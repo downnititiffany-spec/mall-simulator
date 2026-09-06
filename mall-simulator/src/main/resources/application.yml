@@ -1,0 +1,33 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: mall-simulator
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/mall_simulator?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: ${MALL_DB_USER:root}
+    password: ${MALL_DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: Asia/Shanghai
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+# 商城与事件发布配置（V2.2 §5.2.4/§5.2.5）
+mall:
+  landing:
+    # Landing 区根目录；事件按 {landing}/events/{yyyyMMddHH}.jsonl 滚动写入，后续由 Flume Taildir 采集
+    path: ${MALL_LANDING_PATH:./landing}
+  outbox:
+    batch-size: 200      # 每轮发布批大小
+    poll-seconds: 10     # 定时发布间隔（秒）
+
+logging:
+  level:
+    com.graduation.mall: info
