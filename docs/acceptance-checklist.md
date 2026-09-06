@@ -13,7 +13,7 @@
 | 金额字段精度 | DECIMAL(18,2) | ✅ BigDecimal/字符串链路全程 | 契约文档 §4；`SqlExecutor`（BigDecimal → 字符串） |
 | 幂等 | 同键不重复执行 | ✅ | `PipelineRunTest.idempotencyReturnsSameRun`（同 runId、仅 1 行） |
 | 快照发布 | 唯一 ACTIVE、失败保旧 | ✅ | `MySqlMetricStoreTest.onlyOneActivePerProfile`；`amountMismatchBlocksPublish` |
-| AI 只读 | 不可写业务库 | ✅ 四层校验 + 只读连接 | `SqlSafetyValidatorTest`（DML/注入全拦截） |
+| AI 只读 | 不可写业务库 | ✅ 四层校验 + **数据库只读账号 mall_reader 实测**（UPDATE/DROP 被权限层拒绝，ReaderAccountSecurityTest 3/3） |
 | 决策闭环 | 全生命周期 | ✅ 12 态状态机 + 基线锁定 + 方向取反 | `DecisionStateMachineTest` / `DecisionServiceTest` |
 
 ## 性能验收（本机实测，30 并发 × 600 请求）

@@ -18,16 +18,18 @@
 ```bash
 # 1. 数据库
 #    MySQL 需存在可建库账号；库由应用自动创建（createDatabaseIfNotExist）+ Flyway 迁移
+#    （含 V6：自动创建 AI 执行器专用只读账号 mall_reader，仅 SELECT 权限）
 # 2. 后端
 cd mall-simulator
 set MALL_DB_PASSWORD=你的密码        # 或环境变量；绝不写进代码/配置库
+set MALL_READER_PASSWORD=只读账号密码 # 生产必须覆盖默认值（V6 placeholder）
 mvn spring-boot:run                 # :8090
 # 可选 AI：set LLM_BASE_URL=... LLM_API_KEY=... LLM_MODEL=deepseek-chat
 # 3. 前端
 cd web
 npm install && npm run dev          # :5173（/api 代理到 8090）
 # 4. 测试/回归
-mvn test                            # 85 项（黄金对账+安全+全链路）
+mvn test                            # 88 项（含只读账号安全测试）
 mvn -Dtest=GoldenE2ETest test       # 黄金端到端
 ```
 

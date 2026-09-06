@@ -6,8 +6,19 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    placeholders:
+      mall:
+        reader:
+          user: ${MALL_READER_USER:mall_reader}
+          password: ${MALL_READER_PASSWORD:mall_reader_pw}
 
 mall:
+  reader:
+    url: jdbc:mysql://127.0.0.1:3306/mall_simulator_test?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: mall_reader
+    password: mall_reader_pw
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   landing:
     path: ${java.io.tmpdir}/mall-landing-test
   outbox:

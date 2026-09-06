@@ -12,6 +12,11 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    placeholders:
+      mall:
+        reader:
+          user: ${MALL_READER_USER:mall_reader}
+          password: ${MALL_READER_PASSWORD:mall_reader_pw}
   jackson:
     time-zone: Asia/Shanghai
 
@@ -21,6 +26,12 @@ mybatis-plus:
 
 # 商城与事件发布配置（V2.2 §5.2.4/§5.2.5）
 mall:
+  reader:
+    # AI 执行器专属只读账号（§8.6 第四层防线：即使校验被绕过也不可写）
+    url: ${MALL_READER_URL:jdbc:mysql://127.0.0.1:3306/mall_simulator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
+    username: ${MALL_READER_USER:mall_reader}
+    password: ${MALL_READER_PASSWORD:mall_reader_pw}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   landing:
     # Landing 区根目录；事件按 {landing}/events/{yyyyMMddHH}.jsonl 滚动写入，后续由 Flume Taildir 采集
     path: ${MALL_LANDING_PATH:./landing}
