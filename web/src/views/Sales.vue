@@ -1,6 +1,8 @@
 <template>
   <div>
-    <div class="page-title">销售分析</div>
+    <div class="page-title">销售分析
+      <button style="float:right;font-size:12px;padding:4px 12px" :disabled="!rows.length" @click="doExport">导出 CSV</button>
+    </div>
     <div class="chart-box">
       <div class="chart-title">销售额与支付订单数趋势</div>
       <BaseChart :option="salesOption" :height="280" />
@@ -26,8 +28,15 @@
 import { computed, onMounted, ref } from 'vue'
 import api from '../api'
 import BaseChart from '../components/BaseChart.vue'
+import { exportCSV } from '../utils/exportCsv'
 
 const rows = ref([])
+
+const doExport = () => {
+  exportCSV('sales-trend.csv',
+    ['日期', '订单数', '销售额(元)', '买家数'],
+    rows.value.map((s) => [s.date, s.orderCount, Number(s.saleAmount).toFixed(2), s.buyerCount]))
+}
 
 const salesOption = computed(() => ({
   tooltip: { trigger: 'axis' },

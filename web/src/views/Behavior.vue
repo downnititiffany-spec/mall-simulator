@@ -1,6 +1,8 @@
 <template>
   <div>
-    <div class="page-title">用户行为分析</div>
+    <div class="page-title">用户行为分析
+      <button style="float:right;font-size:12px;padding:4px 12px" :disabled="!stages.length" @click="doExport">导出 CSV</button>
+    </div>
     <div class="chart-box">
       <div class="chart-title">转化漏斗（宽松用户口径，去重用户）</div>
       <BaseChart :option="funnelOption" :height="300" />
@@ -16,9 +18,17 @@
 import { computed, onMounted, ref } from 'vue'
 import api from '../api'
 import BaseChart from '../components/BaseChart.vue'
+import { exportCSV } from '../utils/exportCsv'
 
 const stages = ref([])
 const behaviorCounts = ref({ view: 0, favorite: 0, cart_add: 0, cart_remove: 0, search: 0 })
+
+const STAGE_NAMES = { view: '浏览', intent: '意向(收藏/加购)', order: '创建订单', pay: '支付成功' }
+const doExport = () => {
+  exportCSV('behavior-funnel.csv',
+    ['阶段', '用户数', '转化率'],
+    stages.value.map((s) => [STAGE_NAMES[s.stage] || s.stage, s.users, s.rate === null || s.rate === undefined ? '' : (Number(s.rate) * 100).toFixed(1) + '%']))
+}
 
 const funnelOption = computed(() => ({
   tooltip: { trigger: 'item' },
