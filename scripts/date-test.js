@@ -1,0 +1,30 @@
+// 日期选择器验证
+(async () => {
+  const { chromium } = require('D:/Develop_code/yjxxt/01_note/其他学习内容/AgentChat/node_modules/playwright-core');
+  const b = await chromium.launch({ headless: true, executablePath: 'C:/Users/ASUS/AppData/Local/ms-playwright/chromium-1223/chrome-win64/chrome.exe' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 900 } });
+  const errs = [];
+  p.on('pageerror', e => errs.push(e.message.slice(0, 120)));
+  await p.goto('http://127.0.0.1:5173/login', { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await p.waitForSelector('#username');
+  await p.fill('#username', 'admin');
+  await p.fill('#password', 'admin123');
+  await p.click('.login-btn');
+  await p.waitForURL(/overview/, { timeout: 20000 });
+  await p.goto('http://127.0.0.1:5173/sales', { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await p.waitForTimeout(2200);
+  const before = await p.evaluate(() => document.querySelectorAll('tbody tr').length);
+  await p.fill('input[type=date] >> nth=0', '2020-01-01');
+  await p.fill('input[type=date] >> nth=1', '2020-01-07');
+  await p.click('button:has-text("加载")');
+  await p.waitForTimeout(2000);
+  const after = await p.evaluate(() => document.querySelectorAll('tbody tr').length);
+  console.log('销售表行数 近7天:', before, '| 2020年:', after, '(应0)');
+  await p.goto('http://127.0.0.1:5173/behavior', { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await p.waitForTimeout(2000);
+  const hasDate = await p.evaluate(() => !!document.querySelector('input[type=date]'));
+  console.log('行为页有日期选择:', hasDate);
+  console.log('JS错误:', errs.length ? errs.join(';') : '无');
+  await b.close();
+  console.log('DATE_OK');
+})().catch(e => { console.error('ERR:', e.message.slice(0, 200)); process.exit(1); });

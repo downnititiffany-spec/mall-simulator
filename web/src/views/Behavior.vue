@@ -3,6 +3,11 @@
     <div class="page-title">用户行为分析
       <button style="float:right;font-size:12px;padding:4px 12px" :disabled="!stages.length" @click="doExport">导出 CSV</button>
     </div>
+    <div class="chart-box" style="display:flex;gap:10px;align-items:center;padding:10px 14px">
+      <label style="font-size:13px;color:#374151">分析日期：</label>
+      <input type="date" v-model="date" style="padding:4px" />
+      <button style="font-size:12px" @click="load">加载</button>
+    </div>
     <div class="chart-box">
       <div class="chart-title">转化漏斗（宽松用户口径，去重用户）</div>
       <BaseChart :option="funnelOption" :height="300" />
@@ -24,11 +29,21 @@ const stages = ref([])
 const behaviorCounts = ref({ view: 0, favorite: 0, cart_add: 0, cart_remove: 0, search: 0 })
 
 const STAGE_NAMES = { view: '浏览', intent: '意向(收藏/加购)', order: '创建订单', pay: '支付成功' }
+const date = ref(new Date().toISOString().slice(0, 10))
 const doExport = () => {
-  exportCSV('behavior-funnel.csv',
+  exportCSV(`behavior-funnel-${date.value}.csv`,
     ['阶段', '用户数', '转化率'],
     stages.value.map((s) => [STAGE_NAMES[s.stage] || s.stage, s.users, s.rate === null || s.rate === undefined ? '' : (Number(s.rate) * 100).toFixed(1) + '%']))
 }
+
+async function load() {
+  try {
+    stages.value = await api.funnel(date.value)
+  } catch (e) {
+    // 无数据时多个空状态即可
+  }
+}
+onMounted(load)
 
 const funnelOption = computed(() => ({
   tooltip: { trigger: 'item' },
@@ -48,13 +63,4 @@ const typeOption = computed(() => ({
   yAxis: { type: 'value' },
   series: [{ name: '次数', type: 'bar', data: Object.values(behaviorCounts.value), itemStyle: { color: '#3b82f6' } }]
 }))
-
-onMounted(async () => {
-  const today = new Date().toISOString().slice(0, 10)
-  try {
-    stages.value = await api.funnel(today)
-  } catch (e) {
-    // 无数据时多个空状态即可
-  }
-})
 </script>

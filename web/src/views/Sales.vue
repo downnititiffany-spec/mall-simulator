@@ -3,6 +3,13 @@
     <div class="page-title">销售分析
       <button style="float:right;font-size:12px;padding:4px 12px" :disabled="!rows.length" @click="doExport">导出 CSV</button>
     </div>
+    <div class="chart-box" style="display:flex;gap:10px;align-items:center;padding:10px 14px">
+      <label style="font-size:13px;color:#374151">日期范围：</label>
+      <input type="date" v-model="from" style="padding:4px" />
+      <span style="color:#9ca3af">至</span>
+      <input type="date" v-model="to" style="padding:4px" />
+      <button style="font-size:12px" @click="load">加载</button>
+    </div>
     <div class="chart-box">
       <div class="chart-title">销售额与支付订单数趋势</div>
       <BaseChart :option="salesOption" :height="280" />
@@ -31,12 +38,21 @@ import BaseChart from '../components/BaseChart.vue'
 import { exportCSV } from '../utils/exportCsv'
 
 const rows = ref([])
+const from = ref(new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10))
+const to = ref(new Date().toISOString().slice(0, 10))
 
 const doExport = () => {
-  exportCSV('sales-trend.csv',
+  exportCSV(`sales-trend-${from.value}_${to.value}.csv`,
     ['日期', '订单数', '销售额(元)', '买家数'],
     rows.value.map((s) => [s.date, s.orderCount, Number(s.saleAmount).toFixed(2), s.buyerCount]))
 }
+
+async function load() {
+  try {
+    rows.value = await api.sales(from.value, to.value)
+  } catch (e) { console.error(e) }
+}
+onMounted(load)
 
 const salesOption = computed(() => ({
   tooltip: { trigger: 'axis' },
@@ -52,12 +68,4 @@ const salesOption = computed(() => ({
     { name: '订单数', type: 'line', yAxisIndex: 1, data: rows.value.map((s) => s.orderCount) }
   ]
 }))
-
-onMounted(async () => {
-  const to = new Date().toISOString().slice(0, 10)
-  const from = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10)
-  try {
-    rows.value = await api.sales(from, to)
-  } catch (e) { console.error(e) }
-})
 </script>
