@@ -90,4 +90,26 @@ public class ProductManagementService {
                         product.getCategoryId(), product.getBrandId(), newPrice, product.getCost(),
                         product.getStatus()));
     }
+
+    /**
+     * 上架/下架（§2.2 商品生命周期；下架后商城不可售，requireOnSale 拦截）。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void updateStatus(Long productId, String status, TraceContext trace) {
+        if (!"on_sale".equals(status) && !"off_sale".equals(status)) {
+            throw new MallBizException("PARAM_INVALID", "status 必须为 on_sale/off_sale");
+        }
+        Product product = productMapper.selectById(productId);
+        if (product == null) {
+            throw new MallBizException(MallBizException.PRODUCT_NOT_FOUND, "商品不存在: " + productId);
+        }
+        product.setStatus(status);
+        productMapper.updateById(product);
+        OffsetDateTime now = eventClock.now();
+        outboxService.append(trace, EventContract.AGG_PRODUCT, String.valueOf(productId),
+                EventContract.PRODUCT_UPDATED, now,
+                EventPayloadFactory.productUpdated(productId, product.getProductName(),
+                        product.getCategoryId(), product.getBrandId(), product.getPrice(), product.getCost(),
+                        status));
+    }
 }
