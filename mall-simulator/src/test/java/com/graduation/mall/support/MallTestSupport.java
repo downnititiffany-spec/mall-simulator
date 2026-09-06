@@ -17,6 +17,10 @@ import com.graduation.mall.domain.mapper.MallUserMapper;
 import com.graduation.mall.domain.mapper.OrderItemMapper;
 import com.graduation.mall.domain.mapper.PaymentMapper;
 import com.graduation.mall.domain.mapper.RefundMapper;
+import com.graduation.mall.ingestion.mapper.FileCheckpointMapper;
+import com.graduation.mall.ingestion.mapper.IngestionBatchFileMapper;
+import com.graduation.mall.ingestion.mapper.IngestionBatchMapper;
+import com.graduation.mall.ingestion.mapper.QuarantineRecordMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -63,6 +67,14 @@ public abstract class MallTestSupport {
     private MallUserMapper mallUserMapper;
     @Autowired
     private InventoryMapper inventoryMapper;
+    @Autowired
+    private IngestionBatchMapper ingestionBatchMapper;
+    @Autowired
+    private IngestionBatchFileMapper ingestionBatchFileMapper;
+    @Autowired
+    private FileCheckpointMapper fileCheckpointMapper;
+    @Autowired
+    private QuarantineRecordMapper quarantineRecordMapper;
 
     @DynamicPropertySource
     static void landingProps(DynamicPropertyRegistry registry) {
@@ -79,6 +91,11 @@ public abstract class MallTestSupport {
         refundMapper.delete(null);
         cartItemMapper.delete(null);
         mallUserMapper.delete(null);
+        // 采集元数据表（批次/断点/隔离）也必须隔离，否则断点残留导致误判"无新内容"
+        ingestionBatchFileMapper.delete(null);
+        ingestionBatchMapper.delete(null);
+        quarantineRecordMapper.delete(null);
+        fileCheckpointMapper.delete(null);
         // 恢复种子库存（商品/分类由 Flyway 种子固定）
         for (Long productId : List.of(1001L, 1002L, 1003L, 1004L)) {
             inventoryMapper.update(null, new LambdaUpdateWrapper<Inventory>()
