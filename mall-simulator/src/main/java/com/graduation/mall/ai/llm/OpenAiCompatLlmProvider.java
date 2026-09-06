@@ -33,12 +33,27 @@ public class OpenAiCompatLlmProvider implements LlmProvider {
             @Value("${llm.base-url:}") String baseUrl,
             @Value("${llm.api-key:}") String apiKey,
             @Value("${llm.model:deepseek-chat}") String model) {
-        this.baseUrl = baseUrl;
+        this.baseUrl = normalizeBaseUrl(baseUrl);
         this.apiKey = apiKey;
         this.model = model;
         this.client = RestClient.builder()
-                .baseUrl(baseUrl.isBlank() ? "http://127.0.0.1:1" : baseUrl) // 无配置时不可达
+                .baseUrl(this.baseUrl.isEmpty() ? "http://127.0.0.1:1" : this.baseUrl) // 无配置时不可达
                 .build();
+    }
+
+    /**
+     * URL 归一化：容忍用户配置带或不带 /v1 / 尾部斜杠
+     * （请求路径固定为 /v1/chat/completions，避免 /v1/v1 双重前缀导致 404）。
+     */
+    static String normalizeBaseUrl(String baseUrl) {
+        if (baseUrl == null) {
+            return "";
+        }
+        String b = baseUrl.trim().replaceAll("/+$", "");
+        if (b.endsWith("/v1")) {
+            b = b.substring(0, b.length() - 3);
+        }
+        return b;
     }
 
     @Override
