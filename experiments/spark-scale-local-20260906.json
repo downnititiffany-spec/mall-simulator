@@ -1,0 +1,18 @@
+{
+  "experiment": "spark-scale-local",
+  "timestamp": "2026-09-06T17:55:00",
+  "mode": "Spark 3.5.1 local[2] + embedded Derby Hive（Windows）",
+  "job_chain": "sci -> odl -> bdw -> usw -> fna",
+  "data": [
+    { "events": 14400,  "odl_ms": 10908, "bdw_ms": 12194, "usw_ms": 11163, "fna_ms": 10987, "dws_rows": 30 },
+    { "events": 64800,  "odl_ms": 13662, "bdw_ms": 15243, "usw_ms": 14226, "fna_ms": 13403, "dws_rows": 90 },
+    { "events": 129600, "odl_ms": 11067, "bdw_ms": 12420, "usw_ms": 10165, "fna_ms": 11237, "dws_rows": 120 }
+  ],
+  "observations": [
+    "三档事件数相差 9 倍，链上各作业耗时基本持平（~11-15s），其中约 10s 为 JVM/Spark 启动与 Derby 元数据固定开销",
+    "处理吞吐：odl 档C 约 1.17 万事件/s、档A 约 0.13 万事件/s——吞吐随规模显著提升（启动摊薄），符合 Spark 批处理特性",
+    "该实验为 §10.2 实验一（数据规模扩展）的单机部分；集群分档（100万-1亿）待环境后复用同一 run-spark-chain 脚本",
+    "过滤/谓词下推（WHERE schema_version/dt）在 SQL 模板层已固化（分区裁剪），广播/并行度对照实验待集群数据"
+  ],
+  "reproduce": "pwsh scripts/run-spark-chain.ps1（先按规模生成 Landing 数据）"
+}

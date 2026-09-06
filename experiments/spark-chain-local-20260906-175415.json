@@ -1,0 +1,36 @@
+{
+  "hive": "embedded derby (spark.sql.warehouse.dir)",
+  "spark": "3.5.1 local[2]",
+  "timestamp": "2026-09-06T17:54:15",
+  "jobs": {
+    "usw": {
+      "elapsedMs": 14226,
+      "output": 90,
+      "input": 64800,
+      "status": "SUCCESS"
+    },
+    "bdw": {
+      "elapsedMs": 15243,
+      "output": 64800,
+      "input": 64800,
+      "status": "SUCCESS"
+    },
+    "odl": {
+      "elapsedMs": 13662,
+      "output": 64800,
+      "input": 64800,
+      "status": "SUCCESS"
+    },
+    "sci": {
+      "status": "SUCCESS",
+      "elapsedMs": 6885
+    },
+    "fna": {
+      "elapsedMs": 13403,
+      "output": 4,
+      "input": 1,
+      "status": "SUCCESS"
+    }
+  },
+  "landingDir": "D:\\Develop_code\\GraduationProject\\mall-simulator\\landing\\events"
+}
