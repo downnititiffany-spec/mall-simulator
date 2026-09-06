@@ -70,14 +70,35 @@
         </button>
       </div>
     </div>
+
+    <div class="chart-box" v-if="history.length">
+      <div class="chart-title">我的最近问答（点击回填）</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button v-for="h in history" :key="h.id" @click="question = h.question"
+                style="text-align:left;padding:6px 10px;border:1px solid #f3f4f6;background:#fafafa;border-radius:6px;font-size:13px;cursor:pointer">
+          <span style="color:#111827">{{ h.question }}</span>
+          <span style="float:right;color:#9ca3af;font-size:12px">{{ h.status }} · {{ h.rowsReturned }} 行 · {{ (h.createdAt || '').toString().slice(0, 10) }}</span>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import api from '../api'
 
 const question = ref('')
+const history = ref([])
+
+async function loadHistory() {
+  try {
+    history.value = await api.get('/ai/history/my', { limit: 8 }) || []
+  } catch (e) {
+    // 历史不存在时静默（新用户）
+  }
+}
+onMounted(loadHistory)
 const busy = ref(false)
 const result = ref(null)
 const error = ref('')
@@ -104,6 +125,7 @@ async function ask() {
   result.value = null
   try {
     result.value = await api.post('/ai/queries', { question: question.value.trim(), timeRange: '近30天' })
+    await loadHistory()
   } catch (e) {
     error.value = '请求失败：' + (e.message || e)
   } finally {

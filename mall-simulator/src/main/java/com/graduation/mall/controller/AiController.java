@@ -44,17 +44,27 @@ public class AiController {
     public record AiQueryResp(QueryResult query, ExplanationResult explanation) {
     }
 
-    /** 一次完整问答：受控 Text-to-SQL + 证据解释（§3.5.4 AI 辅助运行模式） */
+    /** 一次完整问答：受控 Text-to-SQL + 证据解释（§3.5.4 AI 辅助运行模式；审计归属登录用户） */
     @PostMapping("/queries")
     public ApiResponse<AiQueryResp> query(@RequestBody AiQueryReq req,
-                                          @RequestHeader(value = "X-User-Id", defaultValue = "demo") String userId) {
+                                          @RequestHeader(value = "X-User-Id", defaultValue = "") String headerUserId) {
         TraceContext trace = TraceContext.create();
+        String userId = currentUserId(headerUserId);
         QueryResult query = textToSqlService.query(req.question(), userId);
         String snapshotId = latestSnapshotId(query);
         String timeRange = req.timeRange() == null || req.timeRange().isBlank() ? "近30天(默认)" : req.timeRange();
         ExplanationResult explanation = explanationService.explain(query, snapshotId,
                 req.question(), timeRange);
         return ApiResponse.ok(new AiQueryResp(query, explanation), trace.traceId());
+    }
+
+    /** 审计归属：优先登录用户（CurrentUserHolder），无登录态回退头/default */
+    private String currentUserId(String headerUserId) {
+        com.graduation.mall.auth.CurrentUser current = com.graduation.mall.auth.CurrentUserHolder.get();
+        if (current != null) {
+            return current.username();
+        }
+        return headerUserId == null || headerUserId.isBlank() ? "demo" : headerUserId;
     }
 
     /** 仅生成解释（基于已有查询） */
@@ -93,5 +103,16 @@ public class AiController {
         return ApiResponse.ok(callLogMapper.selectList(new LambdaQueryWrapper<AiCallLog>()
                 .orderByDesc(AiCallLog::getId)
                 .last("LIMIT " + Math.max(1, Math.min(200, limit)))), TraceContext.create().traceId());
+    }
+
+    /** 我的最近问答（登录用户自己的历史，用于 AI 页回填复问） */
+    @GetMapping("/history/my")
+    public ApiResponse<List<AiQueryHistory>> myHistory(@RequestParam(defaultValue = "10") int limit) {
+        com.graduation.mall.auth.CurrentUser current = com.graduation.mall.auth.CurrentUserHolder.get();
+        String userId = current == null ? "demo" : current.username();
+        return ApiResponse.ok(queryHistoryMapper.selectList(new LambdaQueryWrapper<AiQueryHistory>()
+                .eq(AiQueryHistory::getUserId, userId)
+                .orderByDesc(AiQueryHistory::getId)
+                .last("LIMIT " + Math.max(1, Math.min(50, limit)))), TraceContext.create().traceId());
     }
 }
