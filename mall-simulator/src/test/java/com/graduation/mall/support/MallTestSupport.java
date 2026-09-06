@@ -21,6 +21,11 @@ import com.graduation.mall.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.mall.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.mall.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.mall.ingestion.mapper.QuarantineRecordMapper;
+import com.graduation.mall.metric.mapper.MetricSnapshotMapper;
+import com.graduation.mall.metric.mapper.MetricValueMapper;
+import com.graduation.mall.pipeline.mapper.DataQualityResultMapper;
+import com.graduation.mall.pipeline.mapper.PipelineRunMapper;
+import com.graduation.mall.pipeline.mapper.PipelineStageRunMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -75,6 +80,16 @@ public abstract class MallTestSupport {
     private FileCheckpointMapper fileCheckpointMapper;
     @Autowired
     private QuarantineRecordMapper quarantineRecordMapper;
+    @Autowired
+    private MetricValueMapper metricValueMapper;
+    @Autowired
+    private MetricSnapshotMapper metricSnapshotMapper;
+    @Autowired
+    private PipelineStageRunMapper pipelineStageRunMapper;
+    @Autowired
+    private PipelineRunMapper pipelineRunMapper;
+    @Autowired
+    private DataQualityResultMapper dataQualityResultMapper;
 
     @DynamicPropertySource
     static void landingProps(DynamicPropertyRegistry registry) {
@@ -96,6 +111,12 @@ public abstract class MallTestSupport {
         ingestionBatchMapper.delete(null);
         quarantineRecordMapper.delete(null);
         fileCheckpointMapper.delete(null);
+        // 指标与流水线元数据
+        metricValueMapper.delete(null);
+        metricSnapshotMapper.delete(null);
+        pipelineStageRunMapper.delete(null);
+        dataQualityResultMapper.delete(null);
+        pipelineRunMapper.delete(null);
         // 恢复种子库存（商品/分类由 Flyway 种子固定）
         for (Long productId : List.of(1001L, 1002L, 1003L, 1004L)) {
             inventoryMapper.update(null, new LambdaUpdateWrapper<Inventory>()
