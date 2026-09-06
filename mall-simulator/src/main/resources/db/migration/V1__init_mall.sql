@@ -120,7 +120,7 @@ CREATE TABLE event_outbox (
     aggregate_id   VARCHAR(64)  NOT NULL,
     event_type     VARCHAR(32)  NOT NULL COMMENT '事件类型，见事件契约',
     trace_id       VARCHAR(64)  NOT NULL,
-    payload        JSON         NOT NULL COMMENT '事件信封完整 JSON',
+    payload        TEXT         NOT NULL COMMENT '事件信封完整 JSON 字符串（TEXT 以容忍下游解析失败的坏样本，供隔离/重放研究）',
     created_at     DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     published_at   DATETIME(3)  NULL COMMENT '写入滚动日志时间，NULL=未发布',
     PRIMARY KEY (id),

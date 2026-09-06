@@ -1,0 +1,38 @@
+{
+  "dataset": "golden-20260901",
+  "date": "2026-09-01",
+  "description": "固定场景黄金数据标准答案（人工核算）。口径依据：docs/contracts/metric-dictionary.md v1。",
+  "scope": {
+    "event_count": 30,
+    "users": 3,
+    "products": 4,
+    "behaviors": 10,
+    "orders_created": 3,
+    "orders_paid": 2,
+    "orders_cancelled": 1,
+    "refunds": 1
+  },
+  "metrics": {
+    "pv": 6,
+    "uv": 3,
+    "dau": 3,
+    "fav_cnt": 1,
+    "cart_add_cnt": 2,
+    "paid_order_cnt": 2,
+    "buy_users": 2,
+    "gmv": "1275.00",
+    "net_sale": "1225.00",
+    "avg_order_value": "637.50",
+    "refund_rate": "0.50",
+    "buy_rate": "0.6667",
+    "repeat_rate": "0.00"
+  },
+  "notes": [
+    "gmv = 1097.00(O1001) + 178.00(O1003) = 1275.00",
+    "net_sale = 1275.00 - 50.00(refund_completed) = 1225.00",
+    "avg_order_value = 1275.00 / 2 = 637.50",
+    "refund_rate = 退款订单数(1) / 支付订单数(2) = 0.50",
+    "buy_rate = 支付用户数(2) / 浏览用户数(3) = 0.6667",
+    "repeat_rate = 观察期(1天)支付订单数>=2的用户数(0) / 支付用户数(2) = 0.00"
+  ]
+}
