@@ -14,6 +14,13 @@ mvn spring-boot:run          # 启动后监听 8090，Flyway 自动建库建表
 npm install && npm run dev   # http://127.0.0.1:5173
 ```
 
+## 0) 一键出数据（可选，省手打）
+
+```bash
+pwsh -File scripts/run-demo.ps1 -Clean     # 1 天窗口 ≈ 3.2 万事件（~3 分钟）
+# 参数：-Days 2 -Users 100 -Scenario promotion；数据规模建议 ≤2 天（时间成本见文末表）
+```
+
 ## 主线演示（约 3 分钟）
 
 ### 1) 一键生成并分析（演示控制台）
