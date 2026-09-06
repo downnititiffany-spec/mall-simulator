@@ -18,6 +18,9 @@ public class MockLlmProvider implements LlmProvider {
     /** 请求特征 → 响应内容（由测试设置） */
     public static final Map<String, Function<String, String>> BEHAVIOR = new ConcurrentHashMap<>();
 
+    /** 兜底分发器（评测器按问题文本动态分类生成响应） */
+    public static volatile Function<String, String> DEFAULT_HANDLER = null;
+
     @Override
     public boolean healthCheck() {
         return true;
@@ -36,7 +39,7 @@ public class MockLlmProvider implements LlmProvider {
                 .filter(e -> content.startsWith(e.getKey()))
                 .map(Map.Entry::getValue)
                 .findFirst()
-                .orElse(null);
+                .orElse(DEFAULT_HANDLER);
         String result = fn != null ? fn.apply(content) : defaultSqlResponse();
         return new AiResponse(result, 100, 50, "mock-model");
     }
