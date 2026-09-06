@@ -48,3 +48,22 @@ ppt/                  答辩网页 PPT（16 页）
   # 或先跑测试：
   mvn test
   ```
+
+## 快速开始与验收（§14.3 交付物）
+
+```powershell
+# 一键构建可执行 jar（前端 dist 内置 → 29.8MB 单 jar）+ 一键启动（自动开浏览器）
+pwsh scripts/build-web-and-package.ps1          # 需先设 MALL_DB_PASSWORD
+pwsh scripts/start-all.ps1 -DbPassword 你的密码  # 或环境变量方式
+
+# 全链路验收快照（11 项：登录/生成/发布/采集/流水线/指标/AI/决策/商城/角色隔离）
+pwsh scripts/final-accept.ps1 -DbPassword 你的密码
+
+演示账号：admin/admin123（系统管理员）、operator/operator123（运营）、analyst/analyst123（数据分析师）
+```
+
+## 功能补强记录（2026-09 迭代）
+
+权限登录（3 角色 403 隔离）→ 商城演示页 → 运维中心（快照/质量/AI 审计）→ 用户管理 →
+商品管理（上下架）→ RFM 用户分层 → CSV 导出 → 日期范围选择 → AI 问答历史回填 →
+单进程打包（SPA fallback）＋ 数据库只读账号防线。每项均有测试与冒烟留痕（scripts/ 常驻脚本）。
