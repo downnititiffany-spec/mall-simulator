@@ -22,16 +22,17 @@
 ## 仓库结构（§19.1）
 
 ```text
-docs/                 设计、接口、指标和实验文档
+docs/                 契约、API、部署、验收、兼容性矩阵与论文初稿素材
 tests/golden-dataset/ 黄金数据及标准答案
-mall-simulator/       最小商城与自动生成器，独立进程（本轮）
-analytics-server/     Spring Boot Maven 多模块分析平台（后续阶段）
-spark-jobs/           Scala Spark 任务（后续阶段）
-web/                  Vue 3 分析平台（后续阶段）
-warehouse/            Hive DDL、迁移、指标 SQL（后续阶段）
-ingestion/flume/      Flume 配置（后续阶段）
-deploy/               LOCAL/SINGLE_NODE/REMOTE_CLUSTER 模板（后续阶段）
-experiments/          实验原始结果（后续阶段）
+tests/ai-questions/   Text-to-SQL 评审测试集（100 题）
+mall-simulator/       简化单片应用：商城/生成器/采集/流水线/指标/AI/决策（阶段 1-8）
+spark-jobs/           Scala Spark 作业（6 个，含本地链验证）
+web/                  Vue 3 + ECharts 看板（7 页面）
+warehouse/            四层数仓 DDL（29 表）与血缘说明
+ingestion/flume/      Flume 部署模板（集群模式）
+scripts/              一键演示 / Spark 链 / 截图脚本
+experiments/          全部实测结果档案（可复现）
+ppt/                  答辩网页 PPT（16 页）
 ```
 
 ## 本地开发
