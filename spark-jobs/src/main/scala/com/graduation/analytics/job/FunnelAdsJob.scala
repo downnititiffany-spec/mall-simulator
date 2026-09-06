@@ -27,21 +27,21 @@ class FunnelAdsJob extends WarehouseJob {
     spark.sql(AdsSql.hotProduct(dt, topN))
     spark.sql(AdsSql.productConversion(dt))
     spark.sql(AdsSql.saleTrend(dt))
-    // ads_behavior_funnel：由漏斗 DWS 展开为 stage 行
+    // ads_behavior_funnel：由漏斗 DWS 展开为 stage 行（dt 为分区列不投影）
     spark.sql(
       s"""
          |INSERT OVERWRITE TABLE dw_ads.ads_behavior_funnel PARTITION(dt = '$dt')
-         |SELECT '$dt' AS dt, 'view' AS stage, view_users AS user_count, NULL AS conversion_rate,
+         |SELECT 'view' AS stage, view_users AS user_count, NULL AS conversion_rate,
          |       overall_buy_rate
          |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
          |UNION ALL
-         |SELECT '$dt', 'intent', intent_users, intent_rate, overall_buy_rate
+         |SELECT 'intent', intent_users, intent_rate, overall_buy_rate
          |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
          |UNION ALL
-         |SELECT '$dt', 'order', order_users, order_rate, overall_buy_rate
+         |SELECT 'order', order_users, order_rate, overall_buy_rate
          |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
          |UNION ALL
-         |SELECT '$dt', 'pay', pay_users, pay_rate, overall_buy_rate
+         |SELECT 'pay', pay_users, pay_rate, overall_buy_rate
          |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
          |""".stripMargin)
 

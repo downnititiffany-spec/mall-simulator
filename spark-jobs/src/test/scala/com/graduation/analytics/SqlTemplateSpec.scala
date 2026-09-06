@@ -9,11 +9,15 @@ import org.scalatest.matchers.should.Matchers
  */
 class SqlTemplateSpec extends AnyFlatSpec with Matchers {
 
-  "OdsLoadSql" should "版本过滤并路由到行为主题" in {
-    val sql = OdsLoadSql.behaviorFromLanding("/landing/events", "20260901", "10")
-    sql.toLowerCase should include("schema_version = '1.0'")
-    sql.toLowerCase should include("event_type = 'behavior'")
-    sql.toLowerCase should include("json.`/landing/events/runtime.json`")
+  "OdsLoadSql" should "版本过滤并派生 dt/hour 分区" in {
+    val sql = OdsLoadSql.behaviorFromLanding("/landing/events")
+    val lower = sql.toLowerCase
+    lower should include("schema_version = '1.0'")
+    lower should include("event_type = 'behavior'")
+    lower should include("json.`/landing/events`")
+    lower should include("partition (dt, hour)")
+    lower should include("regexp_replace(substr(event_time, 1, 10), '-', '')")
+    lower should include("substr(event_time, 12, 2)")
   }
 
   "DwdSql" should "event_id 去重且只保留合法枚举" in {

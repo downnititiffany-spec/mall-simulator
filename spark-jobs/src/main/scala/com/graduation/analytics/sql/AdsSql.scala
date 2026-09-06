@@ -25,11 +25,11 @@ object AdsSql {
        |      FROM dw_dwd.dwd_order_detail WHERE dt = '$dt' AND final_refunded_flag = 1) r
        |""".stripMargin
 
-  /** 活跃趋势 */
+  /** 活跃趋势（dt 为分区列，由 INSERT PARTITION 提供，不再投影） */
   def activeTrend(dt: String): String =
     s"""
        |INSERT OVERWRITE TABLE dw_ads.ads_active_trend PARTITION(dt = '$dt')
-       |SELECT '$dt' AS dt, COUNT(DISTINCT user_id) AS dau, COUNT(*) AS behavior_count
+       |SELECT COUNT(DISTINCT user_id) AS dau, COUNT(*) AS behavior_count
        |FROM dw_dwd.dwd_user_behavior_detail
        |WHERE dt = '$dt'
        |""".stripMargin
@@ -38,7 +38,7 @@ object AdsSql {
   def hotProduct(dt: String, topN: Int): String =
     s"""
        |INSERT OVERWRITE TABLE dw_ads.ads_hot_product PARTITION(dt = '$dt')
-       |SELECT product_id, p.product_name, heat_score, pv, fav, cart, buy, rank_no
+       |SELECT t.product_id, p.product_name, heat_score, pv, fav, cart, buy, rank_no
        |FROM (
        |  SELECT product_id,
        |         1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score,

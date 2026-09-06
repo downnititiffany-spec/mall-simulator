@@ -32,6 +32,11 @@ data/
 logs/
 *.log
 
+# ── Spark 本地实验残留（embedded Derby / warehouse）──
+metastore_db/
+spark-warehouse/
+derby.log
+
 # ── 参考/备份/临时目录（第三方代码与历史备份不入库）──
 借鉴项目/
 text-to-sql/

@@ -24,14 +24,15 @@ class JobArgsRegistrySpec extends AnyFlatSpec with Matchers {
     JobArgs.parse(Array("--runtimeProfileId=1", "--jobCode=bdw", "--businessDate=2026-09-01")) should be('left)
   }
 
-  "JobRegistry" should "注册首批 5 作业且依赖顺序正确" in {
-    JobRegistry.allCodes should contain allOf ("odl", "bdw", "usw", "fna", "ljp")
-    JobRegistry.jobs.size should be(5)
+  "JobRegistry" should "注册首批 6 作业且依赖顺序正确" in {
+    JobRegistry.allCodes should contain allOf ("odl", "bdw", "usw", "fna", "ljp", "sci")
+    JobRegistry.jobs.size should be(6)
     JobRegistry.dependencies("bdw") should be(List("odl"))
     JobRegistry.dependencies("usw") should be(List("bdw"))
     JobRegistry.dependencies("fna") should be(List("usw"))
     JobRegistry.dependencies("odl") should be(List.empty)
     JobRegistry.dependencies("ljp") should be(List.empty)
+    JobRegistry.dependencies("sci") should be(List.empty)
     JobRegistry.lookup("unknown") should be(None)
   }
 }
