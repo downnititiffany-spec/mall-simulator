@@ -26,6 +26,7 @@ public class MetricController {
 
     private final MetricStore metricStore;
     private final MetricSnapshotMapper snapshotMapper;
+    private final com.graduation.mall.pipeline.mapper.DataQualityResultMapper qualityMapper;
 
     /** 经营指标（默认最新 ACTIVE 快照）；返回 metric_code→value+unit */
     @GetMapping("/overview")
@@ -53,5 +54,19 @@ public class MetricController {
     @GetMapping("/health")
     public ApiResponse<MetricStore.HealthResult> health() {
         return ApiResponse.ok(metricStore.healthCheck(), TraceContext.create().traceId());
+    }
+
+    /** 数据质量规则结果（§23.1 质量门；管理员运维页） */
+    @GetMapping("/quality")
+    public ApiResponse<List<com.graduation.mall.pipeline.entity.DataQualityResult>> quality(
+            @RequestParam(required = false) Long runId,
+            @RequestParam(defaultValue = "20") int limit) {
+        var wrapper = new LambdaQueryWrapper<com.graduation.mall.pipeline.entity.DataQualityResult>()
+                .orderByDesc(com.graduation.mall.pipeline.entity.DataQualityResult::getId)
+                .last("LIMIT " + Math.max(1, Math.min(200, limit)));
+        if (runId != null) {
+            wrapper.eq(com.graduation.mall.pipeline.entity.DataQualityResult::getRunId, runId);
+        }
+        return ApiResponse.ok(qualityMapper.selectList(wrapper), TraceContext.create().traceId());
     }
 }

@@ -64,11 +64,12 @@ const userLine = computed(() => {
   return `${roleName.value} ${name}${realName ? '（' + username + '）' : ''}`
 })
 
-// 导航按角色过滤：admin 可见全部页面，其余角色隐藏「数据流水线」
+// 导航按角色过滤：admin 可见全部页面，其余角色隐藏「数据流水线/运维中心」
 const allRoutes = router.options.routes.filter((r) => r.meta && r.meta.title && r.path !== '/login')
+const ADMIN_ONLY_PATHS = ['/pipeline', '/ops']
 const nav = computed(() => {
   const isAdmin = user.value && user.value.role === 'admin'
-  return allRoutes.filter((r) => isAdmin || r.path !== '/pipeline')
+  return allRoutes.filter((r) => isAdmin || !ADMIN_ONLY_PATHS.includes(r.path))
 })
 
 const onLogout = async () => {
