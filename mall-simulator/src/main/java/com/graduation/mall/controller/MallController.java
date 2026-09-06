@@ -44,7 +44,7 @@ public class MallController {
     public ApiResponse<Map<String, Object>> register(@Valid @RequestBody CreateUserReq req) {
         TraceContext trace = TraceContext.create();
         Long userId = mallService.registerUser(req, trace);
-        return ApiResponse.ok(Map.of("userId", userId), trace.traceId());
+        return ApiResponse.ok(Map.of("userId", String.valueOf(userId)), trace.traceId());
     }
 
     @GetMapping("/products")
@@ -73,7 +73,8 @@ public class MallController {
     public ApiResponse<Map<String, Object>> createOrder(@Valid @RequestBody OrderCreateReq req) {
         TraceContext trace = TraceContext.create();
         Long orderId = mallService.createOrder(req, trace);
-        return ApiResponse.ok(Map.of("orderId", orderId), trace.traceId());
+        // ID 超 JS 安全整数，统一字符串返回（雪花 19 位）
+        return ApiResponse.ok(Map.of("orderId", String.valueOf(orderId)), trace.traceId());
     }
 
     @PostMapping("/orders/{orderId}/pay")
@@ -95,7 +96,7 @@ public class MallController {
                                                         @Valid @RequestBody RefundApplyReq req) {
         TraceContext trace = TraceContext.create();
         Long refundId = mallService.applyRefund(orderId, req.userId(), req.amount(), req.reason(), trace);
-        return ApiResponse.ok(Map.of("refundId", refundId), trace.traceId());
+        return ApiResponse.ok(Map.of("refundId", String.valueOf(refundId)), trace.traceId());
     }
 
     @PostMapping("/refunds/{refundId}/complete")
@@ -112,13 +113,21 @@ public class MallController {
         TraceContext trace = TraceContext.create();
         List<Map<String, Object>> result = mallService.listOrders(userId, status).stream().map(o -> {
             Map<String, Object> m = new HashMap<>();
-            m.put("orderId", o.getOrderId());
-            m.put("userId", o.getUserId());
+            // 雪花 ID 超 JS 安全整数：一律字符串返回（前端回传不再丢精度）
+            m.put("orderId", String.valueOf(o.getOrderId()));
+            m.put("userId", String.valueOf(o.getUserId()));
             m.put("status", o.getStatus());
             m.put("totalAmount", o.getTotalAmount());
             m.put("createdAt", o.getCreatedAt());
             m.put("items", mallService.listOrderItems(o.getOrderId()));
-            m.put("refunds", mallService.listRefunds(o.getOrderId()));
+            m.put("refunds", mallService.listRefunds(o.getOrderId()).stream().map(r -> {
+                Map<String, Object> rf = new HashMap<>();
+                rf.put("refundId", String.valueOf(r.getRefundId()));
+                rf.put("status", r.getStatus());
+                rf.put("amount", r.getAmount());
+                rf.put("reason", r.getReason());
+                return rf;
+            }).toList());
             return m;
         }).toList();
         return ApiResponse.ok(result, trace.traceId());
