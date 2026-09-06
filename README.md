@@ -13,6 +13,8 @@
 | 3 | 自动生成：场景、分布、随机种子和脏数据 | ✅ 完成 |
 | 4 | 环境与采集：LOCAL 环境 + Flume，再验证远程集群 | ✅ 完成（LOCAL：断点采集+批次状态机+契约隔离；Flume 模板已交付） |
 | 5 | 数仓与 Spark：ODS、DWD、DWS、ADS、算法和质量规则 | ✅ DDL 全层 + 首批 4 作业（Scala，22 单测全绿，本机编译打包）；集群 spark-submit 实跑待环境 |
+| 6 | 指标服务：快照发布和 MySQL MetricStore | ✅ 快照状态机(BUILDING→VERIFYING→ACTIVE)、流水线7阶段+幂等键、MetricStore 接口（黄金对账 60 测试全绿） |
+| 7 | Web 程序：权限、运行中心和普通员工分析页面 | 🚧 进行中：分析 API 5 端点 + Vue3/ECharts 看板 6 页面（build 通过、端到端联通）；登录权限待接入 |
 | 5 | 数仓与 Spark：ODS、DWD、DWS、ADS、算法和质量规则 | 未开始 |
 | 6 | 指标服务：快照发布和 MySQL MetricStore | 未开始 |
 | 7 | Web 程序：权限、运行中心和普通员工分析页面 | 未开始 |

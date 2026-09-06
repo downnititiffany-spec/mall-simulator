@@ -60,6 +60,7 @@ public class SimulationEngine {
     private final EventOutboxService outboxService;
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
+    private final com.graduation.mall.domain.mapper.InventoryMapper inventoryMapper;
     private final EventClock eventClock;
 
     private record SeedUser(Long userId, int activityLevel, double[] categoryPref, double sensitivity) {
@@ -72,6 +73,10 @@ public class SimulationEngine {
      * 执行一次可复现生成，返回运行摘要。
      */
     public GenerationResult run(GeneratorConfig config, GenerationFactors factors, TraceContext trace) {
+        // 场景模拟器的确定性起始状态（§20.6）：每次 run 重置全部商品库存，
+        // 否则上一次 run 的预扣/售罄会让相同种子产生不同决策流
+        resetAllInventory();
+
         DistributionKit rng = new DistributionKit(config.randomSeed());
 
         List<SeedUser> users = createUsers(config, trace, rng);
@@ -101,6 +106,21 @@ public class SimulationEngine {
 
     // ── 1. 分层用户（§20.3：15/35/50） ─────────────────────────────────────
 
+    /** 重置全部商品库存为种子状态（100 可售 / 0 预留 / version 0） */
+    private void resetAllInventory() {
+        try {
+            com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<
+                    com.graduation.mall.domain.entity.Inventory> w =
+                    new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<>();
+            w.set(com.graduation.mall.domain.entity.Inventory::getAvailableQty, 100)
+                    .set(com.graduation.mall.domain.entity.Inventory::getReservedQty, 0)
+                    .set(com.graduation.mall.domain.entity.Inventory::getVersion, 0);
+            inventoryMapper.update(null, w);
+        } catch (Exception e) {
+            log.warn("reset inventory failed: {}", e.getMessage());
+        }
+    }
+
     private List<SeedUser> createUsers(GeneratorConfig config, TraceContext trace, DistributionKit rng) {
         List<SeedUser> users = new ArrayList<>();
         String[] ageGroups = {"under18", "age18_24", "age25_34", "age35_44", "age45_plus"};
@@ -110,22 +130,27 @@ public class SimulationEngine {
                 .eq(Category::getLevel, 1).orderByAsc(Category::getId));
         int catCount = topCategories.size();
 
-        for (int i = 0; i < config.userCount(); i++) {
-            int activity = rng.weightedPick(ACTIVITY_RATIO);
-            Long userId = mall.registerUser(new CreateUserReq(
-                    ageGroups[rng.nextInt(ageGroups.length)],
-                    cities[rng.nextInt(cities.length)],
-                    members[rng.nextInt(members.length)]), trace);
-            double[] prefs = new double[catCount];
-            double sum = 0;
-            for (int c = 0; c < catCount; c++) {
-                prefs[c] = 0.2 + rng.nextDouble(); // 随机偏好向量
-                sum += prefs[c];
+        eventClock.pushSimulated(config.startTime().atZone(ZONE).toOffsetDateTime());
+        try {
+            for (int i = 0; i < config.userCount(); i++) {
+                int activity = rng.weightedPick(ACTIVITY_RATIO);
+                Long userId = mall.registerUser(new CreateUserReq(
+                        ageGroups[rng.nextInt(ageGroups.length)],
+                        cities[rng.nextInt(cities.length)],
+                        members[rng.nextInt(members.length)]), trace);
+                double[] prefs = new double[catCount];
+                double sum = 0;
+                for (int c = 0; c < catCount; c++) {
+                    prefs[c] = 0.2 + rng.nextDouble(); // 随机偏好向量
+                    sum += prefs[c];
+                }
+                for (int c = 0; c < catCount; c++) {
+                    prefs[c] /= sum;
+                }
+                users.add(new SeedUser(userId, activity, prefs, rng.uniform(0.5, 1.5)));
             }
-            for (int c = 0; c < catCount; c++) {
-                prefs[c] /= sum;
-            }
-            users.add(new SeedUser(userId, activity, prefs, rng.uniform(0.5, 1.5)));
+        } finally {
+            eventClock.popSimulated();
         }
         return users;
     }
@@ -145,19 +170,24 @@ public class SimulationEngine {
 
         if (config.productCount() > 0) {
             // 补建商品：按二级分类模板对数正态定价（§20.2）
-            List<Category> leafCategories = categoryMapper.selectList(new LambdaQueryWrapper<Category>()
-                    .eq(Category::getLevel, 2).orderByAsc(Category::getId));
-            for (int i = 0; i < config.productCount(); i++) {
-                Category leaf = leafCategories.get(rng.nextInt(leafCategories.size()));
-                double medianByCat = 60 + (leaf.getId() % 8) * 40.0;
-                BigDecimal price = BigDecimal.valueOf(rng.boundedLogNormal(9.9, medianByCat, 999))
-                        .setScale(2, RoundingMode.HALF_UP);
-                BigDecimal cost = price.multiply(BigDecimal.valueOf(rng.uniform(0.45, 0.80)))
-                        .setScale(2, RoundingMode.HALF_UP);
-                Long productId = productManagement.createProduct(
-                        leaf.getName() + " 精选" + (i + 1), leaf.getId(), 900L + (i % 9L),
-                        price, cost, trace);
-                pool.add(new SeedProduct(productId, leaf.getParentId(), price, true, rank++));
+            eventClock.pushSimulated(config.startTime().atZone(ZONE).toOffsetDateTime());
+            try {
+                List<Category> leafCategories = categoryMapper.selectList(new LambdaQueryWrapper<Category>()
+                        .eq(Category::getLevel, 2).orderByAsc(Category::getId));
+                for (int i = 0; i < config.productCount(); i++) {
+                    Category leaf = leafCategories.get(rng.nextInt(leafCategories.size()));
+                    double medianByCat = 60 + (leaf.getId() % 8) * 40.0;
+                    BigDecimal price = BigDecimal.valueOf(rng.boundedLogNormal(9.9, medianByCat, 999))
+                            .setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal cost = price.multiply(BigDecimal.valueOf(rng.uniform(0.45, 0.80)))
+                            .setScale(2, RoundingMode.HALF_UP);
+                    Long productId = productManagement.createProduct(
+                            leaf.getName() + " 精选" + (i + 1), leaf.getId(), 900L + (i % 9L),
+                            price, cost, trace);
+                    pool.add(new SeedProduct(productId, leaf.getParentId(), price, true, rank++));
+                }
+            } finally {
+                eventClock.popSimulated();
             }
         }
         return pool;
@@ -294,8 +324,13 @@ public class SimulationEngine {
                     emitBehavior(user, product, eventTime, "cart_add", trace, c);
                     c.addCart.add(product.productId());
                     if (rng.chance(conversionProb)) {
-                        orderFlow(user, product, eventTime, conversionProb, refundProb,
-                                hotIds, shortageIds, trace, rng, c);
+                        eventClock.pushSimulated(toOffset(eventTime));
+                        try {
+                            orderFlow(user, product, eventTime, conversionProb, refundProb,
+                                    hotIds, shortageIds, trace, rng, c);
+                        } finally {
+                            eventClock.popSimulated();
+                        }
                     }
                 }
                 case 3 -> emitBehavior(user, product, eventTime, "cart_remove", trace, c);

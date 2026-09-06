@@ -25,8 +25,8 @@ mall:
     # Landing 区根目录；事件按 {landing}/events/{yyyyMMddHH}.jsonl 滚动写入，后续由 Flume Taildir 采集
     path: ${MALL_LANDING_PATH:./landing}
   outbox:
-    batch-size: 200      # 每轮发布批大小
-    poll-seconds: 10     # 定时发布间隔（秒）
+    batch-size: 5000     # 每轮发布批大小（演示规模吞吐）
+    poll-seconds: 3      # 定时发布间隔（秒）
 
 logging:
   level:

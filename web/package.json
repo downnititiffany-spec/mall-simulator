@@ -1,0 +1,22 @@
+{
+  "name": "ecommerce-analytics-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "电商用户行为分析系统看板（Vue 3 + ECharts）",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "echarts": "^5.5.0",
+    "vue": "^3.4.27",
+    "vue-router": "^4.3.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.11"
+  }
+}
