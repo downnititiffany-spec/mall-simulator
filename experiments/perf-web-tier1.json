@@ -1,0 +1,38 @@
+[
+  {
+    "api": "metrics/overview",
+    "requests": 600,
+    "errors": 0,
+    "p50": 3.0,
+    "p95": 24.0,
+    "max": 55.0,
+    "concurrent": 30
+  },
+  {
+    "api": "analysis/sales",
+    "requests": 600,
+    "errors": 0,
+    "p50": 1.0,
+    "p95": 21.0,
+    "max": 2668.0,
+    "concurrent": 30
+  },
+  {
+    "api": "analysis/funnel",
+    "requests": 600,
+    "errors": 0,
+    "p50": 1.0,
+    "p95": 21.0,
+    "max": 2695.0,
+    "concurrent": 30
+  },
+  {
+    "api": "dashboards/overview",
+    "requests": 600,
+    "errors": 0,
+    "p50": 3.0,
+    "p95": 29.0,
+    "max": 5506.0,
+    "concurrent": 30
+  }
+]

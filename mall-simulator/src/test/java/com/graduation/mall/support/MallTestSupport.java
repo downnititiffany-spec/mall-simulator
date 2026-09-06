@@ -105,6 +105,14 @@ public abstract class MallTestSupport {
     @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
+    @Autowired
+    private com.graduation.mall.analysis.AnalysisService analysisService;
+
+    /** 测试前后清理分析缓存，避免事件数据更新后命中旧缓存 */
+    protected void clearAnalysisCache() {
+        analysisService.clearCache();
+    }
+
     @DynamicPropertySource
     static void landingProps(DynamicPropertyRegistry registry) {
         registry.add("mall.landing.path", () -> LANDING.get().toString());
@@ -113,6 +121,7 @@ public abstract class MallTestSupport {
     @BeforeEach
     void freshState() throws IOException {
         LANDING.set(Files.createTempDirectory("mall-landing-"));
+        analysisService.clearCache();
         eventOutboxMapper.delete(null);
         mallOrderMapper.delete(null);
         orderItemMapper.delete(null);

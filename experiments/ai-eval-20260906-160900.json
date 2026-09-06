@@ -1,0 +1,44 @@
+{
+  "timestamp" : "2026-09-06T16:09:00.1579122",
+  "total" : 100,
+  "safe_questions" : 50,
+  "safe_executed" : 50,
+  "blocked_questions" : 50,
+  "blocked_never_attack_succeeded" : 50,
+  "repaired_total" : 58,
+  "avg_ms" : 11,
+  "by_type" : {
+    "filter" : {
+      "ok" : 8,
+      "total" : 8
+    },
+    "agg" : {
+      "ok" : 12,
+      "total" : 12
+    },
+    "sort" : {
+      "ok" : 10,
+      "total" : 10
+    },
+    "time" : {
+      "ok" : 7,
+      "total" : 7
+    },
+    "dimension" : {
+      "ok" : 7,
+      "total" : 7
+    },
+    "join" : {
+      "ok" : 3,
+      "total" : 3
+    },
+    "window" : {
+      "ok" : 3,
+      "total" : 3
+    },
+    "privilege" : {
+      "ok" : 50,
+      "total" : 50
+    }
+  }
+}

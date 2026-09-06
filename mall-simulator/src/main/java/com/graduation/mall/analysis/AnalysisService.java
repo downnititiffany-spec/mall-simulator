@@ -32,11 +32,37 @@ import java.util.stream.Stream;
 /**
  * 专题分析服务（阶段 7，§5.5/§5.6）：从 landing/events 按口径实时聚合。
  * 口径唯一来源 docs/contracts/metric-dictionary.md v1；与 MetricCalculator 共享语义。
+ * 性能：事件解析为耗时路径（10 万级事件 ~2-3s），指标只随快照发布变化 →
+ * 30s TTL 缓存（§2.2 看板 P95 ≤2s 验收；实测见 experiments/perf-web-*.json）。
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AnalysisService {
+
+    private static final long CACHE_TTL_MS = 30_000;
+    private final java.util.concurrent.ConcurrentHashMap<String, CachedEntry> cache =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    private record CachedEntry(Object value, long expiresAt) {
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T cached(String key, java.util.function.Supplier<T> supplier) {
+        long now = System.currentTimeMillis();
+        CachedEntry hit = cache.get(key);
+        if (hit != null && hit.expiresAt() > now) {
+            return (T) hit.value();
+        }
+        T value = supplier.get();
+        cache.put(key, new CachedEntry(value, now + CACHE_TTL_MS));
+        return value;
+    }
+
+    /** 测试/管理：清缓存 */
+    public void clearCache() {
+        cache.clear();
+    }
 
     private static final Set<String> BEHAVIORS =
             Set.of("view", "favorite", "cart_add", "cart_remove", "search");
@@ -101,21 +127,24 @@ public class AnalysisService {
     // ── 销售趋势（§5.6.2：order_paid 按日聚合） ────────────────────────────
 
     public List<SalesDay> salesTrend(LocalDate from, LocalDate to) {
-        Map<String, SalesAccum> byDay = new TreeMap<>();
-        for (EventEnvelope e : loadEvents(from, to)) {
-            if (!EventContract.ORDER_PAID.equals(e.eventType())) {
-                continue;
+        String key = "sales:" + from + ":" + to;
+        return cached(key, () -> {
+            Map<String, SalesAccum> byDay = new TreeMap<>();
+            for (EventEnvelope e : loadEvents(from, to)) {
+                if (!EventContract.ORDER_PAID.equals(e.eventType())) {
+                    continue;
+                }
+                String date = e.eventTime().substring(0, 10);
+                SalesAccum acc = byDay.computeIfAbsent(date, d -> new SalesAccum());
+                acc.orderCount++;
+                acc.saleAmount = acc.saleAmount.add(dec(e.payload().get("amount")));
+                acc.buyers.add(String.valueOf(e.payload().get("user_id")));
             }
-            String date = e.eventTime().substring(0, 10);
-            SalesAccum acc = byDay.computeIfAbsent(date, d -> new SalesAccum());
-            acc.orderCount++;
-            acc.saleAmount = acc.saleAmount.add(dec(e.payload().get("amount")));
-            acc.buyers.add(String.valueOf(e.payload().get("user_id")));
-        }
-        List<SalesDay> result = new ArrayList<>();
-        byDay.forEach((date, acc) -> result.add(new SalesDay(date, acc.orderCount,
-                acc.saleAmount.setScale(2), acc.buyers.size())));
-        return result;
+            List<SalesDay> result = new ArrayList<>();
+            byDay.forEach((date, acc) -> result.add(new SalesDay(date, acc.orderCount,
+                    acc.saleAmount.setScale(2), acc.buyers.size())));
+            return result;
+        });
     }
 
     private static final class SalesAccum {
@@ -127,40 +156,43 @@ public class AnalysisService {
     // ── 商品热度 TopN（§5.6.1/§21.7 对数权重） ─────────────────────────────
 
     public List<ProductRankItem> productRank(int topN, LocalDate from, LocalDate to) {
-        Map<String, BehaviorCount> byProduct = new HashMap<>();
-        for (EventEnvelope e : loadEvents(from, to)) {
-            if (!EventContract.BEHAVIOR.equals(e.eventType())) {
-                continue;
-            }
-            String productId = str(e.payload().get("product_id"));
-            if (productId.isEmpty()) {
-                continue;
-            }
-            BehaviorCount bc = byProduct.computeIfAbsent(productId, p -> new BehaviorCount());
-            switch (str(e.payload().get("behavior_type"))) {
-                case "view" -> bc.pv++;
-                case "favorite" -> bc.fav++;
-                case "cart_add" -> bc.cart++;
-                default -> {
+        String key = "products:" + topN + ":" + from + ":" + to;
+        return cached(key, () -> {
+            Map<String, BehaviorCount> byProduct = new HashMap<>();
+            for (EventEnvelope e : loadEvents(from, to)) {
+                if (!EventContract.BEHAVIOR.equals(e.eventType())) {
+                    continue;
+                }
+                String productId = str(e.payload().get("product_id"));
+                if (productId.isEmpty()) {
+                    continue;
+                }
+                BehaviorCount bc = byProduct.computeIfAbsent(productId, p -> new BehaviorCount());
+                switch (str(e.payload().get("behavior_type"))) {
+                    case "view" -> bc.pv++;
+                    case "favorite" -> bc.fav++;
+                    case "cart_add" -> bc.cart++;
+                    default -> {
+                    }
                 }
             }
-        }
-        List<ProductRankItem> items = new ArrayList<>();
-        byProduct.forEach((productId, bc) -> {
-            double heat = 1.0 * Math.log1p(bc.pv) + 2.0 * Math.log1p(bc.fav)
-                    + 3.0 * Math.log1p(bc.cart) + 5.0 * Math.log1p(bc.buy);
-            items.add(new ProductRankItem(Long.valueOf(productId), "商品-" + productId, "",
-                    bc.pv, bc.fav, bc.cart, bc.buy,
-                    BigDecimal.valueOf(heat).setScale(4, RoundingMode.HALF_UP), 0));
+            List<ProductRankItem> items = new ArrayList<>();
+            byProduct.forEach((productId, bc) -> {
+                double heat = 1.0 * Math.log1p(bc.pv) + 2.0 * Math.log1p(bc.fav)
+                        + 3.0 * Math.log1p(bc.cart) + 5.0 * Math.log1p(bc.buy);
+                items.add(new ProductRankItem(Long.valueOf(productId), "商品-" + productId, "",
+                        bc.pv, bc.fav, bc.cart, bc.buy,
+                        BigDecimal.valueOf(heat).setScale(4, RoundingMode.HALF_UP), 0));
+            });
+            items.sort((a, b) -> b.heat().compareTo(a.heat()));
+            List<ProductRankItem> ranked = new ArrayList<>();
+            for (int i = 0; i < Math.min(topN, items.size()); i++) {
+                ProductRankItem it = items.get(i);
+                ranked.add(new ProductRankItem(it.productId(), it.productName(),
+                        it.categoryName(), it.pv(), it.fav(), it.cart(), it.buy(), it.heat(), i + 1));
+            }
+            return ranked;
         });
-        items.sort((a, b) -> b.heat().compareTo(a.heat()));
-        List<ProductRankItem> ranked = new ArrayList<>();
-        for (int i = 0; i < Math.min(topN, items.size()); i++) {
-            ProductRankItem it = items.get(i);
-            ranked.add(new ProductRankItem(it.productId(), it.productName(),
-                    it.categoryName(), it.pv(), it.fav(), it.cart(), it.buy(), it.heat(), i + 1));
-        }
-        return ranked;
     }
 
     private static final class BehaviorCount {
@@ -173,33 +205,36 @@ public class AnalysisService {
     // ── 漏斗（§21.4 宽松用户口径） ────────────────────────────────────────
 
     public List<FunnelStage> funnelDay(LocalDate date) {
-        Set<String> view = new java.util.HashSet<>();
-        Set<String> intent = new java.util.HashSet<>();
-        Set<String> order = new java.util.HashSet<>();
-        Set<String> pay = new java.util.HashSet<>();
-        for (EventEnvelope e : loadEvents(date, date)) {
-            String userId = str(e.payload().get("user_id"));
-            switch (e.eventType()) {
-                case EventContract.BEHAVIOR -> {
-                    String bt = str(e.payload().get("behavior_type"));
-                    if ("view".equals(bt)) {
-                        view.add(userId);
-                    } else if ("favorite".equals(bt) || "cart_add".equals(bt)) {
-                        intent.add(userId);
+        String key = "funnel:" + date;
+        return cached(key, () -> {
+            Set<String> view = new java.util.HashSet<>();
+            Set<String> intent = new java.util.HashSet<>();
+            Set<String> order = new java.util.HashSet<>();
+            Set<String> pay = new java.util.HashSet<>();
+            for (EventEnvelope e : loadEvents(date, date)) {
+                String userId = str(e.payload().get("user_id"));
+                switch (e.eventType()) {
+                    case EventContract.BEHAVIOR -> {
+                        String bt = str(e.payload().get("behavior_type"));
+                        if ("view".equals(bt)) {
+                            view.add(userId);
+                        } else if ("favorite".equals(bt) || "cart_add".equals(bt)) {
+                            intent.add(userId);
+                        }
+                    }
+                    case EventContract.ORDER_CREATED -> order.add(userId);
+                    case EventContract.ORDER_PAID -> pay.add(userId);
+                    default -> {
                     }
                 }
-                case EventContract.ORDER_CREATED -> order.add(userId);
-                case EventContract.ORDER_PAID -> pay.add(userId);
-                default -> {
-                }
             }
-        }
-        List<FunnelStage> stages = new ArrayList<>();
-        stages.add(new FunnelStage("view", view.size(), null));
-        stages.add(new FunnelStage("intent", intent.size(), rate(intent.size(), view.size())));
-        stages.add(new FunnelStage("order", order.size(), rate(order.size(), intent.size())));
-        stages.add(new FunnelStage("pay", pay.size(), rate(pay.size(), order.size())));
-        return stages;
+            List<FunnelStage> stages = new ArrayList<>();
+            stages.add(new FunnelStage("view", view.size(), null));
+            stages.add(new FunnelStage("intent", intent.size(), rate(intent.size(), view.size())));
+            stages.add(new FunnelStage("order", order.size(), rate(order.size(), intent.size())));
+            stages.add(new FunnelStage("pay", pay.size(), rate(pay.size(), order.size())));
+            return stages;
+        });
     }
 
     private BigDecimal rate(long next, long prev) {
@@ -212,19 +247,22 @@ public class AnalysisService {
     // ── 活跃趋势（§5.5.1 用户活跃趋势） ───────────────────────────────────
 
     public List<ActiveDay> userActiveTrend(LocalDate from, LocalDate to) {
-        Map<String, ActiveAccum> byDay = new TreeMap<>();
-        for (EventEnvelope e : loadEvents(from, to)) {
-            if (!EventContract.BEHAVIOR.equals(e.eventType())) {
-                continue;
+        String key = "active:" + from + ":" + to;
+        return cached(key, () -> {
+            Map<String, ActiveAccum> byDay = new TreeMap<>();
+            for (EventEnvelope e : loadEvents(from, to)) {
+                if (!EventContract.BEHAVIOR.equals(e.eventType())) {
+                    continue;
+                }
+                String date = e.eventTime().substring(0, 10);
+                ActiveAccum acc = byDay.computeIfAbsent(date, d -> new ActiveAccum());
+                acc.behaviorCount++;
+                acc.users.add(str(e.payload().get("user_id")));
             }
-            String date = e.eventTime().substring(0, 10);
-            ActiveAccum acc = byDay.computeIfAbsent(date, d -> new ActiveAccum());
-            acc.behaviorCount++;
-            acc.users.add(str(e.payload().get("user_id")));
-        }
-        List<ActiveDay> result = new ArrayList<>();
-        byDay.forEach((date, acc) -> result.add(new ActiveDay(date, acc.users.size(), acc.behaviorCount)));
-        return result;
+            List<ActiveDay> result = new ArrayList<>();
+            byDay.forEach((date, acc) -> result.add(new ActiveDay(date, acc.users.size(), acc.behaviorCount)));
+            return result;
+        });
     }
 
     private static final class ActiveAccum {
