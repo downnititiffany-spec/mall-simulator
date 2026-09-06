@@ -3,6 +3,40 @@
     <div class="page-title">运维中心</div>
 
     <div class="chart-box">
+      <div class="chart-title">系统用户（admin 专属：创建/启用禁用/重置密码）</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <input v-model="newUser.username" placeholder="用户名" style="padding:4px" />
+        <input v-model="newUser.realName" placeholder="姓名" style="padding:4px" />
+        <select v-model="newUser.role" style="padding:4px">
+          <option value="operator">运营专员</option><option value="analyst">数据分析师</option>
+          <option value="admin">系统管理员</option>
+        </select>
+        <input v-model="newUser.password" placeholder="初始密码(≥6位)" type="password" style="padding:4px" />
+        <button style="font-size:12px;background:#16a34a" @click="createUser" :disabled="busy">创建用户</button>
+      </div>
+      <table v-if="users.length" style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="text-align:left;color:#6b7280">
+          <th style="padding:6px">ID</th><th>用户名</th><th>姓名</th><th>角色</th><th>状态</th><th>操作</th>
+        </tr></thead>
+        <tbody>
+          <tr v-for="u in users" :key="u.id" style="border-top:1px solid #f3f4f6">
+            <td style="padding:6px">{{ u.id }}</td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.realName || '—' }}</td>
+            <td>{{ roleName(u.role) }}</td>
+            <td><span :style="{ color: u.status === 1 ? '#16a34a' : '#dc2626' }">{{ u.status === 1 ? '启用' : '禁用' }}</span></td>
+            <td style="white-space:nowrap">
+              <button v-if="u.status === 1" style="font-size:12px;background:#dc2626" @click="toggle(u, false)" :disabled="busy">禁用</button>
+              <button v-else style="font-size:12px;background:#16a34a" @click="toggle(u, true)" :disabled="busy">启用</button>
+              <button style="font-size:12px" @click="resetPwd(u)" :disabled="busy">重置密码</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="el-empty">暂无用户</div>
+    </div>
+
+    <div class="chart-box">
       <div class="chart-title">快照版本（BUILDING→VERIFYING→ACTIVE / ARCHIVED / FAILED）
         <button style="float:right;font-size:12px;padding:3px 10px" @click="loadAll">刷新</button>
       </div>
@@ -99,6 +133,11 @@ const history = ref([])
 const calls = ref([])
 const selected = ref('')
 const snapshotValues = ref([])
+const users = ref([])
+const busy = ref(false)
+const newUser = ref({ username: '', realName: '', role: 'operator', password: '' })
+
+const roleName = (r) => ({ admin: '系统管理员', operator: '运营专员', analyst: '数据分析师' }[r] || r)
 
 const snapColor = (s) => ({ ACTIVE: '#16a34a', BUILDING: '#d97706', VERIFYING: '#d97706', ARCHIVED: '#6b7280', FAILED: '#dc2626' }[s] || '#111827')
 
@@ -107,10 +146,35 @@ async function loadAll() {
   quality.value = await api.get('/metrics/quality', { limit: 20 }) || []
   history.value = await api.get('/ai/audit/history', { limit: 10 }) || []
   calls.value = await api.get('/ai/audit/calls', { limit: 10 }) || []
+  users.value = await api.get('/admin/users') || []
 }
 async function viewSnapshot(id) {
   selected.value = id
   snapshotValues.value = await api.get('/metrics/overview', { snapshotId: id }) || []
+}
+async function createUser() {
+  busy.value = true
+  try {
+    await api.post('/admin/users', newUser.value)
+    newUser.value = { username: '', realName: '', role: 'operator', password: '' }
+    await loadAll()
+  } catch (e) { alert('创建失败：' + (e.message || '')) } finally { busy.value = false }
+}
+async function toggle(u, enable) {
+  busy.value = true
+  try {
+    await api.post(`/admin/users/${u.id}/toggle`, { enable })
+    await loadAll()
+  } catch (e) { alert('操作失败：' + (e.message || '')) } finally { busy.value = false }
+}
+async function resetPwd(u) {
+  const pwd = prompt(`重置 ${u.username} 的密码（至少 6 位）`, '')
+  if (!pwd) return
+  busy.value = true
+  try {
+    await api.post(`/admin/users/${u.id}/reset-password`, { password: pwd })
+    alert('已重置')
+  } catch (e) { alert('操作失败：' + (e.message || '')) } finally { busy.value = false }
 }
 onMounted(loadAll)
 </script>

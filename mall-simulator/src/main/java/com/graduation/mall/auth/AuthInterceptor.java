@@ -37,7 +37,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             "/api/v1/pipeline-runs",
             "/api/v1/mall/outbox",
             "/api/v1/metrics/quality",
-            "/api/v1/ai/audit");
+            "/api/v1/ai/audit",
+            "/api/v1/admin");
 
     private static final String ROLE_ADMIN = "admin";
 

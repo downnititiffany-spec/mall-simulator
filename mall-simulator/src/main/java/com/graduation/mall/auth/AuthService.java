@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -105,5 +106,68 @@ public class AuthService {
             throw new MallBizException(MallBizException.USER_NOT_FOUND, "用户不存在");
         }
         return new UserView(user.getId(), user.getUsername(), user.getRealName(), user.getRole());
+    }
+
+    // ── 用户管理（§3.2 权限模块·admin 专属） ─────────────────────────
+
+    /** 创建用户：username 唯一；初始密码 BCrypt；返回用户视图 */
+    public UserView createUser(String username, String realName, String role, String rawPassword) {
+        if (username == null || username.isBlank() || rawPassword == null || rawPassword.isBlank()) {
+            throw new MallBizException("PARAM_INVALID", "用户名与初始密码必填");
+        }
+        UserEntity exist = userMapper.selectOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getUsername, username));
+        if (exist != null) {
+            throw new MallBizException("USER_EXISTS", "用户名已存在: " + username);
+        }
+        String roleNorm = switch (role == null ? "" : role) {
+            case "admin", "operator", "analyst" -> role;
+            default -> throw new MallBizException("PARAM_INVALID", "非法角色: " + role);
+        };
+        UserEntity user = new UserEntity();
+        user.setUsername(username);
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        user.setRealName(realName == null ? "" : realName);
+        user.setRole(roleNorm);
+        user.setStatus(1);
+        user.setCreatedAt(LocalDateTime.now());
+        userMapper.insert(user);
+        return new UserView(user.getId(), user.getUsername(), user.getRealName(), user.getRole());
+    }
+
+    /** 启用/禁用：禁止禁用 admin 自身（后台必须保留一个管理员） */
+    public void toggleUser(Long userId, boolean enable, CurrentUser operator) {
+        UserEntity user = requireUser(userId);
+        if (operator != null && operator.userId().equals(userId)) {
+            throw new MallBizException("FORBIDDEN_OPERATION", "不能停用当前登录账号");
+        }
+        user.setStatus(enable ? 1 : 0);
+        userMapper.updateById(user);
+    }
+
+    /** 重置密码：新密码 BCrypt（成功后旧会话仍有效，由调用方自行决定） */
+    public void resetPassword(Long userId, String newPassword) {
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new MallBizException("PARAM_INVALID", "新密码至少 6 位");
+        }
+        UserEntity user = requireUser(userId);
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+    }
+
+    /** 用户列表（不含 password_hash） */
+    public List<UserView> listUsers() {
+        return userMapper.selectList(new LambdaQueryWrapper<UserEntity>()
+                        .orderByAsc(UserEntity::getId)).stream()
+                .map(u -> new UserView(u.getId(), u.getUsername(), u.getRealName(), u.getRole()))
+                .toList();
+    }
+
+    private UserEntity requireUser(Long userId) {
+        UserEntity user = userId == null ? null : userMapper.selectById(userId);
+        if (user == null) {
+            throw new MallBizException(MallBizException.USER_NOT_FOUND, "用户不存在");
+        }
+        return user;
     }
 }
