@@ -19,6 +19,12 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        return ApiResponse.error("NOT_FOUND", "资源不存在: " + e.getResourcePath(), TraceContext.create().traceId());
+    }
+
     @ExceptionHandler(MallBizException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleBiz(MallBizException e) {

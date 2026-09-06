@@ -37,6 +37,9 @@ metastore_db/
 spark-warehouse/
 derby.log
 
+# ── 单进程发布产物（由 build-web-and-package.ps1 生成，不入库）──
+mall-simulator/src/main/resources/static/
+
 # ── 参考/备份/临时目录（第三方代码与历史备份不入库）──
 借鉴项目/
 text-to-sql/
