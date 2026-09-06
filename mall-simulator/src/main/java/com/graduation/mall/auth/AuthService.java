@@ -1,0 +1,109 @@
+package com.graduation.mall.auth;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.graduation.mall.auth.entity.UserEntity;
+import com.graduation.mall.auth.entity.UserSessionEntity;
+import com.graduation.mall.auth.mapper.SysUserMapper;
+import com.graduation.mall.auth.mapper.UserSessionMapper;
+import com.graduation.mall.common.MallBizException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * 登录认证服务（§3.2 权限模块 / §21.5 会话）：
+ * login 校验 BCrypt 密码并创建 24h 会话；logout 删除会话；
+ * validate 供 AuthInterceptor 校验 token 并还原 CurrentUser。
+ */
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    /** 用户名或密码错误（响应 401） */
+    public static final String BAD_CREDENTIALS = "BAD_CREDENTIALS";
+    /** 账号已禁用（响应 403） */
+    public static final String USER_DISABLED = "USER_DISABLED";
+
+    private static final long SESSION_TTL_HOURS = 24;
+
+    private final SysUserMapper userMapper;
+    private final UserSessionMapper sessionMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    /** 登录成功返回给调用方的用户信息 */
+    public record UserView(Long id, String username, String realName, String role) {
+    }
+
+    /** 登录结果信封：token + 用户信息 */
+    public record LoginResult(String token, UserView user) {
+    }
+
+    /**
+     * 登录：账号不存在或密码错误 → BAD_CREDENTIALS（控制器映射 401）；
+     * 账号禁用（status=0）→ USER_DISABLED（控制器映射 403）。
+     */
+    public LoginResult login(String username, String password, String loginIp) {
+        UserEntity user = userMapper.selectOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getUsername, username));
+        if (user == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new MallBizException(BAD_CREDENTIALS, "用户名或密码错误");
+        }
+        if (user.getStatus() == null || user.getStatus() != 1) {
+            throw new MallBizException(USER_DISABLED, "账号已被禁用，请联系管理员");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        String token = UUID.randomUUID().toString().replace("-", "");
+        UserSessionEntity session = new UserSessionEntity();
+        session.setToken(token);
+        session.setUserId(user.getId());
+        session.setExpiresAt(now.plusHours(SESSION_TTL_HOURS));
+        session.setLoginIp(loginIp);
+        session.setCreatedAt(now);
+        sessionMapper.insert(session);
+        return new LoginResult(token, new UserView(user.getId(), user.getUsername(), user.getRealName(), user.getRole()));
+    }
+
+    /** 登出：删除当前 token 对应会话（token 不存在时静默忽略）。 */
+    public void logout(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        sessionMapper.delete(new LambdaQueryWrapper<UserSessionEntity>()
+                .eq(UserSessionEntity::getToken, token));
+    }
+
+    /**
+     * 会话校验：token 存在、未过期、用户存在且启用（status=1）→ CurrentUser，
+     * 否则返回 null（AuthInterceptor 据此响应 401）。
+     */
+    public CurrentUser validate(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        UserSessionEntity session = sessionMapper.selectOne(new LambdaQueryWrapper<UserSessionEntity>()
+                .eq(UserSessionEntity::getToken, token));
+        if (session == null) {
+            return null;
+        }
+        if (session.getExpiresAt() == null || session.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return null;
+        }
+        UserEntity user = userMapper.selectById(session.getUserId());
+        if (user == null || user.getStatus() == null || user.getStatus() != 1) {
+            return null;
+        }
+        return new CurrentUser(user.getId(), user.getUsername(), user.getRole());
+    }
+
+    /** /api/v1/auth/me：返回当前用户完整信息（含 realName）。 */
+    public UserView me(CurrentUser current) {
+        UserEntity user = userMapper.selectById(current.userId());
+        if (user == null) {
+            throw new MallBizException(MallBizException.USER_NOT_FOUND, "用户不存在");
+        }
+        return new UserView(user.getId(), user.getUsername(), user.getRealName(), user.getRole());
+    }
+}

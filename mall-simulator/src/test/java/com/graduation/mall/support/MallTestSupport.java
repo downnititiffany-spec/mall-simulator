@@ -145,6 +145,8 @@ public abstract class MallTestSupport {
         aiCallLogMapper.delete(null);
         decisionEvaluationMapper.delete(null);
         decisionTaskMapper.delete(null);
+        // 会话表清空（sys_user 保留 V7 种子账号供认证测试）
+        jdbc.update("DELETE FROM user_session");
         jdbc.update("DELETE FROM ads_operation_overview_m");
         jdbc.update("DELETE FROM ads_sale_trend_m");
         jdbc.update("DELETE FROM ads_behavior_funnel_m");

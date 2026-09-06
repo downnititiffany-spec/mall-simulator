@@ -20,6 +20,12 @@ try { $null = Invoke-RestMethod "$Base/api/v1/metrics/health" -TimeoutSec 5 }
 catch { Write-Host "后端未就绪: $Base（请先在 mall-simulator 目录 mvn spring-boot:run）"; exit 1 }
 Write-Host "[0] 后端就绪: $Base"
 
+# ── 0.1 登录（§21.5 会话；后续所有请求携带令牌） ──────────────
+$loginResp = Invoke-RestMethod -Method Post "$Base/api/v1/auth/login" -ContentType 'application/json' -Body '{"username":"admin","password":"admin123"}'
+$token = $loginResp.data.token
+$auth = @{ Authorization = "Bearer $token"; 'Content-Type' = 'application/json' }
+Write-Host "[0.1] 管理员已登录: $($loginResp.data.user.realName)（$($loginResp.data.user.role)）"
+
 # ── 0.5 清场（可选） ──────────────────────────────────────────
 if ($Clean) {
   $env:MYSQL_PWD = if ($env:MYSQL_PWD) { $env:MYSQL_PWD } else { $env:MALL_DB_PASSWORD }
@@ -35,19 +41,19 @@ $body = @{ userCount = $Users; productCount = 0; eventsPerSecond = $Eps; baseCon
            startTime = "$($start)T09:00:00"; endTime = "$($end)T18:00:00"; randomSeed = $Seed;
            dirtyDataRate = 0; scenario = $Scenario } | ConvertTo-Json
 $t0 = Get-Date
-$g = Invoke-RestMethod -Method Post "$Base/api/v1/generator/runs" -Body $body -ContentType 'application/json'
+$g = Invoke-RestMethod -Method Post "$Base/api/v1/generator/runs" -Headers $auth -Body $body -ContentType 'application/json'
 Write-Host ("[1] 生成 {0} 天 × {1} 事件（{2}s）：支付 {3} 单，GMV {4}" -f $Days, $g.data.totalEvents,
   [Math]::Round(((Get-Date)-$t0).TotalSeconds,1), $g.data.ordersPaid, $g.data.gmv)
 
 # ── 2. 等待 Outbox 发布 → 采集 ────────────────────────────────
 $wait = (Get-Date).AddMinutes(5)
-do { Start-Sleep -Seconds 5; $st = Invoke-RestMethod "$Base/api/v1/mall/outbox/status" } while ($st.data.pendingCount -gt 0 -and (Get-Date) -lt $wait)
+do { Start-Sleep -Seconds 5; $st = Invoke-RestMethod "$Base/api/v1/mall/outbox/status" -Headers $auth } while ($st.data.pendingCount -gt 0 -and (Get-Date) -lt $wait)
 if ($st.data.pendingCount -gt 0) { Write-Host '[2] 警告：outbox 发布超时，仍有积压'; exit 2 }
-$ing = Invoke-RestMethod -Method Post "$Base/api/v1/ingestion/runs"
+$ing = Invoke-RestMethod -Method Post "$Base/api/v1/ingestion/runs" -Headers $auth
 Write-Host ("[2] 采集完成：{0} 行（{1}，隔离 {2}）" -f $ing.data.recordCount, $ing.data.status, $ing.data.quarantineCount)
 
 # ── 3. 流水线（最后一天） ──────────────────────────────────────
-$p = Invoke-RestMethod -Method Post "$Base/api/v1/pipeline-runs" -Body (@{ runtimeProfileId=1; pipelineCode='DAILY_CORE';
+$p = Invoke-RestMethod -Method Post "$Base/api/v1/pipeline-runs" -Headers $auth -Body (@{ runtimeProfileId=1; pipelineCode='DAILY_CORE';
   businessTime = "$($end)T00:00:00"; sourceDataVersion = "demo-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" } | ConvertTo-Json) -ContentType 'application/json'
 Write-Host ("[3] 流水线：{0}（阶段 {1}/7 成功）{2}" -f $p.data.status,
   ($p.data.stages | Where-Object { $_.status -eq 'SUCCESS' }).Count,
@@ -55,7 +61,7 @@ Write-Host ("[3] 流水线：{0}（阶段 {1}/7 成功）{2}" -f $p.data.status,
 if ($p.data.status -ne 'SUCCESS') { exit 3 }
 
 # ── 4. 证据输出 ────────────────────────────────────────────────
-$ov = Invoke-RestMethod "$Base/api/v1/metrics/overview"
+$ov = Invoke-RestMethod "$Base/api/v1/metrics/overview" -Headers $auth
 $snap = ($ov.data | Select-Object -First 1)
 Write-Host "[4] 证据："
 Write-Host "    快照: $($snap.snapshotId)"
