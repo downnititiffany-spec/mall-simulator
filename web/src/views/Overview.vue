@@ -1,6 +1,14 @@
 <template>
   <div>
     <div class="page-title">运营大盘</div>
+    <div class="chart-box" style="display:flex;gap:10px;align-items:center;padding:10px 14px">
+      <label style="font-size:13px;color:#374151">趋势日期范围：</label>
+      <input type="date" v-model="from" style="padding:4px" />
+      <span style="color:#9ca3af">至</span>
+      <input type="date" v-model="to" style="padding:4px" />
+      <button style="font-size:12px" @click="load">加载</button>
+      <span style="font-size:12px;color:#9ca3af">指标卡来自最新 ACTIVE 快照</span>
+    </div>
     <div v-if="!loading && Object.keys(metrics).length === 0" class="el-empty">
       暂无已发布指标快照。请先在「数据流水线」页运行一次流水线，或执行一键生成分析。
     </div>
@@ -34,6 +42,8 @@ const metrics = ref({})
 const sales = ref([])
 const active = ref([])
 const snapshotId = ref(null)
+const from = ref(new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10))
+const to = ref(new Date().toISOString().slice(0, 10))
 
 const METRIC_NAMES = { gmv: '销售额(GMV)', net_sale: '净销售额', avg_order_value: '客单价',
   paid_order_cnt: '支付订单数', pv: '浏览量', uv: '浏览用户', dau: '活跃用户', refund_rate: '退款率' }
@@ -66,9 +76,10 @@ const activeOption = computed(() => ({
   ]
 }))
 
-onMounted(async () => {
+async function load() {
+  loading.value = true
   try {
-    const data = await api.overview()
+    const data = await api.get('/dashboards/overview', { from: from.value, to: to.value })
     metrics.value = data.snapshotMetrics || {}
     sales.value = data.salesTrend || []
     active.value = data.activeTrend || []
@@ -78,5 +89,6 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+onMounted(load)
 </script>

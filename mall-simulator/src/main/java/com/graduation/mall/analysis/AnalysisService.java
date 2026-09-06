@@ -272,7 +272,7 @@ public class AnalysisService {
 
     // ── 大盘（§25.1 首页：最新 ACTIVE 快照 + 近 7 日趋势） ─────────────────
 
-    public Overview overview() {
+    public Overview overview(LocalDate from, LocalDate to) {
         List<MetricValue> values = metricStore.query(new MetricStore.MetricQuery(null, true));
         Map<String, Object> metrics = new LinkedHashMap<>();
         String snapshotId = null;
@@ -287,8 +287,10 @@ public class AnalysisService {
                     "definitionVersion", v.getDefinitionVersion()));
         }
         LocalDate today = LocalDate.now();
-        List<SalesDay> sales = salesTrend(today.minusDays(6), today);
-        List<ActiveDay> active = userActiveTrend(today.minusDays(6), today);
+        LocalDate effFrom = from == null ? today.minusDays(6) : from;
+        LocalDate effTo = to == null ? today : to;
+        List<SalesDay> sales = salesTrend(effFrom, effTo);
+        List<ActiveDay> active = userActiveTrend(effFrom, effTo);
         return new Overview(metrics, sales, active, snapshotId);
     }
 

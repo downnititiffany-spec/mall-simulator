@@ -115,7 +115,7 @@ class AnalysisServiceTest extends MallTestSupport {
         v.setDefinitionVersion("v1");
         valueMapper.insert(v);
 
-        Overview overview = analysisService.overview();
+        Overview overview = analysisService.overview(null, null);
         assertEquals("S_OVERVIEW", overview.snapshotId());
         BigDecimal gmv = new BigDecimal(String.valueOf(
                 ((java.util.Map<?, ?>) overview.snapshotMetrics().get("gmv")).get("value")));

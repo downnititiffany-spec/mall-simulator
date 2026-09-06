@@ -33,8 +33,10 @@ public class AnalysisController {
     private final RfmService rfmService;
 
     @GetMapping("/dashboards/overview")
-    public ApiResponse<Overview> overview() {
-        return ApiResponse.ok(analysisService.overview(), TraceContext.create().traceId());
+    public ApiResponse<Overview> overview(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ApiResponse.ok(analysisService.overview(from, to), TraceContext.create().traceId());
     }
 
     @GetMapping("/analysis/sales")
