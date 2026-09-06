@@ -7,6 +7,7 @@ const routes = [
   { path: '/overview', name: 'overview', component: () => import('./views/Overview.vue'), meta: { title: '运营大盘', requiresAuth: true } },
   { path: '/behavior', name: 'behavior', component: () => import('./views/Behavior.vue'), meta: { title: '用户行为分析', requiresAuth: true } },
   { path: '/products', name: 'products', component: () => import('./views/Products.vue'), meta: { title: '商品分析', requiresAuth: true } },
+  { path: '/rfm', name: 'rfm', component: () => import('./views/Rfm.vue'), meta: { title: '用户分层', requiresAuth: true } },
   { path: '/sales', name: 'sales', component: () => import('./views/Sales.vue'), meta: { title: '销售分析', requiresAuth: true } },
   { path: '/pipeline', name: 'pipeline', component: () => import('./views/Pipeline.vue'), meta: { title: '数据流水线', requiresAuth: true } },
   { path: '/ops', name: 'ops', component: () => import('./views/Ops.vue'), meta: { title: '运维中心', requiresAuth: true } },

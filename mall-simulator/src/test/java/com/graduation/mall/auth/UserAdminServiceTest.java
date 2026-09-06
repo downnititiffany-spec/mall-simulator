@@ -11,12 +11,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 用户管理服务测试（§3.2）：创建/唯一性/禁用后登录失败/重置密码/禁停自身。
+ * 用户名带时间戳保证跨测试运行可重复（种子与历史用户不清除）。
  */
 class UserAdminServiceTest extends MallTestSupport {
 
@@ -28,13 +28,18 @@ class UserAdminServiceTest extends MallTestSupport {
         return authService.validate(r.token());
     }
 
+    private String unique(String prefix) {
+        return prefix + "_" + System.nanoTime();
+    }
+
     @Test
     @DisplayName("admin 创建用户后新账号可登录（BCrypt）")
     void createAndLogin() {
-        AuthService.UserView created = authService.createUser("op_new", "新运营", "operator", "op123456");
+        String username = unique("op_new");
+        AuthService.UserView created = authService.createUser(username, "新运营", "operator", "op123456");
         assertNotNull(created.id());
         assertEquals("operator", created.role());
-        LoginResult r = authService.login("op_new", "op123456", "127.0.0.1");
+        LoginResult r = authService.login(username, "op123456", "127.0.0.1");
         assertEquals("新运营", r.user().realName());
     }
 
@@ -45,33 +50,35 @@ class UserAdminServiceTest extends MallTestSupport {
                 () -> authService.createUser("admin", "x", "operator", "op123456"),
                 "admin 已存在");
         assertThrows(MallBizException.class,
-                () -> authService.createUser("someone", "x", "superadmin", "op123456"),
+                () -> authService.createUser(unique("w"), "x", "superadmin", "op123456"),
                 "非法角色");
     }
 
     @Test
     @DisplayName("禁用后登录失败；恢复后重新可登录")
     void disableAndEnable() {
-        authService.createUser("op_tmp", "临时", "operator", "op123456");
-        var users = authService.listUsers();
-        Long id = users.stream().filter(u -> u.username().equals("op_tmp")).findFirst().orElseThrow().id();
+        String username = unique("op_tmp");
+        authService.createUser(username, "临时", "operator", "op123456");
+        Long id = authService.listUsers().stream()
+                .filter(u -> u.username().equals(username)).findFirst().orElseThrow().id();
 
         authService.toggleUser(id, false, admin());
-        assertThrows(MallBizException.class, () -> authService.login("op_tmp", "op123456", "127.0.0.1"));
+        assertThrows(MallBizException.class, () -> authService.login(username, "op123456", "127.0.0.1"));
 
         authService.toggleUser(id, true, admin());
-        assertNotNull(authService.login("op_tmp", "op123456", "127.0.0.1").token());
+        assertNotNull(authService.login(username, "op123456", "127.0.0.1").token());
     }
 
     @Test
     @DisplayName("重置密码后旧密码失效新密码可登录")
     void resetPassword() {
-        authService.createUser("op_reset", "重置", "analyst", "old12345");
-        var users = authService.listUsers();
-        Long id = users.stream().filter(u -> u.username().equals("op_reset")).findFirst().orElseThrow().id();
+        String username = unique("op_reset");
+        authService.createUser(username, "重置", "analyst", "old12345");
+        Long id = authService.listUsers().stream()
+                .filter(u -> u.username().equals(username)).findFirst().orElseThrow().id();
         authService.resetPassword(id, "newpass88");
-        assertThrows(MallBizException.class, () -> authService.login("op_reset", "old12345", "127.0.0.1"));
-        assertNotNull(authService.login("op_reset", "newpass88", "127.0.0.1").token());
+        assertThrows(MallBizException.class, () -> authService.login(username, "old12345", "127.0.0.1"));
+        assertNotNull(authService.login(username, "newpass88", "127.0.0.1").token());
     }
 
     @Test

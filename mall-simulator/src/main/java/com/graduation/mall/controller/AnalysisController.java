@@ -6,6 +6,8 @@ import com.graduation.mall.analysis.AnalysisService.FunnelStage;
 import com.graduation.mall.analysis.AnalysisService.Overview;
 import com.graduation.mall.analysis.AnalysisService.ProductRankItem;
 import com.graduation.mall.analysis.AnalysisService.SalesDay;
+import com.graduation.mall.analysis.RfmService;
+import com.graduation.mall.analysis.RfmService.RfmReport;
 import com.graduation.mall.common.ApiResponse;
 import com.graduation.mall.outbox.TraceContext;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import java.util.List;
 public class AnalysisController {
 
     private final AnalysisService analysisService;
+    private final RfmService rfmService;
 
     @GetMapping("/dashboards/overview")
     public ApiResponse<Overview> overview() {
@@ -60,5 +63,11 @@ public class AnalysisController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ApiResponse.ok(analysisService.userActiveTrend(from, to), TraceContext.create().traceId());
+    }
+
+    /** RFM 用户分层（§21.6）：八类分布 + TopN 用户（有效支付口径） */
+    @GetMapping("/analysis/rfm")
+    public ApiResponse<RfmReport> rfm(@RequestParam(defaultValue = "50") int limit) {
+        return ApiResponse.ok(rfmService.rfmReport(limit), TraceContext.create().traceId());
     }
 }
