@@ -36,10 +36,19 @@
 
 | 项 | 依赖 | 现状 |
 |---|---|---|
-| Spark 集群性能（100 万-1 亿，分发/广播/Parquet 对照） | Hadoop/Hive/Spark 环境（node01-03 或云端） | 代码就绪，未实跑 |
+| Spark 集群性能（100 万-1 亿，分发/广播/Parquet 对照） | Hadoop/Hive/Spark 环境（node01-03 或云端） | 本地 Derby-Hive 四层链已通（13 万事件，见下），集群分档待环境 |
 | 真实 LLM 对照（Baseline A/B/C/D） | `LLM_API_KEY` | 框架就绪（`AiQuestionSetTest` 复用），Mock 基线已存 |
 | Flume→HDFS 断点恢复实录 | SINGLE_NODE 环境 | 本地等价语义已测（`LocalFileIngestorTest`），集群实录待环境 |
 | AI 数值事实一致率（≥95%） | 真实模型 + 人工评分 | 待 key 后运行 |
+
+## 本机已达成补充（2026-09-06 归档）
+
+| 项 | 结果 | 证据 |
+|---|---|---|
+| Spark 四层作业链本地运行 | sci→odl→bdw→usw→fna 全 SUCCESS（13 万事件） | `experiments/spark-chain-local-20260906-174311.json` |
+| Spark 规模扩展（单机） | 1.4万/6.5万/13万 三档吞吐随规模提升 | `experiments/spark-scale-local-20260906.json` |
+| 答辩/论文素材 | 16 页网页 PPT + 11 张截图 + 九章论文初稿 | `ppt/index.html`、`docs/thesis-material*/` |
+| 一键演示 | 生成→发布→采集→流水线→证据输出脚本化 | `scripts/run-demo.ps1`（实测通过） |
 
 ## 版本与复现说明
 
