@@ -10,7 +10,8 @@ object JobRegistry {
     EventOdsLoadJob.instance.code -> EventOdsLoadJob.instance,
     BehaviorDwdJob.instance.code -> BehaviorDwdJob.instance,
     UserProductDwsJob.instance.code -> UserProductDwsJob.instance,
-    FunnelAdsJob.instance.code -> FunnelAdsJob.instance
+    FunnelAdsJob.instance.code -> FunnelAdsJob.instance,
+    LocalJsonParquetJob.instance.code -> LocalJsonParquetJob.instance
   )
 
   /** 依赖：jobCode -> 其前置作业 code 列表（§5.3.2，供阶段 6 流水线使用） */
@@ -18,7 +19,8 @@ object JobRegistry {
     "odl" -> List.empty,
     "bdw" -> List("odl"),
     "usw" -> List("bdw"),
-    "fna" -> List("usw")
+    "fna" -> List("usw"),
+    "ljp" -> List.empty // 本地验证作业，独立运行
   )
 
   def lookup(code: String): Option[WarehouseJob] = jobs.get(code)

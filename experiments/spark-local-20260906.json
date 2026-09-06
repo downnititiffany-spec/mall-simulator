@@ -1,0 +1,25 @@
+{
+  "experiment": "spark-local-ljp",
+  "timestamp": "2026-09-06T17:15:00",
+  "spark": "3.5.1 (bin-hadoop3)",
+  "master": "local[2]",
+  "job": "LocalJsonParquetJob (ljp)",
+  "input": {
+    "source": "D:\\Develop_code\\GraduationProject\\mall-simulator\\landing\\events",
+    "records_parsed": 130672,
+    "schema_version_ok": 130672,
+    "rejected": 0
+  },
+  "output": {
+    "format": "parquet-snappy",
+    "records": 130672,
+    "size_mb": 3.2
+  },
+  "elapsed_ms": 6610,
+  "notes": [
+    "首次在真实 Spark 3.5.1（Windows local 模式）上运行本仓库 Scala 作业，验证 JSON→DataFrame→清洗→Parquet 全链",
+    "输入为演示数据（脚本 run-demo.ps1 产出的事件 Landing，含全部 12 类事件）",
+    "与 MySQL 侧合同链路（EventContractValidator）语义一致：schema_version='1.0' 过滤",
+    "环境指纹见 env-profile.json；Hive 依赖作业（odl/bdw/usw/fna）需 SINGLE_NODE/REMOTE_CLUSTER 后验证"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "collectedAt": "2026-09-06T17:12:16",
+  "os": "Microsoft Windows 11 家庭版 中文版 10.0.26100",
+  "cpu": "Intel(R) Core(TM) i9-14900HX",
+  "cores": 24,
+  "logicalProcessors": 32,
+  "cpuMaxClockMhz": 2200,
+  "ramGB": 31.6,
+  "cDriveFreeGB": 52.0,
+  "jdk": "17.0.12 2024-07-16 LTS",
+  "maven": "Apache Maven 3.9.14 (996c630dbc656c76214ce58821dcc58be960875b)",
+  "node": "v24.16.0",
+  "mysql": "8.0.41",
+  "scala": "2.12.17 -- Copyright 2002-2022, LAMP/EPFL and Lightbend, Inc.",
+  "spark": "3.5.1 (待本地验证)"
+}

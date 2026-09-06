@@ -32,13 +32,19 @@ experiments/
   == `../tests/golden-dataset/expected/` 标准答案（gmv=1275.00 等 9 项）。
 - 用途：任何算法/口径变更后的第一道回归门。
 
-### 3. Spark 性能实验（待集群环境，模板）
+### 3. Spark 本地验证（2026-09-06 实测）
 
-```text
-每次实验记录（§7.9）：executor 数、cores、memory、driver memory、shuffle partitions、
-输入记录数、输入/输出文件数、总耗时、失败次数；数据规模 100万/1000万/5000万；
-对照组：基础方案 vs 分区裁剪 vs Parquet vs 广播连接 vs 并行度调整（§10.2 实验二）。
-```
+- `spark-jobs` 新增 `LocalJsonParquetJob`（无 Hive 依赖：Landing JSON → Parquet）
+- 真实 Spark 3.5.1（Windows local[2]）实跑：**130,672 条事件 → Parquet-Snappy，6.6s**
+  （`experiments/spark-local-20260906.json`；环境见 `env-profile.json`）
+- 意义：Scala 作业产物在真实 Spark 上可运行的硬证据；含 Hive 的完整作业链
+  （odl/bdw/usw/fna）在集群环境验证后补记录。
+
+### 4. 环境指纹（§7.9）
+
+- `experiments/env-profile.json`：CPU（i9-14900HX 24C/32T）、内存 31.6GB、OS Win11、
+  JDK 17.0.12、Maven 3.9.14、MySQL 8.0.41、Node 24、Scala 2.12.17、Spark 3.5.1。
+- 论文所有实验数据引用时必须挂接本指纹文件。
 
 ## 运行方式
 
