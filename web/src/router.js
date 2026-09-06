@@ -8,6 +8,7 @@ const routes = [
   { path: '/products', name: 'products', component: () => import('./views/Products.vue'), meta: { title: '商品分析' } },
   { path: '/sales', name: 'sales', component: () => import('./views/Sales.vue'), meta: { title: '销售分析' } },
   { path: '/pipeline', name: 'pipeline', component: () => import('./views/Pipeline.vue'), meta: { title: '数据流水线' } },
+  { path: '/decisions', name: 'decisions', component: () => import('./views/Decisions.vue'), meta: { title: '决策中心' } },
   { path: '/ai', name: 'ai', component: () => import('./views/AiAssistant.vue'), meta: { title: '智能分析助手' } }
 ]
 

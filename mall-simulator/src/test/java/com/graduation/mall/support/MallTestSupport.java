@@ -28,6 +28,8 @@ import com.graduation.mall.metric.mapper.MetricValueMapper;
 import com.graduation.mall.pipeline.mapper.DataQualityResultMapper;
 import com.graduation.mall.pipeline.mapper.PipelineRunMapper;
 import com.graduation.mall.pipeline.mapper.PipelineStageRunMapper;
+import com.graduation.mall.decision.mapper.DecisionEvaluationMapper;
+import com.graduation.mall.decision.mapper.DecisionTaskMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -97,6 +99,10 @@ public abstract class MallTestSupport {
     @Autowired
     private AiCallLogMapper aiCallLogMapper;
     @Autowired
+    private DecisionEvaluationMapper decisionEvaluationMapper;
+    @Autowired
+    private DecisionTaskMapper decisionTaskMapper;
+    @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @DynamicPropertySource
@@ -128,6 +134,8 @@ public abstract class MallTestSupport {
         // AI 审计与物化 ADS（§阶段8）
         aiQueryHistoryMapper.delete(null);
         aiCallLogMapper.delete(null);
+        decisionEvaluationMapper.delete(null);
+        decisionTaskMapper.delete(null);
         jdbc.update("DELETE FROM ads_operation_overview_m");
         jdbc.update("DELETE FROM ads_sale_trend_m");
         jdbc.update("DELETE FROM ads_behavior_funnel_m");
