@@ -13,3 +13,8 @@ mall:
   outbox:
     batch-size: 200
     poll-seconds: 3600   # 测试时关闭自动轮询，仅手动 publishOnce
+
+llm:
+  base-url: ""
+  api-key: "test-key"
+  mock-enabled: true     # 测试统一使用 MockLlmProvider

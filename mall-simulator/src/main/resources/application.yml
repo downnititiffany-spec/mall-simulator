@@ -28,6 +28,13 @@ mall:
     batch-size: 5000     # 每轮发布批大小（演示规模吞吐）
     poll-seconds: 3      # 定时发布间隔（秒）
 
+# AI 大模型（§4.1 OpenAI 兼容 API；密钥经环境变量，未配置时走规则回退不阻塞主链路）
+llm:
+  base-url: ${LLM_BASE_URL:}
+  api-key: ${LLM_API_KEY:}
+  model: ${LLM_MODEL:deepseek-chat}
+  mock-enabled: ${LLM_MOCK_ENABLED:false}
+
 logging:
   level:
     com.graduation.mall: info

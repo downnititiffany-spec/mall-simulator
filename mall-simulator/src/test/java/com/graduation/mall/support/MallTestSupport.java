@@ -21,6 +21,8 @@ import com.graduation.mall.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.mall.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.mall.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.mall.ingestion.mapper.QuarantineRecordMapper;
+import com.graduation.mall.ai.mapper.AiCallLogMapper;
+import com.graduation.mall.ai.mapper.AiQueryHistoryMapper;
 import com.graduation.mall.metric.mapper.MetricSnapshotMapper;
 import com.graduation.mall.metric.mapper.MetricValueMapper;
 import com.graduation.mall.pipeline.mapper.DataQualityResultMapper;
@@ -90,6 +92,12 @@ public abstract class MallTestSupport {
     private PipelineRunMapper pipelineRunMapper;
     @Autowired
     private DataQualityResultMapper dataQualityResultMapper;
+    @Autowired
+    private AiQueryHistoryMapper aiQueryHistoryMapper;
+    @Autowired
+    private AiCallLogMapper aiCallLogMapper;
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @DynamicPropertySource
     static void landingProps(DynamicPropertyRegistry registry) {
@@ -117,6 +125,12 @@ public abstract class MallTestSupport {
         pipelineStageRunMapper.delete(null);
         dataQualityResultMapper.delete(null);
         pipelineRunMapper.delete(null);
+        // AI 审计与物化 ADS（§阶段8）
+        aiQueryHistoryMapper.delete(null);
+        aiCallLogMapper.delete(null);
+        jdbc.update("DELETE FROM ads_operation_overview_m");
+        jdbc.update("DELETE FROM ads_sale_trend_m");
+        jdbc.update("DELETE FROM ads_behavior_funnel_m");
         // 恢复种子库存（商品/分类由 Flyway 种子固定）
         for (Long productId : List.of(1001L, 1002L, 1003L, 1004L)) {
             inventoryMapper.update(null, new LambdaUpdateWrapper<Inventory>()

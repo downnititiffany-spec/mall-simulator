@@ -127,6 +127,11 @@ public class MetricCalculator {
         } else {
             metrics.put("cart_rate", null);
         }
+        // 漏斗各阶段人数（宽松用户口径）也作为指标发布，供物化/白名单查询
+        metrics.put("funnel_view", bd(viewUsers.size()));
+        metrics.put("funnel_intent", bd(intentUsers.size()));
+        metrics.put("funnel_order", bd(orderUsers.size()));
+        metrics.put("funnel_pay", bd(payUsers.size()));
         // 移除空值指标（无可计算数据 → 不发布，页面显示"无可计算数据"）
         metrics.entrySet().removeIf(en -> en.getValue() == null);
 

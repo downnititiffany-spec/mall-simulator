@@ -18,6 +18,8 @@ client.interceptors.response.use(
 )
 
 export default {
+  post: (url, body) => client.post(url, body),
+  get: (url, params) => client.get(url, { params }),
   // 大盘（§25.1 首页信息层级）
   overview: () => client.get('/dashboards/overview'),
   // 专题

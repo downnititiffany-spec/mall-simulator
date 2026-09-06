@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.mall.metric.MetricCalculator;
 import com.graduation.mall.metric.MetricCalculator.MetricDataset;
 import com.graduation.mall.metric.MetricStore;
+import com.graduation.mall.metric.AdsMaterializer;
 import com.graduation.mall.metric.entity.MetricSnapshot;
 import com.graduation.mall.metric.entity.MetricValue;
 import com.graduation.mall.metric.mapper.MetricSnapshotMapper;
@@ -54,6 +55,7 @@ public class PipelineService {
     private final DataQualityResultMapper qualityMapper;
     private final MetricSnapshotMapper snapshotMapper;
     private final MetricValueMapper valueMapper;
+    private final AdsMaterializer adsMaterializer;
     private final MetricCalculator calculator;
     private final MetricStore metricStore;
     private final QualityChecker qualityChecker;
@@ -203,6 +205,7 @@ public class PipelineService {
 
             // 快照发布（§21.11：BUILDING→VERIFYING→ACTIVE，旧 ACTIVE→ARCHIVED）
             snapshotId = createSnapshot(run.getId(), run.getBusinessTime(), businessDate, dataset);
+            adsMaterializer.refreshActive(); // 刷新 AI 白名单物化 ADS（§8.1）
             stage(run.getId(), "PUBLISH_METRIC", () -> (long) dataset.metrics().size());
 
             run.setStatus(PipelineRun.STATUS_SUCCESS);
