@@ -63,7 +63,9 @@ public class OpenAiCompatLlmProvider implements LlmProvider {
 
     @Override
     public String providerName() {
-        return "openai-compat";
+        // 返回实际模型名（deepseek-chat 等），供页面/审计直接展示；
+        // 未配置模型时退化为协议标识
+        return (model == null || model.isBlank()) ? "openai-compat" : model;
     }
 
     @Override
