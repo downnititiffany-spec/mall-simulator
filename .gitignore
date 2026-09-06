@@ -1,0 +1,44 @@
+# ── 构建产物 ──
+target/
+*.class
+*.jar
+!mall-simulator/target/*.jar
+*.war
+
+# ── 前端 / Node ──
+node_modules/
+dist/
+.vite/
+
+# ── IDE ──
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# ── 本地配置与密钥（绝不进入 Git）──
+.env.local
+*.local.yml
+application-local.yml
+mall-simulator/src/main/resources/application-local.yml
+*.pem
+*.key
+
+# ── 运行时数据 ──
+landing/
+data/
+logs/
+*.log
+
+# ── 参考/备份/临时目录（第三方代码与历史备份不入库）──
+借鉴项目/
+text-to-sql/
+backups/
+tmp/
+*.pdf
+
+# ── 操作系统 ──
+.DS_Store
+Thumbs.db
