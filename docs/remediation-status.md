@@ -71,7 +71,26 @@
   - ODS 商品表扩列（payload_category_name/payload_parent_category_id/payload_parent_category_name）同步三处：模板 OdsLoadSql / 本地 LocalSchemaInitJob / 生产 warehouse/ddl/00-ods.sql
   - 验证 warehouse 迁至 `.verify/r4-wh`（spark-jobs/target 会被 mvn clean 清除）；黄金数据 `.verify/r4-landing/events.jsonl`（36 事件，gitignore）
   - 提交：本期提交（feat: ODS/DWD 全主题 + dim/tdw 作业 + pipeline evidence）
-- [ ] **R5 DWS/ADS**：真实调用全部核心 DWS、修复漏斗/热度、八张核心 ADS、层间对账
+- [x] **R5 DWS/ADS**：真实调用全部核心 DWS、修复漏斗/热度、八张核心 ADS、层间对账。验收证据（2026-09-07 全新 `.verify/r5-wh` 全链重放 spark-submit + spark-sql 比对黄金）：
+  - R5a DwsSql 重写 7 模板（userBehaviorDay 加 buy=订单明细 SUM(quantity)/funnelDay 订单源 order/pay 用户替代硬编码 0/productBehaviorDay buy 改订单源/tradeDay 有效支付口径+avg 分母 0→NULL/新增 productSaleDay/userTradePeriod/regionSaleDay）
+  - R5b AdsSql 重写 8 模板（funnel 4 stage 收编内联 UNION/productConversion buy_users 取 dws_product_sale_day.buyer_count/新增 userProfile RFM 八类+lifecycle/dataQuality 4 规则与 QualityChecker 同名同阈值）
+  - R5c 生产 DDL 对齐：LocalSchemaInitJob 补 dws_user_behavior_day.buy BIGINT + 新增 ads_user_profile/ads_data_quality；warehouse/ddl/04-ads.sql 删除 ads_behavior_funnel/ads_active_trend 普通 dt 列（与分区列冲突）
+  - R5d 作业扩能：UserProductDwsJob 依次产出 7 张 DWS、FunnelAdsJob 依次产出 8 张 ADS、JobRegistry usw→[bdw,tdw]
+  - R5e 单测：SqlTemplateSpec 补 6 项新断言、JobArgsRegistrySpec 同步 usw 依赖，41/41 绿
+  - R5f 真实验证（.verify/r5-wh 全新重放，36 事件→35 接受/1 隔离；行为 4 行/拒重 1；订单 6 行）：
+    - dws_user_behavior_day：u1(1,1,0,0,buy5,1h) u2(0,0,1,1,buy1,1h) ✓
+    - dws_behavior_funnel_day：view1/intent2/order2/pay2，intent_rate 2.0000/order 1.0000/pay 1.0000（order/pay 来自订单明细，无硬编码 0）✓
+    - dws_product_behavior_day：101(1,1,1,0,buy3) 102(0,0,0,1,buy3) ✓
+    - dws_trade_day：order4/buyer2/sale586/refund260/net326/avg146.50 ✓
+    - dws_product_sale_day：101(3,388,2) 102(3,198,1)；dws_user_trade_period：u1(3单486) u2(1单100)；dws_region_sale_day：tier1(1,3,486) tier2(1,1,100) ✓
+    - ads_operation_overview：pv4/uv1/dau2/order4/sale586/net326/avg146.50/refund_rate0.5000；ads_sale_trend：4/2/586/146.50（与 dws_trade_day 对账一致）✓
+    - ads_behavior_funnel：view(1,NULL)/intent(2,2.0)/order(2,1.0)/pay(2,1.0) ✓
+    - ads_hot_product：top2={101 无线耳机Pro, 102 保温杯} heat 9.0109 并列（名称非"商品-{id}"）✓
+    - ads_product_conversion：101 pv1/buy2/conv2.0；102 pv0/buy1/conv NULL ✓
+    - ads_user_profile：2 用户 r/f/m 五分位 + 八类标签 + lifecycle + rule_version=rfm-v1 ✓
+    - ads_data_quality：AMOUNT_RECONCILE(4,0)✓/REQUIRED_FIELD_NULL_RATE(4,0)✓/EVENT_ID_UNIQUE(4,1)真实拒重/ENUM_WHITELIST(4,0)✓
+  - 修复：userProfile 观察期 yyyyMMdd→yyyy-MM-dd 转换（DATEDIFF 混比失败）、F/M 正向五分位排序方向（ASC）、favorite_category 子查询去聚合（rn=1 直接投影）
+  - 提交：R5 特征提交（spark-jobs 7 DWS + 8 ADS + DDL 对齐 + 单测）
 - [ ] **R6 流水线**：异步 taskId、JobSubmitter、externalJobId、分阶段恢复、幂等
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
