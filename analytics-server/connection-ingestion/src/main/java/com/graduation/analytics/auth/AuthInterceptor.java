@@ -27,7 +27,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     /** 白名单：跳过一切校验 */
     private static final List<String> WHITELIST_PATHS = List.of(
-            ("/api/v1/auth/login", "/api/v1/metrics/health", "/api/v1/health"));
+            "/api/v1/auth/login", "/api/v1/metrics/health", "/api/v1/health");
 
     /** admin 专属路径前缀：非 admin 拒绝（403） */
     private static final List<String> ADMIN_ONLY_PREFIXES = List.of(
