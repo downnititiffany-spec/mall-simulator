@@ -15,7 +15,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.graduation.analytics.metric.mapper",
         "com.graduation.analytics.ai.mapper",
         "com.graduation.analytics.decision.mapper",
-        "com.graduation.analytics.auth.mapper"})
+        "com.graduation.analytics.auth.mapper",
+        "com.graduation.analytics.runtime.mapper"})
 public class AnalyticsApplication {
 
     public static void main(String[] args) {

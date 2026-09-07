@@ -30,7 +30,13 @@
   - platform-app 启动：`/api/v1/health`=200，`Tomcat started on port 8091`
   - Flyway：analytics_meta V1-V5 全绿，16 张平台表 + 15 条指标字典 + admin/operator/analyst 种子
   - 提交：71189d1（骨架）、b589134（代码迁移）、1eee26f（启动+迁移修复）、后续互停/接线提交
-- [ ] **R2 RuntimeProfile**：实体/表/Service/API；Local/HDFS LandingStorage；LocalProcess/Ssh JobSubmitter
+- [x] **R2 RuntimeProfile**：实体/表/Service/API；Local/HDFS LandingStorage；LocalProcess/Ssh JobSubmitter。验收证据：
+  - V7 迁移生效：`runtime_profile` 表 + `spark_job_run` 表 + `pipeline_run`/`metric_snapshot` 补列（runtime_profile_version/input_batch_id/target_snapshot_id/current_stage/error_message/created_by/started_at/finished_at），local-dev 种子 DRAFT
+  - `/api/v1/runtime-profiles` 冒烟：list/create/update/disable/activate/getActive 全通；ACTIVE 更新被拒 400（PARAM_INVALID）；SINGLE_NODE 缺 Hive 配置激活被拒（ACTIVATE_CHECK_FAILED，适用项未通过即阻断）；LOCAL 的 Hive 项如实 SKIPPED(不适用) 不伪装通过
+  - 激活流程（§8.3）：四步测试（Landing 读写 / Hive SELECT 1 / 最小 Spark 真实 spark-submit 可执行 / MetricStore 查询）全过 → 旧 ACTIVE→DISABLED、版本 +1 → new ACTIVE（local-dev ACTIVE v2）
+  - R2d：PipelineService 删除硬编码 `setRuntimeProfileId(1L)`，改用 run.getRuntimeProfileId() + runtimeProfileService.get() 取实际 profile_version；pipeline_run/metric_snapshot 同跑实际 profile_version=2、target_snapshot_id 溯源、started/finished 落库；幂等同键重跑返回原 run（1 行）
+  - 硬编码清理：Connection-Ingestion 新增 RuntimeProfile/CredentialService/LandingStorage(Local+HDFS)/JobSubmitter(LocalProcess+Ssh via JSch)/SparkJobRun 实体+mapper；MapperScan 加 runtime.mapper；AdsMaterializer 物化表缺失（R7 建表）WARN 跳过不让发布回滚
+  - 双进程回归：平台 8091=200、商城 8090=200；流水线 daily-full 七阶段 SUCCESS
 - [ ] **R3 采集**：字节偏移、accepted/quarantine/manifest、WAIT_LANDING 认 manifest
 - [ ] **R4 ODS/DWD**：全主题 ODS、维度、行为/交易 DWD、reject 表、迟到重算
 - [ ] **R5 DWS/ADS**：真实调用全部核心 DWS、修复漏斗/热度、八张核心 ADS、层间对账

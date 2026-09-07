@@ -19,6 +19,8 @@ import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineStageRunMapper;
+import com.graduation.analytics.runtime.RuntimeProfileService;
+import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -62,6 +64,7 @@ public class PipelineService {
     private final EventClock eventClock;
     private final Environment environment;
     private final ObjectMapper objectMapper;
+    private final RuntimeProfileService runtimeProfileService;
 
     public record RunResult(Long runId, String idempotencyKey, String status,
                             String errorCode, int attemptNo, Long snapshotId,
@@ -70,6 +73,8 @@ public class PipelineService {
 
     public RunResult run(Long runtimeProfileId, String pipelineCode, LocalDateTime businessTime,
                          String sourceDataVersion, String idempotencyKey, String traceId) {
+        // §8.1：每次运行必须保存实际 runtime_profile_id + profile_version
+        RuntimeProfile profile = runtimeProfileService.get(runtimeProfileId);
         String key = idempotencyKey != null && !idempotencyKey.isBlank()
                 ? idempotencyKey
                 : buildKey(runtimeProfileId, pipelineCode, businessTime, sourceDataVersion);
@@ -84,6 +89,7 @@ public class PipelineService {
         PipelineRun run = new PipelineRun();
         run.setIdempotencyKey(key);
         run.setRuntimeProfileId(runtimeProfileId);
+        run.setRuntimeProfileVersion(profile.getVersion());
         run.setPipelineCode(pipelineCode);
         run.setBusinessTime(businessTime);
         run.setSourceDataVersion(sourceDataVersion);
@@ -92,6 +98,7 @@ public class PipelineService {
         run.setTraceId(traceId);
         run.setCreatedAt(eventClock.nowLdt());
         run.setUpdatedAt(eventClock.nowLdt());
+        run.setStartedAt(eventClock.nowLdt());
         runMapper.insert(run);
         return execute(run);
     }
@@ -110,8 +117,10 @@ public class PipelineService {
         }
         run.setStatus(PipelineRun.STATUS_RUNNING);
         run.setErrorCode(null);
+        run.setErrorMessage(null);
         run.setAttemptNo(run.getAttemptNo() + 1);
         run.setTraceId(traceId);
+        run.setStartedAt(eventClock.nowLdt());
         runMapper.updateById(run);
         return execute(run);
     }
@@ -204,20 +213,26 @@ public class PipelineService {
             stage(run.getId(), "QUALITY_CHECK", () -> (long) quality.results().size());
 
             // 快照发布（§21.11：BUILDING→VERIFYING→ACTIVE，旧 ACTIVE→ARCHIVED）
-            snapshotId = createSnapshot(run.getId(), run.getBusinessTime(), businessDate, dataset);
+            snapshotId = createSnapshot(run, dataset);
             adsMaterializer.refreshActive(); // 刷新 AI 白名单物化 ADS（§8.1）
             stage(run.getId(), "PUBLISH_METRIC", () -> (long) dataset.metrics().size());
 
             run.setStatus(PipelineRun.STATUS_SUCCESS);
+            run.setCurrentStage("SUCCESS");
+            run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
         } catch (PipelineStageException e) {
             run.setStatus(PipelineRun.STATUS_FAILED);
             run.setErrorCode(e.code());
+            run.setErrorMessage(e.getMessage());
+            run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
             log.warn("pipeline {} failed: {}", run.getId(), e.getMessage());
         } catch (Exception e) {
             run.setStatus(PipelineRun.STATUS_FAILED);
             run.setErrorCode("RUN_INTERNAL");
+            run.setErrorMessage(e.getMessage());
+            run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
             log.error("pipeline {} internal error", run.getId(), e);
         }
@@ -226,14 +241,16 @@ public class PipelineService {
 
     // ── 快照发布 ──────────────────────────────────────────────────────────
 
-    private long createSnapshot(Long runId, LocalDateTime businessTime, String businessDate,
-                                MetricDataset dataset) {
-        String snapshotId = "S" + businessDate + "_" + runId;
+    private long createSnapshot(PipelineRun run, MetricDataset dataset) {
+        String businessDate = run.getBusinessTime().toLocalDate().format(KEY_DATE);
+        String snapshotId = "S" + businessDate + "_" + run.getId();
         MetricSnapshot snapshot = new MetricSnapshot();
         snapshot.setSnapshotId(snapshotId);
-        snapshot.setRuntimeProfileId(1L);
-        snapshot.setBusinessTime(businessTime);
-        snapshot.setPipelineRunId(runId);
+        // §8.1：必须保存实际 runtime_profile_id + profile_version（替代早期硬编码 1L）
+        snapshot.setRuntimeProfileId(run.getRuntimeProfileId());
+        snapshot.setRuntimeProfileVersion(run.getRuntimeProfileVersion());
+        snapshot.setBusinessTime(run.getBusinessTime());
+        snapshot.setPipelineRunId(run.getId());
         snapshot.setStatus(MetricSnapshot.STATUS_BUILDING);
         snapshot.setVersion(1);
         snapshot.setDataUpdatedAt(eventClock.nowLdt());
@@ -243,6 +260,9 @@ public class PipelineService {
 
         snapshot.setStatus(MetricSnapshot.STATUS_VERIFYING);
         snapshotMapper.updateById(snapshot);
+
+        run.setTargetSnapshotId(snapshotId);
+        runMapper.updateById(run);
 
         List<MetricValue> values = new ArrayList<>();
         for (Map.Entry<String, BigDecimal> m : dataset.metrics().entrySet()) {
@@ -255,7 +275,7 @@ public class PipelineService {
             v.setDefinitionVersion("v1");
             values.add(v);
         }
-        metricStore.publish(new MetricStore.SnapshotRef(snapshotId, 1L, "day:" + businessDate), values);
+        metricStore.publish(new MetricStore.SnapshotRef(snapshotId, run.getRuntimeProfileId(), "day:" + businessDate), values);
         return snapshot.getId();
     }
 

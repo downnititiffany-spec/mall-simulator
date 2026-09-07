@@ -40,6 +40,12 @@
       <artifactId>platform-common</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- R2：流水线记录 profile_version（§8.1），依赖环境档案服务 -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>connection-ingestion</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>

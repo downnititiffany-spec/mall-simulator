@@ -50,6 +50,19 @@ public class AdsMaterializer {
         if (dt == null) {
             return 0;
         }
+        try {
+            materialize(dt, snapshotId, values);
+            log.info("ads materialized for {} (snapshot {})", dt, snapshotId);
+            return 3;
+        } catch (org.springframework.dao.DataAccessException e) {
+            // 物化表由 R7（db/metric 迁移）建立；缺失时记录 WARN 跳过，
+            // 不让物化失败把已成功的指标发布回滚为 FAILED（§15：失败保留旧 ACTIVE）
+            log.warn("ads materialize skipped (tables not ready until R7?): {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    private void materialize(String dt, String snapshotId, Map<String, BigDecimal> values) {
         jdbc.update("DELETE FROM ads_operation_overview_m WHERE dt = ?", dt);
         jdbc.update("DELETE FROM ads_sale_trend_m WHERE dt = ?", dt);
         jdbc.update("DELETE FROM ads_behavior_funnel_m WHERE dt = ?", dt);
@@ -72,8 +85,6 @@ public class AdsMaterializer {
                             "VALUES (?,?,?,?,?)",
                     dt, stage[0], num(values, stage[1]), null, snapshotId);
         }
-        log.info("ads materialized for {} (snapshot {})", dt, snapshotId);
-        return 3;
     }
 
     private static long num(Map<String, BigDecimal> m, String key) {

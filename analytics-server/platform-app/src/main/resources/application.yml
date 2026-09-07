@@ -14,6 +14,11 @@ platform:
       url: ${PLATFORM_METRIC_READ_URL:jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
       username: ${PLATFORM_METRIC_READ_USER:metric_read}
       password: ${PLATFORM_METRIC_READ_PASSWORD:metric_read_pw_2026}
+  # R2 落地存储与凭据（整改书 §8）：LOCAL 演示默认值，生产必须显式配置
+  landing:
+    local-root: ${PLATFORM_LANDING_LOCAL_ROOT:./landing}
+  credential:
+    ssh-default: ${CRED_SSH_DEFAULT:}
 
 # 迁移由 MetaFlywayInitializer 显式执行（classpath:db/meta）；默认 flyway 关闭
 spring:

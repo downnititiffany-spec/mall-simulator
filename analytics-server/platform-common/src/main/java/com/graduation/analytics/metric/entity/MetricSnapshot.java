@@ -19,6 +19,9 @@ public class MetricSnapshot {
 
     private Long runtimeProfileId;
 
+    /** §8.1：每次快照保存实际 profile_version（V7 列） */
+    private Integer runtimeProfileVersion;
+
     private java.time.LocalDateTime businessTime;
 
     private Long pipelineRunId;
