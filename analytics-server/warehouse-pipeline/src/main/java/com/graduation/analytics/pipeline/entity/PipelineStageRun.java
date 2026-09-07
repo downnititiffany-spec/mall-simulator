@@ -29,6 +29,9 @@ public class PipelineStageRun {
 
     private String errorCode;
 
+    /** 阶段证据 JSON（§13.2：WAIT_LANDING 保存 batchId/URI/checksum/records） */
+    private String evidence;
+
     private LocalDateTime startedAt;
 
     private LocalDateTime finishedAt;

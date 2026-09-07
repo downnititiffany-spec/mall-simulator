@@ -19,6 +19,9 @@ public class IngestionBatch {
 
     private String batchNo;
 
+    /** 采集归属的运行环境（manifest 携带 runtimeProfileId，§9.3） */
+    private Long runtimeProfileId;
+
     private String source;
 
     private String status;

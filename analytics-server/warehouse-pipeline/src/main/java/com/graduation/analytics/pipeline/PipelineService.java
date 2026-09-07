@@ -23,7 +23,6 @@ import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -31,11 +30,14 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 /**
@@ -62,7 +64,6 @@ public class PipelineService {
     private final MetricStore metricStore;
     private final QualityChecker qualityChecker;
     private final EventClock eventClock;
-    private final Environment environment;
     private final ObjectMapper objectMapper;
     private final RuntimeProfileService runtimeProfileService;
 
@@ -137,31 +138,53 @@ public class PipelineService {
         try {
             String businessDate = run.getBusinessTime().toLocalDate().format(KEY_DATE);
             List<EventEnvelope> events = new ArrayList<>();
+            // 流水线归属的落地根：取运行环境 landingUri（替代硬编码 ./landing，§8.1/§9.1）
+            RuntimeProfile profile = runtimeProfileService.get(run.getRuntimeProfileId());
+            Path landingRoot = parseLandingRoot(profile.getLandingUri());
 
+            // WAIT_LANDING（§9.3）：只认 manifests/ 下状态为 READY 的批次清单，
+            // 不再看 source/events 目录；证据 batchId/URI/checksum/records 落 stage.evidence（§13.2）
+            AtomicReference<Map<String, Object>> manifestRef = new AtomicReference<>();
             stage(run.getId(), "WAIT_LANDING", () -> {
-                Path eventsDir = eventsDir();
-                long files = 0;
-                long bytes = 0;
-                if (Files.isDirectory(eventsDir)) {
-                    try (Stream<Path> list = Files.list(eventsDir)) {
-                        for (Path f : list.filter(p -> p.getFileName().toString().endsWith(".jsonl")).toList()) {
-                            files++;
-                            bytes += Files.size(f);
-                        }
-                    }
+                Map<String, Object> manifest = findReadyManifest(landingRoot);
+                if (manifest == null) {
+                    throw new PipelineStageException("RUN_EMPTY_LANDING",
+                            "landing/manifests 无 READY 批次清单（先执行采集并生成 manifest）");
                 }
-                if (files == 0 || bytes == 0) {
-                    throw new PipelineStageException("RUN_EMPTY_LANDING", "events 目录无数据");
-                }
-                return files;
+                manifestRef.set(manifest);
+                return ((Number) manifest.get("acceptedRecords")).longValue();
             });
+            if (manifestRef.get() != null) {
+                PipelineStageRun waitStage = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
+                        .eq(PipelineStageRun::getRunId, run.getId())
+                        .eq(PipelineStageRun::getStageCode, "WAIT_LANDING")
+                        .orderByDesc(PipelineStageRun::getId).last("LIMIT 1"));
+                if (waitStage != null) {
+                    Map<String, Object> evidence = new LinkedHashMap<>();
+                    evidence.put("batchId", manifestRef.get().get("batchId"));
+                    evidence.put("acceptedUri", manifestRef.get().get("acceptedUri"));
+                    evidence.put("checksum", manifestRef.get().get("checksum"));
+                    evidence.put("acceptedRecords", manifestRef.get().get("acceptedRecords"));
+                    evidence.put("schemaVersions", manifestRef.get().get("schemaVersions"));
+                    waitStage.setEvidence(toJson(evidence));
+                    stageMapper.updateById(waitStage);
+                }
+            }
 
             stage(run.getId(), "LOAD_ODS", () -> {
+                // §9.1：ODS 只能读取 accepted（好的批次数据），禁止直接读 source/events
+                Map<String, Object> manifest = manifestRef.get();
+                if (manifest == null) {
+                    throw new PipelineStageException("RUN_EMPTY_LANDING", "无 READY manifest");
+                }
+                Path acceptedDir = landingRoot.resolve(String.valueOf(manifest.get("acceptedUri")));
+                if (!Files.isDirectory(acceptedDir)) {
+                    throw new PipelineStageException("RUN_LOAD_FAILED", "accepted 目录不存在: " + acceptedDir);
+                }
                 // 只装载 businessTime 归属日的事件（补数/重跑按日隔离，§5.3.3）
                 String datePrefix = businessDate.substring(0, 4) + "-" + businessDate.substring(4, 6)
                         + "-" + businessDate.substring(6, 8);
-                Path eventsDir = eventsDir();
-                try (Stream<Path> list = Files.list(eventsDir)) {
+                try (Stream<Path> list = Files.list(acceptedDir)) {
                     for (Path f : list.filter(p -> p.getFileName().toString().endsWith(".jsonl")).sorted().toList()) {
                         for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
                             if (line.isBlank()) {
@@ -181,7 +204,7 @@ public class PipelineService {
                     throw new PipelineStageException("RUN_LOAD_FAILED", e.getMessage());
                 }
                 if (events.isEmpty()) {
-                    throw new PipelineStageException("RUN_EMPTY_DATA", "无可解析事件");
+                    throw new PipelineStageException("RUN_EMPTY_DATA", "accepted 无归属业务日事件");
                 }
                 return (long) events.size();
             });
@@ -309,8 +332,65 @@ public class PipelineService {
         }
     }
 
-    private Path eventsDir() {
-        return Path.of(environment.getProperty("mall.landing.path", "./landing")).resolve("events");
+    /**
+     * 扫描 landing/manifests/*.json，返回状态为 READY 且含数据（accepted+quarantined>0）
+     * 的最新批次清单（§9.3；空批次视为无新数据，不做 ODS 输入）。
+     * 按清单内 batchId 取最大者视为最新；无可用清单返回 null。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> findReadyManifest(Path landingRoot) {
+        Path manifestsDir = landingRoot.resolve("manifests");
+        if (!Files.isDirectory(manifestsDir)) {
+            return null;
+        }
+        AtomicReference<Long> maxBatchId = new AtomicReference<>(null);
+        AtomicReference<Map<String, Object>> best = new AtomicReference<>(null);
+        try (Stream<Path> list = Files.list(manifestsDir)) {
+            for (Path m : list.filter(p -> p.getFileName().toString().endsWith(".json")).toList()) {
+                try {
+                    Map<String, Object> manifest = objectMapper.readValue(Files.readString(m, StandardCharsets.UTF_8),
+                            new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                            });
+                    if (!"READY".equals(manifest.get("status"))) {
+                        continue;
+                    }
+                    long accepted = ((Number) manifest.get("acceptedRecords")).longValue();
+                    long quarantined = ((Number) manifest.get("quarantinedRecords")).longValue();
+                    if (accepted + quarantined <= 0) {
+                        continue; // 空批次：无新数据，不阻塞也不作为输入（§9.3）
+                    }
+                    long batchId = ((Number) manifest.get("batchId")).longValue();
+                    if (maxBatchId.get() == null || batchId > maxBatchId.get()) {
+                        maxBatchId.set(batchId);
+                        best.set(manifest);
+                    }
+                } catch (Exception e) {
+                    log.warn("manifest 解析失败 {}: {}", m.getFileName(), e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            log.warn("manifests 扫描失败: {}", e.getMessage());
+        }
+        return best.get();
+    }
+
+    private String toJson(Object o) {
+        try {
+            return objectMapper.writeValueAsString(o);
+        } catch (Exception e) {
+            return String.valueOf(o);
+        }
+    }
+
+    /** 解析 profile.landingUri（file:///D:/... 或 file://./landing）→ 本地 Path */
+    static Path parseLandingRoot(String landingUri) {
+        String p = landingUri == null ? "./landing" : landingUri.trim();
+        if (p.startsWith("file:///")) {
+            p = p.substring("file://".length());
+        } else if (p.startsWith("file://")) {
+            p = p.substring("file://".length());
+        }
+        return Paths.get(p).toAbsolutePath();
     }
 
     private static String buildKey(Long profileId, String code, LocalDateTime businessTime, String version) {

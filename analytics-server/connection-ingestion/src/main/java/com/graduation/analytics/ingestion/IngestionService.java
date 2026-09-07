@@ -1,6 +1,7 @@
 package com.graduation.analytics.ingestion;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
 import com.graduation.analytics.ingestion.entity.IngestionBatchFile;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
@@ -8,6 +9,8 @@ import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.common.TraceContext;
+import com.graduation.analytics.runtime.RuntimeProfileService;
+import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -15,19 +18,27 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
+import java.util.zip.CRC32;
 
 /**
- * 采集编排服务（§5.2.7 批次状态机）：
+ * 采集编排服务（§5.2.7 批次状态机 + 整改书 §9）：
  * GENERATED → COLLECTING → LANDED → VALIDATING → SUCCESS / QUARANTINED
- * 一轮 = events 目录一次全量增量扫描；文件级 offset 落 ingestion_batch_file 与 file_checkpoint。
+ * - 一轮采集归属当前 ACTIVE RuntimeProfile：checkpoint 键含 runtime_profile_id（§9.2）；
+ * - 输出目录职责（§9.1）：landing/accepted/{batchId} 校验通过、landing/quarantine/{batchId} 坏行、
+ *   landing/manifests/{batchId}.json 批次清单（状态 READY，§9.3）；
+ * - ODS 只能读取 accepted，禁止直接读 source/events（§9.1）。
  */
 @Slf4j
 @Service
@@ -42,17 +53,23 @@ public class IngestionService {
     private final LocalFileIngestor ingestor;
     private final EventClock eventClock;
     private final Environment environment;
+    private final RuntimeProfileService runtimeProfileService;
+    private final ObjectMapper objectMapper;
 
     public record RunResult(Long batchId, String batchNo, String status,
                             long recordCount, long quarantineCount, long errorCount,
-                            int fileCount, String landedDir, String quarantineFile) {
+                            int fileCount, long acceptedBytes, String acceptedDir,
+                            String quarantineDir, String manifestPath) {
     }
 
     /**
      * 执行一轮采集（手动触发/演示控制台；定时触发在平台阶段）。
+     * 采集归属当前 ACTIVE 运行环境（§8.3）；landing 根取 profile.landingUri。
      */
     public RunResult runOne(TraceContext trace) {
-        Path landingRoot = Path.of(environment.getProperty("mall.landing.path", "./landing"));
+        RuntimeProfile active = runtimeProfileService.getActive();
+        long runtimeProfileId = active.getId();
+        Path landingRoot = parseLandingRoot(active.getLandingUri());
         Path eventsDir = landingRoot.resolve("events");
         // 批次号带随机后缀，避免同秒多次运行撞唯一键
         String batchNo = "ing-" + BATCH_NO.format(LocalDateTime.now())
@@ -60,6 +77,7 @@ public class IngestionService {
 
         IngestionBatch batch = new IngestionBatch();
         batch.setBatchNo(batchNo);
+        batch.setRuntimeProfileId(runtimeProfileId);
         batch.setSource("local-file");
         batch.setStatus(IngestionBatch.STATUS_COLLECTING);
         batch.setRecordCount(0L);
@@ -67,34 +85,42 @@ public class IngestionService {
         batch.setQuarantineCount(0L);
         batch.setStartTime(eventClock.nowLdt());
         batchMapper.insert(batch);
+        String batchId = String.valueOf(batch.getId());
 
-        Path landedDir = landingRoot.resolve("landed").resolve(batchNo);
-        Path quarantineFile = landingRoot.resolve("quarantine").resolve(batchNo + ".jsonl");
-        batch.setLandingDir(landedDir.toString());
+        Path acceptedDir = landingRoot.resolve("accepted").resolve(batchId);
+        Path quarantineDir = landingRoot.resolve("quarantine").resolve(batchId);
+        batch.setLandingDir(acceptedDir.toString());
         batchMapper.updateById(batch);
 
         long recordCount = 0;
         long quarantineCount = 0;
         long errorCount = 0;
         int fileCount = 0;
+        long acceptedBytes = 0;
+        CRC32 checksum = new CRC32();
+        var schemaVersions = new TreeMap<String, Boolean>();
+        var files = new ArrayList<Map<String, Object>>();
+        LocalDateTime startedAt = eventClock.nowLdt();
         try {
-            Files.createDirectories(landedDir);
-            Files.createDirectories(quarantineFile.getParent());
+            Files.createDirectories(acceptedDir);
+            Files.createDirectories(quarantineDir);
             Map<String, Path> hourFiles = new TreeMap<>(); // 文件名排序 → 确定性批次顺序
             if (Files.isDirectory(eventsDir)) {
-                try (Stream<Path> files = Files.list(eventsDir)) {
-                    files.filter(p -> p.getFileName().toString().endsWith(".jsonl"))
+                try (Stream<Path> s = Files.list(eventsDir)) {
+                    s.filter(p -> p.getFileName().toString().endsWith(".jsonl"))
                             .forEach(p -> hourFiles.put(p.getFileName().toString(), p));
                 }
             }
             for (var entry : hourFiles.entrySet()) {
                 try {
-                    var res = ingestor.ingestFile(entry.getValue(), batch.getId(), landedDir,
-                            quarantineFile, trace);
-                    recordCount += res.collected();
-                    quarantineCount += res.quarantined();
-                    fileCount++;
+                    var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId,
+                            acceptedDir, quarantineDir, trace, checksum);
                     if (res.collected() > 0 || res.quarantined() > 0) {
+                        recordCount += res.collected();
+                        quarantineCount += res.quarantined();
+                        acceptedBytes += res.acceptedBytes();
+                        fileCount++;
+                        res.schemaVersions().forEach(v -> schemaVersions.put(v, true));
                         IngestionBatchFile bf = new IngestionBatchFile();
                         bf.setBatchId(batch.getId());
                         bf.setFilePath(res.filePath());
@@ -103,6 +129,12 @@ public class IngestionService {
                         bf.setRecordCount(res.collected());
                         bf.setStatus("LANDED");
                         batchFileMapper.insert(bf);
+                        files.add(Map.of(
+                                "file", res.filePath(),
+                                "acceptedRecords", res.collected(),
+                                "quarantinedRecords", res.quarantined(),
+                                "startOffset", res.startOffset(),
+                                "endOffset", res.endOffset()));
                     }
                 } catch (Exception e) {
                     errorCount++;
@@ -121,10 +153,67 @@ public class IngestionService {
         batch.setEndTime(eventClock.nowLdt());
         batchMapper.updateById(batch);
 
-        log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={}",
-                batchNo, batch.getStatus(), recordCount, quarantineCount, errorCount, fileCount);
+        // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
+        String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
+                recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files);
+        String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
+
+        log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={}",
+                batchNo, batch.getStatus(), recordCount, quarantineCount, errorCount, fileCount, acceptedBytes);
         return new RunResult(batch.getId(), batchNo, batch.getStatus(), recordCount,
-                quarantineCount, errorCount, fileCount, landedDir.toString(), quarantineFile.toString());
+                quarantineCount, errorCount, fileCount, acceptedBytes,
+                acceptedDir.toString(), quarantineDir.toString(), manifestUri);
+    }
+
+    private String buildManifest(String batchId, long runtimeProfileId, String batchNo,
+                                 LocalDateTime startedAt, long acceptedRecords, long quarantinedRecords,
+                                 int files, long acceptedBytes, CRC32 checksum,
+                                 Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList) {
+        Map<String, Object> manifest = new LinkedHashMap<>();
+        manifest.put("batchId", Long.parseLong(batchId));
+        manifest.put("batchNo", batchNo);
+        manifest.put("runtimeProfileId", runtimeProfileId);
+        manifest.put("source", "local-file");
+        manifest.put("status", "READY");             // §9.3：WAIT_LANDING 认 READY manifest
+        manifest.put("startedAt", startedAt.toString());
+        manifest.put("finishedAt", eventClock.nowLdt().toString());
+        manifest.put("files", fileList);
+        manifest.put("acceptedRecords", acceptedRecords);
+        manifest.put("quarantinedRecords", quarantinedRecords);
+        manifest.put("acceptedBytes", acceptedBytes);
+        manifest.put("schemaVersions", new ArrayList<>(schemaVersions.keySet()));
+        manifest.put("acceptedUri", "accepted/" + batchId);
+        manifest.put("quarantineUri", "quarantine/" + batchId);
+        manifest.put("checksum", Long.toHexString(checksum.getValue()));
+        try {
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest);
+        } catch (Exception e) {
+            throw new IllegalStateException("manifest 序列化失败", e);
+        }
+    }
+
+    private String writeManifestQuietly(Path landingRoot, String batchId, String manifestJson) {
+        try {
+            Path dir = landingRoot.resolve("manifests");
+            Files.createDirectories(dir);
+            Path file = dir.resolve(batchId + ".json");
+            Files.writeString(file, manifestJson, StandardCharsets.UTF_8);
+            return file.toUri().toString();
+        } catch (IOException e) {
+            log.error("manifest 写入失败 batchId={}", batchId, e);
+            return null;
+        }
+    }
+
+    /** 解析 profile.landingUri（file:///D:/... 或 file://./landing）→ 本地 Path */
+    static Path parseLandingRoot(String landingUri) {
+        String p = landingUri == null ? "./landing" : landingUri.trim();
+        if (p.startsWith("file:///")) {
+            p = p.substring("file://".length());
+        } else if (p.startsWith("file://")) {
+            p = p.substring("file://".length());
+        }
+        return Paths.get(p).toAbsolutePath();
     }
 
     /** 采集状态总览：events 待采文件、最近批次、断点数 */
@@ -145,15 +234,24 @@ public class IngestionService {
         }
         IngestionBatch latest = batchMapper.selectOne(new LambdaQueryWrapper<IngestionBatch>()
                 .orderByDesc(IngestionBatch::getId).last("LIMIT 1"));
-        return Map.of(
-                "eventsDir", eventsDir.toString(),
-                "pendingFiles", pendingFiles,
-                "pendingBytes", pendingBytes,
-                "latestBatch", latest == null ? null : Map.of(
-                        "batchNo", latest.getBatchNo(), "status", latest.getStatus(),
-                        "recordCount", latest.getRecordCount(),
-                        "quarantineCount", latest.getQuarantineCount()),
-                "checkpointFiles", checkpointMapper.selectCount(null));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("eventsDir", eventsDir.toString());
+        result.put("pendingFiles", pendingFiles);
+        result.put("pendingBytes", pendingBytes);
+        if (latest != null) {
+            Map<String, Object> latestInfo = new LinkedHashMap<>();
+            latestInfo.put("batchId", latest.getId());
+            latestInfo.put("runtimeProfileId", latest.getRuntimeProfileId());
+            latestInfo.put("batchNo", latest.getBatchNo());
+            latestInfo.put("status", latest.getStatus());
+            latestInfo.put("recordCount", latest.getRecordCount());
+            latestInfo.put("quarantineCount", latest.getQuarantineCount());
+            result.put("latestBatch", latestInfo);
+        } else {
+            result.put("latestBatch", null);
+        }
+        result.put("checkpointFiles", checkpointMapper.selectCount(null));
+        return result;
     }
 
     public List<IngestionBatch> recentBatches(int limit) {

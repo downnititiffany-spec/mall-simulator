@@ -15,8 +15,8 @@
 | 身份来源 | §18.2 禁用 X-User-Id | ⚠ 已改 CurrentUserHolder 优先，残留 3 处 header | AiController/决策 |
 | 三库边界 | §7 三个 database | ❌ 单库 mall_simulator | 配置 |
 | analytics-server | §6 独立平台工程 | ❌ 未创建 | — |
-| 采集 manifest | §9.3 | ❌ 无 manifest；WAIT_LANDING 看文件存在 | IngestionService |
-| 采集字节偏移 | §9.2 中文断点 | ⚠ 当前字符偏移存在风险 | LocalFileIngestor |
+| 采集 manifest | §9.3 | ✅ READY 清单：batchId/accept/checkpoint 全闭环（见 R3） | IngestionService+manifest |
+| 采集字节偏移 | §9.2 中文断点 | ✅ FileChannel 字节偏移+CRLF+创建时间戳身份（见 R3） | LocalFileIngestor |
 | 异步流水线 | §13.1 taskId | ❌ 同步执行大事件 | PipelineService |
 | 质量门阻断 | §14.1 | ✅ 金额对账阻断发布 | QualityChecker+测试 |
 | 只读账号 | §7.2/17.3 | ✅ mall_reader 实测写被拒 | ReaderAccountSecurityTest |
@@ -37,7 +37,19 @@
   - R2d：PipelineService 删除硬编码 `setRuntimeProfileId(1L)`，改用 run.getRuntimeProfileId() + runtimeProfileService.get() 取实际 profile_version；pipeline_run/metric_snapshot 同跑实际 profile_version=2、target_snapshot_id 溯源、started/finished 落库；幂等同键重跑返回原 run（1 行）
   - 硬编码清理：Connection-Ingestion 新增 RuntimeProfile/CredentialService/LandingStorage(Local+HDFS)/JobSubmitter(LocalProcess+Ssh via JSch)/SparkJobRun 实体+mapper；MapperScan 加 runtime.mapper；AdsMaterializer 物化表缺失（R7 建表）WARN 跳过不让发布回滚
   - 双进程回归：平台 8091=200、商城 8090=200；流水线 daily-full 七阶段 SUCCESS
-- [ ] **R3 采集**：字节偏移、accepted/quarantine/manifest、WAIT_LANDING 认 manifest
+- [x] **R3 采集**：字节偏移、accepted/quarantine/manifest、WAIT_LANDING 认 manifest。验收证据（2026-09-07 实测）：
+  - V8 迁移：`file_checkpoint` 加 `id AUTO PK + runtime_profile_id + file_identity` + 复合唯一键 `uk_ckpt(runtime_profile_id, file_path, file_identity)`（三 ALTER 均 `ALGORITHM=INPLACE, LOCK=SHARED` 规避 AUTO_INCREMENT 与 LOCK=NONE 冲突）；`ingestion_batch` 加 runtime_profile_id；`pipeline_stage_run` 加 evidence 列；Flyway version 8 全绿
+  - 采集字节偏移（§9.2）：LocalFileIngestor 重写为 FileChannel 逐字节扫 LF/CRLF；仅整行校验成功才推进 endOffset；尾部无 LF 残行回退留待文件增长；Windows file identity=创建时间戳，文件删除重建即新版本从头读；checkpoint 唯一键=profile+绝对路径+identity，累计 37 文件全部 runtime_profile_id=1
+  - 全量采集：35 文件 402,859,259 字节 → accepted 866,680 行 / 0 隔离 / 0 错误，SUCCESS（batch2）
+  - 幂等重采：断点已到尾部时再跑 recordCount=0（batch3/10 验证）
+  - 增量断点恢复：向已采文件 append 3 行（中文商品名事件）→ 只采 3 条新增（batch9），既有 1000 条不重采；中文 399 行逐字零错位
+  - 隔离闸门：坏 JSON（1 行）、未知 schema_version 9.9/1.1（各 1）只进 quarantine/{batchId} + quarantine_record（reason 正确），accepted 全为有效行
+  - checksum：manifest checksum=CRC32(acceptedBytes) 十六进制，`bc2e1132` 与 zlib 独立重算 `0xbc2e1132` 逐字节一致
+  - manifest（§9.3）：批号/status=READY/files(start/end offset)/acceptedBytes/schemaVersions/acceptedUri/checksum 全字段落盘
+  - 流水线整改（WAIT_LANDING 认 manifest + LOAD_ODS 只读 accepted）：`findReadyManifest` 取最新含数据 READY 清单（空批次跳过）；WAIT_LANDING evidence 落库 `{batchId,acceptedUri,checksum,acceptedRecords,schemaVersions}`；七阶段 SUCCESS：batch8 1000 条 WAIT_LANDING 1000→ODS 1000→DWD 1000→DWS 200→ADS 16→QUALITY 4 规则→PUBLISH 16，snapshotId=3
+  - 质量门按设计阻断演示：金额对账失败 → PIPELINE_QUALITY_FAILED 新指标未发布（非回调 bug，为构造数据不配对所致；配对数据即 SUCCESS）
+  - 幂等：相同 Idempotency-Key 重发返回原 runId=6 不重跑
+  - 提交：待 R3 提交哈希
 - [ ] **R4 ODS/DWD**：全主题 ODS、维度、行为/交易 DWD、reject 表、迟到重算
 - [ ] **R5 DWS/ADS**：真实调用全部核心 DWS、修复漏斗/热度、八张核心 ADS、层间对账
 - [ ] **R6 流水线**：异步 taskId、JobSubmitter、externalJobId、分阶段恢复、幂等
