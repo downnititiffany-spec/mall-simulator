@@ -1,0 +1,49 @@
+# 整改状态登记（对标《项目整改实施指导书 V1.0》）
+
+> 依据整改书 §29 进度表与 §28 自检模板维护；每阶段仅在有验收证据后置为"完成"。
+> 基线：Git tag `v0.9-protype-baseline`（2026-09-06，整改分支 `remediation/r1-boundary`）。
+
+## 现状差距核对（2026-09-06 审计）
+
+| 整改项 | 要求（整改书） | 现状 | 证据 |
+|---|---|---|---|
+| 看板只读 MetricStore | §15.3/16.2 删除 `AnalysisService.loadEvents()` | ❌ AnalysisService 仍从 `landing/events` 实时聚合 | `AnalysisService.java:96 loadEvents` |
+| RFM 数据源 | §5.4 禁止直查商城业务表 | ❌ RfmService `FROM mall_order` | `RfmService.java` |
+| 商城内购口径 | §11.3/12.3 商品 buy 来自订单明细 | ❌ 商品热度 buy 来自行为计数（无 buy 枚举） | spark-jobs ads/hotProduct |
+| 漏斗真实数值 | §12.1/12.2 不得硬编码 order/pay | ❌/⚠ Spark 链 DWS 漏斗未完整入链 | `DwsSql` vs 链脚本 |
+| runtimeProfileId | §8.4 删除硬编码 | ❌ PipelineService 5 处 `runtimeProfileId=1L` | grep |
+| 身份来源 | §18.2 禁用 X-User-Id | ⚠ 已改 CurrentUserHolder 优先，残留 3 处 header | AiController/决策 |
+| 三库边界 | §7 三个 database | ❌ 单库 mall_simulator | 配置 |
+| analytics-server | §6 独立平台工程 | ❌ 未创建 | — |
+| 采集 manifest | §9.3 | ❌ 无 manifest；WAIT_LANDING 看文件存在 | IngestionService |
+| 采集字节偏移 | §9.2 中文断点 | ⚠ 当前字符偏移存在风险 | LocalFileIngestor |
+| 异步流水线 | §13.1 taskId | ❌ 同步执行大事件 | PipelineService |
+| 质量门阻断 | §14.1 | ✅ 金额对账阻断发布 | QualityChecker+测试 |
+| 只读账号 | §7.2/17.3 | ✅ mall_reader 实测写被拒 | ReaderAccountSecurityTest |
+| 黄金数据 | §21 | ✅ 30 事件 9 指标对账 | GoldenE2ETest |
+| 决策状态机/效果 | §18 | ✅ 12 态+基线锁定+方向取反 | DecisionServiceTest |
+
+## 执行计划（严格 R0→R9）
+
+- [x] **R0 冻结与基线**：文档备份（docs/backups/ 12 份）、git tag v0.9-protype-baseline、整改分支、README 状态标注（本轮）
+- [ ] **R1 应用和数据库边界**：新建 analytics-server；三库拆分（mall_business/analytics_meta/analytics_metric）；平台代码迁移；禁止跨模块依赖测试
+- [ ] **R2 RuntimeProfile**：实体/表/Service/API；Local/HDFS LandingStorage；LocalProcess/Ssh JobSubmitter
+- [ ] **R3 采集**：字节偏移、accepted/quarantine/manifest、WAIT_LANDING 认 manifest
+- [ ] **R4 ODS/DWD**：全主题 ODS、维度、行为/交易 DWD、reject 表、迟到重算
+- [ ] **R5 DWS/ADS**：真实调用全部核心 DWS、修复漏斗/热度、八张核心 ADS、层间对账
+- [ ] **R6 流水线**：异步 taskId、JobSubmitter、externalJobId、分阶段恢复、幂等
+- [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
+- [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
+- [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性
+
+## 验收纪律（整改书 §23/26）
+
+新最终验收至少含：双进程双库、READY manifest、taskId、非空 externalJobId、Hive 四主题有数、
+层间对账、Hive ADS=MySQL ACTIVE=页面=AI 一致、质量失败保旧快照、决策越权 403、
+AI 查商城表被 DB 拒绝、停模型后看板可用。Mock 数据不得写成真实实验。
+
+## UI 美化（ui-ux-pro-max 设计系统）
+
+- 风格：Enterprise Gateway / Data-Dense Dashboard（Navy #1E40AF + 琥珀 #D97706 + Fira Sans/Code）
+- 应用范围：全局令牌 → App 壳（侧栏/顶栏/卡片/表格）→ 各分析页（大盘先行，逐页铺开）
+- 验收：npm build + headless 截图对比、可访问性（对比度 4.5:1、焦点可见、reduced-motion）
