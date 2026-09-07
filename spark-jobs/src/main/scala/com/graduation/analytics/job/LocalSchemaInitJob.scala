@@ -35,11 +35,43 @@ object LocalSchemaInitJob {
     ("dw_dim", "CREATE DATABASE IF NOT EXISTS dw_dim"),
 
     ("dw_ods", """
+        CREATE TABLE IF NOT EXISTS dw_ods.ods_user_event (
+          event_id STRING, event_type STRING, event_time STRING, ingest_time STRING,
+          source_system STRING, schema_version STRING, trace_id STRING,
+          payload_user_id STRING, payload_age_group STRING, payload_city_level STRING,
+          payload_member_level STRING, payload_register_time STRING,
+          source_file STRING, ingest_batch_id BIGINT)
+        USING parquet PARTITIONED BY (dt STRING, hour STRING)"""),
+
+    ("dw_ods", """
+        CREATE TABLE IF NOT EXISTS dw_ods.ods_product_event (
+          event_id STRING, event_type STRING, event_time STRING, ingest_time STRING,
+          source_system STRING, schema_version STRING, trace_id STRING,
+          payload_product_id STRING, payload_product_name STRING, payload_category_id STRING,
+          payload_category_name STRING, payload_parent_category_id STRING,
+          payload_parent_category_name STRING,
+          payload_brand_id STRING, payload_price DECIMAL(18,2), payload_cost DECIMAL(18,2),
+          payload_status STRING,
+          source_file STRING, ingest_batch_id BIGINT)
+        USING parquet PARTITIONED BY (dt STRING, hour STRING)"""),
+
+    ("dw_ods", """
         CREATE TABLE IF NOT EXISTS dw_ods.ods_behavior_event (
           event_id STRING, event_type STRING, event_time STRING, ingest_time STRING,
           source_system STRING, schema_version STRING, trace_id STRING,
           payload_user_id STRING, payload_product_id STRING, payload_session_id STRING,
           payload_behavior_type STRING, payload_channel STRING,
+          source_file STRING, ingest_batch_id BIGINT)
+        USING parquet PARTITIONED BY (dt STRING, hour STRING)"""),
+
+    ("dw_ods", """
+        CREATE TABLE IF NOT EXISTS dw_ods.ods_trade_event (
+          event_id STRING, event_type STRING, event_time STRING, ingest_time STRING,
+          source_system STRING, schema_version STRING, trace_id STRING,
+          payload_order_id STRING, payload_user_id STRING, payload_payment_id STRING,
+          payload_refund_id STRING, payload_product_id STRING,
+          payload_amount DECIMAL(18,2), payload_total_amount DECIMAL(18,2),
+          payload_status STRING, payload_reason STRING, payload_items STRING,
           source_file STRING, ingest_batch_id BIGINT)
         USING parquet PARTITIONED BY (dt STRING, hour STRING)"""),
 
@@ -61,19 +93,22 @@ object LocalSchemaInitJob {
           quantity INT, unit_price DECIMAL(18,2), discount DECIMAL(18,2),
           amount DECIMAL(18,2), order_status STRING, order_time TIMESTAMP,
           order_date STRING, city_level STRING, paid_at TIMESTAMP,
-          refund_amount DECIMAL(18,2), final_paid_flag INT, final_refunded_flag INT)
+          order_amount DECIMAL(18,2), paid_amount DECIMAL(18,2),
+          refund_amount DECIMAL(18,2), net_paid_amount DECIMAL(18,2),
+          final_paid_flag INT, final_refunded_flag INT)
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     ("dw_dim", """
         CREATE TABLE IF NOT EXISTS dw_dim.dim_user (
           user_id BIGINT, age_group STRING, city_level STRING, member_level STRING,
-          register_date STRING, register_time TIMESTAMP)
+          register_date STRING, register_time TIMESTAMP, source_batch_id BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
     ("dw_dim", """
         CREATE TABLE IF NOT EXISTS dw_dim.dim_product (
           product_id BIGINT, product_name STRING, category_id BIGINT, category_name STRING,
           parent_category_id BIGINT, parent_category_name STRING,
-          brand_id BIGINT, price DECIMAL(18,2), cost DECIMAL(18,2), status STRING)
+          brand_id BIGINT, price DECIMAL(18,2), cost DECIMAL(18,2), status STRING,
+          source_batch_id BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     ("dw_dws", """

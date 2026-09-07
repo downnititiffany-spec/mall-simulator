@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -53,6 +54,14 @@ import java.util.stream.Stream;
 public class PipelineService {
 
     private static final DateTimeFormatter KEY_DATE = DateTimeFormatter.BASIC_ISO_DATE;
+
+    /** ODS 接受的事件类型白名单（与 spark-jobs OdsLoadSql.eventTypeToTable 口径一致，§10.2） */
+    private static final Set<String> ODS_ACCEPTED_TYPES = Set.of(
+            "user_created", "user_updated",
+            "product_created", "product_updated", "product_status_changed", "inventory_changed",
+            "behavior",
+            "order_created", "order_cancelled", "order_paid",
+            "refund_requested", "refund_completed");
 
     private final PipelineRunMapper runMapper;
     private final PipelineStageRunMapper stageMapper;
@@ -208,6 +217,30 @@ public class PipelineService {
                 }
                 return (long) events.size();
             });
+            // §10.3：流水线详情展示 ODS 输入/输出/隔离数（与 EventOdsLoadJob 契约口径一致：
+            // 接受=schema_version=1.0 且 event_id/event_type/event_time 非空且类型在合法集合）
+            PipelineStageRun loadStage = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
+                    .eq(PipelineStageRun::getRunId, run.getId())
+                    .eq(PipelineStageRun::getStageCode, "LOAD_ODS")
+                    .orderByDesc(PipelineStageRun::getId).last("LIMIT 1"));
+            if (loadStage != null) {
+                long accepted = events.stream().filter(e -> "1.0".equals(e.schemaVersion())
+                        && !isBlank(e.eventId()) && !isBlank(e.eventType()) && !isBlank(e.eventTime())
+                        && ODS_ACCEPTED_TYPES.contains(e.eventType())).count();
+                long rejected = events.size() - accepted;
+                Map<String, Object> evidence = new LinkedHashMap<>();
+                evidence.put("odsInputRecords", (long) events.size());
+                evidence.put("odsAcceptedRecords", accepted);
+                evidence.put("odsRejectedRecords", rejected);
+                // 采集层隔离（schema_version 不符等）来自 manifest，§9.3 quarantine
+                Number q = (Number) manifestRef.get().get("quarantinedRecords");
+                if (q != null) {
+                    evidence.put("odsQuarantinedRecords", q.longValue());
+                }
+                evidence.put("contracted", "odl: total=input, output=accepted, quarantine=rejected (Spark 侧同口径)");
+                loadStage.setEvidence(toJson(evidence));
+                stageMapper.updateById(loadStage);
+            }
 
             // DWD 清洗（LOCAL：契约级校验 + 去重计数；集群：spark-jobs bdw）
             stage(run.getId(), "BUILD_DWD", () -> {
@@ -215,8 +248,40 @@ public class PipelineService {
                         EventContract.BEHAVIOR.equals(e.eventType())
                                 && (isBlank(e.payload().get("user_id")) || isBlank(e.payload().get("product_id"))))
                         .count();
-                return (long) events.size() - bad;
+                long total = events.size();
+                long behaviorEvents = events.stream()
+                        .filter(e -> EventContract.BEHAVIOR.equals(e.eventType())).count();
+                long uniqueBehavior = events.stream()
+                        .filter(e -> EventContract.BEHAVIOR.equals(e.eventType()))
+                        .map(EventEnvelope::eventId).distinct().count();
+                long duplicateRejected = behaviorEvents - uniqueBehavior;
+                return total - bad - duplicateRejected;
             });
+            // §11.4 第 1 条：行为事件 event_id 重复 → 1 有效行，重复进拒绝表（Java 侧计数口径）
+            PipelineStageRun dwdStage = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
+                    .eq(PipelineStageRun::getRunId, run.getId())
+                    .eq(PipelineStageRun::getStageCode, "BUILD_DWD")
+                    .orderByDesc(PipelineStageRun::getId).last("LIMIT 1"));
+            if (dwdStage != null) {
+                long behaviorEvents = events.stream()
+                        .filter(e -> EventContract.BEHAVIOR.equals(e.eventType())).count();
+                long uniqueBehavior = events.stream()
+                        .filter(e -> EventContract.BEHAVIOR.equals(e.eventType()))
+                        .map(EventEnvelope::eventId).distinct().count();
+                long contractBad = events.stream().filter(e ->
+                        EventContract.BEHAVIOR.equals(e.eventType())
+                                && (isBlank(e.payload().get("user_id")) || isBlank(e.payload().get("product_id"))))
+                        .count();
+                Map<String, Object> evidence = new LinkedHashMap<>();
+                evidence.put("dwdInputRecords", (long) events.size());
+                evidence.put("behaviorEvents", behaviorEvents);
+                evidence.put("behaviorUnique", uniqueBehavior);
+                evidence.put("duplicateRejected", behaviorEvents - uniqueBehavior);
+                evidence.put("contractBad", contractBad);
+                evidence.put("contracted", "bdw: event_id 重复→reject 表，每重复组 1 条 DUPLICATE_EVENT (Spark 侧已验证 10→1)");
+                dwdStage.setEvidence(toJson(evidence));
+                stageMapper.updateById(dwdStage);
+            }
 
             // DWS 主题聚合（LOCAL：透视计数占位，与计算器口径一致）
             stage(run.getId(), "BUILD_DWS", () ->

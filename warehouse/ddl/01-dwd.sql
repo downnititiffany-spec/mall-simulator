@@ -41,11 +41,14 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_dwd.dwd_order_detail (
     order_date    STRING,
     city_level    STRING,
     paid_at       TIMESTAMP COMMENT 'order_paid 事件时间',
-    refund_amount DECIMAL(18,2) COMMENT '累计退款金额（refund_completed 汇总）',
+    order_amount  DECIMAL(18,2) COMMENT '订单优惠后应付总额（order_created.total_amount）',
+    paid_amount   DECIMAL(18,2) COMMENT '实际成功支付金额（order_paid.amount，refund_id 去重后最新）',
+    refund_amount DECIMAL(18,2) COMMENT '累计已完成退款金额（refund_completed 按 refund_id 去重汇总）',
+    net_paid_amount DECIMAL(18,2) COMMENT '=paid_amount−refund_amount（净销售口径）',
     final_paid_flag INT COMMENT '1=有效支付（口径依据，§21.3）',
     final_refunded_flag INT COMMENT '1=完全退款（有效复购率排除）'
 )
-COMMENT '订单明细（状态展开+金额核对）'
+COMMENT '订单明细（状态展开+金额核对，§11.3）'
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dw_dwd.db/dwd_order_detail';

@@ -50,7 +50,27 @@
   - 质量门按设计阻断演示：金额对账失败 → PIPELINE_QUALITY_FAILED 新指标未发布（非回调 bug，为构造数据不配对所致；配对数据即 SUCCESS）
   - 幂等：相同 Idempotency-Key 重发返回原 runId=6 不重跑
   - 提交：427427c（R3 采集整改）
-- [ ] **R4 ODS/DWD**：全主题 ODS、维度、行为/交易 DWD、reject 表、迟到重算
+- [x] **R4 ODS/DWD**：全主题 ODS、维度、行为/交易 DWD、reject 表、迟到重算。验收证据（2026-09-07 实测 spark-submit + spark-sql）：
+  - 设计修正（R4 核心）：ODS 模板 SQL 改为从显式 Schema 视图读取（EventLandingSchema.structType 注册 `landing_valid` 视图），替代 `json.\`path\`` 自动推断——后者会缺失 payload 中未出现的字段（reason/completed_at）导致 FIELD_NOT_FOUND（§10.2 显式 StructType 要求）
+  - OdsLoadSql 四主题模板（user/product/behavior/trade）全部 INSERT OVERWRITE PARTITION(dt,hour)，白名单+event_id/event_time 非空校验；EventOdsLoadJob 单入口：input=原始行数，accepted=通过校验，rejected=input-accepted
+  - **odl 真实验证（spark-submit local[2] + 本地 warehouse）**：input=36 / output=35 / rejected=1，message `accepted=35 rejectedVersionKeys=1 topics=4` SUCCESS（§10.3：总输入=成功+隔离 36=35+1）
+  - §10.3 每种事件类型≥1 黄金记录：ODS 分区（spark-sql）user 08=2/09=1，product 08=3/09=1，behavior 10=13，trade 11=4/12=4/13=3/14=2 + 迟到 20260902 h09=2
+  - 幂等重跑（§10.3 第 4 条）：同参重跑 odl 输出仍 input=36/output=35，spark-sql 复查 behavior=13/trade=15 不重复
+  - **dim 维度（新建 DimensionBuildJob + DimSql userSnapshot/productSnapshot）**：user 3→2（u1 事件更新覆盖 member_level=platinum）、product 4→2（同 product_id 取最新，p101 无线耳机Pro 138.00 / p102 保温杯 88.00），source_batch_id=42 落库（§11.2 维度只从 ODS 事件流，禁止直连商城 DB）
+  - **tdw 交易 DWD（新建 TradeDwdJob + OrderTradeCompiler 纯状态机）**：15 交易事件 → 6 行 dwd_order_detail，迟到退款动态分区重算
+  - §11.4 断言（spark-sql 核实）：
+    1) event_id 重复 10 次→1 有效行：bdw input=13（含 b1×10）→ dwd_user_behavior_detail 4 行（b1/b2/b3/b4 各 1），dwd_reject_record 落 b1 DUPLICATE_EVENT
+    2) 双商品订单 1 个订单展开 2 行：order 1001 → product 101/102 两行
+    3) 取消不入 GMV：1002 CANCELLED final_paid_flag=0
+    4) 全额退款 GMV 保留支付额、净销售 0：1003 REFUNDED paid=150.00 refund=150.00 net=0.00 final_paid=1 final_refunded=1
+    5) 迟到退款重算原业务日：1005 退款事件 event_time=2026-09-02 迟到，但 dwd_order_detail dt=20260901（订单创建日），REFUNDED net=0
+    6) 部分退款：1004 REFUNDING paid=100 refund=30 net=70
+  - 维度 LEFT JOIN：dwd_order_detail 关联 dim_product(dim_product_id)/dim_user(city_level)（COALESCE 兜底 -1/unknown）
+  - **R4h 流水线 evidence（§10.3 最后一条：流水线详情能看输入/输出/隔离数）**：LOAD_ODS evidence 落 `{odsInputRecords,odsAcceptedRecords,odsRejectedRecords,odsQuarantinedRecords}`；BUILD_DWD evidence 落 `{dwdInputRecords,behaviorEvents,behaviorUnique,duplicateRejected,contractBad}`。实测 run=11：LOAD_ODS input=3/accepted=3/rejected=0；BUILD_DWD behaviorEvents=2/behaviorUnique=1/duplicateRejected=1（2 重复→1 有效）records=2（Java 侧口径与 Spark bdw 一致）
+  - 单测 35/35 绿（SqlTemplateSpec 含 OdsLoadSql 5 新签名 / OrderTradeCompilerSpec 7 / JobArgsRegistrySpec 8 作业+依赖 / 等）；JobRegistry 8 作业：odl/bdw/dim/tdw/usw/fna/ljp/sci，依赖 dim→[odl]、tdw→[odl,dim]、bdw→[odl]
+  - ODS 商品表扩列（payload_category_name/payload_parent_category_id/payload_parent_category_name）同步三处：模板 OdsLoadSql / 本地 LocalSchemaInitJob / 生产 warehouse/ddl/00-ods.sql
+  - 验证 warehouse 迁至 `.verify/r4-wh`（spark-jobs/target 会被 mvn clean 清除）；黄金数据 `.verify/r4-landing/events.jsonl`（36 事件，gitignore）
+  - 提交：本期提交（feat: ODS/DWD 全主题 + dim/tdw 作业 + pipeline evidence）
 - [ ] **R5 DWS/ADS**：真实调用全部核心 DWS、修复漏斗/热度、八张核心 ADS、层间对账
 - [ ] **R6 流水线**：异步 taskId、JobSubmitter、externalJobId、分阶段恢复、幂等
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致

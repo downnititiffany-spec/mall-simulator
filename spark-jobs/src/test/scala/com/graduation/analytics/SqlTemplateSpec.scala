@@ -1,6 +1,6 @@
 package com.graduation.analytics
 
-import com.graduation.analytics.sql.{AdsSql, DwdSql, DwsSql, OdsLoadSql}
+import com.graduation.analytics.sql.{AdsSql, DimSql, DwdSql, DwsSql, OdsLoadSql}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -10,14 +10,71 @@ import org.scalatest.matchers.should.Matchers
 class SqlTemplateSpec extends AnyFlatSpec with Matchers {
 
   "OdsLoadSql" should "版本过滤并派生 dt/hour 分区" in {
-    val sql = OdsLoadSql.behaviorFromLanding("/landing/events")
+    val sql = OdsLoadSql.behaviorFromLanding(7L)
     val lower = sql.toLowerCase
     lower should include("schema_version = '1.0'")
     lower should include("event_type = 'behavior'")
-    lower should include("json.`/landing/events`")
+    lower should include("landing_valid")
     lower should include("partition (dt, hour)")
     lower should include("regexp_replace(substr(event_time, 1, 10), '-', '')")
     lower should include("substr(event_time, 12, 2)")
+    lower should include("7 as ingest_batch_id")
+  }
+
+  it should "用户主题 ODS 覆盖 user_created/user_updated 且保留画像字段" in {
+    val sql = OdsLoadSql.userFromLanding(8L)
+    val lower = sql.toLowerCase
+    lower should include("event_type in ('user_created', 'user_updated')")
+    lower should include("payload_user_id")
+    lower should include("payload_age_group")
+    lower should include("payload_member_level")
+    lower should include("payload_register_time")
+    lower should include("'landing' as source_file")
+  }
+
+  it should "商品主题 ODS 覆盖商品与库存事件且金额转 DECIMAL" in {
+    val sql = OdsLoadSql.productFromLanding(9L)
+    val lower = sql.toLowerCase
+    lower should include("product_status_changed")
+    lower should include("inventory_changed")
+    lower should include("payload_price")
+    lower should include("cast(payload.price as decimal(18,2))")
+  }
+
+  it should "交易主题 ODS 覆盖订单/支付/退款且不被 behavior 过滤掉" in {
+    val sql = OdsLoadSql.tradeFromLanding(10L)
+    val lower = sql.toLowerCase
+    lower should include("order_created")
+    lower should include("order_paid")
+    lower should include("refund_completed")
+    lower should include("payload_items")
+    lower should include("payload_refund_id")
+    lower should not include "event_type = 'behavior'"
+  }
+
+  it should "隔离行按未知版本或缺失主键筛选" in {
+    val sql = OdsLoadSql.rejectedSelect()
+    val lower = sql.toLowerCase
+    lower should include("schema_version <> '1.0'")
+    lower should include("event_id is null")
+    lower should include("bad_version_or_key")
+  }
+
+  "DimSql" should "用户维度取每 user_id 最新事件生成快照并保留来源批次" in {
+    val sql = DimSql.userSnapshot("20260901")
+    val lower = sql.toLowerCase
+    lower should include("row_number() over (partition by payload_user_id order by event_time desc)")
+    lower should include("payload_user_id")
+    lower should include("source_batch_id")
+    lower should include("partition(dt = '20260901')")
+  }
+
+  it should "商品维度取每 product_id 最新事件并做 unknown key 兜底" in {
+    val sql = DimSql.productSnapshot("20260901")
+    val lower = sql.toLowerCase
+    lower should include("row_number() over (partition by payload_product_id order by event_time desc)")
+    lower should include("'unknown'")
+    lower should include("-1")
   }
 
   "DwdSql" should "event_id 去重且只保留合法枚举" in {

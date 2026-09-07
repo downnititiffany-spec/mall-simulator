@@ -10,7 +10,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_dim.dim_user (
     city_level    STRING,
     member_level  STRING,
     register_date STRING COMMENT 'yyyy-MM-dd',
-    register_time TIMESTAMP
+    register_time TIMESTAMP,
+    source_batch_id BIGINT COMMENT '来源采集批次（§11.2）'
 )
 COMMENT '用户维度（模拟属性，无真实个人信息）'
 PARTITIONED BY (dt STRING)
@@ -27,7 +28,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_dim.dim_product (
     brand_id     BIGINT,
     price        DECIMAL(18,2),
     cost         DECIMAL(18,2),
-    status       STRING
+    status       STRING,
+    source_batch_id BIGINT COMMENT '来源采集批次（§11.2）'
 )
 COMMENT '商品维度（含一级/二级分类归属）'
 PARTITIONED BY (dt STRING)

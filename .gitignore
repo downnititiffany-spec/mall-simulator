@@ -50,3 +50,8 @@ tmp/
 # ── 操作系统 ──
 .DS_Store
 Thumbs.db
+# R4 验证产物（黄金数据 + 本地 warehouse）
+.verify/
+token.txt
+r4-*.json
+platform-r4*.log
