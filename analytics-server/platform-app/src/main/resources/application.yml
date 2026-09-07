@@ -1,2 +1,14 @@
 server:
   port: 8091
+
+# R1 平台元数据库（整改书 §7.1；账号由 init-three-dbs.sql 创建）
+platform:
+  meta:
+    url: ${PLATFORM_META_URL:jdbc:mysql://127.0.0.1:3306/analytics_meta?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
+    username: ${PLATFORM_META_USER:meta_app}
+    password: ${PLATFORM_META_PASSWORD:meta_app_pw_2026}
+
+# 迁移由 MetaFlywayInitializer 显式执行（classpath:db/meta）；默认 flyway 关闭
+spring:
+  flyway:
+    enabled: false

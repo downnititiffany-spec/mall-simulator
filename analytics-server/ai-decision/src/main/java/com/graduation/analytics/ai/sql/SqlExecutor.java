@@ -30,12 +30,11 @@ public class SqlExecutor {
     public static final int MAX_ROWS = 1000;
 
     @org.springframework.beans.factory.annotation.Autowired
-    @org.springframework.beans.factory.annotation.Qualifier("dataSource")
     private DataSource dataSource;
 
-    /** 只读账号数据源（可选：未配置 mall.reader.url 时为 null，回退应用源） */
+    /** 只读账号数据源（可选：未配置 metricReadDataSource 时为 null，回退主源） */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
-    @org.springframework.beans.factory.annotation.Qualifier("readerDataSource")
+    @org.springframework.beans.factory.annotation.Qualifier("metricReadDataSource")
     private DataSource readerDataSource;
 
     public record ExecutionResult(List<Map<String, Object>> rows, long elapsedMs, boolean truncated) {

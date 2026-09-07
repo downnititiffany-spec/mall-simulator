@@ -11,7 +11,19 @@
   <artifactId>platform-app</artifactId>
   <name>platform-app</name>
   <description>分析平台 Spring Boot 启动模块（R1 骨架：可独立启动，端口 8091）</description>
-    <dependencies>
+    <dependencies>    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-mysql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.baomidou</groupId>
+      <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+      <version>${mybatis-plus.version}</version>
+    </dependency>
     <dependency>
       <groupId>com.graduation.analytics</groupId>
       <artifactId>connection-ingestion</artifactId>

@@ -1,5 +1,6 @@
 package com.graduation.analytics;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -9,6 +10,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * ai-decision 及三库（analytics_meta / analytics_metric）迁移与代码。
  */
 @SpringBootApplication
+@MapperScan({"com.graduation.analytics.ingestion.mapper",
+        "com.graduation.analytics.pipeline.mapper",
+        "com.graduation.analytics.metric.mapper",
+        "com.graduation.analytics.ai.mapper",
+        "com.graduation.analytics.decision.mapper",
+        "com.graduation.analytics.auth.mapper"})
 public class AnalyticsApplication {
 
     public static void main(String[] args) {
