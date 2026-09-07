@@ -26,7 +26,10 @@
 ## 执行计划（严格 R0→R9）
 
 - [x] **R0 冻结与基线**：文档备份（docs/backups/ 12 份）、git tag v0.9-protype-baseline、整改分支、README 状态标注（已完成）
-- [x] **R1 应用和数据库边界（骨架）**：三库创建（mall_business/analytics_meta/analytics_metric）+ 四账号隔离（mall_app/meta_app/metric_pub/metric_read，init-three-dbs.sql）；analytics-server 父工程 + 6 模块骨架（platform-app 可独立启动 8091，health OK）；迁移按整改书 §7.3 拆三套 Flyway 集合（business/meta/metric，split-migrations.ps1）；平台代码迁移、边界测试、互停验证待后续轮
+- [x] **R1 应用和数据库边界**：三库创建（mall_business/analytics_meta/analytics_metric）+ 四账号隔离（mall_app/meta_app/metric_pub/metric_read，init-three-dbs.sql）；analytics-server 父工程 + 6 模块骨架（platform-app 可独立启动 8091）；迁移按整改书 §7.3 拆三套 Flyway 集合（business/meta/metric）；平台代码迁移 81 文件；三数据源接线（meta 主 + metricReadDataSource 只读，metric_read 实测 CREATE 被拒 1142）；边界测试（grep com.graduation.mall = 空）；互停验证（平台停止后商城 200；商城停止后平台启动 200）。验收证据：
+  - platform-app 启动：`/api/v1/health`=200，`Tomcat started on port 8091`
+  - Flyway：analytics_meta V1-V5 全绿，16 张平台表 + 15 条指标字典 + admin/operator/analyst 种子
+  - 提交：71189d1（骨架）、b589134（代码迁移）、1eee26f（启动+迁移修复）、后续互停/接线提交
 - [ ] **R2 RuntimeProfile**：实体/表/Service/API；Local/HDFS LandingStorage；LocalProcess/Ssh JobSubmitter
 - [ ] **R3 采集**：字节偏移、accepted/quarantine/manifest、WAIT_LANDING 认 manifest
 - [ ] **R4 ODS/DWD**：全主题 ODS、维度、行为/交易 DWD、reject 表、迟到重算
