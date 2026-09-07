@@ -27,7 +27,10 @@
         <div class="chart-title">近 7 日活跃用户与行为量</div>
         <BaseChart :option="activeOption" :height="260" />
       </div>
-      <div class="el-empty" v-if="snapshotId">数据快照：{{ snapshotId }}（数据更新时间见快照详情）</div>
+      <div class="el-empty" v-if="snapshotId">
+        数据快照：<span class="mono">{{ snapshotId }}</span>
+        <span style="margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--color-muted);color:var(--color-muted-foreground);font-size:12px">口径 v1 · 数据更新时间见快照详情</span>
+      </div>
     </template>
   </div>
 </template>

@@ -84,41 +84,5 @@ const onLogout = async () => {
 </script>
 
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f7fa; }
-.layout { display: flex; min-height: 100vh; }
-.sidebar {
-  width: 220px; background: #1f2937; color: #e5e7eb; display: flex; flex-direction: column; flex-shrink: 0;
-}
-.logo { padding: 20px 16px; font-weight: 700; font-size: 15px; color: #fff; letter-spacing: 1px; }
-nav { flex: 1; padding: 8px 0; }
-.nav-item {
-  display: block; padding: 10px 20px; color: #cbd5e1; text-decoration: none; font-size: 14px;
-  border-left: 3px solid transparent;
-}
-.nav-item:hover { background: #374151; color: #fff; }
-.nav-item.router-link-active { background: #374151; color: #fff; border-left-color: #3b82f6; }
-.sidebar-foot { padding: 14px 16px; font-size: 12px; color: #6b7280; }
-.user-info {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  border-top: 1px solid #374151; padding-top: 12px; margin-bottom: 10px;
-}
-.user-line { color: #cbd5e1; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.logout-btn {
-  flex-shrink: 0; border: 1px solid #4b5563; background: transparent; color: #cbd5e1;
-  font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;
-}
-.logout-btn:hover { background: #374151; color: #fff; border-color: #6b7280; }
-.version { color: #6b7280; }
-.content { flex: 1; padding: 24px; min-width: 0; }
-.page-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #111827; }
-.metric-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
-.metric-card { background: #fff; border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-.metric-card .label { font-size: 12px; color: #6b7280; }
-.metric-card .value { font-size: 22px; font-weight: 700; color: #111827; margin-top: 4px; }
-.metric-card .unit { font-size: 12px; color: #9ca3af; margin-left: 2px; }
-.chart-box { background: #fff; border-radius: 8px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 16px; }
-.chart-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #374151; }
-.table-box { background: #fff; border-radius: 8px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-.el-empty { color: #9ca3af; font-size: 13px; padding: 20px; text-align: center; }
+/* 全局主题由 styles/theme.css 提供（设计令牌/壳/卡片/表格/控件）。 */
 </style>
