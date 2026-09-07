@@ -30,7 +30,7 @@ class JobArgsRegistrySpec extends AnyFlatSpec with Matchers {
     JobRegistry.dependencies("bdw") should be(List("odl"))
     JobRegistry.dependencies("dim") should be(List("odl"))
     JobRegistry.dependencies("tdw") should be(List("odl", "dim"))
-    JobRegistry.dependencies("usw") should be(List("bdw"))
+    JobRegistry.dependencies("usw") should be(List("bdw", "tdw"))
     JobRegistry.dependencies("fna") should be(List("usw"))
     JobRegistry.dependencies("odl") should be(List.empty)
     JobRegistry.dependencies("ljp") should be(List.empty)

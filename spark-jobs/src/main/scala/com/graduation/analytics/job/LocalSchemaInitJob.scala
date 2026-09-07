@@ -114,7 +114,7 @@ object LocalSchemaInitJob {
     ("dw_dws", """
         CREATE TABLE IF NOT EXISTS dw_dws.dws_user_behavior_day (
           user_id BIGINT, pv BIGINT, fav BIGINT, cart BIGINT, search BIGINT,
-          active_hours INT)
+          active_hours INT, buy BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
     ("dw_dws", """
         CREATE TABLE IF NOT EXISTS dw_dws.dws_behavior_funnel_day (
@@ -177,6 +177,18 @@ object LocalSchemaInitJob {
         CREATE TABLE IF NOT EXISTS dw_ads.ads_sale_trend (
           order_count BIGINT, buyer_count BIGINT, sale_amount DECIMAL(18,2),
           avg_order_value DECIMAL(18,2))
+        USING parquet PARTITIONED BY (dt STRING)"""),
+    ("dw_ads", """
+        CREATE TABLE IF NOT EXISTS dw_ads.ads_user_profile (
+          user_id BIGINT, r INT, f INT, m INT, value_group STRING,
+          active_level STRING, favorite_category BIGINT, last_active_date STRING,
+          last_buy_date STRING, lifecycle_state STRING, rule_version STRING,
+          calc_date STRING)
+        USING parquet PARTITIONED BY (dt STRING)"""),
+    ("dw_ads", """
+        CREATE TABLE IF NOT EXISTS dw_ads.ads_data_quality (
+          rule_code STRING, check_count BIGINT, error_count BIGINT,
+          error_rate DECIMAL(8,6), passed INT, threshold STRING)
         USING parquet PARTITIONED BY (dt STRING)""")
   )
 }

@@ -21,9 +21,8 @@ PARTITIONED BY (dt STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dw_ads.db/ads_operation_overview';
 
--- 转化漏斗（页面/AI 直接使用）
+-- 转化漏斗（页面/AI 直接使用；dt 仅作分区列，不设普通列）
 CREATE EXTERNAL TABLE IF NOT EXISTS dw_ads.ads_behavior_funnel (
-    dt             STRING,
     stage          STRING COMMENT 'view/intent/order/pay',
     user_count     BIGINT,
     conversion_rate DECIMAL(8,4) COMMENT '后一阶段/前一阶段，首阶段=1',
@@ -33,9 +32,8 @@ PARTITIONED BY (dt STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dw_ads.db/ads_behavior_funnel';
 
--- 活跃趋势
+-- 活跃趋势（dt 仅作分区列，不设普通列）
 CREATE EXTERNAL TABLE IF NOT EXISTS dw_ads.ads_active_trend (
-    dt             STRING,
     dau            BIGINT,
     behavior_count BIGINT
 )

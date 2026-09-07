@@ -4,6 +4,7 @@ package com.graduation.analytics.job
  * 作业注册表（§5.3.2 依赖限定）：code 唯一。
  * 依赖顺序用于流水线编排（阶段 6 JobSubmitter 引用）。
  * R4：odl 全主题 ODS → bdw 行为 DWD / dim 维度 / tdw 交易 DWD。
+ * R5：usw 聚合 7 张 DWS（行为+订单），fna 产出 8 张核心 ADS。
  */
 object JobRegistry {
 
@@ -24,7 +25,7 @@ object JobRegistry {
     "bdw" -> List("odl"),
     "dim" -> List("odl"),
     "tdw" -> List("odl", "dim"),
-    "usw" -> List("bdw"),
+    "usw" -> List("bdw", "tdw"),
     "fna" -> List("usw"),
     "ljp" -> List.empty,  // 本地 JSON→Parquet 验证
     "sci" -> List.empty   // 本地表初始化自举
