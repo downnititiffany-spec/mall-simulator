@@ -25,8 +25,8 @@
 
 ## 执行计划（严格 R0→R9）
 
-- [x] **R0 冻结与基线**：文档备份（docs/backups/ 12 份）、git tag v0.9-protype-baseline、整改分支、README 状态标注（本轮）
-- [ ] **R1 应用和数据库边界**：新建 analytics-server；三库拆分（mall_business/analytics_meta/analytics_metric）；平台代码迁移；禁止跨模块依赖测试
+- [x] **R0 冻结与基线**：文档备份（docs/backups/ 12 份）、git tag v0.9-protype-baseline、整改分支、README 状态标注（已完成）
+- [x] **R1 应用和数据库边界（骨架）**：三库创建（mall_business/analytics_meta/analytics_metric）+ 四账号隔离（mall_app/meta_app/metric_pub/metric_read，init-three-dbs.sql）；analytics-server 父工程 + 6 模块骨架（platform-app 可独立启动 8091，health OK）；迁移按整改书 §7.3 拆三套 Flyway 集合（business/meta/metric，split-migrations.ps1）；平台代码迁移、边界测试、互停验证待后续轮
 - [ ] **R2 RuntimeProfile**：实体/表/Service/API；Local/HDFS LandingStorage；LocalProcess/Ssh JobSubmitter
 - [ ] **R3 采集**：字节偏移、accepted/quarantine/manifest、WAIT_LANDING 认 manifest
 - [ ] **R4 ODS/DWD**：全主题 ODS、维度、行为/交易 DWD、reject 表、迟到重算
