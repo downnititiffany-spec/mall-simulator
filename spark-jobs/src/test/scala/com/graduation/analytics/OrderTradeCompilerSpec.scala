@@ -61,7 +61,7 @@ class OrderTradeCompilerSpec extends AnyFlatSpec with Matchers {
     val d = OrderTradeCompiler.compile(Seq(
       ev("e1", "1004", "order_created", "2026-09-04T10:00:00+08:00", total = Some("150.00")),
       ev("e2", "1004", "order_paid", "2026-09-04T10:05:00+08:00", amount = Some("150.00")),
-      ev("e3", "1004", "refund_requested", "2026-09-04T11:00:00+08:00", refundId = Some("r1")),
+      ev("e3", "1004", "refund_created", "2026-09-04T11:00:00+08:00", refundId = Some("r1")),
       ev("e4", "1004", "refund_completed", "2026-09-04T11:30:00+08:00", amount = Some("150.00"), refundId = Some("r1"))
     )).get
 
@@ -104,7 +104,7 @@ class OrderTradeCompilerSpec extends AnyFlatSpec with Matchers {
     val d = OrderTradeCompiler.compile(Seq(
       ev("e1", "1007", "order_created", "2026-09-01T10:00:00+08:00", total = Some("80.00")),
       ev("e2", "1007", "order_paid", "2026-09-01T10:05:00+08:00", amount = Some("80.00")),
-      ev("e3", "1007", "refund_requested", "2026-09-02T09:00:00+08:00", refundId = Some("r1")),
+      ev("e3", "1007", "refund_created", "2026-09-02T09:00:00+08:00", refundId = Some("r1")),
       ev("e4", "1007", "refund_completed", "2026-09-02T09:30:00+08:00", amount = Some("80.00"), refundId = Some("r1"))
     )).get
 

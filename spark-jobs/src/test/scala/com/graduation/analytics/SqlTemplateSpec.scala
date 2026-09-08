@@ -22,10 +22,10 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     lower should include("7 as ingest_batch_id")
   }
 
-  it should "用户主题 ODS 覆盖 user_created/user_updated 且保留画像字段" in {
+  it should "用户主题 ODS 覆盖 user_registered 且保留画像字段" in {
     val sql = OdsLoadSql.userFromLanding(8L)
     val lower = sql.toLowerCase
-    lower should include("event_type in ('user_created', 'user_updated')")
+    lower should include("event_type in ('user_registered')")
     lower should include("payload_user_id")
     lower should include("payload_age_group")
     lower should include("payload_member_level")
@@ -36,8 +36,9 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
   it should "商品主题 ODS 覆盖商品与库存事件且金额转 DECIMAL" in {
     val sql = OdsLoadSql.productFromLanding(9L)
     val lower = sql.toLowerCase
-    lower should include("product_status_changed")
-    lower should include("inventory_changed")
+    lower should include("product_updated")
+    lower should include("stock_reserved")
+    lower should include("stock_changed")
     lower should include("payload_price")
     lower should include("cast(payload.price as decimal(18,2))")
   }
@@ -47,6 +48,7 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     val lower = sql.toLowerCase
     lower should include("order_created")
     lower should include("order_paid")
+    lower should include("refund_created")
     lower should include("refund_completed")
     lower should include("payload_items")
     lower should include("payload_refund_id")
@@ -70,12 +72,14 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     lower should include("partition(dt = '20260901')")
   }
 
-  it should "商品维度取每 product_id 最新事件并做 unknown key 兜底" in {
+  it should "商品维度取每 product_id 最新建档事件并做 unknown key 兜底（库存事件不进快照）" in {
     val sql = DimSql.productSnapshot("20260901")
     val lower = sql.toLowerCase
     lower should include("row_number() over (partition by payload_product_id order by event_time desc)")
     lower should include("'unknown'")
     lower should include("-1")
+    lower should include("event_type in ('product_created', 'product_updated')")
+    lower should not include "stock_reserved"
   }
 
   "DwdSql" should "event_id 去重且只保留合法枚举" in {

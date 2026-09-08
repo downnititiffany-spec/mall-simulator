@@ -47,7 +47,7 @@ case class TradeOrderDetail(
 case class TradeEvent(
     eventId: String,
     orderId: String,
-    eventType: String,           // order_created/order_paid/order_cancelled/refund_requested/refund_completed
+    eventType: String,           // order_created/order_paid/order_cancelled/refund_created/refund_completed（契约 12 类）
     eventTime: String,
     amount: Option[String],      // 支付/退款金额字符串
     totalAmount: Option[String], // 订单应付总额

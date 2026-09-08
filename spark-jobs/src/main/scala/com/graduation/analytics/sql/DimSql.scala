@@ -32,7 +32,7 @@ object DimSql {
        |WHERE u.rn = 1
        |""".stripMargin
 
-  /** dim_product：每个 product_id 取最近一次商品/库存事件生成全量快照 */
+  /** dim_product：每个 product_id 取最近一次商品建档/变更事件生成全量快照 */
   def productSnapshot(dt: String): String =
     s"""
        |INSERT OVERWRITE TABLE dw_dim.dim_product PARTITION(dt = '$dt')
@@ -58,6 +58,7 @@ object DimSql {
        |  WHERE dt = '$dt'
        |    AND schema_version = '1.0'
        |    AND payload_product_id IS NOT NULL
+       |    AND event_type IN ('product_created', 'product_updated')
        |) p
        |WHERE p.rn = 1
        |""".stripMargin

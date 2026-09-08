@@ -71,19 +71,19 @@ object OdsLoadSql {
     )), nullable = true)
   ))
 
-  /** 合法事件类型 → ODS 目标表映射（§10.1） */
+  /** 合法事件类型 → ODS 目标表映射（§10.1，与 docs/contracts/event-contract.md §3 12 类对齐） */
   val eventTypeToTable: Map[String, String] = Map(
-    "user_created" -> "ods_user_event",
-    "user_updated" -> "ods_user_event",
+    "user_registered" -> "ods_user_event",
     "product_created" -> "ods_product_event",
     "product_updated" -> "ods_product_event",
-    "product_status_changed" -> "ods_product_event",
-    "inventory_changed" -> "ods_product_event",
+    "stock_reserved" -> "ods_product_event",
+    "stock_released" -> "ods_product_event",
+    "stock_changed" -> "ods_product_event",
     "behavior" -> "ods_behavior_event",
     "order_created" -> "ods_trade_event",
     "order_cancelled" -> "ods_trade_event",
     "order_paid" -> "ods_trade_event",
-    "refund_requested" -> "ods_trade_event",
+    "refund_created" -> "ods_trade_event",
     "refund_completed" -> "ods_trade_event"
   )
 
@@ -104,7 +104,7 @@ object OdsLoadSql {
        |  SUBSTR(event_time, 12, 2) AS hour
        |FROM $LANDING_VIEW
        |WHERE schema_version = '1.0'
-       |  AND event_type IN ('user_created', 'user_updated')
+       |  AND event_type IN ('user_registered')
        |  AND event_id IS NOT NULL AND event_time IS NOT NULL
        |""".stripMargin
 
@@ -132,7 +132,8 @@ object OdsLoadSql {
        |  SUBSTR(event_time, 12, 2) AS hour
        |FROM $LANDING_VIEW
        |WHERE schema_version = '1.0'
-       |  AND event_type IN ('product_created', 'product_updated', 'product_status_changed', 'inventory_changed')
+       |  AND event_type IN ('product_created', 'product_updated',
+       |                     'stock_reserved', 'stock_released', 'stock_changed')
        |  AND event_id IS NOT NULL AND event_time IS NOT NULL
        |""".stripMargin
 
@@ -182,7 +183,7 @@ object OdsLoadSql {
        |FROM $LANDING_VIEW
        |WHERE schema_version = '1.0'
        |  AND event_type IN ('order_created', 'order_cancelled', 'order_paid',
-       |                     'refund_requested', 'refund_completed')
+       |                     'refund_created', 'refund_completed')
        |  AND event_id IS NOT NULL AND event_time IS NOT NULL
        |""".stripMargin
 
