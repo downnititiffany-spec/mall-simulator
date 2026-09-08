@@ -24,7 +24,8 @@ import static org.mockito.Mockito.when;
 /**
  * R6-7c 真实 Spark 冒烟（L2，单独运行，不进快速套件）：
  * SparkStageExecutor + 真实 LocalProcessSparkSubmitter → 真实 spark-submit → JobRunner，
- * golden 30 条 odl 装载。验证 §四 边界：提交器真实启动 spark-submit、参数被 JobRunner
+ * golden 55 行（R6-8b 扩充：52 接受 / 3 rejected：坏 JSON、schema_version=2.0、缺 event_id）。
+ * 验证 §四 边界：提交器真实启动 spark-submit、参数被 JobRunner
  * 正确解析、externalJobId/记录数/状态落库（spark_job_run）、Spark 确实写出目标分区。
  *
  * 运行：mvn -pl warehouse-pipeline -Dtest=SparkStageExecutorSmokeTest test
@@ -91,7 +92,7 @@ class SparkStageExecutorSmokeTest {
         // Derby 嵌入式元数据库锁：等 sci 进程完全退出后再启动 odl
         Thread.sleep(2000);
 
-        // 2) LOAD_ODS 阶段经 SparkStageExecutor 真跑 odl（golden 30 条）
+        // 2) LOAD_ODS 阶段经 SparkStageExecutor 真跑 odl（golden 55 行：52 接受 / 3 拒绝）
         SparkJobRunMapper mapper = mock(SparkJobRunMapper.class);
         AtomicLong idSeq = new AtomicLong(100L);
         when(mapper.insert(any(SparkJobRun.class))).thenAnswer(inv -> {
@@ -113,7 +114,7 @@ class SparkStageExecutorSmokeTest {
         assertThat(odl.jobCode()).isEqualTo("odl");
         assertThat(odl.externalJobId()).startsWith("lp-");
         assertThat(odl.status()).isEqualTo(SparkJobRun.STATUS_SUCCESS);
-        assertThat(odl.inputRecords()).isEqualTo(30L);
+        assertThat(odl.inputRecords()).isEqualTo(55L);
         assertThat(odl.outputRecords()).isGreaterThan(0);
         assertThat(odl.errorMessage()).isNull();
 
@@ -132,7 +133,7 @@ class SparkStageExecutorSmokeTest {
         assertThat(updated.getPipelineRunId()).isEqualTo(1L);
         assertThat(updated.getRuntimeProfileId()).isEqualTo(7L);
         assertThat(updated.getStatus()).isEqualTo(SparkJobRun.STATUS_SUCCESS);
-        assertThat(updated.getInputRecords()).isEqualTo(30L);
+        assertThat(updated.getInputRecords()).isEqualTo(55L);
         assertThat(updated.getOutputRecords()).isEqualTo(odl.outputRecords());
         assertThat(updated.getRejectedRecords()).isEqualTo(odl.rejectedRecords());
         assertThat(updated.getArgumentsJson()).contains("--jobCode=odl").contains("--businessDate=20260901");
