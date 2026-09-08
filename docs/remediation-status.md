@@ -99,6 +99,8 @@
   - R6-4 PipelineService 可测化重构（编译通过）：注入 `@Qualifier("pipelineExecutor")` Executor；run()/retry() 异步（insert PENDING→executor.execute→立即返回 PENDING taskId，§13.1）；幂等锁 ConcurrentHashMap+二次检查+DuplicateKeyException 兜底（§13.4 并发同键单任务）；数据准备提升到 execute() 顶部幂等重读；QUALITY_CHECK 移入 stage action；completedStages 跳过（重试成功阶段不重复写记录）；`PlatformBeans` 新增 pipelineExecutor bean（core2/max4/queue64）
   - R6-5 PipelineServiceTest（8 断言 GREEN，2.2s 无 Spark/DB）：①异步首提立即返 taskId+PENDING 不阻塞 ②同幂等键返原任务且不新增 updateById ③WAIT_LANDING→LOAD_ODS 七阶段顺序 SUCCESS ④阶段失败→FAILED（RUN_EMPTY_DATA）不发布 ⑤重试只重跑失败阶段（WAIT_LANDING 1 次/LOAD_ODS 2 次，attemptNo=2，§13.4）⑥质量失败→PIPELINE_QUALITY_FAILED 无 PUBLISH/快照/物化 ⑦attemptNo 递增 ⑧并发同键双线程仅 1 次 insert 同 runId
   - 快速测试合集 28/28 GREEN：`.verify/r6-fast-tests-green.log`（JobResultParser 8 + JobCommandBuilder 7 + FakeJobSubmitter 5 + PipelineService 8，2.3s）
+  - R6-6 SparkStageExecutor（新，`pipeline/spark/SparkStageExecutor.java`）：阶段→作业序列映射（LOAD_ODS→odl；BUILD_DWD→bdw,dim,tdw；BUILD_DWS→usw；BUILD_ADS→fna；与 spark-jobs JobRegistry 依赖对齐）；JobCommandBuilder 构建命令→JobSubmitter 提交→externalJobId 非空+argumentsJson 快照落 spark_job_run（§13.3/§21.10 溯源）→轮询日志 JobResultParser 解析；判定：CANCELLED→失败、进程态 FAILED（退出码非0）覆盖日志声称 SUCCESS（§13.2 阶段不能自证）、超时无结果行→失败；修 LocalProcessSparkSubmitter 日志文件名 bug（写 {logPrefix}-{jobId}.log 读 {externalJobId}.log 不一致 → 统一 {externalJobId}.log，§13.3 日志可溯源）。8 测试 GREEN（0.02s）
+  - 快速测试合集 36/36 GREEN：`.verify/r6-fast-tests-green.log`（+SparkStageExecutor 8，6.7s）
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性
