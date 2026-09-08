@@ -63,10 +63,19 @@ public class SparkStageExecutor {
     public List<JobExecution> executeStage(RuntimeProfile profile, Long pipelineRunId,
                                            String stageCode, String businessDate, int attemptNo,
                                            Map<String, String> extraArgs) {
+        return executeStage(profile, pipelineRunId, stageCode, businessDate, attemptNo,
+                extraArgs, null);
+    }
+
+    /** 完整版：显式 --conf（如 spark.sql.warehouse.dir 分区隔离），null 等价便捷版。 */
+    public List<JobExecution> executeStage(RuntimeProfile profile, Long pipelineRunId,
+                                           String stageCode, String businessDate, int attemptNo,
+                                           Map<String, String> extraArgs,
+                                           Map<String, String> confs) {
         List<JobExecution> results = new ArrayList<>();
         for (String jobCode : stageJobs(stageCode)) {
             results.add(executeJob(profile, pipelineRunId, stageCode, jobCode,
-                    businessDate, attemptNo, extraArgs));
+                    businessDate, attemptNo, extraArgs, confs));
         }
         return results;
     }
@@ -74,9 +83,9 @@ public class SparkStageExecutor {
     /** 提交单个作业并等待结果（§13.3：externalJobId 落库非空、argumentsJson 快照溯源） */
     private JobExecution executeJob(RuntimeProfile profile, Long pipelineRunId, String stageCode,
                                     String jobCode, String businessDate, int attemptNo,
-                                    Map<String, String> extraArgs) {
+                                    Map<String, String> extraArgs, Map<String, String> confs) {
         List<String> command = JobCommandBuilder.build(profile, jobCode, businessDate,
-                profile.getId(), attemptNo, extraArgs, null);
+                profile.getId(), attemptNo, extraArgs, confs);
 
         JobSubmitter.SubmitResult sr = submitter.submit(command, "pipeline-" + pipelineRunId + "-" + stageCode);
 

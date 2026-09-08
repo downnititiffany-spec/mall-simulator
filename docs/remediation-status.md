@@ -101,6 +101,13 @@
   - 快速测试合集 28/28 GREEN：`.verify/r6-fast-tests-green.log`（JobResultParser 8 + JobCommandBuilder 7 + FakeJobSubmitter 5 + PipelineService 8，2.3s）
   - R6-6 SparkStageExecutor（新，`pipeline/spark/SparkStageExecutor.java`）：阶段→作业序列映射（LOAD_ODS→odl；BUILD_DWD→bdw,dim,tdw；BUILD_DWS→usw；BUILD_ADS→fna；与 spark-jobs JobRegistry 依赖对齐）；JobCommandBuilder 构建命令→JobSubmitter 提交→externalJobId 非空+argumentsJson 快照落 spark_job_run（§13.3/§21.10 溯源）→轮询日志 JobResultParser 解析；判定：CANCELLED→失败、进程态 FAILED（退出码非0）覆盖日志声称 SUCCESS（§13.2 阶段不能自证）、超时无结果行→失败；修 LocalProcessSparkSubmitter 日志文件名 bug（写 {logPrefix}-{jobId}.log 读 {externalJobId}.log 不一致 → 统一 {externalJobId}.log，§13.3 日志可溯源）。8 测试 GREEN（0.02s）
   - 快速测试合集 36/36 GREEN：`.verify/r6-fast-tests-green.log`（+SparkStageExecutor 8，6.7s）
+  - R6-7 真实 Spark 冒烟（L2，golden 30 条，`.verify/r6-7b-sci-odl-pwsh-smoke.log` + `.verify/r6-7c-real-spark-smoke-logs/`）：
+    - 7a `LocalProcessSparkSubmitterLogTest`（3 测试 GREEN）：真实 `cmd /c echo` 提交→logs() 按 {externalJobId}.log 读回同文件、日志文件按 externalJobId 命名（轮询等文件出现，修复异步守护线程竞态）、缺失文件返回可读消息
+    - 7b PowerShell 真实 spark 冒烟：sci SUCCESS（output=29 表，elapsedMs=5402）+ odl SUCCESS（input=30→output=21→rejected=9，elapsedMs=10625，accepted=21 topics=4），独立 warehouse 隔离
+    - 7c `SparkStageExecutorSmokeTest`（1 测试 GREEN，26.9s 真实 spark）：真实 LocalProcessSparkSubmitter 启动 spark-submit→sci 建表→executor.executeStage(LOAD_ODS, confs) 真跑 odl；断言 externalJobId `lp-` 前缀非空、JobResult 30/21/9、spark_job_run insert(SUBMITTED)+updateById(SUCCESS) 落库、argumentsJson 含 --jobCode=odl/--businessDate=20260901、warehouse 出现 part-* parquet 分区（写出目标分区 §四）
+    - **调试根因**：仓库固定目录 warehouse 为空但 odl SUCCESS——嵌入式 Derby 元数据库（javax.jdo）持久化在 spark-submit CWD 的 `metastore_db/`，首次 sci 建表把表位置绑定到首个 warehouse URI，之后幂等 skip 重建→odl 写旧位置。修复：confs 注入 `spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:derby:<固定路径>;create=true` 隔离元数据库 + 整目录每次重建 + sci 后 2s 等 Derby 锁释放；冒烟目录固定 `tests/r6-smoke-warehouse/`（非 @TempDir，证据可事后查验）
+  - SparkStageExecutor 新增 confs 重载（executeStage/executeJob 透传 → JobCommandBuilder --conf）
+  - 回归：快速套件 8+7+8+8+5+3=39/39 GREEN（`.verify/r6-post-smoke-regression.log`），冒烟后无回归
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性

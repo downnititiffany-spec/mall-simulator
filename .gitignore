@@ -36,6 +36,8 @@ logs/
 metastore_db/
 spark-warehouse/
 derby.log
+# R6 真实 Spark 冒烟运行产物（固定目录，不入库）
+analytics-server/warehouse-pipeline/tests/r6-smoke-warehouse/
 
 # ── 单进程发布产物（由 build-web-and-package.ps1 生成，不入库）──
 mall-simulator/src/main/resources/static/
