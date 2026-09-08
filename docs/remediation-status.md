@@ -92,6 +92,13 @@
   - 修复：userProfile 观察期 yyyyMMdd→yyyy-MM-dd 转换（DATEDIFF 混比失败）、F/M 正向五分位排序方向（ASC）、favorite_category 子查询去聚合（rn=1 直接投影）
   - 提交：R5 特征提交（spark-jobs 7 DWS + 8 ADS + DDL 对齐 + 单测）
 - [ ] **R6 流水线**：异步 taskId、JobSubmitter、externalJobId、分阶段恢复、幂等
+  - 验证策略（R6 提速）：四级测试体系固化为 `docs/r6-verification-strategy.md` —— L0 快速测试（10-30s 无 Spark）/ L1 模块集成（20-100 条）/ L2 真实小链（50-500 条有 Spark 3-10min）/ L3 完整性能（≥10 万，推迟 R9）；缩小数据量不缩业务场景；跨层契约变化才跑完整小链
+  - R6-1 JobResultParser（新，`pipeline/spark/JobResultParser.java`）：逐行只认含 jobCode+status 的 JSON 行取最后一条；exitCode≠0→FAILED 带 "exit=N"；无结果行+exit0→FAILED「未找到 JobResult 结果行」。8 测试 GREEN（0.03s）
+  - R6-2 JobCommandBuilder（新，`pipeline/spark/JobCommandBuilder.java`）：cmd 顺序 submitPath→--master→（非 LOCAL 才 deploy-mode/queue）→--conf 每对占两元素且在 --class 前→--class JobRunner→jar→--runtimeProfileId/--jobCode/--businessDate/--attemptNo→可选 inputVersion/outputSnapshotId→extra；jar 无 scheme 时 LOCAL 绝对化 file:///。7 测试 GREEN（0.02s）
+  - R6-3 FakeJobSubmitter（test 替身，可编程 externalJobId/status/logs/healthCheck/cancel + 命令记录）+ 5 自测 GREEN（0.01s）
+  - R6-4 PipelineService 可测化重构（编译通过）：注入 `@Qualifier("pipelineExecutor")` Executor；run()/retry() 异步（insert PENDING→executor.execute→立即返回 PENDING taskId，§13.1）；幂等锁 ConcurrentHashMap+二次检查+DuplicateKeyException 兜底（§13.4 并发同键单任务）；数据准备提升到 execute() 顶部幂等重读；QUALITY_CHECK 移入 stage action；completedStages 跳过（重试成功阶段不重复写记录）；`PlatformBeans` 新增 pipelineExecutor bean（core2/max4/queue64）
+  - R6-5 PipelineServiceTest（8 断言 GREEN，2.2s 无 Spark/DB）：①异步首提立即返 taskId+PENDING 不阻塞 ②同幂等键返原任务且不新增 updateById ③WAIT_LANDING→LOAD_ODS 七阶段顺序 SUCCESS ④阶段失败→FAILED（RUN_EMPTY_DATA）不发布 ⑤重试只重跑失败阶段（WAIT_LANDING 1 次/LOAD_ODS 2 次，attemptNo=2，§13.4）⑥质量失败→PIPELINE_QUALITY_FAILED 无 PUBLISH/快照/物化 ⑦attemptNo 递增 ⑧并发同键双线程仅 1 次 insert 同 runId
+  - 快速测试合集 28/28 GREEN：`.verify/r6-fast-tests-green.log`（JobResultParser 8 + JobCommandBuilder 7 + FakeJobSubmitter 5 + PipelineService 8，2.3s）
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性
