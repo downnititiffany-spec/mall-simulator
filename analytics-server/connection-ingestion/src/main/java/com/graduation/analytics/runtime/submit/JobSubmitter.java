@@ -26,6 +26,14 @@ public interface JobSubmitter {
     /** 拉取任务日志（截断到合理长度） */
     String logs(String externalJobId);
 
+    /**
+     * 日志位置（R6-12，V2.0 §15.3）：可访问的日志 URI/路径，落 spark_job_run.log_uri，
+     * 供运维与验收溯源。默认无（远程实现可返回远端路径）。
+     */
+    default String logUri(String externalJobId) {
+        return null;
+    }
+
     /** 取消任务 */
     void cancel(String externalJobId);
 

@@ -2,24 +2,18 @@ package com.graduation.analytics.pipeline;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.graduation.analytics.metric.MetricCalculator;
-import com.graduation.analytics.metric.MetricCalculator.MetricDataset;
-import com.graduation.analytics.metric.MetricStore;
-import com.graduation.analytics.metric.AdsMaterializer;
-import com.graduation.analytics.metric.entity.MetricSnapshot;
-import com.graduation.analytics.metric.entity.MetricValue;
-import com.graduation.analytics.metric.mapper.MetricSnapshotMapper;
-import com.graduation.analytics.metric.mapper.MetricValueMapper;
 import com.graduation.analytics.contracts.EventContract;
 import com.graduation.analytics.contracts.EventEnvelope;
 import com.graduation.analytics.contracts.EventClock;
-import com.graduation.analytics.pipeline.entity.DataQualityResult;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineStageRunMapper;
+import com.graduation.analytics.pipeline.spark.SparkStageExecutor;
+import com.graduation.analytics.pipeline.spark.SparkStageExecutorFactory;
 import com.graduation.analytics.runtime.RuntimeProfileService;
+import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +21,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,7 +44,14 @@ import java.util.stream.Stream;
  * 幂等键 = runtimeProfileId+pipelineCode+businessTime+sourceDataVersion（DB 唯一键
  * uk_idempotency 兜底 + 应用层按 key 加锁，§13.4）；同键返回原任务；失败后重试递增
  * attempt_no 且已成功阶段不重复执行（§13.4 恢复）；质量检查失败阻断发布（§5.4.1）。
- * 集群模式各阶段由 spark-jobs 执行（external_job_id），LOCAL 模式由本服务顺序执行。
+ *
+ * R6-11（V2.0 §15.3）：本服务只做**状态机与阶段编排**，不再解析 Landing JSON 计算指标。
+ * 四个计算阶段（LOAD_ODS/BUILD_DWD/BUILD_DWS/BUILD_ADS）全部由 {@link SparkStageExecutor}
+ * 提交真实 spark-jobs，输入/输出/隔离计数一律取 JobResult（§15.3 R6-12：禁止常量或输入数冒充输出），
+ * 每个作业的 external_job_id / log_uri / arguments_json 落 spark_job_run（可溯源）。
+ * 阶段失败立即把 run 置 FAILED，后续依赖阶段不再执行（§15.2 fail-fast）。
+ * 本地 Java 只保留两处非计算职责：WAIT_LANDING 的 READY manifest 门（§9.3）与
+ * QUALITY_CHECK 的质量门（§5.4.1，R6-13 升级为读 staging 结果）。
  */
 @Slf4j
 @Service
@@ -66,15 +66,13 @@ public class PipelineService {
     private final PipelineRunMapper runMapper;
     private final PipelineStageRunMapper stageMapper;
     private final DataQualityResultMapper qualityMapper;
-    private final MetricSnapshotMapper snapshotMapper;
-    private final MetricValueMapper valueMapper;
-    private final AdsMaterializer adsMaterializer;
-    private final MetricCalculator calculator;
-    private final MetricStore metricStore;
     private final QualityChecker qualityChecker;
     private final EventClock eventClock;
     private final ObjectMapper objectMapper;
     private final RuntimeProfileService runtimeProfileService;
+
+    /** R6-11：真实 Spark 阶段执行器工厂（生产注入点；L1 测试注入 Fake） */
+    private final SparkStageExecutorFactory stageExecutorFactory;
 
     /** R6（§13.1）：后台执行线程池（测试注入直接执行器验证状态机） */
     @org.springframework.beans.factory.annotation.Qualifier("pipelineExecutor")
@@ -179,8 +177,10 @@ public class PipelineService {
     private void execute(PipelineRun run) {
         try {
             String businessDate = run.getBusinessTime().toLocalDate().format(KEY_DATE);
-            // 流水线归属的落地根：取运行环境 landingUri（替代硬编码 ./landing，§8.1/§9.1）
+            // §8.1/§15.3 R6-10：一次 run 冻结一份环境快照（提交器与命令均取自该快照）
             RuntimeProfile profile = runtimeProfileService.get(run.getRuntimeProfileId());
+            RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile);
+            SparkStageExecutor executor = stageExecutorFactory.create(snapshot);
             Path landingRoot = parseLandingRoot(profile.getLandingUri());
 
             // §13.4 恢复：重试时已成功阶段不重复执行（阶段记录不再重复写入）
@@ -209,8 +209,9 @@ public class PipelineService {
             if (acceptedDir != null && Files.isDirectory(acceptedDir)) {
                 readAcceptedEvents(acceptedDir, datePrefix, events);
             }
-            // ADS 指标（LOCAL：MetricCalculator；集群：spark-jobs usw/fna 产出）
-            MetricDataset dataset = calculator.compute(events, businessDate);
+            // R6-11：本地 Java **不再**计算任何 ADS 指标（删除 MetricCalculator / local-calculator 路径）。
+            // events 仅服务于两处非计算职责：LOAD_ODS 空数据预检（快速失败，避免白跑 Spark）
+            // 与 QUALITY_CHECK 质量门（§5.4.1；R6-13 改为读 staging 结果）。
 
             // ── WAIT_LANDING（§9.3）：只认 READY manifest ─────────────────
             stage(run.getId(), "WAIT_LANDING", completedStages, () -> {
@@ -218,127 +219,126 @@ public class PipelineService {
                     throw new PipelineStageException("RUN_EMPTY_LANDING",
                             "landing/manifests 无 READY 批次清单（先执行采集并生成 manifest）");
                 }
-                return ((Number) manifest.get("acceptedRecords")).longValue();
+                Map<String, Object> evidence = new LinkedHashMap<>();
+                evidence.put("batchId", manifest.get("batchId"));
+                evidence.put("acceptedUri", manifest.get("acceptedUri"));
+                evidence.put("checksum", manifest.get("checksum"));
+                evidence.put("acceptedRecords", manifest.get("acceptedRecords"));
+                evidence.put("schemaVersions", manifest.get("schemaVersions"));
+                return new StageOutcome(((Number) manifest.get("acceptedRecords")).longValue(), evidence);
             });
-            if (!completedStages.contains("WAIT_LANDING") && manifest != null) {
-                // 证据 batchId/URI/checksum/records 落 stage.evidence（§13.2）
-                PipelineStageRun waitStage = latestStage(run.getId(), "WAIT_LANDING");
-                if (waitStage != null) {
-                    Map<String, Object> evidence = new LinkedHashMap<>();
-                    evidence.put("batchId", manifest.get("batchId"));
-                    evidence.put("acceptedUri", manifest.get("acceptedUri"));
-                    evidence.put("checksum", manifest.get("checksum"));
-                    evidence.put("acceptedRecords", manifest.get("acceptedRecords"));
-                    evidence.put("schemaVersions", manifest.get("schemaVersions"));
-                    waitStage.setEvidence(toJson(evidence));
-                    stageMapper.updateById(waitStage);
+
+            // 业务日预检在 LOAD_ODS 阶段内执行：accepted 目录与业务日事件必须存在，
+            // 否则给出稳定错误码（RUN_EMPTY_DATA），且失败必须留在阶段记录上（§23.2/§15.3 失败留痕）
+            final Map<String, Object> manifestRef = manifest;
+            final Path acceptedDirRef = acceptedDir;
+            final List<EventEnvelope> eventsRef = events;
+
+            // ── LOAD_ODS（§9.1）：真实 spark-jobs odl 装载四主题 ──────────
+            Map<String, String> odsExtra = new LinkedHashMap<>();
+            odsExtra.put("landingDir", acceptedDir == null ? "" : acceptedDir.toUri().toString());
+            if (manifest != null && manifest.get("batchId") != null) {
+                odsExtra.put("batchId", String.valueOf(manifest.get("batchId")));
+            }
+            StageOutcome odsOutcome = runSparkStage(run, executor, snapshot, "LOAD_ODS",
+                    businessDate, completedStages, odsExtra, () -> {
+                        if (manifestRef == null) {
+                            throw new PipelineStageException("RUN_EMPTY_LANDING", "无 READY manifest");
+                        }
+                        if (acceptedDirRef == null || !Files.isDirectory(acceptedDirRef)) {
+                            throw new PipelineStageException("RUN_LOAD_FAILED",
+                                    "accepted 目录不存在: " + acceptedDirRef);
+                        }
+                        if (eventsRef.isEmpty()) {
+                            throw new PipelineStageException("RUN_EMPTY_DATA", "accepted 无归属业务日事件");
+                        }
+                    });
+            if (odsOutcome != null && !completedStages.contains("LOAD_ODS")) {
+                // §10.3：ODS 输入/输出/隔离数 = JobResult 真实计数（R6-12：非 Java 侧估算）
+                Map<String, Object> evidence = new LinkedHashMap<>(odsOutcome.evidence());
+                evidence.put("contracted", "odl: input=Landing 行数, output=四主题写入行数, rejected=版本/主键非法");
+                Number q = manifest == null ? null : (Number) manifest.get("quarantinedRecords");
+                if (q != null) {
+                    evidence.put("odsQuarantinedRecords", q.longValue());
                 }
+                updateStageEvidence(run.getId(), "LOAD_ODS", evidence);
             }
 
-            // ── LOAD_ODS（§9.1）：只读 accepted，装载归属业务日事件 ──────
-            stage(run.getId(), "LOAD_ODS", completedStages, () -> {
-                if (manifest == null) {
-                    throw new PipelineStageException("RUN_EMPTY_LANDING", "无 READY manifest");
-                }
-                if (acceptedDir == null || !Files.isDirectory(acceptedDir)) {
-                    throw new PipelineStageException("RUN_LOAD_FAILED", "accepted 目录不存在: " + acceptedDir);
-                }
-                if (events.isEmpty()) {
-                    throw new PipelineStageException("RUN_EMPTY_DATA", "accepted 无归属业务日事件");
-                }
-                return (long) events.size();
-            });
-            // §10.3：流水线详情展示 ODS 输入/输出/隔离数（与 EventOdsLoadJob 契约口径一致：
-            // 接受=schema_version=1.0 且 event_id/event_type/event_time 非空且类型属契约 12 类）
-            // R6-9：类型白名单唯一来源 = EventContract（不再维护私有旧命名白名单，§15.3）
-            if (!completedStages.contains("LOAD_ODS")) {
-                PipelineStageRun loadStage = latestStage(run.getId(), "LOAD_ODS");
-                if (loadStage != null) {
-                    long accepted = events.stream().filter(e -> EventContract.SCHEMA_VERSION.equals(e.schemaVersion())
-                            && !isBlank(e.eventId()) && !isBlank(e.eventType()) && !isBlank(e.eventTime())
-                            && EventContract.isKnownType(e.eventType())).count();
-                    long rejected = events.size() - accepted;
-                    Map<String, Object> evidence = new LinkedHashMap<>();
-                    evidence.put("odsInputRecords", (long) events.size());
-                    evidence.put("odsAcceptedRecords", accepted);
-                    evidence.put("odsRejectedRecords", rejected);
-                    evidence.put("unknownEventType", events.stream()
-                            .filter(e -> !isBlank(e.eventType()) && !EventContract.isKnownType(e.eventType()))
-                            .count());
-                    // 采集层隔离（schema_version 不符等）来自 manifest，§9.3 quarantine
-                    Number q = (Number) manifest.get("quarantinedRecords");
-                    if (q != null) {
-                        evidence.put("odsQuarantinedRecords", q.longValue());
-                    }
-                    evidence.put("contracted", "odl: total=input, output=accepted, quarantine=rejected (Spark 侧同口径)");
-                    loadStage.setEvidence(toJson(evidence));
-                    stageMapper.updateById(loadStage);
-                }
+            // ── BUILD_DWD：真实 spark-jobs bdw（行为明细/拒绝）+ dim（维度）+ tdw（订单明细）──
+            StageOutcome dwdOutcome = runSparkStage(run, executor, snapshot, "BUILD_DWD",
+                    businessDate, completedStages, Map.of(), null);
+            if (dwdOutcome != null && !completedStages.contains("BUILD_DWD")) {
+                Map<String, Object> evidence = new LinkedHashMap<>(dwdOutcome.evidence());
+                evidence.put("contracted", "bdw: event_id 重复→reject 表；dim: 维度最新快照；tdw: 订单/退款合并明细");
+                updateStageEvidence(run.getId(), "BUILD_DWD", evidence);
             }
 
-            // DWD 清洗（LOCAL：契约级校验 + 去重计数；集群：spark-jobs bdw）
-            stage(run.getId(), "BUILD_DWD", completedStages, () -> {
-                long bad = events.stream().filter(e ->
-                        EventContract.BEHAVIOR.equals(e.eventType())
-                                && (isBlank(e.payload().get("user_id")) || isBlank(e.payload().get("product_id"))))
-                        .count();
-                long total = events.size();
-                long behaviorEvents = events.stream()
-                        .filter(e -> EventContract.BEHAVIOR.equals(e.eventType())).count();
-                long uniqueBehavior = events.stream()
-                        .filter(e -> EventContract.BEHAVIOR.equals(e.eventType()))
-                        .map(EventEnvelope::eventId).distinct().count();
-                long duplicateRejected = behaviorEvents - uniqueBehavior;
-                return total - bad - duplicateRejected;
-            });
-            // §11.4 第 1 条：行为事件 event_id 重复 → 1 有效行，重复进拒绝表（Java 侧计数口径）
-            if (!completedStages.contains("BUILD_DWD")) {
-                PipelineStageRun dwdStage = latestStage(run.getId(), "BUILD_DWD");
-                if (dwdStage != null) {
-                    long behaviorEvents = events.stream()
-                            .filter(e -> EventContract.BEHAVIOR.equals(e.eventType())).count();
-                    long uniqueBehavior = events.stream()
-                            .filter(e -> EventContract.BEHAVIOR.equals(e.eventType()))
-                            .map(EventEnvelope::eventId).distinct().count();
-                    long contractBad = events.stream().filter(e ->
-                            EventContract.BEHAVIOR.equals(e.eventType())
-                                    && (isBlank(e.payload().get("user_id")) || isBlank(e.payload().get("product_id"))))
-                            .count();
-                    Map<String, Object> evidence = new LinkedHashMap<>();
-                    evidence.put("dwdInputRecords", (long) events.size());
-                    evidence.put("behaviorEvents", behaviorEvents);
-                    evidence.put("behaviorUnique", uniqueBehavior);
-                    evidence.put("duplicateRejected", behaviorEvents - uniqueBehavior);
-                    evidence.put("contractBad", contractBad);
-                    evidence.put("contracted", "bdw: event_id 重复→reject 表，每重复组 1 条 DUPLICATE_EVENT (Spark 侧已验证 10→1)");
-                    dwdStage.setEvidence(toJson(evidence));
-                    stageMapper.updateById(dwdStage);
-                }
+            // ── BUILD_DWS：真实 spark-jobs usw（7 张 DWS，观察期=业务日） ──
+            StageOutcome dwsOutcome = runSparkStage(run, executor, snapshot, "BUILD_DWS",
+                    businessDate, completedStages,
+                    Map.of("periodStart", businessDate, "periodEnd", businessDate), null);
+            if (dwsOutcome != null && !completedStages.contains("BUILD_DWS")) {
+                Map<String, Object> evidence = new LinkedHashMap<>(dwsOutcome.evidence());
+                evidence.put("contracted", "usw: 7 张 DWS（行为/漏斗/商品/交易/区域/用户周期）");
+                updateStageEvidence(run.getId(), "BUILD_DWS", evidence);
             }
 
-            // DWS 主题聚合（LOCAL：透视计数占位，与计算器口径一致）
-            stage(run.getId(), "BUILD_DWS", completedStages, () ->
-                    events.stream().filter(e -> EventContract.ORDER_PAID.equals(e.eventType()))
-                            .map(e -> String.valueOf(e.payload().get("order_id"))).distinct().count());
+            // ── BUILD_ADS：真实 spark-jobs fna（8 张 ADS，观察期=业务日） ──
+            StageOutcome adsOutcome = runSparkStage(run, executor, snapshot, "BUILD_ADS",
+                    businessDate, completedStages,
+                    Map.of("periodStart", businessDate, "periodEnd", businessDate, "topN", "50"), null);
+            if (adsOutcome != null && !completedStages.contains("BUILD_ADS")) {
+                Map<String, Object> evidence = new LinkedHashMap<>(adsOutcome.evidence());
+                evidence.put("contracted", "fna: 8 张 ADS（大盘/趋势/漏斗/热度/转化/画像/质量）");
+                updateStageEvidence(run.getId(), "BUILD_ADS", evidence);
+            }
 
-            // ADS 指标计算（LOCAL：MetricCalculator；集群：spark-jobs usw/fna 产出）
-            stage(run.getId(), "BUILD_ADS", completedStages, () -> (long) dataset.metrics().size());
-
-            // 质量门（核心规则失败 → 阻断发布，§5.4.1 对账性）
+            // ── QUALITY_CHECK：质量门（核心规则失败 → 阻断发布，§5.4.1） ──
             stage(run.getId(), "QUALITY_CHECK", completedStages, () -> {
                 QualityChecker.QualitySummary quality = qualityChecker.check(events, run.getId());
                 quality.results().forEach(qualityMapper::insert);
+                Map<String, Object> evidence = new LinkedHashMap<>();
+                evidence.put("rules", quality.results().stream().map(r -> Map.of(
+                        "ruleCode", String.valueOf(r.getRuleCode()),
+                        "checkCount", r.getCheckCount(),
+                        "errorCount", r.getErrorCount(),
+                        "passed", r.getPassed())).toList());
+                evidence.put("corePassed", quality.corePassed());
+                evidence.put("blocking", "AMOUNT_RECONCILE（支付金额 vs 订单总额）");
                 if (!quality.corePassed()) {
-                    throw new PipelineStageException("PIPELINE_QUALITY_FAILED", "金额对账未通过，新指标未发布");
+                    // 失败证据必须先落库，再抛出阻断（否则失败原因丢失）
+                    updateStageEvidence(run.getId(), "QUALITY_CHECK", evidence);
+                    throw new PipelineStageException("PIPELINE_QUALITY_FAILED",
+                            "金额对账未通过，新指标未发布");
                 }
-                return (long) quality.results().size();
+                return new StageOutcome(quality.results().size(), evidence);
             });
 
-            // 快照发布（§21.11：BUILDING→VERIFYING→ACTIVE，旧 ACTIVE→ARCHIVED）
+            // ── PUBLISH_METRIC：登记本次 ADS 快照（真实分区已由 fna 写出） ──
+            // R6 阶段边界：Hive ADS 已由 BUILD_ADS 真实写入；Hive→MySQL staging/原子切换属 R7，
+            // 此处**不发布 MySQL、不写本地计算指标**（§15.4：生产服务不得引用 MetricCalculator）。
             if (!completedStages.contains("PUBLISH_METRIC")) {
-                createSnapshot(run, dataset);
-                adsMaterializer.refreshActive(); // 刷新 AI 白名单物化 ADS（§8.1）
-                stage(run.getId(), "PUBLISH_METRIC", completedStages, () -> (long) dataset.metrics().size());
+                String snapshotId = "S" + businessDate + "_" + run.getId();
+                run.setTargetSnapshotId(snapshotId);
+                runMapper.updateById(run);
+                // 本次运行已产出证据则直接用；重试跳过 BUILD_ADS 时从阶段记录回读（§13.4 恢复）
+                Map<String, Object> adsEvidence = adsOutcome != null
+                        ? adsOutcome.evidence()
+                        : stageEvidence(run.getId(), "BUILD_ADS");
+                stage(run.getId(), "PUBLISH_METRIC", completedStages, () -> {
+                    if (adsEvidence.isEmpty()) {
+                        throw new PipelineStageException("RUN_PUBLISH_NO_ADS",
+                                "缺少 BUILD_ADS 真实作业证据，拒绝登记快照");
+                    }
+                    Map<String, Object> evidence = new LinkedHashMap<>();
+                    evidence.put("adsSnapshotId", snapshotId);
+                    evidence.put("adsJobs", adsEvidence.get("jobs"));
+                    evidence.put("adsOutputRecords", adsEvidence.get("totalOutputRecords"));
+                    evidence.put("hiveAds", "已写入 dw_ads.*（BUILD_ADS JobResult 计数）");
+                    evidence.put("mysqlPublish", "deferred-to-R7（Hive→MySQL staging→ACTIVE 原子切换）");
+                    Object total = adsEvidence.get("totalOutputRecords");
+                    return new StageOutcome(total instanceof Number n ? n.longValue() : 0L, evidence);
+                });
             }
 
             run.setStatus(PipelineRun.STATUS_SUCCESS);
@@ -349,6 +349,7 @@ public class PipelineService {
             run.setStatus(PipelineRun.STATUS_FAILED);
             run.setErrorCode(e.code());
             run.setErrorMessage(e.getMessage());
+            run.setCurrentStage("FAILED");
             run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
             log.warn("pipeline {} failed: {}", run.getId(), e.getMessage());
@@ -356,66 +357,102 @@ public class PipelineService {
             run.setStatus(PipelineRun.STATUS_FAILED);
             run.setErrorCode("RUN_INTERNAL");
             run.setErrorMessage(e.getMessage());
+            run.setCurrentStage("FAILED");
             run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
             log.error("pipeline {} internal error", run.getId(), e);
         }
     }
 
-    // ── 快照发布 ──────────────────────────────────────────────────────────
+    // ── 真实 Spark 阶段 ────────────────────────────────────────────────────
 
-    private long createSnapshot(PipelineRun run, MetricDataset dataset) {
-        String businessDate = run.getBusinessTime().toLocalDate().format(KEY_DATE);
-        String snapshotId = "S" + businessDate + "_" + run.getId();
-        MetricSnapshot snapshot = new MetricSnapshot();
-        snapshot.setSnapshotId(snapshotId);
-        // §8.1：必须保存实际 runtime_profile_id + profile_version（替代早期硬编码 1L）
-        snapshot.setRuntimeProfileId(run.getRuntimeProfileId());
-        snapshot.setRuntimeProfileVersion(run.getRuntimeProfileVersion());
-        snapshot.setBusinessTime(run.getBusinessTime());
-        snapshot.setPipelineRunId(run.getId());
-        snapshot.setStatus(MetricSnapshot.STATUS_BUILDING);
-        snapshot.setVersion(1);
-        snapshot.setDataUpdatedAt(eventClock.nowLdt());
-        snapshot.setSource("local-calculator");
-        snapshot.setCreatedAt(eventClock.nowLdt());
-        snapshotMapper.insert(snapshot);
-
-        snapshot.setStatus(MetricSnapshot.STATUS_VERIFYING);
-        snapshotMapper.updateById(snapshot);
-
-        run.setTargetSnapshotId(snapshotId);
-        runMapper.updateById(run);
-
-        List<MetricValue> values = new ArrayList<>();
-        for (Map.Entry<String, BigDecimal> m : dataset.metrics().entrySet()) {
-            MetricValue v = new MetricValue();
-            v.setSnapshotId(snapshotId);
-            v.setMetricCode(m.getKey());
-            v.setMetricValue(m.getValue());
-            v.setUnit(dataset.units().getOrDefault(m.getKey(), ""));
-            v.setPeriod("day:" + businessDate);
-            v.setDefinitionVersion("v1");
-            values.add(v);
+    /**
+     * 提交并等待一个由真实 Spark 作业承载的阶段（§15.3 R6-11）。
+     * 失败即抛 {@link PipelineStageException}（stage 记录置 FAILED，run 置 FAILED，后续阶段不执行）。
+     * 重试时若该阶段已成功，返回 null（调用方据 completedStages 跳过证据覆盖）。
+     *
+     * @param precheck 阶段内预检（如 LOAD_ODS 的 accepted/业务日事件检查）；null 表示无
+     */
+    private StageOutcome runSparkStage(PipelineRun run, SparkStageExecutor executor,
+                                      RuntimeProfileSnapshot snapshot, String stageCode,
+                                      String businessDate, Set<String> completedStages,
+                                      Map<String, String> extraArgs, Precheck precheck) {
+        if (completedStages.contains(stageCode)) {
+            return null; // 重试跳过：成功阶段不重复执行（§13.4）
         }
-        metricStore.publish(new MetricStore.SnapshotRef(snapshotId, run.getRuntimeProfileId(), "day:" + businessDate), values);
-        return snapshot.getId();
+        return stage(run.getId(), stageCode, completedStages, () -> {
+            if (precheck != null) {
+                precheck.verify();
+            }
+            SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
+                    stageCode, businessDate, run.getAttemptNo(), extraArgs, null);
+            Map<String, Object> evidence = jobEvidence(ex);
+            if (ex.failed()) {
+                // 失败证据先落库（stage() 的 finally 写记录），再阻断：后续依赖阶段保持未执行
+                return new StageOutcome(ex.totalOutputRecords(), evidence,
+                        new PipelineStageException("RUN_JOB_FAILED",
+                                stageCode + " 作业失败: " + ex.errorMessage()));
+            }
+            // 输出计数只取 JobResult（R6-12）
+            return new StageOutcome(ex.totalOutputRecords(), evidence);
+        });
+    }
+
+    /** 阶段内预检（在阶段记录内执行，失败同样留痕） */
+    private interface Precheck {
+        void verify() throws PipelineStageException;
+    }
+
+    /** 阶段作业证据：逐作业 externalJobId/计数/日志位置（§15.3 R6-12） */
+    private Map<String, Object> jobEvidence(SparkStageExecutor.StageExecution ex) {
+        Map<String, Object> evidence = new LinkedHashMap<>();
+        List<Map<String, Object>> jobs = new ArrayList<>();
+        for (SparkStageExecutor.JobExecution j : ex.jobs()) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("jobCode", j.jobCode());
+            item.put("externalJobId", j.externalJobId());
+            item.put("status", j.status());
+            item.put("inputRecords", j.inputRecords());
+            item.put("outputRecords", j.outputRecords());
+            item.put("rejectedRecords", j.rejectedRecords());
+            item.put("logUri", j.logUri());
+            if (j.errorMessage() != null) {
+                item.put("errorMessage", j.errorMessage());
+            }
+            jobs.add(item);
+        }
+        evidence.put("stageCode", ex.stageCode());
+        evidence.put("jobs", jobs);
+        evidence.put("totalInputRecords", ex.totalInputRecords());
+        evidence.put("totalOutputRecords", ex.totalOutputRecords());
+        evidence.put("totalRejectedRecords", ex.totalRejectedRecords());
+        evidence.put("failed", ex.failed());
+        return evidence;
     }
 
     // ── 辅助 ──────────────────────────────────────────────────────────────
 
+    /** 阶段产出：记录数 + 证据；可选延迟抛出（失败证据需先落库再阻断） */
+    private record StageOutcome(long records, Map<String, Object> evidence,
+                                PipelineStageException deferredFailure) {
+        StageOutcome(long records, Map<String, Object> evidence) {
+            this(records, evidence, null);
+        }
+    }
+
     private interface StageAction {
-        long execute() throws PipelineStageException, IOException;
+        StageOutcome execute() throws PipelineStageException, IOException;
     }
 
     /**
      * 阶段执行：已成功阶段在重试时跳过（不重复写记录，§13.4 恢复：成功且输出校验
      * 有效的阶段不重复执行；数据准备在 execute() 中幂等重读，不影响跳过后继阶段）。
+     * 失败时先落 FAILED + 证据，再抛出（§15.3：失败留痕不得丢失）。
      */
-    private void stage(Long runId, String stageCode, Set<String> completedStages, StageAction action) {
+    private StageOutcome stage(Long runId, String stageCode, Set<String> completedStages, StageAction action) {
         if (completedStages.contains(stageCode)) {
             log.info("pipeline {}: stage {} 已成功，重试跳过（不重复执行）", runId, stageCode);
-            return;
+            return null;
         }
         PipelineStageRun s = new PipelineStageRun();
         s.setRunId(runId);
@@ -423,20 +460,64 @@ public class PipelineService {
         s.setStatus(PipelineStageRun.STATUS_RUNNING);
         s.setStartedAt(eventClock.nowLdt());
         stageMapper.insert(s);
+        StageOutcome outcome = null;
+        PipelineStageException failure = null;
         try {
-            s.setRecords(action.execute());
-            s.setStatus(PipelineStageRun.STATUS_SUCCESS);
+            outcome = action.execute();
+            s.setRecords(outcome.records());
+            if (outcome.evidence() != null) {
+                s.setEvidence(toJson(outcome.evidence()));
+            }
+            if (outcome.deferredFailure() != null) {
+                // 作业失败：证据已随记录落库，状态置 FAILED 并延后抛出
+                failure = outcome.deferredFailure();
+                s.setStatus(PipelineStageRun.STATUS_FAILED);
+                s.setErrorCode(failure.code());
+            } else {
+                s.setStatus(PipelineStageRun.STATUS_SUCCESS);
+            }
         } catch (PipelineStageException e) {
+            failure = e;
             s.setStatus(PipelineStageRun.STATUS_FAILED);
             s.setErrorCode(e.code());
-            throw e;
         } catch (Exception e) {
+            failure = new PipelineStageException("STAGE_INTERNAL",
+                    "阶段 " + stageCode + " 内部错误: " + e.getMessage());
             s.setStatus(PipelineStageRun.STATUS_FAILED);
             s.setErrorCode("STAGE_INTERNAL");
-            throw new PipelineStageException("STAGE_INTERNAL", e.getMessage());
         } finally {
             s.setFinishedAt(eventClock.nowLdt());
             stageMapper.updateById(s);
+        }
+        if (failure != null) {
+            throw failure;
+        }
+        return outcome;
+    }
+
+    /** 覆盖式更新阶段证据（阶段已 SUCCESS 后追加契约说明等） */
+    private void updateStageEvidence(Long runId, String stageCode, Map<String, Object> evidence) {
+        PipelineStageRun s = latestStage(runId, stageCode);
+        if (s != null) {
+            s.setEvidence(toJson(evidence));
+            stageMapper.updateById(s);
+        }
+    }
+
+    /** 读取阶段证据 JSON（重试路径下从库中恢复 BUILD_ADS 证据） */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> stageEvidence(Long runId, String stageCode) {
+        PipelineStageRun s = latestStage(runId, stageCode);
+        if (s == null || s.getEvidence() == null || s.getEvidence().isBlank()) {
+            return Map.of();
+        }
+        try {
+            return objectMapper.readValue(s.getEvidence(),
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                    });
+        } catch (Exception e) {
+            log.warn("阶段证据解析失败 run={} stage={}: {}", runId, stageCode, e.getMessage());
+            return Map.of();
         }
     }
 

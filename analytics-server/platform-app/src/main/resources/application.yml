@@ -19,6 +19,10 @@ platform:
     local-root: ${PLATFORM_LANDING_LOCAL_ROOT:./landing}
   credential:
     ssh-default: ${CRED_SSH_DEFAULT:}
+  # R6-11（V2.0 §15.3）：真实 Spark 作业阶段等待上限与轮询间隔（LOCAL 小样本秒级完成）
+  spark:
+    job-timeout-ms: ${PLATFORM_SPARK_JOB_TIMEOUT_MS:900000}
+    poll-interval-ms: ${PLATFORM_SPARK_POLL_INTERVAL_MS:2000}
 
 # 迁移由 MetaFlywayInitializer 显式执行（classpath:db/meta）；默认 flyway 关闭
 spring:

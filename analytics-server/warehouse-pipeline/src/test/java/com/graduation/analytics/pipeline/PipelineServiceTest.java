@@ -2,18 +2,14 @@ package com.graduation.analytics.pipeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.contracts.EventClock;
-import com.graduation.analytics.metric.AdsMaterializer;
-import com.graduation.analytics.metric.MetricCalculator;
-import com.graduation.analytics.metric.MetricStore;
-import com.graduation.analytics.metric.entity.MetricSnapshot;
-import com.graduation.analytics.metric.mapper.MetricSnapshotMapper;
-import com.graduation.analytics.metric.mapper.MetricValueMapper;
 import com.graduation.analytics.pipeline.entity.DataQualityResult;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineStageRunMapper;
+import com.graduation.analytics.pipeline.spark.SparkStageExecutor;
+import com.graduation.analytics.pipeline.spark.SparkStageExecutorFactory;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +39,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -56,6 +54,9 @@ import static org.mockito.Mockito.when;
  * ②同幂等键返回原任务（§13.4）  ③WAIT_LANDING 成功→LOAD_ODS（阶段顺序）
  * ④阶段失败→FAILED  ⑤重试跳过成功阶段（§13.4 恢复）
  * ⑥质量失败不得进发布（§5.4.1）  ⑦attemptNo 递增  ⑧并发同键只产生一个任务
+ *
+ * R6-11（V2.0 §15.3）：四个计算阶段改为真实 Spark 执行器（注入 Fake 工厂做 L1 编排验证）：
+ * ⑨阶段失败 fail-fast（后续依赖阶段不执行）  ⑩阶段计数来自 JobResult（非 Java 估算）
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -67,17 +68,14 @@ class PipelineServiceTest {
     @Mock PipelineRunMapper runMapper;
     @Mock PipelineStageRunMapper stageMapper;
     @Mock DataQualityResultMapper qualityMapper;
-    @Mock MetricSnapshotMapper snapshotMapper;
-    @Mock MetricValueMapper valueMapper;
-    @Mock AdsMaterializer adsMaterializer;
-    @Mock MetricStore metricStore;
     @Mock QualityChecker qualityChecker;
     @Mock RuntimeProfileService runtimeProfileService;
+    @Mock SparkStageExecutorFactory stageExecutorFactory;
+    @Mock SparkStageExecutor stageExecutor;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final EventClock eventClock = new EventClock(Clock.fixed(
             java.time.Instant.parse("2026-09-01T10:00:00Z"), ZoneId.of("Asia/Shanghai")));
-    private final MetricCalculator calculator = new MetricCalculator();
 
     /** 收集型 Executor：run() 只投递不执行 → 手动 drain 触发异步链（验证"立即返回"） */
     private final CollectingExecutor executor = new CollectingExecutor();
@@ -87,7 +85,6 @@ class PipelineServiceTest {
     private final List<PipelineStageRun> stages = new ArrayList<>();
     private final AtomicLong stageId = new AtomicLong(1);
     private final AtomicLong runId = new AtomicLong(1);
-    private final AtomicLong snapshotIdSeq = new AtomicLong(1);
 
     private PipelineService service;
 
@@ -118,27 +115,46 @@ class PipelineServiceTest {
         when(stageMapper.selectOne(any())).thenAnswer(inv ->
                 stages.isEmpty() ? null : stages.get(stages.size() - 1));
 
-        // 快照 insert 回填自增 id（createSnapshot 返回 snapshot.getId() 需要非空）
-        doAnswer(inv -> {
-            MetricSnapshot s = inv.getArgument(0);
-            s.setId(900L + snapshotIdSeq.getAndIncrement());
-            return 1;
-        }).when(snapshotMapper).insert(any(MetricSnapshot.class));
-
         RuntimeProfile profile = new RuntimeProfile();
         profile.setId(1L);
         profile.setVersion(7);
         profile.setType(RuntimeProfile.TYPE_LOCAL);
         profile.setLandingUri(landing.toAbsolutePath().toString());
+        profile.setSparkSubmitPath("D:\\spark\\bin\\spark-submit.cmd");
+        profile.setSparkJobJarUri("spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
         when(runtimeProfileService.get(1L)).thenReturn(profile);
+
+        // R6-11：真实 Spark 阶段由执行器工厂产出；L1 注入 Fake 执行器（不启动 Spark），
+        // 默认每个阶段全部作业 SUCCESS，计数取 jobCode 对应的固定 JobResult 值。
+        when(stageExecutorFactory.create(any())).thenReturn(stageExecutor);
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> successExecution(inv.getArgument(2)));
 
         // 质量检查默认通过（个别测试覆盖为失败）
         when(qualityChecker.check(any(), anyLong()))
                 .thenReturn(new QualityChecker.QualitySummary(List.of(mock(DataQualityResult.class)), true));
 
-        service = new PipelineService(runMapper, stageMapper, qualityMapper, snapshotMapper,
-                valueMapper, adsMaterializer, calculator, metricStore, qualityChecker,
-                eventClock, objectMapper, runtimeProfileService, executor);
+        service = new PipelineService(runMapper, stageMapper, qualityMapper, qualityChecker,
+                eventClock, objectMapper, runtimeProfileService, stageExecutorFactory, executor);
+    }
+
+    /** 构造"全作业 SUCCESS"的阶段执行结果（计数模拟 JobResult 真实输出） */
+    private static SparkStageExecutor.StageExecution successExecution(String stageCode) {
+        List<SparkStageExecutor.JobExecution> jobs = new ArrayList<>();
+        for (String jobCode : SparkStageExecutor.stageJobs(stageCode)) {
+            jobs.add(new SparkStageExecutor.JobExecution(
+                    "lp-test-" + jobCode, jobCode, com.graduation.analytics.pipeline.entity.SparkJobRun.STATUS_SUCCESS,
+                    10L, 8L, 1L, "landing/logs/test__lp-test-" + jobCode + ".log", null));
+        }
+        return new SparkStageExecutor.StageExecution(stageCode, jobs, false, null);
+    }
+
+    /** 构造"某阶段首个作业 FAILED"的执行结果（fail-fast 场景） */
+    private static SparkStageExecutor.StageExecution failedExecution(String stageCode, String jobCode) {
+        List<SparkStageExecutor.JobExecution> jobs = List.of(new SparkStageExecutor.JobExecution(
+                "lp-fail-" + jobCode, jobCode, com.graduation.analytics.pipeline.entity.SparkJobRun.STATUS_FAILED,
+                5L, 0L, 5L, "landing/logs/test__lp-fail-" + jobCode + ".log", "作业失败"));
+        return new SparkStageExecutor.StageExecution(stageCode, jobs, true, jobCode + ": 作业失败");
     }
 
     // ── ①接口异步：POST 立即返回 taskId+PENDING，不阻塞（§13.1） ─────────
@@ -220,8 +236,9 @@ class PipelineServiceTest {
         assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
         assertThat(failed.errorCode()).isEqualTo("RUN_EMPTY_DATA");
         assertThat(stageStatus("LOAD_ODS")).isEqualTo(PipelineStageRun.STATUS_FAILED);
-        // 未发布
-        verify(metricStore, never()).publish(any(), any());
+        // 预检失败不提交任何 Spark 作业；后续依赖阶段不执行、未发布
+        verify(stageExecutor, never()).executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any());
+        assertThat(stageOf("PUBLISH_METRIC")).isNull();
     }
 
     // ── ⑤重试跳过成功阶段：成功阶段不重复执行，失败阶段重跑（§13.4 恢复） ─
@@ -274,11 +291,8 @@ class PipelineServiceTest {
         assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
         assertThat(failed.errorCode()).isEqualTo("PIPELINE_QUALITY_FAILED");
         assertThat(stageStatus("QUALITY_CHECK")).isEqualTo(PipelineStageRun.STATUS_FAILED);
-        // 不发布：无 PUBLISH_METRIC 阶段、快照与 ADS 物化均未触发
+        // 不发布：无 PUBLISH_METRIC 阶段（BUILD_ADS 已真实执行，但快照登记被质量门阻断）
         assertThat(stageOf("PUBLISH_METRIC")).isNull();
-        verify(snapshotMapper, never()).insert(any(MetricSnapshot.class));
-        verify(adsMaterializer, never()).refreshActive();
-        verify(metricStore, never()).publish(any(), any());
     }
 
     // ── ⑦重试 attempt_no 递增（§23.1 恢复） ────────────────────────────────
@@ -335,8 +349,62 @@ class PipelineServiceTest {
         verify(runMapper, org.mockito.Mockito.times(1)).insert(any(PipelineRun.class));
     }
 
-    // ── 辅助 ────────────────────────────────────────────────────────────────
+    // ── ⑨R6-11 fail-fast：计算阶段作业失败 → run FAILED，后续依赖阶段不执行 ──
 
+    @Test
+    void sparkStageFailureFailsFastWithoutRunningDependentStages() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        // BUILD_DWD 的 bdw 作业失败 → BUILD_DWS/BUILD_ADS/PUBLISH 都不得执行
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    String stage = inv.getArgument(2);
+                    if ("BUILD_DWD".equals(stage)) {
+                        return failedExecution(stage, "bdw");
+                    }
+                    return successExecution(stage);
+                });
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-fail-fast", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(r.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("RUN_JOB_FAILED");
+        assertThat(stageStatus("BUILD_DWD")).isEqualTo(PipelineStageRun.STATUS_FAILED);
+        // 依赖阶段保持未执行（无阶段记录），PUBLISH 更不得发生
+        assertThat(stageOf("BUILD_DWS")).isNull();
+        assertThat(stageOf("BUILD_ADS")).isNull();
+        assertThat(stageOf("PUBLISH_METRIC")).isNull();
+        // 只提交到 BUILD_DWD 为止（LOAD_ODS 1 次 + BUILD_DWD 1 次）
+        verify(stageExecutor, org.mockito.Mockito.times(2))
+                .executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any());
+    }
+
+    // ── ⑩R6-11/R6-12 计数取 JobResult：阶段 records = 作业输出行数合计 ──────
+
+    @Test
+    void stageRecordsComeFromJobResultNotJavaEstimate() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "behavior", "2026-09-01T10:00:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\"}"),
+                event("e2", "behavior", "2026-09-01T10:01:00", "{\"user_id\":\"u2\",\"product_id\":\"p2\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-records", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        // 每个 Spark 阶段 records = 该阶段所有作业 outputRecords 之和（Fake: 每作业 8 行）
+        PipelineStageRun dwd = stageOf("BUILD_DWD");
+        assertThat(dwd.getRecords()).isEqualTo(8L * SparkStageExecutor.stageJobs("BUILD_DWD").size());
+        assertThat(stageOf("BUILD_DWS").getRecords()).isEqualTo(8L);
+        assertThat(stageOf("BUILD_ADS").getRecords()).isEqualTo(8L);
+        // 证据含真实 externalJobId / logUri（§15.3 R6-12 可溯源）
+        assertThat(dwd.getEvidence()).contains("lp-test-bdw").contains("landing/logs/test__lp-test-bdw.log");
+    }
+
+    // ── 辅助 ────────────────────────────────────────────────────────────────
     private void writeLanding(String acceptedUriDir, String... eventLines) throws IOException {
         Files.createDirectories(landing.resolve("manifests"));
         Map<String, Object> m = new LinkedHashMap<>();

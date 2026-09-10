@@ -1,6 +1,6 @@
 package com.graduation.analytics.pipeline.spark;
 
-import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * R6：把 RuntimeProfile + 作业参数转成 spark-submit 命令数组（纯函数，无 IO）。
+ * R6：把 RuntimeProfile 快照 + 作业参数转成 spark-submit 命令数组（纯函数，无 IO）。
  * 契约（与 spark-jobs JobRunner 对齐）：
  *   <sparkSubmitPath> [--master X] [--deploy-mode Y] [--queue Z]
  *   [--conf k=v ...]           ← 必须在 --class 之前，由调用方传入（如 warehouse/shard 分区）
@@ -18,6 +18,9 @@ import java.util.Map;
  *   [--inputVersion=...] [--outputSnapshotId=...] [--k=v ...extra 透传]
  * LOCAL 的 jar 若为相对路径会绝对化为 file:///（历史教训：No FileSystem for scheme "D"）；
  * REMOTE 的 jar 是 hdfs:// URI，原样保留。List<String> 天然保证路径带空格为单个参数。
+ *
+ * R6-10：入参改为不可变 {@link RuntimeProfileSnapshot}——一次运行冻结一份环境配置，
+ * 运行中途管理员改档案不会造成"半个 run 用 A 环境、半个 run 用 B 环境"。
  */
 public final class JobCommandBuilder {
 
@@ -29,7 +32,7 @@ public final class JobCommandBuilder {
     /**
      * 便捷版：inputVersion/outputSnapshotId 并入 extraArgs 由调用方决定。
      */
-    public static List<String> build(RuntimeProfile profile, String jobCode, String businessDate,
+    public static List<String> build(RuntimeProfileSnapshot profile, String jobCode, String businessDate,
                                      long runtimeProfileId, int attemptNo,
                                      Map<String, String> extraArgs, Map<String, String> confs) {
         return build(profile, jobCode, businessDate, runtimeProfileId, attemptNo,
@@ -39,19 +42,19 @@ public final class JobCommandBuilder {
     /**
      * 完整版：显式 inputVersion/outputSnapshotId，与 extraArgs 一并拼到 --key=value 参数段。
      */
-    public static List<String> build(RuntimeProfile profile, String jobCode, String businessDate,
+    public static List<String> build(RuntimeProfileSnapshot profile, String jobCode, String businessDate,
                                      long runtimeProfileId, int attemptNo,
                                      String inputVersion, String outputSnapshotId,
                                      Map<String, String> extraArgs, Map<String, String> confs) {
         List<String> cmd = new ArrayList<>();
-        String submitPath = profile.getSparkSubmitPath();
+        String submitPath = profile.sparkSubmitPath();
         if (submitPath == null || submitPath.isBlank()) {
             throw new IllegalArgumentException("RuntimeProfile.sparkSubmitPath 不能为空");
         }
         cmd.add(submitPath);
 
-        boolean local = RuntimeProfile.TYPE_LOCAL.equals(profile.getType());
-        String master = profile.getSparkMaster();
+        boolean local = profile.isLocal();
+        String master = profile.sparkMaster();
         if (master == null || master.isBlank()) {
             master = local ? "local[*]" : "yarn";
         }
@@ -59,13 +62,13 @@ public final class JobCommandBuilder {
         cmd.add(master);
 
         // LOCAL 不需要 deploy-mode/yarn-queue；集群环境按档案配置
-        if (!local && profile.getDeployMode() != null && !profile.getDeployMode().isBlank()) {
+        if (!local && profile.deployMode() != null && !profile.deployMode().isBlank()) {
             cmd.add("--deploy-mode");
-            cmd.add(profile.getDeployMode());
+            cmd.add(profile.deployMode());
         }
-        if (!local && profile.getYarnQueue() != null && !profile.getYarnQueue().isBlank()) {
+        if (!local && profile.yarnQueue() != null && !profile.yarnQueue().isBlank()) {
             cmd.add("--queue");
-            cmd.add(profile.getYarnQueue());
+            cmd.add(profile.yarnQueue());
         }
 
         // --conf 必须在 --class 之前（spark-submit 解析顺序）
@@ -102,8 +105,8 @@ public final class JobCommandBuilder {
         return cmd;
     }
 
-    private static String resolveJarUri(RuntimeProfile profile, boolean local) {
-        String jar = profile.getSparkJobJarUri();
+    private static String resolveJarUri(RuntimeProfileSnapshot profile, boolean local) {
+        String jar = profile.sparkJobJarUri();
         if (jar == null || jar.isBlank()) {
             throw new IllegalArgumentException("RuntimeProfile.sparkJobJarUri 不能为空");
         }

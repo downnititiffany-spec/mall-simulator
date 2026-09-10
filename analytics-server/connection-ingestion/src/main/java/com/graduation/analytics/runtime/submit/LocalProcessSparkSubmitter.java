@@ -100,6 +100,20 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
         }
     }
 
+    /** R6-12：日志文件绝对路径（落 spark_job_run.log_uri，可溯源） */
+    @Override
+    public String logUri(String externalJobId) {
+        try {
+            Path logDir = Paths.get(logRoot).toAbsolutePath();
+            Path exact = logDir.resolve(externalJobId + ".log");
+            Path found = Files.exists(exact) ? exact : findByJobId(logDir, externalJobId);
+            return found == null ? logDir.resolve(logFileName(null, externalJobId)).toString()
+                    : found.toString();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     /** R6-12：日志文件名前缀（{runId}-{stage}-{jobCode}-a{attempt}），非法字符替换为 '-' */
     static String logFileName(String logPrefix, String jobId) {
         if (logPrefix == null || logPrefix.isBlank()) {

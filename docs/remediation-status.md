@@ -121,6 +121,15 @@
   - **R6-9 统一事件契约（V2.0 §15.3）**：`EventContract` 升级为"12 类契约 + ODS 主题路由"唯一 Java 侧来源（`ODS_TABLE_BY_TYPE` / `EVENT_TYPES` / `isKnownType` / `odsTable` / `UNKNOWN_EVENT_TYPE`）；`PipelineService` 删除私有旧白名单（原 `user_created/user_updated/product_status_changed/inventory_changed/refund_requested` 等旧命名，R6-8a 漂移根因）改用 `EventContract`；LOAD_ODS 证据新增 `unknownEventType` 计数（未知类型显式拒绝、不悄悄跳过）。验证：`EventContractTest` 28 GREEN（12 类全集/主题语义/**跨语言契约锁**——直接比对 scala `OdsLoadSql.eventTypeToTable` 键集取值逐项一致/12 类过统一校验器/未知类型显式拒绝）
   - **R6-10 提交器工厂（V2.0 §15.3）**：新增 `RuntimeProfileSnapshot`（不可变档案快照，冻结 type/master/ssh/jar/凭据引用）+ `JobSubmitterFactory`（LOCAL/SINGLE_NODE→`LocalProcessSparkSubmitter`，REMOTE_CLUSTER→`SshSparkSubmitter`；缺 `spark_submit_path`/`ssh_host`/`ssh_user` fail-fast，不再猜默认路径 §8.4；工厂只管构造，不碰 DAG/落库）；`LocalProcessSparkSubmitter` 日志名升级为 `{runId}-{stage}-{jobCode}-a{attempt}__{externalJobId}.log`（R6-12 可检索），`logs(jobId)` 按 `*__{jobId}.log` 后缀兜底仍可溯源。验证：`JobSubmitterFactoryTest` 8 GREEN + `LocalProcessSparkSubmitterLogTest` 4 GREEN（真实子进程）
   - R6-9/R6-10 回归：warehouse-pipeline 快速套件 **76/76 GREEN**（`mvn -pl warehouse-pipeline -am test -Dtest=!SparkStageExecutorSmokeTest`）
+  - **R6-11 生产编排接线（V2.0 §15.3，本次最大改造）**：`PipelineService` 收敛为**只做状态机与阶段编排**——
+    - 四个计算阶段（LOAD_ODS/BUILD_DWD/BUILD_DWS/BUILD_ADS）全部改由 `SparkStageExecutor` 提交**真实 spark-jobs**（odl；bdw+dim+tdw；usw；fna），阶段职责/参数：odl `--landingDir`（accepted 目录 URI）+`--batchId`，usw/fna `--periodStart/--periodEnd`=业务日、fna `--topN=50`
+    - **删除本地假计算路径**：`MetricCalculator`/`MetricDataset`/`metricStore`/`snapshotMapper`/`valueMapper`/`adsMaterializer` 全部移出生产编排，`source=local-calculator` 快照不再产生（§15.4："生产服务不再引用 MetricCalculator 或读取 Landing JSON 算 ADS"）；Java 侧仅保留两处非计算职责：WAIT_LANDING 的 READY manifest 门（§9.3）与 QUALITY_CHECK 质量门（§5.4.1）
+    - **阶段内 fail-fast**：`SparkStageExecutor.executeStage` 任一作业失败即停止本阶段剩余作业（实测日志 `stage BUILD_DWD fail-fast: job dim 失败（…），不再提交剩余作业 [tdw]`）；失败证据先落库再阻断（`StageOutcome.deferredFailure`），run 置 FAILED、依赖阶段保持未执行
+    - **真实输出证据（R6-12 前半）**：阶段 `records` = 该阶段各作业 `outputRecords` 之和（只取 JobResult，禁止常量/输入数冒充）；阶段 evidence 逐作业记录 `jobCode/externalJobId/status/inputRecords/outputRecords/rejectedRecords/logUri`；`SparkJobRun.logUri` 落真实日志路径
+    - 提交路径统一到不可变 `RuntimeProfileSnapshot`（`JobCommandBuilder`/`SparkStageExecutor` 同步改造）；新增 `SparkStageExecutorFactory`（快照→提交器→执行器），Bean 注册于 `PlatformBeans`，超时/轮询可配（`platform.spark.job-timeout-ms`/`poll-interval-ms`）
+    - PUBLISH_METRIC 语义收敛为"登记本次 ADS 快照"：记录 `adsSnapshotId` + ADS 作业证据 + `mysqlPublish: deferred-to-R7（Hive→MySQL staging→ACTIVE 原子切换）`；缺 ADS 证据时**拒绝登记**（RUN_PUBLISH_NO_ADS），不再假装发布
+    - 验证：warehouse-pipeline 快速套件 **80/80 GREEN**（新增 ⑨fail-fast：BUILD_DWD 失败→BUILD_DWS/BUILD_ADS/PUBLISH 无阶段记录、executeStage 仅调用 2 次；⑩计数取 JobResult：BUILD_DWD records=8×3）；`analytics-server` 七模块 `mvn -DskipTests package` 全 SUCCESS
+    - **边界如实登记**：ADS 目前仍由 fna 直接写正式分区，staging/原子发布属 R6-13；Hive→MySQL 发布属 R7（R6 期间 `metric_snapshot`/`metric_value` 无新数据，看板数据源将在 R7 恢复为真实 ADS）
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性

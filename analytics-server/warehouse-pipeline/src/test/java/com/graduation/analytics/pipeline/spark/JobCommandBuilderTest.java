@@ -1,5 +1,6 @@
 package com.graduation.analytics.pipeline.spark;
 
+import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import org.junit.jupiter.api.Test;
 
@@ -10,28 +11,30 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * R6 快速测试（L0，不启动 Spark）：JobCommandBuilder 把 RuntimeProfile + 作业参数
+ * R6 快速测试（L0，不启动 Spark）：JobCommandBuilder 把 RuntimeProfile 快照 + 作业参数
  * 转成 spark-submit 命令数组。覆盖：JAR 路径来自 profile、参数齐全、--conf 在
  * --class 之前、路径带空格仍为单个参数、LOCAL/REMOTE 生成不同但合法的命令。
  */
 class JobCommandBuilderTest {
 
-    private final RuntimeProfile local = profile(RuntimeProfile.TYPE_LOCAL, "local[2]",
+    private final RuntimeProfileSnapshot local = profile(RuntimeProfile.TYPE_LOCAL, "local[2]",
             "D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd",
             "spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
 
-    private final RuntimeProfile remote = profile(RuntimeProfile.TYPE_REMOTE_CLUSTER, "yarn",
+    private final RuntimeProfileSnapshot remote = profile(RuntimeProfile.TYPE_REMOTE_CLUSTER, "yarn",
             "/opt/spark/bin/spark-submit",
             "hdfs://node01:9000/app/spark-jobs/spark-jobs-0.1.0-SNAPSHOT.jar");
 
-    private static RuntimeProfile profile(String type, String master, String submitPath, String jarUri) {
+    private static RuntimeProfileSnapshot profile(String type, String master, String submitPath, String jarUri) {
         RuntimeProfile p = new RuntimeProfile();
+        p.setId(1L);
+        p.setVersion(1);
         p.setType(type);
         p.setSparkMaster(master);
         p.setSparkSubmitPath(submitPath);
         p.setSparkJobJarUri(jarUri);
         p.setDeployMode("cluster");
-        return p;
+        return RuntimeProfileSnapshot.from(p);
     }
 
     @Test
@@ -76,7 +79,7 @@ class JobCommandBuilderTest {
 
     @Test
     void pathWithSpacesStaysSingleArgument() {
-        RuntimeProfile p = profile(RuntimeProfile.TYPE_LOCAL, "local[2]",
+        RuntimeProfileSnapshot p = profile(RuntimeProfile.TYPE_LOCAL, "local[2]",
                 "D:\\Program Files\\spark\\bin\\spark-submit.cmd", "some dir/jar/spark-jobs.jar");
         List<String> cmd = JobCommandBuilder.build(p, "odl", "20260901", 1L, 1, Map.of(), Map.of());
         assertThat(cmd.get(0)).isEqualTo("D:\\Program Files\\spark\\bin\\spark-submit.cmd");

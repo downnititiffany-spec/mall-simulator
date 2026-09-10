@@ -3,7 +3,7 @@ package com.graduation.analytics.pipeline.spark;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.pipeline.entity.SparkJobRun;
 import com.graduation.analytics.pipeline.mapper.SparkJobRunMapper;
-import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.submit.JobSubmitter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,17 +14,25 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * R6-6：阶段作业执行器（§13.2/§13.3）。
- * 把计算阶段映射为 spark-jobs 作业序列（JobRegistry 依赖：odl → bdw/dim/tdw → usw → fna），
+ * R6-6/R6-11：阶段作业执行器（§13.2/§13.3，V2.0 §15.3）。
+ * 把计算阶段映射为 spark-jobs 作业序列（JobRegistry 依赖：odl → bdw/dim → tdw → usw → fna），
  * 经 JobSubmitter 提交（externalJobId 非空即提交成功）、轮询日志（JobResultParser 解析
  * 最终 JobResult JSON，取最后一行）、落库 spark_job_run（argumentsJson 可溯源 §21.10）。
+ *
  * 判定规则：CANCELLED → 失败；日志有 JobResult 行 → 按行内 status 判定；超时无结果行 →
  * 失败（契约缺失不冒充成功）；进程退出码非 0 覆盖日志声称的 SUCCESS（§13.2 阶段不能自证）。
+ *
+ * R6-11 变更：
+ * ①入参为不可变 {@link RuntimeProfileSnapshot}（与 JobCommandBuilder 同源，§15.3 R6-10）；
+ * ②**阶段内 fail-fast**：任一作业失败立即停止本阶段剩余作业（V2.0 §15.2 原"失败仍继续"
+ *   会浪费算力并让依赖作业读到半成品），由编排方据 {@link StageExecution#failed()} 判定；
+ * ③真实输出证据：externalJobId / input / output / rejected / logUri 逐作业落 spark_job_run
+ *   （§15.3 R6-12：计数只能来自 JobResult，禁止用输入数或常量冒充输出数）。
  */
 @Slf4j
 public class SparkStageExecutor {
 
-    /** 阶段 → 作业序列（与 spark-jobs JobRegistry 依赖对齐）：QUALITY_CHECK/PUBLISH_METRIC 无外部作业 */
+    /** 阶段 → 作业序列（与 spark-jobs JobRegistry 依赖对齐）：QUALITY_CHECK/PUBLISH_METRIC 由编排方本地判定 */
     private static final Map<String, List<String>> STAGE_JOBS = Map.of(
             "LOAD_ODS", List.of("odl"),
             "BUILD_DWD", List.of("bdw", "dim", "tdw"),
@@ -50,48 +58,85 @@ public class SparkStageExecutor {
         return STAGE_JOBS.getOrDefault(stageCode, List.of());
     }
 
+    /** 该阶段是否由真实 Spark 作业承载（编排方据此决定是否调执行器） */
+    public static boolean hasExternalJobs(String stageCode) {
+        return !stageJobs(stageCode).isEmpty();
+    }
+
     /** 一次作业执行结果（§13.3：externalJobId/记录数/状态/错误）。 */
     public record JobExecution(String externalJobId, String jobCode, String status,
                                long inputRecords, long outputRecords, long rejectedRecords,
-                               String errorMessage) {
+                               String logUri, String errorMessage) {
+        public boolean success() {
+            return SparkJobRun.STATUS_SUCCESS.equals(status);
+        }
     }
 
     /**
-     * 执行一个阶段的所有外部作业（顺序提交等待，§13.2）。任一作业失败不熔断后续（由
-     * 编排方按阶段结果判定）；本方法只保证每个作业提交成功并如实记录状态。
+     * 阶段执行结果：作业明细 + 是否失败（fail-fast 后剩余作业未提交，jobs() 只含已提交项）。
      */
-    public List<JobExecution> executeStage(RuntimeProfile profile, Long pipelineRunId,
-                                           String stageCode, String businessDate, int attemptNo,
-                                           Map<String, String> extraArgs) {
+    public record StageExecution(String stageCode, List<JobExecution> jobs, boolean failed,
+                                 String errorMessage) {
+        public long totalInputRecords() {
+            return jobs.stream().mapToLong(JobExecution::inputRecords).sum();
+        }
+
+        public long totalOutputRecords() {
+            return jobs.stream().mapToLong(JobExecution::outputRecords).sum();
+        }
+
+        public long totalRejectedRecords() {
+            return jobs.stream().mapToLong(JobExecution::rejectedRecords).sum();
+        }
+    }
+
+    /**
+     * 执行一个阶段的所有外部作业（顺序提交等待，§13.2）。
+     * R6-11 fail-fast：某作业失败后**不再提交**本阶段剩余作业（依赖作业不得读半成品），
+     * 失败原因通过 {@link StageExecution#errorMessage()} 上抛给编排方。
+     */
+    public StageExecution executeStage(RuntimeProfileSnapshot profile, Long pipelineRunId,
+                                       String stageCode, String businessDate, int attemptNo,
+                                       Map<String, String> extraArgs) {
         return executeStage(profile, pipelineRunId, stageCode, businessDate, attemptNo,
                 extraArgs, null);
     }
 
     /** 完整版：显式 --conf（如 spark.sql.warehouse.dir 分区隔离），null 等价便捷版。 */
-    public List<JobExecution> executeStage(RuntimeProfile profile, Long pipelineRunId,
-                                           String stageCode, String businessDate, int attemptNo,
-                                           Map<String, String> extraArgs,
-                                           Map<String, String> confs) {
+    public StageExecution executeStage(RuntimeProfileSnapshot profile, Long pipelineRunId,
+                                       String stageCode, String businessDate, int attemptNo,
+                                       Map<String, String> extraArgs,
+                                       Map<String, String> confs) {
         List<JobExecution> results = new ArrayList<>();
         for (String jobCode : stageJobs(stageCode)) {
-            results.add(executeJob(profile, pipelineRunId, stageCode, jobCode,
-                    businessDate, attemptNo, extraArgs, confs));
+            JobExecution exec = executeJob(profile, pipelineRunId, stageCode, jobCode,
+                    businessDate, attemptNo, extraArgs, confs);
+            results.add(exec);
+            if (!exec.success()) {
+                log.warn("stage {} fail-fast: job {} 失败（{}），不再提交剩余作业 {}",
+                        stageCode, jobCode, exec.errorMessage(),
+                        stageJobs(stageCode).subList(results.size(), stageJobs(stageCode).size()));
+                return new StageExecution(stageCode, results, true,
+                        jobCode + ": " + exec.errorMessage());
+            }
         }
-        return results;
+        return new StageExecution(stageCode, results, false, null);
     }
 
     /** 提交单个作业并等待结果（§13.3：externalJobId 落库非空、argumentsJson 快照溯源） */
-    private JobExecution executeJob(RuntimeProfile profile, Long pipelineRunId, String stageCode,
+    private JobExecution executeJob(RuntimeProfileSnapshot profile, Long pipelineRunId, String stageCode,
                                     String jobCode, String businessDate, int attemptNo,
                                     Map<String, String> extraArgs, Map<String, String> confs) {
         List<String> command = JobCommandBuilder.build(profile, jobCode, businessDate,
-                profile.getId(), attemptNo, extraArgs, confs);
+                profile.id(), attemptNo, extraArgs, confs);
 
-        JobSubmitter.SubmitResult sr = submitter.submit(command, "pipeline-" + pipelineRunId + "-" + stageCode);
+        // §15.3 R6-12：日志前缀携带 runId/stage/jobCode/attempt，运维可按运行检索
+        String logPrefix = "pipeline-" + pipelineRunId + "-" + stageCode + "-" + jobCode + "-a" + attemptNo;
+        JobSubmitter.SubmitResult sr = submitter.submit(command, logPrefix);
 
         SparkJobRun run = new SparkJobRun();
-        run.setRuntimeProfileId(profile.getId());
-        run.setRuntimeProfileVersion(profile.getVersion());
+        run.setRuntimeProfileId(profile.id());
+        run.setRuntimeProfileVersion(profile.version());
         run.setPipelineRunId(pipelineRunId);
         run.setStageCode(stageCode);
         run.setJobCode(jobCode);
@@ -128,6 +173,7 @@ public class SparkStageExecutor {
         run.setInputRecords(info.inputRecords());
         run.setOutputRecords(info.outputRecords());
         run.setRejectedRecords(info.rejectedRecords());
+        run.setLogUri(submitter.logUri(sr.externalJobId())); // R6-12：真实可访问日志位置
         run.setStatus(info.success() ? SparkJobRun.STATUS_SUCCESS : SparkJobRun.STATUS_FAILED);
         run.setFinishedAt(LocalDateTime.now());
         if (!info.success()) {
@@ -138,7 +184,7 @@ public class SparkStageExecutor {
 
         return new JobExecution(run.getExternalJobId(), jobCode, run.getStatus(),
                 run.getInputRecords(), run.getOutputRecords(), run.getRejectedRecords(),
-                info.success() ? null : info.message());
+                run.getLogUri(), info.success() ? null : info.message());
     }
 
     /** 按提交器状态 + 日志结果行综合判定（与 JobResultParser.resolve 语义一致） */

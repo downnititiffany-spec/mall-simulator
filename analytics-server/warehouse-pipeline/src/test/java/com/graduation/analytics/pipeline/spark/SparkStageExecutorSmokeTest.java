@@ -2,6 +2,7 @@ package com.graduation.analytics.pipeline.spark;
 
 import com.graduation.analytics.pipeline.entity.SparkJobRun;
 import com.graduation.analytics.pipeline.mapper.SparkJobRunMapper;
+import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.runtime.submit.JobSubmitter;
 import com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter;
@@ -55,13 +56,15 @@ class SparkStageExecutorSmokeTest {
         Files.createDirectories(logRoot);
 
         // 档案：LOCAL + 真实 spark-submit（与 runtime_profile 表 LOCAL 档案同构）
-        RuntimeProfile profile = new RuntimeProfile();
-        profile.setId(7L);
-        profile.setVersion(3);
-        profile.setType(RuntimeProfile.TYPE_LOCAL);
-        profile.setSparkMaster("local[2]");
-        profile.setSparkSubmitPath("D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd");
-        profile.setSparkJobJarUri("file:///D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
+        RuntimeProfile profileEntity = new RuntimeProfile();
+        profileEntity.setId(7L);
+        profileEntity.setVersion(3);
+        profileEntity.setType(RuntimeProfile.TYPE_LOCAL);
+        profileEntity.setSparkMaster("local[2]");
+        profileEntity.setSparkSubmitPath("D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd");
+        profileEntity.setSparkJobJarUri("file:///D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
+
+        RuntimeProfileSnapshot profile = RuntimeProfileSnapshot.from(profileEntity);
 
         String warehouseUri = "file:///" + warehouse.toString().replace('\\', '/');
         // Derby 元数据库也必须隔离（否则绑定到首次 warehouse 位置、跨 run 残留）。
@@ -79,7 +82,7 @@ class SparkStageExecutorSmokeTest {
                 "spark.hadoop.datanucleus.schema.autoCreateTables", "true");
 
         LocalProcessSparkSubmitter submitter = new LocalProcessSparkSubmitter(
-                profile.getSparkSubmitPath(), logRoot.toString());
+                profile.sparkSubmitPath(), logRoot.toString());
 
         // 1) 自举：sci 建表（不在阶段映射中，直接裸提交验证真实启动 + JobResult 解析）
         JobSubmitter.SubmitResult sci = submitter.submit(
@@ -106,7 +109,7 @@ class SparkStageExecutorSmokeTest {
         List<SparkStageExecutor.JobExecution> results = executor.executeStage(profile, 1L,
                 "LOAD_ODS", "20260901", 1,
                 Map.of("landingDir", "file:///D:/Develop_code/GraduationProject/tests/golden-dataset/events"),
-                confs);
+                confs).jobs();
 
         // 3) 断言阶段结果：odl 唯一作业 SUCCESS
         assertThat(results).hasSize(1);
