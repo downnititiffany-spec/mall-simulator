@@ -7,9 +7,14 @@ platform:
     url: ${PLATFORM_META_URL:jdbc:mysql://127.0.0.1:3306/analytics_meta?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
     username: ${PLATFORM_META_USER:meta_app}
     password: ${PLATFORM_META_PASSWORD:meta_app_pw_2026}
-  # R1 指标库只读源（整改书 §7.2/17.3）：metric_read 仅 SELECT 已发布 ADS 表；
-  # AI SqlExecutor 优先使用，未配置时回退主源（降级友好，生产必须配置）
+  # 指标库（analytics_metric）双源，V2.0 §17.1：
+  #   publish = metric_pub 读写（Flyway db/metric + 指标发布写路径）
+  #   read    = metric_read 仅 SELECT 已发布 ADS（看板/AI SQL/决策取值）
   metric:
+    publish:
+      url: ${PLATFORM_METRIC_PUBLISH_URL:jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
+      username: ${PLATFORM_METRIC_PUBLISH_USER:metric_pub}
+      password: ${PLATFORM_METRIC_PUBLISH_PASSWORD:metric_pub_pw_2026}
     read:
       url: ${PLATFORM_METRIC_READ_URL:jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
       username: ${PLATFORM_METRIC_READ_USER:metric_read}

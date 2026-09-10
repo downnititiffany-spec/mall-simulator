@@ -6,6 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.contracts.EventContract;
 import com.graduation.analytics.contracts.EventEnvelope;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.metric.dict.MetricDefinition;
+import com.graduation.analytics.metric.dict.MetricDefinitionMapper;
+import com.graduation.analytics.metric.publish.MetricPublisherPort;
+import com.graduation.analytics.metric.publish.MetricPublisherPort.DefinitionRef;
+import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport;
+import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest;
 import com.graduation.analytics.pipeline.entity.DataQualityResult;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.entity.PipelineStageRun;
@@ -84,6 +90,19 @@ public class PipelineService {
     /** R6（§13.1）：后台执行线程池（测试注入直接执行器验证状态机） */
     @org.springframework.beans.factory.annotation.Qualifier("pipelineExecutor")
     private final Executor pipelineExecutor;
+
+    /**
+     * R7-3（§17.4/§17.5）：指标快照发布端口。流水线只依赖 platform-common 里的契约，
+     * 实现在 metric-analysis（避免 warehouse-pipeline → metric-analysis 的模块环）。
+     */
+    private final MetricPublisherPort metricPublisher;
+
+    /** R7-3：发布前读指标字典做「指标码 + 口径版本」对账（字典属 analytics_meta，§17.2） */
+    private final MetricDefinitionMapper metricDefinitionMapper;
+
+    /** R7-3：Spark `mxp` 导出目录根（清单 + 各表 JSONL），可配置便于运维定位 */
+    @org.springframework.beans.factory.annotation.Value("${platform.metric.publish.export-dir:metric-staging}")
+    private String metricExportRoot = "metric-staging";
 
     public record RunResult(Long runId, String idempotencyKey, String status, String currentStage,
                             String errorCode, int attemptNo, String targetSnapshotId,
@@ -481,7 +500,7 @@ public class PipelineService {
                 return new StageOutcome(ex.totalOutputRecords(), evidence);
             });
 
-            // ── PUBLISH_METRIC：真实作业 pub 发布正式分区（Hive 元数据指针）+ 登记快照 ──
+            // ── PUBLISH_METRIC：真实作业 pub 发布正式分区（Hive 元数据指针）+ mxp 导出 → 指标库发布 ──
             if (!completedStages.contains("PUBLISH_METRIC")) {
                 Map<String, Object> adsEvidence = adsOutcome != null
                         ? adsOutcome.evidence()
@@ -491,14 +510,17 @@ public class PipelineService {
                         throw new PipelineStageException("RUN_PUBLISH_NO_ADS",
                                 "缺少 BUILD_ADS 真实作业证据，拒绝发布");
                     }
+                    Path exportDir = Paths.get(metricExportRoot).toAbsolutePath().resolve(snapshotIdRef);
+                    Map<String, String> publishArgs = new LinkedHashMap<>();
+                    publishArgs.put("outputSnapshotId", snapshotIdRef);
+                    publishArgs.put("exportDir", exportDir.toString());
                     SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
                             "PUBLISH_METRIC", businessDate, run.getAttemptNo(),
-                            Map.of("outputSnapshotId", snapshotIdRef), confs);
+                            publishArgs, confs);
                     Map<String, Object> evidence = jobEvidence(ex);
                     evidence.put("adsSnapshotId", snapshotIdRef);
                     evidence.put("adsJobs", adsEvidence.get("jobs"));
                     evidence.put("hiveAds", "正式分区以 Hive 元数据指针指向本次暂存路径（§14.4）");
-                    evidence.put("mysqlPublish", "deferred-to-R7（Hive→MySQL staging→ACTIVE 原子切换）");
                     evidence.put("adsChecksPersisted", persistChecks(run.getId(), snapshotIdRef, ex.checks()));
                     evidence.put("adsChecks", ex.checks().stream().map(c -> Map.of(
                             "ruleCode", c.ruleCode(), "severity", c.severity(),
@@ -508,6 +530,27 @@ public class PipelineService {
                                 new PipelineStageException("RUN_PUBLISH_FAILED",
                                         "正式分区发布失败: " + ex.errorMessage()));
                     }
+
+                    // ── R7-3：Hive 正式分区已发布 → 指标库 ADS→MySQL 写入 + 快照 ACTIVE 原子切换 ──
+                    PublishReport report = metricPublisher.publish(new PublishRequest(
+                            snapshot.id(), snapshot.version(), snapshotIdRef, businessDate,
+                            run.getBusinessTime().toString(), run.getId(), exportDir, metricDefinitions()));
+                    evidence.put("metricPublish", Map.of(
+                            "ok", report.ok(),
+                            "errorCode", String.valueOf(report.errorCode()),
+                            "message", String.valueOf(report.message()),
+                            "snapshotId", String.valueOf(report.snapshotId()),
+                            "adsRows", report.adsRows(),
+                            "metricValues", report.metricValues()));
+                    evidence.put("metricPublishEvidence", report.evidence());
+                    evidence.put("metricPublishChecks", report.checks().stream().map(c -> Map.of(
+                            "ruleCode", c.ruleCode(), "severity", c.severity(),
+                            "passed", c.passed(), "detail", c.detail())).toList());
+                    if (!report.ok()) {
+                        throw new PipelineStageException("RUN_METRIC_PUBLISH_FAILED",
+                                "指标库发布失败[" + report.errorCode() + "]: " + report.message());
+                    }
+                    evidence.put("metricExportDir", exportDir.toString());
                     return new StageOutcome(ex.totalOutputRecords(), evidence);
                 });
             }
@@ -583,6 +626,23 @@ public class PipelineService {
      * 只 setErrorCode(null) 无法把库里已有错误清掉 —— 必须用 UpdateWrapper 显式 set null。
      * 实测触发：run 16 attempt1 失败 → attempt2 成功后 error_code 仍残留 STAGE_INTERNAL。
      */
+    /**
+     * R7-3：读指标字典（analytics_meta.metric_definition）→ metric_code 到「口径版本 + 单位」的映射。
+     *
+     * <p>发布器只允许写字典内的指标码，并逐码核对 definition_version（§17.5 版本对账）；
+     * 字典为空/缺码时发布校验会以 BLOCKING 拦下整个发布，不会"少写几个指标也算成功"。</p>
+     */
+    private Map<String, DefinitionRef> metricDefinitions() {
+        Map<String, DefinitionRef> refs = new LinkedHashMap<>();
+        List<MetricDefinition> definitions = metricDefinitionMapper.selectList(null);
+        for (MetricDefinition d : definitions) {
+            refs.put(d.getMetricCode(), new DefinitionRef(
+                    d.getDefinitionVersion() == null ? "" : d.getDefinitionVersion(),
+                    d.getUnit() == null ? "" : d.getUnit()));
+        }
+        return refs;
+    }
+
     private void clearRunError(PipelineRun run) {
         runMapper.update(null, new UpdateWrapper<PipelineRun>()
                 .eq("id", run.getId())

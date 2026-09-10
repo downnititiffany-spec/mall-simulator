@@ -136,7 +136,23 @@ class PipelineServiceTest {
                 .thenReturn(new QualityChecker.QualitySummary(List.of(mock(DataQualityResult.class)), true));
 
         service = new PipelineService(runMapper, stageMapper, qualityMapper, qualityChecker,
-                eventClock, objectMapper, runtimeProfileService, stageExecutorFactory, executor);
+                eventClock, objectMapper, runtimeProfileService, stageExecutorFactory, executor,
+                metricPublisherPort(), metricDefinitionMapper());
+    }
+
+    /**
+     * R7-3：L1 用假发布端口（不连指标库）——本类只验证编排与状态机；
+     * ADS→MySQL 的真实写入/对账/ACTIVE 切换由 metric-analysis 的单测 + 真实小链（run 21）覆盖。
+     */
+    private static com.graduation.analytics.metric.publish.MetricPublisherPort metricPublisherPort() {
+        return request -> new com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport(
+                true, null, "L1 stub", request.snapshotId(), 22L, 10, List.of(),
+                Map.of("stub", true));
+    }
+
+    /** R7-3：字典 mapper 用 Mockito 假实现（返回空字典；L1 不校验指标码） */
+    private static com.graduation.analytics.metric.dict.MetricDefinitionMapper metricDefinitionMapper() {
+        return mock(com.graduation.analytics.metric.dict.MetricDefinitionMapper.class);
     }
 
     /** 构造"全作业 SUCCESS"的阶段执行结果（计数模拟 JobResult 真实输出） */

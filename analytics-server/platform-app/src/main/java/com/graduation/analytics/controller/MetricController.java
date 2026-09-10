@@ -2,9 +2,9 @@ package com.graduation.analytics.controller;
 
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.metric.MetricStore;
+import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
-import com.graduation.analytics.metric.mapper.MetricSnapshotMapper;
 import com.graduation.analytics.common.TraceContext;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
@@ -18,14 +18,16 @@ import java.util.Map;
 
 /**
  * 指标服务接口（§24.3 子集）：看板固定查询走 MetricStore；快照列表供管理页。
+ *
+ * R7-1：快照列表不再走 MyBatis mapper（analytics_metric 无 mapper 扫描），
+ * 改由 {@link MySqlMetricStore#listSnapshots(int)} 通过 metric_read 只读源查询，返回结构不变。
  */
 @RestController
 @RequestMapping("/api/v1/metrics")
 @RequiredArgsConstructor
 public class MetricController {
 
-    private final MetricStore metricStore;
-    private final MetricSnapshotMapper snapshotMapper;
+    private final MySqlMetricStore metricStore;
     private final com.graduation.analytics.pipeline.mapper.DataQualityResultMapper qualityMapper;
 
     /** 经营指标（默认最新 ACTIVE 快照）；返回 metric_code→value+unit */
@@ -46,9 +48,7 @@ public class MetricController {
 
     @GetMapping("/snapshots")
     public ApiResponse<List<MetricSnapshot>> snapshots(@RequestParam(defaultValue = "10") int limit) {
-        return ApiResponse.ok(snapshotMapper.selectList(new LambdaQueryWrapper<MetricSnapshot>()
-                .orderByDesc(MetricSnapshot::getId)
-                .last("LIMIT " + Math.max(1, Math.min(100, limit)))), TraceContext.create().traceId());
+        return ApiResponse.ok(metricStore.listSnapshots(limit), TraceContext.create().traceId());
     }
 
     @GetMapping("/health")

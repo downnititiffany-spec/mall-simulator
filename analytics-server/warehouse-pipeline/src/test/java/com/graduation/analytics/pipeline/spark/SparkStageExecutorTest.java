@@ -80,7 +80,8 @@ class SparkStageExecutorTest {
         assertThat(SparkStageExecutor.stageJobs("BUILD_ADS")).containsExactly("fna");
         // R6-13：质量门与发布由真实作业承载（dqc 读暂存分区，pub 用元数据指针发布正式分区）
         assertThat(SparkStageExecutor.stageJobs("QUALITY_CHECK")).containsExactly("dqc");
-        assertThat(SparkStageExecutor.stageJobs("PUBLISH_METRIC")).containsExactly("pub");
+        // R7-3：发布后 mxp 把已发布的正式 ADS 导出给指标库发布器（Hive→MySQL 快照发布）
+        assertThat(SparkStageExecutor.stageJobs("PUBLISH_METRIC")).containsExactly("pub", "mxp");
     }
 
     @Test

@@ -14,9 +14,12 @@ GRANT ALL PRIVILEGES ON mall_business.* TO 'mall_app'@'localhost';
 CREATE USER IF NOT EXISTS 'meta_app'@'localhost' IDENTIFIED BY 'meta_app_pw_2026';
 GRANT ALL PRIVILEGES ON analytics_meta.* TO 'meta_app'@'localhost';
 
--- 指标发布账号：analytics_metric 暂存/快照读写
+-- 指标发布账号：analytics_metric 暂存/快照读写 + db/metric 迁移 DDL
+-- （R7-1：MetricFlywayInitializer 用该账号执行 classpath:db/metric，需要 CREATE/ALTER/INDEX；
+--  刻意不授 DROP —— 破坏性清理必须显式授权，避免迁移脚本误删快照数据）
 CREATE USER IF NOT EXISTS 'metric_pub'@'localhost' IDENTIFIED BY 'metric_pub_pw_2026';
 GRANT SELECT, INSERT, UPDATE, DELETE ON analytics_metric.* TO 'metric_pub'@'localhost';
+GRANT CREATE, ALTER, INDEX, REFERENCES ON analytics_metric.* TO 'metric_pub'@'localhost';
 
 -- 指标查询/AI 只读账号：仅已发布 ADS 表 SELECT（AI 执行器使用；禁止授权商城与元数据库）
 CREATE USER IF NOT EXISTS 'metric_read'@'localhost' IDENTIFIED BY 'metric_read_pw_2026';

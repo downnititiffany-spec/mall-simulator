@@ -6,6 +6,7 @@ package com.graduation.analytics.job
  * R4：odl 全主题 ODS → bdw 行为 DWD / dim 维度 / tdw 交易 DWD。
  * R5：usw 聚合 7 张 DWS（行为+订单），fna 产出 8 张核心 ADS。
  * R6-13：fna 只写暂存分区 → dqc 质量门 → pub 发布正式分区（元数据指针）。
+ * R7-3：pub 之后 mxp 把已发布正式 ADS 导出为发布文件（指标库发布读取侧）。
  */
 object JobRegistry {
 
@@ -18,6 +19,7 @@ object JobRegistry {
     FunnelAdsJob.instance.code -> FunnelAdsJob.instance,
     AdsQualityJob.instance.code -> AdsQualityJob.instance,
     AdsPublishJob.instance.code -> AdsPublishJob.instance,
+    MetricExportJob.instance.code -> MetricExportJob.instance,
     LocalJsonParquetJob.instance.code -> LocalJsonParquetJob.instance,
     LocalSchemaInitJobInstance.instance.code -> LocalSchemaInitJobInstance.instance
   )
@@ -32,6 +34,7 @@ object JobRegistry {
     "fna" -> List("usw"),
     "dqc" -> List("fna"),
     "pub" -> List("dqc"),
+    "mxp" -> List("pub"),
     "ljp" -> List.empty,  // 本地 JSON→Parquet 验证
     "sci" -> List.empty   // 本地表初始化自举
   )

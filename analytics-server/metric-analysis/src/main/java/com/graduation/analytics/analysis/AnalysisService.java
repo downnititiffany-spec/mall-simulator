@@ -2,12 +2,9 @@ package com.graduation.analytics.analysis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.metric.entity.MetricValue;
-import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.MetricStore;
-import com.graduation.analytics.metric.mapper.MetricSnapshotMapper;
 import com.graduation.analytics.contracts.EventContract;
 import com.graduation.analytics.contracts.EventEnvelope;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -70,7 +67,6 @@ public class AnalysisService {
     private final ObjectMapper objectMapper;
     private final Environment environment;
     private final MetricStore metricStore;
-    private final MetricSnapshotMapper snapshotMapper;
 
     // ── 输出 DTO ──────────────────────────────────────────────────────────
 

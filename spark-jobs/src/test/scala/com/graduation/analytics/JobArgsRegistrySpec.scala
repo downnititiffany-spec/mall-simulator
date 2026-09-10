@@ -24,9 +24,9 @@ class JobArgsRegistrySpec extends AnyFlatSpec with Matchers {
     JobArgs.parse(Array("--runtimeProfileId=1", "--jobCode=bdw", "--businessDate=2026-09-01")) should be('left)
   }
 
-  "JobRegistry" should "注册全部 10 作业且依赖顺序正确" in {
-    JobRegistry.allCodes should contain allOf ("odl", "bdw", "dim", "tdw", "usw", "fna", "ljp", "sci", "dqc", "pub")
-    JobRegistry.jobs.size should be(10)
+  "JobRegistry" should "注册全部 11 作业且依赖顺序正确" in {
+    JobRegistry.allCodes should contain allOf ("odl", "bdw", "dim", "tdw", "usw", "fna", "ljp", "sci", "dqc", "pub", "mxp")
+    JobRegistry.jobs.size should be(11)
     JobRegistry.dependencies("bdw") should be(List("odl"))
     JobRegistry.dependencies("dim") should be(List("odl"))
     JobRegistry.dependencies("tdw") should be(List("odl", "dim"))
@@ -35,6 +35,8 @@ class JobArgsRegistrySpec extends AnyFlatSpec with Matchers {
     // R6-13：fna 写暂存 → dqc 只查暂存 → pub 元数据指针发布正式分区
     JobRegistry.dependencies("dqc") should be(List("fna"))
     JobRegistry.dependencies("pub") should be(List("dqc"))
+    // R7-3：pub 之后才允许导出（导出必须读已发布的正式分区）
+    JobRegistry.dependencies("mxp") should be(List("pub"))
     JobRegistry.dependencies("odl") should be(List.empty)
     JobRegistry.dependencies("ljp") should be(List.empty)
     JobRegistry.dependencies("sci") should be(List.empty)

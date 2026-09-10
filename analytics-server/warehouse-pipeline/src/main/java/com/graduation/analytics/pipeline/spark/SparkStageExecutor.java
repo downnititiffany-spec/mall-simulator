@@ -36,6 +36,7 @@ public class SparkStageExecutor {
      * 阶段 → 作业序列（与 spark-jobs JobRegistry 依赖对齐）。
      * R6-13：QUALITY_CHECK 由真实作业 dqc 承载（读 ADS 暂存分区 + DWS 对账），
      * PUBLISH_METRIC 由 pub 承载（Hive 元数据指针把正式分区指向已过质量门的暂存路径）。
+     * R7-3：PUBLISH_METRIC = pub（Hive 侧发布）→ mxp（把已发布正式 ADS 导出给指标库发布器）。
      */
     private static final Map<String, List<String>> STAGE_JOBS = Map.of(
             "INIT_SCHEMA", List.of("sci"),
@@ -44,7 +45,7 @@ public class SparkStageExecutor {
             "BUILD_DWS", List.of("usw"),
             "BUILD_ADS", List.of("fna"),
             "QUALITY_CHECK", List.of("dqc"),
-            "PUBLISH_METRIC", List.of("pub"));
+            "PUBLISH_METRIC", List.of("pub", "mxp"));
 
     private final JobSubmitter submitter;
     private final SparkJobRunMapper runMapper;
