@@ -30,23 +30,37 @@ object AdsSql {
     case None      => s"INSERT OVERWRITE TABLE ${formal(table)} PARTITION(dt = '$dt')"
   }
 
-  /** 运营大盘（退款率=完全退款订单/支付订单，分母 0 → null） */
+  /**
+   * 运营大盘（§13.1 指标字典口径，R7-0 统一）：
+   *  - pv   = view 行为事件数（字典「count(view 行为事件)」，**不再**把全部行为当 PV）
+   *  - uv   = view 行为去重用户数
+   *  - refund_rate      = 发生**已完成**退款的订单数 / 支付订单数（部分/全部退款都算，字典口径）
+   *  - full_refund_rate = 全额退款订单数 / 支付订单数（新增独立指标，不偷换 refund_rate）
+   * 退款金额口径来自 OrderTradeCompiler：refund_amount 只累计 refund_completed 事件（按 refund_id 去重）。
+   * 分母 0 → null（不满除零）。
+   */
   def operationOverview(dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget("ads_operation_overview", dt, snapshotId)}
        |SELECT
        |  b.pv, b.uv, b.dau, t.order_count, t.sale_amount, t.net_sale_amount, t.avg_order_value,
        |  CASE WHEN t.order_count = 0 THEN NULL
-       |       ELSE CAST(r.refunded_orders AS DECIMAL(18,2)) / t.order_count END AS refund_rate
+       |       ELSE CAST(r.refunded_orders AS DECIMAL(18,2)) / t.order_count END AS refund_rate,
+       |  CASE WHEN t.order_count = 0 THEN NULL
+       |       ELSE CAST(r.full_refunded_orders AS DECIMAL(18,2)) / t.order_count END AS full_refund_rate
        |FROM (SELECT
-       |        COUNT(*) AS pv,
+       |        COUNT(CASE WHEN behavior_type = 'view' THEN 1 END) AS pv,
        |        COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS uv,
        |        COUNT(DISTINCT user_id) AS dau
        |      FROM dw_dwd.dwd_user_behavior_detail WHERE dt = '$dt') b,
        |     (SELECT order_count, sale_amount, net_sale_amount, avg_order_value
        |      FROM dw_dws.dws_trade_day WHERE dt = '$dt') t,
-       |     (SELECT COUNT(DISTINCT order_id) AS refunded_orders
-       |      FROM dw_dwd.dwd_order_detail WHERE dt = '$dt' AND final_refunded_flag = 1) r
+       |     (SELECT
+       |        COUNT(DISTINCT CASE WHEN final_paid_flag = 1 AND refund_amount > 0
+       |              THEN order_id END) AS refunded_orders,
+       |        COUNT(DISTINCT CASE WHEN final_paid_flag = 1 AND final_refunded_flag = 1
+       |              THEN order_id END) AS full_refunded_orders
+       |      FROM dw_dwd.dwd_order_detail WHERE dt = '$dt') r
        |""".stripMargin
 
   /** 活跃趋势（dt 为分区列，由 INSERT PARTITION 提供，不再投影） */

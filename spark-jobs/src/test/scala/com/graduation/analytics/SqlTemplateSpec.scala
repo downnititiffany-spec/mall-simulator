@@ -164,6 +164,24 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     hot should include("rank_no <= 50")
   }
 
+  it should "R7-0 口径：PV 只计 view、退款率按「有已完成退款的订单」、另立全额退款率" in {
+    val overview = AdsSql.operationOverview("20260901").toLowerCase
+    // PV 字典口径 = count(view 行为事件)，禁止把全部行为行数当 PV
+    overview should include("count(case when behavior_type = 'view' then 1 end) as pv")
+    overview should not include "count(*) as pv"
+    // 退款率分子 = 有已完成退款（refund_amount>0，部分/全部都算）的支付订单
+    overview should include("final_paid_flag = 1 and refund_amount > 0")
+    overview should include("as refunded_orders")
+    // 全额退款率是独立指标，不能顶替 refund_rate
+    overview should include("full_refund_rate")
+    overview should include("final_refunded_flag = 1")
+    overview should include("as full_refunded_orders")
+    // 暂存/正式两条发布路径都必须带新列（否则发布后列错位）
+    val stg = AdsSql.operationOverview("20260901", Some("S20260901_99")).toLowerCase
+    stg should include("ads_operation_overview__staging")
+    stg should include("full_refund_rate")
+  }
+
   it should "漏斗 ADS 展开 4 个 stage 行" in {
     val sql = AdsSql.funnel("20260901").toLowerCase
     sql should include("'view' as stage")

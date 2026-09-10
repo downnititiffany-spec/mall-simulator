@@ -156,7 +156,8 @@ object LocalSchemaInitJob {
         CREATE TABLE IF NOT EXISTS dw_ads.ads_operation_overview (
           pv BIGINT, uv BIGINT, dau BIGINT, order_count BIGINT,
           sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
-          avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4))
+          avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
+          full_refund_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (dt STRING)"""),
     ("dw_ads", """
         CREATE TABLE IF NOT EXISTS dw_ads.ads_behavior_funnel (
@@ -202,7 +203,8 @@ object LocalSchemaInitJob {
         CREATE TABLE IF NOT EXISTS dw_ads.ads_operation_overview__staging (
           pv BIGINT, uv BIGINT, dau BIGINT, order_count BIGINT,
           sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
-          avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4))
+          avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
+          full_refund_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     ("dw_ads", """
         CREATE TABLE IF NOT EXISTS dw_ads.ads_behavior_funnel__staging (
@@ -247,8 +249,14 @@ object LocalSchemaInitJob {
       CREATE TABLE IF NOT EXISTS dw_ads.ads_operation_overview (
         pv BIGINT, uv BIGINT, dau BIGINT, order_count BIGINT,
         sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
-        avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4))
+        avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
+        full_refund_rate DECIMAL(8,4))
       USING parquet PARTITIONED BY (dt STRING)"""
+
+  /** R7-0 新增列（口径统一新增 full_refund_rate）：正式+暂存表都补齐 */
+  val R7_ADDED_COLUMNS: Map[String, Seq[String]] = Map(
+    "dw_ads.ads_operation_overview" -> Seq("full_refund_rate DECIMAL(8,4)"),
+    "dw_ads.ads_operation_overview__staging" -> Seq("full_refund_rate DECIMAL(8,4)"))
 
   /**
    * R6-13 结构对账（幂等，只在检测到漂移时动作）：
@@ -258,6 +266,9 @@ object LocalSchemaInitJob {
    * 该表由 fna 的 INSERT OVERWRITE 全量重建，无持久数据损失；
    * 重建后正式分区元数据为空（Spark 不会自动发现遗留目录，实测 COUNT=0），
    * 首次成功的 pub 会用元数据指针把正式分区指到本次暂存路径。
+   *
+   * R7-0 追加：缺列（full_refund_rate）用 ALTER TABLE ADD COLUMNS 补齐（非破坏性，
+   * 历史 parquet 文件缺该列时读出 null，下一次成功发布即被新快照覆盖）。
    */
   def reconcile(spark: SparkSession): List[String] = {
     val actions = scala.collection.mutable.ListBuffer[String]()
@@ -268,6 +279,18 @@ object LocalSchemaInitJob {
         spark.sql(s"DROP TABLE IF EXISTS $table")
         spark.sql(ADS_OPERATION_OVERVIEW_DDL)
         actions += s"$table 检测到遗留数据列 snapshot_id（值恒为 dt，语义错误）→ 已重建为无该列的当前结构"
+      }
+    }
+    // R7-0 缺列补齐（正式表 + 暂存表）
+    R7_ADDED_COLUMNS.foreach { case (tbl, columns) =>
+      val Array(db, name) = tbl.split("\\.", 2)
+      if (spark.catalog.tableExists(db, name)) {
+        val existing = spark.table(tbl).schema.fieldNames.toSet
+        val missing = columns.filterNot(c => existing.contains(c.trim.split("\\s+")(0)))
+        if (missing.nonEmpty) {
+          spark.sql(s"ALTER TABLE $tbl ADD COLUMNS (${missing.mkString(", ")})")
+          actions += s"$tbl 补齐 R7-0 缺失列: ${missing.mkString(", ")}"
+        }
       }
     }
     actions.toList
