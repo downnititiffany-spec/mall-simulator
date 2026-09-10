@@ -236,8 +236,12 @@ class PipelineServiceTest {
         assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
         assertThat(failed.errorCode()).isEqualTo("RUN_EMPTY_DATA");
         assertThat(stageStatus("LOAD_ODS")).isEqualTo(PipelineStageRun.STATUS_FAILED);
-        // 预检失败不提交任何 Spark 作业；后续依赖阶段不执行、未发布
-        verify(stageExecutor, never()).executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any());
+        // 自举阶段（INIT_SCHEMA）已执行；LOAD_ODS 预检失败不提交 odl，后续依赖阶段不执行、未发布
+        assertThat(stageStatus("INIT_SCHEMA")).isEqualTo(PipelineStageRun.STATUS_SUCCESS);
+        verify(stageExecutor, org.mockito.Mockito.times(1))
+                .executeStage(any(), anyLong(), org.mockito.ArgumentMatchers.eq("INIT_SCHEMA"),
+                        anyString(), anyInt(), any(), any());
+        assertThat(stageOf("BUILD_DWD")).isNull();
         assertThat(stageOf("PUBLISH_METRIC")).isNull();
     }
 
@@ -372,13 +376,14 @@ class PipelineServiceTest {
         PipelineService.RunResult failed = service.get(r.runId());
         assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
         assertThat(failed.errorCode()).isEqualTo("RUN_JOB_FAILED");
+        assertThat(stageStatus("INIT_SCHEMA")).isEqualTo(PipelineStageRun.STATUS_SUCCESS);
         assertThat(stageStatus("BUILD_DWD")).isEqualTo(PipelineStageRun.STATUS_FAILED);
         // 依赖阶段保持未执行（无阶段记录），PUBLISH 更不得发生
         assertThat(stageOf("BUILD_DWS")).isNull();
         assertThat(stageOf("BUILD_ADS")).isNull();
         assertThat(stageOf("PUBLISH_METRIC")).isNull();
-        // 只提交到 BUILD_DWD 为止（LOAD_ODS 1 次 + BUILD_DWD 1 次）
-        verify(stageExecutor, org.mockito.Mockito.times(2))
+        // 只提交到 BUILD_DWD 为止（INIT_SCHEMA + LOAD_ODS + BUILD_DWD = 3 次）
+        verify(stageExecutor, org.mockito.Mockito.times(3))
                 .executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any());
     }
 

@@ -34,6 +34,7 @@ public class SparkStageExecutor {
 
     /** 阶段 → 作业序列（与 spark-jobs JobRegistry 依赖对齐）：QUALITY_CHECK/PUBLISH_METRIC 由编排方本地判定 */
     private static final Map<String, List<String>> STAGE_JOBS = Map.of(
+            "INIT_SCHEMA", List.of("sci"),
             "LOAD_ODS", List.of("odl"),
             "BUILD_DWD", List.of("bdw", "dim", "tdw"),
             "BUILD_DWS", List.of("usw"),

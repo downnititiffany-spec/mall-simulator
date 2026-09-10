@@ -23,6 +23,9 @@ platform:
   spark:
     job-timeout-ms: ${PLATFORM_SPARK_JOB_TIMEOUT_MS:900000}
     poll-interval-ms: ${PLATFORM_SPARK_POLL_INTERVAL_MS:2000}
+    # Hive 仓位置与嵌入式元数据库（LOCAL）：显式固定，避免随 spark-submit 的 CWD 漂移
+    warehouse-dir: ${PLATFORM_SPARK_WAREHOUSE_DIR:./spark-warehouse}
+    metastore-dir: ${PLATFORM_SPARK_METASTORE_DIR:./derby-metastore}
 
 # 迁移由 MetaFlywayInitializer 显式执行（classpath:db/meta）；默认 flyway 关闭
 spring:

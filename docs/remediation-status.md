@@ -130,6 +130,15 @@
     - PUBLISH_METRIC 语义收敛为"登记本次 ADS 快照"：记录 `adsSnapshotId` + ADS 作业证据 + `mysqlPublish: deferred-to-R7（Hive→MySQL staging→ACTIVE 原子切换）`；缺 ADS 证据时**拒绝登记**（RUN_PUBLISH_NO_ADS），不再假装发布
     - 验证：warehouse-pipeline 快速套件 **80/80 GREEN**（新增 ⑨fail-fast：BUILD_DWD 失败→BUILD_DWS/BUILD_ADS/PUBLISH 无阶段记录、executeStage 仅调用 2 次；⑩计数取 JobResult：BUILD_DWD records=8×3）；`analytics-server` 七模块 `mvn -DskipTests package` 全 SUCCESS
     - **边界如实登记**：ADS 目前仍由 fna 直接写正式分区，staging/原子发布属 R6-13；Hive→MySQL 发布属 R7（R6 期间 `metric_snapshot`/`metric_value` 无新数据，看板数据源将在 R7 恢复为真实 ADS）
+  - **R6-12/R6-15 生产链路真实验收（进行中，2026-09-10 实测，run 12）**：按正规流程 `disable → update → activate`（档案 local-dev 置 `spark_submit_path`/`spark_job_jar_uri`/`spark_master=local[2]`，§8.4 路径来自档案而非硬编码；激活检查含真实 `spark-submit --version` 与 metric 查询，v2→v3 ACTIVE），经 `POST /api/v1/ingestion/runs` 采集 55 行黄金数据 → `POST /api/v1/pipeline-runs` 提交生产流水线。**已取得真实生产证据**：
+    - `WAIT_LANDING` SUCCESS（manifest batch 18：accepted=51 / quarantined=4）
+    - `LOAD_ODS` SUCCESS：`spark_job_run` row1 jobCode=odl externalJobId=`lp-1789030422172-1d2b14` **input=51 output=51**，log_uri=`landing/logs/pipeline-12-LOAD_ODS-odl-a1__lp-….log`（真实日志文件名含 run/stage/job/attempt，R6-12 生效）
+    - `BUILD_DWD` bdw SUCCESS：input=15 output=14（行为 ODS 15 行 → DWD 14 行 + 1 重复拒绝，与 R6-8b 黄金口径一致）
+    - `dim` FAILED：`INSERT_COLUMN_ARITY_MISMATCH` — `dw_dim.dim_user` 表 6 列（旧 DDL 建）vs 当前 SQL 7 列（含 `source_batch_id`）
+    - **缺陷①（环境/历史遗留，非代码）**：LOCAL 生产路径此前未显式指定仓位置，Spark 用全局默认 `D:\Develop\tmp\spark-warehouse` + CWD 下 `metastore_db`；该 warehouse 由**旧版 DDL** 建表，而 `sci` 是 `CREATE TABLE IF NOT EXISTS`（不演进既有表）→ 表结构漂移使 dim 写入失败。修复方向：R6-11 已加 `SparkStageExecutorFactory.confsFor()` 把 warehouse/metastore 钉到显式配置（`platform.spark.warehouse-dir` / `metastore-dir`，默认 `./spark-warehouse` / `./derby-metastore`），下次运行即用全新仓位置建当前 schema；**遗留改进**：`sci` 应做幂等 schema 对账（`ALTER TABLE … ADD COLUMNS` 补齐缺失列），避免既有环境再次漂移
+    - **缺陷②（本次新代码缺陷，已修）**：`pipeline_stage_run.evidence` 为 `VARCHAR(500)`，R6-11 起证据含逐作业明细（3 作业 JSON >500 字节）→ `MysqlDataTruncation` → 阶段落库失败并把 run 置 `RUN_INTERNAL`（run 12 实测）。修复：迁移 `V9__platform_stage_evidence_widen.sql` 加宽至 4000 + 代码侧 `evidenceJson()` 截断兜底（保留头部并标注截断长度）
+    - **缺陷③（黄金数据夹具，已修）**：`tests/golden-dataset/events/golden-20260901.jsonl` 末行无换行符 → 采集器按 Taildir 语义有意不消费尾部残行（§9.2 防止半行入库）→ 第 55 行（缺 event_id 的 055）既未 accepted 也未 quarantined，51+3=54≠55 违反 §16.4 对账公式。**这是夹具问题而非代码缺陷**（JSONL 记录应以换行结尾）：补末尾 LF 后重采（batch 18）= **51 accepted + 4 quarantined = 55** 对账成立
+    - 本阶段验证：warehouse-pipeline 快速套件 **80/80 GREEN**；`analytics-server` 七模块 `-DskipTests package` BUILD SUCCESS
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性

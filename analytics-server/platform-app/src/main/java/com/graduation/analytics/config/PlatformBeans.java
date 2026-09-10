@@ -60,14 +60,18 @@ public class PlatformBeans {
     /**
      * R6-11（V2.0 §15.3）：阶段执行器工厂。超时/轮询可配置；默认 15 分钟等待、2 秒轮询
      * （小样本黄金链秒级完成，集群模式留足余量）。
+     * warehouse/metastore 显式配置：LOCAL 的嵌入式 Hive 不能按 spark-submit 的 CWD 漂移
+     * （否则 sci 建表与 odl 装载会看到不同 warehouse，历史 R6-7 已踩坑）。
      */
     @Bean
     public SparkStageExecutorFactory sparkStageExecutorFactory(
             JobSubmitterFactory jobSubmitterFactory,
             SparkJobRunMapper sparkJobRunMapper,
             @Value("${platform.spark.job-timeout-ms:900000}") long maxWaitMs,
-            @Value("${platform.spark.poll-interval-ms:2000}") long pollIntervalMs) {
+            @Value("${platform.spark.poll-interval-ms:2000}") long pollIntervalMs,
+            @Value("${platform.spark.warehouse-dir:./spark-warehouse}") String warehouseDir,
+            @Value("${platform.spark.metastore-dir:./derby-metastore}") String metastoreDir) {
         return new SparkStageExecutorFactory(jobSubmitterFactory, sparkJobRunMapper,
-                maxWaitMs, pollIntervalMs);
+                maxWaitMs, pollIntervalMs, warehouseDir, metastoreDir);
     }
 }

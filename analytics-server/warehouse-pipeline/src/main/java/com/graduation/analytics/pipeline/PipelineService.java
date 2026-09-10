@@ -234,6 +234,18 @@ public class PipelineService {
             final Path acceptedDirRef = acceptedDir;
             final List<EventEnvelope> eventsRef = events;
 
+            // 每次提交都带显式 warehouse/metastore 配置（LOCAL 嵌入式 Hive 不能按 spark-submit CWD 漂移）
+            final Map<String, String> confs = stageExecutorFactory.confsFor(snapshot);
+
+            // ── INIT_SCHEMA（§14.1）：先自举四层库表（sci 幂等 CREATE IF NOT EXISTS）──
+            StageOutcome initOutcome = runSparkStage(run, executor, snapshot, "INIT_SCHEMA",
+                    businessDate, completedStages, Map.of(), null, confs);
+            if (initOutcome != null && !completedStages.contains("INIT_SCHEMA")) {
+                Map<String, Object> evidence = new LinkedHashMap<>(initOutcome.evidence());
+                evidence.put("contracted", "sci: CREATE DATABASE/TABLE IF NOT EXISTS（四层库表自举，可重复执行）");
+                updateStageEvidence(run.getId(), "INIT_SCHEMA", evidence);
+            }
+
             // ── LOAD_ODS（§9.1）：真实 spark-jobs odl 装载四主题 ──────────
             Map<String, String> odsExtra = new LinkedHashMap<>();
             odsExtra.put("landingDir", acceptedDir == null ? "" : acceptedDir.toUri().toString());
@@ -252,7 +264,7 @@ public class PipelineService {
                         if (eventsRef.isEmpty()) {
                             throw new PipelineStageException("RUN_EMPTY_DATA", "accepted 无归属业务日事件");
                         }
-                    });
+                    }, confs);
             if (odsOutcome != null && !completedStages.contains("LOAD_ODS")) {
                 // §10.3：ODS 输入/输出/隔离数 = JobResult 真实计数（R6-12：非 Java 侧估算）
                 Map<String, Object> evidence = new LinkedHashMap<>(odsOutcome.evidence());
@@ -266,7 +278,7 @@ public class PipelineService {
 
             // ── BUILD_DWD：真实 spark-jobs bdw（行为明细/拒绝）+ dim（维度）+ tdw（订单明细）──
             StageOutcome dwdOutcome = runSparkStage(run, executor, snapshot, "BUILD_DWD",
-                    businessDate, completedStages, Map.of(), null);
+                    businessDate, completedStages, Map.of(), null, confs);
             if (dwdOutcome != null && !completedStages.contains("BUILD_DWD")) {
                 Map<String, Object> evidence = new LinkedHashMap<>(dwdOutcome.evidence());
                 evidence.put("contracted", "bdw: event_id 重复→reject 表；dim: 维度最新快照；tdw: 订单/退款合并明细");
@@ -276,7 +288,7 @@ public class PipelineService {
             // ── BUILD_DWS：真实 spark-jobs usw（7 张 DWS，观察期=业务日） ──
             StageOutcome dwsOutcome = runSparkStage(run, executor, snapshot, "BUILD_DWS",
                     businessDate, completedStages,
-                    Map.of("periodStart", businessDate, "periodEnd", businessDate), null);
+                    Map.of("periodStart", businessDate, "periodEnd", businessDate), null, confs);
             if (dwsOutcome != null && !completedStages.contains("BUILD_DWS")) {
                 Map<String, Object> evidence = new LinkedHashMap<>(dwsOutcome.evidence());
                 evidence.put("contracted", "usw: 7 张 DWS（行为/漏斗/商品/交易/区域/用户周期）");
@@ -286,7 +298,7 @@ public class PipelineService {
             // ── BUILD_ADS：真实 spark-jobs fna（8 张 ADS，观察期=业务日） ──
             StageOutcome adsOutcome = runSparkStage(run, executor, snapshot, "BUILD_ADS",
                     businessDate, completedStages,
-                    Map.of("periodStart", businessDate, "periodEnd", businessDate, "topN", "50"), null);
+                    Map.of("periodStart", businessDate, "periodEnd", businessDate, "topN", "50"), null, confs);
             if (adsOutcome != null && !completedStages.contains("BUILD_ADS")) {
                 Map<String, Object> evidence = new LinkedHashMap<>(adsOutcome.evidence());
                 evidence.put("contracted", "fna: 8 张 ADS（大盘/趋势/漏斗/热度/转化/画像/质量）");
@@ -372,11 +384,13 @@ public class PipelineService {
      * 重试时若该阶段已成功，返回 null（调用方据 completedStages 跳过证据覆盖）。
      *
      * @param precheck 阶段内预检（如 LOAD_ODS 的 accepted/业务日事件检查）；null 表示无
+     * @param confs    Spark --conf（warehouse/metastore，LOCAL 必须显式指定，见 SparkStageExecutorFactory）
      */
     private StageOutcome runSparkStage(PipelineRun run, SparkStageExecutor executor,
                                       RuntimeProfileSnapshot snapshot, String stageCode,
                                       String businessDate, Set<String> completedStages,
-                                      Map<String, String> extraArgs, Precheck precheck) {
+                                      Map<String, String> extraArgs, Precheck precheck,
+                                      Map<String, String> confs) {
         if (completedStages.contains(stageCode)) {
             return null; // 重试跳过：成功阶段不重复执行（§13.4）
         }
@@ -385,7 +399,7 @@ public class PipelineService {
                 precheck.verify();
             }
             SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
-                    stageCode, businessDate, run.getAttemptNo(), extraArgs, null);
+                    stageCode, businessDate, run.getAttemptNo(), extraArgs, confs);
             Map<String, Object> evidence = jobEvidence(ex);
             if (ex.failed()) {
                 // 失败证据先落库（stage() 的 finally 写记录），再阻断：后续依赖阶段保持未执行
@@ -466,7 +480,7 @@ public class PipelineService {
             outcome = action.execute();
             s.setRecords(outcome.records());
             if (outcome.evidence() != null) {
-                s.setEvidence(toJson(outcome.evidence()));
+                s.setEvidence(evidenceJson(outcome.evidence()));
             }
             if (outcome.deferredFailure() != null) {
                 // 作业失败：证据已随记录落库，状态置 FAILED 并延后抛出
@@ -499,7 +513,7 @@ public class PipelineService {
     private void updateStageEvidence(Long runId, String stageCode, Map<String, Object> evidence) {
         PipelineStageRun s = latestStage(runId, stageCode);
         if (s != null) {
-            s.setEvidence(toJson(evidence));
+            s.setEvidence(evidenceJson(evidence));
             stageMapper.updateById(s);
         }
     }
@@ -569,6 +583,20 @@ public class PipelineService {
         } catch (Exception e) {
             return String.valueOf(o);
         }
+    }
+
+    /**
+     * 阶段证据 JSON（R6-12）：列宽有限（V9 后 VARCHAR(4000)），超长时保留头部并标注截断，
+     * 避免证据过大把阶段写成 FAILED（实测 run 12：evidence 超 500 字节导致落库失败）。
+     */
+    private String evidenceJson(Map<String, Object> evidence) {
+        String json = toJson(evidence);
+        int max = 4000;
+        if (json.length() <= max) {
+            return json;
+        }
+        String note = "…(截断,原长度" + json.length() + ")";
+        return json.substring(0, max - note.length()) + note;
     }
 
     /** 解析 profile.landingUri（file:///D:/... 或 file://./landing）→ 本地 Path */

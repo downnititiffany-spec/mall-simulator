@@ -73,6 +73,7 @@ class SparkStageExecutorTest {
 
     @Test
     void stageMappingCoversAllCalculationStages() {
+        assertThat(SparkStageExecutor.stageJobs("INIT_SCHEMA")).containsExactly("sci");
         assertThat(SparkStageExecutor.stageJobs("LOAD_ODS")).containsExactly("odl");
         assertThat(SparkStageExecutor.stageJobs("BUILD_DWD")).containsExactly("bdw", "dim", "tdw");
         assertThat(SparkStageExecutor.stageJobs("BUILD_DWS")).containsExactly("usw");
