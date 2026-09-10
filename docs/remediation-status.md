@@ -139,6 +139,19 @@
     - **缺陷②（本次新代码缺陷，已修）**：`pipeline_stage_run.evidence` 为 `VARCHAR(500)`，R6-11 起证据含逐作业明细（3 作业 JSON >500 字节）→ `MysqlDataTruncation` → 阶段落库失败并把 run 置 `RUN_INTERNAL`（run 12 实测）。修复：迁移 `V9__platform_stage_evidence_widen.sql` 加宽至 4000 + 代码侧 `evidenceJson()` 截断兜底（保留头部并标注截断长度）
     - **缺陷③（黄金数据夹具，已修）**：`tests/golden-dataset/events/golden-20260901.jsonl` 末行无换行符 → 采集器按 Taildir 语义有意不消费尾部残行（§9.2 防止半行入库）→ 第 55 行（缺 event_id 的 055）既未 accepted 也未 quarantined，51+3=54≠55 违反 §16.4 对账公式。**这是夹具问题而非代码缺陷**（JSONL 记录应以换行结尾）：补末尾 LF 后重采（batch 18）= **51 accepted + 4 quarantined = 55** 对账成立
     - 本阶段验证：warehouse-pipeline 快速套件 **80/80 GREEN**；`analytics-server` 七模块 `-DskipTests package` BUILD SUCCESS
+  - **R6-15 生产链路端到端验收完成（2026-09-10 实测，run 13，全阶段 SUCCESS）**：新构建（INIT_SCHEMA 自举 + `confsFor()` 钉 warehouse/metastore）启动平台 → `POST /api/v1/pipeline-runs` → 八阶段全绿：
+    | 阶段 | 作业 | 真实计数（spark_job_run） |
+    |---|---|---|
+    | INIT_SCHEMA | sci | output=29 表（新仓 `./spark-warehouse` + `./derby-metastore` 按当前 DDL 建表） |
+    | LOAD_ODS | odl | input=51 output=51 |
+    | BUILD_DWD | bdw / dim / tdw | 15→14(+1 拒重) / 18→7 / 18→7 |
+    | BUILD_DWS | usw | 14→3 |
+    | BUILD_ADS | fna | 1→4 |
+    | QUALITY_CHECK | —（本地门） | 4 规则，`corePassed=true`（AMOUNT_RECONCILE check=5 error=0；EVENT_ID_UNIQUE error=1 passed=0 只记不阻断） |
+    | PUBLISH_METRIC | —（快照登记） | `adsSnapshotId=S20260901_13` + ADS 作业证据；`mysqlPublish=deferred-to-R7` |
+    - **Hive 内容与黄金基准逐项一致**（spark-sql 实测）：`dws_trade_day` order=5 buyer=3 sale=2042.00 refund=549.00 net=1493.00 avg=408.40；`ads_operation_overview` pv=14 uv=3 dau=3 order=5 sale=2042.00 net=1493.00 refund_rate=0.2000；`ads_data_quality` 4 规则同上；`dwd_order_detail` 7 行（6 行 fp=1）；`dws_user_trade_period` u1=2/1496.00 u2=1/279.00 u3=2/267.00（复购 1/3）
+    - `pipeline_run` 13：status=SUCCESS、current_stage=SUCCESS、target_snapshot_id=S20260901_13、runtime_profile_version=3、error_code=NULL
+    - **R6 完成条件对照（§15.4）**：①Controller 返回 taskId 且阶段变化可查 ✓ ②每个 Spark 阶段有真实 `spark_job_run`+externalJobId ✓ ③生产服务不再引用 MetricCalculator/不算本地 ADS ✓ ④Hive 正式分区证据 ✓、**staging 证据 ✗（待 R6-13）** ⑤质量失败阻断发布 ✓（跑通路径）、重试只重跑失败阶段 ✓（R6-11 实现，**重启恢复 ✗ 待 R6-14**）
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性
