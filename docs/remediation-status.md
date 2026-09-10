@@ -118,6 +118,9 @@
     - **冒烟脚本 bug 修复**：`$argsList += $extra` 把 `--periodStart=... --periodEnd=...` 整串当一个参数 → JobArgs 解析后 periodStart 含空格、userTradePeriod WHERE 无匹配 → dws_user_trade_period 空分区 0 行；修复为 `($extra -split ' ')` 逐一入参数组后重跑 usw/fna，user_trade_period 恢复 3 行 ✓
     - SparkStageExecutorSmokeTest 硬编码同步 30→55（inputRecords/头注释 4 处）；spark-jobs 单测回归 41/41 GREEN（Scala 未改，jar 未重打）
     - 提交：R6-8b commit（见下）
+  - **R6-9 统一事件契约（V2.0 §15.3）**：`EventContract` 升级为"12 类契约 + ODS 主题路由"唯一 Java 侧来源（`ODS_TABLE_BY_TYPE` / `EVENT_TYPES` / `isKnownType` / `odsTable` / `UNKNOWN_EVENT_TYPE`）；`PipelineService` 删除私有旧白名单（原 `user_created/user_updated/product_status_changed/inventory_changed/refund_requested` 等旧命名，R6-8a 漂移根因）改用 `EventContract`；LOAD_ODS 证据新增 `unknownEventType` 计数（未知类型显式拒绝、不悄悄跳过）。验证：`EventContractTest` 28 GREEN（12 类全集/主题语义/**跨语言契约锁**——直接比对 scala `OdsLoadSql.eventTypeToTable` 键集取值逐项一致/12 类过统一校验器/未知类型显式拒绝）
+  - **R6-10 提交器工厂（V2.0 §15.3）**：新增 `RuntimeProfileSnapshot`（不可变档案快照，冻结 type/master/ssh/jar/凭据引用）+ `JobSubmitterFactory`（LOCAL/SINGLE_NODE→`LocalProcessSparkSubmitter`，REMOTE_CLUSTER→`SshSparkSubmitter`；缺 `spark_submit_path`/`ssh_host`/`ssh_user` fail-fast，不再猜默认路径 §8.4；工厂只管构造，不碰 DAG/落库）；`LocalProcessSparkSubmitter` 日志名升级为 `{runId}-{stage}-{jobCode}-a{attempt}__{externalJobId}.log`（R6-12 可检索），`logs(jobId)` 按 `*__{jobId}.log` 后缀兜底仍可溯源。验证：`JobSubmitterFactoryTest` 8 GREEN + `LocalProcessSparkSubmitterLogTest` 4 GREEN（真实子进程）
+  - R6-9/R6-10 回归：warehouse-pipeline 快速套件 **76/76 GREEN**（`mvn -pl warehouse-pipeline -am test -Dtest=!SparkStageExecutorSmokeTest`）
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性

@@ -43,8 +43,10 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
             Path logDir = Paths.get(logRoot).toAbsolutePath();
             Files.createDirectories(logDir);
             String jobId = "lp-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 6);
-            // §13.3：日志文件与 externalJobId 同名，logs(externalJobId) 可直接溯源
-            Path logFile = logDir.resolve(jobId + ".log");
+            // §13.3：日志文件与 externalJobId 同名（logs(externalJobId) 可直接溯源）。
+            // R6-12（V2.0 §15.3）：文件名前置 runId/stage/jobCode/attempt，便于运维按运行检索；
+            // 仍在文件名中保留完整 externalJobId，logs() 用 *__{jobId}.log 兜底匹配。
+            Path logFile = logDir.resolve(logFileName(logPrefix, jobId));
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
@@ -82,15 +84,41 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
     @Override
     public String logs(String externalJobId) {
         try {
-            Path logFile = Paths.get(logRoot).toAbsolutePath()
-                    .resolve(externalJobId + ".log");
-            if (Files.exists(logFile)) {
+            Path logDir = Paths.get(logRoot).toAbsolutePath();
+            Path logFile = logDir.resolve(externalJobId + ".log");
+            if (!Files.exists(logFile)) {
+                // R6-12：带前缀命名（{runId}-{stage}-{jobCode}-a{attempt}__{jobId}.log）时按后缀匹配
+                logFile = findByJobId(logDir, externalJobId);
+            }
+            if (logFile != null && Files.exists(logFile)) {
                 String content = Files.readString(logFile, StandardCharsets.UTF_8);
                 return content.length() > 20000 ? content.substring(content.length() - 20000) : content;
             }
             return "(日志文件不存在: " + logFile + ")";
         } catch (IOException e) {
             return "(读取日志失败: " + e.getMessage() + ")";
+        }
+    }
+
+    /** R6-12：日志文件名前缀（{runId}-{stage}-{jobCode}-a{attempt}），非法字符替换为 '-' */
+    static String logFileName(String logPrefix, String jobId) {
+        if (logPrefix == null || logPrefix.isBlank()) {
+            return jobId + ".log";
+        }
+        String safe = logPrefix.trim().replaceAll("[^A-Za-z0-9._-]", "-");
+        return safe + "__" + jobId + ".log";
+    }
+
+    /** 按 externalJobId 后缀查找日志文件（前缀命名兼容；找不到返回 null） */
+    private static Path findByJobId(Path logDir, String externalJobId) throws IOException {
+        if (!Files.isDirectory(logDir)) {
+            return null;
+        }
+        try (java.util.stream.Stream<Path> list = Files.list(logDir)) {
+            return list.filter(p -> {
+                String n = p.getFileName().toString();
+                return n.endsWith("__" + externalJobId + ".log");
+            }).findFirst().orElse(null);
         }
     }
 

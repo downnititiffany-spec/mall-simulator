@@ -63,14 +63,6 @@ public class PipelineService {
     /** 幂等键 → 内存锁（防并发同键重复 insert；DB 唯一键兜底） */
     private final ConcurrentHashMap<String, Object> idempotencyLocks = new ConcurrentHashMap<>();
 
-    /** ODS 接受的事件类型白名单（与 spark-jobs OdsLoadSql.eventTypeToTable 口径一致，§10.2） */
-    private static final Set<String> ODS_ACCEPTED_TYPES = Set.of(
-            "user_created", "user_updated",
-            "product_created", "product_updated", "product_status_changed", "inventory_changed",
-            "behavior",
-            "order_created", "order_cancelled", "order_paid",
-            "refund_requested", "refund_completed");
-
     private final PipelineRunMapper runMapper;
     private final PipelineStageRunMapper stageMapper;
     private final DataQualityResultMapper qualityMapper;
@@ -257,18 +249,22 @@ public class PipelineService {
                 return (long) events.size();
             });
             // §10.3：流水线详情展示 ODS 输入/输出/隔离数（与 EventOdsLoadJob 契约口径一致：
-            // 接受=schema_version=1.0 且 event_id/event_type/event_time 非空且类型在合法集合）
+            // 接受=schema_version=1.0 且 event_id/event_type/event_time 非空且类型属契约 12 类）
+            // R6-9：类型白名单唯一来源 = EventContract（不再维护私有旧命名白名单，§15.3）
             if (!completedStages.contains("LOAD_ODS")) {
                 PipelineStageRun loadStage = latestStage(run.getId(), "LOAD_ODS");
                 if (loadStage != null) {
-                    long accepted = events.stream().filter(e -> "1.0".equals(e.schemaVersion())
+                    long accepted = events.stream().filter(e -> EventContract.SCHEMA_VERSION.equals(e.schemaVersion())
                             && !isBlank(e.eventId()) && !isBlank(e.eventType()) && !isBlank(e.eventTime())
-                            && ODS_ACCEPTED_TYPES.contains(e.eventType())).count();
+                            && EventContract.isKnownType(e.eventType())).count();
                     long rejected = events.size() - accepted;
                     Map<String, Object> evidence = new LinkedHashMap<>();
                     evidence.put("odsInputRecords", (long) events.size());
                     evidence.put("odsAcceptedRecords", accepted);
                     evidence.put("odsRejectedRecords", rejected);
+                    evidence.put("unknownEventType", events.stream()
+                            .filter(e -> !isBlank(e.eventType()) && !EventContract.isKnownType(e.eventType()))
+                            .count());
                     // 采集层隔离（schema_version 不符等）来自 manifest，§9.3 quarantine
                     Number q = (Number) manifest.get("quarantinedRecords");
                     if (q != null) {
