@@ -62,6 +62,16 @@ object JobRunner {
     node.put("status", r.status)
     node.put("message", r.message)
     node.put("elapsedMs", r.elapsedMs)
+    // R6-12：输出分区证据（表/dt/snapshotId/rowCount/path），Java 侧落 spark_job_run.output_partitions_json
+    val partitions = node.putArray("outputPartitions")
+    r.outputPartitions.foreach { p =>
+      val o = partitions.addObject()
+      o.put("table", p.table)
+      o.put("dt", p.dt)
+      p.snapshotId.foreach(o.put("snapshotId", _))
+      o.put("rowCount", p.rowCount)
+      p.path.foreach(o.put("path", _))
+    }
     node.toString
   }
 }

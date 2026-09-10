@@ -152,6 +152,21 @@
     - **Hive 内容与黄金基准逐项一致**（spark-sql 实测）：`dws_trade_day` order=5 buyer=3 sale=2042.00 refund=549.00 net=1493.00 avg=408.40；`ads_operation_overview` pv=14 uv=3 dau=3 order=5 sale=2042.00 net=1493.00 refund_rate=0.2000；`ads_data_quality` 4 规则同上；`dwd_order_detail` 7 行（6 行 fp=1）；`dws_user_trade_period` u1=2/1496.00 u2=1/279.00 u3=2/267.00（复购 1/3）
     - `pipeline_run` 13：status=SUCCESS、current_stage=SUCCESS、target_snapshot_id=S20260901_13、runtime_profile_version=3、error_code=NULL
     - **R6 完成条件对照（§15.4）**：①Controller 返回 taskId 且阶段变化可查 ✓ ②每个 Spark 阶段有真实 `spark_job_run`+externalJobId ✓ ③生产服务不再引用 MetricCalculator/不算本地 ADS ✓ ④Hive 正式分区证据 ✓、**staging 证据 ✗（待 R6-13）** ⑤质量失败阻断发布 ✓（跑通路径）、重试只重跑失败阶段 ✓（R6-11 实现，**重启恢复 ✗ 待 R6-14**）
+  - **R6-12 输出分区证据（2026-09-10 实测完成，run 15）**：`JobResult.outputPartitions` 从 Spark 一路贯通到 `spark_job_run.output_partitions_json`，作业不再只报"写了多少行"而能回答"写了哪些表/dt 分区、各多少行、落在哪个物理路径"（§15.3）。实现与真实证据：
+    - **Scala 侧**（`spark-jobs`）：新增 `PartitionEvidence.collect(spark, tables, snapshotId, dtEquals)` —— 用 `sessionState.catalog.getTableMetadata(...).partitionSchema.fieldNames` 判分区列 → `SHOW PARTITIONS` 枚举 → 分区内**真实 `COUNT(*)`** → `DESCRIBE FORMATTED ... PARTITION (...)` 解析**真实 Location**；采集失败**直接抛异常**（缺证据=假成功，不允许静默返回空表）；6 个作业（`odl`/`bdw`/`dim`/`tdw`/`usw`/`fna`）各自声明 `OUTPUT_TABLES`。`JobResult`/`JobRunner` 增 `outputPartitions` 数组（`table`/`dt`/`snapshotId`/`rowCount`/`path`）。
+    - **Java 侧**：`JobResultParser` 解析 `outputPartitions`（缺失 → 空表，**不臆造**）；`SparkStageExecutor.JobExecution` 携带分区证据并写入 `spark_job_run.output_partitions_json`（迁移 `V10__spark_job_run_output_partitions.sql`，LONGTEXT）；阶段证据同步记录 `outputPartitions`/`outputPartitionCount`/`outputPartitionRows`。
+    - **run 14（失败→修复）**：真实链路暴露新代码缺陷 —— `DESCRIBE FORMATTED … PARTITION (dt = '20260901' AND hour = '09')` 触发 `[PARSE_SYNTAX_ERROR] Syntax error at or near 'AND'`，LOAD_ODS 立即 FAILED 且后续阶段不执行（fail-fast 行为正确）。根因：Hive 的 `PARTITION` 规格用**逗号**分隔（`(dt='20260901', hour='09')`），`AND` 只适用于 `WHERE` 谓词。修复：`toSpec()`（逗号，用于 DESCRIBE）与 `toPredicate()`（AND，用于 COUNT 过滤）分离。
+    - **run 15（全绿）**：`POST /api/v1/pipeline-runs`（sourceDataVersion=`r6-12-run15`）→ 八阶段全 SUCCESS，7 个 Spark 作业全部落库分区证据（`sci` 仅建表故为 NULL）：
+      | 作业 | 阶段 | in→out | 分区证据 |
+      |---|---|---|---|
+      | odl | LOAD_ODS | 51→51 | **21 个分区**（4 张 ODS 表 × dt/hour），含迟到退款 `ods_trade_event/dt=20260902/hour=00`=2 行 |
+      | bdw | BUILD_DWD | 15→14 | `dwd_user_behavior_detail` + `dwd_reject_record` |
+      | dim | BUILD_DWD | 18→7 | `dim_user` + `dim_product` |
+      | tdw | BUILD_DWD | 18→7 | `dwd_order_detail` |
+      | usw | BUILD_DWS | 14→3 | 7 张 DWS |
+      | fna | BUILD_ADS | 1→4 | 8 张 ADS |
+    - **证据独立对账**（不是自证）：证据内 21 个 ODS 分区行数合计 **51**，与 `spark-sql` 独立查询 `ods_user_event=4 / ods_product_event=14 / ods_behavior_event=15 / ods_trade_event=18`（合 51）逐项一致；路径为真实 `file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ods.db/…/dt=…/hour=…`。
+    - 本阶段验证：`JobResultParserTest`+`PipelineServiceTest`+`SparkStageExecutorTest` **31/31 GREEN**（新增 3 条分区解析断言：正常解析、缺失字段→空表、失败时仍保留已采集证据）；`analytics-server` 全模块 `-DskipTests package` BUILD SUCCESS。
 - [ ] **R7 指标与看板**：Hive→MySQL staging→原子切换、看板只读 MetricStore、页面/AI 数值一致
 - [ ] **R8 AI/安全/决策**：EvidencePackage、AST 全字段校验+EXPLAIN、最小权限、身份、DRAFT 创建
 - [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性

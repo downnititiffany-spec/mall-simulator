@@ -10,6 +10,7 @@ import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineStageRunMapper;
+import com.graduation.analytics.pipeline.spark.JobResultParser;
 import com.graduation.analytics.pipeline.spark.SparkStageExecutor;
 import com.graduation.analytics.pipeline.spark.SparkStageExecutorFactory;
 import com.graduation.analytics.runtime.RuntimeProfileService;
@@ -432,6 +433,13 @@ public class PipelineService {
             item.put("logUri", j.logUri());
             if (j.errorMessage() != null) {
                 item.put("errorMessage", j.errorMessage());
+            }
+            // R6-12：真实输出分区证据（表/dt/snapshotId/行数/路径），空则不写（不造数）
+            if (j.outputPartitions() != null && !j.outputPartitions().isEmpty()) {
+                item.put("outputPartitions", j.outputPartitions());
+                item.put("outputPartitionCount", j.outputPartitions().size());
+                item.put("outputPartitionRows", j.outputPartitions().stream()
+                        .mapToLong(JobResultParser.OutputPartitionInfo::rowCount).sum());
             }
             jobs.add(item);
         }

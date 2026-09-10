@@ -36,10 +36,17 @@ class FunnelAdsJob extends WarehouseJob {
     val outputCount = spark.sql(
       s"SELECT COUNT(*) c FROM dw_ads.ads_behavior_funnel WHERE dt = '$dt'").collect()(0).getLong(0)
     JobResult.success(code, inputCount, outputCount, 0L, args.outputSnapshotId, args.attemptNo,
-      System.currentTimeMillis() - start)
+      System.currentTimeMillis() - start,
+      PartitionEvidence.collect(spark, FunnelAdsJob.OUTPUT_TABLES, args.outputSnapshotId, Some(dt)))
   }
 }
 
 object FunnelAdsJob {
   val instance: FunnelAdsJob = new FunnelAdsJob()
+
+  /** 本作业写出的 8 张 ADS（R6-12 分区证据采集范围） */
+  val OUTPUT_TABLES: Seq[String] = Seq(
+    "dw_ads.ads_operation_overview", "dw_ads.ads_active_trend", "dw_ads.ads_behavior_funnel",
+    "dw_ads.ads_hot_product", "dw_ads.ads_product_conversion", "dw_ads.ads_sale_trend",
+    "dw_ads.ads_user_profile", "dw_ads.ads_data_quality")
 }

@@ -41,10 +41,18 @@ class UserProductDwsJob extends WarehouseJob {
     val outputCount = spark.sql(
       s"SELECT COUNT(*) c FROM dw_dws.dws_user_behavior_day WHERE dt = '$dt'").collect()(0).getLong(0)
     JobResult.success(code, inputCount, outputCount, 0L, args.outputSnapshotId, args.attemptNo,
-      System.currentTimeMillis() - start)
+      System.currentTimeMillis() - start,
+      PartitionEvidence.collect(spark, UserProductDwsJob.OUTPUT_TABLES, args.outputSnapshotId, Some(dt)))
   }
 }
 
 object UserProductDwsJob {
   val instance: UserProductDwsJob = new UserProductDwsJob()
+
+  /** 本作业写出的 7 张 DWS（R6-12 分区证据采集范围） */
+  val OUTPUT_TABLES: Seq[String] = Seq(
+    "dw_dws.dws_user_behavior_day", "dw_dws.dws_behavior_funnel_day",
+    "dw_dws.dws_product_behavior_day", "dw_dws.dws_trade_day",
+    "dw_dws.dws_product_sale_day", "dw_dws.dws_user_trade_period",
+    "dw_dws.dws_region_sale_day")
 }

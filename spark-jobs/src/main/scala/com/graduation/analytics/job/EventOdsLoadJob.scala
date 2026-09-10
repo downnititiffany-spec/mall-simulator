@@ -72,11 +72,17 @@ class EventOdsLoadJob extends WarehouseJob {
         col("event_type").isNull || col("event_time").isNull).count()
 
     JobResult.success(code, inputCount, outputCount, rejectedCount,
-      args.outputSnapshotId, args.attemptNo, System.currentTimeMillis() - start)
+      args.outputSnapshotId, args.attemptNo, System.currentTimeMillis() - start,
+      PartitionEvidence.collect(spark, EventOdsLoadJob.OUTPUT_TABLES, args.outputSnapshotId))
       .copy(message = s"accepted=$acceptedCount rejectedVersionKeys=$rejectedByVersion topics=4")
   }
 }
 
 object EventOdsLoadJob {
   val instance: EventOdsLoadJob = new EventOdsLoadJob()
+
+  /** 本作业写出的目标表（R6-12 分区证据采集范围） */
+  val OUTPUT_TABLES: Seq[String] = Seq(
+    "dw_ods.ods_user_event", "dw_ods.ods_product_event",
+    "dw_ods.ods_behavior_event", "dw_ods.ods_trade_event")
 }

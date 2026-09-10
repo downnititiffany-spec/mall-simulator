@@ -44,6 +44,12 @@ public class SparkJobRun {
 
     private Long rejectedRecords;
 
+    /**
+     * R6-12（V2.0 §15.3）：真实输出分区证据 JSON 数组
+     * [{"table","dt","snapshotId","rowCount","path"}]，来自 spark-jobs JobResult.outputPartitions。
+     */
+    private String outputPartitionsJson;
+
     /** SUBMITTED / RUNNING / SUCCESS / FAILED / CANCELLED */
     private String status;
 

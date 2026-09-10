@@ -8,6 +8,7 @@ import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineStageRunMapper;
+import com.graduation.analytics.pipeline.spark.JobResultParser;
 import com.graduation.analytics.pipeline.spark.SparkStageExecutor;
 import com.graduation.analytics.pipeline.spark.SparkStageExecutorFactory;
 import com.graduation.analytics.runtime.RuntimeProfileService;
@@ -144,16 +145,24 @@ class PipelineServiceTest {
         for (String jobCode : SparkStageExecutor.stageJobs(stageCode)) {
             jobs.add(new SparkStageExecutor.JobExecution(
                     "lp-test-" + jobCode, jobCode, com.graduation.analytics.pipeline.entity.SparkJobRun.STATUS_SUCCESS,
-                    10L, 8L, 1L, "landing/logs/test__lp-test-" + jobCode + ".log", null));
+                    10L, 8L, 1L, "landing/logs/test__lp-test-" + jobCode + ".log", null,
+                    List.of(partition("dw_ads.ads_operation_overview", "dt=20260901"))));
         }
         return new SparkStageExecutor.StageExecution(stageCode, jobs, false, null);
+    }
+
+    /** R6-12：分区证据样例（表/dt/快照/行数/路径） */
+    private static JobResultParser.OutputPartitionInfo partition(String table, String dt) {
+        return new JobResultParser.OutputPartitionInfo(table, dt, "S20260901_1", 8L,
+                "file:/tmp/warehouse/" + table.replace('.', '/') + "/" + dt);
     }
 
     /** 构造"某阶段首个作业 FAILED"的执行结果（fail-fast 场景） */
     private static SparkStageExecutor.StageExecution failedExecution(String stageCode, String jobCode) {
         List<SparkStageExecutor.JobExecution> jobs = List.of(new SparkStageExecutor.JobExecution(
                 "lp-fail-" + jobCode, jobCode, com.graduation.analytics.pipeline.entity.SparkJobRun.STATUS_FAILED,
-                5L, 0L, 5L, "landing/logs/test__lp-fail-" + jobCode + ".log", "作业失败"));
+                5L, 0L, 5L, "landing/logs/test__lp-fail-" + jobCode + ".log", "作业失败",
+                List.of()));
         return new SparkStageExecutor.StageExecution(stageCode, jobs, true, jobCode + ": 作业失败");
     }
 

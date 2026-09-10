@@ -104,4 +104,49 @@ class JobResultParserTest {
                     assertThat(r.attemptNo()).isEqualTo(2);
                 });
     }
+
+    // ── R6-12：输出分区证据（§15.3） ──────────────────────────────────────
+
+    @Test
+    void parsesOutputPartitionsFromResultLine() {
+        String log = "{\"jobCode\":\"fna\",\"inputRecords\":1,\"outputRecords\":4,\"rejectedRecords\":0,"
+                + "\"snapshotId\":\"S20260901_13\",\"attemptNo\":1,\"status\":\"SUCCESS\","
+                + "\"message\":\"ok\",\"elapsedMs\":15854,\"outputPartitions\":["
+                + "{\"table\":\"dw_ads.ads_operation_overview\",\"dt\":\"20260901\","
+                + "\"snapshotId\":\"S20260901_13\",\"rowCount\":1,"
+                + "\"path\":\"file:/D:/wh/dw_ads.db/ads_operation_overview/dt=20260901\"},"
+                + "{\"table\":\"dw_ads.ads_user_profile\",\"dt\":\"20260901\","
+                + "\"snapshotId\":\"S20260901_13\",\"rowCount\":3,"
+                + "\"path\":\"file:/D:/wh/dw_ads.db/ads_user_profile/dt=20260901\"}]}\n";
+        JobResultParser.JobResultInfo r = JobResultParser.parseLog(log).orElseThrow();
+        assertThat(r.outputPartitions()).hasSize(2);
+        assertThat(r.outputPartitions().get(0).table()).isEqualTo("dw_ads.ads_operation_overview");
+        assertThat(r.outputPartitions().get(0).dt()).isEqualTo("20260901");
+        assertThat(r.outputPartitions().get(0).snapshotId()).isEqualTo("S20260901_13");
+        assertThat(r.outputPartitions().get(0).rowCount()).isEqualTo(1);
+        assertThat(r.outputPartitions().get(0).path()).endsWith("ads_operation_overview/dt=20260901");
+        assertThat(r.outputPartitions().get(1).table()).isEqualTo("dw_ads.ads_user_profile");
+        assertThat(r.outputPartitions().get(1).rowCount()).isEqualTo(3);
+    }
+
+    @Test
+    void missingOutputPartitionsYieldsEmptyListNotFabricated() {
+        // 旧作业结果（无 outputPartitions 字段）：解析为空表，绝不臆造证据
+        JobResultParser.JobResultInfo r = JobResultParser.parseLog(SUCCESS_LOG).orElseThrow();
+        assertThat(r.outputPartitions()).isEmpty();
+    }
+
+    @Test
+    void exitCodeFailureStillCarriesCollectedPartitions() {
+        // 失败判定不得丢弃已采集到的分区证据（失败留痕，§15.3）
+        String log = "{\"jobCode\":\"usw\",\"inputRecords\":0,\"outputRecords\":0,\"rejectedRecords\":0,"
+                + "\"attemptNo\":1,\"status\":\"SUCCESS\",\"message\":\"ok\",\"elapsedMs\":310,"
+                + "\"outputPartitions\":[{\"table\":\"dw_dws.dws_trade_day\",\"dt\":\"20260901\","
+                + "\"rowCount\":5,\"path\":\"file:/D:/wh/dw_dws.db/dws_trade_day/dt=20260901\"}]}\n";
+        JobResultParser.JobResultInfo failed = JobResultParser.resolve(1,
+                JobResultParser.parseLog(log));
+        assertThat(failed.success()).isFalse();
+        assertThat(failed.outputPartitions()).hasSize(1);
+        assertThat(failed.outputPartitions().get(0).rowCount()).isEqualTo(5);
+    }
 }

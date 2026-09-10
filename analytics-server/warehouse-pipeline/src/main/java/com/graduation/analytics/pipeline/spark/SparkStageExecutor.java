@@ -64,10 +64,13 @@ public class SparkStageExecutor {
         return !stageJobs(stageCode).isEmpty();
     }
 
-    /** 一次作业执行结果（§13.3：externalJobId/记录数/状态/错误）。 */
+    /**
+     * 一次作业执行结果（§13.3：externalJobId/记录数/状态/错误；R6-12：输出分区证据）。
+     */
     public record JobExecution(String externalJobId, String jobCode, String status,
                                long inputRecords, long outputRecords, long rejectedRecords,
-                               String logUri, String errorMessage) {
+                               String logUri, String errorMessage,
+                               List<JobResultParser.OutputPartitionInfo> outputPartitions) {
         public boolean success() {
             return SparkJobRun.STATUS_SUCCESS.equals(status);
         }
@@ -174,6 +177,10 @@ public class SparkStageExecutor {
         run.setInputRecords(info.inputRecords());
         run.setOutputRecords(info.outputRecords());
         run.setRejectedRecords(info.rejectedRecords());
+        // R6-12：真实输出分区证据（表/dt/snapshotId/行数/路径）逐作业落库，供审计与对账
+        if (!info.outputPartitions().isEmpty()) {
+            run.setOutputPartitionsJson(toJson(info.outputPartitions()));
+        }
         run.setLogUri(submitter.logUri(sr.externalJobId())); // R6-12：真实可访问日志位置
         run.setStatus(info.success() ? SparkJobRun.STATUS_SUCCESS : SparkJobRun.STATUS_FAILED);
         run.setFinishedAt(LocalDateTime.now());
@@ -185,7 +192,7 @@ public class SparkStageExecutor {
 
         return new JobExecution(run.getExternalJobId(), jobCode, run.getStatus(),
                 run.getInputRecords(), run.getOutputRecords(), run.getRejectedRecords(),
-                run.getLogUri(), info.success() ? null : info.message());
+                run.getLogUri(), info.success() ? null : info.message(), info.outputPartitions());
     }
 
     /** 按提交器状态 + 日志结果行综合判定（与 JobResultParser.resolve 语义一致） */
@@ -194,7 +201,7 @@ public class SparkStageExecutor {
                                                   String jobCode) {
         if ("CANCELLED".equals(st)) {
             return new JobResultParser.JobResultInfo(jobCode, 0, 0, 0, null, 0,
-                    "FAILED", "外部任务被取消", 0);
+                    "FAILED", "外部任务被取消", 0, List.of());
         }
         if ("FAILED".equals(st)) {
             // 进程退出码非 0：即使日志尾行声称 SUCCESS 也判失败（§13.2 不冒充成功）

@@ -34,11 +34,15 @@ class DimensionBuildJob extends WarehouseJob {
       s"SELECT COUNT(*) c FROM dw_dim.dim_product WHERE dt = '$dt'").collect()(0).getLong(0)
 
     JobResult.success(code, userInput + productInput, userOutput + productOutput, 0L,
-      args.outputSnapshotId, args.attemptNo, System.currentTimeMillis() - start)
+      args.outputSnapshotId, args.attemptNo, System.currentTimeMillis() - start,
+      PartitionEvidence.collect(spark, DimensionBuildJob.OUTPUT_TABLES, args.outputSnapshotId, Some(dt)))
       .copy(message = s"user=$userInput->$userOutput product=$productInput->$productOutput")
   }
 }
 
 object DimensionBuildJob {
   val instance: DimensionBuildJob = new DimensionBuildJob()
+
+  /** 本作业写出的目标表（R6-12 分区证据采集范围） */
+  val OUTPUT_TABLES: Seq[String] = Seq("dw_dim.dim_user", "dw_dim.dim_product")
 }

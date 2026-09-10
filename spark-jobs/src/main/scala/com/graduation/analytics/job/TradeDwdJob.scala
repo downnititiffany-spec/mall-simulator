@@ -91,8 +91,10 @@ class TradeDwdJob extends WarehouseJob {
     }
 
     val outputCount = spark.sql("SELECT COUNT(*) c FROM dw_dwd.dwd_order_detail").collect()(0).getLong(0)
+    // 数据驱动分区（迟到支付/退款会重算历史归属日），故采集该表全部存续分区
     JobResult.success(code, inputCount, outputCount, 0L, args.outputSnapshotId, args.attemptNo,
-      System.currentTimeMillis() - start)
+      System.currentTimeMillis() - start,
+      PartitionEvidence.collect(spark, TradeDwdJob.OUTPUT_TABLES, args.outputSnapshotId))
   }
 
   /** ODS 行 → TradeEvent（字符串归一，避免 NULL 装箱） */
@@ -138,4 +140,7 @@ object TradeDwdJob {
     ))
 
   val instance: TradeDwdJob = new TradeDwdJob()
+
+  /** 本作业写出的目标表（R6-12 分区证据采集范围） */
+  val OUTPUT_TABLES: Seq[String] = Seq("dw_dwd.dwd_order_detail")
 }

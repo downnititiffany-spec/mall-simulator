@@ -30,10 +30,14 @@ class BehaviorDwdJob extends WarehouseJob {
       s"SELECT COUNT(*) c FROM dw_dwd.dwd_reject_record WHERE dt = '$dt'").collect()(0).getLong(0)
 
     JobResult.success(code, inputCount, outputCount, rejected, args.outputSnapshotId, args.attemptNo,
-      System.currentTimeMillis() - start)
+      System.currentTimeMillis() - start,
+      PartitionEvidence.collect(spark, BehaviorDwdJob.OUTPUT_TABLES, args.outputSnapshotId, Some(dt)))
   }
 }
 
 object BehaviorDwdJob {
   val instance: BehaviorDwdJob = new BehaviorDwdJob()
+
+  /** 本作业写出的目标表（R6-12 分区证据采集范围） */
+  val OUTPUT_TABLES: Seq[String] = Seq("dw_dwd.dwd_user_behavior_detail", "dw_dwd.dwd_reject_record")
 }
