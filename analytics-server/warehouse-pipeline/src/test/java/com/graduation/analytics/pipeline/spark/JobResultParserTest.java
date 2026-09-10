@@ -36,6 +36,35 @@ class JobResultParserTest {
     }
 
     @Test
+    void parsesQualityChecksAndBlockingFailures() {
+        // R6-13：dqc/pub 的 checks 数组必须被解析出来（含 severity/layer/targetTable），
+        // 缺失 severity 的检查按 BLOCKING 处理（安全默认：不放过未知严重度）
+        String log = "{\"jobCode\":\"dqc\",\"inputRecords\":51,\"outputRecords\":0,\"rejectedRecords\":0," +
+                "\"attemptNo\":1,\"status\":\"FAILED\",\"message\":\"质量门阻断\",\"elapsedMs\":800," +
+                "\"checks\":[" +
+                "{\"ruleCode\":\"ADS_STAGING_PRESENT\",\"layer\":\"ADS_STAGING\"," +
+                "\"targetTable\":\"dw_ads.ads_hot_product__staging\",\"checkCount\":8,\"errorCount\":1," +
+                "\"threshold\":\"每表行数>0\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
+                "{\"ruleCode\":\"PUB_DQ_EVENT_ID_UNIQUE\",\"layer\":\"PUBLISH\",\"checkCount\":51," +
+                "\"errorCount\":3,\"threshold\":\"0.0005\",\"severity\":\"ERROR\",\"passed\":false}," +
+                "{\"ruleCode\":\"LEGACY_NO_SEVERITY\",\"checkCount\":1,\"errorCount\":1,\"passed\":false}" +
+                "]}\n";
+
+        JobResultParser.JobResultInfo r = JobResultParser.parseLog(log).orElseThrow();
+
+        assertThat(r.checks()).hasSize(3);
+        assertThat(r.checks().get(0).ruleCode()).isEqualTo("ADS_STAGING_PRESENT");
+        assertThat(r.checks().get(0).layer()).isEqualTo("ADS_STAGING");
+        assertThat(r.checks().get(0).targetTable()).isEqualTo("dw_ads.ads_hot_product__staging");
+        assertThat(r.checks().get(0).blocking()).isTrue();
+        assertThat(r.checks().get(1).blocking()).isFalse(); // ERROR 不阻断发布
+        assertThat(r.checks().get(2).severity()).isEqualTo("BLOCKING"); // 缺省保守判定
+        // 只有 BLOCKING 且未通过的算阻断失败；PUB_DQ_EVENT_ID_UNIQUE 是观察项
+        assertThat(r.blockingFailures()).extracting(JobResultParser.CheckInfo::ruleCode)
+                .containsExactly("ADS_STAGING_PRESENT", "LEGACY_NO_SEVERITY");
+    }
+
+    @Test
     void ignoresOrdinaryJsonLogLines() {
         // 前面有普通 JSON 日志（含 jobCode 字样但不完整）时不得误判
         String log = "{\"jobCode\":\"odl\",\"msg\":\"starting\"}\n" +

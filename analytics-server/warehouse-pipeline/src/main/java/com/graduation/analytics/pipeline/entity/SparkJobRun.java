@@ -64,13 +64,16 @@ public class SparkJobRun {
 
     private String errorMessage;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
+    // 注意：spark_job_run 表**没有** created_at/updated_at 列（见 V1/V10 迁移）。
+    // 早期实体多声明了这两个字段：insert 时值为 null → MP 走 NOT_NULL 策略被跳过，所以插入正常；
+    // 但 selectList 会显式列出全部实体字段 → 报 "Unknown column 'created_at'"，R6-14 启动对账首次
+    // 触发该查询时暴露。这里删除幻影字段（时间语义由 started_at/finished_at 承担），而不是加列。
 
     public static final String STATUS_SUBMITTED = "SUBMITTED";
     public static final String STATUS_RUNNING = "RUNNING";
     public static final String STATUS_SUCCESS = "SUCCESS";
     public static final String STATUS_FAILED = "FAILED";
     public static final String STATUS_CANCELLED = "CANCELLED";
+    /** §23.1 重启对账：未结束的作业结果不可判定（不当作成功，也不当作失败） */
+    public static final String STATUS_UNKNOWN = "UNKNOWN";
 }

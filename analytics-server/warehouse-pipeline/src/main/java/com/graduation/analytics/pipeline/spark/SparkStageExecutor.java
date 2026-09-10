@@ -32,13 +32,19 @@ import java.util.Optional;
 @Slf4j
 public class SparkStageExecutor {
 
-    /** 阶段 → 作业序列（与 spark-jobs JobRegistry 依赖对齐）：QUALITY_CHECK/PUBLISH_METRIC 由编排方本地判定 */
+    /**
+     * 阶段 → 作业序列（与 spark-jobs JobRegistry 依赖对齐）。
+     * R6-13：QUALITY_CHECK 由真实作业 dqc 承载（读 ADS 暂存分区 + DWS 对账），
+     * PUBLISH_METRIC 由 pub 承载（Hive 元数据指针把正式分区指向已过质量门的暂存路径）。
+     */
     private static final Map<String, List<String>> STAGE_JOBS = Map.of(
             "INIT_SCHEMA", List.of("sci"),
             "LOAD_ODS", List.of("odl"),
             "BUILD_DWD", List.of("bdw", "dim", "tdw"),
             "BUILD_DWS", List.of("usw"),
-            "BUILD_ADS", List.of("fna"));
+            "BUILD_ADS", List.of("fna"),
+            "QUALITY_CHECK", List.of("dqc"),
+            "PUBLISH_METRIC", List.of("pub"));
 
     private final JobSubmitter submitter;
     private final SparkJobRunMapper runMapper;
@@ -70,7 +76,8 @@ public class SparkStageExecutor {
     public record JobExecution(String externalJobId, String jobCode, String status,
                                long inputRecords, long outputRecords, long rejectedRecords,
                                String logUri, String errorMessage,
-                               List<JobResultParser.OutputPartitionInfo> outputPartitions) {
+                               List<JobResultParser.OutputPartitionInfo> outputPartitions,
+                               List<JobResultParser.CheckInfo> checks) {
         public boolean success() {
             return SparkJobRun.STATUS_SUCCESS.equals(status);
         }
@@ -91,6 +98,11 @@ public class SparkStageExecutor {
 
         public long totalRejectedRecords() {
             return jobs.stream().mapToLong(JobExecution::rejectedRecords).sum();
+        }
+
+        /** 本阶段全部质量检查结果（含失败作业的 checks：§16.3 失败证据不得丢失） */
+        public List<JobResultParser.CheckInfo> checks() {
+            return jobs.stream().flatMap(j -> j.checks().stream()).toList();
         }
     }
 
@@ -192,7 +204,8 @@ public class SparkStageExecutor {
 
         return new JobExecution(run.getExternalJobId(), jobCode, run.getStatus(),
                 run.getInputRecords(), run.getOutputRecords(), run.getRejectedRecords(),
-                run.getLogUri(), info.success() ? null : info.message(), info.outputPartitions());
+                run.getLogUri(), info.success() ? null : info.message(), info.outputPartitions(),
+                info.checks());
     }
 
     /** 按提交器状态 + 日志结果行综合判定（与 JobResultParser.resolve 语义一致） */
@@ -201,7 +214,7 @@ public class SparkStageExecutor {
                                                   String jobCode) {
         if ("CANCELLED".equals(st)) {
             return new JobResultParser.JobResultInfo(jobCode, 0, 0, 0, null, 0,
-                    "FAILED", "外部任务被取消", 0, List.of());
+                    "FAILED", "外部任务被取消", 0, List.of(), List.of());
         }
         if ("FAILED".equals(st)) {
             // 进程退出码非 0：即使日志尾行声称 SUCCESS 也判失败（§13.2 不冒充成功）

@@ -27,13 +27,31 @@ public final class JobResultParser {
                                       long rowCount, String path) {
     }
 
-    /** 作业结果（snapshotId 可能缺失；outputPartitions 可能为空）。 */
+    /**
+     * 质量检查结果（R6-13，V2.0 §16.1/§16.5）：层次 + 目标表 + 检查数/错误数/阈值/严重度。
+     * severity=BLOCKING 的规则未通过即发布阻断（§16.3）；ERROR 只记录。
+     */
+    public record CheckInfo(String ruleCode, String layer, String targetTable,
+                            long checkCount, long errorCount, String threshold,
+                            String severity, boolean passed, String detail) {
+        public boolean blocking() {
+            return "BLOCKING".equalsIgnoreCase(severity);
+        }
+    }
+
+    /** 作业结果（snapshotId 可能缺失；outputPartitions/checks 可能为空）。 */
     public record JobResultInfo(String jobCode, long inputRecords, long outputRecords,
                                 long rejectedRecords, String snapshotId, int attemptNo,
                                 String status, String message, long elapsedMs,
-                                List<OutputPartitionInfo> outputPartitions) {
+                                List<OutputPartitionInfo> outputPartitions,
+                                List<CheckInfo> checks) {
         public boolean success() {
             return "SUCCESS".equals(status);
+        }
+
+        /** 严重度为 BLOCKING 且未通过的规则（作业失败时用于定位阻断原因） */
+        public List<CheckInfo> blockingFailures() {
+            return checks.stream().filter(c -> c.blocking() && !c.passed()).toList();
         }
     }
 
@@ -78,10 +96,10 @@ public final class JobResultParser {
             return new JobResultInfo(r.jobCode(), r.inputRecords(), r.outputRecords(),
                     r.rejectedRecords(), r.snapshotId(), r.attemptNo(), "FAILED",
                     "进程退出码非0(exit=" + exitCode + "): " + r.message(), r.elapsedMs(),
-                    r.outputPartitions());
+                    r.outputPartitions(), r.checks());
         }
         return new JobResultInfo("", 0, 0, 0, null, 0, "FAILED",
-                "未找到 JobResult 结果行", 0, List.of());
+                "未找到 JobResult 结果行", 0, List.of(), List.of());
     }
 
     private static JobResultInfo toInfo(String line) {
@@ -97,11 +115,12 @@ public final class JobResultParser {
                     n.path("status").asText("FAILED"),
                     n.path("message").asText(""),
                     n.path("elapsedMs").asLong(0),
-                    toPartitions(n.path("outputPartitions")));
+                    toPartitions(n.path("outputPartitions")),
+                    toChecks(n.path("checks")));
         } catch (Exception e) {
             // 理论上不会到这里（parseLog 已用同一 parser 校验过），防御性兜底
             return new JobResultInfo("", 0, 0, 0, null, 0, "FAILED",
-                    "结果行解析失败: " + e.getMessage(), 0, List.of());
+                    "结果行解析失败: " + e.getMessage(), 0, List.of(), List.of());
         }
     }
 
@@ -120,5 +139,26 @@ public final class JobResultParser {
                     p.hasNonNull("path") ? p.get("path").asText() : null));
         }
         return partitions;
+    }
+
+    /** 质量检查数组 → 强类型列表（缺 severity 视为 BLOCKING：契约缺失不得当作放行） */
+    private static List<CheckInfo> toChecks(JsonNode array) {
+        List<CheckInfo> checks = new ArrayList<>();
+        if (array == null || !array.isArray()) {
+            return checks;
+        }
+        for (JsonNode c : array) {
+            checks.add(new CheckInfo(
+                    c.path("ruleCode").asText(""),
+                    c.path("layer").asText(""),
+                    c.path("targetTable").asText(""),
+                    c.path("checkCount").asLong(0),
+                    c.path("errorCount").asLong(0),
+                    c.path("threshold").asText(""),
+                    c.path("severity").asText("BLOCKING"),
+                    c.path("passed").asBoolean(false),
+                    c.path("detail").asText("")));
+        }
+        return checks;
     }
 }

@@ -78,7 +78,9 @@ class SparkStageExecutorTest {
         assertThat(SparkStageExecutor.stageJobs("BUILD_DWD")).containsExactly("bdw", "dim", "tdw");
         assertThat(SparkStageExecutor.stageJobs("BUILD_DWS")).containsExactly("usw");
         assertThat(SparkStageExecutor.stageJobs("BUILD_ADS")).containsExactly("fna");
-        assertThat(SparkStageExecutor.stageJobs("QUALITY_CHECK")).isEmpty();
+        // R6-13：质量门与发布由真实作业承载（dqc 读暂存分区，pub 用元数据指针发布正式分区）
+        assertThat(SparkStageExecutor.stageJobs("QUALITY_CHECK")).containsExactly("dqc");
+        assertThat(SparkStageExecutor.stageJobs("PUBLISH_METRIC")).containsExactly("pub");
     }
 
     @Test

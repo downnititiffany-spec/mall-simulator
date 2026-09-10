@@ -1,10 +1,12 @@
 package com.graduation.analytics.pipeline;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.contracts.EventContract;
 import com.graduation.analytics.contracts.EventEnvelope;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.pipeline.entity.DataQualityResult;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
@@ -22,6 +24,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +42,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 流水线编排（§13.1：POST 立即返回 taskId+PENDING，线程池异步执行计算链）：
@@ -79,8 +85,8 @@ public class PipelineService {
     @org.springframework.beans.factory.annotation.Qualifier("pipelineExecutor")
     private final Executor pipelineExecutor;
 
-    public record RunResult(Long runId, String idempotencyKey, String status,
-                            String errorCode, int attemptNo, Long snapshotId,
+    public record RunResult(Long runId, String idempotencyKey, String status, String currentStage,
+                            String errorCode, int attemptNo, String targetSnapshotId,
                             List<PipelineStageRun> stages) {
     }
 
@@ -95,14 +101,14 @@ public class PipelineService {
         // 幂等：同键已存在 → 返回原 run（不重复执行）
         PipelineRun existing = selectByKey(key);
         if (existing != null) {
-            return assemble(existing.getId(), null);
+            return assemble(existing.getId());
         }
 
         // 并发同键：内存锁 + 二次检查（DB 唯一键 uk_idempotency 最终兜底，§13.4）
         synchronized (idempotencyLocks.computeIfAbsent(key, k -> new Object())) {
             existing = selectByKey(key);
             if (existing != null) {
-                return assemble(existing.getId(), null);
+                return assemble(existing.getId());
             }
             PipelineRun run = new PipelineRun();
             run.setIdempotencyKey(key);
@@ -123,14 +129,14 @@ public class PipelineService {
                 // 并发下唯一键兜底命中：返回已存在的任务
                 PipelineRun winner = selectByKey(key);
                 if (winner != null) {
-                    return assemble(winner.getId(), null);
+                    return assemble(winner.getId());
                 }
                 throw e;
             }
             final Long runId = run.getId();
             // §13.1：立即返回 PENDING taskId，计算链异步执行
             pipelineExecutor.execute(() -> executeInBackground(runId));
-            return assemble(runId, null);
+            return assemble(runId);
         }
     }
 
@@ -144,7 +150,7 @@ public class PipelineService {
             throw new IllegalArgumentException("run 不存在: " + runId);
         }
         if (!PipelineRun.STATUS_FAILED.equals(run.getStatus())) {
-            return assemble(runId, null);
+            return assemble(runId);
         }
         run.setStatus(PipelineRun.STATUS_PENDING);
         run.setCurrentStage("PENDING");
@@ -154,13 +160,128 @@ public class PipelineService {
         run.setTraceId(traceId);
         run.setUpdatedAt(eventClock.nowLdt());
         runMapper.updateById(run);
+        clearRunError(run);
         pipelineExecutor.execute(() -> executeInBackground(runId));
-        return assemble(runId, null);
+        return assemble(runId);
     }
 
     /** 只读查询（含阶段明细） */
     public RunResult get(Long runId) {
-        return assemble(runId, null);
+        return assemble(runId);
+    }
+
+    // ── R6-14（§23.1）管理员恢复动作：resume / mark-failed / retry-from-stage ──────
+    // 三者都必须记录操作者与原因（审计），且都复用同一 snapshotId，保证暂存与发布幂等。
+
+    /** 阶段权威顺序（retry-from-stage 需要知道"其后"包含哪些阶段） */
+    public static final List<String> STAGE_ORDER = List.of(
+            "WAIT_LANDING", "INIT_SCHEMA", "LOAD_ODS", "BUILD_DWD", "BUILD_DWS",
+            "BUILD_ADS", "QUALITY_CHECK", "PUBLISH_METRIC");
+
+    /**
+     * 恢复执行：把被中断/待执行/失败的 run 重新排队（§23.1）。
+     * SUCCESS 阶段按阶段记录跳过，不重复计算；snapshotId 复用，暂存写入与发布保持幂等。
+     * RUNNING 状态**拒绝**（无法证明执行线程已死，直接 resume 会双跑）——由启动对账或 mark-failed 先判定中断。
+     */
+    public RunResult resume(Long runId, String operator, String reason, String traceId) {
+        PipelineRun run = requireRun(runId);
+        if (PipelineRun.STATUS_SUCCESS.equals(run.getStatus())) {
+            return assemble(runId);
+        }
+        if (PipelineRun.STATUS_RUNNING.equals(run.getStatus())) {
+            throw new IllegalArgumentException("run " + runId
+                    + " 仍为 RUNNING：先由启动对账或 mark-failed 判定中断，再 resume（避免双跑）");
+        }
+        audit(runId, "RESUME", operator, reason);
+        run.setStatus(PipelineRun.STATUS_PENDING);
+        run.setCurrentStage("PENDING");
+        run.setAttemptNo(run.getAttemptNo() + 1);
+        run.setTraceId(traceId);
+        run.setFinishedAt(null);
+        run.setUpdatedAt(eventClock.nowLdt());
+        runMapper.updateById(run);
+        // finished_at 与错误字段一样受 NOT_NULL 策略影响，需显式清空
+        runMapper.update(null, new UpdateWrapper<PipelineRun>()
+                .eq("id", runId)
+                .set("finished_at", null));
+        clearRunError(run);
+        pipelineExecutor.execute(() -> executeInBackground(runId));
+        log.info("pipeline {} resumed by {} ({}) attempt={}", runId, operator, reason, run.getAttemptNo());
+        return assemble(runId);
+    }
+
+    /** 管理员判定失败（§23.1）：写入稳定错误码与操作者/原因，供运维页与审计追溯 */
+    public RunResult markFailed(Long runId, String operator, String reason) {
+        PipelineRun run = requireRun(runId);
+        if (PipelineRun.STATUS_SUCCESS.equals(run.getStatus())) {
+            throw new IllegalArgumentException("run " + runId + " 已 SUCCESS，不可标记失败");
+        }
+        audit(runId, "MARK_FAILED", operator, reason);
+        run.setStatus(PipelineRun.STATUS_FAILED);
+        run.setCurrentStage("FAILED");
+        run.setErrorCode("ADMIN_MARKED_FAILED");
+        run.setErrorMessage("管理员标记失败 operator=" + operator + " reason=" + reason);
+        run.setFinishedAt(eventClock.nowLdt());
+        run.setUpdatedAt(eventClock.nowLdt());
+        runMapper.updateById(run);
+        log.warn("pipeline {} marked FAILED by {} ({})", runId, operator, reason);
+        return assemble(runId);
+    }
+
+    /**
+     * 从指定阶段起重跑（§23.1）：删除该阶段及其之后的阶段记录，使 execute() 重新执行它们，
+     * 再按 resume 排队。用于"失败阶段之前的数据可信、只需尾段重算"的场景。
+     */
+    public RunResult retryFromStage(Long runId, String stageCode, String operator, String reason,
+                                    String traceId) {
+        requireRun(runId);
+        int idx = STAGE_ORDER.indexOf(stageCode);
+        if (idx < 0) {
+            throw new IllegalArgumentException("未知阶段: " + stageCode + "，可选 " + STAGE_ORDER);
+        }
+        List<String> from = STAGE_ORDER.subList(idx, STAGE_ORDER.size());
+        stageMapper.delete(new LambdaQueryWrapper<PipelineStageRun>()
+                .eq(PipelineStageRun::getRunId, runId)
+                .in(PipelineStageRun::getStageCode, from));
+        audit(runId, "RETRY_FROM_STAGE:" + stageCode, operator, reason);
+        PipelineRun run = requireRun(runId);
+        run.setStatus(PipelineRun.STATUS_FAILED);
+        run.setErrorCode("ADMIN_RETRY_FROM_STAGE");
+        run.setErrorMessage("管理员从 " + stageCode + " 起重跑 operator=" + operator + " reason=" + reason);
+        runMapper.updateById(run);
+        log.warn("pipeline {} retry-from-stage {} by {} ({})", runId, stageCode, operator, reason);
+        return resume(runId, operator, "retry-from-stage " + stageCode, traceId);
+    }
+
+    /**
+     * 审计：把恢复动作写入 run **最早**一条阶段记录（WAIT_LANDING）的证据。
+     * R6-13 修正：原实现写"最近一条"，而 retry-from-stage 会删除失败阶段及其之后的记录
+     * （实测 run 18：mark-failed 的审计行随 QUALITY_CHECK 记录被删而丢失），
+     * §23.1 要求管理员动作的操作者+原因必须可追溯 → 改写耐久的最早阶段记录。
+     * 无阶段记录（例如从 WAIT_LANDING 起重跑）时忽略。
+     */
+    private void audit(Long runId, String action, String operator, String reason) {
+        PipelineStageRun latest = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
+                .eq(PipelineStageRun::getRunId, runId)
+                .orderByAsc(PipelineStageRun::getId).last("LIMIT 1"));
+        if (latest == null) {
+            return;
+        }
+        String note = "[RECOVERY] action=" + action + " operator=" + operator
+                + " reason=" + reason + " at=" + eventClock.nowLdt();
+        String merged = latest.getEvidence() == null || latest.getEvidence().isBlank()
+                ? note : cap(latest.getEvidence() + " | " + note, 4000);
+        stageMapper.update(null, new UpdateWrapper<PipelineStageRun>()
+                .eq("id", latest.getId())
+                .set("evidence", merged));
+    }
+
+    private PipelineRun requireRun(Long runId) {
+        PipelineRun run = runMapper.selectById(runId);
+        if (run == null) {
+            throw new IllegalArgumentException("run 不存在: " + runId);
+        }
+        return run;
     }
 
     // ── 执行链（幂等检查之外，run()/retry() 共用的异步入口） ──────────────
@@ -198,9 +319,19 @@ public class PipelineService {
             run.setUpdatedAt(eventClock.nowLdt());
             runMapper.updateById(run);
 
+            // §14.4 快照号：一次 run 一个 snapshotId，**重试复用**（保证暂存分区与发布幂等，
+            // 重试不会产生第二份数据，也不会把上一次的暂存结果误当本次）。生成即落库可追溯。
+            String snapshotId = run.getTargetSnapshotId();
+            if (snapshotId == null || snapshotId.isBlank()) {
+                snapshotId = "S" + businessDate + "_" + run.getId();
+                run.setTargetSnapshotId(snapshotId);
+                runMapper.updateById(run);
+            }
+
             // ── 数据准备（幂等读：即使重试跳过成功阶段，后续阶段仍有上下文） ──
             // §9.3：只认 manifests/ 下状态为 READY 的批次清单，不再看 source/events 目录
-            Map<String, Object> manifest = findReadyManifest(landingRoot);
+            // §13.4/§23.1：重试/恢复必须钉住**本 run 原有批次**（见 manifestForRun）
+            Map<String, Object> manifest = manifestForRun(landingRoot, run.getId());
             // §9.1：ODS 只能读取 accepted（好的批次数据）；§5.3.3 只装载业务日事件
             Path acceptedDir = manifest == null ? null
                     : landingRoot.resolve(String.valueOf(manifest.get("acceptedUri")));
@@ -296,61 +427,88 @@ public class PipelineService {
                 updateStageEvidence(run.getId(), "BUILD_DWS", evidence);
             }
 
-            // ── BUILD_ADS：真实 spark-jobs fna（8 张 ADS，观察期=业务日） ──
+            // ── BUILD_ADS：真实 spark-jobs fna（8 张 ADS，R6-13 只写**暂存分区**） ──
+            // §14.4：ADS 先写 {table}__staging/snapshot_id=S/dt=D，正式分区由 PUBLISH_METRIC 发布。
             StageOutcome adsOutcome = runSparkStage(run, executor, snapshot, "BUILD_ADS",
                     businessDate, completedStages,
-                    Map.of("periodStart", businessDate, "periodEnd", businessDate, "topN", "50"), null, confs);
+                    Map.of("periodStart", businessDate, "periodEnd", businessDate, "topN", "50",
+                            "outputSnapshotId", snapshotId), null, confs);
             if (adsOutcome != null && !completedStages.contains("BUILD_ADS")) {
                 Map<String, Object> evidence = new LinkedHashMap<>(adsOutcome.evidence());
-                evidence.put("contracted", "fna: 8 张 ADS（大盘/趋势/漏斗/热度/转化/画像/质量）");
+                evidence.put("contracted", "fna: 8 张 ADS 写入暂存分区（snapshot_id=" + snapshotId + "）");
+                evidence.put("stagingSnapshotId", snapshotId);
                 updateStageEvidence(run.getId(), "BUILD_ADS", evidence);
             }
 
-            // ── QUALITY_CHECK：质量门（核心规则失败 → 阻断发布，§5.4.1） ──
+            // ── QUALITY_CHECK：① Landing/DWD 层内联规则（Java，快速失败）② ADS 暂存层质量门（真实作业 dqc） ──
+            final String snapshotIdRef = snapshotId;
             stage(run.getId(), "QUALITY_CHECK", completedStages, () -> {
-                QualityChecker.QualitySummary quality = qualityChecker.check(events, run.getId());
-                quality.results().forEach(qualityMapper::insert);
                 Map<String, Object> evidence = new LinkedHashMap<>();
-                evidence.put("rules", quality.results().stream().map(r -> Map.of(
+                // ① 内联规则（§5.4.1）：金额对账阻断，空值率/枚举白名单/event_id 唯一为记录项
+                QualityChecker.QualitySummary quality = qualityChecker.check(events, run.getId());
+                persistQuality(run.getId(), snapshotIdRef, "LANDING", quality.results());
+                evidence.put("landingRules", quality.results().stream().map(r -> Map.of(
                         "ruleCode", String.valueOf(r.getRuleCode()),
                         "checkCount", r.getCheckCount(),
                         "errorCount", r.getErrorCount(),
                         "passed", r.getPassed())).toList());
-                evidence.put("corePassed", quality.corePassed());
+                evidence.put("landingCorePassed", quality.corePassed());
                 evidence.put("blocking", "AMOUNT_RECONCILE（支付金额 vs 订单总额）");
                 if (!quality.corePassed()) {
                     // 失败证据必须先落库，再抛出阻断（否则失败原因丢失）
+                    evidence.put("published", false);
                     updateStageEvidence(run.getId(), "QUALITY_CHECK", evidence);
                     throw new PipelineStageException("PIPELINE_QUALITY_FAILED",
-                            "金额对账未通过，新指标未发布");
+                            "金额对账未通过，正式分区未发布");
                 }
-                return new StageOutcome(quality.results().size(), evidence);
+                // ② ADS 暂存层质量门：读 staging 结果 + DWS 对账，任一 BLOCKING 未过 → 阶段失败、不发布
+                SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
+                        "QUALITY_CHECK", businessDate, run.getAttemptNo(),
+                        Map.of("outputSnapshotId", snapshotIdRef), confs);
+                evidence.putAll(jobEvidence(ex));
+                evidence.put("adsChecksPersisted", persistChecks(run.getId(), snapshotIdRef, ex.checks()));
+                evidence.put("adsChecks", ex.checks().stream().map(c -> Map.of(
+                        "ruleCode", c.ruleCode(), "layer", c.layer(), "severity", c.severity(),
+                        "checkCount", c.checkCount(), "errorCount", c.errorCount(),
+                        "passed", c.passed())).toList());
+                evidence.put("published", false);
+                if (ex.failed()) {
+                    updateStageEvidence(run.getId(), "QUALITY_CHECK", evidence);
+                    throw new PipelineStageException("PIPELINE_QUALITY_FAILED",
+                            "ADS 暂存质量门未通过，正式分区未发布: " + ex.errorMessage());
+                }
+                evidence.put("published", true);
+                return new StageOutcome(ex.totalOutputRecords(), evidence);
             });
 
-            // ── PUBLISH_METRIC：登记本次 ADS 快照（真实分区已由 fna 写出） ──
-            // R6 阶段边界：Hive ADS 已由 BUILD_ADS 真实写入；Hive→MySQL staging/原子切换属 R7，
-            // 此处**不发布 MySQL、不写本地计算指标**（§15.4：生产服务不得引用 MetricCalculator）。
+            // ── PUBLISH_METRIC：真实作业 pub 发布正式分区（Hive 元数据指针）+ 登记快照 ──
             if (!completedStages.contains("PUBLISH_METRIC")) {
-                String snapshotId = "S" + businessDate + "_" + run.getId();
-                run.setTargetSnapshotId(snapshotId);
-                runMapper.updateById(run);
-                // 本次运行已产出证据则直接用；重试跳过 BUILD_ADS 时从阶段记录回读（§13.4 恢复）
                 Map<String, Object> adsEvidence = adsOutcome != null
                         ? adsOutcome.evidence()
                         : stageEvidence(run.getId(), "BUILD_ADS");
                 stage(run.getId(), "PUBLISH_METRIC", completedStages, () -> {
                     if (adsEvidence.isEmpty()) {
                         throw new PipelineStageException("RUN_PUBLISH_NO_ADS",
-                                "缺少 BUILD_ADS 真实作业证据，拒绝登记快照");
+                                "缺少 BUILD_ADS 真实作业证据，拒绝发布");
                     }
-                    Map<String, Object> evidence = new LinkedHashMap<>();
-                    evidence.put("adsSnapshotId", snapshotId);
+                    SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
+                            "PUBLISH_METRIC", businessDate, run.getAttemptNo(),
+                            Map.of("outputSnapshotId", snapshotIdRef), confs);
+                    Map<String, Object> evidence = jobEvidence(ex);
+                    evidence.put("adsSnapshotId", snapshotIdRef);
                     evidence.put("adsJobs", adsEvidence.get("jobs"));
-                    evidence.put("adsOutputRecords", adsEvidence.get("totalOutputRecords"));
-                    evidence.put("hiveAds", "已写入 dw_ads.*（BUILD_ADS JobResult 计数）");
+                    evidence.put("hiveAds", "正式分区以 Hive 元数据指针指向本次暂存路径（§14.4）");
                     evidence.put("mysqlPublish", "deferred-to-R7（Hive→MySQL staging→ACTIVE 原子切换）");
-                    Object total = adsEvidence.get("totalOutputRecords");
-                    return new StageOutcome(total instanceof Number n ? n.longValue() : 0L, evidence);
+                    evidence.put("adsChecksPersisted", persistChecks(run.getId(), snapshotIdRef, ex.checks()));
+                    evidence.put("adsChecks", ex.checks().stream().map(c -> Map.of(
+                            "ruleCode", c.ruleCode(), "severity", c.severity(),
+                            "passed", c.passed(), "detail", c.detail())).toList());
+                    if (ex.failed()) {
+                        return new StageOutcome(ex.totalOutputRecords(), evidence,
+                                new PipelineStageException("RUN_PUBLISH_FAILED",
+                                        "正式分区发布失败: " + ex.errorMessage()));
+                    }
+                    return new StageOutcome(ex.totalOutputRecords(), evidence);
                 });
             }
 
@@ -358,6 +516,8 @@ public class PipelineService {
             run.setCurrentStage("SUCCESS");
             run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
+            // 重试成功的 run 不能残留上一次失败的错误信息（SUCCESS 与 error 并存会误导运维页）
+            clearRunError(run);
         } catch (PipelineStageException e) {
             run.setStatus(PipelineRun.STATUS_FAILED);
             run.setErrorCode(e.code());
@@ -418,6 +578,87 @@ public class PipelineService {
         void verify() throws PipelineStageException;
     }
 
+    /**
+     * 显式清空 run 级错误字段。MyBatis-Plus updateById 默认跳过 null 字段（FieldStrategy.NOT_NULL），
+     * 只 setErrorCode(null) 无法把库里已有错误清掉 —— 必须用 UpdateWrapper 显式 set null。
+     * 实测触发：run 16 attempt1 失败 → attempt2 成功后 error_code 仍残留 STAGE_INTERNAL。
+     */
+    private void clearRunError(PipelineRun run) {
+        runMapper.update(null, new UpdateWrapper<PipelineRun>()
+                .eq("id", run.getId())
+                .set("error_code", null)
+                .set("error_message", null));
+        run.setErrorCode(null);
+        run.setErrorMessage(null);
+    }
+
+    /**
+     * R6-13：落 Landing 层内联质量规则结果（§16.1 layer=LANDING，§16.5 运维页字段）。
+     * 严重度按规则语义标注：AMOUNT_RECONCILE 为阻断项，其余为记录项（与 QualityChecker.corePassed 一致）。
+     */
+    private void persistQuality(Long runId, String snapshotId, String layer,
+                               List<DataQualityResult> results) {
+        for (DataQualityResult r : results) {
+            r.setRunId(runId);
+            r.setLayer(cap(layer, 32));
+            r.setSeverity("AMOUNT_RECONCILE".equals(String.valueOf(r.getRuleCode())) ? "BLOCKING" : "ERROR");
+            r.setTargetTable(cap("landing/events", 500));
+            r.setSnapshotId(cap(snapshotId, 64));
+            r.setDetail(cap(r.getDetail(), 2000));
+            if (r.getErrorRate() == null) {
+                r.setErrorRate(r.getCheckCount() != null && r.getCheckCount() > 0
+                        ? BigDecimal.valueOf(r.getErrorCount())
+                            .divide(BigDecimal.valueOf(r.getCheckCount()), 6, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO);
+            }
+            qualityMapper.insert(r);
+        }
+    }
+
+    /**
+     * R6-13：落 Spark 作业回传的质量检查结果（dqc 的 ADS_STAGING/PUBLISH 层规则、pub 的发布校验）。
+     * severity=INFO 的是发布操作审计项（切换/清理计数），只进阶段证据，不冒充质量规则写库。
+     *
+     * @return 实际写库的规则条数
+     */
+    private int persistChecks(Long runId, String snapshotId, List<JobResultParser.CheckInfo> checks) {
+        int inserted = 0;
+        for (JobResultParser.CheckInfo c : checks) {
+            if ("INFO".equalsIgnoreCase(c.severity())) {
+                continue;
+            }
+            DataQualityResult r = new DataQualityResult();
+            r.setRunId(runId);
+            r.setRuleCode(cap(c.ruleCode(), 64));
+            r.setLayer(cap(c.layer(), 32));
+            r.setSeverity(cap(c.severity(), 16));
+            r.setTargetTable(cap(c.targetTable(), 500));
+            r.setSnapshotId(cap(snapshotId, 64));
+            r.setCheckCount(c.checkCount());
+            r.setErrorCount(c.errorCount());
+            r.setThreshold(cap(c.threshold(), 64));
+            r.setPassed(c.passed() ? 1 : 0);
+            // error_rate 为 NOT NULL：checkCount=0 时记 0（不能留 null，否则插入被 DB 拒绝）
+            r.setErrorRate(c.checkCount() > 0
+                    ? BigDecimal.valueOf(c.errorCount())
+                        .divide(BigDecimal.valueOf(c.checkCount()), 6, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO);
+            r.setDetail(cap(c.detail(), 2000));
+            r.setCreatedAt(eventClock.nowLdt());
+            qualityMapper.insert(r);
+            inserted++;
+        }
+        return inserted;
+    }
+
+    /** 列宽保护：超长即截断（规则明细的完整内容仍在阶段证据 JSON 中，不丢证据） */
+    private static String cap(String value, int max) {
+        if (value == null || value.length() <= max) {
+            return value;
+        }
+        return value.substring(0, max - 3) + "...";
+    }
+
     /** 阶段作业证据：逐作业 externalJobId/计数/日志位置（§15.3 R6-12） */
     private Map<String, Object> jobEvidence(SparkStageExecutor.StageExecution ex) {
         Map<String, Object> evidence = new LinkedHashMap<>();
@@ -440,6 +681,24 @@ public class PipelineService {
                 item.put("outputPartitionCount", j.outputPartitions().size());
                 item.put("outputPartitionRows", j.outputPartitions().stream()
                         .mapToLong(JobResultParser.OutputPartitionInfo::rowCount).sum());
+            }
+            // R6-13：质量检查结果逐作业入证据（含 severity=INFO 的发布操作审计项）
+            if (j.checks() != null && !j.checks().isEmpty()) {
+                item.put("checks", j.checks().stream().map(c -> {
+                    Map<String, Object> cm = new LinkedHashMap<>();
+                    cm.put("ruleCode", c.ruleCode());
+                    cm.put("layer", c.layer());
+                    cm.put("severity", c.severity());
+                    cm.put("targetTable", c.targetTable());
+                    cm.put("checkCount", c.checkCount());
+                    cm.put("errorCount", c.errorCount());
+                    cm.put("threshold", c.threshold());
+                    cm.put("passed", c.passed());
+                    cm.put("detail", c.detail());
+                    return cm;
+                }).toList());
+                item.put("blockingFailed", j.checks().stream()
+                        .filter(c -> c.blocking() && !c.passed()).map(JobResultParser.CheckInfo::ruleCode).toList());
             }
             jobs.add(item);
         }
@@ -482,6 +741,12 @@ public class PipelineService {
         s.setStatus(PipelineStageRun.STATUS_RUNNING);
         s.setStartedAt(eventClock.nowLdt());
         stageMapper.insert(s);
+        // §16.5 运维页/轮询要能读到真实进度：旧实现只在 execute() 开头写一次 current_stage，
+        // 之后永不前进（轮询永远看到 WAIT_LANDING）。这里在每个阶段真正开始时推进一次。
+        runMapper.update(null, new UpdateWrapper<PipelineRun>()
+                .eq("id", runId)
+                .set("current_stage", stageCode)
+                .set("updated_at", eventClock.nowLdt()));
         StageOutcome outcome = null;
         PipelineStageException failure = null;
         try {
@@ -544,11 +809,51 @@ public class PipelineService {
     }
 
     /**
+     * 本 run 的输入批次：重试/恢复时**钉住**原批次（WAIT_LANDING 证据里的 batchId），
+     * 只有首跑（尚无 WAIT_LANDING 记录）才取"最新 READY 批次"。
+     * R6-13 修正：原实现每次都取最新 READY，重试时会换输入（实测 run 18 retry：篡改批次 19
+     * 被后来的干净批次 20 顶掉，同一 run 的 Landing 对账门从 FAILED 变 passed → 判定不可复现）。
+     */
+    private Map<String, Object> manifestForRun(Path landingRoot, Long runId) {
+        PipelineStageRun landing = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
+                .eq(PipelineStageRun::getRunId, runId)
+                .eq(PipelineStageRun::getStageCode, "WAIT_LANDING")
+                .orderByAsc(PipelineStageRun::getId).last("LIMIT 1"));
+        if (landing != null && landing.getEvidence() != null) {
+            Matcher m = Pattern.compile("\"batchId\"\\s*:\\s*(\\d+)").matcher(landing.getEvidence());
+            if (m.find()) {
+                Map<String, Object> pinned = readManifest(
+                        landingRoot.resolve("manifests").resolve(m.group(1) + ".json"));
+                if (pinned != null) {
+                    log.info("pipeline {}: 复用本 run 原批次 batchId={}（重试/恢复不切换输入）",
+                            runId, m.group(1));
+                    return pinned;
+                }
+            }
+        }
+        return findReadyManifest(landingRoot);
+    }
+
+    /** 读取单个 manifest JSON（失败返回 null，不抛异常） */
+    private Map<String, Object> readManifest(Path file) {
+        try {
+            if (!Files.isRegularFile(file)) {
+                return null;
+            }
+            return objectMapper.readValue(Files.readString(file, StandardCharsets.UTF_8),
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                    });
+        } catch (Exception e) {
+            log.warn("manifest 解析失败 {}: {}", file.getFileName(), e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * 扫描 landing/manifests/*.json，返回状态为 READY 且含数据（accepted+quarantined>0）
      * 的最新批次清单（§9.3；空批次视为无新数据，不做 ODS 输入）。
      * 按清单内 batchId 取最大者视为最新；无可用清单返回 null。
      */
-    @SuppressWarnings("unchecked")
     private Map<String, Object> findReadyManifest(Path landingRoot) {
         Path manifestsDir = landingRoot.resolve("manifests");
         if (!Files.isDirectory(manifestsDir)) {
@@ -559,18 +864,19 @@ public class PipelineService {
         try (Stream<Path> list = Files.list(manifestsDir)) {
             for (Path m : list.filter(p -> p.getFileName().toString().endsWith(".json")).toList()) {
                 try {
-                    Map<String, Object> manifest = objectMapper.readValue(Files.readString(m, StandardCharsets.UTF_8),
-                            new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
-                            });
-                    if (!"READY".equals(manifest.get("status"))) {
+                    Map<String, Object> manifest = readManifest(m);
+                    if (manifest == null || !"READY".equals(manifest.get("status"))) {
                         continue;
                     }
-                    long accepted = ((Number) manifest.get("acceptedRecords")).longValue();
-                    long quarantined = ((Number) manifest.get("quarantinedRecords")).longValue();
+                    // R6-13 修正：老批次清单里计数是字符串（实测 2.json/4.json/5.json 报
+                    // "class java.lang.String cannot be cast to class java.lang.Number"），
+                    // 按数字/字符串双兼容解析，避免整条清单被当作损坏而跳过。
+                    long accepted = longOf(manifest.get("acceptedRecords"));
+                    long quarantined = longOf(manifest.get("quarantinedRecords"));
                     if (accepted + quarantined <= 0) {
                         continue; // 空批次：无新数据，不阻塞也不作为输入（§9.3）
                     }
-                    long batchId = ((Number) manifest.get("batchId")).longValue();
+                    long batchId = longOf(manifest.get("batchId"));
                     if (maxBatchId.get() == null || batchId > maxBatchId.get()) {
                         maxBatchId.set(batchId);
                         best.set(manifest);
@@ -583,6 +889,21 @@ public class PipelineService {
             log.warn("manifests 扫描失败: {}", e.getMessage());
         }
         return best.get();
+    }
+
+    /** 宽松取长整型：Number 直接用，字符串/空值按解析（老清单兼容） */
+    private static long longOf(Object v) {
+        if (v instanceof Number n) {
+            return n.longValue();
+        }
+        if (v == null) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(String.valueOf(v).trim());
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
     }
 
     private String toJson(Object o) {
@@ -632,13 +953,13 @@ public class PipelineService {
         return v == null || String.valueOf(v).isBlank();
     }
 
-    private RunResult assemble(Long runId, Long snapshotId) {
+    private RunResult assemble(Long runId) {
         PipelineRun run = runMapper.selectById(runId);
         List<PipelineStageRun> stages = stageMapper.selectList(new LambdaQueryWrapper<PipelineStageRun>()
                 .eq(PipelineStageRun::getRunId, runId)
                 .orderByAsc(PipelineStageRun::getId));
-        return new RunResult(runId, run.getIdempotencyKey(), run.getStatus(),
-                run.getErrorCode(), run.getAttemptNo(), snapshotId, stages);
+        return new RunResult(runId, run.getIdempotencyKey(), run.getStatus(), run.getCurrentStage(),
+                run.getErrorCode(), run.getAttemptNo(), run.getTargetSnapshotId(), stages);
     }
 
     /** 阶段最近一条记录（证据更新用；重试跳过后取旧记录保持不变） */
@@ -686,3 +1007,5 @@ public class PipelineService {
         }
     }
 }
+
+

@@ -9,15 +9,35 @@ package com.graduation.analytics.sql
  */
 object AdsSql {
 
+  /** 8 张首期核心 ADS（不含库前缀；R6-13 暂存/正式同名，仅分区不同） */
+  val TABLES: Seq[String] = Seq(
+    "ads_operation_overview", "ads_active_trend", "ads_behavior_funnel", "ads_hot_product",
+    "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality")
+
+  /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4） */
+  def formal(table: String): String = s"dw_ads.$table"
+
+  /** R6-13 暂存表（分区 snapshot_id + dt，物理路径 {table}__staging/snapshot_id=S/dt=D） */
+  def staging(table: String): String = s"dw_ads.${table}__staging"
+
+  /**
+   * 写入目标 + 分区子句（§14.4 分区幂等协议）：
+   * `snapshotId=None` → 直写正式分区（仅历史路径/局部重算使用）；
+   * `Some(sid)` → 写暂存分区，正式分区只在质量门通过后由 pub 发布。
+   */
+  def insertTarget(table: String, dt: String, snapshotId: Option[String]): String = snapshotId match {
+    case Some(sid) => s"INSERT OVERWRITE TABLE ${staging(table)} PARTITION(snapshot_id = '$sid', dt = '$dt')"
+    case None      => s"INSERT OVERWRITE TABLE ${formal(table)} PARTITION(dt = '$dt')"
+  }
+
   /** 运营大盘（退款率=完全退款订单/支付订单，分母 0 → null） */
-  def operationOverview(dt: String): String =
+  def operationOverview(dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_operation_overview PARTITION(dt = '$dt')
+       |${insertTarget("ads_operation_overview", dt, snapshotId)}
        |SELECT
        |  b.pv, b.uv, b.dau, t.order_count, t.sale_amount, t.net_sale_amount, t.avg_order_value,
        |  CASE WHEN t.order_count = 0 THEN NULL
-       |       ELSE CAST(r.refunded_orders AS DECIMAL(18,2)) / t.order_count END AS refund_rate,
-       |  '$dt' AS snapshot_id
+       |       ELSE CAST(r.refunded_orders AS DECIMAL(18,2)) / t.order_count END AS refund_rate
        |FROM (SELECT
        |        COUNT(*) AS pv,
        |        COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS uv,
@@ -30,18 +50,18 @@ object AdsSql {
        |""".stripMargin
 
   /** 活跃趋势（dt 为分区列，由 INSERT PARTITION 提供，不再投影） */
-  def activeTrend(dt: String): String =
+  def activeTrend(dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_active_trend PARTITION(dt = '$dt')
+       |${insertTarget("ads_active_trend", dt, snapshotId)}
        |SELECT COUNT(DISTINCT user_id) AS dau, COUNT(*) AS behavior_count
        |FROM dw_dwd.dwd_user_behavior_detail
        |WHERE dt = '$dt'
        |""".stripMargin
 
   /** 转化漏斗：dws_behavior_funnel_day 展开为 stage 行（dt 为分区列不投影） */
-  def funnel(dt: String): String =
+  def funnel(dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_behavior_funnel PARTITION(dt = '$dt')
+       |${insertTarget("ads_behavior_funnel", dt, snapshotId)}
        |SELECT 'view' AS stage, view_users AS user_count, NULL AS conversion_rate,
        |       overall_buy_rate
        |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
@@ -57,9 +77,9 @@ object AdsSql {
        |""".stripMargin
 
   /** 热门商品 TopN（热度权重来自配置，默认 §21.7 对数公式） */
-  def hotProduct(dt: String, topN: Int): String =
+  def hotProduct(dt: String, topN: Int, snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_hot_product PARTITION(dt = '$dt')
+       |${insertTarget("ads_hot_product", dt, snapshotId)}
        |SELECT t.product_id, p.product_name, heat_score, pv, fav, cart, buy, rank_no
        |FROM (
        |  SELECT product_id,
@@ -74,9 +94,9 @@ object AdsSql {
        |""".stripMargin
 
   /** 商品转化：pv_users=浏览用户，buy_users=商品销售 DWS 去重买家数 */
-  def productConversion(dt: String): String =
+  def productConversion(dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_product_conversion PARTITION(dt = '$dt')
+       |${insertTarget("ads_product_conversion", dt, snapshotId)}
        |SELECT b.product_id,
        |       b.uv AS pv_users,
        |       COALESCE(s.buyer_count, 0) AS buy_users,
@@ -89,9 +109,9 @@ object AdsSql {
        |""".stripMargin
 
   /** 销售趋势 */
-  def saleTrend(dt: String): String =
+  def saleTrend(dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_sale_trend PARTITION(dt = '$dt')
+       |${insertTarget("ads_sale_trend", dt, snapshotId)}
        |SELECT order_count, buyer_count, sale_amount, avg_order_value
        |FROM dw_dws.dws_trade_day
        |WHERE dt = '$dt'
@@ -106,9 +126,10 @@ object AdsSql {
    *   （新用户=观察期首购且仅 1 单；流失风险 rDays>60；沉默 30<rDays<=60；否则活跃）；
    * active_level 按最近活跃天数（<=7 高 / <=30 中 / 其余低）。
    */
-  def userProfile(dt: String, periodStart: String, periodEnd: String): String =
+  def userProfile(dt: String, periodStart: String, periodEnd: String,
+                  snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_user_profile PARTITION(dt = '$dt')
+       |${insertTarget("ads_user_profile", dt, snapshotId)}
        |SELECT
        |  tp.user_id,
        |  6 - r_ntile AS r,
@@ -170,9 +191,9 @@ object AdsSql {
    * 数据质量大盘（§5.4）：4 规则与 QualityChecker 同名同阈值，
    * 统计来自 ODS/DWD 真实数据，非 SQL 字符串自检。
    */
-  def dataQuality(dt: String): String =
+  def dataQuality(dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ads.ads_data_quality PARTITION(dt = '$dt')
+       |${insertTarget("ads_data_quality", dt, snapshotId)}
        |SELECT rule_code, check_count, error_count, error_rate, passed, threshold FROM (
        |  SELECT 'AMOUNT_RECONCILE' AS rule_code,
        |         CAST(SUM(fp) AS BIGINT) AS check_count,

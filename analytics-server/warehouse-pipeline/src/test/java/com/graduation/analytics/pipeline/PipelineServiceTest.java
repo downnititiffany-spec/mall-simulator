@@ -146,9 +146,40 @@ class PipelineServiceTest {
             jobs.add(new SparkStageExecutor.JobExecution(
                     "lp-test-" + jobCode, jobCode, com.graduation.analytics.pipeline.entity.SparkJobRun.STATUS_SUCCESS,
                     10L, 8L, 1L, "landing/logs/test__lp-test-" + jobCode + ".log", null,
-                    List.of(partition("dw_ads.ads_operation_overview", "dt=20260901"))));
+                    List.of(partition("dw_ads.ads_operation_overview", "dt=20260901")),
+                    checksFor(stageCode)));
         }
         return new SparkStageExecutor.StageExecution(stageCode, jobs, false, null);
+    }
+
+    /** R6-13：dqc 通过时的质量检查结果（BLOCKING 全通过 + 1 条 INFO 审计项） */
+    private static List<JobResultParser.CheckInfo> checksFor(String stageCode) {
+        if (!"QUALITY_CHECK".equals(stageCode)) {
+            return List.of();
+        }
+        return List.of(
+                new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
+                        "dw_ads.ads_operation_overview__staging", 8L, 0L, "每表行数>0",
+                        "BLOCKING", true, "8 张暂存表行数均>0"),
+                new JobResultParser.CheckInfo("PUB_STAGING_PRUNE", "PUBLISH", "staging", 0L, 0L,
+                        "保留被引用快照", "INFO", true, "无待清理历史暂存分区"));
+    }
+
+    /** R6-13：dqc 阻断（BLOCKING 未通过）时的执行结果 */
+    private static SparkStageExecutor.StageExecution qualityBlockedExecution(String stageCode) {
+        List<JobResultParser.CheckInfo> checks = List.of(
+                new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
+                        "dw_ads.ads_hot_product__staging", 8L, 1L, "每表行数>0",
+                        "BLOCKING", false, "空/缺失暂存表: dw_ads.ads_hot_product__staging"),
+                new JobResultParser.CheckInfo("PUB_DQ_EVENT_ID_UNIQUE", "PUBLISH",
+                        "dw_ads.ads_data_quality__staging", 51L, 3L, "0.0005", "ERROR", false,
+                        "观察项"));
+        List<SparkStageExecutor.JobExecution> jobs = List.of(new SparkStageExecutor.JobExecution(
+                "lp-block-dqc", "dqc", com.graduation.analytics.pipeline.entity.SparkJobRun.STATUS_FAILED,
+                40L, 0L, 1L, "landing/logs/test__lp-block-dqc.log",
+                "质量门阻断发布: ADS_STAGING_PRESENT", List.of(), checks));
+        return new SparkStageExecutor.StageExecution(stageCode, jobs, true,
+                "dqc: 质量门阻断发布: ADS_STAGING_PRESENT");
     }
 
     /** R6-12：分区证据样例（表/dt/快照/行数/路径） */
@@ -162,7 +193,7 @@ class PipelineServiceTest {
         List<SparkStageExecutor.JobExecution> jobs = List.of(new SparkStageExecutor.JobExecution(
                 "lp-fail-" + jobCode, jobCode, com.graduation.analytics.pipeline.entity.SparkJobRun.STATUS_FAILED,
                 5L, 0L, 5L, "landing/logs/test__lp-fail-" + jobCode + ".log", "作业失败",
-                List.of()));
+                List.of(), List.of()));
         return new SparkStageExecutor.StageExecution(stageCode, jobs, true, jobCode + ": 作业失败");
     }
 
@@ -306,6 +337,41 @@ class PipelineServiceTest {
         assertThat(stageStatus("QUALITY_CHECK")).isEqualTo(PipelineStageRun.STATUS_FAILED);
         // 不发布：无 PUBLISH_METRIC 阶段（BUILD_ADS 已真实执行，但快照登记被质量门阻断）
         assertThat(stageOf("PUBLISH_METRIC")).isNull();
+    }
+
+    // ── ⑥b R6-13：ADS 暂存质量门阻断 → 不发布正式分区（§14.4/§16.3） ──────
+
+    @Test
+    void adsQualityGateFailureBlocksFormalPartitionPublish() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        // Landing 层内联规则通过，但 dqc（ADS 暂存层 BLOCKING 规则）未过
+        when(stageExecutor.executeStage(any(), anyLong(), org.mockito.ArgumentMatchers.eq("QUALITY_CHECK"),
+                anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> qualityBlockedExecution("QUALITY_CHECK"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-gate", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(r.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("PIPELINE_QUALITY_FAILED");
+        assertThat(stageStatus("QUALITY_CHECK")).isEqualTo(PipelineStageRun.STATUS_FAILED);
+        // 不发布：PUBLISH_METRIC 阶段根本未创建（正式分区未被指针切换）
+        assertThat(stageOf("PUBLISH_METRIC")).isNull();
+        // 失败也要留下检查证据：BLOCKING 未过的规则写库（运维页可见失败原因）
+        org.mockito.ArgumentCaptor<DataQualityResult> captor =
+                org.mockito.ArgumentCaptor.forClass(DataQualityResult.class);
+        verify(qualityMapper, org.mockito.Mockito.atLeastOnce()).insert(captor.capture());
+        assertThat(captor.getAllValues())
+                .anySatisfy(q -> {
+                    assertThat(q.getRuleCode()).isEqualTo("ADS_STAGING_PRESENT");
+                    assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+                    assertThat(q.getLayer()).isEqualTo("ADS_STAGING");
+                    assertThat(q.getPassed()).isZero();
+                    assertThat(q.getSnapshotId()).startsWith("S20260901_");
+                });
     }
 
     // ── ⑦重试 attempt_no 递增（§23.1 恢复） ────────────────────────────────

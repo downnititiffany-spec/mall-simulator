@@ -72,6 +72,20 @@ object JobRunner {
       o.put("rowCount", p.rowCount)
       p.path.foreach(o.put("path", _))
     }
+    // R6-13：质量检查结果（层次/目标表/检查数/错误数/阈值/严重度/是否通过）
+    val checks = node.putArray("checks")
+    r.checks.foreach { c =>
+      val o = checks.addObject()
+      o.put("ruleCode", c.ruleCode)
+      o.put("layer", c.layer)
+      o.put("targetTable", c.targetTable)
+      o.put("checkCount", c.checkCount)
+      o.put("errorCount", c.errorCount)
+      o.put("threshold", c.threshold)
+      o.put("severity", c.severity)
+      o.put("passed", c.passed)
+      o.put("detail", c.detail)
+    }
     node.toString
   }
 }

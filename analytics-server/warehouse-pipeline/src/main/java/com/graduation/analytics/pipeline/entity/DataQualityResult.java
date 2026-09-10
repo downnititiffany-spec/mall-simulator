@@ -22,6 +22,18 @@ public class DataQualityResult {
 
     private String ruleCode;
 
+    /** 规则层次（R6-13 §16.1：LANDING/DWD/DWS/ADS_STAGING/PUBLISH），运维页分层展示 */
+    private String layer;
+
+    /** 严重度（BLOCKING 阻断发布 / ERROR 记录 / INFO 操作审计） */
+    private String severity;
+
+    /** 规则作用对象（表名或分区范围） */
+    private String targetTable;
+
+    /** 本次快照号（可追溯规则作用于哪份快照） */
+    private String snapshotId;
+
     private Long checkCount;
 
     private Long errorCount;

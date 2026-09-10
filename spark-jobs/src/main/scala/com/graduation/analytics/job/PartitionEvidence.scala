@@ -50,7 +50,9 @@ object PartitionEvidence {
       OutputPartition(
         table = table,
         dt = specValue(spec, "dt").getOrElse(""),
-        snapshotId = snapshotId,
+        // R6-13：分区列本身含 snapshot_id 时以**分区规格实测值**为准（不沿用入参，
+        // 否则同一 dt 下的多个快照分区会被错误标成同一快照号）
+        snapshotId = specValue(spec, "snapshot_id").orElse(snapshotId),
         rowCount = countWhere(spark, table, Some(toPredicate(spec))),
         // DESCRIBE FORMATTED ... PARTITION 用逗号分隔分区规格（多列分区不能用 AND）
         path = location(spark, s"DESCRIBE FORMATTED $table PARTITION (${toSpec(spec)})"))
