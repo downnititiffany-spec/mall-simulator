@@ -1,0 +1,42 @@
+{
+  "comparedWith": "docs/acceptance/p1-baseline-r39-20260911/baseline.json",
+  "comparedAt": "2026-09-11 17:45:41",
+  "ignoredTopLevelKeys": [
+    "baselineId",
+    "generatedAt",
+    "durationSec",
+    "rawFiles",
+    "services"
+  ],
+  "ignoredNestedPaths": [
+    "repo.dirtyFiles",
+    "landing.ingestionApiStatus.checkedAt"
+  ],
+  "normalizedTables": [
+    "user_session"
+  ],
+  "comparedKeys": [
+    "task",
+    "purpose",
+    "script",
+    "inputs",
+    "repo",
+    "preflight",
+    "artifacts",
+    "pipelineRun",
+    "metricSnapshot",
+    "metricStoreTables",
+    "metadataDb",
+    "activeProfile",
+    "warehouse",
+    "landing",
+    "provenance",
+    "checks",
+    "notCollected",
+    "readonlyProof",
+    "volatilePaths",
+    "selfInflicted"
+  ],
+  "differences": [],
+  "identical": true
+}
