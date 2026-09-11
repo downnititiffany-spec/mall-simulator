@@ -17,7 +17,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,7 +47,7 @@ class IngestionServiceStatusTest {
     }
 
     private IngestionService service() {
-        return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class), checkpointMapper,
+        return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class),
                 ingestor(), null, runtimeProfileService, new ObjectMapper());
     }
 
@@ -62,7 +64,6 @@ class IngestionServiceStatusTest {
         profile.setLandingUri(landingRoot.toUri().toString());
         when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
         when(batchMapper.selectOne(any())).thenReturn(null);
-        when(checkpointMapper.selectCount(null)).thenReturn(7L);
 
         Map<String, Object> status = service().status();
 
@@ -72,7 +73,8 @@ class IngestionServiceStatusTest {
         assertThat(status.get("eventsDir")).isEqualTo(events.toAbsolutePath().toString());
         assertThat(status.get("pendingFiles")).isEqualTo(2L);
         assertThat((Long) status.get("pendingBytes")).isPositive();
-        assertThat(status.get("checkpointFiles")).isEqualTo(7L);
+        // DEF-13：这个数字现在是"当前 events 目录里已建立断点的文件数"，两个文件都还没采集过 → 0
+        assertThat(status.get("checkpointFiles")).isEqualTo(0L);
         assertThat(status.get("latestBatch")).isNull();
         // B-08 / D-022 候选①：从未采集过（断点缺失）→ 两个文件都算"新增"；到达时间如实给出
         assertThat(status.get("newFileCount")).isEqualTo(2L);
@@ -255,7 +257,6 @@ class IngestionServiceStatusTest {
         batch.setRecordCount(51L);
         batch.setQuarantineCount(4L);
         when(batchMapper.selectOne(any())).thenReturn(batch);
-        when(checkpointMapper.selectCount(null)).thenReturn(50L);
 
         Map<String, Object> status = service().status();
 
@@ -265,5 +266,69 @@ class IngestionServiceStatusTest {
                 .containsEntry("status", "QUARANTINED")
                 .containsEntry("recordCount", 51L)
                 .containsEntry("quarantineCount", 4L);
+    }
+
+    @Test
+    @DisplayName("DEF-13：checkpointFiles 只数当前 events 目录里的文件（库里别的行不算）")
+    void checkpointFilesCountsOnlyFilesInEventsDir(@TempDir Path landingRoot) throws IOException {
+        Path events = Files.createDirectories(landingRoot.resolve("events"));
+        Files.writeString(events.resolve("events-001.jsonl"), "{\"eventId\":\"e1\"}\n", StandardCharsets.UTF_8);
+
+        RuntimeProfile profile = new RuntimeProfile();
+        profile.setId(1L);
+        profile.setLandingUri(landingRoot.toUri().toString());
+        when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
+        when(batchMapper.selectOne(any())).thenReturn(null);
+
+        // 库里有一行断点，但它对应的文件已不在 events 目录里（归档走了 / 别的环境 / 别的目录）
+        FileCheckpoint elsewhere = new FileCheckpoint();
+        elsewhere.setRuntimeProfileId(1L);
+        elsewhere.setFilePath(landingRoot.resolve("archive").resolve("events-000.jsonl")
+                .toAbsolutePath().toString());
+        elsewhere.setFileIdentity("1757500000000");
+        elsewhere.setNextOffset(10L);
+        when(checkpointMapper.selectList(any())).thenReturn(List.of(elsewhere));
+
+        Map<String, Object> status = service().status();
+
+        assertThat(status.get("pendingFiles")).isEqualTo(1L);
+        assertThat(status.get("checkpointFiles"))
+                .as("目录里这个文件还没有断点 → 0；旧实现报全表行数，会把库外的行算进来")
+                .isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("DEF-13：同一物理文件的两种历史写法只算一个断点（checkpointFiles 不再翻倍）")
+    void checkpointFilesIsSpellingProof(@TempDir Path landingRoot) throws IOException {
+        Path events = Files.createDirectories(landingRoot.resolve("events"));
+        Path file = events.resolve("events-001.jsonl");
+        Files.writeString(file, "{\"eventId\":\"e1\"}\n", StandardCharsets.UTF_8);
+
+        RuntimeProfile profile = new RuntimeProfile();
+        profile.setId(1L);
+        profile.setLandingUri(landingRoot.toUri().toString());
+        when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
+        when(batchMapper.selectOne(any())).thenReturn(null);
+
+        // 实测的两种写法：M1-1 之前的 `\.\` 写法与现在的规范写法，指向同一个物理文件
+        FileCheckpoint legacy = new FileCheckpoint();
+        legacy.setRuntimeProfileId(1L);
+        legacy.setFilePath(Paths.get(events.toString(), ".", "events-001.jsonl").toString());
+        legacy.setFileIdentity(LocalFileIngestor.fileIdentity(file));
+        legacy.setNextOffset(Files.size(file));
+
+        FileCheckpoint current = new FileCheckpoint();
+        current.setRuntimeProfileId(1L);
+        current.setFilePath(file.toAbsolutePath().toString());
+        current.setFileIdentity(LocalFileIngestor.fileIdentity(file));
+        current.setNextOffset(Files.size(file));
+        when(checkpointMapper.selectList(any())).thenReturn(List.of(legacy, current));
+
+        Map<String, Object> status = service().status();
+
+        assertThat(status.get("pendingFiles")).isEqualTo(1L);
+        assertThat(status.get("checkpointFiles"))
+                .as("两行是同一个物理文件 → 只算一个（实测 50 个文件占 100 行 → 曾报 checkpointFiles=101）")
+                .isEqualTo(1L);
     }
 }

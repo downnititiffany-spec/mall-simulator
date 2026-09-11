@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
-import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
@@ -41,14 +40,13 @@ import static org.mockito.Mockito.when;
 class IngestionRunNoNewDataTest {
 
     private final IngestionBatchMapper batchMapper = mock(IngestionBatchMapper.class);
-    private final FileCheckpointMapper checkpointMapper = mock(FileCheckpointMapper.class);
     private final RuntimeProfileService runtimeProfileService = mock(RuntimeProfileService.class);
     private final LocalFileIngestor ingestor = mock(LocalFileIngestor.class);
     private final EventClock clock = new EventClock(
             Clock.fixed(Instant.parse("2026-09-12T02:00:00Z"), ZoneId.of("Asia/Shanghai")));
 
     private IngestionService service() {
-        return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class), checkpointMapper,
+        return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class),
                 ingestor, clock, runtimeProfileService, new ObjectMapper());
     }
 

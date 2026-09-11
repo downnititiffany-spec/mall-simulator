@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
 import com.graduation.analytics.ingestion.entity.IngestionBatchFile;
-import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.contracts.EventClock;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.zip.CRC32;
@@ -49,7 +49,6 @@ public class IngestionService {
 
     private final IngestionBatchMapper batchMapper;
     private final IngestionBatchFileMapper batchFileMapper;
-    private final FileCheckpointMapper checkpointMapper;
     private final LocalFileIngestor ingestor;
     private final EventClock eventClock;
     private final RuntimeProfileService runtimeProfileService;
@@ -245,6 +244,13 @@ public class IngestionService {
         //   lastArrivalAt = landing 目录内最新文件的到达（最后修改）时间，无文件时如实为 null。
         // 只补观测，不改判定、不加表、不探活生产者（平台依旧不知道数据源进程的死活，只知道自己多久没收到数据）。
         long newFileCount = 0;
+        // DEF-13：checkpointFiles 原先取 `checkpointMapper.selectCount(null)`——全表行数，
+        // 既含其他运行环境的行，也含 M1-1 之前另一种路径写法留下的历史行（同一物理文件两行），
+        // 于是出现 checkpointFiles=101 对 pendingFiles=51 的怪数。它要回答的问题其实是
+        // "当前环境的 events 目录里有多少文件已经建立断点"，因此改为与 pendingFiles 同一次目录扫描内计数，
+        // 断点命中由唯一所有者 LocalFileIngestor.checkpointKeys（读写共用规范键）回答，不删任何历史行。
+        long checkpointFiles = 0;
+        Set<String> checkpointKeys = active == null ? Set.of() : ingestor.checkpointKeys(active.getId());
         LocalDateTime lastArrivalAt = null;
         if (eventsDir != null && Files.isDirectory(eventsDir)) {
             try (Stream<Path> files = Files.list(eventsDir)) {
@@ -256,6 +262,9 @@ public class IngestionService {
                             Files.getLastModifiedTime(f).toInstant(), java.time.ZoneId.systemDefault());
                     if (lastArrivalAt == null || arrivedAt.isAfter(lastArrivalAt)) {
                         lastArrivalAt = arrivedAt;
+                    }
+                    if (checkpointKeys.contains(LocalFileIngestor.checkpointKey(f))) {
+                        checkpointFiles++;
                     }
                     if (ingestor.hasConsumableData(f, active.getId())) {
                         newFileCount++;
@@ -275,6 +284,7 @@ public class IngestionService {
         result.put("eventsDir", eventsDir == null ? null : eventsDir.toString());
         result.put("pendingFiles", pendingFiles);
         result.put("pendingBytes", pendingBytes);
+        result.put("checkpointFiles", checkpointFiles);
         result.put("newFileCount", newFileCount);
         result.put("lastArrivalAt", lastArrivalAt == null ? null : lastArrivalAt.toString());
         if (latest != null) {
@@ -289,7 +299,6 @@ public class IngestionService {
         } else {
             result.put("latestBatch", null);
         }
-        result.put("checkpointFiles", checkpointMapper.selectCount(null));
         return result;
     }
 

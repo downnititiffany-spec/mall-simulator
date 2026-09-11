@@ -22,10 +22,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
 /**
@@ -62,7 +64,7 @@ public class LocalFileIngestor {
     public FileResult ingestFile(Path file, long batchId, long runtimeProfileId,
                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
                                  CRC32 checksum) {
-        String abs = file.toAbsolutePath().toString();
+        String abs = checkpointKey(file);
         String identity = fileIdentity(file);
         FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, abs);
         long size = sizeOf(file);
@@ -196,6 +198,46 @@ public class LocalFileIngestor {
                 .eq(FileCheckpoint::getFilePath, absPath));
     }
 
+    /**
+     * checkpoint 物理键 = 规范化绝对路径。
+     *
+     * <p>为什么键的规范形式必须由**键的所有者**负责：唯一键是
+     * {@code runtime_profile_id + file_path + file_identity}，而 {@code file_path} 由调用方传入的
+     * {@link Path} 拼出。只要有一个调用方传进带冗余片段（{@code ./}、{@code ../}、重复分隔符）的路径，
+     * 同一个物理文件就会占**两行**：一行写、另一行读不到 → 采集端按"从未采集"从头读
+     * （目录里最大单文件 19.4MB）并重复写 ODS 分区（最终由 DWD 的 {@code event_id} 去重兜底，
+     * 代价是白读磁盘）。</p>
+     *
+     * <p>实测（DEF-13）：50 个文件 × 2 行 = 100 行，两种写法只差一个 {@code \.\}，
+     * {@code file_identity} 与 {@code next_offset} 完全相同。</p>
+     */
+    static String checkpointKey(Path file) {
+        return canonical(file.toAbsolutePath().toString());
+    }
+
+    /**
+     * 键的规范形式：去掉 {@code ./}、{@code ../} 与重复分隔符。
+     *
+     * <p>读写两端都走这一个表达式——这是"同一物理文件只有一条键"的唯一保证。</p>
+     */
+    private static String canonical(String absolutePath) {
+        return Paths.get(absolutePath).normalize().toString();
+    }
+
+    /**
+     * 当前运行环境**已有断点**的文件（规范路径集合）。
+     *
+     * <p>读数端与写入端共用同一条规范形式，因此历史遗留写法不会把同一物理文件算两次
+     * （DEF-13：{@code checkpointFiles=101} 对 {@code pendingFiles=51}）。</p>
+     */
+    public Set<String> checkpointKeys(long runtimeProfileId) {
+        return checkpointMapper.selectList(new LambdaQueryWrapper<FileCheckpoint>()
+                        .eq(FileCheckpoint::getRuntimeProfileId, runtimeProfileId))
+                .stream()
+                .map(ckpt -> canonical(ckpt.getFilePath()))
+                .collect(Collectors.toSet());
+    }
+
     private void upsertCheckpoint(long runtimeProfileId, String absPath, String identity, long nextOffset) {
         FileCheckpoint existing = findCheckpoint(runtimeProfileId, absPath);
         if (existing == null) {
@@ -294,7 +336,7 @@ public class LocalFileIngestor {
         if (consumable <= 0) {
             return false;   // 空文件，或整个文件只有一条没有换行的残行
         }
-        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, file.toAbsolutePath().toString());
+        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, checkpointKey(file));
         if (ckpt == null) {
             return true;    // 从未采集过
         }

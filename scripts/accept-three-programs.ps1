@@ -246,6 +246,11 @@ try {
   if ($fixtureOk -and $rr2.data.recordCount -ne 0) { $bad += 'runs2.recordCount 不为 0' }
   if ($st.data.newFileCount -ne 0) { $bad += 'newFileCount 不为 0' }
   if (-not $st.data.lastArrivalAt) { $bad += 'lastArrivalAt 为空' }
+  # DEF-13/B-11：checkpointFiles 曾是"全表行数"（含别的环境、别的路径写法的历史行），
+  # 于是出现过 101 对 pendingFiles=51。结构不变量：断点数不可能多于目录里的文件数。
+  if ($st.data.checkpointFiles -gt $st.data.pendingFiles) {
+    $bad += "checkpointFiles($($st.data.checkpointFiles)) 大于 pendingFiles($($st.data.pendingFiles))：断点数不可能多于目录文件数（DEF-13）"
+  }
   if ($bad.Count -eq 0) { Note 'b08' '自检' 'PASS' } else { Note 'b08' '自检' "FAIL: $($bad -join '; ')"; $gateFail = $true }
 } catch {
   Note 'b08' '自检' "FAIL: $($_.Exception.Message)"
