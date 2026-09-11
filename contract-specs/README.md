@@ -137,6 +137,6 @@
 | `schemas/canonical-event.v1.schema.json` | 未冻结，见 §7 | B-06/Q6 未决，指纹待冻结时同表登记 |
 | `schemas/generation-artifact-manifest.v1.schema.json` | 未冻结，见 §7 | 同上 |
 | `README.md` | **不登记自身**（自指：把本文件的哈希写进本文件，写入动作本身就会让该哈希失效） | 需核对时现算：`Get-FileHash contract-specs/README.md -Algorithm SHA256`，并与该次提交比对 |
-| `VERSION` | `C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0` | 内容 `contract-specs 1.2.0`（本表登记的是 2026-09-11 21:0x 提交时的值） |
+| `VERSION` | `C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0` | 内容 `contract-specs 1.2.0`（本表登记的是 2026-09-11 20:12 写入、提交 `332b52b` 20:14:08 时的值） |
 
 **口径**：指纹是**复核辅助**而非契约的一部分——`VERSION` 才是契约的版本所有者（改契约必须同时升 `VERSION`，指纹随内容自然变化，不单独维护"指纹版本"）。
