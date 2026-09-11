@@ -1,5 +1,6 @@
 package com.graduation.analytics.sql
 
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.types.{
   ArrayType, DecimalType, StringType, StructField, StructType
 }
@@ -7,7 +8,7 @@ import org.apache.spark.sql.types.{
 /**
  * ODS 装载 SQL（§10.1/§10.2 全主题）：
  * 显式 Schema 事件视图（EventOdsLoadJob 用 EventLandingSchema 读取后注册）
- * → dw_ods 四主题表（user/product/behavior/trade）。
+ * → ns.ods 四主题表（user/product/behavior/trade）。
  * 模板函数返回 SQL 字符串，便于单元测试关键子句；真实布局由 EventOdsLoadJob 执行。
  *
  * 设计约定（§10.2）：
@@ -88,9 +89,9 @@ object OdsLoadSql {
   )
 
   /** 用户事件：显式视图 → ods_user_event（§10.1 用户主题核心字段） */
-  def userFromLanding(batchId: Long): String =
+  def userFromLanding(ns: WarehouseNamespace, batchId: Long): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ods.ods_user_event PARTITION (dt, hour)
+       |INSERT OVERWRITE TABLE ${ns.ods}.ods_user_event PARTITION (dt, hour)
        |SELECT
        |  event_id, event_type, event_time, ingest_time, source_system,
        |  schema_version, trace_id,
@@ -109,9 +110,9 @@ object OdsLoadSql {
        |""".stripMargin
 
   /** 商品事件：显式视图 → ods_product_event（§10.1 商品主题，含库存事件） */
-  def productFromLanding(batchId: Long): String =
+  def productFromLanding(ns: WarehouseNamespace, batchId: Long): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ods.ods_product_event PARTITION (dt, hour)
+       |INSERT OVERWRITE TABLE ${ns.ods}.ods_product_event PARTITION (dt, hour)
        |SELECT
        |  event_id, event_type, event_time, ingest_time, source_system,
        |  schema_version, trace_id,
@@ -138,9 +139,9 @@ object OdsLoadSql {
        |""".stripMargin
 
   /** 行为事件：显式视图 → ods_behavior_event（§10.1 行为主题） */
-  def behaviorFromLanding(batchId: Long): String =
+  def behaviorFromLanding(ns: WarehouseNamespace, batchId: Long): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ods.ods_behavior_event PARTITION (dt, hour)
+       |INSERT OVERWRITE TABLE ${ns.ods}.ods_behavior_event PARTITION (dt, hour)
        |SELECT
        |  event_id, event_type, event_time, ingest_time, source_system,
        |  schema_version, trace_id,
@@ -159,9 +160,9 @@ object OdsLoadSql {
        |""".stripMargin
 
   /** 交易事件：显式视图 → ods_trade_event（§10.1 交易主题，订单/支付/退款） */
-  def tradeFromLanding(batchId: Long): String =
+  def tradeFromLanding(ns: WarehouseNamespace, batchId: Long): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_ods.ods_trade_event PARTITION (dt, hour)
+       |INSERT OVERWRITE TABLE ${ns.ods}.ods_trade_event PARTITION (dt, hour)
        |SELECT
        |  event_id, event_type, event_time, ingest_time, source_system,
        |  schema_version, trace_id,

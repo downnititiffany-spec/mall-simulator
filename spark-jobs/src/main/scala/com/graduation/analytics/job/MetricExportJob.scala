@@ -1,6 +1,7 @@
 package com.graduation.analytics.job
 
 import com.graduation.analytics.metric.MetricAdsSpec
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.col
@@ -37,6 +38,7 @@ class MetricExportJob extends WarehouseJob {
   override def run(spark: SparkSession, args: JobArgs): JobResult = {
     val start = System.currentTimeMillis()
     val dt = args.businessDate
+    val ns = WarehouseNamespace.fromArgs(args)
     val sid = args.outputSnapshotId.get
     val exportDir = args.extra("exportDir").stripSuffix("/")
     val checks = ListBuffer.empty[QualityCheck]
@@ -44,7 +46,7 @@ class MetricExportJob extends WarehouseJob {
     // null 字段必须出现在 JSON 里（默认 true 会省略 null → 各行键集不一致 → 发布侧拒绝批量写入）
     spark.conf.set("spark.sql.jsonGenerator.ignoreNullFields", "false")
 
-    val formalTables = MetricAdsSpec.TABLES.map(_.hiveTable)
+    val formalTables = MetricAdsSpec.TABLES.map(_.hiveTable(ns))
     val evidence = PartitionEvidence.collect(spark, formalTables, None, Some(dt))
     val pathOf = evidence.map(p => p.table -> p.path).toMap
     val countOf = evidence.map(p => p.table -> p.rowCount).toMap
@@ -66,8 +68,8 @@ class MetricExportJob extends WarehouseJob {
     val manifestRows = ListBuffer.empty[String]
     var totalRows = 0L
     MetricAdsSpec.TABLES.foreach { spec =>
-      val loc = pathOf(spec.hiveTable).get
-      val hiveRows = countOf.getOrElse(spec.hiveTable, -1L)
+      val loc = pathOf(spec.hiveTable(ns)).get
+      val hiveRows = countOf.getOrElse(spec.hiveTable(ns), -1L)
       val df = spark.read.parquet(loc).select(spec.columns.map(col): _*)
       val exportFile = s"$exportDir/${spec.mysqlTable}.jsonl"
       MetricExportJob.writeJsonl(spark, df, exportFile)
@@ -77,7 +79,7 @@ class MetricExportJob extends WarehouseJob {
         s"${spec.mysqlTable}: hive=$hiveRows export=$written")
       totalRows += written
       manifestRows +=
-        s"""    {"hiveTable":"${spec.hiveTable}","mysqlTable":"${spec.mysqlTable}","rowCount":$written,""" +
+        s"""    {"hiveTable":"${spec.hiveTable(ns)}","mysqlTable":"${spec.mysqlTable}","rowCount":$written,""" +
           s""""columns":[${spec.columns.map(c => s""""$c"""").mkString(",")}],""" +
           s""""hivePath":"$loc","exportFile":"${MetricExportJob.posix(exportFile)}"}"""
     }

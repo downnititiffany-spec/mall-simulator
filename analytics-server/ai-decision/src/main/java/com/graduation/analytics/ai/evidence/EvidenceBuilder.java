@@ -5,6 +5,8 @@ import com.graduation.analytics.analysis.AnalysisViewModel;
 import com.graduation.analytics.ai.evidence.EvidencePackage.Period;
 import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
+import com.graduation.analytics.warehouse.WarehouseNamespace;
+import com.graduation.analytics.warehouse.WarehouseNamespaceProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -50,6 +52,8 @@ public class EvidenceBuilder {
 
     private final AnalysisService analysisService;
     private final MySqlMetricStore metricStore;
+    /** 数仓库名空间（唯一所有者）：血缘里的 Hive 库名不写死，随 ACTIVE 档案的 hive_database_prefix 走 */
+    private final WarehouseNamespaceProvider namespaceProvider;
 
     public EvidencePackage build(EvidenceRequest req) {
         String requestedSnapshot = req == null ? null : trim(req.snapshotId());
@@ -308,7 +312,8 @@ public class EvidenceBuilder {
                 || !dimensions.getOrDefault("region", List.of()).isEmpty()) {
             mysql.add(MetricLineage.saleTrend().mysqlTable());
         }
-        return new EvidencePackage.Lineage(MetricLineage.hiveTables(mysql), List.copyOf(mysql),
+        return new EvidencePackage.Lineage(
+                MetricLineage.hiveTables(mysql, namespaceProvider.current()), List.copyOf(mysql),
                 meta == null ? null : meta.getPipelineRunId(), snapshotId);
     }
 

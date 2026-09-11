@@ -41,3 +41,24 @@ Hive ADS 是权威历史与复杂分析的来源；MySQL 指标库只承载已�
 * 小维表（dim_*）spark-submit 时广播连接；禁止无条件广播大事实表。
 * 每日任务完成后合并过小文件（repartition/coalesce，§7.8）。
 * 表清单与 §6.2-§6.5 完全对应：ODS 4 + DWD 3 + DIM 5 + DWS 7 + ADS 10。
+
+## 执行方式（库名前缀可替换）
+
+`ddl/*.sql` 里的库名不写死，写成变量 `${WAREHOUSE_PREFIX}_<层>`（层 ∈ `ods`/`dwd`/`dim`/`dws`/`ads`）。
+用 beeline 的 `--hivevar` 传前缀，按 00 → 01 → 02 → 03 → 04 顺序执行：
+
+```bash
+beeline --hivevar WAREHOUSE_PREFIX=dw -f warehouse/ddl/00-ods.sql
+beeline --hivevar WAREHOUSE_PREFIX=dw -f warehouse/ddl/01-dwd.sql
+beeline --hivevar WAREHOUSE_PREFIX=dw -f warehouse/ddl/02-dims.sql
+beeline --hivevar WAREHOUSE_PREFIX=dw -f warehouse/ddl/03-dws.sql
+beeline --hivevar WAREHOUSE_PREFIX=dw -f warehouse/ddl/04-ads.sql
+```
+
+* `WAREHOUSE_PREFIX=dw` 就是缺省值，派生 `dw_ods`/`dw_dwd`/`dw_dim`/`dw_dws`/`dw_ads`——即源 A 的既有库名，
+  零数据迁移；上面的分层表和正文里的 `dw_dim.dim_metric` 都是这个缺省前缀下的具体值，不是第二处定义。
+* 换源（第二个源用 `dw_b`）时**同一套 DDL 直接复用**，只改 `--hivevar` 的值（派生 `dw_b_ods` … `dw_b_ads`），
+  不需要为每个源复制第二份 DDL；多源就是同一份 DDL 换前缀各跑一遍。
+* 库名派生规则的唯一来源是 `contract-specs/specs/warehouse-namespace.v1.json`（前缀合法形状、保留字、
+  错误码与全部测试向量）；Java/Scala 两侧的 `WarehouseNamespace` 只是该规格的薄适配，DDL 层的
+  `${WAREHOUSE_PREFIX}_<层>` 与之同名同规则。

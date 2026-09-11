@@ -1,12 +1,13 @@
 package com.graduation.analytics.job
 
 import com.graduation.analytics.sql.{EventLandingSchema, OdsLoadSql}
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.SparkSession
 
 /**
  * Job01 全主题 ODS 装载（§10.2 OdsEventLoadJob 入口）：
- * Landing JSON 目录 → dw_ods 四主题表（ods_user_event / ods_product_event /
+ * Landing JSON 目录 → ns.ods 四主题表（ods_user_event / ods_product_event /
  * ods_behavior_event / ods_trade_event）。
  *
  * §10.2 落实：
@@ -29,6 +30,7 @@ class EventOdsLoadJob extends WarehouseJob {
     val start = System.currentTimeMillis()
     val landingDir = args.extra("landingDir")
     val batchId = args.extra.get("batchId").flatMap(v => scala.util.Try(v.toLong).toOption).getOrElse(0L)
+    val ns = WarehouseNamespace.fromArgs(args)
 
     spark.sparkContext.setJobDescription(s"$code read-json: $landingDir")
     // §10.2(1)(2)：显式 Schema 读取，payload.* 结构完整保留（原始 JSON 可重放）
@@ -57,13 +59,13 @@ class EventOdsLoadJob extends WarehouseJob {
     var outputCount = 0L
     tables.foreach { case (table, sqlName) =>
       val sql = sqlName match {
-        case "userFromLanding"     => OdsLoadSql.userFromLanding(batchId)
-        case "productFromLanding"  => OdsLoadSql.productFromLanding(batchId)
-        case "behaviorFromLanding" => OdsLoadSql.behaviorFromLanding(batchId)
-        case "tradeFromLanding"    => OdsLoadSql.tradeFromLanding(batchId)
+        case "userFromLanding"     => OdsLoadSql.userFromLanding(ns, batchId)
+        case "productFromLanding"  => OdsLoadSql.productFromLanding(ns, batchId)
+        case "behaviorFromLanding" => OdsLoadSql.behaviorFromLanding(ns, batchId)
+        case "tradeFromLanding"    => OdsLoadSql.tradeFromLanding(ns, batchId)
       }
       spark.sql(sql) // INSERT OVERWRITE 幂等：分区内重跑内容相同，不重复累加（§10.3 第 4 条）
-      outputCount += spark.sql(s"SELECT COUNT(*) c FROM dw_ods.$table").collect()(0).getLong(0)
+      outputCount += spark.sql(s"SELECT COUNT(*) c FROM ${ns.ods}.$table").collect()(0).getLong(0)
     }
 
     spark.sparkContext.setJobDescription(s"$code rejected summary")
@@ -73,7 +75,7 @@ class EventOdsLoadJob extends WarehouseJob {
 
     JobResult.success(code, inputCount, outputCount, rejectedCount,
       args.outputSnapshotId, args.attemptNo, System.currentTimeMillis() - start,
-      PartitionEvidence.collect(spark, EventOdsLoadJob.OUTPUT_TABLES, args.outputSnapshotId))
+      PartitionEvidence.collect(spark, EventOdsLoadJob.outputTables(ns), args.outputSnapshotId))
       .copy(message = s"accepted=$acceptedCount rejectedVersionKeys=$rejectedByVersion topics=4")
   }
 }
@@ -81,8 +83,8 @@ class EventOdsLoadJob extends WarehouseJob {
 object EventOdsLoadJob {
   val instance: EventOdsLoadJob = new EventOdsLoadJob()
 
-  /** 本作业写出的目标表（R6-12 分区证据采集范围） */
-  val OUTPUT_TABLES: Seq[String] = Seq(
-    "dw_ods.ods_user_event", "dw_ods.ods_product_event",
-    "dw_ods.ods_behavior_event", "dw_ods.ods_trade_event")
+  /** 本作业写出的目标表（R6-12 分区证据采集范围）；库名由唯一所有者派生 */
+  def outputTables(ns: WarehouseNamespace): Seq[String] = Seq(
+    ns.table("ods", "ods_user_event"), ns.table("ods", "ods_product_event"),
+    ns.table("ods", "ods_behavior_event"), ns.table("ods", "ods_trade_event"))
 }

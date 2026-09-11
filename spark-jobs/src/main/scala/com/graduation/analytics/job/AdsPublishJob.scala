@@ -1,6 +1,7 @@
 package com.graduation.analytics.job
 
 import com.graduation.analytics.sql.AdsSql
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 
@@ -9,8 +10,8 @@ import scala.collection.mutable.ListBuffer
 /**
  * R6-13 正式分区发布（V2.0 §14.4 分区幂等协议，code=pub）：
  * 质量门（dqc）通过后，把 8 张 ADS 的**正式分区**用 **Hive 元数据指针**指向本次快照的暂存路径：
- *   ALTER TABLE dw_ads.ads_X ADD IF NOT EXISTS PARTITION (dt='D') LOCATION '<staging>';
- *   ALTER TABLE dw_ads.ads_X PARTITION (dt='D') SET LOCATION '<staging>';
+ *   ALTER TABLE {ns.ads}.ads_X ADD IF NOT EXISTS PARTITION (dt='D') LOCATION '<staging>';
+ *   ALTER TABLE {ns.ads}.ads_X PARTITION (dt='D') SET LOCATION '<staging>';
  *
  * 选型说明（在 docs/remediation-status.md 登记）：指导书首选项为"元数据分区交换"，并明确远程对象存储
  * 用"版本路径 + 元数据指针"。本地 file:// 实验环境实测（.verify/r6-13-probe*.log）：
@@ -35,19 +36,20 @@ class AdsPublishJob extends WarehouseJob {
   override def run(spark: SparkSession, args: JobArgs): JobResult = {
     val start = System.currentTimeMillis()
     val dt = args.businessDate
+    val ns = WarehouseNamespace.fromArgs(args)
     val sid = args.outputSnapshotId.get
     val prune = args.extra.get("pruneStaging").forall(_ != "false")
     val checks = ListBuffer.empty[QualityCheck]
 
     val tables = AdsSql.TABLES
-    val stagingTables = tables.map(AdsSql.staging)
-    val formalTables = tables.map(AdsSql.formal)
+    val stagingTables = tables.map(AdsSql.staging(ns, _))
+    val formalTables = tables.map(AdsSql.formal(ns, _))
     val stagingParts = PartitionEvidence.collect(spark, stagingTables, Some(sid), Some(dt))
       .filter(_.snapshotId.contains(sid))
     val stgOf = stagingParts.map(p => p.table -> p).toMap
 
     // 规则 1（发布前预检）：暂存分区必须全部就绪且已知物理路径，否则不切换任何分区
-    val notReady = tables.filter(t => stgOf.get(AdsSql.staging(t)).forall(p => p.rowCount <= 0 || p.path.isEmpty))
+    val notReady = tables.filter(t => stgOf.get(AdsSql.staging(ns, t)).forall(p => p.rowCount <= 0 || p.path.isEmpty))
     checks += QualityCheck("PUB_STAGING_READY", "PUBLISH", stagingTables.mkString(","),
       tables.size, notReady.size, "8 张暂存分区就绪", "BLOCKING", notReady.isEmpty,
       if (notReady.isEmpty) s"8 张暂存分区就绪，合计 ${stagingParts.map(_.rowCount).sum} 行"
@@ -62,8 +64,8 @@ class AdsPublishJob extends WarehouseJob {
     val switched = ListBuffer.empty[String]
     val replayed = ListBuffer.empty[String]
     tables.foreach { t =>
-      val formal = AdsSql.formal(t)
-      val ev = stgOf(AdsSql.staging(t))
+      val formal = AdsSql.formal(ns, t)
+      val ev = stgOf(AdsSql.staging(ns, t))
       val loc = ev.path.get
       val before = PartitionEvidence.collect(spark, Seq(formal), None, Some(dt)).headOption
       val same = before.flatMap(_.path).exists(_.stripSuffix("/") == loc.stripSuffix("/"))
@@ -75,11 +77,11 @@ class AdsPublishJob extends WarehouseJob {
     // ── 发布后校验：正式分区行数 = 暂存分区行数（真实 COUNT(*)，证据随 JobResult 落库） ──
     val formalParts = PartitionEvidence.collect(spark, formalTables, Some(sid), Some(dt))
     val formalOf = formalParts.map(p => p.table -> p.rowCount).toMap
-    val mismatch = tables.filter(t => formalOf.getOrElse(AdsSql.formal(t), -1L) != stgOf(AdsSql.staging(t)).rowCount)
+    val mismatch = tables.filter(t => formalOf.getOrElse(AdsSql.formal(ns, t), -1L) != stgOf(AdsSql.staging(ns, t)).rowCount)
     checks += QualityCheck("PUB_FORMAL_PARTITION_MATCH", "PUBLISH", formalTables.mkString(","),
       tables.size, mismatch.size, "正式=暂存行数", "BLOCKING", mismatch.isEmpty,
       if (mismatch.isEmpty) s"8 张正式分区行数与暂存一致（合计 ${formalParts.map(_.rowCount).sum} 行）"
-      else s"行数不一致: ${mismatch.map(t => s"$t stg=${stgOf(AdsSql.staging(t)).rowCount} formal=${formalOf.getOrElse(AdsSql.formal(t), -1L)}").mkString(",")}")
+      else s"行数不一致: ${mismatch.map(t => s"$t stg=${stgOf(AdsSql.staging(ns, t)).rowCount} formal=${formalOf.getOrElse(AdsSql.formal(ns, t), -1L)}").mkString(",")}")
     checks += QualityCheck("PUB_POINTER_SWITCH", "PUBLISH", formalTables.mkString(","),
       tables.size, switched.size, "本次切换表数", "INFO", true,
       s"本次切换 ${switched.size} 张（${switched.mkString(",")}）；同快照重放 ${replayed.size} 张" +

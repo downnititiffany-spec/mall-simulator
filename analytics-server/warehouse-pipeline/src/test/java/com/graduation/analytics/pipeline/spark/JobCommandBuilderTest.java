@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * R6 快速测试（L0，不启动 Spark）：JobCommandBuilder 把 RuntimeProfile 快照 + 作业参数
@@ -116,5 +117,39 @@ class JobCommandBuilderTest {
         extra.put("topN", "50");
         List<String> cmd = JobCommandBuilder.build(remote, "fna", "20260901", 1L, 1, extra, Map.of());
         assertThat(cmd).contains("--periodStart=20260901", "--periodEnd=20260907", "--topN=50");
+    }
+
+    // ── P1-04：库名前缀由 runtime_profile 派生，且非法值在提交前失败 ──────────────
+
+    @Test
+    void hiveDatabasePrefixComesFromProfileOrDefaultsToDw() {
+        // NULL（源 A 存量档）→ 缺省 dw：与改造前库名逐字一致，零迁移
+        List<String> legacy = JobCommandBuilder.build(local, "odl", "20260901", 1L, 1, Map.of(), Map.of());
+        assertThat(legacy).contains("--hiveDatabasePrefix=dw");
+
+        // 非缺省前缀（第二个源）→ 原样传给 JobRunner，由 Scala 侧同一规格派生 dw_b_ods…
+        RuntimeProfileSnapshot second = withPrefix(local, "dw_b");
+        List<String> other = JobCommandBuilder.build(second, "odl", "20260901", 1L, 1, Map.of(), Map.of());
+        assertThat(other).contains("--hiveDatabasePrefix=dw_b");
+        assertThat(other).doesNotContain("--hiveDatabasePrefix=dw");
+    }
+
+    @Test
+    void invalidPrefixFailsBeforeSubmit() {
+        // 校验发生在构造命令数组时（即 spark-submit 进程启动之前），且不 trim/不兜底
+        for (String bad : List.of("dw_ods", "DW", " dw", "dw__b", "default", "dw_")) {
+            RuntimeProfileSnapshot p = withPrefix(local, bad);
+            assertThatThrownBy(() -> JobCommandBuilder.build(p, "odl", "20260901", 1L, 1, Map.of(), Map.of()))
+                    .as("非法前缀 %s 必须在提交前失败", bad)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("WAREHOUSE_PREFIX_");
+        }
+    }
+
+    private static RuntimeProfileSnapshot withPrefix(RuntimeProfileSnapshot base, String prefix) {
+        return new RuntimeProfileSnapshot(base.id(), base.version(), base.type(), base.landingUri(),
+                base.hiveJdbcUrl(), prefix, base.sparkMaster(), base.deployMode(), base.yarnQueue(),
+                base.sshHost(), base.sshPort(), base.sshUser(), base.sparkSubmitPath(),
+                base.sparkJobJarUri(), base.metricStoreType(), base.credentialRef(), base.timezone());
     }
 }

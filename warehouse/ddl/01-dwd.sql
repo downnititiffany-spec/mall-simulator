@@ -3,11 +3,12 @@
 -- 清洗：时间统一、枚举映射、空值过滤、event_id 去重、维度补充；
 -- 异常数据进入 dwd_reject_record，不混入正式明细。
 -- 金额 DECIMAL(18,2)；event_time 决定指标归属日。
+-- 库名：${WAREHOUSE_PREFIX}_dwd，缺省源 A 用 dw（beeline --hivevar WAREHOUSE_PREFIX=dw -f 01-dwd.sql）；规则见 contract-specs/specs/warehouse-namespace.v1.json
 -- =====================================================================
-CREATE DATABASE IF NOT EXISTS dw_dwd COMMENT 'DWD 明细数据层';
+CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd COMMENT 'DWD 明细数据层';
 
 -- 用户行为明细（唯一事实：每个行为一行，event_id 去重后）
-CREATE EXTERNAL TABLE IF NOT EXISTS dw_dwd.dwd_user_behavior_detail (
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_user_behavior_detail (
     behavior_id   STRING  COMMENT '= event_id',
     user_id       BIGINT,
     product_id    BIGINT,
@@ -24,10 +25,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_dwd.dwd_user_behavior_detail (
 COMMENT '用户行为明细（去重、标准枚举、维度补充）'
 PARTITIONED BY (dt STRING COMMENT '业务日期 yyyyMMdd')
 STORED AS PARQUET
-LOCATION '/user/hive/warehouse/dw_dwd.db/dwd_user_behavior_detail';
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dwd.db/dwd_user_behavior_detail';
 
 -- 订单明细（状态展开：同 order_id 的事件按 event_time 重建最新状态）
-CREATE EXTERNAL TABLE IF NOT EXISTS dw_dwd.dwd_order_detail (
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_order_detail (
     order_id      BIGINT,
     user_id       BIGINT,
     product_id    BIGINT,
@@ -51,10 +52,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_dwd.dwd_order_detail (
 COMMENT '订单明细（状态展开+金额核对，§11.3）'
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
-LOCATION '/user/hive/warehouse/dw_dwd.db/dwd_order_detail';
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dwd.db/dwd_order_detail';
 
 -- 拒绝记录（清洗时隔离的异常数据，人工/程序复审）
-CREATE EXTERNAL TABLE IF NOT EXISTS dw_dwd.dwd_reject_record (
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_reject_record (
     reject_id     STRING,
     source_table  STRING,
     reject_reason STRING COMMENT '枚举：EMPTY_FIELD/DUPLICATE_EVENT/BAD_ENUM/BAD_AMOUNT/FUTURE_TIME',
@@ -64,4 +65,4 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_dwd.dwd_reject_record (
 COMMENT '清洗拒绝记录'
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
-LOCATION '/user/hive/warehouse/dw_dwd.db/dwd_reject_record';
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dwd.db/dwd_reject_record';

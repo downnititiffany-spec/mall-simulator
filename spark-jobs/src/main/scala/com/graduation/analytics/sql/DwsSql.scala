@@ -1,5 +1,7 @@
 package com.graduation.analytics.sql
 
+import com.graduation.analytics.warehouse.WarehouseNamespace
+
 /**
  * DWS 主题聚合 SQL（§7.3/§7.4，§12.1 修复）：
  * 7 张核心 DWS 全部真实执行——漏斗不再硬编码 order/pay，
@@ -9,9 +11,9 @@ package com.graduation.analytics.sql
 object DwsSql {
 
   /** 用户×日期行为宽表（buy=当日有效支付商品件数，来自订单明细） */
-  def userBehaviorDay(dt: String): String =
+  def userBehaviorDay(ns: WarehouseNamespace, dt: String): String =
     s"""
-      |INSERT OVERWRITE TABLE dw_dws.dws_user_behavior_day PARTITION(dt = '$dt')
+      |INSERT OVERWRITE TABLE ${ns.dws}.dws_user_behavior_day PARTITION(dt = '$dt')
       |SELECT
       |  b.user_id,
       |  SUM(CASE WHEN b.behavior_type = 'view' THEN 1 ELSE 0 END) AS pv,
@@ -20,10 +22,10 @@ object DwsSql {
       |  SUM(CASE WHEN b.behavior_type = 'search' THEN 1 ELSE 0 END) AS search,
       |  COUNT(DISTINCT b.event_hour) AS active_hours,
       |  COALESCE(s.buy, 0) AS buy
-      |FROM dw_dwd.dwd_user_behavior_detail b
+      |FROM ${ns.dwd}.dwd_user_behavior_detail b
       |LEFT JOIN (
       |  SELECT user_id, SUM(quantity) AS buy
-      |  FROM dw_dwd.dwd_order_detail
+      |  FROM ${ns.dwd}.dwd_order_detail
       |  WHERE dt = '$dt' AND final_paid_flag = 1
       |  GROUP BY user_id
       |) s ON s.user_id = b.user_id
@@ -38,9 +40,9 @@ object DwsSql {
    * pay_users=当日有效支付去重用户（final_paid_flag=1）。
    * 转化率分母为 0 → NULL，绝不返回硬编码 0。
    */
-  def funnelDay(dt: String): String =
+  def funnelDay(ns: WarehouseNamespace, dt: String): String =
     s"""
-      |INSERT OVERWRITE TABLE dw_dws.dws_behavior_funnel_day PARTITION(dt = '$dt')
+      |INSERT OVERWRITE TABLE ${ns.dws}.dws_behavior_funnel_day PARTITION(dt = '$dt')
       |SELECT
       |  -1 AS category_id, 'all' AS channel,
       |  b.view_users, b.intent_users, o.order_users, p.pay_users,
@@ -56,17 +58,17 @@ object DwsSql {
       |  SELECT
       |    COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS view_users,
       |    COUNT(DISTINCT CASE WHEN behavior_type IN ('favorite','cart_add') THEN user_id END) AS intent_users
-      |  FROM dw_dwd.dwd_user_behavior_detail
+      |  FROM ${ns.dwd}.dwd_user_behavior_detail
       |  WHERE dt = '$dt'
       |) b,
       |(
       |  SELECT COUNT(DISTINCT user_id) AS order_users
-      |  FROM dw_dwd.dwd_order_detail
+      |  FROM ${ns.dwd}.dwd_order_detail
       |  WHERE dt = '$dt'
       |) o,
       |(
       |  SELECT COUNT(DISTINCT user_id) AS pay_users
-      |  FROM dw_dwd.dwd_order_detail
+      |  FROM ${ns.dwd}.dwd_order_detail
       |  WHERE dt = '$dt' AND final_paid_flag = 1
       |) p
       |""".stripMargin
@@ -76,9 +78,9 @@ object DwsSql {
    * buy 来自 dwd_order_detail 有效支付商品件数（SUM(quantity)），
    * 绝不从行为表取不存在的 buy 枚举。
    */
-  def productBehaviorDay(dt: String): String =
+  def productBehaviorDay(ns: WarehouseNamespace, dt: String): String =
     s"""
-      |INSERT OVERWRITE TABLE dw_dws.dws_product_behavior_day PARTITION(dt = '$dt')
+      |INSERT OVERWRITE TABLE ${ns.dws}.dws_product_behavior_day PARTITION(dt = '$dt')
       |SELECT
       |  b.product_id, b.category_id,
       |  SUM(CASE WHEN b.behavior_type = 'view' THEN 1 ELSE 0 END) AS pv,
@@ -86,10 +88,10 @@ object DwsSql {
       |  SUM(CASE WHEN b.behavior_type = 'favorite' THEN 1 ELSE 0 END) AS fav,
       |  SUM(CASE WHEN b.behavior_type = 'cart_add' THEN 1 ELSE 0 END) AS cart,
       |  COALESCE(s.buy, 0) AS buy
-      |FROM dw_dwd.dwd_user_behavior_detail b
+      |FROM ${ns.dwd}.dwd_user_behavior_detail b
       |LEFT JOIN (
       |  SELECT product_id, SUM(quantity) AS buy
-      |  FROM dw_dwd.dwd_order_detail
+      |  FROM ${ns.dwd}.dwd_order_detail
       |  WHERE dt = '$dt' AND final_paid_flag = 1
       |  GROUP BY product_id
       |) s ON s.product_id = b.product_id
@@ -98,9 +100,9 @@ object DwsSql {
       |""".stripMargin
 
   /** 交易日汇总（§21.3 有效支付口径）：order_count/buyer_count 仅计 final_paid_flag=1 */
-  def tradeDay(dt: String): String =
+  def tradeDay(ns: WarehouseNamespace, dt: String): String =
     s"""
-      |INSERT OVERWRITE TABLE dw_dws.dws_trade_day PARTITION(dt = '$dt')
+      |INSERT OVERWRITE TABLE ${ns.dws}.dws_trade_day PARTITION(dt = '$dt')
       |SELECT
       |  COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN order_id END) AS order_count,
       |  COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN user_id END) AS buyer_count,
@@ -111,20 +113,20 @@ object DwsSql {
       |  CASE WHEN COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN order_id END) = 0 THEN NULL
       |       ELSE SUM(CASE WHEN final_paid_flag = 1 THEN amount ELSE 0 END)
       |            / COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN order_id END) END AS avg_order_value
-      |FROM dw_dwd.dwd_order_detail
+      |FROM ${ns.dwd}.dwd_order_detail
       |WHERE dt = '$dt'
       |""".stripMargin
 
   /** 商品×日期销售宽表（§12.1 第 4 张）：有效支付商品件数/金额/去重买家 */
-  def productSaleDay(dt: String): String =
+  def productSaleDay(ns: WarehouseNamespace, dt: String): String =
     s"""
-      |INSERT OVERWRITE TABLE dw_dws.dws_product_sale_day PARTITION(dt = '$dt')
+      |INSERT OVERWRITE TABLE ${ns.dws}.dws_product_sale_day PARTITION(dt = '$dt')
       |SELECT
       |  product_id, category_id,
       |  SUM(quantity) AS sale_count,
       |  SUM(amount) AS sale_amount,
       |  COUNT(DISTINCT user_id) AS buyer_count
-      |FROM dw_dwd.dwd_order_detail
+      |FROM ${ns.dwd}.dwd_order_detail
       |WHERE dt = '$dt' AND final_paid_flag = 1
       |GROUP BY product_id, category_id
       |""".stripMargin
@@ -133,9 +135,9 @@ object DwsSql {
    * 用户×统计周期交易汇总（复购/RFM 输入，§12.1 第 6 张）。
    * 观察期 [periodStart, periodEnd] 取有效支付订单；分区 dt 为统计日。
    */
-  def userTradePeriod(dt: String, periodStart: String, periodEnd: String): String =
+  def userTradePeriod(ns: WarehouseNamespace, dt: String, periodStart: String, periodEnd: String): String =
     s"""
-      |INSERT OVERWRITE TABLE dw_dws.dws_user_trade_period PARTITION(dt = '$dt')
+      |INSERT OVERWRITE TABLE ${ns.dws}.dws_user_trade_period PARTITION(dt = '$dt')
       |SELECT
       |  user_id,
       |  MAX(order_date) AS last_buy_date,
@@ -143,21 +145,21 @@ object DwsSql {
       |  SUM(amount) AS sale_amount,
       |  '$periodStart' AS period_start,
       |  '$periodEnd' AS period_end
-      |FROM dw_dwd.dwd_order_detail
+      |FROM ${ns.dwd}.dwd_order_detail
       |WHERE dt >= '$periodStart' AND dt <= '$periodEnd' AND final_paid_flag = 1
       |GROUP BY user_id
       |""".stripMargin
 
   /** 地区×日期销售汇总（§12.1 第 7 张）：城市等级 = region */
-  def regionSaleDay(dt: String): String =
+  def regionSaleDay(ns: WarehouseNamespace, dt: String): String =
     s"""
-      |INSERT OVERWRITE TABLE dw_dws.dws_region_sale_day PARTITION(dt = '$dt')
+      |INSERT OVERWRITE TABLE ${ns.dws}.dws_region_sale_day PARTITION(dt = '$dt')
       |SELECT
       |  COALESCE(city_level, 'unknown') AS region,
       |  COUNT(DISTINCT user_id) AS buyer_count,
       |  COUNT(DISTINCT order_id) AS order_count,
       |  SUM(amount) AS sale_amount
-      |FROM dw_dwd.dwd_order_detail
+      |FROM ${ns.dwd}.dwd_order_detail
       |WHERE dt = '$dt' AND final_paid_flag = 1
       |GROUP BY COALESCE(city_level, 'unknown')
       |""".stripMargin

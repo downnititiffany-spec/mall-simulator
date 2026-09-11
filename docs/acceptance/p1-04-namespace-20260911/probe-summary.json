@@ -1,0 +1,166 @@
+{
+  "probe": "P1-04 warehouse namespace prefix",
+  "ranAt": "2026-09-11 18:21:16",
+  "sparkHome": "D:\\Develop\\spark-3.5.1-bin-hadoop3",
+  "jar": "D:\\Develop_code\\GraduationProject\\spark-jobs\\target\\spark-jobs-0.1.0-SNAPSHOT.jar",
+  "jarBuiltAt": "2026-09-11 18:19:03",
+  "driverMemory": "512m",
+  "workDir": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe",
+  "checks": [
+    {
+      "check": "A.sci 退出码/状态",
+      "passed": true,
+      "detail": "exit=0 status=SUCCESS"
+    },
+    {
+      "check": "A.odl 退出码/状态",
+      "passed": true,
+      "detail": "exit=0 status=SUCCESS"
+    },
+    {
+      "check": "A.odl 输入 55 行",
+      "passed": true,
+      "detail": "inputRecords=55 outputRecords=52"
+    },
+    {
+      "check": "A 实建 `<dw_b>_ods.db`",
+      "passed": true,
+      "detail": "warehouse 下的库目录: dw_b_ads.db, dw_b_dim.db, dw_b_dwd.db, dw_b_dws.db, dw_b_ods.db"
+    },
+    {
+      "check": "A 未建源 A 的 `<dw>_ods.db`（库名隔离）",
+      "passed": true,
+      "detail": "warehouse 下的库目录: dw_b_ads.db, dw_b_dim.db, dw_b_dwd.db, dw_b_dws.db, dw_b_ods.db"
+    },
+    {
+      "check": "A `<dw_b>_ods` 有 parquet 文件",
+      "passed": true,
+      "detail": "part-*.parquet = 21"
+    },
+    {
+      "check": "A stderr 打印库名空间",
+      "passed": true,
+      "detail": "[spark-jobs] 数仓库名空间: dw_b_ods, dw_b_dwd, dw_b_dim, dw_b_dws, dw_b_ads\r"
+    },
+    {
+      "check": "B 层后缀前缀退出码 64",
+      "passed": true,
+      "detail": "exit=64"
+    },
+    {
+      "check": "B 层后缀前缀错误码",
+      "passed": true,
+      "detail": "[spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=dw_ods）：WAREHOUSE_PREFIX_LAYER_SUFFIX\r"
+    },
+    {
+      "check": "B 大写前缀退出码 64",
+      "passed": true,
+      "detail": "exit=64"
+    },
+    {
+      "check": "B 大写前缀错误码",
+      "passed": true,
+      "detail": "[spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=DW）：WAREHOUSE_PREFIX_PATTERN\r"
+    },
+    {
+      "check": "B 未产出 JobResult（Spark 未启动）",
+      "passed": true,
+      "detail": "status=/"
+    },
+    {
+      "check": "B 一个库都没建",
+      "passed": true,
+      "detail": "warehouse 下的库目录: []"
+    },
+    {
+      "check": "B stderr 无 Spark 会话日志",
+      "passed": true,
+      "detail": "stderr 行数=6（只有 JAVA_TOOL_OPTIONS 回显 + 一行前缀非法 + 关闭钩子）"
+    },
+    {
+      "check": "C.sci/C.odl 成功",
+      "passed": true,
+      "detail": "exit=0/0 status=SUCCESS"
+    },
+    {
+      "check": "C 实建 `<dw>_ods.db`（与改造前逐字一致）",
+      "passed": true,
+      "detail": "warehouse 下的库目录: dw_ads.db, dw_dim.db, dw_dwd.db, dw_dws.db, dw_ods.db"
+    },
+    {
+      "check": "C `<dw>_ods` 有 parquet 文件",
+      "passed": true,
+      "detail": "part-*.parquet = 21"
+    },
+    {
+      "check": "C odl 输入 55 行",
+      "passed": true,
+      "detail": "inputRecords=55"
+    }
+  ],
+  "passed": 18,
+  "total": 18,
+  "failures": [],
+  "jobs": [
+    {
+      "Scenario": "A-other-prefix",
+      "Tag": "sci",
+      "ExitCode": 0,
+      "Status": "SUCCESS",
+      "InputRecords": 0,
+      "OutputRecords": 37,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\A-other-prefix\\logs\\sci.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\A-other-prefix\\logs\\sci.err.txt"
+    },
+    {
+      "Scenario": "A-other-prefix",
+      "Tag": "odl",
+      "ExitCode": 0,
+      "Status": "SUCCESS",
+      "InputRecords": 55,
+      "OutputRecords": 52,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\A-other-prefix\\logs\\odl.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\A-other-prefix\\logs\\odl.err.txt"
+    },
+    {
+      "Scenario": "B-invalid-prefix",
+      "Tag": "sci-layer-suffix",
+      "ExitCode": 64,
+      "Status": null,
+      "InputRecords": null,
+      "OutputRecords": null,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\B-invalid-prefix\\logs\\sci-layer-suffix.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\B-invalid-prefix\\logs\\sci-layer-suffix.err.txt"
+    },
+    {
+      "Scenario": "B-invalid-prefix",
+      "Tag": "sci-uppercase",
+      "ExitCode": 64,
+      "Status": null,
+      "InputRecords": null,
+      "OutputRecords": null,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\B-invalid-prefix\\logs\\sci-uppercase.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\B-invalid-prefix\\logs\\sci-uppercase.err.txt"
+    },
+    {
+      "Scenario": "C-default-prefix",
+      "Tag": "sci",
+      "ExitCode": 0,
+      "Status": "SUCCESS",
+      "InputRecords": 0,
+      "OutputRecords": 37,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\C-default-prefix\\logs\\sci.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\C-default-prefix\\logs\\sci.err.txt"
+    },
+    {
+      "Scenario": "C-default-prefix",
+      "Tag": "odl",
+      "ExitCode": 0,
+      "Status": "SUCCESS",
+      "InputRecords": 55,
+      "OutputRecords": 52,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\C-default-prefix\\logs\\odl.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p1-04-ns-probe\\C-default-prefix\\logs\\odl.err.txt"
+    }
+  ]
+}

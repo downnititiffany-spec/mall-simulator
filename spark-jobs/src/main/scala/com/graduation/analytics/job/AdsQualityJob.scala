@@ -1,6 +1,7 @@
 package com.graduation.analytics.job
 
 import com.graduation.analytics.sql.AdsSql
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable.ListBuffer
@@ -33,8 +34,9 @@ class AdsQualityJob extends WarehouseJob {
   override def run(spark: SparkSession, args: JobArgs): JobResult = {
     val start = System.currentTimeMillis()
     val dt = args.businessDate
+    val ns = WarehouseNamespace.fromArgs(args)
     val sid = args.outputSnapshotId.get
-    val staging = FunnelAdsJob.STAGING_TABLES
+    val staging = FunnelAdsJob.stagingTables(ns)
 
     val checks = ListBuffer.empty[QualityCheck]
     // 分区证据来自 Hive 元数据实测（分区规格里的 snapshot_id + 真实 COUNT + Location）
@@ -63,14 +65,14 @@ class AdsQualityJob extends WarehouseJob {
 
     // 规则 3：关键列非空（逐表真实 COUNT，阈值 0）
     val keyPredicates = Map(
-      AdsSql.staging("ads_operation_overview") -> "pv IS NULL OR uv IS NULL OR dau IS NULL",
-      AdsSql.staging("ads_active_trend") -> "dau IS NULL",
-      AdsSql.staging("ads_behavior_funnel") -> "stage IS NULL OR user_count IS NULL",
-      AdsSql.staging("ads_hot_product") -> "product_id IS NULL OR product_name IS NULL OR heat_score IS NULL",
-      AdsSql.staging("ads_product_conversion") -> "product_id IS NULL OR pv_users IS NULL",
-      AdsSql.staging("ads_sale_trend") -> "order_count IS NULL OR sale_amount IS NULL",
-      AdsSql.staging("ads_user_profile") -> "user_id IS NULL OR r IS NULL OR f IS NULL OR m IS NULL",
-      AdsSql.staging("ads_data_quality") -> "rule_code IS NULL OR check_count IS NULL OR passed IS NULL")
+      AdsSql.staging(ns, "ads_operation_overview") -> "pv IS NULL OR uv IS NULL OR dau IS NULL",
+      AdsSql.staging(ns, "ads_active_trend") -> "dau IS NULL",
+      AdsSql.staging(ns, "ads_behavior_funnel") -> "stage IS NULL OR user_count IS NULL",
+      AdsSql.staging(ns, "ads_hot_product") -> "product_id IS NULL OR product_name IS NULL OR heat_score IS NULL",
+      AdsSql.staging(ns, "ads_product_conversion") -> "product_id IS NULL OR pv_users IS NULL",
+      AdsSql.staging(ns, "ads_sale_trend") -> "order_count IS NULL OR sale_amount IS NULL",
+      AdsSql.staging(ns, "ads_user_profile") -> "user_id IS NULL OR r IS NULL OR f IS NULL OR m IS NULL",
+      AdsSql.staging(ns, "ads_data_quality") -> "rule_code IS NULL OR check_count IS NULL OR passed IS NULL")
     var keyChecked = 0L
     var keyErrors = 0L
     val keyDetail = ListBuffer.empty[String]
@@ -90,7 +92,7 @@ class AdsQualityJob extends WarehouseJob {
 
     // 规则 4/5：staging 质量大盘的规则结果（阻断规则硬失败，观察项只记录）
     val blockingRules = Set("AMOUNT_RECONCILE", "REQUIRED_FIELD_NULL_RATE", "ENUM_WHITELIST")
-    val dqTable = AdsSql.staging("ads_data_quality")
+    val dqTable = AdsSql.staging(ns, "ads_data_quality")
     val dqRows = spark.sql(
       s"SELECT rule_code, check_count, error_count, passed FROM $dqTable " +
         s"WHERE snapshot_id = '$sid' AND dt = '$dt'").collect()
@@ -109,7 +111,7 @@ class AdsQualityJob extends WarehouseJob {
     }
 
     // 规则 6：跨层对账 ADS 漏斗 vs DWS 漏斗（§16.4 对账公式）
-    val funnelStaging = AdsSql.staging("ads_behavior_funnel")
+    val funnelStaging = AdsSql.staging(ns, "ads_behavior_funnel")
     val stageMap = Seq("view" -> "view_users", "intent" -> "intent_users",
       "order" -> "order_users", "pay" -> "pay_users")
     val adsSum = spark.sql(
@@ -117,7 +119,7 @@ class AdsQualityJob extends WarehouseJob {
       .collect().map(r => r.getString(0) -> r.getLong(1)).toMap
     val dwsSum = spark.sql(
       s"SELECT SUM(view_users), SUM(intent_users), SUM(order_users), SUM(pay_users) " +
-        s"FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'").collect()(0)
+        s"FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'").collect()(0)
     val mismatch = stageMap.zipWithIndex.filter { case ((stage, _), i) =>
       adsSum.getOrElse(stage, -1L) != Option(dwsSum.get(i)).map(_.toString.toLong).getOrElse(0L)
     }.map(_._1._1)

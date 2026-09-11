@@ -147,7 +147,13 @@ python .verify/r7-4-mall-dom.py     # 商城端
 
 1. 部署 Hadoop 3.3.x + Hive 3.1.x + Spark 3.5（`docs/compatibility-matrix.md` 的「集群部署候选版本
    （待环境验证后回填）」一节尚未实跑，选定版本后需自行验证兼容性）。
-2. 执行数仓 DDL：`warehouse/ddl/00-ods.sql` ~ `04-ads.sql`（含建库）。
+2. 执行数仓 DDL：`warehouse/ddl/00-ods.sql` ~ `04-ads.sql`（含建库）。库名不写死，按
+   `--hivevar WAREHOUSE_PREFIX=<前缀>` 替换（缺省 `dw` → `dw_ods`…`dw_ads`；第二个源换前缀即可复用同一套 DDL）：
+   `beeline --hivevar WAREHOUSE_PREFIX=dw -f warehouse/ddl/00-ods.sql`（01 → 04 同法按序执行）。
+   漏传 `--hivevar` 时 Hive 会原样保留 `${WAREHOUSE_PREFIX}` 从而在建库处语法报错（fail-closed，不会静默建错库）。
+   说明：平台自身跑 INIT_SCHEMA 阶段时用 `runtime_profile.hive_database_prefix` 派生同一套库名（`LocalSchemaInitJob`），
+   与这里的 `WAREHOUSE_PREFIX` 同规则；`warehouse/ddl/*.sql` 是集群手工/脚本部署路径。
+   注：`--hivevar` 的替换行为本机尚未实跑（集群路径见 §8 首条，待环境验证后回填）。
 3. 配置 Flume：按 `ingestion/flume/flume-taildir.conf` 修改路径后启动（Taildir 断点采集 → HDFS `/landing`）。
 4. 构建作业包：`mvn -f spark-jobs/pom.xml package`（jar 不含 Spark 依赖）。
 5. 在平台登记 RuntimeProfile（类型、SSH 主机、提交用户、`spark-submit` 路径、作业 jar 路径）——

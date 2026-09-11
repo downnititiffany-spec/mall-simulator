@@ -1,0 +1,14 @@
+### 场景 A-other-prefix
+- dw_b_ads.db : 表 16 张 [ads_active_trend, ads_active_trend__staging, ads_behavior_funnel, ads_behavior_funnel__staging, ads_data_quality, ads_data_quality__staging, ads_hot_product, ads_hot_product__staging, ads_operation_overview, ads_operation_overview__staging, ads_product_conversion, ads_product_conversion__staging, ads_sale_trend, ads_sale_trend__staging, ads_user_profile, ads_user_profile__staging] ; 分区 [] ; part-*.parquet 0 个
+- dw_b_dim.db : 表 2 张 [dim_product, dim_user] ; 分区 [] ; part-*.parquet 0 个
+- dw_b_dwd.db : 表 3 张 [dwd_order_detail, dwd_reject_record, dwd_user_behavior_detail] ; 分区 [] ; part-*.parquet 0 个
+- dw_b_dws.db : 表 7 张 [dws_behavior_funnel_day, dws_product_behavior_day, dws_product_sale_day, dws_region_sale_day, dws_trade_day, dws_user_behavior_day, dws_user_trade_period] ; 分区 [] ; part-*.parquet 0 个
+- dw_b_ods.db : 表 4 张 [ods_behavior_event, ods_product_event, ods_trade_event, ods_user_event] ; 分区 [dt=20260901, dt=20260902] ; part-*.parquet 21 个
+
+### 场景 C-default-prefix
+- dw_ads.db : 表 16 张 [ads_active_trend, ads_active_trend__staging, ads_behavior_funnel, ads_behavior_funnel__staging, ads_data_quality, ads_data_quality__staging, ads_hot_product, ads_hot_product__staging, ads_operation_overview, ads_operation_overview__staging, ads_product_conversion, ads_product_conversion__staging, ads_sale_trend, ads_sale_trend__staging, ads_user_profile, ads_user_profile__staging] ; 分区 [] ; part-*.parquet 0 个
+- dw_dim.db : 表 2 张 [dim_product, dim_user] ; 分区 [] ; part-*.parquet 0 个
+- dw_dwd.db : 表 3 张 [dwd_order_detail, dwd_reject_record, dwd_user_behavior_detail] ; 分区 [] ; part-*.parquet 0 个
+- dw_dws.db : 表 7 张 [dws_behavior_funnel_day, dws_product_behavior_day, dws_product_sale_day, dws_region_sale_day, dws_trade_day, dws_user_behavior_day, dws_user_trade_period] ; 分区 [] ; part-*.parquet 0 个
+- dw_ods.db : 表 4 张 [ods_behavior_event, ods_product_event, ods_trade_event, ods_user_event] ; 分区 [dt=20260901, dt=20260902] ; part-*.parquet 21 个
+

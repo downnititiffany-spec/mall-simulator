@@ -1,6 +1,7 @@
 package com.graduation.analytics.job
 
 import com.graduation.analytics.sql.DimSql
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -16,26 +17,27 @@ class DimensionBuildJob extends WarehouseJob {
   override def run(spark: SparkSession, args: JobArgs): JobResult = {
     val start = System.currentTimeMillis()
     val dt = args.businessDate
+    val ns = WarehouseNamespace.fromArgs(args)
 
     spark.sparkContext.setJobDescription(s"$code input count")
     val userInput = spark.sql(
-      s"SELECT COUNT(*) c FROM dw_ods.ods_user_event WHERE dt = '$dt'").collect()(0).getLong(0)
+      s"SELECT COUNT(*) c FROM ${ns.ods}.ods_user_event WHERE dt = '$dt'").collect()(0).getLong(0)
     val productInput = spark.sql(
-      s"SELECT COUNT(*) c FROM dw_ods.ods_product_event WHERE dt = '$dt'").collect()(0).getLong(0)
+      s"SELECT COUNT(*) c FROM ${ns.ods}.ods_product_event WHERE dt = '$dt'").collect()(0).getLong(0)
 
     spark.sparkContext.setJobDescription(s"$code dim_user snapshot")
-    if (userInput > 0) spark.sql(DimSql.userSnapshot(dt))
+    if (userInput > 0) spark.sql(DimSql.userSnapshot(ns, dt))
     spark.sparkContext.setJobDescription(s"$code dim_product snapshot")
-    if (productInput > 0) spark.sql(DimSql.productSnapshot(dt))
+    if (productInput > 0) spark.sql(DimSql.productSnapshot(ns, dt))
 
     val userOutput = spark.sql(
-      s"SELECT COUNT(*) c FROM dw_dim.dim_user WHERE dt = '$dt'").collect()(0).getLong(0)
+      s"SELECT COUNT(*) c FROM ${ns.dim}.dim_user WHERE dt = '$dt'").collect()(0).getLong(0)
     val productOutput = spark.sql(
-      s"SELECT COUNT(*) c FROM dw_dim.dim_product WHERE dt = '$dt'").collect()(0).getLong(0)
+      s"SELECT COUNT(*) c FROM ${ns.dim}.dim_product WHERE dt = '$dt'").collect()(0).getLong(0)
 
     JobResult.success(code, userInput + productInput, userOutput + productOutput, 0L,
       args.outputSnapshotId, args.attemptNo, System.currentTimeMillis() - start,
-      PartitionEvidence.collect(spark, DimensionBuildJob.OUTPUT_TABLES, args.outputSnapshotId, Some(dt)))
+      PartitionEvidence.collect(spark, DimensionBuildJob.outputTables(ns), args.outputSnapshotId, Some(dt)))
       .copy(message = s"user=$userInput->$userOutput product=$productInput->$productOutput")
   }
 }
@@ -43,6 +45,7 @@ class DimensionBuildJob extends WarehouseJob {
 object DimensionBuildJob {
   val instance: DimensionBuildJob = new DimensionBuildJob()
 
-  /** 本作业写出的目标表（R6-12 分区证据采集范围） */
-  val OUTPUT_TABLES: Seq[String] = Seq("dw_dim.dim_user", "dw_dim.dim_product")
+  /** 本作业写出的目标表（R6-12 分区证据采集范围）；库名由唯一所有者派生 */
+  def outputTables(ns: WarehouseNamespace): Seq[String] = Seq(
+    ns.table("dim", "dim_user"), ns.table("dim", "dim_product"))
 }

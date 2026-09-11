@@ -4,6 +4,7 @@ import com.graduation.analytics.analysis.AnalysisService;
 import com.graduation.analytics.analysis.AnalysisViewModel;
 import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
+import com.graduation.analytics.warehouse.WarehouseNamespace;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +43,7 @@ class EvidenceBuilderTest {
     private MySqlMetricStore metricStore;
 
     private EvidenceBuilder builder() {
-        return new EvidenceBuilder(analysisService, metricStore);
+        return new EvidenceBuilder(analysisService, metricStore, WarehouseNamespace::defaultNamespace);
     }
 
     // ── 夹具 ───────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ package com.graduation.analytics
 
 import com.graduation.analytics.job.MetricExportJob
 import com.graduation.analytics.metric.MetricAdsSpec
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -29,11 +30,22 @@ class MetricAdsSpecTest extends AnyFlatSpec with Matchers {
 
   private val javaCatalogMap = javaCatalog.toMap
 
+  private val ns = WarehouseNamespace.defaultNamespace
+
   "MetricAdsSpec" should "覆盖 8 张 ADS 且 Hive/MySQL 表名一一对应" in {
     MetricAdsSpec.TABLES.size should be(8)
     MetricAdsSpec.TABLES.map(_.mysqlTable) should be(javaCatalog.map(_._1))
-    MetricAdsSpec.TABLES.map(_.hiveTable).foreach(_ should startWith("dw_ads.ads_"))
+    MetricAdsSpec.TABLES.map(_.hiveTable(ns)).foreach(_ should startWith(s"${ns.ads}.ads_"))
     MetricAdsSpec.byMysqlTable.size should be(8)
+  }
+
+  it should "P1-04：库名前缀可替换，表名映射不写死（换源时同一套规格复用）" in {
+    val other = WarehouseNamespace.of("dw_b")
+    val names = MetricAdsSpec.TABLES.map(_.hiveTable(other))
+    names.foreach(_ should startWith(s"${other.ads}.ads_"))
+    names.foreach(_ should not startWith "dw_ads.")
+    // 表名本身（层内名）与 MySQL 映射不随库名变化
+    MetricAdsSpec.TABLES.map(_.table) should be(MetricAdsSpec.TABLES.map(_.mysqlTable.dropRight(2)))
   }
 
   it should "列清单与 Java 侧 MetricAdsCatalog 完全一致（含顺序）" in {

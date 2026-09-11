@@ -1,5 +1,7 @@
 package com.graduation.analytics.sql
 
+import com.graduation.analytics.warehouse.WarehouseNamespace
+
 /**
  * ADS 指标 SQL（§7.7，§12.4 修复）：
  * 8 张首期核心 ADS 全部真实执行；漏斗收编为模板；
@@ -14,20 +16,20 @@ object AdsSql {
     "ads_operation_overview", "ads_active_trend", "ads_behavior_funnel", "ads_hot_product",
     "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality")
 
-  /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4） */
-  def formal(table: String): String = s"dw_ads.$table"
+  /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4）；库名由唯一所有者派生 */
+  def formal(ns: WarehouseNamespace, table: String): String = ns.table("ads", table)
 
   /** R6-13 暂存表（分区 snapshot_id + dt，物理路径 {table}__staging/snapshot_id=S/dt=D） */
-  def staging(table: String): String = s"dw_ads.${table}__staging"
+  def staging(ns: WarehouseNamespace, table: String): String = ns.table("ads", s"${table}__staging")
 
   /**
    * 写入目标 + 分区子句（§14.4 分区幂等协议）：
    * `snapshotId=None` → 直写正式分区（仅历史路径/局部重算使用）；
    * `Some(sid)` → 写暂存分区，正式分区只在质量门通过后由 pub 发布。
    */
-  def insertTarget(table: String, dt: String, snapshotId: Option[String]): String = snapshotId match {
-    case Some(sid) => s"INSERT OVERWRITE TABLE ${staging(table)} PARTITION(snapshot_id = '$sid', dt = '$dt')"
-    case None      => s"INSERT OVERWRITE TABLE ${formal(table)} PARTITION(dt = '$dt')"
+  def insertTarget(ns: WarehouseNamespace, table: String, dt: String, snapshotId: Option[String]): String = snapshotId match {
+    case Some(sid) => s"INSERT OVERWRITE TABLE ${staging(ns, table)} PARTITION(snapshot_id = '$sid', dt = '$dt')"
+    case None      => s"INSERT OVERWRITE TABLE ${formal(ns, table)} PARTITION(dt = '$dt')"
   }
 
   /**
@@ -39,9 +41,9 @@ object AdsSql {
    * 退款金额口径来自 OrderTradeCompiler：refund_amount 只累计 refund_completed 事件（按 refund_id 去重）。
    * 分母 0 → null（不满除零）。
    */
-  def operationOverview(dt: String, snapshotId: Option[String] = None): String =
+  def operationOverview(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_operation_overview", dt, snapshotId)}
+       |${insertTarget(ns, "ads_operation_overview", dt, snapshotId)}
        |SELECT
        |  b.pv, b.uv, b.dau, t.order_count, t.sale_amount, t.net_sale_amount, t.avg_order_value,
        |  CASE WHEN t.order_count = 0 THEN NULL
@@ -52,42 +54,42 @@ object AdsSql {
        |        COUNT(CASE WHEN behavior_type = 'view' THEN 1 END) AS pv,
        |        COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS uv,
        |        COUNT(DISTINCT user_id) AS dau
-       |      FROM dw_dwd.dwd_user_behavior_detail WHERE dt = '$dt') b,
+       |      FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') b,
        |     (SELECT order_count, sale_amount, net_sale_amount, avg_order_value
-       |      FROM dw_dws.dws_trade_day WHERE dt = '$dt') t,
+       |      FROM ${ns.dws}.dws_trade_day WHERE dt = '$dt') t,
        |     (SELECT
        |        COUNT(DISTINCT CASE WHEN final_paid_flag = 1 AND refund_amount > 0
        |              THEN order_id END) AS refunded_orders,
        |        COUNT(DISTINCT CASE WHEN final_paid_flag = 1 AND final_refunded_flag = 1
        |              THEN order_id END) AS full_refunded_orders
-       |      FROM dw_dwd.dwd_order_detail WHERE dt = '$dt') r
+       |      FROM ${ns.dwd}.dwd_order_detail WHERE dt = '$dt') r
        |""".stripMargin
 
   /** 活跃趋势（dt 为分区列，由 INSERT PARTITION 提供，不再投影） */
-  def activeTrend(dt: String, snapshotId: Option[String] = None): String =
+  def activeTrend(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_active_trend", dt, snapshotId)}
+       |${insertTarget(ns, "ads_active_trend", dt, snapshotId)}
        |SELECT COUNT(DISTINCT user_id) AS dau, COUNT(*) AS behavior_count
-       |FROM dw_dwd.dwd_user_behavior_detail
+       |FROM ${ns.dwd}.dwd_user_behavior_detail
        |WHERE dt = '$dt'
        |""".stripMargin
 
   /** 转化漏斗：dws_behavior_funnel_day 展开为 stage 行（dt 为分区列不投影） */
-  def funnel(dt: String, snapshotId: Option[String] = None): String =
+  def funnel(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_behavior_funnel", dt, snapshotId)}
+       |${insertTarget(ns, "ads_behavior_funnel", dt, snapshotId)}
        |SELECT 'view' AS stage, view_users AS user_count, NULL AS conversion_rate,
        |       overall_buy_rate
-       |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
+       |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
        |SELECT 'intent', intent_users, intent_rate, overall_buy_rate
-       |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
+       |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
        |SELECT 'order', order_users, order_rate, overall_buy_rate
-       |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
+       |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
        |SELECT 'pay', pay_users, pay_rate, overall_buy_rate
-       |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
+       |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |""".stripMargin
 
   /**
@@ -99,43 +101,43 @@ object AdsSql {
    * BLOCKING 规则 `ADS_STAGING_KEY_NOT_NULL` 拦截整条发布。故名称按维度表既有 unknown 约定兜底
    * （`DimSql.productSnapshot` 同样写 'UNKNOWN'），**不用 NULL**：宁可显式 unknown，不留空关键列。
    */
-  def hotProduct(dt: String, topN: Int, snapshotId: Option[String] = None): String =
+  def hotProduct(ns: WarehouseNamespace, dt: String, topN: Int, snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_hot_product", dt, snapshotId)}
+       |${insertTarget(ns, "ads_hot_product", dt, snapshotId)}
        |SELECT t.product_id, COALESCE(p.product_name, 'UNKNOWN') AS product_name, heat_score, pv, fav, cart, buy, rank_no
        |FROM (
        |  SELECT product_id,
        |         1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score,
        |         pv, fav, cart, buy,
        |         ROW_NUMBER() OVER (ORDER BY 1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) DESC) AS rank_no
-       |  FROM dw_dws.dws_product_behavior_day
+       |  FROM ${ns.dws}.dws_product_behavior_day
        |  WHERE dt = '$dt'
        |) t
-       |LEFT JOIN dw_dim.dim_product p ON p.product_id = t.product_id AND p.dt = '$dt'
+       |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = t.product_id AND p.dt = '$dt'
        |WHERE rank_no <= $topN
        |""".stripMargin
 
   /** 商品转化：pv_users=浏览用户，buy_users=商品销售 DWS 去重买家数 */
-  def productConversion(dt: String, snapshotId: Option[String] = None): String =
+  def productConversion(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_product_conversion", dt, snapshotId)}
+       |${insertTarget(ns, "ads_product_conversion", dt, snapshotId)}
        |SELECT b.product_id,
        |       b.uv AS pv_users,
        |       COALESCE(s.buyer_count, 0) AS buy_users,
        |       CASE WHEN b.uv = 0 THEN NULL
        |            ELSE CAST(COALESCE(s.buyer_count, 0) AS DECIMAL(8,4)) / b.uv END AS conversion_rate
-       |FROM dw_dws.dws_product_behavior_day b
-       |LEFT JOIN dw_dws.dws_product_sale_day s
+       |FROM ${ns.dws}.dws_product_behavior_day b
+       |LEFT JOIN ${ns.dws}.dws_product_sale_day s
        |  ON s.product_id = b.product_id AND s.dt = b.dt
        |WHERE b.dt = '$dt'
        |""".stripMargin
 
   /** 销售趋势 */
-  def saleTrend(dt: String, snapshotId: Option[String] = None): String =
+  def saleTrend(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_sale_trend", dt, snapshotId)}
+       |${insertTarget(ns, "ads_sale_trend", dt, snapshotId)}
        |SELECT order_count, buyer_count, sale_amount, avg_order_value
-       |FROM dw_dws.dws_trade_day
+       |FROM ${ns.dws}.dws_trade_day
        |WHERE dt = '$dt'
        |""".stripMargin
 
@@ -156,10 +158,10 @@ object AdsSql {
    * 分类用哨兵 **-1**（与 `DwdSql.behaviorClean` 的 `COALESCE(p.category_id, -1)` 同口径），
    * 日期用 **''**（DDL 自身声明的 unknown 载体），此时 `active_level` 的 ELSE 分支给 '低'。
    */
-  def userProfile(dt: String, periodStart: String, periodEnd: String,
+  def userProfile(ns: WarehouseNamespace, dt: String, periodStart: String, periodEnd: String,
                   snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_user_profile", dt, snapshotId)}
+       |${insertTarget(ns, "ads_user_profile", dt, snapshotId)}
        |SELECT
        |  tp.user_id,
        |  6 - r_ntile AS r,
@@ -198,7 +200,7 @@ object AdsSql {
        |           regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3'), last_buy_date) ASC) AS r_ntile,
        |         NTILE(5) OVER (ORDER BY order_count ASC) AS f_ntile,
        |         NTILE(5) OVER (ORDER BY sale_amount ASC) AS m_ntile
-       |  FROM dw_dws.dws_user_trade_period
+       |  FROM ${ns.dws}.dws_user_trade_period
        |  WHERE dt = '$dt'
        |) tp
        |LEFT JOIN (
@@ -208,7 +210,7 @@ object AdsSql {
        |           ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY cnt DESC, category_id ASC) AS rn
        |    FROM (
        |      SELECT user_id, category_id, MAX(event_date) AS event_date, COUNT(*) AS cnt
-       |      FROM dw_dwd.dwd_user_behavior_detail
+       |      FROM ${ns.dwd}.dwd_user_behavior_detail
        |      WHERE dt = '$dt'
        |      GROUP BY user_id, category_id
        |    ) g
@@ -221,9 +223,9 @@ object AdsSql {
    * 数据质量大盘（§5.4）：4 规则与 QualityChecker 同名同阈值，
    * 统计来自 ODS/DWD 真实数据，非 SQL 字符串自检。
    */
-  def dataQuality(dt: String, snapshotId: Option[String] = None): String =
+  def dataQuality(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
-       |${insertTarget("ads_data_quality", dt, snapshotId)}
+       |${insertTarget(ns, "ads_data_quality", dt, snapshotId)}
        |SELECT rule_code, check_count, error_count, error_rate, passed, threshold FROM (
        |  SELECT 'AMOUNT_RECONCILE' AS rule_code,
        |         CAST(SUM(fp) AS BIGINT) AS check_count,
@@ -237,7 +239,7 @@ object AdsSql {
        |           MAX(final_paid_flag) AS fp,
        |           CASE WHEN MAX(final_paid_flag) = 1
        |                     AND ABS(MAX(order_amount) - MAX(paid_amount)) > 0.01 THEN 1 ELSE 0 END AS bad
-       |    FROM dw_dwd.dwd_order_detail
+       |    FROM ${ns.dwd}.dwd_order_detail
        |    WHERE dt = '$dt'
        |    GROUP BY order_id
        |  ) o
@@ -248,16 +250,16 @@ object AdsSql {
        |         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
        |         CASE WHEN SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) * 1000 <= COUNT(*) THEN 1 ELSE 0 END AS passed,
        |         '0.001' AS threshold
-       |  FROM dw_dwd.dwd_user_behavior_detail
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
        |  WHERE dt = '$dt'
        |  UNION ALL
        |  SELECT 'EVENT_ID_UNIQUE' AS rule_code,
-       |         CAST((SELECT COUNT(*) FROM dw_dwd.dwd_user_behavior_detail WHERE dt = '$dt') AS BIGINT) AS check_count,
-       |         CAST((SELECT COUNT(*) FROM dw_dwd.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS BIGINT) AS error_count,
-       |         CAST((SELECT COUNT(*) FROM dw_dwd.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS DECIMAL(8,6))
-       |           / (SELECT COUNT(*) FROM dw_dwd.dwd_user_behavior_detail WHERE dt = '$dt') AS error_rate,
-       |         CASE WHEN (SELECT COUNT(*) FROM dw_dwd.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') * 2000
-       |                <= (SELECT COUNT(*) FROM dw_dwd.dwd_user_behavior_detail WHERE dt = '$dt') THEN 1 ELSE 0 END AS passed,
+       |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS BIGINT) AS check_count,
+       |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS BIGINT) AS error_count,
+       |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS DECIMAL(8,6))
+       |           / (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS error_rate,
+       |         CASE WHEN (SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') * 2000
+       |                <= (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') THEN 1 ELSE 0 END AS passed,
        |         '0.0005' AS threshold
        |  UNION ALL
        |  SELECT 'ENUM_WHITELIST' AS rule_code,
@@ -266,7 +268,7 @@ object AdsSql {
        |         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
        |         CASE WHEN SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) = 0 THEN 1 ELSE 0 END AS passed,
        |         '0' AS threshold
-       |  FROM dw_dwd.dwd_user_behavior_detail
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
        |  WHERE dt = '$dt'
        |) q
        |""".stripMargin

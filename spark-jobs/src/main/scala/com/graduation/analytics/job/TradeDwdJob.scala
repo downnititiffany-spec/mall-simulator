@@ -2,6 +2,7 @@ package com.graduation.analytics.job
 
 import com.graduation.analytics.algorithm.{OrderTradeCompiler, TradeEvent, TradeOrderDetail}
 import com.graduation.analytics.sql.IdCodec
+import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.JavaConverters._
@@ -21,6 +22,7 @@ class TradeDwdJob extends WarehouseJob {
 
   override def run(spark: SparkSession, args: JobArgs): JobResult = {
     val start = System.currentTimeMillis()
+    val ns = WarehouseNamespace.fromArgs(args)
     spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic") // §11.4 迟到重算只覆盖归属分区
 
     spark.sparkContext.setJobDescription(s"$code read ods_trade_event")
@@ -28,7 +30,7 @@ class TradeDwdJob extends WarehouseJob {
       "SELECT event_id, event_type, event_time, " +
         "payload_order_id, payload_user_id, payload_amount, payload_total_amount, " +
         "payload_refund_id, payload_items " +
-        "FROM dw_ods.ods_trade_event").filter("payload_order_id IS NOT NULL")
+        s"FROM ${ns.ods}.ods_trade_event").filter("payload_order_id IS NOT NULL")
 
     val inputCount = ods.count()
     spark.sparkContext.setJobDescription(s"$code dedup by event_id")
@@ -73,14 +75,14 @@ class TradeDwdJob extends WarehouseJob {
       //   实测 dt=20260901 订单明细 7 行被放大为 28 行（无维度分区 2 个 × 用户分区 2 个），
       //   GMV 2042.00 → 8168.00、net_sale 1493.00 → 5972.00。
       val dimDt = args.businessDate
-      spark.sql(TradeDwdJob.orderDetailInsertSql(dimDt))
+      spark.sql(TradeDwdJob.orderDetailInsertSql(ns, dimDt))
     }
 
-    val outputCount = spark.sql("SELECT COUNT(*) c FROM dw_dwd.dwd_order_detail").collect()(0).getLong(0)
+    val outputCount = spark.sql(s"SELECT COUNT(*) c FROM ${ns.dwd}.dwd_order_detail").collect()(0).getLong(0)
     // 数据驱动分区（迟到支付/退款会重算历史归属日），故采集该表全部存续分区
     JobResult.success(code, inputCount, outputCount, 0L, args.outputSnapshotId, args.attemptNo,
       System.currentTimeMillis() - start,
-      PartitionEvidence.collect(spark, TradeDwdJob.OUTPUT_TABLES, args.outputSnapshotId))
+      PartitionEvidence.collect(spark, TradeDwdJob.outputTables(ns), args.outputSnapshotId))
   }
 
   /** ODS 行 → TradeEvent（字符串归一，避免 NULL 装箱） */
@@ -109,13 +111,14 @@ object TradeDwdJob {
    *   规则只在 `IdCodec` 定义（DEF-05 / 决策 B-07 候选 ② / D-023），此处不得再手写 `CAST(... AS BIGINT)`；
    * - **维度分区谓词**：R9 修正（D-R9-2）——`dim_*` 必须按生效日期分区过滤，否则 JOIN 笛卡尔放大（GMV 2042.00→8168.00）。
    *
+   * @param ns 数仓命名空间（库名由唯一所有者派生）
    * @param dimDt 维度快照生效日期分区（= 业务日 `yyyyMMdd`）
    */
-  def orderDetailInsertSql(dimDt: String): String = {
+  def orderDetailInsertSql(ns: WarehouseNamespace, dimDt: String): String = {
     val orderKey = IdCodec.toBIGINT("t.order_id")
     val userKey = IdCodec.toBIGINT("t.user_id")
     val productKey = IdCodec.toBIGINT("t.product_id")
-    s"""INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt)
+    s"""INSERT OVERWRITE TABLE ${ns.dwd}.dwd_order_detail PARTITION (dt)
        |SELECT
        |  $orderKey,
        |  $userKey,
@@ -132,9 +135,9 @@ object TradeDwdJob {
        |  t.final_paid_flag, t.final_refunded_flag,
        |  t.dt
        |FROM tdw_tmp t
-       |LEFT JOIN dw_dim.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
+       |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
        |     THEN -1 ELSE $productKey END AND p.dt = '$dimDt'
-       |LEFT JOIN dw_dim.dim_user u ON u.user_id = $userKey AND u.dt = '$dimDt'""".stripMargin
+       |LEFT JOIN ${ns.dim}.dim_user u ON u.user_id = $userKey AND u.dt = '$dimDt'""".stripMargin
   }
 
   /** 临时视图 Schema（不含维度列；与 LocalSchemaInitJob.dwd_order_detail 列序对齐） */
@@ -162,6 +165,6 @@ object TradeDwdJob {
 
   val instance: TradeDwdJob = new TradeDwdJob()
 
-  /** 本作业写出的目标表（R6-12 分区证据采集范围） */
-  val OUTPUT_TABLES: Seq[String] = Seq("dw_dwd.dwd_order_detail")
+  /** 本作业写出的目标表（R6-12 分区证据采集范围）；库名由唯一所有者派生 */
+  def outputTables(ns: WarehouseNamespace): Seq[String] = Seq(ns.table("dwd", "dwd_order_detail"))
 }

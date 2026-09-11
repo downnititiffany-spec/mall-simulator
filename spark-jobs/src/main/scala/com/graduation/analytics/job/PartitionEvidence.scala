@@ -22,7 +22,7 @@ object PartitionEvidence {
   /**
    * 采集一组目标表的分区证据。
    *
-   * @param tables     形如 `dw_ads.ads_operation_overview` 的库限定表名
+   * @param tables     库限定表名（形如 `ns.table("ads", "ads_operation_overview")`，库名由 WarehouseNamespace 派生）
    * @param snapshotId 本次快照号（§14.4 分区幂等协议的一部分）
    * @param dtEquals   只采集该 dt 的分区（None = 该表全部存续分区，用于数据驱动分区的作业）
    */

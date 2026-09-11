@@ -3,11 +3,12 @@
 -- Landing 之上建立的外部表：原样保留源字段，只增加采集审计字段。
 -- 分区：dt（业务日期 yyyyMMdd）/ hour。
 -- 数据从不从 Flume/DataX 直接进入 DWD；ODS 是所有 Spark 清洗任务的唯一正式入口。
+-- 库名：${WAREHOUSE_PREFIX}_ods，缺省源 A 用 dw（beeline --hivevar WAREHOUSE_PREFIX=dw -f 00-ods.sql）；规则见 contract-specs/specs/warehouse-namespace.v1.json
 -- =====================================================================
-CREATE DATABASE IF NOT EXISTS dw_ods COMMENT 'ODS 原始数据层';
+CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods COMMENT 'ODS 原始数据层';
 
 -- 用户事件（user_registered）
-CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_user_event (
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_user_event (
     event_id        STRING  COMMENT '全局唯一事件ID',
     event_type      STRING,
     event_time      STRING  COMMENT '业务时间(ISO-8601带时区)',
@@ -26,10 +27,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_user_event (
 COMMENT '用户事件原始层'
 PARTITIONED BY (dt STRING COMMENT '业务日期 yyyyMMdd', hour STRING COMMENT '小时 HH')
 STORED AS PARQUET
-LOCATION '/user/hive/warehouse/dw_ods.db/ods_user_event';
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ods.db/ods_user_event';
 
 -- 商品事件（product_created / product_updated）
-CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_product_event (
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_product_event (
     event_id            STRING,
     event_type          STRING,
     event_time          STRING,
@@ -53,10 +54,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_product_event (
 COMMENT '商品事件原始层'
 PARTITIONED BY (dt STRING, hour STRING)
 STORED AS PARQUET
-LOCATION '/user/hive/warehouse/dw_ods.db/ods_product_event';
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ods.db/ods_product_event';
 
 -- 用户行为事件（behavior）
-CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_behavior_event (
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_behavior_event (
     event_id            STRING,
     event_type          STRING,
     event_time          STRING,
@@ -75,10 +76,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_behavior_event (
 COMMENT '用户行为事件原始层'
 PARTITIONED BY (dt STRING, hour STRING)
 STORED AS PARQUET
-LOCATION '/user/hive/warehouse/dw_ods.db/ods_behavior_event';
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ods.db/ods_behavior_event';
 
 -- 交易事件（order_created/order_paid/order_cancelled/refund_created/refund_completed/stock_*）
-CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_trade_event (
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_trade_event (
     event_id            STRING,
     event_type          STRING,
     event_time          STRING,
@@ -102,4 +103,4 @@ CREATE EXTERNAL TABLE IF NOT EXISTS dw_ods.ods_trade_event (
 COMMENT '交易事件原始层'
 PARTITIONED BY (dt STRING, hour STRING)
 STORED AS PARQUET
-LOCATION '/user/hive/warehouse/dw_ods.db/ods_trade_event';
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ods.db/ods_trade_event';

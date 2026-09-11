@@ -1,6 +1,7 @@
 package com.graduation.analytics.pipeline.spark;
 
 import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
+import com.graduation.analytics.warehouse.WarehouseNamespace;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -53,6 +54,10 @@ public final class JobCommandBuilder {
         }
         cmd.add(submitPath);
 
+        // P1-04：数仓库名空间由唯一所有者解析。非法前缀在这里（spark-submit 之前）失败，
+        // 本方法只被提交路径调用，因此“非法前缀绝不进入 Spark”是结构保证，不靠下游再校验。
+        WarehouseNamespace namespace = WarehouseNamespace.ofNullable(profile.hiveDatabasePrefix());
+
         boolean local = profile.isLocal();
         String master = profile.sparkMaster();
         if (master == null || master.isBlank()) {
@@ -88,6 +93,8 @@ public final class JobCommandBuilder {
         cmd.add("--jobCode=" + jobCode);
         cmd.add("--businessDate=" + businessDate);
         cmd.add("--attemptNo=" + attemptNo);
+        // 解析后的前缀（缺省 dw）显式下发：作业侧 JobRunner 启动前复核，两侧同一份规格
+        cmd.add("--" + WarehouseNamespace.ARG_KEY + "=" + namespace.prefix());
         if (inputVersion != null && !inputVersion.isBlank()) {
             cmd.add("--inputVersion=" + inputVersion);
         }

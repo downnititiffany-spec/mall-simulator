@@ -1,5 +1,7 @@
 package com.graduation.analytics.sql
 
+import com.graduation.analytics.warehouse.WarehouseNamespace
+
 /**
  * 维度快照 SQL（§11.2 DimensionBuildJob）：
  * ODS 用户/商品事件 → dim_user / dim_product 每日全量快照。
@@ -10,9 +12,9 @@ package com.graduation.analytics.sql
 object DimSql {
 
   /** dim_user：每个 user_id 取最近一次用户事件（event_time 最新）生成全量快照 */
-  def userSnapshot(dt: String): String =
+  def userSnapshot(ns: WarehouseNamespace, dt: String): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_dim.dim_user PARTITION(dt = '$dt')
+       |INSERT OVERWRITE TABLE ${ns.dim}.dim_user PARTITION(dt = '$dt')
        |SELECT
        |  ${IdCodec.toBIGINT("u.payload_user_id")} AS user_id,
        |  u.payload_age_group AS age_group,
@@ -24,7 +26,7 @@ object DimSql {
        |FROM (
        |  SELECT *,
        |         ROW_NUMBER() OVER (PARTITION BY payload_user_id ORDER BY event_time DESC) AS rn
-       |  FROM dw_ods.ods_user_event
+       |  FROM ${ns.ods}.ods_user_event
        |  WHERE dt = '$dt'
        |    AND schema_version = '1.0'
        |    AND payload_user_id IS NOT NULL
@@ -33,9 +35,9 @@ object DimSql {
        |""".stripMargin
 
   /** dim_product：每个 product_id 取最近一次商品建档/变更事件生成全量快照 */
-  def productSnapshot(dt: String): String =
+  def productSnapshot(ns: WarehouseNamespace, dt: String): String =
     s"""
-       |INSERT OVERWRITE TABLE dw_dim.dim_product PARTITION(dt = '$dt')
+       |INSERT OVERWRITE TABLE ${ns.dim}.dim_product PARTITION(dt = '$dt')
        |SELECT
        |  ${IdCodec.toBIGINT("p.payload_product_id")} AS product_id,
        |  COALESCE(p.payload_product_name, 'UNKNOWN') AS product_name,
@@ -54,7 +56,7 @@ object DimSql {
        |FROM (
        |  SELECT *,
        |         ROW_NUMBER() OVER (PARTITION BY payload_product_id ORDER BY event_time DESC) AS rn
-       |  FROM dw_ods.ods_product_event
+       |  FROM ${ns.ods}.ods_product_event
        |  WHERE dt = '$dt'
        |    AND schema_version = '1.0'
        |    AND payload_product_id IS NOT NULL
