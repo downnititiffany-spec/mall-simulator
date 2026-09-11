@@ -125,3 +125,18 @@
 - **商城 outbox 表 DDL 与商城业务表 DDL**：属 `reference-mall` 内部实现，按 §3.1 L64 不进入中立契约；仅 `event_outbox`（`mall-simulator/src/main/resources/db/migration/V1__init_mall.sql` L116-L129）作为事件来源的事实记录在此。
 - **生成器 5 张表的 DDL**（Q15）与**第二个 `MallTargetAdapter` 的字段夹具**（M1-9）。
 - **滚动日志 / Landing 目录布局契约**：`landing/events`、`landing/accepted/{batchId}`、`landing/quarantine/{batchId}`、`landing/manifests/{batchId}.json` 目前只在 `IngestionService` 与 `RuntimeProfile.landingUri` 中体现，尚无独立契约文件；是否纳入本目录待总控决定。
+
+## 10. 冻结指纹（文件级，2026-09-11 总控复核时实测）
+
+目的：让"证据对应的是哪一版契约"可被**独立复核**——引用本目录任何结论前先核对指纹；指纹不符 ⇒ 该结论应按新版本重取。
+
+| 文件 | SHA-256 | 说明 |
+|---|---|---|
+| `specs/warehouse-namespace.v1.json` | `463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A` | **已冻结**版（`status=FROZEN-2026-09-11`）。冻结前哈希 `A3E712B2…` 出自 P1-04 轮实测记录，本轮**无法再复核**（该内容已不存在）；冻结改动经 diff 确认为**仅 `status` 一个字符串**，故 P1-04 的 22 向量实测结论按"仅 status 变化"继承 |
+| `schemas/ingestion-manifest.v1.schema.json` | `0993E1474228E2EE895E5804D20212DBF1662EF74C22F7EB2A4FAF2E2EF93603` | P1-05 加法扩展后（19 属性 / `required` 仍 15） |
+| `schemas/canonical-event.v1.schema.json` | 未冻结，见 §7 | B-06/Q6 未决，指纹待冻结时同表登记 |
+| `schemas/generation-artifact-manifest.v1.schema.json` | 未冻结，见 §7 | 同上 |
+| `README.md` | **不登记自身**（自指：把本文件的哈希写进本文件，写入动作本身就会让该哈希失效） | 需核对时现算：`Get-FileHash contract-specs/README.md -Algorithm SHA256`，并与该次提交比对 |
+| `VERSION` | `C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0` | 内容 `contract-specs 1.2.0`（本表登记的是 2026-09-11 21:0x 提交时的值） |
+
+**口径**：指纹是**复核辅助**而非契约的一部分——`VERSION` 才是契约的版本所有者（改契约必须同时升 `VERSION`，指纹随内容自然变化，不单独维护"指纹版本"）。

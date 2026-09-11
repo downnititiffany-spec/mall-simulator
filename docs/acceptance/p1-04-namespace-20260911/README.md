@@ -29,7 +29,7 @@
 
 | 项 | 值 |
 |---|---|
-| 契约 | `contract-specs/specs/warehouse-namespace.v1.json`（`status=DRAFT-待总控冻结`，改动需总控出 v2，见 V2.2 §2.1.1） |
+| 契约 | `contract-specs/specs/warehouse-namespace.v1.json`（**2026-09-11 已由总控冻结**：`status` 由 `DRAFT-待总控冻结` 改为 `FROZEN-2026-09-11`，`specs/VERSION` 升 `1.1.0`；**只改了 `status` 一个字符串**，`rule`/`vectors`(22 个)/`parity` 一字未动，故本页第 3–6 节的实测结论与向量数仍然成立。改动需总控出 v2，见 V2.2 §2.1.1） |
 | 规则 | `库名 = <prefix>_<layer>`，`layer ∈ {ods,dwd,dim,dws,ads}`；前缀 `^[a-z][a-z0-9_]{0,23}$`；保留字 `default/sys/system/information_schema/hive_metastore`；**不做归一化** |
 | 检查顺序 | `PATTERN → UNDERSCORE → RESERVED → LAYER_SUFFIX`（错误码 `WAREHOUSE_PREFIX_PATTERN/UNDERSCORE/RESERVED/LAYER_SUFFIX`） |
 | 空值语义 | 仅 `NULL` / `""` 取缺省前缀 `dw`（`blankIsDefault=true`，不做 trim） |
