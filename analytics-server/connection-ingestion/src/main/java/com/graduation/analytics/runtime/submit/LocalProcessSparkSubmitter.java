@@ -10,9 +10,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 本地进程提交器（§8.2/LOCAL）：用 ProcessBuilder 执行 spark-submit（本机
@@ -20,9 +26,36 @@ import java.util.concurrent.TimeUnit;
  * 一行 JobResult JSON（spark-jobs 契约，§24.5），日志归档到 landing/logs 供 status/logs。
  * R6：日志文件名固定为 {externalJobId}.log（修复早期 {logPrefix}-{jobId}.log 写 /
  * {externalJobId}.log 读不一致，§13.3 日志可溯源）。
+ *
+ * <p>M1-11（D-019，2026-09-11）：status() 由"永远 SUBMITTED"改为**真实进程态**
+ * （RUNNING / SUCCESS / FAILED / CANCELLED）——原先进程已崩但日志无 JobResult 行时，平台只能空等到
+ * 阶段超时（实测 900s）；cancel() 由"不支持"改为真实终止进程树。
+ *
+ * <p>DEF-06（2026-09-11 实测）：Windows 上子 JVM 默认按本地代码页（GBK）写出中文，平台按 UTF-8 读入
+ * → 落库 detail 出现乱码（`8 ���ݴ��������>0`）。修复：为子进程注入 UTF-8 编码选项。
  */
 @Slf4j
 public class LocalProcessSparkSubmitter implements JobSubmitter {
+
+    /** DEF-06：子 JVM（spark-submit 会再起 driver/executor JVM，均可继承）显式使用 UTF-8 */
+    static final String CHILD_ENCODING_OPTS =
+            "-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8";
+
+    /** M1-11：存活进程句柄（jobId → Process），供 status()/cancel() 查询与终止真实进程 */
+    private static final Map<String, Process> LIVE = new ConcurrentHashMap<>();
+
+    /** M1-11：已结束作业的退出码（有界 LRU，避免平台长跑内存增长） */
+    static final int EXIT_CODE_CAPACITY = 256;
+    private static final Map<String, Integer> EXIT_CODES = Collections.synchronizedMap(
+            new LinkedHashMap<>() {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
+                    return size() > EXIT_CODE_CAPACITY;
+                }
+            });
+
+    /** M1-11：被 cancel() 主动终止的作业（status 返回 CANCELLED，不误报 FAILED） */
+    private static final Set<String> CANCELLED = ConcurrentHashMap.newKeySet();
 
     private final String sparkSubmitPath;
     private final String logRoot;
@@ -30,6 +63,11 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
     public LocalProcessSparkSubmitter(String sparkSubmitPath, String logRoot) {
         this.sparkSubmitPath = sparkSubmitPath;
         this.logRoot = logRoot;
+    }
+
+    /** DEF-06：为子进程注入 UTF-8 编码选项；已有 JAVA_TOOL_OPTIONS 时追加而不覆盖 */
+    static void applyChildEncoding(ProcessBuilder pb) {
+        pb.environment().merge("JAVA_TOOL_OPTIONS", CHILD_ENCODING_OPTS, (a, b) -> a + " " + b);
     }
 
     @Override
@@ -50,7 +88,19 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
+            applyChildEncoding(pb); // DEF-06：子 JVM 输出中文按 UTF-8，避免落库乱码
             Process proc = pb.start();
+            // M1-11：登记存活句柄 + 退出码（status() 依据真实进程态判定，不再空等超时）
+            LIVE.put(jobId, proc);
+            proc.onExit().whenComplete((p, err) -> {
+                LIVE.remove(jobId);
+                try {
+                    EXIT_CODES.put(jobId, p.exitValue());
+                } catch (IllegalThreadStateException stillAlive) {
+                    // 极端竞态：onExit 回调瞬间进程仍报存活 → 下一次 status() 轮询重新判定
+                    LIVE.putIfAbsent(jobId, p);
+                }
+            });
             // 异步落日志（避免管道死锁）
             Thread thread = new Thread(() -> {
                 try (BufferedReader reader = new BufferedReader(
@@ -77,7 +127,22 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
 
     @Override
     public String status(String externalJobId) {
-        // 本地进程为一次性提交；状态由流水线根据进程退出码 + JobResult JSON 判定
+        // M1-11（D-019）：返回真实进程态——RUNNING（存活）/ SUCCESS / FAILED（已退出，按退出码）/
+        // CANCELLED（被 cancel() 终止）。契约由 SparkStageExecutor 轮询消费：非终结值继续轮询，
+        // SUCCESS/FAILED/CANCELLED 触发终结判定（再由日志 JobResult 行与退出码综合判定，§13.2 不冒充成功）。
+        if (CANCELLED.contains(externalJobId)) {
+            return "CANCELLED";
+        }
+        Process live = LIVE.get(externalJobId);
+        if (live != null) {
+            // 已退出但退出码登记尚未完成 → 仍返回非终结值，下一轮重新判定
+            return live.isAlive() ? "RUNNING" : "SUBMITTED";
+        }
+        Integer exitCode = EXIT_CODES.get(externalJobId);
+        if (exitCode != null) {
+            return exitCode == 0 ? "SUCCESS" : "FAILED";
+        }
+        // 无句柄（平台重启后查询历史作业、或非本进程提交）：保持"由日志 JobResult 行判定"的既有语义
         return "SUBMITTED";
     }
 
@@ -171,7 +236,26 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
 
     @Override
     public void cancel(String externalJobId) {
-        log.warn("本地进程任务不支持远程取消: {}", externalJobId);
+        // M1-11：真实终止本地进程树（spark-submit.cmd → java driver → executor 子进程）
+        CANCELLED.add(externalJobId);
+        Process proc = LIVE.remove(externalJobId);
+        if (proc == null) {
+            log.warn("本地进程任务无存活句柄，无法终止（可能已结束或平台已重启）: {}", externalJobId);
+            return;
+        }
+        List<ProcessHandle> children = proc.descendants().collect(Collectors.toList());
+        children.forEach(ProcessHandle::destroy);
+        proc.destroy();
+        try {
+            if (!proc.waitFor(5, TimeUnit.SECONDS)) {
+                children.forEach(ProcessHandle::destroyForcibly);
+                proc.destroyForcibly();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            proc.destroyForcibly();
+        }
+        log.warn("本地进程任务已终止: {} pid={} 子进程={}", externalJobId, proc.pid(), children.size());
     }
 
     @Override

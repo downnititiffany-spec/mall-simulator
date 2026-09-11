@@ -1,0 +1,302 @@
+[
+  {
+    "step": "config",
+    "what": "analytics-platform.port",
+    "value": "8091 (期望 8091) => OK"
+  },
+  {
+    "step": "config",
+    "what": "analytics-platform.db",
+    "value": "analytics_meta"
+  },
+  {
+    "step": "config",
+    "what": "analytics-platform.log",
+    "value": ".verify\\start-platform.log（启动命令 stdout/stderr 重定向；该程序未配 logging.file.name）"
+  },
+  {
+    "step": "config",
+    "what": "analytics-platform.start",
+    "value": "java -Dfile.encoding=UTF-8 -jar analytics-server/platform-app/target/platform-app-0.1.0-SNAPSHOT.jar -Dplatform.metric.publish.export-dir=<root>/metric-staging"
+  },
+  {
+    "step": "config",
+    "what": "reference-mall.port",
+    "value": "8090 (期望 8090) => OK"
+  },
+  {
+    "step": "config",
+    "what": "reference-mall.db",
+    "value": "mall_simulator"
+  },
+  {
+    "step": "config",
+    "what": "reference-mall.log",
+    "value": ".verify\\start-mall.log（启动命令 stdout/stderr 重定向；该程序未配 logging.file.name）"
+  },
+  {
+    "step": "config",
+    "what": "reference-mall.start",
+    "value": "java -Dfile.encoding=UTF-8 -jar mall-simulator/target/mall-simulator-0.1.0-SNAPSHOT.jar"
+  },
+  {
+    "step": "config",
+    "what": "synthetic-data-generator.port",
+    "value": "8092 (期望 8092) => OK"
+  },
+  {
+    "step": "config",
+    "what": "synthetic-data-generator.db",
+    "value": "generator_meta"
+  },
+  {
+    "step": "config",
+    "what": "synthetic-data-generator.log",
+    "value": "name:"
+  },
+  {
+    "step": "config",
+    "what": "synthetic-data-generator.start",
+    "value": "java -Dfile.encoding=UTF-8 -jar synthetic-data-generator/target/synthetic-data-generator-0.1.0-SNAPSHOT.jar  (CLI 亦可：java -jar <jar> generate ...)"
+  },
+  {
+    "step": "config",
+    "what": "port-unique",
+    "value": "8091,8090,8092 => OK(三个互不相同)"
+  },
+  {
+    "step": "build",
+    "what": "analytics-platform.exit",
+    "value": "0"
+  },
+  {
+    "step": "build",
+    "what": "analytics-platform.seconds",
+    "value": "20.6"
+  },
+  {
+    "step": "build",
+    "what": "analytics-platform.jar",
+    "value": "platform-app-0.1.0-SNAPSHOT.jar 31.54 MB 14:25:42"
+  },
+  {
+    "step": "build",
+    "what": "reference-mall.exit",
+    "value": "0"
+  },
+  {
+    "step": "build",
+    "what": "reference-mall.seconds",
+    "value": "8.6"
+  },
+  {
+    "step": "build",
+    "what": "reference-mall.jar",
+    "value": "mall-simulator-0.1.0-SNAPSHOT.jar 28.52 MB 14:25:50"
+  },
+  {
+    "step": "build",
+    "what": "synthetic-data-generator.exit",
+    "value": "0"
+  },
+  {
+    "step": "build",
+    "what": "synthetic-data-generator.seconds",
+    "value": "7.1"
+  },
+  {
+    "step": "build",
+    "what": "synthetic-data-generator.jar",
+    "value": "synthetic-data-generator-0.1.0-SNAPSHOT.jar 24.92 MB 14:25:57"
+  },
+  {
+    "step": "isolation",
+    "what": "analytics-platform.up",
+    "value": "True (HTTP 200)"
+  },
+  {
+    "step": "isolation",
+    "what": "analytics-platform-only: reference-mall:8090 open",
+    "value": "False"
+  },
+  {
+    "step": "isolation",
+    "what": "analytics-platform-only: synthetic-data-generator:8092 open",
+    "value": "False"
+  },
+  {
+    "step": "isolation",
+    "what": "analytics-platform.port-closed-after-stop",
+    "value": "False (False)"
+  },
+  {
+    "step": "isolation",
+    "what": "reference-mall.up",
+    "value": "True (HTTP 200)"
+  },
+  {
+    "step": "isolation",
+    "what": "reference-mall-only: analytics-platform:8091 open",
+    "value": "True"
+  },
+  {
+    "step": "isolation",
+    "what": "reference-mall-only: synthetic-data-generator:8092 open",
+    "value": "False"
+  },
+  {
+    "step": "isolation",
+    "what": "reference-mall.port-closed-after-stop",
+    "value": "True (True)"
+  },
+  {
+    "step": "isolation",
+    "what": "synthetic-data-generator.up",
+    "value": "True (HTTP 200)"
+  },
+  {
+    "step": "isolation",
+    "what": "synthetic-data-generator-only: analytics-platform:8091 open",
+    "value": "True"
+  },
+  {
+    "step": "isolation",
+    "what": "synthetic-data-generator-only: reference-mall:8090 open",
+    "value": "False"
+  },
+  {
+    "step": "isolation",
+    "what": "synthetic-data-generator.port-closed-after-stop",
+    "value": "True (True)"
+  },
+  {
+    "step": "joint",
+    "what": "analytics-platform.start",
+    "value": "True"
+  },
+  {
+    "step": "joint",
+    "what": "reference-mall.start",
+    "value": "True"
+  },
+  {
+    "step": "joint",
+    "what": "synthetic-data-generator.start",
+    "value": "True"
+  },
+  {
+    "step": "joint",
+    "what": "stop(analytics-platform)",
+    "value": "False"
+  },
+  {
+    "step": "joint",
+    "what": "after stop(analytics-platform): reference-mall HTTP",
+    "value": "-1"
+  },
+  {
+    "step": "joint",
+    "what": "after stop(analytics-platform): synthetic-data-generator HTTP",
+    "value": "-1"
+  },
+  {
+    "step": "joint",
+    "what": "restart(analytics-platform)",
+    "value": "True"
+  },
+  {
+    "step": "joint",
+    "what": "stop(reference-mall)",
+    "value": "True"
+  },
+  {
+    "step": "joint",
+    "what": "after stop(reference-mall): analytics-platform HTTP",
+    "value": "200"
+  },
+  {
+    "step": "joint",
+    "what": "after stop(reference-mall): synthetic-data-generator HTTP",
+    "value": "-1"
+  },
+  {
+    "step": "joint",
+    "what": "restart(reference-mall)",
+    "value": "True"
+  },
+  {
+    "step": "joint",
+    "what": "stop(synthetic-data-generator)",
+    "value": "True"
+  },
+  {
+    "step": "joint",
+    "what": "after stop(synthetic-data-generator): analytics-platform HTTP",
+    "value": "200"
+  },
+  {
+    "step": "joint",
+    "what": "after stop(synthetic-data-generator): reference-mall HTTP",
+    "value": "-1"
+  },
+  {
+    "step": "joint",
+    "what": "restart(synthetic-data-generator)",
+    "value": "True"
+  },
+  {
+    "step": "nodatasource",
+    "what": "platform.health",
+    "value": "200"
+  },
+  {
+    "step": "nodatasource",
+    "what": "login",
+    "value": "OK (token 长度 32)"
+  },
+  {
+    "step": "nodatasource",
+    "what": "ingestion/status",
+    "value": "HTTP 200 {\"code\":\"OK\",\"message\":\"success\",\"data\":{\"profileState\":\"ACTIVE\",\"runtimeProfileId\":1,\"landingUri\":\"file://./landing\",\"landingError\":null,\"eventsDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\landing\\\\events\",\"pendingFiles\":49,\"pendingBytes\":404118978,\"latestBatch\":{\"batchId\":31,\"runtimeProfileId\":1,\"batchNo\":\"ing-20260911132046-0bff4d45\",\"status\":\"SUCCESS\",\"recordCount\":1000,\"quarantineCount\":0},\"che…"
+  },
+  {
+    "step": "nodatasource",
+    "what": "ingestion/batches?limit=3",
+    "value": "HTTP 200 {\"code\":\"OK\",\"message\":\"success\",\"data\":[{\"id\":31,\"batchNo\":\"ing-20260911132046-0bff4d45\",\"runtimeProfileId\":1,\"source\":\"local-file\",\"status\":\"SUCCESS\",\"recordCount\":1000,\"errorCount\":0,\"quarantineCount\":0,\"landingDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\landing\\\\accepted\\\\31\",\"startTime\":\"2026-09-11T13:20:46.731\",\"endTime\":\"2026-09-11T13:20:46.787\"},{\"id\":30,\"batchNo\":\"ing-20260911123006-bc6e7e…"
+  },
+  {
+    "step": "nodatasource",
+    "what": "pipeline-runs?limit=3",
+    "value": "HTTP 200 {\"code\":\"OK\",\"message\":\"success\",\"data\":[{\"id\":36,\"idempotencyKey\":\"1|ODS_TO_ADS|2026-09-01T00:00|m1-4s3b-gen1000-def04fix\",\"runtimeProfileId\":1,\"runtimeProfileVersion\":3,\"pipelineCode\":\"ODS_TO_ADS\",\"businessTime\":\"2026-09-01T00:00:00\",\"sourceDataVersion\":\"m1-4s3b-gen1000-def04fix\",\"inputBatchId\":null,\"targetSnapshotId\":\"S20260901_36\",\"attemptNo\":1,\"status\":\"FAILED\",\"currentStage\":\"FAILED\",\"errorC…"
+  },
+  {
+    "step": "nodatasource",
+    "what": "runtime-profiles/active",
+    "value": "HTTP 200 {\"code\":\"OK\",\"message\":\"success\",\"data\":{\"id\":1,\"profileCode\":\"local-dev\",\"profileName\":\"LOCAL 开发环境（本机 Win）\",\"type\":\"LOCAL\",\"status\":\"ACTIVE\",\"landingUri\":\"file://./landing\",\"hdfsUri\":null,\"hiveJdbcUrl\":null,\"hiveDatabasePrefix\":null,\"sparkMaster\":\"local[2]\",\"deployMode\":null,\"yarnQueue\":null,\"sshHost\":null,\"sshPort\":null,\"sshUser\":null,\"sparkSubmitPath\":\"D:\\\\Develop\\\\spark-3.5.1-bin-hadoop3\\\\bin\\…"
+  },
+  {
+    "step": "nodatasource",
+    "what": "POST ingestion/runs（无新数据源）",
+    "value": "HTTP 200 {\"code\":\"OK\",\"message\":\"success\",\"data\":{\"batchId\":32,\"batchNo\":\"ing-20260911142804-dd004cca\",\"status\":\"SUCCESS\",\"recordCount\":0,\"quarantineCount\":0,\"errorCount\":0,\"fileCount\":0,\"acceptedBytes\":0,\"acceptedDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\landing\\\\accepted\\\\32\",\"quarantineDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\landing\\\\quarantine\\\\32\",\"manifestPath\":\"file:///D:/Develop_code/GraduationProject/landing/manifests/32.json\"},\"traceId\":\"a54cc8b6-9b17-4307-adf8-2ebd294df73b\"}"
+  },
+  {
+    "step": "nodatasource",
+    "what": "mall:8090 / generator:8092 open",
+    "value": "False / False"
+  },
+  {
+    "step": "cleanup",
+    "what": "analytics-platform.port-closed",
+    "value": "False"
+  },
+  {
+    "step": "cleanup",
+    "what": "reference-mall.port-closed",
+    "value": "True"
+  },
+  {
+    "step": "cleanup",
+    "what": "synthetic-data-generator.port-closed",
+    "value": "True"
+  }
+]
