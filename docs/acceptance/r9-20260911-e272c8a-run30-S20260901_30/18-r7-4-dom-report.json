@@ -1,0 +1,448 @@
+{
+  "base": "http://127.0.0.1:8091",
+  "pages": {
+    "overview": {
+      "url": "http://127.0.0.1:8091/overview",
+      "title": "运营大盘",
+      "metricCardCount": 10,
+      "contextText": "快照 | S20260901_22 | 业务时间 | 2026-09-01 00:00:00 | 数据更新 | 2026-09-01 00:00:00 | 口径版本 | v2 | 质量 | PASS | 质量通过",
+      "chartCount": 2
+    },
+    "behavior": {
+      "url": "http://127.0.0.1:8091/behavior",
+      "title": "用户行为分析",
+      "chartCount": 2,
+      "tableRows": 4,
+      "hasContext": true,
+      "hasEmpty": false,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "用户行为分析"
+      ]
+    },
+    "products": {
+      "url": "http://127.0.0.1:8091/products",
+      "title": "商品分析",
+      "chartCount": 2,
+      "tableRows": 4,
+      "hasContext": true,
+      "hasEmpty": false,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "商品分析"
+      ]
+    },
+    "sales": {
+      "url": "http://127.0.0.1:8091/sales",
+      "title": "销售分析",
+      "chartCount": 1,
+      "tableRows": 1,
+      "hasContext": true,
+      "hasEmpty": false,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "销售分析"
+      ]
+    },
+    "rfm": {
+      "url": "http://127.0.0.1:8091/rfm",
+      "title": "用户分层（RFM）",
+      "chartCount": 1,
+      "tableRows": 11,
+      "hasContext": true,
+      "hasEmpty": false,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "用户分层（RFM）"
+      ]
+    },
+    "pipeline": {
+      "url": "http://127.0.0.1:8091/pipeline",
+      "title": "数据流水线",
+      "chartCount": 0,
+      "tableRows": 10,
+      "hasContext": false,
+      "hasEmpty": false,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "数据流水线"
+      ]
+    },
+    "ops": {
+      "url": "http://127.0.0.1:8091/ops",
+      "title": "运维中心",
+      "chartCount": 0,
+      "tableRows": 56,
+      "hasContext": true,
+      "hasEmpty": true,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "运维中心"
+      ]
+    },
+    "ai-assistant": {
+      "url": "http://127.0.0.1:8091/ai",
+      "title": "智能分析助手",
+      "chartCount": 0,
+      "tableRows": 0,
+      "hasContext": true,
+      "hasEmpty": false,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "智能分析助手"
+      ]
+    },
+    "decisions": {
+      "url": "http://127.0.0.1:8091/decisions",
+      "title": "决策中心",
+      "chartCount": 0,
+      "tableRows": 8,
+      "hasContext": true,
+      "hasEmpty": false,
+      "hasError": false,
+      "firstLines": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心",
+        "决策中心",
+        "智能分析助手",
+        "系统管理员 系统管理员（admin）",
+        "退出登录",
+        "V2.2 · 阶段7 看板",
+        "决策中心"
+      ]
+    }
+  },
+  "cards": {
+    "销售额(GMV)": "2,042.00元",
+    "净销售额": "1,493.00元",
+    "支付订单数": "5单",
+    "浏览量(PV)": "7次",
+    "浏览用户(UV)": "3人",
+    "活跃用户(DAU)": "3人",
+    "客单价": "408.40元",
+    "退款率": "60.00%",
+    "购买转化率": "1.00",
+    "全额退款率": "0.20"
+  },
+  "golden": {
+    "销售额(GMV)": "2,042.00元",
+    "支付订单数": "5单",
+    "浏览量(PV)": "7次",
+    "退款率": "60.00%"
+  },
+  "errors": [],
+  "console": [],
+  "consoleIsolated": [
+    "error: Failed to load resource: net::ERR_FAILED"
+  ],
+  "assertions": [
+    {
+      "label": "登录态键名为分析平台自有键（§18.4 边界）",
+      "expected": "含 analytics_token，且不含 mall_token",
+      "dom": [
+        "analytics_user",
+        "analytics_token"
+      ],
+      "pass": true
+    },
+    {
+      "label": "overview/销售额(GMV)",
+      "expected": "2,042.00元",
+      "dom": "2,042.00元",
+      "pass": true
+    },
+    {
+      "label": "overview/支付订单数",
+      "expected": "5单",
+      "dom": "5单",
+      "pass": true
+    },
+    {
+      "label": "overview/浏览量(PV)",
+      "expected": "7次",
+      "dom": "7次",
+      "pass": true
+    },
+    {
+      "label": "overview/退款率",
+      "expected": "60.00%",
+      "dom": "60.00%",
+      "pass": true
+    },
+    {
+      "label": "overview/快照上下文(S20260901_22+业务时间)",
+      "expected": "含快照号与业务时间",
+      "dom": "快照 | S20260901_22 | 业务时间 | 2026-09-01 00:00:00 | 数据更新 | 2026-09-01 00:00:00 | 口径版本 | v2 | 质量 | PASS | 质量通过",
+      "pass": true
+    },
+    {
+      "label": "behavior/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=用户行为分析 error=False",
+      "pass": true
+    },
+    {
+      "label": "products/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=商品分析 error=False",
+      "pass": true
+    },
+    {
+      "label": "sales/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=销售分析 error=False",
+      "pass": true
+    },
+    {
+      "label": "rfm/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=用户分层（RFM） error=False",
+      "pass": true
+    },
+    {
+      "label": "pipeline/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=数据流水线 error=False",
+      "pass": true
+    },
+    {
+      "label": "ops/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=运维中心 error=False",
+      "pass": true
+    },
+    {
+      "label": "ai-assistant/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=智能分析助手 error=False",
+      "pass": true
+    },
+    {
+      "label": "decisions/渲染无错误态",
+      "expected": "无「数据加载失败」且页面有标题",
+      "dom": "title=决策中心 error=False",
+      "pass": true
+    },
+    {
+      "label": "ops/点击快照行「查看指标」后出现指标行",
+      "expected": "≥1 行含 avg_order_value/pv/refund_rate 等列",
+      "dom": "clicked=True lines=5",
+      "pass": true
+    },
+    {
+      "label": "ai-assistant/真实问数返回结果",
+      "expected": "页面出现 SQL 与结果行",
+      "dom": "sql=True rows=1",
+      "pass": true
+    },
+    {
+      "label": "overview/未知快照 → 空态且不回退 ACTIVE",
+      "expected": "提示未知快照且不出现 ACTIVE 快照号/黄金值",
+      "dom": "unknown=True noFallback=True cards={}",
+      "pass": true
+    },
+    {
+      "label": "overview/接口失败 → 显示失败态",
+      "expected": "出现「数据加载失败」",
+      "dom": [
+        "电商用户行为分析",
+        "运营大盘",
+        "用户行为分析",
+        "商品分析",
+        "用户分层",
+        "销售分析",
+        "数据流水线",
+        "运维中心"
+      ],
+      "pass": true
+    },
+    {
+      "label": "离线可运行（无非本机外网请求）",
+      "expected": "0 个外部请求",
+      "dom": [],
+      "pass": true
+    },
+    {
+      "label": "0 页面错误（主流程）",
+      "expected": "无 pageerror",
+      "dom": [],
+      "pass": true
+    },
+    {
+      "label": "0 console 错误（主流程）",
+      "expected": "无 console error",
+      "dom": [],
+      "pass": true
+    },
+    {
+      "label": "隔离用例（故意失败）的 console 仅记录不判失败",
+      "expected": "记录条目数 ≥0",
+      "dom": 1,
+      "pass": true
+    }
+  ],
+  "opsInteraction": {
+    "clickedSnapshotActionButton": true,
+    "contextBefore": "快照 S20260901_22 业务时间 2026-09-01 00:00:00 数据更新 2026-09-01 00:00:00 口径版本 v2 质量 FAIL 质量未通过 数据告警：该接口未返回统一信封（无 snapshotId/口径版本/质量状态），上下文以响应内可见字段拼装，另有缺失项已逐项标注。；数据质量规则存在未通过项（金额对账失败会阻断指标发布），请在下方的质量规则结果中核对。",
+    "contextAfter": "快照 S20260901_22 业务时间 2026-09-01 00:00:00 数据更新 2026-09-01 00:00:00 口径版本 v2 质量 FAIL 质量未通过 数据告警：该接口未返回统一信封（无 snapshotId/口径版本/质量状态），上下文以响应内可见字段拼装，另有缺失项已逐项标注。；数据质量规则存在未通过项（金额对账失败会阻断指标发布），请在下方的质量规则结果中核对。",
+    "rowsAfterClick": 56,
+    "metricLines": [
+      "avg_order_value\t408.40\t元\tday:2026-09-01\tS20260901_22\tv1",
+      "full_refund_rate\t0.20\t—\tday:2026-09-01\tS20260901_22\tv1",
+      "paid_order_cnt\t5.00\t单\tday:2026-09-01\tS20260901_22\tv1",
+      "pv\t7.00\t次\tday:2026-09-01\tS20260901_22\tv1",
+      "refund_rate\t0.60\t—\tday:2026-09-01\tS20260901_22\tv2"
+    ]
+  },
+  "aiInteraction": {
+    "inputFound": true,
+    "sendFound": true,
+    "hasExecuted": true,
+    "hasSql": true,
+    "tableRows": 1,
+    "lines": [
+      "电商用户行为分析",
+      "运营大盘",
+      "用户行为分析",
+      "商品分析",
+      "用户分层",
+      "销售分析",
+      "数据流水线",
+      "运维中心",
+      "决策中心",
+      "智能分析助手",
+      "系统管理员 系统管理员（admin）",
+      "退出登录",
+      "V2.2 · 阶段7 看板",
+      "智能分析助手",
+      "问答数据上下文（取当期 ACTIVE 快照作对照）",
+      "快照",
+      "S20260901_22",
+      "业务时间",
+      "2026-09-01 00:00:00",
+      "数据更新",
+      "2026-09-01 00:00:00",
+      "口径版本",
+      "v2",
+      "质量",
+      "PASS"
+    ]
+  },
+  "emptyState": {
+    "cards": {},
+    "lines": [
+      "电商用户行为分析",
+      "运营大盘",
+      "用户行为分析",
+      "商品分析",
+      "用户分层",
+      "销售分析",
+      "数据流水线",
+      "运维中心",
+      "决策中心",
+      "智能分析助手",
+      "系统管理员 系统管理员（admin）",
+      "退出登录",
+      "V2.2 · 阶段7 看板",
+      "运营大盘"
+    ]
+  },
+  "badResponses": []
+}

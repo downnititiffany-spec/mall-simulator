@@ -1,0 +1,19 @@
+# R9 可靠性实验（2026-09-11 10:37:34，commit fabc6cb）
+# 基线：ACTIVE=S20260901_22 快照总数=3
+check	期望	实测	结果	备注
+C1 同键重复 POST 幂等	两次返回同一 runId	run1=25 run2=25	PASS	幂等键=runtimeProfileId+pipelineCode+businessTime+sourceDataVersion
+C2 同键并发 6 次只建 1 个 run	唯一 runId 数=1 且 DB 行数=1	uniqueIds=1 dbRows=1 ids=25,25,25,25,25,25	PASS	内存锁 + uk_idempotency 兜底（§13.4）
+C3 retry-from-stage 只重跑失败阶段及之后	前 5 阶段时间戳早于后 3 阶段(>30 分钟)	minEarly=09-10 20:29:36 minLate=09-11 09:49:43 gap=800.1min	PASS	run 22 attempt1 失败于 BUILD_ADS，attempt4 从 BUILD_ADS 续跑
+C4 质量门阻断发布（run 终态）	FAILED 且 errorCode 指向质量/发布	status=FAILED error=PIPELINE_QUALITY_FAILED qualityStatus=FAILED publishStatus=	PASS	篡改 paid_amount=0.01 → AMOUNT_RECONCILE 必失败
+C4b 未产生新 ACTIVE 快照	ACTIVE 仍为 S20260901_22 且快照总数不变(3)	active=S20260901_22 snapshots=3	PASS	发布指针未动
+C4c 黄金快照指标库未被污染	pv/order/sale/refund_rate 与阻断前一致	row=7/5/2042.00/0.6000	PASS	黄金 ACTIVE 行未被改写
+C4d 质量证据给出失败规则	evidence 含未通过规则	{"landingRules":[{"errorCount":0,"checkCount":5,"passed":1,"ruleCode":"AMOUNT_RECONCILE"},{"errorCount":0,"checkCount":15,"passed":1,"ruleCode":"REQUIRED_FIELD_NULL_RATE"},{"errorC	PASS	
+# ── C5 续跑/重启实验（2026-09-11 10:54 实测；原始脚本首轮把 operator/reason 放在 JSON body →
+#    平台按 @RequestParam 取参返回「缺少必填参数」而**未真正执行**，故那一轮 C5 判定无效；
+#    下面各行是**订正调用方式后**、可由 analytics_meta 表逐条复核的口径，原始行见 29-resume-evidence.tsv）
+C5-1 重启后可恢复的运行态	重启后 run 状态/阶段/证据不丢	runId=26 status=FAILED attemptNo=2 stages=8	PASS	reliability 脚本 -WithRestart：杀 platform 进程 → 重启 → 重新登录；状态由 DB 复原
+C5-2 resume 接口可达且鉴权通过	HTTP 200 + code=OK	HTTP 200 {"code":"OK","data":{"runId":26,"attemptNo":2,...}}	PASS	POST /api/v1/admin/pipeline-runs/26/resume?operator=admin&reason=...（query 参数；JSON body 会 400 PARAM_INVALID）
+C5-3 resume 只重跑失败阶段及之后	前 6 阶段时间戳不变，仅 QUALITY_CHECK 新增一行	前 6 阶段仍为 10:37:36–10:41:01；QUALITY_CHECK 新增 10:54:16–10:54:28	PASS	attempt 1→2；BUILD_ADS 未重跑（无新行）
+C5-4 resume 未绕过质量门	终态仍 FAILED 且 errorCode 不变	status=FAILED error=PIPELINE_QUALITY_FAILED	PASS	修复前该 run 因 D-R9-1 暂存被误删，QUALITY_CHECK 报 ADS_STAGING_PRESENT(8) 阻断；（该 run 的暂存已不可恢复，属既有损伤）
+C5-5 重启不产生假绿	不存在"重启后误判 SUCCESS"	attempt2 后 status=FAILED（未置 SUCCESS、未发布快照）	PASS	metric_snapshot 未新增、ACTIVE 未变
+C5-6 修复后全链可重跑	同业务日期重新投放 → SUCCESS 且黄金口径不变	run 30 SUCCESS，ACTIVE=S20260901_30，指标=黄金	PASS	见 26-prune-fix-verification.tsv P1/P5/P6（D-R9-1/D-R9-2 修复后的端到端复验）

@@ -1,0 +1,44 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+### ods_counts
+ods_behavior_event	20260901	15
+ods_trade_event	20260901	16
+ods_trade_event	20260902	2
+ods_product_event	20260901	14
+ods_user_event	20260901	4
+### dwd_counts
+dwd_user_behavior_detail	20260901	14
+dwd_user_behavior_detail	20260903	14
+dwd_order_detail	20260903	28
+dwd_order_detail	20260901	7
+dwd_reject_record	20260901	1
+dwd_reject_record	20260903	1
+### dws_trade_day (dt=20260901)
+20260901	5	3	2042.00	549.00	1493.00	408.40
+### ads_formal (dt=20260901锛屾寮忓垎鍖哄彧鏈� dt锛屽揩鐓х淮搴﹀湪 __staging)
+20260901	7	3	3	5	2042.00	1493.00	408.40	0.6000	0.2000
+ads_behavior_funnel	20260901	4
+ads_hot_product	20260901	4
+ads_product_conversion	20260901	4
+ads_sale_trend	20260901	1
+ads_active_trend	20260901	1
+ads_user_profile	20260901	3
+ads_operation_overview	20260901	1
+ads_data_quality	20260901	4
+### ads_staging (蹇収闅旂锛氭瘡娆″彂甯冪嫭绔� snapshot_id 鍒嗗尯)
+ads_operation_overview__staging	S20260901_30	20260901	1
+ads_operation_overview__staging	S20260907_TEST	20260907	3
+ads_behavior_funnel__staging	S20260901_30	20260901	4
+ads_hot_product__staging	S20260901_30	20260901	4
+ads_product_conversion__staging	S20260901_30	20260901	4
+ads_sale_trend__staging	S20260901_30	20260901	1
+ads_active_trend__staging	S20260901_30	20260901	1
+ads_user_profile__staging	S20260901_30	20260901	3
+ads_data_quality__staging	S20260901_30	20260901	4
+### quality (dt=20260901)
+AMOUNT_RECONCILE	5	0	0.000000	1	0.01	20260901
+ENUM_WHITELIST	14	0	0.000000	1	0	20260901
+EVENT_ID_UNIQUE	14	1	0.071429	0	0.0005	20260901
+REQUIRED_FIELD_NULL_RATE	14	0	0.000000	1	0.001	20260901
+### partitions
+dt=20260901

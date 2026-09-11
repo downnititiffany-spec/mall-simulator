@@ -1,0 +1,34 @@
+# A. 黄金标准答案（人工核算） vs 指标库 ACTIVE 快照 metric_value
+metric_code	黄金标准答案	指标库(ACTIVE=S20260901_30)	一致
+pv	7	7.0000	YES
+uv	3	3.0000	YES
+dau	3	3.0000	YES
+paid_order_cnt	5	5.0000	YES
+gmv	2042.00	2042.0000	YES
+net_sale	1493.00	1493.0000	YES
+avg_order_value	408.40	408.4000	YES
+refund_rate	0.60	0.6000	YES
+buy_rate	1.0000	1.0000	YES
+full_refund_rate	(黄金文件未列，R7-0 新增口径)	0.2000	—
+
+# B. 指标库 metric_value vs ADS 概览宽表（同一快照，防「宽表对但指标值错」）
+字段	宽表 ads_operation_overview_m	metric_value	一致
+pv	7	7.0000	YES
+uv	3	3.0000	YES
+dau	3	3.0000	YES
+order_count/paid_order_cnt	5	5.0000	YES
+sale_amount/gmv	2042.00	2042.0000	YES
+net_sale_amount/net_sale	1493.00	1493.0000	YES
+avg_order_value	408.40	408.4000	YES
+refund_rate	0.6000	0.6000	YES
+full_refund_rate	0.2000	0.2000	YES
+
+# C. 黄金数据集契约口径（夹具人工核算）
+L1 输入行数(golden-20260901.jsonl)	55
+L1 契约接受事件数	52
+L1 契约拒绝行数	3
+事件构成	users=3 products=4 behaviors=14 orders_created=6 orders_paid=5 orders_cancelled=1 refunds=3
+
+# D. 运行与快照
+run	30	SUCCESS attempt=1 snapshot=S20260901_30 error=无
+ACTIVE 快照	S20260901_30	业务日期 20260901

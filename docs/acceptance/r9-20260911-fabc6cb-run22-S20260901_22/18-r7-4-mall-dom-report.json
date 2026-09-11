@@ -1,0 +1,94 @@
+{
+  "target": "http://127.0.0.1:8090",
+  "assertions": 17,
+  "failed": 0,
+  "results": [
+    {
+      "name": "8090 根路径进入商城登录页",
+      "ok": true,
+      "detail": "http://127.0.0.1:8090/login?redirect=/mall"
+    },
+    {
+      "name": "登录页标题为「模拟商城」",
+      "ok": true,
+      "detail": "模拟商城（mall-simulator）"
+    },
+    {
+      "name": "登录页提示账号库为商城库 mall_simulator",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "登录后进入商城演示页 /mall",
+      "ok": true,
+      "detail": "http://127.0.0.1:8090/mall"
+    },
+    {
+      "name": "登录令牌写入 localStorage(mall_token)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "/mall 渲染「商城演示」",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "/admin-products 渲染商品后台（含新建商品表单）",
+      "ok": true,
+      "detail": "模拟商城（mall-simulator） 商城演示 商品后台 数据生成器 admin 退出登录 本页属模拟商城（事件来源系统，仅提供可重复测试数据）； 分析平台看板在 http://127.0.0.1:8091，两者数据库、账号与前端完全独"
+    },
+    {
+      "name": "/generator 渲染数据生成器",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "生成器页面注明生成入口属商城侧（§18.4）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "商城页面不含分析看板标记",
+      "ok": true,
+      "detail": "命中: []"
+    },
+    {
+      "name": "访问分析路由 /ops 不渲染分析页面（回落商城登录/首页）",
+      "ok": true,
+      "detail": "http://127.0.0.1:8090/ops"
+    },
+    {
+      "name": "8090 不提供分析接口 /api/v1/dashboards/overview",
+      "ok": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "name": "8090 不提供指标库健康接口 /api/v1/metrics/health",
+      "ok": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "name": "商城自身登录接口可用（返回 token）",
+      "ok": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "商城自身商品接口可用 /api/v1/mall/products",
+      "ok": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "0 页面错误",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "0 console 错误",
+      "ok": true,
+      "detail": "[]"
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": []
+}

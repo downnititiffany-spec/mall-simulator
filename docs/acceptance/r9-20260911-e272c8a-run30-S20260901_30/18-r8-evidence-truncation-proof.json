@@ -1,0 +1,107 @@
+{
+  "ranAt": "2026-09-11T09:52:49",
+  "runId": 22,
+  "mode": "no-retry (评估真实重试后的持久化状态)",
+  "maxStageEvidenceChars": 18010,
+  "publishStageEvidenceChars": 18070,
+  "retriedStages": [
+    "BUILD_ADS",
+    "QUALITY_CHECK",
+    "PUBLISH_METRIC"
+  ],
+  "retriedInvalidJsonRows": 0,
+  "over4000ValidRows": 2,
+  "over4000Lens": "QUALITY_CHECK/5914\nPUBLISH_METRIC/18010",
+  "atBoundaryRows": [
+    "LOAD_ODS/BAD/2026-09-10 20:29:50"
+  ],
+  "nonJsonEvidenceRows": [
+    "WAIT_LANDING/576/2026-09-10 20:29:36\nLOAD_ODS/4000/2026-09-10 20:29:50"
+  ],
+  "nonJsonUnexpected": [],
+  "activeSnapshot": "S20260901_22",
+  "stageTableBefore": [
+    "WAIT_LANDING=SUCCESS/ev=576/json=BAD",
+    "INIT_SCHEMA=SUCCESS/ev=453/json=ok",
+    "LOAD_ODS=SUCCESS/ev=4000/json=BAD",
+    "BUILD_DWD=SUCCESS/ev=2106/json=ok",
+    "BUILD_DWS=SUCCESS/ev=1866/json=ok",
+    "BUILD_ADS=SUCCESS/ev=2490/json=ok",
+    "QUALITY_CHECK=SUCCESS/ev=5914/json=ok",
+    "PUBLISH_METRIC=SUCCESS/ev=18010/json=ok"
+  ],
+  "stageTableAfter": [
+    "WAIT_LANDING=SUCCESS/ev=576/json=BAD",
+    "INIT_SCHEMA=SUCCESS/ev=453/json=ok",
+    "LOAD_ODS=SUCCESS/ev=4000/json=BAD",
+    "BUILD_DWD=SUCCESS/ev=2106/json=ok",
+    "BUILD_DWS=SUCCESS/ev=1866/json=ok",
+    "BUILD_ADS=SUCCESS/ev=2490/json=ok",
+    "QUALITY_CHECK=SUCCESS/ev=5914/json=ok",
+    "PUBLISH_METRIC=SUCCESS/ev=18010/json=ok"
+  ],
+  "pass": 12,
+  "fail": 0,
+  "checks": [
+    {
+      "check": "P1 run 22 终态 SUCCESS（修复前同一 run 在 PUBLISH_METRIC 被拒）",
+      "result": "PASS",
+      "detail": "status=SUCCESS err="
+    },
+    {
+      "check": "P2 存在阶段证据 >4000 字符（老 VARCHAR(4000) 上限已被突破）",
+      "result": "PASS",
+      "detail": "maxStageEvidenceChars=18010 publishEvidenceChars=18070"
+    },
+    {
+      "check": "P2b 本次重试重跑的 BUILD_ADS/QUALITY_CHECK/PUBLISH_METRIC 证据全部合法 JSON",
+      "result": "PASS",
+      "detail": "invalidRows=0"
+    },
+    {
+      "check": "P2b2 修复后多个阶段证据突破 4000 字符且合法 JSON（修复前所有长证据恰好停在 4000）",
+      "result": "PASS",
+      "detail": "rows=2 lens=QUALITY_CHECK/5914\nPUBLISH_METRIC/18010"
+    },
+    {
+      "check": "P2b3 「恰好 4000 字符」的行只剩修复前历史行（白名单 LOAD_ODS）",
+      "result": "PASS",
+      "detail": "atBoundary=[LOAD_ODS/BAD/2026-09-10 20:29:50] unexpected=[]"
+    },
+    {
+      "check": "P2c 非 JSON 证据仅限白名单（WAIT_LANDING 审计追加文本 / 修复前 4000 截断历史行）",
+      "result": "PASS",
+      "detail": "nonJsonRows=[WAIT_LANDING/576/2026-09-10 20:29:36\nLOAD_ODS/4000/2026-09-10 20:29:50] unexpected=[]"
+    },
+    {
+      "check": "P3 PUBLISH_METRIC 证据是合法 JSON 且含逐作业明细",
+      "result": "PASS",
+      "detail": "jsonOk=True len=18070"
+    },
+    {
+      "check": "P4 PUBLISH_METRIC 阶段 SUCCESS",
+      "result": "PASS",
+      "detail": "publishStatus=SUCCESS"
+    },
+    {
+      "check": "P4b mxp 导出作业 SUCCESS（修复前因残留非空目录失败）",
+      "result": "PASS",
+      "detail": "mxpStatus=SUCCESS"
+    },
+    {
+      "check": "P5 快照已真实切换 ACTIVE",
+      "result": "PASS",
+      "detail": "active=S20260901_22 snapshots=S20260901_22/ACTIVE\nS20260901_24/ARCHIVED\nS20260901_23/ARCHIVED"
+    },
+    {
+      "check": "P6 导出目录 8 张表均为单文件 .jsonl（非目录形态）",
+      "result": "PASS",
+      "detail": "jsonlFiles=8 names=ads_active_trend_m.jsonl,ads_behavior_funnel_m.jsonl,ads_data_quality_m.jsonl,ads_hot_product_m.jsonl,ads_operation_overview_m.jsonl,ads_product_conversion_m.jsonl,ads_sale_trend_m.jsonl,ads_user_profile_m.jsonl"
+    },
+    {
+      "check": "P6b 导出目录无 *.jsonl.parts / 非空目录残留",
+      "result": "PASS",
+      "detail": "partsLeftovers=0 dirLeftovers=0"
+    }
+  ]
+}

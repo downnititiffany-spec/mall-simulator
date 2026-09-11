@@ -1,9 +1,14 @@
-# 整改状态登记（对标《项目整改实施指导书 V1.0》）
+# 整改状态登记（对标《项目完整实施指导书 V2.0》；《项目整改实施指导书 V1.0》为从属依据）
 
-> 依据整改书 §29 进度表与 §28 自检模板维护；每阶段仅在有验收证据后置为"完成"。
+> 依据 V2.0 §31 权威顺序（V2.0 > V1.0）与 §30 终检清单维护；每阶段仅在有验收证据后置为"完成"。
 > 基线：Git tag `v0.9-protype-baseline`（2026-09-06，整改分支 `remediation/r1-boundary`）。
 
-## 现状差距核对（2026-09-06 审计）
+## 现状差距核对（2026-09-06 整改前审计 · 历史快照，勿当现状引用）
+
+> 下表是**整改开始前**的差距审计结论，保留作为整改动机与前后对照。表中"现状"列的 ❌/⚠
+> 与证据列中的类名（如 `AnalysisService.loadEvents`、`ReaderAccountSecurityTest`、`GoldenE2ETest`）
+> **描述的是 2026-09-06 的状态**；这些类多数已在 R1–R8 删除或替换，现状以本文件"执行计划"各 R
+> 阶段的验收证据与 `docs/acceptance/` 证据包为准。
 
 | 整改项 | 要求（整改书） | 现状 | 证据 |
 |---|---|---|---|
@@ -249,7 +254,15 @@
   - **真机验收（全部本次会话内实跑）**：`.verify/r8-accept.ps1` → **PASS=53 FAIL=0**（A 身份 4、B 证据包 7、C 六段解释 12、D 安全问数 5、E 攻击集 7、F 决策 12 + 审计留痕），报告 `.verify/r8-accept-report.json`；`.verify/r8-evidence-truncation-proof.ps1` → **PASS=12 FAIL=0**；回归 `.verify/r7-4-dom.py` **22/22**、`.verify/r7-4-mall-dom.py` **17/17**；`spark-jobs` 单测 **46/46**。
   - **本轮修掉的三个真实缺陷（Mock 发现不了，全部真机复现+复验）**：①AI 生成 ISO 日期字面量，而 ADS 镜像 `dt` 是 `varchar` 存紧凑 `20260901` → 字符串比较上界恒假 → **四类问法静默 0 行**（HTTP 200 / `EXECUTED` / `rows=0`，不报错）→ `AiScope.DT_FORMAT` 为唯一所有者，校验器只认 `\d{8}`、ISO 一律 loud 拒绝；②攻击问法经规则回退被"无害化改写"成普通 SELECT → 攻击集**假绿**（AST 校验器从未触发）→ 新增**问句层** `SQL_QUESTION_UNSAFE`（生成 SQL 之前拒绝、不落 `sql_text`、仍写审计）；③`pipeline_stage_run.evidence` 为 `VARCHAR(4000)` 且超长用 `substring` 截断 → 落库**非法 JSON** → 重试路径 `stageEvidence()` 静默退化成空 Map → `PUBLISH_METRIC` 报「缺少 BUILD_ADS 真实作业证据」拒发（run 21/22 两次真实发布失败，证据长度恰停 4000）→ V15 改 `MEDIUMTEXT` + `evidenceJson` 结构化缩减（无论怎么截都保持合法 JSON）；连带挖出 `MetricExportJob.writeJsonl` 的 `fs.delete(target,false)` **非递归删除**在残留**目录**上抛 `Directory ... is not empty`（旧实现 `text(target)` 把目标写成目录）→ mxp 导出作业**一旦重试必挂** → 改递归清理 + 幂等覆盖。真实链复验：run 22 `retry-from-stage BUILD_ADS` → 终态 **SUCCESS**、`mxp` SUCCESS、导出目录 8 张表均为**单文件**、`ACTIVE=S20260901_22`、`PUBLISH_METRIC` 证据 18010 字符且合法 JSON（`QUALITY_CHECK` 5914）。
   - **如实登记的边界（未做/偏差）**：①「无 ACTIVE 快照」分支只有单测（真机恒有 ACTIVE）；②契约质量 `4/4/[]` vs 真实 `4/3/["EVENT_ID_UNIQUE"]`（EVENT_ID_UNIQUE 计数 Java 49 / Spark 14 分歧仍存在）；③`ads_user_profile_m` 无金额列 → `RFM_AMOUNT_UNAVAILABLE`；④类目/地区 ADS 无载体 → 证据包 `UNKNOWN_DIMENSION_TABLE`（**无数据不造假**）；⑤归档快照可读且未做权限校验；⑥`WAIT_LANDING.evidence` 是「JSON + ` | ` 审计追加」的**混合文本**（仅该阶段允许非 JSON，`manifestForRun` 只做正则读取；要"列格式唯一"需拆审计列，未做）；⑦`PUB_STAGING_PRUNE` 会删除导出文件，故 `retry-from-stage` 必须重跑导出（本次已实测可重跑）；⑧`LocalProcessSparkSubmitter.status()` 恒 `SUBMITTED`；⑨`metric_snapshot.version` 恒为 1；⑩`/admin/users` 不返回 `status`；⑪`cart_rate` 无 ADS 落地；⑫阶段审计追加有两处所有者（admin 审计追**最早**一条、恢复流程追**最新**一条），语义已登记但未合并；⑬`UserAdminController` 类包名与目录不一致（历史迁移残留）。
-- [ ] **R9 完整验收与论文证据**：端到端黄金链、恢复/安全实验、README/验收/论文一致性
+- [x] **R9 完整验收与论文证据**（2026-09-11 完工：真机黄金链 run 30 + 交付级证据包 + §30 逐项验收 + 论文证据映射；本轮又挖出并修掉两个真实缺陷）
+  - **提交**：`e272c8a`（两个缺陷修复 + 口径订正：Scala 作业、`PipelineService` Javadoc、`scripts/start-all.ps1`、`docs/compatibility-matrix.md`、黄金标准答案注记）→ 紧随其后的证据/文档提交（证据包 + §30 验收 + 验收/论文文档对齐）。目录名中的 commit 指**产生该 run 的代码提交 `e272c8a`**，文档提交不含代码变更。
+  - **交付级证据包（§23.5 命名：日期+commit+runId+snapshotId）**：`docs/acceptance/r9-20260911-e272c8a-run30-S20260901_30/`（**61 个文件**（含 `scripts/` 下 8 个随证据归档的复现脚本），采集脚本 `.verify/r9-evidence-collect.ps1 -RunId 30 -Snapshot S20260901_30 -Date 20260901`）。内含 `01`–`14` 平台/指标库逐表导出、`15-hive-layers.txt`（ODS 15/16/14/4、DWD 14/7/1、DWS `5/3/2042.00/549.00/1493.00/408.40`、ADS 概览 `7/3/3/5/2042.00/1493.00/408.40/0.6000/0.2000`、质量 4 规则 3 过 1 败、`__staging` 快照隔离）、`16-api-responses.json`（11 个真实 HTTP 响应）、`17-screenshots/`（13 张真机 PNG）、`18-*`（R7-4 DOM 22/22、商城 17/17、R8 53/53、证据截断 12/12）、`19-spark-jobs.jar`、`20-reconciliation.tsv`（**黄金不一致项 = 0**）、`21`–`29`（可靠性/故障注入/续跑原始证据）、`30-final-acceptance.md`（**§30 六域 18 项逐条判定：16 ✅ / 2 ⚠️ / 0 ❌**，含未达标边界清单）、`31-metric-publish-it-regression.log`、`README.md`（逐文件索引）。
+  - **本轮修掉两个真实缺陷（真实链暴露，Mock/单测不可能发现）**：**D-R9-1** `AdsPublishJob` 回收历史 `__staging` 分区时缺业务日期限定 → 发布一个业务日期会删掉**其他业务日期**尚未发布的暂存分区（交错运行误报 `ADS_STAGING_PRESENT` 8 表全空而失败，且失败运行的 `resume` 永久失败）→ 清理前按 `p.dt == dt` 过滤（`PUB_STAGING_PRUNE` 文案同步点明 `dt=`）；**D-R9-2** `TradeDwdJob` 关联 `dim_user`/`dim_product` 未按生效日期过滤 → 维度每日一份快照导致笛卡尔扇出（订单明细 7→**28 行**、GMV 2042.00→**8168.00**、净销售额 1493.00→**5972.00**，ACTIVE 指标同步放大）→ 两处 JOIN 补 `AND dt = '$dimDt'`（`DwdSql.scala:32-33`、`AdsSql.scala:106` 本来就有该谓词，仅此作业遗漏）。修复后重建 jar 并端到端复验 `.verify/r9-prune-fix-verify.ps1` → **PASS=10 FAIL=0**（异日期暂存 `S20260907_TEST/dt=20260907` 存活、同日期历史 `S20260901_29/dt=20260901` 仍回收、DWD=7 行、DWS/GMV/净额回黄金、ACTIVE=黄金）。**D-R9-2 无对应单测**（证据仅真实链），已如实登记。
+  - **可靠性实验（§23.3，原始行见 `21-reliability-experiments.tsv`）**：C1 同键重复提交 → 同一 `runId=25`；C2 同键 6 次并发 → 唯一 runId/DB 1 行；C3 `retry-from-stage` 前 5 阶段与后 3 阶段时间戳间隔 **800.1 分钟**（完成阶段未重跑）；C4 篡改夹具（`paid_amount=0.01`）→ run 26 终态 `FAILED`/`PIPELINE_QUALITY_FAILED`，ACTIVE 未切换、快照总数未增、黄金行未被改写（隔离核对 `23-qualityfail-isolation.sql`）；**C5 杀进程重启后 `resume`** → 状态由 DB 复原、`HTTP 200 {"code":"OK","attemptNo":2}`、仅新增 1 行 `QUALITY_CHECK`（10:54:16→10:54:28）、前 6 阶段时间戳不变、**未**误判 SUCCESS（`29-resume-evidence.tsv` 为 analytics_meta 直读原始行）；C6 快照字典版本不符 → 真库 IT 写库前拦截 `MP_VERIFY_FAILED`/`MP_METRIC_DICT_VERSION`。
+  - **测试与验收实跑**：平台 `mvn -f analytics-server/pom.xml test` → **303/303**、7 个 reactor 模块全 `BUILD SUCCESS`（29+96+38+91+49，落档 `24-fulltest-analytics-server.log`，**补上了长期缺落的 303 落点**）；真库集成测试 `-Dmetric.it=true -Dtest=MetricPublisherMySqlIT` → **1/1 PASS、0 skipped**（`31-...log`）；`spark-jobs` 修复后重建 **46/46**；`mall-simulator` **54/54**、平台前端 `node --test` **74/74** 沿用既有登记（本轮未重跑，已在 `30-final-acceptance.md` 第 7 节写明"沿用"）。
+  - **口径订正（本轮统一）**：ADS `dt`/`last_active_date`/`last_buy_date`/`calc_date` 一律 **`varchar` 紧凑 `yyyyMMdd`**，`AiScope.DT_FORMAT` 为唯一所有者、校验器只认紧凑格式（ISO 一律 loud 拒绝）——已写入 `docs/contracts/` 与黄金标准答案注记；`pv` 只计 `view` 行为（=7，原 14 的口径作废）、`refund_rate=0.6000`、`full_refund_rate=0.2000`、`buy_rate=1.0000`、`repeat_rate=0.3333`。
+  - **文档与论文一致性**：`docs/acceptance-checklist.md` **整篇重写**为整改后口径（删除已不存在的测试类名 `PipelineRunTest`/`GoldenE2ETest`/`MySqlMetricStoreTest`/`ReaderAccountSecurityTest`/`AiQuestionSetTest`/`LocalFileIngestorTest` 与旧规模 1.1 万/10.8 万、旧 P95 21–29ms 的当前版表述）；`docs/thesis-draft/08-实验结果与分析.md` 新增 **8.7 实验六：故障注入与可靠性验证**（表 8-6 六类故障 + 两个真实缺陷的修复前后实测数字）并把本章小结升为六维度（原 8.7 → **8.8**），表 8-1/8-5 标注"R9 复验快照 `S20260901_30` 数值逐项相同"，表 8-3 增补"整改前时点、整改后待重测"说明；`docs/thesis-materials/` 三份材料同步（`证据映射表.md` 新增 6 条可靠性与缺陷映射、合计 68→**74** 条并补齐 303/303 落档；`results-tables.md` 新增第 7 节故障注入表；`screenshot-list.md` 增列 run 30 权威截图来源）。改前备份：`docs/backups/r9-20260911-111257/`（6 份）。
+  - **如实登记的边界（未做/不可扩大表述）**：① C5 的"杀进程→重启→`resume`→SUCCESS"整段闭环只在**当时仍带缺陷**的代码上走完（该失败运行暂存已不可恢复，属既有损伤），修复后验证的是"重启可恢复 + 仅重跑失败阶段 + 全链重跑 SUCCESS（run 30）"，**未**重录完整杀进程恢复流程；② `dt=20260903` 分区是 C4 故障注入夹具的痕迹（`dwd_order_detail` 28 行为修复前扇出），修复后未重跑该测试日期；③ 失败 run 26（`PIPELINE_QUALITY_FAILED`）、27（`RUN_INTERRUPTED`，2026-09-04 空数据）、28（`RUN_EMPTY_DATA`）按设计保留，不清理不 resume（避免发布空快照）；④ 采集口径分歧仍在：`ingestion_batch` 记 `QUARANTINED / record_count=51 / quarantine=4`（契约口径 accept 52 / reject 3，多隔离 1 行为重复 `event_id=golden-evt-037`）而 accepted 部分仍被流水线消费；⑤ 契约质量 `4/4/[]` vs 真实 `4/3/["EVENT_ID_UNIQUE"]`；⑥ 本轮**未**重测整改后平台性能基线、未启用真实 LLM、未做集群规模分档（详见 `30-final-acceptance.md` 第 8 节与 `docs/acceptance-checklist.md` 待环境项）。
 
 ## 验收纪律（整改书 §23/26）
 
@@ -262,3 +275,4 @@ AI 查商城表被 DB 拒绝、停模型后看板可用。Mock 数据不得写�
 - 风格：Enterprise Gateway / Data-Dense Dashboard（Navy #1E40AF + 琥珀 #D97706 + Fira Sans/Code）
 - 应用范围：全局令牌 → App 壳（侧栏/顶栏/卡片/表格）→ 各分析页（大盘先行，逐页铺开）
 - 验收：npm build + headless 截图对比、可访问性（对比度 4.5:1、焦点可见、reduced-motion）
+

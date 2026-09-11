@@ -1,6 +1,7 @@
 # 部署说明（LOCAL 真实链路版）
 
-> 依据指导书 V2.0 §3.3（三种运行环境）、§14.3（交付物）、§18.4/§31⑥（两系统边界）。
+> 依据指导书 V2.0 §9.1（`runtime_profile` 三种类型 LOCAL / SINGLE_NODE / REMOTE_CLUSTER）、
+> §23.5（验收证据目录）与 §30（最终验收清单）、§18.4 与 §31⑥（两系统边界）。
 > **LOCAL 模式不等于"不需要 Spark/Hive"**：本仓库的 LOCAL 是「本机 MySQL + 文件 Landing +
 > 本机 spark-submit + 嵌入式 Derby Hive」，Hive 数仓与 Spark 作业**真实执行**，只是不部署
 > Hadoop 集群、不用 Flume（用平台采集器等价替代）。
@@ -25,13 +26,16 @@
 | JDK | 17 | `JAVA_HOME` 需指向 JDK（打包脚本用 `%JAVA_HOME%\bin\jar.exe` 做 jar 边界自检） |
 | Maven | 3.9+ | `analytics-server` 为多模块 reactor，`spark-jobs` 为独立 Scala 模块 |
 | Node | 18+ | `web/`、`mall-frontend/` 两个前端 |
-| MySQL | 8.x，服务运行 | 三库三账号由 `warehouse/migrations/init-three-dbs.sql` 创建 |
-| Spark | 3.5.1（本机解压即可） | 路径**登记在 `runtime_profile.spark_submit_path`**，不是环境变量 |
+| MySQL | 8.0（本机 8.0.41），服务运行 | `warehouse/migrations/init-three-dbs.sql` 建 `analytics_meta` / `analytics_metric` / `mall_business` 三库 + `mall_app` / `meta_app` / `metric_pub` / `metric_read` 四账号；**商城进程实际连 `mall_simulator`**（`root` + `createDatabaseIfNotExist=true` 自建），该库不在脚本内 |
+| Spark | 3.5.1（本机解压即可） | 路径**登记在 `runtime_profile.spark_submit_path`**，不是环境变量；本机 LOCAL 档案为 `D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd`，作业 jar 为 `spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar` |
 | 可选 | LLM API Key | 不配也能用：AI 走模板/规则回退（§19.3） |
 
-三库三账号（最小权限，§17.1）：`meta_app`（只碰 `analytics_meta`）、`metric_pub`（读写 `analytics_metric`）、
-`metric_read`（**仅 SELECT** `analytics_metric`，看板与 AI 只读 SQL 必须走它；缺该源时 AI fail-closed，
-不回退元库）。
+数据库与账号（最小权限，§17.1）：`init-three-dbs.sql` 建 `analytics_meta` / `analytics_metric` / `mall_business`
+三库与 `mall_app` / `meta_app` / `metric_pub` / `metric_read` 四账号。平台在用的是其中三个：`meta_app`
+（只碰 `analytics_meta`）、`metric_pub`（读写 `analytics_metric`）、`metric_read`（**仅 SELECT**
+`analytics_metric`，看板与 AI 只读 SQL 必须走它；缺该源时 AI fail-closed，不回退元库）。
+`mall_app` 与 `mall_business` 库当前无使用方（商城进程以 `root` 连 `mall_simulator`，见
+`mall-simulator/src/main/resources/application.yml`）。
 
 ## 3. 一键构建 → 一键启动
 
@@ -47,7 +51,9 @@ pwsh -File scripts/start-all.ps1 -MallDbPassword '<商城库口令>'
 ```
 
 - 分析平台探活：`GET http://127.0.0.1:8091/api/v1/metrics/health` → `ok=true`（detail 含 `metric_read`）；
-  入口 <http://127.0.0.1:8091/>（脚本会打印演示账号）。
+  入口 <http://127.0.0.1:8091/>；演示账号 `admin/admin123`（管理员）、`operator/operator123`（运营）、
+  `analyst/analyst123`（分析师）——`analytics_meta.sys_user` 的种子即这三条（`scripts/start-all.ps1`
+  打印行里多出的 `viewer/viewer123` 在库中不存在，属脚本待修项）。
 - 模拟商城探活：`GET http://127.0.0.1:8090/`（SPA）；入口 <http://127.0.0.1:8090/generator>（造数据）。
 - `start-all.ps1` 会给 platform-app 传 `-Dplatform.metric.publish.export-dir=<repo>\metric-staging`
   （Hive→指标库导出目录，与流水线 `PUBLISH_METRIC` 阶段一致）。
@@ -64,12 +70,18 @@ cd mall-frontend  ; npm install ; npm run dev   # 5173 → /api 代理到 8090�
 ## 5. 跑一次真实链路（LOCAL）
 
 ```powershell
-# ① 造数据（8090 生成器页面，或直接调接口）：生成的事件滚动落在 mall-simulator\landing\events\{yyyyMMddHH}.jsonl
+# ① 造数据（8090 生成器页面，或直接调接口）：事件按 MALL_LANDING_PATH 落在 {landing}\events\{yyyyMMddHH}.jsonl。
+#    两个进程的工作目录都是仓库根，故 start-all.ps1 启动时 {landing} = 仓库根 landing\，与平台采集根是同一处
+#    （MALL_LANDING_PATH 单独设定时才分叉；mall-simulator\landing\ 只出现在以 mall-simulator 为工作目录启动时）。
+#    不起商城进程也可以跑：把黄金夹具拷进 landing\events\（新文件名触发从 0 重读），见 README §4.3。
 # ② 采集（8091）：POST /api/v1/ingestion/runs → 批次状态机 + 断点续采，产出 READY manifest
 # ③ 建流水线（8091）：POST /api/v1/pipeline-runs（可带 Idempotency-Key）
-#    八阶段：WAIT_LANDING → LOAD_ODS → BUILD_DWD → BUILD_DWS → BUILD_ADS → QUALITY_CHECK → PUBLISH_METRIC → SUCCESS
-#    （INIT_SCHEMA 建表在最前；每个 Spark 阶段真实启动 spark-submit，证据落 spark_job_run）
-# ④ 查证据：GET /api/v1/pipeline-runs/{id}（阶段/attempt/externalJobId/outputPartitions）
+#    八阶段：WAIT_LANDING → INIT_SCHEMA → LOAD_ODS → BUILD_DWD → BUILD_DWS → BUILD_ADS → QUALITY_CHECK → PUBLISH_METRIC
+#    （SUCCESS 是 run 终态、不是阶段；每个计算阶段真实启动 spark-submit）
+# ④ 查证据：GET /api/v1/pipeline-runs/{id}（阶段/records/errorCode/evidence）；阶段逐条落
+#    analytics_meta.pipeline_stage_run（stage_code/status/external_job_id/records/evidence），Spark 作业明细落
+#    analytics_meta.spark_job_run（stage_code/job_code/input_records/output_records/rejected_records/
+#    output_partitions_json/log_uri/error_code）
 # ⑤ 看结果：8091 Ops 页（快照状态 + 质量门）与看板页（只读 ACTIVE 快照）
 ```
 
@@ -77,12 +89,12 @@ cd mall-frontend  ; npm install ; npm run dev   # 5173 → /api 代理到 8090�
 
 | 内容 | 位置 |
 |---|---|
-| 商城事件 Landing | `mall-simulator/landing/events/*.jsonl`（`MALL_LANDING_PATH` 可覆盖） |
+| 事件 Landing（商城落盘 = 平台采集源） | `landing/events/*.jsonl`（`MALL_LANDING_PATH` 默认 `./landing`，`PLATFORM_LANDING_LOCAL_ROOT` 指向同一根；两进程 CWD 均为仓库根） |
 | 平台采集落地/暂存 | `landing/`（`PLATFORM_LANDING_LOCAL_ROOT`）、`metric-staging/`（导出清单，gitignore） |
 | Hive 仓（ODS/DWD/DWS/ADS 四层正式分区与 `__staging` 孪生分区） | `spark-warehouse/`（`PLATFORM_SPARK_WAREHOUSE_DIR`） |
 | Hive 元数据库（嵌入式 Derby） | `derby-metastore/`（`PLATFORM_SPARK_METASTORE_DIR`） |
-| 运行/质量/审计/决策元数据 | MySQL `analytics_meta` |
-| 已发布快照 + 8 张 ADS 宽表 + 指标值 | MySQL `analytics_metric` |
+| 运行/质量/审计/决策元数据 | MySQL `analytics_meta`（Flyway `classpath:db/meta`，当前已应用到 **V15**） |
+| 已发布快照 + 8 张 ADS 宽表 + 指标值 | MySQL `analytics_metric`（Flyway `classpath:db/metric` V1–V3） |
 | 商城业务数据 | MySQL `mall_simulator` |
 
 > **Derby 单写者**：嵌入式元数据库同一时刻只允许一个进程持有。平台（8091）持有它并通过子进程
@@ -122,13 +134,19 @@ cd web; npm test ; cd ..\mall-frontend; npm test                      # 两个�
 mvn -f analytics-server/pom.xml test "-Dmetric.it=true"
 
 # 页面级验收（Playwright，需两个进程已启动）
-python .verify/r7-4-dom.py          # 分析端 8 页
+python .verify/r7-4-dom.py          # 分析端 9 个 URL（overview + 其余 8 条路由）
 python .verify/r7-4-mall-dom.py     # 商城端
 ```
 
+最近一次实测（2026-09-11）：`analytics-server` 303/303、`spark-jobs` 46/46、`web` 74/74、
+`.verify/r8-accept.ps1` 53/53、`.verify/r8-evidence-truncation-proof.ps1` 12/12、
+`.verify/r7-4-dom.py` 22/22、`.verify/r7-4-mall-dom.py` 17/17；商城 54/54 见
+`docs/remediation-status.md` R7-4 条。数字均取自磁盘上的 surefire / 报告 JSON，不做估算。
+
 ## 8. 集群模式（SINGLE_NODE / REMOTE_CLUSTER，待环境实跑）
 
-1. 部署 Hadoop 3.3.x + Hive 3.1.x + Spark 3.5（版本以 `docs/compatibility-matrix.md` 实测为准）。
+1. 部署 Hadoop 3.3.x + Hive 3.1.x + Spark 3.5（`docs/compatibility-matrix.md` 的「集群部署候选版本
+   （待环境验证后回填）」一节尚未实跑，选定版本后需自行验证兼容性）。
 2. 执行数仓 DDL：`warehouse/ddl/00-ods.sql` ~ `04-ads.sql`（含建库）。
 3. 配置 Flume：按 `ingestion/flume/flume-taildir.conf` 修改路径后启动（Taildir 断点采集 → HDFS `/landing`）。
 4. 构建作业包：`mvn -f spark-jobs/pom.xml package`（jar 不含 Spark 依赖）。
