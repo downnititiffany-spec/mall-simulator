@@ -214,8 +214,13 @@ public class LocalFileIngestor {
         }
     }
 
-    /** Windows 文件身份：创建时间戳（文件删除重建即变化 → 新版本从头读） */
-    private static String fileIdentity(Path file) {
+    /**
+     * Windows 文件身份：创建时间戳（文件删除重建即变化 → 新版本从头读）。
+     *
+     * <p>包内共享（B-08 / D-022 候选①）：{@link IngestionService#status()} 判定"自上次采集以来是否新增"
+     * 必须与采集端用**同一套**身份与偏移语义，故此处是唯一所有者，不另写第二份实现。</p>
+     */
+    static String fileIdentity(Path file) {
         try {
             java.nio.file.attribute.BasicFileAttributes attrs =
                     Files.readAttributes(file, java.nio.file.attribute.BasicFileAttributes.class,
@@ -232,6 +237,74 @@ public class LocalFileIngestor {
         } catch (IOException e) {
             return 0;
         }
+    }
+
+    /**
+     * 文件当前**可消费**的结束偏移 = 最后一个换行符之后的字节数（与 {@link #ingestFile} 的 Taildir 语义同源）。
+     *
+     * <p>末尾没有换行的残行不计入：采集端会把残行留在原地等文件增长，因此
+     * "文件长度 &gt; 断点偏移"**并不等于**"有新数据可读"（DEF-12）。</p>
+     */
+    static long consumableEnd(Path file) {
+        long size = sizeOf(file);
+        if (size <= 0) {
+            return 0;
+        }
+        ByteBuffer buf = ByteBuffer.allocate(64 * 1024);
+        try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ)) {
+            long pos = size;
+            while (pos > 0) {
+                int len = (int) Math.min(buf.capacity(), pos);
+                long start = pos - len;
+                buf.clear();
+                buf.limit(len);
+                channel.position(start);
+                int read = 0;
+                while (read < len) {
+                    int n = channel.read(buf);
+                    if (n < 0) {
+                        break;
+                    }
+                    read += n;
+                }
+                byte[] bytes = buf.array();
+                for (int i = len - 1; i >= 0; i--) {
+                    if (bytes[i] == LF) {
+                        return start + i + 1;
+                    }
+                }
+                pos = start;
+            }
+        } catch (IOException e) {
+            log.warn("consumableEnd {} 读取失败，按文件长度处理: {}", file.getFileName(), e.getMessage());
+            return size;
+        }
+        return 0;   // 整个文件没有任何换行 → 没有完整行
+    }
+
+    /**
+     * 该文件是否还有**可被本次采集消费**的数据（B-08 / D-022 候选①：数据源停机时的"最小明示"）。
+     *
+     * <p>这里是"什么算有新数据"的**唯一所有者**，判定与 {@link #ingestFile} 同源：
+     * 文件从未采集 / 身份（创建时间）变化 / 长度小于断点 → 采集端会从头读取，此时只要存在完整行即为有新数据；
+     * 否则比较 {@link #consumableEnd} 与断点偏移，**严格大于**才算有新数据（尾部残行不算，DEF-12）。</p>
+     */
+    public boolean hasConsumableData(Path file, long runtimeProfileId) {
+        long consumable = consumableEnd(file);
+        if (consumable <= 0) {
+            return false;   // 空文件，或整个文件只有一条没有换行的残行
+        }
+        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, file.toAbsolutePath().toString());
+        if (ckpt == null) {
+            return true;    // 从未采集过
+        }
+        Long next = ckpt.getNextOffset();
+        boolean newVersion = !fileIdentity(file).equals(ckpt.getFileIdentity())
+                || next == null || sizeOf(file) < next;
+        if (newVersion) {
+            return true;    // 采集端按新版本从头读 → 有完整行即有新数据
+        }
+        return consumable > next;
     }
 
     private String schemaVersionOf(String jsonLine) {

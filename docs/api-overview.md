@@ -103,8 +103,8 @@
 
 | 方法 | 路径 | 权限 | 说明 |
 |---|---|---|---|
-| GET | /api/v1/ingestion/status | ops:log:view | 采集状态（待采文件/断点/最新批次） |
-| POST | /api/v1/ingestion/runs | pipeline:run | 手动采集一轮（断点续采） |
+| GET | /api/v1/ingestion/status | ops:log:view | 采集状态（待采文件/断点/最新批次）。**B-08/D-022（2026-09-11）**：另有 `newFileCount`=**还有可采集完整行**的文件数（≠ 整目录累计 `pendingFiles`，也≠ 已采完的文件）与 `lastArrivalAt`=landing 目录最新文件到达时间（无文件时为 `null`）；两者共同回答"平台多久没收到数据"，**不代表**数据源存活判定（不探活生产者，D-002） |
+| POST | /api/v1/ingestion/runs | pipeline:run | 手动采集一轮（断点续采）。**B-08/D-022**：响应增 `noNewData`——本次**没读到任何新字节**即 `true`（此时 `recordCount=0`、批次仍如实记 `SUCCESS`）；尾部无换行的残行按 Taildir 语义**不算**新数据、等待写全（DEF-12） |
 | GET | /api/v1/ingestion/batches | ops:log:view | 批次列表 |
 | POST | /api/v1/pipeline-runs | pipeline:run | 创建流水线（**8 阶段**：WAIT_LANDING→INIT_SCHEMA→LOAD_ODS→BUILD_DWD→BUILD_DWS→BUILD_ADS→QUALITY_CHECK→PUBLISH_METRIC；支持 Idempotency-Key） |
 | GET | /api/v1/pipeline-runs/{id} | ops:log:view | 阶段明细（含 evidence/records/errorCode） |

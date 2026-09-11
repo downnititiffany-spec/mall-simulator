@@ -1,10 +1,12 @@
 package com.graduation.analytics.ingestion;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.ingestion.entity.FileCheckpoint;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
+import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -35,9 +38,15 @@ class IngestionServiceStatusTest {
     private final FileCheckpointMapper checkpointMapper = mock(FileCheckpointMapper.class);
     private final RuntimeProfileService runtimeProfileService = mock(RuntimeProfileService.class);
 
+    /** 状态总览的"新数据"判定唯一所有者在采集器里（DEF-12），因此这里注入真实采集器（依赖全部是 mock）。 */
+    private LocalFileIngestor ingestor() {
+        return new LocalFileIngestor(checkpointMapper, mock(QuarantineRecordMapper.class),
+                mock(EventContractValidator.class), new ObjectMapper());
+    }
+
     private IngestionService service() {
         return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class), checkpointMapper,
-                null, null, runtimeProfileService, new ObjectMapper());
+                ingestor(), null, runtimeProfileService, new ObjectMapper());
     }
 
     @Test
@@ -65,6 +74,114 @@ class IngestionServiceStatusTest {
         assertThat((Long) status.get("pendingBytes")).isPositive();
         assertThat(status.get("checkpointFiles")).isEqualTo(7L);
         assertThat(status.get("latestBatch")).isNull();
+        // B-08 / D-022 候选①：从未采集过（断点缺失）→ 两个文件都算"新增"；到达时间如实给出
+        assertThat(status.get("newFileCount")).isEqualTo(2L);
+        assertThat(status.get("lastArrivalAt")).isNotNull();
+        assertThat(LocalDateTime.parse((String) status.get("lastArrivalAt"))).isBefore(LocalDateTime.now().plusMinutes(1));
+    }
+
+    @Test
+    @DisplayName("B-08：已采完的文件不重复计入 newFileCount，但仍计入 pendingFiles（累计语义不变）")
+    void countsOnlyFilesWithUnreadContentAsNew(@TempDir Path landingRoot) throws IOException {
+        Path events = Files.createDirectories(landingRoot.resolve("events"));
+        Path file = events.resolve("events-001.jsonl");
+        Files.writeString(file, "{\"eventId\":\"e1\"}\n", StandardCharsets.UTF_8);
+        long size = Files.size(file);
+
+        RuntimeProfile profile = new RuntimeProfile();
+        profile.setId(1L);
+        profile.setLandingUri(landingRoot.toUri().toString());
+        when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
+        when(batchMapper.selectOne(any())).thenReturn(null);
+        // 断点已推进到文件末尾，且文件身份未变（与 LocalFileIngestor 同源的判定）
+        FileCheckpoint done = new FileCheckpoint();
+        done.setRuntimeProfileId(1L);
+        done.setFilePath(file.toAbsolutePath().toString());
+        done.setFileIdentity(LocalFileIngestor.fileIdentity(file));
+        done.setNextOffset(size);
+        when(checkpointMapper.selectOne(any())).thenReturn(done);
+
+        Map<String, Object> status = service().status();
+
+        assertThat(status.get("newFileCount")).isEqualTo(0L);
+        assertThat(status.get("pendingFiles")).isEqualTo(1L);
+
+        // 追加新行后（断点 < 文件长度）→ 重新计为"新增"
+        Files.writeString(file, "{\"eventId\":\"e2\"}\n", StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.APPEND);
+        Map<String, Object> afterAppend = service().status();
+        assertThat(afterAppend.get("newFileCount")).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("B-08：文件被删除重建（身份变化）同样算新增——与采集端「从头读」语义一致")
+    void recreatedFileCountsAsNew(@TempDir Path landingRoot) throws IOException {
+        Path events = Files.createDirectories(landingRoot.resolve("events"));
+        Path file = events.resolve("events-001.jsonl");
+        Files.writeString(file, "{\"eventId\":\"e1\"}\n", StandardCharsets.UTF_8);
+
+        RuntimeProfile profile = new RuntimeProfile();
+        profile.setId(1L);
+        profile.setLandingUri(landingRoot.toUri().toString());
+        when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
+        when(batchMapper.selectOne(any())).thenReturn(null);
+        FileCheckpoint stale = new FileCheckpoint();
+        stale.setRuntimeProfileId(1L);
+        stale.setFilePath(file.toAbsolutePath().toString());
+        stale.setFileIdentity("旧的创建时间戳");
+        stale.setNextOffset(Files.size(file));
+        when(checkpointMapper.selectOne(any())).thenReturn(stale);
+
+        Map<String, Object> status = service().status();
+
+        assertThat(status.get("newFileCount")).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("B-08：空文件不算新增（没有内容可读）")
+    void emptyFileIsNotNew(@TempDir Path landingRoot) throws IOException {
+        Path events = Files.createDirectories(landingRoot.resolve("events"));
+        Files.writeString(events.resolve("events-001.jsonl"), "", StandardCharsets.UTF_8);
+
+        RuntimeProfile profile = new RuntimeProfile();
+        profile.setId(1L);
+        profile.setLandingUri(landingRoot.toUri().toString());
+        when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
+        when(batchMapper.selectOne(any())).thenReturn(null);
+
+        Map<String, Object> status = service().status();
+
+        assertThat(status.get("newFileCount")).isEqualTo(0L);
+        assertThat(status.get("lastArrivalAt")).isNotNull();   // 文件存在 → 有到达时间
+    }
+
+    @Test
+    @DisplayName("DEF-12：尾部无换行的残行不算新增数据（残行永远消费不掉，否则 newFileCount 永久非零）")
+    void partialTailLineIsNotNewData(@TempDir Path landingRoot) throws IOException {
+        Path events = Files.createDirectories(landingRoot.resolve("events"));
+        Path file = events.resolve("events-001.jsonl");
+        Files.writeString(file, "{\"eventId\":\"e1\"}\n", StandardCharsets.UTF_8);
+        long completeBoundary = Files.size(file);
+        // 写入一条没有换行的残行（模拟写入中途被杀 / 文件尚未写完）
+        Files.writeString(file, "{\"eventId\":\"e2\"", StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.APPEND);
+        assertThat(LocalFileIngestor.consumableEnd(file)).isEqualTo(completeBoundary);
+
+        RuntimeProfile profile = new RuntimeProfile();
+        profile.setId(1L);
+        profile.setLandingUri(landingRoot.toUri().toString());
+        when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
+        when(batchMapper.selectOne(any())).thenReturn(null);
+        FileCheckpoint done = new FileCheckpoint();
+        done.setRuntimeProfileId(1L);
+        done.setFilePath(file.toAbsolutePath().toString());
+        done.setFileIdentity(LocalFileIngestor.fileIdentity(file));
+        done.setNextOffset(completeBoundary);           // 断点停在完整行边界，落后于文件长度
+        when(checkpointMapper.selectOne(any())).thenReturn(done);
+
+        assertThat(service().status().get("newFileCount")).isEqualTo(0L);
+
+        // 文件继续增长、残行补全 → 才重新算"有新数据"
+        Files.writeString(file, "}\n", StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.APPEND);
+        assertThat(service().status().get("newFileCount")).isEqualTo(1L);
     }
 
     @Test
@@ -81,6 +198,8 @@ class IngestionServiceStatusTest {
         assertThat(status.get("eventsDir")).isNull();
         assertThat(status.get("pendingFiles")).isEqualTo(0L);
         assertThat(status.get("pendingBytes")).isEqualTo(0L);
+        assertThat(status.get("newFileCount")).isEqualTo(0L);
+        assertThat(status.get("lastArrivalAt")).isNull();
     }
 
     @Test

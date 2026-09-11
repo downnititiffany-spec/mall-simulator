@@ -163,6 +163,7 @@ foreach ($p in $progs) {
 
 # ── 5. 无数据源：停商城 + 停生成器，平台必须仍可启停/登录/读历史，并对采集给出明确答复
 Write-Host '[5] 无数据源时的平台行为（停商城 + 停生成器）'
+$gateFail = $false
 Stop-Prog ($progs | Where-Object Name -eq 'reference-mall') | Out-Null
 Stop-Prog ($progs | Where-Object Name -eq 'synthetic-data-generator') | Out-Null
 $plat = $progs | Where-Object Name -eq 'analytics-platform'
@@ -193,14 +194,62 @@ foreach ($probe in @(
     Note 'nodatasource' $probe.n "HTTP $code FAILED: $($_.Exception.Message)"
   }
 }
+# B-08 夹具：往 landing/events 放一个**当前可采集**的小文件（验收夹具，不是生产者产出——
+# 商城与生成器此刻都已停机）。这样"第一次采集有新数据 / 第二次采集无新数据"的对照不依赖
+# landing 目录里恰好剩着什么，脚本可重复执行（DEF-12 的教训：残行会让残留状态不可信）。
+$eventsDir = Join-Path $root 'landing\events'
+$fixtureOk = $false
 try {
-  $rr = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8091/api/v1/ingestion/runs' -Headers $hdr -TimeoutSec 60
+  New-Item -ItemType Directory -Force -Path $eventsDir | Out-Null
+  $fixtureName = "b08-gate-$stamp.jsonl"
+  $fx = @(
+    '{"event_id":"b08-gate-001","event_type":"user_registered","event_time":"2026-09-01T10:00:00+08:00","ingest_time":"2026-09-01T10:00:01+08:00","source_system":"mock-mall","schema_version":"1.0","trace_id":"b08-trace-001","payload":{"user_id":"9001","age_group":"25-34","member_level":"gold"}}'
+    '{"event_id":"b08-gate-002","event_type":"user_registered","event_time":"2026-09-01T10:05:00+08:00","ingest_time":"2026-09-01T10:05:01+08:00","source_system":"mock-mall","schema_version":"1.0","trace_id":"b08-trace-002","payload":{"user_id":"9002","age_group":"35-44","member_level":"silver"}}'
+  )
+  # 显式无 BOM：BOM 会让首行 JSON 解析失败
+  [System.IO.File]::WriteAllLines((Join-Path $eventsDir $fixtureName), $fx, (New-Object System.Text.UTF8Encoding($false)))
+  $fixtureOk = $true
+  Note 'b08' '夹具' "$fixtureName 已写入（2 条 user_registered，均为契约合法事件）"
+} catch {
+  Note 'b08' '夹具' "写入失败: $($_.Exception.Message)"
+  $gateFail = $true
+}
+$runs1NoNew = $null
+try {
+  $sw = [Diagnostics.Stopwatch]::StartNew()
+  $rr = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8091/api/v1/ingestion/runs' -Headers $hdr -TimeoutSec 300
+  $sw.Stop()
+  $runs1NoNew = $rr.data.noNewData
   $body = ($rr | ConvertTo-Json -Depth 4 -Compress)
   if ($body.Length -gt 600) { $body = $body.Substring(0, 600) + '…' }
-  Note 'nodatasource' 'POST ingestion/runs（无新数据源）' "HTTP 200 $body"
+  Note 'nodatasource' 'POST ingestion/runs 第1次（数据源已停机）' "HTTP 200 用时 $([math]::Round($sw.Elapsed.TotalSeconds,1))s $body"
+  if ($fixtureOk) {
+    Note 'b08' 'runs1（有夹具数据）' "noNewData=$($rr.data.noNewData)（期望 False） recordCount=$($rr.data.recordCount)（期望 2） quarantineCount=$($rr.data.quarantineCount)（期望 0）"
+  }
 } catch {
   $code = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { -1 }
-  Note 'nodatasource' 'POST ingestion/runs（无新数据源）' "HTTP $code FAILED: $($_.Exception.Message)"
+  Note 'nodatasource' 'POST ingestion/runs 第1次（数据源已停机）' "HTTP $code FAILED: $($_.Exception.Message)"
+  $gateFail = $true
+}
+# B-08（D-022 最小明示）：数据源停机且上一步已排空 → 再采集必须 noNewData=true，状态本身可自证"没有新字节"
+try {
+  $rr2 = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8091/api/v1/ingestion/runs' -Headers $hdr -TimeoutSec 300
+  $st = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8091/api/v1/ingestion/status' -Headers $hdr
+  Note 'b08' 'runs2.noNewData' "$($rr2.data.noNewData)（期望 True）"
+  Note 'b08' 'runs2.status/recordCount/quarantineCount' "$($rr2.data.status) / $($rr2.data.recordCount) / $($rr2.data.quarantineCount)"
+  Note 'b08' 'status.newFileCount' "$($st.data.newFileCount)（期望 0）"
+  Note 'b08' 'status.lastArrivalAt' "$($st.data.lastArrivalAt)"
+  Note 'b08' 'status.pendingFiles/pendingBytes/checkpointFiles' "$($st.data.pendingFiles) / $($st.data.pendingBytes) / $($st.data.checkpointFiles)"
+  $bad = @()
+  if ($fixtureOk -and $runs1NoNew -ne $false) { $bad += '有夹具数据时 runs1.noNewData 不为 false' }
+  if ($rr2.data.noNewData -ne $true) { $bad += 'noNewData 不为 true' }
+  if ($fixtureOk -and $rr2.data.recordCount -ne 0) { $bad += 'runs2.recordCount 不为 0' }
+  if ($st.data.newFileCount -ne 0) { $bad += 'newFileCount 不为 0' }
+  if (-not $st.data.lastArrivalAt) { $bad += 'lastArrivalAt 为空' }
+  if ($bad.Count -eq 0) { Note 'b08' '自检' 'PASS' } else { Note 'b08' '自检' "FAIL: $($bad -join '; ')"; $gateFail = $true }
+} catch {
+  Note 'b08' '自检' "FAIL: $($_.Exception.Message)"
+  $gateFail = $true
 }
 Note 'nodatasource' 'mall:8090 / generator:8092 open' "$(PortOpen 8090) / $(PortOpen 8092)"
 
@@ -231,6 +280,10 @@ $lines.Add('')
 $lines.Add('| step | what | value |')
 $lines.Add('|---|---|---|')
 foreach ($o in $obs) { $lines.Add("| $($o.step) | $($o.what) | $($o.value -replace '\|', '\|') |") }
+$lines.Add('')
+$lines.Add("门禁自检（B-08 无新字节语义）：$(if ($gateFail) { 'FAIL' } else { 'PASS' })")
 $lines | Set-Content $md -Encoding utf8
 Write-Host "报告：$md"
 Write-Host "原始观测：$json"
+if ($gateFail) { Write-Host '[FAIL] B-08 门禁自检未通过，见报告'; exit 5 }
+Write-Host '[PASS] B-08 门禁自检通过'

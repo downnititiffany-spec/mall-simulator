@@ -55,10 +55,17 @@ public class IngestionService {
     private final RuntimeProfileService runtimeProfileService;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 一轮采集的结果。
+     *
+     * <p>B-08 / D-022 候选①（最小明示）：{@code noNewData=true} 表示本次**没有读到任何新字节**
+     * ——数据源停机时平台据此明示"本次无新数据（数据源未产出）"，而不是只回一个 {@code SUCCESS + 0 条}。
+     * 判定口径不变（批次状态仍按错误/隔离行决定），不探活生产者、不新增外部依赖。</p>
+     */
     public record RunResult(Long batchId, String batchNo, String status,
                             long recordCount, long quarantineCount, long errorCount,
                             int fileCount, long acceptedBytes, String acceptedDir,
-                            String quarantineDir, String manifestPath) {
+                            String quarantineDir, String manifestPath, boolean noNewData) {
     }
 
     /**
@@ -70,8 +77,9 @@ public class IngestionService {
         long runtimeProfileId = active.getId();
         Path landingRoot = LandingUri.resolve(active.getLandingUri());
         Path eventsDir = landingRoot.resolve("events");
-        // 批次号带随机后缀，避免同秒多次运行撞唯一键
-        String batchNo = "ing-" + BATCH_NO.format(LocalDateTime.now())
+        // 批次号带随机后缀，避免同秒多次运行撞唯一键；时间取**注入的业务时间源**（§20.3 不把系统当前时间
+        // 当业务时间），与批次 createdAt（startedAt，同一时间源）保持一致，冻结契约的 ^ing-\d{14}-[0-9a-f]{8}$ 不变
+        String batchNo = "ing-" + BATCH_NO.format(eventClock.nowLdt())
                 + "-" + java.util.UUID.randomUUID().toString().substring(0, 8);
 
         IngestionBatch batch = new IngestionBatch();
@@ -99,6 +107,7 @@ public class IngestionService {
         CRC32 checksum = new CRC32();
         var schemaVersions = new TreeMap<String, Boolean>();
         var files = new ArrayList<Map<String, Object>>();
+        boolean anyNewBytes = false;   // B-08：本次是否读到过新字节（含新增/重建/追加三种情形）
         LocalDateTime startedAt = eventClock.nowLdt();
         try {
             Files.createDirectories(acceptedDir);
@@ -114,6 +123,11 @@ public class IngestionService {
                 try {
                     var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId,
                             acceptedDir, quarantineDir, trace, checksum);
+                    // endOffset > startOffset ⇒ 真实推进了断点（有新内容可读），与 fileCount 的
+                    // "产出了记录"是两件事：全是坏行的文件同样说明数据源在产出（B-08 / D-022）
+                    if (res.endOffset() > res.startOffset()) {
+                        anyNewBytes = true;
+                    }
                     if (res.collected() > 0 || res.quarantined() > 0) {
                         recordCount += res.collected();
                         quarantineCount += res.quarantined();
@@ -157,11 +171,12 @@ public class IngestionService {
                 recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files);
         String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
 
-        log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={}",
-                batchNo, batch.getStatus(), recordCount, quarantineCount, errorCount, fileCount, acceptedBytes);
+        log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={} noNewData={}",
+                batchNo, batch.getStatus(), recordCount, quarantineCount, errorCount, fileCount, acceptedBytes,
+                !anyNewBytes);
         return new RunResult(batch.getId(), batchNo, batch.getStatus(), recordCount,
                 quarantineCount, errorCount, fileCount, acceptedBytes,
-                acceptedDir.toString(), quarantineDir.toString(), manifestUri);
+                acceptedDir.toString(), quarantineDir.toString(), manifestUri, !anyNewBytes);
     }
 
     private String buildManifest(String batchId, long runtimeProfileId, String batchNo,
@@ -204,7 +219,7 @@ public class IngestionService {
         }
     }
 
-    /** 采集状态总览：events 待采文件、最近批次、断点数 */
+    /** 采集状态总览：events 待采文件、自上次采集以来的新增文件、最近到达时间、最近批次、断点数 */
     public Map<String, Object> status() {
         // Landing 根与 runOne 同源：只来自 ACTIVE RuntimeProfile.landingUri（§8.3 / V2.1 §3.4-4：
         // 平台不得引用 mall.* 配置键）。无 ACTIVE 环境时如实报告 NO_ACTIVE，不读取任何其它路径。
@@ -223,11 +238,28 @@ public class IngestionService {
         Path eventsDir = landingRoot == null ? null : landingRoot.resolve("events");
         long pendingFiles = 0;
         long pendingBytes = 0;
+        // B-08 / D-022 候选①（最小明示）：D-016 的 pendingFiles/pendingBytes 是**整目录累计值**，
+        // 说不清"数据源还在不在产出"。这里补两个可与采集端对齐的观测字段：
+        //   newFileCount = 自上次采集以来**还有可采集完整行**的文件数（判定唯一所有者为
+        //                  LocalFileIngestor.hasConsumableData，含尾部残行不算，DEF-12）；
+        //   lastArrivalAt = landing 目录内最新文件的到达（最后修改）时间，无文件时如实为 null。
+        // 只补观测，不改判定、不加表、不探活生产者（平台依旧不知道数据源进程的死活，只知道自己多久没收到数据）。
+        long newFileCount = 0;
+        LocalDateTime lastArrivalAt = null;
         if (eventsDir != null && Files.isDirectory(eventsDir)) {
             try (Stream<Path> files = Files.list(eventsDir)) {
                 for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".jsonl")).toList()) {
                     pendingFiles++;
-                    pendingBytes += Files.size(f);
+                    long size = Files.size(f);
+                    pendingBytes += size;
+                    LocalDateTime arrivedAt = LocalDateTime.ofInstant(
+                            Files.getLastModifiedTime(f).toInstant(), java.time.ZoneId.systemDefault());
+                    if (lastArrivalAt == null || arrivedAt.isAfter(lastArrivalAt)) {
+                        lastArrivalAt = arrivedAt;
+                    }
+                    if (ingestor.hasConsumableData(f, active.getId())) {
+                        newFileCount++;
+                    }
                 }
             } catch (IOException e) {
                 log.warn("events dir scan failed: {}", e.getMessage());
@@ -243,6 +275,8 @@ public class IngestionService {
         result.put("eventsDir", eventsDir == null ? null : eventsDir.toString());
         result.put("pendingFiles", pendingFiles);
         result.put("pendingBytes", pendingBytes);
+        result.put("newFileCount", newFileCount);
+        result.put("lastArrivalAt", lastArrivalAt == null ? null : lastArrivalAt.toString());
         if (latest != null) {
             Map<String, Object> latestInfo = new LinkedHashMap<>();
             latestInfo.put("batchId", latest.getId());
