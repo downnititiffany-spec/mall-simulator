@@ -42,6 +42,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -368,8 +369,11 @@ public class PipelineService {
             String datePrefix = businessDate.substring(0, 4) + "-" + businessDate.substring(4, 6)
                     + "-" + businessDate.substring(6, 8);
             List<EventEnvelope> events = new ArrayList<>();
+            // DEF-04：订单总额索引覆盖**整批**（不受业务日切片限制），供金额对账使用。
+            // 电商订单跨日支付是常态（T 日下单、T+1 日支付），只用切片会对真实数据误判对账失败。
+            Map<String, BigDecimal> batchOrderTotals = new HashMap<>();
             if (acceptedDir != null && Files.isDirectory(acceptedDir)) {
-                readAcceptedEvents(acceptedDir, datePrefix, events);
+                readAcceptedEvents(acceptedDir, datePrefix, events, batchOrderTotals);
             }
             // R6-11：本地 Java **不再**计算任何 ADS 指标（删除 MetricCalculator / local-calculator 路径）。
             // events 仅服务于两处非计算职责：LOAD_ODS 空数据预检（快速失败，避免白跑 Spark）
@@ -475,8 +479,11 @@ public class PipelineService {
             stage(run.getId(), "QUALITY_CHECK", completedStages, () -> {
                 Map<String, Object> evidence = new LinkedHashMap<>();
                 // ① 内联规则（§5.4.1）：金额对账阻断，空值率/枚举白名单/event_id 唯一为记录项
-                QualityChecker.QualitySummary quality = qualityChecker.check(events, run.getId());
+                QualityChecker.QualitySummary quality =
+                        qualityChecker.check(events, run.getId(), batchOrderTotals);
                 persistQuality(run.getId(), snapshotIdRef, "LANDING", quality.results());
+                evidence.put("batchOrderTotalsSize", batchOrderTotals.size());
+                evidence.put("businessDayEvents", events.size());
                 evidence.put("landingRules", quality.results().stream().map(r -> Map.of(
                         "ruleCode", String.valueOf(r.getRuleCode()),
                         "checkCount", r.getCheckCount(),
@@ -1076,7 +1083,14 @@ public class PipelineService {
     }
 
     /** 读取 accepted 目录下补给业务日（datePrefix）的 jsonl 事件（§9.1 只读 accepted） */
-    private void readAcceptedEvents(Path acceptedDir, String datePrefix, List<EventEnvelope> out) {
+    /**
+     * 读取 accepted 批次事件。
+     *
+     * @param out              只收**业务日切片**的事件（§5.3.3 只装载业务日事件）
+     * @param batchOrderTotals 收**整批**订单总额（order_id → total_amount），供金额对账跨日使用（DEF-04）
+     */
+    private void readAcceptedEvents(Path acceptedDir, String datePrefix, List<EventEnvelope> out,
+                                    Map<String, BigDecimal> batchOrderTotals) {
         try (Stream<Path> list = Files.list(acceptedDir)) {
             for (Path f : list.filter(p -> p.getFileName().toString().endsWith(".jsonl")).sorted().toList()) {
                 for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
@@ -1085,6 +1099,14 @@ public class PipelineService {
                     }
                     try {
                         EventEnvelope envelope = EventEnvelope.fromJson(line, objectMapper);
+                        if (EventContract.ORDER_CREATED.equals(envelope.eventType())) {
+                            String orderId = envelope.payload().get("order_id") == null ? ""
+                                    : String.valueOf(envelope.payload().get("order_id"));
+                            if (!orderId.isEmpty()) {
+                                QualityChecker.putTotal(batchOrderTotals, orderId,
+                                        envelope.payload().get("total_amount"));
+                            }
+                        }
                         if (envelope.eventTime() != null && envelope.eventTime().startsWith(datePrefix)) {
                             out.add(envelope);
                         }

@@ -131,8 +131,8 @@ class PipelineServiceTest {
         when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
                 .thenAnswer(inv -> successExecution(inv.getArgument(2)));
 
-        // 质量检查默认通过（个别测试覆盖为失败）
-        when(qualityChecker.check(any(), anyLong()))
+        // 质量检查默认通过（个别测试覆盖为失败）；DEF-04 后生产路径走三参重载（带整批订单总额索引）
+        when(qualityChecker.check(any(), anyLong(), any()))
                 .thenReturn(new QualityChecker.QualitySummary(List.of(mock(DataQualityResult.class)), true));
 
         service = new PipelineService(runMapper, stageMapper, qualityMapper, qualityChecker,
@@ -340,7 +340,7 @@ class PipelineServiceTest {
         writeLanding("accepted/2026-09-01",
                 event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"),
                 event("e2", "order_paid", "2026-09-01T10:05:00", "{\"order_id\":\"o1\",\"amount\":\"99\"}"));
-        when(qualityChecker.check(any(), anyLong()))
+        when(qualityChecker.check(any(), anyLong(), any()))
                 .thenReturn(new QualityChecker.QualitySummary(List.of(mock(DataQualityResult.class)), false));
 
         PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",

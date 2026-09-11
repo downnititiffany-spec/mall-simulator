@@ -27,6 +27,9 @@ import java.util.Map;
 @Slf4j
 public class SparkStageExecutorFactory {
 
+    /** 本地档案钉死的 driver 地址（见 confsFor 中 DEF-01 说明） */
+    private static final String LOOPBACK = "127.0.0.1";
+
     private final JobSubmitterFactory submitterFactory;
     private final SparkJobRunMapper jobRunMapper;
     private final long maxWaitMs;
@@ -69,6 +72,12 @@ public class SparkStageExecutorFactory {
         Map<String, String> confs = new LinkedHashMap<>();
         confs.put("spark.sql.warehouse.dir", fileUri(warehouseDir));
         confs.put("spark.sql.session.timeZone", "Asia/Shanghai");
+        // DEF-01：本机 hosts 把本机 IP(172.16.208.83) 反解为 host.docker.internal，Spark 自动探测的
+        // driver host 随之变成该名字；local 模式下 executor 需从 spark://host.docker.internal:<port>/jars/
+        // 拉作业 jar，连接不通即无限阻塞在 SparkContext 初始化（driver 僵死，平台只能等满超时）。
+        // 本地档案显式钉死回环地址，与 hosts/DNS 现状解耦（集群档案不受影响）。
+        confs.put("spark.driver.host", LOOPBACK);
+        confs.put("spark.driver.bindAddress", LOOPBACK);
         // 嵌入式 Derby 元数据库固定路径：跨 run / 跨进程一致（sci 建表与 odl 装载看到同一套表）
         confs.put("spark.hadoop.javax.jdo.option.ConnectionURL",
                 "jdbc:derby:" + absolute(metastoreDir).replace('\\', '/') + ";create=true");

@@ -92,12 +92,45 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
             }
             if (logFile != null && Files.exists(logFile)) {
                 String content = Files.readString(logFile, StandardCharsets.UTF_8);
-                return content.length() > 20000 ? content.substring(content.length() - 20000) : content;
+                return tailWithJobResult(content);
             }
             return "(日志文件不存在: " + logFile + ")";
         } catch (IOException e) {
             return "(读取日志失败: " + e.getMessage() + ")";
         }
+    }
+
+    /** 回传日志窗口大小（字符） */
+    static final int LOG_TAIL_CHARS = 20000;
+    /** JobResult 结果行起始标记（spark-jobs 契约 §24.5：jobCode 为首字段） */
+    static final String JOB_RESULT_MARKER = "{\"jobCode\"";
+
+    /**
+     * 返回日志文本，且**必须包含完整的 JobResult 结果行**。
+     *
+     * <p>DEF-03（2026-09-11 实测）：结果行可能极长——run 34 的 LOAD_ODS 结果行实测 **154 365 字符**
+     * （`outputPartitions` 逐 dt/hour 分区列出 1000 行的落点）。因此：
+     * ① 只取尾部 20KB 会把结果行整行挤掉；② 即使从结果行起点截取、再截断到 20KB，也会把 JSON 截断成
+     * 非法 JSON（`JobResultParser` 的 `readTree` 抛错被忽略 → 解析为空）→ 平台误判"未找到 JobResult 结果行"
+     * 并空等到阶段超时，作业本身其实已 SUCCESS。
+     *
+     * <p>规则：结果行整体在尾部窗口内时按原样返回尾部窗口（既有行为不变）；否则返回该结果行本身
+     * （从行首到行尾，长度不设上限，完整性优先）。
+     */
+    static String tailWithJobResult(String content) {
+        int windowStart = Math.max(0, content.length() - LOG_TAIL_CHARS);
+        String tail = content.substring(windowStart);
+        if (content.length() <= LOG_TAIL_CHARS) {
+            return content;
+        }
+        int marker = content.lastIndexOf(JOB_RESULT_MARKER);
+        if (marker < 0 || marker >= windowStart) {
+            // 无结果行，或结果行整体已在窗口内（窗口延伸到文本末尾，行必然完整）
+            return tail;
+        }
+        int lineEnd = content.indexOf('\n', marker);
+        int resultEnd = lineEnd < 0 ? content.length() : lineEnd;
+        return content.substring(marker, resultEnd);
     }
 
     /** R6-12：日志文件绝对路径（落 spark_job_run.log_uri，可溯源） */
