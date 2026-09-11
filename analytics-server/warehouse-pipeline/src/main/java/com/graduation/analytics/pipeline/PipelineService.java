@@ -3,6 +3,7 @@ package com.graduation.analytics.pipeline;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.common.LandingUri;
 import com.graduation.analytics.contracts.EventContract;
 import com.graduation.analytics.contracts.EventEnvelope;
 import com.graduation.analytics.contracts.EventClock;
@@ -332,7 +333,7 @@ public class PipelineService {
             RuntimeProfile profile = runtimeProfileService.get(run.getRuntimeProfileId());
             RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile);
             SparkStageExecutor executor = stageExecutorFactory.create(snapshot);
-            Path landingRoot = parseLandingRoot(profile.getLandingUri());
+            Path landingRoot = LandingUri.resolve(profile.getLandingUri());
 
             // §13.4 恢复：重试时已成功阶段不重复执行（阶段记录不再重复写入）
             Set<String> completedStages = stageMapper.selectList(new LambdaQueryWrapper<PipelineStageRun>()
@@ -1042,16 +1043,6 @@ public class PipelineService {
         return out;
     }
 
-    /** 解析 profile.landingUri（file:///D:/... 或 file://./landing）→ 本地 Path */
-    static Path parseLandingRoot(String landingUri) {
-        String p = landingUri == null ? "./landing" : landingUri.trim();
-        if (p.startsWith("file:///")) {
-            p = p.substring("file://".length());
-        } else if (p.startsWith("file://")) {
-            p = p.substring("file://".length());
-        }
-        return Paths.get(p).toAbsolutePath();
-    }
 
     private static String buildKey(Long profileId, String code, LocalDateTime businessTime, String version) {
         return profileId + "|" + code + "|" + businessTime + "|" + (version == null ? "" : version);

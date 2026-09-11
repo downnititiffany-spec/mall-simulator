@@ -23,6 +23,7 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * RuntimeProfile 服务实现（§8.2/§8.3）。
@@ -260,15 +261,16 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
 
     @Override
     public RuntimeProfile getActive() {
-        RuntimeProfile active = profileMapper.selectOne(new LambdaQueryWrapper<RuntimeProfile>()
+        return findActive().orElseThrow(() -> new MallBizException(MallBizException.INTERNAL,
+                "尚无 ACTIVE 运行环境（请先完成激活流程，§8.3）"));
+    }
+
+    @Override
+    public Optional<RuntimeProfile> findActive() {
+        return Optional.ofNullable(profileMapper.selectOne(new LambdaQueryWrapper<RuntimeProfile>()
                 .eq(RuntimeProfile::getStatus, RuntimeProfile.STATUS_ACTIVE)
                 .orderByDesc(RuntimeProfile::getId)
-                .last("LIMIT 1"));
-        if (active == null) {
-            throw new MallBizException(MallBizException.INTERNAL,
-                    "尚无 ACTIVE 运行环境（请先完成激活流程，§8.3）");
-        }
-        return active;
+                .last("LIMIT 1")));
     }
 
     @Override

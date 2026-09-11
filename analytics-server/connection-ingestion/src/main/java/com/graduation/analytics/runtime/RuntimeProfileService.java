@@ -3,6 +3,7 @@ package com.graduation.analytics.runtime;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 运行环境服务（§8.2）：create/update/test/activate/disable/getActive。
@@ -27,6 +28,12 @@ public interface RuntimeProfileService {
 
     /** 当前唯一 ACTIVE 环境（无则抛异常） */
     RuntimeProfile getActive();
+
+    /**
+     * 当前唯一 ACTIVE 环境；无则返回空。
+     * 供只读场景使用（如采集状态总览：无 ACTIVE 环境时如实报告，不读取任何其它路径/配置键）。
+     */
+    Optional<RuntimeProfile> findActive();
 
     RuntimeProfile get(Long id);
 

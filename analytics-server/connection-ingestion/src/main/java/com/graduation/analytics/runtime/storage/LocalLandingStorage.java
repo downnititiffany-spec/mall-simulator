@@ -1,5 +1,6 @@
 package com.graduation.analytics.runtime.storage;
 
+import com.graduation.analytics.common.LandingUri;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -9,7 +10,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Stream;
@@ -30,14 +30,13 @@ public class LocalLandingStorage implements LandingStorage {
         log.info("LocalLandingStorage root = {}", this.root.toAbsolutePath());
     }
 
+    /**
+     * 配置项（不是环境档案）→ 本地根路径：配置侧允许缺省为 ./landing，
+     * 解析本身复用唯一实现 {@link LandingUri#resolve(String)}（标准 file:/// 写法可用，非法值明确报错）。
+     */
     private static Path toPath(String uriOrPath) {
-        String p = uriOrPath == null ? "./landing" : uriOrPath.trim();
-        if (p.startsWith("file:///")) {
-            p = p.substring("file://".length());
-        } else if (p.startsWith("file://")) {
-            p = p.substring("file://".length());
-        }
-        return Paths.get(p).toAbsolutePath();
+        String value = (uriOrPath == null || uriOrPath.isBlank()) ? "./landing" : uriOrPath;
+        return LandingUri.resolve(value);
     }
 
     @Override

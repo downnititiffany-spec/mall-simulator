@@ -8,12 +8,13 @@ import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.common.LandingUri;
+import com.graduation.analytics.common.MallBizException;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,7 +22,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -52,7 +52,6 @@ public class IngestionService {
     private final FileCheckpointMapper checkpointMapper;
     private final LocalFileIngestor ingestor;
     private final EventClock eventClock;
-    private final Environment environment;
     private final RuntimeProfileService runtimeProfileService;
     private final ObjectMapper objectMapper;
 
@@ -69,7 +68,7 @@ public class IngestionService {
     public RunResult runOne(TraceContext trace) {
         RuntimeProfile active = runtimeProfileService.getActive();
         long runtimeProfileId = active.getId();
-        Path landingRoot = parseLandingRoot(active.getLandingUri());
+        Path landingRoot = LandingUri.resolve(active.getLandingUri());
         Path eventsDir = landingRoot.resolve("events");
         // 批次号带随机后缀，避免同秒多次运行撞唯一键
         String batchNo = "ing-" + BATCH_NO.format(LocalDateTime.now())
@@ -205,24 +204,26 @@ public class IngestionService {
         }
     }
 
-    /** 解析 profile.landingUri（file:///D:/... 或 file://./landing）→ 本地 Path */
-    static Path parseLandingRoot(String landingUri) {
-        String p = landingUri == null ? "./landing" : landingUri.trim();
-        if (p.startsWith("file:///")) {
-            p = p.substring("file://".length());
-        } else if (p.startsWith("file://")) {
-            p = p.substring("file://".length());
-        }
-        return Paths.get(p).toAbsolutePath();
-    }
-
     /** 采集状态总览：events 待采文件、最近批次、断点数 */
     public Map<String, Object> status() {
-        Path landingRoot = Path.of(environment.getProperty("mall.landing.path", "./landing"));
-        Path eventsDir = landingRoot.resolve("events");
+        // Landing 根与 runOne 同源：只来自 ACTIVE RuntimeProfile.landingUri（§8.3 / V2.1 §3.4-4：
+        // 平台不得引用 mall.* 配置键）。无 ACTIVE 环境时如实报告 NO_ACTIVE，不读取任何其它路径。
+        RuntimeProfile active = runtimeProfileService.findActive().orElse(null);
+        Path landingRoot = null;
+        String landingError = null;
+        if (active != null) {
+            try {
+                landingRoot = LandingUri.resolve(active.getLandingUri());
+            } catch (MallBizException e) {
+                // 显式报告错误：landingUri 不可解析时如实说明，绝不回退到任何默认目录（D-003）
+                landingError = e.getMessage();
+                log.warn("landingUri 不可解析（profile {}）：{}", active.getId(), e.getMessage());
+            }
+        }
+        Path eventsDir = landingRoot == null ? null : landingRoot.resolve("events");
         long pendingFiles = 0;
         long pendingBytes = 0;
-        if (Files.isDirectory(eventsDir)) {
+        if (eventsDir != null && Files.isDirectory(eventsDir)) {
             try (Stream<Path> files = Files.list(eventsDir)) {
                 for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".jsonl")).toList()) {
                     pendingFiles++;
@@ -235,7 +236,11 @@ public class IngestionService {
         IngestionBatch latest = batchMapper.selectOne(new LambdaQueryWrapper<IngestionBatch>()
                 .orderByDesc(IngestionBatch::getId).last("LIMIT 1"));
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("eventsDir", eventsDir.toString());
+        result.put("profileState", active == null ? "NO_ACTIVE" : "ACTIVE");
+        result.put("runtimeProfileId", active == null ? null : active.getId());
+        result.put("landingUri", active == null ? null : active.getLandingUri());
+        result.put("landingError", landingError);
+        result.put("eventsDir", eventsDir == null ? null : eventsDir.toString());
         result.put("pendingFiles", pendingFiles);
         result.put("pendingBytes", pendingBytes);
         if (latest != null) {

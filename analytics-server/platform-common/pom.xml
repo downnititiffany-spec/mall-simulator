@@ -30,5 +30,11 @@
       <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
       <version>${mybatis-plus.version}</version>
     </dependency>
+    <!-- 本模块此前没有任何测试类；LandingUri 等公共解析逻辑必须有自己的单测 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
