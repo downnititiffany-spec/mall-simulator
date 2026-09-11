@@ -31,12 +31,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- SQL AST 解析（§8.6 安全校验第二层） -->
-        <dependency>
-            <groupId>com.github.jsqlparser</groupId>
-            <artifactId>jsqlparser</artifactId>
-            <version>4.9</version>
-        </dependency>
+        <!-- 说明：jsqlparser 只被已移出的 ai/sql/SqlSafetyValidator（平台侧 Text-to-SQL 安全校验）
+             使用，随平台复制代码一并删除；商城本模块不再做 SQL AST 解析。 -->
         <!-- 仅 BCrypt 密码编码（§3.2 权限模块；不引入 Security 过滤器链） -->
         <dependency>
             <groupId>org.springframework.security</groupId>

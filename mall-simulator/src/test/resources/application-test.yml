@@ -6,26 +6,15 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    placeholders:
-      mall:
-        reader:
-          user: ${MALL_READER_USER:mall_reader}
-          password: ${MALL_READER_PASSWORD:mall_reader_pw}
+    # 与 application.yml 同因：平台侧迁移文件（V2-V6）已移出本模块，
+    # 忽略历史库中已应用但本地已不存在的迁移，避免 validate 失败。
+    ignore-migration-patterns: "*:missing"
 
+# 说明：原 mall.reader.*（AI 只读数据源）与 llm.*（AI 大模型）只服务于已删除的
+# ai/**、ingestion/**、metric/**、pipeline/** 平台复制代码，属 analytics-server 职责，故删除。
 mall:
-  reader:
-    url: jdbc:mysql://127.0.0.1:3306/mall_simulator_test?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
-    username: mall_reader
-    password: mall_reader_pw
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
   landing:
     path: ${java.io.tmpdir}/mall-landing-test
   outbox:
     batch-size: 200
     poll-seconds: 3600   # 测试时关闭自动轮询，仅手动 publishOnce
-
-llm:
-  base-url: ""
-  api-key: "test-key"
-  mock-enabled: true     # 测试统一使用 MockLlmProvider

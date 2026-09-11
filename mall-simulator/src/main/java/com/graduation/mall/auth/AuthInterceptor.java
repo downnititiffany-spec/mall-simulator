@@ -25,19 +25,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthInterceptor implements HandlerInterceptor {
 
-    /** 白名单：跳过一切校验 */
+    /** 白名单：跳过一切校验（仅商城自身登录入口；§5.2 边界内已无 metrics/health 端点） */
     private static final List<String> WHITELIST_PATHS = List.of(
-            "/api/v1/auth/login",
-            "/api/v1/metrics/health");
+            "/api/v1/auth/login");
 
-    /** admin 专属路径前缀：非 admin 拒绝（403） */
+    /**
+     * admin 专属路径前缀：非 admin 拒绝（403）。
+     * 只保留商城自己的管理面：演示生成器、Outbox 运维、商品/用户管理（§5.2）。
+     * 采集/流水线/指标质量/AI 审计端点属于 analytics-server，已随平台复制代码移出，不再登记。
+     */
     private static final List<String> ADMIN_ONLY_PREFIXES = List.of(
             "/api/v1/generator",
-            "/api/v1/ingestion",
-            "/api/v1/pipeline-runs",
             "/api/v1/mall/outbox",
-            "/api/v1/metrics/quality",
-            "/api/v1/ai/audit",
             "/api/v1/admin");
 
     private static final String ROLE_ADMIN = "admin";

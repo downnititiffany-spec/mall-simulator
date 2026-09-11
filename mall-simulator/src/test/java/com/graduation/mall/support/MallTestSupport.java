@@ -17,19 +17,6 @@ import com.graduation.mall.domain.mapper.MallUserMapper;
 import com.graduation.mall.domain.mapper.OrderItemMapper;
 import com.graduation.mall.domain.mapper.PaymentMapper;
 import com.graduation.mall.domain.mapper.RefundMapper;
-import com.graduation.mall.ingestion.mapper.FileCheckpointMapper;
-import com.graduation.mall.ingestion.mapper.IngestionBatchFileMapper;
-import com.graduation.mall.ingestion.mapper.IngestionBatchMapper;
-import com.graduation.mall.ingestion.mapper.QuarantineRecordMapper;
-import com.graduation.mall.ai.mapper.AiCallLogMapper;
-import com.graduation.mall.ai.mapper.AiQueryHistoryMapper;
-import com.graduation.mall.metric.mapper.MetricSnapshotMapper;
-import com.graduation.mall.metric.mapper.MetricValueMapper;
-import com.graduation.mall.pipeline.mapper.DataQualityResultMapper;
-import com.graduation.mall.pipeline.mapper.PipelineRunMapper;
-import com.graduation.mall.pipeline.mapper.PipelineStageRunMapper;
-import com.graduation.mall.decision.mapper.DecisionEvaluationMapper;
-import com.graduation.mall.decision.mapper.DecisionTaskMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,6 +38,10 @@ import java.util.concurrent.atomic.AtomicReference;
  *   RollingJsonEventWriter 每次写入时才解析该属性，因此按测试方法生效）；
  * - @BeforeEach 清空业务表并恢复种子库存，保证每个测试从确定状态开始；
  * - 每类测试结束销毁 Spring 上下文，避免 Bean/路径串扰。
+ *
+ * 边界说明（§5.2）：本基类只清理商城责任范围内的表（商品/库存/交易/Outbox/账号会话）。
+ * 采集(ingestion)/指标(metric)/流水线(pipeline)/AI(ai)/决策(decision) 的表与 Mapper
+ * 属于 analytics-server，已随平台复制代码移出本模块，故此处不再引用。
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -77,41 +68,7 @@ public abstract class MallTestSupport {
     @Autowired
     private InventoryMapper inventoryMapper;
     @Autowired
-    private IngestionBatchMapper ingestionBatchMapper;
-    @Autowired
-    private IngestionBatchFileMapper ingestionBatchFileMapper;
-    @Autowired
-    private FileCheckpointMapper fileCheckpointMapper;
-    @Autowired
-    private QuarantineRecordMapper quarantineRecordMapper;
-    @Autowired
-    private MetricValueMapper metricValueMapper;
-    @Autowired
-    private MetricSnapshotMapper metricSnapshotMapper;
-    @Autowired
-    private PipelineStageRunMapper pipelineStageRunMapper;
-    @Autowired
-    private PipelineRunMapper pipelineRunMapper;
-    @Autowired
-    private DataQualityResultMapper dataQualityResultMapper;
-    @Autowired
-    private AiQueryHistoryMapper aiQueryHistoryMapper;
-    @Autowired
-    private AiCallLogMapper aiCallLogMapper;
-    @Autowired
-    private DecisionEvaluationMapper decisionEvaluationMapper;
-    @Autowired
-    private DecisionTaskMapper decisionTaskMapper;
-    @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbc;
-
-    @Autowired
-    private com.graduation.mall.analysis.AnalysisService analysisService;
-
-    /** 测试前后清理分析缓存，避免事件数据更新后命中旧缓存 */
-    protected void clearAnalysisCache() {
-        analysisService.clearCache();
-    }
 
     @DynamicPropertySource
     static void landingProps(DynamicPropertyRegistry registry) {
@@ -121,7 +78,6 @@ public abstract class MallTestSupport {
     @BeforeEach
     void freshState() throws IOException {
         LANDING.set(Files.createTempDirectory("mall-landing-"));
-        analysisService.clearCache();
         eventOutboxMapper.delete(null);
         mallOrderMapper.delete(null);
         orderItemMapper.delete(null);
@@ -129,27 +85,8 @@ public abstract class MallTestSupport {
         refundMapper.delete(null);
         cartItemMapper.delete(null);
         mallUserMapper.delete(null);
-        // 采集元数据表（批次/断点/隔离）也必须隔离，否则断点残留导致误判"无新内容"
-        ingestionBatchFileMapper.delete(null);
-        ingestionBatchMapper.delete(null);
-        quarantineRecordMapper.delete(null);
-        fileCheckpointMapper.delete(null);
-        // 指标与流水线元数据
-        metricValueMapper.delete(null);
-        metricSnapshotMapper.delete(null);
-        pipelineStageRunMapper.delete(null);
-        dataQualityResultMapper.delete(null);
-        pipelineRunMapper.delete(null);
-        // AI 审计与物化 ADS（§阶段8）
-        aiQueryHistoryMapper.delete(null);
-        aiCallLogMapper.delete(null);
-        decisionEvaluationMapper.delete(null);
-        decisionTaskMapper.delete(null);
         // 会话表清空（sys_user 保留 V7 种子账号供认证测试）
         jdbc.update("DELETE FROM user_session");
-        jdbc.update("DELETE FROM ads_operation_overview_m");
-        jdbc.update("DELETE FROM ads_sale_trend_m");
-        jdbc.update("DELETE FROM ads_behavior_funnel_m");
         // 恢复种子库存（商品/分类由 Flyway 种子固定）
         for (Long productId : List.of(1001L, 1002L, 1003L, 1004L)) {
             inventoryMapper.update(null, new LambdaUpdateWrapper<Inventory>()

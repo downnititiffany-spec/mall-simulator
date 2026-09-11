@@ -17,16 +17,23 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * HTTP 层鉴权测试（§3.2 权限模块）：
- * 无 token 401、错误 token 401、admin 可访问管理端点、operator 访问管理端点 403、
- * operator 可访问分析端点 200。
+ * 无 token 401、错误 token 401、admin 可访问管理端点、operator 访问管理端点 403。
+ *
+ * 边界说明（§5.2）：原用例中的 /api/v1/metrics/snapshots（401 探针）、
+ * /api/v1/metrics/health（匿名可访问）、/api/v1/analysis/sales（operator 可访问）
+ * 都是分析平台端点，对应控制器已随平台复制代码移出本模块，故：
+ * - 401 探针改用仍保留的受保护商城端点 /api/v1/mall/products；
+ * - 后两个平台专属断言整体删除（其覆盖应由 analytics-server 自己的测试承担）。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class AuthHttpTest {
+
+    /** 仍保留的受保护商城端点：仅用于验证拦截器对无/错 token 的 401 行为 */
+    private static final String PROTECTED_MALL_PATH = "/api/v1/mall/products";
 
     @Autowired
     private TestRestTemplate rest;
@@ -50,7 +57,7 @@ class AuthHttpTest {
     @Test
     @DisplayName("无 token 访问受保护接口 → 401")
     void noTokenUnauthorized() {
-        ResponseEntity<Map> resp = rest.getForEntity("/api/v1/metrics/snapshots", Map.class);
+        ResponseEntity<Map> resp = rest.getForEntity(PROTECTED_MALL_PATH, Map.class);
         assertEquals(HttpStatus.UNAUTHORIZED, resp.getStatusCode());
         assertEquals("UNAUTHORIZED", resp.getBody().get("code"));
     }
@@ -58,7 +65,7 @@ class AuthHttpTest {
     @Test
     @DisplayName("错误 token → 401")
     void badTokenUnauthorized() {
-        ResponseEntity<Map> resp = rest.exchange("/api/v1/metrics/snapshots",
+        ResponseEntity<Map> resp = rest.exchange(PROTECTED_MALL_PATH,
                 HttpMethod.GET, new HttpEntity<>(authHeader("bad-token")), Map.class);
         assertEquals(HttpStatus.UNAUTHORIZED, resp.getStatusCode());
     }
@@ -80,22 +87,6 @@ class AuthHttpTest {
         ResponseEntity<Map> resp = rest.exchange("/api/v1/generator/scenarios",
                 HttpMethod.GET, new HttpEntity<>(authHeader(token)), Map.class);
         assertEquals(HttpStatus.FORBIDDEN, resp.getStatusCode());
-    }
-
-    @Test
-    @DisplayName("operator 可访问分析端点")
-    void operatorCanAccessAnalysis() {
-        String token = login("operator", "operator123");
-        ResponseEntity<Map> resp = rest.exchange("/api/v1/analysis/sales?from=2026-09-01&to=2026-09-06",
-                HttpMethod.GET, new HttpEntity<>(authHeader(token)), Map.class);
-        assertTrue(resp.getStatusCode().is2xxSuccessful(), "分析接口对运营人员应可访问");
-    }
-
-    @Test
-    @DisplayName("health 无需登录")
-    void healthPublic() {
-        ResponseEntity<Map> resp = rest.getForEntity("/api/v1/metrics/health", Map.class);
-        assertEquals(HttpStatus.OK, resp.getStatusCode());
     }
 
     @Test

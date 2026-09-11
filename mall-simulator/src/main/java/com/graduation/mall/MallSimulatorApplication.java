@@ -11,10 +11,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling
-@MapperScan({"com.graduation.mall.domain.mapper", "com.graduation.mall.ingestion.mapper",
-        "com.graduation.mall.metric.mapper", "com.graduation.mall.pipeline.mapper",
-        "com.graduation.mall.ai.mapper", "com.graduation.mall.decision.mapper",
-        "com.graduation.mall.auth.mapper"})
+// 仅扫描商城责任范围内的 Mapper：商品/库存/交易/Outbox/账号会话（§5.2 边界）。
+// 采集(ingestion)/指标(metric)/流水线(pipeline)/AI(ai)/决策(decision) 的 Mapper 属于
+// analytics-server，已随平台复制代码一并移出本模块，此处不再声明。
+@MapperScan({"com.graduation.mall.domain.mapper", "com.graduation.mall.auth.mapper"})
 public class MallSimulatorApplication {
 
     public static void main(String[] args) {
