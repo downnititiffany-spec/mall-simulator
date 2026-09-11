@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,9 +28,12 @@ public class OutboxController {
     public ApiResponse<Map<String, Object>> status() {
         TraceContext trace = TraceContext.create();
         Optional<Path> latest = publisher.latestFile();
-        Map<String, Object> data = Map.of(
-                "pendingCount", publisher.pendingCount(),
-                "latestFile", latest.map(Path::toString).orElse(null));
+        // DEF-11：不能用 Map.of(...) —— 它是 null 敌对的（任一 value 为 null 直接 NPE → 500）。
+        // 尚无滚动文件时 latestFile 就是 null（干净的测试库/首次启动都会命中），
+        // 语义上要如实回答"还没有文件"，故用允许 null 的 LinkedHashMap（JSON 里为 null）。
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("pendingCount", publisher.pendingCount());
+        data.put("latestFile", latest.map(Path::toString).orElse(null));
         return ApiResponse.ok(data, trace.traceId());
     }
 

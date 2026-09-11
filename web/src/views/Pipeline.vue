@@ -70,7 +70,10 @@ async function runOnce() {
     await api.ingestionRun()
     await new Promise((r) => setTimeout(r, 3000))
     runResult.value = await api.createPipelineRun({
-      runtimeProfileId: runtimeProfileId.value, pipelineCode: 'DAILY_CORE',
+      // 流水线编码是全项目唯一的编排标识：脚本 / 验收记录 / 论文一律用 ODS_TO_ADS。
+      // 早期页面写死过 DAILY_CORE（只在 V2 建表注释里出现过，平台不按它选阶段），
+      // 会让面板里出现的编码与文档/脚本对不上，故对齐为 ODS_TO_ADS（M1-6 命名一致）。
+      runtimeProfileId: runtimeProfileId.value, pipelineCode: 'ODS_TO_ADS',
       businessTime: businessDate.value + 'T00:00:00', sourceDataVersion: 'manual-' + Date.now()
     }, 'manual-' + Date.now())
     await loadRuns()

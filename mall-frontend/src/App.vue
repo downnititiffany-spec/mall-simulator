@@ -5,7 +5,6 @@
       <nav class="mall-nav">
         <RouterLink to="/mall">商城演示</RouterLink>
         <RouterLink to="/admin-products">商品后台</RouterLink>
-        <RouterLink to="/generator">数据生成器</RouterLink>
       </nav>
       <div class="mall-user">
         <span v-if="userName">{{ userName }}</span>

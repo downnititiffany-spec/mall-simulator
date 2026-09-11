@@ -1,6 +1,7 @@
 package com.graduation.analytics.job
 
 import com.graduation.analytics.algorithm.{OrderTradeCompiler, TradeEvent, TradeOrderDetail}
+import com.graduation.analytics.sql.IdCodec
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.JavaConverters._
@@ -72,27 +73,7 @@ class TradeDwdJob extends WarehouseJob {
       //   实测 dt=20260901 订单明细 7 行被放大为 28 行（无维度分区 2 个 × 用户分区 2 个），
       //   GMV 2042.00 → 8168.00、net_sale 1493.00 → 5972.00。
       val dimDt = args.businessDate
-      spark.sql(
-        s"""INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt)
-          |SELECT
-          |  CAST(t.order_id AS BIGINT),
-          |  CAST(t.user_id AS BIGINT),
-          |  CASE WHEN t.product_id = '' THEN -1 ELSE CAST(t.product_id AS BIGINT) END,
-          |  COALESCE(p.category_id, -1) AS category_id,
-          |  CAST(t.quantity AS INT),
-          |  t.unit_price, t.discount, t.amount,
-          |  t.status AS order_status,
-          |  TO_TIMESTAMP(t.order_time) AS order_time,
-          |  t.order_date,
-          |  COALESCE(u.city_level, 'unknown') AS city_level,
-          |  CASE WHEN t.paid_at IS NULL THEN NULL ELSE TO_TIMESTAMP(t.paid_at) END AS paid_at,
-          |  t.order_amount, t.paid_amount, t.refund_amount, t.net_paid_amount,
-          |  t.final_paid_flag, t.final_refunded_flag,
-          |  t.dt
-          |FROM tdw_tmp t
-          |LEFT JOIN dw_dim.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
-          |     THEN -1 ELSE CAST(t.product_id AS BIGINT) END AND p.dt = '$dimDt'
-          |LEFT JOIN dw_dim.dim_user u ON u.user_id = CAST(t.user_id AS BIGINT) AND u.dt = '$dimDt'""".stripMargin)
+      spark.sql(TradeDwdJob.orderDetailInsertSql(dimDt))
     }
 
     val outputCount = spark.sql("SELECT COUNT(*) c FROM dw_dwd.dwd_order_detail").collect()(0).getLong(0)
@@ -120,6 +101,41 @@ class TradeDwdJob extends WarehouseJob {
 }
 
 object TradeDwdJob {
+
+  /**
+   * `dwd_order_detail` 写入 SQL（从 `tdw_tmp` 临时视图落表 + 维度补充）。
+   *
+   * - **id 归一化**：契约字符串 id（`O00000001`/`U000065`/`P00030`）在 ODS→DWD 边界一次性转 `BIGINT`，
+   *   规则只在 `IdCodec` 定义（DEF-05 / 决策 B-07 候选 ② / D-023），此处不得再手写 `CAST(... AS BIGINT)`；
+   * - **维度分区谓词**：R9 修正（D-R9-2）——`dim_*` 必须按生效日期分区过滤，否则 JOIN 笛卡尔放大（GMV 2042.00→8168.00）。
+   *
+   * @param dimDt 维度快照生效日期分区（= 业务日 `yyyyMMdd`）
+   */
+  def orderDetailInsertSql(dimDt: String): String = {
+    val orderKey = IdCodec.toBIGINT("t.order_id")
+    val userKey = IdCodec.toBIGINT("t.user_id")
+    val productKey = IdCodec.toBIGINT("t.product_id")
+    s"""INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt)
+       |SELECT
+       |  $orderKey,
+       |  $userKey,
+       |  CASE WHEN t.product_id = '' THEN -1 ELSE $productKey END,
+       |  COALESCE(p.category_id, -1) AS category_id,
+       |  CAST(t.quantity AS INT),
+       |  t.unit_price, t.discount, t.amount,
+       |  t.status AS order_status,
+       |  TO_TIMESTAMP(t.order_time) AS order_time,
+       |  t.order_date,
+       |  COALESCE(u.city_level, 'unknown') AS city_level,
+       |  CASE WHEN t.paid_at IS NULL THEN NULL ELSE TO_TIMESTAMP(t.paid_at) END AS paid_at,
+       |  t.order_amount, t.paid_amount, t.refund_amount, t.net_paid_amount,
+       |  t.final_paid_flag, t.final_refunded_flag,
+       |  t.dt
+       |FROM tdw_tmp t
+       |LEFT JOIN dw_dim.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
+       |     THEN -1 ELSE $productKey END AND p.dt = '$dimDt'
+       |LEFT JOIN dw_dim.dim_user u ON u.user_id = $userKey AND u.dt = '$dimDt'""".stripMargin
+  }
 
   /** 临时视图 Schema（不含维度列；与 LocalSchemaInitJob.dwd_order_detail 列序对齐） */
   val OUT_SCHEMA: org.apache.spark.sql.types.StructType =

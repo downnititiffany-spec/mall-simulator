@@ -14,7 +14,7 @@ object DimSql {
     s"""
        |INSERT OVERWRITE TABLE dw_dim.dim_user PARTITION(dt = '$dt')
        |SELECT
-       |  CAST(u.payload_user_id AS BIGINT) AS user_id,
+       |  ${IdCodec.toBIGINT("u.payload_user_id")} AS user_id,
        |  u.payload_age_group AS age_group,
        |  u.payload_city_level AS city_level,
        |  u.payload_member_level AS member_level,
@@ -37,16 +37,16 @@ object DimSql {
     s"""
        |INSERT OVERWRITE TABLE dw_dim.dim_product PARTITION(dt = '$dt')
        |SELECT
-       |  CAST(p.payload_product_id AS BIGINT) AS product_id,
+       |  ${IdCodec.toBIGINT("p.payload_product_id")} AS product_id,
        |  COALESCE(p.payload_product_name, 'UNKNOWN') AS product_name,
        |  CASE WHEN p.payload_category_id IS NULL OR p.payload_category_id = ''
-       |       THEN -1 ELSE CAST(p.payload_category_id AS BIGINT) END AS category_id,
+       |       THEN -1 ELSE ${IdCodec.toBIGINT("p.payload_category_id")} END AS category_id,
        |  COALESCE(p.payload_category_name, 'UNKNOWN') AS category_name,
        |  CASE WHEN p.payload_parent_category_id IS NULL OR p.payload_parent_category_id = ''
-       |       THEN -1 ELSE CAST(p.payload_parent_category_id AS BIGINT) END AS parent_category_id,
+       |       THEN -1 ELSE ${IdCodec.toBIGINT("p.payload_parent_category_id")} END AS parent_category_id,
        |  COALESCE(p.payload_parent_category_name, 'UNKNOWN') AS parent_category_name,
        |  CASE WHEN p.payload_brand_id IS NULL OR p.payload_brand_id = ''
-       |       THEN -1 ELSE CAST(p.payload_brand_id AS BIGINT) END AS brand_id,
+       |       THEN -1 ELSE ${IdCodec.toBIGINT("p.payload_brand_id")} END AS brand_id,
        |  p.payload_price AS price,
        |  p.payload_cost AS cost,
        |  COALESCE(p.payload_status, 'active') AS status,

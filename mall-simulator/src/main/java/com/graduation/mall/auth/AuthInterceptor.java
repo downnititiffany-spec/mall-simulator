@@ -31,11 +31,12 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     /**
      * admin 专属路径前缀：非 admin 拒绝（403）。
-     * 只保留商城自己的管理面：演示生成器、Outbox 运维、商品/用户管理（§5.2）。
-     * 采集/流水线/指标质量/AI 审计端点属于 analytics-server，已随平台复制代码移出，不再登记。
+     * 只保留商城自己的管理面：Outbox 运维、商品/用户管理（§5.2）。
+     * M1-7（三程序边界）：演示数据生成器已整体移交 synthetic-data-generator（8092）并从本模块删除，
+     * 故 `/api/v1/generator` 前缀一并下线；采集/流水线/指标质量/AI 审计端点属于 analytics-server，
+     * 已随平台复制代码移出，不再登记。
      */
     private static final List<String> ADMIN_ONLY_PREFIXES = List.of(
-            "/api/v1/generator",
             "/api/v1/mall/outbox",
             "/api/v1/admin");
 

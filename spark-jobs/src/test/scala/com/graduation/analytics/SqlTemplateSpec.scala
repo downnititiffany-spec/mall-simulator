@@ -164,6 +164,14 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     hot should include("rank_no <= 50")
   }
 
+  it should "DEF-08：热门商品名取维度兜底，缺失维度的商品不得产出 NULL 名（否则 BLOCKING 空关键列阻断发布）" in {
+    val hot = AdsSql.hotProduct("20260901", 50)
+    // 实测（run 37）：dim_product 单日快照 0 行（当日无 product_created 事件），
+    // ads_hot_product__staging 9/9 行 product_name 为 NULL → ADS_STAGING_KEY_NOT_NULL 阻断发布。
+    hot.toLowerCase should include("coalesce(p.product_name, 'unknown') as product_name")
+    hot should not include "t.product_id, p.product_name,"
+  }
+
   it should "R7-0 口径：PV 只计 view、退款率按「有已完成退款的订单」、另立全额退款率" in {
     val overview = AdsSql.operationOverview("20260901").toLowerCase
     // PV 字典口径 = count(view 行为事件)，禁止把全部行为行数当 PV
@@ -206,6 +214,16 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     sql should include("流失风险")
     sql should include("新用户")
     sql should include("'rfm-v1' as rule_version")
+  }
+
+  it should "DEF-10：用户画像的 NOT NULL 列不得产出 NULL（下单但当日无行为的用户会把发布 INSERT 打挂）" in {
+    val sql = AdsSql.userProfile("20260901", "20260601", "20260901").toLowerCase
+    // 发布侧 ads_user_profile_m.favorite_category/last_active_date 均为 NOT NULL：
+    // 显式写 NULL 会直接 DataIntegrityViolation（run 38 实测 RUN_METRIC_PUBLISH_FAILED）。
+    sql should include("coalesce(a.favorite_category, -1) as favorite_category")
+    sql should include("coalesce(a.last_active_date, '') as last_active_date")
+    sql should not include "  a.favorite_category,"
+    sql should not include "  a.last_active_date,"
   }
 
   it should "数据质量大盘包含 4 条 QualityChecker 同名规则" in {

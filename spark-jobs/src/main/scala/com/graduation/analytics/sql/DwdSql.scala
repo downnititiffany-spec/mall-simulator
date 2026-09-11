@@ -5,14 +5,14 @@ package com.graduation.analytics.sql
  */
 object DwdSql {
 
-  /** 行为清洗：回到正常行（row_number 去重 + 过滤非法枚举/空 user_id） */
+  /** 行为清洗：回到正常行（row_number 去重 + 过滤非法枚举/空 user_id）；id 归一化见 IdCodec（DEF-05） */
   def behaviorClean(dt: String): String =
     s"""
        |INSERT OVERWRITE TABLE dw_dwd.dwd_user_behavior_detail PARTITION(dt = '$dt')
        |SELECT
        |  rn.event_id AS behavior_id,
-       |  CAST(rn.payload_user_id AS BIGINT) AS user_id,
-       |  CAST(rn.payload_product_id AS BIGINT) AS product_id,
+       |  ${IdCodec.toBIGINT("rn.payload_user_id")} AS user_id,
+       |  ${IdCodec.toBIGINT("rn.payload_product_id")} AS product_id,
        |  COALESCE(p.category_id, -1) AS category_id,
        |  rn.payload_behavior_type AS behavior_type,
        |  FROM_UTC_TIMESTAMP(FROM_UNIXTIME(UNIX_TIMESTAMP(rn.event_time)), 'Asia/Shanghai') AS event_time,
@@ -29,8 +29,8 @@ object DwdSql {
        |  WHERE dt = '$dt'
        |    AND schema_version = '1.0'
        |) rn
-       |LEFT JOIN dw_dim.dim_user u ON u.user_id = CAST(rn.payload_user_id AS BIGINT) AND u.dt = '$dt'
-       |LEFT JOIN dw_dim.dim_product p ON p.product_id = CAST(rn.payload_product_id AS BIGINT) AND p.dt = '$dt'
+       |LEFT JOIN dw_dim.dim_user u ON u.user_id = ${IdCodec.toBIGINT("rn.payload_user_id")} AND u.dt = '$dt'
+       |LEFT JOIN dw_dim.dim_product p ON p.product_id = ${IdCodec.toBIGINT("rn.payload_product_id")} AND p.dt = '$dt'
        |WHERE rn.rn = 1                       -- event_id 去重
        |  AND rn.payload_user_id IS NOT NULL
        |  AND rn.payload_product_id IS NOT NULL

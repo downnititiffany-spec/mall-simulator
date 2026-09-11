@@ -94,8 +94,7 @@ export default {
   changePrice: (productId, price) => client.post(`/admin/products/${productId}/price`, { price }),
   changeStock: (productId, quantity, changeType) =>
     client.post(`/admin/products/${productId}/stock`, { quantity, changeType }),
-  changeStatus: (productId, status) => client.post(`/admin/products/${productId}/status`, { status }),
-  // 数据生成器（事件生成属于模拟商城侧；已从分析平台前端迁出）
-  scenarios: () => client.get('/generator/scenarios'),
-  generatorRun: (body) => client.post('/generator/runs', body)
+  changeStatus: (productId, status) => client.post(`/admin/products/${productId}/status`, { status })
+  // M1-7（三程序边界）：演示数据生成器 API 已随生成器移交 synthetic-data-generator（8092），
+  //   本前端不再调用 /generator/**（生成器自带前端与 CLI，商城只负责被采集的业务数据）。
 }

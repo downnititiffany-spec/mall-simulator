@@ -132,10 +132,12 @@
 | POST | /api/v1/mall/refunds/{id}/complete | 完成退款 |
 | GET | /api/v1/mall/outbox/status | 未发布事件数/最新滚动文件 |
 | POST | /api/v1/mall/outbox/publish | 手动触发发布 |
-| POST | /api/v1/generator/runs | 场景化生成（userCount/eventsPerSecond/窗口/种子/场景/脏数据比例） |
-| GET | /api/v1/generator/scenarios | 11 个场景与预期方向 |
 | GET/POST | /api/v1/admin/products | 商品管理（`/{id}/price`、`/{id}/stock`、`/{id}/status`） |
 | GET/POST | /api/v1/admin/users | 商城用户管理（`/{id}/toggle`、`/{id}/reset-password`） |
+
+**已退役（M1-7，2026-09-11）**：`/api/v1/generator/runs`、`/api/v1/generator/scenarios` 及商城前端"数据生成"页
+**已删除**——场景化造数归第三个程序 `synthetic-data-generator`（端口 8092，见 `contract-specs/openapi/generator-api.v1.yaml`）。
+商城侧只剩"下单/加购/退款/发布 outbox"的正常经营行为，实测 `GET /api/v1/generator/scenarios` → **404**（§3.4-2 验收项）。
 
 商城与平台**不共享 cookie/localStorage 键**（`mall_token` vs `analytics_token`），交叉端口调用被两侧
 boundary 测试与 DOM 验收常驻守卫（8090 对平台端点一律 401）。

@@ -90,11 +90,19 @@ object AdsSql {
        |FROM dw_dws.dws_behavior_funnel_day WHERE dt = '$dt'
        |""".stripMargin
 
-  /** 热门商品 TopN（热度权重来自配置，默认 §21.7 对数公式） */
+  /**
+   * 热门商品 TopN（热度权重来自配置，默认 §21.7 对数公式）。
+   *
+   * DEF-08：`dim_product` 是**按业务日的快照**，只覆盖当日 `product_created/product_updated` 事件；
+   * 当日无商品事件时该分区 0 行（实测 run 37：dim_product(20260901)=0，dws_product_behavior_day=9 个商品），
+   * LEFT JOIN 会把商品名全部打成 NULL → `ads_hot_product__staging` 9/9 行 `product_name` 为空 →
+   * BLOCKING 规则 `ADS_STAGING_KEY_NOT_NULL` 拦截整条发布。故名称按维度表既有 unknown 约定兜底
+   * （`DimSql.productSnapshot` 同样写 'UNKNOWN'），**不用 NULL**：宁可显式 unknown，不留空关键列。
+   */
   def hotProduct(dt: String, topN: Int, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget("ads_hot_product", dt, snapshotId)}
-       |SELECT t.product_id, p.product_name, heat_score, pv, fav, cart, buy, rank_no
+       |SELECT t.product_id, COALESCE(p.product_name, 'UNKNOWN') AS product_name, heat_score, pv, fav, cart, buy, rank_no
        |FROM (
        |  SELECT product_id,
        |         1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score,
@@ -139,6 +147,14 @@ object AdsSql {
    * lifecycle_state 与 algorithm/RfmScorer.lifecycle 一致
    *   （新用户=观察期首购且仅 1 单；流失风险 rDays>60；沉默 30<rDays<=60；否则活跃）；
    * active_level 按最近活跃天数（<=7 高 / <=30 中 / 其余低）。
+   *
+   * DEF-10：RFM 队列来自 `dws_user_trade_period`（有下单的用户），而"偏好分类/最近活跃日"来自
+   * 当日行为明细的 LEFT JOIN —— 下单但当日无行为事件的用户会得到 NULL。发布侧 `ads_user_profile_m`
+   * 的这两列是 **NOT NULL**（显式写 NULL 即约束报错，DEFAULT 0/'' 只在"不写该列"时生效），
+   * 实测 run 38 的 `PUBLISH_METRIC` 因此报 `RUN_METRIC_PUBLISH_FAILED`
+   * （`Column 'favorite_category' cannot be null`）。故按库内既有 unknown 约定兜底：
+   * 分类用哨兵 **-1**（与 `DwdSql.behaviorClean` 的 `COALESCE(p.category_id, -1)` 同口径），
+   * 日期用 **''**（DDL 自身声明的 unknown 载体），此时 `active_level` 的 ELSE 分支给 '低'。
    */
   def userProfile(dt: String, periodStart: String, periodEnd: String,
                   snapshotId: Option[String] = None): String =
@@ -165,8 +181,8 @@ object AdsSql {
        |  CASE WHEN DATEDIFF(pe, a.last_active_date) <= 7 THEN '高'
        |       WHEN DATEDIFF(pe, a.last_active_date) <= 30 THEN '中'
        |       ELSE '低' END AS active_level,
-       |  a.favorite_category,
-       |  a.last_active_date,
+       |  COALESCE(a.favorite_category, -1) AS favorite_category,
+       |  COALESCE(a.last_active_date, '') AS last_active_date,
        |  tp.last_buy_date,
        |  CASE WHEN tp.order_count = 1 AND tp.last_buy_date = ps THEN '新用户'
        |       WHEN DATEDIFF(pe, tp.last_buy_date) > 60 THEN '流失风险'

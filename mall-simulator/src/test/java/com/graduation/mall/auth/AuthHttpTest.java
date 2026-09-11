@@ -22,11 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * HTTP 层鉴权测试（§3.2 权限模块）：
  * 无 token 401、错误 token 401、admin 可访问管理端点、operator 访问管理端点 403。
  *
- * 边界说明（§5.2）：原用例中的 /api/v1/metrics/snapshots（401 探针）、
+ * 边界说明（§5.2 / M1-7）：原用例中的 /api/v1/metrics/snapshots（401 探针）、
  * /api/v1/metrics/health（匿名可访问）、/api/v1/analysis/sales（operator 可访问）
- * 都是分析平台端点，对应控制器已随平台复制代码移出本模块，故：
+ * 都是分析平台端点，对应控制器已随平台复制代码移出本模块；原管理端点探针
+ * /api/v1/generator/scenarios 随演示生成器下线（M1-7：生成器整体归 synthetic-data-generator），故：
  * - 401 探针改用仍保留的受保护商城端点 /api/v1/mall/products；
- * - 后两个平台专属断言整体删除（其覆盖应由 analytics-server 自己的测试承担）。
+ * - admin/403 探针改用仍保留的商城管理端点 /api/v1/mall/outbox/status；
+ * - 平台专属断言整体删除（其覆盖由 analytics-server 自己的测试承担）。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -71,10 +73,10 @@ class AuthHttpTest {
     }
 
     @Test
-    @DisplayName("admin 可访问管理端点（生成器场景列表）")
+    @DisplayName("admin 可访问管理端点（Outbox 运维）")
     void adminCanAccessAdminEndpoints() {
         String token = login("admin", "admin123");
-        ResponseEntity<Map> resp = rest.exchange("/api/v1/generator/scenarios",
+        ResponseEntity<Map> resp = rest.exchange("/api/v1/mall/outbox/status",
                 HttpMethod.GET, new HttpEntity<>(authHeader(token)), Map.class);
         assertEquals(HttpStatus.OK, resp.getStatusCode());
         assertNotNull(resp.getBody().get("data"));
@@ -84,7 +86,7 @@ class AuthHttpTest {
     @DisplayName("operator 访问管理端点 → 403")
     void operatorForbiddenOnAdminEndpoints() {
         String token = login("operator", "operator123");
-        ResponseEntity<Map> resp = rest.exchange("/api/v1/generator/scenarios",
+        ResponseEntity<Map> resp = rest.exchange("/api/v1/mall/outbox/status",
                 HttpMethod.GET, new HttpEntity<>(authHeader(token)), Map.class);
         assertEquals(HttpStatus.FORBIDDEN, resp.getStatusCode());
     }
