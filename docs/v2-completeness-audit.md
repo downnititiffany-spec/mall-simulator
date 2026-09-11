@@ -127,16 +127,16 @@
 | 节号 | 要求 | 判定 | 证据 | 缺口 |
 |---|---|---|---|---|
 | §12.1 | 分层边界：ODS/DIM/DWD/DWS 不可页面直读，ADS 仅管理查询 | 完成 | `LocalSchemaInitJob.scala:34-302`（建库）；`AnalysisService.java:46`；`MetricExportJob.scala:14-19` | Landing 由 `LandingStorage` 独立承载，不是 Hive 层 |
-| §12.2 | ODS 4 张表、dt/hour 分区、只做解析/路由/强转/审计/写分区 | 完成 | `OdsLoadSql.scala:74-82`；`warehouse/ddl/00-ods.sql:1-105`；`OdsLoadSql.scala:26-30,27-72,190-198` | 隔离行只计数、不入 reject 表（§12.2 未要求落表） |
+| §12.2 | ODS 4 张表、dt/hour 分区、只做解析/路由/强转/审计/写分区 | 完成 | `OdsLoadSql.scala:74-82`；`warehouse/ddl/00-ods.sql:1-106`；`OdsLoadSql.scala:26-30,27-72,190-198` | 隔离行只计数、不入 reject 表（§12.2 未要求落表） |
 | §12.3 | `dim_user` 按 event_time 取最新合法事件 | 完成 | `DimSql.scala:13-26` | — |
 | §12.3 | `dim_product` 只接受建档/更新，库存事件不能建商品 | 完成 | `DimSql.scala:36-61`（`:61` event_type 白名单） | — |
-| §12.3 | `dim_date` 预生成覆盖分析日期范围 | **未做** | `warehouse/ddl/02-dims.sql:39-51` 仅 DDL；全仓生产代码零引用（实测 grep `dim_date` = 0 命中） | 日期维无数据 |
-| §12.3 | `dim_region` 静态版本化配置 | **未做** | `02-dims.sql:53-60` 仅 DDL | 地区维无载体，连带 `ads_region_sale` 无来源 |
-| §12.3 | `dim_metric` 从 MySQL `metric_definition` 同步 | **未做** | `02-dims.sql:62-73` 仅 DDL；无同步作业 | 语义层由 `MetricAdsCatalog.java:33-46` 代偿，Hive 字典为空 |
+| §12.3 | `dim_date` 预生成覆盖分析日期范围 | **未做** | `warehouse/ddl/02-dims.sql:40-52` 仅 DDL；全仓生产代码零引用（实测 grep `dim_date` = 0 命中） | 日期维无数据 |
+| §12.3 | `dim_region` 静态版本化配置 | **未做** | `02-dims.sql:54-61` 仅 DDL | 地区维无载体，连带 `ads_region_sale` 无来源 |
+| §12.3 | `dim_metric` 从 MySQL `metric_definition` 同步 | **未做** | `02-dims.sql:63-74` 仅 DDL；无同步作业 | 语义层由 `MetricAdsCatalog.java:33-46` 代偿，Hive 字典为空 |
 | §12.3 | 首版每日全量快照（SCD1 折中） | 完成 | `DimSql.scala:15,38` | 论文须写明该折中 |
 | §12.4 | 行为明细去重/枚举白名单/维度补全 | 完成 | `DwdSql.scala:9-38`（`:27` 去重、`:37` 枚举白名单） | — |
 | §12.4 | `dwd_order_detail` 订单×商品 + 金额/标志字段 | 完成 | `TradeDwdJob.scala:46-63,130-145` | — |
-| §12.4 | `dwd_reject_record` 汇总清洗坏数据 | 部分 | `DwdSql.scala:41-45`；`warehouse/ddl/01-dwd.sql:60` | DDL 声明 5 类 reason，实际只写 `DUPLICATE_EVENT` 一种 |
+| §12.4 | `dwd_reject_record` 汇总清洗坏数据 | 部分 | `DwdSql.scala:41-45`；`warehouse/ddl/01-dwd.sql:61` | DDL 声明 5 类 reason，实际只写 `DUPLICATE_EVENT` 一种 |
 | §12.4-1 | 同 order_id 先按 event_id 去重 | 完成 | `TradeDwdJob.scala:34` | — |
 | §12.4-2 | 按 event_time、ingest_time、event_id 稳定排序 | 部分 | `OrderTradeCompiler.scala:93-94` | 只按 eventTime，缺 ingest_time/event_id 决胜键 → 同秒事件顺序不定 |
 | §12.4-3 | 订单状态机合法性校验，非法跳转进 reject | **未做** | `OrderTradeCompiler.scala:92-147` 仅折叠取最新；合法性只在 `mall-simulator/.../MallBusinessService.java:297,374` | DWD 侧非法流转被静默吞掉，无 reject 行 → 数仓无法自证状态合法性 |
@@ -150,15 +150,15 @@
 | §12.5 | `dws_trade_day` 含 GMV/退款/净销售/客单价 | 完成 | `DwsSql.scala:110` | — |
 | §12.5 | `dws_region_sale_day` 地区×日 | 完成 | `UserProductDwsJob.scala:53`；`warehouse/ddl/03-dws.sql` | 下游 ADS 无载体（见 §12.6） |
 | §12.5 | count distinct 口径入字典；不混自然日/到达日 | 完成（含 4 项未落地说明） | `docs/contracts/metric-dictionary.md:1-40`；DWS 仅 dt 一维 | 字典 16 项中 4 项"仅字典"（`metric-lineage.md:43-44`） |
-| §12.6 | ADS 10 张表齐备 | 部分 | 实产 8 张（`AdsSql.scala:13-15` + `FunnelAdsJob.scala:39-46`）；另 2 张仅 `warehouse/ddl/04-ads.sql:82-101` | **ADS 实产 8/10**：`ads_category_sale`、`ads_region_sale` 无产出作业 |
+| §12.6 | ADS 10 张表齐备 | 部分 | 实产 8 张（`AdsSql.scala:13-15` + `FunnelAdsJob.scala:39-46`）；另 2 张仅 `warehouse/ddl/04-ads.sql:83-102` | **ADS 实产 8/10**：`ads_category_sale`、`ads_region_sale` 无产出作业 |
 | §12.6 | `ads_operation_overview` 字段齐（含 snapshot_id） | 完成 | `AdsSql.scala:42-64,28-31` | — |
 | §12.6 | `ads_behavior_funnel` 字段齐 | 完成 | `AdsSql.scala:76-91` | stage 仅全站 4 行 |
 | §12.6 | `ads_active_trend` dau/behavior_count | 完成 | `AdsSql.scala:67-70` | — |
 | §12.6 | `ads_hot_product` 字段齐（含 rank） | 完成 | `AdsSql.scala:94-108` | — |
 | §12.6 | `ads_product_conversion` 字段齐 | 完成 | `AdsSql.scala:111-123` | — |
-| §12.6 | `ads_sale_trend` 补 `net_sale_amount` | **未做** | `AdsSql.scala:126-132`；`04-ads.sql:71-79` | DWS 已有 `net_sale_amount`（`DwsSql.scala:110`）却未落 ADS |
-| §12.6 | `ads_category_sale` 分类销售结构 | **未做** | `04-ads.sql:82-91`（仅 DDL） | 页面 `byCategory` 恒空 + `UNKNOWN_DIMENSION_TABLE` |
-| §12.6 | `ads_region_sale` 补 `order_count` | **未做** | `04-ads.sql:94-101`（无该列，且无产出作业） | 既缺列也无数据 |
+| §12.6 | `ads_sale_trend` 补 `net_sale_amount` | **未做** | `AdsSql.scala:126-132`；`04-ads.sql:72-80` | DWS 已有 `net_sale_amount`（`DwsSql.scala:110`）却未落 ADS |
+| §12.6 | `ads_category_sale` 分类销售结构 | **未做** | `04-ads.sql:83-92`（仅 DDL） | 页面 `byCategory` 恒空 + `UNKNOWN_DIMENSION_TABLE` |
+| §12.6 | `ads_region_sale` 补 `order_count` | **未做** | `04-ads.sql:95-102`（无该列，且无产出作业） | 既缺列也无数据 |
 | §12.6 | `ads_user_profile_m` R/F/M/分群/活跃/偏好/生命周期/版本 | 完成 | `AdsSql.scala:143-202`（`:175` rule_version） | 金额列缺失见 §13.4 |
 | §12.6 | `ads_data_quality_m` 六类质量字段 | 完成 | `AdsSql.scala:208-255` | `EVENT_ID_UNIQUE` 的 Java/Spark 计数分歧已在验收账本登记 |
 
@@ -343,7 +343,7 @@
 | §16.2 | ODS `event_id` 非空 | 部分 | `QualityChecker.java:76`（通用 null 率） | 非 event_id 专列，且作用于 Landing 而非 ODS |
 | §16.2 | ODS schema 受支持 | **未做** | `OdsLoadSql.scala:194`（仅 `BAD_VERSION_OR_KEY` 拒收） | 无 schema 版本质量规则 |
 | §16.2 | ODS `eventId` 唯一率 | 完成 | `QualityChecker.java:85`；`AdsQualityJob.scala:105-106` | `EVENT_ID_UNIQUE` 的 Java/Spark 计数分歧已登记 |
-| §16.2 | DWD 行为 user/product/type/time 合法 | 部分 | `DwdSql.scala:9,37`；`Cleaners.scala:33-39` | `Cleaners` 谓词**主源码零引用**（grep `Cleaners.` 无命中）；reject 只产 `DUPLICATE_EVENT`（`DwdSql.scala:45`），无 BAD_ENUM/BAD_AMOUNT/FUTURE_TIME（DDL 注释见 `01-dwd.sql:60`） |
+| §16.2 | DWD 行为 user/product/type/time 合法 | 部分 | `DwdSql.scala:9,37`；`Cleaners.scala:33-39` | `Cleaners` 谓词**主源码零引用**（grep `Cleaners.` 无命中）；reject 只产 `DUPLICATE_EVENT`（`DwdSql.scala:45`），无 BAD_ENUM/BAD_AMOUNT/FUTURE_TIME（DDL 注释见 `01-dwd.sql:61`） |
 | §16.2 | DWD 订单行金额 = 数量×单价−折扣（<0.01） | **未做** | `AdsSql.scala:204-256`（只有 MAX−MAX 对账） | 无行级公式校验 |
 | §16.2 | DWD 退款额 ≤ 实付额 | **未做** | 全仓无该规则 | 与 §12.4-6 同源缺口 |
 | §16.2 | DWD 非法状态跳转 | **未做** | `Cleaners.scala:37` `validOrderStatus` 无调用点 | 与 §12.4-3 同源缺口 |
