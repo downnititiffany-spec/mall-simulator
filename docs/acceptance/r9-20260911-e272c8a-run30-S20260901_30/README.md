@@ -42,6 +42,7 @@
 | 30-final-acceptance.md | 16049 | §30 最终验收清单逐项判定（16 ✅ / 2 ⚠️ / 0 ❌，含未达标边界清单） |
 | 31-metric-publish-it-regression.log | 9645 | 指标发布真库集成测试原始日志（PV/退款率口径回归，1/1 PASS、0 skipped） |
 | 32-spark-jobs-tests.log | 7839 | Scala 作业单测原始日志（D-R9-1/D-R9-2 修复后：succeeded 46 / failed 0） |
+| 33-snapshot-history-values.tsv | 1349 | D-R9-2 直接证据：逐快照指标值（metrics 直读）——修复前 run 29 的 S20260901_29 金额类放大 4 倍并曾为 ACTIVE，11:09 被 run 30 黄金值覆盖 |
 | ai-assistant-after-query.png | 168522 | 页面截图（Playwright 真机） |
 | ai-assistant.png | 98291 | 页面截图（Playwright 真机） |
 | behavior.png | 83247 | 页面截图（Playwright 真机） |
@@ -62,7 +63,7 @@
 | r9-prune-fix-verify.ps1 | 10464 | D-R9-1/D-R9-2 修复端到端复验脚本（P0–P8） |
 | r9-reliability.ps1 | 12007 | §23.3 可靠性/故障注入脚本（C1–C5，含 -WithRestart） |
 | r9-resume-experiment.ps1 | 4665 | 续跑实验脚本（C5a–C5f） |
-| README.md | 5116 | 本索引 |
+| README.md | 本文件 | 本索引 |
 | rfm.png | 79040 | 页面截图（Playwright 真机） |
 | sales.png | 78449 | 页面截图（Playwright 真机） |
 
