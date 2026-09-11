@@ -4,6 +4,7 @@
 > 冻结契约：`contract-specs/specs/warehouse-namespace.v1.json`（规则 + 22 条向量）。
 > 证据脚本：本目录 `probe-namespace-prefix.ps1`（自检 **18/18 PASS**）；机器可读结果 `probe-summary.json`；目录清单 `probe-dir-facts.txt`。
 > 状态：`REVIEW`。E1 + E2（模块自动化，**含真实 Spark 冒烟**）+ E3（本机真实链，隔离数仓）已取证，全仓 **386 用例 0 失败**（两条命令，均不加 `-Dtest` 过滤）；早前两次冒烟超时经实测判为**本机提交内存**环境问题，换配置后复跑通过，全过程见 §5。
+> 后续补充（同日 19:3x，`P1-07`）：DEF-16 已修复，此处两条 E2 命令由**单条** `-DforkCount=0` 命令取代（386 用例 0 失败 **0 跳过**），本目录内容按原样保留为当时的取证记录，见 `docs/acceptance/p1-07-def16-20260911/`。
 
 ---
 
@@ -64,7 +65,7 @@
 | E1 编译 | `mvn -o -f spark-jobs/pom.xml package -DskipTests` | BUILD SUCCESS；jar 234,038 B / 18:19:03（内 `warehouse/WarehouseNamespace*.class`） |
 | E2 Java（模块 1–3，进程内） | `mvn -o test -f analytics-server/pom.xml -pl platform-common,connection-ingestion,warehouse-pipeline -DforkCount=0`（Maven 堆 896m，`SPARK_DRIVER_MEMORY=512m`） | platform-common **36/36**（含 `WarehouseNamespaceContractTest` 24 + `WarehouseNameLiteralGateTest` 3）、connection-ingestion **67/67**、warehouse-pipeline **102 用例 / 0 失败 / 0 错误**（**真实 Spark 冒烟 `SparkStageExecutorSmokeTest` 29.5 s 通过**；`JobCommandBuilderTest` **9/9**，其中 P1-04 新增 2 条）—— BUILD SUCCESS，01:00 min |
 | E2 Java（模块 5–7，fork） | `mvn -o test -f analytics-server/pom.xml -pl metric-analysis,ai-decision,platform-app -am -DforkCount=1 -DreuseForks=true '-DargLine=-Xmx384m -XX:+UseSerialGC -Djdk.attach.allowAttachSelf=true'`（Maven 堆 640m） | warehouse-pipeline 102 + metric-analysis **38/38** + ai-decision **91/91** + platform-app **52/52**（含 `AnalysisSourcePolicyTest` **3/3**、`PlatformMallBoundarySourcePolicyTest` **3/3**）—— BUILD SUCCESS，54 s |
-| E2 合计 | 上面两条**都不加 `-Dtest` 过滤、不排除任何测试类** | **386 用例 0 失败**。为何必须分两条命令（两个源码策略类用相对路径定位本模块源码，隐含"工作目录 = 模块 basedir"，该假设只在 surefire fork 时成立）见 `docs/开发过程事实与决策记录.md` **DEF-16**；smoke 需要进程内配置见 §5 |
+| E2 合计 | 上面两条**都不加 `-Dtest` 过滤、不排除任何测试类** | **386 用例 0 失败**。为何当时必须分两条命令（两个源码策略类用相对路径定位本模块源码，隐含"工作目录 = 模块 basedir"，该假设只在 surefire fork 时成立）见 `docs/开发过程事实与决策记录.md` **DEF-16**；smoke 需要进程内配置见 §5。**后续（同日 19:3x，`P1-07`）**：DEF-16 已修复，本表两条命令由**单条** `mvn -o test -f analytics-server/pom.xml -pl platform-app -am -DforkCount=0` 取代（386 用例 0 失败 **0 跳过**，其中进程内模式此前会静默跳过 `EventContractTest` 的跨语言契约锁），改用例数不变，见 `docs/acceptance/p1-07-def16-20260911/` |
 | E2 Scala | `mvn -o -f spark-jobs/pom.xml test-compile scalatest:test` | `WarehouseNamespaceSpec` 等：**Suites 全绿 / Tests 62 / 0 失败**（含 22 条向量、29 个 producer 的跨前缀断言、`LocalSchemaInitJob.statements(ns)` 37 条 DDL） |
 | 门禁（P1-04 DoD） | `WarehouseNameLiteralGateTest`（3 条） | ① `noBareWarehouseNameLiterals`：扫描 `spark-jobs/src/main/`、`analytics-server/<module>/src/main/`、`warehouse/ddl/`、`scripts/`（≥60 文件）→ 裸库名字面量 **0 命中**（仅 2 个所有者文件在白名单）；② 扫描范围自身合法性；③ `ddlDerivesDatabaseNamesFromSharedPrefix`：`warehouse/ddl/*.sql` 恰好 5 个、每个含 `${WAREHOUSE_PREFIX}_`、层集合 = `{ods,dwd,dim,dws,ads}`、变量集合 = `{WAREHOUSE_PREFIX}` |
 
@@ -98,6 +99,9 @@ $env:JAVA_TOOL_OPTIONS='-Dfile.encoding=UTF-8 -XX:+UseSerialGC'
 pwsh -NoProfile -ExecutionPolicy Bypass -File docs/acceptance/p1-04-namespace-20260911/probe-namespace-prefix.ps1
 
 # 3) 模块自动化（Java；两条命令都不加 -Dtest 过滤，合计 386 用例）
+#    注：这两条命令是当时的取证记录。同日 19:3x 起（P1-07 修复 DEF-16）已由单条
+#    `mvn -o test -f analytics-server/pom.xml -pl platform-app -am -DforkCount=0` 取代，
+#    见 docs/acceptance/p1-07-def16-20260911/README.md；下面两条保留为那份证据的原始口径。
 $env:SPARK_DRIVER_MEMORY='512m'   # 被 spark-submit 采纳，实测判别法见 §5
 $env:MAVEN_OPTS='-Xmx896m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Djdk.attach.allowAttachSelf=true'
 mvn -o test -f analytics-server/pom.xml -pl platform-common,connection-ingestion,warehouse-pipeline -DforkCount=0

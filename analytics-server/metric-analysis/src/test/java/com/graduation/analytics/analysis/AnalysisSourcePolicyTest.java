@@ -1,6 +1,7 @@
 package com.graduation.analytics.analysis;
 
 import com.graduation.analytics.metric.MetricAdsCatalog;
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +28,16 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  */
 class AnalysisSourcePolicyTest {
 
-    private static final Path ANALYSIS_PACKAGE = Path.of("src", "main", "java", "com", "graduation", "analytics",
-            "analysis");
+    /**
+     * 被扫描的生产源码目录。
+     *
+     * <p>用 {@link RepoRoot} 定位（DEF-16）：此前写的是相对路径 {@code src/main/java/...}，
+     * 隐含假设"工作目录＝模块 basedir"——surefire 只在 fork 时才如此，
+     * 因此 {@code -DforkCount=0}（本机内存受限时唯一跑得动的配置）下本类必然报
+     * {@code NoSuchFileException}。定位逻辑收归 platform-common 的测试工具唯一所有者。</p>
+     */
+    private static final Path ANALYSIS_PACKAGE = RepoRoot.path(
+            "analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis");
 
     /** 禁止在分析包出现的数据来源痕迹（小写比较） */
     private static final List<String> FORBIDDEN_TOKENS = List.of(

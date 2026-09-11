@@ -59,6 +59,15 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- DEF-16：复用 platform-common 的测试工具（RepoRoot 单一所有者），
+         本模块的源码策略守卫不得再写「工作目录＝模块 basedir」的相对路径 -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>platform-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>

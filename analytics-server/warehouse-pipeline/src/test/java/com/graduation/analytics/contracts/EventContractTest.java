@@ -2,7 +2,7 @@ package com.graduation.analytics.contracts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.ingestion.EventContractValidator;
-import org.junit.jupiter.api.Assumptions;
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * ①12 类事件全集唯一来源是 {@link EventContract}（生产编排不得再维护私有白名单）；
  * ②每一类都路由到 ODS 四主题之一，且与 scala 侧 {@code OdsLoadSql.eventTypeToTable} 逐项一致
- *   （跨语言契约锁：直接读取 scala 源文件比对，仓库布局变化时自动跳过而非误报）；
+ *   （跨语言契约锁：直接读取 scala 源文件比对；DEF-16 起定位走 {@code RepoRoot}，文件缺失即红）；
  * ③12 类事件在 {@link EventContractValidator} 下均通过（路由表与校验器同源）；
  * ④未知类型不得"悄悄跳过"：validator 明确给出未知类型违规，EventContract 返回 null 表名。
  */
@@ -125,13 +125,17 @@ class EventContractTest {
     /**
      * ②跨语言契约锁：Java 侧 ODS_TABLE_BY_TYPE 必须与 scala 侧
      * {@code OdsLoadSql.eventTypeToTable} 键集/取值完全一致（R6-8a 契约漂移的回归防线）。
+     *
+     * <p>DEF-16：此前用相对路径 {@code ../../spark-jobs/...} + {@code assumeTrue(存在)}，
+     * 于是 {@code -DforkCount=0}（CWD＝仓库根）下这条锁**被静默跳过**——一个看起来全绿的假信号。
+     * 现在定位收归 {@link RepoRoot}，文件必须存在（缺了就红）。</p>
      */
     @Test
     void odsRoutingMatchesScalaLoadSql() throws Exception {
-        Path scala = Path.of("..", "..", "spark-jobs", "src", "main", "scala",
-                "com", "graduation", "analytics", "sql", "OdsLoadSql.scala");
-        Assumptions.assumeTrue(Files.exists(scala),
-                "scala 源不在预期布局（" + scala.toAbsolutePath() + "），跳过跨语言契约锁");
+        Path scala = RepoRoot.path("spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala");
+        assertThat(Files.exists(scala))
+                .as("跨语言契约锁的 scala 源必须存在（DEF-16：不得静默跳过）: %s", scala)
+                .isTrue();
         String src = Files.readString(scala, StandardCharsets.UTF_8);
 
         Pattern entry = Pattern.compile("\"([a-z_]+)\"\\s*->\\s*\"(ods_[a-z_]+)\"");

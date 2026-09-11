@@ -62,5 +62,14 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- DEF-16：复用 platform-common 的测试工具（RepoRoot 单一所有者），
+         跨语言契约锁不得再靠相对路径 + 找不到就静默跳过 -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>platform-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

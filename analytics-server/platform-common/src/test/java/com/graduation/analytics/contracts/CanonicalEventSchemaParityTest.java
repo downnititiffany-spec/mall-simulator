@@ -3,6 +3,7 @@ package com.graduation.analytics.contracts;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -123,20 +124,9 @@ class CanonicalEventSchemaParityTest {
     }
 
     private static JsonNode schema(String fileName) throws IOException {
-        Path path = repoRoot().resolve("contract-specs").resolve("schemas").resolve(fileName);
+        Path path = RepoRoot.path("contract-specs/schemas").resolve(fileName);
         assertTrue(Files.isRegularFile(path), "契约文件不存在: " + path);
         return MAPPER.readTree(Files.readString(path, StandardCharsets.UTF_8));
-    }
-
-    /** 从模块目录向上找含 contract-specs/schemas 的仓库根，避免依赖 surefire 工作目录。 */
-    private static Path repoRoot() {
-        Path dir = Path.of(System.getProperty("user.dir")).toAbsolutePath();
-        for (Path candidate = dir; candidate != null; candidate = candidate.getParent()) {
-            if (Files.isDirectory(candidate.resolve("contract-specs").resolve("schemas"))) {
-                return candidate;
-            }
-        }
-        throw new IllegalStateException("未找到 contract-specs/schemas（从 " + dir + " 向上查找）");
     }
 
     private static Set<String> fieldNames(JsonNode node) {

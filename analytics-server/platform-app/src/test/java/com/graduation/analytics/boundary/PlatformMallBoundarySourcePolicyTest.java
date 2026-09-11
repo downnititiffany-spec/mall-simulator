@@ -1,5 +1,6 @@
 package com.graduation.analytics.boundary;
 
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +38,15 @@ class PlatformMallBoundarySourcePolicyTest {
             "platform-common", "connection-ingestion", "warehouse-pipeline",
             "metric-analysis", "ai-decision", "platform-app");
 
-    private static final Path PLATFORM_ROOT = Path.of("..").toAbsolutePath().normalize();
+    /**
+     * 平台根目录（{@code analytics-server/}）。
+     *
+     * <p>用 {@link RepoRoot} 定位（DEF-16）：此前写的是 {@code Path.of("..")}，隐含假设
+     * "工作目录＝platform-app 模块目录"——surefire 只在 fork 时才如此，
+     * 因此 {@code -DforkCount=0} 下六个模块的 {@code src/main} 一个都扫不到，
+     * 守卫会以"平台 Java 生产源码必须存在"报错（不是空跑通过）。</p>
+     */
+    private static final Path PLATFORM_ROOT = RepoRoot.path("analytics-server");
 
     /** Java 源码禁止痕迹：引用商城/生成器程序、商城库表、mall.* 配置键 */
     private static final Map<String, Pattern> JAVA_FORBIDDEN = new LinkedHashMap<>();

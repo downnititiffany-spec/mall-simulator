@@ -1,6 +1,7 @@
 package com.graduation.analytics.ai;
 
 import com.graduation.analytics.ai.sql.AiScope;
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -79,16 +80,16 @@ class AiSqlDriftTest {
         return tables;
     }
 
+    /**
+     * ADS 物化表迁移目录。
+     *
+     * <p>DEF-16：此前是"两个候选路径依次试"（{@code ../platform-app/...} 与
+     * {@code analytics-server/platform-app/...}），本质是把手写的"我在哪个工作目录"判断
+     * 复制了一份，且只在两种已知 CWD 下成立。定位收归 {@link RepoRoot}（唯一所有者），
+     * 目录不存在时由它直接失败，不会退化成静默跳过。</p>
+     */
     private static Path resolveDdlDir() {
-        List<Path> candidates = List.of(
-                Path.of("..", "platform-app", "src", "main", "resources", "db", "metric"),
-                Path.of("analytics-server", "platform-app", "src", "main", "resources", "db", "metric"));
-        for (Path p : candidates) {
-            if (Files.isDirectory(p)) {
-                return p.toAbsolutePath().normalize();
-            }
-        }
-        throw new IllegalStateException("找不到 ADS 物化表迁移目录（db/metric），无法执行漂移守卫");
+        return RepoRoot.path("analytics-server/platform-app/src/main/resources/db/metric");
     }
 
     /**

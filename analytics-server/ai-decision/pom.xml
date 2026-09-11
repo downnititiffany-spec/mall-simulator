@@ -60,5 +60,14 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- DEF-16：复用 platform-common 的测试工具（RepoRoot 单一所有者），
+         本模块测试不得再写「工作目录＝模块 basedir」的相对路径或多候选兜底 -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>platform-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
