@@ -158,5 +158,5 @@ boundary 测试与 DOM 验收常驻守卫（8090 对平台端点一律 401）。
 | UNKNOWN_SNAPSHOT / UNKNOWN_DIMENSION_TABLE / RFM_AMOUNT_UNAVAILABLE | 200（`warnings`） | 数据 | false | 如实降级，不造数 |
 | PIPELINE_QUALITY_FAILED | 200/4xx | 数据质量 | false | 质量门未过，指标未发布（保旧快照） |
 | RUN_EMPTY_LANDING / RUN_EMPTY_DATA | 200/4xx | 数据质量 | true（补数据后） | 无可用数据 |
-| USER_NOT_FOUND / ORDER_STATE_ILLEGAL | 4xx | 业务 | false | 商城域错误 |
+| USER_NOT_FOUND | 4xx | 业务 | false | 平台用户域（账号不存在）；**商城域错误码**（商品/库存/订单/退款）由商城程序自己定义与返回，平台不复制、不映射（M1-6/AE-04 已删除平台侧那 8 个常量，映射改由每源配置承载） |
 | LLM 相关（AUTH/NETWORK/TIMEOUT） | 200（`providerUsed=template`） | 外部 | true（限次） | 模型失败 → 固定模板，绝不 5xx |

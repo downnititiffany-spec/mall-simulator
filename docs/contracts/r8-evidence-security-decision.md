@@ -178,7 +178,8 @@ public class AiScopeResolver {                 // 走 metricReadDataSource（met
     （拒绝也要留痕）。筛选在 `scopeResolver.resolve()` **之后**执行，使被拒行仍带快照与日期作用域便于取证。
 13. **HTTP 层错误映射（本轮补的三条，避免"参数错误伪装 500"）**：请求体缺失/非 JSON →
     `400 PARAM_INVALID`；`Content-Type` 不是 `application/json` → `415 UNSUPPORTED_MEDIA_TYPE`；
-    方法不支持 → `405 METHOD_NOT_ALLOWED`（新增常量见 `platform-common/MallBizException`）。
+    方法不支持 → `405 METHOD_NOT_ALLOWED`（新增常量见 `platform-common/PlatformBizException`；
+    该文件在 R8 时名为 `MallBizException`，2026-09-11 M1-6/AE-04 改名，见决策记录 D-023）。
     未捕获异常仍 `500 INTERNAL`，但日志前缀已由误导性的 "mall internal error" 改为
     `unhandled server error [METHOD /path]`（只记方法+路径，不带 query，凭据不入日志）。
 14. **`ai_query_history.user_id` 是 `varchar(64)`，存的是用户名**（`analyst`），不是 `sys_user.id` 数字。

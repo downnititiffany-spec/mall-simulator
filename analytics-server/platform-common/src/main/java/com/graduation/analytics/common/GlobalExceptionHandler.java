@@ -25,9 +25,9 @@ public class GlobalExceptionHandler {
         return ApiResponse.error("NOT_FOUND", "资源不存在: " + e.getResourcePath(), TraceContext.create().traceId());
     }
 
-    @ExceptionHandler(MallBizException.class)
+    @ExceptionHandler(PlatformBizException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<Void> handleBiz(MallBizException e) {
+    public ApiResponse<Void> handleBiz(PlatformBizException e) {
         return ApiResponse.error(e.getCode(), e.getMessage(), TraceContext.create().traceId());
     }
 
@@ -37,14 +37,14 @@ public class GlobalExceptionHandler {
         String detail = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
-        return ApiResponse.error(MallBizException.PARAM_INVALID, detail, TraceContext.create().traceId());
+        return ApiResponse.error(PlatformBizException.PARAM_INVALID, detail, TraceContext.create().traceId());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Void> handleOther(Exception e) {
         log.error("unhandled server error [{}] {}", describeCurrentRequest(), e.getMessage(), e);
-        return ApiResponse.error(MallBizException.INTERNAL, "系统繁忙，请稍后重试", TraceContext.create().traceId());
+        return ApiResponse.error(PlatformBizException.INTERNAL, "系统繁忙，请稍后重试", TraceContext.create().traceId());
     }
 
     /**
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleUnreadableBody(
             org.springframework.http.converter.HttpMessageNotReadableException e) {
-        return ApiResponse.error(MallBizException.PARAM_INVALID,
+        return ApiResponse.error(PlatformBizException.PARAM_INVALID,
                 "请求体缺失或不是合法 JSON（需 Content-Type: application/json）", TraceContext.create().traceId());
     }
 
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
     public ApiResponse<Void> handleMediaType(
             org.springframework.web.HttpMediaTypeNotSupportedException e) {
-        return ApiResponse.error(MallBizException.UNSUPPORTED_MEDIA_TYPE,
+        return ApiResponse.error(PlatformBizException.UNSUPPORTED_MEDIA_TYPE,
                 "Content-Type 不受支持：" + e.getContentType() + "，请使用 application/json",
                 TraceContext.create().traceId());
     }
@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     public ApiResponse<Void> handleMethod(
             org.springframework.web.HttpRequestMethodNotSupportedException e) {
-        return ApiResponse.error(MallBizException.METHOD_NOT_ALLOWED,
+        return ApiResponse.error(PlatformBizException.METHOD_NOT_ALLOWED,
                 "HTTP 方法不支持：" + e.getMethod(), TraceContext.create().traceId());
     }
 
@@ -84,7 +84,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleTypeMismatch(
             org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
-        return ApiResponse.error(MallBizException.PARAM_INVALID,
+        return ApiResponse.error(PlatformBizException.PARAM_INVALID,
                 "参数类型不合法：" + e.getName(), TraceContext.create().traceId());
     }
 
@@ -92,7 +92,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleMissingParam(
             org.springframework.web.bind.MissingServletRequestParameterException e) {
-        return ApiResponse.error(MallBizException.PARAM_INVALID,
+        return ApiResponse.error(PlatformBizException.PARAM_INVALID,
                 "缺少必填参数：" + e.getParameterName(), TraceContext.create().traceId());
     }
 

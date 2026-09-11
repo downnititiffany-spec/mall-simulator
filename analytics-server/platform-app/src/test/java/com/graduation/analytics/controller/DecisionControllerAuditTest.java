@@ -3,7 +3,7 @@ package com.graduation.analytics.controller;
 import com.graduation.analytics.auth.CurrentUser;
 import com.graduation.analytics.auth.CurrentUserHolder;
 import com.graduation.analytics.common.ApiResponse;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.AuditActor;
 import com.graduation.analytics.decision.DecisionService;
 import com.graduation.analytics.decision.DecisionStateMachine;
@@ -74,9 +74,9 @@ class DecisionControllerAuditTest {
     @DisplayName("参数不齐（PARAM_INVALID）：同样记 FAILED 且原因带上原始 message")
     void paramInvalidIsAudited() {
         when(decisionService.approve(eq(2L), any(), any()))
-                .thenThrow(new MallBizException(MallBizException.PARAM_INVALID, "缺少 dueDate"));
+                .thenThrow(new PlatformBizException(PlatformBizException.PARAM_INVALID, "缺少 dueDate"));
 
-        assertThrows(MallBizException.class, () -> controller.approve(2L,
+        assertThrows(PlatformBizException.class, () -> controller.approve(2L,
                 new DecisionService.ApproveReq("alice", null, null, 3, null), request()));
 
         ArgumentCaptor<String> reasonCaptor = ArgumentCaptor.forClass(String.class);
@@ -88,12 +88,12 @@ class DecisionControllerAuditTest {
     @Test
     @DisplayName("审计写入自身失败：只记日志，原始业务异常照常抛出（不掩盖）")
     void auditFailureDoesNotMaskBusinessError() {
-        MallBizException business = new MallBizException(MallBizException.PARAM_INVALID, "驳回原因必填");
+        PlatformBizException business = new PlatformBizException(PlatformBizException.PARAM_INVALID, "驳回原因必填");
         when(decisionService.reject(eq(3L), any(), any())).thenThrow(business);
         doThrow(new RuntimeException("audit db down")).when(audit)
                 .failure(any(), any(), any(), any(), any(), any(), any());
 
-        MallBizException thrown = assertThrows(MallBizException.class,
+        PlatformBizException thrown = assertThrows(PlatformBizException.class,
                 () -> controller.reject(3L, new DecisionService.ReasonReq(null), request()));
         assertSame(business, thrown);
     }
@@ -118,9 +118,9 @@ class DecisionControllerAuditTest {
     @DisplayName("创建草稿失败也留痕（resourceId 为 null，因为还没有 id）")
     void createFailureAuditedWithoutResourceId() {
         when(decisionService.createDraft(any(), any(), any()))
-                .thenThrow(new MallBizException(MallBizException.PARAM_INVALID, "标题必填"));
+                .thenThrow(new PlatformBizException(PlatformBizException.PARAM_INVALID, "标题必填"));
 
-        assertThrows(MallBizException.class, () -> controller.createDraft(
+        assertThrows(PlatformBizException.class, () -> controller.createDraft(
                 new DecisionService.CreateDraftReq(" ", "a", "m", "UP", null, null, null, null), request()));
 
         verify(audit).failure(any(), eq(OperationAuditService.ACTION_DECISION_CREATE),

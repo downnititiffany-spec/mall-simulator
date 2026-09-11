@@ -4,7 +4,7 @@ import com.graduation.analytics.auth.AuthService;
 import com.graduation.analytics.auth.CurrentUser;
 import com.graduation.analytics.auth.CurrentUserHolder;
 import com.graduation.analytics.common.ApiResponse;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -25,7 +25,7 @@ import java.util.Map;
  * 登录认证接口（§3.2 权限模块）：
  * login（白名单）→ 创建 24h 会话；logout / me 需携带有效 Bearer token。
  * 登录失败由本控制器直接映射 401 BAD_CREDENTIALS / 403 USER_DISABLED
- * （全局异常处理器把 MallBizException 固定映射为 400，无法表达 401）。
+ * （全局异常处理器把 PlatformBizException 固定映射为 400，无法表达 401）。
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -49,7 +49,7 @@ public class AuthController {
                     request.username(), request.password(), clientIp(servletRequest));
             ApiResponse<Object> body = ApiResponse.ok(result, trace.traceId());
             return ResponseEntity.ok(body);
-        } catch (MallBizException e) {
+        } catch (PlatformBizException e) {
             if (AuthService.BAD_CREDENTIALS.equals(e.getCode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ApiResponse.error(e.getCode(), e.getMessage(), trace.traceId()));

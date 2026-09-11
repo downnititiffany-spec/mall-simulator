@@ -1,6 +1,6 @@
 package com.graduation.analytics.decision;
 
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 
 /**
  * 操作者身份 + 请求上下文（R8-3 契约 §3.1/§3.3）：写审计与落库字段一律来自这里，
@@ -17,7 +17,7 @@ public record AuditActor(String traceId, String userId, String role, String ip) 
 
     public AuditActor {
         if (userId == null || userId.isBlank()) {
-            throw new MallBizException(UNAUTHORIZED, "缺少可信当前用户，拒绝执行（§21.2 禁止回退请求头/demo 用户）");
+            throw new PlatformBizException(UNAUTHORIZED, "缺少可信当前用户，拒绝执行（§21.2 禁止回退请求头/demo 用户）");
         }
     }
 

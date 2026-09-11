@@ -3,7 +3,7 @@ package com.graduation.analytics.auth;
 import com.graduation.analytics.auth.entity.UserEntity;
 import com.graduation.analytics.auth.mapper.SysUserMapper;
 import com.graduation.analytics.auth.mapper.UserSessionMapper;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,9 +64,9 @@ class AuthServiceRoleWhitelistTest {
         for (String role : new String[]{null, "", "guest", "ADMIN", "root", "data-dev"}) {
             setUp();
             when(userMapper.selectOne(any())).thenReturn(null);
-            MallBizException e = assertThrows(MallBizException.class,
+            PlatformBizException e = assertThrows(PlatformBizException.class,
                     () -> authService.createUser("u", "n", role, "Secret123"));
-            assertEquals(MallBizException.PARAM_INVALID, e.getCode());
+            assertEquals(PlatformBizException.PARAM_INVALID, e.getCode());
             verify(userMapper, never()).insert(any(UserEntity.class));
         }
     }
@@ -77,12 +77,12 @@ class AuthServiceRoleWhitelistTest {
         UserEntity exist = new UserEntity();
         exist.setUsername("dup");
         when(userMapper.selectOne(any())).thenReturn(exist);
-        assertThrows(MallBizException.class, () -> authService.createUser("dup", "n", "analyst", "Secret123"));
+        assertThrows(PlatformBizException.class, () -> authService.createUser("dup", "n", "analyst", "Secret123"));
 
         setUp();
         when(userMapper.selectOne(any())).thenReturn(null);
-        assertThrows(MallBizException.class, () -> authService.createUser("u", "n", "analyst", ""));
-        assertThrows(MallBizException.class, () -> authService.createUser("u", "n", "analyst", null));
+        assertThrows(PlatformBizException.class, () -> authService.createUser("u", "n", "analyst", ""));
+        assertThrows(PlatformBizException.class, () -> authService.createUser("u", "n", "analyst", null));
     }
 
     @Test

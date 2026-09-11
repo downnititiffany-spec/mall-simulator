@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * R8-3 身份与状态异常映射（平台层补充 advice，不动共享的 GlobalExceptionHandler）。
  *
- * <p>共享处理器把 {@code MallBizException} 固定映射 400、其余异常映射 500，无法表达 401，
+ * <p>共享处理器把 {@code PlatformBizException} 固定映射 400、其余异常映射 500，无法表达 401，
  * 也无法区分「业务参数错」与「状态机冲突」；这两个语义属本轮职责，因此在 platform-app 内
  * 用最高优先级的 advice 处理：</p>
  * <ul>

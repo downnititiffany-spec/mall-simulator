@@ -23,6 +23,18 @@
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <mybatis-plus.version>3.5.7</mybatis-plus.version>
+    <!--
+      DEF-14（2026-09-11 实测定位并固化，M1-6 期间发现）：Mockito 5 默认内联 mock maker
+      （ByteBuddy）在 JDK 9+ 需先 self-attach agent。本机受限执行环境下"借外部 java 进程 attach"
+      这条路会失败，报错固定为：
+        Could not initialize plugin: interface org.mockito.plugins.MockMaker (alternate: null)
+          Caused by: Could not self-attach to current VM using external process
+      于是任何用到 mock()/mockStatic() 的测试类整体报错（实测 metric-analysis 3 个类 23 个用例全红，
+      而 code 未变、编译正常）。放行 JVM 直连 self-attach 后同一条命令 38/38 全绿：
+        mvn -o -f analytics-server/pom.xml -pl metric-analysis -am test
+      固化在此处而不是靠每次命令行加参数——否则换个人/换台机器复跑就会重新踩。可用 -DargLine=... 覆盖。
+    -->
+    <argLine>-Djdk.attach.allowAttachSelf=true</argLine>
   </properties>
 
   <modules>

@@ -1,6 +1,6 @@
 package com.graduation.analytics.auth;
 
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.AuditActor;
 import com.graduation.analytics.decision.OperationAuditService;
 import org.junit.jupiter.api.AfterEach;
@@ -73,9 +73,9 @@ class UserAdminControllerAuditTest {
     @DisplayName("创建用户失败（重复用户名）：写 FAILED 行且仍不含密码")
     void createFailureAuditHidesPassword() {
         when(authService.createUser(anyString(), any(), anyString(), anyString()))
-                .thenThrow(new MallBizException("USER_EXISTS", "用户名已存在: dev1"));
+                .thenThrow(new PlatformBizException("USER_EXISTS", "用户名已存在: dev1"));
 
-        assertThrows(MallBizException.class, () -> controller.create(
+        assertThrows(PlatformBizException.class, () -> controller.create(
                 new UserAdminController.CreateUserReq("dev1", "张三", "data_dev", RAW_PASSWORD), request()));
 
         ArgumentCaptor<String> digestCaptor = ArgumentCaptor.forClass(String.class);
@@ -102,10 +102,10 @@ class UserAdminControllerAuditTest {
     @Test
     @DisplayName("重置密码失败：digest 里密码位仍是 ***（失败路径最容易漏脱敏）")
     void resetPasswordFailureAuditMasksSecret() {
-        doThrow(new MallBizException(MallBizException.PARAM_INVALID, "新密码至少 6 位"))
+        doThrow(new PlatformBizException(PlatformBizException.PARAM_INVALID, "新密码至少 6 位"))
                 .when(authService).resetPassword(anyLong(), anyString());
 
-        assertThrows(MallBizException.class, () -> controller.resetPassword(5L,
+        assertThrows(PlatformBizException.class, () -> controller.resetPassword(5L,
                 new UserAdminController.ResetPasswordReq(RAW_PASSWORD), request()));
 
         ArgumentCaptor<String> digestCaptor = ArgumentCaptor.forClass(String.class);
@@ -132,10 +132,10 @@ class UserAdminControllerAuditTest {
     @Test
     @DisplayName("启停失败（不能停用当前登录账号）：写 FAILED 行")
     void toggleFailureAudited() {
-        doThrow(new MallBizException("FORBIDDEN_OPERATION", "不能停用当前登录账号"))
+        doThrow(new PlatformBizException("FORBIDDEN_OPERATION", "不能停用当前登录账号"))
                 .when(authService).toggleUser(anyLong(), anyBoolean(), any());
 
-        assertThrows(MallBizException.class,
+        assertThrows(PlatformBizException.class,
                 () -> controller.toggle(1L, new UserAdminController.ToggleReq(false), request()));
 
         verify(audit).failure(any(), eq(OperationAuditService.ACTION_USER_TOGGLE),

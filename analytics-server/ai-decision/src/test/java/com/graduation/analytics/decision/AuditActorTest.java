@@ -1,6 +1,6 @@
 package com.graduation.analytics.decision;
 
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ class AuditActorTest {
     @DisplayName("user_id 为空/空白 → 抛 UNAUTHORIZED（禁止匿名审计）")
     void blankUserIdRejected() {
         for (String blank : new String[]{null, "", "   "}) {
-            MallBizException e = assertThrows(MallBizException.class, () -> new AuditActor("t", blank, "admin", null));
+            PlatformBizException e = assertThrows(PlatformBizException.class, () -> new AuditActor("t", blank, "admin", null));
             assertEquals(AuditActor.UNAUTHORIZED, e.getCode());
             assertTrue(e.getMessage().contains("§21.2") || e.getMessage().contains("身份"),
                     "异常信息应说明身份不可缺省: " + e.getMessage());

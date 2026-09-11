@@ -5,7 +5,7 @@ import com.graduation.analytics.auth.entity.UserEntity;
 import com.graduation.analytics.auth.entity.UserSessionEntity;
 import com.graduation.analytics.auth.mapper.SysUserMapper;
 import com.graduation.analytics.auth.mapper.UserSessionMapper;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,10 +50,10 @@ public class AuthService {
         UserEntity user = userMapper.selectOne(new LambdaQueryWrapper<UserEntity>()
                 .eq(UserEntity::getUsername, username));
         if (user == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new MallBizException(BAD_CREDENTIALS, "用户名或密码错误");
+            throw new PlatformBizException(BAD_CREDENTIALS, "用户名或密码错误");
         }
         if (user.getStatus() == null || user.getStatus() != 1) {
-            throw new MallBizException(USER_DISABLED, "账号已被禁用，请联系管理员");
+            throw new PlatformBizException(USER_DISABLED, "账号已被禁用，请联系管理员");
         }
         LocalDateTime now = LocalDateTime.now();
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -103,7 +103,7 @@ public class AuthService {
     public UserView me(CurrentUser current) {
         UserEntity user = userMapper.selectById(current.userId());
         if (user == null) {
-            throw new MallBizException(MallBizException.USER_NOT_FOUND, "用户不存在");
+            throw new PlatformBizException(PlatformBizException.USER_NOT_FOUND, "用户不存在");
         }
         return new UserView(user.getId(), user.getUsername(), user.getRealName(), user.getRole());
     }
@@ -113,21 +113,21 @@ public class AuthService {
     /** 创建用户：username 唯一；初始密码 BCrypt；返回用户视图 */
     public UserView createUser(String username, String realName, String role, String rawPassword) {
         if (username == null || username.isBlank() || rawPassword == null || rawPassword.isBlank()) {
-            throw new MallBizException("PARAM_INVALID", "用户名与初始密码必填");
+            throw new PlatformBizException("PARAM_INVALID", "用户名与初始密码必填");
         }
         UserEntity exist = userMapper.selectOne(new LambdaQueryWrapper<UserEntity>()
                 .eq(UserEntity::getUsername, username));
         if (exist != null) {
-            throw new MallBizException("USER_EXISTS", "用户名已存在: " + username);
+            throw new PlatformBizException("USER_EXISTS", "用户名已存在: " + username);
         }
         String roleNorm = switch (role == null ? "" : role) {
             // R8-3（§21.1）：白名单补 data_dev，并直接以权限矩阵为唯一事实来源，
             // 避免「矩阵加角色、这里忘加」的双份维护
             case "admin", "data_dev", "operator", "analyst" -> role;
-            default -> throw new MallBizException("PARAM_INVALID", "非法角色: " + role);
+            default -> throw new PlatformBizException("PARAM_INVALID", "非法角色: " + role);
         };
         if (!RolePermissions.knownRole(roleNorm)) {
-            throw new MallBizException("PARAM_INVALID", "角色未在权限矩阵中登记: " + roleNorm);
+            throw new PlatformBizException("PARAM_INVALID", "角色未在权限矩阵中登记: " + roleNorm);
         }
         UserEntity user = new UserEntity();
         user.setUsername(username);
@@ -144,7 +144,7 @@ public class AuthService {
     public void toggleUser(Long userId, boolean enable, CurrentUser operator) {
         UserEntity user = requireUser(userId);
         if (operator != null && operator.userId().equals(userId)) {
-            throw new MallBizException("FORBIDDEN_OPERATION", "不能停用当前登录账号");
+            throw new PlatformBizException("FORBIDDEN_OPERATION", "不能停用当前登录账号");
         }
         user.setStatus(enable ? 1 : 0);
         userMapper.updateById(user);
@@ -153,7 +153,7 @@ public class AuthService {
     /** 重置密码：新密码 BCrypt（成功后旧会话仍有效，由调用方自行决定） */
     public void resetPassword(Long userId, String newPassword) {
         if (newPassword == null || newPassword.length() < 6) {
-            throw new MallBizException("PARAM_INVALID", "新密码至少 6 位");
+            throw new PlatformBizException("PARAM_INVALID", "新密码至少 6 位");
         }
         UserEntity user = requireUser(userId);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
@@ -171,7 +171,7 @@ public class AuthService {
     private UserEntity requireUser(Long userId) {
         UserEntity user = userId == null ? null : userMapper.selectById(userId);
         if (user == null) {
-            throw new MallBizException(MallBizException.USER_NOT_FOUND, "用户不存在");
+            throw new PlatformBizException(PlatformBizException.USER_NOT_FOUND, "用户不存在");
         }
         return user;
     }

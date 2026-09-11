@@ -1,7 +1,7 @@
 package com.graduation.analytics.decision;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.entity.DecisionEvaluation;
 import com.graduation.analytics.decision.entity.DecisionTask;
 import com.graduation.analytics.decision.mapper.DecisionEvaluationMapper;
@@ -122,7 +122,7 @@ public class DecisionService {
 
     public DecisionTask createDraft(CreateDraftReq req, AuditActor actor, String source) {
         if (req == null) {
-            throw new MallBizException("PARAM_INVALID", "请求体不能为空");
+            throw new PlatformBizException("PARAM_INVALID", "请求体不能为空");
         }
         String normalizedSource = normalizeSource(source);
         requireText(req.title(), "title（决策标题）");
@@ -171,7 +171,7 @@ public class DecisionService {
         }
         List<String> missing = missingForSubmit(task);
         if (!missing.isEmpty()) {
-            throw new MallBizException("PARAM_INVALID",
+            throw new PlatformBizException("PARAM_INVALID",
                     "提交审批前必须齐备（§20.3），缺失: " + String.join(", ", missing));
         }
         DecisionStateMachine.validate(task.getStatus(), DecisionStateMachine.PENDING_REVIEW);
@@ -194,7 +194,7 @@ public class DecisionService {
 
         String owner = req != null && trimToNull(req.owner()) != null ? req.owner().trim() : trimToNull(task.getOwner());
         if (owner == null || (req == null || req.dueDate() == null)) {
-            throw new MallBizException("PARAM_INVALID",
+            throw new PlatformBizException("PARAM_INVALID",
                     "必须设置负责人与截止时间（owner/dueDate）");
         }
         int windowDays = resolveWindowDays(req == null ? null : req.evalWindowDays(), task.getEvalWindowDays());
@@ -202,7 +202,7 @@ public class DecisionService {
         // 基线：批准时刻的最新 ACTIVE 快照，同时钉住快照号（事后换快照无法伪造基线）
         Observation baseline = observe(task.getTargetMetricCode(), null);
         if (baseline.isEmpty()) {
-            throw new MallBizException("PARAM_INVALID", "当前快照缺少目标指标 " + task.getTargetMetricCode()
+            throw new PlatformBizException("PARAM_INVALID", "当前快照缺少目标指标 " + task.getTargetMetricCode()
                     + " 的基线，无法批准");
         }
 
@@ -319,7 +319,7 @@ public class DecisionService {
         String direction = normalizeDirection(task.getTargetDirection());
         int windowDays = resolveWindowDays(null, task.getEvalWindowDays());
         if (task.getApprovedAt() == null || task.getCompletedAt() == null) {
-            throw new MallBizException("PARAM_INVALID", "决策缺少批准时间或完成时间，无法计算评价窗口");
+            throw new PlatformBizException("PARAM_INVALID", "决策缺少批准时间或完成时间，无法计算评价窗口");
         }
         LocalDate approvedDate = task.getApprovedAt().toLocalDate();
         LocalDate completedDate = task.getCompletedAt().toLocalDate();
@@ -346,7 +346,7 @@ public class DecisionService {
         // baseline_value 非空约束：批准时已落库的基线值可作证据复用（同一钉住快照读出的值）
         evaluation.setBaselineValue(baseline.value() != null ? baseline.value() : task.getBaselineValue());
         if (evaluation.getBaselineValue() == null) {
-            throw new MallBizException("PARAM_INVALID", "决策缺少基线值，无法评价（批准时未锁定基线）");
+            throw new PlatformBizException("PARAM_INVALID", "决策缺少基线值，无法评价（批准时未锁定基线）");
         }
 
         String insufficient = insufficientReason(task, baseline, actual, windowDays,
@@ -582,7 +582,7 @@ public class DecisionService {
     private DecisionTask require(Long id) {
         DecisionTask task = id == null ? null : taskMapper.selectById(id);
         if (task == null) {
-            throw new MallBizException("PARAM_INVALID", "决策不存在: " + id);
+            throw new PlatformBizException("PARAM_INVALID", "决策不存在: " + id);
         }
         return task;
     }
@@ -595,14 +595,14 @@ public class DecisionService {
         if (SOURCE_AI.equals(value)) {
             return SOURCE_AI;
         }
-        throw new MallBizException("PARAM_INVALID", "非法决策来源: " + source + "（仅 ai/human）");
+        throw new PlatformBizException("PARAM_INVALID", "非法决策来源: " + source + "（仅 ai/human）");
     }
 
     private String normalizeDirection(String direction) {
         if (DIRECTION_UP.equals(direction) || DIRECTION_DOWN.equals(direction)) {
             return direction;
         }
-        throw new MallBizException("PARAM_INVALID",
+        throw new PlatformBizException("PARAM_INVALID",
                 "目标方向必须是 UP 或 DOWN（当前: " + direction + "），无法判定指标好坏（§20.3）");
     }
 
@@ -611,7 +611,7 @@ public class DecisionService {
         Integer value = requested != null && requested > 0 ? requested : stored;
         int days = value != null && value > 0 ? value : defaultEvalWindowDays;
         if (days <= 0) {
-            throw new MallBizException("PARAM_INVALID", "评价窗口天数必须大于 0");
+            throw new PlatformBizException("PARAM_INVALID", "评价窗口天数必须大于 0");
         }
         return days;
     }
@@ -619,7 +619,7 @@ public class DecisionService {
     private static String requireText(String value, String field) {
         String trimmed = trimToNull(value);
         if (trimmed == null) {
-            throw new MallBizException("PARAM_INVALID", "缺少必填字段: " + field);
+            throw new PlatformBizException("PARAM_INVALID", "缺少必填字段: " + field);
         }
         return trimmed;
     }

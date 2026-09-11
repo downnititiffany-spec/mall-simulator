@@ -9,7 +9,7 @@ import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.common.LandingUri;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
@@ -229,7 +229,7 @@ public class IngestionService {
         if (active != null) {
             try {
                 landingRoot = LandingUri.resolve(active.getLandingUri());
-            } catch (MallBizException e) {
+            } catch (PlatformBizException e) {
                 // 显式报告错误：landingUri 不可解析时如实说明，绝不回退到任何默认目录（D-003）
                 landingError = e.getMessage();
                 log.warn("landingUri 不可解析（profile {}）：{}", active.getId(), e.getMessage());

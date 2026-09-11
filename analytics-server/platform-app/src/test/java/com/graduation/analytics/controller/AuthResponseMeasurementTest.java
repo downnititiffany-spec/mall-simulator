@@ -12,7 +12,7 @@ import com.graduation.analytics.auth.AuthService;
 import com.graduation.analytics.auth.AuthInterceptor;
 import com.graduation.analytics.auth.CurrentUser;
 import com.graduation.analytics.auth.UserAdminController;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.DecisionService;
 import com.graduation.analytics.decision.OperationAuditService;
 import com.graduation.analytics.decision.entity.DecisionTask;
@@ -80,7 +80,7 @@ class AuthResponseMeasurementTest {
         DecisionService decisionService = mock(DecisionService.class);
         when(decisionService.list(anyInt())).thenReturn(List.of(new DecisionTask()));
         when(decisionService.createDraft(any(), any(), anyString()))
-                .thenThrow(new MallBizException(MallBizException.PARAM_INVALID, "标题必填"));
+                .thenThrow(new PlatformBizException(PlatformBizException.PARAM_INVALID, "标题必填"));
 
         TextToSqlService textToSqlService = mock(TextToSqlService.class);
         EvidenceBuilder builder = mock(EvidenceBuilder.class);

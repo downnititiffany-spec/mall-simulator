@@ -1,7 +1,7 @@
 package com.graduation.analytics.runtime;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.runtime.credential.CredentialService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
@@ -51,12 +51,12 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
     @Override
     public RuntimeProfile create(RuntimeProfile p) {
         if (p.getProfileCode() == null || p.getProfileCode().isBlank()) {
-            throw new MallBizException(MallBizException.PARAM_INVALID, "profile_code 必填");
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "profile_code 必填");
         }
         Long existed = profileMapper.selectCount(new LambdaQueryWrapper<RuntimeProfile>()
                 .eq(RuntimeProfile::getProfileCode, p.getProfileCode()));
         if (existed > 0) {
-            throw new MallBizException(MallBizException.PARAM_INVALID, "profile_code 已存在: " + p.getProfileCode());
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "profile_code 已存在: " + p.getProfileCode());
         }
         p.setId(null);
         if (p.getStatus() == null || p.getStatus().isBlank()) {
@@ -80,15 +80,15 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
     @Override
     public RuntimeProfile update(RuntimeProfile p) {
         if (p.getId() == null) {
-            throw new MallBizException(MallBizException.PARAM_INVALID, "id 必填");
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "id 必填");
         }
         RuntimeProfile existed = profileMapper.selectById(p.getId());
         if (existed == null) {
-            throw new MallBizException(MallBizException.PARAM_INVALID, "profile 不存在: " + p.getId());
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "profile 不存在: " + p.getId());
         }
         if (RuntimeProfile.STATUS_ACTIVE.equals(existed.getStatus())) {
             // 激活中的环境不允许直接改关键配置（§8.3：切换环境不能影响运行中批次）
-            throw new MallBizException(MallBizException.PARAM_INVALID, "ACTIVE 环境禁止修改，请先 disable");
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "ACTIVE 环境禁止修改，请先 disable");
         }
         p.setProfileCode(existed.getProfileCode()); // code 不可改
         p.setStatus(existed.getStatus());
@@ -231,7 +231,7 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
                     sb.append(c.name()).append(": ").append(c.detail()).append("; ");
                 }
             }
-            throw new MallBizException("ACTIVATE_CHECK_FAILED",
+            throw new PlatformBizException("ACTIVATE_CHECK_FAILED",
                     "激活前置测试未全部通过: " + sb);
         }
         // 旧 ACTIVE → DISABLED（§8.3 切换环境不能影响已运行批次）
@@ -261,7 +261,7 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
 
     @Override
     public RuntimeProfile getActive() {
-        return findActive().orElseThrow(() -> new MallBizException(MallBizException.INTERNAL,
+        return findActive().orElseThrow(() -> new PlatformBizException(PlatformBizException.INTERNAL,
                 "尚无 ACTIVE 运行环境（请先完成激活流程，§8.3）"));
     }
 
@@ -287,7 +287,7 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
     private RuntimeProfile require(Long id) {
         RuntimeProfile p = profileMapper.selectById(id);
         if (p == null) {
-            throw new MallBizException(MallBizException.PARAM_INVALID, "profile 不存在: " + id);
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "profile 不存在: " + id);
         }
         return p;
     }

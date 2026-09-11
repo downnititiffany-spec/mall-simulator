@@ -51,7 +51,7 @@ class LandingUriTest {
         for (String bad : new String[]{null, "", "   ", "file://host/share/landing", "hdfs://namenode:8020/landing"}) {
             assertThatThrownBy(() -> LandingUri.resolve(bad))
                     .as("landingUri=%s 必须明确报错", bad)
-                    .isInstanceOf(MallBizException.class)
+                    .isInstanceOf(PlatformBizException.class)
                     .hasMessageContaining("landingUri");
         }
     }

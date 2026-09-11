@@ -27,10 +27,10 @@ public final class LandingUri {
     private LandingUri() {
     }
 
-    /** 解析 landingUri/路径为本地绝对路径；不可解析时抛 {@link MallBizException}（不返回默认目录）。 */
+    /** 解析 landingUri/路径为本地绝对路径；不可解析时抛 {@link PlatformBizException}（不返回默认目录）。 */
     public static Path resolve(String landingUri) {
         if (landingUri == null || landingUri.isBlank()) {
-            throw new MallBizException(MallBizException.INTERNAL,
+            throw new PlatformBizException(PlatformBizException.INTERNAL,
                     "landingUri 为空，无法定位 Landing 根（V2.1 §6.2）");
         }
         String raw = landingUri.trim();
@@ -40,14 +40,14 @@ public final class LandingUri {
                 // file:///D:/landing → /D:/landing → D:/landing
                 rest = rest.substring(1);
             } else if (!isAcceptableFileUriTail(rest)) {
-                throw new MallBizException(MallBizException.INTERNAL,
+                throw new PlatformBizException(PlatformBizException.INTERNAL,
                         "不明 landingUri（file:// 后应接 file:///data/landing、file://./landing 或 file://D:/landing）：" + raw);
             }
             return Paths.get(rest).toAbsolutePath().normalize();
         }
         int schemeEnd = raw.indexOf("://");
         if (schemeEnd > 0) {
-            throw new MallBizException(MallBizException.INTERNAL,
+            throw new PlatformBizException(PlatformBizException.INTERNAL,
                     "暂不支持的 landingUri 协议：" + raw.substring(0, schemeEnd) + "://（当前仅支持本地 file:// 与裸路径）");
         }
         return Paths.get(raw).toAbsolutePath().normalize();

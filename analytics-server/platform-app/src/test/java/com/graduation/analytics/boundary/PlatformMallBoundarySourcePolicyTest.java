@@ -48,6 +48,11 @@ class PlatformMallBoundarySourcePolicyTest {
         JAVA_FORBIDDEN.put("商城数据库名", Pattern.compile("mall_simulator"));
         JAVA_FORBIDDEN.put("商城/生成器程序类", Pattern.compile("MallSimulatorApplication|GeneratorController"));
         JAVA_FORBIDDEN.put("mall.* 配置键", Pattern.compile("\"mall\\.[a-z]"));
+        // M1-6/AE-04：平台曾有一批以商城命名的类（旧名 "Mall" + "BizException"，根因是整改前平台与商城同进程），
+        // 2026-09-11 已改名为 PlatformBizException；本规则钉住它不许回来。
+        // 平台自有异常/工具类一律用 Platform* 命名；"商城"只允许作为**数据源**出现在配置与数据里
+        // （如 source_system="mock-mall" 是小写串，不受本规则约束）。
+        JAVA_FORBIDDEN.put("商城命名遗留（Mall 前缀类名）", Pattern.compile("\\bMall[A-Z]\\w*"));
     }
 
     /** 配置类资源禁止痕迹 */

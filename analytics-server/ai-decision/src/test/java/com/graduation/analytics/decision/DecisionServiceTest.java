@@ -1,6 +1,6 @@
 package com.graduation.analytics.decision;
 
-import com.graduation.analytics.common.MallBizException;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.DecisionService.ApproveReq;
 import com.graduation.analytics.decision.DecisionService.CreateDraftReq;
 import com.graduation.analytics.decision.DecisionService.SubmitReq;
@@ -87,18 +87,18 @@ class DecisionServiceTest {
     @Test
     @DisplayName("createDraft：非法 source 直接拒绝，不落库")
     void createDraftRejectsIllegalSource() {
-        MallBizException e = assertThrows(MallBizException.class, () -> service.createDraft(
+        PlatformBizException e = assertThrows(PlatformBizException.class, () -> service.createDraft(
                 new CreateDraftReq("t", "a", METRIC, "UP", null, null, "alice", null), alice, "robot"));
-        assertEquals(MallBizException.PARAM_INVALID, e.getCode());
+        assertEquals(PlatformBizException.PARAM_INVALID, e.getCode());
         verify(taskMapper, never()).insert(any(DecisionTask.class));
     }
 
     @Test
     @DisplayName("createDraft：title/action 缺失即 PARAM_INVALID")
     void createDraftRequiresTitleAndAction() {
-        assertThrows(MallBizException.class, () -> service.createDraft(
+        assertThrows(PlatformBizException.class, () -> service.createDraft(
                 new CreateDraftReq(" ", "a", METRIC, "UP", null, null, "alice", null), alice, "ai"));
-        assertThrows(MallBizException.class, () -> service.createDraft(
+        assertThrows(PlatformBizException.class, () -> service.createDraft(
                 new CreateDraftReq("t", "", METRIC, "UP", null, null, "alice", null), alice, "ai"));
     }
 
@@ -115,8 +115,8 @@ class DecisionServiceTest {
         task.setEvidencePackageId(null);
         when(taskMapper.selectById(1L)).thenReturn(task);
 
-        MallBizException e = assertThrows(MallBizException.class, () -> service.submit(1L, null, alice));
-        assertEquals(MallBizException.PARAM_INVALID, e.getCode());
+        PlatformBizException e = assertThrows(PlatformBizException.class, () -> service.submit(1L, null, alice));
+        assertEquals(PlatformBizException.PARAM_INVALID, e.getCode());
         assertTrue(e.getMessage().contains("owner"), e.getMessage());
         assertTrue(e.getMessage().contains("target_metric_code"), e.getMessage());
         assertTrue(e.getMessage().contains("target_direction"), e.getMessage());
@@ -178,13 +178,13 @@ class DecisionServiceTest {
         DecisionTask task = completeDraft();
         task.setStatus(DecisionStateMachine.PENDING_REVIEW);
         when(taskMapper.selectById(1L)).thenReturn(task);
-        assertThrows(MallBizException.class, () -> service.approve(1L, new ApproveReq("bob", null, null, 3, null), alice));
+        assertThrows(PlatformBizException.class, () -> service.approve(1L, new ApproveReq("bob", null, null, 3, null), alice));
 
         DecisionTask noMetric = completeDraft();
         noMetric.setStatus(DecisionStateMachine.PENDING_REVIEW);
         noMetric.setTargetMetricCode(null);
         when(taskMapper.selectById(2L)).thenReturn(noMetric);
-        assertThrows(MallBizException.class,
+        assertThrows(PlatformBizException.class,
                 () -> service.approve(2L, new ApproveReq("bob", LocalDate.now(), null, 3, null), alice));
     }
 
@@ -196,7 +196,7 @@ class DecisionServiceTest {
         when(taskMapper.selectById(1L)).thenReturn(task);
         when(metricStore.query(any(MetricStore.MetricQuery.class))).thenReturn(List.of());
 
-        MallBizException e = assertThrows(MallBizException.class,
+        PlatformBizException e = assertThrows(PlatformBizException.class,
                 () -> service.approve(1L, new ApproveReq("bob", LocalDate.now(), null, 3, null), alice));
         assertTrue(e.getMessage().contains("基线"), e.getMessage());
     }
@@ -207,15 +207,15 @@ class DecisionServiceTest {
         DecisionTask pending = completeDraft();
         pending.setStatus(DecisionStateMachine.PENDING_REVIEW);
         when(taskMapper.selectById(1L)).thenReturn(pending);
-        MallBizException e = assertThrows(MallBizException.class, () -> service.reject(1L, "  ", alice));
-        assertEquals(MallBizException.PARAM_INVALID, e.getCode());
+        PlatformBizException e = assertThrows(PlatformBizException.class, () -> service.reject(1L, "  ", alice));
+        assertEquals(PlatformBizException.PARAM_INVALID, e.getCode());
         assertTrue(e.getMessage().contains("原因"), e.getMessage());
         assertEquals(DecisionStateMachine.PENDING_REVIEW, pending.getStatus());
 
         DecisionTask running = completeDraft();
         running.setStatus(DecisionStateMachine.IN_PROGRESS);
         when(taskMapper.selectById(2L)).thenReturn(running);
-        assertThrows(MallBizException.class, () -> service.cancel(2L, null, alice));
+        assertThrows(PlatformBizException.class, () -> service.cancel(2L, null, alice));
 
         DecisionTask rejected = service.reject(1L, "指标口径不对", alice);
         assertEquals(DecisionStateMachine.REJECTED, rejected.getStatus());
@@ -395,7 +395,7 @@ class DecisionServiceTest {
         DecisionTask noApprovedAt = completedTask(new BigDecimal("100"));
         noApprovedAt.setApprovedAt(null);
         when(taskMapper.selectById(2L)).thenReturn(noApprovedAt);
-        assertThrows(MallBizException.class, () -> service.evaluate(2L, alice));
+        assertThrows(PlatformBizException.class, () -> service.evaluate(2L, alice));
     }
 
     @Test
@@ -413,8 +413,8 @@ class DecisionServiceTest {
     @DisplayName("未知决策 id → PARAM_INVALID，且不写任何评价")
     void unknownDecisionRejected() {
         when(taskMapper.selectById(99L)).thenReturn(null);
-        MallBizException e = assertThrows(MallBizException.class, () -> service.evaluate(99L, alice));
-        assertEquals(MallBizException.PARAM_INVALID, e.getCode());
+        PlatformBizException e = assertThrows(PlatformBizException.class, () -> service.evaluate(99L, alice));
+        assertEquals(PlatformBizException.PARAM_INVALID, e.getCode());
         verify(evaluationMapper, never()).insert(any(DecisionEvaluation.class));
     }
 
