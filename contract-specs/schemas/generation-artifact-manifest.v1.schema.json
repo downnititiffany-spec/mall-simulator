@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://graduation.local/contract-specs/schemas/generation-artifact-manifest.v1.schema.json",
+  "title": "generation-artifact-manifest v1.0 — 生成器文件模式制品清单（CANONICAL_EVENT_FILE）",
+  "description": "适用范围：模拟数据生成器（synthetic-data-generator）在 CANONICAL_EVENT_FILE 模式（V2.1 §3.3 B，L88-L90）下为产出的 JSONL 制品写出的清单，对应 V2.1 §4.1 的 EventSink.closeAndBuildManifest()（L122）与 §4.2 的 generation_artifact 表（L135）。\n\n字段来源：本 Schema 的 8 个字段严格取自 V2.1 §4.2 generation_artifact 行（L135：run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version，其中 min/max_event_time 展开为 min_event_time 与 max_event_time 两个键）。synthetic 为 §3.3 B L90『该模式必须显示 synthetic=true』的落点，见 x-synthetic-marker。\n\n未冻结项（务必先读）：\n1) §4.2 以表格列『关键字段』，未逐项标注可选性；本 Schema 为可复现/对账用途把 8 个字段全部视为 required（根 x-required-basis）。\n2) 类型未冻结：run_id 的序列化类型（字符串 / 整数）V2.1 未规定，故省略 type 并标 x-unspecified；uri、checksum 只约束 string，其格式（URI 形态、校验算法）V2.1 未规定。\n3) §4.3 L149 要求『并在 manifest 中记录期望隔离数』，但 §4.2 的 generation_artifact 字段里没有该字段。本 Schema 采用 additionalProperties: false，使该字段在契约冻结前被显式拒绝，而不是被静默接受——冲突登记在 README 待决策。\n4) EventSink.rotateIfNeeded()（§4.1 L120）意味着一次运行可能产出多个制品文件；本 Schema 描述『单个制品文件的清单』（每文件一份）。是否需要在运行级清单里放制品数组，V2.1 未规定，登记在 README 待决策。\n5) 时间字段格式按事件契约 §1 L25『时间一律 ISO-8601 带时区（业务统一 Asia/Shanghai，+08:00）』约束——制品内的 min/max_event_time 取自事件 event_time。",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "description": "所属生成运行 ID，对应 generation_run.run_id（V2.1 §4.2 L134）。类型未冻结：V2.1 §4.2 只列字段名，未规定 JSON 序列化类型（run_id 在 §4.4 L153 写作 API 返回的 runId），故此处不声明 type。",
+      "x-unspecified": true
+    },
+    "uri": {
+      "type": "string",
+      "description": "制品文件位置。来源：V2.1 §4.2 L135（uri）。URI 形态（相对/绝对/file:///HDFS）与基准目录 V2.1 未规定；生成器写入『独立测试目录』（§3.3 B L90）但路径未冻结。",
+      "x-unspecified": true
+    },
+    "checksum": {
+      "type": "string",
+      "description": "制品内容校验和。来源：V2.1 §4.2 L135（checksum，用于可复现和对账）。算法与编码（CRC32 / MD5 / SHA-256 / hex / base64）V2.1 未规定；注意采集侧清单用的是 CRC32 十六进制（见 ingestion-manifest.v1.schema.json 的 checksum），两者是否同一算法未冻结，不得默认相同。",
+      "x-unspecified": true
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "制品字节数。来源：V2.1 §4.2 L135（bytes）。"
+    },
+    "record_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "制品内的记录（JSONL 行）数。来源：V2.1 §4.2 L135（record_count）。"
+    },
+    "min_event_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?([+-]\\d{2}:\\d{2}|Z)$",
+      "description": "制品内最小 event_time（V2.1 §4.2 L135 写作 min/max_event_time，展开为 min_event_time）。格式依据事件契约 §1 L25；与 event-contract.md §4 L169『业务统计按 event_time』配套用于对账。"
+    },
+    "max_event_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?([+-]\\d{2}:\\d{2}|Z)$",
+      "description": "制品内最大 event_time（V2.1 §4.2 L135 的 min/max_event_time 展开）。格式依据事件契约 §1 L25。"
+    },
+    "schema_version": {
+      "type": "string",
+      "description": "制品内事件所用的契约版本。来源：V2.1 §4.2 L135（schema_version）+ §3.3 B L90『输出符合指定契约版本的 JSONL』——由计划冻结指定，故不写 const；当前事件契约版本为 1.0（event-contract.md L1/§1 L17，EventContract.SCHEMA_VERSION），未来新增字段升 1.1（event-contract.md L4）。"
+    },
+    "synthetic": {
+      "const": true,
+      "description": "合成数据标记，必须为 true。来源：V2.1 §3.3 B L90『该模式必须显示 synthetic=true，不能被描述为商城端到端测试』（CANONICAL_EVENT_FILE 模式）。此处按『落在文件模式制品清单上』实现；§3.3 未明确该标记的载体是制品清单、运行报告还是事件信封，登记为 README 待决策。信封本身只有 8 个固定字段（event-contract.md §1 L11-L20），无法承载该标记，故本文件是它的落点。",
+      "x-unspecified": true
+    }
+  },
+  "required": [
+    "run_id",
+    "uri",
+    "checksum",
+    "bytes",
+    "record_count",
+    "min_event_time",
+    "max_event_time",
+    "schema_version",
+    "synthetic"
+  ],
+  "additionalProperties": false,
+  "x-contract-status": "DRAFT",
+  "x-required-basis": {
+    "x-unspecified": true,
+    "rationale": "V2.1 §4.2 L135 只以『关键字段』列出 generation_artifact 的 8 个字段，未标注哪些可选；本 Schema 按清单的对账用途把全部字段视为必填，待契约任务确认可选性。"
+  },
+  "x-synthetic-marker": {
+    "x-unspecified": true,
+    "rationale": "V2.1 §3.3 B L90 只规定『该模式必须显示 synthetic=true』，未规定该标记落在制品清单、运行报告还是响应体；本文件选择制品清单作为载体，需契约任务确认。"
+  },
+  "x-evidence": [
+    "docs/项目完整实施指导书 V2.1.md §3.3 B L88-L90 (CANONICAL_EVENT_FILE 模式与 synthetic 标记)",
+    "docs/项目完整实施指导书 V2.1.md §4.1 L118-L123 (EventSink.write/rotateIfNeeded/flush/closeAndBuildManifest)",
+    "docs/项目完整实施指导书 V2.1.md §4.2 L135 (generation_artifact 关键字段)",
+    "docs/项目完整实施指导书 V2.1.md §4.3 L149 (manifest 记录期望隔离数 → 与 §4.2 字段清单冲突)",
+    "docs/contracts/event-contract.md §1 L25 (时间一律 ISO-8601 带时区)"
+  ]
+}

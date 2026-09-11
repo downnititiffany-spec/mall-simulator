@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://graduation.local/contract-specs/schemas/ingestion-manifest.v1.schema.json",
+  "title": "ingestion-manifest v1.0 — 采集批次清单（landing/manifests/{batchId}.json）",
+  "description": "来源声明：本 Schema 不是从指导书表格推导，而是从真实产物与写出它的代码逐字段反推——(1) 真实清单 landing/manifests/30.json（15 个顶层键，全部列入 required）；(2) 写出该清单的唯一实现 analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/IngestionService.java 的 buildManifest（L167-L192，键名与顺序一致）与 runOne（L68-L165）。files[] 结构按真实观测保持：单文件对象的 5 个键。\n\n键顺序不代表契约：顶层按 buildManifest 的 LinkedHashMap 顺序稳定；files[] 由 Map.of(...) 构造（IngestionService.java:131-136），其迭代顺序不稳定，故 files[] 的键顺序不作约束。\n\n未确定项：本清单是否允许多出未知键，指导书与事件契约均未规定（写出侧只产出这 15 个键，读取侧未见强约束实现），故 additionalProperties: true 并标 x-unspecified。",
+  "type": "object",
+  "properties": {
+    "batchId": {
+      "type": "integer",
+      "description": "采集批次 ID，来源 IngestionService.java:172（Long.parseLong(batchId)），也用于 acceptedUri/quarantineUri 与文件名。真实观测：30.json = 30（数字）。历史漂移：landing/manifests/1.json-5.json（5 个文件）中 batchId 为字符串 \"1\"…\"5\"，与 30.json 的类型不同，本 Schema 以 30.json 观测为准，漂移登记在 README 待决策。"
+    },
+    "batchNo": {
+      "type": "string",
+      "pattern": "^ing-\\d{14}-[0-9a-f]{8}$",
+      "description": "批次号，来源 IngestionService.java:74-75：\"ing-\" + yyyyMMddHHmmss（BATCH_NO，L48）+ \"-\" + UUID.substring(0,8)。真实观测 ing-20260911123006-bc6e7ea2、ing-20260907181748-c91ffd88，均满足该 pattern。"
+    },
+    "runtimeProfileId": {
+      "type": "integer",
+      "description": "ACTIVE RuntimeProfile 主键（采集归属运行环境）。来源 IngestionService.java:69-71、174。真实观测 1。"
+    },
+    "source": {
+      "const": "local-file",
+      "description": "采集来源类型。来源 IngestionService.java:175（buildManifest 内硬编码 \"local-file\"；batch.source 亦为 L80 同值）。新增连接器类型需契约任务后再放宽。"
+    },
+    "status": {
+      "const": "READY",
+      "description": "清单状态。来源 IngestionService.java:176（写死 \"READY\"，注释：§9.3 WAIT_LANDING 认 READY manifest）。真实观测 30 个清单全部为 READY。注意：该 READY 与 ingestion_batch.status（SUCCESS/QUARANTINED/FAILED，L150-L151）不是同一字段，勿混用。"
+    },
+    "startedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?$",
+      "description": "采集开始时间。来源 IngestionService.java:177（LocalDateTime.toString()）——因此是本地时间且无时区偏移，与事件信封的 ISO-8601 带时区规则（event-contract.md §1 L25）不同；此处按真实写出格式约束。真实观测 2026-09-11T12:30:06.247400（6 位小数）、2026-09-07T18:17:48.731855800（9 位小数）。时长/时区语义指导书未规定 → x-unspecified。",
+      "x-unspecified": true
+    },
+    "finishedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?$",
+      "description": "采集结束时间。来源 IngestionService.java:178（eventClock.nowLdt().toString()）。格式同 startedAt。",
+      "x-unspecified": true
+    },
+    "files": {
+      "type": "array",
+      "description": "参与本批次且产生记录的文件清单。来源 IngestionService.java:131-136（仅当 collected>0 或 quarantined>0 才加入，L117）；空数组是合法观测（landing/manifests/1.json-5.json files 为 []）。",
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    },
+    "acceptedRecords": {
+      "type": "integer",
+      "description": "本批次被接受（进入 accepted 目录）的记录数。来源 IngestionService.java:180（recordCount 累加 L118）。真实观测 30.json = 51。"
+    },
+    "quarantinedRecords": {
+      "type": "integer",
+      "description": "本批次进入隔离区的记录数。来源 IngestionService.java:181（quarantineCount 累加 L119）。真实观测 30.json = 4。"
+    },
+    "acceptedBytes": {
+      "type": "integer",
+      "description": "被接受记录的字节数。来源 IngestionService.java:182（acceptedBytes 累加 L120，落盘侧为 long）。真实观测 30.json = 17419。"
+    },
+    "schemaVersions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      },
+      "description": "本批次接受记录中出现的 event.schema_version 集合，去重且有序。来源 IngestionService.java:100（TreeMap 作去重集合）、L122、L183（new ArrayList<>(schemaVersions.keySet())）。空数组合法（无接受记录时，见 1.json）。当前平台唯一支持的版本为 \"1.0\"（EventContract.SCHEMA_VERSION；EventContractValidator.KNOWN_VERSIONS），但此处不写死枚举：升版本规则允许未来出现 1.1（event-contract.md L4）。"
+    },
+    "acceptedUri": {
+      "type": "string",
+      "pattern": "^accepted/\\d+$",
+      "description": "接受数据所在目录（相对 landing 根）。来源 IngestionService.java:184（\"accepted/\" + batchId）。真实观测 accepted/30。"
+    },
+    "quarantineUri": {
+      "type": "string",
+      "pattern": "^quarantine/\\d+$",
+      "description": "隔离数据所在目录（相对 landing 根）。来源 IngestionService.java:185（\"quarantine/\" + batchId）。真实观测 quarantine/30。"
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{1,8}$",
+      "description": "接受数据内容的 CRC32 校验和，十六进制小写、无前缀。来源 IngestionService.java:99、116、186（Long.toHexString(checksum.getValue())）。因 Long.toHexString 不补前导零，长度可变：真实观测长度 1（\"0\"，见 1.json）与 8（\"71bbde63\"，见 30.json）各若干。校验范围（仅 accepted 字节）指导书未规定 → x-unspecified。",
+      "x-unspecified": true
+    }
+  },
+  "required": [
+    "batchId",
+    "batchNo",
+    "runtimeProfileId",
+    "source",
+    "status",
+    "startedAt",
+    "finishedAt",
+    "files",
+    "acceptedRecords",
+    "quarantinedRecords",
+    "acceptedBytes",
+    "schemaVersions",
+    "acceptedUri",
+    "quarantineUri",
+    "checksum"
+  ],
+  "additionalProperties": true,
+  "x-unspecified": true,
+  "x-contract-status": "DRAFT",
+  "x-evidence": [
+    "landing/manifests/30.json (真实清单，15 个顶层键)",
+    "landing/manifests/1.json-5.json (files=[] / checksum=\"0\" / batchId 为字符串的历史形态)",
+    "analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/IngestionService.java L167-L192 (buildManifest) 与 L68-L165 (runOne)",
+    "analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java L186-L191 (files[].file = 文件名) 与 L62-L84 (offset/identity)"
+  ],
+  "$defs": {
+    "file": {
+      "title": "files[] 单项 — 文件级证据",
+      "type": "object",
+      "description": "来源 IngestionService.java:131-136（Map.of 的 5 个键）。键顺序不约束（Map.of 迭代顺序不稳定，30.json 中的观测顺序为 startOffset、acceptedRecords、quarantinedRecords、file、endOffset）。",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "文件名（非绝对路径）。来源 LocalFileIngestor.java:189（result(...) 传 file.getFileName().toString()）。真实观测 r9-m1-123006.jsonl。"
+        },
+        "acceptedRecords": {
+          "type": "integer",
+          "description": "该文件被接受的记录数（= LocalFileIngestor.FileResult.collected，LocalFileIngestor.java:248）。来源 IngestionService.java:133。真实观测 51。"
+        },
+        "quarantinedRecords": {
+          "type": "integer",
+          "description": "该文件进入隔离区的记录数（= FileResult.quarantined）。来源 IngestionService.java:134。真实观测 4。"
+        },
+        "startOffset": {
+          "type": "integer",
+          "description": "本次读取起始字节偏移，断点续采（首读 0，续读取 checkpoint.nextOffset）。来源 IngestionService.java:135 + LocalFileIngestor.java:71。真实观测 0。"
+        },
+        "endOffset": {
+          "type": "integer",
+          "description": "本次读取结束字节偏移。来源 IngestionService.java:136 + LocalFileIngestor.java:249。真实观测 18430。"
+        }
+      },
+      "required": [
+        "file",
+        "acceptedRecords",
+        "quarantinedRecords",
+        "startOffset",
+        "endOffset"
+      ],
+      "additionalProperties": true,
+      "x-unspecified": true
+    }
+  }
+}

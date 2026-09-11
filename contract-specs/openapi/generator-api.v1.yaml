@@ -1,0 +1,545 @@
+openapi: 3.0.3
+info:
+  title: synthetic-data-generator API（V2.1 §4.4）
+  version: 1.0.0
+  description: |
+    模拟数据生成器（`synthetic-data-generator`，V2.1 §3.1 L62）对外 API 的中立契约，仅覆盖
+    `docs/项目完整实施指导书 V2.1.md` §4.4（L151-L158）明确固定的端点与 §4.2（L130-L138）明确列出的字段名。
+
+    权威顺序：语义权威是指导书 V2.1（及已冻结的 docs/contracts/*.md）；本文件是其机器可读投影，
+    冲突时以指导书为准并按 V2.1 §9.1 登记契约任务。状态：DRAFT，未经总控冻结。
+
+    保守约定（防止凭空发明）：
+    - 只定义 §4.4 列出的路径与方法；§4.4 写作 `POST/PUT/GET /api/v1/targets`，其中 PUT 落在集合路径
+      字面照录（是否应为 `PUT /api/v1/targets/{id}` 未冻结，见 x-unspecified-notes）。
+    - 只使用 §4.2 表格中出现的字段名。字段类型/枚举只有在指导书明确时才声明（如 mode、run status），
+      其余一律省略 `type` 并标 `x-unspecified: true`。
+    - HTTP 状态码与错误响应体形状：指导书未规定。成功响应统一记为 200 并标 `x-unspecified`，
+      另给一个只有文字说明的 `default` 响应。
+    - 未定义 `servers`：§3.1 L62 只写「8092 或 CLI」，未冻结主机/端口/基路径。
+
+    相关契约文件：
+    - `../schemas/canonical-event.v1.schema.json`（文件模式产出的 JSONL 每行必须通过该校验）
+    - `../schemas/generation-artifact-manifest.v1.schema.json`（`GET .../artifacts` 返回的清单结构）
+  x-contract-status: DRAFT
+  x-unspecified-notes:
+    - "§4.4 L158 的 `POST/PUT/GET /api/v1/targets` 未区分集合路径与单项路径；本文件把 PUT 定义在集合路径，待冻结。"
+    - "§4.4 L158 写作 `POST /targets/{id}/test`（无 `/api/v1` 前缀）；本文件按同段其余端点的前缀规范化为 `/api/v1/targets/{id}/test`，待冻结。"
+    - "§4.4 L154 要求 `GET /generation-runs/{id}` 返回『进度』，但 §4.2 L134 未定义进度字段名与口径，故本文件不造字段。"
+    - "§4.4 L156 的『清单』对应哪个 schema 未明说；本文件按 ../schemas/generation-artifact-manifest.v1.schema.json 关联。"
+    - "MALL_API 模式（§3.3 A）是否也走同一组端点/同一制品清单，指导书未规定；本契约不对该模式作断言。"
+x-source: docs/项目完整实施指导书 V2.1.md §3.1/§3.3/§4.1/§4.2/§4.4
+
+tags:
+  - name: generation-runs
+    description: 生成运行：异步启动、查询、取消、取制品（§4.4 L153-L156）
+  - name: scenarios
+    description: 场景定义与输入约束（§4.4 L157）
+  - name: targets
+    description: 目标商城配置与连通性检查（§4.4 L158）
+
+paths:
+  /api/v1/generation-runs:
+    post:
+      tags: [generation-runs]
+      operationId: startGenerationRun
+      summary: 按 plan/version 异步启动一次生成运行
+      description: |
+        §4.4 L153：『按 plan/version 异步启动，返回 runId』。
+        请求体只承载 plan 与 version 两个标识（字段名取自 §4.2 L133 的 plan_id、version）；
+        其余运行参数来自被引用的不可变 plan 版本（§4.2 L133『运行只引用不可变版本』）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerationRunStartRequest'
+      responses:
+        '200':
+          description: 已接受异步启动请求。指导书未规定状态码（202/200 均未明说），此处按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationRunStarted'
+        default:
+          description: 失败响应。指导书未规定错误响应体形状与错误码，待契约任务冻结；本契约不造错误结构。
+
+  /api/v1/generation-runs/{id}:
+    get:
+      tags: [generation-runs]
+      operationId: getGenerationRun
+      summary: 查询运行状态、计数与失败摘要
+      description: |
+        §4.4 L154：『状态、进度、计数、失败摘要』。
+        状态用 §4.2 L138 的状态机；计数用 §4.2 L134 的 success_count/failed_count；失败摘要用 error。
+        『进度』字段名与口径未冻结，故不建模（见 info.x-unspecified-notes）。
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: 运行详情。指导书未规定状态码，按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationRun'
+        default:
+          description: 失败响应。错误体形状未冻结，不建模。
+
+  /api/v1/generation-runs/{id}/cancel:
+    post:
+      tags: [generation-runs]
+      operationId: cancelGenerationRun
+      summary: 幂等取消运行
+      description: |
+        §4.4 L155：『幂等取消』。幂等语义即重复调用不改变结果；取消意图另见 §4.2 L134 的 cancel_requested，
+        终态取值 CANCELLED（§4.2 L138）。指导书未规定成功响应体，本契约返回取消后的运行详情。
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: 取消请求已受理（幂等）。指导书未规定状态码，按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationRun'
+        default:
+          description: 失败响应。错误体形状未冻结，不建模。
+
+  /api/v1/generation-runs/{id}/artifacts:
+    get:
+      tags: [generation-runs]
+      operationId: listGenerationRunArtifacts
+      summary: 列出运行的制品文件、checksum 与清单
+      description: |
+        §4.4 L156：『文件、checksum、清单』。
+        字段取 §4.2 L135 的 generation_artifact；文件模式下每份制品另有清单，结构见
+        ../schemas/generation-artifact-manifest.v1.schema.json（本文件用 components.schemas.GenerationArtifact
+        平铺同一组字段，避免在 3.0.3 中混用 2020-12 关键字）。
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: 制品列表（可能为空数组）。指导书未规定状态码，按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GenerationArtifact'
+        default:
+          description: 失败响应。错误体形状未冻结，不建模。
+
+  /api/v1/scenarios:
+    get:
+      tags: [scenarios]
+      operationId: listScenarios
+      summary: 列出场景定义与输入约束
+      description: |
+        §4.4 L157：『场景定义和输入约束』。
+        §4.3（L140-L149）描述了算法维度（商品抽样、用户分层、时间分布、行为链、金额、库存、可复现、异常样本），
+        但没有冻结场景对象的字段名与 schema，故本契约把响应元素建模为『未冻结对象』（空 schema + x-unspecified），
+        不发明 scenario 的结构。
+      responses:
+        '200':
+          description: 场景列表。指导书未规定状态码，按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Scenario'
+
+  /api/v1/targets:
+    get:
+      tags: [targets]
+      operationId: listTargets
+      summary: 列出目标商城配置
+      description: §4.4 L158 的 GET 分支。字段取 §4.2 L132 的 generator_target；credential_ref 只存引用（L132『凭据只存引用』），不得返回明文凭据。
+      responses:
+        '200':
+          description: 目标列表。指导书未规定状态码，按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GeneratorTarget'
+        default:
+          description: 失败响应。错误体形状未冻结，不建模。
+    post:
+      tags: [targets]
+      operationId: createTarget
+      summary: 新建目标商城配置
+      description: §4.4 L158 的 POST 分支。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratorTarget'
+      responses:
+        '200':
+          description: 已创建的目标。指导书未规定状态码（未明说 201），按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratorTarget'
+        default:
+          description: 失败响应。错误体形状未冻结，不建模。
+    put:
+      tags: [targets]
+      operationId: updateTarget
+      summary: 更新目标商城配置
+      description: |
+        §4.4 L158 字面写作 `PUT /api/v1/targets`（集合路径）；本文件照录，是否应改为
+        `PUT /api/v1/targets/{id}` 未冻结（见 info.x-unspecified-notes）。
+        §4.2 L132 的 config_version 用于版本冻结：『每次运行冻结版本』。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratorTarget'
+      responses:
+        '200':
+          description: 更新后的目标。指导书未规定状态码，按 200 记录，待冻结。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratorTarget'
+        default:
+          description: 失败响应。错误体形状未冻结，不建模。
+
+  /api/v1/targets/{id}/test:
+    post:
+      tags: [targets]
+      operationId: testTarget
+      summary: 目标商城连通性检查
+      description: |
+        §4.4 L158：`POST /targets/{id}/test`（前缀按本文件规范化）。
+        语义对应 §4.1 L107 的 `TargetCheckResult test(TargetConfig config)`；TargetCheckResult 与
+        TargetConfig 的字段在指导书中均未定义，故响应只标 x-unspecified，不发明检查项字段。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: generator_target.id（§4.2 L132）。类型未冻结，故不声明 schema。
+          schema:
+            x-unspecified: true
+      responses:
+        '200':
+          description: 连通性检查结果。字段未冻结，待契约任务。指导书未规定状态码，按 200 记录。
+          x-unspecified: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TargetCheckResult'
+        default:
+          description: 失败响应。错误体形状未冻结，不建模。
+
+components:
+  parameters:
+    RunId:
+      name: id
+      in: path
+      required: true
+      description: |
+        运行标识。§4.4 写作 `{id}`，§4.2 L134 的字段名为 run_id，§4.4 L153 的响应写作 runId；
+        三者命名不一致，类型亦未冻结，故此处不声明 schema，登记在 README 待决策。
+      schema:
+        x-unspecified: true
+
+  schemas:
+    GenerationRunStartRequest:
+      title: 启动运行的请求（§4.4 L153）
+      type: object
+      description: 只承载被引用的不可变 plan 版本；其它运行参数从 plan 版本读取（§4.2 L133）。
+      properties:
+        plan_id:
+          description: 计划 ID（字段名取自 §4.2 L133 的 plan_id）。类型未冻结。
+          x-unspecified: true
+        version:
+          description: 计划版本（字段名取自 §4.2 L133 的 version）。类型未冻结；§4.2 L133『运行只引用不可变版本』。
+          x-unspecified: true
+      required: [plan_id, version]
+      additionalProperties: false
+      x-unspecified: true
+
+    GenerationRunStarted:
+      title: 启动运行的响应（§4.4 L153）
+      type: object
+      description: §4.4 L153『返回 runId』。字段名照录响应用语 `runId`；注意 §4.2 L134 的表字段名为 run_id，两者命名不一致，待冻结。
+      properties:
+        runId:
+          description: 新建运行的标识。类型未冻结。
+          x-unspecified: true
+      required: [runId]
+      additionalProperties: false
+      x-unspecified: true
+
+    GenerationRun:
+      title: 生成运行（§4.2 L134 generation_run）
+      type: object
+      description: |
+        字段名逐项取自 §4.2 L134：run_id、plan_version、target_version、status、started/finished、success_count、
+        failed_count、checksum、error、cancel_requested。其中 started/finished 在指导书中以简写形式出现，未给出
+        完整键名，本契约按字面取 started 与 finished（不擅自改写为 started_at/finished_at），待冻结。
+      properties:
+        run_id:
+          description: 运行 ID。类型未冻结（§4.4 L153 的响应用语为 runId）。
+          x-unspecified: true
+        plan_version:
+          description: 本次运行冻结的计划版本。类型未冻结。
+          x-unspecified: true
+        target_version:
+          description: 本次运行冻结的目标配置版本（§4.2 L132 config_version 侧）。类型未冻结。
+          x-unspecified: true
+        status:
+          allOf:
+            - $ref: '#/components/schemas/GenerationRunStatus'
+          description: 运行状态，取值受 §4.2 L138 状态机约束：PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED。
+        started:
+          description: 运行开始时间。§4.2 L134 写作 `started/finished`，键名未完全冻结，格式未规定。
+          x-unspecified: true
+        finished:
+          description: 运行结束时间。§4.2 L134 写作 `started/finished`，键名未完全冻结，格式未规定。
+          x-unspecified: true
+        success_count:
+          description: 成功计数（§4.2 L134）。口径（事件数/请求数）未冻结。
+          x-unspecified: true
+        failed_count:
+          description: 失败计数（§4.2 L134）。口径未冻结。
+          x-unspecified: true
+        checksum:
+          description: 运行级校验和（§4.2 L134）。算法与覆盖范围未冻结。
+          x-unspecified: true
+        error:
+          description: 失败摘要（§4.4 L154『失败摘要』；§4.2 L134 字段名 error）。类型未冻结（字符串或对象）。
+          x-unspecified: true
+        cancel_requested:
+          description: 是否已请求取消（§4.2 L134）。类型未冻结（布尔或时间戳）。
+          x-unspecified: true
+      required: [run_id, status]
+      additionalProperties: false
+      x-unspecified: true
+
+    GenerationRunStatus:
+      title: 运行状态枚举（§4.2 L138）
+      type: string
+      description: 状态机 PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED（§4.2 L138 原文）。
+      enum:
+        - PENDING
+        - RUNNING
+        - SUCCESS
+        - FAILED
+        - CANCELLED
+
+    GenerationPlan:
+      title: 生成计划（§4.2 L133 generation_plan）
+      type: object
+      description: |
+        字段名逐项取自 §4.2 L133：plan_id、mode、target_id、scenario、seed、start/end、event_count、
+        rate_per_second、dirty_profile、output_uri、version。start/end 在指导书中为简写，本契约按字面取 start 与 end。
+        §4.2 L133『运行只引用不可变版本』：修改计划不得影响已启动任务。
+      properties:
+        plan_id:
+          description: 计划 ID。类型未冻结。
+          x-unspecified: true
+        mode:
+          allOf:
+            - $ref: '#/components/schemas/GenerationMode'
+          description: 生成模式，取值受 §3.3 约束（MALL_API / CANONICAL_EVENT_FILE）。
+        target_id:
+          description: 目标商城 ID（关联 generator_target.id）。类型未冻结。
+          x-unspecified: true
+        scenario:
+          description: 场景标识（场景定义见 §4.4 L157 / §4.3）。取值集合未冻结。
+          x-unspecified: true
+        seed:
+          description: 根随机种子（§4.3 L148『所有随机源由一个根 seed 派生』）。类型未冻结（整数或字符串）。
+          x-unspecified: true
+        start:
+          description: 时间窗口起点。§4.2 L133 写作 `start/end`，键名未完全冻结，格式未规定。
+          x-unspecified: true
+        end:
+          description: 时间窗口终点。§4.2 L133 写作 `start/end`，键名未完全冻结，格式未规定。
+          x-unspecified: true
+        event_count:
+          description: 目标事件数。类型未冻结。
+          x-unspecified: true
+        rate_per_second:
+          description: 负载（每秒事件数）。类型未冻结。
+          x-unspecified: true
+        dirty_profile:
+          description: 脏数据策略档位。§3.1 L62『脏数据策略』/§4.3 L149『异常样本』；取值集合未冻结。
+          x-unspecified: true
+        output_uri:
+          description: 输出位置（文件模式制品目录）。形态未冻结。
+          x-unspecified: true
+        version:
+          description: 计划版本（不可变，运行只引用版本）。类型未冻结。
+          x-unspecified: true
+      required: [plan_id, mode, version]
+      additionalProperties: false
+      x-unspecified: true
+
+    GenerationMode:
+      title: 生成模式枚举（§3.3 L82/L88）
+      type: string
+      description: §3.3 的两个模式标题即取值：MALL_API（A 模式，走商城公开接口）、CANONICAL_EVENT_FILE（B 模式，直接产出契约事件文件）。
+      enum:
+        - MALL_API
+        - CANONICAL_EVENT_FILE
+
+    GeneratorTarget:
+      title: 目标商城配置（§4.2 L132 generator_target）
+      type: object
+      description: |
+        字段名逐项取自 §4.2 L132：id、name、adapter_type、base_url、credential_ref、config_json、
+        config_version、status、test_environment、capabilities。约束：『凭据只存引用』（credential_ref），
+        『每次运行冻结版本』（config_version）。adapter_type 的取值集合未冻结（§4.1 L126 只说明第一版实现
+        ReferenceMallHttpAdapter 与 JsonlEventSink）。
+      properties:
+        id:
+          description: 目标 ID。类型未冻结。
+          x-unspecified: true
+        name:
+          description: 目标名称。类型未冻结。
+          x-unspecified: true
+        adapter_type:
+          description: 适配器类型；取值集合未冻结（§4.1 L126 第一版为 ReferenceMallHttpAdapter）。
+          x-unspecified: true
+        base_url:
+          description: 商城公开接口基地址。类型未冻结。
+          x-unspecified: true
+        credential_ref:
+          description: 凭据引用（不得为明文凭据）。§4.2 L132『凭据只存引用』；引用形态未冻结。
+          x-unspecified: true
+        config_json:
+          description: 适配器配置 JSON。内部结构未冻结。
+          x-unspecified: true
+        config_version:
+          description: 配置版本，用于运行冻结（§4.2 L132『每次运行冻结版本』）。类型未冻结。
+          x-unspecified: true
+        status:
+          description: 目标状态。取值集合未冻结。
+          x-unspecified: true
+        test_environment:
+          description: 是否/何种测试环境标记。类型与取值未冻结。
+          x-unspecified: true
+        capabilities:
+          description: 能力集合（对应 §4.1 L108 capabilities()）。结构未冻结。
+          x-unspecified: true
+      required: [name, adapter_type]
+      additionalProperties: false
+      x-unspecified: true
+
+    TargetCheckResult:
+      title: 连通性检查结果（§4.1 L107 / §4.4 L158）
+      type: object
+      description: |
+        §4.1 L107 `TargetCheckResult test(TargetConfig config)` 与 §4.4 L158 的连通性检查均已提出该对象，
+        但指导书没有给出它的任何字段，故本契约不声明 properties（空对象 + x-unspecified），
+        不发明『检查项/是否通过/耗时』等字段。
+      additionalProperties: true
+      x-unspecified: true
+
+    Scenario:
+      title: 场景定义与输入约束（§4.4 L157）
+      type: object
+      description: |
+        §4.4 L157 要求返回『场景定义和输入约束』，§4.3（L140-L149）给出了算法维度但未冻结字段名，
+        故本契约不声明 properties（空对象 + x-unspecified）。生成器实现不得据此发明对外字段后回写成契约。
+      additionalProperties: true
+      x-unspecified: true
+
+    GenerationArtifact:
+      title: 生成制品（§4.2 L135 generation_artifact）
+      type: object
+      description: |
+        字段名逐项取自 §4.2 L135：run_id、uri、checksum、bytes、record_count、min_event_time、
+        max_event_time、schema_version（其中 min/max_event_time 展开为两个键）；文件模式下另有 synthetic 标记，
+        完整清单契约见 ../schemas/generation-artifact-manifest.v1.schema.json。
+      properties:
+        run_id:
+          description: 所属运行 ID。类型未冻结。
+          x-unspecified: true
+        uri:
+          type: string
+          description: 制品位置。形态未冻结。
+          x-unspecified: true
+        checksum:
+          type: string
+          description: 制品校验和。算法与编码未冻结。
+          x-unspecified: true
+        bytes:
+          type: integer
+          minimum: 0
+          description: 制品字节数。
+        record_count:
+          type: integer
+          minimum: 0
+          description: 制品记录数。
+        min_event_time:
+          type: string
+          description: 制品内最小 event_time。格式未冻结（按事件契约 §1 L25 应为 ISO-8601 带时区）。
+          x-unspecified: true
+        max_event_time:
+          type: string
+          description: 制品内最大 event_time。格式未冻结（按事件契约 §1 L25 应为 ISO-8601 带时区）。
+          x-unspecified: true
+        schema_version:
+          type: string
+          description: 制品所用契约版本；由计划指定（§3.3 B L90『符合指定契约版本』），当前为 1.0。
+        synthetic:
+          type: boolean
+          enum: [true]
+          description: 文件模式（CANONICAL_EVENT_FILE）必须为 true（§3.3 B L90『该模式必须显示 synthetic=true』）。标记载体未冻结，本契约按制品清单落点建模。
+          x-unspecified: true
+      required: [run_id, uri, checksum, schema_version]
+      additionalProperties: false
+      x-unspecified: true
+
+    GenerationEventStat:
+      title: 事件统计（§4.2 L136 generation_event_stat）
+      type: object
+      description: |
+        字段名逐项取自 §4.2 L136：run_id、event_type、count、amount，用途『验证各事件类型和金额分布』。
+        §4.4 没有为它固定端点，故本契约只登记结构，不定义路径（避免发明 API）。
+      properties:
+        run_id:
+          description: 运行 ID。类型未冻结。
+          x-unspecified: true
+        event_type:
+          type: string
+          enum:
+            - user_registered
+            - product_created
+            - product_updated
+            - behavior
+            - order_created
+            - order_paid
+            - order_cancelled
+            - refund_created
+            - refund_completed
+            - stock_reserved
+            - stock_released
+            - stock_changed
+          description: 事件类型，取值全集来自 event-contract.md §3 L152-L160（12 类）。
+        count:
+          description: 该事件类型的记录数。类型未冻结。
+          x-unspecified: true
+        amount:
+          description: 该事件类型的金额合计（§4.2 L136 用途为金额分布校验）。类型未冻结（按事件契约 §1 L26 应为十进制字符串）。
+          x-unspecified: true
+      required: [run_id, event_type]
+      additionalProperties: false
+      x-unspecified: true
