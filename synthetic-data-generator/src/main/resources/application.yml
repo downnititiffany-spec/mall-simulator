@@ -31,9 +31,13 @@ generator:
   output:
     # 文件模式（CANONICAL_EVENT_FILE）产物根目录；只允许本程序自己的目录
     root: ${GENERATOR_OUTPUT_ROOT:./generator-output}
+    # 单个 JSONL 制品最多多少条事件，超过即轮转并立即写同名清单（§4.2 generation_artifact）
+    max-records-per-file: ${GENERATOR_MAX_RECORDS_PER_FILE:100000}
   reproducibility:
     # 可复现口径（§4.2）：相同 plan_version + seed + time_window 必须可复现
     key-prefix: v1
+  # 命令行入口：留空即只起 Web 服务（§4.5 的 CLI 分支，见 GeneratorCli）
+  cli: ${GENERATOR_CLI:}
 
 logging:
   file:

@@ -38,8 +38,13 @@ public record ArtifactManifest(
         if (runId == null || runId.isBlank()) {
             throw new IllegalArgumentException("run_id 必填（契约清单 required）");
         }
-        ContractFormat.requireTime(minEventTime);
-        ContractFormat.requireTime(maxEventTime);
+        if (recordCount > 0) {
+            ContractFormat.requireTime(minEventTime);
+            ContractFormat.requireTime(maxEventTime);
+        } else if (minEventTime != null || maxEventTime != null) {
+            throw new IllegalArgumentException("空制品（record_count=0）不得带 min/max event_time："
+                    + "否则无法分辨『真的没有事件』与『没算出来』");
+        }
         if (schemaVersion == null || schemaVersion.isBlank()) {
             throw new IllegalArgumentException("schema_version 必填（契约清单 required）");
         }

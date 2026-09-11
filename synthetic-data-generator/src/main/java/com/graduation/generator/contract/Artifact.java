@@ -32,8 +32,9 @@ public record Artifact(String uri, String kind, String checksum, long bytes, lon
         if (bytes < 0 || recordCount < 0) {
             throw new IllegalArgumentException("制品字节数与记录数不得为负");
         }
-        if (recordCount > 0 && (minEventTime == null || maxEventTime == null)) {
-            throw new IllegalArgumentException("非空制品必须带 min/max event_time（§4.2 对账字段）");
+        if (recordCount > 0 && (minEventTime == null || maxEventTime == null)
+                && KIND_EVENT_JSONL.equals(kind)) {
+            throw new IllegalArgumentException("非空事件制品必须带 min/max event_time（§4.2 对账字段）：" + uri);
         }
     }
 
