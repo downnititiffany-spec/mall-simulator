@@ -95,8 +95,25 @@ class SourceRegistryMigrationMySqlIT {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '16'", Integer.class);
         assertThat(count).as("V16 只允许一条历史行").isEqualTo(1);
 
-        Integer maxRank = meta.queryForObject("SELECT MAX(installed_rank) FROM flyway_schema_history", Integer.class);
-        assertThat(maxRank).as("V16 应是最后应用的脚本").isEqualTo(((Number) row.get("installed_rank")).intValue());
+        // P1-05（V17，D-037）之后 V16 不再是最后应用的脚本，故这里不再断言 maxRank == V16 的 rank，
+        // 改为断言 V16 在历史中的**相对次序**（V16 之前的所有号都排在它前面）——这正是 P1-02 当时要的
+        // 性质，且不会在后续迁移加号时变红（原断言 "V16 应是最后应用的脚本" 会在 V17 落地后必然失败）。
+        Integer laterRank = meta.queryForObject(
+                "SELECT MIN(installed_rank) FROM flyway_schema_history WHERE version <> '16' "
+                        + "AND CAST(version AS UNSIGNED) > 16", Integer.class);
+        if (laterRank != null) {
+            assertThat(((Number) row.get("installed_rank")).intValue())
+                    .as("比 V16 号大的脚本必须排在 V16 之后")
+                    .isLessThan(laterRank);
+        }
+        Integer earlierRank = meta.queryForObject(
+                "SELECT MAX(installed_rank) FROM flyway_schema_history WHERE version <> '16' "
+                        + "AND CAST(version AS UNSIGNED) < 16", Integer.class);
+        if (earlierRank != null) {
+            assertThat(((Number) row.get("installed_rank")).intValue())
+                    .as("比 V16 号小的脚本必须排在 V16 之前")
+                    .isGreaterThan(earlierRank);
+        }
     }
 
     @Test

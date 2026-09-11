@@ -2,9 +2,38 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://graduation.local/contract-specs/schemas/ingestion-manifest.v1.schema.json",
   "title": "ingestion-manifest v1.0 — 采集批次清单（landing/manifests/{batchId}.json）",
-  "description": "来源声明：本 Schema 不是从指导书表格推导，而是从真实产物与写出它的代码逐字段反推——(1) 真实清单 landing/manifests/30.json（15 个顶层键，全部列入 required）；(2) 写出该清单的唯一实现 analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/IngestionService.java 的 buildManifest（L167-L192，键名与顺序一致）与 runOne（L68-L165）。files[] 结构按真实观测保持：单文件对象的 5 个键。\n\n键顺序不代表契约：顶层按 buildManifest 的 LinkedHashMap 顺序稳定；files[] 由 Map.of(...) 构造（IngestionService.java:131-136），其迭代顺序不稳定，故 files[] 的键顺序不作约束。\n\n未确定项：本清单是否允许多出未知键，指导书与事件契约均未规定（写出侧只产出这 15 个键，读取侧未见强约束实现），故 additionalProperties: true 并标 x-unspecified。",
+  "description": "来源声明：本 Schema 不是从指导书表格推导，而是从真实产物与写出它的代码逐字段反推——(1) 真实清单 landing/manifests/30.json（15 个顶层键，全部列入 required）；(2) 写出该清单的唯一实现 analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/IngestionService.java 的 buildManifest（L167-L192，键名与顺序一致）与 runOne（L68-L165）。files[] 结构按真实观测保持：单文件对象的 5 个键。\n\n键顺序不代表契约：顶层按 buildManifest 的 LinkedHashMap 顺序稳定；files[] 由 Map.of(...) 构造（IngestionService.java:131-136），其迭代顺序不稳定，故 files[] 的键顺序不作约束。\n\n未确定项：本清单是否允许多出未知键，指导书与事件契约均未规定（写出侧只产出这 15 个键，读取侧未见强约束实现），故 additionalProperties: true 并标 x-unspecified。\n\nP1-05 加法扩展（2026-09-11，决策记录 D-037 裁决 6/8）：新增 sourceCode / sourceId / profileVersion / mappingVersion 四个字段，**一律不列入 required**——已落盘的 landing/manifests/*.json（1-5.json、30.json 等）没有这些键，列入 required 会让它们瞬间非法。取值者：sourceCode、sourceId、profileVersion **一律取自 analytics_meta.source_registry 的 source_code / id / profile_version 三列**（登记值权威，禁止从源画像 JSON 反推——那会造出第二所有者）；mappingVersion 在词汇映射落地（P2）之前**只能为 null**，语义 = 本批次未应用任何映射，禁止用 \"0\"/\"\"/\"v1\" 之类占位值冒充版本。",
   "type": "object",
   "properties": {
+    "sourceCode": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "本批次的源编码（如 mock-mall）。取值者 = source_registry.source_code（VARCHAR(64) NOT NULL，V16__source_registry.sql）。与既有 source 字段的区别：source 是**连接器类型**（现有取值 local-file），sourceCode 是**登记源的业务编码**，两者不得互相复用或改名（D-037 裁决 5）。P1-05 之前落盘的清单没有该键。",
+      "x-added-by": "P1-05 (D-037)"
+    },
+    "sourceId": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "本批次的源登记主键（source_registry.id）。取值者 = source_registry.id。为什么批次必须有它：runtime_profile.source_id 会被「切换当前源」改写，只靠 profile 反推会得到错的源归属（D-037 裁决 4）。",
+      "x-added-by": "P1-05 (D-037)"
+    },
+    "profileVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "description": "本批次使用的源画像版本。取值者 = source_registry.profile_version（VARCHAR(32) NOT NULL，种子值 1.0）。画像文件内的 profileVersion 是**文件自述版本**，与登记值的一致性由此后的画像加载器（P3-01）负责校验，写入清单时一律用登记列（D-037 裁决 8）。",
+      "x-added-by": "P1-05 (D-037)"
+    },
+    "mappingVersion": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64,
+      "description": "本批次应用的词汇映射版本；P1-05 阶段**恒为 null**（映射在 P2 落地），语义 = 未应用任何映射。禁止写占位值（D-037 裁决 6）。",
+      "x-added-by": "P1-05 (D-037)"
+    },
     "batchId": {
       "type": "integer",
       "description": "采集批次 ID，来源 IngestionService.java:172（Long.parseLong(batchId)），也用于 acceptedUri/quarantineUri 与文件名。真实观测：30.json = 30（数字）。历史漂移：landing/manifests/1.json-5.json（5 个文件）中 batchId 为字符串 \"1\"…\"5\"，与 30.json 的类型不同，本 Schema 以 30.json 观测为准，漂移登记在 README 待决策。"
@@ -106,7 +135,9 @@
     "landing/manifests/30.json (真实清单，15 个顶层键)",
     "landing/manifests/1.json-5.json (files=[] / checksum=\"0\" / batchId 为字符串的历史形态)",
     "analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/IngestionService.java L167-L192 (buildManifest) 与 L68-L165 (runOne)",
-    "analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java L186-L191 (files[].file = 文件名) 与 L62-L84 (offset/identity)"
+    "analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java L186-L191 (files[].file = 文件名) 与 L62-L84 (offset/identity)",
+    "docs/开发过程事实与决策记录.md D-037 (P1-05 裁决：四个源身份字段的取值者、不进 required、mappingVersion 恒 null)",
+    "analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql (source_code/id/profile_version 三列的权威定义)"
   ],
   "$defs": {
     "file": {

@@ -1,6 +1,6 @@
 # contract-specs — 三程序共享的版本化机器可读契约
 
-状态：**部分冻结**——`specs/warehouse-namespace.v1.json` 已由总控冻结（2026-09-11，依据 P1-04 的本地 E3 实测，见 §4）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`1.1.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的**加法新增**，按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增）
+状态：**部分冻结**——`specs/warehouse-namespace.v1.json` 已由总控冻结（2026-09-11，依据 P1-04 的本地 E3 实测，见 §4）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`1.2.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
 
 ## 1. 目的与边界
 
@@ -39,7 +39,7 @@
 
 ## 3. 规则
 
-- **版本号**：沿用 `event-contract.md` L4 的自身规则——新增字段 → `schema_version` 升 `1.1` 起；破坏性变更 → 新主版本并增加转换器。文件名中的 `v1` 表示主版本，仅在破坏性变更时新增文件（如 `canonical-event.v2.schema.json`），**不原地改语义**。目录级版本见 [`VERSION`](VERSION)：任何契约文件发生加法变更 → `1.1.0`；破坏性变更 → `2.0.0`。
+- **版本号**：沿用 `event-contract.md` L4 的自身规则——新增字段 → `schema_version` 升 `1.1` 起；破坏性变更 → 新主版本并增加转换器。文件名中的 `v1` 表示主版本，仅在破坏性变更时新增文件（如 `canonical-event.v2.schema.json`），**不原地改语义**。目录级版本见 [`VERSION`](VERSION)：**加法变更 → minor 递增**（`1.0.0 → 1.1.0 → 1.2.0 …`）；破坏性变更 → major 递增（`2.0.0`）并新建 `v2` 文件。（原句写作"加法变更 → `1.1.0`"，那是目录还在 `1.0.0` 时的写法；`D-037` 裁决 7 明确为语义化递增，避免第二次加法无号可升。）
 - **禁止跨程序 Java 依赖**：三个程序不得互相 import Java 实体、Mapper、Service 或 Maven 业务依赖（§3.1 L64、§3.4 L96-L97）。本目录只交换 JSON Schema / OpenAPI / 清单 Schema 这类语言无关产物。当前仓库里 `analytics-server` 与 `mall-simulator` 各有一份 `EventContract.java` 常量副本，就是本目录要消除的耦合形态（两侧常量值经核对一致：`SCHEMA_VERSION="1.0"`、`SOURCE_SYSTEM="mock-mall"`、金额正则相同）。
 - **每个程序校验自己的输出**，不依赖别的程序替它校验：生成器校验自己写的 JSONL 与清单；商城校验自己写的 outbox 事件；平台校验自己读入的事件与自己写出的采集清单。校验器实现由各程序自带，本目录只提供 schema。
 - **不得静默放宽**：本目录 schema 中任何未获来源明确授权的地方都以 `"x-unspecified": true`、`x-*` 注解或 `description: "指导书未确定，待契约任务冻结"` 显式标注；不得用「反正宽松点也能过」的方式偷偷放宽枚举、必填或正则。
@@ -49,11 +49,11 @@
 | 文件 | 归属程序（Owner） | 谁校验 | 状态 |
 |---|---|---|---|
 | [`schemas/canonical-event.v1.schema.json`](schemas/canonical-event.v1.schema.json) | 三方共享：`reference-mall`（写 outbox 事件）、`synthetic-data-generator`（文件模式写 JSONL）、`analytics-platform`（入湖校验） | 三方各自校验自己的输出；平台侧另有结构对账测试 `CanonicalEventSchemaParityTest` | `DRAFT` |
-| [`schemas/ingestion-manifest.v1.schema.json`](schemas/ingestion-manifest.v1.schema.json) | `analytics-platform`（`connection-ingestion` 写出 `landing/manifests/{batchId}.json`） | 平台采集侧自校验；生成器/商城只读不写 | `DRAFT` |
+| [`schemas/ingestion-manifest.v1.schema.json`](schemas/ingestion-manifest.v1.schema.json) | `analytics-platform`（`connection-ingestion` 写出 `landing/manifests/{batchId}.json`） | 平台采集侧自校验；生成器/商城只读不写 | `DRAFT`（2026-09-11 按 `D-037` 加法扩展 4 个源身份字段：`sourceCode`/`sourceId`/`profileVersion`/`mappingVersion`，**均不入 `required`** 以兼容已落盘清单；取值者 = `source_registry` 的 `source_code`/`id`/`profile_version`，`mappingVersion` 在 P2 前恒为 `null`） |
 | [`schemas/generation-artifact-manifest.v1.schema.json`](schemas/generation-artifact-manifest.v1.schema.json) | `synthetic-data-generator`（`CANONICAL_EVENT_FILE` 模式制品清单） | 生成器自校验；平台采集侧在读取生成器目录时按此校验 | `DRAFT` |
 | `openapi/generator-api.v1.yaml` | `synthetic-data-generator`（服务端）；`MALL_API` 场景下的调用方与页面为消费方 | 生成器按契约实现并自测；调用方按契约生成客户端 | `DRAFT` |
 | [`specs/warehouse-namespace.v1.json`](specs/warehouse-namespace.v1.json) | 两个消费方共享：`spark-jobs`（Scala）、`analytics-server`（Java）；两侧各自持有**薄适配器**，规则本体只在本规格 | Java：`WarehouseNamespaceContractTest`（逐向量 + `errorCodes` 数量/取值）+ `WarehouseNameLiteralGateTest`（源码门禁：除唯一 owner 外无裸库名字面量）；Scala：`WarehouseNamespaceSpec`（62 用例） | **`FROZEN-2026-09-11`** |
-| [`VERSION`](VERSION) | 总控 | — | `1.1.0` |
+| [`VERSION`](VERSION) | 总控 | — | `1.2.0` |
 
 **为什么其余四个制品仍是 `DRAFT`（诚实说明）**：这些文件是 M1-5 新建立的投影，尚未经过两条冻结门槛——(1) 结构对账测试 `analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java` 转绿；(2) 总控（热点 Owner）审阅并处置第 7 节的待决策项。**只有两者都完成，才允许把状态改为 `FROZEN`。** 当前 `canonical-event.v1` 的字段集/枚举/常量/金额正则已按该测试的断言逐条对齐（本案建立时用 PowerShell 逐条模拟断言核对，见第 8 节；M1-5 范围内不允许运行 Maven，故未执行该测试本身）；且 Q6（采集层接受的 51 行里约 25 行按契约属脏数据）未决 ⇒ `canonical-event.v1` **不得**冻结。
 
@@ -77,6 +77,7 @@
 
 - `ingestion-manifest.v1` **不是从指导书表格推导**，而是从真实产物 + 写出代码反推：`landing/manifests/30.json`（15 个顶层键全部进 `required`）+ `IngestionService.buildManifest`（L167-L192）与 `runOne`（L68-L165）。`files[]` 的 5 个键与真实观测一致，且**不约束键顺序**（`Map.of` 迭代顺序不稳定）。`checksum` 用 `^[0-9a-f]{1,8}$`，因为它是 `Long.toHexString(CRC32)`，不补前导零（真实观测既有 `"0"` 也有 `"71bbde63"`）。
 - `generation-artifact-manifest.v1` **严格限定**在 §4.2 L135 的 8 个字段（`min/max_event_time` 展开为 `min_event_time`/`max_event_time`）+ §3.3 B L90 要求的 `synthetic: true`。字段可选性、`run_id` 类型、`uri`/`checksum` 格式均未冻结，已逐项标注；`additionalProperties: false` 让 §4.3 L149 的「期望隔离数」在契约冻结前被**显式拒绝**而不是静默接受（Q9）。
+- `ingestion-manifest.v1` 的 **P1-05 加法扩展**（2026-09-11，`D-037`）：新增 `sourceCode`/`sourceId`/`profileVersion`/`mappingVersion` 四个**可选**字段。**为什么不进 `required`**：已落盘的 `landing/manifests/1-5.json`、`30.json` 里没有这些键，一旦列入 required，历史清单会瞬间全部非法——契约的加法变更必须让既有产物继续合法。**为什么 `source` 不复用**：实测真库 `ingestion_batch.source` 39 行全部是 `local-file`，它指的是**连接器类型**（采集方式），不是源编码；源身份必须另立字段，三个所有者（连接器类型 / 源身份 / 源实例连接器配置）各占各的键名，改名或复用都会同时破坏 15 个 required 键与已落盘清单。**`mappingVersion` 为什么可以是 `null`**：词汇映射在 P2 才落地，此阶段"未应用映射"是**事实**而不是缺值；写 `"0"`/`""`/`"v1"` 之类的占位值等于把"没做"伪装成"做了"。类型上写 `["string","null"]`，让"没有映射"这件事在 schema 层就是合法的、可判别的。
 
 ## 7. 待冻结 / 待决策（按 V2.1 §9.1 交由总控登记契约任务）
 

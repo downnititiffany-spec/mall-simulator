@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,7 +41,7 @@ class SourceRegistryMigrationScriptTest {
     private static final String SEED_PROFILE_PATH = "analytics-server/source-profiles/mock-mall.v1.json";
 
     @Test
-    @DisplayName("迁移号由总控分配且不冲突：V16 是该目录最高版本，且版本号唯一")
+    @DisplayName("迁移号由总控分配且不冲突：V16 版本号存在且目录内不重复")
     void migrationVersionIsAssignedAndUnique() {
         List<Integer> versions = scriptVersions();
         assertThat(versions)
@@ -51,9 +50,10 @@ class SourceRegistryMigrationScriptTest {
         assertThat(versions)
                 .as("同一迁移号不允许出现两次（Flyway 会拒绝启动）：%s", versions)
                 .doesNotHaveDuplicates();
-        assertThat(versions.stream().max(Comparator.naturalOrder()).orElseThrow())
-                .as("P1-02 的迁移号必须是当前最高版本 %d；更高号说明总控已把该号分配给别的任务", ASSIGNED_VERSION)
-                .isEqualTo(ASSIGNED_VERSION);
+        assertThat(versions)
+                .as("P1-02 的迁移号 %d 必须存在；" 
+                        + "脚本内容由本类其余用例与源登记 MySqlIT 逐条钉住，改号/删号必在此处变红", ASSIGNED_VERSION)
+                .contains(ASSIGNED_VERSION);
         assertThat(Files.isRegularFile(META_DIR.resolve(SCRIPT_NAME)))
                 .as("P1-02 迁移脚本 %s 必须存在", SCRIPT_NAME)
                 .isTrue();
