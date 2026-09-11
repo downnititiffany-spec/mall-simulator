@@ -40,6 +40,16 @@
       <artifactId>platform-common</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!--
+      R8-1（§19.2/§25）：证据包的数值**只从已发布数据读取**，读取所有者是 metric-analysis 的
+      AnalysisService/MetricAdsReader/MySqlMetricStore。这里直接复用同一所有者，避免在 ai-decision
+      里再造一个快照钉住 + ADS 读取的第二实现（依赖方向 ai-decision → metric-analysis，无环）。
+    -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>metric-analysis</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>

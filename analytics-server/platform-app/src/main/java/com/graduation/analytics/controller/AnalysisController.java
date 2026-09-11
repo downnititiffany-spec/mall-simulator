@@ -8,6 +8,8 @@ import com.graduation.analytics.analysis.AnalysisService.RfmData;
 import com.graduation.analytics.analysis.AnalysisService.SalesData;
 import com.graduation.analytics.analysis.AnalysisService.UsersData;
 import com.graduation.analytics.analysis.AnalysisViewModel;
+import com.graduation.analytics.auth.PermissionCode;
+import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,8 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+// R8-3 §3.2：专题分析与大盘全部归 dashboard:view（admin/data_dev/operator/analyst 四种角色都有）
+@RequiresPermission(PermissionCode.DASHBOARD_VIEW)
 public class AnalysisController {
 
     private final AnalysisService analysisService;

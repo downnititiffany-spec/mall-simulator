@@ -43,7 +43,69 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Void> handleOther(Exception e) {
-        log.error("mall internal error", e);
+        log.error("unhandled server error [{}] {}", describeCurrentRequest(), e.getMessage(), e);
         return ApiResponse.error(MallBizException.INTERNAL, "系统繁忙，请稍后重试", TraceContext.create().traceId());
+    }
+
+    /**
+     * 请求体不是合法 JSON / 缺少必填请求体 → 400（客户端错误，不是 500）。
+     * 真机验收踩到：{@code POST /api/v1/ai/explanations} 未带 {@code Content-Type: application/json}
+     * 时落到兜底 500 INTERNAL，既误导调用方也污染「系统故障」指标。
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleUnreadableBody(
+            org.springframework.http.converter.HttpMessageNotReadableException e) {
+        return ApiResponse.error(MallBizException.PARAM_INVALID,
+                "请求体缺失或不是合法 JSON（需 Content-Type: application/json）", TraceContext.create().traceId());
+    }
+
+    /** Content-Type 不受支持（如表单/纯文本 POST JSON 接口）→ 415 稳定错误码 */
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    public ApiResponse<Void> handleMediaType(
+            org.springframework.web.HttpMediaTypeNotSupportedException e) {
+        return ApiResponse.error(MallBizException.UNSUPPORTED_MEDIA_TYPE,
+                "Content-Type 不受支持：" + e.getContentType() + "，请使用 application/json",
+                TraceContext.create().traceId());
+    }
+
+    /** HTTP 方法用错（如对只读接口发 POST）→ 405 */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public ApiResponse<Void> handleMethod(
+            org.springframework.web.HttpRequestMethodNotSupportedException e) {
+        return ApiResponse.error(MallBizException.METHOD_NOT_ALLOWED,
+                "HTTP 方法不支持：" + e.getMethod(), TraceContext.create().traceId());
+    }
+
+    /** 查询参数类型不匹配 / 缺少必填参数 → 400（原先落兜底 500） */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
+        return ApiResponse.error(MallBizException.PARAM_INVALID,
+                "参数类型不合法：" + e.getName(), TraceContext.create().traceId());
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleMissingParam(
+            org.springframework.web.bind.MissingServletRequestParameterException e) {
+        return ApiResponse.error(MallBizException.PARAM_INVALID,
+                "缺少必填参数：" + e.getParameterName(), TraceContext.create().traceId());
+    }
+
+    /** 兜底日志用的请求描述：方法 + 路径（不含查询串，避免把敏感参数写进日志） */
+    private static String describeCurrentRequest() {
+        org.springframework.web.context.request.RequestAttributes attrs =
+                org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (!(attrs instanceof org.springframework.web.context.request.ServletRequestAttributes sra)) {
+            return "-";
+        }
+        jakarta.servlet.http.HttpServletRequest req = sra.getRequest();
+        String uri = req.getRequestURI();
+        int semi = uri.indexOf(';');
+        return req.getMethod() + " " + (semi > 0 ? uri.substring(0, semi) : uri);
     }
 }

@@ -1,5 +1,6 @@
 package com.graduation.analytics.ai;
 
+import com.graduation.analytics.ai.sql.AiScope;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -90,17 +91,26 @@ class AiSqlDriftTest {
         throw new IllegalStateException("找不到 ADS 物化表迁移目录（db/metric），无法执行漂移守卫");
     }
 
+    /**
+     * R8-2 契约 §2.2：少样本里的 {@code snapshot_id} / {@code dt} 已改为**参数化字面量**，
+     * 因此漂移比对必须传一份 scope，模板才会被实例化为真正可执行的 SQL。
+     */
+    private static final AiScope SCOPE =
+            AiScope.of("S20260901_24", "v2", java.time.LocalDate.of(2026, 9, 4));
+
     private static List<String> allAiSql() {
         List<String> sqls = new ArrayList<>();
         for (String q : List.of("最近一天的销售额和订单数是多少", "转化漏斗各阶段人数", "最近的热销商品排行",
                 "今天的大盘 GMV 和退款率", "各商品转化率多少")) {
-            sqls.add(RuleBasedSqlFallback.resolve(q, List.of()).sql());
+            RuleBasedSqlFallback.Fallback fb = RuleBasedSqlFallback.resolve(q, List.of(), SCOPE);
+            assertTrue(fb.ok(), "规则回退未生成 SQL（R8-2 起必须带 scope 字面量）: " + q);
+            sqls.add(fb.sql());
         }
         for (Map.Entry<String, List<String>> e : SemanticCatalog.FEW_SHOTS.entrySet()) {
             for (String shot : e.getValue()) {
                 int idx = shot.indexOf("答：");
                 assertTrue(idx > 0, "少样本格式错误（缺少 答：）: " + shot);
-                sqls.add(shot.substring(idx + 2));
+                sqls.add(SemanticCatalog.parameterize(shot.substring(idx + 2), SCOPE));
             }
         }
         return sqls;
@@ -201,16 +211,50 @@ class AiSqlDriftTest {
      * 跨快照串数守卫：ADS 物化表按快照保留历史，同一 dt 会同时存在归档快照与生效快照的行
      * （实测 ads_hot_product_m 等 8 张表在 dt=20260901 上各有 S20260901_23 与 S20260901_24 两套）。
      * AI 查询（尤其带 LIMIT 1 的）若不 pin 快照，就会把两个快照混在一起，甚至返回归档快照的旧口径值。
+     *
+     * <p>R8-2 契约 §2.2 修订：pin 的方式从 {@code snapshot_id = (SELECT MAX(snapshot_id) ...)}
+     * 子查询改为**参数化字面量** {@code snapshot_id = 'S...'}（子查询已整体禁用），
+     * 因此这里同时要求「字面量钉住 + 少样本不含任何子查询」。</p>
      */
     @Test
     void AI查询必须锁定单一快照() {
         for (String sql : allAiSql()) {
-            assertTrue(sql.contains("snapshot_id = (SELECT MAX(snapshot_id) FROM "),
-                    "AI SQL 未锁定最新已发布快照，存在跨快照串数风险: " + sql);
+            assertTrue(sql.contains("snapshot_id = '"),
+                    "AI SQL 未用字面量锁定快照，存在跨快照串数风险: " + sql);
+            assertTrue(sql.contains("snapshot_id = '" + SCOPE.snapshotId() + "'"),
+                    "AI SQL 未锁定 ACTIVE 快照 " + SCOPE.snapshotId() + ": " + sql);
+            assertFalse(sql.toLowerCase().contains("select max("),
+                    "R8-2 起 AI SQL 禁止 MAX 子查询（日期/快照必须字面量参数化）: " + sql);
+            assertFalse(sql.toLowerCase().contains("(select"),
+                    "R8-2 起 AI SQL 禁止任何子查询: " + sql);
         }
         for (String table : SemanticCatalog.TABLES.keySet()) {
             assertTrue(SemanticCatalog.TABLES.get(table).containsKey("snapshot_id"),
                     "语义层未向模型暴露 snapshot_id，模型无法自行 pin 快照: " + table);
+        }
+    }
+
+    /**
+     * R8-2 追加：规则回退与少样本必须带真实业务日的 dt 字面量区间（不能只靠 MAX(dt) 子查询）。
+     *
+     * <p>2026-09-11 真机事故回归：此前断言写的是 ISO {@code yyyy-MM-dd}，与 ADS 落库的紧凑
+     * {@code yyyyMMdd} 不一致 → 生成的 SQL 在真库上字符串比较恒 false、**静默 0 行**。
+     * 现在起点/终点都从 {@link AiScope#DT_FORMAT} 派生，并显式禁止 ISO 形态字面量。</p>
+     */
+    @Test
+    void AI查询必须带参数化日期区间() {
+        String day = AiScope.dt(SCOPE.businessDate());
+        for (String sql : allAiSql()) {
+            assertTrue(sql.contains("dt >= '" + SCOPE.dtFrom() + "'")
+                            || sql.contains("dt >= '" + AiScope.dt(SCOPE.businessDate().minusDays(6)) + "'")
+                            || sql.contains("dt >= '" + day + "'"),
+                    "AI SQL 缺少 dt 起始字面量（紧凑格式 " + SCOPE.dtFrom() + "）: " + sql);
+            assertTrue(sql.contains("dt <= '" + day + "'"),
+                    "AI SQL 缺少 dt 结束字面量（必须钉住 ACTIVE 业务日的紧凑格式 " + day + "）: " + sql);
+            assertFalse(sql.matches("(?s).*dt\\s*[<>=]+\\s*'\\d{4}-\\d{2}-\\d{2}'.*"),
+                    "AI SQL 不得使用 ISO 日期字面量（与 ADS 落库 yyyyMMdd 不符 → 静默 0 行）: " + sql);
+            assertFalse(sql.toLowerCase().contains("curdate()") || sql.toLowerCase().contains("date_sub("),
+                    "AI SQL 不得使用当前时间函数（会绕过允许日期区间）: " + sql);
         }
     }
 }

@@ -141,7 +141,7 @@ public class PipelineRecoveryService {
             return;
         }
         String merged = latest.getEvidence() == null || latest.getEvidence().isBlank()
-                ? note : cut(latest.getEvidence() + " | " + note, 4000);
+                ? note : cut(latest.getEvidence() + " | " + note, PipelineService.EVIDENCE_MAX_CHARS);
         stageMapper.update(null, new UpdateWrapper<PipelineStageRun>()
                 .eq("id", latest.getId())
                 .set("evidence", merged));

@@ -1,15 +1,25 @@
 package com.graduation.analytics.ai;
 
+import com.graduation.analytics.ai.sql.AiScope;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * 业务语义层（§8.2/§8.3）：AI 可查询的 ADS 白名单表、字段语义、中文别名、
- * 指标口径与少样本。Schema 选择 = 关键词 → 主题 → 1-3 张表（不引入向量库）。
+ * 业务语义层（§19.4/§24.8）：AI 可查询的已发布 ADS 白名单表、字段语义、中文别名、指标口径与少样本。
+ * Schema 选择 = 关键词 → 主题 → 1-3 张表（不引入向量库）。
+ *
+ * <p>反熵（R8-2 契约 §2.2）：**删除 {@code snapshotPin()} 的 {@code (SELECT MAX(snapshot_id) ...)} 子查询**。
+ * 原实现让 SQL 自锁「最新快照」，与「日期与快照必须参数化注入」直接冲突：
+ * ① 子查询本身违反第一阶段「禁子查询」；② {@code MAX(dt)} 会把归档快照的同名日期一起纳入范围。
+ * 现在改为：{@link com.graduation.analytics.ai.sql.AiScopeResolver} 先取 ACTIVE 快照，
+ * 再由 {@link #fewShots(List, AiScope)} 把 {@code snapshot_id} / {@code dt} 作为**字面量**写进少样本，
+ * 校验器用同一份 scope 反向核对（{@link com.graduation.analytics.ai.sql.SqlSafetyValidator}）。</p>
  */
 @Component
 public class SemanticCatalog {
@@ -20,22 +30,40 @@ public class SemanticCatalog {
     /** 中文别名 → 字段（用于拼音/同义词匹配） */
     public static final Map<String, String> FIELD_ALIASES = new LinkedHashMap<>();
 
-    /** 少样本示例（每表 2 条） */
+    /**
+     * 少样本示例（每表 2-3 条），一律为**参数化字面量**形态：
+     * 里面的 {@code 'S20260901_24'} / {@code '20260904'} 是模板占位值，
+     * 真正的运行时值由 {@link #fewShots(List, AiScope)} 按 ACTIVE 快照替换后送进提示词。
+     */
     public static final Map<String, List<String>> FEW_SHOTS = new LinkedHashMap<>();
 
-    /** 锁定"最新已发布快照"的 WHERE 片段（ADS 服务表按快照保留历史，同 dt 会有多快照行） */
-    public static String snapshotPin(String table) {
-        return "snapshot_id = (SELECT MAX(snapshot_id) FROM " + table + ")";
+    /** 日期语义列（值形如 yyyyMMdd 紧凑格式的 VARCHAR，见 AiScope.DT_FORMAT）：校验器据此区分日期字面量与普通字符串字面量 */
+    public static final Set<String> DATE_COLUMNS = Set.of("dt", "last_active_date", "last_buy_date", "calc_date");
+
+    /** 模板占位业务日：仅在 {@link #FEW_SHOTS} 静态文本里出现，运行时由 scope 覆盖 */
+    static final String TEMPLATE_DATE = "20260904";
+
+    /** 模板占位快照号：同上 */
+    static final String TEMPLATE_SNAPSHOT = "S20260901_24";
+
+    /** 契约 §2.3：WHERE 必须含 {@code snapshot_id = '<ACTIVE>'}（字面量钉住快照，不用子查询） */
+    public static String snapshotPin(AiScope scope) {
+        return "snapshot_id = '" + scope.snapshotId() + "'";
+    }
+
+    /** 契约 §2.3：WHERE 必须含 {@code dt >= '<min>' AND dt <= '<max>'} 字面量范围（紧凑 yyyyMMdd，见 AiScope.DT_FORMAT） */
+    public static String dateRangePin(AiScope scope) {
+        return "dt >= '" + scope.dtFrom() + "' AND dt <= '" + scope.dtTo() + "'";
     }
 
     static {
         // 字段集合必须与 platform-app/src/main/resources/db/metric/V*.sql 一致：
         // AiSqlDriftTest（R7-4）常驻校验，任何一方漂移即红。
         // snapshot_id 必须进 Prompt：ADS 服务表按快照保留历史（同 dt 同时存在归档 S..._23 与生效 S..._24），
-        // AI 查询若不 pin 快照就会跨快照串数（LIMIT 1 甚至可能返回归档快照的旧口径值）。
+        // AI 查询若不 pin 快照就会跨快照串数，但 pin 的方式是**字面量**而非子查询（R8-2）。
         Map<String, String> overview = new LinkedHashMap<>();
-        overview.put("snapshot_id", "发布快照 ID：查询必须锁定最新已发布快照，避免跨快照串数");
-        overview.put("dt", "业务日期 yyyy-MM-dd");
+        overview.put("snapshot_id", "发布快照 ID：查询必须写成 snapshot_id = '<ACTIVE 快照号>' 字面量，禁止子查询");
+        overview.put("dt", "业务日期 yyyyMMdd 紧凑格式（如 20260901）：必须写成 dt >= '<起始>' AND dt <= '<结束>' 字面量范围");
         overview.put("pv", "浏览量：当日 view 行为次数");
         overview.put("uv", "浏览用户数：当日去重浏览用户");
         overview.put("dau", "日活跃用户数：当日任一有效行为去重用户");
@@ -48,8 +76,8 @@ public class SemanticCatalog {
         TABLES.put("ads_operation_overview_m", overview);
 
         Map<String, String> saleTrend = new LinkedHashMap<>();
-        saleTrend.put("snapshot_id", "发布快照 ID：查询必须锁定最新已发布快照，避免跨快照串数");
-        saleTrend.put("dt", "业务日期 yyyy-MM-dd");
+        saleTrend.put("snapshot_id", "发布快照 ID：查询必须写成 snapshot_id = '<ACTIVE 快照号>' 字面量，禁止子查询");
+        saleTrend.put("dt", "业务日期 yyyyMMdd 紧凑格式（如 20260901）：必须写成 dt >= '<起始>' AND dt <= '<结束>' 字面量范围");
         saleTrend.put("order_count", "支付订单数");
         saleTrend.put("buyer_count", "支付用户数（去重）");
         saleTrend.put("sale_amount", "销售额(GMV)，单位元");
@@ -57,8 +85,8 @@ public class SemanticCatalog {
         TABLES.put("ads_sale_trend_m", saleTrend);
 
         Map<String, String> funnel = new LinkedHashMap<>();
-        funnel.put("snapshot_id", "发布快照 ID：查询必须锁定最新已发布快照，避免跨快照串数");
-        funnel.put("dt", "业务日期 yyyy-MM-dd");
+        funnel.put("snapshot_id", "发布快照 ID：查询必须写成 snapshot_id = '<ACTIVE 快照号>' 字面量，禁止子查询");
+        funnel.put("dt", "业务日期 yyyyMMdd 紧凑格式（如 20260901）：必须写成 dt >= '<起始>' AND dt <= '<结束>' 字面量范围");
         funnel.put("stage", "漏斗阶段：view/intent/order/pay");
         funnel.put("user_count", "该阶段去重用户数");
         funnel.put("conversion_rate", "阶段转化率（后一阶段/前一阶段，0-1）");
@@ -66,8 +94,8 @@ public class SemanticCatalog {
         TABLES.put("ads_behavior_funnel_m", funnel);
 
         Map<String, String> hotProduct = new LinkedHashMap<>();
-        hotProduct.put("snapshot_id", "发布快照 ID：查询必须锁定最新已发布快照，避免跨快照串数");
-        hotProduct.put("dt", "业务日期 yyyy-MM-dd");
+        hotProduct.put("snapshot_id", "发布快照 ID：查询必须写成 snapshot_id = '<ACTIVE 快照号>' 字面量，禁止子查询");
+        hotProduct.put("dt", "业务日期 yyyyMMdd 紧凑格式（如 20260901）：必须写成 dt >= '<起始>' AND dt <= '<结束>' 字面量范围");
         hotProduct.put("product_id", "商品编号");
         hotProduct.put("product_name", "商品名称");
         hotProduct.put("heat_score", "热度分：浏览/收藏/加购/购买加权得分，可排序");
@@ -79,8 +107,8 @@ public class SemanticCatalog {
         TABLES.put("ads_hot_product_m", hotProduct);
 
         Map<String, String> productConversion = new LinkedHashMap<>();
-        productConversion.put("snapshot_id", "发布快照 ID：查询必须锁定最新已发布快照，避免跨快照串数");
-        productConversion.put("dt", "业务日期 yyyy-MM-dd");
+        productConversion.put("snapshot_id", "发布快照 ID：查询必须写成 snapshot_id = '<ACTIVE 快照号>' 字面量，禁止子查询");
+        productConversion.put("dt", "业务日期 yyyyMMdd 紧凑格式（如 20260901）：必须写成 dt >= '<起始>' AND dt <= '<结束>' 字面量范围");
         productConversion.put("product_id", "商品编号");
         productConversion.put("pv_users", "浏览该商品的用户数");
         productConversion.put("buy_users", "购买该商品的用户数");
@@ -113,28 +141,52 @@ public class SemanticCatalog {
         FIELD_ALIASES.put("本周", "dt");
         FIELD_ALIASES.put("昨日", "dt");
 
-        // 少样本一律以 snapshotPin(TABLE) 开头，示范"先锁快照再筛日期"
+        // ── 少样本：快照与日期一律字面量（R8-2 契约 §2.2） ─────────────────────
+        // 禁止出现 (SELECT MAX(...) ...)、DATE_SUB(CURDATE(),...)、FIELD()：前者是子查询，
+        // 中者绕过「日期必须落在 scope 内」，后者不在函数白名单（§2.3）。
+        String saleTrendSnap = "snapshot_id = '" + TEMPLATE_SNAPSHOT + "'";
         FEW_SHOTS.put("ads_sale_trend_m", List.of(
-                "问：最近7天销售额趋势？答：SELECT dt, sale_amount, order_count FROM ads_sale_trend_m WHERE " + snapshotPin("ads_sale_trend_m") + " AND dt >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) ORDER BY dt DESC LIMIT 7",
-                "问：昨日客单价是多少？答：SELECT dt, avg_order_value FROM ads_sale_trend_m WHERE " + snapshotPin("ads_sale_trend_m") + " AND dt = DATE_SUB(CURDATE(), INTERVAL 1 DAY) LIMIT 1",
-                "问：9月4日销售额？答：SELECT dt, sale_amount FROM ads_sale_trend_m WHERE " + snapshotPin("ads_sale_trend_m") + " AND dt = '2026-09-04' LIMIT 1"));
+                "问：最近7天销售额趋势？答：SELECT dt, sale_amount, order_count FROM ads_sale_trend_m WHERE "
+                        + saleTrendSnap + " AND dt >= '20260829' AND dt <= '" + TEMPLATE_DATE
+                        + "' ORDER BY dt LIMIT 7",
+                "问：昨日客单价是多少？答：SELECT dt, avg_order_value FROM ads_sale_trend_m WHERE "
+                        + saleTrendSnap + " AND dt >= '" + TEMPLATE_DATE + "' AND dt <= '" + TEMPLATE_DATE + "' LIMIT 1",
+                "问：9月4日销售额？答：SELECT dt, sale_amount FROM ads_sale_trend_m WHERE "
+                        + saleTrendSnap + " AND dt >= '" + TEMPLATE_DATE + "' AND dt <= '" + TEMPLATE_DATE + "' LIMIT 1"));
 
+        String overviewSnap = "snapshot_id = '" + TEMPLATE_SNAPSHOT + "'";
         FEW_SHOTS.put("ads_operation_overview_m", List.of(
-                "问：最近一天的销售额和退款率？答：SELECT dt, sale_amount, net_sale_amount, refund_rate FROM ads_operation_overview_m WHERE " + snapshotPin("ads_operation_overview_m") + " AND dt = (SELECT MAX(dt) FROM ads_operation_overview_m) LIMIT 1",
-                "问：每天的活跃用户数？答：SELECT dt, dau FROM ads_operation_overview_m WHERE " + snapshotPin("ads_operation_overview_m") + " AND dt >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) ORDER BY dt DESC LIMIT 7",
-                "问：9月4日大盘？答：SELECT dt, pv, uv, dau, sale_amount FROM ads_operation_overview_m WHERE " + snapshotPin("ads_operation_overview_m") + " AND dt = '2026-09-04' LIMIT 1"));
+                "问：最近一天的销售额和退款率？答：SELECT dt, sale_amount, net_sale_amount, refund_rate "
+                        + "FROM ads_operation_overview_m WHERE " + overviewSnap + " AND dt >= '" + TEMPLATE_DATE
+                        + "' AND dt <= '" + TEMPLATE_DATE + "' LIMIT 1",
+                "问：每天的活跃用户数？答：SELECT dt, dau FROM ads_operation_overview_m WHERE " + overviewSnap
+                        + " AND dt >= '20260829' AND dt <= '" + TEMPLATE_DATE + "' ORDER BY dt LIMIT 7",
+                "问：9月4日大盘？答：SELECT dt, pv, uv, dau, sale_amount FROM ads_operation_overview_m WHERE "
+                        + overviewSnap + " AND dt >= '" + TEMPLATE_DATE + "' AND dt <= '" + TEMPLATE_DATE + "' LIMIT 1"));
 
+        String funnelSnap = "snapshot_id = '" + TEMPLATE_SNAPSHOT + "'";
         FEW_SHOTS.put("ads_behavior_funnel_m", List.of(
-                "问：9月4日转化漏斗？答：SELECT dt, stage, user_count, conversion_rate FROM ads_behavior_funnel_m WHERE " + snapshotPin("ads_behavior_funnel_m") + " AND dt = '2026-09-04' ORDER BY FIELD(stage,'view','intent','order','pay') LIMIT 4",
-                "问：最近一天各漏斗阶段人数？答：SELECT stage, user_count FROM ads_behavior_funnel_m WHERE " + snapshotPin("ads_behavior_funnel_m") + " AND dt = '2026-09-04' LIMIT 4",
-                "问：9月4日支付人数？答：SELECT user_count FROM ads_behavior_funnel_m WHERE " + snapshotPin("ads_behavior_funnel_m") + " AND dt = '2026-09-04' AND stage = 'pay' LIMIT 1"));
+                "问：9月4日转化漏斗？答：SELECT dt, stage, user_count, conversion_rate, overall_buy_rate "
+                        + "FROM ads_behavior_funnel_m WHERE " + funnelSnap + " AND dt >= '" + TEMPLATE_DATE
+                        + "' AND dt <= '" + TEMPLATE_DATE + "' ORDER BY stage LIMIT 4",
+                "问：9月4日支付人数？答：SELECT dt, stage, user_count FROM ads_behavior_funnel_m WHERE "
+                        + funnelSnap + " AND dt >= '" + TEMPLATE_DATE + "' AND dt <= '" + TEMPLATE_DATE
+                        + "' AND stage = 'pay' LIMIT 1"));
 
+        String hotSnap = "snapshot_id = '" + TEMPLATE_SNAPSHOT + "'";
         FEW_SHOTS.put("ads_hot_product_m", List.of(
-                "问：热度最高的商品有哪些？答：SELECT dt, product_id, product_name, heat_score, rank_no FROM ads_hot_product_m WHERE " + snapshotPin("ads_hot_product_m") + " AND dt = (SELECT MAX(dt) FROM ads_hot_product_m) ORDER BY rank_no LIMIT 10",
-                "问：最近一天商品排行？答：SELECT product_name, pv, fav, cart, buy, heat_score FROM ads_hot_product_m WHERE " + snapshotPin("ads_hot_product_m") + " AND dt = (SELECT MAX(dt) FROM ads_hot_product_m) ORDER BY rank_no LIMIT 10"));
+                "问：热度最高的商品有哪些？答：SELECT dt, product_id, product_name, heat_score, rank_no "
+                        + "FROM ads_hot_product_m WHERE " + hotSnap + " AND dt >= '" + TEMPLATE_DATE
+                        + "' AND dt <= '" + TEMPLATE_DATE + "' ORDER BY rank_no LIMIT 10",
+                "问：最近一天商品排行？答：SELECT dt, product_name, pv, fav, cart, buy, heat_score, rank_no "
+                        + "FROM ads_hot_product_m WHERE " + hotSnap + " AND dt >= '" + TEMPLATE_DATE
+                        + "' AND dt <= '" + TEMPLATE_DATE + "' ORDER BY rank_no LIMIT 10"));
 
+        String convSnap = "snapshot_id = '" + TEMPLATE_SNAPSHOT + "'";
         FEW_SHOTS.put("ads_product_conversion_m", List.of(
-                "问：商品转化率是多少？答：SELECT dt, product_id, pv_users, buy_users, conversion_rate FROM ads_product_conversion_m WHERE " + snapshotPin("ads_product_conversion_m") + " AND dt = (SELECT MAX(dt) FROM ads_product_conversion_m) ORDER BY conversion_rate DESC LIMIT 10"));
+                "问：商品转化率是多少？答：SELECT dt, product_id, pv_users, buy_users, conversion_rate "
+                        + "FROM ads_product_conversion_m WHERE " + convSnap + " AND dt >= '" + TEMPLATE_DATE
+                        + "' AND dt <= '" + TEMPLATE_DATE + "' ORDER BY conversion_rate DESC LIMIT 10"));
     }
 
     /** 主题关键词 → 表 */
@@ -158,12 +210,12 @@ public class SemanticCatalog {
             Map.entry("热度", List.of("ads_hot_product_m")),
             Map.entry("用户数", List.of("ads_behavior_funnel_m", "ads_operation_overview_m")));
 
-    /** 主题识别：关键词命中 → 去重表列表（§8.3：1-3 张） */
+    /** 主题识别：关键词命中 → 去重表列表 */
     public List<String> selectTables(String question) {
-        String q = question == null ? "" : question.toLowerCase();
+        String q = question == null ? "" : question.toLowerCase(Locale.ROOT);
         Set<String> tables = new java.util.LinkedHashSet<>();
         for (Map.Entry<String, List<String>> e : TOPIC_TABLES.entrySet()) {
-            if (q.contains(e.getKey().toLowerCase())) {
+            if (q.contains(e.getKey().toLowerCase(Locale.ROOT))) {
                 tables.addAll(e.getValue());
             }
         }
@@ -182,11 +234,14 @@ public class SemanticCatalog {
         return TABLES.containsKey(table);
     }
 
-    /** 组装 Schema JSON（表+字段语义+少样本），用于 Prompt */
+    /** 组装 Schema JSON（表+字段语义），用于 Prompt */
     public String schemaJson(List<String> tables) {
         StringBuilder sb = new StringBuilder("{");
         boolean first = true;
         for (String t : tables) {
+            if (!TABLES.containsKey(t)) {
+                continue;
+            }
             if (!first) {
                 sb.append(",");
             }
@@ -206,6 +261,10 @@ public class SemanticCatalog {
         return sb.toString();
     }
 
+    /**
+     * 少样本模板（占位字面量，不依赖数据库）：由 {@link #FEW_SHOTS} 拼装。
+     * 供离线漂移守卫（AiSqlDriftTest）与无 scope 场景使用。
+     */
     public String fewShots(List<String> tables) {
         StringBuilder sb = new StringBuilder();
         for (String t : tables) {
@@ -214,5 +273,30 @@ public class SemanticCatalog {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * 少样本（把 ACTIVE 快照/业务日作为**真实字面量**注入，R8-2 契约 §2.2）：
+     * 先取允许日期范围 {@code [businessDate-89, businessDate]}，把模板里的占位快照号与占位日期整体替换，
+     * 模型看到的就是「本环境当前生效」的快照与日期，不需要（也不允许）自己写 MAX 子查询。
+     */
+    public String fewShots(List<String> tables, AiScope scope) {
+        String raw = fewShots(tables);
+        if (scope == null || scope.snapshotId() == null || scope.businessDate() == null) {
+            return raw;
+        }
+        return parameterize(raw, scope);
+    }
+
+    /**
+     * 模板参数化：占位快照 → ACTIVE 快照号；占位日期 → 业务日，并把模板中的
+     * 「业务日 - 6 天」一并平移（占位业务日固定为 {@link #TEMPLATE_DATE}，紧凑 yyyyMMdd）。
+     */
+    static String parameterize(String template, AiScope scope) {
+        String shifted = AiScope.dt(LocalDate.parse(TEMPLATE_DATE, AiScope.DT_FORMAT).minusDays(6));
+        return template
+                .replace(TEMPLATE_SNAPSHOT, scope.snapshotId())
+                .replace(shifted, AiScope.dt(scope.businessDate().minusDays(6)))
+                .replace(TEMPLATE_DATE, scope.dtTo());
     }
 }

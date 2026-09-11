@@ -121,9 +121,14 @@ public class AuthService {
             throw new MallBizException("USER_EXISTS", "用户名已存在: " + username);
         }
         String roleNorm = switch (role == null ? "" : role) {
-            case "admin", "operator", "analyst" -> role;
+            // R8-3（§21.1）：白名单补 data_dev，并直接以权限矩阵为唯一事实来源，
+            // 避免「矩阵加角色、这里忘加」的双份维护
+            case "admin", "data_dev", "operator", "analyst" -> role;
             default -> throw new MallBizException("PARAM_INVALID", "非法角色: " + role);
         };
+        if (!RolePermissions.knownRole(roleNorm)) {
+            throw new MallBizException("PARAM_INVALID", "角色未在权限矩阵中登记: " + roleNorm);
+        }
         UserEntity user = new UserEntity();
         user.setUsername(username);
         user.setPasswordHash(passwordEncoder.encode(rawPassword));

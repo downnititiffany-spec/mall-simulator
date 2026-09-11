@@ -73,6 +73,12 @@ public class PipelineService {
 
     private static final DateTimeFormatter KEY_DATE = DateTimeFormatter.BASIC_ISO_DATE;
 
+    /**
+     * 阶段证据 JSON 的字符上限（V15 后列型 MEDIUMTEXT，16MB；本项目证据量级为 10^4 字符，
+     * 该上限只在异常膨胀时兜底，且缩减结果必须仍是合法 JSON）。
+     */
+    static final int EVIDENCE_MAX_CHARS = 200_000;
+
     /** 幂等键 → 内存锁（防并发同键重复 insert；DB 唯一键兜底） */
     private final ConcurrentHashMap<String, Object> idempotencyLocks = new ConcurrentHashMap<>();
 
@@ -288,8 +294,11 @@ public class PipelineService {
         }
         String note = "[RECOVERY] action=" + action + " operator=" + operator
                 + " reason=" + reason + " at=" + eventClock.nowLdt();
+        // 口径：恢复审计以「| 文本后缀」形式追加到最早阶段证据（WAIT_LANDING 证据只被
+        // 正则读 batchId，从不按 JSON 解析，见 manifestForRun）；上限随列宽（V15 MEDIUMTEXT）
+        // 取 EVIDENCE_MAX_CHARS，避免审计行被 4000 老上限切掉。
         String merged = latest.getEvidence() == null || latest.getEvidence().isBlank()
-                ? note : cap(latest.getEvidence() + " | " + note, 4000);
+                ? note : cap(latest.getEvidence() + " | " + note, EVIDENCE_MAX_CHARS);
         stageMapper.update(null, new UpdateWrapper<PipelineStageRun>()
                 .eq("id", latest.getId())
                 .set("evidence", merged));
@@ -975,17 +984,61 @@ public class PipelineService {
     }
 
     /**
-     * 阶段证据 JSON（R6-12）：列宽有限（V9 后 VARCHAR(4000)），超长时保留头部并标注截断，
-     * 避免证据过大把阶段写成 FAILED（实测 run 12：evidence 超 500 字节导致落库失败）。
+     * 阶段证据 JSON（R6-12 / 2026-09-11 重写）。
+     *
+     * <p>历史：V8 列宽 500 → R6-12 起加宽到 4000 并在代码侧「截断兜底」。但真机真实链路
+     * 的 BUILD_ADS 证据（逐作业 × 逐输出分区：表名/dt/快照/行数/路径）会超过 4000 字符，
+     * 而 {@code substring} 截断发生在**字符串中间** → 落库的是**非法 JSON**；重试/恢复路径
+     * {@link #stageEvidence} 解析失败后静默退化成空 Map → PUBLISH_METRIC 报
+     * 「缺少 BUILD_ADS 真实作业证据，拒绝发布」（实测 pipeline run 22，且该 run 在平台重启后
+     * 被自动恢复重试时复现）。</p>
+     *
+     * <p>现在两道保证：① V15 把列型改为 MEDIUMTEXT（16MB），本项目证据量级不会再触发；
+     * ② 兜底改成**结构化缩减**（逐列表限量 + 标注 {@code _evidenceTruncated}），
+     * 无论怎么截都仍是**合法 JSON**，绝不切断字符串。</p>
      */
-    private String evidenceJson(Map<String, Object> evidence) {
+    String evidenceJson(Map<String, Object> evidence) {
         String json = toJson(evidence);
-        int max = 4000;
-        if (json.length() <= max) {
+        if (json.length() <= EVIDENCE_MAX_CHARS) {
             return json;
         }
-        String note = "…(截断,原长度" + json.length() + ")";
-        return json.substring(0, max - note.length()) + note;
+        for (int cap : new int[]{200, 50, 10, 2}) {
+            String reduced = toJson(reduceLists(evidence, cap, json.length()));
+            if (reduced.length() <= EVIDENCE_MAX_CHARS) {
+                return reduced;
+            }
+        }
+        // 极端情况：只保留最小可用摘要（重试路径判定「证据是否存在」依赖 jobs 非空）
+        Map<String, Object> minimal = new LinkedHashMap<>();
+        minimal.put("_evidenceTruncated", true);
+        minimal.put("_originalLength", json.length());
+        minimal.put("_note", "证据超长，仅保留作业摘要（完整内容见 landing/logs 作业日志）");
+        Object jobs = evidence.get("jobs");
+        if (jobs instanceof List<?> list) {
+            minimal.put("jobCodes", list.stream()
+                    .filter(Map.class::isInstance)
+                    .map(m -> String.valueOf(((Map<?, ?>) m).get("jobCode")))
+                    .toList());
+            minimal.put("jobCount", list.size());
+        }
+        return toJson(minimal);
+    }
+
+    /** 逐列表限量，并标注被截断的列表（保持 JSON 合法；标量字段全部保留） */
+    private static Map<String, Object> reduceLists(Map<String, Object> evidence, int cap, int originalLength) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> e : evidence.entrySet()) {
+            Object v = e.getValue();
+            if (v instanceof List<?> list && list.size() > cap) {
+                out.put(e.getKey(), new ArrayList<>(list.subList(0, cap)));
+                out.put(e.getKey() + "_truncated", Map.of("kept", cap, "total", list.size()));
+            } else {
+                out.put(e.getKey(), v);
+            }
+        }
+        out.put("_evidenceTruncated", true);
+        out.put("_originalLength", originalLength);
+        return out;
     }
 
     /** 解析 profile.landingUri（file:///D:/... 或 file://./landing）→ 本地 Path */

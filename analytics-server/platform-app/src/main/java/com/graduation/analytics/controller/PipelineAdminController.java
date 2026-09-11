@@ -1,5 +1,7 @@
 package com.graduation.analytics.controller;
 
+import com.graduation.analytics.auth.PermissionCode;
+import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.pipeline.PipelineRecoveryService;
@@ -14,7 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * R6-14（§23.1）流水线恢复管理接口：resume / mark-failed / retry-from-stage + 启动对账报告。
- * 每个动作都必须携带 operator 与 reason（审计），鉴权沿用全局拦截器（细粒度权限属 R8）。
+ * 每个动作都必须携带 operator 与 reason（审计）；R8-3 起细粒度权限由
+ * {@link RequiresPermission} 声明、AuthInterceptor 查矩阵执行（恢复动作 = pipeline:run）。
  */
 @RestController
 @RequestMapping("/api/v1/admin/pipeline-runs")
@@ -25,6 +28,7 @@ public class PipelineAdminController {
     private final PipelineRecoveryService recoveryService;
 
     @PostMapping("/{id}/resume")
+    @RequiresPermission(PermissionCode.PIPELINE_RUN)
     public ApiResponse<PipelineService.RunResult> resume(@PathVariable Long id,
                                                         @RequestParam String operator,
                                                         @RequestParam String reason) {
@@ -33,6 +37,7 @@ public class PipelineAdminController {
     }
 
     @PostMapping("/{id}/mark-failed")
+    @RequiresPermission(PermissionCode.PIPELINE_RUN)
     public ApiResponse<PipelineService.RunResult> markFailed(@PathVariable Long id,
                                                             @RequestParam String operator,
                                                             @RequestParam String reason) {
@@ -41,6 +46,7 @@ public class PipelineAdminController {
     }
 
     @PostMapping("/{id}/retry-from-stage")
+    @RequiresPermission(PermissionCode.PIPELINE_RUN)
     public ApiResponse<PipelineService.RunResult> retryFromStage(@PathVariable Long id,
                                                                  @RequestParam String stage,
                                                                  @RequestParam String operator,
@@ -52,6 +58,7 @@ public class PipelineAdminController {
 
     /** 启动对账报告（本次启动处理了哪些 run） */
     @GetMapping("/recovery-report")
+    @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
     public ApiResponse<PipelineRecoveryService.Report> recoveryReport() {
         return ApiResponse.ok(recoveryService.lastReport(), TraceContext.create().traceId());
     }

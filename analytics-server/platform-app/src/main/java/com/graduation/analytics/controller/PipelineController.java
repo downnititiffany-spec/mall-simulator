@@ -1,5 +1,7 @@
 package com.graduation.analytics.controller;
 
+import com.graduation.analytics.auth.PermissionCode;
+import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.pipeline.PipelineService;
@@ -21,6 +23,9 @@ import java.util.List;
 
 /**
  * 流水线接口（§24.3 子集）：创建（幂等键头）、查询、重试。
+ *
+ * <p>R8-3 §3.2：启动/重试 = pipeline:run（admin/data_dev/operator），运行记录查看 = ops:log:view
+ * （analyst 只能看看板，不能触发流水线）。</p>
  */
 @RestController
 @RequestMapping("/api/v1/pipeline-runs")
@@ -38,6 +43,7 @@ public class PipelineController {
     }
 
     @PostMapping
+    @RequiresPermission(PermissionCode.PIPELINE_RUN)
     public ApiResponse<PipelineService.RunResult> create(@RequestBody CreateRunReq req,
                                                          @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
         TraceContext trace = TraceContext.create();
@@ -47,17 +53,20 @@ public class PipelineController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
     public ApiResponse<PipelineService.RunResult> get(@PathVariable Long id) {
         return ApiResponse.ok(pipelineService.get(id), TraceContext.create().traceId());
     }
 
     @PostMapping("/{id}/retry")
+    @RequiresPermission(PermissionCode.PIPELINE_RUN)
     public ApiResponse<PipelineService.RunResult> retry(@PathVariable Long id) {
         TraceContext trace = TraceContext.create();
         return ApiResponse.ok(pipelineService.retry(id, trace.traceId()), trace.traceId());
     }
 
     @GetMapping
+    @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
     public ApiResponse<List<PipelineRun>> list(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit) {
         return ApiResponse.ok(runMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PipelineRun>()
                 .orderByDesc(PipelineRun::getId)

@@ -500,6 +500,60 @@ class PipelineServiceTest {
         assertThat(dwd.getEvidence()).contains("lp-test-bdw").contains("landing/logs/test__lp-test-bdw.log");
     }
 
+    /**
+     * 2026-09-11 真机事故回归：BUILD_ADS 证据超长时**不得**截断成非法 JSON。
+     *
+     * <p>原实现按字符数 {@code substring} 截断，落库的是半截 JSON；重试/恢复路径
+     * {@code stageEvidence()} 解析失败后静默退化成空 Map → PUBLISH_METRIC 报
+     * 「缺少 BUILD_ADS 真实作业证据，拒绝发布」（实测 pipeline run 22）。</p>
+     */
+    @Test
+    void 阶段证据超长时仍保持JSON合法() throws Exception {
+        // 构造真实体量的 BUILD_ADS 证据：逐作业 × 逐输出分区
+        Map<String, Object> evidence = new LinkedHashMap<>();
+        List<Map<String, Object>> jobs = new ArrayList<>();
+        for (String jobCode : List.of("fna", "dqc", "pub", "mxp")) {
+            Map<String, Object> job = new LinkedHashMap<>();
+            job.put("jobCode", jobCode);
+            job.put("externalJobId", "lp-1789043509617-310b7b");
+            job.put("status", "SUCCESS");
+            job.put("inputRecords", 55);
+            job.put("outputRecords", 22);
+            List<Map<String, Object>> partitions = new ArrayList<>();
+            for (int i = 0; i < 60; i++) {
+                partitions.add(Map.of("table", "dw_ads.ads_hot_product__staging" + i, "dt", "20260901",
+                        "snapshotId", "S20260901_24", "rowCount", 8,
+                        "path", "file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_hot_product__staging"
+                                + i + "/dt=20260901/snapshot_id=S20260901_24/part-00000-abc.json"));
+            }
+            job.put("outputPartitions", partitions);
+            jobs.add(job);
+        }
+        evidence.put("jobs", jobs);
+        evidence.put("adsSnapshotId", "S20260901_24");
+
+        String json = service.evidenceJson(evidence);
+        // ① 无论长短都必须是合法 JSON（可被 ObjectMapper 反序列化）
+        Map<String, Object> parsed = objectMapper.readValue(json,
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                });
+        assertThat(parsed).isNotEmpty();
+        // ② 本项目量级（约 6 万字符）不触发缩减：证据必须完整保留
+        assertThat(json.length()).isLessThan(PipelineService.EVIDENCE_MAX_CHARS);
+        assertThat(parsed).doesNotContainKey("_evidenceTruncated");
+        assertThat((List<?>) parsed.get("jobs")).hasSize(4);
+
+        // ③ 人为超限（把上限当作「列宽」模拟）时，缩减结果仍必须是合法 JSON + 有截断标注
+        Map<String, Object> huge = new LinkedHashMap<>(evidence);
+        huge.put("blob", "x".repeat(PipelineService.EVIDENCE_MAX_CHARS + 10));
+        String reduced = service.evidenceJson(huge);
+        Map<String, Object> reducedParsed = objectMapper.readValue(reduced,
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                });
+        assertThat(reducedParsed).containsEntry("_evidenceTruncated", true);
+        assertThat(reduced.length()).isLessThanOrEqualTo(PipelineService.EVIDENCE_MAX_CHARS);
+    }
+
     // ── 辅助 ────────────────────────────────────────────────────────────────
     private void writeLanding(String acceptedUriDir, String... eventLines) throws IOException {
         Files.createDirectories(landing.resolve("manifests"));

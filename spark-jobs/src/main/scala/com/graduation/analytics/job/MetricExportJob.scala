@@ -138,8 +138,14 @@ object MetricExportJob {
     val tmpDir = new Path(targetFile + ".parts")
     val target = new Path(targetFile)
     val fs = target.getFileSystem(spark.sparkContext.hadoopConfiguration)
+    // 幂等清理：导出作业拥有 `targetFile` 与 `targetFile.parts` 两个路径，重试必须能覆盖上一次
+    // 失败留下的**任何形态**。真机事故（run 21/22 attempt 3）：旧实现用 `text(targetFile)` 直接写，
+    // 目标路径是**非空目录**；这里的 `fs.delete(target, false)` 非递归删除对非空目录抛
+    // `Directory ...jsonl is not empty` → 导出作业一旦重试就必然失败（PUBLISH_METRIC FAILED）。
+    // 故统一递归清理后再写临时目录、拼成单文件。
+    if (fs.exists(tmpDir)) fs.delete(tmpDir, true)
+    if (fs.exists(target)) fs.delete(target, true)
     df.toJSON.write.mode("overwrite").text(tmpDir.toString)
-    if (fs.exists(target)) fs.delete(target, false)
     val out = fs.create(target, true)
     try {
       val parts = fs.listStatus(tmpDir)

@@ -1,11 +1,16 @@
 package com.graduation.analytics.decision;
 
 /**
- * 决策状态机（§22.6）：
+ * 决策状态机（§22.6 / R8-3 §20.3）：
  * DRAFT → PENDING_REVIEW → APPROVED → IN_PROGRESS → COMPLETED → EVALUATING
  *   → EFFECTIVE | PARTIAL | INEFFECTIVE | INSUFFICIENT_DATA
  * 审核前任意状态可 REJECTED；执行中可 CANCELLED（必须记录原因）。
- * 纯逻辑，可单元测试。
+ *
+ * <p>{@code INSUFFICIENT_DATA} 是「暂不可评」而非终态：§20.3 要求「完成后等待完整评价窗口再评价，
+ * 数据不足不得归类为无效」，所以窗口还没数据时允许再次 EVALUATING（EFFECTIVE/PARTIAL/INEFFECTIVE
+ * 才是终态）。</p>
+ *
+ * <p>纯逻辑，可单元测试。</p>
  */
 public final class DecisionStateMachine {
 
@@ -35,7 +40,9 @@ public final class DecisionStateMachine {
             case COMPLETED -> to.equals(EVALUATING);
             case EVALUATING -> to.equals(EFFECTIVE) || to.equals(PARTIAL)
                     || to.equals(INEFFECTIVE) || to.equals(INSUFFICIENT_DATA);
-            default -> false; // 终态（EFFECTIVE/PARTIAL/INEFFECTIVE/INSUFFICIENT_DATA/REJECTED/CANCELLED）
+            // 暂不可评：窗口数据补齐后可再评一次（§20.3）
+            case INSUFFICIENT_DATA -> to.equals(EVALUATING);
+            default -> false; // 终态（EFFECTIVE/PARTIAL/INEFFECTIVE/REJECTED/CANCELLED）
         };
     }
 

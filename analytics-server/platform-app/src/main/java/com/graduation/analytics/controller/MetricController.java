@@ -1,5 +1,7 @@
 package com.graduation.analytics.controller;
 
+import com.graduation.analytics.auth.PermissionCode;
+import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.MySqlMetricStore;
@@ -32,6 +34,7 @@ public class MetricController {
 
     /** 经营指标（默认最新 ACTIVE 快照）；返回 metric_code→value+unit */
     @GetMapping("/overview")
+    @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
     public ApiResponse<Object> overview(@RequestParam(required = false) String snapshotId) {
         TraceContext trace = TraceContext.create();
         List<MetricValue> values = metricStore.query(
@@ -47,17 +50,20 @@ public class MetricController {
     }
 
     @GetMapping("/snapshots")
+    @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
     public ApiResponse<List<MetricSnapshot>> snapshots(@RequestParam(defaultValue = "10") int limit) {
         return ApiResponse.ok(metricStore.listSnapshots(limit), TraceContext.create().traceId());
     }
 
+    /** 连通性检查：AuthInterceptor 白名单路径（无需权限码，供探活使用） */
     @GetMapping("/health")
     public ApiResponse<MetricStore.HealthResult> health() {
         return ApiResponse.ok(metricStore.healthCheck(), TraceContext.create().traceId());
     }
 
-    /** 数据质量规则结果（§23.1 质量门；管理员运维页） */
+    /** 数据质量规则结果（§23.1 质量门；管理员运维页 → ops:log:view） */
     @GetMapping("/quality")
+    @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
     public ApiResponse<List<com.graduation.analytics.pipeline.entity.DataQualityResult>> quality(
             @RequestParam(required = false) Long runId,
             @RequestParam(defaultValue = "20") int limit) {

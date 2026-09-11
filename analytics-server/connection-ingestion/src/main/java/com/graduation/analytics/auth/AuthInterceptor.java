@@ -6,40 +6,52 @@ import com.graduation.analytics.common.TraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 /**
- * 登录鉴权 + 基于角色的 API 鉴权（§3.2 / §21.5）：
- * 解析 Authorization: Bearer &lt;token&gt; → AuthService.validate →
- * 未通过直接写 401 JSON；通过后按 admin 专属路径前缀做角色校验（非 admin → 403 JSON）。
- * 白名单路径在 AuthConfig 注册时排除，此处再兜底短路一次。
+ * 登录鉴权 + permissionCode 鉴权（R8-3 契约 §3.1/§3.2、V2.0 §21.1/§21.2/§24.9）。
+ *
+ * <p>执行顺序：白名单短路 → 校验 Bearer token（失败 401 {@code UNAUTHORIZED}）→
+ * 仅登录态接口短路 → 读取 {@link RequiresPermission}（方法级优先，其次类级）→
+ * 查 {@link RolePermissions} 矩阵（失败 403 {@code FORBIDDEN_PERMISSION}）→ 写入 {@link CurrentUserHolder}。</p>
+ *
+ * <p>与 R8 之前实现的区别（反熵）：**删除**「按 URL 前缀猜 admin」的规则。
+ * 前缀只能表达「是不是 admin」，既管不住 data_dev/operator，也会随新增路径静默放宽；
+ * 现在未声明权限码的接口一律拒绝（fail-closed），权限矩阵是唯一判据。</p>
+ *
+ * <p>ThreadLocal 纪律：只有校验通过才 {@link CurrentUserHolder#set}；
+ * 拒绝路径显式 {@link CurrentUserHolder#clear()}（Spring 对 preHandle 返回 false 的拦截器
+ * **不会**回调 afterCompletion，不清理就会把身份残留给同线程的下一个请求）。</p>
  */
 @Component
 @RequiredArgsConstructor
 public class AuthInterceptor implements HandlerInterceptor {
 
-    /** 白名单：跳过一切校验 */
+    /** 白名单：跳过一切校验（登录接口本身、健康检查） */
     private static final List<String> WHITELIST_PATHS = List.of(
             "/api/v1/auth/login", "/api/v1/metrics/health", "/api/v1/health");
 
-    /** admin 专属路径前缀：非 admin 拒绝（403） */
-    private static final List<String> ADMIN_ONLY_PREFIXES = List.of(
-            "/api/v1/generator",
-            "/api/v1/ingestion",
-            "/api/v1/pipeline-runs",
-            "/api/v1/mall/outbox",
-            "/api/v1/metrics/quality",
-            "/api/v1/ai/audit",
-            "/api/v1/admin");
+    /**
+     * 仅需登录态、无权限码语义的接口（§3.2 矩阵未列这些动作）：
+     * 登出与「当前用户」是会话自身操作，任何已登录角色都必须可用。
+     */
+    private static final Set<String> SESSION_ONLY_PATHS = Set.of(
+            "/api/v1/auth/logout", "/api/v1/auth/me");
 
-    private static final String ROLE_ADMIN = "admin";
+    /** 无权限 */
+    private static final String FORBIDDEN = "FORBIDDEN";
+    /** 缺少所需权限码（R8-3 契约 §3.2 冻结码） */
+    private static final String FORBIDDEN_PERMISSION = "FORBIDDEN_PERMISSION";
 
     private final AuthService authService;
     private final ObjectMapper objectMapper;
@@ -57,15 +69,32 @@ public class AuthInterceptor implements HandlerInterceptor {
         String token = resolveToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         CurrentUser current = authService.validate(token);
         if (current == null) {
-            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "UNAUTHORIZED", "未登录或会话已过期");
-            return false;
+            return deny(response, HttpServletResponse.SC_UNAUTHORIZED, "UNAUTHORIZED", "未登录或会话已过期");
         }
 
-        // 角色规则：admin 专属路径前缀
-        boolean adminOnly = ADMIN_ONLY_PREFIXES.stream().anyMatch(uri::startsWith);
-        if (adminOnly && !ROLE_ADMIN.equals(current.role())) {
-            writeError(response, HttpServletResponse.SC_FORBIDDEN, "FORBIDDEN", "无权访问该资源，需要管理员权限");
-            return false;
+        // 会话自身操作：登录态校验通过即可
+        if (SESSION_ONLY_PATHS.contains(uri)) {
+            CurrentUserHolder.set(current);
+            return true;
+        }
+
+        // 角色必须在权限矩阵内：未知/空角色不能因为「查表查不到」而落到任何权限
+        if (!RolePermissions.knownRole(current.role())) {
+            return deny(response, HttpServletResponse.SC_FORBIDDEN, FORBIDDEN,
+                    "当前账号未分配有效角色，无法访问受保护资源");
+        }
+
+        // 权限码判定：注解 + 角色矩阵
+        String required = requiredPermission(handler);
+        if (required == null) {
+            // 未声明权限码 → 拒绝（fail-closed）。出现该分支说明有接口漏加注解，
+            // ControllerPermissionCoverageTest 会在构建期把这种情况拦住。
+            return deny(response, HttpServletResponse.SC_FORBIDDEN, FORBIDDEN_PERMISSION,
+                    "接口未声明权限码，按最小权限拒绝访问: " + request.getMethod() + " " + uri);
+        }
+        if (!RolePermissions.has(current.role(), required)) {
+            return deny(response, HttpServletResponse.SC_FORBIDDEN, FORBIDDEN_PERMISSION,
+                    "无权访问该资源，需要权限: " + required);
         }
 
         CurrentUserHolder.set(current);
@@ -77,6 +106,21 @@ public class AuthInterceptor implements HandlerInterceptor {
         CurrentUserHolder.clear();
     }
 
+    /** 取方法级注解，其次类级；都没有返回 null */
+    private String requiredPermission(Object handler) {
+        if (!(handler instanceof HandlerMethod handlerMethod)) {
+            return null;
+        }
+        RequiresPermission onMethod = AnnotatedElementUtils.findMergedAnnotation(
+                handlerMethod.getMethod(), RequiresPermission.class);
+        if (onMethod != null) {
+            return onMethod.value();
+        }
+        RequiresPermission onType = AnnotatedElementUtils.findMergedAnnotation(
+                handlerMethod.getBeanType(), RequiresPermission.class);
+        return onType == null ? null : onType.value();
+    }
+
     private String resolveToken(String header) {
         if (header == null || !header.startsWith("Bearer ")) {
             return null;
@@ -85,10 +129,13 @@ public class AuthInterceptor implements HandlerInterceptor {
         return token.isEmpty() ? null : token;
     }
 
-    private void writeError(HttpServletResponse response, int status, String code, String message) throws IOException {
+    /** 拒绝：清 ThreadLocal（返回 false 时 Spring 不会回调 afterCompletion）并写统一 JSON 错误体 */
+    private boolean deny(HttpServletResponse response, int status, String code, String message) throws IOException {
+        CurrentUserHolder.clear();
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         objectMapper.writeValue(response.getWriter(), ApiResponse.error(code, message, TraceContext.create().traceId()));
+        return false;
     }
 }

@@ -1,5 +1,7 @@
 package com.graduation.analytics.controller;
 
+import com.graduation.analytics.auth.PermissionCode;
+import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.runtime.RuntimeProfileService;
@@ -21,10 +23,15 @@ import java.util.List;
 /**
  * 运行环境管理（整改书 §8.4）：环境列表/连通测试/激活/禁用。
  * 运维中心调用；普通员工页面只显示环境名称与数据更新时间（前端控制，§8.4）。
+ *
+ * <p>R8-3 §3.2：整类归 runtime:manage（admin/data_dev）。读接口一并要求该权限，
+ * 因为环境行含连接配置（host/port/账号等），不应开放给 operator/analyst；
+ * 冻结前端 web/src/api.js 未使用本组接口，故不会造成前端 403。</p>
  */
 @RestController
 @RequestMapping("/api/v1/runtime-profiles")
 @RequiredArgsConstructor
+@RequiresPermission(PermissionCode.RUNTIME_MANAGE)
 public class RuntimeProfileController {
 
     private final RuntimeProfileService profileService;
