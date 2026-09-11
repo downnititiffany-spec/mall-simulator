@@ -1,0 +1,5 @@
+fk_runtime_profile_source	FOREIGN KEY
+PRIMARY	PRIMARY KEY
+uk_profile_code	UNIQUE
+PRIMARY	PRIMARY KEY
+uk_source_registry_code	UNIQUE

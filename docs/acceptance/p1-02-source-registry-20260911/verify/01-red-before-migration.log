@@ -1,0 +1,551 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -XX:+UseSerialGC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] platform-app                                                       [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/7]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[WARNING] useSystemClassLoader setting has no effect when not forking
+[WARNING] The parameter forkCount should likely not be 0. Forking a JVM for tests improves test accuracy. Ensure to have a <forkCount> >= 1.
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/7]
+[INFO]   from connection-ingestion\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ connection-ingestion ---
+[WARNING] useSystemClassLoader setting has no effect when not forking
+[WARNING] The parameter forkCount should likely not be 0. Forking a JVM for tests improves test accuracy. Ensure to have a <forkCount> >= 1.
+[INFO] 
+[INFO] ------------< com.graduation.analytics:warehouse-pipeline >-------------
+[INFO] Building warehouse-pipeline 0.1.0-SNAPSHOT                         [4/7]
+[INFO]   from warehouse-pipeline\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ warehouse-pipeline ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ warehouse-pipeline ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ warehouse-pipeline ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ warehouse-pipeline ---
+[INFO] Changes detected - recompiling the module! :input tree
+[INFO] Compiling 13 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineRecoveryServiceTest.java: D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineRecoveryServiceTest.java使用了未经检查或不安全的操作。
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineRecoveryServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ warehouse-pipeline ---
+[WARNING] useSystemClassLoader setting has no effect when not forking
+[WARNING] The parameter forkCount should likely not be 0. Forking a JVM for tests improves test accuracy. Ensure to have a <forkCount> >= 1.
+[INFO] 
+[INFO] --------------< com.graduation.analytics:metric-analysis >--------------
+[INFO] Building metric-analysis 0.1.0-SNAPSHOT                            [5/7]
+[INFO]   from metric-analysis\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ metric-analysis ---
+[WARNING] useSystemClassLoader setting has no effect when not forking
+[WARNING] The parameter forkCount should likely not be 0. Forking a JVM for tests improves test accuracy. Ensure to have a <forkCount> >= 1.
+[INFO] 
+[INFO] ----------------< com.graduation.analytics:ai-decision >----------------
+[INFO] Building ai-decision 0.1.0-SNAPSHOT                                [6/7]
+[INFO]   from ai-decision\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ ai-decision ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ ai-decision ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ ai-decision ---
+[WARNING] useSystemClassLoader setting has no effect when not forking
+[WARNING] The parameter forkCount should likely not be 0. Forking a JVM for tests improves test accuracy. Ensure to have a <forkCount> >= 1.
+[INFO] 
+[INFO] ---------------< com.graduation.analytics:platform-app >----------------
+[INFO] Building platform-app 0.1.0-SNAPSHOT                               [7/7]
+[INFO]   from platform-app\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-app ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 43 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-app ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 19 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-app ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-app\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-app ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 12 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-app ---
+[WARNING] useSystemClassLoader setting has no effect when not forking
+[WARNING] The parameter forkCount should likely not be 0. Forking a JVM for tests improves test accuracy. Ensure to have a <forkCount> >= 1.
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] Running com.graduation.analytics.source.SourceRegistryMigrationMySqlIT
+19:56:03.729 [main] INFO org.flywaydb.core.internal.license.VersionPrinter -- Flyway Community Edition 9.22.3 by Redgate
+19:56:03.732 [main] INFO org.flywaydb.core.internal.license.VersionPrinter -- See release notes here: https://rd.gt/416ObMi
+19:56:03.732 [main] INFO org.flywaydb.core.internal.license.VersionPrinter -- 
+19:56:03.746 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:mysql://127.0.0.1:3306/analytics_meta (MySQL 8.0)
+19:56:03.818 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 14 migrations (execution time 00:00.057s)
+19:56:03.826 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema `analytics_meta`: 15
+19:56:03.827 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Schema `analytics_meta` is up to date. No migration necessary.
+19:56:03.845 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:mysql://127.0.0.1:3306/analytics_meta (MySQL 8.0)
+19:56:03.855 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 14 migrations (execution time 00:00.006s)
+19:56:03.861 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema `analytics_meta`: 15
+19:56:03.861 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Schema `analytics_meta` is up to date. No migration necessary.
+[P1-02] analytics_meta 首次启动执行脚本数=0，schemaVersion=null；第二次启动执行脚本数=0
+[ERROR] Tests run: 5, Failures: 2, Errors: 3, Skipped: 0, Time elapsed: 0.539 s <<< FAILURE! -- in com.graduation.analytics.source.SourceRegistryMigrationMySqlIT
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.repeatStartupIsANoOp -- Time elapsed: 0.049 s <<< ERROR!
+org.springframework.dao.EmptyResultDataAccessException: Incorrect result size: expected 1, actual 0
+	at org.springframework.dao.support.DataAccessUtils.nullableSingleResult(DataAccessUtils.java:190)
+	at org.springframework.jdbc.core.JdbcTemplate.queryForObject(JdbcTemplate.java:520)
+	at org.springframework.jdbc.core.JdbcTemplate.queryForMap(JdbcTemplate.java:513)
+	at com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.repeatStartupIsANoOp(SourceRegistryMigrationMySqlIT.java:88)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.legacyProfilesAreBackfilledWithForeignKey -- Time elapsed: 0.025 s <<< ERROR!
+org.springframework.jdbc.BadSqlGrammarException: StatementCallback; bad SQL grammar [SELECT id FROM source_registry WHERE source_code = 'mock-mall']
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:408)
+	at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:476)
+	at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:486)
+	at org.springframework.jdbc.core.JdbcTemplate.queryForObject(JdbcTemplate.java:519)
+	at org.springframework.jdbc.core.JdbcTemplate.queryForObject(JdbcTemplate.java:526)
+	at com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.legacyProfilesAreBackfilledWithForeignKey(SourceRegistryMigrationMySqlIT.java:170)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.sql.SQLSyntaxErrorException: Table 'analytics_meta.source_registry' doesn't exist
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.StatementImpl.executeQuery(StatementImpl.java:1208)
+	at org.springframework.jdbc.core.JdbcTemplate$1QueryStatementCallback.doInStatement(JdbcTemplate.java:463)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:393)
+	... 8 more
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.sourceRegistrySchemaMatchesFrozenContract -- Time elapsed: 0.056 s <<< FAILURE!
+java.lang.AssertionError: 
+[列集合必须与实施书 §3.1 逐字段一致（多列少列都算漂移）] 
+Actual and expected should have same size but actual size is:
+  0
+while expected size is:
+  11
+Actual was:
+  {}
+Expected was:
+  ["id"="bigint",
+    "source_code"="varchar(64)",
+    "display_name"="varchar(128)",
+    "ingest_mode"="varchar(16)",
+    "profile_path"="varchar(255)",
+    "timezone"="varchar(64)",
+    "currency"="char(3)",
+    "status"="varchar(16)",
+    "profile_version"="varchar(32)",
+    "created_at"="datetime(3)",
+    "updated_at"="datetime(3)"]
+	at com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.sourceRegistrySchemaMatchesFrozenContract(SourceRegistryMigrationMySqlIT.java:115)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.runtimeProfileGainsOnlySourceIdColumn -- Time elapsed: 0.014 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[迁移前 24 列必须原样保留，新增列只能是 source_id] 
+Expecting actual:
+  ["id",
+    "profile_code",
+    "profile_name",
+    "type",
+    "status",
+    "landing_uri",
+    "hdfs_uri",
+    "hive_jdbc_url",
+    "hive_database_prefix",
+    "spark_master",
+    "deploy_mode",
+    "yarn_queue",
+    "ssh_host",
+    "ssh_port",
+    "ssh_user",
+    "spark_submit_path",
+    "spark_job_jar_uri",
+    "metric_store_type",
+    "metric_store_config_ref",
+    "credential_ref",
+    "timezone",
+    "version",
+    "created_at",
+    "updated_at"]
+to contain exactly (and in same order):
+  ["id",
+    "profile_code",
+    "profile_name",
+    "type",
+    "status",
+    "landing_uri",
+    "hdfs_uri",
+    "hive_jdbc_url",
+    "hive_database_prefix",
+    "spark_master",
+    "deploy_mode",
+    "yarn_queue",
+    "ssh_host",
+    "ssh_port",
+    "ssh_user",
+    "spark_submit_path",
+    "spark_job_jar_uri",
+    "metric_store_type",
+    "metric_store_config_ref",
+    "credential_ref",
+    "timezone",
+    "version",
+    "created_at",
+    "updated_at",
+    "source_id"]
+but could not find the following elements:
+  ["source_id"]
+
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.runtimeProfileGainsOnlySourceIdColumn(SourceRegistryMigrationMySqlIT.java:164)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.seedSourceIsRegisteredAsActiveReferenceMall -- Time elapsed: 0.004 s <<< ERROR!
+org.springframework.jdbc.BadSqlGrammarException: StatementCallback; bad SQL grammar [SELECT source_code, display_name, ingest_mode, profile_path, timezone, currency, status, profile_version FROM source_registry WHERE source_code = 'mock-mall']
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:408)
+	at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:476)
+	at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:486)
+	at org.springframework.jdbc.core.JdbcTemplate.queryForList(JdbcTemplate.java:536)
+	at com.graduation.analytics.source.SourceRegistryMigrationMySqlIT.seedSourceIsRegisteredAsActiveReferenceMall(SourceRegistryMigrationMySqlIT.java:136)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.sql.SQLSyntaxErrorException: Table 'analytics_meta.source_registry' doesn't exist
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.StatementImpl.executeQuery(StatementImpl.java:1208)
+	at org.springframework.jdbc.core.JdbcTemplate$1QueryStatementCallback.doInStatement(JdbcTemplate.java:463)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:393)
+	... 7 more
+
+[INFO] Running com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+[ERROR] Tests run: 6, Failures: 1, Errors: 5, Skipped: 0, Time elapsed: 0.009 s <<< FAILURE! -- in com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationScriptTest.migrationDoesNotTouchWarehousePrefix -- Time elapsed: 0.001 s <<< ERROR!
+java.io.UncheckedIOException: 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:153)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.migrationDoesNotTouchWarehousePrefix(SourceRegistryMigrationScriptTest.java:79)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.nio.file.NoSuchFileException: D:\Develop_code\GraduationProject\analytics-server\platform-app\src\main\resources\db\meta\V16__source_registry.sql
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:85)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:108)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.newByteChannel(WindowsFileSystemProvider.java:236)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:380)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:432)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3288)
+	at java.base/java.nio.file.Files.readString(Files.java:3366)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:151)
+	... 4 more
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationScriptTest.migrationVersionIsAssignedAndUnique -- Time elapsed: 0.005 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[P1-02 的迁移号必须是当前最高版本 16；更高号说明总控已把该号分配给别的任务] 
+expected: 16
+ but was: 15
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.migrationVersionIsAssignedAndUnique(SourceRegistryMigrationScriptTest.java:56)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationScriptTest.sourceIdColumnIsNullableWithForeignKey -- Time elapsed: 0 s <<< ERROR!
+java.io.UncheckedIOException: 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:153)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.sourceIdColumnIsNullableWithForeignKey(SourceRegistryMigrationScriptTest.java:136)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.nio.file.NoSuchFileException: D:\Develop_code\GraduationProject\analytics-server\platform-app\src\main\resources\db\meta\V16__source_registry.sql
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:85)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:108)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.newByteChannel(WindowsFileSystemProvider.java:236)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:380)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:432)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3288)
+	at java.base/java.nio.file.Files.readString(Files.java:3366)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:151)
+	... 4 more
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationScriptTest.migrationIsAdditiveOnly -- Time elapsed: 0.001 s <<< ERROR!
+java.io.UncheckedIOException: 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:153)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.migrationIsAdditiveOnly(SourceRegistryMigrationScriptTest.java:65)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.nio.file.NoSuchFileException: D:\Develop_code\GraduationProject\analytics-server\platform-app\src\main\resources\db\meta\V16__source_registry.sql
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:85)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:108)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.newByteChannel(WindowsFileSystemProvider.java:236)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:380)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:432)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3288)
+	at java.base/java.nio.file.Files.readString(Files.java:3366)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:151)
+	... 4 more
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationScriptTest.backfillOnlyTouchesRowsWithoutSourceId -- Time elapsed: 0.001 s <<< ERROR!
+java.io.UncheckedIOException: 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:153)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.statement(SourceRegistryMigrationScriptTest.java:164)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.backfillOnlyTouchesRowsWithoutSourceId(SourceRegistryMigrationScriptTest.java:110)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.nio.file.NoSuchFileException: D:\Develop_code\GraduationProject\analytics-server\platform-app\src\main\resources\db\meta\V16__source_registry.sql
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:85)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:108)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.newByteChannel(WindowsFileSystemProvider.java:236)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:380)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:432)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3288)
+	at java.base/java.nio.file.Files.readString(Files.java:3366)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:151)
+	... 5 more
+
+[ERROR] com.graduation.analytics.source.SourceRegistryMigrationScriptTest.seedSourceIsIdempotentAndUsesRelativeProfilePath -- Time elapsed: 0 s <<< ERROR!
+java.io.UncheckedIOException: 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:153)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.statement(SourceRegistryMigrationScriptTest.java:164)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.seedSourceIsIdempotentAndUsesRelativeProfilePath(SourceRegistryMigrationScriptTest.java:87)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.nio.file.NoSuchFileException: D:\Develop_code\GraduationProject\analytics-server\platform-app\src\main\resources\db\meta\V16__source_registry.sql
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:85)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:108)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.newByteChannel(WindowsFileSystemProvider.java:236)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:380)
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:432)
+	at java.base/java.nio.file.Files.readAllBytes(Files.java:3288)
+	at java.base/java.nio.file.Files.readString(Files.java:3366)
+	at com.graduation.analytics.source.SourceRegistryMigrationScriptTest.script(SourceRegistryMigrationScriptTest.java:151)
+	... 5 more
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   SourceRegistryMigrationMySqlIT.runtimeProfileGainsOnlySourceIdColumn:164 [迁移前 24 列必须原样保留，新增列只能是 source_id] 
+Expecting actual:
+  ["id",
+    "profile_code",
+    "profile_name",
+    "type",
+    "status",
+    "landing_uri",
+    "hdfs_uri",
+    "hive_jdbc_url",
+    "hive_database_prefix",
+    "spark_master",
+    "deploy_mode",
+    "yarn_queue",
+    "ssh_host",
+    "ssh_port",
+    "ssh_user",
+    "spark_submit_path",
+    "spark_job_jar_uri",
+    "metric_store_type",
+    "metric_store_config_ref",
+    "credential_ref",
+    "timezone",
+    "version",
+    "created_at",
+    "updated_at"]
+to contain exactly (and in same order):
+  ["id",
+    "profile_code",
+    "profile_name",
+    "type",
+    "status",
+    "landing_uri",
+    "hdfs_uri",
+    "hive_jdbc_url",
+    "hive_database_prefix",
+    "spark_master",
+    "deploy_mode",
+    "yarn_queue",
+    "ssh_host",
+    "ssh_port",
+    "ssh_user",
+    "spark_submit_path",
+    "spark_job_jar_uri",
+    "metric_store_type",
+    "metric_store_config_ref",
+    "credential_ref",
+    "timezone",
+    "version",
+    "created_at",
+    "updated_at",
+    "source_id"]
+but could not find the following elements:
+  ["source_id"]
+
+[ERROR]   SourceRegistryMigrationMySqlIT.sourceRegistrySchemaMatchesFrozenContract:115 [列集合必须与实施书 §3.1 逐字段一致（多列少列都算漂移）] 
+Actual and expected should have same size but actual size is:
+  0
+while expected size is:
+  11
+Actual was:
+  {}
+Expected was:
+  ["id"="bigint",
+    "source_code"="varchar(64)",
+    "display_name"="varchar(128)",
+    "ingest_mode"="varchar(16)",
+    "profile_path"="varchar(255)",
+    "timezone"="varchar(64)",
+    "currency"="char(3)",
+    "status"="varchar(16)",
+    "profile_version"="varchar(32)",
+    "created_at"="datetime(3)",
+    "updated_at"="datetime(3)"]
+[ERROR]   SourceRegistryMigrationScriptTest.migrationVersionIsAssignedAndUnique:56 [P1-02 的迁移号必须是当前最高版本 16；更高号说明总控已把该号分配给别的任务] 
+expected: 16
+ but was: 15
+[ERROR] Errors: 
+[ERROR]   SourceRegistryMigrationMySqlIT.legacyProfilesAreBackfilledWithForeignKey:170 » BadSqlGrammar StatementCallback; bad SQL grammar [SELECT id FROM source_registry WHERE source_code = 'mock-mall']
+[ERROR]   SourceRegistryMigrationMySqlIT.repeatStartupIsANoOp:88 » EmptyResultDataAccess Incorrect result size: expected 1, actual 0
+[ERROR]   SourceRegistryMigrationMySqlIT.seedSourceIsRegisteredAsActiveReferenceMall:136 » BadSqlGrammar StatementCallback; bad SQL grammar [SELECT source_code, display_name, ingest_mode, profile_path, timezone, currency, status, profile_version FROM source_registry WHERE source_code = 'mock-mall']
+[ERROR]   SourceRegistryMigrationScriptTest.backfillOnlyTouchesRowsWithoutSourceId:110->statement:164->script:153 UncheckedIO 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+[ERROR]   SourceRegistryMigrationScriptTest.migrationDoesNotTouchWarehousePrefix:79->script:153 UncheckedIO 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+[ERROR]   SourceRegistryMigrationScriptTest.migrationIsAdditiveOnly:65->script:153 UncheckedIO 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+[ERROR]   SourceRegistryMigrationScriptTest.seedSourceIsIdempotentAndUsesRelativeProfilePath:87->statement:164->script:153 UncheckedIO 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+[ERROR]   SourceRegistryMigrationScriptTest.sourceIdColumnIsNullableWithForeignKey:136->script:153 UncheckedIO 读取 V16__source_registry.sql 失败（P1-02 迁移尚未落盘？）
+[INFO] 
+[ERROR] Tests run: 11, Failures: 3, Errors: 8, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.001 s]
+[INFO] platform-common .................................... SUCCESS [  0.488 s]
+[INFO] connection-ingestion ............................... SUCCESS [  0.371 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [  1.468 s]
+[INFO] metric-analysis .................................... SUCCESS [  0.047 s]
+[INFO] ai-decision ........................................ SUCCESS [  0.055 s]
+[INFO] platform-app ....................................... FAILURE [  2.448 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.049 s
+[INFO] Finished at: 2026-09-11T19:56:04+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project platform-app: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\analytics-server\platform-app\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :platform-app

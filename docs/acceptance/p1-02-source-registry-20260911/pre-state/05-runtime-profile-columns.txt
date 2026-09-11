@@ -1,0 +1,24 @@
+1	id	bigint	NO	NULL	PRI	auto_increment
+2	profile_code	varchar(64)	NO	NULL	UNI	
+3	profile_name	varchar(128)	NO	NULL		
+4	type	varchar(24)	NO	NULL		
+5	status	varchar(24)	NO	DRAFT		
+6	landing_uri	varchar(255)	YES	NULL		
+7	hdfs_uri	varchar(255)	YES	NULL		
+8	hive_jdbc_url	varchar(255)	YES	NULL		
+9	hive_database_prefix	varchar(64)	YES	NULL		
+10	spark_master	varchar(128)	YES	NULL		
+11	deploy_mode	varchar(32)	YES	NULL		
+12	yarn_queue	varchar(64)	YES	NULL		
+13	ssh_host	varchar(128)	YES	NULL		
+14	ssh_port	int	YES	NULL		
+15	ssh_user	varchar(64)	YES	NULL		
+16	spark_submit_path	varchar(255)	YES	NULL		
+17	spark_job_jar_uri	varchar(255)	YES	NULL		
+18	metric_store_type	varchar(24)	NO	MYSQL		
+19	metric_store_config_ref	varchar(255)	YES	NULL		
+20	credential_ref	varchar(255)	YES	NULL		
+21	timezone	varchar(32)	NO	Asia/Shanghai		
+22	version	int	NO	1		
+23	created_at	datetime(3)	NO	CURRENT_TIMESTAMP(3)		DEFAULT_GENERATED
+24	updated_at	datetime(3)	NO	CURRENT_TIMESTAMP(3)		DEFAULT_GENERATED on update CURRENT_TIMESTAMP(3)

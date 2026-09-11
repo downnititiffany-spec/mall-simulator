@@ -1,0 +1,2 @@
+PRIMARY	PRIMARY KEY
+uk_profile_code	UNIQUE

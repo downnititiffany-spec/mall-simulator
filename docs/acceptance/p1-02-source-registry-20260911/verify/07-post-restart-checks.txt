@@ -1,0 +1,16 @@
+## 重启后 API 与库内版本核对（2026-09-11 20:0x，jar sha256 851FADD7944A183576292CD8468596EEF17BDC0A36E3ABD2E8AB108E6A81F2A6）
+
+### 1) 运行中 8091 读 runtime_profile（新增列不影响既有读路径）
+login code=OK token长度=32
+/api/v1/health → HTTP 200  {"stage":"R1-skleton","app":"analytics-server","code":"OK"}
+/api/v1/runtime-profiles → HTTP 200  {"code":"OK","message":"success","data":[{"id":1,"profileCode":"local-dev","profileName":"LOCAL 开发环境（本机 Win）","type":"LOCAL","status":"ACTIVE","landingUri":"file://./landing","hdfsUri":null,"hiveJdbcUrl":null,"hiveDatabasePrefix":null,"sparkMaster":"local[2]",…
+/api/v1/runtime-profiles/active → HTTP 200  {"code":"OK","message":"success","data":{"id":1,"profileCode":"local-dev","profileName":"LOCAL 开发环境（本机 Win）","type":"LOCAL","status":"ACTIVE","landingUri":"file://./landing","hdfsUri":null,"hiveJdbcUrl":null,"hiveDatabasePrefix":null,"sparkMaster":"local[2]","…
+
+### 2) 库内事实（真 MySQL analytics_meta）
+> SELECT installed_rank, version, description, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 3;
+15	16	source registry	1
+14	15	stage evidence mediumtext	1
+13	14	r8 identity decision	1
+> SELECT id, source_code, ingest_mode, status, profile_version FROM source_registry; SELECT COUNT(*) FROM runtime_profile WHERE source_id IS NULL;
+1	mock-mall	FILE	ACTIVE	1.0
+0

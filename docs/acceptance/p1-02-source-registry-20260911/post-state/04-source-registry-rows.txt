@@ -1,0 +1,1 @@
+1	mock-mall	参考商城（源 A）	FILE	analytics-server/source-profiles/mock-mall.v1.json	Asia/Shanghai	CNY	ACTIVE	1.0	2026-09-11 19:56:28.020	2026-09-11 19:56:28.020

@@ -1,0 +1,9 @@
+pipeline_run	38
+pipeline_stage_run	241
+metric_snapshot	9
+ingestion_batch	39
+file_checkpoint	102
+runtime_profile	1
+data_quality_result	379
+quarantine_record	104
+spark_job_run	205
