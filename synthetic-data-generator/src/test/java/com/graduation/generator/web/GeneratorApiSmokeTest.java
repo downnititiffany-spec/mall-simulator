@@ -271,6 +271,20 @@ class GeneratorApiSmokeTest {
         // 不存在的目标：404 而不是空对象
         ResponseEntity<String> missing = rest.postForEntity("/api/v1/targets/99999999/test", null, String.class);
         assertEquals(404, missing.getStatusCode().value());
+
+        // S4a：adapter_type 必须有已注册的适配器实现。未注册类型必须响亮失败（400），
+        // 不能退化成"随便连一下 TCP 端口"的通用探测——那种探测对"这台商城能提供什么"什么都没证明。
+        TargetView unknownType = rest.postForObject("/api/v1/targets",
+                new TargetRequest(null, "it-unknown-adapter-" + UUID.randomUUID().toString().substring(0, 6),
+                        "SOME_OTHER_MALL", "http://127.0.0.1:8090", null, null, null, null, null),
+                TargetView.class);
+        assertNotNull(unknownType);
+        ResponseEntity<String> unregistered = rest.postForEntity(
+                "/api/v1/targets/" + unknownType.id() + "/test", null, String.class);
+        assertEquals(400, unregistered.getStatusCode().value(),
+                "未注册的 adapter_type 必须 400 并列出已注册类型：" + unregistered.getBody());
+        assertTrue(unregistered.getBody() != null && unregistered.getBody().contains("CANONICAL_EVENT_FILE"),
+                "错误信息必须列出已注册类型：" + unregistered.getBody());
     }
 
     // ---------- 辅助 ----------

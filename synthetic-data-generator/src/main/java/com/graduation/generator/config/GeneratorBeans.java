@@ -3,9 +3,16 @@ package com.graduation.generator.config;
 import com.graduation.generator.engine.FileModeGenerationEngine;
 import com.graduation.generator.engine.GenerationEngine;
 import com.graduation.generator.meta.GeneratorMetaStore;
+import com.graduation.generator.adapter.FileModeTargetAdapter;
+import com.graduation.generator.adapter.MallTargetAdapterRegistry;
+import com.graduation.generator.adapter.ReferenceMallHttpAdapter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.time.Duration;
+import java.util.List;
 
 /**
  * 生成器装配。
@@ -32,5 +39,20 @@ public class GeneratorBeans {
     @Bean
     public GenerationEngine generationEngine() {
         return new FileModeGenerationEngine();
+    }
+
+    /**
+     * 目标适配器登记处（S4a）：一个 {@code adapter_type} 一个所有者。
+     *
+     * <p>新增商城＝在这里加一个 {@code MallTargetAdapter} 实现，而不是去改探测服务的分支——
+     * "分析系统不能被写死到某一个模拟商城上"这条固定指令，在生成器这一侧的落点就是本方法。</p>
+     */
+    @Bean
+    public MallTargetAdapterRegistry mallTargetAdapterRegistry(
+            @Value("${generator.output.root:./generator-output}") String outputRoot,
+            @Value("${generator.target.probe-timeout-ms:3000}") long probeTimeoutMs) {
+        return new MallTargetAdapterRegistry(List.of(
+                new FileModeTargetAdapter(outputRoot),
+                ReferenceMallHttpAdapter.withEnvironment(Duration.ofMillis(probeTimeoutMs))));
     }
 }

@@ -1,0 +1,8 @@
+{
+  "withCredential": 64,
+  "withoutCredential": 65,
+  "closedPort": 66,
+  "unknownAdapter": 67,
+  "fileTarget": 68,
+  "declaredBehavior": 69
+}
