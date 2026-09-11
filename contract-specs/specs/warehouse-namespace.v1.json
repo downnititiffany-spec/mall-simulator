@@ -1,7 +1,7 @@
 {
   "spec": "warehouse-namespace",
   "version": "v1",
-  "status": "DRAFT-待总控冻结",
+  "status": "FROZEN-2026-09-11",
   "owner": "P1-04（数仓库名单点所有者）",
   "createdAt": "2026-09-11",
   "purpose": "三个程序共用的数仓库名派生规则与白名单校验的唯一机器可读来源；Java 与 Scala 两侧实现都只做该规格的薄适配，测试逐向量对账，防止两侧规则漂移。",

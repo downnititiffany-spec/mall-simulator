@@ -1,6 +1,6 @@
 # contract-specs — 三程序共享的版本化机器可读契约
 
-状态：**DRAFT（新建立，未经总控冻结）** ｜ 版本：`1.0.0`（见 [`VERSION`](VERSION)） ｜ 建立任务：M1-5
+状态：**部分冻结**——`specs/warehouse-namespace.v1.json` 已由总控冻结（2026-09-11，依据 P1-04 的本地 E3 实测，见 §4）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`1.1.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的**加法新增**，按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增）
 
 ## 1. 目的与边界
 
@@ -35,6 +35,8 @@
 | `landing/manifests/30.json`（真实清单） | `A68566DB7C38FFA0` |
 | `landing/events/r9-m1-123006.jsonl`（真实夹具） | `2351BCC35E04CCD2` |
 
+**权威文档已换代（本轮实测，2026-09-11）**：当前权威是 `docs/项目完整实施指导书 V2.2.md`（实测 SHA-256 前 16 位 `B366969C12A1A2C7`）；本目录建立时依据的 V2.1 现测前 16 位为 `F7E13DAF244295BF`，与上表记录的 `845D8C08297F7E1C` **不同** ⇒ 该来源文档在本目录建立之后发生过变化（原因未取证：可能为内容更新或行尾/编码重写）。**本目录尚未按 V2.1/V2.2 复读**，属待办的契约任务；在上表补上 V2.2 指纹之前，任何"契约与指导书一致"的说法只覆盖建立时那一版。
+
 ## 3. 规则
 
 - **版本号**：沿用 `event-contract.md` L4 的自身规则——新增字段 → `schema_version` 升 `1.1` 起；破坏性变更 → 新主版本并增加转换器。文件名中的 `v1` 表示主版本，仅在破坏性变更时新增文件（如 `canonical-event.v2.schema.json`），**不原地改语义**。目录级版本见 [`VERSION`](VERSION)：任何契约文件发生加法变更 → `1.1.0`；破坏性变更 → `2.0.0`。
@@ -49,10 +51,13 @@
 | [`schemas/canonical-event.v1.schema.json`](schemas/canonical-event.v1.schema.json) | 三方共享：`reference-mall`（写 outbox 事件）、`synthetic-data-generator`（文件模式写 JSONL）、`analytics-platform`（入湖校验） | 三方各自校验自己的输出；平台侧另有结构对账测试 `CanonicalEventSchemaParityTest` | `DRAFT` |
 | [`schemas/ingestion-manifest.v1.schema.json`](schemas/ingestion-manifest.v1.schema.json) | `analytics-platform`（`connection-ingestion` 写出 `landing/manifests/{batchId}.json`） | 平台采集侧自校验；生成器/商城只读不写 | `DRAFT` |
 | [`schemas/generation-artifact-manifest.v1.schema.json`](schemas/generation-artifact-manifest.v1.schema.json) | `synthetic-data-generator`（`CANONICAL_EVENT_FILE` 模式制品清单） | 生成器自校验；平台采集侧在读取生成器目录时按此校验 | `DRAFT` |
-| [`openapi/generator-api.v1.yaml`](openapi/generator-api.v1.yaml) | `synthetic-data-generator`（服务端）；`MALL_API` 场景下的调用方与页面为消费方 | 生成器按契约实现并自测；调用方按契约生成客户端 | `DRAFT` |
-| [`VERSION`](VERSION) | 总控 | — | `DRAFT` |
+| `openapi/generator-api.v1.yaml` | `synthetic-data-generator`（服务端）；`MALL_API` 场景下的调用方与页面为消费方 | 生成器按契约实现并自测；调用方按契约生成客户端 | `DRAFT` |
+| [`specs/warehouse-namespace.v1.json`](specs/warehouse-namespace.v1.json) | 两个消费方共享：`spark-jobs`（Scala）、`analytics-server`（Java）；两侧各自持有**薄适配器**，规则本体只在本规格 | Java：`WarehouseNamespaceContractTest`（逐向量 + `errorCodes` 数量/取值）+ `WarehouseNameLiteralGateTest`（源码门禁：除唯一 owner 外无裸库名字面量）；Scala：`WarehouseNamespaceSpec`（62 用例） | **`FROZEN-2026-09-11`** |
+| [`VERSION`](VERSION) | 总控 | — | `1.1.0` |
 
-**为什么全部是 `DRAFT`（诚实说明）**：这些文件是 M1-5 新建立的投影，尚未经过两条冻结门槛——(1) 结构对账测试 `analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java` 转绿；(2) 总控（热点 Owner）审阅并处置第 7 节的待决策项。**只有两者都完成，才允许把状态改为 `FROZEN`。** 当前 `canonical-event.v1` 的字段集/枚举/常量/金额正则已按该测试的断言逐条对齐（本会话用 PowerShell 逐条模拟断言核对，见第 8 节；M1-5 范围内不允许运行 Maven，故未执行该测试本身）。
+**为什么其余四个制品仍是 `DRAFT`（诚实说明）**：这些文件是 M1-5 新建立的投影，尚未经过两条冻结门槛——(1) 结构对账测试 `analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java` 转绿；(2) 总控（热点 Owner）审阅并处置第 7 节的待决策项。**只有两者都完成，才允许把状态改为 `FROZEN`。** 当前 `canonical-event.v1` 的字段集/枚举/常量/金额正则已按该测试的断言逐条对齐（本案建立时用 PowerShell 逐条模拟断言核对，见第 8 节；M1-5 范围内不允许运行 Maven，故未执行该测试本身）；且 Q6（采集层接受的 51 行里约 25 行按契约属脏数据）未决 ⇒ `canonical-event.v1` **不得**冻结。
+
+**`specs/warehouse-namespace.v1.json` 为何已冻结（冻结依据与边界，2026-09-11 总控复核）**：P1-04 交付了机器可读规格 + Java/Scala 两侧薄适配器 + 门禁与逐向量测试，并用**隔离临时数仓真跑 `spark-submit`** 取证（`docs/acceptance/p1-04-namespace-20260911/`，探针 18/18 PASS）：前缀 `dw_b` → 实建 `dw_b_ods…dw_b_ads` 且**不建** `dw_ods`；不传前缀 → `dw_ods…dw_ads` 与前者的表/分区/文件**逐项一致**（⇒ 零数据迁移）；非法前缀（`dw_ods`、`DW`）→ Spark 启动**前** `exit 64`、stdout 无 JobResult、**0 个库**（fail-closed）。E2 侧 `WarehouseNameLiteralGateTest` 证明"除唯一 owner 外无裸库名字面量"。**冻结的边界（未取证，不得当作已证）**：① 集群档与 1,000,000 行档；② `beeline --hivevar` 的实际变量替换（本机无 HiveServer2 ⇒ 留 M3/集群 T4）。这两项不改变规则本体，但**任何"集群上已验证"的说法都不成立**。冻结后按 §3 处置：加法变更 → 目录级升 `1.1.0` 并复核向量；语义变更 → 新建 `warehouse-namespace.v2.json`，不原地改。
 
 ## 5. `canonical-event.v1` 的建模决定（须连同 markdown 一起读）
 
@@ -110,6 +115,7 @@
 ## 9. 有意不放在本目录的内容（范围声明）
 
 - **V2.1 §5.2 元数据/映射相关 schema**（L172-L182 的 `source_instance`、`source_connector`、`schema_mapping`、`source_manifest`、`ingestion_batch_file`、`file_checkpoint` 的表与映射规格）：属 M2 连接器插件体系工作，尚未冻结字段语义，放进来必然靠猜。
+- **源登记 `analytics_meta.source_registry` 与源画像 `analytics-server/source-profiles/<source>.v1.json`**：**明确不进入本目录**（总控裁决 `D-036`，2026-09-11，并在 G0 契约门复核）。理由：本目录的边界是"三个程序**之间**交换的语言无关产物"（§1/§3 逐字），而这两者是 **`analytics-platform` 自身的元数据**——自己的库表、自己读的配置文件，**没有任何第二个程序读它们** ⇒ 放进来只会制造"看似跨程序契约、实为单程序内部结构"的假耦合（正是本目录要消除的形态）。因此：源登记的契约由迁移 `V16__source_registry.sql` + `D-034`/`D-035` 承担；源画像的机器可读 JSON Schema 由 **P3-01 作为平台自有制品**落位（`analytics-server/source-profiles/source-profile.v1.schema.json`），同样不进本目录。**触发迁入的条件**：出现真正的第二个消费者（例：独立的数据源管理服务、第三方商城自检工具，或生成器的 `MALL_API` 需要读画像做映射）时，按 §3 走"总控登记契约任务 → 冻结"的流程迁入，不提前放。
 - **平台入库清单 `source_manifest` 的 JSON 契约**：与采集侧 `ingestion-manifest.v1` 的关系（是同一份文件还是入库后的另一份）未冻结，故只登记存在性（Q 未列，属 M2 范围）。
 - **ADS / 分析视图模型契约**：归 `docs/contracts/analysis-viewmodel-r7-4.md`，R7-4 工作项范围，本目录不复制。
 - **指标字典与血缘**：归 `docs/contracts/metric-dictionary.md`、`docs/contracts/metric-lineage.md`。
