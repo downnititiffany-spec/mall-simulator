@@ -68,7 +68,21 @@ mvn -o test -f analytics-server/pom.xml -pl platform-app -am -DforkCount=0   # -
 - 定向复跑（同样 `-DforkCount=0`，只跑受影响的守卫类）：`EventContractTest` 28/28、`AnalysisSourcePolicyTest` 3/3、
   `AiSqlDriftTest` 6/6、`PlatformMallBoundarySourcePolicyTest` 3/3、`WarehouseNameLiteralGateTest` 3/3，全绿。
 
-### 3.2 已知限制（实测，不是推测）
+### 3.2 E1 构建（新增的 test-jar 执行确实产出工件）
+
+```
+mvn -o -DskipTests package -f analytics-server/pom.xml -pl platform-common
+[INFO] --- jar:3.3.0:jar (default-jar) @ platform-common ---
+[INFO] Building jar: …\platform-common-0.1.0-SNAPSHOT.jar
+[INFO] --- jar:3.3.0:test-jar (test-jar) @ platform-common ---
+[INFO] Building jar: …\platform-common-0.1.0-SNAPSHOT-tests.jar     # 25,613 B / 19:22:17
+[INFO] BUILD SUCCESS
+```
+
+解包核对：`test-jar` 内含 `com/graduation/analytics/testsupport/RepoRoot.class`（即四个模块测试期实际用的那份）。
+只验证 `platform-common` 单模块打包：完整 fat jar 打包需先停掉 8091（Windows 文件锁），属 D-032 推迟的"重建平台 jar"事项，此处未做。
+
+### 3.3 已知限制（实测，不是推测）
 
 `test-jar` 依赖只在**反应堆内**（`-am` 或整反应堆）可解析。不带 `-am` 的单模块跑法实测**直接构建失败**（响亮报错，非静默）：
 
@@ -81,7 +95,7 @@ mvn -o test -f analytics-server/pom.xml -pl platform-app -am -DforkCount=0   # -
 即：单模块跑测试必须带 `-am`（本仓库口径本来就是"平台测试必须全反应堆"，见决策记录 §5）。替代方案是把 `RepoRoot`
 挪进 `src/main`，但那会把测试工具打进生产 fat jar——不做。
 
-### 3.3 未取证（诚实标注）
+### 3.4 未取证（诚实标注）
 
 - 未在 CI/其它机器上复跑（本机 Windows + JDK17 + Maven 3.9.14 单点验证）。
 - 未验证 IDE 内直接跑单类测试（`user.dir` 由 IDE 决定；`RepoRoot` 的"向上走"策略在模块目录与仓库根两种起点下都成立，但未实测）。
