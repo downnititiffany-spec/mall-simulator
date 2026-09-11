@@ -3,6 +3,7 @@ package com.graduation.analytics.common;
 import com.graduation.analytics.common.TraceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,10 +26,37 @@ public class GlobalExceptionHandler {
         return ApiResponse.error("NOT_FOUND", "资源不存在: " + e.getResourcePath(), TraceContext.create().traceId());
     }
 
+    /**
+     * 业务异常 → 稳定错误码 + 分状态 HTTP。
+     *
+     * <p>P1-03（2026-09-11）之前此方法用类级 {@code @ResponseStatus(BAD_REQUEST)} 把所有业务码压成 400，
+     * 调用方无法区分「找不到资源」与「与当前状态冲突」。现在状态由 {@link #mapStatus} 单点决定：
+     * 源登记域三个冲突码 → 409、{@code SOURCE_NOT_FOUND} → 404，其余一律 400（既有语义不变）。</p>
+     *
+     * <p>返回 {@code ResponseEntity} 而不是继续用 {@code @ResponseStatus}：分状态无法用类级注解表达，
+     * 而并列两个处理器会造成"同一异常两个所有者"。</p>
+     */
     @ExceptionHandler(PlatformBizException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<Void> handleBiz(PlatformBizException e) {
-        return ApiResponse.error(e.getCode(), e.getMessage(), TraceContext.create().traceId());
+    public ResponseEntity<ApiResponse<Void>> handleBiz(PlatformBizException e) {
+        return ResponseEntity.status(mapStatus(e.getCode()))
+                .body(ApiResponse.error(e.getCode(), e.getMessage(), TraceContext.create().traceId()));
+    }
+
+    /**
+     * 业务码 → HTTP 状态（**唯一所有者**：新增错误码只在这里加一行，不得散落到控制器或第二个 advice）。
+     * 未列出的码一律 400——保持 V1 以来的既有契约，改动只做加法。
+     */
+    static HttpStatus mapStatus(String code) {
+        if (code == null) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        return switch (code) {
+            case PlatformBizException.SOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case PlatformBizException.SOURCE_CODE_IMMUTABLE,
+                 PlatformBizException.SOURCE_PROFILE_INVALID,
+                 PlatformBizException.SOURCE_IN_USE -> HttpStatus.CONFLICT;
+            default -> HttpStatus.BAD_REQUEST;
+        };
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

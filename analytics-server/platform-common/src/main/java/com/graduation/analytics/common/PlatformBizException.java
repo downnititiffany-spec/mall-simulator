@@ -28,6 +28,18 @@ public class PlatformBizException extends RuntimeException {
     public static final String METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED";
     public static final String INTERNAL = "INTERNAL";
 
+    // 源登记域错误码（P1-03，2026-09-11）：逐字取自任务书 §4 P1-03，
+    // 与 platform-app 的 /api/v1/sources 一一对应。语义边界见《开发过程事实与决策记录》D-035 裁决 6：
+    //   SOURCE_NOT_FOUND        → 404（资源不存在）
+    //   SOURCE_CODE_IMMUTABLE   → 409（source_code 创建后不可改）
+    //   SOURCE_PROFILE_INVALID  → 409（画像文件缺失/非法/与登记不一致）
+    //   SOURCE_IN_USE           → 409（该源是当前激活源，不能暂停）
+    // 状态映射的**唯一所有者**是 GlobalExceptionHandler.mapStatus，不另立异常类型或映射表。
+    public static final String SOURCE_NOT_FOUND = "SOURCE_NOT_FOUND";
+    public static final String SOURCE_CODE_IMMUTABLE = "SOURCE_CODE_IMMUTABLE";
+    public static final String SOURCE_PROFILE_INVALID = "SOURCE_PROFILE_INVALID";
+    public static final String SOURCE_IN_USE = "SOURCE_IN_USE";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

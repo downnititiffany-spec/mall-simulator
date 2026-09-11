@@ -1,0 +1,242 @@
+== 启动实例：port=8093 cwd=D:\Develop_code\GraduationProject run=run5-final
+   pid=53804（第 1 次启动，exe=javaw.exe）
+== 健康检查通过 /api/v1/health -> HTTP 200
+== 登录（demo 账号，无新增鉴权后门）
+[login] POST /api/v1/auth/login -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"token":"<32位UUID，已省略>","user":{"id":1,"username":"admin","realName":"系统管理员","role":"admin"}},"traceId":"64e20b8d-c3e8-47f1-8331-877c620b5f3f"}
+[authz-1] GET /api/v1/sources（无 token）-> HTTP 401 code=UNAUTHORIZED
+[authz-2] GET /api/v1/sources（operator token）-> HTTP 403 code=FORBIDDEN_PERMISSION
+== 副本库 Flyway 状态（启动即迁移）
+    flyway_max=17 rows=16
+    v17_applied=1
+== 场景前基线：operation_audit_log=92（副本库）
+
+---- S1 list ----
+[S1] GET /api/v1/sources -> HTTP 200
+    body: {"code":"OK","message":"success","data":[{"id":1,"sourceCode":"mock-mall","displayName":"参考商城（源 A）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/mock-mall.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T19:56:28.02","updatedAt":"2026-09-11T19:56:28.02"}],"traceId":"fd3d1503-c9ee-477f-9e2f-006f4841f179"}
+    rows=1 current_count=1 statuses=1:mock-mall:ACTIVE:current=True
+
+---- S2 get 存在的源 ----
+[S2] GET /api/v1/sources/1 -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":1,"sourceCode":"mock-mall","displayName":"参考商城（源 A）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/mock-mall.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T19:56:28.02","updatedAt":"2026-09-11T19:56:28.02"},"traceId":"920ffe5a-f164-406f-b53c-60940b842b29"}
+
+---- S3 get 不存在的源（期望 404 SOURCE_NOT_FOUND）----
+[S3] GET /api/v1/sources/999999 -> HTTP 404
+    body: {"code":"SOURCE_NOT_FOUND","message":"源不存在: 999999","data":null,"traceId":"25d373be-307d-492a-8c97-b20223298618"}
+    code=SOURCE_NOT_FOUND http=404
+
+---- S4 create 默认 DRAFT ----
+[S4] POST /api/v1/sources -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"DRAFT","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:06.91"},"traceId":"0b2c040f-5f2a-4973-b857-f406cdcdc5f5"}
+    id=2 status=DRAFT current=False
+
+---- S4b create 源编码与画像文件内 sourceCode 不一致（期望 200，登记时不做画像校验）----
+[S4b] POST /api/v1/sources -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":3,"sourceCode":"p1-03-probe-mismatch","displayName":"编码不一致探针","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"DRAFT","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.928","updatedAt":"2026-09-11T20:56:06.928"},"traceId":"acf77592-22eb-4e9f-8a82-893406260006"}
+    id=3（登记不校验画像，校验发生在 test/activate）
+
+---- S4c test 编码不一致的源（期望 ok=false，sourceCode 项 false）----
+[S4c] POST /api/v1/sources/3/test -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"sourceId":3,"sourceCode":"p1-03-probe-mismatch","ok":false,"items":[{"name":"profile_path_policy","passed":true,"applicable":true,"detail":"profile_path 是仓库相对路径：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_file_exists","passed":true,"applicable":true,"detail":"画像文件存在且可读：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_json_object","passed":true,"applicable":true,"detail":"顶层是合法 JSON 对象：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_source_code_matches","passed":false,"applicable":true,"detail":"画像 sourceCode 与登记不一致：登记=p1-03-probe-mismatch 文件=p1-03-probe-1"},{"name":"profile_profile_version_matches","passed":true,"applicable":true,"detail":"画像 profileVersion 与登记一致：1.0"},{"name":"profile_required_top_level_keys","passed":true,"applicable":true,"detail":"设计 §4.2 的 9 个顶层必备键齐全"},{"name":"status_transition_allowed","passed":true,"applicable":true,"detail":"当前状态允许生命周期变更：DRAFT"}]},"traceId":"09db9650-875c-4fc4-a2d2-edfda0075792"}
+    ok=False items=profile_path_policy=True, profile_file_exists=True, profile_json_object=True, profile_source_code_matches=False, profile_profile_version_matches=True, profile_required_top_level_keys=True, status_transition_allowed=True
+
+---- S4d activate 编码不一致的源（期望 409 SOURCE_PROFILE_INVALID）----
+[S4d] POST /api/v1/sources/3/activate -> HTTP 409
+    body: {"code":"SOURCE_PROFILE_INVALID","message":"源画像校验未通过：画像 sourceCode 与登记不一致：登记=p1-03-probe-mismatch 文件=p1-03-probe-1","data":null,"traceId":"b19bbe92-81d1-40f1-b982-e89289247734"}
+    code=SOURCE_PROFILE_INVALID http=409
+
+---- S5 create 指定 ACTIVE（期望 400 PARAM_INVALID）----
+[S5] POST /api/v1/sources -> HTTP 400
+    body: {"code":"PARAM_INVALID","message":"status 只允许 [DRAFT, PAUSED]（缺省 DRAFT）；ACTIVE 必须经 /activate 获得，否则会出现未校验画像却已激活的源：ACTIVE","data":null,"traceId":"cb1ef349-a854-4d11-8b36-d02e4c9aacd8"}
+    code=PARAM_INVALID http=400
+
+---- S6 update 改 source_code（期望 409 SOURCE_CODE_IMMUTABLE）----
+[S6] PUT /api/v1/sources/2 -> HTTP 409
+    body: {"code":"SOURCE_CODE_IMMUTABLE","message":"source_code 创建后不可修改：现值 p1-03-probe-1","data":null,"traceId":"7dc21483-af0f-4026-9bd5-80a13629ac46"}
+    code=SOURCE_CODE_IMMUTABLE http=409
+
+---- S7 update 其他字段（期望 200 且真的改了）----
+[S7] PUT /api/v1/sources/2 -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"DRAFT","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:07.015"},"traceId":"52ba1f8e-e426-4dc0-9f29-09b215e30f06"}
+    displayName=P1-03 探针源 A（已改名） timezone=UTC sourceCode=p1-03-probe-1
+
+---- S7b update 改 status（期望 400 PARAM_INVALID：状态只能走 activate/pause）----
+[S7b] PUT /api/v1/sources/2 -> HTTP 400
+    body: {"code":"PARAM_INVALID","message":"status 不能经 PUT 变更（请用 /activate 或 /pause），现值 DRAFT","data":null,"traceId":"ac167d8e-206d-43f5-9c1d-e8028c7d2299"}
+    code=PARAM_INVALID http=400
+
+---- S7c update 绝对路径 profile_path（期望 400 PARAM_INVALID，且响应里不回显该绝对路径）----
+[S7c] PUT /api/v1/sources/2 -> HTTP 400
+    body: {"code":"PARAM_INVALID","message":"profile_path 必须是仓库相对路径（POSIX 分隔符、不含 ..、非绝对路径、最长 255 字符）；收到的值违反该策略，已脱敏不回显（长度 88）","data":null,"traceId":"2b0199ea-d77c-4874-a72e-8b9b9730fbe3"}
+    code=PARAM_INVALID http=400
+    裸响应含 'Develop_code'=False；含 'p1-03-probe-1.v1.json'=False（两者都期望 False）
+    响应是否含凭据字样=False（期望 False）
+    脱敏后消息=profile_path 必须是仓库相对路径（POSIX 分隔符、不含 ..、非绝对路径、最长 255 字符）；收到的值违反该策略，已脱敏不回显（长度 88）
+
+---- S8 test 种子源（画像文件未落盘：诚实报缺，不写状态）----
+[S8] POST /api/v1/sources/1/test -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"sourceId":1,"sourceCode":"mock-mall","ok":false,"items":[{"name":"profile_path_policy","passed":true,"applicable":true,"detail":"profile_path 是仓库相对路径：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_file_exists","passed":false,"applicable":true,"detail":"画像文件不存在或不可读（仓库相对路径）：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_json_object","passed":false,"applicable":false,"detail":"画像文件不存在或不可读（仓库相对路径）：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_source_code_matches","passed":false,"applicable":false,"detail":"前置项未通过，无法评估"},{"name":"profile_profile_version_matches","passed":false,"applicable":false,"detail":"前置项未通过，无法评估"},{"name":"profile_required_top_level_keys","passed":false,"applicable":false,"detail":"前置项未通过，无法评估"},{"name":"status_transition_allowed","passed":true,"applicable":true,"detail":"当前状态允许生命周期变更：ACTIVE"}]},"traceId":"dbba2424-29c0-4f0d-aaee-3b00d337fd76"}
+    ok=False items=profile_path_policy=True, profile_file_exists=False, profile_json_object=False, profile_source_code_matches=False, profile_profile_version_matches=False, profile_required_top_level_keys=False, status_transition_allowed=True
+    DB: seed_status=ACTIVE
+
+---- S9 activate 种子源（期望 409 SOURCE_PROFILE_INVALID，D-035 §11 预期非缺陷）----
+[S9] POST /api/v1/sources/1/activate -> HTTP 409
+    body: {"code":"SOURCE_PROFILE_INVALID","message":"源画像校验未通过：画像文件不存在或不可读（仓库相对路径）：analytics-server/source-profiles/mock-mall.v1.json","data":null,"traceId":"9283b029-231e-424e-8449-c640c20599cd"}
+    code=SOURCE_PROFILE_INVALID http=409
+
+---- S10a test 探针 A（期望 ok=true）----
+[S10a] POST /api/v1/sources/2/test -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"sourceId":2,"sourceCode":"p1-03-probe-1","ok":true,"items":[{"name":"profile_path_policy","passed":true,"applicable":true,"detail":"profile_path 是仓库相对路径：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_file_exists","passed":true,"applicable":true,"detail":"画像文件存在且可读：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_json_object","passed":true,"applicable":true,"detail":"顶层是合法 JSON 对象：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_source_code_matches","passed":true,"applicable":true,"detail":"画像 sourceCode 与登记一致：p1-03-probe-1"},{"name":"profile_profile_version_matches","passed":true,"applicable":true,"detail":"画像 profileVersion 与登记一致：1.0"},{"name":"profile_required_top_level_keys","passed":true,"applicable":true,"detail":"设计 §4.2 的 9 个顶层必备键齐全"},{"name":"status_transition_allowed","passed":true,"applicable":true,"detail":"当前状态允许生命周期变更：DRAFT"}]},"traceId":"4f840138-ae06-4f7d-8db0-19d19e98d97a"}
+    ok=True items=profile_path_policy=True, profile_file_exists=True, profile_json_object=True, profile_source_code_matches=True, profile_profile_version_matches=True, profile_required_top_level_keys=True, status_transition_allowed=True
+
+---- S10b activate 探针 A（期望 200，成为当前源）----
+[S10b] POST /api/v1/sources/2/activate -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:07.131"},"traceId":"3a613df3-2d60-416b-8294-79a7392039f6"}
+    DB: runtime_profile_id=1 status=ACTIVE source_id=2
+
+---- S10c activate 探针 A 再来一次（幂等：期望 200 且不新增审计行）----
+[S10c] POST /api/v1/sources/2/activate -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:07.131"},"traceId":"2ed95974-8eba-4ae4-ac85-160427a556d3"}
+    审计行增量=0（期望 0）
+
+---- S11 pause 当前源（期望 409 SOURCE_IN_USE）----
+[S11] POST /api/v1/sources/2/pause -> HTTP 409
+    body: {"code":"SOURCE_IN_USE","message":"该源是当前激活源，暂停前请先切换当前源（源状态未改动）：p1-03-probe-1","data":null,"traceId":"c3cf6786-8e16-4480-a77c-82cfe04f76ba"}
+    code=SOURCE_IN_USE http=409
+
+---- S12a create 探针 B（源编码与画像文件内 sourceCode 一致）----
+[S12a] POST /api/v1/sources -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"DRAFT","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:07.274"},"traceId":"9d352739-7e47-4edf-9086-fb4a3809ccf6"}
+    id=4 status=DRAFT
+[S12a2] POST /api/v1/sources/4/test -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"sourceId":4,"sourceCode":"p1-03-probe-2","ok":true,"items":[{"name":"profile_path_policy","passed":true,"applicable":true,"detail":"profile_path 是仓库相对路径：analytics-server/source-profiles/p1-03-probe-2.v1.json"},{"name":"profile_file_exists","passed":true,"applicable":true,"detail":"画像文件存在且可读：analytics-server/source-profiles/p1-03-probe-2.v1.json"},{"name":"profile_json_object","passed":true,"applicable":true,"detail":"顶层是合法 JSON 对象：analytics-server/source-profiles/p1-03-probe-2.v1.json"},{"name":"profile_source_code_matches","passed":true,"applicable":true,"detail":"画像 sourceCode 与登记一致：p1-03-probe-2"},{"name":"profile_profile_version_matches","passed":true,"applicable":true,"detail":"画像 profileVersion 与登记一致：1.0"},{"name":"profile_required_top_level_keys","passed":true,"applicable":true,"detail":"设计 §4.2 的 9 个顶层必备键齐全"},{"name":"status_transition_allowed","passed":true,"applicable":true,"detail":"当前状态允许生命周期变更：DRAFT"}]},"traceId":"20f1c16d-1906-41a8-9d1a-6f44fd28ac1f"}
+    ok=True
+
+---- S12b activate 探针 B（当前源 A→B）----
+[S12b] POST /api/v1/sources/4/activate -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:07.296"},"traceId":"e0b99149-b957-43d8-843f-8c8c70c7bb63"}
+    DB: runtime_profile_id=1 status=ACTIVE source_id=4 hive_database_prefix=<NULL>
+    源状态: 1:mock-mall:ACTIVE | 2:p1-03-probe-1:ACTIVE | 3:p1-03-probe-mismatch:DRAFT | 4:p1-03-probe-2:ACTIVE
+
+---- S12c pause 非当前源 A（期望 200，A 从 ACTIVE→PAUSED）----
+[S12c] POST /api/v1/sources/2/pause -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"PAUSED","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:07.382"},"traceId":"ac1e8cf7-efbf-464b-8606-51e1aaee3925"}
+    DB: 1:mock-mall:ACTIVE | 2:p1-03-probe-1:PAUSED | 3:p1-03-probe-mismatch:DRAFT | 4:p1-03-probe-2:ACTIVE
+
+---- S12d list 复核 current 唯一性 ----
+[S12d] GET /api/v1/sources -> HTTP 200
+    body: {"code":"OK","message":"success","data":[{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:07.296"},{"id":3,"sourceCode":"p1-03-probe-mismatch","displayName":"编码不一致探针","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"DRAFT","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.928","updatedAt":"2026-09-11T20:56:06.928"},{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"PAUSED","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:07.382"},{"id":1,"sourceCode":"mock-mall","displayName":"参考商城（源 A）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/mock-mall.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T19:56:28.02","updatedAt":"2026-09-11T19:56:28.02"}],"traceId":"26c95760-6000-453d-85e3-bff55a94ce0e"}
+    rows=4 current_count=1 current_id=4
+
+---- S13a 并发 8 个 activate 同一源（A 当前非当前源：A=PAUSED、当前源=B）----
+    #1 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"38308be7-9007-4ccc-87ca-2328c2826b24"}
+    #2 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"cf74b873-2139-415e-be94-d5836bf73dad"}
+    #3 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"ad8e7139-2e0f-4c12-9de8-723f84cdd315"}
+    #4 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"e2be367b-f995-42e7-9a24-28a495c4e173"}
+    #5 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"58a9859d-9d61-4b1a-bcad-9e5ba162c54b"}
+    #6 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"d7f96ebd-a059-4676-84fe-ed74acc83334"}
+    #7 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"aac1bbd3-97a5-4e7e-8577-d084f0bb90d6"}
+    #8 HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:11.516"},"traceId":"7364f8d5-6d43-448e-8cef-4116aa4600d4"}
+    并发 8 个 activate(A)：SUCCESS 审计行增量=1（期望 1：只有一次真实变更）FAILED 增量=0（期望 0）
+    响应 200 数=8/8
+    DB: active_runtime_rows=1
+    DB: runtime_profile.source_id=2
+    DB: 1:mock-mall:ACTIVE | 2:p1-03-probe-1:ACTIVE | 3:p1-03-probe-mismatch:DRAFT | 4:p1-03-probe-2:ACTIVE
+
+---- S13b 并发 16 个混合 activate（8×A + 8×B）----
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.742"},"traceId":"7e054442-d6c1-4523-b391-c41c48d1c0e4"}
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.742"},"traceId":"e3f509f4-ad50-4c6b-b13f-fe26b3064a80"}
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.742"},"traceId":"6fea9eb0-8032-40ff-969b-f6607da643f1"}
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.727"},"traceId":"fd8979ed-d2bf-4d12-a50a-34c98ef380da"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.734"},"traceId":"f5393e75-c293-4960-ac26-36fcdfa2ca15"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.752"},"traceId":"8032b694-ee78-40f0-84db-49f48cf4e987"}
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.742"},"traceId":"2c0c4e75-dedb-4f1a-aa15-62e37738e81f"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.752"},"traceId":"188e5dfa-ef07-489e-9ca1-01cb80a2b9da"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.752"},"traceId":"a2172445-6973-42bd-87d5-4c189b2ca458"}
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.76"},"traceId":"bd53066a-3dbb-4a0e-a09f-f5e13f45a08b"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.769"},"traceId":"d35cce37-a8ed-4ecb-8731-04e38b9b658b"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.769"},"traceId":"9da96ad5-6667-4fa4-9229-7020b3ff41f2"}
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.775"},"traceId":"4affd416-31a1-45f2-9b5e-9af906d6ff1e"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.781"},"traceId":"53f5135c-387b-4d5d-ba95-307a4e07220f"}
+    2/activate HTTP 200 {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.781"},"traceId":"1bcdbdc2-fe2b-46b2-8be0-69db1ad139a5"}
+    4/activate HTTP 200 {"code":"OK","message":"success","data":{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.788"},"traceId":"ff897cd7-e8f7-434b-9844-d5c772d167f1"}
+    响应 200 数=16/16；SUCCESS 审计行增量=9
+    注：混合并发**不设**审计行数上界——请求交错时 A/B 可能被反复切回，每次都是真实变更、各留一行；
+        不变式是「ACTIVE runtime_profile 恰好 1 行」，不是「只写一次」。
+    DB: active_runtime_rows=1
+    DB: runtime_profile.source_id=4
+[S13c] GET /api/v1/sources -> HTTP 200
+    body: {"code":"OK","message":"success","data":[{"id":4,"sourceCode":"p1-03-probe-2","displayName":"P1-03 探针源 B","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-2.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T20:56:07.274","updatedAt":"2026-09-11T20:56:15.788"},{"id":3,"sourceCode":"p1-03-probe-mismatch","displayName":"编码不一致探针","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"DRAFT","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.928","updatedAt":"2026-09-11T20:56:06.928"},{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-03 探针源 A（已改名）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"UTC","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T20:56:06.91","updatedAt":"2026-09-11T20:56:15.781"},{"id":1,"sourceCode":"mock-mall","displayName":"参考商城（源 A）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/mock-mall.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":false,"createdAt":"2026-09-11T19:56:28.02","updatedAt":"2026-09-11T19:56:28.02"}],"traceId":"bd2b08e8-495e-460f-947d-e0f609ddcb68"}
+    list 复核：current_count=1 current_id=4
+
+== 审计总账（副本库 operation_audit_log，仅本任务动作码）
+    total_before=92 total_after=116
+    SOURCE_ACTIVATE FAILED n=2
+    SOURCE_ACTIVATE SUCCESS n=12
+    SOURCE_CREATE FAILED n=1
+    SOURCE_CREATE SUCCESS n=3
+    SOURCE_PAUSE FAILED n=1
+    SOURCE_PAUSE SUCCESS n=1
+    SOURCE_UPDATE FAILED n=3
+    SOURCE_UPDATE SUCCESS n=1
+    -- 明细（id/action/result/resource_id/reason/actor/时间）--
+    93 | SOURCE_CREATE | SUCCESS | res=2 | admin/admin | 登记新源 p1-03-probe-1 | 2026-09-11 20:56:06.916
+    94 | SOURCE_CREATE | SUCCESS | res=3 | admin/admin | 登记新源 p1-03-probe-mismatch | 2026-09-11 20:56:06.932
+    95 | SOURCE_ACTIVATE | FAILED | res=3 | admin/admin | SOURCE_PROFILE_INVALID: 源画像校验未通过：画像 sourceCode 与登记不一致：登记=p1-03-probe-mismatch 文件 | 2026-09-11 20:56:06.981
+    96 | SOURCE_CREATE | FAILED | res=- | admin/admin | PARAM_INVALID: status 只允许 [DRAFT, PAUSED]（缺省 DRAFT）；ACTIVE 必须经 /activate 获得，否则会出 | 2026-09-11 20:56:06.992
+    97 | SOURCE_UPDATE | FAILED | res=2 | admin/admin | SOURCE_CODE_IMMUTABLE: source_code 创建后不可修改：现值 p1-03-probe-1 | 2026-09-11 20:56:07.004
+    98 | SOURCE_UPDATE | SUCCESS | res=2 | admin/admin | 修改源登记 p1-03-probe-1 | 2026-09-11 20:56:07.020
+    99 | SOURCE_UPDATE | FAILED | res=2 | admin/admin | PARAM_INVALID: status 不能经 PUT 变更（请用 /activate 或 /pause），现值 DRAFT | 2026-09-11 20:56:07.033
+    100 | SOURCE_UPDATE | FAILED | res=2 | admin/admin | PARAM_INVALID: profile_path 必须是仓库相对路径（POSIX 分隔符、不含 ..、非绝对路径、最长 255 字符）；收到的值违反该策略 | 2026-09-11 20:56:07.044
+    101 | SOURCE_ACTIVATE | FAILED | res=1 | admin/admin | SOURCE_PROFILE_INVALID: 源画像校验未通过：画像文件不存在或不可读（仓库相对路径）：analytics-server/source-pro | 2026-09-11 20:56:07.106
+    102 | SOURCE_ACTIVATE | SUCCESS | res=2 | admin/admin | 设为当前源 p1-03-probe-1 | 2026-09-11 20:56:07.137
+    103 | SOURCE_PAUSE | FAILED | res=2 | admin/admin | SOURCE_IN_USE: 该源是当前激活源，暂停前请先切换当前源（源状态未改动）：p1-03-probe-1 | 2026-09-11 20:56:07.264
+    104 | SOURCE_CREATE | SUCCESS | res=4 | admin/admin | 登记新源 p1-03-probe-2 | 2026-09-11 20:56:07.276
+    105 | SOURCE_ACTIVATE | SUCCESS | res=4 | admin/admin | 设为当前源 p1-03-probe-2 | 2026-09-11 20:56:07.300
+    106 | SOURCE_PAUSE | SUCCESS | res=2 | admin/admin | 暂停源 p1-03-probe-1 | 2026-09-11 20:56:07.386
+    107 | SOURCE_ACTIVATE | SUCCESS | res=2 | admin/admin | 设为当前源 p1-03-probe-1 | 2026-09-11 20:56:11.523
+    108 | SOURCE_ACTIVATE | SUCCESS | res=4 | admin/admin | 设为当前源 p1-03-probe-2 | 2026-09-11 20:56:15.733
+    109 | SOURCE_ACTIVATE | SUCCESS | res=2 | admin/admin | 设为当前源 p1-03-probe-1 | 2026-09-11 20:56:15.740
+    110 | SOURCE_ACTIVATE | SUCCESS | res=4 | admin/admin | 设为当前源 p1-03-probe-2 | 2026-09-11 20:56:15.747
+    111 | SOURCE_ACTIVATE | SUCCESS | res=2 | admin/admin | 设为当前源 p1-03-probe-1 | 2026-09-11 20:56:15.756
+    112 | SOURCE_ACTIVATE | SUCCESS | res=4 | admin/admin | 设为当前源 p1-03-probe-2 | 2026-09-11 20:56:15.767
+    113 | SOURCE_ACTIVATE | SUCCESS | res=2 | admin/admin | 设为当前源 p1-03-probe-1 | 2026-09-11 20:56:15.773
+    114 | SOURCE_ACTIVATE | SUCCESS | res=4 | admin/admin | 设为当前源 p1-03-probe-2 | 2026-09-11 20:56:15.780
+    115 | SOURCE_ACTIVATE | SUCCESS | res=2 | admin/admin | 设为当前源 p1-03-probe-1 | 2026-09-11 20:56:15.786
+    116 | SOURCE_ACTIVATE | SUCCESS | res=4 | admin/admin | 设为当前源 p1-03-probe-2 | 2026-09-11 20:56:15.792
+    -- before/after 摘要（证明不含凭据）--
+    93 | before=- | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A;ingestMode=FILE;status=DRAFT;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=Asia/Shanghai;currency=CNY
+    94 | before=- | after=id=3;sourceCode=p1-03-probe-mismatch;displayName=编码不一致探针;ingestMode=FILE;status=DRAFT;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=Asia/Shanghai;currency=CNY
+    95 | before=- | after=-
+    96 | before=- | after=-
+    97 | before=- | after=-
+    98 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A;ingestMode=FILE;status=DRAFT;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=Asia/Shanghai;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=DRAFT;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    99 | before=- | after=-
+    100 | before=- | after=-
+    101 | before=- | after=-
+    102 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=DRAFT;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    103 | before=- | after=-
+    104 | before=- | after=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=DRAFT;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY
+    105 | before=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=DRAFT;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY | after=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY
+    106 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=PAUSED;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    107 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=PAUSED;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    108 | before=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY | after=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY
+    109 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    110 | before=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY | after=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY
+    111 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    112 | before=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY | after=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY
+    113 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    114 | before=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY | after=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY
+    115 | before=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY | after=id=2;sourceCode=p1-03-probe-1;displayName=P1-03 探针源 A（已改名）;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-1.v1.json;timezone=UTC;currency=CNY
+    116 | before=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=false;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY | after=id=4;sourceCode=p1-03-probe-2;displayName=P1-03 探针源 B;ingestMode=FILE;status=ACTIVE;current=true;profileVersion=1.0;profilePath=analytics-server/source-profiles/p1-03-probe-2.v1.json;timezone=Asia/Shanghai;currency=CNY
+
+== analytics_meta / analytics_metric（真库）未被本次验收触碰
+    pipeline_run=38
+    metric_snapshot=8
+    runtime_profile=1 source_id=1
+    source_registry=1
+    operation_audit_log=92
+
+== 收尾：停止 8093 实例（不动 8090/8091/8092）
+   已停止 pid=53804
+   8093 仍在监听=False

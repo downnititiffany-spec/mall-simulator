@@ -24,6 +24,12 @@ platform:
     local-root: ${PLATFORM_LANDING_LOCAL_ROOT:./landing}
   credential:
     ssh-default: ${CRED_SSH_DEFAULT:}
+  # P1-03 源登记：source_registry.profile_path 是**仓库相对路径**，
+  # 解析基准＝仓库根（平台启动约定要求工作目录为仓库根，故默认 "."）。
+  # 显式做成配置键而不是硬编码相对路径，是为了让单元测试能指向临时目录、
+  # 也让非"工作目录＝仓库根"的部署方式有一个明确说法而不是默默读错文件。
+  source:
+    profile-root: ${PLATFORM_SOURCE_PROFILE_ROOT:.}
   # R6-11（V2.0 §15.3）：真实 Spark 作业阶段等待上限与轮询间隔（LOCAL 小样本秒级完成）
   spark:
     job-timeout-ms: ${PLATFORM_SPARK_JOB_TIMEOUT_MS:900000}

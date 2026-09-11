@@ -1,0 +1,118 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -XX:+UseSerialGC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] platform-app                                                       [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/7]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 6 source files with javac [debug release 17] to target\test-classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[26,33] 不兼容的类型: com.graduation.analytics.common.ApiResponse<java.lang.Void>无法转换为org.springframework.http.ResponseEntity<com.graduation.analytics.common.ApiResponse<java.lang.Void>>
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[32,81] 找不到符号
+  符号:   变量 SOURCE_NOT_FOUND
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[44,47] 找不到符号
+  符号:   变量 SOURCE_CODE_IMMUTABLE
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[46,47] 找不到符号
+  符号:   变量 SOURCE_IN_USE
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[48,47] 找不到符号
+  符号:   变量 SOURCE_PROFILE_INVALID
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[82,40] 找不到符号
+  符号:   变量 SOURCE_NOT_FOUND
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[83,40] 找不到符号
+  符号:   变量 SOURCE_CODE_IMMUTABLE
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[84,40] 找不到符号
+  符号:   变量 SOURCE_PROFILE_INVALID
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[85,40] 找不到符号
+  符号:   变量 SOURCE_IN_USE
+  位置: 类 com.graduation.analytics.common.PlatformBizException
+[INFO] 9 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.001 s]
+[INFO] platform-common .................................... FAILURE [  2.377 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.595 s
+[INFO] Finished at: 2026-09-11T20:13:04+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:testCompile (default-testCompile) on project platform-common: Compilation failure: Compilation failure: 
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[26,33] 不兼容的类型: com.graduation.analytics.common.ApiResponse<java.lang.Void>无法转换为org.springframework.http.ResponseEntity<com.graduation.analytics.common.ApiResponse<java.lang.Void>>
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[32,81] 找不到符号
+[ERROR]   符号:   变量 SOURCE_NOT_FOUND
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[44,47] 找不到符号
+[ERROR]   符号:   变量 SOURCE_CODE_IMMUTABLE
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[46,47] 找不到符号
+[ERROR]   符号:   变量 SOURCE_IN_USE
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[48,47] 找不到符号
+[ERROR]   符号:   变量 SOURCE_PROFILE_INVALID
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[82,40] 找不到符号
+[ERROR]   符号:   变量 SOURCE_NOT_FOUND
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[83,40] 找不到符号
+[ERROR]   符号:   变量 SOURCE_CODE_IMMUTABLE
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[84,40] 找不到符号
+[ERROR]   符号:   变量 SOURCE_PROFILE_INVALID
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java:[85,40] 找不到符号
+[ERROR]   符号:   变量 SOURCE_IN_USE
+[ERROR]   位置: 类 com.graduation.analytics.common.PlatformBizException
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :platform-common

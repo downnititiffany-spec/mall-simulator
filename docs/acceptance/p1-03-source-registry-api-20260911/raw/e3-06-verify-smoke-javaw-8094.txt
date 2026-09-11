@@ -1,0 +1,81 @@
+P1-03 E3 断言报告  run=smoke-javaw-8094  日志=D:\Develop_code\GraduationProject\docs\acceptance\p1-03-source-registry-api-20260911\raw\e3-03-scenarios-smoke-javaw-8094.txt
+日志字符数=39052
+
+  [PASS] 健康检查 200 | 证据: 健康检查行
+  [PASS] 登录 200 | 证据: login 行
+  [PASS] 无 token -> 401 UNAUTHORIZED | 证据: authz-1 行
+  [PASS] operator token -> 403 FORBIDDEN_PERMISSION（权限门是真的） | 证据: authz-2 行
+  [PASS] 副本库启动即迁移到 V17 | 证据: flyway_max 行
+  [PASS] V17 已应用 | 证据: v17_applied 行
+  [PASS] 场景前审计基线 92 行 | 证据: 基线行
+  [PASS] S1 list 200 | 证据: S1 行
+  [PASS] S1 种子源恰好 1 行且为当前源 | 证据: S1 明细行
+  [PASS] S2 get 200 | 证据: S2 行
+  [PASS] S3 不存在 -> 404 SOURCE_NOT_FOUND | 证据: S3 行
+  [PASS] S4 create 200 + DRAFT | 证据: S4 行
+  [PASS] S4c /test 编码不一致 -> ok=false 且 sourceCode 项 false | 证据: S4c 行
+  [PASS] S4c 不一致项给出「登记=..文件=..」可定位明细 | 证据: S4c detail
+  [PASS] S4c 版本项与文件项各自独立为 true（不再共用一句 detail） | 证据: S4c 版本项 detail
+  [PASS] S4d activate 编码不一致 -> 409 SOURCE_PROFILE_INVALID | 证据: S4d 行
+  [PASS] S5 非法 status -> 400 PARAM_INVALID | 证据: S5 行
+  [PASS] S6 改 source_code -> 409 SOURCE_CODE_IMMUTABLE | 证据: S6 行
+  [PASS] S7 update 200 且改名/改时区生效 | 证据: S7 行
+  [PASS] S7b PUT 改 status -> 400（status 只能走 activate/pause） | 证据: S7b 行
+  [PASS] S7c 绝对路径 -> 400 且响应不回显绝对路径/文件名 | 证据: S7c 行
+  [PASS] 审计 reason 也不回显绝对路径（PARAM_INVALID 行结尾为「已脱敏不回显」） | 证据: 审计 100 行
+  [PASS] S8 种子源 /test ok=false 且文件项 false | 证据: S8 行
+  [PASS] S8 前置未通过的项 applicable=false（没评估 != 通过） | 证据: S8 items
+  [PASS] S9 激活种子源 -> 409 SOURCE_PROFILE_INVALID | 证据: S9 行
+  [PASS] S10a 探针 A /test 全项 ok=true | 证据: S10a 行
+  [PASS] S10b activate 200 且当前源切到 A（runtime_profile.source_id=2） | 证据: S10b 行
+  [PASS] S10c 重复 activate 幂等：200 且审计增量 0 | 证据: S10c 行
+  [PASS] S11 暂停当前源 -> 409 SOURCE_IN_USE | 证据: S11 行
+  [PASS] S11 文案点明「源状态未改动」 | 证据: S11 body
+  [PASS] S12a 建探针 B 200 | 证据: S12a 行
+  [PASS] S12a2 探针 B /test ok=true | 证据: S12a2 行
+  [PASS] S12b 激活 B 200 且当前源切到 B（source_id=4） | 证据: S12b 行
+  [PASS] S12b 未写 hive_database_prefix（源级命名空间接管属 P2，本次未做） | 证据: S12b 行
+  [PASS] S12c 暂停非当前源 200 | 证据: S12c 行
+  [PASS] S12d list 恰好 1 个当前源（id=4） | 证据: S12d 行
+  [PASS] S13a 并发 8 次激活同一目标：SUCCESS 审计增量恰好 1 | 证据: S13a 行
+  [PASS] S13a 8/8 请求都返回 200（失败者读到的是一致状态，不是报错） | 证据: S13a 响应行
+  [PASS] S13a 结束后 ACTIVE runtime_profile 恰好 1 行 | 证据: S13a DB 行
+  [PASS] S13b 混合并发 16/16 返回 200 | 证据: S13b 响应行
+  [PASS] S13b 有真实交错切换（SUCCESS 增量 >= 2，证明不是在测一个假并发） | 证据: S13b 增量行
+  [PASS] S13b 结束后 ACTIVE runtime_profile 恰好 1 行 | 证据: 两处 DB 行
+  [PASS] S13c list 复核仍恰好 1 个当前源 | 证据: S13c 行
+  [PASS] 审计总账：本轮每类变更都新增了行（total_after - total_before >= 20） | 证据: before=92 after=115 增量=23
+  [PASS] SOURCE_CREATE 精确计数：3 成功（S4/S4b/S12a）+ 1 失败（S5 非法 status） | 证据: CREATE 分组行
+  [PASS] SOURCE_PAUSE 精确计数：1 成功（S12c）+ 1 失败（S11 当前源） | 证据: PAUSE 分组行
+  [PASS] SOURCE_UPDATE 精确计数：1 成功（S7）+ 3 失败（S6/S7b/S7c） | 证据: UPDATE 分组行
+  [PASS] SOURCE_ACTIVATE：2 次失败（S4d 编码不一致 / S9 种子源无画像） | 证据: ACTIVATE 失败行
+  [PASS] SOURCE_ACTIVATE：真实变更 >= 11 次，每次一行（S10b + 并发 1 + 交错 9 + S12b 等） | 证据: ACTIVATE 成功行
+  [PASS] 明细里能同时看到「设为当前源」落到两个不同源（当前源真的被切换过） | 证据: 明细行
+  [PASS] 明细里能看到「暂停源」成功与「当前源」失败并存的证据 | 证据: PAUSE 明细行
+  [PASS] 审计摘要行数 >= 12（实测 23） | 证据: 摘要行数=23
+  [PASS] 摘要里没有 before==after 的行（改了什么必须看得出来） | 证据: 相同行数=0
+  [PASS] 摘要不含任何凭据字样 | 证据: 含凭据字样行数=0
+  [PASS] 只改 displayName/timezone 的那次更新，before/after 能看出差异（旧摘要看不出，已修） | 证据: 摘要 98 行
+  [PASS] 真库 pipeline_run=38 | 证据: 真库行
+  [PASS] 真库 metric_snapshot=8 | 证据: 真库行
+  [PASS] 真库 runtime_profile 仍 1 行且 source_id=1（未被切走） | 证据: 真库行
+  [PASS] 真库 source_registry 仍 1 行 | 证据: 真库行
+  [PASS] 真库 operation_audit_log 仍 92 行 | 证据: 真库行
+  [PASS] 只用 8094，收尾后不再监听 | 证据: 收尾行
+  [PASS] 启动用的不是 java.exe 而是 javaw.exe（无控制台，防环境误杀） | 证据: 启动行
+
+-- 本轮快照（observed，非断言：这些数字在并发交错下轮次间会不同）--
+  审计总行数: before=92 after=115 增量=23
+  SOURCE_ACTIVATE FAILED n=2
+  SOURCE_ACTIVATE SUCCESS n=11
+  SOURCE_CREATE FAILED n=1
+  SOURCE_CREATE SUCCESS n=3
+  SOURCE_PAUSE FAILED n=1
+  SOURCE_PAUSE SUCCESS n=1
+  SOURCE_UPDATE FAILED n=3
+  SOURCE_UPDATE SUCCESS n=1
+  收尾时当前源 id=2（交错决定，轮次间可能不同）
+  S13b 混合并发真实变更次数=8（>=2 即证明存在真实交错）
+
+断言总数=62  失败=0
+结论：全部通过

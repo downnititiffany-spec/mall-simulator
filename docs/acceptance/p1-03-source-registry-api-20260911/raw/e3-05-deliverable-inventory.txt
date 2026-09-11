@@ -1,0 +1,42 @@
+P1-03 交付物清单（bytes + sha256，生成于 2026-09-11 20:52:36）
+
+== 生产代码 ==
+    1619  79BEC84F8C950A93A98C96FE74DA8BD868B05BC6E9EB4A35A404F0F70F5C6574  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceAuditActions.java
+    4418  0DF95956237BF0654BF96C9F3D8D29F58681ED9032E28E6926D26EA2E4F2DF96  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourcePathPolicy.java
+    7041  0C4CC657C74E42298AB2683B2A85FD42AFB84DD9B2BE99C8E66C9D6325DEA3C7  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java
+    2289  FAF125D4109F3F79C67608E82A532602D03F15FC9A51FBDF5D54B7FEA0306E8E  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryService.java
+   20592  30B84E803792681EFA345DECCF37A31BD329C96170D9120084E17F8C1AE7F487  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java
+    4249  AD3EF74851C9C6F420CF32BC3336BD973E74CB7C691794027F22BE782D127211  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/entity/SourceRegistry.java
+    2517  9EC1530C5B69E4E1998EE178BA0A0EF246607116B51CBC96FEB3F4DE1B06D550  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/mapper/SourceRegistryMapper.java
+    3237  2CE54D3DEC1178AEFBF6172987222B1F96625B32006EE3C204CCDF3EA3533DC3  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/mapper/ActiveSourceBindingMapper.java
+    1734  1916D3C2C1336A644FB11A475B10FB4F6D77DD1C39B1169464707DFA22010C58  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceRegistryView.java
+     917  3877F430968CE6296C4284B086D0B08E32CD36C3E4115BEE41C3A4F25EAE6E9A  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceRegistryCreateReq.java
+    1011  28260360F061183671FF37ED5895FCFCC01721DDF6934B95CA0B05CBEAD6CFCA  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceRegistryUpdateReq.java
+    2376  3DC2C4674963171A38FF10BD1181FAE3B6368EB6FF50A899F204152FA086B1CF  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceCheckResult.java
+    1636  13C522384F261DD59C586D4C01821CA8894382582647CA700106F3A3E3E4CFA3  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceChangeOutcome.java
+    9388  E39DB5A497DAEB5A961D32C767F250FF7058BE8661D63458CF072B4155FF6934  analytics-server/platform-app/src/main/java/com/graduation/analytics/controller/SourceRegistryController.java
+    1881  92A1A5FF39E06F73E84CF814D820AD6D564ABE7EF88682D0221D970727DA1E00  analytics-server/platform-app/src/main/java/com/graduation/analytics/AnalyticsApplication.java
+    2565  BEA1CC78FFB2636A24362D22EEF6C4C4D2958C94B3D8783064696ED6FAFFF9ED  analytics-server/platform-app/src/main/resources/application.yml
+    2960  664603163FF886DA7533B3967263637C27FD22610B83AE8896DEC3561848E0E2  analytics-server/platform-common/src/main/java/com/graduation/analytics/common/PlatformBizException.java
+    7477  A76BC709BE5091527A5F05AC4CFECA06EA4751A32AD44FCC815C9C4B0419D77C  analytics-server/platform-common/src/main/java/com/graduation/analytics/common/GlobalExceptionHandler.java
+    1123  F525DF73181E9300174D846E2C9066A4CC7850E9B048025792F363B1DC17C6CF  analytics-server/source-profiles/p1-03-probe-1.v1.json
+     987  6D09167133E7F722ADF4664556D50C5A4FB660303EAF268E7153216E7C538735  analytics-server/source-profiles/p1-03-probe-2.v1.json
+
+== 测试代码 ==
+   13131  731D9B99FFFFD4111C34AB51566B9F54F2626888CA916E4CE5F879B9F8FF18D3  analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryTestSupport.java
+   32200  754DB8C7875C4FF24B2C2523373B918198F0A857B247FBBB7948E62BF582FD51  analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java
+    7085  AF8D49C893B5B0B5096CE7E5C8F7969A04B57AF65BB3016DE333C4BA5E81CFB3  analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java
+   17701  FAE4CB9CA8AD2697F1E3DC103DA54FDAFD7A6FA000294584F9D62BB3181A64D0  analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java
+   19170  F070F3D997700660A0BEE8B32BE862A90C6EC8396B983B279B2268F40B01A3D5  analytics-server/platform-app/src/test/java/com/graduation/analytics/controller/SourceRegistryControllerAuditTest.java
+    4591  97AF7F65D8630E0379A15EAE6E161C3284BDD660E011D6F7F1E12847BC5F0056  analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceProfileFixtureTest.java
+    4696  B8A63D996AC04D04AC9C86989A571310563C4B47A020E96B6FA561630447CDC8  analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java
+   24468  91717974D7AF3A58F0D69D309B31A18C85DD941E2CB1E1E7AE9921AB9A11154A  docs/acceptance/p1-03-source-registry-api-20260911/e3-acceptance.ps1
+
+== 测试用例数（源码内 @Test 计数，与 surefire 实测对照用）==
+       0  SourceRegistryTestSupport.java
+      32  SourceRegistryServiceTest.java
+       8  SourceProfileValidatorTest.java
+       7  SourceRegistryConcurrencyTest.java
+      17  SourceRegistryControllerAuditTest.java
+       4  SourceProfileFixtureTest.java
+       5  GlobalExceptionHandlerSourceStatusTest.java

@@ -1,0 +1,4 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+1	local-dev	ACTIVE	3	1	<NULL>
+1	mock-mall	ACTIVE	1.0	analytics-server/source-profiles/mock-mall.v1.json
+S20260901_39	1	3

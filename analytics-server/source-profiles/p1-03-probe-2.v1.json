@@ -1,0 +1,30 @@
+{
+  "profileVersion": "1.0",
+  "sourceCode": "p1-03-probe-2",
+  "canonical": { "schemaVersion": "1.0" },
+  "eventTypeMapping": {
+    "goods_detail_pv": "view",
+    "cart_add": "cart_add",
+    "order_paid": "order_paid"
+  },
+  "fieldMapping": {
+    "uid": "user_id",
+    "sku": "product_id",
+    "total_fee": "amount",
+    "event_time": "event_time"
+  },
+  "enumSemantics": {
+    "behavior": { "collect": "favorite", "detail": "view", "buy": "purchase" },
+    "orderStatus": { "FINISHED": "PAID", "CLOSED": "CANCELLED" }
+  },
+  "identityPolicy": {
+    "user": { "rawField": "uid", "shape": "NUMERIC", "surrogate": "HASH64" },
+    "product": { "rawField": "sku", "shape": "PREFIX_NUMERIC", "surrogate": "HASH64" },
+    "order": { "rawField": "trade_no", "shape": "ANY", "surrogate": "HASH64" }
+  },
+  "timePolicy": {
+    "field": "event_time",
+    "formats": ["EPOCH_MILLIS", "yyyy-MM-dd HH:mm:ss"]
+  },
+  "quarantinePolicy": { "unknownEventType": "QUARANTINE", "unknownField": "DROP" }
+}

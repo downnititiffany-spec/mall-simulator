@@ -1,0 +1,7 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+pipeline_run	38
+metric_snapshot_total	8
+metric_snapshot_active	1
+runtime_profile	1
+source_registry	1
+operation_audit_log	92

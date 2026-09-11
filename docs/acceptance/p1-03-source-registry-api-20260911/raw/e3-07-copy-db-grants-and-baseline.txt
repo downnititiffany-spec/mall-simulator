@@ -1,0 +1,28 @@
+P1-03 E3 副本库账号授权 + 副本库状态（证明 8093 实例在权限层就不可能写真实库）
+生成时间 2026-09-11 20:59:34
+命令：mysql -uroot -p*** -N -B -e "SHOW GRANTS FOR '<user>'@'localhost';"
+
+== p103_meta@localhost
+   GRANT USAGE ON *.* TO `p103_meta`@`localhost`
+   GRANT ALL PRIVILEGES ON `analytics_meta_p103`.* TO `p103_meta`@`localhost`
+== p103_metric_pub@localhost
+   GRANT USAGE ON *.* TO `p103_metric_pub`@`localhost`
+   GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, REFERENCES, INDEX, ALTER ON `analytics_metric_p103`.* TO `p103_metric_pub`@`localhost`
+== p103_metric_read@localhost
+   GRANT USAGE ON *.* TO `p103_metric_read`@`localhost`
+   GRANT SELECT ON `analytics_metric_p103`.* TO `p103_metric_read`@`localhost`
+
+== 副本库账号清单（只列账号，不落任何认证串/口令）
+   p103_meta@localhost
+   p103_metric_pub@localhost
+   p103_metric_read@localhost
+
+== 副本库状态（两组数字，别混）
+   [运行前基线] 由 e3-acceptance.ps1 每轮重建后读取，见 raw/e3-03-scenarios-run5-final.txt 的
+              「场景前基线：operation_audit_log=92」行；本轮重建后同为 source_registry=1
+              runtime_profile=1(source_id=1) flyway_max=16（V17 由实例启动时应用）。
+   [本轮结束后]
+   analytics_meta_p103: tables=22 source_registry=4 audit=116 runtime_profile=1 flyway_max=17
+
+== 真实库账号（反证：真实库上没有任何 p103_* 授权，副本库账号看不到 analytics_meta/analytics_metric）
+   真库三个业务账号为 analytics_* 专用账号；副本库账号的 GRANT 语句里库名一律是 *_p103（见上）。

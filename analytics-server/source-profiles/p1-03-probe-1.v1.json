@@ -1,0 +1,32 @@
+{
+  "profileVersion": "1.0",
+  "sourceCode": "p1-03-probe-1",
+  "canonical": { "schemaVersion": "1.0" },
+  "eventTypeMapping": {
+    "product_viewed": "view",
+    "add_to_cart": "cart_add",
+    "payment_success": "order_paid",
+    "contract_signed": "order_created"
+  },
+  "fieldMapping": {
+    "buyer_id": "user_id",
+    "item_id": "product_id",
+    "pay_money": "amount",
+    "created_at": "event_time",
+    "coupon_code": "@keep"
+  },
+  "enumSemantics": {
+    "behavior": { "wishlist": "favorite", "browse": "view", "purchased": "purchase" },
+    "orderStatus": { "SIGNED": "PAID", "CANCELLED": "CANCELLED" }
+  },
+  "identityPolicy": {
+    "user": { "rawField": "buyer_id", "shape": "UUID", "surrogate": "HASH64" },
+    "product": { "rawField": "item_id", "shape": "PREFIX_NUMERIC", "surrogate": "HASH64" },
+    "order": { "rawField": "contract_no", "shape": "ANY", "surrogate": "HASH64" }
+  },
+  "timePolicy": {
+    "field": "created_at",
+    "formats": ["ISO_OFFSET_DATE_TIME", "EPOCH_MILLIS", "yyyy-MM-dd HH:mm:ss"]
+  },
+  "quarantinePolicy": { "unknownEventType": "QUARANTINE", "unknownField": "KEEP_IN_PAYLOAD" }
+}

@@ -14,6 +14,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * metricPublishJdbcTemplate / metricReadJdbcTemplate（见 PlatformDataSources）。
  * R7-3：metric_definition 仍在 analytics_meta（§17.2 表所有权），其 mapper/实体迁到
  * {@code com.graduation.analytics.metric.dict} 并纳入扫描（发布前口径版本对账需要）。
+ *
+ * P1-03（2026-09-11）：新增 {@code com.graduation.analytics.source.mapper}
+ * （{@code source_registry} 与 {@code runtime_profile.source_id} 绑定的唯一读写口）。
+ * 仍是**同一份** {@code @MapperScan} 列表——不新建第二个扫描配置，避免"哪些包被扫描"
+ * 出现两个说法。
  */
 @SpringBootApplication
 @MapperScan({"com.graduation.analytics.ingestion.mapper",
@@ -22,7 +27,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.graduation.analytics.decision.mapper",
         "com.graduation.analytics.auth.mapper",
         "com.graduation.analytics.runtime.mapper",
-        "com.graduation.analytics.metric.dict"})
+        "com.graduation.analytics.metric.dict",
+        "com.graduation.analytics.source.mapper"})
 public class AnalyticsApplication {
 
     public static void main(String[] args) {

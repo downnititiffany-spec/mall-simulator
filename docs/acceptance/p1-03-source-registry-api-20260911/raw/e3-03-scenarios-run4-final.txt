@@ -1,0 +1,6 @@
+== 启动实例：port=8093 cwd=D:\Develop_code\GraduationProject run=run4-final
+   pid=44240
+
+== 收尾：停止 8093 实例（不动 8090/8091/8092）
+   进程已退出，pid=44240
+   8093 仍在监听=False

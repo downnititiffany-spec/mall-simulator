@@ -1,0 +1,12 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+runtime_profile_id1|1|local-dev|3|ACTIVE|1|NULL
+metric_snapshot_active|S20260901_39|ACTIVE|1|3
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+metric_snapshot_all_activeflag|S20260901_39|ACTIVE|1
+source_row|1|mock-mall|参考商城（源 A）|FILE|analytics-server/source-profiles/mock-mall.v1.json|Asia/Shanghai|CNY|ACTIVE|1.0

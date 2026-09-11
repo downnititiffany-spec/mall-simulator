@@ -1,0 +1,27 @@
+P1-03 E3 真库未变证明（逐字节，不是"看一眼计数"）
+
+方法：mysqldump --single-transaction --routines --triggers --events --hex-blob --skip-comments --skip-dump-date
+      对真实库 analytics_meta / analytics_metric 在 E3 验收运行前后各导出一份，比对 sha256。
+      首次比对未加 --skip-comments/--skip-dump-date，两次文件 sha256 不同 —— 差异只有
+      末行 "-- Dump completed on <时间>" 这一条注释（比对 677 行非注释内容：diff = 0）。
+      加上两个确定性开关后 sha256 完全一致，才是可复核的证明。
+
+real analytics_meta   before/after sha256 = 5728BA68AED07135499D6C28FF70AC43E818E660E177B7D4A39D26FF0F7D9432
+   bytes = 3262447   IDENTICAL = True
+real analytics_metric before/after sha256 = A7F16963AFA0D5850C73B0BE2B354AB5AE7394115212E7194558F4A142561714
+   bytes = 32496     IDENTICAL = True
+
+三轮实测（同一对哈希逐轮复核 before==after）：
+  run3-final          IDENTICAL = True  ※该轮验收结论因审计摘要字段不全而作废，见 README 运行历史
+  run4-final          IDENTICAL = True  ※该轮实例在启动期被外部控制台关闭事件杀掉（0xC000013A），场景未跑完
+  run5-final（有效）  IDENTICAL = True
+另有同会话内的计数复核（场景日志末尾）：pipeline_run=38、metric_snapshot=8、
+  runtime_profile=1 source_id=1、source_registry=1、operation_audit_log=92 —— 与验收前一致。
+
+更强的一层保证（结构性、不依赖观测）：E3 实例连的是副本库
+  analytics_meta_p103 / analytics_metric_p103，账号 p103_meta / p103_metric_pub / p103_metric_read
+  的授权范围只到副本库（SHOW GRANTS 逐条见 raw/e3-07-copy-db-grants-and-baseline.txt），
+  因此该实例**在权限层就不具备**写真实库的能力。
+副本库来源：mysqldump --single-transaction --routines --triggers --events --hex-blob 真实库导出后
+  导入同名新库（utf8mb4 / utf8mb4_0900_ai_ci）。E3 每轮开始前都从该 dump 重建，保证基线一致；
+  重建后 flyway_max=16，V17 由实例启动时应用（实测 0.143s，见 run5 stdout 日志）。

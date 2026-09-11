@@ -1,0 +1,68 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-11T20:46:47.314+08:00  INFO 47684 --- [           main] c.g.analytics.AnalyticsApplication       : Starting AnalyticsApplication using Java 17.0.12 with PID 47684 (D:\p103-e3\classes\platform-app started by ASUS in D:\Develop_code\GraduationProject)
+2026-09-11T20:46:47.318+08:00  INFO 47684 --- [           main] c.g.analytics.AnalyticsApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-09-11T20:46:50.300+08:00  INFO 47684 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8093 (http)
+2026-09-11T20:46:50.307+08:00  INFO 47684 --- [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-11T20:46:50.310+08:00  INFO 47684 --- [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-11T20:46:50.319+08:00  INFO 47684 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-11T20:46:50.319+08:00  INFO 47684 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-11T20:46:50.367+08:00  INFO 47684 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-11T20:46:50.368+08:00  INFO 47684 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2985 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-11T20:46:51.078+08:00  INFO 47684 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Starting...
+2026-09-11T20:46:51.291+08:00  INFO 47684 --- [           main] com.zaxxer.hikari.pool.HikariPool        : meta-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@6e1ae763
+2026-09-11T20:46:51.294+08:00  INFO 47684 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Start completed.
+2026-09-11T20:46:51.356+08:00  INFO 47684 --- [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-11T20:46:51.357+08:00  INFO 47684 --- [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-11T20:46:51.357+08:00  INFO 47684 --- [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-11T20:46:51.386+08:00  INFO 47684 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_meta_p103 (MySQL 8.0)
+2026-09-11T20:46:51.481+08:00  INFO 47684 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 16 migrations (execution time 00:00.058s)
+2026-09-11T20:46:51.493+08:00  INFO 47684 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_meta_p103`: 16
+2026-09-11T20:46:51.512+08:00  INFO 47684 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_p103` to version "17 - source dimension for checkpoint and batch"
+2026-09-11T20:46:51.697+08:00  INFO 47684 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema `analytics_meta_p103`, now at version v17 (execution time 00:00.173s)
+2026-09-11T20:46:51.699+08:00  INFO 47684 --- [           main] c.g.a.config.MetaFlywayInitializer       : analytics_meta 迁移完成: 执行 1 个脚本，版本 17
+2026-09-11T20:46:51.702+08:00  INFO 47684 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Starting...
+2026-09-11T20:46:51.706+08:00  INFO 47684 --- [           main] com.zaxxer.hikari.pool.HikariPool        : metric-publish-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@5e193ef5
+2026-09-11T20:46:51.706+08:00  INFO 47684 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Start completed.
+2026-09-11T20:46:51.712+08:00  INFO 47684 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_metric_p103 (MySQL 8.0)
+2026-09-11T20:46:51.727+08:00  INFO 47684 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.009s)
+2026-09-11T20:46:51.733+08:00  INFO 47684 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_metric_p103`: 3
+2026-09-11T20:46:51.735+08:00  INFO 47684 --- [           main] o.f.core.internal.command.DbMigrate      : Schema `analytics_metric_p103` is up to date. No migration necessary.
+2026-09-11T20:46:51.769+08:00  INFO 47684 --- [           main] c.g.a.config.MetricFlywayInitializer     : analytics_metric 迁移完成: 执行 0 个脚本，当前版本 3 (迁移历史 analytics_metric.flyway_schema_history)
+2026-09-11T20:46:52.057+08:00  INFO 47684 --- [           main] c.g.a.r.storage.LocalLandingStorage      : LocalLandingStorage root = D:\Develop_code\GraduationProject\landing
+2026-09-11T20:46:52.569+08:00  INFO 47684 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-11T20:46:53.331+08:00  INFO 47684 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8093 (http) with context path ''
+2026-09-11T20:46:53.343+08:00  INFO 47684 --- [           main] c.g.analytics.AnalyticsApplication       : Started AnalyticsApplication in 6.431 seconds (process running for 6.686)
+2026-09-11T20:46:53.497+08:00  INFO 47684 --- [           main] c.g.a.pipeline.PipelineRecoveryService   : R6-14 启动对账完成: pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]
+2026-09-11T20:46:53.726+08:00  INFO 47684 --- [nio-8093-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-11T20:46:53.742+08:00  INFO 47684 --- [nio-8093-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-11T20:46:53.744+08:00  INFO 47684 --- [nio-8093-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-09-11T20:46:54.239+08:00  INFO 47684 --- [nio-8093-exec-7] c.g.a.source.SourceRegistryServiceImpl   : 源登记创建 sourceCode=p1-03-probe-1 id=2 status=DRAFT
+2026-09-11T20:46:54.274+08:00  INFO 47684 --- [nio-8093-exec-9] c.g.a.source.SourceRegistryServiceImpl   : 源登记创建 sourceCode=p1-03-probe-mismatch id=3 status=DRAFT
+2026-09-11T20:46:54.339+08:00  INFO 47684 --- [nio-8093-exec-8] c.g.a.source.SourceRegistryServiceImpl   : 源登记修改 id=2 sourceCode=p1-03-probe-1
+2026-09-11T20:46:54.444+08:00  INFO 47684 --- [nio-8093-exec-8] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+2026-09-11T20:46:54.562+08:00  INFO 47684 --- [nio-8093-exec-4] c.g.a.source.SourceRegistryServiceImpl   : 源登记创建 sourceCode=p1-03-probe-2 id=4 status=DRAFT
+2026-09-11T20:46:54.585+08:00  INFO 47684 --- [nio-8093-exec-8] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-2 id=4 绑定 runtime_profile.id=1
+2026-09-11T20:46:54.661+08:00  INFO 47684 --- [io-8093-exec-10] c.g.a.source.SourceRegistryServiceImpl   : 源暂停 sourceCode=p1-03-probe-1 id=2
+2026-09-11T20:46:58.782+08:00  INFO 47684 --- [nio-8093-exec-4] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.001+08:00  INFO 47684 --- [nio-8093-exec-1] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-2 id=4 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.012+08:00  INFO 47684 --- [nio-8093-exec-8] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.018+08:00  INFO 47684 --- [nio-8093-exec-7] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-2 id=4 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.028+08:00  INFO 47684 --- [io-8093-exec-10] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.037+08:00  INFO 47684 --- [io-8093-exec-11] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-2 id=4 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.045+08:00  INFO 47684 --- [io-8093-exec-13] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.050+08:00  INFO 47684 --- [io-8093-exec-12] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-2 id=4 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.055+08:00  INFO 47684 --- [nio-8093-exec-9] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.065+08:00  INFO 47684 --- [io-8093-exec-14] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-2 id=4 绑定 runtime_profile.id=1
+2026-09-11T20:47:03.072+08:00  INFO 47684 --- [io-8093-exec-16] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
