@@ -140,3 +140,5 @@
 | `VERSION` | `C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0` | 内容 `contract-specs 1.2.0`（本表登记的是 2026-09-11 20:12 写入、提交 `332b52b` 20:14:08 时的值） |
 
 **口径**：指纹是**复核辅助**而非契约的一部分——`VERSION` 才是契约的版本所有者（改契约必须同时升 `VERSION`，指纹随内容自然变化，不单独维护"指纹版本"）。
+
+**本表自检（2026-09-11 20:22，总控现场复核）**：对表中三个已冻结指纹逐个重算 `Get-FileHash -Algorithm SHA256` 并与登记值比对 ⇒ `specs/warehouse-namespace.v1.json` `463D9DC3…` ✓、`schemas/ingestion-manifest.v1.schema.json` `0993E147…` ✓、`VERSION` `C9E89F9D…`（内容 `contract-specs 1.2.0`，21 B）✓，**三项全部相符、未漂移**。⇒ 冻结后没有任何人改动过这些制品；引用其结论时按登记版次有效。未冻结的四个制品（`canonical-event.v1` 等）不在本表登记，其状态见 §7。
