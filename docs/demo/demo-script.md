@@ -1,79 +1,125 @@
 # 系统演示脚本（答辩/验收用）
 
-> 演示目标：**一条 REST 命令跑通"数据生成 → 采集 → 数仓流水线 → 指标发布 → 看板 → AI 问答 → 决策闭环"**，
-> 全程无需进入虚拟机、无需 SQL、无需启动集群（LOCAL 模式，见 `deployment.md`）。
+> 演示目标：**一条真实链路跑通「数据来源 → 采集 → 数仓流水线 → 指标发布 → 看板 → AI 问答 → 决策闭环」**，
+> 全程无需进入虚拟机、无需集群（LOCAL 模式，见 `docs/deployment.md`）。
+>
+> **边界（先讲清楚，避免被问倒）**：分析平台与模拟商城是**两个独立进程、两套库、两份前端产物**。
+> 平台 `platform-app` = `:8091`（`analytics_meta` + `analytics_metric`）；模拟商城 `mall-simulator` = `:8090`（`mall_simulator`）。
+> 平台**不依赖**商城即可运行——黄金链路只用磁盘上的 55 行黄金 JSONL 作为来源（`docs/compatibility-matrix.md` L0 段）。
 
 ## 准备（约 2 分钟）
 
-```bash
-# 终端 1：后端（在 mall-simulator 目录）
-export MALL_DB_PASSWORD=你的MySQL密码
-mvn spring-boot:run          # 启动后监听 8090，Flyway 自动建库建表
+```pwsh
+# 一键起两进程（平台 8091 + 商城 8090；含前端构建产物）
+pwsh -File scripts/start-all.ps1
+#   只演示分析平台：  pwsh -File scripts/start-all.ps1 -PlatformOnly
+#   只造数据：        pwsh -File scripts/start-all.ps1 -MallOnly
+# 商城库口令：$env:MALL_DB_PASSWORD（默认取本机 LOCAL 演示口令）
 
-# 终端 2：前端（在 web 目录）
-npm install && npm run dev   # http://127.0.0.1:5173
+# 前端（开发模式，可选）：web/ 下 npm install && npm run dev → http://127.0.0.1:5173（代理到 8091）
 ```
 
-## 0) 一键出数据（可选，省手打）
+登录拿令牌（除登录/健康检查外，平台全部接口都要 `Authorization: Bearer`）：
 
 ```bash
-pwsh -File scripts/run-demo.ps1 -Clean     # 1 天窗口 ≈ 3.2 万事件（~3 分钟）
-# 参数：-Days 2 -Users 100 -Scenario promotion；数据规模建议 ≤2 天（时间成本见文末表）
+# 种子账号见 analytics-server/platform-app/src/main/resources/db/meta/V5__platform_users.sql
+TOKEN=$(curl -s -X POST http://127.0.0.1:8091/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"analyst","password":"<种子口令>"}' | jq -r '.data.token')
 ```
 
 ## 主线演示（约 3 分钟）
 
-### 1) 一键生成并分析（演示控制台）
-浏览器打开 `http://127.0.0.1:5173/pipeline` → 场景选「促销爆发」→ 点「生成并分析」。
-页面显示：流水线 run 状态、阶段成功数（7/7）。
-或命令行等价：
+### 1) 造一批来源数据（商城侧，:8090）
+
 ```bash
+# 生成器属于模拟商城，不属于分析平台（平台不托管生成器页面）
 curl -X POST http://127.0.0.1:8090/api/v1/generator/runs \
   -H 'Content-Type: application/json' \
   -d '{"userCount":100,"eventsPerSecond":2,"baseConversionRate":0.05,
        "startTime":"2026-09-03T09:00:00","endTime":"2026-09-05T12:00:00",
        "randomSeed":20260903,"dirtyDataRate":0,"scenario":"promotion"}'
-curl -X POST http://127.0.0.1:8090/api/v1/ingestion/runs
-curl -X POST http://127.0.0.1:8090/api/v1/pipeline-runs \
-  -H 'Content-Type: application/json' -H 'Idempotency-Key: demo-1' \
-  -d '{"runtimeProfileId":1,"pipelineCode":"DAILY_CORE","businessTime":"2026-09-04T00:00:00","sourceDataVersion":"demo"}'
 ```
 
-### 2) 固定看板（普通员工入口）
-`http://127.0.0.1:5173/overview`：指标卡（GMV/净额/客单价/支付订单/UV/DAU…）+ 近 7 日销售趋势 + 活跃趋势。
-`/behavior`：转化漏斗（view→intent→order→pay）；`/products`：商品热度 TopN；`/sales`：销售趋势。
-每个图表底部显示快照 ID 与数据更新时间（§25.1 口径透明）。
+### 2) 采集 + 流水线（平台侧，:8091）
 
-### 3) 智能分析助手（AI 或降级模式）
-`http://127.0.0.1:5173/ai` → 输入推荐问题如「转化漏斗各阶段人数」→ 左侧展示：
-执行状态（EXECUTED）、真实结果表、SQL 证据（可展开）、结论与限制说明。
-特权演示：输入「删除订单数据」→ 系统返回 FAILED（危险 SQL 拦截），数据完好。
-> 未配置 `LLM_API_KEY` 时自动走规则回退（页面标注"规则回退模式"）；配置后走真实模型：
-> `export LLM_BASE_URL=... LLM_API_KEY=... LLM_MODEL=...` 重启后端即可切换。
+```bash
+# 采集：从活动档案（GET /api/v1/runtime-profiles）配置的 landingUri 读取待处理文件
+curl -X POST http://127.0.0.1:8091/api/v1/ingestion/runs -H "Authorization: Bearer $TOKEN"
 
-### 4) 决策闭环（创新点六）
-AI 建议 → `http://127.0.0.1:5173/decisions` 列表出现「补充安全库存」草稿（DRAFT）→
-提交审核 → 批准（填负责人，系统自动锁定当前快照基线）→ 开始 → 完成 → 评价。
-评价展示：基线值、实际值、改善率、EFFECTIVE/PARTIAL 等结果（含"非因果推断"声明）。
+# 流水线：8 个阶段 WAIT_LANDING→…→PUBLISH_METRIC，立即返回 runId（异步执行，用 GET 查进度）
+curl -X POST http://127.0.0.1:8091/api/v1/pipeline-runs \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: demo-1' \
+  -d '{"runtimeProfileId":1,"pipelineCode":"DAILY_CORE",
+       "businessTime":"2026-09-04T00:00:00","sourceDataVersion":"demo"}'
 
-### 5) 数据工程侧（管理员视角）
-- `http://127.0.0.1:8090/api/v1/ingestion/status`：采集待处理/断点数
-- `http://127.0.0.1:8090/api/v1/metrics/snapshots`：快照版本（ACTIVE/ARCHIVED）
-- MySQL 举证：`SELECT * FROM mall_simulator.metric_value WHERE snapshot_id=(最新ACTIVE)`
-  `SELECT question,status,sql_text FROM mall_simulator.ai_query_history ORDER BY id DESC LIMIT 5`
+curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8091/api/v1/pipeline-runs/1  # 查 run 与阶段状态
+```
+
+> 说明：`POST /api/v1/pipeline-runs` 返回 **HTTP 200 + body(snapshot/runId, 阶段 PENDING…)**，异步语义靠 `runId` 查询，
+> **不是** HTTP 202（指导书 §22 的 202 状态码未实现，已在审计中登记）。
+
+### 3) 固定看板（普通员工入口）
+
+`http://127.0.0.1:5173/overview`：指标卡（GMV/净额/客单价/支付订单/UV/DAU…）+ 销售趋势 + 活跃趋势。
+`/behavior`：转化漏斗（view→intent→order→pay）；`/products`：商品热度 TopN；`/sales`：销售趋势；`/rfm`：RFM 八类分群。
+每个图表底部显示**快照 ID / 数据更新时间 / 质量状态**（口径透明）；加载/空/错误/过期四态有独立呈现。
+
+### 4) 智能分析助手（AI 或规则回退）
+
+`http://127.0.0.1:5173/ai` → 输入推荐问题（如「转化漏斗各阶段人数」）→ 展示：执行状态（EXECUTED）、
+真实结果表、SQL 证据、结论与限制说明（所有数字来自 `EvidencePackage` 并带 `evidenceRef`）。
+特权演示：输入「删除订单数据」→ 返回 `SQL_QUESTION_UNSAFE`（生成 SQL 之前即拒绝），数据完好。
+> 未配置 `LLM_API_KEY` 时自动走模板/规则回退（页面标注"规则回退模式"，`ai_call_log` 为 0 行——**不冒充真实模型**）；
+> 配置 `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL`（即 `llm.base-url`/`llm.api-key`/`llm.model`）后重启后端即切换。
+
+### 5) 决策闭环
+
+决策草稿（AI 只能写 `DRAFT`）→ `http://127.0.0.1:5173/decisions` 提交审核 → 批准（填负责人，锁定当前快照为基线）→
+开始 → 完成 → 评价。评价展示基线值/实际值/改善率与 `INSUFFICIENT_DATA` / `EFFECTIVE` 等结论（含"非因果推断"声明）。
+> 样本不足时如实返回 `INSUFFICIENT_DATA`（当前真库 4 条评价全为该状态），不编造效果。
+
+### 6) 数据工程侧（管理员视角）
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8091/api/v1/ingestion/status    # 采集待处理/断点
+curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8091/api/v1/metrics/snapshots   # 快照版本 ACTIVE/ARCHIVED
+```
+
+```sql
+-- 指标库唯一所有者：analytics_metric（不是商城库）
+SELECT snapshot_id, status, version, business_time FROM analytics_metric.metric_snapshot ORDER BY id DESC LIMIT 5;
+SELECT metric_code, metric_value, unit, period FROM analytics_metric.metric_value
+ WHERE snapshot_id = (SELECT snapshot_id FROM analytics_metric.metric_snapshot WHERE status='ACTIVE');
+-- AI 审计（库在 analytics_meta）
+SELECT question, status, sql_text FROM analytics_meta.ai_query_history ORDER BY id DESC LIMIT 5;
+```
 
 ## 黄金数据对账演示（1 分钟，答辩加分项）
 
 ```bash
-cd mall-simulator && mvn -Dtest=GoldenE2ETest test
-# 输出：黄金 30 行 → 采集 30 SUCCESS → 流水线 7 阶段 → gmv=1275.00 等 9 项与标准答案一致
+# 黄金链路：磁盘上 55 行黄金 JSONL（tests/golden-dataset/events/golden-20260901.jsonl）作为唯一来源
+# 1) 采集 + 2) 流水线（同上面的两个 POST，businessTime=2026-09-01T00:00:00）→ 产出唯一 ACTIVE 快照
+# 3) 对账证据（真实落档，可直接打开）：docs/acceptance/r9-20260911-e272c8a-run30-S20260901_30/
+#    20-reconciliation.tsv  黄金标准答案 vs 指标库 ACTIVE 逐项
+#    15-hive-layers.txt     ODS/DWD/DWS/ADS 四层行数与金额
+#    03-spark-job-run.tsv   10 条真实 Spark 作业（作业码/外部作业 id/输入输出行数）
 ```
 
-## 演示规模与耗时（本机实测，§7.9 记录口径）
+黄金标准答案（与 `20-reconciliation.tsv` 逐项一致）：
+`pv 7`、`uv 3`、`dau 3`、`paid_order_cnt 5`、`gmv 2042.00`、`net_sale 1493.00`、`avg_order_value 408.40`、
+`refund_rate 0.6000`、`full_refund_rate 0.2000`、`buy_rate 1.0000`。
+> 唯一注意点：`full_refund_rate` 是 R7-0 新增口径，黄金文件未列该值，故 A 段对账标 `—`（只与 ADS 宽表互校）。
+> 遗留脚本 `scripts/run-spark-chain.ps1` 只覆盖 11 个作业中的 5 个，**不得作为链路证据**（README 已标注）。
+
+## 演示规模与耗时
 
 | 事件规模 | 生成 | 发布 | 流水线 | 看板 P95 |
 |---|---:|---:|---:|---:|
-| 1.1 万 | ~30s | ~20s | <1s | 21-29ms（30 并发） |
-| 10.8 万 | ~290s | ~145s | 1.3s | 21-29ms |
+| 1.1 万 | ~30s | ~20s | <1s | 21–29ms（30 并发） |
+| 10.8 万 | ~290s | ~145s | 1.3s | 21–29ms |
 
-> 论文引用时必须标注本机配置（CPU/内存/MySQL 版本），见 `experiments/README.md`。
+> ⚠️ **上表是 2026-09-06 整改前旧链的本机实测**（`experiments/`），本轮未在整改后平台重测 P95；
+> 论文引用时须标注为旧链数据并注明本机配置（CPU/内存/MySQL 版本），见 `experiments/README.md`。
+> 1M–100M 分档与集群对照**未做**（无 Hadoop/Hive 集群）。

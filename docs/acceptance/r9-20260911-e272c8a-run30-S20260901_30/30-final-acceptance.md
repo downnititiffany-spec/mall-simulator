@@ -19,13 +19,13 @@ MySQL `analytics_metric` 发布唯一 ACTIVE 快照 → 页面/AI 与指标库�
 | `10`–`14` | 指标库快照表、ACTIVE 指标值、8 张 ADS 宽表行数、概览宽表整行、质量规则结果 |
 | `20-reconciliation.tsv` | 黄金标准答案 vs 指标库逐项对账（**不一致项 = 0**） |
 | `16-api-responses.json` | 11 个真实 HTTP 响应（指标/漏斗/商品/趋势/RFM/流水线/决策/AI 健康/看板） |
-| `17-screenshots/`（13 张） | 平台 8 页 + 商城页真机截图（Playwright，PNG 头校验） |
+| `17-screenshots/`（平台 13 张 + `mall/` 4 张 = 17 张） | 平台 8 页 + 商城/商品后台/生成器 3 页真机截图（Playwright，PNG 头校验） |
 | `21`–`29` | 可靠性/故障注入/续跑实验原始证据（§23.3） |
 | `30-final-acceptance.md` | 本文件 |
 | `31-metric-publish-it-regression.log` | 指标发布真库集成测试（PV/退款率口径回归，真实 MySQL，1/1 PASS） |
 | `32-spark-jobs-tests.log` | Scala 作业单测（修复后：succeeded 46 / failed 0，BUILD SUCCESS） |
 | `scripts/`（8 个） | 采集与复现脚本随证据归档（`.verify/` 被 `.gitignore` 排除，故一并入库） |
-| `README.md` | 逐文件索引（61 个文件，含字节数） |
+| `README.md` | 逐文件索引（本目录 **62 个文件**：37 顶层 + 13 平台截图 + 4 商城截图 + 8 脚本，含字节数） |
 
 ---
 
@@ -33,7 +33,7 @@ MySQL `analytics_metric` 发布唯一 ACTIVE 快照 → 页面/AI 与指标库�
 
 | # | 验收项 | 判定 | 真实证据 | 说明 |
 |---|---|---|---|---|
-| A1 | 分析平台与模拟商城是不同进程、数据库、前端和构建产物 | ✅ | `docs/compatibility-matrix.md` L0 段；`17-screenshots/mall-home.png`（8090）；`16-api-responses.json`（8091） | 平台 8091（`platform-app`，Spring Boot 单进程）、商城 8090（`mall-simulator` 独立进程）；库分离 `analytics_meta`/`analytics_metric` vs `mall_simulator`；前端两份构建产物（`analytics-server/platform-app/src/main/resources/static` 与商城页面），分别 `npm build` |
+| A1 | 分析平台与模拟商城是不同进程、数据库、前端和构建产物 | ✅ | `docs/compatibility-matrix.md` L0 段；`17-screenshots/mall/02-mall.png`（商城 8090，进程内页头可见）；`16-api-responses.json`（平台 8091） | 平台 8091（`platform-app`，Spring Boot 单进程）、商城 8090（`mall-simulator` 独立进程）；库分离 `analytics_meta`/`analytics_metric` vs `mall_simulator`；前端两份构建产物（`analytics-server/platform-app/src/main/resources/static` 与商城页面），分别 `npm build` |
 | A2 | 平台无需模拟商城即可运行黄金文件分析 | ✅ | `01-pipeline-run.tsv`（run 30 `source_data_version=r9-prunefix-*`）、`15-hive-layers.txt` | run 30 全链输入是**磁盘上的 55 行黄金 JSONL**（`landing/events/*.jsonl`），商城进程未参与；脚本 `.verify/r9-prune-fix-verify.ps1` 仅调用平台 HTTP |
 | A3 | 平台不存在对商城业务库或生成器代码的依赖 | ✅ | `analytics-server/**/pom.xml` 无任何 `mall` 依赖（仅 2 处注释提及迁移来源）；平台源码 `com.graduation.mall` 引用数 = **0** | 代码级扫描实测；平台数据源只有 `analytics_meta`（主）、`analytics_metric`（写/只读）三源 |
 
@@ -43,7 +43,7 @@ MySQL `analytics_metric` 发布唯一 ACTIVE 快照 → 页面/AI 与指标库�
 |---|---|---|---|---|
 | B1 | 真实来源→Landing→ODS→DWD→DWS→ADS→MySQL→页面完整运行 | ✅ | `01`–`04`、`15-hive-layers.txt`、`10`–`13`、`16-api-responses.json`、`17-screenshots/` | 一条 run 贯穿 8 阶段；`15-hive-layers.txt` 给出四层真实行数，`13-ads-overview-active.tsv` 给出 ACTIVE 宽表整行，`16-api-responses.json` 给出页面同源响应 |
 | B2 | 每层有表、分区、行数、runId、jobId、snapshotId 证据 | ✅ | `02-pipeline-stage-run.tsv`（阶段×`external_job_id`）、`03-spark-job-run.tsv`（`output_partitions_json`）、`15-hive-layers.txt`（分区与行数）、`10-metric-snapshot.tsv`（snapshot） | 10 条作业行全部带非空 `externalJobId`（`lp-<ts>-<hex>`）；正式 ADS 分区只有 `dt`，快照维度落在 `__staging`（`snapshot_id,dt`），发布采用**元数据指针切换** |
-| B3 | PV、退款率等口径冲突已解决并有回归测试 | ✅ | `20-reconciliation.tsv`（34 行，**不一致项 0**）；`11-metric-value-active.tsv`；`31-metric-publish-it-regression.log` | R7-0 统一口径：`pv` 只计 `view` 行为 = 7（原按行为明细 14 已纠正）、`refund_rate=0.6000`、`full_refund_rate=0.2000`；真库回归 `MetricPublisherMySqlIT`（`-Dmetric.it=true`）**实跑 1/1 PASS、0 skipped**：正常快照发布 8 行 ADS + 10 条指标值，字典版本不符的快照被 `MP_VERIFY_FAILED`/`MP_METRIC_DICT_VERSION` 写库前拦下 |
+| B3 | PV、退款率等口径冲突已解决并有回归测试 | ✅ | `20-reconciliation.tsv`（34 行，A 段 11 行中 **10 行 YES、1 行为 `—`**）；`11-metric-value-active.tsv`；`31-metric-publish-it-regression.log` | R7-0 统一口径：`pv` 只计 `view` 行为 = 7（原按行为明细 14 已纠正）、`refund_rate=0.6000`、`full_refund_rate=0.2000`；真库回归 `MetricPublisherMySqlIT`（`-Dmetric.it=true`）**实跑 1/1 PASS、0 skipped**：正常快照发布 8 行 ADS + 10 条指标值，字典版本不符的快照被 `MP_VERIFY_FAILED`/`MP_METRIC_DICT_VERSION` 写库前拦下。**边界**：A 段第 12 行 `full_refund_rate` 因**黄金文件未列该口径**（R7-0 新增）而标 `—`，即该指标只有「指标库 vs ADS 宽表」的 B 段对账（YES），没有人工黄金基线比对 |
 
 ## 3. 可靠性
 
@@ -58,9 +58,9 @@ MySQL `analytics_metric` 发布唯一 ACTIVE 快照 → 页面/AI 与指标库�
 
 | # | 验收项 | 判定 | 真实证据 | 说明 |
 |---|---|---|---|---|
-| D1 | 普通员工可在 Web 完成选择日期、查看分析、读解释、导出和创建决策草稿 | ✅ | `18-r7-4-dom-report.json`（**22/22**）、`17-screenshots/`、`16-api-responses.json` | 8 页 DOM 实测（大盘/趋势/漏斗/商品/RFM/问数/决策/运维）覆盖日期选择、指标卡、图表、解释面板、导出与决策草稿创建；接口层 `16-api-responses.json` 给出对应真实响应 |
-| D2 | 页面有加载、空、错误、过期和无权限状态 | ⚠️ | `18-r7-4-dom-report.json`、`18-r8-accept-report.json`（A 身份 4 项）、`MetricAdsDaoTest.selectActiveWithoutActiveSnapshotReturnsEmpty`、`AnalysisServiceTest.noActiveSnapshotReturnsEmptyEnvelopeForEveryEndpoint` | 加载/空/错误/无权（403）在真机 DOM 与 R8 身份组实测；**只做单测**的是"无 ACTIVE 快照"分支（真机恒有 ACTIVE，无法自然构造，已如实登记）；"过期"以 `MIXED_DEFINITION_VERSIONS`/`NO_COMPARISON_PERIOD` 警告语义呈现 |
-| D3 | 商城和随机生成器页面不在分析平台前端 | ✅ | `docs/compatibility-matrix.md`；`17-screenshots/mall-home.png`（8090）；平台 8 页截图 | 平台前端构建产物不含商城/生成器页面；两者由 `scripts/start-all.ps1` 分别启动、可分别停止 |
+| D1 | 普通员工可在 Web 完成选择日期、查看分析、读解释、导出和创建决策草稿 | ✅ | `18-r7-4-dom-report.json`（**22/22**）、`17-screenshots/`、`16-api-responses.json` | 8 页 DOM 实测（大盘/趋势/漏斗/商品/RFM/问数/决策/运维）覆盖日期选择、指标卡、图表、解释面板、导出与决策草稿创建；接口层 `16-api-responses.json` 给出对应真实响应。**边界**：DOM 报告采集时上下文快照为 **`S20260901_22`（run 22）**（见该文件 `contextBefore/contextAfter` 字段），是本包内页面侧证据的复用；run 30 快照 `S20260901_30` 的同源性由 `16-api-responses.json` 与 `18-r8-accept-report.json` 断言 |
+| D2 | 页面有加载、空、错误、过期和无权限状态 | ⚠️ | `18-r7-4-dom-report.json`、`18-r8-accept-report.json`（A 身份 4 项）、`MetricAdsDaoTest.selectActiveWithoutActiveSnapshotReturnsEmpty`、`AnalysisServiceTest.noActiveSnapshotReturnsEmptyEnvelopeForEveryEndpoint` | 加载/空/错误在真机 DOM 采集，越权在 R8 身份组实测（403）；**只做单测**的是"无 ACTIVE 快照"分支（真机恒有 ACTIVE，无法自然构造，已如实登记）；**页面「无权限态」只有后端 403 实测、无对应 DOM/截图证据**；"过期"以 `MIXED_DEFINITION_VERSIONS`/`NO_COMPARISON_PERIOD` 警告语义呈现 |
+| D3 | 商城和随机生成器页面不在分析平台前端 | ✅ | `docs/compatibility-matrix.md`；`17-screenshots/mall/02-mall.png`、`03-admin-products.png`、`04-generator.png`（8090）；平台 13 张截图 | 平台前端构建产物不含商城/生成器页面；两者由 `scripts/start-all.ps1` 分别启动、可分别停止 |
 
 ## 5. AI 与安全
 
@@ -76,8 +76,8 @@ MySQL `analytics_metric` 发布唯一 ACTIVE 快照 → 页面/AI 与指标库�
 | # | 验收项 | 判定 | 真实证据 | 说明 |
 |---|---|---|---|---|
 | F1 | README、部署手册、接口文档和实际架构一致 | ✅ | `README.md`、`docs/README.md`、`docs/deployment.md`、`docs/compatibility-matrix.md`、`docs/contracts/*` | 按真实两进程/两端口/两库边界重写：8 阶段流水线、`scripts/start-all.ps1` 参数、开发代理指向 8091、Derby 单写者警告、遗留脚本 `scripts/run-spark-chain.ps1` 标注"不可作为链路证据" |
-| F2 | 所有文稿修改前均有备份 | ✅ | `docs/backups/`（**48 个文件**，含 `remediation-status-preR*.md`、`deployment.md.20260911.pre-r8-docs-align.bak` 及本轮 `docs/backups/r9-*`） | 每个整改阶段改前落一份时间戳备份；本轮 R9 新增备份见 `docs/backups/` 索引 |
-| F3 | 论文中的功能、指标、截图和实验都能映射到真实代码与验收证据 | ✅ | `docs/thesis-materials/证据映射表.md`（68 条映射）、`docs/thesis-materials/results-tables.md`、`docs/thesis-materials/screenshot-list.md`、`docs/thesis-draft/**` | 论文初稿已按真实证据订正：黄金对账口径、未实测的性能/决策数字改为 ⚠️ 占位、阶段数 7→8、页面数 7→9、Scala 作业 6→11、Flyway V1–V15、去掉未使用的 Snappy、开发代理端口、`node --test`、决策 12 态常量、`user_session` 鉴权、29 张表口径 |
+| F2 | 所有文稿修改前均有备份 | ✅ | `docs/backups/`（**实测递归 54 个文件**，含 `remediation-status-preR*.md`、`deployment.md.20260911.pre-r8-docs-align.bak` 及本轮 `docs/backups/r9-*`） | 每个整改阶段改前落一份时间戳备份；本轮 R9 新增备份见 `docs/backups/` 索引。抽样命中，"所有文稿"无法穷证 |
+| F3 | 论文中的功能、指标、截图和实验都能映射到真实代码与验收证据 | ✅ | `docs/thesis-materials/证据映射表.md`（**实测主表 74 条映射**：57 已实测 / 9 部分 / 8 未实测）、`docs/thesis-materials/results-tables.md`、`docs/thesis-materials/screenshot-list.md`、`docs/thesis-draft/**` | 论文初稿已按真实证据订正：黄金对账口径、未实测的性能/决策数字改为 ⚠️ 占位、阶段数 7→8、页面数 7→9、Scala 作业 6→11、Flyway V1–V15、去掉未使用的 Snappy、开发代理端口、`node --test`、决策 12 态常量、`user_session` 鉴权、29 张表口径。**残留**：`docs/thesis-materials/thesis-outline.md` 仍引用已不存在的 `1.png`/`GoldenE2ETest`/`AdsMaterializer`（待同步） |
 
 ## 7. 测试与实验计数（本轮实跑）
 
@@ -102,11 +102,14 @@ MySQL `analytics_metric` 发布唯一 ACTIVE 快照 → 页面/AI 与指标库�
 6. **采集口径分歧**：`ingestion_batch` 记 `record_count=51 / quarantine=4`，契约口径为 accept 52 / reject 3（多隔离的一行是重复 `event_id=golden-evt-037`），`LOAD_ODS` 实测装载 51 条；批次状态 `QUARANTINED` 但 accepted 部分仍被流水线消费（已登记，未改语义）。
 7. **`dt=20260903` 分区**：来自 C4 故障注入夹具（`paid_amount=0.01`），`dwd_order_detail` 该分区 28 行是**修复前**扇出结果，修复后未重跑该测试日期（保留为故障注入痕迹，不代表黄金口径）。
 8. **失败 run 保留**：run 26（`PIPELINE_QUALITY_FAILED`）、27（`RUN_INTERRUPTED`，2026-09-04 空数据）、28（`RUN_EMPTY_DATA`）按设计保留为故障证据，不清理、不 resume（避免发布空快照）。
-9. **其他已登记偏差**：归档快照可读且未做权限校验；`ads_user_profile_m` 无金额列（`RFM_AMOUNT_UNAVAILABLE`）；类目/地区 ADS 无载体（`UNKNOWN_DIMENSION_TABLE`）；`ADS_STAGING_SNAPSHOT_ISOLATION` 故意保持 ERROR 级；`metric_snapshot.version` 恒为 1；`/admin/users` 不返回 `status`；`cart_rate` 无 ADS 落地；`WAIT_LANDING.evidence` 为 JSON + ` | ` 审计混合文本；`metadata_app`（第 4 库）未使用。
+9. **其他已登记偏差**：归档快照可读且未做权限校验（`MySqlMetricStore` 查询与 `findSnapshot` 均无 status 过滤，客户端可传任意 snapshotId）；`ads_user_profile_m` 无金额列（`RFM_AMOUNT_UNAVAILABLE`）；类目/地区 ADS 无载体（`UNKNOWN_DIMENSION_TABLE`）；`ADS_STAGING_SNAPSHOT_ISOLATION` 故意保持 ERROR 级；`/admin/users` 不返回 `status`；`cart_rate` 与 `repeat_rate` 无 ADS 落地（`repeat_rate` 仅存在于契约夹具期望值）；`WAIT_LANDING.evidence` 为 JSON + ` | ` 审计混合文本；`metadata_app`（第 4 库）未使用。
+   - 订正（2026-09-11 复核）：本清单早期版本写「`metric_snapshot.version` 恒为 1」**不成立**——发布器取 `MAX(version)+1`（`MetricPublishRepository.java:38-41,60`），真库实测 `S20260901_23=1 → _24=2 → _22=3 → _25=4 → _29=5 → _30=6`；仅首次发布取 DDL 默认值 1。同步已修正 `docs/remediation-status.md` 对应行。
 
 ## 9. 结论
 
-§30 六域 18 项：**16 项 ✅、2 项 ⚠️（C2 故障恢复、D2 页面状态）、0 项 ❌**；两项 ⚠️ 的差距均已在第 8 节逐条列明，不涉及黄金链正确性。
+§30 六域（指导书原文 **19 项**，见 `docs/项目完整实施指导书 V2.0.md:1547-1580`）：**17 项 ✅、2 项 ⚠️（C2 故障恢复、D2 页面状态）、0 项 ❌**。
+本表另加 1 行自检项 C4（本轮新发现并修复的缺陷，非指导书条目），故本表共 20 行 = **18 ✅ / 2 ⚠️ / 0 ❌**。
+两项 ⚠️ 的差距均已在第 8 节逐条列明，不涉及黄金链正确性。
 本轮最重的收获是**用真实链挖出并修掉两个 Mock 不可能发现的缺陷**（D-R9-1 暂存清理越界、D-R9-2 维度跨分区扇出），修复后端到端复验 10/10 PASS，黄金口径与标准答案逐项一致（不一致项 0）。
 
 
