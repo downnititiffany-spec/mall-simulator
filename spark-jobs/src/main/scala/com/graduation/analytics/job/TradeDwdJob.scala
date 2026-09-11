@@ -67,8 +67,13 @@ class TradeDwdJob extends WarehouseJob {
       val out = spark.createDataFrame(rows.asJava, TradeDwdJob.OUT_SCHEMA)
       out.createOrReplaceTempView("tdw_tmp")
       // 维度补充（缺失 → unknown key，§11.1）：category_id 关联商品维、city_level 关联用户维
+      // R9 修正（D-R9-2）：维度快照必须按**生效日期分区**过滤（与 DwdSql/AdsSql 同口径）。
+      //   原实现漏掉 dt 谓词 → dim_user/dim_product 每日快照逐日累积出多分区，JOIN 形成笛卡尔放大：
+      //   实测 dt=20260901 订单明细 7 行被放大为 28 行（无维度分区 2 个 × 用户分区 2 个），
+      //   GMV 2042.00 → 8168.00、net_sale 1493.00 → 5972.00。
+      val dimDt = args.businessDate
       spark.sql(
-        """INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt)
+        s"""INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt)
           |SELECT
           |  CAST(t.order_id AS BIGINT),
           |  CAST(t.user_id AS BIGINT),
@@ -86,8 +91,8 @@ class TradeDwdJob extends WarehouseJob {
           |  t.dt
           |FROM tdw_tmp t
           |LEFT JOIN dw_dim.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
-          |     THEN -1 ELSE CAST(t.product_id AS BIGINT) END
-          |LEFT JOIN dw_dim.dim_user u ON u.user_id = CAST(t.user_id AS BIGINT)""".stripMargin)
+          |     THEN -1 ELSE CAST(t.product_id AS BIGINT) END AND p.dt = '$dimDt'
+          |LEFT JOIN dw_dim.dim_user u ON u.user_id = CAST(t.user_id AS BIGINT) AND u.dt = '$dimDt'""".stripMargin)
     }
 
     val outputCount = spark.sql("SELECT COUNT(*) c FROM dw_dwd.dwd_order_detail").collect()(0).getLong(0)

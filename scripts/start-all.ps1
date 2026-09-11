@@ -54,7 +54,7 @@ if (-not $MallOnly) {
     Write-Host '  分析平台未就绪'; exit 1
   }
   Write-Host '  分析平台 OK → http://127.0.0.1:8091/'
-  Write-Host '  演示账号：admin/admin123（管理员）、operator/operator123（运营）、analyst/analyst123（分析师）、viewer/viewer123（只读）'
+  Write-Host '  演示账号（仅此三个真实存在）：admin/admin123（管理员）、operator/operator123（运营）、analyst/analyst123（分析师）'
 }
 
 if (-not $PlatformOnly) {

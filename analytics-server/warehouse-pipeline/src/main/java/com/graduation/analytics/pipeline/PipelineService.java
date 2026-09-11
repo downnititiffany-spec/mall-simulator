@@ -53,7 +53,8 @@ import java.util.regex.Pattern;
 
 /**
  * 流水线编排（§13.1：POST 立即返回 taskId+PENDING，线程池异步执行计算链）：
- * WAIT_LANDING→LOAD_ODS→BUILD_DWD→BUILD_DWS→BUILD_ADS→QUALITY_CHECK→PUBLISH_METRIC→SUCCESS。
+ * WAIT_LANDING→INIT_SCHEMA→LOAD_ODS→BUILD_DWD→BUILD_DWS→BUILD_ADS→QUALITY_CHECK→PUBLISH_METRIC
+ * 共 8 个阶段（§9.1）；SUCCESS 是**运行终态**而非阶段，不出现在 stage_code 中。
  * 幂等键 = runtimeProfileId+pipelineCode+businessTime+sourceDataVersion（DB 唯一键
  * uk_idempotency 兜底 + 应用层按 key 加锁，§13.4）；同键返回原任务；失败后重试递增
  * attempt_no 且已成功阶段不重复执行（§13.4 恢复）；质量检查失败阻断发布（§5.4.1）。

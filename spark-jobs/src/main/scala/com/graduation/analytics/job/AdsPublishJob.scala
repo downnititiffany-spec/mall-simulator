@@ -85,13 +85,17 @@ class AdsPublishJob extends WarehouseJob {
       s"本次切换 ${switched.size} 张（${switched.mkString(",")}）；同快照重放 ${replayed.size} 张" +
         s"（同 snapshotId 不产生第二份数据，§14.4 发布幂等）")
 
-    // ── 暂存清理：只保留被正式分区指针引用的快照（§14.4 第 6 步） ──
+    // ── 暂存清理：只清理**本次业务日期**的历史暂存快照（§14.4 第 6 步） ──
+    // R9 修正：原实现不带 dt 限定，发布任一日期会连带删除**其他业务日期**尚未发布的暂存分区，
+    // 使交错/并发运行在 QUALITY_CHECK 误报 ADS_STAGING_PRESENT（8 张暂存表全空）而失败，
+    // 并使失败运行的 resume/retry-from-stage 因暂存已被清空而永久失败（实测 run 26）。
     val removed = ListBuffer.empty[String]
     if (prune) {
       val referenced = formalTables.flatMap(t =>
         PartitionEvidence.collect(spark, Seq(t), None, None).flatMap(_.path)).map(norm).toSet
       stagingTables.foreach { stg =>
         PartitionEvidence.collect(spark, Seq(stg), None, None)
+          .filter(p => p.dt == dt)
           .filterNot(_.snapshotId.contains(sid))
           .filterNot(p => p.path.map(norm).exists(referenced.contains))
           .foreach { p =>
@@ -103,10 +107,10 @@ class AdsPublishJob extends WarehouseJob {
       }
     }
     checks += QualityCheck("PUB_STAGING_PRUNE", "PUBLISH", stagingTables.mkString(","),
-      removed.size, 0L, "保留被引用快照", "INFO", true,
+      removed.size, 0L, s"只清理 dt=$dt 的历史暂存快照（其他业务日期的暂存分区不动）", "INFO", true,
       if (!prune) "本次未启用清理（--pruneStaging=false）"
-      else if (removed.isEmpty) s"无待清理历史暂存分区（保留 $sid 及被正式分区引用的路径）"
-      else s"已清理 ${removed.size} 个历史暂存分区: ${removed.mkString(",")}")
+      else if (removed.isEmpty) s"dt=$dt 无待清理历史暂存分区（保留 $sid 及被正式分区引用的路径）"
+      else s"已清理 ${removed.size} 个 dt=$dt 历史暂存分区: ${removed.mkString(",")}")
 
     val all = checks.toList
     val blockingFailed = all.filter(c => c.severity == "BLOCKING" && !c.passed)
