@@ -1,40 +1,65 @@
 <template>
   <div>
     <div class="page-title">智能分析助手</div>
+
+    <!-- AI 接口不是统一信封：证据包只提供快照/SQL/表/时间范围/提示词版本，
+         其余上下文一律标注「接口未提供」，不编造、不 Mock。 -->
+    <div class="chart-box">
+      <div class="chart-title">问答数据上下文（取当期 ACTIVE 快照作对照）</div>
+      <AnalysisContext :context="baseContext" :state="state" :error="error" />
+      <div class="table-hint">
+        说明：/dashboards/overview 提供当期快照、业务时间、口径版本与质量状态，用作对照基线；
+        AI 问答结果自带证据包（快照、SQL、使用表、时间范围、提示词版本），二者的快照号应一致，
+        若不一致说明问答把快照 pin 在了另一个版本上，需复核。
+      </div>
+    </div>
+
     <div class="chart-box">
       <div class="chart-title">自然语言问数（语义层 → 受控 Text-to-SQL → 安全校验 → 证据解释）</div>
       <div style="display:flex;gap:10px">
         <input v-model="question" @keyup.enter="ask" placeholder="例如：最近 7 天销售额变化趋势如何？"
-               style="flex:1;padding:8px" />
-        <button @click="ask" :disabled="busy"
+               style="flex:1;padding:8px" :disabled="busy" />
+        <button @click="ask" :disabled="busy || !question.trim()"
                 style="padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:6px">
-          {{ busy ? '分析中…' : '发送' }}
+          {{ busy ? '分析中…（再次点击可放弃上一次）' : '发送' }}
         </button>
       </div>
-      <div v-if="busy" style="margin-top:10px;font-size:13px;color:#6b7280">
+      <div v-if="busy" class="state-line">
         执行状态：理解问题 → 生成 SQL → 安全校验 → 查询数据 → 生成解释…
       </div>
-      <div v-if="error" style="margin-top:10px;font-size:13px;color:#dc2626">{{ error }}</div>
+      <div v-if="queryError" class="banner banner-error" style="margin-top:10px">请求失败：{{ queryError }}</div>
+      <div v-if="abortedNotice" class="banner banner-stale" style="margin-top:10px">{{ abortedNotice }}</div>
     </div>
 
-    <template v-if="result">
+    <template v-if="queryResult">
       <div class="chart-box">
-        <div class="chart-title">结论</div>
-        <div style="font-size:14px;line-height:1.7">{{ result.explanation.summary || '（无结论）' }}</div>
-        <div v-if="result.query.status" style="margin-top:8px;font-size:12px;color:#6b7280">
-          管道状态：{{ result.query.status }}（模型：{{ result.query.providerUsed }}，行数：{{ result.query.rowsReturned }}，耗时：{{ result.query.elapsedMs }}ms）
+        <div class="chart-title">
+          结论
+          <button style="float:right;font-size:12px;padding:3px 10px"
+                  :disabled="!canExportResult" @click="exportResult">
+            {{ exportButtonText }}
+          </button>
         </div>
+        <div style="font-size:14px;line-height:1.7">{{ evidenceContext.summary || '（后端未给出结论文本）' }}</div>
+        <div v-if="query.status" class="table-hint">
+          管道状态：{{ query.status }}（模型：{{ query.providerUsed || '未提供' }}，行数：{{ query.rowsReturned ?? 0 }}，
+          耗时：{{ query.elapsedMs ?? '未提供' }}ms）
+        </div>
+        <div v-if="query.assumptions && query.assumptions.length" class="table-hint">
+          模型假设：{{ query.assumptions.join('；') }}
+        </div>
+        <div v-if="query.error" class="banner banner-error">后端返回错误：{{ query.error }}</div>
       </div>
 
       <div class="chart-box">
-        <div class="chart-title">数据依据（真实查询结果）</div>
-        <table v-if="result.query.rows && result.query.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
+        <div class="chart-title">数据依据（真实查询结果，未做前端重算）</div>
+        <table v-if="resultTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead><tr style="text-align:left;color:#6b7280">
-            <th v-for="k in Object.keys(result.query.rows[0])" :key="k" style="padding:6px">{{ k }}</th>
+            <th v-for="k in resultTable.headers" :key="k" style="padding:6px">{{ k }}</th>
           </tr></thead>
           <tbody>
-            <tr v-for="(row, i) in result.query.rows" :key="i" style="border-top:1px solid #f3f4f6">
-              <td v-for="(v, k) in row" :key="k" style="padding:6px">{{ v }}</td>
+            <tr v-for="(row, i) in resultTable.rows" :key="i" style="border-top:1px solid #f3f4f6">
+              <td v-for="(v, j) in row" :key="j" style="padding:6px" class="mono">{{ v }}</td>
             </tr>
           </tbody>
         </table>
@@ -42,7 +67,7 @@
       </div>
 
       <div class="chart-box" v-if="explanationSection.length">
-        <div class="chart-title">建议与可能原因</div>
+        <div class="chart-title">建议与可能原因（模型推测，非因果结论）</div>
         <div v-for="(s, i) in explanationSection" :key="i" style="font-size:13px;line-height:1.8;padding:4px 0">
           • {{ s }}
         </div>
@@ -50,13 +75,28 @@
 
       <div class="chart-box">
         <div class="chart-title">证据（SQL + 口径）</div>
-        <pre style="background:#f9fafb;padding:10px;border-radius:6px;font-size:12px;overflow:auto">{{ result.query.sql }}</pre>
-        <div style="font-size:12px;color:#6b7280;margin-top:6px">
-          使用表：{{ (result.query.tables || []).join(', ') }}；快照：{{ result.explanation.evidence.snapshotId }}；
-          口径：{{ result.explanation.evidence.timeRange }}
-          <template v-if="result.explanation.limitations && result.explanation.limitations.length">
-            <br />限制说明：{{ result.explanation.limitations.join('；') }}
-          </template>
+        <pre style="background:#f9fafb;padding:10px;border-radius:6px;font-size:12px;overflow:auto">{{ evidence.sql || '（后端未返回 SQL）' }}</pre>
+        <div class="meta-row" style="margin-top:8px">
+          <span class="meta-item">
+            证据快照
+            <b class="mono">{{ evidenceSnapshotText }}</b>
+            <span class="meta-hint">{{ evidenceSnapshotHint }}</span>
+          </span>
+          <span class="meta-item">时间范围 <b class="mono">{{ evidence.timeRange || '未提供' }}</b></span>
+          <span class="meta-item">提示词版本 <b class="mono">{{ evidence.promptVersion || '未提供' }}</b></span>
+          <span class="meta-item">返回行数 <b class="mono">{{ evidence.returnedRows }}</b></span>
+          <span class="meta-item">查询耗时 <b class="mono">{{ evidence.queryElapsedMs === null ? '未提供' : evidence.queryElapsedMs + 'ms' }}</b></span>
+          <span class="meta-item">
+            对照大盘快照 <b class="mono">{{ baseContext ? (baseContext.snapshotId || '无') : '加载中' }}</b>
+          </span>
+        </div>
+        <div class="table-hint">使用表：{{ evidence.tables.length ? evidence.tables.join(', ') : '未提供' }}</div>
+        <div v-if="evidenceContext.missingNotice" class="banner banner-missing">{{ evidenceContext.missingNotice }}</div>
+        <div v-if="evidenceContext.warnings.length" class="banner banner-warn">
+          证据包告警：{{ evidenceContext.warnings.map(warningTextAll).join('；') }}
+        </div>
+        <div v-if="explanation.limitations && explanation.limitations.length" class="table-hint">
+          限制说明：{{ explanation.limitations.join('；') }}
         </div>
       </div>
     </template>
@@ -64,44 +104,59 @@
     <div class="chart-box">
       <div class="chart-title">推荐问题</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <button v-for="q in recommended" :key="q" @click="question = q; ask()"
+        <button v-for="q in recommended" :key="q" @click="askPreset(q)"
                 style="padding:6px 12px;border:1px solid #e5e7eb;background:#fff;border-radius:16px;font-size:13px;cursor:pointer">
           {{ q }}
         </button>
       </div>
     </div>
 
-    <div class="chart-box" v-if="history.length">
-      <div class="chart-title">我的最近问答（点击回填）</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
+    <div class="chart-box">
+      <div class="chart-title">我的最近问答（点击回填；来自 /ai/history/my，非统一信封）</div>
+      <div v-if="historyError" class="banner banner-error">历史加载失败：{{ historyError }}</div>
+      <div v-if="history.length" style="display:flex;flex-direction:column;gap:6px">
         <button v-for="h in history" :key="h.id" @click="question = h.question"
                 style="text-align:left;padding:6px 10px;border:1px solid #f3f4f6;background:#fafafa;border-radius:6px;font-size:13px;cursor:pointer">
           <span style="color:#111827">{{ h.question }}</span>
-          <span style="float:right;color:#9ca3af;font-size:12px">{{ h.status }} · {{ h.rowsReturned }} 行 · {{ (h.createdAt || '').toString().slice(0, 10) }}</span>
+          <span style="float:right;color:#9ca3af;font-size:12px">
+            {{ h.status }} · {{ h.rowsReturned ?? 0 }} 行 · {{ formatDateTime(h.createdAt) }}
+          </span>
         </button>
       </div>
+      <div v-else class="el-empty">暂无历史记录</div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import api from '../api'
+import AnalysisContext from '../components/AnalysisContext.vue'
+import { useAnalysis } from '../composables/useAnalysis'
+import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
+import { buildAiEvidenceContext, isRealSnapshotId, warningTextAll } from '../utils/context'
+import { formatDateTime } from '../utils/envelope'
+import { aiResultCsvHeaders, aiResultTable } from '../utils/tables'
+import { exportAnalysisCsv } from '../utils/exportCsv'
 
 const question = ref('')
-const history = ref([])
-
-async function loadHistory() {
-  try {
-    history.value = await api.get('/ai/history/my', { limit: 8 }) || []
-  } catch (e) {
-    // 历史不存在时静默（新用户）
-  }
-}
-onMounted(loadHistory)
 const busy = ref(false)
-const result = ref(null)
-const error = ref('')
+const queryError = ref('')
+const abortedNotice = ref('')
+const queryResult = ref(null)
+
+// 对照基线：当期 ACTIVE 快照的分析信封（供上下文条展示快照/业务时间/口径版本/质量状态与告警）
+const base = useAnalysis({ fetcher: (params, signal) => api.overview({}, { signal }), rowKeys: ENDPOINT_ROW_KEYS.overview })
+const { context: baseContext, state, error, load: loadBase, cancel: cancelBase } = base
+
+// 历史记录：/ai/history/my 返回裸数组，失败必须显式提示（不再静默）
+const history = ref([])
+const historyError = ref('')
+
+// 提问请求序号守卫：新提问发起时取消上一次在途请求，并丢弃过期响应
+let askSeq = 0
+let askController = null
+const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
 const recommended = [
   '最近 7 天销售额变化趋势如何？',
@@ -110,26 +165,99 @@ const recommended = [
   '最新一期的 GMV 和退款率是多少？'
 ]
 
+const query = computed(() => (queryResult.value && queryResult.value.query) || {})
+const explanation = computed(() => (queryResult.value && queryResult.value.explanation) || {})
+const evidenceContext = computed(() => buildAiEvidenceContext(queryResult.value))
+const evidence = computed(() => evidenceContext.value.evidence || {})
+
+// 规则回退分支的证据快照是占位串 'unknown'（SQL 里用 MAX(snapshot_id) 锁定最新快照），
+// 页面只如实说明后端给了什么、SQL 实际怎么锁的，不替它填一个快照号。
+const evidenceSnapshotText = computed(() => (isRealSnapshotId(evidence.value.snapshotId) ? evidence.value.snapshotId : '未提供'))
+const evidenceSnapshotHint = computed(() => {
+  if (isRealSnapshotId(evidence.value.snapshotId)) return ''
+  const raw = pickRawEvidenceSnapshot.value
+  return raw ? `（后端返回占位值 ${raw}；SQL 用 MAX(snapshot_id) 锁定最新快照）` : '（证据包未返回快照号）'
+})
+const pickRawEvidenceSnapshot = computed(() => {
+  const ev = (queryResult.value && queryResult.value.explanation && queryResult.value.explanation.evidence) || {}
+  return ev.snapshotId || ''
+})
+const resultTable = computed(() => aiResultTable(query.value.rows))
+
 const explanationSection = computed(() => {
-  if (!result.value || !result.value.explanation) return []
   const out = []
-  ;(result.value.explanation.possibleCauses || []).forEach((p) => out.push('可能原因：' + p.statement))
-  ;(result.value.explanation.suggestions || []).forEach((s) => out.push('建议：' + s.title + ' — ' + s.action))
+  ;(explanation.value.possibleCauses || []).forEach((p) => out.push('可能原因：' + p.statement))
+  ;(explanation.value.suggestions || []).forEach((s) => out.push('建议：' + s.title + ' — ' + s.action))
   return out
 })
 
-async function ask() {
-  if (!question.value.trim() || busy.value) return
-  busy.value = true
-  error.value = ''
-  result.value = null
+// 导出条件：本次问答已成功返回且结果表非空；失败/无结果时禁止导出
+const canExportResult = computed(() => Boolean(queryResult.value) && resultTable.value.rows.length > 0)
+const exportButtonText = computed(() => (canExportResult.value ? '导出本次查询 CSV' : '导出（暂无可导出结果）'))
+
+async function loadHistory() {
+  historyError.value = ''
   try {
-    result.value = await api.post('/ai/queries', { question: question.value.trim(), timeRange: '近30天' })
-    await loadHistory()
+    history.value = (await api.aiHistoryMine(8)) || []
   } catch (e) {
-    error.value = '请求失败：' + (e.message || e)
-  } finally {
-    busy.value = false
+    if (!isAbort(e)) historyError.value = (e && (e.message || e.code)) || '请求失败'
   }
 }
+
+async function ask() {
+  const text = question.value.trim()
+  if (!text || busy.value) return
+  const mySeq = ++askSeq
+  if (askController) askController.abort()
+  askController = typeof AbortController === 'function' ? new AbortController() : null
+  busy.value = true
+  queryError.value = ''
+  abortedNotice.value = ''
+  queryResult.value = null
+  try {
+    const resp = await api.aiQuery(text, '近30天', askController ? { signal: askController.signal } : undefined)
+    if (mySeq !== askSeq) return // 已有更新的提问，丢弃过期响应
+    queryResult.value = resp
+    await loadHistory()
+  } catch (e) {
+    if (mySeq !== askSeq) return
+    if (isAbort(e)) {
+      abortedNotice.value = '上一次提问已被新的提问取消，结果未展示（避免展示过期答案）。'
+      return
+    }
+    queryError.value = (e && (e.message || e.code)) || '请求失败'
+  } finally {
+    if (mySeq === askSeq) busy.value = false
+  }
+}
+
+function askPreset(q) {
+  question.value = q
+  ask()
+}
+
+function exportResult() {
+  if (!canExportResult.value) return
+  const generatedAt = new Date().toISOString()
+  const rows = query.value.rows
+  exportAnalysisCsv({
+    baseName: 'ai-query-result',
+    context: evidenceContext.value,
+    generatedAt,
+    // 导出表头带原始字段名，方便与证据里的 SQL 列一一对照
+    headers: aiResultCsvHeaders(rows),
+    rows: resultTable.value.rows
+  })
+}
+
+onMounted(() => {
+  loadBase({})
+  loadHistory()
+})
+
+onUnmounted(() => {
+  cancelBase()
+  askSeq += 1
+  if (askController) askController.abort()
+})
 </script>

@@ -1,24 +1,21 @@
 <template>
   <div>
-    <div class="page-title">数据流水线（演示控制台）</div>
+    <div class="page-title">数据流水线</div>
     <div class="chart-box">
-      <div class="chart-title">一键演示：生成并分析</div>
+      <div class="chart-title">触发一次采集与流水线实例（分析平台侧，不调用模拟商城生成器）</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <label style="font-size:13px">场景
-          <select v-model="scenario" style="margin-left:6px;padding:4px">
-            <option v-for="s in scenarioList" :key="s.code" :value="s.code">{{ s.label }}</option>
-          </select>
+        <label style="font-size:13px">业务时间
+          <input v-model="businessDate" type="date" style="margin-left:6px;padding:4px">
         </label>
-        <label style="font-size:13px">用户数
-          <input v-model.number="userCount" type="number" min="10" style="width:70px;margin-left:6px;padding:4px">
+        <label style="font-size:13px">运行环境
+          <input v-model.number="runtimeProfileId" type="number" min="1" style="width:70px;margin-left:6px;padding:4px">
         </label>
-        <label style="font-size:13px">窗口
-          <input v-model="startDate" type="date" style="margin-left:6px;padding:4px"> ~
-          <input v-model="endDate" type="date" style="padding:4px">
-        </label>
-        <button @click="runDemo" :disabled="busy" style="padding:6px 16px;background:#3b82f6;color:#fff;border:none;border-radius:6px">
-          {{ busy ? '运行中…' : '生成并分析（一键）' }}
+        <button @click="runOnce" :disabled="busy" style="padding:6px 16px">
+          {{ busy ? '运行中…' : '触发采集并创建流水线实例' }}
         </button>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#6b7280">
+        说明：事件由外部模拟商城按统一契约写入事件目录，分析平台只做采集与编排，不再内置“生成订单”入口（指导书 §18.4）。
       </div>
       <div v-if="runResult" style="margin-top:12px;font-size:13px">
         流水线 run#{{ runResult.runId }}：{{ runResult.status }}
@@ -59,33 +56,23 @@
 import { onMounted, ref } from 'vue'
 import api from '../api'
 
-const scenario = ref('normal')
-const scenarioList = ref([])
-const userCount = ref(50)
-const startDate = ref(new Date(Date.now() - 86400000).toISOString().slice(0, 10))
-const endDate = ref(new Date().toISOString().slice(0, 10))
+const businessDate = ref(new Date().toISOString().slice(0, 10))
+const runtimeProfileId = ref(1)
 const busy = ref(false)
 const runs = ref([])
 const runResult = ref(null)
 
-async function runDemo() {
+async function runOnce() {
   busy.value = true
   runResult.value = null
   try {
-    // 一键演示（§3.5.2）：生成 → 采集（发布由定时器完成）→ 流水线 → 快照
-    await api.generatorRun({
-      userCount: userCount.value, productCount: 0, eventsPerSecond: 2,
-      baseConversionRate: 0.04,
-      startTime: startDate.value + 'T09:00:00', endTime: endDate.value + 'T18:00:00',
-      randomSeed: 20260906, dirtyDataRate: 0, scenario: scenario.value
-    })
-    // 等待 outbox 发布（10s 轮询批次），手动补一轮
-    await new Promise((r) => setTimeout(r, 3000))
+    // 采集一次事件目录（发布由定时器完成），再创建流水线实例
     await api.ingestionRun()
+    await new Promise((r) => setTimeout(r, 3000))
     runResult.value = await api.createPipelineRun({
-      runtimeProfileId: 1, pipelineCode: 'DAILY_CORE',
-      businessTime: startDate.value + 'T00:00:00', sourceDataVersion: 'demo-' + Date.now()
-    }, 'demo-' + Date.now())
+      runtimeProfileId: runtimeProfileId.value, pipelineCode: 'DAILY_CORE',
+      businessTime: businessDate.value + 'T00:00:00', sourceDataVersion: 'manual-' + Date.now()
+    }, 'manual-' + Date.now())
     await loadRuns()
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
@@ -103,8 +90,5 @@ async function retry(id) {
   await loadRuns()
 }
 
-onMounted(async () => {
-  await loadRuns()
-  try { scenarioList.value = await api.scenarios() } catch (e) { /* 无场景表时忽略 */ }
-})
+onMounted(loadRuns)
 </script>

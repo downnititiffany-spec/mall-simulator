@@ -41,9 +41,12 @@ analytics-server/warehouse-pipeline/tests/r6-smoke-warehouse/
 
 # ── 单进程发布产物（由 build-web-and-package.ps1 生成，不入库）──
 mall-simulator/src/main/resources/static/
+# 分析平台前端产物（R7-4 前端拆分：分析前端进 platform-app，商城前端进 mall-simulator）
+analytics-server/platform-app/src/main/resources/static/
 
 # ── 参考/备份/临时目录（第三方代码与历史备份不入库）──
-借鉴项目/
+references/sample-projects/
+references/papers/visual-checks/
 text-to-sql/
 backups/
 tmp/
@@ -57,3 +60,11 @@ Thumbs.db
 token.txt
 r4-*.json
 platform-r4*.log
+
+# ── 运行时状态（本机跑出来的，不入库）──
+# Spark/Hive 本地元数据库（与 metastore_db 同性质，R7 运行在仓库根生成）
+derby-metastore/
+# R7-3 指标导出暂存目录（发布器的中间产物，含失败现场）
+metric-staging/
+# 商城模拟器本地草稿目录
+mall-simulator/.freebuff/

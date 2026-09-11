@@ -77,13 +77,14 @@ public class PlatformDataSources {
     /**
      * analytics_metric 只读数据源（R1 接线）：metric_read 账号，DB 层仅 SELECT 权限
      * （init-three-dbs.sql 已授权）。AI SqlExecutor 与看板只读链路使用；
-     * 未配置时返回 null（SqlExecutor 以 required=false 注入，其降级策略见该类）。
+     * 未配置时返回 null —— 消费方必须 fail-closed（R7-4 起 SqlExecutor 已取消回退主源，
+     * 见 SqlExecutor#effectiveDataSource），绝不允许退回 analytics_meta 取数（§17.1）。
      */
     @Bean("metricReadDataSource")
     public DataSource metricReadDataSource(Environment env) {
         String url = env.getProperty("platform.metric.read.url");
         if (url == null || url.isBlank()) {
-            // 未配置 metric 只读源时返回 null：SqlExecutor 以 required=false 注入并回退主源
+            // 返回 null 仅表示"本机没配只读源"；消费方据此拒绝执行，而不是改用元数据库
             return null;
         }
         HikariDataSource ds = DataSourceBuilder.create()

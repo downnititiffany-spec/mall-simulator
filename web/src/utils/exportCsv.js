@@ -1,15 +1,15 @@
-// CSV 导出工具（运营分析结果落地）
-export function exportCSV(filename, headers, rows) {
-  // 表头与行数据 → CSV（含 BOM 保证 Excel 中文不乱码）
-  const esc = (v) => {
-    const s = v === null || v === undefined ? '' : String(v)
-    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
-  }
-  const lines = [headers.map(esc).join(',')]
-  for (const r of rows) {
-    lines.push(r.map(esc).join(','))
-  }
-  const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+// CSV 下载层：负责浏览器动作（BOM / Blob / 触发下载），拼装逻辑在 utils/csv.js
+import { buildCsvText, buildExportFilename } from './csv'
+
+/**
+ * 导出 CSV（自动携带当前 filters、snapshotId 与生成时间）。
+ * @param {{baseName: string, context: object, headers: string[], rows: unknown[][], generatedAt?: string}} input
+ */
+export function exportAnalysisCsv({ baseName, context, headers, rows, generatedAt }) {
+  const at = generatedAt || new Date().toISOString()
+  const filename = buildExportFilename({ baseName, context, generatedAt: at })
+  const text = buildCsvText({ context, generatedAt: at, headers, rows })
+  const blob = new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -18,4 +18,5 @@ export function exportCSV(filename, headers, rows) {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+  return filename
 }

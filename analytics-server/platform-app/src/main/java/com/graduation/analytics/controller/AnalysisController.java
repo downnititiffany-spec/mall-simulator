@@ -1,13 +1,13 @@
 package com.graduation.analytics.controller;
 
 import com.graduation.analytics.analysis.AnalysisService;
-import com.graduation.analytics.analysis.AnalysisService.ActiveDay;
-import com.graduation.analytics.analysis.AnalysisService.FunnelStage;
-import com.graduation.analytics.analysis.AnalysisService.Overview;
-import com.graduation.analytics.analysis.AnalysisService.ProductRankItem;
-import com.graduation.analytics.analysis.AnalysisService.SalesDay;
-import com.graduation.analytics.analysis.RfmService;
-import com.graduation.analytics.analysis.RfmService.RfmReport;
+import com.graduation.analytics.analysis.AnalysisService.FunnelData;
+import com.graduation.analytics.analysis.AnalysisService.OverviewData;
+import com.graduation.analytics.analysis.AnalysisService.ProductsData;
+import com.graduation.analytics.analysis.AnalysisService.RfmData;
+import com.graduation.analytics.analysis.AnalysisService.SalesData;
+import com.graduation.analytics.analysis.AnalysisService.UsersData;
+import com.graduation.analytics.analysis.AnalysisViewModel;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +18,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * 专题分析接口（§24.3）：销售/商品/漏斗/用户 + 大盘。
  * 固定看板数据源：不调用大模型，普通员工直接可用。
+ *
+ * <p>R7-4 看板切换：URL 与查询参数**保持不变**（前端 web/src/api.js 不用改），
+ * 变化只在 {@code ApiResponse.data} 里 —— 由裸 DTO 换成统一信封 {@link AnalysisViewModel}
+ * （契约 docs/contracts/analysis-viewmodel-r7-4.md §2）。控制器不做任何聚合与兜底，
+ * 只做参数解析和透传（§18.1 数据分析边界）。</p>
+ *
+ * <p>参数兼容说明：{@code from/to/topN/date/limit} 在本层只用于回显（服务端按 ADS 物化粒度取值，
+ * 不按事件时间重算），因此旧前端的传参仍然被接受、被原样回显，但不再影响数据；
+ * 新增可选的 {@code snapshotId}，不传则服务端取 ACTIVE 快照并在响应中回传。</p>
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -30,46 +38,58 @@ import java.util.List;
 public class AnalysisController {
 
     private final AnalysisService analysisService;
-    private final RfmService rfmService;
 
+    /** 运营总览（§3.1） */
     @GetMapping("/dashboards/overview")
-    public ApiResponse<Overview> overview(
+    public ApiResponse<AnalysisViewModel<OverviewData>> overview(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ApiResponse.ok(analysisService.overview(from, to), TraceContext.create().traceId());
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String snapshotId) {
+        return ApiResponse.ok(analysisService.overview(snapshotId, from, to), TraceContext.create().traceId());
     }
 
+    /** 销售分析（§3.2） */
     @GetMapping("/analysis/sales")
-    public ApiResponse<List<SalesDay>> sales(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ApiResponse.ok(analysisService.salesTrend(from, to), TraceContext.create().traceId());
+    public ApiResponse<AnalysisViewModel<SalesData>> sales(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String snapshotId) {
+        return ApiResponse.ok(analysisService.sales(snapshotId, from, to), TraceContext.create().traceId());
     }
 
+    /** 商品分析：热度榜 + 转化（§3.3） */
     @GetMapping("/analysis/products")
-    public ApiResponse<List<ProductRankItem>> products(
+    public ApiResponse<AnalysisViewModel<ProductsData>> products(
             @RequestParam(defaultValue = "10") int topN,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ApiResponse.ok(analysisService.productRank(topN, from, to), TraceContext.create().traceId());
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String snapshotId) {
+        return ApiResponse.ok(analysisService.products(snapshotId, topN, from, to),
+                TraceContext.create().traceId());
     }
 
+    /** 行为漏斗（§3.4）；date 兼容旧前端传参，只回显不参与计算 */
     @GetMapping("/analysis/funnel")
-    public ApiResponse<List<FunnelStage>> funnel(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ApiResponse.ok(analysisService.funnelDay(date), TraceContext.create().traceId());
+    public ApiResponse<AnalysisViewModel<FunnelData>> funnel(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String snapshotId) {
+        return ApiResponse.ok(analysisService.funnel(snapshotId, date), TraceContext.create().traceId());
     }
 
+    /** 用户分群（§3.5）：RFM 分层 + 生命周期 + 偏好（只返回聚合，不含个人明细） */
     @GetMapping("/analysis/users")
-    public ApiResponse<List<ActiveDay>> users(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ApiResponse.ok(analysisService.userActiveTrend(from, to), TraceContext.create().traceId());
+    public ApiResponse<AnalysisViewModel<UsersData>> users(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String snapshotId) {
+        return ApiResponse.ok(analysisService.users(snapshotId, from, to), TraceContext.create().traceId());
     }
 
-    /** RFM 用户分层（§21.6）：八类分布 + TopN 用户（有效支付口径） */
+    /** RFM 用户分层（§21.6、契约 §3.6）：八类分布矩阵 + 口径版本；limit 兼容旧前端传参，只回显 */
     @GetMapping("/analysis/rfm")
-    public ApiResponse<RfmReport> rfm(@RequestParam(defaultValue = "50") int limit) {
-        return ApiResponse.ok(rfmService.rfmReport(limit), TraceContext.create().traceId());
+    public ApiResponse<AnalysisViewModel<RfmData>> rfm(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String snapshotId) {
+        return ApiResponse.ok(analysisService.rfm(snapshotId, limit), TraceContext.create().traceId());
     }
 }

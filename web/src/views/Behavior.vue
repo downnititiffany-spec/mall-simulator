@@ -1,66 +1,130 @@
 <template>
   <div>
-    <div class="page-title">用户行为分析
-      <button style="float:right;font-size:12px;padding:4px 12px" :disabled="!stages.length" @click="doExport">导出 CSV</button>
+    <div class="page-title">用户行为分析</div>
+
+    <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
+      <label style="font-size:13px;color:#374151">活跃趋势日期范围：</label>
+      <input type="date" v-model="from" style="padding:4px" />
+      <span style="color:#9ca3af">至</span>
+      <input type="date" v-model="to" style="padding:4px" />
+      <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
+      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
+      <span style="font-size:12px;color:#9ca3af">漏斗按快照整体口径返回，不受日期范围影响</span>
     </div>
-    <div class="chart-box" style="display:flex;gap:10px;align-items:center;padding:10px 14px">
-      <label style="font-size:13px;color:#374151">分析日期：</label>
-      <input type="date" v-model="date" style="padding:4px" />
-      <button style="font-size:12px" @click="load">加载</button>
-    </div>
+
+    <AnalysisContext :context="context || {}" :state="state" :error="error" />
+
     <div class="chart-box">
-      <div class="chart-title">转化漏斗（宽松用户口径，去重用户）</div>
-      <BaseChart :option="funnelOption" :height="300" />
+      <div class="chart-title">转化漏斗（去重用户）</div>
+      <div class="window-note">
+        观察窗口：{{ windowNote }}
+        <template v-if="overallBuyRate !== null">；整体支付转化率（后端快照口径）：{{ formatPercent(overallBuyRate) }}</template>
+      </div>
+      <ChartState :option="funnelOpt" :state="state" :error="error" :height="300"
+                  empty-text="当前快照没有漏斗阶段数据" />
     </div>
+
     <div class="chart-box">
-      <div class="chart-title">行为类型分布（当日）</div>
-      <BaseChart :option="typeOption" :height="260" />
+      <div class="chart-title">活跃趋势（活跃用户 / 行为量）</div>
+      <ChartState :option="trendOpt" :state="state" :error="error" :height="280"
+                  empty-text="所选日期范围内没有活跃趋势数据" />
+    </div>
+
+    <div class="table-box">
+      <div class="chart-title">漏斗阶段明细（转化率取后端 conversion_rate，前端不重算）</div>
+      <table>
+        <thead>
+          <tr><th>阶段</th><th>用户数</th><th>转化率</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in stages" :key="s.stage">
+            <td>{{ s.label || s.stage }}</td>
+            <td class="mono">{{ formatInteger(s.users) }}</td>
+            <td class="mono">{{ formatPercent(s.rate) }}</td>
+          </tr>
+          <tr v-if="stages.length === 0"><td colspan="3" class="el-empty">当前快照没有漏斗阶段数据</td></tr>
+        </tbody>
+      </table>
+      <div class="table-hint">
+        说明：行为类型构成、渠道/分类维度字段本期未在分析接口发布（契约 §3.4），页面不自行拆分行为类型。
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
-import BaseChart from '../components/BaseChart.vue'
-import { exportCSV } from '../utils/exportCsv'
+import { useAnalysis } from '../composables/useAnalysis'
+import { formatInteger, formatPercent } from '../utils/number'
+import { readEnvelope } from '../utils/envelope'
+import { activeTrendOption, funnelOption } from '../utils/chartOptions'
+import { exportAnalysisCsv } from '../utils/exportCsv'
+import AnalysisContext from '../components/AnalysisContext.vue'
+import ChartState from '../components/ChartState.vue'
 
-const stages = ref([])
-const behaviorCounts = ref({ view: 0, favorite: 0, cart_add: 0, cart_remove: 0, search: 0 })
+const isoDay = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
+const from = ref(isoDay(-6))
+const to = ref(isoDay(0))
 
-const STAGE_NAMES = { view: '浏览', intent: '意向(收藏/加购)', order: '创建订单', pay: '支付成功' }
-const date = ref(new Date().toISOString().slice(0, 10))
-const doExport = () => {
-  exportCSV(`behavior-funnel-${date.value}.csv`,
-    ['阶段', '用户数', '转化率'],
-    stages.value.map((s) => [STAGE_NAMES[s.stage] || s.stage, s.users, s.rate === null || s.rate === undefined ? '' : (Number(s.rate) * 100).toFixed(1) + '%']))
-}
-
-async function load() {
-  try {
-    stages.value = await api.funnel(date.value)
-  } catch (e) {
-    // 无数据时多个空状态即可
+// 一次请求同时取漏斗与活跃趋势：漏斗不接日期，趋势接日期范围
+async function fetchBehavior(params, signal) {
+  const [funnelRaw, overviewRaw] = await Promise.all([
+    api.funnel({}, { signal }),
+    api.overview({ from: params.from, to: params.to }, { signal })
+  ])
+  const funnel = readEnvelope(funnelRaw)
+  const overview = readEnvelope(overviewRaw)
+  const warnings = [...funnel.warnings, ...overview.warnings]
+  return {
+    snapshotId: funnel.snapshotId || overview.snapshotId,
+    businessTime: funnel.businessTime || overview.businessTime,
+    dataUpdatedAt: funnel.dataUpdatedAt || overview.dataUpdatedAt,
+    definitionVersion: funnel.definitionVersion || overview.definitionVersion,
+    qualityStatus:
+      funnel.qualityStatus === 'UNKNOWN' && overview.qualityStatus !== 'UNKNOWN'
+        ? overview.qualityStatus
+        : funnel.qualityStatus,
+    filters: { ...overview.filters, ...funnel.filters },
+    warnings: [...new Set(warnings)],
+    data: {
+      stages: funnel.data.stages || [],
+      overallBuyRate: funnel.data.overallBuyRate ?? null,
+      windowNote: funnel.data.windowNote || '未提供观察窗口说明',
+      activeTrend: overview.data.activeTrend || []
+    }
   }
 }
+
+const analysis = useAnalysis({
+  fetcher: fetchBehavior,
+  rowKeys: ['stages', 'activeTrend'],
+  defaults: { stages: [], activeTrend: [], overallBuyRate: null, windowNote: '' }
+})
+const { data, context, state, error, loading, exportable, exportContext } = analysis
+
+const stages = computed(() => (Array.isArray(data.value.stages) ? data.value.stages : []))
+const overallBuyRate = computed(() => (data.value.overallBuyRate === null || data.value.overallBuyRate === undefined ? null : data.value.overallBuyRate))
+const windowNote = computed(() => data.value.windowNote || '未提供观察窗口说明')
+const funnelOpt = computed(() => funnelOption(stages.value))
+const trendOpt = computed(() => activeTrendOption(data.value.activeTrend))
+
+const load = () => analysis.load({ from: from.value, to: to.value })
+
+function doExport() {
+  exportAnalysisCsv({
+    baseName: 'behavior-funnel',
+    context: exportContext.value,
+    headers: ['阶段', '阶段编码', '用户数', '转化率'],
+    rows: stages.value.map((s) => [s.label || s.stage, s.stage, s.users, formatPercent(s.rate, 2, '')])
+  })
+}
+
 onMounted(load)
-
-const funnelOption = computed(() => ({
-  tooltip: { trigger: 'item' },
-  series: [{
-    type: 'funnel', left: 60, top: 20, bottom: 20, width: '70%', minSize: '20%',
-    label: { formatter: '{b}: {c} 人' },
-    data: stages.value.map((s) => ({
-      name: { view: '浏览', intent: '意向(收藏/加购)', order: '创建订单', pay: '支付成功' }[s.stage] || s.stage,
-      value: s.users
-    }))
-  }]
-}))
-
-const typeOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  xAxis: { type: 'category', data: Object.keys(behaviorCounts.value) },
-  yAxis: { type: 'value' },
-  series: [{ name: '次数', type: 'bar', data: Object.values(behaviorCounts.value), itemStyle: { color: '#3b82f6' } }]
-}))
+onBeforeUnmount(() => analysis.cancel())
 </script>
+
+<style scoped>
+.window-note { font-size: 12px; color: var(--color-muted-foreground); margin-bottom: 8px; }
+.table-hint { font-size: 12px; color: #94A3B8; margin-top: 8px; }
+</style>

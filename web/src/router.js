@@ -11,9 +11,7 @@ const routes = [
   { path: '/sales', name: 'sales', component: () => import('./views/Sales.vue'), meta: { title: '销售分析', requiresAuth: true } },
   { path: '/pipeline', name: 'pipeline', component: () => import('./views/Pipeline.vue'), meta: { title: '数据流水线', requiresAuth: true } },
   { path: '/ops', name: 'ops', component: () => import('./views/Ops.vue'), meta: { title: '运维中心', requiresAuth: true } },
-  { path: '/admin-products', name: 'admin-products', component: () => import('./views/AdminProducts.vue'), meta: { title: '商品管理', requiresAuth: true } },
   { path: '/decisions', name: 'decisions', component: () => import('./views/Decisions.vue'), meta: { title: '决策中心', requiresAuth: true } },
-  { path: '/mall', name: 'mall', component: () => import('./views/Mall.vue'), meta: { title: '商城演示', requiresAuth: true } },
   { path: '/ai', name: 'ai', component: () => import('./views/AiAssistant.vue'), meta: { title: '智能分析助手', requiresAuth: true } }
 ]
 
@@ -23,8 +21,9 @@ const router = createRouter({
 })
 
 // 登录守卫：未登录访问受保护页面 → /login；已登录访问 /login → /
+// 令牌键名与 api.js 一致（analytics_token）；分析平台不读写商城侧键名（§18.4 边界）
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('mall_token')
+  const token = localStorage.getItem('analytics_token')
   if (to.path === '/login' && token) {
     next('/')
     return

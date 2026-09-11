@@ -3,9 +3,10 @@ import axios from 'axios'
 // API 客户端：统一处理 traceId / 错误码（§24.2 约定）
 const client = axios.create({ baseURL: '/api/v1', timeout: 30000 })
 
-// 登录态存储（localStorage 键名与后端约定一致）
-const TOKEN_KEY = 'mall_token'
-const USER_KEY = 'mall_user'
+// 登录态存储（分析平台自有键名；商城前端用 mall_token/mall_user，两侧互不读取——
+// 越界即由 web/tests/boundary.test.js 拦截，见指导书 V2.0 §18.4）
+const TOKEN_KEY = 'analytics_token'
+const USER_KEY = 'analytics_user'
 
 const readToken = () => localStorage.getItem(TOKEN_KEY) || ''
 
@@ -61,8 +62,9 @@ client.interceptors.response.use(
 )
 
 export default {
-  post: (url, body) => client.post(url, body),
-  get: (url, params) => client.get(url, { params }),
+  // 第三个参数可传 { signal }（AbortController）：新提问发起时取消上一次在途请求（§18.4）
+  post: (url, body, options) => client.post(url, body, { ...(options || {}) }),
+  get: (url, params, options) => client.get(url, { params, ...(options || {}) }),
   // 认证（登录 / 登出 / 当前用户）
   login: async (username, password) => {
     const data = await client.post('/auth/login', { username, password })
@@ -78,28 +80,40 @@ export default {
     }
   },
   me: () => client.get('/auth/me'),
-  // 大盘（§25.1 首页信息层级）
-  overview: () => client.get('/dashboards/overview'),
-  // 专题
-  sales: (from, to) => client.get('/analysis/sales', { params: { from, to } }),
-  products: (topN, from, to) => client.get('/analysis/products', { params: { topN, from, to } }),
-  funnel: (date) => client.get('/analysis/funnel', { params: { date } }),
-  users: (from, to) => client.get('/analysis/users', { params: { from, to } }),
+  // 大盘（§25.1 首页信息层级）：响应 data 为统一信封，见契约 analysis-viewmodel-r7-4 §2
+  overview: (params = {}, options) => client.get('/dashboards/overview', { params, ...(options || {}) }),
+  // 专题分析（响应 data 均为统一信封）
+  sales: (params = {}, options) => client.get('/analysis/sales', { params, ...(options || {}) }),
+  products: (params = {}, options) => client.get('/analysis/products', { params, ...(options || {}) }),
+  funnel: (params = {}, options) => client.get('/analysis/funnel', { params, ...(options || {}) }),
+  users: (params = {}, options) => client.get('/analysis/users', { params, ...(options || {}) }),
+  rfm: (params = {}, options) => client.get('/analysis/rfm', { params, ...(options || {}) }),
   // 流水线
   createPipelineRun: (body, idempotencyKey) =>
     client.post('/pipeline-runs', body, { headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {} }),
   pipelineRuns: (limit = 10) => client.get('/pipeline-runs', { params: { limit } }),
   pipelineRun: (id) => client.get(`/pipeline-runs/${id}`),
   retryPipelineRun: (id) => client.post(`/pipeline-runs/${id}/retry`),
-  // 指标/快照
-  metricsOverview: (snapshotId) => client.get('/metrics/overview', { params: { snapshotId } }),
-  snapshots: (limit = 10) => client.get('/metrics/snapshots', { params: { limit } }),
-  // 生成器（演示控制台）
-  generatorRun: (body) => client.post('/generator/runs', body),
-  scenarios: () => client.get('/generator/scenarios'),
-  // 采集
+  // 指标/快照（非统一信封接口：/metrics/overview 返回指标数组，/metrics/snapshots 返回快照数组）
+  metricsOverview: (snapshotId, options) =>
+    client.get('/metrics/overview', { params: snapshotId ? { snapshotId } : {}, ...(options || {}) }),
+  snapshots: (limit = 10, options) => client.get('/metrics/snapshots', { params: { limit }, ...(options || {}) }),
+  quality: (limit = 20, options) => client.get('/metrics/quality', { params: { limit }, ...(options || {}) }),
+  // AI（问答 + 审计）：返回证据包结构，非统一信封
+  aiQuery: (question, timeRange = '近30天', options) =>
+    client.post('/ai/queries', { question, timeRange }, { ...(options || {}) }),
+  aiHistoryMine: (limit = 8, options) => client.get('/ai/history/my', { params: { limit }, ...(options || {}) }),
+  aiAuditHistory: (limit = 20, options) => client.get('/ai/audit/history', { params: { limit }, ...(options || {}) }),
+  aiAuditCalls: (limit = 20, options) => client.get('/ai/audit/calls', { params: { limit }, ...(options || {}) }),
+  // 决策中心：返回决策任务/评价数组，非统一信封
+  decisions: (limit = 20, options) => client.get('/decisions', { params: { limit }, ...(options || {}) }),
+  decisionEvaluations: (id, options) => client.get(`/decisions/${id}/evaluations`, { ...(options || {}) }),
+  decisionAction: (id, action, body = {}) => client.post(`/decisions/${id}/${action}`, body),
+  // 用户管理（运维页，admin 专属）
+  adminUsers: (options) => client.get('/admin/users', { ...(options || {}) }),
+  adminCreateUser: (body) => client.post('/admin/users', body),
+  adminUserAction: (id, action, body) => client.post(`/admin/users/${id}/${action}`, body),
+  // 采集（分析平台侧采集触发；模拟商城生成器接口已迁出分析前端）
   ingestionRun: () => client.post('/ingestion/runs'),
-  ingestionStatus: () => client.get('/ingestion/status'),
-  // 商城（演示下单链路）
-  mallOrders: () => client.get('/mall/orders')
+  ingestionStatus: () => client.get('/ingestion/status')
 }

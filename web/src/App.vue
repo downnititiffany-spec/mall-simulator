@@ -37,7 +37,8 @@ const ROLE_NAMES = { admin: '系统管理员', operator: '运营专员', analyst
 
 const readUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('mall_user') || 'null')
+    // 键名与分析前端 api.js 一致（analytics_user）；不读商城侧键名（§18.4 边界）
+    return JSON.parse(localStorage.getItem('analytics_user') || 'null')
   } catch (e) {
     return null
   }
@@ -66,7 +67,7 @@ const userLine = computed(() => {
 
 // 导航按角色过滤：admin 可见全部页面，其余角色隐藏「数据流水线/运维中心」
 const allRoutes = router.options.routes.filter((r) => r.meta && r.meta.title && r.path !== '/login')
-const ADMIN_ONLY_PATHS = ['/pipeline', '/ops', '/admin-products']
+const ADMIN_ONLY_PATHS = ['/pipeline', '/ops']
 const nav = computed(() => {
   const isAdmin = user.value && user.value.role === 'admin'
   return allRoutes.filter((r) => isAdmin || !ADMIN_ONLY_PATHS.includes(r.path))

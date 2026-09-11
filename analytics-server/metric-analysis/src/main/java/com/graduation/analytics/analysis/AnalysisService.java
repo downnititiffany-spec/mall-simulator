@@ -1,302 +1,463 @@
 package com.graduation.analytics.analysis;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.graduation.analytics.metric.entity.MetricValue;
+import com.graduation.analytics.metric.MetricAdsReader;
+import com.graduation.analytics.metric.MetricQualityGate;
 import com.graduation.analytics.metric.MetricStore;
-import com.graduation.analytics.contracts.EventContract;
-import com.graduation.analytics.contracts.EventEnvelope;
+import com.graduation.analytics.metric.MySqlMetricStore;
+import com.graduation.analytics.metric.dict.MetricDefinition;
+import com.graduation.analytics.metric.dict.MetricDefinitionMapper;
+import com.graduation.analytics.metric.entity.MetricSnapshot;
+import com.graduation.analytics.metric.entity.MetricValue;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Stream;
 
 /**
- * 专题分析服务（阶段 7，§5.5/§5.6）：从 landing/events 按口径实时聚合。
- * 口径唯一来源 docs/contracts/metric-dictionary.md v1；与 MetricCalculator 共享语义。
- * 性能：事件解析为耗时路径（10 万级事件 ~2-3s），指标只随快照发布变化 →
- * 30s TTL 缓存（§2.2 看板 P95 ≤2s 验收；实测见 experiments/perf-web-*.json）。
+ * 专题分析服务（R7-4 契约 docs/contracts/analysis-viewmodel-r7-4.md，指导书 §18.1/§18.2/§24.6）。
+ *
+ * <p>数据来源唯一：**指标库只读源**。数值指标取 {@code metric_value}（§3.1/§3.2 明确"不得重算"），
+ * 图表语义数据取 MetricAdsCatalog 白名单内的 ADS 宽表。R7-4 之前的旧原型（按落地区事件 JSON 实时聚合）
+ * 已整体删除：分析包内不读 JSON 文件、不查商城业务表（订单/商品等明细表）、不在本层重算口径（§18.1）。</p>
+ *
+ * <p>快照一致性：一次请求只解析一个 snapshotId（请求指定优先，否则取 ACTIVE），
+ * 之后所有查询都带着它，并在响应信封里回显（契约 §1.2，§17.5 第 8 步）。</p>
+ *
+ * <p>{@code from/to}、{@code topN} 只作为筛选回显：ADS 宽表本身就是"快照 + dt"粒度的物化结果，
+ * 服务端不按事件时间重算，因此它们不参与计算（契约 §1.3 不允许回退到明细层）。</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AnalysisService {
 
-    private static final long CACHE_TTL_MS = 30_000;
-    private final java.util.concurrent.ConcurrentHashMap<String, CachedEntry> cache =
-            new java.util.concurrent.ConcurrentHashMap<>();
+    // ── 指标库 ADS 表名（只允许 MetricAdsCatalog 白名单内的表） ────────────────
+    private static final String T_SALE_TREND = "ads_sale_trend_m";
+    private static final String T_FUNNEL = "ads_behavior_funnel_m";
+    private static final String T_ACTIVE_TREND = "ads_active_trend_m";
+    private static final String T_HOT_PRODUCT = "ads_hot_product_m";
+    private static final String T_PRODUCT_CONVERSION = "ads_product_conversion_m";
+    private static final String T_DATA_QUALITY = "ads_data_quality_m";
 
-    private record CachedEntry(Object value, long expiresAt) {
+    // ── 销售分析取值的指标码（一律取 metric_value，不重算，契约 §3.2） ──────────
+    private static final String METRIC_GMV = "gmv";
+    private static final String METRIC_NET_SALE = "net_sale";
+    private static final String METRIC_REFUND_RATE = "refund_rate";
+    private static final String METRIC_FULL_REFUND_RATE = "full_refund_rate";
+
+    /** 漏斗阶段规范顺序与中文标签（页面必须显示阶段语义，§18.2 用户行为） */
+    private static final List<String> FUNNEL_ORDER = List.of("view", "intent", "order", "pay");
+    private static final Map<String, String> FUNNEL_LABELS = Map.of(
+            "view", "浏览", "intent", "意向", "order", "下单", "pay", "支付");
+
+    private static final int DEFAULT_TOP_N = 10;
+    private static final int MAX_TOP_N = 100;
+
+    private static final DateTimeFormatter ISO_SECONDS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+    private final MetricAdsReader adsReader;
+    private final MySqlMetricStore metricStore;
+    private final MetricQualityGate qualityGate;
+    private final MetricDefinitionMapper definitionMapper;
+    private final RfmService rfmService;
+
+    // ── 端点数据结构（图表语义数据，不是 ECharts option） ──────────────────────
+
+    public record MetricItem(String metricCode, String metricName, BigDecimal value, String unit,
+                             String period, String definitionVersion) {
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> T cached(String key, java.util.function.Supplier<T> supplier) {
-        long now = System.currentTimeMillis();
-        CachedEntry hit = cache.get(key);
-        if (hit != null && hit.expiresAt() > now) {
-            return (T) hit.value();
-        }
-        T value = supplier.get();
-        cache.put(key, new CachedEntry(value, now + CACHE_TTL_MS));
-        return value;
+    public record DictionaryItem(String metricCode, String metricName, String formula, String unit) {
     }
 
-    /** 测试/管理：清缓存 */
-    public void clearCache() {
-        cache.clear();
+    /** 质量卡：规则条数 / 通过条数 / 未通过规则码（营业页质量状态的可展开明细） */
+    public record QualitySummary(int ruleCount, int passedCount, List<String> failedRules) {
     }
 
-    private static final Set<String> BEHAVIORS =
-            Set.of("view", "favorite", "cart_add", "cart_remove", "search");
-
-    private final ObjectMapper objectMapper;
-    private final Environment environment;
-    private final MetricStore metricStore;
-
-    // ── 输出 DTO ──────────────────────────────────────────────────────────
-
-    public record SalesDay(String date, long orderCount, BigDecimal saleAmount, long buyerCount) {
-    }
-
-    public record ProductRankItem(Long productId, String productName, String categoryName,
-                                  long pv, long fav, long cart, long buy, BigDecimal heat, int rank) {
-    }
-
-    public record FunnelStage(String stage, long users, BigDecimal rate) {
+    public record SalesTrendPoint(String date, long orderCount, BigDecimal saleAmount, long buyerCount,
+                                  BigDecimal avgOrderValue) {
     }
 
     public record ActiveDay(String date, long dau, long behaviorCount) {
     }
 
-    public record Overview(Map<String, Object> snapshotMetrics, List<SalesDay> salesTrend,
-                           List<ActiveDay> activeTrend, String snapshotId) {
+    public record OverviewData(List<MetricItem> metrics, List<SalesTrendPoint> salesTrend,
+                               List<ActiveDay> activeTrend, QualitySummary quality,
+                               List<DictionaryItem> metricDictionary) {
     }
 
-    // ── 数据装载（实时解析 events，按日过滤） ──────────────────────────────
+    public record SalesData(List<SalesTrendPoint> trend, BigDecimal gmv, BigDecimal netSale,
+                            BigDecimal refundRate, BigDecimal fullRefundRate, QualitySummary quality,
+                            List<Map<String, Object>> byCategory, List<Map<String, Object>> byRegion) {
+    }
 
-    private List<EventEnvelope> loadEvents(LocalDate from, LocalDate to) {
-        List<EventEnvelope> events = new ArrayList<>();
-        Path eventsDir = Path.of(environment.getProperty("mall.landing.path", "./landing")).resolve("events");
-        if (!Files.isDirectory(eventsDir)) {
-            return events;
+    public record HotProduct(long productId, String productName, BigDecimal heat, long pv, long fav,
+                             long cart, long buy, int rank) {
+    }
+
+    public record ProductConversion(long productId, long pvUsers, long buyUsers, BigDecimal conversionRate) {
+    }
+
+    public record ProductsData(List<HotProduct> hot, List<ProductConversion> conversion, int topN) {
+    }
+
+    public record FunnelStage(String stage, String label, long users, BigDecimal rate) {
+    }
+
+    public record FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote) {
+    }
+
+    public record UsersData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.LifecycleState> lifecycle,
+                            List<RfmService.CategoryPreference> preference, String ruleVersion) {
+    }
+
+    public record RfmData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.RfmSegment> rfmMatrix,
+                          String ruleVersion) {
+    }
+
+    // ── 运营总览（§3.1） ──────────────────────────────────────────────────────
+
+    public AnalysisViewModel<OverviewData> overview(String snapshotId, LocalDate from, LocalDate to) {
+        Map<String, Object> filters = new LinkedHashMap<>();
+        echoDateRange(filters, from, to);
+        echoRequestedSnapshot(filters, snapshotId);
+        Pinned pinned = pin(snapshotId);
+        if (pinned.snapshotId() == null) {
+            return AnalysisViewModel.empty(filters, pinned.warnings());
         }
-        try (Stream<Path> list = Files.list(eventsDir)) {
-            for (Path f : list.filter(p -> p.getFileName().toString().endsWith(".jsonl")).sorted().toList()) {
-                for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
-                    if (line.isBlank()) {
-                        continue;
-                    }
-                    try {
-                        EventEnvelope e = EventEnvelope.fromJson(line, objectMapper);
-                        if (e.eventTime() != null && e.eventTime().length() >= 10) {
-                            LocalDate eventDate = LocalDate.parse(e.eventTime().substring(0, 10));
-                            if (!eventDate.isBefore(from) && !eventDate.isAfter(to)) {
-                                events.add(e);
-                            }
-                        }
-                    } catch (Exception ex) {
-                        // 坏行跳过（采集层已隔离，此处防御）
-                    }
-                }
-            }
-        } catch (IOException e) {
-            log.warn("analysis load events failed: {}", e.getMessage());
+        String sid = pinned.snapshotId();
+        filters.put("snapshotId", sid);
+
+        List<DictionaryItem> dictionary = dictionary();
+        Map<String, String> names = new HashMap<>();
+        dictionary.forEach(item -> names.put(item.metricCode(), item.metricName()));
+        OverviewData data = new OverviewData(metrics(sid, names), salesTrend(sid), activeTrend(sid),
+                quality(sid), dictionary);
+        return view(pinned, filters, data, List.of());
+    }
+
+    // ── 销售分析（§3.2） ──────────────────────────────────────────────────────
+
+    public AnalysisViewModel<SalesData> sales(String snapshotId, LocalDate from, LocalDate to) {
+        Map<String, Object> filters = new LinkedHashMap<>();
+        echoDateRange(filters, from, to);
+        echoRequestedSnapshot(filters, snapshotId);
+        Pinned pinned = pin(snapshotId);
+        if (pinned.snapshotId() == null) {
+            return AnalysisViewModel.empty(filters, pinned.warnings());
         }
-        return events;
+        String sid = pinned.snapshotId();
+        filters.put("snapshotId", sid);
+
+        Map<String, BigDecimal> values = metricValueMap(sid);
+        // 分类/地区结构：本期没有对应 Hive ADS 与 MySQL 服务表，返回空数组并显式给出降级事实（契约 §3.2）
+        SalesData data = new SalesData(salesTrend(sid),
+                values.get(METRIC_GMV), values.get(METRIC_NET_SALE),
+                values.get(METRIC_REFUND_RATE), values.get(METRIC_FULL_REFUND_RATE),
+                quality(sid), List.of(), List.of());
+        return view(pinned, filters, data, List.of(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE));
     }
 
-    // ── 销售趋势（§5.6.2：order_paid 按日聚合） ────────────────────────────
+    // ── 商品分析（§3.3） ──────────────────────────────────────────────────────
 
-    public List<SalesDay> salesTrend(LocalDate from, LocalDate to) {
-        String key = "sales:" + from + ":" + to;
-        return cached(key, () -> {
-            Map<String, SalesAccum> byDay = new TreeMap<>();
-            for (EventEnvelope e : loadEvents(from, to)) {
-                if (!EventContract.ORDER_PAID.equals(e.eventType())) {
-                    continue;
-                }
-                String date = e.eventTime().substring(0, 10);
-                SalesAccum acc = byDay.computeIfAbsent(date, d -> new SalesAccum());
-                acc.orderCount++;
-                acc.saleAmount = acc.saleAmount.add(dec(e.payload().get("amount")));
-                acc.buyers.add(String.valueOf(e.payload().get("user_id")));
-            }
-            List<SalesDay> result = new ArrayList<>();
-            byDay.forEach((date, acc) -> result.add(new SalesDay(date, acc.orderCount,
-                    acc.saleAmount.setScale(2), acc.buyers.size())));
-            return result;
-        });
-    }
-
-    private static final class SalesAccum {
-        long orderCount = 0;
-        BigDecimal saleAmount = BigDecimal.ZERO;
-        final Set<String> buyers = new java.util.HashSet<>();
-    }
-
-    // ── 商品热度 TopN（§5.6.1/§21.7 对数权重） ─────────────────────────────
-
-    public List<ProductRankItem> productRank(int topN, LocalDate from, LocalDate to) {
-        String key = "products:" + topN + ":" + from + ":" + to;
-        return cached(key, () -> {
-            Map<String, BehaviorCount> byProduct = new HashMap<>();
-            for (EventEnvelope e : loadEvents(from, to)) {
-                if (!EventContract.BEHAVIOR.equals(e.eventType())) {
-                    continue;
-                }
-                String productId = str(e.payload().get("product_id"));
-                if (productId.isEmpty()) {
-                    continue;
-                }
-                BehaviorCount bc = byProduct.computeIfAbsent(productId, p -> new BehaviorCount());
-                switch (str(e.payload().get("behavior_type"))) {
-                    case "view" -> bc.pv++;
-                    case "favorite" -> bc.fav++;
-                    case "cart_add" -> bc.cart++;
-                    default -> {
-                    }
-                }
-            }
-            List<ProductRankItem> items = new ArrayList<>();
-            byProduct.forEach((productId, bc) -> {
-                double heat = 1.0 * Math.log1p(bc.pv) + 2.0 * Math.log1p(bc.fav)
-                        + 3.0 * Math.log1p(bc.cart) + 5.0 * Math.log1p(bc.buy);
-                items.add(new ProductRankItem(Long.valueOf(productId), "商品-" + productId, "",
-                        bc.pv, bc.fav, bc.cart, bc.buy,
-                        BigDecimal.valueOf(heat).setScale(4, RoundingMode.HALF_UP), 0));
-            });
-            items.sort((a, b) -> b.heat().compareTo(a.heat()));
-            List<ProductRankItem> ranked = new ArrayList<>();
-            for (int i = 0; i < Math.min(topN, items.size()); i++) {
-                ProductRankItem it = items.get(i);
-                ranked.add(new ProductRankItem(it.productId(), it.productName(),
-                        it.categoryName(), it.pv(), it.fav(), it.cart(), it.buy(), it.heat(), i + 1));
-            }
-            return ranked;
-        });
-    }
-
-    private static final class BehaviorCount {
-        long pv = 0;
-        long fav = 0;
-        long cart = 0;
-        long buy = 0;
-    }
-
-    // ── 漏斗（§21.4 宽松用户口径） ────────────────────────────────────────
-
-    public List<FunnelStage> funnelDay(LocalDate date) {
-        String key = "funnel:" + date;
-        return cached(key, () -> {
-            Set<String> view = new java.util.HashSet<>();
-            Set<String> intent = new java.util.HashSet<>();
-            Set<String> order = new java.util.HashSet<>();
-            Set<String> pay = new java.util.HashSet<>();
-            for (EventEnvelope e : loadEvents(date, date)) {
-                String userId = str(e.payload().get("user_id"));
-                switch (e.eventType()) {
-                    case EventContract.BEHAVIOR -> {
-                        String bt = str(e.payload().get("behavior_type"));
-                        if ("view".equals(bt)) {
-                            view.add(userId);
-                        } else if ("favorite".equals(bt) || "cart_add".equals(bt)) {
-                            intent.add(userId);
-                        }
-                    }
-                    case EventContract.ORDER_CREATED -> order.add(userId);
-                    case EventContract.ORDER_PAID -> pay.add(userId);
-                    default -> {
-                    }
-                }
-            }
-            List<FunnelStage> stages = new ArrayList<>();
-            stages.add(new FunnelStage("view", view.size(), null));
-            stages.add(new FunnelStage("intent", intent.size(), rate(intent.size(), view.size())));
-            stages.add(new FunnelStage("order", order.size(), rate(order.size(), intent.size())));
-            stages.add(new FunnelStage("pay", pay.size(), rate(pay.size(), order.size())));
-            return stages;
-        });
-    }
-
-    private BigDecimal rate(long next, long prev) {
-        if (prev == 0) {
-            return null;
+    public AnalysisViewModel<ProductsData> products(String snapshotId, int topN, LocalDate from, LocalDate to) {
+        Map<String, Object> filters = new LinkedHashMap<>();
+        echoDateRange(filters, from, to);
+        echoRequestedSnapshot(filters, snapshotId);
+        filters.put("topN", topN); // 原样回显请求值
+        Pinned pinned = pin(snapshotId);
+        if (pinned.snapshotId() == null) {
+            return AnalysisViewModel.empty(filters, pinned.warnings());
         }
-        return BigDecimal.valueOf(next).divide(BigDecimal.valueOf(prev), 4, RoundingMode.HALF_UP);
+        String sid = pinned.snapshotId();
+        filters.put("snapshotId", sid);
+
+        // 生效值才做上限保护（回显仍是请求原值，避免"回显值与实际不符"）
+        int effectiveTopN = topN <= 0 ? DEFAULT_TOP_N : Math.min(topN, MAX_TOP_N);
+        ProductsData data = new ProductsData(hotProducts(sid, effectiveTopN), productConversion(sid), effectiveTopN);
+        return view(pinned, filters, data, List.of());
     }
 
-    // ── 活跃趋势（§5.5.1 用户活跃趋势） ───────────────────────────────────
+    // ── 行为漏斗（§3.4） ──────────────────────────────────────────────────────
 
-    public List<ActiveDay> userActiveTrend(LocalDate from, LocalDate to) {
-        String key = "active:" + from + ":" + to;
-        return cached(key, () -> {
-            Map<String, ActiveAccum> byDay = new TreeMap<>();
-            for (EventEnvelope e : loadEvents(from, to)) {
-                if (!EventContract.BEHAVIOR.equals(e.eventType())) {
-                    continue;
-                }
-                String date = e.eventTime().substring(0, 10);
-                ActiveAccum acc = byDay.computeIfAbsent(date, d -> new ActiveAccum());
-                acc.behaviorCount++;
-                acc.users.add(str(e.payload().get("user_id")));
+    /**
+     * @param date 兼容旧前端传参：只回显进 filters，不参与计算（漏斗是快照 + businessDate 粒度）
+     */
+    public AnalysisViewModel<FunnelData> funnel(String snapshotId, LocalDate date) {
+        Map<String, Object> filters = new LinkedHashMap<>();
+        if (date != null) {
+            filters.put("date", date.toString());
+        }
+        echoRequestedSnapshot(filters, snapshotId);
+        Pinned pinned = pin(snapshotId);
+        if (pinned.snapshotId() == null) {
+            return AnalysisViewModel.empty(filters, pinned.warnings());
+        }
+        String sid = pinned.snapshotId();
+        filters.put("snapshotId", sid);
+
+        Map<String, Map<String, Object>> byStage = new LinkedHashMap<>();
+        for (Map<String, Object> row : AdsRows.latestPartition(adsReader, T_FUNNEL, sid)) {
+            byStage.put(AdsRows.asString(row.get("stage")), row);
+        }
+        List<String> orderedStages = new ArrayList<>(byStage.keySet());
+        orderedStages.sort(Comparator
+                .comparingInt((String stage) -> AdsRows.orderIndex(FUNNEL_ORDER, stage))
+                .thenComparing(Comparator.naturalOrder()));
+
+        List<FunnelStage> stages = new ArrayList<>();
+        BigDecimal overallBuyRate = null;
+        for (String stage : orderedStages) {
+            Map<String, Object> row = byStage.get(stage);
+            // rate 取 ADS 的 conversion_rate 原值：首阶段（view）库里为 NULL，不擅自补 1.0
+            stages.add(new FunnelStage(stage, FUNNEL_LABELS.getOrDefault(stage, stage),
+                    AdsRows.asLong(row.get("user_count")), AdsRows.asDecimal(row.get("conversion_rate"))));
+            BigDecimal stageOverall = AdsRows.asDecimal(row.get("overall_buy_rate"));
+            if (stageOverall != null) {
+                overallBuyRate = stageOverall; // 规范顺序里最后一个非空值 = 全链路累计购买率
             }
-            List<ActiveDay> result = new ArrayList<>();
-            byDay.forEach((date, acc) -> result.add(new ActiveDay(date, acc.users.size(), acc.behaviorCount)));
-            return result;
-        });
-    }
-
-    private static final class ActiveAccum {
-        long behaviorCount = 0;
-        final Set<String> users = new java.util.HashSet<>();
-    }
-
-    // ── 大盘（§25.1 首页：最新 ACTIVE 快照 + 近 7 日趋势） ─────────────────
-
-    public Overview overview(LocalDate from, LocalDate to) {
-        List<MetricValue> values = metricStore.query(new MetricStore.MetricQuery(null, true));
-        Map<String, Object> metrics = new LinkedHashMap<>();
-        String snapshotId = null;
-        if (!values.isEmpty()) {
-            snapshotId = values.get(0).getSnapshotId();
         }
-        for (MetricValue v : values) {
-            metrics.put(v.getMetricCode(), Map.of(
-                    "value", v.getMetricValue(),
-                    "unit", v.getUnit(),
-                    "period", v.getPeriod(),
-                    "definitionVersion", v.getDefinitionVersion()));
+        // 漏斗口径与观察窗口必须随响应返回（§18.2 用户行为）；口径版本用快照的 definitionVersion，不写死
+        FunnelData data = new FunnelData(stages, overallBuyRate,
+                "同一 businessDate 内的行为窗口（口径版本 " + blankToEmpty(pinned.meta().getDefinitionVersion()) + "）");
+        return view(pinned, filters, data, List.of());
+    }
+
+    // ── 用户分群（§3.5）与 RFM（§3.6） ────────────────────────────────────────
+
+    public AnalysisViewModel<UsersData> users(String snapshotId, LocalDate from, LocalDate to) {
+        Map<String, Object> filters = new LinkedHashMap<>();
+        echoDateRange(filters, from, to);
+        echoRequestedSnapshot(filters, snapshotId);
+        Pinned pinned = pin(snapshotId);
+        if (pinned.snapshotId() == null) {
+            return AnalysisViewModel.empty(filters, pinned.warnings());
         }
-        LocalDate today = LocalDate.now();
-        LocalDate effFrom = from == null ? today.minusDays(6) : from;
-        LocalDate effTo = to == null ? today : to;
-        List<SalesDay> sales = salesTrend(effFrom, effTo);
-        List<ActiveDay> active = userActiveTrend(effFrom, effTo);
-        return new Overview(metrics, sales, active, snapshotId);
+        String sid = pinned.snapshotId();
+        filters.put("snapshotId", sid);
+
+        RfmService.RfmProfile profile = rfmService.profile(sid);
+        UsersData data = new UsersData(profile.segments(), profile.lifecycle(), profile.preference(),
+                profile.ruleVersion());
+        return view(pinned, filters, data, profile.warnings());
     }
 
-    // ── 工具 ──────────────────────────────────────────────────────────────
+    /**
+     * @param limit 兼容旧前端 {@code ?limit=50}：只回显，不再用于截断——
+     *              R7-4 起本端点只返回聚合分层，不返回 user_id 明细（§18.2 不展示真实个人敏感数据）
+     */
+    public AnalysisViewModel<RfmData> rfm(String snapshotId, Integer limit) {
+        Map<String, Object> filters = new LinkedHashMap<>();
+        if (limit != null) {
+            filters.put("limit", limit);
+        }
+        echoRequestedSnapshot(filters, snapshotId);
+        Pinned pinned = pin(snapshotId);
+        if (pinned.snapshotId() == null) {
+            return AnalysisViewModel.empty(filters, pinned.warnings());
+        }
+        String sid = pinned.snapshotId();
+        filters.put("snapshotId", sid);
 
-    private static String str(Object v) {
-        return v == null ? "" : String.valueOf(v);
+        RfmService.RfmProfile profile = rfmService.profile(sid);
+        RfmData data = new RfmData(profile.segments(), profile.matrix(), profile.ruleVersion());
+        return view(pinned, filters, data, profile.warnings());
     }
 
-    private static BigDecimal dec(Object v) {
-        return new BigDecimal(String.valueOf(v));
+    // ── 快照解析与信封组装 ────────────────────────────────────────────────────
+
+    /** 本次请求固定使用的快照；snapshotId=null 表示无可用快照（契约 §1.3 → 空 data + warning） */
+    private record Pinned(String snapshotId, MetricSnapshot meta, List<String> warnings) {
+    }
+
+    /**
+     * 解析快照号：请求指定优先，否则取 ACTIVE；随后**只按该快照号**读元数据与 ADS。
+     * 解析不到就返回带警告的空信封，绝不回退到落地区事件明细、也不编数值。
+     */
+    private Pinned pin(String requestedSnapshotId) {
+        String requested = requestedSnapshotId == null ? null : requestedSnapshotId.trim();
+        boolean explicit = requested != null && !requested.isEmpty();
+        String snapshotId = explicit ? requested : adsReader.activeSnapshotId();
+        if (snapshotId == null) {
+            return new Pinned(null, null, List.of(AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
+        }
+        MetricSnapshot meta = metricStore.findSnapshot(snapshotId);
+        if (meta == null) {
+            // 显式指定的快照号库里没有（不能假装读过它）；ACTIVE 号取到却没有快照行同样属于"取不到"
+            return new Pinned(null, null, List.of(explicit
+                    ? AnalysisViewModel.WARN_UNKNOWN_SNAPSHOT
+                    : AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
+        }
+        return new Pinned(snapshotId, meta, List.of());
+    }
+
+    /** 统一信封：元数据来自快照行，qualityStatus 来自质量门，data 为各端点结构 */
+    private <T> AnalysisViewModel<T> view(Pinned pinned, Map<String, Object> filters, T data,
+                                          List<String> warnings) {
+        List<String> allWarnings = new ArrayList<>(warnings);
+        MetricSnapshot meta = pinned.meta();
+        return AnalysisViewModel.of(pinned.snapshotId(), isoSeconds(meta.getBusinessTime()),
+                dataUpdatedAt(meta), blankToEmpty(meta.getDefinitionVersion()),
+                qualityStatus(meta, allWarnings), filters, data, allWarnings);
+    }
+
+    /**
+     * 质量门结论：BLOCKING 未通过 → FAIL，有结果且无阻断失败 → PASS，取不到 → UNKNOWN。
+     * 查询本身失败（meta 库不可用）也归为 UNKNOWN 并留下警告，不把异常伪造成 PASS。
+     */
+    private String qualityStatus(MetricSnapshot meta, List<String> warnings) {
+        try {
+            return qualityGate.statusForRun(meta.getPipelineRunId());
+        } catch (RuntimeException e) {
+            log.warn("quality gate unavailable for run {}: {}", meta.getPipelineRunId(), e.getMessage());
+            warnings.add(AnalysisViewModel.WARN_QUALITY_STATUS_UNAVAILABLE);
+            return MetricQualityGate.UNKNOWN;
+        }
+    }
+
+    /** dataUpdatedAt 取快照的 data_updated_at；缺失时退回发布时间、再退回 LOAD（行创建）时间 */
+    private static String dataUpdatedAt(MetricSnapshot meta) {
+        LocalDateTime value = meta.getDataUpdatedAt() != null ? meta.getDataUpdatedAt()
+                : meta.getPublishedAt() != null ? meta.getPublishedAt() : meta.getCreatedAt();
+        return isoSeconds(value);
+    }
+
+    // ── 指标值与字典（metric_value / metric_definition） ──────────────────────
+
+    private List<MetricItem> metrics(String snapshotId, Map<String, String> names) {
+        List<MetricItem> items = new ArrayList<>();
+        for (MetricValue value : metricValues(snapshotId)) {
+            items.add(new MetricItem(value.getMetricCode(),
+                    names.getOrDefault(value.getMetricCode(), ""), // 字典缺该码就留空，不臆造名称
+                    value.getMetricValue(), blankToEmpty(value.getUnit()),
+                    blankToEmpty(value.getPeriod()), blankToEmpty(value.getDefinitionVersion())));
+        }
+        items.sort(Comparator.comparing(MetricItem::metricCode)); // 按 metricCode 稳定排序（契约 §3.1）
+        return items;
+    }
+
+    private Map<String, BigDecimal> metricValueMap(String snapshotId) {
+        Map<String, BigDecimal> values = new HashMap<>();
+        for (MetricValue value : metricValues(snapshotId)) {
+            values.put(value.getMetricCode(), value.getMetricValue());
+        }
+        return values;
+    }
+
+    private List<MetricValue> metricValues(String snapshotId) {
+        List<MetricValue> values = metricStore.query(new MetricStore.MetricQuery(snapshotId, false));
+        return values == null ? List.of() : values;
+    }
+
+    /** 指标字典（analytics_meta.metric_definition）：页面"查看指标口径"用 */
+    private List<DictionaryItem> dictionary() {
+        List<MetricDefinition> definitions = definitionMapper.selectList(null);
+        if (definitions == null) {
+            return List.of();
+        }
+        List<DictionaryItem> items = new ArrayList<>();
+        for (MetricDefinition definition : definitions) {
+            if (definition.getMetricCode() == null) {
+                continue;
+            }
+            items.add(new DictionaryItem(definition.getMetricCode(), blankToEmpty(definition.getMetricName()),
+                    blankToEmpty(definition.getFormula()), blankToEmpty(definition.getUnit())));
+        }
+        items.sort(Comparator.comparing(DictionaryItem::metricCode));
+        return items;
+    }
+
+    // ── ADS 宽表映射 ──────────────────────────────────────────────────────────
+
+    /** 销售趋势（ads_sale_trend_m，按 dt 升序） */
+    private List<SalesTrendPoint> salesTrend(String snapshotId) {
+        return adsReader.selectBySnapshot(T_SALE_TREND, snapshotId, null).stream()
+                .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
+                .map(row -> new SalesTrendPoint(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
+                        AdsRows.asLong(row.get("order_count")), AdsRows.asDecimal(row.get("sale_amount")),
+                        AdsRows.asLong(row.get("buyer_count")), AdsRows.asDecimal(row.get("avg_order_value"))))
+                .toList();
+    }
+
+    /** 活跃趋势（ads_active_trend_m，按 dt 升序） */
+    private List<ActiveDay> activeTrend(String snapshotId) {
+        return adsReader.selectBySnapshot(T_ACTIVE_TREND, snapshotId, null).stream()
+                .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
+                .map(row -> new ActiveDay(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
+                        AdsRows.asLong(row.get("dau")), AdsRows.asLong(row.get("behavior_count"))))
+                .toList();
+    }
+
+    /** 质量卡（ads_data_quality_m）：按规则码去重统计，未通过规则码升序列出 */
+    private QualitySummary quality(String snapshotId) {
+        Map<String, Integer> passedByRule = new java.util.TreeMap<>();
+        for (Map<String, Object> row : AdsRows.latestPartition(adsReader, T_DATA_QUALITY, snapshotId)) {
+            passedByRule.put(AdsRows.asString(row.get("rule_code")), AdsRows.asInt(row.get("passed")));
+        }
+        int passed = (int) passedByRule.values().stream().filter(value -> value == 1).count();
+        List<String> failedRules = passedByRule.entrySet().stream()
+                .filter(entry -> entry.getValue() != 1)
+                .map(Map.Entry::getKey)
+                .toList();
+        return new QualitySummary(passedByRule.size(), passed, failedRules);
+    }
+
+    /** 热门商品榜（ads_hot_product_m，按 rank_no 升序取前 topN） */
+    private List<HotProduct> hotProducts(String snapshotId, int topN) {
+        return AdsRows.latestPartition(adsReader, T_HOT_PRODUCT, snapshotId).stream()
+                .sorted(Comparator.comparingInt((Map<String, Object> row) -> AdsRows.asInt(row.get("rank_no"))))
+                .limit(topN)
+                .map(row -> new HotProduct(AdsRows.asLong(row.get("product_id")),
+                        AdsRows.asString(row.get("product_name")), AdsRows.asDecimal(row.get("heat_score")),
+                        AdsRows.asLong(row.get("pv")), AdsRows.asLong(row.get("fav")),
+                        AdsRows.asLong(row.get("cart")), AdsRows.asLong(row.get("buy")),
+                        AdsRows.asInt(row.get("rank_no"))))
+                .toList();
+    }
+
+    /** 商品转化（ads_product_conversion_m，按 product_id 升序；不做 topN 截断，避免漏商品） */
+    private List<ProductConversion> productConversion(String snapshotId) {
+        return AdsRows.latestPartition(adsReader, T_PRODUCT_CONVERSION, snapshotId).stream()
+                .sorted(Comparator.comparingLong((Map<String, Object> row) -> AdsRows.asLong(row.get("product_id"))))
+                .map(row -> new ProductConversion(AdsRows.asLong(row.get("product_id")),
+                        AdsRows.asLong(row.get("pv_users")), AdsRows.asLong(row.get("buy_users")),
+                        AdsRows.asDecimal(row.get("conversion_rate"))))
+                .toList();
+    }
+
+    // ── 工具 ──────────────────────────────────────────────────────────────────
+
+    private static void echoDateRange(Map<String, Object> filters, LocalDate from, LocalDate to) {
+        if (from != null) {
+            filters.put("from", from.toString());
+        }
+        if (to != null) {
+            filters.put("to", to.toString());
+        }
+    }
+
+    private static void echoRequestedSnapshot(Map<String, Object> filters, String requestedSnapshotId) {
+        String requested = requestedSnapshotId == null ? null : requestedSnapshotId.trim();
+        if (requested != null && !requested.isEmpty()) {
+            filters.put("snapshotId", requested);
+        }
+    }
+
+    private static String isoSeconds(LocalDateTime value) {
+        return value == null ? null : value.format(ISO_SECONDS);
+    }
+
+    private static String blankToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

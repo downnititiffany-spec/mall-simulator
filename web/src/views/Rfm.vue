@@ -1,71 +1,182 @@
 <template>
   <div>
-    <div class="page-title">用户分层（RFM）
-      <button style="float:right;font-size:12px;padding:4px 12px" :disabled="!rows.length" @click="doExport">导出 CSV</button>
+    <div class="page-title">用户分层（RFM）</div>
+
+    <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
+      <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
+      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
+      <span style="font-size:12px;color:#9ca3af">
+        分层口径版本：{{ ruleVersion || '未提供' }}；只展示聚合结果，不展示个人敏感明细
+      </span>
     </div>
+
+    <AnalysisContext :context="context || {}" :state="state" :error="error" />
+
     <div class="chart-box">
-      <div class="chart-title">八类用户分布（R 最近购买 / F 频次 / M 金额，三分位五档评分 §21.6）</div>
-      <BaseChart :option="barOption" :height="300" />
+      <div class="chart-title">RFM 八类用户分布（缺失类目按 0 人展示，契约 §3.6）</div>
+      <ChartState :option="matrixOpt" :state="state" :error="error" :height="300"
+                  empty-text="当前快照没有 RFM 分层数据" />
     </div>
+
     <div class="table-box">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
-          <th style="padding:8px">用户ID</th><th>最近购买(天)</th><th>订单数</th><th>金额(元)</th>
-          <th>R/F/M 分</th><th>八类标签</th><th>生命周期</th>
-        </tr></thead>
+      <div class="chart-title">八类分层明细</div>
+      <table>
+        <thead>
+          <tr><th>分层</th><th>用户数</th><th>消费额(元)</th><th>平均最近购买(天)</th></tr>
+        </thead>
         <tbody>
-          <tr v-for="u in rows" :key="u.userId" style="border-top:1px solid #f3f4f6">
-            <td style="padding:8px">{{ u.userId }}</td>
-            <td>{{ u.recency }}</td>
-            <td>{{ u.frequency }}</td>
-            <td>{{ Number(u.monetary).toFixed(2) }}</td>
-            <td>{{ u.rScore }}/{{ u.fScore }}/{{ u.mScore }}</td>
-            <td><b :style="{ color: labelColor(u.label) }">{{ u.label }}</b></td>
-            <td>{{ u.lifecycle }}</td>
+          <tr v-for="s in segmentRows" :key="s.valueGroup">
+            <td><b :style="{ color: colorOf(s.valueGroup) }">{{ s.valueGroup }}</b></td>
+            <td class="mono">{{ formatInteger(s.users) }}</td>
+            <td class="mono">{{ formatNumber(s.amount, 2) }}</td>
+            <td class="mono">{{ formatInteger(s.avgRecencyDays) }}</td>
           </tr>
-          <tr v-if="rows.length === 0"><td colspan="7" class="el-empty">暂无分层数据（有支付订单后出现）</td></tr>
+          <tr v-if="segmentRows.length === 0"><td colspan="4" class="el-empty">当前快照没有 RFM 分层数据</td></tr>
         </tbody>
       </table>
+      <div class="table-hint">平均最近购买天数在聚合列缺失时按“—”展示，后端不造数、前端也不补零。</div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">生命周期分布（aggregate，来自 ads_user_profile_m）</div>
+      <table>
+        <thead><tr><th>生命周期</th><th>用户数</th></tr></thead>
+        <tbody>
+          <tr v-for="l in lifecycle" :key="l.state">
+            <td>{{ l.state }}</td><td class="mono">{{ formatInteger(l.users) }}</td>
+          </tr>
+          <tr v-if="lifecycle.length === 0"><td colspan="2" class="el-empty">未取到生命周期聚合数据</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">偏好分类分布（聚合）</div>
+      <table>
+        <thead><tr><th>分类ID</th><th>用户数</th></tr></thead>
+        <tbody>
+          <tr v-for="p in preference" :key="p.categoryId">
+            <td class="mono">{{ p.categoryId }}</td><td class="mono">{{ formatInteger(p.users) }}</td>
+          </tr>
+          <tr v-if="preference.length === 0"><td colspan="2" class="el-empty">未取到偏好分类聚合数据</td></tr>
+        </tbody>
+      </table>
+      <div v-if="usersError" class="table-hint">用户聚合接口（/analysis/users）本次请求失败：{{ usersError }}</div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
-import BaseChart from '../components/BaseChart.vue'
-import { exportCSV } from '../utils/exportCsv'
+import { useAnalysis } from '../composables/useAnalysis'
+import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
+import { formatInteger, formatNumber } from '../utils/number'
+import { readEnvelope } from '../utils/envelope'
+import { rfmMatrixOption } from '../utils/chartOptions'
+import { exportAnalysisCsv } from '../utils/exportCsv'
+import AnalysisContext from '../components/AnalysisContext.vue'
+import ChartState from '../components/ChartState.vue'
 
-const rows = ref([])
-const distribution = ref({})
+// RFM 八类固定类目（缺失补 0，契约 §3.6）
+const SEGMENTS = ['重要价值', '重要发展', '重要保持', '重要挽留', '一般价值', '一般发展', '一般保持', '一般挽留']
+const COLORS = {
+  重要价值: '#059669', 重要发展: '#10B981', 重要保持: '#84CC16', 重要挽留: '#D97706',
+  一般价值: '#1E40AF', 一般发展: '#3B82F6', 一般保持: '#7C3AED', 一般挽留: '#94A3B8'
+}
+const colorOf = (name) => COLORS[name] || '#1E40AF'
 
-const LABELS = ['重要价值', '重要发展', '重要保持', '重要挽留', '一般价值', '一般发展', '一般保持', '一般挽留']
-const COLORS = { '重要价值': '#16a34a', '重要发展': '#22c55e', '重要保持': '#84cc16', '重要挽留': '#d97706', '一般价值': '#3b82f6', '一般发展': '#60a5fa', '一般保持': '#a78bfa', '一般挽留': '#9ca3af' }
-const labelColor = (l) => COLORS[l] || '#111827'
+// 一次请求取 RFM 分层 + 用户聚合（生命周期/偏好）；用户聚合失败不影响分层展示
+const usersError = ref('')
+const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
-const barOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  grid: { left: 60, right: 30, top: 20 },
-  xAxis: { type: 'category', data: LABELS },
-  yAxis: { type: 'value', name: '用户数' },
-  series: [{
-    name: '用户数', type: 'bar',
-    data: LABELS.map((l) => distribution.value[l] || 0),
-    itemStyle: { color: (p) => COLORS[LABELS[p.dataIndex]] || '#3b82f6' }
-  }]
-}))
-
-onMounted(async () => {
+async function fetchRfm(params, signal) {
+  const rfmRaw = await api.rfm({}, { signal })
+  const rfm = readEnvelope(rfmRaw)
+  let usersData = {}
+  let usersWarnings = []
   try {
-    const r = await api.get('/analysis/rfm', { limit: 50 })
-    rows.value = r.users || []
-    distribution.value = r.distribution || {}
-  } catch (e) { console.error(e) }
+    const users = readEnvelope(await api.users({}, { signal }))
+    usersData = users.data
+    usersWarnings = users.warnings
+  } catch (e) {
+    // 主动取消（切换刷新）不算失败，不写错误提示
+    if (!isAbort(e)) usersError.value = (e && (e.message || e.code)) || '请求失败'
+  }
+  return {
+    snapshotId: rfm.snapshotId,
+    businessTime: rfm.businessTime,
+    dataUpdatedAt: rfm.dataUpdatedAt,
+    definitionVersion: rfm.definitionVersion,
+    qualityStatus: rfm.qualityStatus,
+    filters: rfm.filters,
+    warnings: [...new Set([...rfm.warnings, ...usersWarnings])],
+    data: {
+      rfmSegments: rfm.data.rfmSegments || [],
+      rfmMatrix: rfm.data.rfmMatrix || [],
+      ruleVersion: rfm.data.ruleVersion || null,
+      lifecycle: usersData.lifecycle || [],
+      preference: usersData.preference || []
+    }
+  }
+}
+
+const analysis = useAnalysis({
+  fetcher: fetchRfm,
+  rowKeys: [...ENDPOINT_ROW_KEYS.rfm, 'lifecycle', 'preference'],
+  defaults: { rfmSegments: [], rfmMatrix: [], ruleVersion: null, lifecycle: [], preference: [] }
+})
+const { data, context, state, error, loading, exportable, exportContext } = analysis
+
+const ruleVersion = computed(() => data.value.ruleVersion || (context.value && context.value.definitionVersion) || null)
+
+// 后端返回的分层明细；空类目补 0 人数，保证类目齐全且不丢类
+// 注意：类目名以后端下发为准（本期实际值为「高价值」等），契约八类名仅作空数据的兜底展示，
+// 不能反过来用固定八类名去索引后端数据，否则会把真实人数全部显示成 0。
+const segmentRows = computed(() => {
+  const list = Array.isArray(data.value.rfmSegments) && data.value.rfmSegments.length
+    ? data.value.rfmSegments
+    : (Array.isArray(data.value.rfmMatrix) ? data.value.rfmMatrix : [])
+  if (!list.length) return []
+  const byName = {}
+  for (const s of list) if (s && s.valueGroup) byName[s.valueGroup] = s
+  const names = [...new Set([...list.map((s) => s.valueGroup).filter(Boolean), ...SEGMENTS])]
+  return names.map((name) => {
+    const s = byName[name] || {}
+    return {
+      valueGroup: name,
+      users: s.users === undefined ? 0 : s.users,
+      amount: s.amount === undefined ? null : s.amount,
+      avgRecencyDays: s.avgRecencyDays === undefined ? null : s.avgRecencyDays
+    }
+  })
 })
 
-const doExport = () => {
-  exportCSV('rfm-users.csv',
-    ['用户ID', '最近购买(天)', '订单数', '金额(元)', 'R', 'F', 'M', '八类标签', '生命周期'],
-    rows.value.map((u) => [u.userId, u.recency, u.frequency, Number(u.monetary).toFixed(2), u.rScore, u.fScore, u.mScore, u.label, u.lifecycle]))
+const lifecycle = computed(() => (Array.isArray(data.value.lifecycle) ? data.value.lifecycle : []))
+const preference = computed(() => (Array.isArray(data.value.preference) ? data.value.preference : []))
+// 图表类目与人数都取 segmentRows（后端类目优先），不再用固定八类名做索引
+const matrixOpt = computed(() =>
+  rfmMatrixOption(segmentRows.value, segmentRows.value.map((s) => s.valueGroup), COLORS)
+)
+
+const load = () => {
+  usersError.value = ''
+  return analysis.load({})
 }
+
+function doExport() {
+  exportAnalysisCsv({
+    baseName: 'rfm-segments',
+    context: exportContext.value,
+    headers: ['分层', '用户数', '消费额(元)', '平均最近购买(天)'],
+    rows: segmentRows.value.map((s) => [s.valueGroup, s.users, formatNumber(s.amount, 2, ''), s.avgRecencyDays === null ? '' : s.avgRecencyDays])
+  })
+}
+
+onMounted(load)
+onBeforeUnmount(() => analysis.cancel())
 </script>
+
+<style scoped>
+.table-hint { font-size: 12px; color: #94A3B8; margin-top: 8px; }
+</style>

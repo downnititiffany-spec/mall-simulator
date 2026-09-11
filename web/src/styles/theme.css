@@ -93,6 +93,30 @@ nav { flex: 1; padding: 10px 8px; overflow-y: auto; }
 }
 .el-empty { color: #94A3B8; font-size: 13px; padding: 18px; text-align: center; }
 
+/* ── 分析上下文条（快照/口径/质量 + 告警与四态提示，契约 §18.3 §18.4） ── */
+.analysis-context { margin-bottom: 12px; }
+.meta-row {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center;
+  background: var(--color-card); border: 1px solid var(--color-border);
+  border-radius: var(--radius); padding: 8px 14px; font-size: 12px;
+  color: var(--color-muted-foreground); box-shadow: var(--shadow-card);
+}
+.meta-item { display: inline-flex; align-items: center; gap: 4px; }
+.meta-item b { color: var(--color-foreground); font-weight: 600; }
+.meta-item b.ok { color: var(--color-success); }
+.meta-item b.bad { color: var(--color-destructive); }
+.meta-hint { color: #94A3B8; }
+.banner {
+  margin-top: 8px; padding: 8px 14px; border-radius: var(--radius);
+  font-size: 13px; border: 1px solid transparent;
+}
+.banner-warn { background: #FFFBEB; border-color: #FDE68A; color: #92400E; }
+.banner-stale { background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
+.banner-error { background: #FEF2F2; border-color: #FECACA; color: #B91C1C; }
+.banner-missing { background: #F8FAFC; border-color: #CBD5E1; color: #475569; }
+/* 表格/区块内的单行状态提示（非图表场景，不占图表高度） */
+.state-line { padding: 8px 2px; font-size: 13px; color: var(--color-muted-foreground); }
+
 /* ── 表格与控件 ── */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; color: var(--color-muted-foreground); font-weight: 600; padding: 8px; }

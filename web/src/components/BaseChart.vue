@@ -3,8 +3,26 @@
 </template>
 
 <script setup>
-import * as echarts from 'echarts'
+import * as echarts from 'echarts/core'
+import { BarChart, LineChart, FunnelChart } from 'echarts/charts'
+import {
+  GridComponent,
+  TooltipComponent,
+  LegendComponent
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+
+// ECharts 按需注册（指导书 §18.4）：只引入实际用到的图表与组件，避免整包引入造成大 chunk 告警
+echarts.use([
+  BarChart,
+  LineChart,
+  FunnelChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  CanvasRenderer
+])
 
 const props = defineProps({
   option: { type: Object, required: true },
@@ -25,6 +43,7 @@ const enrich = (opt) => ({
 })
 
 const render = () => {
+  if (!el.value) return
   if (!chart) chart = echarts.init(el.value)
   chart.setOption(enrich(props.option), true)
 }

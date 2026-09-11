@@ -3,6 +3,7 @@ package com.graduation.analytics.auth;
 import com.graduation.analytics.auth.AuthService.UserView;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -44,21 +45,26 @@ public class UserAdminController {
     }
 
     @PostMapping
-    public ApiResponse<UserView> create(@RequestBody CreateUserReq req) {
+    public ApiResponse<UserView> create(@Valid @RequestBody CreateUserReq req) {
         TraceContext trace = TraceContext.create();
         return ApiResponse.ok(authService.createUser(req.username(), req.realName(), req.role(), req.password()),
                 trace.traceId());
     }
 
+    /**
+     * 启用/禁用。入参缺失（如空 body）必须落到 400 PARAM_INVALID：
+     * record 上已声明 @NotNull，但缺 @Valid 时约束不生效，req.enable() 自动拆箱会抛 NPE → 500，
+     * 把「参数错误」误报成「系统繁忙」（2026-09-11 DOM 验收实测：空 body 返回 500 INTERNAL）。
+     */
     @PostMapping("/{userId}/toggle")
-    public ApiResponse<Void> toggle(@PathVariable Long userId, @RequestBody ToggleReq req) {
+    public ApiResponse<Void> toggle(@PathVariable Long userId, @Valid @RequestBody ToggleReq req) {
         TraceContext trace = TraceContext.create();
         authService.toggleUser(userId, req.enable(), CurrentUserHolder.get());
         return ApiResponse.ok(null, trace.traceId());
     }
 
     @PostMapping("/{userId}/reset-password")
-    public ApiResponse<Void> resetPassword(@PathVariable Long userId, @RequestBody ResetPasswordReq req) {
+    public ApiResponse<Void> resetPassword(@PathVariable Long userId, @Valid @RequestBody ResetPasswordReq req) {
         TraceContext trace = TraceContext.create();
         authService.resetPassword(userId, req.password());
         return ApiResponse.ok(null, trace.traceId());

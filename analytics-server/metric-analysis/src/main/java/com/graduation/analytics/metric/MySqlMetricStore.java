@@ -125,6 +125,24 @@ public class MySqlMetricStore implements MetricStore {
                 SNAPSHOT_MAPPER, capped);
     }
 
+    /**
+     * R7-4：按快照号读快照元数据（只读源）；不存在返回 null。
+     *
+     * <p>分析接口的信封需要 businessTime / dataUpdatedAt / definitionVersion / pipelineRunId
+     * （契约 §2），这些只在 metric_snapshot 上。{@link #listSnapshots(int)} 是"最近 N 条"，
+     * 无法按请求指定的历史快照号取，因此补一个按主键等值查询的只读方法；仍走 metric_read，
+     * 不新增数据源、不写库。</p>
+     */
+    public MetricSnapshot findSnapshot(String snapshotId) {
+        if (snapshotId == null || snapshotId.isBlank()) {
+            return null;
+        }
+        List<MetricSnapshot> rows = readJdbc.query(
+                "SELECT " + SNAPSHOT_COLUMNS + " FROM metric_snapshot WHERE snapshot_id = ?",
+                SNAPSHOT_MAPPER, snapshotId);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
     // ── 写（metric_pub 发布源，专用事务管理器） ─────────────────────────────
 
     @Override

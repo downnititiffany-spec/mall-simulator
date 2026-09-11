@@ -1,71 +1,155 @@
 <template>
   <div>
-    <div class="page-title">销售分析
-      <button style="float:right;font-size:12px;padding:4px 12px" :disabled="!rows.length" @click="doExport">导出 CSV</button>
-    </div>
-    <div class="chart-box" style="display:flex;gap:10px;align-items:center;padding:10px 14px">
+    <div class="page-title">销售分析</div>
+
+    <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
       <label style="font-size:13px;color:#374151">日期范围：</label>
       <input type="date" v-model="from" style="padding:4px" />
       <span style="color:#9ca3af">至</span>
       <input type="date" v-model="to" style="padding:4px" />
-      <button style="font-size:12px" @click="load">加载</button>
+      <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
+      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
+      <span style="font-size:12px;color:#9ca3af">汇总值取快照指标库，趋势取快照明细，页面不重算</span>
     </div>
+
+    <AnalysisContext :context="context || {}" :state="state" :error="error" />
+
+    <div class="metric-cards">
+      <div v-for="c in cards" :key="c.code" class="metric-card">
+        <div class="label">{{ c.label }}</div>
+        <div class="value">{{ c.text }}<span class="unit">{{ c.unit }}</span></div>
+      </div>
+    </div>
+
     <div class="chart-box">
-      <div class="chart-title">销售额与支付订单数趋势</div>
-      <BaseChart :option="salesOption" :height="280" />
+      <div class="chart-title">销售趋势（销售额 / 订单数 / 买家数）</div>
+      <ChartState :option="trendOpt" :state="state" :error="error" :height="280"
+                  empty-text="所选日期范围内没有销售趋势数据" />
     </div>
+
     <div class="table-box">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
-          <th style="padding:8px">日期</th><th>订单数</th><th>销售额(元)</th><th>买家数</th>
-        </tr></thead>
-        <tbody>
-          <tr v-for="s in rows" :key="s.date" style="border-top:1px solid #f3f4f6">
-            <td style="padding:8px">{{ s.date }}</td><td>{{ s.orderCount }}</td>
-            <td>{{ Number(s.saleAmount).toFixed(2) }}</td><td>{{ s.buyerCount }}</td>
+      <div class="chart-title">
+        销售明细
+        <span class="table-count">共 {{ rows.length }} 行</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th v-for="col in columns" :key="col.key" style="cursor:pointer" @click="toggleSort(col.key)">
+              {{ col.title }}<span v-if="sortKey === col.key">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            </th>
           </tr>
-          <tr v-if="rows.length === 0"><td colspan="4" class="el-empty">暂无销售数据</td></tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in paged.items" :key="r.date">
+            <td class="mono">{{ r.date }}</td>
+            <td class="mono">{{ formatInteger(r.orderCount) }}</td>
+            <td class="mono">{{ formatNumber(r.saleAmount, 2) }}</td>
+            <td class="mono">{{ formatInteger(r.buyerCount) }}</td>
+            <td class="mono">{{ formatNumber(r.avgOrderValue, 2) }}</td>
+          </tr>
+          <tr v-if="rows.length === 0"><td colspan="5" class="el-empty">所选日期范围内没有销售数据</td></tr>
         </tbody>
       </table>
+      <div class="pager">
+        <button style="font-size:12px" :disabled="paged.page <= 1" @click="page = paged.page - 1">上一页</button>
+        <span>第 {{ paged.page }} / {{ paged.totalPages }} 页</span>
+        <button style="font-size:12px" :disabled="paged.page >= paged.totalPages" @click="page = paged.page + 1">下一页</button>
+      </div>
+      <div class="table-hint">
+        质量规则（快照 run）：{{ qualityText }}。
+        说明：分类结构、地区结构本期未在分析接口发布（契约 §3.2 中 ads_category_sale_m / ads_region_sale_m 不存在），
+        页面不展示无数据来源的维度图。
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
-import BaseChart from '../components/BaseChart.vue'
-import { exportCSV } from '../utils/exportCsv'
+import { useAnalysis } from '../composables/useAnalysis'
+import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
+import { formatInteger, formatNumber, formatPercent } from '../utils/number'
+import { salesTrendOption, sortRows, paginate } from '../utils/chartOptions'
+import { exportAnalysisCsv } from '../utils/exportCsv'
+import AnalysisContext from '../components/AnalysisContext.vue'
+import ChartState from '../components/ChartState.vue'
 
-const rows = ref([])
-const from = ref(new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10))
-const to = ref(new Date().toISOString().slice(0, 10))
+const isoDay = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
+const from = ref(isoDay(-6))
+const to = ref(isoDay(0))
+const sortKey = ref('')
+const sortOrder = ref('asc')
+const page = ref(1)
+const pageSize = 10
 
-const doExport = () => {
-  exportCSV(`sales-trend-${from.value}_${to.value}.csv`,
-    ['日期', '订单数', '销售额(元)', '买家数'],
-    rows.value.map((s) => [s.date, s.orderCount, Number(s.saleAmount).toFixed(2), s.buyerCount]))
+const analysis = useAnalysis({
+  fetcher: (params, signal) => api.sales(params, { signal }),
+  rowKeys: ENDPOINT_ROW_KEYS.sales,
+  defaults: { trend: [], gmv: null, netSale: null, refundRate: null, fullRefundRate: null, quality: {} }
+})
+const { data, context, state, error, loading, exportable, exportContext } = analysis
+
+// GMV 与净销售必须并列展示（指导书 §18.2 销售分析）
+const cards = computed(() => [
+  { code: 'gmv', label: '销售额(GMV)', text: formatNumber(data.value.gmv, 2), unit: '元' },
+  { code: 'netSale', label: '净销售额', text: formatNumber(data.value.netSale, 2), unit: '元' },
+  { code: 'refundRate', label: '退款率', text: formatPercent(data.value.refundRate), unit: '' },
+  { code: 'fullRefundRate', label: '全额退款率', text: formatPercent(data.value.fullRefundRate), unit: '' }
+])
+
+const rows = computed(() => (Array.isArray(data.value.trend) ? data.value.trend : []))
+const columns = [
+  { key: 'date', title: '日期' },
+  { key: 'orderCount', title: '订单数' },
+  { key: 'saleAmount', title: '销售额(元)' },
+  { key: 'buyerCount', title: '买家数' },
+  { key: 'avgOrderValue', title: '客单价(元)' }
+]
+const sortedRows = computed(() => (sortKey.value ? sortRows(rows.value, sortKey.value, sortOrder.value) : rows.value))
+const paged = computed(() => paginate(sortedRows.value, page.value, pageSize))
+
+const qualityText = computed(() => {
+  const q = data.value.quality || {}
+  const ruleCount = formatInteger(q.ruleCount, '—')
+  const passedCount = formatInteger(q.passedCount, '—')
+  const failed = Array.isArray(q.failedRules) && q.failedRules.length ? q.failedRules.join('、') : '无'
+  return `规则 ${passedCount}/${ruleCount} 通过，失败规则：${failed}`
+})
+
+const trendOpt = computed(() => salesTrendOption(rows.value))
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortOrder.value = 'asc'
+  }
+  page.value = 1
 }
 
-async function load() {
-  try {
-    rows.value = await api.sales(from.value, to.value)
-  } catch (e) { console.error(e) }
+const load = () => {
+  page.value = 1
+  return analysis.load({ from: from.value, to: to.value })
 }
+
+function doExport() {
+  exportAnalysisCsv({
+    baseName: 'sales-analysis',
+    context: exportContext.value,
+    headers: ['日期', '订单数', '销售额(元)', '买家数', '客单价(元)'],
+    rows: sortedRows.value.map((r) => [r.date, r.orderCount, formatNumber(r.saleAmount, 2, ''), r.buyerCount, formatNumber(r.avgOrderValue, 2, '')])
+  })
+}
+
 onMounted(load)
-
-const salesOption = computed(() => ({
-  tooltip: { trigger: 'axis' },
-  legend: { data: ['销售额', '订单数'] },
-  grid: { left: 60, right: 40, top: 30 },
-  xAxis: { type: 'category', data: rows.value.map((s) => s.date) },
-  yAxis: [
-    { type: 'value', name: '销售额' },
-    { type: 'value', name: '订单数' }
-  ],
-  series: [
-    { name: '销售额', type: 'bar', data: rows.value.map((s) => Number(s.saleAmount)) },
-    { name: '订单数', type: 'line', yAxisIndex: 1, data: rows.value.map((s) => s.orderCount) }
-  ]
-}))
+onBeforeUnmount(() => analysis.cancel())
 </script>
+
+<style scoped>
+.table-count { float: right; font-weight: 400; color: #94A3B8; }
+.pager { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: var(--color-muted-foreground); }
+.table-hint { font-size: 12px; color: #94A3B8; margin-top: 8px; }
+</style>
