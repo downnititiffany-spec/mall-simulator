@@ -10,7 +10,7 @@
   - 9.2 多级校验与修复 → `SqlPolicy` + `SqlSafetyValidator`（AST 全树校验）+ `QueryCostGuard`（EXPLAIN fail-closed）；"修复"为拒答后重生成，不夸大
   - 9.3 证据链报告 → `EvidenceBuilder` + `ExplanationService`（数值全部带 `evidenceRef`，`templateVersion=evidence_v1`）
   - 9.4 大数据与智能交互分层 → `MySqlMetricStore`/`MetricPublisher`（AI 与页面**只读指标库 `analytics_metric`**，不查 Hive 明细、不查商城库）
-  - 9.5 场景驱动可复现数据 → `SimulationEngine`（`randomSeed` 可复现）+ 11 场景；**生成器属模拟商城进程（:8090），不属平台**
+  - 9.5 场景驱动可复现数据 → 生成器 `FileModeGenerationEngine` + `GenerationRunService`（`plan_version + seed + time_window` 可复现）+ 场景注册表 `ScenarioRegistry`（`ScenarioRegistry.java:11-28` 实测 **11 个场景**：normal/promotion/weekend_growth/sales_decline/refund_rise/price_increase/hot_product/stock_shortage/new_product_cold_start/old_user_churn/new_user_growth）；**生成器是第三个独立程序（:8092，独立库 `generator_meta`），既不属于平台、也不属于商城**；旧名 `SimulationEngine` 已在全仓 0 命中，**论文不得再引用该文件名**
   - 9.6 指标快照决策闭环 → `DecisionService` + 12 态状态机（`DecisionStateMachine`）+ 窗口效果评价（样本不足返回 `INSUFFICIENT_DATA`）
 
 ## 第二章 相关技术
@@ -23,12 +23,13 @@
 
 ## 第四章 系统总体设计
 - 架构图/部署图/模块图：文稿 §3 图 → **不要引用 `1.png`（不存在）**；用 `docs/acceptance/r9-*/17-screenshots/` 真机截图或自行绘图
-- 模块构成：平台 `analytics-server` = 7 个 reactor 模块（`connection-ingestion`/`warehouse-pipeline`/`metric-analysis`/`ai-decision`/`platform-common`/`platform-app` + 父 POM）；模拟商城 `mall-simulator` 独立进程/独立库/独立前端
-- 两进程两端口两库边界：`docs/compatibility-matrix.md` L0 段（平台 8091 / 商城 8090；`analytics_meta`+`analytics_metric` / `mall_simulator`）
+- 模块构成：平台 `analytics-server` = **6 个 `<module>` 的聚合工程**（`connection-ingestion`/`warehouse-pipeline`/`metric-analysis`/`ai-decision`/`platform-common`/`platform-app`），父 POM `analytics-server` 自己是 packaging=pom 的**聚合根、不计入模块数**（依据：`analytics-server/pom.xml:16,18,40-47` 的 `<modules>` 下恰 6 条 `<module>`）。模拟商城 `mall-simulator` 独立进程/独立库/独立前端
+- 三进程三端口三库边界：`docs/compatibility-matrix.md` L0 段（平台 8091：`analytics_meta`+`analytics_metric` ／ 商城 8090：`mall_simulator` ／ 合成数据生成器 8092：`generator_meta`，依据 `synthetic-data-generator/src/main/resources/application.yml:12,20`）
 
 ## 第五章 数仓与 Spark 设计实现（核心章）
-- 表清单：`warehouse/ddl/00-ods.sql`…`04-ads.sql`，Hive 库 `dw_ods`/`dw_dwd`/`dw_dim`/`dw_dws`/`dw_ads`
-  - **声明 vs 实建要分开写**：DDL 声明 ODS 4 / DWD 3 / DIM 5 / DWS 7 / ADS 10；**实际每日产出** DIM 只有 `dim_user`/`dim_product`（`dim_date`/`dim_region`/`dim_metric` 有建表无数据），ADS 只有 8 张（`ads_category_sale`/`ads_region_sale` 无产出，页面以 `UNKNOWN_DIMENSION_TABLE` 如实降级）
+- 表清单：**路径已实测存在** —— `warehouse/ddl/00-ods.sql`、`01-dwd.sql`、`02-dims.sql`、`03-dws.sql`、`04-ads.sql`（注意第 3 个文件名是 **`02-dims.sql`**，不是 `02-dim.sql`）。
+  - **Hive 库名的正确写法（P1-04 起库名只有一个所有者）**：DDL 里写的是 `CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_<层>`（`warehouse/ddl/00-ods.sql:8`、`01-dwd.sql:8`、`02-dims.sql:6`、`03-dws.sql:6`、`04-ads.sql:7`），**库名 = `<前缀>_<层>`**，层 ∈ {ods, dwd, dim, dws, ads}；前缀由 `runtime_profile.hive_database_prefix` 决定，**NULL/空串时缺省前缀 = `dw`**（`spark-jobs/src/main/scala/com/graduation/analytics/warehouse/WarehouseNamespace.scala:17,67-68`）——所以"前缀为空"**不等于**库名就是裸 `ods/dwd/...`，而是 `dw_ods`/`dw_dwd`/`dw_dim`/`dw_dws`/`dw_ads`。当前激活 profile（`runtime_profile.hive_database_prefix = NULL`）下的实际库名即 `dw_ods`…`dw_ads`（实测 `spark-warehouse/` 下存在 `dw_ods.db`…`dw_ads.db` 五个目录）。换第二个源时传 `dw_b` 即得 `dw_b_ods`…，DDL 无需改动（`docs/deployment.md:151-152`）。
+  - **声明 vs 实建要分开写**：DDL 声明（`CREATE EXTERNAL TABLE` 条数，实测逐文件计数）ODS 4 / DWD 3 / DIM 5 / DWS 7 / ADS 10（合计 29）；**实际每日产出** DIM 只有 `dim_user`/`dim_product`（`dim_date`/`dim_region`/`dim_metric` 有建表无数据），ADS 只有 8 张（`ads_category_sale`/`ads_region_sale` 无产出，页面以 `UNKNOWN_DIMENSION_TABLE` 如实降级）
 - 血缘：`docs/contracts/metric-lineage.md`（权威，标注了未落地指标）+ `warehouse/README.md`
 - Spark 作业源码：`spark-jobs/src/main/scala/...`（**11 个作业** + 基类 `WarehouseJob`）；作业码 `sci`/`dim`/`tdw`/…（注意与指导书早期命名 `lsi`/`dmb`/`tds` 的差异）
 - 口径：event_id 去重 / 有效支付 / 分母 0→NULL——`MetricAdsSpecTest`、`OrderTradeCompilerSpec` 断言可引
