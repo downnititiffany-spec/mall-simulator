@@ -1,0 +1,4 @@
+== M1-4 D10 失败路径只读取证 ==
+  runId=m1-4-d10-failpath-v1-v1-20260912-110139-8803
+  运行目录=D:\Develop_code\GraduationProject\docs\generator-output\m1-4-d10-failpath-v1-v1-20260912-110139-8803
+  [FAIL] 运行目录不存在

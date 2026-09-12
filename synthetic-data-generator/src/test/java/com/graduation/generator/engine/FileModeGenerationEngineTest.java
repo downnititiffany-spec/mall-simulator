@@ -425,6 +425,27 @@ class FileModeGenerationEngineTest {
                 () -> "取消必须记入运行报告 notes，实际=" + outcome.notes());
     }
 
+    // ------------------------------------------------------------------ 7c. 逐类账本的归属（D10）
+
+    @Test
+    void perTypeLedgerIsOwnedByCallerAndMatchesTheStream() {
+        long eventCount = 160L;
+        GenerationRequest request = new GenerationRequest(RUN_ID, SCENARIO, 20260601L, WINDOW_START, WINDOW_END,
+                eventCount, RATE_PER_SECOND, GenerationRequest.DIRTY_NONE);
+        JsonlEventSink sink = new JsonlEventSink(RUN_ID, tempDir.resolve("ledger"), ContractFormat.SCHEMA_VERSION,
+                MAX_RECORDS_PER_FILE);
+        EventStatsRecorder ledger = new EventStatsRecorder();
+
+        EngineOutcome outcome = new FileModeGenerationEngine().run(request, sink, () -> false, ledger);
+        sink.closeAndBuildManifest();
+
+        assertFalse(ledger.isEmpty(), "账本必须记下写进规范流的事件");
+        assertEquals(outcome.eventStats(), ledger.snapshot(),
+                "outcome 的逐类统计必须就是调用方账本的快照（同源 ⇒ 失败路径不必另算一份）");
+        assertEquals(sink.eventRecords(), ledger.totalCount(), "账本条数之和必须等于规范流真实条数");
+        assertEquals(eventCount, ledger.totalCount(), "正常跑完时账本条数必须等于事件预算");
+    }
+
     // ------------------------------------------------------------------ 运行与校验工具
 
     private RunResult run(String runId, Path outputRoot, long eventCount, String dirtyProfile, long seed,

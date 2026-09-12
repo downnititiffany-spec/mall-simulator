@@ -58,8 +58,16 @@ public final class MallApiGenerationEngine implements GenerationEngine {
 
     private final FileModeGenerationEngine fileEngine = new FileModeGenerationEngine();
 
+    /**
+     * 刻意留成响亮失败：MALL_API 引擎没有目标适配器就没有商城可打，也就没有 MALL_API 运行。
+     *
+     * <p>为什么不实现成"降级成文件模式"：那样某人把它当文件模式引擎塞进 {@link GenerationEngine} 位置后，
+     * 会静默跑成一次"打了商城的旗号、实际只写文件"的空运行。3 参重载由接口默认方法转到这里，
+     * 因此两条入口的失败信息完全一致。</p>
+     */
     @Override
-    public EngineOutcome run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled) {
+    public EngineOutcome run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled,
+                             EventStatsRecorder eventStats) {
         throw new UnsupportedOperationException("MALL_API 引擎必须经 runForTarget(request, target, adapter, sink, cancelled) 调用："
                 + "没有目标适配器就没有商城可打，也就没有 MALL_API 运行。"
                 + "本方法刻意留成响亮失败，避免有人把它当文件模式引擎直接塞进 GenerationEngine 位置后静默跑成空运行");
@@ -76,7 +84,7 @@ public final class MallApiGenerationEngine implements GenerationEngine {
      */
     public MallRunOutcome runForTarget(GenerationRequest request, TargetConfig target, MallTargetAdapter adapter,
                                        EventSink sink, BooleanSupplier cancelled) {
-        return runForTarget(request, target, adapter, sink, cancelled, null);
+        return runForTarget(request, target, adapter, sink, cancelled, null, new EventStatsRecorder());
     }
 
     /**
@@ -91,6 +99,23 @@ public final class MallApiGenerationEngine implements GenerationEngine {
      */
     public MallRunOutcome runForTarget(GenerationRequest request, TargetConfig target, MallTargetAdapter adapter,
                                        EventSink sink, BooleanSupplier cancelled, Preflight reusedPreflight) {
+        return runForTarget(request, target, adapter, sink, cancelled, reusedPreflight, new EventStatsRecorder());
+    }
+
+    /**
+     * 执行一次 MALL_API 运行，并把逐类事件账本交给调用方持有。
+     *
+     * <p><b>为什么账本要由调用方持有（D10）</b>：本方法在"商城真实拒单"时是
+     * <b>事件已经写进规范流之后</b>才抛 {@link MallOperationException} 的，
+     * 运行服务因此拿不到 {@code MallRunOutcome}；账本若留在本方法内部，这次运行的逐类分布就随异常一起丢了
+     * （{@code event_stats: []}，失败样本缺分布）。交给调用方之后，失败路径读到的仍是
+     * "抛异常之前真的进了规范流的事件"。</p>
+     *
+     * @param eventStats 逐类事件账本（由调用方创建并持有；本方法只往里记"已转写进规范流"的事件）
+     */
+    public MallRunOutcome runForTarget(GenerationRequest request, TargetConfig target, MallTargetAdapter adapter,
+                                       EventSink sink, BooleanSupplier cancelled, Preflight reusedPreflight,
+                                       EventStatsRecorder eventStats) {
         if (request.injectsDirtySamples()) {
             throw new IllegalArgumentException("MALL_API 模式不支持脏数据档位 " + request.dirtyProfile()
                     + "：异常样本要真实写进商城才能验证采集侧隔离，本模式不做（§3.3 B 的脏样本只属于文件模式）");
@@ -115,8 +140,11 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         // 因此改成"跑完再据实收口"：让每条事件都拿到真实结论、流水记全，最后有任何失败就不许报成功。
         MallApiDispatchSink dispatch = new MallApiDispatchSink(adapter, target, adapter.capabilities(target),
                 journal, preflight.catalog(), false);
-        ForwardingSink forwarding = new ForwardingSink(sink, dispatch, request.eventCount());
+        ForwardingSink forwarding = new ForwardingSink(sink, dispatch, request.eventCount(), eventStats);
 
+        // 刻意用 3 参重载：MALL_API 模式下"权威账本"是 ForwardingSink 那本（只记真的转写进规范流的事件），
+        // 而文件引擎自己那本记的是"生成器尝试产出"的事件（含被商城拒绝、没进流的那些）。
+        // 两者若共用一本账，每条转发成功的事件会被记两次。文件引擎那本在这里本就被丢弃（结果里用不到）。
         EngineOutcome fileOutcome = fileEngine.run(filtered, forwarding, cancelled);
         MallApiDispatchSink.DispatchResult dispatchResult = dispatch.result();
         if (dispatchResult.failed() > 0) {
@@ -167,7 +195,7 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         List<String> allNotes = new ArrayList<>(fileOutcome.notes());
         allNotes.addAll(notes);
         return new MallRunOutcome(
-                new EngineOutcome(result, new TreeMap<>(forwarding.stats()), forwarding.forwarded(),
+                new EngineOutcome(result, eventStats.snapshot(), forwarding.forwarded(),
                         dispatchResult.failed(), List.of(), allNotes),
                 preflight, dispatchResult, forwarding.forwarded());
     }
@@ -326,15 +354,18 @@ public final class MallApiGenerationEngine implements GenerationEngine {
 
         private final EventSink delegate;
         private final MallApiDispatchSink dispatch;
-        private final Map<String, EventTypeStat> stats = new TreeMap<>();
+        /** 由运行服务持有的逐类账本：只记"真的转写进规范流"的事件（D10） */
+        private final EventStatsRecorder eventStats;
         private final long attemptCap;
         private long forwarded;
         private long attempted;
 
-        ForwardingSink(EventSink delegate, MallApiDispatchSink dispatch, long attemptCap) {
+        ForwardingSink(EventSink delegate, MallApiDispatchSink dispatch, long attemptCap,
+                       EventStatsRecorder eventStats) {
             this.delegate = delegate;
             this.dispatch = dispatch;
             this.attemptCap = attemptCap;
+            this.eventStats = eventStats;
         }
 
         @Override
@@ -350,8 +381,8 @@ public final class MallApiGenerationEngine implements GenerationEngine {
             }
             delegate.write(dispatch.rewrite(event));
             forwarded++;
-            stats.merge(event.eventType(), new EventTypeStat(1, amountOf(event)),
-                    (left, right) -> left.plus(right.count(), right.amount()));
+            // 记账点在"真的转写进规范流"之后：账本与产物逐条一致，被商城拒绝的事件不进账本。
+            eventStats.record(event.eventType(), amountOf(event));
         }
 
         private boolean budgetExhausted;
@@ -381,10 +412,6 @@ public final class MallApiGenerationEngine implements GenerationEngine {
 
         long forwarded() {
             return forwarded;
-        }
-
-        Map<String, EventTypeStat> stats() {
-            return stats;
         }
 
         @Override

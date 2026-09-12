@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -415,6 +417,84 @@ class MallApiGenerationSmokeTest {
                     .count();
             assertTrue(failedLines > 0, "被拒的调用必须在流水里留下 FAILED 行");
         }
+    }
+
+    /**
+     * D10：失败运行也必须留下<b>逐类事件分布</b>（{@code generation_event_stat} + 报告 {@code event_stats}）。
+     *
+     * <p>缺陷形态：MALL_API 引擎在"有商城拒绝"时是<b>在事件已经写进规范流之后</b>才抛异常的
+     * （{@code MallApiGenerationEngine.runForTarget} 里 {@code dispatchResult.failed() > 0} 那一支），
+     * 运行服务因此拿到 {@code outcome == null} 并早退，这次运行一条逐类统计都不留（{@code event_stats: []}）。
+     * 失败样本于是缺了"失败前究竟发生了什么"的分布——而这份分布一直真实存在：规范流里逐条写着。</p>
+     *
+     * <p>断言口径全部落在<b>制品里真实存在的条数</b>上，不读实现自己的汇总数：逐类条数 == 规范流里该类事件
+     * 的条数；逐类金额 == 按契约 payload 口径独立重算的金额。这样"失败路径写成空 / 金额写成 0"都过不去。</p>
+     */
+    @Test
+    void failedRunStillKeepsPerClassEventStats() throws IOException {
+        // 同 realMallRejectionIsRecordedAsFailureWithTruthfulCounts：容量只够 6 单 ⇒ 必然出现真实拒单
+        try (FakeMallServer mall = new FakeMallServer(TOKEN, FakeMallServer.DEFAULT_BEHAVIOR_PATH, 8, 6)) {
+            Plan plan = appendPlan(MODE_MALL, createMallTarget(mall.baseUrl(), CREDENTIAL_REF), "none", 60L);
+            RunView view = runToTerminal(plan);
+            assertEquals("FAILED", view.status(), "本用例要的正是失败运行：" + view.error());
+
+            // ① 规范流 = 唯一可信的"已发生事实"，逐类条数与金额都从这里独立重算
+            List<JsonNode> events = new ArrayList<>();
+            for (String line : readEventStream(view.runId())) {
+                events.add(json(line));
+            }
+            assertFalse(events.isEmpty(), "被拒之前真的写进规范流的事件不该消失");
+            Map<String, Long> streamCounts = new TreeMap<>();
+            Map<String, BigDecimal> streamAmounts = new TreeMap<>();
+            for (JsonNode event : events) {
+                String type = event.path("event_type").asText();
+                streamCounts.merge(type, 1L, Long::sum);
+                streamAmounts.merge(type, amountOf(event), BigDecimal::add);
+            }
+            assertTrue(streamAmounts.getOrDefault("order_created", BigDecimal.ZERO).signum() > 0,
+                    "订单金额必须非零，否则'金额一律写 0'也能蒙过下面的对账");
+
+            // ② 库内逐类统计必须非空，且逐类条数/金额与规范流完全相等
+            Map<String, GeneratorMetaStore.EventStatRow> persisted = new TreeMap<>();
+            for (GeneratorMetaStore.EventStatRow row : store.listEventStats(view.runId())) {
+                persisted.put(row.eventType(), row);
+            }
+            assertFalse(persisted.isEmpty(), "失败运行也必须留下逐类分布（D10：event_stats 不许为空）");
+            assertEquals(streamCounts.keySet(), persisted.keySet(), "逐类集合必须与规范流一致");
+            for (Map.Entry<String, Long> entry : streamCounts.entrySet()) {
+                assertEquals(entry.getValue().longValue(), persisted.get(entry.getKey()).eventCount(),
+                        "逐类条数必须等于规范流里的真实条数：" + entry.getKey());
+                assertEquals(0, streamAmounts.get(entry.getKey()).compareTo(persisted.get(entry.getKey()).amount()),
+                        "逐类金额必须等于按契约口径独立重算的金额：" + entry.getKey()
+                                + "，库内 " + persisted.get(entry.getKey()).amount());
+            }
+
+            // ③ 报告 JSON 与库内是同一份事实，不许各说各话（报告不注册为制品，按约定路径直接读盘）
+            Path reportPath = Path.of("target", "it-mall-output", view.runId(), "run-report.json");
+            assertTrue(Files.isRegularFile(reportPath), "失败运行也必须留下运行报告：" + reportPath);
+            JsonNode reportJson = json(Files.readString(reportPath, StandardCharsets.UTF_8));
+            Map<String, Long> reported = new TreeMap<>();
+            for (JsonNode stat : reportJson.path("event_stats")) {
+                reported.put(stat.path("event_type").asText(), stat.path("count").asLong());
+            }
+            assertEquals(streamCounts, reported, "报告里的 event_stats 必须与规范流/库内一致");
+            assertEquals(view.successCount(), reported.values().stream().mapToLong(Long::longValue).sum(),
+                    "逐类条数之和必须等于 success_count（同一本账）");
+            String notes = reportJson.path("notes").toString();
+            assertTrue(notes.contains("部分真相"), "失败路径的统计口径必须写进报告 notes：" + notes);
+        }
+    }
+
+    /** 逐类金额口径（契约 payload 字段）：order_created 取 total_amount，支付/退款取 amount，其余类型无金额 */
+    private static BigDecimal amountOf(JsonNode event) {
+        String key = switch (event.path("event_type").asText()) {
+            case "order_created" -> "total_amount";
+            case "order_paid", "refund_created", "refund_completed" -> "amount";
+            default -> null;
+        };
+        JsonNode value = key == null ? null : event.path("payload").path(key);
+        return value == null || value.isMissingNode() || value.isNull() ? BigDecimal.ZERO
+                : new BigDecimal(value.asText());
     }
 
     @Test

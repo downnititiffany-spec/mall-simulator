@@ -70,3 +70,5 @@ derby-metastore/
 metric-staging/
 # 商城模拟器本地草稿目录
 mall-simulator/.freebuff/
+# 生成器运行产物（规范流 jsonl + 操作流水 + 运行报告；本机跑出来的，不入库）
+generator-output/

@@ -1,0 +1,43 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -XX:+UseSerialGC
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 68 source files with javac [debug release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/main/java/com/graduation/generator/service/GenerationRunService.java:[310,33] 无法将接口 com.graduation.generator.engine.GenerationEngine中的方法 run应用到给定类型;
+  需要: com.graduation.generator.engine.GenerationRequest,com.graduation.generator.contract.EventSink,java.util.function.BooleanSupplier
+  找到:    com.graduation.generator.engine.GenerationRequest,com.graduation.generator.contract.JsonlEventSink,java.util.function.BooleanSupplier,com.graduation.generator.engine.EventStatsRecorder
+  原因: 实际参数列表和形式参数列表长度不同
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.426 s
+[INFO] Finished at: 2026-09-12T10:56:48+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project synthetic-data-generator: Compilation failure
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/main/java/com/graduation/generator/service/GenerationRunService.java:[310,33] 无法将接口 com.graduation.generator.engine.GenerationEngine中的方法 run应用到给定类型;
+[ERROR]   需要: com.graduation.generator.engine.GenerationRequest,com.graduation.generator.contract.EventSink,java.util.function.BooleanSupplier
+[ERROR]   找到:    com.graduation.generator.engine.GenerationRequest,com.graduation.generator.contract.JsonlEventSink,java.util.function.BooleanSupplier,com.graduation.generator.engine.EventStatsRecorder
+[ERROR]   原因: 实际参数列表和形式参数列表长度不同
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

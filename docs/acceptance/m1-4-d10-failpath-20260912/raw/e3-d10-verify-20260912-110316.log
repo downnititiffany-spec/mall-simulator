@@ -1,0 +1,31 @@
+== M1-4 D10 失败路径只读取证 ==
+  runId=m1-4-d10-failpath-v1-v1-20260912-110139-8803
+  运行目录=D:\Develop_code\GraduationProject\generator-output\m1-4-d10-failpath-v1-v1-20260912-110139-8803
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  [PASS] ① 运行终态是 FAILED  status=FAILED error_code=RUN_FAILED success_count=840 failed_count=0
+  [PASS] ①-2 failed_count=0（失败来自商城拒绝，不是写入失败）  failed_count=0
+mysql: [Warning] Using a password on the command line interface can be insecure.
+  [PASS] ② 库内逐类账本非空（D10 修复前此处为 0 行）  类型数=7 合计条数=840
+  [PASS] ②-2 库内合计条数 = success_count  库内=840 success_count=840
+  [INFO] ②-3 库内逐类账  order_cancelled=239 order_created=355 order_paid=116 product_created=43 refund_completed=8 refund_created=8 user_registered=71
+  [PASS] ③ 规范流行数 = success_count  行数=840 success_count=840
+  [PASS] ⑤ 正控 order_created 有量  条数=355 金额分=2893300
+  [PASS] ③-2 逐类条数：库内 vs 规范流  类型数=7
+  [PASS] ③-3 逐类金额：库内 vs 规范流  类型数=7
+  [PASS] ④ 逐类条数：报告 vs 规范流  类型数=7
+  [PASS] ④-2 逐类金额：报告 vs 规范流  类型数=7
+  [PASS] ④-3 报告 status=FAILED 且条数合计=success_count  status=FAILED 合计=840
+  [PASS] ⑥ 报告写明失败路径统计口径  运行失败：event_stats 取自失败前已进入规范流的逐类账本（部分真相，840 条 = success_count）；被商城拒绝、未进规范流的事件不在其中 | 事件统计与制品已分别落 generation_event_stat / generation_artifact；清单为每个制品文件同名一份
+  [PASS] ④-4 流水 request 归属三分（real_http + local_accounting + skipped = 全部）  总行数=861 real_http=809 local_accounting=51 skipped=1
+  [PASS] ④-5 流水 OK 条数 = 入流条数（cancel）  OK=239 入流=239
+  [PASS] ④-5 流水 OK 条数 = 入流条数（createOrder）  OK=355 入流=355
+  [PASS] ④-5 流水 OK 条数 = 入流条数（createSyntheticUser）  OK=71 入流=71
+  [PASS] ④-5 流水 OK 条数 = 入流条数（listProducts）  OK=44 入流=44
+  [PASS] ④-5 流水 OK 条数 = 入流条数（pay）  OK=116 入流=116
+  [PASS] ④-5 流水 OK 条数 = 入流条数（refund）  OK=16 入流=16
+  [PASS] ④-6 流水 FAILED 条数 = 报告被拒次数  流水 FAILED=19 报告=19
+  [INFO] ④-7 流水 status 直方图  FAILED=19 OK=841 SKIPPED=1
+  [INFO] 残留A expected_quarantine_counts（失败路径）  {}
+  [INFO] 残留B dirty_sample_types（失败路径）  
+
+== 全部判据通过 ==

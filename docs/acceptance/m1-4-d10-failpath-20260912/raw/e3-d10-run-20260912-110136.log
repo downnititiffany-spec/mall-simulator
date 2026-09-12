@@ -1,0 +1,44 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-12T11:01:37.806+08:00  INFO 36836 --- [synthetic-data-generator] [           main] c.g.generator.GeneratorApplication       : Starting GeneratorApplication v0.1.0-SNAPSHOT using Java 17.0.12 with PID 36836 (D:\Develop_code\GraduationProject\synthetic-data-generator\target\synthetic-data-generator-0.1.0-SNAPSHOT.jar started by ASUS in D:\Develop_code\GraduationProject)
+2026-09-12T11:01:37.809+08:00  INFO 36836 --- [synthetic-data-generator] [           main] c.g.generator.GeneratorApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-09-12T11:01:38.780+08:00  INFO 36836 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-12T11:01:39.030+08:00  INFO 36836 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@455c1d8c
+2026-09-12T11:01:39.031+08:00  INFO 36836 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-12T11:01:39.100+08:00  INFO 36836 --- [synthetic-data-generator] [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-12T11:01:39.100+08:00  INFO 36836 --- [synthetic-data-generator] [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-12T11:01:39.100+08:00  INFO 36836 --- [synthetic-data-generator] [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-12T11:01:39.120+08:00  INFO 36836 --- [synthetic-data-generator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/generator_meta (MySQL 8.0)
+2026-09-12T11:01:39.154+08:00  INFO 36836 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.019s)
+2026-09-12T11:01:39.164+08:00  INFO 36836 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `generator_meta`: 1
+2026-09-12T11:01:39.166+08:00  INFO 36836 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Schema `generator_meta` is up to date. No migration necessary.
+2026-09-12T11:01:39.506+08:00  INFO 36836 --- [synthetic-data-generator] [           main] c.g.generator.GeneratorApplication       : Started GeneratorApplication in 2.308 seconds (process running for 2.782)
+2026-09-12T11:01:39.765+08:00  INFO 36836 --- [synthetic-data-generator] [           main] c.g.g.service.GenerationRunService       : 生成运行已入队：runId=m1-4-d10-failpath-v1-v1-20260912-110139-8803 plan=m1-4-d10-failpath-v1 v1 mode=MALL_API scenario=normal eventCount=860
+run_id=m1-4-d10-failpath-v1-v1-20260912-110139-8803
+2026-09-12T11:01:46.467+08:00 ERROR 36836 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : 生成运行失败：runId=m1-4-d10-failpath-v1-v1-20260912-110139-8803 code=RUN_FAILED
+
+com.graduation.generator.adapter.MallOperationException: [runForTarget] 运行中有 19 次商城操作被真实拒绝（已写入规范流 840 条）：createOrder → [createOrder] 商城拒绝：http://127.0.0.1:8090 → HTTP 400 code=INSUFFICIENT_STOCK message=库存不足: 2096441183038967810。商城侧不回滚，已成功的写操作真实存在；请清理后再重跑，或调小 event_count 让订单量落在库存可承受范围内
+	at com.graduation.generator.engine.MallApiGenerationEngine.runForTarget(MallApiGenerationEngine.java:154) ~[!/:0.1.0-SNAPSHOT]
+	at com.graduation.generator.service.GenerationRunService.execute(GenerationRunService.java:314) ~[!/:0.1.0-SNAPSHOT]
+	at com.graduation.generator.service.GenerationRunService.lambda$start$2(GenerationRunService.java:153) ~[!/:0.1.0-SNAPSHOT]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:842) ~[na:na]
+
+2026-09-12T11:01:46.521+08:00  INFO 36836 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : 生成运行收口：runId=m1-4-d10-failpath-v1-v1-20260912-110139-8803 status=FAILED success=840 failed=0 artifacts=2 manifestRecords=840
+{"run_id":"m1-4-d10-failpath-v1-v1-20260912-110139-8803","plan_version":1,"target_version":1,"status":"FAILED","started":"2026-09-12T11:01:39+08:00","finished":"2026-09-12T11:01:46+08:00","success_count":840,"failed_count":0,"checksum":"2b5ab155551e46bdd53815cb9667e2915e4aa8dc4b70f6a439c0d54324e61f8c","error":"RUN_FAILED: MallOperationException: [runForTarget] 运行中有 19 次商城操作被真实拒绝（已写入规范流 840 条）：createOrder → [createOrder] 商城拒绝：http://127.0.0.1:8090 → HTTP 400 code=INSUFFICIENT_STOCK message=库存不足: 2096441183038967810。商城侧不回滚，已成功的写操作真实存在；请清理后再重跑，或调小 event_count 让订单量落在库存可承受范围内","cancel_requested":false}
+{"run_id":"m1-4-d10-failpath-v1-v1-20260912-110139-8803","uri":"file:///D:/Develop_code/GraduationProject/generator-output/m1-4-d10-failpath-v1-v1-20260912-110139-8803/events-0001.jsonl","checksum":"2b5ab155551e46bdd53815cb9667e2915e4aa8dc4b70f6a439c0d54324e61f8c","bytes":355850,"record_count":840,"min_event_time":"2026-09-08T08:00:00+08:00","max_event_time":"2026-09-14T07:57:49+08:00","schema_version":"1.0","synthetic":true}
+{"run_id":"m1-4-d10-failpath-v1-v1-20260912-110139-8803","uri":"file:///D:/Develop_code/GraduationProject/generator-output/m1-4-d10-failpath-v1-v1-20260912-110139-8803/operation-journal.jsonl","checksum":"3d9658f76c16356939fb63101bc54899ae967728d09fece89786879dea7ab19e","bytes":220086,"record_count":861,"schema_version":"1.1","synthetic":true}
+{"run_id":"m1-4-d10-failpath-v1-v1-20260912-110139-8803","uri":"file:///D:/Develop_code/GraduationProject/generator-output/m1-4-d10-failpath-v1-v1-20260912-110139-8803/events-0001.manifest.json","checksum":"ea1f62720986bd8d98dc516d5521e2f83a73c8c2b0088dd6b8f11cb9adf283e7","bytes":485,"record_count":0,"schema_version":"1.0","synthetic":true}
+2026-09-12T11:01:46.893+08:00 ERROR 36836 --- [synthetic-data-generator] [           main] c.graduation.generator.cli.GeneratorCli  : 运行未成功：status=FAILED error=RUN_FAILED: MallOperationException: [runForTarget] 运行中有 19 次商城操作被真实拒绝（已写入规范流 840 条）：createOrder → [createOrder] 商城拒绝：http://127.0.0.1:8090 → HTTP 400 code=INSUFFICIENT_STOCK message=库存不足: 2096441183038967810。商城侧不回滚，已成功的写操作真实存在；请清理后再重跑，或调小 event_count 让订单量落在库存可承受范围内
+2026-09-12T11:01:46.895+08:00  INFO 36836 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-09-12T11:01:46.899+08:00  INFO 36836 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

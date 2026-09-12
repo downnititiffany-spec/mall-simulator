@@ -532,6 +532,31 @@ class MallApiGenerationEngineTest {
         assertTrue(failedOps > 0, "这条用例的前提就是订单会被拒");
     }
 
+    @Test
+    @DisplayName("D10：引擎抛异常之后，调用方手里的逐类账本仍记着「抛之前真的进了规范流的事件」")
+    void eventStatsLedgerSurvivesMallRejection() throws IOException {
+        // 真机上的失败形态就是这样：事件已经写进规范流，引擎才因为"有商城拒绝"抛异常。
+        // 账本若留在引擎内部，这次运行的逐类分布就随异常一起丢了（event_stats: []）。
+        mall = new FakeMallServer(TOKEN, null, 100);
+        TargetConfig target = mallTarget(mall.baseUrl(), ENV_NAME);
+        RecordingSink sink = new RecordingSink();
+        EventStatsRecorder ledger = new EventStatsRecorder();
+
+        assertThrows(MallOperationException.class, () -> engine.runForTarget(request("run-d10-ledger", "none"),
+                target, rejectingOrderAdapter(), sink, () -> false, null, ledger));
+
+        Map<String, Long> streamCounts = new TreeMap<>();
+        sink.events.forEach(event -> streamCounts.merge(event.eventType(), 1L, Long::sum));
+        Map<String, Long> ledgerCounts = new TreeMap<>();
+        ledger.snapshot().forEach((type, stat) -> ledgerCounts.put(type, stat.count()));
+
+        assertFalse(sink.events.isEmpty(), "这条用例的前提是失败前真的写进了规范流");
+        assertFalse(ledger.isEmpty(), "失败样本的逐类分布不许随异常一起丢");
+        // 逐类相等是"不重不漏"的判据：多一条 = 文件引擎那本"尝试账"被共用（重复记账），少一条 = 漏记
+        assertEquals(streamCounts, ledgerCounts, "账本必须与规范流逐类相等");
+        assertEquals(sink.events.size(), ledger.totalCount(), "账本条数之和必须等于入流条数");
+    }
+
     // ---------- 辅助 ----------
 
     /**

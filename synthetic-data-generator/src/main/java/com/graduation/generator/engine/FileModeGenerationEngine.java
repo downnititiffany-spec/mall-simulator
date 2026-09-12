@@ -103,13 +103,14 @@ public final class FileModeGenerationEngine implements GenerationEngine {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public EngineOutcome run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled) {
+    public EngineOutcome run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled,
+                             EventStatsRecorder eventStats) {
         Double dirtyRate = DIRTY_RATE_BY_PROFILE.get(request.dirtyProfile().toLowerCase(Locale.ROOT));
         if (dirtyRate == null) {
             throw new IllegalArgumentException("未知脏数据档位 " + request.dirtyProfile()
                     + "，已实现档位：" + DIRTY_RATE_BY_PROFILE.keySet());
         }
-        return new Run(request, sink, cancelled, dirtyRate).execute();
+        return new Run(request, sink, cancelled, dirtyRate, eventStats).execute();
     }
 
     /** 用户数规则（事件预算的派生量；登记 D-015） */
@@ -163,7 +164,12 @@ public final class FileModeGenerationEngine implements GenerationEngine {
         private final DistributionKit dirtyRng;
 
         private final CanonicalEventFactory factory;
-        private final Map<String, EventTypeStat> stats = new TreeMap<>();
+
+        /**
+         * 逐类事件账本。<b>不是</b>本类私有：由调用方（运行服务）持有，
+         * 这样运行中途抛异常时，"抛之前真的进了规范流的事件"仍然在调用方手里（D10）。
+         */
+        private final EventStatsRecorder eventStats;
         private final List<DirtySample> dirtySamples = new ArrayList<>();
         private final List<String> notes = new ArrayList<>();
         private final List<String> sampleEventIds = new ArrayList<>();
@@ -199,11 +205,13 @@ public final class FileModeGenerationEngine implements GenerationEngine {
         private long gmvCents;
         private long refundCents;
 
-        private Run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled, double dirtyRate) {
+        private Run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled, double dirtyRate,
+                    EventStatsRecorder eventStats) {
             this.request = request;
             this.sink = sink;
             this.cancelled = cancelled;
             this.dirtyRate = dirtyRate;
+            this.eventStats = eventStats;
             this.expectedEffect = ScenarioRegistry.get(request.scenario()).expectedEffect();
             this.factors = ScenarioRegistry.get(request.scenario()).factors(config());
             this.userRng = new DistributionKit(subSeed(request.seed(), "users"));
@@ -281,7 +289,7 @@ public final class FileModeGenerationEngine implements GenerationEngine {
                     .sampleEventIds(List.copyOf(sampleEventIds))
                     .dirtySamples(List.copyOf(dirtySamples))
                     .build();
-            return new EngineOutcome(result, stats, emitted, failed, dirtySamples, notes);
+            return new EngineOutcome(result, eventStats.snapshot(), emitted, failed, dirtySamples, notes);
         }
 
         // ---------- 商品池 ----------
@@ -654,8 +662,9 @@ public final class FileModeGenerationEngine implements GenerationEngine {
             if (sampleEventIds.size() < SAMPLE_EVENT_IDS) {
                 sampleEventIds.add(event.eventId());
             }
-            stats.merge(event.eventType(), new EventTypeStat(1, amount),
-                    (left, right) -> left.plus(right.count(), right.amount()));
+            // 记账发生在 sink.write 成功之后：账本里的每一条都对应规范流里真实存在的一条。
+            // 失败/被白名单摘掉的事件不进账本（前者没进流，后者本就不该进流）。
+            eventStats.record(event.eventType(), amount);
             return true;
         }
 

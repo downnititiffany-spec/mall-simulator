@@ -10,6 +10,7 @@ import com.graduation.generator.contract.ContractFormat;
 import com.graduation.generator.contract.JsonlEventSink;
 import com.graduation.generator.core.DirtySample;
 import com.graduation.generator.engine.EngineOutcome;
+import com.graduation.generator.engine.EventStatsRecorder;
 import com.graduation.generator.engine.EventTypeStat;
 import com.graduation.generator.engine.GenerationEngine;
 import com.graduation.generator.engine.GenerationRequest;
@@ -293,6 +294,9 @@ public class GenerationRunService {
         }
         Path runDir = outputRoot.resolve(runId);
         JsonlEventSink sink = new JsonlEventSink(runId, outputRoot, ContractFormat.SCHEMA_VERSION, maxRecordsPerFile);
+        // 逐类事件账本由本方法持有、交给引擎往里记（D10）：引擎在"事件已进流之后"抛异常时，
+        // 失败路径读到的仍是抛之前真的写进规范流的那些事件，不必为失败另开一条统计路径。
+        EventStatsRecorder eventStats = new EventStatsRecorder();
         EngineOutcome outcome = null;
         MallApiGenerationEngine.MallRunOutcome mallOutcome = null;
         ArtifactManifest manifest = null;
@@ -303,12 +307,12 @@ public class GenerationRunService {
             GenerationRequest request = new GenerationRequest(runId, plan.scenario(), plan.seed(),
                     plan.startTime(), plan.endTime(), plan.eventCount(), plan.ratePerSecond(), plan.dirtyProfile());
             if (mallContext == null) {
-                outcome = engine.run(request, sink, cancelSupplier(runId));
+                outcome = engine.run(request, sink, cancelSupplier(runId), eventStats);
             } else {
                 // 复用落库前那一次预检：预检里的目录读取是真实 HTTP 调用，重复做会让
                 // "目录读了几次"对不上账，也会让商城侧凭空多一次调用。
                 mallOutcome = mallEngine.runForTarget(request, mallContext.config, mallContext.adapter, sink,
-                        cancelSupplier(runId), mallContext.preflight());
+                        cancelSupplier(runId), mallContext.preflight(), eventStats);
                 outcome = mallOutcome.outcome();
             }
             manifest = sink.closeAndBuildManifest();
@@ -338,9 +342,9 @@ public class GenerationRunService {
         long failedCount = outcome == null ? 0 : outcome.failedCount();
         try {
             persistArtifacts(runId, artifacts);
-            persistEventStats(runId, outcome);
-            writeReport(runDir, runId, plan, terminal, successCount, failedCount, checksum, outcome, artifacts,
-                    errorCode, errorMessage, mallOutcome);
+            persistEventStats(runId, eventStats);
+            writeReport(runDir, runId, plan, terminal, successCount, failedCount, checksum, outcome, eventStats,
+                    artifacts, errorCode, errorMessage, mallOutcome);
         } catch (RuntimeException e) {
             // 落库/报告失败比"运行失败"更严重：状态必须收口成 FAILED，且原始失败信息不能被覆盖掉
             log.error("运行对账落库失败：runId={}", runId, e);
@@ -459,17 +463,23 @@ public class GenerationRunService {
         }
     }
 
-    private void persistEventStats(String runId, EngineOutcome outcome) {
-        if (outcome == null) {
-            return;
-        }
-        for (Map.Entry<String, EventTypeStat> entry : outcome.eventStats().entrySet()) {
+    /**
+     * 落库逐类事件统计。
+     *
+     * <p><b>失败路径也照落（D10）</b>：账本由调用方（{@link #execute}）持有，引擎抛异常时它已经记着
+     * "抛之前真的写进规范流的事件"。过去这里在 {@code outcome == null} 时直接 return，等于让失败样本
+     * 的逐类分布凭空消失（{@code event_stats: []}）——而失败样本恰恰是最需要"失败前发生了什么"的样本。
+     * 现在成功与失败读同一本账，这里没有分支。</p>
+     */
+    private void persistEventStats(String runId, EventStatsRecorder eventStats) {
+        for (Map.Entry<String, EventTypeStat> entry : eventStats.snapshot().entrySet()) {
             store.upsertEventStat(runId, entry.getKey(), entry.getValue().count(), entry.getValue().amount());
         }
     }
 
     private void writeReport(Path runDir, String runId, PlanRow plan, RunStatus terminal, long successCount,
-                             long failedCount, String checksum, EngineOutcome outcome, List<Artifact> artifacts,
+                             long failedCount, String checksum, EngineOutcome outcome, EventStatsRecorder eventStats,
+                             List<Artifact> artifacts,
                              String errorCode, String errorMessage,
                              MallApiGenerationEngine.MallRunOutcome mallOutcome) {
         List<RunReport.ArtifactLine> artifactLines = new ArrayList<>();
@@ -478,14 +488,21 @@ public class GenerationRunService {
                     artifact.bytes(), artifact.recordCount(), timeOf(artifact.minEventTime()),
                     timeOf(artifact.maxEventTime())));
         }
-        List<RunReport.StatLine> stats = outcome == null ? List.of()
-                : outcome.eventStats().entrySet().stream()
+        // 逐类统计取自运行账本（成功/失败同一本账，见 persistEventStats 的说明）：失败运行时它记的是
+        // "失败前已经进流的事件"，也就是与 success_count 同源的那批事件。
+        List<RunReport.StatLine> stats = eventStats.snapshot().entrySet().stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))
                 .map(entry -> new RunReport.StatLine(entry.getKey(), entry.getValue().count(), entry.getValue().amount()))
                 .toList();
         List<String> notes = new ArrayList<>();
         if (outcome != null) {
             notes.addAll(outcome.notes());
+        } else {
+            // 空分布与"统计缺失"必须能被区分开：一个说"真的一条都没写进去"，另一个说"我们没记"。
+            notes.add(eventStats.isEmpty()
+                    ? "运行在写入任何事件之前就失败了：本次 event_stats 为空是事实（规范流里一条都没有），不是统计缺失"
+                    : ("运行失败：event_stats 取自失败前已进入规范流的逐类账本（部分真相，%d 条 = success_count）；"
+                            + "被商城拒绝、未进规范流的事件不在其中").formatted(eventStats.totalCount()));
         }
         if (mallOutcome != null) {
             MallApiGenerationEngine.Preflight preflight = mallOutcome.preflight();

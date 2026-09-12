@@ -18,9 +18,23 @@ import java.util.function.BooleanSupplier;
  *       由调用方把运行置为 CANCELLED（§4.4 幂等取消）。</li>
  *   <li><b>失败不隐藏</b>：单条事件失败计入 {@code failedCount} 并在 {@code notes} 说明；
  *       不可恢复的错误直接抛出，由运行服务置 FAILED 并写 error_code。</li>
+ *   <li><b>逐类账本交给调用方</b>：每写进规范流一条事件，就往调用方传入的 {@link EventStatsRecorder}
+ *       记一笔；引擎自己的汇总数只能来自这本账。理由（D10）：引擎"事件已进流之后"抛异常时，
+ *       调用方仍要能报出失败样本的逐类分布——账本若留在引擎内部，失败样本就只剩 {@code event_stats: []}。</li>
  * </ol>
  */
 public interface GenerationEngine {
 
-    EngineOutcome run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled);
+    /**
+     * 执行一次生成，逐类事件账本由调用方持有。
+     *
+     * @param eventStats 逐类事件账本（调用方创建；引擎只往里记"真的写进规范流"的事件）
+     */
+    EngineOutcome run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled,
+                      EventStatsRecorder eventStats);
+
+    /** 便捷重载：账本由引擎自己新建，只用于"调用方不关心失败样本分布"的场合（测试、单次试算）。 */
+    default EngineOutcome run(GenerationRequest request, EventSink sink, BooleanSupplier cancelled) {
+        return run(request, sink, cancelled, new EventStatsRecorder());
+    }
 }
