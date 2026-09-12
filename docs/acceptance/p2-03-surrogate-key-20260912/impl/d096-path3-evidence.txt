@@ -1,0 +1,21 @@
+A0 黄金夹具 = file:///D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl
+A1 实际读入行数 = 55   （夹具文件行数实测 55）
+
+B. 黄金 55 条里 payload.*_id 的空值实测（SQL 侧 get_json_object 取值）
+B1 payload.user_id      空/缺 = 15   非空 = 40
+B1 payload.product_id   空/缺 = 24   非空 = 31
+B1 payload.category_id  空/缺 = 50   非空 = 5
+B1 payload.order_id     空/缺 = 29   非空 = 26
+
+C. 阳性对照（证明上面的「空 = 0」不是探针没跑到）
+C1 空串形态计数 = 1（期望 1）
+C2 仅空白计数   = 1（期望 1）
+C3 字段缺失计数 = 1（期望 1）
+C4 阳性对照通过 ⇒ B 段表达式确实能数出空值，「空 = 0」才算真 0
+
+D. **结论（推翻「恒为 0」假设）**
+D1 黄金夹具里 `payload.*_id` 的**空串形态实测 0 条**，但**字段不存在形态大量存在**：
+D2 user_id 15/55、product_id 24/55、category_id 50/55、order_id 29/55 行**不含该字段**。
+D3 这些行经 payload_* 列投影后即为 NULL ⇒ 触发 D-087「空/缺 ⇒ NULL 键」，
+D4 故「空 id 真实发生量恒为 0 ⇒ 不需要任何记录通道」的假设**在本项目夹具上不成立**。
+D5 未测：本读数取自**夹具**；在产 landing 的真实分布未测（无集群、无在产 landing 读数）。

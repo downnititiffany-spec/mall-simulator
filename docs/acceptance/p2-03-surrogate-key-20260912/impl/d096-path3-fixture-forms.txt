@@ -1,0 +1,15 @@
+# D-096 路径 3 取证：黄金夹具 payload.*_id 取值形态（逐行正则实测，独立于 Spark 侧读数）
+# 夹具（只读）：tests/golden-dataset/events/golden-20260901.jsonl
+# 方法：逐行正则匹配 "field": <value>；未匹配到即记为 <ABSENT>（字段不存在）
+# 行数：55
+
+E1 payload.user_id : 空串形态 = 0 ; 字段不存在 = 15 ; 合计空/缺 = 15 / 55
+E2 payload.user_id 取值形态全量分布：
+      15 x <ABSENT>
+      14 x "1"
+      13 x "2"
+      12 x "3"
+      1 x "9"
+E1 payload.product_id : 空串形态 = 0 ; 字段不存在 = 24 ; 合计空/缺 = 24 / 55
+E1 payload.category_id : 空串形态 = 0 ; 字段不存在 = 50 ; 合计空/缺 = 50 / 55
+E1 payload.order_id : 空串形态 = 0 ; 字段不存在 = 29 ; 合计空/缺 = 29 / 55

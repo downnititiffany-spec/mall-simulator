@@ -1,0 +1,297 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.graduation:spark-jobs >----------------------
+[INFO] Building spark-jobs 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ spark-jobs ---
+[WARNING] Using platform encoding (GBK actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:compile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__61.0-1.8.0_20221110T195421.jar
+[INFO] compile in 1.7 s
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ spark-jobs ---
+[WARNING] Using platform encoding (GBK actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:testCompile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[WARNING] Plugin is modifying testCompileSourceRoots through add(), which will not work in Maven 4.0.0. Use MavenProject.addTestCompileSourceRoot()/removeTestCompileSourceRoot() methods instead. If using a plugin, please upgrade to the latest version or report the issue to the plugin maintainer. To disable these warnings, set -Dmaven.project.sourceRoots.warningsDisabled=true on the command line, in the .mvn/maven.config file, or in project POM properties.
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__61.0-1.8.0_20221110T195421.jar
+[INFO] compile in 0.6 s
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ spark-jobs ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junit.JUnit3Provider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.MetricAdsSpecTest
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in com.graduation.analytics.MetricAdsSpecTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- scalatest:2.2.0:test (test) @ spark-jobs ---
+[INFO] ScalaTest report directory: D:\Develop_code\GraduationProject\spark-jobs\target\surefire-reports
+Discovery starting.
+Discovery completed in 345 milliseconds.
+Run starting. Expected test count is: 111
+OdsV2SqlContractSpec:
+OdsLoadSql
+- should A9 四个模板�? SELECT 表达式与目标表列逐位对齐（数据列 + dt/hour 分区派生列）
+- should A9b 常量 'landing' AS source_file 已消失，source_file �? landing_file 同源同�??
+- should A10 source_system 来自平台注入值（不是行内值），行内原值只�? raw_source_system
+- should A10b 注入值经 SQL 字面量渲染并�? ' 转义（�?�来自平台，不得拼出可注�? SQL�?
+- should A9c raw_event_type 为行�? event_type 原样值，payload_json/payload_hash 由原样切片产�?
+- should A9d INSERT 目标列与 SELECT 表达式的表名/分区子句保持改�?�前形�??
+- should A9e 四张表的业务列表达式仍从 payload 结构体取，v1 口径未变
+- should A12b 既有 DWD 模板�?个都不引�? v2 新增列（加法扩列不牵连下游）
+QuartileStatsRfmSpec:
+QuartileStats
+- should 线�?�插值分位点正确
+- should 正向五分位打分：越大分越�?
+- should 反向五分位打分：间隔越小分越高（R 维度�?
+RfmScorer
+- should 八类标签映射正确
+- should 生命周期状�?�判定正�?
+WarehouseNamespaceSpec:
+WarehouseNamespace
+- should 常量与规�? rule 段�?�字�?致（含层顺序与检查顺序）
+- should 规格 vectors 逐向量对账（Scala 侧）
+- should 行为护栏：null/空串缺省、不 trim、未知层与非法表名直接失�?
+- should fromArgs �? --hiveDatabasePrefix，缺省走 dw，非法前�?在作业内也照样失�?
+- should �?�? SQL 模板�? INIT_SCHEMA 随命名空间走（换前缀后不残留 dw_* 库名�?
+- should INIT_SCHEMA �? 38 �? DDL 全部只引用当前命名空间的库（5 建库 + 33 建表�?
+OrderTradeCompilerSpec:
+OrderTradeCompiler
+- should CREATED→PAID→COMPLETED 合并�? PAID 有效支付
+- should 两件商品订单在订单明细中产生两行（商品展�?�?
+- should 取消订单不进入支付（final_paid_flag=0�?
+- should 已支付后全额�?款：GMV 保留支付额，�?�?售额为零
+- should 部分�?�? �? REFUNDING �? final_refunded_flag=0
+- should 多次�?款事件按 refund_id 去重汇�?�（同一 refund_id 只计�?次）
+- should 订单归属业务日由 order_created 决定，迟到事件重算到原分�?
+OdsV2EdgeCaseSpec:
+JsonObjectSlicer on controlled fixtures
+- should A5c 嵌套/转义行切出的原文与源行那�?段�?�字节相�?
+- should A6 �? payload 不丢行：�? payload / 值非对象两行照常入库且双 NULL；整行残缺的行走既有 valid 闸拒�?
+- should A6b 相同 payload �? hash 相同但两行都在（hash 仅诊断，不是去重键）
+- should A7b source_system 全表等于注入值；raw_source_system 保留行内差异（row-src/other-src�?
+- should A8b 五行 landing_file 都指向受控夹具文件，source_file 与之相等
+MetricAdsSpecTest:
+MetricAdsSpec
+- should 覆盖 8 �? ADS �? Hive/MySQL 表名�?�?对应
+- should P1-04：库名前�?可替换，表名映射不写死（换源时同�?套规格复用）
+- should 列清单与 Java �? MetricAdsCatalog 完全�?致（含顺序）
+- should R7-0 口径列已贯�?�到导出口径（full_refund_rate 必须导出�?
+MetricExportJob.posix
+- should �? Windows 路径规范成正斜杠（清单是 JSON，反斜杠会变非法转义�?
+SqlTemplateSpec:
+OdsLoadSql
+- should 版本过滤并派�? dt/hour 分区
+- should 用户主题 ODS 覆盖 user_registered 且保留画像字�?
+- should 商品主题 ODS 覆盖商品与库存事件且金额�? DECIMAL
+- should 交易主题 ODS 覆盖订单/支付/�?款且不被 behavior 过滤�?
+- should 隔离行按未知版本或缺失主键筛�?
+DimSql
+- should 用户维度取每 user_id �?新事件生成快照并保留来源批次
+- should 商品维度取每 product_id �?新建档事件并�? unknown key 兜底（库存事件不进快照）
+DwdSql
+- should event_id 去重且只保留合法枚举
+- should 重复事件写入拒绝记录
+DwsSql
+- should 用户日宽表按行为类型 CASE 聚合�? buy 来自订单明细
+- should 漏斗 DWS 为宽松用户口径且 order/pay 用户来自订单明细（禁硬编�? 0�?
+- should 商品行为�? buy 来自有效支付订单而非行为枚举，且转化率不能乘状�??
+- should 交易日汇总按有效支付口径（order_count=支付订单数）并处理分�? 0
+- should 商品�?售日/用户交易周期/地区�?售日模板存在且口径正�?
+AdsSql
+- should 大盘�?款率分母 0 �? null；热门排行限 TopN
+- should DEF-08：热门商品名取维度兜底，缺失维度的商品不得产�? NULL 名（否则 BLOCKING 空关键列阻断发布�?
+- should R7-0 口径：PV 只计 view、�??款率按�?�有已完成�??款的订单」�?�另立全额�??款率
+- should 漏斗 ADS 展开 4 �? stage �?
+- should 商品转化 buy_users 取商品销�? DWS 去重买家数�?�非 buy 件数
+- should 用户画像 RFM 分层：五分位 + 八类标签 + 生命周期
+- should DEF-10：用户画像的 NOT NULL 列不得产�? NULL（下单但当日无行为的用户会把发布 INSERT 打挂�?
+- should 数据质量大盘包含 4 �? QualityChecker 同名规则
+FunnelHeatAnomalySpec:
+FunnelComputer
+- should 四阶段转化率与整体购买转化率正确
+- should 分母�? 0 时返�? None
+ProductHeat
+- should 对数权重热度：购�?>加购>收藏>浏览
+- should 头部贡献度计算（长尾�?
+AnomalyDetector
+- should z-score 阈�?�判�?
+- should IQR 边界与维度贡�?
+Cleaners
+- should 时间标准化与校验谓词
+JobArgsRegistrySpec:
+JobArgs.parse
+- should 解析标准参数并校验必�?
+- should 拒绝缺参与非法日�?
+JobRegistry
+- should 注册全部 11 作业且依赖顺序正�?
+OdsV2ByteFidelitySpec:
+JsonObjectSlicer
+- should A5 payload 缺失/畸形�?�? Left，正常行 Right 且为原始子串
+- should A5b 无空�?/多空�?/转义 三种形�?�都原样返回（不补空格�?�不还原转义�?
+- should A4b golden �? 1 �? payload �? SHA-256 与独�? oracle 逐字节一致（122 字节�?
+- should A4 逐行比对：源�? payload 原文 == 表内 payload_json，SHA-256 == 表内 payload_hash
+- should A6 landing 原样列不参与去重键：同一 payload_hash 的两行都保留（hash 仅诊断）
+- should A7 source_system 取平台注入�?�（不是行内值），raw_source_system 保行内原�?
+- should A8 landing_file/source_file 取真实落地文件路径（非常�? 'landing'�?
+- should A12c 端到端真跑：golden 55 行读入，四主题表合计 52 行（3 �? rejected�?
+- should A12d metastore 读回的表结构�? 12 列公共列，顺序与唯一�?有�?�一�?
+SurrogateKeySpec:
+契约向量�?
+- should 可被读到且条数为 23（含 3 �? NULL_KEY�? *** FAILED ***
+  Stream() was not equal to List("user", "product", "category", "brand", "coupon") (SurrogateKeySpec.scala:45)
+- should 每一�? KEY 向量：normalized / material / sha256 / keyHex16 / keyBigint 全部命中
+- should 每一�? NULL_KEY 向量：不生成键（None），且契�? rawInput 的三种区分靠 rawInputNotation
+- should category / brand / coupon 向量复算命中（仅单测可达，真链无数据�?
+- should 契约枚举外的实体�?律拒绝（D-093：order 不得套用代理键算法）
+- should 同一三元组恒同键（幂等），不同三元组不同键（单射�?15 组无碰撞�? *** FAILED ***
+  17 was not equal to 15 (SurrogateKeySpec.scala:157)
+- should 键恒�? [1, 2^63-1]：清符号�? + 全零�? 1（D-085�?
+SurrogateKey.toBIGINT（SQL 表达式）
+- should 在真�? Spark 上�?�向量与内存实现同�?? *** FAILED ***
+  java.lang.IllegalArgumentException: requirement failed: entity 不在契约枚举内：order（D-083 枚举封闭；order/category 之外的新增实体须走契约升版，不得就地扩写�?
+  at scala.Predef$.require(Predef.scala:281)
+  at com.graduation.analytics.sql.SurrogateKey$.keyExpr(SurrogateKey.scala:161)
+  at com.graduation.analytics.sql.SurrogateKey$.literalSource(SurrogateKey.scala:198)
+  at com.graduation.analytics.sql.SurrogateKeySpec.$anonfun$new$42(SurrogateKeySpec.scala:207)
+  at scala.collection.immutable.List.map(List.scala:297)
+  at com.graduation.analytics.sql.SurrogateKeySpec.$anonfun$new$39(SurrogateKeySpec.scala:202)
+  at org.scalatest.OutcomeOf.outcomeOf(OutcomeOf.scala:85)
+  at org.scalatest.OutcomeOf.outcomeOf$(OutcomeOf.scala:83)
+  at org.scalatest.OutcomeOf$.outcomeOf(OutcomeOf.scala:104)
+  at org.scalatest.Transformer.apply(Transformer.scala:22)
+  ...
+- should 空串 / 仅空�? / NULL 三种输入�? SQL 侧都得到 NULL（不落哨兵�?�不合并�? *** FAILED ***
+  org.apache.spark.sql.catalyst.parser.ParseException: [PARSE_SYNTAX_ERROR] Syntax error at or near '$'.(line 2, pos 12)
+
+== SQL ==
+SELECT
+  CASE WHEN $src, trim(cast('' AS STRING)) IS NULL THEN NULL ELSE cast(conv(substr(hex(sha2(concat(cast($src AS STRING), '|', 'user', '|', upper(trim(cast('' AS STRING)))), 256)), 1, 16), 16, 10) AS BIGINT) END AS empty_str,
+------------^^^
+  CASE WHEN $src, trim(cast('   ' AS STRING)) IS NULL THEN NULL ELSE cast(conv(substr(hex(sha2(concat(cast($src AS STRING), '|', 'user', '|', upper(trim(cast('   ' AS STRING)))), 256)), 1, 16), 16, 10) AS BIGINT) END AS blank,
+  CASE WHEN $src, trim(cast(CAST(NULL AS STRING) AS STRING)) IS NULL THEN NULL ELSE cast(conv(substr(hex(sha2(concat(cast($src AS STRING), '|', 'user', '|', upper(trim(cast(CAST(NULL AS STRING) AS STRING)))), 256)), 1, 16), 16, 10) AS BIGINT) END AS null_raw,
+  CASE WHEN CAST(NULL AS STRING), trim(cast('U1' AS STRING)) IS NULL THEN NULL ELSE cast(conv(substr(hex(sha2(concat(cast(CAST(NULL AS STRING) AS STRING), '|', 'user', '|', upper(trim(cast('U1' AS STRING)))), 256)), 1, 16), 16, 10) AS BIGINT) END AS null_src,
+  CASE WHEN $src, trim(cast('U000065' AS STRING)) IS NULL THEN NULL ELSE cast(conv(substr(hex(sha2(concat(cast($src AS STRING), '|', 'user', '|', upper(trim(cast('U000065' AS STRING)))), 256)), 1, 16), 16, 10) AS BIGINT) END AS present
+  at org.apache.spark.sql.catalyst.parser.ParseException.withCommand(parsers.scala:257)
+  at org.apache.spark.sql.catalyst.parser.AbstractParser.parse(parsers.scala:98)
+  at org.apache.spark.sql.execution.SparkSqlParser.parse(SparkSqlParser.scala:54)
+  at org.apache.spark.sql.catalyst.parser.AbstractSqlParser.parsePlan(AbstractSqlParser.scala:68)
+  at org.apache.spark.sql.SparkSession.$anonfun$sql$5(SparkSession.scala:684)
+  at org.apache.spark.sql.catalyst.QueryPlanningTracker.measurePhase(QueryPlanningTracker.scala:138)
+  at org.apache.spark.sql.SparkSession.$anonfun$sql$4(SparkSession.scala:683)
+  at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:900)
+  at org.apache.spark.sql.SparkSession.sql(SparkSession.scala:682)
+  at org.apache.spark.sql.SparkSession.sql(SparkSession.scala:713)
+  ...
+代理键真链（隔离 warehouse + 黄金 55 条）
+- should 旧列不变且新键列与契约同值（A6�?/A6⑤） *** FAILED ***
+  org.apache.spark.sql.catalyst.parser.ParseException: [PARSE_SYNTAX_ERROR] Syntax error at or near 'u'.(line 11, pos 12)
+
+== SQL ==
+
+INSERT OVERWRITE TABLE dw_dim.dim_user PARTITION(dt = '20260901')
+SELECT
+  CAST(REGEXP_EXTRACT(u.payload_user_id, '^[A-Za-z]*([0-9]+)$', 1) AS BIGINT) AS user_id,
+  u.payload_age_group AS age_group,
+  u.payload_city_level AS city_level,
+  u.payload_member_level AS member_level,
+  SUBSTR(u.event_time, 1, 10) AS register_date,
+  TO_TIMESTAMP(u.event_time) AS register_time,
+  u.ingest_batch_id AS source_batch_id,
+  CASE WHEN u.source_system, trim(cast(u.payload_user_id AS STRING)) IS NULL THEN NULL ELSE cast(conv(substr(hex(sha2(concat(cast(u.source_system AS STRING), '|', 'user', '|', upper(trim(cast(u.payload_user_id AS STRING)))), 256)), 1, 16), 16, 10) AS BIGINT) END AS user_key
+------------^^^
+FROM (
+  SELECT *,
+         ROW_NUMBER() OVER (PARTITION BY payload_user_id ORDER BY event_time DESC) AS rn
+  FROM dw_ods.ods_user_event
+  WHERE dt = '20260901'
+    AND schema_version = '1.0'
+    AND payload_user_id IS NOT NULL
+) u
+WHERE u.rn = 1
+  at org.apache.spark.sql.catalyst.parser.ParseException.withCommand(parsers.scala:257)
+  at org.apache.spark.sql.catalyst.parser.AbstractParser.parse(parsers.scala:98)
+  at org.apache.spark.sql.execution.SparkSqlParser.parse(SparkSqlParser.scala:54)
+  at org.apache.spark.sql.catalyst.parser.AbstractSqlParser.parsePlan(AbstractSqlParser.scala:68)
+  at org.apache.spark.sql.SparkSession.$anonfun$sql$5(SparkSession.scala:684)
+  at org.apache.spark.sql.catalyst.QueryPlanningTracker.measurePhase(QueryPlanningTracker.scala:138)
+  at org.apache.spark.sql.SparkSession.$anonfun$sql$4(SparkSession.scala:683)
+  at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:900)
+  at org.apache.spark.sql.SparkSession.sql(SparkSession.scala:682)
+  at org.apache.spark.sql.SparkSession.sql(SparkSession.scala:713)
+  ...
+- should 大写归一必须文化无关（Locale.ROOT）�?��?�土耳其语区域下不得变形 *** FAILED ***
+  24 was not equal to 21 (SurrogateKeySpec.scala:379)
+OdsV2SchemaOwnerSpec:
+- should A3c v1 数据列的列序/顺序在所有�?�中与改造前快照逐位�?致（�?个字面量都不许漂�?
+- should A1 v2 新增列全部追加在 v1 列之后（既有列的序号�?格不动）
+- should A1b 12 公共列在四张表里都在，且共享段（信封 7 列）逐位�?�?
+- should A2 event_time 保持 STRING（类型收敛不在本任务范围�?
+- should A3 四张表两两不同（业务列各表自有，不是把同�?�? payload_* 抄四遍）
+- should A3b 信封共享列名不含 payload_ 前缀，业务列名必须含 payload_ 前缀（分层不混）
+- should A11 warehouse/ddl/00-ods.sql 的四张表列名/类型/顺序与唯�?�?有�?��?�列�?�?
+- should A11b 静�?? DDL �? v1 全部列与改�?�前快照逐位�?致（只允许在尾部追加�?
+- should A11c 静�?? DDL 的最终列集与唯一�?有�?��?�列�?致，分区列在 PARTITIONED BY �?
+- should A12 LocalSchemaInitJob �? ODS 建表列由唯一�?有�?�派生，逐列�?致且语句总数不变
+IdCodecSpec:
+IdCodec
+- should 剥掉契约 id 的字母前�?（U/P/O/C/B）并转数�?
+- should 纯数�? id 原样通过（兼容旧夹具与商城自增主键）
+- should 无法数字化的取�?�返�? None 而不�? 0（不静默兜底�?
+- should 生成与规则一致的 SQL 表达式（全匹配形状，不匹�? �? NULL�?
+�?�? id 承接�?
+- should �? IdCodec 归一化，不再直接 CAST 契约 id
+- should 行为/维度/交易三条 id 链的归一化次数与列对应正�? *** FAILED ***
+  5 was not equal to 4 (IdCodecSpec.scala:92)
+- should ODS 载入层保留字符串原文（不�? ODS 提前转型�?
+JsonObjectSlicerSpec:
+JsonObjectSlicer
+- should A5 正常行切出原始子串；缺失/嵌套/重复�?/未配�?/非对�? �?�? Left
+- should A5b 无空�?/多空�?/转义 三种形�?�都原样返回（不补空格�?�不还原转义�?
+- should A5c 大括�?/转义在深层嵌套下仍能正确找到顶层键（键名出现在嵌套对象里不算顶层�?
+- should A5d 缺冒�?/缺�??/未终止字符串 �?�? Left（不抛异常）
+- should A4b 黄金夹具�? 1 �? payload �? SHA-256 与独�? oracle 逐字节一致（122 字节�?
+- should A4c 黄金夹具逐行：切片结果必须是源行的原始子串（不是重序列化产物�?
+Run completed in 21 seconds, 740 milliseconds.
+Total number of tests run: 111
+Suites: completed 15, aborted 0
+Tests: succeeded 104, failed 7, canceled 0, ignored 0, pending 0
+*** 7 TESTS FAILED ***
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  27.816 s
+[INFO] Finished at: 2026-09-12T20:10:02+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.scalatest:scalatest-maven-plugin:2.2.0:test (test) on project spark-jobs: There are test failures -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
