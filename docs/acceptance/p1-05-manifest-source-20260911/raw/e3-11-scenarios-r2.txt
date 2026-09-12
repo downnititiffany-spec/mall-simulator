@@ -1,0 +1,46 @@
+== P1-05 E3 第二轮 RunLabel=r2 端口=8093 开始时刻=2026-09-12 09:03:01
+   git HEAD = f5eb74ac8349eb817348a9c92e63abd7713bba21  工作区改动文件数 = 17
+== 追加前：5089 字节 12 行
+    checkpoint（追加前）: id=103 source_id=1 offset=5089 | id=104 source_id=2 offset=5089
+== 追加后：7210 字节 17 行（+2121 字节，取自同一真实文件第 13..17 行）
+    （切回源 1）DB runtime_profile: id=1 status=ACTIVE source_id=1
+
+== 启动实例（工作目录=D:\p105-e3\run）
+   pid=46484（第 1 次启动）
+== 健康检查通过 /api/v1/health -> HTTP 200
+
+== 登录 + 读口确认当前源 = 1
+[login] HTTP 200
+[R1] GET /api/v1/ingestion/status -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"profileState":"ACTIVE","runtimeProfileId":1,"sourceId":1,"landingUri":"file://./landing","landingError":null,"eventsDir":"D:\\p105-e3\\run\\landing\\events","pendingFiles":1,"pendingBytes":7210,"checkpointFiles":1,"newFileCount":1,"lastArrivalAt":"2026-09-12T09:03:01.209949500","latestBatch":{"batchId":41,"runtimeProfileId":1,"sourceId":2,"batchNo":"ing-20260912090158-7b30ab98","status":"SUCCESS","recordCount":12,"quarantineCount":0}},"traceId":"88ea8bd7-3858-43f0-b845-53b450c59ee5"}
+    status.sourceId=1（期望 1）pendingFiles=1
+
+== R2 只用源 1 采集追加的 5 条（期望 startOffset=5089 的增量读取）
+[R2] POST /api/v1/ingestion/runs -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"batchId":42,"batchNo":"ing-20260912090308-cae7f73e","status":"SUCCESS","recordCount":5,"quarantineCount":0,"errorCount":0,"fileCount":1,"acceptedBytes":2116,"acceptedDir":"D:\\p105-e3\\run\\landing\\accepted\\42","quarantineDir":"D:\\p105-e3\\run\\landing\\quarantine\\42","manifestPath":"file:///D:/p105-e3/run/landing/manifests/42.json","noNewData":false},"traceId":"97baf600-1b10-4d68-8246-a5a5df6bb5e0"}
+    batchId=42 status=SUCCESS recordCount=5 fileCount=1 noNewData=False
+    DB batch: id=42 source_id=1 source=local-file records=5
+    checkpoint（源 1 采集后（源 1 应前进到 5861，源 2 必须仍是 5089））: id=103 source_id=1 offset=7210 | id=104 source_id=2 offset=5089
+    manifest files[0]: file=e3-sample.jsonl startOffset=5089 endOffset=7210 acceptedRecords=5
+    manifest 四字段: sourceCode=mock-mall sourceId=1 profileVersion=1.0 mappingVersion=<null>
+
+== R3 切到源 2 再采一轮（期望再把同样 5 条独立读一遍：源 2 的 offset 从 5089 走到 5861）
+    （切到源 2）DB runtime_profile: source_id=2
+[R3a] GET /api/v1/ingestion/status -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"profileState":"ACTIVE","runtimeProfileId":1,"sourceId":2,"landingUri":"file://./landing","landingError":null,"eventsDir":"D:\\p105-e3\\run\\landing\\events","pendingFiles":1,"pendingBytes":7210,"checkpointFiles":1,"newFileCount":1,"lastArrivalAt":"2026-09-12T09:03:01.209949500","latestBatch":{"batchId":42,"runtimeProfileId":1,"sourceId":1,"batchNo":"ing-20260912090308-cae7f73e","status":"SUCCESS","recordCount":5,"quarantineCount":0}},"traceId":"6477325b-d07f-495a-931d-94930c3d7ff6"}
+    status.sourceId=2（期望 2）
+[R3b] POST /api/v1/ingestion/runs -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"batchId":43,"batchNo":"ing-20260912090308-febcb8c3","status":"SUCCESS","recordCount":5,"quarantineCount":0,"errorCount":0,"fileCount":1,"acceptedBytes":2116,"acceptedDir":"D:\\p105-e3\\run\\landing\\accepted\\43","quarantineDir":"D:\\p105-e3\\run\\landing\\quarantine\\43","manifestPath":"file:///D:/p105-e3/run/landing/manifests/43.json","noNewData":false},"traceId":"4dc8e601-b744-408a-90c9-178fc25add6e"}
+    batchId=43 status=SUCCESS recordCount=5 noNewData=False
+    DB batch: id=43 source_id=2 records=5
+    checkpoint（源 2 采集后（两行都到 5861，但各自独立推进））: id=103 source_id=1 offset=7210 | id=104 source_id=2 offset=7210
+
+== 结束态：历史 39 行与 102 行仍然只被 V17 回填过 source_id，其余列未动
+    ingestion_batch id<=39: n=39 md5(同列集)=15ee7c6a8f7bcd3745025a857e38429b
+    file_checkpoint id<=102: n=102 md5(同列集)=0c35d0ad20560b861dd2fa484f52ce86
+    （对照 r1 启动前的同列集哈希：15ee7c6a8f7bcd3745025a857e38429b / 0c35d0ad20560b861dd2fa484f52ce86）
+    real meta: flyway max=16 checkpoint=102 batch=39
+
+== 收尾：停止 8093 实例
+   已停止 pid=46484 停机时刻=2026-09-12 09:03:08
+   8093 仍在监听=False

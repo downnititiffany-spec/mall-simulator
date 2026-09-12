@@ -24,13 +24,57 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>本类只读业务数据、不写任何业务行（唯一写入是 Flyway 自己的迁移历史）。
  * 回填「不改版本/激活时间」的逐值证据是同一时刻抓取的迁移前/后行快照对比，
  * 落在 {@code docs/acceptance/p1-02-source-registry-20260911/}（见该目录 README）。</p>
+ *
+ * <p><b>P1-05（V17）的真库取证状态</b>：本类自 P1-05 起把 V17 纳入 {@code EXPECTED_META_SCRIPTS}。
+ * 但真库 {@code analytics_meta} 在 P1-05 交付时仍是 V16（V17 由总控在其"同批次换 jar"窗口应用），
+ * 因此**本类无法在 P1-05 这一轮对真库通过**：一旦在本类里连真库，{@link #twoApplicationStartups()}
+ * 就会把真库迁移到 V17，那属于越界写库。本轮的替代证据是
+ * {@code docs/acceptance/p1-05-manifest-source-20260911/}：在同一 schema 的**临时副本库**上
+ * 用最新代码启动，由 {@code MetaFlywayInitializer} 实际应用 V17，并留下迁移历史原样输出；
+ * 并且本类本身也被 {@code -Dp1.it.metaDb=analytics_meta_p105it} 指向另一份"真库 dump 的副本库"
+ * **实跑通过**（见该目录 {@code e3-20-migration-it-on-replica.log}）。真库上的本类运行留给总控换 jar 之后。</p>
  */
 @EnabledIfSystemProperty(named = "p1.it", matches = "true")
 class SourceRegistryMigrationMySqlIT {
 
-    private static final String META_DB = "analytics_meta";
+    /**
+     * 目标库名。默认就是真库 {@code analytics_meta}（本类的语义不变：跑的仍是"真 MySQL 8.0 上的迁移链"）。
+     *
+     * <p>允许用 {@code -Dp1.it.metaDb=...} 指向一个**从真库 dump 出来的字节等价副本库**：P1-05 的 V17
+     * 在真库上属越界写（真库仍是 V16，由总控在同批次换 jar 时才应用），但"本类在 V16→V17 的库上到底
+     * 绿不绿"不能靠推理。副本库跑通的是同一份脚本链、同一份存量数据，因此是本轮能拿到的最强证据；
+     * 真库上的本类运行仍留给总控换 jar 之后。凭证同理，默认值不写库外账号。</p>
+     */
+    private static final String META_DB = System.getProperty("p1.it.metaDb", "analytics_meta");
 
-    /** 迁移前 frozen 的 runtime_profile 列集合（实测于 2026-09-11，见 pre-state/05-runtime-profile-columns.txt） */
+    /**
+     * meta 库应当存在的迁移脚本清单（P1-05 起含 V17，D-037）。
+     *
+     * <p>写成**显式清单**而不是"最后一个是 V16"：清单能把"少了哪个脚本"和"多了没登记的脚本"
+     * 都变成红，而"最后版本号"只能发现前者。历史脚本行的 checksum 由 Flyway 自己校验，
+     * 本类不复制 checksum（复制了就变成两处所有者）。</p>
+     */
+    private static final List<String> EXPECTED_META_SCRIPTS = List.of(
+            "V1__platform_ingestion.sql",
+            "V2__platform_pipeline_quality.sql",
+            "V3__platform_ai_audit.sql",
+            "V4__platform_decisions.sql",
+            "V5__platform_users.sql",
+            "V7__platform_runtime_profile.sql",
+            "V8__platform_ingestion_r3.sql",
+            "V9__platform_stage_evidence_widen.sql",
+            "V10__spark_job_run_output_partitions.sql",
+            "V11__data_quality_layers.sql",
+            "V12__quality_detail_width.sql",
+            "V13__metric_definition_r7.sql",
+            "V14__r8_identity_decision.sql",
+            "V15__stage_evidence_mediumtext.sql",
+            "V16__source_registry.sql",
+            "V17__source_dimension_for_checkpoint_and_batch.sql");
+
+    private static final String V17_SCRIPT = "V17__source_dimension_for_checkpoint_and_batch.sql";
+
+
     private static final List<String> FROZEN_RUNTIME_PROFILE_COLUMNS = List.of(
             "id", "profile_code", "profile_name", "type", "status",
             "landing_uri", "hdfs_uri", "hive_jdbc_url", "hive_database_prefix",
@@ -76,6 +120,34 @@ class SourceRegistryMigrationMySqlIT {
         System.out.println("[P1-02] analytics_meta 首次启动执行脚本数=" + firstStartupExecuted
                 + "，schemaVersion=" + firstStartupSchemaVersion
                 + "；第二次启动执行脚本数=" + secondStartupExecuted);
+    }
+
+    @Test
+    @DisplayName("P1-05：迁移历史含 V16 与 V17，且全部脚本都成功、无失败行")
+    void migrationHistoryContainsV17AndNoFailedRuns() {
+        List<Map<String, Object>> rows = meta.queryForList(
+                "SELECT installed_rank, version, script, success FROM flyway_schema_history ORDER BY installed_rank");
+
+        assertThat(rows).as("历史行数应等于脚本数（无重复、无中途失败重跑残留）")
+                .hasSize(EXPECTED_META_SCRIPTS.size());
+        assertThat(rows.stream().map(r -> String.valueOf(r.get("script"))).toList())
+                .as("脚本清单必须逐条一致：少一个（没跑到）或多一个（没登记）都算漂移")
+                .containsExactlyElementsOf(EXPECTED_META_SCRIPTS);
+        assertThat(rows.stream().map(r -> r.get("success")).distinct().toList())
+                .as("不允许存在 success=0 的迁移行")
+                .containsExactly(Boolean.TRUE);
+
+        Map<String, Object> v17 = rows.stream()
+                .filter(r -> V17_SCRIPT.equals(String.valueOf(r.get("script"))))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("V17 未落在迁移历史里：" + EXPECTED_META_SCRIPTS));
+        assertThat(String.valueOf(v17.get("version"))).as("V17 的 version 列").isEqualTo("17");
+        assertThat(((Number) v17.get("installed_rank")).intValue())
+                .as("V17 必须排在历史最后（本轮唯一新脚本）")
+                .isEqualTo(((Number) rows.get(rows.size() - 1).get("installed_rank")).intValue());
+
+        assertThat(V17_SCRIPT).isEqualTo("V17__source_dimension_for_checkpoint_and_batch.sql");
+        System.out.println("[P1-05] 迁移历史脚本清单=" + rows.stream().map(r -> r.get("script")).toList());
     }
 
     @Test
@@ -218,8 +290,8 @@ class SourceRegistryMigrationMySqlIT {
         ds.setDriverClassName("com.mysql.cj.jdbc.Driver");
         ds.setUrl("jdbc:mysql://127.0.0.1:3306/" + META_DB
                 + "?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true");
-        ds.setUsername("meta_app");
-        ds.setPassword("meta_app_pw_2026");
+        ds.setUsername(System.getProperty("p1.it.metaUser", "meta_app"));
+        ds.setPassword(System.getProperty("p1.it.metaPassword", "meta_app_pw_2026"));
         return ds;
     }
 }

@@ -8,6 +8,7 @@ import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.source.SourceRegistryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -20,6 +21,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,12 +44,25 @@ class IngestionRunNoNewDataTest {
     private final IngestionBatchMapper batchMapper = mock(IngestionBatchMapper.class);
     private final RuntimeProfileService runtimeProfileService = mock(RuntimeProfileService.class);
     private final LocalFileIngestor ingestor = mock(LocalFileIngestor.class);
+    /** P1-05：采集必须归属一个已激活的源，故本夹具默认绑定源 1（未绑定的拒绝行为另有用例）。 */
+    private final SourceRegistryService sourceRegistryService = mock(SourceRegistryService.class);
     private final EventClock clock = new EventClock(
             Clock.fixed(Instant.parse("2026-09-12T02:00:00Z"), ZoneId.of("Asia/Shanghai")));
 
     private IngestionService service() {
         return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class),
-                ingestor, clock, runtimeProfileService, new ObjectMapper());
+                ingestor, clock, runtimeProfileService, sourceRegistryService, new ObjectMapper());
+    }
+
+    /**
+     * 绑定源的桩（P1-05）：采集必须归属一个已激活的源，未绑定的拒绝行为另在
+     * {@code IngestionSourceNotBoundTest} 里取证，本类各用例只关心"有新数据 / 无新数据"。
+     */
+    private void bindSourceOne() {
+        when(sourceRegistryService.currentSourceId()).thenReturn(Optional.of(1L));
+        when(sourceRegistryService.get(1L)).thenReturn(
+                com.graduation.analytics.source.dto.SourceRegistryView.of(
+                        sourceRow(1L, "mock-mall", "1.0"), 1L));
     }
 
     private Path prepareLanding(Path landingRoot) throws IOException {
@@ -57,6 +72,7 @@ class IngestionRunNoNewDataTest {
         profile.setId(1L);
         profile.setLandingUri(landingRoot.toUri().toString());
         when(runtimeProfileService.getActive()).thenReturn(profile);
+        bindSourceOne();
         when(batchMapper.insert(any(IngestionBatch.class))).thenAnswer(inv -> {
             inv.<IngestionBatch>getArgument(0).setId(101L);
             return 1;
@@ -64,8 +80,24 @@ class IngestionRunNoNewDataTest {
         return events;
     }
 
+    private static com.graduation.analytics.source.entity.SourceRegistry sourceRow(
+            Long id, String code, String version) {
+        com.graduation.analytics.source.entity.SourceRegistry row =
+                new com.graduation.analytics.source.entity.SourceRegistry();
+        row.setId(id);
+        row.setSourceCode(code);
+        row.setDisplayName(code);
+        row.setIngestMode("FILE");
+        row.setProfilePath("analytics-server/source-profiles/" + code + ".v1.json");
+        row.setTimezone("Asia/Shanghai");
+        row.setCurrency("CNY");
+        row.setStatus("ACTIVE");
+        row.setProfileVersion(version);
+        return row;
+    }
+
     private void stubIngest(long startOffset, long endOffset, long collected, long quarantined) {
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), any(), any(), any(), any()))
+        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any()))
                 .thenReturn(new LocalFileIngestor.FileResult("events-001.jsonl", startOffset, endOffset,
                         "identity-1", collected, quarantined, collected > 0 ? 64L : 0L, Set.of("1.0")));
     }
@@ -121,6 +153,7 @@ class IngestionRunNoNewDataTest {
         profile.setId(1L);
         profile.setLandingUri(landingRoot.toUri().toString());
         when(runtimeProfileService.getActive()).thenReturn(profile);
+        bindSourceOne();
         when(batchMapper.insert(any(IngestionBatch.class))).thenAnswer(inv -> {
             inv.<IngestionBatch>getArgument(0).setId(102L);
             return 1;

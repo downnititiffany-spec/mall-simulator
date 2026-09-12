@@ -38,10 +38,16 @@ import java.util.zip.CRC32;
  * - 仅在一整行成功处理后推进偏移（文件尾部无换行的残行留在原地等文件增长）；
  * - 文件被截断或 file identity（Windows=创建时间戳）变化时视为新版本，从头读取，
  *   不沿用旧偏移；文件删除重建（创建时间变化）即新版本；
- * - checkpoint 唯一键 = runtime_profile_id + file_path(绝对路径) + file_identity（§9.2）；
+ * - checkpoint 唯一键 = runtime_profile_id + **source_id** + file_path(绝对路径) + file_identity
+ *   （§9.2；P1-05 / D-037 裁决 1：源必须参与键，否则切换源会**静默少采** —— 见 {@code FileCheckpoint}）；
  * - 干净行 → accepted/{batchId}/，坏行 → quarantine/{batchId}/ + quarantine_record；
  * - 数据落地成功后 checkpoint 才推进（可恢复顺序）；at-least-once 重复投递由
  *   DWD 的 event_id 去重兜底。
+ *
+ * <p><b>源从哪来</b>：本类不依赖源登记（不注入 {@code SourceRegistryService}）——源由调用方
+ * 解析后**显式传入**，与 {@code runtimeProfileId} 同样的处理方式。这样"写入用的源"和
+ * "查询用的源"必然是同一个值，不会出现"写 A 查 B"这类只有并发时才暴露的错配；
+ * "未绑定源即拒绝采集"的判定留在编排层（{@code IngestionService}）单点负责。</p>
  */
 @Slf4j
 @Component
@@ -59,14 +65,17 @@ public class LocalFileIngestor {
     /**
      * 采集一个文件从断点之后的新内容（字节偏移）。
      *
+     * @param runtimeProfileId 归属运行环境
+     * @param sourceId         归属数据源（{@code source_registry.id}，**必填**）：
+     *                         断点按源隔离（D-037 裁决 1），缺省就会造出"来源不明"的断点行
      * @return 文件级结果
      */
-    public FileResult ingestFile(Path file, long batchId, long runtimeProfileId,
+    public FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
                                  CRC32 checksum) {
         String abs = checkpointKey(file);
         String identity = fileIdentity(file);
-        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, abs);
+        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, abs);
         long size = sizeOf(file);
         // 文件版本变化或 size 小于偏移（被截断）→ 新版本从头读取，不沿用旧偏移（§9.2）
         boolean newVersion = ckpt == null || !identity.equals(ckpt.getFileIdentity()) || size < ckpt.getNextOffset();
@@ -174,7 +183,7 @@ public class LocalFileIngestor {
             }
             // 落地成功后才推进 checkpoint（可恢复顺序，§9.2）
             if (endOffset > startOffset || collected > 0 || quarantined > 0) {
-                upsertCheckpoint(runtimeProfileId, abs, identity, endOffset);
+                upsertCheckpoint(runtimeProfileId, sourceId, abs, identity, endOffset);
             }
         } catch (IOException e) {
             throw new UncheckedIOException("采集失败: " + file, e);
@@ -192,9 +201,17 @@ public class LocalFileIngestor {
                 collected, quarantined, acceptedBytes, schemaVersions);
     }
 
-    private FileCheckpoint findCheckpoint(long runtimeProfileId, String absPath) {
+    /**
+     * 按 {@code (runtime_profile_id, source_id, file_path)} 取断点行——与 V17 的
+     * {@code uk_ckpt_source} 前三个列**同序同集**（第四列 file_identity 只用于判"是否新版本"，
+     * 不参与定位，因为同一键下 identity 唯一）。
+     *
+     * <p>源必须参与定位：少了它，"同一 profile 切源"会读到上一源的偏移并直接跳过数据。</p>
+     */
+    private FileCheckpoint findCheckpoint(long runtimeProfileId, long sourceId, String absPath) {
         return checkpointMapper.selectOne(new LambdaQueryWrapper<FileCheckpoint>()
                 .eq(FileCheckpoint::getRuntimeProfileId, runtimeProfileId)
+                .eq(FileCheckpoint::getSourceId, sourceId)
                 .eq(FileCheckpoint::getFilePath, absPath));
     }
 
@@ -202,7 +219,7 @@ public class LocalFileIngestor {
      * checkpoint 物理键 = 规范化绝对路径。
      *
      * <p>为什么键的规范形式必须由**键的所有者**负责：唯一键是
-     * {@code runtime_profile_id + file_path + file_identity}，而 {@code file_path} 由调用方传入的
+     * {@code runtime_profile_id + source_id + file_path + file_identity}，而 {@code file_path} 由调用方传入的
      * {@link Path} 拼出。只要有一个调用方传进带冗余片段（{@code ./}、{@code ../}、重复分隔符）的路径，
      * 同一个物理文件就会占**两行**：一行写、另一行读不到 → 采集端按"从未采集"从头读
      * （目录里最大单文件 19.4MB）并重复写 ODS 分区（最终由 DWD 的 {@code event_id} 去重兜底，
@@ -225,30 +242,37 @@ public class LocalFileIngestor {
     }
 
     /**
-     * 当前运行环境**已有断点**的文件（规范路径集合）。
+     * 当前运行环境**在指定源下已有断点**的文件（规范路径集合）。
      *
      * <p>读数端与写入端共用同一条规范形式，因此历史遗留写法不会把同一物理文件算两次
      * （DEF-13：{@code checkpointFiles=101} 对 {@code pendingFiles=51}）。</p>
+     *
+     * <p>P1-05：必须同时按 {@code source_id} 过滤。否则切源后状态总览会把**另一个源**的断点
+     * 算到当前源头上（虚报 {@code checkpointFiles}），与采集侧"按源隔离"的口径自相矛盾。</p>
      */
-    public Set<String> checkpointKeys(long runtimeProfileId) {
+    public Set<String> checkpointKeys(long runtimeProfileId, long sourceId) {
         return checkpointMapper.selectList(new LambdaQueryWrapper<FileCheckpoint>()
-                        .eq(FileCheckpoint::getRuntimeProfileId, runtimeProfileId))
+                        .eq(FileCheckpoint::getRuntimeProfileId, runtimeProfileId)
+                        .eq(FileCheckpoint::getSourceId, sourceId))
                 .stream()
                 .map(ckpt -> canonical(ckpt.getFilePath()))
                 .collect(Collectors.toSet());
     }
 
-    private void upsertCheckpoint(long runtimeProfileId, String absPath, String identity, long nextOffset) {
-        FileCheckpoint existing = findCheckpoint(runtimeProfileId, absPath);
+    private void upsertCheckpoint(long runtimeProfileId, long sourceId, String absPath,
+                                  String identity, long nextOffset) {
+        FileCheckpoint existing = findCheckpoint(runtimeProfileId, sourceId, absPath);
         if (existing == null) {
             FileCheckpoint ckpt = new FileCheckpoint();
             ckpt.setRuntimeProfileId(runtimeProfileId);
+            ckpt.setSourceId(sourceId);
             ckpt.setFilePath(absPath);
             ckpt.setFileIdentity(identity);
             ckpt.setNextOffset(nextOffset);
             ckpt.setUpdatedAt(LocalDateTime.now());
             checkpointMapper.insert(ckpt);
         } else {
+            // sourceId 不改：本行的源就是查询条件里的源，改它等于把 A 的断点搬给 B
             existing.setFileIdentity(identity);
             existing.setNextOffset(nextOffset);
             existing.setUpdatedAt(LocalDateTime.now());
@@ -330,13 +354,16 @@ public class LocalFileIngestor {
      * <p>这里是"什么算有新数据"的**唯一所有者**，判定与 {@link #ingestFile} 同源：
      * 文件从未采集 / 身份（创建时间）变化 / 长度小于断点 → 采集端会从头读取，此时只要存在完整行即为有新数据；
      * 否则比较 {@link #consumableEnd} 与断点偏移，**严格大于**才算有新数据（尾部残行不算，DEF-12）。</p>
+     *
+     * <p>P1-05：断点查找也必须带 {@code sourceId}——读数端若按 profile 找断点，切源后会把"本源的
+     * 新数据"误判成"已采完"（正是 D-037 要关的那个洞）。</p>
      */
-    public boolean hasConsumableData(Path file, long runtimeProfileId) {
+    public boolean hasConsumableData(Path file, long runtimeProfileId, long sourceId) {
         long consumable = consumableEnd(file);
         if (consumable <= 0) {
             return false;   // 空文件，或整个文件只有一条没有换行的残行
         }
-        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, checkpointKey(file));
+        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, checkpointKey(file));
         if (ckpt == null) {
             return true;    // 从未采集过
         }

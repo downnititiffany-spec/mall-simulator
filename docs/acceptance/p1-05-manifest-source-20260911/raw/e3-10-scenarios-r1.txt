@@ -1,0 +1,123 @@
+== P1-05 E3 真机验收 RunLabel=r1 端口=8093 开始时刻=2026-09-12 09:01:49
+   git HEAD = f5eb74ac8349eb817348a9c92e63abd7713bba21
+   工作区改动文件数 = 17
+   git:  M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/IngestionService.java
+   git:  M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java
+   git:  M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/entity/FileCheckpoint.java
+   git:  M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/entity/IngestionBatch.java
+   git:  M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionRunNoNewDataTest.java
+   git:  M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionServiceStatusTest.java
+   git:  M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/LocalFileIngestorCheckpointKeyTest.java
+   git:  M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/LocalFileIngestorConsumableDataTest.java
+   git:  M analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceRegistryMigrationMySqlIT.java
+   git:  M analytics-server/platform-common/src/main/java/com/graduation/analytics/common/GlobalExceptionHandler.java
+   git:  M analytics-server/platform-common/src/main/java/com/graduation/analytics/common/PlatformBizException.java
+   git:  M analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java
+   git: ?? analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionSourceManifestTest.java
+   git: ?? analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionSourceNotBoundTest.java
+   git: ?? analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/LocalFileIngestorSourceIsolationTest.java
+   git: ?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/
+   git: ?? docs/acceptance/p1-05-manifest-source-20260911/
+---- 真库只读快照（启动前）----
+    real meta flyway: rows=15 max=16 failed=0
+    real meta file_checkpoint: n=102
+    real meta ingestion_batch: n=39
+    real meta source_registry: n=1
+    real meta runtime_profile: n=1
+    real meta operation_audit_log: n=92
+    real metric metric_snapshot: n=8
+    real metric metric_value: n=70
+    real metric ads_operation_overview_m: n=7
+---- 副本库快照（启动前（V17 之前，故无 source_id 列））----
+    flyway: rows=15 max=16 failed=0
+    ingestion_batch: n=39 md5(id<=39, 无source_id列)=15ee7c6a8f7bcd3745025a857e38429b
+    file_checkpoint: n=102 md5(id<=102, 无source_id列)=0c35d0ad20560b861dd2fa484f52ce86
+    runtime_profile: id=1 status=ACTIVE source_id=1 landing_uri=file://./landing
+    source_registry: n=1
+
+== landing 准备：D:\p105-e3\run
+   events\e3-sample.jsonl 行数=12 字节=5089（取自 D:\Develop_code\GraduationProject\landing\events\2026090509.jsonl 前 12 行）
+   manifests\30.json md5=4CC46FEB1356E5FBFAD386F3C0BD2861（历史清单副本，用于回归）
+
+== 启动实例：D:\Develop\JAVA17\bin\javaw.exe -Dserver.port=8093（工作目录=D:\p105-e3\run）
+   pid=25152（第 1 次启动）
+== 健康检查通过 /api/v1/health -> HTTP 200
+
+== S1 副本库迁移结果（新代码启动即跑 Flyway；真库仍是 V16，本轮不碰）
+    flyway: rows=16 max=17 failed=0
+    V17 row: version=17 script=V17__source_dimension_for_checkpoint_and_batch.sql success=1
+    file_checkpoint.source_id: bigint nullable=NO default=<none>
+    index: idx_file_checkpoint_source cols=source_id index: PRIMARY cols=id index: uk_ckpt_source cols=runtime_profile_id,source_id,file_path,file_identity
+    backfill: checkpoint rows=102 rows_with_source_id_null=0
+
+== 登录（demo 账号，无新增鉴权后门）
+[login] POST /api/v1/auth/login -> HTTP 200
+    已取得 token（32 位 UUID，按 P1-03 先例省略）
+[S2] GET /api/v1/ingestion/status -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"profileState":"ACTIVE","runtimeProfileId":1,"sourceId":1,"landingUri":"file://./landing","landingError":null,"eventsDir":"D:\\p105-e3\\run\\landing\\events","pendingFiles":1,"pendingBytes":5089,"checkpointFiles":0,"newFileCount":1,"lastArrivalAt":"2026-09-12T09:01:49.933352300","latestBatch":{"batchId":39,"runtimeProfileId":1,"sourceId":1,"batchNo":"ing-20260911162916-04e0eb74","status":"SUCCESS","recordCount":2,"quarantineCount":0}},"traceId":"fd0f7ea8-1715-4049-8906-7628629466e8"}
+    status.sourceId=1 latestBatch.sourceId=1 profileState=ACTIVE
+
+== S3 源 1（mock-mall, id=1）采集一轮：POST /api/v1/ingestion/runs
+[S3] POST /api/v1/ingestion/runs -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"batchId":40,"batchNo":"ing-20260912090158-b61133c4","status":"SUCCESS","recordCount":12,"quarantineCount":0,"errorCount":0,"fileCount":1,"acceptedBytes":5077,"acceptedDir":"D:\\p105-e3\\run\\landing\\accepted\\40","quarantineDir":"D:\\p105-e3\\run\\landing\\quarantine\\40","manifestPath":"file:///D:/p105-e3/run/landing/manifests/40.json","noNewData":false},"traceId":"03c99855-3b7a-4e84-896f-8e9af1a831d5"}
+    batchId=40 status=SUCCESS recordCount=12 fileCount=1 noNewData=False manifest=file:///D:/p105-e3/run/landing/manifests/40.json
+    DB batch: id=40 source_id=1 source=local-file status=SUCCESS records=12
+    DB checkpoint（本源+本路径）: id=103 source_id=1 next_offset=5089 identity=1789174909933 path=D:\\p105-e3\\run\\landing\\events\\e3-sample.jsonl
+    新清单 D:\p105-e3\run\landing\manifests\40.json 内容: { "batchId" : 40, "batchNo" : "ing-20260912090158-b61133c4", "runtimeProfileId" : 1, "source" : "local-file", "status" : "READY", "startedAt" : "2026-09-12T09:01:58.774238600", "finishedAt" : "2026-09-12T09:01:58.793178500", "files" : [ { "quarantinedRecords" : 0, "file" : "e3-sample.jsonl", "endOffset" : 5089, "startOffset" : 0, "acceptedRecords" : 12 } ], "acceptedRecords" : 12, "quarantinedRecords" : 0, "acceptedBytes" : 5077, "schemaVersions" : [ "1.0" ], "acceptedUri" : "accepted/40", "quarantineUri" : "quarantine/40", "checksum" : "3920b5c8", "sourceCode" : "mock-mall", "sourceId" : 1, "profileVersion" : "1.0", "mappingVersion" : null }
+    四字段: sourceCode=mock-mall sourceId=1 profileVersion=1.0 mappingVersion=<null>
+    键数=19 required 里没有这四个键（单元测试 IngestionManifestSourceSchemaTest 已对账）
+    历史清单 30.json 仍在且 md5=4CC46FEB1356E5FBFAD386F3C0BD2861（未被改写）
+
+== S4 建第二个源并切换：POST /api/v1/sources + /test + /activate
+[S4] POST /api/v1/sources -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-05 切源探针","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"DRAFT","profileVersion":"1.0","current":false,"createdAt":"2026-09-12T09:01:58.89","updatedAt":"2026-09-12T09:01:58.89"},"traceId":"5079d4b9-c585-4686-8fbd-06e15c3a4f8e"}
+    新源 id=2 sourceCode=p1-03-probe-1 status=DRAFT
+[S5] POST /api/v1/sources/2/test -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"sourceId":2,"sourceCode":"p1-03-probe-1","ok":true,"items":[{"name":"profile_path_policy","passed":true,"applicable":true,"detail":"profile_path 是仓库相对路径：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_file_exists","passed":true,"applicable":true,"detail":"画像文件存在且可读：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_json_object","passed":true,"applicable":true,"detail":"顶层是合法 JSON 对象：analytics-server/source-profiles/p1-03-probe-1.v1.json"},{"name":"profile_source_code_matches","passed":true,"applicable":true,"detail":"画像 sourceCode 与登记一致：p1-03-probe-1"},{"name":"profile_profile_version_matches","passed":true,"applicable":true,"detail":"画像 profileVersion 与登记一致：1.0"},{"name":"profile_required_top_level_keys","passed":true,"applicable":true,"detail":"设计 §4.2 的 9 个顶层必备键齐全"},{"name":"status_transition_allowed","passed":true,"applicable":true,"detail":"当前状态允许生命周期变更：DRAFT"}]},"traceId":"a616a747-6f47-4f61-9060-b6208f105ef7"}
+    ok=True items=profile_path_policy=True, profile_file_exists=True, profile_json_object=True, profile_source_code_matches=True, profile_profile_version_matches=True, profile_required_top_level_keys=True, status_transition_allowed=True
+[S6] POST /api/v1/sources/2/activate -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"id":2,"sourceCode":"p1-03-probe-1","displayName":"P1-05 切源探针","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/p1-03-probe-1.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-12T09:01:58.89","updatedAt":"2026-09-12T09:01:58.93"},"traceId":"4673d11a-7043-4317-8edc-49acb1ed2621"}
+    activated: id=2 status=ACTIVE current=True
+    DB runtime_profile: id=1 status=ACTIVE source_id=2
+[S7] GET /api/v1/ingestion/status -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"profileState":"ACTIVE","runtimeProfileId":1,"sourceId":2,"landingUri":"file://./landing","landingError":null,"eventsDir":"D:\\p105-e3\\run\\landing\\events","pendingFiles":1,"pendingBytes":5089,"checkpointFiles":0,"newFileCount":1,"lastArrivalAt":"2026-09-12T09:01:49.933352300","latestBatch":{"batchId":40,"runtimeProfileId":1,"sourceId":1,"batchNo":"ing-20260912090158-b61133c4","status":"SUCCESS","recordCount":12,"quarantineCount":0}},"traceId":"e918ae13-ff94-44ff-baea-17cac34f4f68"}
+    读口 status.sourceId=2（应等于新源 id=2）
+
+== S8 同一物理文件、第二个源采集一轮（核心交付：断点按源隔离）
+[S8] POST /api/v1/ingestion/runs -> HTTP 200
+    body: {"code":"OK","message":"success","data":{"batchId":41,"batchNo":"ing-20260912090158-7b30ab98","status":"SUCCESS","recordCount":12,"quarantineCount":0,"errorCount":0,"fileCount":1,"acceptedBytes":5077,"acceptedDir":"D:\\p105-e3\\run\\landing\\accepted\\41","quarantineDir":"D:\\p105-e3\\run\\landing\\quarantine\\41","manifestPath":"file:///D:/p105-e3/run/landing/manifests/41.json","noNewData":false},"traceId":"72e68182-ea02-47ba-af14-28349c0b5f5d"}
+    batchId=41 status=SUCCESS recordCount=12 fileCount=1 noNewData=False
+    DB batch: id=40 source_id=1 source=local-file status=SUCCESS records=12 id=41 source_id=2 source=local-file status=SUCCESS records=12
+    DB checkpoint：同一 file_path 应有两行，source_id 分别为 1/2，offset 各自独立
+    id=103 source_id=1 next_offset=5089 path=D:\\p105-e3\\run\\landing\\events\\e3-sample.jsonl id=104 source_id=2 next_offset=5089 path=D:\\p105-e3\\run\\landing\\events\\e3-sample.jsonl
+    第二份清单四字段: sourceCode=p1-03-probe-1 sourceId=2 profileVersion=1.0 mappingVersion=<null>
+    landing/manifests 下清单数=3（含历史 30.json）
+
+== S9 失败关闭：把副本库 runtime_profile.source_id 置空后触发采集（期望 409 + SOURCE_NOT_BOUND + 零写入）
+    DB runtime_profile（置空后）: id=1 status=ACTIVE source_id=<NULL>
+[S9] POST /api/v1/ingestion/runs -> HTTP 409
+    body: {"code":"SOURCE_NOT_BOUND","message":"运行环境未绑定源，先激活源再采集（runtime_profile_id=1，source_id 为空）","data":null,"traceId":"60cfd7a9-d7e1-4686-9675-7e7bd285fca2"}
+    code=SOURCE_NOT_BOUND message=运行环境未绑定源，先激活源再采集（runtime_profile_id=1，source_id 为空）
+    写入对比：ingestion_batch 41->41（期望不变） manifest 3->3（期望不变） file_checkpoint 104->104（期望不变）
+    已恢复绑定: runtime_profile.source_id=2
+
+---- 副本库快照（本轮之后）----
+    flyway: rows=16 max=17 failed=0
+    ingestion_batch: n=39 md5(id<=39)=12f9f0a27f2587713904789e72407657
+    file_checkpoint: n=102 md5(id<=102)=c8e5a344854b77625e000168f65a410a
+    runtime_profile: id=1 status=ACTIVE source_id=2 landing_uri=file://./landing
+    source_registry: n=2
+---- 真库只读快照（本轮之后）----
+    real meta flyway: rows=15 max=16 failed=0
+    real meta file_checkpoint: n=102
+    real meta ingestion_batch: n=39
+    real meta source_registry: n=1
+    real meta runtime_profile: n=1
+    real meta operation_audit_log: n=92
+    real metric metric_snapshot: n=8
+    real metric metric_value: n=70
+    real metric ads_operation_overview_m: n=7
+
+== 收尾：停止 8093 实例（不动 8090/8091/8092）
+   已停止 pid=25152 停机时刻=2026-09-12 09:01:59
+   8093 仍在监听=False

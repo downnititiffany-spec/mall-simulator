@@ -39,13 +39,16 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
-    @DisplayName("SOURCE_CODE_IMMUTABLE / SOURCE_IN_USE / SOURCE_PROFILE_INVALID → 409（与当前资源状态冲突）")
+    @DisplayName("SOURCE_CODE_IMMUTABLE / SOURCE_IN_USE / SOURCE_PROFILE_INVALID / SOURCE_NOT_BOUND → 409（与当前资源状态冲突）")
     void sourceConflictCodesMapTo409() {
         assertThat(handle(PlatformBizException.SOURCE_CODE_IMMUTABLE, "source_code 不可改").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
         assertThat(handle(PlatformBizException.SOURCE_IN_USE, "当前源不可暂停").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
         assertThat(handle(PlatformBizException.SOURCE_PROFILE_INVALID, "画像文件不存在").getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        // P1-05 加性：未绑定源是"当前运行环境状态不允许采集"，不是请求参数写错（那才是 400）
+        assertThat(handle(PlatformBizException.SOURCE_NOT_BOUND, "运行环境未绑定源").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
@@ -71,7 +74,7 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
-    @DisplayName("错误码常量本身是加性的：原有 5 个码逐字不变，新增 4 个码逐字取自任务书")
+    @DisplayName("错误码常量本身是加性的：原有 5 个码逐字不变，新增 5 个码逐字取自任务书")
     void codesAreAdditiveAndVerbatim() {
         assertThat(PlatformBizException.USER_NOT_FOUND).isEqualTo("USER_NOT_FOUND");
         assertThat(PlatformBizException.PARAM_INVALID).isEqualTo("PARAM_INVALID");
@@ -83,5 +86,7 @@ class GlobalExceptionHandlerSourceStatusTest {
         assertThat(PlatformBizException.SOURCE_CODE_IMMUTABLE).isEqualTo("SOURCE_CODE_IMMUTABLE");
         assertThat(PlatformBizException.SOURCE_PROFILE_INVALID).isEqualTo("SOURCE_PROFILE_INVALID");
         assertThat(PlatformBizException.SOURCE_IN_USE).isEqualTo("SOURCE_IN_USE");
+        // P1-05 加性新增（D-037）：未绑定源
+        assertThat(PlatformBizException.SOURCE_NOT_BOUND).isEqualTo("SOURCE_NOT_BOUND");
     }
 }

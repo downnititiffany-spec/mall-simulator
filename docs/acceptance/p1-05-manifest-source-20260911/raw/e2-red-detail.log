@@ -1,0 +1,216 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -XX:+UseSerialGC
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ connection-ingestion ---
+[WARNING] useSystemClassLoader setting has no effect when not forking
+[WARNING] The parameter forkCount should likely not be 0. Forking a JVM for tests improves test accuracy. Ensure to have a <forkCount> >= 1.
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] Running com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+SLF4J(W): Class path contains multiple SLF4J providers.
+SLF4J(W): Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@70840a5a]
+SLF4J(W): Found provider [org.slf4j.reload4j.Reload4jServiceProvider@7af9595d]
+SLF4J(W): See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J(I): Actual provider is of type [ch.qos.logback.classic.spi.LogbackServiceProvider@70840a5a]
+[ERROR] Tests run: 4, Failures: 0, Errors: 4, Skipped: 0, Time elapsed: 0.711 s <<< FAILURE! -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[ERROR] com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.quarantinedOnlyIsStillNewData(Path) -- Time elapsed: 0.058 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.service(IngestionRunNoNewDataTest.java:53)
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.quarantinedOnlyIsStillNewData(IngestionRunNoNewDataTest.java:133)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[ERROR] com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.reportsNoNewDataWhenSourceProducedNothing(Path) -- Time elapsed: 0.006 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.service(IngestionRunNoNewDataTest.java:53)
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.reportsNoNewDataWhenSourceProducedNothing(IngestionRunNoNewDataTest.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[ERROR] com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.reportsNewDataWhenBytesRead(Path) -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.service(IngestionRunNoNewDataTest.java:53)
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.reportsNewDataWhenBytesRead(IngestionRunNoNewDataTest.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[ERROR] com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.emptyEventsDirIsNoNewData(Path) -- Time elapsed: 0.004 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.service(IngestionRunNoNewDataTest.java:53)
+	at com.graduation.analytics.ingestion.IngestionRunNoNewDataTest.emptyEventsDirIsNoNewData(IngestionRunNoNewDataTest.java:153)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[INFO] Running com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[ERROR] Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.116 s <<< FAILURE! -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[ERROR] com.graduation.analytics.ingestion.IngestionSourceManifestTest.connectorTypeAndStatusUnchanged(Path) -- Time elapsed: 0.006 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.service(IngestionSourceManifestTest.java:64)
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.connectorTypeAndStatusUnchanged(IngestionSourceManifestTest.java:149)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[ERROR] com.graduation.analytics.ingestion.IngestionSourceManifestTest.profileVersionComesFromRegistryNotProfileFile(Path) -- Time elapsed: 0.005 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.service(IngestionSourceManifestTest.java:64)
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.profileVersionComesFromRegistryNotProfileFile(IngestionSourceManifestTest.java:164)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[ERROR] com.graduation.analytics.ingestion.IngestionSourceManifestTest.newBatchRowCarriesSourceId(Path) -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.service(IngestionSourceManifestTest.java:64)
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.newBatchRowCarriesSourceId(IngestionSourceManifestTest.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[ERROR] com.graduation.analytics.ingestion.IngestionSourceManifestTest.existingManifestKeysArePreserved(Path) -- Time elapsed: 0.004 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.service(IngestionSourceManifestTest.java:64)
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.existingManifestKeysArePreserved(IngestionSourceManifestTest.java:178)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[ERROR] com.graduation.analytics.ingestion.IngestionSourceManifestTest.manifestCarriesSourceIdentityFields(Path) -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.NoClassDefFoundError: com/graduation/analytics/common/PlatformBizException
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.service(IngestionSourceManifestTest.java:64)
+	at com.graduation.analytics.ingestion.IngestionSourceManifestTest.manifestCarriesSourceIdentityFields(IngestionSourceManifestTest.java:124)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: com.graduation.analytics.common.PlatformBizException
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:445)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:592)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	at org.apache.maven.surefire.booter.IsolatedClassLoader.loadClass(IsolatedClassLoader.java:82)
+	... 5 more
+
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+08:46:15.052 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0→16 identity=1789173975039
+[ERROR] Tests run: 4, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.167 s <<< FAILURE! -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[ERROR] com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest.checkpointKeysAreScopedToSource(Path) -- Time elapsed: 0.004 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper.getTargetSql()" because "wrapper" is null
+	at com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest.queriedFilePath(LocalFileIngestorCheckpointKeyTest.java:95)
+	at com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest.lambda$ingestor$1(LocalFileIngestorCheckpointKeyTest.java:82)
+	at org.mockito.internal.stubbing.StubbedInvocationMatcher.answer(StubbedInvocationMatcher.java:42)
+	at org.mockito.internal.handler.MockHandlerImpl.handle(MockHandlerImpl.java:103)
+	at org.mockito.internal.handler.NullResultGuardian.handle(NullResultGuardian.java:29)
+	at org.mockito.internal.handler.InvocationNotifierHandler.handle(InvocationNotifierHandler.java:34)
+	at org.mockito.internal.creation.bytebuddy.MockMethodInterceptor.doIntercept(MockMethodInterceptor.java:82)
+	at org.mockito.internal.creation.bytebuddy.MockMethodAdvice.handle(MockMethodAdvice.java:134)
+	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectOne(BaseMapper.java:295)
+	at com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest.ingestor(LocalFileIngestorCheckpointKeyTest.java:82)
+	at com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest.checkpointKeysAreScopedToSource(LocalFileIngestorCheckpointKeyTest.java:203)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   IngestionRunNoNewDataTest.emptyEventsDirIsNoNewData:153->service:53 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionRunNoNewDataTest.quarantinedOnlyIsStillNewData:133->service:53 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionRunNoNewDataTest.reportsNewDataWhenBytesRead:118->service:53 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionRunNoNewDataTest.reportsNoNewDataWhenSourceProducedNothing:103->service:53 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionSourceManifestTest.connectorTypeAndStatusUnchanged:149->service:64 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionSourceManifestTest.existingManifestKeysArePreserved:178->service:64 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionSourceManifestTest.manifestCarriesSourceIdentityFields:124->service:64 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionSourceManifestTest.newBatchRowCarriesSourceId:104->service:64 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   IngestionSourceManifestTest.profileVersionComesFromRegistryNotProfileFile:164->service:64 NoClassDefFound com/graduation/analytics/common/PlatformBizException
+[ERROR]   LocalFileIngestorCheckpointKeyTest.checkpointKeysAreScopedToSource:203->ingestor:82->lambda$ingestor$1:82->queriedFilePath:95 NullPointer Cannot invoke "com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper.getTargetSql()" because "wrapper" is null
+[INFO] 
+[ERROR] Tests run: 13, Failures: 0, Errors: 10, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.314 s
+[INFO] Finished at: 2026-09-12T08:46:15+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project connection-ingestion: 
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

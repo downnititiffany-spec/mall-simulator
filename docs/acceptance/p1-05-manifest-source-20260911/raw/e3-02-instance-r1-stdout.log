@@ -1,0 +1,56 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-12T09:01:53.144+08:00  INFO 25152 --- [           main] c.g.analytics.AnalyticsApplication       : Starting AnalyticsApplication using Java 17.0.12 with PID 25152 (D:\p105-e3\classes\platform-app started by ASUS in D:\p105-e3\run)
+2026-09-12T09:01:53.148+08:00  INFO 25152 --- [           main] c.g.analytics.AnalyticsApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-09-12T09:01:55.321+08:00  INFO 25152 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8093 (http)
+2026-09-12T09:01:55.323+08:00  INFO 25152 --- [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-12T09:01:55.337+08:00  INFO 25152 --- [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-12T09:01:55.345+08:00  INFO 25152 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-12T09:01:55.346+08:00  INFO 25152 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-12T09:01:55.399+08:00  INFO 25152 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-12T09:01:55.400+08:00  INFO 25152 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2203 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-12T09:01:56.034+08:00  INFO 25152 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Starting...
+2026-09-12T09:01:56.216+08:00  INFO 25152 --- [           main] com.zaxxer.hikari.pool.HikariPool        : meta-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@126f8f24
+2026-09-12T09:01:56.219+08:00  INFO 25152 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Start completed.
+2026-09-12T09:01:56.288+08:00  INFO 25152 --- [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-12T09:01:56.288+08:00  INFO 25152 --- [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-12T09:01:56.289+08:00  INFO 25152 --- [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-12T09:01:56.320+08:00  INFO 25152 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_meta_p105 (MySQL 8.0)
+2026-09-12T09:01:56.414+08:00  INFO 25152 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 16 migrations (execution time 00:00.058s)
+2026-09-12T09:01:56.426+08:00  INFO 25152 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_meta_p105`: 16
+2026-09-12T09:01:56.448+08:00  INFO 25152 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_p105` to version "17 - source dimension for checkpoint and batch"
+2026-09-12T09:01:56.635+08:00  INFO 25152 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema `analytics_meta_p105`, now at version v17 (execution time 00:00.177s)
+2026-09-12T09:01:56.636+08:00  INFO 25152 --- [           main] c.g.a.config.MetaFlywayInitializer       : analytics_meta 迁移完成: 执行 1 个脚本，版本 17
+2026-09-12T09:01:56.638+08:00  INFO 25152 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Starting...
+2026-09-12T09:01:56.660+08:00  INFO 25152 --- [           main] com.zaxxer.hikari.pool.HikariPool        : metric-publish-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@1e495414
+2026-09-12T09:01:56.660+08:00  INFO 25152 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Start completed.
+2026-09-12T09:01:56.665+08:00  INFO 25152 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_metric_p105 (MySQL 8.0)
+2026-09-12T09:01:56.677+08:00  INFO 25152 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.007s)
+2026-09-12T09:01:56.682+08:00  INFO 25152 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_metric_p105`: 3
+2026-09-12T09:01:56.682+08:00  INFO 25152 --- [           main] o.f.core.internal.command.DbMigrate      : Schema `analytics_metric_p105` is up to date. No migration necessary.
+2026-09-12T09:01:56.701+08:00  INFO 25152 --- [           main] c.g.a.config.MetricFlywayInitializer     : analytics_metric 迁移完成: 执行 0 个脚本，当前版本 3 (迁移历史 analytics_metric.flyway_schema_history)
+2026-09-12T09:01:56.964+08:00  INFO 25152 --- [           main] c.g.a.r.storage.LocalLandingStorage      : LocalLandingStorage root = D:\p105-e3\run\landing
+2026-09-12T09:01:57.438+08:00  INFO 25152 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-12T09:01:58.046+08:00  INFO 25152 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8093 (http) with context path ''
+2026-09-12T09:01:58.058+08:00  INFO 25152 --- [           main] c.g.analytics.AnalyticsApplication       : Started AnalyticsApplication in 5.297 seconds (process running for 8.087)
+2026-09-12T09:01:58.237+08:00  INFO 25152 --- [nio-8093-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-12T09:01:58.237+08:00  INFO 25152 --- [nio-8093-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-12T09:01:58.238+08:00  INFO 25152 --- [nio-8093-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-09-12T09:01:58.354+08:00  INFO 25152 --- [           main] c.g.a.pipeline.PipelineRecoveryService   : R6-14 启动对账完成: pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]
+2026-09-12T09:01:58.787+08:00  INFO 25152 --- [nio-8093-exec-7] c.g.a.ingestion.LocalFileIngestor        : ingest e3-sample.jsonl: collected=12 quarantined=0 acceptedBytes=5077 offset 0→5089 identity=1789174909933
+2026-09-12T09:01:58.795+08:00  INFO 25152 --- [nio-8093-exec-7] c.g.a.ingestion.IngestionService         : ingestion run ing-20260912090158-b61133c4: status=SUCCESS records=12 quarantine=0 errors=0 files=1 bytes=5077 noNewData=false
+2026-09-12T09:01:58.891+08:00  INFO 25152 --- [nio-8093-exec-9] c.g.a.source.SourceRegistryServiceImpl   : 源登记创建 sourceCode=p1-03-probe-1 id=2 status=DRAFT
+2026-09-12T09:01:58.932+08:00  INFO 25152 --- [nio-8093-exec-3] c.g.a.source.SourceRegistryServiceImpl   : 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+2026-09-12T09:01:58.992+08:00  INFO 25152 --- [nio-8093-exec-7] c.g.a.ingestion.LocalFileIngestor        : ingest e3-sample.jsonl: collected=12 quarantined=0 acceptedBytes=5077 offset 0→5089 identity=1789174909933
+2026-09-12T09:01:58.997+08:00  INFO 25152 --- [nio-8093-exec-7] c.g.a.ingestion.IngestionService         : ingestion run ing-20260912090158-7b30ab98: status=SUCCESS records=12 quarantine=0 errors=0 files=1 bytes=5077 noNewData=false

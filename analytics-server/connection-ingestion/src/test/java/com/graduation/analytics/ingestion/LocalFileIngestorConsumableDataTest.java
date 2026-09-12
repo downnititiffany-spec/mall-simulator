@@ -43,6 +43,7 @@ class LocalFileIngestorConsumableDataTest {
     private static FileCheckpoint checkpointOf(Path file, String identity, Long nextOffset) {
         FileCheckpoint ckpt = new FileCheckpoint();
         ckpt.setRuntimeProfileId(1L);
+        ckpt.setSourceId(1L);
         ckpt.setFilePath(file.toAbsolutePath().toString());
         ckpt.setFileIdentity(identity);
         ckpt.setNextOffset(nextOffset);
@@ -50,7 +51,7 @@ class LocalFileIngestorConsumableDataTest {
     }
 
     private boolean consumable(Path file) {
-        return ingestor().hasConsumableData(file, 1L);
+        return ingestor().hasConsumableData(file, 1L, 1L);
     }
 
     // ---------- consumableEnd：可消费边界 = 最后一个换行符之后 ----------

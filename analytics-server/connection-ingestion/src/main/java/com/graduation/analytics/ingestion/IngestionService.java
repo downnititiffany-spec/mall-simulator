@@ -12,6 +12,8 @@ import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.source.SourceRegistryService;
+import com.graduation.analytics.source.dto.SourceRegistryView;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,7 +37,10 @@ import java.util.zip.CRC32;
 /**
  * 采集编排服务（§5.2.7 批次状态机 + 整改书 §9）：
  * GENERATED → COLLECTING → LANDED → VALIDATING → SUCCESS / QUARANTINED
- * - 一轮采集归属当前 ACTIVE RuntimeProfile：checkpoint 键含 runtime_profile_id（§9.2）；
+ * - 一轮采集归属当前 ACTIVE RuntimeProfile：checkpoint 键含 runtime_profile_id **与 source_id**（§9.2；P1-05 / D-037 裁决 1）；
+ * - 本轮采集归属的源 = 「当前激活源」读口（D-035 裁决 ②：{@code runtime_profile(ACTIVE).source_id}），
+ *   由 {@link SourceRegistryService#currentSourceId()} 单点解析；**未绑定源即 fail-closed**
+ *   （{@link PlatformBizException#SOURCE_NOT_BOUND}，绝不回落到某个固定源）；
  * - 输出目录职责（§9.1）：landing/accepted/{batchId} 校验通过、landing/quarantine/{batchId} 坏行、
  *   landing/manifests/{batchId}.json 批次清单（状态 READY，§9.3）；
  * - ODS 只能读取 accepted，禁止直接读 source/events（§9.1）。
@@ -52,6 +57,12 @@ public class IngestionService {
     private final LocalFileIngestor ingestor;
     private final EventClock eventClock;
     private final RuntimeProfileService runtimeProfileService;
+    /**
+     * 「当前激活源」的读口（D-035 裁决 ②的单一读写者）。P1-05 的源维度只从这里取，
+     * **不另写第二个 {@code SELECT ... FROM runtime_profile}**——否则"当前源"就有了两个所有者，
+     * 二者在切换的瞬间必然不一致。
+     */
+    private final SourceRegistryService sourceRegistryService;
     private final ObjectMapper objectMapper;
 
     /**
@@ -70,10 +81,20 @@ public class IngestionService {
     /**
      * 执行一轮采集（手动触发/演示控制台；定时触发在平台阶段）。
      * 采集归属当前 ACTIVE 运行环境（§8.3）；landing 根取 profile.landingUri。
+     *
+     * <p>P1-05：先解析「本轮归属的源」，解析不到就**直接拒绝**（{@code SOURCE_NOT_BOUND}），
+     * 且拒绝发生在**任何写入之前**——批次行、accepted/quarantine 目录、清单都不产生。
+     * 这样库里不会出现 source_id 为空的新行（与 V17 回填过的历史行混在一起就再也分不清
+     * "历史未标注"和"新代码没写"）。</p>
      */
     public RunResult runOne(TraceContext trace) {
         RuntimeProfile active = runtimeProfileService.getActive();
         long runtimeProfileId = active.getId();
+        long sourceId = requireBoundSourceId(runtimeProfileId);
+        // 本轮 manifest 的源身份三字段一次性从登记读口取好（同一行 profile 只读一次）：
+        //   sourceCode / profileVersion 取 source_registry 的**列**（D-037 裁决 8：不解析画像 JSON 反推版本，
+        //   那是第二个所有者，且画像文件在本轮尚未交付）；sourceId 取上面解析出的激活源。
+        SourceRegistryView source = requireSourceView(sourceId);
         Path landingRoot = LandingUri.resolve(active.getLandingUri());
         Path eventsDir = landingRoot.resolve("events");
         // 批次号带随机后缀，避免同秒多次运行撞唯一键；时间取**注入的业务时间源**（§20.3 不把系统当前时间
@@ -84,6 +105,7 @@ public class IngestionService {
         IngestionBatch batch = new IngestionBatch();
         batch.setBatchNo(batchNo);
         batch.setRuntimeProfileId(runtimeProfileId);
+        batch.setSourceId(sourceId);
         batch.setSource("local-file");
         batch.setStatus(IngestionBatch.STATUS_COLLECTING);
         batch.setRecordCount(0L);
@@ -120,7 +142,12 @@ public class IngestionService {
             }
             for (var entry : hourFiles.entrySet()) {
                 try {
-                    var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId,
+                    // P1-05：逐文件复核"本轮归属的源"。批次行的 source_id 在开头就定了，
+                    // 期间若有人切换激活源（D-035 只允许一个 ACTIVE 源），继续写就会把 B 源的
+                    // 字节记进 A 源的批次、并把断点写到 A 源名下 —— 本次记 FAILED 并中断，
+                    // 宁可这一轮失败，也不产出**归属错误**的批次（那是事后无法察觉的错账）。
+                    requireSourceUnchanged(runtimeProfileId, sourceId, entry.getKey().toString());
+                    var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId, sourceId,
                             acceptedDir, quarantineDir, trace, checksum);
                     // endOffset > startOffset ⇒ 真实推进了断点（有新内容可读），与 fileCount 的
                     // "产出了记录"是两件事：全是坏行的文件同样说明数据源在产出（B-08 / D-022）
@@ -167,7 +194,8 @@ public class IngestionService {
 
         // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
         String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
-                recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files);
+                recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
+                source);
         String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
 
         log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={} noNewData={}",
@@ -178,10 +206,76 @@ public class IngestionService {
                 acceptedDir.toString(), quarantineDir.toString(), manifestUri, !anyNewBytes);
     }
 
+    /**
+     * 解析「本轮采集归属的源」，解析不到即 fail-closed。
+     *
+     * <p>读口是 {@link SourceRegistryService#currentSourceId()}（D-035 裁决 ② 的"当前激活源"唯一读写者），
+     * 它返回 {@code Optional.empty()} 恰好表达"运行环境未绑定源"——比让本类自己去查
+     * {@code runtime_profile.source_id} 更不容易退化成兜底（那种写法一遇到 null 就想填个默认值）。
+     * 因此本方法**故意不提供** {@code orElse(1L)} 之类的写法。</p>
+     */
+    private long requireBoundSourceId(long runtimeProfileId) {
+        return sourceRegistryService.currentSourceId().orElseThrow(() -> new PlatformBizException(
+                PlatformBizException.SOURCE_NOT_BOUND,
+                "运行环境未绑定源，先激活源再采集（runtime_profile_id=" + runtimeProfileId
+                        + "，source_id 为空）"));
+    }
+
+    /**
+     * 取源登记行（manifest 三字段的唯一来源）。
+     *
+     * <p>为什么不吞异常：{@code SourceRegistryService.get} 在 id 不存在时抛
+     * {@code SOURCE_NOT_FOUND}（404 语义，登记口自己的口径，不在此处改写）。能走到这一步说明
+     * "当前激活源"已经指向了 {@code sourceId}，正常状态下 {@code file_checkpoint}/{@code runtime_profile}
+     * 的外键保证该行存在，因此这属于**绑定状态已损坏**。两种情况都**不静默降级**成"没有 sourceCode"——
+     * 那会写出一份缺字段却仍然 READY 的清单，下游无从察觉。</p>
+     */
+    private SourceRegistryView requireSourceView(long sourceId) {
+        try {
+            return sourceRegistryService.get(sourceId);
+        } catch (PlatformBizException e) {
+            throw new PlatformBizException(PlatformBizException.SOURCE_NOT_BOUND,
+                    "运行环境绑定的源在登记中不可用，先修复源绑定再采集（source_id=" + sourceId
+                            + "，原因：" + e.getMessage() + "）");
+        }
+    }
+
+    /** 逐文件复核源未变（见 {@code runOne} 内注释：切换源发生在批次中途时，继续写就是错账）。 */
+    private void requireSourceUnchanged(long runtimeProfileId, long sourceId, String file) {
+        long now = sourceRegistryService.currentSourceId().orElseThrow(() -> new PlatformBizException(
+                PlatformBizException.SOURCE_NOT_BOUND,
+                "运行环境未绑定源，先激活源再采集（runtime_profile_id=" + runtimeProfileId
+                        + "，source_id 为空）"));
+        if (now != sourceId) {
+            throw new PlatformBizException(PlatformBizException.SOURCE_NOT_BOUND,
+                    "采集过程中激活源被切换（本轮归属 source_id=" + sourceId + "，当前=" + now
+                            + "），本轮已按失败中止以免把文件 " + file + " 归到错误的源名下");
+        }
+    }
+
+    /**
+     * 批次清单（§9.3 的 15 个键 + P1-05 / D-037 裁决 6 新增的 4 个源身份键）。
+     *
+     * <p>四个新键的定位：**可选的来源标注**，全部不进 schema 的 {@code required}
+     * （裁决 6 的硬约束）——一旦进 required，V17 之前落盘的 39 个清单会立刻判非法。
+     * 各字段口径：</p>
+     * <ul>
+     *   <li>{@code sourceCode} ← {@code source_registry.source_code}（不是 {@code display_name}）；</li>
+     *   <li>{@code sourceId} ← 本轮解析出的激活源 id；</li>
+     *   <li>{@code profileVersion} ← {@code source_registry.profile_version} **列**
+     *       （裁决 8：画像文件里的同名值是"文件自述版本"，两者一致性属 P3-01，不在此处校验）；</li>
+     *   <li>{@code mappingVersion} ← {@code null}：语义映射尚未实施，恒为 null 直到 P2。
+     *       写 {@code ""}/{@code "0"}/{@code "v1"} 之类占位值会让下游以为映射已生效，故显式放 null 键。</li>
+     * </ul>
+     *
+     * <p>{@code source}（连接器类型，恒为 {@code local-file}）语义不变，**不是**源身份
+     * （裁决 5：不得改名、不得复用为源标识）。</p>
+     */
     private String buildManifest(String batchId, long runtimeProfileId, String batchNo,
                                  LocalDateTime startedAt, long acceptedRecords, long quarantinedRecords,
                                  int files, long acceptedBytes, CRC32 checksum,
-                                 Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList) {
+                                 Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList,
+                                 SourceRegistryView source) {
         Map<String, Object> manifest = new LinkedHashMap<>();
         manifest.put("batchId", Long.parseLong(batchId));
         manifest.put("batchNo", batchNo);
@@ -198,6 +292,12 @@ public class IngestionService {
         manifest.put("acceptedUri", "accepted/" + batchId);
         manifest.put("quarantineUri", "quarantine/" + batchId);
         manifest.put("checksum", Long.toHexString(checksum.getValue()));
+        // P1-05 / D-037 裁决 6：四个源身份键（可选，不进 required）。放在最后，保持既有键顺序不变，
+        // 便于与历史清单逐键对账（历史清单只少了这四个键）。
+        manifest.put("sourceCode", source.sourceCode());
+        manifest.put("sourceId", source.id());
+        manifest.put("profileVersion", source.profileVersion());
+        manifest.put("mappingVersion", null);
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest);
         } catch (Exception e) {
@@ -250,7 +350,14 @@ public class IngestionService {
         // "当前环境的 events 目录里有多少文件已经建立断点"，因此改为与 pendingFiles 同一次目录扫描内计数，
         // 断点命中由唯一所有者 LocalFileIngestor.checkpointKeys（读写共用规范键）回答，不删任何历史行。
         long checkpointFiles = 0;
-        Set<String> checkpointKeys = active == null ? Set.of() : ingestor.checkpointKeys(active.getId());
+        // P1-05 / D-037 裁决 1（读数端）：状态总览的断点口径必须与采集端同源，即**同时按 profile 与源**。
+        // 未绑定源时如实报告 sourceId=null 且不查断点（checkpointFiles 保持 0），**不抛异常**：
+        // 这是只读总览接口，抛异常会让运维在"还没来得及激活源"时连环境状态都看不到；
+        // 也不回落到某个固定源——那正是 runOne 拒绝掉的兜底。
+        Long sourceId = sourceRegistryService.currentSourceId().orElse(null);
+        Set<String> checkpointKeys = (active == null || sourceId == null)
+                ? Set.of()
+                : ingestor.checkpointKeys(active.getId(), sourceId);
         LocalDateTime lastArrivalAt = null;
         if (eventsDir != null && Files.isDirectory(eventsDir)) {
             try (Stream<Path> files = Files.list(eventsDir)) {
@@ -266,7 +373,7 @@ public class IngestionService {
                     if (checkpointKeys.contains(LocalFileIngestor.checkpointKey(f))) {
                         checkpointFiles++;
                     }
-                    if (ingestor.hasConsumableData(f, active.getId())) {
+                    if (ingestor.hasConsumableData(f, active.getId(), sourceId)) {
                         newFileCount++;
                     }
                 }
@@ -279,6 +386,7 @@ public class IngestionService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("profileState", active == null ? "NO_ACTIVE" : "ACTIVE");
         result.put("runtimeProfileId", active == null ? null : active.getId());
+        result.put("sourceId", sourceId);
         result.put("landingUri", active == null ? null : active.getLandingUri());
         result.put("landingError", landingError);
         result.put("eventsDir", eventsDir == null ? null : eventsDir.toString());
@@ -291,6 +399,7 @@ public class IngestionService {
             Map<String, Object> latestInfo = new LinkedHashMap<>();
             latestInfo.put("batchId", latest.getId());
             latestInfo.put("runtimeProfileId", latest.getRuntimeProfileId());
+            latestInfo.put("sourceId", latest.getSourceId());
             latestInfo.put("batchNo", latest.getBatchNo());
             latestInfo.put("status", latest.getStatus());
             latestInfo.put("recordCount", latest.getRecordCount());

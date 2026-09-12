@@ -40,6 +40,14 @@ public class PlatformBizException extends RuntimeException {
     public static final String SOURCE_PROFILE_INVALID = "SOURCE_PROFILE_INVALID";
     public static final String SOURCE_IN_USE = "SOURCE_IN_USE";
 
+    // 源绑定域错误码（P1-05，2026-09-12，加法式新增；D-037）：
+    //   SOURCE_NOT_BOUND → 409（运行环境未绑定源：runtime_profile.source_id 为空时采集 fail-closed）
+    // 语义：这不是"参数写错了"（400），而是**运行环境的绑定状态不满足采集前提**——与既有的
+    // SOURCE_IN_USE 同属"源域的状态冲突"，故归 409，由 mapStatus 统一映射（裁决：状态映射单一所有者）。
+    // 为什么不做兜底：回落 1/mock-mall、或给列加 DEFAULT 1，会把"来源不明"伪装成"来自某个源"，
+    // 断点挂到错误的源名下后，切源即产生**静默少采**（D-037 裁决 2 的同一条理由，从迁移侧延伸到运行侧）。
+    public static final String SOURCE_NOT_BOUND = "SOURCE_NOT_BOUND";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

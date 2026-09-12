@@ -1,0 +1,25 @@
+# P1-05 E3 历史行同列集哈希核对    生成时刻=2026-09-12 09:03:49
+# 说明：本文件在 r1/r2 两轮 E3 **之后**生成，SQL 与 r1 启动前快照的列集逐字一致（不含 V17 才有的 source_id 列）。
+# 副本库自 r2 结束（2026-09-12 09:03:08 停机）后未再被任何进程写入，故此处数值即 r2 结束态。
+# SQL:
+SET SESSION group_concat_max_len=1000000;
+SELECT CONCAT('ingestion_batch id<=39: n=', COUNT(*), ' md5(同列集无source_id)=', COALESCE(MD5(GROUP_CONCAT(CONCAT_WS('|',id,batch_no,runtime_profile_id,source,status,record_count,quarantine_count,error_count) ORDER BY id SEPARATOR ';')),'-')) FROM analytics_meta_p105.ingestion_batch WHERE id<=39;
+SELECT CONCAT('file_checkpoint id<=102: n=', COUNT(*), ' md5(同列集无source_id)=', COALESCE(MD5(GROUP_CONCAT(CONCAT_WS('|',id,runtime_profile_id,file_path,file_identity,next_offset) ORDER BY id SEPARATOR ';')),'-')) FROM analytics_meta_p105.file_checkpoint WHERE id<=102;
+SELECT CONCAT('历史 ingestion_batch source_id 分布: source_id=', IFNULL(source_id,'<NULL>'), ' n=', COUNT(*)) FROM analytics_meta_p105.ingestion_batch WHERE id<=39 GROUP BY source_id;
+SELECT CONCAT('历史 file_checkpoint source_id 分布: source_id=', IFNULL(source_id,'<NULL>'), ' n=', COUNT(*)) FROM analytics_meta_p105.file_checkpoint WHERE id<=102 GROUP BY source_id;
+SELECT CONCAT('新写入行: batch id>=40 n=', COUNT(*), ' 明细=', GROUP_CONCAT(CONCAT(id,':source_id=',source_id) ORDER BY id)) FROM analytics_meta_p105.ingestion_batch WHERE id>=40;
+
+# 实测输出:
+    ingestion_batch id<=39: n=39 md5(同列集无source_id)=15ee7c6a8f7bcd3745025a857e38429b
+    file_checkpoint id<=102: n=102 md5(同列集无source_id)=0c35d0ad20560b861dd2fa484f52ce86
+    历史 ingestion_batch source_id 分布: source_id=1 n=39
+    历史 file_checkpoint source_id 分布: source_id=1 n=102
+    新写入行: batch id>=40 n=4 明细=40:source_id=1,41:source_id=2,42:source_id=1,43:source_id=2
+
+# 对照（取自 e3-10-scenarios-r1.txt 的启动前快照，同为无 source_id 列集）:
+#    ingestion_batch: n=39 md5(id<=39, 无source_id列)=15ee7c6a8f7bcd3745025a857e38429b
+#    file_checkpoint: n=102 md5(id<=102, 无source_id列)=0c35d0ad20560b861dd2fa484f52ce86
+# 结论：同列集哈希逐字相同 ⇒ 两轮 E3（4 次新批次，40/41/42/43）没有改动任何历史行；
+#       历史行上唯一的变化是 V17 按 runtime_profile 回填的 source_id=1（D-037 裁决 ② 的预期行为）。
+
+# 未取证：本核对只覆盖副本库 analytics_meta_p105；真库 analytics_meta 本轮只做只读快照（见 e3-10），未跑 V17。

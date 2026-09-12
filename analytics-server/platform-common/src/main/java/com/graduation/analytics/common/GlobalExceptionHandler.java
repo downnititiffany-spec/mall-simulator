@@ -31,7 +31,9 @@ public class GlobalExceptionHandler {
      *
      * <p>P1-03（2026-09-11）之前此方法用类级 {@code @ResponseStatus(BAD_REQUEST)} 把所有业务码压成 400，
      * 调用方无法区分「找不到资源」与「与当前状态冲突」。现在状态由 {@link #mapStatus} 单点决定：
-     * 源登记域三个冲突码 → 409、{@code SOURCE_NOT_FOUND} → 404，其余一律 400（既有语义不变）。</p>
+     * 源登记域三个冲突码 → 409、{@code SOURCE_NOT_FOUND} → 404，其余一律 400（既有语义不变）。
+     * P1-05（2026-09-12）加法新增 {@code SOURCE_NOT_BOUND} → 409（运行环境未绑定源，
+     * 与 {@code SOURCE_IN_USE} 同属"源域状态冲突"，理由见 {@link PlatformBizException#SOURCE_NOT_BOUND}）。</p>
      *
      * <p>返回 {@code ResponseEntity} 而不是继续用 {@code @ResponseStatus}：分状态无法用类级注解表达，
      * 而并列两个处理器会造成"同一异常两个所有者"。</p>
@@ -54,7 +56,8 @@ public class GlobalExceptionHandler {
             case PlatformBizException.SOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case PlatformBizException.SOURCE_CODE_IMMUTABLE,
                  PlatformBizException.SOURCE_PROFILE_INVALID,
-                 PlatformBizException.SOURCE_IN_USE -> HttpStatus.CONFLICT;
+                 PlatformBizException.SOURCE_IN_USE,
+                 PlatformBizException.SOURCE_NOT_BOUND -> HttpStatus.CONFLICT;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

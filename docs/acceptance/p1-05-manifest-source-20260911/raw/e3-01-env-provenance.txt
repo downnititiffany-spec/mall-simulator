@@ -1,0 +1,60 @@
+# P1-05 E3 环境出处    生成时刻=2026-09-12 09:03:49
+# 1) 代码出处（E3 实测时的 HEAD，注意与本 lane 开工时的 c214b25 不同：期间主线有新提交）
+    git HEAD           = f5eb74ac8349eb817348a9c92e63abd7713bba21
+    git rev-parse --abbrev-ref HEAD = remediation/r1-boundary
+    git status --porcelain:
+       M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/IngestionService.java
+       M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java
+       M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/entity/FileCheckpoint.java
+       M analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/entity/IngestionBatch.java
+       M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionRunNoNewDataTest.java
+       M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionServiceStatusTest.java
+       M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/LocalFileIngestorCheckpointKeyTest.java
+       M analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/LocalFileIngestorConsumableDataTest.java
+       M analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceRegistryMigrationMySqlIT.java
+       M analytics-server/platform-common/src/main/java/com/graduation/analytics/common/GlobalExceptionHandler.java
+       M analytics-server/platform-common/src/main/java/com/graduation/analytics/common/PlatformBizException.java
+       M analytics-server/platform-common/src/test/java/com/graduation/analytics/common/GlobalExceptionHandlerSourceStatusTest.java
+      ?? analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionSourceManifestTest.java
+      ?? analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionSourceNotBoundTest.java
+      ?? analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/LocalFileIngestorSourceIsolationTest.java
+      ?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/
+      ?? docs/acceptance/p1-05-manifest-source-20260911/
+
+# 2) 实例类路径构成（不用 fat jar：target 里的 fat jar 是早于本轮改动的旧产物）
+    classes\platform-app         files=77   newest=2026-09-12 09:00:05 SpaFallbackController.class
+    classes\connection-ingestion files=68   newest=2026-09-12 08:45:22 AuthenticationRequiredException.class
+    classes\platform-common      files=24   newest=2026-09-12 08:44:44 LandingUri.class
+    classes\warehouse-pipeline   files=30   newest=2026-09-11 20:36:36 JobCommandBuilder.class
+    classes\metric-analysis      files=35   newest=2026-09-11 20:36:38 AnalysisService.class
+    classes\ai-decision          files=68   newest=2026-09-11 20:36:40 DecisionStateMachine.class
+    依赖：D:\p105-e3\base\BOOT-INF\lib 共 59 个 jar（自 D:\p103-e3\base 整目录复制而来）
+    依赖集等价性核对：与 analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar 的 BOOT-INF/lib/*.jar 逐名比对 —— Compare-Object 无差异（59 = 59）
+    本轮编译：mvn -o compile -f analytics-server/pom.xml -pl platform-app -am → BUILD SUCCESS（2.144 s，platform-app 重编 20 个源文件）
+
+# 3) 真库只读的结构性保证：作用域账号（只有副本库权限，真库上连 SELECT 都被拒）
+    GRANT USAGE ON *.* TO `p105_meta`@`localhost`
+    GRANT ALL PRIVILEGES ON `analytics_meta_p105`.* TO `p105_meta`@`localhost`
+    GRANT USAGE ON *.* TO `p105_metric_pub`@`localhost`
+    GRANT ALL PRIVILEGES ON `analytics_metric_p105`.* TO `p105_metric_pub`@`localhost`
+    GRANT USAGE ON *.* TO `p105_metric_read`@`localhost`
+    GRANT SELECT ON `analytics_metric_p105`.* TO `p105_metric_read`@`localhost`
+    实测：mysql -up105_meta -pp105_meta_pw_2026 -e "SELECT COUNT(*) FROM analytics_meta.file_checkpoint;"
+    -> ERROR 1142 (42000) at line 1: SELECT command denied to user 'p105_meta'@'localhost' for table 'file_checkpoint'
+    实测：同一账号读副本库
+    -> 104
+
+# 4) 副本库来源（真库 dump → 副本库；真库全程只读）
+    mysqldump analytics_meta   → D:\p105-e3\analytics_meta_p105.sql   (3265948 字节)
+    mysqldump analytics_metric → D:\p105-e3\analytics_metric_p105.sql (34478 字节)
+    载入后副本库与真库一致性：flyway 15 行 max=16 failed=0；file_checkpoint=102；ingestion_batch=39；source_registry=1；runtime_profile=1
+
+# 5) Landing 隔离：实例工作目录 = D:\p105-e3\run，LandingUri 对 file://./landing 按进程 cwd 解析
+    实例 eventsDir（取自 /api/v1/ingestion/status 响应体）= D:\p105-e3\run\landing\events
+    ⇒ 仓库 landing\ 在本轮采集链路上物理不可达（真库+真 landing 双向只读）
+
+# 6) 端口纪律：本轮只用 8093；8090/8091/8092 全程未监听、未触碰
+    8090 正在监听=False
+    8091 正在监听=False
+    8092 正在监听=False
+    8093 正在监听=False
