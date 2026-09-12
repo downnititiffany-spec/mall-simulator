@@ -160,3 +160,19 @@
   仓库内的历史原文是**已跟踪的** `docs/项目完整实施指导书 V2.2.md` 本身——本轮未改它一个字节（SHA256 `B366969C…0D6A` 见 `raw/v2.3-selfcheck-*.txt`），所以"可比对的原文"在仓库内始终可用；冷备只用于回滚操作。
 - 因此 §9 反熵声明里"V2.2 哈希留证"= 仓库内 V2.2 文件 ＋ 本轮 raw 自检输出里的 SHA256，两者互相印证；**不是**指仓库里有一份冷备副本。
 - 提交 `574cad8` 的 7 个文件里**不含** `docs/backups/**`（被忽略）与 `docs/acceptance/p1-05-8091-swap-20260911/8091-stdout.log`（被 8091 进程持续写入的运行期日志，见文末"附带发现"）。
+
+## 14. F-25：参考商城词表与规范契约"恰好同名"，掩盖了缺失的状态词映射（2026-09-12 发现）
+
+**事实（只读取证）**
+
+| 环节 | 证据 | 说明 |
+|---|---|---|
+| 规范事件的 `product.status` 是受约束的枚举 | `contract-specs/schemas/canonical-event.v1.schema.json` L413-419、L465-471：`enum = [on_sale, off_sale, pending]`，且 `status` 属 `required` | 写入别的词即违约 |
+| 但写入值来自**商城原样应答** | `engine/MallApiDispatchSink.java` L327-328：`if (product.status() != null) payload.put("status", product.status());`（同 L236/246 的 `paid/cancelled/refund.status()` 只进流水，无此问题） | 引擎把商城词直接放进规范载荷 |
+| 参考商城**恰好**返回 `on_sale` | `adapter/ExternalProduct.java` L32-34：`onSale()` 只认 `on_sale`（`ReferenceMallHttpAdapter` 的样例与真实应答同词） | 同名使缺陷不显形 |
+
+**为什么此前所有测试都没发现**：现有两个夹具（`fixture/FakeMallServer`、`MallTargetAdapterOperationsTest.FakeMall`）**逐字复刻**参考商城的词表，因此"商城词 == 规范词"这一巧合在两个夹具里同样成立；只有引入**不同词表**的第二家商城才会让规范事件出现 `enum` 违约。
+
+**影响**：接第二家商城时，产物里的 `product_created.status` 可能写着 `ON_SHELF`/`SALE` 之类，规范事件校验与下游 Hive 清洗（按 `on_sale` 判定在售）会同时出错；错误方向是"静默写出违约数据"，不是响亮失败，属与已关闭 D12 同类的**证据真实性**问题。
+
+**处置**：① 契约侧已追加**补记**（`docs/项目完整实施指导书 V2.3.md` §4.1.1 末尾）：`ExternalProduct.status` 为**规范词表**，映射归适配器；`ExternalOrder/ExternalRefund.status` 仍为商城原样文本（只进流水/报告）。② 实现侧的映射与断言排在 **M1-9 ②**（第二适配器必须用不同词表，并断言规范事件里是 `on_sale`）。**未取证**：第二家商城的真实应答（环境内不存在第二家商城，本条只有代码级证据）。
