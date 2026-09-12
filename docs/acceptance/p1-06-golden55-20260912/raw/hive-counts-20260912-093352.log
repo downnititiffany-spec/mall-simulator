@@ -1,0 +1,236 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 09:33:56 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 09:33:56 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 09:33:57 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 09:33:57 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+Spark Web UI available at http://127.0.0.1:4040
+Spark master: local[2], Application Id: local-1789176835284
+default
+dw_ads
+dw_dim
+dw_dwd
+dw_dws
+dw_ods
+probe_r613
+Time taken: 0.902 seconds, Fetched 7 row(s)
+26/09/12 09:33:58 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+ods_behavior_event
+Time taken: 0.855 seconds, Fetched 4 row(s)
+ods_product_event
+ods_trade_event
+ods_user_event
+dw_ods.ods_behavior_event	365
+Time taken: 4.312 seconds, Fetched 1 row(s)
+dw_ods.ods_product_event	271
+Time taken: 1.416 seconds, Fetched 1 row(s)
+dw_ods.ods_trade_event	281
+Time taken: 1.262 seconds, Fetched 1 row(s)
+dw_ods.ods_user_event	83
+Time taken: 0.434 seconds, Fetched 1 row(s)
+dw_ods.ods_behavior_event	20260901	13
+dw_ods.ods_behavior_event	20260902	13
+dw_ods.ods_behavior_event	20260903	5
+dw_ods.ods_behavior_event	20260904	14
+dw_ods.ods_behavior_event	20260905	9
+dw_ods.ods_behavior_event	20260906	8
+dw_ods.ods_behavior_event	20260907	11
+dw_ods.ods_behavior_event	20260908	13
+dw_ods.ods_behavior_event	20260909	12
+dw_ods.ods_behavior_event	20260910	11
+dw_ods.ods_behavior_event	20260911	9
+dw_ods.ods_behavior_event	20260912	10
+dw_ods.ods_behavior_event	20260913	4
+dw_ods.ods_behavior_event	20260914	20
+dw_ods.ods_behavior_event	20260915	14
+dw_ods.ods_behavior_event	20260916	10
+dw_ods.ods_behavior_event	20260917	13
+dw_ods.ods_behavior_event	20260918	12
+dw_ods.ods_behavior_event	20260919	7
+dw_ods.ods_behavior_event	20260920	20
+dw_ods.ods_behavior_event	20260921	17
+dw_ods.ods_behavior_event	20260922	12
+dw_ods.ods_behavior_event	20260923	10
+dw_ods.ods_behavior_event	20260924	10
+dw_ods.ods_behavior_event	20260925	18
+dw_ods.ods_behavior_event	20260926	13
+dw_ods.ods_behavior_event	20260927	20
+dw_ods.ods_behavior_event	20260928	15
+dw_ods.ods_behavior_event	20260929	13
+dw_ods.ods_behavior_event	20260930	9
+Time taken: 1.698 seconds, Fetched 30 row(s)
+dw_ods.ods_product_event	20260901	10
+dw_ods.ods_product_event	20260902	9
+dw_ods.ods_product_event	20260903	8
+dw_ods.ods_product_event	20260904	6
+dw_ods.ods_product_event	20260905	9
+dw_ods.ods_product_event	20260906	7
+dw_ods.ods_product_event	20260907	8
+dw_ods.ods_product_event	20260908	6
+dw_ods.ods_product_event	20260909	17
+dw_ods.ods_product_event	20260910	16
+dw_ods.ods_product_event	20260911	11
+dw_ods.ods_product_event	20260912	14
+dw_ods.ods_product_event	20260913	8
+dw_ods.ods_product_event	20260914	6
+dw_ods.ods_product_event	20260915	7
+dw_ods.ods_product_event	20260916	14
+dw_ods.ods_product_event	20260917	6
+dw_ods.ods_product_event	20260918	6
+dw_ods.ods_product_event	20260919	12
+dw_ods.ods_product_event	20260920	7
+dw_ods.ods_product_event	20260921	6
+dw_ods.ods_product_event	20260922	9
+dw_ods.ods_product_event	20260923	10
+dw_ods.ods_product_event	20260924	9
+dw_ods.ods_product_event	20260925	6
+dw_ods.ods_product_event	20260926	5
+dw_ods.ods_product_event	20260927	6
+dw_ods.ods_product_event	20260928	9
+dw_ods.ods_product_event	20260929	12
+dw_ods.ods_product_event	20260930	12
+Time taken: 0.813 seconds, Fetched 30 row(s)
+dw_ods.ods_trade_event	20260901	11
+dw_ods.ods_trade_event	20260902	12
+dw_ods.ods_trade_event	20260903	8
+dw_ods.ods_trade_event	20260904	6
+dw_ods.ods_trade_event	20260905	4
+dw_ods.ods_trade_event	20260906	12
+dw_ods.ods_trade_event	20260907	7
+dw_ods.ods_trade_event	20260908	14
+dw_ods.ods_trade_event	20260909	9
+dw_ods.ods_trade_event	20260910	16
+dw_ods.ods_trade_event	20260911	8
+dw_ods.ods_trade_event	20260912	13
+dw_ods.ods_trade_event	20260913	14
+dw_ods.ods_trade_event	20260914	8
+dw_ods.ods_trade_event	20260915	9
+dw_ods.ods_trade_event	20260916	9
+dw_ods.ods_trade_event	20260917	9
+dw_ods.ods_trade_event	20260918	12
+dw_ods.ods_trade_event	20260919	10
+dw_ods.ods_trade_event	20260920	9
+dw_ods.ods_trade_event	20260921	8
+dw_ods.ods_trade_event	20260922	6
+dw_ods.ods_trade_event	20260923	6
+dw_ods.ods_trade_event	20260924	8
+dw_ods.ods_trade_event	20260925	6
+dw_ods.ods_trade_event	20260926	12
+dw_ods.ods_trade_event	20260927	5
+dw_ods.ods_trade_event	20260928	13
+dw_ods.ods_trade_event	20260929	11
+dw_ods.ods_trade_event	20260930	6
+Time taken: 0.822 seconds, Fetched 30 row(s)
+dw_ods.ods_user_event	20260901	8
+dw_ods.ods_user_event	20260902	8
+dw_ods.ods_user_event	20260903	10
+dw_ods.ods_user_event	20260904	10
+dw_ods.ods_user_event	20260905	8
+dw_ods.ods_user_event	20260906	6
+dw_ods.ods_user_event	20260907	8
+dw_ods.ods_user_event	20260908	6
+dw_ods.ods_user_event	20260909	2
+dw_ods.ods_user_event	20260910	1
+Time taken: 0.394 seconds, Fetched 21 row(s)
+dw_ods.ods_user_event	20260911	2
+dw_ods.ods_user_event	20260912	1
+dw_ods.ods_user_event	20260916	2
+dw_ods.ods_user_event	20260918	1
+dw_ods.ods_user_event	20260919	1
+dw_ods.ods_user_event	20260920	3
+dw_ods.ods_user_event	20260922	1
+dw_ods.ods_user_event	20260924	1
+dw_ods.ods_user_event	20260925	1
+dw_ods.ods_user_event	20260926	2
+dw_ods.ods_user_event	20260930	1
+dwd_order_detail
+dwd_reject_record
+dwd_user_behavior_detail
+Time taken: 0.013 seconds, Fetched 3 row(s)
+dw_dwd.dwd_order_detail	138
+Time taken: 0.186 seconds, Fetched 1 row(s)
+26/09/12 09:34:10 WARN HadoopFSUtils: The directory file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_dwd.db/dwd_reject_record/dt=20260901 was not found. Was it deleted very recently?
+dw_dwd.dwd_reject_record	1
+Time taken: 0.114 seconds, Fetched 1 row(s)
+dw_dwd.dwd_user_behavior_detail	27
+Time taken: 0.135 seconds, Fetched 1 row(s)
+dim_product
+dim_user
+Time taken: 0.013 seconds, Fetched 2 row(s)
+26/09/12 09:34:11 WARN HadoopFSUtils: The directory file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_dim.db/dim_product/dt=20260901 was not found. Was it deleted very recently?
+dw_dim.dim_product	4
+Time taken: 0.132 seconds, Fetched 1 row(s)
+dw_dim.dim_user	11
+Time taken: 0.104 seconds, Fetched 1 row(s)
+dws_behavior_funnel_day
+Time taken: 0.012 seconds, Fetched 7 row(s)
+dws_product_behavior_day
+dws_product_sale_day
+dws_region_sale_day
+dws_trade_day
+dws_user_behavior_day
+dws_user_trade_period
+dw_dws.dws_behavior_funnel_day	2
+Time taken: 0.102 seconds, Fetched 1 row(s)
+dw_dws.dws_product_behavior_day	13
+Time taken: 0.1 seconds, Fetched 1 row(s)
+dw_dws.dws_product_sale_day	4
+Time taken: 0.109 seconds, Fetched 1 row(s)
+dw_dws.dws_region_sale_day	4
+Time taken: 0.086 seconds, Fetched 1 row(s)
+dw_dws.dws_trade_day	2
+Time taken: 0.103 seconds, Fetched 1 row(s)
+dw_dws.dws_user_behavior_day	13
+Time taken: 0.097 seconds, Fetched 1 row(s)
+dw_dws.dws_user_trade_period	4
+Time taken: 0.096 seconds, Fetched 1 row(s)
+ads_active_trend
+ads_active_trend__staging
+ads_behavior_funnel
+ads_behavior_funnel__staging
+ads_data_quality
+ads_data_quality__staging
+ads_hot_product
+ads_hot_product__staging
+ads_operation_overview
+ads_operation_overview__staging
+ads_product_conversion
+ads_product_conversion__staging
+ads_sale_trend
+ads_sale_trend__staging
+ads_user_profile
+ads_user_profile__staging
+Time taken: 0.012 seconds, Fetched 16 row(s)
+dw_ads.ads_active_trend	1
+Time taken: 0.079 seconds, Fetched 1 row(s)
+dw_ads.ads_active_trend__staging	1
+Time taken: 0.082 seconds, Fetched 1 row(s)
+dw_ads.ads_behavior_funnel	4
+Time taken: 0.074 seconds, Fetched 1 row(s)
+dw_ads.ads_behavior_funnel__staging	4
+Time taken: 0.082 seconds, Fetched 1 row(s)
+dw_ads.ads_data_quality	4
+Time taken: 0.088 seconds, Fetched 1 row(s)
+dw_ads.ads_data_quality__staging	4
+Time taken: 0.082 seconds, Fetched 1 row(s)
+dw_ads.ads_hot_product	9
+Time taken: 0.074 seconds, Fetched 1 row(s)
+dw_ads.ads_hot_product__staging	9
+Time taken: 0.087 seconds, Fetched 1 row(s)
+dw_ads.ads_operation_overview	1
+Time taken: 0.102 seconds, Fetched 1 row(s)
+dw_ads.ads_operation_overview__staging	4
+Time taken: 0.08 seconds, Fetched 1 row(s)
+dw_ads.ads_product_conversion	9
+Time taken: 0.075 seconds, Fetched 1 row(s)
+Time taken: 0.077 seconds, Fetched 1 row(s)
+dw_ads.ads_product_conversion__staging	9
+dw_ads.ads_sale_trend	1
+Time taken: 0.075 seconds, Fetched 1 row(s)
+dw_ads.ads_sale_trend__staging	1
+Time taken: 0.069 seconds, Fetched 1 row(s)
+dw_ads.ads_user_profile	1
+Time taken: 0.071 seconds, Fetched 1 row(s)
+dw_ads.ads_user_profile__staging	1
+Time taken: 0.076 seconds, Fetched 1 row(s)

@@ -1,0 +1,48 @@
+P1-06 T2 采集写入后态（只读采集）  20260912-092637  仓根 D:\Develop_code\GraduationProject
+HEAD 3199a26b369c8d4e77682ad1c31990a625ae4632
+
+=== [A] landing/events（源目录，应仍为 55 个文件）===
+  文件数 = 55  总字节 = 404895418
+=== [B] landing/accepted（批目录 + 文件）===
+  批次目录数 = 40  最大 = 40
+  批次 39: 文件 2  字节 584
+      b11-fixture-20260911162916.jsonl  584 B  2026-09-11 16:29:16
+      golden-r615-20260910164859.jsonl  0 B  2026-09-11 16:29:16
+  批次 40: 文件 4  字节 754236
+      2026091120.jsonl  459013 B  2026-09-12 09:23:15
+      2026091121.jsonl  165249 B  2026-09-12 09:23:15
+      2026091122.jsonl  129974 B  2026-09-12 09:23:15
+      golden-r615-20260910164859.jsonl  0 B  2026-09-12 09:23:15
+  accepted 文件总数 = 134
+=== [C] landing/quarantine ===
+  目录数 = 40  文件总数 = 134
+=== [D] landing/manifests ===
+  文件数 = 31  最大 = 31
+  40.json: batchId= accepted= quarantine= uri= status=
+  40.json files: 
+
+=== [E] 库表计数（真库 analytics_meta）===
+  t	c	mx
+  ingestion_batch	40	40
+  ingestion_batch_file	112	112
+  file_checkpoint	105	105
+  file_checkpoint(source_id IS NULL)	0	NULL
+  pipeline_run	40	41
+  pipeline_stage_run	247	262
+  spark_job_run	208	208
+  metric_snapshot	8	23
+  metric_value	70	110
+  operation_audit_log	92	92
+  quarantine_record	104	104
+  data_quality_result	379	379
+
+=== [F] 批 40 与 checkpoint 明细（写路径证据）===
+  ERROR 1054 (42S22) at line 1: Unknown column 'created_at' in 'field list'
+  ERROR 1054 (42S22) at line 1: Unknown column 'file_name' in 'field list'
+
+=== [G] 指标快照现状 ===
+  id	snapshot_id	pipeline_run_id	status	version	business_time	active_flag	published_at
+  23	S20260901_39	39	ACTIVE	8	2026-09-01 00:00:00.000	1	2026-09-11 15:12:22.013
+  22	S20260901_38	38	FAILED	7	2026-09-01 00:00:00.000	NULL	NULL
+  17	S20260901_30	30	ARCHIVED	6	2026-09-01 00:00:00.000	NULL	2026-09-11 11:09:19.753
+  16	S20260901_29	29	ARCHIVED	5	2026-09-01 00:00:00.000	NULL	2026-09-11 11:02:25.364

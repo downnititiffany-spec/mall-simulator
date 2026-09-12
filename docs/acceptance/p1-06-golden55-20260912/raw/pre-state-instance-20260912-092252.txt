@@ -1,0 +1,37 @@
+P1-06 T2 前态补充件（补 pre-state 的 §A jar 身份 + §B source_registry 列名）  20260912-092252
+原因：pre-state 脚本在 `[Management.ManagementDateTimeConverter]::ToDateTime($p.CreationDate)` 处抛 "dmtfDate 越界"（PS7 的 CIM CreationDate 已是 DateTime），该语句终止使同轮迭代的 jar 身份行未写入；本件补正，原文件不改写。
+
+=== A. 8091 实例身份（补）===
+  PID=47132  父PID=7984
+  启动时间(本地) = 2026-09-12 09:14:59
+  命令行 = "D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+  jar 路径 = D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+  -Dplatform.metric.publish.export-dir = D:\Develop_code\GraduationProject\metric-staging
+
+=== 监听端口 ===
+  8091  PID=47132
+
+=== B. source_registry 真实列名 + 行 ===
+--- SQL: SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,COLUMN_KEY FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta' AND TABLE_NAME='source_registry' ORDER BY ORDINAL_POSITION;
+    COLUMN_NAME	DATA_TYPE	IS_NULLABLE	COLUMN_KEY
+    id	bigint	NO	PRI
+    source_code	varchar	NO	UNI
+    display_name	varchar	NO	
+    ingest_mode	varchar	NO	
+    profile_path	varchar	NO	
+    timezone	varchar	NO	
+    currency	char	NO	
+    status	varchar	NO	MUL
+    profile_version	varchar	NO	
+    created_at	datetime	NO	
+    updated_at	datetime	NO	
+
+--- SQL: SELECT * FROM analytics_meta.source_registry ORDER BY id;
+    id	source_code	display_name	ingest_mode	profile_path	timezone	currency	status	profile_version	created_at	updated_at
+    1	mock-mall	参考商城（源 A）	FILE	analytics-server/source-profiles/mock-mall.v1.json	Asia/Shanghai	CNY	ACTIVE	1.0	2026-09-11 19:56:28.020	2026-09-11 19:56:28.020
+
+--- SQL: SELECT COLUMN_NAME,DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta' AND TABLE_NAME IN ('file_checkpoint','ingestion_batch') AND COLUMN_NAME='source_id' ORDER BY TABLE_NAME;
+    COLUMN_NAME	DATA_TYPE
+    source_id	bigint
+    source_id	bigint
+

@@ -1,0 +1,43 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 09:35:18 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 09:35:18 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 09:35:20 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 09:35:20 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+Spark Web UI available at http://127.0.0.1:4040
+Spark master: local[2], Application Id: local-1789176918134
+26/09/12 09:35:20 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+dw_ads.ads_active_trend__staging	S20260901_41	20260901	1
+Time taken: 2.954 seconds, Fetched 1 row(s)
+dw_ads.ads_behavior_funnel__staging	S20260901_41	20260901	4
+Time taken: 0.514 seconds, Fetched 1 row(s)
+dw_ads.ads_data_quality__staging	S20260901_41	20260901	4
+Time taken: 0.367 seconds, Fetched 1 row(s)
+dw_ads.ads_hot_product__staging	S20260901_41	20260901	9
+Time taken: 0.315 seconds, Fetched 1 row(s)
+dw_ads.ads_operation_overview__staging	S20260901_41	20260901	1
+Time taken: 0.423 seconds, Fetched 2 row(s)
+dw_ads.ads_operation_overview__staging	S20260907_TEST	20260907	3
+dw_ads.ads_product_conversion__staging	S20260901_41	20260901	9
+Time taken: 0.231 seconds, Fetched 1 row(s)
+dw_ads.ads_sale_trend__staging	S20260901_41	20260901	1
+Time taken: 0.233 seconds, Fetched 1 row(s)
+dw_ads.ads_user_profile__staging	S20260901_41	20260901	1
+Time taken: 0.259 seconds, Fetched 1 row(s)
+dw_ads.ads_active_trend	20260901	1
+Time taken: 0.245 seconds, Fetched 1 row(s)
+dw_ads.ads_behavior_funnel	20260901	4
+Time taken: 0.237 seconds, Fetched 1 row(s)
+dw_ads.ads_data_quality	20260901	4
+Time taken: 0.259 seconds, Fetched 1 row(s)
+dw_ads.ads_hot_product	20260901	9
+Time taken: 0.191 seconds, Fetched 1 row(s)
+dw_ads.ads_operation_overview	20260901	1
+Time taken: 0.196 seconds, Fetched 1 row(s)
+dw_ads.ads_product_conversion	20260901	9
+Time taken: 0.185 seconds, Fetched 1 row(s)
+dw_ads.ads_sale_trend	20260901	1
+Time taken: 0.119 seconds, Fetched 1 row(s)
+dw_ads.ads_user_profile	20260901	1
+Time taken: 0.128 seconds, Fetched 1 row(s)

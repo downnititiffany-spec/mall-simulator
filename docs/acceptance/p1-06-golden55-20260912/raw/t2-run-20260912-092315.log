@@ -1,0 +1,27 @@
+P1-06 T2 执行日志  开始 2026-09-12 09:23:15  sourceDataVersion=p1-06-t2-golden55-20260912
+仓根 D:\Develop_code\GraduationProject  HEAD 3199a26
+
+[0] 登录 HTTP 200  用户=admin  角色=admin  token 长度=32 前缀=dd13753467c4...
+[1a] GET /api/v1/health HTTP 200  {"code":"OK","app":"analytics-server","stage":"R1-skleton"}
+[1b] GET /api/v1/ingestion/status HTTP 200
+     {"code":"OK","message":"success","data":{"profileState":"ACTIVE","runtimeProfileId":1,"sourceId":1,"landingUri":"file://./landing","landingError":null,"eventsDir":"D:\\Develop_code\\GraduationProject\\landing\\events","pendingFiles":55,"pendingBytes":404895418,"checkpointFiles":52,"newFileCount":3,"lastArrivalAt":"2026-09-11T22:02:55.576756600","latestBatch":{"batchId":39,"runtimeProfileId":1,"sourceId":1,"batchNo":"ing-20260911162916-04e0eb74","status":"SUCCESS","recordCount":2,"quarantineCount":0}},"traceId":"6d336aea-59af-4aec-b701-a50ba56b125d"}
+
+[2] POST /api/v1/ingestion/runs  09:23:15
+     HTTP 200  耗时 0.2s
+     响应原文: {"code":"OK","message":"success","data":{"batchId":40,"batchNo":"ing-20260912092315-fef96b66","status":"SUCCESS","recordCount":1667,"quarantineCount":0,"errorCount":0,"fileCount":3,"acceptedBytes":754236,"acceptedDir":"D:\\Develop_code\\GraduationProject\\landing\\accepted\\40","quarantineDir":"D:\\Develop_code\\GraduationProject\\landing\\quarantine\\40","manifestPath":"file:///D:/Develop_code/GraduationProject/landing/manifests/40.json","noNewData":false},"traceId":"6c9f2322-9331-4f2a-92dd-9243afbf8776"}
+     解析: batchNo=ing-20260912092315-fef96b66 status=SUCCESS recordCount=1667 quarantineCount=0 noNewData=False batchId=40
+
+[3] POST /api/v1/pipeline-runs  body={"sourceDataVersion":"p1-06-t2-golden55-20260912","businessTime":"2026-09-01T00:00:00","runtimeProfileId":1,"pipelineCode":"ODS_TO_ADS"}  09:23:15
+     HTTP 200  耗时 0.0s
+     响应原文: {"code":"OK","message":"success","data":{"runId":40,"idempotencyKey":"1|ODS_TO_ADS|2026-09-01T00:00|p1-06-t2-golden55-20260912","status":"PENDING","currentStage":"PENDING","errorCode":null,"attemptNo":1,"targetSnapshotId":null,"stages":[]},"traceId":"da7de33e-563f-4d1a-9a71-ab75eaabaff6"}
+     runId = 40
+
+[4] 09:23:25  run=40 status=RUNNING 阶段=WAIT_LANDING=SUCCESS,INIT_SCHEMA=RUNNING err=
+[4] 09:23:35  run=40 status=FAILED 阶段=WAIT_LANDING=SUCCESS,INIT_SCHEMA=SUCCESS,LOAD_ODS=FAILED err=RUN_EMPTY_DATA
+
+[4x] 终态: status=FAILED errorCode=RUN_EMPTY_DATA errorMsg=
+     终态响应原文: {"code":"OK","message":"success","data":{"runId":40,"idempotencyKey":"1|ODS_TO_ADS|2026-09-01T00:00|p1-06-t2-golden55-20260912","status":"FAILED","currentStage":"FAILED","errorCode":"RUN_EMPTY_DATA","attemptNo":1,"targetSnapshotId":"S20260901_40","stages":[{"id":257,"runId":40,"stageCode":"WAIT_LANDING","status":"SUCCESS","externalJobId":null,"records":1667,"errorCode":null,"evidence":"{\"batchId\":40,\"acceptedUri\":\"accepted/40\",\"checksum\":\"a89ddd9d\",\"acceptedRecords\":1667,\"schemaVersions\":[\"1.0\"]}","startedAt":"2026-09-12T09:23:15.97","finishedAt":"2026-09-12T09:23:15.986"},{"id":258,"runId":40,"stageCode":"INIT_SCHEMA","status":"SUCCESS","externalJobId":null,"records":37,"errorCode":null,"evidence":"{\"stageCode\":\"INIT_SCHEMA\",\"jobs\":[{\"jobCode\":\"sci\",\"externalJobId\":\"lp-1789176196004-08a17a\",\"status\":\"SUCCESS\",\"inputRecords\":0,\"outputRecords\":37,\"rejectedRecords\":0,\"logUri\":\"D:\\\\Develop_code\\\\GraduationProject\\\\.\\\\landing\\\\logs\\\\pipeline-40-INIT_SCHEMA-sci-a1__lp-1789176196004-08a17a.log\"}],\"totalInputRecords\":0,\"totalOutputRecords\":37,\"totalRejectedRecords\":0,\"failed\":false,\"contracted\":\"sci: CREATE DATABASE/TABLE IF NOT EXISTS（四层库表自举，可重复执行）\"}","startedAt":"2026-09-12T09:23:15.991","finishedAt":"2026-09-12T09:23:26.082"},{"id":259,"runId":40,"stageCode":"LOAD_ODS","status":"FAILED","externalJobId":null,"records":0,"errorCode":"RUN_EMPTY_DATA","evidence":null,"startedAt":"2026-09-12T09:23:26.091","finishedAt":"2026-09-12T09:23:26.096"}]},"traceId":"1b418804-a7fc-42d6-8a21-5b0d42e6c0d3"}
+
+[5] 跳过指标读取：流水线未 SUCCESS
+
+结束 2026-09-12 09:23:35  日志 D:\Develop_code\GraduationProject\docs\acceptance\p1-06-golden55-20260912\raw\t2-run-20260912-092315.log

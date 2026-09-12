@@ -1,0 +1,4 @@
+P1-06 T2 执行日志  开始 2026-09-12 09:22:45  sourceDataVersion=p1-06-t2-golden55-20260912
+仓根 D:\Develop_code\GraduationProject  HEAD 3199a26
+
+[0] 登录 HTTP 200  用户=admin  角色=admin  token 长度=32 前缀=7ccd0d8d2d81...
