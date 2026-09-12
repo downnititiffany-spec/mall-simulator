@@ -1,0 +1,2 @@
+Found 1 items
+drwxr-xr-x   - root supergroup          0 2026-09-11 20:12 /hive/warehouse

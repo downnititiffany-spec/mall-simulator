@@ -1,0 +1,9 @@
+Found 8 items
+drwxr-xr-x   - root supergroup          0 2026-09-07 20:06 /dolphinscheduler
+drwxr-xr-x   - root supergroup          0 2026-09-02 09:28 /exam
+drwxr-xr-x   - root supergroup          0 2026-09-11 10:13 /history
+drwxr-xr-x   - root supergroup          0 2026-08-25 15:06 /hive
+drwxr-xr-x   - root supergroup          0 2026-08-19 15:37 /logs
+drwxrwxrwx   - root supergroup          0 2026-08-29 17:04 /tmp
+drwxr-xr-x   - root supergroup          0 2026-08-25 16:43 /user
+drwxr-xr-x   - root supergroup          0 2026-09-11 16:47 /yjx

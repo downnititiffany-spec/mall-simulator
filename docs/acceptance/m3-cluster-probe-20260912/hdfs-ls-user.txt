@@ -1,0 +1,3 @@
+Found 2 items
+drwxr-xr-x   - root supergroup          0 2026-08-25 16:43 /user/hive
+drwxr-xr-x   - root supergroup          0 2026-08-26 16:49 /user/root

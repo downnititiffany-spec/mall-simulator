@@ -1,0 +1,13 @@
+2181	OPEN	ZooKeeper
+8030	OPEN	RM Scheduler
+8031	OPEN	RM Tracker
+8032	OPEN	YARN RM RPC(作业提交必需)
+8033	OPEN	RM Admin
+8041	closed	NM 容器管理(node01)
+8042	OPEN	NM Web(node01)
+9083	OPEN	Hive Metastore
+9866	OPEN	DataNode 数据口
+9867	OPEN	DataNode 数据口2
+10020	closed	JobHistory RPC
+16020	closed	HBase RS
+19888	closed	JobHistory Web

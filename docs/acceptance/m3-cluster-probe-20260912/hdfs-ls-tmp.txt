@@ -1,0 +1,4 @@
+Found 3 items
+drwx------   - root supergroup          0 2026-08-29 17:04 /tmp/hadoop-yarn
+drwxrwxrwx   - root supergroup          0 2026-08-28 15:19 /tmp/hive
+drwxrwxrwt   - root root                0 2026-09-12 14:52 /tmp/logs

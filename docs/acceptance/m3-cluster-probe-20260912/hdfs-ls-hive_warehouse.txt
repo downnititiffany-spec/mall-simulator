@@ -1,0 +1,7 @@
+Found 6 items
+drwxr-xr-x   - root supergroup          0 2026-08-28 09:20 /hive/warehouse/exam.db
+drwxr-xr-x   - root supergroup          0 2026-09-11 16:26 /hive/warehouse/ods.db
+drwxr-xr-x   - root supergroup          0 2026-08-25 15:06 /hive/warehouse/scott.db
+drwxr-xr-x   - root supergroup          0 2026-08-30 17:38 /hive/warehouse/shop.db
+drwxr-xr-x   - root supergroup          0 2026-09-11 20:49 /hive/warehouse/tmp.db
+drwxr-xr-x   - root supergroup          0 2026-09-07 15:36 /hive/warehouse/yjxxt.db
