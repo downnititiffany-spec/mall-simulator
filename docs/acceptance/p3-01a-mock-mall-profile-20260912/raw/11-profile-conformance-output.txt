@@ -1,0 +1,26 @@
+### ts=2026-09-12 20:49:44 画像 ⇔ 实测数据 双向对账（I1-I9）v5b：画像改为「契约外一律 null」，I6 改为按 (event_type,字段) 定位契约 enum
+## T. 画像文件
+   path=analytics-server\source-profiles\mock-mall.v1.json
+   bytes=3323
+   top-level keys=['profileVersion', 'sourceCode', 'canonical', 'eventTypeMapping', 'fieldMapping', 'enumSemantics', 'identityPolicy', 'timePolicy', 'quarantinePolicy']
+   [PASS] I1 顶层恰好 9 键且与 SourceProfileValidator 同名同序  画像=9 键；Validator 源码解析=['profileVersion', 'sourceCode', 'canonical', 'eventTypeMapping', 'fieldMapping', 'enumSemantics', 'identityPolicy', 'timePolicy', 'quarantinePolicy']；本地期望=['profileVersion', 'sourceCode', 'canonical', 'eventTypeMapping', 'fieldMapping', 'enumSemantics', 'identityPolicy', 'timePolicy', 'quarantinePolicy']
+   实测：文件=346 行=2620776
+   [PASS] I2 sourceCode/profileVersion 与 source_registry 实测行一致  画像 sourceCode='mock-mall' profileVersion='1.0'；DB 实测 mock-mall / 1.0（raw/03）
+   [PASS] I3 event_type 全覆盖且映射目标 ⊆ 契约 12 类  实测 distinct=12，全部被覆盖=True；未覆盖=无；映射目标合法=True
+   [PASS] I4 fieldMapping 覆盖 payload 字段全集，@keep 仅用于契约外字段  实测字段=31；未登记=无；契约外=['event_time_utc']；@keep=['event_time_utc']；恒等条目落在契约外(应为空)=无
+   [PASS] I5 enumSemantics 覆盖各域全部实测 distinct 值  受检 (event_type,字段)->域 组合=9；未覆盖=无
+   [PASS] I6 null 恰好落在契约 enum 之外（不漏判、不冤枉、不擅自归一）  契约内被判 null=无；契约外却给了非 null 标签=无；契约本无 enum 却被判 null=无
+   [PASS] I7 identityPolicy.rawField 在数据里真实存在  声明 rawField=['brand_id', 'category_id', 'order_id', 'product_id', 'user_id']；数据里不存在的=无
+   [PASS] I8 timePolicy 覆盖 100% event_time 且无其它时区  event_time 样本=2620776，被契约 ISO-8601 形态解析=2620776（100%=True）；非 +08:00/Z 的=0；formats=['ISO_OFFSET_DATE_TIME']
+   [PASS] I9 画像不含 timezone/currency（不与 source_registry 争 owner）  命中=无（期望空）；时区唯一 owner=source_registry.timezone（DB 实测 Asia/Shanghai）
+
+## U. 汇总
+   断言 9 条，PASS 9，FAIL 0
+   verdict=ALL_PASS
+
+## V. 对照（证明本脚本不是在「全 0 真空」上通过）
+   [positive-control] 实测行数 = 2620776（期望 > 0）
+   [positive-control] 实测 event_type distinct = 12（期望 == 12）
+   [negative-control] 画像里 '__NO_SUCH_KEY__' 出现次数 = 0（期望 0）
+   [negative-control] 实测 event_type == '__NO_SUCH_TYPE__' 的行 = 0（期望 0）
+### exit=0

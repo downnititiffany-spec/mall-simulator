@@ -1,0 +1,518 @@
+### ts=2026-09-12 20:41:33 权威清单：先枚举再筛选（Get-ChildItem -Recurse -File -Filter *.jsonl），不是按已知子目录列举
+
+### [1] 按目录分组：目录 => 文件数 => 字节数
+landing\accepted\11 => files=1 => bytes=363
+landing\accepted\13 => files=1 => bytes=655
+landing\accepted\14 => files=1 => bytes=296
+landing\accepted\15 => files=1 => bytes=293
+landing\accepted\16 => files=1 => bytes=915
+landing\accepted\17 => files=1 => bytes=17419
+landing\accepted\18 => files=2 => bytes=17419
+landing\accepted\19 => files=2 => bytes=17419
+landing\accepted\2 => files=35 => bytes=401992579
+landing\accepted\20 => files=2 => bytes=17419
+landing\accepted\21 => files=2 => bytes=17419
+landing\accepted\22 => files=2 => bytes=17419
+landing\accepted\23 => files=2 => bytes=17419
+landing\accepted\24 => files=2 => bytes=17419
+landing\accepted\25 => files=2 => bytes=17419
+landing\accepted\26 => files=2 => bytes=17419
+landing\accepted\27 => files=2 => bytes=17419
+landing\accepted\28 => files=2 => bytes=17419
+landing\accepted\29 => files=47 => bytes=402856183
+landing\accepted\30 => files=2 => bytes=17419
+landing\accepted\31 => files=2 => bytes=363848
+landing\accepted\32 => files=1 => bytes=0
+landing\accepted\33 => files=1 => bytes=0
+landing\accepted\34 => files=2 => bytes=19325
+landing\accepted\35 => files=1 => bytes=0
+landing\accepted\36 => files=2 => bytes=584
+landing\accepted\37 => files=1 => bytes=0
+landing\accepted\38 => files=1 => bytes=0
+landing\accepted\39 => files=2 => bytes=584
+landing\accepted\4 => files=1 => bytes=0
+landing\accepted\40 => files=4 => bytes=754236
+landing\accepted\41 => files=6 => bytes=1233445
+landing\accepted\42 => files=2 => bytes=363848
+landing\accepted\5 => files=1 => bytes=399
+landing\accepted\7 => files=1 => bytes=346927
+landing\accepted\8 => files=1 => bytes=355940
+landing\accepted\9 => files=1 => bytes=1045
+landing\events => files=61 => bytes=406496411
+landing\quarantine\11 => files=1 => bytes=0
+landing\quarantine\13 => files=1 => bytes=296
+landing\quarantine\14 => files=1 => bytes=0
+landing\quarantine\15 => files=1 => bytes=0
+landing\quarantine\16 => files=1 => bytes=0
+landing\quarantine\17 => files=1 => bytes=720
+landing\quarantine\18 => files=2 => bytes=1011
+landing\quarantine\19 => files=2 => bytes=1011
+landing\quarantine\2 => files=35 => bytes=0
+landing\quarantine\20 => files=2 => bytes=1011
+landing\quarantine\21 => files=2 => bytes=1011
+landing\quarantine\22 => files=2 => bytes=1011
+landing\quarantine\23 => files=2 => bytes=1011
+landing\quarantine\24 => files=2 => bytes=1011
+landing\quarantine\25 => files=2 => bytes=1011
+landing\quarantine\26 => files=2 => bytes=1011
+landing\quarantine\27 => files=2 => bytes=1011
+landing\quarantine\28 => files=2 => bytes=1011
+landing\quarantine\29 => files=47 => bytes=11538
+landing\quarantine\30 => files=2 => bytes=1011
+landing\quarantine\31 => files=2 => bytes=0
+landing\quarantine\32 => files=1 => bytes=0
+landing\quarantine\33 => files=1 => bytes=0
+landing\quarantine\34 => files=2 => bytes=0
+landing\quarantine\35 => files=1 => bytes=0
+landing\quarantine\36 => files=2 => bytes=0
+landing\quarantine\37 => files=1 => bytes=0
+landing\quarantine\38 => files=1 => bytes=0
+landing\quarantine\39 => files=2 => bytes=0
+landing\quarantine\4 => files=1 => bytes=1111
+landing\quarantine\40 => files=4 => bytes=0
+landing\quarantine\41 => files=6 => bytes=1011
+landing\quarantine\42 => files=2 => bytes=0
+landing\quarantine\5 => files=1 => bytes=501
+landing\quarantine\7 => files=1 => bytes=822
+landing\quarantine\8 => files=1 => bytes=0
+landing\quarantine\9 => files=1 => bytes=0
+
+### [2] landing 合计（权威读数，用于与总控对拍）
+landing jsonl => files=345 => bytes=1215042454
+golden jsonl  => files=1 => bytes=18430
+GRAND TOTAL   => files=346 => bytes=1215060884
+
+### [3] landing 各二级目录全部文件（含非 jsonl：manifests/logs 可能是别的后缀）
+
+FullName                                                                                                       Length
+--------                                                                                                       ------
+D:\Develop_code\GraduationProject\landing\manifests\1.json                                                        463
+D:\Develop_code\GraduationProject\landing\manifests\10.json                                                       464
+D:\Develop_code\GraduationProject\landing\manifests\11.json                                                       631
+D:\Develop_code\GraduationProject\landing\manifests\12.json                                                       464
+D:\Develop_code\GraduationProject\landing\manifests\13.json                                                       634
+D:\Develop_code\GraduationProject\landing\manifests\14.json                                                       634
+D:\Develop_code\GraduationProject\landing\manifests\15.json                                                       634
+D:\Develop_code\GraduationProject\landing\manifests\16.json                                                       623
+D:\Develop_code\GraduationProject\landing\manifests\17.json                                                       648
+D:\Develop_code\GraduationProject\landing\manifests\18.json                                                       649
+D:\Develop_code\GraduationProject\landing\manifests\19.json                                                       651
+D:\Develop_code\GraduationProject\landing\manifests\2.json                                                       5944
+D:\Develop_code\GraduationProject\landing\manifests\20.json                                                       648
+D:\Develop_code\GraduationProject\landing\manifests\21.json                                                       647
+D:\Develop_code\GraduationProject\landing\manifests\22.json                                                       647
+D:\Develop_code\GraduationProject\landing\manifests\23.json                                                       645
+D:\Develop_code\GraduationProject\landing\manifests\24.json                                                       648
+D:\Develop_code\GraduationProject\landing\manifests\25.json                                                       648
+D:\Develop_code\GraduationProject\landing\manifests\26.json                                                       643
+D:\Develop_code\GraduationProject\landing\manifests\27.json                                                       640
+D:\Develop_code\GraduationProject\landing\manifests\28.json                                                       640
+D:\Develop_code\GraduationProject\landing\manifests\29.json                                                      7889
+D:\Develop_code\GraduationProject\landing\manifests\3.json                                                        463
+D:\Develop_code\GraduationProject\landing\manifests\30.json                                                       631
+D:\Develop_code\GraduationProject\landing\manifests\31.json                                                       649
+D:\Develop_code\GraduationProject\landing\manifests\32.json                                                       464
+D:\Develop_code\GraduationProject\landing\manifests\33.json                                                       464
+D:\Develop_code\GraduationProject\landing\manifests\34.json                                                       629
+D:\Develop_code\GraduationProject\landing\manifests\35.json                                                       464
+D:\Develop_code\GraduationProject\landing\manifests\36.json                                                       638
+D:\Develop_code\GraduationProject\landing\manifests\37.json                                                       464
+D:\Develop_code\GraduationProject\landing\manifests\38.json                                                       464
+D:\Develop_code\GraduationProject\landing\manifests\39.json                                                       642
+D:\Develop_code\GraduationProject\landing\manifests\4.json                                                        614
+D:\Develop_code\GraduationProject\landing\manifests\40.json                                                      1051
+D:\Develop_code\GraduationProject\landing\manifests\41.json                                                      1365
+D:\Develop_code\GraduationProject\landing\manifests\42.json                                                       763
+D:\Develop_code\GraduationProject\landing\manifests\5.json                                                        622
+D:\Develop_code\GraduationProject\landing\manifests\6.json                                                        461
+D:\Develop_code\GraduationProject\landing\manifests\7.json                                                        626
+D:\Develop_code\GraduationProject\landing\manifests\8.json                                                        628
+D:\Develop_code\GraduationProject\landing\manifests\9.json                                                        625
+D:\Develop_code\GraduationProject\landing\logs\manual-load-ods-fixed.log                                       169019
+D:\Develop_code\GraduationProject\landing\logs\pipeline-12-BUILD_DWD-bdw-a1__lp-1789030438273-c89a74.log        15066
+D:\Develop_code\GraduationProject\landing\logs\pipeline-12-BUILD_DWD-dim-a1__lp-1789030452356-d32415.log        15234
+D:\Develop_code\GraduationProject\landing\logs\pipeline-12-LOAD_ODS-odl-a1__lp-1789030422172-1d2b14.log         16730
+D:\Develop_code\GraduationProject\landing\logs\pipeline-13-BUILD_ADS-fna-a1__lp-1789031392811-62df85.log        21484
+D:\Develop_code\GraduationProject\landing\logs\pipeline-13-BUILD_DWD-bdw-a1__lp-1789031328401-9f8d3e.log        15066
+D:\Develop_code\GraduationProject\landing\logs\pipeline-13-BUILD_DWD-dim-a1__lp-1789031342487-c84ede.log        15053
+D:\Develop_code\GraduationProject\landing\logs\pipeline-13-BUILD_DWD-tdw-a1__lp-1789031356575-e4fd65.log        14914
+D:\Develop_code\GraduationProject\landing\logs\pipeline-13-BUILD_DWS-usw-a1__lp-1789031372685-0ba4ff.log        15740
+D:\Develop_code\GraduationProject\landing\logs\pipeline-13-INIT_SCHEMA-sci-a1__lp-1789031300224-9debbd.log      19618
+D:\Develop_code\GraduationProject\landing\logs\pipeline-13-LOAD_ODS-odl-a1__lp-1789031310317-46ed33.log         17769
+D:\Develop_code\GraduationProject\landing\logs\pipeline-14-INIT_SCHEMA-sci-a1__lp-1789034610893-0736ee.log      14354
+D:\Develop_code\GraduationProject\landing\logs\pipeline-14-LOAD_ODS-odl-a1__lp-1789034618960-53f037.log         15541
+D:\Develop_code\GraduationProject\landing\logs\pipeline-15-BUILD_ADS-fna-a1__lp-1789034833457-e5fa5d.log        21823
+D:\Develop_code\GraduationProject\landing\logs\pipeline-15-BUILD_DWD-bdw-a1__lp-1789034767059-11399d.log        15172
+D:\Develop_code\GraduationProject\landing\logs\pipeline-15-BUILD_DWD-dim-a1__lp-1789034783152-46a910.log        15136
+D:\Develop_code\GraduationProject\landing\logs\pipeline-15-BUILD_DWD-tdw-a1__lp-1789034797248-44e2e3.log        14984
+D:\Develop_code\GraduationProject\landing\logs\pipeline-15-BUILD_DWS-usw-a1__lp-1789034813344-5af3f1.log        16045
+D:\Develop_code\GraduationProject\landing\logs\pipeline-15-INIT_SCHEMA-sci-a1__lp-1789034734868-8d1cb5.log      14354
+D:\Develop_code\GraduationProject\landing\logs\pipeline-15-LOAD_ODS-odl-a1__lp-1789034744928-edbc39.log         18774
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-BUILD_ADS-fna-a1__lp-1789036911958-ff77bd.log        23563
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-BUILD_DWD-bdw-a1__lp-1789036837505-76e6e8.log        15174
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-BUILD_DWD-dim-a1__lp-1789036855640-4a3c20.log        15160
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-BUILD_DWD-tdw-a1__lp-1789036871733-33648e.log        14984
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-BUILD_DWS-usw-a1__lp-1789036887839-c842d8.log        16056
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-INIT_SCHEMA-sci-a1__lp-1789036799262-488a00.log      15255
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-LOAD_ODS-odl-a1__lp-1789036813384-99e9b2.log         18773
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-PUBLISH_METRIC-pub-a2__lp-1789037316792-ff34d2.log   18982
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-QUALITY_CHECK-dqc-a1__lp-1789036938082-418d29.log    19193
+D:\Develop_code\GraduationProject\landing\logs\pipeline-16-QUALITY_CHECK-dqc-a2__lp-1789037300643-17183d.log    19180
+D:\Develop_code\GraduationProject\landing\logs\pipeline-17-BUILD_DWD-bdw-a2__lp-1789038845090-3c0540.log        15173
+D:\Develop_code\GraduationProject\landing\logs\pipeline-17-BUILD_DWD-dim-a2__lp-1789038865182-818e08.log        15148
+D:\Develop_code\GraduationProject\landing\logs\pipeline-17-BUILD_DWD-tdw-a2__lp-1789038885293-904f8b.log        14996
+D:\Develop_code\GraduationProject\landing\logs\pipeline-17-BUILD_DWS-usw-a2__lp-1789038905419-63759b.log       239819
+D:\Develop_code\GraduationProject\landing\logs\pipeline-17-INIT_SCHEMA-sci-a1__lp-1789037949850-bc0fe1.log      14472
+D:\Develop_code\GraduationProject\landing\logs\pipeline-17-LOAD_ODS-odl-a1__lp-1789037959976-28d84f.log          5879
+D:\Develop_code\GraduationProject\landing\logs\pipeline-17-LOAD_ODS-odl-a2__lp-1789038810870-eb82bb.log         18784
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-BUILD_ADS-fna-a1__lp-1789040054856-f758c1.log        25457
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-BUILD_DWD-bdw-a1__lp-1789039958217-b5e69e.log        14882
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-BUILD_DWD-dim-a1__lp-1789039980396-11bf26.log        14869
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-BUILD_DWD-tdw-a1__lp-1789040002529-11b0d2.log        14700
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-BUILD_DWS-usw-a1__lp-1789040024674-8d1cc4.log        15766
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-INIT_SCHEMA-sci-a1__lp-1789039913858-c09c6f.log      14181
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-LOAD_ODS-odl-a1__lp-1789039928004-373fbd.log         18483
+D:\Develop_code\GraduationProject\landing\logs\pipeline-18-QUALITY_CHECK-dqc-a2__lp-1789040526145-57630f.log    17603
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-BUILD_ADS-fna-a1__lp-1789040386747-e42e1f.log        27413
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-BUILD_DWD-bdw-a1__lp-1789040296078-1337e0.log        14883
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-BUILD_DWD-dim-a1__lp-1789040318240-e11e11.log        14857
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-BUILD_DWD-tdw-a1__lp-1789040340406-a47a86.log        14694
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-BUILD_DWS-usw-a1__lp-1789040360573-7fd03e.log        15766
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-INIT_SCHEMA-sci-a1__lp-1789040251726-f2bfc6.log      14181
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-LOAD_ODS-odl-a1__lp-1789040265868-cbbf44.log         18495
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-PUBLISH_METRIC-pub-a1__lp-1789040445156-0b14e0.log   19854
+D:\Develop_code\GraduationProject\landing\logs\pipeline-19-QUALITY_CHECK-dqc-a1__lp-1789040418933-cc9646.log    20053
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-BUILD_ADS-fna-a1__lp-1789041457106-7ea12b.log        25216
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-BUILD_DWD-bdw-a1__lp-1789041368410-54859b.log        14883
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-BUILD_DWD-dim-a1__lp-1789041390566-4eb4f4.log        14858
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-BUILD_DWD-tdw-a1__lp-1789041410716-d2fd0c.log        14706
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-BUILD_DWS-usw-a1__lp-1789041430882-2b91ad.log        15766
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-INIT_SCHEMA-sci-a1__lp-1789041324034-6c0d9d.log      14639
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-LOAD_ODS-odl-a1__lp-1789041338190-928006.log         18482
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-PUBLISH_METRIC-pub-a1__lp-1789041513512-686b08.log   19237
+D:\Develop_code\GraduationProject\landing\logs\pipeline-20-QUALITY_CHECK-dqc-a1__lp-1789041489318-f81b0e.log    19543
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-BUILD_ADS-fna-a1__lp-1789043148264-8753a6.log        25319
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-BUILD_DWD-bdw-a1__lp-1789043059649-646d81.log        14987
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-BUILD_DWD-dim-a1__lp-1789043079784-b59ccb.log        14961
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-BUILD_DWD-tdw-a1__lp-1789043099912-e8edc2.log        14797
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-BUILD_DWS-usw-a1__lp-1789043120049-d17282.log        15870
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-INIT_SCHEMA-sci-a1__lp-1789043017316-42f447.log      14284
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-LOAD_ODS-odl-a1__lp-1789043031432-d66665.log         18587
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-PUBLISH_METRIC-mxp-a1__lp-1789043240869-7fc841.log   19187
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-PUBLISH_METRIC-pub-a1__lp-1789043208705-4630ec.log   19128
+D:\Develop_code\GraduationProject\landing\logs\pipeline-21-QUALITY_CHECK-dqc-a1__lp-1789043184520-e666f2.log    19460
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-BUILD_ADS-fna-a1__lp-1789043509617-310b7b.log        25318
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-BUILD_ADS-fna-a3__lp-1789091117747-0014dc.log        25340
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-BUILD_ADS-fna-a4__lp-1789091383861-1d546d.log        22277
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-BUILD_DWD-bdw-a1__lp-1789043421102-587870.log        14987
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-BUILD_DWD-dim-a1__lp-1789043441211-37ccba.log        14961
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-BUILD_DWD-tdw-a1__lp-1789043461296-80e0b0.log        14797
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-BUILD_DWS-usw-a1__lp-1789043481434-13f5db.log        15868
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-INIT_SCHEMA-sci-a1__lp-1789043376834-09849a.log      14283
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-LOAD_ODS-odl-a1__lp-1789043390935-11824d.log         18586
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-PUBLISH_METRIC-mxp-a1__lp-1789043598259-35551c.log   19189
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-PUBLISH_METRIC-mxp-a3__lp-1789091182168-e6001b.log   14935
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-PUBLISH_METRIC-mxp-a4__lp-1789091440247-33e24b.log   19481
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-PUBLISH_METRIC-pub-a1__lp-1789043566059-9438dc.log   19127
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-PUBLISH_METRIC-pub-a3__lp-1789091160050-501321.log   19362
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-PUBLISH_METRIC-pub-a4__lp-1789091420121-9d0104.log   18738
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-QUALITY_CHECK-dqc-a1__lp-1789043541872-0295cb.log    19460
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-QUALITY_CHECK-dqc-a3__lp-1789091141922-50e3ca.log    19661
+D:\Develop_code\GraduationProject\landing\logs\pipeline-22-QUALITY_CHECK-dqc-a4__lp-1789091406003-e32b5f.log    19146
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-BUILD_ADS-fna-a1__lp-1789043821256-793b23.log        25331
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-BUILD_DWD-bdw-a1__lp-1789043734652-d2f535.log        14987
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-BUILD_DWD-dim-a1__lp-1789043756809-35a642.log        14961
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-BUILD_DWD-tdw-a1__lp-1789043774937-c5f4be.log        14798
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-BUILD_DWS-usw-a1__lp-1789043793069-776d5d.log        15869
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-INIT_SCHEMA-sci-a1__lp-1789043692347-610466.log      14284
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-LOAD_ODS-odl-a1__lp-1789043706454-a34653.log         18587
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-PUBLISH_METRIC-mxp-a1__lp-1789043911833-0ffca0.log   19202
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-PUBLISH_METRIC-pub-a1__lp-1789043879653-1cdc40.log   19140
+D:\Develop_code\GraduationProject\landing\logs\pipeline-23-QUALITY_CHECK-dqc-a1__lp-1789043855501-cf2d8e.log    19471
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-BUILD_ADS-fna-a1__lp-1789044133149-afa99e.log        25331
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-BUILD_DWD-bdw-a1__lp-1789044044606-dcd0c7.log        14998
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-BUILD_DWD-dim-a1__lp-1789044064727-7bb3a7.log        14973
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-BUILD_DWD-tdw-a1__lp-1789044084840-fc0e02.log        14809
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-BUILD_DWS-usw-a1__lp-1789044104973-6b1e99.log        15881
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-INIT_SCHEMA-sci-a1__lp-1789044004344-ce2ca6.log      14296
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-LOAD_ODS-odl-a1__lp-1789044016435-272c3e.log         18597
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-PUBLISH_METRIC-mxp-a1__lp-1789044227647-54ce7f.log   19202
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-PUBLISH_METRIC-pub-a1__lp-1789044193526-f780ab.log   19140
+D:\Develop_code\GraduationProject\landing\logs\pipeline-24-QUALITY_CHECK-dqc-a1__lp-1789044167394-85d524.log    19471
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-BUILD_ADS-fna-a1__lp-1789094373006-59df53.log      1943381
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-BUILD_DWD-bdw-a1__lp-1789094272365-877e01.log       654466
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-BUILD_DWD-dim-a1__lp-1789094292493-dee0ed.log      3852778
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-BUILD_DWD-tdw-a1__lp-1789094318675-b6c917.log      1845016
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-BUILD_DWS-usw-a1__lp-1789094342806-9ea85f.log      1934787
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-INIT_SCHEMA-sci-a1__lp-1789094242157-4d13dc.log      14318
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-LOAD_ODS-odl-a1__lp-1789094250224-ecfca1.log         18608
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-PUBLISH_METRIC-mxp-a1__lp-1789094485676-cff7ba.log 1373129
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-PUBLISH_METRIC-pub-a1__lp-1789094441427-9214ff.log 3628732
+D:\Develop_code\GraduationProject\landing\logs\pipeline-25-QUALITY_CHECK-dqc-a1__lp-1789094407199-dead45.log  3177384
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-BUILD_ADS-fna-a1__lp-1789094425577-58266d.log      3859554
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-BUILD_DWD-bdw-a1__lp-1789094308947-07bd54.log      1294304
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-BUILD_DWD-dim-a1__lp-1789094329067-1bd67b.log      2573876
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-BUILD_DWD-tdw-a1__lp-1789094355237-923f81.log      3674884
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-BUILD_DWS-usw-a1__lp-1789094385396-117ffe.log      5134013
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-INIT_SCHEMA-sci-a1__lp-1789094256612-4f9bdc.log    2674622
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-LOAD_ODS-odl-a1__lp-1789094278761-45fe1e.log       1785949
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-QUALITY_CHECK-dqc-a1__lp-1789094461849-ead0b8.log  4069060
+D:\Develop_code\GraduationProject\landing\logs\pipeline-26-QUALITY_CHECK-dqc-a2__lp-1789095256508-460f55.log    16867
+D:\Develop_code\GraduationProject\landing\logs\pipeline-28-INIT_SCHEMA-sci-a1__lp-1789095500136-231945.log      14305
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-BUILD_ADS-fna-a1__lp-1789095660723-589fe7.log        25341
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-BUILD_DWD-bdw-a1__lp-1789095598304-08ca5a.log        15017
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-BUILD_DWD-dim-a1__lp-1789095612413-c65ee0.log        14993
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-BUILD_DWD-tdw-a1__lp-1789095626482-89fadb.log        14989
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-BUILD_DWS-usw-a1__lp-1789095640584-b6ed27.log        15891
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-INIT_SCHEMA-sci-a1__lp-1789095570091-b7d988.log      14318
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-LOAD_ODS-odl-a1__lp-1789095578157-df1692.log         21360
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-PUBLISH_METRIC-mxp-a1__lp-1789095729180-ac217e.log   19470
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-PUBLISH_METRIC-pub-a1__lp-1789095705033-e279a2.log   19454
+D:\Develop_code\GraduationProject\landing\logs\pipeline-29-QUALITY_CHECK-dqc-a1__lp-1789095686891-e2591e.log    19656
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-BUILD_ADS-fna-a1__lp-1789096089217-3e2767.log        25340
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-BUILD_DWD-bdw-a1__lp-1789096032828-dd5ccc.log        15002
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-BUILD_DWD-dim-a1__lp-1789096046935-074f65.log        14993
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-BUILD_DWD-tdw-a1__lp-1789096059010-7dde64.log        14988
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-BUILD_DWS-usw-a1__lp-1789096071101-9336b0.log        15902
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-INIT_SCHEMA-sci-a1__lp-1789096004653-63f684.log      14305
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-LOAD_ODS-odl-a1__lp-1789096012714-d7dbf5.log         18606
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-PUBLISH_METRIC-mxp-a1__lp-1789096145606-9a47c9.log   19468
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-PUBLISH_METRIC-pub-a1__lp-1789096125466-9d3c51.log   19453
+D:\Develop_code\GraduationProject\landing\logs\pipeline-30-QUALITY_CHECK-dqc-a1__lp-1789096109357-6829cf.log    19668
+D:\Develop_code\GraduationProject\landing\logs\pipeline-31-BUILD_DWD-bdw-a1__lp-1789101035574-65b64c.log        15007
+D:\Develop_code\GraduationProject\landing\logs\pipeline-31-BUILD_DWD-dim-a1__lp-1789101047655-04904a.log        14980
+D:\Develop_code\GraduationProject\landing\logs\pipeline-31-BUILD_DWD-tdw-a1__lp-1789101059745-3bcbe2.log        95852
+D:\Develop_code\GraduationProject\landing\logs\pipeline-31-INIT_SCHEMA-sci-a1__lp-1789101011387-2e2634.log      14304
+D:\Develop_code\GraduationProject\landing\logs\pipeline-31-LOAD_ODS-odl-a1__lp-1789101019488-6f85ed.log         18619
+D:\Develop_code\GraduationProject\landing\logs\pipeline-32-INIT_SCHEMA-sci-a1__lp-1789104067576-57f748.log      14316
+D:\Develop_code\GraduationProject\landing\logs\pipeline-32-LOAD_ODS-odl-a1__lp-1789104075642-703023.log        281732
+D:\Develop_code\GraduationProject\landing\logs\pipeline-33-INIT_SCHEMA-sci-a1__lp-1789105234768-42e2c5.log      14194
+D:\Develop_code\GraduationProject\landing\logs\pipeline-33-LOAD_ODS-odl-a1__lp-1789105242867-3a1dcc.log        168909
+D:\Develop_code\GraduationProject\landing\logs\pipeline-34-INIT_SCHEMA-sci-a1__lp-1789105720612-75f18f.log      14183
+D:\Develop_code\GraduationProject\landing\logs\pipeline-34-LOAD_ODS-odl-a1__lp-1789105728693-3a4710.log        168922
+D:\Develop_code\GraduationProject\landing\logs\pipeline-35-BUILD_ADS-fna-a1__lp-1789106734562-a71cbe.log        25599
+D:\Develop_code\GraduationProject\landing\logs\pipeline-35-BUILD_DWD-bdw-a1__lp-1789106664168-0b97bc.log        15078
+D:\Develop_code\GraduationProject\landing\logs\pipeline-35-BUILD_DWD-dim-a1__lp-1789106678248-d36d48.log        15059
+D:\Develop_code\GraduationProject\landing\logs\pipeline-35-BUILD_DWD-tdw-a1__lp-1789106690317-818169.log        23192
+D:\Develop_code\GraduationProject\landing\logs\pipeline-35-BUILD_DWS-usw-a1__lp-1789106714442-961f28.log        15766
+D:\Develop_code\GraduationProject\landing\logs\pipeline-35-INIT_SCHEMA-sci-a1__lp-1789106567608-ec932f.log      14183
+D:\Develop_code\GraduationProject\landing\logs\pipeline-35-LOAD_ODS-odl-a1__lp-1789106575704-47cc14.log        168909
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-BUILD_ADS-fna-a1__lp-1789107515752-95af8d.log        27544
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-BUILD_DWD-bdw-a1__lp-1789107447299-64296c.log        15265
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-BUILD_DWD-dim-a1__lp-1789107461398-c6cbf2.log        15045
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-BUILD_DWD-tdw-a1__lp-1789107475497-760f5f.log        19618
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-BUILD_DWS-usw-a1__lp-1789107497648-a78f6e.log        15779
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-INIT_SCHEMA-sci-a1__lp-1789107346777-683fc6.log      14191
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-LOAD_ODS-odl-a1__lp-1789107356864-3961c1.log        168909
+D:\Develop_code\GraduationProject\landing\logs\pipeline-36-QUALITY_CHECK-dqc-a1__lp-1789107537895-44634c.log    20150
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-BUILD_ADS-fna-a1__lp-1789109457382-4b008e.log        29499
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-BUILD_DWD-bdw-a1__lp-1789109388938-103110.log        15277
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-BUILD_DWD-dim-a1__lp-1789109403029-d55dff.log        15047
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-BUILD_DWD-tdw-a1__lp-1789109417124-dcee45.log        19618
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-BUILD_DWS-usw-a1__lp-1789109439269-17eec6.log        15768
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-INIT_SCHEMA-sci-a1__lp-1789109282401-574605.log      14182
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-LOAD_ODS-odl-a1__lp-1789109290497-88d16c.log        168921
+D:\Develop_code\GraduationProject\landing\logs\pipeline-37-QUALITY_CHECK-dqc-a1__lp-1789109481533-9cc0a6.log    20501
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-BUILD_ADS-fna-a1__lp-1789109974098-d57205.log        31443
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-BUILD_DWD-bdw-a1__lp-1789109903689-95f423.log        15278
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-BUILD_DWD-dim-a1__lp-1789109917775-f1b300.log        15046
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-BUILD_DWD-tdw-a1__lp-1789109931858-a3b003.log        19630
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-BUILD_DWS-usw-a1__lp-1789109953982-fbb7ce.log        15770
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-INIT_SCHEMA-sci-a1__lp-1789109801168-946493.log      14183
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-LOAD_ODS-odl-a1__lp-1789109811230-4d0547.log        168910
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-PUBLISH_METRIC-mxp-a1__lp-1789110048510-a00b43.log   19346
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-PUBLISH_METRIC-pub-a1__lp-1789110020373-b5205c.log   20977
+D:\Develop_code\GraduationProject\landing\logs\pipeline-38-QUALITY_CHECK-dqc-a1__lp-1789109998227-67ba4d.log    20890
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-BUILD_ADS-fna-a1__lp-1789110661479-b054b3.log        25800
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-BUILD_DWD-bdw-a1__lp-1789110589018-7e0769.log        15465
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-BUILD_DWD-dim-a1__lp-1789110603110-675d50.log        15246
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-BUILD_DWD-tdw-a1__lp-1789110617210-8b6b15.log        19818
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-BUILD_DWS-usw-a1__lp-1789110641372-f37e31.log        15982
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-INIT_SCHEMA-sci-a1__lp-1789110480365-12b754.log      14393
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-LOAD_ODS-odl-a1__lp-1789110490458-26b88e.log        169109
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-PUBLISH_METRIC-mxp-a1__lp-1789110727863-fa3dad.log   19299
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-PUBLISH_METRIC-pub-a1__lp-1789110703756-d127a7.log   19306
+D:\Develop_code\GraduationProject\landing\logs\pipeline-39-QUALITY_CHECK-dqc-a1__lp-1789110685645-ab1340.log    19556
+D:\Develop_code\GraduationProject\landing\logs\pipeline-40-INIT_SCHEMA-sci-a1__lp-1789176196004-08a17a.log      14586
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-BUILD_ADS-fna-a1__lp-1789176584751-7b78c8.log        25989
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-BUILD_DWD-bdw-a1__lp-1789176510315-f048ff.log        15668
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-BUILD_DWD-dim-a1__lp-1789176524398-6d797f.log        15449
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-BUILD_DWD-tdw-a1__lp-1789176538497-5c70a2.log        20009
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-BUILD_DWS-usw-a1__lp-1789176564626-9fd5ae.log        16161
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-INIT_SCHEMA-sci-a1__lp-1789176387642-3c2a91.log      14581
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-LOAD_ODS-odl-a1__lp-1789176395723-0abc5a.log        169312
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-PUBLISH_METRIC-mxp-a1__lp-1789176657183-98a117.log   19490
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-PUBLISH_METRIC-pub-a1__lp-1789176631061-0aa4be.log   19507
+D:\Develop_code\GraduationProject\landing\logs\pipeline-41-QUALITY_CHECK-dqc-a1__lp-1789176612965-8cf2d6.log    19747
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-BUILD_ADS-fna-a1__lp-1789205173817-db879e.log        25577
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-BUILD_DWD-bdw-a1__lp-1789205044954-a37f82.log        15424
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-BUILD_DWD-dim-a1__lp-1789205077203-4a80f9.log        15207
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-BUILD_DWD-tdw-a1__lp-1789205103356-498a1a.log        19781
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-BUILD_DWS-usw-a1__lp-1789205139604-4d98aa.log        16127
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-INIT_SCHEMA-sci-a1__lp-1789204968375-c7ce63.log      15721
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-LOAD_ODS-odl-a1__lp-1789204982556-7f4407.log         22524
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-PUBLISH_METRIC-mxp-a1__lp-1789205270427-fdc745.log   19435
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-PUBLISH_METRIC-pub-a1__lp-1789205236208-263c6c.log   19452
+D:\Develop_code\GraduationProject\landing\logs\pipeline-42-QUALITY_CHECK-dqc-a1__lp-1789205210032-6cca27.log    19705
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-BUILD_ADS-fna-a1__lp-1789205901289-5cbd69.log        25947
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-BUILD_DWD-bdw-a1__lp-1789205822704-e15a47.log        15437
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-BUILD_DWD-dim-a1__lp-1789205838814-351536.log        15404
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-BUILD_DWD-tdw-a1__lp-1789205852964-2e0fec.log        19978
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-BUILD_DWS-usw-a1__lp-1789205877072-9ae3c9.log        16128
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-INIT_SCHEMA-sci-a1__lp-1789205698057-1036c0.log      14530
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-LOAD_ODS-odl-a1__lp-1789205708135-3b3631.log        281723
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-PUBLISH_METRIC-mxp-a1__lp-1789205975751-c945d0.log   19435
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-PUBLISH_METRIC-pub-a1__lp-1789205947560-23cd65.log   19453
+D:\Develop_code\GraduationProject\landing\logs\pipeline-43-QUALITY_CHECK-dqc-a1__lp-1789205925423-509908.log    19704
+
+
+
+### [4] landing 全部文件类型计数
+.json => files=42 => bytes=38861
+.jsonl => files=345 => bytes=1215042454
+.local-landing-probe => files=1 => bytes=2
+.log => files=236 => bytes=49556361
+
+### [5] 逐文件清单（相对路径 + 字节数），quarantine 全集
+landing\quarantine\11\2026090701.jsonl	0
+landing\quarantine\13\2026090701.jsonl	296
+landing\quarantine\14\2026090701.jsonl	0
+landing\quarantine\15\2026090701.jsonl	0
+landing\quarantine\16\2026090703.jsonl	0
+landing\quarantine\17\golden-r615-20260910164859.jsonl	720
+landing\quarantine\18\golden-r615-20260910164859.jsonl	0
+landing\quarantine\18\golden-r615b-20260910165249.jsonl	1011
+landing\quarantine\19\golden-r615-20260910164859.jsonl	0
+landing\quarantine\19\golden-r618-tampered-20260910.jsonl	1011
+landing\quarantine\2\2026090509.jsonl	0
+landing\quarantine\2\2026090510.jsonl	0
+landing\quarantine\2\2026090511.jsonl	0
+landing\quarantine\2\2026090512.jsonl	0
+landing\quarantine\2\2026090513.jsonl	0
+landing\quarantine\2\2026090514.jsonl	0
+landing\quarantine\2\2026090515.jsonl	0
+landing\quarantine\2\2026090516.jsonl	0
+landing\quarantine\2\2026090517.jsonl	0
+landing\quarantine\2\2026090518.jsonl	0
+landing\quarantine\2\2026090519.jsonl	0
+landing\quarantine\2\2026090520.jsonl	0
+landing\quarantine\2\2026090521.jsonl	0
+landing\quarantine\2\2026090522.jsonl	0
+landing\quarantine\2\2026090523.jsonl	0
+landing\quarantine\2\2026090600.jsonl	0
+landing\quarantine\2\2026090601.jsonl	0
+landing\quarantine\2\2026090602.jsonl	0
+landing\quarantine\2\2026090603.jsonl	0
+landing\quarantine\2\2026090604.jsonl	0
+landing\quarantine\2\2026090605.jsonl	0
+landing\quarantine\2\2026090606.jsonl	0
+landing\quarantine\2\2026090607.jsonl	0
+landing\quarantine\2\2026090608.jsonl	0
+landing\quarantine\2\2026090609.jsonl	0
+landing\quarantine\2\2026090610.jsonl	0
+landing\quarantine\2\2026090611.jsonl	0
+landing\quarantine\2\2026090612.jsonl	0
+landing\quarantine\2\2026090613.jsonl	0
+landing\quarantine\2\2026090614.jsonl	0
+landing\quarantine\2\2026090615.jsonl	0
+landing\quarantine\2\2026090616.jsonl	0
+landing\quarantine\2\2026090617.jsonl	0
+landing\quarantine\2\2026090620.jsonl	0
+landing\quarantine\2\2026090621.jsonl	0
+landing\quarantine\20\golden-r615-20260910164859.jsonl	0
+landing\quarantine\20\golden-r619-clean-20260910.jsonl	1011
+landing\quarantine\21\golden-r615-20260910164859.jsonl	0
+landing\quarantine\21\golden-r70-clean-20260910.jsonl	1011
+landing\quarantine\22\golden-r615-20260910164859.jsonl	0
+landing\quarantine\22\golden-r73-clean-20260910.jsonl	1011
+landing\quarantine\23\golden-r615-20260910164859.jsonl	0
+landing\quarantine\23\golden-r73b-clean-20260910.jsonl	1011
+landing\quarantine\24\golden-r615-20260910164859.jsonl	0
+landing\quarantine\24\golden-r73c-clean-20260910.jsonl	1011
+landing\quarantine\25\golden-r615-20260910164859.jsonl	0
+landing\quarantine\25\golden-r73d-clean-20260910.jsonl	1011
+landing\quarantine\26\golden-r615-20260910164859.jsonl	0
+landing\quarantine\26\r9-qualityfail-103736.jsonl	1011
+landing\quarantine\27\golden-r615-20260910164859.jsonl	0
+landing\quarantine\27\r9-prunefix-105922.jsonl	1011
+landing\quarantine\28\golden-r615-20260910164859.jsonl	0
+landing\quarantine\28\r9-prunefix-110637.jsonl	1011
+landing\quarantine\29\2026090509.jsonl	0
+landing\quarantine\29\2026090510.jsonl	0
+landing\quarantine\29\2026090511.jsonl	0
+landing\quarantine\29\2026090512.jsonl	0
+landing\quarantine\29\2026090513.jsonl	0
+landing\quarantine\29\2026090514.jsonl	0
+landing\quarantine\29\2026090515.jsonl	0
+landing\quarantine\29\2026090516.jsonl	0
+landing\quarantine\29\2026090517.jsonl	0
+landing\quarantine\29\2026090518.jsonl	0
+landing\quarantine\29\2026090519.jsonl	0
+landing\quarantine\29\2026090520.jsonl	0
+landing\quarantine\29\2026090521.jsonl	0
+landing\quarantine\29\2026090522.jsonl	0
+landing\quarantine\29\2026090523.jsonl	0
+landing\quarantine\29\2026090600.jsonl	0
+landing\quarantine\29\2026090601.jsonl	0
+landing\quarantine\29\2026090602.jsonl	0
+landing\quarantine\29\2026090603.jsonl	0
+landing\quarantine\29\2026090604.jsonl	0
+landing\quarantine\29\2026090605.jsonl	0
+landing\quarantine\29\2026090606.jsonl	0
+landing\quarantine\29\2026090607.jsonl	0
+landing\quarantine\29\2026090608.jsonl	0
+landing\quarantine\29\2026090609.jsonl	0
+landing\quarantine\29\2026090610.jsonl	0
+landing\quarantine\29\2026090611.jsonl	0
+landing\quarantine\29\2026090612.jsonl	0
+landing\quarantine\29\2026090613.jsonl	0
+landing\quarantine\29\2026090614.jsonl	0
+landing\quarantine\29\2026090615.jsonl	0
+landing\quarantine\29\2026090616.jsonl	0
+landing\quarantine\29\2026090617.jsonl	0
+landing\quarantine\29\2026090620.jsonl	0
+landing\quarantine\29\2026090621.jsonl	1612
+landing\quarantine\29\2026090700.jsonl	822
+landing\quarantine\29\2026090701.jsonl	296
+landing\quarantine\29\2026090703.jsonl	0
+landing\quarantine\29\golden-r615-20260910164859.jsonl	720
+landing\quarantine\29\golden-r615b-20260910165249.jsonl	1011
+landing\quarantine\29\golden-r618-tampered-20260910.jsonl	1011
+landing\quarantine\29\golden-r619-clean-20260910.jsonl	1011
+landing\quarantine\29\golden-r70-clean-20260910.jsonl	1011
+landing\quarantine\29\golden-r73-clean-20260910.jsonl	1011
+landing\quarantine\29\r9-prunefix-105922.jsonl	1011
+landing\quarantine\29\r9-prunefix-110637.jsonl	1011
+landing\quarantine\29\r9-qualityfail-103736.jsonl	1011
+landing\quarantine\30\golden-r615-20260910164859.jsonl	0
+landing\quarantine\30\r9-m1-123006.jsonl	1011
+landing\quarantine\31\gen-s3b-1000-20260911.jsonl	0
+landing\quarantine\31\golden-r615-20260910164859.jsonl	0
+landing\quarantine\32\golden-r615-20260910164859.jsonl	0
+landing\quarantine\33\golden-r615-20260910164859.jsonl	0
+landing\quarantine\34\2026091115.jsonl	0
+landing\quarantine\34\golden-r615-20260910164859.jsonl	0
+landing\quarantine\35\golden-r615-20260910164859.jsonl	0
+landing\quarantine\36\b08-gate-20260911-1555.jsonl	0
+landing\quarantine\36\golden-r615-20260910164859.jsonl	0
+landing\quarantine\37\golden-r615-20260910164859.jsonl	0
+landing\quarantine\38\golden-r615-20260910164859.jsonl	0
+landing\quarantine\39\b11-fixture-20260911162916.jsonl	0
+landing\quarantine\39\golden-r615-20260910164859.jsonl	0
+landing\quarantine\4\2026090621.jsonl	1111
+landing\quarantine\40\2026091120.jsonl	0
+landing\quarantine\40\2026091121.jsonl	0
+landing\quarantine\40\2026091122.jsonl	0
+landing\quarantine\40\golden-r615-20260910164859.jsonl	0
+landing\quarantine\41\2026091209.jsonl	0
+landing\quarantine\41\2026091210.jsonl	0
+landing\quarantine\41\2026091211.jsonl	0
+landing\quarantine\41\2026091215.jsonl	0
+landing\quarantine\41\golden-r615-20260910164859.jsonl	0
+landing\quarantine\41\r2-golden55-20260912-172221.jsonl	1011
+landing\quarantine\42\golden-r615-20260910164859.jsonl	0
+landing\quarantine\42\r2ctl-b31replay-20260912-173418.jsonl	0
+landing\quarantine\5\2026090621.jsonl	501
+landing\quarantine\7\2026090700.jsonl	822
+landing\quarantine\8\2026090701.jsonl	0
+landing\quarantine\9\2026090701.jsonl	0

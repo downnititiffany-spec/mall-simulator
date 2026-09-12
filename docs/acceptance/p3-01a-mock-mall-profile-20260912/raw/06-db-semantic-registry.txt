@@ -1,0 +1,48 @@
+### ts=2026-09-12 20:40:42 semantics 只读侦察（能力探测：先 SHOW TABLES 拿真实表名）
+
+### [1] SHOW TABLES;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Tables_in_analytics_meta
+ai_call_log
+ai_query_history
+data_quality_result
+decision_evaluation
+decision_task
+file_checkpoint
+flyway_schema_history
+ingestion_batch
+ingestion_batch_file
+metric_definition
+metric_snapshot
+metric_value
+operation_audit_log
+pipeline_run
+pipeline_stage_run
+quarantine_record
+runtime_profile
+source_registry
+spark_job_run
+sys_user
+t_ckpt_test
+user_session
+### exit=0
+
+### [2] SHOW COLUMNS FROM semantic_registry;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1146 (42S02) at line 1: Table 'analytics_meta.semantic_registry' doesn't exist
+### exit=1
+
+### [3] SELECT COUNT(*) FROM semantic_registry;  (阳性/阴性能力探测)
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1146 (42S02) at line 1: Table 'analytics_meta.semantic_registry' doesn't exist
+### exit=1
+
+### [4] SELECT * FROM semantic_registry ORDER BY domain, raw_code;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1146 (42S02) at line 1: Table 'analytics_meta.semantic_registry' doesn't exist
+### exit=1
+
+### [5] SELECT * FROM dimension_registry ORDER BY dimension_code;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1146 (42S02) at line 1: Table 'analytics_meta.dimension_registry' doesn't exist
+### exit=1

@@ -1,0 +1,56 @@
+### ts=2026-09-12 20:40:03
+### tool: C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe
+### args: --host=127.0.0.1 --user=root --password=*** --database=analytics_meta --default-character-set=utf8mb4 --batch
+### NOTE: password value redacted in this header; actual invocation used it. 全部为只读 SELECT/SHOW。
+
+### [1] SHOW COLUMNS FROM source_registry;  (先取真实列名，禁止凭印象写列名)
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Field	Type	Null	Key	Default	Extra
+id	bigint	NO	PRI	NULL	auto_increment
+source_code	varchar(64)	NO	UNI	NULL	
+display_name	varchar(128)	NO		NULL	
+ingest_mode	varchar(16)	NO		NULL	
+profile_path	varchar(255)	NO		NULL	
+timezone	varchar(64)	NO		NULL	
+currency	char(3)	NO		NULL	
+status	varchar(16)	NO	MUL	NULL	
+profile_version	varchar(32)	NO		NULL	
+warehouse_prefix	varchar(24)	NO		NULL	
+created_at	datetime(3)	NO		CURRENT_TIMESTAMP(3)	DEFAULT_GENERATED
+updated_at	datetime(3)	NO		CURRENT_TIMESTAMP(3)	DEFAULT_GENERATED on update CURRENT_TIMESTAMP(3)
+### exit=0
+
+### [2] 阳性对照 A: SELECT COUNT(*) FROM source_registry;  (期望 1)
+mysql: [Warning] Using a password on the command line interface can be insecure.
+row_count
+1
+### exit=0
+
+### [3] 阳性对照 B: SELECT source_code FROM source_registry;  (已知必然命中, 期望 mock-mall)
+mysql: [Warning] Using a password on the command line interface can be insecure.
+source_code
+mock-mall
+### exit=0
+
+### [4] 阴性对照: SELECT COUNT(*) FROM source_registry WHERE source_code='no-such-source-xyz';  (期望 0)
+mysql: [Warning] Using a password on the command line interface can be insecure.
+nonexistent_rows
+0
+### exit=0
+
+### [5] 唯一一行全列: SELECT * FROM source_registry\G
+mysql: [Warning] Using a password on the command line interface can be insecure.
+*************************** 1. row ***************************
+              id: 1
+     source_code: mock-mall
+    display_name: 参考商城（源 A）
+     ingest_mode: FILE
+    profile_path: analytics-server/source-profiles/mock-mall.v1.json
+        timezone: Asia/Shanghai
+        currency: CNY
+          status: ACTIVE
+ profile_version: 1.0
+warehouse_prefix: dw
+      created_at: 2026-09-11 19:56:28.020
+      updated_at: 2026-09-11 19:56:28.020
+### exit=0

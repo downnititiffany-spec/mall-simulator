@@ -1,0 +1,219 @@
+### ts=2026-09-12 20:42:20 枚举/标识/quarantine 取证（修正阳性对照）
+## 对照（本版修正：引号在右侧）
+   [positive-control] 含 '+08:00"' 的行 = 2620776 (期望 > 0)
+   [negative-control] 含 '__NO_SUCH_FORMAT__' 的行 = 0 (期望 0)
+
+## J. 各 event_type 的枚举取值域
+   [behavior]
+      behavior_type    distinct=8    'view'=2280400, 'cart_add'=128768, 'favorite'=104933, 'search'=39447, 'cart_remove'=38397, 'purchase'=35, 'click'=6, 'add_cart'=6
+      channel          distinct=4    'app'=2588704, 'pc'=428, 'web'=210, 'h5'=208
+      event_type       distinct=1    'behavior'=2591992
+      schema_version   distinct=3    '1.0'=2591980, '9.9'=9, '1.1'=3
+   [order_cancelled]
+      event_type       distinct=1    'order_cancelled'=2311
+      reason           distinct=4    'out_of_stock'=646, 'user_cancel'=631, 'change_of_mind'=522, 'payment_timeout'=512
+      schema_version   distinct=1    '1.0'=2311
+   [order_created]
+      event_type       distinct=1    'order_created'=7850
+      schema_version   distinct=1    '1.0'=7850
+      status           distinct=1    'CREATED'=6434
+   [order_paid]
+      event_type       distinct=1    'order_paid'=5521
+      schema_version   distinct=1    '1.0'=5521
+   [product_created]
+      event_type       distinct=1    'product_created'=640
+      schema_version   distinct=1    '1.0'=640
+      status           distinct=1    'on_sale'=340
+   [product_updated]
+      event_type       distinct=1    'product_updated'=35
+      schema_version   distinct=1    '1.0'=35
+      status           distinct=1    'on_sale'=35
+   [refund_completed]
+      event_type       distinct=1    'refund_completed'=281
+      reason           distinct=3    'quality_issue'=35, 'buyer_returns_all'=35, 'late_partial_return'=35
+      schema_version   distinct=1    '1.0'=281
+   [refund_created]
+      event_type       distinct=1    'refund_created'=281
+      reason           distinct=6    'quality_issue'=173, 'buyer_returns_all'=35, 'late_partial_return'=35, 'wrong_item'=22, 'late_delivery'=10, 'user_regret'=6
+      schema_version   distinct=1    '1.0'=281
+   [stock_changed]
+      change_type      distinct=2    'inbound'=64, 'restock'=35
+      event_type       distinct=1    'stock_changed'=99
+      schema_version   distinct=1    '1.0'=99
+   [stock_released]
+      event_type       distinct=1    'stock_released'=2311
+      schema_version   distinct=1    '1.0'=2311
+   [stock_reserved]
+      event_type       distinct=1    'stock_reserved'=6679
+      schema_version   distinct=1    '1.0'=6679
+   [user_registered]
+      age_group        distinct=11   '20-29'=900, '25-34'=459, '35-44'=339, '18-24'=289, 'age18_24'=132, 'age45_plus'=132, 'age25_34'=132, 'under18'=124, 'age35_44'=120, '45+'=114, '45-54'=35
+      city_level       distinct=6    'tier1'=641, 'tier2'=439, 'tier3'=409, 'other'=310, '2'=63, '1'=6
+      event_type       distinct=1    'user_registered'=2776
+      member_level     distinct=4    'gold'=1295, 'normal'=891, 'silver'=433, 'platinum'=157
+      schema_version   distinct=2    '1.0'=2741, '2.0'=35
+
+## K. 标识前缀形态（用于 identityPolicy.shape 与 rawField 出处）
+   order_id     {'<pure-digits len=19>': 19910, 'o...': 2394, 'O...': 2008, '<pure-digits len=4>': 910, 'or...': 6, 'ox...': 6}
+   payment_id   {'<pure-digits len=19>': 3930, 'pay...': 1197, 'PAYO...': 216, 'P-...': 175, 'px...': 3}
+   product_id   {'<pure-digits len=4>': 2500233, '<pure-digits len=19>': 95154, 'p...': 2718, 'P...': 2544, '<pure-digits len=1>': 1083, 'pr...': 18, 'px...': 6}
+   refund_id    {'<pure-digits len=19>': 328, 'R-...': 210, 'R...': 24}
+   session_id   {'gen-session-...': 2587431, 's...': 2409, 'S...': 1460, 's-...': 593, 'session-...': 34, 'sr...': 18, 'sx...': 6, 'session-e...': 6}
+   user_id      {'<pure-digits len=19>': 2600942, 'u...': 5712, 'U...': 2916, '<pure-digits len=1>': 1398, 'ur...': 24, 'ux...': 12, '<pure-digits len=4>': 8}
+
+   -- 按 landing 分区（events vs accepted vs quarantine，看是否同分布）--
+   order_id     golden               {'<pure-digits len=4>': 26}
+   order_id     landing/accepted     {'<pure-digits len=19>': 11948, 'o...': 1596, 'O...': 1004, '<pure-digits len=4>': 598, 'or...': 4}
+   order_id     landing/events       {'<pure-digits len=19>': 7962, 'O...': 1004, 'o...': 798, '<pure-digits len=4>': 286, 'ox...': 2}
+   payment_id   golden               {'P-...': 5}
+   payment_id   landing/accepted     {'<pure-digits len=19>': 2500, 'pay...': 798, 'P-...': 115, 'PAYO...': 108, 'px...': 2}
+   payment_id   landing/events       {'<pure-digits len=19>': 1430, 'pay...': 399, 'PAYO...': 108, 'P-...': 55, 'px...': 1}
+   product_id   golden               {'<pure-digits len=1>': 31}
+   product_id   landing/accepted     {'<pure-digits len=4>': 1666211, '<pure-digits len=19>': 63430, 'p...': 1800, 'P...': 1272, '<pure-digits len=1>': 667}
+   product_id   landing/events       {'<pure-digits len=4>': 834022, '<pure-digits len=19>': 31724, 'P...': 1272, 'p...': 906, '<pure-digits len=1>': 341}
+   product_id   landing/quarantine   {'<pure-digits len=1>': 44, 'p...': 12, 'pr...': 2}
+   refund_id    golden               {'R-...': 6}
+   refund_id    landing/accepted     {'<pure-digits len=19>': 204, 'R-...': 138, 'R...': 12}
+   refund_id    landing/events       {'<pure-digits len=19>': 124, 'R-...': 66, 'R...': 12}
+   session_id   golden               {'s-...': 17}
+   session_id   landing/accepted     {'gen-session-...': 1724954, 's...': 1600, 'S...': 730, 's-...': 345, 'session-...': 17}
+   session_id   landing/events       {'gen-session-...': 862477, 's...': 803, 'S...': 730, 's-...': 187, 'session-...': 17}
+   session_id   landing/quarantine   {'s-...': 44, 's...': 6, 'sr...': 2}
+   user_id      golden               {'<pure-digits len=1>': 40}
+   user_id      landing/accepted     {'<pure-digits len=19>': 1733102, 'u...': 3796, 'U...': 1458, '<pure-digits len=1>': 851, 'ur...': 14}
+   user_id      landing/events       {'<pure-digits len=19>': 867840, 'u...': 1904, 'U...': 1458, '<pure-digits len=1>': 440, 'ur...': 8}
+   user_id      landing/quarantine   {'<pure-digits len=1>': 67, 'u...': 12, 'ur...': 2}
+
+   -- 标识长度分布（前 6）--
+   order_id     {19: 19910, 4: 2530, 9: 2008, 5: 600, 3: 174, 2: 12}
+   payment_id   {19: 3930, 6: 982, 7: 300, 12: 216, 5: 84, 4: 6}
+   product_id   {4: 2501877, 19: 95154, 6: 2544, 1: 1083, 5: 915, 3: 171}
+   refund_id    {19: 328, 8: 210, 9: 24}
+   session_id   {31: 2587431, 9: 1460, 4: 1374, 5: 906, 3: 734, 44: 66}
+   user_id      {19: 2600942, 4: 3812, 7: 2916, 5: 1515, 1: 1398, 3: 399}
+
+## L. 契约必填字段缺失计数（缺字段 = 脏数据负例）
+   behavior           缺 channel          2442 行
+   behavior           缺 session_id       9 行
+   order_cancelled    缺 cancelled_at     35 行
+   order_created      缺 status           1416 行
+   order_created      缺 created_at       1416 行
+   order_paid         缺 paid_at          1375 行
+   product_created    缺 brand_id         300 行
+   product_created    缺 cost             300 行
+   product_created    缺 status           300 行
+   refund_completed   缺 completed_at     105 行
+   refund_created     缺 created_at       105 行
+   user_registered    缺 city_level       908 行
+   user_registered    缺 register_time    908 行
+
+## M. quarantine 原始记录样本（前 12 条，截断）
+   file=landing\quarantine\13\2026090701.jsonl
+      {"event_id": "r4v-2001", "event_type": "behavior", "event_time": "2026-09-07T03:02:00+08:00", "ingest_time": "2026-09-07T03:02:01+08:00", "source_system": "mock-mall", "schema_version": "9.9", "trace_id": "r4t-3", "payload": {"user_id": "ur41", "product_id": "pr41", "session_id": "sr41", "behavior_type": "search"}}
+   file=landing\quarantine\17\golden-r615-20260910164859.jsonl
+      {"event_id": "golden-evt-038", "event_type": "behavior", "event_time": "2026-09-01T15:20:00+08:00", "ingest_time": "2026-09-01T15:20:01+08:00", "source_system": "mock-mall", "schema_version": "1.0", "trace_id": "golden-trace-038", "payload": {"user_id": "3", "product_id": "2", "session_id": "s-3", "behavior_type": "purchase", "channel": "app"}}
+   file=landing\quarantine\17\golden-r615-20260910164859.jsonl
+      {"event_id": "golden-evt-054", "event_type": "user_registered", "event_time": "2026-09-01T18:00:00+08:00", "ingest_time": "2026-09-01T18:00:01+08:00", "source_system": "mock-mall", "schema_version": "2.0", "trace_id": "golden-trace-054", "payload": {"user_id": "9", "age_group": "45-54", "city_level": "tier1", "member_level": "gold", "register_time": "2026-09-01T18:00:00+08:00"}}
+   file=landing\quarantine\18\golden-r615b-20260910165249.jsonl
+      {"event_id": "golden-evt-038", "event_type": "behavior", "event_time": "2026-09-01T15:20:00+08:00", "ingest_time": "2026-09-01T15:20:01+08:00", "source_system": "mock-mall", "schema_version": "1.0", "trace_id": "golden-trace-038", "payload": {"user_id": "3", "product_id": "2", "session_id": "s-3", "behavior_type": "purchase", "channel": "app"}}
+   file=landing\quarantine\18\golden-r615b-20260910165249.jsonl
+      {"event_id": "golden-evt-054", "event_type": "user_registered", "event_time": "2026-09-01T18:00:00+08:00", "ingest_time": "2026-09-01T18:00:01+08:00", "source_system": "mock-mall", "schema_version": "2.0", "trace_id": "golden-trace-054", "payload": {"user_id": "9", "age_group": "45-54", "city_level": "tier1", "member_level": "gold", "register_time": "2026-09-01T18:00:00+08:00"}}
+   file=landing\quarantine\18\golden-r615b-20260910165249.jsonl
+      {"event_type": "behavior", "event_time": "2026-09-01T18:30:00+08:00", "ingest_time": "2026-09-01T18:30:01+08:00", "source_system": "mock-mall", "schema_version": "1.0", "trace_id": "golden-trace-055", "payload": {"user_id": "3", "product_id": "1", "session_id": "s-5", "behavior_type": "view", "channel": "app"}}
+   file=landing\quarantine\19\golden-r618-tampered-20260910.jsonl
+      {"event_id": "golden-evt-038", "event_type": "behavior", "event_time": "2026-09-01T15:20:00+08:00", "ingest_time": "2026-09-01T15:20:01+08:00", "source_system": "mock-mall", "schema_version": "1.0", "trace_id": "golden-trace-038", "payload": {"user_id": "3", "product_id": "2", "session_id": "s-3", "behavior_type": "purchase", "channel": "app"}}
+   file=landing\quarantine\19\golden-r618-tampered-20260910.jsonl
+      {"event_id": "golden-evt-054", "event_type": "user_registered", "event_time": "2026-09-01T18:00:00+08:00", "ingest_time": "2026-09-01T18:00:01+08:00", "source_system": "mock-mall", "schema_version": "2.0", "trace_id": "golden-trace-054", "payload": {"user_id": "9", "age_group": "45-54", "city_level": "tier1", "member_level": "gold", "register_time": "2026-09-01T18:00:00+08:00"}}
+   file=landing\quarantine\19\golden-r618-tampered-20260910.jsonl
+      {"event_type": "behavior", "event_time": "2026-09-01T18:30:00+08:00", "ingest_time": "2026-09-01T18:30:01+08:00", "source_system": "mock-mall", "schema_version": "1.0", "trace_id": "golden-trace-055", "payload": {"user_id": "3", "product_id": "1", "session_id": "s-5", "behavior_type": "view", "channel": "app"}}
+   file=landing\quarantine\20\golden-r619-clean-20260910.jsonl
+      {"event_id": "golden-evt-038", "event_type": "behavior", "event_time": "2026-09-01T15:20:00+08:00", "ingest_time": "2026-09-01T15:20:01+08:00", "source_system": "mock-mall", "schema_version": "1.0", "trace_id": "golden-trace-038", "payload": {"user_id": "3", "product_id": "2", "session_id": "s-3", "behavior_type": "purchase", "channel": "app"}}
+   file=landing\quarantine\20\golden-r619-clean-20260910.jsonl
+      {"event_id": "golden-evt-054", "event_type": "user_registered", "event_time": "2026-09-01T18:00:00+08:00", "ingest_time": "2026-09-01T18:00:01+08:00", "source_system": "mock-mall", "schema_version": "2.0", "trace_id": "golden-trace-054", "payload": {"user_id": "9", "age_group": "45-54", "city_level": "tier1", "member_level": "gold", "register_time": "2026-09-01T18:00:00+08:00"}}
+   file=landing\quarantine\20\golden-r619-clean-20260910.jsonl
+      {"event_type": "behavior", "event_time": "2026-09-01T18:30:00+08:00", "ingest_time": "2026-09-01T18:30:01+08:00", "source_system": "mock-mall", "schema_version": "1.0", "trace_id": "golden-trace-055", "payload": {"user_id": "3", "product_id": "1", "session_id": "s-5", "behavior_type": "view", "channel": "app"}}
+
+## N. landing/manifests 与 landing/logs 的全部文件（含非 jsonl）
+   manifests: files=42
+      landing\manifests\1.json  463 B
+      landing\manifests\10.json  464 B
+      landing\manifests\11.json  631 B
+      landing\manifests\12.json  464 B
+      landing\manifests\13.json  634 B
+      landing\manifests\14.json  634 B
+      landing\manifests\15.json  634 B
+      landing\manifests\16.json  623 B
+      landing\manifests\17.json  648 B
+      landing\manifests\18.json  649 B
+      landing\manifests\19.json  651 B
+      landing\manifests\2.json  5944 B
+      landing\manifests\20.json  648 B
+      landing\manifests\21.json  647 B
+      landing\manifests\22.json  647 B
+      landing\manifests\23.json  645 B
+      landing\manifests\24.json  648 B
+      landing\manifests\25.json  648 B
+      landing\manifests\26.json  643 B
+      landing\manifests\27.json  640 B
+      landing\manifests\28.json  640 B
+      landing\manifests\29.json  7889 B
+      landing\manifests\3.json  463 B
+      landing\manifests\30.json  631 B
+      landing\manifests\31.json  649 B
+      landing\manifests\32.json  464 B
+      landing\manifests\33.json  464 B
+      landing\manifests\34.json  629 B
+      landing\manifests\35.json  464 B
+      landing\manifests\36.json  638 B
+      landing\manifests\37.json  464 B
+      landing\manifests\38.json  464 B
+      landing\manifests\39.json  642 B
+      landing\manifests\4.json  614 B
+      landing\manifests\40.json  1051 B
+      landing\manifests\41.json  1365 B
+      landing\manifests\42.json  763 B
+      landing\manifests\5.json  622 B
+      landing\manifests\6.json  461 B
+      landing\manifests\7.json  626 B
+   logs: files=236
+      landing\logs\manual-load-ods-fixed.log  169019 B
+      landing\logs\pipeline-12-BUILD_DWD-bdw-a1__lp-1789030438273-c89a74.log  15066 B
+      landing\logs\pipeline-12-BUILD_DWD-dim-a1__lp-1789030452356-d32415.log  15234 B
+      landing\logs\pipeline-12-LOAD_ODS-odl-a1__lp-1789030422172-1d2b14.log  16730 B
+      landing\logs\pipeline-13-BUILD_ADS-fna-a1__lp-1789031392811-62df85.log  21484 B
+      landing\logs\pipeline-13-BUILD_DWD-bdw-a1__lp-1789031328401-9f8d3e.log  15066 B
+      landing\logs\pipeline-13-BUILD_DWD-dim-a1__lp-1789031342487-c84ede.log  15053 B
+      landing\logs\pipeline-13-BUILD_DWD-tdw-a1__lp-1789031356575-e4fd65.log  14914 B
+      landing\logs\pipeline-13-BUILD_DWS-usw-a1__lp-1789031372685-0ba4ff.log  15740 B
+      landing\logs\pipeline-13-INIT_SCHEMA-sci-a1__lp-1789031300224-9debbd.log  19618 B
+      landing\logs\pipeline-13-LOAD_ODS-odl-a1__lp-1789031310317-46ed33.log  17769 B
+      landing\logs\pipeline-14-INIT_SCHEMA-sci-a1__lp-1789034610893-0736ee.log  14354 B
+      landing\logs\pipeline-14-LOAD_ODS-odl-a1__lp-1789034618960-53f037.log  15541 B
+      landing\logs\pipeline-15-BUILD_ADS-fna-a1__lp-1789034833457-e5fa5d.log  21823 B
+      landing\logs\pipeline-15-BUILD_DWD-bdw-a1__lp-1789034767059-11399d.log  15172 B
+      landing\logs\pipeline-15-BUILD_DWD-dim-a1__lp-1789034783152-46a910.log  15136 B
+      landing\logs\pipeline-15-BUILD_DWD-tdw-a1__lp-1789034797248-44e2e3.log  14984 B
+      landing\logs\pipeline-15-BUILD_DWS-usw-a1__lp-1789034813344-5af3f1.log  16045 B
+      landing\logs\pipeline-15-INIT_SCHEMA-sci-a1__lp-1789034734868-8d1cb5.log  14354 B
+      landing\logs\pipeline-15-LOAD_ODS-odl-a1__lp-1789034744928-edbc39.log  18774 B
+      landing\logs\pipeline-16-BUILD_ADS-fna-a1__lp-1789036911958-ff77bd.log  23563 B
+      landing\logs\pipeline-16-BUILD_DWD-bdw-a1__lp-1789036837505-76e6e8.log  15174 B
+      landing\logs\pipeline-16-BUILD_DWD-dim-a1__lp-1789036855640-4a3c20.log  15160 B
+      landing\logs\pipeline-16-BUILD_DWD-tdw-a1__lp-1789036871733-33648e.log  14984 B
+      landing\logs\pipeline-16-BUILD_DWS-usw-a1__lp-1789036887839-c842d8.log  16056 B
+      landing\logs\pipeline-16-INIT_SCHEMA-sci-a1__lp-1789036799262-488a00.log  15255 B
+      landing\logs\pipeline-16-LOAD_ODS-odl-a1__lp-1789036813384-99e9b2.log  18773 B
+      landing\logs\pipeline-16-PUBLISH_METRIC-pub-a2__lp-1789037316792-ff34d2.log  18982 B
+      landing\logs\pipeline-16-QUALITY_CHECK-dqc-a1__lp-1789036938082-418d29.log  19193 B
+      landing\logs\pipeline-16-QUALITY_CHECK-dqc-a2__lp-1789037300643-17183d.log  19180 B
+      landing\logs\pipeline-17-BUILD_DWD-bdw-a2__lp-1789038845090-3c0540.log  15173 B
+      landing\logs\pipeline-17-BUILD_DWD-dim-a2__lp-1789038865182-818e08.log  15148 B
+      landing\logs\pipeline-17-BUILD_DWD-tdw-a2__lp-1789038885293-904f8b.log  14996 B
+      landing\logs\pipeline-17-BUILD_DWS-usw-a2__lp-1789038905419-63759b.log  239819 B
+      landing\logs\pipeline-17-INIT_SCHEMA-sci-a1__lp-1789037949850-bc0fe1.log  14472 B
+      landing\logs\pipeline-17-LOAD_ODS-odl-a1__lp-1789037959976-28d84f.log  5879 B
+      landing\logs\pipeline-17-LOAD_ODS-odl-a2__lp-1789038810870-eb82bb.log  18784 B
+      landing\logs\pipeline-18-BUILD_ADS-fna-a1__lp-1789040054856-f758c1.log  25457 B
+      landing\logs\pipeline-18-BUILD_DWD-bdw-a1__lp-1789039958217-b5e69e.log  14882 B
+      landing\logs\pipeline-18-BUILD_DWD-dim-a1__lp-1789039980396-11bf26.log  14869 B
+### exit=0

@@ -1,0 +1,144 @@
+### ts=2026-09-12 20:44:22 冻结契约骨架 × 实测取值 交叉对账（v4b：修掉 enum 键用 repr 导致 JSONDecodeError）
+## O. 冻结契约 canonical-event.v1 骨架
+   根对象字段: ['event_id', 'event_time', 'event_type', 'ingest_time', 'payload', 'schema_version', 'source_system', 'trace_id']
+   [behavior] ['behavior_type', 'channel', 'product_id', 'session_id', 'user_id']
+   [order_cancelled] ['cancelled_at', 'order_id', 'reason', 'user_id']
+   [order_created] ['created_at', 'items', 'order_id', 'status', 'total_amount', 'user_id']
+   [order_paid] ['amount', 'order_id', 'paid_at', 'payment_id', 'user_id']
+   [product_created] ['brand_id', 'category_id', 'cost', 'price', 'product_id', 'product_name', 'status']
+   [product_updated] ['brand_id', 'category_id', 'cost', 'price', 'product_id', 'product_name', 'status']
+   [refund_completed] ['amount', 'completed_at', 'order_id', 'refund_id', 'user_id']
+   [refund_created] ['amount', 'created_at', 'order_id', 'reason', 'refund_id', 'user_id']
+   [stock_changed] ['available_qty', 'change_type', 'product_id', 'quantity']
+   [stock_released] ['available_qty', 'order_id', 'product_id', 'quantity', 'reserved_qty']
+   [stock_reserved] ['available_qty', 'order_id', 'product_id', 'quantity', 'reserved_qty']
+   [user_registered] ['age_group', 'city_level', 'member_level', 'register_time', 'user_id']
+
+   契约枚举（字段 => 允许值）:
+   behavior           behavior_type  ['view', 'favorite', 'cart_add', 'cart_remove', 'search']
+   behavior           channel        ['app', 'pc', 'h5']
+   product_created    status         ['on_sale', 'off_sale', 'pending']
+   product_updated    status         ['on_sale', 'off_sale', 'pending']
+   stock_changed      change_type    ['inbound', 'outbound', 'adjust']
+   user_registered    age_group      ['under18', '18-24', '25-34', '35-44', '45+']
+   user_registered    city_level     ['tier1', 'tier2', 'tier3', 'other']
+   user_registered    member_level   ['normal', 'silver', 'gold', 'platinum']
+
+## P. 实测 payload 字段 × 契约骨架（判定 fieldMapping 是恒等还是有 @keep）
+   [behavior]
+      恒等映射(5): ['behavior_type', 'channel', 'product_id', 'session_id', 'user_id']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(3): ['amount', 'event_time_utc', 'product_name']
+   [order_cancelled]
+      恒等映射(4): ['cancelled_at', 'order_id', 'reason', 'user_id']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [order_created]
+      恒等映射(6): ['created_at', 'items', 'order_id', 'status', 'total_amount', 'user_id']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [order_paid]
+      恒等映射(5): ['amount', 'order_id', 'paid_at', 'payment_id', 'user_id']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [product_created]
+      恒等映射(7): ['brand_id', 'category_id', 'cost', 'price', 'product_id', 'product_name', 'status']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [product_updated]
+      恒等映射(7): ['brand_id', 'category_id', 'cost', 'price', 'product_id', 'product_name', 'status']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [refund_completed]
+      恒等映射(5): ['amount', 'completed_at', 'order_id', 'refund_id', 'user_id']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(1): ['reason']
+   [refund_created]
+      恒等映射(6): ['amount', 'created_at', 'order_id', 'reason', 'refund_id', 'user_id']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [stock_changed]
+      恒等映射(4): ['available_qty', 'change_type', 'product_id', 'quantity']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [stock_released]
+      恒等映射(5): ['available_qty', 'order_id', 'product_id', 'quantity', 'reserved_qty']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [stock_reserved]
+      恒等映射(5): ['available_qty', 'order_id', 'product_id', 'quantity', 'reserved_qty']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+   [user_registered]
+      恒等映射(5): ['age_group', 'city_level', 'member_level', 'register_time', 'user_id']
+      契约有但本事件未实测(0): []
+      >>> 需 @keep 的源侧额外字段(0): []
+
+## Q. 实测枚举值 × 契约 enum（判定 enumSemantics 哪些是恒等、哪些待裁定）
+   age_group      实测 distinct=11
+        契约 enum: ['under18', '18-24', '25-34', '35-44', '45+']
+        命中(1325): [('"25-34"', 459), ('"35-44"', 339), ('"18-24"', 289), ('"under18"', 124), ('"45+"', 114)]
+        >>> 出界(1451): [('"20-29"', 900), ('"age18_24"', 132), ('"age45_plus"', 132), ('"age25_34"', 132), ('"age35_44"', 120), ('"45-54"', 35)]
+   behavior_type  实测 distinct=8
+        契约 enum: ['view', 'favorite', 'cart_add', 'cart_remove', 'search']
+        命中(2591945): [('"view"', 2280400), ('"cart_add"', 128768), ('"favorite"', 104933), ('"search"', 39447), ('"cart_remove"', 38397)]
+        >>> 出界(47): [('"purchase"', 35), ('"click"', 6), ('"add_cart"', 6)]
+   change_type    实测 distinct=2
+        契约 enum: ['inbound', 'outbound', 'adjust']
+        命中(64): [('"inbound"', 64)]
+        >>> 出界(35): [('"restock"', 35)]
+   channel        实测 distinct=4
+        契约 enum: ['app', 'pc', 'h5']
+        命中(2589340): [('"app"', 2588704), ('"pc"', 428), ('"h5"', 208)]
+        >>> 出界(210): [('"web"', 210)]
+   city_level     实测 distinct=6
+        契约 enum: ['tier1', 'tier2', 'tier3', 'other']
+        命中(1799): [('"tier1"', 641), ('"tier2"', 439), ('"tier3"', 409), ('"other"', 310)]
+        >>> 出界(69): [('"2"', 63), ('"1"', 6)]
+   member_level   实测 distinct=4
+        契约 enum: ['normal', 'silver', 'gold', 'platinum']
+        命中(2776): [('"gold"', 1295), ('"normal"', 891), ('"silver"', 433), ('"platinum"', 157)]
+        >>> 出界(0): []
+   reason         实测 distinct=10
+        契约 enum: <本字段在 canonical-event.v1 中无 enum 约束>
+          "out_of_stock"         646
+          "user_cancel"          631
+          "change_of_mind"       522
+          "payment_timeout"      512
+          "quality_issue"        208
+          "buyer_returns_all"    70
+          "late_partial_return"  70
+          "wrong_item"           22
+          "late_delivery"        10
+          "user_regret"          6
+   status         实测 distinct=2
+        契约 enum: ['on_sale', 'off_sale', 'pending']
+        命中(375): [('"on_sale"', 375)]
+        >>> 出界(6434): [('"CREATED"', 6434)]
+
+## R. 标识形态判定（shape 该写什么）
+   brand_id       {'PREFIX_NUMERIC': 200, 'NUMERIC': 175}
+        非纯数字样本: ['B001', 'B002', 'B003', 'B004', 'B005', 'B006']
+   category_id    {'PREFIX_NUMERIC': 500, 'NUMERIC': 175}
+        非纯数字样本: ['c1', 'c1', 'c1', 'c1', 'c1', 'c1']
+   order_id       {'NUMERIC': 20820, 'PREFIX_NUMERIC': 4414}
+        非纯数字样本: ['or41', 'or42', 'o2', 'o4', 'o7', 'o9']
+   payment_id     {'NUMERIC': 3930, 'PREFIX_NUMERIC': 1591}
+        非纯数字样本: ['P-1001', 'P-1003', 'P-1004', 'P-1005', 'P-1006', 'P-1001']
+   product_id     {'NUMERIC': 2596470, 'PREFIX_NUMERIC': 5286}
+        非纯数字样本: ['px10', 'pr41', 'pr41', 'pr41', 'pr42', 'pr42']
+   refund_id      {'NUMERIC': 328, 'ANY': 210, 'PREFIX_NUMERIC': 24}
+        非纯数字样本: ['R-1003-A', 'R-1003-A', 'R-1004-B', 'R-1004-B', 'R-1005-C', 'R-1005-C']
+   session_id     {'PREFIX_NUMERIC': 2590457, 'ANY': 1526}
+        非纯数字样本: ['sx10', 'sr41', 'sr41', 'sr41', 'sr42', 'sr42']
+   user_id        {'NUMERIC': 2602348, 'PREFIX_NUMERIC': 8664}
+        非纯数字样本: ['ux10', 'ur41', 'ur41', 'ur41', 'ur41', 'ur42']
+
+## S. schema_version=1.1 的实际行（前 3 条）
+   file=landing\events\2026090700.jsonl
+      {"event_id": "bbbbbbbb-0000-0000-0000-000000000999", "event_type": "behavior", "event_time": "2026-09-07T00:59:00+08:00", "ingest_time": "2026-09-07T00:59:00+08:00", "source_system": "mock-mall", "schema_version": "1.1", "trace_id": "tr-999", "payload": {"user_id": "u999", "product_id": "p999", "session_id": "s999", "behavior_type": "view", "product_name": "中文测试未来版本"}}
+   file=landing\quarantine\29\2026090700.jsonl
+      {"event_id": "bbbbbbbb-0000-0000-0000-000000000999", "event_type": "behavior", "event_time": "2026-09-07T00:59:00+08:00", "ingest_time": "2026-09-07T00:59:00+08:00", "source_system": "mock-mall", "schema_version": "1.1", "trace_id": "tr-999", "payload": {"user_id": "u999", "product_id": "p999", "session_id": "s999", "behavior_type": "view", "product_name": "中文测试未来版本"}}
+   file=landing\quarantine\7\2026090700.jsonl
+      {"event_id": "bbbbbbbb-0000-0000-0000-000000000999", "event_type": "behavior", "event_time": "2026-09-07T00:59:00+08:00", "ingest_time": "2026-09-07T00:59:00+08:00", "source_system": "mock-mall", "schema_version": "1.1", "trace_id": "tr-999", "payload": {"user_id": "u999", "product_id": "p999", "session_id": "s999", "behavior_type": "view", "product_name": "中文测试未来版本"}}
+### exit=0

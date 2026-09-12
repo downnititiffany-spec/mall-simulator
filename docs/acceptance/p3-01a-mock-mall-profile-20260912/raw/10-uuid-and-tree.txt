@@ -1,0 +1,48 @@
+### ts=2026-09-12 20:47:53 覆盖差异核查 + landing 目录树
+### 背景：surrogate-key.v1.json 向量 V01 标注 entity=user rawInput=89a6db2c-9ecb-4be0-a24b-9f697da00686 why='真实 landing 取值'；我的 346 文件 jsonl 全树扫描**未**发现 user_id 的 UUID 形态。
+
+## [1] landing 下逐文件搜该字面量（限 <8MB，避开 200MB 大文件导致的超时）
+命中文件数 = 2
+   landing\accepted\41\2026091211.jsonl : line 1
+   landing\events\2026091211.jsonl : line 1
+
+## [2] 该字面量在命中行里扮演什么字段（关键：它是 event_id 还是 user_id？）
+   file= landing\events\2026091211.jsonl
+   event_id   = 89a6db2c-9ecb-4be0-a24b-9f697da00686
+   trace_id   = 443eae1d-7318-45d9-9a94-736303709e02
+   payload.user_id = 2098607948334395394
+   => �� UUID ������ event_id �ֶΣ�user_id �� 19 λѩ������
+
+## [3] 阴性对照（必然不存在的 UUID）
+阴性对照命中文件数 = 0（期望 0）
+
+## [4] landing 顶层条目 + 一级子目录文件数（不限后缀，用于回答'manifests 是否非 jsonl'）
+   d----  accepted
+   d----  events
+   d----  logs
+   d----  manifests
+   d----  quarantine
+   -a---  .local-landing-probe
+   accepted => files=142 => bytes=
+   events => files=61 => bytes=
+   logs => files=236 => bytes=
+   manifests => files=42 => bytes=
+   quarantine => files=142 => bytes=
+
+## [5] manifests 后缀分布（清单是否为 .jsonl）
+   .json => files=42
+
+## [6] manifests 是否声明源侧格式/时区字段（全键名并集）
+   全 42 个清单的键名并集: acceptedBytes, acceptedRecords, acceptedUri, batchId, batchNo, checksum, files, finishedAt, mappingVersion, profileVersion, quarantinedRecords, quarantineUri, runtimeProfileId, schemaVersions, source, sourceCode, sourceId, startedAt, status
+   是否含 timezone/format/dateFormat 类键: runtimeProfileId  (空=未声明)
+
+## [4b] 更正 [4]：bytes 列为空是我 Measure-Object 用法写错（已改为 .Sum），且以 raw/04b 为权威
+   accepted => files=142 => bytes=808517912
+   events => files=61 => bytes=406496411
+   logs => files=236 => bytes=49556361
+   manifests => files=42 => bytes=38861
+   quarantine => files=142 => bytes=28131
+
+## [6b] 更正 [6]：上一格 'runtimeProfileId' 是正则 time|zone|format 的**假阳性**（runtime 里含 'time'），并非时区声明
+   精确匹配 ^(timezone|tz|format|dateFormat|timeFormat|charset|encoding)$ 的键:    (空 = 清单未声明任何源侧格式/时区)
+   结论：ingestion-manifest.v1 的 42 个清单**不含**源侧时间格式或时区字段；时区的唯一声明处是 source_registry.timezone（DB），格式的唯一声明处是本画像的 timePolicy。两者不重叠。

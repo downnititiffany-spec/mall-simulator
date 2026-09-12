@@ -1,0 +1,15 @@
+### ts=2026-09-12 20:54:22  P3-01-a E3 后置态：mock-mall.v1.json 已落盘
+### 阳性对照①：服务在监听（netstat 8091）
+
+  TCP    0.0.0.0:8091           0.0.0.0:0              LISTENING       61104
+  TCP    [::]:8091              [::]:0                 LISTENING       61104
+
+### [1] POST /api/v1/auth/login  (body: username=admin, password=已脱敏) => HTTP 200
+### token acquired: fd684902... (长度 32)
+### [2] POST /api/v1/sources/1/test  (只读；**未调用 activate**) => HTTP 200
+{"code":"OK","message":"success","data":{"sourceId":1,"sourceCode":"mock-mall","ok":true,"items":[{"name":"profile_path_policy","passed":true,"applicable":true,"detail":"profile_path 是仓库相对路径：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_file_exists","passed":true,"applicable":true,"detail":"画像文件存在且可读：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_json_object","passed":true,"applicable":true,"detail":"顶层是合法 JSON 对象：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_source_code_matches","passed":true,"applicable":true,"detail":"画像 sourceCode 与登记一致：mock-mall"},{"name":"profile_profile_version_matches","passed":true,"applicable":true,"detail":"画像 profileVersion 与登记一致：1.0"},{"name":"profile_required_top_level_keys","passed":true,"applicable":true,"detail":"设计 §4.2 的 9 个顶层必备键齐全"},{"name":"status_transition_allowed","passed":true,"applicable":true,"detail":"当前状态允许生命周期变更：ACTIVE"}]},"traceId":"be371d86-bb05-4f38-a0b4-1f089d708e32"}
+### [3] GET /api/v1/sources/1  (只读；确认状态未被本泳道改动) => HTTP 200
+{"code":"OK","message":"success","data":{"id":1,"sourceCode":"mock-mall","displayName":"参考商城（源 A）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/mock-mall.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T19:56:28.02","updatedAt":"2026-09-11T19:56:28.02","warehousePrefix":"dw"},"traceId":"9d4654ce-73d5-4d5a-8395-86bf3fcd8356"}
+### [4] 阴性对照 POST /api/v1/sources/999999/test（不存在的源）=> HTTP 404
+{"code":"SOURCE_NOT_FOUND","message":"源不存在: 999999","data":null,"traceId":"8a60aa77-191e-4274-8384-55cbde85c9f4"}
+### done ts=2026-09-12 20:54:22

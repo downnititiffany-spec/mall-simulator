@@ -1,0 +1,4 @@
+### ts=2026-09-12 20:45:34 覆盖差异核查：surrogate-key 规格标注 V01 user UUID='89a6db2c-9ecb-4be0-a24b-9f697da00686' 的 why='真实 landing 取值'
+### 目的：我的 346 文件 *.jsonl 全树扫描**未**发现 user_id 的 UUID 形态；此处核查该取值是否真的存在于 landing（不限后缀）
+
+## [1] 全仓（不限后缀）搜该 UUID 字面量

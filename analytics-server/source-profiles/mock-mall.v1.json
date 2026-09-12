@@ -1,0 +1,124 @@
+{
+  "profileVersion": "1.0",
+  "sourceCode": "mock-mall",
+  "canonical": {
+    "schemaVersion": "1.0"
+  },
+  "eventTypeMapping": {
+    "behavior": "behavior",
+    "order_cancelled": "order_cancelled",
+    "order_created": "order_created",
+    "order_paid": "order_paid",
+    "product_created": "product_created",
+    "product_updated": "product_updated",
+    "refund_completed": "refund_completed",
+    "refund_created": "refund_created",
+    "stock_changed": "stock_changed",
+    "stock_released": "stock_released",
+    "stock_reserved": "stock_reserved",
+    "user_registered": "user_registered"
+  },
+  "fieldMapping": {
+    "age_group": "age_group",
+    "amount": "amount",
+    "available_qty": "available_qty",
+    "behavior_type": "behavior_type",
+    "brand_id": "brand_id",
+    "cancelled_at": "cancelled_at",
+    "category_id": "category_id",
+    "change_type": "change_type",
+    "channel": "channel",
+    "city_level": "city_level",
+    "completed_at": "completed_at",
+    "cost": "cost",
+    "created_at": "created_at",
+    "event_time_utc": "@keep",
+    "items": "items",
+    "member_level": "member_level",
+    "order_id": "order_id",
+    "paid_at": "paid_at",
+    "payment_id": "payment_id",
+    "price": "price",
+    "product_id": "product_id",
+    "product_name": "product_name",
+    "quantity": "quantity",
+    "reason": "reason",
+    "refund_id": "refund_id",
+    "register_time": "register_time",
+    "reserved_qty": "reserved_qty",
+    "session_id": "session_id",
+    "status": "status",
+    "total_amount": "total_amount",
+    "user_id": "user_id"
+  },
+  "enumSemantics": {
+    "behavior": {
+      "view": "view",
+      "favorite": "favorite",
+      "cart_add": "cart_add",
+      "cart_remove": "cart_remove",
+      "search": "search",
+      "add_cart": null,
+      "purchase": null,
+      "click": null
+    },
+    "channel": {
+      "app": "app",
+      "pc": "pc",
+      "h5": "h5",
+      "web": null
+    },
+    "orderStatus": {
+      "CREATED": "CREATED"
+    },
+    "productStatus": {
+      "on_sale": "on_sale"
+    },
+    "changeType": {
+      "inbound": "inbound",
+      "restock": null
+    },
+    "ageGroup": {
+      "under18": "under18",
+      "18-24": "18-24",
+      "25-34": "25-34",
+      "35-44": "35-44",
+      "45+": "45+",
+      "age18_24": null,
+      "age25_34": null,
+      "age35_44": null,
+      "age45_plus": null,
+      "20-29": null,
+      "45-54": null
+    },
+    "cityLevel": {
+      "tier1": "tier1",
+      "tier2": "tier2",
+      "tier3": "tier3",
+      "other": "other",
+      "1": null,
+      "2": null
+    },
+    "memberLevel": {
+      "normal": "normal",
+      "silver": "silver",
+      "gold": "gold",
+      "platinum": "platinum"
+    }
+  },
+  "identityPolicy": {
+    "user": { "rawField": "user_id", "shape": "ANY", "surrogate": "HASH64" },
+    "product": { "rawField": "product_id", "shape": "ANY", "surrogate": "HASH64" },
+    "category": { "rawField": "category_id", "shape": "ANY", "surrogate": "HASH64" },
+    "brand": { "rawField": "brand_id", "shape": "ANY", "surrogate": "HASH64" },
+    "order": { "rawField": "order_id", "shape": "ANY", "surrogate": "HASH64" }
+  },
+  "timePolicy": {
+    "field": "event_time",
+    "formats": ["ISO_OFFSET_DATE_TIME"]
+  },
+  "quarantinePolicy": {
+    "unknownEventType": "QUARANTINE",
+    "unknownField": "KEEP_IN_PAYLOAD"
+  }
+}

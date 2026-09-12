@@ -1,0 +1,21 @@
+### ts=2026-09-12 20:40:31  P3-01-a E3 前置态（画像文件尚不存在）—— 本文件是**阴性对照**：证明探测工具真的打到了 8091 且返回真实结构。
+### 端口证据：netstat 8091
+
+LocalAddress LocalPort OwningProcess
+------------ --------- -------------
+::                8091         61104
+
+
+### [1] POST /api/v1/auth/login  (body: username=admin, password=已脱敏)
+{"code":"OK","message":"success","data":{"token":"0b751e7c4e734e69a69c0c3ad657640e","user":{"id":1,"username":"admin","realName":"系统管理员","role":"admin"}},"traceId":"43f0345b-8642-4983-a328-f72b0b2c0b83"}
+### token acquired: 0b751e7c... (长度 32)
+
+### [2] GET /api/v1/sources/1   (只读)
+HTTP 200
+{"code":"OK","message":"success","data":{"id":1,"sourceCode":"mock-mall","displayName":"参考商城（源 A）","ingestMode":"FILE","profilePath":"analytics-server/source-profiles/mock-mall.v1.json","timezone":"Asia/Shanghai","currency":"CNY","status":"ACTIVE","profileVersion":"1.0","current":true,"createdAt":"2026-09-11T19:56:28.02","updatedAt":"2026-09-11T19:56:28.02","warehousePrefix":"dw"},"traceId":"c0d92a7c-a555-4e0e-82f3-bce68363b411"}
+
+### [3] POST /api/v1/sources/1/test   (只读；**不调 activate**)
+HTTP 200
+{"code":"OK","message":"success","data":{"sourceId":1,"sourceCode":"mock-mall","ok":false,"items":[{"name":"profile_path_policy","passed":true,"applicable":true,"detail":"profile_path 是仓库相对路径：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_file_exists","passed":false,"applicable":true,"detail":"画像文件不存在或不可读（仓库相对路径）：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_json_object","passed":false,"applicable":false,"detail":"画像文件不存在或不可读（仓库相对路径）：analytics-server/source-profiles/mock-mall.v1.json"},{"name":"profile_source_code_matches","passed":false,"applicable":false,"detail":"前置项未通过，无法评估"},{"name":"profile_profile_version_matches","passed":false,"applicable":false,"detail":"前置项未通过，无法评估"},{"name":"profile_required_top_level_keys","passed":false,"applicable":false,"detail":"前置项未通过，无法评估"},{"name":"status_transition_allowed","passed":true,"applicable":true,"detail":"当前状态允许生命周期变更：ACTIVE"}]},"traceId":"28d4463a-5d3d-4e2d-b11f-ed744552959c"}
+
+### done ts=2026-09-12 20:40:32

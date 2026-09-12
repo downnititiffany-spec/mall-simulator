@@ -1,0 +1,35 @@
+### ts=2026-09-12 20:54:57  补齐 raw/10-uuid-coverage-gap.txt（原文件仅 4 行、无输出 = **不完整证据**；按「不删旧文件」原则另存本文件）
+## [1] 扫描范围：landing 下**全部**文件（不限后缀）= 624 个
+
+## 目标 UUID（规格 V01 声称的 user_id） = 89a6db2c-9ecb-4be0-a24b-9f697da00686 => 命中 2 个文件
+     landing\accepted\41\2026091211.jsonl
+     landing\events\2026091211.jsonl
+
+## 阳性对照 A：同行真实 payload.user_id = 2098607948334395394 => 命中 2 个文件
+     landing\accepted\41\2026091211.jsonl
+     landing\events\2026091211.jsonl
+
+## 阳性对照 B：UUID 头部子串 = 89a6db2c => 命中 2 个文件
+     landing\accepted\41\2026091211.jsonl
+     landing\events\2026091211.jsonl
+
+## 阴性对照：必然不存在的 UUID = ffffffff-dead-beef-dead-beefdeadbeef => 命中 0 个文件
+
+## [2] 该 UUID 在真实行里到底是哪个字段？
+   landing\accepted\41\2026091211.jsonl
+     字段位置 = ['event_id']
+     event_id   = '89a6db2c-9ecb-4be0-a24b-9f697da00686'
+     event_type = 'user_registered'
+     payload.user_id = '2098607948334395394'
+   landing\events\2026091211.jsonl
+     字段位置 = ['event_id']
+     event_id   = '89a6db2c-9ecb-4be0-a24b-9f697da00686'
+     event_type = 'user_registered'
+     payload.user_id = '2098607948334395394'
+
+## [3] 判读
+   对照自检 = True（阳性 A>0、阳性 B>=目标、阴性==0）
+   结论：规格 surrogate-key.v1.json 向量 V01 把 **event_id** 当成了 entity=user 的 rawInput；
+         同一条真实行里 payload.user_id 另有其值（见 [2]，即该规格的 V02 向量）。
+         且 event_id 属该规格自称的**范围之外**（事件粒度键）。
+### exit=0
