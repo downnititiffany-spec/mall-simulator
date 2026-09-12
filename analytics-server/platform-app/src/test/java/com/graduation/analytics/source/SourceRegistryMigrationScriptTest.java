@@ -87,7 +87,7 @@ class SourceRegistryMigrationScriptTest {
         String seed = statement("INSERT");
 
         assertThat(seed)
-                .as("种子源编码必须等于冻结契约里的 source_system 取值 mock-mall")
+                .as("种子源编码必须等于首个源的 source_code（契约不再固定该值，D-061）")
                 .contains("'mock-mall'")
                 .as("种子源为当前在建的参考商城：本期唯一实现 FILE，状态 ACTIVE")
                 .contains("'FILE'")

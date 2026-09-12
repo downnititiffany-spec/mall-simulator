@@ -1,0 +1,29 @@
+==== CT 集成期 E1-a 对比门禁（父侧独立判据；不声称通过 PLAN 字面判据）====
+  时间 = 2026-09-12 17:03:24
+
+  逐模块测试数（前 → 后）：
+    platform-common             41 →    41
+    connection-ingestion       156 →   156
+    warehouse-pipeline         111 →   111
+    metric-analysis             38 →    38
+    ai-decision                 91 →    91
+    platform-app               100 →   100
+    合计                    537 →   537
+
+  失败集合 前：IngestionManifestSourceSchemaTest.allOnDiskManifestsStillValidate
+  失败集合 后：IngestionManifestSourceSchemaTest.allOnDiskManifestsStillValidate
+  BUILD 前：[INFO] BUILD FAILURE
+  BUILD 后：[INFO] BUILD FAILURE
+
+  [PASS] C1 测试总数不得下降 :: 537 → 537（差 0）
+  [PASS] C2 不得新增失败用例 :: 新增 = 无
+  [PASS] C3 判据地基：两侧都解析到模块汇总行 :: 前 6 条／后 6 条
+  [PASS] C4 模块集合必须一致（防"少跑一个模块"式假绿） :: 6 个模块逐名相同
+  [PASS] C5 逐模块测试数不得下降 :: 逐模块均未下降
+  [PASS] C6 既有红逐条保留（消失≠修好，须解释） :: 改动前红 1 条，无消失
+  [PASS] C7 BUILD 结果不得从 SUCCESS 变为 FAILURE :: 前 [INFO] BUILD FAILURE／后 [INFO] BUILD FAILURE
+
+  [PASS] D1 断言数与应然值一致（本脚本自检） :: 应然 = 8，实际 = 8
+
+  ==== 汇总：断言 8 条，PASS 8，FAIL 0 ====
+  结果 = PASS

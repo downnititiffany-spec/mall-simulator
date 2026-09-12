@@ -1,0 +1,15 @@
+  [PASS] I1 VERSION 文本 = 'contract-specs 2.2.0'
+  [PASS] I2 VERSION 落盘为 LF（CR 字节 0）
+  [PASS] I3 VERSION（LF）sha256 = EB175583…
+  [PASS] I4 source_system 无 const 键
+  [PASS] I5 source_system 形状约束 type=string
+  [PASS] I6 正向对照：schema_version.const 仍为 '1.0'
+  [PASS] I7 order_created.items 有 oneOf 且恰 2 分支
+  [PASS] I8 两分支 type = ['array','string']（加性接受）
+  [PASS] I9 数组分支保留原 items 子定义
+  [PASS] I10 规范形态：根 required 仍为 8 个字段
+  [PASS] I11 冻结契约 warehouse-namespace.v1 指纹仍为 463D9DC3…
+  [PASS] I12 平台侧 EventContract.SOURCE_SYSTEM 已退休（0 命中）
+  [PASS] I13 正向对照：SCHEMA_VERSION 仍在（≥1 命中）
+
+=== 独立复核汇总：断言 13 条；PASS 13 / FAIL 0 ===

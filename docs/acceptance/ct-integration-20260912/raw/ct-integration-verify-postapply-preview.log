@@ -1,0 +1,65 @@
+**********************
+PowerShell 记录开始
+开始时间: 20260912170808
+用户名: DAHAISHUI\ASUS
+RunAs 用户: DAHAISHUI\ASUS
+配置名称: 
+计算机: DAHAISHUI (Microsoft Windows NT 10.0.26100.0)
+主机应用程序: C:\Program Files\WindowsApps\Microsoft.PowerShell_7.6.6.0_x64__8wekyb3d8bbwe\pwsh.dll -NoProfile -File docs\acceptance\ct-batch-20260912\tools\ct-integration-verify.ps1 -Phase PostApply -Repo D:\Develop_code\GraduationProject-wt\ct-preview -Patch D:\Develop_code\GraduationProject-wt\ct-batch\.verify\ct-batch\ct-batch.patch -LogPath .verify\ct-integration-verify-postapply-preview.log
+进程 ID: 62628
+PSVersion: 7.6.6
+PSEdition: Core
+GitCommitId: 7.6.6
+OS: Microsoft Windows 10.0.26100
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.4
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+=== CT 集成校验（阶段 PostApply）===
+仓库 = D:\Develop_code\GraduationProject-wt\ct-preview
+
+--- A. 补丁面 ---
+  [PASS] A1 补丁文件存在
+  [PASS] A0a 补丁文件自身行尾 = 纯 LF（CRLF 行数必须为 0）
+  [PASS] A0b 补丁与本检出{已落地一致：反向 git apply --check -R，只读}
+  [PASS] A2 补丁文件集合 = 施工单 §2 的 8 个受控文件
+  [PASS] A3 补丁不改红线面（spark-jobs/mall-simulator/黄金数据集/证据目录/冻结契约本体）
+  [PASS] A4 8 个受控文件在检出中全程 LF（CR 字节 0）
+  [PASS] A5 落地后：改动集合恰为 8 个受控文件（无漏改/无多改/无删除）
+
+--- B. 契约面（现算）---
+  [PASS] B1a VERSION 内容 = "contract-specs 2.2.0"
+  [PASS] B1b VERSION 的 LF 形态 = 21 B（§14 登记口径）
+  [PASS] B1c VERSION 的 LF sha256 = EB175583…（README §14 登记值）
+  [PASS] B2 冻结契约 warehouse-namespace.v1.json 指纹仍为 463D9DC3…（本批不得动）
+  [PASS] B3a source_system 节点不含 const（CT-1 / D-061）
+  [PASS] B3b 正向对照：schema_version 仍锁 const = 1.0（证明 B3a 非空转）
+  [PASS] B3c source_system 仍受形状约束（type=string ∧ minLength≥1）
+  [PASS] B4a order_created.items 有 oneOf 且恰 2 分支（CT-3 / D-063）
+  [PASS] B4b 两分支 type 分别为 array 与 string（加性接受，规范形态仍为数组）
+  [PASS] B4c 数组分支保留原 items 子定义（原文不动）
+  [PASS] B5a 平台侧常量 SOURCE_SYSTEM 已退休（0 命中）
+  [PASS] B5b 正向对照：SCHEMA_VERSION 仍存在（≥1 命中，证明扫描非空转）
+  [PASS] B6a README §10 历史指纹行仍在（append-only，未删旧值）
+  [PASS] B6b README §14 已登记新值 EB175583… 与 raw 5D349AFB…
+
+--- B7 裸锚点守卫实跑（只读模式，退出码 0 = PASS）---
+  [PASS] B7a 守卫脚本存在
+  [PASS] B7b 守卫退出码 = 0
+  [PASS] B7c 守卫自报 结果 = PASS（恰 1 行）
+  [PASS] B7d 台账行数 ≤ 基线（只减不增）
+         守卫自报：  结果 = PASS（裸锚点 199 处 / 112 行，全部在台账内；台账 113 行 ≤ 基线 113）
+
+--- C. E1-a 计数：未传入（-BaselineTests / -AfterTests），本段跳过 ---
+
+--- D. 条数自检 ---
+  [PASS] D1 断言总条数 = 脚本声明值（防漏跑/多跑）
+
+=== 汇总：断言 26 条（应然 26）；PASS 26 / FAIL 0 ===
+  全部通过。
+**********************
+PowerShell 记录结束
+结束时间: 20260912170809
+**********************

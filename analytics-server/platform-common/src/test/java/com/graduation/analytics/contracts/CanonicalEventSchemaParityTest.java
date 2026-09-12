@@ -62,15 +62,20 @@ class CanonicalEventSchemaParityTest {
     }
 
     @Test
-    @DisplayName("schema_version / source_system 常量与 EventContract 一致")
+    @DisplayName("结构守卫：schema_version 仍锁 const；source_system 只受形状约束、不得锁 const")
     void versionAndSourceConstMatchContract() throws IOException {
         JsonNode root = schema(ENVELOPE_SCHEMA);
+        // 正向对照（D-061）：schema_version 仍然锁定 const —— 证明下面那条"不得带 const"的守卫不是空转。
         assertEquals(EventContract.SCHEMA_VERSION,
                 root.path("properties").path("schema_version").path("const").asText(),
                 "schema_version 必须锁定为 EventContract.SCHEMA_VERSION");
-        assertEquals(EventContract.SOURCE_SYSTEM,
-                root.path("properties").path("source_system").path("const").asText(),
-                "source_system 必须锁定为 EventContract.SOURCE_SYSTEM");
+        JsonNode source = root.path("properties").path("source_system");
+        assertFalse(source.has("const"),
+                "D-061：source_system 不得再锁定 const（值域归 source_registry.source_code，契约只约束形状）");
+        assertEquals("string", source.path("type").asText(),
+                "D-061：source_system 必须是 string 形状约束");
+        assertEquals(1, source.path("minLength").asInt(),
+                "D-061：source_system 必须带 minLength=1（非空）形状约束");
     }
 
     @Test

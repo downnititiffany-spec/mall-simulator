@@ -9,11 +9,11 @@
 
 ```json
 {
-  "event_id": "UUID",                        // 全局唯一，ODS/DWD 按此去重（允许 at-least-once 投递）
+  "event_id": "UUID",                        // 源命名空间内唯一，ODS/DWD 按 (source_instance_id, event_id) 去重（允许 at-least-once 投递）
   "event_type": "order_paid",                // 见 §3 事件类型枚举
   "event_time": "2026-09-05T20:15:31+08:00", // 业务时间（带时区），指标归属依据
   "ingest_time": "2026-09-05T20:15:32+08:00",// 该行的采集时间（Java 侧生成），链路延迟 = ingest_time - event_time
-  "source_system": "mock-mall",              // 固定值：mock-mall
+  "source_system": "mock-mall",              // 形状约束：非空字符串，取值 = 该源的 source_registry.source_code（值域非契约所有，D-061）；mock-mall 为首个源取值
   "schema_version": "1.0",                   // 未知版本 → 进入隔离区（quarantine_record），不进入 DWD
   "trace_id": "UUID",                        // 一次业务操作一个 trace_id，贯穿 商城→Outbox→日志→批次→ODS
   "payload": {}
@@ -162,7 +162,7 @@ stock_reserved  stock_released  stock_changed
 ## 4. 一致性约束（验收依据）
 
 * 同一业务事务内写入的 outbox 事件必须与业务表同时提交或同时回滚（同库同事务）。
-* `event_id` 唯一；重复投递由 DWD 按 `event_id` 去重，因此允许 at-least-once。
+* `event_id` 在源命名空间内唯一；重复投递由 DWD 按 `(source_instance_id, event_id)` 去重，因此允许 at-least-once。
 * `order_paid.amount` 必须等于该订单 `order_created.total_amount`。
 * `refund_completed.amount` 不得大于对应订单已支付金额。
 * 金额字段（total_amount/amount/unit_price/discount/price/cost/available_qty/reserved_qty）必须是 `^\d+(\.\d{1,2})?$` 的十进制字符串。

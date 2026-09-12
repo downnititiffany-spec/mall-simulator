@@ -109,7 +109,11 @@ $ledgerAbs = if ([IO.Path]::IsPathRooted($LedgerPath)) { $LedgerPath } else { Jo
 Write-Host ''
 Write-Host ('  == 裸锚点实况（扫描根 ' + $ContractRoot + '，文件 ' + $files.Count + ' 个）==')
 Write-Host ('  锚点总数（含合规）= ' + $all.Count + ' ；裸锚点出现次数 = ' + $bare.Count + ' ；去重后（文件|锚点）= ' + $cur.Count + ' 行')
-$bare | Group-Object { $_.file } | Sort-Object Name | ForEach-Object { Write-Host ('    ' + $_.Name.PadRight(58) + $_.Count + ' 处') }
+$bareGroups = @($bare | Group-Object { $_.file } | Sort-Object Name)
+# 列宽按实际最长文件名现算（原来硬编码 58：`generation-artifact-manifest.v1.schema.json` 长 59 ⇒ 名字与计数粘连成 "…json1 处"，读数会被误读）
+$nameW = 58
+foreach ($g in $bareGroups) { if ($g.Name.Length -gt $nameW) { $nameW = $g.Name.Length } }
+foreach ($g in $bareGroups) { Write-Host ('    ' + $g.Name.PadRight($nameW + 2) + $g.Count + ' 处') }
 Write-Host ('  非 markdown 载体占比：' + (@($bare | Group-Object { [IO.Path]::GetExtension($_.file) } | ForEach-Object { $_.Name + '=' + $_.Count }) -join '  '))
 
 # ---------- 建/重建台账 ----------

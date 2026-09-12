@@ -14,7 +14,6 @@ import java.util.Set;
 public final class EventContract {
 
     public static final String SCHEMA_VERSION = "1.0";
-    public static final String SOURCE_SYSTEM = "mock-mall";
     /** 金额十进制字符串格式：^\d+(\.\d{1,2})?$ */
     public static final String AMOUNT_PATTERN = "^\\d+(\\.\\d{1,2})?$";
 

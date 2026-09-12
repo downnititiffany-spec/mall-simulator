@@ -1,6 +1,6 @@
 # contract-specs — 三程序共享的版本化机器可读契约
 
-状态：**部分冻结**（`specs/surrogate-key.v1.json` 为 `DRAFT`，**尚无任何实现读取**；见 §4 目录表与 §10 指纹表）——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.0.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），`1.3.0 → 2.0.0` 对应 `specs/warehouse-namespace.v2.json` 的**破坏性变更**（取值来源由 `runtime_profile.hive_database_prefix` 迁至源级 `source_registry.warehouse_prefix`；规则本体与 22 向量与 v1 逐字段等价，v1 保留为历史冻结件），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
+状态：**部分冻结**（`specs/surrogate-key.v1.json` 为 `DRAFT`，**尚无任何实现读取**；见 §4 目录表与 §10 指纹表）——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.2.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），`1.3.0 → 2.0.0` 对应 `specs/warehouse-namespace.v2.json` 的**破坏性变更**（取值来源由 `runtime_profile.hive_database_prefix` 迁至源级 `source_registry.warehouse_prefix`；规则本体与 22 向量与 v1 逐字段等价，v1 保留为历史冻结件），`2.1.0 → 2.2.0` 对应 CT 批次（`canonical-event.v1` 的加法变更：`order_created.items` 加性接受字符串形态；`source_system` **去掉** `const` 属放宽兼容性 ⇒ 仍按加法处理。见 §14），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
 
 ## 1. 目的与边界
 
@@ -40,9 +40,20 @@
 ## 3. 规则
 
 - **版本号**：沿用 `event-contract.md` L4 的自身规则——新增字段 → `schema_version` 升 `1.1` 起；破坏性变更 → 新主版本并增加转换器。文件名中的 `v1` 表示主版本，仅在破坏性变更时新增文件（如 `canonical-event.v2.schema.json`），**不原地改语义**。目录级版本见 [`VERSION`](VERSION)：**加法变更 → minor 递增**（`1.0.0 → 1.1.0 → 1.2.0 …`）；破坏性变更 → major 递增（`2.0.0`）并新建 `v2` 文件。（原句写作"加法变更 → `1.1.0`"，那是目录还在 `1.0.0` 时的写法；`D-037` 裁决 7 明确为语义化递增，避免第二次加法无号可升。）
-- **禁止跨程序 Java 依赖**：三个程序不得互相 import Java 实体、Mapper、Service 或 Maven 业务依赖（§3.1 L64、§3.4 L96-L97）。本目录只交换 JSON Schema / OpenAPI / 清单 Schema 这类语言无关产物。当前仓库里 `analytics-server` 与 `mall-simulator` 各有一份 `EventContract.java` 常量副本，就是本目录要消除的耦合形态（两侧常量值经核对一致：`SCHEMA_VERSION="1.0"`、`SOURCE_SYSTEM="mock-mall"`、金额正则相同）。
+- **禁止跨程序 Java 依赖**：三个程序不得互相 import Java 实体、Mapper、Service 或 Maven 业务依赖（§3.1 L64、§3.4 L96-L97）。本目录只交换 JSON Schema / OpenAPI / 清单 Schema 这类语言无关产物。当前仓库里 `analytics-server` 与 `mall-simulator` 各有一份 `EventContract.java` 常量副本，就是本目录要消除的耦合形态；其中 `analytics-server` 侧那份的 `SOURCE_SYSTEM` 常量已随 CT 批次（`D-064 ①`，2026-09-12）**退休**（常量行已删），故现存同名副本只剩 `mall-simulator` 侧 `EventContract.java` 与生成器 `ContractFormat.SOURCE_SYSTEM`——后两者是否退休属 `D-064 ②③`／`B-06`，**本轮未决、本批一字未改**（历史陈述「两侧常量值经核对一致：`SCHEMA_VERSION="1.0"`、`SOURCE_SYSTEM="mock-mall"`、金额正则相同」作为 CT 批次前的归档结论保留于本节「批次补记」）。
+
+  > **批次补记（2026-09-12 CT 批次 `D-061`…`D-065`）**：本 bullet 的历史原句为——「当前仓库里 `analytics-server` 与 `mall-simulator` 各有一份 `EventContract.java` 常量副本，就是本目录要消除的耦合形态（两侧常量值经核对一致：`SCHEMA_VERSION="1.0"`、`SOURCE_SYSTEM="mock-mall"`、金额正则相同）。」
+  > 该结论在 CT-1 落地后**部分失效**：平台侧 `EventContract.SOURCE_SYSTEM` 已按 `D-064 ①` 退休，故「两侧同值」不再成立（对账测试中的「两侧常量一致」断言也就地改为**结构守卫**：`source_system` 不得含 `const`）。原句照上保留、不删，改动缘由见 [`RULINGS.md`](../docs/acceptance/ct-batch-20260912/RULINGS.md)（`D-061`／`D-064`）与本节 §14。
 - **每个程序校验自己的输出**，不依赖别的程序替它校验：生成器校验自己写的 JSONL 与清单；商城校验自己写的 outbox 事件；平台校验自己读入的事件与自己写出的采集清单。校验器实现由各程序自带，本目录只提供 schema。
 - **不得静默放宽**：本目录 schema 中任何未获来源明确授权的地方都以 `"x-unspecified": true`、`x-*` 注解或 `description: "指导书未确定，待契约任务冻结"` 显式标注；不得用「反正宽松点也能过」的方式偷偷放宽枚举、必填或正则。
+
+### 3.5 锚点书写规则（`D-065`，2026-09-12 CT 批次新增）
+
+- **规则**：本目录与 `docs/contracts/**` 内引用指导书章节时，锚点**必须带文件名或版本前缀**（如 `docs/contracts/event-contract.md §2.4 L77`、`V2.3 §4.1 L139`），**不得**只写 `§x.y Lzzz`——裸行号在指导书迭代后会指向错误段落。
+- **门禁**：`scripts/check-bare-anchors.ps1`（判据 = `contract-specs/**` 内检出的裸锚点集合 **⊆** `scripts/contract-bare-anchors.allowlist.txt`），脚本内含**正向对照**（一条带文件名的锚点必须**不**计入）。
+- **在册负债**：台账 `scripts/contract-bare-anchors.allowlist.txt` 共 **113 行 / 201 处**裸锚点，**只减不增**；`README.md` §11 勘误表（`F-29`）的审计口径是 **258 处**（扫码范围更宽，且含刻意保留的旧锚点原文）。**两数不同，不得互相印证**；本批只登记，不清理。
+- **本批实际处置（单一实例）**：`contract-specs/schemas/canonical-event.v1.schema.json` 里**指向指导书 §2.4 的 2 处裸锚点**（同在 `items` 容器那一行描述里，逐处明细见 §14.1 第 5 行）补全为带文件名前缀的写法（形如 `docs/contracts/event-contract.md §2.4 L77`，**行号一字未改**；逐处明细见 §14.1 第 5 行）。**守卫实测（改后）**：裸锚点 **199 处 / 112 行**（台账 `113 行`）——台账仍余 2 条待收敛（1 条整行可删、1 条出现次数实测 1 < 台账 2）；收敛须在看板登记后跑 `-WriteLedger`，本批**未做**。其余裸锚点本批**不动**（专项 M1-5-R，时点 = P3-04 同批或之前）。
+- **本细则不声称**：锚点「指对了地方」（只补文件名，未核语义）；非 markdown 载体的同款裸锚点已普查。
 
 ## 4. 制品清单
 
@@ -55,7 +66,7 @@
 | [`specs/warehouse-namespace.v1.json`](specs/warehouse-namespace.v1.json) | 两个消费方共享：`spark-jobs`（Scala）、`analytics-server`（Java）；两侧各自持有**薄适配器**，规则本体只在本规格 | Java：`WarehouseNamespaceContractTest`（逐向量 + `errorCodes` 数量/取值）+ `WarehouseNameLiteralGateTest`（源码门禁：除唯一 owner 外无裸库名字面量）；Scala：`WarehouseNamespaceSpec`（62 用例） | **已被 v2 取代（历史冻结件，不改）** |
 | [`specs/warehouse-namespace.v2.json`](specs/warehouse-namespace.v2.json) | 同上（`supersedes: warehouse-namespace.v1.json`） | 同上 | **`FROZEN-2026-09-12`** |
 | [`specs/surrogate-key.v1.json`](specs/surrogate-key.v1.json) | `spark-jobs`（Scala，派生侧）＋ `analytics-server`（Java，源画像声明校验与展示）；两侧薄适配**待建** | 待建（Java/Scala 逐向量对账，模式沿用 warehouse-namespace） | **`DRAFT-2026-09-12`**（无实现读取；不得声称已验证） |
-| [`VERSION`](VERSION) | 总控 | — | `2.1.0` |
+| [`VERSION`](VERSION) | 总控 | — | `2.2.0` |
 
 **为什么其余四个制品仍是 `DRAFT`（诚实说明）**：这些文件是 M1-5 新建立的投影，尚未经过两条冻结门槛——(1) 结构对账测试 `analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java` 转绿；(2) 总控（热点 Owner）审阅并处置第 7 节的待决策项。**只有两者都完成，才允许把状态改为 `FROZEN`。** 当前 `canonical-event.v1` 的字段集/枚举/常量/金额正则已按该测试的断言逐条对齐（本案建立时用 PowerShell 逐条模拟断言核对，见第 8 节；M1-5 范围内不允许运行 Maven，故未执行该测试本身）；且 Q6（采集层接受的 51 行里约 25 行按契约属脏数据）未决 ⇒ `canonical-event.v1` **不得**冻结。
 
@@ -68,7 +79,7 @@
 - **根对象 = 恰好 8 个信封字段**（§1 L11-L20）：`event_id`、`event_type`、`event_time`、`ingest_time`、`source_system`、`schema_version`、`trace_id`、`payload`；`required` 为同样 8 个（§1 L28「缺失必需字段视为脏数据」）。信封上不新增任何字段——包括生成器的 `synthetic` 标记（信封放不下，见第 7 节 Q3）。
 - **信封允许多出未知字段**（`additionalProperties: true`，标 `x-unspecified`）：依据 `event-contract.md` §1 L28「多出的未知字段不阻止消费（向后兼容）」的兼容性原则与 `EventEnvelope.java:18` 的 `@JsonIgnoreProperties(ignoreUnknown = true)`；该句字面只覆盖 payload，故显式登记为待冻结项（Q1）。
 - **`payload` 允许多出未知字段**：§1 L28 明确允许。
-- **`source_system` 取 `const: "mock-mall"`**：§1 L16「固定值：mock-mall」，且 `EventContract.SOURCE_SYSTEM` 两侧实现同值，`CanonicalEventSchemaParityTest` 也要求 `const`。§3.3 B 的 `synthetic=true` 与它的关系未定（Q3）。
+- **`source_system` 只受形状约束（`type: string` ＋ `minLength: 1`），不取 `const`／`enum`／`pattern`**（`D-061`，2026-09-12 CT 批次）：取值 = 该事件所属源的 `source_registry.source_code`，**值域非契约所有**——命名规则的单一所有者是 `source_registry` 侧校验（`D-035`）。原句「§1 L16『固定值：mock-mall』，且 `EventContract.SOURCE_SYSTEM` 两侧实现同值，`CanonicalEventSchemaParityTest` 也要求 `const`」是 **CT 批次前的历史陈述，原文保留**；其中平台侧常量 `EventContract.SOURCE_SYSTEM` 已按 `D-064 ①` 退休（行已删），对账测试已改为「形状守卫 ＋ `schema_version` 仍锁 `const`」的正向对照。§3.3 B 的 `synthetic=true` 与它的关系未定（Q3）。
 - **`schema_version` 取 `const: "1.0"`**：§1 L17 + `EventContract.SCHEMA_VERSION`。
 - **`event_type` 枚举 12 类**：§3 L152-L160。
 - **金额类字段**统一 `$ref` 到 `$defs.amount`（`type: string` + 正则 `^\d+(\.\d{1,2})?$`）：§1 L26「金额一律十进制字符串（保持精度，禁止 double 序列化）」+ §4 L168 的字段清单与正则原文。
@@ -265,3 +276,53 @@
 
 - 自检：`VERSION` 与 v2 指纹均为**本轮现算值**；本文件哈希按 §10 口径**不登记自身**（`Get-FileHash contract-specs/README.md -Algorithm SHA256`，与该次提交比对）；v1 指纹现算相符（13.2 末条）。
 - **未取证**：本轮**未运行**任何 Maven/测试（Java/Scala 侧仍加载 v1 ⇒ 运行它们不能证明 v2 侧行为）；v2 的 `rule` 未被任何实现读取过；`source_registry.warehouse_prefix` 列、V18 迁移、源级校验与 `forSource` 解析**均尚未实现**（属 P2-07 实施泳道，见 `docs/acceptance/p2-07-source-prefix-20260912/RULINGS-20260912.md`）。**不得**据本节声称"源级命名空间已生效"。
+## 14. CT 批次（`D-061`…`D-065`）落地：当前态版本串 `2.1.0` → `2.2.0`（2026-09-12）
+
+**为什么有本节**：§11 是 M1-5 收口同步（`1.2.0 → 1.3.0`），§12 是 CT-0 勘误，§13 是 P2-07（`→ 2.0.0`）。本轮 CT 批次把三条裁决落到契约上：`source_system` 去 `const`（`D-061`）、`event_id` 去重语义改源命名空间内（`D-062`）、`order_created.items` 加性接受字符串形态（`D-063`），并退休平台侧常量（`D-064`）、登记锚点规则（`D-065`）。三者**均为加法**（`source_system` 去 `const` 是放宽兼容性，不是破坏性变更）⇒ 目录级版本按 §3 规则 minor 递增到 **`2.2.0`**。
+
+### 14.1 逐项改动
+
+| # | 位置 | 改动 |
+|---|---|---|
+| 1 | `VERSION` | `contract-specs 2.1.0` → `contract-specs 2.2.0`（raw `5D349AFBF593CF7FFDF5E0BDEEA4CDE5CCB96D8E0397449CA9DF501F7A4AF320`） |
+| 2 | `schemas/canonical-event.v1.schema.json` | ① `properties.event_id.description` 首句：去重键改 `(source_instance_id, event_id)`；② `properties.source_system`：`const: "mock-mall"` → `type: string` ＋ `minLength: 1`，`description` 改为形状约束声明（**刻意不加 `pattern`/`enum`**，`D-061`）；③ `$defs.order_created.properties.items`：`type: array` → `oneOf: [{array（原定义原文保留）}, {string}]`；④ `$defs.order_created.description` **追加**处置句 |
+| 3 | `docs/contracts/event-contract.md` | §1 L12 注释与 L16 注释改写；§4 L165 去重句改写（`event_id` → `(source_instance_id, event_id)`） |
+| 4 | 平台侧代码 | `platform-common/.../contracts/EventContract.java`：删除 `SOURCE_SYSTEM` 常量行（`D-064 ①`）；`CanonicalEventSchemaParityTest`：旧「两侧常量一致」断言改为「**结构守卫**：`source_system` 不得含 `const` ＋ 形状断言」，并以 `schema_version` 仍锁 `const` 作**正向对照**；`SourceRegistryMigrationScriptTest` 仅改 `.as(...)` 理由串，**断言本体 `.contains("'mock-mall'")` 一字未改** |
+| 5 | 本节 ＋ §3.5 | 新增锚点规则与在册负债登记（`D-065`）；`canonical-event.v1.schema.json` 里 `items` 那一行描述中的 **2 处**裸锚点补全文件名前缀（第一条锚点 → `docs/contracts/event-contract.md` ＋ 原行号；第二条（区间形态） → 同前缀，**行号均未改**）——属「补前缀」而非「新增锚点行」，且这 2 处补完后该行不再有裸锚点，故守卫去重行数**反降 1**（`113 → 112`）、出现次数 `201 → 199`；`items[]` 子对象描述里的 `docs/contracts/event-contract.md §2.4 L84-L90` **仍是裸写法（只加了文件名未动行号）、本批不动** |
+
+### 14.2 逐制品指纹（本节数值均为**本轮现算**，非转录）
+
+| 制品 | sha256 |
+|---|---|
+| `contract-specs/VERSION`（**当前值**，内容 `contract-specs 2.2.0`） | raw `5D349AFBF593CF7FFDF5E0BDEEA4CDE5CCB96D8E0397449CA9DF501F7A4AF320`（22 B）／LF-normalized `EB1755838292C33126D7B433CA859118EB4B1FDEEC1D07BB76B06702A2028940`（21 B，**与 §10 历史行同口径**） |
+| `schemas/canonical-event.v1.schema.json`（**当前值**） | raw `8A8F8A432678CBEF180D34E16E9922147A9F46A5483977760DA16C2756A9A384`（34,563 B）／LF-normalized `A70AF90110FBB5D36CA93F5C89C9E2E9D4C93A5F8C5973F7721D6464B2D7ADE5`（33,687 B） |
+| `docs/contracts/event-contract.md`（**当前值**） | raw `0BD7919DD5155B94C0EF91B558C721605991CB6AFA82D7214ED642DAB78458B6`（7,607 B）／LF-normalized `7F4A6E45FF5E68698AC96C1AF44F046F0045B5A19E0D75E4B3CFBE3B425B384E`（7,439 B） |
+| `contract-specs` 目录内其余制品（`ingestion-manifest.v1`、`generation-artifact-manifest.v1`、`openapi/generator-api.v1.yaml`、`specs/surrogate-key.v1.json`、`specs/warehouse-namespace.v1.json`、`specs/warehouse-namespace.v2.json`） | **本批一字未改**（`warehouse-namespace.v1.json` 现算仍为 `463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A`，与 §10 登记值相符） |
+
+**口径说明（本节两列并存的原因）**：本仓工作区全部制品为 `CRLF`，而 §10 历史登记值是**去 `CR` 后的 `LF` 规范化字节**——已用两条独立对照证实：
+`VERSION` 的 `LF` 形态现算 `9784177F34E4B4A248F7D3840D73E294C35EE46ADCB76F429CAA87D4D8E0E30D`（21 B），与 §10 登记值**逐字符相同**；`specs/warehouse-namespace.v1.json` 的 `LF` 形态现算 `463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A`，与 §10 登记值**逐字符相同**（该文件本批**一字未改**，`git status` 为空）。故 §10 的「21 B」与本节测得的「22 B」是**两个口径**，不是改动，历史行原文保留不改。
+
+`VERSION` 变更前为 `contract-specs 2.1.0`（raw 22 B，sha256 `605679A0B8BE10CDA8D1F60045C524145AAD1AA388766AF01ECD8ADEBA559798`；LF 21 B，`9784177F34E4B4A248F7D3840D73E294C35EE46ADCB76F429CAA87D4D8E0E30D` ＝ §10 登记值）。
+
+### 14.3 刻意保留（不改）
+
+- §10 全部历史指纹行、§11 的 `1.2.0 → 1.3.0` 同步表、§12 的 CT-0 勘误全节、§13 的 P2-07 全节与 `1.3.0 → 2.0.0` 沿革；
+- §5 建模决定里 `source_system` 那条**决策句已随 `D-061` 改写为当前态**（`const` → 形状约束；补丁为**同行 `-`/`+` 整句替换**，**不是**「原句保留 ＋ 追加标注」——原措辞易被读成后者，故按 diff 事实更正）。逐字原句与日期补记一并落在本 §14.3 引文块内，**历史陈述不因改写而丢失**：
+  > 原句（源文件 `docs/contracts/event-contract.md`，`2.1.0` 期，2026-09-12 前）：「- **`source_system` 取 `const: "mock-mall"`**：§1 L16「固定值：mock-mall」，且 `EventContract.SOURCE_SYSTEM` 两侧实现同值，`CanonicalEventSchemaParityTest` 也要求 `const`。§3.3 B 的 `synthetic=true` 与它的关系未定（Q3）。」
+  > 处置（2026-09-12 CT 批次）：`const` 与「parity 测试要求 `const`」双双反转（`D-061`）；平台侧常量退休（`D-064 ①`）。现文见 §5 对应 bullet。
+- `schemas/canonical-event.v1.schema.json` 与 `docs/contracts/event-contract.md` 中「固定值：mock-mall」「按 `event_id` 去重」这类**历史冲突陈述亦为就地改写**（同样不是「原句保留 ＋ 追加标注」）；本批改后的当前态表述见 §14.1 逐项表；
+- 四个 `DRAFT` 制品的状态与内容；`specs/**`、`openapi/**`、`schemas/ingestion-manifest.v1.schema.json`、`schemas/generation-artifact-manifest.v1.schema.json`。
+
+### 14.4 未取证／不得声称
+
+- 本批次**未**执行 T2 重跑（55 条黄金链端到端，= M1-11，排在本批之后）；`canonical-event.v1` 仍为 **`DRAFT`**——§4 的两条冻结门槛中，门槛 (1) 结构对账测试本轮已跑绿，门槛 (2) Q6 处置仍未决。
+- `spark-jobs/**`、`tests/golden-dataset/**`、`mall-simulator/**` 与生成器 `ContractFormat.SOURCE_SYSTEM` **本批一字未改**；`D-064 ②③`（商城/生成器侧同名常量）与 `B-06` 仍未决。
+- 字符串形态 `items` 的**解析归一**尚未实现（属 DWD，P2-04/P2-05）；本轮只把「契约接受」落成文字与 schema 分支。
+- **E1-a 是子集口径、`platform-app` 不在本批测试面内**：本批 E1-a 跑的模块集是 `platform-common,connection-ingestion`（`41 + 156 = 197` 条全绿）。总控在主检出按 **PLAN §3 的字面命令**（含 `-am`）跑出的**改动前**基线为 **7 个反应堆模块（6 个有测试）／合计 537 tests／1 failure／BUILD FAILURE**，唯一红点是**既有**的 `IngestionManifestSourceSchemaTest.allOnDiskManifestsStillValidate:168`（断言原文 `Expecting empty but was: ["40.json"]`，`landing/manifests/40.json` 被回填，`landing/**` 属 gitignore 面，与 CT 无关）。⇒ ①PLAN §3 的字面判据「`Failures: 0` ＋ BUILD SUCCESS」**在主检出动工前即不成立**；②本批 197/0 只是该字面命令的**真子集**（差 `warehouse-pipeline`/`metric-analysis`/`ai-decision`/`platform-app` 共 340 条），**不得**被读成「PLAN 门禁已过」；③`platform-app` 另有 Windows 偶发项 `LocalProcessSparkSubmitterProcessTest`（`Failed to delete temp directory`），本批未纳入测试面。
+
+### 14.5 本批附带的一处**超 PLAN 范围**改动（单列，供总控判收）
+
+`scripts/check-bare-anchors.ps1` L112 的裸锚点实况表用硬编码列宽 `PadRight(58)` 排版，而最长文件名 `generation-artifact-manifest.v1.schema.json` 长 **59** ⇒ 该行输出成 `…schema.json1 处`，**文件名与计数粘连**，守卫读数会被误读成"1 处"归属不明。本批把它改为**按实际最长文件名现算列宽**（`PadRight($nameW + 2)`）：纯排版，**不改任何计数逻辑与门禁判据**，改后守卫仍 `PASS`，实测裸锚点 `199 处 / 112 行`（修前修后同一读数）。
+
+- 为什么必须单列：PLAN §2.5 只要求"补文件名前缀"，没要求改守卫；这一处改动**超出了 PLAN 授权范围**，故在 README 与批报告里都显式登记，不自评"顺带修好"。
+- 未做：台账 `scripts/contract-bare-anchors.allowlist.txt` **一行未改**（D-065 裁决"只减不增"，且删减须先在看板登记，而看板 `docs/项目实施进度与任务看板 V2.2.md` 属总控面）。守卫提示的 2 条待收敛（1 行可删 ＋ 1 处次数下降）如实保留为**在册负债**。
