@@ -111,11 +111,15 @@ object SurrogateKeyVectorSupport {
    *
    * 判空与取值**必须是同一个表达式**，否则 V13(空串)/V14(仅空白) 会算出一个真实键
    * ——实测首轮正是如此（SQL 侧得 `1`，契约要 NULL）。
+   *
+   * **P2-03-m 同步**：NULL 分支与生产 {@link SurrogateKey.nullSafe} 保持**同一形态**
+   * （`CAST(NULL AS BIGINT)`，不是裸 `NULL`）。夹具若停留在裸 `NULL`，本夹具推断出 STRING、
+   * 生产侧却已定型 BIGINT，二者就不再是同一个表达式——正是本夹具注释所警告的漂移。
    */
   def keyExprTestFixture(sourceExpr: String, entity: String, rawIdExpr: String): String =
     s"""CASE WHEN trim(cast($rawIdExpr AS STRING)) IS NULL
        |          OR trim(cast($rawIdExpr AS STRING)) = ''
-       |     THEN NULL ELSE ${SurrogateKey.keyFormula(sourceExpr, entity, rawIdExpr)} END""".stripMargin
+       |     THEN CAST(NULL AS BIGINT) ELSE ${SurrogateKey.keyFormula(sourceExpr, entity, rawIdExpr)} END""".stripMargin
 
   /**
    * 一条契约向量。

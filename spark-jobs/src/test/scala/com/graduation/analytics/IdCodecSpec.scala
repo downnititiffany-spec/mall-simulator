@@ -95,7 +95,8 @@ class IdCodecSpec extends AnyFlatSpec with Matchers {
     // 为什么是 7 而不是「旧 3 + 新 2 = 5」：新键表达式**不是**只引用一次原始 id——
     // D-087 要求「空/缺 ⇒ NULL 键」，故键列表表达式形如
     //   `CASE WHEN <src> IS NULL OR trim(<raw>) IS NULL OR trim(<raw>) = ''
-    //         THEN NULL ELSE GREATEST(cast(conv(… <raw> …) AS BIGINT), 1) END`
+    //         THEN CAST(NULL AS BIGINT) ELSE GREATEST(cast(conv(… <raw> …) AS BIGINT), 1) END`
+    // （NULL 分支为**显式定型** `CAST(NULL AS BIGINT)`；P2-03-m 后与生产 `nullSafe` 同形态）
     // 其中 `<raw>` 出现 **1** 次（取值段）+ **2** 次（两条判空）= **3** 次；
     // 旧列 2 次（`user_id` 表达式 + JOIN 谓词）+ `IS NOT NULL` 过滤 1 次 = 3 次 ⇒ 3+3+1=7。
     //
@@ -134,6 +135,29 @@ class IdCodecSpec extends AnyFlatSpec with Matchers {
     order should include("user_key")
     order should include("product_key")
     order should include("category_key")
+
+    // P2-03-m2 实测缺陷回归守卫：INSERT 不写列名 ⇒ 与 DDL 全靠**位置**对齐。
+    //   `INSERT OVERWRITE TABLE … PARTITION (dt)` 未给分区值时，Spark 仍要求 SELECT 提供该分区列，
+    //   且它**必须落在最后一列**。早先把 `t.dt` 放在 `final_refunded_flag` 之后，整体右移一位，
+    //   使 STRING 的 `t.dt` 落到 `user_key`(BIGINT) ⇒ CANNOT_SAFELY_CAST（run 44/45/46 实测）。
+    //   口径：只写 `include("t.dt")` **抓不到错位**（旧断言正是这样漏掉本缺陷的），
+    //   必须比**先后次序**。先去掉跨行续行符与行尾注释（注释含中文，正则里不碰）。
+    val flat = order.linesIterator
+      .map(l => l.replaceAll("--.*$", ""))
+      .mkString(" ")
+      .replaceAll("\\s+", " ")
+    def pos(marker: String): Int = {
+      val i = flat.indexOf(marker)
+      withClue(s"未在落表 SQL 中找到 $marker；实际 SQL=$flat；") { i should be >= 0 }
+      i
+    }
+    // 三个代理键必须按 DDL 列序出现，且静态分区列 t.dt 必须排在它们**之后**（= SELECT 末位）
+    pos("user_key") should be < pos("product_key")
+    pos("product_key") should be < pos("category_key")
+    pos("category_key") should be < pos("t.dt")
+    // 且 t.dt 之后除 FROM/JOIN 外不得再有取值项（末位性）：断言最后一个 SELECT 取值就是 t.dt
+    flat.indexOf("FROM tdw_tmp") should be > pos("t.dt")
+    flat.substring(pos("t.dt"), flat.indexOf("FROM tdw_tmp")).trim shouldBe "t.dt"
   }
 
   it should "ODS 载入层保留字符串原文（不在 ODS 提前转型）" in {

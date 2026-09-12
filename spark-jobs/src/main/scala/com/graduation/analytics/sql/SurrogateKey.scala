@@ -152,13 +152,30 @@ object SurrogateKey {
    * 故 guard 一律是**完整布尔谓词**（`x IS NULL`、`trim(x) = ''`…），本方法只负责用
    * `OR` 连接。谓词由调用方经 {@link blankGuard} 等构造，判据只有一份定义。
    *
-   * @param expr   被包装的取值表达式
+   * **实测缺陷 3 / P2-03-m（M3 步骤 8 实测，run 44/45 阻断）**：早先 NULL 分支写成**裸 `NULL`
+   * 字面量**。Spark 把裸 `NULL` 解析为 **`NullType`**，`CASE` 的分支类型统一在 `NullType`
+   * 与 `expr` 的类型之间做**放宽**，结果整个 `CASE` 被推断为 **`STRING`**——于是 `*_key`
+   * 表达式是 STRING，写进 `BIGINT` 列时被 Spark 3.5 的**安全转换**直接拒绝：
+   *   `[INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] Cannot write incompatible data for the
+   *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`
+   * 对照实测：run 43（旧 jar）`tdw` SUCCESS @17:37:56 ↔ run 44（新 jar 296,327 B）`BUILD_DWD` FAILED，
+   * 变量只有 jar（详见 `docs/acceptance/m3-step8-parity-20260912/raw/post/p2-03-regression-evidence.txt`）。
+   *
+   * 修法 = **显式定型空值**：`CAST(NULL AS BIGINT)`。本方法**只**服务代理键——两个调用点
+   * ({@link toBIGINT} / {@link literalSource}) 的 `expr` 都断言是 `BIGINT`（{@link keyFormula}
+   * 出口即 `GREATEST(cast(… AS BIGINT), …)`），故类型常量 `BIGINT` 在此**不是**假设而是同族不变量；
+   * 若将来出现非 BIGINT 的调用点，须改为由调用方传类型，而不是把本行改回裸 `NULL`。
+   *
+   * **语义未变**：`CAST(NULL AS BIGINT)` 与裸 `NULL` 在 SQL 里**同为 NULL**，
+   * D-087 的「空/缺 ⇒ NULL 键、行保留」语义与 D-116 枚举护栏都不动；变的只是**静态类型**。
+   *
+   * @param expr   被包装的取值表达式（**必须**是 `BIGINT`）
    * @param guards 完整布尔谓词（**谓词**，不是裸表达式；例如 `x IS NULL`）
    */
   def nullSafe(expr: String, guards: String*): String = {
     require(guards.nonEmpty, "nullSafe 至少需要一个 guard（无 guard 时不该调用 nullSafe）")
     val cond = guards.mkString(" OR ")
-    s"CASE WHEN $cond THEN NULL ELSE $expr END"
+    s"CASE WHEN $cond THEN CAST(NULL AS BIGINT) ELSE $expr END"
   }
 
   /**

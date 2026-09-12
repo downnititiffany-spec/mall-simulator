@@ -124,6 +124,28 @@ object TradeDwdJob {
    * @param sourceSystem 本运行源编码（= `--sourceSystem` 注入的 `source_registry.source_code`，D-056）。
    *                     `tdw_tmp` 由 `TradeDwdJob.run` 在内存里拼出（`OUT_SCHEMA` 不含 `source_system`），
    *                     故源身份只能经**参数通道**进入本 SQL，而不是从临时视图读列。
+   *
+   * **实测缺陷（P2-03-m2，run 44/45/46 连续失败的真根因）**：本 SQL 的 INSERT **不写列名**，全靠与 DDL
+   * 的**位置**对齐，而 `INSERT OVERWRITE TABLE … PARTITION (dt)` 未给分区值（动态分区）时，Spark
+   * **仍把分区列当作一个需要由 SELECT 提供的列**——它必须落在 **SELECT 列表的最末位**。
+   * 错误的写法是把 `t.dt` 放在三个代理键**之前**（此处前面已有 19 个普通字段，`t.dt` 是**第 20 项**），
+   * 而 `ccc1dff`(P2-03) 新增的三个 `BIGINT` 代理键被追加在 `t.dt` **之后** ⇒ 整体右移一位：
+   * **STRING** 的 `t.dt` 落到第 20 个普通列 `user_key`(BIGINT)：
+   * 报错 `[INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] … Cannot safely cast user_key "STRING" to "BIGINT"`。
+   *
+   * 正确顺序：19 个数据字段 → `user_key` → `product_key` → `category_key` → `t.dt`（分区列在最末位）。
+   *
+   * **口径订正（2026-09-12，人裁定）**：旧表是「19 个普通列 ＋ 动态分区列 `dt`」、旧 SELECT 是
+   * 「19 个普通值 ＋ `t.dt`」，`t.dt` 正好是**第 20 项**、**位置正确** ⇒ **不存在**「旧版静默错位／
+   * run 43 静默写错值」，也**不得**用 run 43 与 run 47 的行数或分区数差异去论证数据损坏
+   * （两者输入批次不同）。此前本文件与调查报告中的「该错位在 P2-03 之前就已存在」「第 19 项」等
+   * 表述已按该裁定**撤回**。
+   *
+   * 一次性实验钉死（`raw/post/align-experiment-1-*.sql` / `-2-*.sql`，实验表 `dw_exp.t_align_bad`
+   * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：
+   *  - 实验 1：23 列同构表，`dt` 放第 19 项（STRING）⇒ 复现**逐字相同**的报错；
+   *  - 实验 2：同一 SELECT 仅把 `dt` 移到末尾 ⇒ 写入成功，读回 `user_key=111/product_key=222/
+   *    category_key=333/dt=20260901` 逐列落位正确。
    */
   def orderDetailInsertSql(ns: WarehouseNamespace, dimDt: String, sourceSystem: String): String = {
     val orderKey = IdCodec.toBIGINT("t.order_id")
@@ -148,10 +170,10 @@ object TradeDwdJob {
        |  CASE WHEN t.paid_at IS NULL THEN NULL ELSE TO_TIMESTAMP(t.paid_at) END AS paid_at,
        |  t.order_amount, t.paid_amount, t.refund_amount, t.net_paid_amount,
        |  t.final_paid_flag, t.final_refunded_flag,
-       |  t.dt,                                 -- 静态分区列（DDL 里在列尾，位置必须对齐）
        |  $userSurrogate AS user_key,
        |  $productSurrogate AS product_key,
-       |  p.category_key AS category_key
+       |  p.category_key AS category_key,
+       |  t.dt                                  -- 静态分区列**必须在最后一个位置**（见下）
        |FROM tdw_tmp t
        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
        |     THEN -1 ELSE $productKey END AND p.dt = '$dimDt'
