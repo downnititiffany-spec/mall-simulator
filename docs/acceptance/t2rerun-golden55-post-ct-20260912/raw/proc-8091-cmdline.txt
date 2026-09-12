@@ -1,0 +1,3 @@
+pid=59304
+CommandLine (raw):
+"D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar

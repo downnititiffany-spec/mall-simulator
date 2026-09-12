@@ -1,0 +1,164 @@
+R2-b 同输入对照判定（CT 是否破坏指标面）
+=====================================================================
+跑动时点：2026-09-12 17:41:25.982
+新快照  ：S20260901_43  (runId=43)   ← CT 后、输入 = 批 31 的 1000 行副本
+参照快照：S20260901_41          ← CT 前、run 41、输入 = 批 31
+判定库  ：analytics_metric（权威；F-82：analytics_meta 同名表是孤儿）
+预测文件：raw/predictions-control-run.txt（先落盘，未改写）
+
+---- CH1 库：指标逐值（SQL 退出码 0）----
+s
+=== CH1-a 新快照逐值 ===
+metric_code	metric_value	unit	period	definition_version
+avg_order_value	88.1600	元	day:2026-09-01	v1
+buy_rate	0.2000		day:2026-09-01	v1
+dau	10.0000	人	day:2026-09-01	v1
+full_refund_rate	0.0000		day:2026-09-01	v1
+gmv	88.1600	元	day:2026-09-01	v1
+net_sale	88.1600	元	day:2026-09-01	v1
+paid_order_cnt	1.0000	单	day:2026-09-01	v1
+pv	5.0000	次	day:2026-09-01	v1
+refund_rate	0.0000		day:2026-09-01	v2
+uv	5.0000	人	day:2026-09-01	v1
+s
+=== CH1-b 参照快照逐值 ===
+metric_code	metric_value	unit	period	definition_version
+avg_order_value	88.1600	元	day:2026-09-01	v1
+buy_rate	0.2000		day:2026-09-01	v1
+dau	10.0000	人	day:2026-09-01	v1
+full_refund_rate	0.0000		day:2026-09-01	v1
+gmv	88.1600	元	day:2026-09-01	v1
+net_sale	88.1600	元	day:2026-09-01	v1
+paid_order_cnt	1.0000	单	day:2026-09-01	v1
+pv	5.0000	次	day:2026-09-01	v1
+refund_rate	0.0000		day:2026-09-01	v2
+uv	5.0000	人	day:2026-09-01	v1
+s
+=== CH1-c 差集（五元组，必须 0 行）===
+s
+=== CH1-c2 差集的结构化判据（union 行数 / 去重元组数；两者相等 ⇔ 差集为空）===
+new_rows2	ref_rows2	union_rows	distinct_tuples	mut_union_rows	mut_distinct_tuples
+10	10	20	10	20	11
+s
+=== CH1-d 行数 ===
+new_rows	ref_rows
+10	10
+s
+=== CH1-e 正向对照：参照侧 pv+1 后差集（必须 >=1 行）===
+diff_rows_mut
+1
+1
+
+  new_rows=10 ref_rows=10
+  CH1-c2 结构化：new=10 ref=10 union=20 distinct=10
+  CH1-c2 正向对照：mut_union=20 mut_distinct=11（应不等，差 = 9 行）
+  ⇒ CH1-c2 判定：两快照五元组集合完全相同，差集 = 0 行 ✓
+  CH1 差集 diff_rows = （空结果集 ⇒ 0 行；原文该段无数据行）
+  CH1-e 正向对照 diff_rows（参照侧 pv+1）= 1
+---- CH2 库：8 张 ADS 镜像表按 snapshot_id 的 COUNT(*) ----
+（红线：只用 COUNT(*)；禁用 information_schema.table_rows；禁
+  ads_active_trend_m             新=1     参照=1     应然=1  
+  ads_behavior_funnel_m          新=4     参照=4     应然=4  
+  ads_data_quality_m             新=4     参照=4     应然=4  
+  ads_hot_product_m              新=9     参照=9     应然=9  
+  ads_operation_overview_m       新=1     参照=1     应然=1  
+  ads_product_conversion_m       新=9     参照=9     应然=9  
+  ads_sale_trend_m               新=1     参照=1     应然=1  
+  ads_user_profile_m             新=1     参照=1     应然=1  
+
+  新快照合计 = 30 行（应然 30）
+  参照合计   = 30 行（应然 30）
+
+---- CH3 导出：metric-staging\<快照>\_export.json ----
+  文件：D:\Develop_code\GraduationProject\metric-staging\S20260901_43\_export.json
+  mtime=2026-09-12 17:39:50.177  bytes=3648
+  顶层键：snapshotId, businessDate, dt, source, generatedAt, totalRows, tables
+  snapshotId=S20260901_43  source=spark-ads  generatedAt=09/12/2026 17:39:50
+  **totalRows（导出侧自述）= 30**（应然 30）
+  tables 条目数 = 8（应然 8）
+  逐表（导出侧声明）：
+    ads_active_trend_m             rowCount=1    hive=dw_ads.ads_active_trend
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_active_trend__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_active_trend_m.jsonl
+    ads_behavior_funnel_m          rowCount=4    hive=dw_ads.ads_behavior_funnel
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_behavior_funnel__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_behavior_funnel_m.jsonl
+    ads_data_quality_m             rowCount=4    hive=dw_ads.ads_data_quality
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_data_quality__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_data_quality_m.jsonl
+    ads_hot_product_m              rowCount=9    hive=dw_ads.ads_hot_product
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_hot_product__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_hot_product_m.jsonl
+    ads_operation_overview_m       rowCount=1    hive=dw_ads.ads_operation_overview
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_operation_overview__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_operation_overview_m.jsonl
+    ads_product_conversion_m       rowCount=9    hive=dw_ads.ads_product_conversion
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_product_conversion__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_product_conversion_m.jsonl
+    ads_sale_trend_m               rowCount=1    hive=dw_ads.ads_sale_trend
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_sale_trend__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_sale_trend_m.jsonl
+    ads_user_profile_m             rowCount=1    hive=dw_ads.ads_user_profile
+      hivePath: file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_user_profile__staging/snapshot_id=S20260901_43/dt=20260901
+      exportFile: D:/Develop_code/GraduationProject/metric-staging/S20260901_43/ads_user_profile_m.jsonl
+  库 vs 导出 交叉核对：
+    ads_active_trend_m             库=1     导出=1     一致 ✓
+    ads_behavior_funnel_m          库=4     导出=4     一致 ✓
+    ads_data_quality_m             库=4     导出=4     一致 ✓
+    ads_hot_product_m              库=9     导出=9     一致 ✓
+    ads_operation_overview_m       库=1     导出=1     一致 ✓
+    ads_product_conversion_m       库=9     导出=9     一致 ✓
+    ads_sale_trend_m               库=1     导出=1     一致 ✓
+    ads_user_profile_m             库=1     导出=1     一致 ✓
+  8 个 jsonl 行数：
+    ads_active_trend_m.jsonl              1 行  31 B
+    ads_behavior_funnel_m.jsonl           4 行  332 B
+    ads_data_quality_m.jsonl              4 行  476 B
+    ads_hot_product_m.jsonl               9 行  958 B
+    ads_operation_overview_m.jsonl        1 行  156 B
+    ads_product_conversion_m.jsonl        9 行  617 B
+    ads_sale_trend_m.jsonl                1 行  78 B
+    ads_user_profile_m.jsonl              1 行  231 B
+  jsonl 行数合计 = 30（应然 30）
+
+---- CH4 接口：GET /api/v1/metrics/overview ----
+  响应（压缩）：{"code":"OK","message":"success","data":[{"snapshotId":"S20260901_43","unit":"元","definitionVersion":"v1","value":88.16,"metricCode":"avg_order_value","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"","definitionVersion":"v1","value":0.2,"metricCode":"buy_rate","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"人","definitionVersion":"v1","value":10.0,"metricCode":"dau","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"","definitionVersion":"v1","value":0.0,"metricCode":"full_refund_rate","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"元","definitionVersion":"v1","value":88.16,"metricCode":"gmv","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"元","definitionVersion":"v1","value":88.16,"metricCode":"net_sale","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"单","definitionVersion":"v1","value":1.0,"metricCode":"paid_order_cnt","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"次","definitionVersion":"v1","value":5.0,"metricCode":"pv","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"","definitionVersion":"v2","value":0.0,"metricCode":"refund_rate","period":"day:2026-09-01"},{"snapshotId":"S20260901_43","unit":"人","definitionVersion":"v1","value":5.0,"metricCode":"uv","period":"day:2026-09-01"}],"traceId":"a129ee16-0274-452d-b5b6-e63e754327a8"}
+  指标条目数 = 10
+  逐条（接口侧）：
+    avg_order_value      value=88.16        unit=元    period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    buy_rate             value=0.2          unit=     period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    dau                  value=10           unit=人    period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    full_refund_rate     value=0            unit=     period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    gmv                  value=88.16        unit=元    period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    net_sale             value=88.16        unit=元    period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    paid_order_cnt       value=1            unit=单    period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    pv                   value=5            unit=次    period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+    refund_rate          value=0            unit=     period=day:2026-09-01     defver=v2 snapshotId=S20260901_43
+    uv                   value=5            unit=人    period=day:2026-09-01     defver=v1 snapshotId=S20260901_43
+  接口返回的 snapshotId 集合：S20260901_43（应为本对照快照 S20260901_43）
+  metricCode：avg_order_value,buy_rate,dau,full_refund_rate,gmv,net_sale,paid_order_cnt,pv,refund_rate,uv
+
+---- D3 采集读数（调用方传入，源自 raw/control-ingestion-response-*.txt）----
+  recordCount=1000  quarantineCount=0
+
+---- D6 输入同一性：WAIT_LANDING 证据 checksum 对照（内容级证据）----
+run_id	b	ck	ar
+41	31	89b82028	1000
+43	42	89b82028	1000
+  run41(CT 前,批31) checksum = 89b82028
+  run43(CT 后,批42) checksum = 89b82028
+  ⇒ **checksum 完全相同** ⇒ 输入同一性有**内容级**证据（不只是
+
+---- D4 run 阶段（analytics_meta.pipeline_stage_run）----
+mysql: [ERROR] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe: option '-e' requires an argument.
+  SUCCESS 阶段数 = 0（应然 8）
+
+  pipeline_run 行：
+id	status	target_snapshot_id	source_data_version	input_batch_id
+43	SUCCESS	S20260901_43	r2ctl-b31replay-post-ct-20260912-173418	NULL
+
+==== 断言小结 ====
+  FAIL: A3 失败：正向对照未命中（mut_distinct=11 未低于 10）⇒ 判据无鉴别力（F-38 ①）
+  FAIL: **D4 未命中**：SUCCESS 阶段数 = 0，期望 8
+
+**判定：不通过（见上）** —— 若为 D1/D2 未命中则属**真回归**，须立刻停并报父侧。

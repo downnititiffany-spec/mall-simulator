@@ -56,3 +56,25 @@ G5 落地区时点声明 —— **满足（记时点，非冻结窗口）**
 5. M1-11 的 `status()` 迁移序列 + 一次受控 `cancel()` 的 `Get-Process` 前后对照（E3-d）
 6. `scripts/check-bare-anchors.ps1` 实跑（集合 ⊆ 台账 ＋ 正向对照；台账只减不增，E3-e）
 7. 数仓跑前/跑后 parquet 文件数与字节（E3-f）、落地区跑前/跑后时点与文件数（E3-g）
+
+-----------------------------------------------------
+补记（2026-09-12 17:25，父侧；**只追加，不改上文**）
+
+一、HEAD 前进（不改 G1 判据）
+  G1 落笔时 HEAD = `095118a`；此后父侧提交 `f004960 docs(r2): 开工登记`（只加 3 个 docs 文件，
+  +112 行、0 源码、0 契约文件）⇒ 复核时 HEAD = `f004960`，`095118a` 是其祖先。
+  冻结件指纹与 CT 集成均未受影响，G1 结论不变。执行方 17:18 的独立复测（raw/gates-r2-rerun.txt）与此一致。
+
+二、口径更正：**F-82（孤儿表）**——本文件上文与父侧口述中的「metric_snapshot 9 行 / ACTIVE=1」语义有误
+  该读数取自 `analytics_meta.metric_snapshot`：它是 `db/meta/V2__platform_pipeline_quality.sql`
+  L81/L99 建、V7 L72-73 改的**遗留副本**，自 2026-09-07 19:33:50 起再无写入，其 `ACTIVE`
+  指向 `S20260907_11`（2026-09-07 的过期快照），**不是**运行期真正在用的快照。
+  运行期读路径（`application.yml` L15 publish / L19 read）都指向 **`analytics_metric`** ⇒ 权威源是它。
+  父侧 17:2x 独立复算（以此为准）：
+    analytics_metric.metric_snapshot  9 行，id 4–24（**不连续**），`S20260901_41` = ACTIVE / version 9，
+                                      `S20260901_38` = FAILED / version 7
+    analytics_metric.metric_value     80 行 = 8 个有值快照 × 10 指标（FAILED 的 `_38` **无**值）
+    analytics_meta.metric_snapshot    9 行，末次写入 2026-09-07 19:33:50.118（冻结副本，记为 F-82）
+  影响面：G1–G5 的判定**不因此改变**（G3 读的是 `analytics_meta.flyway_schema_history`，不是该孤儿表；
+  G1/G2/G4/G5 与指标库无关）。但**凡涉及「当前 ACTIVE 快照」的一切判据，一律以 `analytics_metric` 为准**。
+  不得据此声称「快照表坏了/发布失败/V18 建了孤儿表」——真指标库的 9 行、版本序列与 ACTIVE 均正常。

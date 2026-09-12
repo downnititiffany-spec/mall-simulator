@@ -1,0 +1,33 @@
+E3-h jar 指纹（G4；F-81 未修期间的人工旁证）
+=====================================================================
+记录时点：2026-09-12 17:21:45.892
+记录人  ：R2 执行方（一次性泳道）
+
+格式：<jar 路径>|<sha256 前 16>|<字节>|<mtime>
+
+跑前（旧制品，**不含 CT**；已停机弃用）
+D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar|49859A1CDB66AB47|33135969|2026-09-12 15:01:13
+  运行时身份：javaw pid 39220（15:06:01 启动）—— R2 于 17:20:34 停止
+
+跑后（本单真实链**实际使用**的制品，**含 CT 改动**）
+D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar|C099F307D80135E2|33135937|2026-09-12 17:21:07
+  完整 sha256 = C099F307D80135E2B657974F36D7AFB2CCA0F820A36A6EA9077D2A0ACBC8FDC6
+  运行时身份：java pid 59304（17:21:20.330 启动；Tomcat 17:21:26.188 监听 8091）
+  构建命令：$env:JAVA_HOME='D:\Develop\JAVA17'; D:\apache-maven-3.9.14\bin\mvn.cmd -o -f analytics-server\pom.xml package -pl platform-app -am -DskipTests
+  构建结果：BUILD SUCCESS，7 模块全 SUCCESS，23.817 s（17:20:42.773 → 17:21:07.703），MVN_EXIT=0
+  启动命令（配方取自 scripts\start-all.ps1 L47-48：**-D 必须在 -jar 之前**）：
+    java -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar <jar 绝对路径>
+    WorkingDirectory = D:\Develop_code\GraduationProject（landing/ spark-warehouse/ 均为相对检出根的路径）
+
+字节差：33135937 - 33135969 = -32 B（新制品略小）
+  说明：这与 CT 批次「source_system 去 const」的**方向一致**（删除字面量使 class 变小），
+  但**不得**当作「CT 已进 jar」的证明 —— 那需要解包比对 class；R2 未做（见 README §5 未实测清单）。
+
+=====================================================================
+**必须写明的未实测声明（ORDER-1 §6.1 / G4）**
+F-81 未修 ⇒ **库内无从证明**是哪个 jar 发布了本单的快照：
+  nalytics_meta.metric_snapshot / nalytics_metric.metric_snapshot 均**无** jar/version/build 指纹列
+  （实测列清单见 raw/state-pre-20260912-172011.txt §4：只有 runtime_profile_id / runtime_profile_version /
+   status / version / published_at / source / created_at，**没有任何制品身份字段**）。
+⇒ 本指纹（C099F307D80135E2）只是**人工旁证**，**不等于环境档案**；
+  它证明的是「17:21:20 起在 8091 上跑的是这个字节序列的 jar」，**不能**由库内数据反查。

@@ -1,0 +1,47 @@
+E3-b 指标逐值判定（SQL 自连接差集）
+=====================================================================
+跑动时点：2026-09-12 17:29:40.663
+目标快照：S20260901_42   （runId=42）
+参照快照：S20260901_41
+基线文件：D:\Develop_code\GraduationProject\docs\acceptance\p1-baseline-r39-20260911\baseline.json
+判定库  ：analytics_metric（权威指标库；见 F-82：analytics_meta 下的同名表是孤儿）
+
+---- 基线 JSON 读数 ----
+  snapshotId=S20260901_39  version=8  status=ACTIVE
+  values 行数=10  valueCount字段=10
+  metricCode 集合（排序）：avg_order_value,buy_rate,dau,full_refund_rate,gmv,net_sale,paid_order_cnt,pv,refund_rate,uv
+
+---- SQL 原样输出（退出码 1）----
+section
+ERROR 1146 (42S02) at line 8: Table 'analytics_metric._base' doesn't exist
+=== C0 目标快照逐值 dump ===
+metric_code	metric_value	unit	period	definition_version
+avg_order_value	408.4000	元	day:2026-09-01	v1
+buy_rate	1.0000		day:2026-09-01	v1
+dau	3.0000	人	day:2026-09-01	v1
+full_refund_rate	0.2000		day:2026-09-01	v1
+gmv	2042.0000	元	day:2026-09-01	v1
+net_sale	1493.0000	元	day:2026-09-01	v1
+paid_order_cnt	5.0000	单	day:2026-09-01	v1
+pv	7.0000	次	day:2026-09-01	v1
+refund_rate	0.6000		day:2026-09-01	v2
+uv	3.0000	人	day:2026-09-01	v1
+section
+=== C0b 参照快照逐值 dump ===
+metric_code	metric_value	unit	period	definition_version
+avg_order_value	88.1600	元	day:2026-09-01	v1
+buy_rate	0.2000		day:2026-09-01	v1
+dau	10.0000	人	day:2026-09-01	v1
+full_refund_rate	0.0000		day:2026-09-01	v1
+gmv	88.1600	元	day:2026-09-01	v1
+net_sale	88.1600	元	day:2026-09-01	v1
+paid_order_cnt	1.0000	单	day:2026-09-01	v1
+pv	5.0000	次	day:2026-09-01	v1
+refund_rate	0.0000		day:2026-09-01	v2
+uv	5.0000	人	day:2026-09-01	v1
+section
+=== C2 行数核对 ===
+
+
+---- 断言小结 ----
+  FAIL: SQL 执行失败：退出码 1

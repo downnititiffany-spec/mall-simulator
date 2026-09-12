@@ -1,0 +1,3 @@
+HTTP 200
+BODY_REQ={"runtimeProfileId":1,"pipelineCode":"ODS_TO_ADS","sourceDataVersion":"r2ctl-b31replay-post-ct-20260912-173418","businessTime":"2026-09-01T00:00:00"}
+{"code":"OK","message":"success","data":{"runId":43,"idempotencyKey":"1|ODS_TO_ADS|2026-09-01T00:00|r2ctl-b31replay-post-ct-20260912-173418","status":"PENDING","currentStage":"PENDING","errorCode":null,"attemptNo":1,"targetSnapshotId":null,"stages":[]},"traceId":"43ef5998-4710-4452-ab47-8dddb856f76e"}

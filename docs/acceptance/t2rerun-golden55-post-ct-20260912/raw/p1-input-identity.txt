@@ -1,0 +1,38 @@
+P1 采集输入核对：被采集的 55 行 golden 文件
+=====================================================================
+核对时点：2026-09-12 17:22:15.789
+
+夹具源文件（**只读，属禁改面 tests/golden-dataset/**）：
+  tests\golden-dataset\events\golden-20260901.jsonl
+    bytes   = 18430
+    sha256  = 2351BCC35E04CCD278638F07247BC37E9C4D402CC4736CD2A4D4B70F4232B11C
+    行数    = 55 行（LF=55，CR=0 ⇒ 无 $r 字节，纯 LF）
+
+已采集过的同内容副本（landing\events 内，**已有 checkpoint**）：
+  landing\events\r9-m1-123006.jsonl
+    bytes   = 18430
+    sha256  = 2351BCC35E04CCD278638F07247BC37E9C4D402CC4736CD2A4D4B70F4232B11C
+
+逐字节比对：byte-identical = True
+  ⇒ 与施工单提示一致（「与 landing/events/r9-m1-123006.jsonl 逐字节相同」）。
+  ⇒ 该内容此前已被采集（file_checkpoint 105 行含该绝对路径）
+     ⇒ **直接再跑采集会 noNewData=true**（LocalFileIngestor：checkpoint 键 =
+        runtime_profile_id + source_id + file_path(绝对路径) + file_identity，
+        identity 相同且 size >= nextOffset ⇒ 判定无新数据）。
+
+P1 采用的做法（ORDER-1 §3 P1 提示）：
+  把该 55 行内容**以新文件名**复制进扫描目录 —— 只增、不改、不删任何既有文件。
+
+扫描目录的**实测**确认（不是推断）：
+  配置链：analytics_meta.runtime_profile#1.landing_uri = 'file://./landing'
+          （原始行见 raw/state-pre-20260912-172011.txt §3 前的只读查询）
+  解析器：LandingUri.resolve()（platform-common/.../common/LandingUri.java L30-51）
+          ⇒ file://./landing 相对**进程工作目录**解析
+  进程工作目录：D:\Develop_code\GraduationProject（Start-Process -WorkingDirectory 指定，
+          与 scripts\start-all.ps1 L60 注释「工作目录必须是仓库根」一致）
+  落地根：D:\Develop_code\GraduationProject\landing
+  采集扫描子目录：D:\Develop_code\GraduationProject\landing\events
+  证据：scan 目录现有 59 个文件的清单（含既有的 r9-m1-123006.jsonl）见
+        raw/state-pre-20260912-172011.txt §1 逐文件清单。
+
+目标新文件名（本次决定）：D:\Develop_code\GraduationProject\landing\events\r2-golden55-<yyyymmdd-HHmmss>.jsonl

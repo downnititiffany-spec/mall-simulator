@@ -1,0 +1,29 @@
+8091 停机/起机对照（本单范围；8090/8092 全程未动）
+=====================================================================
+停机时点：2026-09-12 17:20:34.826
+  命令：Stop-Process -Id 39220 -Force
+  停机前身份：javaw pid 39220，15:06:01 启动，jar=49859A1CDB66AB47 / 33,135,969 B / mtime 15:01:13
+  停机后复测：端口 8091 **无监听**（Get-NetTCPConnection 无返回）
+  同刻 8090/8092 复测：port=8092 pid=19268 在听；port=8090 pid=41228 在听 ⇒ **未受影响**
+  javaw 进程残留：none
+
+重建：17:20:42.773 → 17:21:07.703（23.817 s，BUILD SUCCESS，MVN_EXIT=0）
+
+起机时点：2026-09-12 17:21:20.330（Start-Process 返回 LAUNCHER_PID=59304）
+  身份：java pid 59304，jar=C099F307D80135E2 / 33,135,937 B / mtime 17:21:07
+  命令行：(Get-CimInstance 复测见下)
+  探活：GET http://127.0.0.1:8091/api/v1/metrics/health ⇒ 200
+        {"code":"OK","message":"success","data":{"ok":true,"detail":"mysql metric store ok (metric_read)"}}
+        ↑ 注意 detail 明确写 **metric_read** ⇒ 运行期指标读取走 analytics_metric（印证 F-82 的路由结论）
+  Tomcat 监听：2026-09-12T17:21:26.188+08:00 "Tomcat started on port 8091"
+  启动耗时：Started AnalyticsApplication in 5.255 seconds
+
+迁移幂等（G3 复测）：**0 个脚本执行**
+  analytics_meta ：Current version 18 → "Schema nalytics_meta is up to date. No migration necessary."
+                   MetaFlywayInitializer: 执行 0 个脚本
+  analytics_metric：Current version 3 → "Schema nalytics_metric is up to date. No migration necessary."
+                   MetricFlywayInitializer: 执行 0 个脚本，当前版本 3
+  DB 复测：flyway_schema_history 17 行 / MAX(version)=18 / success=17 / bad=0（与停机前逐值相同）
+  R6-14 启动对账：pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]（**干净**）
+
+启动日志：.verify\r2-start-platform.log（stdout）+ .verify\r2-start-platform.log.err（stderr）

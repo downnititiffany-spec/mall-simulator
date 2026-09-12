@@ -1,0 +1,21 @@
+E3-b 指标逐值判定（SQL 自连接差集）
+=====================================================================
+跑动时点：2026-09-12 17:29:14.437
+目标快照：S20260901_42   （runId=42）
+参照快照：S20260901_41
+基线文件：D:\Develop_code\GraduationProject\docs\acceptance\p1-baseline-r39-20260911\baseline.json
+判定库  ：analytics_metric（权威指标库；见 F-82：analytics_meta 下的同名表是孤儿）
+
+---- 基线 JSON 读数 ----
+  snapshotId=S20260901_39  version=8  status=ACTIVE
+  values 行数=10  valueCount字段=10
+  metricCode 集合（排序）：avg_order_value,buy_rate,dau,full_refund_rate,gmv,net_sale,paid_order_cnt,pv,refund_rate,uv
+
+---- SQL 原样输出（退出码 1）----
+section
+ERROR 1054 (42S22) at line 2: Unknown column 'value' in 'field list'
+=== C0 目标快照逐值 dump ===
+
+
+---- 断言小结 ----
+  FAIL: SQL 执行失败：退出码 1

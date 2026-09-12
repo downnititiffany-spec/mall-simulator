@@ -1,0 +1,21 @@
+E3-b 指标逐值判定 — 自连接差集判据
+=====================================================================
+判定时点：2026-09-12 17:28:44.770
+目标快照：S20260901_42   （pipeline_run id = 42）
+基线来源：docs\acceptance\p1-baseline-r39-20260911\baseline.json（P1-01 冻结基线）
+被比库 ：analytics_metric（真指标库；依据 application.yml L15/L19 双源路由）
+业务日 ：day:2026-09-01
+
+A1 基线 10 个 metricCode（自 baseline.json 读出，按名排序）：
+                              value=             unit=       period=         defver=
+                              value=             unit=       period=         defver=
+                              value=             unit=       period=         defver=
+                              value=             unit=       period=         defver=
+                              value=             unit=       period=         defver=
+                              value=             unit=       period=         defver=
+                              value=             unit=       period=         defver=
+   System.Object[]            value=88.1600 0.2000 10.0000 0.0000 88.1600 88.1600 1.0000 5.0000 0.0000 5.0000 unit=元  人  元 元 单 次  人 period=day:2026-09-01 day:2026-09-01 day:2026-09-01 day:2026-09-01 day:2026-09-01 day:2026-09-01 day:2026-09-01 day:2026-09-01 day:2026-09-01 day:2026-09-01 defver=v1 v1 v1 v1 v1 v1 v1 v1 v2 v1
+
+ERROR 1046 (3D000) at line 1: No database selected
+
+---- 断言小结 ----

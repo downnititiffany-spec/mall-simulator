@@ -1,0 +1,58 @@
+陷阱实测记录：analytics_meta 里的 metric_snapshot / metric_value 是**孤儿表**（会读错 ACTIVE 快照）
+================================================================================================
+记录人：R2 执行方；记录时刻：2026-09-12 17:2x
+起因：R2 首次采集（tools\collect-state.ps1 v1）把 metric_snapshot 读在 analytics_meta，
+      得到「9 行 / ACTIVE=1 / max snapshot_id = S20260907_11 / version 全为 1」——
+      与 ORDER-1 提示的环境事实（`metric_snapshot` 9 行、ACTIVE=1）**数字一致但语义错误**：
+      该 ACTIVE 指向的是 2026-09-07 19:33 的 `S20260907_11`，而不是本轮真正在用的 `S20260901_41`。
+
+一、路由事实（代码/配置取证，非推断）
+  analytics-server\platform-app\src\main\resources\application.yml
+    L5-9   platform.meta.url                -> jdbc:mysql://127.0.0.1:3306/analytics_meta   （元数据库）
+    L15    platform.metric.publish.url      -> jdbc:mysql://127.0.0.1:3306/analytics_metric （指标库，写）
+    L19    platform.metric.read.url         -> jdbc:mysql://127.0.0.1:3306/analytics_metric （指标库，读）
+  账号：meta_app / metric_pub / metric_read（三者分别持有各自库权限）
+  ⇒ 运行期「读 ACTIVE 快照」走的是 **analytics_metric**，不是 analytics_meta。
+
+二、孤儿表的来源（迁移取证）
+  grep db/meta/*.sql 命中 metric_snapshot|metric_value 的两个文件：
+    V2__platform_pipeline_quality.sql  L81 CREATE TABLE metric_snapshot / L99 CREATE TABLE metric_value
+    V7__platform_runtime_profile.sql   L72-73 ALTER TABLE metric_snapshot（补 profile 版本）
+  MetaFlywayInitializer.java L27 以 classpath:db/meta 对 **analytics_meta** 执行迁移
+  ⇒ analytics_meta 在 2026-09-07 16:04（V2）/ 17:15（V7）确实建过这一套表。
+
+三、两库实际内容（实测，2026-09-12 17:2x）
+  analytics_metric.metric_snapshot（权威）：**9 行**，id 从 **4 到 24（不连续**——中间 id 属于
+    更早期已被清理的测试快照），只 9 行有数据：
+    S20260901_23/24/22/25/29/30/38(FAILED)/39/41 —— version 1..9，_41 为 ACTIVE
+    （**订正说明**：本节初稿误写「24 行 id 连续」，实为「9 行、id 4..24 不连续」；
+      24 是**最大 id**，不是行数。父侧 2026-09-12 复核指出，R2 落盘订正。）
+  analytics_metric.metric_value = **80 行** = **8 个有值快照 × 10 指标**
+    （FAILED 的 `_38` 无指标值 ⇒ 9 个快照里只有 8 个有值：23/24/22/25/29/30/39/41）
+  analytics_meta.metric_snapshot（孤儿，9 行）：
+    S20260905_1/_2、S20260907_5.._11 —— version **全为 1**，最后写入 2026-09-07 19:33:50
+    ⇒ 自 2026-09-07 19:33 之后再无写入；run 22..41 从未写入该表。
+    孤儿 metric_value 行数**单独核算**（见 raw/state-pre-20260912-172011.txt §3
+      的 [ORPHAN meta]metric_value 读数）——它与 analytics_metric 的 80 行**不同**，
+      因为两库快照集合根本不同（孤儿库是 09-05/09-07 那 9 个，权威库是 09-01 那 9 个）。
+
+四、为什么这是缺陷（后果，不是"看起来奇怪"）
+  1. 该表是**冻结的历史副本**，与真指标库内容**不同源、不再同步**，却仍带 `status='ACTIVE'` 标记
+     （且指向 2026-09-07 的 `S20260907_11`）。任何按「analytics_meta.metric_snapshot 里 status=ACTIVE」
+     取值的人/工具/文档，都会拿到一个**过期快照号**，而系统真正的 ACTIVE 是 `S20260901_41`。
+  2. 本单开工门禁的父侧读数（raw/gates-pre-run.txt L48 与提示「metric_snapshot 9 行（ACTIVE=1）」）
+     正是读的这张孤儿表 —— 数字对、语义错。**R2 已改用 analytics_metric 复测。**
+  3. 属于"同一事实有两个所有者"的反熵问题：`db/meta/V2` 与 `db/metric/V1` 都定义了 metric_snapshot，
+     前者已无读者却未退休。
+
+五、R2 的处置（本单不改代码/不删数据，只记录与绕开）
+  - `tools\collect-state.ps1` 已同时采 `analytics_metric`（权威，标记 [metric]）与
+    `analytics_meta`（标记 [ORPHAN meta]），使"不一致"本身成为**可复算的判据**而不是靠记忆。
+  - 新缺陷编号：**F-82**（见 README §6）。
+  - 建议后续（不在本单范围）：核对 db/meta/V2 建的那套 metric 表是否仍有任何读路径；若无，
+    按反熵治理流程退休（DROP 或改名 `*_legacy_frozen` 并去掉 ACTIVE 标记）。
+
+六、不得据此声称
+  - **不得**说"快照表坏了/发布失败"：真指标库 analytics_metric 的 9 行、version 序列、ACTIVE 都正常。
+  - **不得**说"V18 建了孤儿表"：孤儿表来自 V2/V7，与 V18 无关。
+  - **不得**把 analytics_meta 的 9 行当成本轮的发布结果。

@@ -1,0 +1,80 @@
+E3-d 读数：M1-11 提交器 status() 迁移序列 + 一次受控 cancel()（父侧收口）
+=====================================================================
+时点：2026-09-12 19:17–19:28（父侧独立实测）
+原执行泳道 313a4f8f（R2）在 17:42 写好 tools/e3d-cancel-evidence.ps1 后**未执行即失败退出**；
+本文件的三项读数（模块测试 / 长窗口探针 / 外部进程观测）均由父侧重新实测，不沿用泳道自述。
+
+【口径先行】M1-11 的本体是 JobSubmitter.status()/cancel()
+  （analytics-server/connection-ingestion/src/main/java/.../runtime/submit/），**不是 HTTP 端点**。实测
+  PipelineController 的全部映射只有：POST /api/v1/pipeline-runs、GET /{id}、POST /{id}/retry、GET；
+  唯一的 `/{id}/cancel` 在 DecisionController（/api/v1/decisions/{id}/cancel，决策域）。
+  ⇒ 现状下「用 API 取消一次长跑的 pipeline run」**不可达**；E3-d 只能在提交器层取证。记 F-85。
+
+---------------------------------------------------------------------
+一、模块自带测试（判据来源为独立制品 raw/e3d-surefire-LocalProcessSparkSubmitterProcessTest.xml）
+  命令：mvn -o test -f analytics-server/pom.xml -pl connection-ingestion -am
+        -Dtest=LocalProcessSparkSubmitterProcessTest -Dsurefire.failIfNoSpecifiedTests=false
+  结果：Tests run: 4, Failures: 0, Errors: 0, Skipped: 0；Reactor BUILD SUCCESS；exit 0（19:22:03）
+  覆盖：① 存活进程 status()=RUNNING → cancel() → CANCELLED；
+        ② 退出码 0/非 0 → SUCCESS/FAILED（平台据此快速判失败，不再空等阶段超时）；
+        ③ 无句柄历史作业 → SUBMITTED（保持旧语义）；④ 子进程 UTF-8 注入（DEF-06）
+  实测 pid：m1-11-ok pid=22964；m1-11-bad pid=36624；m1-11-cancel pid=53156
+  时间证据：19:22:03.433 提交 ⇒ 19:22:03.453「本地进程被主动终止 … 子进程=1」= **20 ms 窗口**
+
+  ⚠ 方法学（负面结论，必须留痕）：20 ms 窗口使**外部 Get-Process 轮询不可能**捕获该子进程。
+    父侧 19:18:55–19:21:45 那一轮轮询（首次尝试）既早于本测试开跑（19:22:03），
+    即便重叠也来不及采样 ⇒ **不得**把「轮询未见 ping」解读为「进程未创建」。
+
+---------------------------------------------------------------------
+二、父侧长窗口探针（外部观测；不采信被测代码自述）
+  探针源码副本：raw/e3d-M111Probe.java.txt（原件 .verify/r2/m1-11/M111Probe.java，.verify 已 gitignore）
+  子进程：cmd /c ping -n 60 127.0.0.1（≈59 s 窗口，使外部观测可行）
+  status() 序列（raw/e3d-probe-stdout-20260912-1924.txt，进程 exit 0）：
+      t+0.1s  submit jobId=lp-1789212251266-be92c7 status=RUNNING
+      t+1s … t+12s  status=RUNNING（连续 12 次采样）
+      t+12.2s cancel before=RUNNING
+      t+12.2s cancel after=CANCELLED      ← 立即迁移，未误报 FAILED
+      t+14.2s +2s status=CANCELLED        ← 迁移稳定，不回退
+  代码侧日志：19:24:23.486 WARN 本地进程任务已终止: lp-1789212251266-be92c7 pid=50684 子进程=2
+  父侧 Get-Process 外部事件（raw/e3d-external-process-events-20260912-1924.txt）：
+      19:24:15.460  出现 cmd/50684      启动 19:24:11.332
+      19:24:15.462  出现 PING/5384      启动 19:24:11.362
+      19:24:23.682  **消失** PING/5384
+      19:24:23.683  **消失** cmd/50684
+  ⇒ 真实进程树在 cancel() 时刻被回收：外部观测（19:24:23.68x）与代码自称（19:24:23.486）相差 ~0.2 s，
+    采样间隔 250 ms。
+  ⚠ 首帧即已在场（轮询起点晚于进程创建 4.1 s）⇒「出现」非实时捕获；只有「消失」被精确捕获。
+
+---------------------------------------------------------------------
+三、未扰动不变量（E3-d 之后复测，逐值）
+  analytics_metric.metric_snapshot 链：S20260901_43=ACTIVE v11(run 43) / _42=ARCHIVED v10(run 42) /
+      _41=ARCHIVED v9(run 41)（无跳号）
+  metric_value 十项与 R2-b 判定逐值相同（period 全为 day:2026-09-01）：
+      avg_order_value 88.16 元；buy_rate 0.2；dau 10 人；full_refund_rate 0；gmv 88.16；
+      net_sale 88.16；paid_order_cnt 1 单；pv 5 次；refund_rate 0（definitionVersion v2）；uv 5 人
+  pipeline_run 42 行 / max id 43；ingestion_batch 42 行 / max id 42（E3-d 未新增运行、未新增批）
+  8091：pid=61104（19:17:49 起），GET /api/v1/metrics/health = {"ok":true,"detail":"mysql metric store ok (metric_read)"}
+
+---------------------------------------------------------------------
+四、过程性事实与自身失误（不改写）
+  1. 17:46–19:17 之间，8090/8091/8092 三个本地服务**均已停止**（用户指令「暂停推进，把所有进程退出」）。
+     父侧 19:17:49 仅重启 8091；jar 指纹 C099F307D80135E2 / 33,135,937 B，与 R2 跑前登记**逐值一致**
+     ⇒ 同一制品。Flyway 复测：analytics_meta 18 / analytics_metric 3，「执行 0 个脚本」（幂等）。
+     ⇒ R2 既有读数不受影响（DB 与文件均已落盘），但 **19:1x 之后不构成冻结窗口**；
+        E3-d 的 19:22–19:28 读数按「后续时点」登记，不与 17:xx 读数混算。
+  2. 首次命令用了**错误的 surefire 属性名**（-DfailIfNoSpecifiedTests 而非
+     -Dsurefire.failIfNoSpecifiedTests）⇒ platform-common「无匹配测试」即 FAILURE、connection-ingestion 被
+     SKIPPED ⇒ 该次 exit 1 **不是**测试失败。改正后 4/4 通过。
+  3. 探针首跑把 `-Dfile.encoding=UTF-8` **未加引号**传给原生 java ⇒ JVM 收到 `-Dfile` 与
+     `.encoding=UTF-8`（报 ClassNotFoundException: /encoding=UTF-8）⇒ 陷阱 #1 的第 3 次复犯；
+     加引号后正常。**工具调用失败不得退化为读数**（陷阱 #39）。
+
+---------------------------------------------------------------------
+五、判定
+  E3-d **通过**：status() 迁移序列（RUNNING→CANCELLED，且稳定不回退）＋ 一次 cancel() 前后
+  Get-Process 对照（含子进程回收，pid/时间/退出码证据齐备）。
+  P4 **命中**：真实链上实测到 RUNNING 与 SUCCESS 两态
+  （raw/e3a-poll-run43-*.txt：「run.status=RUNNING currentStage=INIT_SCHEMA」、
+   「WAIT_LANDING=SUCCESS INIT_SCHEMA=RUNNING」），且 cancel() 后进程树不再存在。
+  未测/不得声称：① 未验证 CANCELLED 在**真实 Spark 阶段执行器**中的消费路径（本轮探针用 ping，
+    非 spark-submit）；② 未验证 HTTP 层取消（无此端点，F-85）；③ 未验证集群档提交器的 cancel。

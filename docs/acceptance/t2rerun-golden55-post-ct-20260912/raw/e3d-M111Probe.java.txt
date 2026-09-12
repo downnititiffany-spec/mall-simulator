@@ -1,0 +1,39 @@
+import com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter;
+
+import java.util.List;
+
+/**
+ * E3-d 父级外部观测探针（不经 HTTP；直接用生产类 LocalProcessSparkSubmitter）。
+ *
+ * <p>目的：模块自带测试的 cancel 窗口只有 20 ms（19:22:03.433 submit → 19:22:03.453 终止），
+ * 外部 Get-Process 轮询不可能捕获。本探针把子进程拉长到 ~59 s（ping -n 60），使「真实进程出现 →
+ * cancel() → 真实进程消失」可被父级独立观测，而不是只采信被测代码的自述。
+ *
+ * <p>用法：M111Probe <logDir> <holdSeconds>
+ */
+public class M111Probe {
+
+    public static void main(String[] args) throws Exception {
+        String logDir = args.length > 0 ? args[0] : ".verify/r2/m1-11/logs";
+        int holdSec = args.length > 1 ? Integer.parseInt(args[1]) : 12;
+        LocalProcessSparkSubmitter s = new LocalProcessSparkSubmitter("spark-submit-noop", logDir);
+        long t0 = System.currentTimeMillis();
+        String jobId = s.submit(List.of("cmd", "/c", "ping", "-n", "60", "127.0.0.1"), "e3d-probe")
+                .externalJobId();
+        System.out.println(ts(t0) + " submit jobId=" + jobId + " status=" + s.status(jobId));
+        for (int i = 1; i <= holdSec; i++) {
+            Thread.sleep(1000L);
+            System.out.println(ts(t0) + " t+" + i + "s status=" + s.status(jobId));
+        }
+        System.out.println(ts(t0) + " cancel before=" + s.status(jobId));
+        s.cancel(jobId);
+        System.out.println(ts(t0) + " cancel after=" + s.status(jobId));
+        Thread.sleep(2000L);
+        System.out.println(ts(t0) + " +2s status=" + s.status(jobId));
+        System.out.println(ts(t0) + " PROBE_DONE");
+    }
+
+    private static String ts(long t0) {
+        return String.format("t+%.1fs", (System.currentTimeMillis() - t0) / 1000.0);
+    }
+}

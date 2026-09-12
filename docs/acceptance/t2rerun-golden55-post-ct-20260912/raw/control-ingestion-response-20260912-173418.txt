@@ -1,0 +1,2 @@
+HTTP 200
+{"code":"OK","message":"success","data":{"batchId":42,"batchNo":"ing-20260912173453-cf5576fe","status":"SUCCESS","recordCount":1000,"quarantineCount":0,"errorCount":0,"fileCount":1,"acceptedBytes":363848,"acceptedDir":"D:\\Develop_code\\GraduationProject\\landing\\accepted\\42","quarantineDir":"D:\\Develop_code\\GraduationProject\\landing\\quarantine\\42","manifestPath":"file:///D:/Develop_code/GraduationProject/landing/manifests/42.json","noNewData":false},"traceId":"2f8b39f8-af88-4341-86ad-799e5562ef4f"}

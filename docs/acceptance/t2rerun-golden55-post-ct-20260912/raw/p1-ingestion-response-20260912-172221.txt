@@ -1,0 +1,20 @@
+P1 采集实跑原始证据
+=====================================================================
+跑动时点：2026-09-12 17:22:21.982 → 2026-09-12 17:22:22.418（0.436 s）
+
+[1] 输入文件落地（只增：新文件名副本，未改未删任何既有文件）
+  源：D:\Develop_code\GraduationProject\tests\golden-dataset\events\golden-20260901.jsonl
+  目标：D:\Develop_code\GraduationProject\landing\events\r2-golden55-20260912-172221.jsonl
+  字节：18430   sha256：2351BCC35E04CCD278638F07247BC37E9C4D402CC4736CD2A4D4B70F4232B11C
+
+[2] 登录
+  POST http://127.0.0.1:8091/api/v1/auth/login
+  body: {"username":"admin","password":"admin123"}
+  响应 code=OK  token 长度=32  （令牌原样不落盘，避免凭据入证据）
+
+[3] 采集（ORDER-1 提示：**无请求体**）
+  POST http://127.0.0.1:8091/api/v1/ingestion/runs
+  Authorization: Bearer <token>
+  HTTP 200
+  响应体（原样）：
+{"code":"OK","message":"success","data":{"batchId":41,"batchNo":"ing-20260912172222-6c163e45","status":"QUARANTINED","recordCount":2740,"quarantineCount":4,"errorCount":0,"fileCount":5,"acceptedBytes":1233445,"acceptedDir":"D:\\Develop_code\\GraduationProject\\landing\\accepted\\41","quarantineDir":"D:\\Develop_code\\GraduationProject\\landing\\quarantine\\41","manifestPath":"file:///D:/Develop_code/GraduationProject/landing/manifests/41.json","noNewData":false},"traceId":"0cc0d248-47f3-467b-8442-54976832a10b"}

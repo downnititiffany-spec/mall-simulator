@@ -1,0 +1,14 @@
+E3-a 真实链：POST /api/v1/pipeline-runs 原始响应
+=====================================================================
+发起时点：2026-09-12 17:22:48.163  响应时点：2026-09-12 17:22:48.198
+请求： POST http://127.0.0.1:8091/api/v1/pipeline-runs
+       Authorization: Bearer <token>（admin/admin123 登录取自 /api/v1/auth/login）
+       Content-Type: application/json
+       body: {"runtimeProfileId":1,"pipelineCode":"ODS_TO_ADS","sourceDataVersion":"r2-post-ct-20260912-172230","businessTime":"2026-09-01T00:00:00"}
+HTTP 200
+响应体（原样）：
+{"code":"OK","message":"success","data":{"runId":42,"idempotencyKey":"1|ODS_TO_ADS|2026-09-01T00:00|r2-post-ct-20260912-172230","status":"PENDING","currentStage":"PENDING","errorCode":null,"attemptNo":1,"targetSnapshotId":null,"stages":[]},"traceId":"b6b126d4-530d-4082-9dfa-b36b6baaccc2"}
+
+提取：runId = 42   sourceDataVersion = r2-post-ct-20260912-172230
+⇒ 异步启动（ORDER-1 环境事实：**异步**，须轮询 GET /api/v1/pipeline-runs/{id} 至终态）
+⇒ 8 阶段权威顺序：WAIT_LANDING→INIT_SCHEMA→LOAD_ODS→BUILD_DWD→BUILD_DWS→BUILD_ADS→QUALITY_CHECK→PUBLISH_METRIC

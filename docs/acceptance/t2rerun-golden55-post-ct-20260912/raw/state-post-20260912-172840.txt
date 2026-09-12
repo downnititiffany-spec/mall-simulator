@@ -1,0 +1,208 @@
+R2 状态采集（post）— collect-state.ps1
+=================================================================
+采集时点(本地)：2026-09-12 17:28:40.481
+采集者：R2 执行方（一次性泳道）；全部命令只读
+工作目录约定：D:\Develop_code\GraduationProject（landing/ spark-warehouse/ 均为该目录下的相对路径）
+
+---- [1] 落地区（E3-g；必须带时点）----
+时点：2026-09-12 17:28:40
+landing\events         60 文件 /       406132563 B
+landing\manifests      41 文件 /           38098 B
+landing\accepted      140 文件 /       808154064 B
+landing\quarantine    140 文件 /           28131 B
+
+landing\events 逐文件清单（名|字节|mtime）：共 60 条
+  2026090509.jsonl|12089941|2026-09-06 21:58:26
+  2026090510.jsonl|15268153|2026-09-06 21:58:26
+  2026090511.jsonl|17000746|2026-09-06 21:58:26
+  2026090512.jsonl|18234895|2026-09-06 21:58:26
+  2026090513.jsonl|16127604|2026-09-06 21:58:26
+  2026090514.jsonl|15258744|2026-09-06 21:58:26
+  2026090515.jsonl|14216195|2026-09-06 21:58:26
+  2026090516.jsonl|13184054|2026-09-06 21:58:26
+  2026090517.jsonl|16761473|2026-09-06 21:58:26
+  2026090518.jsonl|20344587|2026-09-06 21:58:26
+  2026090519.jsonl|19363647|2026-09-06 21:58:26
+  2026090520.jsonl|20103891|2026-09-06 21:58:26
+  2026090521.jsonl|18125058|2026-09-06 21:58:26
+  2026090522.jsonl|14209197|2026-09-06 21:58:26
+  2026090523.jsonl|8062834|2026-09-06 21:58:26
+  2026090600.jsonl|2946673|2026-09-06 21:58:25
+  2026090601.jsonl|2072574|2026-09-06 21:58:26
+  2026090602.jsonl|1668224|2026-09-06 21:58:26
+  2026090603.jsonl|1144345|2026-09-06 21:58:25
+  2026090604.jsonl|1005211|2026-09-06 21:58:24
+  2026090605.jsonl|1026537|2026-09-06 21:58:26
+  2026090606.jsonl|2065794|2026-09-06 21:58:26
+  2026090607.jsonl|5094599|2026-09-06 21:58:26
+  2026090608.jsonl|8996315|2026-09-06 21:58:26
+  2026090609.jsonl|12092686|2026-09-06 21:58:26
+  2026090610.jsonl|15080217|2026-09-06 21:58:26
+  2026090611.jsonl|17291695|2026-09-06 21:58:26
+  2026090612.jsonl|18502991|2026-09-06 21:58:26
+  2026090613.jsonl|16147426|2026-09-06 21:58:26
+  2026090614.jsonl|15692460|2026-09-06 21:58:26
+  2026090615.jsonl|14275535|2026-09-06 21:58:26
+  2026090616.jsonl|13227116|2026-09-06 21:58:26
+  2026090617.jsonl|16168955|2026-09-06 21:58:26
+  2026090620.jsonl|1846|2026-09-06 20:57:24
+  2026090621.jsonl|9053|2026-09-07 18:25:26
+  2026090700.jsonl|348746|2026-09-07 18:33:45
+  2026090701.jsonl|359896|2026-09-07 19:33:30
+  2026090703.jsonl|918|2026-09-07 19:33:43
+  2026091115.jsonl|19365|2026-09-11 15:16:14
+  2026091120.jsonl|460026|2026-09-11 20:55:09
+  2026091121.jsonl|165616|2026-09-11 21:06:57
+  2026091122.jsonl|130261|2026-09-11 22:02:55
+  2026091209.jsonl|1131|2026-09-12 09:53:26
+  2026091210.jsonl|584644|2026-09-12 10:46:56
+  2026091211.jsonl|631946|2026-09-12 11:01:49
+  2026091215.jsonl|994|2026-09-12 15:05:39
+  b08-gate-20260911-1555.jsonl|586|2026-09-11 15:56:48
+  b11-fixture-20260911162916.jsonl|586|2026-09-11 16:29:16
+  gen-s3b-1000-20260911.jsonl|363848|2026-09-11 13:17:40
+  golden-r615-20260910164859.jsonl|18429|2026-09-08 19:02:33
+  golden-r615b-20260910165249.jsonl|18430|2026-09-10 16:52:06
+  golden-r618-tampered-20260910.jsonl|18430|2026-09-10 18:41:59
+  golden-r619-clean-20260910.jsonl|18430|2026-09-10 19:37:30
+  golden-r70-clean-20260910.jsonl|18430|2026-09-10 19:55:23
+  golden-r73-clean-20260910.jsonl|18430|2026-09-10 20:23:36
+  r2-golden55-20260912-172221.jsonl|18430|2026-09-10 16:52:06
+  r9-m1-123006.jsonl|18430|2026-09-11 11:06:44
+  r9-prunefix-105922.jsonl|18430|2026-09-11 10:59:29
+  r9-prunefix-110637.jsonl|18430|2026-09-11 11:06:44
+  r9-qualityfail-103736.jsonl|18430|2026-09-11 10:37:36
+
+---- [2] spark-warehouse parquet（E3-f；文件数 + 字节，按库分组）----
+spark-warehouse 合计：137 parquet 文件 / 1234592 B
+按一级子目录（= Hive 库）分组：
+  dw_ads.db                30 文件 /      54998 B
+  dw_dim.db                 4 文件 /      11564 B
+  dw_dwd.db                58 文件 /     338827 B
+  dw_dws.db                14 文件 /      28761 B
+  dw_ods.db                29 文件 /     799164 B
+  probe_r613.db             2 文件 /       1278 B
+分组求和校验：137 文件 / 1234592 B（应等于合计 137 / 1234592）
+  自检 OK：分组求和 == 合计
+
+---- [3] MySQL 真库计数（只读 SELECT）----
+口径：analytics_meta = 平台元数据（采集/流水线）；analytics_metric = 指标库（快照/指标值/ADS 镜像）
+      依据 application.yml L5-21：platform.metric.publish/read 两源均指向 analytics_metric；
+      analytics_meta.metric_snapshot|metric_value 是 db/meta/V2 遗留的**孤儿表**（见 raw/trap-orphan-metric-tables.txt）
+flyway_rows	17
+flyway_max_version	18
+flyway_success	17
+flyway_bad	0
+file_checkpoint	110
+file_checkpoint_null_source	0
+ingestion_batch	41
+ingestion_batch_maxid	41
+ingestion_batch_file	117
+pipeline_run	41
+pipeline_run_maxid	42
+pipeline_stage_run	260
+source_registry	1
+[metric]metric_snapshot	10
+[metric]metric_snapshot_ACTIVE	1
+[metric]metric_snapshot_ARCHIVED	8
+[metric]metric_value	90
+[ORPHAN meta]metric_snapshot	9
+[ORPHAN meta]metric_snapshot_ACTIVE	1
+[ORPHAN meta]metric_value	132
+
+---- [4] analytics_metric.metric_snapshot 逐行（权威指标库）----
+id	snapshot_id	runtime_profile_id	runtime_profile_version	pipeline_run_id	status	version	business_time	published_at	created_at
+4	S20260901_23	1	3	23	ARCHIVED	1	2026-09-01 00:00:00.000	2026-09-10 20:38:54.103	2026-09-10 20:38:54.036
+5	S20260901_24	1	3	24	ARCHIVED	2	2026-09-01 00:00:00.000	2026-09-10 20:44:11.886	2026-09-10 20:44:11.835
+14	S20260901_22	1	3	22	ARCHIVED	3	2026-09-01 00:00:00.000	2026-09-11 09:50:54.425	2026-09-11 09:50:54.384
+15	S20260901_25	1	3	25	ARCHIVED	4	2026-09-01 00:00:00.000	2026-09-11 10:41:49.858	2026-09-11 10:41:49.814
+16	S20260901_29	1	3	29	ARCHIVED	5	2026-09-01 00:00:00.000	2026-09-11 11:02:25.364	2026-09-11 11:02:25.331
+17	S20260901_30	1	3	30	ARCHIVED	6	2026-09-01 00:00:00.000	2026-09-11 11:09:19.753	2026-09-11 11:09:19.733
+22	S20260901_38	1	3	38	FAILED	7	2026-09-01 00:00:00.000	NULL	2026-09-11 15:01:02.630
+23	S20260901_39	1	3	39	ARCHIVED	8	2026-09-01 00:00:00.000	2026-09-11 15:12:22.013	2026-09-11 15:12:21.981
+24	S20260901_41	1	3	41	ARCHIVED	9	2026-09-01 00:00:00.000	2026-09-12 09:31:13.388	2026-09-12 09:31:13.337
+25	S20260901_42	1	3	42	ACTIVE	10	2026-09-01 00:00:00.000	2026-09-12 17:28:12.779	2026-09-12 17:28:12.666
+
+---- [4b] analytics_metric ADS 镜像 8 表按 snapshot_id 的 COUNT(*) ----
+t	snapshot_id	c
+ads_active_trend_m	S20260901_22	1
+ads_active_trend_m	S20260901_23	1
+ads_active_trend_m	S20260901_24	1
+ads_active_trend_m	S20260901_25	1
+ads_active_trend_m	S20260901_29	1
+ads_active_trend_m	S20260901_30	1
+ads_active_trend_m	S20260901_39	1
+ads_active_trend_m	S20260901_41	1
+ads_active_trend_m	S20260901_42	1
+ads_behavior_funnel_m	S20260901_22	4
+ads_behavior_funnel_m	S20260901_23	4
+ads_behavior_funnel_m	S20260901_24	4
+ads_behavior_funnel_m	S20260901_25	4
+ads_behavior_funnel_m	S20260901_29	4
+ads_behavior_funnel_m	S20260901_30	4
+ads_behavior_funnel_m	S20260901_39	4
+ads_behavior_funnel_m	S20260901_41	4
+ads_behavior_funnel_m	S20260901_42	4
+ads_data_quality_m	S20260901_22	4
+ads_data_quality_m	S20260901_23	4
+ads_data_quality_m	S20260901_24	4
+ads_data_quality_m	S20260901_25	4
+ads_data_quality_m	S20260901_29	4
+ads_data_quality_m	S20260901_30	4
+ads_data_quality_m	S20260901_39	4
+ads_data_quality_m	S20260901_41	4
+ads_data_quality_m	S20260901_42	4
+ads_hot_product_m	S20260901_22	4
+ads_hot_product_m	S20260901_23	4
+ads_hot_product_m	S20260901_24	4
+ads_hot_product_m	S20260901_25	4
+ads_hot_product_m	S20260901_29	4
+ads_hot_product_m	S20260901_30	4
+ads_hot_product_m	S20260901_39	9
+ads_hot_product_m	S20260901_41	9
+ads_hot_product_m	S20260901_42	4
+ads_operation_overview_m	S20260901_22	1
+ads_operation_overview_m	S20260901_23	1
+ads_operation_overview_m	S20260901_24	1
+ads_operation_overview_m	S20260901_25	1
+ads_operation_overview_m	S20260901_29	1
+ads_operation_overview_m	S20260901_30	1
+ads_operation_overview_m	S20260901_39	1
+ads_operation_overview_m	S20260901_41	1
+ads_operation_overview_m	S20260901_42	1
+ads_product_conversion_m	S20260901_22	4
+ads_product_conversion_m	S20260901_23	4
+ads_product_conversion_m	S20260901_24	4
+ads_product_conversion_m	S20260901_25	4
+ads_product_conversion_m	S20260901_29	4
+ads_product_conversion_m	S20260901_30	4
+ads_product_conversion_m	S20260901_39	9
+ads_product_conversion_m	S20260901_41	9
+ads_product_conversion_m	S20260901_42	4
+ads_sale_trend_m	S20260901_22	1
+ads_sale_trend_m	S20260901_23	1
+ads_sale_trend_m	S20260901_24	1
+ads_sale_trend_m	S20260901_25	1
+ads_sale_trend_m	S20260901_29	1
+ads_sale_trend_m	S20260901_30	1
+ads_sale_trend_m	S20260901_39	1
+ads_sale_trend_m	S20260901_41	1
+ads_sale_trend_m	S20260901_42	1
+ads_user_profile_m	S20260901_22	3
+ads_user_profile_m	S20260901_23	3
+ads_user_profile_m	S20260901_24	3
+ads_user_profile_m	S20260901_25	3
+ads_user_profile_m	S20260901_29	3
+ads_user_profile_m	S20260901_30	3
+ads_user_profile_m	S20260901_39	1
+ads_user_profile_m	S20260901_41	1
+ads_user_profile_m	S20260901_42	3
+
+---- [5] 当前在跑的 java/javaw 进程 ----
+pid=19268 name=java start=2026-09-12 11:01:06
+pid=41228 name=java start=2026-09-12 09:40:49
+pid=59304 name=java start=2026-09-12 17:21:20
+
+---- 断言小结 ----
+全部断言 PASS（A1/A2/A2b/A3）
+输出行数：207

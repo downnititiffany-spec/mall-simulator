@@ -1,0 +1,37 @@
+E3-e 裸锚点守卫实跑（scripts\check-bare-anchors.ps1，只读模式）
+=====================================================================
+跑动时点：2026-09-12 17:21:51.810
+跑动人  ：R2 执行方
+命令    ：pwsh -NoProfile -File scripts\check-bare-anchors.ps1    （**不带 -WriteLedger**，只读）
+工作目录：D:\Develop_code\GraduationProject
+退出码  ：0
+台账文件：scripts\contract-bare-anchors.allowlist.txt
+扫描根  ：contract-specs
+
+---- 原样输出开始 ----  [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+
+  == 裸锚点实况（扫描根 contract-specs，文件 9 个）==
+  锚点总数（含合规）= 313 ；裸锚点出现次数 = 199 ；去重后（文件|锚点）= 112 行
+    contract-specs\openapi\generator-api.v1.yaml                        65 处
+    contract-specs\README.md                                            42 处
+    contract-specs\schemas\canonical-event.v1.schema.json               91 处
+    contract-specs\schemas\generation-artifact-manifest.v1.schema.json  1 处
+  非 markdown 载体占比：.json=92  .md=42  .yaml=65
+
+  == 门禁（台账 113 行 / 基线 113 行）==
+  [可删减 1 行] 台账内已不再是裸锚点的条目（删减须在看板登记后跑 -WriteLedger）：
+    contract-specs\schemas\canonical-event.v1.schema.json :: §2.4 L77
+  [已减少 1 处] 出现次数低于台账（下次 -WriteLedger 收敛）：
+    contract-specs\schemas\canonical-event.v1.schema.json :: §2.4 L84  台账=2 实测=1
+
+  结果 = PASS（裸锚点 199 处 / 112 行，全部在台账内；台账 113 行 ≤ 基线 113）
+---- 原样输出结束 ----
+
+判据核对（ORDER-1 §4 E3-e 三条）：
+  ① 守卫集合 ⊆ 台账     ：见上方「结果 = PASS ... 全部在台账内」
+  ② 正向对照            ：见上方「[正向对照] 对照样本锚点=4 裸锚点=1」——4 条样本中
+                           '裸锚点：见 §2.5 L92 的说明' 必须被判裸（1 条），
+                           带文件名（docs/contracts/event-contract.md §2.5 L92-L100）与带版本前缀的 3 条必须**不**被判裸
+  ③ 台账「只减不增」     ：见上方「台账 N 行 ≤ 基线 M」；且本次**未**写台账（无 -WriteLedger）
+                           ⇒ 台账文件字节数/mtime 跑前跑后必须逐值相同（见 raw/guard-ledger-identity.txt）

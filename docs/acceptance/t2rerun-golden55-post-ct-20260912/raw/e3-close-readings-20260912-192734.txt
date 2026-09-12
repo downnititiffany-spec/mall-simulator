@@ -1,0 +1,59 @@
+==== E3 收口自检 ====
+仓库：D:\Develop_code\GraduationProject
+时点：2026-09-12 19:27:34
+快照：S20260901_43（对照 S20260901_41）
+
+---- E3-b：指标逐值（DB 自连接差集，不依赖被验脚本自述）----
+   [PASS] B0         应然=10                           实际=10
+   [PASS] B1         应然=0                            实际=0
+   [PASS] B2         应然=10                           实际=10
+   [PASS] B3         应然=10                           实际=10
+
+---- E3-b 附：API 现值 vs P1-01 冻结基线（逐值，[decimal] 比较）----
+   [PASS] B4         应然=0 处不符                        实际=0 处不符
+
+---- E3-c：镜像按快照（COUNT(*) 且按 snapshot_id 分组；禁止 estimates）----
+   [PASS] C-ads_active_trend_m 应然=1                            实际=1
+   [PASS] C-ads_behavior_funnel_m 应然=4                            实际=4
+   [PASS] C-ads_data_quality_m 应然=4                            实际=4
+   [PASS] C-ads_hot_product_m 应然=9                            实际=9
+   [PASS] C-ads_operation_overview_m 应然=1                            实际=1
+   [PASS] C-ads_product_conversion_m 应然=9                            实际=9
+   [PASS] C-ads_sale_trend_m 应然=1                            实际=1
+   [PASS] C-ads_user_profile_m 应然=1                            实际=1
+   [PASS] C-sum      应然=30                           实际=30
+   [PASS] C-prev     应然=30                           实际=30
+
+---- E3-c 续：Hive 侧（导出 jsonl 行数，按表名对齐 —— 禁按位置比）----
+ConvertFrom-Json: D:\Develop_code\GraduationProject\docs\acceptance\t2rerun-golden55-post-ct-20260912\tools\e3-close-verify.ps1:88
+Line |
+  88 |  … Join-Path $_.FullName '_export.json') -Raw | ConvertFrom-Json).snapsh …
+     |                                                 ~~~~~~~~~~~~~~~~
+     | 从 JSON 转换失败，出现错误: Bad JSON escape sequence: \D. Path 'tables[0].exportFile', line 9, position 393.
+
+   [PASS] C-exp-total 应然=30                           实际=30
+   [PASS] C-align    应然=0 处不符                        实际=0 处不符
+
+---- E3-f：数仓前后（跑前 vs 现静默窗口；逐层文件数/字节）----
+   [PASS] F-pre      应然=972 文件 / 4977445 B           实际=972 文件 / 4977445 B
+   [PASS] F-now      应然=文件数与跑前相同（972）                实际=972 文件 / 8177073 B
+   [FAIL（已登记红，须逐项解释）] F-bytes    应然=4977445 B（与跑前一致）             实际=8177073 B
+   [PASS] F-dw_ads.db 应然=跑前 30 文件/54737 B             实际=30 文件/54737 B
+   [PASS] F-dw_dim.db 应然=跑前 3 文件/8198 B               实际=3 文件/8198 B
+   [PASS] F-probe_r613.db 应然=跑前 2 文件/1278 B               实际=2 文件/1278 B
+   [DIFF（逐项解释）] F-dw_dwd.db 应然=跑前 57 文件/317273 B            实际=57 文件/317297 B
+   [DIFF（逐项解释）] F-dw_dws.db 应然=跑前 14 文件/28547 B             实际=14 文件/28571 B
+   [DIFF（逐项解释）] F-dw_ods.db 应然=跑前 866 文件/4567412 B          实际=866 文件/7766992 B
+   [PASS（单轮写入 ⇒ 覆盖）] F-mtime    应然=单一窗口（< 120 s）                实际=最早 17:35:18 最晚 17:35:39 跨度 20 s
+
+---- E3-f 续：17:28:40 那帧是否可作为"跑后"读数 ----
+   [FAIL（与前后两帧互斥 ⇒ 不采信为跑后读数）] F-frame    应然=应与 972 一致                    实际=137 文件 / 1234592 B
+
+---- E3-g：落地区时点（带时点表述；与跑前逐值闭合）----
+   [PASS] G-ev       应然=+2 文件 / +382278 B（=18430+363848） 实际=61 文件 / 406496411 B / 差 +2 文件 +382278 B
+   [PASS] G-mf       应然=+2 文件                        实际=42 文件 / 38861 B
+
+==== 自检汇总 ====
+   判据条数 = 30（PASS 25 / FAIL 2 / DIFF-登记 3）
+   条数自检：上面逐条打印的行数应等于 30
+   结论：存在 FAIL ⇒ 本脚本 exit 1（红项已在 README 逐项登记，不得改写为通过）

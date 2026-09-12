@@ -1,0 +1,87 @@
+R2-b 输入纯净度检查（landing\events 是否还有无断点文件）
+=====================================================================
+检查时点：2026-09-12 17:33:43.641
+目录    ：D:\Develop_code\GraduationProject\landing\events
+
+---- 库内 file_checkpoint ----
+  总行数：110
+  source_id 为 NULL 的行数：0
+
+---- landing\events 目录 ----
+  文件数：60
+  合计字节：406132563
+
+---- 逐文件核对（basename 口径）----
+  2026090509.jsonl                                   12089941 B  next_offset=12089941 source_id=1
+  2026090510.jsonl                                   15268153 B  next_offset=15268153 source_id=1
+  2026090511.jsonl                                   17000746 B  next_offset=17000746 source_id=1
+  2026090512.jsonl                                   18234895 B  next_offset=18234895 source_id=1
+  2026090513.jsonl                                   16127604 B  next_offset=16127604 source_id=1
+  2026090514.jsonl                                   15258744 B  next_offset=15258744 source_id=1
+  2026090515.jsonl                                   14216195 B  next_offset=14216195 source_id=1
+  2026090516.jsonl                                   13184054 B  next_offset=13184054 source_id=1
+  2026090517.jsonl                                   16761473 B  next_offset=16761473 source_id=1
+  2026090518.jsonl                                   20344587 B  next_offset=20344587 source_id=1
+  2026090519.jsonl                                   19363647 B  next_offset=19363647 source_id=1
+  2026090520.jsonl                                   20103891 B  next_offset=20103891 source_id=1
+  2026090521.jsonl                                   18125058 B  next_offset=18125058 source_id=1
+  2026090522.jsonl                                   14209197 B  next_offset=14209197 source_id=1
+  2026090523.jsonl                                    8062834 B  next_offset=8062834 source_id=1
+  2026090600.jsonl                                    2946673 B  next_offset=2946673 source_id=1
+  2026090601.jsonl                                    2072574 B  next_offset=2072574 source_id=1
+  2026090602.jsonl                                    1668224 B  next_offset=1668224 source_id=1
+  2026090603.jsonl                                    1144345 B  next_offset=1144345 source_id=1
+  2026090604.jsonl                                    1005211 B  next_offset=1005211 source_id=1
+  2026090605.jsonl                                    1026537 B  next_offset=1026537 source_id=1
+  2026090606.jsonl                                    2065794 B  next_offset=2065794 source_id=1
+  2026090607.jsonl                                    5094599 B  next_offset=5094599 source_id=1
+  2026090608.jsonl                                    8996315 B  next_offset=8996315 source_id=1
+  2026090609.jsonl                                   12092686 B  next_offset=12092686 source_id=1
+  2026090610.jsonl                                   15080217 B  next_offset=15080217 source_id=1
+  2026090611.jsonl                                   17291695 B  next_offset=17291695 source_id=1
+  2026090612.jsonl                                   18502991 B  next_offset=18502991 source_id=1
+  2026090613.jsonl                                   16147426 B  next_offset=16147426 source_id=1
+  2026090614.jsonl                                   15692460 B  next_offset=15692460 source_id=1
+  2026090615.jsonl                                   14275535 B  next_offset=14275535 source_id=1
+  2026090616.jsonl                                   13227116 B  next_offset=13227116 source_id=1
+  2026090617.jsonl                                   16168955 B  next_offset=16168955 source_id=1
+  2026090620.jsonl                                       1846 B  next_offset=1846 source_id=1
+  2026090621.jsonl                                       9053 B  next_offset=9053 source_id=1
+  2026090700.jsonl                                     348746 B  next_offset=348746 source_id=1
+  2026090701.jsonl                                     359896 B  next_offset=359896 source_id=1
+  2026090703.jsonl                                        918 B  next_offset=918 source_id=1
+  2026091115.jsonl                                      19365 B  next_offset=19365 source_id=1
+  2026091120.jsonl                                     460026 B  next_offset=460026 source_id=1
+  2026091121.jsonl                                     165616 B  next_offset=165616 source_id=1
+  2026091122.jsonl                                     130261 B  next_offset=130261 source_id=1
+  2026091209.jsonl                                       1131 B  next_offset=1131 source_id=1
+  2026091210.jsonl                                     584644 B  next_offset=584644 source_id=1
+  2026091211.jsonl                                     631946 B  next_offset=631946 source_id=1
+  2026091215.jsonl                                        994 B  next_offset=994 source_id=1
+  b08-gate-20260911-1555.jsonl                            586 B  next_offset=586 source_id=1
+  b11-fixture-20260911162916.jsonl                        586 B  next_offset=586 source_id=1
+  gen-s3b-1000-20260911.jsonl                          363848 B  next_offset=363848 source_id=1
+  golden-r615-20260910164859.jsonl                      18429 B  next_offset=18139 source_id=1
+  golden-r615b-20260910165249.jsonl                     18430 B  next_offset=18430 source_id=1
+  golden-r618-tampered-20260910.jsonl                   18430 B  next_offset=18430 source_id=1
+  golden-r619-clean-20260910.jsonl                      18430 B  next_offset=18430 source_id=1
+  golden-r70-clean-20260910.jsonl                       18430 B  next_offset=18430 source_id=1
+  golden-r73-clean-20260910.jsonl                       18430 B  next_offset=18430 source_id=1
+  r2-golden55-20260912-172221.jsonl                     18430 B  next_offset=18430 source_id=1
+  r9-m1-123006.jsonl                                    18430 B  next_offset=18430 source_id=1
+  r9-prunefix-105922.jsonl                              18430 B  next_offset=18430 source_id=1
+  r9-prunefix-110637.jsonl                              18430 B  next_offset=18430 source_id=1
+  r9-qualityfail-103736.jsonl                           18430 B  next_offset=18430 source_id=1
+
+==== 三个读数（父侧要求的判据）====
+  ① landing\events 文件数            = 60
+  ② 其中能在 file_checkpoint 找到的  = 60
+  ③ 差集名单（无断点 ⇒ 会被一起采集）= （空）
+
+---- A4 正向对照 ----
+  构造假文件名：zzz-nonexistent-probe-file-20260912.jsonl
+  算法判定其有无断点：无断点 ✓
+
+---- 判定 ----
+  **输入纯净**：landing\events 全部文件均有断点 ⇒ 采集只会吃到我新放的那一个文件。
+  可以开跑 R2-b 对照。
