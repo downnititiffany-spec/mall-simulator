@@ -1,0 +1,83 @@
+{
+  "spec": "warehouse-namespace",
+  "version": "v2",
+  "status": "FROZEN-2026-09-12",
+  "owner": "P2-07（源级数仓命名空间单点所有者；继 P1-04）",
+  "createdAt": "2026-09-11",
+  "supersedes": "warehouse-namespace.v1.json",
+  "revisedAt": "2026-09-12",
+  "revisionReason": "D-072：取值来源（sourceOfTruth）由 runtime_profile.hive_database_prefix 迁至 source_registry.warehouse_prefix —— 属改语义，故出新 v2 而非原地放宽 v1；规则本体（pattern/保留字/层后缀/四错误码/22 向量）与 v1 逐字段等价，v1 作为历史冻结件保留不改。",
+  "purpose": "三个程序共用的数仓库名派生规则与白名单校验的唯一机器可读来源；Java 与 Scala 两侧实现都只做该规格的薄适配，测试逐向量对账，防止两侧规则漂移。",
+  "consumers": [
+    "spark-jobs（Scala）：INIT_SCHEMA、ODS/DWD/DIM/DWS/ADS SQL 模板、质量检查、ADS 发布、指标导出、JobRunner 启动前校验",
+    "analytics-server（Java）：spark-submit 命令构造（提交前校验）、指标血缘显示、P4 数据源管理页展示"
+  ],
+  "rule": {
+    "defaultPrefix": "dw",
+    "separator": "_",
+    "layerSuffixes": ["ods", "dwd", "dim", "dws", "ads"],
+    "derivedName": "<prefix><separator><layerSuffix>",
+    "prefixPattern": "^[a-z][a-z0-9_]{0,23}$",
+    "prefixMaxLength": 24,
+    "reserved": ["default", "sys", "system", "information_schema", "hive_metastore"],
+    "blankIsDefault": true,
+    "blankDefinition": "仅 null 与空串 \"\" 视为缺省；空白串（如 \" \"）不视为缺省，按规则判为 WAREHOUSE_PREFIX_PATTERN",
+    "checkOrder": ["WAREHOUSE_PREFIX_PATTERN", "WAREHOUSE_PREFIX_UNDERSCORE", "WAREHOUSE_PREFIX_RESERVED", "WAREHOUSE_PREFIX_LAYER_SUFFIX"],
+    "errorCodes": {
+      "WAREHOUSE_PREFIX_PATTERN": "形状/长度不合规（须 ^[a-z][a-z0-9_]{0,23}$，首字符小写字母）",
+      "WAREHOUSE_PREFIX_UNDERSCORE": "以下划线结尾或含连续下划线（会派生 dw__ods 这类歧义库名）",
+      "WAREHOUSE_PREFIX_RESERVED": "命中保留字（Hive/元数据库名）",
+      "WAREHOUSE_PREFIX_LAYER_SUFFIX": "已以 _ods/_dwd/_dim/_dws/_ads 结尾（会派生 dw_ods_ods 这类二次后缀）"
+    },
+    "noNormalization": "实现不得 trim/大小写转换/自动纠正：非法取值必须原样失败，不静默兜底",
+  "sourceOfTruth": "运行期取值来自 source_registry.warehouse_prefix（NOT NULL、无 DEFAULT，由 V18 迁移建立）。解析链唯一：source_registry.warehouse_prefix → WarehouseNamespace，经 WarehouseNamespaceProvider.forSource(sourceId)（current() = forSource(ACTIVE 运行档案的 source_id)）。runtime_profile.hive_database_prefix 自 2026-09-12 起**只断读不删列**：任何生产读取点不得再读它，写入非空值一律拒绝（P2-07 / D-073）。"
+  },
+  "compatibility": {
+    "note": "源 A（本地/集群既有数仓）在源级 warehouse_prefix 回填为 'dw' 时派生 dw_ods/dw_dwd/dw_dim/dw_dws/dw_ads，与改造前库名逐字一致，因此零数据迁移；第二个源可用 dw_b → dw_b_ods。V18 回填值 'dw' 与旧语义（profile NULL → defaultPrefix）在该源上结果等价，该等价性由 E2 用例逐字断言。",
+    "observedDatabases": ["dw_ods", "dw_dwd", "dw_dim", "dw_dws", "dw_ads"]
+  },
+  "vectors": [
+    {
+      "input": null,
+      "expect": "DEFAULT",
+      "names": {"ods": "dw_ods", "dwd": "dw_dwd", "dim": "dw_dim", "dws": "dw_dws", "ads": "dw_ads"},
+      "why": "源级 warehouse_prefix 回填为 'dw'（等价于旧 profile NULL）：源 A 既有库名，零迁移"
+    },
+    {"input": "", "expect": "DEFAULT", "why": "空串等同缺省"},
+    {
+      "input": "dw",
+      "expect": "OK",
+      "names": {"ods": "dw_ods", "dwd": "dw_dwd", "dim": "dw_dim", "dws": "dw_dws", "ads": "dw_ads"},
+      "why": "显式写 dw 与缺省同结果"
+    },
+    {
+      "input": "dw_b",
+      "expect": "OK",
+      "names": {"ods": "dw_b_ods", "dwd": "dw_b_dwd", "dim": "dw_b_dim", "dws": "dw_b_dws", "ads": "dw_b_ads"},
+      "why": "异源前缀（P5 手工配置基线）"
+    },
+    {"input": "a", "expect": "OK", "why": "最短合法前缀"},
+    {"input": "src1", "expect": "OK", "why": "含数字"},
+    {"input": "dw_2026", "expect": "OK", "why": "含下划线与数字"},
+    {"input": "abcdefghijklmnopqrstuvwx", "expect": "OK", "why": "24 字符边界（含）"},
+    {"input": "abcdefghijklmnopqrstuvwxy", "expect": "WAREHOUSE_PREFIX_PATTERN", "why": "25 字符越界"},
+    {"input": "DW", "expect": "WAREHOUSE_PREFIX_PATTERN", "why": "大写不合法（不自动小写化）"},
+    {"input": "1dw", "expect": "WAREHOUSE_PREFIX_PATTERN", "why": "首字符非字母"},
+    {"input": "dw-b", "expect": "WAREHOUSE_PREFIX_PATTERN", "why": "连字符不合法（会破坏库名解析）"},
+    {"input": " dw", "expect": "WAREHOUSE_PREFIX_PATTERN", "why": "空白串不视为缺省，也不 trim"},
+    {"input": "_dw", "expect": "WAREHOUSE_PREFIX_PATTERN", "why": "首字符为下划线"},
+    {"input": "dw_", "expect": "WAREHOUSE_PREFIX_UNDERSCORE", "why": "以下划线结尾 → dw__ods"},
+    {"input": "dw__b", "expect": "WAREHOUSE_PREFIX_UNDERSCORE", "why": "连续下划线"},
+    {"input": "default", "expect": "WAREHOUSE_PREFIX_RESERVED", "why": "Hive 默认库"},
+    {"input": "sys", "expect": "WAREHOUSE_PREFIX_RESERVED", "why": "保留字"},
+    {"input": "information_schema", "expect": "WAREHOUSE_PREFIX_RESERVED", "why": "保留字（形状本身合法）"},
+    {"input": "dw_ods", "expect": "WAREHOUSE_PREFIX_LAYER_SUFFIX", "why": "已带层后缀"},
+    {"input": "dw_dwd", "expect": "WAREHOUSE_PREFIX_LAYER_SUFFIX", "why": "已带层后缀"},
+    {"input": "shop_ads", "expect": "WAREHOUSE_PREFIX_LAYER_SUFFIX", "why": "已带层后缀"}
+  ],
+  "parity": {
+    "javaTest": "com.graduation.analytics.warehouse.WarehouseNamespaceContractTest",
+    "scalaTest": "com.graduation.analytics.WarehouseNamespaceSpec",
+    "requirement": "两侧测试都必须加载本文件并逐向量断言，同时断言本方常量与 rule 段逐字一致；任一实现漂移即失败。"
+  }
+}

@@ -1,6 +1,6 @@
 # contract-specs — 三程序共享的版本化机器可读契约
 
-状态：**部分冻结**——`specs/warehouse-namespace.v1.json` 已由总控冻结（2026-09-11，依据 P1-04 的本地 E3 实测，见 §4）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`1.3.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
+状态：**部分冻结**——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.0.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），`1.3.0 → 2.0.0` 对应 `specs/warehouse-namespace.v2.json` 的**破坏性变更**（取值来源由 `runtime_profile.hive_database_prefix` 迁至源级 `source_registry.warehouse_prefix`；规则本体与 22 向量与 v1 逐字段等价，v1 保留为历史冻结件），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
 
 ## 1. 目的与边界
 
@@ -52,12 +52,15 @@
 | [`schemas/ingestion-manifest.v1.schema.json`](schemas/ingestion-manifest.v1.schema.json) | `analytics-platform`（`connection-ingestion` 写出 `landing/manifests/{batchId}.json`） | 平台采集侧自校验；生成器/商城只读不写 | `DRAFT`（2026-09-11 按 `D-037` 加法扩展 4 个源身份字段：`sourceCode`/`sourceId`/`profileVersion`/`mappingVersion`，**均不入 `required`** 以兼容已落盘清单；取值者 = `source_registry` 的 `source_code`/`id`/`profile_version`，`mappingVersion` 在 P2 前恒为 `null`） |
 | [`schemas/generation-artifact-manifest.v1.schema.json`](schemas/generation-artifact-manifest.v1.schema.json) | `synthetic-data-generator`（`CANONICAL_EVENT_FILE` 模式制品清单） | 生成器自校验；平台采集侧在读取生成器目录时按此校验 | `DRAFT` |
 | `openapi/generator-api.v1.yaml` | `synthetic-data-generator`（服务端）；`MALL_API` 场景下的调用方与页面为消费方 | 生成器按契约实现并自测；调用方按契约生成客户端 | `DRAFT` |
-| [`specs/warehouse-namespace.v1.json`](specs/warehouse-namespace.v1.json) | 两个消费方共享：`spark-jobs`（Scala）、`analytics-server`（Java）；两侧各自持有**薄适配器**，规则本体只在本规格 | Java：`WarehouseNamespaceContractTest`（逐向量 + `errorCodes` 数量/取值）+ `WarehouseNameLiteralGateTest`（源码门禁：除唯一 owner 外无裸库名字面量）；Scala：`WarehouseNamespaceSpec`（62 用例） | **`FROZEN-2026-09-11`** |
-| [`VERSION`](VERSION) | 总控 | — | `1.3.0` |
+| [`specs/warehouse-namespace.v1.json`](specs/warehouse-namespace.v1.json) | 两个消费方共享：`spark-jobs`（Scala）、`analytics-server`（Java）；两侧各自持有**薄适配器**，规则本体只在本规格 | Java：`WarehouseNamespaceContractTest`（逐向量 + `errorCodes` 数量/取值）+ `WarehouseNameLiteralGateTest`（源码门禁：除唯一 owner 外无裸库名字面量）；Scala：`WarehouseNamespaceSpec`（62 用例） | **已被 v2 取代（历史冻结件，不改）** |
+| [`specs/warehouse-namespace.v2.json`](specs/warehouse-namespace.v2.json) | 同上（`supersedes: warehouse-namespace.v1.json`） | 同上 | **`FROZEN-2026-09-12`** |
+| [`VERSION`](VERSION) | 总控 | — | `2.0.0` |
 
 **为什么其余四个制品仍是 `DRAFT`（诚实说明）**：这些文件是 M1-5 新建立的投影，尚未经过两条冻结门槛——(1) 结构对账测试 `analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java` 转绿；(2) 总控（热点 Owner）审阅并处置第 7 节的待决策项。**只有两者都完成，才允许把状态改为 `FROZEN`。** 当前 `canonical-event.v1` 的字段集/枚举/常量/金额正则已按该测试的断言逐条对齐（本案建立时用 PowerShell 逐条模拟断言核对，见第 8 节；M1-5 范围内不允许运行 Maven，故未执行该测试本身）；且 Q6（采集层接受的 51 行里约 25 行按契约属脏数据）未决 ⇒ `canonical-event.v1` **不得**冻结。
 
 **`specs/warehouse-namespace.v1.json` 为何已冻结（冻结依据与边界，2026-09-11 总控复核）**：P1-04 交付了机器可读规格 + Java/Scala 两侧薄适配器 + 门禁与逐向量测试，并用**隔离临时数仓真跑 `spark-submit`** 取证（`docs/acceptance/p1-04-namespace-20260911/`，探针 18/18 PASS）：前缀 `dw_b` → 实建 `dw_b_ods…dw_b_ads` 且**不建** `dw_ods`；不传前缀 → `dw_ods…dw_ads` 与前者的表/分区/文件**逐项一致**（⇒ 零数据迁移）；非法前缀（`dw_ods`、`DW`）→ Spark 启动**前** `exit 64`、stdout 无 JobResult、**0 个库**（fail-closed）。E2 侧 `WarehouseNameLiteralGateTest` 证明"除唯一 owner 外无裸库名字面量"。**冻结的边界（未取证，不得当作已证）**：① 集群档与 1,000,000 行档；② `beeline --hivevar` 的实际变量替换（本机无 HiveServer2 ⇒ 留 M3/集群 T4）。这两项不改变规则本体，但**任何"集群上已验证"的说法都不成立**。冻结后按 §3 处置：加法变更 → 目录级升 `1.1.0` 并复核向量；语义变更 → 新建 `warehouse-namespace.v2.json`，不原地改。
+
+**2026-09-12 更新（P2-07 / `D-072`）：取值来源迁到源级，规则本体逐字段未变。** P2-07 只读取证实测：源级前缀此前在代码/库/契约三层**皆无载体**（`source` 包内 `WarehouseNamespace` 零命中；全库仅 `runtime_profile.hive_database_prefix` 一列；`source_registry` 11 列无前缀列），故按本节规则**出新 v2 而非原地改 v1**：`sourceOfTruth` 改指 `source_registry.warehouse_prefix`（NOT NULL、无 DEFAULT，V18 迁移建立），解析链唯一化为 `source_registry.warehouse_prefix → WarehouseNamespace`（经 `WarehouseNamespaceProvider.forSource(sourceId)`，`current()` = `forSource(ACTIVE 档案的 source_id)`）。**机械等价性证明**：v2 的 `rule` 除 `sourceOfTruth` 外与 v1 逐字段相等，22 条向量的 `input`/`expect`/`names` 三元组逐条相等（`json` 深比较，`contract-specs/VERSION` 同步 `1.3.0 → 2.0.0`）⇒ 上文 P1-04 的隔离真跑结论（零数据迁移、非法前缀 fail-closed）**继续有效**，因其只依赖规则本体。**引用点排期**：Java 侧（`WarehouseNamespaceContractTest.java:40` 等 4 处）随 P2-07 实施改指 v2；Scala 侧（`WarehouseNamespaceSpec.scala:177` 等 2 处）改指 v2 排在 P2-01 实施泳道让出 `spark-jobs/**` 之后（登记为 P2-07-c）——**在该项完成前，两侧读的是 v1/v2 两个文件名，但规则本体逐字段相同，不构成行为分叉**。另：`runtime_profile.hive_database_prefix` **只断读不删列**（`D-073`；删列属破坏性 DDL，待用户确认后另立任务），`EvidenceBuilder` 的第二读取端口（快照身份 vs 当前 profile）未在本轮修复，另立 P2-07-b。
 
 ## 5. `canonical-event.v1` 的建模决定（须连同 markdown 一起读）
 
@@ -175,13 +178,15 @@
 
 | 文件 | SHA-256 | 说明 |
 |---|---|---|
-| `specs/warehouse-namespace.v1.json` | `463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A` | **已冻结**版（`status=FROZEN-2026-09-11`）。冻结前哈希 `A3E712B2…` 出自 P1-04 轮实测记录，本轮**无法再复核**（该内容已不存在）；冻结改动经 diff 确认为**仅 `status` 一个字符串**，故 P1-04 的 22 向量实测结论按"仅 status 变化"继承 |
+| `specs/warehouse-namespace.v1.json` | `463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A` | **已冻结**版（`status=FROZEN-2026-09-11`）。冻结前哈希 `A3E712B2…` 出自 P1-04 轮实测记录，本轮**无法再复核**（该内容已不存在）；冻结改动经 diff 确认为**仅 `status` 一个字符串**，故 P1-04 的 22 向量实测结论按"仅 status 变化"继承。**2026-09-12 起由 v2 取代（`D-072`），本行哈希仍有效（v1 未被改动）** |
+| `specs/warehouse-namespace.v2.json` | `CD79BBA1688E333B8E378D079AEC2959C5B803A5D27F38A9916392F426C17B28`（6,156 B / 84 行） | **现行权威版**（`status=FROZEN-2026-09-12`，`supersedes: warehouse-namespace.v1.json`）。与 v1 的差异经逐行 diff 限定为：`version`/`status`/`owner` 三行改写、`createdAt` 后新增 `supersedes`/`revisedAt`/`revisionReason` 三行、`sourceOfTruth` 与 `compatibility.note` 两行改写、1 处向量 `why` 散文改写；`rule`（除 `sourceOfTruth`）与 22 向量三元组经 json 深比较**逐字段等价** |
 | `schemas/ingestion-manifest.v1.schema.json` | `0993E1474228E2EE895E5804D20212DBF1662EF74C22F7EB2A4FAF2E2EF93603` | P1-05 加法扩展后（19 属性 / `required` 仍 15） |
 | `schemas/canonical-event.v1.schema.json` | 未冻结，见 §7 | B-06/Q6 未决，指纹待冻结时同表登记 |
 | `schemas/generation-artifact-manifest.v1.schema.json` | 未冻结，见 §7 | 同上 |
 | `README.md` | **不登记自身**（自指：把本文件的哈希写进本文件，写入动作本身就会让该哈希失效） | 需核对时现算：`Get-FileHash contract-specs/README.md -Algorithm SHA256`，并与该次提交比对 |
 | `VERSION` | `C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0` | 内容 `contract-specs 1.2.0`（本表登记的是 2026-09-11 20:12 写入、提交 `332b52b` 20:14:08 时的值） |
 | `VERSION`（**当前值**，2026-09-12 CT-0 重登记） | `B6BAB8E0547C6BC0EB7005128E177B891E32534FA3522D54B079E7AEC384EC89` | 内容 `contract-specs 1.3.0`（21 B）。上一行 `C9E89F9D…`／内容 `1.2.0` 是 2026-09-11 20:12 的**历史登记，原文保留不改**；变化发生在 M1-5 收口同步升版（§11，提交 `fee9dbc`）。引用**当前态**结论用本行，引用**历史轮次**结论用上一行 |
+| `VERSION`（**当前值**，2026-09-12 P2-07 重登记） | `BA01EE34366FAC52AD8EE7709EF44F25117E0662F3D7E3D0CE1FF9E3B3407A71` | 内容 `contract-specs 2.0.0`（21 B）。上一行 `B6BAB8E0…`／内容 `1.3.0` 是 CT-0 时点的**历史登记，原文保留不改**；本次变化是 P2-07 的**破坏性契约变更**（`D-072`，见 §13）。引用**当前态**结论用本行 |
 
 **口径**：指纹是**复核辅助**而非契约的一部分——`VERSION` 才是契约的版本所有者（改契约必须同时升 `VERSION`，指纹随内容自然变化，不单独维护"指纹版本"）。
 
@@ -217,3 +222,43 @@
 **写入窗口纪律（F-32 残因下的做法）**：本次采用「暴露窗口最小化」——写前复核本文件指纹与登记值相符；四处改动逐条断言"命中且仅命中 1 次"；写后立即复核新指纹；并在同一次操作内提交。期间若检测到外部改写即中止。**残因如实登记**：看板 **F-32** 中本文件于 2026-09-12 11:53 被改写一事**仍未归因**；F-37 的"外部并发写者"说法对 33 个文件被删一事**已证伪**（系总控自身复核脚本的 helper 撞 PowerShell 别名 `rd`），两者不是同一件事。
 
 **本节自检口径**：本文件哈希按 §10 的口径**不登记自身**（自指会让哈希失效）；复核命令 `Get-FileHash contract-specs/README.md -Algorithm SHA256` 并与本次提交比对。本节不改变任何制品的冻结状态：`specs/warehouse-namespace.v1.json` 仍 `FROZEN-2026-09-11`，其余四个仍 `DRAFT`。
+
+
+## 13. P2-07 / `D-072` 落地：当前态版本串 `1.3.0` → `2.0.0`（2026-09-12）
+
+**为什么有本节**：§12 记录的是 CT-0 勘误（`1.2.0 → 1.3.0`）。本轮 P2-07 按 §3 的目录级版本规则把一个**语义变更**落到契约上：数仓库名前缀的取值来源由 `runtime_profile.hive_database_prefix` 迁到源级 `source_registry.warehouse_prefix`，故**新建 `specs/warehouse-namespace.v2.json`**（`supersedes: warehouse-namespace.v1.json`）并升 `VERSION` 到 `2.0.0`。本节记录**改了什么、刻意保留了什么、按什么口径复核**。
+
+### 13.1 改了什么（逐条可复核）
+
+| # | 位置 | 改动 |
+|---|---|---|
+| 1 | 新增 `specs/warehouse-namespace.v2.json` | 由 v1 行级外科改写而来：`version` `v1→v2`、`status` `FROZEN-2026-09-11→FROZEN-2026-09-12`、`owner` 改指 P2-07、`createdAt` 后新增 `supersedes`/`revisedAt`/`revisionReason`、`sourceOfTruth` 与 `compatibility.note` 两行改写、1 处向量 `why` 散文改写 |
+| 2 | `VERSION` | `contract-specs 1.3.0` → `contract-specs 2.0.0`（21 B，sha256 `BA01EE34366FAC52AD8EE7709EF44F25117E0662F3D7E3D0CE1FF9E3B3407A71`） |
+| 3 | §1 状态行（第 3 行） | 冻结状态改指 v2（v1 标为历史冻结件）；版本述沿革追加 `1.3.0 → 2.0.0` 一段（**破坏性变更**） |
+| 4 | §4 目录表 | `VERSION` 行 `1.3.0 → 2.0.0`；原 v1 规格行状态改为「已被 v2 取代（历史冻结件，不改）」，**新增 v2 行**（`FROZEN-2026-09-12`） |
+| 5 | §4 冻结依据段之后 | **追加**「2026-09-12 更新」段：说明三层无载体的实测、机械等价性证明、两个消费方的引用点排期、`D-073` 只断读不删列、P2-07-b |
+| 6 | §10 指纹表 | 新增 v2 行（`CD79BBA1688E333B8E378D079AEC2959C5B803A5D27F38A9916392F426C17B28`，6,156 B / 84 行）与 `VERSION` **当前值**行；v1 行说明追加「2026-09-12 起由 v2 取代，本行哈希仍有效」 |
+
+### 13.2 机械等价性证明（本轮实测，非声明）
+
+- `rule` 对象：v1 与 v2 **除 `sourceOfTruth` 外逐字段相等**（Python `json` 深比较，断言通过）；
+- `vectors`：22 条，`input`/`expect`/`names` **三元组逐条相等**；
+- `compatibility.observedDatabases` 相等；向量条数 22 = 22；
+- v1 文件本体**未被改动**：本轮现算 sha256 `463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A`，与 §10 登记值 `463D9DC3…` 相符。
+
+⇒ §4 中 P1-04 的隔离真跑结论（`dw_b` 建 `dw_b_*` 且不建 `dw_*`；不传前缀与前者的表/分区/文件逐项一致 ⇒ 零数据迁移；非法前缀 `exit 64` 且 0 个库）**继续有效**，因其只依赖规则本体，而规则本体未变。
+
+### 13.3 刻意保留（不改）
+
+- `specs/warehouse-namespace.v1.json` **本体与其 §10 指纹行**（历史冻结件；其 `sourceOfTruth` 已被 v2 取代，但原文不改）；
+- §11 的 `1.2.0 → 1.3.0` 对照表、§12 的 CT-0 勘误全节（那两节是**历史动作记录**，其中出现的 `1.3.0` 是当时读数）；
+- 四个 `DRAFT` 制品的状态与内容；任何 OpenAPI／schema 制品。
+
+### 13.4 引用点排期（本轮**未**改实施侧）
+
+`contract-specs/specs/warehouse-namespace.v1.json` 在实施侧仍有 6 处引用（Java 4 处含**加载点** `WarehouseNamespaceContractTest.java:40`；Scala 2 处含加载点 `WarehouseNamespaceSpec.scala:177`）。Java 侧随 P2-07 实施改指 v2；Scala 侧改指 v2 **排在 P2-01 实施泳道让出 `spark-jobs/**` 之后**（登记为 P2-07-c）。⇒ 在此之前两侧读的是 v1/v2 两个文件名，但**规则本体逐字段相同，不构成行为分叉**；本节不声称任何一侧已按 v2 运行。
+
+### 13.5 本节自检与未取证
+
+- 自检：`VERSION` 与 v2 指纹均为**本轮现算值**；本文件哈希按 §10 口径**不登记自身**（`Get-FileHash contract-specs/README.md -Algorithm SHA256`，与该次提交比对）；v1 指纹现算相符（13.2 末条）。
+- **未取证**：本轮**未运行**任何 Maven/测试（Java/Scala 侧仍加载 v1 ⇒ 运行它们不能证明 v2 侧行为）；v2 的 `rule` 未被任何实现读取过；`source_registry.warehouse_prefix` 列、V18 迁移、源级校验与 `forSource` 解析**均尚未实现**（属 P2-07 实施泳道，见 `docs/acceptance/p2-07-source-prefix-20260912/RULINGS-20260912.md`）。**不得**据本节声称"源级命名空间已生效"。
