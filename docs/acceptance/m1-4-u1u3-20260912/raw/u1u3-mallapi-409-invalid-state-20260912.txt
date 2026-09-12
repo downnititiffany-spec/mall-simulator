@@ -1,0 +1,1 @@
+{"error":"INVALID_STATE","detail":"目标适配器 REFERENCE_MALL_HTTP 的能力不满足 MALL_API 运行：缺少 product=UNDETERMINED、user=UNDETERMINED、order=UNDETERMINED。请先修复目标配置（base_url/凭据引用/config_json）并用 POST /api/v1/targets/{id}/probe 实测确认；本引擎不会降级成文件模式，也不会跳过这些事件报成功。本次调用用的凭据引用是 GENERATOR_TARGET_TOKEN（凭据取不到值时所有路由都判 UNDETERMINED；凭据值不回显）","timestamp":"2026-09-12T02:11:00.884613900Z"}

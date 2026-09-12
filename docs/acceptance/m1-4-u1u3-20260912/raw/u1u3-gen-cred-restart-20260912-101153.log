@@ -1,0 +1,33 @@
+=== M1-4 U1/U3 前置：8092 凭据注入重启 + 目标探针 · 起始 2026-09-12 10:11:53.340 ===
+
+--- §1 缺口证据：MALL_API 运行被 409 拒绝（凭据环境变量在 8092 进程里取不到值）---
+  原文已落盘：docs\acceptance\m1-4-u1u3-20260912\raw\u1u3-mallapi-409-invalid-state-20260912.txt
+  内容：{"error":"INVALID_STATE","detail":"目标适配器 REFERENCE_MALL_HTTP 的能力不满足 MALL_API 运行：缺少 product=UNDETERMINED、user=UNDETERMINED、order=UNDETERMINED。请先修复目标配置（base_url/凭据引用/config_json）并用 POST /api/v1/targets/{id}/probe 实测确认；本引擎不会降级成文件模式，也不会跳过这些事件报成功。本次调用用的凭据引用是 GENERATOR_TARGET_TOKEN（凭据取不到值时所有路由都判 UNDETERMINED；凭据值不回显）","timestamp":"2026-09-12T02:11:00.884613900Z"}
+  机制（源码）：ReferenceMallHttpAdapter 的 credential_ref 是**环境变量名**，取值走 System::getenv；取不到 -> 三条路由全 UNDETERMINED -> GenerationRunService 前置校验 409 INVALID_STATE，不降级、不跳过。
+  启动脚本缺口：scripts/start-all.ps1 第 82-89 行启动生成器时**不注入** GENERATOR_TARGET_TOKEN（全仓库仅本泳道脚本提到该名字）。
+
+--- §2 重启前身份 ---
+  8092 pid=10412 启动=2026-09-12 09:48:10
+  在飞运行检查（应全为终态）：
+    non_terminal=0
+
+--- §3 取 8090 新会话令牌（只注入进程环境，不落盘、不打印值）---
+  code=OK token长度=32（值不落盘）
+  data.user = {"id":1,"username":"admin","realName":"系统管理员","role":"admin"}
+  已设置环境变量 GENERATOR_TARGET_TOKEN 于本会话（长度=32）
+
+--- §4 终止旧 8092 并等待端口释放 ---
+  旧 pid=10412 已终止；端口释放=True
+
+--- §5 以注入环境启动新 8092（同一 jar、工作目录 synthetic-data-generator）---
+  新 pid=24692  jar=26216592 B  jar_mtime=2026-09-11 21:04:06  CWD=D:\Develop_code\GraduationProject\synthetic-data-generator
+  就绪=True  监听 pid=24692 启动=2026-09-12 10:11:55
+
+--- §6 目标 118 定义（库内行）---
+  注：capabilities 列不入库回写（探针是即时判定），下面用接口实测。
+
+--- §7 目标探针实测 POST /api/v1/targets/118/test ---
+  http=200
+  响应体={"target_id":118,"reachable":true,"detail":"OPTIONS 探测 http://127.0.0.1:8090：11 条代表路由；product=SUPPORTED；user=SUPPORTED；order=SUPPORTED；refund=SUPPORTED；behavior=UNDETERMINED；reset_state=UNDETERMINED；admin=SUPPORTED。路由明细：/api/v1/mall/products=HTTP_ANSWERED(200), /api/v1/mall/users=HTTP_ANSWERED(200), /api/v1/mall/orders=HTTP_ANSWERED(200), /api/v1/mall/orders/0/pay=HTTP_ANSWERED(200), /api/v1/mall/orders/0/cancel=HTTP_ANSWERED(200), /api/v1/mall/orders/0/refunds=HTTP_ANSWERED(200), /api/v1/mall/refunds/0/complete=HTTP_ANSWERED(200), /api/v1/admin/products=HTTP_ANSWERED(200), /api/v1/admin/products/0/price=HTTP_ANSWERED(200), /api/v1/admin/products/0/stock=HTTP_ANSWERED(200), /api/v1/admin/products/0/status=HTTP_ANSWERED(200)。已按凭据引用 GENERATOR_TARGET_TOKEN 取值并对所有代表路由附带（值不回显）。behavior 需在 config_json.behavior_path 声明公开行为埋点接口路径（参考商城尚无该接口，路径未冻结，B-04）。reset_state 需在 config_json.reset_path 声明受保护重置接口路径","capabilities":{"product":"SUPPORTED","user":"SUPPORTED","order":"SUPPORTED","refund":"SUPPORTED","behavior":"UNDETERMINED","reset_state":"UNDETERMINED","admin":"SUPPORTED"}}
+
+=== 日志结束 2026-09-12 10:12:03.407 ===

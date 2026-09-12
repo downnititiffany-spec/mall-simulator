@@ -1,0 +1,213 @@
+=== M1-4 U1/U3 真机正向运行 · 日志起始 2026-09-12 10:12:42.069 ===
+
+--- §0 预注册预测（本段在发起运行之前写出；预测错也要照原样留着）---
+  P1 终态 = SUCCESS
+  P2 failed_count = 0，success_count = 640
+  P3 createOrder 尝试次数 ≈ 274（= 640 × 171/400，run 147 实测比例 0.4275），区间 200–340
+  P4 事件类型计数：user_registered = 53（usersFor(640)=floor(640/12)）、product_created = 32（productsFor(640)=32）、order_created ≈ 274
+  P5 至少 1 条 refund_completed 真实写入商城（U3 判据）；预期 2–4 条
+  P6 商城侧增量：mall_order ≈ +274、mall_user ≈ +53、refund(COMPLETED) ≥ +1
+  P7 无任何 INSUFFICIENT_STOCK（池内 32 件全部 available_qty=500/1000，单件最坏消耗按 run 147 分布外推 ≤ 130）
+  P8 落地区：商城 outbox 会新增当前小时文件（若商城定时发布器在跑）
+
+--- §1 发起运行（POST /api/v1/generation-runs，body 只含 plan_id + version）---
+  请求体 = {"plan_id":"m1-4-u1u3-live-20260912","version":1}
+  发起时刻 = 2026-09-12 10:12:42.081
+  http_code = 200
+  响应体 = {"runId":"m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba"}
+  run_id = m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba
+
+--- §2 轮询终态（GET /api/v1/generation-runs/{runId}）---
+  [ 1] 10:12:45 status=RUNNING success= failed=
+  [ 2] 10:12:48 status=RUNNING success= failed=
+  [ 3] 10:12:51 status=SUCCESS success= failed=
+
+--- §3 终态全文 RunView ---
+{
+  "run_id": "m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba",
+  "plan_version": 1,
+  "target_version": 1,
+  "status": "SUCCESS",
+  "started": "2026-09-12T10:12:42+08:00",
+  "finished": "2026-09-12T10:12:48+08:00",
+  "success_count": 640,
+  "failed_count": 0,
+  "checksum": "c381c8579da1122cb49f1f81086a8bcd8d517727cf7847d589ae53c71e3636cc",
+  "cancel_requested": false
+}
+
+--- §4 运行产物清单（GET /api/v1/generation-runs/{runId}/artifacts）---
+[
+  {
+    "run_id": "m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba",
+    "uri": "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/events-0001.jsonl",
+    "checksum": "c381c8579da1122cb49f1f81086a8bcd8d517727cf7847d589ae53c71e3636cc",
+    "bytes": 271019,
+    "record_count": 640,
+    "min_event_time": "2026-09-01T00:00:00+08:00",
+    "max_event_time": "2026-09-07T23:44:11+08:00",
+    "schema_version": "1.0",
+    "synthetic": true
+  },
+  {
+    "run_id": "m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba",
+    "uri": "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/operation-journal.jsonl",
+    "checksum": "02e70d10598e3ef9ce69aef618f50fe48596e5ca8fcd7372857b8f37bb975576",
+    "bytes": 136256,
+    "record_count": 641,
+    "schema_version": "1.0",
+    "synthetic": true
+  },
+  {
+    "run_id": "m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba",
+    "uri": "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/events-0001.manifest.json",
+    "checksum": "a5cc51d546fb1ecedb6dfdb73c4d1d6b63ca56184d5b1c20d31c54b5dd2fab49",
+    "bytes": 516,
+    "record_count": 0,
+    "schema_version": "1.0",
+    "synthetic": true
+  }
+]
+
+--- §5 库内运行行（generator_meta.generation_run）---
+  id=154 run_id=m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba plan=m1-4-u1u3-live-20260912 v1 target=118 status=SUCCESS started=2026-09-12 10:12:42.182 finished=2026-09-12 10:12:48.387
+  success=640 failed=0 error_code=-
+  error_message=NULL
+
+--- §6 库内逐类事件统计（generation_event_stat）---
+  order_created = 272
+  order_cancelled = 183
+  order_paid = 88
+  user_registered = 53
+  product_created = 32
+  refund_completed = 6
+  refund_created = 6
+
+--- §7 库内制品行（generation_artifact）---
+  EVENT_JSONL uri=file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/events-0001.jsonl records=640 bytes=271019 checksum=c381c8579da1122c
+  MANIFEST uri=file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/events-0001.manifest.json records=0 bytes=516 checksum=a5cc51d546fb1ece
+  OPERATION_JOURNAL uri=file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/operation-journal.jsonl records=641 bytes=136256 checksum=02e70d10598e3ef9
+
+--- §8 运行目录产物（含 sha256）---
+  events-0001.jsonl  271019 B  sha256=C381C8579DA1122CB49F1F81086A8BCD8D517727CF7847D589AE53C71E3636CC  mtime=2026-09-12 10:12:48.330
+  events-0001.manifest.json  516 B  sha256=A5CC51D546FB1ECEDB6DFDB73C4D1D6B63CA56184D5B1C20D31C54B5DD2FAB49  mtime=2026-09-12 10:12:48.335
+  operation-journal.jsonl  136256 B  sha256=02E70D10598E3EF9CE69AEF618F50FE48596E5CA8FCD7372857B8F37BB975576  mtime=2026-09-12 10:12:48.344
+  run-report.json  3610 B  sha256=B34256FB81063624FB095BE79AA6787B6870682CCCB9096FD39B2CBCF52C3EC1  mtime=2026-09-12 10:12:48.386
+
+--- §9 后态：商城计数与库存 ---
+  mall_order=5329
+  order_item=5330
+  payment=4223
+  refund=189
+  refund_COMPLETED=189
+  mall_user=1904
+  event_outbox=876776
+  products=38 total_avail=17900 sold_out=0 min=92
+  outbox/behavior=869708
+  outbox/order_cancelled=611
+  outbox/order_created=1936
+  outbox/order_paid=1321
+  outbox/refund_completed=55
+  outbox/refund_created=55
+  outbox/stock_changed=32
+  outbox/stock_released=611
+  outbox/stock_reserved=1936
+  outbox/user_registered=511
+
+--- §10 本轮运行造成的商城增量（按 run 时间窗）---
+  订单=272
+  退款COMPLETED=6
+  退款明细: 2098595630867312642 order=2098595630737289217 status=COMPLETED amount=19.26 at=2026-09-12 10:12:43.082
+  退款明细: 2098595641101414402 order=2098595640975585281 status=COMPLETED amount=43.08 at=2026-09-12 10:12:45.518
+  退款明细: 2098595642334539778 order=2098595642267430913 status=COMPLETED amount=141.00 at=2026-09-12 10:12:45.822
+  退款明细: 2098595648080736258 order=2098595648013627393 status=COMPLETED amount=63.71 at=2026-09-12 10:12:47.181
+  退款明细: 2098595651335516161 order=2098595651272601601 status=COMPLETED amount=58.09 at=2026-09-12 10:12:47.959
+  退款明细: 2098595652639944706 order=2098595652509921282 status=COMPLETED amount=42.86 at=2026-09-12 10:12:48.270
+
+--- §11 本轮下单分布（商品 × 单数 × 件数）---
+  1001 orders=99 units=198
+  1002 orders=30 units=71
+  1003 orders=18 units=39
+  1004 orders=16 units=32
+  2001 orders=17 units=27
+  2002 orders=10 units=20
+  2003 orders=9 units=14
+  2004 orders=7 units=12
+  3001 orders=6 units=10
+  3002 orders=4 units=7
+  3003 orders=3 units=6
+  3004 orders=5 units=12
+  4002 orders=4 units=8
+  4003 orders=4 units=10
+  4004 orders=2 units=3
+  5001 orders=5 units=8
+  5002 orders=2 units=3
+  5003 orders=5 units=11
+  5004 orders=3 units=9
+  6001 orders=2 units=3
+  6002 orders=5 units=9
+  6003 orders=5 units=10
+  7001 orders=2 units=4
+  7002 orders=2 units=3
+  7003 orders=1 units=2
+  7004 orders=1 units=1
+  8001 orders=1 units=3
+  8003 orders=2 units=5
+  8004 orders=2 units=4
+
+--- §12 池内库存消耗（逐件，补库存后 -> 运行后）---
+  # 1 1001                   924|176|228
+  # 2 1002                   975|125|105
+  # 3 1003                   988|112|175
+  # 4 1004                   485|82|148
+  # 5 2001                   495|57|112
+  # 6 2002                   494|46|96
+  # 7 2003                   495|83|112
+  # 8 2004                   496|34|72
+  # 9 3001                   496|39|46
+  #10 3002                   497|33|36
+  #11 3003                   500|22|39
+  #12 3004                   496|20|49
+  #13 4001                   500|29|27
+  #14 4002                   499|28|38
+  #15 4003                   497|40|37
+  #16 4004                   499|3|14
+  #17 5001                   498|16|16
+  #18 5002                   499|13|22
+  #19 5003                   497|17|24
+  #20 5004                   497|12|21
+  #21 6001                   500|0|5
+  #22 6002                   499|7|15
+  #23 6003                   500|8|14
+  #24 6004                   500|6|4
+  #25 7001                   499|8|9
+  #26 7002                   499|8|7
+  #27 7003                   500|8|6
+  #28 7004                   500|2|4
+  #29 8001                   500|8|17
+  #30 8002                   500|8|5
+  #31 8003                   498|13|11
+  #32 8004                   499|11|10
+  #33 2096441182850224129    NO_ROW
+  #34 2096441182913138689    NO_ROW
+  #35 2096441182976053249    NO_ROW
+  #36 2096441183038967809    NO_ROW
+  #37 2096441183038967810    NO_ROW
+  #38 2096441909920153601    98|2|1
+  #39 2096441909920153602    97|3|2
+  #40 2096441909920153603    98|2|4
+  #41 2096441909987262465    100|0|0
+  #42 2096441909987262466    94|6|4
+  #43 2096569486857068545    92|8|4
+
+--- §13 落地区（时点口径）---
+  landing/events 文件数=57 bytes=405390030
+    2026091210.jsonl  493481 B  2026-09-12 10:12:50
+    2026091209.jsonl  1131 B  2026-09-12 09:53:26
+    2026091122.jsonl  130261 B  2026-09-11 22:02:55
+
+--- §14 结束时三程序身份（应完全未变）---
+  8090 pid=41228 启动=2026-09-12 09:40:49
+  8091 pid=47132 启动=2026-09-12 09:14:59
+  8092 pid=24692 启动=2026-09-12 10:11:55
+=== 日志结束 2026-09-12 10:13:02.094 ===

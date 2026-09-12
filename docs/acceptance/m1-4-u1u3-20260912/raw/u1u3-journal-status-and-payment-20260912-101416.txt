@@ -1,0 +1,42 @@
+=== M1-4 U1/U3 补充取证 · 2026-09-12 10:14:16 ===
+
+--- §A operation-journal.jsonl 按 status 分组（真机调用零拒绝的直接判据）---
+  总行数=641  run_id 内所有行 run 一致=True
+  按 operation × status 计数：
+    cancel | OK -> 183
+    createOrder | OK -> 272
+    createSyntheticUser | OK -> 53
+    listProducts | OK -> 33
+    pay | OK -> 88
+    refund | OK -> 12
+  非 OK 行数=0
+  supported=false 行数=0
+  listProducts 逐条（D12：本条是否代表真实 HTTP 调用，本轮不做结论）：
+    {"seq":1,"operation":"listProducts","supported":true,"http_method":"GET","route":"/api/v1/mall/products","canonical_id":null,"external_id":null,"status":"OK","detail":"目录 43 件，在售 43 件（预检兼凭据校验）"}
+    {"seq":55,"operation":"listProducts","supported":true,"http_method":"GET","route":"/api/v1/mall/products","canonical_id":"P00001","external_id":"1001","status":"OK","detail":"对齐商城目录商品：磁吸手机支架"}
+    {"seq":56,"operation":"listProducts","supported":true,"http_method":"GET","route":"/api/v1/mall/products","canonical_id":"P00002","external_id":"1002","status":"OK","detail":"对齐商城目录商品：快充数据线套装"}
+    {"seq":57,"operation":"listProducts","supported":true,"http_method":"GET","route":"/api/v1/mall/products","canonical_id":"P00003","external_id":"1003","status":"OK","detail":"对齐商城目录商品：入耳式蓝牙耳机"}
+    ...（共 33 条）
+  detail 里出现 库存不足/INSUFFICIENT_STOCK 的行数=0
+
+--- §B 外部 ID 去重（映射 363 条是否唯一）---
+  有 external_id 的行数=640  去重后=363
+    cancel -> 183 条
+    createOrder -> 272 条
+    createSyntheticUser -> 53 条
+    listProducts -> 32 条
+    pay -> 88 条
+    refund -> 12 条
+
+--- §C payment 表真实列名与增量 ---
+  列名=payment_id, order_id, user_id, amount, status, paid_at
+  总数=4223
+  时间列判定=paid_at
+  本轮增量（paid_at >= 2026-09-12 10:12:42）=88
+
+--- §D 库存守恒核对（avail+reserved 应等于补库存后的常量）---
+  1001 now=1100 rows=1
+  1004 now=567 rows=1
+  2001 now=552 rows=1
+  3004 now=516 rows=1
+  8004 now=510 rows=1

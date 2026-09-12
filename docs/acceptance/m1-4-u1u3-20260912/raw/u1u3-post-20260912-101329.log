@@ -1,0 +1,232 @@
+=== M1-4 U1/U3 后态补收 · 2026-09-12 10:13:29.860 ===
+run_id  = m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba
+增量口径 = created_at >= 2026-09-12 10:12:42（generation_run.started_at）
+说明：同轮 exec 日志在 §8 之后被外层管道（Select-Object -First）掐断，本文件是同一轮的续录，不改动前一份。
+
+--- §9 后态：商城计数 ---
+  mall_order=5329
+  order_item=5330
+  payment=4223
+  refund=189
+  refund_COMPLETED=189
+  mall_user=1904
+  event_outbox=876776
+  cart_item=34
+  inventory_rows=38 total_avail=17900 total_reserved=1095 sold_out=0 min=92
+  outbox 逐类：
+    behavior=869708
+    order_cancelled=611
+    order_created=1936
+    order_paid=1321
+    refund_completed=55
+    refund_created=55
+    stock_changed=32
+    stock_released=611
+    stock_reserved=1936
+    user_registered=511
+
+--- §10 本轮增量（按 run 时间窗）---
+  订单=272
+  订单行=272
+  用户=53
+ERROR 1054 (42S22) at line 1: Unknown column 'created_at' in 'where clause'
+  退款=6 COMPLETED=6
+
+  U3 逐条退款明细（本轮写入商城的真实退款）：
+    refund_id=2098595630867312642 order=2098595630737289217 status=COMPLETED amount=19.26 reason=wrong_item created=2026-09-12 10:12:43.082
+    refund_id=2098595641101414402 order=2098595640975585281 status=COMPLETED amount=43.08 reason=wrong_item created=2026-09-12 10:12:45.518
+    refund_id=2098595642334539778 order=2098595642267430913 status=COMPLETED amount=141.00 reason=quality_issue created=2026-09-12 10:12:45.822
+    refund_id=2098595648080736258 order=2098595648013627393 status=COMPLETED amount=63.71 reason=user_regret created=2026-09-12 10:12:47.181
+    refund_id=2098595651335516161 order=2098595651272601601 status=COMPLETED amount=58.09 reason=late_delivery created=2026-09-12 10:12:47.959
+    refund_id=2098595652639944706 order=2098595652509921282 status=COMPLETED amount=42.86 reason=quality_issue created=2026-09-12 10:12:48.270
+
+  本轮订单状态分布：
+    CANCELLED=183
+    CREATED=1
+    PAID=82
+    REFUNDED=6
+
+  本轮下单分布（商品 × 单数 × 件数）：
+    1001 orders=99 units=198
+    1002 orders=30 units=71
+    1003 orders=18 units=39
+    1004 orders=16 units=32
+    2001 orders=17 units=27
+    2002 orders=10 units=20
+    2003 orders=9 units=14
+    2004 orders=7 units=12
+    3001 orders=6 units=10
+    3002 orders=4 units=7
+    3003 orders=3 units=6
+    3004 orders=5 units=12
+    4002 orders=4 units=8
+    4003 orders=4 units=10
+    4004 orders=2 units=3
+    5001 orders=5 units=8
+    5002 orders=2 units=3
+    5003 orders=5 units=11
+    5004 orders=3 units=9
+    6001 orders=2 units=3
+    6002 orders=5 units=9
+    6003 orders=5 units=10
+    7001 orders=2 units=4
+    7002 orders=2 units=3
+    7003 orders=1 units=2
+    7004 orders=1 units=1
+    8001 orders=1 units=3
+    8003 orders=2 units=5
+    8004 orders=2 units=4
+  本轮下单涉及商品数：
+    不同商品数=29
+
+--- §11 池内 32 件库存（运行后；与补库存日志的 500|*|* 对照）---
+  # 1 1001                   avail|reserved|ver = 924|176|228
+  # 2 1002                   avail|reserved|ver = 975|125|105
+  # 3 1003                   avail|reserved|ver = 988|112|175
+  # 4 1004                   avail|reserved|ver = 485|82|148
+  # 5 2001                   avail|reserved|ver = 495|57|112
+  # 6 2002                   avail|reserved|ver = 494|46|96
+  # 7 2003                   avail|reserved|ver = 495|83|112
+  # 8 2004                   avail|reserved|ver = 496|34|72
+  # 9 3001                   avail|reserved|ver = 496|39|46
+  #10 3002                   avail|reserved|ver = 497|33|36
+  #11 3003                   avail|reserved|ver = 500|22|39
+  #12 3004                   avail|reserved|ver = 496|20|49
+  #13 4001                   avail|reserved|ver = 500|29|27
+  #14 4002                   avail|reserved|ver = 499|28|38
+  #15 4003                   avail|reserved|ver = 497|40|37
+  #16 4004                   avail|reserved|ver = 499|3|14
+  #17 5001                   avail|reserved|ver = 498|16|16
+  #18 5002                   avail|reserved|ver = 499|13|22
+  #19 5003                   avail|reserved|ver = 497|17|24
+  #20 5004                   avail|reserved|ver = 497|12|21
+  #21 6001                   avail|reserved|ver = 500|0|5
+  #22 6002                   avail|reserved|ver = 499|7|15
+  #23 6003                   avail|reserved|ver = 500|8|14
+  #24 6004                   avail|reserved|ver = 500|6|4
+  #25 7001                   avail|reserved|ver = 499|8|9
+  #26 7002                   avail|reserved|ver = 499|8|7
+  #27 7003                   avail|reserved|ver = 500|8|6
+  #28 7004                   avail|reserved|ver = 500|2|4
+  #29 8001                   avail|reserved|ver = 500|8|17
+  #30 8002                   avail|reserved|ver = 500|8|5
+  #31 8003                   avail|reserved|ver = 498|13|11
+  #32 8004                   avail|reserved|ver = 499|11|10
+  #33 2096441182850224129    avail|reserved|ver = NO_ROW
+  #34 2096441182913138689    avail|reserved|ver = NO_ROW
+  #35 2096441182976053249    avail|reserved|ver = NO_ROW
+  #36 2096441183038967809    avail|reserved|ver = NO_ROW
+  #37 2096441183038967810    avail|reserved|ver = NO_ROW
+  #38 2096441909920153601    avail|reserved|ver = 98|2|1
+  #39 2096441909920153602    avail|reserved|ver = 97|3|2
+  #40 2096441909920153603    avail|reserved|ver = 98|2|4
+  #41 2096441909987262465    avail|reserved|ver = 100|0|0
+  #42 2096441909987262466    avail|reserved|ver = 94|6|4
+  #43 2096569486857068545    avail|reserved|ver = 92|8|4
+
+--- §12 操作日志逐类汇总（operation-journal.jsonl，真机调用的直接证据）---
+  总行数=641
+  字段名=seq,operation,supported,http_method,route,canonical_id,external_id,status,detail
+  按 操作 × 结果 计数：
+    cancel |  -> 183
+    createOrder |  -> 272
+    createSyntheticUser |  -> 53
+    listProducts |  -> 33
+    pay |  -> 88
+    refund |  -> 12
+
+  U3 退款相关行（逐条原文）：
+    {"seq":107,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/orders/{orderId}/refunds","canonical_id":"O00000010","external_id":"2098595630867312642","status":"OK","detail":"status=COMPLETED"}
+    {"seq":108,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/refunds/{refundId}/complete","canonical_id":"O00000010","external_id":"2098595630867312642","status":"OK","detail":"复用已完成退款"}
+    {"seq":333,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/orders/{orderId}/refunds","canonical_id":"O00000122","external_id":"2098595641101414402","status":"OK","detail":"status=COMPLETED"}
+    {"seq":334,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/refunds/{refundId}/complete","canonical_id":"O00000122","external_id":"2098595641101414402","status":"OK","detail":"复用已完成退款"}
+    {"seq":365,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/orders/{orderId}/refunds","canonical_id":"O00000137","external_id":"2098595642334539778","status":"OK","detail":"status=COMPLETED"}
+    {"seq":366,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/refunds/{refundId}/complete","canonical_id":"O00000137","external_id":"2098595642334539778","status":"OK","detail":"复用已完成退款"}
+    {"seq":509,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/orders/{orderId}/refunds","canonical_id":"O00000208","external_id":"2098595648080736258","status":"OK","detail":"status=COMPLETED"}
+    {"seq":510,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/refunds/{refundId}/complete","canonical_id":"O00000208","external_id":"2098595648080736258","status":"OK","detail":"复用已完成退款"}
+    {"seq":599,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/orders/{orderId}/refunds","canonical_id":"O00000252","external_id":"2098595651335516161","status":"OK","detail":"status=COMPLETED"}
+    {"seq":600,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/refunds/{refundId}/complete","canonical_id":"O00000252","external_id":"2098595651335516161","status":"OK","detail":"复用已完成退款"}
+    {"seq":635,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/orders/{orderId}/refunds","canonical_id":"O00000269","external_id":"2098595652639944706","status":"OK","detail":"status=COMPLETED"}
+    {"seq":636,"operation":"refund","supported":true,"http_method":"POST","route":"/api/v1/mall/refunds/{refundId}/complete","canonical_id":"O00000269","external_id":"2098595652639944706","status":"OK","detail":"复用已完成退款"}
+
+  头两行原文（看字段语义）：
+    {"seq":1,"operation":"listProducts","supported":true,"http_method":"GET","route":"/api/v1/mall/products","canonical_id":null,"external_id":null,"status":"OK","detail":"目录 43 件，在售 43 件（预检兼凭据校验）"}
+    {"seq":2,"operation":"createSyntheticUser","supported":true,"http_method":"POST","route":"/api/v1/mall/users","canonical_id":"U000001","external_id":"2098595627235045378","status":"OK","detail":"member_level=silver"}
+
+--- §13 运行报告 run-report.json（原文）---
+{
+  "run_id" : "m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba",
+  "plan_id" : "m1-4-u1u3-live-20260912",
+  "plan_version" : 1,
+  "mode" : "MALL_API",
+  "scenario" : "normal",
+  "seed" : 20260912,
+  "start_time" : "2026-09-01T00:00:00+08:00",
+  "end_time" : "2026-09-08T00:00:00+08:00",
+  "event_count" : 640,
+  "status" : "SUCCESS",
+  "success_count" : 640,
+  "failed_count" : 0,
+  "checksum" : "c381c8579da1122cb49f1f81086a8bcd8d517727cf7847d589ae53c71e3636cc",
+  "expected_quarantine_counts" : { },
+  "dirty_sample_types" : [ ],
+  "event_stats" : [ {
+    "event_type" : "order_cancelled",
+    "count" : 183,
+    "amount" : 0
+  }, {
+    "event_type" : "order_created",
+    "count" : 272,
+    "amount" : 21393.04
+  }, {
+    "event_type" : "order_paid",
+    "count" : 88,
+    "amount" : 6454.40
+  }, {
+    "event_type" : "product_created",
+    "count" : 32,
+    "amount" : 0
+  }, {
+    "event_type" : "refund_completed",
+    "count" : 6,
+    "amount" : 368.00
+  }, {
+    "event_type" : "refund_created",
+    "count" : 6,
+    "amount" : 368.00
+  }, {
+    "event_type" : "user_registered",
+    "count" : 53,
+    "amount" : 0
+  } ],
+  "artifacts" : [ {
+    "uri" : "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/events-0001.jsonl",
+    "kind" : "EVENT_JSONL",
+    "checksum" : "c381c8579da1122cb49f1f81086a8bcd8d517727cf7847d589ae53c71e3636cc",
+    "bytes" : 271019,
+    "record_count" : 640,
+    "min_event_time" : "2026-09-01T00:00:00+08:00",
+    "max_event_time" : "2026-09-07T23:44:11+08:00"
+  }, {
+    "uri" : "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-u1u3-live-20260912-v1-20260912-101242-c0ba/operation-journal.jsonl",
+    "kind" : "OPERATION_JOURNAL",
+    "checksum" : "02e70d10598e3ef9ce69aef618f50fe48596e5ca8fcd7372857b8f37bb975576",
+    "bytes" : 136256,
+    "record_count" : 641
+  } ],
+  "notes" : [ "文件模式事件预算 event_count=640；rate_per_second=0 在文件模式不生效（离线产物无真实负载）", "ingest_time 取事件时间：文件模式无真实采集链路，取时钟会破坏可复现（§4.2）", "单线程生成，子种子按数据流派生：users/products/behaviors/orders/time/dirty", "用户数 53、商品池 32（按事件预算派生，属引擎自定规则）", "脏数据档位 none：不注入异常样本，期望隔离数为 0", "行为埋点：能力判定 UNDETERMINED，behavior 事件不进入本模式产物（B-04：参考商城当前无该接口，属商城侧依赖）", "MALL_API 落点：640 条事件写规范流；商城操作成功 640 次、失败 0 次、因能力缺口跳过 0 次", "能力判定取自适配器声明（不联网）；每次调用的真实结果见 OPERATION_JOURNAL 制品", "MALL_API 目标：adapter_type=REFERENCE_MALL_HTTP，能力声明 declared{ORDER=SUPPORTED, USER=SUPPORTED, ADMIN=SUPPORTED, BEHAVIOR=UNDETERMINED, REFUND=SUPPORTED, PRODUCT=SUPPORTED, RESET_STATE=UNDETERMINED}（不联网；实测结果见 operation-journal 与 target probe）", "MALL_API 对账：写规范流 640 条；商城操作成功 640 / 失败 0 / 因能力缺口跳过 0", "规范 ID → 商城外部 ID 映射 363 条，逐条见 operation-journal.jsonl", "MALL_API 不承诺同 seed 逐字节复现（商城会分配雪花 ID 并真实扣减库存）：本模式保证可追溯的场景分布，见 B-04", "事件统计与制品已分别落 generation_event_stat / generation_artifact；清单为每个制品文件同名一份" ]
+}
+
+--- §14 落地区时点口径 ---
+  landing/events 文件数=57 bytes=405390030（时点 2026-09-12 10:13:33）
+    2026091210.jsonl  493481 B  2026-09-12 10:12:50
+    2026091209.jsonl  1131 B  2026-09-12 09:53:26
+    2026091122.jsonl  130261 B  2026-09-11 22:02:55
+    2026091121.jsonl  165616 B  2026-09-11 21:06:57
+
+--- §15 结束时三程序身份 ---
+  8090 pid=41228 启动=2026-09-12 09:40:49
+  8091 pid=47132 启动=2026-09-12 09:14:59
+  8092 pid=24692 启动=2026-09-12 10:11:55
+
+=== 结束 2026-09-12 10:13:40.889 ===

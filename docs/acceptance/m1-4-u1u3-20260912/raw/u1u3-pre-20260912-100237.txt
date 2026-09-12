@@ -1,0 +1,95 @@
+=== M1-4 U1/U3 真机正向取证 · 阶段=pre · 起始 2026-09-12 10:02:37 ===
+
+--- §A 三程序身份与健康 ---
+  8090 pid=41228 启动=2026-09-12 09:40:49 命令行="D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -jar D:\Develop_code\GraduationProject\mall-simulator\target\mall-simulator-0.1.0-SNAPSHOT.jar
+  8091 pid=47132 启动=2026-09-12 09:14:59 命令行="D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+  8092 pid=10412 启动=2026-09-12 09:48:10 命令行="D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -jar D:\Develop_code\GraduationProject\synthetic-data-generator\target\synthetic-data-generator-0.1.0-SNAPSHOT.jar
+  GET http://127.0.0.1:8091/api/v1/health -> 200 (59 B)
+  GET http://127.0.0.1:8090/api/v1/health -> 异常 响应状态代码未指示成功: 401 ()。
+  GET http://127.0.0.1:8092/api/v1/scenarios -> 200 (1117 B)
+
+--- §B 商城目录（生成器看到的顺序：GET /api/v1/mall/products，位置从 1 起）---
+  登录 code=OK role=admin token长度=32
+  目录返回件数 = 43
+  # 1 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 2 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 3 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 4 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 5 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 6 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 7 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 8 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  # 9 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #10 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #11 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #12 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #13 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #14 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #15 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #16 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #17 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #18 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #19 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #20 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #21 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #22 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #23 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #24 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #25 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #26 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #27 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #28 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #29 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #30 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #31 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #32 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #33 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #34 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #35 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #36 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #37 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #38 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #39 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #40 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池内
+  #41 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池外
+  #42 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池外
+  #43 product_id=                       status=          库存(avail/reserved/ver)=无库存行         池外
+
+--- §C 商城库存汇总 + 业务计数（前/后态对照用）---
+  products=38 total_avail=5884 sold_out=0 min=22
+  mall_order=5057
+  order_item=5058
+  payment=4135
+  refund=183
+  refund_COMPLETED=183
+  mall_user=1851
+  event_outbox=875684
+  outbox/behavior=869708
+  outbox/order_cancelled=428
+  outbox/order_created=1664
+  outbox/order_paid=1233
+  outbox/refund_completed=49
+  outbox/refund_created=49
+  outbox/stock_changed=3
+  outbox/stock_released=428
+  outbox/stock_reserved=1664
+  outbox/user_registered=458
+
+--- §D 平台侧计数 + 落地区（时点口径）---
+  ingestion_batch=40
+  pipeline_run=40
+  metric_snapshot=9
+  file_checkpoint=105
+  landing/events 文件数=56 bytes=404896549 最新=2026091209.jsonl
+
+--- §E 生成器侧（generator_meta + 产物目录）---
+  generation_plan=163
+  generation_run=75
+  generation_artifact=225
+  generation_event_stat=287
+  generator_target=159
+  max_run_id=153
+  generator-output 运行目录数=35 最新 3 个：
+    s4b-e3-live-20260911-v1-20260911-220249-fc47  2026-09-11 22:02:52
+    s4b-p-18-20260951-v1-20260911-210655-5730  2026-09-11 21:06:55
+    s4b-p-18-20260941-v1-20260911-210654-0bc3  2026-09-11 21:06:54
