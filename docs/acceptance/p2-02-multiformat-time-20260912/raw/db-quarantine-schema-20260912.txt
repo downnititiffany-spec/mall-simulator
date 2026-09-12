@@ -1,0 +1,35 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
++-------------------------+
+| clock_at_query          |
++-------------------------+
+| 2026-09-12 20:04:41.628 |
++-------------------------+
++----------------+
+| server_version |
++----------------+
+| 8.0.41         |
++----------------+
++----------------+--------------+------+-----+----------------------+-------------------+
+| Field          | Type         | Null | Key | Default              | Extra             |
++----------------+--------------+------+-----+----------------------+-------------------+
+| id             | bigint       | NO   | PRI | NULL                 | auto_increment    |
+| batch_id       | bigint       | NO   | MUL | NULL                 |                   |
+| event_id       | varchar(64)  | YES  |     | NULL                 |                   |
+| schema_version | varchar(16)  | YES  |     | NULL                 |                   |
+| reason         | varchar(255) | NO   |     | NULL                 |                   |
+| raw_path       | varchar(500) | NO   |     | NULL                 |                   |
+| created_at     | datetime(3)  | NO   |     | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
++----------------+--------------+------+-----+----------------------+-------------------+
+*************************** 1. row ***************************
+       Table: quarantine_record
+Create Table: CREATE TABLE `quarantine_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `batch_id` bigint NOT NULL,
+  `event_id` varchar(64) DEFAULT NULL COMMENT '能解析出则填，否则 null',
+  `schema_version` varchar(16) DEFAULT NULL,
+  `reason` varchar(255) NOT NULL COMMENT '隔离原因（契约校验描述）',
+  `raw_path` varchar(500) NOT NULL COMMENT '隔离文件路径',
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `idx_quarantine_batch` (`batch_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=109 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='隔离数据索引'

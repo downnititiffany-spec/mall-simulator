@@ -1,0 +1,53 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
++-------------------------+
+| clock_at_query          |
++-------------------------+
+| 2026-09-12 20:09:17.472 |
++-------------------------+
++--------------------------+
+| Tables_in_analytics_meta |
++--------------------------+
+| ai_call_log              |
+| ai_query_history         |
+| data_quality_result      |
+| decision_evaluation      |
+| decision_task            |
+| file_checkpoint          |
+| flyway_schema_history    |
+| ingestion_batch          |
+| ingestion_batch_file     |
+| metric_definition        |
+| metric_snapshot          |
+| metric_value             |
+| operation_audit_log      |
+| pipeline_run             |
+| pipeline_stage_run       |
+| quarantine_record        |
+| runtime_profile          |
+| source_registry          |
+| spark_job_run            |
+| sys_user                 |
+| t_ckpt_test              |
+| user_session             |
++--------------------------+
++-----------------------+-------------------------+-------------+-------------+
+| TABLE_NAME            | COLUMN_NAME             | COLUMN_TYPE | IS_NULLABLE |
++-----------------------+-------------------------+-------------+-------------+
+| file_checkpoint       | runtime_profile_id      | bigint      | NO          |
+| flyway_schema_history | execution_time          | int         | NO          |
+| ingestion_batch       | runtime_profile_id      | bigint      | NO          |
+| ingestion_batch       | start_time              | datetime(3) | NO          |
+| ingestion_batch       | end_time                | datetime(3) | YES         |
+| metric_definition     | default_time_field      | varchar(32) | NO          |
+| metric_snapshot       | runtime_profile_id      | bigint      | NO          |
+| metric_snapshot       | runtime_profile_version | int         | NO          |
+| metric_snapshot       | business_time           | datetime(3) | NO          |
+| pipeline_run          | runtime_profile_id      | bigint      | NO          |
+| pipeline_run          | runtime_profile_version | int         | NO          |
+| pipeline_run          | business_time           | datetime(3) | NO          |
+| runtime_profile       | timezone                | varchar(32) | NO          |
+| source_registry       | timezone                | varchar(64) | NO          |
+| spark_job_run         | runtime_profile_id      | bigint      | NO          |
+| spark_job_run         | runtime_profile_version | int         | NO          |
+| t_ckpt_test           | runtime_profile_id      | bigint      | NO          |
++-----------------------+-------------------------+-------------+-------------+

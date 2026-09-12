@@ -1,0 +1,38 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
++-------------------------+
+| clock_at_query          |
++-------------------------+
+| 2026-09-12 20:11:46.228 |
++-------------------------+
++--------------+--------------+------+-----+---------+----------------+
+| Field        | Type         | Null | Key | Default | Extra          |
++--------------+--------------+------+-----+---------+----------------+
+| id           | bigint       | NO   | PRI | NULL    | auto_increment |
+| batch_id     | bigint       | NO   | MUL | NULL    |                |
+| file_path    | varchar(500) | NO   |     | NULL    |                |
+| start_offset | bigint       | NO   |     | 0       |                |
+| end_offset   | bigint       | NO   |     | 0       |                |
+| record_count | bigint       | NO   |     | 0       |                |
+| status       | varchar(24)  | NO   |     | NULL    |                |
++--------------+--------------+------+-----+---------+----------------+
++--------------------+--------------+------+-----+------------+----------------+
+| Field              | Type         | Null | Key | Default    | Extra          |
++--------------------+--------------+------+-----+------------+----------------+
+| id                 | bigint       | NO   | PRI | NULL       | auto_increment |
+| batch_no           | varchar(64)  | NO   | UNI | NULL       |                |
+| source             | varchar(32)  | NO   |     | local-file |                |
+| runtime_profile_id | bigint       | NO   |     | 1          |                |
+| source_id          | bigint       | YES  | MUL | NULL       |                |
+| status             | varchar(24)  | NO   |     | NULL       |                |
+| record_count       | bigint       | NO   |     | 0          |                |
+| error_count        | bigint       | NO   |     | 0          |                |
+| quarantine_count   | bigint       | NO   |     | 0          |                |
+| landing_dir        | varchar(255) | YES  |     | NULL       |                |
+| start_time         | datetime(3)  | NO   |     | NULL       |                |
+| end_time           | datetime(3)  | YES  |     | NULL       |                |
++--------------------+--------------+------+-----+------------+----------------+
++-----------------+
+| batch_file_rows |
++-----------------+
+|             118 |
++-----------------+

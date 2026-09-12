@@ -1,0 +1,63 @@
+CLOCK	2026-09-12 20:12:44.766 +08:00
+HEAD	ce36065c3db4572115ff09945ef6b041fcfdc5e2
+METHOD	Select-String -SimpleMatch; 每条锚点附阳性对照（同文件同模式已知命中数）
+
+### A. 契约侧：iso8601_time 定义
+A 31: "$ref": "#/$defs/iso8601_time",
+A 35: "$ref": "#/$defs/iso8601_time",
+A 323: "iso8601_time": {
+A 371: "$ref": "#/$defs/iso8601_time",
+A 605: "$ref": "#/$defs/iso8601_time",
+A 642: "$ref": "#/$defs/iso8601_time",
+A 674: "$ref": "#/$defs/iso8601_time",
+A 713: "$ref": "#/$defs/iso8601_time",
+A 750: "$ref": "#/$defs/iso8601_time",
+
+### B. 契约侧：event_time / ingest_time 属性
+B 30: "event_time": {
+B 36: "description": "该行的采集时间（Java 侧生成）；链路延迟 = ingest_time - event_time。来源：event-contract.md §1 L15 + §4 L169（每个事件必须同时包含 event_time 与 ingest_time）。"
+B 60: "event_time",
+
+### C. 事件契约文档口径
+C 25: * 时间一律 ISO-8601 带时区（业务统一 Asia/Shanghai，`+08:00`）；解析失败视为脏数据。
+C 47: | register_time | string | 是 | 注册时间（ISO-8601） |
+
+### D. 采集侧校验（Java）：event_time 只查空
+D 56: for (String required : new String[]{"event_id", "event_type", "event_time", "ingest_time",
+
+### E. ODS 装载（Scala）：透传 + 位置切片分区
+E 17: *  - 校验 schema_version='1.0'、event_id/event_type/event_time 非空；
+E 90: "event_time" -> "event_time",
+E 168: "  REGEXP_REPLACE(SUBSTR(event_time, 1, 10), '-', '') AS dt,\n" +
+E 169: "  SUBSTR(event_time, 12, 2) AS hour"
+E 181: |  AND event_id IS NOT NULL AND event_time IS NOT NULL
+E 208: StructField("event_time", StringType, nullable = false),
+E 271: |SELECT event_id, event_type, schema_version, event_time, trace_id,
+E 275: |   OR event_id IS NULL OR event_type IS NULL OR event_time IS NULL
+E-SUBSTR L168: "  REGEXP_REPLACE(SUBSTR(event_time, 1, 10), '-', '') AS dt,\n" +
+E-SUBSTR L169: "  SUBSTR(event_time, 12, 2) AS hour"
+
+### F. DWD 侧：解析式派生 + 仍用位置切片
+F 34: |  FROM_UTC_TIMESTAMP(FROM_UNIXTIME(UNIX_TIMESTAMP(rn.event_time)), 'Asia/Shanghai') AS event_time,
+F 35: |  SUBSTR(rn.event_time, 1, 10) AS event_date,
+F 36: |  CAST(SUBSTR(rn.event_time, 12, 2) AS INT) AS event_hour,
+
+### G. ODS DDL：event_time 声明
+G 21: event_time      STRING  COMMENT '业务时间(ISO-8601带时区)',
+G 22: ingest_time     STRING  COMMENT '采集时间，链路延迟=ingest_time-event_time',
+G 48: event_time          STRING,
+G 80: event_time          STRING,
+G 107: event_time          STRING,
+
+### H. Session 时区（第三个 owner 候选）
+H 14: .config("spark.sql.session.timeZone", "Asia/Shanghai")
+
+### I. 源时区载体（两个）
+I1 source_registry.timezone (DB)
+I2 runtime_profile.timezone (DB) -> 见 raw/db-source-registry-values-20260912.txt
+I 72: p.setTimezone("Asia/Shanghai");
+
+### 阳性对照
+CTRL_A_iso8601_hits	9
+CTRL_E_substr_hits	2
+CTRL_ABSENT	0

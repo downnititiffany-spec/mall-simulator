@@ -1,0 +1,368 @@
+== GET-DATE (取证时点) ==
+2026-09-12 20:15:11
+== PWD ==
+D:\Develop_code\GraduationProject
+
+===== R-01 git 工作区状态（含并发写入者） =====
+ M spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala
+ M spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala
+ M spark-jobs/src/main/scala/com/graduation/analytics/sql/DimSql.scala
+ M spark-jobs/src/main/scala/com/graduation/analytics/sql/DwdSql.scala
+ M spark-jobs/src/test/scala/com/graduation/analytics/IdCodecSpec.scala
+ M spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala
+ M warehouse/ddl/01-dwd.sql
+ M warehouse/ddl/02-dims.sql
+?? docs/acceptance/p2-02-multiformat-time-20260912/
+?? docs/acceptance/p2-03-surrogate-key-20260912/impl/
+?? docs/acceptance/p2-04-dwd-source-projection-20260912/
+?? spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/SurrogateKeyVectorSupport.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/sql/SurrogateKeySpec.scala
+
+===== R-02 HEAD 与分支 =====
+2cd1ff54927734218f798108b9e5763c62723092
+remediation/r1-boundary
+
+===== R-03 spark-jobs/** 被并发写入文件的 blob sha + mtime（行号可能漂移） =====
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwdSql.scala	blob=dc4d36a295326c1267367272417e0a26e808ee2a	mtime=2026-09-12 19:59:52	lines=72
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DimSql.scala	blob=03a54ac019020abfd8b13304b731408276e25b5c	mtime=2026-09-12 20:06:13	lines=93
+spark-jobs/src/main/scala/com/graduation/analytics/job/EventOdsLoadJob.scala	blob=fb43b45883dbc311a94fd8de7613bbe0bd802ae7	mtime=2026-09-12 14:05:38	lines=166
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsV2Columns.scala	blob=2af7323276862bf83dee2d5fbfa825bf1d83b4c4	mtime=2026-09-12 12:45:42	lines=183
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala	blob=5097cb32294aed04e61a94079e93aee9c9898065	mtime=2026-09-12 14:05:46	lines=292
+spark-jobs/src/main/scala/com/graduation/analytics/sql/IdCodec.scala	blob=6aad5bd8013d3a315b1c150ba70bd1e4733e7efc	mtime=2026-09-11 14:44:23	lines=49
+spark-jobs/src/main/scala/com/graduation/analytics/warehouse/WarehouseNamespace.scala	blob=562430cbeee1313cb57e6619458ab693636aa2d0	mtime=2026-09-11 17:55:06	lines=128
+
+===== R-04 DwdSql.scala 去重键（worktree 现状，行号以本时点为准） =====
+L6: * DWD 清洗 SQL（§7.1/§7.2）：event_id 去重、枚举/空值过滤、时间标准化、reject 记录。
+L12: * （`INSERT OVERWRITE` 按位置对齐）。**A5：JOIN 谓词本轮保持旧口径不变**（改 JOIN 属 P2-04）。
+L19: * P2-03 追加列：`user_key` / `product_key` / `category_key`。
+L20: *  - `user_key`/`product_key` 取**原始** `rn.payload_user_id` / `rn.payload_product_id`（A2，不得由
+L22: *  - `category_key` 取**维表**的 `p.category_key`（LEFT JOIN 未命中时随之为 NULL），
+L29: |  rn.event_id AS behavior_id,
+L41: |  ${SurrogateKey.toBIGINT("rn.source_system", "user", "rn.payload_user_id")} AS user_key,
+L42: |  ${SurrogateKey.toBIGINT("rn.source_system", "product", "rn.payload_product_id")} AS product_key,
+L46: |         ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY ingest_time) AS rn
+L49: |    AND schema_version = '1.0'
+L51: |LEFT JOIN ${ns.dim}.dim_user u ON u.user_id = ${IdCodec.toBIGINT("rn.payload_user_id")} AND u.dt = '$dt'
+L52: |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = ${IdCodec.toBIGINT("rn.payload_product_id")} AND p.dt = '$dt'
+L53: |WHERE rn.rn = 1                       -- event_id 去重
+L63: |SELECT event_id AS reject_id, 'ods_behavior_event' AS source_table,
+L67: |  SELECT event_id, COUNT(*) AS c
+L69: |  GROUP BY event_id HAVING COUNT(*) > 1
+
+===== R-05 DwdSql.scala 在 HEAD（工作基线，D-091 Q17）中的同项行号 =====
+L6: * DWD 清洗 SQL（§7.1/§7.2）：event_id 去重、枚举/空值过滤、时间标准化、reject 记录。
+L17: |  rn.event_id AS behavior_id,
+L31: |         ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY ingest_time) AS rn
+L34: |    AND schema_version = '1.0'
+L36: |LEFT JOIN ${ns.dim}.dim_user u ON u.user_id = ${IdCodec.toBIGINT("rn.payload_user_id")} AND u.dt = '$dt'
+L37: |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = ${IdCodec.toBIGINT("rn.payload_product_id")} AND p.dt = '$dt'
+L38: |WHERE rn.rn = 1                       -- event_id 去重
+L48: |SELECT event_id AS reject_id, 'ods_behavior_event' AS source_table,
+L52: |  SELECT event_id, COUNT(*) AS c
+L54: |  GROUP BY event_id HAVING COUNT(*) > 1
+HEAD blob = 2a1582ac9ac59482b3eed8a1ef0fee588cac90e1
+
+===== R-06 HEAD 版 DwdSql.scala 全文（P2-04 施工面：投影位、JOIN 谓词、去重键） =====
+   1: package com.graduation.analytics.sql
+   2: 
+   3: import com.graduation.analytics.warehouse.WarehouseNamespace
+   4: 
+   5: /**
+   6:  * DWD 清洗 SQL（§7.1/§7.2）：event_id 去重、枚举/空值过滤、时间标准化、reject 记录。
+   7:  *
+   8:  * P1-04：库名不再写字面量，一律由 {@link WarehouseNamespace} 派生（首个参数）。
+   9:  */
+  10: object DwdSql {
+  11: 
+  12:   /** 行为清洗：回到正常行（row_number 去重 + 过滤非法枚举/空 user_id）；id 归一化见 IdCodec（DEF-05） */
+  13:   def behaviorClean(ns: WarehouseNamespace, dt: String): String =
+  14:     s"""
+  15:        |INSERT OVERWRITE TABLE ${ns.dwd}.dwd_user_behavior_detail PARTITION(dt = '$dt')
+  16:        |SELECT
+  17:        |  rn.event_id AS behavior_id,
+  18:        |  ${IdCodec.toBIGINT("rn.payload_user_id")} AS user_id,
+  19:        |  ${IdCodec.toBIGINT("rn.payload_product_id")} AS product_id,
+  20:        |  COALESCE(p.category_id, -1) AS category_id,
+  21:        |  rn.payload_behavior_type AS behavior_type,
+  22:        |  FROM_UTC_TIMESTAMP(FROM_UNIXTIME(UNIX_TIMESTAMP(rn.event_time)), 'Asia/Shanghai') AS event_time,
+  23:        |  SUBSTR(rn.event_time, 1, 10) AS event_date,
+  24:        |  CAST(SUBSTR(rn.event_time, 12, 2) AS INT) AS event_hour,
+  25:        |  u.city_level AS city_level,
+  26:        |  rn.payload_channel AS channel,
+  27:        |  rn.payload_session_id AS session_id,
+  28:        |  rn.ingest_batch_id AS source_batch_id
+  29:        |FROM (
+  30:        |  SELECT *,
+  31:        |         ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY ingest_time) AS rn
+  32:        |  FROM ${ns.ods}.ods_behavior_event
+  33:        |  WHERE dt = '$dt'
+  34:        |    AND schema_version = '1.0'
+  35:        |) rn
+  36:        |LEFT JOIN ${ns.dim}.dim_user u ON u.user_id = ${IdCodec.toBIGINT("rn.payload_user_id")} AND u.dt = '$dt'
+  37:        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = ${IdCodec.toBIGINT("rn.payload_product_id")} AND p.dt = '$dt'
+  38:        |WHERE rn.rn = 1                       -- event_id 去重
+  39:        |  AND rn.payload_user_id IS NOT NULL
+  40:        |  AND rn.payload_product_id IS NOT NULL
+  41:        |  AND rn.payload_behavior_type IN ('view','favorite','cart_add','cart_remove','search')
+  42:        |""".stripMargin
+  43: 
+  44:   /** 重复事件（去重淘汰行）进入拒绝记录 */
+  45:   def duplicateReject(ns: WarehouseNamespace, dt: String): String =
+  46:     s"""
+  47:        |INSERT OVERWRITE TABLE ${ns.dwd}.dwd_reject_record PARTITION(dt = '$dt')
+  48:        |SELECT event_id AS reject_id, 'ods_behavior_event' AS source_table,
+  49:        |       'DUPLICATE_EVENT' AS reject_reason, NULL AS raw_payload,
+  50:        |       CURRENT_TIMESTAMP() AS reject_time
+  51:        |FROM (
+  52:        |  SELECT event_id, COUNT(*) AS c
+  53:        |  FROM ${ns.ods}.ods_behavior_event WHERE dt = '$dt'
+  54:        |  GROUP BY event_id HAVING COUNT(*) > 1
+  55:        |) t
+  56:        |""".stripMargin
+  57: }
+
+===== R-07 source_instance_id 在 spark-jobs / warehouse 的命中（含阳性对照） =====
+-- 目标检索：source_instance_id --
+(零命中 —— 见紧随其后的阳性对照)
+-- 阳性对照：同一命令形态检索 source_system（证明工具不假零）--
+spark-jobs/src/main/scala/com/graduation/analytics/job/EventOdsLoadJob.scala:4
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalJsonParquetJob.scala:1
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:1
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DimSql.scala:6
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwdSql.scala:2
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala:7
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsV2Columns.scala:5
+spark-jobs/src/test/scala/com/graduation/analytics/OdsV2ByteFidelitySpec.scala:5
+
+===== R-08 DWD 目标表 DDL 列序（warehouse/ddl/01-dwd.sql） =====
+blob=6e620e8282b90c184848a0d065c88dbc27ef61bd lines=81
+   1: -- =====================================================================
+   2: -- DWD 明细数据层（§6.3）
+   3: -- 清洗：时间统一、枚举映射、空值过滤、event_id 去重、维度补充；
+   4: -- 异常数据进入 dwd_reject_record，不混入正式明细。
+   5: -- 金额 DECIMAL(18,2)；event_time 决定指标归属日。
+   6: -- 库名：${WAREHOUSE_PREFIX}_dwd，缺省源 A 用 dw（beeline --hivevar WAREHOUSE_PREFIX=dw -f 01-dwd.sql）；规则见 contract-specs/specs/warehouse-namespace.v1.json
+   7: -- =====================================================================
+   8: CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd COMMENT 'DWD 明细数据层';
+   9: 
+  10: -- 用户行为明细（唯一事实：每个行为一行，event_id 去重后）
+  11: -- P2-03 代理键（裁决 D-083…D-092）：`*_key` 列为**新增**列，一律追加在列尾（INSERT 按位置对齐）。
+  12: --   两套 id 列语义必须显式区分，不得互相替代：
+  13: --     *_id  = 旧口径编码（IdCodec 剥字母转 BIGINT；含 -1 哨兵；**已摧毁前缀命名空间**，
+  14: --             U00000001 与 O00000001 都折叠成 1）——下游 DWS/ADS 现依赖它，未删（D-094）
+  15: --     *_key = 契约口径代理键（SHA-256 前 8 字节清符号位；空/缺 → NULL，**永不落 -1**；跨源不合并）
+  16: CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_user_behavior_detail (
+  17:     behavior_id   STRING  COMMENT '= event_id',
+  18:     user_id       BIGINT  COMMENT '旧口径编码（含哨兵，见文件头 *_id/*_key 语义说明）',
+  19:     product_id    BIGINT  COMMENT '旧口径编码（含哨兵，同上）',
+  20:     category_id   BIGINT  COMMENT '商品维表补充（旧口径，含 -1 哨兵）',
+  21:     behavior_type STRING  COMMENT 'view/favorite/cart_add/cart_remove/search',
+  22:     event_time    TIMESTAMP,
+  23:     event_date    STRING  COMMENT 'yyyy-MM-dd',
+  24:     event_hour    INT,
+  25:     city_level    STRING  COMMENT '用户维表补充',
+  26:     channel       STRING,
+  27:     session_id    STRING,
+  28:     source_batch_id BIGINT,
+  29:     user_key      BIGINT  COMMENT 'P2-03 代理键（user）：sha256(源编码|user|NORMALIZED_ID) 前 8 字节清符号位；空/缺=NULL',
+  30:     product_key   BIGINT  COMMENT 'P2-03 代理键（product）：同上；空/缺=NULL',
+  31:     category_key  BIGINT  COMMENT 'P2-03 代理键（category）：取自 dim_product.category_key；维表未命中=NULL'
+  32: )
+  33: COMMENT '用户行为明细（去重、标准枚举、维度补充）'
+  34: PARTITIONED BY (dt STRING COMMENT '业务日期 yyyyMMdd')
+  35: STORED AS PARQUET
+  36: LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dwd.db/dwd_user_behavior_detail';
+  37: 
+  38: -- 订单明细（状态展开：同 order_id 的事件按 event_time 重建最新状态）
+  39: -- 注意：**没有** `order_key`。契约实体枚举为 {user, product, category, brand, coupon}，无 `order`，
+  40: -- 按裁决 D-093 订单级身份一律不得套用代理键算法（登记为契约缺口，须走契约升版）。
+  41: CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_order_detail (
+  42:     order_id      BIGINT  COMMENT '旧口径编码（订单级**无**代理键，见文件头 D-093 说明）',
+  43:     user_id       BIGINT,
+  44:     product_id    BIGINT,
+  45:     category_id   BIGINT,
+  46:     quantity      INT,
+  47:     unit_price    DECIMAL(18,2),
+  48:     discount      DECIMAL(18,2),
+  49:     amount        DECIMAL(18,2) COMMENT '=quantity×unit_price−discount',
+  50:     order_status  STRING  COMMENT 'CREATED/PAID/COMPLETED/CANCELLED/REFUNDING/REFUNDED',
+  51:     order_time    TIMESTAMP,
+  52:     order_date    STRING,
+  53:     city_level    STRING,
+  54:     paid_at       TIMESTAMP COMMENT 'order_paid 事件时间',
+  55:     order_amount  DECIMAL(18,2) COMMENT '订单优惠后应付总额（order_created.total_amount）',
+  56:     paid_amount   DECIMAL(18,2) COMMENT '实际成功支付金额（order_paid.amount，refund_id 去重后最新）',
+  57:     refund_amount DECIMAL(18,2) COMMENT '累计已完成退款金额（refund_completed 按 refund_id 去重汇总）',
+  58:     net_paid_amount DECIMAL(18,2) COMMENT '=paid_amount−refund_amount（净销售口径）',
+  59:     final_paid_flag INT COMMENT '1=有效支付（口径依据，§21.3）',
+  60:     final_refunded_flag INT COMMENT '1=完全退款（有效复购率排除）',
+  61:     user_key      BIGINT  COMMENT 'P2-03 代理键（user）；空/缺=NULL',
+  62:     product_key   BIGINT  COMMENT 'P2-03 代理键（product）；空/缺=NULL',
+  63:     category_key  BIGINT  COMMENT 'P2-03 代理键（category）：取自 dim_product.category_key；维表未命中=NULL'
+  64: )
+  65: COMMENT '订单明细（状态展开+金额核对，§11.3）'
+  66: PARTITIONED BY (dt STRING)
+  67: STORED AS PARQUET
+  68: LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dwd.db/dwd_order_detail';
+  69: 
+  70: -- 拒绝记录（清洗时隔离的异常数据，人工/程序复审）
+  71: CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_reject_record (
+  72:     reject_id     STRING,
+  73:     source_table  STRING,
+  74:     reject_reason STRING COMMENT '枚举：EMPTY_FIELD/DUPLICATE_EVENT/BAD_ENUM/BAD_AMOUNT/FUTURE_TIME',
+  75:     raw_payload   STRING,
+  76:     reject_time   TIMESTAMP
+  77: )
+  78: COMMENT '清洗拒绝记录'
+  79: PARTITIONED BY (dt STRING)
+  80: STORED AS PARQUET
+  81: LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dwd.db/dwd_reject_record';
+
+===== R-09 ODS v2 实际落库列集（类级唯一所有者 OdsV2Columns.scala） =====
+blob=2af7323276862bf83dee2d5fbfa825bf1d83b4c4
+L15: * 前提下**加法扩列**，新增 `raw_event_type` / `raw_source_system` / `landing_file` /
+L37: * 各表业务列之后。要物理列序用 {@link dataColumns}。
+L39: val CommonColumns: Seq[Column] = Seq(
+L48: Column("raw_source_system", "STRING"),
+L56: private val V1Shared: Seq[Column] = Seq(
+L67: val V2NewColumns: Seq[Column] = Seq(
+L69: Column("raw_source_system", "STRING"),
+L119: val AuditColumns: Seq[Column] = Seq(
+L154: def dataColumns(table: String): Seq[Column] = v1Columns(table) ++ V2NewColumns
+L157: def v1Columns(table: String): Seq[Column] = {
+L160: V1Shared ++ payload ++ AuditColumns
+L164: def v2NewColumnNames: Seq[String] = V2NewColumns.map(_.name)
+L167: def allColumns(table: String): Seq[Column] = dataColumns(table) ++ PartitionColumns
+L182: dataColumns(table).map(_.ddlFragment).mkString(",\n          ")
+
+===== R-10 ODS 建表列序（warehouse/ddl/00-ods.sql）—— 冻结 4 列 vs 实现 5 列 =====
+blob=65b0fb3bf7f938a8dee7868b67c8769b25dc4a03 lines=133
+L8: -- P2-01 / ODS v2（D-052…D-059）：四表尾部**追加** 5 列（raw_event_type / raw_source_system /
+L9: -- landing_file / payload_json / payload_hash）。v1 的全部列**名字、类型、序号一格未动**
+L33: raw_event_type   STRING COMMENT 'P2-01：落地区原始事件类型词汇（不映射，源 B 词汇保真留 P5）',
+L34: raw_source_system STRING COMMENT 'P2-01：落地区行内 source_system 原样值（不受信任，仅供诊断）',
+L35: landing_file     STRING COMMENT 'P2-01：真实落地文件（_metadata.file_path）；与 source_file 同源',
+L36: payload_json     STRING COMMENT 'P2-01：payload 对象原始文本，逐字节保真（不做解析重排/美化/压缩）',
+L37: payload_hash     STRING COMMENT 'P2-01：SHA-256(UTF-8(payload_json 原始字节)) 小写十六进制；仅诊断，不是去重键'
+L40: PARTITIONED BY (dt STRING COMMENT '业务日期 yyyyMMdd', hour STRING COMMENT '小时 HH')
+L65: raw_event_type   STRING,
+L66: raw_source_system STRING,
+L67: landing_file     STRING,
+L68: payload_json     STRING,
+L69: payload_hash     STRING
+L72: PARTITIONED BY (dt STRING, hour STRING)
+L92: raw_event_type   STRING,
+L93: raw_source_system STRING,
+L94: landing_file     STRING,
+L95: payload_json     STRING,
+L96: payload_hash     STRING
+L99: PARTITIONED BY (dt STRING, hour STRING)
+L124: raw_event_type   STRING,
+L125: raw_source_system STRING,
+L126: landing_file     STRING,
+L127: payload_json     STRING,
+L128: payload_hash     STRING
+L131: PARTITIONED BY (dt STRING, hour STRING)
+
+===== R-11 IdCodec 通用 CAST BIGINT 现状（P2-04 要求禁止通用 CAST） =====
+blob=6aad5bd8013d3a315b1c150ba70bd1e4733e7efc lines=49
+   1: package com.graduation.analytics.sql
+   2: 
+   3: /**
+   4:  * 契约字符串 id → 数仓 BIGINT 代理键的**唯一**映射规则。
+   5:  *
+   6:  * 背景（DEF-05，实测）：冻结契约把身份放在 `payload` 内的**字符串**字段
+   7:  * （`user_id=U000065`、`product_id=P00030`、`order_id=O00000001`、`category_id=C0001`、`brand_id=B0001`），
+   8:  * 而数仓 `dwd/dws/ads/dim` 的 id 列是 `BIGINT`；直接 `CAST(... AS BIGINT)` 会**静默返回 NULL**
+   9:  * （run 36 实测：ODS `U000058` → NULL，DWD `rows=13 / null_uid=13 / null_pid=13`），
+  10:  * 导致 `PUB_DQ_BLOCKING_RULES`(13/13) 与 `ADS_STAGING_KEY_NOT_NULL`(3/14) 阻断发布。
+  11:  *
+  12:  * 决策：B-07 候选 ② / D-023——**只在 ODS→DWD 边界做一次归一化**，数仓模型、指标、页面与已发布快照都不动。
+  13:  * 规则 = **全匹配**「字母前缀 + 纯数字」才转 `BIGINT`，否则 `NULL`（由质量规则判定，**不静默兜底成 0**）。
+  14:  * 全匹配（而不是"剥前缀后尽力解析"）是有意的：`U12A`/`U-1`/`view` 这类取值必须得到 `NULL`，
+  15:  * 否则 `U-1` 会被解析成 `-1`，与维度表的 unknown key 哨兵 `-1` 混淆（`IdCodecSpec` 已固化该断言）。
+  16:  *
+  17:  * 纪律：该规则**只在此处定义**。任何地方都不得再手写 `CAST(payload_*_id AS BIGINT)`
+  18:  * （`IdCodecSpec` 会扫描三个 SQL 模板对象做负向守卫）。
+  19:  */
+  20: object IdCodec {
+  21: 
+  22:   /**
+  23:    * 契约 id 的完整形状：可选字母前缀 + 纯数字。
+  24:    * group 1 = 数字部分（user `U000065` → `000065`；product `P00030` → `00030`；纯数字 `123` → `123`）。
+  25:    */
+  26:   final val IdPattern: String = "^[A-Za-z]*([0-9]+)$"
+  27: 
+  28:   /** 本地判定用（与 `IdPattern` 同语义，去掉捕获组） */
+  29:   private final val IdShape = "^[A-Za-z]*[0-9]+$"
+  30: 
+  31:   /**
+  32:    * 归一化 SQL 表达式：`CAST(REGEXP_EXTRACT(<expr>, '^[A-Za-z]*([0-9]+)$', 1) AS BIGINT)`。
+  33:    * `REGEXP_EXTRACT` 不匹配时返回空串，`CAST('' AS BIGINT)` = `NULL`——即"形状不合规 → NULL"。
+  34:    *
+  35:    * @param expr 承接契约字符串 id 的 SQL 表达式（列引用，如 `rn.payload_user_id`）
+  36:    */
+  37:   def toBIGINT(expr: String): String =
+  38:     s"CAST(REGEXP_EXTRACT($expr, '$IdPattern', 1) AS BIGINT)"
+  39: 
+  40:   /**
+  41:    * 与 SQL 同语义的本地实现（供快速单测与文档核对）。
+  42:    * SQL 侧用 `REGEXP_EXTRACT`、本地用 `String.matches`（同一 Java 正则引擎语义）。
+  43:    */
+  44:   def normalize(id: String): Option[Long] =
+  45:     Option(id)
+  46:       .filter(_.matches(IdShape))
+  47:       .map(_.replaceAll("^[A-Za-z]+", ""))
+  48:       .flatMap(s => scala.util.Try(s.toLong).toOption)
+  49: }
+
+===== R-12 全仓 CAST(... AS BIGINT) 形态清点（spark-jobs 主源） =====
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:114:   *   规则只在 `IdCodec` 定义（DEF-05 / 决策 B-07 候选 ② / D-023），此处不得再手写 `CAST(... AS BIGINT)`；
+spark-jobs/src/main/scala/com/graduation/analytics/sql/IdCodec.scala:8: * 而数仓 `dwd/dws/ads/dim` 的 id 列是 `BIGINT`；直接 `CAST(... AS BIGINT)` 会**静默返回 NULL**
+spark-jobs/src/main/scala/com/graduation/analytics/sql/IdCodec.scala:17: * 纪律：该规则**只在此处定义**。任何地方都不得再手写 `CAST(payload_*_id AS BIGINT)`
+spark-jobs/src/main/scala/com/graduation/analytics/sql/IdCodec.scala:33:   * `REGEXP_EXTRACT` 不匹配时返回空串，`CAST('' AS BIGINT)` = `NULL`——即"形状不合规 → NULL"。
+
+===== R-13 SourceProfile 概念在 spark-jobs 的命中（含阳性对照） =====
+-- 目标检索：SourceProfile / source-profile / sourceProfile --
+(零命中 —— 见阳性对照)
+-- 阳性对照：同形态检索 sourceSystem --
+spark-jobs/src/main/scala/com/graduation/analytics/job/EventOdsLoadJob.scala:9
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:6
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala:18
+spark-jobs/src/test/scala/com/graduation/analytics/IdCodecSpec.scala:2
+spark-jobs/src/test/scala/com/graduation/analytics/OdsV2ByteFidelitySpec.scala:3
+spark-jobs/src/test/scala/com/graduation/analytics/OdsV2EdgeCaseSpec.scala:3
+spark-jobs/src/test/scala/com/graduation/analytics/OdsV2SqlContractSpec.scala:8
+spark-jobs/src/test/scala/com/graduation/analytics/SqlTemplateSpec.scala:2
+
+===== R-14 契约侧去重语义（CT-2 = D-062 已落盘） =====
+blob=73e5e913f390631ceb7ef03ecd89ab7ca16fd625
+L12: "event_id": "UUID",                        // 源命名空间内唯一，ODS/DWD 按 (source_instance_id, event_id) 去重（允许 at-least-once 投递）
+L165: * `event_id` 在源命名空间内唯一；重复投递由 DWD 按 `(source_instance_id, event_id)` 去重，因此允许 at-least-once。
+blob=1e4f2d8565c0901067ceafafdc6116feb96b3b48
+L5: "description": "机器可读投影，语义权威是 docs/contracts/event-contract.md（schema_version 1.0）。本文件逐项对齐该文档 §1（8 字段信封）、§2.1-§2.10（12 类 payload 字段/必填/枚举）、§3（event_type 全集）、§4（金额正则）。两者冲突时以 markdown 文档为准，并须按 V2.1 §9.1 登记契约任务（本目录 README 的权
+L10: "description": "源命名空间内唯一的事件 ID，ODS/DWD 按 (source_instance_id, event_id) 去重（允许 at-least-once 投递）。来源：event-contract.md §1 L12。契约 §1 L27 规定 event_id 为 UUID 字符串；但真实夹具 landing/events/r9-m1-123006.jsonl 使用 golden-evt-001 这类非 U
+L38: "source_system": {
+L41: "description": "形状约束（type: string, minLength: 1）：取值 = 该事件所属源的 source_registry.source_code（D-056 经 spark-submit --extra 注入通道下发）；**值域非契约所有**（D-061：刻意不加 pattern/enum，否则每接入一个源都要改契约，且契约会成为第二个命名规则所有者——命名规则的单一所有者是 source_regist
+L62: "source_system",
+
+===== R-15 指导书 V2.4 权威条文（§2.1 权威顺序 / §5.1 去重键 / §7.3-7.4 质量与快照） =====
+blob=732abb9bf7c621828ac6f7d859b9226f4b7b1f46 lines=720
+L85: -> 质量门 -> MySQL ACTIVE 指标快照 -> 页面/AI/决策
+L91: - 模拟数据生成器只是测试客户端。没有生成器、没有参考商城时，分析平台仍必须能连接其他商城并读取历史 ACTIVE 快照。
+L245: | `ProductPage` | `products`(List)、`total`(int)、`unmappedStateWords`(List<String>)、`stateFieldMissing`(List<String>)、`priceUnreadable`(List<String>) | `total` 不小于 `products.size()`；后三个字段是**本次读取的缺口通道**（去重、按字典序；非空即表示本次有缺口）——依次为「映射不到规范词表的**商城原
+L314: 外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。
+L323: | `source_connector` | id、source_instance_id、type、config_json、credential_ref、version、status、capability_json、last_test_result | 表示采集方式和版本 |
+L325: | `source_manifest` | batch_id、source_instance_id、connector_version、mapping_version、uri、checksum、record_count、min/max_event_time、event_type_counts、contract_version | 批次溯源与对账 |
+L348: 未知源版本、没有 ACTIVE mapping、必填字段缺失和不允许的转换全部进入 quarantine，并保存 source instance、mapping version、reason code 和原始位置。映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数。
+L350: 映射的最终真相仍是版本化配置和审核记录，不是大模型对话。P1–P5 先证明人工/配置驱动接入异构源；其后 AI 可以读取字段元数据和脱敏样本，生成 `SourceProfileDraft`、字段映射建议、置信度和待确认问题。低置信度、金额、退款、用户身份、时区等业务语义必须由人确认，AI 草案不能直接变为 ACTIVE mapping。
+L382: HDFS /graduation/landing/{source_instance_id}/dt=yyyyMMdd/hour=HH/
+L426: 8. Flume 是 at-least-once；平台只能通过 checkpoint、manifest 和 `(source_instance_id,event_id)` 去重提供幂等结果，不得宣称 exactly-once。
+L452: - 去重排序：同一业务键按 event_time、ingest_time、event_id 确定唯一结果，保证重跑稳定。
+L461: - 异常检测：至少 14 个历史点才计算；第一版可采用滚动中位数/MAD 或滚动均值/z-score。结果表保存 metric_code、source_instance_id、window、actual、baseline、deviation、threshold、algorithm_version、snapshot_id。算法类必须接入生产指标链，不允许只有孤立类。
+L480: 每条 BLOCKING 规则必须有一条“构造失败→流水线失败→不产生新 ACTIVE→旧 ACTIVE 可读”的负向验收。
+L484: 第一版 Hive 全程存在：ODS/DWD/DWS/ADS 均在 Hive。MySQL 不是数仓替代品，而是将常用 ADS 指标发布为 ACTIVE 快照的低延迟服务库。页面、AI 和决策只通过 MetricStore 读取同一快照。
+L488: 普通用户只能读 ACTIVE 快照。必须提供当前 ACTIVE 元信息接口，包含 snapshotId、sourceInstanceId、businessDate、version、createdAt 和口径版本。
+L500: 1. **分析辅助**：自然语言问数、异常解释、指标归因候选与经营摘要，全部引用同一 ACTIVE snapshot 的证据包。
+L703: 4. sandbox 小链完成对账、质量和安全检查；失败不能影响 ACTIVE 数仓/指标快照。

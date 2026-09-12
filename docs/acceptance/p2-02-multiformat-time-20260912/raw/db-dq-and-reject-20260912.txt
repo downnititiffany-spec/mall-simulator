@@ -1,0 +1,58 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1054 (42S22) at line 1: Unknown column 'metric_code' in 'field list'
++-------------------------+
+| clock_at_query          |
++-------------------------+
+| 2026-09-12 20:04:50.844 |
++-------------------------+
++--------------+---------------+------+-----+----------------------+-------------------+
+| Field        | Type          | Null | Key | Default              | Extra             |
++--------------+---------------+------+-----+----------------------+-------------------+
+| id           | bigint        | NO   | PRI | NULL                 | auto_increment    |
+| run_id       | bigint        | NO   | MUL | NULL                 |                   |
+| rule_code    | varchar(64)   | NO   |     | NULL                 |                   |
+| layer        | varchar(32)   | YES  |     | NULL                 |                   |
+| severity     | varchar(16)   | YES  |     | NULL                 |                   |
+| target_table | varchar(500)  | YES  |     | NULL                 |                   |
+| snapshot_id  | varchar(64)   | YES  |     | NULL                 |                   |
+| check_count  | bigint        | NO   |     | NULL                 |                   |
+| error_count  | bigint        | NO   |     | NULL                 |                   |
+| error_rate   | decimal(10,6) | NO   |     | NULL                 |                   |
+| threshold    | varchar(64)   | NO   |     | NULL                 |                   |
+| passed       | int           | NO   |     | NULL                 |                   |
+| detail       | varchar(2000) | YES  |     | NULL                 |                   |
+| created_at   | datetime(3)   | NO   |     | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
++--------------+---------------+------+-----+----------------------+-------------------+
++----------+
+| dq_total |
++----------+
+|      445 |
++----------+
++--------------------------------+----------+-----+
+| rule_code                      | severity | c   |
++--------------------------------+----------+-----+
+| MXP_EXPORT_ROWS                | BLOCKING | 104 |
+| AMOUNT_RECONCILE               | BLOCKING |  25 |
+| REQUIRED_FIELD_NULL_RATE       | ERROR    |  25 |
+| EVENT_ID_UNIQUE                | ERROR    |  25 |
+| ENUM_WHITELIST                 | ERROR    |  25 |
+| ADS_STAGING_PRESENT            | BLOCKING |  22 |
+| ADS_STAGING_KEY_NOT_NULL       | BLOCKING |  22 |
+| PUB_DQ_BLOCKING_RULES          | BLOCKING |  22 |
+| ADS_DWS_FUNNEL_RECONCILE       | BLOCKING |  22 |
+| ADS_STAGING_SNAPSHOT_ISOLATION | ERROR    |  21 |
+| PUB_DQ_EVENT_ID_UNIQUE         | ERROR    |  19 |
+| PUB_STAGING_READY              | BLOCKING |  17 |
+| PUB_FORMAL_PARTITION_MATCH     | BLOCKING |  17 |
+| MXP_SNAPSHOT_PINNED            | BLOCKING |  13 |
+| MXP_EXPORT_COMPLETE            | BLOCKING |  13 |
+| AMOUNT_RECONCILE               | NULL     |  12 |
+| REQUIRED_FIELD_NULL_RATE       | NULL     |  12 |
+| EVENT_ID_UNIQUE                | NULL     |  12 |
+| ENUM_WHITELIST                 | NULL     |  12 |
+| AMOUNT_RECONCILE               | INFO     |   1 |
+| REQUIRED_FIELD_NULL_RATE       | INFO     |   1 |
+| EVENT_ID_UNIQUE                | BLOCKING |   1 |
+| ENUM_WHITELIST                 | INFO     |   1 |
+| ADS_STAGING_SNAPSHOT_ISOLATION | BLOCKING |   1 |
++--------------------------------+----------+-----+

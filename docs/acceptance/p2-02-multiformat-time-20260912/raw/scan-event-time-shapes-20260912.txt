@@ -1,0 +1,372 @@
+SCAN_ROOT_COUNT	3
+SCAN_FILE_COUNT	349
+SCAN_TOTAL_BYTES	1215989873
+CONTRACT_PATTERN	^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?([+-]\d{2}:\d{2}|Z)$
+
+=== PER-FILE ===
+file	bytes	lines	extracted	shapes
+generator-output\e4c1000-v1-20260912-154851-6e28\events-0001.jsonl	353053	1001	1000	CONTRACT_OK_OFFSET=1000
+generator-output\m1-4-d10-failpath-v1-v1-20260912-110139-8803\events-0001.jsonl	355850	841	840	CONTRACT_OK_OFFSET=840
+generator-output\m1-4-d10-failpath-v1-v1-20260912-110139-8803\operation-journal.jsonl	220086	862	0	
+landing\accepted\11\2026090701.jsonl	363	2	1	CONTRACT_OK_OFFSET=1
+landing\accepted\13\2026090701.jsonl	655	3	2	CONTRACT_OK_OFFSET=2
+landing\accepted\14\2026090701.jsonl	296	2	1	CONTRACT_OK_OFFSET=1
+landing\accepted\15\2026090701.jsonl	293	2	1	CONTRACT_OK_OFFSET=1
+landing\accepted\16\2026090703.jsonl	915	4	3	CONTRACT_OK_OFFSET=3
+landing\accepted\17\golden-r615-20260910164859.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\18\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\18\golden-r615b-20260910165249.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\19\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\19\golden-r618-tampered-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\2\2026090509.jsonl	12063914	26028	26027	CONTRACT_OK_OFFSET=26027
+landing\accepted\2\2026090510.jsonl	15235306	32848	32847	CONTRACT_OK_OFFSET=32847
+landing\accepted\2\2026090511.jsonl	16964170	36577	36576	CONTRACT_OK_OFFSET=36576
+landing\accepted\2\2026090512.jsonl	18195668	39228	39227	CONTRACT_OK_OFFSET=39227
+landing\accepted\2\2026090513.jsonl	16092906	34699	34698	CONTRACT_OK_OFFSET=34698
+landing\accepted\2\2026090514.jsonl	15225918	32827	32826	CONTRACT_OK_OFFSET=32826
+landing\accepted\2\2026090515.jsonl	14185614	30582	30581	CONTRACT_OK_OFFSET=30581
+landing\accepted\2\2026090516.jsonl	13155688	28367	28366	CONTRACT_OK_OFFSET=28366
+landing\accepted\2\2026090517.jsonl	16725415	36059	36058	CONTRACT_OK_OFFSET=36058
+landing\accepted\2\2026090518.jsonl	20300824	43764	43763	CONTRACT_OK_OFFSET=43763
+landing\accepted\2\2026090519.jsonl	19321993	41655	41654	CONTRACT_OK_OFFSET=41654
+landing\accepted\2\2026090520.jsonl	20060642	43250	43249	CONTRACT_OK_OFFSET=43249
+landing\accepted\2\2026090521.jsonl	18086070	38989	38988	CONTRACT_OK_OFFSET=38988
+landing\accepted\2\2026090522.jsonl	14178627	30571	30570	CONTRACT_OK_OFFSET=30570
+landing\accepted\2\2026090523.jsonl	8045487	17348	17347	CONTRACT_OK_OFFSET=17347
+landing\accepted\2\2026090600.jsonl	2940335	6339	6338	CONTRACT_OK_OFFSET=6338
+landing\accepted\2\2026090601.jsonl	2068115	4460	4459	CONTRACT_OK_OFFSET=4459
+landing\accepted\2\2026090602.jsonl	1664634	3591	3590	CONTRACT_OK_OFFSET=3590
+landing\accepted\2\2026090603.jsonl	1141883	2463	2462	CONTRACT_OK_OFFSET=2462
+landing\accepted\2\2026090604.jsonl	1003050	2162	2161	CONTRACT_OK_OFFSET=2161
+landing\accepted\2\2026090605.jsonl	1024328	2210	2209	CONTRACT_OK_OFFSET=2209
+landing\accepted\2\2026090606.jsonl	2061351	4444	4443	CONTRACT_OK_OFFSET=4443
+landing\accepted\2\2026090607.jsonl	5083640	10960	10959	CONTRACT_OK_OFFSET=10959
+landing\accepted\2\2026090608.jsonl	8976958	19358	19357	CONTRACT_OK_OFFSET=19357
+landing\accepted\2\2026090609.jsonl	12066670	26017	26016	CONTRACT_OK_OFFSET=26016
+landing\accepted\2\2026090610.jsonl	15047773	32445	32444	CONTRACT_OK_OFFSET=32444
+landing\accepted\2\2026090611.jsonl	17254498	37198	37197	CONTRACT_OK_OFFSET=37197
+landing\accepted\2\2026090612.jsonl	18463188	39804	39803	CONTRACT_OK_OFFSET=39803
+landing\accepted\2\2026090613.jsonl	16112691	34736	34735	CONTRACT_OK_OFFSET=34735
+landing\accepted\2\2026090614.jsonl	15658701	33760	33759	CONTRACT_OK_OFFSET=33759
+landing\accepted\2\2026090615.jsonl	14244829	30707	30706	CONTRACT_OK_OFFSET=30706
+landing\accepted\2\2026090616.jsonl	13198659	28458	28457	CONTRACT_OK_OFFSET=28457
+landing\accepted\2\2026090617.jsonl	16134167	34789	34788	CONTRACT_OK_OFFSET=34788
+landing\accepted\2\2026090620.jsonl	1842	5	4	CONTRACT_OK_OFFSET=4
+landing\accepted\2\2026090621.jsonl	7025	17	16	CONTRACT_OK_OFFSET=16
+landing\accepted\20\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\20\golden-r619-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\21\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\21\golden-r70-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\22\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\22\golden-r73-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\23\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\23\golden-r73b-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\24\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\24\golden-r73c-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\25\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\25\golden-r73d-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\26\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\26\r9-qualityfail-103736.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\27\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\27\r9-prunefix-105922.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\28\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\28\r9-prunefix-110637.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\2026090509.jsonl	12063914	26028	26027	CONTRACT_OK_OFFSET=26027
+landing\accepted\29\2026090510.jsonl	15235306	32848	32847	CONTRACT_OK_OFFSET=32847
+landing\accepted\29\2026090511.jsonl	16964170	36577	36576	CONTRACT_OK_OFFSET=36576
+landing\accepted\29\2026090512.jsonl	18195668	39228	39227	CONTRACT_OK_OFFSET=39227
+landing\accepted\29\2026090513.jsonl	16092906	34699	34698	CONTRACT_OK_OFFSET=34698
+landing\accepted\29\2026090514.jsonl	15225918	32827	32826	CONTRACT_OK_OFFSET=32826
+landing\accepted\29\2026090515.jsonl	14185614	30582	30581	CONTRACT_OK_OFFSET=30581
+landing\accepted\29\2026090516.jsonl	13155688	28367	28366	CONTRACT_OK_OFFSET=28366
+landing\accepted\29\2026090517.jsonl	16725415	36059	36058	CONTRACT_OK_OFFSET=36058
+landing\accepted\29\2026090518.jsonl	20300824	43764	43763	CONTRACT_OK_OFFSET=43763
+landing\accepted\29\2026090519.jsonl	19321993	41655	41654	CONTRACT_OK_OFFSET=41654
+landing\accepted\29\2026090520.jsonl	20060642	43250	43249	CONTRACT_OK_OFFSET=43249
+landing\accepted\29\2026090521.jsonl	18086070	38989	38988	CONTRACT_OK_OFFSET=38988
+landing\accepted\29\2026090522.jsonl	14178627	30571	30570	CONTRACT_OK_OFFSET=30570
+landing\accepted\29\2026090523.jsonl	8045487	17348	17347	CONTRACT_OK_OFFSET=17347
+landing\accepted\29\2026090600.jsonl	2940335	6339	6338	CONTRACT_OK_OFFSET=6338
+landing\accepted\29\2026090601.jsonl	2068115	4460	4459	CONTRACT_OK_OFFSET=4459
+landing\accepted\29\2026090602.jsonl	1664634	3591	3590	CONTRACT_OK_OFFSET=3590
+landing\accepted\29\2026090603.jsonl	1141883	2463	2462	CONTRACT_OK_OFFSET=2462
+landing\accepted\29\2026090604.jsonl	1003050	2162	2161	CONTRACT_OK_OFFSET=2161
+landing\accepted\29\2026090605.jsonl	1024328	2210	2209	CONTRACT_OK_OFFSET=2209
+landing\accepted\29\2026090606.jsonl	2061351	4444	4443	CONTRACT_OK_OFFSET=4443
+landing\accepted\29\2026090607.jsonl	5083640	10960	10959	CONTRACT_OK_OFFSET=10959
+landing\accepted\29\2026090608.jsonl	8976958	19358	19357	CONTRACT_OK_OFFSET=19357
+landing\accepted\29\2026090609.jsonl	12066670	26017	26016	CONTRACT_OK_OFFSET=26016
+landing\accepted\29\2026090610.jsonl	15047773	32445	32444	CONTRACT_OK_OFFSET=32444
+landing\accepted\29\2026090611.jsonl	17254498	37198	37197	CONTRACT_OK_OFFSET=37197
+landing\accepted\29\2026090612.jsonl	18463188	39804	39803	CONTRACT_OK_OFFSET=39803
+landing\accepted\29\2026090613.jsonl	16112691	34736	34735	CONTRACT_OK_OFFSET=34735
+landing\accepted\29\2026090614.jsonl	15658701	33760	33759	CONTRACT_OK_OFFSET=33759
+landing\accepted\29\2026090615.jsonl	14244829	30707	30706	CONTRACT_OK_OFFSET=30706
+landing\accepted\29\2026090616.jsonl	13198659	28458	28457	CONTRACT_OK_OFFSET=28457
+landing\accepted\29\2026090617.jsonl	16134167	34789	34788	CONTRACT_OK_OFFSET=34788
+landing\accepted\29\2026090620.jsonl	1842	5	4	CONTRACT_OK_OFFSET=4
+landing\accepted\29\2026090621.jsonl	7424	18	17	CONTRACT_OK_OFFSET=17
+landing\accepted\29\2026090700.jsonl	346927	998	997	CONTRACT_OK_OFFSET=997
+landing\accepted\29\2026090701.jsonl	358592	1009	1008	CONTRACT_OK_OFFSET=1008
+landing\accepted\29\2026090703.jsonl	915	4	3	CONTRACT_OK_OFFSET=3
+landing\accepted\29\golden-r615-20260910164859.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\golden-r615b-20260910165249.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\golden-r618-tampered-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\golden-r619-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\golden-r70-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\golden-r73-clean-20260910.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\r9-prunefix-105922.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\r9-prunefix-110637.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\29\r9-qualityfail-103736.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\30\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\30\r9-m1-123006.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\31\gen-s3b-1000-20260911.jsonl	363848	1001	1000	CONTRACT_OK_OFFSET=1000
+landing\accepted\31\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\32\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\33\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\34\2026091115.jsonl	19325	41	40	CONTRACT_OK_OFFSET=40
+landing\accepted\34\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\35\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\36\b08-gate-20260911-1555.jsonl	584	3	2	CONTRACT_OK_OFFSET=2
+landing\accepted\36\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\37\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\38\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\39\b11-fixture-20260911162916.jsonl	584	3	2	CONTRACT_OK_OFFSET=2
+landing\accepted\39\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\4\2026090621.jsonl	0	1	0	
+landing\accepted\40\2026091120.jsonl	459013	1014	1013	CONTRACT_OK_OFFSET=1013
+landing\accepted\40\2026091121.jsonl	165249	368	367	CONTRACT_OK_OFFSET=367
+landing\accepted\40\2026091122.jsonl	129974	288	287	CONTRACT_OK_OFFSET=287
+landing\accepted\40\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\41\2026091209.jsonl	1128	4	3	CONTRACT_OK_OFFSET=3
+landing\accepted\41\2026091210.jsonl	583351	1294	1293	CONTRACT_OK_OFFSET=1293
+landing\accepted\41\2026091211.jsonl	630555	1392	1391	CONTRACT_OK_OFFSET=1391
+landing\accepted\41\2026091215.jsonl	992	3	2	CONTRACT_OK_OFFSET=2
+landing\accepted\41\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\41\r2-golden55-20260912-172221.jsonl	17419	52	51	CONTRACT_OK_OFFSET=51
+landing\accepted\42\golden-r615-20260910164859.jsonl	0	1	0	
+landing\accepted\42\r2ctl-b31replay-20260912-173418.jsonl	363848	1001	1000	CONTRACT_OK_OFFSET=1000
+landing\accepted\5\2026090621.jsonl	399	2	1	CONTRACT_OK_OFFSET=1
+landing\accepted\7\2026090700.jsonl	346927	998	997	CONTRACT_OK_OFFSET=997
+landing\accepted\8\2026090701.jsonl	355940	1001	1000	CONTRACT_OK_OFFSET=1000
+landing\accepted\9\2026090701.jsonl	1045	4	3	CONTRACT_OK_OFFSET=3
+landing\events\2026090509.jsonl	12089941	26028	26027	CONTRACT_OK_OFFSET=26027
+landing\events\2026090510.jsonl	15268153	32848	32847	CONTRACT_OK_OFFSET=32847
+landing\events\2026090511.jsonl	17000746	36577	36576	CONTRACT_OK_OFFSET=36576
+landing\events\2026090512.jsonl	18234895	39228	39227	CONTRACT_OK_OFFSET=39227
+landing\events\2026090513.jsonl	16127604	34699	34698	CONTRACT_OK_OFFSET=34698
+landing\events\2026090514.jsonl	15258744	32827	32826	CONTRACT_OK_OFFSET=32826
+landing\events\2026090515.jsonl	14216195	30582	30581	CONTRACT_OK_OFFSET=30581
+landing\events\2026090516.jsonl	13184054	28367	28366	CONTRACT_OK_OFFSET=28366
+landing\events\2026090517.jsonl	16761473	36059	36058	CONTRACT_OK_OFFSET=36058
+landing\events\2026090518.jsonl	20344587	43764	43763	CONTRACT_OK_OFFSET=43763
+landing\events\2026090519.jsonl	19363647	41655	41654	CONTRACT_OK_OFFSET=41654
+landing\events\2026090520.jsonl	20103891	43250	43249	CONTRACT_OK_OFFSET=43249
+landing\events\2026090521.jsonl	18125058	38989	38988	CONTRACT_OK_OFFSET=38988
+landing\events\2026090522.jsonl	14209197	30571	30570	CONTRACT_OK_OFFSET=30570
+landing\events\2026090523.jsonl	8062834	17348	17347	CONTRACT_OK_OFFSET=17347
+landing\events\2026090600.jsonl	2946673	6339	6338	CONTRACT_OK_OFFSET=6338
+landing\events\2026090601.jsonl	2072574	4460	4459	CONTRACT_OK_OFFSET=4459
+landing\events\2026090602.jsonl	1668224	3591	3590	CONTRACT_OK_OFFSET=3590
+landing\events\2026090603.jsonl	1144345	2463	2462	CONTRACT_OK_OFFSET=2462
+landing\events\2026090604.jsonl	1005211	2162	2161	CONTRACT_OK_OFFSET=2161
+landing\events\2026090605.jsonl	1026537	2210	2209	CONTRACT_OK_OFFSET=2209
+landing\events\2026090606.jsonl	2065794	4444	4443	CONTRACT_OK_OFFSET=4443
+landing\events\2026090607.jsonl	5094599	10960	10959	CONTRACT_OK_OFFSET=10959
+landing\events\2026090608.jsonl	8996315	19358	19357	CONTRACT_OK_OFFSET=19357
+landing\events\2026090609.jsonl	12092686	26017	26016	CONTRACT_OK_OFFSET=26016
+landing\events\2026090610.jsonl	15080217	32445	32444	CONTRACT_OK_OFFSET=32444
+landing\events\2026090611.jsonl	17291695	37198	37197	CONTRACT_OK_OFFSET=37197
+landing\events\2026090612.jsonl	18502991	39804	39803	CONTRACT_OK_OFFSET=39803
+landing\events\2026090613.jsonl	16147426	34736	34735	CONTRACT_OK_OFFSET=34735
+landing\events\2026090614.jsonl	15692460	33760	33759	CONTRACT_OK_OFFSET=33759
+landing\events\2026090615.jsonl	14275535	30707	30706	CONTRACT_OK_OFFSET=30706
+landing\events\2026090616.jsonl	13227116	28458	28457	CONTRACT_OK_OFFSET=28457
+landing\events\2026090617.jsonl	16168955	34789	34788	CONTRACT_OK_OFFSET=34788
+landing\events\2026090620.jsonl	1846	5	4	CONTRACT_OK_OFFSET=4
+landing\events\2026090621.jsonl	9053	23	21	CONTRACT_OK_OFFSET=21
+landing\events\2026090700.jsonl	348746	1001	999	CONTRACT_OK_OFFSET=999
+landing\events\2026090701.jsonl	359896	1010	1009	CONTRACT_OK_OFFSET=1009
+landing\events\2026090703.jsonl	918	4	3	CONTRACT_OK_OFFSET=3
+landing\events\2026091115.jsonl	19365	41	40	CONTRACT_OK_OFFSET=40
+landing\events\2026091120.jsonl	460026	1014	1013	CONTRACT_OK_OFFSET=1013
+landing\events\2026091121.jsonl	165616	368	367	CONTRACT_OK_OFFSET=367
+landing\events\2026091122.jsonl	130261	288	287	CONTRACT_OK_OFFSET=287
+landing\events\2026091209.jsonl	1131	4	3	CONTRACT_OK_OFFSET=3
+landing\events\2026091210.jsonl	584644	1294	1293	CONTRACT_OK_OFFSET=1293
+landing\events\2026091211.jsonl	631946	1392	1391	CONTRACT_OK_OFFSET=1391
+landing\events\2026091215.jsonl	994	3	2	CONTRACT_OK_OFFSET=2
+landing\events\b08-gate-20260911-1555.jsonl	586	3	2	CONTRACT_OK_OFFSET=2
+landing\events\b11-fixture-20260911162916.jsonl	586	3	2	CONTRACT_OK_OFFSET=2
+landing\events\gen-s3b-1000-20260911.jsonl	363848	1001	1000	CONTRACT_OK_OFFSET=1000
+landing\events\golden-r615-20260910164859.jsonl	18429	55	54	CONTRACT_OK_OFFSET=54
+landing\events\golden-r615b-20260910165249.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\golden-r618-tampered-20260910.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\golden-r619-clean-20260910.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\golden-r70-clean-20260910.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\golden-r73-clean-20260910.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\r2-golden55-20260912-172221.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\r2ctl-b31replay-20260912-173418.jsonl	363848	1001	1000	CONTRACT_OK_OFFSET=1000
+landing\events\r9-m1-123006.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\r9-prunefix-105922.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\r9-prunefix-110637.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\events\r9-qualityfail-103736.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+landing\quarantine\11\2026090701.jsonl	0	1	0	
+landing\quarantine\13\2026090701.jsonl	296	2	1	CONTRACT_OK_OFFSET=1
+landing\quarantine\14\2026090701.jsonl	0	1	0	
+landing\quarantine\15\2026090701.jsonl	0	1	0	
+landing\quarantine\16\2026090703.jsonl	0	1	0	
+landing\quarantine\17\golden-r615-20260910164859.jsonl	720	4	2	CONTRACT_OK_OFFSET=2
+landing\quarantine\18\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\18\golden-r615b-20260910165249.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\19\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\19\golden-r618-tampered-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\2\2026090509.jsonl	0	1	0	
+landing\quarantine\2\2026090510.jsonl	0	1	0	
+landing\quarantine\2\2026090511.jsonl	0	1	0	
+landing\quarantine\2\2026090512.jsonl	0	1	0	
+landing\quarantine\2\2026090513.jsonl	0	1	0	
+landing\quarantine\2\2026090514.jsonl	0	1	0	
+landing\quarantine\2\2026090515.jsonl	0	1	0	
+landing\quarantine\2\2026090516.jsonl	0	1	0	
+landing\quarantine\2\2026090517.jsonl	0	1	0	
+landing\quarantine\2\2026090518.jsonl	0	1	0	
+landing\quarantine\2\2026090519.jsonl	0	1	0	
+landing\quarantine\2\2026090520.jsonl	0	1	0	
+landing\quarantine\2\2026090521.jsonl	0	1	0	
+landing\quarantine\2\2026090522.jsonl	0	1	0	
+landing\quarantine\2\2026090523.jsonl	0	1	0	
+landing\quarantine\2\2026090600.jsonl	0	1	0	
+landing\quarantine\2\2026090601.jsonl	0	1	0	
+landing\quarantine\2\2026090602.jsonl	0	1	0	
+landing\quarantine\2\2026090603.jsonl	0	1	0	
+landing\quarantine\2\2026090604.jsonl	0	1	0	
+landing\quarantine\2\2026090605.jsonl	0	1	0	
+landing\quarantine\2\2026090606.jsonl	0	1	0	
+landing\quarantine\2\2026090607.jsonl	0	1	0	
+landing\quarantine\2\2026090608.jsonl	0	1	0	
+landing\quarantine\2\2026090609.jsonl	0	1	0	
+landing\quarantine\2\2026090610.jsonl	0	1	0	
+landing\quarantine\2\2026090611.jsonl	0	1	0	
+landing\quarantine\2\2026090612.jsonl	0	1	0	
+landing\quarantine\2\2026090613.jsonl	0	1	0	
+landing\quarantine\2\2026090614.jsonl	0	1	0	
+landing\quarantine\2\2026090615.jsonl	0	1	0	
+landing\quarantine\2\2026090616.jsonl	0	1	0	
+landing\quarantine\2\2026090617.jsonl	0	1	0	
+landing\quarantine\2\2026090620.jsonl	0	1	0	
+landing\quarantine\2\2026090621.jsonl	0	1	0	
+landing\quarantine\20\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\20\golden-r619-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\21\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\21\golden-r70-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\22\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\22\golden-r73-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\23\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\23\golden-r73b-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\24\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\24\golden-r73c-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\25\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\25\golden-r73d-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\26\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\26\r9-qualityfail-103736.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\27\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\27\r9-prunefix-105922.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\28\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\28\r9-prunefix-110637.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\2026090509.jsonl	0	1	0	
+landing\quarantine\29\2026090510.jsonl	0	1	0	
+landing\quarantine\29\2026090511.jsonl	0	1	0	
+landing\quarantine\29\2026090512.jsonl	0	1	0	
+landing\quarantine\29\2026090513.jsonl	0	1	0	
+landing\quarantine\29\2026090514.jsonl	0	1	0	
+landing\quarantine\29\2026090515.jsonl	0	1	0	
+landing\quarantine\29\2026090516.jsonl	0	1	0	
+landing\quarantine\29\2026090517.jsonl	0	1	0	
+landing\quarantine\29\2026090518.jsonl	0	1	0	
+landing\quarantine\29\2026090519.jsonl	0	1	0	
+landing\quarantine\29\2026090520.jsonl	0	1	0	
+landing\quarantine\29\2026090521.jsonl	0	1	0	
+landing\quarantine\29\2026090522.jsonl	0	1	0	
+landing\quarantine\29\2026090523.jsonl	0	1	0	
+landing\quarantine\29\2026090600.jsonl	0	1	0	
+landing\quarantine\29\2026090601.jsonl	0	1	0	
+landing\quarantine\29\2026090602.jsonl	0	1	0	
+landing\quarantine\29\2026090603.jsonl	0	1	0	
+landing\quarantine\29\2026090604.jsonl	0	1	0	
+landing\quarantine\29\2026090605.jsonl	0	1	0	
+landing\quarantine\29\2026090606.jsonl	0	1	0	
+landing\quarantine\29\2026090607.jsonl	0	1	0	
+landing\quarantine\29\2026090608.jsonl	0	1	0	
+landing\quarantine\29\2026090609.jsonl	0	1	0	
+landing\quarantine\29\2026090610.jsonl	0	1	0	
+landing\quarantine\29\2026090611.jsonl	0	1	0	
+landing\quarantine\29\2026090612.jsonl	0	1	0	
+landing\quarantine\29\2026090613.jsonl	0	1	0	
+landing\quarantine\29\2026090614.jsonl	0	1	0	
+landing\quarantine\29\2026090615.jsonl	0	1	0	
+landing\quarantine\29\2026090616.jsonl	0	1	0	
+landing\quarantine\29\2026090617.jsonl	0	1	0	
+landing\quarantine\29\2026090620.jsonl	0	1	0	
+landing\quarantine\29\2026090621.jsonl	1612	6	4	CONTRACT_OK_OFFSET=4
+landing\quarantine\29\2026090700.jsonl	822	4	2	CONTRACT_OK_OFFSET=2
+landing\quarantine\29\2026090701.jsonl	296	2	1	CONTRACT_OK_OFFSET=1
+landing\quarantine\29\2026090703.jsonl	0	1	0	
+landing\quarantine\29\golden-r615-20260910164859.jsonl	720	4	2	CONTRACT_OK_OFFSET=2
+landing\quarantine\29\golden-r615b-20260910165249.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\golden-r618-tampered-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\golden-r619-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\golden-r70-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\golden-r73-clean-20260910.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\r9-prunefix-105922.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\r9-prunefix-110637.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\29\r9-qualityfail-103736.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\30\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\30\r9-m1-123006.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\31\gen-s3b-1000-20260911.jsonl	0	1	0	
+landing\quarantine\31\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\32\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\33\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\34\2026091115.jsonl	0	1	0	
+landing\quarantine\34\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\35\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\36\b08-gate-20260911-1555.jsonl	0	1	0	
+landing\quarantine\36\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\37\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\38\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\39\b11-fixture-20260911162916.jsonl	0	1	0	
+landing\quarantine\39\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\4\2026090621.jsonl	1111	4	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\40\2026091120.jsonl	0	1	0	
+landing\quarantine\40\2026091121.jsonl	0	1	0	
+landing\quarantine\40\2026091122.jsonl	0	1	0	
+landing\quarantine\40\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\41\2026091209.jsonl	0	1	0	
+landing\quarantine\41\2026091210.jsonl	0	1	0	
+landing\quarantine\41\2026091211.jsonl	0	1	0	
+landing\quarantine\41\2026091215.jsonl	0	1	0	
+landing\quarantine\41\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\41\r2-golden55-20260912-172221.jsonl	1011	5	3	CONTRACT_OK_OFFSET=3
+landing\quarantine\42\golden-r615-20260910164859.jsonl	0	1	0	
+landing\quarantine\42\r2ctl-b31replay-20260912-173418.jsonl	0	1	0	
+landing\quarantine\5\2026090621.jsonl	501	3	1	CONTRACT_OK_OFFSET=1
+landing\quarantine\7\2026090700.jsonl	822	4	2	CONTRACT_OK_OFFSET=2
+landing\quarantine\8\2026090701.jsonl	0	1	0	
+landing\quarantine\9\2026090701.jsonl	0	1	0	
+tests\golden-dataset\events\golden-20260901.jsonl	18430	56	54	CONTRACT_OK_OFFSET=54
+
+=== GRAND TOTAL BY SHAPE ===
+shape	count
+CONTRACT_OK_OFFSET	2622616
+
+=== DISTINCT SAMPLES PER SHAPE (max 4) ===
+SHAPE CONTRACT_OK_OFFSET -> 2026-09-01T14:21:56+08:00 | 2026-09-01T02:11:59+08:00 | 2026-09-01T04:23:58+08:00 | 2026-09-01T20:00:56+08:00
+
+=== POSITIVE CONTROL ===
+CONTROL_FILE	D:\Develop_code\GraduationProject\tests\golden-dataset\events\golden-20260901.jsonl
+CONTROL_EXTRACT_COUNT	54
+CONTROL_FIRST_VALUE	2026-09-01T09:00:00+08:00
+CONTROL_FIRST_CLASS	CONTRACT_OK_OFFSET
+NEGATIVE_CONTROL_ABSENT_KEY_COUNT	0
+CONTROL_METHOD	Select-String 对照（不使用 git grep / pathspec）
+CONTROL_SELECTSTRING_HITS	54

@@ -1,0 +1,431 @@
+== GET-DATE (取证时点) ==
+2026-09-12 20:15:42
+
+===== R-01 EventOdsLoadJob.scala 落盘位置与 blob（INSERT OVERWRITE 调用点） =====
+blob=fb43b45883dbc311a94fd8de7613bbe0bd802ae7 lines=166 mtime=2026-09-12 14:05:38
+L4: import com.graduation.analytics.warehouse.WarehouseNamespace
+L10: * Landing JSON 目录 → ns.ods 四主题表（ods_user_event / ods_product_event /
+L18: *  5. INSERT OVERWRITE 幂等（重跑相同 inputVersion 分区内容不重复，§10.3）；
+L57: val ns = WarehouseNamespace.fromArgs(args)
+L121: spark.sql(sql) // INSERT OVERWRITE 幂等：分区内重跑内容相同，不重复累加（§10.3 第 4 条）
+L122: outputCount += spark.sql(s"SELECT COUNT(*) c FROM ${ns.ods}.$table").collect()(0).getLong(0)
+L132: PartitionEvidence.collect(spark, EventOdsLoadJob.outputTables(ns), args.outputSnapshotId))
+L163: def outputTables(ns: WarehouseNamespace): Seq[String] = Seq(
+
+===== R-02 实际 INSERT OVERWRITE 语句体（OdsLoadSql.scala insert 模板） =====
+blob=5097cb32294aed04e61a94079e93aee9c9898065 lines=292
+ 156:   private def decimalCase(expr: String): String =
+ 157:     s"CASE WHEN $expr IS NULL OR $expr = '' THEN NULL ELSE CAST($expr AS DECIMAL(18,2)) END"
+ 158: 
+ 159:   /** SELECT 列表 → SQL 文本（`expr AS name`，逐位对齐目标表） */
+ 160:   private def renderSelect(select: Seq[(String, String)], batchId: Long): String =
+ 161:     select.map { case (name, expr) =>
+ 162:       val e = expr.replace(BatchIdPlaceholder, batchId.toString)
+ 163:       if (e == name) s"  $e" else s"  $e AS $name"
+ 164:     }.mkString(",\n")
+ 165: 
+ 166:   /** 分区派生表达式（四条模板共享） */
+ 167:   private def partitionSelect: String =
+ 168:     "  REGEXP_REPLACE(SUBSTR(event_time, 1, 10), '-', '') AS dt,\n" +
+ 169:       "  SUBSTR(event_time, 12, 2) AS hour"
+ 170: 
+ 171:   private def insert(ns: WarehouseNamespace, table: String, sourceSystem: String,
+ 172:                      batchId: Long, whereClause: String): String =
+ 173:     s"""
+ 174:        |INSERT OVERWRITE TABLE ${ns.ods}.$table PARTITION (dt, hour)
+ 175:        |SELECT
+ 176:        |${renderSelect(odsSelect(table, sourceSystem), batchId)},
+ 177:        |$partitionSelect
+ 178:        |FROM $LANDING_VIEW
+ 179:        |WHERE schema_version = '1.0'
+ 180:        |  AND $whereClause
+ 181:        |  AND event_id IS NOT NULL AND event_time IS NOT NULL
+ 182:        |""".stripMargin
+ 183: 
+ 184:   /** 用户事件：显式视图 → ods_user_event（§10.1 用户主题核心字段） */
+ 185:   def userFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
+ 186:     insert(ns, "ods_user_event", sourceSystem, batchId, "event_type IN ('user_registered')")
+ 187: 
+ 188:   /** 商品事件：显式视图 → ods_product_event（§10.1 商品主题，含库存事件） */
+ 189:   def productFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
+ 190:     insert(ns, "ods_product_event", sourceSystem, batchId,
+ 191:       "event_type IN ('product_created', 'product_updated',\n" +
+ 192:         "                     'stock_reserved', 'stock_released', 'stock_changed')")
+ 193: 
+ 194:   /** 行为事件：显式视图 → ods_behavior_event（§10.1 行为主题） */
+ 195:   def behaviorFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
+ 196:     insert(ns, "ods_behavior_event", sourceSystem, batchId, "event_type = 'behavior'")
+ 197: 
+ 198:   /** 交易事件：显式视图 → ods_trade_event（§10.1 交易主题，订单/支付/退款） */
+ 199:   def tradeFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
+ 200:     insert(ns, "ods_trade_event", sourceSystem, batchId,
+
+===== R-03 spark-jobs 全域 INSERT OVERWRITE 清点（判断哪些层无暂存隔离） =====
+spark-jobs/src/main/scala/com/graduation/analytics/job/EventOdsLoadJob.scala:18: *  5. INSERT OVERWRITE 幂等（重跑相同 inputVersion 分区内容不重复，§10.3）；
+spark-jobs/src/main/scala/com/graduation/analytics/job/EventOdsLoadJob.scala:121:      spark.sql(sql) // INSERT OVERWRITE 幂等：分区内重跑内容相同，不重复累加（§10.3 第 4 条）
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:259:   * 该表由 fna 的 INSERT OVERWRITE 全量重建，无持久数据损失；
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:298:   * 下一次 `INSERT OVERWRITE` 即被真实值覆盖；**不重建表**（真数仓 `dw_*` 有真实数据，D-071 零迁移前提）。
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:326:   *     历史 parquet 文件缺该列时读出 null，下一次 `INSERT OVERWRITE` 即被真实值覆盖。
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:136:    s"""INSERT OVERWRITE TABLE ${ns.dwd}.dwd_order_detail PARTITION (dt)
+spark-jobs/src/main/scala/com/graduation/analytics/sql/AdsSql.scala:31:    case Some(sid) => s"INSERT OVERWRITE TABLE ${staging(ns, table)} PARTITION(snapshot_id = '$sid', dt = '$dt')"
+spark-jobs/src/main/scala/com/graduation/analytics/sql/AdsSql.scala:32:    case None      => s"INSERT OVERWRITE TABLE ${formal(ns, table)} PARTITION(dt = '$dt')"
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DimSql.scala:15: *    `INSERT OVERWRITE` 是**按位置**对齐的，故新列表达式必须排在 SELECT 列表末尾。
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DimSql.scala:29:       |INSERT OVERWRITE TABLE ${ns.dim}.dim_user PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DimSql.scala:59:       |INSERT OVERWRITE TABLE ${ns.dim}.dim_product PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwdSql.scala:12: * （`INSERT OVERWRITE` 按位置对齐）。**A5：JOIN 谓词本轮保持旧口径不变**（改 JOIN 属 P2-04）。
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwdSql.scala:27:       |INSERT OVERWRITE TABLE ${ns.dwd}.dwd_user_behavior_detail PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwdSql.scala:62:       |INSERT OVERWRITE TABLE ${ns.dwd}.dwd_reject_record PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwsSql.scala:16:      |INSERT OVERWRITE TABLE ${ns.dws}.dws_user_behavior_day PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwsSql.scala:45:      |INSERT OVERWRITE TABLE ${ns.dws}.dws_behavior_funnel_day PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwsSql.scala:83:      |INSERT OVERWRITE TABLE ${ns.dws}.dws_product_behavior_day PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwsSql.scala:105:      |INSERT OVERWRITE TABLE ${ns.dws}.dws_trade_day PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwsSql.scala:123:      |INSERT OVERWRITE TABLE ${ns.dws}.dws_product_sale_day PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwsSql.scala:140:      |INSERT OVERWRITE TABLE ${ns.dws}.dws_user_trade_period PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/DwsSql.scala:156:      |INSERT OVERWRITE TABLE ${ns.dws}.dws_region_sale_day PARTITION(dt = '$dt')
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala:19: *  - 按 dt（yyyyMMdd）/hour（HH）分区；INSERT OVERWRITE 幂等，重跑不重复；
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala:174:       |INSERT OVERWRITE TABLE ${ns.ods}.$table PARTITION (dt, hour)
+
+===== R-04 namespace 唯一所有者 WarehouseNamespace.scala（P2-05『限定 namespace』对象） =====
+blob=562430cbeee1313cb57e6619458ab693636aa2d0 lines=128
+   1: package com.graduation.analytics.warehouse
+   2: 
+   3: import com.graduation.analytics.job.JobArgs
+   4: 
+   5: /**
+   6:  * 数仓库名空间的**唯一所有者**（P1-04）。
+   7:  *
+   8:  * 背景（改造前实测）：`dw_ods/dw_dwd/dw_dim/dw_dws/dw_ads` 这五个库名以裸字面量散落在
+   9:  * INIT_SCHEMA、五张 SQL 模板、质量检查、ADS 发布、指标导出与测试里（共 ~190 处），
+  10:  * `runtime_profile.hive_database_prefix` 是**死配置**（写了不生效）。要做「一种平台适配多种商城」，
+  11:  * 就必须让每个源有自己的库名空间，且库名只能由一处派生。
+  12:  *
+  13:  * 规则（机器可读权威见 `contract-specs/specs/warehouse-namespace.v1.json`，两侧逐向量对账）：
+  14:  *   - 库名 = `<prefix>_<layer>`，layer ∈ {ods, dwd, dim, dws, ads}；
+  15:  *   - prefix 白名单：`^[a-z][a-z0-9_]{0,23}$`，且不得以 `_` 结尾、不得含 `__`、
+  16:  *     不得命中保留字、不得已带层后缀（避免 `dw_ods_ods` 这类二次后缀）；
+  17:  *   - `hive_database_prefix` 为 null/空串 → 缺省前缀 `dw`（与改造前库名逐字一致，零数据迁移）；
+  18:  *   - **不做任何归一化**：不 trim、不转小写、不自动纠正；非法取值原样失败并带错误码。
+  19:  *
+  20:  * 纪律：库名字面量只允许出现在本文件与规格文件里；其余源码（含 SQL 模板、脚本、测试）
+  21:  * 必须消费本对象。`WarehouseNamespaceSpec` 与 Java 侧契约测试共同守住这条线。
+  22:  */
+  23: final case class WarehouseNamespace private (prefix: String) {
+  24: 
+  25:   import WarehouseNamespace.{LayerSuffixes, Separator}
+  26: 
+  27:   /** 某层的库名（层名必须在 `LayerSuffixes` 内，否则抛错——调用方不得自造层名） */
+  28:   def layerDb(layer: String): String = {
+  29:     require(LayerSuffixes.contains(layer), s"未知数仓层: $layer（允许: ${LayerSuffixes.mkString(",")}）")
+  30:     s"$prefix$Separator$layer"
+  31:   }
+  32: 
+  33:   /** 贴源层 ODS */
+  34:   def ods: String = layerDb("ods")
+  35: 
+  36:   /** 明细层 DWD */
+  37:   def dwd: String = layerDb("dwd")
+  38: 
+  39:   /** 维度层 DIM */
+  40:   def dim: String = layerDb("dim")
+  41: 
+  42:   /** 汇总层 DWS */
+  43:   def dws: String = layerDb("dws")
+  44: 
+  45:   /** 应用层 ADS */
+  46:   def ads: String = layerDb("ads")
+  47: 
+  48:   /** 层 → 库名（按规格给定顺序，供页面/证据展示；不参与 SQL 拼接） */
+  49:   def layers: Map[String, String] = {
+  50:     val b = scala.collection.immutable.ListMap.newBuilder[String, String]
+  51:     LayerSuffixes.foreach(l => b += (l -> layerDb(l)))
+  52:     b.result()
+  53:   }
+  54: 
+  55:   /** `库.表` 限定名（表名由调用方给定，不得含 `.`——避免跨库注入） */
+  56:   def table(layer: String, table: String): String = {
+  57:     require(table != null && table.nonEmpty && !table.contains("."),
+  58:       s"表名非法: $table（不得为空或含 '.'）")
+  59:     s"${layerDb(layer)}.$table"
+  60:   }
+  61: 
+  62:   override def toString: String = s"WarehouseNamespace($prefix → ${layers.values.mkString("/")})"
+  63: }
+  64: 
+  65: object WarehouseNamespace {
+  66: 
+  67:   /** 缺省前缀：源 A 既有库名（`dw_ods` …），零数据迁移 */
+  68:   final val DefaultPrefix: String = "dw"
+  69: 
+  70:   final val Separator: String = "_"
+  71: 
+  72:   /** 前缀白名单形状（与规格 rule.prefixPattern 逐字一致） */
+  73:   final val PrefixPattern: String = "^[a-z][a-z0-9_]{0,23}$"
+  74: 
+  75:   /** 由前缀派生的层后缀；顺序即规格 order */
+  76:   final val LayerSuffixes: Seq[String] = Seq("ods", "dwd", "dim", "dws", "ads")
+  77: 
+  78:   /** 保留前缀（Hive/元数据库名） */
+  79:   final val Reserved: Set[String] =
+  80:     Set("default", "sys", "system", "information_schema", "hive_metastore")
+  81: 
+  82:   final val ErrPattern = "WAREHOUSE_PREFIX_PATTERN"
+  83:   final val ErrUnderscore = "WAREHOUSE_PREFIX_UNDERSCORE"
+  84:   final val ErrReserved = "WAREHOUSE_PREFIX_RESERVED"
+  85:   final val ErrLayerSuffix = "WAREHOUSE_PREFIX_LAYER_SUFFIX"
+  86: 
+  87:   /** Java 侧（`JobCommandBuilder`）与本侧共用的透传键名 */
+  88:   final val ArgKey: String = "hiveDatabasePrefix"
+  89: 
+  90:   private val Compiled = java.util.regex.Pattern.compile(PrefixPattern)
+  91: 
+  92:   /**
+  93:    * 白名单校验：`None` = 合法（含缺省）；`Some(错误码)` = 非法。
+  94:    * 检查顺序与规格 `rule.checkOrder` 一致（保证两侧同一输入得到同一错误码）。
+  95:    */
+  96:   def validate(raw: String): Option[String] = {
+  97:     if (raw == null || raw.isEmpty) None
+  98:     else if (!Compiled.matcher(raw).matches()) Some(ErrPattern)
+  99:     else if (raw.endsWith(Separator) || raw.contains(Separator + Separator)) Some(ErrUnderscore)
+ 100:     else if (Reserved.contains(raw)) Some(ErrReserved)
+ 101:     else if (LayerSuffixes.exists(s => raw.endsWith(Separator + s))) Some(ErrLayerSuffix)
+ 102:     else None
+ 103:   }
+ 104: 
+ 105:   /** 解析：`Right` = 命名空间（缺省也合法）；`Left(错误码)` = 非法 */
+ 106:   def parse(raw: String): Either[String, WarehouseNamespace] =
+ 107:     validate(raw) match {
+ 108:       case None => Right(WarehouseNamespace(if (raw == null || raw.isEmpty) DefaultPrefix else raw))
+ 109:       case Some(code) => Left(code)
+ 110:     }
+ 111: 
+ 112:   /** 解析并返回值；非法 → `IllegalArgumentException("<错误码>: <原值>")` */
+ 113:   def of(raw: String): WarehouseNamespace = parse(raw) match {
+ 114:     case Right(ns) => ns
+ 115:     case Left(code) => throw new IllegalArgumentException(s"$code: $raw")
+ 116:   }
+ 117: 
+ 118:   /** 缺省命名空间（源 A，`dw_*`） */
+ 119:   def defaultNamespace: WarehouseNamespace = WarehouseNamespace(DefaultPrefix)
+ 120: 
+ 121:   /**
+ 122:    * 从作业参数解析（`--hiveDatabasePrefix=…`；缺省 → `dw`）。
+ 123:    * 供 `JobRunner` 在创建 SparkSession **之前**调用做启动前校验（非法前缀不进入 Spark），
+ 124:    * 各作业也可自行调用取得同一命名空间。
+ 125:    */
+ 126:   def fromArgs(args: JobArgs): WarehouseNamespace =
+ 127:     of(args.extra.getOrElse(ArgKey, DefaultPrefix))
+ 128: }
+
+===== R-05 ODS 目标表分区规格（是否含 snapshot_id 暂存隔离） =====
+blob=65b0fb3bf7f938a8dee7868b67c8769b25dc4a03 lines=133
+L8: -- P2-01 / ODS v2（D-052…D-059）：四表尾部**追加** 5 列（raw_event_type / raw_source_system /
+L9: -- landing_file / payload_json / payload_hash）。v1 的全部列**名字、类型、序号一格未动**
+L34: raw_source_system STRING COMMENT 'P2-01：落地区行内 source_system 原样值（不受信任，仅供诊断）',
+L35: landing_file     STRING COMMENT 'P2-01：真实落地文件（_metadata.file_path）；与 source_file 同源',
+L36: payload_json     STRING COMMENT 'P2-01：payload 对象原始文本，逐字节保真（不做解析重排/美化/压缩）',
+L37: payload_hash     STRING COMMENT 'P2-01：SHA-256(UTF-8(payload_json 原始字节)) 小写十六进制；仅诊断，不是去重键'
+L40: PARTITIONED BY (dt STRING COMMENT '业务日期 yyyyMMdd', hour STRING COMMENT '小时 HH')
+L66: raw_source_system STRING,
+L67: landing_file     STRING,
+L68: payload_json     STRING,
+L72: PARTITIONED BY (dt STRING, hour STRING)
+L93: raw_source_system STRING,
+L94: landing_file     STRING,
+L95: payload_json     STRING,
+L99: PARTITIONED BY (dt STRING, hour STRING)
+L125: raw_source_system STRING,
+L126: landing_file     STRING,
+L127: payload_json     STRING,
+L131: PARTITIONED BY (dt STRING, hour STRING)
+
+===== R-06 暂存发布路径：ADS 写 __staging 后由 PUBLISH_METRIC 发布（OMS 无此机制） =====
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java:465:            // §14.4：ADS 先写 {table}__staging/snapshot_id=S/dt=D，正式分区由 PUBLISH_METRIC 发布。
+spark-jobs/src/main/scala/com/graduation/analytics/job/FunnelAdsJob.scala:13: * `{ns.ads}.{table}__staging/snapshot_id={snapshotId}/dt={dt}`，不碰正式分区；
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:171:    // fna 只写 {table}__staging/snapshot_id=S/dt=D；质量门（dqc）通过后由 pub 用
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:174:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_operation_overview__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:181:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_behavior_funnel__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:186:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_active_trend__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:190:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_hot_product__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:195:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_product_conversion__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:200:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_sale_trend__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:205:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_user_profile__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:212:        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_data_quality__staging (
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala:252:    ("ads", "ads_operation_overview__staging") -> Seq("full_refund_rate DECIMAL(8,4)"))
+spark-jobs/src/main/scala/com/graduation/analytics/sql/AdsSql.scala:22:  /** R6-13 暂存表（分区 snapshot_id + dt，物理路径 {table}__staging/snapshot_id=S/dt=D） */
+spark-jobs/src/main/scala/com/graduation/analytics/sql/AdsSql.scala:23:  def staging(ns: WarehouseNamespace, table: String): String = ns.table("ads", s"${table}__staging")
+spark-jobs/src/main/scala/com/graduation/analytics/sql/AdsSql.scala:100:   * LEFT JOIN 会把商品名全部打成 NULL → `ads_hot_product__staging` 9/9 行 `product_name` 为空 →
+-- AdsSql 暂存/正式分区选择 --
+blob=f817135b8a97a08e373e830e85c0f72b48fee726
+  21: 
+  22:   /** R6-13 暂存表（分区 snapshot_id + dt，物理路径 {table}__staging/snapshot_id=S/dt=D） */
+  23:   def staging(ns: WarehouseNamespace, table: String): String = ns.table("ads", s"${table}__staging")
+  24: 
+  25:   /**
+  26:    * 写入目标 + 分区子句（§14.4 分区幂等协议）：
+  27:    * `snapshotId=None` → 直写正式分区（仅历史路径/局部重算使用）；
+  28:    * `Some(sid)` → 写暂存分区，正式分区只在质量门通过后由 pub 发布。
+  29:    */
+  30:   def insertTarget(ns: WarehouseNamespace, table: String, dt: String, snapshotId: Option[String]): String = snapshotId match {
+  31:     case Some(sid) => s"INSERT OVERWRITE TABLE ${staging(ns, table)} PARTITION(snapshot_id = '$sid', dt = '$dt')"
+  32:     case None      => s"INSERT OVERWRITE TABLE ${formal(ns, table)} PARTITION(dt = '$dt')"
+  33:   }
+  34: 
+  35:   /**
+  36:    * 运营大盘（§13.1 指标字典口径，R7-0 统一）：
+  37:    *  - pv   = view 行为事件数（字典「count(view 行为事件)」，**不再**把全部行为当 PV）
+  38:    *  - uv   = view 行为去重用户数
+  39:    *  - refund_rate      = 发生**已完成**退款的订单数 / 支付订单数（部分/全部退款都算，字典口径）
+  40:    *  - full_refund_rate = 全额退款订单数 / 支付订单数（新增独立指标，不偷换 refund_rate）
+
+===== R-07 指导书 V2.4 §12.3 重建授权条文（P2-05 核心依据） =====
+blob=732abb9bf7c621828ac6f7d859b9226f4b7b1f46 lines=720
+ 661: 理由不是商城“不重要”，而是本项目的产品主体是分析工具。参考商城只需提供稳定、可审计的数据源；等平台能用异构源证明“可替换”后，再决定是否接入一个成熟开源商城。任何开源商城都通过 Adapter/Profile 接入，禁止为了适配它修改平台核心 SQL、事件常量或表结构。
+ 662: 
+ 663: ### 12.3 P1–P5 五项默认决策
+ 664: 
+ 665: 1. **P5 先用纯文件异构 fixture。** 它便宜、可复现、能验证字段/枚举/UUID/多余字段差异。接真实开源商城是 P5 后的加分项，不作为当前主线依赖。
+ 666: 2. **ODS v2 允许对演示数据重建。** 重建前必须备份对应 warehouse 目录、记录表数/行数/checksum，并由显式的 `INIT_SCHEMA` 审计步骤执行；不得静默 DROP，也不得影响其他 source namespace。
+ 667: 3. **新增 `source_registry`，不折叠进 `runtime_profile`。** source 表示长期业务身份；profile 表示可变化的运行参数，两者生命周期不同。
+ 668: 4. **P4 先做单源切换器。** 同屏跨源比较推迟到 P5 之后；第一版 API 未传 source 时返回当前激活源，并在响应中显式带 sourceCode。
+ 669: 5. **数据源管理不能永久只有 API。** P1/P2 可先交付 API 以解锁后端；P4 出口必须有最小管理员页面，至少支持列表、查看状态、测试连接、启停、选择当前源和查看画像校验结果。可视化拖拽字段映射后续再做。
+ 670: 
+ 671: ### 12.4 契约严格度与 synthetic 标识裁决
+ 672: 
+-- §7.4 失败语义 L478-490 --
+ 478: 12. 发布行数一致性与抽样 checksum。
+ 479: 
+ 480: 每条 BLOCKING 规则必须有一条“构造失败→流水线失败→不产生新 ACTIVE→旧 ACTIVE 可读”的负向验收。
+ 481: 
+ 482: ### 7.4 指标存储
+ 483: 
+ 484: 第一版 Hive 全程存在：ODS/DWD/DWS/ADS 均在 Hive。MySQL 不是数仓替代品，而是将常用 ADS 指标发布为 ACTIVE 快照的低延迟服务库。页面、AI 和决策只通过 MetricStore 读取同一快照。
+ 485: 
+ 486: 建立 `MetricStoreFactory` 按 `metric_store_type` 选择实现：MySQL 为默认并完成；Hive 为管理员显式降级查询路径，不由系统按数据量随机切换；Doris 为第二阶段首选；ClickHouse 仅接口和能力矩阵，标记 DEFERRED。
+ 487: 
+ 488: 普通用户只能读 ACTIVE 快照。必须提供当前 ACTIVE 元信息接口，包含 snapshotId、sourceInstanceId、businessDate、version、createdAt 和口径版本。
+ 489: 
+ 490: ## 8. 页面、AI、决策和安全
+-- §8.4 审计环境激活 L574-578 --
+ 574: - Hive/SSH/LLM 凭据统一使用 credential_ref，日志脱敏 password、token、Authorization、key。
+ 575: - 分开“启动流水线”和“重试”权限。
+ 576: - 审计环境激活、流水线启动/重试、质量强制处理、快照激活和归档快照读取。
+ 577: 
+ 578: ## 9. 并行开发和测试提速
+
+===== R-08 INIT_SCHEMA 审计步骤在平台侧的落点（PipelineService） =====
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java:58: * WAIT_LANDING→INIT_SCHEMA→LOAD_ODS→BUILD_DWD→BUILD_DWS→BUILD_ADS→QUALITY_CHECK→PUBLISH_METRIC
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java:206:            "WAIT_LANDING", "INIT_SCHEMA", "LOAD_ODS", "BUILD_DWD", "BUILD_DWS",
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java:406:            // ── INIT_SCHEMA（§14.1）：先自举四层库表（sci 幂等 CREATE IF NOT EXISTS）──
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java:407:            StageOutcome initOutcome = runSparkStage(run, executor, snapshot, "INIT_SCHEMA",
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java:409:            if (initOutcome != null && !completedStages.contains("INIT_SCHEMA")) {
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java:412:                updateStageEvidence(run.getId(), "INIT_SCHEMA", evidence);
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/SparkStageExecutor.java:44:            "INIT_SCHEMA", List.of("sci"),
+-- SparkStageExecutor 阶段→作业映射 --
+blob=f6a1c65371bfcb49a7d863560743213713e1ae1f
+  36: 
+  37:     /**
+  38:      * 阶段 → 作业序列（与 spark-jobs JobRegistry 依赖对齐）。
+  39:      * R6-13：QUALITY_CHECK 由真实作业 dqc 承载（读 ADS 暂存分区 + DWS 对账），
+  40:      * PUBLISH_METRIC 由 pub 承载（Hive 元数据指针把正式分区指向已过质量门的暂存路径）。
+  41:      * R7-3：PUBLISH_METRIC = pub（Hive 侧发布）→ mxp（把已发布正式 ADS 导出给指标库发布器）。
+  42:      */
+  43:     private static final Map<String, List<String>> STAGE_JOBS = Map.of(
+  44:             "INIT_SCHEMA", List.of("sci"),
+  45:             "LOAD_ODS", List.of("odl"),
+  46:             "BUILD_DWD", List.of("bdw", "dim", "tdw"),
+  47:             "BUILD_DWS", List.of("usw"),
+  48:             "BUILD_ADS", List.of("fna"),
+  49:             "QUALITY_CHECK", List.of("dqc"),
+  50:             "PUBLISH_METRIC", List.of("pub", "mxp"));
+  51: 
+  52:     private final JobSubmitter submitter;
+  53:     private final SparkJobRunMapper runMapper;
+  54:     private final ObjectMapper objectMapper = new ObjectMapper();
+  55:     private final long maxWaitMs;
+  56:     private final long pollIntervalMs;
+  57:     /** 本次运行的源身份（P2-07/A12：由工厂按快照的 sourceId 解析一次，全程冻结） */
+  58:     private final RunSourceIdentity source;
+  59: 
+  60:     public SparkStageExecutor(JobSubmitter submitter, SparkJobRunMapper runMapper,
+
+===== R-09 既有审计载体 operation_audit_log（P2-05『审计』候选落点） =====
+blob=1b2a1da48ac567b1a2e7477456f248df413b6b22
+  34: -- 3) 操作审计（§21.4）：trace/user/role/action/resource/前后摘要/原因/ip/结果/时间
+  35: CREATE TABLE IF NOT EXISTS operation_audit_log (
+  36:     id            BIGINT       NOT NULL AUTO_INCREMENT,
+  37:     trace_id      VARCHAR(64)  NULL COMMENT '链路 trace id（与响应信封一致）',
+  38:     user_id       VARCHAR(64)  NOT NULL COMMENT '操作者（取自登录会话，禁止请求头伪造）',
+  39:     role          VARCHAR(32)  NULL COMMENT '操作者角色',
+  40:     action        VARCHAR(64)  NOT NULL COMMENT '动作码：DECISION_CREATE/SUBMIT/APPROVE/REJECT/START/COMPLETE/CANCEL/EVALUATE、USER_CREATE/USER_TOGGLE/USER_RESET_PASSWORD、AI_QUERY',
+  41:     resource_type VARCHAR(32)  NOT NULL COMMENT '资源类型：DECISION_TASK/SYS_USER/AI_QUERY',
+  42:     resource_id   VARCHAR(64)  NULL COMMENT '资源 id',
+  43:     before_digest VARCHAR(512) NULL COMMENT '变更前摘要（仅状态与关键字段，禁止密码/token）',
+  44:     after_digest  VARCHAR(512) NULL COMMENT '变更后摘要',
+  45:     reason        VARCHAR(512) NULL COMMENT '原因/说明（驳回、取消、评价结论等）',
+  46:     ip            VARCHAR(64)  NULL COMMENT '客户端 ip',
+  47:     result        VARCHAR(16)  NOT NULL COMMENT 'SUCCESS/FAILED',
+  48:     created_at    DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  49:     PRIMARY KEY (id),
+  50:     KEY idx_audit_action_time (action, created_at),
+  51:     KEY idx_audit_user_time (user_id, created_at),
+  52:     KEY idx_audit_resource (resource_type, resource_id)
+  53: ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作审计日志（R8-3 §21.4：决策全流程/用户管理/AI 查询）';
+  54: 
+-- 源登记域已定义的动作码（P1-03 SourceAuditActions）--
+blob=833fb92607dcac9aab507774e21d43a1f93748a5
+L18: public static final String ACTION_SOURCE_CREATE = "SOURCE_CREATE";
+L21: public static final String ACTION_SOURCE_UPDATE = "SOURCE_UPDATE";
+L24: public static final String ACTION_SOURCE_ACTIVATE = "SOURCE_ACTIVATE";
+L27: public static final String ACTION_SOURCE_PAUSE = "SOURCE_PAUSE";
+L29: /** 资源类型：与 {@code operation_audit_log.resource_type} 对应 */
+L30: public static final String RESOURCE_SOURCE_REGISTRY = "SOURCE_REGISTRY";
+
+===== R-10 迁移台账：现存 V 号与备份清单候选载体 =====
+V1__platform_ingestion.sql
+V10__spark_job_run_output_partitions.sql
+V11__data_quality_layers.sql
+V12__quality_detail_width.sql
+V13__metric_definition_r7.sql
+V14__r8_identity_decision.sql
+V15__stage_evidence_mediumtext.sql
+V16__source_registry.sql
+V17__source_dimension_for_checkpoint_and_batch.sql
+V18__source_warehouse_prefix.sql
+V2__platform_pipeline_quality.sql
+V3__platform_ai_audit.sql
+V4__platform_decisions.sql
+V5__platform_users.sql
+V7__platform_runtime_profile.sql
+V8__platform_ingestion_r3.sql
+V9__platform_stage_evidence_widen.sql
+-- V18（P2-07 源级前缀）是否已在真库执行：见 R-11 --
+
+===== R-11 真库只读读数（analytics_meta / analytics_metric） =====
+-- flyway_schema_history 头部（判断最大已落版本）--
+17	18	source warehouse prefix	1	2026-09-12 15:06:05
+16	17	source dimension for checkpoint and batch	1	2026-09-12 09:12:11
+15	16	source registry	1	2026-09-11 19:56:28
+14	15	stage evidence mediumtext	1	2026-09-11 09:41:19
+-- source_registry（源级 namespace 前缀唯一权威）--
+id	source_code	warehouse_prefix	status	profile_version
+1	mock-mall	dw	ACTIVE	1.0
+-- metric_snapshot ACTIVE（旧 ACTIVE 可读性的对象）--
+id	snapshot_id	status	active_flag	pipeline_run_id
+26	S20260901_43	ACTIVE	1	43
+25	S20260901_42	ARCHIVED	NULL	42
+24	S20260901_41	ARCHIVED	NULL	41
+23	S20260901_39	ARCHIVED	NULL	39
+22	S20260901_38	FAILED	NULL	38
+-- operation_audit_log 现有动作码分布（判断是否已有重建类审计码）--
+action	resource_type	c
+AI_QUERY	AI_QUERY	52
+DECISION_CREATE	DECISION_TASK	8
+DECISION_START	DECISION_TASK	8
+USER_TOGGLE	SYS_USER	5
+DECISION_SUBMIT	DECISION_TASK	4
+DECISION_APPROVE	DECISION_TASK	4
+DECISION_COMPLETE	DECISION_TASK	4
+DECISION_EVALUATE	DECISION_TASK	4
+DECISION_REJECT	DECISION_TASK	3
+-- 是否存在备份清单/重建审计类表 --
+analytics_meta	operation_audit_log

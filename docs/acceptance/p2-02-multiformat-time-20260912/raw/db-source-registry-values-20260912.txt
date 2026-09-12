@@ -1,0 +1,28 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
++-------------------------+
+| clock_at_query          |
++-------------------------+
+| 2026-09-12 20:10:00.053 |
++-------------------------+
+*************************** 1. row ***************************
+              id: 1
+     source_code: mock-mall
+    display_name: 参考商城（源 A）
+     ingest_mode: FILE
+    profile_path: analytics-server/source-profiles/mock-mall.v1.json
+        timezone: Asia/Shanghai
+        currency: CNY
+          status: ACTIVE
+ profile_version: 1.0
+warehouse_prefix: dw
+      created_at: 2026-09-11 19:56:28.020
+      updated_at: 2026-09-11 19:56:28.020
+*************************** 1. row ***************************
+                  id: 1
+        profile_code: local-dev
+        profile_name: LOCAL 开发环境（本机 Win）
+            timezone: Asia/Shanghai
+hive_database_prefix: NULL
+           source_id: 1
+              status: ACTIVE
+             version: 3
