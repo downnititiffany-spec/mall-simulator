@@ -249,6 +249,19 @@ refund_created=2, refund_completed=2
 | D11 | MALL_API 下 `dirty_profile != none` **响亮拒绝** | 脏数据注入的行为语义在真实商城上没有对应操作，宁可不做也不伪造 |
 | D12 | **流水里 `listProducts` 混淆了"真 HTTP 调用"与"本地对齐记账"** | 实测本次运行 `listProducts OK = 21`，但**真正发出去的 HTTP 只有 1 次**（预检）；另外 20 条是 `product_created` 的"按位对齐"记录（`dispatchProduct` 只从内存里的预检目录 `pollFirst()`，**零 HTTP**），却写成了同一种 `operation/method/route`。后果：只看流水条数会**高估**对商城的读请求量。本轮**未修**；判据是 `canonical_id`——`null` 的才是真预检，带 `P000xx` 的是本地对齐。建议下一轮给流水加一个显式字段区分"真调用 / 本地记账" |
 
+> **补记（2026-09-12，由 M1-9 契约先行轮登记；此处只放指针，不重复正文）**
+>
+> 本表 D1/D2 **覆盖不全**：后续只读审计又查出 4 项此前未登记的偏离，已统一登记为 **D13–D16（J1–J4）**，正文与 `path` 级证据见
+> `docs/acceptance/m1-9-contract-first-20260912/README.md` §4；F-25（状态词映射缺失）见同文 §14；契约文本见 `docs/项目完整实施指导书 V2.3.md` §4.1.1。
+>
+> - **D13 / J1** `capabilities()` 的语义被改写：三态 `CapabilityVerdict` ＋ `TargetCapabilities.declared`，且**声明**与**实测**分离（声明纯本地推导、不联网）。
+> - **D14 / J2** 新增 §4.1 九方法之外的 `adapterType()`（注册表的查找键）。
+> - **D15 / J3** `EventSink` 多继承 `AutoCloseable` 且有 `default close()`（§4.1 未写）。
+> - **D16 / J4** `generator_target` 十列里只有五列进 `TargetConfig`（`name`/`config_version`/`status`/`test_environment`/`capabilities` 不进）。
+> - **R1**（升格为契约硬约束 6「路由所有权」）流水/报告的 `http_method`/`route` 原是引擎内置的参考商城字面量，与 D12 同属**证据真实性**类；实现排在 M1-9 ②。
+> - **D1 口径更正**：多出 `TargetConfig` 首参的是**八**个方法（D1 只写"七项业务方法"，漏了 `capabilities`）。
+>
+> 以上均为**只读代码取证**，不是运行证据；本表历史正文一字未改。
 ---
 
 ## 7. 现场副作用（**必须知道**）
