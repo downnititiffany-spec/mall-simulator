@@ -1,0 +1,8 @@
+--- 真库 analytics_meta（只读核对：必须仍是 V17、无 warehouse_prefix）---
+16	0	1
+0
+--- 副本库 analytics_meta_p207（V18 已由 Flyway 应用）---
+17	1
+varchar(24)	NO	<NULL>
+1	mock-mall	ACTIVE	dw
+0

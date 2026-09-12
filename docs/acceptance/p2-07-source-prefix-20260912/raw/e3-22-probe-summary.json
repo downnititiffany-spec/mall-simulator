@@ -1,0 +1,236 @@
+{
+  "probe": "P2-07 source-level warehouse namespace (strengthened copy of P1-04 probe)",
+  "ranAt": "2026-09-12 13:49:32",
+  "sparkHome": "D:\\Develop\\spark-3.5.1-bin-hadoop3",
+  "jar": "D:\\Develop_code\\GraduationProject\\spark-jobs\\target\\spark-jobs-0.1.0-SNAPSHOT.jar",
+  "jarLength": 283971,
+  "jarBuiltAt": "2026-09-12 13:34:35",
+  "jarSha256Before": "463AF1D36882F911012FEF467A121E5B8F104FA83C90DF9BBECBE23DD7AB5E88",
+  "jarSha256After": "463AF1D36882F911012FEF467A121E5B8F104FA83C90DF9BBECBE23DD7AB5E88",
+  "driverMemory": "512m",
+  "workDir": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe",
+  "checks": [
+    {
+      "check": "P1 缺参 fail-closed（非零退出且未启动 Spark）",
+      "passed": true,
+      "detail": "exit=2"
+    },
+    {
+      "check": "P1 错误文案点名 --sourceSystem",
+      "passed": true,
+      "detail": "[spark-jobs] odl 校验失败: 缺少参数 --sourceSystem（D-056：source_system 只能由平台参数通道注入，不接受行内值、不接受缺省）"
+    },
+    {
+      "check": "P1 未产出 JobResult（Spark 未启动）",
+      "passed": true,
+      "detail": "status="
+    },
+    {
+      "check": "P1 一个库都没建",
+      "passed": true,
+      "detail": "warehouse 下的库目录: []"
+    },
+    {
+      "check": "P2 不再报\"缺少参数 --sourceSystem\"",
+      "passed": true,
+      "detail": "exit=1"
+    },
+    {
+      "check": "P2 stderr 打印库名空间 = dw_b_*",
+      "passed": true,
+      "detail": "[spark-jobs] 数仓库名空间: dw_b_ods, dw_b_dwd, dw_b_dim, dw_b_dws, dw_b_ads"
+    },
+    {
+      "check": "P4 两源各建各的库（dw_* 与 dw_b_* 并存于同一隔离根）",
+      "passed": true,
+      "detail": "库目录: [dw_ads.db, dw_b_ads.db, dw_b_dim.db, dw_b_dwd.db, dw_b_dws.db, dw_b_ods.db, dw_dim.db, dw_dwd.db, dw_dws.db, dw_ods.db]"
+    },
+    {
+      "check": "P4 第二个源打印自己的库名空间 dw_b_*",
+      "passed": true,
+      "detail": "exit=1 status=FAILED"
+    },
+    {
+      "check": "P3.underscore 退出码 64",
+      "passed": true,
+      "detail": "prefix=dw__b exit=64"
+    },
+    {
+      "check": "P3.underscore 错误码 WAREHOUSE_PREFIX_UNDERSCORE",
+      "passed": true,
+      "detail": "[spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=dw__b）：WAREHOUSE_PREFIX_UNDERSCORE"
+    },
+    {
+      "check": "P3.underscore 未启动 Spark（无 SparkSession）",
+      "passed": true,
+      "detail": "stderr 行数=6"
+    },
+    {
+      "check": "P3.reserved 退出码 64",
+      "passed": true,
+      "detail": "prefix=default exit=64"
+    },
+    {
+      "check": "P3.reserved 错误码 WAREHOUSE_PREFIX_RESERVED",
+      "passed": true,
+      "detail": "[spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=default）：WAREHOUSE_PREFIX_RESERVED"
+    },
+    {
+      "check": "P3.reserved 未启动 Spark（无 SparkSession）",
+      "passed": true,
+      "detail": "stderr 行数=6"
+    },
+    {
+      "check": "P3.layer 退出码 64",
+      "passed": true,
+      "detail": "prefix=dw_ods exit=64"
+    },
+    {
+      "check": "P3.layer 错误码 WAREHOUSE_PREFIX_LAYER_SUFFIX",
+      "passed": true,
+      "detail": "[spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=dw_ods）：WAREHOUSE_PREFIX_LAYER_SUFFIX"
+    },
+    {
+      "check": "P3.layer 未启动 Spark（无 SparkSession）",
+      "passed": true,
+      "detail": "stderr 行数=6"
+    },
+    {
+      "check": "P3.pattern 退出码 64",
+      "passed": true,
+      "detail": "prefix=DW exit=64"
+    },
+    {
+      "check": "P3.pattern 错误码 WAREHOUSE_PREFIX_PATTERN",
+      "passed": true,
+      "detail": "[spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=DW）：WAREHOUSE_PREFIX_PATTERN"
+    },
+    {
+      "check": "P3.pattern 未启动 Spark（无 SparkSession）",
+      "passed": true,
+      "detail": "stderr 行数=6"
+    },
+    {
+      "check": "P3 一个库都没建",
+      "passed": true,
+      "detail": "warehouse 下的库目录: []"
+    }
+  ],
+  "observations": [
+    {
+      "observation": "P0.sci 退出码/库目录",
+      "detail": "exit=1 status=FAILED dbDirs=[dw_ads.db, dw_dim.db, dw_dwd.db, dw_dws.db, dw_ods.db]"
+    },
+    {
+      "observation": "P0.sci 首个 PARSE_SYNTAX_ERROR（跨泳道 DDL 回归）",
+      "detail": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'USING'.(line 22, pos 8)"
+    },
+    {
+      "observation": "P1 缺参退出码实测值",
+      "detail": "exit=2（本脚本初版断言写的是 64，13:56 实测为 2 ⇒ 按实测改正，不按猜测；两类失败不同轴：作业参数缺失=2、前缀非法=64）"
+    },
+    {
+      "observation": "P2 退出码（后续依赖建表，受 P0 跨泳道回归影响）",
+      "detail": "exit=1 status=FAILED"
+    },
+    {
+      "observation": "P4 两源并存的证据等级",
+      "detail": "目录级已证（10 个库目录）；**表级未取证**——sci 建表被跨泳道 DDL 子句顺序回归阻塞（P0），故不得声称 dw_b_ods 内有表/数据"
+    }
+  ],
+  "passed": 21,
+  "total": 21,
+  "failures": [],
+  "jobs": [
+    {
+      "Scenario": "P0-sci-observation",
+      "Tag": "sci",
+      "ExitCode": 1,
+      "Status": "FAILED",
+      "InputRecords": 0,
+      "OutputRecords": 0,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P0-sci-observation\\logs\\sci.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P0-sci-observation\\logs\\sci.err.txt"
+    },
+    {
+      "Scenario": "P1-missing-source-system",
+      "Tag": "odl-no-source-system",
+      "ExitCode": 2,
+      "Status": null,
+      "InputRecords": null,
+      "OutputRecords": null,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P1-missing-source-system\\logs\\odl-no-source-system.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P1-missing-source-system\\logs\\odl-no-source-system.err.txt"
+    },
+    {
+      "Scenario": "P2-with-source-system",
+      "Tag": "odl-with-source-system",
+      "ExitCode": 1,
+      "Status": "FAILED",
+      "InputRecords": 0,
+      "OutputRecords": 0,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P2-with-source-system\\logs\\odl-with-source-system.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P2-with-source-system\\logs\\odl-with-source-system.err.txt"
+    },
+    {
+      "Scenario": "P4-two-sources",
+      "Tag": "sci-dw",
+      "ExitCode": 1,
+      "Status": "FAILED",
+      "InputRecords": 0,
+      "OutputRecords": 0,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P4-two-sources\\logs\\sci-dw.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P4-two-sources\\logs\\sci-dw.err.txt"
+    },
+    {
+      "Scenario": "P4-two-sources",
+      "Tag": "sci-dw-b",
+      "ExitCode": 1,
+      "Status": "FAILED",
+      "InputRecords": 0,
+      "OutputRecords": 0,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P4-two-sources\\logs\\sci-dw-b.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P4-two-sources\\logs\\sci-dw-b.err.txt"
+    },
+    {
+      "Scenario": "P3-invalid-prefixes",
+      "Tag": "sci-underscore",
+      "ExitCode": 64,
+      "Status": null,
+      "InputRecords": null,
+      "OutputRecords": null,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-underscore.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-underscore.err.txt"
+    },
+    {
+      "Scenario": "P3-invalid-prefixes",
+      "Tag": "sci-reserved",
+      "ExitCode": 64,
+      "Status": null,
+      "InputRecords": null,
+      "OutputRecords": null,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-reserved.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-reserved.err.txt"
+    },
+    {
+      "Scenario": "P3-invalid-prefixes",
+      "Tag": "sci-layer",
+      "ExitCode": 64,
+      "Status": null,
+      "InputRecords": null,
+      "OutputRecords": null,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-layer.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-layer.err.txt"
+    },
+    {
+      "Scenario": "P3-invalid-prefixes",
+      "Tag": "sci-pattern",
+      "ExitCode": 64,
+      "Status": null,
+      "InputRecords": null,
+      "OutputRecords": null,
+      "Stdout": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-pattern.out.txt",
+      "Stderr": "D:\\Develop_code\\GraduationProject\\analytics-server\\warehouse-pipeline\\tests\\r6-smoke-warehouse\\p2-07-source-probe\\P3-invalid-prefixes\\logs\\sci-pattern.err.txt"
+    }
+  ]
+}

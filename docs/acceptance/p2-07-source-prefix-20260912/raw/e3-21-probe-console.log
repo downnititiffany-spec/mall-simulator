@@ -1,0 +1,36 @@
+=== 目标 jar: D:\Develop_code\GraduationProject\spark-jobs\target\spark-jobs-0.1.0-SNAPSHOT.jar
+=== jar sha256: 463AF1D36882F911012FEF467A121E5B8F104FA83C90DF9BBECBE23DD7AB5E88 (builtAt=2026-09-12 13:34:35, length=283971)
+=== P0: sci 建表现状（观测）===
+[OBS ] P0.sci 退出码/库目录 :: exit=1 status=FAILED dbDirs=[dw_ads.db, dw_dim.db, dw_dwd.db, dw_dws.db, dw_ods.db]
+[OBS ] P0.sci 首个 PARSE_SYNTAX_ERROR（跨泳道 DDL 回归） :: [PARSE_SYNTAX_ERROR] Syntax error at or near 'USING'.(line 22, pos 8)
+=== P1: 缺 --sourceSystem fail-closed（A12 真实链依据）===
+[PASS] P1 缺参 fail-closed（非零退出且未启动 Spark） :: exit=2
+[OBS ] P1 缺参退出码实测值 :: exit=2（本脚本初版断言写的是 64，13:56 实测为 2 ⇒ 按实测改正，不按猜测；两类失败不同轴：作业参数缺失=2、前缀非法=64）
+[PASS] P1 错误文案点名 --sourceSystem :: [spark-jobs] odl 校验失败: 缺少参数 --sourceSystem（D-056：source_system 只能由平台参数通道注入，不接受行内值、不接受缺省）
+[PASS] P1 未产出 JobResult（Spark 未启动） :: status=
+[PASS] P1 一个库都没建 :: warehouse 下的库目录: []
+=== P2: 带 --sourceSystem 的 odl（参数闸门 + 库名路由）===
+[PASS] P2 不再报"缺少参数 --sourceSystem" :: exit=1
+[PASS] P2 stderr 打印库名空间 = dw_b_* :: [spark-jobs] 数仓库名空间: dw_b_ods, dw_b_dwd, dw_b_dim, dw_b_dws, dw_b_ads
+[OBS ] P2 退出码（后续依赖建表，受 P0 跨泳道回归影响） :: exit=1 status=FAILED
+=== P4: 两源并存（dw 与 dw_b）===
+[PASS] P4 两源各建各的库（dw_* 与 dw_b_* 并存于同一隔离根） :: 库目录: [dw_ads.db, dw_b_ads.db, dw_b_dim.db, dw_b_dwd.db, dw_b_dws.db, dw_b_ods.db, dw_dim.db, dw_dwd.db, dw_dws.db, dw_ods.db]
+[PASS] P4 第二个源打印自己的库名空间 dw_b_* :: exit=1 status=FAILED
+[OBS ] P4 两源并存的证据等级 :: 目录级已证（10 个库目录）；**表级未取证**——sci 建表被跨泳道 DDL 子句顺序回归阻塞（P0），故不得声称 dw_b_ods 内有表/数据
+=== P3: 四类非法前缀 fail-closed ===
+[PASS] P3.underscore 退出码 64 :: prefix=dw__b exit=64
+[PASS] P3.underscore 错误码 WAREHOUSE_PREFIX_UNDERSCORE :: [spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=dw__b）：WAREHOUSE_PREFIX_UNDERSCORE
+[PASS] P3.underscore 未启动 Spark（无 SparkSession） :: stderr 行数=6
+[PASS] P3.reserved 退出码 64 :: prefix=default exit=64
+[PASS] P3.reserved 错误码 WAREHOUSE_PREFIX_RESERVED :: [spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=default）：WAREHOUSE_PREFIX_RESERVED
+[PASS] P3.reserved 未启动 Spark（无 SparkSession） :: stderr 行数=6
+[PASS] P3.layer 退出码 64 :: prefix=dw_ods exit=64
+[PASS] P3.layer 错误码 WAREHOUSE_PREFIX_LAYER_SUFFIX :: [spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=dw_ods）：WAREHOUSE_PREFIX_LAYER_SUFFIX
+[PASS] P3.layer 未启动 Spark（无 SparkSession） :: stderr 行数=6
+[PASS] P3.pattern 退出码 64 :: prefix=DW exit=64
+[PASS] P3.pattern 错误码 WAREHOUSE_PREFIX_PATTERN :: [spark-jobs] 库名空间前缀非法（--hiveDatabasePrefix=DW）：WAREHOUSE_PREFIX_PATTERN
+[PASS] P3.pattern 未启动 Spark（无 SparkSession） :: stderr 行数=6
+[PASS] P3 一个库都没建 :: warehouse 下的库目录: []
+=== 结果: 21/21 PASS ===
+=== 观测（不断言）: 5 条 ===
+汇总: D:\Develop_code\GraduationProject\docs\acceptance\p2-07-source-prefix-20260912\raw\e3-22-probe-summary.json
