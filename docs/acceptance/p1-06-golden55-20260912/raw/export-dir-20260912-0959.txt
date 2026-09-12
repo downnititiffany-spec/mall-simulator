@@ -1,0 +1,70 @@
+=== P1-06 F-06 检查③ 补记：platform.metric.publish.export-dir 的实际落点 ===
+取证时间 = 2026-09-12 09:59:20（本轮补记；P1-06 主轮 09:2x-09:3x 时未单独留此清单）
+目的 = 回应指导书 F-06「导出目录是否就是发布读的那个目录」的检查项③，不改任何东西，只读。
+
+--- §1 配置归属（代码级，逐行引用）---
+  PipelineService.java:113  @org.springframework.beans.factory.annotation.Value("${platform.metric.publish.export-dir:metric-staging}")
+  PipelineService.java:531  Path exportDir = Paths.get(metricExportRoot).toAbsolutePath().resolve(snapshotIdRef);
+  PipelineService.java:534  publishArgs.put("exportDir", exportDir.toString());
+  PipelineService.java:571  evidence.put("metricExportDir", exportDir.toString());
+  ⇒ 属性默认值 = 相对路径 "metric-staging"；使用前经 Paths.get(...).toAbsolutePath() ⇒ 相对当前工作目录解析
+
+--- §2 运行面（8091 进程实参，引自已入库证据 raw/pre-state-instance-20260912-092252.txt）---
+  命令行 = "D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+  -Dplatform.metric.publish.export-dir = D:\Develop_code\GraduationProject\metric-staging
+
+--- §3 DB 权威字段（analytics_meta.pipeline_stage_run.evidence，run_id=41 / PUBLISH_METRIC）---
+  metricExportDir = D:\Develop_code\GraduationProject\metric-staging\S20260901_41
+
+--- §4 已提交的原始证据 JSON ---
+  raw/stage-evidence-run41-PUBLISH_METRIC.json 顶层 metricExportDir = D:\Develop_code\GraduationProject\metric-staging\S20260901_41
+  metricPublish = {"message":"发布成功","ok":true,"errorCode":"null","snapshotId":"S20260901_41","adsRows":30,"metricValues":10}
+  metricPublishChecks 条数 = 15，blocking 未过条数 = 0
+
+--- §5 文件面：metric-staging 快照目录清单 ---
+  S20260901_21     文件数= 38  bytes=6378
+  S20260901_22     文件数= 18  bytes=6293
+  S20260901_23     文件数= 18  bytes=6293
+  S20260901_24     文件数= 18  bytes=6293
+  S20260901_25     文件数= 18  bytes=6293
+  S20260901_29     文件数= 18  bytes=6297
+  S20260901_30     文件数= 18  bytes=6293
+  S20260901_38     文件数= 18  bytes=6661
+  S20260901_39     文件数= 18  bytes=6660
+  S20260901_41     文件数= 18  bytes=6660
+  --- 当前快照 S20260901_41 明细（18 文件 / 6,660 B）---
+    _export.json                               3637 B  2026-09-12 09:31:11
+    ._export.json.crc                            40 B  2026-09-12 09:31:11
+    .ads_active_trend_m.jsonl.crc                12 B  2026-09-12 09:31:10
+    .ads_behavior_funnel_m.jsonl.crc             12 B  2026-09-12 09:31:10
+    .ads_data_quality_m.jsonl.crc                12 B  2026-09-12 09:31:11
+    .ads_hot_product_m.jsonl.crc                 16 B  2026-09-12 09:31:11
+    .ads_operation_overview_m.jsonl.crc          12 B  2026-09-12 09:31:10
+    .ads_product_conversion_m.jsonl.crc          16 B  2026-09-12 09:31:11
+    .ads_sale_trend_m.jsonl.crc                  12 B  2026-09-12 09:31:10
+    .ads_user_profile_m.jsonl.crc                12 B  2026-09-12 09:31:11
+    ads_active_trend_m.jsonl                     31 B  2026-09-12 09:31:10
+    ads_behavior_funnel_m.jsonl                 332 B  2026-09-12 09:31:10
+    ads_data_quality_m.jsonl                    476 B  2026-09-12 09:31:11
+    ads_hot_product_m.jsonl                     958 B  2026-09-12 09:31:11
+    ads_operation_overview_m.jsonl              156 B  2026-09-12 09:31:10
+    ads_product_conversion_m.jsonl              617 B  2026-09-12 09:31:11
+    ads_sale_trend_m.jsonl                       78 B  2026-09-12 09:31:10
+    ads_user_profile_m.jsonl                    231 B  2026-09-12 09:31:11
+
+--- §6 版本库边界 ---
+  git check-ignore -v => .gitignore:70:metric-staging/	metric-staging/S20260901_41/_export.json（退出码 0）⇒ 导出物属运行时产物，不入库；入库的是"路径 + 清单 + 校验值"这类文本证据
+
+--- §7 结论 ---
+  ① 检查③ 成立：属性由 PipelineService 读入（默认相对 metric-staging），运行实例用 -D 显式指向仓库根的绝对路径
+     D:\Develop_code\GraduationProject\metric-staging，实际写出目录 = 该根下按 snapshotId 的 <root>\S20260901_41，与 run 41 PUBLISH_METRIC
+     证据里的 metricExportDir 字段逐字一致 ⇒ 发布读的就是 Spark 导出写出的那份，不存在"导出写 A、发布读 B"。
+  ② 边界：本清单只覆盖 run 41 这一个快照与目录清单本身；不含"发布是否应保留历史导出目录"的策略判定（P2/P3 议题）；
+     也未验证相对路径默认值在非仓库根工作目录下的行为（本轮实例用绝对路径 -D 覆盖，未触发默认值分支）。
+
+--- §8 补注（同日 10:0x，写入后自查，原文不改）---
+  ① 本条与既有登记 F-06 的关系：`docs/开发过程事实与决策记录.md` L1067 已登记"`-Dplatform.metric.publish.export-dir` 一直写在 -jar 之后
+     ⇒ 不参与属性绑定"，并明确"导出目录留待 P1-06 的真实发布实测确认"⇒ 本清单补的正是这**端到端落点**的一半（旧实例命令行已由历史证据保留，不再改写）。
+  ② 但本清单**不能**区分下面两种解释：(a) 前置 `-D` 真的绑定成功；(b) 属性未绑定、取 `@Value` 默认值 `metric-staging` 并按进程 CWD=仓库根解析。
+     两种解释算出的路径**完全相同**，故本清单证明的是"**落点 = `<repo>\metric-staging\<snapshotId>`**"（运行上要的那个结论），
+     **不构成**"机制已实测"。判别实验（用与默认值不同的 `-D` 值跑一次真实发布、看导出落在哪）**未做**，成本 = 一次 8091 重启 + 一次完整流水线，登记为 P2/P3 候选。

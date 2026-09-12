@@ -158,6 +158,7 @@
 | `hive-counts-20260912-093352.log` (236 行) + `.sql` + `.conf` | **成功**的 Hive 物理行数：8 正式表 + 8 暂存表 + ODS 逐 `dt` 分布 |
 | `ads-staging-20260912-093515.log` + `.sql` + `.conf` | 暂存表按 `snapshot_id/dt` 分布（F-15 的孤儿分区证据） |
 | `stage-evidence-run{40,41}-<阶段>.json`（11 份，本文件写作时从 `analytics_meta.pipeline_stage_run.evidence` 原样导出，全部 `ConvertFrom-Json` 校验通过） | 权威阶段证据的自包含快照：run 40 的 3 份（`WAIT_LANDING` 钉定批 40 / `INIT_SCHEMA` / `LOAD_ODS` **0 字节**——该阶段失败且无 evidence 载荷，错误码 `RUN_EMPTY_DATA`、`records=0` 在 DB 行内）；run 41 的 8 份（`WAIT_LANDING` `batchId=31/acceptedRecords=1000`、`LOAD_ODS` 170 KB 逐分区、`QUALITY_CHECK` 6.6 KB、`PUBLISH_METRIC` 22 KB 等） |
+| `export-dir-20260912-0959.txt` (70 行 / 6,008 B，2026-09-12 09:59 取证 + 10:0x §8 补注) | F-06 检查③ 的落点取证：`PipelineService` 属性默认值/`toAbsolutePath()`/`metricExportDir` 三处代码行、8091 实参、DB `evidence` 与已提交 JSON 的 `metricExportDir` 逐字一致、`metric-staging` 十个快照目录清单 + `S20260901_41` 18 文件明细（见 §12） |
 
 另：Spark 作业日志在 `landing/logs/pipeline-40-*`（1 个）与 `pipeline-41-*`（10 个，含 `odl` 169 KB）；`landing/` 整目录被 `.gitignore` 忽略（既往 P1-01 亦未收编作业日志，只收编 `evidence` JSON），故按同一约定以 `stage-evidence-*.json` 自包含留证，作业日志留在工作区。
 
@@ -166,3 +167,21 @@
 - **T2 的实质条件满足**：一次真实本地链（批 31 → MySQL/Spark/Hive → 发布）跑通 8/8 阶段，**源 A 的 `day:2026-09-01` 十个指标与 P1-01 冻结基线逐值一致（不符项 0，四项判据）**，真数仓前后逐字节一致、零破坏，采集写路径（P2，D-040 第 6 步缺的那一半）由 `ingestion_batch#40` + `file_checkpoint` 103–105 证实。
 - **看板 P1-06 可置 `DONE`**（材料：本节 + §5 判定 + §10 清单）；同时登记：F-13（缺批次/业务日选择参数）、F-14（ODS 分区覆盖模式）、F-15（暂存孤儿分区 + 隔离规则漏检）与 §9 的 7 项未取证。
 - 后续动作顺序：① 恢复 8090/8092 三程序运行；② 在专轮里载入批 40（同时按 §9.1 观察 F-14）；③ F-13/F-15 登记为 P2 候选（批次/业务日选择参数、暂存孤儿清理与规则枚举口径）。
+
+## 12. 补记（2026-09-12 09:40–09:59，P1-06 收尾后两件事；原文与结论不改）
+
+### 12.1 后续动作①已完成：三程序恢复运行
+
+- 8090（商城）pid `41228`、8092（生成器）pid `10412` 已启动并对外服务；8091（平台）pid `47132` **自 D-040 换血起一直在跑、未重启**。三处健康探针 200。证据与全过程见 `docs/acceptance/m1-4-restock-20260912/`（同批完成 D-041 后续①的补库存，属追加性写入）。
+- **对 P1-06 结论无影响**：P1-06 的证据全部取自 09:2x–09:3x 的冻结窗口（当时 8090/8092 停机、8091 未重启），补库存发生在 09:53:26 之后，不触及本轮任何读数。
+- **口径失效提醒**：§9 第 7 条的"落地区 55 文件"是冻结窗口内的时点值；09:53:26 商城补库存写出 `2026091209.jsonl` 后已成为 **56 文件 / 404,896,549 B**，且商城在跑期间会继续按小时落盘 ⇒ 今后引用该数字必须带时点。
+
+### 12.2 F-06 检查③补证：`platform.metric.publish.export-dir` 的实际落点
+
+- **问题**：导出目录是否就是发布读的那个目录（避免"Spark 导出写 A、发布读 B"）。
+- **证据链（四层一致）**：① 代码——`PipelineService.java:113` `@Value("${platform.metric.publish.export-dir:metric-staging}")`（默认相对路径），L531 `Paths.get(metricExportRoot).toAbsolutePath().resolve(snapshotIdRef)`，L571 把结果写进阶段 evidence；② 运行实例——8091 命令行 `-Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging`（绝对路径覆盖默认值）；③ DB——`analytics_meta.pipeline_stage_run.evidence`（run 41 / `PUBLISH_METRIC`）`metricExportDir = D:\Develop_code\GraduationProject\metric-staging\S20260901_41`；④ 已提交的 `raw/stage-evidence-run41-PUBLISH_METRIC.json` 顶层同名字段**逐字相同**。
+- **文件面**：该目录下 18 个文件 / 6,660 B（`_export.json` 3,637 B + 8 张 `ads_*_m.jsonl` + 9 个 `.crc`），mtime 09:31:10–09:31:11，早于快照 `published_at` 09:31:13.388 ⇒ 是本次 run 41 写出的那份。同级共 10 个快照目录（`_21` 为 38 文件的旧布局，其余各 18 文件）。
+- **版本库边界**：`metric-staging/` 被 `.gitignore:70` 忽略（运行时产物），入库的是路径与清单文本证据（`raw/export-dir-20260912-0959.txt`）。**检查③判定：成立**（落点这一半）。
+- **与既有 F-06 的关系**：事实记录 L1067 已登记"该 `-D` 原先写在 `-jar` 之后 ⇒ 不参与属性绑定"，并留下"导出目录留待 P1-06 的真实发布实测确认"这一半；本条即补齐该端到端落点（`scripts/start-all.ps1` 改前置后新实例的命令行见 `raw/pre-state-instance-20260912-092252.txt`）。
+- **不得当作"机制已实测"**：观测到的 `metricExportDir` 无法区分 (a) 前置 `-D` 绑定成功 与 (b) 取默认值 `metric-staging` 按 CWD=仓库根解析——两种解释路径完全相同。判别实验（用与默认值不同的 `-D` 值跑一次真实发布）未做，成本一次 8091 重启 + 一次完整流水线，转 P2/P3 候选。
+- **边界**：仅覆盖 run 41 一个快照与目录清单；不含"历史导出目录是否应清理/保留 N 份"的策略判定（转 P2/P3）。
