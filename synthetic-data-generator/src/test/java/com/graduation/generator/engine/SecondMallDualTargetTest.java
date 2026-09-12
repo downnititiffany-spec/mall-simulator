@@ -159,16 +159,13 @@ class SecondMallDualTargetTest {
                 engine.runForTarget(request("run-count"), secondTarget, counting, sink, () -> false);
 
         assertEquals(EVENT_COUNT, outcome.forwardedCount());
+        // 一条等式把上下两个边界都钉住（L6b）：≠1 时既可能是 0（一次都没问：预检没问适配器，
+        // 路由表是引擎自己拼的）也可能是 ≥2（每条事件问一次 / 重试），两种坏法都在这一条上变红；
+        // 故障信息里同时打印实际次数，读的人不必去翻实现。
         assertEquals(1, counting.routeResolutions,
                 "operationRoutes 必须每次运行只解析一次（预检），实际=" + counting.routeResolutions
-                        + "；每条事件问一次会让\"同一次运行里路由中途变了\"无法察觉");
-        // 上一条钉的是"恰好一次"；这两条把上下两个边界也写成显式断言：
-        // 下界挡住"一次都没问"（那样上面的等式会因为 0≠1 而失败，这条让原因直接写在断言里），
-        // 上界挡住"重试/重复解析"——一次运行里路由表变了必须靠别的信号暴露，不能靠多问几次掩盖。
-        assertTrue(counting.routeResolutions <= 1,
-                "operationRoutes 的解析次数不许超过 1（一次运行一次）：实际=" + counting.routeResolutions);
-        assertTrue(counting.routeResolutions >= 1,
-                "operationRoutes 必须真的被问过至少 1 次：实际=" + counting.routeResolutions);
+                        + "；=0 说明预检没问适配器（路由表来路不明），≥2 说明每条事件/每次重试都在问"
+                        + "（那样\"同一次运行里路由中途变了\"会被多问几次掩盖掉）");
         // 能力判定可以被问多次（预检一次、构造落点一次），但它必须是不联网的纯本地判定——
         // 这里只要求"次数是常数级"，不把它钉成 1，避免把实现细节当成契约。
         assertTrue(counting.capabilityResolutions >= 1 && counting.capabilityResolutions <= 4,
@@ -280,6 +277,74 @@ class SecondMallDualTargetTest {
                 "未登记的商城状态词必须映射成 null（而不是原样透出或猜一个）");
         assertTrue(SecondMallHttpAdapter.toCanonicalProductStatus("SALE") != null,
                 "正向对照：SALE 是有映射的，说明上面的 null 不是\"映射表整个坏了\"");
+    }
+
+    // ---------- H2：报价读不懂（第三个缺口通道）必须与状态词缺口并列被点名 ----------
+
+    @Test
+    @DisplayName("报价读不懂：缺口说明点名\"报价读不懂\"与 SKU，该商品不进规范流，报价复原后目录恢复完整")
+    void unreadablePriceIsNamedAndExcluded() throws IOException {
+        secondMall = new SecondMallFakeServer(SECOND_TOKEN, null, CATALOG_SIZE);
+        // 只让目录里第一件商品的报价读不懂（负数分：商城自己认为那是它的价，200 照回）——
+        // 其余照常，这样"被排除 1 件"与"其余照常进流"能同时被观测到（全改掉就只能看到前者）。
+        String unreadableSku = secondMall.itemSkus().get(0);
+        long originalCents = secondMall.itemJson(unreadableSku).path("unit_price_cents").asLong();
+        secondMall.overrideItemPriceCents(unreadableSku, -585);
+        int mappableCount = CATALOG_SIZE - 1;
+
+        TargetConfig target = new TargetConfig(36L, SecondMallHttpAdapter.ADAPTER_TYPE,
+                secondMall.baseUrl(), SECOND_ENV, "{\"format\":\"open-v2\"}");
+
+        RecordingSink sink = new RecordingSink();
+        MallApiGenerationEngine.MallRunOutcome outcome =
+                engine.runForTarget(request("run-unreadable-price"), target, secondAdapter(), sink, () -> false);
+
+        // 1) 缺口必须被点名：成因（"报价读不懂"）+ 件数 + 名单，这就是 H2 缺的那个出口
+        String gapText = runGapText(outcome);
+        assertTrue(gapText.contains("报价读不懂"),
+                "缺口说明必须直说\"报价读不懂\"这个成因（与状态词缺口分开说）：\n" + gapText);
+        assertTrue(gapText.contains(unreadableSku),
+                "缺口说明必须点名是哪件商品的报价读不懂（只报件数等于让商品无声消失）：" + unreadableSku
+                        + "\n" + gapText);
+        assertTrue(gapText.contains("1 件"), "报价缺口同样要带件数（这里恰好 1 件）：\n" + gapText);
+        // 预检那行"在售 M 件"要能对上：目录 60 件（商城自报的 total 不变），在售少 1 件
+        assertTrue(gapText.contains("目录 %d 件，在售 %d 件".formatted(CATALOG_SIZE, mappableCount)),
+                "预检行必须显示目录件数与在售件数（%d/%d）：\n".formatted(CATALOG_SIZE, mappableCount) + gapText);
+        // 2) 三通道不许互相冒充：这件商品的**状态**是好的（SALE），因此状态通道上不该有缺口
+        assertFalse(gapText.contains("状态词缺口"),
+                "状态没问题的商品不许在状态通道上报缺口（否则三个通道就分不清了）：\n" + gapText);
+
+        // 3) 可用目录必须恰好少了这一件，且它的 SKU 绝不进入规范流
+        assertEquals(mappableCount, outcome.preflight().catalog().size(),
+                "可用目录必须把报价读不懂的那件排除掉（" + CATALOG_SIZE + " → " + mappableCount + "）");
+        assertTrue(outcome.preflight().catalog().stream()
+                        .noneMatch(product -> unreadableSku.equals(product.productId())),
+                "报价读不懂的商品不许留在可用目录里：" + unreadableSku);
+        assertFalse(sink.events.toString().contains(unreadableSku),
+                "报价读不懂的商品不许进入规范流（连外键都不该出现）：" + unreadableSku);
+
+        // 4) 正向对照：其余商品照常进流，且价格都是正数（负数既不原样进流、也不取绝对值混进来）
+        List<CanonicalEvent> productEvents = sink.events.stream()
+                .filter(event -> "product_created".equals(event.eventType())).toList();
+        assertFalse(productEvents.isEmpty(), "排除了 1 件商品，不该把整次运行也弄空（否则正向对照不成立）");
+        assertTrue(productEvents.stream().allMatch(event -> {
+                    Object price = event.payload().get("price");
+                    return price != null && new java.math.BigDecimal(String.valueOf(price)).signum() > 0;
+                }),
+                "流水里的商品价格必须都是正数："
+                        + productEvents.stream().map(event -> event.payload().get("price")).distinct().toList());
+
+        // 5) 夹具侧的原始事实（可核对的对照物）
+        assertEquals(-585, secondMall.itemJson(unreadableSku).path("unit_price_cents").asLong(),
+                "被排除必须是因为报价读不懂，而不是别的：夹具里这件就是 -585 分");
+
+        // 6) 反向对照：报价复原后，同一件商品必须重新进目录——否则上面的"排除"可能只是目录整个坏了
+        secondMall.overrideItemPriceCents(unreadableSku, originalCents);
+        MallApiGenerationEngine.MallRunOutcome recovery = engine.runForTarget(
+                request("run-unreadable-price-fixed"), target, secondAdapter(), new RecordingSink(), () -> false);
+        assertEquals(CATALOG_SIZE, recovery.preflight().catalog().size(),
+                "报价复原后目录必须完整（证明第 3 条的少件是报价引起的）："
+                        + recovery.preflight().catalog().stream().map(ExternalProduct::productId).toList());
     }
 
     // ---------- S5：缺口事实不许跨运行（跨目标）残留 ----------

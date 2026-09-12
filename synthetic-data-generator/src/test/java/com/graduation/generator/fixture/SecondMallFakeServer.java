@@ -98,8 +98,33 @@ public final class SecondMallFakeServer implements AutoCloseable {
     private final List<Integer> statuses = new CopyOnWriteArrayList<>();
     private final Map<String, Integer> routeHits = new ConcurrentHashMap<>();
 
-    /** {@code true} ⇒ 订单类应答里不回 {@code pay_state} 字段（商城内部状态照旧，只改应答形态） */
-    private volatile boolean omitOrderStateInResponse;
+    /** 订单类应答的形态开关（只改<b>应答形状</b>，商城内部那份快照照旧推进） */
+    public enum OrderResponseShape {
+
+        /** 原样深拷贝（默认；状态与明细行都回） */
+        AS_IS,
+
+        /** 删掉 {@code pay_state}：验证"商城没给状态字段"⇒ 规范字段保持 null */
+        OMIT_STATE,
+
+        /** {@code pay_state} 回一个空白串：验证"给了但是空白"与"没给"走同一条规范化规则 */
+        BLANK_STATE,
+
+        /** 删掉 {@code lines}：验证"读不出明细行"必须响亮失败，不许当成 0 行 */
+        OMIT_LINES,
+
+        /** {@code lines} 回空数组：同上，验证"为空"这半边也被判成读不出 */
+        EMPTY_LINES,
+
+        /** 明细行里删掉 {@code unit_price_cents}：验证"商城没回单价"必须响亮失败 */
+        OMIT_LINE_PRICE,
+
+        /** 整个 {@code result} 回一个 JSON 数组（信封照旧 {@code success=true}）：验证"结果不是对象"必须响亮失败 */
+        RESULT_NOT_OBJECT
+    }
+
+    /** 订单类应答形态（默认原样） */
+    private volatile OrderResponseShape orderResponseShape = OrderResponseShape.AS_IS;
     private final AtomicLong sequence = new AtomicLong();
     private final AtomicLong orderAttempts = new AtomicLong();
 
@@ -110,7 +135,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
      *                       可被构造成未登记的怪词，用于验证适配器"认不出就不硬塞进规范枚举"；
      *                       {@code null} 表示<b>商城这条应答里根本没有 state 字段</b>
      *                       （与"给了一个读不懂的词"是两种不同的缺口，见
-     *                       {@link #putItemWithoutState(String, String, long)}）
+     *                       {@link #overrideItemState(String, String)}）
      * @param unitPriceCents 整数分；{@link #MISSING_UNIT_PRICE_CENTS} 表示<b>这条应答里根本没有
      *                       unit_price_cents 字段</b>（用于验证"价格缺失必须响亮失败"）
      */
@@ -121,8 +146,10 @@ public final class SecondMallFakeServer implements AutoCloseable {
      * 单价缺失的哨兵：带这个值的商品在应答里<b>整条 {@code unit_price_cents} 字段都不写</b>
      * （不是写 0、也不是写 null 文本）——模拟"商城这条记录里根本没有价格"。
      *
-     * <p>用 {@code -1} 当哨兵而不是用 {@code null}：{@code long} 的取值域里负数不是合法价格，
-     * 因此"哨兵"与"真实价格"不会混。</p>
+     * <p>用 {@code -1} 当哨兵而不是用 {@code null}：{@code long} 的取值域里负数本该不是合法价格，
+     * 因此"哨兵"与"真实价格"不会混。<b>但负数确实能被写进应答</b>：要造"商城给了一个非法报价"
+     * 的形状请用 {@link #overrideItemPriceCents(String, long)}，别传 {@code -1}
+     * （那是"字段缺失"，会走到 {@code E_NO_PRICE} 拒单，与"报了个非法数"是两件事）。</p>
      */
     public static final long MISSING_UNIT_PRICE_CENTS = -1L;
 
@@ -241,24 +268,22 @@ public final class SecondMallFakeServer implements AutoCloseable {
         }
     }
 
-    /** 新增一件商品，带一个合法的在售状态词（其余字段为第二家的形状） */
-    public void putItem(String sku, String title, long categoryCode, long unitPriceCents) {
-        items.put(sku, new Item(sku, title, categoryCode, unitPriceCents, "SALE"));
-    }
-
     /**
-     * 新增一件<b>应答里没有 unit_price_cents</b> 的商品（价格缺失的夹具形态）。
+     * 把某件商品的单价改成任意整数分（含<b>负数</b>这种非法报价）。
      *
-     * <p>存在的理由只有一个：验证适配器在"商城这条记录里没有价格"时<b>响亮失败</b>，
-     * 而不是把 {@code null} 金额静默带进流水与运行报告。</p>
+     * <p>存在的理由只有一个：造"商城给了一个读不懂/不合法的报价"的形状，验证适配器
+     * <b>(1)</b> 不把它当成合法金额（不取绝对值、不静默取整）；<b>(2)</b> 响亮失败的异常属于
+     * {@code MallOperationException} 这一族（不会被 {@code IllegalArgumentException} 顶掉）；
+     * <b>(3)</b> 被排除的商品 ID 仍然被点名（{@code ProductPage.priceUnreadable}）。</p>
+     *
+     * @param cents 整数分；<b>不要传 {@link #MISSING_UNIT_PRICE_CENTS}</b>——那个值表示"应答里整条
+     *              字段不写"，会走到 {@code E_NO_PRICE} 拒单，与本方法要造的"值本身非法"不同
      */
-    public void putItemWithoutPrice(String sku, String title, long categoryCode) {
-        items.put(sku, new Item(sku, title, categoryCode, MISSING_UNIT_PRICE_CENTS, "SALE"));
-    }
-
-    /** 新增一件<b>应答里没有 state 字段</b>的商品（字段缺失的夹具形态；与"读不懂的词"分开） */
-    public void putItemWithoutState(String sku, String title, long unitPriceCents) {
-        items.put(sku, new Item(sku, title, 21L, unitPriceCents, null));
+    public void overrideItemPriceCents(String sku, long cents) {
+        Item item = items.get(sku);
+        if (item != null) {
+            items.put(sku, new Item(item.sku(), item.title(), item.categoryCode(), cents, item.state()));
+        }
     }
 
     /** 把某件商品的单价改成"商城没给"（应答里整条字段不写）：复用同一件商品，不新增规模 */
@@ -286,16 +311,48 @@ public final class SecondMallFakeServer implements AutoCloseable {
      * <p>它只改<b>应答形态</b>：{@link #orderJson(String)} 与 {@link #orderStateHistogram()} 读的是
      * 商城内部那份快照，仍然带着 {@code pay_state}——因此"状态缺失"是应答的事实，
      * 而不是夹具被改坏了。</p>
+     *
+     * <p>等价于 {@code orderResponseShape(OrderResponseShape.OMIT_STATE)}；保留这个短方法是因为
+     * "状态缺失"这条路径被多处测试用到，而形状枚举还要覆盖明细行与整体结构。</p>
      */
     public void omitOrderStateInResponse() {
-        this.omitOrderStateInResponse = true;
+        orderResponseShape(OrderResponseShape.OMIT_STATE);
     }
 
-    /** 订单应答体：默认原样深拷贝；开了"不回状态字段"时，删掉 {@code pay_state} 再回 */
-    private ObjectNode orderResponse(ObjectNode order) {
+    /**
+     * 设置订单类应答的形态（一次设置对所有后续订单类应答生效，直到再次设置）。
+     *
+     * <p>为什么用枚举而不是几个布尔开关：形态是<b>互斥</b>的（应答不可能既"没有 lines"又"lines 是空数组"），
+     * 用布尔就会出现"两个开关同时为真时以谁为准"的隐含优先级——那种形状在测试里没人说得清。
+     * 枚举同时把"夹具能造哪几种坏形状"写成一个清单，新增一条失败路径就必须在这里加一个取值。</p>
+     */
+    public void orderResponseShape(OrderResponseShape shape) {
+        this.orderResponseShape = shape;
+    }
+
+    /**
+     * 订单应答体：按 {@link OrderResponseShape} 造形状；默认原样深拷贝。
+     *
+     * <p>{@code RESULT_NOT_OBJECT} 直接回 JSON 数组（不是对象）：信封仍是
+     * {@code {success:true,result:[...]}}，验证适配器读明细行之前先判"结果是不是对象"。</p>
+     */
+    private JsonNode orderResponse(ObjectNode order) {
+        if (orderResponseShape == OrderResponseShape.RESULT_NOT_OBJECT) {
+            return MAPPER.createArrayNode();
+        }
         ObjectNode copy = order.deepCopy();
-        if (omitOrderStateInResponse) {
-            copy.remove("pay_state");
+        switch (orderResponseShape) {
+            case OMIT_STATE -> copy.remove("pay_state");
+            case BLANK_STATE -> copy.put("pay_state", "   ");
+            case OMIT_LINES -> copy.remove("lines");
+            case EMPTY_LINES -> copy.set("lines", MAPPER.createArrayNode());
+            case OMIT_LINE_PRICE -> {
+                for (JsonNode line : copy.path("lines")) {
+                    ((ObjectNode) line).remove("unit_price_cents");
+                }
+            }
+            default -> {
+            }
         }
         return copy;
     }
@@ -412,16 +469,13 @@ public final class SecondMallFakeServer implements AutoCloseable {
                     return;
                 }
                 totalCents += item.unitPriceCents() * quantity;
+                // 下单应答的明细行如实回显"商城记账的单价"。价格缺失走不到这里：上面已按商城自己的
+                // 规矩 409 E_NO_PRICE 拒单了——因此这里不再留"写一个 null 单价"的分支
+                // （那是不可达代码，留着会让人以为商城真的会回一笔没有单价的订单）
                 ObjectNode lineNode = MAPPER.createObjectNode()
                         .put("sku", item.sku())
-                        .put("quantity", quantity);
-                // 下单应答的明细行如实回显"商城记账的单价"；商品价格缺失时这条**没有真实取值**
-                // （写显式 null，不编一个数），适配器据此必须响亮失败
-                if (item.unitPriceCents() == MISSING_UNIT_PRICE_CENTS) {
-                    lineNode.putNull("unit_price_cents");
-                } else {
-                    lineNode.put("unit_price_cents", item.unitPriceCents());
-                }
+                        .put("quantity", quantity)
+                        .put("unit_price_cents", item.unitPriceCents());
                 lines.add(lineNode);
             }
             String orderNo = "ON" + String.format("%015d", sequence.incrementAndGet());

@@ -129,15 +129,21 @@ public final class GeneratorApiDtos {
      * {@code TargetCheckResult}：契约**没有**给出任何字段（"不发明'检查项/是否通过/耗时'等字段"），
      * 但 §4.4 要求该端点必须返回检查结果，所以这里返回最小可核实的内容，并在 D-015 登记为待冻结。
      *
-     * <p>S4a 追加 {@code capabilities}（2026-09-11）：它是本端点的<b>实测结论</b>，键取自
+     * <p>S4a 追加 {@code capabilities}（2026-09-11）：它是本端点的<b>能力判定</b>，键取自
      * {@code MallCapability}（{@code product/user/order/refund/behavior/reset_state/admin}），
      * 值只有三态 {@code SUPPORTED/ABSENT/UNDETERMINED}。契约把 {@code GeneratorTarget.capabilities}
      * 标注为 {@code x-unspecified}（取值未冻结），且 {@code TargetCheckResult} 是
      * {@code additionalProperties: true} 的空对象，因此本字段是**允许的扩展**；
      * 它仍属生成器侧实现形状，**未写回** {@code contract-specs}，待总控冻结（登记 D-033）。</p>
      *
-     * <p>注意区分：{@code generator_target.capabilities} 是运营方的<b>声明</b>，本字段是<b>实测</b>。
-     * 两者不一致时以实测为准，且探测结果不写回目标配置行。</p>
+     * <p><b>措辞更正（M4）</b>：判定<b>不都来自本次探测</b>。没有代表路由的能力项
+     * （第二家商城的 {@code admin}/{@code refund}/{@code reset_state}）是适配器按公开接口清单给出的
+     * <b>静态声明</b>，{@code test()} 里不发探测请求。逐项来源写在 {@code detail} 的自由文本里；
+     * 响应体里加结构化的 {@code declared} 标记属契约变更，按 D-068 排到 CT 之后。</p>
+     *
+     * <p>注意区分：{@code generator_target.capabilities} 是运营方的<b>声明</b>，本字段是本端点的
+     * <b>判定</b>（探测结论 + 适配器静态声明）。两者不一致时以本端点的判定为准，
+     * 且判定结果不写回目标配置行。</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record TargetCheckView(

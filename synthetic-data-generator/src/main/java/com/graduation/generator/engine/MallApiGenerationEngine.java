@@ -252,27 +252,29 @@ public final class MallApiGenerationEngine implements GenerationEngine {
                     + "（凭据不可用/商城不可达时不允许启动运行，也不会降级成文件模式）", e);
         }
         List<ExternalProduct> catalog = page.products().stream().filter(ExternalProduct::onSale).toList();
-        // 目录里"有商品但状态词映射不到规范词表"的部分必须被点名（硬约束 16 / F-25 同族）：
-        // 只报"目录 N 件、在售 M 件"会让 N-M 里混着两种完全不同的东西——"商城说它下架了"（正常）
-        // 与"生成器读不懂商城的状态词"（缺口）。后者必须能看出件数与商城原词，
+        // 目录缺口必须被点名（硬约束 16 / F-25 同族）：只报"目录 N 件、在售 M 件"会让 N-M 里混着
+        // 三种完全不同的东西——"商城说它下架了"（正常）、"生成器读不懂商城的状态词/商城没给状态字段"
+        // （缺口）、"报价读不懂而被适配器排除出目录"（缺口）。后两种都必须能看出件数与名单，
         // 否则商品只是无声消失，运维会以为是商城没货。
-        String unmapped = describeUnmappedStatuses(page.products(),
-                page.unmappedStateWords(), page.stateFieldMissing());
+        String gaps = describeCatalogGaps(page.products(),
+                page.unmappedStateWords(), page.stateFieldMissing(), page.priceUnreadable());
         journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true,
                 routeMethod(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
                 routePath(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
                 null, null, OperationJournalEntry.STATUS_OK,
                 "目录 %d 件，在售 %d 件（预检兼凭据校验）".formatted(page.total(), catalog.size()), false);
-        if (unmapped != null) {
-            // 缺口单独占一行（SKIPPED，且不是真实调用）：这样"预检读了几次目录""在售几件""多少件因状态缺口被排除"
-            // 三件事在流水里各自可数，不会被合并成一句话而失去可核对性。
+        if (gaps != null) {
+            // 缺口单独占一行（SKIPPED，且不是真实调用）：这样"预检读了几次目录""在售几件""多少件有缺口"
+            // 三件事在流水里各自可数，不会被合并成一句话而失去可核对性。三个通道并列写在同一行里，
+            // 不挑一个报——只报状态词缺口正是 H2 的"有收集、无出口"。
             journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, false, null, null, null, null,
                     OperationJournalEntry.STATUS_SKIPPED,
-                    "商城状态词无法映射到规范状态词表/商城未给状态字段，%s 商品被排除在可用目录之外".formatted(unmapped),
-                    false);
-            notes.add(("目录缺口：%s 商品的状态词无法映射到规范状态词表（或商城未给状态字段）——"
-                    + "它们不会进入规范事件流，也绝不会被静默当成「在售」；若要使用，"
-                    + "需在对应适配器的状态词映射表里补齐（状态词映射归适配器，见 F-25）").formatted(unmapped));
+                    "目录缺口（三个通道并列）：" + gaps, false);
+            // 这里只说两个通道的**共同后果**，不复述具体成因：成因与修法由 describeCatalogGaps 按
+            // "哪个通道真有缺口"逐条写（写成一句无条件的"状态词缺口里的商品…"会让只有报价缺口的
+            // 运行也读到"状态词缺口"，读报告的人分不清这次到底是哪种缺口）
+            notes.add("目录缺口：" + gaps + "；缺口商品不会进入规范事件流，也绝不会被静默当成「在售」，"
+                    + "更不会带着读不懂的金额进流水（状态词映射归适配器，见 F-25）");
         }
         if (catalog.isEmpty()) {
             throw new IllegalArgumentException("商城商品目录里没有在售商品，MALL_API 无法生成任何订单："
@@ -314,55 +316,79 @@ public final class MallApiGenerationEngine implements GenerationEngine {
     }
 
     /**
-     * 目录的<b>状态缺口</b>：<b>件数</b> + <b>商城原词</b> + <b>未给状态字段的商品</b>
-     * （清单按字典序，输出可复现）。
+     * 目录缺口的<b>三通道并列</b>说明：<b>(1)</b> 状态词缺口——件数 + 商城原词 + 未给状态字段的商品 ID；
+     * <b>(2)</b> 报价缺口——报价读不懂、已被适配器排除出目录的商品 ID（清单按字典序，输出可复现）。
      *
-     * <p><b>引擎对任何一家商城的词表零知识</b>：本方法只吃两个<b>通用</b>清单
-     * （{@link ProductPage#unmappedStateWords()} 与 {@link ProductPage#stateFieldMissing()}），
-     * 不认识也不去问"这家适配器属于哪个类型"。谁有词表、谁缺字段是<b>适配器在读目录时</b>的事，
-     * 事实随 {@link ProductPage} 一起返回；引擎只读页，不按适配器类型分支——
-     * 这正是"映射与词表归适配器、计数与报缺口归引擎"的分工。</p>
+     * <p><b>引擎对任何一家商城的词表零知识</b>：本方法只吃三个<b>通用</b>清单
+     * （{@link ProductPage#unmappedStateWords()}、{@link ProductPage#stateFieldMissing()}、
+     * {@link ProductPage#priceUnreadable()}），不认识也不去问"这家适配器属于哪个类型"。
+     * 谁有词表、谁缺字段、谁的报价读不懂是<b>适配器在读目录时</b>的事，事实随 {@link ProductPage}
+     * 一起返回；引擎只读页，不按适配器类型分支——这正是"映射与词表归适配器、计数与报缺口归引擎"的分工。</p>
      *
-     * <p>判据仍然是 {@link ExternalProduct#status()} 为 {@code null}（F-25 的约定：适配器把
-     * "商城的词映射不到规范词表/商城没给"表达成 {@code null}，而不是把原词塞进规范字段）。
-     * 两个清单只用来把 {@code null} 的<b>成因</b>说清楚，不参与计数：
-     * <b>(1)</b> 商城返回过、但映射表里没有的原词；（2）商城根本没给状态字段。</p>
+     * <p>状态缺口的判据仍然是 {@link ExternalProduct#status()} 为 {@code null}（F-25 的约定：适配器把
+     * "商城的词映射不到规范词表/商城没给"表达成 {@code null}，而不是把原词塞进规范字段）；
+     * 两个状态类清单只用来把 {@code null} 的<b>成因</b>说清楚，不参与这个计数。报价缺口不按件数重算，
+     * 因为报价读不懂的商品<b>根本不在页里</b>（适配器已排除），它的唯一事实来源就是清单本身——
+     * 这也正是它以前会静默消失的原因（H2）。</p>
      *
-     * <p>为什么必须单独报：这些商品既不是"商城说下架"（那是正常业务事实），也不能被当作在售，
-     * 只能被排除；不报出来，它们就只是"目录里少了几件"，运维会以为是商城没货。</p>
+     * <p>为什么必须并列报全：这些商品既不是"商城说下架"（那是正常业务事实），也不能被当作在售，
+     * 只能被排除；少报一个通道，它们就只是"目录里少了几件"，运维会以为是商城没货。
+     * 本方法原名 {@code describeUnmappedStatuses}（只有两个状态类清单、没有第三通道），
+     * D-067 加入报价通道后改名：名字只描述状态词的话，实现就又在"少说话"了。</p>
      *
      * @param unmappedStateWords 本次目录读取里商城返回过、但映射不到规范词表的原词（可为 null/空）
-     * @param stateFieldMissing  本次目录读取里商城没给状态字段的商品 ID（可为 null/空）
-     * @return 一句可直接写进流水/运行报告的中文；没有缺口时返回 {@code null}
+     * @param stateFieldMissing  本次目录读取里商城没给状态字段（或为空）的商品 ID（可为 null/空）
+     * @param priceUnreadable    本次目录读取里报价读不懂、已被适配器排除出目录的商品 ID（可为 null/空）
+     * @return 一句可直接写进流水/运行报告的中文；三个通道都没有缺口时返回 {@code null}
      */
-    public static String describeUnmappedStatuses(List<ExternalProduct> products,
-                                                  List<String> unmappedStateWords,
-                                                  List<String> stateFieldMissing) {
-        if (products == null) {
-            return null;
-        }
-        int count = 0;
-        for (ExternalProduct product : products) {
-            if (product != null && product.status() == null) {
-                count++;
+    public static String describeCatalogGaps(List<ExternalProduct> products,
+                                             List<String> unmappedStateWords,
+                                             List<String> stateFieldMissing,
+                                             List<String> priceUnreadable) {
+        int statusGapCount = 0;
+        if (products != null) {
+            for (ExternalProduct product : products) {
+                if (product != null && product.status() == null) {
+                    statusGapCount++;
+                }
             }
-        }
-        if (count == 0) {
-            return null;
         }
         List<String> words = distinctSorted(unmappedStateWords);
         List<String> missing = distinctSorted(stateFieldMissing);
-        StringBuilder detail = new StringBuilder();
-        if (!words.isEmpty()) {
-            detail.append("商城原词：").append(String.join("、", words));
+        List<String> unreadablePrices = distinctSorted(priceUnreadable);
+        if (statusGapCount == 0 && words.isEmpty() && missing.isEmpty() && unreadablePrices.isEmpty()) {
+            return null;
         }
-        if (!missing.isEmpty()) {
-            if (detail.length() > 0) {
-                detail.append("；");
+        StringBuilder text = new StringBuilder();
+        if (statusGapCount > 0 || !words.isEmpty() || !missing.isEmpty()) {
+            text.append(statusGapCount > 0 ? "状态词缺口 " + statusGapCount + " 件（" : "状态词缺口成因清单（");
+            if (!words.isEmpty()) {
+                // 写"无法映射"这四个字是有意的：报告要直说成因，不能让读者自己从"原词"推
+                text.append("无法映射到规范词表的商城原词：").append(String.join("、", words));
             }
-            detail.append("商城未给状态字段的商品：").append(String.join("、", missing));
+            if (!missing.isEmpty()) {
+                if (!words.isEmpty()) {
+                    text.append("；");
+                }
+                text.append("商城未给状态字段的商品：").append(String.join("、", missing));
+            }
+            if (words.isEmpty() && missing.isEmpty()) {
+                // 件数对得上但适配器没登记成因：如实说明"成因未知"，不编一个原因
+                text.append("适配器未登记成因清单");
+            }
+            // 成因与修法写在同一处（谁的通道谁带修法）：这样"没有缺口的通道"不会在话术里被顺口捎上，
+            // 读报告的人也不必自己把成因和动作对起来
+            text.append("）（需在对应适配器的状态词映射表或商城侧数据里补齐）");
         }
-        return count + " 件" + (detail.length() == 0 ? "" : "（" + detail + "）");
+        if (!unreadablePrices.isEmpty()) {
+            if (text.length() > 0) {
+                text.append("；");
+            }
+            text.append("报价读不懂、已被排除出目录的商品 ").append(unreadablePrices.size())
+                    .append(" 件：").append(String.join("、", unreadablePrices))
+                    .append("（需查商城的计价口径：报价读不懂的成因在商城侧，不在映射表）");
+        }
+        return text.toString();
     }
 
     /** 去重 + 字典序：缺口说明在任何一次运行里都要是同一串（可复现的取证口径） */

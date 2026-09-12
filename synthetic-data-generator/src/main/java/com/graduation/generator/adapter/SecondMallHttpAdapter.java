@@ -106,8 +106,33 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
     /** 整数分 → 元的进制（显式常量；金额换算只经 BigDecimal，绝不经 double） */
     public static final int CENTS_PER_YUAN = 100;
 
-    /** 上面那个进制对应的十进制位数（{@code movePointLeft/movePointRight} 的入参；写成常量而非 {@code Math.log10}） */
-    private static final int CENTS_PER_YUAN_LOG10 = 2;
+    /**
+     * {@link #CENTS_PER_YUAN} 对应的十进制位数（{@code movePointLeft} 的入参）。
+     *
+     * <p><b>由进制常量推导，不是第二个字面量</b>（单一所有者）：写成
+     * {@code private static final int CENTS_PER_YUAN_LOG10 = 2;} 时，换算就与
+     * {@link #CENTS_PER_YUAN} 脱了钩——把它改成 1000 而这里仍是 2，金额会静默错 10 倍，
+     * 而且拿夹具独立复算的断言照样是绿的（它比的是"分 → 元"的结果，不是常量本身）。</p>
+     */
+    private static final int CENTS_PER_YUAN_LOG10 = requirePowerOfTen(CENTS_PER_YUAN);
+
+    /**
+     * 求出 10 的幂对应的十进制位数；{@link #CENTS_PER_YUAN} 不是 10 的幂时<b>启动即失败</b>
+     * （整数分 → 元只能靠十进制移位，取近似值就等于静默改金额）。
+     */
+    private static int requirePowerOfTen(int centsPerYuan) {
+        int scale = 0;
+        long value = 1;
+        while (value < centsPerYuan) {
+            value *= 10;
+            scale++;
+        }
+        if (value != centsPerYuan) {
+            throw new IllegalStateException("CENTS_PER_YUAN 必须是 10 的幂（否则分 → 元无法用移位精确表达）："
+                    + centsPerYuan);
+        }
+        return scale;
+    }
 
     /** 小数的位数（元，两位） */
     private static final int YUAN_SCALE = 2;
@@ -276,22 +301,29 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         if (query.keyword() == null) {
             return page;
         }
-        // 关键字过滤只改本页的商品集合；缺口是"本次读取"的事实（商城确实返回过这些词），不随过滤增减
+        // 关键字过滤只改本页的商品集合；缺口是"本次读取"的事实（商城确实返回过这些词、这些报价读不懂），
+        // 不随过滤增减——三个通道必须一起带过去，少带一个就等于让那个缺口静默消失（H2）。
+        // total 也原样带过去：它的口径是"施加分页前适配器看到的候选总数"，换成 filtered.size() 会让
+        // "有没有发生分页截断"在关键字查询下得出错误结论（同一个字段两种口径）。
         List<ExternalProduct> filtered = page.products().stream()
                 .filter(product -> product.name() != null
                         && product.name().toLowerCase().contains(query.keyword().toLowerCase()))
                 .toList();
-        return new ProductPage(query.window(filtered), filtered.size(),
-                page.unmappedStateWords(), page.stateFieldMissing());
+        return new ProductPage(query.window(filtered), page.total(),
+                page.unmappedStateWords(), page.stateFieldMissing(), page.priceUnreadable());
     }
 
     /**
-     * 一次目录读取：把"本次读取"的缺口事实（读不懂的原词、没给状态字段的商品）收集在<b>方法局部</b>，
-     * 随 {@link ProductPage} 一起返回。
+     * 一次目录读取：把"本次读取"的缺口事实（读不懂的原词、没给状态字段的商品、报价读不懂的商品）
+     * 收集在<b>方法局部</b>，随 {@link ProductPage} 的<b>三个通道</b>一起返回。
      *
      * <p><b>为什么不放在适配器字段上</b>：适配器是单例（{@code config/GeneratorBeans}），
      * 放字段就会跨运行、跨目标累计，让下一次运行（甚至另一家商城）的报告里出现上一次见过的词。
      * 缺口是"这一次读取"的事实，只能挂在这一次的返回值上。</p>
+     *
+     * <p><b>为什么三个通道都要返回</b>：被排除的商品必须能被点名（Javadoc 承诺"一定会被点名报出来"，
+     * 实现就得真有出口）。只有"整份目录都读不懂"才响亮失败，<b>部分</b>读不懂的走"排除 + 点名"，
+     * 因此 {@code priceUnreadable} 必须进页，否则它随局部变量一起消失，运维只能去翻 debug 日志。</p>
      */
     private ProductPage readCatalog(TargetConfig config, String path) {
         JsonNode result = call(config, "listProducts", "GET", path, null);
@@ -317,8 +349,13 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
                             + String.join("、", sortedDistinct(priceUnreadable))
                             + "）：目录为空即响亮失败，绝不静默返回空目录继续跑");
         }
-        return new ProductPage(products, products.size(),
-                sortedDistinct(unmappedWords), sortedDistinct(stateMissing));
+        // total = 商城这次**给了多少件商品**（含报价读不懂、已被排除的那些），不是"能用的有几件"：
+        // 引擎把它渲染成"目录 N 件，在售 M 件"，N 与 M 的差额必须正好是缺口件数。
+        // 若这里写 products.size()，报价缺口的 N 会悄悄变成 59 而状态缺口的 N 仍是 60——
+        // 同一个"N"在两种缺口下有两种含义，运维无法从两个数字看出差额去了哪里（H2 的"无声消失"）。
+        List<String> unreadablePrices = sortedDistinct(priceUnreadable);
+        return new ProductPage(products, products.size() + unreadablePrices.size(),
+                sortedDistinct(unmappedWords), sortedDistinct(stateMissing), unreadablePrices);
     }
 
     @Override
@@ -623,14 +660,21 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
     /**
      * 整数分 → 元：{@code "12345"} ⇒ {@code 123.45}。
      *
-     * <p>只经 {@link BigDecimal#movePointLeft(int)}，除数用 {@link #CENTS_PER_YUAN} 显式常量表达，
-     * <b>全程不经 double</b>（{@code 12345 / 100.0} 这类写法会带出尾差，下游 Hive 侧按 {@code decimal(18,2)}
-     * 读出来就是"金额对不上"）。</p>
+     * <p>只经 {@link BigDecimal#movePointLeft(int)}，位数由 {@link #CENTS_PER_YUAN} 推导
+     * （见 {@link #CENTS_PER_YUAN_LOG10}），<b>全程不经 double</b>（{@code 12345 / 100.0} 这类写法会带出尾差，
+     * 下游 Hive 侧按 {@code decimal(18,2)} 读出来就是"金额对不上"）。</p>
      *
-     * <p>契约边界：商城的金额是<b>整数分</b>。给了小数分（如 {@code "12.345"} 元，即半分）说明对方口径与
-     * 本适配器不一致，这里<b>响亮失败</b>而不是静默四舍五入——把读不懂的金额悄悄改成另一个数，比报错更糟。</p>
+     * <p>契约边界：商城的金额是<b>非负整数分</b>。小数分（如 {@code "12.345"}，即半分）与负分
+     * （如 {@code "-585"}）都说明对方口径与本适配器不一致，这里<b>一律响亮失败</b>，既不擅自取整
+     * 也不取绝对值——把读不懂的金额悄悄改成另一个数，比报错更糟。</p>
      *
-     * @throws MallOperationException 非整数、负数、超长或非数字的金额
+     * <p><b>失败一律是 {@link MallOperationException}</b>（含负数这一种）：两个调用点
+     * （{@link #toProduct}、{@link #readCreatedOrder}）都按"这个报价读不懂"处理它，这也正是
+     * {@code engine/MallApiDispatchSink#write} 的 catch 面。金额类失败绝不能以
+     * {@code IllegalArgumentException} 的形式穿透——那会绕过"记失败 + 记流水 + 记运行说明"的出口。
+     * {@code ExternalProduct} 的"金额非负"是最后一道<b>类型不变量</b>，不是本方法的输入校验。</p>
+     *
+     * @throws MallOperationException 空值、非数字、带符号、小数分或任何不是非负整数的取值
      */
     public static BigDecimal centsToYuan(String cents) {
         String text = cents == null ? "" : cents.trim();
@@ -638,13 +682,15 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
             throw new MallOperationException(OPERATION_MONEY,
                     "商城未给出 unit_price_cents，无法得到规范单价");
         }
-        if (!text.matches("-?\\d+")) {
+        // 只认无符号十进制数字：'-'/'+' 都不匹配（负数不是"另一个合法价格"，是口径不一致）。
+        // 长度不设上限：BigDecimal 精确表示任意长度的整数分，19 位也不失真（T2 边界三）。
+        if (!text.matches("\\d+")) {
             throw new MallOperationException(OPERATION_MONEY,
-                    "unit_price_cents 必须是整数分，实际=" + abbreviateText(text)
-                            + "（小数分说明商城口径不一致，本适配器不擅自取整）");
+                    "unit_price_cents 必须是非负整数分，实际=" + abbreviateText(text)
+                            + "（小数分或负数说明商城口径不一致，本适配器既不擅自取整也不取绝对值）");
         }
-        // 整数分 → 元：movePointLeft(2) 恰好得到两位小数，setScale 只是把"两位"这一契约显式写出来
-        // （输入是整数、左移 2 位，因此 setScale 不会发生舍入，不存在 ArithmeticException）
+        // 整数分 → 元：movePointLeft(CENTS_PER_YUAN_LOG10) 恰好得到两位小数，setScale 只是把"两位"
+        // 这一契约显式写出来（输入是整数、左移 2 位，因此 setScale 不会发生舍入，不存在 ArithmeticException）
         return new BigDecimal(text)
                 .movePointLeft(CENTS_PER_YUAN_LOG10)
                 .setScale(YUAN_SCALE);
@@ -757,30 +803,47 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         if (credential.available()) {
             return credential.token();
         }
-        String why = credential.ref() == null
-                ? "目标未配置 credential_ref，而第二家商城对 /open/v2/** 全部要求 Bearer，匿名调用必然被拒"
-                : "凭据引用 " + credential.ref() + " 指向的环境变量未设置或为空";
+        // "引用名没配"与"引用名是空白串"是两件事（一个是漏配、一个是写错了，排障动作不同），
+        // 因此按事实分开说，不合并成一句"未配置"（L5）
+        String why;
+        if (credential.ref() == null) {
+            why = "目标未配置 credential_ref，而第二家商城对 /open/v2/** 全部要求 Bearer，匿名调用必然被拒";
+        } else if (credential.ref().isEmpty()) {
+            why = "目标的 credential_ref 已设置但去掉空白后是空串（等于没有引用名），"
+                    + "而第二家商城对 /open/v2/** 全部要求 Bearer，匿名调用必然被拒";
+        } else {
+            why = "凭据引用 " + credential.ref() + " 指向的环境变量未设置或为空";
+        }
         throw new MallOperationException(operation, "缺少凭据，拒绝发送匿名请求：" + why
                 + "（credential_ref 只存引用，取值由部署环境注入）");
     }
 
+    /**
+     * 凭据状态：<b>"引用名没配"与"引用名是空白串"分成两种状态</b>（L5）——空白串的 {@code ref}
+     * 归一成 {@code ""} 而不是 {@code null}，这样 {@link #requireCredential} 能按事实说话，
+     * 不会把"写了个空白引用"报成"没配引用"。
+     */
     private Credential credentialState(String credentialRef) {
-        if (credentialRef == null || credentialRef.isBlank()) {
+        if (credentialRef == null) {
             return new Credential(null, null);
         }
-        return new Credential(credentialRef.trim(), resolveToken(credentialRef));
+        String ref = credentialRef.trim();
+        return new Credential(ref, ref.isEmpty() ? null : resolveToken(ref));
     }
 
     /**
      * 商品应答 → {@link ExternalProduct}：第二家的 {@code sku/title/unit_price_cents/state} 在这里落成规范字段。
      *
-     * <p>两个缺口清单由<b>调用方（本次读取）</b>持有并传入：<b>(1)</b> 认不出的状态原词进
-     * {@code unmappedWords}；<b>(2)</b> 商城没给状态字段的商品 ID 进 {@code stateMissing}——
-     * 两者刻意分开：前者要补适配器映射表，后者要补商城侧数据，混在一起会让报告说成
+     * <p>三个缺口清单由<b>调用方（本次读取）</b>持有并传入：<b>(1)</b> 认不出的状态原词进
+     * {@code unmappedWords}；<b>(2)</b> 商城没给状态字段的商品 ID 进 {@code stateMissing}；
+     * <b>(3)</b> 报价读不懂的商品 ID 进 {@code priceUnreadable}——三者刻意分开：状态原词要补适配器映射表、
+     * 状态字段缺失要补商城侧数据、报价读不懂要查商城计价口径，混在一起会让报告说成
      * "商城返回过这个词"。</p>
      *
-     * @param priceUnreadable 商城没给 {@code unit_price_cents}（或给的不是整数分）的商品 ID 出口；
-     *                        被记进去的商品<b>不会</b>出现在返回页里，但一定会被点名报出来
+     * @param priceUnreadable 商城没给 {@code unit_price_cents}（或给的不是非负整数分）的商品 ID 出口；
+     *                        被记进去的商品<b>不会</b>出现在返回页里，但一定会被点名报出来——
+     *                        出口是 {@link ProductPage#priceUnreadable()}（引擎据此在流水与运行说明里
+     *                        记一条缺口），以及"整份目录的报价都读不懂"时的响亮失败，不是 debug 日志
      * @return 规范商品；报价读不懂时返回 {@code null}（由调用方排除并报缺口），绝不返回带 null 金额的商品
      */
     private ExternalProduct toProduct(JsonNode node, List<String> unmappedWords, List<String> stateMissing,
@@ -827,12 +890,19 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
      * 看起来一切正常，把"读不懂的金额"静默带过（硬约束 3 与 §4.1.1 的金额口径）。因此这里逐行校验：
      * 没有 {@code lines}、某行没有 {@code unit_price_cents}、或该值不是合法整数分，一律抛
      * {@link MallOperationException}，绝不带 {@code null} 继续。</p>
+     *
+     * <p>上面这三条就是本方法的<b>全部</b>失败出口，每条都有夹具形态与用例钉着（T2d：
+     * {@code OMIT_LINES}/{@code EMPTY_LINES}/{@code OMIT_LINE_PRICE} 与非法单价）。</p>
+     *
+     * <p>"{@code result} 是不是对象"<b>不在这里判</b>：唯一的调用方
+     * {@link #createOrder} 在调本方法之前已经过 {@code requireText(result, order_no)}
+     * （它第一件事就是判类型），再判一次就是同一条前置条件的<b>第二个所有者</b>——
+     * 那时把任一处删掉都不会有用例变红，而"读不出订单"这件事仍然响亮失败。
+     * 同一条规则只留一个所有者，所以这里只声明前置条件。</p>
+     *
+     * @param result 商城应答的 {@code result}，<b>必须是对象</b>（由调用方保证）
      */
     private static ExternalOrder readCreatedOrder(JsonNode result, String orderNo, String buyerRef) {
-        if (result == null || !result.isObject()) {
-            throw new MallOperationException("createOrder",
-                    "应答 result 不是对象，读不到订单快照：" + abbreviate(result));
-        }
         JsonNode lines = result.path(RESULT_LINES);
         if (!lines.isArray() || lines.isEmpty()) {
             throw new MallOperationException("createOrder",
@@ -856,12 +926,16 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
     /**
      * 订单类应答 → {@link ExternalOrder}：第二家的 {@code order_no/pay_state/total_cents} 落成规范字段。
      *
-     * <p><b>{@code status} 是商城原文的逐字符透出</b>（指导书 V2.3 §4.1.1.3"商城原样文本"）：
+     * <p><b>{@code status} 是商城原文的逐字符透出</b>（指导书 V2.4 §4.1.1.3"商城原样文本"）：
      * {@code pay_state} 是什么就写什么（{@code NEW}/{@code SETTLED}/{@code VOID}），
      * <b>不加括号别名、不翻译成生成器的枚举</b>——一旦拼上"等价词"，同一个字段就有了两种口径，
-     * 按状态词聚合/对账的消费方会被分成两个桶；而且没有任何契约字段声明过"别名后缀"这种东西。
-     * 商城没给 {@code pay_state} 时保持 {@code null}（{@link ExternalOrder} 的紧凑构造器把它读成
-     * "无法读取"），<b>不编造一个商城没给过的词</b>。</p>
+     * 按状态词聚合/对账的消费方会被分成两个桶；而且没有任何契约字段声明过"别名后缀"这种东西。</p>
+     *
+     * <p>商城没给 {@code pay_state} 时保持 {@code null}（{@link ExternalOrder} 的紧凑构造器把它读成
+     * "无法读取"，那里是"空白 / 缺失 ⇒ null"这条规则的<b>唯一所有者</b>），
+     * <b>不编造一个商城没给过的词</b>。因此<b>本方法不做</b>空白判断：在这里再写一次
+     * {@code isBlank() ? null : …}，就会让同一条规则有两个所有者，而文档指认的那个（构造器）
+     * 在读取路径上永远不生效——删掉构造器那两行也没人会发现（M2）。</p>
      *
      * <p>{@code pay}/{@code cancel} 的应答按商城自己的形态可能不带明细行，因此这里对 {@code lines}
      * 只做"有就计数"的处理；下单路径的单价校验在 {@link #readCreatedOrder} 里单独做。</p>
@@ -871,14 +945,30 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
             throw new MallOperationException(operation,
                     "应答 result 不是对象，读不到订单快照：" + abbreviate(result));
         }
-        String mallState = result.path(RESULT_PAY_STATE).asText(null);
-        String status = mallState == null || mallState.isBlank() ? null : mallState;
+        JsonNode state = result.path(RESULT_PAY_STATE);
+        // 原样透出（含空白）：空白/缺失落成 null 是 ExternalOrder 构造器的事，这里不抢它的活
+        String mallState = isPresent(state) ? state.asText() : null;
         JsonNode total = result.path(RESULT_TOTAL_CENTS);
-        BigDecimal totalYuan = total.isNumber() || total.isTextual()
-                ? centsToYuan(total.asText())
-                : null;
+        BigDecimal totalYuan = isReadableCents(total) ? centsToYuan(total.asText()) : null;
         JsonNode lines = result.path(RESULT_LINES);
-        return new ExternalOrder(orderNo, buyerRef, status, totalYuan, lines.isArray() ? lines.size() : -1);
+        return new ExternalOrder(orderNo, buyerRef, mallState, totalYuan, lines.isArray() ? lines.size() : -1);
+    }
+
+    /** 该节点是不是"商城真的给了值"（字段缺失与显式 null 都算"没给"，与空白串区分开） */
+    private static boolean isPresent(JsonNode node) {
+        return node != null && !node.isMissingNode() && !node.isNull();
+    }
+
+    /**
+     * 该节点是不是"读得出的整数分"：数字与字符串都收（第二家的 {@code total_cents} 两种形态都出现过）。
+     *
+     * <p>字段缺失、显式 {@code null}、布尔/对象/数组都返回 {@code false} ⇒ 总额保持 {@code null}
+     * （"没给/读不懂"这一种表达，与 §4.1.1.3 的"未返回记 null"一致）。
+     * 单独成方法是为了与 {@link #isPresent} 一个风格：判据有名字，读代码的人不必每次重新解释
+     * 内联的 {@code isNumber() || isTextual()}。</p>
+     */
+    private static boolean isReadableCents(JsonNode node) {
+        return node != null && (node.isNumber() || node.isTextual());
     }
 
     private static Long parseLongOrNull(String text) {

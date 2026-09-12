@@ -120,29 +120,76 @@ class SecondMallAdapterOperationsTest {
         assertEquals("0.01", SecondMallHttpAdapter.centsToYuan("1").toPlainString());
         assertEquals("0.10", SecondMallHttpAdapter.centsToYuan("10").toPlainString());
         assertEquals("123.45", SecondMallHttpAdapter.centsToYuan("12345").toPlainString());
-        assertEquals(CENTS_PER_YUAN_IS_EXPLICIT, SecondMallHttpAdapter.CENTS_PER_YUAN);
 
-        // 边界五（响亮失败）：小数分说明商城口径不一致，必须抛而不是静默取整
-        MallOperationException halfCent = assertThrows(MallOperationException.class,
-                () -> SecondMallHttpAdapter.centsToYuan("12.345"));
-        assertTrue(halfCent.getMessage().contains("整数分"), halfCent.getMessage());
-        assertThrows(MallOperationException.class, () -> SecondMallHttpAdapter.centsToYuan("12,3"));
+        // 边界五（L2 的行为断言，替代原先的 assertEquals(100, CENTS_PER_YUAN)）：期望值必须**由
+        // CENTS_PER_YUAN 推导**出来，而不是单测里另写一个 100——后者只证明"两个字面量相等"，
+        // 证明不了"换算真的按这个进制算"（把 movePointLeft 写死成 3 而常量不动，它照样绿）。
+        int shift = centsShift();
+        assertEquals(new BigDecimal("12345").movePointLeft(shift),
+                SecondMallHttpAdapter.centsToYuan("12345"),
+                "分 → 元必须按 CENTS_PER_YUAN 这个进制算（常量与实现脱钩时这里必须红）");
+        assertEquals(BigDecimal.ONE.setScale(2),
+                SecondMallHttpAdapter.centsToYuan(String.valueOf(SecondMallHttpAdapter.CENTS_PER_YUAN)),
+                "CENTS_PER_YUAN 分必须恰好是 1 元（进制的语义断言，不是常量比常量）");
+
+        // 边界六（M1）：负数分必须响亮失败——负价格不是"另一个合法价格"，是商城口径不一致。
+        // 修法前正则写的是 "-?\d+"，"-585" 会被静默接受成 -5.85 元，然后由 ExternalProduct 的
+        // 类型不变量抛出 IllegalArgumentException —— 那**不是** MallOperationException，
+        // 会绕过引擎的 catch 面（MallApiDispatchSink 只接这一族），"记失败 + 记流水 + 记说明"全都不发生。
+        MallOperationException negative = assertThrows(MallOperationException.class,
+                () -> SecondMallHttpAdapter.centsToYuan("-585"),
+                "负数分必须响亮失败，且异常必须属于 MallOperationException 这一族（不是 IllegalArgumentException）");
+        assertTrue(negative.getMessage().contains("非负整数分"),
+                "异常必须说清要求的是非负整数分：" + negative.getMessage());
+        assertThrows(MallOperationException.class, () -> SecondMallHttpAdapter.centsToYuan("+585"),
+                "带正号也不是本适配器认的形态（原样传数字，不带符号）");
+        assertThrows(MallOperationException.class, () -> SecondMallHttpAdapter.centsToYuan(" -585 "),
+                "去掉空白后是负数 ⇒ 同样响亮失败（trim 不许把非法值洗成合法值）");
+
+        // 边界七（M1）：其它"看着像数字但不是非负整数分"的输入同样一族失败
+        for (String illegal : List.of("12.345", "12,3", "1e3", "0x10", "１２３", "5 85", "١٢٣")) {
+            MallOperationException e = assertThrows(MallOperationException.class,
+                    () -> SecondMallHttpAdapter.centsToYuan(illegal),
+                    "非法金额必须响亮失败：" + illegal);
+            assertTrue(e.getMessage().contains("非负整数分"),
+                    "失败话术必须统一（同一件事只有一种说法）：" + illegal + " ⇒ " + e.getMessage());
+        }
         assertThrows(MallOperationException.class, () -> SecondMallHttpAdapter.centsToYuan(""));
+        assertThrows(MallOperationException.class, () -> SecondMallHttpAdapter.centsToYuan("   "));
         assertThrows(MallOperationException.class, () -> SecondMallHttpAdapter.centsToYuan(null));
     }
 
-    /** 进制必须是 100：换算常量不许被改成 1000 之类而无人察觉 */
-    private static final int CENTS_PER_YUAN_IS_EXPLICIT = 100;
+    /**
+     * 由适配器的进制常量<b>独立推导</b>出"分 → 元"要左移几位（单测侧复算，不引用被测实现的私有常量）。
+     *
+     * <p>顺带把前提钉住：{@code CENTS_PER_YUAN} 必须是 10 的幂，否则"整数分 → 元"根本无法用移位精确表达。</p>
+     */
+    private static int centsShift() {
+        int shift = 0;
+        long unit = 1;
+        while (unit < SecondMallHttpAdapter.CENTS_PER_YUAN) {
+            unit *= 10;
+            shift++;
+        }
+        assertEquals(SecondMallHttpAdapter.CENTS_PER_YUAN, unit,
+                "CENTS_PER_YUAN 必须是 10 的幂，否则本用例的独立复算前提不成立："
+                        + SecondMallHttpAdapter.CENTS_PER_YUAN);
+        return shift;
+    }
 
-    // ---------- T2b：价格缺失 ⇒ 响亮失败（绝不静默 null） ----------
+    // ---------- T2b：商城因缺价拒单 ⇒ 适配器响亮失败；缺价商品被排除并点名 ----------
 
     @Test
-    @DisplayName("T2b 价格缺失：商城没给 unit_price_cents 时下单必须响亮失败，绝不静默 null 或当成 0 元")
+    @DisplayName("T2b 商城缺价拒单（409 E_NO_PRICE）：适配器响亮失败并点名 SKU；缺价商品被排除出目录、目录全无价时响亮失败")
     void missingPriceFailsLoudly() throws IOException {
         mall = new SecondMallFakeServer(null, null, ITEM_COUNT);
         SecondMallHttpAdapter adapter = adapter();
         TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
 
+        // 这条用例证明的是"**商城侧**拒单（夹具按商城自己的规矩回 409 E_NO_PRICE）时适配器的表现：
+        // 抛、且异常里带商城的错误码与原话。它**不**证明"适配器自己发现明细行没有单价"——
+        // 那条路径商城不会拒单（应答照回 200），由 T2d 的 OMIT_LINE_PRICE 形态单独覆盖（M6）。
+        //
         // 夹具形态先被独立钉住：目录里这件商品**整条 unit_price_cents 字段都没有**
         // （不是 0、也不是 null 文本）；正文里那个 null 才是"价格缺失"的判据。
         String sku = mall.itemSkus().get(0);
@@ -179,16 +226,196 @@ class SecondMallAdapterOperationsTest {
         assertTrue(page.products().stream().allMatch(p -> p.price() != null),
                 "可用目录里不许有任何金额为 null 的商品：" + page.products().stream()
                         .filter(p -> p.price() == null).map(ExternalProduct::productId).toList());
-        // 目录成空时更不许"静默返回空目录"：那是把"读不懂"伪装成"商城没货"
-        mall = new SecondMallFakeServer(null, null, 1);
-        String onlySku = mall.itemSkus().get(0);
-        mall.removeItemPrice(onlySku);
-        TargetConfig singleItemTarget = target(mall.baseUrl(), FORMAT_DECLARED);
-        MallOperationException empty = assertThrows(MallOperationException.class,
-                () -> adapter().listProducts(singleItemTarget, ProductQuery.firstPage(1)),
-                "整份目录的报价都读不懂时必须响亮失败，绝不静默返回空目录");
-        assertTrue(empty.getMessage().contains(onlySku),
-                "空目录失败必须点名是哪件商品读不懂：" + empty.getMessage());
+        // 目录成空时更不许"静默返回空目录"：那是把"读不懂"伪装成"商城没货"。
+        // 这份夹具单独用局部变量 + try-with-resources（L6b）：重绑 mall 字段会让同一个用例里的断言
+        // 作用在两个夹具实例上，读的人得来回确认"这句用的是哪个 mall"，而前一个夹具还不会被关。
+        try (SecondMallFakeServer singleItemMall = new SecondMallFakeServer(null, null, 1)) {
+            String onlySku = singleItemMall.itemSkus().get(0);
+            singleItemMall.removeItemPrice(onlySku);
+            TargetConfig singleItemTarget = target(singleItemMall.baseUrl(), FORMAT_DECLARED);
+            MallOperationException empty = assertThrows(MallOperationException.class,
+                    () -> adapter().listProducts(singleItemTarget, ProductQuery.firstPage(1)),
+                    "整份目录的报价都读不懂时必须响亮失败，绝不静默返回空目录");
+            assertTrue(empty.getMessage().contains(onlySku),
+                    "空目录失败必须点名是哪件商品读不懂：" + empty.getMessage());
+        }
+    }
+
+    // ---------- T2c：报价为负数 ⇒ 既不取绝对值也不静默接受，且必须被点名（第三个缺口通道 H2） ----------
+
+    @Test
+    @DisplayName("T2c 商城报价是负数分：排除 + 点名（priceUnreadable 随页返回），缺口说明里能看到这个 SKU")
+    void negativePriceIsRejectedAndNamed() throws IOException {
+        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT);
+        SecondMallHttpAdapter adapter = adapter();
+        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
+        String sku = mall.itemSkus().get(0);
+        mall.overrideItemPriceCents(sku, -585);
+
+        // 0) 夹具侧事实先钉住：这件商品的应答里就是一个**负数**整数分（不是缺字段、不是怪字符串）
+        assertEquals(-585, mall.itemJson(sku).path("unit_price_cents").asLong(),
+                "夹具必须真的把负数写进应答，否则这条用例没有对照物：" + mall.itemJson(sku));
+
+        // 1) 负价格不许进目录：不许取绝对值变成 5.85 元（那是最危险的一种"看起来很正常"），
+        //    也不许当成 0 元或"缺失"——它读不懂，就该被排除
+        ProductPage page = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
+        assertEquals(ITEM_COUNT - 1, page.products().size(),
+                "报价读不懂的商品必须被排除出目录（" + ITEM_COUNT + " → " + page.products().size() + "）");
+        assertTrue(page.products().stream().noneMatch(p -> sku.equals(p.productId())),
+                "负数报价的商品不许留在可用目录里：" + sku);
+        assertTrue(page.products().stream().noneMatch(p -> new BigDecimal("5.85").equals(p.price())),
+                "负数的绝对值不许被当成合法价格混进目录：-585 分 ≠ 5.85 元");
+        // 1′) 目录规模口径只有一个：N = 商城这次给了多少件（含报价读不懂的），M = 能用的，
+        //     N - M 必须正好等于缺口件数。否则报价缺口的 N 会悄悄变成 59，而状态缺口的 N 是 60，
+        //     同一个"N"在两种缺口下含义不同 ⇒ 运维看不出差额去了哪里（H2 的"无声消失"）。
+        assertEquals(ITEM_COUNT, page.total(),
+                "目录规模必须算上报价读不懂的那件（商城这次确实给了 " + ITEM_COUNT + " 件）：" + page.total());
+        assertEquals(page.total() - page.priceUnreadable().size(), page.products().size(),
+                "目录件数 - 缺口件数 必须正好是可用件数（两个数字之间的差额要有出处）");
+
+        // 2) H2：被排除的商品必须**被点名**（第三个缺口通道随页返回，不是只写进适配器的私字段/日志）。
+        //    修复前这个事实只活在 log.debug 里：页、流水、运行说明三处都看不到，"被排除"等于"凭空少了货"。
+        assertEquals(List.of(sku), page.priceUnreadable(),
+                "报价读不懂的商品 ID 必须随页返回（H2 的第三个通道）：" + page.priceUnreadable());
+        assertTrue(page.hasGap(), "有报价缺口 ⇒ 三个通道任一非空，hasGap() 必须为真");
+        assertTrue(page.unmappedStateWords().isEmpty() && page.stateFieldMissing().isEmpty(),
+                "这件商品的**状态**是好的：缺口必须只落在报价通道上，不许串到状态通道："
+                        + page.unmappedStateWords() + " / " + page.stateFieldMissing());
+
+        // 3) 引擎侧的出口：三通道并列的缺口说明里必须真的出现这个 SKU
+        //    （否则"点名"只停在数据结构里，运维在运行报告上看不到）
+        String gaps = com.graduation.generator.engine.MallApiGenerationEngine.describeCatalogGaps(
+                page.products(), page.unmappedStateWords(), page.stateFieldMissing(), page.priceUnreadable());
+        assertNotNull(gaps, "有报价缺口时缺口说明不许为 null");
+        assertTrue(gaps.contains("报价读不懂") && gaps.contains(sku),
+                "缺口说明必须点名报价读不懂的 SKU：" + gaps);
+
+        // 4) 异常族一致（M1）：单元层面抛的也必须是 MallOperationException 这一族
+        //    （修法前 "-585" 会被静默接受，再被 ExternalProduct 的类型不变量抛成 IllegalArgumentException，
+        //     绕过引擎只接 MallOperationException 的 catch 面 ⇒ 失败与流水都不落账）
+        MallOperationException e = assertThrows(MallOperationException.class,
+                () -> SecondMallHttpAdapter.centsToYuan("-585"));
+        assertTrue(e.getMessage().contains("非负整数分"), e.getMessage());
+    }
+
+    // ---------- T2d：下单应答读不出明细行 ⇒ 三条失败出口全部响亮失败（M5） ----------
+
+    @Test
+    @DisplayName("T2d 下单应答读不出成交价（没有 lines / 空 lines / 行里没有单价 / 单价非法）⇒ 逐条响亮失败，商城侧确已建单")
+    void unreadableCreatedOrderFailsLoudly() throws IOException {
+        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT);
+        SecondMallHttpAdapter adapter = adapter();
+        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
+        ExternalUser buyer = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
+        String sku = mall.itemSkus().get(0);
+
+        // 出口一 / 出口二：result 里根本没有 lines，或 lines 是空数组
+        for (SecondMallFakeServer.OrderResponseShape shape : List.of(
+                SecondMallFakeServer.OrderResponseShape.OMIT_LINES,
+                SecondMallFakeServer.OrderResponseShape.EMPTY_LINES)) {
+            mall.orderResponseShape(shape);
+            int ordersBefore = mall.orderCount();
+            MallOperationException e = assertThrows(MallOperationException.class,
+                    () -> adapter.createOrder(target, OrderCommand.single(buyer.userId(), sku, 1)),
+                    "应答形态 " + shape + " 时读不出明细行，必须响亮失败，绝不返回一笔成交价未知的订单");
+            assertTrue(e.getMessage().contains("lines") || e.getMessage().contains("明细"),
+                    "异常必须指明读不出的是明细行：" + shape + " ⇒ " + e.getMessage());
+            // 商城侧反证据：这一单商城**真的收下了**（订单数 +1）——所以失败发生在"读应答"这一侧，
+            // 不是"商城拒单"。两者的排查方向完全不同，夹具必须能分清（否则用例证的是另一件事）。
+            assertEquals(ordersBefore + 1, mall.orderCount(),
+                    "商城侧必须真的建了单（否则这条证的是拒单而不是\"读不出\"）：" + shape);
+        }
+
+        // 出口三：明细行里没有 unit_price_cents（商城回了单，只是没回成交单价）
+        mall.orderResponseShape(SecondMallFakeServer.OrderResponseShape.OMIT_LINE_PRICE);
+        int ordersBeforeNoPrice = mall.orderCount();
+        MallOperationException noPrice = assertThrows(MallOperationException.class,
+                () -> adapter.createOrder(target, OrderCommand.single(buyer.userId(), sku, 1)),
+                "明细行没有 unit_price_cents 时必须响亮失败（T2b 走的是商城拒单，这条才是适配器自己读不出来）");
+        // 断言必须**区分得出**这一条失败出口：只断言"消息含 unit_price_cents"太弱——
+        // centsToYuan 自己的"商城未给出 unit_price_cents"也含这四个字，于是把行级判据删掉
+        // （实测改成 if (false)）这条用例照样绿，等于没覆盖。因此要求消息点明"明细行"并点名那一行的 sku。
+        assertTrue(noPrice.getMessage().contains("明细行"),
+                "异常必须点明是明细行缺单价，而不是只丢出个通用金额错误：" + noPrice.getMessage());
+        assertTrue(noPrice.getMessage().contains(sku),
+                "异常必须点名缺单价的那一行（sku=" + sku + "）：" + noPrice.getMessage());
+        assertEquals(ordersBeforeNoPrice + 1, mall.orderCount(), "商城侧确实建了单：失败在读应答这一侧");
+
+        // 出口三′：明细行里的单价是**负数** ⇒ 同一族失败（这条只有适配器自己会拒，商城照 200 回单；
+        //          M1 把正则收紧成非负整数分之后，这条路径才真的可达）
+        mall.orderResponseShape(SecondMallFakeServer.OrderResponseShape.AS_IS);
+        long originalCents = mall.itemJson(sku).path("unit_price_cents").asLong();
+        mall.overrideItemPriceCents(sku, -585);
+        int ordersBeforeNegative = mall.orderCount();
+        MallOperationException illegal = assertThrows(MallOperationException.class,
+                () -> adapter.createOrder(target, OrderCommand.single(buyer.userId(), sku, 1)),
+                "商城记账单价是负数分时必须响亮失败（不许取绝对值后当成成交价）");
+        assertTrue(illegal.getMessage().contains("非负整数分"), illegal.getMessage());
+        assertEquals(ordersBeforeNegative + 1, mall.orderCount(),
+                "商城照自己的目录把单建了（它认为 -585 分就是它的价）⇒ 拒绝来自适配器这一侧");
+
+        // 出口四（整体结构）：result 不是对象 ⇒ 同样响亮失败，话术点明"不是对象"。
+        // 注意这条的失败发生在调用方的 requireText（它先判类型），readCreatedOrder 里不再重复判一次——
+        // 同一条前置条件只留一个所有者，否则删掉任一处都不会有用例变红（本用例仍然钉住"必须响亮失败"）。
+        mall.overrideItemPriceCents(sku, originalCents);
+        mall.orderResponseShape(SecondMallFakeServer.OrderResponseShape.RESULT_NOT_OBJECT);
+        MallOperationException notObject = assertThrows(MallOperationException.class,
+                () -> adapter.createOrder(target, OrderCommand.single(buyer.userId(), sku, 1)),
+                "result 不是对象时读不到订单快照，必须响亮失败");
+        assertTrue(notObject.getMessage().contains("对象"), notObject.getMessage());
+
+        // 反向对照：形态复原后下单必须成功，且成交总额逐字来自商城应答
+        // （否则上面那四连红可能只是"接口整个坏了"，证明不了这几条是在测失败出口）
+        mall.orderResponseShape(SecondMallFakeServer.OrderResponseShape.AS_IS);
+        ExternalOrder order = adapter.createOrder(target, OrderCommand.single(buyer.userId(), sku, 1));
+        assertEquals("NEW", order.status(), "商城侧状态原样透出（正向对照）");
+        assertEquals(new BigDecimal(originalCents).movePointLeft(2).setScale(2).toPlainString(),
+                order.totalAmount().toPlainString(),
+                "成交总额必须来自商城应答里那件商品的单价（" + originalCents + " 分）");
+    }
+
+    // ---------- T2e：关键字分支的 total 口径与缺口通道（L1 + H2） ----------
+
+    @Test
+    @DisplayName("T2e 关键字分支：total 仍是目录规模（不是切片件数），三个缺口通道原样带过去")
+    void keywordBranchKeepsCatalogTotalAndGapChannels() throws IOException {
+        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT);
+        SecondMallHttpAdapter adapter = adapter();
+        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
+        String unreadableSku = mall.itemSkus().get(0);
+        mall.overrideItemPriceCents(unreadableSku, -585);
+
+        ProductPage full = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
+        assertEquals(ITEM_COUNT, full.total(), "前提：不带关键字时 total 就是目录规模（后面对照的基准）");
+
+        // 1) 关键字命中一部分：窗口是页内切片，total 不许变成切片件数。
+        //    旧写法传的是 filtered.size()，于是"带关键字"和"不带关键字"两条路径上同一个字段含义不同——
+        //    消费方用它判断"有没有发生分页截断"时会在关键字查询下得出错误结论。
+        String keyword = full.products().get(full.products().size() - 1).name();
+        ProductPage hit = adapter.listProducts(target, new ProductQuery(null, keyword, 0, ITEM_COUNT));
+        assertTrue(hit.products().size() >= 1 && hit.products().size() < full.products().size(),
+                "前提：这个关键字确实只命中一部分商品（" + hit.products().size() + "/"
+                        + full.products().size() + "）：" + keyword);
+        assertTrue(hit.products().stream().allMatch(p -> p.name().toLowerCase().contains(keyword.toLowerCase())),
+                "前提：命中的商品名字里都含这个关键字");
+        assertEquals(full.total(), hit.total(),
+                "带关键字时 total 仍是\"这次读到的目录规模\"，不是切片件数：" + hit.total());
+        // 2) 三个缺口通道必须原样带过去：缺口是"本次读取"的事实，不随页内切片增减
+        assertEquals(full.unmappedStateWords(), hit.unmappedStateWords(), "状态词缺口不许被关键字滤掉");
+        assertEquals(full.stateFieldMissing(), hit.stateFieldMissing(), "缺状态字段清单不许被关键字滤掉");
+        assertEquals(List.of(unreadableSku), hit.priceUnreadable(),
+                "报价读不懂的名单不许被关键字滤掉（H2：缺口必须随页返回）：" + hit.priceUnreadable());
+        assertTrue(hit.hasGap(), "有报价缺口 ⇒ hasGap() 为真（与带不带关键字无关）");
+
+        // 3) 关键字一个都查不到：商品集合为空，但目录规模与缺口事实都还在
+        //    （旧写法会在这里报 total=0，等于把"这次没查到"说成"目录是空的"）
+        ProductPage miss = adapter.listProducts(target,
+                new ProductQuery(null, "不可能命中的关键词-" + ITEM_COUNT, 0, ITEM_COUNT));
+        assertTrue(miss.products().isEmpty(), "前提：这个关键字确实一件都查不到");
+        assertEquals(full.total(), miss.total(),
+                "查不到东西 ⇒ 商品集合为空，但目录规模仍是 " + full.total() + "（两个事实不许混成一个）");
+        assertEquals(List.of(unreadableSku), miss.priceUnreadable(),
+                "被关键字滤空也不许把缺口事实一起滤掉：缺口是本次读取的事实，不是这次窗口的事实");
     }
 
     // ---------- T3：信封不同仍能解析 / 响亮失败 ----------
@@ -239,6 +466,29 @@ class SecondMallAdapterOperationsTest {
                 () -> noCredential.listProducts(target3, ProductQuery.firstPage(5)));
         assertTrue(missing.getMessage().contains(ENV_NAME), "必须点名凭据引用名：" + missing.getMessage());
         assertFalse(missing.getMessage().contains(TOKEN), "异常里绝不能出现凭据值：" + missing.getMessage());
+
+        // 3e（L5）："目标里没配 credential_ref"与"配了个空白串"是两种不同的成因，话术必须分开说——
+        // 合成一句话（旧话术里两种情况都可能被读成"没配"）会让运维照着"去配一个引用"改，
+        // 而事实是他的配置里已经有一个（只是内容是空白），改法完全不同。
+        SecondMallHttpAdapter blankRefAdapter = new SecondMallHttpAdapter(name -> null, Duration.ofSeconds(2));
+        int exchangesBefore = mall.exchanges().size();
+        TargetConfig noRefTarget = new TargetConfig(22L, SecondMallHttpAdapter.ADAPTER_TYPE,
+                mall.baseUrl(), null, FORMAT_DECLARED);
+        MallOperationException unsetRef = assertThrows(MallOperationException.class,
+                () -> blankRefAdapter.listProducts(noRefTarget, ProductQuery.firstPage(5)));
+        assertTrue(unsetRef.getMessage().contains("未配置 credential_ref"),
+                "\"没配引用\"必须说成没配（且点名字段名）：" + unsetRef.getMessage());
+        TargetConfig blankRefTarget = new TargetConfig(23L, SecondMallHttpAdapter.ADAPTER_TYPE,
+                mall.baseUrl(), "   ", FORMAT_DECLARED);
+        MallOperationException blankRef = assertThrows(MallOperationException.class,
+                () -> blankRefAdapter.listProducts(blankRefTarget, ProductQuery.firstPage(5)));
+        assertTrue(blankRef.getMessage().contains("空白"),
+                "\"配了个空白串\"必须说成已设置但去掉空白后为空：" + blankRef.getMessage());
+        assertFalse(blankRef.getMessage().contains("未配置 credential_ref"),
+                "两种成因不许合成一句话（否则运维会把\"改配置\"误读成\"补配置\"）：" + blankRef.getMessage());
+        assertFalse(blankRef.getMessage().contains(TOKEN), "异常里绝不能出现凭据值：" + blankRef.getMessage());
+        assertEquals(exchangesBefore, mall.exchanges().size(),
+                "凭据不成立时必须在发请求**之前**就拒绝（绝不匿名打商城）：" + mall.exchanges());
     }
 
     // ---------- T4：状态词表不同；映射归适配器，引擎不按字面量判定 ----------
@@ -496,10 +746,27 @@ class SecondMallAdapterOperationsTest {
         ExternalRefund refund = new ExternalRefund("RF1", withoutState.orderId(), null, new BigDecimal("1.00"));
         assertNull(refund.status(), "退款状态没给就是 null：绝不许出现 UNKNOWN 这类编出来的词");
         assertFalse(refund.completed(), "\"未给\"不许被读成\"已完成\"");
-        // 空白状态词也按"没给"处理：它同样不是商城说过的词
+        // 直接构造 DTO 的对照："空白 / 缺失 ⇒ null"这条规则本身（所有者 = 两个 DTO 的紧凑构造器）
         assertNull(new ExternalOrder("ON9", "BR9", "   ", null, -1).status(),
                 "空白状态词不是商城原词，必须落成\"未给\"而不是留着空白串冒充状态");
         assertNull(new ExternalRefund("RF9", "ON9", "   ", null).status(), "退款单同理");
+
+        // 6) M2：空白状态词走**适配器读取路径**（不是直接 new 一个 DTO）。
+        //    这条规则的唯一所有者是 ExternalOrder 的紧凑构造器；修复前 readOrder 里还内联了一次
+        //    isBlank 判断，于是"读取路径上生效的到底是哪一份"根本分不清——删掉构造器那两行也没人发现。
+        //    这条用例钉的正是"唯一所有者在读取路径上真的生效"。
+        mall.orderResponseShape(SecondMallFakeServer.OrderResponseShape.BLANK_STATE);
+        ExternalOrder blankState = adapter.createOrder(target, OrderCommand.single(buyer.userId(), sellable, 1));
+        assertNull(blankState.status(),
+                "商城给了个空白 pay_state ⇒ 规范字段必须是 null（空白不是商城说过的词），实际="
+                        + blankState.status());
+        assertFalse(blankState.paid() || blankState.cancelled(), "空白不许被读成已支付/已取消");
+        assertEquals("NEW", mall.orderJson(blankState.orderId()).path("pay_state").asText(),
+                "商城内部状态照旧是 NEW ⇒ 空白是**应答形态**，不是商城没干活");
+        // 反向对照：形态改回去后状态必须又能透出来（否则上面那条可能只是"整个状态都读不到"）
+        mall.orderResponseShape(SecondMallFakeServer.OrderResponseShape.AS_IS);
+        ExternalOrder backToNormal = adapter.createOrder(target, OrderCommand.single(buyer.userId(), sellable, 1));
+        assertEquals("NEW", backToNormal.status(), "形态复原后商城原词必须恢复原样透出");
     }
 
     // ---------- T9：格式声明缺失时，运维话术必须点名键名与可接受取值 ----------
