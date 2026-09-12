@@ -71,3 +71,14 @@ drwxr-xr-x - root supergroup 0 2026-09-11 16:47 /yjx
 - **因此 E4（集群 1,000 行）仍然零证据**，不得引用本文档声称集群链路已跑通。
 - 未使用 SSH（22 端口开放但无凭据）；`/dolphinscheduler`、`/yjx`、`/exam` 等他人目录**未读取内容**，只做了根目录列名。
 - 本机 `show databases` 使用 `local[*]`（日志 `Spark master: local[*]`）⇒ 该次运行**只在客户端本地跑**，未占用集群资源。
+
+---
+
+## 7. 补记（2026-09-12 15:46，以此为准）：只读探测之后已发生「集群写」
+
+§6 的「未提交任何 YARN 作业、未在 HDFS 写入任何字节」在本文档成文时（15:2x）**属实**；其后经用户授权（以 root 建 `/graduation`、先提最小探针作业、SSH 暂不需要），已完成**首个集群写作业**并实测成功：`application_1789195359269_0004` **FINISHED/SUCCEEDED**。
+
+- §4 待办 A（可写根）、B（提交授权）、C（队列：RM 实测**单队列 `default`、容量 100%**）、D（jar 落点 = `/graduation/jars/spark-3.5.1/`，Spark 自管 `/graduation/staging`）、E（集群侧**不装 Spark**，用本机 `spark-submit` 随作业分发）**均已闭合**；F（SSH）本轮**未用**，仍待用户。
+- **完整记录见同目录 `PROBE-RESULTS.md`**：四次提交的失败→修复链、探针实测读数、`yarn logs` 观测通道、F-50…F-53、边界声明与 E4 前置核实。
+- §1–§6 原文**未改**（append-only）；如与本节冲突，**以本节与 `PROBE-RESULTS.md` 为准**（两者更晚）。
+- **仍未改变**：E4（集群 1,000 行）**零证据**；集群上**未创建任何本项目 Hive 库/表**。

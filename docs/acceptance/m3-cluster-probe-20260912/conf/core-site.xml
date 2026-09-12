@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  M3 接入用的**最小客户端配置**（2026-09-12）。
+  原则：只写"客户端连出去"必需的地址，不猜测、不覆盖集群侧行为
+  （因此刻意不写 yarn.nodemanager.*、yarn.scheduler.* 等集群内部参数）。
+  Spark 提交时会把本目录打包成 __spark_conf__.zip 下发到 AM/Executor 容器，
+  故容器侧也会看到这里的取值。
+-->
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://node01:8020</value>
+  </property>
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/tmp/hadoop-${user.name}</value>
+  </property>
+</configuration>

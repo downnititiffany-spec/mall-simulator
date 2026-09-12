@@ -1,0 +1,18 @@
+PROBE spark.version=3.5.1
+PROBE scala.version=2.12.18
+PROBE master=yarn
+PROBE appId=application_1789195359269_0004
+PROBE sparkUser=root
+PROBE containerHost=node03
+PROBE java.version=1.8.0_351
+PROBE java.class.version=52.0
+PROBE java.home=/usr/java/jdk1.8.0_351-amd64/jre
+PROBE defaultFS=hdfs://node01:8020
+PROBE hive.metastore.uris=thrift://node01:9083
+PROBE hdfs.write=/graduation/probe/from-container/container-node03.txt len=70 replicas=3
+PROBE hdfs.blockLocations=hdfs://node01:8020/graduation/probe/from-container/container-node03.txt
+PROBE hdfs.readback.lines=1
+PROBE spark.parallelism.readback=2
+PROBE metastore.databases=[[default], [exam], [ods], [scott], [shop], [tmp], [yjxxt]]
+PROBE metastore.reachable=TRUE
+PROBE done=TRUE

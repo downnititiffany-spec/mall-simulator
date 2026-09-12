@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  M3 接入用的**最小客户端配置**（2026-09-12）：Hive Metastore 直连（实测 1.08s / 7 库）。
+  注意：HiveServer2(10000) **未开放**，因此只走 Metastore（thrift 9083），不使用 jdbc:hive2。
+  warehouse 指向本项目自己的 /graduation/warehouse，**不触碰** /hive/warehouse（他人所有）。
+-->
+<configuration>
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://node01:9083</value>
+  </property>
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>hdfs://node01:8020/graduation/warehouse</value>
+  </property>
+</configuration>
