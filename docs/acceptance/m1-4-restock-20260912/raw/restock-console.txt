@@ -1,0 +1,68 @@
+M1-4 后续① 补库存取证  2026-09-12 09:53:20  仓库根 D:\Develop_code\GraduationProject
+HEAD = c5ea360  branch = remediation/r1-boundary
+
+=== 0. 三个程序实例身份（补库存前） ===
+  8090: pid=41228 启动=09/12/2026 09:40:49
+       jar=D:\Develop_code\GraduationProject\mall-simulator\target\mall-simulator-0.1.0-SNAPSHOT.jar (29852277 B) sha256=EF1991A03D68B394BE903461749F23D78BED6AEF2272FD4130A29D93DC00BC29
+  8091: pid=47132 启动=09/12/2026 09:14:59
+       jar=D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar (33129288 B) sha256=6742197BD26CED91D038131BA82BAF5B0FCCE112042DCAB9F61BE99032896B51
+  8092: pid=10412 启动=09/12/2026 09:48:10
+       jar=D:\Develop_code\GraduationProject\synthetic-data-generator\target\synthetic-data-generator-0.1.0-SNAPSHOT.jar (26216592 B) sha256=A64CABFE8355A01CC0E4A610735F72C7458DAAA52CBEFFD0974AF3AE0A447203
+  GET http://127.0.0.1:8090/ -> 200
+  GET http://127.0.0.1:8091/api/v1/health -> 200
+  GET http://127.0.0.1:8092/api/v1/scenarios -> 200
+
+=== 1. 补库存前状态（商城库，只读） ===
+  --- SQL: SELECT product_id,available_qty,reserved_qty,version FROM mall_simulator.inventory ORDER BY product_id LIMIT 6;
+    1001	0	100	65
+    1002	0	100	55
+    1003	0	100	144
+    1004	33	67	122
+    2001	48	52	80
+    2002	60	40	77
+  --- 目标三件（真机运行打空的）：
+    1001	0	100
+    1002	0	100
+    1003	0	100
+  --- outbox 表名：
+    event_outbox
+  --- stock_changed outbox 事件数（前）= 0
+  --- landing\events 文件数（前）= 55 / 404895418 B
+
+=== 2. 商城 admin 登录（真实 HTTP） ===
+  POST /api/v1/auth/login -> HTTP 200
+  响应体 = {"code":"OK","message":"success","data":{"token":"f89c75d1629842768c1f5bfc94f85d6a","user":{"id":1,"username":"admin","realName":"系统管理员","role":"admin"}},"traceId":"f10e980f-511e-43d9-ba62-a2c6df09aad0"}
+
+=== 3. 补库存（POST /api/v1/admin/products/{id}/stock，changeType=inbound，quantity=1000） ===
+  product 1001 -> HTTP 200  响应体 = {"code":"OK","message":"success","data":null,"traceId":"f2166453-0b4a-412f-ae2b-6b1460f3713d"}
+  product 1002 -> HTTP 200  响应体 = {"code":"OK","message":"success","data":null,"traceId":"a8022527-7716-4a7b-a0d4-4d6e478bce0e"}
+  product 1003 -> HTTP 200  响应体 = {"code":"OK","message":"success","data":null,"traceId":"4a121b81-131a-4575-953d-b104fa1e48f1"}
+  --- 越权对照（无 token）：
+  product 1001（无 Authorization）-> HTTP 401  响应体 = {"code":"UNAUTHORIZED","message":"未登录或会话已过期","data":null,"traceId":"978f30e8-b463-4f92-acf2-a998ec7d03c0"}
+
+=== 4. 补库存后状态 ===
+  --- SQL: 同 §1 查询
+    1001	1000	100	66
+    1002	1000	100	56
+    1003	1000	100	145
+    1004	33	67	122
+    2001	48	52	80
+    2002	60	40	77
+    1001	1000	100
+    1002	1000	100
+    1003	1000	100
+  --- stock_changed outbox 事件数（后）= 3（增量应 = 3）
+  --- 新增 outbox 行明细：
+    ERROR 1054 (42S22) at line 1: Unknown column 'status' in 'field list'
+  --- 商城 admin 列表接口回读（GET /api/v1/admin/products，取 1001-1003）：
+  HTTP 200
+    productId=1001 name=磁吸手机支架 availableQty=1000 reservedQty=100 status=on_sale
+    productId=1002 name=快充数据线套装 availableQty=1000 reservedQty=100 status=on_sale
+    productId=1003 name=入耳式蓝牙耳机 availableQty=1000 reservedQty=100 status=on_sale
+  --- landing\events 文件数（后）= 56 / 404896549 B（差额 1 文件 / 1131 B）
+
+=== 5. 结论 ===
+  三件库存补入 HTTP 200 = True；越权对照（无 token）= HTTP 401（应 401）
+  stock_changed 事件增量 = 3（应 3）
+  落地区 55 -> 56 文件：商城已恢复运行，outbox 继续按小时落盘（P1-06 冻结窗口已结束）
+OUT=D:\Develop_code\GraduationProject\docs\acceptance\m1-4-restock-20260912\raw\restock-20260912-095320.log

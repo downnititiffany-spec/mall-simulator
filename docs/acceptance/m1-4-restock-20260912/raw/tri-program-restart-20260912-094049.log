@@ -1,0 +1,6 @@
+=== 三程序恢复运行（启 8090 + 8092；8091 已在跑）20260912-094049 ===
+[3/6] 启动模拟商城（reference-mall, 8090）...
+  已启动 mall-simulator-0.1.0-SNAPSHOT.jar（日志 D:\Develop_code\GraduationProject\.verify\start-mall.log）
+[4/6] 探活模拟商城（SPA 首页）...
+  模拟商城 OK → http://127.0.0.1:8090/（商城演示 / 商品后台）
+商城入口：http://127.0.0.1:8090/
