@@ -4,7 +4,9 @@ import com.graduation.analytics.analysis.AnalysisService;
 import com.graduation.analytics.analysis.AnalysisViewModel;
 import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
+import com.graduation.analytics.warehouse.RunSourceIdentity;
 import com.graduation.analytics.warehouse.WarehouseNamespace;
+import com.graduation.analytics.warehouse.WarehouseNamespaceProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +45,35 @@ class EvidenceBuilderTest {
     private MySqlMetricStore metricStore;
 
     private EvidenceBuilder builder() {
-        return new EvidenceBuilder(analysisService, metricStore, WarehouseNamespace::defaultNamespace);
+        return new EvidenceBuilder(analysisService, metricStore, defaultNamespaceProvider());
+    }
+
+    /**
+     * P2-07 起 {@link WarehouseNamespaceProvider} 不再是单抽象方法接口（新增
+     * {@code runSource}/{@code currentRunSource} 两个读取点），原先的方法引用
+     * {@code WarehouseNamespace::defaultNamespace} 已不合法（F-46 编译回归）。
+     *
+     * <p>此处显式实现两个读取点，语义与旧写法**完全一致**：无论按哪个源解析，都得到
+     * {@link WarehouseNamespace#defaultNamespace()}。之所以只要求这一点，是因为本测试的对象是
+     * 「证据装配与诚实边界」，{@code EvidenceBuilder} 对 provider 的唯一调用点是
+     * {@code namespaceProvider.current()}（库名视图），源级解析的真实行为由
+     * {@code ActiveProfileWarehouseNamespaceProviderTest} 与
+     * {@code SparkStageExecutorFactoryTest} 覆盖。</p>
+     */
+    private static WarehouseNamespaceProvider defaultNamespaceProvider() {
+        RunSourceIdentity identity =
+                new RunSourceIdentity("mock-mall", WarehouseNamespace.defaultNamespace());
+        return new WarehouseNamespaceProvider() {
+            @Override
+            public RunSourceIdentity runSource(Long sourceId) {
+                return identity;
+            }
+
+            @Override
+            public RunSourceIdentity currentRunSource() {
+                return identity;
+            }
+        };
     }
 
     // ── 夹具 ───────────────────────────────────────────────────────────────

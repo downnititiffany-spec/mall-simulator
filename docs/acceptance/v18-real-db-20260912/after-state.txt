@@ -1,5 +1,5 @@
-history_rows=16
-max_numeric=17
-v18_rows=0 desc= success=
-prefix_cols=0 type= nullable=
-ERROR 1054 (42S22) at line 1: Unknown column 'warehouse_prefix' in 'field list'
+history_rows=17
+max_numeric=18
+v18=18|source warehouse prefix|success=1|at=2026-09-12 15:06:05
+prefix_col=varchar(24)|null=NO
+registry=mock-mall|ACTIVE|prefix=dw

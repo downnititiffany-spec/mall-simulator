@@ -47,3 +47,17 @@
 ## 6. 本目录文件
 - `before-state.txt` / `after-state.txt`：重启前后真库只读读数原文。
 - `8091-stdout.log` / `8091-stderr.log`：新实例启动日志（含 `Tomcat started on port 8091`、`R6-14 启动对账完成`）。
+
+---
+
+## 6. 补记 2026-09-12 15:09（**以此为准**）：V18 已于真库成功执行；本文档 §1–§5 记录的是**更早一次失败的重启**，未被改写
+
+**本文档 §1–§5 的结论「V18 未在真库执行、真库零变更」对 14:42 那次重启**成立且保留为历史证据。其后发生的事：
+
+1. **根因确认（承接 §4 陷阱 #14）**：`jar tf` 显示运行制品内 `db/meta/` 只有 **17 条目（V1…V17，无 V18）** ⇒ 旧制品结构上不可能执行 V18。
+2. **重建**：`mvn -o -f analytics-server/pom.xml package -pl platform-app -am -DskipTests` 首次 **FAILURE**（`EvidenceBuilderTest.java:[46,66] 不兼容的类型: WarehouseNamespaceProvider 不是函数接口`）⇒ 新登记 **F-46**（P2-07 把 `WarehouseNamespaceProvider` 改成 2 个抽象方法，破坏了 P1-04 泳道写在 ai-decision 测试里的方法引用；**`-DskipTests` 仍会编译测试**，故被抓住）。测试侧最小修复 + 全 reactor `test-compile` **BUILD SUCCESS 7/7 模块** 后重建成功：新 jar **33,135,969 B / 15:01:13 / sha256 前16 `49859A1CDB66AB47`**，`jar tf` 列 `db/meta/` **18 条目且 V18 命中**。
+3. **启动方式（F-47）**：用 `Start-Process java.exe` 在工具调用内启动的新制品 1–4 s 内**静默消失**，`ExitCode = 0xC000013A`（`STATUS_CONTROL_C_EXIT` ＝ 控制台 Ctrl+C/关闭事件），stderr 0 B、无 `hs_err`、主代码无 `System.exit`；**对照组**（同一路径启动旧 jar）health 200 且跨调用存活 ⇒ 定位到**控制台生命周期**；改用 **`javaw.exe`（不挂控制台）** 后稳定运行。原始日志见本目录 `run2/3/4-*.log`、`control-old-jar-*.log`、`8091-live-*.log`。
+4. **V18 真库执行（实测，本补记的核心事实）**：`flyway_schema_history` **17 行**、`MAX(CAST(version AS UNSIGNED)) = 18`、`v18 = 18 | source warehouse prefix | success = 1 | at 2026-09-12 15:06:05`、`source_registry.warehouse_prefix` 列存在（`varchar(24)`、`NOT NULL`）、`registry = mock-mall | ACTIVE | prefix = dw`；启动日志 `Current version of schema analytics_meta: 17` → `Migrating schema … to version "18 - so…"` → `Successfully applied 1 migration`。原始读数：`after-state.txt`。**对比**：`before-state.txt`（14:42 那次）为 `history_rows=16 / max=17 / v18=0 / 列不存在`。
+5. **仍未取证（不得据本文档推断）**：源级命名空间在真数仓是否生效（未跑真实链）、1,000 行链、集群档任何读数、P2-01 侧跨泳道 E2 复跑。
+
+**隐私**：本文档及本目录日志不含主机名、私网地址或口令字面量（按用户 2026-09-12 要求，涉及隐私的一律脱敏；`root/123456` 类测试口令按用户裁定不处理）。

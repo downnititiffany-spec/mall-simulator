@@ -10,7 +10,7 @@
 
 | # | §6.4 要求 | 本轮实测读数 | 结论 |
 |---|---|---|---|
-| 1 | 主机名、IP、端口、DNS、时间同步、Java/Spark/Hadoop/Hive 版本 | 主机 `dahaishui`；Windows 11 家庭版 build 26100；IPv4 = `192.168.18.1`、`192.168.43.1`（均为虚拟网卡网段）+ `169.254.105.212`（链路本地）⇒ **无常规局域网地址**；`w32time` = Running，时钟 2026-09-12 13:51:29；Java **17.0.12**（`JAVA_HOME=D:\Develop\JAVA17`）；Spark **3.5.1 built for Hadoop 3.3.4**（`D:\Develop\spark-3.5.1-bin-hadoop3`，RELEASE 含 `-Pyarn -Phive -Phive-thriftserver`）；Hadoop **3.3.4**（`HADOOP_HOME=D:\soft\hadoop\hadoop-3.3.4`，`hadoop/hdfs/yarn` 在 PATH，`winutils.exe` 在 system32）；**Hive 无独立安装**（`beeline`/`hive` 不在 PATH，`HIVE_HOME` 为空） | **部分通过**：版本面本机自洽且具备 YARN/Hive 能力的 Spark 发行版；**Hive 服务端缺失**、**无局域网地址** |
+| 1 | 主机名、IP、端口、DNS、时间同步、Java/Spark/Hadoop/Hive 版本 | 主机 `<主机名已脱敏>`；Windows 11 家庭版 build 26100；IPv4 = `192.168.18.x`、`192.168.43.x`（均为虚拟网卡网段）+ `169.254.x.x`（链路本地）⇒ **无常规局域网地址**；`w32time` = Running，时钟 2026-09-12 13:51:29；Java **17.0.12**（`JAVA_HOME=D:\Develop\JAVA17`）；Spark **3.5.1 built for Hadoop 3.3.4**（`D:\Develop\spark-3.5.1-bin-hadoop3`，RELEASE 含 `-Pyarn -Phive -Phive-thriftserver`）；Hadoop **3.3.4**（`HADOOP_HOME=D:\soft\hadoop\hadoop-3.3.4`，`hadoop/hdfs/yarn` 在 PATH，`winutils.exe` 在 system32）；**Hive 无独立安装**（`beeline`/`hive` 不在 PATH，`HIVE_HOME` 为空） | **部分通过**：版本面本机自洽且具备 YARN/Hive 能力的 Spark 发行版；**Hive 服务端缺失**、**无局域网地址** |
 | 2 | HDFS 临时文件建/写/读/删 | `8020`（NameNode）**无监听**；`D:\soft\hadoop\hadoop-3.3.4\etc\hadoop` 下 `core-site.xml`/`hdfs-site.xml`/`mapred-site.xml`/`yarn-site.xml` **全部存在但 property 数 = 0**（默认空配置）；**无 NameNode 数据目录**（`D:\soft\hadoop\hadoop-3.3.4\data`、`D:\soft\hadoop\data`、`D:\hadoop-data` 均不存在） | **BLOCKED**（本机 HDFS 从未初始化：空配置 + 无元数据目录 + 无监听） |
 | 3 | Hive 临时库/表建/写/查/删 | `9083`（Metastore）、`10000`（HiveServer2）**无监听**；无 `hive-site.xml`；无独立 Hive 安装 | **BLOCKED**（无 Hive 服务端） |
 | 4 | 提交最小 Spark count 作业，取 externalJobId/最终状态/日志 | `8088`（YARN ResourceManager）**无监听** ⇒ 无 YARN 可提交；本机 Spark 仅可 `local[*]` 运行（真实链一直如此） | **BLOCKED**（集群档；本机 local 档已由既有真实链覆盖） |
@@ -50,7 +50,7 @@
 
 | # | §6.5 条目 | 本机已确定 | 仍需你提供 |
 |---|---|---|---|
-| 1 | node01–03 主机名/IP 与各角色 | 本机 = `dahaishui`（仅虚拟/链路本地地址） | 是否有真集群？若有：三节点主机名/IP 与 NameNode/DataNode/RM/NM/Hive/Spark 角色分布 |
+| 1 | node01–03 主机名/IP 与各角色 | 本机 = `<主机名已脱敏>`（仅虚拟/链路本地地址） | 是否有真集群？若有：三节点主机名/IP 与 NameNode/DataNode/RM/NM/Hive/Spark 角色分布 |
 | 2 | NameNode URI/端口、可写根目录、warehouse 路径、服务用户权限 | 本机 8020 无监听 | `hdfs://<host>:<port>`、可写根目录、warehouse 路径、提交用户与权限 |
 | 3 | Spark 运行模式（yarn client / yarn cluster / standalone）、队列、提交命令路径 | 本机 Spark 3.5.1（含 YARN 支持），当前 profile 为 LOCAL | 模式、队列名、`spark-submit` 绝对路径 |
 | 4 | HiveServer2 JDBC 或 Metastore URI、数据库名前缀 | 本机 9083/10000 无监听；库名前缀机制已由 P2-07 迁到源级 `source_registry.warehouse_prefix` | HS2/Metastore URI；集群侧是否复用同一前缀规则（F-39 的手工通道是否纳入强约束） |
@@ -79,3 +79,33 @@
 - **不声称**：M3 的任何集群档已完成；HDFS/Hive/YARN/Flume 任一组件可用；§6.4.1 第 8 条已判定结论；1,000 行链已跑过；`beeline` 可连通任何服务端。
 - **未做**：未启停进程（含未启动 Docker）、未格式化和配置 Hadoop、未安装任何软件、未写库、未跑 Maven、未改代码/契约/配置。
 - **对既有结论的影响**：无。E4 仍为未取证；F-39 的处置不变（本轮仅补充"客户端可通过 Spark 自带 beeline 取得"这一事实）。
+
+---
+
+## 6. 补记 2026-09-12 15:09（总控实测；**以此为准**）：第 1 节第 2/3/4 行的 `BLOCKED` 是**宿主**读数，不等于「集群不存在」
+
+**起因**：用户回答「有集群，已启动，是本机安装的虚拟机创建了 node01-03，相关配置文件我已放到代码 main 下的 resource 目录下」。第 1 节的 8020/9083/10000/8088 无监听、`site.xml` property 数 = 0、无 NameNode 数据目录等，全部是在**本机（Windows 宿主）**上读到的 ⇒ 当时据此写下的「本机 HDFS 从未初始化」只对宿主成立。
+
+**随后实测（只读；**未 SSH 登录、未启停任何进程、未写库**）**：
+
+| 项 | 实测读数 |
+|---|---|
+| `C:\Windows\System32\drivers\etc\hosts` | `192.168.18.10x basenode / node01 / node02 / node03`（末位掩码，下同） |
+| DNS 解析 / 连通 | node01、node02、node03 均解析成功；`ping` = True |
+| 开放端口 | **node01: 22, 8020, 9870, 8088, 9083, 3306**；node02: 22, 8020, 9870, 3306；node03: 22, 8088, 3306 |
+| 角色推断（据端口） | node01 ＝ NameNode(8020/9870) + YARN RM(8088) + Hive **Metastore(9083)**；node02 ＝ NameNode HA 第二节点(8020/9870)；node03 ＝ RM 第二节点(8088)；三节点均有 22/3306 |
+| HiveServer2 | **10000 未开放** ⇒ 现实通道是 **Metastore / Spark 直连**，不是 `beeline -u jdbc:hive2://…`（与 F-39 直接相关） |
+| 虚拟化 | `vmware`、`vmware-vmx`×2 在运行；`vmrun.exe` 不在 PATH |
+| 仓库内的集群配置 | **未找到**：`glob **/*site.xml` 只命中 `references/sample-projects/**`；`git grep node01` 只命中 `JobCommandBuilderTest.java:38,:118`、`anchor-resolution-20260912.tsv:63`、本文件 `:53`、设计文档 ⇒ 「配置文件已放到 `src/main/resources`」**尚未在磁盘上证实**（可能指虚拟机的安装目录而非本仓库，待用户澄清） |
+
+**结论修订**：
+
+- 第 1 节第 2/3/4 行的 `BLOCKED` 应读作「**本机**该能力不成立」，**不是**「集群不存在」；第 1 行「无常规局域网地址」同理只描述宿主。
+- §6.4.1 八条接入前必改项（file:line）**不受影响**，全部仍然有效（它们是代码级缺口，与集群是否存在无关）。
+- §6.4 第 5 步（本机无 Flume 运行体）**仍然有效**。
+- **M3 状态修订**：由「缺环境的 `BLOCKED`」转为「**待接入**」——路径 **B（外部真集群）成立**，用户在 A/B/C 中选择 B。
+- **仍需用户提供（§6.5 剩余项）**：SSH 用户/端口/密钥引用与是否跳板；NameNode 可写根目录与 warehouse 路径；Spark 运行模式（yarn client / yarn cluster）与队列名；集群侧 Hadoop/Spark/Hive/Java 版本与安装目录；jar 放提交节点还是 HDFS；是否启用 Kerberos；Flume agent 运行位置与 spool 目录。
+
+**仍未做（不得据本补记推断）**：未 SSH 登录任何节点、未提交任何 Spark 作业、未在集群上跑 55 行或 1,000 行、未验证集群侧 Hive 库名前缀规则、未验证 `hdfs://node01:8020` 可写 ⇒ **E4（集群 1,000 行）仍无证据**。
+
+**隐私处置（同批，遵用户「涉及隐私的都脱敏处理」）**：本文件第 13 行与第 53 行的主机名、私网地址已就地掩码为 `<主机名已脱敏>`、`192.168.18.x`、`192.168.43.x`、`169.254.x.x`，**行数与其余内容未改动**；本补记起集群节点地址一律以 `192.168.18.10x` 形式登记，**完整地址不入库**。用户同时裁定：`root/123456` 一类测试口令无需处理，故 HEAD 中既有本地测试口令保持不动。

@@ -1,0 +1,49 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-12T15:05:06.774+08:00  INFO 15792 --- [           main] c.g.analytics.AnalyticsApplication       : Starting AnalyticsApplication v0.1.0-SNAPSHOT using Java 17.0.12 with PID 15792 (D:\Develop\jar-backup-20260912\platform-app-0.1.0-SNAPSHOT-6742197B.jar started by ASUS in D:\Develop_code\GraduationProject)
+2026-09-12T15:05:06.777+08:00  INFO 15792 --- [           main] c.g.analytics.AnalyticsApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-09-12T15:05:08.444+08:00  INFO 15792 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8091 (http)
+2026-09-12T15:05:08.447+08:00  INFO 15792 --- [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-12T15:05:08.463+08:00  INFO 15792 --- [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-12T15:05:08.471+08:00  INFO 15792 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-12T15:05:08.471+08:00  INFO 15792 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-12T15:05:08.505+08:00  INFO 15792 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-12T15:05:08.506+08:00  INFO 15792 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1638 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-12T15:05:09.283+08:00  INFO 15792 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Starting...
+2026-09-12T15:05:09.425+08:00  INFO 15792 --- [           main] com.zaxxer.hikari.pool.HikariPool        : meta-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@3e4d40ea
+2026-09-12T15:05:09.426+08:00  INFO 15792 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Start completed.
+2026-09-12T15:05:09.484+08:00  INFO 15792 --- [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-12T15:05:09.484+08:00  INFO 15792 --- [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-12T15:05:09.485+08:00  INFO 15792 --- [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-12T15:05:09.499+08:00  INFO 15792 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_meta (MySQL 8.0)
+2026-09-12T15:05:09.566+08:00  INFO 15792 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 16 migrations (execution time 00:00.039s)
+2026-09-12T15:05:09.579+08:00  INFO 15792 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_meta`: 17
+2026-09-12T15:05:09.586+08:00  INFO 15792 --- [           main] o.f.core.internal.command.DbMigrate      : Schema `analytics_meta` is up to date. No migration necessary.
+2026-09-12T15:05:09.589+08:00  INFO 15792 --- [           main] c.g.a.config.MetaFlywayInitializer       : analytics_meta 迁移完成: 执行 0 个脚本，版本 null
+2026-09-12T15:05:09.592+08:00  INFO 15792 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Starting...
+2026-09-12T15:05:09.598+08:00  INFO 15792 --- [           main] com.zaxxer.hikari.pool.HikariPool        : metric-publish-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@8f57e4c
+2026-09-12T15:05:09.598+08:00  INFO 15792 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Start completed.
+2026-09-12T15:05:09.605+08:00  INFO 15792 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_metric (MySQL 8.0)
+2026-09-12T15:05:09.615+08:00  INFO 15792 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.005s)
+2026-09-12T15:05:09.623+08:00  INFO 15792 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_metric`: 3
+2026-09-12T15:05:09.624+08:00  INFO 15792 --- [           main] o.f.core.internal.command.DbMigrate      : Schema `analytics_metric` is up to date. No migration necessary.
+2026-09-12T15:05:09.646+08:00  INFO 15792 --- [           main] c.g.a.config.MetricFlywayInitializer     : analytics_metric 迁移完成: 执行 0 个脚本，当前版本 3 (迁移历史 analytics_metric.flyway_schema_history)
+2026-09-12T15:05:10.013+08:00  INFO 15792 --- [           main] c.g.a.r.storage.LocalLandingStorage      : LocalLandingStorage root = D:\Develop_code\GraduationProject\landing
+2026-09-12T15:05:10.493+08:00  INFO 15792 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-12T15:05:11.304+08:00  INFO 15792 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8091 (http) with context path ''
+2026-09-12T15:05:11.318+08:00  INFO 15792 --- [           main] c.g.analytics.AnalyticsApplication       : Started AnalyticsApplication in 4.969 seconds (process running for 5.487)
+2026-09-12T15:05:11.639+08:00  INFO 15792 --- [           main] c.g.a.pipeline.PipelineRecoveryService   : R6-14 启动对账完成: pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]
+2026-09-12T15:05:11.825+08:00  INFO 15792 --- [nio-8091-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-12T15:05:11.826+08:00  INFO 15792 --- [nio-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-12T15:05:11.828+08:00  INFO 15792 --- [nio-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms

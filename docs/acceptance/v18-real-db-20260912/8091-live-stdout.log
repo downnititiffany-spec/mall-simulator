@@ -1,0 +1,50 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-12T15:06:02.196+08:00  INFO 39220 --- [           main] c.g.analytics.AnalyticsApplication       : Starting AnalyticsApplication v0.1.0-SNAPSHOT using Java 17.0.12 with PID 39220 (D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar started by ASUS in D:\Develop_code\GraduationProject)
+2026-09-12T15:06:02.200+08:00  INFO 39220 --- [           main] c.g.analytics.AnalyticsApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-09-12T15:06:03.780+08:00  INFO 39220 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8091 (http)
+2026-09-12T15:06:03.784+08:00  INFO 39220 --- [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-12T15:06:03.787+08:00  INFO 39220 --- [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-12T15:06:03.793+08:00  INFO 39220 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-12T15:06:03.793+08:00  INFO 39220 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-12T15:06:03.827+08:00  INFO 39220 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-12T15:06:03.828+08:00  INFO 39220 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1534 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-12T15:06:04.549+08:00  INFO 39220 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Starting...
+2026-09-12T15:06:04.758+08:00  INFO 39220 --- [           main] com.zaxxer.hikari.pool.HikariPool        : meta-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@2c2c3947
+2026-09-12T15:06:04.762+08:00  INFO 39220 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Start completed.
+2026-09-12T15:06:04.839+08:00  INFO 39220 --- [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-12T15:06:04.840+08:00  INFO 39220 --- [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-12T15:06:04.840+08:00  INFO 39220 --- [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-12T15:06:04.855+08:00  INFO 39220 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_meta (MySQL 8.0)
+2026-09-12T15:06:04.920+08:00  INFO 39220 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 17 migrations (execution time 00:00.036s)
+2026-09-12T15:06:04.941+08:00  INFO 39220 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_meta`: 17
+2026-09-12T15:06:04.968+08:00  INFO 39220 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta` to version "18 - source warehouse prefix"
+2026-09-12T15:06:05.096+08:00  INFO 39220 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema `analytics_meta`, now at version v18 (execution time 00:00.116s)
+2026-09-12T15:06:05.098+08:00  INFO 39220 --- [           main] c.g.a.config.MetaFlywayInitializer       : analytics_meta 迁移完成: 执行 1 个脚本，版本 18
+2026-09-12T15:06:05.100+08:00  INFO 39220 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Starting...
+2026-09-12T15:06:05.103+08:00  INFO 39220 --- [           main] com.zaxxer.hikari.pool.HikariPool        : metric-publish-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@3a109ff7
+2026-09-12T15:06:05.103+08:00  INFO 39220 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Start completed.
+2026-09-12T15:06:05.109+08:00  INFO 39220 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3306/analytics_metric (MySQL 8.0)
+2026-09-12T15:06:05.115+08:00  INFO 39220 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.003s)
+2026-09-12T15:06:05.120+08:00  INFO 39220 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_metric`: 3
+2026-09-12T15:06:05.121+08:00  INFO 39220 --- [           main] o.f.core.internal.command.DbMigrate      : Schema `analytics_metric` is up to date. No migration necessary.
+2026-09-12T15:06:05.141+08:00  INFO 39220 --- [           main] c.g.a.config.MetricFlywayInitializer     : analytics_metric 迁移完成: 执行 0 个脚本，当前版本 3 (迁移历史 analytics_metric.flyway_schema_history)
+2026-09-12T15:06:05.569+08:00  INFO 39220 --- [           main] c.g.a.r.storage.LocalLandingStorage      : LocalLandingStorage root = D:\Develop_code\GraduationProject\landing
+2026-09-12T15:06:05.861+08:00  INFO 39220 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-12T15:06:06.626+08:00  INFO 39220 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8091 (http) with context path ''
+2026-09-12T15:06:06.642+08:00  INFO 39220 --- [           main] c.g.analytics.AnalyticsApplication       : Started AnalyticsApplication in 4.878 seconds (process running for 5.395)
+2026-09-12T15:06:06.787+08:00  INFO 39220 --- [           main] c.g.a.pipeline.PipelineRecoveryService   : R6-14 启动对账完成: pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]
+2026-09-12T15:06:06.890+08:00  INFO 39220 --- [nio-8091-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-12T15:06:06.890+08:00  INFO 39220 --- [nio-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-12T15:06:06.891+08:00  INFO 39220 --- [nio-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms

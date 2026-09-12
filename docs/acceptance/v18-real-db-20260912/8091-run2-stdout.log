@@ -1,0 +1,11 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-12T15:01:52.763+08:00  INFO 36228 --- [           main] c.g.analytics.AnalyticsApplication       : Starting AnalyticsApplication v0.1.0-SNAPSHOT using Java 17.0.12 with PID 36228 (D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar started by ASUS in D:\Develop_code\GraduationProject)
+2026-09-12T15:01:52.767+08:00  INFO 36228 --- [           main] c.g.analytics.AnalyticsApplication       : No active profile set, falling back to 1 default profile: "default"

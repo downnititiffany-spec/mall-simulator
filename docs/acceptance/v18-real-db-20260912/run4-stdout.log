@@ -1,0 +1,23 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-12T15:05:31.473+08:00  INFO 16004 --- [           main] c.g.analytics.AnalyticsApplication       : Starting AnalyticsApplication v0.1.0-SNAPSHOT using Java 17.0.12 with PID 16004 (D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar started by ASUS in D:\Develop_code\GraduationProject)
+2026-09-12T15:05:31.476+08:00  INFO 16004 --- [           main] c.g.analytics.AnalyticsApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-09-12T15:05:32.992+08:00  INFO 16004 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8091 (http)
+2026-09-12T15:05:32.995+08:00  INFO 16004 --- [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-12T15:05:32.997+08:00  INFO 16004 --- [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-12T15:05:33.004+08:00  INFO 16004 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-12T15:05:33.004+08:00  INFO 16004 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-12T15:05:33.036+08:00  INFO 16004 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-12T15:05:33.037+08:00  INFO 16004 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1468 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-12T15:05:33.797+08:00  INFO 16004 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Starting...
