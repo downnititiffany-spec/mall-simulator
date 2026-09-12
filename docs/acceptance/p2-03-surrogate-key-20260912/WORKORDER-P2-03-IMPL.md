@@ -46,3 +46,17 @@
 - `event_id`/`behavior_id` 的单一所有者是 `DwdSql.scala:31`，**本任务不动**（D-055）。
 - 出生证：`surrogate-key.v1.json` 的 23 向量已由总控**独立重算**复核（并因此查出泳道草案的 `key_hex8` 缺"清符号位"与散文空值记号两处载体缺陷）⇒ 测试夹具**必须**以契约文件为准，**不得**引用泳道 `raw/draft-vectors.tsv`。
 - 期望产出：`docs/acceptance/p2-03-surrogate-key-20260912/IMPL-REPORT.md`（含 E1/E2/E3 证据与 A6 逐条读数）＋ `raw/` 原始日志。
+
+---
+
+## 4 补记：D-095 裁决（2026-09-12 20:07，总控；**上文原文全部保留，本条以此为准**）
+
+**触发**：本单 §0【裁 D-093】写「本任务**零改动** `TradeDwdJob`」，而 §1 **A1 的加法列表含 `dw_dwd.dwd_order_detail`** —— 订单明细的 `user_key`／`product_key`／`category_key` 只能在 `TradeDwdJob` 内计算 ⇒ **单内自相矛盾**，实施者无法同时满足。20:0x 读实施泳道工作区 diff 后裁决：
+
+1. **D-093 口径收窄**为：「**不得新增 `order_key`**（`order` 不在契约实体枚举 `{user, product, category, brand, coupon}`）＋ 既有 `orderKey`／`userKey`／`productKey` 的 `IdCodec` 旧列逻辑**逐字不变**」。「零改动 `TradeDwdJob`」更正为「**只加不改**」。
+2. **允许** `orderDetailInsertSql` 增参 `sourceSystem: String`（A3 要求源编码取自既有唯一所有者 `OdsLoadSql.sourceSystemLiteral`，而 `tdw_tmp`／`OUT_SCHEMA` 不含 `source_system`）⇒ 随之的 `IdCodecSpec`／`WarehouseNamespaceSpec` 机械调用点更新**允许**。
+3. **既有断言口径变更须显式交代**：`IdCodecSpec` 中 `payload_user_id` 计数 `3 → 5`（新增 `user_key`／`product_key` 各再引用一次原始 id，属 A2 的结构性后果）**予以认可**，但必须：① 在 `IMPL-REPORT.md` 单列「既有断言口径变更」条目，写清原断言／新断言／原因／原意图如何仍被保住；② 保持**精确值**断言，不得放宽为 `>=` 或删除；③ 保留新增的「旧列逐字保留」「A5 JOIN 谓词不得改动」「订单明细不得出现 `order_key`」三条断言。
+4. **收尾范围硬判据**：最终 `git diff --name-only` 必须**恰好**等于下列 11 个文件（另有证据文件）：`spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala`（新）、`spark-jobs/src/test/scala/com/graduation/analytics/SurrogateKeyVectorSupport.scala`（新）、`spark-jobs/src/test/scala/com/graduation/analytics/sql/SurrogateKeySpec.scala`（新）、`.../sql/DwdSql.scala`、`.../sql/DimSql.scala`、`.../job/TradeDwdJob.scala`、`.../job/LocalSchemaInitJob.scala`、`warehouse/ddl/01-dwd.sql`、`warehouse/ddl/02-dims.sql`、`.../test/.../IdCodecSpec.scala`、`.../test/.../WarehouseNamespaceSpec.scala`。**出现额外文件即越界**，须回退而非解释。
+5. **不变项**：禁删 `IdCodec.scala`／`IdCodecSpec.scala`（A8）；禁改 `contract-specs/**`；禁改看板；禁 git 写操作；Java 侧对账按 **P2-03-j** 放行口径（只新增 `platform-common` 文件、运行时读契约向量、不内嵌期望值）。
+6. **A5／A7 口径不变**：JOIN 本轮**不得**改动，等价性对照未实测即写「未实测」；真链覆盖须原样写明「user/product ✅；category/brand/coupon **未取证（无数据）**」并附命令、输出与**阳性对照**（陷阱 #54）。
+7. **父侧独立核对（20:0x 只读，非复现）**：`srcSys` 定义在 `WarehouseNamespaceSpec.scala:224`（`:252` 引用可编译）；`orderDetailInsertSql` 调用点 **4 处全部同步**（`TradeDwdJob.scala:81/128`、`IdCodecSpec.scala:78/112`、`WarehouseNamespaceSpec.scala:252`，其余命中均为文档）；三个新文件确实**运行时读** `contract-specs/specs/surrogate-key.v1.json`（`SurrogateKeyVectorSupport.scala:22`）且 `SurrogateKeySpec.scala:16` 自述**不内嵌期望值**。
