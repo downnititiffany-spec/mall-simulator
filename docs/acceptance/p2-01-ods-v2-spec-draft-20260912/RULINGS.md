@@ -180,3 +180,21 @@ P2-01 的验收**不得**包含任何 per-source 命名的断言。
 - 因此 CT-0（契约 README 当前态版本串 `1.2.0` → `1.3.0`）状态改为：**登记，未落地**；落地前提是「同一工作区的并发写者边界先澄清」，否则每次写入都可能被外部覆盖。
 - 其余 CT-1/CT-2/CT-3 排序**不受影响**（本就与 F-31 同批次，随 `VERSION 1.3.0 → 1.4.0` 落地）。
 - 未取证：无文件审计/句柄级证据指认具体进程；F-32 只到「同一工作区有 Codex app-server 在跑 ＋ `contract-specs` 目录 ACL 含其沙箱主体」这一层。
+
+## D-059 v2 新增列**末尾追加**；v1 十四列的名字与物理序号冻结（2026-09-12 12:5x）
+
+- **裁决**：采纳施工泳道的保守解——v1 十四列的名字与物理序号**一格不动**，v2 新增列追加在 `ingest_batch_id` 之后。
+- **理由**：D-052(c) 的约束对象是"不改名/不改类型/不删列"；**按列位置读取 Parquet 的既有外部消费方零感知**才是"加法扩列"的完整含义。计划书 L79 的"12 公共列"是**逻辑分组**叙述，不构成物理布局要求。
+- **附加要求**（否则本条不算落地）：① `OdsV2Columns.scala` 注释写明"新增列位置＝末尾追加、列序单一所有者"；② 增一条**结构断言**：v1 十四列的名字与序号逐格等于 v1，且新增列序号紧随其后——这是防未来重排的机械守卫，不靠人读。
+- **未取证**：新增列的序号区间取决于 v2 列集最终定稿，本条不冻结该区间；以 `OdsV2Columns.scala` 为单一所有者。
+
+## D-060 端到端 Hive 断言只走真 `spark-submit` 进程；**禁止**为此改 `spark-jobs/pom.xml`（2026-09-12 12:5x）
+
+- **触发**：施工泳道实测两个端到端 suite 在 `mvn test` 下 `beforeAll` ABORT（`Unable to instantiate SparkSession with Hive support because Hive classes are not found.`），并**自报根因**为「`spark-hive_2.12` 被声明为 `provided`，故不在测试 classpath」。
+- **总控实测更正（该归因不成立）**：`spark-jobs/pom.xml` **从未声明** `spark-hive_2.12`——只有 `spark-core_2.12`/`spark-sql_2.12`/`hadoop-client`，三者 `provided`；而 Maven 的 test classpath **本就包含 `provided`**。⇒ 症状真实、**归因错误**。此为「泳道自报归因亦须复核」的第 2 例，与看板 F-38 ③ 同族。
+- **且离线不可解析（实测）**：`D:\maven_repository` 内 `org\apache\spark\spark-hive_2.12` **只有 3.3.2**（无 3.5.1）；`datanucleus-core` **整目录缺失**；`hive-metastore` 只有 2.3.9。⇒ 任何"新增 test 域依赖"或"profile 提权"在 `mvn -o` 下**必然失败**；以 3.3.2 混 3.5.1 属伪造环境，**禁止**。
+- **裁决**：否决 (a)(b)；端到端断言走 **(c) 真 `spark-submit` 进程**。可行性实测：`D:\Develop\spark-3.5.1-bin-hadoop3\jars\` 含 `spark-hive_2.12-3.5.1.jar` ＋ 14 个 `hive-*` ＋ 3 个 `datanucleus*` ＋ `derby-10.14.2.0.jar`，`bin\spark-submit.cmd` 在位；既有先例 `.verify\p1-06-t2-run.ps1`、`.verify\p1-06-t2-replay-batch31.ps1`。
+- **硬条件**：① 临时 warehouse 与临时 Derby metastore 均置于 `target/` 之下，并以**响亮断言**保证解析出的 `warehouse.dir` 位于 `target\` 内——`D:\Develop_code\GraduationProject\spark-warehouse`（既有 6 库真仓库）与既有 metastore **绝不可写**；② jar 覆盖/还原严格按 `p2-01-ods-v2-20260912/ORDER-1.md` R1 (a)–(f)：备份并核对冻结 jar `234,038 B / mtime 2026-09-11 18:19:03 / sha256 F9E879AADEA71C9301B079FC70D714C3DEF6DE30902DB39FF92F428C596318A8`，跑完**还原并复验同一 sha256**（总控 2026-09-12 12:5x 复核该值未变）；③ 每轮 spark-submit 的完整命令行、全量 `--conf`、stdout/stderr、退出码全量落盘，判定从原始输出取证；④ 证据级别标注为 **E3（本地真实链）**——**不是** E2，也**不是** T2 权威 55 条链复跑（后者归 M1-11）。
+- **禁止**：为"让 E2 也能建表"改动 `spark-jobs/pom.xml` 依赖；若确需，属新任务且须先入规格。
+- **附带批准**：`JsonObjectSlicer` 的纯函数断言（A5/A5b/A4b）移入不建表的 suite，先取红。
+- **已确认只读事实**（补 D-057）：`_metadata.file_path` 实测非空（`file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl`），而 `input_file_name()` 在同一读法下返回**空串** ⇒ `landing_file` 必须取自 `_metadata.file_path`。
