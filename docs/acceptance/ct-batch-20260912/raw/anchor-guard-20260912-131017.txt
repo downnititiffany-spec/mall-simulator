@@ -1,0 +1,191 @@
+== contract-specs 裸锚点门禁（D-065 裁决 3）证据 ==
+时间：2026-09-12 13:10:17
+HEAD：d3fd74edb72844a8c917e1134991fcc5fe3adf4b
+台账是否已存在：False
+台账 sha256（若存在）：（不存在）
+
+===== 1) 负向对照：台账不存在时门禁必须失败 =====
+  命令：pwsh -NoProfile -File scripts\check-bare-anchors.ps1
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 306 ；裸锚点出现次数 = 201 ；去重后（文件|锚点）= 113 行
+  |     contract-specs\openapi\generator-api.v1.yaml              65 处
+  |     contract-specs\README.md                                  42 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=42  .yaml=65
+  |   [门禁失败] 台账不存在：D:\Develop_code\GraduationProject\scripts\contract-bare-anchors.allowlist.txt ⇒ 先跑 -WriteLedger 建基线。
+  >>> 退出码 = 1
+
+===== 2) 首次建台账（-WriteLedger） =====
+  命令：pwsh -NoProfile -File scripts\check-bare-anchors.ps1 -WriteLedger
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 306 ；裸锚点出现次数 = 201 ；去重后（文件|锚点）= 113 行
+  |     contract-specs\openapi\generator-api.v1.yaml              65 处
+  |     contract-specs\README.md                                  42 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=42  .yaml=65
+  | 
+  |   已写出台账：D:\Develop_code\GraduationProject\scripts\contract-bare-anchors.allowlist.txt（121 行，其中数据行 113，出现次数合计 201）
+  >>> 退出码 = 0
+
+===== 3) 建台账后门禁（期望 PASS，退出码 0） =====
+  命令：pwsh -NoProfile -File scripts\check-bare-anchors.ps1
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 306 ；裸锚点出现次数 = 201 ；去重后（文件|锚点）= 113 行
+  |     contract-specs\openapi\generator-api.v1.yaml              65 处
+  |     contract-specs\README.md                                  42 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=42  .yaml=65
+  | 
+  |   == 门禁（台账 113 行 / 基线 113 行）==
+  | 
+  |   结果 = PASS（裸锚点 201 处 / 113 行，全部在台账内；台账 113 行 ≤ 基线 113）
+  >>> 退出码 = 0
+
+台账：scripts\contract-bare-anchors.allowlist.txt  sha256=7EFAA774399BBB23EA736816239243AB8F016D317981D7744B1D9DF1F3887156  数据行=113  文件字节=7482
+台账出现次数合计 = 201
+
+== 副本根 = C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs（仓库外；注入只发生在副本里）==
+
+===== 4) 副本未注入 ⇒ 必须 PASS（证明副本本身不是失败原因） =====
+  命令：pwsh -NoProfile -File scripts\check-bare-anchors.ps1 -ContractRoot C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs -LedgerPath D:\Develop_code\GraduationProject\scripts\contract-bare-anchors.allowlist.txt
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 306 ；裸锚点出现次数 = 201 ；去重后（文件|锚点）= 113 行
+  |     contract-specs\openapi\generator-api.v1.yaml              65 处
+  |     contract-specs\README.md                                  42 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=42  .yaml=65
+  | 
+  |   == 门禁（台账 113 行 / 基线 113 行）==
+  | 
+  |   结果 = PASS（裸锚点 201 处 / 113 行，全部在台账内；台账 113 行 ≤ 基线 113）
+  >>> 退出码 = 0
+
+  副本 README.md 注入：sha256 478E526EA044CC4BAE91977A8AFEB12187421992AD4B6587B38C25696F3FC5D5 → A410576D9B6DBDA227AE6724F3AA37D0FD8309A77193EE362D15BE4B6871CF79
+
+===== 5) 副本注入全新裸锚点 §9.9 L999 ⇒ 必须 FAIL 且点名该锚点 =====
+  命令：pwsh -NoProfile -File scripts\check-bare-anchors.ps1 -ContractRoot C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs -LedgerPath D:\Develop_code\GraduationProject\scripts\contract-bare-anchors.allowlist.txt
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 307 ；裸锚点出现次数 = 202 ；去重后（文件|锚点）= 114 行
+  |     contract-specs\openapi\generator-api.v1.yaml              65 处
+  |     contract-specs\README.md                                  43 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=43  .yaml=65
+  | 
+  |   == 门禁（台账 113 行 / 基线 113 行）==
+  |   [门禁失败] 新增裸锚点 1 处（D-065：裸锚点不得新增）——
+  |     contract-specs\README.md   §§9.9 L999
+  |     ⇒ 修法：给该锚点补**文件名**或**在册版本前缀**（例：`docs/contracts/event-contract.md §2.5 L92-L100`）。
+  | 
+  |   结果 = FAIL（裸锚点门禁未通过；见上列失败项）
+  >>> 退出码 = 1
+
+  重复行对照：台账首行 = contract-specs\openapi\generator-api.v1.yaml|§1 L25|2 → 目标文件 C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs\openapi\generator-api.v1.yaml 命中行号 = 539
+
+===== 6) 副本内把台账已登记的锚点重复一次 ⇒ 出现次数升高必须 FAIL =====
+  命令：pwsh -NoProfile -File scripts\check-bare-anchors.ps1 -ContractRoot C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs -LedgerPath D:\Develop_code\GraduationProject\scripts\contract-bare-anchors.allowlist.txt
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 308 ；裸锚点出现次数 = 203 ；去重后（文件|锚点）= 114 行
+  |     contract-specs\openapi\generator-api.v1.yaml              66 处
+  |     contract-specs\README.md                                  43 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=43  .yaml=66
+  | 
+  |   == 门禁（台账 113 行 / 基线 113 行）==
+  |   [门禁失败] 新增裸锚点 1 处（D-065：裸锚点不得新增）——
+  |     contract-specs\README.md   §§9.9 L999
+  |     ⇒ 修法：给该锚点补**文件名**或**在册版本前缀**（例：`docs/contracts/event-contract.md §2.5 L92-L100`）。
+  |   [门禁失败] 台账内锚点出现次数升高 1 处——
+  |     contract-specs\openapi\generator-api.v1.yaml :: §1 L25  台账=2 实测=3
+  | 
+  |   结果 = FAIL（裸锚点门禁未通过；见上列失败项）
+  >>> 退出码 = 1
+
+===== 7) 在注入了新裸锚点的副本上跑 -WriteLedger ⇒ 必须"拒绝重建"（台账只减不增） =====
+  命令：pwsh -NoProfile -File scripts\check-bare-anchors.ps1 -ContractRoot C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs -LedgerPath C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\ledger-copy.txt -WriteLedger
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 308 ；裸锚点出现次数 = 203 ；去重后（文件|锚点）= 114 行
+  |     contract-specs\openapi\generator-api.v1.yaml              66 处
+  |     contract-specs\README.md                                  43 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=43  .yaml=66
+  | 
+  |   [拒绝重建] 台账只减不增：本次基线会新增/升高以下条目 ——
+  |     新增 contract-specs\README.md :: §9.9 L999
+  |     升高 contract-specs\openapi\generator-api.v1.yaml :: §1 L25 → 3
+  |   ⇒ 先按 D-065 规则给锚点补文件名/版本前缀（或经裁决后 -Force 重建并在看板登记）。
+  >>> 退出码 = 1
+
+===== 判定 =====
+  期望退出码：1 / 0 / 0 / 0 / 1 / 1 / 1   实测：1 / 0 / 0 / 0 / 1 / 1 / 1
+  总判定 = 全部符合预期 PASS
+  仓库内 contract-specs 是否被改动：0 条（必须为 0）
+
+===== 8) 消息形态修正后复跑（脚本 sha256=1DA788177146464FC26809F5D0D6946FCDC162A2AFD7E5F04B96B5C0C0C4268B）=====
+  修正内容：新裸锚点失败项的显示由 `§§9.9 L999` 改为 `§9.9 L999`（纯显示，判据/计数/退出码逻辑未动）。
+
+  --- 8a) 仓库内门禁（期望 PASS / 0） ---
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 306 ；裸锚点出现次数 = 201 ；去重后（文件|锚点）= 113 行
+  |     contract-specs\openapi\generator-api.v1.yaml              65 处
+  |     contract-specs\README.md                                  42 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=42  .yaml=65
+  | 
+  |   == 门禁（台账 113 行 / 基线 113 行）==
+  | 
+  |   结果 = PASS（裸锚点 201 处 / 113 行，全部在台账内；台账 113 行 ≤ 基线 113）
+  >>> 退出码 = 0
+
+  --- 8b) 仓库外已注入副本（期望 FAIL / 1，且消息无双 §） ---
+  |   [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  |   [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+  | 
+  |   == 裸锚点实况（扫描根 C:\Users\ASUS\AppData\Local\Temp\anchor-neg-20260912-131017\contract-specs，文件 7 个）==
+  |   锚点总数（含合规）= 308 ；裸锚点出现次数 = 203 ；去重后（文件|锚点）= 114 行
+  |     contract-specs\openapi\generator-api.v1.yaml              66 处
+  |     contract-specs\README.md                                  43 处
+  |     contract-specs\schemas\canonical-event.v1.schema.json     93 处
+  |     contract-specs\schemas\generation-artifact-manifest.v1.schema.json1 处
+  |   非 markdown 载体占比：.json=94  .md=43  .yaml=66
+  | 
+  |   == 门禁（台账 113 行 / 基线 113 行）==
+  |   [门禁失败] 新增裸锚点 1 处（D-065：裸锚点不得新增）——
+  |     contract-specs\README.md  §9.9 L999
+  |     ⇒ 修法：给该锚点补**文件名**或**在册版本前缀**（例：`docs/contracts/event-contract.md §2.5 L92-L100`）。
+  |   [门禁失败] 台账内锚点出现次数升高 1 处——
+  |     contract-specs\openapi\generator-api.v1.yaml :: §1 L25  台账=2 实测=3
+  | 
+  |   结果 = FAIL（裸锚点门禁未通过；见上列失败项）
+  >>> 退出码 = 1
