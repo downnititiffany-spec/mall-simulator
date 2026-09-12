@@ -1,0 +1,259 @@
+file	section	line	class	resolved_doc	evidence
+openapi\generator-api.v1.yaml	3.1	62	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 4 个）
+openapi\generator-api.v1.yaml	4.4	158	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	158	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=2 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	154	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	134	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=清单）
+openapi\generator-api.v1.yaml	4.4	156	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	153	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	157	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	158	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	153	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	133	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	133	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	154	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	138	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=进度）
+openapi\generator-api.v1.yaml	4.2	134	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=进度）
+openapi\generator-api.v1.yaml	4.4	155	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	138	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	156	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	135	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	157	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	158	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=凭据只存引用）
+openapi\generator-api.v1.yaml	4.2	132	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	158	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	158	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=PUT /api/v1/targets,PUT /api/v1/targets/{id}）
+openapi\generator-api.v1.yaml	4.2	132	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	304	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	153	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	133	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	133	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	133	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	133	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	153	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=2 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	153	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=2 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	153	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	132	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	138	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	134	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	134	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.4	154	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	134	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	138	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	138	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	133	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	133	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	133	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.4	157	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.3	148	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	133	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	4.2	133	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	3.1	62	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 4 个）
+openapi\generator-api.v1.yaml	4.3	149	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	3.3	82	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	278	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=capabilities(config)）
+openapi\generator-api.v1.yaml	4.1.1.3	240	V-A	d	标签仅存在于该文档
+openapi\generator-api.v1.yaml	4.4	304	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.1.1.3	241	V-A	d	标签仅存在于该文档
+openapi\generator-api.v1.yaml	1	25	V-C		无 token 可核对，候选文档 5 个
+openapi\generator-api.v1.yaml	1	25	V-C		无 token 可核对，候选文档 5 个
+openapi\generator-api.v1.yaml	4.2	136	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	4.2	136	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+openapi\generator-api.v1.yaml	3	152	V-C		无 token 可核对，候选文档 5 个
+openapi\generator-api.v1.yaml	4.2	136	V-C		无 token 可核对，候选文档 3 个
+openapi\generator-api.v1.yaml	1	26	V-C		无 token 可核对，候选文档 5 个
+schemas\generation-artifact-manifest.v1.schema.json	4.3	149	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+schemas\generation-artifact-manifest.v1.schema.json	4.1	120	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=单个制品文件的清单）
+schemas\generation-artifact-manifest.v1.schema.json	1	25	V-C		无 token 可核对，候选文档 5 个
+schemas\generation-artifact-manifest.v1.schema.json	4.4	153	V-C		无 token 可核对，候选文档 3 个
+schemas\generation-artifact-manifest.v1.schema.json	1	25	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=业务统计按 event_time）
+schemas\generation-artifact-manifest.v1.schema.json	4	169	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+schemas\generation-artifact-manifest.v1.schema.json	1	25	V-C		无 token 可核对，候选文档 5 个
+schemas\generation-artifact-manifest.v1.schema.json	1	17	V-C		无 token 可核对，候选文档 5 个
+schemas\generation-artifact-manifest.v1.schema.json	1	11	V-C		无 token 可核对，候选文档 5 个
+schemas\generation-artifact-manifest.v1.schema.json	4.1	118	V-C		无 token 可核对，候选文档 3 个
+schemas\generation-artifact-manifest.v1.schema.json	4.2	135	V-C		无 token 可核对，候选文档 3 个
+schemas\generation-artifact-manifest.v1.schema.json	4.3	149	V-C		无 token 可核对，候选文档 3 个
+schemas\generation-artifact-manifest.v1.schema.json	4.1	131	V-C		无 token 可核对，候选文档 3 个
+schemas\generation-artifact-manifest.v1.schema.json	4.1.1.3	258	V-A	d	标签仅存在于该文档
+schemas\generation-artifact-manifest.v1.schema.json	4.2	281	V-C		无 token 可核对，候选文档 3 个
+schemas\generation-artifact-manifest.v1.schema.json	4.3	295	V-C		无 token 可核对，候选文档 3 个
+schemas\generation-artifact-manifest.v1.schema.json	1	25	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	28	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+schemas\canonical-event.v1.schema.json	1	28	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+schemas\canonical-event.v1.schema.json	1	28	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+schemas\canonical-event.v1.schema.json	1	12	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	27	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	3	152	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	3	160	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	14	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	25	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	15	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	4	169	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	16	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+schemas\canonical-event.v1.schema.json	1	17	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	18	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	27	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	19	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	28	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	28	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	27	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	26	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	26	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	1	25	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=一律带时区）
+schemas\canonical-event.v1.schema.json	2.1	39	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2	32	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.1	43	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.1	44	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=非法枚举被接受）
+schemas\canonical-event.v1.schema.json	2.1	45	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.1	46	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.1	47	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	49	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	53	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	54	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	55	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	56	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	57	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.2	58	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.2	59	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	49	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	53	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	54	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	55	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	56	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.2	57	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.2	58	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.2	59	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.3	61	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.3	69	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.3	65	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.3	66	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.3	67	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.3	68	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	3	154	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.3	69	V-C		无 token 可核对，候选文档 3 个
+schemas\canonical-event.v1.schema.json	2.4	71	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	75	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	76	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	77	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	84	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	84	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	86	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	87	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	88	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.4	89	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	90	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	78	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	166	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.4	79	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	80	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.5	92	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	166	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.5	96	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.5	97	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.5	98	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.5	99	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.5	100	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.6	102	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.6	106	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.6	107	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.6	108	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.6	109	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.7	111	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.7	115	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.7	116	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.7	117	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.7	118	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.7	119	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.7	120	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.8	122	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	167	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.8	126	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.8	127	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.8	128	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.8	129	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.8	130	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	132	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	136	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	137	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	138	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	139	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.9	139	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.9	132	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	136	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	137	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	138	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	139	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.9	139	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\canonical-event.v1.schema.json	2.10	141	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.10	146	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.10	145	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.10	146	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.10	147	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.4	87	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.9	137	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	2.10	148	V-A	d	标签仅存在于该文档
+schemas\canonical-event.v1.schema.json	4	168	V-C		无 token 可核对，候选文档 5 个
+schemas\ingestion-manifest.v1.schema.json	1	25	V-C		无 token 可核对，候选文档 5 个
+README.md	3.1	64	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 4 个）
+README.md	3.1	60	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 4 个）
+README.md	3.1	64	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=analytics-server）
+README.md	3.4	96	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=analytics-server）
+README.md	1	11	V-C		多文档同分: docs/superpowers/specs/2026-09-11-mall-agnostic-platform-design.md=1 docs/contracts/event-contract.md=1
+README.md	1	28	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	1	28	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	1	28	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=固定值：mock-mall,const: "mock-mall",source_system）
+README.md	1	16	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	1	17	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=event_type,EventContract.SCHEMA_VERSION）
+README.md	3	152	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=^\d+(\.\d{1,2})?$,$defs.amount,$ref,type: string）
+README.md	1	26	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	4	168	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=$defs.iso8601_time,$ref）
+README.md	1	25	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	2.2	57	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=order_id,stock_released,stock_reserved）
+README.md	2.4	78	V-A	d	标签仅存在于该文档
+README.md	4	166	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=条件（预留时必填，释放时如有）,order_id,stock_released,stock_reserved）
+README.md	2.9	138	V-A	d	标签仅存在于该文档
+README.md	4.2	135	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=2 个（候选文档 3 个）
+README.md	4.3	149	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	1	28	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=允许,additionalProperties: true,x-unspecified）
+README.md	1	27	V-B	docs/contracts/event-contract.md	token 命中=2 个（候选文档 5 个）
+README.md	1	27	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=const,mock-mall,source_system,synthetic）
+README.md	1	16	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	2.3	69	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 3 个）
+README.md	2.10	146	V-A	d	标签仅存在于该文档
+README.md	2.4	77	V-A	d	标签仅存在于该文档
+README.md	1	28	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	1	26	V-B	docs/contracts/event-contract.md	token 命中=1 个（候选文档 5 个）
+README.md	1	26	V-C		无 token 可核对，候选文档 5 个
+README.md	3.1	64	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=event_outbox）
+README.md	4.1	126	V-C		无 token 可核对，候选文档 3 个
+README.md	4.1	108	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.1	107	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.1	108	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.1	126	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.1	118	V-C		无 token 可核对，候选文档 3 个
+README.md	4.2	132	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.2	134	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.2	135	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.2	138	V-C		token 在任何候选文档的 L/L+1 都未命中（tokens=generation_event_stat）
+README.md	4.3	149	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.4	153	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）
+README.md	4.4	158	V-B	docs/项目完整实施指导书 V2.1.md	token 命中=1 个（候选文档 3 个）

@@ -1,0 +1,259 @@
+file	section	old_line	v1_at_L	v1_at_Lplus1	v23_hits_for_Lplus1
+openapi\generator-api.v1.yaml	3.1	62	| 参考商城 | `reference-mall` / 8090 | 用户、商品、分类、库存、购物车、订单、支付、退款、Outbox 事件 | 分析任务、Spark/Hive、生成场景、直接写分析平台 |	| 模拟数据生成器 | `synthetic-data-generator` / 8092 或 CLI | 固定 seed 的场景生成、负载控制、脏数据策略、运行报告 | 直接操作商城数据库；依赖商城内部 Service/Mapper；写平台业务库；触发平台流水线 |	75
+openapi\generator-api.v1.yaml	4.4	158	- `GET /api/v1/scenarios`：场景定义和输入约束。	- `POST/PUT/GET /api/v1/targets` 与 `POST /targets/{id}/test`：目标商城配置和连通性检查。	304
+openapi\generator-api.v1.yaml	4.4	158	- `GET /api/v1/scenarios`：场景定义和输入约束。	- `POST/PUT/GET /api/v1/targets` 与 `POST /targets/{id}/test`：目标商城配置和连通性检查。	304
+openapi\generator-api.v1.yaml	4.4	154	- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	- `GET /api/v1/generation-runs/{id}`：状态、进度、计数、失败摘要。	300
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.4	156	- `POST /api/v1/generation-runs/{id}/cancel`：幂等取消。	- `GET /api/v1/generation-runs/{id}/artifacts`：文件、checksum、清单。	302
+openapi\generator-api.v1.yaml	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+openapi\generator-api.v1.yaml	4.4	157	- `GET /api/v1/generation-runs/{id}/artifacts`：文件、checksum、清单。	- `GET /api/v1/scenarios`：场景定义和输入约束。	303
+openapi\generator-api.v1.yaml	4.4	158	- `GET /api/v1/scenarios`：场景定义和输入约束。	- `POST/PUT/GET /api/v1/targets` 与 `POST /targets/{id}/test`：目标商城配置和连通性检查。	304
+openapi\generator-api.v1.yaml	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.4	154	- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	- `GET /api/v1/generation-runs/{id}`：状态、进度、计数、失败摘要。	300
+openapi\generator-api.v1.yaml	4.2	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.4	155	- `GET /api/v1/generation-runs/{id}`：状态、进度、计数、失败摘要。	- `POST /api/v1/generation-runs/{id}/cancel`：幂等取消。	301
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+openapi\generator-api.v1.yaml	4.4	156	- `POST /api/v1/generation-runs/{id}/cancel`：幂等取消。	- `GET /api/v1/generation-runs/{id}/artifacts`：文件、checksum、清单。	302
+openapi\generator-api.v1.yaml	4.2	135	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	281
+openapi\generator-api.v1.yaml	4.4	157	- `GET /api/v1/generation-runs/{id}/artifacts`：文件、checksum、清单。	- `GET /api/v1/scenarios`：场景定义和输入约束。	303
+openapi\generator-api.v1.yaml	4.4	158	- `GET /api/v1/scenarios`：场景定义和输入约束。	- `POST/PUT/GET /api/v1/targets` 与 `POST /targets/{id}/test`：目标商城配置和连通性检查。	304
+openapi\generator-api.v1.yaml	4.2	132	|---|---|---|	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	278
+openapi\generator-api.v1.yaml	4.4	158	- `GET /api/v1/scenarios`：场景定义和输入约束。	- `POST/PUT/GET /api/v1/targets` 与 `POST /targets/{id}/test`：目标商城配置和连通性检查。	304
+openapi\generator-api.v1.yaml	4.4	158	- `GET /api/v1/scenarios`：场景定义和输入约束。	- `POST/PUT/GET /api/v1/targets` 与 `POST /targets/{id}/test`：目标商城配置和连通性检查。	304
+openapi\generator-api.v1.yaml	4.2	132	|---|---|---|	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	278
+openapi\generator-api.v1.yaml	4.4	304	- 退款：按 `refund_id + event_time + ingest_time + event_id` 取最新；累计退款不得超过实付。	- 去重排序：同一业务键按 event_time、ingest_time、event_id 确定唯一结果，保证重跑稳定。	452
+openapi\generator-api.v1.yaml	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+openapi\generator-api.v1.yaml	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+openapi\generator-api.v1.yaml	4.2	132	|---|---|---|	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	278
+openapi\generator-api.v1.yaml	4.2	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.4	154	- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	- `GET /api/v1/generation-runs/{id}`：状态、进度、计数、失败摘要。	300
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+openapi\generator-api.v1.yaml	4.2	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+openapi\generator-api.v1.yaml	4.2	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.4	157	- `GET /api/v1/generation-runs/{id}/artifacts`：文件、checksum、清单。	- `GET /api/v1/scenarios`：场景定义和输入约束。	303
+openapi\generator-api.v1.yaml	4.3	148	- 库存：MALL_API 模式只通过商城接口变化；失败必须记入运行报告，不能绕过业务规则。	- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。	294
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	4.2	133	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	279
+openapi\generator-api.v1.yaml	3.1	62	| 参考商城 | `reference-mall` / 8090 | 用户、商品、分类、库存、购物车、订单、支付、退款、Outbox 事件 | 分析任务、Spark/Hive、生成场景、直接写分析平台 |	| 模拟数据生成器 | `synthetic-data-generator` / 8092 或 CLI | 固定 seed 的场景生成、负载控制、脏数据策略、运行报告 | 直接操作商城数据库；依赖商城内部 Service/Mapper；写平台业务库；触发平台流水线 |	75
+openapi\generator-api.v1.yaml	4.3	149	- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。	- 异常样本：仅在文件模式注入缺字段、未知枚举、重复 eventId、非法金额、迟到事件和非法状态跳转，并在 manifest 中记录期望隔离数。	295
+openapi\generator-api.v1.yaml	3.3	82		#### A. `MALL_API` 模式	95
+openapi\generator-api.v1.yaml	4.2	278	7. 版本化 jar 放到 `/apps/graduation/spark-jobs/<gitCommit>/...jar` 并保存 SHA-256，不能只引用可变的 `latest`。	8. Flume 是 at-least-once；平台只能通过 checkpoint、manifest 和 `(source_instance_id,event_id)` 去重提供幂等结果，不得宣称 exactly-once。	426
+openapi\generator-api.v1.yaml	4.1.1.3	240	Flume 不能跨机器直接 tail 一个不存在于 agent 主机的本地文件。商城若不在集群节点上，必须明确传输到 node01 spool 的协议；开发 Agent 不得凭空假设 Windows 路径可被 Linux Flume 读取。		
+openapi\generator-api.v1.yaml	4.4	304	- 退款：按 `refund_id + event_time + ingest_time + event_id` 取最新；累计退款不得超过实付。	- 去重排序：同一业务键按 event_time、ingest_time、event_id 确定唯一结果，保证重跑稳定。	452
+openapi\generator-api.v1.yaml	4.1.1.3	241		### 6.3 RuntimeProfile 关键字段	389
+openapi\generator-api.v1.yaml	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+openapi\generator-api.v1.yaml	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+openapi\generator-api.v1.yaml	4.2	136	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |	282
+openapi\generator-api.v1.yaml	4.2	136	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |	282
+openapi\generator-api.v1.yaml	3	152	### 4.4 对外 API		
+openapi\generator-api.v1.yaml	4.2	136	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |	282
+openapi\generator-api.v1.yaml	1	26	- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	30
+schemas\generation-artifact-manifest.v1.schema.json	4.3	149	- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。	- 异常样本：仅在文件模式注入缺字段、未知枚举、重复 eventId、非法金额、迟到事件和非法状态跳转，并在 manifest 中记录期望隔离数。	295
+schemas\generation-artifact-manifest.v1.schema.json	4.1	120	void write(CanonicalEvent event);	Optional<Artifact> rotateIfNeeded();	133,195
+schemas\generation-artifact-manifest.v1.schema.json	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+schemas\generation-artifact-manifest.v1.schema.json	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+schemas\generation-artifact-manifest.v1.schema.json	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+schemas\generation-artifact-manifest.v1.schema.json	4	169	外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。		
+schemas\generation-artifact-manifest.v1.schema.json	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+schemas\generation-artifact-manifest.v1.schema.json	1	17	V2.1 不推翻已完成链路，重点完成四件事：		
+schemas\generation-artifact-manifest.v1.schema.json	1	11	---		
+schemas\generation-artifact-manifest.v1.schema.json	4.1	118		interface EventSink {	131
+schemas\generation-artifact-manifest.v1.schema.json	4.2	135	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	281
+schemas\generation-artifact-manifest.v1.schema.json	4.3	149	- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。	- 异常样本：仅在文件模式注入缺字段、未知枚举、重复 eventId、非法金额、迟到事件和非法状态跳转，并在 manifest 中记录期望隔离数。	295
+schemas\generation-artifact-manifest.v1.schema.json	4.1	131	| 对象/表 | 关键字段 | 约束与用途 |	|---|---|---|	239,277,321,535,594
+schemas\generation-artifact-manifest.v1.schema.json	4.1.1.3	258	2. HDFS 临时文件创建、写入、读取、删除。	3. Hive 临时库/表创建、写入、查询、删除。	406
+schemas\generation-artifact-manifest.v1.schema.json	4.2	281	### 6.5 需要用户提供的信息		
+schemas\generation-artifact-manifest.v1.schema.json	4.3	295	## 7. 数仓、算法与剩余实现规格		
+schemas\generation-artifact-manifest.v1.schema.json	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+schemas\canonical-event.v1.schema.json	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+schemas\canonical-event.v1.schema.json	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+schemas\canonical-event.v1.schema.json	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+schemas\canonical-event.v1.schema.json	1	12		## 1. 当前结论与本版目标	15
+schemas\canonical-event.v1.schema.json	1	27	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	31
+schemas\canonical-event.v1.schema.json	3	152	### 4.4 对外 API		
+schemas\canonical-event.v1.schema.json	3	160		### 4.5 页面	306
+schemas\canonical-event.v1.schema.json	1	14		当前项目不是“从零开始”，也没有全部完成。冻结基线为：269 条可判定要求中，132 条完成、90 条部分完成、42 条未做、5 条不适用；42 条未做可归并为 25 组功能缺口。主体链路已经能从事件进入 Landing，经 Hive/Spark 形成 ODS、DWD、DWS、ADS，并发布到指标库供页面、AI 和决策读取，但仍存在“有表无数据、有算法未接线、有接口无页面”和证据不足的问题。	17
+schemas\canonical-event.v1.schema.json	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+schemas\canonical-event.v1.schema.json	1	15	当前项目不是“从零开始”，也没有全部完成。冻结基线为：269 条可判定要求中，132 条完成、90 条部分完成、42 条未做、5 条不适用；42 条未做可归并为 25 组功能缺口。主体链路已经能从事件进入 Landing，经 Hive/Spark 形成 ODS、DWD、DWS、ADS，并发布到指标库供页面、AI 和决策读取，但仍存在“有表无数据、有算法未接线、有接口无页面”和证据不足的问题。		
+schemas\canonical-event.v1.schema.json	4	169	外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。		
+schemas\canonical-event.v1.schema.json	1	16		V2.1 不推翻已完成链路，重点完成四件事：	
+schemas\canonical-event.v1.schema.json	1	17	V2.1 不推翻已完成链路，重点完成四件事：		
+schemas\canonical-event.v1.schema.json	1	18		1. 将现有“两程序”改成三个可独立构建、部署、停止和替换的程序：分析平台、参考商城、模拟数据生成器。	21
+schemas\canonical-event.v1.schema.json	1	27	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	31
+schemas\canonical-event.v1.schema.json	1	19	1. 将现有“两程序”改成三个可独立构建、部署、停止和替换的程序：分析平台、参考商城、模拟数据生成器。	2. 建立真正可更换商城的数据源连接器与字段映射层，清除 `mock-mall` 等硬编码。	22
+schemas\canonical-event.v1.schema.json	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+schemas\canonical-event.v1.schema.json	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+schemas\canonical-event.v1.schema.json	1	27	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	31
+schemas\canonical-event.v1.schema.json	1	26	- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	30
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	1	26	- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	30
+schemas\canonical-event.v1.schema.json	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+schemas\canonical-event.v1.schema.json	2.1	39	4. V2.0、整改指导书、历史计划和交接文档。		
+schemas\canonical-event.v1.schema.json	2	32	## 2. 文档与完成状态规则		
+schemas\canonical-event.v1.schema.json	2.1	43	### 2.2 执行状态		
+schemas\canonical-event.v1.schema.json	2.1	44		执行任务只允许使用 `TODO / READY / IN_PROGRESS / BLOCKED / REVIEW / DONE_LIMITED / DONE / REGRESSED / DEFERRED / N/A`。代码、表、接口或页面单独存在不等于完成；普通功能至少需要 E2 自动化证据，数据链需要 E3 本地真实链证据，集群能力需要 E4，普通员工可用的页面路径需要 E5。	57
+schemas\canonical-event.v1.schema.json	2.1	45	执行任务只允许使用 `TODO / READY / IN_PROGRESS / BLOCKED / REVIEW / DONE_LIMITED / DONE / REGRESSED / DEFERRED / N/A`。代码、表、接口或页面单独存在不等于完成；普通功能至少需要 E2 自动化证据，数据链需要 E3 本地真实链证据，集群能力需要 E4，普通员工可用的页面路径需要 E5。		
+schemas\canonical-event.v1.schema.json	2.1	46		### 2.3 反馈要求	59
+schemas\canonical-event.v1.schema.json	2.1	47	### 2.3 反馈要求		
+schemas\canonical-event.v1.schema.json	2.2	49	- 开工前在看板登记任务 ID、Owner、允许修改范围和下次反馈时间。	- 最长 30 分钟更新一次；失败、阻塞或范围变化立即更新。	62
+schemas\canonical-event.v1.schema.json	2.2	53	- 总控负责契约、热点文件、合并、跨模块测试与最终状态确认。		
+schemas\canonical-event.v1.schema.json	2.2	54		## 3. 三程序架构裁决	67
+schemas\canonical-event.v1.schema.json	2.2	55	## 3. 三程序架构裁决		
+schemas\canonical-event.v1.schema.json	2.2	56		### 3.1 最终边界	69
+schemas\canonical-event.v1.schema.json	2.2	57	### 3.1 最终边界		
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.2	58		| 程序 | 建议名称/端口 | 唯一职责 | 明确禁止 |	71
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.2	59	| 程序 | 建议名称/端口 | 唯一职责 | 明确禁止 |	|---|---|---|---|	72,209
+schemas\canonical-event.v1.schema.json	2.2	49	- 开工前在看板登记任务 ID、Owner、允许修改范围和下次反馈时间。	- 最长 30 分钟更新一次；失败、阻塞或范围变化立即更新。	62
+schemas\canonical-event.v1.schema.json	2.2	53	- 总控负责契约、热点文件、合并、跨模块测试与最终状态确认。		
+schemas\canonical-event.v1.schema.json	2.2	54		## 3. 三程序架构裁决	67
+schemas\canonical-event.v1.schema.json	2.2	55	## 3. 三程序架构裁决		
+schemas\canonical-event.v1.schema.json	2.2	56		### 3.1 最终边界	69
+schemas\canonical-event.v1.schema.json	2.2	57	### 3.1 最终边界		
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.2	58		| 程序 | 建议名称/端口 | 唯一职责 | 明确禁止 |	71
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.2	59	| 程序 | 建议名称/端口 | 唯一职责 | 明确禁止 |	|---|---|---|---|	72,209
+schemas\canonical-event.v1.schema.json	2.3	61	| 分析平台 | `analytics-platform` / 8091 | 数据源配置、采集编排、标准化、Landing、Hive 数仓、Spark 作业、质量、指标发布、看板、AI、决策、运维 | 商城业务增删改；随机造订单；依赖商城数据库或 Java 包 |	| 参考商城 | `reference-mall` / 8090 | 用户、商品、分类、库存、购物车、订单、支付、退款、Outbox 事件 | 分析任务、Spark/Hive、生成场景、直接写分析平台 |	74
+schemas\canonical-event.v1.schema.json	2.3	69	```text	模拟数据生成器 --公开 HTTP API--> 参考商城 --Outbox/事件文件--> 数据源连接器	82
+schemas\canonical-event.v1.schema.json	2.3	65	另外建立中立的 `contract-specs`，保存版本化 JSON Schema、OpenAPI 和清单 Schema。三个程序可以分别根据契约生成或校验数据，但不得通过共享 Java 实体、Mapper 或 Maven 业务依赖耦合。		
+schemas\canonical-event.v1.schema.json	2.3	66		### 3.2 唯一正常业务路径	79
+schemas\canonical-event.v1.schema.json	2.3	67	### 3.2 唯一正常业务路径		
+schemas\canonical-event.v1.schema.json	2.3	68		```text	
+schemas\canonical-event.v1.schema.json	3	154	- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	- `GET /api/v1/generation-runs/{id}`：状态、进度、计数、失败摘要。	300
+schemas\canonical-event.v1.schema.json	2.3	69	```text	模拟数据生成器 --公开 HTTP API--> 参考商城 --Outbox/事件文件--> 数据源连接器	82
+schemas\canonical-event.v1.schema.json	2.4	71	真实商城 -----------------------------------------------> 数据源连接器	数据源连接器 -> HDFS/本地 Landing -> 标准化 -> Hive ODS/DWD/DWS/ADS	84
+schemas\canonical-event.v1.schema.json	2.4	75		这条路径表达两个关键事实：	88
+schemas\canonical-event.v1.schema.json	2.4	76	这条路径表达两个关键事实：		
+schemas\canonical-event.v1.schema.json	2.4	77		- 参考商城只是可替换的数据提供者和演示样例，不是分析平台的一部分。	90
+schemas\canonical-event.v1.schema.json	2.4	84		用于完整演示。生成器通过 `MallTargetAdapter` 调用商城公开接口完成注册、浏览、加购、下单、支付、取消、退款等行为。禁止调用商城内部类、直接连接商城数据库或修改库存表。	97
+schemas\canonical-event.v1.schema.json	2.4	84		用于完整演示。生成器通过 `MallTargetAdapter` 调用商城公开接口完成注册、浏览、加购、下单、支付、取消、退款等行为。禁止调用商城内部类、直接连接商城数据库或修改库存表。	97
+schemas\canonical-event.v1.schema.json	2.4	86		脏数据不得在此模式中绕过商城校验直接写库；需要验证平台隔离能力时，使用 B 模式。	99
+schemas\canonical-event.v1.schema.json	2.4	87	脏数据不得在此模式中绕过商城校验直接写库；需要验证平台隔离能力时，使用 B 模式。		
+schemas\canonical-event.v1.schema.json	2.4	88		#### B. `CANONICAL_EVENT_FILE` 模式	101
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.4	89	#### B. `CANONICAL_EVENT_FILE` 模式		
+schemas\canonical-event.v1.schema.json	2.4	90		用于采集、质量、数仓和性能测试。生成器直接输出符合指定契约版本的 JSONL、manifest 和可选脏样本，写入独立测试目录。该模式必须显示 `synthetic=true`，不能被描述为商城端到端测试，也不得直接写 ODS/DWD/ADS/指标库或自动触发流水线。	103
+schemas\canonical-event.v1.schema.json	2.4	78	- 参考商城只是可替换的数据提供者和演示样例，不是分析平台的一部分。	- 模拟数据生成器只是测试客户端。没有生成器、没有参考商城时，分析平台仍必须能连接其他商城并读取历史 ACTIVE 快照。	91
+schemas\canonical-event.v1.schema.json	4	166		### 5.1 平台统一标识	312
+schemas\canonical-event.v1.schema.json	2.4	79	- 模拟数据生成器只是测试客户端。没有生成器、没有参考商城时，分析平台仍必须能连接其他商城并读取历史 ACTIVE 快照。		
+schemas\canonical-event.v1.schema.json	2.4	80		### 3.3 生成器的两种模式	93
+schemas\canonical-event.v1.schema.json	2.5	92		### 3.4 独立验收	105
+schemas\canonical-event.v1.schema.json	4	166		### 5.1 平台统一标识	312
+schemas\canonical-event.v1.schema.json	2.5	96	2. 商城工程中不存在 `generator` 包、`GeneratorController` 或生成器页面。	3. 生成器工程不引用商城实体、Mapper、Service、数据源配置，也不能访问商城 JDBC。	109
+schemas\canonical-event.v1.schema.json	2.5	97	3. 生成器工程不引用商城实体、Mapper、Service、数据源配置，也不能访问商城 JDBC。	4. 分析平台不引用商城/生成器 Java 包、商城表或 `mall.*` 配置键。	110
+schemas\canonical-event.v1.schema.json	2.5	98	4. 分析平台不引用商城/生成器 Java 包、商城表或 `mall.*` 配置键。	5. 分别停止三者：其余程序不会因类加载或数据库依赖崩溃；停止数据源时平台明确显示采集不可用，但历史指标仍可读。	111
+schemas\canonical-event.v1.schema.json	2.5	99	5. 分别停止三者：其余程序不会因类加载或数据库依赖崩溃；停止数据源时平台明确显示采集不可用，但历史指标仍可读。	6. 可以用第二个 `MallTargetAdapter` 或一份不同字段的夹具证明平台不是为 `mock-mall` 写死。	112
+schemas\canonical-event.v1.schema.json	2.5	100	6. 可以用第二个 `MallTargetAdapter` 或一份不同字段的夹具证明平台不是为 `mock-mall` 写死。		
+schemas\canonical-event.v1.schema.json	2.6	102	## 4. 模拟数据生成器详细设计		
+schemas\canonical-event.v1.schema.json	2.6	106	```java	interface MallTargetAdapter {	119,157
+schemas\canonical-event.v1.schema.json	2.6	107	interface MallTargetAdapter {	TargetCheckResult test(TargetConfig config);	120,162
+schemas\canonical-event.v1.schema.json	2.6	108	TargetCheckResult test(TargetConfig config);	TargetCapabilities capabilities();	121
+schemas\canonical-event.v1.schema.json	2.6	109	TargetCapabilities capabilities();	ProductPage listProducts(ProductQuery query);	122
+schemas\canonical-event.v1.schema.json	2.7	111	ExternalUser createSyntheticUser(UserCommand command);	void emitBehavior(BehaviorCommand command);	124
+schemas\canonical-event.v1.schema.json	2.7	115	ExternalOrder cancel(CancelCommand command);	ExternalRefund refund(RefundCommand command);	128
+schemas\canonical-event.v1.schema.json	2.7	116	ExternalRefund refund(RefundCommand command);	}	
+schemas\canonical-event.v1.schema.json	2.7	117	}		
+schemas\canonical-event.v1.schema.json	2.7	118		interface EventSink {	131
+schemas\canonical-event.v1.schema.json	2.7	119	interface EventSink {	void write(CanonicalEvent event);	132,193
+schemas\canonical-event.v1.schema.json	2.7	120	void write(CanonicalEvent event);	Optional<Artifact> rotateIfNeeded();	133,195
+schemas\canonical-event.v1.schema.json	2.8	122	void flush();	Manifest closeAndBuildManifest();	135
+schemas\canonical-event.v1.schema.json	4	167	### 5.1 平台统一标识		
+schemas\canonical-event.v1.schema.json	2.8	126		第一版实现 `ReferenceMallHttpAdapter` 与 `JsonlEventSink`。扩展其他商城时新增 Adapter，不修改场景引擎。	139
+schemas\canonical-event.v1.schema.json	2.8	127	第一版实现 `ReferenceMallHttpAdapter` 与 `JsonlEventSink`。扩展其他商城时新增 Adapter，不修改场景引擎。		
+schemas\canonical-event.v1.schema.json	2.8	128		### 4.2 数据结构	274
+schemas\canonical-event.v1.schema.json	2.8	129	### 4.2 数据结构		
+schemas\canonical-event.v1.schema.json	2.8	130		| 对象/表 | 关键字段 | 约束与用途 |	276
+schemas\canonical-event.v1.schema.json	2.9	132	|---|---|---|	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	278
+schemas\canonical-event.v1.schema.json	2.9	136	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |	282
+schemas\canonical-event.v1.schema.json	2.9	137	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |		
+schemas\canonical-event.v1.schema.json	2.9	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+schemas\canonical-event.v1.schema.json	2.9	139	状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。		
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.9	139	状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。		
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.9	132	|---|---|---|	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	278
+schemas\canonical-event.v1.schema.json	2.9	136	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |	282
+schemas\canonical-event.v1.schema.json	2.9	137	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |		
+schemas\canonical-event.v1.schema.json	2.9	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+schemas\canonical-event.v1.schema.json	2.9	139	状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。		
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.9	139	状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。		
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\canonical-event.v1.schema.json	2.10	141	### 4.3 场景和算法		
+schemas\canonical-event.v1.schema.json	2.10	146	- 行为链：浏览→收藏/加购→下单→支付→退款使用条件概率，且订单必须引用已存在用户与商品。	- 金额：使用 `BigDecimal`；商品价格、数量、优惠、实付和退款遵守商城公式。	292
+schemas\canonical-event.v1.schema.json	2.10	145	- 时间分布：工作日/周末、小时段和活动峰值使用分段权重；不能简单均匀随机。	- 行为链：浏览→收藏/加购→下单→支付→退款使用条件概率，且订单必须引用已存在用户与商品。	291
+schemas\canonical-event.v1.schema.json	2.10	146	- 行为链：浏览→收藏/加购→下单→支付→退款使用条件概率，且订单必须引用已存在用户与商品。	- 金额：使用 `BigDecimal`；商品价格、数量、优惠、实付和退款遵守商城公式。	292
+schemas\canonical-event.v1.schema.json	2.10	147	- 金额：使用 `BigDecimal`；商品价格、数量、优惠、实付和退款遵守商城公式。	- 库存：MALL_API 模式只通过商城接口变化；失败必须记入运行报告，不能绕过业务规则。	293
+schemas\canonical-event.v1.schema.json	2.4	87	脏数据不得在此模式中绕过商城校验直接写库；需要验证平台隔离能力时，使用 B 模式。		
+schemas\canonical-event.v1.schema.json	2.9	137	| `generation_event_stat` | run_id、event_type、count、amount | 验证各事件类型和金额分布 |		
+schemas\canonical-event.v1.schema.json	2.10	148	- 库存：MALL_API 模式只通过商城接口变化；失败必须记入运行报告，不能绕过业务规则。	- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。	294
+schemas\canonical-event.v1.schema.json	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+schemas\ingestion-manifest.v1.schema.json	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+README.md	3.1	64		另外建立中立的 `contract-specs`，保存版本化 JSON Schema、OpenAPI 和清单 Schema。三个程序可以分别根据契约生成或校验数据，但不得通过共享 Java 实体、Mapper 或 Maven 业务依赖耦合。	77
+README.md	3.1	60	|---|---|---|---|	| 分析平台 | `analytics-platform` / 8091 | 数据源配置、采集编排、标准化、Landing、Hive 数仓、Spark 作业、质量、指标发布、看板、AI、决策、运维 | 商城业务增删改；随机造订单；依赖商城数据库或 Java 包 |	73
+README.md	3.1	64		另外建立中立的 `contract-specs`，保存版本化 JSON Schema、OpenAPI 和清单 Schema。三个程序可以分别根据契约生成或校验数据，但不得通过共享 Java 实体、Mapper 或 Maven 业务依赖耦合。	77
+README.md	3.4	96	2. 商城工程中不存在 `generator` 包、`GeneratorController` 或生成器页面。	3. 生成器工程不引用商城实体、Mapper、Service、数据源配置，也不能访问商城 JDBC。	109
+README.md	1	11	---		
+README.md	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+README.md	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+README.md	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+README.md	1	16		V2.1 不推翻已完成链路，重点完成四件事：	
+README.md	1	17	V2.1 不推翻已完成链路，重点完成四件事：		
+README.md	3	152	### 4.4 对外 API		
+README.md	1	26	- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	30
+README.md	4	168		外部商城不能自行决定平台主键。平台创建 `source_instance_id`，它从 Landing manifest 传播到 ODS、DWD、DWS、ADS、指标快照和页面筛选。跨商城去重键为 `(source_instance_id, event_id)`，不能只按 `event_id` 去重。	314
+README.md	1	25		- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	29
+README.md	2.2	57	### 3.1 最终边界		
+README.md	2.4	78	- 参考商城只是可替换的数据提供者和演示样例，不是分析平台的一部分。	- 模拟数据生成器只是测试客户端。没有生成器、没有参考商城时，分析平台仍必须能连接其他商城并读取历史 ACTIVE 快照。	91
+README.md	4	166		### 5.1 平台统一标识	312
+README.md	2.9	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+README.md	4.2	135	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	281
+README.md	4.3	149	- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。	- 异常样本：仅在文件模式注入缺字段、未知枚举、重复 eventId、非法金额、迟到事件和非法状态跳转，并在 manifest 中记录期望隔离数。	295
+README.md	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+README.md	1	27	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	31
+README.md	1	27	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	31
+README.md	1	16		V2.1 不推翻已完成链路，重点完成四件事：	
+README.md	2.3	69	```text	模拟数据生成器 --公开 HTTP API--> 参考商城 --Outbox/事件文件--> 数据源连接器	82
+README.md	2.10	146	- 行为链：浏览→收藏/加购→下单→支付→退款使用条件概率，且订单必须引用已存在用户与商品。	- 金额：使用 `BigDecimal`；商品价格、数量、优惠、实付和退款遵守商城公式。	292
+README.md	2.4	77		- 参考商城只是可替换的数据提供者和演示样例，不是分析平台的一部分。	90
+README.md	1	28	- 未在相同环境、相同数据和相同口径下测量的“提升百分比”不得填写。	- ClickHouse 只保留接口和能力矩阵，状态为 `DEFERRED`；第一阶段不实现。	32
+README.md	1	26	- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	30
+README.md	1	26	- 不撰写论文正文、摘要、结论、答辩稿，不为了论文包装未完成能力。	- 可以记录真实的架构决策、缺陷根因、修复过程、前后数据和测试证据。	30
+README.md	3.1	64		另外建立中立的 `contract-specs`，保存版本化 JSON Schema、OpenAPI 和清单 Schema。三个程序可以分别根据契约生成或校验数据，但不得通过共享 Java 实体、Mapper 或 Maven 业务依赖耦合。	77
+README.md	4.1	126		第一版实现 `ReferenceMallHttpAdapter` 与 `JsonlEventSink`。扩展其他商城时新增 Adapter，不修改场景引擎。	139
+README.md	4.1	108	TargetCheckResult test(TargetConfig config);	TargetCapabilities capabilities();	121
+README.md	4.1	107	interface MallTargetAdapter {	TargetCheckResult test(TargetConfig config);	120,162
+README.md	4.1	108	TargetCheckResult test(TargetConfig config);	TargetCapabilities capabilities();	121
+README.md	4.1	126		第一版实现 `ReferenceMallHttpAdapter` 与 `JsonlEventSink`。扩展其他商城时新增 Adapter，不修改场景引擎。	139
+README.md	4.1	118		interface EventSink {	131
+README.md	4.2	132	|---|---|---|	| `generator_target` | id、name、adapter_type、base_url、credential_ref、config_json、config_version、status、test_environment、capabilities | 凭据只存引用；每次运行冻结版本 |	278
+README.md	4.2	134	| `generation_plan` | plan_id、mode、target_id、scenario、seed、start/end、event_count、rate_per_second、dirty_profile、output_uri、version | 运行只引用不可变版本 |	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	280
+README.md	4.2	135	| `generation_run` | run_id、plan_version、target_version、status、started/finished、success_count、failed_count、checksum、error、cancel_requested | 异步运行，可查询和取消 |	| `generation_artifact` | run_id、uri、checksum、bytes、record_count、min/max_event_time、schema_version | 用于可复现和对账 |	281
+README.md	4.2	138		状态机：`PENDING -> RUNNING -> SUCCESS/FAILED/CANCELLED`。相同 `plan_version + seed + time_window` 应可复现；运行中修改计划不会影响已启动任务。	284
+README.md	4.3	149	- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。	- 异常样本：仅在文件模式注入缺字段、未知枚举、重复 eventId、非法金额、迟到事件和非法状态跳转，并在 manifest 中记录期望隔离数。	295
+README.md	4.4	153		- `POST /api/v1/generation-runs`：按 plan/version 异步启动，返回 runId。	299
+README.md	4.4	158	- `GET /api/v1/scenarios`：场景定义和输入约束。	- `POST/PUT/GET /api/v1/targets` 与 `POST /targets/{id}/test`：目标商城配置和连通性检查。	304
