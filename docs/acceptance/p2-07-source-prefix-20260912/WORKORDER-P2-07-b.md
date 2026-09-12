@@ -25,6 +25,19 @@
 
 > **⚠ 执行前第一步（强制）**：先查清**平台实际读写哪一个 schema 的哪一张 `metric_snapshot`**（看数据源配置与 `MySqlMetricStore`），再动手。同名表跨 10 个 schema，其中 7 个是历史副本/探针残留（见看板 **F-40**）——**打错库是本任务的头号风险**，写迁移之前必须把目标 schema 名写进报告并给出判断依据。
 
+### 1.1 A0（认库）已由总控现场答毕（2026-09-12，执行者只需复核不必重查）
+
+**目标表 = `analytics_metric.metric_snapshot`**。证据链（三条互证）：
+
+1. **配置**（`analytics-server/platform-app/src/main/resources/application.yml`，只读）：存在**三个**数据源 —— `PLATFORM_META_URL` → `jdbc:mysql://127.0.0.1:3306/**analytics_meta**`（用户 `meta_app`）、`PLATFORM_METRIC_PUBLISH_URL` → `…/**analytics_metric**`（`metric_pub`）、`PLATFORM_METRIC_READ_URL` → `…/**analytics_metric**`（`metric_read`）。
+2. **行数与时序**：`analytics_metric.metric_snapshot` = **9 行**，`id` 4…24，`max(published_at) = 2026-09-12 09:31:13.388`；`analytics_meta.metric_snapshot` = **9 行**，`id` 1…9，`max(published_at) = 2026-09-07 19:33:50.123`。
+3. **跨通道互证**：本仓已入库的证据日志 `docs/acceptance/p1-05-8091-swap-20260911/8091-stdout.log` 末行 `09:31:13.399 metric publish: 快照 S20260901_41 发布成功`，与该表 `max(published_at)=09:31:13.388` **同批同一秒** ⇒ 平台确实往 `analytics_metric` 发布。
+
+**⚠ 由此细化的第二重陷阱（并入 F-40）**：**同一真库内**还存在一张**同名陈旧表** `analytics_meta.metric_snapshot`（9 行，最后发布 09-07），且 `metric_value` 在**两个真库各有一份**（`analytics_meta` 132 行 / `analytics_metric` 80 行），`data_quality_result` 只在 `analytics_meta`（401 行）。
+⇒ **V19 的数据源与迁移目标只能是 `analytics_metric`**；若误改 `analytics_meta.metric_snapshot`，平台行为**零变化**且看不出错 —— 这类"改对了但改的是影子表"的错误无法靠测试发现，只能靠**认库**避免。报告须显式写出「本次迁移目标 schema = `analytics_metric`，依据 = 上述三条」。
+
+**另一条实测**：真库 `analytics_meta.flyway_schema_history` 最高 `version = 17`（`installed_on 2026-09-12 09:12:11`）⇒ **V18 尚未在真库执行**（与 D-080/D-082 的"前向效应"一致：V18 在下次平台启动时执行）。V19 尚未存在，号位由总控分配。
+
 ## 2 交付要求（A1–A7）
 
 - **A1 迁移**：`analytics-server/platform-app/src/main/resources/db/meta/V19__metric_snapshot_source_id.sql`（号位由总控分配；实测真库 `flyway_schema_history` 最高 17，V18 由 P2-07 占用）。
