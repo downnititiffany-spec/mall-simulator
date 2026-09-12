@@ -1,0 +1,11 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+104	30	NULL	1.0	缺失必要字段: event_id	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\30\\r9-m1-123006.jsonl	2026-09-11 12:30:06.314
+103	30	golden-evt-054	2.0	未支持 schema_version: 2.0	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\30\\r9-m1-123006.jsonl	2026-09-11 12:30:06.312
+102	30	NULL	NULL	JSON 解析失败: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\30\\r9-m1-123006.jsonl	2026-09-11 12:30:06.310
+101	30	golden-evt-038	1.0	非法 behavior_type: purchase	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\30\\r9-m1-123006.jsonl	2026-09-11 12:30:06.306
+100	29	NULL	1.0	缺失必要字段: event_id	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\29\\r9-qualityfail-103736.jsonl	2026-09-11 12:22:49.362
+99	29	golden-evt-054	2.0	未支持 schema_version: 2.0	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\29\\r9-qualityfail-103736.jsonl	2026-09-11 12:22:49.360
+98	29	NULL	NULL	JSON 解析失败: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\29\\r9-qualityfail-103736.jsonl	2026-09-11 12:22:49.358
+97	29	golden-evt-038	1.0	非法 behavior_type: purchase	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\29\\r9-qualityfail-103736.jsonl	2026-09-11 12:22:49.355
+96	29	NULL	1.0	缺失必要字段: event_id	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\29\\r9-prunefix-110637.jsonl	2026-09-11 12:22:49.341
+95	29	golden-evt-054	2.0	未支持 schema_version: 2.0	D:\\Develop_code\\GraduationProject\\landing\\quarantine\\29\\r9-prunefix-110637.jsonl	2026-09-11 12:22:49.339

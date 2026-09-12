@@ -1,0 +1,17 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+1	1	platform ingestion	V1__platform_ingestion.sql	1	2026-09-07 14:44:15
+2	2	platform pipeline quality	V2__platform_pipeline_quality.sql	1	2026-09-07 16:04:26
+3	3	platform ai audit	V3__platform_ai_audit.sql	1	2026-09-07 16:04:26
+4	4	platform decisions	V4__platform_decisions.sql	1	2026-09-07 16:04:26
+5	5	platform users	V5__platform_users.sql	1	2026-09-07 16:04:26
+6	7	platform runtime profile	V7__platform_runtime_profile.sql	1	2026-09-07 17:15:57
+7	8	platform ingestion r3	V8__platform_ingestion_r3.sql	1	2026-09-07 18:13:41
+8	9	platform stage evidence widen	V9__platform_stage_evidence_widen.sql	1	2026-09-10 17:06:34
+9	10	spark job run output partitions	V10__spark_job_run_output_partitions.sql	1	2026-09-10 18:02:13
+10	11	data quality layers	V11__data_quality_layers.sql	1	2026-09-10 18:38:59
+11	12	quality detail width	V12__quality_detail_width.sql	1	2026-09-10 18:45:27
+12	13	metric definition r7	V13__metric_definition_r7.sql	1	2026-09-10 20:05:31
+13	14	r8 identity decision	V14__r8_identity_decision.sql	1	2026-09-11 09:22:21
+14	15	stage evidence mediumtext	V15__stage_evidence_mediumtext.sql	1	2026-09-11 09:41:19
+15	16	source registry	V16__source_registry.sql	1	2026-09-11 19:56:28
+16	17	source dimension for checkpoint and batch	V17__source_dimension_for_checkpoint_and_batch.sql	1	2026-09-12 09:12:11
