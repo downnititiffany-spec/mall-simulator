@@ -97,17 +97,34 @@ public final class SecondMallFakeServer implements AutoCloseable {
     private final Map<String, List<String>> bodiesByRoute = new ConcurrentHashMap<>();
     private final List<Integer> statuses = new CopyOnWriteArrayList<>();
     private final Map<String, Integer> routeHits = new ConcurrentHashMap<>();
+
+    /** {@code true} ⇒ 订单类应答里不回 {@code pay_state} 字段（商城内部状态照旧，只改应答形态） */
+    private volatile boolean omitOrderStateInResponse;
     private final AtomicLong sequence = new AtomicLong();
     private final AtomicLong orderAttempts = new AtomicLong();
 
     /**
      * 一条商品记录（第二家的字段名与单位）
      *
-     * @param state 第二家的状态词（{@code SALE}/{@code OFF_SHELF}/{@code PENDING}）；
-     *              可被构造成未登记的怪词，用于验证适配器"认不出就不硬塞进规范枚举"
+     * @param state          第二家的状态词（{@code SALE}/{@code OFF_SHELF}/{@code PENDING}）；
+     *                       可被构造成未登记的怪词，用于验证适配器"认不出就不硬塞进规范枚举"；
+     *                       {@code null} 表示<b>商城这条应答里根本没有 state 字段</b>
+     *                       （与"给了一个读不懂的词"是两种不同的缺口，见
+     *                       {@link #putItemWithoutState(String, String, long)}）
+     * @param unitPriceCents 整数分；{@link #MISSING_UNIT_PRICE_CENTS} 表示<b>这条应答里根本没有
+     *                       unit_price_cents 字段</b>（用于验证"价格缺失必须响亮失败"）
      */
     private record Item(String sku, String title, long categoryCode, long unitPriceCents, String state) {
     }
+
+    /**
+     * 单价缺失的哨兵：带这个值的商品在应答里<b>整条 {@code unit_price_cents} 字段都不写</b>
+     * （不是写 0、也不是写 null 文本）——模拟"商城这条记录里根本没有价格"。
+     *
+     * <p>用 {@code -1} 当哨兵而不是用 {@code null}：{@code long} 的取值域里负数不是合法价格，
+     * 因此"哨兵"与"真实价格"不会混。</p>
+     */
+    public static final long MISSING_UNIT_PRICE_CENTS = -1L;
 
     public SecondMallFakeServer(String token, String behaviorPath, int itemCount) throws IOException {
         this(token, behaviorPath, itemCount, Long.MAX_VALUE, null);
@@ -211,12 +228,76 @@ public final class SecondMallFakeServer implements AutoCloseable {
         return histogram;
     }
 
-    /** 把某件商品的状态词改成任意值（用于验证未登记状态词的处理策略） */
+    /**
+     * 把某件商品的状态词改成任意值（用于验证未登记状态词的处理策略）。
+     *
+     * @param state 商城状态词；传 {@code null} 表示<b>这条应答里根本没有 state 字段</b>
+     *              （用于验证"商城没给字段"与"给了一个读不懂的词"被分成两件事）
+     */
     public void overrideItemState(String sku, String state) {
         Item item = items.get(sku);
         if (item != null) {
             items.put(sku, new Item(item.sku(), item.title(), item.categoryCode(), item.unitPriceCents(), state));
         }
+    }
+
+    /** 新增一件商品，带一个合法的在售状态词（其余字段为第二家的形状） */
+    public void putItem(String sku, String title, long categoryCode, long unitPriceCents) {
+        items.put(sku, new Item(sku, title, categoryCode, unitPriceCents, "SALE"));
+    }
+
+    /**
+     * 新增一件<b>应答里没有 unit_price_cents</b> 的商品（价格缺失的夹具形态）。
+     *
+     * <p>存在的理由只有一个：验证适配器在"商城这条记录里没有价格"时<b>响亮失败</b>，
+     * 而不是把 {@code null} 金额静默带进流水与运行报告。</p>
+     */
+    public void putItemWithoutPrice(String sku, String title, long categoryCode) {
+        items.put(sku, new Item(sku, title, categoryCode, MISSING_UNIT_PRICE_CENTS, "SALE"));
+    }
+
+    /** 新增一件<b>应答里没有 state 字段</b>的商品（字段缺失的夹具形态；与"读不懂的词"分开） */
+    public void putItemWithoutState(String sku, String title, long unitPriceCents) {
+        items.put(sku, new Item(sku, title, 21L, unitPriceCents, null));
+    }
+
+    /** 把某件商品的单价改成"商城没给"（应答里整条字段不写）：复用同一件商品，不新增规模 */
+    public void removeItemPrice(String sku) {
+        Item item = items.get(sku);
+        if (item != null) {
+            items.put(sku, new Item(item.sku(), item.title(), item.categoryCode(),
+                    MISSING_UNIT_PRICE_CENTS, item.state()));
+        }
+    }
+
+    /** 目录里这件商品的应答里到底有没有 {@code unit_price_cents}（测试侧独立可判的事实） */
+    public boolean itemHasPrice(String sku) {
+        Item item = items.get(sku);
+        return item != null && item.unitPriceCents() != MISSING_UNIT_PRICE_CENTS;
+    }
+
+    /**
+     * 让订单类应答（下单/支付/取消）<b>不带 {@code pay_state} 字段</b>，而商城自己记的状态照旧推进。
+     *
+     * <p>存在的理由只有一个：验证"商城没给状态字段"时，生成器<b>不造词</b>——
+     * {@code ExternalOrder#status()} 必须是 {@code null}（而不是 {@code "UNKNOWN"} 这类编出来的词），
+     * 且这次调用仍然算成功（HTTP 真的成功了，与商城回没回状态字段是两件事）。</p>
+     *
+     * <p>它只改<b>应答形态</b>：{@link #orderJson(String)} 与 {@link #orderStateHistogram()} 读的是
+     * 商城内部那份快照，仍然带着 {@code pay_state}——因此"状态缺失"是应答的事实，
+     * 而不是夹具被改坏了。</p>
+     */
+    public void omitOrderStateInResponse() {
+        this.omitOrderStateInResponse = true;
+    }
+
+    /** 订单应答体：默认原样深拷贝；开了"不回状态字段"时，删掉 {@code pay_state} 再回 */
+    private ObjectNode orderResponse(ObjectNode order) {
+        ObjectNode copy = order.deepCopy();
+        if (omitOrderStateInResponse) {
+            copy.remove("pay_state");
+        }
+        return copy;
     }
 
     // ---------- HTTP ----------
@@ -313,18 +394,35 @@ public final class SecondMallFakeServer implements AutoCloseable {
                     return;
                 }
                 int quantity = line.path("quantity").asInt();
-                // 商城按<b>自己的目录</b>定价并回算总额；请求里带的 unit_price_cents 只做校验，
-                // 对不上就拒单——这样"适配器有没有正确报单价"也是可观测的事实
+                // 目录里这件商品没有价格 ⇒ 商城自己也算不出可信总额，只能拒单（E_NO_PRICE）。
+                // 真实商城也是这个形状：不可能用"未知单价"去记一笔账；拒单而不是回一笔
+                // 带 null 单价的订单，正好让"价格缺失不许变成一笔成交"在**商城侧**也成立。
+                if (item.unitPriceCents() == MISSING_UNIT_PRICE_CENTS) {
+                    fail(exchange, 409, "E_NO_PRICE",
+                            "item has no price, cannot quote: " + item.sku());
+                    return;
+                }
+                // 商城按<b>自己的目录</b>定价并回算总额；请求里若带了 unit_price_cents 就做校验，
+                // 对不上就拒单——这样"适配器有没有乱报价"也是可观测的事实。
+                // 注意：Jackson 里"字段不存在"读到的是 MissingNode（isNull() 为 false、asLong() 为 0），
+                // 所以这里必须同时判 missing 与 null，否则"没带价格"会被误判成"报了 0 分"。
                 JsonNode quoted = line.path("unit_price_cents");
-                if (!quoted.isNull() && quoted.asLong() != item.unitPriceCents()) {
+                if (!quoted.isMissingNode() && !quoted.isNull() && quoted.asLong() != item.unitPriceCents()) {
                     fail(exchange, 409, "E_PRICE_MISMATCH", "unit_price_cents mismatch for " + item.sku());
                     return;
                 }
                 totalCents += item.unitPriceCents() * quantity;
-                lines.add(MAPPER.createObjectNode()
+                ObjectNode lineNode = MAPPER.createObjectNode()
                         .put("sku", item.sku())
-                        .put("quantity", quantity)
-                        .put("unit_price_cents", item.unitPriceCents()));
+                        .put("quantity", quantity);
+                // 下单应答的明细行如实回显"商城记账的单价"；商品价格缺失时这条**没有真实取值**
+                // （写显式 null，不编一个数），适配器据此必须响亮失败
+                if (item.unitPriceCents() == MISSING_UNIT_PRICE_CENTS) {
+                    lineNode.putNull("unit_price_cents");
+                } else {
+                    lineNode.put("unit_price_cents", item.unitPriceCents());
+                }
+                lines.add(lineNode);
             }
             String orderNo = "ON" + String.format("%015d", sequence.incrementAndGet());
             order.put("order_no", orderNo);
@@ -334,7 +432,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
             order.set("lines", lines);
             orders.put(orderNo, order);
             hit(ORDERS_ROUTE);
-            ok(exchange, order.deepCopy());
+            ok(exchange, orderResponse(order));
             return;
         }
         Matcher settle = SETTLE.matcher(path);
@@ -350,7 +448,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
             }
             order.put("pay_state", "SETTLED");
             hit(SETTLE_ROUTE);
-            ok(exchange, order.deepCopy());
+            ok(exchange, orderResponse(order));
             return;
         }
         Matcher cancel = VOID.matcher(path);
@@ -366,7 +464,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
             }
             order.put("pay_state", "VOID");
             hit(VOID_ROUTE);
-            ok(exchange, order.deepCopy());
+            ok(exchange, orderResponse(order));
             return;
         }
         // 第二家没有的路由（含 /open/v2/admin/**、任何 /refund* 变体）：404 + E_NO_ROUTE
@@ -379,8 +477,15 @@ public final class SecondMallFakeServer implements AutoCloseable {
         node.put("sku", item.sku());
         node.put("title", item.title());
         node.put("category_code", item.categoryCode());
-        node.put("unit_price_cents", item.unitPriceCents());
-        node.put("state", item.state());
+        // 价格缺失时**整条字段不写**（不是写 0、也不是写 null）：这样"商城这条记录里没有价格"
+        // 才是真的可观测形态，适配器也就没有"当成 0 元"的机会。
+        if (item.unitPriceCents() != MISSING_UNIT_PRICE_CENTS) {
+            node.put("unit_price_cents", item.unitPriceCents());
+        }
+        // 状态字段同理：null 表示商城这条记录里没有 state 字段，与"给了一个读不懂的词"分开
+        if (item.state() != null) {
+            node.put("state", item.state());
+        }
         // 第二家还会给一些生成器用不上的字段：多给字段必须不影响解析（参考商城也有 brandId/cost）
         node.put("marketing_tag", "NONE");
         return node;

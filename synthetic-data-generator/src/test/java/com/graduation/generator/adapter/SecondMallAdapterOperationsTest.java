@@ -134,6 +134,63 @@ class SecondMallAdapterOperationsTest {
     /** 进制必须是 100：换算常量不许被改成 1000 之类而无人察觉 */
     private static final int CENTS_PER_YUAN_IS_EXPLICIT = 100;
 
+    // ---------- T2b：价格缺失 ⇒ 响亮失败（绝不静默 null） ----------
+
+    @Test
+    @DisplayName("T2b 价格缺失：商城没给 unit_price_cents 时下单必须响亮失败，绝不静默 null 或当成 0 元")
+    void missingPriceFailsLoudly() throws IOException {
+        mall = new SecondMallFakeServer(null, null, ITEM_COUNT);
+        SecondMallHttpAdapter adapter = adapter();
+        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
+
+        // 夹具形态先被独立钉住：目录里这件商品**整条 unit_price_cents 字段都没有**
+        // （不是 0、也不是 null 文本）；正文里那个 null 才是"价格缺失"的判据。
+        String sku = mall.itemSkus().get(0);
+        mall.removeItemPrice(sku);
+        JsonNode raw = mall.itemJson(sku);
+        assertFalse(raw.has("unit_price_cents"),
+                "夹具必须先去掉价格字段，否则这条用例没有对照物：" + raw);
+        assertFalse(mall.itemHasPrice(sku), "夹具侧事实：这件商品没有价格：" + sku);
+
+        ExternalUser buyer = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
+
+        // 1) 下单时这件商品没有可信单价 ⇒ 商城拒单、适配器必须抛，绝不返回含 null 金额的订单
+        MallOperationException e = assertThrows(MallOperationException.class,
+                () -> adapter.createOrder(target, OrderCommand.single(buyer.userId(), sku, 1)),
+                "价格缺失必须响亮失败：返回订单（哪怕金额是 null）会把\"读不懂的金额\"静默带进流水");
+        assertTrue(e.getMessage().contains("E_NO_PRICE") && e.getMessage().contains(sku),
+                "异常必须点名缺失的价格与哪件商品（错误码 + SKU）：" + e.getMessage());
+        assertTrue(e.getMessage().contains("no price") || e.getMessage().contains("价格")
+                        || e.getMessage().contains("单价"),
+                "异常必须直说价格/单价缺失（不许只丢一句\"失败\"）：" + e.getMessage());
+
+        // 2) 商城侧"确实没有留下成交"必须被独立证明：否则第 1 条的抛可能只是别的原因
+        assertEquals(0, mall.orderCount(),
+                "价格缺失时商城侧不许留下一笔成交（订单数必须 0，实际：" + mall.orderCount() + "）");
+        assertNull(mall.orderJson("ON1"), "价格缺失时不该建成任何订单快照");
+        // 3) 反向对照：目录读取本身仍然正常；报价读不懂的那件**被排除并响亮报错**，
+        //    而不是留在目录里带着 null 金额继续跑（与"读不懂的状态词"同一形态：排除 + 点名）
+        ProductPage page = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
+        assertEquals(ITEM_COUNT - 1, page.products().size(),
+                "报价读不懂的那件必须被排除在可用目录之外（目录 " + ITEM_COUNT + " 件 → 在售 "
+                        + page.products().size() + " 件）");
+        assertTrue(page.products().stream().noneMatch(p -> sku.equals(p.productId())),
+                "报价读不懂的商品不许留在可用目录里：" + sku);
+        assertTrue(page.products().stream().allMatch(p -> p.price() != null),
+                "可用目录里不许有任何金额为 null 的商品：" + page.products().stream()
+                        .filter(p -> p.price() == null).map(ExternalProduct::productId).toList());
+        // 目录成空时更不许"静默返回空目录"：那是把"读不懂"伪装成"商城没货"
+        mall = new SecondMallFakeServer(null, null, 1);
+        String onlySku = mall.itemSkus().get(0);
+        mall.removeItemPrice(onlySku);
+        TargetConfig singleItemTarget = target(mall.baseUrl(), FORMAT_DECLARED);
+        MallOperationException empty = assertThrows(MallOperationException.class,
+                () -> adapter().listProducts(singleItemTarget, ProductQuery.firstPage(1)),
+                "整份目录的报价都读不懂时必须响亮失败，绝不静默返回空目录");
+        assertTrue(empty.getMessage().contains(onlySku),
+                "空目录失败必须点名是哪件商品读不懂：" + empty.getMessage());
+    }
+
     // ---------- T3：信封不同仍能解析 / 响亮失败 ----------
 
     @Test
@@ -209,14 +266,19 @@ class SecondMallAdapterOperationsTest {
         ExternalUser buyer = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
         ExternalOrder created = adapter.createOrder(target,
                 OrderCommand.single(buyer.userId(), product.productId(), 2));
-        // 订单状态 = 商城原词（NEW），括号里只是给流水看的人读别名（CREATED）——原词必须在前，不许被别名顶掉
-        assertTrue(created.status().startsWith("NEW"), "下单后必须保留第二家原词 NEW：" + created.status());
-        assertFalse(created.status().startsWith("CREATED"), "不许把别名当成商城原词：" + created.status());
+        // 订单状态 = 商城原文的**逐字符**透出（指导书 V2.3 §4.1.1.3"商城原样文本"）：
+        // 这里必须是逐字相等的 "NEW"，不许加括号别名、不许大小写改写、不许加前后缀——
+        // 用 startsWith 断言会把 "NEW(CREATED)" 这种"拼了别名"的实现放过去，所以这里写死全等。
+        assertEquals("NEW", created.status(), "下单后必须是第二家原文 NEW 的逐字符透出：" + created.status());
+        // 反向对照（商城侧）：不是应答好看，商城自己真的记着 NEW
+        assertEquals("NEW", mall.orderJson(created.orderId()).path("pay_state").asText(),
+                "商城侧下单后就是 NEW（正向对照：上面的 NEW 确实来自商城）");
         assertNotNull(created.orderId());
         assertTrue(created.orderId().startsWith("ON"), created.orderId());
 
         ExternalOrder paid = adapter.pay(target, new PayCommand(created.orderId(), buyer.userId()));
-        assertEquals("SETTLED", paid.status().split("\\(")[0], "支付后必须回 SETTLED（不是参考商城的 PAID）");
+        assertEquals("SETTLED", paid.status(),
+                "支付后必须是第二家原文 SETTLED 的逐字符透出（不是参考商城的 PAID，也不是 PAID(SETTLED)）");
         assertEquals("SETTLED", mall.orderJson(created.orderId()).path("pay_state").asText(),
                 "商城侧状态真的迁移了（不是只有应答好看）");
         // 明细条数取"应答里的行数"（1 行），件数是行内的 quantity（2）——两者不是一个东西，
@@ -225,15 +287,45 @@ class SecondMallAdapterOperationsTest {
         assertEquals(2, mall.orderJson(created.orderId()).path("lines").get(0).path("quantity").asInt(),
                 "商城收到的件数必须是 2（订单命令里的 quantity 真的发出去了）");
 
+        // 4b-2：第三个状态词 VOID 也要逐字透出（另起一单来作废，因为商城侧 SETTLED 之后不能再 VOID）
+        ExternalOrder toCancel = adapter.createOrder(target,
+                OrderCommand.single(buyer.userId(), product.productId(), 1));
+        assertEquals("NEW", toCancel.status(), "新单仍是商城原文 NEW");
+        ExternalOrder cancelled = adapter.cancel(target,
+                new CancelCommand(toCancel.orderId(), buyer.userId(), "测试用：作废"));
+        assertEquals("VOID", cancelled.status(), "作废后必须是第二家原文 VOID 的逐字符透出（不是 CANCELLED）");
+        assertEquals("VOID", mall.orderJson(toCancel.orderId()).path("pay_state").asText(),
+                "商城侧真的迁移到了 VOID（正向对照）");
+        // 商城侧原词分布要和"逐字透出"对得上：只有 SETTLED/VOID 两个原词，各 1 单。
+        // 拼过别名的实现会让这里的桶名/桶数都对不上（这也是别名为什么必须删掉）。
+        assertEquals(Map.of("SETTLED", 1, "VOID", 1), mall.orderStateHistogram(),
+                "商城侧只该有 SETTLED/VOID 两个原词，各 1 单：" + mall.orderStateHistogram());
+
         // 4c：引擎侧不按字面量判定 —— 适配器不认识的状态词映射成 null（而不是把原词塞进规范字段）
         mall.overrideItemState(mall.itemSkus().get(5), "ARCHIVED");
-        ExternalProduct unknown = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT)).products()
+        ProductPage afterArchive = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
+        ExternalProduct unknown = afterArchive.products()
                 .stream().filter(p -> "SKU00006".equals(p.productId())).findFirst().orElseThrow();
         assertNull(unknown.status(), "映射不到必须是 null，绝不能是商城原词 ARCHIVED");
         assertFalse(unknown.onSale(), "映射不到的不能被当成在售");
-        // 4d：原词必须留痕（供引擎报成目录缺口），而不是无声丢弃
-        assertTrue(adapter.unmappedStatusWords().contains("ARCHIVED"),
-                "适配器必须报出读不懂的商城原词：" + adapter.unmappedStatusWords());
+        // 4d：原词必须留痕（供引擎报成目录缺口），而不是无声丢弃。
+        //     留痕的**载体是本次读取的返回页**（ProductPage），不是适配器实例上的字段：
+        //     适配器是单例无状态的，"上一轮读到过什么"不许跨运行留在它身上。
+        assertTrue(afterArchive.unmappedStateWords().contains("ARCHIVED"),
+                "本次读取的返回页必须报出读不懂的商城原词：" + afterArchive.unmappedStateWords());
+        assertEquals(List.of("ARCHIVED"), afterArchive.unmappedStateWords(),
+                "原词清单是把商城原词照实列出（去重、字典序），不是把规范词或商品 ID 混进去");
+        // 4e：第二次读取（状态已改回 SALE）的返回页里**不许**还留着上一轮的原词——
+        //     这是"事实随返回值走、不随单例走"的正向对照
+        mall.overrideItemState(mall.itemSkus().get(5), "SALE");
+        ProductPage afterRevert = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
+        assertEquals("on_sale", afterRevert.products().stream()
+                        .filter(p -> "SKU00006".equals(p.productId())).findFirst().orElseThrow().status(),
+                "改回 SALE 后必须重新映射成 on_sale");
+        assertTrue(afterRevert.unmappedStateWords().isEmpty(),
+                "上一轮读到的原词不许留在下一次读取的结果里：" + afterRevert.unmappedStateWords());
+        assertTrue(afterRevert.stateFieldMissing().isEmpty(),
+                "商城明明给了 state 字段，不该被记成\"没给状态字段\"：" + afterRevert.stateFieldMissing());
     }
 
     // ---------- T5：路由不同，且流水记的是适配器自报的路由 ----------
@@ -285,12 +377,38 @@ class SecondMallAdapterOperationsTest {
         assertEquals(CapabilityVerdict.SUPPORTED, capabilities.verdict(MallCapability.PRODUCT));
         assertEquals(CapabilityVerdict.SUPPORTED, capabilities.verdict(MallCapability.USER));
         assertEquals(CapabilityVerdict.SUPPORTED, capabilities.verdict(MallCapability.ORDER));
+        // 第二家没有改价/改库存、退款单、重置状态这三类接口 ⇒ 静态声明为 ABSENT。
+        // 口径必须说清："值（ABSENT） + 静态声明（未探测）"——即这是适配器**不联网**给出的声明，
+        // 不是一次探测的结论；本用例只断言到"声明成 ABSENT 且调用走响亮失败"，
+        // **不断言**"被探测定性为不存在"（那需要真的发探测请求，本适配器刻意不发）。
         assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.ADMIN),
-                "第二家没有改价/改库存接口 ⇒ ABSENT（不是 UNDETERMINED：这是已知事实）");
-        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.REFUND));
-        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.RESET_STATE));
+                "第二家没有改价/改库存接口 ⇒ 静态声明 ABSENT（未探测；不是 UNDETERMINED 的\"没证实\"）");
+        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.REFUND),
+                "退款：静态声明 ABSENT（未探测）");
+        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.RESET_STATE),
+                "重置状态：静态声明 ABSENT（未探测）");
         assertEquals(CapabilityVerdict.UNDETERMINED, capabilities.verdict(MallCapability.BEHAVIOR),
                 "没声明 behavior_path ⇒ UNDETERMINED（没证实，但不是没有）");
+
+        // 反向对照：这三项 ABSENT 是**静态声明（未探测）**，不是探测结论 —— 声明式能力判定不许联网，
+        // 因此 capabilities() 之后商城侧一条请求都不该多出来
+        assertEquals(0, mall.exchanges().size(),
+                "capabilities() 是声明口，不许联网：实际收到的请求=" + mall.exchanges());
+        // 同理：test() 里对这三项**不发探测请求**，也从不谎称测过（它只探 product/user/order/behavior）
+        int beforeProbe = mall.exchanges().size();
+        TargetCheckResult check = adapter.test(target);
+        List<String> probeRequests = mall.exchanges().subList(beforeProbe, mall.exchanges().size());
+        assertTrue(probeRequests.stream().noneMatch(request -> request.contains("admin")
+                        || request.contains("refund") || request.contains("reset")),
+                "对 admin/refund/reset_state 不许发探测请求（发了就只能算\"未证实\"，不能算\"不存在\"）："
+                        + probeRequests);
+        assertFalse(probeRequests.isEmpty(),
+                "test() 至少要探一次代表路由，否则\"没探那三项\"是因为它什么都没探（空对照）：" + probeRequests);
+        // test() 的结果同样把这三项写成静态声明（未探测），而不是"测出来的不存在"
+        assertEquals(CapabilityVerdict.ABSENT, check.verdict(MallCapability.REFUND),
+                "test() 里退款仍是静态声明 ABSENT（未探测）：" + check.detail());
+        assertTrue(check.detail().contains("未探测") || check.detail().contains("静态声明"),
+                "test() 的文案必须自报\"未探测/静态声明\"，不许把声明说成测量：" + check.detail());
 
         // 不支持的必须响亮失败：绝不能返回一个"成功"对象让调用方记账
         MallOperationException refund = assertThrows(MallOperationException.class,
@@ -312,6 +430,128 @@ class SecondMallAdapterOperationsTest {
         TargetCapabilities undeclared = adapter.capabilities(target(mall.baseUrl(), "{}"));
         assertEquals(CapabilityVerdict.UNDETERMINED, undeclared.verdict(MallCapability.PRODUCT),
                 "没声明 open-v2 格式 ⇒ UNDETERMINED，而不是乐观的 SUPPORTED");
+    }
+
+    // ---------- T8：商城没给状态字段 ⇒ 保持"未给"，绝不造词 ----------
+
+    @Test
+    @DisplayName("T8 缺状态：商城没给 state/pay_state 时保持\"未给\"（null），绝不产出 UNKNOWN 这类编出来的商城词")
+    void missingStateNeverInventsAMallWord() throws IOException {
+        mall = new SecondMallFakeServer(null, null, ITEM_COUNT);
+        SecondMallHttpAdapter adapter = adapter();
+        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
+
+        // 0) 夹具形态先被独立钉住：这件商品的应答里**整条 state 字段都没有**（不是空串、不是怪词）
+        String sku = mall.itemSkus().get(0);
+        mall.overrideItemState(sku, null);
+        JsonNode rawItem = mall.itemJson(sku);
+        assertFalse(rawItem.has("state"), "夹具必须先去掉 state 字段，否则这条用例没有对照物：" + rawItem);
+
+        // 1) "商城没给字段"与"给了一个读不懂的词"是两件事：前者**没有商城原词可报**，
+        //    因此不许出现在 unmappedStateWords（那个列表里每个词都必须是商城真的说过的）
+        ProductPage page = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
+        assertTrue(page.unmappedStateWords().isEmpty(),
+                "没给字段不是\"给了读不懂的词\"，这里不许凭空冒出一个商城原词：" + page.unmappedStateWords());
+        assertTrue(page.stateFieldMissing().contains(sku),
+                "缺状态字段的商品必须进 stateFieldMissing（可核对的缺口事实）：" + page.stateFieldMissing());
+        // 这一行本身要留着（不静默丢商品），但它的规范状态必须是 null：不是 UNKNOWN、也不是任何词
+        ExternalProduct missingState = page.products().stream()
+                .filter(p -> sku.equals(p.productId())).findFirst()
+                .orElseThrow(() -> new AssertionError("缺状态字段的商品不许从目录里静默消失：" + sku));
+        assertNull(missingState.status(),
+                "商城没给 state 字段 ⇒ 规范状态必须是 null（\"未给\"），实际=" + missingState.status());
+        assertFalse(missingState.onSale(), "\"未给\"不许被当成在售");
+        long usable = page.products().stream().filter(ExternalProduct::onSale).count();
+        assertEquals(ITEM_COUNT - 1, usable,
+                "缺状态字段的商品必须被排除在可用目录之外（目录 " + ITEM_COUNT + " 件 → 可用 " + usable + " 件）");
+
+        // 2) 订单侧的正向对照：商城给了 pay_state 时必须逐字符透出（否则下面的 null 没有对照物）
+        ExternalUser buyer = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
+        String sellable = mall.itemSkus().get(1);
+        ExternalOrder withState = adapter.createOrder(target, OrderCommand.single(buyer.userId(), sellable, 1));
+        assertEquals("NEW", withState.status(),
+                "商城给了 pay_state=NEW ⇒ 必须原样透出（这条正向对照是下面那条断言的前提）");
+
+        // 3) 商城从此不回 pay_state 字段 ⇒ status 必须保持 null：不是 UNKNOWN、不是任何编出来的词
+        mall.omitOrderStateInResponse();
+        ExternalOrder withoutState = adapter.createOrder(target, OrderCommand.single(buyer.userId(), sellable, 1));
+        assertNull(withoutState.status(),
+                "商城没给状态字段时 status 必须是 null（\"未给\"），实际=" + withoutState.status()
+                        + "；编一个词会让\"商城说的是它\"与\"生成器猜的它\"在同一个字段里再也分不开");
+        assertFalse(withoutState.paid(), "\"未给\"不许被读成\"已支付\"");
+        assertFalse(withoutState.cancelled(), "\"未给\"不许被读成\"已取消\"");
+        assertEquals("NEW", mall.orderJson(withoutState.orderId()).path("pay_state").asText(),
+                "商城内部状态照旧是它自己的词 ⇒ \"状态缺失\"是应答形态，不是夹具坏了");
+        assertEquals("NEW", mall.orderJson(withState.orderId()).path("pay_state").asText(),
+                "那笔带状态的正向对照订单在商城侧也仍是 NEW（只创建、没支付）");
+
+        // 4) 支付应答同样不给状态字段：调用成功照样成功，但状态不造词
+        ExternalOrder paid = adapter.pay(target, new PayCommand(withoutState.orderId(), buyer.userId()));
+        assertNull(paid.status(), "支付应答没给状态字段 ⇒ 保持 null，不许写 UNKNOWN：" + paid.status());
+        assertFalse(paid.paid(), "不许把\"未给\"当成\"已支付\"");
+        assertEquals("SETTLED", mall.orderJson(withoutState.orderId()).path("pay_state").asText(),
+                "商城侧确实收下了这次支付（state=SETTLED）——状态字段缺失与调用成不成功是两件事");
+
+        // 5) 退款单同口径（第二家没有退款接口，这里只能直接观测 DTO 的\"未给\"语义）
+        ExternalRefund refund = new ExternalRefund("RF1", withoutState.orderId(), null, new BigDecimal("1.00"));
+        assertNull(refund.status(), "退款状态没给就是 null：绝不许出现 UNKNOWN 这类编出来的词");
+        assertFalse(refund.completed(), "\"未给\"不许被读成\"已完成\"");
+        // 空白状态词也按"没给"处理：它同样不是商城说过的词
+        assertNull(new ExternalOrder("ON9", "BR9", "   ", null, -1).status(),
+                "空白状态词不是商城原词，必须落成\"未给\"而不是留着空白串冒充状态");
+        assertNull(new ExternalRefund("RF9", "ON9", "   ", null).status(), "退款单同理");
+    }
+
+    // ---------- T9：格式声明缺失时，运维话术必须点名键名与可接受取值 ----------
+
+    @Test
+    @DisplayName("T9 格式声明缺失/不匹配：运维看得到的话术必须点名 config_json.format=open-v2（键名与取值都走常量）")
+    void formatGateIsNamedInOperatorFacingText() throws IOException {
+        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT);
+        SecondMallHttpAdapter adapter = adapter();
+
+        // 9a：base_url 与凭据都没问题，只是 config_json 里没有格式声明 —— 这正是"运维只能看到一串
+        //     UNDETERMINED、却不知道缺哪个键"的场景，话术必须直接告诉他键名与可接受取值
+        TargetConfig undeclaredTarget = target(mall.baseUrl(), "{}");
+        assertEquals(CapabilityVerdict.UNDETERMINED,
+                adapter.capabilities(undeclaredTarget).verdict(MallCapability.PRODUCT),
+                "声明门：没声明格式 ⇒ 三段一律 UNDETERMINED（这条断言是下面话术断言的前提）");
+        assertEquals(0, mall.exchanges().size(),
+                "能力声明不许联网：运维在配置写对之前不该已经在打商城了：" + mall.exchanges());
+        TargetCheckResult undeclared = adapter.test(undeclaredTarget);
+        assertTrue(undeclared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_KEY),
+                "话术必须点名缺的是哪个键（经常量断言，不硬编码字面量）：" + undeclared.detail());
+        assertTrue(undeclared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
+                "话术必须点名该键可接受的取值（经常量断言，不硬编码字面量）：" + undeclared.detail());
+        assertTrue(undeclared.detail().contains(
+                        SecondMallHttpAdapter.CONFIG_FORMAT_KEY + "=" + SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
+                "键名与取值必须以 \"<键>=<取值>\" 的形态连在一起出现，运维才能照着改：" + undeclared.detail());
+        assertTrue(undeclared.detail().contains(SecondMallHttpAdapter.CONFIG_BEHAVIOR_PATH),
+                "behavior 还要另外声明哪个键，也要在同一段话术里说清：" + undeclared.detail());
+
+        // 9b：声明了、但取值不对 ⇒ 与"根本没声明"同一个结论，话术要回显当前那份声明
+        TargetConfig wrongValueTarget = target(mall.baseUrl(),
+                "{\"" + SecondMallHttpAdapter.CONFIG_FORMAT_KEY + "\":\"open-v1\"}");
+        assertEquals(CapabilityVerdict.UNDETERMINED,
+                adapter.capabilities(wrongValueTarget).verdict(MallCapability.PRODUCT),
+                "声明了但取值不对 ⇒ 同样是 UNDETERMINED，绝不降级成 ABSENT"
+                        + "（ABSENT 会被读成\"商城没有这个接口\"，而事实是配置写错了）");
+        TargetCheckResult wrongValue = adapter.test(wrongValueTarget);
+        assertTrue(wrongValue.detail().contains("open-v1"),
+                "话术必须回显当前那份声明，运维才知道自己写的是什么：" + wrongValue.detail());
+        assertTrue(wrongValue.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
+                "取值不对时同样要点名可接受取值：" + wrongValue.detail());
+
+        // 9c：正向对照 —— 声明正确时声明门给 SUPPORTED，话术也必须说"已声明"，不能反过来吓人
+        TargetConfig declaredTarget = target(mall.baseUrl(), FORMAT_DECLARED);
+        assertTrue(adapter.capabilities(declaredTarget).isSupported(MallCapability.PRODUCT),
+                "声明正确 + base_url/凭据没问题 ⇒ 声明门给 SUPPORTED（否则 9a/9b 的 UNDETERMINED 没有对照物）");
+        TargetCheckResult declared = adapter.test(declaredTarget);
+        assertTrue(declared.detail().contains("已声明"),
+                "声明成立时话术要明说已声明，而不是继续提示缺失：" + declared.detail());
+        assertTrue(declared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_KEY)
+                        && declared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
+                "无论成立与否，这段话术都要能自解释（键名 + 取值）：" + declared.detail());
     }
 
     /** {@code config_json}：显式声明第二家的接口格式（能力判定的输入之一） */

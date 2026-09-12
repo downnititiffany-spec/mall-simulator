@@ -8,7 +8,6 @@ import com.graduation.generator.adapter.MallTargetAdapter;
 import com.graduation.generator.adapter.ProductPage;
 import com.graduation.generator.adapter.ProductQuery;
 import com.graduation.generator.adapter.TargetCapabilities;
-import com.graduation.generator.adapter.MallStatusVocabulary;
 import com.graduation.generator.adapter.TargetConfig;
 import com.graduation.generator.adapter.TargetRoute;
 import com.graduation.generator.contract.CanonicalEvent;
@@ -257,21 +256,23 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         // 只报"目录 N 件、在售 M 件"会让 N-M 里混着两种完全不同的东西——"商城说它下架了"（正常）
         // 与"生成器读不懂商城的状态词"（缺口）。后者必须能看出件数与商城原词，
         // 否则商品只是无声消失，运维会以为是商城没货。
-        String unmapped = describeUnmappedStatuses(page.products(), adapter);
+        String unmapped = describeUnmappedStatuses(page.products(),
+                page.unmappedStateWords(), page.stateFieldMissing());
         journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true,
                 routeMethod(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
                 routePath(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
                 null, null, OperationJournalEntry.STATUS_OK,
                 "目录 %d 件，在售 %d 件（预检兼凭据校验）".formatted(page.total(), catalog.size()), false);
         if (unmapped != null) {
-            // 缺口单独占一行（SKIPPED，且不是真实调用）：这样"预检读了几次目录""在售几件""多少件因词表被排除"
+            // 缺口单独占一行（SKIPPED，且不是真实调用）：这样"预检读了几次目录""在售几件""多少件因状态缺口被排除"
             // 三件事在流水里各自可数，不会被合并成一句话而失去可核对性。
             journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, false, null, null, null, null,
                     OperationJournalEntry.STATUS_SKIPPED,
-                    "商城状态词无法映射到规范状态词表，%s 商品被排除在可用目录之外".formatted(unmapped), false);
-            notes.add(("目录缺口：%s 商品的状态词无法映射到规范状态词表——它们不会进入规范事件流，"
-                    + "也绝不会被静默当成「在售」；若要使用，需在对应适配器的状态词映射表里补齐"
-                    + "（状态词映射归适配器，见 F-25）").formatted(unmapped));
+                    "商城状态词无法映射到规范状态词表/商城未给状态字段，%s 商品被排除在可用目录之外".formatted(unmapped),
+                    false);
+            notes.add(("目录缺口：%s 商品的状态词无法映射到规范状态词表（或商城未给状态字段）——"
+                    + "它们不会进入规范事件流，也绝不会被静默当成「在售」；若要使用，"
+                    + "需在对应适配器的状态词映射表里补齐（状态词映射归适配器，见 F-25）").formatted(unmapped));
         }
         if (catalog.isEmpty()) {
             throw new IllegalArgumentException("商城商品目录里没有在售商品，MALL_API 无法生成任何订单："
@@ -313,21 +314,31 @@ public final class MallApiGenerationEngine implements GenerationEngine {
     }
 
     /**
-     * 目录里"读不懂状态词"的商品：<b>件数</b> + <b>商城原词</b>（原词按字典序，输出可复现）。
+     * 目录的<b>状态缺口</b>：<b>件数</b> + <b>商城原词</b> + <b>未给状态字段的商品</b>
+     * （清单按字典序，输出可复现）。
      *
-     * <p>判据只有一件事：{@link ExternalProduct#status()} 为 {@code null}。按 F-25 的约定，
-     * 适配器把"商城的词映射不到规范词表"表达成 {@code null}（而不是把原词塞进规范字段），
-     * 于是引擎不需要认识任何一家商城的词表，也能把缺口如实报出来——这就是"映射归适配器、
-     * 报缺口归引擎"的分工。</p>
+     * <p><b>引擎对任何一家商城的词表零知识</b>：本方法只吃两个<b>通用</b>清单
+     * （{@link ProductPage#unmappedStateWords()} 与 {@link ProductPage#stateFieldMissing()}），
+     * 不认识也不去问"这家适配器属于哪个类型"。谁有词表、谁缺字段是<b>适配器在读目录时</b>的事，
+     * 事实随 {@link ProductPage} 一起返回；引擎只读页，不按适配器类型分支——
+     * 这正是"映射与词表归适配器、计数与报缺口归引擎"的分工。</p>
      *
-     * <p>原词从哪来：适配器实现 {@link MallStatusVocabulary} 的话，直接问它要（词表本来就在适配器里）。
-     * 没实现的适配器只能说"K 件读不懂"——这仍然远好过不说。</p>
+     * <p>判据仍然是 {@link ExternalProduct#status()} 为 {@code null}（F-25 的约定：适配器把
+     * "商城的词映射不到规范词表/商城没给"表达成 {@code null}，而不是把原词塞进规范字段）。
+     * 两个清单只用来把 {@code null} 的<b>成因</b>说清楚，不参与计数：
+     * <b>(1)</b> 商城返回过、但映射表里没有的原词；（2）商城根本没给状态字段。</p>
      *
      * <p>为什么必须单独报：这些商品既不是"商城说下架"（那是正常业务事实），也不能被当作在售，
      * 只能被排除；不报出来，它们就只是"目录里少了几件"，运维会以为是商城没货。</p>
+     *
+     * @param unmappedStateWords 本次目录读取里商城返回过、但映射不到规范词表的原词（可为 null/空）
+     * @param stateFieldMissing  本次目录读取里商城没给状态字段的商品 ID（可为 null/空）
+     * @return 一句可直接写进流水/运行报告的中文；没有缺口时返回 {@code null}
      */
-    public static String describeUnmappedStatuses(List<ExternalProduct> products, MallTargetAdapter adapter) {
-        if (products == null || adapter == null) {
+    public static String describeUnmappedStatuses(List<ExternalProduct> products,
+                                                  List<String> unmappedStateWords,
+                                                  List<String> stateFieldMissing) {
+        if (products == null) {
             return null;
         }
         int count = 0;
@@ -339,11 +350,27 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         if (count == 0) {
             return null;
         }
-        List<String> words = adapter instanceof MallStatusVocabulary vocabulary
-                ? vocabulary.unmappedStatusWords()
-                : List.of();
-        return count + " 件" + (words.isEmpty() ? ""
-                : "（商城原词：" + words.stream().distinct().sorted().collect(Collectors.joining("、")) + "）");
+        List<String> words = distinctSorted(unmappedStateWords);
+        List<String> missing = distinctSorted(stateFieldMissing);
+        StringBuilder detail = new StringBuilder();
+        if (!words.isEmpty()) {
+            detail.append("商城原词：").append(String.join("、", words));
+        }
+        if (!missing.isEmpty()) {
+            if (detail.length() > 0) {
+                detail.append("；");
+            }
+            detail.append("商城未给状态字段的商品：").append(String.join("、", missing));
+        }
+        return count + " 件" + (detail.length() == 0 ? "" : "（" + detail + "）");
+    }
+
+    /** 去重 + 字典序：缺口说明在任何一次运行里都要是同一串（可复现的取证口径） */
+    private static List<String> distinctSorted(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        return values.stream().filter(java.util.Objects::nonNull).distinct().sorted().toList();
     }
 
     /**

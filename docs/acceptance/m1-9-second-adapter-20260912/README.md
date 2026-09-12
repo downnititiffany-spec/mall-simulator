@@ -186,3 +186,61 @@
 ## 13. 补记
 
 （待修复轮交付与总控复核后追加；追加时只新增内容，不改上文。）
+
+### 13.1 补记一（2026-09-12 12:5x）：修复轮验收 —— S1–S7 / W1–W3 处置与残余
+
+**验收方式声明**：以下数值**全部由总控自己产生**；修复泳道的自述只作线索，**不作证据**。
+
+1. **自跑 E2（修复后最终树，含死类型退休）**：`Tests run: 116, Failures: 0, Errors: 0, Skipped: 0` ＋ `BUILD SUCCESS`，`exit=0`，21.625 s。原始日志 `.verify/m1-9-verify/e2-final-20260912-123946.out.txt`（23,939 B，sha256 `505B8AC10D8E1733F389579AFABEEDFD56736086E70708F3E44F0D10E4EB386C`）。用例数轨迹：基线 **100** → 泳道交付 111 → 修复轮 **116**（新增 T8/T8b/T9，无改名、无删除、无跳过）。
+2. **判据复核（判据先冻结、后执行）**：v2（sha256 `1E73812754A3A17F53EFDDAFCA7DA235A33C56CEF017CFE9352CFDDF07A165BA`，已入库）对**同一份日志**实测 **17 PASS / 1 FAIL**；唯一 FAIL 经根因诊断为**判据自身的解析缺陷（假红灯）**，见 13.3。据此出具**只含 (修-6) 的追加修订版** v3（**提交 `bd92f65`，冻结于执行之前**；288 行 / CR=0 / sha256 `AECB32FC322FB362C51C70C905B35EBE485AD75AE87B1B7BAB6E61E6456B5270`），对**同一份日志**实测 **18 PASS / 0 FAIL，`exit=0`**（报告 `.verify/m1-9-verify/w3-run-20260912.txt`，sha256 `58E69B80062890BEDB349E26AEDB3B2D2C24BD6A24D5DB6379AECB74D31B41F2`）。**v3 未放松任何阈值**，只把 W12 的解析改成能读真实 surefire 日志的形状，并**增**了一条正向对照。**两版读数一并报告，不掩盖 v2 的那条 FAIL。**
+3. **变更面**：`git status --porcelain -- synthetic-data-generator/src` = **11 条（10 M ＋ 1 D）**，与泳道报告**逐文件 sha256 11/11 全等**（总控自算）。W1 实测「清单外=0、清单 18 条」。
+4. **人读**（不仅看机械读数）：S1 原词透出与无兜底映射（`SecondMallHttpAdapter.java:158-175`、`:786-802`）；S6 响亮失败（`MallApiDispatchSink.java:382-393`）与新渲染（`:398-411`）；S2/S3 运维文案（`SecondMallHttpAdapter.java:576-595`）；新证据用例 T2b/T8/T9/「跨运行不串台」/「商城未给状态字段」的 `@DisplayName` 与断言方向（含反向断言：明细不得出现 `UNKNOWN`/`CREATED`）。
+5. **复核器 W0 自证**：复核期间 `src` 指纹 **93 → 93、漂移 0**（含"文件被删"这一最坏情形）。
+
+### 13.2 处置表（S1–S7 / W1–W3）
+
+| 项 | 严重度 | 处置 | 总控实测证据（v3 读数） | 判定 |
+|---|---|---|---|---|
+| **S1** 订单状态 `原词(别名)` 复合格式 | 最重 | **删别名表**，只透出商城原词 | `ORDER_STATE_ALIAS=0`；别名词字面量 `"(CREATED\|PAID\|CANCELLED\|NEW)"=0`；正向对照 `readOrder=4` | **已消除** |
+| **S1 同类面** 三个 DTO 造 `status="UNKNOWN"` | （人读发现，机械判据漏） | 空白 → `null`（"商城未给"），**不再编词**；需要非空处以响亮失败收口 | `adapter/**` 内 `= "UNKNOWN"`/`? "UNKNOWN"` = **0**、`"UNKNOWN"` 提及 = 0；正向对照 adapter 文件数 24、含 `record` 文件 21；新增用例「缺状态」「未给状态」 | **已消除** |
+| **S2** 魔法串 `config_json.format=="open-v2"` 把门、报错不点名 | 重 | **单点常量** `CONFIG_FORMAT_KEY`/`CONFIG_FORMAT_VALUE`；运维话术点名键与取值；声明"非契约键" | 代码行 `"format"` 字面量 = **1**（单点定义；全文亦 1）；`CONFIG_FORMAT_KEY` 引用 7、`CONFIG_FORMAT_VALUE` 引用 6；文案 `:582-591` 逐字含 `config_json.<KEY>=<VALUE>`，并否掉「OPTIONS 通过＝已按格式声明」的误读 | **已消除**（键仍属约定，见 R-b） |
+| **S3** 三能力位不探测直接 `ABSENT` | 中 | 按裁决**保留 `ABSENT`**，口径改为「静态声明（未探测）」并写进 Javadoc 与运维文案 | 「未探测/静态声明」命中 15、`ABSENT` 18；`:593-595` 原文含"不要把这三个 ABSENT 读成「测过所以没有」"；测试侧 `:384-391` 三条 `ABSENT` ＋ **新增** `BEHAVIOR==UNDETERMINED` 对照 | **口径已披露；语义未变** ⇒ 残余 **R-a** |
+| **S4** 新公开 SPI ＋ 引擎 `instanceof` 旁路 | 中 | ① **删引擎旁路**；② 类型本体**退休**（零实现者、零消费者） | `engine/**` 内 `MallStatusVocabulary=0`、其 `instanceof=0`，正向对照 `operationRoutes=29`；全仓库该类型仅剩自身文件 2 处 ⇒ 已移出仓库（见 R-e） | **已消除** |
+| **S5** 累计实例状态冒充"本次运行"事实 | 中 | **改按运行作用域**：改由方法参数与单次调用返回值承载，缺口记在运行级 sink | `unmappedStatusWords` 全 `src` 0（原仅存于已退休接口）；适配器实例字段仅 `credentialLookup`/`timeout`/`mapper`（无集合型累计）；`describeUnmappedStatuses(products, unmappedStateWords, stateFieldMissing)` 为 `static`；`ProductPage.unmappedStateWords()/stateFieldMissing()` 每次读取 `List.copyOf` 快照；用例「跨运行不串台」（同实例、两目标）命中 6 | **已消除**（诊断未丢） |
+| **S6** 下单链路 N+1 补价 ＋ 价格静默降级 | 轻 | **整体删除**补价动作（不是"改成响亮"）：`createOrder` 不再读目录 | `catalogPricesBySku=0`；`createOrder:368-386` 仅组装 `buyer_ref`＋`lines` 后下单；「价格缺失」用例命中 11（含 T2b「必须响亮失败，绝不静默 null 或当成 0 元」） | **已消除** |
+| **S7** 缺字段被编码成中文句子常量 | 轻 | **拆成独立通道**：字段缺失 vs 未登记词分列 | `MISSING_STATE_WORD=0`、`"(商城未给 state 字段)"=0`，正向对照 `stateFieldMissing=1`；实现侧 `:793-801` 两条通道互不混入 | **已消除** |
+| **W1** `startsWith("NEW")` 前缀容忍 | 中 | 改**精确等值** | `startsWith("NEW")=0`；`assertEquals("NEW")=6` | **已改强** |
+| **W2** `split("\\(")[0]` 自截断 | 中 | 改**精确等值** | `split("(")=0`；`assertEquals("SETTLED")=3`；正向对照断言总数 62 | **已改强** |
+| **W3** 把"未探测即 ABSENT"固化成规格 | 中 | **重述为静态声明口径** ＋ 补 `UNDETERMINED` 反向对照 | 见 S3 行 | **已改强** |
+| 断言总量（防"改口径变相削弱"） | — | — | 基线 → 工作区：`SecondMallAdapterOperationsTest` 79→**135**、`SecondMallDualTargetTest` 46→**66**、`GeneratorBoundarySourcePolicyTest` 20→20；新增行中削弱语句 **0**、疑似凭据 **0** | 通过 |
+
+### 13.3 判据缺口三例（治理条目，教训入库）
+
+1. **按"缺陷点"枚举，而非按"缺陷类"**：v1 的允许清单与 S1 检查是按复核报告点名的 14 个文件写的，于是同一**类**残留（三个 DTO 的 `status="UNKNOWN"` 造值）逃过机械检查，**只被人读抓到**。(修-1)/(修-2) 与 W15a/W15b 已补。教训：清单要么按类枚举，要么在判据里明写"本判据只覆盖点、类由人读负责"——不能靠人恰好想到。
+2. **W12 假红灯（判据写错了被测对象的形状）**：W12 原按 `^Tests run: \d+, Failures` 逐行匹配合计行，而 **Maven surefire 的合计行带 `[INFO] ` 前缀**（实测原文 `[INFO] Tests run: 116, Failures: 0, Errors: 0, Skipped: 0`，行尾 CRLF、末字符码 13）⇒ 该正则**在任何真实日志上都匹配不到**，W12 一律判 FAIL。三种候选正则的命中数（同一份日志）：裸 `Tests run: …\s*$` = 原文 0 / 去 CR 后 0；带 `\[INFO\] ` = 20 / 20；带 `(?m)^…$` = 0 / 1。**教训有二**：① 判据必须对着**真实产物的形状**写，并同时具备正向对照（v3 增"逐类行 ≥15"）；② 该缺陷**只有在"第一次真的喂它一份日志"时才暴露**——冻结前从未对真实日志跑过，就是"未取证"的一种，必须显式登记而不是默认为可用。
+3. **泳道自报的偏离同样要被复核**：泳道在其报告 §6.2 自报「W1 白名单不含 `ExternalOrder`/`ExternalRefund`/`MallApiDispatchSink`，故运行 W1 必报越界」。总控核验：**该自报不成立**——冻结 v2 的允许清单 **18 条**逐字含这三个文件（其中 `ExternalOrder.java`/`ExternalRefund.java`/`ExternalUser.java` 正是 (修-1) 增补项），W1 实测 **PASS、清单外=0**。⇒ 复核对象不仅是"泳道声称做完的"，也包括"泳道声称做不到/必然失败的"。
+
+### 13.4 残余（**接受的、未消除的**，勿读成已修）
+
+- **R-a（S3）**：`CapabilityVerdict.ABSENT` 在本适配器承担两种含义——「探测后确认没有」与「静态声明没有（未探测）」。本次只做到**披露**（Javadoc ＋ 运维文案 ＋ 用例文案）：三态词汇表**未扩充**、未新增任何探测请求。只读 `ABSENT` 值而不读文案的消费方仍无法区分二者。
+- **R-b（S2）**：`config_json.format=open-v2` 仍是**适配器与其夹具之间的约定**，不是契约键（`contract-specs/**` 未定义，全仓库无第三方消费者）。已在文案中声明"非契约键"；若需入规格，属 `P5` 异种源适配窗口。
+- **R-c（夹具能力）**：`SecondMallFakeServer` **不实现 `OPTIONS`**（实测 `grep '"OPTIONS"'` 为空），因此 `test()` 对本夹具的 product/user/order 三段**实测判定为 `ABSENT`**（`aggregate()` 见 `MISSING` 即 ABSENT）。故新用例 T9 的"前提"锚在**声明门 `capabilities()`**（引擎预检实际使用的那一个），而非 `test()` 的实测值。这不是本轮引入的缺陷，本轮也未修（若要让 `test()` 实测三段呈 `SUPPORTED`，需夹具支持 `OPTIONS`，属新范围）。
+- **R-d（HEAD-clean 的同类残留，只报不改）**：`ExternalOrder.created(...)` 仍返回**自造**的 `"CREATED"`（全仓库**零调用点**，该方法的 Javadoc 自陈商城下单应答只回 `orderId`）；`ReferenceMallHttpAdapter.java:245/259/278` 仍自造 `PAID`/`CANCELLED`/`COMPLETED`（参考商城 pay/cancel/refund 应答为 `ApiResponse<Void>`，`:240-241` 有自陈注释，且被既有用例钉住）⇒ 属既有口径，不在本轮范围，登记为残余。
+- **R-e（口径收紧，记变更不追改上文）**：§6 的 D-D 裁决原文是「**适配器侧类型可留**」；本次在其后**退休**了该类型（`adapter/MallStatusVocabulary.java`，2013 B，sha256 `EAAD61AC47B456450222ADF4A968F413A84A66DC4F5788FAF587AA5AB982127E`，零实现者、零消费者、引擎零引用），文件移出仓库（备份 `D:\Develop_code\graduation-lane-backup\fix-round\files\retired-MallStatusVocabulary.java`，git 历史保留 `25b0fe7` 原文）。依据：内部代码退休、不涉契约与持久状态 ⇒ 取 delete-first；留一个"无人实现、无人消费、且 Javadoc 自陈曾是旁路"的公开类型，正是 S4 复发点。**上文 §6 原文不改**，以本条为准。
+- **R-f（仪器豁免范围）**：W1b 的自我豁免正则仍写 `verify-fix(-v2)?\.ps1`；v3 已入库（提交 `bd92f65`）故不依赖豁免，正则未改（v3 冻结文本一字不动，避免"边跑边改判据"）。
+
+### 13.5 未取证（诚实标注，勿外推）
+
+1. **真实第二家商城未接入**：Part B 仍是夹具 `HttpServer`（`127.0.0.1:0`）；"适配了第二家真实商城"不成立。
+2. **分页／幂等／限流／错误码**未实测；`behavior`／`reset_state` 仍为 `UNDETERMINED`（未探测）；S3 的三能力位是**静态声明**，不是探测结论。
+3. 本轮证据级别 **E2（模块自动化）**，**不能**外推到 **E3（本地真实链）** 与 **E4（集群 1,000 行）**。T2 权威 55 条黄金链本轮**未跑**。
+4. **W1–W3 的"改强"只做了文本/断言层实测**，未做变异测试（故意破坏实现，确认用例确实变红）。
+5. **V 系列复核器（`scripts/verify.ps1`、`verify-v2.ps1`）本轮未运行**——它们面向 `25b0fe7` 的交付面；`verify-fix.ps1`（v1）**不可运行**（破坏性缺陷，见 F-37），只在档案里作为判据文本引用。W9–W12 中 v1 系列对当前 11 文件树的判定**未观测**。
+6. 引擎侧"格式声明摘要"话术**未做**（刻意只保留适配器侧一处话术来源，避免第二份来源漂移）。
+7. `describeUnmappedStatuses` 只验证了"词表经参数传入、不落实例字段"，未覆盖多目标**并发**下的其它共享点（本轮覆盖的是同实例跨**运行**串台）。
+
+### 13.6 结论
+
+- **可声称**：S1/S2/S4/S5/S6/S7 **已消除**；S1 同类面（DTO 造值）**已收口**；W1/W2 **已改强为精确等值**；W3 **已重述为静态声明口径**；S3 口径**已披露**（判定值按裁决不变）；变更面 11 条**全在允许清单内**；证据级别 **E2**，原始日志与判据报告路径/哈希见 13.1。
+- **不可声称**：真实第二家商城已适配；M1-9 ② 整体 `DONE`（无真实异种源、无集群链 ⇒ 仍 `DONE_LIMITED`）；E3/E4 结论；残余 R-a…R-f 已消除。
+- **后续**：`P5-03`（T8 变更面守卫 ＋ 真实第二家）→ 代码质量评审（在修复定稿后跑）→ 看板 `M1-9` 行与 §5.1 F-35/F-36 状态同步 ＋ 新增 **F-38**（判据缺口三例）。

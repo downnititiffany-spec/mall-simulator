@@ -249,7 +249,7 @@ public final class MallApiDispatchSink {
         ExternalOrder paid = adapter.pay(target, new PayCommand(requireOrder(canonicalOrder, plan.operation()),
                 requireUser(event, plan.operation())));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, paid.orderId(),
-                OperationJournalEntry.STATUS_OK, "status=" + paid.status(), false);
+                OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(paid.status()), false);
         return true;
     }
 
@@ -259,7 +259,7 @@ public final class MallApiDispatchSink {
                 requireOrder(canonicalOrder, plan.operation()), requireUser(event, plan.operation()),
                 text(event, "reason")));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, cancelled.orderId(),
-                OperationJournalEntry.STATUS_OK, "status=" + cancelled.status(), false);
+                OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(cancelled.status()), false);
         return true;
     }
 
@@ -272,7 +272,7 @@ public final class MallApiDispatchSink {
         // 一行流水 = 两次 HTTP（参考商城的退款是"申请 + 完成"两步，适配器内一次走完）：
         // 因此"真实调用条数"与"HTTP 请求次数"不是同一个数，对账时按后者要再加上本条数。
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, refund.refundId(),
-                OperationJournalEntry.STATUS_OK, "status=" + refund.status(), false);
+                OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(refund.status()), false);
         return true;
     }
 
@@ -393,6 +393,21 @@ public final class MallApiDispatchSink {
             }
             payload.put("status", product.status());
         });
+    }
+
+    /**
+     * 流水明细里的"商城侧状态"渲染：商城没给状态字段时写清"未给"，而不是让 {@code null}
+     * 变成字符串 {@code null}（那既不是商城原词，也读不出是"商城没给"还是"我们读漏了"）。
+     *
+     * <p><b>这里为什么不响亮失败</b>：订单与退款的状态只进这一行<b>说明文字</b>，没有任何消费方
+     * 需要它非空（{@code ExternalOrder}/{@code ExternalRefund} 的状态判定方法全项目零调用点）；
+     * 而这一行记的是"这次 HTTP 调用真的成功了"——商城有没有回状态字段与调用成不成功是两件事，
+     * 因为后者把一次<b>真实发生过的商城写操作</b>记成失败，反而是错的账。
+     * 真正<b>需要</b>非空状态的地方（商品的规范状态要写进规范事件）走的是响亮失败，见
+     * {@link #rewriteProduct}。</p>
+     */
+    private static String describeMallStatus(String status) {
+        return status == null || status.isBlank() ? "（商城未给状态字段）" : status;
     }
 
     private static void replace(Map<String, Object> payload, String key, Map<String, String> mapping) {

@@ -162,6 +162,13 @@ class SecondMallDualTargetTest {
         assertEquals(1, counting.routeResolutions,
                 "operationRoutes 必须每次运行只解析一次（预检），实际=" + counting.routeResolutions
                         + "；每条事件问一次会让\"同一次运行里路由中途变了\"无法察觉");
+        // 上一条钉的是"恰好一次"；这两条把上下两个边界也写成显式断言：
+        // 下界挡住"一次都没问"（那样上面的等式会因为 0≠1 而失败，这条让原因直接写在断言里），
+        // 上界挡住"重试/重复解析"——一次运行里路由表变了必须靠别的信号暴露，不能靠多问几次掩盖。
+        assertTrue(counting.routeResolutions <= 1,
+                "operationRoutes 的解析次数不许超过 1（一次运行一次）：实际=" + counting.routeResolutions);
+        assertTrue(counting.routeResolutions >= 1,
+                "operationRoutes 必须真的被问过至少 1 次：实际=" + counting.routeResolutions);
         // 能力判定可以被问多次（预检一次、构造落点一次），但它必须是不联网的纯本地判定——
         // 这里只要求"次数是常数级"，不把它钉成 1，避免把实现细节当成契约。
         assertTrue(counting.capabilityResolutions >= 1 && counting.capabilityResolutions <= 4,
@@ -273,6 +280,120 @@ class SecondMallDualTargetTest {
                 "未登记的商城状态词必须映射成 null（而不是原样透出或猜一个）");
         assertTrue(SecondMallHttpAdapter.toCanonicalProductStatus("SALE") != null,
                 "正向对照：SALE 是有映射的，说明上面的 null 不是\"映射表整个坏了\"");
+    }
+
+    // ---------- S5：缺口事实不许跨运行（跨目标）残留 ----------
+
+    @Test
+    @DisplayName("跨运行不串台：上一轮读到的状态缺口不许留在下一轮（同一个适配器实例，两个目标）")
+    void gapFactsDoNotLeakAcrossRuns() throws IOException {
+        // 两个**同时存在**的第二家商城，用的是**同一个适配器实例**：这正是生产形态
+        // （适配器是单例，见 config/GeneratorBeans）。第一轮故意让商品状态读不懂，
+        // 第二轮完全正常——如果缺口被记在适配器字段上，第二轮就会"继承"上一轮的词。
+        SecondMallFakeServer firstTargetMall = new SecondMallFakeServer(SECOND_TOKEN, null, CATALOG_SIZE);
+        secondMall = new SecondMallFakeServer(SECOND_TOKEN, null, CATALOG_SIZE);
+        try {
+            SecondMallHttpAdapter sharedAdapter = secondAdapter();
+
+            String unmappableSku = firstTargetMall.itemSkus().get(0);
+            firstTargetMall.overrideItemState(unmappableSku, UNMAPPABLE_STATE);
+            TargetConfig firstTarget = new TargetConfig(51L, SecondMallHttpAdapter.ADAPTER_TYPE,
+                    firstTargetMall.baseUrl(), SECOND_ENV, "{\"format\":\"open-v2\"}");
+            TargetConfig secondTarget = new TargetConfig(52L, SecondMallHttpAdapter.ADAPTER_TYPE,
+                    secondMall.baseUrl(), SECOND_ENV, "{\"format\":\"open-v2\"}");
+
+            MallApiGenerationEngine.MallRunOutcome firstRun = engine.runForTarget(
+                    request("run-leak-1"), firstTarget, sharedAdapter, new RecordingSink(), () -> false);
+            MallApiGenerationEngine.MallRunOutcome secondRun = engine.runForTarget(
+                    request("run-leak-2"), secondTarget, sharedAdapter, new RecordingSink(), () -> false);
+
+            // 正向对照：第一轮**确实**观测到了缺口（否则下面"第二轮没有"可能是"从来没报过"）
+            String firstGapText = runGapText(firstRun);
+            assertTrue(firstGapText.contains(UNMAPPABLE_STATE),
+                    "第一轮必须报出读不懂的原词（没有这个对照，下面的\"不残留\"就是空断言）：\n" + firstGapText);
+            assertEquals(CATALOG_SIZE - 1, firstRun.preflight().catalog().size(),
+                    "第一轮必须真的排除了那件读不懂的商品");
+
+            // 1) 第二轮（另一家商城、同一个适配器实例）的目录必须完整：没有被上一轮的缺口影响
+            String secondGapText = runGapText(secondRun);
+            assertEquals(CATALOG_SIZE, secondRun.preflight().catalog().size(),
+                    "第二轮的可用目录必须完整：" + CATALOG_SIZE + " 件；被上一轮的缺口影响了就会少件");
+            assertTrue(secondRun.preflight().catalog().stream().allMatch(product -> product.status() != null),
+                    "第二轮的目录里不该有\"状态读不懂\"的商品（null 状态即缺口）："
+                            + secondRun.preflight().catalog().stream()
+                            .filter(product -> product.status() == null)
+                            .map(ExternalProduct::productId).toList());
+
+            // 2) 第二轮的缺口说明里绝不能出现上一轮的原词（跨运行残留的可观测形态）
+            assertFalse(secondGapText.contains(UNMAPPABLE_STATE),
+                    "上一轮读到的商城原词不许出现在第二轮的流水/报告里（跨运行残留）：\n" + secondGapText);
+            assertFalse(secondGapText.contains(unmappableSku),
+                    "上一轮的商品 ID 不许出现在第二轮的说明里：" + unmappableSku);
+            // 3) 第二轮自己的商城必须真的被读到一次目录（否则上面的"没缺口"可能只是"根本没读"）
+            assertEquals(1, secondMall.hits(SecondMallFakeServer.ITEMS_ROUTE),
+                    "第二轮自己的商城必须被读到目录（正向对照）");
+            // 4) 第二轮绝不该再打第一轮的商城（否则"跨目标"也串了）
+            assertEquals(1, firstTargetMall.hits(SecondMallFakeServer.ITEMS_ROUTE),
+                    "第二轮绝不该再打第一轮的商城：" + firstTargetMall.exchanges());
+            // 5) 第二轮的流水里只该有第二家商城自己的路由，且真的留下了调用行
+            assertFalse(journalRoutes(secondRun).isEmpty(), "第二轮必须留下真实调用行");
+            assertTrue(journalRoutes(secondRun).stream().allMatch(route -> route.startsWith("/open/v2/")),
+                    "第二轮的流水里混进了别的路由：" + distinct(journalRoutes(secondRun)));
+        } finally {
+            firstTargetMall.close();
+        }
+    }
+
+    // ---------- 商城未给状态字段：不造词，也不把成功的调用记成失败 ----------
+
+    @Test
+    @DisplayName("商城未给状态字段：订单流水不造状态词（明细写明\"未给\"），成功的调用仍记 OK、规范事件照常产出")
+    void missingOrderStateIsNotInventedInJournal() throws IOException {
+        secondMall = new SecondMallFakeServer(SECOND_TOKEN, null, CATALOG_SIZE);
+        // 商城应答里不回 pay_state（内部状态照旧推进）：这就是"商城没给状态字段"的可观测形态
+        secondMall.omitOrderStateInResponse();
+        TargetConfig target = new TargetConfig(53L, SecondMallHttpAdapter.ADAPTER_TYPE,
+                secondMall.baseUrl(), SECOND_ENV, "{\"format\":\"open-v2\"}");
+
+        RecordingSink sink = new RecordingSink();
+        MallApiGenerationEngine.MallRunOutcome outcome =
+                engine.runForTarget(request("run-nostate"), target, secondAdapter(), sink, () -> false);
+
+        List<OperationJournalEntry> payRows = outcome.dispatch().entries().stream()
+                .filter(entry -> MallDispatchPlan.OP_PAY.equals(entry.operation())).toList();
+        assertFalse(payRows.isEmpty(),
+                "这次运行必须真的支付过（否则\"状态不造词\"没有对照物）；实际操作=" + distinct(outcome.dispatch()
+                        .entries().stream().map(OperationJournalEntry::operation).distinct().toList()));
+        for (OperationJournalEntry row : payRows) {
+            // 1) 状态字段缺失 ≠ 这次调用失败：HTTP 真的成功了，把它记成 FAILED 才是错的账
+            assertEquals(OperationJournalEntry.STATUS_OK, row.status(),
+                    "商城没回状态字段不等于调用失败：" + row);
+            // 2) 明细里不许出现任何"像商城状态词"的值，必须写明\"未给\"
+            assertTrue(row.detail().contains("未给状态"),
+                    "明细必须写明\"商城未给状态字段\"，而不是留一个 null 冒充状态：" + row.detail());
+            assertFalse(row.detail().contains("null"),
+                    "明细里出现 null 会让\"商城没给\"与\"我们读漏了\"分不开：" + row.detail());
+            assertFalse(row.detail().contains("UNKNOWN") || row.detail().contains("CREATED")
+                            || row.detail().contains("PAID") || row.detail().contains("CANCELLED"),
+                    "明细里出现了生成器编出来的状态词：" + row.detail());
+        }
+
+        // 3) 商城侧的事实照旧：状态真的推进了（说明"状态缺失"是应答形态，不是商城没干活）
+        assertFalse(secondMall.orderStateHistogram().isEmpty(), "商城侧必须真的留下了订单状态");
+        assertEquals(0, outcome.dispatch().entries().stream()
+                        .filter(entry -> OperationJournalEntry.STATUS_FAILED.equals(entry.status())).count(),
+                "状态字段缺失不许把任何一行记成 FAILED");
+        // 4) 规范事件照常产出、条数不变：商城没回状态字段是"少了一个可对账的字段"，
+        //    不是"这次支付没发生"——既不降级成文件模式，也不把事件悄悄吞掉
+        assertEquals(EVENT_COUNT, outcome.forwardedCount(),
+                "支付/取消仍然成功 ⇒ 计划条数必须照常跑满（不许因为状态字段缺失而少产出）");
+    }
+
+    /** 一次运行的"缺口说明"全文：流水明细 + 预检备注（缺口必须在这两处之一被看见） */
+    private static String runGapText(MallApiGenerationEngine.MallRunOutcome outcome) {
+        return String.join("\n", outcome.dispatch().entries().stream()
+                .map(entry -> String.valueOf(entry.detail())).toList())
+                + "\n" + String.join("\n", outcome.preflight().notes());
     }
 
     // ---------- 断言辅助 ----------
