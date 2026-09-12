@@ -1,0 +1,58 @@
+R2 开工门禁实测读数（G1–G5）— 父侧现测
+========================================
+测量时点：2026-09-12 17:16（`Get-Date` 取值随各条命令输出）
+测量者：总控（父侧）；命令：只读（git / MySQL SELECT / Get-FileHash / Get-ChildItem / Get-CimInstance）
+仓库：D:\Develop_code\GraduationProject（主检出，分支 remediation/r1-boundary）
+
+-----------------------------------------------------
+G1 CT 批已集成进 main —— **满足**（含一处已登记的口径更正）
+  HEAD                = 095118afc7cc1a6a2a6287e54422e43cbdb7e08a
+  git status --porcelain = 0 行（干净）
+  CT 落地提交          = 5690ffb（8 受控文件 + 17 证据文件，共 25 文件，+99/−21）
+  登记/归档提交        = e9a9bdf（看板行 + README §10.7）、095118a（泳道 89 份原始证据归档）
+  冻结指纹             = contract-specs/specs/warehouse-namespace.v1.json
+                         LF 规范化 sha256 = 463D9DC3503D563D…（前 16 位）—— **与冻结值一致，未变**
+  E1-a 子项            = 以**不劣化**取值 537/1/BUILD FAILURE（口径更正见 raw/predictions-before-run.txt 末节；
+                         字面判据「Failures: 0」在 CT 动工前即不成立 —— 先测基线 537/1 两次独立复现）
+
+G2 无并发 Maven / 无并发 Spark —— **满足**
+  只读进程清单（时点 17:16）：java pid=19268（11:01:06 启动，8092 生成器）
+                              java pid=41228（09:40:49 启动，8090 商城）
+                              javaw pid=39220（15:06:01 启动，8091 平台）
+  mvn / spark-submit 进程数 = 0 ⇒ 无并发构建、无并发 Spark（陷阱 #26 页面文件上限 ~4.2 GB）
+
+G3 8091 可启动且迁移幂等 —— **满足（已实测依据）**
+  analytics_meta.flyway_schema_history：行数 17、MAX(CAST(version AS UNSIGNED)) = 18、
+                                        SUM(success=1) = 17、SUM(success=0) = 0
+  V17 = success 1 @ 2026-09-12 09:12:11 ；V18 = success 1 @ 2026-09-12 15:06:05
+  analytics_meta.source_registry.warehouse_prefix 列存在（information_schema.columns 计数 = 1）
+  ⇒ V18 已应用、重启**不再**触发新迁移（「重启＝对真库执行 V18」的顾虑已消失）
+
+G4 jar 指纹（F-81 未修期间的人工补偿控制）—— **满足，但跑前必须重录**
+  **跑前（旧制品，不含 CT）**：analytics-server/platform-app/target/platform-app-0.1.0-SNAPSHOT.jar
+                               33,135,969 B | mtime 2026-09-12 15:01:13 | sha256 前 16 = 49859A1CDB66AB47
+                               运行时身份：javaw pid 39220（15:06:01 启动）
+  跑前判定：该 jar 构建于 15:01，**早于** CT 落地（17:13）⇒ 不含 CT 代码面改动
+           ⇒ 按 ORDER-1 §1 G3 的意图（重启不再迁移）**重建并重启 8091**，
+             以「含 CT 改动」的制品跑本单真实链
+  **跑后必须写入 raw/jar-fingerprint.txt**：`<jar 路径>|<sha256 前 16>|<字节>|<mtime>`
+  库内无从证明该 jar（F-81）⇒ 该指纹只是**人工旁证**，非环境档案
+
+G5 落地区时点声明 —— **满足（记时点，非冻结窗口）**
+  时点 2026-09-12 17:16:05：
+    landing\events      59 文件 / 406,114,133 B
+    landing\manifests   40 文件 /      36,733 B
+    spark-warehouse    972 parquet 文件 / 4,977,445 B
+  8090/8092 **未停机**（用户裁决默认不停）⇒ 本单**不是**冻结窗口；
+  所有「文件数/字节」必须带时点；**不得**与 T2 首跑的冻结窗口数值直接比较（陷阱 #28）。
+  注：spark-warehouse 读数 972 / 4,977,445 B 与 P1-01 基线**逐值相同**（同口径同点位的巧合性留待跑后复算核对）。
+
+-----------------------------------------------------
+父侧未代做、留给跑动方的事项
+1. `raw/jar-fingerprint.txt`（重建后的新制品，G4）
+2. 8 阶段逐阶段证据（runId / ingestion_batch id / 快照 ID / 起止时刻，E3-a）
+3. 指标逐值自连接差集 0 行（E3-b，不得依赖被验脚本自述）
+4. 镜像按快照 8 表 COUNT(*) 与 Hive `dw_ads` 8 正式表序列逐个比对（E3-c）
+5. M1-11 的 `status()` 迁移序列 + 一次受控 `cancel()` 的 `Get-Process` 前后对照（E3-d）
+6. `scripts/check-bare-anchors.ps1` 实跑（集合 ⊆ 台账 ＋ 正向对照；台账只减不增，E3-e）
+7. 数仓跑前/跑后 parquet 文件数与字节（E3-f）、落地区跑前/跑后时点与文件数（E3-g）
