@@ -1,0 +1,56 @@
+line	event_id	event_type	verdict	detail
+1	golden-evt-001	user_registered	VALID	
+2	golden-evt-002	user_registered	VALID	
+3	golden-evt-003	user_registered	VALID	
+4	golden-evt-004	product_created	VALID	
+5	golden-evt-005	product_created	VALID	
+6	golden-evt-006	product_created	VALID	
+7	golden-evt-007	product_created	VALID	
+8	golden-evt-008	behavior	VALID	
+9	golden-evt-009	behavior	VALID	
+10	golden-evt-010	behavior	VALID	
+11	golden-evt-011	behavior	VALID	
+12	golden-evt-012	behavior	INVALID	1 @ payload/channel :: 'web' is not one of ['app', 'pc', 'h5']
+13	golden-evt-013	behavior	INVALID	1 @ payload/channel :: 'web' is not one of ['app', 'pc', 'h5']
+14	golden-evt-014	behavior	INVALID	1 @ payload/channel :: 'web' is not one of ['app', 'pc', 'h5']
+15	golden-evt-015	behavior	VALID	
+16	golden-evt-016	behavior	VALID	
+17	golden-evt-017	behavior	VALID	
+18	golden-evt-018	order_created	INVALID	3 @ payload :: 'status' is a required property
+19	golden-evt-019	order_paid	INVALID	1 @ payload :: 'paid_at' is a required property
+20	golden-evt-020	order_created	INVALID	3 @ payload :: 'status' is a required property
+21	golden-evt-021	order_cancelled	INVALID	1 @ payload :: 'cancelled_at' is a required property
+22	golden-evt-022	order_created	INVALID	3 @ payload :: 'status' is a required property
+23	golden-evt-023	order_paid	INVALID	1 @ payload :: 'paid_at' is a required property
+24	golden-evt-024	refund_created	INVALID	1 @ payload :: 'created_at' is a required property
+25	golden-evt-025	refund_completed	INVALID	1 @ payload :: 'completed_at' is a required property
+26	golden-evt-026	stock_reserved	VALID	
+27	golden-evt-027	stock_reserved	VALID	
+28	golden-evt-028	stock_reserved	VALID	
+29	golden-evt-029	stock_released	VALID	
+30	golden-evt-030	stock_reserved	VALID	
+31	golden-evt-031	user_registered	VALID	
+32	golden-evt-032	product_updated	VALID	
+33	golden-evt-033	behavior	VALID	
+34	golden-evt-034	behavior	INVALID	1 @ payload/channel :: 'web' is not one of ['app', 'pc', 'h5']
+35	golden-evt-035	behavior	INVALID	1 @ payload/channel :: 'web' is not one of ['app', 'pc', 'h5']
+36	golden-evt-036	behavior	INVALID	1 @ payload/channel :: 'web' is not one of ['app', 'pc', 'h5']
+37	golden-evt-008	behavior	VALID	
+38	golden-evt-038	behavior	INVALID	1 @ payload/behavior_type :: 'purchase' is not one of ['view', 'favorite', 'cart_add', 'cart_remove', 'search']
+39	golden-evt-039	order_created	INVALID	3 @ payload :: 'status' is a required property
+40	golden-evt-040	order_paid	INVALID	1 @ payload :: 'paid_at' is a required property
+41	golden-evt-041	refund_created	INVALID	1 @ payload :: 'created_at' is a required property
+42	golden-evt-042	refund_completed	INVALID	1 @ payload :: 'completed_at' is a required property
+43	golden-evt-043	order_created	INVALID	3 @ payload :: 'status' is a required property
+44	golden-evt-044	order_paid	INVALID	1 @ payload :: 'paid_at' is a required property
+45	golden-evt-045	refund_created	INVALID	1 @ payload :: 'created_at' is a required property
+46	golden-evt-046	refund_completed	INVALID	1 @ payload :: 'completed_at' is a required property
+47	golden-evt-047	order_created	INVALID	3 @ payload :: 'status' is a required property
+48	golden-evt-048	order_paid	INVALID	1 @ payload :: 'paid_at' is a required property
+49	golden-evt-049	stock_reserved	VALID	
+50	golden-evt-050	stock_reserved	VALID	
+51	golden-evt-051	stock_reserved	VALID	
+52	golden-evt-052	stock_changed	INVALID	1 @ payload/change_type :: 'restock' is not one of ['inbound', 'outbound', 'adjust']
+53	-	-	PARSE_ERROR	Expecting value: line 1 column 1 (char 0)
+54	golden-evt-054	user_registered	INVALID	2 @ payload/age_group :: '45-54' is not one of ['under18', '18-24', '25-34', '35-44', '45+']
+55	-	behavior	INVALID	1 @ <root> :: 'event_id' is a required property
