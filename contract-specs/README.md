@@ -1,6 +1,6 @@
 # contract-specs — 三程序共享的版本化机器可读契约
 
-状态：**部分冻结**——`specs/warehouse-namespace.v1.json` 已由总控冻结（2026-09-11，依据 P1-04 的本地 E3 实测，见 §4）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`1.2.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
+状态：**部分冻结**——`specs/warehouse-namespace.v1.json` 已由总控冻结（2026-09-11，依据 P1-04 的本地 E3 实测，见 §4）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`1.3.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
 
 ## 1. 目的与边界
 
@@ -53,7 +53,7 @@
 | [`schemas/generation-artifact-manifest.v1.schema.json`](schemas/generation-artifact-manifest.v1.schema.json) | `synthetic-data-generator`（`CANONICAL_EVENT_FILE` 模式制品清单） | 生成器自校验；平台采集侧在读取生成器目录时按此校验 | `DRAFT` |
 | `openapi/generator-api.v1.yaml` | `synthetic-data-generator`（服务端）；`MALL_API` 场景下的调用方与页面为消费方 | 生成器按契约实现并自测；调用方按契约生成客户端 | `DRAFT` |
 | [`specs/warehouse-namespace.v1.json`](specs/warehouse-namespace.v1.json) | 两个消费方共享：`spark-jobs`（Scala）、`analytics-server`（Java）；两侧各自持有**薄适配器**，规则本体只在本规格 | Java：`WarehouseNamespaceContractTest`（逐向量 + `errorCodes` 数量/取值）+ `WarehouseNameLiteralGateTest`（源码门禁：除唯一 owner 外无裸库名字面量）；Scala：`WarehouseNamespaceSpec`（62 用例） | **`FROZEN-2026-09-11`** |
-| [`VERSION`](VERSION) | 总控 | — | `1.2.0` |
+| [`VERSION`](VERSION) | 总控 | — | `1.3.0` |
 
 **为什么其余四个制品仍是 `DRAFT`（诚实说明）**：这些文件是 M1-5 新建立的投影，尚未经过两条冻结门槛——(1) 结构对账测试 `analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java` 转绿；(2) 总控（热点 Owner）审阅并处置第 7 节的待决策项。**只有两者都完成，才允许把状态改为 `FROZEN`。** 当前 `canonical-event.v1` 的字段集/枚举/常量/金额正则已按该测试的断言逐条对齐（本案建立时用 PowerShell 逐条模拟断言核对，见第 8 节；M1-5 范围内不允许运行 Maven，故未执行该测试本身）；且 Q6（采集层接受的 51 行里约 25 行按契约属脏数据）未决 ⇒ `canonical-event.v1` **不得**冻结。
 
@@ -181,7 +181,39 @@
 | `schemas/generation-artifact-manifest.v1.schema.json` | 未冻结，见 §7 | 同上 |
 | `README.md` | **不登记自身**（自指：把本文件的哈希写进本文件，写入动作本身就会让该哈希失效） | 需核对时现算：`Get-FileHash contract-specs/README.md -Algorithm SHA256`，并与该次提交比对 |
 | `VERSION` | `C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0` | 内容 `contract-specs 1.2.0`（本表登记的是 2026-09-11 20:12 写入、提交 `332b52b` 20:14:08 时的值） |
+| `VERSION`（**当前值**，2026-09-12 CT-0 重登记） | `B6BAB8E0547C6BC0EB7005128E177B891E32534FA3522D54B079E7AEC384EC89` | 内容 `contract-specs 1.3.0`（21 B）。上一行 `C9E89F9D…`／内容 `1.2.0` 是 2026-09-11 20:12 的**历史登记，原文保留不改**；变化发生在 M1-5 收口同步升版（§11，提交 `fee9dbc`）。引用**当前态**结论用本行，引用**历史轮次**结论用上一行 |
 
 **口径**：指纹是**复核辅助**而非契约的一部分——`VERSION` 才是契约的版本所有者（改契约必须同时升 `VERSION`，指纹随内容自然变化，不单独维护"指纹版本"）。
 
 **本表自检（2026-09-11 20:22，总控现场复核）**：对表中三个已冻结指纹逐个重算 `Get-FileHash -Algorithm SHA256` 并与登记值比对 ⇒ `specs/warehouse-namespace.v1.json` `463D9DC3…` ✓、`schemas/ingestion-manifest.v1.schema.json` `0993E147…` ✓、`VERSION` `C9E89F9D…`（内容 `contract-specs 1.2.0`，21 B）✓，**三项全部相符、未漂移**。⇒ 冻结后没有任何人改动过这些制品；引用其结论时按登记版次有效。未冻结的四个制品（`canonical-event.v1` 等）不在本表登记，其状态见 §7。
+
+## 12. CT-0 / F-31 勘误落地：当前态版本串 `1.2.0` → `1.3.0`（2026-09-12）
+
+**为什么有本节**：本文件 §1 的状态行与 §3 的目录表把**当前态**版本写作 `1.2.0`，而 `VERSION` 早已是 `1.3.0`（M1-5 收口同步，见 §11）。该滞后登记为事实 **F-31**、契约任务 **CT-0**（`docs/acceptance/p2-01-ods-v2-spec-draft-20260912/RULINGS.md` §8）。本节记录本次勘误**改了什么、刻意保留了什么、按什么口径复核**。
+
+**写前实测（2026-09-12，总控现场）**：
+
+- `VERSION` 内容 `contract-specs 1.3.0`，21 B，sha256 `B6BAB8E0547C6BC0EB7005128E177B891E32534FA3522D54B079E7AEC384EC89`；
+- 本文件写前 sha256 `07D2F02E31CEFB28665B32C00B7D7E554621D4B4991EB64C617601B7455E33BB`，34,496 B，188 行、CR=0——与既有登记值相符 ⇒ 写前不存在未登记的改动；
+- 滞后点两处：§1 状态行与 §3 目录表的 `VERSION` 行，均写 `1.2.0`。
+
+**改了什么（两处正文，均"命中且仅命中 1 次"）**：
+
+| # | 位置 | 改前 | 改后 |
+|---|---|---|---|
+| 1 | §1 状态行（第 3 行） | `版本：`1.2.0`（… `1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，均按 §3 的目录级版本规则）` | `版本：`1.3.0`（… 前两段不变 …，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），均按 §3 的目录级版本规则）` |
+| 2 | §3 目录表 `VERSION` 行（第 56 行） | `` `1.2.0` `` | `` `1.3.0` `` |
+
+**新增一处登记（不改历史行）**：§10 冻结指纹表中 `VERSION` 的 `C9E89F9D…`／内容 `1.2.0` 行**原文保留**，其后**新增**「当前值」行（`B6BAB8E0…`／内容 `1.3.0`／21 B），并注明历史行是 2026-09-11 20:12 时点的读数。
+
+**刻意保留不改（历史陈述，按"历史证据文本不改写"纪律原文留存）**：
+
+- §10 表头「同步前（`VERSION` 1.2.0）｜同步后（`VERSION` 1.3.0）」——那是 M1-5 同步动作的前后对照；
+- §11 中「平台侧 `IngestionManifestSourceSchemaTest` 类注释里的『目录级 `1.2.0`』未改」与「`VERSION` 升版未同步 `analytics-server` 侧任何断言」——那是当轮实测与决定；
+- §10「本表自检（2026-09-11 20:22）」中 `VERSION C9E89F9D…` 的 ✓——那是该时点的读数，不是当前态声明。
+
+**未改（本次不动）**：四个 `DRAFT` 制品（`canonical-event.v1`、`generation-artifact-manifest.v1` 等）的状态与内容；`VERSION` 本身（**勘误级，不升版**）；任何 OpenAPI／schema 制品；`analytics-server` 侧任何文件。
+
+**写入窗口纪律（F-32 残因下的做法）**：本次采用「暴露窗口最小化」——写前复核本文件指纹与登记值相符；四处改动逐条断言"命中且仅命中 1 次"；写后立即复核新指纹；并在同一次操作内提交。期间若检测到外部改写即中止。**残因如实登记**：看板 **F-32** 中本文件于 2026-09-12 11:53 被改写一事**仍未归因**；F-37 的"外部并发写者"说法对 33 个文件被删一事**已证伪**（系总控自身复核脚本的 helper 撞 PowerShell 别名 `rd`），两者不是同一件事。
+
+**本节自检口径**：本文件哈希按 §10 的口径**不登记自身**（自指会让哈希失效）；复核命令 `Get-FileHash contract-specs/README.md -Algorithm SHA256` 并与本次提交比对。本节不改变任何制品的冻结状态：`specs/warehouse-namespace.v1.json` 仍 `FROZEN-2026-09-11`，其余四个仍 `DRAFT`。
