@@ -1,0 +1,56 @@
+仓库根 = D:\Develop_code\GraduationProject
+时点   = 2026-09-12 19:46:48
+
+ Id                                  | 应然                                | 实际                                | 判定
+ ----------------------------------------------------------------------------------------------------
+ DDL-00-sha256                       | 2BEBE55FF09580443937F945A31DACF856  | 2BEBE55FF09580443937F945A31DACF856  | PASS
+ DDL-00-bytes                        | 6178                                | 6178                                | PASS
+ DDL-01-dwd.sql-untouched            | 8ECF37D5… / 3509B                   | 8ECF37D5… / 3509B                   | PASS
+ DDL-02-dims.sql-untouched           | AD2D0881… / 2965B                   | AD2D0881… / 2965B                   | PASS
+ DDL-03-dws.sql-untouched            | D1BE5E71… / 4194B                   | D1BE5E71… / 4194B                   | PASS
+ DDL-04-ads.sql-untouched            | 3057DE99… / 5207B                   | 3057DE99… / 5207B                   | PASS
+ COL-count-parent                    | 14                                  | 14                                  | PASS
+ COL-count-p201                      | 19                                  | 19                                  | PASS
+ COL-v2-5-present                    | 0 missing                           | 0 missing                           | PASS
+ COL-v1-prefix-identical             | v1 14 列名字/顺序不变                      | True                                | PASS
+ LOG-S-raw_event_type                | 9679f5e（代码/DDL 面唯一）                 | 9679f5e 共 1                         | PASS
+ LOG-S-raw_source_system             | 9679f5e（代码/DDL 面唯一）                 | 9679f5e 共 1                         | PASS
+ LOG-S-landing_file                  | 9679f5e（代码/DDL 面唯一）                 | 9679f5e 共 1                         | PASS
+ LOG-S-payload_json                  | 9679f5e（代码/DDL 面唯一）                 | 9679f5e 共 1                         | PASS
+ LOG-S-payload_hash                  | 9679f5e（代码/DDL 面唯一）                 | 9679f5e 共 1                         | PASS
+ LOG-S-scope-required                | 全仓计数 > 限定面计数（故必须限定路径）               | 全仓 68 vs 限定面 5                      | PASS
+ CT-excluded-ddl                     | 0 行                                 | 0 行                                 | PASS
+ CT-excluded-sparkjobs               | 0 行                                 | 0 行                                 | PASS
+ RUN41-tree-predates-P201            | HEAD ≠ 9679f5e                      | 3199a26                             | PASS
+ E3-checks-rows                      | 51                                  | 51                                  | PASS
+ E3-checks-all-pass                  | 0 条非 1                              | 0 条                                 | PASS
+ E3-RESULT                           | E3_RESULT=PASS                      | E3_RESULT=PASS                      | PASS
+ E3-real-warehouse-isolated          | before 值 == after 值                 | True                                | PASS
+ E3-order1-README-present            | README.md 存在                        | True                                | PASS
+ JAR-D060-freeze-stale               | False（冻结值已失效）                       | False                               | PASS
+ CONTROL-expect-red                  | sha8 = 36EDBF79（P2-01 之前）           | sha8 = 2BEBE55F                     | FAIL
+
+   note DDL-00-sha256：P2-01 之后的登记值
+   note DDL-01-dwd.sql-untouched：P2-01 只应改 00-ods.sql
+   note DDL-02-dims.sql-untouched：P2-01 只应改 00-ods.sql
+   note DDL-03-dws.sql-untouched：P2-01 只应改 00-ods.sql
+   note DDL-04-ads.sql-untouched：P2-01 只应改 00-ods.sql
+   note COL-count-parent：event_id, event_type, event_time, ingest_time, source_system, schema_version, trace_id, payload_user_id, payload_product_id, payload_session_id, payload_behavior_type, payload_channel, source_file, ingest_batch_id
+   note COL-count-p201：event_id, event_type, event_time, ingest_time, source_system, schema_version, trace_id, payload_user_id, payload_product_id, payload_session_id, payload_behavior_type, payload_channel, source_file, ingest_batch_id, raw_event_type, raw_source_system, landing_file, payload_json, payload_hash
+   note COL-v1-prefix-identical：D-059：末尾追加
+   note LOG-S-raw_event_type：全仓 14 个提交（多出的为文档/证据引用）
+   note LOG-S-raw_source_system：全仓 6 个提交（多出的为文档/证据引用）
+   note LOG-S-landing_file：全仓 14 个提交（多出的为文档/证据引用）
+   note LOG-S-payload_json：全仓 19 个提交（多出的为文档/证据引用）
+   note LOG-S-payload_hash：全仓 15 个提交（多出的为文档/证据引用）
+   note LOG-S-scope-required：口径纪律：不加路径限定会命中后续文档提交
+   note RUN41-tree-predates-P201：2026-09-12 09:19:24 +0800
+   note E3-checks-rows：表头 1 行 + 判据 51 行
+   note E3-real-warehouse-isolated：FILES=2006 SHA256=3c7e3deaf99072de920124501ca742a71f6490246e47ad2da7af7acb25ea20ae
+   note E3-order1-README-present：ORDER-1 §6 要求总控追加
+   note JAR-D060-freeze-stale：285256 B / 2026-09-12 16:15:07 / 4F29735547D6DDEF…
+   note CONTROL-expect-red：对照项：应然=判红 ⇒ Ok=False 才算对照通过
+
+ 判据（不含对照）：PASS 25 / FAIL 0 / 计 25 条
+ 正向对照：1 条；对照是否按预期判红 = True
+ 自检：打印条数 26 = 判据 25 + 对照 1 ⇒ True

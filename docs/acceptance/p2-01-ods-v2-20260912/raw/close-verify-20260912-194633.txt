@@ -1,0 +1,8 @@
+仓库根 = D:\Develop_code\GraduationProject
+时点   = 2026-09-12 19:46:33
+
+Measure-Object: D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\tools\p2-01-close-verify.ps1:100
+Line |
+ 100 |  $allTotal = ($script:AllCounts | Measure-Object -Sum).Sum
+     |                                   ~~~~~~~~~~~~~~~~~~~
+     | 输入对象“System.Object[]”不是数值。

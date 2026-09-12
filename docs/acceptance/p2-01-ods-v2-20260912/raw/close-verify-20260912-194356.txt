@@ -1,0 +1,8 @@
+仓库根 = D:\Develop_code\GraduationProject
+时点   = 2026-09-12 19:43:56
+
+Add-Result: D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\tools\p2-01-close-verify.ps1:99
+Line |
+  99 |  Add-Result 'RUN41-tree-predates-P201' 'HEAD ≠ ' + $P201Commit $head41 …
+     |                                                    ~~~~~~~~~~~
+     | 无法处理参数 'Ok' 上的自变量转换。无法将值 "System.String" 转换为类型 "System.Boolean"。布尔参数只接受布尔值和数字，例如 $True、$False、1 或 0。
