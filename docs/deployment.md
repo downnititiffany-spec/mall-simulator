@@ -151,8 +151,8 @@ python .verify/r7-4-mall-dom.py     # 商城端
    `--hivevar WAREHOUSE_PREFIX=<前缀>` 替换（缺省 `dw` → `dw_ods`…`dw_ads`；第二个源换前缀即可复用同一套 DDL）：
    `beeline --hivevar WAREHOUSE_PREFIX=dw -f warehouse/ddl/00-ods.sql`（01 → 04 同法按序执行）。
    漏传 `--hivevar` 时 Hive 会原样保留 `${WAREHOUSE_PREFIX}` 从而在建库处语法报错（fail-closed，不会静默建错库）。
-   说明：平台自身跑 INIT_SCHEMA 阶段时用 `runtime_profile.hive_database_prefix` 派生同一套库名（`LocalSchemaInitJob`），
-   与这里的 `WAREHOUSE_PREFIX` 同规则；`warehouse/ddl/*.sql` 是集群手工/脚本部署路径。
+   说明（2026-09-12 勘误，P2-07 / D-070…D-079）：平台自身跑 INIT_SCHEMA 阶段派生的库名，事实来源已由 `runtime_profile.hive_database_prefix` 迁到**源级** `source_registry.warehouse_prefix`（每源一行、`VARCHAR(24) NOT NULL`、无 DEFAULT，V18 迁移；旧列自 2026-09-12 起只断读不删列、运行期不再读取），取值链唯一：`WarehouseNamespaceProvider.forSource(sourceId)` → `JobCommandBuilder` 的 `--hiveDatabasePrefix`。
+   与这里的 `WAREHOUSE_PREFIX` **同规则但未机器强制**（F-39：Hive 侧不校验形状/保留字/层后缀，前缀请按 `source_registry.warehouse_prefix` 原样抄，不要另起一套）；`warehouse/ddl/*.sql` 是集群手工/脚本部署路径。
    注：`--hivevar` 的替换行为本机尚未实跑（集群路径见 §8 首条，待环境验证后回填）。
 3. 配置 Flume：按 `ingestion/flume/flume-taildir.conf` 修改路径后启动（Taildir 断点采集 → HDFS `/landing`）。
 4. 构建作业包：`mvn -f spark-jobs/pom.xml package`（jar 不含 Spark 依赖）。
