@@ -1,0 +1,57 @@
+=== 1. 改动面 8 文件行尾 ===
+  [OK ] CRLF 且 CR==LF：SourceRegistryMigrationScriptTest.java  9,352 B CR=193
+  [OK ] CRLF 且 CR==LF：EventContract.java  4,047 B CR=80
+  [OK ] CRLF 且 CR==LF：CanonicalEventSchemaParityTest.java  8,488 B CR=169
+  [OK ] CRLF 且 CR==LF：README.md  60,960 B CR=328
+  [OK ] CRLF 且 CR==LF：VERSION  22 B CR=1
+  [OK ] CRLF 且 CR==LF：canonical-event.v1.schema.json  34,563 B CR=876
+  [OK ] CRLF 且 CR==LF：event-contract.md  7,607 B CR=168
+  [OK ] CRLF 且 CR==LF：check-bare-anchors.ps1  13,811 B CR=225
+  [OK ] README raw 终值指纹  5896AD0EE9C1C6BBA7EE033CCB3FD55724D2944B366689F2A080EB428AE6B73C  60,960 B
+  [OK ] README LF 形态指纹
+
+=== 2. 补丁形态（父侧可 apply） ===
+  [OK ] CRLF 行数 = 0  0
+  [OK ] CR 总数 = 0  0
+       纯 LF 行数 = 272
+       字节数 = 36,389 B
+       sha256 = DCC102A4BD765E34CF2A03AC77BECFB53AFF7850A9468CF3039F92C149609945
+  [OK ] diff --git 段数 = 8
+  [OK ] 父侧同法（CRLF→LF 规范化）后逐字节不变
+  [OK ] 补丁 sha256 与 REPORT 登记一致
+  [OK ] index 行 = 8 条  8
+  [OK ] index 哈希全为 40 位（--full-index 生效）  位宽=[40]
+
+=== 3. 指纹台账自洽 ===
+  [OK ] CR == LF == 行数−1  CR=78 行数=79
+  [OK ] 末尾非双 CRLF  b'73 B'
+  [OK ] 自身行唯一
+       自身行登记（置零摘要）= 5F48136FFF963C858F983E0498EC48E200191E2618C9EC6ED3A0F0ECF9D8F572
+  [OK ] 置零摘要复算 == 登记值  现算 5F48136FFF963C85…
+  [OK ] 置零摘要位宽 = 64（sha256）  64
+  [OK ] 自身行登记了尺寸       7,973 B
+  [OK ] 台账首部写明置零摘要复核口径
+
+=== 4. REPORT / PROGRESS ===
+  [OK ] REPORT.md 纯 LF  CR=0 LF=286 行数=286 43,169 B
+  [OK ] 章节 ① 完成项 唯一
+  [OK ] 章节 ② 出口证据 唯一
+  [OK ] 章节 ③ 变更面 唯一
+  [OK ] 章节 ④ 未取证 唯一
+  [OK ] 章节 ⑤ 交付物 唯一
+  [OK ] 章节 ⑥ 偏离 唯一
+  [OK ] 章节 ⑦ 过程失败 唯一
+  [OK ] ④/② 登记 537/1 基线
+  [OK ] 197 子集口径 ＋ 340 条未跑
+  [OK ] ⑥-11 补丁行尾自证写入 REPORT
+  [OK ] ⑤/⑥-11 补丁终值（--full-index 口径）登记
+  [OK ] ⑥-11 登记 blob 哈希位宽问题与其处置
+  [OK ] PROGRESS 本轮 append 段存在
+  [OK ] PROGRESS 历史头部未被改写（append-only）  首行=# CT 批次施工进度（泳道 worktree `ct-batch`…
+  [OK ] PROGRESS 只追加纪律声明在位
+
+=== 5. README 本轮内容 ===
+  [OK ] README「2 处裸锚点」= 1
+  [OK ] README §14.4 登记 E1-a 子集口径与 537 基线
+
+### 总自证：全部 PASS

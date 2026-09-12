@@ -1,0 +1,18 @@
+  [正向对照] 对照样本锚点=4 裸锚点=1 → §2.5 L92
+  [正向对照] 4 个对照锚点 → 裸锚点恰 1 个（§2.5 L92）；带文件名/带版本前缀的 3 个均未计入  PASS
+
+  == 裸锚点实况（扫描根 contract-specs，文件 9 个）==
+  锚点总数（含合规）= 313 ；裸锚点出现次数 = 199 ；去重后（文件|锚点）= 112 行
+    contract-specs\openapi\generator-api.v1.yaml                        65 处
+    contract-specs\README.md                                            42 处
+    contract-specs\schemas\canonical-event.v1.schema.json               91 处
+    contract-specs\schemas\generation-artifact-manifest.v1.schema.json  1 处
+  非 markdown 载体占比：.json=92  .md=42  .yaml=65
+
+  == 门禁（台账 113 行 / 基线 113 行）==
+  [可删减 1 行] 台账内已不再是裸锚点的条目（删减须在看板登记后跑 -WriteLedger）：
+    contract-specs\schemas\canonical-event.v1.schema.json :: §2.4 L77
+  [已减少 1 处] 出现次数低于台账（下次 -WriteLedger 收敛）：
+    contract-specs\schemas\canonical-event.v1.schema.json :: §2.4 L84  台账=2 实测=1
+
+  结果 = PASS（裸锚点 199 处 / 112 行，全部在台账内；台账 113 行 ≤ 基线 113）

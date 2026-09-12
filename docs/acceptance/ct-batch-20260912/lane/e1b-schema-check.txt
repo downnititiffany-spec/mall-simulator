@@ -1,0 +1,50 @@
+D:\Develop_code\GraduationProject-wt\ct-batch\.verify\ct-batch\e1b-schema-selfcheck.py:44: DeprecationWarning: Accessing jsonschema.__version__ is deprecated and will be removed in a future release. Use importlib.metadata directly to query for jsonschema's version.
+  W(f"jsonschema 版本: {jsonschema.__version__}")
+=== E1-b 契约自洽性（contract-specs/**）===
+jsonschema 版本: 4.26.0
+
+--- B-1 每个 *.schema.json 通过 check_schema() ---
+[OK ] 发现的 schema 文件数 ≥ 3（正向对照：确实扫到了东西） — 3 个
+    [OK ] contract-specs\schemas\canonical-event.v1.schema.json
+           $schema=https://json-schema.org/draft/2020-12/schema  sha256=8A8F8A432678CBEF180D34E16E9922147A9F46A5483977760DA16C2756A9A384  34563 B
+[OK ] check_schema 通过（canonical-event.v1.schema.json） — $schema=https://json-schema.org/draft/2020-12/schema
+    [OK ] contract-specs\schemas\generation-artifact-manifest.v1.schema.json
+           $schema=https://json-schema.org/draft/2020-12/schema  sha256=7A1E76D272A45A216B01C6E0054B8F6EB1A713D581C45CC27EEF7AC89F562ADB  8598 B
+[OK ] check_schema 通过（generation-artifact-manifest.v1.schema.json） — $schema=https://json-schema.org/draft/2020-12/schema
+    [OK ] contract-specs\schemas\ingestion-manifest.v1.schema.json
+           $schema=https://json-schema.org/draft/2020-12/schema  sha256=C6B1B43B0F08626FE281899764BD0C492AE8D6AE82E234E1BD236EBF3A5DCDD6  12125 B
+[OK ] check_schema 通过（ingestion-manifest.v1.schema.json） — $schema=https://json-schema.org/draft/2020-12/schema
+
+--- B-2 全部 *.json 可解析且规范化后逐字节稳定 ---
+[OK ] 发现的 json 文件数 ≥ 5 — 6 个
+    [OK ] contract-specs\schemas\canonical-event.v1.schema.json  顶层键数=14  规范化 27615 字符
+[OK ] json 可解析（canonical-event.v1.schema.json）
+    [OK ] contract-specs\schemas\generation-artifact-manifest.v1.schema.json  顶层键数=12  规范化 5674 字符
+[OK ] json 可解析（generation-artifact-manifest.v1.schema.json）
+    [OK ] contract-specs\schemas\ingestion-manifest.v1.schema.json  顶层键数=12  规范化 9038 字符
+[OK ] json 可解析（ingestion-manifest.v1.schema.json）
+    [OK ] contract-specs\specs\surrogate-key.v1.json  顶层键数=13  规范化 14760 字符
+[OK ] json 可解析（surrogate-key.v1.json）
+    [OK ] contract-specs\specs\warehouse-namespace.v1.json  顶层键数=11  规范化 4919 字符
+[OK ] json 可解析（warehouse-namespace.v1.json）
+    [OK ] contract-specs\specs\warehouse-namespace.v2.json  顶层键数=14  规范化 5519 字符
+[OK ] json 可解析（warehouse-namespace.v2.json）
+
+--- B-3 正向对照：坏 schema 必须被 check_schema 拒（证明 B-1 非空转）---
+    坏 schema（type 非法值）→ 抛 SchemaError: 'definitely-not-a-type' is not valid under any of the given schemas
+
+Failed validating 'anyOf' in metaschema['
+[OK ] 坏 schema 被拒（checker 真的会报错）
+
+--- B-4 本批改动面的正面读数 ---
+    source_system 键集 = ['description', 'minLength', 'type']
+    items 键集 = ['oneOf']，oneOf 分支类型 = ['array', 'string']
+    schema_version 键集 = ['const', 'description']
+[OK ] source_system 无 const（D-061）
+[OK ] source_system 无 enum/pattern（D-061 刻意不加）
+[OK ] source_system = type:string + minLength:1（形状约束）
+[OK ] items = oneOf[array, string]（D-063 分支甲原文 ＋ 分支乙加性）
+[OK ] 分支甲保留原数组定义三键（type/description/items） — ['description', 'items', 'type']
+[OK ] 正向对照：schema_version 仍含 const（守卫不得被顺手删掉） — const='1.0'
+
+VERDICT=PASS

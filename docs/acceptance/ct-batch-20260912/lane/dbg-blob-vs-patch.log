@@ -1,0 +1,53 @@
+补丁段数 = 8
+
+[OK ] analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceRegistryMigrationScriptTest.java
+       patch index new (40 位) = bd6a4faf549c5915a048bdc785e44080457e3afb
+       工作区 raw sha256         = 28d689af0e8224de2dd681316b8ed90f37d5d54f…  (9,352 B, CR=193)
+       工作区 LF 规范化 sha256    = bdde1fdb2e992198c0f61ad34b54c861ac74120a…  (9,159 B)
+       git hash-object (sha1)   = bd6a4faf549c5915a048bdc785e44080457e3afb  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+[OK ] analytics-server/platform-common/src/main/java/com/graduation/analytics/contracts/EventContract.java
+       patch index new (40 位) = 31024eed3ec40d4ae7c455badb018660da5cc2e0
+       工作区 raw sha256         = 02840cbb4fe4ff031dcc7a1d9634c248f7c5d7f2…  (4,047 B, CR=80)
+       工作区 LF 规范化 sha256    = 132b63f265067f37f402865a0a670d1779e576a9…  (3,967 B)
+       git hash-object (sha1)   = 31024eed3ec40d4ae7c455badb018660da5cc2e0  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+[OK ] analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java
+       patch index new (40 位) = f42a4e32f32f4f3c84aa81d0054c88733562036f
+       工作区 raw sha256         = d845f7806a9862972cffcf5408b78c830adac84b…  (8,488 B, CR=169)
+       工作区 LF 规范化 sha256    = 5893a600b4a874490d0ad186e19ef684a7af56f3…  (8,319 B)
+       git hash-object (sha1)   = f42a4e32f32f4f3c84aa81d0054c88733562036f  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+[OK ] contract-specs/README.md
+       patch index new (40 位) = 0095a4a6b241c46567b8f56c5c8156c671f6a210
+       工作区 raw sha256         = 5896ad0ee9c1c6bba7ee033ccb3fd55724d2944b…  (60,960 B, CR=328)
+       工作区 LF 规范化 sha256    = e53f09019c15127590397e6d8a3e85e0d3dbda33…  (60,632 B)
+       git hash-object (sha1)   = 0095a4a6b241c46567b8f56c5c8156c671f6a210  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+[OK ] contract-specs/VERSION
+       patch index new (40 位) = 8cc98171e1ef4481f1386b4ff29740a1d9163604
+       工作区 raw sha256         = 5d349afbf593cf7ffdf5e0bdeea4cde5ccb96d8e…  (22 B, CR=1)
+       工作区 LF 规范化 sha256    = eb1755838292c33126d7b433ca859118eb4b1fde…  (21 B)
+       git hash-object (sha1)   = 8cc98171e1ef4481f1386b4ff29740a1d9163604  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+[OK ] contract-specs/schemas/canonical-event.v1.schema.json
+       patch index new (40 位) = 1e4f2d8565c0901067ceafafdc6116feb96b3b48
+       工作区 raw sha256         = 8a8f8a432678cbef180d34e16e9922147a9f46a5…  (34,563 B, CR=876)
+       工作区 LF 规范化 sha256    = a70af90110fbb5d36ca93f5c89c9e2e9d4c93a5f…  (33,687 B)
+       git hash-object (sha1)   = 1e4f2d8565c0901067ceafafdc6116feb96b3b48  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+[OK ] docs/contracts/event-contract.md
+       patch index new (40 位) = 73e5e913f390631ceb7ef03ecd89ab7ca16fd625
+       工作区 raw sha256         = 0bd7919dd5155b94c0ef91b558c721605991cb6a…  (7,607 B, CR=168)
+       工作区 LF 规范化 sha256    = 7f4a6e45ff5e68698ac96c1af44f046f0045b5a1…  (7,439 B)
+       git hash-object (sha1)   = 73e5e913f390631ceb7ef03ecd89ab7ca16fd625  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+[OK ] scripts/check-bare-anchors.ps1
+       patch index new (40 位) = 65cf8596b5e01db7678947e79bff5bb2a2e7d688
+       工作区 raw sha256         = b85814c8a5c8a347440c6d9d4341e5d1318cb39a…  (13,811 B, CR=225)
+       工作区 LF 规范化 sha256    = 4df85a19c55344c6f1813d9716ffae6e41972892…  (13,586 B)
+       git hash-object (sha1)   = 65cf8596b5e01db7678947e79bff5bb2a2e7d688  == patch index？ True
+       ⇒ 补丁 index 与【git blob（与工作区 raw/LF 都不同）】相符
+
+### 结论：8/8 段的 `index …..` 新侧哈希，与 `git hash-object` 对该工作区文件给出的 blob 哈希**逐字符相同**
+###     ⇒ 补丁覆盖的正是当前工作区内容（不是历史快照）；且 git 记录的是 LF 形态 blob（README 的 LF 规范化 60,632 B 才是 blob 口径，raw 60,960 B 是检出 CRLF 口径）

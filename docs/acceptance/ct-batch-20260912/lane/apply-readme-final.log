@@ -1,0 +1,14 @@
+README 写前 raw sha256 = BD3224B5FE7F43AE5364060538E7BAF25752EC86C605810DA5826A982AC08314  54407 B
+[OK ] #1 旧串命中=1（应然 1） 新串命中=0（应然 0）
+       旧: - **本批实际处置（单一实例）**：`contract-specs/schemas/canonical-event.v1.schema.json` 的 `items` 描述里 `§2.4 L
+[OK ] #2 旧串命中=1（应然 1） 新串命中=0（应然 0）
+       旧: | 5 | 本节 ＋ §3.5 | 新增锚点规则与在册负债登记（`D-065`） |
+[OK ] #3 旧串命中=1（应然 1） 新串命中=0（应然 0）
+       旧: | `contract-specs/VERSION`（**当前值**，内容 `contract-specs 2.2.0`） | `SHA256_VERSION_NEW` |
+[OK ] #4 旧串命中=1（应然 1） 新串命中=0（应然 0）
+       旧: | `schemas/canonical-event.v1.schema.json`（**当前值**） | `SHA256_SCHEMA_NEW` |
+[OK ] #5 旧串命中=1（应然 1） 新串命中=0（应然 0）
+       旧: | `docs/contracts/event-contract.md`（**当前值**） | `SHA256_EC_NEW` |
+[OK ] #6 旧串命中=1（应然 1） 新串命中=0（应然 0）
+       旧: `VERSION` 变更前为 `contract-specs 2.1.0`（**22 B**，sha256 `605679A0B8BE10CDA8D1F60045C524145AAD1AA38
+>>> 已写盘  raw sha256 = 1446480224EAE300B5EADCE3CD0D677BAB2A775E6DCFDBDED38063D9A5897E59  55998 B  CR=311

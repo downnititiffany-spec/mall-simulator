@@ -1,0 +1,227 @@
+event-contract.md: sha256(原)=FFEDE7534B471BB24D931EE1DEA7842929313B2303D5710A94C0809FED0A1F59 bytes=7399 CR=168 LF=168
+
+[OK ] EC 正向对照（写前基线）：`固定值：mock-mall` 原文命中 == 1（本次将要改写它） — 命中 1
+
+[OK ] EC 正向对照（写前基线）：`按此去重` 原文命中 == 1 — 命中 1
+
+[OK ] EC 第 1 题：旧串命中 == 1 — 命中 1
+
+[OK ] EC 第 1 题：新串命中 == 0（写前） — 命中 0
+
+[OK ] EC 第 2 题：旧串命中 == 1 — 命中 1
+
+[OK ] EC 第 2 题：新串命中 == 0（写前） — 命中 0
+
+[OK ] EC 第 3 题：旧串命中 == 1 — 命中 1
+
+[OK ] EC 第 3 题：新串命中 == 0（写前） — 命中 0
+
+[OK ] EC 正向对照（写后）：`固定值：mock-mall` 旧句已归零（它本身就是本次被改写的目标） — 命中 0
+
+[OK ] EC 正向对照（写后）：`按此去重` 旧句已归零 — 命中 0
+
+[OK ] EC 正向对照（写后）：新句 `(source_instance_id, event_id)` 命中 == 2（§1 注释 ＋ §4 契约句，两处都改到） — 命中 2
+
+
+
+README.md: sha256(原)=4FE3222D6C1A4C3A67E6A6EAE0B415C1F134990188F1B18C61A8013E5603A07E bytes=47709 CR=267 LF=267
+
+[OK ] RM 第 1 题：旧串命中 == 1 — 命中 1
+
+[OK ] RM 第 1 题：新串命中 == 0（写前） — 命中 0
+
+[OK ] RM 第 2 题：旧串命中 == 1 — 命中 1
+
+[OK ] RM 第 2 题：新串命中 == 0（写前） — 命中 0
+
+[OK ] RM 第 3 题：旧串命中 == 1 — 命中 1
+
+[OK ] RM 第 3 题：新串命中 == 0（写前） — 命中 0
+
+[OK ] RM 第 4 题：旧串命中 == 1 — 命中 1
+
+[OK ] RM 第 4 题：新串命中 == 0（写前） — 命中 0
+
+[OK ] RM §4 标题唯一 — 命中 1
+
+[OK ] RM §3.5 段落（写前必须 0）
+
+[OK ] RM §14 标记（写前必须 0）
+
+[OK ] RM 文件末尾为 CRLF（追加前）
+
+[OK ] RM §14 已追加
+
+
+
+VERSION: sha256(原)=605679A0B8BE10CDA8D1F60045C524145AAD1AA388766AF01ECD8ADEBA559798 bytes=22 内容='contract-specs 2.1.0'
+
+[OK ] VERSION 旧内容命中 == 1
+
+[OK ] VERSION 新内容命中 == 0（写前）
+
+[OK ] VERSION 字节数不变（21→21 字符 ＋ 1 个 CR） — 22 → 22
+
+
+
+=== 行级差异（unified, n=0）===
+
+--- D:\Develop_code\GraduationProject-wt\ct-batch\docs\contracts\event-contract.md ：diff 行数 = 11，行数 169 → 169
+
+    --- 
+
+    +++ 
+
+    @@ -12 +12 @@
+
+    -  "event_id": "UUID",                        // 全局唯一，ODS/DWD 按此去重（允许 at-least-once 投递）
+
+    +  "event_id": "UUID",                        // 源命名空间内唯一，ODS/DWD 按 (source_instance_id, event_id) 去重（允许 at-least-once 投递）
+
+    @@ -16 +16 @@
+
+    -  "source_system": "mock-mall",              // 固定值：mock-mall
+
+    +  "source_system": "mock-mall",              // 形状约束：非空字符串，取值 = 该源的 source_registry.source_code（值域非契约所有，D-061）；mock-mall 为首个源取值
+
+    @@ -165 +165 @@
+
+    -* `event_id` 唯一；重复投递由 DWD 按 `event_id` 去重，因此允许 at-least-once。
+
+    +* `event_id` 在源命名空间内唯一；重复投递由 DWD 按 `(source_instance_id, event_id)` 去重，因此允许 at-least-once。
+
+--- D:\Develop_code\GraduationProject-wt\ct-batch\contract-specs\README.md ：diff 行数 = 59，行数 268 → 312
+
+    --- 
+
+    +++ 
+
+    @@ -3 +3 @@
+
+    -状态：**部分冻结**（`specs/surrogate-key.v1.json` 为 `DRAFT`，**尚无任何实现读取**；见 §4 目录表与 §10 指纹表）——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.0.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1
+
+    +状态：**部分冻结**（`specs/surrogate-key.v1.json` 为 `DRAFT`，**尚无任何实现读取**；见 §4 目录表与 §10 指纹表）——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.2.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1
+
+    @@ -45,0 +46,8 @@
+
+    +
+
+    +### 3.5 锚点书写规则（`D-065`，2026-09-12 CT 批次新增）
+
+    +
+
+    +- **规则**：本目录与 `docs/contracts/**` 内引用指导书章节时，锚点**必须带文件名或版本前缀**（如 `docs/contracts/event-contract.md §2.4 L77`、`V2.3 §4.1 L139`），**不得**只写 `§x.y Lzzz`——裸行号在指导书迭代后会指向错误段落。
+
+    +- **门禁**：`scripts/check-bare-anchors.ps1`（判据 = `contract-specs/**` 内检出的裸锚点集合 **⊆** `scripts/contract-bare-anchors.allowlist.txt`），脚本内含**正向对照**（一条带文件名的锚点必须**不**计入）。
+
+    +- **在册负债**：台账 `scripts/contract-bare-anchors.allowlist.txt` 共 **113 行 / 201 处**裸锚点，**只减不增**；`README.md` §11 勘误表（`F-29`）的审计口径是 **258 处**（扫码范围更宽，且含刻意保留的旧锚点原文）。**两数不同，不得互相印证**；本批只登记，不清理。
+
+    +- **本批实际处置（单一实例）**：`contract-specs/schemas/canonical-event.v1.schema.json` 的 `items` 描述里 `§2.4 L77` / `§2.4 L84-L90` 补全为 `docs/contracts/event-contract.md §2.4 L77` / `… L84-L90`（**行号未改**）；其余裸锚点本批**不动**（专项 M1-5-R，时点 = P3-04 同批或之前）。
+
+    +- **本细则不声称**：锚点「指对了地方」（只补文件名，未核语义）；非 markdown 载体的同款裸锚点已普查。
+
+    @@ -58 +66 @@
+
+    -| [`VERSION`](VERSION) | 总控 | — | `2.1.0` |
+
+    +| [`VERSION`](VERSION) | 总控 | — | `2.2.0` |
+
+    @@ -71 +79 @@
+
+    -- **`source_system` 取 `const: "mock-mall"`**：§1 L16「固定值：mock-mall」，且 `EventContract.SOURCE_SYSTEM` 两侧实现同值，`CanonicalEventSchemaParityTest` 也要求 `const`。§3.3 B 的 `synthetic=true` 与它的关系未定（Q3）。
+
+    +- **`source_system` 只受形状约束（`type: string` ＋ `minLength: 1`），不取 `const`／`enum`／`pattern`**（`D-061`，2026-09-12 CT 批次）：取值 = 该事件所属源的 `source_registry.source_code`，**值域非契约所有**——命名规则的单一所有者是 `source_registry` 侧校验（`D-035`）。原句「§1 L16『固定值：mock-mall』，且 `EventContract.SOURCE_SYSTEM` 两侧实现同值，`CanonicalEventSchemaParityTest` 也要求 `const`」是 **CT 批次前的历史陈述，原文保留**；其中平台侧常量 `EventContract.SOURCE_SYSTEM` 已按 `D-064 ①` 退
+
+    @@ -268 +276,37 @@
+
+    -
+
+    +## 14. CT 批次（`D-061`…`D-065`）落地：当前态版本串 `2.1.0` → `2.2.0`（2026-09-12）
+
+    +
+
+    +**为什么有本节**：§11 是 M1-5 收口同步（`1.2.0 → 1.3.0`），§12 是 CT-0 勘误，§13 是 P2-07（`→ 2.0.0`）。本轮 CT 批次把三条裁决落到契约上：`source_system` 去 `const`（`D-061`）、`event_id` 去重语义改源命名空间内（`D-062`）、`order_created.items` 加性接受字符串形态（`D-063`），并退休平台侧常量（`D-064`）、登记锚点规则（`D-065`）。三者**均为加法**（`source_system` 去 `const` 是放宽兼容性，不是破坏性变更）⇒ 目录级版本按 §3 规则 minor 递增到 **`2.2.0`**。
+
+    +
+
+    +### 14.1 逐项改动
+
+    +
+
+    +| # | 位置 | 改动 |
+
+    +|---|---|---|
+
+    +| 1 | `VERSION` | `contract-specs 2.1.0` → `contract-specs 2.2.0`（`SHA256_VERSION_NEW`） |
+
+    +| 2 | `schemas/canonical-event.v1.schema.json` | ① `properties.event_id.description` 首句：去重键改 `(source_instance_id, event_id)`；② `properties.source_system`：`const: "mock-mall"` → `type: string` ＋ `minLength: 1`，`description` 改为形状约束声明（**刻意不加 `pattern`/`enum`**，`D-061`）；③ `$defs.order_created.properties.items`：`type: array` → `oneOf: [{array（原定义原文保留）}, {string}]`；④ `$defs.order_created.description` 
+
+    +| 3 | `docs/contracts/event-contract.md` | §1 L12 注释与 L16 注释改写；§4 L165 去重句改写（`event_id` → `(source_instance_id, event_id)`） |
+
+    +| 4 | 平台侧代码 | `platform-common/.../contracts/EventContract.java`：删除 `SOURCE_SYSTEM` 常量行（`D-064 ①`）；`CanonicalEventSchemaParityTest`：旧「两侧常量一致」断言改为「**结构守卫**：`source_system` 不得含 `const` ＋ 形状断言」，并以 `schema_version` 仍锁 `const` 作**正向对照**；`SourceRegistryMigrationScriptTest` 仅改 `.as(...)` 理由串，**断言本体 `.contains("'mock-mall'")` 一字未改** |
+
+    +| 5 | 本节 ＋ §3.5 | 新增锚点规则与在册负债登记（`D-065`） |
+
+    +
+
+    +### 14.2 逐制品指纹（本节数值均为**本轮现算**，非转录）
+
+    +
+
+    +| 制品 | sha256 |
+
+    +|---|---|
+
+    +| `contract-specs/VERSION`（**当前值**，内容 `contract-specs 2.2.0`） | `SHA256_VERSION_NEW` |
+
+    +| `schemas/canonical-event.v1.schema.json`（**当前值**） | `SHA256_SCHEMA_NEW` |
+
+    +| `docs/contracts/event-contract.md`（**当前值**） | `SHA256_EC_NEW` |
+
+    +| `contract-specs` 目录内其余制品（`ingestion-manifest.v1`、`generation-artifact-manifest.v1`、`openapi/generator-api.v1.yaml`、`specs/surrogate-key.v1.json`、`specs/warehouse-namespace.v1.json`、`specs/warehouse-namespace.v2.json`） | **本批一字未改**（`warehouse-namespace.v1.json` 现算仍为 `463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A`，与 §10 登记值相符） |
+
+    +
+
+    +`VERSION` 变更前为 `contract-specs 2.1.0`（**22 B**，sha256 `605679A0B8BE10CDA8D1F60045C524145AAD1AA388766AF01ECD8ADEBA559798`）。注意：§10 表内 `2.0.0`/`2.1.0` 两行登记的是「21 B」，与本轮实测的 **22 B** 不符（该文件含 `CRLF`）⇒ **历史行原文保留不改**，此处按实测登记，登记口径差异属既有事实。
+
+    +
+
+    +### 14.3 刻意保留（不改）
+
+    +
+
+    +- §10 全部历史指纹行、§11 的 `1.2.0 → 1.3.0` 同步表、§12 的 CT-0 勘误全节、§13 的 P2-07 全节与 `1.3.0 → 2.0.0` 沿革；
+
+    +- §5 建模决定里那句「`source_system` 取 `const`」的原句、schema 与 `event-contract.md` 中所有「固定值：mock-mall」「按 `event_id` 去重」的**历史冲突陈述**（均以追加方式标注处置，不删原文）；
+
+    +- 四个 `DRAFT` 制品的状态与内容；`specs/**`、`openapi/**`、`schemas/ingestion-manifest.v1.schema.json`、`schemas/generation-artifact-manifest.v1.schema.json`。
+
+    +
+
+    +### 14.4 未取证／不得声称
+
+    +
+
+    +- 本批次**未**执行 T2 重跑（55 条黄金链端到端，= M1-11，排在本批之后）；`canonical-event.v1` 仍为 **`DRAFT`**——§4 的两条冻结门槛中，门槛 (1) 结构对账测试本轮已跑绿，门槛 (2) Q6 处置仍未决。
+
+    +- `spark-jobs/**`、`tests/golden-dataset/**`、`mall-simulator/**` 与生成器 `ContractFormat.SOURCE_SYSTEM` **本批一字未改**；`D-064 ②③`（商城/生成器侧同名常量）与 `B-06` 仍未决。
+
+    +- 字符串形态 `items` 的**解析归一**尚未实现（属 DWD，P2-04/P2-05）；本轮只把「契约接受」落成文字与 schema 分支。
+
+    +
+
+--- D:\Develop_code\GraduationProject-wt\ct-batch\contract-specs\VERSION ：diff 行数 = 5，行数 2 → 2
+
+    --- 
+
+    +++ 
+
+    @@ -1 +1 @@
+
+    -contract-specs 2.1.0
+
+    +contract-specs 2.2.0
+
+
+
+>>> 已写盘（--apply）

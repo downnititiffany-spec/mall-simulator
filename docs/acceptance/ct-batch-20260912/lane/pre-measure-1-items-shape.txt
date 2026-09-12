@@ -1,0 +1,57 @@
+### M1-a 生成器 CanonicalPayloads.orderCreated（synthetic-data-generator）
+  70: 
+  71:     /**
+  72:      * 订单创建（契约 §2.4）。
+  73:      *
+  74:      * <p>注意两个必须遵守的点：{@code items} 必须是**数组**而不是 JSON 字符串；{@code status} 契约固定为
+  75:      * {@code CREATED}；{@code total_amount} = Σ item.amount（跨字段一致性，运行期校验）。</p>
+  76:      */
+  77:     public static Map<String, Object> orderCreated(String orderId, String userId, List<OrderItem> items,
+  78:                                                    String totalAmount, String createdAt) {
+  79:         Map<String, Object> payload = new LinkedHashMap<>();
+  80:         payload.put("order_id", orderId);
+  81:         payload.put("user_id", userId);
+  82:         payload.put("items", items.stream().map(OrderItem::toJson).toList());
+  83:         payload.put("total_amount", ContractFormat.requireAmount(totalAmount));
+  84:         payload.put("status", "CREATED");
+  85:         payload.put("created_at", ContractFormat.requireTime(createdAt));
+  86:         return payload;
+  87:     }
+  88: 
+  89:     public static Map<String, Object> orderPaid(String orderId, String userId, String paymentId,
+  90:                                                 String amount, String paidAt) {
+  91:         Map<String, Object> payload = new LinkedHashMap<>();
+  92:         payload.put("order_id", orderId);
+
+### M1-b 商城 EventPayloadFactory.orderCreated（mall-simulator outbox 写出路径）
+  70:         p.put("channel", channel);
+  71:         p.put("event_time_utc", time(eventTime));
+  72:         return p;
+  73:     }
+  74: 
+  75:     public static Map<String, Object> orderCreated(Long orderId, Long userId, List<OrderItemVo> items,
+  76:                                                    BigDecimal totalAmount, OffsetDateTime createdAt) {
+  77:         Map<String, Object> p = new LinkedHashMap<>();
+  78:         p.put("order_id", String.valueOf(orderId));
+  79:         p.put("user_id", String.valueOf(userId));
+  80:         List<Map<String, Object>> itemList = new ArrayList<>();
+  81:         for (OrderItemVo it : items) {
+  82:             Map<String, Object> m = new LinkedHashMap<>();
+  83:             m.put("product_id", String.valueOf(it.productId()));
+  84:             m.put("quantity", it.quantity());
+  85:             m.put("unit_price", money(it.unitPrice()));
+  86:             m.put("discount", money(it.discount()));
+  87:             m.put("amount", money(it.amount()));
+  88:             itemList.add(m);
+  89:         }
+  90:         p.put("items", itemList);
+  91:         p.put("total_amount", money(totalAmount));
+  92:         p.put("status", "CREATED");
+  93:         p.put("created_at", time(createdAt));
+  94:         return p;
+  95:     }
+  96: 
+  97:     public static Map<String, Object> orderPaid(Long orderId, Long userId, Long paymentId,
+  98:                                                 BigDecimal amount, OffsetDateTime paidAt) {
+  99:         Map<String, Object> p = new LinkedHashMap<>();
+ 100:         p.put("order_id", String.valueOf(orderId));

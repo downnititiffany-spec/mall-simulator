@@ -1,0 +1,75 @@
+=== ① properties.event_id.description ===
+'源命名空间内唯一的事件 ID，ODS/DWD 按 (source_instance_id, event_id) 去重（允许 at-least-once 投递）。来源：event-contract.md §1 L12。契约 §1 L27 规定 event_id 为 UUID 字符串；但真实夹具 landing/events/r9-m1-123006.jsonl 使用 golden-evt-001 这类非 UUID 值且被采集层接受（landing/manifests/30.json acceptedRecords=51），两处冲突，故本 Schema 只约束 string，不强制 UUID 格式（待契约任务冻结，见 README 待决策）。'
+
+=== ② properties.source_system（整节点）===
+{
+  "type": "string",
+  "minLength": 1,
+  "description": "形状约束（type: string, minLength: 1）：取值 = 该事件所属源的 source_registry.source_code（D-056 经 spark-submit --extra 注入通道下发）；**值域非契约所有**（D-061：刻意不加 pattern/enum，否则每接入一个源都要改契约，且契约会成为第二个命名规则所有者——命名规则的单一所有者是 source_registry 侧校验，D-035）。mock-mall 为首个源的取值，非契约固定值。来源：event-contract.md §1 L16；平台侧常量 EventContract.SOURCE_SYSTEM 已退休（D-064 ①），mall-simulator / 生成器侧同名常量属 B-06 未决（D-064 ②③）。生成器 CANONICAL_EVENT_FILE 模式的 synthetic 标记不落在信封上（信封只有这 8 个字段），见 README 待决策。"
+}
+
+=== ③ $defs.order_created.description 末段（末 460 字）===
+§2.4 表格 6 个字段全部『是』（必填），其中 items 为订单项数组（L82-L90 子表）。total_amount = Σ item.amount（L78）属跨字段一致性约束，§4 未给出可机读表达，留运行期校验。真实数据冲突（全部 6 行 order_created 均如此，L18/L20/L22/L39/L43/L47，且都被采集层接受）：(1) items 被写成 JSON 字符串（如 "[{\"product_id\":\"2\",...}]"）而不是数组；(2) 缺 status；(3) 缺 created_at。见 README Q5、Q6。处置（D-063）：契约加性接受字符串形态；规范形态仍为数组；解析归一属 DWD（P2-04/P2-05）。
+
+=== ③ $defs.order_created.properties.items ===
+{
+  "oneOf": [
+    {
+      "type": "array",
+      "description": "订单项数组（规范形态；字符串形态为外部源兼容，见 oneOf 分支乙）。docs/contracts/event-contract.md §2.4 L77；子表字段见 docs/contracts/event-contract.md §2.4 L84-L90。",
+      "items": {
+        "type": "object",
+        "description": "订单项（items[]）。§2.4 L84-L90，5 个字段全部『是』（必填）。",
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "description": "商品 ID。§2.4 L86。"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "数量（正整数）。§2.4 L87。"
+          },
+          "unit_price": {
+            "$ref": "#/$defs/amount",
+            "description": "成交单价。§2.4 L88；金额正则见 §4 L168。"
+          },
+          "discount": {
+            "$ref": "#/$defs/amount",
+            "description": "优惠分摊（默认 \"0.00\"）。§2.4 L89。"
+          },
+          "amount": {
+            "$ref": "#/$defs/amount",
+            "description": "= quantity × unit_price − discount。§2.4 L90。"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "unit_price",
+          "discount",
+          "amount"
+        ],
+        "additionalProperties": true
+      }
+    },
+    {
+      "type": "string",
+      "description": "承载 JSON 编码数组的字符串（外部源兼容形态，D-063）：真实夹具 landing/events/r9-m1-123006.jsonl 的 6 行 order_created（L18/L20/L22/L39/L43/L47）均如此且被采集层接受；契约**加性**接受该形态（不放宽必填），规范形态仍为数组，解析归一属 DWD（P2-04/P2-05）。"
+    }
+  ]
+}
+
+=== 正向对照：schema_version 仍锁 const ===
+{
+  "const": "1.0",
+  "description": "契约版本，当前唯一支持值 1.0。来源：event-contract.md 标题 L1 与 §1 L17；EventContract.SCHEMA_VERSION（EventContract.java:16）。未知版本 → 进入隔离区（quarantine_record），不进入 DWD。升版本规则：新增字段 → 1.1 起；破坏性变更 → 新主版本 + 转换器（event-contract.md L4）。"
+}
+
+=== 关键词计数（终态）===
+  "pattern"              = 2
+  "enum"                 = 9
+  "const"                = 14
+  "minLength"            = 1
+  "oneOf"                = 1
+  "type": "string",      = 48

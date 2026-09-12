@@ -1,0 +1,26 @@
+=== E1-d 变异验证 ===
+schema 现态 : sha256=8A8F8A432678CBEF180D34E16E9922147A9F46A5483977760DA16C2756A9A384  (34563 B)
+期望值      : 8A8F8A432678CBEF180D34E16E9922147A9F46A5483977760DA16C2756A9A384
+[ OK  ] 现态与 E1-b 读数一致（变异前基线可信）
+
+[OK ] 变异锚 'source_system' 顶层属性命中 = 1（应然 1）
+[OK ] 变异后 schema 已含 const（读回确认）
+[OK ] 变异后 sha256 已变：BF141496B38CF856063D8CD484AB5B33C0ABDD33DF0815781C5F3891E3EA8E42
+
+--- ③ 变异态跑 CanonicalEventSchemaParityTest（期望 **BUILD FAILURE**）---
+[OK ] 变异态：mvn exit=1；BUILD FAILURE=True；BUILD SUCCESS=False
+    变异态失败消息（守卫命中的断言）：
+      [ERROR]   CanonicalEventSchemaParityTest.versionAndSourceConstMatchContract:73 D-061：source_system 不得再锁定 const（值域归 source_registry.source_code，契约只约束形状） ==> expected: <false> but was: <true>
+[ OK  ] 失败消息明确指向 source_system 的 const 守卫
+
+--- ④⑤ 恢复并核对 ---
+[OK ] 已按字节恢复：sha256=8A8F8A432678CBEF180D34E16E9922147A9F46A5483977760DA16C2756A9A384（与变异前逐字符相同：True）
+[OK ] 恢复值与 E1-b/E1-c 登记的 8A8F8A43… 一致
+
+--- ⑥ 恢复态再跑（期望 **BUILD SUCCESS**）---
+[OK ] 恢复态：mvn exit=0；BUILD SUCCESS=True
+    [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+    变异态读数：[ERROR] Tests run: 5, Failures: 1, Errors: 0, Skipped: 0
+
+VERDICT=PASS  MUTATION_EXIT=1  RESTORED_EXIT=0
+TEMP_CHANGE_PERSISTED=False

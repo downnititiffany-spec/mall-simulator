@@ -1,0 +1,68 @@
+file       : D:\Develop_code\GraduationProject-wt\ct-batch\contract-specs\schemas\canonical-event.v1.schema.json
+sha256(原) : BF0C7356AA924512CF7E861BDE49C59D9A787886B99EDEE89F4676DC089120EB  bytes=33383  lines=868  CR=867  LF=867
+
+[OK ] S1 旧串 event_id.description 首句: 命中 1（应然 1）
+[OK ] S1 新串（写前必须 0）: 命中 0（应然 0）
+[OK ] S2 旧串 const: 命中 1（应然 1）
+[OK ] S2 新串（写前必须 0）: 命中 0（应然 0）
+[OK ] S2 旧串 description: 命中 1（应然 1）
+[OK ] S2 新串 description（写前必须 0）: 命中 0（应然 0）
+[OK ] S3 旧串 items.description: 命中 1（应然 1）
+[OK ] S3 新串 items.description（写前必须 0）: 命中 0（应然 0）
+[OK ] S3 旧串 order_created.description 尾（含 Q5/Q6）: 命中 1（应然 1）
+[OK ] S3 处置句（写前必须 0）: 命中 0（应然 0）
+[OK ] S3 带上下文锚 '        "items": {' + array（唯一）: 命中 1（应然 1）
+[对照] 裸 '"items": {' 命中 2 处 ⇒ 远大于 1，证明 CT-3 **不得**用裸 items 计数（判据非空转）
+[OK ] S3 数组分支尾部锚（10 空格闭括号 + 8 空格闭括号逗号 + total_amount）: 命中 1（应然 1）
+
+=== 写后复核（新串 == 1 ∧ 旧串 == 0）===
+[OK ] S1 新串: 1（应然 1）
+[OK ] S1 旧串: 0（应然 0）
+[OK ] S2 新串 const→shape: 1（应然 1）
+[OK ] S2 旧串 const: 0（应然 0）
+[OK ] S2 新串 desc: 1（应然 1）
+[OK ] S2 旧串 desc: 0（应然 0）
+[OK ] S3 新串 items.desc: 1（应然 1）
+[OK ] S3 旧串 items.desc: 0（应然 0）
+[OK ] S3 处置句: 1（应然 1）
+[OK ] S3 oneOf 分支甲 '          "oneOf": [': 1（应然 1）
+[OK ] S3 分支乙字符串形态: 1（应然 1）
+[OK ] S3 原数组定义原文保留（"type": "array" @ items）: 1（应然 1）
+
+=== 行级差异（unified, n=0）共 28 行 ===
+--- 
++++ 
+@@ -10 +10 @@
+-      "description": "全局唯一事件 ID，ODS/DWD 按此去重（允许 at-least-once 投递）。来源：event-contract.md §1 L12。契约 §1 L27 规定 event_id 为 UUID 字符串；但真实夹具 landing/events/r9-m1-123006.jsonl 使用 golden-evt-001 这类非 UUID 值且被采集层接受（landing/manifests/30.json acceptedRecords=51），两处冲突，故本 Schema 只约束 string，不强制 UUID 格式（待契约任务冻结，见 README 待决策）。"
++      "description": "源命名空间内唯一的事件 ID，ODS/DWD 按 (source_instance_id, event_id) 去重（允许 at-least-once 投递）。来源：event-contract.md §1 L12。契约 §1 L27 规定 event_id 为 UUID 字符串；但真实夹具 landing/events/r9-m1-123006.jsonl 使用 golden-evt-001 这类非 UUID 值且被采集层接受（landing/manifests/30.json acceptedRecords=51），两处冲突，故本 Schema 只约束 string，不强制 UUID 格式（待契约任务冻结，见 README 待决策）。"
+@@ -39,2 +39,3 @@
+-      "const": "mock-mall",
+-      "description": "固定值：mock-mall。来源：event-contract.md §1 L16『固定值：mock-mall』；与 EventContract.SOURCE_SYSTEM（EventContract.java:17）及 mall-simulator 侧 EventContract.SOURCE_SYSTEM 一致，并由 CanonicalEventSchemaParityTest 锁定为 const。生成器 CANONICAL_EVENT_FILE 模式的 synthetic 标记不落在信封上（信封只有这 8 个字段），见 README 待决策。"
++      "type": "string",
++      "minLength": 1,
++      "description": "形状约束（type: string, minLength: 1）：取值 = 该事件所属源的 source_registry.source_code（D-056 经 spark-submit --extra 注入通道下发）；**值域非契约所有**（D-061：刻意不加 pattern/enum，否则每接入一个源都要改契约，且契约会成为第二个命名规则所有者——命名规则的单一所有者是 source_registry 侧校验，D-035）。mock-mall 为首个源的取值，非契约固定值。来源：event-contract.md §1 L16；平台侧常量 EventContract.SOURCE_SYSTEM 已退休（D-064 ①），mall-simulator / 生成器侧同名常量属 B-06 未决（D-064 ②③）。生成器 CANONICAL_EVENT_FILE 模式的 synthetic 标记不落在信封上（信封只有这 8 个字段），见 README 待决策。"
+@@ -538 +539 @@
+-      "description": "§2.4 表格 6 个字段全部『是』（必填），其中 items 为订单项数组（L82-L90 子表）。total_amount = Σ item.amount（L78）属跨字段一致性约束，§4 未给出可机读表达，留运行期校验。真实数据冲突（全部 6 行 order_created 均如此，L18/L20/L22/L39/L43/L47，且都被采集层接受）：(1) items 被写成 JSON 字符串（如 \"[{\\\"product_id\\\":\\\"2\\\",...}]\"）而不是数组；(2) 缺 status；(3) 缺 created_at。见 README Q5、Q6。",
++      "description": "§2.4 表格 6 个字段全部『是』（必填），其中 items 为订单项数组（L82-L90 子表）。total_amount = Σ item.amount（L78）属跨字段一致性约束，§4 未给出可机读表达，留运行期校验。真实数据冲突（全部 6 行 order_created 均如此，L18/L20/L22/L39/L43/L47，且都被采集层接受）：(1) items 被写成 JSON 字符串（如 \"[{\\\"product_id\\\":\\\"2\\\",...}]\"）而不是数组；(2) 缺 status；(3) 缺 created_at。见 README Q5、Q6。处置（D-063）：契约加性接受字符串形态；规范形态仍为数组；解析归一属 DWD（P2-04/P2-05）。",
+@@ -549,2 +550,4 @@
+-          "type": "array",
+-          "description": "订单项数组。§2.4 L77；子表字段见 §2.4 L84-L90。",
++          "oneOf": [
++          {
++            "type": "array",
++          "description": "订单项数组（规范形态；字符串形态为外部源兼容，见 oneOf 分支乙）。docs/contracts/event-contract.md §2.4 L77；子表字段见 docs/contracts/event-contract.md §2.4 L84-L90。",
+@@ -585,0 +589,6 @@
++          },
++          {
++            "type": "string",
++            "description": "承载 JSON 编码数组的字符串（外部源兼容形态，D-063）：真实夹具 landing/events/r9-m1-123006.jsonl 的 6 行 order_created（L18/L20/L22/L39/L43/L47）均如此且被采集层接受；契约**加性**接受该形态（不放宽必填），规范形态仍为数组，解析归一属 DWD（P2-04/P2-05）。"
++          }
++          ]
+
+sha256(新) : 8A8F8A432678CBEF180D34E16E9922147A9F46A5483977760DA16C2756A9A384  bytes=34563  lines=877  CR=876  LF=876
+[OK ] json.loads 通过
+[读数] source_system 键集 = ['description', 'minLength', 'type']  const 存在? False
+[读数] items 键集 = ['oneOf']  oneOf 分支数 = 2
+[OK ] 正向对照：schema_version 仍含 const（守卫非空转）
+
+>>> 已写盘（--apply）

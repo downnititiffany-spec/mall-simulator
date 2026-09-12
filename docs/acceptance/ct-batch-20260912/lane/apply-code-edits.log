@@ -1,0 +1,57 @@
+
+=== 1) EventContract.java（EventContract.java）===
+[OK ] 旧常量行（应为 1）: 命中 1（应然 1）
+[OK ] 退休占位注释（应为 0）: 命中 0（应然 0）
+
+=== 2) CanonicalEventSchemaParityTest.java ===
+[OK ] 旧 @DisplayName（应为 1）: 命中 1（应然 1）
+[OK ] 旧断言块（应为 1）: 命中 1（应然 1）
+[OK ] 旧常量引用 EventContract.SOURCE_SYSTEM（应为 2 处：断言参数 + 失败消息）: 命中 2（应然 2）
+[OK ] 新守卫锚 assertFalse(source.has("const")（应为 0）: 命中 0（应然 0）
+
+=== 3) SourceRegistryMigrationScriptTest.java ===
+[OK ] 旧 .as(...) 理由串（应为 1）: 命中 1（应然 1）
+[OK ] 旧断言本体 .contains("'mock-mall'")（应为 1，**不改**）: 命中 1（应然 1）
+
+
+=== 写后复核（新串 == 1 ∧ 旧串 == 0）===
+[OK ] main: 旧常量残留: 0（应然 0）
+[OK ] main: SCHEMA_VERSION 仍在: 1（应然 1）
+[OK ] parity: 旧 @DisplayName 残留: 0（应然 0）
+[OK ] parity: 新 @DisplayName: 1（应然 1）
+[OK ] parity: 旧断言块残留: 0（应然 0）
+[OK ] parity: 常量引用残留: 0（应然 0）
+[OK ] parity: 正向对照（schema_version const 断言）: 1（应然 1）
+[OK ] parity: 新守卫: 1（应然 1）
+[OK ] srcreg: 旧理由串残留: 0（应然 0）
+[OK ] srcreg: 新理由串: 1（应然 1）
+[OK ] srcreg: 断言本体保留: 1（应然 1）
+
+=== 行级差异（unified, n=0）===
+--- EventContract.java ：变更行数 = 1 ---
+    <=     public static final String SOURCE_SYSTEM = "mock-mall";
+--- CanonicalEventSchemaParityTest.java ：变更行数 = 13 ---
+    =>     @DisplayName("结构守卫：schema_version 仍锁 const；source_system 只受形状约束、不得锁 const")
+    =>         // 正向对照（D-061）：schema_version 仍然锁定 const —— 证明下面那条"不得带 const"的守卫不是空转。
+    =>         JsonNode source = root.path("properties").path("source_system");
+    =>         assertFalse(source.has("const"),
+    =>                 "D-061：source_system 不得再锁定 const（值域归 source_registry.source_code，契约只约束形状）");
+    =>         assertEquals("string", source.path("type").asText(),
+    =>                 "D-061：source_system 必须是 string 形状约束");
+    =>         assertEquals(1, source.path("minLength").asInt(),
+    =>                 "D-061：source_system 必须带 minLength=1（非空）形状约束");
+    <=     @DisplayName("schema_version / source_system 常量与 EventContract 一致")
+    <=         assertEquals(EventContract.SOURCE_SYSTEM,
+    <=                 root.path("properties").path("source_system").path("const").asText(),
+    <=                 "source_system 必须锁定为 EventContract.SOURCE_SYSTEM");
+--- SourceRegistryMigrationScriptTest.java ：变更行数 = 2 ---
+    =>                 .as("种子源编码必须等于首个源的 source_code（契约不再固定该值，D-061）")
+    <=                 .as("种子源编码必须等于冻结契约里的 source_system 取值 mock-mall")
+
+D:\Develop_code\GraduationProject-wt\ct-batch\analytics-server\platform-common\src\main\java\com\graduation\analytics\contracts\EventContract.java
+    sha256(新)=02840CBB4FE4FF031DCC7A1D9634C248F7C5D7F2991C56274F8023C7ACE62791 bytes=4047 CR=80 LF=80
+D:\Develop_code\GraduationProject-wt\ct-batch\analytics-server\platform-common\src\test\java\com\graduation\analytics\contracts\CanonicalEventSchemaParityTest.java
+    sha256(新)=D845F7806A9862972CFFCF5408B78C830ADAC84B64003AF470246CA9125A7B18 bytes=8488 CR=169 LF=169
+D:\Develop_code\GraduationProject-wt\ct-batch\analytics-server\platform-app\src\test\java\com\graduation\analytics\source\SourceRegistryMigrationScriptTest.java
+    sha256(新)=28D689AF0E8224DE2DD681316B8ED90F37D5D54F8518AACF63639881BDA8BA01 bytes=9352 CR=193 LF=193
+>>> 已写盘（-Apply）

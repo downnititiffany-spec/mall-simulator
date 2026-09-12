@@ -1,0 +1,30 @@
+独立复算（守卫同款规则）: 文件 4 个；裸锚点 199 处 / 113 行
+台账自述              : 数据行 113 行；出现次数合计 201 处；表头行数基线 = 113
+
+  contract-specs\README.md                                             复算   42  台账   42  一致
+  contract-specs\openapi\generator-api.v1.yaml                         复算   65  台账   65  一致
+  contract-specs\schemas\canonical-event.v1.schema.json                复算   91  台账   93  !! 差 -2
+  contract-specs\schemas\generation-artifact-manifest.v1.schema.json   复算    1  台账    1  一致
+
+--- 台账有、复算无（或复算次数更低）的条目 ---
+  contract-specs\README.md :: §1 L11  台账=1 复算=0
+  contract-specs\README.md :: §3 L152  台账=1 复算=0
+  contract-specs\README.md :: §3.1 L60  台账=1 复算=0
+  contract-specs\README.md :: §3.4 L96  台账=1 复算=0
+  contract-specs\README.md :: §4 L166  台账=1 复算=0
+  contract-specs\README.md :: §4.1 L118  台账=1 复算=0
+  contract-specs\openapi\generator-api.v1.yaml :: §4.4 L153  台账=6 复算=5
+  contract-specs\schemas\canonical-event.v1.schema.json :: §2 L32  台账=1 复算=0
+  contract-specs\schemas\canonical-event.v1.schema.json :: §2.4 L77  台账=1 复算=0
+  contract-specs\schemas\canonical-event.v1.schema.json :: §2.4 L84  台账=2 复算=0
+
+--- 复算有、台账无的条目 ---
+  contract-specs\README.md :: §1 L11-L20  复算=1 台账=缺
+  contract-specs\README.md :: §3 L152-L160  复算=1 台账=缺
+  contract-specs\README.md :: §3.1 L60-L62  复算=1 台账=缺
+  contract-specs\README.md :: §3.4 L96-L97  复算=1 台账=缺
+  contract-specs\README.md :: §4 L166-L167  复算=1 台账=缺
+  contract-specs\README.md :: §4.1 L118-L123  复算=1 台账=缺
+  contract-specs\openapi\generator-api.v1.yaml :: §4.4 L153-L156  复算=1 台账=缺
+  contract-specs\schemas\canonical-event.v1.schema.json :: §2 L32-L37  复算=1 台账=缺
+  contract-specs\schemas\canonical-event.v1.schema.json :: §2.4 L84-L90  复算=1 台账=缺

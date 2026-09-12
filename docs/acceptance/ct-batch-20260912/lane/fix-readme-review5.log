@@ -1,0 +1,8 @@
+README raw sha256 = C715D6E753D4C0B6BEDF1D4BB44C43782EECE9B4FD56E211CA6BBD96497AEE1D  60913 B  CR=328 LF=328  行数=328
+[OK ] 哨兵：CR == LF == 328，行数 328 ≥ 300
+[OK ] 旧串命中=1（应然 1） 新串命中=0（应然 0）
+判据：README 内 `§1 L16` 裸形式 = 2 处（应然 2）
+    L82  窗口尾 = '一所有者是 `source_registry` 侧校验（`D-035`）。原句「'
+    L101  窗口尾 = '3. **Q3 `source_system` 与 `synthetic`**：'
+[OK ] 写后 CR == LF：328 == 328
+>>> 已写盘  raw sha256 = 5896AD0EE9C1C6BBA7EE033CCB3FD55724D2944B366689F2A080EB428AE6B73C  60960 B  CR=328 LF=328  行数=328

@@ -1,0 +1,92 @@
+=== E1-c 真实数据对照 ===
+schema : D:\Develop_code\GraduationProject-wt\ct-batch\contract-specs\schemas\canonical-event.v1.schema.json
+        sha256=8A8F8A432678CBEF180D34E16E9922147A9F46A5483977760DA16C2756A9A384  bytes=34563
+data   : D:\Develop_code\GraduationProject-wt\ct-batch\tests\golden-dataset\events\golden-20260901.jsonl
+        sha256=4869E88C568B1F0B37640AFD3655D3E5F67E8132F98F93F1AC5E102BC958CD46  bytes=18485
+jsonschema 版本: 4.26.0
+
+[自检] Draft202012Validator.check_schema: OK
+[读数] properties.source_system 键集 = ['description', 'minLength', 'type']
+[读数] $defs.order_created.properties.items 键集 = ['oneOf']
+
+[读数] 非空行（逻辑行）数 = 55
+
+[读数] 失败行数 = 29 / 55；不可解析行 = [53]
+[读数] 失败行号集合 = [12, 13, 14, 18, 19, 20, 21, 22, 23, 24, 25, 34, 35, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 52, 53, 54, 55]
+
+[读数] 关键词 → 涉及行号（用于判定失败是否为 items 相关）：
+    UNPARSABLE: [53]
+    allOf: [12, 13, 14, 18, 19, 20, 21, 22, 23, 24, 25, 34, 35, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 52, 54]
+    properties: [54]
+    required: [55]
+
+[明细] 逐失败行（最多 25 条/行）：
+  --- 行 12 ---
+      ['allOf', 3, 'then', 'properties', 'payload', 'properties', 'channel', 'enum'] @ payload/channel: 'web' is not one of ['app', 'pc', 'h5']
+  --- 行 13 ---
+      ['allOf', 3, 'then', 'properties', 'payload', 'properties', 'channel', 'enum'] @ payload/channel: 'web' is not one of ['app', 'pc', 'h5']
+  --- 行 14 ---
+      ['allOf', 3, 'then', 'properties', 'payload', 'properties', 'channel', 'enum'] @ payload/channel: 'web' is not one of ['app', 'pc', 'h5']
+  --- 行 18 ---
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'status' is a required property
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 19 ---
+      ['allOf', 5, 'then', 'properties', 'payload', 'required'] @ payload: 'paid_at' is a required property
+  --- 行 20 ---
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'status' is a required property
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 21 ---
+      ['allOf', 6, 'then', 'properties', 'payload', 'required'] @ payload: 'cancelled_at' is a required property
+  --- 行 22 ---
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'status' is a required property
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 23 ---
+      ['allOf', 5, 'then', 'properties', 'payload', 'required'] @ payload: 'paid_at' is a required property
+  --- 行 24 ---
+      ['allOf', 7, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 25 ---
+      ['allOf', 8, 'then', 'properties', 'payload', 'required'] @ payload: 'completed_at' is a required property
+  --- 行 34 ---
+      ['allOf', 3, 'then', 'properties', 'payload', 'properties', 'channel', 'enum'] @ payload/channel: 'web' is not one of ['app', 'pc', 'h5']
+  --- 行 35 ---
+      ['allOf', 3, 'then', 'properties', 'payload', 'properties', 'channel', 'enum'] @ payload/channel: 'web' is not one of ['app', 'pc', 'h5']
+  --- 行 36 ---
+      ['allOf', 3, 'then', 'properties', 'payload', 'properties', 'channel', 'enum'] @ payload/channel: 'web' is not one of ['app', 'pc', 'h5']
+  --- 行 38 ---
+      ['allOf', 3, 'then', 'properties', 'payload', 'properties', 'behavior_type', 'enum'] @ payload/behavior_type: 'purchase' is not one of ['view', 'favorite', 'cart_add', 'cart_remove', 'search']
+  --- 行 39 ---
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'status' is a required property
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 40 ---
+      ['allOf', 5, 'then', 'properties', 'payload', 'required'] @ payload: 'paid_at' is a required property
+  --- 行 41 ---
+      ['allOf', 7, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 42 ---
+      ['allOf', 8, 'then', 'properties', 'payload', 'required'] @ payload: 'completed_at' is a required property
+  --- 行 43 ---
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'status' is a required property
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 44 ---
+      ['allOf', 5, 'then', 'properties', 'payload', 'required'] @ payload: 'paid_at' is a required property
+  --- 行 45 ---
+      ['allOf', 7, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 46 ---
+      ['allOf', 8, 'then', 'properties', 'payload', 'required'] @ payload: 'completed_at' is a required property
+  --- 行 47 ---
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'status' is a required property
+      ['allOf', 4, 'then', 'properties', 'payload', 'required'] @ payload: 'created_at' is a required property
+  --- 行 48 ---
+      ['allOf', 5, 'then', 'properties', 'payload', 'required'] @ payload: 'paid_at' is a required property
+  --- 行 52 ---
+      ['allOf', 11, 'then', 'properties', 'payload', 'properties', 'change_type', 'enum'] @ payload/change_type: 'restock' is not one of ['inbound', 'outbound', 'adjust']
+  --- 行 53 ---
+      JSON 不可解析: Expecting value: line 1 column 1 (char 0)
+  --- 行 54 ---
+      ['allOf', 0, 'then', 'properties', 'payload', 'properties', 'age_group', 'enum'] @ payload/age_group: '45-54' is not one of ['under18', '18-24', '25-34', '35-44', '45+']
+      ['properties', 'schema_version', 'const'] @ schema_version: '1.0' was expected
+  --- 行 55 ---
+      ['required'] @ <root>: 'event_id' is a required property
+
+FAILSET=12,13,14,18,19,20,21,22,23,24,25,34,35,36,38,39,40,41,42,43,44,45,46,47,48,52,53,54,55
+ITEMSKEYWORDS=UNPARSABLE,allOf,properties,required
+
