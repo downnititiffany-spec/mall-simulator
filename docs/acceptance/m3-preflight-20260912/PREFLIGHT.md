@@ -109,3 +109,25 @@
 **仍未做（不得据本补记推断）**：未 SSH 登录任何节点、未提交任何 Spark 作业、未在集群上跑 55 行或 1,000 行、未验证集群侧 Hive 库名前缀规则、未验证 `hdfs://node01:8020` 可写 ⇒ **E4（集群 1,000 行）仍无证据**。
 
 **隐私处置（同批，遵用户「涉及隐私的都脱敏处理」）**：本文件第 13 行与第 53 行的主机名、私网地址已就地掩码为 `<主机名已脱敏>`、`192.168.18.x`、`192.168.43.x`、`169.254.x.x`，**行数与其余内容未改动**；本补记起集群节点地址一律以 `192.168.18.10x` 形式登记，**完整地址不入库**。用户同时裁定：`root/123456` 一类测试口令无需处理，故 HEAD 中既有本地测试口令保持不动。
+
+---
+
+## 7. 只读探测补记（2026-09-12，**以此为准**）
+
+§1 表格中曾标 `BLOCKED` 的「集群是否可达/版本/认证」一类问题，已于同日以**只读**方式取得答案（不改集群、不 SSH、不提交作业）。完整证据与原始输出见 `docs/acceptance/m3-cluster-probe-20260912/README.md`。
+
+| 预检问题 | 实测答案（2026-09-12） |
+|---|---|
+| 集群是否真实存在 | **是**：HDFS NameNode `node01:9870/8020` 存活、安全模式关、容量 293.10 GB；`Live datanodes (3)`；YARN RM `STARTED/ACTIVE` |
+| 版本 | Hadoop/HDFS/YARN **3.3.4** ＝ 本机客户端 3.3.4（Spark 3.5.1 内置同版）⇒ **无需另备客户端** |
+| 认证方式 | **无 Kerberos**：本机在**无任何凭据**下即完成 HDFS RPC `ls` 与 Metastore `show databases` |
+| Hive 通道 | Metastore `thrift://node01:9083` **可直连**（1.08 s / 7 库）；**HiveServer2 10000 closed** ⇒ 走 Metastore/Spark 直连 |
+| YARN 提交条件 | RM RPC **8032 OPEN**（8030/8031/8033/8042 亦 OPEN）；19888/10020 closed（无 JobHistory） |
+| 可写根 | **未定，须用户指定**：HDFS 根 8 个目录全属 `root:supergroup` 权限 755（仅 `/tmp` 为 777） |
+| 集群是否已被他人使用 | **是**：`/dolphinscheduler`、`/exam`、`/yjx` 及 `/hive/warehouse` 下 6 个他人库 ⇒ 任何写操作须另行确认 |
+| 本项目是否已落地集群 | **否**：`sci/dwd/ads/graduation/analytics/mock` 在 `/hive/warehouse` 检索命中 **0** |
+| 撞名风险 | 本项目 `<source_prefix>_<layer>` 与既有 7 库（`default/exam/ods/scott/shop/tmp/yjxxt`）**均不撞名** |
+
+**仍未取证（禁止越界表述）**：**E4（集群 1,000 行）零证据**；本次**未**提交任何 YARN 作业、**未**在 HDFS 写入任何字节、**未**创建任何 Hive 库表、**未**使用 SSH；他人目录仅做根级列名，未读取内容。
+
+**待用户输入后才能继续的接入项**：A 可写 HDFS 根（或授权以 `HADOOP_USER_NAME=root` 建目录）；B 授权向 YARN 提交真实作业；C YARN 队列名与资源上限；D `spark-jobs` jar 的 HDFS 落点；F 若需集群侧落地 Flume/脚本则仍需 SSH 凭据。
