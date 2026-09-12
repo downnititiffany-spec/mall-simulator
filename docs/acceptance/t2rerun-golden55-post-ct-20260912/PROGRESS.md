@@ -17,3 +17,15 @@
 2026-09-12 17:42:11 | R2-b 采集 batch 42 = SUCCESS recordCount=1000 quarantineCount=0 | raw/control-ingestion-response-20260912-173418.txt
 2026-09-12 17:42:11 | R2-b 对照 run 43 终态 SUCCESS / S20260901_43 / 8 阶段齐 | raw/e3a-poll-run43-20260912-173500.txt
 2026-09-12 17:42:11 | R2-b 判定 PASS：D1 十指标逐值全等 / D2 8 表 1,4,4,9,1,9,1,1=30 逐表相同 / D3 1000-0 / D4 8-8 / D5 库-导出-接口三通道一致 / D6 checksum 89b82028 内容级同源 | raw/control-verdict-run43-20260912-174203.txt
+---
+
+## 补记 2026-09-12 19:38 · 「落地（push）」受阻记录（网络层，非仓库问题）
+
+- 本地提交 **`e5c0bec`**（52 文件 / +4,604 −0）已完成；`git status` 干净。
+- `git push origin HEAD:main` **连续 3 次失败**（19:35:25 / 19:35:58 / 19:36:32），报错一致：
+  `Failed to connect to github.com port 443 after ~21 s: Could not connect to server`；
+  首次报 `Recv failure: Connection was reset`。
+- 现场判定（已实测）：`Resolve-DnsName github.com` **正常**（→ `20.205.243.166`）；`git config` 无 `http.proxy`，环境变量 `HTTP_PROXY/HTTPS_PROXY/ALL_PROXY` **均为空**；
+  本会话早前（17:2x）推送同一远端**成功** ⇒ 判为**网络侧 TCP 443 连通被重置/中断**，非凭据、非仓库、非配置问题。
+- 现状：`origin/main` = `f004960…`（落后本地 **1** 个提交）。
+- 恢复后执行一次即可：`git push origin HEAD:main`（无其它待办）。
