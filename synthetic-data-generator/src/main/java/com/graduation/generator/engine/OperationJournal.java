@@ -14,17 +14,38 @@ import java.util.Map;
  */
 public final class OperationJournal {
 
+    /**
+     * 流水制品**自身的**格式版本（与事件契约的 {@code schema_version} 不是一回事）。
+     *
+     * <p>1.0 = 最初形态（无 {@code real_http}/{@code local_accounting}）；1.1 = 补上这两列（D12：
+     * 本地对齐记账以前与真调用长得一样，"对商城发了多少次请求"被系统性高估）。
+     * 落库时写进 {@code generation_artifact.schema_version}，见 {@code GenerationRunService#schemaVersionOf}。</p>
+     */
+    public static final String SCHEMA_VERSION = "1.1";
+
     private final List<OperationJournalEntry> entries = new ArrayList<>();
     private long nextSeq = 1;
 
-    /** 追加一条并返回带序号的记录 */
+    /** 追加一条并返回带序号的记录（{@code localAccounting=true} 表示这一行没向商城发请求，见 D12） */
     public synchronized OperationJournalEntry append(String operation, boolean supported, String httpMethod,
                                                      String route, String canonicalId, String externalId,
-                                                     String status, String detail) {
+                                                     String status, String detail, boolean localAccounting) {
         OperationJournalEntry entry = new OperationJournalEntry(nextSeq++, operation, supported, httpMethod, route,
-                canonicalId, externalId, status, detail);
+                canonicalId, externalId, status, detail, localAccounting);
         entries.add(entry);
         return entry;
+    }
+
+    /**
+     * 追加一条<b>本地对齐记账</b>行：生成器把规范 ID 对到了商城已有的东西，**没有发任何请求**。
+     *
+     * <p>刻意单独开一个方法而不是让调用方传 {@code true}：这类行一旦与真调用混淆（D12），
+     * "这次运行对商城发了多少次请求"就无法从流水里读出来。</p>
+     */
+    public synchronized OperationJournalEntry appendLocal(String operation, String canonicalId, String externalId,
+                                                          String detail) {
+        return append(operation, true, null, null, canonicalId, externalId, OperationJournalEntry.STATUS_OK,
+                detail, true);
     }
 
     public synchronized List<OperationJournalEntry> entries() {
@@ -33,6 +54,16 @@ public final class OperationJournal {
 
     public synchronized int size() {
         return entries.size();
+    }
+
+    /** 真发过请求的条数（U11 口径：这次运行对商城发起了多少次调用；不含本地对齐记账与能力缺口） */
+    public synchronized long realHttpCount() {
+        return entries.stream().filter(OperationJournalEntry::realHttp).count();
+    }
+
+    /** 本地对齐记账条数（这些行没有向商城发请求） */
+    public synchronized long localAccountingCount() {
+        return entries.stream().filter(OperationJournalEntry::localAccounting).count();
     }
 
     /** 按操作名统计 {@code OK} 的条数（运行报告与验收对账用） */

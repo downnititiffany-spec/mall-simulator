@@ -177,7 +177,12 @@ class MallApiGenerationSmokeTest {
             Map<String, Integer> journalByOperation = new LinkedHashMap<>();
             int ok = 0;
             int skipped = 0;
+            int realHttp = 0;
+            int localRows = 0;
             int preflightReads = 0;
+            int preflightRealReads = 0;
+            int realProductAlignments = 0;
+            int localProductAlignments = 0;
             for (String line : journalLines) {
                 JsonNode entry = mapper.readTree(line);
                 journalByOperation.merge(entry.path("operation").asText(), 1, Integer::sum);
@@ -190,17 +195,55 @@ class MallApiGenerationSmokeTest {
                     fail("流水里出现非 OK/SKIPPED 的状态（失败应当在启动阶段就响亮抛错）：" + line);
                 }
                 assertFalse(entry.path("detail").asText().contains(TOKEN), "流水里绝不允许出现凭据值：" + line);
+                // D12：每一行必须自报家门——真发出去的请求（real_http）还是本地对齐记账（local_accounting）
+                boolean isReal = entry.path("real_http").asBoolean();
+                boolean isLocal = entry.path("local_accounting").asBoolean();
+                assertFalse(isReal && isLocal, "一行不可能既是真实调用又是本地记账：" + line);
+                assertTrue(entry.has("real_http") && entry.has("local_accounting"),
+                        "D12 之后流水必须带 real_http / local_accounting 两列：" + line);
+                if (isReal) {
+                    realHttp++;
+                    assertFalse(entry.path("http_method").isNull() || entry.path("route").isNull(),
+                            "真实调用行必须带方法/路径：" + line);
+                }
+                if (isLocal) {
+                    localRows++;
+                    assertTrue(entry.path("http_method").isNull() && entry.path("route").isNull(),
+                            "本地记账行不许带请求形状（D12 的原始症状就是它带了）：" + line);
+                }
                 // 预检那次目录读取是"无主体"的读操作（canonicalId 为空），与 product_created 驱动的那次
-                // 目录读取必须分得开——否则"预检只读一次"这条事实在流水里就对不出来。
-                if ("listProducts".equals(entry.path("operation").asText())
-                        && entry.path("canonical_id").isNull()) {
-                    preflightReads++;
+                // 目录对齐必须分得开——否则"预检只读一次"这条事实在流水里就对不出来。
+                if ("listProducts".equals(entry.path("operation").asText())) {
+                    if (entry.path("canonical_id").isNull()) {
+                        preflightReads++;
+                        if (isReal) {
+                            preflightRealReads++;
+                        }
+                    } else if (isReal) {
+                        realProductAlignments++;
+                    } else if (isLocal) {
+                        localProductAlignments++;
+                    }
                 }
             }
+            assertEquals(journalLines.size(), realHttp + localRows + skipped,
+                    "三类行必须覆盖每一行（真实调用 / 本地记账 / 能力缺口）：real=" + realHttp
+                            + " local=" + localRows + " skipped=" + skipped + " 行数=" + journalLines.size());
             assertEquals(1, preflightReads, "流水必须记录预检那次目录读取（且只记一次）");
+            assertEquals(1, preflightRealReads, "预检那次目录读取本身就是真实调用（它才对应商城那次真 HTTP）");
+            assertEquals(0, realProductAlignments,
+                    "商品对齐行一条都不许标成 real_http（D12 的原始症状）");
+            assertEquals(streamCounts.getOrDefault("product_created", 0), localProductAlignments,
+                    "每条 product_created 对齐一条本地记账，而不是一次真实目录读取");
             assertEquals(1 + streamCounts.getOrDefault("product_created", 0),
                     journalByOperation.getOrDefault("listProducts", 0),
-                    "目录读取次数 = 预检 1 次 + 每条 product_created 一次：" + journalByOperation);
+                    "目录相关流水行 = 预检 1 条 + 每条 product_created 一条：" + journalByOperation);
+            long totalEvents = streamCounts.values().stream().mapToLong(Integer::longValue).sum();
+            assertEquals(totalEvents, view.successCount(), "规范流条数 = 运行记录的成功数");
+            assertEquals(1 + totalEvents - streamCounts.getOrDefault("product_created", 0)
+                            - streamCounts.getOrDefault("refund_completed", 0), realHttp,
+                    "真实调用条数 = 预检 1 条 + 有公开写接口的事件条数"
+                            + "（商品对齐与退款完成复用不发请求；事件计数=" + streamCounts + "）");
             // 被计划层摘掉的事件类型（行为埋点、库存、改价）根本不会走到派发层，
             // 所以流水里一条 SKIPPED 都不该有；缺口写在运行报告的 notes 里（见 ⑦），不写进流水。
             assertEquals(0, skipped, "进不了计划的类型不会到派发层，流水里不该出现 SKIPPED：" + journalLines);

@@ -1,0 +1,20 @@
+=== D12 复算补正：P10 平台侧零副作用（上一版脚本误查 mall_simulator，现按分析的三个库重查）===
+  时点 = 2026-09-12 10:47:47
+
+--- mall_simulator 里也存在同名表（上一版误查的就是它们，口径不同，不能当平台副作用判据）---
+  mall_simulator.ingestion_batch=1
+  mall_simulator.pipeline_run=10
+  mall_simulator.metric_snapshot=10
+  mall_simulator.file_checkpoint=3
+
+--- 平台侧真实口径（analytics_meta / analytics_metric）---
+  analytics_meta.ingestion_batch=40
+  analytics_meta.pipeline_run=40
+  analytics_meta.file_checkpoint=105
+  analytics_metric.metric_snapshot=9
+  （U1/U3 轮结束时的后态为 ingestion_batch 40 / pipeline_run 40 / metric_snapshot 9 / file_checkpoint 105）
+
+--- 逐表最新时点（自证"没有被本轮的商城写入动过"）---
+ERROR 1054 (42S22) at line 1: Unknown column 'created_at' in 'field list'
+  pipeline_run.max_started=2026-09-12 09:26:27.592
+  metric_snapshot.max_created=2026-09-12 09:31:13.337

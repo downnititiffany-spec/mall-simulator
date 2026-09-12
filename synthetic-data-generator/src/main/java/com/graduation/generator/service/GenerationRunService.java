@@ -410,16 +410,29 @@ public class GenerationRunService {
         for (Artifact artifact : artifacts) {
             store.insertArtifact(runId, new ArtifactRow(artifact.uri(), artifact.kind(), artifact.checksum(),
                     artifact.bytes(), artifact.recordCount(), artifact.minEventTime(), artifact.maxEventTime(),
-                    ContractFormat.SCHEMA_VERSION));
+                    schemaVersionOf(artifact)));
         }
         for (Artifact jsonl : artifacts) {
             Artifact manifestArtifact = manifestArtifactOf(jsonl);
             if (manifestArtifact != null) {
                 store.insertArtifact(runId, new ArtifactRow(manifestArtifact.uri(), manifestArtifact.kind(),
                         manifestArtifact.checksum(), manifestArtifact.bytes(), 0, null, null,
-                        ContractFormat.SCHEMA_VERSION));
+                        schemaVersionOf(manifestArtifact)));
             }
         }
+    }
+
+    /**
+     * 制品落库时记的 {@code schema_version}：事件流/清单用事件契约版本，操作流水用它自己的格式版本。
+     *
+     * <p>为什么必须分开：流水不是事件契约的产物，它有自己的列集合（D12 起 1.1 多了
+     * {@code real_http}/{@code local_accounting}）。一律盖 {@code 1.0} 会让"这份流水有没有那两个字段"
+     * 在库里查不出来——总要打开文件才敢下结论。</p>
+     */
+    private static String schemaVersionOf(Artifact artifact) {
+        return Artifact.KIND_OPERATION_JOURNAL.equals(artifact.kind())
+                ? com.graduation.generator.engine.OperationJournal.SCHEMA_VERSION
+                : ContractFormat.SCHEMA_VERSION;
     }
 
     /**
@@ -478,9 +491,21 @@ public class GenerationRunService {
             MallApiGenerationEngine.Preflight preflight = mallOutcome.preflight();
             notes.add("MALL_API 目标：adapter_type=%s，能力声明 %s（不联网；实测结果见 operation-journal 与 target probe）"
                     .formatted(preflight.adapterType(), preflight.capabilities()));
-            notes.add("MALL_API 对账：写规范流 %d 条；商城操作成功 %d / 失败 %d / 因能力缺口跳过 %d"
+            notes.add("MALL_API 对账：写规范流 %d 条；按事件计成功 %d / 失败 %d / 因能力缺口跳过 %d"
                     .formatted(mallOutcome.forwardedCount(), mallOutcome.dispatch().succeeded(),
                             mallOutcome.dispatch().failed(), mallOutcome.dispatch().skipped()));
+            // D12：流水里"真发出去的请求"与"本地对齐记账"必须分开报，否则真实请求量会被系统性高估。
+            // 口径说明：真实调用按流水行数计，而退款申请一条流水内含"申请 + 完成"两次 HTTP，
+            // 因此商城侧实际收到的请求数 = 真实调用条数 + 退款申请条数（不写死数字，逐条见流水）。
+            long realHttpRows = mallOutcome.dispatch().entries().stream()
+                    .filter(com.graduation.generator.engine.OperationJournalEntry::realHttp).count();
+            long localRows = mallOutcome.dispatch().entries().stream()
+                    .filter(com.graduation.generator.engine.OperationJournalEntry::localAccounting).count();
+            notes.add("MALL_API 真实调用 %d 条（real_http=true，含失败的尝试）；本地对齐记账 %d 条"
+                    .formatted(realHttpRows, localRows)
+                    + "（未向商城发请求：商品目录对齐/复用已创建用户/复用已完成退款）。"
+                    + "注意退款申请一条流水含「申请 + 完成」两次 HTTP，故商城侧请求数 = 真实调用条数 + 退款申请条数；"
+                    + "逐条见 " + OPERATION_JOURNAL_FILE);
             notes.add("规范 ID → 商城外部 ID 映射 " + mallOutcome.dispatch().traceability().size()
                     + " 条，逐条见 " + OPERATION_JOURNAL_FILE);
             notes.add("MALL_API 不承诺同 seed 逐字节复现（商城会分配雪花 ID 并真实扣减库存）："

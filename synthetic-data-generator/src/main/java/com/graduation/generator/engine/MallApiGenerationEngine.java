@@ -208,7 +208,7 @@ public final class MallApiGenerationEngine implements GenerationEngine {
             page = adapter.listProducts(target, ProductQuery.firstPage(CATALOG_PROBE_LIMIT));
         } catch (RuntimeException e) {
             journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true, "GET", MallDispatchPlan.PRODUCTS_ROUTE,
-                    null, null, OperationJournalEntry.STATUS_FAILED, e.getMessage());
+                    null, null, OperationJournalEntry.STATUS_FAILED, e.getMessage(), false);
             // 点名凭据<b>引用名</b>（不是值）：排查时要知道去修哪一个引用，而不是只知道"401 了"。
             // 这里只说引用名，令牌值永远不进日志、不进流水、不进异常信息。
             throw new IllegalArgumentException("MALL_API 预检失败：读不到商城商品目录（"
@@ -218,7 +218,7 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         List<ExternalProduct> catalog = page.products().stream().filter(ExternalProduct::onSale).toList();
         journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true, "GET", MallDispatchPlan.PRODUCTS_ROUTE,
                 null, null, OperationJournalEntry.STATUS_OK,
-                "目录 %d 件，在售 %d 件（预检兼凭据校验）".formatted(page.total(), catalog.size()));
+                "目录 %d 件，在售 %d 件（预检兼凭据校验）".formatted(page.total(), catalog.size()), false);
         if (catalog.isEmpty()) {
             throw new IllegalArgumentException("商城商品目录里没有在售商品，MALL_API 无法生成任何订单："
                     + "请先在商城侧准备商品（参考商城公开接口只读目录，B-04）");

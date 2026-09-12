@@ -1,0 +1,44 @@
+=== D12 打包（先停 8092，避免 jar 被占用出现'瘦 jar 覆盖'陷阱）· 2026-09-12 10:45:24.340 ===
+  停前 8092 pid=24692 启动=2026-09-12 10:11:55
+  磁盘 jar（当前不可执行，repackage 失败留下的瘦 jar）：235196 B mtime=2026-09-12 10:44:28
+  8092 已停；端口释放=True
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -XX:+UseSerialGC
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\synthetic-data-generator\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.3.0:jar (default-jar) @ synthetic-data-generator ---
+[INFO] 
+[INFO] --- spring-boot:3.2.5:repackage (repackage) @ synthetic-data-generator ---
+[INFO] Replacing main artifact D:\Develop_code\GraduationProject\synthetic-data-generator\target\synthetic-data-generator-0.1.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to D:\Develop_code\GraduationProject\synthetic-data-generator\target\synthetic-data-generator-0.1.0-SNAPSHOT.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.075 s
+[INFO] Finished at: 2026-09-12T10:45:35+08:00
+[INFO] ------------------------------------------------------------------------
+  maven exit=0
+  BUILD 行：[INFO] BUILD SUCCESS
+  成品 jar=26218013 B  mtime=2026-09-12 10:45:35  sha256=4285BA7C7BEFC6D236E684F9846E961611E62F99BF6138681CAF5C6289EC5858
+  fat-jar 自证：BOOT-INF 内是否含本次改动的类 -> YES  BOOT-INF/classes/com/graduation/generator/engine/OperationJournalEntry.class
+  BOOT-INF/ 条目数=170

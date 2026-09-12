@@ -117,7 +117,7 @@ public final class MallApiDispatchSink {
         } catch (MallOperationException e) {
             failed++;
             journal.append(plan.operation(), true, plan.method(), plan.route(),
-                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED, e.getMessage());
+                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED, e.getMessage(), false);
             if (failFast) {
                 throw e;
             }
@@ -144,16 +144,16 @@ public final class MallApiDispatchSink {
         String canonicalId = canonicalIdOf(event);
         String existing = externalUserByCanonical.get(canonicalId);
         if (existing != null) {
-            // 同一用户第二次注册：不重复建号，但要留一行"复用"，否则流水条数会对不上事件条数
-            journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, existing,
-                    OperationJournalEntry.STATUS_OK, "复用已创建用户");
+            // 同一用户第二次注册：不重复建号，但要留一行"复用"，否则流水条数会对不上事件条数。
+            // 这行是本地记账（没发请求）：D12 起显式标注，免得它被算成一次真实调用。
+            journal.appendLocal(plan.operation(), canonicalId, existing, "复用已创建用户");
             return true;
         }
         ExternalUser user = adapter.createSyntheticUser(target,
                 new UserCommand(text(event, "age_group"), text(event, "city_level"), text(event, "member_level")));
         externalUserByCanonical.put(canonicalId, user.userId());
         journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, user.userId(),
-                OperationJournalEntry.STATUS_OK, "member_level=" + user.memberLevel());
+                OperationJournalEntry.STATUS_OK, "member_level=" + user.memberLevel(), false);
         return true;
     }
 
@@ -173,8 +173,9 @@ public final class MallApiDispatchSink {
                             + "（参考商城公开接口不提供建品，B-04：MALL_API 只能使用目录里真实存在的商品）");
         }
         productRefByCanonical.put(canonicalId, product.productId());
-        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, product.productId(),
-                OperationJournalEntry.STATUS_OK, "对齐商城目录商品：" + product.name());
+        // 本地对齐记账：目录是预检那一次真实读取取回来的，这里不再发请求（D12 的原始症状就在这一行）
+        journal.appendLocal(plan.operation(), canonicalId, product.productId(),
+                "对齐商城目录商品：" + product.name());
         return true;
     }
 
@@ -184,7 +185,7 @@ public final class MallApiDispatchSink {
                 externalProductOf(text(event, "product_id")), text(event, "session_id"),
                 text(event, "behavior_type"), text(event, "channel")));
         journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalIdOf(event), null,
-                OperationJournalEntry.STATUS_OK, "behavior_type=" + text(event, "behavior_type"));
+                OperationJournalEntry.STATUS_OK, "behavior_type=" + text(event, "behavior_type"), false);
         return true;
     }
 
@@ -200,7 +201,7 @@ public final class MallApiDispatchSink {
                 new OrderCommand(requireUser(event, plan.operation()), items));
         externalOrderByCanonical.put(canonicalId, order.orderId());
         journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, order.orderId(),
-                OperationJournalEntry.STATUS_OK, "件数=" + items.size());
+                OperationJournalEntry.STATUS_OK, "件数=" + items.size(), false);
         return true;
     }
 
@@ -209,7 +210,7 @@ public final class MallApiDispatchSink {
         ExternalOrder paid = adapter.pay(target, new PayCommand(requireOrder(canonicalOrder, plan.operation()),
                 requireUser(event, plan.operation())));
         journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, paid.orderId(),
-                OperationJournalEntry.STATUS_OK, "status=" + paid.status());
+                OperationJournalEntry.STATUS_OK, "status=" + paid.status(), false);
         return true;
     }
 
@@ -219,7 +220,7 @@ public final class MallApiDispatchSink {
                 requireOrder(canonicalOrder, plan.operation()), requireUser(event, plan.operation()),
                 text(event, "reason")));
         journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, cancelled.orderId(),
-                OperationJournalEntry.STATUS_OK, "status=" + cancelled.status());
+                OperationJournalEntry.STATUS_OK, "status=" + cancelled.status(), false);
         return true;
     }
 
@@ -229,8 +230,10 @@ public final class MallApiDispatchSink {
         ExternalRefund refund = adapter.refund(target, new RefundCommand(externalOrder,
                 requireUser(event, plan.operation()), amount(event, "amount"), text(event, "reason")));
         externalRefundByOrder.put(canonicalOrder, refund.refundId());
+        // 一行流水 = 两次 HTTP（参考商城的退款是"申请 + 完成"两步，适配器内一次走完）：
+        // 因此"真实调用条数"与"HTTP 请求次数"不是同一个数，对账时按后者要再加上本条数。
         journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, refund.refundId(),
-                OperationJournalEntry.STATUS_OK, "status=" + refund.status());
+                OperationJournalEntry.STATUS_OK, "status=" + refund.status(), false);
         return true;
     }
 
@@ -238,10 +241,14 @@ public final class MallApiDispatchSink {
     private boolean dispatchRefundComplete(CanonicalEvent event, MallDispatchPlan plan) {
         String canonicalOrder = text(event, "order_id");
         String refundId = externalRefundByOrder.get(canonicalOrder);
-        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, refundId,
-                OperationJournalEntry.STATUS_OK,
-                refundId == null ? "未找到已完成退款（记缺口）" : "复用已完成退款");
-        return refundId != null;
+        if (refundId == null) {
+            // 没找到已完成退款 = 这一条什么都没发生：按缺口记账（SKIPPED）。
+            // 以前这里写的是 status=OK + "记缺口"，一行自相矛盾的字（D12 同族问题，顺手一并纠正）。
+            recordGap(event.eventType(), plan, "refund_completed：未找到已完成的退款申请，无法复用退款单");
+            return false;
+        }
+        journal.appendLocal(plan.operation(), canonicalOrder, refundId, "复用已完成退款");
+        return true;
     }
 
     // ---------- 转写：规范 ID → 商城外部 ID ----------
@@ -336,7 +343,7 @@ public final class MallApiDispatchSink {
 
     private void recordGap(String eventType, MallDispatchPlan plan, String detail) {
         journal.append(plan.operation(), false, null, null, null, null,
-                OperationJournalEntry.STATUS_SKIPPED, eventType + "：" + detail);
+                OperationJournalEntry.STATUS_SKIPPED, eventType + "：" + detail, false);
         if (recordedGapEventTypes.add(eventType)) {
             notes.add("缺口 " + eventType + "（" + plan.capability().key() + "）：" + detail);
         }

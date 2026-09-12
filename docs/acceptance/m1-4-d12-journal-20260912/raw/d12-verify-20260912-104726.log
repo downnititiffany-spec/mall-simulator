@@ -1,0 +1,163 @@
+=== M1-4 D12 复算（只读）· run_id=m1-4-d12-journal-v11-v1-20260912-104653-f1bc · 日志起始 2026-09-12 10:47:26.319 ===
+
+--- §0 运行行（库内事实，窗口起点取 started_at）---
+  run_id=m1-4-d12-journal-v11-v1-20260912-104653-f1bc plan=m1-4-d12-journal-v11 v=1 target_version=1 status=SUCCESS success=120 failed=0 started=2026-09-12 10:46:53.246 finished=2026-09-12 10:46:54.457 checksum=85ab8d1f68ec85e521d802adb769ea818dd00404e030c68ea4238cb8fcd8a8a7
+  对账窗口 = 2026-09-12 10:46:53（= generation_run.started_at，运行前瞬间）
+ERROR 1054 (42S22) at line 1: Unknown column 'rate' in 'field list'
+
+--- §1 库内制品行（P7：journal 制品 schema_version）---
+  EVENT_JSONL records=120 bytes=50790 schema_version=1.0 uri=file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-d12-journal-v11-v1-20260912-104653-f1bc/events-0001.jsonl
+  OPERATION_JOURNAL records=121 bytes=30594 schema_version=1.1 uri=file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-d12-journal-v11-v1-20260912-104653-f1bc/operation-journal.jsonl
+  MANIFEST records=0 bytes=509 schema_version=1.0 uri=file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-d12-journal-v11-v1-20260912-104653-f1bc/events-0001.manifest.json
+  [OK] P7 journal 制品 schema_version=1.1
+  [OK] P7 事件流制品 schema_version=1.0
+
+  逐类事件统计（generation_event_stat）与运行报告口径：
+  order_created = 51
+  order_cancelled = 36
+  order_paid = 15
+  user_registered = 10
+  product_created = 6
+  refund_completed = 1
+  refund_created = 1
+
+  运行报告全文（run-report.json）：
+{
+  "run_id" : "m1-4-d12-journal-v11-v1-20260912-104653-f1bc",
+  "plan_id" : "m1-4-d12-journal-v11",
+  "plan_version" : 1,
+  "mode" : "MALL_API",
+  "scenario" : "normal",
+  "seed" : 20260912,
+  "start_time" : "2026-09-12T10:00:00+08:00",
+  "end_time" : "2026-09-12T11:00:00+08:00",
+  "event_count" : 120,
+  "status" : "SUCCESS",
+  "success_count" : 120,
+  "failed_count" : 0,
+  "checksum" : "85ab8d1f68ec85e521d802adb769ea818dd00404e030c68ea4238cb8fcd8a8a7",
+  "expected_quarantine_counts" : { },
+  "dirty_sample_types" : [ ],
+  "event_stats" : [ {
+    "event_type" : "order_cancelled",
+    "count" : 36,
+    "amount" : 0
+  }, {
+    "event_type" : "order_created",
+    "count" : 51,
+    "amount" : 3046.16
+  }, {
+    "event_type" : "order_paid",
+    "count" : 15,
+    "amount" : 782.19
+  }, {
+    "event_type" : "product_created",
+    "count" : 6,
+    "amount" : 0
+  }, {
+    "event_type" : "refund_completed",
+    "count" : 1,
+    "amount" : 19.26
+  }, {
+    "event_type" : "refund_created",
+    "count" : 1,
+    "amount" : 19.26
+  }, {
+    "event_type" : "user_registered",
+    "count" : 10,
+    "amount" : 0
+  } ],
+  "artifacts" : [ {
+    "uri" : "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-d12-journal-v11-v1-20260912-104653-f1bc/events-0001.jsonl",
+    "kind" : "EVENT_JSONL",
+    "checksum" : "85ab8d1f68ec85e521d802adb769ea818dd00404e030c68ea4238cb8fcd8a8a7",
+    "bytes" : 50790,
+    "record_count" : 120,
+    "min_event_time" : "2026-09-12T10:01:08+08:00",
+    "max_event_time" : "2026-09-12T10:59:47+08:00"
+  }, {
+    "uri" : "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/m1-4-d12-journal-v11-v1-20260912-104653-f1bc/operation-journal.jsonl",
+    "kind" : "OPERATION_JOURNAL",
+    "checksum" : "f9550984d38c2a2776e18aab7f9697db664a445c30e30e7103cdb42cd9464698",
+    "bytes" : 30594,
+    "record_count" : 121
+  } ],
+  "notes" : [ "文件模式事件预算 event_count=120；rate_per_second=0 在文件模式不生效（离线产物无真实负载）", "ingest_time 取事件时间：文件模式无真实采集链路，取时钟会破坏可复现（§4.2）", "单线程生成，子种子按数据流派生：users/products/behaviors/orders/time/dirty", "用户数 10、商品池 6（按事件预算派生，属引擎自定规则）", "脏数据档位 none：不注入异常样本，期望隔离数为 0", "行为埋点：能力判定 UNDETERMINED，behavior 事件不进入本模式产物（B-04：参考商城当前无该接口，属商城侧依赖）", "MALL_API 落点：120 条事件写规范流；商城操作成功 120 次、失败 0 次、因能力缺口跳过 0 次", "能力判定取自适配器声明（不联网）；每次调用的真实结果见 OPERATION_JOURNAL 制品", "MALL_API 目标：adapter_type=REFERENCE_MALL_HTTP，能力声明 declared{RESET_STATE=UNDETERMINED, BEHAVIOR=UNDETERMINED, USER=SUPPORTED, ADMIN=SUPPORTED, PRODUCT=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED}（不联网；实测结果见 operation-journal 与 target probe）", "MALL_API 对账：写规范流 120 条；按事件计成功 120 / 失败 0 / 因能力缺口跳过 0", "MALL_API 真实调用 114 条（real_http=true，含失败的尝试）；本地对齐记账 7 条（未向商城发请求：商品目录对齐/复用已创建用户/复用已完成退款）。注意退款申请一条流水含「申请 + 完成」两次 HTTP，故商城侧请求数 = 真实调用条数 + 退款申请条数；逐条见 operation-journal.jsonl", "规范 ID → 商城外部 ID 映射 68 条，逐条见 operation-journal.jsonl", "MALL_API 不承诺同 seed 逐字节复现（商城会分配雪花 ID 并真实扣减库存）：本模式保证可追溯的场景分布，见 B-04", "事件统计与制品已分别落 generation_event_stat / generation_artifact；清单为每个制品文件同名一份" ]
+}
+
+--- §2 运行目录产物 ---
+  events-0001.jsonl  50790 B  sha256=85AB8D1F68EC85E521D802ADB769EA818DD00404E030C68EA4238CB8FCD8A8A7
+  events-0001.manifest.json  509 B  sha256=778AF9AC246E698C579639CD73050CFA1D33264566DF3E542C3CF3EAE453AF04
+  operation-journal.jsonl  30594 B  sha256=F9550984D38C2A2776E18AAB7F9697DB664A445C30E30E7103CDB42CD9464698
+  run-report.json  3950 B  sha256=1D0DBF3ECD829643F2C40EB731886EDAE73FCD54033D19293F14DC983135A821
+
+--- §3 流水逐字段复算（D12 核心判据）---
+  流水行数=121  real_http=114  local_accounting=7  SKIPPED=0  非OK状态=0
+  逐操作总行数：cancel=36  createOrder=51  createSyntheticUser=10  listProducts=7  pay=15  refund=2
+  逐操作 real_http：cancel=36  createOrder=51  createSyntheticUser=10  listProducts=1  pay=15  refund=1
+  逐操作 local_accounting：cancel=0  createOrder=0  createSyntheticUser=0  listProducts=6  pay=0  refund=1
+  listProducts 分解：预检 real=1 local=0 ；目录对齐 real=0 local=6
+
+  样例行（原文，未改写）：
+    [real 预检]      {"seq":1,"operation":"listProducts","supported":true,"real_http":true,"local_accounting":false,"http_method":"GET","route":"/api/v1/mall/products","canonical_id":null,"external_id":null,"status":"OK","detail":"目录 43 件，在售 43 件（预检兼凭据校验）"}
+    [local 商品对齐] {"seq":12,"operation":"listProducts","supported":true,"real_http":false,"local_accounting":true,"http_method":null,"route":null,"canonical_id":"P00001","external_id":"1001","status":"OK","detail":"对齐商城目录商品：磁吸手机支架"}
+    [local 退款复用] {"seq":39,"operation":"refund","supported":true,"real_http":false,"local_accounting":true,"http_method":null,"route":null,"canonical_id":"O00000010","external_id":"2098604231447048194","status":"OK","detail":"复用已完成退款"}
+
+  流水首 3 行与末 2 行（原文）：
+    {"seq":1,"operation":"listProducts","supported":true,"real_http":true,"local_accounting":false,"http_method":"GET","route":"/api/v1/mall/products","canonical_id":null,"external_id":null,"status":"OK","detail":"目录 43 件，在售 43 件（预检兼凭据校验）"}
+    {"seq":2,"operation":"createSyntheticUser","supported":true,"real_http":true,"local_accounting":false,"http_method":"POST","route":"/api/v1/mall/users","canonical_id":"U000001","external_id":"2098604230012596226","status":"OK","detail":"member_level=silver"}
+    {"seq":3,"operation":"createSyntheticUser","supported":true,"real_http":true,"local_accounting":false,"http_method":"POST","route":"/api/v1/mall/users","canonical_id":"U000002","external_id":"2098604230075510785","status":"OK","detail":"member_level=normal"}
+    {"seq":120,"operation":"createOrder","supported":true,"real_http":true,"local_accounting":false,"http_method":"POST","route":"/api/v1/mall/orders","canonical_id":"O00000051","external_id":"2098604234697633794","status":"OK","detail":"件数=1"}
+    {"seq":121,"operation":"cancel","supported":true,"real_http":true,"local_accounting":false,"http_method":"POST","route":"/api/v1/mall/orders/{orderId}/cancel","canonical_id":"O00000051","external_id":"2098604234697633794","status":"OK","detail":"status=CANCELLED"}
+
+  规范流事件数（events-0001.jsonl）：order_cancelled=36  order_created=51  order_paid=15  product_created=6  refund_completed=1  refund_created=1  user_registered=10
+
+  [OK] P2 规范流事件数=120
+  [OK] P2 user_registered=10（usersFor(120)）
+  [OK] P2 product_created=6（productsFor(120)）
+  [OK] P3 order_created 落在预注册区间 40–65
+  [OK] P4 流水行数 = 1（预检）+ 事件数
+  [OK] P4 无 SKIPPED、无非 OK 状态
+  [OK] P5 real_http = 1+事件−商品对齐−退款完成复用
+  [OK] P5 local_accounting = 商品对齐+退款完成复用
+  [OK] §3 三分类恰好覆盖每一行（无重复、无遗漏）
+  [OK] §3 没有任何一行同时 real_http 与 local_accounting
+  [OK] P6 真实调用行必带 http_method + route
+  [OK] P6 本地记账行必不带 http_method/route
+  [OK] P6 预检行 counted as real_http（canonical_id 为空但真发过请求）
+  [OK] P6 商品目录对齐全部是本地记账（D12 原始症状：过去被记成 listProducts 真读）
+
+--- §4 商城侧独立对照（库内增量 ↔ 流水逐操作真实行数）---
+  商城增量（窗口 2026-09-12 10:46:53 起）：mall_user=10 mall_order=51 order_item=51 payment=15 paid_at=15 cancelled_at=36 refund=1 event_outbox=201
+  [OK] P8 Δmall_user = createSyntheticUser 真实行数
+  [OK] P8 Δmall_order = createOrder 真实行数
+  [OK] P8 Δpayment / Δpaid_at = pay 真实行数
+  [OK] P8 Δcancelled_at = cancel 真实行数
+  [OK] P8 Δrefund = refund 真实行数（每条含"申请+完成"两次 HTTP）
+
+  U11 收口（D12 口径）：流水 real_http 行数 = 114；其中 refund 行 1 条每条含两步 HTTP，
+  故商城侧实际收到 HTTP 请求数 = 114 + 1 = 115（不含被拒/重试；本次终态 SUCCESS、failed=0）
+
+  商城退款明细（窗口内）：
+    refund_id=2098604231447048194 order=2098604231317024769 status=COMPLETED created=2026-09-12 10:46:53.622 completed=2026-09-12 10:46:53.631
+  订单状态分布（窗口内）：
+    CANCELLED = 36
+    PAID = 14
+    REFUNDED = 1
+  库存汇总：
+    products=38 total_avail=17871 zero_avail=0
+
+--- §5 结束现场：三程序身份 + 平台侧副作用（P10）---
+  8090 pid=41228 启动=2026-09-12 09:40:49
+  8091 pid=47132 启动=2026-09-12 09:14:59
+  8092 pid=16996 启动=2026-09-12 10:46:48
+  ingestion_batch=1
+  pipeline_run=10
+  metric_snapshot=10
+  file_checkpoint=3
+
+  运行结束后无在飞运行：
+  non_terminal=0
+
+*** 复算全部断言通过 ***
+=== 日志结束 2026-09-12 10:47:30.517 ===

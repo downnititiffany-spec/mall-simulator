@@ -144,15 +144,22 @@ class MallApiGenerationEngineTest {
         assertTrue(mall.productIds().contains(itemProductId),
                 "订单商品必须来自真实目录：" + itemProductId);
 
-        // 操作流水：预检 1 条 + 每个成功事件 1 条。
-        // refund_created 与 refund_completed 共用一行：参考商城的退款是"申请即完成"的一步调用，
-        // 完成事件复用申请那次的退款单、不再发起第二次调用（见 dispatchRefundComplete）。
+        // 操作流水：预检 1 条真实读取 + 每个"有公开写接口"的事件各 1 条真实调用。
+        // D12 起这两个数必须分开数：product_created 走的是预检已取回的目录（本地对齐记账，不发请求），
+        // refund_completed 复用申请那次的退款单（同样是本地记账）。
         long refundCompletions = sink.events.stream()
                 .filter(event -> "refund_completed".equals(event.eventType())).count();
-        long realCalls = outcome.dispatch().entries().stream().filter(OperationJournalEntry::supported).count();
-        assertEquals(1 + sink.events.size(), realCalls,
-                "真实调用流水条数 = 预检 1 条 + 成功事件 " + sink.events.size() + " 条"
-                        + "（refund_completed " + refundCompletions + " 条与 refund_created 共用一行）");
+        long productAlignments = sink.events.stream()
+                .filter(event -> "product_created".equals(event.eventType())).count();
+        long realCalls = outcome.dispatch().entries().stream().filter(OperationJournalEntry::realHttp).count();
+        assertEquals(1 + sink.events.size() - productAlignments - refundCompletions, realCalls,
+                "真实调用流水条数 = 预检 1 条 + 有公开写接口的事件条数"
+                        + "（product_created " + productAlignments + " 条是本地对齐、refund_completed "
+                        + refundCompletions + " 条复用申请那次的退款单，都不发请求）");
+        assertEquals(productAlignments + refundCompletions,
+                outcome.dispatch().entries().stream()
+                        .filter(OperationJournalEntry::localAccounting).count(),
+                "本地对齐记账条数 = 商品对齐 + 退款完成复用");
         assertTrue(sink.events.stream().noneMatch(event -> "product_updated".equals(event.eventType())
                         || "stock_reserved".equals(event.eventType())),
                 "商城公开接口无对应动作的事件类型不该出现在产物里");
@@ -172,6 +179,63 @@ class MallApiGenerationEngineTest {
                 "未声明的行为埋点只能 UNDETERMINED");
         assertEquals(60, outcome.preflight().catalog().size(), "目录规模必须来自真实 listProducts");
         assertEquals(1, mall.hits("GET /api/v1/mall/products"), "预检只读一次目录");
+    }
+
+    // ---------- 1b. D12：流水必须自报"这一次到底有没有真的发请求" ----------
+
+    @Test
+    @DisplayName("D12：real_http 只数真发过请求的行，本地对齐记账另行标注，且与商城服务端收到的请求数对账")
+    void journalSeparatesRealHttpFromLocalAccounting() throws IOException {
+        mall = new FakeMallServer(TOKEN, null, 60);
+        TargetConfig target = mallTarget(mall.baseUrl(), ENV_NAME);
+        RecordingSink sink = new RecordingSink();
+
+        MallApiGenerationEngine.MallRunOutcome outcome =
+                engine.runForTarget(request("run-d12", "none"), target, adapter(), sink, () -> false);
+        List<OperationJournalEntry> entries = outcome.dispatch().entries();
+
+        long realHttp = entries.stream()
+                .filter(entry -> Boolean.TRUE.equals(entry.toJson().get("real_http"))).count();
+        long local = entries.stream()
+                .filter(entry -> Boolean.TRUE.equals(entry.toJson().get("local_accounting"))).count();
+        long gaps = entries.stream()
+                .filter(entry -> OperationJournalEntry.STATUS_SKIPPED.equals(entry.status())).count();
+
+        Map<String, Integer> eventCounts = new TreeMap<>();
+        sink.events.forEach(event -> eventCounts.merge(event.eventType(), 1, Integer::sum));
+        long expectedRealRows = 1 + eventCounts.getOrDefault("user_registered", 0)
+                + eventCounts.getOrDefault("order_created", 0) + eventCounts.getOrDefault("order_paid", 0)
+                + eventCounts.getOrDefault("order_cancelled", 0) + eventCounts.getOrDefault("refund_created", 0);
+        assertEquals(expectedRealRows, realHttp,
+                "real_http 必须只数真发过请求的操作：预检 1 次 + 有公开写接口的事件各一次"
+                        + "（product_created 用的是预检已取回的目录、refund_completed 复用申请那次退款单，都不是请求）");
+        assertEquals(entries.size(), realHttp + local + gaps,
+                "每一行必须恰好属于一类：真实调用 / 本地记账 / 能力缺口（real=" + realHttp + " local=" + local
+                        + " gap=" + gaps + " 合计=" + entries.size() + "）");
+
+        for (OperationJournalEntry entry : entries) {
+            Map<String, Object> row = entry.toJson();
+            if (Boolean.TRUE.equals(row.get("local_accounting"))) {
+                assertFalse(Boolean.TRUE.equals(row.get("real_http")), "本地记账行不得同时声称发过请求：" + row);
+                assertEquals(null, row.get("http_method"), "没发请求就不该写请求方法：" + row);
+                assertEquals(null, row.get("route"), "没发请求就不该写请求路径：" + row);
+            }
+        }
+
+        // D12 的原始症状：listProducts 的 33 行里只有预检那 1 行是真读目录，另外 32 行是本地对齐
+        assertEquals(1, mall.hits("GET /api/v1/mall/products"), "预检只读一次目录");
+        assertEquals(1, entries.stream().filter(entry -> "listProducts".equals(entry.operation())
+                        && Boolean.TRUE.equals(entry.toJson().get("real_http"))).count(),
+                "真读目录的流水行只该有预检那一条");
+        assertTrue(entries.stream().anyMatch(entry -> "listProducts".equals(entry.operation())
+                        && entry.canonicalId() != null
+                        && Boolean.TRUE.equals(entry.toJson().get("local_accounting"))),
+                "商品对齐行必须显式标成 local_accounting（D12 要求补的字段）");
+
+        // 服务端独立对照：请求数 = real_http 行数 + 退款申请数（退款"申请+完成"两次 HTTP 只占一行流水）
+        long refundApplies = eventCounts.getOrDefault("refund_created", 0);
+        assertEquals(realHttp + refundApplies, mall.exchanges().size(),
+                "商城服务端收到的请求数 = 真实请求行数 + 退款申请数（退款两步只占一行流水）");
     }
 
     @Test

@@ -1,0 +1,1 @@
+{"event_id":"E135283000000333","event_type":"order_cancelled","event_time":"2026-09-12T10:46:01+08:00","ingest_time":"2026-09-12T10:46:01+08:00","source_system":"mock-mall","schema_version":"1.0","trace_id":"T135283000000333","payload":{"order_id":"2098604234697633794","user_id":"2098604230138425347","reason":"payment_timeout","cancelled_at":"2026-09-12T10:46:01+08:00"}}
