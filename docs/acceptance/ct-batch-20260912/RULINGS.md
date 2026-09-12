@@ -124,6 +124,28 @@ CT-4 = `canonical-event.v1` **冻结前置**，其两项未决：**B-06**（文�
 
 ---
 
+## 5bis. D-065（F-30 处置）：契约锚点风格统一 —— 一部分随本批，一部分单独立项
+
+**事实（实测，全部来自 `docs/acceptance/m1-5-anchor-audit-20260912/` 的可复跑审计）**
+
+| # | 事实 |
+|---|---|
+| 1 | `contract-specs/**` 现有 **258** 处裸锚点，按文件分布：`openapi/generator-api.v1.yaml` 71、`schemas/canonical-event.v1.schema.json` 125、`schemas/generation-artifact-manifest.v1.schema.json` 17、`schemas/ingestion-manifest.v1.schema.json` 1、`README.md` 44（`specs/warehouse-namespace.v1.json` 0） |
+| 2 | 其中**只有 48 处**能机械定位目标（45 处 → `docs/contracts/event-contract.md`；3 处 → `docs/项目完整实施指导书 V2.3.md` §4.1.1.3），**210 处**无法机械确定目标文档（多文档同分 48／无 token 可核对 136／token 未命中 26） |
+| 3 | F-29 声称的"统一偏移 +1／+12／+145"**不普适**；病根是**跨文档引用丢掉了文件名** |
+| 4 | 审计明确**没有**核对"锚点是否指对了地方"（只做了机械定位）；非 markdown 载体（yaml/json/SQL/Java 注释）里的同款裸锚点**未普查** |
+
+**裁决**
+
+1. **拒绝批量改写**：不得按 F-29 的偏移批量改写，也不得给 210 处补一个**未经判定**的目标文件名——那等于把不可复核的引用写进契约，违反"未实测不写结论"。
+2. **立规则（写入 `contract-specs/README.md`，随本批一次性升版）**：**新增**锚点必须带**文件名**（例：`docs/contracts/event-contract.md §2.5 L92-L100`）或在册版本前缀（`指导书 V2.x`／`设计文稿 V2.2`）；**裸锚点不得新增**。此规则与文件内既有写法一致（`canonical-event.v1.schema.json:611` 的 `x-source` 已经是带文件名的正确形态）。
+3. **立机器守卫 ＋ 负债台账**（本批交付）：守卫脚本 `scripts/check-bare-anchors.ps1` ＋ 台账 `scripts/contract-bare-anchors.allowlist.txt`（258 行，逐行「文件｜锚点文本｜出现次数」）。判据 = **裸锚点集合 ⊆ 台账集合**；新增即**门禁失败**（响亮报错），台账**只减不增**，每次删减须在看板登记。守卫本身必须带**正向对照**（构造一条带文件名的锚点 ⇒ 不得计入裸锚点）。
+4. **随本批顺带**：只补**与 CT-1/CT-2/CT-3 改动同段文字内**的裸锚点（含 `canonical-event.v1.schema.json:538` 的 `§2.4 L77；子表字段见 §2.4 L84-L90` 一处）——这些锚点本就要被本批改到，顺手带上文件名**零额外风险**。其余 48 处与 210 处**本批不动**。
+5. **单独立项**：其余锚点的"补文件名（＋可选行号复核）"与**语义核对**立为专项 **M1-5-R**，时点排在 **P3-04（semantic/dimension registry，本就要动契约）同批或之前**；在此之前 **M1-5 保持 `REVIEW`**，且**不得**声称 R-M1-5-1 已闭环。
+6. **本批不得声称**：不得声称"锚点已对齐（指对了地方）"（只补文件名、未核语义）；不得声称非 markdown 载体已普查。
+
+---
+
 ## 6. 本批次的验收与证据面（摘要，明细见 `PLAN.md`）
 
 - 契约面：`contract-specs/VERSION` `1.3.0 → 1.4.0`；四个 DRAFT 制品中**只有** `canonical-event.v1` 内容变化；每处改动须"**命中且仅命中 1 次**"断言 + 写前/写后 SHA-256 与逐项指纹重登记。
