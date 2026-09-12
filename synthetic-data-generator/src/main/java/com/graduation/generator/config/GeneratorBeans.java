@@ -7,6 +7,7 @@ import com.graduation.generator.meta.GeneratorMetaStore;
 import com.graduation.generator.adapter.FileModeTargetAdapter;
 import com.graduation.generator.adapter.MallTargetAdapterRegistry;
 import com.graduation.generator.adapter.ReferenceMallHttpAdapter;
+import com.graduation.generator.adapter.SecondMallHttpAdapter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -65,7 +66,8 @@ public class GeneratorBeans {
             @Value("${generator.target.probe-timeout-ms:3000}") long probeTimeoutMs) {
         return new MallTargetAdapterRegistry(List.of(
                 new FileModeTargetAdapter(outputRoot),
-                new ReferenceMallHttpAdapter(credentialResolver(), Duration.ofMillis(probeTimeoutMs))));
+                new ReferenceMallHttpAdapter(credentialResolver(), Duration.ofMillis(probeTimeoutMs)),
+                new SecondMallHttpAdapter(credentialResolver(), Duration.ofMillis(probeTimeoutMs))));
     }
 
     /**

@@ -16,7 +16,16 @@ import java.math.BigDecimal;
  * @param name       商品名
  * @param categoryId 分类 ID，可为 null（商城未给时）
  * @param price      单价（元，两位小数）
- * @param status     商城侧状态原文（如 {@code on_sale}），保持原样不翻译，避免生成器自造口径
+ * @param status     <b>规范</b>状态词（{@code on_sale}/{@code off_sale}/{@code pending}，
+ *                   即 {@code ContractEnums.PRODUCT_STATUS}）；{@code null} 的语义被写死为
+ *                   <b>"商城的词无法映射到规范词表"</b>（含商城未给该字段）。
+ *                   <p>两条禁令（F-25，硬约束 3）：<b>(1)</b> 绝不把商城原词（参考商城的 {@code PAID}、
+ *                   第二家的 {@code SALE}）放进这个字段——规范事件契约对 {@code status} 是
+ *                   required + 枚举，写原词就是产出违约数据；<b>(2)</b> 映射不到时不许静默丢弃，
+ *                   适配器要用 {@link MallStatusVocabulary#unmappedStatusWords()} 把原词报出来，
+ *                   由引擎记成"目录缺口（K 件被排除）"。</p>
+ *                   <p>由此得到的读法：{@code status == null} ⇒ 该商品既不能算"在售"、也不能算"下架"，
+ *                   只能被排除在可用目录之外，并且必须留下可见的缺口记录。</p>
  */
 public record ExternalProduct(String productId, String name, Long categoryId, BigDecimal price, String status) {
 

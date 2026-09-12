@@ -1,5 +1,7 @@
 package com.graduation.generator.adapter;
 
+import java.util.Map;
+
 /**
  * 目标商城适配器（S4 的 SPI，逐字对齐指导书 §4.1）。
  *
@@ -45,6 +47,26 @@ public interface MallTargetAdapter {
      */
     default TargetCapabilities capabilities(TargetConfig config) {
         return TargetCapabilities.none();
+    }
+
+    /**
+     * §4.1.1 的 {@code operationRoutes}：本适配器在各操作上<b>真实使用</b>的 HTTP 方法与路径
+     * （供运行流水如实记录）；无 HTTP 语义的操作不给条目。
+     *
+     * <p><b>键 = SPI 操作名</b>（§4.1.1.3 的七项，字面量与 {@code MallDispatchPlan.OP_*} 一致）：
+     * {@code listProducts}/{@code createSyntheticUser}/{@code emitBehavior}/{@code createOrder}/
+     * {@code pay}/{@code cancel}/{@code refund}。</p>
+     *
+     * <p><b>未声明即"该目标不支持该操作 / 路由未知"</b>：引擎在流水里写明确占位，<b>绝不</b>回落到
+     * 任何一家商城的字面量（硬约束 6）。为什么默认是空表：{@code CANONICAL_EVENT_FILE} 这类目标
+     * 没有 HTTP 语义，强迫它写一张表只会制造噪音；而"什么都没声明"必须读成"一条路由都没有"，
+     * 不能读成"用参考商城那套"。</p>
+     *
+     * <p>本方法<b>不联网</b>、不读凭据值，只按 {@code config}（含 {@code config_json} 的路径声明）
+     * 回答问题；适配器<b>不该</b>在本接口里写任何商城字面量——字面量属于各实现。</p>
+     */
+    default Map<String, TargetRoute> operationRoutes(TargetConfig config) {
+        return Map.of();
     }
 
     /** §4.1 {@code listProducts}：读目标商城的商品目录 */

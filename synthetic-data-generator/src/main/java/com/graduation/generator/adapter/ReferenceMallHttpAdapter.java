@@ -51,6 +51,16 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
     /** {@code config_json} 里声明受保护重置接口路径的键 */
     public static final String CONFIG_RESET_PATH = "reset_path";
 
+    // 公开业务路由模板（唯一来源）：业务方法发请求、operationRoutes 报流水，两处都引这里，
+    // 于是"报出去的形状"与"真发出去的形状"不可能各写一份而漂移（硬约束 6）。
+    private static final String PRODUCTS_PATH = "/api/v1/mall/products";
+    private static final String USERS_PATH = "/api/v1/mall/users";
+    private static final String ORDERS_PATH = "/api/v1/mall/orders";
+    private static final String PAY_PATH = ORDERS_PATH + "/{orderId}/pay";
+    private static final String CANCEL_PATH = ORDERS_PATH + "/{orderId}/cancel";
+    private static final String REFUND_APPLY_PATH = ORDERS_PATH + "/{orderId}/refunds";
+    private static final String REFUND_COMPLETE_PATH = "/api/v1/mall/refunds/{refundId}/complete";
+
     /** 公开业务路由（参考商城实测：公开路由同样要求 Bearer，故有凭据时一并发头）；插入顺序即报告顺序 */
     private static final Map<MallCapability, List<String>> PUBLIC_ROUTES = publicRoutes();
 
@@ -119,6 +129,34 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         return TargetCapabilities.declared(verdicts);
     }
 
+    /**
+     * §4.1.1 的 {@code operationRoutes}：本适配器<b>真实使用</b>的方法与路径（硬约束 6 的所有权落点）。
+     *
+     * <p>逐条对应下方七个业务方法里发出去的请求，路径模板用 {@code {orderId}}/{@code {refundId}} 占位；
+     * <b>不含</b> base_url、凭据与 {@code ?categoryId=} 查询串。{@code emitBehavior} 的路径未冻结
+     * （B-04：参考商城当前尚无该接口），<b>只有</b> {@code config_json.behavior_path} 显式声明时才出现该键；
+     * 未声明就不给条目——"路由未知"必须诚实为空，而不是猜一个。</p>
+     *
+     * <p>{@code refund} 一次走两步（申请 + 完成），这里给出第一步（申请）——它是这次操作的主体路径，
+     * 与流水里"一行 = 一次操作"的口径一致（第二步在流水里不单独占行，见 {@code MallApiDispatchSink}）。</p>
+     */
+    @Override
+    public Map<String, TargetRoute> operationRoutes(TargetConfig config) {
+        // 键是 §4.1.1.1 的 SPI 操作名字面量；适配器不依赖 engine 包（那是调用方），所以这里写字面量。
+        Map<String, TargetRoute> routes = new LinkedHashMap<>();
+        routes.put("listProducts", new TargetRoute("GET", PRODUCTS_PATH));
+        routes.put("createSyntheticUser", new TargetRoute("POST", USERS_PATH));
+        routes.put("createOrder", new TargetRoute("POST", ORDERS_PATH));
+        routes.put("pay", new TargetRoute("POST", PAY_PATH));
+        routes.put("cancel", new TargetRoute("POST", CANCEL_PATH));
+        routes.put("refund", new TargetRoute("POST", REFUND_APPLY_PATH));
+        String behaviorPath = declaredPaths(config.configJson()).get(CONFIG_BEHAVIOR_PATH);
+        if (behaviorPath != null) {
+            routes.put("emitBehavior", new TargetRoute("POST", behaviorPath));
+        }
+        return Map.copyOf(routes);
+    }
+
     // ---------- §4.1 其余七项：真实调用 ----------
 
     @Override
@@ -127,7 +165,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
             throw new MallOperationException("listProducts", "ProductQuery 不得为 null");
         }
         JsonNode data = call(config, "listProducts", "GET",
-                "/api/v1/mall/products" + categoryQuery(query.categoryId()),
+                PRODUCTS_PATH + categoryQuery(query.categoryId()),
                 null, query.offset() + query.limit());
         if (!data.isArray()) {
             throw new MallOperationException("listProducts",
@@ -153,7 +191,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         body.put("ageGroup", command.ageGroup());
         body.put("cityLevel", command.cityLevel());
         body.put("memberLevel", command.memberLevel());
-        JsonNode data = call(config, "createSyntheticUser", "POST", "/api/v1/mall/users", body, 0);
+        JsonNode data = call(config, "createSyntheticUser", "POST", USERS_PATH, body, 0);
         return new ExternalUser(requireId(data, "userId", "createSyntheticUser"), command.memberLevel());
     }
 
@@ -190,7 +228,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
             row.put("quantity", item.quantity());
             return row;
         }).toList());
-        JsonNode data = call(config, "createOrder", "POST", "/api/v1/mall/orders", body, 0);
+        JsonNode data = call(config, "createOrder", "POST", ORDERS_PATH, body, 0);
         return readOrder(data, command.userId(), "createOrder", null);
     }
 
@@ -202,7 +240,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         // 参考商城的支付应答是 ApiResponse<Void>（data=null，实测商城订单接口 L80）：HTTP 2xx + code=OK
         // 就是"已支付"，没有可读的状态字段可解析——这里的 PAID 是"调用成功"的记录，不是从应答里读来的值。
         call(config, "pay", "POST",
-                "/api/v1/mall/orders/" + encode(command.orderId()) + "/pay",
+                PAY_PATH.replace("{orderId}", encode(command.orderId())),
                 Map.of("userId", command.userId()), 0);
         return new ExternalOrder(command.orderId(), command.userId(), "PAID", null, -1);
     }
@@ -217,7 +255,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         body.put("reason", command.reason());
         // 同上：取消也是 ApiResponse<Void>
         call(config, "cancel", "POST",
-                "/api/v1/mall/orders/" + encode(command.orderId()) + "/cancel", body, 0);
+                CANCEL_PATH.replace("{orderId}", encode(command.orderId())), body, 0);
         return new ExternalOrder(command.orderId(), command.userId(), "CANCELLED", null, -1);
     }
 
@@ -231,11 +269,11 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         body.put("amount", command.amount());
         body.put("reason", command.reason());
         JsonNode data = call(config, "refund", "POST",
-                "/api/v1/mall/orders/" + encode(command.orderId()) + "/refunds", body, 0);
+                REFUND_APPLY_PATH.replace("{orderId}", encode(command.orderId())), body, 0);
         String refundId = requireId(data, "refundId", "refund");
         // 参考商城的退款是两步（申请 + 完成）；只申请不完成会留下"永远不完成"的退款单，
         // 因此这里把完成也走一遍——两步都成，返回的退款项才算 COMPLETED。
-        call(config, "refund", "POST", "/api/v1/mall/refunds/" + encode(refundId) + "/complete",
+        call(config, "refund", "POST", REFUND_COMPLETE_PATH.replace("{refundId}", encode(refundId)),
                 Map.of("userId", command.userId()), 0);
         return new ExternalRefund(refundId, command.orderId(), "COMPLETED", command.amount());
     }

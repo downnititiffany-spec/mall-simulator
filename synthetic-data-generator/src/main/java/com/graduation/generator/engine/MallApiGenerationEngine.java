@@ -8,7 +8,9 @@ import com.graduation.generator.adapter.MallTargetAdapter;
 import com.graduation.generator.adapter.ProductPage;
 import com.graduation.generator.adapter.ProductQuery;
 import com.graduation.generator.adapter.TargetCapabilities;
+import com.graduation.generator.adapter.MallStatusVocabulary;
 import com.graduation.generator.adapter.TargetConfig;
+import com.graduation.generator.adapter.TargetRoute;
 import com.graduation.generator.contract.CanonicalEvent;
 import com.graduation.generator.contract.EventSink;
 import com.graduation.generator.contract.EventTypes;
@@ -19,8 +21,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 
 /**
  * MALL_API 生成引擎（V2.1 §3.3 A）：读<b>同一份</b>生成计划，把事件驱动成对目标商城公开接口的真实调用。
@@ -139,7 +141,7 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         // 170 条 [createOrder] INSUFFICIENT_STOCK 被打成 failed_count=170，运行却报 SUCCESS。
         // 因此改成"跑完再据实收口"：让每条事件都拿到真实结论、流水记全，最后有任何失败就不许报成功。
         MallApiDispatchSink dispatch = new MallApiDispatchSink(adapter, target, adapter.capabilities(target),
-                journal, preflight.catalog(), false);
+                journal, preflight.catalog(), false, preflight.operationRoutes());
         ForwardingSink forwarding = new ForwardingSink(sink, dispatch, request.eventCount(), eventStats);
 
         // 刻意用 3 参重载：MALL_API 模式下"权威账本"是 ForwardingSink 那本（只记真的转写进规范流的事件），
@@ -210,6 +212,9 @@ public final class MallApiGenerationEngine implements GenerationEngine {
      */
     public Preflight preflight(GenerationRequest request, TargetConfig target, MallTargetAdapter adapter) {
         TargetCapabilities capabilities = adapter.capabilities(target);
+        // 硬约束 6：路由的所有者是适配器。这里解析一次、随 Preflight 带着走，
+        // 流水与预检都用这一份，绝不内置任何商城字面量。
+        Map<String, TargetRoute> operationRoutes = adapter.operationRoutes(target);
         OperationJournal journal = new OperationJournal();
         List<String> notes = new ArrayList<>();
 
@@ -220,12 +225,14 @@ public final class MallApiGenerationEngine implements GenerationEngine {
             }
         }
         if (!missing.isEmpty()) {
+            // 这里刻意不写"调哪个地址去实测"：探活的地址由适配器自己声明（operationRoutes），
+            // 引擎里出现任何一家的具体路径都会让"换一家商城"退化成改引擎（硬约束 6）。
             throw new IllegalStateException("目标适配器 " + adapter.adapterType()
                     + " 的能力不满足 MALL_API 运行：缺少 " + String.join("、", missing)
-                    + "。请先修复目标配置（base_url/凭据引用/config_json）并用 "
-                    + "POST /api/v1/targets/{id}/probe 实测确认；本引擎不会降级成文件模式，也不会跳过这些事件报成功"
+                    + "。请先修复目标配置（base_url/凭据引用/config_json）并对该目标执行一次探活实测确认"
+                    + "（探活地址以目标适配器自报的路由为准）；本引擎不会降级成文件模式，也不会跳过这些事件报成功"
                     // 点名凭据<b>引用名</b>（不是值）：能力判定 UNDETERMINED 绝大多数是"凭据取不到值"造成的
-                    // （参考商城对 /api/v1/** 全部要求 Bearer，D-033），不说清楚就只能看到一串 UNDETERMINED。
+                    // （参考商城对公开接口全部要求 Bearer，D-033），不说清楚就只能看到一串 UNDETERMINED。
                     // 引用名不是秘密，令牌值永远不进日志、不进流水、不进异常信息。
                     + "。本次调用用的凭据引用是 " + describeCredentialRef(target)
                     + "（凭据取不到值时所有路由都判 UNDETERMINED；凭据值不回显）");
@@ -235,7 +242,9 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         try {
             page = adapter.listProducts(target, ProductQuery.firstPage(CATALOG_PROBE_LIMIT));
         } catch (RuntimeException e) {
-            journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true, "GET", MallDispatchPlan.PRODUCTS_ROUTE,
+            journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true,
+                    routeMethod(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
+                    routePath(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
                     null, null, OperationJournalEntry.STATUS_FAILED, e.getMessage(), false);
             // 点名凭据<b>引用名</b>（不是值）：排查时要知道去修哪一个引用，而不是只知道"401 了"。
             // 这里只说引用名，令牌值永远不进日志、不进流水、不进异常信息。
@@ -244,9 +253,26 @@ public final class MallApiGenerationEngine implements GenerationEngine {
                     + "（凭据不可用/商城不可达时不允许启动运行，也不会降级成文件模式）", e);
         }
         List<ExternalProduct> catalog = page.products().stream().filter(ExternalProduct::onSale).toList();
-        journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true, "GET", MallDispatchPlan.PRODUCTS_ROUTE,
+        // 目录里"有商品但状态词映射不到规范词表"的部分必须被点名（硬约束 16 / F-25 同族）：
+        // 只报"目录 N 件、在售 M 件"会让 N-M 里混着两种完全不同的东西——"商城说它下架了"（正常）
+        // 与"生成器读不懂商城的状态词"（缺口）。后者必须能看出件数与商城原词，
+        // 否则商品只是无声消失，运维会以为是商城没货。
+        String unmapped = describeUnmappedStatuses(page.products(), adapter);
+        journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true,
+                routeMethod(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
+                routePath(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
                 null, null, OperationJournalEntry.STATUS_OK,
                 "目录 %d 件，在售 %d 件（预检兼凭据校验）".formatted(page.total(), catalog.size()), false);
+        if (unmapped != null) {
+            // 缺口单独占一行（SKIPPED，且不是真实调用）：这样"预检读了几次目录""在售几件""多少件因词表被排除"
+            // 三件事在流水里各自可数，不会被合并成一句话而失去可核对性。
+            journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, false, null, null, null, null,
+                    OperationJournalEntry.STATUS_SKIPPED,
+                    "商城状态词无法映射到规范状态词表，%s 商品被排除在可用目录之外".formatted(unmapped), false);
+            notes.add(("目录缺口：%s 商品的状态词无法映射到规范状态词表——它们不会进入规范事件流，"
+                    + "也绝不会被静默当成「在售」；若要使用，需在对应适配器的状态词映射表里补齐"
+                    + "（状态词映射归适配器，见 F-25）").formatted(unmapped));
+        }
         if (catalog.isEmpty()) {
             throw new IllegalArgumentException("商城商品目录里没有在售商品，MALL_API 无法生成任何订单："
                     + "请先在商城侧准备商品（参考商城公开接口只读目录，B-04）");
@@ -261,7 +287,63 @@ public final class MallApiGenerationEngine implements GenerationEngine {
             notes.add("退款：能力判定 " + capabilities.verdict(MallCapability.REFUND)
                     + "，退款事件不进入本模式产物");
         }
-        return new Preflight(adapter.adapterType(), capabilities, catalog, List.copyOf(notes), journal);
+        return new Preflight(adapter.adapterType(), capabilities, catalog, List.copyOf(notes), journal,
+                operationRoutes);
+    }
+
+    /**
+     * 流水里该记的方法：<b>只查适配器声明的路由表</b>，未声明就给明确占位（硬约束 6）。
+     *
+     * <p>与 {@code MallApiDispatchSink#routeOf} 同口径、共用同一组占位常量——它们是"适配器没告诉我们"
+     * 的同一个事实在两处的同一种写法，不是两套口径。</p>
+     */
+    static String routeMethod(Map<String, TargetRoute> operationRoutes, String operation) {
+        return routeOf(operationRoutes, operation).method();
+    }
+
+    /** 流水里该记的路径（口径同 {@link #routeMethod}） */
+    static String routePath(Map<String, TargetRoute> operationRoutes, String operation) {
+        return routeOf(operationRoutes, operation).path();
+    }
+
+    private static TargetRoute routeOf(Map<String, TargetRoute> operationRoutes, String operation) {
+        TargetRoute route = operationRoutes == null ? null : operationRoutes.get(operation);
+        return route != null ? route
+                : new TargetRoute(MallApiDispatchSink.ROUTE_UNDECLARED_METHOD, MallApiDispatchSink.ROUTE_UNDECLARED_PATH);
+    }
+
+    /**
+     * 目录里"读不懂状态词"的商品：<b>件数</b> + <b>商城原词</b>（原词按字典序，输出可复现）。
+     *
+     * <p>判据只有一件事：{@link ExternalProduct#status()} 为 {@code null}。按 F-25 的约定，
+     * 适配器把"商城的词映射不到规范词表"表达成 {@code null}（而不是把原词塞进规范字段），
+     * 于是引擎不需要认识任何一家商城的词表，也能把缺口如实报出来——这就是"映射归适配器、
+     * 报缺口归引擎"的分工。</p>
+     *
+     * <p>原词从哪来：适配器实现 {@link MallStatusVocabulary} 的话，直接问它要（词表本来就在适配器里）。
+     * 没实现的适配器只能说"K 件读不懂"——这仍然远好过不说。</p>
+     *
+     * <p>为什么必须单独报：这些商品既不是"商城说下架"（那是正常业务事实），也不能被当作在售，
+     * 只能被排除；不报出来，它们就只是"目录里少了几件"，运维会以为是商城没货。</p>
+     */
+    public static String describeUnmappedStatuses(List<ExternalProduct> products, MallTargetAdapter adapter) {
+        if (products == null || adapter == null) {
+            return null;
+        }
+        int count = 0;
+        for (ExternalProduct product : products) {
+            if (product != null && product.status() == null) {
+                count++;
+            }
+        }
+        if (count == 0) {
+            return null;
+        }
+        List<String> words = adapter instanceof MallStatusVocabulary vocabulary
+                ? vocabulary.unmappedStatusWords()
+                : List.of();
+        return count + " 件" + (words.isEmpty() ? ""
+                : "（商城原词：" + words.stream().distinct().sorted().collect(Collectors.joining("、")) + "）");
     }
 
     /**
@@ -315,10 +397,12 @@ public final class MallApiGenerationEngine implements GenerationEngine {
                             TargetCapabilities capabilities,
                             List<ExternalProduct> catalog,
                             List<String> notes,
-                            OperationJournal journal) {
+                            OperationJournal journal,
+                            Map<String, TargetRoute> operationRoutes) {
         public Preflight {
             catalog = List.copyOf(catalog);
             notes = List.copyOf(notes);
+            operationRoutes = Map.copyOf(operationRoutes);
         }
 
         public CapabilityVerdict verdict(MallCapability capability) {

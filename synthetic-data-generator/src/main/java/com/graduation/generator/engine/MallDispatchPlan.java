@@ -12,21 +12,24 @@ import java.util.Map;
  * 区别只在"事件往哪儿落"。有了这张表，"计划里的第 N 条事件"到"商城的哪一次公开调用"是<b>数据</b>而不是
  * 散落的 {@code if}，运行报告、操作流水与验收都能引用同一份对照关系。</p>
  *
- * <p><b>{@code mallBacked=false} 的语义</b>：该事件类型在生成计划里存在，但参考商城的公开接口没有任何
+ * <p><b>路由不在这张表里</b>（硬约束 6）：{@code method}/{@code route} 以前是这里的字面量常量，于是流水
+ * 无论打哪台商城都记着参考商城的路径——那是编出来的证据。现在路由的<b>唯一所有者</b>是适配器
+ * （{@code MallTargetAdapter#operationRoutes(TargetConfig)}），流水按"事件 → 操作名 → 适配器声明的路由"
+ * 查表；适配器没声明就写明确占位，<b>不回落到任何商城字面量</b>。本表只保留
+ * "这条事件属于哪个能力位 / 对应哪个 SPI 操作 / 商城有没有这个公开动作"。</p>
+ *
+ * <p><b>{@code mallBacked=false} 的语义</b>：该事件类型在生成计划里存在，但商城的公开接口没有任何
  * 对应操作（改价、库存预留/释放/入库）。这类事件在 MALL_API 模式下**不写入规范事件流**，只在操作流水里
  * 留一行 {@code SKIPPED} 缺口——绝不为了凑数把它当成功写出去。落到指标里就是"这台商城确实没有这类动作"，
  * 而不是"生成器伪造了一堆动作"。</p>
  *
  * @param capability 该事件对应的能力位（能力不 {@code SUPPORTED} 时整类降级并记缺口）
- * @param operation  §4.1 的操作名（写进操作流水）
- * @param method     真实使用的 HTTP 方法
- * @param route      真实请求路径（仅用于流水与排障，不含 base_url 与凭据）
- * @param mallBacked 该事件在参考商城是否有对应的公开写操作
+ * @param operation  §4.1 的操作名（写进操作流水；也是查适配器路由表的键）
+ * @param mallBacked 该事件在商城是否有对应的公开写操作
  */
-public record MallDispatchPlan(MallCapability capability, String operation, String method, String route,
-                               boolean mallBacked) {
+public record MallDispatchPlan(MallCapability capability, String operation, boolean mallBacked) {
 
-    /** §4.1 操作名（与适配器 SPI 的方法名逐字一致） */
+    /** §4.1 操作名（与适配器 SPI 的方法名逐字一致；也是 {@code operationRoutes} 的键） */
     public static final String OP_LIST_PRODUCTS = "listProducts";
     public static final String OP_CREATE_USER = "createSyntheticUser";
     public static final String OP_EMIT_BEHAVIOR = "emitBehavior";
@@ -35,38 +38,34 @@ public record MallDispatchPlan(MallCapability capability, String operation, Stri
     public static final String OP_CANCEL = "cancel";
     public static final String OP_REFUND = "refund";
 
-    public static final String PRODUCTS_ROUTE = "/api/v1/mall/products";
-    public static final String USERS_ROUTE = "/api/v1/mall/users";
-    public static final String ORDERS_ROUTE = "/api/v1/mall/orders";
-
     private static final Map<String, MallDispatchPlan> BY_EVENT_TYPE = Map.ofEntries(
             Map.entry(EventTypes.USER_REGISTERED, new MallDispatchPlan(
-                    MallCapability.USER, OP_CREATE_USER, "POST", USERS_ROUTE, true)),
-            // 商品：参考商城的公开接口只能"读目录"，没有公开的建品/改价。计划里的商品池因此按外部目录
+                    MallCapability.USER, OP_CREATE_USER, true)),
+            // 商品：公开接口只能"读目录"，没有公开的建品/改价。计划里的商品池因此按外部目录
             // 里真实存在的商品逐一对齐（见 MallApiDispatchSink 的 productCatalog），plan 里的 product_created
             // 事件被改写为商城的真实商品快照——记的是"商城里确实有这件商品"，不是凭空造的商品。
             Map.entry(EventTypes.PRODUCT_CREATED, new MallDispatchPlan(
-                    MallCapability.PRODUCT, OP_LIST_PRODUCTS, "GET", PRODUCTS_ROUTE, true)),
+                    MallCapability.PRODUCT, OP_LIST_PRODUCTS, true)),
             Map.entry(EventTypes.PRODUCT_UPDATED, new MallDispatchPlan(
-                    MallCapability.ADMIN, "updateProduct", "PATCH", "/api/v1/admin/products/{id}", false)),
+                    MallCapability.ADMIN, "updateProduct", false)),
             Map.entry(EventTypes.BEHAVIOR, new MallDispatchPlan(
-                    MallCapability.BEHAVIOR, OP_EMIT_BEHAVIOR, "POST", "（config_json.behavior_path 声明）", true)),
+                    MallCapability.BEHAVIOR, OP_EMIT_BEHAVIOR, true)),
             Map.entry(EventTypes.ORDER_CREATED, new MallDispatchPlan(
-                    MallCapability.ORDER, OP_CREATE_ORDER, "POST", ORDERS_ROUTE, true)),
+                    MallCapability.ORDER, OP_CREATE_ORDER, true)),
             Map.entry(EventTypes.ORDER_PAID, new MallDispatchPlan(
-                    MallCapability.ORDER, OP_PAY, "POST", ORDERS_ROUTE + "/{orderId}/pay", true)),
+                    MallCapability.ORDER, OP_PAY, true)),
             Map.entry(EventTypes.ORDER_CANCELLED, new MallDispatchPlan(
-                    MallCapability.ORDER, OP_CANCEL, "POST", ORDERS_ROUTE + "/{orderId}/cancel", true)),
+                    MallCapability.ORDER, OP_CANCEL, true)),
             Map.entry(EventTypes.REFUND_CREATED, new MallDispatchPlan(
-                    MallCapability.REFUND, OP_REFUND, "POST", ORDERS_ROUTE + "/{orderId}/refunds", true)),
+                    MallCapability.REFUND, OP_REFUND, true)),
             Map.entry(EventTypes.REFUND_COMPLETED, new MallDispatchPlan(
-                    MallCapability.REFUND, OP_REFUND, "POST", "/api/v1/mall/refunds/{refundId}/complete", true)),
+                    MallCapability.REFUND, OP_REFUND, true)),
             Map.entry(EventTypes.STOCK_RESERVED, new MallDispatchPlan(
-                    MallCapability.ORDER, "reserveStock", "（无）", "（商城无公开库存预留接口）", false)),
+                    MallCapability.ORDER, "reserveStock", false)),
             Map.entry(EventTypes.STOCK_RELEASED, new MallDispatchPlan(
-                    MallCapability.ORDER, "releaseStock", "（无）", "（商城无公开库存释放接口）", false)),
+                    MallCapability.ORDER, "releaseStock", false)),
             Map.entry(EventTypes.STOCK_CHANGED, new MallDispatchPlan(
-                    MallCapability.ADMIN, "changeStock", "（无）", "（商城无公开入库接口）", false)));
+                    MallCapability.ADMIN, "changeStock", false)));
 
     /** 查不到就抛：新增事件类型却忘了登记对照关系，必须在测试/首跑就炸，而不是静默丢事件 */
     public static MallDispatchPlan of(String eventType) {

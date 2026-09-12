@@ -165,6 +165,78 @@ class GeneratorBoundarySourcePolicyTest {
         assertThat(pom).as("独立版本号").contains("<artifactId>synthetic-data-generator</artifactId>");
     }
 
+    /**
+     * M1-9 ② 硬约束 6 的常驻负向证据：<b>引擎侧不许内置任何一家商城的路由字面量</b>。
+     *
+     * <p>为什么这条必须用源码扫描而不是行为断言：把 {@code /api/v1/mall/products} 写进引擎，
+     * 只要目标恰好是参考商城，所有功能测试都会绿——退化不会让任何用例变红，只会让"换一家商城"
+     * 在实现上不成立（引擎里躺着上一家的地址，第二家就得靠"如果……否则……"打补丁）。
+     * 因此路由只允许出现在适配器里，引擎/落点只能通过 {@code MallTargetAdapter.operationRoutes} 拿表。</p>
+     *
+     * <p>正向对照不可省：同一条正则必须在参考商城适配器里命中。否则"引擎里没命中"可能只是因为
+     * 正则写错了（比如把路径写成了永远匹配不上的形状），那样的绿灯是假的。</p>
+     */
+    @Test
+    @DisplayName("引擎源码不含任何商城路由字面量，且同一条正则在适配器里必须命中（正向对照）")
+    void engineSourcesCarryNoMallRouteLiterals() {
+        Pattern routeLiteral = Pattern.compile("\"/[a-z0-9][^\"]*(?:/api/|/open/)[^\"]*\"|/(?:api|open)/v[0-9]");
+
+        List<Path> engineSources = scan("src/main/java", ".java").stream()
+                .filter(path -> relative(path).replace('\\', '/').contains("/engine/"))
+                .toList();
+        assertThat(engineSources).as("引擎源码必须存在（守卫不可空跑）").isNotEmpty();
+
+        List<String> offenders = new ArrayList<>();
+        for (Path source : engineSources) {
+            String text = read(source);
+            Matcher matcher = routeLiteral.matcher(text);
+            while (matcher.find()) {
+                offenders.add("%s 内置了商城路径字面量 \"%s\"（第 %d 行）".formatted(
+                        relative(source), matcher.group(), lineOf(text, matcher.start())));
+            }
+        }
+        assertThat(offenders)
+                .as("硬约束 6：路由只能来自适配器（MallTargetAdapter.operationRoutes），"
+                        + "引擎/落点里不许出现任何商城地址——否则\"换一家商城\"就退化成改引擎")
+                .isEmpty();
+
+        // 正向对照：参考商城适配器里这些字面量必须存在，证明上面的正则确实能命中商城路径
+        List<Path> adapterSources = scan("src/main/java", ".java").stream()
+                .filter(path -> relative(path).replace('\\', '/').contains("/adapter/"))
+                .toList();
+        assertThat(adapterSources).as("适配器源码必须存在").isNotEmpty();
+        assertThat(adapterSources.stream().filter(path -> routeLiteral.matcher(read(path)).find()).toList())
+                .as("正向对照：同一条正则必须在适配器源码里命中至少一处商城路径，"
+                        + "否则\"引擎里没命中\"只是因为正则写错了")
+                .isNotEmpty();
+
+        // 第二家也必须有自己的路由前缀，且不许把参考商城的地址当成自己的路由。
+        // 这里刻意不用正则（转义引号容易写错，写错了还会静默空跑），改成逐行取"常量值"再判定。
+        String secondMall = read(MODULE_ROOT.resolve(
+                "src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java"));
+        List<String> secondRoutes = new ArrayList<>();
+        List<String> routeOffenders = new ArrayList<>();
+        String secondRoutePrefix = "/open/v2/";
+        for (String rawLine : secondMall.split("\n")) {
+            String line = rawLine.trim();
+            // 只看路由常量声明行，且常量值必须是字面量（含 '+' 的拼接行不在这里判定）
+            if (!line.endsWith(";") || !line.contains("_PATH = \"") || line.contains("+")) {
+                continue;
+            }
+            String value = line.substring(line.indexOf('"') + 1, line.lastIndexOf('"'));
+            if (!value.startsWith("/")) {
+                continue;
+            }
+            secondRoutes.add(value);
+            if (!value.startsWith(secondRoutePrefix)) {
+                routeOffenders.add(line);
+            }
+        }
+        assertThat(secondRoutes).as("第二家适配器必须以常量形式声明自己的路由（否则下面的前缀断言是空跑）")
+                .contains("/open/v2/items", "/open/v2/members", "/open/v2/orders");
+        assertThat(routeOffenders).as("第二家适配器不得把参考商城的地址声明成自己的路由").isEmpty();
+    }
+
     // ---------- 工具 ----------
 
     private static List<Path> scan(String relativeDir, String suffix) {
