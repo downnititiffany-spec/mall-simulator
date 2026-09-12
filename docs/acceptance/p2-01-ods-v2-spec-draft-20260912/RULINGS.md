@@ -198,3 +198,11 @@ P2-01 的验收**不得**包含任何 per-source 命名的断言。
 - **禁止**：为"让 E2 也能建表"改动 `spark-jobs/pom.xml` 依赖；若确需，属新任务且须先入规格。
 - **附带批准**：`JsonObjectSlicer` 的纯函数断言（A5/A5b/A4b）移入不建表的 suite，先取红。
 - **已确认只读事实**（补 D-057）：`_metadata.file_path` 实测非空（`file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl`），而 `input_file_name()` 在同一读法下返回**空串** ⇒ `landing_file` 必须取自 `_metadata.file_path`。
+
+## 追认（2026-09-12 20:1x，父侧只读复算）—— D-054「新增 4 列」vs 实现「5 列」：**以 5 列为准**，本文件补齐该追认
+
+- **缺口（实测）**：本文件此前 `raw_source_system` **0 命中**（正对照 `source_system` **8 命中** ⇒ 检索有效）。而实现侧确实多出该列：`spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsV2Columns.scala` 行 **48**（`CommonColumns`）与行 **69**（`V2NewColumns`）各声明一次 `Column("raw_source_system","STRING")`；文件头注释（行 **15**）自述为「加法扩列」新增 `raw_event_type` / `raw_source_system` / `landing_file` / `payload_json` / `payload_hash`。运行期证据见 `docs/acceptance/p2-01-ods-v2-20260912/IMPL-REPORT.md` 行 **190**（`E3_20_newcols_present` ⇒ 5 个新列俱全）与行 **193**（DESCRIBE 21 列）。
+- **追认依据（两层，均已在库）**：① 看板行 **460 ⑥** 已由总控事后追认「静态 DDL 必须与运行时唯一所有者 `OdsV2Columns` 对齐」，该追认被 `docs/acceptance/p2-01-ods-v2-20260912/README.md` 行 **61** 明确引用；② 本轮独立复算确认 **ODS v2 列清单不在冻结契约文件内** —— `contract-specs/` 共 **9** 个文件中 `raw_source_system` **0 命中**（正对照 `source_system` **18 命中**），契约面只有 `canonical-event.v1.schema.json`、`generation-artifact-manifest.v1.schema.json`、`ingestion-manifest.v1.schema.json`、`specs/surrogate-key.v1.json`、`specs/warehouse-namespace.v1.json`、`specs/warehouse-namespace.v2.json`、`openapi/generator-api.v1.yaml`、`README.md`、`VERSION`。⇒ 本偏差属**裁决口径 vs 实现**，**不**触发契约升版流程。
+- **裁决（追认，非新增）**：D-054 的「新增 4 列」按**冻结时点口径**理解；实现多出的第 5 列 `raw_source_system` 是 **D-056 的承载列**（`source_system` 只能来自平台注入通道，行内原值只保留在 `raw_source_system`，见 §5）。**两处均为准**：列数以实现（**5 列**）为准，D-054 文义不再逐字复述。**不得**为对齐「4」而回退实现（破坏性，且会使 D-056 失去承载列）。
+- **未实测（诚实申报）**：本轮**未**连库、**未**建表、**未**跑任何链；上述实现面结论取自文件与既有 `IMPL-REPORT.md`，不是本轮新跑的读数。
+- **效力范围**：本追认只解答「4 vs 5」这一处，**不**代表 P2-01 其余口径已被复核，也**不**改变 P2-01 的 `DONE_LIMITED`。
