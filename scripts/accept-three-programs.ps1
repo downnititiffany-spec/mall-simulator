@@ -28,7 +28,7 @@ $progs = @(
     Log = '.verify\start-platform.log'
     Extra = @("-Dplatform.metric.publish.export-dir=$root\metric-staging")
     Build = @('mvn', '-o', '-q', '-f', 'analytics-server/pom.xml', '-pl', 'platform-app', '-am', 'clean', 'package', '-DskipTests')
-    CmdText = 'java -Dfile.encoding=UTF-8 -jar analytics-server/platform-app/target/platform-app-0.1.0-SNAPSHOT.jar -Dplatform.metric.publish.export-dir=<root>/metric-staging'
+    CmdText = 'java -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=<root>/metric-staging -jar analytics-server/platform-app/target/platform-app-0.1.0-SNAPSHOT.jar'
   }
   [pscustomobject]@{
     Name = 'reference-mall'; JarGlob = 'mall-simulator\target\*.jar'; JarName = 'mall-simulator-0.1.0-SNAPSHOT.jar'; Port = 8090
@@ -82,7 +82,8 @@ function Start-Prog($p) {
   $jar = Get-Jar $p
   if (-not $jar) { throw "未找到 $($p.Name) 的 jar：$($p.JarGlob)（先跑独立构建）" }
   $log = Join-Path $root $p.Log
-  Start-Process -FilePath 'java' -ArgumentList (@('-Dfile.encoding=UTF-8', '-jar', $jar.FullName) + $p.Extra) `
+  # JVM 属性必须放在 -jar **之前**（放在之后会被当应用参数、Spring Boot 不绑定 `-Dk=v` 形态）⇒ 显式前置，行为不依赖 CWD
+  Start-Process -FilePath 'java' -ArgumentList (@('-Dfile.encoding=UTF-8') + $p.Extra + @('-jar', $jar.FullName)) `
     -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError "$log.err" | Out-Null
   return (Wait-Up $p)
 }

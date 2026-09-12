@@ -42,7 +42,9 @@ function Start-Jar {
     Where-Object { $_.Name -notlike '*original*' } | Select-Object -First 1
   if (-not $jar) { throw "未找到 jar（$JarGlob），请先运行 scripts/build-web-and-package.ps1" }
   $log = Join-Path $logDir $LogName
-  Start-Process -FilePath 'java' -ArgumentList (@('-Dfile.encoding=UTF-8', '-jar', $jar.FullName) + $JvmArgs) `
+  # JVM 属性必须放在 -jar **之前**：放在 -jar 之后会被当作应用参数（Spring Boot 只把 `--k=v` 绑定为属性，
+  # `-Dk=v` 形态不绑定）⇒ 参数形同虚设、实际落到 @Value 默认值 + 进程工作目录。此处显式前置，行为不再依赖 CWD。
+  Start-Process -FilePath 'java' -ArgumentList (@('-Dfile.encoding=UTF-8') + $JvmArgs + @('-jar', $jar.FullName)) `
     -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError "$log.err"
   Write-Host "  已启动 $($jar.Name)（日志 $log）"
   return $log
