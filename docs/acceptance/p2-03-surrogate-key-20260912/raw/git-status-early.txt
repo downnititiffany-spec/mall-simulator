@@ -1,0 +1,20 @@
+ M docs/acceptance/p1-05-8091-swap-20260911/8091-stdout.log
+ M spark-jobs/src/main/scala/com/graduation/analytics/job/EventOdsLoadJob.scala
+ M spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala
+ M spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala
+?? .verify-tmp-adapter-diff.txt
+?? .verify-tmp-dual-diff.txt
+?? .verify-tmp-fixture-diff.txt
+?? .verify-tmp-optest-diff.txt
+?? docs/acceptance/m1-9-second-adapter-20260912/review-code-quality.md
+?? docs/acceptance/p2-03-surrogate-key-20260912/
+?? spark-jobs/src/main/scala/com/graduation/analytics/sql/JsonObjectSlicer.scala
+?? spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsV2Columns.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/OdsV2ByteFidelitySpec.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/OdsV2EdgeCaseSpec.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/OdsV2SchemaOwnerSpec.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/OdsV2SqlContractSpec.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/P2Probe2Spec.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/P2ProbeSpec.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/P2TestSupport.scala
+?? spark-jobs/src/test/scala/com/graduation/analytics/sql/

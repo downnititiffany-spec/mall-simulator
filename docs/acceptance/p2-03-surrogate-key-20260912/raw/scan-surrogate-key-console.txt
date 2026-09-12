@@ -1,0 +1,16 @@
+files_scanned=447
+total_hits=1732
+non_utf8_files=0
+--- per side/module totals ---
+
+Name                           Count
+----                           -----
+main, analytics-server           465
+main, mall-simulator             120
+main, spark-jobs                  60
+main, synthetic-data-generator   304
+test, analytics-server           374
+test, mall-simulator              60
+test, spark-jobs                 147
+test, synthetic-data-generator   202
+

@@ -1,0 +1,38 @@
+vectors=22
+--- 必须同值/不同值的机械自检（只比字符串，不比"代理键"实现）---
+V04 vs V07: material_same=True 期望=SAME => PASS
+V04 vs V08: material_same=True 期望=SAME => PASS
+V01 vs V12: material_same=True 期望=SAME => PASS
+V04 vs V16: material_same=False 期望=DIFF => PASS
+V04 vs V17: material_same=False 期望=DIFF => PASS
+--- 空值类必须不生成 ---
+V13: material=(不生成)
+V14: material=(不生成)
+V15: material=(不生成)
+--- 抽样 sha256 前 16 hex ---
+
+id  material
+--  --------                                                                                                           
+V01 mock-mall|user|89A6DB2C-9ECB-4BE0-A24B-9F697DA00686                                                                
+V02 mock-mall|user|2098607948334395394                                                                                 
+V03 mock-mall|user|123                                                                                                 
+V04 mock-mall|user|U000065                                                                                             
+V05 mock-mall|product|1001                                                                                             
+V06 mock-mall|order|O00000001                                                                                          
+V07 mock-mall|user|U000065                                                                                             
+V08 mock-mall|user|U000065                                                                                             
+V09 mock-mall|user|用户一                                                                                              
+V10 mock-mall|user|AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+V11 mock-mall|product|商品-壹                                                                                          
+V12 mock-mall|user|89A6DB2C-9ECB-4BE0-A24B-9F697DA00686                                                                
+V13 (不生成)                                                                                                           
+V14 (不生成)                                                                                                           
+V15 (不生成)                                                                                                           
+V16 other-src|user|U000065                                                                                             
+V17 mock-mall|product|U000065                                                                                          
+V18 mock-mall|user|0007                                                                                                
+V19 mock-mall|user|-1                                                                                                  
+V20 mock-mall|payment|P-1001                                                                                           
+V21 mock-mall|refund|R-1003-A                                                                                          
+V22 mock-mall|user|USER:U000001                                                                                        
+

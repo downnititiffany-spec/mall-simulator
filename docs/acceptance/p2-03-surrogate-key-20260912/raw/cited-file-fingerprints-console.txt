@@ -1,0 +1,11 @@
+window = 09/12/2026 12:57:06 .. 09/12/2026 13:01:48
+files_total=56  missing=0  window_writes=3
+--- 落在读取窗口内被改动的文件（事实可能已失效）---
+
+path                                                                              size mtime
+----                                                                              ---- -----
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala  18324 2026-09-12 13:01:06
+warehouse/ddl/00-ods.sql                                                          6178 2026-09-12 13:01:45
+docs/项目实施进度与任务看板 V2.2.md                                             189771 2026-09-12 12:57:18
+
+--- 缺失（引用不存在的路径）---

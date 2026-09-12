@@ -1,0 +1,2 @@
+registered=35 pass=35 fail=0 missing=0
+VERDICT=PASS（README §2.2/§2.3/§2.4 逐字登记的 35 个制品三元组与磁盘现状全部一致）

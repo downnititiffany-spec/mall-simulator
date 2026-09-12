@@ -1,0 +1,9 @@
+brand_id	5	3	3	3	NUMERIC	NO	YES	NO	NO	NO	NO	NO	01 012 02	101 ; 102 ; 202
+category_id	5	3	2	2	NUMERIC	NO	YES	NO	NO	NO	NO	NO	1 12	11 ; 12 ; 21
+event_id	53	52	14	14	OTHER	NO	NO	NO	NO	YES	NO	NO	-012deglnotv -013deglnotv -014deglnotv -015deglnotv -016deglnotv -017deglnotv -018deglnotv -019deglnotv -01deglnotv -023deglnotv -024deglnotv -025deglnotv -026deglnotv -027deglnotv -028deglnotv -029deglnotv -02deglnotv -034deglnotv -035deglnotv -036deglnotv -038deglnotv -039deglnotv -03deglnotv -045deglnotv -046deglnotv -047deglnotv -048deglnotv -049deglnotv -04deglnotv -05deglnotv -06deglnotv -07deglnotv -08deglnotv -09deglnotv	golden-evt-001 ; golden-evt-002 ; golden-evt-003 ; golden-evt-004 ; golden-evt-005 ; golden-evt-006 ; golden-evt-007 ; golden-evt-008
+order_id	26	6	4	4	NUMERIC	NO	YES	NO	NO	NO	NO	NO	01 012 013 014 015 016	1001 ; 1002 ; 1003 ; 1004 ; 1005 ; 1006
+payment_id	5	5	6	6	OTHER	NO	NO	NO	YES	NO	NO	NO	-013P -014P -015P -016P -01P	P-1001 ; P-1003 ; P-1004 ; P-1005 ; P-1006
+product_id	31	4	1	1	NUMERIC	NO	YES	NO	NO	NO	NO	NO	1 2 3 4	1 ; 2 ; 3 ; 4
+refund_id	6	3	8	8	OTHER	NO	NO	NO	YES	NO	NO	NO	-013AR -014BR -015CR	R-1003-A ; R-1004-B ; R-1005-C
+session_id	17	5	3	3	OTHER	NO	NO	NO	NO	YES	NO	NO	-1s -2s -3s -4s -5s	s-1 ; s-2 ; s-3 ; s-4 ; s-5
+user_id	40	4	1	1	NUMERIC	NO	YES	NO	NO	NO	NO	NO	1 2 3 9	1 ; 2 ; 3 ; 9

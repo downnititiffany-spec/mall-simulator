@@ -1,0 +1,57 @@
+golden_file=D:\Develop_code\GraduationProject\tests\golden-dataset\events\golden-20260901.jsonl
+golden_lines=55
+golden_sha256=2351bcc35e04ccd278638f07247bc37e9c4d402cc4736cd2a4d4b70f4232b11c
+--- 行分类计数 ---
+
+Name     Count
+----     -----
+JSON        54
+NOT_JSON     1
+
+--- 字段形态 ---
+
+field       occurrences distinct min_len max_len shapes  has_uuid has_pure_digit has_prefix charset_union
+-----       ----------- -------- ------- ------- ------  -------- -------------- ---------- -------------
+brand_id              5        3    3.00    3.00 NUMERIC NO       YES            NO         01 012 02
+category_id           5        3    2.00    2.00 NUMERIC NO       YES            NO         1 12
+event_id             53       52   14.00   14.00 OTHER   NO       NO             NO         -012deglnotv -013deglnotv …
+order_id             26        6    4.00    4.00 NUMERIC NO       YES            NO         01 012 013 014 015 016
+payment_id            5        5    6.00    6.00 OTHER   NO       NO             NO         -013P -014P -015P -016P -0…
+product_id           31        4    1.00    1.00 NUMERIC NO       YES            NO         1 2 3 4
+refund_id             6        3    8.00    8.00 OTHER   NO       NO             NO         -013AR -014BR -015CR
+session_id           17        5    3.00    3.00 OTHER   NO       NO             NO         -1s -2s -3s -4s -5s
+user_id              40        4    1.00    1.00 NUMERIC NO       YES            NO         1 2 3 9
+
+--- 非 JSON 行 ---
+
+line cls      raw
+---- ---      ---
+  53 NOT_JSON not-valid-json-line-with-no-braces-{{{
+
+--- payload 键名并集 ---
+age_group, amount, available_qty, behavior_type, brand_id, category_id, change_type, channel, city_level, cost, items, member_level, order_id, payment_id, price, product_id, product_name, quantity, reason, refund_id, register_time, reserved_qty, session_id, status, total_amount, user_id
+缺 event_id 的行数 = 1；行号 = 55
+--- schema_version 分布 ---
+
+Name Count
+---- -----
+1.0     53
+2.0      1
+
+--- event_type 分布 ---
+
+Name             Count
+----             -----
+behavior            17
+order_cancelled      1
+order_created        6
+order_paid           5
+product_created      4
+product_updated      1
+refund_completed     3
+refund_created       3
+stock_changed        1
+stock_released       1
+stock_reserved       7
+user_registered      5
+
