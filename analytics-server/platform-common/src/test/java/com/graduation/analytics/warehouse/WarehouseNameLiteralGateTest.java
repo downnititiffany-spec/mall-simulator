@@ -25,9 +25,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 库名字面量门禁（P1-04 的 DoD 自动化）。
  *
  * <p>数仓库名只能由唯一所有者派生：Java {@code WarehouseNamespace} 与 Scala {@code WarehouseNamespace}
- * （同名镜像，规格 {@code contract-specs/specs/warehouse-namespace.v1.json}）。本测试扫**生产源码**
+ * （同名镜像，规格 {@code contract-specs/specs/warehouse-namespace.v2.json}，P2-07 起；
+ * v1 为历史冻结件）。本测试扫**生产源码**
  * （两个程序的 {@code src/main}、{@code warehouse/ddl}、{@code scripts}），
  * 出现 `dw_ods` 这类裸库名、或 `dw_$layer` / `"dw_" + x` 这类在代码里拼前缀的写法即失败。</p>
+ *
+ * <p>P2-07 的额外意义：源级前缀下沉后，新写入点（V18 迁移、源登记服务、命令构造）都在扫描范围内，
+ * 因此"多一个所有者"这件事会被本门禁挡住，而不只是靠评审。</p>
  *
  * <p>**不扫测试源码**：测试里出现 `"dw_ods"` 是断言期望值（例如规格向量的 names 字段），
  * 那是「验证」而不是「第二处所有者」。**不扫文档/验收证据**：历史证据必须保持原样。</p>

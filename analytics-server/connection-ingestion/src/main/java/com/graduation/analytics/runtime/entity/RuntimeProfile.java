@@ -38,6 +38,19 @@ public class RuntimeProfile {
 
     private String hiveDatabasePrefix;
 
+    /**
+     * 本运行环境绑定到哪个源（{@code source_registry.id}，列由 V16 新增）。
+     *
+     * <p>P2-07 起本字段有两个消费者：①「当前激活源」读口（{@code ActiveSourceBindingMapper}
+     * 用显式 SQL 读写它，那是唯一写者）；② 一次运行的环境快照
+     * （{@link com.graduation.analytics.runtime.RuntimeProfileSnapshot}）——
+     * 库名按快照里的 {@code sourceId} 解析，运行中途切换源不会改了这一次 run 的库名。</p>
+     *
+     * <p>兼容期可空（存量行先于源登记存在）；需要它的路径一律 fail-closed 拒绝空值
+     * （{@code SOURCE_NOT_BOUND}），不回落到"缺省源"。</p>
+     */
+    private Long sourceId;
+
     private String sparkMaster;
 
     private String deployMode;

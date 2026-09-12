@@ -4,6 +4,8 @@ import com.graduation.analytics.pipeline.mapper.SparkJobRunMapper;
 import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.submit.JobSubmitter;
 import com.graduation.analytics.runtime.submit.JobSubmitterFactory;
+import com.graduation.analytics.warehouse.RunSourceIdentity;
+import com.graduation.analytics.warehouse.WarehouseNamespaceProvider;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
@@ -32,6 +34,7 @@ public class SparkStageExecutorFactory {
 
     private final JobSubmitterFactory submitterFactory;
     private final SparkJobRunMapper jobRunMapper;
+    private final WarehouseNamespaceProvider namespaceProvider;
     private final long maxWaitMs;
     private final long pollIntervalMs;
     private final String warehouseDir;
@@ -39,22 +42,38 @@ public class SparkStageExecutorFactory {
 
     public SparkStageExecutorFactory(JobSubmitterFactory submitterFactory,
                                      SparkJobRunMapper jobRunMapper,
+                                     WarehouseNamespaceProvider namespaceProvider,
                                      long maxWaitMs, long pollIntervalMs,
                                      String warehouseDir, String metastoreDir) {
         this.submitterFactory = submitterFactory;
         this.jobRunMapper = jobRunMapper;
+        this.namespaceProvider = namespaceProvider;
         this.maxWaitMs = maxWaitMs;
         this.pollIntervalMs = pollIntervalMs;
         this.warehouseDir = warehouseDir;
         this.metastoreDir = metastoreDir;
     }
 
-    /** 按环境快照构造执行器；每次调用新实例（无跨 run 状态） */
+    /**
+     * 按环境快照构造执行器；每次调用新实例（无跨 run 状态）。
+     *
+     * <p>P2-07：库名在这里（第一次 spark-submit 之前）按快照的 {@code sourceId} 解析**一次**，
+     * 之后整轮 run 复用同一个命名空间对象。解析失败（未绑定源 / 源不存在 / 前缀空或非法）
+     * 直接抛出，不放行任何作业——"非法前缀绝不进入 Spark"因此是结构保证，
+     * 不依赖 spark-jobs 侧再校验。</p>
+     *
+     * <p>A12：同一次解析还带出源编码（{@code --sourceSystem}）。解析与校验都在
+     * {@code namespaceProvider.runSource(sourceId)} 内部完成，本类只负责"取不到就不建执行器"，
+     * 不存在第二条读取路径，也没有可选的"缺省源"。</p>
+     */
     public SparkStageExecutor create(RuntimeProfileSnapshot profile) {
         JobSubmitter submitter = submitterFactory.create(profile);
-        log.debug("SparkStageExecutorFactory: profile={} v{} submitter={} maxWaitMs={} pollIntervalMs={}",
-                profile.id(), profile.version(), submitter.type(), maxWaitMs, pollIntervalMs);
-        return new SparkStageExecutor(submitter, jobRunMapper, maxWaitMs, pollIntervalMs);
+        RunSourceIdentity source = namespaceProvider.runSource(profile.sourceId());
+        log.debug("SparkStageExecutorFactory: profile={} v{} sourceId={} sourceCode={} namespace={} "
+                        + "submitter={} maxWaitMs={} pollIntervalMs={}",
+                profile.id(), profile.version(), profile.sourceId(), source.sourceCode(),
+                source.namespace().prefix(), submitter.type(), maxWaitMs, pollIntervalMs);
+        return new SparkStageExecutor(submitter, jobRunMapper, maxWaitMs, pollIntervalMs, source);
     }
 
     /**

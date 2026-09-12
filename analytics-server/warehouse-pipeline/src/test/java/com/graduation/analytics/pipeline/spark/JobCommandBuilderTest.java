@@ -2,6 +2,8 @@ package com.graduation.analytics.pipeline.spark;
 
 import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.warehouse.RunSourceIdentity;
+import com.graduation.analytics.warehouse.WarehouseNamespace;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -15,8 +17,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * R6 快速测试（L0，不启动 Spark）：JobCommandBuilder 把 RuntimeProfile 快照 + 作业参数
  * 转成 spark-submit 命令数组。覆盖：JAR 路径来自 profile、参数齐全、--conf 在
  * --class 之前、路径带空格仍为单个参数、LOCAL/REMOTE 生成不同但合法的命令。
+ *
+ * <p>P2-07（D-076）：库名前缀不再是"从档案列取、空则缺省"——本类改为接收调用方
+ * 按**源**解析好的 {@link RunSourceIdentity}（源编码 + 命名空间）。因此原先断言
+ * "前缀来自 profile/回落 dw"的用例已删除（那是旧所有权），改名后只断言"传进来的源身份原样下发"。
+ * A12：同一份源身份还下发 {@code --sourceSystem}。</p>
  */
 class JobCommandBuilderTest {
+
+    /** 本次运行的源身份（真实链路由 WarehouseNamespaceProvider.runSource 一次读取后传入） */
+    private static final RunSourceIdentity SRC = new RunSourceIdentity("mock-mall", WarehouseNamespace.of("dw"));
+    private static final RunSourceIdentity SRC_B = new RunSourceIdentity("mall-b", WarehouseNamespace.of("dw_b"));
 
     private final RuntimeProfileSnapshot local = profile(RuntimeProfile.TYPE_LOCAL, "local[2]",
             "D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd",
@@ -29,6 +40,7 @@ class JobCommandBuilderTest {
     private static RuntimeProfileSnapshot profile(String type, String master, String submitPath, String jarUri) {
         RuntimeProfile p = new RuntimeProfile();
         p.setId(1L);
+        p.setSourceId(1L);
         p.setVersion(1);
         p.setType(type);
         p.setSparkMaster(master);
@@ -40,7 +52,7 @@ class JobCommandBuilderTest {
 
     @Test
     void jarPathComesFromRuntimeProfile() {
-        List<String> cmd = JobCommandBuilder.build(local, "odl", "20260901", 1L, 1,
+        List<String> cmd = JobCommandBuilder.build(local, SRC, "odl", "20260901", 1L, 1,
                 Map.of(), Map.of("landingDir", "file:///D:/landing/accepted", "batchId", "17"));
         // 本地相对 jar 路径必须绝对化为 file:///（历史教训：No FileSystem for scheme "D"）
         assertThat(cmd).anyMatch(a -> a.endsWith("spark-jobs-0.1.0-SNAPSHOT.jar"));
@@ -53,7 +65,7 @@ class JobCommandBuilderTest {
         extra.put("landingDir", "file:///D:/landing/accepted");
         extra.put("batchId", "17");
         extra.put("outputSnapshotId", "S20260901_5");
-        List<String> cmd = JobCommandBuilder.build(remote, "odl", "20260901", 3L, 2, extra, Map.of());
+        List<String> cmd = JobCommandBuilder.build(remote, SRC, "odl", "20260901", 3L, 2, extra, Map.of());
         assertThat(cmd).contains(
                 "--runtimeProfileId=3",
                 "--jobCode=odl",
@@ -66,7 +78,7 @@ class JobCommandBuilderTest {
 
     @Test
     void confsComeBeforeClass() {
-        List<String> cmd = JobCommandBuilder.build(local, "usw", "20260901", 1L, 1, Map.of(),
+        List<String> cmd = JobCommandBuilder.build(local, SRC, "usw", "20260901", 1L, 1, Map.of(),
                 Map.of("spark.sql.warehouse.dir", "file:///D:/wh", "spark.shuffle.partitions", "8"));
         int classIdx = cmd.indexOf("--class");
         int confIdx = cmd.indexOf("--conf");
@@ -82,14 +94,14 @@ class JobCommandBuilderTest {
     void pathWithSpacesStaysSingleArgument() {
         RuntimeProfileSnapshot p = profile(RuntimeProfile.TYPE_LOCAL, "local[2]",
                 "D:\\Program Files\\spark\\bin\\spark-submit.cmd", "some dir/jar/spark-jobs.jar");
-        List<String> cmd = JobCommandBuilder.build(p, "odl", "20260901", 1L, 1, Map.of(), Map.of());
+        List<String> cmd = JobCommandBuilder.build(p, SRC, "odl", "20260901", 1L, 1, Map.of(), Map.of());
         assertThat(cmd.get(0)).isEqualTo("D:\\Program Files\\spark\\bin\\spark-submit.cmd");
         assertThat(cmd).doesNotContain("Program");
     }
 
     @Test
     void localUsesConfiguredMasterAndClassAfterSubmitPath() {
-        List<String> cmd = JobCommandBuilder.build(local, "fna", "20260901", 1L, 3, Map.of(), Map.of());
+        List<String> cmd = JobCommandBuilder.build(local, SRC, "fna", "20260901", 1L, 3, Map.of(), Map.of());
         assertThat(cmd).startsWith("D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd")
                 .contains("--master", "local[2]");
         // 命令应保持 提交器可执行顺序：submit path → master → conf → class → jar → 参数
@@ -99,8 +111,8 @@ class JobCommandBuilderTest {
 
     @Test
     void remoteAndLocalDifferButBothLegal() {
-        List<String> localCmd = JobCommandBuilder.build(local, "bdw", "20260901", 1L, 1, Map.of(), Map.of());
-        List<String> remoteCmd = JobCommandBuilder.build(remote, "bdw", "20260901", 1L, 1, Map.of(), Map.of());
+        List<String> localCmd = JobCommandBuilder.build(local, SRC, "bdw", "20260901", 1L, 1, Map.of(), Map.of());
+        List<String> remoteCmd = JobCommandBuilder.build(remote, SRC, "bdw", "20260901", 1L, 1, Map.of(), Map.of());
         assertThat(localCmd).isNotEqualTo(remoteCmd);
         // REMOTE：jar 已是 hdfs:// URI，不应被本地绝对化；deploy-mode 保留
         assertThat(remoteCmd).anyMatch(a -> a.startsWith("hdfs://node01"));
@@ -115,41 +127,89 @@ class JobCommandBuilderTest {
         extra.put("periodStart", "20260901");
         extra.put("periodEnd", "20260907");
         extra.put("topN", "50");
-        List<String> cmd = JobCommandBuilder.build(remote, "fna", "20260901", 1L, 1, extra, Map.of());
+        List<String> cmd = JobCommandBuilder.build(remote, SRC, "fna", "20260901", 1L, 1, extra, Map.of());
         assertThat(cmd).contains("--periodStart=20260901", "--periodEnd=20260907", "--topN=50");
     }
 
-    // ── P1-04：库名前缀由 runtime_profile 派生，且非法值在提交前失败 ──────────────
+    // ── P2-07：前缀是**入参**，本类不再读档案列、也不再自己决定缺省 ──────────────
 
     @Test
-    void hiveDatabasePrefixComesFromProfileOrDefaultsToDw() {
-        // NULL（源 A 存量档）→ 缺省 dw：与改造前库名逐字一致，零迁移
-        List<String> legacy = JobCommandBuilder.build(local, "odl", "20260901", 1L, 1, Map.of(), Map.of());
-        assertThat(legacy).contains("--hiveDatabasePrefix=dw");
+    void hiveDatabasePrefixComesFromResolvedNamespace() {
+        // 同一个档案快照 + 两个不同的源级命名空间 ⇒ 命令只在源身份相关参数上不同。
+        // 这是"库名跟着源走、档案列无权参与"的最小可判据形式。
+        List<String> seed = JobCommandBuilder.build(local, SRC, "odl", "20260901", 1L, 1, Map.of(), Map.of());
+        List<String> second = JobCommandBuilder.build(local, SRC_B, "odl", "20260901", 1L, 1, Map.of(), Map.of());
 
-        // 非缺省前缀（第二个源）→ 原样传给 JobRunner，由 Scala 侧同一规格派生 dw_b_ods…
-        RuntimeProfileSnapshot second = withPrefix(local, "dw_b");
-        List<String> other = JobCommandBuilder.build(second, "odl", "20260901", 1L, 1, Map.of(), Map.of());
-        assertThat(other).contains("--hiveDatabasePrefix=dw_b");
-        assertThat(other).doesNotContain("--hiveDatabasePrefix=dw");
+        assertThat(seed).contains("--hiveDatabasePrefix=dw");
+        assertThat(second).contains("--hiveDatabasePrefix=dw_b");
+        assertThat(second).doesNotContain("--hiveDatabasePrefix=dw");
+        assertThat(second.stream()
+                .filter(a -> !a.startsWith("--hiveDatabasePrefix=") && !a.startsWith("--sourceSystem="))
+                .toList())
+                .isEqualTo(seed.stream()
+                        .filter(a -> !a.startsWith("--hiveDatabasePrefix=") && !a.startsWith("--sourceSystem="))
+                        .toList());
+    }
+
+    // ── A12（P2-01 对齐）：源编码与库名并列下发，缺一即拒 ─────────────────────────
+
+    @Test
+    void sourceSystemComesFromResolvedSourceCode() {
+        // ① 逐参数比对（不是子串包含）：整个参数必须**恰好**是 --sourceSystem=mock-mall。
+        List<String> cmd = JobCommandBuilder.build(local, SRC, "odl", "20260901", 1L, 1, Map.of(), Map.of());
+
+        assertThat(cmd).contains("--hiveDatabasePrefix=dw", "--sourceSystem=mock-mall");
+        assertThat(cmd.stream().filter(a -> a.startsWith("--sourceSystem=")).toList())
+                .as("--sourceSystem 必须恰好出现一次，且值为源编码")
+                .containsExactly("--sourceSystem=mock-mall");
+        assertThat(cmd.stream().filter(a -> a.startsWith("--hiveDatabasePrefix=")).toList())
+                .containsExactly("--hiveDatabasePrefix=dw");
     }
 
     @Test
-    void invalidPrefixFailsBeforeSubmit() {
-        // 校验发生在构造命令数组时（即 spark-submit 进程启动之前），且不 trim/不兜底
-        for (String bad : List.of("dw_ods", "DW", " dw", "dw__b", "default", "dw_")) {
-            RuntimeProfileSnapshot p = withPrefix(local, bad);
-            assertThatThrownBy(() -> JobCommandBuilder.build(p, "odl", "20260901", 1L, 1, Map.of(), Map.of()))
-                    .as("非法前缀 %s 必须在提交前失败", bad)
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("WAREHOUSE_PREFIX_");
-        }
+    void secondSourceSendsItsOwnSourceSystem() {
+        // 换成另一个源身份：两个参数**同时**跟着换 —— 证明它们来自同一个解析结果，
+        // 不会出现"A 源的库名 + B 源的 source_system"。
+        List<String> cmd = JobCommandBuilder.build(local, SRC_B, "odl", "20260901", 1L, 1, Map.of(), Map.of());
+
+        assertThat(cmd.stream().filter(a -> a.startsWith("--sourceSystem=")).toList())
+                .containsExactly("--sourceSystem=mall-b");
+        assertThat(cmd.stream().filter(a -> a.startsWith("--hiveDatabasePrefix=")).toList())
+                .containsExactly("--hiveDatabasePrefix=dw_b");
     }
 
-    private static RuntimeProfileSnapshot withPrefix(RuntimeProfileSnapshot base, String prefix) {
-        return new RuntimeProfileSnapshot(base.id(), base.version(), base.type(), base.landingUri(),
-                base.hiveJdbcUrl(), prefix, base.sparkMaster(), base.deployMode(), base.yarnQueue(),
-                base.sshHost(), base.sshPort(), base.sshUser(), base.sparkSubmitPath(),
-                base.sparkJobJarUri(), base.metricStoreType(), base.credentialRef(), base.timezone());
+    @Test
+    void sourceSystemParamNameMatchesSparkJobsContract() {
+        // 参数名是跨进程字面量：spark-jobs 侧 OdsLoadSql.ArgSourceSystem 必须同名，
+        // 写错会在第一个 ODS 作业处失败（而不是静默丢字段）。此处把名字钉住。
+        assertThat(JobCommandBuilder.ARG_SOURCE_SYSTEM).isEqualTo("sourceSystem");
+        List<String> cmd = JobCommandBuilder.build(local, SRC, "odl", "20260901", 1L, 1, Map.of(), Map.of());
+        assertThat(cmd).anyMatch(a -> a.equals("--sourceSystem=mock-mall"));
+    }
+
+    @Test
+    void sourceIdentityIsRequiredAndNeverGuessed() {
+        // ② 源身份缺失 → 拒绝构造命令（即"提交被拒"：本方法是提交前唯一的命令来源）。
+        // 空 sourceCode 在 RunSourceIdentity 构造时就拒（解析侧的真实入口），此处补一层
+        // "漏传整个身份"的防线：没有任何缺省源编码可以兜底。
+        assertThatThrownBy(() -> new RunSourceIdentity(null, WarehouseNamespace.of("dw")))
+                .as("源编码为空必须拒绝，不得兜底成某个字面量")
+                .isInstanceOf(com.graduation.analytics.common.PlatformBizException.class)
+                .hasMessageContaining("source_code")
+                .hasMessageContaining("--sourceSystem");
+        assertThatThrownBy(() -> new RunSourceIdentity("   ", WarehouseNamespace.of("dw")))
+                .isInstanceOf(com.graduation.analytics.common.PlatformBizException.class)
+                .hasMessageContaining("source_code");
+    }
+
+    @Test
+    void nullSourceIdentityIsRejectedInsteadOfGuessed() {
+        // 本类不再提供"缺省 dw / 缺省源"这条兜底：调用方必须给出解析结果。
+        // （非法前缀/空源编码的拒绝点在解析侧：WarehouseNamespaceProvider.runSource /
+        //  SparkStageExecutorFactory.create，见 warehouse-pipeline 的工厂用例。）
+        assertThatThrownBy(() -> JobCommandBuilder.build(local, null, "odl", "20260901", 1L, 1,
+                Map.of(), Map.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("RunSourceIdentity");
     }
 }

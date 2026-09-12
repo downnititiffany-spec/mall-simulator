@@ -60,6 +60,9 @@ class SourceRegistryServiceTest {
         seed.setCurrency("CNY");
         seed.setStatus(status);
         seed.setProfileVersion("1.0");
+        // 与真库 V16 种子行同形：V18 回填后种子行的 warehouse_prefix = 'dw'
+        // （P2-07 / D-072：源 A 的库名逐字不变，故零数据迁移）
+        seed.setWarehousePrefix("dw");
         return seed;
     }
 
@@ -98,7 +101,7 @@ class SourceRegistryServiceTest {
 
     private SourceRegistryCreateReq createReq(String code, String path, String status) {
         return new SourceRegistryCreateReq(code, "探针源 " + code, "FILE", path,
-                "Asia/Shanghai", "CNY", status, "1.0");
+                "Asia/Shanghai", "CNY", status, "1.0", "probe");
     }
 
     private static String codeOf(Throwable e) {
@@ -202,7 +205,7 @@ class SourceRegistryServiceTest {
     @DisplayName("create 拒绝非 FILE 接入方式：JDBC/HTTP 是预留能力，登记层 fail-closed 不假装支持")
     void createRejectsUnimplementedIngestMode() {
         SourceRegistryCreateReq req = new SourceRegistryCreateReq(
-                "probe-jdbc", "JDBC 探针", "JDBC", PROBE_PATH, "Asia/Shanghai", "CNY", null, "1.0");
+                "probe-jdbc", "JDBC 探针", "JDBC", PROBE_PATH, "Asia/Shanghai", "CNY", null, "1.0", "probe");
         assertThatThrownBy(() -> service().create(req))
                 .isInstanceOf(PlatformBizException.class)
                 .satisfies(e -> assertThat(codeOf(e)).isEqualTo(PlatformBizException.PARAM_INVALID));
@@ -215,7 +218,7 @@ class SourceRegistryServiceTest {
     void updateSourceCodeIsImmutable() {
         SourceRegistry seed = seedRow();
         SourceRegistryUpdateReq req = new SourceRegistryUpdateReq(
-                "renamed-mall", null, null, null, null, null, null, null);
+                "renamed-mall", null, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> service().update(seed.getId(), req))
                 .isInstanceOf(PlatformBizException.class)
@@ -227,7 +230,7 @@ class SourceRegistryServiceTest {
     @DisplayName("update 目标不存在 → SOURCE_NOT_FOUND")
     void updateMissingIdThrowsSourceNotFound() {
         SourceRegistryUpdateReq req = new SourceRegistryUpdateReq(
-                null, "新名字", null, null, null, null, null, null);
+                null, "新名字", null, null, null, null, null, null, null);
         assertThatThrownBy(() -> service().update(404L, req))
                 .isInstanceOf(PlatformBizException.class)
                 .satisfies(e -> assertThat(codeOf(e)).isEqualTo(PlatformBizException.SOURCE_NOT_FOUND));
@@ -239,7 +242,7 @@ class SourceRegistryServiceTest {
         SourceRegistry seed = seedRow();
         writeValidProfile(PROBE_PATH, PROBE_CODE, "1.0");
         SourceRegistryUpdateReq req = new SourceRegistryUpdateReq(
-                null, "参考商城（改名后）", null, PROBE_PATH, "UTC", "USD", "1.0", null);
+                null, "参考商城（改名后）", null, PROBE_PATH, "UTC", "USD", "1.0", null, null);
 
         SourceChangeOutcome outcome = service().update(seed.getId(), req);
 
@@ -257,7 +260,7 @@ class SourceRegistryServiceTest {
     void updateRejectsStatusChange() {
         SourceRegistry seed = seedRow();
         SourceRegistryUpdateReq req = new SourceRegistryUpdateReq(
-                null, null, null, null, null, null, null, "PAUSED");
+                null, null, null, null, null, null, null, "PAUSED", null);
 
         assertThatThrownBy(() -> service().update(seed.getId(), req))
                 .isInstanceOf(PlatformBizException.class)
@@ -270,9 +273,9 @@ class SourceRegistryServiceTest {
     void updateRejectsIllegalProfilePath() {
         SourceRegistry seed = seedRow();
         SourceRegistryUpdateReq absolute = new SourceRegistryUpdateReq(
-                null, null, null, "/tmp/x.json", null, null, null, null);
+                null, null, null, "/tmp/x.json", null, null, null, null, null);
         SourceRegistryUpdateReq escape = new SourceRegistryUpdateReq(
-                null, null, null, "a/../../b.json", null, null, null, null);
+                null, null, null, "a/../../b.json", null, null, null, null, null);
 
         assertThatThrownBy(() -> service().update(seed.getId(), absolute))
                 .isInstanceOf(PlatformBizException.class)
@@ -288,7 +291,7 @@ class SourceRegistryServiceTest {
         SourceRegistry seed = seedRow();
         String absolute = "D:\\Develop_code\\GraduationProject\\analytics-server\\source-profiles\\x.v1.json";
         SourceRegistryUpdateReq req = new SourceRegistryUpdateReq(
-                null, null, null, absolute, null, null, null, null);
+                null, null, null, absolute, null, null, null, null, null);
 
         assertThatThrownBy(() -> service().update(seed.getId(), req))
                 .isInstanceOf(PlatformBizException.class)
@@ -298,7 +301,7 @@ class SourceRegistryServiceTest {
                 });
         // create 走同一条策略实现，也必须不回显
         assertThatThrownBy(() -> service().create(new SourceRegistryCreateReq(
-                "probe-abs", "绝对路径探针", "FILE", absolute, "Asia/Shanghai", "CNY", null, "1.0")))
+                "probe-abs", "绝对路径探针", "FILE", absolute, "Asia/Shanghai", "CNY", null, "1.0", "probe")))
                 .isInstanceOf(PlatformBizException.class)
                 .satisfies(e -> assertThat(e.getMessage()).doesNotContain("D:\\Develop_code", "x.v1.json"));
     }
@@ -457,7 +460,8 @@ class SourceRegistryServiceTest {
         Set<String> seen = new LinkedHashSet<>();
         for (int i = 0; i < 20; i++) {
             SourceRegistryCreateReq req = new SourceRegistryCreateReq(
-                    "probe-status-" + i, "状态提示探针", "FILE", PROBE_PATH, "Asia/Shanghai", "CNY", "ACTIVE", "1.0");
+                    "probe-status-" + i, "状态提示探针", "FILE", PROBE_PATH, "Asia/Shanghai", "CNY", "ACTIVE", "1.0",
+                    "probe");
             assertThatThrownBy(() -> service().create(req))
                     .isInstanceOf(PlatformBizException.class)
                     .satisfies(e -> seen.add(e.getMessage()));
@@ -630,6 +634,9 @@ class SourceRegistryServiceTest {
         probe.setCurrency("CNY");
         probe.setStatus(SourceRegistry.STATUS_DRAFT);
         probe.setProfileVersion(version);
+        // P2-07：探针源是"第二个源"，给一个与种子源 'dw' 不撞名的合法前缀。
+        // 这里必须给值而不是留空：V18 之后该列 NOT NULL，且 activate 会校验库中的值（D-074 三处挂点）。
+        probe.setWarehousePrefix("dw_probe");
         return probe;
     }
 }

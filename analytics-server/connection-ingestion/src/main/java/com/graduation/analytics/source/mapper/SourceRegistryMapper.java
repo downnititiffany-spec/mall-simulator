@@ -38,6 +38,7 @@ public interface SourceRegistryMapper extends BaseMapper<SourceRegistry> {
     @Select("SELECT id AS id, source_code AS sourceCode, display_name AS displayName, "
             + "ingest_mode AS ingestMode, profile_path AS profilePath, timezone AS timezone, "
             + "currency AS currency, status AS status, profile_version AS profileVersion, "
+            + "warehouse_prefix AS warehousePrefix, "
             + "created_at AS createdAt, updated_at AS updatedAt "
             + "FROM source_registry WHERE id = #{id} FOR UPDATE")
     SourceRegistry lockById(@Param("id") Long id);

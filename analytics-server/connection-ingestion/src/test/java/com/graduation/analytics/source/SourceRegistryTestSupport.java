@@ -143,6 +143,10 @@ final class SourceRegistryTestSupport {
             if (entity.getProfileVersion() != null) {
                 stored.setProfileVersion(entity.getProfileVersion());
             }
+            // P2-07：warehouse_prefix 与其余字段同语义（partial update 由服务层保证性）
+            if (entity.getWarehousePrefix() != null) {
+                stored.setWarehousePrefix(entity.getWarehousePrefix());
+            }
             stored.setUpdatedAt(LocalDateTime.now());
         }
 
@@ -298,6 +302,7 @@ final class SourceRegistryTestSupport {
         copy.setCurrency(source.getCurrency());
         copy.setStatus(source.getStatus());
         copy.setProfileVersion(source.getProfileVersion());
+        copy.setWarehousePrefix(source.getWarehousePrefix());
         copy.setCreatedAt(source.getCreatedAt());
         copy.setUpdatedAt(source.getUpdatedAt());
         return copy;

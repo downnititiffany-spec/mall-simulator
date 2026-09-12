@@ -73,6 +73,7 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
         }
         p.setCreatedAt(LocalDateTime.now());
         p.setUpdatedAt(LocalDateTime.now());
+        rejectProfileHivePrefix(p);
         profileMapper.insert(p);
         return p;
     }
@@ -95,8 +96,32 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
         p.setVersion(existed.getVersion());
         p.setCreatedAt(existed.getCreatedAt());
         p.setUpdatedAt(LocalDateTime.now());
+        rejectProfileHivePrefix(p);
         profileMapper.updateById(p);
         return profileMapper.selectById(p.getId());
+    }
+
+    /**
+     * P2-07（D-070/D-073）：数仓命名空间前缀已下沉到源级，本档案的
+     * {@code hive_database_prefix} 不再是任何生产路径的读取点。
+     *
+     * <p>为什么非空值**拒绝**而不是忽略：静默丢掉调用方以为生效的配置，会留下
+     * "我改了前缀"与"库名还跟着源走"两套认知长期并存——这类不一致最难查。
+     * 空值（null/空白）放行并归一为 null：等价于"没写"，也让该列在写入侧保持空置。</p>
+     */
+    private static void rejectProfileHivePrefix(RuntimeProfile p) {
+        String prefix = p.getHiveDatabasePrefix();
+        if (prefix == null) {
+            return;
+        }
+        if (prefix.isBlank()) {
+            p.setHiveDatabasePrefix(null);
+            return;
+        }
+        throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                "hive_database_prefix 已停用：数仓命名空间前缀自 P2-07 起登记在**源**上"
+                        + "（source_registry.warehouse_prefix，对应接口字段 warehousePrefix），"
+                        + "不再从运行环境档案读取（D-070/D-073）。请改源登记，档案侧的该字段不再接受非空值");
     }
 
     @Override

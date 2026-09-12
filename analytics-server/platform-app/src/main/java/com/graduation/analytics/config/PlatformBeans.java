@@ -5,6 +5,7 @@ import com.graduation.analytics.pipeline.mapper.SparkJobRunMapper;
 import com.graduation.analytics.pipeline.spark.SparkStageExecutorFactory;
 import com.graduation.analytics.runtime.credential.CredentialService;
 import com.graduation.analytics.runtime.submit.JobSubmitterFactory;
+import com.graduation.analytics.warehouse.WarehouseNamespaceProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,16 +63,20 @@ public class PlatformBeans {
      * （小样本黄金链秒级完成，集群模式留足余量）。
      * warehouse/metastore 显式配置：LOCAL 的嵌入式 Hive 不能按 spark-submit 的 CWD 漂移
      * （否则 sci 建表与 odl 装载会看到不同 warehouse，历史 R6-7 已踩坑）。
+     *
+     * <p>P2-07：另注入 {@link WarehouseNamespaceProvider}——库名前缀按本次运行的源解析，
+     * 在工厂里解析一次并随执行器冻结整轮 run。</p>
      */
     @Bean
     public SparkStageExecutorFactory sparkStageExecutorFactory(
             JobSubmitterFactory jobSubmitterFactory,
             SparkJobRunMapper sparkJobRunMapper,
+            WarehouseNamespaceProvider warehouseNamespaceProvider,
             @Value("${platform.spark.job-timeout-ms:900000}") long maxWaitMs,
             @Value("${platform.spark.poll-interval-ms:2000}") long pollIntervalMs,
             @Value("${platform.spark.warehouse-dir:./spark-warehouse}") String warehouseDir,
             @Value("${platform.spark.metastore-dir:./derby-metastore}") String metastoreDir) {
         return new SparkStageExecutorFactory(jobSubmitterFactory, sparkJobRunMapper,
-                maxWaitMs, pollIntervalMs, warehouseDir, metastoreDir);
+                warehouseNamespaceProvider, maxWaitMs, pollIntervalMs, warehouseDir, metastoreDir);
     }
 }

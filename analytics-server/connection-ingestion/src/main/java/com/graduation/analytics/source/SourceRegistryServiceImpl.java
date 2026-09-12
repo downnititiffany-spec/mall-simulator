@@ -10,6 +10,7 @@ import com.graduation.analytics.source.dto.SourceRegistryView;
 import com.graduation.analytics.source.entity.SourceRegistry;
 import com.graduation.analytics.source.mapper.ActiveSourceBindingMapper;
 import com.graduation.analytics.source.mapper.SourceRegistryMapper;
+import com.graduation.analytics.warehouse.WarehouseNamespaceProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,6 +97,10 @@ public class SourceRegistryServiceImpl implements SourceRegistryService {
         String timezone = requireText(req.timezone(), "timezone", 64);
         String currency = validateCurrency(req.currency());
         String profileVersion = requireText(req.profileVersion(), "profile_version", 32);
+        // D-074 挂点①：数仓命名空间前缀。必填 + 形状由唯一判据判（不新写一份规则），
+        // 返回的就是**入库值**（WarehouseNamespace 不做归一化，原样存取）。
+        String warehousePrefix =
+                WarehouseNamespaceProvider.requireSourcePrefix(req.warehousePrefix()).prefix();
         String status = normalize(req.status());
         if (status == null) {
             status = SourceRegistry.STATUS_DRAFT;
@@ -120,6 +125,7 @@ public class SourceRegistryServiceImpl implements SourceRegistryService {
         row.setCurrency(currency);
         row.setStatus(status);
         row.setProfileVersion(profileVersion);
+        row.setWarehousePrefix(warehousePrefix);
         row.setCreatedAt(now);
         row.setUpdatedAt(now);
         sourceMapper.insert(row);
@@ -164,6 +170,12 @@ public class SourceRegistryServiceImpl implements SourceRegistryService {
         }
         if (req.profileVersion() != null) {
             row.setProfileVersion(requireText(req.profileVersion(), "profile_version", 32));
+        }
+        // D-074 挂点②：只挂 create 会被 PUT 绕过 ⇒ update 同样过唯一判据。
+        // 语义与其余字段一致：null = 保持原值；显式写空白/非法值 = 拒绝（不是"改成缺省"）。
+        if (req.warehousePrefix() != null) {
+            row.setWarehousePrefix(
+                    WarehouseNamespaceProvider.requireSourcePrefix(req.warehousePrefix()).prefix());
         }
         row.setUpdatedAt(LocalDateTime.now());
         sourceMapper.updateById(row);
@@ -246,6 +258,11 @@ public class SourceRegistryServiceImpl implements SourceRegistryService {
         //    （REPEATABLE READ 的一致性快照会让普通 SELECT 一直返回旧版本，故用 FOR UPDATE，见 mapper 注释）
         row = requireLocked(id);
         requireLifecycleMutable(row);
+
+        // D-074 挂点③：激活是"这个源开始被用"的开关，库名就此生效 ⇒ 库里存着的前缀必须合法。
+        // 位置与画像校验同理：放在幂等短路**之前**，否则"已是当前源但前缀非法"会被幂等吞掉。
+        // 正常路径下该值必经 create/update 判据（写入侧），此处是防止历史行/人工改库造成的坏值放行。
+        WarehouseNamespaceProvider.requireSourcePrefix(row.getWarehousePrefix());
 
         // ③ 画像校验在幂等判断**之前**：否则"已是当前源但画像缺失"会被幂等短路成成功，
         //    种子源 mock-mall 的预期结果（SOURCE_PROFILE_INVALID）就取不到了（D-035 裁决 11）。

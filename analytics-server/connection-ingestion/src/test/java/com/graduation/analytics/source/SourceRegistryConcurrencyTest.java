@@ -68,9 +68,9 @@ class SourceRegistryConcurrencyTest {
 
         SourceRegistryService service = newService(profileRoot);
         service.create(new com.graduation.analytics.source.dto.SourceRegistryCreateReq(
-                CODE_A, "P1-03 探针源 1", "FILE", PATH_A, "Asia/Shanghai", "CNY", null, "1.0"));
+                CODE_A, "P1-03 探针源 1", "FILE", PATH_A, "Asia/Shanghai", "CNY", null, "1.0", "probe_a"));
         service.create(new com.graduation.analytics.source.dto.SourceRegistryCreateReq(
-                CODE_B, "P1-03 探针源 2", "FILE", PATH_B, "Asia/Shanghai", "CNY", null, "1.0"));
+                CODE_B, "P1-03 探针源 2", "FILE", PATH_B, "Asia/Shanghai", "CNY", null, "1.0", "probe_b"));
         // 与真库一致：存在 1 行 ACTIVE runtime_profile（id=1），初始绑定到 A
         store.bind(1L, idOf(CODE_A));
         return service;

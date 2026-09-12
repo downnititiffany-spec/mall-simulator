@@ -83,6 +83,22 @@ public class SourceRegistry {
     /** 画像文件的声明版本，必须与画像文件内的 profileVersion 一致才允许激活 */
     private String profileVersion;
 
+    /**
+     * 数仓命名空间前缀（P2-07，列 {@code warehouse_prefix} 由 V18 迁移新增）：
+     * 本源的五个层库名（{@code <prefix>_ods} 等）由它派生。
+     *
+     * <p><b>为什么在源级而不在 {@code runtime_profile}</b>（D-070/D-071）：库名是"哪个源的数据"，
+     * 属源身份；运行参数（landing、激活态）才是环境的。原先它在 {@code runtime_profile}
+     * 里与"当前源"分居两表 ⇒ 一次切换源会连库名一起换掉，历史数据与库名错位。
+     * 取值规则本体不在本模块：唯一所有者是
+     * {@link com.graduation.analytics.warehouse.WarehouseNamespace}（规格
+     * {@code contract-specs/specs/warehouse-namespace.v2.json}），本字段只存结果。</p>
+     *
+     * <p>写入侧拒绝形状非法值（{@code WAREHOUSE_PREFIX_*} 四码）；{@code create} 另要求**必填**
+     * （缺省不代替填 —— 缺省会让忘记填的源静默落进别人的库，见 V18 注释）。</p>
+     */
+    private String warehousePrefix;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

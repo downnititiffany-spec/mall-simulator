@@ -26,10 +26,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * 数仓库名规格对账测试（P1-04，Java 侧）。
  *
- * <p>权威是机器可读规格 {@code contract-specs/specs/warehouse-namespace.v1.json}：
- * 本测试既断言「Java 常量与规格 rule 段逐字一致」，又把规格里每个向量跑一遍。
+ * <p>权威是机器可读规格 {@code contract-specs/specs/warehouse-namespace.v2.json}（P2-07 起；
+ * v1 作为历史冻结件保留不改）：本测试既断言「Java 常量与规格 rule 段逐字一致」，
+ * 又把规格里每个向量跑一遍。
  * Scala 侧 {@code com.graduation.analytics.WarehouseNamespaceSpec} 读同一份文件做同样的断言，
- * 因此任一侧实现或任一侧规则漂移都会红。</p>
+ * 因此任一侧实现或任一侧规则漂移都会红。Scala 侧改指 v2 属 P2-07-c（本任务只改 Java 侧 4 处引用）。</p>
  *
  * <p>纪律：本测试**不自己编造期望值**——期望全部来自规格文件；
  * 唯一由测试自己推导的是「前缀 + '_' + 层」这个派生式，它同时用于校验规格里的 {@code names} 字段自洽。</p>
@@ -37,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class WarehouseNamespaceContractTest {
 
     private static final Path SPEC_PATH =
-            RepoRoot.path("contract-specs/specs/warehouse-namespace.v1.json");
+            RepoRoot.path("contract-specs/specs/warehouse-namespace.v2.json");
     private static final JsonNode SPEC = read(SPEC_PATH);
     private static final JsonNode RULE = SPEC.get("rule");
     private static final String DEFAULT = "DEFAULT";

@@ -159,7 +159,9 @@ public class SourceRegistryController {
      * <p>为什么必须列全：真机验收实测到一次只改 {@code displayName}/{@code timezone} 的 {@code PUT}，
      * 其审计行 before/after 逐字相同（摘要当时只含 id/sourceCode/status/current/profileVersion/profilePath）——
      * 行是留下了，但事后**看不出改了什么**，"每次变更有审计"就只剩形式。
-     * 摘要在 512 字符处由 {@code OperationAuditService} 显式截断并标注，不会静默丢字段。</p>
+     * 摘要在 512 字符处由 {@code OperationAuditService} 显式截断并标注，不会静默丢字段。
+     * P2-07（A7）：{@code warehousePrefix} 同样是可变更字段，已列入摘要——
+     * 「只改前缀」这种运维动作必须能从审计行里看出来。</p>
      */
     private static String digestOf(SourceRegistryView view) {
         if (view == null) {
@@ -175,7 +177,8 @@ public class SourceRegistryController {
                 "profileVersion", view.profileVersion(),
                 "profilePath", view.profilePath(),
                 "timezone", view.timezone(),
-                "currency", view.currency());
+                "currency", view.currency(),
+                "warehousePrefix", view.warehousePrefix());
     }
 
     private static String truncate(String reason) {

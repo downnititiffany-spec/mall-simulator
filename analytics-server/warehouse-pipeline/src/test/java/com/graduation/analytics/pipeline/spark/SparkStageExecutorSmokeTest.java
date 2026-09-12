@@ -58,6 +58,7 @@ class SparkStageExecutorSmokeTest {
         // 档案：LOCAL + 真实 spark-submit（与 runtime_profile 表 LOCAL 档案同构）
         RuntimeProfile profileEntity = new RuntimeProfile();
         profileEntity.setId(7L);
+        profileEntity.setSourceId(1L); // P2-07：库名按本次运行的源解析（与真库 seed 源同 id）
         profileEntity.setVersion(3);
         profileEntity.setType(RuntimeProfile.TYPE_LOCAL);
         profileEntity.setSparkMaster("local[2]");
@@ -84,9 +85,15 @@ class SparkStageExecutorSmokeTest {
         LocalProcessSparkSubmitter submitter = new LocalProcessSparkSubmitter(
                 profile.sparkSubmitPath(), logRoot.toString());
 
+        // P2-07/A12：源身份由源解析（真库 seed 源 source_code='mock-mall'、warehouse_prefix='dw'，
+        // 见 V16 种子行 + V18 回填），此处显式构造同值。
+        com.graduation.analytics.warehouse.RunSourceIdentity source =
+                new com.graduation.analytics.warehouse.RunSourceIdentity("mock-mall",
+                        com.graduation.analytics.warehouse.WarehouseNamespace.of("dw"));
+
         // 1) 自举：sci 建表（不在阶段映射中，直接裸提交验证真实启动 + JobResult 解析）
         JobSubmitter.SubmitResult sci = submitter.submit(
-                JobCommandBuilder.build(profile, "sci", "20260901", 7L, 1,
+                JobCommandBuilder.build(profile, source, "sci", "20260901", 7L, 1,
                         Map.of(), confs),
                 "smoke-sci");
         assertThat(sci.externalJobId()).startsWith("lp-");
@@ -104,7 +111,7 @@ class SparkStageExecutorSmokeTest {
             return 1;
         });
         when(mapper.updateById(any(SparkJobRun.class))).thenReturn(1);
-        SparkStageExecutor executor = new SparkStageExecutor(submitter, mapper, 240_000L, 500L);
+        SparkStageExecutor executor = new SparkStageExecutor(submitter, mapper, 240_000L, 500L, source);
 
         List<SparkStageExecutor.JobExecution> results = executor.executeStage(profile, 1L,
                 "LOAD_ODS", "20260901", 1,

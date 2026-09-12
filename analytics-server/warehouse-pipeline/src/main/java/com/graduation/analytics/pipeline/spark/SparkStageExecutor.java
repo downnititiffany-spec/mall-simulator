@@ -5,6 +5,8 @@ import com.graduation.analytics.pipeline.entity.SparkJobRun;
 import com.graduation.analytics.pipeline.mapper.SparkJobRunMapper;
 import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.submit.JobSubmitter;
+import com.graduation.analytics.warehouse.RunSourceIdentity;
+import com.graduation.analytics.warehouse.WarehouseNamespace;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -52,13 +54,17 @@ public class SparkStageExecutor {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final long maxWaitMs;
     private final long pollIntervalMs;
+    /** 本次运行的源身份（P2-07/A12：由工厂按快照的 sourceId 解析一次，全程冻结） */
+    private final RunSourceIdentity source;
 
     public SparkStageExecutor(JobSubmitter submitter, SparkJobRunMapper runMapper,
-                              long maxWaitMs, long pollIntervalMs) {
+                              long maxWaitMs, long pollIntervalMs,
+                              RunSourceIdentity source) {
         this.submitter = submitter;
         this.runMapper = runMapper;
         this.maxWaitMs = maxWaitMs;
         this.pollIntervalMs = pollIntervalMs;
+        this.source = source;
     }
 
     /** 阶段 → 作业序列（未知阶段返回空表：无外部作业，阶段由编排方本地判定） */
@@ -144,7 +150,7 @@ public class SparkStageExecutor {
     private JobExecution executeJob(RuntimeProfileSnapshot profile, Long pipelineRunId, String stageCode,
                                     String jobCode, String businessDate, int attemptNo,
                                     Map<String, String> extraArgs, Map<String, String> confs) {
-        List<String> command = JobCommandBuilder.build(profile, jobCode, businessDate,
+        List<String> command = JobCommandBuilder.build(profile, source, jobCode, businessDate,
                 profile.id(), attemptNo, extraArgs, confs);
 
         // §15.3 R6-12：日志前缀携带 runId/stage/jobCode/attempt，运维可按运行检索

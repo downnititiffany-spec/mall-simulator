@@ -11,22 +11,30 @@ import java.util.regex.Pattern;
 /**
  * 数仓库名空间的**唯一所有者**（Java 侧，P1-04）。
  *
- * <p>机器可读权威：{@code contract-specs/specs/warehouse-namespace.v1.json}。
+ * <p>机器可读权威：{@code contract-specs/specs/warehouse-namespace.v2.json}（P2-07 起；
+ * P2-07 之前是 v1.json，规则本体未变，变的是"前缀从哪来"）。
  * 本类是它的薄适配（规则常量 + 白名单校验 + 派生名），Scala 侧
  * {@code com.graduation.analytics.warehouse.WarehouseNamespace} 是同名镜像；
  * 两侧契约测试加载同一份规格逐向量对账，任一实现漂移即失败。</p>
  *
  * <p>规则：库名 = {@code <prefix>_<layer>}，layer ∈ {ods, dwd, dim, dws, ads}；
  * prefix 白名单 {@code ^[a-z][a-z0-9_]{0,23}$}，不得以 {@code _} 结尾、不得含 {@code __}、
- * 不得命中保留字、不得已带层后缀。{@code hive_database_prefix} 为 null/空串 →
- * 缺省 {@code dw}（与改造前库名逐字一致，零数据迁移）。**不做任何归一化**：
+ * 不得命中保留字、不得已带层后缀。**不做任何归一化**：
  * 不 trim、不转小写、不静默兜底；非法取值原样失败并带错误码。</p>
+ *
+ * <p><b>前缀从哪来（P2-07 / D-070）</b>：唯一登记处是
+ * {@code source_registry.warehouse_prefix}（列由 {@code V18} 新增），按**运行所用的源**解析；
+ * {@code runtime_profile.hive_database_prefix} 不再是生产读取点（D-073：物理列保留、写入侧拒绝非空值）。
+ * 契约里 {@code blankIsDefault: true}（null/空串 → {@code dw}）描述的是本类
+ * **字符串 → 命名空间**这一层的历史语义，源级登记列刻意不走这个分支：
+ * 该列 NOT NULL 且无 {@code DEFAULT}（D-071），"没填前缀"必须报错而不是落进缺省库
+ * （判据在 {@link WarehouseNamespaceProvider#requireSourcePrefix(String)}）。</p>
  *
  * <p>纪律：库名字面量只允许出现在本文件与规格文件里。</p>
  */
 public final class WarehouseNamespace {
 
-    /** 缺省前缀：源 A 既有库名（dw_ods …） */
+    /** 缺省前缀：源 A 既有库名（{@code dw_ods} 等，见契约 defaultPrefix；零数据迁移的依据） */
     public static final String DEFAULT_PREFIX = "dw";
 
     public static final String SEPARATOR = "_";
@@ -112,8 +120,12 @@ public final class WarehouseNamespace {
     }
 
     /**
-     * 白名单校验：{@code Optional.empty()} = 合法（含缺省）；否则为错误码。
-     * 检查顺序与规格 {@code rule.checkOrder} 一致。
+     * 白名单校验：{@code Optional.empty()} = 合法（含 null/空串，即契约的 {@code blankIsDefault}）；
+     * 否则为错误码。检查顺序与规格 {@code rule.checkOrder} 一致。
+     *
+     * <p>注意：null/空串在此处合法**不等于**"源级前缀可以为空"——源级登记列必填，
+     * 空值在 {@link WarehouseNamespaceProvider#requireSourcePrefix(String)} 就被拒了。
+     * 本方法只回答"这个字符串是不是一个合法前缀"，不回答"该不该有值"。</p>
      */
     public static Optional<String> validationError(String raw) {
         if (raw == null || raw.isEmpty()) {
@@ -145,12 +157,18 @@ public final class WarehouseNamespace {
         return new WarehouseNamespace(raw == null || raw.isEmpty() ? DEFAULT_PREFIX : raw);
     }
 
-    /** null/空串 → 缺省命名空间；其余同 {@link #of(String)}（源 A 的 NULL 前缀走这里） */
+    /**
+     * null/空串 → 缺省命名空间；其余同 {@link #of(String)}（契约 {@code blankIsDefault} 语义）。
+     *
+     * <p>P2-07 起生产解析链**不再经过本方法**：源级前缀必填，空值在
+     * {@link WarehouseNamespaceProvider#requireSourcePrefix(String)} 就失败。
+     * 保留它是为了契约向量对账（规格里 {@code blankIsDefault: true} 仍须逐字成立）。</p>
+     */
     public static WarehouseNamespace ofNullable(String raw) {
         return of(raw);
     }
 
-    /** 缺省命名空间（源 A，dw_*） */
+    /** 缺省命名空间（源 A，{@code dw_*}）；契约语义/测试用，**不是**"取不到就兜底"的入口 */
     public static WarehouseNamespace defaultNamespace() {
         return new WarehouseNamespace(DEFAULT_PREFIX);
     }

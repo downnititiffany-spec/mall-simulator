@@ -42,11 +42,17 @@ class SparkStageExecutorTest {
     @BeforeEach
     void setUp() {
         submitter = new FakeJobSubmitter();
-        executor = new SparkStageExecutor(submitter, runMapper, 2_000L, 5L);
+        // P2-07：执行器接收"本次运行的源身份"（由工厂按源的 warehouse_prefix/source_code 解析）。
+        // 这里刻意用非缺省前缀：命令里出现 dw_b 才能证明下发的就是**注入的那个**命名空间，
+        // 而不是任何形式的"缺省兜底"。
+        executor = new SparkStageExecutor(submitter, runMapper, 2_000L, 5L,
+                new com.graduation.analytics.warehouse.RunSourceIdentity("mock-mall",
+                        com.graduation.analytics.warehouse.WarehouseNamespace.of("dw_b")));
         idSeq = new java.util.concurrent.atomic.AtomicLong(100L);
         com.graduation.analytics.runtime.entity.RuntimeProfile entity =
                 new com.graduation.analytics.runtime.entity.RuntimeProfile();
         entity.setId(7L);
+        entity.setSourceId(5L);
         entity.setVersion(3);
         entity.setType(com.graduation.analytics.runtime.entity.RuntimeProfile.TYPE_LOCAL);
         entity.setSparkSubmitPath("D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd");
@@ -126,6 +132,20 @@ class SparkStageExecutorTest {
         assertThat(submitter.submittedCommands().get(0)).contains("--jobCode=bdw");
         assertThat(submitter.submittedCommands().get(1)).contains("--jobCode=dim");
         assertThat(submitter.submittedCommands().get(2)).contains("--jobCode=tdw");
+    }
+
+    @Test
+    void submittedCommandCarriesInjectedNamespaceNotADefault() {
+        // P2-07/A12：前缀不再是"档案列 or 缺省 dw"，而是构造执行器时注入的那个源身份。
+        // 断言：① 命令里是注入值 dw_b / mock-mall；② **不出现** --hiveDatabasePrefix=dw（缺省兜底已无权出现）。
+        submitter.program("SUBMITTED", successLog("odl", 5, 5, 0));
+
+        runStage(14L, "LOAD_ODS");
+
+        // 按参数逐个比对（不是子串包含）：整个参数必须**恰好**是 --hiveDatabasePrefix=dw_b
+        assertThat(submitter.lastCommand().split(" "))
+                .contains("--hiveDatabasePrefix=dw_b", "--sourceSystem=mock-mall")
+                .doesNotContain("--hiveDatabasePrefix=dw");
     }
 
     @Test

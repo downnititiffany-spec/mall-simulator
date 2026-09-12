@@ -26,13 +26,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 落在 {@code docs/acceptance/p1-02-source-registry-20260911/}（见该目录 README）。</p>
  *
  * <p><b>P1-05（V17）的真库取证状态</b>：本类自 P1-05 起把 V17 纳入 {@code EXPECTED_META_SCRIPTS}。
- * 但真库 {@code analytics_meta} 在 P1-05 交付时仍是 V16（V17 由总控在其"同批次换 jar"窗口应用），
+ * 但真库 {@code analytics_meta} 在 P1-05 交付时仍是 V16（V17 由总控在其"同批次换 jar"窗口应用）,
  * 因此**本类无法在 P1-05 这一轮对真库通过**：一旦在本类里连真库，{@link #twoApplicationStartups()}
  * 就会把真库迁移到 V17，那属于越界写库。本轮的替代证据是
  * {@code docs/acceptance/p1-05-manifest-source-20260911/}：在同一 schema 的**临时副本库**上
  * 用最新代码启动，由 {@code MetaFlywayInitializer} 实际应用 V17，并留下迁移历史原样输出；
  * 并且本类本身也被 {@code -Dp1.it.metaDb=analytics_meta_p105it} 指向另一份"真库 dump 的副本库"
  * **实跑通过**（见该目录 {@code e3-20-migration-it-on-replica.log}）。真库上的本类运行留给总控换 jar 之后。</p>
+ *
+ * <p><b>P2-07（V18）的真库取证状态</b>：{@code EXPECTED_META_SCRIPTS} 自本轮起含 V18（源级
+ * {@code warehouse_prefix}），且 {@link #warehousePrefixIsBackfilledNotNullWithoutDefault()} 断言
+ * "NOT NULL、无默认值、存量行全部回填、旧列仍在"。与 P1-05 同理，**本轮不在真库跑**：真库
+ * {@code analytics_meta} 仍是 V17，连上去就会把它迁到 V18（越界写库，D-080）。本轮的替代证据是
+ * "真库只读转储 → 副本库 → 由 Flyway 实际应用 V18"的日志（见
+ * {@code docs/acceptance/p2-07-source-prefix-20260912/}）。</p>
  */
 @EnabledIfSystemProperty(named = "p1.it", matches = "true")
 class SourceRegistryMigrationMySqlIT {
@@ -70,9 +77,11 @@ class SourceRegistryMigrationMySqlIT {
             "V14__r8_identity_decision.sql",
             "V15__stage_evidence_mediumtext.sql",
             "V16__source_registry.sql",
-            "V17__source_dimension_for_checkpoint_and_batch.sql");
+            "V17__source_dimension_for_checkpoint_and_batch.sql",
+            "V18__source_warehouse_prefix.sql");
 
     private static final String V17_SCRIPT = "V17__source_dimension_for_checkpoint_and_batch.sql";
+    private static final String V18_SCRIPT = "V18__source_warehouse_prefix.sql";
 
 
     private static final List<String> FROZEN_RUNTIME_PROFILE_COLUMNS = List.of(
@@ -97,6 +106,8 @@ class SourceRegistryMigrationMySqlIT {
         EXPECTED_SOURCE_REGISTRY_TYPES.put("currency", "char(3)");
         EXPECTED_SOURCE_REGISTRY_TYPES.put("status", "varchar(16)");
         EXPECTED_SOURCE_REGISTRY_TYPES.put("profile_version", "varchar(32)");
+        // P2-07（V18）：源级数仓命名空间前缀。宽度 24 = 契约 v2 rule.prefixPattern ^[a-z][a-z0-9_]{0,23}$ 的上界
+        EXPECTED_SOURCE_REGISTRY_TYPES.put("warehouse_prefix", "varchar(24)");
         EXPECTED_SOURCE_REGISTRY_TYPES.put("created_at", "datetime(3)");
         EXPECTED_SOURCE_REGISTRY_TYPES.put("updated_at", "datetime(3)");
     }
@@ -123,8 +134,8 @@ class SourceRegistryMigrationMySqlIT {
     }
 
     @Test
-    @DisplayName("P1-05：迁移历史含 V16 与 V17，且全部脚本都成功、无失败行")
-    void migrationHistoryContainsV17AndNoFailedRuns() {
+    @DisplayName("P2-07：迁移历史含已登记的全部脚本（含 V16/V17/V18），全部成功、无失败行")
+    void migrationHistoryContainsAllRegisteredScriptsAndNoFailedRuns() {
         List<Map<String, Object>> rows = meta.queryForList(
                 "SELECT installed_rank, version, script, success FROM flyway_schema_history ORDER BY installed_rank");
 
@@ -137,17 +148,33 @@ class SourceRegistryMigrationMySqlIT {
                 .as("不允许存在 success=0 的迁移行")
                 .containsExactly(Boolean.TRUE);
 
+        // version 列必须与脚本名里的号一致：清单与历史两处对不上就是漂移
+        assertThat(rows.stream().map(r -> String.valueOf(r.get("version"))).toList())
+                .as("version 列必须由脚本名推导，不允许手写号")
+                .containsExactlyElementsOf(EXPECTED_META_SCRIPTS.stream()
+                        .map(name -> name.substring(1, name.indexOf("__")))
+                        .toList());
+
+        // 清单最后一项（本轮 = V18）必须是最后应用的脚本 —— "新迁移只能往后加"的可判据形式。
+        // 原 P1-05 版本把"最后"硬写成 V17，加 V18 后必然失败，故改为从清单推导。
+        String newest = EXPECTED_META_SCRIPTS.get(EXPECTED_META_SCRIPTS.size() - 1);
+        Map<String, Object> last = rows.get(rows.size() - 1);
+        assertThat(newest).as("本轮新增脚本即 V18").isEqualTo(V18_SCRIPT);
+        assertThat(String.valueOf(last.get("script")))
+                .as("清单最后一项必须就是最后应用的脚本")
+                .isEqualTo(newest);
+        assertThat(String.valueOf(last.get("version"))).as("V18 的 version 列").isEqualTo("18");
+
         Map<String, Object> v17 = rows.stream()
                 .filter(r -> V17_SCRIPT.equals(String.valueOf(r.get("script"))))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("V17 未落在迁移历史里：" + EXPECTED_META_SCRIPTS));
         assertThat(String.valueOf(v17.get("version"))).as("V17 的 version 列").isEqualTo("17");
         assertThat(((Number) v17.get("installed_rank")).intValue())
-                .as("V17 必须排在历史最后（本轮唯一新脚本）")
-                .isEqualTo(((Number) rows.get(rows.size() - 1).get("installed_rank")).intValue());
+                .as("V17 必须排在 V18 之前")
+                .isLessThan(((Number) last.get("installed_rank")).intValue());
 
-        assertThat(V17_SCRIPT).isEqualTo("V17__source_dimension_for_checkpoint_and_batch.sql");
-        System.out.println("[P1-05] 迁移历史脚本清单=" + rows.stream().map(r -> r.get("script")).toList());
+        System.out.println("[P2-07] 迁移历史脚本清单=" + rows.stream().map(r -> r.get("script")).toList());
     }
 
     @Test
@@ -283,6 +310,51 @@ class SourceRegistryMigrationMySqlIT {
         assertThat(fk.get(0).get("referenced_column_name")).isEqualTo("id");
 
         System.out.println("[P1-02] 回填后 profile 行=" + profiles + "，seedId=" + seedId);
+    }
+
+    @Test
+    @DisplayName("P2-07（V18）：warehouse_prefix 为 NOT NULL 无默认值、存量行已回填 'dw'，旧列仍在")
+    void warehousePrefixIsBackfilledNotNullWithoutDefault() {
+        String type = meta.queryForObject(
+                "SELECT column_type FROM information_schema.columns "
+                        + "WHERE table_schema = ? AND table_name = 'source_registry' AND column_name = 'warehouse_prefix'",
+                String.class, META_DB);
+        assertThat(type).as("列宽必须等于契约 v2 上界 24").isEqualTo("varchar(24)");
+
+        String nullable = meta.queryForObject(
+                "SELECT is_nullable FROM information_schema.columns "
+                        + "WHERE table_schema = ? AND table_name = 'source_registry' AND column_name = 'warehouse_prefix'",
+                String.class, META_DB);
+        assertThat(nullable).as("V18 第三步必须收紧为 NOT NULL").isEqualTo("NO");
+
+        String defaultValue = meta.queryForObject(
+                "SELECT column_default FROM information_schema.columns "
+                        + "WHERE table_schema = ? AND table_name = 'source_registry' AND column_name = 'warehouse_prefix'",
+                String.class, META_DB);
+        assertThat(defaultValue)
+                .as("D-071：不得有默认值 —— 有默认值就会让忘填前缀的源静默落进 dw_*")
+                .isNull();
+
+        Integer blank = meta.queryForObject(
+                "SELECT COUNT(*) FROM source_registry WHERE warehouse_prefix IS NULL OR warehouse_prefix = ''",
+                Integer.class);
+        assertThat(blank).as("回填必须覆盖全部存量行").isZero();
+
+        String seedPrefix = meta.queryForObject(
+                "SELECT warehouse_prefix FROM source_registry WHERE source_code = 'mock-mall'", String.class);
+        assertThat(seedPrefix)
+                .as("零迁移等价：种子源回填值与今日解析结果逐字相同（dw）")
+                .isEqualTo("dw");
+
+        // D-073：本轮只断读不删列 —— 旧列必须还在（删列是另一个任务的破坏性 DDL）
+        Integer legacy = meta.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_schema = ? AND table_name = 'runtime_profile' "
+                        + "AND column_name = 'hive_database_prefix'", Integer.class, META_DB);
+        assertThat(legacy).as("V18 不得删除 runtime_profile.hive_database_prefix").isEqualTo(1);
+
+        System.out.println("[P2-07] warehouse_prefix: type=" + type + ", nullable=" + nullable
+                + ", default=" + defaultValue + "；种子源前缀=" + seedPrefix);
     }
 
     private static DataSource dataSource() {

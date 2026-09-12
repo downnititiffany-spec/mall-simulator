@@ -80,7 +80,7 @@ class SourceRegistryControllerAuditTest {
         return new SourceRegistryView(id, code, "参考商城（源 A）", "FILE",
                 "analytics-server/source-profiles/" + code + ".v1.json",
                 "Asia/Shanghai", "CNY", status, "1.0", current,
-                LocalDateTime.of(2026, 9, 11, 10, 0), LocalDateTime.of(2026, 9, 11, 10, 0));
+                LocalDateTime.of(2026, 9, 11, 10, 0), LocalDateTime.of(2026, 9, 11, 10, 0), "dw");
     }
 
     // ---------------- create ----------------
@@ -94,7 +94,7 @@ class SourceRegistryControllerAuditTest {
         ApiResponse<SourceRegistryView> response = controller.create(
                 new SourceRegistryCreateReq("p1-03-probe-1", "探针", "FILE",
                         "analytics-server/source-profiles/p1-03-probe-1.v1.json",
-                        "Asia/Shanghai", "CNY", null, "1.0"), request());
+                        "Asia/Shanghai", "CNY", null, "1.0", "probe"), request());
 
         assertThat(response.code()).isEqualTo("OK");
         assertThat(response.data()).isSameAs(created);
@@ -116,7 +116,7 @@ class SourceRegistryControllerAuditTest {
 
         assertThatThrownBy(() -> controller.create(
                 new SourceRegistryCreateReq("BAD CODE", "探针", "FILE", "a/b.json",
-                        "Asia/Shanghai", "CNY", null, "1.0"), request()))
+                        "Asia/Shanghai", "CNY", null, "1.0", "probe"), request()))
                 .isSameAs(boom);
 
         ArgumentCaptor<String> reason = ArgumentCaptor.forClass(String.class);
@@ -146,7 +146,7 @@ class SourceRegistryControllerAuditTest {
         SourceRegistryView after = view(2L, "p1-03-probe-1", "DRAFT", false);
         when(service.update(eq(2L), any())).thenReturn(new SourceChangeOutcome(after, before, true));
 
-        controller.update(2L, new SourceRegistryUpdateReq(null, "改名", null, null, null, null, null, null),
+        controller.update(2L, new SourceRegistryUpdateReq(null, "改名", null, null, null, null, null, null, null),
                 request());
 
         ArgumentCaptor<String> digests = ArgumentCaptor.forClass(String.class);
@@ -162,13 +162,13 @@ class SourceRegistryControllerAuditTest {
         // 一次「只改显示名与时区」的 PUT 会写出 before==after 的审计行——留了行却看不出改了什么。
         SourceRegistryView before = new SourceRegistryView(2L, "p1-03-probe-1", "旧名", "FILE",
                 "analytics-server/source-profiles/p1-03-probe-1.v1.json", "Asia/Shanghai", "CNY",
-                "DRAFT", "1.0", false, null, null);
+                "DRAFT", "1.0", false, null, null, "dw");
         SourceRegistryView after = new SourceRegistryView(2L, "p1-03-probe-1", "新名", "FILE",
                 "analytics-server/source-profiles/p1-03-probe-1.v1.json", "UTC", "CNY",
-                "DRAFT", "1.0", false, null, null);
+                "DRAFT", "1.0", false, null, null, "newmall");
         when(service.update(eq(2L), any())).thenReturn(new SourceChangeOutcome(after, before, true));
 
-        controller.update(2L, new SourceRegistryUpdateReq(null, "新名", null, null, "UTC", null, null, null),
+        controller.update(2L, new SourceRegistryUpdateReq(null, "新名", null, null, "UTC", null, null, null, null),
                 request());
 
         ArgumentCaptor<String> digests = ArgumentCaptor.forClass(String.class);
@@ -178,6 +178,9 @@ class SourceRegistryControllerAuditTest {
         assertThat(digests.getAllValues().get(0)).isNotEqualTo(digests.getAllValues().get(1));
         assertThat(digests.getAllValues().get(0)).contains("displayName=旧名", "timezone=Asia/Shanghai");
         assertThat(digests.getAllValues().get(1)).contains("displayName=新名", "timezone=UTC");
+        // P2-07 A7：warehousePrefix 也是可变更字段，摘要必须带上（否则"只改前缀"会写出 before==after 的审计行）
+        assertThat(digests.getAllValues().get(0)).contains("warehousePrefix=dw");
+        assertThat(digests.getAllValues().get(1)).contains("warehousePrefix=newmall");
         // 摘要里不能出现凭据字样（源登记本来也没有凭据列，这里是防回归）
         assertThat(digests.getAllValues()).allSatisfy(d ->
                 assertThat(d).doesNotContainIgnoringCase("password", "secret", "token", "credential"));
@@ -190,7 +193,7 @@ class SourceRegistryControllerAuditTest {
                 PlatformBizException.SOURCE_CODE_IMMUTABLE, "source_code 创建后不可修改"));
 
         assertThatThrownBy(() -> controller.update(2L,
-                new SourceRegistryUpdateReq("renamed", null, null, null, null, null, null, null), request()))
+                new SourceRegistryUpdateReq("renamed", null, null, null, null, null, null, null, null), request()))
                 .isInstanceOf(PlatformBizException.class);
 
         ArgumentCaptor<String> reason = ArgumentCaptor.forClass(String.class);
@@ -206,7 +209,7 @@ class SourceRegistryControllerAuditTest {
                 PlatformBizException.SOURCE_NOT_FOUND, "源不存在: 404"));
 
         assertThatThrownBy(() -> controller.update(404L,
-                new SourceRegistryUpdateReq(null, "x", null, null, null, null, null, null), request()))
+                new SourceRegistryUpdateReq(null, "x", null, null, null, null, null, null, null), request()))
                 .isInstanceOf(PlatformBizException.class);
 
         verify(audit).failure(any(), eq(SourceAuditActions.ACTION_SOURCE_UPDATE),
@@ -337,7 +340,7 @@ class SourceRegistryControllerAuditTest {
 
         ApiResponse<SourceRegistryView> response = controller.create(
                 new SourceRegistryCreateReq("p1-03-probe-1", "探针", "FILE", "a/b.json",
-                        "Asia/Shanghai", "CNY", null, "1.0"), request());
+                        "Asia/Shanghai", "CNY", null, "1.0", "probe"), request());
 
         ArgumentCaptor<AuditActor> actor = ArgumentCaptor.forClass(AuditActor.class);
         verify(audit).success(actor.capture(), any(), any(), any(), any(), any(), any());
@@ -352,7 +355,8 @@ class SourceRegistryControllerAuditTest {
         when(service.create(any())).thenReturn(new SourceChangeOutcome(view(9L, "x", "DRAFT", false), null, true));
 
         assertThatThrownBy(() -> controller.create(
-                new SourceRegistryCreateReq("x", "探针", "FILE", "a/b.json", "Asia/Shanghai", "CNY", null, "1.0"),
+                new SourceRegistryCreateReq("x", "探针", "FILE", "a/b.json", "Asia/Shanghai", "CNY", null, "1.0",
+                        "probe"),
                 request()))
                 .isInstanceOf(com.graduation.analytics.auth.AuthenticationRequiredException.class);
         verifyNoInteractions(audit);
