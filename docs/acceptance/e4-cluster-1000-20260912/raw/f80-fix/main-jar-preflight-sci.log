@@ -1,0 +1,146 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[spark-jobs] 数仓库名空间: dw_ods, dw_dwd, dw_dim, dw_dws, dw_ads
+26/09/12 16:16:08 INFO HiveConf: Found configuration file null
+26/09/12 16:16:08 INFO SparkContext: Running Spark version 3.5.1
+26/09/12 16:16:08 INFO SparkContext: OS info Windows 10, 10.0, amd64
+26/09/12 16:16:08 INFO SparkContext: Java version 1.8.0_202
+26/09/12 16:16:08 INFO ResourceUtils: ==============================================================
+26/09/12 16:16:08 INFO ResourceUtils: No custom resources configured for spark.driver.
+26/09/12 16:16:08 INFO ResourceUtils: ==============================================================
+26/09/12 16:16:08 INFO SparkContext: Submitted application: sci-20260901
+26/09/12 16:16:08 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+26/09/12 16:16:08 INFO ResourceProfile: Limiting resource is cpu
+26/09/12 16:16:08 INFO ResourceProfileManager: Added ResourceProfile id: 0
+26/09/12 16:16:08 INFO SecurityManager: Changing view acls to: ASUS
+26/09/12 16:16:08 INFO SecurityManager: Changing modify acls to: ASUS
+26/09/12 16:16:08 INFO SecurityManager: Changing view acls groups to: 
+26/09/12 16:16:08 INFO SecurityManager: Changing modify acls groups to: 
+26/09/12 16:16:08 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: ASUS; groups with view permissions: EMPTY; users with modify permissions: ASUS; groups with modify permissions: EMPTY
+26/09/12 16:16:08 INFO Utils: Successfully started service 'sparkDriver' on port 10654.
+26/09/12 16:16:08 INFO SparkEnv: Registering MapOutputTracker
+26/09/12 16:16:08 INFO SparkEnv: Registering BlockManagerMaster
+26/09/12 16:16:08 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+26/09/12 16:16:08 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+26/09/12 16:16:08 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+26/09/12 16:16:08 INFO DiskBlockManager: Created local directory at C:\Users\ASUS\AppData\Local\Temp\blockmgr-8787ce68-6de4-416b-bd62-0d979f3f3fac
+26/09/12 16:16:08 INFO MemoryStore: MemoryStore started with capacity 366.3 MiB
+26/09/12 16:16:08 INFO SparkEnv: Registering OutputCommitCoordinator
+26/09/12 16:16:09 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+26/09/12 16:16:09 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+26/09/12 16:16:09 INFO SparkContext: Added JAR file:/D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar at spark://host.docker.internal:10654/jars/spark-jobs-0.1.0-SNAPSHOT.jar with timestamp 1789200968152
+26/09/12 16:16:09 INFO Executor: Starting executor ID driver on host host.docker.internal
+26/09/12 16:16:09 INFO Executor: OS info Windows 10, 10.0, amd64
+26/09/12 16:16:09 INFO Executor: Java version 1.8.0_202
+26/09/12 16:16:09 INFO Executor: Starting executor with user classpath (userClassPathFirst = false): ''
+26/09/12 16:16:09 INFO Executor: Created or updated repl class loader org.apache.spark.util.MutableURLClassLoader@6ec7bce0 for default.
+26/09/12 16:16:09 INFO Executor: Fetching spark://host.docker.internal:10654/jars/spark-jobs-0.1.0-SNAPSHOT.jar with timestamp 1789200968152
+26/09/12 16:16:09 INFO TransportClientFactory: Successfully created connection to host.docker.internal/172.16.208.83:10654 after 20 ms (0 ms spent in bootstraps)
+26/09/12 16:16:09 INFO Utils: Fetching spark://host.docker.internal:10654/jars/spark-jobs-0.1.0-SNAPSHOT.jar to C:\Users\ASUS\AppData\Local\Temp\spark-9d91df05-65f2-4aac-aa09-c117804871e4\userFiles-c7734ecf-2c36-4ed0-9a0c-6e86412d25ef\fetchFileTemp6510729481061790051.tmp
+26/09/12 16:16:09 INFO Executor: Adding file:/C:/Users/ASUS/AppData/Local/Temp/spark-9d91df05-65f2-4aac-aa09-c117804871e4/userFiles-c7734ecf-2c36-4ed0-9a0c-6e86412d25ef/spark-jobs-0.1.0-SNAPSHOT.jar to class loader default
+26/09/12 16:16:09 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 10704.
+26/09/12 16:16:09 INFO NettyBlockTransferService: Server created on host.docker.internal:10704
+26/09/12 16:16:09 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+26/09/12 16:16:09 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, host.docker.internal, 10704, None)
+26/09/12 16:16:09 INFO BlockManagerMasterEndpoint: Registering block manager host.docker.internal:10704 with 366.3 MiB RAM, BlockManagerId(driver, host.docker.internal, 10704, None)
+26/09/12 16:16:09 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, host.docker.internal, 10704, None)
+26/09/12 16:16:09 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, host.docker.internal, 10704, None)
+26/09/12 16:16:11 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 16:16:11 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 16:16:12 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 16:16:12 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+26/09/12 16:16:13 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+{"jobCode":"sci","inputRecords":0,"outputRecords":37,"rejectedRecords":0,"attemptNo":1,"status":"SUCCESS","message":"ok","elapsedMs":4902,"outputPartitions":[],"checks":[]}
+26/09/12 16:16:14 WARN SparkEnv: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-9d91df05-65f2-4aac-aa09-c117804871e4\userFiles-c7734ecf-2c36-4ed0-9a0c-6e86412d25ef
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-9d91df05-65f2-4aac-aa09-c117804871e4\userFiles-c7734ecf-2c36-4ed0-9a0c-6e86412d25ef\spark-jobs-0.1.0-SNAPSHOT.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.SparkEnv.stop(SparkEnv.scala:108)
+	at org.apache.spark.SparkContext.$anonfun$stop$25(SparkContext.scala:2310)
+	at org.apache.spark.util.Utils$.tryLogNonFatalError(Utils.scala:1375)
+	at org.apache.spark.SparkContext.stop(SparkContext.scala:2310)
+	at org.apache.spark.SparkContext.stop(SparkContext.scala:2216)
+	at org.apache.spark.sql.SparkSession.stop(SparkSession.scala:836)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:64)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)
+	at org.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1029)
+	at org.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:194)
+	at org.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:217)
+	at org.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:91)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1120)
+	at org.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1129)
+	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
+26/09/12 16:16:14 ERROR ShutdownHookManager: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-9d91df05-65f2-4aac-aa09-c117804871e4
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-9d91df05-65f2-4aac-aa09-c117804871e4\userFiles-c7734ecf-2c36-4ed0-9a0c-6e86412d25ef\spark-jobs-0.1.0-SNAPSHOT.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4(ShutdownHookManager.scala:65)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4$adapted(ShutdownHookManager.scala:62)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.ArrayOps$ofRef.foreach(ArrayOps.scala:198)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$2(ShutdownHookManager.scala:62)
+	at org.apache.spark.util.SparkShutdownHook.run(ShutdownHookManager.scala:214)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$2(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at org.apache.spark.util.Utils$.logUncaughtExceptions(Utils.scala:1928)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$1(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.util.Try$.apply(Try.scala:213)
+	at org.apache.spark.util.SparkShutdownHookManager.runAll(ShutdownHookManager.scala:188)
+	at org.apache.spark.util.SparkShutdownHookManager$$anon$2.run(ShutdownHookManager.scala:178)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+26/09/12 16:16:14 ERROR ShutdownHookManager: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-9d91df05-65f2-4aac-aa09-c117804871e4\userFiles-c7734ecf-2c36-4ed0-9a0c-6e86412d25ef
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-9d91df05-65f2-4aac-aa09-c117804871e4\userFiles-c7734ecf-2c36-4ed0-9a0c-6e86412d25ef\spark-jobs-0.1.0-SNAPSHOT.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4(ShutdownHookManager.scala:65)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4$adapted(ShutdownHookManager.scala:62)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.ArrayOps$ofRef.foreach(ArrayOps.scala:198)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$2(ShutdownHookManager.scala:62)
+	at org.apache.spark.util.SparkShutdownHook.run(ShutdownHookManager.scala:214)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$2(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at org.apache.spark.util.Utils$.logUncaughtExceptions(Utils.scala:1928)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$1(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.util.Try$.apply(Try.scala:213)
+	at org.apache.spark.util.SparkShutdownHookManager.runAll(ShutdownHookManager.scala:188)
+	at org.apache.spark.util.SparkShutdownHookManager$$anon$2.run(ShutdownHookManager.scala:178)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8

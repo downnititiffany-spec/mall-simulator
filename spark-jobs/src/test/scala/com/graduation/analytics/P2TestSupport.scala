@@ -77,7 +77,7 @@ object P2TestSupport {
   private val runId: String = sys.props.get("p2.test.runId").filter(_.nonEmpty).getOrElse {
     val ts = java.time.LocalDateTime.now()
       .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
-    s"$ts-${ProcessHandle.current().pid()}"
+    s"$ts-${java.lang.management.ManagementFactory.getRuntimeMXBean.getName.takeWhile(_ != '@')}"
   }
 
   def spark(suiteName: String): SparkSession = {

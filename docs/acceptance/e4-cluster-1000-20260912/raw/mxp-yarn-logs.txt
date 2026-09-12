@@ -1,0 +1,1972 @@
+2026-09-12 15:56:59,844 INFO  [main] client.DefaultNoHARMFailoverProxyProvider (DefaultNoHARMFailoverProxyProvider.java:init(64)) - Connecting to ResourceManager at node01/192.168.18.10x:8032
+Container: container_e35_1789195359269_0014_01_000001 on node01_45365
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:directory.info
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:31462
+LogContents:
+ls -l:
+total 72
+lrwxrwxrwx 1 root root    98 Sep 12 15:56 __app__.jar -> /var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/23/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+-rw-r--r-- 1 root root    69 Sep 12 15:56 container_tokens
+-rwx------ 1 root root   704 Sep 12 15:56 default_container_executor_session.sh
+-rwx------ 1 root root   759 Sep 12 15:56 default_container_executor.sh
+-rwx------ 1 root root 44606 Sep 12 15:56 launch_container.sh
+lrwxrwxrwx 1 root root    78 Sep 12 15:56 __spark_conf__ -> /var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/24/__spark_conf__.zip
+drwxr-xr-x 2 root root 12288 Sep 12 15:56 __spark_libs__
+drwx--x--- 2 root root     6 Sep 12 15:56 tmp
+find -L . -maxdepth 5 -ls:
+136995975    4 drwx--x---   4 root     root         4096 Sep 12 15:56 .
+11255294    0 drwx--x---   2 root     root            6 Sep 12 15:56 ./tmp
+136995976    4 -rw-r--r--   1 root     root           69 Sep 12 15:56 ./container_tokens
+136995977    4 -rw-r--r--   1 root     root           12 Sep 12 15:56 ./.container_tokens.crc
+136995978   44 -rwx------   1 root     root        44606 Sep 12 15:56 ./launch_container.sh
+136995979    4 -rw-r--r--   1 root     root          360 Sep 12 15:56 ./.launch_container.sh.crc
+136995980    4 -rwx------   1 root     root          704 Sep 12 15:56 ./default_container_executor_session.sh
+136995981    4 -rw-r--r--   1 root     root           16 Sep 12 15:56 ./.default_container_executor_session.sh.crc
+136995982    4 -rwx------   1 root     root          759 Sep 12 15:56 ./default_container_executor.sh
+136995983    4 -rw-r--r--   1 root     root           16 Sep 12 15:56 ./.default_container_executor.sh.crc
+72620262   16 drwxr-xr-x   2 root     root        12288 Sep 12 15:56 ./__spark_libs__
+10957368  932 -r-xr-xr-x   1 root     root       953001 Sep 12 15:38 ./__spark_libs__/kubernetes-model-autoscaling-6.7.2.jar
+69921471  180 -r-xr-xr-x   1 root     root       183633 Sep 12 15:38 ./__spark_libs__/hive-beeline-2.3.9.jar
+70701977  328 -r-xr-xr-x   1 root     root       334803 Sep 12 15:38 ./__spark_libs__/snakeyaml-2.0.jar
+69917724  404 -r-xr-xr-x   1 root     root       410874 Sep 12 15:38 ./__spark_libs__/kryo-shaded-4.0.2.jar
+201814161   36 -r-xr-xr-x   1 root     root        35518 Sep 12 15:38 ./__spark_libs__/zjsonpatch-0.3.0.jar
+70701048   20 -r-xr-xr-x   1 root     root        20437 Sep 12 15:38 ./__spark_libs__/audience-annotations-0.5.0.jar
+201814257  532 -r-xr-xr-x   1 root     root       541587 Sep 12 15:38 ./__spark_libs__/spark-kubernetes_2.12-3.5.1.jar
+70701029  112 -r-xr-xr-x   1 root     root       111010 Sep 12 15:38 ./__spark_libs__/arrow-memory-core-12.0.1.jar
+10957270 8004 -r-xr-xr-x   1 root     root      8195966 Sep 12 15:38 ./__spark_libs__/hive-metastore-2.3.9.jar
+201814239  420 -r-xr-xr-x   1 root     root       427674 Sep 12 15:38 ./__spark_libs__/okhttp-3.12.12.jar
+10957356  244 -r-xr-xr-x   1 root     root       249790 Sep 12 15:38 ./__spark_libs__/javax.jdo-3.2.0-m3.jar
+10957389  252 -r-xr-xr-x   1 root     root       256667 Sep 12 15:38 ./__spark_libs__/threeten-extra-1.7.1.jar
+135392954 7176 -r-xr-xr-x   1 root     root      7345382 Sep 12 15:38 ./__spark_libs__/mesos-1.4.3-shaded-protobuf.jar
+201814131  424 -r-xr-xr-x   1 root     root       432651 Sep 12 15:38 ./__spark_libs__/spark-graphx_2.12-3.5.1.jar
+70702004  188 -r-xr-xr-x   1 root     root       188465 Sep 12 15:38 ./__spark_libs__/avro-mapred-1.11.2.jar
+135390399  324 -r-xr-xr-x   1 root     root       327891 Sep 12 15:38 ./__spark_libs__/httpcore-4.4.16.jar
+10957309  440 -r-xr-xr-x   1 root     root       447005 Sep 12 15:38 ./__spark_libs__/univocity-parsers-2.9.1.jar
+70701968  244 -r-xr-xr-x   1 root     root       246445 Sep 12 15:38 ./__spark_libs__/libthrift-0.12.0.jar
+135388947   56 -r-xr-xr-x   1 root     root        54630 Sep 12 15:38 ./__spark_libs__/jackson-dataformat-yaml-2.15.2.jar
+201813989   84 -r-xr-xr-x   1 root     root        82872 Sep 12 15:38 ./__spark_libs__/jakarta.servlet-api-4.0.3.jar
+10957383   28 -r-xr-xr-x   1 root     root        25486 Sep 12 15:38 ./__spark_libs__/netty-handler-proxy-4.1.96.Final.jar
+201814194  292 -r-xr-xr-x   1 root     root       297253 Sep 12 15:38 ./__spark_libs__/spark-mesos_2.12-3.5.1.jar
+135390372 3588 -r-xr-xr-x   1 root     root      3670535 Sep 12 15:38 ./__spark_libs__/scala-reflect-2.12.18.jar
+69921485   60 -r-xr-xr-x   1 root     root        58284 Sep 12 15:38 ./__spark_libs__/commons-cli-1.5.0.jar
+135710038 1152 -r-xr-xr-x   1 root     root      1175798 Sep 12 15:38 ./__spark_libs__/JTransforms-3.1.jar
+135391423  344 -r-xr-xr-x   1 root     root       351778 Sep 12 15:38 ./__spark_libs__/spark-yarn_2.12-3.5.1.jar
+70842904   16 -r-xr-xr-x   1 root     root        15071 Sep 12 15:38 ./__spark_libs__/jta-1.1.jar
+201814203  984 -r-xr-xr-x   1 root     root      1004811 Sep 12 15:38 ./__spark_libs__/parquet-hadoop-1.13.1.jar
+135390387  124 -r-xr-xr-x   1 root     root       124506 Sep 12 15:38 ./__spark_libs__/py4j-0.10.9.7.jar
+70842883  116 -r-xr-xr-x   1 root     root       116013 Sep 12 15:38 ./__spark_libs__/xz-1.9.jar
+201814212  236 -r-xr-xr-x   1 root     root       238400 Sep 12 15:38 ./__spark_libs__/commons-text-1.10.0.jar
+135392901 1644 -r-xr-xr-x   1 root     root      1679366 Sep 12 15:38 ./__spark_libs__/hive-service-rpc-3.1.3.jar
+10957347  768 -r-xr-xr-x   1 root     root       785639 Sep 12 15:38 ./__spark_libs__/httpclient-4.5.14.jar
+8667177   16 -r-xr-xr-x   1 root     root        15160 Sep 12 15:38 ./__spark_libs__/spark-tags_2.12-3.5.1.jar
+10957282 29384 -r-xr-xr-x   1 root     root     30085504 Sep 12 15:38 ./__spark_libs__/hadoop-client-runtime-3.3.4.jar
+135390390  896 -r-xr-xr-x   1 root     root       916630 Sep 12 15:38 ./__spark_libs__/hive-serde-2.3.9.jar
+70701051 2012 -r-xr-xr-x   1 root     root      2058806 Sep 12 15:38 ./__spark_libs__/snappy-java-1.1.10.3.jar
+10957267  516 -r-xr-xr-x   1 root     root       526286 Sep 12 15:38 ./__spark_libs__/json4s-core_2.12-3.7.0-M11.jar
+135388926  232 -r-xr-xr-x   1 root     root       236660 Sep 12 15:38 ./__spark_libs__/ST4-4.0.4.jar
+10957279   20 -r-xr-xr-x   1 root     root        19479 Sep 12 15:38 ./__spark_libs__/osgi-resource-locator-1.0.3.jar
+135390375   12 -r-xr-xr-x   1 root     root         8786 Sep 12 15:38 ./__spark_libs__/hive-shims-2.3.9.jar
+10957386  172 -r-xr-xr-x   1 root     root       174487 Sep 12 15:38 ./__spark_libs__/kubernetes-model-rbac-6.7.2.jar
+10957306   12 -r-xr-xr-x   1 root     root        12131 Sep 12 15:38 ./__spark_libs__/jpam-1.1.jar
+70842910 4796 -r-xr-xr-x   1 root     root      4907714 Sep 12 15:38 ./__spark_libs__/kubernetes-model-core-6.7.2.jar
+10957374  264 -r-xr-xr-x   1 root     root       268780 Sep 12 15:38 ./__spark_libs__/jline-2.14.6.jar
+70701035  200 -r-xr-xr-x   1 root     root       203358 Sep 12 15:38 ./__spark_libs__/hk2-locator-2.6.1.jar
+10957258  112 -r-xr-xr-x   1 root     root       110600 Sep 12 15:38 ./__spark_libs__/bonecp-0.8.0.RELEASE.jar
+10957276 1836 -r-xr-xr-x   1 root     root      1878304 Sep 12 15:38 ./__spark_libs__/arrow-vector-12.0.1.jar
+201814233  708 -r-xr-xr-x   1 root     root       724280 Sep 12 15:38 ./__spark_libs__/spark-hive_2.12-3.5.1.jar
+10957300  176 -r-xr-xr-x   1 root     root       178149 Sep 12 15:38 ./__spark_libs__/stream-2.9.6.jar
+205723071  712 -r-xr-xr-x   1 root     root       726071 Sep 12 15:38 ./__spark_libs__/parquet-format-structures-1.13.1.jar
+135390393  288 -r-xr-xr-x   1 root     root       292124 Sep 12 15:38 ./__spark_libs__/snakeyaml-engine-2.6.jar
+201814242   32 -r-xr-xr-x   1 root     root        28997 Sep 12 15:38 ./__spark_libs__/orc-shims-1.9.2.jar
+67718963  384 -r-xr-xr-x   1 root     root       392179 Sep 12 15:38 ./__spark_libs__/kubernetes-client-6.7.2.jar
+135390364  472 -r-xr-xr-x   1 root     root       483284 Sep 12 15:38 ./__spark_libs__/netty-codec-http2-4.1.96.Final.jar
+201814176  356 -r-xr-xr-x   1 root     root       360738 Sep 12 15:38 ./__spark_libs__/commons-codec-1.16.0.jar
+10957362  200 -r-xr-xr-x   1 root     root       201965 Sep 12 15:38 ./__spark_libs__/curator-framework-2.13.0.jar
+205723063   44 -r-xr-xr-x   1 root     root        44704 Sep 12 15:38 ./__spark_libs__/hive-cli-2.3.9.jar
+10957365  848 -r-xr-xr-x   1 root     root       867679 Sep 12 15:38 ./__spark_libs__/lapack-3.0.3.jar
+135391371   28 -r-xr-xr-x   1 root     root        26430 Sep 12 15:38 ./__spark_libs__/log4j-slf4j2-impl-2.20.0.jar
+135388911  340 -r-xr-xr-x   1 root     root       344788 Sep 12 15:38 ./__spark_libs__/netty-codec-4.1.96.Final.jar
+70701962  240 -r-xr-xr-x   1 root     root       244621 Sep 12 15:38 ./__spark_libs__/spark-common-utils_2.12-3.5.1.jar
+70842892  164 -r-xr-xr-x   1 root     root       166244 Sep 12 15:38 ./__spark_libs__/commons-crypto-1.1.0.jar
+201814116 6000 -r-xr-xr-x   1 root     root      6143759 Sep 12 15:38 ./__spark_libs__/spark-mllib_2.12-3.5.1.jar
+201814209  256 -r-xr-xr-x   1 root     root       258346 Sep 12 15:38 ./__spark_libs__/hive-storage-api-2.8.1.jar
+10957249  120 -r-xr-xr-x   1 root     root       120974 Sep 12 15:38 ./__spark_libs__/netty-codec-socks-4.1.96.Final.jar
+70701980   64 -r-xr-xr-x   1 root     root        64873 Sep 12 15:38 ./__spark_libs__/flatbuffers-java-1.12.0.jar
+135390346  300 -r-xr-xr-x   1 root     root       306489 Sep 12 15:38 ./__spark_libs__/netty-buffer-4.1.96.Final.jar
+69921474   40 -r-xr-xr-x   1 root     root        38970 Sep 12 15:38 ./__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-x86_64.jar
+205723050  164 -r-xr-xr-x   1 root     root       166259 Sep 12 15:38 ./__spark_libs__/blas-3.0.3.jar
+135390396  624 -r-xr-xr-x   1 root     root       637993 Sep 12 15:38 ./__spark_libs__/joda-time-2.12.5.jar
+135710046  108 -r-xr-xr-x   1 root     root       108433 Sep 12 15:38 ./__spark_libs__/netty-transport-classes-kqueue-4.1.96.Final.jar
+8667168   40 -r-xr-xr-x   1 root     root        37065 Sep 12 15:38 ./__spark_libs__/json4s-jackson_2.12-3.7.0-M11.jar
+201814155  344 -r-xr-xr-x   1 root     root       348265 Sep 12 15:38 ./__spark_libs__/json4s-scalap_2.12-3.7.0-M11.jar
+135388923   40 -r-xr-xr-x   1 root     root        37791 Sep 12 15:38 ./__spark_libs__/netty-resolver-4.1.96.Final.jar
+70701054  132 -r-xr-xr-x   1 root     root       131590 Sep 12 15:38 ./__spark_libs__/hk2-utils-2.6.1.jar
+70702007    8 -r-xr-xr-x   1 root     root         4468 Sep 12 15:38 ./__spark_libs__/netty-all-4.1.96.Final.jar
+10957255  764 -r-xr-xr-x   1 root     root       780664 Sep 12 15:38 ./__spark_libs__/jackson-mapper-asl-1.9.13.jar
+201814170  280 -r-xr-xr-x   1 root     root       283653 Sep 12 15:38 ./__spark_libs__/curator-recipes-2.13.0.jar
+135135860  144 -r-xr-xr-x   1 root     root       145397 Sep 12 15:38 ./__spark_libs__/kubernetes-model-certificates-6.7.2.jar
+201814248  540 -r-xr-xr-x   1 root     root       549207 Sep 12 15:38 ./__spark_libs__/jackson-core-2.15.2.jar
+135391419   92 -r-xr-xr-x   1 root     root        93210 Sep 12 15:38 ./__spark_libs__/super-csv-2.2.0.jar
+135392938   72 -r-xr-xr-x   1 root     root        73256 Sep 12 15:38 ./__spark_libs__/jersey-container-servlet-core-2.40.jar
+135388902   20 -r-xr-xr-x   1 root     root        19827 Sep 12 15:38 ./__spark_libs__/opencsv-2.3.jar
+70842913   28 -r-xr-xr-x   1 root     root        26514 Sep 12 15:38 ./__spark_libs__/stax-api-1.0.1.jar
+201814152   24 -r-xr-xr-x   1 root     root        21143 Sep 12 15:38 ./__spark_libs__/jcl-over-slf4j-2.0.7.jar
+10957392  184 -r-xr-xr-x   1 root     root       185432 Sep 12 15:38 ./__spark_libs__/avro-ipc-1.11.2.jar
+135135871  120 -r-xr-xr-x   1 root     root       120293 Sep 12 15:38 ./__spark_libs__/hive-shims-common-2.3.9.jar
+10957303 2368 -r-xr-xr-x   1 root     root      2422356 Sep 12 15:38 ./__spark_libs__/spark-network-common_2.12-3.5.1.jar
+69921480  188 -r-xr-xr-x   1 root     root       190432 Sep 12 15:38 ./__spark_libs__/gson-2.2.4.jar
+201814254   80 -r-xr-xr-x   1 root     root        77939 Sep 12 15:38 ./__spark_libs__/kubernetes-model-metrics-6.7.2.jar
+70842901  420 -r-xr-xr-x   1 root     root       427780 Sep 12 15:38 ./__spark_libs__/jodd-core-3.5.2.jar
+201816718  116 -r-xr-xr-x   1 root     root       117002 Sep 12 15:38 ./__spark_libs__/spark-mllib-local_2.12-3.5.1.jar
+10957264   36 -r-xr-xr-x   1 root     root        34654 Sep 12 15:38 ./__spark_libs__/paranamer-2.8.jar
+201813982   28 -r-xr-xr-x   1 root     root        24665 Sep 12 15:38 ./__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-x86_64.jar
+8667142   76 -r-xr-xr-x   1 root     root        75567 Sep 12 15:38 ./__spark_libs__/jackson-annotations-2.15.2.jar
+70701956  144 -r-xr-xr-x   1 root     root       147152 Sep 12 15:38 ./__spark_libs__/netty-transport-classes-epoll-4.1.96.Final.jar
+10957404   24 -r-xr-xr-x   1 root     root        21568 Sep 12 15:38 ./__spark_libs__/metrics-jmx-4.2.19.jar
+135390381   88 -r-xr-xr-x   1 root     root        89855 Sep 12 15:38 ./__spark_libs__/json4s-ast_2.12-3.7.0-M11.jar
+201814236 10588 -r-xr-xr-x   1 root     root     10840949 Sep 12 15:38 ./__spark_libs__/hive-exec-2.3.9-core.jar
+201814275  108 -r-xr-xr-x   1 root     root       110232 Sep 12 15:38 ./__spark_libs__/arrow-format-12.0.1.jar
+8667162 2120 -r-xr-xr-x   1 root     root      2168533 Sep 12 15:38 ./__spark_libs__/tink-1.9.0.jar
+70842898 1168 -r-xr-xr-x   1 root     root      1194003 Sep 12 15:38 ./__spark_libs__/arpack_combined_all-0.1.jar
+69929585   92 -r-xr-xr-x   1 root     root        91930 Sep 12 15:38 ./__spark_libs__/jakarta.validation-api-2.0.2.jar
+10957291  564 -r-xr-xr-x   1 root     root       577133 Sep 12 15:38 ./__spark_libs__/kubernetes-model-networking-6.7.2.jar
+135390384   40 -r-xr-xr-x   1 root     root        39487 Sep 12 15:38 ./__spark_libs__/arrow-memory-netty-12.0.1.jar
+135392941 1228 -r-xr-xr-x   1 root     root      1254153 Sep 12 15:38 ./__spark_libs__/zookeeper-3.6.3.jar
+135390378   28 -r-xr-xr-x   1 root     root        25400 Sep 12 15:38 ./__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-aarch_64.jar
+201814263   80 -r-xr-xr-x   1 root     root        81831 Sep 12 15:38 ./__spark_libs__/compress-lzf-1.1.2.jar
+201814143  992 -r-xr-xr-x   1 root     root      1013367 Sep 12 15:38 ./__spark_libs__/jaxb-runtime-2.3.2.jar
+201814185   32 -r-xr-xr-x   1 root     root        31604 Sep 12 15:38 ./__spark_libs__/kubernetes-httpclient-okhttp-6.7.2.jar
+135388938   80 -r-xr-xr-x   1 root     root        80384 Sep 12 15:38 ./__spark_libs__/breeze-macros_2.12-2.1.0.jar
+70702013  940 -r-xr-xr-x   1 root     root       961299 Sep 12 15:38 ./__spark_libs__/kubernetes-model-admissionregistration-6.7.2.jar
+70842895 9420 -r-xr-xr-x   1 root     root      9644368 Sep 12 15:38 ./__spark_libs__/spark-sql_2.12-3.5.1.jar
+201814272   36 -r-xr-xr-x   1 root     root        33031 Sep 12 15:38 ./__spark_libs__/jsr305-3.0.0.jar
+70701974 1732 -r-xr-xr-x   1 root     root      1772199 Sep 12 15:38 ./__spark_libs__/spark-sql-api_2.12-3.5.1.jar
+70101148   20 -r-xr-xr-x   1 root     root        18140 Sep 12 15:38 ./__spark_libs__/jakarta.inject-2.6.1.jar
+135388905  476 -r-xr-xr-x   1 root     root       483954 Sep 12 15:38 ./__spark_libs__/commons-io-2.13.0.jar
+201814146   56 -r-xr-xr-x   1 root     root        54774 Sep 12 15:38 ./__spark_libs__/spark-unsafe_2.12-3.5.1.jar
+201814200   84 -r-xr-xr-x   1 root     root        84199 Sep 12 15:38 ./__spark_libs__/spark-kvstore_2.12-3.5.1.jar
+201814269  436 -r-xr-xr-x   1 root     root       443362 Sep 12 15:38 ./__spark_libs__/RoaringBitmap-0.9.45.jar
+135135866  308 -r-xr-xr-x   1 root     root       313296 Sep 12 15:38 ./__spark_libs__/log4j-api-2.20.0.jar
+70701032  172 -r-xr-xr-x   1 root     root       173752 Sep 12 15:38 ./__spark_libs__/commons-compiler-3.1.9.jar
+201814134   48 -r-xr-xr-x   1 root     root        48987 Sep 12 15:38 ./__spark_libs__/kubernetes-model-coordination-6.7.2.jar
+69921501  136 -r-xr-xr-x   1 root     root       136363 Sep 12 15:38 ./__spark_libs__/HikariCP-2.5.1.jar
+135388908   28 -r-xr-xr-x   1 root     root        27156 Sep 12 15:38 ./__spark_libs__/istack-commons-runtime-3.0.8.jar
+10957407 1980 -r-xr-xr-x   1 root     root      2027128 Sep 12 15:38 ./__spark_libs__/parquet-column-1.13.1.jar
+70701995  832 -r-xr-xr-x   1 root     root       849213 Sep 12 15:38 ./__spark_libs__/parquet-encoding-1.13.1.jar
+8667171  156 -r-xr-xr-x   1 root     root       159174 Sep 12 15:38 ./__spark_libs__/kubernetes-model-node-6.7.2.jar
+201814260 2140 -r-xr-xr-x   1 root     root      2189117 Sep 12 15:38 ./__spark_libs__/guava-14.0.1.jar
+135129457  252 -r-xr-xr-x   1 root     root       254067 Sep 12 15:38 ./__spark_libs__/aircompressor-0.26.jar
+135129466  292 -r-xr-xr-x   1 root     root       296926 Sep 12 15:38 ./__spark_libs__/kubernetes-model-batch-6.7.2.jar
+10957297  320 -r-xr-xr-x   1 root     root       326585 Sep 12 15:38 ./__spark_libs__/hive-llap-common-2.3.9.jar
+10957285  548 -r-xr-xr-x   1 root     root       557737 Sep 12 15:38 ./__spark_libs__/netty-handler-4.1.96.Final.jar
+69914375  644 -r-xr-xr-x   1 root     root       656598 Sep 12 15:38 ./__spark_libs__/netty-codec-http-4.1.96.Final.jar
+135388944  520 -r-xr-xr-x   1 root     root       530799 Sep 12 15:38 ./__spark_libs__/kubernetes-model-apps-6.7.2.jar
+135392951   36 -r-xr-xr-x   1 root     root        35085 Sep 12 15:38 ./__spark_libs__/spire-util_2.12-0.17.0.jar
+135129443  668 -r-xr-xr-x   1 root     root       682804 Sep 12 15:38 ./__spark_libs__/lz4-java-1.8.0.jar
+135710002  388 -r-xr-xr-x   1 root     root       395195 Sep 12 15:38 ./__spark_libs__/javolution-5.5.1.jar
+201814191  140 -r-xr-xr-x   1 root     root       140376 Sep 12 15:38 ./__spark_libs__/jakarta.ws.rs-api-2.1.6.jar
+201814119 19004 -r-xr-xr-x   1 root     root     19458635 Sep 12 15:38 ./__spark_libs__/hadoop-client-api-3.3.4.jar
+70842880   28 -r-xr-xr-x   1 root     root        25475 Sep 12 15:38 ./__spark_libs__/json-1.8.jar
+10957380 1000 -r-xr-xr-x   1 root     root      1022407 Sep 12 15:38 ./__spark_libs__/kubernetes-model-flowcontrol-6.7.2.jar
+70702010   96 -r-xr-xr-x   1 root     root        97009 Sep 12 15:38 ./__spark_libs__/parquet-common-1.13.1.jar
+201814218    8 -r-xr-xr-x   1 root     root         5711 Sep 12 15:38 ./__spark_libs__/minlog-1.3.0.jar
+70701038  116 -r-xr-xr-x   1 root     root       116364 Sep 12 15:38 ./__spark_libs__/hive-jdbc-2.3.9.jar
+201814182 14324 -r-xr-xr-x   1 root     root     14667703 Sep 12 15:38 ./__spark_libs__/spark-core_2.12-3.5.1.jar
+10957377 1016 -r-xr-xr-x   1 root     root      1036374 Sep 12 15:38 ./__spark_libs__/kubernetes-model-gatewayapi-6.7.2.jar
+70701041  248 -r-xr-xr-x   1 root     root       250399 Sep 12 15:38 ./__spark_libs__/zookeeper-jute-3.6.3.jar
+201814188  128 -r-xr-xr-x   1 root     root       129647 Sep 12 15:38 ./__spark_libs__/metrics-core-4.2.19.jar
+201814173    8 -r-xr-xr-x   1 root     root         5655 Sep 12 15:38 ./__spark_libs__/jul-to-slf4j-2.0.7.jar
+69921468  128 -r-xr-xr-x   1 root     root       129774 Sep 12 15:38 ./__spark_libs__/datasketches-memory-2.1.0.jar
+10957294 2164 -r-xr-xr-x   1 root     root      2213560 Sep 12 15:38 ./__spark_libs__/commons-math3-3.6.1.jar
+135388920 3160 -r-xr-xr-x   1 root     root      3232770 Sep 12 15:38 ./__spark_libs__/derby-10.14.2.0.jar
+70702001   24 -r-xr-xr-x   1 root     root        23890 Sep 12 15:38 ./__spark_libs__/metrics-graphite-4.2.19.jar
+70701959  296 -r-xr-xr-x   1 root     root       301876 Sep 12 15:38 ./__spark_libs__/jersey-client-2.40.jar
+69914395   40 -r-xr-xr-x   1 root     root        40475 Sep 12 15:38 ./__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-aarch_64.jar
+201814140  816 -r-xr-xr-x   1 root     root       832024 Sep 12 15:38 ./__spark_libs__/datasketches-java-3.3.0.jar
+201814206  736 -r-xr-xr-x   1 root     root       751914 Sep 12 15:38 ./__spark_libs__/commons-collections4-4.4.jar
+201814251  260 -r-xr-xr-x   1 root     root       262591 Sep 12 15:38 ./__spark_libs__/xbean-asm9-shaded-4.23.jar
+135392948  196 -r-xr-xr-x   1 root     root       200223 Sep 12 15:38 ./__spark_libs__/hk2-api-2.6.1.jar
+10957261  428 -r-xr-xr-x   1 root     root       436169 Sep 12 15:38 ./__spark_libs__/hive-common-2.3.9.jar
+201814122 1864 -r-xr-xr-x   1 root     root      1908681 Sep 12 15:38 ./__spark_libs__/datanucleus-rdbms-4.1.19.jar
+72620256  188 -r-xr-xr-x   1 root     root       191677 Sep 12 15:38 ./__spark_libs__/kubernetes-model-discovery-6.7.2.jar
+135392944   56 -r-xr-xr-x   1 root     root        54279 Sep 12 15:38 ./__spark_libs__/pickle-1.3.jar
+135135863  504 -r-xr-xr-x   1 root     root       513968 Sep 12 15:38 ./__spark_libs__/jackson-module-scala_2.12-2.15.2.jar
+8667195  228 -r-xr-xr-x   1 root     root       232470 Sep 12 15:38 ./__spark_libs__/JLargeArrays-1.5.jar
+10957350  200 -r-xr-xr-x   1 root     root       201124 Sep 12 15:38 ./__spark_libs__/jdo-api-3.0.1.jar
+10957359   52 -r-xr-xr-x   1 root     root        49423 Sep 12 15:38 ./__spark_libs__/objenesis-3.3.jar
+8667156  776 -r-xr-xr-x   1 root     root       794137 Sep 12 15:38 ./__spark_libs__/javassist-3.29.2-GA.jar
+201814197  360 -r-xr-xr-x   1 root     root       366748 Sep 12 15:38 ./__spark_libs__/datanucleus-api-jdo-4.2.4.jar
+69921493  332 -r-xr-xr-x   1 root     root       336742 Sep 12 15:38 ./__spark_libs__/antlr4-runtime-4.9.3.jar
+8667165 57936 -r-xr-xr-x   1 root     root     59326387 Sep 12 15:38 ./__spark_libs__/rocksdbjni-8.3.2.jar
+70701952    4 -r-xr-xr-x   1 root     root         2551 Sep 12 15:38 ./__spark_libs__/shims-0.9.45.jar
+8667159   96 -r-xr-xr-x   1 root     root        96221 Sep 12 15:38 ./__spark_libs__/commons-pool-1.5.4.jar
+69929595  228 -r-xr-xr-x   1 root     root       232248 Sep 12 15:38 ./__spark_libs__/jackson-core-asl-1.9.13.jar
+70701998  340 -r-xr-xr-x   1 root     root       344375 Sep 12 15:38 ./__spark_libs__/log4j-1.2-api-2.20.0.jar
+201814278   44 -r-xr-xr-x   1 root     root        43897 Sep 12 15:38 ./__spark_libs__/netty-transport-native-unix-common-4.1.96.Final.jar
+135388950   16 -r-xr-xr-x   1 root     root        15935 Sep 12 15:38 ./__spark_libs__/dropwizard-metrics-hadoop-metrics2-reporter-0.1.2.jar
+8667146   20 -r-xr-xr-x   1 root     root        17037 Sep 12 15:38 ./__spark_libs__/metrics-json-4.2.19.jar
+135129420   32 -r-xr-xr-x   1 root     root        29603 Sep 12 15:38 ./__spark_libs__/kubernetes-model-common-6.7.2.jar
+70842889   16 -r-xr-xr-x   1 root     root        12923 Sep 12 15:38 ./__spark_libs__/hive-shims-scheduler-2.3.9.jar
+70101161 1368 -r-xr-xr-x   1 root     root      1398591 Sep 12 15:38 ./__spark_libs__/ivy-2.5.1.jar
+201814167  224 -r-xr-xr-x   1 root     root       228230 Sep 12 15:38 ./__spark_libs__/kubernetes-model-resource-6.7.2.jar
+135710009   20 -r-xr-xr-x   1 root     root        19014 Sep 12 15:38 ./__spark_libs__/annotations-17.0.0.jar
+135388917 1972 -r-xr-xr-x   1 root     root      2016766 Sep 12 15:38 ./__spark_libs__/datanucleus-core-4.1.17.jar
+135388954  280 -r-xr-xr-x   1 root     root       284220 Sep 12 15:38 ./__spark_libs__/commons-lang-2.6.jar
+8667189   16 -r-xr-xr-x   1 root     root        15071 Sep 12 15:38 ./__spark_libs__/transaction-api-1.1.jar
+201814227 12756 -r-xr-xr-x   1 root     root     13059596 Sep 12 15:38 ./__spark_libs__/breeze_2.12-2.1.0.jar
+201814128   60 -r-xr-xr-x   1 root     root        58683 Sep 12 15:38 ./__spark_libs__/chill-java-0.10.0.jar
+201814221  308 -r-xr-xr-x   1 root     root       313702 Sep 12 15:38 ./__spark_libs__/libfb303-0.9.3.jar
+201814224   68 -r-xr-xr-x   1 root     root        65966 Sep 12 15:38 ./__spark_libs__/kubernetes-model-scheduling-6.7.2.jar
+10957401 10728 -r-xr-xr-x   1 root     root     10983677 Sep 12 15:38 ./__spark_libs__/scala-compiler-2.12.18.jar
+70701971  104 -r-xr-xr-x   1 root     root       103931 Sep 12 15:38 ./__spark_libs__/kubernetes-model-events-6.7.2.jar
+10957395   68 -r-xr-xr-x   1 root     root        69409 Sep 12 15:38 ./__spark_libs__/activation-1.1.1.jar
+201814125 1972 -r-xr-xr-x   1 root     root      2017388 Sep 12 15:38 ./__spark_libs__/parquet-jackson-1.13.1.jar
+69916972  560 -r-xr-xr-x   1 root     root       571369 Sep 12 15:38 ./__spark_libs__/spark-hive-thriftserver_2.12-3.5.1.jar
+10957410  648 -r-xr-xr-x   1 root     root       659926 Sep 12 15:38 ./__spark_libs__/netty-common-4.1.96.Final.jar
+70101154   56 -r-xr-xr-x   1 root     root        53902 Sep 12 15:38 ./__spark_libs__/hive-shims-0.23-2.3.9.jar
+10957353  932 -r-xr-xr-x   1 root     root       950564 Sep 12 15:38 ./__spark_libs__/jersey-server-2.40.jar
+135388929   80 -r-xr-xr-x   1 root     root        78441 Sep 12 15:38 ./__spark_libs__/spark-launcher_2.12-3.5.1.jar
+70842886  116 -r-xr-xr-x   1 root     root       114698 Sep 12 15:38 ./__spark_libs__/spire-macros_2.12-0.17.0.jar
+135390349 2768 -r-xr-xr-x   1 root     root      2830854 Sep 12 15:38 ./__spark_libs__/orc-core-1.9.2-shaded-protobuf.jar
+70701989  336 -r-xr-xr-x   1 root     root       341926 Sep 12 15:38 ./__spark_libs__/kubernetes-model-policy-6.7.2.jar
+8667186   80 -r-xr-xr-x   1 root     root        78477 Sep 12 15:38 ./__spark_libs__/jersey-hk2-2.40.jar
+201814230 3284 -r-xr-xr-x   1 root     root      3362359 Sep 12 15:38 ./__spark_libs__/hadoop-shaded-guava-1.1.1.jar
+10957252  940 -r-xr-xr-x   1 root     root       958840 Sep 12 15:38 ./__spark_libs__/janino-3.1.9.jar
+73217818   28 -r-xr-xr-x   1 root     root        25058 Sep 12 15:38 ./__spark_libs__/jakarta.annotation-api-1.3.5.jar
+135139212  600 -r-xr-xr-x   1 root     root       612317 Sep 12 15:38 ./__spark_libs__/avro-1.11.2.jar
+201814266  568 -r-xr-xr-x   1 root     root       579727 Sep 12 15:38 ./__spark_libs__/kubernetes-model-extensions-6.7.2.jar
+135871741   88 -r-xr-xr-x   1 root     root        88732 Sep 12 15:38 ./__spark_libs__/okio-1.15.0.jar
+135388899 5308 -r-xr-xr-x   1 root     root      5433857 Sep 12 15:38 ./__spark_libs__/scala-library-2.12.18.jar
+135392907   64 -r-xr-xr-x   1 root     root        65261 Sep 12 15:38 ./__spark_libs__/oro-2.0.8.jar
+201814137 7076 -r-xr-xr-x   1 root     root      7243903 Sep 12 15:38 ./__spark_libs__/spire_2.12-0.17.0.jar
+201814215  388 -r-xr-xr-x   1 root     root       395537 Sep 12 15:38 ./__spark_libs__/kubernetes-model-storageclass-6.7.2.jar
+8667183   16 -r-xr-xr-x   1 root     root        12483 Sep 12 15:38 ./__spark_libs__/logging-interceptor-3.12.12.jar
+10957344  208 -r-xr-xr-x   1 root     root       212374 Sep 12 15:38 ./__spark_libs__/chill_2.12-0.10.0.jar
+70842916   56 -r-xr-xr-x   1 root     root        56812 Sep 12 15:38 ./__spark_libs__/hadoop-yarn-server-web-proxy-3.3.4.jar
+135392957  184 -r-xr-xr-x   1 root     root       186777 Sep 12 15:38 ./__spark_libs__/scala-parser-combinators_2.12-2.3.0.jar
+10957288 1808 -r-xr-xr-x   1 root     root      1847550 Sep 12 15:38 ./__spark_libs__/log4j-core-2.20.0.jar
+8667180 1016 -r-xr-xr-x   1 root     root      1037169 Sep 12 15:38 ./__spark_libs__/kubernetes-model-apiextensions-6.7.2.jar
+135388932 1040 -r-xr-xr-x   1 root     root      1062555 Sep 12 15:38 ./__spark_libs__/commons-compress-1.23.0.jar
+8667174 2368 -r-xr-xr-x   1 root     root      2423157 Sep 12 15:38 ./__spark_libs__/curator-client-2.13.0.jar
+70701044 1024 -r-xr-xr-x   1 root     root      1045744 Sep 12 15:38 ./__spark_libs__/leveldbjni-all-1.8.jar
+10957413  164 -r-xr-xr-x   1 root     root       167761 Sep 12 15:38 ./__spark_libs__/antlr-runtime-3.5.2.jar
+135388957  244 -r-xr-xr-x   1 root     root       247466 Sep 12 15:38 ./__spark_libs__/scala-collection-compat_2.12-2.7.0.jar
+201814149   32 -r-xr-xr-x   1 root     root        30823 Sep 12 15:38 ./__spark_libs__/spark-sketch_2.12-3.5.1.jar
+70701965   64 -r-xr-xr-x   1 root     root        63635 Sep 12 15:38 ./__spark_libs__/slf4j-api-2.0.7.jar
+70701992 12260 -r-xr-xr-x   1 root     root     12551721 Sep 12 15:38 ./__spark_libs__/spark-catalyst_2.12-3.5.1.jar
+8667192 1584 -r-xr-xr-x   1 root     root      1620088 Sep 12 15:38 ./__spark_libs__/jackson-databind-2.15.2.jar
+70842907 1672 -r-xr-xr-x   1 root     root      1710748 Sep 12 15:38 ./__spark_libs__/orc-mapreduce-1.9.2-shaded-protobuf.jar
+10957398  476 -r-xr-xr-x   1 root     root       486414 Sep 12 15:38 ./__spark_libs__/kubernetes-client-api-6.7.2.jar
+201816705  456 -r-xr-xr-x   1 root     root       466520 Sep 12 15:38 ./__spark_libs__/scala-xml_2.12-2.1.0.jar
+69914391 1144 -r-xr-xr-x   1 root     root      1168417 Sep 12 15:38 ./__spark_libs__/algebra_2.12-2.0.1.jar
+201814164   40 -r-xr-xr-x   1 root     root        38711 Sep 12 15:38 ./__spark_libs__/spark-repl_2.12-3.5.1.jar
+8667153 3264 -r-xr-xr-x   1 root     root      3340031 Sep 12 15:38 ./__spark_libs__/cats-kernel_2.12-2.1.1.jar
+201814113  176 -r-xr-xr-x   1 root     root       177704 Sep 12 15:38 ./__spark_libs__/spark-network-shuffle_2.12-3.5.1.jar
+135388914 5804 -r-xr-xr-x   1 root     root      5940719 Sep 12 15:38 ./__spark_libs__/zstd-jni-1.5.5-4.jar
+201814179 1108 -r-xr-xr-x   1 root     root      1133653 Sep 12 15:38 ./__spark_libs__/spark-streaming_2.12-3.5.1.jar
+135390368   28 -r-xr-xr-x   1 root     root        27006 Sep 12 15:38 ./__spark_libs__/aopalliance-repackaged-2.6.1.jar
+70701986  576 -r-xr-xr-x   1 root     root       588337 Sep 12 15:38 ./__spark_libs__/commons-collections-3.2.2.jar
+10957273  124 -r-xr-xr-x   1 root     root       122937 Sep 12 15:38 ./__spark_libs__/jackson-datatype-jsr310-2.15.2.jar
+135388935  116 -r-xr-xr-x   1 root     root       115498 Sep 12 15:38 ./__spark_libs__/jakarta.xml.bind-api-2.3.2.jar
+135129460   76 -r-xr-xr-x   1 root     root        76500 Sep 12 15:38 ./__spark_libs__/arpack-3.0.3.jar
+70701983   32 -r-xr-xr-x   1 root     root        32298 Sep 12 15:38 ./__spark_libs__/jersey-container-servlet-2.40.jar
+8667198 1204 -r-xr-xr-x   1 root     root      1230119 Sep 12 15:38 ./__spark_libs__/jersey-common-2.40.jar
+201814245  480 -r-xr-xr-x   1 root     root       489581 Sep 12 15:38 ./__spark_libs__/netty-transport-4.1.96.Final.jar
+201814158   12 -r-xr-xr-x   1 root     root         8455 Sep 12 15:38 ./__spark_libs__/spire-platform_2.12-0.17.0.jar
+135392935   64 -r-xr-xr-x   1 root     root        62050 Sep 12 15:38 ./__spark_libs__/commons-logging-1.1.3.jar
+135136276   28 -r-xr-xr-x   1 root     root        24683 Sep 12 15:38 ./__spark_libs__/metrics-jvm-4.2.19.jar
+135388896  160 -r-xr-xr-x   1 root     root       160519 Sep 12 15:38 ./__spark_libs__/commons-dbcp-1.4.jar
+10957371  576 -r-xr-xr-x   1 root     root       587402 Sep 12 15:38 ./__spark_libs__/commons-lang3-3.12.0.jar
+136995971    0 drwx------   3 root     root          134 Sep 12 15:56 ./__spark_conf__
+201814295    0 drwx------   2 root     root           69 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__
+201814296    4 -r-x------   1 root     root         1247 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__/yarn-site.xml
+201814297    4 -r-x------   1 root     root          721 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__/core-site.xml
+201814298    4 -r-x------   1 root     root          713 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__/hive-site.xml
+136995972  152 -r-x------   1 root     root       153506 Sep 12 15:56 ./__spark_conf__/__spark_hadoop_conf__.xml
+136995973    4 -r-x------   1 root     root          554 Sep 12 15:56 ./__spark_conf__/__spark_conf__.properties
+136995974   40 -r-x------   1 root     root        38946 Sep 12 15:56 ./__spark_conf__/__spark_dist_cache__.properties
+11255291  280 -r-x------   1 root     root       284147 Sep 12 15:56 ./__app__.jar
+broken symlinks(find -L . -maxdepth 5 -type l -ls):
+
+End of LogType:directory.info
+*******************************************************************************
+
+Container: container_e35_1789195359269_0014_01_000001 on node01_45365
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:launch_container.sh
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:44606
+LogContents:
+#!/bin/bash
+
+set -o pipefail -e
+export PRELAUNCH_OUT="/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/prelaunch.out"
+exec >"${PRELAUNCH_OUT}"
+export PRELAUNCH_ERR="/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/prelaunch.err"
+exec 2>"${PRELAUNCH_ERR}"
+echo "Setting up env variables"
+export JAVA_HOME=${JAVA_HOME:-"/usr/java/jdk1.8.0_351-amd64"}
+export HADOOP_COMMON_HOME=${HADOOP_COMMON_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export HADOOP_HDFS_HOME=${HADOOP_HDFS_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-"/opt/yjx/hadoop-3.3.4/etc/hadoop"}
+export HADOOP_YARN_HOME=${HADOOP_YARN_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export HADOOP_HOME=${HADOOP_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export PATH=${PATH:-"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"}
+export LANG=${LANG:-"en_US.UTF-8"}
+export HADOOP_TOKEN_FILE_LOCATION="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/appcache/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/container_tokens"
+export CONTAINER_ID="container_e35_1789195359269_0014_01_000001"
+export NM_PORT="45365"
+export NM_HOST="node01"
+export NM_HTTP_PORT="8042"
+export LOCAL_DIRS="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/appcache/application_1789195359269_0014"
+export LOCAL_USER_DIRS="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/"
+export LOG_DIRS="/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001"
+export USER="root"
+export LOGNAME="root"
+export HOME="/home/"
+export PWD="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/appcache/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001"
+export LOCALIZATION_COUNTERS="482062,337677190,2,252,49"
+export JVM_PID="$$"
+export NM_AUX_SERVICE_mapreduce_shuffle="AAA0+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+export SPARK_YARN_STAGING_DIR="hdfs://node01:8020/user/root/.sparkStaging/application_1789195359269_0014"
+export APPLICATION_WEB_PROXY_BASE="/proxy/application_1789195359269_0014"
+export SPARK_PREFER_IPV6="false"
+export CLASSPATH="$PWD:$PWD/__spark_conf__:$PWD/__spark_libs__/*:$PWD/__spark_conf__/__hadoop_conf__"
+export APP_SUBMIT_TIME_ENV="1789199812335"
+export SPARK_USER="root"
+export PYTHONHASHSEED="0"
+export MALLOC_ARENA_MAX="4"
+echo "Setting up job resources"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/201/kubernetes-model-autoscaling-6.7.2.jar" "__spark_libs__/kubernetes-model-autoscaling-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/46/hive-beeline-2.3.9.jar" "__spark_libs__/hive-beeline-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/158/snakeyaml-2.0.jar" "__spark_libs__/snakeyaml-2.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/38/kryo-shaded-4.0.2.jar" "__spark_libs__/kryo-shaded-4.0.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/104/zjsonpatch-0.3.0.jar" "__spark_libs__/zjsonpatch-0.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/114/audience-annotations-0.5.0.jar" "__spark_libs__/audience-annotations-0.5.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/232/spark-kubernetes_2.12-3.5.1.jar" "__spark_libs__/spark-kubernetes_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/90/arrow-memory-core-12.0.1.jar" "__spark_libs__/arrow-memory-core-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/113/hive-metastore-2.3.9.jar" "__spark_libs__/hive-metastore-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/208/okhttp-3.12.12.jar" "__spark_libs__/okhttp-3.12.12.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/185/javax.jdo-3.2.0-m3.jar" "__spark_libs__/javax.jdo-3.2.0-m3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/229/threeten-extra-1.7.1.jar" "__spark_libs__/threeten-extra-1.7.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/235/mesos-1.4.3-shaded-protobuf.jar" "__spark_libs__/mesos-1.4.3-shaded-protobuf.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/64/spark-graphx_2.12-3.5.1.jar" "__spark_libs__/spark-graphx_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/194/avro-mapred-1.11.2.jar" "__spark_libs__/avro-mapred-1.11.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/199/httpcore-4.4.16.jar" "__spark_libs__/httpcore-4.4.16.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/165/univocity-parsers-2.9.1.jar" "__spark_libs__/univocity-parsers-2.9.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/146/libthrift-0.12.0.jar" "__spark_libs__/libthrift-0.12.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/131/jackson-dataformat-yaml-2.15.2.jar" "__spark_libs__/jackson-dataformat-yaml-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/15/jakarta.servlet-api-4.0.3.jar" "__spark_libs__/jakarta.servlet-api-4.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/221/netty-handler-proxy-4.1.96.Final.jar" "__spark_libs__/netty-handler-proxy-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/148/spark-mesos_2.12-3.5.1.jar" "__spark_libs__/spark-mesos_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/163/scala-reflect-2.12.18.jar" "__spark_libs__/scala-reflect-2.12.18.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/58/commons-cli-1.5.0.jar" "__spark_libs__/commons-cli-1.5.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/251/JTransforms-3.1.jar" "__spark_libs__/JTransforms-3.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/19/spark-yarn_2.12-3.5.1.jar" "__spark_libs__/spark-yarn_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/242/jta-1.1.jar" "__spark_libs__/jta-1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/160/parquet-hadoop-1.13.1.jar" "__spark_libs__/parquet-hadoop-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/183/py4j-0.10.9.7.jar" "__spark_libs__/py4j-0.10.9.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/214/xz-1.9.jar" "__spark_libs__/xz-1.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/172/commons-text-1.10.0.jar" "__spark_libs__/commons-text-1.10.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/203/hive-service-rpc-3.1.3.jar" "__spark_libs__/hive-service-rpc-3.1.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/173/httpclient-4.5.14.jar" "__spark_libs__/httpclient-4.5.14.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/53/spark-tags_2.12-3.5.1.jar" "__spark_libs__/spark-tags_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/129/hadoop-client-runtime-3.3.4.jar" "__spark_libs__/hadoop-client-runtime-3.3.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/187/hive-serde-2.3.9.jar" "__spark_libs__/hive-serde-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/118/snappy-java-1.1.10.3.jar" "__spark_libs__/snappy-java-1.1.10.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/109/json4s-core_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-core_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/107/ST4-4.0.4.jar" "__spark_libs__/ST4-4.0.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/125/osgi-resource-locator-1.0.3.jar" "__spark_libs__/osgi-resource-locator-1.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/167/hive-shims-2.3.9.jar" "__spark_libs__/hive-shims-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/225/kubernetes-model-rbac-6.7.2.jar" "__spark_libs__/kubernetes-model-rbac-6.7.2.jar"
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/24/__spark_conf__.zip" "__spark_conf__"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/161/jpam-1.1.jar" "__spark_libs__/jpam-1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/250/kubernetes-model-core-6.7.2.jar" "__spark_libs__/kubernetes-model-core-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/209/jline-2.14.6.jar" "__spark_libs__/jline-2.14.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/98/hk2-locator-2.6.1.jar" "__spark_libs__/hk2-locator-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/97/bonecp-0.8.0.RELEASE.jar" "__spark_libs__/bonecp-0.8.0.RELEASE.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/121/arrow-vector-12.0.1.jar" "__spark_libs__/arrow-vector-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/200/spark-hive_2.12-3.5.1.jar" "__spark_libs__/spark-hive_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/153/stream-2.9.6.jar" "__spark_libs__/stream-2.9.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/36/parquet-format-structures-1.13.1.jar" "__spark_libs__/parquet-format-structures-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/191/snakeyaml-engine-2.6.jar" "__spark_libs__/snakeyaml-engine-2.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/212/orc-shims-1.9.2.jar" "__spark_libs__/orc-shims-1.9.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/18/kubernetes-client-6.7.2.jar" "__spark_libs__/kubernetes-client-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/155/netty-codec-http2-4.1.96.Final.jar" "__spark_libs__/netty-codec-http2-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/124/commons-codec-1.16.0.jar" "__spark_libs__/commons-codec-1.16.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/193/curator-framework-2.13.0.jar" "__spark_libs__/curator-framework-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/32/hive-cli-2.3.9.jar" "__spark_libs__/hive-cli-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/197/lapack-3.0.3.jar" "__spark_libs__/lapack-3.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/10/log4j-slf4j2-impl-2.20.0.jar" "__spark_libs__/log4j-slf4j2-impl-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/87/netty-codec-4.1.96.Final.jar" "__spark_libs__/netty-codec-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/138/spark-common-utils_2.12-3.5.1.jar" "__spark_libs__/spark-common-utils_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/226/commons-crypto-1.1.0.jar" "__spark_libs__/commons-crypto-1.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/44/spark-mllib_2.12-3.5.1.jar" "__spark_libs__/spark-mllib_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/168/hive-storage-api-2.8.1.jar" "__spark_libs__/hive-storage-api-2.8.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/85/netty-codec-socks-4.1.96.Final.jar" "__spark_libs__/netty-codec-socks-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/162/flatbuffers-java-1.12.0.jar" "__spark_libs__/flatbuffers-java-1.12.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/147/netty-buffer-4.1.96.Final.jar" "__spark_libs__/netty-buffer-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/50/netty-transport-native-epoll-4.1.96.Final-linux-x86_64.jar" "__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-x86_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/28/blas-3.0.3.jar" "__spark_libs__/blas-3.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/195/joda-time-2.12.5.jar" "__spark_libs__/joda-time-2.12.5.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/255/netty-transport-classes-kqueue-4.1.96.Final.jar" "__spark_libs__/netty-transport-classes-kqueue-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/41/json4s-jackson_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-jackson_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/96/json4s-scalap_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-scalap_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/103/netty-resolver-4.1.96.Final.jar" "__spark_libs__/netty-resolver-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/122/hk2-utils-2.6.1.jar" "__spark_libs__/hk2-utils-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/198/netty-all-4.1.96.Final.jar" "__spark_libs__/netty-all-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/93/jackson-mapper-asl-1.9.13.jar" "__spark_libs__/jackson-mapper-asl-1.9.13.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/116/curator-recipes-2.13.0.jar" "__spark_libs__/curator-recipes-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/43/kubernetes-model-certificates-6.7.2.jar" "__spark_libs__/kubernetes-model-certificates-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/220/jackson-core-2.15.2.jar" "__spark_libs__/jackson-core-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/14/super-csv-2.2.0.jar" "__spark_libs__/super-csv-2.2.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/215/jersey-container-servlet-core-2.40.jar" "__spark_libs__/jersey-container-servlet-core-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/75/opencsv-2.3.jar" "__spark_libs__/opencsv-2.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/254/stax-api-1.0.1.jar" "__spark_libs__/stax-api-1.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/92/jcl-over-slf4j-2.0.7.jar" "__spark_libs__/jcl-over-slf4j-2.0.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/233/avro-ipc-1.11.2.jar" "__spark_libs__/avro-ipc-1.11.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/55/hive-shims-common-2.3.9.jar" "__spark_libs__/hive-shims-common-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/157/spark-network-common_2.12-3.5.1.jar" "__spark_libs__/spark-network-common_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/54/gson-2.2.4.jar" "__spark_libs__/gson-2.2.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/228/kubernetes-model-metrics-6.7.2.jar" "__spark_libs__/kubernetes-model-metrics-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/238/jodd-core-3.5.2.jar" "__spark_libs__/jodd-core-3.5.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/24/spark-mllib-local_2.12-3.5.1.jar" "__spark_libs__/spark-mllib-local_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/105/paranamer-2.8.jar" "__spark_libs__/paranamer-2.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/11/netty-transport-native-kqueue-4.1.96.Final-osx-x86_64.jar" "__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-x86_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/12/jackson-annotations-2.15.2.jar" "__spark_libs__/jackson-annotations-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/130/netty-transport-classes-epoll-4.1.96.Final.jar" "__spark_libs__/netty-transport-classes-epoll-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/249/metrics-jmx-4.2.19.jar" "__spark_libs__/metrics-jmx-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/175/json4s-ast_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-ast_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/204/hive-exec-2.3.9-core.jar" "__spark_libs__/hive-exec-2.3.9-core.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/256/arrow-format-12.0.1.jar" "__spark_libs__/arrow-format-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/33/tink-1.9.0.jar" "__spark_libs__/tink-1.9.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/234/arpack_combined_all-0.1.jar" "__spark_libs__/arpack_combined_all-0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/70/jakarta.validation-api-2.0.2.jar" "__spark_libs__/jakarta.validation-api-2.0.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/141/kubernetes-model-networking-6.7.2.jar" "__spark_libs__/kubernetes-model-networking-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/179/arrow-memory-netty-12.0.1.jar" "__spark_libs__/arrow-memory-netty-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/219/zookeeper-3.6.3.jar" "__spark_libs__/zookeeper-3.6.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/171/netty-transport-native-kqueue-4.1.96.Final-osx-aarch_64.jar" "__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-aarch_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/240/compress-lzf-1.1.2.jar" "__spark_libs__/compress-lzf-1.1.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/80/jaxb-runtime-2.3.2.jar" "__spark_libs__/jaxb-runtime-2.3.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/136/kubernetes-httpclient-okhttp-6.7.2.jar" "__spark_libs__/kubernetes-httpclient-okhttp-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/123/breeze-macros_2.12-2.1.0.jar" "__spark_libs__/breeze-macros_2.12-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/206/kubernetes-model-admissionregistration-6.7.2.jar" "__spark_libs__/kubernetes-model-admissionregistration-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/230/spark-sql_2.12-3.5.1.jar" "__spark_libs__/spark-sql_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/252/jsr305-3.0.0.jar" "__spark_libs__/jsr305-3.0.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/154/spark-sql-api_2.12-3.5.1.jar" "__spark_libs__/spark-sql-api_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/78/jakarta.inject-2.6.1.jar" "__spark_libs__/jakarta.inject-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/79/commons-io-2.13.0.jar" "__spark_libs__/commons-io-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/84/spark-unsafe_2.12-3.5.1.jar" "__spark_libs__/spark-unsafe_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/156/spark-kvstore_2.12-3.5.1.jar" "__spark_libs__/spark-kvstore_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/248/RoaringBitmap-0.9.45.jar" "__spark_libs__/RoaringBitmap-0.9.45.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/51/log4j-api-2.20.0.jar" "__spark_libs__/log4j-api-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/94/commons-compiler-3.1.9.jar" "__spark_libs__/commons-compiler-3.1.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/68/kubernetes-model-coordination-6.7.2.jar" "__spark_libs__/kubernetes-model-coordination-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/66/HikariCP-2.5.1.jar" "__spark_libs__/HikariCP-2.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/83/istack-commons-runtime-3.0.8.jar" "__spark_libs__/istack-commons-runtime-3.0.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/253/parquet-column-1.13.1.jar" "__spark_libs__/parquet-column-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/182/parquet-encoding-1.13.1.jar" "__spark_libs__/parquet-encoding-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/45/kubernetes-model-node-6.7.2.jar" "__spark_libs__/kubernetes-model-node-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/236/guava-14.0.1.jar" "__spark_libs__/guava-14.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/31/aircompressor-0.26.jar" "__spark_libs__/aircompressor-0.26.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/39/kubernetes-model-batch-6.7.2.jar" "__spark_libs__/kubernetes-model-batch-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/149/hive-llap-common-2.3.9.jar" "__spark_libs__/hive-llap-common-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/133/netty-handler-4.1.96.Final.jar" "__spark_libs__/netty-handler-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/22/netty-codec-http-4.1.96.Final.jar" "__spark_libs__/netty-codec-http-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/127/kubernetes-model-apps-6.7.2.jar" "__spark_libs__/kubernetes-model-apps-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/231/spire-util_2.12-0.17.0.jar" "__spark_libs__/spire-util_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/27/lz4-java-1.8.0.jar" "__spark_libs__/lz4-java-1.8.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/243/javolution-5.5.1.jar" "__spark_libs__/javolution-5.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/144/jakarta.ws.rs-api-2.1.6.jar" "__spark_libs__/jakarta.ws.rs-api-2.1.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/48/hadoop-client-api-3.3.4.jar" "__spark_libs__/hadoop-client-api-3.3.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/210/json-1.8.jar" "__spark_libs__/json-1.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/217/kubernetes-model-flowcontrol-6.7.2.jar" "__spark_libs__/kubernetes-model-flowcontrol-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/202/parquet-common-1.13.1.jar" "__spark_libs__/parquet-common-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/180/minlog-1.3.0.jar" "__spark_libs__/minlog-1.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/102/hive-jdbc-2.3.9.jar" "__spark_libs__/hive-jdbc-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/132/spark-core_2.12-3.5.1.jar" "__spark_libs__/spark-core_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/213/kubernetes-model-gatewayapi-6.7.2.jar" "__spark_libs__/kubernetes-model-gatewayapi-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/106/zookeeper-jute-3.6.3.jar" "__spark_libs__/zookeeper-jute-3.6.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/140/metrics-core-4.2.19.jar" "__spark_libs__/metrics-core-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/120/jul-to-slf4j-2.0.7.jar" "__spark_libs__/jul-to-slf4j-2.0.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/42/datasketches-memory-2.1.0.jar" "__spark_libs__/datasketches-memory-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/145/commons-math3-3.6.1.jar" "__spark_libs__/commons-math3-3.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/99/derby-10.14.2.0.jar" "__spark_libs__/derby-10.14.2.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/190/metrics-graphite-4.2.19.jar" "__spark_libs__/metrics-graphite-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/134/jersey-client-2.40.jar" "__spark_libs__/jersey-client-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/30/netty-transport-native-epoll-4.1.96.Final-linux-aarch_64.jar" "__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-aarch_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/76/datasketches-java-3.3.0.jar" "__spark_libs__/datasketches-java-3.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/164/commons-collections4-4.4.jar" "__spark_libs__/commons-collections4-4.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/224/xbean-asm9-shaded-4.23.jar" "__spark_libs__/xbean-asm9-shaded-4.23.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/227/hk2-api-2.6.1.jar" "__spark_libs__/hk2-api-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/101/hive-common-2.3.9.jar" "__spark_libs__/hive-common-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/52/datanucleus-rdbms-4.1.19.jar" "__spark_libs__/datanucleus-rdbms-4.1.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/17/kubernetes-model-discovery-6.7.2.jar" "__spark_libs__/kubernetes-model-discovery-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/223/pickle-1.3.jar" "__spark_libs__/pickle-1.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/47/jackson-module-scala_2.12-2.15.2.jar" "__spark_libs__/jackson-module-scala_2.12-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/77/JLargeArrays-1.5.jar" "__spark_libs__/JLargeArrays-1.5.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/177/jdo-api-3.0.1.jar" "__spark_libs__/jdo-api-3.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/189/objenesis-3.3.jar" "__spark_libs__/objenesis-3.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/25/javassist-3.29.2-GA.jar" "__spark_libs__/javassist-3.29.2-GA.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/152/datanucleus-api-jdo-4.2.4.jar" "__spark_libs__/datanucleus-api-jdo-4.2.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/62/antlr4-runtime-4.9.3.jar" "__spark_libs__/antlr4-runtime-4.9.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/37/rocksdbjni-8.3.2.jar" "__spark_libs__/rocksdbjni-8.3.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/126/shims-0.9.45.jar" "__spark_libs__/shims-0.9.45.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/29/commons-pool-1.5.4.jar" "__spark_libs__/commons-pool-1.5.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/74/jackson-core-asl-1.9.13.jar" "__spark_libs__/jackson-core-asl-1.9.13.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/186/log4j-1.2-api-2.20.0.jar" "__spark_libs__/log4j-1.2-api-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/260/netty-transport-native-unix-common-4.1.96.Final.jar" "__spark_libs__/netty-transport-native-unix-common-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/135/dropwizard-metrics-hadoop-metrics2-reporter-0.1.2.jar" "__spark_libs__/dropwizard-metrics-hadoop-metrics2-reporter-0.1.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/16/metrics-json-4.2.19.jar" "__spark_libs__/metrics-json-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/23/kubernetes-model-common-6.7.2.jar" "__spark_libs__/kubernetes-model-common-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/222/hive-shims-scheduler-2.3.9.jar" "__spark_libs__/hive-shims-scheduler-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/86/ivy-2.5.1.jar" "__spark_libs__/ivy-2.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/112/kubernetes-model-resource-6.7.2.jar" "__spark_libs__/kubernetes-model-resource-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/247/annotations-17.0.0.jar" "__spark_libs__/annotations-17.0.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/95/datanucleus-core-4.1.17.jar" "__spark_libs__/datanucleus-core-4.1.17.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/139/commons-lang-2.6.jar" "__spark_libs__/commons-lang-2.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/69/transaction-api-1.1.jar" "__spark_libs__/transaction-api-1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/192/breeze_2.12-2.1.0.jar" "__spark_libs__/breeze_2.12-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/60/chill-java-0.10.0.jar" "__spark_libs__/chill-java-0.10.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/184/libfb303-0.9.3.jar" "__spark_libs__/libfb303-0.9.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/188/kubernetes-model-scheduling-6.7.2.jar" "__spark_libs__/kubernetes-model-scheduling-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/245/scala-compiler-2.12.18.jar" "__spark_libs__/scala-compiler-2.12.18.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/150/kubernetes-model-events-6.7.2.jar" "__spark_libs__/kubernetes-model-events-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/237/activation-1.1.1.jar" "__spark_libs__/activation-1.1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/56/parquet-jackson-1.13.1.jar" "__spark_libs__/parquet-jackson-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/34/spark-hive-thriftserver_2.12-3.5.1.jar" "__spark_libs__/spark-hive-thriftserver_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/257/netty-common-4.1.96.Final.jar" "__spark_libs__/netty-common-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/82/hive-shims-0.23-2.3.9.jar" "__spark_libs__/hive-shims-0.23-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/181/jersey-server-2.40.jar" "__spark_libs__/jersey-server-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/111/spark-launcher_2.12-3.5.1.jar" "__spark_libs__/spark-launcher_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/218/spire-macros_2.12-0.17.0.jar" "__spark_libs__/spire-macros_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/151/orc-core-1.9.2-shaded-protobuf.jar" "__spark_libs__/orc-core-1.9.2-shaded-protobuf.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/174/kubernetes-model-policy-6.7.2.jar" "__spark_libs__/kubernetes-model-policy-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/65/jersey-hk2-2.40.jar" "__spark_libs__/jersey-hk2-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/196/hadoop-shaded-guava-1.1.1.jar" "__spark_libs__/hadoop-shaded-guava-1.1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/89/janino-3.1.9.jar" "__spark_libs__/janino-3.1.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/13/jakarta.annotation-api-1.3.5.jar" "__spark_libs__/jakarta.annotation-api-1.3.5.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/63/avro-1.11.2.jar" "__spark_libs__/avro-1.11.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/244/kubernetes-model-extensions-6.7.2.jar" "__spark_libs__/kubernetes-model-extensions-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/259/okio-1.15.0.jar" "__spark_libs__/okio-1.15.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/71/scala-library-2.12.18.jar" "__spark_libs__/scala-library-2.12.18.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/207/oro-2.0.8.jar" "__spark_libs__/oro-2.0.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/72/spire_2.12-0.17.0.jar" "__spark_libs__/spire_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/176/kubernetes-model-storageclass-6.7.2.jar" "__spark_libs__/kubernetes-model-storageclass-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/61/logging-interceptor-3.12.12.jar" "__spark_libs__/logging-interceptor-3.12.12.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/169/chill_2.12-0.10.0.jar" "__spark_libs__/chill_2.12-0.10.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/258/hadoop-yarn-server-web-proxy-3.3.4.jar" "__spark_libs__/hadoop-yarn-server-web-proxy-3.3.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/239/scala-parser-combinators_2.12-2.3.0.jar" "__spark_libs__/scala-parser-combinators_2.12-2.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/137/log4j-core-2.20.0.jar" "__spark_libs__/log4j-core-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/57/kubernetes-model-apiextensions-6.7.2.jar" "__spark_libs__/kubernetes-model-apiextensions-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/115/commons-compress-1.23.0.jar" "__spark_libs__/commons-compress-1.23.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/49/curator-client-2.13.0.jar" "__spark_libs__/curator-client-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/110/leveldbjni-all-1.8.jar" "__spark_libs__/leveldbjni-all-1.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/261/antlr-runtime-3.5.2.jar" "__spark_libs__/antlr-runtime-3.5.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/143/scala-collection-compat_2.12-2.7.0.jar" "__spark_libs__/scala-collection-compat_2.12-2.7.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/88/spark-sketch_2.12-3.5.1.jar" "__spark_libs__/spark-sketch_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/142/slf4j-api-2.0.7.jar" "__spark_libs__/slf4j-api-2.0.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/178/spark-catalyst_2.12-3.5.1.jar" "__spark_libs__/spark-catalyst_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/73/jackson-databind-2.15.2.jar" "__spark_libs__/jackson-databind-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/246/orc-mapreduce-1.9.2-shaded-protobuf.jar" "__spark_libs__/orc-mapreduce-1.9.2-shaded-protobuf.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/241/kubernetes-client-api-6.7.2.jar" "__spark_libs__/kubernetes-client-api-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/20/scala-xml_2.12-2.1.0.jar" "__spark_libs__/scala-xml_2.12-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/26/algebra_2.12-2.0.1.jar" "__spark_libs__/algebra_2.12-2.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/108/spark-repl_2.12-3.5.1.jar" "__spark_libs__/spark-repl_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/21/cats-kernel_2.12-2.1.1.jar" "__spark_libs__/cats-kernel_2.12-2.1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/40/spark-network-shuffle_2.12-3.5.1.jar" "__spark_libs__/spark-network-shuffle_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/91/zstd-jni-1.5.5-4.jar" "__spark_libs__/zstd-jni-1.5.5-4.jar"
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/23/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar" "__app__.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/128/spark-streaming_2.12-3.5.1.jar" "__spark_libs__/spark-streaming_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/159/aopalliance-repackaged-2.6.1.jar" "__spark_libs__/aopalliance-repackaged-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/170/commons-collections-3.2.2.jar" "__spark_libs__/commons-collections-3.2.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/117/jackson-datatype-jsr310-2.15.2.jar" "__spark_libs__/jackson-datatype-jsr310-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/119/jakarta.xml.bind-api-2.3.2.jar" "__spark_libs__/jakarta.xml.bind-api-2.3.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/35/arpack-3.0.3.jar" "__spark_libs__/arpack-3.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/166/jersey-container-servlet-2.40.jar" "__spark_libs__/jersey-container-servlet-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/81/jersey-common-2.40.jar" "__spark_libs__/jersey-common-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/216/netty-transport-4.1.96.Final.jar" "__spark_libs__/netty-transport-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/100/spire-platform_2.12-0.17.0.jar" "__spark_libs__/spire-platform_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/211/commons-logging-1.1.3.jar" "__spark_libs__/commons-logging-1.1.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/59/metrics-jvm-4.2.19.jar" "__spark_libs__/metrics-jvm-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/67/commons-dbcp-1.4.jar" "__spark_libs__/commons-dbcp-1.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/205/commons-lang3-3.12.0.jar" "__spark_libs__/commons-lang3-3.12.0.jar"
+echo "Copying debugging information"
+# Creating copy of launch script
+cp "launch_container.sh" "/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/launch_container.sh"
+chmod 640 "/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/launch_container.sh"
+# Determining directory contents
+echo "ls -l:" 1>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/directory.info"
+ls -l 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/directory.info"
+echo "find -L . -maxdepth 5 -ls:" 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/directory.info"
+find -L . -maxdepth 5 -ls 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/directory.info"
+echo "broken symlinks(find -L . -maxdepth 5 -type l -ls):" 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/directory.info"
+find -L . -maxdepth 5 -type l -ls 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/directory.info"
+echo "Launching container"
+exec /bin/bash -c "$JAVA_HOME/bin/java -server -Djava.net.preferIPv6Addresses=false -XX:+IgnoreUnrecognizedVMOptions --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.nio.cs=ALL-UNNAMED --add-opens=java.base/sun.security.action=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=false -Xmx1024m -Djava.io.tmpdir=$PWD/tmp -Dspark.yarn.app.container.log.dir=/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001 org.apache.spark.deploy.yarn.ApplicationMaster --class com.graduation.analytics.job.JobRunner --jar file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-built/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar --arg "--jobCode=mxp" --arg "--runtimeProfileId=1" --arg "--businessDate=20260901" --arg "--attemptNo=1" --arg "--hiveDatabasePrefix=dw" --arg "--outputSnapshotId=S20260901E4" --arg "--shufflePartitions=4" --arg "--exportDir=hdfs://node01:8020/graduation/export/e4c1000" --properties-file $PWD/__spark_conf__/__spark_conf__.properties --dist-cache-conf $PWD/__spark_conf__/__spark_dist_cache__.properties 1> /opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/stdout 2> /opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_01_000001/stderr"
+
+End of LogType:launch_container.sh
+************************************************************************************
+
+Container: container_e35_1789195359269_0014_01_000001 on node01_45365
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:prelaunch.err
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:0
+LogContents:
+
+End of LogType:prelaunch.err
+******************************************************************************
+
+Container: container_e35_1789195359269_0014_01_000001 on node01_45365
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:prelaunch.out
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:100
+LogContents:
+Setting up env variables
+Setting up job resources
+Copying debugging information
+Launching container
+
+End of LogType:prelaunch.out
+******************************************************************************
+
+Container: container_e35_1789195359269_0014_01_000001 on node01_45365
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:stderr
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:5577
+LogContents:
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+26/09/12 15:56:53 INFO SignalUtils: Registering signal handler for TERM
+26/09/12 15:56:53 INFO SignalUtils: Registering signal handler for HUP
+26/09/12 15:56:53 INFO SignalUtils: Registering signal handler for INT
+26/09/12 15:56:54 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+26/09/12 15:56:54 INFO ApplicationMaster: ApplicationAttemptId: appattempt_1789195359269_0014_000001
+26/09/12 15:56:54 INFO ApplicationMaster: Starting the user application in a separate Thread
+26/09/12 15:56:54 INFO ApplicationMaster: Waiting for spark context initialization...
+[spark-jobs] 数仓库名空间: dw_ods, dw_dwd, dw_dim, dw_dws, dw_ads
+26/09/12 15:56:55 ERROR ApplicationMaster: User class threw exception: 
+java.lang.NoSuchMethodError: java.lang.String.isBlank()Z
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1$adapted(MetricExportJob.scala:33)
+	at scala.Option.forall(Option.scala:390)
+	at com.graduation.analytics.job.MetricExportJob.validate(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:45)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:738)
+26/09/12 15:56:55 INFO ApplicationMaster: Final app status: FAILED, exitCode: 13, (reason: User class threw exception: java.lang.NoSuchMethodError: java.lang.String.isBlank()Z
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1$adapted(MetricExportJob.scala:33)
+	at scala.Option.forall(Option.scala:390)
+	at com.graduation.analytics.job.MetricExportJob.validate(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:45)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:738)
+)
+26/09/12 15:56:55 ERROR ApplicationMaster: Uncaught exception: 
+org.apache.spark.SparkException: Exception thrown in awaitResult: 
+	at org.apache.spark.util.SparkThreadUtils$.awaitResult(SparkThreadUtils.scala:56)
+	at org.apache.spark.util.ThreadUtils$.awaitResult(ThreadUtils.scala:310)
+	at org.apache.spark.deploy.yarn.ApplicationMaster.runDriver(ApplicationMaster.scala:506)
+	at org.apache.spark.deploy.yarn.ApplicationMaster.run(ApplicationMaster.scala:265)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$3.run(ApplicationMaster.scala:934)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$3.run(ApplicationMaster.scala:933)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1878)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$.main(ApplicationMaster.scala:933)
+	at org.apache.spark.deploy.yarn.ApplicationMaster.main(ApplicationMaster.scala)
+Caused by: java.util.concurrent.ExecutionException: Boxed Error
+	at scala.concurrent.impl.Promise$.resolver(Promise.scala:87)
+	at scala.concurrent.impl.Promise$.scala$concurrent$impl$Promise$$resolveTry(Promise.scala:79)
+	at scala.concurrent.impl.Promise$DefaultPromise.tryComplete(Promise.scala:284)
+	at scala.concurrent.Promise.tryFailure(Promise.scala:112)
+	at scala.concurrent.Promise.tryFailure$(Promise.scala:112)
+	at scala.concurrent.impl.Promise$DefaultPromise.tryFailure(Promise.scala:187)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:757)
+Caused by: java.lang.NoSuchMethodError: java.lang.String.isBlank()Z
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1$adapted(MetricExportJob.scala:33)
+	at scala.Option.forall(Option.scala:390)
+	at com.graduation.analytics.job.MetricExportJob.validate(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:45)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:738)
+26/09/12 15:56:55 INFO ShutdownHookManager: Shutdown hook called
+
+End of LogType:stderr
+***********************************************************************
+
+Container: container_e35_1789195359269_0014_01_000001 on node01_45365
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:stdout
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:0
+LogContents:
+
+End of LogType:stdout
+***********************************************************************
+
+Container: container_e35_1789195359269_0014_02_000001 on node03_43710
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:directory.info
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:31390
+LogContents:
+ls -l:
+total 72
+lrwxrwxrwx 1 root root    98 Sep 12 15:56 __app__.jar -> /var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/31/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+-rw-r--r-- 1 root root    69 Sep 12 15:56 container_tokens
+-rwx------ 1 root root   704 Sep 12 15:56 default_container_executor_session.sh
+-rwx------ 1 root root   759 Sep 12 15:56 default_container_executor.sh
+-rwx------ 1 root root 44606 Sep 12 15:56 launch_container.sh
+lrwxrwxrwx 1 root root    78 Sep 12 15:56 __spark_conf__ -> /var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/32/__spark_conf__.zip
+drwxr-xr-x 2 root root 12288 Sep 12 15:56 __spark_libs__
+drwx--x--- 2 root root     6 Sep 12 15:56 tmp
+find -L . -maxdepth 5 -ls:
+7194789    4 drwx--x---   4 root     root         4096 Sep 12 15:56 .
+137707900    0 drwx--x---   2 root     root            6 Sep 12 15:56 ./tmp
+7194790    4 -rw-r--r--   1 root     root           69 Sep 12 15:56 ./container_tokens
+7194791    4 -rw-r--r--   1 root     root           12 Sep 12 15:56 ./.container_tokens.crc
+7194792   44 -rwx------   1 root     root        44606 Sep 12 15:56 ./launch_container.sh
+7194793    4 -rw-r--r--   1 root     root          360 Sep 12 15:56 ./.launch_container.sh.crc
+7194794    4 -rwx------   1 root     root          704 Sep 12 15:56 ./default_container_executor_session.sh
+7194795    4 -rw-r--r--   1 root     root           16 Sep 12 15:56 ./.default_container_executor_session.sh.crc
+7194796    4 -rwx------   1 root     root          759 Sep 12 15:56 ./default_container_executor.sh
+7194797    4 -rw-r--r--   1 root     root           16 Sep 12 15:56 ./.default_container_executor.sh.crc
+206050007   16 drwxr-xr-x   2 root     root        12288 Sep 12 15:56 ./__spark_libs__
+7154285  932 -r-xr-xr-x   1 root     root       953001 Sep 12 15:40 ./__spark_libs__/kubernetes-model-autoscaling-6.7.2.jar
+70028023  180 -r-xr-xr-x   1 root     root       183633 Sep 12 15:40 ./__spark_libs__/hive-beeline-2.3.9.jar
+70442059  328 -r-xr-xr-x   1 root     root       334803 Sep 12 15:40 ./__spark_libs__/snakeyaml-2.0.jar
+70028017  404 -r-xr-xr-x   1 root     root       410874 Sep 12 15:40 ./__spark_libs__/kryo-shaded-4.0.2.jar
+206003489   36 -r-xr-xr-x   1 root     root        35518 Sep 12 15:40 ./__spark_libs__/zjsonpatch-0.3.0.jar
+70430538   20 -r-xr-xr-x   1 root     root        20437 Sep 12 15:40 ./__spark_libs__/audience-annotations-0.5.0.jar
+206018273  532 -r-xr-xr-x   1 root     root       541587 Sep 12 15:40 ./__spark_libs__/spark-kubernetes_2.12-3.5.1.jar
+70430520  112 -r-xr-xr-x   1 root     root       111010 Sep 12 15:40 ./__spark_libs__/arrow-memory-core-12.0.1.jar
+7153931 8004 -r-xr-xr-x   1 root     root      8195966 Sep 12 15:40 ./__spark_libs__/hive-metastore-2.3.9.jar
+206018255  420 -r-xr-xr-x   1 root     root       427674 Sep 12 15:40 ./__spark_libs__/okhttp-3.12.12.jar
+7154273  244 -r-xr-xr-x   1 root     root       249790 Sep 12 15:40 ./__spark_libs__/javax.jdo-3.2.0-m3.jar
+7160386  252 -r-xr-xr-x   1 root     root       256667 Sep 12 15:40 ./__spark_libs__/threeten-extra-1.7.1.jar
+137388720 7176 -r-xr-xr-x   1 root     root      7345382 Sep 12 15:40 ./__spark_libs__/mesos-1.4.3-shaded-protobuf.jar
+206003043  424 -r-xr-xr-x   1 root     root       432651 Sep 12 15:40 ./__spark_libs__/spark-graphx_2.12-3.5.1.jar
+70442086  188 -r-xr-xr-x   1 root     root       188465 Sep 12 15:40 ./__spark_libs__/avro-mapred-1.11.2.jar
+137388693  324 -r-xr-xr-x   1 root     root       327891 Sep 12 15:40 ./__spark_libs__/httpcore-4.4.16.jar
+7154258  440 -r-xr-xr-x   1 root     root       447005 Sep 12 15:40 ./__spark_libs__/univocity-parsers-2.9.1.jar
+70442050  244 -r-xr-xr-x   1 root     root       246445 Sep 12 15:40 ./__spark_libs__/libthrift-0.12.0.jar
+135997922   56 -r-xr-xr-x   1 root     root        54630 Sep 12 15:40 ./__spark_libs__/jackson-dataformat-yaml-2.15.2.jar
+205776827   84 -r-xr-xr-x   1 root     root        82872 Sep 12 15:40 ./__spark_libs__/jakarta.servlet-api-4.0.3.jar
+7154300   28 -r-xr-xr-x   1 root     root        25486 Sep 12 15:40 ./__spark_libs__/netty-handler-proxy-4.1.96.Final.jar
+206003522  292 -r-xr-xr-x   1 root     root       297253 Sep 12 15:40 ./__spark_libs__/spark-mesos_2.12-3.5.1.jar
+135997946 3588 -r-xr-xr-x   1 root     root      3670535 Sep 12 15:40 ./__spark_libs__/scala-reflect-2.12.18.jar
+70430496   60 -r-xr-xr-x   1 root     root        58284 Sep 12 15:40 ./__spark_libs__/commons-cli-1.5.0.jar
+137388732 1152 -r-xr-xr-x   1 root     root      1175798 Sep 12 15:40 ./__spark_libs__/JTransforms-3.1.jar
+135997678  344 -r-xr-xr-x   1 root     root       351778 Sep 12 15:40 ./__spark_libs__/spark-yarn_2.12-3.5.1.jar
+70451690   16 -r-xr-xr-x   1 root     root        15071 Sep 12 15:40 ./__spark_libs__/jta-1.1.jar
+206003531  984 -r-xr-xr-x   1 root     root      1004811 Sep 12 15:40 ./__spark_libs__/parquet-hadoop-1.13.1.jar
+137388681  124 -r-xr-xr-x   1 root     root       124506 Sep 12 15:40 ./__spark_libs__/py4j-0.10.9.7.jar
+70442101  116 -r-xr-xr-x   1 root     root       116013 Sep 12 15:40 ./__spark_libs__/xz-1.9.jar
+206003540  236 -r-xr-xr-x   1 root     root       238400 Sep 12 15:40 ./__spark_libs__/commons-text-1.10.0.jar
+137388696 1644 -r-xr-xr-x   1 root     root      1679366 Sep 12 15:40 ./__spark_libs__/hive-service-rpc-3.1.3.jar
+7154264  768 -r-xr-xr-x   1 root     root       785639 Sep 12 15:40 ./__spark_libs__/httpclient-4.5.14.jar
+7153886   16 -r-xr-xr-x   1 root     root        15160 Sep 12 15:40 ./__spark_libs__/spark-tags_2.12-3.5.1.jar
+7153943 29384 -r-xr-xr-x   1 root     root     30085504 Sep 12 15:40 ./__spark_libs__/hadoop-client-runtime-3.3.4.jar
+137388684  896 -r-xr-xr-x   1 root     root       916630 Sep 12 15:40 ./__spark_libs__/hive-serde-2.3.9.jar
+70430541 2012 -r-xr-xr-x   1 root     root      2058806 Sep 12 15:40 ./__spark_libs__/snappy-java-1.1.10.3.jar
+7153928  516 -r-xr-xr-x   1 root     root       526286 Sep 12 15:40 ./__spark_libs__/json4s-core_2.12-3.7.0-M11.jar
+135997904  232 -r-xr-xr-x   1 root     root       236660 Sep 12 15:40 ./__spark_libs__/ST4-4.0.4.jar
+7153940   20 -r-xr-xr-x   1 root     root        19479 Sep 12 15:40 ./__spark_libs__/osgi-resource-locator-1.0.3.jar
+135997949   12 -r-xr-xr-x   1 root     root         8786 Sep 12 15:40 ./__spark_libs__/hive-shims-2.3.9.jar
+7154303  172 -r-xr-xr-x   1 root     root       174487 Sep 12 15:40 ./__spark_libs__/kubernetes-model-rbac-6.7.2.jar
+7154255   12 -r-xr-xr-x   1 root     root        12131 Sep 12 15:40 ./__spark_libs__/jpam-1.1.jar
+70451696 4796 -r-xr-xr-x   1 root     root      4907714 Sep 12 15:40 ./__spark_libs__/kubernetes-model-core-6.7.2.jar
+7154291  264 -r-xr-xr-x   1 root     root       268780 Sep 12 15:40 ./__spark_libs__/jline-2.14.6.jar
+70430526  200 -r-xr-xr-x   1 root     root       203358 Sep 12 15:40 ./__spark_libs__/hk2-locator-2.6.1.jar
+7153919  112 -r-xr-xr-x   1 root     root       110600 Sep 12 15:40 ./__spark_libs__/bonecp-0.8.0.RELEASE.jar
+7153937 1836 -r-xr-xr-x   1 root     root      1878304 Sep 12 15:40 ./__spark_libs__/arrow-vector-12.0.1.jar
+206018249  708 -r-xr-xr-x   1 root     root       724280 Sep 12 15:40 ./__spark_libs__/spark-hive_2.12-3.5.1.jar
+7154249  176 -r-xr-xr-x   1 root     root       178149 Sep 12 15:40 ./__spark_libs__/stream-2.9.6.jar
+206003022  712 -r-xr-xr-x   1 root     root       726071 Sep 12 15:40 ./__spark_libs__/parquet-format-structures-1.13.1.jar
+137388687  288 -r-xr-xr-x   1 root     root       292124 Sep 12 15:40 ./__spark_libs__/snakeyaml-engine-2.6.jar
+206018258   32 -r-xr-xr-x   1 root     root        28997 Sep 12 15:40 ./__spark_libs__/orc-shims-1.9.2.jar
+70028002  384 -r-xr-xr-x   1 root     root       392179 Sep 12 15:40 ./__spark_libs__/kubernetes-client-6.7.2.jar
+135997940  472 -r-xr-xr-x   1 root     root       483284 Sep 12 15:40 ./__spark_libs__/netty-codec-http2-4.1.96.Final.jar
+206003504  356 -r-xr-xr-x   1 root     root       360738 Sep 12 15:40 ./__spark_libs__/commons-codec-1.16.0.jar
+7154279  200 -r-xr-xr-x   1 root     root       201965 Sep 12 15:40 ./__spark_libs__/curator-framework-2.13.0.jar
+206003019   44 -r-xr-xr-x   1 root     root        44704 Sep 12 15:40 ./__spark_libs__/hive-cli-2.3.9.jar
+7154282  848 -r-xr-xr-x   1 root     root       867679 Sep 12 15:40 ./__spark_libs__/lapack-3.0.3.jar
+135997670   28 -r-xr-xr-x   1 root     root        26430 Sep 12 15:40 ./__spark_libs__/log4j-slf4j2-impl-2.20.0.jar
+135997889  340 -r-xr-xr-x   1 root     root       344788 Sep 12 15:40 ./__spark_libs__/netty-codec-4.1.96.Final.jar
+70430556  240 -r-xr-xr-x   1 root     root       244621 Sep 12 15:40 ./__spark_libs__/spark-common-utils_2.12-3.5.1.jar
+70442110  164 -r-xr-xr-x   1 root     root       166244 Sep 12 15:40 ./__spark_libs__/commons-crypto-1.1.0.jar
+206003028 6000 -r-xr-xr-x   1 root     root      6143759 Sep 12 15:40 ./__spark_libs__/spark-mllib_2.12-3.5.1.jar
+206003537  256 -r-xr-xr-x   1 root     root       258346 Sep 12 15:40 ./__spark_libs__/hive-storage-api-2.8.1.jar
+7153910  120 -r-xr-xr-x   1 root     root       120974 Sep 12 15:40 ./__spark_libs__/netty-codec-socks-4.1.96.Final.jar
+70442062   64 -r-xr-xr-x   1 root     root        64873 Sep 12 15:40 ./__spark_libs__/flatbuffers-java-1.12.0.jar
+135997934  300 -r-xr-xr-x   1 root     root       306489 Sep 12 15:40 ./__spark_libs__/netty-buffer-4.1.96.Final.jar
+70028026   40 -r-xr-xr-x   1 root     root        38970 Sep 12 15:40 ./__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-x86_64.jar
+206003016  164 -r-xr-xr-x   1 root     root       166259 Sep 12 15:40 ./__spark_libs__/blas-3.0.3.jar
+137388690  624 -r-xr-xr-x   1 root     root       637993 Sep 12 15:40 ./__spark_libs__/joda-time-2.12.5.jar
+137388735  108 -r-xr-xr-x   1 root     root       108433 Sep 12 15:40 ./__spark_libs__/netty-transport-classes-kqueue-4.1.96.Final.jar
+7153877   40 -r-xr-xr-x   1 root     root        37065 Sep 12 15:40 ./__spark_libs__/json4s-jackson_2.12-3.7.0-M11.jar
+206003067  344 -r-xr-xr-x   1 root     root       348265 Sep 12 15:40 ./__spark_libs__/json4s-scalap_2.12-3.7.0-M11.jar
+135997901   40 -r-xr-xr-x   1 root     root        37791 Sep 12 15:40 ./__spark_libs__/netty-resolver-4.1.96.Final.jar
+70430544  132 -r-xr-xr-x   1 root     root       131590 Sep 12 15:40 ./__spark_libs__/hk2-utils-2.6.1.jar
+70442089    8 -r-xr-xr-x   1 root     root         4468 Sep 12 15:40 ./__spark_libs__/netty-all-4.1.96.Final.jar
+7153916  764 -r-xr-xr-x   1 root     root       780664 Sep 12 15:40 ./__spark_libs__/jackson-mapper-asl-1.9.13.jar
+206003498  280 -r-xr-xr-x   1 root     root       283653 Sep 12 15:40 ./__spark_libs__/curator-recipes-2.13.0.jar
+135997696  144 -r-xr-xr-x   1 root     root       145397 Sep 12 15:40 ./__spark_libs__/kubernetes-model-certificates-6.7.2.jar
+206018264  540 -r-xr-xr-x   1 root     root       549207 Sep 12 15:40 ./__spark_libs__/jackson-core-2.15.2.jar
+135997674   92 -r-xr-xr-x   1 root     root        93210 Sep 12 15:40 ./__spark_libs__/super-csv-2.2.0.jar
+137388705   72 -r-xr-xr-x   1 root     root        73256 Sep 12 15:40 ./__spark_libs__/jersey-container-servlet-core-2.40.jar
+135997720   20 -r-xr-xr-x   1 root     root        19827 Sep 12 15:40 ./__spark_libs__/opencsv-2.3.jar
+70451699   28 -r-xr-xr-x   1 root     root        26514 Sep 12 15:40 ./__spark_libs__/stax-api-1.0.1.jar
+206003064   24 -r-xr-xr-x   1 root     root        21143 Sep 12 15:40 ./__spark_libs__/jcl-over-slf4j-2.0.7.jar
+7160389  184 -r-xr-xr-x   1 root     root       185432 Sep 12 15:40 ./__spark_libs__/avro-ipc-1.11.2.jar
+135997705  120 -r-xr-xr-x   1 root     root       120293 Sep 12 15:40 ./__spark_libs__/hive-shims-common-2.3.9.jar
+7154252 2368 -r-xr-xr-x   1 root     root      2422356 Sep 12 15:40 ./__spark_libs__/spark-network-common_2.12-3.5.1.jar
+70028029  188 -r-xr-xr-x   1 root     root       190432 Sep 12 15:40 ./__spark_libs__/gson-2.2.4.jar
+206018270   80 -r-xr-xr-x   1 root     root        77939 Sep 12 15:40 ./__spark_libs__/kubernetes-model-metrics-6.7.2.jar
+70451687  420 -r-xr-xr-x   1 root     root       427780 Sep 12 15:40 ./__spark_libs__/jodd-core-3.5.2.jar
+206003013  116 -r-xr-xr-x   1 root     root       117002 Sep 12 15:40 ./__spark_libs__/spark-mllib-local_2.12-3.5.1.jar
+7153925   36 -r-xr-xr-x   1 root     root        34654 Sep 12 15:40 ./__spark_libs__/paranamer-2.8.jar
+205776824   28 -r-xr-xr-x   1 root     root        24665 Sep 12 15:40 ./__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-x86_64.jar
+7153851   76 -r-xr-xr-x   1 root     root        75567 Sep 12 15:40 ./__spark_libs__/jackson-annotations-2.15.2.jar
+70430550  144 -r-xr-xr-x   1 root     root       147152 Sep 12 15:40 ./__spark_libs__/netty-transport-classes-epoll-4.1.96.Final.jar
+7160401   24 -r-xr-xr-x   1 root     root        21568 Sep 12 15:40 ./__spark_libs__/metrics-jmx-4.2.19.jar
+137388675   88 -r-xr-xr-x   1 root     root        89855 Sep 12 15:40 ./__spark_libs__/json4s-ast_2.12-3.7.0-M11.jar
+206018252 10588 -r-xr-xr-x   1 root     root     10840949 Sep 12 15:40 ./__spark_libs__/hive-exec-2.3.9-core.jar
+206018291  108 -r-xr-xr-x   1 root     root       110232 Sep 12 15:40 ./__spark_libs__/arrow-format-12.0.1.jar
+7153871 2120 -r-xr-xr-x   1 root     root      2168533 Sep 12 15:40 ./__spark_libs__/tink-1.9.0.jar
+70451684 1168 -r-xr-xr-x   1 root     root      1194003 Sep 12 15:40 ./__spark_libs__/arpack_combined_all-0.1.jar
+70430505   92 -r-xr-xr-x   1 root     root        91930 Sep 12 15:40 ./__spark_libs__/jakarta.validation-api-2.0.2.jar
+7154240  564 -r-xr-xr-x   1 root     root       577133 Sep 12 15:40 ./__spark_libs__/kubernetes-model-networking-6.7.2.jar
+137388678   40 -r-xr-xr-x   1 root     root        39487 Sep 12 15:40 ./__spark_libs__/arrow-memory-netty-12.0.1.jar
+137388708 1228 -r-xr-xr-x   1 root     root      1254153 Sep 12 15:40 ./__spark_libs__/zookeeper-3.6.3.jar
+137388672   28 -r-xr-xr-x   1 root     root        25400 Sep 12 15:40 ./__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-aarch_64.jar
+206018279   80 -r-xr-xr-x   1 root     root        81831 Sep 12 15:40 ./__spark_libs__/compress-lzf-1.1.2.jar
+206003055  992 -r-xr-xr-x   1 root     root      1013367 Sep 12 15:40 ./__spark_libs__/jaxb-runtime-2.3.2.jar
+206003513   32 -r-xr-xr-x   1 root     root        31604 Sep 12 15:40 ./__spark_libs__/kubernetes-httpclient-okhttp-6.7.2.jar
+135997916   80 -r-xr-xr-x   1 root     root        80384 Sep 12 15:40 ./__spark_libs__/breeze-macros_2.12-2.1.0.jar
+70442095  940 -r-xr-xr-x   1 root     root       961299 Sep 12 15:40 ./__spark_libs__/kubernetes-model-admissionregistration-6.7.2.jar
+70451681 9420 -r-xr-xr-x   1 root     root      9644368 Sep 12 15:40 ./__spark_libs__/spark-sql_2.12-3.5.1.jar
+206018288   36 -r-xr-xr-x   1 root     root        33031 Sep 12 15:40 ./__spark_libs__/jsr305-3.0.0.jar
+70442056 1732 -r-xr-xr-x   1 root     root      1772199 Sep 12 15:40 ./__spark_libs__/spark-sql-api_2.12-3.5.1.jar
+70430511   20 -r-xr-xr-x   1 root     root        18140 Sep 12 15:40 ./__spark_libs__/jakarta.inject-2.6.1.jar
+135997723  476 -r-xr-xr-x   1 root     root       483954 Sep 12 15:40 ./__spark_libs__/commons-io-2.13.0.jar
+206003058   56 -r-xr-xr-x   1 root     root        54774 Sep 12 15:40 ./__spark_libs__/spark-unsafe_2.12-3.5.1.jar
+206003528   84 -r-xr-xr-x   1 root     root        84199 Sep 12 15:40 ./__spark_libs__/spark-kvstore_2.12-3.5.1.jar
+206018285  436 -r-xr-xr-x   1 root     root       443362 Sep 12 15:40 ./__spark_libs__/RoaringBitmap-0.9.45.jar
+135997702  308 -r-xr-xr-x   1 root     root       313296 Sep 12 15:40 ./__spark_libs__/log4j-api-2.20.0.jar
+70430523  172 -r-xr-xr-x   1 root     root       173752 Sep 12 15:40 ./__spark_libs__/commons-compiler-3.1.9.jar
+206003046   48 -r-xr-xr-x   1 root     root        48987 Sep 12 15:40 ./__spark_libs__/kubernetes-model-coordination-6.7.2.jar
+70430502  136 -r-xr-xr-x   1 root     root       136363 Sep 12 15:40 ./__spark_libs__/HikariCP-2.5.1.jar
+135997726   28 -r-xr-xr-x   1 root     root        27156 Sep 12 15:40 ./__spark_libs__/istack-commons-runtime-3.0.8.jar
+7160404 1980 -r-xr-xr-x   1 root     root      2027128 Sep 12 15:40 ./__spark_libs__/parquet-column-1.13.1.jar
+70442077  832 -r-xr-xr-x   1 root     root       849213 Sep 12 15:40 ./__spark_libs__/parquet-encoding-1.13.1.jar
+7153880  156 -r-xr-xr-x   1 root     root       159174 Sep 12 15:40 ./__spark_libs__/kubernetes-model-node-6.7.2.jar
+206018276 2140 -r-xr-xr-x   1 root     root      2189117 Sep 12 15:40 ./__spark_libs__/guava-14.0.1.jar
+135997687  252 -r-xr-xr-x   1 root     root       254067 Sep 12 15:40 ./__spark_libs__/aircompressor-0.26.jar
+135997693  292 -r-xr-xr-x   1 root     root       296926 Sep 12 15:40 ./__spark_libs__/kubernetes-model-batch-6.7.2.jar
+7154246  320 -r-xr-xr-x   1 root     root       326585 Sep 12 15:40 ./__spark_libs__/hive-llap-common-2.3.9.jar
+7153946  548 -r-xr-xr-x   1 root     root       557737 Sep 12 15:40 ./__spark_libs__/netty-handler-4.1.96.Final.jar
+70028005  644 -r-xr-xr-x   1 root     root       656598 Sep 12 15:40 ./__spark_libs__/netty-codec-http-4.1.96.Final.jar
+135997919  520 -r-xr-xr-x   1 root     root       530799 Sep 12 15:40 ./__spark_libs__/kubernetes-model-apps-6.7.2.jar
+137388717   36 -r-xr-xr-x   1 root     root        35085 Sep 12 15:40 ./__spark_libs__/spire-util_2.12-0.17.0.jar
+135997684  668 -r-xr-xr-x   1 root     root       682804 Sep 12 15:40 ./__spark_libs__/lz4-java-1.8.0.jar
+137388726  388 -r-xr-xr-x   1 root     root       395195 Sep 12 15:40 ./__spark_libs__/javolution-5.5.1.jar
+206003519  140 -r-xr-xr-x   1 root     root       140376 Sep 12 15:40 ./__spark_libs__/jakarta.ws.rs-api-2.1.6.jar
+206003031 19004 -r-xr-xr-x   1 root     root     19458635 Sep 12 15:40 ./__spark_libs__/hadoop-client-api-3.3.4.jar
+70442098   28 -r-xr-xr-x   1 root     root        25475 Sep 12 15:40 ./__spark_libs__/json-1.8.jar
+7154297 1000 -r-xr-xr-x   1 root     root      1022407 Sep 12 15:40 ./__spark_libs__/kubernetes-model-flowcontrol-6.7.2.jar
+70442092   96 -r-xr-xr-x   1 root     root        97009 Sep 12 15:40 ./__spark_libs__/parquet-common-1.13.1.jar
+206003546    8 -r-xr-xr-x   1 root     root         5711 Sep 12 15:40 ./__spark_libs__/minlog-1.3.0.jar
+70430529  116 -r-xr-xr-x   1 root     root       116364 Sep 12 15:40 ./__spark_libs__/hive-jdbc-2.3.9.jar
+206003510 14324 -r-xr-xr-x   1 root     root     14667703 Sep 12 15:40 ./__spark_libs__/spark-core_2.12-3.5.1.jar
+7154294 1016 -r-xr-xr-x   1 root     root      1036374 Sep 12 15:40 ./__spark_libs__/kubernetes-model-gatewayapi-6.7.2.jar
+70430532  248 -r-xr-xr-x   1 root     root       250399 Sep 12 15:40 ./__spark_libs__/zookeeper-jute-3.6.3.jar
+206003516  128 -r-xr-xr-x   1 root     root       129647 Sep 12 15:40 ./__spark_libs__/metrics-core-4.2.19.jar
+206003501    8 -r-xr-xr-x   1 root     root         5655 Sep 12 15:40 ./__spark_libs__/jul-to-slf4j-2.0.7.jar
+70028020  128 -r-xr-xr-x   1 root     root       129774 Sep 12 15:40 ./__spark_libs__/datasketches-memory-2.1.0.jar
+7154243 2164 -r-xr-xr-x   1 root     root      2213560 Sep 12 15:40 ./__spark_libs__/commons-math3-3.6.1.jar
+135997898 3160 -r-xr-xr-x   1 root     root      3232770 Sep 12 15:40 ./__spark_libs__/derby-10.14.2.0.jar
+70442083   24 -r-xr-xr-x   1 root     root        23890 Sep 12 15:40 ./__spark_libs__/metrics-graphite-4.2.19.jar
+70430553  296 -r-xr-xr-x   1 root     root       301876 Sep 12 15:40 ./__spark_libs__/jersey-client-2.40.jar
+70028011   40 -r-xr-xr-x   1 root     root        40475 Sep 12 15:40 ./__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-aarch_64.jar
+206003052  816 -r-xr-xr-x   1 root     root       832024 Sep 12 15:40 ./__spark_libs__/datasketches-java-3.3.0.jar
+206003534  736 -r-xr-xr-x   1 root     root       751914 Sep 12 15:40 ./__spark_libs__/commons-collections4-4.4.jar
+206018267  260 -r-xr-xr-x   1 root     root       262591 Sep 12 15:40 ./__spark_libs__/xbean-asm9-shaded-4.23.jar
+137388714  196 -r-xr-xr-x   1 root     root       200223 Sep 12 15:40 ./__spark_libs__/hk2-api-2.6.1.jar
+7153922  428 -r-xr-xr-x   1 root     root       436169 Sep 12 15:40 ./__spark_libs__/hive-common-2.3.9.jar
+206003034 1864 -r-xr-xr-x   1 root     root      1908681 Sep 12 15:40 ./__spark_libs__/datanucleus-rdbms-4.1.19.jar
+70027999  188 -r-xr-xr-x   1 root     root       191677 Sep 12 15:40 ./__spark_libs__/kubernetes-model-discovery-6.7.2.jar
+137388711   56 -r-xr-xr-x   1 root     root        54279 Sep 12 15:40 ./__spark_libs__/pickle-1.3.jar
+135997699  504 -r-xr-xr-x   1 root     root       513968 Sep 12 15:40 ./__spark_libs__/jackson-module-scala_2.12-2.15.2.jar
+7153904  228 -r-xr-xr-x   1 root     root       232470 Sep 12 15:40 ./__spark_libs__/JLargeArrays-1.5.jar
+7154267  200 -r-xr-xr-x   1 root     root       201124 Sep 12 15:40 ./__spark_libs__/jdo-api-3.0.1.jar
+7154276   52 -r-xr-xr-x   1 root     root        49423 Sep 12 15:40 ./__spark_libs__/objenesis-3.3.jar
+7153865  776 -r-xr-xr-x   1 root     root       794137 Sep 12 15:40 ./__spark_libs__/javassist-3.29.2-GA.jar
+206003525  360 -r-xr-xr-x   1 root     root       366748 Sep 12 15:40 ./__spark_libs__/datanucleus-api-jdo-4.2.4.jar
+70430499  332 -r-xr-xr-x   1 root     root       336742 Sep 12 15:40 ./__spark_libs__/antlr4-runtime-4.9.3.jar
+7153874 57936 -r-xr-xr-x   1 root     root     59326387 Sep 12 15:40 ./__spark_libs__/rocksdbjni-8.3.2.jar
+70430547    4 -r-xr-xr-x   1 root     root         2551 Sep 12 15:40 ./__spark_libs__/shims-0.9.45.jar
+7153868   96 -r-xr-xr-x   1 root     root        96221 Sep 12 15:40 ./__spark_libs__/commons-pool-1.5.4.jar
+70430508  228 -r-xr-xr-x   1 root     root       232248 Sep 12 15:40 ./__spark_libs__/jackson-core-asl-1.9.13.jar
+70442080  340 -r-xr-xr-x   1 root     root       344375 Sep 12 15:40 ./__spark_libs__/log4j-1.2-api-2.20.0.jar
+206018294   44 -r-xr-xr-x   1 root     root        43897 Sep 12 15:40 ./__spark_libs__/netty-transport-native-unix-common-4.1.96.Final.jar
+135997925   16 -r-xr-xr-x   1 root     root        15935 Sep 12 15:40 ./__spark_libs__/dropwizard-metrics-hadoop-metrics2-reporter-0.1.2.jar
+7153855   20 -r-xr-xr-x   1 root     root        17037 Sep 12 15:40 ./__spark_libs__/metrics-json-4.2.19.jar
+135997681   32 -r-xr-xr-x   1 root     root        29603 Sep 12 15:40 ./__spark_libs__/kubernetes-model-common-6.7.2.jar
+70442107   16 -r-xr-xr-x   1 root     root        12923 Sep 12 15:40 ./__spark_libs__/hive-shims-scheduler-2.3.9.jar
+70430517 1368 -r-xr-xr-x   1 root     root      1398591 Sep 12 15:40 ./__spark_libs__/ivy-2.5.1.jar
+206003495  224 -r-xr-xr-x   1 root     root       228230 Sep 12 15:40 ./__spark_libs__/kubernetes-model-resource-6.7.2.jar
+137388729   20 -r-xr-xr-x   1 root     root        19014 Sep 12 15:40 ./__spark_libs__/annotations-17.0.0.jar
+135997895 1972 -r-xr-xr-x   1 root     root      2016766 Sep 12 15:40 ./__spark_libs__/datanucleus-core-4.1.17.jar
+135997928  280 -r-xr-xr-x   1 root     root       284220 Sep 12 15:40 ./__spark_libs__/commons-lang-2.6.jar
+7153898   16 -r-xr-xr-x   1 root     root        15071 Sep 12 15:40 ./__spark_libs__/transaction-api-1.1.jar
+206018243 12756 -r-xr-xr-x   1 root     root     13059596 Sep 12 15:40 ./__spark_libs__/breeze_2.12-2.1.0.jar
+206003040   60 -r-xr-xr-x   1 root     root        58683 Sep 12 15:40 ./__spark_libs__/chill-java-0.10.0.jar
+206003549  308 -r-xr-xr-x   1 root     root       313702 Sep 12 15:40 ./__spark_libs__/libfb303-0.9.3.jar
+206018240   68 -r-xr-xr-x   1 root     root        65966 Sep 12 15:40 ./__spark_libs__/kubernetes-model-scheduling-6.7.2.jar
+7160398 10728 -r-xr-xr-x   1 root     root     10983677 Sep 12 15:40 ./__spark_libs__/scala-compiler-2.12.18.jar
+70442053  104 -r-xr-xr-x   1 root     root       103931 Sep 12 15:40 ./__spark_libs__/kubernetes-model-events-6.7.2.jar
+7160392   68 -r-xr-xr-x   1 root     root        69409 Sep 12 15:40 ./__spark_libs__/activation-1.1.1.jar
+206003037 1972 -r-xr-xr-x   1 root     root      2017388 Sep 12 15:40 ./__spark_libs__/parquet-jackson-1.13.1.jar
+70028014  560 -r-xr-xr-x   1 root     root       571369 Sep 12 15:40 ./__spark_libs__/spark-hive-thriftserver_2.12-3.5.1.jar
+7160407  648 -r-xr-xr-x   1 root     root       659926 Sep 12 15:40 ./__spark_libs__/netty-common-4.1.96.Final.jar
+70430514   56 -r-xr-xr-x   1 root     root        53902 Sep 12 15:40 ./__spark_libs__/hive-shims-0.23-2.3.9.jar
+7154270  932 -r-xr-xr-x   1 root     root       950564 Sep 12 15:40 ./__spark_libs__/jersey-server-2.40.jar
+135997907   80 -r-xr-xr-x   1 root     root        78441 Sep 12 15:40 ./__spark_libs__/spark-launcher_2.12-3.5.1.jar
+70442104  116 -r-xr-xr-x   1 root     root       114698 Sep 12 15:40 ./__spark_libs__/spire-macros_2.12-0.17.0.jar
+135997937 2768 -r-xr-xr-x   1 root     root      2830854 Sep 12 15:40 ./__spark_libs__/orc-core-1.9.2-shaded-protobuf.jar
+70442071  336 -r-xr-xr-x   1 root     root       341926 Sep 12 15:40 ./__spark_libs__/kubernetes-model-policy-6.7.2.jar
+7153895   80 -r-xr-xr-x   1 root     root        78477 Sep 12 15:40 ./__spark_libs__/jersey-hk2-2.40.jar
+206018246 3284 -r-xr-xr-x   1 root     root      3362359 Sep 12 15:40 ./__spark_libs__/hadoop-shaded-guava-1.1.1.jar
+7153913  940 -r-xr-xr-x   1 root     root       958840 Sep 12 15:40 ./__spark_libs__/janino-3.1.9.jar
+70027993   28 -r-xr-xr-x   1 root     root        25058 Sep 12 15:40 ./__spark_libs__/jakarta.annotation-api-1.3.5.jar
+135997711  600 -r-xr-xr-x   1 root     root       612317 Sep 12 15:40 ./__spark_libs__/avro-1.11.2.jar
+206018282  568 -r-xr-xr-x   1 root     root       579727 Sep 12 15:40 ./__spark_libs__/kubernetes-model-extensions-6.7.2.jar
+137707874   88 -r-xr-xr-x   1 root     root        88732 Sep 12 15:40 ./__spark_libs__/okio-1.15.0.jar
+135997717 5308 -r-xr-xr-x   1 root     root      5433857 Sep 12 15:40 ./__spark_libs__/scala-library-2.12.18.jar
+137388699   64 -r-xr-xr-x   1 root     root        65261 Sep 12 15:40 ./__spark_libs__/oro-2.0.8.jar
+206003049 7076 -r-xr-xr-x   1 root     root      7243903 Sep 12 15:40 ./__spark_libs__/spire_2.12-0.17.0.jar
+206003543  388 -r-xr-xr-x   1 root     root       395537 Sep 12 15:40 ./__spark_libs__/kubernetes-model-storageclass-6.7.2.jar
+7153892   16 -r-xr-xr-x   1 root     root        12483 Sep 12 15:40 ./__spark_libs__/logging-interceptor-3.12.12.jar
+7154261  208 -r-xr-xr-x   1 root     root       212374 Sep 12 15:40 ./__spark_libs__/chill_2.12-0.10.0.jar
+70451702   56 -r-xr-xr-x   1 root     root        56812 Sep 12 15:40 ./__spark_libs__/hadoop-yarn-server-web-proxy-3.3.4.jar
+137388723  184 -r-xr-xr-x   1 root     root       186777 Sep 12 15:40 ./__spark_libs__/scala-parser-combinators_2.12-2.3.0.jar
+7153949 1808 -r-xr-xr-x   1 root     root      1847550 Sep 12 15:40 ./__spark_libs__/log4j-core-2.20.0.jar
+7153889 1016 -r-xr-xr-x   1 root     root      1037169 Sep 12 15:40 ./__spark_libs__/kubernetes-model-apiextensions-6.7.2.jar
+135997910 1040 -r-xr-xr-x   1 root     root      1062555 Sep 12 15:40 ./__spark_libs__/commons-compress-1.23.0.jar
+7153883 2368 -r-xr-xr-x   1 root     root      2423157 Sep 12 15:40 ./__spark_libs__/curator-client-2.13.0.jar
+70430535 1024 -r-xr-xr-x   1 root     root      1045744 Sep 12 15:40 ./__spark_libs__/leveldbjni-all-1.8.jar
+7160410  164 -r-xr-xr-x   1 root     root       167761 Sep 12 15:40 ./__spark_libs__/antlr-runtime-3.5.2.jar
+135997931  244 -r-xr-xr-x   1 root     root       247466 Sep 12 15:40 ./__spark_libs__/scala-collection-compat_2.12-2.7.0.jar
+206003061   32 -r-xr-xr-x   1 root     root        30823 Sep 12 15:40 ./__spark_libs__/spark-sketch_2.12-3.5.1.jar
+70430559   64 -r-xr-xr-x   1 root     root        63635 Sep 12 15:40 ./__spark_libs__/slf4j-api-2.0.7.jar
+70442074 12260 -r-xr-xr-x   1 root     root     12551721 Sep 12 15:40 ./__spark_libs__/spark-catalyst_2.12-3.5.1.jar
+7153901 1584 -r-xr-xr-x   1 root     root      1620088 Sep 12 15:40 ./__spark_libs__/jackson-databind-2.15.2.jar
+70451693 1672 -r-xr-xr-x   1 root     root      1710748 Sep 12 15:40 ./__spark_libs__/orc-mapreduce-1.9.2-shaded-protobuf.jar
+7160395  476 -r-xr-xr-x   1 root     root       486414 Sep 12 15:40 ./__spark_libs__/kubernetes-client-api-6.7.2.jar
+206003010  456 -r-xr-xr-x   1 root     root       466520 Sep 12 15:40 ./__spark_libs__/scala-xml_2.12-2.1.0.jar
+70028008 1144 -r-xr-xr-x   1 root     root      1168417 Sep 12 15:40 ./__spark_libs__/algebra_2.12-2.0.1.jar
+206003492   40 -r-xr-xr-x   1 root     root        38711 Sep 12 15:40 ./__spark_libs__/spark-repl_2.12-3.5.1.jar
+7153862 3264 -r-xr-xr-x   1 root     root      3340031 Sep 12 15:40 ./__spark_libs__/cats-kernel_2.12-2.1.1.jar
+206003025  176 -r-xr-xr-x   1 root     root       177704 Sep 12 15:40 ./__spark_libs__/spark-network-shuffle_2.12-3.5.1.jar
+135997892 5804 -r-xr-xr-x   1 root     root      5940719 Sep 12 15:40 ./__spark_libs__/zstd-jni-1.5.5-4.jar
+206003507 1108 -r-xr-xr-x   1 root     root      1133653 Sep 12 15:40 ./__spark_libs__/spark-streaming_2.12-3.5.1.jar
+135997943   28 -r-xr-xr-x   1 root     root        27006 Sep 12 15:40 ./__spark_libs__/aopalliance-repackaged-2.6.1.jar
+70442068  576 -r-xr-xr-x   1 root     root       588337 Sep 12 15:40 ./__spark_libs__/commons-collections-3.2.2.jar
+7153934  124 -r-xr-xr-x   1 root     root       122937 Sep 12 15:40 ./__spark_libs__/jackson-datatype-jsr310-2.15.2.jar
+135997913  116 -r-xr-xr-x   1 root     root       115498 Sep 12 15:40 ./__spark_libs__/jakarta.xml.bind-api-2.3.2.jar
+135997690   76 -r-xr-xr-x   1 root     root        76500 Sep 12 15:40 ./__spark_libs__/arpack-3.0.3.jar
+70442065   32 -r-xr-xr-x   1 root     root        32298 Sep 12 15:40 ./__spark_libs__/jersey-container-servlet-2.40.jar
+7153907 1204 -r-xr-xr-x   1 root     root      1230119 Sep 12 15:40 ./__spark_libs__/jersey-common-2.40.jar
+206018261  480 -r-xr-xr-x   1 root     root       489581 Sep 12 15:40 ./__spark_libs__/netty-transport-4.1.96.Final.jar
+206003070   12 -r-xr-xr-x   1 root     root         8455 Sep 12 15:40 ./__spark_libs__/spire-platform_2.12-0.17.0.jar
+137388702   64 -r-xr-xr-x   1 root     root        62050 Sep 12 15:40 ./__spark_libs__/commons-logging-1.1.3.jar
+135997708   28 -r-xr-xr-x   1 root     root        24683 Sep 12 15:40 ./__spark_libs__/metrics-jvm-4.2.19.jar
+135997714  160 -r-xr-xr-x   1 root     root       160519 Sep 12 15:40 ./__spark_libs__/commons-dbcp-1.4.jar
+7154288  576 -r-xr-xr-x   1 root     root       587402 Sep 12 15:40 ./__spark_libs__/commons-lang3-3.12.0.jar
+7194785    0 drwx------   3 root     root          134 Sep 12 15:56 ./__spark_conf__
+70641094    0 drwx------   2 root     root           69 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__
+70641103    4 -r-x------   1 root     root         1247 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__/yarn-site.xml
+70641107    4 -r-x------   1 root     root          721 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__/core-site.xml
+70641108    4 -r-x------   1 root     root          713 Sep 12 15:56 ./__spark_conf__/__hadoop_conf__/hive-site.xml
+7194786  152 -r-x------   1 root     root       153506 Sep 12 15:56 ./__spark_conf__/__spark_hadoop_conf__.xml
+7194787    4 -r-x------   1 root     root          554 Sep 12 15:56 ./__spark_conf__/__spark_conf__.properties
+7194788   40 -r-x------   1 root     root        38946 Sep 12 15:56 ./__spark_conf__/__spark_dist_cache__.properties
+137707898  280 -r-x------   1 root     root       284147 Sep 12 15:56 ./__app__.jar
+broken symlinks(find -L . -maxdepth 5 -type l -ls):
+
+End of LogType:directory.info
+*******************************************************************************
+
+Container: container_e35_1789195359269_0014_02_000001 on node03_43710
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:launch_container.sh
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:44606
+LogContents:
+#!/bin/bash
+
+set -o pipefail -e
+export PRELAUNCH_OUT="/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/prelaunch.out"
+exec >"${PRELAUNCH_OUT}"
+export PRELAUNCH_ERR="/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/prelaunch.err"
+exec 2>"${PRELAUNCH_ERR}"
+echo "Setting up env variables"
+export JAVA_HOME=${JAVA_HOME:-"/usr/java/jdk1.8.0_351-amd64"}
+export HADOOP_COMMON_HOME=${HADOOP_COMMON_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export HADOOP_HDFS_HOME=${HADOOP_HDFS_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-"/opt/yjx/hadoop-3.3.4/etc/hadoop"}
+export HADOOP_YARN_HOME=${HADOOP_YARN_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export HADOOP_HOME=${HADOOP_HOME:-"/opt/yjx/hadoop-3.3.4"}
+export PATH=${PATH:-"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"}
+export LANG=${LANG:-"en_US.UTF-8"}
+export HADOOP_TOKEN_FILE_LOCATION="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/appcache/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/container_tokens"
+export CONTAINER_ID="container_e35_1789195359269_0014_02_000001"
+export NM_PORT="43710"
+export NM_HOST="node03"
+export NM_HTTP_PORT="8042"
+export LOCAL_DIRS="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/appcache/application_1789195359269_0014"
+export LOCAL_USER_DIRS="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/"
+export LOG_DIRS="/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001"
+export USER="root"
+export LOGNAME="root"
+export HOME="/home/"
+export PWD="/var/yjx/hadoop/ha/nm-local-dir/usercache/root/appcache/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001"
+export LOCALIZATION_COUNTERS="482062,337677190,2,252,37"
+export JVM_PID="$$"
+export NM_AUX_SERVICE_mapreduce_shuffle="AAA0+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+export SPARK_YARN_STAGING_DIR="hdfs://node01:8020/user/root/.sparkStaging/application_1789195359269_0014"
+export APPLICATION_WEB_PROXY_BASE="/proxy/application_1789195359269_0014"
+export SPARK_PREFER_IPV6="false"
+export CLASSPATH="$PWD:$PWD/__spark_conf__:$PWD/__spark_libs__/*:$PWD/__spark_conf__/__hadoop_conf__"
+export APP_SUBMIT_TIME_ENV="1789199812335"
+export SPARK_USER="root"
+export PYTHONHASHSEED="0"
+export MALLOC_ARENA_MAX="4"
+echo "Setting up job resources"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/201/kubernetes-model-autoscaling-6.7.2.jar" "__spark_libs__/kubernetes-model-autoscaling-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/46/hive-beeline-2.3.9.jar" "__spark_libs__/hive-beeline-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/158/snakeyaml-2.0.jar" "__spark_libs__/snakeyaml-2.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/38/kryo-shaded-4.0.2.jar" "__spark_libs__/kryo-shaded-4.0.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/104/zjsonpatch-0.3.0.jar" "__spark_libs__/zjsonpatch-0.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/114/audience-annotations-0.5.0.jar" "__spark_libs__/audience-annotations-0.5.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/232/spark-kubernetes_2.12-3.5.1.jar" "__spark_libs__/spark-kubernetes_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/90/arrow-memory-core-12.0.1.jar" "__spark_libs__/arrow-memory-core-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/113/hive-metastore-2.3.9.jar" "__spark_libs__/hive-metastore-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/208/okhttp-3.12.12.jar" "__spark_libs__/okhttp-3.12.12.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/185/javax.jdo-3.2.0-m3.jar" "__spark_libs__/javax.jdo-3.2.0-m3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/229/threeten-extra-1.7.1.jar" "__spark_libs__/threeten-extra-1.7.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/235/mesos-1.4.3-shaded-protobuf.jar" "__spark_libs__/mesos-1.4.3-shaded-protobuf.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/64/spark-graphx_2.12-3.5.1.jar" "__spark_libs__/spark-graphx_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/194/avro-mapred-1.11.2.jar" "__spark_libs__/avro-mapred-1.11.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/199/httpcore-4.4.16.jar" "__spark_libs__/httpcore-4.4.16.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/165/univocity-parsers-2.9.1.jar" "__spark_libs__/univocity-parsers-2.9.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/146/libthrift-0.12.0.jar" "__spark_libs__/libthrift-0.12.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/131/jackson-dataformat-yaml-2.15.2.jar" "__spark_libs__/jackson-dataformat-yaml-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/15/jakarta.servlet-api-4.0.3.jar" "__spark_libs__/jakarta.servlet-api-4.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/221/netty-handler-proxy-4.1.96.Final.jar" "__spark_libs__/netty-handler-proxy-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/148/spark-mesos_2.12-3.5.1.jar" "__spark_libs__/spark-mesos_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/163/scala-reflect-2.12.18.jar" "__spark_libs__/scala-reflect-2.12.18.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/58/commons-cli-1.5.0.jar" "__spark_libs__/commons-cli-1.5.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/251/JTransforms-3.1.jar" "__spark_libs__/JTransforms-3.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/19/spark-yarn_2.12-3.5.1.jar" "__spark_libs__/spark-yarn_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/242/jta-1.1.jar" "__spark_libs__/jta-1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/160/parquet-hadoop-1.13.1.jar" "__spark_libs__/parquet-hadoop-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/183/py4j-0.10.9.7.jar" "__spark_libs__/py4j-0.10.9.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/214/xz-1.9.jar" "__spark_libs__/xz-1.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/172/commons-text-1.10.0.jar" "__spark_libs__/commons-text-1.10.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/203/hive-service-rpc-3.1.3.jar" "__spark_libs__/hive-service-rpc-3.1.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/173/httpclient-4.5.14.jar" "__spark_libs__/httpclient-4.5.14.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/53/spark-tags_2.12-3.5.1.jar" "__spark_libs__/spark-tags_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/129/hadoop-client-runtime-3.3.4.jar" "__spark_libs__/hadoop-client-runtime-3.3.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/187/hive-serde-2.3.9.jar" "__spark_libs__/hive-serde-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/118/snappy-java-1.1.10.3.jar" "__spark_libs__/snappy-java-1.1.10.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/109/json4s-core_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-core_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/107/ST4-4.0.4.jar" "__spark_libs__/ST4-4.0.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/125/osgi-resource-locator-1.0.3.jar" "__spark_libs__/osgi-resource-locator-1.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/167/hive-shims-2.3.9.jar" "__spark_libs__/hive-shims-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/225/kubernetes-model-rbac-6.7.2.jar" "__spark_libs__/kubernetes-model-rbac-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/161/jpam-1.1.jar" "__spark_libs__/jpam-1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/250/kubernetes-model-core-6.7.2.jar" "__spark_libs__/kubernetes-model-core-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/209/jline-2.14.6.jar" "__spark_libs__/jline-2.14.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/98/hk2-locator-2.6.1.jar" "__spark_libs__/hk2-locator-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/97/bonecp-0.8.0.RELEASE.jar" "__spark_libs__/bonecp-0.8.0.RELEASE.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/121/arrow-vector-12.0.1.jar" "__spark_libs__/arrow-vector-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/200/spark-hive_2.12-3.5.1.jar" "__spark_libs__/spark-hive_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/153/stream-2.9.6.jar" "__spark_libs__/stream-2.9.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/36/parquet-format-structures-1.13.1.jar" "__spark_libs__/parquet-format-structures-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/191/snakeyaml-engine-2.6.jar" "__spark_libs__/snakeyaml-engine-2.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/212/orc-shims-1.9.2.jar" "__spark_libs__/orc-shims-1.9.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/18/kubernetes-client-6.7.2.jar" "__spark_libs__/kubernetes-client-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/155/netty-codec-http2-4.1.96.Final.jar" "__spark_libs__/netty-codec-http2-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/124/commons-codec-1.16.0.jar" "__spark_libs__/commons-codec-1.16.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/193/curator-framework-2.13.0.jar" "__spark_libs__/curator-framework-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/32/hive-cli-2.3.9.jar" "__spark_libs__/hive-cli-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/197/lapack-3.0.3.jar" "__spark_libs__/lapack-3.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/10/log4j-slf4j2-impl-2.20.0.jar" "__spark_libs__/log4j-slf4j2-impl-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/87/netty-codec-4.1.96.Final.jar" "__spark_libs__/netty-codec-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/138/spark-common-utils_2.12-3.5.1.jar" "__spark_libs__/spark-common-utils_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/226/commons-crypto-1.1.0.jar" "__spark_libs__/commons-crypto-1.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/44/spark-mllib_2.12-3.5.1.jar" "__spark_libs__/spark-mllib_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/168/hive-storage-api-2.8.1.jar" "__spark_libs__/hive-storage-api-2.8.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/85/netty-codec-socks-4.1.96.Final.jar" "__spark_libs__/netty-codec-socks-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/162/flatbuffers-java-1.12.0.jar" "__spark_libs__/flatbuffers-java-1.12.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/147/netty-buffer-4.1.96.Final.jar" "__spark_libs__/netty-buffer-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/50/netty-transport-native-epoll-4.1.96.Final-linux-x86_64.jar" "__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-x86_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/28/blas-3.0.3.jar" "__spark_libs__/blas-3.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/195/joda-time-2.12.5.jar" "__spark_libs__/joda-time-2.12.5.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/255/netty-transport-classes-kqueue-4.1.96.Final.jar" "__spark_libs__/netty-transport-classes-kqueue-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/41/json4s-jackson_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-jackson_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/96/json4s-scalap_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-scalap_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/103/netty-resolver-4.1.96.Final.jar" "__spark_libs__/netty-resolver-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/122/hk2-utils-2.6.1.jar" "__spark_libs__/hk2-utils-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/198/netty-all-4.1.96.Final.jar" "__spark_libs__/netty-all-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/93/jackson-mapper-asl-1.9.13.jar" "__spark_libs__/jackson-mapper-asl-1.9.13.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/116/curator-recipes-2.13.0.jar" "__spark_libs__/curator-recipes-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/43/kubernetes-model-certificates-6.7.2.jar" "__spark_libs__/kubernetes-model-certificates-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/220/jackson-core-2.15.2.jar" "__spark_libs__/jackson-core-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/14/super-csv-2.2.0.jar" "__spark_libs__/super-csv-2.2.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/215/jersey-container-servlet-core-2.40.jar" "__spark_libs__/jersey-container-servlet-core-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/75/opencsv-2.3.jar" "__spark_libs__/opencsv-2.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/254/stax-api-1.0.1.jar" "__spark_libs__/stax-api-1.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/92/jcl-over-slf4j-2.0.7.jar" "__spark_libs__/jcl-over-slf4j-2.0.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/233/avro-ipc-1.11.2.jar" "__spark_libs__/avro-ipc-1.11.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/55/hive-shims-common-2.3.9.jar" "__spark_libs__/hive-shims-common-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/157/spark-network-common_2.12-3.5.1.jar" "__spark_libs__/spark-network-common_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/54/gson-2.2.4.jar" "__spark_libs__/gson-2.2.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/228/kubernetes-model-metrics-6.7.2.jar" "__spark_libs__/kubernetes-model-metrics-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/238/jodd-core-3.5.2.jar" "__spark_libs__/jodd-core-3.5.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/24/spark-mllib-local_2.12-3.5.1.jar" "__spark_libs__/spark-mllib-local_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/105/paranamer-2.8.jar" "__spark_libs__/paranamer-2.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/11/netty-transport-native-kqueue-4.1.96.Final-osx-x86_64.jar" "__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-x86_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/12/jackson-annotations-2.15.2.jar" "__spark_libs__/jackson-annotations-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/130/netty-transport-classes-epoll-4.1.96.Final.jar" "__spark_libs__/netty-transport-classes-epoll-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/249/metrics-jmx-4.2.19.jar" "__spark_libs__/metrics-jmx-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/175/json4s-ast_2.12-3.7.0-M11.jar" "__spark_libs__/json4s-ast_2.12-3.7.0-M11.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/204/hive-exec-2.3.9-core.jar" "__spark_libs__/hive-exec-2.3.9-core.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/256/arrow-format-12.0.1.jar" "__spark_libs__/arrow-format-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/33/tink-1.9.0.jar" "__spark_libs__/tink-1.9.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/234/arpack_combined_all-0.1.jar" "__spark_libs__/arpack_combined_all-0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/70/jakarta.validation-api-2.0.2.jar" "__spark_libs__/jakarta.validation-api-2.0.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/141/kubernetes-model-networking-6.7.2.jar" "__spark_libs__/kubernetes-model-networking-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/179/arrow-memory-netty-12.0.1.jar" "__spark_libs__/arrow-memory-netty-12.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/219/zookeeper-3.6.3.jar" "__spark_libs__/zookeeper-3.6.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/171/netty-transport-native-kqueue-4.1.96.Final-osx-aarch_64.jar" "__spark_libs__/netty-transport-native-kqueue-4.1.96.Final-osx-aarch_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/240/compress-lzf-1.1.2.jar" "__spark_libs__/compress-lzf-1.1.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/80/jaxb-runtime-2.3.2.jar" "__spark_libs__/jaxb-runtime-2.3.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/136/kubernetes-httpclient-okhttp-6.7.2.jar" "__spark_libs__/kubernetes-httpclient-okhttp-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/123/breeze-macros_2.12-2.1.0.jar" "__spark_libs__/breeze-macros_2.12-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/206/kubernetes-model-admissionregistration-6.7.2.jar" "__spark_libs__/kubernetes-model-admissionregistration-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/230/spark-sql_2.12-3.5.1.jar" "__spark_libs__/spark-sql_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/252/jsr305-3.0.0.jar" "__spark_libs__/jsr305-3.0.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/154/spark-sql-api_2.12-3.5.1.jar" "__spark_libs__/spark-sql-api_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/78/jakarta.inject-2.6.1.jar" "__spark_libs__/jakarta.inject-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/79/commons-io-2.13.0.jar" "__spark_libs__/commons-io-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/84/spark-unsafe_2.12-3.5.1.jar" "__spark_libs__/spark-unsafe_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/156/spark-kvstore_2.12-3.5.1.jar" "__spark_libs__/spark-kvstore_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/248/RoaringBitmap-0.9.45.jar" "__spark_libs__/RoaringBitmap-0.9.45.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/51/log4j-api-2.20.0.jar" "__spark_libs__/log4j-api-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/94/commons-compiler-3.1.9.jar" "__spark_libs__/commons-compiler-3.1.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/68/kubernetes-model-coordination-6.7.2.jar" "__spark_libs__/kubernetes-model-coordination-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/66/HikariCP-2.5.1.jar" "__spark_libs__/HikariCP-2.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/83/istack-commons-runtime-3.0.8.jar" "__spark_libs__/istack-commons-runtime-3.0.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/253/parquet-column-1.13.1.jar" "__spark_libs__/parquet-column-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/182/parquet-encoding-1.13.1.jar" "__spark_libs__/parquet-encoding-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/45/kubernetes-model-node-6.7.2.jar" "__spark_libs__/kubernetes-model-node-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/236/guava-14.0.1.jar" "__spark_libs__/guava-14.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/31/aircompressor-0.26.jar" "__spark_libs__/aircompressor-0.26.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/39/kubernetes-model-batch-6.7.2.jar" "__spark_libs__/kubernetes-model-batch-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/149/hive-llap-common-2.3.9.jar" "__spark_libs__/hive-llap-common-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/133/netty-handler-4.1.96.Final.jar" "__spark_libs__/netty-handler-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/22/netty-codec-http-4.1.96.Final.jar" "__spark_libs__/netty-codec-http-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/127/kubernetes-model-apps-6.7.2.jar" "__spark_libs__/kubernetes-model-apps-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/231/spire-util_2.12-0.17.0.jar" "__spark_libs__/spire-util_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/27/lz4-java-1.8.0.jar" "__spark_libs__/lz4-java-1.8.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/243/javolution-5.5.1.jar" "__spark_libs__/javolution-5.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/144/jakarta.ws.rs-api-2.1.6.jar" "__spark_libs__/jakarta.ws.rs-api-2.1.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/48/hadoop-client-api-3.3.4.jar" "__spark_libs__/hadoop-client-api-3.3.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/210/json-1.8.jar" "__spark_libs__/json-1.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/217/kubernetes-model-flowcontrol-6.7.2.jar" "__spark_libs__/kubernetes-model-flowcontrol-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/202/parquet-common-1.13.1.jar" "__spark_libs__/parquet-common-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/180/minlog-1.3.0.jar" "__spark_libs__/minlog-1.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/102/hive-jdbc-2.3.9.jar" "__spark_libs__/hive-jdbc-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/132/spark-core_2.12-3.5.1.jar" "__spark_libs__/spark-core_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/213/kubernetes-model-gatewayapi-6.7.2.jar" "__spark_libs__/kubernetes-model-gatewayapi-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/106/zookeeper-jute-3.6.3.jar" "__spark_libs__/zookeeper-jute-3.6.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/140/metrics-core-4.2.19.jar" "__spark_libs__/metrics-core-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/120/jul-to-slf4j-2.0.7.jar" "__spark_libs__/jul-to-slf4j-2.0.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/42/datasketches-memory-2.1.0.jar" "__spark_libs__/datasketches-memory-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/145/commons-math3-3.6.1.jar" "__spark_libs__/commons-math3-3.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/99/derby-10.14.2.0.jar" "__spark_libs__/derby-10.14.2.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/190/metrics-graphite-4.2.19.jar" "__spark_libs__/metrics-graphite-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/134/jersey-client-2.40.jar" "__spark_libs__/jersey-client-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/30/netty-transport-native-epoll-4.1.96.Final-linux-aarch_64.jar" "__spark_libs__/netty-transport-native-epoll-4.1.96.Final-linux-aarch_64.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/76/datasketches-java-3.3.0.jar" "__spark_libs__/datasketches-java-3.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/164/commons-collections4-4.4.jar" "__spark_libs__/commons-collections4-4.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/224/xbean-asm9-shaded-4.23.jar" "__spark_libs__/xbean-asm9-shaded-4.23.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/227/hk2-api-2.6.1.jar" "__spark_libs__/hk2-api-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/101/hive-common-2.3.9.jar" "__spark_libs__/hive-common-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/52/datanucleus-rdbms-4.1.19.jar" "__spark_libs__/datanucleus-rdbms-4.1.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/17/kubernetes-model-discovery-6.7.2.jar" "__spark_libs__/kubernetes-model-discovery-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/223/pickle-1.3.jar" "__spark_libs__/pickle-1.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/47/jackson-module-scala_2.12-2.15.2.jar" "__spark_libs__/jackson-module-scala_2.12-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/77/JLargeArrays-1.5.jar" "__spark_libs__/JLargeArrays-1.5.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/177/jdo-api-3.0.1.jar" "__spark_libs__/jdo-api-3.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/189/objenesis-3.3.jar" "__spark_libs__/objenesis-3.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/25/javassist-3.29.2-GA.jar" "__spark_libs__/javassist-3.29.2-GA.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/152/datanucleus-api-jdo-4.2.4.jar" "__spark_libs__/datanucleus-api-jdo-4.2.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/62/antlr4-runtime-4.9.3.jar" "__spark_libs__/antlr4-runtime-4.9.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/37/rocksdbjni-8.3.2.jar" "__spark_libs__/rocksdbjni-8.3.2.jar"
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/32/__spark_conf__.zip" "__spark_conf__"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/126/shims-0.9.45.jar" "__spark_libs__/shims-0.9.45.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/29/commons-pool-1.5.4.jar" "__spark_libs__/commons-pool-1.5.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/74/jackson-core-asl-1.9.13.jar" "__spark_libs__/jackson-core-asl-1.9.13.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/186/log4j-1.2-api-2.20.0.jar" "__spark_libs__/log4j-1.2-api-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/260/netty-transport-native-unix-common-4.1.96.Final.jar" "__spark_libs__/netty-transport-native-unix-common-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/135/dropwizard-metrics-hadoop-metrics2-reporter-0.1.2.jar" "__spark_libs__/dropwizard-metrics-hadoop-metrics2-reporter-0.1.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/16/metrics-json-4.2.19.jar" "__spark_libs__/metrics-json-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/23/kubernetes-model-common-6.7.2.jar" "__spark_libs__/kubernetes-model-common-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/222/hive-shims-scheduler-2.3.9.jar" "__spark_libs__/hive-shims-scheduler-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/86/ivy-2.5.1.jar" "__spark_libs__/ivy-2.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/112/kubernetes-model-resource-6.7.2.jar" "__spark_libs__/kubernetes-model-resource-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/247/annotations-17.0.0.jar" "__spark_libs__/annotations-17.0.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/95/datanucleus-core-4.1.17.jar" "__spark_libs__/datanucleus-core-4.1.17.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/139/commons-lang-2.6.jar" "__spark_libs__/commons-lang-2.6.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/69/transaction-api-1.1.jar" "__spark_libs__/transaction-api-1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/192/breeze_2.12-2.1.0.jar" "__spark_libs__/breeze_2.12-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/60/chill-java-0.10.0.jar" "__spark_libs__/chill-java-0.10.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/184/libfb303-0.9.3.jar" "__spark_libs__/libfb303-0.9.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/188/kubernetes-model-scheduling-6.7.2.jar" "__spark_libs__/kubernetes-model-scheduling-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/245/scala-compiler-2.12.18.jar" "__spark_libs__/scala-compiler-2.12.18.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/150/kubernetes-model-events-6.7.2.jar" "__spark_libs__/kubernetes-model-events-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/237/activation-1.1.1.jar" "__spark_libs__/activation-1.1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/56/parquet-jackson-1.13.1.jar" "__spark_libs__/parquet-jackson-1.13.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/34/spark-hive-thriftserver_2.12-3.5.1.jar" "__spark_libs__/spark-hive-thriftserver_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/257/netty-common-4.1.96.Final.jar" "__spark_libs__/netty-common-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/82/hive-shims-0.23-2.3.9.jar" "__spark_libs__/hive-shims-0.23-2.3.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/181/jersey-server-2.40.jar" "__spark_libs__/jersey-server-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/111/spark-launcher_2.12-3.5.1.jar" "__spark_libs__/spark-launcher_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/218/spire-macros_2.12-0.17.0.jar" "__spark_libs__/spire-macros_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/151/orc-core-1.9.2-shaded-protobuf.jar" "__spark_libs__/orc-core-1.9.2-shaded-protobuf.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/174/kubernetes-model-policy-6.7.2.jar" "__spark_libs__/kubernetes-model-policy-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/65/jersey-hk2-2.40.jar" "__spark_libs__/jersey-hk2-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/196/hadoop-shaded-guava-1.1.1.jar" "__spark_libs__/hadoop-shaded-guava-1.1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/89/janino-3.1.9.jar" "__spark_libs__/janino-3.1.9.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/13/jakarta.annotation-api-1.3.5.jar" "__spark_libs__/jakarta.annotation-api-1.3.5.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/63/avro-1.11.2.jar" "__spark_libs__/avro-1.11.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/244/kubernetes-model-extensions-6.7.2.jar" "__spark_libs__/kubernetes-model-extensions-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/259/okio-1.15.0.jar" "__spark_libs__/okio-1.15.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/71/scala-library-2.12.18.jar" "__spark_libs__/scala-library-2.12.18.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/207/oro-2.0.8.jar" "__spark_libs__/oro-2.0.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/72/spire_2.12-0.17.0.jar" "__spark_libs__/spire_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/176/kubernetes-model-storageclass-6.7.2.jar" "__spark_libs__/kubernetes-model-storageclass-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/61/logging-interceptor-3.12.12.jar" "__spark_libs__/logging-interceptor-3.12.12.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/169/chill_2.12-0.10.0.jar" "__spark_libs__/chill_2.12-0.10.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/258/hadoop-yarn-server-web-proxy-3.3.4.jar" "__spark_libs__/hadoop-yarn-server-web-proxy-3.3.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/239/scala-parser-combinators_2.12-2.3.0.jar" "__spark_libs__/scala-parser-combinators_2.12-2.3.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/137/log4j-core-2.20.0.jar" "__spark_libs__/log4j-core-2.20.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/57/kubernetes-model-apiextensions-6.7.2.jar" "__spark_libs__/kubernetes-model-apiextensions-6.7.2.jar"
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/usercache/root/filecache/31/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar" "__app__.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/115/commons-compress-1.23.0.jar" "__spark_libs__/commons-compress-1.23.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/49/curator-client-2.13.0.jar" "__spark_libs__/curator-client-2.13.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/110/leveldbjni-all-1.8.jar" "__spark_libs__/leveldbjni-all-1.8.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/261/antlr-runtime-3.5.2.jar" "__spark_libs__/antlr-runtime-3.5.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/143/scala-collection-compat_2.12-2.7.0.jar" "__spark_libs__/scala-collection-compat_2.12-2.7.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/88/spark-sketch_2.12-3.5.1.jar" "__spark_libs__/spark-sketch_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/142/slf4j-api-2.0.7.jar" "__spark_libs__/slf4j-api-2.0.7.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/178/spark-catalyst_2.12-3.5.1.jar" "__spark_libs__/spark-catalyst_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/73/jackson-databind-2.15.2.jar" "__spark_libs__/jackson-databind-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/246/orc-mapreduce-1.9.2-shaded-protobuf.jar" "__spark_libs__/orc-mapreduce-1.9.2-shaded-protobuf.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/241/kubernetes-client-api-6.7.2.jar" "__spark_libs__/kubernetes-client-api-6.7.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/20/scala-xml_2.12-2.1.0.jar" "__spark_libs__/scala-xml_2.12-2.1.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/26/algebra_2.12-2.0.1.jar" "__spark_libs__/algebra_2.12-2.0.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/108/spark-repl_2.12-3.5.1.jar" "__spark_libs__/spark-repl_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/21/cats-kernel_2.12-2.1.1.jar" "__spark_libs__/cats-kernel_2.12-2.1.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/40/spark-network-shuffle_2.12-3.5.1.jar" "__spark_libs__/spark-network-shuffle_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/91/zstd-jni-1.5.5-4.jar" "__spark_libs__/zstd-jni-1.5.5-4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/128/spark-streaming_2.12-3.5.1.jar" "__spark_libs__/spark-streaming_2.12-3.5.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/159/aopalliance-repackaged-2.6.1.jar" "__spark_libs__/aopalliance-repackaged-2.6.1.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/170/commons-collections-3.2.2.jar" "__spark_libs__/commons-collections-3.2.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/117/jackson-datatype-jsr310-2.15.2.jar" "__spark_libs__/jackson-datatype-jsr310-2.15.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/119/jakarta.xml.bind-api-2.3.2.jar" "__spark_libs__/jakarta.xml.bind-api-2.3.2.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/35/arpack-3.0.3.jar" "__spark_libs__/arpack-3.0.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/166/jersey-container-servlet-2.40.jar" "__spark_libs__/jersey-container-servlet-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/81/jersey-common-2.40.jar" "__spark_libs__/jersey-common-2.40.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/216/netty-transport-4.1.96.Final.jar" "__spark_libs__/netty-transport-4.1.96.Final.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/100/spire-platform_2.12-0.17.0.jar" "__spark_libs__/spire-platform_2.12-0.17.0.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/211/commons-logging-1.1.3.jar" "__spark_libs__/commons-logging-1.1.3.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/59/metrics-jvm-4.2.19.jar" "__spark_libs__/metrics-jvm-4.2.19.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/67/commons-dbcp-1.4.jar" "__spark_libs__/commons-dbcp-1.4.jar"
+mkdir -p __spark_libs__
+ln -sf -- "/var/yjx/hadoop/ha/nm-local-dir/filecache/205/commons-lang3-3.12.0.jar" "__spark_libs__/commons-lang3-3.12.0.jar"
+echo "Copying debugging information"
+# Creating copy of launch script
+cp "launch_container.sh" "/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/launch_container.sh"
+chmod 640 "/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/launch_container.sh"
+# Determining directory contents
+echo "ls -l:" 1>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/directory.info"
+ls -l 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/directory.info"
+echo "find -L . -maxdepth 5 -ls:" 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/directory.info"
+find -L . -maxdepth 5 -ls 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/directory.info"
+echo "broken symlinks(find -L . -maxdepth 5 -type l -ls):" 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/directory.info"
+find -L . -maxdepth 5 -type l -ls 1>>"/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/directory.info"
+echo "Launching container"
+exec /bin/bash -c "$JAVA_HOME/bin/java -server -Djava.net.preferIPv6Addresses=false -XX:+IgnoreUnrecognizedVMOptions --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.nio.cs=ALL-UNNAMED --add-opens=java.base/sun.security.action=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=false -Xmx1024m -Djava.io.tmpdir=$PWD/tmp -Dspark.yarn.app.container.log.dir=/opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001 org.apache.spark.deploy.yarn.ApplicationMaster --class com.graduation.analytics.job.JobRunner --jar file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-built/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar --arg "--jobCode=mxp" --arg "--runtimeProfileId=1" --arg "--businessDate=20260901" --arg "--attemptNo=1" --arg "--hiveDatabasePrefix=dw" --arg "--outputSnapshotId=S20260901E4" --arg "--shufflePartitions=4" --arg "--exportDir=hdfs://node01:8020/graduation/export/e4c1000" --properties-file $PWD/__spark_conf__/__spark_conf__.properties --dist-cache-conf $PWD/__spark_conf__/__spark_dist_cache__.properties 1> /opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/stdout 2> /opt/yjx/hadoop-3.3.4/logs/userlogs/application_1789195359269_0014/container_e35_1789195359269_0014_02_000001/stderr"
+
+End of LogType:launch_container.sh
+************************************************************************************
+
+Container: container_e35_1789195359269_0014_02_000001 on node03_43710
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:prelaunch.err
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:0
+LogContents:
+
+End of LogType:prelaunch.err
+******************************************************************************
+
+Container: container_e35_1789195359269_0014_02_000001 on node03_43710
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:prelaunch.out
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:100
+LogContents:
+Setting up env variables
+Setting up job resources
+Copying debugging information
+Launching container
+
+End of LogType:prelaunch.out
+******************************************************************************
+
+Container: container_e35_1789195359269_0014_02_000001 on node03_43710
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:stderr
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:5720
+LogContents:
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+26/09/12 15:56:56 INFO SignalUtils: Registering signal handler for TERM
+26/09/12 15:56:56 INFO SignalUtils: Registering signal handler for HUP
+26/09/12 15:56:56 INFO SignalUtils: Registering signal handler for INT
+26/09/12 15:56:57 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+26/09/12 15:56:57 INFO ApplicationMaster: ApplicationAttemptId: appattempt_1789195359269_0014_000002
+26/09/12 15:56:57 INFO ApplicationMaster: Starting the user application in a separate Thread
+26/09/12 15:56:57 INFO ApplicationMaster: Waiting for spark context initialization...
+[spark-jobs] 数仓库名空间: dw_ods, dw_dwd, dw_dim, dw_dws, dw_ads
+26/09/12 15:56:58 ERROR ApplicationMaster: User class threw exception: 
+java.lang.NoSuchMethodError: java.lang.String.isBlank()Z
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1$adapted(MetricExportJob.scala:33)
+	at scala.Option.forall(Option.scala:390)
+	at com.graduation.analytics.job.MetricExportJob.validate(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:45)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:738)
+26/09/12 15:56:58 INFO ApplicationMaster: Final app status: FAILED, exitCode: 13, (reason: User class threw exception: java.lang.NoSuchMethodError: java.lang.String.isBlank()Z
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1$adapted(MetricExportJob.scala:33)
+	at scala.Option.forall(Option.scala:390)
+	at com.graduation.analytics.job.MetricExportJob.validate(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:45)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:738)
+)
+26/09/12 15:56:58 ERROR ApplicationMaster: Uncaught exception: 
+org.apache.spark.SparkException: Exception thrown in awaitResult: 
+	at org.apache.spark.util.SparkThreadUtils$.awaitResult(SparkThreadUtils.scala:56)
+	at org.apache.spark.util.ThreadUtils$.awaitResult(ThreadUtils.scala:310)
+	at org.apache.spark.deploy.yarn.ApplicationMaster.runDriver(ApplicationMaster.scala:506)
+	at org.apache.spark.deploy.yarn.ApplicationMaster.run(ApplicationMaster.scala:265)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$3.run(ApplicationMaster.scala:934)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$3.run(ApplicationMaster.scala:933)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1878)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$.main(ApplicationMaster.scala:933)
+	at org.apache.spark.deploy.yarn.ApplicationMaster.main(ApplicationMaster.scala)
+Caused by: java.util.concurrent.ExecutionException: Boxed Error
+	at scala.concurrent.impl.Promise$.resolver(Promise.scala:87)
+	at scala.concurrent.impl.Promise$.scala$concurrent$impl$Promise$$resolveTry(Promise.scala:79)
+	at scala.concurrent.impl.Promise$DefaultPromise.tryComplete(Promise.scala:284)
+	at scala.concurrent.Promise.tryFailure(Promise.scala:112)
+	at scala.concurrent.Promise.tryFailure$(Promise.scala:112)
+	at scala.concurrent.impl.Promise$DefaultPromise.tryFailure(Promise.scala:187)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:757)
+Caused by: java.lang.NoSuchMethodError: java.lang.String.isBlank()Z
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.MetricExportJob.$anonfun$validate$1$adapted(MetricExportJob.scala:33)
+	at scala.Option.forall(Option.scala:390)
+	at com.graduation.analytics.job.MetricExportJob.validate(MetricExportJob.scala:33)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:45)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:738)
+26/09/12 15:56:58 INFO ApplicationMaster: Deleting staging directory hdfs://node01:8020/user/root/.sparkStaging/application_1789195359269_0014
+26/09/12 15:56:58 INFO ShutdownHookManager: Shutdown hook called
+
+End of LogType:stderr
+***********************************************************************
+
+Container: container_e35_1789195359269_0014_02_000001 on node03_43710
+LogAggregationType: AGGREGATED
+=====================================================================
+LogType:stdout
+LogLastModifiedTime:周六 9月 12 15:56:59 +0800 2026
+LogLength:0
+LogContents:
+
+End of LogType:stdout
+***********************************************************************
+

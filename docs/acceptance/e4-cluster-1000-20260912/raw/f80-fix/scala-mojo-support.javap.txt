@@ -1,0 +1,1459 @@
+Compiled from "ScalaMojoSupport.java"
+public abstract class scala_maven.ScalaMojoSupport extends org.apache.maven.plugin.AbstractMojo {
+  protected org.apache.maven.project.MavenProject project;
+
+  protected org.apache.maven.execution.MavenSession session;
+
+  org.apache.maven.repository.RepositorySystem factory;
+
+  protected scala_maven.BasicArtifact[] dependencies;
+
+  private scala_maven.BasicArtifact[] compilerPlugins;
+
+  protected java.lang.String[] jvmArgs;
+
+  protected java.lang.String[] args;
+
+  private java.lang.String addScalacArgs;
+
+  protected java.lang.String scalaClassName;
+
+  private java.lang.String scalaVersion;
+
+  private java.lang.String scalaOrganization;
+
+  private java.lang.String scalaCompatVersion;
+
+  private java.lang.String scalaHome;
+
+  protected java.lang.String[] javacArgs;
+
+  protected boolean javacGenerateDebugSymbols;
+
+  protected java.lang.String addJavacArgs;
+
+  protected java.lang.String source;
+
+  protected java.lang.String target;
+
+  protected java.lang.String release;
+
+  protected java.lang.String encoding;
+
+  public boolean displayCmd;
+
+  protected boolean fork;
+
+  protected boolean forceUseArgFile;
+
+  protected boolean checkMultipleScalaVersions;
+
+  protected boolean failOnMultipleScalaVersions;
+
+  protected boolean useCanonicalPath;
+
+  private org.apache.maven.shared.dependency.graph.DependencyGraphBuilder dependencyGraphBuilder;
+
+  private org.apache.maven.toolchain.ToolchainManager toolchainManager;
+
+  protected java.util.List<org.apache.maven.artifact.Artifact> pluginArtifacts;
+
+  private scala_maven.MavenArtifactResolver mavenArtifactResolver;
+
+  private scala_maven_dependency.Context scalaContext;
+
+  private scala_maven.VersionNumber detectedScalaVersion;
+
+  public scala_maven.ScalaMojoSupport();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method org/apache/maven/plugin/AbstractMojo."<init>":()V
+       4: aload_0
+       5: iconst_1
+       6: putfield      #2                  // Field javacGenerateDebugSymbols:Z
+       9: aload_0
+      10: iconst_1
+      11: putfield      #3                  // Field fork:Z
+      14: aload_0
+      15: iconst_0
+      16: putfield      #4                  // Field forceUseArgFile:Z
+      19: aload_0
+      20: iconst_0
+      21: putfield      #5                  // Field failOnMultipleScalaVersions:Z
+      24: aload_0
+      25: iconst_1
+      26: putfield      #6                  // Field useCanonicalPath:Z
+      29: aload_0
+      30: aconst_null
+      31: putfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+      34: return
+
+  public scala_maven.MavenArtifactResolver findMavenArtifactResolver();
+    Code:
+       0: aload_0
+       1: getfield      #8                  // Field mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+       4: ifnonnull     26
+       7: aload_0
+       8: new           #9                  // class scala_maven/MavenArtifactResolver
+      11: dup
+      12: aload_0
+      13: getfield      #10                 // Field factory:Lorg/apache/maven/repository/RepositorySystem;
+      16: aload_0
+      17: getfield      #11                 // Field session:Lorg/apache/maven/execution/MavenSession;
+      20: invokespecial #12                 // Method scala_maven/MavenArtifactResolver."<init>":(Lorg/apache/maven/repository/RepositorySystem;Lorg/apache/maven/execution/MavenSession;)V
+      23: putfield      #8                  // Field mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+      26: aload_0
+      27: getfield      #8                  // Field mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+      30: areturn
+
+  public scala_maven_dependency.Context findScalaContext() throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: getfield      #13                 // Field scalaContext:Lscala_maven_dependency/Context;
+       4: ifnonnull     187
+       7: aload_0
+       8: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+      11: astore_1
+      12: aload_1
+      13: getfield      #15                 // Field scala_maven/VersionNumber.major:I
+      16: iconst_3
+      17: if_icmpne     31
+      20: new           #16                 // class scala_maven_dependency/ArtifactIds4Scala3
+      23: dup
+      24: aload_1
+      25: invokespecial #17                 // Method scala_maven_dependency/ArtifactIds4Scala3."<init>":(Lscala_maven/VersionNumber;)V
+      28: goto          38
+      31: new           #18                 // class scala_maven_dependency/ArtifactIds4Scala2
+      34: dup
+      35: invokespecial #19                 // Method scala_maven_dependency/ArtifactIds4Scala2."<init>":()V
+      38: astore_2
+      39: aload_0
+      40: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+      43: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      46: ifeq          63
+      49: new           #22                 // class scala_maven/VersionNumberMask
+      52: dup
+      53: aload_0
+      54: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+      57: invokespecial #23                 // Method scala_maven/VersionNumberMask."<init>":(Ljava/lang/String;)V
+      60: goto          64
+      63: aload_1
+      64: astore_3
+      65: aload_3
+      66: aload_1
+      67: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+      70: ifeq          131
+      73: ldc           #25                 // String Scala library detected %s doesn\'t match scala.compat.version : %s
+      75: iconst_2
+      76: anewarray     #26                 // class java/lang/Object
+      79: dup
+      80: iconst_0
+      81: aload_1
+      82: aastore
+      83: dup
+      84: iconst_1
+      85: aload_3
+      86: aastore
+      87: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      90: astore        4
+      92: aload_0
+      93: getfield      #5                  // Field failOnMultipleScalaVersions:Z
+      96: ifeq          120
+      99: aload_0
+     100: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     103: aload         4
+     105: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+     110: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+     113: dup
+     114: aload         4
+     116: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+     119: athrow
+     120: aload_0
+     121: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     124: aload         4
+     126: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+     131: aload_0
+     132: aload_0
+     133: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+     136: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+     139: ifeq          166
+     142: new           #34                 // class scala_maven_dependency/Context4ScalaHome
+     145: dup
+     146: aload_1
+     147: aload_3
+     148: aload_2
+     149: new           #35                 // class java/io/File
+     152: dup
+     153: aload_0
+     154: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+     157: invokespecial #36                 // Method java/io/File."<init>":(Ljava/lang/String;)V
+     160: invokespecial #37                 // Method scala_maven_dependency/Context4ScalaHome."<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/io/File;)V
+     163: goto          184
+     166: new           #38                 // class scala_maven_dependency/Context4ScalaRemote
+     169: dup
+     170: aload_1
+     171: aload_3
+     172: aload_2
+     173: aload_0
+     174: getfield      #39                 // Field scalaOrganization:Ljava/lang/String;
+     177: aload_0
+     178: invokevirtual #40                 // Method findMavenArtifactResolver:()Lscala_maven/MavenArtifactResolver;
+     181: invokespecial #41                 // Method scala_maven_dependency/Context4ScalaRemote."<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/lang/String;Lscala_maven/MavenArtifactResolver;)V
+     184: putfield      #13                 // Field scalaContext:Lscala_maven_dependency/Context;
+     187: aload_0
+     188: getfield      #13                 // Field scalaContext:Lscala_maven_dependency/Context;
+     191: areturn
+
+  protected void addToClasspath(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Set<java.io.File>, boolean);
+    Code:
+       0: aload_0
+       1: invokevirtual #40                 // Method findMavenArtifactResolver:()Lscala_maven/MavenArtifactResolver;
+       4: astore        7
+       6: iload         6
+       8: ifeq          71
+      11: aload         7
+      13: aload_1
+      14: aload_2
+      15: aload_3
+      16: aload         4
+      18: invokevirtual #42                 // Method scala_maven/MavenArtifactResolver.getJarAndDependencies:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Set;
+      21: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+      26: astore        8
+      28: aload         8
+      30: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      35: ifeq          68
+      38: aload         8
+      40: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      45: checkcast     #46                 // class org/apache/maven/artifact/Artifact
+      48: astore        9
+      50: aload         5
+      52: aload         9
+      54: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+      59: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+      64: pop
+      65: goto          28
+      68: goto          98
+      71: aload         7
+      73: aload_1
+      74: aload_2
+      75: aload_3
+      76: aload         4
+      78: invokevirtual #49                 // Method scala_maven/MavenArtifactResolver.getJar:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/apache/maven/artifact/Artifact;
+      81: astore        8
+      83: aload         5
+      85: aload         8
+      87: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+      92: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+      97: pop
+      98: return
+
+  void addCompilerToClasspath(java.util.Set<java.io.File>) throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+       4: astore_2
+       5: aload_2
+       6: invokeinterface #51,  1           // InterfaceMethod scala_maven_dependency/Context.findCompilerAndDependencies:()Ljava/util/Set;
+      11: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+      16: astore_3
+      17: aload_3
+      18: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      23: ifeq          54
+      26: aload_3
+      27: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      32: checkcast     #46                 // class org/apache/maven/artifact/Artifact
+      35: astore        4
+      37: aload_1
+      38: aload         4
+      40: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+      45: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+      50: pop
+      51: goto          17
+      54: return
+
+  void addLibraryToClasspath(java.util.Set<java.io.File>) throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+       4: astore_2
+       5: aload_2
+       6: invokeinterface #52,  1           // InterfaceMethod scala_maven_dependency/Context.findLibraryAndDependencies:()Ljava/util/Set;
+      11: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+      16: astore_3
+      17: aload_3
+      18: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      23: ifeq          54
+      26: aload_3
+      27: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      32: checkcast     #46                 // class org/apache/maven/artifact/Artifact
+      35: astore        4
+      37: aload_1
+      38: aload         4
+      40: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+      45: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+      50: pop
+      51: goto          17
+      54: return
+
+  public void execute() throws org.apache.maven.plugin.MojoExecutionException, org.apache.maven.plugin.MojoFailureException;
+    Code:
+       0: ldc           #53                 // String maven.scala.version
+       2: invokestatic  #54                 // Method java/lang/System.getProperty:(Ljava/lang/String;)Ljava/lang/String;
+       5: astore_1
+       6: aload_1
+       7: ifnull        33
+      10: aload_0
+      11: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+      14: ldc           #55                 // String using \'maven.scala.version\' is deprecated, use \'scala.version\' instead
+      16: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+      21: aload_0
+      22: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+      25: ifnull        33
+      28: aload_0
+      29: aload_1
+      30: putfield      #56                 // Field scalaVersion:Ljava/lang/String;
+      33: ldc           #57                 // String maven.scala.displayCmd
+      35: invokestatic  #54                 // Method java/lang/System.getProperty:(Ljava/lang/String;)Ljava/lang/String;
+      38: astore_1
+      39: aload_1
+      40: ifnull        77
+      43: aload_0
+      44: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+      47: ldc           #58                 // String using \'maven.scala.displayCmd\' is deprecated, use \'displayCmd\' instead
+      49: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+      54: aload_0
+      55: aload_0
+      56: getfield      #59                 // Field displayCmd:Z
+      59: ifne          69
+      62: aload_1
+      63: invokestatic  #60                 // Method java/lang/Boolean.parseBoolean:(Ljava/lang/String;)Z
+      66: ifeq          73
+      69: iconst_1
+      70: goto          74
+      73: iconst_0
+      74: putfield      #59                 // Field displayCmd:Z
+      77: aload_0
+      78: invokevirtual #61                 // Method checkScalaVersion:()V
+      81: aload_0
+      82: invokevirtual #62                 // Method doExecute:()V
+      85: goto          123
+      88: astore_1
+      89: aload_1
+      90: athrow
+      91: astore_1
+      92: aload_1
+      93: athrow
+      94: astore_1
+      95: new           #63                 // class org/apache/maven/plugin/MojoExecutionException
+      98: dup
+      99: new           #66                 // class java/lang/StringBuilder
+     102: dup
+     103: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+     106: ldc           #68                 // String wrap:
+     108: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     111: aload_1
+     112: invokevirtual #70                 // Method java/lang/StringBuilder.append:(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+     115: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+     118: aload_1
+     119: invokespecial #72                 // Method org/apache/maven/plugin/MojoExecutionException."<init>":(Ljava/lang/String;Ljava/lang/Exception;)V
+     122: athrow
+     123: return
+    Exception table:
+       from    to  target type
+           0    85    88   Class org/apache/maven/plugin/MojoExecutionException
+           0    85    91   Class org/apache/maven/plugin/MojoFailureException
+           0    85    91   Class java/lang/RuntimeException
+           0    85    94   Class java/lang/Exception
+
+  protected java.util.List<org.apache.maven.model.Dependency> getDependencies();
+    Code:
+       0: aload_0
+       1: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+       4: invokevirtual #74                 // Method org/apache/maven/project/MavenProject.getCompileDependencies:()Ljava/util/List;
+       7: areturn
+
+  private scala_maven.VersionNumber findScalaVersion() throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: getfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+       4: ifnonnull     15
+       7: aload_0
+       8: aload_0
+       9: invokespecial #75                 // Method findScalaVersion0:()Lscala_maven/VersionNumber;
+      12: putfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+      15: aload_0
+      16: getfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+      19: areturn
+
+  private scala_maven.VersionNumber findScalaVersion0() throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+       4: astore_1
+       5: aload_1
+       6: invokestatic  #76                 // Method org/codehaus/plexus/util/StringUtils.isEmpty:(Ljava/lang/String;)Z
+       9: ifeq          24
+      12: aload_0
+      13: aload_0
+      14: getfield      #39                 // Field scalaOrganization:Ljava/lang/String;
+      17: getstatic     #77                 // Field scala_maven_dependency/ArtifactIds.SCALA_LIBRARY_PATTERN:Ljava/util/regex/Pattern;
+      20: invokespecial #78                 // Method findVersionFromDependencies:(Ljava/lang/String;Ljava/util/regex/Pattern;)Ljava/lang/String;
+      23: astore_1
+      24: aload_1
+      25: invokestatic  #76                 // Method org/codehaus/plexus/util/StringUtils.isEmpty:(Ljava/lang/String;)Z
+      28: ifeq          91
+      31: ldc           #79                 // String pom
+      33: aload_0
+      34: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+      37: invokevirtual #80                 // Method org/apache/maven/project/MavenProject.getPackaging:()Ljava/lang/String;
+      40: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      43: ifne          147
+      46: ldc           #82                 // String %s:%s is missing from project dependencies
+      48: iconst_2
+      49: anewarray     #26                 // class java/lang/Object
+      52: dup
+      53: iconst_0
+      54: aload_0
+      55: getfield      #39                 // Field scalaOrganization:Ljava/lang/String;
+      58: aastore
+      59: dup
+      60: iconst_1
+      61: getstatic     #77                 // Field scala_maven_dependency/ArtifactIds.SCALA_LIBRARY_PATTERN:Ljava/util/regex/Pattern;
+      64: invokevirtual #83                 // Method java/util/regex/Pattern.pattern:()Ljava/lang/String;
+      67: aastore
+      68: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      71: astore_2
+      72: aload_0
+      73: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+      76: aload_2
+      77: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+      82: new           #84                 // class java/lang/UnsupportedOperationException
+      85: dup
+      86: aload_2
+      87: invokespecial #85                 // Method java/lang/UnsupportedOperationException."<init>":(Ljava/lang/String;)V
+      90: athrow
+      91: aload_1
+      92: invokestatic  #86                 // Method org/apache/maven/artifact/ArtifactUtils.isSnapshot:(Ljava/lang/String;)Z
+      95: istore_2
+      96: iload_2
+      97: ifeq          147
+     100: aload_1
+     101: ldc           #87                 // String -SNAPSHOT
+     103: invokevirtual #88                 // Method java/lang/String.endsWith:(Ljava/lang/String;)Z
+     106: ifne          147
+     109: new           #66                 // class java/lang/StringBuilder
+     112: dup
+     113: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+     116: aload_1
+     117: iconst_0
+     118: aload_1
+     119: bipush        45
+     121: aload_1
+     122: bipush        45
+     124: invokevirtual #89                 // Method java/lang/String.lastIndexOf:(I)I
+     127: iconst_1
+     128: isub
+     129: invokevirtual #90                 // Method java/lang/String.lastIndexOf:(II)I
+     132: invokevirtual #91                 // Method java/lang/String.substring:(II)Ljava/lang/String;
+     135: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     138: ldc           #87                 // String -SNAPSHOT
+     140: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     143: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+     146: astore_1
+     147: aload_1
+     148: invokestatic  #76                 // Method org/codehaus/plexus/util/StringUtils.isEmpty:(Ljava/lang/String;)Z
+     151: ifeq          164
+     154: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+     157: dup
+     158: ldc           #92                 // String no scalaVersion detected or set
+     160: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+     163: athrow
+     164: aload_0
+     165: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+     168: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+     171: ifeq          196
+     174: aload_0
+     175: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+     178: aload_1
+     179: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+     182: ifne          196
+     185: aload_0
+     186: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     189: ldc           #93                 // String scala library version defined in dependencies doesn\'t match the scalaVersion of the plugin
+     191: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+     196: new           #94                 // class scala_maven/VersionNumber
+     199: dup
+     200: aload_1
+     201: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+     204: areturn
+
+  private java.lang.String findVersionFromDependencies(java.lang.String, java.util.regex.Pattern);
+    Code:
+       0: new           #94                 // class scala_maven/VersionNumber
+       3: dup
+       4: ldc           #96                 // String 0.0.0
+       6: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+       9: astore_3
+      10: aload_0
+      11: invokevirtual #97                 // Method getDependencies:()Ljava/util/List;
+      14: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+      19: astore        4
+      21: aload         4
+      23: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      28: ifeq          90
+      31: aload         4
+      33: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      38: checkcast     #99                 // class org/apache/maven/model/Dependency
+      41: astore        5
+      43: aload_1
+      44: aload         5
+      46: invokevirtual #100                // Method org/apache/maven/model/Dependency.getGroupId:()Ljava/lang/String;
+      49: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      52: ifeq          87
+      55: aload_2
+      56: aload         5
+      58: invokevirtual #101                // Method org/apache/maven/model/Dependency.getArtifactId:()Ljava/lang/String;
+      61: invokevirtual #102                // Method java/util/regex/Pattern.matcher:(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+      64: invokevirtual #103                // Method java/util/regex/Matcher.find:()Z
+      67: ifeq          87
+      70: aload_3
+      71: new           #94                 // class scala_maven/VersionNumber
+      74: dup
+      75: aload         5
+      77: invokevirtual #104                // Method org/apache/maven/model/Dependency.getVersion:()Ljava/lang/String;
+      80: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+      83: invokevirtual #105                // Method scala_maven/VersionNumber.max:(Lscala_maven/VersionNumber;)Lscala_maven/VersionNumber;
+      86: astore_3
+      87: goto          21
+      90: aload_3
+      91: getfield      #15                 // Field scala_maven/VersionNumber.major:I
+      94: ifne          236
+      97: new           #106                // class java/util/ArrayList
+     100: dup
+     101: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+     104: astore        4
+     106: aload         4
+     108: aload_0
+     109: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+     112: invokevirtual #108                // Method org/apache/maven/project/MavenProject.getModel:()Lorg/apache/maven/model/Model;
+     115: invokevirtual #109                // Method org/apache/maven/model/Model.getDependencies:()Ljava/util/List;
+     118: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+     123: pop
+     124: aload_0
+     125: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+     128: invokevirtual #108                // Method org/apache/maven/project/MavenProject.getModel:()Lorg/apache/maven/model/Model;
+     131: invokevirtual #111                // Method org/apache/maven/model/Model.getDependencyManagement:()Lorg/apache/maven/model/DependencyManagement;
+     134: ifnull        158
+     137: aload         4
+     139: aload_0
+     140: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+     143: invokevirtual #108                // Method org/apache/maven/project/MavenProject.getModel:()Lorg/apache/maven/model/Model;
+     146: invokevirtual #111                // Method org/apache/maven/model/Model.getDependencyManagement:()Lorg/apache/maven/model/DependencyManagement;
+     149: invokevirtual #112                // Method org/apache/maven/model/DependencyManagement.getDependencies:()Ljava/util/List;
+     152: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+     157: pop
+     158: aload         4
+     160: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+     165: astore        5
+     167: aload         5
+     169: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+     174: ifeq          236
+     177: aload         5
+     179: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     184: checkcast     #99                 // class org/apache/maven/model/Dependency
+     187: astore        6
+     189: aload_1
+     190: aload         6
+     192: invokevirtual #100                // Method org/apache/maven/model/Dependency.getGroupId:()Ljava/lang/String;
+     195: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+     198: ifeq          233
+     201: aload_2
+     202: aload         6
+     204: invokevirtual #101                // Method org/apache/maven/model/Dependency.getArtifactId:()Ljava/lang/String;
+     207: invokevirtual #102                // Method java/util/regex/Pattern.matcher:(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+     210: invokevirtual #103                // Method java/util/regex/Matcher.find:()Z
+     213: ifeq          233
+     216: aload_3
+     217: new           #94                 // class scala_maven/VersionNumber
+     220: dup
+     221: aload         6
+     223: invokevirtual #104                // Method org/apache/maven/model/Dependency.getVersion:()Ljava/lang/String;
+     226: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+     229: invokevirtual #105                // Method scala_maven/VersionNumber.max:(Lscala_maven/VersionNumber;)Lscala_maven/VersionNumber;
+     232: astore_3
+     233: goto          167
+     236: aload_3
+     237: getfield      #15                 // Field scala_maven/VersionNumber.major:I
+     240: ifne          247
+     243: aconst_null
+     244: goto          251
+     247: aload_3
+     248: invokevirtual #113                // Method scala_maven/VersionNumber.toString:()Ljava/lang/String;
+     251: areturn
+
+  void checkScalaVersion() throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+       4: invokevirtual #113                // Method scala_maven/VersionNumber.toString:()Ljava/lang/String;
+       7: astore_1
+       8: aload_0
+       9: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+      12: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      15: ifeq          47
+      18: aload_0
+      19: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+      22: ldc           #114                // String local scala-library.jar and scala-compiler.jar from scalaHome(%s) used instead of scala %s
+      24: iconst_2
+      25: anewarray     #26                 // class java/lang/Object
+      28: dup
+      29: iconst_0
+      30: aload_0
+      31: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+      34: aastore
+      35: dup
+      36: iconst_1
+      37: aload_1
+      38: aastore
+      39: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      42: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+      47: aload_0
+      48: getfield      #115                // Field checkMultipleScalaVersions:Z
+      51: ifeq          59
+      54: aload_0
+      55: aload_1
+      56: invokespecial #116                // Method checkCorrectVersionsOfScalaLibrary:(Ljava/lang/String;)V
+      59: return
+
+  private void checkCorrectVersionsOfScalaLibrary(java.lang.String) throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       4: ldc           #117                // String Checking for multiple versions of scala
+       6: invokeinterface #118,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.debug:(Ljava/lang/CharSequence;)V
+      11: new           #94                 // class scala_maven/VersionNumber
+      14: dup
+      15: aload_1
+      16: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+      19: astore_2
+      20: aload_0
+      21: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+      24: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      27: ifeq          44
+      30: new           #22                 // class scala_maven/VersionNumberMask
+      33: dup
+      34: aload_0
+      35: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+      38: invokespecial #23                 // Method scala_maven/VersionNumberMask."<init>":(Ljava/lang/String;)V
+      41: goto          45
+      44: aload_2
+      45: astore_3
+      46: aload_3
+      47: aload_2
+      48: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+      51: ifeq          112
+      54: ldc           #25                 // String Scala library detected %s doesn\'t match scala.compat.version : %s
+      56: iconst_2
+      57: anewarray     #26                 // class java/lang/Object
+      60: dup
+      61: iconst_0
+      62: aload_2
+      63: aastore
+      64: dup
+      65: iconst_1
+      66: aload_3
+      67: aastore
+      68: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      71: astore        4
+      73: aload_0
+      74: getfield      #5                  // Field failOnMultipleScalaVersions:Z
+      77: ifeq          101
+      80: aload_0
+      81: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+      84: aload         4
+      86: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+      91: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+      94: dup
+      95: aload         4
+      97: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+     100: athrow
+     101: aload_0
+     102: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     105: aload         4
+     107: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+     112: new           #119                // class org/apache/maven/project/DefaultProjectBuildingRequest
+     115: dup
+     116: aload_0
+     117: getfield      #11                 // Field session:Lorg/apache/maven/execution/MavenSession;
+     120: invokevirtual #120                // Method org/apache/maven/execution/MavenSession.getProjectBuildingRequest:()Lorg/apache/maven/project/ProjectBuildingRequest;
+     123: invokespecial #121                // Method org/apache/maven/project/DefaultProjectBuildingRequest."<init>":(Lorg/apache/maven/project/ProjectBuildingRequest;)V
+     126: astore        4
+     128: aload         4
+     130: aload_0
+     131: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+     134: invokeinterface #122,  2          // InterfaceMethod org/apache/maven/project/ProjectBuildingRequest.setProject:(Lorg/apache/maven/project/MavenProject;)V
+     139: aload_0
+     140: aload_0
+     141: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+     144: aload_0
+     145: getfield      #123                // Field dependencyGraphBuilder:Lorg/apache/maven/shared/dependency/graph/DependencyGraphBuilder;
+     148: aload         4
+     150: aconst_null
+     151: invokeinterface #124,  3          // InterfaceMethod org/apache/maven/shared/dependency/graph/DependencyGraphBuilder.buildDependencyGraph:(Lorg/apache/maven/project/ProjectBuildingRequest;Lorg/apache/maven/artifact/resolver/filter/ArtifactFilter;)Lorg/apache/maven/shared/dependency/graph/DependencyNode;
+     156: invokespecial #125                // Method checkArtifactForScalaVersion:(Lscala_maven_dependency/Context;Lorg/apache/maven/shared/dependency/graph/DependencyNode;)V
+     159: return
+
+  private void checkArtifactForScalaVersion(scala_maven_dependency.Context, org.apache.maven.shared.dependency.graph.DependencyNode) throws java.lang.Exception;
+    Code:
+       0: new           #126                // class scala_maven_dependency/CheckScalaVersionVisitor
+       3: dup
+       4: aload_1
+       5: aload_0
+       6: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       9: invokespecial #127                // Method scala_maven_dependency/CheckScalaVersionVisitor."<init>":(Lscala_maven_dependency/Context;Lorg/apache/maven/plugin/logging/Log;)V
+      12: astore_3
+      13: new           #128                // class org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor
+      16: dup
+      17: invokespecial #129                // Method org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor."<init>":()V
+      20: astore        4
+      22: new           #130                // class org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor
+      25: dup
+      26: aload         4
+      28: aload_0
+      29: invokespecial #131                // Method createScalaDistroDependencyFilter:()Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+      32: invokespecial #132                // Method org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor."<init>":(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;)V
+      35: astore        5
+      37: aload_2
+      38: aload         5
+      40: invokeinterface #133,  2          // InterfaceMethod org/apache/maven/shared/dependency/graph/DependencyNode.accept:(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;)Z
+      45: pop
+      46: new           #134                // class org/apache/maven/shared/dependency/graph/filter/AncestorOrSelfDependencyNodeFilter
+      49: dup
+      50: aload         4
+      52: invokevirtual #135                // Method org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor.getNodes:()Ljava/util/List;
+      55: invokespecial #136                // Method org/apache/maven/shared/dependency/graph/filter/AncestorOrSelfDependencyNodeFilter."<init>":(Ljava/util/List;)V
+      58: astore        6
+      60: new           #130                // class org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor
+      63: dup
+      64: aload_3
+      65: aload         6
+      67: invokespecial #132                // Method org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor."<init>":(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;)V
+      70: astore        7
+      72: aload_2
+      73: aload         7
+      75: invokeinterface #133,  2          // InterfaceMethod org/apache/maven/shared/dependency/graph/DependencyNode.accept:(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;)Z
+      80: pop
+      81: aload_3
+      82: invokevirtual #137                // Method scala_maven_dependency/CheckScalaVersionVisitor.isFailed:()Z
+      85: ifeq          131
+      88: aload_3
+      89: invokevirtual #138                // Method scala_maven_dependency/CheckScalaVersionVisitor.logScalaDependents:()V
+      92: aload_0
+      93: getfield      #5                  // Field failOnMultipleScalaVersions:Z
+      96: ifeq          120
+      99: aload_0
+     100: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     103: ldc           #139                // String Multiple versions of scala libraries detected!
+     105: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+     110: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+     113: dup
+     114: ldc           #139                // String Multiple versions of scala libraries detected!
+     116: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+     119: athrow
+     120: aload_0
+     121: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     124: ldc           #139                // String Multiple versions of scala libraries detected!
+     126: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+     131: return
+
+  private org.apache.maven.shared.dependency.graph.filter.DependencyNodeFilter createScalaDistroDependencyFilter() throws java.lang.Exception;
+    Code:
+       0: new           #106                // class java/util/ArrayList
+       3: dup
+       4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+       7: astore_1
+       8: aload_1
+       9: new           #140                // class scala_maven_dependency/ScalaDistroArtifactFilter
+      12: dup
+      13: aload_0
+      14: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+      17: invokespecial #141                // Method scala_maven_dependency/ScalaDistroArtifactFilter."<init>":(Lscala_maven_dependency/Context;)V
+      20: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      25: pop
+      26: new           #143                // class org/apache/maven/shared/dependency/graph/filter/AndDependencyNodeFilter
+      29: dup
+      30: aload_1
+      31: invokespecial #144                // Method org/apache/maven/shared/dependency/graph/filter/AndDependencyNodeFilter."<init>":(Ljava/util/List;)V
+      34: areturn
+
+  protected abstract void doExecute() throws java.lang.Exception;
+
+  final scala_maven_executions.JavaMainCaller getScalaCommand(boolean, java.lang.String) throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: aload_2
+       2: iload_1
+       3: invokespecial #145                // Method getEmptyScalaCommand:(Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+       6: astore_3
+       7: aload_0
+       8: invokevirtual #146                // Method getScalacOptions:()Ljava/util/List;
+      11: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+      16: astore        4
+      18: aload         4
+      20: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      25: ifeq          58
+      28: aload         4
+      30: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      35: checkcast     #147                // class java/lang/String
+      38: astore        5
+      40: aload_3
+      41: iconst_1
+      42: anewarray     #147                // class java/lang/String
+      45: dup
+      46: iconst_0
+      47: aload         5
+      49: aastore
+      50: invokeinterface #148,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addArgs:([Ljava/lang/String;)V
+      55: goto          18
+      58: aload_3
+      59: aload_0
+      60: getfield      #149                // Field jvmArgs:[Ljava/lang/String;
+      63: invokeinterface #150,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addJvmArgs:([Ljava/lang/String;)V
+      68: aload_3
+      69: areturn
+
+  final scala_maven_executions.JavaMainCaller getEmptyScalaCommand(java.lang.String) throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_0
+       3: getfield      #3                  // Field fork:Z
+       6: invokespecial #145                // Method getEmptyScalaCommand:(Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+       9: areturn
+
+  private scala_maven_executions.JavaMainCaller getEmptyScalaCommand(java.lang.String, boolean) throws java.lang.Exception;
+    Code:
+       0: iload_2
+       1: aload_0
+       2: getfield      #3                  // Field fork:Z
+       5: if_icmpeq     44
+       8: aload_0
+       9: invokespecial #151                // Method org/apache/maven/plugin/AbstractMojo.getLog:()Lorg/apache/maven/plugin/logging/Log;
+      12: ldc           #152                // String Fork behavior overridden
+      14: invokeinterface #153,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.info:(Ljava/lang/CharSequence;)V
+      19: aload_0
+      20: invokespecial #151                // Method org/apache/maven/plugin/AbstractMojo.getLog:()Lorg/apache/maven/plugin/logging/Log;
+      23: ldc           #154                // String Fork for this execution is %s.
+      25: iconst_1
+      26: anewarray     #26                 // class java/lang/Object
+      29: dup
+      30: iconst_0
+      31: iload_2
+      32: invokestatic  #155                // Method java/lang/String.valueOf:(Z)Ljava/lang/String;
+      35: aastore
+      36: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      39: invokeinterface #153,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.info:(Ljava/lang/CharSequence;)V
+      44: aload_0
+      45: invokespecial #156                // Method getToolClasspath:()Ljava/lang/String;
+      48: astore        4
+      50: iload_2
+      51: ifeq          268
+      54: iconst_1
+      55: istore        5
+      57: aload_0
+      58: getfield      #157                // Field args:[Ljava/lang/String;
+      61: ifnull        120
+      64: aload_0
+      65: getfield      #157                // Field args:[Ljava/lang/String;
+      68: astore        6
+      70: aload         6
+      72: arraylength
+      73: istore        7
+      75: iconst_0
+      76: istore        8
+      78: iload         8
+      80: iload         7
+      82: if_icmpge     120
+      85: aload         6
+      87: iload         8
+      89: aaload
+      90: astore        9
+      92: iload         5
+      94: ifeq          111
+      97: ldc           #158                // String -nobootcp
+      99: aload         9
+     101: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+     104: ifne          111
+     107: iconst_1
+     108: goto          112
+     111: iconst_0
+     112: istore        5
+     114: iinc          8, 1
+     117: goto          78
+     120: iload         5
+     122: ifeq          130
+     125: ldc           #159                // String
+     127: goto          132
+     130: aload         4
+     132: astore        6
+     134: iload         5
+     136: ifeq          165
+     139: aload_0
+     140: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+     143: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+     146: ifeq          161
+     149: aload_0
+     150: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+     153: ldc           #158                // String -nobootcp
+     155: invokevirtual #161                // Method java/lang/String.contains:(Ljava/lang/CharSequence;)Z
+     158: ifne          165
+     161: iconst_1
+     162: goto          166
+     165: iconst_0
+     166: istore        5
+     168: aload_0
+     169: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     172: new           #66                 // class java/lang/StringBuilder
+     175: dup
+     176: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+     179: ldc           #162                // String use java command with args in file forced :
+     181: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     184: aload_0
+     185: getfield      #4                  // Field forceUseArgFile:Z
+     188: invokevirtual #163                // Method java/lang/StringBuilder.append:(Z)Ljava/lang/StringBuilder;
+     191: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+     194: invokeinterface #118,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.debug:(Ljava/lang/CharSequence;)V
+     199: new           #164                // class scala_maven_executions/JavaMainCallerByFork
+     202: dup
+     203: aload_0
+     204: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     207: aload_1
+     208: aload         6
+     210: aconst_null
+     211: aconst_null
+     212: aload_0
+     213: getfield      #4                  // Field forceUseArgFile:Z
+     216: aload_0
+     217: invokevirtual #165                // Method getToolchain:()Lorg/apache/maven/toolchain/Toolchain;
+     220: invokestatic  #166                // Method util/JavaLocator.findExecutableFromToolchain:(Lorg/apache/maven/toolchain/Toolchain;)Ljava/io/File;
+     223: invokespecial #167                // Method scala_maven_executions/JavaMainCallerByFork."<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/io/File;)V
+     226: astore_3
+     227: iload         5
+     229: ifeq          265
+     232: aload_3
+     233: iconst_1
+     234: anewarray     #147                // class java/lang/String
+     237: dup
+     238: iconst_0
+     239: new           #66                 // class java/lang/StringBuilder
+     242: dup
+     243: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+     246: ldc           #168                // String -Xbootclasspath/a:
+     248: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     251: aload         4
+     253: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     256: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+     259: aastore
+     260: invokeinterface #150,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addJvmArgs:([Ljava/lang/String;)V
+     265: goto          285
+     268: new           #169                // class scala_maven_executions/JavaMainCallerInProcess
+     271: dup
+     272: aload_0
+     273: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+     276: aload_1
+     277: aload         4
+     279: aconst_null
+     280: aconst_null
+     281: invokespecial #170                // Method scala_maven_executions/JavaMainCallerInProcess."<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
+     284: astore_3
+     285: aload_3
+     286: areturn
+
+  protected org.apache.maven.toolchain.Toolchain getToolchain();
+    Code:
+       0: aload_0
+       1: getfield      #171                // Field toolchainManager:Lorg/apache/maven/toolchain/ToolchainManager;
+       4: ldc           #172                // String jdk
+       6: aload_0
+       7: getfield      #11                 // Field session:Lorg/apache/maven/execution/MavenSession;
+      10: invokeinterface #173,  3          // InterfaceMethod org/apache/maven/toolchain/ToolchainManager.getToolchainFromBuildContext:(Ljava/lang/String;Lorg/apache/maven/execution/MavenSession;)Lorg/apache/maven/toolchain/Toolchain;
+      15: areturn
+
+  private java.lang.String getToolClasspath() throws java.lang.Exception;
+    Code:
+       0: new           #174                // class java/util/TreeSet
+       3: dup
+       4: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+       7: astore_1
+       8: aload_0
+       9: aload_1
+      10: invokevirtual #176                // Method addLibraryToClasspath:(Ljava/util/Set;)V
+      13: aload_0
+      14: aload_1
+      15: invokevirtual #177                // Method addCompilerToClasspath:(Ljava/util/Set;)V
+      18: aload_0
+      19: getfield      #178                // Field dependencies:[Lscala_maven/BasicArtifact;
+      22: ifnull        77
+      25: aload_0
+      26: getfield      #178                // Field dependencies:[Lscala_maven/BasicArtifact;
+      29: astore_2
+      30: aload_2
+      31: arraylength
+      32: istore_3
+      33: iconst_0
+      34: istore        4
+      36: iload         4
+      38: iload_3
+      39: if_icmpge     77
+      42: aload_2
+      43: iload         4
+      45: aaload
+      46: astore        5
+      48: aload_0
+      49: aload         5
+      51: getfield      #179                // Field scala_maven/BasicArtifact.groupId:Ljava/lang/String;
+      54: aload         5
+      56: getfield      #180                // Field scala_maven/BasicArtifact.artifactId:Ljava/lang/String;
+      59: aload         5
+      61: getfield      #181                // Field scala_maven/BasicArtifact.version:Ljava/lang/String;
+      64: ldc           #159                // String
+      66: aload_1
+      67: iconst_1
+      68: invokevirtual #182                // Method addToClasspath:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+      71: iinc          4, 1
+      74: goto          36
+      77: aload_1
+      78: invokestatic  #183                // Method util/FileUtils.toMultiPath:(Ljava/util/Collection;)Ljava/lang/String;
+      81: areturn
+
+  private static java.lang.String computeTargetOption(java.lang.String);
+    Code:
+       0: aload_0
+       1: ldc           #184                // String 1.5
+       3: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+       6: ifne          18
+       9: aload_0
+      10: ldc           #185                // String 5
+      12: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      15: ifeq          21
+      18: ldc           #186                // String jvm-1.5
+      20: areturn
+      21: aload_0
+      22: ldc           #187                // String 1.6
+      24: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      27: ifne          39
+      30: aload_0
+      31: ldc           #188                // String 6
+      33: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      36: ifeq          42
+      39: ldc           #189                // String jvm-1.6
+      41: areturn
+      42: aload_0
+      43: ldc           #190                // String 1.7
+      45: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      48: ifne          60
+      51: aload_0
+      52: ldc           #191                // String 7
+      54: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      57: ifeq          63
+      60: ldc           #192                // String jvm-1.7
+      62: areturn
+      63: aload_0
+      64: ldc           #193                // String 1.8
+      66: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      69: ifne          81
+      72: aload_0
+      73: ldc           #194                // String 8
+      75: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      78: ifeq          84
+      81: ldc           #195                // String jvm-1.8
+      83: areturn
+      84: aconst_null
+      85: areturn
+
+  private static java.lang.String computeReleaseOptionFromTarget(java.lang.String);
+    Code:
+       0: aload_0
+       1: ldc           #184                // String 1.5
+       3: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+       6: ifeq          12
+       9: ldc           #185                // String 5
+      11: areturn
+      12: aload_0
+      13: ldc           #187                // String 1.6
+      15: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      18: ifeq          24
+      21: ldc           #188                // String 6
+      23: areturn
+      24: aload_0
+      25: ldc           #190                // String 1.7
+      27: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      30: ifeq          36
+      33: ldc           #191                // String 7
+      35: areturn
+      36: aload_0
+      37: ldc           #193                // String 1.8
+      39: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      42: ifeq          48
+      45: ldc           #194                // String 8
+      47: areturn
+      48: aload_0
+      49: areturn
+
+  static java.util.List<java.lang.String> computeBytecodeVersionOptions(java.lang.String, java.lang.String, scala_maven.VersionNumber);
+    Code:
+       0: new           #106                // class java/util/ArrayList
+       3: dup
+       4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+       7: astore_3
+       8: aload_0
+       9: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      12: istore        4
+      14: aload_1
+      15: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      18: istore        5
+      20: aload_2
+      21: new           #94                 // class scala_maven/VersionNumber
+      24: dup
+      25: ldc           #196                // String 2.12.0
+      27: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+      30: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+      33: iflt          40
+      36: iconst_1
+      37: goto          41
+      40: iconst_0
+      41: istore        6
+      43: aload_2
+      44: new           #94                 // class scala_maven/VersionNumber
+      47: dup
+      48: ldc           #197                // String 3.1.2
+      50: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+      53: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+      56: iflt          64
+      59: ldc           #198                // String -java-output-version
+      61: goto          66
+      64: ldc           #199                // String -release
+      66: astore        7
+      68: iload         5
+      70: ifeq          98
+      73: iload         6
+      75: ifeq          98
+      78: aload_3
+      79: aload         7
+      81: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      86: pop
+      87: aload_3
+      88: aload_1
+      89: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      94: pop
+      95: goto          169
+      98: iload         4
+     100: ifeq          169
+     103: iload         6
+     105: ifeq          131
+     108: aload_3
+     109: aload         7
+     111: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     116: pop
+     117: aload_3
+     118: aload_0
+     119: invokestatic  #200                // Method computeReleaseOptionFromTarget:(Ljava/lang/String;)Ljava/lang/String;
+     122: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     127: pop
+     128: goto          169
+     131: aload_0
+     132: invokestatic  #201                // Method computeTargetOption:(Ljava/lang/String;)Ljava/lang/String;
+     135: astore        8
+     137: aload         8
+     139: ifnull        169
+     142: aload_3
+     143: new           #66                 // class java/lang/StringBuilder
+     146: dup
+     147: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+     150: ldc           #202                // String -target:
+     152: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     155: aload         8
+     157: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     160: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+     163: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     168: pop
+     169: aload_3
+     170: areturn
+
+  protected java.util.List<java.lang.String> getScalacOptions() throws java.lang.Exception;
+    Code:
+       0: new           #106                // class java/util/ArrayList
+       3: dup
+       4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+       7: astore_1
+       8: aload_0
+       9: getfield      #157                // Field args:[Ljava/lang/String;
+      12: ifnull        24
+      15: aload_1
+      16: aload_0
+      17: getfield      #157                // Field args:[Ljava/lang/String;
+      20: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+      23: pop
+      24: aload_0
+      25: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+      28: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      31: ifeq          48
+      34: aload_1
+      35: aload_0
+      36: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+      39: ldc           #204                // String |
+      41: invokestatic  #205                // Method org/codehaus/plexus/util/StringUtils.split:(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+      44: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+      47: pop
+      48: aload_1
+      49: aload_0
+      50: invokespecial #206                // Method getCompilerPluginOptions:()Ljava/util/List;
+      53: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+      58: pop
+      59: aload_1
+      60: aload_0
+      61: getfield      #207                // Field target:Ljava/lang/String;
+      64: aload_0
+      65: getfield      #208                // Field release:Ljava/lang/String;
+      68: aload_0
+      69: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+      72: invokestatic  #209                // Method computeBytecodeVersionOptions:(Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List;
+      75: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+      80: pop
+      81: aload_1
+      82: areturn
+
+  protected java.util.List<java.lang.String> getJavacOptions();
+    Code:
+       0: new           #106                // class java/util/ArrayList
+       3: dup
+       4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+       7: astore_1
+       8: aload_0
+       9: getfield      #210                // Field javacArgs:[Ljava/lang/String;
+      12: ifnull        24
+      15: aload_1
+      16: aload_0
+      17: getfield      #210                // Field javacArgs:[Ljava/lang/String;
+      20: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+      23: pop
+      24: aload_0
+      25: getfield      #211                // Field addJavacArgs:Ljava/lang/String;
+      28: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      31: ifeq          48
+      34: aload_1
+      35: aload_0
+      36: getfield      #211                // Field addJavacArgs:Ljava/lang/String;
+      39: ldc           #204                // String |
+      41: invokestatic  #205                // Method org/codehaus/plexus/util/StringUtils.split:(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+      44: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+      47: pop
+      48: aload_0
+      49: getfield      #2                  // Field javacGenerateDebugSymbols:Z
+      52: ifeq          64
+      55: aload_1
+      56: ldc           #212                // String -g
+      58: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      63: pop
+      64: aload_0
+      65: getfield      #208                // Field release:Ljava/lang/String;
+      68: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+      71: ifeq          97
+      74: aload_1
+      75: ldc           #213                // String --release
+      77: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      82: pop
+      83: aload_1
+      84: aload_0
+      85: getfield      #208                // Field release:Ljava/lang/String;
+      88: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      93: pop
+      94: goto          157
+      97: aload_0
+      98: getfield      #207                // Field target:Ljava/lang/String;
+     101: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+     104: ifeq          127
+     107: aload_1
+     108: ldc           #214                // String -target
+     110: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     115: pop
+     116: aload_1
+     117: aload_0
+     118: getfield      #207                // Field target:Ljava/lang/String;
+     121: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     126: pop
+     127: aload_0
+     128: getfield      #215                // Field source:Ljava/lang/String;
+     131: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+     134: ifeq          157
+     137: aload_1
+     138: ldc           #216                // String -source
+     140: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     145: pop
+     146: aload_1
+     147: aload_0
+     148: getfield      #215                // Field source:Ljava/lang/String;
+     151: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     156: pop
+     157: aload_0
+     158: getfield      #217                // Field encoding:Ljava/lang/String;
+     161: ifnull        184
+     164: aload_1
+     165: ldc           #218                // String -encoding
+     167: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     172: pop
+     173: aload_1
+     174: aload_0
+     175: getfield      #217                // Field encoding:Ljava/lang/String;
+     178: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     183: pop
+     184: aload_1
+     185: areturn
+
+  protected boolean isJavaSupportedByCompiler() throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+       4: new           #94                 // class scala_maven/VersionNumber
+       7: dup
+       8: ldc           #219                // String 2.7.2
+      10: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+      13: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+      16: iflt          23
+      19: iconst_1
+      20: goto          24
+      23: iconst_0
+      24: ireturn
+
+  protected void addCompilerPluginOptions(scala_maven_executions.JavaMainCaller) throws java.lang.Exception;
+    Code:
+       0: aload_0
+       1: invokespecial #206                // Method getCompilerPluginOptions:()Ljava/util/List;
+       4: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+       9: astore_2
+      10: aload_2
+      11: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      16: ifeq          46
+      19: aload_2
+      20: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      25: checkcast     #147                // class java/lang/String
+      28: astore_3
+      29: aload_1
+      30: iconst_1
+      31: anewarray     #147                // class java/lang/String
+      34: dup
+      35: iconst_0
+      36: aload_3
+      37: aastore
+      38: invokeinterface #148,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addArgs:([Ljava/lang/String;)V
+      43: goto          10
+      46: return
+
+  private java.util.List<java.lang.String> getCompilerPluginOptions() throws java.lang.Exception;
+    Code:
+       0: new           #106                // class java/util/ArrayList
+       3: dup
+       4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+       7: astore_1
+       8: aload_0
+       9: invokespecial #220                // Method getCompilerPlugins:()Ljava/util/Set;
+      12: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+      17: astore_2
+      18: aload_2
+      19: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      24: ifeq          69
+      27: aload_2
+      28: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      33: checkcast     #35                 // class java/io/File
+      36: astore_3
+      37: aload_1
+      38: new           #66                 // class java/lang/StringBuilder
+      41: dup
+      42: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+      45: ldc           #221                // String -Xplugin:
+      47: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      50: aload_3
+      51: invokevirtual #222                // Method java/io/File.getPath:()Ljava/lang/String;
+      54: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      57: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+      60: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      65: pop
+      66: goto          18
+      69: aload_1
+      70: areturn
+
+  private java.util.Set<java.io.File> getCompilerPlugins() throws java.lang.Exception;
+    Code:
+       0: new           #174                // class java/util/TreeSet
+       3: dup
+       4: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+       7: astore_1
+       8: aload_0
+       9: getfield      #223                // Field compilerPlugins:[Lscala_maven/BasicArtifact;
+      12: ifnull        150
+      15: new           #174                // class java/util/TreeSet
+      18: dup
+      19: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+      22: astore_2
+      23: aload_0
+      24: aload_2
+      25: invokevirtual #177                // Method addCompilerToClasspath:(Ljava/util/Set;)V
+      28: aload_0
+      29: aload_2
+      30: invokevirtual #176                // Method addLibraryToClasspath:(Ljava/util/Set;)V
+      33: aload_0
+      34: getfield      #223                // Field compilerPlugins:[Lscala_maven/BasicArtifact;
+      37: astore_3
+      38: aload_3
+      39: arraylength
+      40: istore        4
+      42: iconst_0
+      43: istore        5
+      45: iload         5
+      47: iload         4
+      49: if_icmpge     150
+      52: aload_3
+      53: iload         5
+      55: aaload
+      56: astore        6
+      58: aload_0
+      59: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+      62: new           #66                 // class java/lang/StringBuilder
+      65: dup
+      66: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+      69: ldc           #224                // String compiler plugin:
+      71: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      74: aload         6
+      76: invokevirtual #225                // Method scala_maven/BasicArtifact.toString:()Ljava/lang/String;
+      79: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      82: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+      85: invokeinterface #153,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.info:(Ljava/lang/CharSequence;)V
+      90: new           #174                // class java/util/TreeSet
+      93: dup
+      94: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+      97: astore        7
+      99: aload_0
+     100: aload         6
+     102: getfield      #179                // Field scala_maven/BasicArtifact.groupId:Ljava/lang/String;
+     105: aload         6
+     107: getfield      #180                // Field scala_maven/BasicArtifact.artifactId:Ljava/lang/String;
+     110: aload         6
+     112: getfield      #181                // Field scala_maven/BasicArtifact.version:Ljava/lang/String;
+     115: aload         6
+     117: getfield      #226                // Field scala_maven/BasicArtifact.classifier:Ljava/lang/String;
+     120: aload         7
+     122: iconst_0
+     123: invokevirtual #182                // Method addToClasspath:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+     126: aload         7
+     128: aload_2
+     129: invokeinterface #227,  2          // InterfaceMethod java/util/Set.removeAll:(Ljava/util/Collection;)Z
+     134: pop
+     135: aload_1
+     136: aload         7
+     138: invokeinterface #228,  2          // InterfaceMethod java/util/Set.addAll:(Ljava/util/Collection;)Z
+     143: pop
+     144: iinc          5, 1
+     147: goto          45
+     150: aload_1
+     151: areturn
+}

@@ -1,0 +1,51 @@
+[spark-jobs] ���ֿ����ռ�: dw_ods, dw_dwd, dw_dim, dw_dws, dw_ads
+26/09/12 16:13:01 INFO HiveConf: Found configuration file null
+26/09/12 16:13:01 INFO SparkContext: Running Spark version 3.5.1
+26/09/12 16:13:01 INFO SparkContext: OS info Windows 10, 10.0, amd64
+26/09/12 16:13:01 INFO SparkContext: Java version 1.8.0_202
+26/09/12 16:13:01 INFO ResourceUtils: ==============================================================
+26/09/12 16:13:01 INFO ResourceUtils: No custom resources configured for spark.driver.
+26/09/12 16:13:01 INFO ResourceUtils: ==============================================================
+26/09/12 16:13:01 INFO SparkContext: Submitted application: mxp-20260901
+26/09/12 16:13:01 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+26/09/12 16:13:01 INFO ResourceProfile: Limiting resource is cpu
+26/09/12 16:13:01 INFO ResourceProfileManager: Added ResourceProfile id: 0
+26/09/12 16:13:01 INFO SecurityManager: Changing view acls to: ASUS
+26/09/12 16:13:01 INFO SecurityManager: Changing modify acls to: ASUS
+26/09/12 16:13:01 INFO SecurityManager: Changing view acls groups to: 
+26/09/12 16:13:01 INFO SecurityManager: Changing modify acls groups to: 
+26/09/12 16:13:01 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: ASUS; groups with view permissions: EMPTY; users with modify permissions: ASUS; groups with modify permissions: EMPTY
+26/09/12 16:13:02 INFO Utils: Successfully started service 'sparkDriver' on port 11862.
+26/09/12 16:13:02 INFO SparkEnv: Registering MapOutputTracker
+26/09/12 16:13:02 INFO SparkEnv: Registering BlockManagerMaster
+26/09/12 16:13:02 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+26/09/12 16:13:02 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+26/09/12 16:13:02 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+26/09/12 16:13:02 INFO DiskBlockManager: Created local directory at C:\Users\ASUS\AppData\Local\Temp\blockmgr-3c1689bb-d02d-49a7-965d-08f180bf3142
+26/09/12 16:13:02 INFO MemoryStore: MemoryStore started with capacity 366.3 MiB
+26/09/12 16:13:02 INFO SparkEnv: Registering OutputCommitCoordinator
+26/09/12 16:13:02 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+26/09/12 16:13:02 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+26/09/12 16:13:02 INFO SparkContext: Added JAR file:/D:/Develop_code/GraduationProject/.verify/spark-jobs-0.1.0-SNAPSHOT-jdk8fix.jar at spark://host.docker.internal:11862/jars/spark-jobs-0.1.0-SNAPSHOT-jdk8fix.jar with timestamp 1789200781504
+26/09/12 16:13:02 INFO Executor: Starting executor ID driver on host host.docker.internal
+26/09/12 16:13:02 INFO Executor: OS info Windows 10, 10.0, amd64
+26/09/12 16:13:02 INFO Executor: Java version 1.8.0_202
+26/09/12 16:13:02 INFO Executor: Starting executor with user classpath (userClassPathFirst = false): ''
+26/09/12 16:13:02 INFO Executor: Created or updated repl class loader org.apache.spark.util.MutableURLClassLoader@5c448433 for default.
+26/09/12 16:13:02 INFO Executor: Fetching spark://host.docker.internal:11862/jars/spark-jobs-0.1.0-SNAPSHOT-jdk8fix.jar with timestamp 1789200781504
+26/09/12 16:13:02 INFO TransportClientFactory: Successfully created connection to host.docker.internal/172.16.208.83:11862 after 22 ms (0 ms spent in bootstraps)
+26/09/12 16:13:02 INFO Utils: Fetching spark://host.docker.internal:11862/jars/spark-jobs-0.1.0-SNAPSHOT-jdk8fix.jar to C:\Users\ASUS\AppData\Local\Temp\spark-ceb4e064-8a3a-4ad3-a24b-4a2da58b2e8f\userFiles-4081c0b4-19a4-41f9-9c45-9ccc17e9182b\fetchFileTemp5416560594222843412.tmp
+26/09/12 16:13:02 INFO Executor: Adding file:/C:/Users/ASUS/AppData/Local/Temp/spark-ceb4e064-8a3a-4ad3-a24b-4a2da58b2e8f/userFiles-4081c0b4-19a4-41f9-9c45-9ccc17e9182b/spark-jobs-0.1.0-SNAPSHOT-jdk8fix.jar to class loader default
+26/09/12 16:13:02 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 7344.
+26/09/12 16:13:02 INFO NettyBlockTransferService: Server created on host.docker.internal:7344
+26/09/12 16:13:02 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+26/09/12 16:13:02 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, host.docker.internal, 7344, None)
+26/09/12 16:13:02 INFO BlockManagerMasterEndpoint: Registering block manager host.docker.internal:7344 with 366.3 MiB RAM, BlockManagerId(driver, host.docker.internal, 7344, None)
+26/09/12 16:13:02 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, host.docker.internal, 7344, None)
+26/09/12 16:13:02 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, host.docker.internal, 7344, None)
+26/09/12 16:13:04 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 16:13:04 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 16:13:05 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 16:13:05 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+26/09/12 16:13:07 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+{"jobCode":"mxp","inputRecords":0,"outputRecords":0,"rejectedRecords":0,"attemptNo":1,"status":"FAILED","message":"����δ����/δָ�򱾴ο��գ��ܾ�����: dw_ads.ads_operation_overview,dw_ads.ads_sale_trend,dw_ads.ads_behavior_funnel,dw_ads.ads_active_trend,dw_ads.ads_hot_product,dw_ads.ads_product_conversion,dw_ads.ads_user_profile,dw_ads.ads_data_quality","elapsedMs":5567,"outputPartitions":[],"checks":[{"ruleCode":"MXP_SNAPSHOT_PINNED","layer":"PUBLISH","targetTable":"dw_ads.ads_operation_overview,dw_ads.ads_sale_trend,dw_ads.ads_behavior_funnel,dw_ads.ads_active_trend,dw_ads.ads_hot_product,dw_ads.ads_product_conversion,dw_ads.ads_user_profile,dw_ads.ads_data_quality","checkCount":8,"errorCount":8,"threshold":"��ʽ���� Location ָ�� snapshot_id=S20260901J8","severity":"BLOCKING","passed":false,"detail":"δָ�򱾴ο���: dw_ads.ads_operation_overview=<��·��>,dw_ads.ads_sale_trend=<��·��>,dw_ads.ads_behavior_funnel=<��·��>,dw_ads.ads_active_trend=<��·��>,dw_ads.ads_hot_product=<��·��>,dw_ads.ads_product_conversion=<��·��>,dw_ads.ads_user_profile=<��·��>,dw_ads.ads_data_quality=<��·��>"}]}

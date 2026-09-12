@@ -30,7 +30,7 @@ class MetricExportJob extends WarehouseJob {
   override val description: String = "Hive 正式 ADS → 发布导出文件（JSONL + 清单），供指标库发布读取"
 
   override def validate(args: JobArgs): Either[String, Unit] = {
-    if (args.outputSnapshotId.forall(_.isBlank)) return Left("mxp 需要 --outputSnapshotId（只导出本次快照）")
+    if (args.outputSnapshotId.forall(_.trim.isEmpty)) return Left("mxp 需要 --outputSnapshotId（只导出本次快照）")
     if (!args.extra.get("exportDir").exists(_.nonEmpty)) return Left("mxp 需要 --exportDir（导出目录）")
     Right(())
   }

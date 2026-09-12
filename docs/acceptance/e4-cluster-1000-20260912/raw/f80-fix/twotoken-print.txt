@@ -1,0 +1,7 @@
+-release:8
+-usejavacp
+-d
+D:\Develop_code\GraduationProject-wt\m3-jdk8fix\.verify\probe-C
+-Xprint-args
+D:\Develop_code\GraduationProject-wt\m3-jdk8fix\.verify\twotoken-print.txt
+D:\Develop_code\GraduationProject-wt\m3-jdk8fix\.verify\ReleaseProbe.scala

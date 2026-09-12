@@ -1,0 +1,4 @@
+[spark-jobs] ���ֿ����ռ�: dw_ods, dw_dwd, dw_dim, dw_dws, dw_ads
+[spark-jobs] ljp У��ʧ��: ȱ�ٲ��� --landingDir
+26/09/12 16:13:10 INFO ShutdownHookManager: Shutdown hook called
+26/09/12 16:13:10 INFO ShutdownHookManager: Deleting directory C:\Users\ASUS\AppData\Local\Temp\spark-2b867ae6-b663-44b1-915c-216c58b17f2a

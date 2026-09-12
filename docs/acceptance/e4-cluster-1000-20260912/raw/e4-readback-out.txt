@@ -1,0 +1,80 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[2], Application Id: local-1789200165118
+ods_behavior_event
+Time taken: 1.822 seconds, Fetched 4 row(s)
+ods_product_event
+ods_trade_event
+ods_user_event
+dwd_order_detail
+Time taken: 0.032 seconds, Fetched 3 row(s)
+dwd_reject_record
+dwd_user_behavior_detail
+dim_product
+Time taken: 0.025 seconds, Fetched 2 row(s)
+dim_user
+dws_behavior_funnel_day
+dws_product_behavior_day
+dws_product_sale_day
+dws_region_sale_day
+dws_trade_day
+dws_user_behavior_day
+dws_user_trade_period
+Time taken: 0.026 seconds, Fetched 7 row(s)
+ads_active_trend
+Time taken: 0.028 seconds, Fetched 16 row(s)
+ads_active_trend__staging
+ads_behavior_funnel
+ads_behavior_funnel__staging
+ads_data_quality
+ads_data_quality__staging
+ads_hot_product
+ads_hot_product__staging
+ads_operation_overview
+ads_operation_overview__staging
+ads_product_conversion
+ads_product_conversion__staging
+ads_sale_trend
+ads_sale_trend__staging
+ads_user_profile
+ads_user_profile__staging
+ODS_behavior	373
+Time taken: 1.819 seconds, Fetched 1 row(s)
+ODS_product	274
+Time taken: 0.311 seconds, Fetched 1 row(s)
+ODS_trade	270
+Time taken: 0.349 seconds, Fetched 1 row(s)
+ODS_user	83
+Time taken: 0.274 seconds, Fetched 1 row(s)
+DIM_user	83
+Time taken: 0.177 seconds, Fetched 1 row(s)
+DIM_product	50
+Time taken: 0.177 seconds, Fetched 1 row(s)
+DWS_funnel	1
+Time taken: 0.155 seconds, Fetched 1 row(s)
+DWS_prod_beh	45
+Time taken: 0.151 seconds, Fetched 1 row(s)
+DWS_prod_sale	16
+Time taken: 0.128 seconds, Fetched 1 row(s)
+DWS_region	4
+Time taken: 0.128 seconds, Fetched 1 row(s)
+ADS_active_trend	1
+Time taken: 0.116 seconds, Fetched 1 row(s)
+ADS_behavior_funnel	4
+Time taken: 0.139 seconds, Fetched 1 row(s)
+ADS_data_quality	4
+Time taken: 0.133 seconds, Fetched 1 row(s)
+ADS_hot_product	45
+Time taken: 0.137 seconds, Fetched 1 row(s)
+ADS_operation_overview	1
+Time taken: 0.107 seconds, Fetched 1 row(s)
+ADS_product_conversion	45
+Time taken: 0.122 seconds, Fetched 1 row(s)
+ADS_sale_trend	1
+Time taken: 0.106 seconds, Fetched 1 row(s)
+ADS_user_profile	37
+Time taken: 0.119 seconds, Fetched 1 row(s)
+ADS_FORMAL_TOTAL	138
+Time taken: 0.97 seconds, Fetched 1 row(s)

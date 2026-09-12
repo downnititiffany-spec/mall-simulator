@@ -1,0 +1,7 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[1], Application Id: local-1789201462864
+Time taken: 3.088 seconds, Fetched 1 row(s)
+ods_behavior_event	[0]	["mock-mall"]	373

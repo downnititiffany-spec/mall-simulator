@@ -1,0 +1,40 @@
+==== 1) 导出目录清单（递归）====
+   -rw-r--r--   3 root supergroup       3373 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/_export.json
+   -rw-r--r--   3 root supergroup         32 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_active_trend_m.jsonl
+   -rw-r--r--   3 root supergroup        336 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_behavior_funnel_m.jsonl
+   -rw-r--r--   3 root supergroup        480 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_data_quality_m.jsonl
+   -rw-r--r--   3 root supergroup       5082 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_hot_product_m.jsonl
+   -rw-r--r--   3 root supergroup        165 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_operation_overview_m.jsonl
+   -rw-r--r--   3 root supergroup       3135 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_product_conversion_m.jsonl
+   -rw-r--r--   3 root supergroup         83 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_sale_trend_m.jsonl
+   -rw-r--r--   3 root supergroup       8877 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_user_profile_m.jsonl
+==== 2) 逐文件行数：清单/数据分开计 ====
+   [清单] _export.json  18 行
+   [数据] ads_active_trend_m.jsonl  1 行
+   [数据] ads_behavior_funnel_m.jsonl  4 行
+   [数据] ads_data_quality_m.jsonl  4 行
+   [数据] ads_hot_product_m.jsonl  45 行
+   [数据] ads_operation_overview_m.jsonl  1 行
+   [数据] ads_product_conversion_m.jsonl  45 行
+   [数据] ads_sale_trend_m.jsonl  1 行
+   [数据] ads_user_profile_m.jsonl  37 行
+   ---- 数据文件（*.jsonl）行数合计 = 138（清单文件不计入）----
+==== 3) 与正式 ADS 口径独立对照（本地 spark-sql 只读 → 集群 metastore）====
+   FORMAL_ADS_TOTAL	138
+==== 3b) 清单自报 vs 导出文件实际行数（逐表）====
+   清单 snapshotId=S20260901E4 dt=20260901 source=spark-ads generatedAt=2026/9/12 16:23:13 totalRows=138
+   ads_operation_overview_m   清单=1    实际=1    OK  暂存路径=ads_operation_overview__staging/snapshot_id=S20260901E4/dt=20260901
+   ads_sale_trend_m           清单=1    实际=1    OK  暂存路径=ads_sale_trend__staging/snapshot_id=S20260901E4/dt=20260901
+   ads_behavior_funnel_m      清单=4    实际=4    OK  暂存路径=ads_behavior_funnel__staging/snapshot_id=S20260901E4/dt=20260901
+   ads_active_trend_m         清单=1    实际=1    OK  暂存路径=ads_active_trend__staging/snapshot_id=S20260901E4/dt=20260901
+   ads_hot_product_m          清单=45   实际=45   OK  暂存路径=ads_hot_product__staging/snapshot_id=S20260901E4/dt=20260901
+   ads_product_conversion_m   清单=45   实际=45   OK  暂存路径=ads_product_conversion__staging/snapshot_id=S20260901E4/dt=20260901
+   ads_user_profile_m         清单=37   实际=37   OK  暂存路径=ads_user_profile__staging/snapshot_id=S20260901E4/dt=20260901
+   ads_data_quality_m         清单=4    实际=4    OK  暂存路径=ads_data_quality__staging/snapshot_id=S20260901E4/dt=20260901
+   清单 8 表 rowCount 合计 = 138（清单 totalRows=138）
+==== 4) 判定（三项必须同时相等）====
+   ① 导出数据文件行数合计 = 138
+   ② 清单自报 totalRows      = 138
+   ③ 独立 Hive 正式 ADS 合计 = 138
+   逐表对账不一致数 = 0
+   ⇒ 三者相等且逐表一致：mxp 导出覆盖完整、清单可信

@@ -1,0 +1,20 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[1], Application Id: local-1789201455125
+DWD_order_detail	134
+Time taken: 2.588 seconds, Fetched 1 row(s)
+DWD_user_behavior	373
+Time taken: 0.175 seconds, Fetched 1 row(s)
+26/09/12 16:24:18 WARN HadoopFSUtils: The directory hdfs://node01:8020/graduation/warehouse/dw_dwd.db/dwd_reject_record/dt=20260901 was not found. Was it deleted very recently?
+DWD_reject	0
+Time taken: 0.109 seconds, Fetched 1 row(s)
+DWS_trade_day	1
+Time taken: 0.12 seconds, Fetched 1 row(s)
+DWS_user_behavior	83
+Time taken: 0.14 seconds, Fetched 1 row(s)
+DWS_user_trade_period	37
+Time taken: 0.135 seconds, Fetched 1 row(s)
+DWD_TOTAL	507
+Time taken: 0.59 seconds, Fetched 1 row(s)

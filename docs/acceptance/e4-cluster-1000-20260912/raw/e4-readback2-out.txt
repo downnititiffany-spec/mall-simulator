@@ -1,0 +1,19 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[2], Application Id: local-1789200286582
+DWD_order_detail	134
+Time taken: 2.617 seconds, Fetched 1 row(s)
+DWD_user_behavior	373
+Time taken: 0.235 seconds, Fetched 1 row(s)
+DWD_reject	0
+Time taken: 0.234 seconds, Fetched 1 row(s)
+DWS_trade_day	1
+Time taken: 0.133 seconds, Fetched 1 row(s)
+DWS_user_behavior	83
+Time taken: 0.147 seconds, Fetched 1 row(s)
+DWS_user_trade_period	37
+Time taken: 0.125 seconds, Fetched 1 row(s)
+DWD_TOTAL	507
+Time taken: 0.629 seconds, Fetched 1 row(s)

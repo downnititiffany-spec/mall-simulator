@@ -1,0 +1,81 @@
+diff --git a/spark-jobs/pom.xml b/spark-jobs/pom.xml
+index e2d7580..2a9bf46 100644
+--- a/spark-jobs/pom.xml
++++ b/spark-jobs/pom.xml
+@@ -15,8 +15,8 @@
+         <scala.version>2.12.19</scala.version>
+         <spark.version>3.5.1</spark.version>
+         <hadoop.version>3.3.4</hadoop.version>
+-        <maven.compiler.source>17</maven.compiler.source>
+-        <maven.compiler.target>17</maven.compiler.target>
++        <maven.compiler.source>8</maven.compiler.source>
++        <maven.compiler.target>8</maven.compiler.target>
+         <encoding>UTF-8</encoding>
+     </properties>
+ 
+@@ -59,6 +59,18 @@
+         <sourceDirectory>src/main/scala</sourceDirectory>
+         <testSourceDirectory>src/test/scala</testSourceDirectory>
+         <plugins>
++            <!--
++              JDK 8 API 闸门 —— 唯一所有者是下方 <release>8</release>（不要只靠 <args> 里的 -release）。
++              ① 本缺陷形态：scala-maven-plugin 用 @Parameter(property="maven.compiler.target") 读上面的
++                 maven.compiler.target，换算成 `-release <target>` 并**追加在 <args> 之后**；scalac 后者覆盖前者。
++                 此前只在 <args> 放 `-release:8`，被追加的 `-release 17` 静默覆盖 ⇒ 闸门形同虚设，
++                 Java 11 的 String.isBlank() 被编入 class（major=52，运行时 JDK 1.8.0_351 上 NoSuchMethodError）。
++              ② 生效证据（worktree 内）：.verify/final-positive-control.log —— 最终配置下把
++                 MetricExportJob.scala 的 `_.trim.isEmpty` 临时改回 `_.isBlank` 必须编译失败并点名 isBlank；
++                 .verify/final-effective-scalac-args.log —— 实际传给 scalac 的选项行（-release 出现次数/取值/生效者）。
++              ③ 规则：class 文件 major ≤ 52 **不等于** API 在 JDK 8 上存在；集群计算节点 JDK 1.8.0_351，
++                 必须用 -release 8 按 ct.sym 校验 Java API，而不是只保证 class 版本。
++            -->
+             <plugin>
+                 <groupId>net.alchim31.maven</groupId>
+                 <artifactId>scala-maven-plugin</artifactId>
+@@ -73,6 +85,7 @@
+                 </executions>
+                 <configuration>
+                     <scalaVersion>${scala.version}</scalaVersion>
++                    <release>8</release>
+                     <args>
+                         <arg>-deprecation</arg>
+                         <arg>-feature</arg>
+diff --git a/spark-jobs/src/main/scala/com/graduation/analytics/job/MetricExportJob.scala b/spark-jobs/src/main/scala/com/graduation/analytics/job/MetricExportJob.scala
+index 27184c7..a837a25 100644
+--- a/spark-jobs/src/main/scala/com/graduation/analytics/job/MetricExportJob.scala
++++ b/spark-jobs/src/main/scala/com/graduation/analytics/job/MetricExportJob.scala
+@@ -30,7 +30,7 @@ class MetricExportJob extends WarehouseJob {
+   override val description: String = "Hive 正式 ADS → 发布导出文件（JSONL + 清单），供指标库发布读取"
+ 
+   override def validate(args: JobArgs): Either[String, Unit] = {
+-    if (args.outputSnapshotId.forall(_.isBlank)) return Left("mxp 需要 --outputSnapshotId（只导出本次快照）")
++    if (args.outputSnapshotId.forall(_.trim.isEmpty)) return Left("mxp 需要 --outputSnapshotId（只导出本次快照）")
+     if (!args.extra.get("exportDir").exists(_.nonEmpty)) return Left("mxp 需要 --exportDir（导出目录）")
+     Right(())
+   }
+diff --git a/spark-jobs/src/test/scala/com/graduation/analytics/P2TestSupport.scala b/spark-jobs/src/test/scala/com/graduation/analytics/P2TestSupport.scala
+index fc33306..9d9ee16 100644
+--- a/spark-jobs/src/test/scala/com/graduation/analytics/P2TestSupport.scala
++++ b/spark-jobs/src/test/scala/com/graduation/analytics/P2TestSupport.scala
+@@ -77,7 +77,7 @@ object P2TestSupport {
+   private val runId: String = sys.props.get("p2.test.runId").filter(_.nonEmpty).getOrElse {
+     val ts = java.time.LocalDateTime.now()
+       .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
+-    s"$ts-${ProcessHandle.current().pid()}"
++    s"$ts-${java.lang.management.ManagementFactory.getRuntimeMXBean.getName.takeWhile(_ != '@')}"
+   }
+ 
+   def spark(suiteName: String): SparkSession = {
+diff --git a/spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala b/spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala
+index f0dce0b..aff71b6 100644
+--- a/spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala
++++ b/spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala
+@@ -187,7 +187,7 @@ object WarehouseNamespaceSpec {
+   private def readSpec(): JsonNode = {
+     val path = findRepoRoot().resolve(SpecRelative)
+     if (!Files.isRegularFile(path)) throw new IllegalStateException(s"规格文件缺失: $path")
+-    new ObjectMapper().readTree(Files.readString(path, StandardCharsets.UTF_8))
++    new ObjectMapper().readTree(new String(Files.readAllBytes(path), StandardCharsets.UTF_8))
+   }
+ 
+   private def findRepoRoot(): Path = {

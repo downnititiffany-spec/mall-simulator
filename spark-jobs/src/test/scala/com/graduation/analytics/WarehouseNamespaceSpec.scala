@@ -187,7 +187,7 @@ object WarehouseNamespaceSpec {
   private def readSpec(): JsonNode = {
     val path = findRepoRoot().resolve(SpecRelative)
     if (!Files.isRegularFile(path)) throw new IllegalStateException(s"规格文件缺失: $path")
-    new ObjectMapper().readTree(Files.readString(path, StandardCharsets.UTF_8))
+    new ObjectMapper().readTree(new String(Files.readAllBytes(path), StandardCharsets.UTF_8))
   }
 
   private def findRepoRoot(): Path = {

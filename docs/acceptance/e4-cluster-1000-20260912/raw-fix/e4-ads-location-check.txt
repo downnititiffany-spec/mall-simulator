@@ -1,0 +1,20 @@
+== E4 修复轮：8 张正式 ADS 分区 LOCATION 独立实测（DESCRIBE FORMATTED via thrift://node01:9083）==
+
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_operation_overview__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_operation_overview	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_sale_trend__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_sale_trend	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_behavior_funnel__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_behavior_funnel	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_active_trend__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_active_trend	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_hot_product__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_hot_product	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_product_conversion__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_product_conversion	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_user_profile__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_user_profile	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_data_quality__staging/snapshot_id=S20260901E4/dt=20260901	                    
+Location            	hdfs://node01:8020/graduation/warehouse/dw_ads.db/ads_data_quality	                    
+
+命中快照暂存路径条数 = 8 / 8

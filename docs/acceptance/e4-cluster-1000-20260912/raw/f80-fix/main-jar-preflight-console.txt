@@ -1,0 +1,12 @@
+   JAVA_HOME=D:\Develop\JDK1.8（java version "1.8.0_202"）
+   jar=D:\Develop_code\GraduationProject\spark-jobs\target\spark-jobs-0.1.0-SNAPSHOT.jar
+   warehouse=file:///D:/Develop_code/GraduationProject/tests/r6-smoke-warehouse/warehouse
+   [mxp ] exit=1  无兼容性错误 ✓  7.1s
+          JobResult: {"jobCode":"mxp","inputRecords":0,"outputRecords":0,"rejectedRecords":0,"attemptNo":1,"status":"FAILED","message":"快照未发布/未指向本次快照，拒绝导出: dw_ads.ads_operation_overview,dw_ads.ads_sale_trend,dw_ads.ads_behavior_funnel,dw_ads.ads_activ
+   [ljp ] exit=2  无兼容性错误 ✓  1.8s
+   [sci ] exit=0  无兼容性错误 ✓  8.1s
+          JobResult: {"jobCode":"sci","inputRecords":0,"outputRecords":37,"rejectedRecords":0,"attemptNo":1,"status":"SUCCESS","message":"ok","elapsedMs":4902,"outputPartitions":[],"checks":[]}
+   ---- 汇总: D:\Develop_code\GraduationProject\.verify\jdk8-preflight\main-jar\summary.jsonl
+   mxp  exit=1   兼容命中=0
+   ljp  exit=2   兼容命中=0
+   sci  exit=0   兼容命中=0

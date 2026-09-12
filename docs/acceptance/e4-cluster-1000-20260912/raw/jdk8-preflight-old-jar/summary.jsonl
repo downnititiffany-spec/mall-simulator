@@ -1,0 +1,1 @@
+{"job":"mxp","exit":1,"compatHit":1,"compatFirst":"Exception in thread \"main\" java.lang.NoSuchMethodError: java.lang.String.isBlank()Z","jobResult":null,"log":"D:\\Develop_code\\GraduationProject\\.verify\\jdk8-preflight\\old-jar\\mxp.log","sec":2.1}

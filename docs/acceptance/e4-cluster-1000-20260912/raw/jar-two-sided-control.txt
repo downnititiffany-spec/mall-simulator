@@ -1,0 +1,21 @@
+=== F-80 修复产物双侧对照（同一扫描方法打在新旧 jar 上，总控独立执行）===
+方法: 解包 → 逐 class 读第 7-8 字节取 major → Latin1 解码后常量池字符串正则匹配；含正对照 trim
+
+[OLD   spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar (E4 run-1 提交件)]
+  sha256  = 2AC3B6512715B3057B9E0736D0D2DBA28AE1CE200EF15C5371AAA0D24E4069E5
+  size    = 284147 B
+  classes = 105
+  major   = 52 x105
+  isBlank 命中 = 1   正对照 trim 命中 = 8 / isEmpty 命中 = 14
+  isBlank 命中类: MetricExportJob.class
+
+[NEW   spark-jobs-0.1.0-SNAPSHOT-jdk8fix.jar (F-80 修复件)]
+  sha256  = 529541373C8D9590058F7B5188BEFAE66C94938252BC11065A50799495AA59D8
+  size    = 285286 B
+  classes = 105
+  major   = 52 x105
+  isBlank 命中 = 0   正对照 trim 命中 = 9 / isEmpty 命中 = 14
+
+=== javap 字节码对照（com.graduation.analytics.job.MetricExportJob）===
+[OLD] 1: invokevirtual #556                // Method java/lang/String.isBlank:()Z
+[NEW] 1: invokevirtual #556                // Method java/lang/String.trim:()Ljava/lang/String;  |  4: invokevirtual #557                // Method java/lang/String.isEmpty:()Z

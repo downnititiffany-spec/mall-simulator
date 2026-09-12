@@ -1,0 +1,26 @@
+==== 1) 导出目录清单（递归）====
+   -rw-r--r--   3 root supergroup       3373 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/_export.json
+   -rw-r--r--   3 root supergroup         32 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_active_trend_m.jsonl
+   -rw-r--r--   3 root supergroup        336 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_behavior_funnel_m.jsonl
+   -rw-r--r--   3 root supergroup        480 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_data_quality_m.jsonl
+   -rw-r--r--   3 root supergroup       5082 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_hot_product_m.jsonl
+   -rw-r--r--   3 root supergroup        165 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_operation_overview_m.jsonl
+   -rw-r--r--   3 root supergroup       3135 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_product_conversion_m.jsonl
+   -rw-r--r--   3 root supergroup         83 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_sale_trend_m.jsonl
+   -rw-r--r--   3 root supergroup       8877 2026-09-12 16:23 hdfs://node01:8020/graduation/export/e4c1000/ads_user_profile_m.jsonl
+==== 2) 逐文件行数（jsonl 计数；清单文件单独展示内容）====
+   [数据] _export.json  18 行
+   [数据] ads_active_trend_m.jsonl  1 行
+   [数据] ads_behavior_funnel_m.jsonl  4 行
+   [数据] ads_data_quality_m.jsonl  4 行
+   [数据] ads_hot_product_m.jsonl  45 行
+   [数据] ads_operation_overview_m.jsonl  1 行
+   [数据] ads_product_conversion_m.jsonl  45 行
+   [数据] ads_sale_trend_m.jsonl  1 行
+   [数据] ads_user_profile_m.jsonl  37 行
+   ---- 数据文件行数合计 = 156 ----
+==== 3) 与正式 ADS 口径对照（独立 Hive 计数，口径来自 .verify/e4-readback.sql）====
+   'Project [FORMAL_ADS_TOTAL AS k#1, 'sum('c) AS c#2]
+==== 4) 判定 ====
+   导出数据行数合计 = 156；正式 ADS 合计见上一行
+   两者相等 ⇒ mxp 导出覆盖完整；不等 ⇒ 需查 mxp 的 includeTables/过滤口径

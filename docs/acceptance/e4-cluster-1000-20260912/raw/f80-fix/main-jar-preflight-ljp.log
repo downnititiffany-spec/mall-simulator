@@ -1,0 +1,6 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[spark-jobs] 数仓库名空间: dw_ods, dw_dwd, dw_dim, dw_dws, dw_ads
+[spark-jobs] ljp 校验失败: 缺少参数 --landingDir
+26/09/12 16:16:06 INFO ShutdownHookManager: Shutdown hook called
+26/09/12 16:16:06 INFO ShutdownHookManager: Deleting directory C:\Users\ASUS\AppData\Local\Temp\spark-c8d6b2fa-b193-4362-b563-e3c630fa713a
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
