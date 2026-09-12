@@ -1,6 +1,6 @@
 # contract-specs — 三程序共享的版本化机器可读契约
 
-状态：**部分冻结**——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.0.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），`1.3.0 → 2.0.0` 对应 `specs/warehouse-namespace.v2.json` 的**破坏性变更**（取值来源由 `runtime_profile.hive_database_prefix` 迁至源级 `source_registry.warehouse_prefix`；规则本体与 22 向量与 v1 逐字段等价，v1 保留为历史冻结件），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
+状态：**部分冻结**（`specs/surrogate-key.v1.json` 为 `DRAFT`，**尚无任何实现读取**；见 §4 目录表与 §10 指纹表）——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.0.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），`1.3.0 → 2.0.0` 对应 `specs/warehouse-namespace.v2.json` 的**破坏性变更**（取值来源由 `runtime_profile.hive_database_prefix` 迁至源级 `source_registry.warehouse_prefix`；规则本体与 22 向量与 v1 逐字段等价，v1 保留为历史冻结件），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
 
 ## 1. 目的与边界
 
@@ -54,7 +54,8 @@
 | `openapi/generator-api.v1.yaml` | `synthetic-data-generator`（服务端）；`MALL_API` 场景下的调用方与页面为消费方 | 生成器按契约实现并自测；调用方按契约生成客户端 | `DRAFT` |
 | [`specs/warehouse-namespace.v1.json`](specs/warehouse-namespace.v1.json) | 两个消费方共享：`spark-jobs`（Scala）、`analytics-server`（Java）；两侧各自持有**薄适配器**，规则本体只在本规格 | Java：`WarehouseNamespaceContractTest`（逐向量 + `errorCodes` 数量/取值）+ `WarehouseNameLiteralGateTest`（源码门禁：除唯一 owner 外无裸库名字面量）；Scala：`WarehouseNamespaceSpec`（62 用例） | **已被 v2 取代（历史冻结件，不改）** |
 | [`specs/warehouse-namespace.v2.json`](specs/warehouse-namespace.v2.json) | 同上（`supersedes: warehouse-namespace.v1.json`） | 同上 | **`FROZEN-2026-09-12`** |
-| [`VERSION`](VERSION) | 总控 | — | `2.0.0` |
+| [`specs/surrogate-key.v1.json`](specs/surrogate-key.v1.json) | `spark-jobs`（Scala，派生侧）＋ `analytics-server`（Java，源画像声明校验与展示）；两侧薄适配**待建** | 待建（Java/Scala 逐向量对账，模式沿用 warehouse-namespace） | **`DRAFT-2026-09-12`**（无实现读取；不得声称已验证） |
+| [`VERSION`](VERSION) | 总控 | — | `2.1.0` |
 
 **为什么其余四个制品仍是 `DRAFT`（诚实说明）**：这些文件是 M1-5 新建立的投影，尚未经过两条冻结门槛——(1) 结构对账测试 `analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java` 转绿；(2) 总控（热点 Owner）审阅并处置第 7 节的待决策项。**只有两者都完成，才允许把状态改为 `FROZEN`。** 当前 `canonical-event.v1` 的字段集/枚举/常量/金额正则已按该测试的断言逐条对齐（本案建立时用 PowerShell 逐条模拟断言核对，见第 8 节；M1-5 范围内不允许运行 Maven，故未执行该测试本身）；且 Q6（采集层接受的 51 行里约 25 行按契约属脏数据）未决 ⇒ `canonical-event.v1` **不得**冻结。
 
@@ -187,6 +188,8 @@
 | `VERSION` | `C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0` | 内容 `contract-specs 1.2.0`（本表登记的是 2026-09-11 20:12 写入、提交 `332b52b` 20:14:08 时的值） |
 | `VERSION`（**当前值**，2026-09-12 CT-0 重登记） | `B6BAB8E0547C6BC0EB7005128E177B891E32534FA3522D54B079E7AEC384EC89` | 内容 `contract-specs 1.3.0`（21 B）。上一行 `C9E89F9D…`／内容 `1.2.0` 是 2026-09-11 20:12 的**历史登记，原文保留不改**；变化发生在 M1-5 收口同步升版（§11，提交 `fee9dbc`）。引用**当前态**结论用本行，引用**历史轮次**结论用上一行 |
 | `VERSION`（**当前值**，2026-09-12 P2-07 重登记） | `BA01EE34366FAC52AD8EE7709EF44F25117E0662F3D7E3D0CE1FF9E3B3407A71` | 内容 `contract-specs 2.0.0`（21 B）。上一行 `B6BAB8E0…`／内容 `1.3.0` 是 CT-0 时点的**历史登记，原文保留不改**；本次变化是 P2-07 的**破坏性契约变更**（`D-072`，见 §13）。引用**当前态**结论用本行 |
+| `specs/surrogate-key.v1.json` | `14385528205886CB3D90E89C4207054234F332D8946662F90E8C1EE8ECF75320` | `DRAFT`（2026-09-12 落盘）：23 向量由总控**独立复算**（Python）并与泳道 PowerShell 读数逐条对账；本文件内**同时**给出 `digestPrefixHex16` 与 `keyHex16`/`keyBigint`，消除“摘要前 8 字节”与“清符号位后的键值”的列语义歧义 |
+| `VERSION`（**当前值**，2026-09-12 surrogate-key 落盘后重登记） | `9784177F34E4B4A248F7D3840D73E294C35EE46ADCB76F429CAA87D4D8E0E30D` | 内容 `contract-specs 2.1.0`（21 B）。加法变更（新增一个 DRAFT 制品）→ minor 递增；上一行 `BA01EE34…`／`2.0.0` 是 P2-07 契约变更时点的历史登记，原文保留不改 |
 
 **口径**：指纹是**复核辅助**而非契约的一部分——`VERSION` 才是契约的版本所有者（改契约必须同时升 `VERSION`，指纹随内容自然变化，不单独维护"指纹版本"）。
 
