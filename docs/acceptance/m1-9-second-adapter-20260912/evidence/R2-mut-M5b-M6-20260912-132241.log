@@ -1,0 +1,72 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\synthetic-data-generator\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 21 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+13:22:45.935 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:22:46.035 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:22:46.043 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:22:46.048 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+[ERROR] Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.710 s <<< FAILURE! -- in com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.unreadableCreatedOrderFailsLoudly -- Time elapsed: 0.031 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: �쳣�����������ϸ��ȱ���ۣ�������ֻ������ͨ�ý�����[centsToYuan] �̳�δ���� unit_price_cents���޷��õ��淶���� ==> expected: <true> but was: <false>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)
+	at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)
+	at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:214)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.unreadableCreatedOrderFailsLoudly(SecondMallAdapterOperationsTest.java:338)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.generator.engine.SecondMallDualTargetTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.835 s -- in com.graduation.generator.engine.SecondMallDualTargetTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   SecondMallAdapterOperationsTest.unreadableCreatedOrderFailsLoudly:338 �쳣�����������ϸ��ȱ���ۣ�������ֻ������ͨ�ý�����[centsToYuan] �̳�δ���� unit_price_cents���޷��õ��淶���� ==> expected: <true> but was: <false>
+[INFO] 
+[ERROR] Tests run: 19, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.008 s
+[INFO] Finished at: 2026-09-12T13:22:48+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project synthetic-data-generator: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\synthetic-data-generator\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

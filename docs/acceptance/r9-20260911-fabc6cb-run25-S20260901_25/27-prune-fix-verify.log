@@ -1,0 +1,7 @@
+R9 D-R9-1 暂存清理 dt 限定修复验证 @ 2026-09-11 11:06:37
+埋点后 partition 清单: snapshot_id=S20260901_29/dt=20260901 || snapshot_id=S20260907_TEST/dt=20260907
+投放黄金夹具 D:\Develop_code\GraduationProject\landing\events\r9-prunefix-110637.jsonl lines=55
+创建 run 30（sourceDataVersion=r9-prunefix-110637）
+发布后 partition 清单: snapshot_id=S20260901_30/dt=20260901 || snapshot_id=S20260907_TEST/dt=20260907
+PUB_STAGING_PRUNE 检查项: {"ruleCode":"PUB_STAGING_PRUNE","layer":"PUBLISH","severity":"INFO","targetTable":"dw_ads.ads_operation_overview__staging,dw_ads.ads_active_trend__staging,dw_ads.ads_behavior_funnel__staging,dw_ads.ads_hot_product__staging,dw_ads.ads_product_conversion__staging,dw_ads.ads_sale_trend__staging,dw_ads.ads_user_profile__staging,dw_ads.ads_data_quality__staging","checkCount":8,"errorCount":0,"threshold":"ֻ���� dt=20260901 ����ʷ�ݴ���գ�����ҵ�����ڵ��ݴ����������","passed":true,"detail":"������ 8 �� dt=20260901 ��ʷ�ݴ����: dw_ads.ads_operation_overview__staging/S20260901_29/dt=20260901(1��),dw_ads.ads_active_trend__staging/S20260901_29/dt=20260901(1��),dw_ads.ads_behavior_funnel__staging/S20260901_29/dt=20260901(4��),dw_ads.ads_hot_product__staging/S20260901_29/dt=20260901(4��),dw_ads.ads_product_conversion__staging/S20260901_29/dt=20260901(4��),dw_ads.ads_sale_trend__staging/S20260901_29/dt=20260901(1��),dw_ads.ads_user_profile__staging/S20260901_29/dt=20260901(3��),dw_ads.ads_data_quality__staging/S20260901_29/dt=20260901(4��)"}
+维度扇出核对: dwd_order_rows=7 dwd_order_distinct=6 dws_trade=5/2042.00/1493.00/408.40

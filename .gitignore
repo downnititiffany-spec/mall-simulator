@@ -72,3 +72,10 @@ metric-staging/
 mall-simulator/.freebuff/
 # 生成器运行产物（规范流 jsonl + 操作流水 + 运行报告；本机跑出来的，不入库）
 generator-output/
+
+# ==== F-42（2026-09-12 总控）：验收证据必须可复现 ====
+# 原 `*.log` 规则把 docs/acceptance/** 下的证据日志一并忽略，导致看板引用的证据不在库中（31 文件 / 949 KB 未入库）。
+# 现改为：docs/acceptance/ 下的日志与产物快照入库；运行期日志（logs/、target/ 等）维持忽略。
+# 策略：单文件超过 5 MB 的证据不入库，改为在报告中记「外部路径 + sha256」。
+!docs/acceptance/**/*.log
+!docs/acceptance/**/*.jar

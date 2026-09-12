@@ -1,0 +1,193 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 70 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\synthetic-data-generator\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 21 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+13:23:54.608 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:23:54.693 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:23:54.699 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:23:54.704 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+[ERROR] Tests run: 12, Failures: 0, Errors: 8, Skipped: 0, Time elapsed: 0.607 s <<< FAILURE! -- in com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.centsAreConvertedWithoutFloatTail -- Time elapsed: 0.386 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.toProduct(SecondMallHttpAdapter.java:873)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCatalog(SecondMallHttpAdapter.java:339)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.listProducts(SecondMallHttpAdapter.java:298)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.centsAreConvertedWithoutFloatTail(SecondMallAdapterOperationsTest.java:107)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.keywordBranchKeepsCatalogTotalAndGapChannels -- Time elapsed: 0.008 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.toProduct(SecondMallHttpAdapter.java:873)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCatalog(SecondMallHttpAdapter.java:339)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.listProducts(SecondMallHttpAdapter.java:298)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.keywordBranchKeepsCatalogTotalAndGapChannels(SecondMallAdapterOperationsTest.java:388)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.unreadableCreatedOrderFailsLoudly -- Time elapsed: 0.039 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCreatedOrder(SecondMallHttpAdapter.java:921)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.createOrder(SecondMallHttpAdapter.java:422)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.unreadableCreatedOrderFailsLoudly(SecondMallAdapterOperationsTest.java:370)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.differentFieldWordsStillFillCanonicalDto -- Time elapsed: 0.007 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.toProduct(SecondMallHttpAdapter.java:873)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCatalog(SecondMallHttpAdapter.java:339)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.listProducts(SecondMallHttpAdapter.java:298)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.differentFieldWordsStillFillCanonicalDto(SecondMallAdapterOperationsTest.java:75)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.missingStateNeverInventsAMallWord -- Time elapsed: 0.008 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.toProduct(SecondMallHttpAdapter.java:873)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCatalog(SecondMallHttpAdapter.java:339)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.listProducts(SecondMallHttpAdapter.java:298)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.missingStateNeverInventsAMallWord(SecondMallAdapterOperationsTest.java:702)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.differentStateWordsAreMappedAtAdapterOnly -- Time elapsed: 0.007 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.toProduct(SecondMallHttpAdapter.java:873)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCatalog(SecondMallHttpAdapter.java:339)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.listProducts(SecondMallHttpAdapter.java:298)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.differentStateWordsAreMappedAtAdapterOnly(SecondMallAdapterOperationsTest.java:504)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.negativePriceIsRejectedAndNamed -- Time elapsed: 0.007 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.toProduct(SecondMallHttpAdapter.java:873)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCatalog(SecondMallHttpAdapter.java:339)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.listProducts(SecondMallHttpAdapter.java:298)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.negativePriceIsRejectedAndNamed(SecondMallAdapterOperationsTest.java:261)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.generator.adapter.SecondMallAdapterOperationsTest.missingPriceFailsLoudly -- Time elapsed: 0.015 s <<< ERROR!
+java.lang.ArithmeticException: Rounding necessary
+	at java.base/java.math.BigDecimal.commonNeedIncrement(BigDecimal.java:4717)
+	at java.base/java.math.BigDecimal.needIncrement(BigDecimal.java:4767)
+	at java.base/java.math.BigDecimal.divideAndRound(BigDecimal.java:4681)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:2940)
+	at java.base/java.math.BigDecimal.setScale(BigDecimal.java:3000)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.centsToYuan(SecondMallHttpAdapter.java:696)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.toProduct(SecondMallHttpAdapter.java:873)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.readCatalog(SecondMallHttpAdapter.java:339)
+	at com.graduation.generator.adapter.SecondMallHttpAdapter.listProducts(SecondMallHttpAdapter.java:298)
+	at com.graduation.generator.adapter.SecondMallAdapterOperationsTest.missingPriceFailsLoudly(SecondMallAdapterOperationsTest.java:220)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   SecondMallAdapterOperationsTest.centsAreConvertedWithoutFloatTail:107 ? Arithmetic Rounding necessary
+[ERROR]   SecondMallAdapterOperationsTest.differentFieldWordsStillFillCanonicalDto:75 ? Arithmetic Rounding necessary
+[ERROR]   SecondMallAdapterOperationsTest.differentStateWordsAreMappedAtAdapterOnly:504 ? Arithmetic Rounding necessary
+[ERROR]   SecondMallAdapterOperationsTest.keywordBranchKeepsCatalogTotalAndGapChannels:388 ? Arithmetic Rounding necessary
+[ERROR]   SecondMallAdapterOperationsTest.missingPriceFailsLoudly:220 ? Arithmetic Rounding necessary
+[ERROR]   SecondMallAdapterOperationsTest.missingStateNeverInventsAMallWord:702 ? Arithmetic Rounding necessary
+[ERROR]   SecondMallAdapterOperationsTest.negativePriceIsRejectedAndNamed:261 ? Arithmetic Rounding necessary
+[ERROR]   SecondMallAdapterOperationsTest.unreadableCreatedOrderFailsLoudly:370 ? Arithmetic Rounding necessary
+[INFO] 
+[ERROR] Tests run: 12, Failures: 0, Errors: 8, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.865 s
+[INFO] Finished at: 2026-09-12T13:23:55+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project synthetic-data-generator: 
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\synthetic-data-generator\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

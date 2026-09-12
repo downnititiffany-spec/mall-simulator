@@ -1,0 +1,453 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/4]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.193 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Running com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Running com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.138 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.236 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.201 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 41, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/4]
+[INFO]   from connection-ingestion\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ connection-ingestion ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.auth.AuthInterceptorTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+SLF4J(W): Class path contains multiple SLF4J providers.
+SLF4J(W): Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@7144655b]
+SLF4J(W): Found provider [org.slf4j.reload4j.Reload4jServiceProvider@5c82cd4f]
+SLF4J(W): See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J(I): Actual provider is of type [ch.qos.logback.classic.spi.LogbackServiceProvider@7144655b]
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.572 s -- in com.graduation.analytics.auth.AuthInterceptorTest
+[INFO] Running com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.614 s -- in com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Running com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+13:35:22.922 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-3808ff47: status=QUARANTINED records=0 quarantine=4 errors=0 files=1 bytes=0 noNewData=false
+13:35:23.055 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-d5b11548: status=SUCCESS records=0 quarantine=0 errors=0 files=0 bytes=0 noNewData=true
+13:35:23.078 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-21da7495: status=SUCCESS records=3 quarantine=0 errors=0 files=1 bytes=64 noNewData=false
+13:35:23.092 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-6a09dd2a: status=SUCCESS records=0 quarantine=0 errors=0 files=0 bytes=0 noNewData=true
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.417 s -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionServiceStatusTest
+13:35:23.353 [main] WARN com.graduation.analytics.ingestion.IngestionService -- landingUri ���ɽ�����profile 1�����ݲ�֧�ֵ� landingUri Э�飺hdfs://����ǰ��֧�ֱ��� file:// ����·����
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.303 s -- in com.graduation.analytics.ingestion.IngestionServiceStatusTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionSourceManifestTest
+13:35:23.418 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-fe47f3b1: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+13:35:23.446 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-d563b369: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+13:35:23.470 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-fb814860: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+13:35:23.483 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-6ab2b7d2: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+13:35:23.523 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-eb30a410: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.127 s -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+13:35:23.560 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-822547f3: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+13:35:23.751 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789191323739
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.200 s -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.099 s -- in com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+13:35:23.897 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323888
+13:35:23.916 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323910
+13:35:23.918 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323910
+13:35:23.930 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323926
+13:35:23.932 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323926
+13:35:23.942 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: β������ 7 �ֽ������ļ�����
+13:35:23.942 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323938
+13:35:23.944 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: β������ 7 �ֽ������ļ�����
+13:35:23.945 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323938
+13:35:23.954 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789191323950
+13:35:23.957 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789191323950
+13:35:23.965 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323961
+13:35:23.969 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 8��16 identity=1789191323961
+13:35:23.978 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323974
+13:35:23.986 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323982
+13:35:23.988 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323982
+13:35:24.000 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789191323996
+13:35:24.005 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789191323996
+13:35:24.009 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 8��16 identity=1789191323996
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.139 s -- in com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+[INFO] Running com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.086 s -- in com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+13:35:24.224 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789191324177-3f0f75 -> pid=13068 log=C:\Users\ASUS\AppData\Local\Temp\junit7564343486725291602\m1-11-ok__lp-1789191324177-3f0f75.log
+13:35:24.338 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789191324327-92bd1e -> pid=2396 log=C:\Users\ASUS\AppData\Local\Temp\junit7564343486725291602\m1-11-bad__lp-1789191324327-92bd1e.log
+13:35:24.470 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789191324455-38ad81 -> pid=29788 log=C:\Users\ASUS\AppData\Local\Temp\junit13914070244138222332\m1-11-cancel__lp-1789191324455-38ad81.log
+13:35:24.492 [main] WARN com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- ���ؽ�����������ֹ: lp-1789191324455-38ad81 pid=29788 �ӽ���=1
+13:35:24.494 [spark-log-lp-1789191324455-38ad81] WARN com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- capture spark-submit log failed: C:\Users\ASUS\AppData\Local\Temp\junit13914070244138222332\m1-11-cancel__lp-1789191324455-38ad81.log
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.325 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+[INFO] Running com.graduation.analytics.source.SourceProfileValidatorTest
+13:35:24.545 [main] WARN com.graduation.analytics.source.SourceProfileValidator -- Դ�������ʧ�� path=analytics-server/source-profiles/p1-03-probe-1.v1.json: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: (String)"not json at all"; line: 1, column: 4]
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.076 s -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[INFO] Running com.graduation.analytics.source.SourceRegistryConcurrencyTest
+13:35:24.645 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+13:35:24.645 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+13:35:24.664 [pool-2-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.671 [pool-2-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.673 [pool-2-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.674 [pool-2-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.675 [pool-2-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.676 [pool-2-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.684 [pool-3-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.686 [pool-3-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.687 [pool-3-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.688 [pool-3-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.693 [pool-4-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.694 [pool-4-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.695 [pool-4-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.697 [pool-4-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.698 [pool-4-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.698 [pool-4-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.711 [pool-5-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.712 [pool-5-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.714 [pool-5-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.714 [pool-5-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.715 [pool-5-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.719 [pool-6-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.720 [pool-6-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.721 [pool-6-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.725 [pool-7-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.726 [pool-7-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.727 [pool-7-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.727 [pool-7-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.728 [pool-7-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.729 [pool-7-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.730 [pool-7-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.734 [pool-8-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.735 [pool-8-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.735 [pool-8-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.736 [pool-8-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.736 [pool-8-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.737 [pool-8-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.742 [pool-9-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.743 [pool-9-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.743 [pool-9-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.744 [pool-9-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.745 [pool-9-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.746 [pool-9-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.747 [pool-9-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.750 [pool-10-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.750 [pool-10-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.751 [pool-10-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.752 [pool-10-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.752 [pool-10-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.753 [pool-10-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.756 [pool-11-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.756 [pool-11-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.757 [pool-11-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.758 [pool-11-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.758 [pool-11-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.759 [pool-11-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.762 [pool-12-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.764 [pool-12-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.765 [pool-12-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.765 [pool-12-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.769 [pool-13-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.770 [pool-13-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.770 [pool-13-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.771 [pool-13-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.771 [pool-13-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.771 [pool-13-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.772 [pool-13-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.773 [pool-13-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.780 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+13:35:24.780 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+13:35:24.783 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.796 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+13:35:24.796 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+13:35:24.799 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.805 [pool-15-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.807 [pool-15-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.808 [pool-15-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.818 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+13:35:24.818 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+13:35:24.824 [pool-16-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.825 [pool-16-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.826 [pool-16-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.826 [pool-16-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.827 [pool-16-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.827 [pool-16-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.828 [pool-16-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.833 [pool-17-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.834 [pool-17-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.834 [pool-17-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.834 [pool-17-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.835 [pool-17-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.835 [pool-17-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.837 [pool-17-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.840 [pool-18-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.842 [pool-18-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.842 [pool-18-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.847 [pool-19-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.851 [pool-20-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.851 [pool-20-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.853 [pool-20-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.853 [pool-20-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.856 [pool-21-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.856 [pool-21-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.857 [pool-21-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.861 [pool-22-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.862 [pool-22-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.862 [pool-22-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.864 [pool-23-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.865 [pool-23-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.866 [pool-23-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.867 [pool-23-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.867 [pool-23-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.870 [pool-24-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.870 [pool-24-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.871 [pool-24-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.871 [pool-24-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.873 [pool-24-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.873 [pool-24-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.876 [pool-25-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.877 [pool-25-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.877 [pool-25-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.878 [pool-25-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.878 [pool-25-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.883 [pool-26-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.885 [pool-26-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.885 [pool-26-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+13:35:24.886 [pool-26-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.890 [pool-27-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.891 [pool-27-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.891 [pool-27-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+13:35:24.892 [pool-27-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+13:35:24.892 [pool-27-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+13:35:24.900 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+13:35:24.901 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+13:35:24.905 [pool-28-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.340 s -- in com.graduation.analytics.source.SourceRegistryConcurrencyTest
+[INFO] Running com.graduation.analytics.source.SourceRegistryServiceTest
+13:35:25.002 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=2
+13:35:25.021 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+13:35:25.055 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=PAUSED
+13:35:25.089 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�Ǽ��޸� id=1 sourceCode=mock-mall
+[ERROR] Tests run: 32, Failures: 2, Errors: 2, Skipped: 0, Time elapsed: 0.176 s <<< FAILURE! -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[ERROR] com.graduation.analytics.source.SourceRegistryServiceTest.activateIsIdempotentWhenAlreadyCurrent -- Time elapsed: 0.008 s <<< ERROR!
+com.graduation.analytics.common.PlatformBizException: warehouse_prefix �����Ҳ���Ϊ�հף����������ռ�ǰ׺���³���Դ����D-070/D-071�������ṩȱʡֵ����ȱʡ����������ǰ׺��Դ��Ĭ������Դ�Ŀ�
+	at com.graduation.analytics.warehouse.WarehouseNamespaceProvider.requireSourcePrefix(WarehouseNamespaceProvider.java:77)
+	at com.graduation.analytics.source.SourceRegistryServiceImpl.activate(SourceRegistryServiceImpl.java:265)
+	at com.graduation.analytics.source.SourceRegistryServiceTest.activateIsIdempotentWhenAlreadyCurrent(SourceRegistryServiceTest.java:512)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceRegistryServiceTest.activateRejectsProfileIdentityMismatch -- Time elapsed: 0.010 s <<< FAILURE!
+org.assertj.core.error.AssertJMultipleFailuresError: 
+
+Multiple Failures (1 failure)
+-- failure 1 --
+expected: "SOURCE_PROFILE_INVALID"
+ but was: "PARAM_INVALID"
+at SourceRegistryServiceTest.lambda$activateRejectsProfileIdentityMismatch$63(SourceRegistryServiceTest.java:552)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.source.SourceRegistryServiceTest.activateRejectsProfileIdentityMismatch(SourceRegistryServiceTest.java:552)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceRegistryServiceTest.activateBindsCurrentSource -- Time elapsed: 0.004 s <<< ERROR!
+com.graduation.analytics.common.PlatformBizException: warehouse_prefix �����Ҳ���Ϊ�հף����������ռ�ǰ׺���³���Դ����D-070/D-071�������ṩȱʡֵ����ȱʡ����������ǰ׺��Դ��Ĭ������Դ�Ŀ�
+	at com.graduation.analytics.warehouse.WarehouseNamespaceProvider.requireSourcePrefix(WarehouseNamespaceProvider.java:77)
+	at com.graduation.analytics.source.SourceRegistryServiceImpl.activate(SourceRegistryServiceImpl.java:265)
+	at com.graduation.analytics.source.SourceRegistryServiceTest.activateBindsCurrentSource(SourceRegistryServiceTest.java:495)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceRegistryServiceTest.activateRejectsProfileMissingRequiredKeys -- Time elapsed: 0.005 s <<< FAILURE!
+org.assertj.core.error.AssertJMultipleFailuresError: 
+
+Multiple Failures (1 failure)
+-- failure 1 --
+expected: "SOURCE_PROFILE_INVALID"
+ but was: "PARAM_INVALID"
+at SourceRegistryServiceTest.lambda$activateRejectsProfileMissingRequiredKeys$67(SourceRegistryServiceTest.java:571)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.source.SourceRegistryServiceTest.activateRejectsProfileMissingRequiredKeys(SourceRegistryServiceTest.java:571)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.analytics.source.SourceWarehousePrefixGateTest
+13:35:25.120 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+13:35:25.124 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+13:35:25.126 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+13:35:25.129 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+13:35:25.130 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+13:35:25.132 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+13:35:25.146 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�Ǽ��޸� id=1 sourceCode=mock-mall
+[ERROR] Tests run: 14, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.055 s <<< FAILURE! -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[ERROR] com.graduation.analytics.source.SourceWarehousePrefixGateTest.createRejectsMissingPrefix -- Time elapsed: 0.003 s <<< FAILURE!
+org.assertj.core.error.AssertJMultipleFailuresError: 
+
+[create(warehousePrefix=[   ]) ����ܾ���] (1 failure)
+-- failure 1 --
+expected: "WAREHOUSE_PREFIX_PATTERN"
+ but was: "PARAM_INVALID"
+at SourceWarehousePrefixGateTest.lambda$createRejectsMissingPrefix$8(SourceWarehousePrefixGateTest.java:174)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.source.SourceWarehousePrefixGateTest.createRejectsMissingPrefix(SourceWarehousePrefixGateTest.java:174)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.source.SourceWarehousePrefixGateTest.updateNullKeepsBlankRejects -- Time elapsed: 0.002 s <<< FAILURE!
+org.assertj.core.error.AssertJMultipleFailuresError: 
+
+Multiple Failures (1 failure)
+-- failure 1 --
+expected: "WAREHOUSE_PREFIX_PATTERN"
+ but was: "PARAM_INVALID"
+at SourceWarehousePrefixGateTest.lambda$updateNullKeepsBlankRejects$12(SourceWarehousePrefixGateTest.java:194)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.source.SourceWarehousePrefixGateTest.updateNullKeepsBlankRejects(SourceWarehousePrefixGateTest.java:194)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   SourceRegistryServiceTest.activateRejectsProfileIdentityMismatch:552 
+Multiple Failures (1 failure)
+-- failure 1 --
+expected: "SOURCE_PROFILE_INVALID"
+ but was: "PARAM_INVALID"
+at SourceRegistryServiceTest.lambda$activateRejectsProfileIdentityMismatch$63(SourceRegistryServiceTest.java:552)
+[ERROR]   SourceRegistryServiceTest.activateRejectsProfileMissingRequiredKeys:571 
+Multiple Failures (1 failure)
+-- failure 1 --
+expected: "SOURCE_PROFILE_INVALID"
+ but was: "PARAM_INVALID"
+at SourceRegistryServiceTest.lambda$activateRejectsProfileMissingRequiredKeys$67(SourceRegistryServiceTest.java:571)
+[ERROR]   SourceWarehousePrefixGateTest.createRejectsMissingPrefix:174 
+[create(warehousePrefix=[   ]) ����ܾ���] (1 failure)
+-- failure 1 --
+expected: "WAREHOUSE_PREFIX_PATTERN"
+ but was: "PARAM_INVALID"
+at SourceWarehousePrefixGateTest.lambda$createRejectsMissingPrefix$8(SourceWarehousePrefixGateTest.java:174)
+[ERROR]   SourceWarehousePrefixGateTest.updateNullKeepsBlankRejects:194 
+Multiple Failures (1 failure)
+-- failure 1 --
+expected: "WAREHOUSE_PREFIX_PATTERN"
+ but was: "PARAM_INVALID"
+at SourceWarehousePrefixGateTest.lambda$updateNullKeepsBlankRejects$12(SourceWarehousePrefixGateTest.java:194)
+[ERROR] Errors: 
+[ERROR]   SourceRegistryServiceTest.activateBindsCurrentSource:495 ? PlatformBiz warehouse_prefix �����Ҳ���Ϊ�հף����������ռ�ǰ׺���³���Դ����D-070/D-071�������ṩȱʡֵ����ȱʡ����������ǰ׺��Դ��Ĭ������Դ�Ŀ�
+[ERROR]   SourceRegistryServiceTest.activateIsIdempotentWhenAlreadyCurrent:512 ? PlatformBiz warehouse_prefix �����Ҳ���Ϊ�հף����������ռ�ǰ׺���³���Դ����D-070/D-071�������ṩȱʡֵ����ȱʡ����������ǰ׺��Դ��Ĭ������Դ�Ŀ�
+[INFO] 
+[ERROR] Tests run: 156, Failures: 4, Errors: 2, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.001 s]
+[INFO] platform-common .................................... SUCCESS [  2.135 s]
+[INFO] connection-ingestion ............................... FAILURE [  5.977 s]
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.296 s
+[INFO] Finished at: 2026-09-12T13:35:25+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project connection-ingestion: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :connection-ingestion

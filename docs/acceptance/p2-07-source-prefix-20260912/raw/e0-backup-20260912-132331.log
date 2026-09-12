@@ -1,0 +1,39 @@
+=== P2-07 A0 备份 ===
+repo        : D:\Develop_code\GraduationProject
+backupRoot  : C:\Users\ASUS\AppData\Local\Temp\p2-07-backup-20260912-132331
+stamp       : 20260912-132331
+fileCount   : 29
+
+--- before 指纹表（相对路径 | 字节 | sha256）---
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/entity/SourceRegistry.java | 4249 | AD3EF74851C9C6F420CF32BC3336BD973E74CB7C691794027F22BE782D127211
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/mapper/SourceRegistryMapper.java | 2517 | 9EC1530C5B69E4E1998EE178BA0A0EF246607116B51CBC96FEB3F4DE1B06D550
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceRegistryCreateReq.java | 917 | 3877F430968CE6296C4284B086D0B08E32CD36C3E4115BEE41C3A4F25EAE6E9A
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceRegistryUpdateReq.java | 1011 | 28260360F061183671FF37ED5895FCFCC01721DDF6934B95CA0B05CBEAD6CFCA
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/dto/SourceRegistryView.java | 1734 | 1916D3C2C1336A644FB11A475B10FB4F6D77DD1C39B1169464707DFA22010C58
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java | 20592 | 30B84E803792681EFA345DECCF37A31BD329C96170D9120084E17F8C1AE7F487
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/ActiveProfileWarehouseNamespaceProvider.java | 1291 | C9236270CD73779D8D2A123587182D2D9B4716E27DC5D90A9C3A6FF0B6586ABC
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileSnapshot.java | 1980 | F2ADE5E6EBB9A9FE2E4922F4E1CA721A5D02888AEA89C0709EBFF1376B40460E
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileServiceImpl.java | 12843 | 4EDA7444B8204EF20F00CA1AD0561BA6A177502A4BB2D451BD2116CAB9D80B15
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryTestSupport.java | 13131 | 731D9B99FFFFD4111C34AB51566B9F54F2626888CA916E4CE5F879B9F8FF18D3
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java | 32200 | 754DB8C7875C4FF24B2C2523373B918198F0A857B247FBBB7948E62BF582FD51
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java | 17701 | FAE4CB9CA8AD2697F1E3DC103DA54FDAFD7A6FA000294584F9D62BB3181A64D0
+analytics-server/platform-common/src/main/java/com/graduation/analytics/warehouse/WarehouseNamespace.java | 6316 | 9C6BBB78077CD14181543EE371A4D8B173014564B7E1991D47C58DC660288B53
+analytics-server/platform-common/src/main/java/com/graduation/analytics/warehouse/WarehouseNamespaceProvider.java | 995 | D3131FCD604761D2DC19B07E3C8B32558DF7DBB47179B08F8E54CE67363A5E69
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNamespaceContractTest.java | 10373 | 5F40A35AF4A05039BF69155B796D50349E9A5947580245DD94FD6600947218BB
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java | 10161 | 74169FCA3353B9312A58C5D4B64F4A1B960149A79BA134E41752191AA33F3F19
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobCommandBuilder.java | 6110 | 68FF7E49B33E68D4653DDA54FA662EC144846EBA1A427D49CA8A237712C65B9D
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/SparkStageExecutor.java | 12186 | 97D782922D3C06C4F031B015CF989C2C2A981B175CECC595EED26DE2BD4B6DDC
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorFactory.java | 5454 | A2CFB5E47A00AF3645A986407C4BC522790933B802AF788202B54D64A0E89182
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobCommandBuilderTest.java | 7850 | 816BA9451A9F044B919624BA43E35EC1834E2BA3A59A83F37BCD41AC404A569E
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorTest.java | 11187 | 9E13E3648DB0FB039080E5ADF0FD064B4E61D36F162E7288CF36D68BED081DC4
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorSmokeTest.java | 9826 | A7FBBDEB3D6753A139BECDE53AAC276FD4321FCF6D51987534ED029B79B79640
+analytics-server/platform-app/src/main/java/com/graduation/analytics/config/PlatformBeans.java | 3740 | 760D782BD031F0FE5EB69EBDE6065F554B98CF86A9A38878D0CF8F7F700EE4E0
+analytics-server/platform-app/src/test/java/com/graduation/analytics/controller/SourceRegistryControllerAuditTest.java | 19170 | F070F3D997700660A0BEE8B32BE862A90C6EC8396B983B279B2268F40B01A3D5
+analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceRegistryMigrationMySqlIT.java | 17190 | 80DAC0D773BA53384882B4F18309276D6D592D7EA3297124D37D7D439F6DBDF2
+analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/EvidenceBuilder.java | 21862 | C38547CBAADCFE4CADC85ED864394193B628A49FF5775E1ECA68605947F3701E
+docs/deployment.md | 13975 | 7D98B57E679F57463B9D652975A07CB61BD650A39F22C03726694837B7D1A3C1
+docs/thesis-materials/thesis-outline.md | 9721 | EBC238CC95C21A4237A3173FE8C95DEE068BCD0AE2827184009E7C92432E393E
+docs/开发过程事实与决策记录.md | 271815 | DBA5911EA2A6F696E1975174B71795BD2C41548342FE378CE6B7AD627B97D10E
+
+backupVerified(byte-equal): 29/29
+=== A0 完成 ===
