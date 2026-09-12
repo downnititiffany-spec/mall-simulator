@@ -1,0 +1,110 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 13:59:30 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 13:59:30 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 13:59:32 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 13:59:32 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[2], Application Id: local-1789192769799
+Response code
+Time taken: 0.869 seconds
+
+[PARSE_SYNTAX_ERROR] Syntax error at or near 'SELECT'.(line 92, pos 0)
+
+== SQL ==
+
+
+SELECT 'A1_total_accepted' AS chk, CAST(
+    (SELECT count(*) FROM p201v2_ods.ods_user_event)
+  + (SELECT count(*) FROM p201v2_ods.ods_product_event)
+  + (SELECT count(*) FROM p201v2_ods.ods_behavior_event)
+  + (SELECT count(*) FROM p201v2_ods.ods_trade_event) AS STRING) AS value
+UNION ALL
+SELECT 'A4_newcol_nulls', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event
+  WHERE raw_event_type IS NULL OR raw_source_system IS NULL OR landing_file IS NULL
+     OR payload_json IS NULL OR payload_hash IS NULL
+UNION ALL
+SELECT 'A5_raw_event_type_mismatch', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event o
+  JOIN raw_text t ON get_json_object(t.value, '$.event_id') = o.event_id
+  WHERE coalesce(o.raw_event_type, '<null>') <> coalesce(get_json_object(t.value, '$.event_type'), '<null>')
+UNION ALL
+SELECT 'A6_landing_file', concat_ws('|', collect_set(landing_file))
+  FROM p201v2_ods.ods_user_event
+UNION ALL
+SELECT 'A7_source_file_ne_landing_file', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event
+  WHERE coalesce(source_file, '<null>') <> coalesce(landing_file, '<null>')
+UNION ALL
+SELECT 'B0_join_rows', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event o
+  JOIN raw_text t ON get_json_object(t.value, '$.event_id') = o.event_id
+UNION ALL
+SELECT 'B1_payload_ne_source_slice', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event o
+  JOIN raw_text t ON get_json_object(t.value, '$.event_id') = o.event_id
+  WHERE coalesce(o.payload_json, '<null>') <> coalesce(
+        substr(t.value, instr(t.value, '"payload":') + 10,
+               length(t.value) - instr(t.value, '"payload":') - 10), '<null>')
+UNION ALL
+SELECT 'B2_hash_ne_sha2_payload', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event
+  WHERE coalesce(payload_hash, '<null>') <> coalesce(sha2(payload_json, 256), '<null>')
+UNION ALL
+SELECT 'B3_hash_ne_sha2_source_slice', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event o
+  JOIN raw_text t ON get_json_object(t.value, '$.event_id') = o.event_id
+  WHERE coalesce(o.payload_hash, '<null>') <> coalesce(
+        sha2(substr(t.value, instr(t.value, '"payload":') + 10,
+                    length(t.value) - instr(t.value, '"payload":') - 10), 256), '<null>')
+UNION ALL
+SELECT 'B4_avg_payload_len', CAST(CAST(avg(length(payload_json)) AS INT) AS STRING)
+  FROM p201v2_ods.ods_user_event
+UNION ALL
+SELECT 'B4_min_payload_len', CAST(min(length(payload_json)) AS STRING) FROM p201v2_ods.ods_user_event
+UNION ALL
+SELECT 'B4_max_payload_len', CAST(max(length(payload_json)) AS STRING) FROM p201v2_ods.ods_user_event
+UNION ALL
+SELECT 'C1_v1_envelope_mismatch', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event o
+  JOIN raw_text t ON get_json_object(t.value, '$.event_id') = o.event_id
+  WHERE coalesce(o.event_type, '<null>')     <> coalesce(get_json_object(t.value, '$.event_type'), '<null>')
+     OR coalesce(o.event_time, '<null>')     <> coalesce(get_json_object(t.value, '$.event_time'), '<null>')
+     OR coalesce(o.ingest_time, '<null>')    <> coalesce(get_json_object(t.value, '$.ingest_time'), '<null>')
+     OR coalesce(o.schema_version, '<null>') <> coalesce(get_json_object(t.value, '$.schema_version'), '<null>')
+     OR coalesce(o.trace_id, '<null>')       <> coalesce(get_json_object(t.value, '$.trace_id'), '<null>')
+UNION ALL
+SELECT 'C2_v1_payload_mismatch', CAST(count(*) AS STRING)
+  FROM p201v2_ods.ods_user_event o
+  JOIN raw_text t ON get_json_object(t.value, '$.event_id') = o.event_id
+  WHERE coalesce(o.payload_user_id, '<null>')       <> coalesce(get_json_object(t.value, '$.payload.user_id'), '<null>')
+     OR coalesce(o.payload_age_group, '<null>')     <> coalesce(get_json_object(t.value, '$.payload.age_group'), '<null>')
+     OR coalesce(o.payload_city_level, '<null>')    <> coalesce(get_json_object(t.value, '$.payload.city_level'), '<null>')
+     OR coalesce(o.payload_member_level, '<null>')  <> coalesce(get_json_object(t.value, '$.payload.member_level'), '<null>')
+     OR coalesce(o.payload_register_time, '<null>') <> coalesce(get_json_object(t.value, '$.payload.register_time'), '<null>')
+UNION ALL
+SELECT 'C3_ingest_batch_id', CAST(min(ingest_batch_id) AS STRING) FROM p201v2_ods.ods_user_event
+UNION ALL
+SELECT 'D1_probe_source_system', concat_ws('|', collect_set(source_system)) FROM p201v2b_ods.ods_user_event
+UNION ALL
+SELECT 'D2_probe_raw_source_system', concat_ws('|', collect_set(raw_source_system)) FROM p201v2b_ods.ods_user_event
+UNION ALL
+SELECT 'D3_main_source_pair', concat_ws('|', collect_set(concat(source_system, '#', raw_source_system)))
+  FROM p201v2_ods.ods_user_event
+UNION ALL
+SELECT 'F1_row_counts', concat_ws('|',
+    concat('user=', CAST((SELECT count(*) FROM p201v2_ods.ods_user_event) AS STRING)),
+    concat('product=', CAST((SELECT count(*) FROM p201v2_ods.ods_product_event) AS STRING)),
+    concat('behavior=', CAST((SELECT count(*) FROM p201v2_ods.ods_behavior_event) AS STRING)),
+    concat('trade=', CAST((SELECT count(*) FROM p201v2_ods.ods_trade_event) AS STRING)),
+    concat('probe_user=', CAST((SELECT count(*) FROM p201v2b_ods.ods_user_event) AS STRING)))
+UNION ALL
+SELECT 'F2_probe_rejected_gate', CAST(count(*) AS STRING)
+  FROM p201v2b_ods.ods_user_event WHERE event_id IS NULL OR event_id = ''
+
+SELECT 'SHOW_DATABASES_BEGIN' AS marker
+^^^
+
+

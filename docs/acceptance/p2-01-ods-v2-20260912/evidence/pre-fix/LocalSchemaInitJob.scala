@@ -219,18 +219,13 @@ object LocalSchemaInitJob {
    */
   def odsCreateTable(ns: WarehouseNamespace, table: String): String = {
     val partitions = OdsV2Columns.PartitionColumns.map(c => c.ddlFragment).mkString(", ")
-    // 子句顺序是**文法硬约束**，不是风格问题：Spark 的 createTableHeader 里
-    // `USING <provider>` 只能紧跟列体 `)`，排在 COMMENT / PARTITIONED BY 等 createTableClauses **之前**。
-    // 写成 `) COMMENT '…'` + `USING parquet` 会 PARSE_SYNTAX_ERROR at or near 'USING'
-    // （E2 实测：docs/acceptance/p2-01-ods-v2-20260912/evidence/e2-full-20260912.log，
-    //  两种形态的真实 spark-sql 对照：…/evidence/e3-probe-ddl-clause-order-20260912-134550.log，
-    //  负向对照退出码 1、正向对照退出码 0 且 SHOW CREATE TABLE 回显出 COMMENT 与分区列）。
-    // 注：曾把该报错误判为「`COMMENT` 前不能有空行」——错因已由上述对照排除。
+    // 注意：`COMMENT` 必须紧跟在列体的 `)` 之后、`USING` 之前，中间不能有空行
+    // （实测：`)` 与 `COMMENT` 之间出现空行会 PARSE_SYNTAX_ERROR at or near 'USING'）
     val comment = OdsV2Columns.TableComments.get(table).map(c => s" COMMENT '$c'").getOrElse("")
     s"""
         CREATE TABLE IF NOT EXISTS ${ns.ods}.$table (
-          ${OdsV2Columns.columnsClause(table)})
-        USING parquet$comment PARTITIONED BY ($partitions)"""
+          ${OdsV2Columns.columnsClause(table)})$comment
+        USING parquet PARTITIONED BY ($partitions)"""
   }
 
   /** 正式 ads_operation_overview 的当前定义（对账重建时使用，须与上方 statements(ns) 一致） */

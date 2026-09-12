@@ -3,6 +3,7 @@ package com.graduation.analytics.job
 import com.graduation.analytics.sql.{EventLandingSchema, JsonObjectSlicer, OdsLoadSql}
 import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.functions.{col, from_json, udf}
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
@@ -24,12 +25,9 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
  *  2. `raw_line` 原样保留，并用 `JsonObjectSlicer` 切出 `payload_json`、算出 `payload_hash`
  *     （UDF 在此注册，模板按名引用）。**不做** `to_json(payload)` 重序列化——红检实测
  *     「语义等价但键序/空白不同」的文本 SHA-256 与源行不同，重序列化不满足字节保真。
- *  3. `payload` 结构体由 **v1 的闭合 schema 一次 `from_json`** 产出（`OdsLoadSql.landingSchema`
- *     是信封+载荷的唯一所有者），与 v1 「闭合 schema 一次解析」逐行等价（含 DECIMAL(18,2) 与
- *     STRING items），所以 v1 的 `payload_*` 双写口径零变化。
- *     **E3 真链纠错**：曾用「payload 取成 STRING 再二次 from_json」实现，实测 `from_json`
- *     把 JSON 对象塞进 STRING 字段时给 NULL（不是对象原文），导致全部 v1 `payload_*` 列静默为 NULL；
- *     已回到一次闭合解析。证据：`evidence/e3-probe-payload-struct-null.log`。
+ *  3. `payload` 结构体走**第二次** `from_json`（载荷文本 → `EventLandingSchema` 的 payload 段）
+ *     —— 实测该路径与 v1 的「闭合 schema 一次解析」**逐行等价**（含 DECIMAL(18,2) 与 STRING items），
+ *     所以 v1 的 `payload_*` 双写口径零变化。
  *  4. `landing_file` / `source_file` 取 `_metadata.file_path`（实测：`file:/D:/…/golden-20260901.jsonl`；
  *     `input_file_name()` 在相对/`file:///` 输入下可能给空串，故不用它）——常量 `'landing'` 已消失（D-057）。
  *  5. `source_system` **必须**由平台参数通道注入（`--sourceSystem=<source_registry.source_code>`，D-056），
@@ -62,33 +60,22 @@ class EventOdsLoadJob extends WarehouseJob {
     EventOdsLoadJob.registerUdfs(spark)
 
     spark.sparkContext.setJobDescription(s"$code read-text: $landingDir")
-    // §10.2(1)：显式 Schema；P2-01：原文行原样保留（payload 的字节只能从原文里切），
-    // 结构体则回 v1 的**闭合 schema 一次解析**产出（见下方 E3 实测纠错）。
+    // §10.2(1)：显式 Schema；P2-01：先拿原文行，再从原文里切 payload
     val rawLines = spark.read.text(landingDir)
       .withColumn(OdsLoadSql.ColLandingFile, col("_metadata.file_path"))
       .select(col("value").as(OdsLoadSql.ColRawLine), col(OdsLoadSql.ColLandingFile))
     val inputCount = rawLines.count()
 
-    // 【E3 真链实测纠错，替换掉「先把 payload 取成 STRING 再二次 from_json」的写法】
-    // 旧写法：envelope 里把 `payload` 声明为 STRING（别名 `landing_payload_text`），再用第二次
-    // from_json 把该文本解析成 payload 结构体。真链实测该写法**静默失效**：
-    // `from_json`（PERMISSIVE）遇到「JSON 对象 → STRING 字段」时给 **NULL**，而不是对象的原文，
-    // 于是 payload 结构体整列为 NULL ⇒ 四张 ODS 表的全部 v1 `payload_*` 列全 NULL。
-    // 无异常、无拒绝计数，属静默数据丢失。原始读数（只读探针，未写任何库表）：
-    //   evidence/e3-probe-payload-struct-null.log
-    //   Q1_steps: get_json_object(value,'$.payload') = {"user_id":"1",…}
-    //             from_json(value, '… landing_payload_text STRING').landing_payload_text = NULL
-    //             from_json(<payload 文本>, 'user_id STRING, age_group STRING') = {"user_id":"1",…}
-    //   Q2_table: ods_user_event.payload_user_id / payload_age_group = NULL，而 payload_json 正确
-    //
-    // 修法：一次闭合解析（`OdsLoadSql.landingSchema` 是信封+载荷的唯一所有者，与 v1 完全同口径，
-    // 满足 D-058「v1 一个不动」）：`e.*` 同时给出 7 个信封列与 `payload` 结构体；
-    // 原文行 `raw_line` 单独保留，`payload_json`/`payload_hash` 仍由 JsonObjectSlicer UDF 从原文切出，
-    // 完全不经过 from_json（字节保真与结构解析互不依赖）。
-    val projected = rawLines
-      .select(from_json(col(OdsLoadSql.ColRawLine), OdsLoadSql.landingSchema).as("e"),
+    // 一级解析：外层信封（payload 取成**字符串**，保留其原文，不解析成结构体）
+    val landing = rawLines
+      .select(from_json(col(OdsLoadSql.ColRawLine), EventOdsLoadJob.envelopeSchema).as("e"),
         col(OdsLoadSql.ColRawLine), col(OdsLoadSql.ColLandingFile))
       .select(col("e.*"), col(OdsLoadSql.ColRawLine), col(OdsLoadSql.ColLandingFile))
+
+    // 二级解析：载荷文本 → v1 的 payload 结构体（实测与 v1 一次解析逐行等价）
+    val projected = landing
+      .withColumn(OdsLoadSql.ColPayload,
+        from_json(col(OdsLoadSql.ColPayloadText), OdsLoadSql.landingPayloadStruct))
 
     // 校验：schema_version='1.0' + event_id/event_type/event_time 非空 + 类型在映射表
     val valid = projected.filter(
@@ -138,10 +125,21 @@ class EventOdsLoadJob extends WarehouseJob {
 object EventOdsLoadJob {
   val instance: EventOdsLoadJob = new EventOdsLoadJob()
 
-  // `envelopeSchema`（把 `payload` 声明成 STRING 的信封 schema）已删除：它的唯一用途是
-  // 「一级解析保留 payload 原文」，而真链实测该路径给 NULL（见 run 内注释与
-  // evidence/e3-probe-payload-struct-null.log）。信封 schema 现在**就是** `OdsLoadSql.landingSchema`
-  // 本身——少一份可以漂移的副本。
+  /**
+   * 一级解析用的**显式信封 Schema**：与 v1 `landingSchema` 的字段逐字一致，
+   * 两处差别：
+   *  - `payload` 声明为 `STRING`（保留原文），而不是闭合 STRUCT——`from_json` 对 struct 字段
+   *    会解析并**丢弃**原始文本，之后无论 `to_json` 还是逐字段拼都拿不回原样字节（D-054 要求原样字节）；
+   *  - 它被**改名**成 `landing_payload_text`，这样二级解析产出的 `payload` 结构体不会同名冲突。
+   *
+   * `lazy` 同 `OdsLoadSql.landingPayloadStruct` 的理由：跨对象初始化的顺序不保证。
+   */
+  lazy val envelopeSchema: StructType = StructType(
+    OdsLoadSql.landingSchema.fields.map { f =>
+      if (f.name == OdsLoadSql.ColPayload) {
+        StructField(OdsLoadSql.ColPayloadText, StringType, nullable = true)
+      } else f
+    })
 
   /** 注册原样切片 UDF（幂等：重复调用只覆盖同名实现） */
   def registerUdfs(spark: SparkSession): Unit = {

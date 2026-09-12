@@ -1,0 +1,22 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 14:03:30 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:03:30 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 14:03:32 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 14:03:32 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[2], Application Id: local-1789193009801
+Time taken: 0.912 seconds
+26/09/12 14:03:33 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+P_user	golden-evt-001	NULL	1	NULL	25-34	NULL	tier1	NULL	gold	NULL	2026-09-01T09:00:00+08:00
+P_user	golden-evt-002	NULL	2	NULL	35-44	NULL	tier2	NULL	silver	NULL	2026-09-01T09:00:00+08:00
+P_user	golden-evt-003	NULL	3	NULL	18-24	NULL	tier3	NULL	normal	NULL	2026-09-01T09:00:00+08:00
+P_user	golden-evt-031	NULL	1	NULL	25-34	NULL	tier1	NULL	platinum	NULL	2026-09-01T12:00:00+08:00
+Time taken: 3.21 seconds, Fetched 4 row(s)
+P_payload	golden-evt-001	{"user_id":"1","age_group":"25-34","city_level":"tier1","member_level":"gold","register_time":"2026-09-01T09:00:00+08:00"}
+Time taken: 0.367 seconds, Fetched 4 row(s)
+P_payload	golden-evt-002	{"user_id":"2","age_group":"35-44","city_level":"tier2","member_level":"silver","register_time":"2026-09-01T09:00:00+08:00"}
+P_payload	golden-evt-003	{"user_id":"3","age_group":"18-24","city_level":"tier3","member_level":"normal","register_time":"2026-09-01T09:00:00+08:00"}
+P_payload	golden-evt-031	{"user_id":"1","age_group":"25-34","city_level":"tier1","member_level":"platinum","register_time":"2026-09-01T12:00:00+08:00"}
+

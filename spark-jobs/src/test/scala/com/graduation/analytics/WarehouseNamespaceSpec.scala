@@ -220,11 +220,13 @@ object WarehouseNamespaceSpec {
    * 少了一个模板就说明有人的 SQL 还没走命名空间，本清单本身即验收对象。
    */
   private object Producers {
+    /** P2-01：ODS 模板的 source_system 注入值（在产由 `--sourceSystem` 传入） */
+    private val srcSys = "mock-mall"
     val all: Seq[(String, WarehouseNamespace => String)] = Seq(
-      "OdsLoadSql.behaviorFromLanding" -> (ns => OdsLoadSql.behaviorFromLanding(ns, 7L)),
-      "OdsLoadSql.userFromLanding" -> (ns => OdsLoadSql.userFromLanding(ns, 8L)),
-      "OdsLoadSql.productFromLanding" -> (ns => OdsLoadSql.productFromLanding(ns, 9L)),
-      "OdsLoadSql.tradeFromLanding" -> (ns => OdsLoadSql.tradeFromLanding(ns, 10L)),
+      "OdsLoadSql.behaviorFromLanding" -> (ns => OdsLoadSql.behaviorFromLanding(ns, srcSys, 7L)),
+      "OdsLoadSql.userFromLanding" -> (ns => OdsLoadSql.userFromLanding(ns, srcSys, 8L)),
+      "OdsLoadSql.productFromLanding" -> (ns => OdsLoadSql.productFromLanding(ns, srcSys, 9L)),
+      "OdsLoadSql.tradeFromLanding" -> (ns => OdsLoadSql.tradeFromLanding(ns, srcSys, 10L)),
       "DimSql.userSnapshot" -> (ns => DimSql.userSnapshot(ns, "20260901")),
       "DimSql.productSnapshot" -> (ns => DimSql.productSnapshot(ns, "20260901")),
       "DwdSql.behaviorClean" -> (ns => DwdSql.behaviorClean(ns, "20260901")),

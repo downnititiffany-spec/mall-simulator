@@ -15,10 +15,14 @@ import org.scalatest.matchers.should.Matchers
  *    对契约 id 的直接 `CAST(... AS BIGINT)`——归一化只允许经 `IdCodec` 一处。
  *
  * P1-04：模板首参是库名空间，本用例用缺省命名空间（库名与改造前一致）。
+ * P2-01：ODS 模板新增第二参 `sourceSystem`（平台注入值），本类统一传测试常量 `SrcSys`。
  */
 class IdCodecSpec extends AnyFlatSpec with Matchers {
 
   private val ns = WarehouseNamespace.defaultNamespace
+
+  /** 测试用注入值（在产必须由 `--sourceSystem` 注入） */
+  private val SrcSys = "mock-mall"
 
   "IdCodec" should "剥掉契约 id 的字母前缀（U/P/O/C/B）并转数字" in {
     IdCodec.normalize("U000065") shouldBe Some(65L)
@@ -75,7 +79,7 @@ class IdCodecSpec extends AnyFlatSpec with Matchers {
     // 下游（DWS/ADS）与 ODS 载入层不得自行转换契约 id：ODS 保留字符串原文，DWS/ADS 只读 DWD 数字键
     assertNoDirectCast("AdsSql.operationOverview", AdsSql.operationOverview(ns, "20260901"))
     assertNoDirectCast("DwsSql.userBehaviorDay", DwsSql.userBehaviorDay(ns, "20260901"))
-    assertNoDirectCast("OdsLoadSql.behaviorFromLanding", OdsLoadSql.behaviorFromLanding(ns, 7L))
+    assertNoDirectCast("OdsLoadSql.behaviorFromLanding", OdsLoadSql.behaviorFromLanding(ns, SrcSys, 7L))
   }
 
   it should "行为/维度/交易三条 id 链的归一化次数与列对应正确" in {
@@ -103,7 +107,7 @@ class IdCodecSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "ODS 载入层保留字符串原文（不在 ODS 提前转型）" in {
-    val behaviorOds = OdsLoadSql.behaviorFromLanding(ns, 7L)
+    val behaviorOds = OdsLoadSql.behaviorFromLanding(ns, SrcSys, 7L)
     behaviorOds should include("payload.user_id AS payload_user_id")
     behaviorOds.toLowerCase should not include "as bigint"
   }

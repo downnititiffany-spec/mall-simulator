@@ -1,0 +1,192 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+[spark-jobs] ���ֿ����ռ�: p201v2_ods, p201v2_dwd, p201v2_dim, p201v2_dws, p201v2_ads
+26/09/12 14:14:00 INFO HiveConf: Found configuration file null
+26/09/12 14:14:00 INFO SparkContext: Running Spark version 3.5.1
+26/09/12 14:14:00 INFO SparkContext: OS info Windows 11, 10.0, amd64
+26/09/12 14:14:00 INFO SparkContext: Java version 17.0.12
+26/09/12 14:14:00 INFO ResourceUtils: ==============================================================
+26/09/12 14:14:00 INFO ResourceUtils: No custom resources configured for spark.driver.
+26/09/12 14:14:00 INFO ResourceUtils: ==============================================================
+26/09/12 14:14:00 INFO SparkContext: Submitted application: odl-20260901
+26/09/12 14:14:00 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+26/09/12 14:14:00 INFO ResourceProfile: Limiting resource is cpu
+26/09/12 14:14:00 INFO ResourceProfileManager: Added ResourceProfile id: 0
+26/09/12 14:14:00 INFO SecurityManager: Changing view acls to: ASUS,root
+26/09/12 14:14:00 INFO SecurityManager: Changing modify acls to: ASUS,root
+26/09/12 14:14:00 INFO SecurityManager: Changing view acls groups to: 
+26/09/12 14:14:00 INFO SecurityManager: Changing modify acls groups to: 
+26/09/12 14:14:00 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: ASUS, root; groups with view permissions: EMPTY; users with modify permissions: ASUS, root; groups with modify permissions: EMPTY
+26/09/12 14:14:00 INFO Utils: Successfully started service 'sparkDriver' on port 1999.
+26/09/12 14:14:00 INFO SparkEnv: Registering MapOutputTracker
+26/09/12 14:14:00 INFO SparkEnv: Registering BlockManagerMaster
+26/09/12 14:14:00 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+26/09/12 14:14:00 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+26/09/12 14:14:00 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+26/09/12 14:14:00 INFO DiskBlockManager: Created local directory at C:\Users\ASUS\AppData\Local\Temp\blockmgr-e6958614-b89d-45db-afad-f61240fc73f0
+26/09/12 14:14:00 INFO MemoryStore: MemoryStore started with capacity 434.4 MiB
+26/09/12 14:14:00 INFO SparkEnv: Registering OutputCommitCoordinator
+26/09/12 14:14:00 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+26/09/12 14:14:00 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+26/09/12 14:14:00 INFO SparkContext: Added JAR file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-built/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar at spark://host.docker.internal:1999/jars/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar with timestamp 1789193640172
+26/09/12 14:14:00 INFO Executor: Starting executor ID driver on host host.docker.internal
+26/09/12 14:14:00 INFO Executor: OS info Windows 11, 10.0, amd64
+26/09/12 14:14:00 INFO Executor: Java version 17.0.12
+26/09/12 14:14:00 INFO Executor: Starting executor with user classpath (userClassPathFirst = false): ''
+26/09/12 14:14:00 INFO Executor: Created or updated repl class loader org.apache.spark.util.MutableURLClassLoader@21de60a7 for default.
+26/09/12 14:14:00 INFO Executor: Fetching spark://host.docker.internal:1999/jars/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar with timestamp 1789193640172
+26/09/12 14:14:00 INFO TransportClientFactory: Successfully created connection to host.docker.internal/172.16.208.83:1999 after 17 ms (0 ms spent in bootstraps)
+26/09/12 14:14:00 INFO Utils: Fetching spark://host.docker.internal:1999/jars/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar to C:\Users\ASUS\AppData\Local\Temp\spark-857e8d9b-0710-4e63-8987-1cb093c449e6\userFiles-426ead56-5f85-4cb0-871a-5ee8eec44a63\fetchFileTemp16171542040334264709.tmp
+26/09/12 14:14:01 INFO Executor: Adding file:/C:/Users/ASUS/AppData/Local/Temp/spark-857e8d9b-0710-4e63-8987-1cb093c449e6/userFiles-426ead56-5f85-4cb0-871a-5ee8eec44a63/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar to class loader default
+26/09/12 14:14:01 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 2001.
+26/09/12 14:14:01 INFO NettyBlockTransferService: Server created on host.docker.internal:2001
+26/09/12 14:14:01 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+26/09/12 14:14:01 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, host.docker.internal, 2001, None)
+26/09/12 14:14:01 INFO BlockManagerMasterEndpoint: Registering block manager host.docker.internal:2001 with 434.4 MiB RAM, BlockManagerId(driver, host.docker.internal, 2001, None)
+26/09/12 14:14:01 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, host.docker.internal, 2001, None)
+26/09/12 14:14:01 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, host.docker.internal, 2001, None)
+26/09/12 14:14:03 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+26/09/12 14:14:04 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:14:04 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 14:14:07 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 14:14:07 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+26/09/12 14:14:07 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+26/09/12 14:14:08 WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.
+26/09/12 14:14:08 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:14:08 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 14:14:09 WARN log: Updating partition stats fast for: ods_user_event
+26/09/12 14:14:09 WARN log: Updating partition stats fast for: ods_user_event
+26/09/12 14:14:09 WARN log: Updated size to 8293
+26/09/12 14:14:09 WARN log: Updated size to 8412
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updated size to 9020
+26/09/12 14:14:11 WARN log: Updated size to 8902
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updated size to 8921
+26/09/12 14:14:11 WARN log: Updated size to 8970
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updated size to 8966
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updated size to 9913
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updating partition stats fast for: ods_product_event
+26/09/12 14:14:11 WARN log: Updated size to 9550
+26/09/12 14:14:11 WARN log: Updated size to 8800
+26/09/12 14:14:12 WARN log: Updating partition stats fast for: ods_behavior_event
+26/09/12 14:14:12 WARN log: Updated size to 7970
+26/09/12 14:14:12 WARN log: Updating partition stats fast for: ods_behavior_event
+26/09/12 14:14:12 WARN log: Updated size to 8097
+26/09/12 14:14:12 WARN log: Updating partition stats fast for: ods_behavior_event
+26/09/12 14:14:12 WARN log: Updated size to 7953
+26/09/12 14:14:12 WARN log: Updating partition stats fast for: ods_behavior_event
+26/09/12 14:14:12 WARN log: Updated size to 8377
+26/09/12 14:14:13 WARN log: Updating partition stats fast for: ods_trade_event
+26/09/12 14:14:13 WARN log: Updated size to 10251
+26/09/12 14:14:13 WARN log: Updating partition stats fast for: ods_trade_event
+26/09/12 14:14:13 WARN log: Updating partition stats fast for: ods_trade_event
+26/09/12 14:14:13 WARN log: Updated size to 9223
+26/09/12 14:14:13 WARN log: Updated size to 10165
+26/09/12 14:14:13 WARN log: Updating partition stats fast for: ods_trade_event
+26/09/12 14:14:13 WARN log: Updating partition stats fast for: ods_trade_event
+26/09/12 14:14:13 WARN log: Updated size to 9542
+26/09/12 14:14:13 WARN log: Updated size to 9714
+26/09/12 14:14:13 WARN log: Updating partition stats fast for: ods_trade_event
+26/09/12 14:14:13 WARN log: Updating partition stats fast for: ods_trade_event
+26/09/12 14:14:13 WARN log: Updated size to 10310
+26/09/12 14:14:13 WARN log: Updated size to 9664
+{"jobCode":"odl","inputRecords":55,"outputRecords":52,"rejectedRecords":3,"attemptNo":1,"status":"SUCCESS","message":"accepted=52 rejectedVersionKeys=3 topics=4 sourceSystem=mock-mall","elapsedMs":13052,"outputPartitions":[{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":6,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=10"},{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":3,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=11"},{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":3,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=13"},{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":4,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=15"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":4,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=08"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=10"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=11"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=12"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=13"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=14"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=15"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=16"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=10"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=11"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":4,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=13"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=14"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":5,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=15"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=16"},{"table":"p201v2_ods.ods_trade_event","dt":"20260902","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260902/hour=00"},{"table":"p201v2_ods.ods_user_event","dt":"20260901","rowCount":3,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_user_event/dt=20260901/hour=09"},{"table":"p201v2_ods.ods_user_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_user_event/dt=20260901/hour=12"}],"checks":[]}
+26/09/12 14:14:20 WARN SparkEnv: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-857e8d9b-0710-4e63-8987-1cb093c449e6\userFiles-426ead56-5f85-4cb0-871a-5ee8eec44a63
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-857e8d9b-0710-4e63-8987-1cb093c449e6\userFiles-426ead56-5f85-4cb0-871a-5ee8eec44a63\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.SparkEnv.stop(SparkEnv.scala:108)
+	at org.apache.spark.SparkContext.$anonfun$stop$25(SparkContext.scala:2310)
+	at org.apache.spark.util.Utils$.tryLogNonFatalError(Utils.scala:1375)
+	at org.apache.spark.SparkContext.stop(SparkContext.scala:2310)
+	at org.apache.spark.SparkContext.stop(SparkContext.scala:2216)
+	at org.apache.spark.sql.SparkSession.stop(SparkSession.scala:836)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:64)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)
+	at org.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1029)
+	at org.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:194)
+	at org.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:217)
+	at org.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:91)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1120)
+	at org.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1129)
+	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
+26/09/12 14:14:20 ERROR ShutdownHookManager: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-857e8d9b-0710-4e63-8987-1cb093c449e6\userFiles-426ead56-5f85-4cb0-871a-5ee8eec44a63
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-857e8d9b-0710-4e63-8987-1cb093c449e6\userFiles-426ead56-5f85-4cb0-871a-5ee8eec44a63\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4(ShutdownHookManager.scala:65)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4$adapted(ShutdownHookManager.scala:62)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.ArrayOps$ofRef.foreach(ArrayOps.scala:198)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$2(ShutdownHookManager.scala:62)
+	at org.apache.spark.util.SparkShutdownHook.run(ShutdownHookManager.scala:214)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$2(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at org.apache.spark.util.Utils$.logUncaughtExceptions(Utils.scala:1928)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$1(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.util.Try$.apply(Try.scala:213)
+	at org.apache.spark.util.SparkShutdownHookManager.runAll(ShutdownHookManager.scala:188)
+	at org.apache.spark.util.SparkShutdownHookManager$$anon$2.run(ShutdownHookManager.scala:178)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+26/09/12 14:14:20 ERROR ShutdownHookManager: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-857e8d9b-0710-4e63-8987-1cb093c449e6
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-857e8d9b-0710-4e63-8987-1cb093c449e6\userFiles-426ead56-5f85-4cb0-871a-5ee8eec44a63\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4(ShutdownHookManager.scala:65)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4$adapted(ShutdownHookManager.scala:62)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.ArrayOps$ofRef.foreach(ArrayOps.scala:198)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$2(ShutdownHookManager.scala:62)
+	at org.apache.spark.util.SparkShutdownHook.run(ShutdownHookManager.scala:214)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$2(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at org.apache.spark.util.Utils$.logUncaughtExceptions(Utils.scala:1928)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$1(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.util.Try$.apply(Try.scala:213)
+	at org.apache.spark.util.SparkShutdownHookManager.runAll(ShutdownHookManager.scala:188)
+	at org.apache.spark.util.SparkShutdownHookManager$$anon$2.run(ShutdownHookManager.scala:178)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+

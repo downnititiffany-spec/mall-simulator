@@ -1,0 +1,17 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 14:04:41 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:04:41 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 14:04:42 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 14:04:42 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[2], Application Id: local-1789193080832
+Time taken: 0.871 seconds
+Q1_steps	{"user_id":"1","age_group":"25-34","city_level":"tier1","member_level":"gold","register_time":"2026-09-01T09:00:00+08:00"}	NULL	NULL	{"user_id":"1","age_group":"25-34"}	NULL
+Time taken: 1.092 seconds, Fetched 1 row(s)
+26/09/12 14:04:45 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+Q2_table	golden-evt-001	NULL	NULL	{"user_id":"1","age_group":"25-34","city
+Q2_table	golden-evt-002	NULL	NULL	{"user_id":"2","age_group":"35-44","city
+Time taken: 1.409 seconds, Fetched 2 row(s)
+

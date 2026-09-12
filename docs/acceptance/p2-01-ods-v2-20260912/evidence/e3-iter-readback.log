@@ -1,0 +1,216 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 14:10:59 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:10:59 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 14:11:00 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 14:11:00 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[2], Application Id: local-1789193458891
+Response code
+Time taken: 0.95 seconds
+26/09/12 14:11:02 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+26/09/12 14:11:02 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+Response code
+Time taken: 0.796 seconds
+marker
+Time taken: 0.501 seconds, Fetched 1 row(s)
+SHOW_DATABASES_BEGIN
+namespace
+default
+p201v2_ads
+p201v2_dim
+p201v2_dwd
+p201v2_dws
+p201v2_ods
+p201v2b_ads
+p201v2b_dim
+p201v2b_dwd
+p201v2b_dws
+p201v2b_ods
+Time taken: 0.062 seconds, Fetched 11 row(s)
+marker
+Time taken: 0.03 seconds, Fetched 1 row(s)
+SHOW_DATABASES_END
+marker
+Time taken: 0.024 seconds, Fetched 1 row(s)
+SHOW_TABLES_BEGIN
+namespace	tableName	isTemporary
+Time taken: 0.6 seconds, Fetched 6 row(s)
+ods_behavior_event
+ods_product_event
+ods_trade_event
+ods_user_event
+landing_join
+raw_text
+marker
+Time taken: 0.025 seconds, Fetched 1 row(s)
+SHOW_TABLES_END
+marker
+Time taken: 0.022 seconds, Fetched 1 row(s)
+DESCRIBE_RESULT_BEGIN
+col_name	data_type	comment
+event_id            	string              	                    
+event_type          	string              	                    
+event_time          	string              	                    
+ingest_time         	string              	                    
+source_system       	string              	                    
+schema_version      	string              	                    
+trace_id            	string              	                    
+payload_user_id     	string              	                    
+payload_age_group   	string              	                    
+payload_city_level  	string              	                    
+payload_member_level	string              	                    
+payload_register_time	string              	                    
+source_file         	string              	                    
+ingest_batch_id     	bigint              	                    
+raw_event_type      	string              	                    
+raw_source_system   	string              	                    
+Time taken: 0.072 seconds, Fetched 25 row(s)
+landing_file        	string              	                    
+payload_json        	string              	                    
+payload_hash        	string              	                    
+dt                  	string              	                    
+hour                	string              	                    
+# Partition Information	                    	                    
+# col_name          	data_type           	comment             
+dt                  	string              	                    
+hour                	string              	                    
+marker
+Time taken: 0.029 seconds, Fetched 1 row(s)
+DESCRIBE_RESULT_END
+marker
+Time taken: 0.023 seconds, Fetched 1 row(s)
+SHOW_CREATE_BEGIN
+createtab_stmt
+CREATE TABLE spark_catalog.p201v2_ods.ods_user_event (
+  event_id STRING,
+  event_type STRING,
+  event_time STRING,
+  ingest_time STRING,
+  source_system STRING,
+  schema_version STRING,
+  trace_id STRING,
+  payload_user_id STRING,
+  payload_age_group STRING,
+  payload_city_level STRING,
+  payload_member_level STRING,
+  payload_register_time STRING,
+  source_file STRING,
+  ingest_batch_id BIGINT,
+  raw_event_type STRING,
+  raw_source_system STRING,
+  landing_file STRING,
+  payload_json STRING,
+  payload_hash STRING,
+  dt STRING,
+  hour STRING)
+USING parquet
+PARTITIONED BY (dt, hour)
+COMMENT '用户事件原始层'
+
+Time taken: 0.04 seconds, Fetched 1 row(s)
+marker
+Time taken: 0.02 seconds, Fetched 1 row(s)
+SHOW_CREATE_END
+marker
+Time taken: 0.024 seconds, Fetched 1 row(s)
+SHOW_PARTITIONS_BEGIN
+partition
+Time taken: 0.099 seconds, Fetched 2 row(s)
+dt=20260901/hour=09
+dt=20260901/hour=12
+marker
+Time taken: 0.021 seconds, Fetched 1 row(s)
+SHOW_PARTITIONS_END
+A1_total_accepted	CAST(count(1) AS STRING)
+A1_total_accepted	54
+A4_newcol_nulls	0
+A5_raw_event_type_mismatch	0
+A6_landing_file	file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl
+A7_source_file_ne_landing_file	0
+Time taken: 5.506 seconds, Fetched 5 row(s)
+B0_join_rows	CAST(count(1) AS STRING)
+B0_join_rows	54
+B1_payload_ne_source_slice	0
+B2_hash_ne_sha2_payload	0
+B3_hash_ne_sha2_source_slice	0
+B4_avg_payload_len	106
+B4_min_payload_len	56
+B4_max_payload_len	286
+B5_payload_braced	54
+B6_payload_hash_lowerhex64	0
+B7_rows_user	4
+B8_rows_trade	18
+Time taken: 5.965 seconds, Fetched 11 row(s)
+C1_v1_envelope_mismatch	CAST(count(1) AS STRING)
+Time taken: 0.953 seconds, Fetched 2 row(s)
+C1_v1_envelope_mismatch	2
+C3_ingest_batch_id	2026091201
+C2_user_payload_mismatch	CAST(count(1) AS STRING)
+C2_user_payload_mismatch	0
+C4_product_payload_mismatch	0
+C4_behavior_payload_mismatch	0
+C4_trade_payload_mismatch	0
+Time taken: 0.898 seconds, Fetched 4 row(s)
+C5_user_payload_nonnull_rows	CAST(count(1) AS STRING)
+C5_user_payload_nonnull_rows	4
+C5_product_payload_nonnull_rows	14
+C5_behavior_payload_nonnull_rows	16
+C5_trade_payload_nonnull_rows	18
+C5_trade_items_ods	[{"product_id":"1","quantity":1,"unit_price":"299.00","discount":"0.00","amount":"299.00"}]|[{"product_id":"3","quantity":1,"unit_price":"89.00","discount":"0.00","amount":"89.00"}]|[{"product_id":"2","quantity":2,"unit_price":"399.00","discount":"0.00","amount":"798.00"},{"product_id":"1","quantity":1,"unit_price":"299.00","discount":"0.00","amount":"299.00"}]|[{"product_id":"3","quantity":2,"unit_price":"89.00","discount":"0.00","amount":"178.00"}]|[{"product_id":"2","quantity":1,"unit_price":"399.00","discount":"0.00","amount":"399.00"}]|<null>|[{"product_id":"1","quantity":1,"unit_price":"279.00","discount":"0.00","amount":"279.00"}]
+C5_trade_items_src_head	[{"product_id":"1","quantity":1,"unit_price":"279.00","disco
+C7_user_projection_mismatch	4
+C7_trade_projection_mismatch	18
+Time taken: 1.252 seconds, Fetched 8 row(s)
+D1_probe_source_system	concat_ws(|, collect_set(source_system))
+D1_probe_source_system	probe-inj-2026
+D2_probe_raw_source_system	mock-mall
+D3_main_source_pair	mock-mall#mock-mall
+D4_main_v1_payload_rowcount	4
+Time taken: 0.552 seconds, Fetched 4 row(s)
+F1_rows_user	CAST(count(1) AS STRING)
+Time taken: 1.564 seconds, Fetched 7 row(s)
+F1_rows_user	4
+F1_rows_product	14
+F1_rows_behavior	16
+F1_rows_trade	18
+F2_rows_probe_user	4
+F3_probe_dual_channel_ok	52
+F4_probe_payload_nonnull_rows	52
+marker
+Time taken: 0.03 seconds, Fetched 1 row(s)
+SAMPLE_5NEWCOLUMNS
+event_id	raw_event_type	raw_source_system	landing_file	payload_hash	payload_len
+Time taken: 0.536 seconds, Fetched 4 row(s)
+golden-evt-001	user_registered	mock-mall	file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl	385dee5b723e23f0778d6726140ced55b5e9f5aa45f79d42869b1f753e260445	122
+golden-evt-002	user_registered	mock-mall	file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl	41c48fffbace2681439065bbf6073fc8483991e15d778374b8345879bc0b9b07	124
+golden-evt-003	user_registered	mock-mall	file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl	796e3bba06ab643dbb4e06f0d73955574b7f6f33d78af95dd6cbd2d049fd2b4c	124
+golden-evt-031	user_registered	mock-mall	file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl	361a253004e011c2779f3bdccfe6d53c144b8848c0c139f14d2df44607a7d144	126
+marker
+Time taken: 0.029 seconds, Fetched 1 row(s)
+SAMPLE_V1_PAYLOAD_USER
+event_id	payload_user_id	payload_age_group	payload_city_level	payload_member_level	payload_register_time
+golden-evt-001	1	25-34	tier1	gold	2026-09-01T09:00:00+08:00
+golden-evt-002	2	35-44	tier2	silver	2026-09-01T09:00:00+08:00
+golden-evt-003	3	18-24	tier3	normal	2026-09-01T09:00:00+08:00
+golden-evt-031	1	25-34	tier1	platinum	2026-09-01T12:00:00+08:00
+Time taken: 0.218 seconds, Fetched 4 row(s)
+marker
+SAMPLE_V1_PAYLOAD_TRADE
+Time taken: 0.029 seconds, Fetched 1 row(s)
+event_id	payload_order_id	payload_user_id	payload_amount	payload_total_amount	payload_status	payload_items
+golden-evt-018	1001	1	NULL	1097.00	NULL	[{"product_id":"2","quantity":2,"unit_price":"399.00","discount":"0.00","amount":"798.00"},{"product_id":"1","quantity":1,"unit_price":"299.00","discount":"0.00","amount":"299.00"}]
+golden-evt-019	1001	1	1097.00	NULL	NULL	NULL
+golden-evt-020	1002	2	NULL	299.00	NULL	[{"product_id":"1","quantity":1,"unit_price":"299.00","discount":"0.00","amount":"299.00"}]
+golden-evt-021	1002	2	NULL	NULL	NULL	NULL
+golden-evt-022	1003	3	NULL	178.00	NULL	[{"product_id":"3","quantity":2,"unit_price":"89.00","discount":"0.00","amount":"178.00"}]
+Time taken: 0.23 seconds, Fetched 5 row(s)
+marker
+Time taken: 0.027 seconds, Fetched 1 row(s)
+SAMPLE_PAYLOAD_JSON_HEAD
+event_id	payload_head
+Time taken: 0.116 seconds, Fetched 2 row(s)
+golden-evt-001	{"user_id":"1","age_group":"25-34","city_level":"tier1","member_level":"gold","register_time":"2026-
+golden-evt-002	{"user_id":"2","age_group":"35-44","city_level":"tier2","member_level":"silver","register_time":"202
+

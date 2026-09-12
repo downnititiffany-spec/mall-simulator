@@ -1,0 +1,174 @@
+P2-01 DDL 子句顺序探针  开始 2026-09-12 13:45:50
+repo        = D:\Develop_code\GraduationProject
+probe root  = D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3-probe-20260912-134550
+warehouse   = file:///D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/warehouse   （响亮断言已通过：在 spark-jobs\\target\\ 之下）
+metastore   = jdbc:derby:D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/derby-metastore;create=true   （响亮断言已通过：在 spark-jobs\\target\\ 之下）
+spark-sql   = D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-sql.cmd
+spark ver   =    /___/ .__/\_,_/_/ /_/\_\   version 3.5.1
+
+──── [0-建库] 13:45:51  spark-sql -f D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3-probe-20260912-134550\db.sql
+     SQL 原文：
+       | CREATE DATABASE IF NOT EXISTS p201v2probe_ods COMMENT 'P2-01 DDL 子句顺序探针库';
+     命令：spark-sql.cmd --conf spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:derby:D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/derby-metastore;create=true --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.apache.derby.jdbc.EmbeddedDriver --conf spark.sql.hive.metastore.jars=builtin --conf spark.hadoop.datanucleus.schema.autoCreateTables=true --conf spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/warehouse --conf spark.sql.session.timeZone=Asia/Shanghai -f D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3-probe-20260912-134550\db.sql
+     退出码：0
+     原始输出：
+       | Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+       | Setting default log level to "WARN".
+       | To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+       | 26/09/12 13:45:56 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+       | 26/09/12 13:45:56 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+       | 26/09/12 13:45:58 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+       | 26/09/12 13:45:58 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+       | 26/09/12 13:45:58 WARN ObjectStore: Failed to get database default, returning NoSuchObjectException
+       | Spark Web UI available at http://host.docker.internal:4040
+       | Spark master: local[*], Application Id: local-1789191955304
+       | 26/09/12 13:45:59 WARN ObjectStore: Failed to get database p201v2probe_ods, returning NoSuchObjectException
+       | 26/09/12 13:45:59 WARN ObjectStore: Failed to get database p201v2probe_ods, returning NoSuchObjectException
+       | 26/09/12 13:45:59 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+       | 26/09/12 13:45:59 WARN ObjectStore: Failed to get database p201v2probe_ods, returning NoSuchObjectException
+       | -chmod: chmod : mode '0' does not match the expected pattern.
+       | Usage: hadoop fs [generic options]
+       | 	[-appendToFile <localsrc> ... <dst>]
+       | 	[-cat [-ignoreCrc] <src> ...]
+       | 	[-checksum [-v] <src> ...]
+       | 	[-chgrp [-R] GROUP PATH...]
+       | 	[-chmod [-R] <MODE[,MODE]... | OCTALMODE> PATH...]
+       | 	[-chown [-R] [OWNER][:[GROUP]] PATH...]
+       | 	[-concat <target path> <src path> <src path> ...]
+       | 	[-copyFromLocal [-f] [-p] [-l] [-d] [-t <thread count>] [-q <thread pool queue size>] <localsrc> ... <dst>]
+       | 	[-copyToLocal [-f] [-p] [-crc] [-ignoreCrc] [-t <thread count>] [-q <thread pool queue size>] <src> ... <localdst>]
+       | 	[-count [-q] [-h] [-v] [-t [<storage type>]] [-u] [-x] [-e] [-s] <path> ...]
+       | 	[-cp [-f] [-p | -p[topax]] [-d] [-t <thread count>] [-q <thread pool queue size>] <src> ... <dst>]
+       | 	[-createSnapshot <snapshotDir> [<snapshotName>]]
+       | 	[-deleteSnapshot <snapshotDir> <snapshotName>]
+       | 	[-df [-h] [<path> ...]]
+       | 	[-du [-s] [-h] [-v] [-x] <path> ...]
+       | 	[-expunge [-immediate] [-fs <path>]]
+       | 	[-find <path> ... <expression> ...]
+       | 	[-get [-f] [-p] [-crc] [-ignoreCrc] [-t <thread count>] [-q <thread pool queue size>] <src> ... <localdst>]
+       | 	[-getfacl [-R] <path>]
+       | 	[-getfattr [-R] {-n name | -d} [-e en] <path>]
+       | 	[-getmerge [-nl] [-skip-empty-file] <src> <localdst>]
+       | 	[-head <file>]
+       | 	[-help [cmd ...]]
+       | 	[-ls [-C] [-d] [-h] [-q] [-R] [-t] [-S] [-r] [-u] [-e] [<path> ...]]
+       | 	[-mkdir [-p] <path> ...]
+       | 	[-moveFromLocal [-f] [-p] [-l] [-d] <localsrc> ... <dst>]
+       | 	[-moveToLocal <src> <localdst>]
+       | 	[-mv <src> ... <dst>]
+       | 	[-put [-f] [-p] [-l] [-d] [-t <thread count>] [-q <thread pool queue size>] <localsrc> ... <dst>]
+       | 	[-renameSnapshot <snapshotDir> <oldName> <newName>]
+       | 	[-rm [-f] [-r|-R] [-skipTrash] [-safely] <src> ...]
+       | 	[-rmdir [--ignore-fail-on-non-empty] <dir> ...]
+       | 	[-setfacl [-R] [{-b|-k} {-m|-x <acl_spec>} <path>]|[--set <acl_spec> <path>]]
+       | 	[-setfattr {-n name [-v value] | -x name} <path>]
+       | 	[-setrep [-R] [-w] <rep> <path> ...]
+       | 	[-stat [format] <path> ...]
+       | 	[-tail [-f] [-s <sleep interval>] <file>]
+       | 	[-test -[defswrz] <path>]
+       | 	[-text [-ignoreCrc] <src> ...]
+       | 	[-touch [-a] [-m] [-t TIMESTAMP (yyyyMMdd:HHmmss) ] [-c] <path> ...]
+       | 	[-touchz <path> ...]
+       | 	[-truncate [-w] <length> <path> ...]
+       | 	[-usage [cmd ...]]
+       | 
+       | Generic options supported are:
+       | -conf <configuration file>        specify an application configuration file
+       | -D <property=value>               define a value for a given property
+       | -fs <file:///|hdfs://namenode:port> specify default filesystem URL to use, overrides 'fs.defaultFS' property from configurations.
+       | -jt <local|resourcemanager:port>  specify a ResourceManager
+       | -files <file1,...>                specify a comma-separated list of files to be copied to the map reduce cluster
+       | -libjars <jar1,...>               specify a comma-separated list of jar files to be included in the classpath
+       | -archives <archive1,...>          specify a comma-separated list of archives to be unarchived on the compute machines
+       | 
+       | The general command line syntax is:
+       | command [genericOptions] [commandOptions]
+       | 
+       | Usage: hadoop fs [generic options] -chmod [-R] <MODE[,MODE]... | OCTALMODE> PATH...
+       | Time taken: 1.145 seconds
+       | 
+
+──── [1-NEG-先COMMENT后USING] 13:46:00  spark-sql -f D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3-probe-20260912-134550\neg.sql
+     SQL 原文：
+       | CREATE TABLE IF NOT EXISTS p201v2probe_ods.t_neg (
+       |   event_id STRING,
+       |   ingest_batch_id BIGINT) COMMENT '负向对照：先 COMMENT 再 USING'
+       | USING parquet PARTITIONED BY (dt STRING, hour STRING);
+     命令：spark-sql.cmd --conf spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:derby:D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/derby-metastore;create=true --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.apache.derby.jdbc.EmbeddedDriver --conf spark.sql.hive.metastore.jars=builtin --conf spark.hadoop.datanucleus.schema.autoCreateTables=true --conf spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/warehouse --conf spark.sql.session.timeZone=Asia/Shanghai -f D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3-probe-20260912-134550\neg.sql
+     退出码：1
+     原始输出：
+       | Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+       | Setting default log level to "WARN".
+       | To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+       | 26/09/12 13:46:03 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+       | 26/09/12 13:46:03 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+       | 26/09/12 13:46:06 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+       | 26/09/12 13:46:06 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+       | Spark Web UI available at http://host.docker.internal:4040
+       | Spark master: local[*], Application Id: local-1789191963118
+       | 
+       | [PARSE_SYNTAX_ERROR] Syntax error at or near 'USING'.(line 4, pos 0)
+       | 
+       | == SQL ==
+       | CREATE TABLE IF NOT EXISTS p201v2probe_ods.t_neg (
+       |   event_id STRING,
+       |   ingest_batch_id BIGINT) COMMENT '璐熷悜瀵圭収锛氬厛 COMMENT 鍐� USING'
+       | USING parquet PARTITIONED BY (dt STRING, hour STRING)
+       | ^^^
+       | 
+       | 
+
+──── [2-POS-USING紧跟列体] 13:46:07  spark-sql -f D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3-probe-20260912-134550\pos.sql
+     SQL 原文：
+       | CREATE TABLE IF NOT EXISTS p201v2probe_ods.t_pos (
+       |   event_id STRING,
+       |   ingest_batch_id BIGINT)
+       | USING parquet COMMENT '正向对照：USING 紧跟列体'
+       | PARTITIONED BY (dt STRING, hour STRING);
+       | DESCRIBE p201v2probe_ods.t_pos;
+       | SHOW CREATE TABLE p201v2probe_ods.t_pos;
+     命令：spark-sql.cmd --conf spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:derby:D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/derby-metastore;create=true --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.apache.derby.jdbc.EmbeddedDriver --conf spark.sql.hive.metastore.jars=builtin --conf spark.hadoop.datanucleus.schema.autoCreateTables=true --conf spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3-probe-20260912-134550/warehouse --conf spark.sql.session.timeZone=Asia/Shanghai -f D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3-probe-20260912-134550\pos.sql
+     退出码：0
+     原始输出：
+       | Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+       | Setting default log level to "WARN".
+       | To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+       | 26/09/12 13:46:11 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+       | 26/09/12 13:46:11 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+       | 26/09/12 13:46:12 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+       | 26/09/12 13:46:12 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+       | Spark Web UI available at http://host.docker.internal:4040
+       | Spark master: local[*], Application Id: local-1789191970568
+       | 26/09/12 13:46:14 WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.
+       | 26/09/12 13:46:14 WARN HiveConf: HiveConf of name hive.internal.ss.authz.settings.applied.marker does not exist
+       | 26/09/12 13:46:14 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+       | 26/09/12 13:46:14 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+       | Time taken: 1.72 seconds
+       | 26/09/12 13:46:14 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+       | event_id            	string              	                    
+       | ingest_batch_id     	bigint              	                    
+       | dt                  	string              	                    
+       | hour                	string              	                    
+       | # Partition Information	                    	                    
+       | # col_name          	data_type           	comment             
+       | dt                  	string              	                    
+       | hour                	string              	                    
+       | Time taken: 0.524 seconds, Fetched 8 row(s)
+       | CREATE TABLE spark_catalog.p201v2probe_ods.t_pos (
+       |   event_id STRING,
+       |   ingest_batch_id BIGINT,
+       |   dt STRING,
+       | Time taken: 0.05 seconds, Fetched 1 row(s)
+       |   hour STRING)
+       | USING parquet
+       | PARTITIONED BY (dt, hour)
+       | COMMENT '姝ｅ悜瀵圭収锛歎SING 绱ц窡鍒椾綋'
+       | 
+       | 
+
+──── 判定 13:46:15
+NEG 退出码 = 1   （预期非 0：当前实现形态不可解析）
+POS 退出码 = 0   （预期 0：修复形态可解析）
+判定 = 修复形态成立：USING parquet 必须紧跟列体，COMMENT 只能排在它之后
+
+结束 2026-09-12 13:46:15  日志 D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-probe-ddl-clause-order-20260912-134550.log

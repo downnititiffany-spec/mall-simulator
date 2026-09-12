@@ -1,0 +1,282 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 14:10:22 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:10:22 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 14:10:23 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 14:10:23 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+Spark Web UI available at http://host.docker.internal:4040
+Spark master: local[2], Application Id: local-1789193421386
+Response code
+Time taken: 0.88 seconds
+26/09/12 14:10:24 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+26/09/12 14:10:25 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+Response code
+Time taken: 0.929 seconds
+marker
+SHOW_DATABASES_BEGIN
+Time taken: 0.534 seconds, Fetched 1 row(s)
+namespace
+default
+p201v2_ads
+p201v2_dim
+p201v2_dwd
+p201v2_dws
+p201v2_ods
+p201v2b_ads
+p201v2b_dim
+p201v2b_dwd
+p201v2b_dws
+p201v2b_ods
+Time taken: 0.064 seconds, Fetched 11 row(s)
+Time taken: 0.031 seconds, Fetched 1 row(s)
+marker
+SHOW_DATABASES_END
+marker
+SHOW_TABLES_BEGIN
+Time taken: 0.026 seconds, Fetched 1 row(s)
+namespace	tableName	isTemporary
+ods_behavior_event
+ods_product_event
+ods_trade_event
+ods_user_event
+landing_join
+raw_text
+Time taken: 0.575 seconds, Fetched 6 row(s)
+marker
+SHOW_TABLES_END
+Time taken: 0.026 seconds, Fetched 1 row(s)
+marker
+Time taken: 0.023 seconds, Fetched 1 row(s)
+DESCRIBE_RESULT_BEGIN
+col_name	data_type	comment
+event_id            	string              	                    
+event_type          	string              	                    
+event_time          	string              	                    
+ingest_time         	string              	                    
+source_system       	string              	                    
+schema_version      	string              	                    
+trace_id            	string              	                    
+payload_user_id     	string              	                    
+payload_age_group   	string              	                    
+payload_city_level  	string              	                    
+payload_member_level	string              	                    
+payload_register_time	string              	                    
+source_file         	string              	                    
+ingest_batch_id     	bigint              	                    
+raw_event_type      	string              	                    
+raw_source_system   	string              	                    
+landing_file        	string              	                    
+payload_json        	string              	                    
+payload_hash        	string              	                    
+dt                  	string              	                    
+hour                	string              	                    
+# Partition Information	                    	                    
+# col_name          	data_type           	comment             
+dt                  	string              	                    
+hour                	string              	                    
+Time taken: 0.068 seconds, Fetched 25 row(s)
+marker
+DESCRIBE_RESULT_END
+Time taken: 0.03 seconds, Fetched 1 row(s)
+marker
+SHOW_CREATE_BEGIN
+Time taken: 0.02 seconds, Fetched 1 row(s)
+createtab_stmt
+Time taken: 0.043 seconds, Fetched 1 row(s)
+CREATE TABLE spark_catalog.p201v2_ods.ods_user_event (
+  event_id STRING,
+  event_type STRING,
+  event_time STRING,
+  ingest_time STRING,
+  source_system STRING,
+  schema_version STRING,
+  trace_id STRING,
+  payload_user_id STRING,
+  payload_age_group STRING,
+  payload_city_level STRING,
+  payload_member_level STRING,
+  payload_register_time STRING,
+  source_file STRING,
+  ingest_batch_id BIGINT,
+  raw_event_type STRING,
+  raw_source_system STRING,
+  landing_file STRING,
+  payload_json STRING,
+  payload_hash STRING,
+  dt STRING,
+  hour STRING)
+USING parquet
+PARTITIONED BY (dt, hour)
+COMMENT '用户事件原始层'
+
+marker
+SHOW_CREATE_END
+Time taken: 0.024 seconds, Fetched 1 row(s)
+marker
+SHOW_PARTITIONS_BEGIN
+Time taken: 0.022 seconds, Fetched 1 row(s)
+partition
+dt=20260901/hour=09
+dt=20260901/hour=12
+Time taken: 0.106 seconds, Fetched 2 row(s)
+marker
+SHOW_PARTITIONS_END
+Time taken: 0.019 seconds, Fetched 1 row(s)
+[UNRESOLVED_COLUMN.WITH_SUGGESTION] A column or function parameter with name `landing_file` cannot be resolved. Did you mean one of the following? [`event_id`, `raw_line`, `tbl`, `payload_hash`, `payload_json`].; line 19 pos 30;
+'Union false, false
+:- 'Union false, false
+:  :- Union false, false
+:  :  :- Union false, false
+:  :  :  :- Aggregate [A1_total_accepted AS A1_total_accepted#361, cast(count(1) as string) AS CAST(count(1) AS STRING)#362]
+:  :  :  :  +- SubqueryAlias landing_join
+:  :  :  :     +- View (`landing_join`, [tbl#231,event_id#232,payload_json#233,payload_hash#234,raw_line#235])
+:  :  :  :        +- Project [cast(tbl#226 as string) AS tbl#231, cast(event_id#227 as string) AS event_id#232, cast(payload_json#228 as string) AS payload_json#233, cast(payload_hash#229 as string) AS payload_hash#234, cast(raw_line#230 as string) AS raw_line#235]
+:  :  :  :           +- Union false, false
+:  :  :  :              :- Union false, false
+:  :  :  :              :  :- Union false, false
+:  :  :  :              :  :  :- Project [ods_user_event AS tbl#226, event_id#10 AS event_id#227, payload_json#27 AS payload_json#228, payload_hash#28 AS payload_hash#229, value#0 AS raw_line#230]
+:  :  :  :              :  :  :  +- Join Inner, (get_json_object(value#0, $.event_id) = event_id#10)
+:  :  :  :              :  :  :     :- SubqueryAlias o
+:  :  :  :              :  :  :     :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_user_event
+:  :  :  :              :  :  :     :     +- Relation spark_catalog.p201v2_ods.ods_user_event[event_id#10,event_type#11,event_time#12,ingest_time#13,source_system#14,schema_version#15,trace_id#16,payload_user_id#17,payload_age_group#18,payload_city_level#19,payload_member_level#20,payload_register_time#21,source_file#22,ingest_batch_id#23L,raw_event_type#24,raw_source_system#25,landing_file#26,payload_json#27,payload_hash#28,dt#29,hour#30] parquet
+:  :  :  :              :  :  :     +- SubqueryAlias t
+:  :  :  :              :  :  :        +- SubqueryAlias raw_text
+:  :  :  :              :  :  :           +- View (`raw_text`, [value#0])
+:  :  :  :              :  :  :              +- Relation [value#0] text
+:  :  :  :              :  :  +- Project [ods_product_event AS ods_product_event#239, event_id#31, payload_json#53, payload_hash#54, value#236]
+:  :  :  :              :  :     +- Join Inner, (get_json_object(value#236, $.event_id) = event_id#31)
+:  :  :  :              :  :        :- SubqueryAlias o
+:  :  :  :              :  :        :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_product_event
+:  :  :  :              :  :        :     +- Relation spark_catalog.p201v2_ods.ods_product_event[event_id#31,event_type#32,event_time#33,ingest_time#34,source_system#35,schema_version#36,trace_id#37,payload_product_id#38,payload_product_name#39,payload_category_id#40,payload_category_name#41,payload_parent_category_id#42,payload_parent_category_name#43,payload_brand_id#44,payload_price#45,payload_cost#46,payload_status#47,source_file#48,ingest_batch_id#49L,raw_event_type#50,raw_source_system#51,landing_file#52,payload_json#53,payload_hash#54,... 2 more fields] parquet
+:  :  :  :              :  :        +- SubqueryAlias t
+:  :  :  :              :  :           +- SubqueryAlias raw_text
+:  :  :  :              :  :              +- View (`raw_text`, [value#236])
+:  :  :  :              :  :                 +- Relation [value#236] text
+:  :  :  :              :  +- Project [ods_behavior_event AS ods_behavior_event#240, event_id#57, payload_json#74, payload_hash#75, value#237]
+:  :  :  :              :     +- Join Inner, (get_json_object(value#237, $.event_id) = event_id#57)
+:  :  :  :              :        :- SubqueryAlias o
+:  :  :  :              :        :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_behavior_event
+:  :  :  :              :        :     +- Relation spark_catalog.p201v2_ods.ods_behavior_event[event_id#57,event_type#58,event_time#59,ingest_time#60,source_system#61,schema_version#62,trace_id#63,payload_user_id#64,payload_product_id#65,payload_session_id#66,payload_behavior_type#67,payload_channel#68,source_file#69,ingest_batch_id#70L,raw_event_type#71,raw_source_system#72,landing_file#73,payload_json#74,payload_hash#75,dt#76,hour#77] parquet
+:  :  :  :              :        +- SubqueryAlias t
+:  :  :  :              :           +- SubqueryAlias raw_text
+:  :  :  :              :              +- View (`raw_text`, [value#237])
+:  :  :  :              :                 +- Relation [value#237] text
+:  :  :  :              +- Project [ods_trade_event AS ods_trade_event#241, event_id#78, payload_json#100, payload_hash#101, value#238]
+:  :  :  :                 +- Join Inner, (get_json_object(value#238, $.event_id) = event_id#78)
+:  :  :  :                    :- SubqueryAlias o
+:  :  :  :                    :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_trade_event
+:  :  :  :                    :     +- Relation spark_catalog.p201v2_ods.ods_trade_event[event_id#78,event_type#79,event_time#80,ingest_time#81,source_system#82,schema_version#83,trace_id#84,payload_order_id#85,payload_user_id#86,payload_payment_id#87,payload_refund_id#88,payload_product_id#89,payload_amount#90,payload_total_amount#91,payload_status#92,payload_reason#93,payload_items#94,source_file#95,ingest_batch_id#96L,raw_event_type#97,raw_source_system#98,landing_file#99,payload_json#100,payload_hash#101,... 2 more fields] parquet
+:  :  :  :                    +- SubqueryAlias t
+:  :  :  :                       +- SubqueryAlias raw_text
+:  :  :  :                          +- View (`raw_text`, [value#238])
+:  :  :  :                             +- Relation [value#238] text
+:  :  :  +- Aggregate [A4_newcol_nulls AS A4_newcol_nulls#577, cast(count(1) as string) AS CAST(count(1) AS STRING)#578]
+:  :  :     +- Filter (((isnull(raw_event_type#382) OR isnull(raw_source_system#383)) OR isnull(landing_file#384)) OR (isnull(payload_json#385) OR isnull(payload_hash#386)))
+:  :  :        +- SubqueryAlias n
+:  :  :           +- Union false, false
+:  :  :              :- Union false, false
+:  :  :              :  :- Union false, false
+:  :  :              :  :  :- Project [raw_event_type#382, raw_source_system#383, landing_file#384, payload_json#385, payload_hash#386]
+:  :  :              :  :  :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_user_event
+:  :  :              :  :  :     +- Relation spark_catalog.p201v2_ods.ods_user_event[event_id#368,event_type#369,event_time#370,ingest_time#371,source_system#372,schema_version#373,trace_id#374,payload_user_id#375,payload_age_group#376,payload_city_level#377,payload_member_level#378,payload_register_time#379,source_file#380,ingest_batch_id#381L,raw_event_type#382,raw_source_system#383,landing_file#384,payload_json#385,payload_hash#386,dt#387,hour#388] parquet
+:  :  :              :  :  +- Project [raw_event_type#408, raw_source_system#409, landing_file#410, payload_json#411, payload_hash#412]
+:  :  :              :  :     +- SubqueryAlias spark_catalog.p201v2_ods.ods_product_event
+:  :  :              :  :        +- Relation spark_catalog.p201v2_ods.ods_product_event[event_id#389,event_type#390,event_time#391,ingest_time#392,source_system#393,schema_version#394,trace_id#395,payload_product_id#396,payload_product_name#397,payload_category_id#398,payload_category_name#399,payload_parent_category_id#400,payload_parent_category_name#401,payload_brand_id#402,payload_price#403,payload_cost#404,payload_status#405,source_file#406,ingest_batch_id#407L,raw_event_type#408,raw_source_system#409,landing_file#410,payload_json#411,payload_hash#412,... 2 more fields] parquet
+:  :  :              :  +- Project [raw_event_type#429, raw_source_system#430, landing_file#431, payload_json#432, payload_hash#433]
+:  :  :              :     +- SubqueryAlias spark_catalog.p201v2_ods.ods_behavior_event
+:  :  :              :        +- Relation spark_catalog.p201v2_ods.ods_behavior_event[event_id#415,event_type#416,event_time#417,ingest_time#418,source_system#419,schema_version#420,trace_id#421,payload_user_id#422,payload_product_id#423,payload_session_id#424,payload_behavior_type#425,payload_channel#426,source_file#427,ingest_batch_id#428L,raw_event_type#429,raw_source_system#430,landing_file#431,payload_json#432,payload_hash#433,dt#434,hour#435] parquet
+:  :  :              +- Project [raw_event_type#455, raw_source_system#456, landing_file#457, payload_json#458, payload_hash#459]
+:  :  :                 +- SubqueryAlias spark_catalog.p201v2_ods.ods_trade_event
+:  :  :                    +- Relation spark_catalog.p201v2_ods.ods_trade_event[event_id#436,event_type#437,event_time#438,ingest_time#439,source_system#440,schema_version#441,trace_id#442,payload_order_id#443,payload_user_id#444,payload_payment_id#445,payload_refund_id#446,payload_product_id#447,payload_amount#448,payload_total_amount#449,payload_status#450,payload_reason#451,payload_items#452,source_file#453,ingest_batch_id#454L,raw_event_type#455,raw_source_system#456,landing_file#457,payload_json#458,payload_hash#459,... 2 more fields] parquet
+:  :  +- Aggregate [A5_raw_event_type_mismatch AS A5_raw_event_type_mismatch#590, cast(count(1) as string) AS CAST(count(1) AS STRING)#591]
+:  :     +- Filter NOT (raw_event_type#476 = get_json_object(value#258, $.event_type))
+:  :        +- SubqueryAlias r
+:  :           +- Union false, false
+:  :              :- Union false, false
+:  :              :  :- Union false, false
+:  :              :  :  :- Project [event_id#462, raw_event_type#476, value#258]
+:  :              :  :  :  +- Join Inner, (get_json_object(value#258, $.event_id) = event_id#462)
+:  :              :  :  :     :- SubqueryAlias o
+:  :              :  :  :     :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_user_event
+:  :              :  :  :     :     +- Relation spark_catalog.p201v2_ods.ods_user_event[event_id#462,event_type#463,event_time#464,ingest_time#465,source_system#466,schema_version#467,trace_id#468,payload_user_id#469,payload_age_group#470,payload_city_level#471,payload_member_level#472,payload_register_time#473,source_file#474,ingest_batch_id#475L,raw_event_type#476,raw_source_system#477,landing_file#478,payload_json#479,payload_hash#480,dt#481,hour#482] parquet
+:  :              :  :  :     +- SubqueryAlias t
+:  :              :  :  :        +- SubqueryAlias raw_text
+:  :              :  :  :           +- View (`raw_text`, [value#258])
+:  :              :  :  :              +- Relation [value#258] text
+:  :              :  :  +- Project [event_id#483, raw_event_type#502, value#259]
+:  :              :  :     +- Join Inner, (get_json_object(value#259, $.event_id) = event_id#483)
+:  :              :  :        :- SubqueryAlias o
+:  :              :  :        :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_product_event
+:  :              :  :        :     +- Relation spark_catalog.p201v2_ods.ods_product_event[event_id#483,event_type#484,event_time#485,ingest_time#486,source_system#487,schema_version#488,trace_id#489,payload_product_id#490,payload_product_name#491,payload_category_id#492,payload_category_name#493,payload_parent_category_id#494,payload_parent_category_name#495,payload_brand_id#496,payload_price#497,payload_cost#498,payload_status#499,source_file#500,ingest_batch_id#501L,raw_event_type#502,raw_source_system#503,landing_file#504,payload_json#505,payload_hash#506,... 2 more fields] parquet
+:  :              :  :        +- SubqueryAlias t
+:  :              :  :           +- SubqueryAlias raw_text
+:  :              :  :              +- View (`raw_text`, [value#259])
+:  :              :  :                 +- Relation [value#259] text
+:  :              :  +- Project [event_id#509, raw_event_type#523, value#260]
+:  :              :     +- Join Inner, (get_json_object(value#260, $.event_id) = event_id#509)
+:  :              :        :- SubqueryAlias o
+:  :              :        :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_behavior_event
+:  :              :        :     +- Relation spark_catalog.p201v2_ods.ods_behavior_event[event_id#509,event_type#510,event_time#511,ingest_time#512,source_system#513,schema_version#514,trace_id#515,payload_user_id#516,payload_product_id#517,payload_session_id#518,payload_behavior_type#519,payload_channel#520,source_file#521,ingest_batch_id#522L,raw_event_type#523,raw_source_system#524,landing_file#525,payload_json#526,payload_hash#527,dt#528,hour#529] parquet
+:  :              :        +- SubqueryAlias t
+:  :              :           +- SubqueryAlias raw_text
+:  :              :              +- View (`raw_text`, [value#260])
+:  :              :                 +- Relation [value#260] text
+:  :              +- Project [event_id#530, raw_event_type#549, value#261]
+:  :                 +- Join Inner, (get_json_object(value#261, $.event_id) = event_id#530)
+:  :                    :- SubqueryAlias o
+:  :                    :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_trade_event
+:  :                    :     +- Relation spark_catalog.p201v2_ods.ods_trade_event[event_id#530,event_type#531,event_time#532,ingest_time#533,source_system#534,schema_version#535,trace_id#536,payload_order_id#537,payload_user_id#538,payload_payment_id#539,payload_refund_id#540,payload_product_id#541,payload_amount#542,payload_total_amount#543,payload_status#544,payload_reason#545,payload_items#546,source_file#547,ingest_batch_id#548L,raw_event_type#549,raw_source_system#550,landing_file#551,payload_json#552,payload_hash#553,... 2 more fields] parquet
+:  :                    +- SubqueryAlias t
+:  :                       +- SubqueryAlias raw_text
+:  :                          +- View (`raw_text`, [value#261])
+:  :                             +- Relation [value#261] text
+:  +- 'Project [A6_landing_file AS A6_landing_file#363, unresolvedalias('min('landing_file), None)]
+:     +- SubqueryAlias landing_join
+:        +- View (`landing_join`, [tbl#247,event_id#248,payload_json#249,payload_hash#250,raw_line#251])
+:           +- Project [cast(tbl#242 as string) AS tbl#247, cast(event_id#243 as string) AS event_id#248, cast(payload_json#244 as string) AS payload_json#249, cast(payload_hash#245 as string) AS payload_hash#250, cast(raw_line#246 as string) AS raw_line#251]
+:              +- Union false, false
+:                 :- Union false, false
+:                 :  :- Union false, false
+:                 :  :  :- Project [ods_user_event AS tbl#242, event_id#262 AS event_id#243, payload_json#279 AS payload_json#244, payload_hash#280 AS payload_hash#245, value#283 AS raw_line#246]
+:                 :  :  :  +- Join Inner, (get_json_object(value#283, $.event_id) = event_id#262)
+:                 :  :  :     :- SubqueryAlias o
+:                 :  :  :     :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_user_event
+:                 :  :  :     :     +- Relation spark_catalog.p201v2_ods.ods_user_event[event_id#262,event_type#263,event_time#264,ingest_time#265,source_system#266,schema_version#267,trace_id#268,payload_user_id#269,payload_age_group#270,payload_city_level#271,payload_member_level#272,payload_register_time#273,source_file#274,ingest_batch_id#275L,raw_event_type#276,raw_source_system#277,landing_file#278,payload_json#279,payload_hash#280,dt#281,hour#282] parquet
+:                 :  :  :     +- SubqueryAlias t
+:                 :  :  :        +- SubqueryAlias raw_text
+:                 :  :  :           +- View (`raw_text`, [value#283])
+:                 :  :  :              +- Relation [value#283] text
+:                 :  :  +- Project [ods_product_event AS ods_product_event#255, event_id#284, payload_json#306, payload_hash#307, value#252]
+:                 :  :     +- Join Inner, (get_json_object(value#252, $.event_id) = event_id#284)
+:                 :  :        :- SubqueryAlias o
+:                 :  :        :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_product_event
+:                 :  :        :     +- Relation spark_catalog.p201v2_ods.ods_product_event[event_id#284,event_type#285,event_time#286,ingest_time#287,source_system#288,schema_version#289,trace_id#290,payload_product_id#291,payload_product_name#292,payload_category_id#293,payload_category_name#294,payload_parent_category_id#295,payload_parent_category_name#296,payload_brand_id#297,payload_price#298,payload_cost#299,payload_status#300,source_file#301,ingest_batch_id#302L,raw_event_type#303,raw_source_system#304,landing_file#305,payload_json#306,payload_hash#307,... 2 more fields] parquet
+:                 :  :        +- SubqueryAlias t
+:                 :  :           +- SubqueryAlias raw_text
+:                 :  :              +- View (`raw_text`, [value#252])
+:                 :  :                 +- Relation [value#252] text
+:                 :  +- Project [ods_behavior_event AS ods_behavior_event#256, event_id#310, payload_json#327, payload_hash#328, value#253]
+:                 :     +- Join Inner, (get_json_object(value#253, $.event_id) = event_id#310)
+:                 :        :- SubqueryAlias o
+:                 :        :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_behavior_event
+:                 :        :     +- Relation spark_catalog.p201v2_ods.ods_behavior_event[event_id#310,event_type#311,event_time#312,ingest_time#313,source_system#314,schema_version#315,trace_id#316,payload_user_id#317,payload_product_id#318,payload_session_id#319,payload_behavior_type#320,payload_channel#321,source_file#322,ingest_batch_id#323L,raw_event_type#324,raw_source_system#325,landing_file#326,payload_json#327,payload_hash#328,dt#329,hour#330] parquet
+:                 :        +- SubqueryAlias t
+:                 :           +- SubqueryAlias raw_text
+:                 :              +- View (`raw_text`, [value#253])
+:                 :                 +- Relation [value#253] text
+:                 +- Project [ods_trade_event AS ods_trade_event#257, event_id#331, payload_json#353, payload_hash#354, value#254]
+:                    +- Join Inner, (get_json_object(value#254, $.event_id) = event_id#331)
+:                       :- SubqueryAlias o
+:                       :  +- SubqueryAlias spark_catalog.p201v2_ods.ods_trade_event
+:                       :     +- Relation spark_catalog.p201v2_ods.ods_trade_event[event_id#331,event_type#332,event_time#333,ingest_time#334,source_system#335,schema_version#336,trace_id#337,payload_order_id#338,payload_user_id#339,payload_payment_id#340,payload_refund_id#341,payload_product_id#342,payload_amount#343,payload_total_amount#344,payload_status#345,payload_reason#346,payload_items#347,source_file#348,ingest_batch_id#349L,raw_event_type#350,raw_source_system#351,landing_file#352,payload_json#353,payload_hash#354,... 2 more fields] parquet
+:                       +- SubqueryAlias t
+:                          +- SubqueryAlias raw_text
+:                             +- View (`raw_text`, [value#254])
+:                                +- Relation [value#254] text
++- Aggregate [A7_source_file_ne_landing_file AS A7_source_file_ne_landing_file#579, cast(count(1) as string) AS CAST(count(1) AS STRING)#580]
+   +- Filter NOT (source_file#568 = landing_file#572)
+      +- SubqueryAlias spark_catalog.p201v2_ods.ods_user_event
+         +- Relation spark_catalog.p201v2_ods.ods_user_event[event_id#556,event_type#557,event_time#558,ingest_time#559,source_system#560,schema_version#561,trace_id#562,payload_user_id#563,payload_age_group#564,payload_city_level#565,payload_member_level#566,payload_register_time#567,source_file#568,ingest_batch_id#569L,raw_event_type#570,raw_source_system#571,landing_file#572,payload_json#573,payload_hash#574,dt#575,hour#576] parquet
+
+

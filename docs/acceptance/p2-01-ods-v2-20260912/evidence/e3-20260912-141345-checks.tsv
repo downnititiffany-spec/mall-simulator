@@ -1,0 +1,52 @@
+chk	pass	detail
+E3_00_jar_built	1	jar=D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-built\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar bytes=284147 sha=5fb1aa14f5389b4db065ba21aad5d703d9a65ee689e6857de2d0152e266ac80c classes=105 classesContentSha=d390b5291bbb817db77c5153be3e3008921ab70271ec76257a94645c4b00e8b1
+E3_01_sci_exit_ok	1	sci(p201v2) exit=0
+E3_02_odl_exit_ok	1	odl(p201v2) exit=0
+E3_03_golden_bytes	1	lines=55 bytes=18430 sha=2351bcc35e04ccd278638f07247bc37e9c4d402cc4736cd2a4d4b70f4232b11c
+E3_04_sci_statements_37	1	sci(p201v2) = {"jobCode":"sci","inputRecords":0,"outputRecords":37,"rejectedRecords":0,"attemptNo":1,"status":"SUCCESS","message":"ok","elapsedMs":6955,"outputPartitions":[],"checks":[]}
+E3_05_sciB_statements_37	1	sci(p201v2b) = {"jobCode":"sci","inputRecords":0,"outputRecords":37,"rejectedRecords":0,"attemptNo":1,"status":"SUCCESS","message":"ok","elapsedMs":7363,"outputPartitions":[],"checks":[]}
+E3_06_odl_status_success	1	odl status must be SUCCESS
+E3_07_odlB_status_success	1	odl-B status must be SUCCESS
+E3_10_jobresult_input	1	odl json: {"jobCode":"odl","inputRecords":55,"outputRecords":52,"rejectedRecords":3,"attemptNo":1,"status":"SUCCESS","message":"accepted=52 rejectedVersionKeys=3 topics=4 sourceSystem=mock-mall","elapsedMs":13052,"outputPartitions":[{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":6,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=10"},{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":3,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=11"},{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":3,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=13"},{"table":"p201v2_ods.ods_behavior_event","dt":"20260901","rowCount":4,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_behavior_event/dt=20260901/hour=15"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":4,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=08"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=10"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=11"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=12"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=13"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=14"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=15"},{"table":"p201v2_ods.ods_product_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_product_event/dt=20260901/hour=16"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=10"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=11"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":4,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=13"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=14"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":5,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=15"},{"table":"p201v2_ods.ods_trade_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260901/hour=16"},{"table":"p201v2_ods.ods_trade_event","dt":"20260902","rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_trade_event/dt=20260902/hour=00"},{"table":"p201v2_ods.ods_user_event","dt":"20260901","rowCount":3,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_user_event/dt=20260901/hour=09"},{"table":"p201v2_ods.ods_user_event","dt":"20260901","rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-141345/warehouse/p201v2_ods.db/ods_user_event/dt=20260901/hour=12"}],"checks":[]}
+E3_11_jobresult_accepted	1	expect outputRecords=52
+E3_12_jobresult_rejected	1	expect rejectedRecords=3
+E3_13_sql_total_rows	1	A1_total_accepted=52
+E3_14_sql_tables_4	1	A2_ods_table_count=4 tables=ods_behavior_event,ods_product_event,ods_trade_event,ods_user_event
+E3_15_table_row_sum_52	1	user+product+behavior+trade=52 (user=4 product=14 behavior=16 trade=18)
+E3_16_probe_dual_channel_52	1	F3_probe_dual_channel_ok=52/52 (source_system=probe-inj-2026 且 raw_source_system=mock-mall)
+E3_18_probe_payload_nonnull_52	1	F4_probe_payload_nonnull_rows=52/52 (换注入值不影响 v1 payload 列)
+E3_17_odl_message_facts	1	message="message":"accepted=52 rejectedVersionKeys=3 topics=4 sourceSystem=mock-mall"
+E3_20_newcols_present	1	A3=raw_event_type,raw_source_system,landing_file,payload_json,payload_hash
+E3_21_newcols_not_null	1	A4_newcol_nulls=0
+E3_22_raw_event_type	1	A5_raw_event_type_mismatch=0
+E3_23_landing_file_value	1	A6_landing_file=file:/D:/Develop_code/GraduationProject/tests/golden-dataset/events/golden-20260901.jsonl
+E3_24_source_file_eq	1	A7_source_file_ne_landing_file=0
+E3_30_join_matched	1	B0_join_rows=52/52（四表 ⋈ 源行）
+E3_31_payload_byte_equal	1	B1_payload_ne_source_slice=0
+E3_32_payload_hash_self	1	B2_hash_ne_sha2_payload=0
+E3_33_hash_matches_src	1	B3_hash_ne_sha2_source_slice=0
+E3_34_sample_len	1	B4_avg/min/max payload len=107/56/286
+E3_35_payload_braced	1	B5_payload_braced=52/52 行形如 {...}
+E3_36_hash_shape	1	B6_payload_hash_lowerhex64=0（小写十六进制 64 位）
+E3_37_join_rows_user	1	B7_rows_user=4
+E3_38_join_rows_trade	1	B8_rows_trade=18
+E3_40_v1_col_order	0	describe=event_id,event_type,event_time,ingest_time,source_system,schema_version,trace_id,payload_user_id,payload_age_group,payload_city_level,payload_member_level,payload_register_time,source_file,ingest_batch_id,raw_event_type,raw_source_system,landing_file,payload_json,payload_hash,dt,hour,dt,hour
+E3_41_v1_types	1	types[0..13]=string,string,string,string,string,string,string,string,string,string,string,string,string,bigint
+E3_42_v1_envelope_values	1	C1_v1_envelope_mismatch=0（四表）
+E3_43_v1_payload_values	1	C2_user_payload_mismatch=0（独立 oracle: get_json_object）
+E3_44_ingest_batch_id	1	C3_ingest_batch_id=2026091201 batchId=2026091201
+E3_45_v1_payload_all4	1	C4 product=0 behavior=0 trade=0（+ user 见 E3_43）
+E3_46_v1_payload_nonnull_rows	1	C5 首列非空行数 user=4 product=14 behavior=16 trade=18（期望 4/14/16/18；缺陷期为全 0）
+E3_47_v1_projection_oracle	1	C7 user=0 trade=0（v1 闭合 schema 解析投影；含 DECIMAL 与数组型 items）
+E3_48_trade_items_reading	1	实测读数 C5_trade_items_ods=[{"product_id":"1","quantity":1,"unit_price":"299.00","discount":"0.00","amount":"299.00"}]|[{"product_id":"3","quantity":1,"unit_price":"89.00","discount":"0.00","amount":"89.00"}]|[{"product_id":"2","quantity":2,"unit_price":"399.00","discount":"0.00","amount":"798.00"},{"product_id":"1","quantity":1,"unit_price":"299.00","discount":"0.00","amount":"299.00"}]|[{"product_id":"3","quantity":2,"unit_price":"89.00","discount":"0.00","amount":"178.00"}]|[{"product_id":"2","quantity":1,"unit_price":"399.00","discount":"0.00","amount":"399.00"}]|<null>|[{"product_id":"1","quantity":1,"unit_price":"279.00","discount":"0.00","amount":"279.00"}] src_head=[{"product_id":"1","quantity":1,"unit_price":"279.00","disco（记录用途，不断言语义）
+E3_49_fixture_dup_event_id	1	实测夹具属性：源行 A10=55 含 event_id 行 A11=53 不同 event_id A12=52 重复 event_id 个数 A13=1 ODS 侧同 id 行数>1 的个数 A14=2（B0=52 即按 event_id 规范成一行后的对账行数）
+E3_50_injected_channel	1	D1_probe_source_system=probe-inj-2026 expect=probe-inj-2026
+E3_51_row_channel	1	D2_probe_raw_source_system=mock-mall expect=mock-mall
+E3_52_main_both_equal	0	D3_main_source_pair=mock-mall#mock-mall
+E3_53_probe_message	1	odl-B message 含 sourceSystem=probe-inj-2026
+E3_54_probe_55_52_3	1	odl-B 同样 55/52/3（换注入值不改变行集）
+E3_60_no_dw_databases	1	E1_dw_databases=0 dbs=default|p201v2_ads|p201v2_dim|p201v2_dwd|p201v2_dws|p201v2_ods|p201v2b_ads|p201v2b_dim|p201v2b_dwd|p201v2b_dws|p201v2b_ods
+E3_61_prefix_databases	1	E2_prefix_databases=10（2 前缀 × 5 层）
+E3_63_no_unexpected_databases	1	E3_other_databases=0（除 default 与本任务两个前缀外无其它库）
+E3_62_real_warehouse_unchanged	1	before=FILES=2006 SHA256=3c7e3deaf99072de920124501ca742a71f6490246e47ad2da7af7acb25ea20ae after=FILES=2006 SHA256=3c7e3deaf99072de920124501ca742a71f6490246e47ad2da7af7acb25ea20ae
+E3_70_partition_files	1	[p201v2.ods_user_event=2 p201v2b.ods_user_event=2 p201v2.ods_product_event=8 p201v2b.ods_product_event=8 p201v2.ods_behavior_event=4 p201v2b.ods_behavior_event=4 p201v2.ods_trade_event=6 p201v2b.ods_trade_event=6]

@@ -1,0 +1,15 @@
+[e3] runId=20260912-135558
+[e3] work=D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-e3\20260912-135558
+[e3] warehouseUri=file:///D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-135558/warehouse
+[e3] derbyUri=jdbc:derby:D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-135558/derby-metastore;create=true
+[e3] realWarehouseBefore: FILES=2006 SHA256=3c7e3deaf99072de920124501ca742a71f6490246e47ad2da7af7acb25ea20ae
+[e3] jar=D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-built\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar bytes=285303 sha256=a088dfabbbf77b3f400d477b92dcf2052f9784a7793b5494119f3a8853d46353
+[e3] goldenFile=D:\Develop_code\GraduationProject\tests\golden-dataset\events\golden-20260901.jsonl bytes=18430 lines=55 sha256=2351bcc35e04ccd278638f07247bc37e9c4d402cc4736cd2a4d4b70f4232b11c
+[e3] [sci-A] spark-submit --master local[2] --class com.graduation.analytics.job.JobRunner --conf spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:derby:D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-135558/derby-metastore;create=true --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.apache.derby.jdbc.EmbeddedDriver --conf spark.sql.hive.metastore.jars=builtin --conf spark.hadoop.datanucleus.schema.autoCreateTables=true --conf spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-135558/warehouse D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-built\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar --runtimeProfileId=7 --jobCode=sci --businessDate=20260901 --attemptNo=1 --hiveDatabasePrefix=p201v2
+[e3] [sci-A] exit=1 result={"jobCode":"sci","inputRecords":0,"outputRecords":0,"rejectedRecords":0,"attemptNo":1,"status":"FAILED","message":"org.apache.hadoop.hive.ql.metadata.HiveException: java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient","elapsedMs":24173,"outputPartitions":[],"checks":[]}
+Exception: D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\harness\e3-real-chain.ps1:118
+Line |
+ 118 |  if ($r1.Exit -ne 0) { throw "sci($prefixA) 失败，见 $($r1.Log)" }
+     |                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | sci(p201v2) 失败，见
+     | D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-20260912-135558-01-sci-p201v2.log

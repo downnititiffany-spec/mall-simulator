@@ -4,6 +4,13 @@
 -- 分区：dt（业务日期 yyyyMMdd）/ hour。
 -- 数据从不从 Flume/DataX 直接进入 DWD；ODS 是所有 Spark 清洗任务的唯一正式入口。
 -- 库名：${WAREHOUSE_PREFIX}_ods，缺省源 A 用 dw（beeline --hivevar WAREHOUSE_PREFIX=dw -f 00-ods.sql）；规则见 contract-specs/specs/warehouse-namespace.v1.json
+--
+-- P2-01 / ODS v2（D-052…D-059）：四表尾部**追加** 5 列（raw_event_type / raw_source_system /
+-- landing_file / payload_json / payload_hash）。v1 的全部列**名字、类型、序号一格未动**
+-- ⇒ 按列位置读 Parquet 的既有消费方零感知。
+-- 本文件是**静态 SQL**（beeline 直接执行），列集必须与运行时显式 schema 的唯一所有者
+-- `spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsV2Columns.scala` 逐列一致，
+-- 由 `OdsV2SchemaOwnerSpec` 对账钉住；改列请改所有者再对账，不要只手改本文件。
 -- =====================================================================
 CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods COMMENT 'ODS 原始数据层';
 
@@ -22,7 +29,12 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_user_event (
     payload_member_level    STRING,
     payload_register_time   STRING,
     source_file     STRING  COMMENT '来源 Landing 文件',
-    ingest_batch_id BIGINT  COMMENT '采集批次号'
+    ingest_batch_id BIGINT  COMMENT '采集批次号',
+    raw_event_type   STRING COMMENT 'P2-01：落地区原始事件类型词汇（不映射，源 B 词汇保真留 P5）',
+    raw_source_system STRING COMMENT 'P2-01：落地区行内 source_system 原样值（不受信任，仅供诊断）',
+    landing_file     STRING COMMENT 'P2-01：真实落地文件（_metadata.file_path）；与 source_file 同源',
+    payload_json     STRING COMMENT 'P2-01：payload 对象原始文本，逐字节保真（不做解析重排/美化/压缩）',
+    payload_hash     STRING COMMENT 'P2-01：SHA-256(UTF-8(payload_json 原始字节)) 小写十六进制；仅诊断，不是去重键'
 )
 COMMENT '用户事件原始层'
 PARTITIONED BY (dt STRING COMMENT '业务日期 yyyyMMdd', hour STRING COMMENT '小时 HH')
@@ -49,7 +61,12 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_product_event (
     payload_cost        DECIMAL(18,2),
     payload_status      STRING,
     source_file         STRING,
-    ingest_batch_id     BIGINT
+    ingest_batch_id     BIGINT,
+    raw_event_type   STRING,
+    raw_source_system STRING,
+    landing_file     STRING,
+    payload_json     STRING,
+    payload_hash     STRING
 )
 COMMENT '商品事件原始层'
 PARTITIONED BY (dt STRING, hour STRING)
@@ -71,7 +88,12 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_behavior_event (
     payload_behavior_type STRING COMMENT 'view/favorite/cart_add/cart_remove/search',
     payload_channel     STRING,
     source_file         STRING,
-    ingest_batch_id     BIGINT
+    ingest_batch_id     BIGINT,
+    raw_event_type   STRING,
+    raw_source_system STRING,
+    landing_file     STRING,
+    payload_json     STRING,
+    payload_hash     STRING
 )
 COMMENT '用户行为事件原始层'
 PARTITIONED BY (dt STRING, hour STRING)
@@ -98,7 +120,12 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ods.ods_trade_event (
     payload_reason      STRING,
     payload_items       STRING  COMMENT 'order_created 的 items JSON 数组（DWD 展开）',
     source_file         STRING,
-    ingest_batch_id     BIGINT
+    ingest_batch_id     BIGINT,
+    raw_event_type   STRING,
+    raw_source_system STRING,
+    landing_file     STRING,
+    payload_json     STRING,
+    payload_hash     STRING
 )
 COMMENT '交易事件原始层'
 PARTITIONED BY (dt STRING, hour STRING)

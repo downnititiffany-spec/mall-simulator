@@ -43,25 +43,19 @@ object OdsLoadSql {
   val ColRawLine = "raw_line"
   val ColLandingFile = "landing_file"
 
-  // 曾用列名 `landing_payload_text`（一级解析把 payload 取成 STRING、供二次 from_json 再解析）
-  // 已在 P2-01 E3 真链实测证伪后**删除**：`from_json`(PERMISSIVE) 把 JSON **对象**塞进 STRING 字段
-  // 得到的是 NULL 而非对象原文，于是 payload 结构体与四张表全部 v1 `payload_*` 列静默为 NULL。
-  // 证据（只读探针原始读数）：evidence/e3-probe-payload-struct-null.log
-  /** 视图里「载荷结构体」列：由 `landingSchema` **一次闭合解析**产出（v1 口径，含 payload 段） */
+  /** 视图里「载荷原文」列：一级解析把 payload 取成字符串，别名到这个列名 */
+  val ColPayloadText = "landing_payload_text"
+
+  /** 视图里「载荷结构体」列：二级解析（文本 → v1 payload 结构体）的产物 */
   val ColPayload = "payload"
 
   /** 注入参数名（平台参数通道 `--k=v`，见 `JobCommandBuilder` 的 extra 通道） */
   val ArgSourceSystem = "sourceSystem"
 
   /**
-   * 视图里 `payload` 的显式 StructType（= `landingSchema` 的 payload 段本身）。
+   * 视图里 `payload` 的显式 StructType。
    *
-   * 与 v1 `landingSchema.payload` **是同一个对象**，保证 DWD/DIM 投影口径零变化。
-   *
-   * 现状说明（P2-01 / E3 纠错后）：不再有调用方——`EventOdsLoadJob` 改为直接用
-   * `landingSchema` 一次闭合解析（旧的「payload 取成 STRING + 二次 from_json」已被真链实测证伪，
-   * 见 `evidence/e3-probe-payload-struct-null.log`）。保留它是因为它是对唯一所有者
-   * `landingSchema` 的**如实**访问器（不是第二份列定义），删掉只会让下游再抄一份 payload 字段列表。
+   * 与 v1 `landingSchema.payload` **逐字一致**（同一个对象），保证 DWD/DIM 投影口径零变化。
    *
    * **`lazy` 是必需的，不是风格选择**：`landingSchema` 在本对象里定义在下方，普通 `val` 会按
    * 声明顺序初始化 ⇒ 这里读到 `null`，类初始化抛 `ExceptionInInitializerError`

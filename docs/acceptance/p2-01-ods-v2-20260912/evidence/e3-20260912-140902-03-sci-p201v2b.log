@@ -1,0 +1,165 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+[spark-jobs] ���ֿ����ռ�: p201v2b_ods, p201v2b_dwd, p201v2b_dim, p201v2b_dws, p201v2b_ads
+26/09/12 14:09:42 INFO HiveConf: Found configuration file null
+26/09/12 14:09:42 INFO SparkContext: Running Spark version 3.5.1
+26/09/12 14:09:42 INFO SparkContext: OS info Windows 11, 10.0, amd64
+26/09/12 14:09:42 INFO SparkContext: Java version 17.0.12
+26/09/12 14:09:42 INFO ResourceUtils: ==============================================================
+26/09/12 14:09:42 INFO ResourceUtils: No custom resources configured for spark.driver.
+26/09/12 14:09:42 INFO ResourceUtils: ==============================================================
+26/09/12 14:09:42 INFO SparkContext: Submitted application: sci-20260901
+26/09/12 14:09:42 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+26/09/12 14:09:42 INFO ResourceProfile: Limiting resource is cpu
+26/09/12 14:09:42 INFO ResourceProfileManager: Added ResourceProfile id: 0
+26/09/12 14:09:42 INFO SecurityManager: Changing view acls to: ASUS,root
+26/09/12 14:09:42 INFO SecurityManager: Changing modify acls to: ASUS,root
+26/09/12 14:09:42 INFO SecurityManager: Changing view acls groups to: 
+26/09/12 14:09:42 INFO SecurityManager: Changing modify acls groups to: 
+26/09/12 14:09:42 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: ASUS, root; groups with view permissions: EMPTY; users with modify permissions: ASUS, root; groups with modify permissions: EMPTY
+26/09/12 14:09:43 INFO Utils: Successfully started service 'sparkDriver' on port 8514.
+26/09/12 14:09:43 INFO SparkEnv: Registering MapOutputTracker
+26/09/12 14:09:43 INFO SparkEnv: Registering BlockManagerMaster
+26/09/12 14:09:43 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+26/09/12 14:09:43 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+26/09/12 14:09:43 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+26/09/12 14:09:43 INFO DiskBlockManager: Created local directory at C:\Users\ASUS\AppData\Local\Temp\blockmgr-801a640c-df27-4012-8c78-cf6e47afc18a
+26/09/12 14:09:43 INFO MemoryStore: MemoryStore started with capacity 434.4 MiB
+26/09/12 14:09:43 INFO SparkEnv: Registering OutputCommitCoordinator
+26/09/12 14:09:43 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+26/09/12 14:09:43 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+26/09/12 14:09:43 INFO SparkContext: Added JAR file:/D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-built/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar at spark://host.docker.internal:8514/jars/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar with timestamp 1789193382671
+26/09/12 14:09:43 INFO Executor: Starting executor ID driver on host host.docker.internal
+26/09/12 14:09:43 INFO Executor: OS info Windows 11, 10.0, amd64
+26/09/12 14:09:43 INFO Executor: Java version 17.0.12
+26/09/12 14:09:43 INFO Executor: Starting executor with user classpath (userClassPathFirst = false): ''
+26/09/12 14:09:43 INFO Executor: Created or updated repl class loader org.apache.spark.util.MutableURLClassLoader@3bc69ce9 for default.
+26/09/12 14:09:43 INFO Executor: Fetching spark://host.docker.internal:8514/jars/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar with timestamp 1789193382671
+26/09/12 14:09:43 INFO TransportClientFactory: Successfully created connection to host.docker.internal/172.16.208.83:8514 after 17 ms (0 ms spent in bootstraps)
+26/09/12 14:09:43 INFO Utils: Fetching spark://host.docker.internal:8514/jars/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar to C:\Users\ASUS\AppData\Local\Temp\spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa\userFiles-a1aee642-07cd-4f9f-9034-782f2391cd2f\fetchFileTemp3340456968125223200.tmp
+26/09/12 14:09:43 INFO Executor: Adding file:/C:/Users/ASUS/AppData/Local/Temp/spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa/userFiles-a1aee642-07cd-4f9f-9034-782f2391cd2f/spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar to class loader default
+26/09/12 14:09:43 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 8519.
+26/09/12 14:09:43 INFO NettyBlockTransferService: Server created on host.docker.internal:8519
+26/09/12 14:09:43 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+26/09/12 14:09:43 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, host.docker.internal, 8519, None)
+26/09/12 14:09:43 INFO BlockManagerMasterEndpoint: Registering block manager host.docker.internal:8519 with 434.4 MiB RAM, BlockManagerId(driver, host.docker.internal, 8519, None)
+26/09/12 14:09:43 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, host.docker.internal, 8519, None)
+26/09/12 14:09:43 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, host.docker.internal, 8519, None)
+26/09/12 14:09:45 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:09:45 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 14:09:46 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 14:09:46 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@172.16.208.83
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_ods, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_ods, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_ods, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dwd, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dwd, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dwd, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dws, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dws, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dws, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_ads, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_ads, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_ads, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dim, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dim, returning NoSuchObjectException
+26/09/12 14:09:47 WARN ObjectStore: Failed to get database p201v2b_dim, returning NoSuchObjectException
+26/09/12 14:09:47 WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.
+26/09/12 14:09:47 WARN HiveConf: HiveConf of name hive.internal.ss.authz.settings.applied.marker does not exist
+26/09/12 14:09:47 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 14:09:47 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+{"jobCode":"sci","inputRecords":0,"outputRecords":37,"rejectedRecords":0,"attemptNo":1,"status":"SUCCESS","message":"ok","elapsedMs":7026,"outputPartitions":[],"checks":[]}
+26/09/12 14:09:50 WARN SparkEnv: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa\userFiles-a1aee642-07cd-4f9f-9034-782f2391cd2f
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa\userFiles-a1aee642-07cd-4f9f-9034-782f2391cd2f\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.SparkEnv.stop(SparkEnv.scala:108)
+	at org.apache.spark.SparkContext.$anonfun$stop$25(SparkContext.scala:2310)
+	at org.apache.spark.util.Utils$.tryLogNonFatalError(Utils.scala:1375)
+	at org.apache.spark.SparkContext.stop(SparkContext.scala:2310)
+	at org.apache.spark.SparkContext.stop(SparkContext.scala:2216)
+	at org.apache.spark.sql.SparkSession.stop(SparkSession.scala:836)
+	at com.graduation.analytics.job.JobRunner$.dispatch(JobRunner.scala:64)
+	at com.graduation.analytics.job.JobRunner$.main(JobRunner.scala:33)
+	at com.graduation.analytics.job.JobRunner.main(JobRunner.scala)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)
+	at org.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1029)
+	at org.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:194)
+	at org.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:217)
+	at org.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:91)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1120)
+	at org.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1129)
+	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
+26/09/12 14:09:50 ERROR ShutdownHookManager: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa\userFiles-a1aee642-07cd-4f9f-9034-782f2391cd2f\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4(ShutdownHookManager.scala:65)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4$adapted(ShutdownHookManager.scala:62)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.ArrayOps$ofRef.foreach(ArrayOps.scala:198)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$2(ShutdownHookManager.scala:62)
+	at org.apache.spark.util.SparkShutdownHook.run(ShutdownHookManager.scala:214)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$2(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at org.apache.spark.util.Utils$.logUncaughtExceptions(Utils.scala:1928)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$1(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.util.Try$.apply(Try.scala:213)
+	at org.apache.spark.util.SparkShutdownHookManager.runAll(ShutdownHookManager.scala:188)
+	at org.apache.spark.util.SparkShutdownHookManager$$anon$2.run(ShutdownHookManager.scala:178)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+26/09/12 14:09:50 ERROR ShutdownHookManager: Exception while deleting Spark temp dir: C:\Users\ASUS\AppData\Local\Temp\spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa\userFiles-a1aee642-07cd-4f9f-9034-782f2391cd2f
+java.io.IOException: Failed to delete: C:\Users\ASUS\AppData\Local\Temp\spark-4964e708-4ad2-4635-891e-e9fe9c59b5fa\userFiles-a1aee642-07cd-4f9f-9034-782f2391cd2f\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:146)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingJavaIO(JavaUtils.java:129)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:117)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:90)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively(SparkFileUtils.scala:121)
+	at org.apache.spark.util.SparkFileUtils.deleteRecursively$(SparkFileUtils.scala:120)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1126)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4(ShutdownHookManager.scala:65)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$4$adapted(ShutdownHookManager.scala:62)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.ArrayOps$ofRef.foreach(ArrayOps.scala:198)
+	at org.apache.spark.util.ShutdownHookManager$.$anonfun$new$2(ShutdownHookManager.scala:62)
+	at org.apache.spark.util.SparkShutdownHook.run(ShutdownHookManager.scala:214)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$2(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at org.apache.spark.util.Utils$.logUncaughtExceptions(Utils.scala:1928)
+	at org.apache.spark.util.SparkShutdownHookManager.$anonfun$runAll$1(ShutdownHookManager.scala:188)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.util.Try$.apply(Try.scala:213)
+	at org.apache.spark.util.SparkShutdownHookManager.runAll(ShutdownHookManager.scala:188)
+	at org.apache.spark.util.SparkShutdownHookManager$$anon$2.run(ShutdownHookManager.scala:178)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+

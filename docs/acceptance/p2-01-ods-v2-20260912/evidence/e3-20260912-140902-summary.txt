@@ -1,0 +1,16 @@
+runId=20260912-140902
+E3_RESULT=FAIL
+jar=D:\Develop_code\GraduationProject\spark-jobs\target\p2-01-built\spark-jobs-0.1.0-SNAPSHOT-p2-01-e3.jar bytes=284147 sha256=bd04c273b3de76db7773d2a08c2bb936e5b57e500cb3afe318625f41817e8764 classes=105
+classesContentSha256=d390b5291bbb817db77c5153be3e3008921ab70271ec76257a94645c4b00e8b1
+golden=D:\Develop_code\GraduationProject\tests\golden-dataset\events\golden-20260901.jsonl lines=55 bytes=18430 sha256=2351bcc35e04ccd278638f07247bc37e9c4d402cc4736cd2a4d4b70f4232b11c
+warehouseUri=file:///D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-140902/warehouse
+derbyUri=jdbc:derby:D:/Develop_code/GraduationProject/spark-jobs/target/p2-01-e3/20260912-140902/derby-metastore;create=true
+prefixes=p201v2,p201v2b sourceSystems=mock-mall,probe-inj-2026 batchId=2026091201
+sciA=D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-20260912-140902-01-sci-p201v2.log
+odlA=D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-20260912-140902-02-odl-p201v2.log
+sciB=D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-20260912-140902-03-sci-p201v2b.log
+odlB=D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-20260912-140902-04-odl-p201v2b.log
+readback=D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-20260912-140902-05-readback.sql.log
+checks=D:\Develop_code\GraduationProject\docs\acceptance\p2-01-ods-v2-20260912\evidence\e3-20260912-140902-checks.tsv
+realWarehouseBefore=FILES=2006 SHA256=3c7e3deaf99072de920124501ca742a71f6490246e47ad2da7af7acb25ea20ae
+realWarehouseAfter=FILES=2006 SHA256=3c7e3deaf99072de920124501ca742a71f6490246e47ad2da7af7acb25ea20ae

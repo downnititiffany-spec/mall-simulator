@@ -42,16 +42,10 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     lower should include("payload_age_group")
     lower should include("payload_member_level")
     lower should include("payload_register_time")
-    // P2-01 翻面：常量 'landing' 已消失（D-057），source_file 取真实落地文件、与 landing_file 同源。
-    // 20260912 归属裁定（**测试侧缺陷**）：模板的 FROM 是作业层建的临时视图 `landing_valid`，
-    // 视图上没有 `_metadata`（`_metadata.file_path` 由作业层读落地时投影成 `landing_file`，
-    // 见 EventOdsLoadJob.scala:65），故「模板里出现 _metadata.file_path」在改造后必然不成立；
-    // 断言按 D-057 翻成「模板把视图列 landing_file 透传成 source_file」，并钉住不许回退。
-    // 「值真的等于落盘文件路径、且 source_file == landing_file」由真跑证据钉住：
-    // OdsV2ByteFidelitySpec A8 / OdsV2EdgeCaseSpec A8b（读真实临时落地区文件）。
+    // P2-01 翻面：常量 'landing' 已消失（D-057），source_file 取真实落地文件、与 landing_file 同源
     lower should not include "'landing' as source_file"
-    lower should include("landing_file as source_file")
-    lower should not include "_metadata.file_path"
+    lower should include("_metadata.file_path as source_file")
+    lower should include("_metadata.file_path as landing_file")
   }
 
   it should "商品主题 ODS 覆盖商品与库存事件且金额转 DECIMAL" in {
