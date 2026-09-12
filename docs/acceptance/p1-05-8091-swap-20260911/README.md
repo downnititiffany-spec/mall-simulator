@@ -2,6 +2,8 @@
 
 **状态：未执行。** 前置条件是"P1-05 代码已合入且 E2 独立复核为绿"；由**总控**执行（D-040）。执行一次即可，脚本自带失败即停。
 
+> **F-07 适配（2026-09-12 08:35 实测后改写）**：隔夜中断使三个程序全部停止，旧 8091 实例（PID 16568）已不存在。脚本不再假设"旧实例在跑"：无监听时改用 **F-04 记录的旧 jar 身份**作对照，并**断言磁盘 jar 仍等于该 sha256**（否则判定"隔夜有人重打包、对照失效"而停止）；同时新增 `[G2]` 断言"无其他持有 platform-app 的 java 进程、8093 空闲"，防止泳道临时实例锁住 jar 导致打包失败。
+
 ## 为什么必须同批原子
 
 V17 让 `file_checkpoint.source_id` 变成 `NOT NULL` 且**无默认值**。旧 jar 的写入路径不是按源写入的，因此：
@@ -26,8 +28,9 @@ pwsh -File docs/acceptance/p1-05-8091-swap-20260911/swap-8091.ps1
 |---|---|
 | G0 | `git status --porcelain -- analytics-server` 为空 ⇒ **打包树 == 提交树** |
 | G1 | 真库迁移末条（按 `installed_rank`）为 **V16** |
-| 1 | 记录旧实例 PID / 命令 / jar sha256；`mysqldump --no-data` 存 DDL 快照；记录行数 |
-| 2 | 只停 8091 这一个 PID（**不碰 8090/8092**），30 s 内端口必须释放 |
+| G2 | 无其他持有 `platform-app` 的 java 进程且 8093 空闲（jar 未被占用；F-07 新增） |
+| 1 | 记录旧实例身份：**在跑**则实测 PID/命令行/jar sha256；**未跑**（F-07）则取 F-04 记录作对照并断言磁盘 jar sha256 逐字节相同；`mysqldump --no-data` 存 DDL 快照；记录行数 |
+| 2 | 在跑：只停 8091 这一个 PID（**不碰 8090/8092**），30 s 内端口必须释放；未跑：断言端口仍空闲即可 |
 | 3 | 打包成功；新 jar sha256 **≠** 旧 jar；`jar tf` 含 `SourceRegistryController` 与 `SourceRegistryServiceImpl` |
 | 4 | `/api/v1/health` 150 s 内 200 |
 | 5 | 迁移末条 = **17**；`file_checkpoint.source_id` 为 NOT NULL；旧 `uk_ckpt` 消失、新 `uk_ckpt_source` 存在；`source_id` 无 NULL；行数与换血前**逐字一致**（迁移不应动数据） |
@@ -43,8 +46,16 @@ pwsh -File docs/acceptance/p1-05-8091-swap-20260911/swap-8091.ps1
 
 两个改动在"Spring 是否绑定 `-D`"两种解释下结果相同（值本就等于"默认值 + CWD=仓库根"），但行为不再依赖进程工作目录。
 
+## 有意偏差：D-040 第 6 步的"采集写路径打通"**不在本脚本做**
+
+D-040 把"采集写路径打通（新代码写断点带 `source_id`）"列为换血成功条件之一，但**在真库上跑一次采集会写入第 40 条 `ingestion_batch` 并推进 `file_checkpoint`，即移动 P1-01 冻结基线**——该动作属于 **P1-06 的 T2 授权范围**，不属于本脚本的授权范围。因此：
+
+- 本脚本只做**结构 + 读端点**验收（V17 生效、唯一键/外键/非空、行数不变、`/api/v1/sources*` 活体可用）；
+- 写路径取证改由两处承担：**P1-05 泳道在副本库上的 E3**（断点行确带 `source_id`、切源不串）+ **P1-06 T2 真链**；
+- 该偏差在执行输出与 `swap-summary.json` 的 `deviations` 字段中显式标明，**不得**在别处写成"换血已证明采集写路径可用"。
+
 ## 产物
 
-`swap-8091.log`（全程时序）、`pre-v17-schema.sql`（换血前 DDL 快照，mysqldump 自带头含版本与导出时刻）、`package.log`、`8091-stdout.log`、`8091-stderr.log`、`swap-summary.json`（新旧实例身份与关键断言结果）。
+`swap-8091.log`（全程时序）、`pre-v17-schema.sql`（换血前 DDL 快照，mysqldump 自带头含版本与导出时刻）、`package.log`、`8091-stdout.log`、`8091-stderr.log`、`swap-summary.json`（新旧实例身份与关键断言结果，含 `deviations` 与 `baselineNote`）。
 
 > `*.log` 在本仓库被 gitignore 覆盖，提交时需 `git add -f`。

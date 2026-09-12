@@ -18,6 +18,21 @@
 #   （旧实例行为未取证：只能证明 metric-staging 在 09-11 15:12 被写过，不能证明 -D 生效。）
 #
 # 失败即停（fail-stop）：任何断言失败立即中止，**不自动回滚**（回滚需用户书面确认）。
+#
+# 【F-07 适配，2026-09-12 08:35 实测后改写】隔夜中断导致三个程序全部停止（8090/8091/8092
+#   均无监听，PID 16568 已不存在）。因此本脚本不再假设"旧实例在跑"：
+#   ① 步骤 1 改为"若 8091 无监听 ⇒ 记录'旧实例已不在运行'，并以 **F-04** 记录的旧 jar 身份
+#      （mtime 19:59:25 / 33,089,738 B / sha256 851FADD7…）作对照"，同时**断言磁盘上的 jar
+#      仍等于该 sha256**（证明隔夜无人重打包，对照才成立）；
+#   ② 步骤 2 改为"若已无监听则跳过停止，仅断言端口空闲"；
+#   ③ 新增前置断言：不得存在持有 platform-app jar 的其他 java 进程 / 8093 监听
+#      （防止 P1-05 泳道自己的临时实例锁住 jar 导致打包失败）。
+#
+# 【有意偏差，D-040 第 6 步的"采集写路径打通"**不在本脚本内做**】在真库上跑一次采集会给
+#   `ingestion_batch` 增加第 40 行并推进 `file_checkpoint`，即**移动 P1-01 冻结基线**，
+#   而该动作属于 P1-06 的 T2 授权范围。故本脚本只做"结构 + 读端点"验收，写路径由
+#   P1-05 泳道在副本库上取证 + P1-06 的 T2 在真链上取证。此偏差在输出与汇总 JSON 中显式标明。
+#
 # 用法：pwsh -File swap-8091.ps1
 # =============================================================================
 
@@ -65,16 +80,36 @@ $last = Sql "SELECT installed_rank, version, success FROM analytics_meta.flyway_
 Say ('[G1] 迁移末条（按 installed_rank）: ' + ($last -join ' | '))
 if (($last -join ' ') -notmatch '\b16\b') { Fail '迁移末条不是 V16，真库状态与预期不符，停止' }
 
+# ---------------------------------------------------------------- 0.5 无他人占用 platform-app
+$others = @(Get-CimInstance Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match 'platform-app' })
+if ($others.Count -ne 0) {
+    $others | ForEach-Object { Say ('  占用者 PID={0}: {1}' -f $_.ProcessId, $_.CommandLine) }
+    Fail '存在其他持有 platform-app jar 的 java 进程（打包会因文件锁失败），先处理再换血'
+}
+$l8093 = Get-NetTCPConnection -LocalPort 8093 -State Listen -ErrorAction SilentlyContinue
+if ($l8093) { Fail '8093 有监听（疑似泳道临时实例未停），先停它再换血' }
+Say '[G2] 无其他 platform-app java 进程、8093 空闲 ⇒ jar 未被占用'
+
 # ---------------------------------------------------------------- 1. 换血前现场
 $pre = @{}
 $c = Get-NetTCPConnection -LocalPort 8091 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $c) { Fail '8091 无监听，现场与预期不符（本协议假设旧实例在跑）' }
-$pre.pid = $c.OwningProcess
-$pre.cmd = (Get-CimInstance Win32_Process -Filter "ProcessId=$($pre.pid)").CommandLine
 $pre.jarSha = (Get-FileHash $jar -Algorithm SHA256).Hash
 $pre.jarTime = (Get-Item $jar).LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss')
-Say ("[1] 旧实例 PID={0} jar_sha256={1} jar_mtime={2}" -f $pre.pid, $pre.jarSha.Substring(0,16), $pre.jarTime)
-Say ('    旧命令行: ' + $pre.cmd)
+if ($c) {
+    $pre.pid = $c.OwningProcess
+    $pre.cmd = (Get-CimInstance Win32_Process -Filter "ProcessId=$($pre.pid)").CommandLine
+    Say ("[1] 旧实例在运行：PID={0} jar_sha256={1} jar_mtime={2}" -f $pre.pid, $pre.jarSha.Substring(0,16), $pre.jarTime)
+    Say ('    旧命令行（本次实测）: ' + $pre.cmd)
+} else {
+    # F-07 适配：隔夜中断后旧实例已不存在，改用 F-04 的记录身份作对照（标注来源，不冒充实测）
+    $pre.pid = $null
+    $pre.cmd = '[F-04 记录，非本次实测] "D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging'
+    Say '[1] 8091 当前无监听 ⇒ 旧实例已不在运行（F-07：隔夜随机器关闭，PID 16568 不存在）'
+    Say ('    对照身份取 F-04 记录：jar_sha256={0} jar_mtime={1}（磁盘实测值）' -f $pre.jarSha.Substring(0,16), $pre.jarTime)
+    $f04 = '851FADD7944A183576292CD8468596EEF17BDC0A36E3ABD2E8AB108E6A81F2A6'
+    if ($pre.jarSha -ne $f04) { Fail ('磁盘 jar 与 F-04 记录的旧 jar 不一致（实测 ' + $pre.jarSha + '）⇒ 隔夜有人重打包，对照基线失效，需人工确认') }
+    Say '[1] 磁盘 jar 与 F-04 记录逐字节一致 ⇒ 隔夜无人重打包，对照有效'
+}
 $schemaSnap = Join-Path $dir 'pre-v17-schema.sql'
 # 用 mysqldump 自带 --result-file（不经 PowerShell 重定向，避免编码不可控）；保留注释头（含服务器版本与导出时刻，就是快照证据本身）
 & $dump -u root -p123456 --no-data --result-file=$schemaSnap analytics_meta 2>&1 | Where-Object { $_ -notmatch 'Using a password' } | ForEach-Object { Say ('    dump: ' + $_) }
@@ -83,12 +118,17 @@ $preCounts = Sql "SELECT (SELECT COUNT(*) FROM analytics_meta.pipeline_run) r, (
 Say ('[1] 换血前行数(含活库快照): ' + ($preCounts -join ' | '))
 
 # ---------------------------------------------------------------- 2. 停 8091
-Say ('[2] 停止 8091（PID {0}）——仅此一个进程，不碰 8090/8092' -f $pre.pid)
-Stop-Process -Id $pre.pid -Force
-$t0 = Get-Date
-while ((Get-NetTCPConnection -LocalPort 8091 -State Listen -ErrorAction SilentlyContinue) -and ((Get-Date) - $t0).TotalSeconds -lt 30) { Start-Sleep -Milliseconds 500 }
-if (Get-NetTCPConnection -LocalPort 8091 -State Listen -ErrorAction SilentlyContinue) { Fail '8091 端口 30s 内未释放' }
-Say '[2] 端口已释放（jar 文件锁随之解除）'
+if ($pre.pid) {
+    Say ('[2] 停止 8091（PID {0}）——仅此一个进程，不碰 8090/8092' -f $pre.pid)
+    Stop-Process -Id $pre.pid -Force
+    $t0 = Get-Date
+    while ((Get-NetTCPConnection -LocalPort 8091 -State Listen -ErrorAction SilentlyContinue) -and ((Get-Date) - $t0).TotalSeconds -lt 30) { Start-Sleep -Milliseconds 500 }
+    if (Get-NetTCPConnection -LocalPort 8091 -State Listen -ErrorAction SilentlyContinue) { Fail '8091 端口 30s 内未释放' }
+    Say '[2] 端口已释放（jar 文件锁随之解除）'
+} else {
+    if (Get-NetTCPConnection -LocalPort 8091 -State Listen -ErrorAction SilentlyContinue) { Fail '8091 突然出现监听，现场与步骤 1 不符，停止' }
+    Say '[2] 换血前 8091 本就无监听（F-07）⇒ 无需停止；jar 无进程占用（已由 [G2] 断言）'
+}
 
 # ---------------------------------------------------------------- 3. 打包新 jar
 $buildLog = Join-Path $dir 'package.log'
@@ -165,6 +205,9 @@ $r2 = Invoke-WebRequest -Uri "$base/api/v1/__no_such_endpoint__" -Headers @{ Aut
 Say ('[6] 对照 GET /api/v1/__no_such_endpoint__（admin）-> HTTP ' + [int]$r2.StatusCode + '（用于证明上一条有区分力）')
 if ([int]$r1.StatusCode -ne 200) { Fail '换血后 /api/v1/sources 仍不可用' }
 if ([int]$r1.StatusCode -eq [int]$r2.StatusCode) { Fail '对照路径同码 ⇒ 本次探测无区分力，结论无效' }
+Say '[6] 【有意偏差】D-040 第 6 步的"采集写路径打通"**不在本脚本做**：在真库跑一次采集会写第 40 条'
+Say '    ingestion_batch 并推进 file_checkpoint ⇒ 移动 P1-01 冻结基线，属 P1-06 T2 的授权范围。'
+Say '    写路径取证 = P1-05 泳道(副本库 E3，断点带 source_id) + P1-06 T2(真链)。'
 
 # ---------------------------------------------------------------- 7. 新身份登记
 Say '================ 换血完成 ================'
@@ -179,6 +222,9 @@ $summary = [ordered]@{
     preCounts = ($preCounts -join ' '); postCounts = ($postCounts -join ' ')
     migrationLast = ($last2 -join ' '); v17Checksum = ($ck -join ' ').Trim()
     endpointsProbe = "GET /api/v1/sources -> $([int]$r1.StatusCode); control /api/v1/__no_such_endpoint__ -> $([int]$r2.StatusCode)"
+    oldInstanceAliveAtStart = [bool]$pre.pid
+    deviations = 'D-040 第6步"采集写路径打通"未在本脚本执行（会移动 P1-01 冻结基线）；写路径取证改由 P1-05 泳道副本库 E3 + P1-06 T2 真链承担'
+    baselineNote = '落地区 55 文件/404,895,418 B（基线 52/404,139,515 B，增量 3 个商城小时文件尚未被采集，见 F-07）'
 }
 $summary | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $dir 'swap-summary.json') -Encoding utf8
 Say '汇总已写入 swap-summary.json'
