@@ -1,0 +1,44 @@
+# =============================================================================
+# 【重构件，非原始文件】run2（2026-09-12 09:11:59）日志
+#
+# 来源：会话中 run2 的作业输出（脚本 Say() 会同时 Write-Host 与 Add-Content，故控制台回声与日志内容逐行相同）。
+# 原文件为何不在：脚本当时把日志固定命名为 swap-8091.log 并在启动时 `Remove-Item $log -Force`，
+#   于是 run3（09:13:34）启动时删掉了 run2 的日志。该缺陷已修（日志名带运行时刻，永不覆盖），见 F-12。
+# 未包含：throw 产生的 stderr 异常块（PowerShell 报错文本，非脚本日志内容）。
+# 本文件不得被当作"原始落盘日志"引用；其内容的每一个数值均可由现行真库独立复核（见 run4 日志与 README 第 6 节）。
+# =============================================================================
+09:11:59  ================ P1-05 轮 · 原子换血开始 ================
+09:11:59  捕获时刻 = 2026-09-12 09:11:59
+09:11:59  HEAD = f6466048b74cde00d493ef795679f3064a8ed29e
+09:11:59  [G0] analytics-server 工作区干净 ⇒ 打包树 == HEAD 提交树
+09:11:59  [G1] 迁移末条（按 installed_rank）: installed_rank	version	success | 15	16	1
+09:12:00  [G2] 无其他 platform-app java 进程、8093 空闲 ⇒ jar 未被占用
+09:12:01  [1] 8091 当前无监听 ⇒ 旧实例已不在运行（F-07：隔夜随机器关闭，PID 16568 不存在）
+09:12:01      对照身份取 F-04 记录：jar_sha256=F0A525A4D5E1F08C jar_mtime=2026-09-12 09:10:21（磁盘实测值）
+09:12:01  [1] 磁盘 jar = **本同一轮内先前一次运行**构建的产物（已登记于 built-jar-history.txt，共 1 条）⇒ 非第三方改写；F-04 对照已由该次运行的日志完成
+09:12:01  [1] DDL 快照 -> pre-v17-schema.sql（30096 B）
+09:12:01  [1] 换血前行数(含活库快照): r	b	c	s	p	ms | 38	39	102	1	1	8
+09:12:02  [2] 换血前 8091 本就无监听（F-07）⇒ 无需停止；jar 无进程占用（已由 [G2] 断言）
+09:12:02  [3] mvn -o package -pl platform-app -am -DskipTests（E2 已在同一提交上单独跑过）
+09:12:06      [INFO] BUILD SUCCESS
+09:12:06  [3] 新 jar mtime=2026-09-12 09:12:06 sha256=C6281F721F62961588849044E745755066261862E2FA213C419723F18DC38B08 size=33129288
+09:12:06  [3] 新 jar 内容断言（逐字条目名，不再用正则计数）：
+09:12:06      含 BOOT-INF/classes/db/meta/V17__source_dimension_for_checkpoint_and_batch.sql
+09:12:06      含 BOOT-INF/classes/com/graduation/analytics/controller/SourceRegistryController.class
+09:12:06      含 BOOT-INF/lib/connection-ingestion-0.1.0-SNAPSHOT.jar
+09:12:06      内嵌 connection-ingestion sha256 = 0C0AFF2251B64AD7 / 模块产物 = 0C0AFF2251B64AD7
+09:12:06      内嵌副本与模块产物逐字节相同 ⇒ 随包发布的 P1-05 类就是 E2 测过的那棵树
+09:12:06  [4] 启动新实例：导出目录用 JVM 属性（-jar 之前）+ WorkingDirectory=仓库根
+09:12:07  [4] 新实例 PID = 37500
+09:12:12  [4] /api/v1/health -> HTTP 200（启动耗时约 6s）
+09:12:12  [5] 迁移末条: installed_rank	version	description	success | 16	17	source dimension for checkpoint and batch	1
+09:12:12  [5] V17 checksum = checksum -555998778
+09:12:13  [5] file_checkpoint.source_id: COLUMN_NAME	IS_NULLABLE	COLUMN_DEFAULT | source_id	NO	NULL
+09:12:13  [5] file_checkpoint 索引:
+09:12:13      INDEX_NAME	cols
+09:12:13      idx_file_checkpoint_source	source_id
+09:12:13      PRIMARY	id
+09:12:13      uk_ckpt_source	runtime_profile_id,source_id,file_path,file_identity
+09:12:13  [5] source_id 为空的行数（应为 0）: COUNT(*) 0
+09:12:13  *** FAIL-STOP: 回填后有 source_id 为 NULL 的行
+09:12:13  *** 真库**可能已被迁移到 V17**（失败发生在 [4] 启动之后），本脚本不自动回滚；回滚需用户书面确认。

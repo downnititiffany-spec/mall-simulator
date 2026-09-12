@@ -44,26 +44,41 @@ $mysql = 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe'
 $dump  = 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqldump.exe'
 $jar   = Join-Path $repo 'analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar'
 $dir   = Join-Path $repo 'docs\acceptance\p1-05-8091-swap-20260911'
-$log   = Join-Path $dir 'swap-8091.log'
+$log   = Join-Path $dir ('swap-8091-run-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')
 $base  = 'http://127.0.0.1:8091'
 
 Set-Location $repo
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
-if (Test-Path $log) { Remove-Item $log -Force }
+# 日志名带运行时刻 ⇒ **永不覆盖**上一次运行的日志。原实现固定叫 swap-8091.log 并在启动时 Remove-Item，
+# 于是 run3 把 run2（真正应用 V17 的那一次）的日志删掉了——见 F-12。历史证据不得被脚本自己抹掉。
 
 function Say([string]$m) {
     $line = '{0}  {1}' -f (Get-Date -Format 'HH:mm:ss'), $m
     Write-Host $line
     Add-Content -Path $log -Value $line -Encoding utf8
 }
+# 阶段感知：V17 由应用**启动时**应用（MetaFlywayInitializer），故失败发生在 [4] 启动之前时，真库其实尚未被改。
+# 首轮（09:10:04）失败时本函数只会硬写"真库迁移不可逆（V17 已加列/换唯一键）"，那句话在启动前**不准确**——见 F-12。
+$script:migrated = $false
 function Fail([string]$m) {
     Say ('*** FAIL-STOP: ' + $m)
-    Say '*** 未自动回滚。真库迁移不可逆（V17 已加列/换唯一键），回滚需用户书面确认。'
+    if ($script:migrated) {
+        Say '*** 真库**可能已被迁移到 V17**（失败发生在 [4] 启动之后），本脚本不自动回滚；回滚需用户书面确认。'
+    } else {
+        Say '*** 真库**尚未被迁移**（失败发生在 [4] 启动之前；V17 由应用启动时才应用）⇒ 现场未受影响；本脚本不自动回滚。'
+    }
     throw $m
 }
 function Sql([string]$q) {
     $out = & $mysql -u root -p123456 -B -e $q 2>&1 | Where-Object { $_ -notmatch 'Using a password' }
     return $out
+}
+# mysql -B **先输出表头**：标量断言若直接拿整个输出比对，'COUNT(*)' 表头会把 '0' 变成 "COUNT(*)\t0"。
+# run2（09:11:59）就是这样把"回填后 0 行 NULL"这一**正确结果**误判成失败的——见 F-12。
+function SqlVal([string]$q) {
+    $o = @(Sql $q) | Where-Object { $_.Trim().Length -gt 0 }
+    if ($o.Count -eq 0) { return '' }
+    return $o[-1].Trim()
 }
 
 Say '================ P1-05 轮 · 原子换血开始 ================'
@@ -78,17 +93,29 @@ Say '[G0] analytics-server 工作区干净 ⇒ 打包树 == HEAD 提交树'
 
 $last = Sql "SELECT installed_rank, version, success FROM analytics_meta.flyway_schema_history ORDER BY installed_rank DESC LIMIT 1;"
 Say ('[G1] 迁移末条（按 installed_rank）: ' + ($last -join ' | '))
-if (($last -join ' ') -notmatch '\b16\b') { Fail '迁移末条不是 V16，真库状态与预期不符，停止' }
+# 原实现硬性要求"末条必须是 V16"。V17 一旦由本轮 run2 应用（授权 D-040），该断言就永远无法再通过，
+# 于是"换血后复核"这类合法重跑会被自己的前置断言挡在门外。改为模式感知，且两种模式都保持严格判据。
+$vStart = SqlVal "SELECT version FROM analytics_meta.flyway_schema_history ORDER BY installed_rank DESC LIMIT 1;"
+$sStart = SqlVal "SELECT success FROM analytics_meta.flyway_schema_history ORDER BY installed_rank DESC LIMIT 1;"
+if ($vStart -eq '16' -and $sStart -eq '1') {
+    $runMode = 'swap'
+    Say '[G1] 真库为 V16（success=1）⇒ 本次为**换血运行**：V17 将由新实例启动时应用'
+} elseif ($vStart -eq '17' -and $sStart -eq '1') {
+    $ckStart = SqlVal "SELECT checksum FROM analytics_meta.flyway_schema_history WHERE version='17';"
+    if ($ckStart -ne '-555998778') { Fail ('真库已是 V17 但 checksum=' + $ckStart + ' ≠ -555998778（设计值），停止') }
+    $runMode = 'recheck'
+    Say ('[G1] 真库已是 V17（success=1、checksum=' + $ckStart + ' 与设计一致）⇒ 本次为**换血后复核运行**：')
+    Say '     迁移不会再执行（Flyway 幂等），[5] 的迁移形状/行数断言与 [6] 端点活体断言照跑。'
+} else {
+    Fail ('迁移末条既不是 V16 也不是成功的 V17（实测 version=' + $vStart + ' success=' + $sStart + '），真库状态与预期不符，停止')
+}
 
 # ---------------------------------------------------------------- 0.5 无他人占用 platform-app
-$others = @(Get-CimInstance Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match 'platform-app' })
-if ($others.Count -ne 0) {
-    $others | ForEach-Object { Say ('  占用者 PID={0}: {1}' -f $_.ProcessId, $_.CommandLine) }
-    Fail '存在其他持有 platform-app jar 的 java 进程（打包会因文件锁失败），先处理再换血'
-}
+# 持有者检查**不能**放在这里：8091 旧实例自己就持有 jar，放在 [2] 停止之前必然误停
+# （run3 09:13:35 实测：run2 起的 PID 37500 被误判为"其他占用者"）。完整检查已挪到 [2] 之后，见 F-12。
 $l8093 = Get-NetTCPConnection -LocalPort 8093 -State Listen -ErrorAction SilentlyContinue
 if ($l8093) { Fail '8093 有监听（疑似泳道临时实例未停），先停它再换血' }
-Say '[G2] 无其他 platform-app java 进程、8093 空闲 ⇒ jar 未被占用'
+Say '[G2-pre] 8093 空闲（platform-app 持有者检查在 [2] 停止 8091 之后执行）'
 
 # ---------------------------------------------------------------- 1. 换血前现场
 $pre = @{}
@@ -106,14 +133,30 @@ if ($c) {
     $pre.cmd = '[F-04 记录，非本次实测] "D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging'
     Say '[1] 8091 当前无监听 ⇒ 旧实例已不在运行（F-07：隔夜随机器关闭，PID 16568 不存在）'
     Say ('    对照身份取 F-04 记录：jar_sha256={0} jar_mtime={1}（磁盘实测值）' -f $pre.jarSha.Substring(0,16), $pre.jarTime)
+    # 首轮 09:10:04 的打包已把 F-04 那枚旧 jar **覆盖**（字节已不可复得，其身份保留在 F-04 与本目录 run1 日志里）。
+    # 因此对照判据必须是"F-04 旧 jar **或** 本轮自己登记过的产物"，否则重跑时会拿自己的产物当外来改写而误停。
     $f04 = '851FADD7944A183576292CD8468596EEF17BDC0A36E3ABD2E8AB108E6A81F2A6'
-    if ($pre.jarSha -ne $f04) { Fail ('磁盘 jar 与 F-04 记录的旧 jar 不一致（实测 ' + $pre.jarSha + '）⇒ 隔夜有人重打包，对照基线失效，需人工确认') }
-    Say '[1] 磁盘 jar 与 F-04 记录逐字节一致 ⇒ 隔夜无人重打包，对照有效'
+    $builtFile = Join-Path $dir 'built-jar-history.txt'
+    $built = @()
+    if (Test-Path $builtFile) { $built = @(Get-Content $builtFile | Where-Object { $_ -match '^[0-9A-Fa-f]{64}' } | ForEach-Object { ($_ -split '\s+')[0].ToUpper() }) }
+    $isF04 = ($pre.jarSha -eq $f04)
+    if ($isF04) {
+        Say '[1] 磁盘 jar 与 F-04 记录逐字节一致 ⇒ 隔夜无人重打包，对照有效'
+    } elseif ($built -contains $pre.jarSha.ToUpper()) {
+        Say ('[1] 磁盘 jar = **本同一轮内先前一次运行**构建的产物（已登记于 built-jar-history.txt，共 ' + $built.Count + ' 条）⇒ 非第三方改写；F-04 对照已由该次运行的日志完成')
+    } else {
+        Fail ('磁盘 jar 既不是 F-04 记录的旧 jar，也不是本轮登记过的自建产物（实测 ' + $pre.jarSha + '）⇒ 对照基线失效，需人工确认')
+    }
 }
 $schemaSnap = Join-Path $dir 'pre-v17-schema.sql'
+# pre-v17-schema.sql 是**首次运行（真库还是 V16 时）**的 DDL 快照，是"迁移前"的唯一证据 ⇒ 绝不被后续运行覆盖。
+# 每次运行另存一份带时刻的快照（复核运行的那份自然是"迁移后"状态）。
+$snapNow = Join-Path $dir ('schema-snapshot-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.sql')
+$snapTarget = if (Test-Path $schemaSnap) { $snapNow } else { $schemaSnap }
 # 用 mysqldump 自带 --result-file（不经 PowerShell 重定向，避免编码不可控）；保留注释头（含服务器版本与导出时刻，就是快照证据本身）
-& $dump -u root -p123456 --no-data --result-file=$schemaSnap analytics_meta 2>&1 | Where-Object { $_ -notmatch 'Using a password' } | ForEach-Object { Say ('    dump: ' + $_) }
-Say ('[1] DDL 快照 -> pre-v17-schema.sql（' + (Get-Item (Join-Path $dir 'pre-v17-schema.sql')).Length + ' B）')
+& $dump -u root -p123456 --no-data --result-file=$snapTarget analytics_meta 2>&1 | Where-Object { $_ -notmatch 'Using a password' } | ForEach-Object { Say ('    dump: ' + $_) }
+Say ('[1] DDL 快照 -> ' + (Split-Path $snapTarget -Leaf) + '（' + (Get-Item $snapTarget).Length + ' B）')
+if ($snapTarget -ne $schemaSnap) { Say ('    pre-v17-schema.sql 保留自首次运行（真库 V16 时），本次快照为运行模式 ' + $runMode + ' 下的现状') }
 $preCounts = Sql "SELECT (SELECT COUNT(*) FROM analytics_meta.pipeline_run) r, (SELECT COUNT(*) FROM analytics_meta.ingestion_batch) b, (SELECT COUNT(*) FROM analytics_meta.file_checkpoint) c, (SELECT COUNT(*) FROM analytics_meta.source_registry) s, (SELECT COUNT(*) FROM analytics_meta.runtime_profile) p, (SELECT COUNT(*) FROM analytics_metric.metric_snapshot) ms;"
 Say ('[1] 换血前行数(含活库快照): ' + ($preCounts -join ' | '))
 
@@ -127,8 +170,17 @@ if ($pre.pid) {
     Say '[2] 端口已释放（jar 文件锁随之解除）'
 } else {
     if (Get-NetTCPConnection -LocalPort 8091 -State Listen -ErrorAction SilentlyContinue) { Fail '8091 突然出现监听，现场与步骤 1 不符，停止' }
-    Say '[2] 换血前 8091 本就无监听（F-07）⇒ 无需停止；jar 无进程占用（已由 [G2] 断言）'
+    Say '[2] 换血前 8091 本就无监听（F-07）⇒ 无需停止'
 }
+
+# ---------------------------------------------------------------- 2b. 停库之后再断言 jar 无持有者
+$others = @(Get-CimInstance Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match 'platform-app' })
+if ($others.Count -ne 0) {
+    $others | ForEach-Object { Say ('  残留占用者 PID={0}: {1}' -f $_.ProcessId, $_.CommandLine) }
+    Fail '停 8091 之后仍有 java 进程持有 platform-app jar（打包会因文件锁失败），先处理再换血'
+}
+if (Get-NetTCPConnection -LocalPort 8093 -State Listen -ErrorAction SilentlyContinue) { Fail '8093 出现监听，先停它再换血' }
+Say '[G2] 8091 已停（或本就未运行）+ 无任何 platform-app java 进程 + 8093 空闲 ⇒ jar 未被占用，可安全打包'
 
 # ---------------------------------------------------------------- 3. 打包新 jar
 $buildLog = Join-Path $dir 'package.log'
@@ -141,11 +193,35 @@ if ($LASTEXITCODE -ne 0) { Fail ('打包失败，见 ' + $buildLog) }
 $newSha = (Get-FileHash $jar -Algorithm SHA256).Hash
 $newTime = (Get-Item $jar).LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss')
 Say ("[3] 新 jar mtime={0} sha256={1} size={2}" -f $newTime, $newSha, (Get-Item $jar).Length)
-if ($newSha -eq $pre.jarSha) { Fail '新 jar 与旧 jar 字节相同 ⇒ 未包含 P1-05 改动，停止' }
-Say '[3] 新 jar 内含 P1-03/P1-05 端点类检查：'
-$hits = @(& 'D:\Develop\JAVA17\bin\jar.exe' tf $jar | Select-String 'SourceRegistryController|SourceRegistryServiceImpl')
-Say ('    SourceRegistry* 命中 = ' + $hits.Count)
-if ($hits.Count -lt 2) { Fail '新 jar 未包含 P1-03 端点类，停止' }
+if ($newSha -eq $pre.jarSha) {
+    if ($isF04) { Fail '新 jar 与 F-04 记录的旧 jar 字节相同 ⇒ 未包含 P1-05 改动，停止' }
+    Say '    新 jar 与上一轮自建产物字节相同 ⇒ 源码未变、构建可复现（重跑的正常结果，非缺陷）'
+}
+Add-Content -Path (Join-Path $dir 'built-jar-history.txt') -Value ($newSha + '  ' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + '  sha256 size=' + (Get-Item $jar).Length) -Encoding utf8
+Say '[3] 新 jar 内容断言（逐字条目名，不再用正则计数）：'
+$tf = @(& 'D:\Develop\JAVA17\bin\jar.exe' tf $jar)
+foreach ($n in @(
+        'BOOT-INF/classes/db/meta/V17__source_dimension_for_checkpoint_and_batch.sql',
+        'BOOT-INF/classes/com/graduation/analytics/controller/SourceRegistryController.class',
+        'BOOT-INF/lib/connection-ingestion-0.1.0-SNAPSHOT.jar')) {
+    if ($tf -notcontains $n) { Fail ('新 jar 缺少条目: ' + $n) }
+    Say ('    含 ' + $n)
+}
+$modJar = Join-Path $repo 'analytics-server\connection-ingestion\target\connection-ingestion-0.1.0-SNAPSHOT.jar'
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::OpenRead($jar)
+try {
+    $entry = $zip.Entries | Where-Object { $_.FullName -eq 'BOOT-INF/lib/connection-ingestion-0.1.0-SNAPSHOT.jar' }
+    if (-not $entry) { Fail '内嵌 connection-ingestion jar 未取到，无法做字节同一性断言' }
+    $ms = New-Object System.IO.MemoryStream
+    $s = $entry.Open(); $s.CopyTo($ms); $s.Dispose()
+    $innerSha = ([BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash($ms.ToArray())) -replace '-','')
+    $ms.Dispose()
+} finally { $zip.Dispose() }
+$modSha = (Get-FileHash $modJar -Algorithm SHA256).Hash
+Say ('    内嵌 connection-ingestion sha256 = ' + $innerSha.Substring(0,16) + ' / 模块产物 = ' + $modSha.Substring(0,16))
+if ($innerSha -ne $modSha) { Fail '随包发布的内嵌 jar 与刚构建的模块产物不一致 ⇒「被测对象=交付物」不成立，停止' }
+Say '    内嵌副本与模块产物逐字节相同 ⇒ 随包发布的 P1-05 类就是 E2 测过的那棵树'
 
 # ---------------------------------------------------------------- 4. 启新实例（启动即迁移）
 $out = Join-Path $dir '8091-stdout.log'
@@ -153,6 +229,7 @@ $err = Join-Path $dir '8091-stderr.log'
 Say '[4] 启动新实例：导出目录用 JVM 属性（-jar 之前）+ WorkingDirectory=仓库根'
 $jvmArgs = @('-Dfile.encoding=UTF-8', ('-Dplatform.metric.publish.export-dir=' + (Join-Path $repo 'metric-staging')), '-jar', $jar)
 $proc = Start-Process -FilePath $java -ArgumentList $jvmArgs -WorkingDirectory $repo -RedirectStandardOutput $out -RedirectStandardError $err -PassThru
+$script:migrated = $true   # 从这一刻起，应用可能已在启动过程中应用 V17 ⇒ 之后的失败必须按"可能已迁移"报告
 Say ('[4] 新实例 PID = ' + $proc.Id)
 
 $ready = $false
@@ -177,15 +254,20 @@ $ck = Sql "SELECT checksum FROM analytics_meta.flyway_schema_history WHERE versi
 Say ('[5] V17 checksum = ' + ($ck -join ' '))
 $src = Sql "SELECT COLUMN_NAME, IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta' AND TABLE_NAME='file_checkpoint' AND COLUMN_NAME='source_id';"
 Say ('[5] file_checkpoint.source_id: ' + ($src -join ' | '))
-if (($src -join ' ') -notmatch 'NO') { Fail 'file_checkpoint.source_id 不是 NOT NULL' }
+# 字段级精确判定：原来只 `-match 'NO'`，任何含 NO 的串都会让它假通过（表头/其他列都可能带）
+$srcRow = @($src | Where-Object { $_ -match '^source_id\s' })
+if ($srcRow.Count -ne 1) { Fail ('information_schema 里 source_id 列信息不是预期的 1 行（实测 ' + $srcRow.Count + ' 行）') }
+$srcCols = $srcRow[0] -split "`t"
+if ($srcCols.Count -lt 2 -or $srcCols[1] -ne 'NO') { Fail ('file_checkpoint.source_id 不是 NOT NULL（实测字段: ' + ($srcCols -join '/') + '）') }
 $idx = Sql "SELECT INDEX_NAME, GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) cols FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='analytics_meta' AND TABLE_NAME='file_checkpoint' GROUP BY INDEX_NAME;"
 Say '[5] file_checkpoint 索引:'
 $idx | ForEach-Object { Say ('    ' + $_) }
 if (($idx -join ' ') -match 'uk_ckpt\b') { Fail '旧唯一键 uk_ckpt 仍存在' }
 if (($idx -join ' ') -notmatch 'uk_ckpt_source') { Fail '新唯一键 uk_ckpt_source 缺失' }
 $nulls = Sql "SELECT COUNT(*) FROM analytics_meta.file_checkpoint WHERE source_id IS NULL;"
-Say ('[5] source_id 为空的行数（应为 0）: ' + ($nulls -join ' '))
-if (($nulls -join ' ').Trim() -notmatch '^0$') { Fail '回填后有 source_id 为 NULL 的行' }
+$nullCnt = SqlVal "SELECT COUNT(*) FROM analytics_meta.file_checkpoint WHERE source_id IS NULL;"
+Say ('[5] source_id 为空的行数（应为 0）: ' + $nullCnt + '   [原始输出: ' + ($nulls -join ' | ') + ']')
+if ($nullCnt -ne '0') { Fail ('回填后有 source_id 为 NULL 的行（实测 ' + $nullCnt + '）') }
 $fk = Sql "SELECT CONSTRAINT_NAME, REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='analytics_meta' AND REFERENCED_TABLE_NAME IS NOT NULL AND TABLE_NAME IN ('file_checkpoint','ingestion_batch');"
 Say '[5] 新外键:'
 $fk | ForEach-Object { Say ('    ' + $_) }
@@ -215,7 +297,8 @@ Say ("新实例 PID = {0}" -f $proc.Id)
 Say ("新 jar sha256 = {0}" -f $newSha)
 Say ("旧 jar sha256 = {0}（{1}）" -f $pre.jarSha, $pre.jarTime)
 $summary = [ordered]@{
-    capturedAt = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'); head = $head
+    capturedAt = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'); head = $head; runMode = $runMode
+    migrationStateAtStart = ($vStart + '/' + $sStart)
     oldPid = $pre.pid; oldJarSha256 = $pre.jarSha; oldJarMtime = $pre.jarTime; oldCmd = $pre.cmd
     newPid = $proc.Id; newJarSha256 = $newSha; newJarMtime = $newTime
     newCmd = ($jvmArgs -join ' '); workingDirectory = $repo

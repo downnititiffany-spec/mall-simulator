@@ -1,0 +1,23 @@
+{
+  "capturedAt": "2026-09-12 09:15:05",
+  "head": "f6466048b74cde00d493ef795679f3064a8ed29e",
+  "runMode": "recheck",
+  "migrationStateAtStart": "17/1",
+  "oldPid": 37500,
+  "oldJarSha256": "C6281F721F62961588849044E745755066261862E2FA213C419723F18DC38B08",
+  "oldJarMtime": "2026-09-12 09:12:06",
+  "oldCmd": "\"D:\\Develop\\JAVA17\\bin\\java.exe\" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\\Develop_code\\GraduationProject\\metric-staging -jar D:\\Develop_code\\GraduationProject\\analytics-server\\platform-app\\target\\platform-app-0.1.0-SNAPSHOT.jar",
+  "newPid": 47132,
+  "newJarSha256": "6742197BD26CED91D038131BA82BAF5B0FCCE112042DCAB9F61BE99032896B51",
+  "newJarMtime": "2026-09-12 09:14:58",
+  "newCmd": "-Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\\Develop_code\\GraduationProject\\metric-staging -jar D:\\Develop_code\\GraduationProject\\analytics-server\\platform-app\\target\\platform-app-0.1.0-SNAPSHOT.jar",
+  "workingDirectory": "D:\\Develop_code\\GraduationProject",
+  "preCounts": "r\tb\tc\ts\tp\tms 38\t39\t102\t1\t1\t8",
+  "postCounts": "r\tb\tc\ts\tp\tms 38\t39\t102\t1\t1\t8",
+  "migrationLast": "installed_rank\tversion\tdescription\tsuccess 16\t17\tsource dimension for checkpoint and batch\t1",
+  "v17Checksum": "checksum -555998778",
+  "endpointsProbe": "GET /api/v1/sources -> 200; control /api/v1/__no_such_endpoint__ -> 403",
+  "oldInstanceAliveAtStart": true,
+  "deviations": "D-040 第6步\"采集写路径打通\"未在本脚本执行（会移动 P1-01 冻结基线）；写路径取证改由 P1-05 泳道副本库 E3 + P1-06 T2 真链承担",
+  "baselineNote": "落地区 55 文件/404,895,418 B（基线 52/404,139,515 B，增量 3 个商城小时文件尚未被采集，见 F-07）"
+}

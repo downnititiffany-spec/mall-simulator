@@ -1,0 +1,54 @@
+09:14:48  ================ P1-05 轮 · 原子换血开始 ================
+09:14:48  捕获时刻 = 2026-09-12 09:14:48
+09:14:48  HEAD = f6466048b74cde00d493ef795679f3064a8ed29e
+09:14:49  [G0] analytics-server 工作区干净 ⇒ 打包树 == HEAD 提交树
+09:14:49  [G1] 迁移末条（按 installed_rank）: installed_rank	version	success | 16	17	1
+09:14:49  [G1] 真库已是 V17（success=1、checksum=-555998778 与设计一致）⇒ 本次为**换血后复核运行**：
+09:14:49       迁移不会再执行（Flyway 幂等），[5] 的迁移形状/行数断言与 [6] 端点活体断言照跑。
+09:14:50  [G2-pre] 8093 空闲（platform-app 持有者检查在 [2] 停止 8091 之后执行）
+09:14:51  [1] 旧实例在运行：PID=37500 jar_sha256=C6281F721F629615 jar_mtime=2026-09-12 09:12:06
+09:14:51      旧命令行（本次实测）: "D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+09:14:51  [1] DDL 快照 -> schema-snapshot-20260912-091451.sql（30680 B）
+09:14:51      pre-v17-schema.sql 保留自首次运行（真库 V16 时），本次快照为运行模式 recheck 下的现状
+09:14:51  [1] 换血前行数(含活库快照): r	b	c	s	p	ms | 38	39	102	1	1	8
+09:14:51  [2] 停止 8091（PID 37500）——仅此一个进程，不碰 8090/8092
+09:14:53  [2] 端口已释放（jar 文件锁随之解除）
+09:14:53  [G2] 8091 已停（或本就未运行）+ 无任何 platform-app java 进程 + 8093 空闲 ⇒ jar 未被占用，可安全打包
+09:14:54  [3] mvn -o package -pl platform-app -am -DskipTests（E2 已在同一提交上单独跑过）
+09:14:58      [INFO] BUILD SUCCESS
+09:14:59  [3] 新 jar mtime=2026-09-12 09:14:58 sha256=6742197BD26CED91D038131BA82BAF5B0FCCE112042DCAB9F61BE99032896B51 size=33129288
+09:14:59  [3] 新 jar 内容断言（逐字条目名，不再用正则计数）：
+09:14:59      含 BOOT-INF/classes/db/meta/V17__source_dimension_for_checkpoint_and_batch.sql
+09:14:59      含 BOOT-INF/classes/com/graduation/analytics/controller/SourceRegistryController.class
+09:14:59      含 BOOT-INF/lib/connection-ingestion-0.1.0-SNAPSHOT.jar
+09:14:59      内嵌 connection-ingestion sha256 = 0C0AFF2251B64AD7 / 模块产物 = 0C0AFF2251B64AD7
+09:14:59      内嵌副本与模块产物逐字节相同 ⇒ 随包发布的 P1-05 类就是 E2 测过的那棵树
+09:14:59  [4] 启动新实例：导出目录用 JVM 属性（-jar 之前）+ WorkingDirectory=仓库根
+09:14:59  [4] 新实例 PID = 47132
+09:15:05  [4] /api/v1/health -> HTTP 200（启动耗时约 6s）
+09:15:05  [5] 迁移末条: installed_rank	version	description	success | 16	17	source dimension for checkpoint and batch	1
+09:15:05  [5] V17 checksum = checksum -555998778
+09:15:05  [5] file_checkpoint.source_id: COLUMN_NAME	IS_NULLABLE	COLUMN_DEFAULT | source_id	NO	NULL
+09:15:05  [5] file_checkpoint 索引:
+09:15:05      INDEX_NAME	cols
+09:15:05      idx_file_checkpoint_source	source_id
+09:15:05      PRIMARY	id
+09:15:05      uk_ckpt_source	runtime_profile_id,source_id,file_path,file_identity
+09:15:05  [5] source_id 为空的行数（应为 0）: 0   [原始输出: COUNT(*) | 0]
+09:15:05  [5] 新外键:
+09:15:05      CONSTRAINT_NAME	REFERENCED_TABLE_NAME
+09:15:05      fk_file_checkpoint_source	source_registry
+09:15:05      fk_ingestion_batch_source	source_registry
+09:15:05  [5] 换血后行数(含活库快照): r	b	c	s	p	ms | 38	39	102	1	1	8
+09:15:05  [5] 行数与换血前逐字一致 ⇒ 迁移未动数据
+09:15:05  [6] 带会话探测（未认证 401 无区分力，必须登录）
+09:15:05  [6] GET /api/v1/sources（admin）-> HTTP 200
+09:15:05  [6] 对照 GET /api/v1/__no_such_endpoint__（admin）-> HTTP 403（用于证明上一条有区分力）
+09:15:05  [6] 【有意偏差】D-040 第 6 步的"采集写路径打通"**不在本脚本做**：在真库跑一次采集会写第 40 条
+09:15:05      ingestion_batch 并推进 file_checkpoint ⇒ 移动 P1-01 冻结基线，属 P1-06 T2 的授权范围。
+09:15:05      写路径取证 = P1-05 泳道(副本库 E3，断点带 source_id) + P1-06 T2(真链)。
+09:15:05  ================ 换血完成 ================
+09:15:05  新实例 PID = 47132
+09:15:05  新 jar sha256 = 6742197BD26CED91D038131BA82BAF5B0FCCE112042DCAB9F61BE99032896B51
+09:15:05  旧 jar sha256 = C6281F721F62961588849044E745755066261862E2FA213C419723F18DC38B08（2026-09-12 09:12:06）
+09:15:05  汇总已写入 swap-summary.json

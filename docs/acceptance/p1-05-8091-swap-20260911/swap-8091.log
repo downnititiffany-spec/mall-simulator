@@ -1,0 +1,8 @@
+09:13:34  ================ P1-05 轮 · 原子换血开始 ================
+09:13:34  捕获时刻 = 2026-09-12 09:13:34
+09:13:34  HEAD = f6466048b74cde00d493ef795679f3064a8ed29e
+09:13:34  [G0] analytics-server 工作区干净 ⇒ 打包树 == HEAD 提交树
+09:13:35  [G1] 迁移末条（按 installed_rank）: installed_rank	version	success | 16	17	1
+09:13:35    占用者 PID=37500: "D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+09:13:35  *** FAIL-STOP: 存在其他持有 platform-app jar 的 java 进程（打包会因文件锁失败），先处理再换血
+09:13:35  *** 真库**尚未被迁移**（失败发生在 [4] 启动之前；V17 由应用启动时才应用）⇒ 现场未受影响；本脚本不自动回滚。
