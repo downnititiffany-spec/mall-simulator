@@ -1,0 +1,5 @@
+history_rows=16
+max_numeric=17
+v18_rows=0 desc= success=
+prefix_cols=0 type= nullable=
+ERROR 1054 (42S22) at line 1: Unknown column 'warehouse_prefix' in 'field list'

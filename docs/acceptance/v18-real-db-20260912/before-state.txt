@@ -1,0 +1,5 @@
+history_rows=16
+max_numeric=17
+v18_rows=0
+prefix_cols=0
+registry_rows=1
