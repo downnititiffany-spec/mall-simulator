@@ -1,0 +1,21 @@
+{
+  "batchId" : 46,
+  "batchNo" : "ing-20260912221107-afc698b5",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T22:11:07.711013700",
+  "finishedAt" : "2026-09-12T22:11:07.716995400",
+  "files" : [ ],
+  "acceptedRecords" : 0,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 0,
+  "schemaVersions" : [ ],
+  "acceptedUri" : "accepted/46",
+  "quarantineUri" : "quarantine/46",
+  "checksum" : "0",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}

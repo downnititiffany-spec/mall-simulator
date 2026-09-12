@@ -1,0 +1,14 @@
+### 批次 44（E5 泳道）实测归属与业务日（读产物，不靠推断）
+
+accepted 目录文件: 2026091221.jsonl  (496 B)
+逐行: {"event_id":"eb22c6ca-58be-47c4-87d2-1467cc79bbe2","event_type":"behavior","event_time":"2026-09-12T21:57:19.6892274+08:00","ingest_time":"2026-09-12T21:57:19.6912275+08:00","source_system":"mock-mall","schema_version":"1.0","trace_id":"ec5eb977-cc2d-4544-b7d2-8f751ebc3a69","payload":{"user_id":"2098607950599319554","product_id":"1001","session_id":"session-ec5eb977-cc2d-4544-b7d2-8f751ebc3a69","behavior_type":"cart_add","channel":"app","event_time_utc":"2026-09-12T21:57:19.6892274+08:00"}}
+event_id=eb22c6ca-58be-47c4-87d2-1467cc79bbe2  event_type=behavior  event_time=2026/9/12 21:57:19  source_system=mock-mall  schema_version=1.0
+landing/events 中该文件: 497 B；sha256=81518B0C25274B58D86911FCC8062333CF0201883A1A4C0B5A991BF83DE93180
+44.json 停车位置: D:\Develop_code\GraduationProject\docs\acceptance\e5-preaccept-20260912\raw\manifest-parked\44.json
+
+--- 精确核查：是否存在钉住 batchId=44 / 45 的 WAIT_LANDING 阶段行（锚定 '{' + batchId 起始）---
+pinned_batch	rows_cnt
+43	5
+44	2
+45	2
+注：上文 [3] 曾用无锚定的 LIKE '%batchId%44%'，会误命中（如 acceptedRecords 等字段里的 44），本节锚定 '{' 开头重测为准。

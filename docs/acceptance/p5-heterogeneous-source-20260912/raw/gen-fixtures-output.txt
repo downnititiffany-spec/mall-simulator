@@ -1,0 +1,37 @@
+{
+  "files": {
+    "b1a-envelope-vocab.jsonl": {
+      "bytes": 8950,
+      "rows": 30,
+      "sha256": "8986C3D08B17B29538797903CC3BBF0B5FA648F639BD61374474C48707AFD594"
+    },
+    "b1b-payload-vocab.jsonl": {
+      "bytes": 10406,
+      "rows": 30,
+      "sha256": "CB5B1FC3ADD2773DB10C56ED1F245B8F171C145DF39A12839ABD16B52EA7FAD1"
+    },
+    "b2-missing-optional.jsonl": {
+      "bytes": 20507,
+      "rows": 60,
+      "sha256": "B07E505E21CB272B1000F79A4777E097CA7FC57D2C1E983D8356F32121208054"
+    },
+    "b3a-missing-required.jsonl": {
+      "bytes": 9537,
+      "rows": 30,
+      "sha256": "70BDEBE126E224D1BF4FA730FDB1B8AD0432C4A6C32DD2FD929FBEA74CD6329F"
+    },
+    "b3b-ambiguous-mapping.jsonl": {
+      "bytes": 9894,
+      "rows": 30,
+      "sha256": "DD5030F17D592930E0739E3D9A9D6F136C9FAB7F27D2FA388DF86450FEEE407C"
+    }
+  },
+  "groundTruth": {
+    "pv": 14,
+    "uv": 3,
+    "order_count": 11,
+    "sale_amount_fen": 365200,
+    "sale_amount_yuan": "3652.00",
+    "orders_created": 11
+  }
+}

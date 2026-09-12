@@ -1,0 +1,30 @@
+### ingestion status BEFORE any restart (captured 2026-09-12 20:57:47)
+### process 61104 started 19:17:49 with CWD=repo root, NO PLATFORM_LANDING_LOCAL_ROOT set
+
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "profileState": "ACTIVE",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "landingUri": "file://./landing",
+    "landingError": null,
+    "eventsDir": "D:\\Develop_code\\GraduationProject\\landing\\events",
+    "pendingFiles": 61,
+    "pendingBytes": 406496411,
+    "checkpointFiles": 61,
+    "newFileCount": 0,
+    "lastArrivalAt": "2026-09-12T15:05:39.09632",
+    "latestBatch": {
+      "batchId": 42,
+      "runtimeProfileId": 1,
+      "sourceId": 1,
+      "batchNo": "ing-20260912173453-cf5576fe",
+      "status": "SUCCESS",
+      "recordCount": 1000,
+      "quarantineCount": 0
+    }
+  },
+  "traceId": "03bca087-cf55-4144-bc9b-5e38153d7953"
+}

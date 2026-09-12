@@ -1,0 +1,26 @@
+### 静态对照：缺失旋钮 / 措辞 / 契约真子集（时间 2026-09-12 22:12:43） 
+--- [A] 全仓库 grep：missingField / unknownField / nullField（旋钮是否存在）---
+  missingField           命中总数=0  其中生产代码=0
+  unknownField           命中总数=6  其中生产代码=4
+      analytics-server\source-profiles\fixture-b.v1.json:137  "unknownField": "KEEP_IN_PAYLOAD"
+      analytics-server\source-profiles\mock-mall.v1.json:122  "unknownField": "KEEP_IN_PAYLOAD"
+      analytics-server\source-profiles\p1-03-probe-1.v1.json:31  "quarantinePolicy": { "unknownEventType": "QUARANTINE", "unknownField": "KEEP_IN_PAYLOAD" }
+      analytics-server\source-profiles\p1-03-probe-2.v1.json:29  "quarantinePolicy": { "unknownEventType": "QUARANTINE", "unknownField": "DROP" }
+  nullField              命中总数=2  其中生产代码=2
+      spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:26  *   ③ JSONL 必须保留 null 字段：发布侧批量写入要求同一批列集一致（`ignoreNullFields=false`）。
+      spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:47  spark.conf.set("spark.sql.jsonGenerator.ignoreNullFields", "false")
+  missingRequiredField   命中总数=1  其中生产代码=0
+--- [B] 全仓库 grep：歧义 / 未裁定 / ambiguous（生产代码里是否有辨别歧义的能力）---
+  歧义             生产代码命中=4
+      analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\MySqlMetricStore.java:24  * 因此不存在多数据源 mapper 扫描歧义，也不需要为指标库配置 SqlSessionFactory。</p>
+      analytics-server\platform-app\src\main\java\com\graduation\analytics\config\PlatformDataSources.java:29  * 因此 @MapperScan 不再包含 metric.mapper，指标库没有 mapper 扫描歧义；
+      analytics-server\platform-app\src\main\java\com\graduation\analytics\config\PlatformDataSources.java:101  // ── JdbcTemplate（每库一份，按 Bean 名 + @Qualifier 注入，避免多数据源歧义） ──────────
+  未裁定            生产代码命中=0
+  ambiguous      生产代码命中=0
+  AMBIGUOUS      生产代码命中=0
+--- [C] 实测：批次 45 的 96 条隔离理由里，是否出现 歧义/未裁定/映射 字样 ---
+  歧义       出现次数=0
+  未裁定      出现次数=0
+  映射       出现次数=0
+  能力       出现次数=0
+  不支持      出现次数=0

@@ -1,0 +1,8 @@
+Grants for metric_pub@localhost
+GRANT USAGE ON *.* TO `metric_pub`@`localhost`
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, REFERENCES, INDEX, ALTER ON `analytics_metric`.* TO `metric_pub`@`localhost`
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, REFERENCES, INDEX, ALTER ON `analytics_verify_m3_parity`.* TO `metric_pub`@`localhost`
+Grants for metric_read@localhost
+GRANT USAGE ON *.* TO `metric_read`@`localhost`
+GRANT SELECT ON `analytics_metric`.* TO `metric_read`@`localhost`
+GRANT SELECT ON `analytics_verify_m3_parity`.* TO `metric_read`@`localhost`

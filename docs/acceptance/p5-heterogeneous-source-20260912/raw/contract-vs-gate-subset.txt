@@ -1,0 +1,23 @@
+# 契约必需字段  vs  闸门实际校验字段（逐事件类型）
+# 契约: contract-specs/schemas/canonical-event.v1.schema.json  $defs.<type>.required
+# 闸门: analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/EventContractValidator.java:90 missingPayloadField 的 switch
+# 金额类型检查: 同文件:113 findBadAmount（只拒"既非文本又非数字"，JSON 数字一律放过）
+
+事件类型	契约必需	闸门校验	契约有而闸门不查（静默放过）
+behavior	5	4	channel
+order_cancelled	4	3	cancelled_at
+order_created	6	4	status,created_at
+order_paid	5	4	paid_at
+product_created	7	4	brand_id,cost,status
+product_updated	7	4	brand_id,cost,status
+refund_completed	5	4	completed_at
+refund_created	6	4	reason,created_at
+stock_changed	4	1	change_type,quantity,available_qty
+stock_released	4	1	quantity,reserved_qty,available_qty
+stock_reserved	4	1	quantity,reserved_qty,available_qty
+user_registered	5	3	city_level,register_time
+
+合计：契约必需 payload 字段 62 个，闸门实际校验 37 个（前者为后者的真超集）
+闸门另查但契约未要求的字段：（无）
+
+# 另注：order_created.items 的嵌套 required（.order_created.items.oneOf[0].items）另有 5 个字段（product_id,quantity,unit_price,discount,amount），闸门**完全不查嵌套必需字段**（findBadAmount 只对 items[] 里的文本型金额做格式检查），故上述 62/37 还未计入这 5 个。

@@ -1,0 +1,5 @@
+# B-13 / 04 — binlog 000130+000131, window 2026-09-11 00:00 .. 2026-09-12 23:30, EXACT `analytics_meta`.`metric_snapshot|metric_value`
+### FILE LAPTOP-8F8T3J1B-bin.000130
+### LAPTOP-8F8T3J1B-bin.000130 hits=0
+### FILE LAPTOP-8F8T3J1B-bin.000131
+### LAPTOP-8F8T3J1B-bin.000131 hits=0

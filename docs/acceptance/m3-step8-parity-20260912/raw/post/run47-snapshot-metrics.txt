@@ -1,0 +1,36 @@
+### run 47 snapshot + metrics (2026-09-12 21:30:26)
+id	snapshot_id	pipeline_run_id	status	version	active_flag	source	published_at
+27	S20260901_47	47	ACTIVE	12	1	spark-ads	2026-09-12 21:29:27.321
+26	S20260901_43	43	ARCHIVED	11	NULL	spark-ads	2026-09-12 17:39:51.953
+25	S20260901_42	42	ARCHIVED	10	NULL	spark-ads	2026-09-12 17:28:12.779
+24	S20260901_41	41	ARCHIVED	9	NULL	spark-ads	2026-09-12 09:31:13.388
+
+metric_code	metric_value	unit	period	definition_version
+avg_order_value	408.4000	Ԫ	day:2026-09-01	v1
+buy_rate	1.0000		day:2026-09-01	v1
+dau	3.0000	��	day:2026-09-01	v1
+full_refund_rate	0.2000		day:2026-09-01	v1
+gmv	2042.0000	Ԫ	day:2026-09-01	v1
+net_sale	1493.0000	Ԫ	day:2026-09-01	v1
+paid_order_cnt	5.0000	��	day:2026-09-01	v1
+pv	7.0000	��	day:2026-09-01	v1
+refund_rate	0.6000		day:2026-09-01	v2
+uv	3.0000	��	day:2026-09-01	v1
+
+t	n
+ads_active_trend_m	11
+ads_behavior_funnel_m	44
+ads_data_quality_m	44
+ads_hot_product_m	59
+ads_operation_overview_m	11
+ads_product_conversion_m	59
+ads_sale_trend_m	11
+ads_user_profile_m	27
+
+sid	st
+S20260901_43	EXISTS
+S20260901_44	NOT_EXISTS
+S20260901_45	NOT_EXISTS
+S20260901_46	NOT_EXISTS
+S20260901_47	EXISTS
+

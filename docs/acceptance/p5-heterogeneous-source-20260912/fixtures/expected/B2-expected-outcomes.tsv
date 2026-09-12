@@ -1,0 +1,61 @@
+row_id	family	expected_outcome	expected_reason_class	note
+b2-1-evt-0001	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [channel]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0002	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [status,created_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0003	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [paid_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0004	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [city_level,register_time]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0005	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [brand_id,cost,status]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0006	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [channel]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0007	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [status,created_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0008	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [paid_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0009	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [city_level,register_time]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0010	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [brand_id,cost,status]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0011	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [channel]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0012	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [status,created_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0013	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [paid_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0014	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [city_level,register_time]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0015	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [brand_id,cost,status]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0016	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [channel]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0017	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [status,created_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0018	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [paid_at]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0019	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [city_level,register_time]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-1-evt-0020	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [brand_id,cost,status]：canonical-event.v1.schema.json required 有、EventContractValidator.missingPayloadField 不查
+b2-2-evt-0021	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 的 [channel] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0022	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 的 [status,created_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0023	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 的 [paid_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0024	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 的 [city_level,register_time] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0025	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 的 [brand_id,cost,status] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0026	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 的 [channel] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0027	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 的 [status,created_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0028	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 的 [paid_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0029	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 的 [city_level,register_time] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0030	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 的 [brand_id,cost,status] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0031	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 的 [channel] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0032	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 的 [status,created_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0033	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 的 [paid_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0034	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 的 [city_level,register_time] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0035	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 的 [brand_id,cost,status] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0036	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 的 [channel] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0037	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 的 [status,created_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0038	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 的 [paid_at] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0039	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 的 [city_level,register_time] 显式置 null（观测到空值，区别于"未观测"）
+b2-2-evt-0040	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 的 [brand_id,cost,status] 显式置 null（观测到空值，区别于"未观测"）
+b2-3-evt-0041	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0042	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0043	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0044	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0045	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0046	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0047	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0048	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0049	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0050	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0051	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0052	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0053	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0054	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0055	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0056	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	behavior 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0057	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0058	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	order_paid 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0059	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	user_registered 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标
+b2-3-evt-0060	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	product_created 缺 [device_id,coupon_code]：画像 fieldMapping 未列出（@keep/附加字段），缺失不应影响主线指标

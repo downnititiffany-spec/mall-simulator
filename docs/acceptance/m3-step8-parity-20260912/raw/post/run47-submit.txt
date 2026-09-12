@@ -1,0 +1,7 @@
+### run 47 submission (2026-09-12 21:26:36)
+request={"businessTime":"2026-09-01T00:00:00","sourceDataVersion":"m3s8-golden55d-202609122126","pipelineCode":"ODS_TO_ADS","runtimeProfileId":1}
+response.runId=47
+response.status=PENDING
+sourceDataVersion=m3s8-golden55d-202609122126
+WAIT_LANDING_status=SUCCESS
+WAIT_LANDING_records=51

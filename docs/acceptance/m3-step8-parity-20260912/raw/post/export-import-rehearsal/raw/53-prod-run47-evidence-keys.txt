@@ -1,0 +1,26 @@
+section
+== prod run 47 PUBLISH_METRIC evidence top-level keys ==
+keys_of_evidence
+["jobs", "failed", "adsJobs", "hiveAds", "adsChecks", "stageCode", "adsSnapshotId", "metricPublish", "metricExportDir", "totalInputRecords", "adsChecksPersisted", "totalOutputRecords", "metricPublishChecks", "totalRejectedRecords", "metricPublishEvidence"]
+section
+== prePublishGate raw ==
+pre_publish_gate
+NULL
+section
+== metricPublishCheck rule codes recorded in prod (pass/fail) ==
+rule_code	severity	passed
+MP_MANIFEST_SNAPSHOT	BLOCKING	true
+MP_MANIFEST_TABLES	BLOCKING	true
+MP_HIVE_PATH_PINNED	BLOCKING	true
+MP_EXPORT_FILES	BLOCKING	true
+MP_ADS_ROWS_MATCH	BLOCKING	true
+MP_REQUIRED_TABLES_NONEMPTY	BLOCKING	true
+MP_ROW_SHAPE_CONSISTENT	BLOCKING	true
+MP_OVERVIEW_CORE_NOT_NULL	BLOCKING	true
+MP_METRIC_DICT_VERSION	BLOCKING	true
+MP_VALUE_MATCH_ADS	BLOCKING	true
+MP_METRIC_VALUE_COUNT	BLOCKING	true
+MP_ACTIVE_SNAPSHOT	BLOCKING	true
+MP_ADS_ROWS_DB_MATCH	BLOCKING	true
+MP_METRIC_VALUE_DB_MATCH	BLOCKING	true
+MP_OLD_ACTIVE_ARCHIVED	INFO	true

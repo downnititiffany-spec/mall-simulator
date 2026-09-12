@@ -1,0 +1,12 @@
+===== 8091 接口取证 tag=pre-stop  at 2026-09-12 21:59:47 =====
+POST /api/v1/auth/login => HTTP 200  (body 略：含 token)
+GET /api/v1/health => HTTP 200 bytes=59 -> api-pre-stop-health.json
+GET /api/v1/dashboards/overview => HTTP 200 bytes=3336 -> api-pre-stop-dashboards-overview.json
+GET /api/v1/metrics/overview => HTTP 200 bytes=1408 -> api-pre-stop-metrics-overview.json
+GET /api/v1/metrics/snapshots?limit=15 => HTTP 200 bytes=4672 -> api-pre-stop-metrics-snapshots.json
+GET /api/v1/metrics/quality?limit=20 => HTTP 200 bytes=8716 -> api-pre-stop-metrics-quality.json
+GET /api/v1/pipeline-runs?limit=20 => HTTP 200 bytes=13901 -> api-pre-stop-pipeline-runs.json
+GET /api/v1/pipeline-runs/46 => HTTP 200 bytes=9041 -> api-pre-stop-pipeline-run-46.json
+GET /api/v1/pipeline-runs/45 => HTTP 200 bytes=9044 -> api-pre-stop-pipeline-run-45.json
+GET /api/v1/ingestion/status => HTTP 200 bytes=555 -> api-pre-stop-ingestion-status.json
+GET /api/v1/ingestion/batches?limit=5 => HTTP 200 bytes=1729 -> api-pre-stop-ingestion-batches.json

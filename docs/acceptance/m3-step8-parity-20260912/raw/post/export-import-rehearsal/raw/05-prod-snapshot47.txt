@@ -1,0 +1,13 @@
+*************************** 1. row ***************************
+                     id: 27
+            snapshot_id: S20260901_47
+     runtime_profile_id: 1
+runtime_profile_version: 3
+          business_time: 2026-09-01 00:00:00.000
+        pipeline_run_id: 47
+                 status: ACTIVE
+                version: 12
+     definition_version: v2
+                 source: spark-ads
+            active_flag: 1
+           published_at: 2026-09-12 21:29:27.321

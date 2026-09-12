@@ -1,0 +1,37 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 21:10:33 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 21:10:33 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 21:10:34 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 21:10:34 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@192.168.1.8
+Spark Web UI available at http://127.0.0.1:4040
+Spark master: local[1], Application Id: local-1789218632858
+26/09/12 21:10:35 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+order_id            	bigint              	                    
+user_id             	bigint              	                    
+product_id          	bigint              	                    
+category_id         	bigint              	                    
+quantity            	int                 	                    
+unit_price          	decimal(18,2)       	                    
+discount            	decimal(18,2)       	                    
+amount              	decimal(18,2)       	                    
+order_status        	string              	                    
+order_time          	timestamp           	                    
+order_date          	string              	                    
+city_level          	string              	                    
+paid_at             	timestamp           	                    
+order_amount        	decimal(18,2)       	                    
+paid_amount         	decimal(18,2)       	                    
+refund_amount       	decimal(18,2)       	                    
+net_paid_amount     	decimal(18,2)       	                    
+final_paid_flag     	int                 	                    
+final_refunded_flag 	int                 	                    
+user_key            	bigint              	                    
+product_key         	bigint              	                    
+category_key        	bigint              	                    
+dt                  	string              	                    
+# Partition Information	                    	                    
+# col_name          	data_type           	comment             
+dt                  	string              	                    
+Time taken: 1.354 seconds, Fetched 26 row(s)

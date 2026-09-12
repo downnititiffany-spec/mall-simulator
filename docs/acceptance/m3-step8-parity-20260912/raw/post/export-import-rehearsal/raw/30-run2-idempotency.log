@@ -1,0 +1,79 @@
+### COMMAND LINE (reproducible) ###
+"D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Drehearsal.publish.url=jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true -Drehearsal.publish.user=metric_pub -Drehearsal.publish.password=metric_pub_pw_2026 -Drehearsal.read.url=jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true -Drehearsal.read.user=metric_read -Drehearsal.read.password=metric_read_pw_2026 -Drehearsal.meta.url=jdbc:mysql://127.0.0.1:3306/analytics_meta?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true -Drehearsal.meta.user=meta_app -Drehearsal.meta.password=meta_app_pw_2026 -cp <classes;libs> RehearsalRunner RUN2-IDEMPOTENCY S20260901_47 20260901 2026-09-01T00:00 1 3 47 "D:\Develop_code\GraduationProject\metric-staging\S20260901_47"
+### EXECUTION ###
+=== REHEARSAL RUN [RUN2-IDEMPOTENCY] ===
+snapshotId        = S20260901_47
+businessDate      = 20260901
+businessTime      = 2026-09-01T00:00
+runtimeProfileId  = 1
+profileVersion    = 3
+pipelineRunId     = 47
+exportDir         = D:\Develop_code\GraduationProject\metric-staging\S20260901_47
+publishJdbcUrl    = jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+readJdbcUrl       = jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+publishUser       = metric_pub
+readUser          = metric_read
+metaJdbcUrl       = jdbc:mysql://127.0.0.1:3306/analytics_meta?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+metric_definition rows = 16 codes=[avg_order_value, buy_rate, cart_rate, dau, full_refund_rate, gmv, net_sale, paid_order_cnt, product_heat, pv, refund_rate, repeat_rate, stock_days, stock_shortage_rate, user_value_level, uv]
+publisher impl    = com.graduation.analytics.metric.publish.MetricPublisher
+22:26:11.123 [main] INFO com.graduation.analytics.metric.publish.MetricPublishRepository -- metric publish: 快照 S20260901_47 登记 BUILDING（profile=1, version=2, businessDate=20260901）
+22:26:11.141 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads delete snapshot S20260901_47: 共删除 22 行（8 张表）
+22:26:11.142 [main] INFO com.graduation.analytics.metric.publish.MetricPublisher -- metric publish: 快照 S20260901_47 重试，先清理已写 ADS 行 22 条
+22:26:11.163 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_operation_overview_m (snapshot=S20260901_47, dt=20260901): 1 行 / 11 列
+22:26:11.169 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_sale_trend_m (snapshot=S20260901_47, dt=20260901): 1 行 / 6 列
+22:26:11.181 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_behavior_funnel_m (snapshot=S20260901_47, dt=20260901): 4 行 / 6 列
+22:26:11.187 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_active_trend_m (snapshot=S20260901_47, dt=20260901): 1 行 / 4 列
+22:26:11.192 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_hot_product_m (snapshot=S20260901_47, dt=20260901): 4 行 / 10 列
+22:26:11.199 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_product_conversion_m (snapshot=S20260901_47, dt=20260901): 4 行 / 6 列
+22:26:11.205 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_user_profile_m (snapshot=S20260901_47, dt=20260901): 3 行 / 14 列
+22:26:11.212 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_data_quality_m (snapshot=S20260901_47, dt=20260901): 4 行 / 8 列
+22:26:11.261 [main] INFO com.graduation.analytics.metric.publish.MetricPublisher -- metric publish: 快照 S20260901_47 发布成功（ADS 22 行，指标值 10 条，旧 ACTIVE=S20260901_47）
+--- PublishReport ---
+ok            = true
+errorCode     = null
+message       = 发布成功
+adsRows       = 22
+metricValues  = 10
+--- evidence ---
+  snapshotId = S20260901_47
+  businessDate = 20260901
+  exportDir = D:\Develop_code\GraduationProject\metric-staging\S20260901_47
+  manifestTotalRows = 22
+  manifestSource = spark-ads
+  previousActiveSnapshotId = S20260901_47
+  adsRows = 22
+  adsRowsByTable = {ads_operation_overview_m=1, ads_sale_trend_m=1, ads_behavior_funnel_m=4, ads_active_trend_m=1, ads_hot_product_m=4, ads_product_conversion_m=4, ads_user_profile_m=3, ads_data_quality_m=4}
+  metricCodes = [pv, uv, dau, paid_order_cnt, gmv, net_sale, avg_order_value, refund_rate, full_refund_rate, buy_rate]
+  metricValues = 10
+  activeSnapshotId = S20260901_47
+  elapsedMs = 191
+--- checks (15) ---
+  [PASS] MP_MANIFEST_SNAPSHOT severity=BLOCKING total=2 errors=0 | 清单快照/业务日与本次发布一致 | request=S20260901_47/20260901 manifest=S20260901_47/20260901
+  [PASS] MP_MANIFEST_TABLES severity=BLOCKING total=8 errors=0 | 8 张宽表齐备且列与白名单一致 | 缺失=[] 列不一致=[]
+  [PASS] MP_HIVE_PATH_PINNED severity=BLOCKING total=8 errors=0 | 每张表来源分区指向本次快照（防读到上一版数据） | ads_operation_overview_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_operation_overview__staging/snapshot_id=S20260901_47/dt=20260901; ads_sale_trend_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_sale_trend__staging/snapshot_id=S20260901_47/dt=20260901; ads_behavior_funnel_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_behavior_funnel__staging/snapshot_id=S20260901_47/dt=20260901; ads_active_trend_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_active_trend__staging/snapshot_id=S20260901_47/dt=20260901; ads_hot_product_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_hot_product__staging/snapshot_id=S20260901_47/dt=20260901; ads_product_conversion_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_product_conversion__staging/snapshot_id=S20260901_47/dt=20260901; ads_user_profile_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_user_profile__staging/snapshot_id=S20260901_47/dt=20260901; ads_data_quality_m<-file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_data_quality__staging/snapshot_id=S20260901_47/dt=20260901
+  [PASS] MP_EXPORT_FILES severity=BLOCKING total=8 errors=0 | 导出文件全部存在 | exportDir=D:\Develop_code\GraduationProject\metric-staging\S20260901_47
+  [PASS] MP_ADS_ROWS_MATCH severity=BLOCKING total=22 errors=0 | 写入行数 = 导出清单行数 | ads_operation_overview_m=manifest:1/written:1 ads_sale_trend_m=manifest:1/written:1 ads_behavior_funnel_m=manifest:4/written:4 ads_active_trend_m=manifest:1/written:1 ads_hot_product_m=manifest:4/written:4 ads_product_conversion_m=manifest:4/written:4 ads_user_profile_m=manifest:3/written:3 ads_data_quality_m=manifest:4/written:4
+  [PASS] MP_REQUIRED_TABLES_NONEMPTY severity=BLOCKING total=4 errors=0 | 概览/趋势/漏斗/活跃表必须有数据 | [ads_operation_overview_m, ads_sale_trend_m, ads_behavior_funnel_m, ads_active_trend_m]
+  [PASS] MP_ROW_SHAPE_CONSISTENT severity=BLOCKING total=8 errors=0 | 同表各行列集一致（否则批量插入会产生错位） | 表数=8
+  [PASS] MP_OVERVIEW_CORE_NOT_NULL severity=BLOCKING total=6 errors=0 | 概览核心字段非空 | overview={pv=7, uv=3, dau=3, order_count=5, sale_amount=2042.00, net_sale_amount=1493.00, avg_order_value=408.40, refund_rate=0.6000, full_refund_rate=0.2000}
+  [PASS] MP_METRIC_DICT_VERSION severity=BLOCKING total=10 errors=0 | 指标码在字典内且版本与字典一致 | 未知=[] 版本不一致=[]
+  [PASS] MP_VALUE_MATCH_ADS severity=BLOCKING total=3 errors=0 | metric_value 与 ADS 概览同值 | gmv/net_sale/paid_order_cnt 一致
+  [PASS] MP_METRIC_VALUE_COUNT severity=BLOCKING total=8 errors=0 | 至少写入 8 条核心指标值 | 实际=10 码=[pv, uv, dau, paid_order_cnt, gmv, net_sale, avg_order_value, refund_rate, full_refund_rate, buy_rate]
+  [PASS] MP_ACTIVE_SNAPSHOT severity=BLOCKING total=1 errors=0 | ACTIVE 指针指向本次快照 | active=S20260901_47 期望=S20260901_47
+  [PASS] MP_ADS_ROWS_DB_MATCH severity=BLOCKING total=8 errors=0 | 只读账号实读宽表行数 = 清单行数 | ads_operation_overview_m=1/1 ads_sale_trend_m=1/1 ads_behavior_funnel_m=4/4 ads_active_trend_m=1/1 ads_hot_product_m=4/4 ads_product_conversion_m=4/4 ads_user_profile_m=3/3 ads_data_quality_m=4/4
+  [PASS] MP_METRIC_VALUE_DB_MATCH severity=BLOCKING total=10 errors=0 | 只读账号实读指标值 = 发布值 | 行数=10/10 值不一致=0
+  [FAIL] MP_OLD_ACTIVE_ARCHIVED severity=INFO total=1 errors=0 | 上一个 ACTIVE=S20260901_47（本次=S20260901_47）
+--- read-back (metric_read) ---
+metric_snapshot: status/active_flag/version = ACTIVE/1/1/v2
+metric_value rows = 10
+  ads_operation_overview_m rows = 1
+  ads_sale_trend_m rows = 1
+  ads_behavior_funnel_m rows = 4
+  ads_active_trend_m rows = 1
+  ads_hot_product_m rows = 4
+  ads_product_conversion_m rows = 4
+  ads_user_profile_m rows = 3
+  ads_data_quality_m rows = 4
+run elapsedMs = 955
+=== REHEARSAL RESULT [RUN2-IDEMPOTENCY] ok=true errorCode=null ===
+### EXIT CODE = 0 ; WALL CLOCK = 1.126 s ###

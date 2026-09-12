@@ -1,0 +1,40 @@
+fx-b: ads_hot_product_m.jsonl lines BEFORE = 4
+fx-b: ads_hot_product_m.jsonl lines AFTER  = 3
+--- fixture: D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\fx-b-missing-row (snapshotId=S20260901_47RH) ---
+_export.json                         4218 bytes  sha256=D31631100E59681D025DEDFAD1CBC4F2A7B27921CE32CDB24499680C6396BF5C
+ads_active_trend_m.jsonl               30 bytes  sha256=1E0EA9BF127CEC4B276E4411094B794DB4F5B2CBECBDBB13F7936A3070061429
+ads_behavior_funnel_m.jsonl           332 bytes  sha256=A98B1C68CE8B0E301C7A51FF451C6FCAE12A6DAA9BF91806D66ADE0E4232985C
+ads_data_quality_m.jsonl              476 bytes  sha256=7B5A77A6CEC44E8FDF68F6FF70D091F99C911A9CBA10C3EFF36FC98FD8A09565
+ads_hot_product_m.jsonl               336 bytes  sha256=2FE006CE4D35AFD196130DA49063CC1734A14A26FA6712F3952109B0CCAB09D0
+ads_operation_overview_m.jsonl        160 bytes  sha256=C499ACD6D5A0E23D50AAAA3E7E5681F8041EFB65FDD09D6886D89A3DB22FE5C6
+ads_product_conversion_m.jsonl        276 bytes  sha256=9C136D34F2E50BA423D2ACF424EA250F13D452E26D00C7A059C025C804F6673D
+ads_sale_trend_m.jsonl                 81 bytes  sha256=7808A741AE4A94EA3D93EC6EFFBF4D90BCC3A2DAE2ADE03A46B49EFA5CA48779
+ads_user_profile_m.jsonl              720 bytes  sha256=8B268F063396B8D2AC13461CFE6E7405258270511049802764AA32140B747F54
+manifest head: 
++
+{
+  "snapshotId": "S20260901_47RH",
+  "businessDate": "20260901",
+-join
+ | 
+fx-c: ads_user_profile_m.jsonl line1 BEFORE = {"user_id":3,"r":3,"f":3,"m":1,"value_group":"一般挽留","active_level":"低","favorite_category":11,"last_active_date":"2026-09-01","last_buy_date":"2026-09-01","lifecycle_state":"活跃","rule_version":"rfm-v1","calc_date":"20260901"}
+fx-c: ads_user_profile_m.jsonl line1 AFTER  = {"user_id":3,"hacked_col":1,"r":3,"f":3,"m":1,"value_group":"一般挽留","active_level":"低","favorite_category":11,"last_active_date":"2026-09-01","last_buy_date":"2026-09-01","lifecycle_state":"活跃","rule_version":"rfm-v1","calc_date":"20260901"}
+--- fixture: D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\fx-c-unknown-column (snapshotId=S20260901_47RC) ---
+_export.json                         4242 bytes  sha256=7E24F929D5649F4C81321AD1E4BC8E4698FFDF3DA21284302C69203224F54F94
+ads_active_trend_m.jsonl               30 bytes  sha256=1E0EA9BF127CEC4B276E4411094B794DB4F5B2CBECBDBB13F7936A3070061429
+ads_behavior_funnel_m.jsonl           332 bytes  sha256=A98B1C68CE8B0E301C7A51FF451C6FCAE12A6DAA9BF91806D66ADE0E4232985C
+ads_data_quality_m.jsonl              476 bytes  sha256=7B5A77A6CEC44E8FDF68F6FF70D091F99C911A9CBA10C3EFF36FC98FD8A09565
+ads_hot_product_m.jsonl               441 bytes  sha256=2BCFA7688D0F40707280007CD8E48031C7908EFD8D05E966A4FD40C5F5A93C30
+ads_operation_overview_m.jsonl        160 bytes  sha256=C499ACD6D5A0E23D50AAAA3E7E5681F8041EFB65FDD09D6886D89A3DB22FE5C6
+ads_product_conversion_m.jsonl        276 bytes  sha256=9C136D34F2E50BA423D2ACF424EA250F13D452E26D00C7A059C025C804F6673D
+ads_sale_trend_m.jsonl                 81 bytes  sha256=7808A741AE4A94EA3D93EC6EFFBF4D90BCC3A2DAE2ADE03A46B49EFA5CA48779
+ads_user_profile_m.jsonl              738 bytes  sha256=3B42883202CB536237C968134849214CAE21D0B5DF91F224615F84B3C46BA505
+manifest head: 
++
+{
+  "snapshotId": "S20260901_47RC",
+  "businessDate": "20260901",
+-join
+ | 
+=== NON-EXISTENT export dir used by failure A ===
+path=D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\no-such-export-dir exists=False

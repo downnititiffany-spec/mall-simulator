@@ -1,0 +1,6 @@
+[8090-root] GET http://127.0.0.1:8090/ => HTTP 200  content-type=text/html  bytes=407  title=<模拟商城（mall-simulator）>
+[8090-health] GET http://127.0.0.1:8090/api/v1/mall/products?page=1&size=1 => ERROR 响应状态代码未指示成功: 401 ()。
+[8091-root] GET http://127.0.0.1:8091/ => HTTP 200  content-type=text/html  bytes=608  title=<电商用户行为分析系统>
+[8091-health] GET http://127.0.0.1:8091/api/v1/health => HTTP 200  content-type=application/json  bytes=59  title=<>
+[8092-root] GET http://127.0.0.1:8092/ => ERROR 响应状态代码未指示成功: 404 ()。
+[8092-scenarios] GET http://127.0.0.1:8092/api/v1/scenarios => HTTP 200  content-type=application/json  bytes=1017  title=<>

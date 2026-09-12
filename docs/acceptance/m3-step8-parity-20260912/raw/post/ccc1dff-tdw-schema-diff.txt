@@ -1,0 +1,215 @@
+commit ccc1dffc9231bc8b9ec3c6139da75e1e6ea7a937
+Author: downnititiffany-spec <downniti.tiffany@gmail.com>
+Date:   Sat Sep 12 20:48:56 2026 +0800
+
+    feat(spark-jobs): P2-03 代理键统一实现 + 维表/明细接入 + DDL 对齐（白名单 11 文件）
+
+diff --git a/spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala b/spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala
+index aff7d07..e1106c4 100644
+--- a/spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala
++++ b/spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala
+@@ -1,6 +1,6 @@
+ package com.graduation.analytics.job
+ 
+-import com.graduation.analytics.sql.OdsV2Columns
++import com.graduation.analytics.sql.{OdsV2Columns, SurrogateKey}
+ import com.graduation.analytics.warehouse.WarehouseNamespace
+ import org.apache.spark.sql.SparkSession
+ 
+@@ -51,7 +51,8 @@ object LocalSchemaInitJob {
+           behavior_id STRING, user_id BIGINT, product_id BIGINT, category_id BIGINT,
+           behavior_type STRING, event_time TIMESTAMP, event_date STRING,
+           event_hour INT, city_level STRING, channel STRING, session_id STRING,
+-          source_batch_id BIGINT)
++          source_batch_id BIGINT,
++          user_key BIGINT, product_key BIGINT, category_key BIGINT)
+         USING parquet PARTITIONED BY (dt STRING)"""),
+     (ns.dwd, s"""
+         CREATE TABLE IF NOT EXISTS ${ns.dwd}.dwd_reject_record (
+@@ -66,20 +67,23 @@ object LocalSchemaInitJob {
+           order_date STRING, city_level STRING, paid_at TIMESTAMP,
+           order_amount DECIMAL(18,2), paid_amount DECIMAL(18,2),
+           refund_amount DECIMAL(18,2), net_paid_amount DECIMAL(18,2),
+-          final_paid_flag INT, final_refunded_flag INT)
++          final_paid_flag INT, final_refunded_flag INT,
++          user_key BIGINT, product_key BIGINT, category_key BIGINT)
+         USING parquet PARTITIONED BY (dt STRING)"""),
+ 
+     (ns.dim, s"""
+         CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_user (
+           user_id BIGINT, age_group STRING, city_level STRING, member_level STRING,
+-          register_date STRING, register_time TIMESTAMP, source_batch_id BIGINT)
++          register_date STRING, register_time TIMESTAMP, source_batch_id BIGINT,
++          user_key BIGINT)
+         USING parquet PARTITIONED BY (dt STRING)"""),
+     (ns.dim, s"""
+         CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_product (
+           product_id BIGINT, product_name STRING, category_id BIGINT, category_name STRING,
+           parent_category_id BIGINT, parent_category_name STRING,
+           brand_id BIGINT, price DECIMAL(18,2), cost DECIMAL(18,2), status STRING,
+-          source_batch_id BIGINT)
++          source_batch_id BIGINT,
++          product_key BIGINT, category_key BIGINT, parent_category_key BIGINT, brand_key BIGINT)
+         USING parquet PARTITIONED BY (dt STRING)"""),
+ 
+     (ns.dws, s"""
+@@ -283,6 +287,34 @@ object LocalSchemaInitJob {
+       }
+     }
+     actions ++= reconcileOdsV2(spark, ns)
++    actions ++= reconcileSurrogateKeys(spark, ns)
++    actions.toList
++  }
++
++  /**
++   * P2-03 代理键列对账（**只用 `ALTER TABLE ADD COLUMNS`，绝不 DROP/重建**）。
++   *
++   * 与 `reconcileOdsV2` 第 1 类同口径：缺列 → 非破坏性补齐。历史 parquet 文件缺该列时读出 `null`，
++   * 下一次 `INSERT OVERWRITE` 即被真实值覆盖；**不重建表**（真数仓 `dw_*` 有真实数据，D-071 零迁移前提）。
++   *
++   * 列清单的唯一所有者是 `SurrogateKey.KeyColumns`（算法所有者）——DDL（本文件 `statements`）
++   * 与对账（本方法）都必须与它一致，避免「建表一处、补列一处」两份清单漂移。
++   *
++   * @return 动作行（`RECONCILE_SURROGATE_KEY ...` 前缀；无漂移时为空）
++   */
++  def reconcileSurrogateKeys(spark: SparkSession, ns: WarehouseNamespace): List[String] = {
++    val actions = scala.collection.mutable.ListBuffer[String]()
++    SurrogateKey.keyColumnPlan.foreach { case (layer, name, cols) =>
++      val full = ns.table(layer, name)
++      if (spark.catalog.tableExists(ns.layerDb(layer), name)) {
++        val existing = spark.table(full).schema.fieldNames.toSet
++        val missing = cols.map(_._1).filterNot(existing.contains)
++        if (missing.nonEmpty) {
++          spark.sql(s"ALTER TABLE $full ADD COLUMNS (${missing.map(c => s"$c BIGINT").mkString(", ")})")
++          actions += s"RECONCILE_SURROGATE_KEY $full 补齐代理键列: ${missing.mkString(", ")}"
++        }
++      }
++    }
+     actions.toList
+   }
+ 
+diff --git a/spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala b/spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala
+index e086941..325f474 100644
+--- a/spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala
++++ b/spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala
+@@ -1,7 +1,7 @@
+ package com.graduation.analytics.job
+ 
+ import com.graduation.analytics.algorithm.{OrderTradeCompiler, TradeEvent, TradeOrderDetail}
+-import com.graduation.analytics.sql.IdCodec
++import com.graduation.analytics.sql.{IdCodec, OdsLoadSql, SurrogateKey}
+ import com.graduation.analytics.warehouse.WarehouseNamespace
+ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+ 
+@@ -75,7 +75,10 @@ class TradeDwdJob extends WarehouseJob {
+       //   实测 dt=20260901 订单明细 7 行被放大为 28 行（无维度分区 2 个 × 用户分区 2 个），
+       //   GMV 2042.00 → 8168.00、net_sale 1493.00 → 5972.00。
+       val dimDt = args.businessDate
+-      spark.sql(TradeDwdJob.orderDetailInsertSql(ns, dimDt))
++      // P2-03：代理键需要本运行源编码。取值点与 ODS 载入**同一个所有者**
++      // （`OdsLoadSql.ArgSourceSystem` + `OdsLoadSql.sourceSystemLiteral` 的校验/转义），不另建解析链。
++      val sourceSystem = args.extra.getOrElse(OdsLoadSql.ArgSourceSystem, "")
++      spark.sql(TradeDwdJob.orderDetailInsertSql(ns, dimDt, sourceSystem))
+     }
+ 
+     val outputCount = spark.sql(s"SELECT COUNT(*) c FROM ${ns.dwd}.dwd_order_detail").collect()(0).getLong(0)
+@@ -110,14 +113,26 @@ object TradeDwdJob {
+    * - **id 归一化**：契约字符串 id（`O00000001`/`U000065`/`P00030`）在 ODS→DWD 边界一次性转 `BIGINT`，
+    *   规则只在 `IdCodec` 定义（DEF-05 / 决策 B-07 候选 ② / D-023），此处不得再手写 `CAST(... AS BIGINT)`；
+    * - **维度分区谓词**：R9 修正（D-R9-2）——`dim_*` 必须按生效日期分区过滤，否则 JOIN 笛卡尔放大（GMV 2042.00→8168.00）。
++   * - **P2-03 代理键（只加不改）**：列尾追加 `user_key` / `product_key` / `category_key`
++   *   （契约 `SurrogateKey` 派生，源编码取 `tdw_tmp` 未携带 → 见下方 `srcSys` 说明）。
++   *   **`order_key` 刻意不存在**：契约实体枚举为 `{user, product, category, brand, coupon}`，**无 `order`**，
++   *   按裁决 **D-093** 订单级身份一律不得套用代理键算法（否则物料 `<entity>` 段是自造的），
++   *   登记为**契约缺口**，须走契约升版新增 `order` 实体后方可实现。原 `IdCodec` 的 `order_id` 列保持原样。
+    *
+    * @param ns 数仓命名空间（库名由唯一所有者派生）
+    * @param dimDt 维度快照生效日期分区（= 业务日 `yyyyMMdd`）
++   * @param sourceSystem 本运行源编码（= `--sourceSystem` 注入的 `source_registry.source_code`，D-056）。
++   *                     `tdw_tmp` 由 `TradeDwdJob.run` 在内存里拼出（`OUT_SCHEMA` 不含 `source_system`），
++   *                     故源身份只能经**参数通道**进入本 SQL，而不是从临时视图读列。
+    */
+-  def orderDetailInsertSql(ns: WarehouseNamespace, dimDt: String): String = {
++  def orderDetailInsertSql(ns: WarehouseNamespace, dimDt: String, sourceSystem: String): String = {
+     val orderKey = IdCodec.toBIGINT("t.order_id")
+     val userKey = IdCodec.toBIGINT("t.user_id")
+     val productKey = IdCodec.toBIGINT("t.product_id")
++    // 源编码字面量走唯一所有者（校验 + `'` 转义）；空值在此抛参数错误，与本项目既有口径一致
++    val src = OdsLoadSql.sourceSystemLiteral(sourceSystem)
++    val userSurrogate = SurrogateKey.toBIGINT(src, "user", "t.user_id")
++    val productSurrogate = SurrogateKey.toBIGINT(src, "product", "t.product_id")
+     s"""INSERT OVERWRITE TABLE ${ns.dwd}.dwd_order_detail PARTITION (dt)
+        |SELECT
+        |  $orderKey,
+@@ -133,7 +148,10 @@ object TradeDwdJob {
+        |  CASE WHEN t.paid_at IS NULL THEN NULL ELSE TO_TIMESTAMP(t.paid_at) END AS paid_at,
+        |  t.order_amount, t.paid_amount, t.refund_amount, t.net_paid_amount,
+        |  t.final_paid_flag, t.final_refunded_flag,
+-       |  t.dt
++       |  t.dt,                                 -- 静态分区列（DDL 里在列尾，位置必须对齐）
++       |  $userSurrogate AS user_key,
++       |  $productSurrogate AS product_key,
++       |  p.category_key AS category_key
+        |FROM tdw_tmp t
+        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
+        |     THEN -1 ELSE $productKey END AND p.dt = '$dimDt'
+diff --git a/warehouse/ddl/01-dwd.sql b/warehouse/ddl/01-dwd.sql
+index 5b4473e..6e620e8 100644
+--- a/warehouse/ddl/01-dwd.sql
++++ b/warehouse/ddl/01-dwd.sql
+@@ -8,11 +8,16 @@
+ CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd COMMENT 'DWD 明细数据层';
+ 
+ -- 用户行为明细（唯一事实：每个行为一行，event_id 去重后）
++-- P2-03 代理键（裁决 D-083…D-092）：`*_key` 列为**新增**列，一律追加在列尾（INSERT 按位置对齐）。
++--   两套 id 列语义必须显式区分，不得互相替代：
++--     *_id  = 旧口径编码（IdCodec 剥字母转 BIGINT；含 -1 哨兵；**已摧毁前缀命名空间**，
++--             U00000001 与 O00000001 都折叠成 1）——下游 DWS/ADS 现依赖它，未删（D-094）
++--     *_key = 契约口径代理键（SHA-256 前 8 字节清符号位；空/缺 → NULL，**永不落 -1**；跨源不合并）
+ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_user_behavior_detail (
+     behavior_id   STRING  COMMENT '= event_id',
+-    user_id       BIGINT,
+-    product_id    BIGINT,
+-    category_id   BIGINT  COMMENT '商品维表补充',
++    user_id       BIGINT  COMMENT '旧口径编码（含哨兵，见文件头 *_id/*_key 语义说明）',
++    product_id    BIGINT  COMMENT '旧口径编码（含哨兵，同上）',
++    category_id   BIGINT  COMMENT '商品维表补充（旧口径，含 -1 哨兵）',
+     behavior_type STRING  COMMENT 'view/favorite/cart_add/cart_remove/search',
+     event_time    TIMESTAMP,
+     event_date    STRING  COMMENT 'yyyy-MM-dd',
+@@ -20,7 +25,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_user_behavior_de
+     city_level    STRING  COMMENT '用户维表补充',
+     channel       STRING,
+     session_id    STRING,
+-    source_batch_id BIGINT
++    source_batch_id BIGINT,
++    user_key      BIGINT  COMMENT 'P2-03 代理键（user）：sha256(源编码|user|NORMALIZED_ID) 前 8 字节清符号位；空/缺=NULL',
++    product_key   BIGINT  COMMENT 'P2-03 代理键（product）：同上；空/缺=NULL',
++    category_key  BIGINT  COMMENT 'P2-03 代理键（category）：取自 dim_product.category_key；维表未命中=NULL'
+ )
+ COMMENT '用户行为明细（去重、标准枚举、维度补充）'
+ PARTITIONED BY (dt STRING COMMENT '业务日期 yyyyMMdd')
+@@ -28,8 +36,10 @@ STORED AS PARQUET
+ LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dwd.db/dwd_user_behavior_detail';
+ 
+ -- 订单明细（状态展开：同 order_id 的事件按 event_time 重建最新状态）
++-- 注意：**没有** `order_key`。契约实体枚举为 {user, product, category, brand, coupon}，无 `order`，
++-- 按裁决 D-093 订单级身份一律不得套用代理键算法（登记为契约缺口，须走契约升版）。
+ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_order_detail (
+-    order_id      BIGINT,
++    order_id      BIGINT  COMMENT '旧口径编码（订单级**无**代理键，见文件头 D-093 说明）',
+     user_id       BIGINT,
+     product_id    BIGINT,
+     category_id   BIGINT,
+@@ -47,7 +57,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dwd.dwd_order_detail (
+     refund_amount DECIMAL(18,2) COMMENT '累计已完成退款金额（refund_completed 按 refund_id 去重汇总）',
+     net_paid_amount DECIMAL(18,2) COMMENT '=paid_amount−refund_amount（净销售口径）',
+     final_paid_flag INT COMMENT '1=有效支付（口径依据，§21.3）',
+-    final_refunded_flag INT COMMENT '1=完全退款（有效复购率排除）'
++    final_refunded_flag INT COMMENT '1=完全退款（有效复购率排除）',
++    user_key      BIGINT  COMMENT 'P2-03 代理键（user）；空/缺=NULL',
++    product_key   BIGINT  COMMENT 'P2-03 代理键（product）；空/缺=NULL',
++    category_key  BIGINT  COMMENT 'P2-03 代理键（category）：取自 dim_product.category_key；维表未命中=NULL'
+ )
+ COMMENT '订单明细（状态展开+金额核对，§11.3）'
+ PARTITIONED BY (dt STRING)

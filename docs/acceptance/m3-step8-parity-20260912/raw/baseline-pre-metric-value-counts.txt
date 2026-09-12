@@ -1,0 +1,18 @@
+### BASELINE BEFORE RUN (captured 2026-09-12 20:56:47)
+### analytics_metric.metric_value grouped by snapshot_id
+
+mysql: [Warning] Using a password on the command line interface can be insecure.
++--------------+--------+
+| snapshot_id  | n_rows |
++--------------+--------+
+| S20260901_22 |     10 |
+| S20260901_23 |     10 |
+| S20260901_24 |     10 |
+| S20260901_25 |     10 |
+| S20260901_29 |     10 |
+| S20260901_30 |     10 |
+| S20260901_39 |     10 |
+| S20260901_41 |     10 |
+| S20260901_42 |     10 |
+| S20260901_43 |     10 |
++--------------+--------+

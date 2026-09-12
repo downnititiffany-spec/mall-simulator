@@ -1,0 +1,25 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 21:30:48 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 21:30:48 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 21:30:50 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 21:30:50 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@192.168.1.8
+Spark Web UI available at http://127.0.0.1:4040
+Spark master: local[1], Application Id: local-1789219848039
+26/09/12 21:30:51 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+A8T2_TOTAL_ROWS	4
+A8T2_product_key_notnull	4
+A8T2_category_key_notnull	4
+A8T2_brand_key_notnull	4
+A8T2_parent_category_key_notnull	0
+A8T2_distinct_product_key	4
+A8T2_distinct_parent_category_key	0
+Time taken: 4.667 seconds, Fetched 7 row(s)
+DWD_ORDER_DETAIL_dt20260901_rows	7
+Time taken: 0.708 seconds, Fetched 6 row(s)
+DWD_ORDER_DETAIL_dt20260901_user_key_notnull	7
+DWD_ORDER_DETAIL_dt20260901_product_key_notnull	7
+DWD_ORDER_DETAIL_dt20260901_category_key_notnull	7
+DWD_USER_BEHAVIOR_dt20260901_rows	14
+DWD_USER_BEHAVIOR_dt20260901_user_key_notnull	14

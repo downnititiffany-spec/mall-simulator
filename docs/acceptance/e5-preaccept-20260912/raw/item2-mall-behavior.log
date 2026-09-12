@@ -1,0 +1,12 @@
+BEFORE landing/events 文件数 = 61
+BEFORE 最新 3 个 = [('r9-prunefix-105922.jsonl', (18430, 1789095569.7724347)), ('r9-prunefix-110637.jsonl', (18430, 1789096004.3539102)), ('r9-qualityfail-103736.jsonl', (18430, 1789094256.4510221))]
+PAGE url=http://127.0.0.1:8090/mall title=<模拟商城（mall-simulator）>
+PAGE 当前用户行: 当前用户：2098607950599319554
+PAGE 「+ 加购」按钮数 = 43
+PAGE 首个商品行 = 1001	磁吸手机支架	11	¥29.90	—	+ 加购
+ACTION 点击「+ 加购」→ 页面提示: 已加入购物车：磁吸手机支架
+PAGE 购物车区域文本 = 商品（点击「+ 加购」加入购物车） / 购物车（userId=2098607950599319554） / 磁吸手机支架 × 1	¥29.90
+AFTER  landing/events 文件数 = 62
+AFTER  新增或变化的文件 = ['2026091221.jsonl']
+FILE 2026091221.jsonl size=497 sha256=81518b0c25274b58d86911fcc8062333cf0201883a1a4c0b5a991bf83de93180
+LAST_LINES ["{\"event_id\":\"eb22c6ca-58be-47c4-87d2-1467cc79bbe2\",\"event_type\":\"behavior\",\"event_time\":\"2026-09-12T21:57:19.6892274+08:00\",\"ingest_time\":\"2026-09-12T21:57:19.6912275+08:00\",\"source_system\":\"mock-mall\",\"schema_version\":\"1.0\",\"trace_id\":\"ec5eb977-cc2d-4544-b7d2-8f751ebc3a69\",\"payload\":{\"user_id\":\"2098607950599319554\",\"product_id\":\"1001\",\"session_id\":\"session-ec5eb977-cc2d-4544-b7d2-8f751ebc3a69\",\"behavior_type\":\"cart_add\",\"channel\":\"app\",\"event_time_utc\":\"2026-09-12T21:57:19.6892274+08:00\"}}"]

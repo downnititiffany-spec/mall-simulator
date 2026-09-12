@@ -1,0 +1,22 @@
+### FROZEN MAPPING fingerprint (stable across 2x20s checks; last mtime 21:01:13)
+captured_at=2026-09-12 21:02:43
+path=D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\MAPPING-20260912.md
+bytes=49517
+mtime=2026-09-12 21:01:13.354
+sha256=E80B357CD8FCE13CD69D6DC0919FEBDB40127EB1974FF5F1A2F50CDED642F52F
+lines=482
+note=This is the version the comparison is judged against. Frozen BEFORE any run.
+
+### APPEND #2 (2026-09-12 21:02:43) -- supersedes the 21:00:03 record above (which read 44,800 B)
+### Reason: the MAPPING author wrote one final revision AFTER my first capture; parent 总控 confirmed
+###         the final frozen revision is 49,517 B / 482 lines / mtime 21:01:13. The 21:00:03 record
+###         (44,800 B / sha B3A249B1...) is therefore SUPERSEDED but retained for the audit trail.
+captured_at=2026-09-12 21:02:43
+bytes=49517
+mtime=2026-09-12 21:01:13.354
+sha256=E80B357CD8FCE13CD69D6DC0919FEBDB40127EB1974FF5F1A2F50CDED642F52F
+lines=482
+stability_evidence=unchanged across the 21:01:28 and 21:01:48 checks (2x20s)
+parent_confirmed=YES (总控 21:02 message quotes the identical sha256/bytes/lines/mtime)
+author_never_saw_run_values=YES -- MAPPING mtime 21:01:13 predates the local chain start (>=21:03);
+   the author only read pre-run baselines in raw/; mapping lane has stopped writing.

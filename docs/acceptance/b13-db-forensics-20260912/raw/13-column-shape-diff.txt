@@ -1,0 +1,21 @@
+### CMD (READ ONLY): information_schema.COLUMNS diff between the two same-named tables
+### 判别规则：出现 definition_version / active_flag / failure_reason 任一列 ⇒ 该读数只能来自 analytics_metric
+COLUMN_NAME	in_analytics_metric	in_analytics_meta
+active_flag	14:tinyint	NULL
+business_time	5:datetime(3)	5:datetime(3)
+created_at	15:datetime(3)	12:datetime(3)
+data_updated_at	10:datetime(3)	9:datetime(3)
+definition_version	9:varchar(16)	NULL
+failure_reason	13:varchar(512)	NULL
+id	1:bigint	1:bigint
+pipeline_run_id	6:bigint	6:bigint
+published_at	11:datetime(3)	10:datetime(3)
+runtime_profile_id	3:bigint	3:bigint
+runtime_profile_version	4:int	4:int
+snapshot_id	2:varchar(64)	2:varchar(64)
+source	12:varchar(32)	11:varchar(32)
+status	7:varchar(24)	7:varchar(24)
+version	8:int	8:int
+TABLE_SCHEMA	col_count
+analytics_meta	12
+analytics_metric	15

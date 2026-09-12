@@ -1,0 +1,181 @@
+file	line	row_id	family	expected_outcome	expected_reason_class	actual_outcome	actual_reason	verdict	join
+b1a-envelope-vocab.jsonl	1	b1a-msg-0001	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	2	b1a-msg-0002	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	3	b1a-msg-0003	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	4	b1a-msg-0004	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	5	b1a-msg-0005	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	6	b1a-msg-0006	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	7	b1a-msg-0007	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	8	b1a-msg-0008	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	9	b1a-msg-0009	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	10	b1a-msg-0010	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	11	b1a-msg-0011	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	12	b1a-msg-0012	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	13	b1a-msg-0013	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	14	b1a-msg-0014	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	15	b1a-msg-0015	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	16	b1a-msg-0016	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	17	b1a-msg-0017	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	18	b1a-msg-0018	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	19	b1a-msg-0019	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	20	b1a-msg-0020	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	21	b1a-msg-0021	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	22	b1a-msg-0022	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	23	b1a-msg-0023	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	24	b1a-msg-0024	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	25	b1a-msg-0025	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	26	b1a-msg-0026	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	27	b1a-msg-0027	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	28	b1a-msg-0028	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	29	b1a-msg-0029	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1a-envelope-vocab.jsonl	30	b1a-msg-0030	B1A-信封异构	ACCEPT	经 fixture-b 画像 eventTypeMapping/fieldMapping 归一后入库，产出可对账指标	QUARANTINE	缺失必要字段: event_id	结果不符	id
+b1b-payload-vocab.jsonl	1	b1b-evt-0001	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	2	b1b-evt-0002	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	3	b1b-evt-0003	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	4	b1b-evt-0004	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	5	b1b-evt-0005	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	6	b1b-evt-0006	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	7	b1b-evt-0007	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	8	b1b-evt-0008	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	9	b1b-evt-0009	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	10	b1b-evt-0010	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	11	b1b-evt-0011	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	12	b1b-evt-0012	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	13	b1b-evt-0013	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	14	b1b-evt-0014	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	15	b1b-evt-0015	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	16	b1b-evt-0016	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	17	b1b-evt-0017	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	18	b1b-evt-0018	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	19	b1b-evt-0019	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	20	b1b-evt-0020	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	21	b1b-evt-0021	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	22	b1b-evt-0022	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	23	b1b-evt-0023	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	24	b1b-evt-0024	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: order_id	结果不符	id
+b1b-payload-vocab.jsonl	25	b1b-evt-0025	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	26	b1b-evt-0026	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	27	b1b-evt-0027	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	28	b1b-evt-0028	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	29	b1b-evt-0029	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b1b-payload-vocab.jsonl	30	b1b-evt-0030	B1B-payload异构	ACCEPT	经画像 fieldMapping/enumSemantics 归一后入库，产出可对账指标	QUARANTINE	payload 缺失必要字段: user_id	结果不符	id
+b2-missing-optional.jsonl	1	b2-1-evt-0001	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	2	b2-1-evt-0002	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	3	b2-1-evt-0003	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	4	b2-1-evt-0004	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	5	b2-1-evt-0005	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	6	b2-1-evt-0006	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	7	b2-1-evt-0007	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	8	b2-1-evt-0008	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	9	b2-1-evt-0009	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	10	b2-1-evt-0010	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	11	b2-1-evt-0011	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	12	b2-1-evt-0012	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	13	b2-1-evt-0013	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	14	b2-1-evt-0014	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	15	b2-1-evt-0015	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	16	b2-1-evt-0016	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	17	b2-1-evt-0017	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	18	b2-1-evt-0018	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	19	b2-1-evt-0019	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	20	b2-1-evt-0020	B2-1-缺契约必需(闸门未查)	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	21	b2-2-evt-0021	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	22	b2-2-evt-0022	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	23	b2-2-evt-0023	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	24	b2-2-evt-0024	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	25	b2-2-evt-0025	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	QUARANTINE	金额格式违规: cost 类型异常	结果不符	id
+b2-missing-optional.jsonl	26	b2-2-evt-0026	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	27	b2-2-evt-0027	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	28	b2-2-evt-0028	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	29	b2-2-evt-0029	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	30	b2-2-evt-0030	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	QUARANTINE	金额格式违规: cost 类型异常	结果不符	id
+b2-missing-optional.jsonl	31	b2-2-evt-0031	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	32	b2-2-evt-0032	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	33	b2-2-evt-0033	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	34	b2-2-evt-0034	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	35	b2-2-evt-0035	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	QUARANTINE	金额格式违规: cost 类型异常	结果不符	id
+b2-missing-optional.jsonl	36	b2-2-evt-0036	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	37	b2-2-evt-0037	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	38	b2-2-evt-0038	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	39	b2-2-evt-0039	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	40	b2-2-evt-0040	B2-2-字段为null	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	QUARANTINE	金额格式违规: cost 类型异常	结果不符	id
+b2-missing-optional.jsonl	41	b2-3-evt-0041	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	42	b2-3-evt-0042	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	43	b2-3-evt-0043	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	44	b2-3-evt-0044	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	45	b2-3-evt-0045	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	46	b2-3-evt-0046	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	47	b2-3-evt-0047	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	48	b2-3-evt-0048	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	49	b2-3-evt-0049	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	50	b2-3-evt-0050	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	51	b2-3-evt-0051	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	52	b2-3-evt-0052	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	53	b2-3-evt-0053	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	54	b2-3-evt-0054	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	55	b2-3-evt-0055	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	56	b2-3-evt-0056	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	57	b2-3-evt-0057	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	58	b2-3-evt-0058	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	59	b2-3-evt-0059	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b2-missing-optional.jsonl	60	b2-3-evt-0060	B2-3-缺源声明可选字段	ACCEPT	缺可选字段必须由**显式规则**处理，并在采集/质量结果中**展示能力限制**；不得静默补造值	ACCEPT		一致	id
+b3a-missing-required.jsonl	1	b3a-evt-0001	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: payment_id	QUARANTINE	payload 缺失必要字段: payment_id	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	2	b3a-evt-0002	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: amount	QUARANTINE	payload 缺失必要字段: amount	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	3	b3a-evt-0003	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: session_id	QUARANTINE	payload 缺失必要字段: session_id	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	4	b3a-evt-0004	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: behavior_type	QUARANTINE	payload 缺失必要字段: behavior_type	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	5	b3a-evt-0005	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: price	QUARANTINE	payload 缺失必要字段: price	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	6	b3a-evt-0006	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: category_id	QUARANTINE	payload 缺失必要字段: category_id	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	7	b3a-evt-0007	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: total_amount	QUARANTINE	payload 缺失必要字段: total_amount	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	8	b3a-evt-0008	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: items	QUARANTINE	payload 缺失必要字段: items	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	9	b3a-evt-0009	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: member_level	QUARANTINE	payload 缺失必要字段: member_level	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	10	b3a-evt-0010	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: age_group	QUARANTINE	payload 缺失必要字段: age_group	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	11	b3a-evt-0011	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: reason	QUARANTINE	payload 缺失必要字段: reason	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	12	b3a-evt-0012	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: refund_id	QUARANTINE	payload 缺失必要字段: refund_id	结果符·理由=真命中（平台确实识别出缺必需字段）	id
+b3a-missing-required.jsonl	13	b3a-evt-0013	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 paid_at（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	14	b3a-evt-0014	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 channel（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	15	b3a-evt-0015	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 brand_id（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	16	b3a-evt-0016	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 status（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	17	b3a-evt-0017	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 city_level（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	18	b3a-evt-0018	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 register_time（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	19	b3a-evt-0019	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 status（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	20	b3a-evt-0020	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 created_at（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	21	b3a-evt-0021	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 completed_at（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	22	b3a-evt-0022	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 available_qty（不得静默按可选处理）	ACCEPT		结果不符	id
+b3a-missing-required.jsonl	23	b3a-missing-envelope-0023	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: event_id	QUARANTINE	缺失必要字段: event_id	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	pos
+b3a-missing-required.jsonl	24	b3a-evt-0024	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: trace_id	QUARANTINE	缺失必要字段: trace_id	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	id
+b3a-missing-required.jsonl	25	b3a-evt-0025	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: source_system	QUARANTINE	缺失必要字段: source_system	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	id
+b3a-missing-required.jsonl	26	b3a-evt-0026	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: schema_version	QUARANTINE	缺失必要字段: schema_version	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	id
+b3a-missing-required.jsonl	27	b3a-evt-0027	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: event_type	QUARANTINE	缺失必要字段: event_type	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	id
+b3a-missing-required.jsonl	28	b3a-evt-0028	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: ingest_time	QUARANTINE	缺失必要字段: ingest_time	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	id
+b3a-missing-required.jsonl	29	b3a-evt-0029	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: event_time	QUARANTINE	缺失必要字段: event_time	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	id
+b3a-missing-required.jsonl	30	b3a-evt-0030	B3A-3-缺信封必需字段	QUARANTINE	payload 缺失或非对象	QUARANTINE	payload 缺失或非对象	结果符·理由=真命中（平台确实识别出缺必需字段/载荷非对象）	id
+b3b-ambiguous-mapping.jsonl	1	b3b-evt-0001	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	QUARANTINE	payload 缺失必要字段: amount	结果符·理由=偶然正确（理由=规范字段 amount 缺失，源自未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	2	b3b-evt-0002	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	QUARANTINE	payload 缺失必要字段: amount	结果符·理由=偶然正确（理由=规范字段 amount 缺失，源自未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	3	b3b-evt-0003	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	QUARANTINE	payload 缺失必要字段: amount	结果符·理由=偶然正确（理由=规范字段 amount 缺失，源自未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	4	b3b-evt-0004	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	QUARANTINE	payload 缺失必要字段: amount	结果符·理由=偶然正确（理由=规范字段 amount 缺失，源自未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	5	b3b-evt-0005	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	6	b3b-evt-0006	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	7	b3b-evt-0007	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	8	b3b-evt-0008	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	9	b3b-evt-0009	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["purchase"] = null）	QUARANTINE	非法 behavior_type: purchase	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	10	b3b-evt-0010	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["add_cart"] = null）	QUARANTINE	非法 behavior_type: add_cart	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	11	b3b-evt-0011	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["pay_later"] = null）	QUARANTINE	非法 behavior_type: pay_later	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	12	b3b-evt-0012	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["cancel"] = null）	QUARANTINE	非法 behavior_type: cancel	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	13	b3b-evt-0013	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["purchase"] = null）	QUARANTINE	非法 behavior_type: purchase	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	14	b3b-evt-0014	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["add_cart"] = null）	QUARANTINE	非法 behavior_type: add_cart	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	15	b3b-evt-0015	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["pay_later"] = null）	QUARANTINE	非法 behavior_type: pay_later	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	16	b3b-evt-0016	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["cancel"] = null）	QUARANTINE	非法 behavior_type: cancel	结果符·理由=偶然正确（理由=非法 behavior_type，源自异构枚举未归一，非"识别歧义"）	id
+b3b-ambiguous-mapping.jsonl	17	b3b-evt-0017	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	18	b3b-evt-0018	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	19	b3b-evt-0019	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	20	b3b-evt-0020	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	21	b3b-evt-0021	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	22	b3b-evt-0022	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	23	b3b-evt-0023	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	24	b3b-evt-0024	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	25	b3b-evt-0025	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	26	b3b-evt-0026	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	27	b3b-evt-0027	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	28	b3b-evt-0028	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	29	b3b-evt-0029	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	ACCEPT		结果不符	id
+b3b-ambiguous-mapping.jsonl	30	b3b-evt-0030	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	ACCEPT		结果不符	id

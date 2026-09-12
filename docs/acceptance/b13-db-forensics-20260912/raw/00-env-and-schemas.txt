@@ -1,0 +1,38 @@
+### CMD (READ ONLY) 2026-09-12 23:12:49
+v	host	port	datadir	log_bin	fmt	gtid	base	expire_s
+8.0.41	dahaishui	3306	C:\ProgramData\MySQL\MySQL Server 8.0\Data\	1	ROW	OFF	C:\ProgramData\MySQL\MySQL Server 8.0\Data\LAPTOP-8F8T3J1B-bin	2592000
+Log_name	File_size	Encrypted
+LAPTOP-8F8T3J1B-bin.000113	157	No
+LAPTOP-8F8T3J1B-bin.000114	1366	No
+LAPTOP-8F8T3J1B-bin.000115	1206	No
+LAPTOP-8F8T3J1B-bin.000116	1073744191	No
+LAPTOP-8F8T3J1B-bin.000117	1073742775	No
+LAPTOP-8F8T3J1B-bin.000118	1073744309	No
+LAPTOP-8F8T3J1B-bin.000119	1073744109	No
+LAPTOP-8F8T3J1B-bin.000120	1147237425	No
+LAPTOP-8F8T3J1B-bin.000121	1134518178	No
+LAPTOP-8F8T3J1B-bin.000122	1073742573	No
+LAPTOP-8F8T3J1B-bin.000123	1073742359	No
+LAPTOP-8F8T3J1B-bin.000124	1073743211	No
+LAPTOP-8F8T3J1B-bin.000125	487659933	No
+LAPTOP-8F8T3J1B-bin.000126	180	No
+LAPTOP-8F8T3J1B-bin.000127	180	No
+LAPTOP-8F8T3J1B-bin.000128	180	No
+LAPTOP-8F8T3J1B-bin.000129	63704239	No
+LAPTOP-8F8T3J1B-bin.000130	150285009	No
+LAPTOP-8F8T3J1B-bin.000131	47977792	No
+--- schemas with metric tables (11) ---
+TABLE_SCHEMA	tbls
+analytics_meta	22
+analytics_meta_p103	22
+analytics_meta_p105	22
+analytics_meta_p105it	22
+analytics_meta_v17probe	22
+analytics_metric	11
+analytics_metric_p103	11
+analytics_metric_p105	11
+analytics_verify_m3_parity	10
+mall_simulator	30
+mall_simulator_test	30
+exact_rows	min_created	max_created	distinct_days	max_version
+9	2026-09-07 17:31:43.431	2026-09-07 19:33:50.118	1	1

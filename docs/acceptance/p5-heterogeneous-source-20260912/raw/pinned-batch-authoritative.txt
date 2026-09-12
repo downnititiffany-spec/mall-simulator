@@ -1,0 +1,33 @@
+### 钉住批次的权威测量（REGEXP_SUBSTR，逐 WAIT_LANDING 行）
+
+pinned_key	rows_cnt	runs
+"batchId":31	9	32,33,34,35,36,37,38,39,41
+"batchId":18	6	12,13,14,15,16,17
+"batchId":26	3	26,27,28
+"batchId":43	3	45,46,47
+NULL	2	2,3
+"batchId":25	2	24,25
+"batchId":42	2	43,44
+"batchId":11	1	7
+"batchId":13	1	8
+"batchId":14	1	9
+"batchId":15	1	10
+"batchId":16	1	11
+"batchId":19	1	18
+"batchId":20	1	19
+"batchId":21	1	20
+"batchId":22	1	21
+"batchId":23	1	22
+"batchId":24	1	23
+"batchId":27	1	29
+"batchId":28	1	30
+"batchId":30	1	31
+"batchId":40	1	40
+"batchId":41	1	42
+"batchId":7	1	4
+"batchId":8	1	5
+"batchId":9	1	6
+--- 那 2 条疑似含 44 的行，打印全文（解释误命中）---
+id	run_id	evidence
+106	18	{"batchId":19,"acceptedUri":"accepted/19","checksum":"bf47dbbf","acceptedRecords":51,"schemaVersions":["1.0"]} | [RECOVERY] action=MARK_FAILED operator=verify-admin-operator reason=R6 运维动作取证：质量阻断后管理员确认失败并只重跑失败阶段 at=2026-09-10T19:44:48.500600500 | [RECOVERY] action=RETRY_FROM_STAGE:QUALITY_CHECK operator=verify-admin-operator reason=R6 运维动作取证：质量阻断后管理员确认失败并只重跑失败阶段 at=2026-09-10T19:44:48.546154600 | [RECOVERY] action=RESUME operator=verify-admin-operator reason=retry-from-stage QUALITY_CHECK at=2026-09-10T19:44:48.559587500
+139	22	{"batchId":23,"acceptedUri":"accepted/23","checksum":"71bbde63","acceptedRecords":51,"schemaVersions":["1.0"]} | [RECOVERY] action=RETRY_FROM_STAGE:BUILD_ADS operator=admin reason=R8 验收：验证阶段证据超长截断缺陷已修复 at=2026-09-11T09:45:17.687869700 | [RECOVERY] action=RESUME operator=admin reason=retry-from-stage BUILD_ADS at=2026-09-11T09:45:17.706994900 | [RECOVERY] action=RETRY_FROM_STAGE:BUILD_ADS operator=admin reason=R8 验收：验证阶段证据超长截断缺陷已修复 at=2026-09-11T09:49:43.839100200 | [RECOVERY] action=RESUME operator=admin reason=retry-from-stage BUILD_ADS at=2026-09-11T09:49:43.844100700

@@ -1,0 +1,47 @@
+### 登记源 B：逐步原始请求/响应（时间 2026-09-12 22:07:13） 
+--- [1] POST /api/v1/auth/login ---
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "token": "8215c4f961944dee837ed5f0c59c3e3b",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "realName": "系统管理员",
+      "role": "admin"
+    }
+  },
+  "traceId": "0d2c5bb3-f4ac-4156-bc1f-a2aa58cdd89e"
+}
+--- [2] POST /api/v1/sources  body= {
+  "sourceCode": "fixture-b",
+  "timezone": "Asia/Shanghai",
+  "warehousePrefix": "het",
+  "profileVersion": "1.0",
+  "displayName": "异构源 B（P5 人工配置接入验证）",
+  "ingestMode": "FILE",
+  "currency": "CNY",
+  "profilePath": "docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b3-ambiguous.v1.json"
+}
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "id": 2,
+    "sourceCode": "fixture-b",
+    "displayName": "异构源 B（P5 人工配置接入验证）",
+    "ingestMode": "FILE",
+    "profilePath": "docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b3-ambiguous.v1.json",
+    "timezone": "Asia/Shanghai",
+    "currency": "CNY",
+    "status": "DRAFT",
+    "profileVersion": "1.0",
+    "current": false,
+    "createdAt": "2026-09-12T22:07:13.583",
+    "updatedAt": "2026-09-12T22:07:13.583",
+    "warehousePrefix": "het"
+  },
+  "traceId": "807a4221-71fc-4ad5-827d-7d7456359c99"
+}
+新建源 id = 2

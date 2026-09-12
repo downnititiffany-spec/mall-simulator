@@ -1,0 +1,45 @@
+{
+  "_note": "依据 fixtures/b1a-*.jsonl + fixtures/b1b-*.jsonl 与 mapping/fixture-b.v1.json 声明的映射独立推算；平台侧产出必须与此一致才叫\"可对账\"。金额单位：分（fen）。",
+  "sourceCode": "fixture-b",
+  "businessDate": "2026-09-20",
+  "rows": {
+    "b1a": 30,
+    "b1b": 30,
+    "total": 60
+  },
+  "metric": {
+    "pv": 14,
+    "uv": 3,
+    "order_count": 11,
+    "sale_amount_fen": 365200,
+    "sale_amount_yuan": "3652.00",
+    "orders_created": 11
+  },
+  "per_user_ids_reused_from_source_a": [
+    "1",
+    "2",
+    "3"
+  ],
+  "per_product_ids_reused_from_source_a": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "per_order_ids_reused_from_source_a": [
+    "1001",
+    "1002",
+    "1003",
+    "1004",
+    "1005",
+    "1006"
+  ],
+  "per_payment_ids_reused_from_source_a": [
+    "P-1001",
+    "P-1002",
+    "P-1003",
+    "P-1004",
+    "P-1005",
+    "P-1006"
+  ]
+}

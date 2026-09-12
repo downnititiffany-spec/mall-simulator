@@ -1,0 +1,138 @@
+### 批次 45 隔离明细（quarantine_record, 只读）时间 2026-09-12 22:09:02 
+--- 按原因聚合计数据（batch_id=45）---
+reason	n
+缺失必要字段: event_id	31
+payload 缺失必要字段: user_id	18
+payload 缺失必要字段: order_id	12
+payload 缺失必要字段: amount	5
+金额格式违规: cost 类型异常	4
+非法 behavior_type: add_cart	2
+非法 behavior_type: cancel	2
+非法 behavior_type: pay_later	2
+非法 behavior_type: purchase	2
+payload 缺失必要字段: age_group	1
+payload 缺失必要字段: behavior_type	1
+payload 缺失必要字段: category_id	1
+payload 缺失必要字段: items	1
+payload 缺失必要字段: member_level	1
+payload 缺失必要字段: payment_id	1
+payload 缺失必要字段: price	1
+payload 缺失必要字段: reason	1
+payload 缺失必要字段: refund_id	1
+payload 缺失必要字段: session_id	1
+payload 缺失必要字段: total_amount	1
+payload 缺失或非对象	1
+缺失必要字段: event_time	1
+缺失必要字段: event_type	1
+缺失必要字段: ingest_time	1
+缺失必要字段: schema_version	1
+缺失必要字段: source_system	1
+缺失必要字段: trace_id	1
+--- 逐行明细（batch_id=45，按 raw_path, id 排序）---
+id	event_id	schema_version	reason	quar_file
+113	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+114	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+115	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+116	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+117	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+118	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+119	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+120	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+121	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+122	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+123	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+124	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+125	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+126	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+127	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+128	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+129	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+130	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+131	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+132	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+133	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+134	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+135	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+136	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+137	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+138	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+139	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+140	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+141	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+142	NULL	NULL	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl
+143	b1b-evt-0001	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+144	b1b-evt-0002	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+145	b1b-evt-0003	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+146	b1b-evt-0004	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+147	b1b-evt-0005	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+148	b1b-evt-0006	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+149	b1b-evt-0007	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+150	b1b-evt-0008	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+151	b1b-evt-0009	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+152	b1b-evt-0010	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+153	b1b-evt-0011	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+154	b1b-evt-0012	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+155	b1b-evt-0013	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+156	b1b-evt-0014	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+157	b1b-evt-0015	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+158	b1b-evt-0016	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+159	b1b-evt-0017	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+160	b1b-evt-0018	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+161	b1b-evt-0019	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+162	b1b-evt-0020	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+163	b1b-evt-0021	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+164	b1b-evt-0022	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+165	b1b-evt-0023	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+166	b1b-evt-0024	1.0	payload 缺失必要字段: order_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+167	b1b-evt-0025	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+168	b1b-evt-0026	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+169	b1b-evt-0027	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+170	b1b-evt-0028	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+171	b1b-evt-0029	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+172	b1b-evt-0030	1.0	payload 缺失必要字段: user_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl
+173	b2-2-evt-0025	1.0	金额格式违规: cost 类型异常	D:\Develop_code\GraduationProject\landing\quarantine\45\b2-missing-optional.jsonl
+174	b2-2-evt-0030	1.0	金额格式违规: cost 类型异常	D:\Develop_code\GraduationProject\landing\quarantine\45\b2-missing-optional.jsonl
+175	b2-2-evt-0035	1.0	金额格式违规: cost 类型异常	D:\Develop_code\GraduationProject\landing\quarantine\45\b2-missing-optional.jsonl
+176	b2-2-evt-0040	1.0	金额格式违规: cost 类型异常	D:\Develop_code\GraduationProject\landing\quarantine\45\b2-missing-optional.jsonl
+177	b3a-evt-0001	1.0	payload 缺失必要字段: payment_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+178	b3a-evt-0002	1.0	payload 缺失必要字段: amount	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+179	b3a-evt-0003	1.0	payload 缺失必要字段: session_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+180	b3a-evt-0004	1.0	payload 缺失必要字段: behavior_type	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+181	b3a-evt-0005	1.0	payload 缺失必要字段: price	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+182	b3a-evt-0006	1.0	payload 缺失必要字段: category_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+183	b3a-evt-0007	1.0	payload 缺失必要字段: total_amount	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+184	b3a-evt-0008	1.0	payload 缺失必要字段: items	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+185	b3a-evt-0009	1.0	payload 缺失必要字段: member_level	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+186	b3a-evt-0010	1.0	payload 缺失必要字段: age_group	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+187	b3a-evt-0011	1.0	payload 缺失必要字段: reason	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+188	b3a-evt-0012	1.0	payload 缺失必要字段: refund_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+189	NULL	1.0	缺失必要字段: event_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+190	b3a-evt-0024	1.0	缺失必要字段: trace_id	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+191	b3a-evt-0025	1.0	缺失必要字段: source_system	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+192	b3a-evt-0026	NULL	缺失必要字段: schema_version	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+193	b3a-evt-0027	1.0	缺失必要字段: event_type	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+194	b3a-evt-0028	1.0	缺失必要字段: ingest_time	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+195	b3a-evt-0029	1.0	缺失必要字段: event_time	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+196	b3a-evt-0030	1.0	payload 缺失或非对象	D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl
+197	b3b-evt-0001	1.0	payload 缺失必要字段: amount	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+198	b3b-evt-0002	1.0	payload 缺失必要字段: amount	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+199	b3b-evt-0003	1.0	payload 缺失必要字段: amount	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+200	b3b-evt-0004	1.0	payload 缺失必要字段: amount	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+201	b3b-evt-0009	1.0	非法 behavior_type: purchase	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+202	b3b-evt-0010	1.0	非法 behavior_type: add_cart	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+203	b3b-evt-0011	1.0	非法 behavior_type: pay_later	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+204	b3b-evt-0012	1.0	非法 behavior_type: cancel	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+205	b3b-evt-0013	1.0	非法 behavior_type: purchase	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+206	b3b-evt-0014	1.0	非法 behavior_type: add_cart	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+207	b3b-evt-0015	1.0	非法 behavior_type: pay_later	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+208	b3b-evt-0016	1.0	非法 behavior_type: cancel	D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl
+--- ingestion_batch_file（batch_id=45）---
+file_path	start_offset	end_offset	record_count	status
+b1a-envelope-vocab.jsonl	0	8950	0	LANDED
+b1b-payload-vocab.jsonl	0	10406	0	LANDED
+b2-missing-optional.jsonl	0	20507	56	LANDED
+b3a-missing-required.jsonl	0	9537	10	LANDED
+b3b-ambiguous-mapping.jsonl	0	9894	18	LANDED
+--- event_id 为空的行数（看能否按 id 反查）---
+total	null_event_id
+96	31

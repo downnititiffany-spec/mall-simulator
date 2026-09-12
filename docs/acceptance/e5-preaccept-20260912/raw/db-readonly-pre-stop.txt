@@ -1,0 +1,26 @@
+===== 只读库取证 at 2026-09-12 22:00:17  （只有 SELECT，无任何写）
+mysql: [Warning] Using a password on the command line interface can be insecure.
+tbl	snapshot_id	status	version	business_time	source	pipeline_run_id	definition_version
+metric_snapshot	S20260901_47	ACTIVE	12	2026-09-01 00:00:00.000	spark-ads	47	v2
+metric_snapshot	S20260901_43	ARCHIVED	11	2026-09-01 00:00:00.000	spark-ads	43	v2
+metric_snapshot	S20260901_42	ARCHIVED	10	2026-09-01 00:00:00.000	spark-ads	42	v2
+metric_snapshot	S20260901_41	ARCHIVED	9	2026-09-01 00:00:00.000	spark-ads	41	v2
+metric_snapshot	S20260901_39	ARCHIVED	8	2026-09-01 00:00:00.000	spark-ads	39	v2
+metric_snapshot	S20260901_38	FAILED	7	2026-09-01 00:00:00.000	spark-ads	38	v2
+metric_snapshot	S20260901_30	ARCHIVED	6	2026-09-01 00:00:00.000	spark-ads	30	v2
+metric_snapshot	S20260901_29	ARCHIVED	5	2026-09-01 00:00:00.000	spark-ads	29	v2
+metric_snapshot	S20260901_25	ARCHIVED	4	2026-09-01 00:00:00.000	spark-ads	25	v2
+metric_snapshot	S20260901_22	ARCHIVED	3	2026-09-01 00:00:00.000	spark-ads	22	v2
+metric_snapshot	S20260901_24	ARCHIVED	2	2026-09-01 00:00:00.000	spark-ads	24	v2
+metric_snapshot	S20260901_23	ARCHIVED	1	2026-09-01 00:00:00.000	spark-ads	23	v2
+tbl	cnt
+active_count	1
+tbl	snapshot_id	cnt
+metric_value_rows	S20260901_43	10
+metric_value_rows	S20260901_47	10
+tbl	id	status	error_code	target_snapshot_id
+run_status	44	FAILED	RUN_JOB_FAILED	S20260901_44
+run_status	45	FAILED	RUN_JOB_FAILED	S20260901_45
+run_status	46	FAILED	RUN_JOB_FAILED	S20260901_46
+run_status	47	SUCCESS	NULL	S20260901_47
+

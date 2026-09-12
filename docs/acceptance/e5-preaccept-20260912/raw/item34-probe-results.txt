@@ -1,0 +1,55 @@
+=== [8091-overview] url=http://127.0.0.1:8091/overview innerText=400chars DOM=5593chars
+    'Cannot safely cast': innerText=False DOM=False
+    'RUN_JOB_FAILED': innerText=False DOM=False
+    'BUILD_DWD 作业失败': innerText=False DOM=False
+    'spark-ads': innerText=False DOM=False
+    '数据源': innerText=False DOM=False
+    'sourceCode': innerText=False DOM=False
+    'source_id': innerText=False DOM=False
+    '旧结果': innerText=False DOM=False
+    '仍可用': innerText=False DOM=False
+    '上一份': innerText=False DOM=False
+    '未发布': innerText=False DOM=False
+    '不影响': innerText=False DOM=False
+    '回退': innerText=False DOM=False
+    '保留': innerText=False DOM=False
+    '失败原因': innerText=False DOM=False
+    'errorMessage': innerText=False DOM=False
+=== [8091-pipeline] url=http://127.0.0.1:8091/pipeline innerText=706chars DOM=4788chars
+    'Cannot safely cast': innerText=False DOM=False
+    'RUN_JOB_FAILED': innerText=False DOM=False
+    'BUILD_DWD 作业失败': innerText=False DOM=False
+    'spark-ads': innerText=False DOM=False
+    '数据源': innerText=False DOM=False
+    'sourceCode': innerText=False DOM=False
+    'source_id': innerText=False DOM=False
+    '旧结果': innerText=False DOM=False
+    '仍可用': innerText=False DOM=False
+    '上一份': innerText=False DOM=False
+    '未发布': innerText=False DOM=False
+    '不影响': innerText=False DOM=False
+    '回退': innerText=False DOM=False
+    '保留': innerText=False DOM=False
+    '失败原因': innerText=False DOM=False
+    'errorMessage': innerText=False DOM=False
+=== [8091-ops] url=http://127.0.0.1:8091/ops innerText=5808chars DOM=35005chars
+    'Cannot safely cast': innerText=False DOM=False
+    'RUN_JOB_FAILED': innerText=True DOM=True
+    'BUILD_DWD 作业失败': innerText=False DOM=False
+    'spark-ads': innerText=False DOM=False
+    '数据源': innerText=False DOM=False
+    'sourceCode': innerText=False DOM=False
+    'source_id': innerText=False DOM=False
+    '旧结果': innerText=False DOM=False
+    '仍可用': innerText=False DOM=False
+    '上一份': innerText=False DOM=False
+    '未发布': innerText=False DOM=False
+    '不影响': innerText=False DOM=False
+    '回退': innerText=False DOM=False
+    '保留': innerText=False DOM=False
+    '失败原因': innerText=False DOM=False
+    'errorMessage': innerText=False DOM=False
+=== FAILED/ARCHIVED 快照行 S20260901_38 文本 = S20260901_38	2026-09-01 00:00:00	FAILED	v7	查看指标
+    行内 [title] 提示 = []
+=== FAILED/ARCHIVED 快照行 S20260901_43 文本 = S20260901_43	2026-09-01 00:00:00	ARCHIVED	v11	查看指标
+    行内 [title] 提示 = []

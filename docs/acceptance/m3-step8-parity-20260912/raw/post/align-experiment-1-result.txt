@@ -1,0 +1,21 @@
+Missing Python executable 'python3', defaulting to 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\..' for SPARK_HOME environment variable. Please install Python or specify the correct Python executable in PYSPARK_DRIVER_PYTHON or PYSPARK_PYTHON environment variable to detect SPARK_HOME safely.
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/09/12 21:21:13 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 21:21:13 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+26/09/12 21:21:14 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+26/09/12 21:21:14 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore UNKNOWN@192.168.1.8
+Spark Web UI available at http://127.0.0.1:4040
+Spark master: local[1], Application Id: local-1789219272373
+26/09/12 21:21:15 WARN ObjectStore: Failed to get database dw_exp, returning NoSuchObjectException
+26/09/12 21:21:15 WARN ObjectStore: Failed to get database dw_exp, returning NoSuchObjectException
+26/09/12 21:21:15 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+26/09/12 21:21:15 WARN ObjectStore: Failed to get database dw_exp, returning NoSuchObjectException
+Time taken: 1.061 seconds
+Time taken: 0.038 seconds
+26/09/12 21:21:16 WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.
+26/09/12 21:21:16 WARN HiveConf: HiveConf of name hive.internal.ss.authz.settings.applied.marker does not exist
+26/09/12 21:21:16 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+26/09/12 21:21:16 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+Time taken: 0.499 seconds
+[INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] Cannot write incompatible data for the table `spark_catalog`.`dw_exp`.`t_align_bad`: Cannot safely cast `user_key` "STRING" to "BIGINT".

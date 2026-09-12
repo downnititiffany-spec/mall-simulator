@@ -1,0 +1,38 @@
+### CMD (READ ONLY): SHOW FULL PROCESSLIST; SELECT * FROM information_schema.INNODB_TRX; SELECT @@innodb_purge/performance_schema...
+Id	User	Host	db	Command	Time	State	Info
+5	event_scheduler	localhost	NULL	Daemon	102634	Waiting on empty queue	NULL
+8667	meta_app	localhost:1362	analytics_meta	Sleep	1615		NULL
+8668	meta_app	localhost:11047	analytics_meta	Sleep	1603		NULL
+8669	metric_pub	localhost:4145	analytics_metric	Sleep	1598		NULL
+8670	meta_app	localhost:4159	analytics_meta	Sleep	1593		NULL
+8671	metric_pub	localhost:14977	analytics_metric	Sleep	1578		NULL
+8672	metric_read	localhost:14978	analytics_metric	Sleep	1578		NULL
+8673	metric_read	localhost:1025	analytics_metric	Sleep	1565		NULL
+8674	metric_pub	localhost:11583	analytics_metric	Sleep	1563		NULL
+8675	metric_pub	localhost:5812	analytics_metric	Sleep	1562		NULL
+8676	metric_read	localhost:5814	analytics_metric	Sleep	1561		NULL
+8677	metric_pub	localhost:7470	analytics_metric	Sleep	1558		NULL
+8678	metric_pub	localhost:7498	analytics_metric	Sleep	1554		NULL
+8679	metric_read	localhost:7501	analytics_metric	Sleep	1551		NULL
+8680	meta_app	localhost:7502	analytics_meta	Sleep	1551		NULL
+8681	metric_pub	localhost:13728	analytics_metric	Sleep	1550		NULL
+8682	metric_read	localhost:13945	analytics_metric	Sleep	1548		NULL
+8683	meta_app	localhost:7371	analytics_meta	Sleep	1541		NULL
+8684	meta_app	localhost:7376	analytics_meta	Sleep	1536		NULL
+8685	metric_read	localhost:7417	analytics_metric	Sleep	1527		NULL
+8686	metric_pub	localhost:7418	analytics_metric	Sleep	1524		NULL
+8688	metric_read	localhost:7434	analytics_metric	Sleep	1517		NULL
+8689	meta_app	localhost:7437	analytics_meta	Sleep	1515		NULL
+8690	metric_read	localhost:7438	analytics_metric	Sleep	1513		NULL
+8691	metric_pub	localhost:7440	analytics_metric	Sleep	1512		NULL
+8692	metric_read	localhost:7446	analytics_metric	Sleep	1510		NULL
+8693	meta_app	localhost:7453	analytics_meta	Sleep	1504		NULL
+8694	meta_app	localhost:12634	analytics_meta	Sleep	1502		NULL
+8695	meta_app	localhost:12668	analytics_meta	Sleep	1501		NULL
+8696	metric_pub	localhost:12674	analytics_metric	Sleep	1500		NULL
+8697	metric_read	localhost:7180	analytics_metric	Sleep	1466		NULL
+8809	root	localhost:9872	NULL	Query	0	init	SHOW FULL PROCESSLIST
+--- INNODB_TRX ---
+--- performance_schema on? ---
+ps_on	eshl_enabled
+1	0

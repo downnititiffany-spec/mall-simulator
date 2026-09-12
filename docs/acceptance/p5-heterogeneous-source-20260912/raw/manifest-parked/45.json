@@ -1,0 +1,51 @@
+{
+  "batchId" : 45,
+  "batchNo" : "ing-20260912220805-04beeb43",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T22:08:05.908715500",
+  "finishedAt" : "2026-09-12T22:08:06.053619100",
+  "files" : [ {
+    "file" : "b1a-envelope-vocab.jsonl",
+    "endOffset" : 8950,
+    "startOffset" : 0,
+    "acceptedRecords" : 0,
+    "quarantinedRecords" : 30
+  }, {
+    "file" : "b1b-payload-vocab.jsonl",
+    "endOffset" : 10406,
+    "startOffset" : 0,
+    "acceptedRecords" : 0,
+    "quarantinedRecords" : 30
+  }, {
+    "file" : "b2-missing-optional.jsonl",
+    "endOffset" : 20507,
+    "startOffset" : 0,
+    "acceptedRecords" : 56,
+    "quarantinedRecords" : 4
+  }, {
+    "file" : "b3a-missing-required.jsonl",
+    "endOffset" : 9537,
+    "startOffset" : 0,
+    "acceptedRecords" : 10,
+    "quarantinedRecords" : 20
+  }, {
+    "file" : "b3b-ambiguous-mapping.jsonl",
+    "endOffset" : 9894,
+    "startOffset" : 0,
+    "acceptedRecords" : 18,
+    "quarantinedRecords" : 12
+  } ],
+  "acceptedRecords" : 84,
+  "quarantinedRecords" : 96,
+  "acceptedBytes" : 28349,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/45",
+  "quarantineUri" : "quarantine/45",
+  "checksum" : "80281eba",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}

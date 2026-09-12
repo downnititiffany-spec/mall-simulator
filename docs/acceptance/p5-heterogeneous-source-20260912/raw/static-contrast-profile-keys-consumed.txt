@@ -1,0 +1,106 @@
+### 静态对照：画像 6 个语义键在**生产代码**里是否被读取
+### 命令：Select-String -Pattern '<key>' -Path analytics-server\**\*.java, spark-jobs\**\*.scala -CaseSensitive
+### 目录约定：src/main = 生产代码；src/test = 测试
+
+--- eventTypeMapping ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:21: * 每个键内部的子结构（{@code eventTypeMapping} 的枚举闭集、{@code identityPolicy} 的字段形状等）
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:39: "eventTypeMapping",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:48: "eventTypeMapping": { "product_viewed": "view" },
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:62: "profileVersion", "sourceCode", "canonical", "eventTypeMapping", "fieldMapping",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:115: "eventTypeMapping", "fieldMapping", "enumSemantics",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryConcurrencyTest.java:95: "eventTypeMapping": {},
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:89: "eventTypeMapping": { "product_viewed": "view" },
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:448: assertThat(item.detail()).contains("canonical", "eventTypeMapping", "quarantinePolicy");
+--- fieldMapping ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:40: "fieldMapping",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:49: "fieldMapping": { "buyer_id": "user_id" },
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:62: "profileVersion", "sourceCode", "canonical", "eventTypeMapping", "fieldMapping",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:115: "eventTypeMapping", "fieldMapping", "enumSemantics",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryConcurrencyTest.java:96: "fieldMapping": {},
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:90: "fieldMapping": { "buyer_id": "user_id" },
+--- enumSemantics ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:41: "enumSemantics",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:50: "enumSemantics": { "behavior": { "browse": "view" } },
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:63: "enumSemantics", "identityPolicy", "timePolicy", "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:115: "eventTypeMapping", "fieldMapping", "enumSemantics",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryConcurrencyTest.java:97: "enumSemantics": {},
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:91: "enumSemantics": { "behavior": { "browse": "view" } },
+--- identityPolicy ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:21: * 每个键内部的子结构（{@code eventTypeMapping} 的枚举闭集、{@code identityPolicy} 的字段形状等）
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:42: "identityPolicy",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:51: "identityPolicy": { "user": { "rawField": "buyer_id", "shape": "UUID", "surrogate": "HASH64" } },
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:63: "enumSemantics", "identityPolicy", "timePolicy", "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:116: "identityPolicy", "timePolicy", "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryConcurrencyTest.java:98: "identityPolicy": {},
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:92: "identityPolicy": { "user": { "rawField": "buyer_id", "shape": "UUID", "surrogate": "HASH64" } },
+  spark-jobs\src\main\scala\com\graduation\analytics\sql\SurrogateKey.scala:54: /** 契约算法名（源画像 `identityPolicy.*.surrogate` 唯一允许值，D-089） */
+--- timePolicy ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:43: "timePolicy",
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:52: "timePolicy": { "field": "created_at", "formats": ["ISO_OFFSET_DATE_TIME"] },
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:63: "enumSemantics", "identityPolicy", "timePolicy", "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:116: "identityPolicy", "timePolicy", "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryConcurrencyTest.java:99: "timePolicy": {},
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:93: "timePolicy": { "field": "created_at", "formats": ["ISO_OFFSET_DATE_TIME"] },
+--- quarantinePolicy ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:44: "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:53: "quarantinePolicy": { "unknownEventType": "QUARANTINE", "unknownField": "KEEP_IN_PAYLOAD" }
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:63: "enumSemantics", "identityPolicy", "timePolicy", "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:116: "identityPolicy", "timePolicy", "quarantinePolicy");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryConcurrencyTest.java:100: "quarantinePolicy": {}
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:94: "quarantinePolicy": { "unknownEventType": "QUARANTINE", "unknownField": "KEEP_IN_PAYLOAD" }
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:448: assertThat(item.detail()).contains("canonical", "eventTypeMapping", "quarantinePolicy");
+
+### 静态对照：mappingVersion / EventNormalizer / SourceProfile DTO 读取面
+--- mappingVersion ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:267: *   <li>{@code mappingVersion} ← {@code null}：语义映射尚未实施，恒为 null 直到 P2。
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:300: manifest.put("mappingVersion", null);
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\IngestionSourceManifestTest.java:47: *   <li>manifest {@code mappingVersion} 在 P1-05 阶段<b>恒为 {@code null}</b>
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\IngestionSourceManifestTest.java:124: @DisplayName("manifest 四字段取值：sourceCode/sourceId/profileVersion 取自登记列，mappingVersion 恒为 null")
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\IngestionSourceManifestTest.java:140: assertThat(manifest.has("mappingVersion"))
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\IngestionSourceManifestTest.java:141: .as("mappingVersion 这个键必须**存在**（否则读侧无法区分「未应用映射」与「字段缺失」）")
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\IngestionSourceManifestTest.java:143: assertThat(manifest.get("mappingVersion").isNull())
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\IngestionSourceManifestTest.java:191: .contains("sourceCode", "sourceId", "profileVersion", "mappingVersion");
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:30: *   <li>新清单（含四字段、{@code mappingVersion=null}）同样通过——加法不能变成"新的合法、旧的非法"。</li>
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:57: List.of("sourceCode", "sourceId", "profileVersion", "mappingVersion");
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:87: @DisplayName("字段类型与 D-037 裁决 6/8 一致：sourceId 是 integer、mappingVersion 可为 null")
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:97: assertThat(typeOf(props.path("mappingVersion")))
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:98: .as("mappingVersion 在 P1-05 恒为 null，schema 必须同时允许 string 与 null")
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:197: @DisplayName("新清单（含四字段、mappingVersion=null）通过 schema")
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:219: "mappingVersion": null
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:227: @DisplayName("mappingVersion 的占位值必须被 schema 拒绝？——不：schema 允许 string（P2 会用）")
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:228: void mappingVersionSchemaAllowsFutureStringVersion() throws IOException {
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java:237: "mappingVersion": "vocab-2026.09"
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\source\FileCheckpointSourceMigrationScriptTest.java:165: .doesNotContain("mappingVersion")
+--- EventNormalizer ---
+  (无命中)
+--- SourceProfileValidator ---
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:30: public class SourceProfileValidator {
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:49: public SourceProfileValidator(@Value("${platform.source.profile-root:.}") String profileRoot,
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceRegistryServiceImpl.java:47: private final SourceProfileValidator profileValidator;
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceRegistryServiceImpl.java:51: SourceProfileValidator profileValidator) {
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceRegistryServiceImpl.java:199: SourceProfileValidator.ProfileCheck check =
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceRegistryServiceImpl.java:230: ? "设计 §4.2 的 " + SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS.size() + " 个顶层必备键齐全"
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceRegistryServiceImpl.java:269: SourceProfileValidator.ProfileCheck check =
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:22: class SourceProfileValidatorTest {
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:32: private SourceProfileValidator validator() {
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:33: return new SourceProfileValidator(root.toString(), objectMapper);
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:61: assertThat(SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS).containsExactly(
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:69: SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:81: SourceProfileValidator.ProfileCheck broken = validator().check(REL, CODE, "1.0");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:87: SourceProfileValidator.ProfileCheck array = validator().check(REL, CODE, "1.0");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:97: SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:112: SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:125: SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceProfileValidatorTest.java:141: SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryConcurrencyTest.java:60: new SourceProfileValidator(profileRoot.toString(), new ObjectMapper()));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceRegistryServiceTest.java:49: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixGateTest.java:50: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixGateTest.java:94: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixGateTest.java:116: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixGateTest.java:140: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixGateTest.java:167: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixGateTest.java:209: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixGateTest.java:225: new SourceProfileValidator(profileRoot.toString(), objectMapper));
+  analytics-server\platform-app\src\test\java\com\graduation\analytics\source\SourceProfileFixtureTest.java:63: List<String> missing = SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS.stream()
+--- SourceProfile\b ---
+  (无命中)

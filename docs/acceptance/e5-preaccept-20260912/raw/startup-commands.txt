@@ -1,0 +1,9 @@
+# 实际使用的启动命令行（源：scripts/start-all.ps1 L39-51 的 Start-Jar 原文，唯一偏离：-FilePath 'java' -> 'javaw'，理由 F-47）
+# 生成时刻 2026-09-12 21:53:07
+mall jar  : D:\Develop_code\GraduationProject\mall-simulator\target\mall-simulator-0.1.0-SNAPSHOT.jar  29852277 B  mtime=2026-09-11 15:06:05  sha256=EF1991A03D68B394BE903461749F23D78BED6AEF2272FD4130A29D93DC00BC29
+gen  jar  : D:\Develop_code\GraduationProject\synthetic-data-generator\target\synthetic-data-generator-0.1.0-SNAPSHOT.jar  26219654 B  mtime=2026-09-12 11:00:58  sha256=11EE6F7F8C1D7FD6FC0CA8F4DAC1704B8E518D3C58F316BEC52C3D8A286D8F22
+
+# [8090] Start-Process -FilePath 'javaw' -ArgumentList @('-Dfile.encoding=UTF-8','-jar',D:\Develop_code\GraduationProject\mall-simulator\target\mall-simulator-0.1.0-SNAPSHOT.jar) -WorkingDirectory D:\Develop_code\GraduationProject -WindowStyle Hidden  (env MALL_DB_PASSWORD=***)  => pid=54644
+# [8092] Start-Process -FilePath 'javaw' -ArgumentList @('-Dfile.encoding=UTF-8','-jar',D:\Develop_code\GraduationProject\synthetic-data-generator\target\synthetic-data-generator-0.1.0-SNAPSHOT.jar) -WorkingDirectory D:\Develop_code\GraduationProject -WindowStyle Hidden  => pid=13696
+
+# 探活结果 21:53:15  8090=True 8092=True

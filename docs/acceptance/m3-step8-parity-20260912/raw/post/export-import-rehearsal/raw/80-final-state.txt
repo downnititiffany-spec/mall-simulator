@@ -1,0 +1,20 @@
+section
+== FINAL STATE of isolated DB analytics_verify_m3_parity (left as evidence) ==
+checked_at
+2026-09-12 22:43:34.402788
+id	snapshot_id	status	version	active_flag	definition_version	published_at	failure_reason
+29	S20260901_47	ACTIVE	1	1	v2	2026-09-12 22:32:37.973	NULL
+30	S20260901_47RH	FAILED	2	NULL	v2	NULL	MP_VERIFY_FAILED: MP_ADS_ROWS_MATCH
+31	S20260901_47RC	FAILED	3	NULL	v2	NULL	MP_ADS_WRITE_FAILED: 导出文件第 1 行含非白名单列（D:\Develop_code\GraduationProject\docs\acce
+snapshot_id	mv_rows
+S20260901_47	10
+k	v
+ADS rows total	22
+k	v
+ACTIVE snapshot for profile 1	S20260901_47
+section
+== prod analytics_metric untouched (final re-check) ==
+id	snapshot_id	status	version	active_flag	published_at
+27	S20260901_47	ACTIVE	12	1	2026-09-12 21:29:27.321
+snapshot_id	mv_rows
+S20260901_47	10

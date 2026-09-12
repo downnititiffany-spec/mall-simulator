@@ -1,0 +1,4 @@
+{"rule_code":"REQUIRED_FIELD_NULL_RATE","check_count":14,"error_count":0,"error_rate":0.000000,"passed":1,"threshold":"0.001"}
+{"rule_code":"EVENT_ID_UNIQUE","check_count":14,"error_count":1,"error_rate":0.071429,"passed":0,"threshold":"0.0005"}
+{"rule_code":"AMOUNT_RECONCILE","check_count":5,"error_count":0,"error_rate":0.000000,"passed":1,"threshold":"0.01"}
+{"rule_code":"ENUM_WHITELIST","check_count":14,"error_count":0,"error_rate":0.000000,"passed":1,"threshold":"0"}

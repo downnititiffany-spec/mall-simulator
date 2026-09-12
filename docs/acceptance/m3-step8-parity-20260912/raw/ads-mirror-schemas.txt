@@ -1,0 +1,128 @@
+### ADS mirror + metric table schemas in analytics_metric (captured 2026-09-12 20:58:56, read-only SHOW COLUMNS)
+
+===== ads_operation_overview_m =====
++------------------+---------------+------+-----+---------+-------+
+| Field            | Type          | Null | Key | Default | Extra |
++------------------+---------------+------+-----+---------+-------+
+| snapshot_id      | varchar(64)   | NO   | PRI | NULL    |       |
+| dt               | varchar(16)   | NO   | PRI | NULL    |       |
+| pv               | bigint        | NO   |     | 0       |       |
+| uv               | bigint        | NO   |     | 0       |       |
+| dau              | bigint        | NO   |     | 0       |       |
+| order_count      | bigint        | NO   |     | 0       |       |
+| sale_amount      | decimal(18,2) | NO   |     | 0.00    |       |
+| net_sale_amount  | decimal(18,2) | NO   |     | 0.00    |       |
+| avg_order_value  | decimal(18,2) | YES  |     | NULL    |       |
+| refund_rate      | decimal(8,4)  | YES  |     | NULL    |       |
+| full_refund_rate | decimal(8,4)  | YES  |     | NULL    |       |
++------------------+---------------+------+-----+---------+-------+
+===== ads_sale_trend_m =====
++-----------------+---------------+------+-----+---------+-------+
+| Field           | Type          | Null | Key | Default | Extra |
++-----------------+---------------+------+-----+---------+-------+
+| snapshot_id     | varchar(64)   | NO   | PRI | NULL    |       |
+| dt              | varchar(16)   | NO   | PRI | NULL    |       |
+| order_count     | bigint        | NO   |     | 0       |       |
+| buyer_count     | bigint        | NO   |     | 0       |       |
+| sale_amount     | decimal(18,2) | NO   |     | 0.00    |       |
+| avg_order_value | decimal(18,2) | YES  |     | NULL    |       |
++-----------------+---------------+------+-----+---------+-------+
+===== ads_active_trend_m =====
++----------------+-------------+------+-----+---------+-------+
+| Field          | Type        | Null | Key | Default | Extra |
++----------------+-------------+------+-----+---------+-------+
+| snapshot_id    | varchar(64) | NO   | PRI | NULL    |       |
+| dt             | varchar(16) | NO   | PRI | NULL    |       |
+| dau            | bigint      | NO   |     | 0       |       |
+| behavior_count | bigint      | NO   |     | 0       |       |
++----------------+-------------+------+-----+---------+-------+
+===== ads_user_profile_m =====
++-------------------+-------------+------+-----+---------+-------+
+| Field             | Type        | Null | Key | Default | Extra |
++-------------------+-------------+------+-----+---------+-------+
+| snapshot_id       | varchar(64) | NO   | PRI | NULL    |       |
+| dt                | varchar(16) | NO   | PRI | NULL    |       |
+| user_id           | bigint      | NO   | PRI | NULL    |       |
+| r                 | int         | NO   |     | 0       |       |
+| f                 | int         | NO   |     | 0       |       |
+| m                 | int         | NO   |     | 0       |       |
+| value_group       | varchar(32) | NO   |     |         |       |
+| active_level      | varchar(32) | NO   |     |         |       |
+| favorite_category | bigint      | NO   |     | 0       |       |
+| last_active_date  | varchar(32) | NO   |     |         |       |
+| last_buy_date     | varchar(32) | NO   |     |         |       |
+| lifecycle_state   | varchar(32) | NO   |     |         |       |
+| rule_version      | varchar(32) | NO   |     |         |       |
+| calc_date         | varchar(32) | NO   |     |         |       |
++-------------------+-------------+------+-----+---------+-------+
+===== ads_hot_product_m =====
++--------------+---------------+------+-----+---------+-------+
+| Field        | Type          | Null | Key | Default | Extra |
++--------------+---------------+------+-----+---------+-------+
+| snapshot_id  | varchar(64)   | NO   | PRI | NULL    |       |
+| dt           | varchar(16)   | NO   | PRI | NULL    |       |
+| product_id   | bigint        | NO   |     | NULL    |       |
+| product_name | varchar(200)  | NO   |     |         |       |
+| heat_score   | decimal(18,4) | NO   |     | 0.0000  |       |
+| pv           | bigint        | NO   |     | 0       |       |
+| fav          | bigint        | NO   |     | 0       |       |
+| cart         | bigint        | NO   |     | 0       |       |
+| buy          | bigint        | NO   |     | 0       |       |
+| rank_no      | int           | NO   | PRI | NULL    |       |
++--------------+---------------+------+-----+---------+-------+
+===== ads_product_conversion_m =====
++-----------------+--------------+------+-----+---------+-------+
+| Field           | Type         | Null | Key | Default | Extra |
++-----------------+--------------+------+-----+---------+-------+
+| snapshot_id     | varchar(64)  | NO   | PRI | NULL    |       |
+| dt              | varchar(16)  | NO   | PRI | NULL    |       |
+| product_id      | bigint       | NO   | PRI | NULL    |       |
+| pv_users        | bigint       | NO   |     | 0       |       |
+| buy_users       | bigint       | NO   |     | 0       |       |
+| conversion_rate | decimal(8,4) | YES  |     | NULL    |       |
++-----------------+--------------+------+-----+---------+-------+
+===== ads_behavior_funnel_m =====
++------------------+--------------+------+-----+---------+-------+
+| Field            | Type         | Null | Key | Default | Extra |
++------------------+--------------+------+-----+---------+-------+
+| snapshot_id      | varchar(64)  | NO   | PRI | NULL    |       |
+| dt               | varchar(16)  | NO   | PRI | NULL    |       |
+| stage            | varchar(16)  | NO   | PRI | NULL    |       |
+| user_count       | bigint       | NO   |     | 0       |       |
+| conversion_rate  | decimal(8,4) | YES  |     | NULL    |       |
+| overall_buy_rate | decimal(8,4) | YES  |     | NULL    |       |
++------------------+--------------+------+-----+---------+-------+
+===== ads_data_quality_m =====
++-------------+---------------+------+-----+----------+-------+
+| Field       | Type          | Null | Key | Default  | Extra |
++-------------+---------------+------+-----+----------+-------+
+| snapshot_id | varchar(64)   | NO   | PRI | NULL     |       |
+| dt          | varchar(16)   | NO   | PRI | NULL     |       |
+| rule_code   | varchar(64)   | NO   | PRI | NULL     |       |
+| check_count | bigint        | NO   |     | 0        |       |
+| error_count | bigint        | NO   |     | 0        |       |
+| error_rate  | decimal(12,6) | NO   |     | 0.000000 |       |
+| passed      | int           | NO   |     | 0        |       |
+| threshold   | varchar(200)  | NO   |     |          |       |
++-------------+---------------+------+-----+----------+-------+
+===== metric_definition (analytics_meta) =====
++---------------------+--------------------+-------------------------------------------------------------------+--------------+--------------------+------+--------------------+
+| metric_code         | metric_name        | formula                                                           | grain        | default_time_field | unit | definition_version |
++---------------------+--------------------+-------------------------------------------------------------------+--------------+--------------------+------+--------------------+
+| avg_order_value     | 客单价             | GMV/支付订单数                                                    | day          | paid_at            | 元   | v1                 |
+| buy_rate            | 购买转化率         | 支付用户数/浏览用户数                                             | day          | event_time         |      | v1                 |
+| cart_rate           | 加购率             | 加购用户数/浏览用户数                                             | day          | event_time         |      | v1                 |
+| dau                 | 日活跃用户数       | count(distinct user_id 当日任一有效行为)                          | day          | event_time         | 人   | v1                 |
+| full_refund_rate    | 全额退款率         | 全额退款订单数/支付订单数                                         | day          | paid_at            |      | v1                 |
+| gmv                 | 销售额(GMV)        | sum(paid_amount)                                                  | day          | paid_at            | 元   | v1                 |
+| net_sale            | 净销售额           | GMV - sum(refund_completed.amount)                                | day          | paid_at            | 元   | v1                 |
+| paid_order_cnt      | 支付订单数         | count(distinct order_id where final_paid_flag=1)                  | day          | paid_at            | 单   | v1                 |
+| product_heat        | 商品热度           | 1×ln(1+PV)+2×ln(1+收藏)+3×ln(1+加购)+5×ln(1+支付件数)             | day          | event_time         |      | v1                 |
+| pv                  | 浏览量             | count(view 行为事件)                                              | day          | event_time         | 次   | v1                 |
+| refund_rate         | 退款率             | 有已完成退款的订单数/支付订单数                                   | day          | paid_at            |      | v2                 |
+| repeat_rate         | 复购率(有效)       | 支付订单数>=2 的用户数/支付用户数                                 | user×period  | paid_at            |      | v1                 |
+| stock_days          | 库存覆盖天数       | 可售库存/日均销量                                                 | day          |                    | 天   | v1                 |
+| stock_shortage_rate | 缺货率             | 缺货商品数/在售商品数                                             | day          |                    |      | v1                 |
+| user_value_level    | 用户价值等级       | RFM 分位数八类                                                    | user×period  | 截止日             |      | v1                 |
+| uv                  | 浏览用户数         | count(distinct user_id where behavior_type=view)                  | day          | event_time         | 人   | v1                 |
++---------------------+--------------------+-------------------------------------------------------------------+--------------+--------------------+------+--------------------+

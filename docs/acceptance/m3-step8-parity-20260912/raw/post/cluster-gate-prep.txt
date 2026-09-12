@@ -1,0 +1,519 @@
+================================================================================
+集群执行 · 前置检查清单（**只读准备，未提交任何作业**）
+M3 §6.4 步骤 6「本地 ↔ 集群 同输入逐值对照」
+执行泳道：专职执行泳道 / 分支 remediation/r1-boundary
+时刻：2026-09-12 22:0x
+状态：**等待总控「门禁已过」口令；本文件不产生任何集群写入**
+依据：裁决 D-142（集群前置门禁）＋ 总控 21:3x 暂停令（优先于工单 B）
+================================================================================
+
+【本文件不做什么】
+- 未提交任何 Spark/YARN 作业（0 次 spark-submit）
+- 未写/删 HDFS 任何路径；未改 MySQL 业务数据；未重启平台
+- 未改 `MAPPING-20260912.md`（冻结件）
+
+--------------------------------------------------------------------------------
+§1 构建物（jar）基准 —— ✅ **总控已裁定：提交前最后一步按最终工作树重建重算**
+--------------------------------------------------------------------------------
+工单假定的基准是 `296,340 B / F9882E6A…9432A0B`。**该构建物已不存在**：
+叙述改正改动了被编译的源文本（1 行 SQL 行内注释），jar 已被重建，且 `clean` 删除了旧产物。
+（本泳道操作失误：重建前未备份旧 jar。如实登记，见 `raw/post/narration-fix-readback.txt` §5。）
+
+  run 47 **认证时**的 jar（已不存在）  : 296,340 B / mtime 21:26:10
+                                        sha256 F9882E6A9A7662BEC2167D6037FB2917672B69890C5ACC0271B0A427B9432A0B
+  **当前** jar（候选提交物）           : 296,359 B / mtime 2026-09-12 21:58:08
+                                        sha256 71C2BCCB54066996E7197DEA004E88F16B4DF912481CB723B4D84CC33CE0C966
+  变化内容                            : **仅 1 行 SQL 行内注释**（`git diff -U0` 全文 1 行，
+                                        `TradeDwdJob.scala:176`），**零可执行语句变化**
+  行为等价性证据                      : `orderDetailInsertSql(…)/OUT_SCHEMA()` 等成员签名逐一未变；
+                                        `TradeDwdJob$.class` bytes 6316 / sha256
+                                        CD979288A93A40C7FFDB8A1176C9C11AE905E449FB78158FAD7F173C090C34DD / major 52；
+                                        E2 = **111 tests / 15 suites / 0 aborted / BUILD SUCCESS**
+
+**另发现（影响「指纹」口径，须与 D-142 第 2 条一并裁定）**：
+同一源码连续 3 次 `clean package` 得 **3 个不同 jar 整包 sha256**（均 296,359 B）——
+jar 为 ZIP，**每个 entry 内嵌写入时刻**（122 entries / 3 个不同时间戳）
+⇒ **jar 整包 sha256 不是稳定标识**；稳定标识应取**逐 entry 内容哈希 + class major**。
+
+⇒ **门禁项 G1 —— 总控已裁定（22:4x）**：
+  **基准 = 门禁通过后，按「最终工作树」重建 jar 并重算指纹**（逐 entry 内容哈希 ＋ class major 一并给出）。
+  ⇒ **本轮不锁定任何指纹**：`71C2BCCB…`（现行）与 `F9882E6A…`（已被 `mvn clean` 删除）
+    **均不得再作为「当前指纹」被引用**；它们只作为**历史世代记录**保留在上表中。
+  ⇒ **本条性质 = 「提交前最后一步」**：指纹**随代码变化必然变**（F-88 落地会改代码 ⇒ 必然再变）。
+    因此执行顺序固定为：**G4/F-88 落地 → 冻结工作树 → 重建 jar → 重算指纹（逐 entry + class major）→ 提交集群**。
+  ⇒ **禁止**在提交时引用任何早于该次重建的指纹值。
+
+--------------------------------------------------------------------------------
+§2 参数清单（相对 E4 蓝本的**全部**差异）
+--------------------------------------------------------------------------------
+脚本：`docs/acceptance/m3-step8-parity-20260912/tools/m3s8-run-cluster.ps1`
+（逐字复制自 `docs/acceptance/e4-cluster-1000-20260912/tools/e4-run-chain-fix.ps1`，仅改下列项）
+
+| # | 参数 | E4 蓝本值 | **本次值** | 隔离作用 |
+|---|---|---|---|---|
+| 1 | `$LAND` (`odl --landingDir`) | `/graduation/landing/e4c1000` | **`hdfs://node01:8020/graduation/landing/m3s8-55`** | 输入隔离（55 行 golden） |
+| 2 | `mxp --exportDir` | `/graduation/export/e4c1000` | **`hdfs://node01:8020/graduation/export/m3s8-55`** | 导出隔离（**禁写 e4c1000**） |
+| 3 | `--outputSnapshotId` | `S20260901E4` | **`S20260901M3S8`** | 指标快照隔离（MySQL） |
+| 4 | `--hiveDatabasePrefix` | `dw` | **`dw`（若照抄蓝本）→ ⚠️ 会撞 E4 证据，见 §3** | **上游表隔离（关键缺口）** |
+
+不变项（照旧）：`--master yarn --deploy-mode cluster`、`spark.yarn.jars=hdfs://…/graduation/jars/spark-3.5.1/*.jar`、
+`spark.eventLog.dir=hdfs://…/graduation/eventlog`、`spark.sql.warehouse.dir=hdfs://…/graduation/warehouse`、
+`spark.hadoop.hive.metastore.uris=thrift://node01:9083`、executor 1×1g、driver 1g、
+`spark.sql.shuffle.partitions=4`、`--runtimeProfileId=1`、`--businessDate=20260901`、`--attemptNo=1`、
+`--shufflePartitions=4`、`odl` 的 `--sourceSystem=mock-mall --batchId=0`。
+
+作业顺序（10 个，**一次跑完**）：
+`sci, odl, bdw, dim, tdw, usw, fna, dqc, pub, mxp`
+
+--------------------------------------------------------------------------------
+§3 **上游隔离核实** —— 本次门禁的**头号缺口**（✅ G2 已原则批准 `m3s8`，**本轮不执行**）
+--------------------------------------------------------------------------------
+### 3.1 实测事实（读源码，不是推断）
+- 库名**全部**由 `--hiveDatabasePrefix` 派生：`<prefix>_<layer>`，
+  layer ∈ {ods, dwd, dim, dws, ads}；缺省前缀 `dw`。
+  权威实现：`spark-jobs/.../warehouse/WarehouseNamespace.scala:28-46,68,126-127`。
+- `sci` 的 `CREATE DATABASE IF NOT EXISTS ${ns.ods/dwd/dws/ads/dim}` 与**所有**建表/写入语句
+  均为 `ns.` 派生：`LocalSchemaInitJob.scala:38-42,44+`。
+- 全量扫描 `spark-jobs/src/main/scala`：**不存在**任何硬编码 `dw_*` 库名字面量
+  （仅出现在注释与 `WarehouseNamespace` 的文档里）⇒ **改前缀即整体换库，无残留写入点**。
+- 蓝本 `--hiveDatabasePrefix=dw`；M3S8 脚本**未改**此项 ⇒ 若照抄，新链将写入
+  **与 E4 完全相同的 `dw_ods/dw_dwd/dw_dim/dw_dws/dw_ads`**。
+
+### 3.2 风险（为什么这是缺口）
+- E4 的集群证据（`docs/acceptance/e4-cluster-1000-20260912/raw/e4-readback-out.txt`）
+  **就是这些库里的内容**：`ADS_hot_product 45`、`ADS_product_conversion 45`、
+  `ADS_user_profile 37`、`ADS_FORMAL_TOTAL 138` 等（同文件另列 ODS/DIM/DWS 各行数）。
+- E4 与本次**同为 `--businessDate=20260901`**。
+- 各作业大量使用 `INSERT OVERWRITE`（如 `EventOdsLoadJob.scala:121`）。
+  ADS 层表**不带日期分区**（按 `_export.json` 是"全量重建"形态）⇒ `INSERT OVERWRITE` 会
+  **整表替换**；带分区表则至少会替换 `dt=20260901` 分区。
+- ⇒ **照抄前缀 = 用 55 行数据覆盖 E4 的 1,000 行证据**，且**不可逆**。
+- ⚠️ 未核实项：`spark.sql.sources.partitionOverwriteMode` 在提交参数与源码中**均未设置**
+  ⇒ 未实测其生效值。**不依赖它**，一律按"最坏情况＝整表/整分区被替换"处理。
+
+### 3.3 隔离方案（**推荐，一句话**）
+把第 4 项也改掉：`--hiveDatabasePrefix=m3s8`
+⇒ 新链写入 **`m3s8_ods / m3s8_dwd / m3s8_dim / m3s8_dws / m3s8_ads`** 全新 5 库，
+**零接触** E4 的 `dw_*`。合规性：前缀白名单 `^[a-z][a-z0-9_]{0,23}$`、不以 `_` 结尾、不含 `__`、
+非保留字、不以层后缀结尾 ⇒ `m3s8` **合法通过**（`WarehouseNamespace.validate`）。
+
+> ✅ **门禁项 G2 —— 总控已裁定（22:4x）**：**原则批准 `--hiveDatabasePrefix=m3s8`**，
+> 但**仅作为方案入册，本轮不执行**（门禁未过，不得提交集群）。
+> ⇒ 落实时只改 `m3s8-run-cluster.ps1` 的 `$NS` 一行，**且须总控批准后才动脚本**。
+> ⇒ **警告（保留原话，不得删）**：**新 `outputSnapshotId` 不等于上游隔离** ——
+> `--outputSnapshotId` 只隔离 `mxp --exportDir` 与 MySQL 指标快照 id，
+> **完全不隔离上游 Hive 库表**；上游隔离**只能**靠 `--hiveDatabasePrefix`。
+
+**副作用（须并入 §5.5 口径，必须披露）**：库名不同 ⇒
+① 上游表名带不同前缀；② 若代理键/维度逻辑对库名敏感则可能影响值——**实测上不敏感**
+（`SurrogateKey` 只吃 `sourceSystem` 与 `rawId`，不吃库名；SQL 模板仅用库名做限定），
+但**仍须在 §5.5 表头写明**「集群侧库名空间 = `m3s8_*`」这一差异，不得隐瞒。
+③ 需新增库 ⇒ `sci` 已含 `CREATE DATABASE IF NOT EXISTS`，**无需人工建库**。
+
+### 3.4 备选方案（若总控坚持沿用 `dw_*`）
+先**只读**核对并留证：确认 `dw_*` 内的 E4 内容已被单独归档（行数/校验和快照），
+并接受「E4 集群证据被覆盖」这一后果，且**明确**授权。
+⇒ 本泳道**不自行选择**；请总控在 G2 裁定。
+
+### 3.5 上游隔离核实的**证据计划**（只读命令，逐条可执行、逐条留证）
+> 目的：证明「新链不会写进 `e4c1000` 的既有分区」＋「新库前缀如何隔离」。
+> 全部为**只读**；每条输出落 `raw/post/`，命名 `gate-<n>-<name>.txt`。
+
+| # | 命令（只读） | 证明什么 |
+|---|---|---|
+| E-1 | `hdfs dfs -ls /graduation/export` | 导出根**只有** `e4c1000`；本次跑前不得出现新目录 |
+| E-2 | `hdfs dfs -ls -R /graduation/export/e4c1000 \| Measure-Object` | E4 导出物**基线**行数/大小（跑前跑后须**完全一致**） |
+| E-3 | `hdfs dfs -cat /graduation/export/e4c1000/_export.json`（或其 `part-*`） | E4 导出物**内容基线**（sha256 逐文件） |
+| E-4 | `hdfs dfs -ls /graduation/landing` | 落地根只有 `e4c1000` + `m3s8-55`；`e4c1000` 未被改 |
+| E-5 | `hdfs dfs -cat /graduation/landing/m3s8-55/golden-20260901.jsonl \| sha256` | **两侧输入同一份**：与本地 `landing/events/` 的该文件 sha256 逐字相等 |
+| E-6 | `spark-sql --hiveconf` 只读：`SHOW DATABASES LIKE 'dw_*'` / `LIKE 'm3s8_*'` | 跑前 `dw_*` 存在、`m3s8_*` **不存在** ⇒ 证明是新建命名空间 |
+| E-7 | 只读 `SHOW PARTITIONS dw_dwd.dwd_order_detail`（或 `DESCRIBE FORMATTED`） | 记录 `dw_*` 目标表**跑前**分区清单（跑后须不变） |
+| E-8 | 只读 `SELECT COUNT(*)` 于 `dw_ads.ads_hot_product` 等 | 记录 `dw_*` 跑前行数（对照 E4 的 45/45/37/138） |
+| E-9 | 跑后重复 E-1…E-8 | **逐字比对**：`e4c1000`/`dw_*` 必须**零差异**；`m3s8_*` 出现新数据 |
+| E-10 | `hdfs dfs -ls -R /graduation/warehouse` 前后 diff | 证明**新增**文件只落在 `m3s8_*` 对应目录，`dw_*` 目录 mtime/内容不变 |
+
+⚠️ **E-1…E-10 全部依赖 HDFS/NameNode 可达。本轮两次 `hdfs dfs -ls` 均超时失败**
+（180 s 与 600 s 上限均超时，exit 1）⇒ **该项当前状态：未完成**。
+⇒ **门禁项 G3**：开跑前须先确认 HDFS/NameNode/YARN 可达（本泳道未做任何集群运维动作）。
+
+--------------------------------------------------------------------------------
+§4 两侧一致性（映射表冻结口径要求）
+--------------------------------------------------------------------------------
+| 要求 | 本地侧（已实测） | 集群侧（待跑） |
+|---|---|---|
+| 输入文件 | `landing/events/golden-20260901.jsonl` 18,430 B | `hdfs://…/landing/m3s8-55/golden-20260901.jsonl` 18,430 B / 3 副本 |
+| 输入 sha256 | **须与 E-5 逐字相等**（跑前采集） | 同上 |
+| 映射表版本 | `MAPPING-20260912.md` 49,517 B / sha256 `E80B357CD8FCE13CD69D6DC0919FEBDB40127EB1974FF5F1A2F50CDED642F52F` | **同一份**（不得修改） |
+| 指标定义版本 | `refund_rate` = **v2**，其余 v1 | 须一致（`DEFINITION_VERSION`） |
+| 业务日期 | `--businessDate=20260901` | 同 |
+| 库名空间 | `dw_*`（本地 metastore） | **`m3s8_*`（若采纳 §3.3）** ← 须在 §5.5 披露 |
+| 导出物形态 | `metric-staging/S20260901_47/`：`_export.json` + 8×`ads_*_m.jsonl` | 新 `outputSnapshotId` 同构导出物 |
+
+⚠️ **入账差异（非数值不等，须持续登记）**：集群 `odl` 读**全 55 行**、无 accept/quarantine 拆分；
+本地 `LOAD_ODS records=51` 是**入参回显**，业务日切片实为 **49**（`49×2026-09-01 + 2×2026-09-02`）。
+⇒ §5.5 中此项记为**入账差异**，**不得**记为数值不等。
+
+--------------------------------------------------------------------------------
+§5 预计提交命令（**原文**，等口令后才执行）
+--------------------------------------------------------------------------------
+```powershell
+pwsh -File docs\acceptance\m3-step8-parity-20260912\tools\m3s8-run-cluster.ps1 `
+     -Jobs sci,odl,bdw,dim,tdw,usw,fna,dqc,pub,mxp `
+     -Jar  D:\Develop_code\GraduationProject\spark-jobs\target\spark-jobs-0.1.0-SNAPSHOT.jar `
+     -RawDir D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\cluster `
+     -SnapshotId S20260901M3S8
+```
+每个作业的实际 argv（脚本 L85-86 拼装，逐字）：
+```
+spark-submit --master yarn --deploy-mode cluster
+  --conf spark.yarn.jars=hdfs://node01:8020/graduation/jars/spark-3.5.1/*.jar
+  --conf spark.eventLog.enabled=true
+  --conf spark.eventLog.dir=hdfs://node01:8020/graduation/eventlog
+  --conf spark.sql.warehouse.dir=hdfs://node01:8020/graduation/warehouse
+  --conf spark.hadoop.hive.metastore.uris=thrift://node01:9083
+  --conf spark.executor.instances=1 --conf spark.executor.cores=1
+  --conf spark.executor.memory=1g  --conf spark.driver.memory=1g
+  --conf spark.sql.shuffle.partitions=4
+  --name e4-<job> --class com.graduation.analytics.job.JobRunner
+  <JAR> --jobCode=<job> --runtimeProfileId=1 --businessDate=20260901 --attemptNo=1
+        --hiveDatabasePrefix=<§3 裁定值> --outputSnapshotId=S20260901M3S8 --shufflePartitions=4
+  [+ odl: --landingDir=hdfs://node01:8020/graduation/landing/m3s8-55 --sourceSystem=mock-mall --batchId=0]
+  [+ mxp: --exportDir=hdfs://node01:8020/graduation/export/m3s8-55]
+```
+⚠️ **须先改脚本**：`-RawDir` 建议指向 `raw\cluster\`（避免与本地链证据混放）；
+`--name` 仍为 `e4-<job>`（蓝本遗留，仅显示名，**不影响**隔离；如需区分可改 `m3s8-<job>`）。
+**以上两处改动属脚本改动，须总控批准后本泳道才执行。**
+
+--------------------------------------------------------------------------------
+§6 其它门禁项（D-142）
+--------------------------------------------------------------------------------
+| # | 门禁项 | 现状 |
+|---|---|---|
+| G1 | jar 指纹基准（§1） | ✅ **已裁定**：提交前最后一步按最终工作树重建重算（逐 entry + class major） |
+| G2 | 上游 Hive 库表/分区隔离方案（§3） | ✅ **已原则批准** `--hiveDatabasePrefix=m3s8`，**仅入册、本轮不执行** |
+| G3 | HDFS/NameNode/YARN 可达性（§3.5 前置） | ❌ **阻塞项 —— 总控登记为 B-12**（见下方「B-12」小节） |
+| G4 | F-88（质量门 `ERROR` 是否阻断）实现与测试 | ⛔ **未实现**（总控另开条目；落地后 jar 须重算） |
+| G5 | 无其它重型作业并跑；本地**不**并跑 Spark 链 | ✅ 本地链已停（run 47 完成；未跑 run 48） |
+| G6 | 不覆盖 `e4c1000` / 不改现有 ACTIVE / 不删历史数据 | ✅ 由 §3.3 方案保证（待 G2 落实） |
+| G7 | 两侧输入/校验和/映射版本/指标定义/业务日期一致 | 🟡 本地侧已固化；集群侧待 E-5 采集 |
+| G8 | 任一关键阶段失败即停、保留现场、不连续盲重跑 | ✅ 将按 `-KeepGoing` **默认关闭**执行（脚本 L119 已实现遇错即停） |
+
+### B-12（总控登记）：上游隔离核实所需的 HDFS/Hive 只读可达性 **未证**
+- **性质**：**集群门禁的阻塞项**。P-5／P-6／E-2／E-3／E-10 等依赖 HDFS 的核实项**全部无法采集**。
+- **证据（两次超时的命令原文与时间戳）**：
+  - `hdfs dfs -ls /graduation/export` —— **180 s** 上限，超时 `[exit code: 1]`
+  - `hdfs dfs -ls /graduation/export` —— **600 s** 上限，重试仍超时 `[exit code: 1]`
+  - ⇒ 基线读数（`e4c1000` / `m3s8-55` / `dw_*`）**未获得**。
+- **🔒 纪律（总控令，本泳道遵守）**：**不做无界重试**。每次门禁尝试**只允许一次有界超时探测**；
+  失败即记「**未证**」并**立即停止**；P-5／P-6 保持「**未执行，无值**」。
+- **本泳道此前正是这样执行的**（180 s 失败 → 仅一次 600 s 重试 → 停止），符合该纪律。
+
+**结论**：G3（B-12）/G4 未闭合，G1/G2 已裁定但 **G2 尚未落实** ⇒ **仍不得提交**。等总控口令。
+
+### 三条裁决落文（总控 23:0x）
+| 项 | 裁决 | 本泳道须遵守 |
+|---|---|---|
+| **G4** | **仍不裁定**。F-88 已被**独立验证**判「**需修正后入库**」：读侧须按 **`ruleCode` 归一化**，否则 ACTIVE 快照质量卡片 **PASS→FAIL**；待其**二次勘误** ＋ **`-Dmetric.it=true` 实跑**后再判 | **在此之前不得据 F-88 推进任何集群动作**（含改代码、改门禁口径、重算 jar） |
+| **G2** | **仅作方案入册，本轮不执行** | 将来**只在「集群提交轮」由总控明确放行后**，才可改 `scripts/start-all.ps1`；本轮**不得**触碰该脚本，亦不得改 `m3s8-run-cluster.ps1` |
+| **B-12** | **维持阻塞**（HDFS/Hive 只读可达性**未证**） | 下一次集群尝试**只允许一次有界探测**（历史：180 s／600 s 均 `[exit code: 1]`），**失败即记「未证」并停止**；**不做无界重试**。✅ 本泳道此前执行方式**已合规**，照此保持 |
+
+### 🚨 B-13（本泳道 23:00 实测发现，**紧急登记**）：`metric_snapshot` / `metric_value` 中 run 47 的发布结果**已消失**
+**两侧实测对照（同一 `analytics_meta` 库）**：
+
+| 时刻 | 证据来源 | `metric_snapshot` 内容 |
+|---|---|---|
+| **22:00:17** | 他道留存件 `docs/acceptance/e5-preaccept-20260912/raw/db-readonly-pre-stop.txt` L4/L20 | **12 行**，含 `S20260901_47` **ACTIVE** v12 `source=spark-ads` `pipeline_run_id=47`；`metric_value_rows S20260901_47 = 10`；`active_count=1` |
+| **23:00:26** | **本泳道只读实测** | **9 行，且全部是 2026-09-07 的快照**（`S20260905_1/2`、`S20260907_5…11`）；**`S20260901_47` 不存在**；`metric_value` 共 132 行；`S20260901_38/43` 等**均无行** |
+
+**⇒ 结论：`S20260901_*` 系列的 `metric_snapshot` / `metric_value` 行在 22:00:17 → 23:00:26 之间被删除。**
+
+**删除（而非「从未写入」）的证据**：
+- `information_schema.TABLES`：`metric_snapshot` `AUTO_INCREMENT = 10`、`TABLE_ROWS = 9`
+  ⇒ **计数器曾超过 27**（他道实测 run 47 的快照 id=27），而现存最大 id = **9**
+  ⇒ **行被 DELETE 过**，**不是**从未插入（若从未插入，计数器应为 1）。
+- `CREATE_TIME` 仍为 **2026-09-07 17:15:57**（= flyway rank 6「platform runtime profile」建表时刻）
+  ⇒ **表未被 DROP／重建**（否则 CREATE_TIME 会刷新）。
+- **业务数据未受影响**：`flyway_schema_history` 18 条完整、`ingestion_batch` 46 行（min 1 / max 46）、
+  `pipeline_run` 46 行（min 2 / **max 47**，`created_at` 最大 `2026-09-12 21:26:36`）、
+  `pipeline_stage_run` run 47 **8 阶段全 SUCCESS** ⇒ **只删了快照/指标两张表的内容**。
+
+**❗ 与陷阱 #63 直接呼应的实例**：run 47 的 `PUBLISH_METRIC` 阶段**仍报 `SUCCESS`（records=44）**，
+且**导出物仍在磁盘上**（`metric-staging/S20260901_47/` **18 文件 / 6,304 B**，
+`_export.json` `totalRows=22`、`snapshotId=S20260901_47`、`generatedAt=2026年9月12日 21:29:25`）
+⇒ **「阶段 SUCCESS」＋「导出目录存在」＋「库里有行」三者此刻互相矛盾**，
+**恰好证明 7A.2 的纪律必要**：判定只认 `pipeline_stage_run` ＋ `metric_snapshot` 行**同时**成立。
+
+**对本任务的影响（必须让总控知道）**：
+- **§5.5 的本地侧对账基准（run 47 的 10 个指标值）在库中已不存在** ⇒ 若集群侧要按同一口径对拍，
+  **必须先裁定**：是从**磁盘导出物**重建基准，还是另行重跑，还是承认该基准已失效。
+- **本泳道未做任何写操作**（全程只有 SELECT），**未处置、未恢复、未补写**。
+- **不猜测删除方**（可能是他道清理／平台动作），**仅登记事实与时刻**，供总控归属。
+
+--------------------------------------------------------------------------------
+§7A **导出→MySQL 对账纪律（三条）** —— 来自预演泳道**实测**，直接决定 §5.5 对比表怎么读
+--------------------------------------------------------------------------------
+> 来源：总控转达的导出→MySQL 预演泳道实测结果（**非推断**）。**§5.5 对账必须遵守，违者结论作废。**
+
+### 7A.1 读侧必须**钉 `snapshot_id`**，**禁止**依赖 `active_flag=1`（缺陷 **F-98**）
+**实测事实**：同快照重导时，profile 1 的 ACTIVE 指针**空缺约 170 ms**
+（`22:32:37.823654 → 22:32:37.978147`，`WHERE runtime_profile_id=1 AND active_flag=1` **返回空**），
+期间 ADS 8 表合计出现 **0 行**与 **1 / 2 / 7 / 15** 等**部分中间态**。
+**根因**：`MetricPublisher` **无类级事务** —— 删除与 8 次插入**各自提交**。
+
+**⇒ 纪律（强制）**：
+- §5.5 的**每一次**对账查询**必须**写成「**指定 `snapshot_id`** ＋ **指定 `runtime_profile_id`**」的形式。
+- **禁止**用「当前 ACTIVE 是哪个快照」来解析被试对象。
+- 查询**原文**与**执行时刻**必须一并留档。
+
+**标准查询模板（留档用，逐字复制）**：
+```sql
+-- 快照元信息（钉 snapshot_id）
+SELECT id, snapshot_id, pipeline_run_id, status, version, active_flag, published_at
+FROM metric_snapshot WHERE snapshot_id = '<SNAPSHOT_ID>';
+
+-- 指标值（钉 snapshot_id + runtime_profile_id；不加 active_flag 条件）
+SELECT m.metric_code, m.metric_value, m.period
+FROM metric_value m
+JOIN metric_snapshot s ON s.id = m.snapshot_id
+WHERE s.snapshot_id = '<SNAPSHOT_ID>' AND m.runtime_profile_id = <PROFILE_ID>
+ORDER BY m.metric_code;
+```
+
+### 7A.2 「导出目录存在」**不是**导入成功的证据（陷阱 **#63**）
+**实测事实（生产 run 38）**：第 8 阶段 `PUBLISH_METRIC` **FAILED**（`RUN_METRIC_PUBLISH_FAILED`）；
+快照 `S20260901_38` 为 **FAILED** / `active_flag=NULL` / `failure_reason` 含
+`MP_ADS_WRITE_FAILED … favorite_category cannot be null` / `metric_value` **0 行** / 8 张 ADS **全 0**；
+**但该 run 的导出目录照样存在（9 文件 ＋ 9 crc）**。
+
+**⇒ 纪律（强制）**：提交判定**只认**两处：
+1. `pipeline_stage_run.status` / `error_code`
+2. `metric_snapshot.status` / `published_at`
+
+**禁止**以「导出目录存在」或「清单里有文件」作为成功依据。
+
+### 7A.3 【**未证项** F-97】HDFS 导出物能否被导入侧读到 —— **未验证**
+**实测事实（读源码）**：写入侧与读取侧**用了不同的文件系统 API**：
+| 侧 | API | 位置 |
+|---|---|---|
+| Spark 写入 | **Hadoop FileSystem** | `MetricExportJob.scala:142` |
+| 导入读取 | **java.nio** | `MetricExportManifest.java:32/35`、`AdsExportReader.java:56/59`、`MetricPublishValidator.java:72` |
+
+⇒ 若集群导出落在 **HDFS**，导入侧（`java.nio`）**可能根本读不到**。
+
+**⇒ 纪律（强制）**：**提交后若走集群导出，第一个要证的不是「指标相等」，而是「导入侧能看到导出物」**
+（路径形态 ＋ 是否能被 `java.nio` 打开）。**本项属未证项，不得写成已验证。**
+
+### 7A.4 环境现状：**「集群导出物」这一测对象当前不存在**
+实测：本环境 `runtime_profile` **只有 1 行**（`local-dev` / `type=LOCAL` / **`hdfs_uri=NULL`**）；
+`metric-staging` 的 **13 个目录全部是本机产物**。
+⇒ **本文件中凡涉及「集群导出物」的前置条件，一律标记为「未证／待环境就绪」。**
+⇒ **禁止**预留任何「应该没问题」的措辞。
+（含 §5 `mxp --exportDir=hdfs://…` 的产物去向、§4 集群侧导出物一致性、以及本节 7A.3。）
+
+--------------------------------------------------------------------------------
+§7 **本地复跑前的批次前置检查**（总控 22:0x 追加硬约束）
+--------------------------------------------------------------------------------
+> 总控令：**本轮绝对不要触发任何 pipeline run（本地也不要）**。
+> 原因：`PipelineService.findReadyManifest` 取「READY 且 accepted+quarantined>0 的 **max batchId**」
+> ⇒ 此刻跑链会**吃掉他道（P5）的夹具批次**，并因切片无归属业务日事件而撞 `RUN_EMPTY_DATA`。
+
+### 7.1 判据来源（**采用 P5 泳道已钉死的结论**，本泳道未重测该源码）
+`PipelineService.findReadyManifest` = **磁盘 manifest 文件**判据，**不是** DB 状态：
+- `PipelineService.java:978-1013` `findReadyManifest`：`Files.list(landingRoot.resolve("manifests"))`
+  → 逐文件 `readManifest` → `status=="READY"` → `accepted+quarantined>0` → 取 `max(batchId)`。
+- `:959-971` `readManifest` 读不到文件返回 `null`。
+- `:938-956` `manifestForRun` 只在 run 已有 `WAIT_LANDING` 证据时钉批次，**且仍要读磁盘同名文件**，
+  读不到就回落 `findReadyManifest`。
+- `:377-379` `LOAD_ODS` 的输入目录由清单对象的 `acceptedUri` 带出。
+⇒ **把 `landing/manifests/N.json` 移走，对判据有效**（park 清单文件即可解除污染）。
+⇒ **F-91（新缺陷，P5 提出，纳入本泳道 park 纪律）**：若某 run 已被 `WAIT_LANDING` 钉住批次 N
+而 `N.json` 被移走 ⇒ `readManifest` 返回 `null` ⇒ **静默回落 `findReadyManifest`，输入被换成别的批次**
+（正是 R6-13 修掉的那类缺陷）。
+⇒ **本泳道今后 park `landing/events` 或清单前，必须先做下面的 (b) 检查。**
+⇒ **陷阱 #59（P5 提出，本轮已复现）**：无锚定的 `LIKE '%batchId%44%'` 会命中 `run_id` 或时间戳造成**假阳性**。
+  本轮实测：无锚定命中 **2 行**（run 43/44，因 `run_id` 里的 `44` 而误配），
+  有界锚定命中 **0 行**（两 run 实际钉的是 **42**）。⇒ 提取必须**有界 + 锚定**（见 (b) 命令）。
+
+### 7.2 【强制前置检查 (a)】磁盘清单面：现在会被选中的批次是谁
+**命令原文**（只读，读 `landing/manifests/*.json`，复刻 `findReadyManifest` 判据）：
+```powershell
+Get-ChildItem -LiteralPath 'landing\manifests' -Filter '*.json' | ForEach-Object {
+  $j = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
+  $acc=[int]$j.acceptedRecords; $q=[int]$j.quarantinedRecords
+  if ($j.status -eq 'READY' -and ($acc+$q) -gt 0) {
+    [pscustomobject]@{ File=$_.Name; BatchId=[int]$j.batchId; Acc=$acc; Q=$q;
+                       Source=$j.sourceCode; FileList=($j.files.file -join ','); AcceptedUri=$j.acceptedUri }
+  }
+} | Sort-Object BatchId | Format-Table -AutoSize
+```
+**实测输出（本轮原文要点）**：磁盘上满足判据的清单共 **33** 个（batchId 2…43）；
+**MAX ACCEPTED batchId = 43**（`43.json`）：
+```
+>>> MAX ACCEPTED batchId on disk = 43  (file 43.json)
+>>> sourceCode=mock-mall  accepted=51 quarantined=4
+>>> files[].file = m3s8-golden55-20260912210313.jsonl
+>>> acceptedUri = accepted/43
+```
+**业务日归属核验**：`landing/accepted/43/` 仅含 `m3s8-golden55-20260912210313.jsonl`，
+首条 `event_time = 09/01/2026 09:00:00` ⇒ **属 2026-09-01 切片**，**不是夹具批次**。
+（⚠️ 注意：`ConvertFrom-Json` 会把 ISO 时间**本地化成 `MM/dd/yyyy`**；判定业务日时以原始 JSONL 文本为准。）
+**通过条件**：max accepted batchId 的 `sourceCode`／`files[].file`／accepted／quarantined
+必须 = **`mock-mall` / `m3s8-golden55-20260912210313.jsonl` / 51 / 4**，且业务日 = **2026-09-01**。
+
+### 7.3 【强制前置检查 (b)】钉住面：有没有未终态 run 钉住一个已不在磁盘上的批次
+**命令原文**（只读，锚定 + 有界提取 `"batchId":N`，**规避陷阱 #59**）：
+```sql
+SELECT run_id, status,
+       CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(evidence,'"batchId":',-1),',',1) AS UNSIGNED) AS pinned_batchId
+FROM pipeline_stage_run
+WHERE stage_code='WAIT_LANDING' AND evidence IS NOT NULL
+ORDER BY run_id DESC LIMIT 12;
+```
+**实测输出（本轮原文）**：run 47/46/45 → **43**；run 44/43 → **42**；run 42 → 41；run 40 → 40；…
+聚合视图：钉住 43 的 run = `45,46,47`；钉住 42 的 = `43,44`；**最高钉住值 = 43**。
+**磁盘侧交叉核对**：`landing/manifests` 共 **43** 个文件，**max = 43**，
+`1..46` 中**缺** = **`44, 45, 46`**。
+**通过条件**：① **没有任何未终态 run**；② 最高钉住值 = **43**；③ 该 `43.json` **在磁盘上存在**
+（否则触发 F-91 静默回落）。
+**本轮结论**：三条**全部满足** ⇒ 判据面与钉住面都指向 **batch 43（黄金 51/4）**，**本轮安全**。
+
+### 7.4 ✅ **更正（本泳道此前判断有误，现撤回）**：本地复跑**不**被金标位置阻断
+> **撤回**：本节原先写「金标不在 `landing/events` ⇒ 不得开跑」。**该结论错误，现撤回。**
+> 错误机制：我把**采集（ingestion）**的输入目录当成了**跑链（pipeline）**的输入目录。
+> 二者**不同**。总控质疑成立，**以本条实测为准**。
+
+**实测证据链（读代码 + 读数据，全部只读）**：
+
+| # | 事实 | 证据 |
+|---|---|---|
+| 1 | 链的批次来源 = 磁盘清单 **max accepted batchId = 43** | §7.2 复测：`43`／`accepted=51`／`quarantined=4`／`acceptedUri=accepted/43` |
+| 2 | 清单对象带出输入目录 = **`acceptedUri`** | `PipelineService.java:378-379` `acceptedDir = landingRoot.resolve(manifest.get("acceptedUri"))` |
+| 3 | **不看 `source/events` 目录**（代码注释明文） | `PipelineService.java:374`：「只认 `manifests/` 下状态为 READY 的批次清单，**不再看 source/events 目录**」 |
+| 4 | Spark `odl` 的输入 = **`acceptedDir`**，不是 `landing/events` | `:428` `odsExtra.put("landingDir", acceptedDir.toUri().toString())` |
+| 5 | 空输入预检读的也是 `acceptedDir` + 业务日切片 | `:437-443`：`accepted 目录不存在` / `accepted 无归属业务日事件`；`:386-387` `readAcceptedEvents(acceptedDir, datePrefix, …)` |
+| 6 | `accepted/43` **在位且可读** | `landing/accepted/43/m3s8-golden55-20260912210313.jsonl` **17,419 B** / sha256 `0426AD1C8EB45273B654C5370459960482F4BD49A1F25367073683FEB0321CB6` |
+| 7 | 业务日归属正确（= run 47 实测值） | 锚定正则 ^ 计数：`2026-09-01 → **49**`、`2026-09-02 → 2`，共 51 ⇒ 与 run 47 `QUALITY_CHECK.businessDayEvents=**49**` **逐字相符** |
+
+**⇒ 更正后的结论**：
+> **本地复跑不阻断** —— 跑链输入 = **`accepted/43`**，与 `landing/events` 的现状**无关**。
+> **更正机制一句话**：**采集输入目录 ≠ 跑链输入目录** ——
+> 采集读 `landing/events/`（原始落地区），跑链读清单 `acceptedUri` 指向的 `landing/accepted/<batchId>/`。
+
+#### 7.4.1 两行源码**原文**（将来任何人质疑「输入是哪来的」都能一次读到）
+```java
+// PipelineService.java:374（注释，明文否定 events 目录）
+// §9.3：只认 manifests/ 下状态为 READY 的批次清单，不再看 source/events 目录
+
+// PipelineService.java:428（可执行代码：odl 的 landingDir 就是 acceptedDir）
+odsExtra.put("landingDir", acceptedDir == null ? "" : acceptedDir.toUri().toString());
+```
+
+#### 7.4.2 金标拆分的**字节账与哈希**（逐字节闭合，51＋4＝55 行）
+| 侧 | 文件 | 字节 | 行数 | sha256 |
+|---|---|---|---|---|
+| **源** | `landing/events/r2-golden55-20260912-172221.jsonl` | **18,430** | **55** | `2351BCC35E04CCD278638F07247BC37E9C4D402CC4736CD2A4D4B70F4232B11C` |
+| **accepted** | `landing/accepted/43/m3s8-golden55-20260912210313.jsonl` | **17,419** | **51** | `0426AD1C8EB45273B654C5370459960482F4BD49A1F25367073683FEB0321CB6` |
+| **quarantine** | `landing/quarantine/43/m3s8-golden55-20260912210313.jsonl` | **1,011** | **4** | `9C752F2B25876286E25636121CBEBEE1F8AE587A028EEA9681F7C35CF75FB636` |
+
+- **字节账**：`17,419 + 1,011 = 18,430` ✅ 与源**逐字节相等**（三文件均以 LF 结尾）
+- **行数账**：`51 + 4 = 55` ✅ 与源 newline 计数相等
+- **语义账**：quarantine 侧 4 行**正是**预期的 4 条拒绝样本：
+  `golden-evt-038`（非法枚举）/ `not-valid-json-line-with-no-braces-{{{`（非 JSON）/
+  `golden-evt-054`（schema 2.0）/ 缺 `event_id` 行
+- **同哈希副本（同源，供交叉核对）**：`landing/accepted/41/r2-golden55-20260912-172221.jsonl`
+  同 `0426AD1C…`；`landing/quarantine/41/r2-golden55-…` 同 `9C752F2B…`；
+  `tests/golden-dataset/events/golden-20260901.jsonl` 同 `2351BCC3…`
+- ⚠️ **口径限定**：本账证明拆分**体积与行数守恒且语义正确**；**不**证明「同一批行被逐行重排」
+  （accepted/quarantine 哈希不同是必然的，二者内容本就不同）。
+
+**⚠️ 但另一条风险保留（性质不同）**：`landing/events` 里的他道夹具
+（曾实测到 `b1a-envelope-vocab.jsonl`/`b1b-…`/`b2-missing-optional.jsonl`/`b3a-missing-required.jsonl`/
+`b3b-ambiguous-mapping.jsonl`）**只在未来触发「采集」时才会被摄取**（`POST /api/v1/ingestion/runs`），
+**不影响跑链**；⇒ **跑采集前须先 park 或与他道错开**。
+（注：`landing/events` 现为 **62** 文件、上述 5 个夹具**当前已不在**该目录 ⇒ 形态随他道动作变动，采前必须重测。）
+
+> 🔒 **共享目录读数纪律（总控 23:0x 追加）**：凡引用**共享目录**（`landing/events`、`landing/manifests`、
+> `landing/accepted/`、`landing/parked-*/` 等）的**文件数／大小／清单**，**必须带测量时刻**，
+> 并**声明「可能被他道改变」**。**本轮实测 5 ↔ 62 波动即为实例**（见 §8 第 1 条与我 22:04 的中间态观测）
+> ⇒ **跑采集前必须重测，任何文档不得写死数量**（含本节「62」这个数字亦仅代表测量时刻的状态）。
+
+### 7.5 【G2 落实后】如何**证明前缀真的生效**（只读核实法，跑前跑后各一遍）
+> 总控要求：提交后用**只读**方式证明 `e4c1000` 相关库/分区**零写入**。
+> 前提：G2 方案落实（脚本 `$NS='--hiveDatabasePrefix=m3s8'`）。**全部只读。**
+| # | 命令（只读） | 期望（证明前缀生效） |
+|---|---|---|
+| P-1 | `SHOW DATABASES LIKE 'm3s8_*'` | 跑前**空**；跑后出现 **恰好 5** 个：`m3s8_ods/m3s8_dwd/m3s8_dim/m3s8_dws/m3s8_ads` |
+| P-2 | `SHOW DATABASES LIKE 'dw_*'` | 跑前后**逐字不变**（库清单一致） |
+| P-3 | `SHOW PARTITIONS dw_dwd.dwd_order_detail` | 跑前后分区清单**逐字不变**（尤其 `dt=20260901` **不得**出现新的写入痕迹） |
+| P-4 | `SELECT COUNT(*)` 于 `dw_ads.ads_hot_product` / `ads_product_conversion` / `ads_user_profile` | 跑前后**仍为 E4 基线 45 / 45 / 37**（`ADS_FORMAL_TOTAL 138` 不变） |
+| P-5 | `hdfs dfs -ls -R /graduation/warehouse/dw.db`（或 metastore 对应路径）前/后 diff | **零差异**（文件数、大小、mtime 全一致） |
+| P-6 | `hdfs dfs -ls -R /graduation/warehouse/m3s8_*.db` 前/后 diff | **仅此处**出现新增文件 ⇒ 写入落点正确 |
+| P-7 | 各作业 argv 留证（脚本 echo 或 YARN app 详情） | 每个 job 的 `--hiveDatabasePrefix=m3s8` **逐条可见**（不是只改了 `sci` 一个） |
+| P-8 | 跑后复核 `SELECT COUNT(*)` 于 `m3s8_ads.*` | **有**数据 ⇒ 确认数据真的落在新库（避免"没写任何地方"被误判为隔离成功） |
+
+**判定规则（必须同时满足，缺一即判隔离失败）**：
+1. P-2 / P-3 / P-4 / P-5 = **零差异**（E4 证据未被碰）；
+2. P-1 / P-6 / P-8 = **新库确有数据**（隔离 ≠ 什么都没写）；
+3. P-7 = **所有**作业都带新前缀（防止部分作业漏改）。
+
+⚠️ **当前状态：P-1…P-8 全部「未执行，无值」** —— G2 本轮不执行、门禁未过，且
+本轮两次 `hdfs dfs -ls` 均超时失败（见 §3.5 与 G3）⇒ **依赖 HDFS 可达性的 P-5/P-6 暂不可采**。
+⚠️ **再次强调**：**新 `outputSnapshotId` 不等于上游隔离**。
+
+### 7.6 本泳道此刻的约束执行声明
+- **未触发任何 pipeline run**（本地 0 次；`POST /api/v1/pipeline-runs` 未被调用）
+- **未触发任何 ingestion run**（`POST /api/v1/ingestion/runs` 未被调用）
+- **未改任何 `ingestion_batch` 状态行**（DB 侧 43/44/45/46 一律保留不动）
+- **未删任何文件**
+- 上述批次/清单信息**全部来自只读 SELECT 与只读读文件**
+
+--------------------------------------------------------------------------------
+§8 本轮顺带发现的**异常**（如实登记，**非本泳道所为**，**未处置**）
+--------------------------------------------------------------------------------
+1. **`landing` 目录形态已被他道改变（疑似 P5/E5）——以总控口径为准**：
+   总控现行口径 = `events` **62** 个文件（含 E5 新增 `2026091221.jsonl` 497 B，**保留不删**、
+   batch 44 的 accepted 产物）、`manifests` **43**（回基线）。
+   本泳道本轮**另**实测到一个中间态：`landing/parked-p5-baseline/` 下 62 文件 / 406,496,908 B
+   （与 61 基线 + 金标的总量一致），而 `landing/_m3s8-parked/events` 为空。
+   ⇒ **两处口径不一致，且本泳道不再复测**（目录正被其它泳道持续改动，结论以总控为准）。
+   ⇒ **唯一确定项**：本任务原「landing 已完整还原」的状态**已不成立**，复跑前**必须**按 §7.2/§7.3 重做前置检查。
+   ⇒ ✅ **金标恢复的执行方 —— 总控已定（22:4x，条件性）**：恢复动作归 **M3 泳道，在获总控放行后执行**；
+     **本泳道不动他人 park 目录**（现状正确，无需更动）。
+     **⚠️ 但依 §7.4 的更正：跑链输入 = `accepted/43`，与 `landing/events` 无关
+     ⇒ 「恢复金标」对本地复跑而言 `not needed`；总控已明确「若 (2) 证明不需要恢复，
+     则不执行任何移动」⇒ 本泳道据此**不申请、不执行**任何移动。**
+     若将来**仍要**恢复（例如为采集做准备），则**必须**：① **先做 §7.3 钉住面自查 (b)**；
+     ② 恢复后**立即**实测 `landing/manifests` 判据面**仍指向 batch 43**（§7.2）；
+     ③ 金标文件 **sha256 须与 `m3s8-golden55-20260912210313.jsonl` 原值逐字一致**
+       （`landing/events` 侧的 18,430 B 源文件 sha256 = `2351BCC35E04CCD278638F07247BC37E9C4D402CC4736CD2A4D4B70F4232B11C`）。
+2. **`/api/v1/ingestion/status` 现返回 401**（匿名；本轮两次实测）。
+   此前同一 URL 返回 200。**未改平台、未重启（PID 61104 仍在，启动时刻仍为 19:17:49）**
+   ⇒ 记为**观察项待裁**。**本泳道不改代码、不加白名单、不排查**（总控明令）。
+3. **归属登记：`TradeDwdJob.scala` 工作树仅 1 行改动，来源为本泳道**（详见 §9）。
+================================================================================
+
+--------------------------------------------------------------------------------
+§9 逐行归属登记（供提交面使用；**绝不 `git add -A`**）
+--------------------------------------------------------------------------------
+| 文件 | 工作树改动 | 归属 | 依据 |
+|---|---|---|---|
+| `spark-jobs/.../job/TradeDwdJob.scala` | **仅 L176 共 1 行**（`1 1` numstat），**注释文本**，无代码变化 | ✅ **本泳道（P2 执行泳道）**，属暂停令**第 1 件「叙述改正」** | `git diff -U0` 全文仅 1 行 |
+| 同上文件 **L144** 的 `raw/post/…` 注释引用 | **不在工作树 diff 中** | ❌ **非本泳道** —— 属提交 `959626e`（21:46），**已在 HEAD 内** | `git blame -L144` = `959626e` |
+
+**L176 改前/改后原文（逐字）**：
+- 改前（= HEAD blob，来自 `959626e`）：`` |  t.dt                                  -- 静态分区列**必须在最后一个位置**（见下）``
+- 改后（= 当前工作树）：`` |  t.dt                                  -- 必须与 DDL 列序一致：分区列落在最末位（见方法上方说明）``
+- 理由：原措辞「静态分区列」与动态分区事实不符，且已在其它三处按 D-141 改正 ⇒ 此处为同一叙述改正的收尾。
+
+**结论**：`TradeDwdJob.scala` 的**全部**工作树改动 = **本泳道这 1 行注释**，**无来源不明改动**。
+（总控另讯 `M` / mtime `21:57:46` 与实测一致；L144 的 `raw/post/` 引用属 HEAD 既有内容，非本次改动。）
+
+--------------------------------------------------------------------------------
+§10 其它文件的工作树归属（本泳道未触碰，**仅登记不判断**）
+--------------------------------------------------------------------------------
+`git status` 另见 9 个 `M` 的 `analytics-server/**` Java 文件（`PipelineService`、`DataQualityGate`、
+`QualityChecker`、`MetricQualityGate`、`JobResultParser`、`AnalysisGoldenMySqlIT` 及 3 个测试）
+与若干 `??` 新文件（`RuleSeverity.*`、`fixture-b.v1.json`、`docs/acceptance/e5-*`、`f88-*`、`p5-*` 等）
+⇒ **均非本泳道产物**（本泳道本轮只写 `docs/acceptance/m3-step8-parity-20260912/` 下的文档，
+以及 `spark-jobs` 的上述 1 行注释）。**提交面须逐条向对应泳道归属。**
+================================================================================

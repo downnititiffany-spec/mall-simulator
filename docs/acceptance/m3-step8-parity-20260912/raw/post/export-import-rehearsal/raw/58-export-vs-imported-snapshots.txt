@@ -1,0 +1,24 @@
+section
+== analytics_metric.metric_snapshot: all S20260901_* snapshots ==
+section
+== metric_value rows per snapshot ==
+snapshot_id	mv_rows
+S20260901_22	10
+S20260901_23	10
+S20260901_24	10
+S20260901_25	10
+S20260901_29	10
+S20260901_30	10
+S20260901_39	10
+S20260901_41	10
+S20260901_42	10
+S20260901_43	10
+S20260901_47	10
+section
+== run 38 vs 47 in meta ==
+id	pipeline_code	status	target_snapshot_id	started_at	finished_at
+38	ODS_TO_ADS	FAILED	S20260901_38	2026-09-11 14:56:41.142	2026-09-11 15:01:02.669
+47	ODS_TO_ADS	SUCCESS	S20260901_47	2026-09-12 21:26:36.126	2026-09-12 21:29:27.334
+section
+== run 38 stages ==
+ERROR 1054 (42S22) at line 8: Unknown column 'error_message' in 'field list'

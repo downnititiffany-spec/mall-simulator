@@ -1,0 +1,21 @@
+*************************** 1. row ***************************
+                     id: 47
+        idempotency_key: 1|ODS_TO_ADS|2026-09-01T00:00|m3s8-golden55d-202609122126
+     runtime_profile_id: 1
+runtime_profile_version: 3
+          pipeline_code: ODS_TO_ADS
+          business_time: 2026-09-01 00:00:00.000
+    source_data_version: m3s8-golden55d-202609122126
+         input_batch_id: NULL
+     target_snapshot_id: S20260901_47
+             attempt_no: 1
+                 status: SUCCESS
+          current_stage: SUCCESS
+             error_code: NULL
+          error_message: NULL
+               trace_id: 5cb6df50-5383-4dde-823d-8fac110c0d7c
+             created_by: NULL
+             created_at: 2026-09-12 21:26:36.119
+             started_at: 2026-09-12 21:26:36.126
+            finished_at: 2026-09-12 21:29:27.334
+             updated_at: 2026-09-12 21:26:36.126

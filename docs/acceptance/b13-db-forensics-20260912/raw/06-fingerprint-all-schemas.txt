@@ -1,0 +1,24 @@
+### CMD (READ ONLY): SELECT ... FROM information_schema.TABLES WHERE TABLE_NAME IN ('metric_snapshot','metric_value') ORDER BY TABLE_SCHEMA,TABLE_NAME
+TABLE_SCHEMA	TABLE_NAME	TABLE_ROWS	AUTO_INCREMENT	CREATE_TIME	UPDATE_TIME	CHECK_TIME	DATA_LENGTH	DATA_FREE	TABLE_COLLATION
+analytics_meta	metric_snapshot	9	10	2026-09-07 17:15:57	NULL	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta	metric_value	132	133	2026-09-07 16:04:26	NULL	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_p103	metric_snapshot	9	10	2026-09-11 20:55:58	2026-09-11 20:55:58	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_p103	metric_value	132	133	2026-09-11 20:55:58	2026-09-11 20:55:58	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_p105	metric_snapshot	9	10	2026-09-12 08:58:02	2026-09-12 08:58:02	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_p105	metric_value	132	133	2026-09-12 08:58:02	2026-09-12 08:58:02	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_p105it	metric_snapshot	9	10	2026-09-12 09:04:37	2026-09-12 09:04:37	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_p105it	metric_value	132	133	2026-09-12 09:04:37	2026-09-12 09:04:37	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_v17probe	metric_snapshot	9	10	2026-09-11 20:11:08	2026-09-11 20:11:08	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_meta_v17probe	metric_value	132	133	2026-09-11 20:11:08	2026-09-11 20:11:08	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_metric	metric_snapshot	9	25	2026-09-10 20:04:14	2026-09-12 09:31:13	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_metric	metric_value	80	121	2026-09-10 20:04:14	2026-09-12 09:31:13	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_metric_p103	metric_snapshot	8	24	2026-09-11 20:55:58	2026-09-11 20:55:59	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_metric_p103	metric_value	70	111	2026-09-11 20:55:59	2026-09-11 20:55:59	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_metric_p105	metric_snapshot	8	24	2026-09-12 08:58:02	2026-09-12 08:58:02	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_metric_p105	metric_value	70	111	2026-09-12 08:58:02	2026-09-12 08:58:02	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_verify_m3_parity	metric_snapshot	3	32	2026-09-12 22:24:02	2026-09-12 22:32:37	NULL	16384	0	utf8mb4_0900_ai_ci
+analytics_verify_m3_parity	metric_value	10	201	2026-09-12 22:24:02	2026-09-12 22:32:37	NULL	16384	0	utf8mb4_0900_ai_ci
+mall_simulator	metric_snapshot	10	12	2026-09-06 12:17:17	NULL	NULL	16384	0	utf8mb4_0900_ai_ci
+mall_simulator	metric_value	134	134	2026-09-06 12:17:17	NULL	NULL	16384	0	utf8mb4_0900_ai_ci
+mall_simulator_test	metric_snapshot	0	450	2026-09-06 12:12:23	NULL	NULL	16384	0	utf8mb4_0900_ai_ci
+mall_simulator_test	metric_value	0	2241	2026-09-06 12:12:23	NULL	NULL	16384	0	utf8mb4_0900_ai_ci

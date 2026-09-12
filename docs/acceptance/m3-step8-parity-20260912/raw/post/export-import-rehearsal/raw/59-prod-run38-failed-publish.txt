@@ -1,0 +1,37 @@
+section
+== A. prod snapshot rows for S20260901_* (status / metric_value landed?) ==
+id	snapshot_id	status	version	active_flag	published_at	failure_reason	mv_rows
+22	S20260901_38	FAILED	7	NULL	NULL	MP_ADS_WRITE_FAILED: PreparedStatementCallback; SQL [INSERT 	0
+27	S20260901_47	ACTIVE	12	1	2026-09-12 21:29:27.321	NULL	10
+section
+== B. run 38 vs run 47 : PUBLISH_METRIC stage summary ==
+run_id	stage_id	stage_code	status	records	error_code	started_at	finished_at
+38	248	PUBLISH_METRIC	FAILED	0	RUN_METRIC_PUBLISH_FAILED	2026-09-11 15:00:20.370	2026-09-11 15:01:02.668
+47	303	PUBLISH_METRIC	SUCCESS	44	NULL	2026-09-12 21:28:49.023	2026-09-12 21:29:27.333
+section
+== C. run 38 (FAILED) all stage summary ==
+run_id	stage_id	stage_code	status	records	error_code	started_at	finished_at
+38	241	WAIT_LANDING	SUCCESS	1000	NULL	2026-09-11 14:56:41.158	2026-09-11 14:56:41.163
+38	242	INIT_SCHEMA	SUCCESS	37	NULL	2026-09-11 14:56:41.164	2026-09-11 14:56:51.223
+38	243	LOAD_ODS	SUCCESS	1000	NULL	2026-09-11 14:56:51.227	2026-09-11 14:58:23.668
+38	244	BUILD_DWD	SUCCESS	159	NULL	2026-09-11 14:58:23.685	2026-09-11 14:59:13.973
+38	245	BUILD_DWS	SUCCESS	10	NULL	2026-09-11 14:59:13.979	2026-09-11 14:59:34.091
+38	246	BUILD_ADS	SUCCESS	30	NULL	2026-09-11 14:59:34.096	2026-09-11 14:59:58.213
+38	247	QUALITY_CHECK	SUCCESS	6	NULL	2026-09-11 14:59:58.218	2026-09-11 15:00:20.367
+38	248	PUBLISH_METRIC	FAILED	0	RUN_METRIC_PUBLISH_FAILED	2026-09-11 15:00:20.370	2026-09-11 15:01:02.668
+section
+== D. export dir exists but never imported : S20260901_38 ==
+mv_rows_s38
+0
+ads_rows_s38
+0
+len
+338
+reason_400
+MP_ADS_WRITE_FAILED: PreparedStatementCallback; SQL [INSERT INTO `ads_user_profile_m` (`snapshot_id`,`dt`,`user_id`,`r`,`f`,`m`,`value_group`,`active_level`,`favorite_category`,`last_active_date`,`last_buy_date`,`lifecycle_state`,`rule_version`,`calc_date`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)]; Column 'favorite_category' cannot be null
+reason_401_800
+
+section
+== E. residual ADS rows for S20260901_38 across all 8 tables (expect 0) ==
+overview	sale_trend	funnel	active_trend	hot_product	conversion	user_profile	data_quality
+0	0	0	0	0	0	0	0

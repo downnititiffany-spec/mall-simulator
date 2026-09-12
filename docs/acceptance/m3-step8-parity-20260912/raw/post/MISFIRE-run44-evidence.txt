@@ -1,0 +1,21 @@
+### MISFIRE evidence: run 44 consumed the OLD 1,000-row batch, not the golden-55 file
+captured_at=2026-09-12 21:07:12
+Root cause (my error): I submitted POST /api/v1/pipeline-runs WITHOUT first running
+  POST /api/v1/ingestion/runs. Ingestion is a SEPARATE trigger; WAIT_LANDING only waits for an
+  already-READY manifest, so it fell back to max-batchId = 42 (the 1,000-row batch).
+
++-----+--------------+---------+---------+----------------+-----------------+-------------------------+-------------------------+
+| id  | stage_code   | status  | records | error_code     | external_job_id | started_at              | finished_at             |
++-----+--------------+---------+---------+----------------+-----------------+-------------------------+-------------------------+
+| 284 | WAIT_LANDING | SUCCESS |    1000 | NULL           | NULL            | 2026-09-12 21:03:40.824 | 2026-09-12 21:03:40.844 |
+| 285 | INIT_SCHEMA  | SUCCESS |      37 | NULL           | NULL            | 2026-09-12 21:03:40.850 | 2026-09-12 21:03:50.952 |
+| 286 | LOAD_ODS     | SUCCESS |    1000 | NULL           | NULL            | 2026-09-12 21:03:50.958 | 2026-09-12 21:05:23.509 |
+| 287 | BUILD_DWD    | FAILED  |      21 | RUN_JOB_FAILED | NULL            | 2026-09-12 21:05:23.532 | 2026-09-12 21:06:07.870 |
++-----+--------------+---------+---------+----------------+-----------------+-------------------------+-------------------------+
+{"batchId":42,"acceptedUri":"accepted/42","checksum":"89b82028","acceptedRecords":1000,"schemaVersions":["1.0"]}
+{"stageCode":"LOAD_ODS","jobs":[{"jobCode":"odl","externalJobId":"lp-1789218230962-33e984","status":"SUCCESS","inputRecords":1000,"outputRecords":1000,"rejectedRecords":0,"logUri":"D:\\\\Develop_code\\\\GraduationProject\\\\.\\\\landing\\\\logs\\\\pipeline-44-LOAD_ODS-odl-a1__lp-1789218230962-33e984.log","outputPartitions":[{"table":"dw_ods.ods_behavior_event","dt":"20260901","snapshotId":null,"rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ods.db/ods_behavior_event/dt=20260901/hour=00"},{"table":"dw_ods.ods_behavior_event","dt":"20260901","snapshotId":null,"rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ods.db/ods_behavior_event/dt=20260901/hour=03"},{"table":"dw_ods.ods_behavior_event","dt":"20260901","snapshotId":null,"rowCount":2,"path":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ods.db/ods_behavior_event/dt=20260901/hour=05"},{"table":"dw_ods.ods_behavior_event","dt":"20260901","snapshotId":null,"rowCount":1,"path":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ods.db/ods_behavior_event/dt=20260901/hour=06"},{"table":"dw_ods.ods_behavior_event","dt":"20260901","snapshotId":null,"rowCount":1,"path"
++--------------+--------+---------+-----------------+--------------------+-----------+-------------------------+
+| snapshot_id  | status | version | pipeline_run_id | definition_version | source    | published_at            |
++--------------+--------+---------+-----------------+--------------------+-----------+-------------------------+
+| S20260901_43 | ACTIVE |      11 |              43 | v2                 | spark-ads | 2026-09-12 17:39:51.953 |
++--------------+--------+---------+-----------------+--------------------+-----------+-------------------------+

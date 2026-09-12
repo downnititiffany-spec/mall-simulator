@@ -1,0 +1,139 @@
+{
+  "profileVersion": "1.0",
+  "sourceCode": "fixture-b",
+  "canonical": {
+    "schemaVersion": "1.0"
+  },
+  "eventTypeMapping": {
+    "user_signup": "user_registered",
+    "item_new": "product_created",
+    "item_change": "product_updated",
+    "item_view": "behavior",
+    "order_new": "order_created",
+    "order_pay": "order_paid",
+    "order_cancel": "order_cancelled",
+    "refund_ask": "refund_created",
+    "refund_done": "refund_completed",
+    "stock_hold": "stock_reserved",
+    "stock_free": "stock_released",
+    "stock_move": "stock_changed",
+    "coupon_redeemed": null,
+    "item_reviewed": null
+  },
+  "fieldMapping": {
+    "msg_id": "event_id",
+    "msg_kind": "event_type",
+    "occurred_ms": "event_time",
+    "received_ms": "ingest_time",
+    "origin": "source_system",
+    "contract_rev": "schema_version",
+    "corr_id": "trace_id",
+    "body": "payload",
+
+    "buyer_uid": "user_id",
+    "item_sku": "product_id",
+    "visit_id": "session_id",
+    "view_action": "behavior_type",
+    "terminal": "channel",
+
+    "item_title": "product_name",
+    "category_ref": "category_id",
+    "brand_ref": "brand_id",
+    "list_price_fen": "price",
+    "cost_fen": "cost",
+    "sale_state": "status",
+
+    "order_ref": "order_id",
+    "order_lines": "items",
+    "qty": "quantity",
+    "unit_price_fen": "unit_price",
+    "discount_fen": "discount",
+    "line_amount_fen": "amount",
+    "order_total_fen": "total_amount",
+    "order_state": "status",
+    "placed_ms": "created_at",
+
+    "pay_ref": "payment_id",
+    "paid_fen": "amount",
+    "settled_ms": "paid_at",
+
+    "hold_qty": "quantity",
+    "held_qty": "reserved_qty",
+    "free_qty": "available_qty",
+
+    "age_bucket": "age_group",
+    "city_tier": "city_level",
+    "member_tier": "member_level",
+    "signed_ms": "register_time",
+
+    "ext_coupon_code": "@keep",
+    "ext_device_id": "@keep"
+  },
+  "enumSemantics": {
+    "behavior": {
+      "BROWSE": "view",
+      "WISH": "favorite",
+      "BASKET_ADD": "cart_add",
+      "BASKET_DROP": "cart_remove",
+      "QUERY": "search",
+      "PURCHASE": null,
+      "CLICK": null,
+      "ADD_TO_CART": null
+    },
+    "channel": {
+      "APP": "app",
+      "WEB_PC": "pc",
+      "MOBILE_WEB": "h5",
+      "MINI_PROG": null
+    },
+    "orderStatus": {
+      "CREATED": "CREATED",
+      "SIGNED": null,
+      "CLOSED": null
+    },
+    "productStatus": {
+      "ON_SHELF": "on_sale",
+      "OFF_SHELF": null
+    },
+    "changeType": {
+      "IN": "inbound",
+      "OUT": null
+    },
+    "ageGroup": {
+      "UNDER_18": "under18",
+      "A18_24": "18-24",
+      "A25_34": "25-34",
+      "A35_44": "35-44",
+      "A45_PLUS": "45+",
+      "A20_29": null
+    },
+    "cityLevel": {
+      "T1": "tier1",
+      "T2": "tier2",
+      "T3": "tier3",
+      "TX": "other",
+      "T4": null
+    },
+    "memberLevel": {
+      "TIER_NORMAL": "normal",
+      "TIER_SILVER": "silver",
+      "TIER_GOLD": "gold",
+      "TIER_PLATINUM": "platinum"
+    }
+  },
+  "identityPolicy": {
+    "user": { "rawField": "buyer_uid", "shape": "ANY", "surrogate": "HASH64" },
+    "product": { "rawField": "item_sku", "shape": "ANY", "surrogate": "HASH64" },
+    "category": { "rawField": "category_ref", "shape": "ANY", "surrogate": "HASH64" },
+    "brand": { "rawField": "brand_ref", "shape": "ANY", "surrogate": "HASH64" },
+    "order": { "rawField": "order_ref", "shape": "ANY", "surrogate": "HASH64" }
+  },
+  "timePolicy": {
+    "field": "occurred_ms",
+    "formats": ["EPOCH_MILLIS"]
+  },
+  "quarantinePolicy": {
+    "unknownEventType": "QUARANTINE",
+    "unknownField": "KEEP_IN_PAYLOAD"
+  }
+}

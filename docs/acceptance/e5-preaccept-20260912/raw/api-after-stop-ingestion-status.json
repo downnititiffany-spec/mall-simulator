@@ -1,0 +1,3 @@
+# GET http://127.0.0.1:8091/api/v1/ingestion/status
+# at 2026-09-12 22:01:48  HTTP 200  bytes=555
+{"code":"OK","message":"success","data":{"profileState":"ACTIVE","runtimeProfileId":1,"sourceId":1,"landingUri":"file://./landing","landingError":null,"eventsDir":"D:\\Develop_code\\GraduationProject\\landing\\events","pendingFiles":62,"pendingBytes":406496908,"checkpointFiles":62,"newFileCount":0,"lastArrivalAt":"2026-09-12T21:57:22.363689700","latestBatch":{"batchId":44,"runtimeProfileId":1,"sourceId":1,"batchNo":"ing-20260912215733-85b570e5","status":"SUCCESS","recordCount":1,"quarantineCount":0}},"traceId":"6122abe8-de38-45b9-835b-901e9bdcda45"}

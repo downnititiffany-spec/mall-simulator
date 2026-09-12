@@ -1,0 +1,15 @@
+Tables_in_analytics_verify_m3_parity
+ads_active_trend_m
+ads_behavior_funnel_m
+ads_data_quality_m
+ads_hot_product_m
+ads_operation_overview_m
+ads_product_conversion_m
+ads_sale_trend_m
+ads_user_profile_m
+metric_snapshot
+metric_value
+snapshot_rows
+0
+overview_rows
+0

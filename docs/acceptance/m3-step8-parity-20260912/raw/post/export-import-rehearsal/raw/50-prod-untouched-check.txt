@@ -1,0 +1,29 @@
+section
+== prod analytics_metric: snapshot 27 / S20260901_47 (must be untouched) ==
+id	snapshot_id	status	active_flag	version	definition_version	source	published_at	created_at
+27	S20260901_47	ACTIVE	1	12	v2	spark-ads	2026-09-12 21:29:27.321	2026-09-12 21:29:27.282
+section
+== prod metric_value rows for S20260901_47 ==
+snapshot_id	rows_n	min_v	max_v
+S20260901_22	10	0.2000	2042.0000
+S20260901_23	10	0.2000	2042.0000
+S20260901_24	10	0.2000	2042.0000
+S20260901_25	10	0.2000	2042.0000
+S20260901_29	10	0.2000	8168.0000
+S20260901_30	10	0.2000	2042.0000
+S20260901_39	10	0.0000	88.1600
+S20260901_41	10	0.0000	88.1600
+S20260901_42	10	0.2000	2042.0000
+S20260901_43	10	0.0000	88.1600
+S20260901_47	10	0.2000	2042.0000
+section
+== prod ADS totals (all snapshots) ==
+tbl	all_rows	rows_of_s47
+ads_operation_overview_m	11	1
+ads_hot_product_m	59	4
+ads_user_profile_m	27	3
+ads_data_quality_m	44	4
+section
+== prod ACTIVE pointer ==
+snapshot_id	status	active_flag	version
+S20260901_47	ACTIVE	1	12

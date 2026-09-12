@@ -1,0 +1,23 @@
+### LOCAL CHAIN SUBMIT 2026-09-12 21:03:40
+POST http://127.0.0.1:8091/api/v1/pipeline-runs
+body={
+  "sourceDataVersion": "m3s8-golden55-20260912210313",
+  "runtimeProfileId": 1,
+  "businessTime": "2026-09-01T00:00:00",
+  "pipelineCode": "ODS_TO_ADS"
+}
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "runId": 44,
+    "idempotencyKey": "1|ODS_TO_ADS|2026-09-01T00:00|m3s8-golden55-20260912210313",
+    "status": "PENDING",
+    "currentStage": "PENDING",
+    "errorCode": null,
+    "attemptNo": 1,
+    "targetSnapshotId": null,
+    "stages": []
+  },
+  "traceId": "783f0b7e-226c-4a60-a2d6-19a5f22f477d"
+}

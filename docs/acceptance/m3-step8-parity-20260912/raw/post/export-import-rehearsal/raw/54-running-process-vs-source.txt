@@ -1,0 +1,6 @@
+pid=61104
+commandLine="D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+fatjar mtime=2026-09-12 17:21:07 size=33135937
+PipelineService.class mtime=2026-09-12 22:23:42
+class contains 'prePublishGate' = True
+class contains 'PIPELINE_QUALITY_FAILED' = True

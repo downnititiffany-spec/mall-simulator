@@ -1,0 +1,11 @@
+===== 只读：本次加购在商城库留下的痕迹（2026-09-12 22:03:56）=====
+mysql: [Warning] Using a password on the command line interface can be insecure.
+tbl	id	user_id	product_id	quantity	updated_at
+cart_item_new	37	2098607950599319554	1001	1	2026-09-12 21:57:19.689
+tbl	id	event_id	aggregate_type	event_type	created_at	published_at
+event_outbox_recent	2949240	eb22c6ca-58be-47c4-87d2-1467cc79bbe2	user	behavior	2026-09-12 21:57:19.691	2026-09-12 21:57:22.365
+event_outbox_recent	2949239	69ea9c57-dab6-42bc-a7a8-698f28291f97	user	behavior	2026-09-12 15:05:38.745	2026-09-12 15:05:39.097
+event_outbox_recent	2949238	e64bd6fd-cb50-4737-9127-07187ee1a70e	user	behavior	2026-09-12 15:05:37.855	2026-09-12 15:05:39.093
+tbl	cnt
+outbox_pending_now	0
+

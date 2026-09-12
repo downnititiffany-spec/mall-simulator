@@ -173,7 +173,7 @@ object TradeDwdJob {
        |  $userSurrogate AS user_key,
        |  $productSurrogate AS product_key,
        |  p.category_key AS category_key,
-       |  t.dt                                  -- 静态分区列**必须在最后一个位置**（见下）
+       |  t.dt                                  -- 必须与 DDL 列序一致：分区列落在最末位（见方法上方说明）
        |FROM tdw_tmp t
        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
        |     THEN -1 ELSE $productKey END AND p.dt = '$dimDt'

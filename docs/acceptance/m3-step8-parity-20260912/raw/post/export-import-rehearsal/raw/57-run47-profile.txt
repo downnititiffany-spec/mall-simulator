@@ -1,0 +1,8 @@
+section
+== runtime_profile (which profile run 47 used) ==
+id	profile_code	profile_name	type	status	landing_uri	hdfs_uri	hive_jdbc_url	hive_database_prefix	spark_master	deploy_mode	yarn_queue	ssh_host	ssh_port	ssh_user	spark_submit_path	spark_job_jar_uri	metric_store_type	metric_store_config_ref	credential_ref	timezone	version	created_at	updated_at	source_id
+1	local-dev	LOCAL 开发环境（本机 Win）	LOCAL	ACTIVE	file://./landing	NULL	NULL	NULL	local[2]	NULL	NULL	NULL	NULL	NULL	D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd	D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar	MYSQL	NULL	NULL	Asia/Shanghai	3	2026-09-07 17:15:57.615	2026-09-10 16:48:17.303	1
+section
+== pipeline_run 47 (business_time / profile / snapshot) ==
+id	pipeline_code	runtime_profile_id	runtime_profile_version	business_time	status	target_snapshot_id	started_at	finished_at
+47	ODS_TO_ADS	1	3	2026-09-01 00:00:00.000	SUCCESS	S20260901_47	2026-09-12 21:26:36.126	2026-09-12 21:29:27.334

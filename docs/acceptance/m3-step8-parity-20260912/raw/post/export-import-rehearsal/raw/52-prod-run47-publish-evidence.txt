@@ -1,0 +1,12 @@
+section
+== prod run 47 PUBLISH_METRIC stage row ==
+id	run_id	stage_code	status	external_job_id	records	error_code	started_at	finished_at
+303	47	PUBLISH_METRIC	SUCCESS	NULL	44	NULL	2026-09-12 21:28:49.023	2026-09-12 21:29:27.333
+section
+== prod run 47 PUBLISH_METRIC evidence: importer result + export dir (JSON extracts) ==
+metric_export_dir	publish_ok	publish_error	publish_message	publish_snapshot	ads_rows	metric_values	precheck_passed
+D:\Develop_code\GraduationProject\metric-staging\S20260901_47	true	null	发布成功	S20260901_47	22	10	NULL
+section
+== prod run 47 importer inner evidence (manifest rows / previous active / checks count) ==
+manifest_total_rows	manifest_source	previous_active	active_after	import_elapsed_ms	checks_n	overview_rows
+22	spark-ads	S20260901_43	S20260901_47	60	15	1

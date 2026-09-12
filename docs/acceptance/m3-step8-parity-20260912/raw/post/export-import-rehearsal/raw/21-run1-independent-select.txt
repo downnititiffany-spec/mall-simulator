@@ -1,0 +1,46 @@
+section
+== 1. metric_snapshot row ==
+id	snapshot_id	runtime_profile_id	runtime_profile_version	business_time	pipeline_run_id	status	version	definition_version	source	active_flag	published_at	created_at
+29	S20260901_47	1	3	2026-09-01 00:00:00.000	47	ACTIVE	1	v2	spark-ads	1	2026-09-12 22:25:47.752	2026-09-12 22:25:47.656
+section
+== 2. ADS wide-table row counts (per snapshot) ==
+tbl	rows_n
+ads_operation_overview_m	1
+ads_sale_trend_m	1
+ads_behavior_funnel_m	4
+ads_active_trend_m	1
+ads_hot_product_m	4
+ads_product_conversion_m	4
+ads_user_profile_m	3
+ads_data_quality_m	4
+TOTAL_8_TABLES	22
+section
+== 3. key metric values (original text) ==
+snapshot_id	metric_code	metric_value	unit	period	definition_version
+S20260901_47	avg_order_value	408.4000	元	day:2026-09-01	v1
+S20260901_47	buy_rate	1.0000		day:2026-09-01	v1
+S20260901_47	dau	3.0000	人	day:2026-09-01	v1
+S20260901_47	full_refund_rate	0.2000		day:2026-09-01	v1
+S20260901_47	gmv	2042.0000	元	day:2026-09-01	v1
+S20260901_47	net_sale	1493.0000	元	day:2026-09-01	v1
+S20260901_47	paid_order_cnt	5.0000	单	day:2026-09-01	v1
+S20260901_47	pv	7.0000	次	day:2026-09-01	v1
+S20260901_47	refund_rate	0.6000		day:2026-09-01	v2
+S20260901_47	uv	3.0000	人	day:2026-09-01	v1
+section
+== 4. key business indicators ==
+snapshot_id	dt	pv	uv	dau	order_count	gmv	net_sale_amount	avg_order_value	refund_rate	full_refund_rate
+S20260901_47	20260901	7	3	3	5	2042.00	1493.00	408.40	0.6000	0.2000
+section
+== 5. funnel (buy_rate source) ==
+snapshot_id	dt	stage	user_count	conversion_rate	overall_buy_rate
+S20260901_47	20260901	intent	2	0.6667	1.0000
+S20260901_47	20260901	order	3	1.5000	1.0000
+S20260901_47	20260901	pay	3	1.0000	1.0000
+S20260901_47	20260901	view	3	NULL	1.0000
+section
+== 6. duplicate-key probe: same snapshot twice? ==
+snapshot_id	snapshot_rows_in_metric_value
+S20260901_47	10
+duplicate_grain_rows
+0

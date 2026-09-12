@@ -1,0 +1,84 @@
+=== A. metric-staging snapshot dirs (root mtime = 09/12/2026 21:29:22) ===
+S20260901_21  visibleFiles=1 hiddenFiles(crc)=1 subdirs=8 lastWrite=2026-09-10 20:27:41
+S20260901_22  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-11 09:50:53
+S20260901_23  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-10 20:38:52
+S20260901_24  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-10 20:44:09
+S20260901_25  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-11 10:41:48
+S20260901_29  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-11 11:02:24
+S20260901_30  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-11 11:09:17
+S20260901_38  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-11 15:01:02
+S20260901_39  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-11 15:12:21
+S20260901_41  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-12 09:31:11
+S20260901_42  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-12 17:28:10
+S20260901_43  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-12 17:39:50
+S20260901_47  visibleFiles=9 hiddenFiles(crc)=9 subdirs=0 lastWrite=2026-09-12 21:29:25
+
+=== B. S20260901_47 contents: name / bytes / sha256 / first line (<=200 chars) ===
+_export.json
+  bytes  = 3648
+  sha256 = CD071B18E39DC58DFC7506D407397EC6DB75EAF8BC0D85B77482B2EEB553D207
+  first  = {
+ads_active_trend_m.jsonl
+  bytes  = 30
+  sha256 = 1E0EA9BF127CEC4B276E4411094B794DB4F5B2CBECBDBB13F7936A3070061429
+  first  = {"dau":3,"behavior_count":14}
+ads_behavior_funnel_m.jsonl
+  bytes  = 332
+  sha256 = A98B1C68CE8B0E301C7A51FF451C6FCAE12A6DAA9BF91806D66ADE0E4232985C
+  first  = {"stage":"intent","user_count":2,"conversion_rate":0.6667,"overall_buy_rate":1.0000}
+ads_data_quality_m.jsonl
+  bytes  = 476
+  sha256 = 7B5A77A6CEC44E8FDF68F6FF70D091F99C911A9CBA10C3EFF36FC98FD8A09565
+  first  = {"rule_code":"REQUIRED_FIELD_NULL_RATE","check_count":14,"error_count":0,"error_rate":0.000000,"passed":1,"threshold":"0.001"}
+ads_hot_product_m.jsonl
+  bytes  = 441
+  sha256 = 2BCFA7688D0F40707280007CD8E48031C7908EFD8D05E966A4FD40C5F5A93C30
+  first  = {"product_id":3,"product_name":"保温杯","heat_score":11.0904,"pv":1,"fav":1,"cart":1,"buy":3,"rank_no":1}
+ads_operation_overview_m.jsonl
+  bytes  = 160
+  sha256 = C499ACD6D5A0E23D50AAAA3E7E5681F8041EFB65FDD09D6886D89A3DB22FE5C6
+  first  = {"pv":7,"uv":3,"dau":3,"order_count":5,"sale_amount":2042.00,"net_sale_amount":1493.00,"avg_order_value":408.40,"refund_rate":0.6000,"full_refund_rate":0.2000}
+ads_product_conversion_m.jsonl
+  bytes  = 276
+  sha256 = 9C136D34F2E50BA423D2ACF424EA250F13D452E26D00C7A059C025C804F6673D
+  first  = {"product_id":2,"pv_users":3,"buy_users":1,"conversion_rate":0.3333}
+ads_sale_trend_m.jsonl
+  bytes  = 81
+  sha256 = 7808A741AE4A94EA3D93EC6EFFBF4D90BCC3A2DAE2ADE03A46B49EFA5CA48779
+  first  = {"order_count":5,"buyer_count":3,"sale_amount":2042.00,"avg_order_value":408.40}
+ads_user_profile_m.jsonl
+  bytes  = 720
+  sha256 = 8B268F063396B8D2AC13461CFE6E7405258270511049802764AA32140B747F54
+  first  = {"user_id":3,"r":3,"f":3,"m":1,"value_group":"一般挽留","active_level":"低","favorite_category":11,"last_active_date":"2026-09-01","last_buy_date":"2026-09-01","lifecycle_state":"活跃","rule_version":"rfm-v1...[truncated]
+
+=== C. hidden sidecar files in S20260901_47 (Hadoop .crc) ===
+._export.json.crc  40 bytes
+.ads_active_trend_m.jsonl.crc  12 bytes
+.ads_behavior_funnel_m.jsonl.crc  12 bytes
+.ads_data_quality_m.jsonl.crc  12 bytes
+.ads_hot_product_m.jsonl.crc  12 bytes
+.ads_operation_overview_m.jsonl.crc  12 bytes
+.ads_product_conversion_m.jsonl.crc  12 bytes
+.ads_sale_trend_m.jsonl.crc  12 bytes
+.ads_user_profile_m.jsonl.crc  16 bytes
+
+=== D. S20260901_47/_export.json (verbatim) ===
+{
+  "snapshotId": "S20260901_47",
+  "businessDate": "20260901",
+  "dt": "20260901",
+  "source": "spark-ads",
+  "generatedAt": "2026-09-12T21:29:25.254295400",
+  "totalRows": 22,
+  "tables": [
+    {"hiveTable":"dw_ads.ads_operation_overview","mysqlTable":"ads_operation_overview_m","rowCount":1,"columns":["pv","uv","dau","order_count","sale_amount","net_sale_amount","avg_order_value","refund_rate","full_refund_rate"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_operation_overview__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_operation_overview_m.jsonl"},
+    {"hiveTable":"dw_ads.ads_sale_trend","mysqlTable":"ads_sale_trend_m","rowCount":1,"columns":["order_count","buyer_count","sale_amount","avg_order_value"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_sale_trend__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_sale_trend_m.jsonl"},
+    {"hiveTable":"dw_ads.ads_behavior_funnel","mysqlTable":"ads_behavior_funnel_m","rowCount":4,"columns":["stage","user_count","conversion_rate","overall_buy_rate"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_behavior_funnel__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_behavior_funnel_m.jsonl"},
+    {"hiveTable":"dw_ads.ads_active_trend","mysqlTable":"ads_active_trend_m","rowCount":1,"columns":["dau","behavior_count"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_active_trend__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_active_trend_m.jsonl"},
+    {"hiveTable":"dw_ads.ads_hot_product","mysqlTable":"ads_hot_product_m","rowCount":4,"columns":["product_id","product_name","heat_score","pv","fav","cart","buy","rank_no"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_hot_product__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_hot_product_m.jsonl"},
+    {"hiveTable":"dw_ads.ads_product_conversion","mysqlTable":"ads_product_conversion_m","rowCount":4,"columns":["product_id","pv_users","buy_users","conversion_rate"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_product_conversion__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_product_conversion_m.jsonl"},
+    {"hiveTable":"dw_ads.ads_user_profile","mysqlTable":"ads_user_profile_m","rowCount":3,"columns":["user_id","r","f","m","value_group","active_level","favorite_category","last_active_date","last_buy_date","lifecycle_state","rule_version","calc_date"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_user_profile__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_user_profile_m.jsonl"},
+    {"hiveTable":"dw_ads.ads_data_quality","mysqlTable":"ads_data_quality_m","rowCount":4,"columns":["rule_code","check_count","error_count","error_rate","passed","threshold"],"hivePath":"file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/ads_data_quality__staging/snapshot_id=S20260901_47/dt=20260901","exportFile":"D:/Develop_code/GraduationProject/metric-staging/S20260901_47/ads_data_quality_m.jsonl"}
+  ]
+}
+

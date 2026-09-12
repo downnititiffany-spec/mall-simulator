@@ -1,0 +1,1402 @@
+hdr
+ts	active_sid_of_profile1	ads_total	metric_values
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:31.985808	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:31.995339	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.010938	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.026468	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.041713	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.057777	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.073594	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.089555	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.104913	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.120181	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.136096	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.151558	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.166123	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.181807	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.197471	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.213628	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.229103	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.244901	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.260418	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.276454	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.291874	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.307590	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.322768	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.338451	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.354318	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.369136	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.385094	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.399513	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.415071	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.430469	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.446353	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.462356	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.477615	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.492896	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.508510	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.523609	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.539362	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.554615	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.570628	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.586556	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.601999	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.617270	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.632503	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.648179	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.664547	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.680256	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.696474	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.711513	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.726949	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.742330	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.758585	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.773350	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.788965	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.804594	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.819663	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.835121	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.850727	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.866226	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.881532	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.897467	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.912874	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.928323	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.943436	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.959346	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.974747	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:32.990851	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.006516	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.022374	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.038353	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.053739	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.069251	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.085311	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.100367	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.116458	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.132193	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.147396	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.162500	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.177676	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.193251	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.208225	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.223764	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.239933	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.255361	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.271698	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.287324	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.303051	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.319086	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.334741	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.350469	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.365406	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.381070	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.396511	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.412558	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.428076	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.444318	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.460764	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.476359	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.492349	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.508302	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.524050	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.539592	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.554467	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.569548	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.584929	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.600427	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.616378	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.632234	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.647961	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.663033	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.678243	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.694308	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.709870	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.725422	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.741325	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.757483	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.773268	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.787883	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.803669	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.818621	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.833496	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.848611	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.864505	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.879654	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.894894	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.911157	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.926584	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.941384	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.957453	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.972928	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:33.988512	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.004545	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.019960	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.035092	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.050483	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.066521	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.081836	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.097488	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.112330	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.128398	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.143375	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.158754	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.174324	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.189925	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.206238	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.222079	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.237552	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.253548	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.268282	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.283839	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.299759	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.315250	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.331203	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.346750	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.362332	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.377615	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.393649	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.409088	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.425073	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.441302	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.457313	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.473329	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.488521	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.504180	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.520020	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.536155	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.551458	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.566676	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.581829	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.597327	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.612652	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.628745	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.644283	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.659562	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.675369	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.691031	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.707285	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.723315	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.738603	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.754565	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.770255	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.785652	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.800774	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.816232	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.831687	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.847588	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.862569	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.878587	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.893571	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.909980	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.926057	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.942308	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.958392	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.973967	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:34.990107	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.006781	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.022545	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.038601	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.053657	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.069257	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.084520	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.099539	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.115239	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.130788	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.145689	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.161670	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.176869	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.192275	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.207848	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.223260	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.238848	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.254484	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.270320	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.286383	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.301047	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.316590	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.332708	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.348707	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.364279	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.379819	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.394787	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.410545	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.426402	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.441943	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.457497	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.472416	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.488610	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.504133	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.519647	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.535537	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.551736	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.567344	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.583321	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.598328	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.613191	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.628772	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.644591	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.659552	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.675433	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.691022	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.706407	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.722400	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.738476	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.754089	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.769968	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.786639	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.801692	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.817292	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.832750	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.848447	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.864213	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.880255	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.895589	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.910384	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.926339	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.941352	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.956474	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.972752	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:35.988423	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.004478	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.020656	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.036775	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.052326	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.068287	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.083760	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.099887	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.115658	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.130589	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.146859	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.162365	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.178954	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.193746	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.209375	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.224901	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.240620	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.256405	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.271516	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.286566	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.302293	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.318255	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.333426	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.349297	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.365021	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.380601	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.396627	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.412476	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.427840	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.443160	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.459454	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.474800	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.490796	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.506182	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.522502	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.537656	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.553217	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.569014	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.584567	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.600650	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.616278	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.632004	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.647663	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.662682	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.678326	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.693480	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.708913	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.723577	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.738240	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.754314	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.769600	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.785817	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.801698	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.816649	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.832552	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.848690	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.864798	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.880092	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.896132	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.912280	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.928310	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.943683	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.959785	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.975366	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:36.991333	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.007322	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.023035	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.038472	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.054372	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.070537	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.086504	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.102328	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.117673	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.132562	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.148195	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.163937	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.179158	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.195382	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.211272	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.227254	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.243808	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.259425	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.275029	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.290397	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.305164	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.321254	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.336354	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.351789	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.366879	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.383291	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.399010	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.414973	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.430994	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.446527	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.462555	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.478638	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.494034	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.509547	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.524579	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.540678	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.556209	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.572240	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.588206	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.603154	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.619157	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.634653	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.650354	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.666334	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.682329	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.698040	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.713513	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.729647	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.745170	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.760206	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.776176	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.792202	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.808144	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.823654	NULL	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.838708	NULL	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.854288	NULL	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.869285	NULL	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.884989	NULL	0	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.899879	NULL	1	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.916607	NULL	2	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.931598	NULL	7	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.946673	NULL	15	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.962705	NULL	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.978147	NULL	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:37.994327	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.010259	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.026274	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.042242	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.058387	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.073529	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.088618	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.103982	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.119483	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.134795	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.150499	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.166214	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.181586	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.197732	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.213137	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.228583	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.244273	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.259601	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.275263	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.291138	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.306657	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.321650	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.336764	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.352228	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.367805	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.382681	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.398917	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.414714	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.430452	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.446873	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.461734	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.477560	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.493132	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.508494	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.524738	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.540814	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.556922	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.572266	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.588639	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.604001	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.619983	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.635567	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.650618	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.666587	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.682139	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.697367	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.712573	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.728851	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.744080	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.760147	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.775553	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.790726	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.806641	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.822166	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.837682	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.853826	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.869472	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.884812	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.900246	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.915521	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.931488	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.947473	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.964042	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.980220	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:38.995815	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.011814	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.027248	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.043328	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.058291	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.073921	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.088718	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.104228	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.119773	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.135225	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.151197	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.166713	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.182744	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.198318	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.213807	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.229349	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.245490	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.260554	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.275456	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.291739	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.307386	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.323458	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.339733	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.355226	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.370675	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.385782	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.402088	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.417755	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.433386	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.449502	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.465215	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.481164	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.496850	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.512103	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.527546	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.543271	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.559134	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.574647	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.590771	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.606926	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.622559	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.637783	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.652611	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.668475	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.684140	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.699235	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.714807	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.729561	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.745084	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.760681	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.776661	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.792723	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.808065	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.823104	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.838805	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.854437	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.869490	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.886152	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.901571	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.916859	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.931804	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.947626	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.962507	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.978466	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:39.994112	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.009100	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.024878	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.041209	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.056481	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.071997	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.087810	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.103133	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.117821	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.133362	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.149563	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.164784	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.180055	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.195022	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.210980	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.226513	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.242584	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.258662	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.273679	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.288946	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.303982	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.319578	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.335211	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.350466	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.365827	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.381346	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.396572	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.412488	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.427425	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.443537	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.458743	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.475633	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.490518	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.505774	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.521251	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.536496	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.551358	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.566884	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.581369	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.596681	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.612625	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.627725	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.643264	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.659246	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.674547	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.690721	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.706672	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.722202	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.737752	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.753959	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.768695	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.783986	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.800040	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.815751	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.831726	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.847726	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.863392	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.878916	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.894870	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.910703	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.926759	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.943197	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.959302	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.974623	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:40.990641	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.006592	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.022436	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.037842	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.052854	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.068062	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.083925	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.100082	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.115951	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.131493	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.147969	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.163441	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.178810	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.194594	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.209987	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.225668	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.240689	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.256672	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.272688	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.287953	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.302939	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.318530	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.334076	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.349589	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.364727	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.380018	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.394773	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.410451	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.426356	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.441652	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.456767	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.472710	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.487642	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.502801	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.518641	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.533818	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.549806	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.565833	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.581298	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.596382	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.611777	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.628094	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.643286	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.658700	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.674095	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.688420	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.704130	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.720211	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.735731	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.751913	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.767790	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.783069	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.799005	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.814980	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.830287	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.846386	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.862220	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.877611	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.892726	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.908529	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.924231	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.939852	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.954749	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.970417	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:41.986533	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.002205	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.017534	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.033495	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.049012	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.064947	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.079464	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.095058	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.110591	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.125416	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.140852	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.156893	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.172419	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.188217	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.202999	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.218626	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.234249	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.249729	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.265692	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.281680	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.296931	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.312547	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.327975	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.343269	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.358718	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.375004	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.391123	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.406938	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.423139	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.438565	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.454172	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.469573	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.485756	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.501567	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.517466	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.532719	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.548506	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.563530	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.578514	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.594060	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.610052	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.625627	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.641288	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.656734	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.671967	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.687543	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.702447	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.719015	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.734608	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.749484	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.765241	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.780181	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.796107	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.811466	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.827703	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.843091	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.858767	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.873812	S20260901_47	22	10
+ts	active_sid_of_profile1	ads_total	metric_values
+2026-09-12 22:32:42.889799	S20260901_47	22	10

@@ -1,0 +1,56 @@
+### 测量完整性取证：运行中字节码 / 工作树并发改动 / 独立复核（只读，时间 2026-09-12 22:22:38）
+
+--- [1] 运行中的实测环境 ---
+  应用进程 PID 61104，启动 2026-09-12 19:17:49；命令 = java -jar analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+  该 jar 文件最后写入 = 2026-09-12 17:21:07（33135937 B）⇒ 运行中的字节码来自 17:21:07 的构建
+  ⇒ 本轮全部实测（采集批次 45/46、/test、/status）都由这份 17:21:07 的字节码产生
+
+--- [2] 19:00 之后 HEAD 上的提交：全部为 docs 提交，且未触及我引用的任何类 ---
+29b7016 docs(board): 台账行 518 —— 选批判据来源钉死为磁盘清单（file:line）＋ 文件面 max accepted batchId=43（黄金批）＋ 新缺陷 F-91（park 击穿 WAIT_LANDING 钉住语义）＋ 陷阱 #59（batchId 提取须锚定正则）＋ 撤销 M3 重复探测、DB 批次行保留不动
+04f9aa7 docs(board): 台账行 517 —— E5 小范围预验收结论（第1/3项部分满足、第2项✅、第4项历史态满足）＋ 缺陷 E5-a..d/O-a/O-b ＋ 陷阱 #58（traceId 假阳性）＋ landing 基线 61→62 ＋ 批次选举风险升级（跑链前强制前置检查）
+dba4381 docs(board): 台账行 516 —— P5 发现「仅靠配置接入异构源不成立（无映射执行者）」入账 F-89；裁决 D-143（维持 P5 边界/不激活源 B/替代证据须自带不可证明项）；跨道批次互斥纪律（manifest park + max batchId 实测）
+  git log --since=19:00 --name-only | 过滤 EventContractValidator|LocalFileIngestor|IngestionService|PipelineService|SourceProfileValidator|SourceRegistry|SourcePathPolicy|canonical-event ⇒ 命中 0 行
+  ⇒ 我引用的闸门/采集/登记类在 19:00 后的提交里零改动（jar 17:21:07 与工作树在这些文件上同源，除下述未提交改动）
+
+--- [3] 工作树的并发未提交改动（别道所为，非本泳道）---
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+ M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+ M spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala
+?? analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/RuleSeverity.java
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/RuleSeverityTest.java
+  其中属于本泳道的：仅 analytics-server/source-profiles/fixture-b.v1.json（?? 新增，工单要求的登记绑定画像）
+  PipelineService.java 相对 HEAD = 50 insertions / 7 deletions；diff 的 hunk 行为 @@ -111 / -481 / -493 / -499 / -551 / -675 / -682 / -699 / -705 / -712 / -768 / -769 / -777 / -778
+  ⇒ 我引用的三段（:377-379 LOAD_ODS 输入目录、:938-956 manifestForRun、:978-1013 findReadyManifest）**均不在这些 hunk 内**（hunk 最大行号 778 < 930）
+  ⚠️ 但：工作树行号 ≠ jar 行号（jar 早于这些改动）⇒ 本报告的 file:line 一律指**工作树当前版本**
+
+--- [4] 独立复核（母泳道 M3 只读钉死，HEAD 提交 29b7016 的提交信息原文）---
+29b7016 docs(board): 台账行 518 —— 选批判据来源钉死为磁盘清单（file:line）＋ 文件面 max accepted batchId=43（黄金批）＋ 新缺陷 F-91（park 击穿 WAIT_LANDING 钉住语义）＋ 陷阱 #59（batchId 提取须锚定正则）＋ 撤销 M3 重复探测、DB 批次行保留不动
+  ⇒ 与我的结论一致的三点：① 选批判据来源 = 磁盘清单（file:line）；② 文件面 max accepted batchId = 43（黄金批）；③ 新缺陷 F-91 = park 击穿 WAIT_LANDING 钉住语义；陷阱 #59 = batchId 提取须锚定正则（本条源自本泳道中途回报的误命中更正）
+  ⇒ 「DB 批次行保留不动」亦与父裁决一致（我未改任何 ingestion_batch 状态行）
+
+--- [5] 结论（诚实标注）---
+  ✅ 已证：判据来源（源码 + M3 独立复核）；污染面从 45 回到 43；夹具入口 accepted/45 不可达；DB 面 45/44 归属清晰；我未改任何状态行
+  🟥 未证：运行中 jar 的 findReadyManifest 字节码未逐指令反编译核验（旁证：jar 17:21:07 早于一切改动；19:00 后提交未触及该类；M3 独立复核结论一致）
+
+--- [6] 冻结的独立证明：mtime 序（不依赖我记录的任何哈希）---
+  运行#1 时刻 = 2026-09-12 22:08:05；运行#2 = 22:11:07
+  冻结件（EXPECTED.md + 5 夹具 JSONL + 4 期望文件 + 3 映射画像）共 15 个，最后写入时间晚于运行#1 的 = 1 个
+  ⇒ 期望与夹具在实测发生之前即已定稿，实测之后零改动（文件系统时间戳为独立证据面，不依赖我登记的哈希）
+
+--- [7] 对拍脚本自身的转写错误（如实登记，已修正）---
+  final-deliverable-hashes.txt 初版第[2]段把契约 schema 的登记哈希写成中段臆造的假值，造成假「不符」。
+  真实值 A70AF90110FBB5D36CA93F5C89C9E2E9D4C93A5F8C5973F7721D6464B2D7ADE5 有三处独立记录：① 本泳道 raw/canonical-schema-required.txt:3；② 跨泳道 p2-02-multiformat-time-20260912/raw/source-fingerprints-20260912.txt；③ 跨泳道 ct-batch-20260912/lane/refresh-fingerprints.log。三者与实测一致 ⇒ 契约 schema 从未被改动；错误只在我写的对拍数组里，已修正并保留本条。
+  陷阱类型：以缩写哈希「XXXX…YYYY」为依据做全量对拍 ⇒ 会把缩写误当成可补全的信息；正确做法：登记值必须整串留档。
+--- [6-更正] 冻结件口径精确化（上一条把说明文档算进了冻结件）---
+  冻结件 = 14 个：EXPECTED.md(1) + 夹具 JSONL(5) + 期望产物(B1/B2/B3 TSV + fixture-manifest.json + ground-truth-metrics.json = 5) + 映射画像(fixture-b / scenario-b2 / scenario-b3 = 3)
+  ⇒ 这 14 个的最后写入时间全部 < 22:08:05（运行#1）⇒ 期望与夹具在实测前定稿、实测后零改动 ✅
+  唯一晚于运行#1 的文件 = mapping/MAPPING-NOTES.md（22:18:53）—— 它是说明文档（冻结后撰写的分析与建议载体），不是期望或夹具，不构成「结果回改期望」
+  另：所有 docs/raw/* 证据文件均在实测之后生成（属证据，不属冻结件）

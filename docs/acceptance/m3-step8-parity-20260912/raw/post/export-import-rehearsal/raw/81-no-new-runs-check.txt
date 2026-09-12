@@ -1,0 +1,10 @@
+section
+== safety: no new pipeline_run created by this rehearsal (max id / max started_at) ==
+max_run_id	total_runs	latest_started	latest_finished
+47	46	2026-09-12 21:26:36.126	2026-09-12 21:29:27.334
+section
+== runs created after 2026-09-12 22:00 (expect none) ==
+section
+== landing dir untouched? latest mtime (read-only stat only) ==
+new_stage_rows_after_2200
+0

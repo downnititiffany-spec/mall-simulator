@@ -1,0 +1,10 @@
+### baseline (captured 2026-09-12 20:58:29): analytics_metric ADS mirror row counts WHERE snapshot_id='S20260901_43'
+
+ads_active_trend_m	1
+ads_behavior_funnel_m	4
+ads_data_quality_m	4
+ads_hot_product_m	9
+ads_operation_overview_m	1
+ads_product_conversion_m	9
+ads_sale_trend_m	1
+ads_user_profile_m	1

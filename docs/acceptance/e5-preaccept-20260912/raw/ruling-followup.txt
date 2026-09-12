@@ -1,0 +1,23 @@
+===== 裁决回执：两个确认点的独立复核（2026-09-12 22:17:25) =====
+
+[确认点1] park 是「移动」还是「复制」？
+landing\manifests\44.json 是否存在 (Test-Path) = False
+park 目标是否存在 = True
+park 目标 sha256 = B74A5A63138539F6936A4AC1C9CB8CFECFBC1A76007AAA8D92F33556CEF82921
+结论：Move-Item -Force —— 源路径已不存在 ⇒ 是移动，不是复制。
+
+[确认点2] landing\manifests 现在几个文件？
+文件数 = 43
+最大文件名的批次号 = 43
+manifest-parked 目录内容 = 44.json(730B), README.txt(1940B)
+
+[附加] 本泳道只读复核：我采集之后是否已有 pipeline_run
+mysql: [Warning] Using a password on the command line interface can be insecure.
+max_id	runs_after_47
+47	0
+
+[附加] 终态端口
+8090 无监听
+8091 LISTENING pid=61104
+8092 无监听
+[附加] landing\events 文件数 = 62

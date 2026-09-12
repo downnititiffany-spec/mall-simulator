@@ -1,0 +1,60 @@
+{
+  "profileVersion": "1.0",
+  "sourceCode": "fixture-b",
+  "canonical": {
+    "schemaVersion": "1.0"
+  },
+  "eventTypeMapping": {
+    "behavior": "behavior",
+    "order_cancelled": "order_cancelled",
+    "order_created": "order_created",
+    "order_paid": "order_paid",
+    "user_registered": "user_registered",
+    "coupon_redeemed": null,
+    "item_reviewed": null
+  },
+  "fieldMapping": {
+    "amount": "amount",
+    "behavior_type": "behavior_type",
+    "channel": "channel",
+    "order_id": "order_id",
+    "paid_at": "paid_at",
+    "payment_id": "payment_id",
+    "product_id": "product_id",
+    "session_id": "session_id",
+    "user_id": "user_id",
+    "pay_money": "amount",
+    "settle_amount": "amount"
+  },
+  "enumSemantics": {
+    "behavior": {
+      "view": "view",
+      "favorite": "favorite",
+      "cart_add": "cart_add",
+      "cart_remove": "cart_remove",
+      "search": "search",
+      "purchase": null,
+      "add_cart": null,
+      "pay_later": null,
+      "cancel": null
+    },
+    "channel": {
+      "app": "app",
+      "pc": "pc",
+      "h5": "h5"
+    }
+  },
+  "identityPolicy": {
+    "user": { "rawField": "user_id", "shape": "ANY", "surrogate": "HASH64" },
+    "product": { "rawField": "product_id", "shape": "ANY", "surrogate": "HASH64" },
+    "order": { "rawField": "order_id", "shape": "ANY", "surrogate": "HASH64" }
+  },
+  "timePolicy": {
+    "field": "event_time",
+    "formats": ["ISO_OFFSET_DATE_TIME", "dd/MM/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm:ss"]
+  },
+  "quarantinePolicy": {
+    "unknownEventType": "QUARANTINE",
+    "unknownField": "KEEP_IN_PAYLOAD"
+  }
+}

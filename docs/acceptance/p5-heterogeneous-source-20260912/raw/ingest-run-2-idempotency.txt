@@ -1,0 +1,126 @@
+### 采集运行 #2 —— 重复导入幂等性（时间 2026-09-12 22:11:07） 前提：landing\events 内容与运行 #1 逐字节相同（同一 5 个夹具） 
+--- POST /api/v1/ingestion/runs （第 2 次，无任何文件改动）---
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "batchId": 46,
+    "batchNo": "ing-20260912221107-afc698b5",
+    "status": "SUCCESS",
+    "recordCount": 0,
+    "quarantineCount": 0,
+    "errorCount": 0,
+    "fileCount": 0,
+    "acceptedBytes": 0,
+    "acceptedDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\46",
+    "quarantineDir": "D:\\Develop_code\\GraduationProject\\landing\\quarantine\\46",
+    "manifestPath": "file:///D:/Develop_code/GraduationProject/landing/manifests/46.json",
+    "noNewData": true
+  },
+  "traceId": "ec10a81f-6ed5-41d8-85c9-19f23c2f11a9"
+}
+--- GET /api/v1/ingestion/batches?limit=4 ---
+[
+  {
+    "id": 46,
+    "batchNo": "ing-20260912221107-afc698b5",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "source": "local-file",
+    "status": "SUCCESS",
+    "recordCount": 0,
+    "errorCount": 0,
+    "quarantineCount": 0,
+    "landingDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\46",
+    "startTime": "2026-09-12T22:11:07.709",
+    "endTime": "2026-09-12T22:11:07.716"
+  },
+  {
+    "id": 45,
+    "batchNo": "ing-20260912220805-04beeb43",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "source": "local-file",
+    "status": "QUARANTINED",
+    "recordCount": 84,
+    "errorCount": 0,
+    "quarantineCount": 96,
+    "landingDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\45",
+    "startTime": "2026-09-12T22:08:05.906",
+    "endTime": "2026-09-12T22:08:06.052"
+  },
+  {
+    "id": 44,
+    "batchNo": "ing-20260912215733-85b570e5",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "source": "local-file",
+    "status": "SUCCESS",
+    "recordCount": 1,
+    "errorCount": 0,
+    "quarantineCount": 0,
+    "landingDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\44",
+    "startTime": "2026-09-12T21:57:33.734",
+    "endTime": "2026-09-12T21:57:33.826"
+  },
+  {
+    "id": 43,
+    "batchNo": "ing-20260912210642-e4588aa7",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "source": "local-file",
+    "status": "QUARANTINED",
+    "recordCount": 51,
+    "errorCount": 0,
+    "quarantineCount": 4,
+    "landingDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\43",
+    "startTime": "2026-09-12T21:06:42.277",
+    "endTime": "2026-09-12T21:06:42.303"
+  }
+]
+--- 运行 #2 后 landing\manifests 目录 ---
+  1.json  463 B  改动时间=18:17:48
+  2.json  5944 B  改动时间=18:20:43
+  3.json  463 B  改动时间=18:22:28
+  4.json  614 B  改动时间=18:23:54
+  5.json  622 B  改动时间=18:25:36
+  6.json  461 B  改动时间=18:31:16
+  7.json  626 B  改动时间=18:34:10
+  8.json  628 B  改动时间=18:37:53
+  9.json  625 B  改动时间=18:38:15
+  10.json  464 B  改动时间=18:38:37
+  11.json  631 B  改动时间=18:41:11
+  12.json  464 B  改动时间=19:30:53
+  13.json  634 B  改动时间=19:31:09
+  14.json  634 B  改动时间=19:33:21
+  15.json  634 B  改动时间=19:33:30
+  16.json  623 B  改动时间=19:33:50
+  17.json  648 B  改动时间=16:48:59
+  18.json  649 B  改动时间=16:52:49
+  19.json  651 B  改动时间=19:31:53
+  20.json  648 B  改动时间=19:37:31
+  21.json  647 B  改动时间=19:55:23
+  22.json  647 B  改动时间=20:23:37
+  23.json  645 B  改动时间=20:29:36
+  24.json  648 B  改动时间=20:34:52
+  25.json  648 B  改动时间=20:40:04
+  26.json  643 B  改动时间=10:37:36
+  27.json  640 B  改动时间=10:59:29
+  28.json  640 B  改动时间=11:06:44
+  29.json  7889 B  改动时间=12:22:49
+  30.json  631 B  改动时间=12:30:06
+  31.json  649 B  改动时间=13:20:46
+  32.json  464 B  改动时间=14:28:04
+  33.json  464 B  改动时间=14:32:15
+  34.json  629 B  改动时间=15:51:39
+  35.json  464 B  改动时间=15:51:39
+  36.json  638 B  改动时间=15:56:48
+  37.json  464 B  改动时间=15:56:48
+  38.json  464 B  改动时间=16:28:54
+  39.json  642 B  改动时间=16:29:16
+  40.json  1051 B  改动时间=09:23:15
+  41.json  1365 B  改动时间=17:22:22
+  42.json  763 B  改动时间=17:34:54
+  43.json  754 B  改动时间=21:06:42
+  45.json  1388 B  改动时间=22:08:06
+  46.json  571 B  改动时间=22:11:07

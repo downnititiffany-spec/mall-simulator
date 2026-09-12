@@ -1,0 +1,7 @@
+# B-13 / 03 — binlog window 2026-09-12 22:00:00 .. 23:30:00 — EXACT tables analytics_meta.metric_snapshot / analytics_meta.metric_value
+# COMMAND:
+#   & 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqlbinlog.exe' -R --host=127.0.0.1 --port=3306 --user=root --password=123456 ^
+#       --base64-output=DECODE-ROWS -v --start-datetime='2026-09-12 22:00:00' --stop-datetime='2026-09-12 23:30:00' LAPTOP-8F8T3J1B-bin.000131
+# then filtering lines matching 'nalytics_meta.metric_snapshot' or 'nalytics_meta.metric_value'
+# with 34 lines of preceding raw context (use/BEGIN/thread_id/GTID). READ ONLY.
+### hits=0

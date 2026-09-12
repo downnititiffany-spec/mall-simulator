@@ -1,0 +1,1402 @@
+hdr
+ts	ads_total	metric_values	active
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.048951	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.064444	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.079289	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.095894	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.111357	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.126551	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.142783	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.157755	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.172673	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.188788	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.203760	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.218711	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.234841	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.250578	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.265655	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.280577	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.296022	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.311617	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.326621	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.341890	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.357670	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.372443	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.388601	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.404769	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.420134	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.435764	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.451477	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.467877	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.483863	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.499520	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.515599	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.531414	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.546782	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.562295	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.577345	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.592774	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.608396	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.624176	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.639642	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.655562	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.671491	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.686644	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.701452	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.717447	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.733513	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.749549	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.765832	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.781608	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.796771	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.812218	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.828444	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.843955	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.859448	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.874827	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.890252	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.905608	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.920504	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.935767	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.951374	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.967023	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.981836	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:03.998289	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.013898	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.030078	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.045424	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.061568	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.076323	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.091276	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.107556	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.123712	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.139538	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.155903	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.171739	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.186745	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.201847	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.217053	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.232491	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.248544	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.264337	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.279763	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.294758	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.310465	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.325821	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.341028	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.357143	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.372505	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.388575	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.404109	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.419277	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.434913	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.450500	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.466802	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.482699	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.498275	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.513896	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.528617	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.544686	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.559604	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.574748	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.590136	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.605681	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.620900	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.635924	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.651780	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.667671	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.682776	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.698231	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.713725	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.730309	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.746089	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.761628	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.777690	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.793629	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.809356	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.824718	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.839726	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.855778	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.871296	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.886821	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.901839	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.917838	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.933302	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.948841	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.964706	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.979915	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:04.995571	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.010577	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.026730	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.041864	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.057403	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.072690	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.088605	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.104861	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.120550	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.136705	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.152824	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.168892	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.184359	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.200734	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.215680	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.230653	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.246901	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.262439	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.278409	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.293833	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.308901	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.325144	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.340034	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.355745	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.371808	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.387597	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.403048	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.417834	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.432901	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.447873	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.463804	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.479584	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.494826	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.510642	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.526215	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.542335	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.558407	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.573480	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.588605	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.604005	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.619514	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.635749	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.651649	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.666849	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.682163	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.697783	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.713036	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.727989	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.743604	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.758820	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.774370	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.789850	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.805761	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.821684	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.836792	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.852348	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.868463	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.883907	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.899882	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.915897	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.931338	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.946839	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.963059	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.978056	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:05.994008	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.009250	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.025809	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.040565	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.056621	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.073152	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.088352	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.103328	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.119642	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.135458	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.152038	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.167645	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.182431	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.197957	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.213463	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.228639	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.243799	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.259814	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.275866	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.291663	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.307667	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.323396	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.339100	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.354775	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.370646	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.385711	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.401624	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.416717	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.431926	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.447750	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.462894	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.478086	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.493784	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.508950	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.524159	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.539775	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.556012	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.571838	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.587602	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.603094	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.619149	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.634743	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.650503	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.665730	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.681156	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.696809	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.712227	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.727480	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.744076	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.759812	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.775681	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.790940	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.805938	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.821867	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.837843	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.852799	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.867983	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.883291	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.899212	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.915611	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.931467	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.946747	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.962475	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.977880	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:06.993362	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.008867	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.023903	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.039989	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.055820	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.071139	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.086950	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.101970	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.117606	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.133080	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.148041	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.163410	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.178894	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.194097	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.209627	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.225834	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.241563	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.257866	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.273727	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.289540	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.305775	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.321691	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.337174	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.352558	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.367586	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.383871	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.399030	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.414544	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.430549	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.446461	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.462297	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.477894	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.493010	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.507974	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.523317	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.539201	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.554590	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.570807	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.585911	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.601890	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.617697	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.633748	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.649019	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.665595	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.681206	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.696567	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.712188	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.728332	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.743547	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.758810	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.773674	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.789716	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.804608	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.820785	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.835741	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.851193	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.866962	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.882346	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.897980	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.913538	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.928474	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.943507	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.959167	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.975052	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:07.990304	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.005032	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.020912	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.035733	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.051540	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.067390	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.082843	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.098259	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.114375	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.129820	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.145102	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.159910	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.176061	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.191862	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.207911	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.223915	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.239117	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.254939	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.270633	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.285979	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.301203	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.317340	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.332828	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.349004	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.364191	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.379823	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.394656	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.410693	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.426062	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.441269	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.456454	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.471561	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.487808	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.503222	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.518986	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.534478	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.549801	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.566148	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.581867	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.597695	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.612789	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.627637	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.642822	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.658350	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.674287	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.689755	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.705756	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.721264	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.736047	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.751631	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.767387	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.783173	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.797605	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.812869	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.827911	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.843589	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.859739	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.875628	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.890750	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.905819	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.922075	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.937863	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.953185	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.968806	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:08.984402	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.000322	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.015952	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.032050	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.047583	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.063700	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.079138	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.094756	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.110724	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.126876	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.141825	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.157652	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.172536	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.187729	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.203997	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.219836	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.236023	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.251018	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.266843	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.282262	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.297424	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.312729	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.328458	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.344401	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.360075	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.375532	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.390522	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.406555	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.422677	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.438740	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.454708	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.470819	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.486967	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.502650	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.518451	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.533381	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.548691	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.564661	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.580236	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.595796	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.611575	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.627779	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.643643	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.659612	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.675661	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.691721	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.706938	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.722034	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.738003	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.752944	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.767554	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.783520	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.798819	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.814204	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.830212	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.845831	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.861720	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.876882	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.891923	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.907519	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.923575	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.938680	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.954676	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.970151	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:09.985681	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.001891	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.017768	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.033172	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.048886	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.064706	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.080280	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.095664	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.111079	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.126607	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.141630	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.156622	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.172651	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.188655	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.204586	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.220780	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.236839	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.252681	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.267727	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.283451	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.299316	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.314696	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.330131	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.345489	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.361655	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.377026	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.393044	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.408817	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.424392	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.440354	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.455922	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.471579	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.486785	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.502142	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.517620	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.532711	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.548749	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.564212	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.579242	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.594812	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.610308	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.624855	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.640838	22	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.655632	22	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.671658	22	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.687710	22	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.703910	0	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.719921	0	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.735383	0	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.750870	2	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.765923	6	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.781932	11	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.797534	18	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.812594	22	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.827970	22	10	NULL
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.843436	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.859332	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.874774	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.890118	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.905490	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.921550	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.936675	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.952842	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.967850	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.983368	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:10.998866	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.013855	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.030323	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.045915	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.061637	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.076757	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.091887	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.107654	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.122976	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.138337	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.154045	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.169525	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.185655	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.200712	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.215480	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.231505	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.246708	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.262219	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.278235	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.293865	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.309433	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.325745	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.341213	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.357090	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.372553	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.387908	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.403533	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.418803	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.433659	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.449797	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.464938	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.480410	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.495751	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.510832	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.526431	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.542048	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.557627	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.573497	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.588974	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.604542	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.620112	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.635514	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.651704	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.666672	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.682180	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.697749	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.713052	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.729021	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.744494	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.759640	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.775935	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.791332	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.806586	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.821561	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.837503	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.853651	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.868929	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.884025	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.899750	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.915811	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.931050	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.946591	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.962613	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.978569	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:11.994114	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.009641	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.025014	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.040929	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.056824	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.072426	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.088138	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.103410	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.119522	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.135051	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.150951	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.167080	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.182197	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.197641	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.212812	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.228748	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.244673	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.260376	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.276150	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.291557	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.307848	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.323810	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.339860	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.355012	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.370457	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.386128	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.402077	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.416574	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.432844	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.449004	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.464551	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.480403	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.496059	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.511575	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.526923	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.542305	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.557463	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.573201	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.588892	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.604287	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.620188	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.635745	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.651414	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.666778	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.681811	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.698060	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.712879	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.728691	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.743578	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.759531	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.775621	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.791155	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.807186	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.822681	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.838731	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.854165	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.869551	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.886175	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.901489	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.917544	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.933388	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.948612	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.964283	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.979170	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:12.994752	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.010322	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.025603	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.040883	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.057055	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.072503	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.088002	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.103765	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.118737	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.135028	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.149709	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.165772	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.181821	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.197018	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.212384	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.227814	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.242674	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.258800	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.273970	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.289864	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.305804	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.321859	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.337372	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.353008	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.368627	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.383756	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.399885	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.414763	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.430847	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.446967	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.462421	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.477837	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.492816	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.508361	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.523836	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.538784	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.553640	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.569708	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.584721	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.600957	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.617003	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.632288	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.647632	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.662762	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.678832	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.694827	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.710810	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.726937	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.742370	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.758002	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.772978	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.788673	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.804635	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.820531	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.836238	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.851407	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.867323	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.882284	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.897955	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.913290	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.928310	22	10	1
+ts	ads_total	metric_values	active
+2026-09-12 22:32:13.943864	22	10	1

@@ -1,0 +1,4 @@
+{"stage":"intent","user_count":2,"conversion_rate":0.6667,"overall_buy_rate":1.0000}
+{"stage":"order","user_count":3,"conversion_rate":1.5000,"overall_buy_rate":1.0000}
+{"stage":"pay","user_count":3,"conversion_rate":1.0000,"overall_buy_rate":1.0000}
+{"stage":"view","user_count":3,"conversion_rate":null,"overall_buy_rate":1.0000}

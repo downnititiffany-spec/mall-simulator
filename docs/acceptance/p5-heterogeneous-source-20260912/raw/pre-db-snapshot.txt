@@ -1,0 +1,52 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+s	v
+pipeline_run_running_now	0
+s
+ingestion_batch_last5
+id	batch_no	status	runtime_profile_id	source_id	record_count	quarantine_count	error_count
+43	ing-20260912210642-e4588aa7	QUARANTINED	1	1	51	4	0
+42	ing-20260912173453-cf5576fe	SUCCESS	1	1	1000	0	0
+41	ing-20260912172222-6c163e45	QUARANTINED	1	1	2740	4	0
+40	ing-20260912092315-fef96b66	SUCCESS	1	1	1667	0	0
+39	ing-20260911162916-04e0eb74	SUCCESS	1	1	2	0	0
+s
+file_checkpoint_by_source
+runtime_profile_id	source_id	ckpt_rows
+1	1	112
+s
+quarantine_reason_histogram
+reason	c
+非法 behavior_type: purchase	24
+JSON 解析失败: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')	24
+未支持 schema_version: 2.0	24
+缺失必要字段: event_id	22
+未支持 schema_version: 9.9	6
+payload 缺失必要字段: session_id	4
+JSON 解析失败: Unexpected character ('b' (code 98)): was expecting double-quote to start field name	4
+非法 behavior_type: add_cart	2
+未支持 schema_version: 1.1	2
+s
+meta_tables
+Tables_in_analytics_meta
+ai_call_log
+ai_query_history
+data_quality_result
+decision_evaluation
+decision_task
+file_checkpoint
+flyway_schema_history
+ingestion_batch
+ingestion_batch_file
+metric_definition
+metric_snapshot
+metric_value
+operation_audit_log
+pipeline_run
+pipeline_stage_run
+quarantine_record
+runtime_profile
+source_registry
+spark_job_run
+sys_user
+t_ckpt_test
+user_session

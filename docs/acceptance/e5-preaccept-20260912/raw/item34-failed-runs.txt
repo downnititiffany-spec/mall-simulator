@@ -1,0 +1,27 @@
+===== 第3/4项：失败运行的字段可得性对照 =====
+取证时间: 2026-09-12 21:59（见 api-pre-stop-index.txt）
+
+--- A) 列表接口 GET /api/v1/pipeline-runs?limit=20（含 errorMessage）---
+id=47 status=SUCCESS currentStage=SUCCESS errorCode= targetSnapshotId=S20260901_47 attemptNo=1
+  createdAt=09/12/2026 21:26:36  finishedAt=09/12/2026 21:29:27
+  errorMessage=
+id=46 status=FAILED currentStage=FAILED errorCode=RUN_JOB_FAILED targetSnapshotId=S20260901_46 attemptNo=1
+  createdAt=09/12/2026 21:17:06  finishedAt=09/12/2026 21:18:12
+  errorMessage=BUILD_DWD 作业失败: tdw: 进程退出码非0(exit=1): [INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] Cannot write incompatible data for the table `spark_catalog`.`dw_dwd`.`dwd_order_detail`: Cannot safely cast `user_key` "STRING" to "BIGINT".
+id=45 status=FAILED currentStage=FAILED errorCode=RUN_JOB_FAILED targetSnapshotId=S20260901_45 attemptNo=1
+  createdAt=09/12/2026 21:06:48  finishedAt=09/12/2026 21:08:08
+  errorMessage=BUILD_DWD 作业失败: tdw: 进程退出码非0(exit=1): [INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] Cannot write incompatible data for the table `spark_catalog`.`dw_dwd`.`dwd_order_detail`: Cannot safely cast `user_key` "STRING" to "BIGINT".
+id=44 status=FAILED currentStage=FAILED errorCode=RUN_JOB_FAILED targetSnapshotId=S20260901_44 attemptNo=1
+  createdAt=09/12/2026 21:03:40  finishedAt=09/12/2026 21:06:07
+  errorMessage=BUILD_DWD 作业失败: tdw: 进程退出码非0(exit=1): [INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] Cannot write incompatible data for the table `spark_catalog`.`dw_dwd`.`dwd_order_detail`: Cannot safely cast `user_key` "STRING" to "BIGINT".
+
+--- B) 详情接口 GET /api/v1/pipeline-runs/46：字段清单（无 errorMessage）---
+  顶层字段 = runId, idempotencyKey, status, currentStage, errorCode, attemptNo, targetSnapshotId, stages
+  stages = WAIT_LANDING:SUCCESS, INIT_SCHEMA:SUCCESS, LOAD_ODS:SUCCESS, BUILD_DWD:FAILED
+  stages[0] 字段 = id, runId, stageCode, status, externalJobId, records, errorCode, evidence, startedAt, finishedAt
+  含 errorMessage 字段? False
+
+--- C) 页面渲染（DOM 全文探针，见 item34-probe-results.txt）---
+  /pipeline: DOM 5,593 chars（含 706 chars 可见文本）；RUN_JOB_FAILED / errorMessage / 失败原因 / Cannot safely cast 命中数 = 0
+  /ops     : DOM 35,005 chars（含 5,808 chars 可见文本）；仅 RUN_JOB_FAILED 命中（错误码列）；errorMessage / 失败原因 / Cannot safely cast 命中数 = 0
+  结论：失败原因文本 API 可得（列表接口 errorMessage），页面无任何展示位。

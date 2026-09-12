@@ -1,0 +1,10 @@
+### B1 逐行隔离证据的可追溯性（只读 SQL，batch 45）
+
+隔离记录总数	event_id为NULL数	schema_version空数
+96	31	31
+文件	条数	event_id为NULL
+D:\Develop_code\GraduationProject\landing\quarantine\45\b1a-envelope-vocab.jsonl	30	30
+D:\Develop_code\GraduationProject\landing\quarantine\45\b1b-payload-vocab.jsonl	30	0
+D:\Develop_code\GraduationProject\landing\quarantine\45\b2-missing-optional.jsonl	4	0
+D:\Develop_code\GraduationProject\landing\quarantine\45\b3a-missing-required.jsonl	20	1
+D:\Develop_code\GraduationProject\landing\quarantine\45\b3b-ambiguous-mapping.jsonl	12	0

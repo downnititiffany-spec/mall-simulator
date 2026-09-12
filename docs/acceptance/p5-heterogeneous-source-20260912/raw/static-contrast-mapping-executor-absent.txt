@@ -1,0 +1,69 @@
+===== A. 校验调用点（采集链路唯一闸门）=====
+
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:130:                            byte[] raw = line.toByteArray();
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:131:                            int len = raw.length;
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:132:                            if (len > 0 && raw[len - 1] == CR) {
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:133:                                len--;
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:134:                            }
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:135:                            String text = new String(raw, 0, len, StandardCharsets.UTF_8);
+> analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:136:                            EventContractValidator.Violation v = validator.check(text, 0);
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:137:                            if (v == null) {
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:138:                                byte[] out = (text + "\n").getBytes(StandardCharsets.UTF_8);
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:139:                                acceptedOut.write(out);
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:140:                                acceptedBytes += out.length;
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:141:                                if (checksum != null) {
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:142:                                    checksum.update(out);
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:143:                                }
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:144:                                collected++;
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:145:                                schemaVersions.add(schemaVersionOf(text));
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\LocalFileIngestor.java:146:                            } else {
+
+
+===== B. EventContractValidator 构造依赖 + 硬编码词汇 =====
+
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\EventContractValidator.java:22:    private static final Set<String> KNOWN_TYPES = Set.of(
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\EventContractValidator.java:27:    private static final Set<String> KNOWN_VERSIONS = Set.of("1.0");
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\EventContractValidator.java:28:    private static final Set<String> BEHAVIOR_TYPES = Set.of("view", "favorite", "cart_add", "cart_remove", "search");
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\EventContractValidator.java:35:    public EventContractValidator(ObjectMapper objectMapper) {
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\EventContractValidator.java:65:        if (!KNOWN_TYPES.contains(eventType)) {
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\EventContractValidator.java:68:        if (!KNOWN_VERSIONS.contains(schemaVersion)) {
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\EventContractValidator.java:77:            if (!BEHAVIOR_TYPES.contains(bt)) {
+
+
+===== C. SourceProfileValidator：只查键是否存在 =====
+
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:35:    public static final List<String> REQUIRED_TOP_LEVEL_KEYS = List.of(
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:65:            return new ProfileCheck(false, false, false, false, List.of(), null, null,
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:71:            return new ProfileCheck(false, false, false, false, List.of(), null, null,
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:80:            return new ProfileCheck(true, false, false, false, List.of(), null, null,
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:84:            return new ProfileCheck(true, false, false, false, List.of(), null, null,
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:89:        for (String key : REQUIRED_TOP_LEVEL_KEYS) {
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:101:        if (!missing.isEmpty()) {
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:110:        return new ProfileCheck(true, true, codeMatches, versionMatches, List.copyOf(missing),
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:126:     * @param missingKeys           缺失的顶层必备键（键存在性判据是键名，值为 null 也算存在）
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:132:                               boolean profileVersionMatches, List<String> missingKeys,
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\source\SourceProfileValidator.java:137:            return exists && jsonObject && sourceCodeMatches && profileVersionMatches && missingKeys.isEmpty();
+
+
+===== D. manifest 里的 mappingVersion 恒为 null =====
+
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:261:     * 各字段口径：</p>
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:262:     * <ul>
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:263:     *   <li>{@code sourceCode} ← {@code source_registry.source_code}（不是 {@code display_name}）；</li>
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:264:     *   <li>{@code sourceId} ← 本轮解析出的激活源 id；</li>
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:265:     *   <li>{@code profileVersion} ← {@code source_registry.profile_version} **列**
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:266:     *       （裁决 8：画像文件里的同名值是"文件自述版本"，两者一致性属 P3-01，不在此处校验）；</li>
+> analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:267:     *   <li>{@code mappingVersion} ← {@code null}：语义映射尚未实施，恒为 null 直到 P2。
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:268:     *       写 {@code ""}/{@code "0"}/{@code "v1"} 之类占位值会让下游以为映射已生效，故显式放 null 键。</li>
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:269:     * </ul>
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:294:        manifest.put("checksum", Long.toHexString(checksum.getValue()));
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:295:        // P1-05 / D-037 裁决 6：四个源身份键（可选，不进 required）。放在最后，保持既有键顺序不变，
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:296:        // 便于与历史清单逐键对账（历史清单只少了这四个键）。
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:297:        manifest.put("sourceCode", source.sourceCode());
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:298:        manifest.put("sourceId", source.id());
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:299:        manifest.put("profileVersion", source.profileVersion());
+> analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:300:        manifest.put("mappingVersion", null);
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:301:        try {
+  analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\ingestion\IngestionService.java:302:            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest);
+
+

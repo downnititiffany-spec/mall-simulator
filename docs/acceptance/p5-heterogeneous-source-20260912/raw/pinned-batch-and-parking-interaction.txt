@@ -1,0 +1,23 @@
+### 关键核查：input_batch_id / WAIT_LANDING 钉住 与 park 清单的相互作用（只读，时间 2026-09-12 22:17:27） 
+--- [1] pipeline_run 最近 8 条（含 input_batch_id = 平台记录的本 run 输入批次）---
+id	business_time	status	current_stage	input_batch_id	attempt_no	source_data_version	started_at	finished_at
+47	2026-09-01 00:00:00.000	SUCCESS	SUCCESS	NULL	1	m3s8-golden55d-202609122126	2026-09-12 21:26:36.126	2026-09-12 21:29:27.334
+46	2026-09-01 00:00:00.000	FAILED	FAILED	NULL	1	m3s8-golden55c-202609122117	2026-09-12 21:17:06.223	2026-09-12 21:18:12.669
+45	2026-09-01 00:00:00.000	FAILED	FAILED	NULL	1	m3s8-golden55b-20260912210642	2026-09-12 21:06:48.261	2026-09-12 21:08:08.801
+44	2026-09-01 00:00:00.000	FAILED	FAILED	NULL	1	m3s8-golden55-20260912210313	2026-09-12 21:03:40.760	2026-09-12 21:06:07.874
+43	2026-09-01 00:00:00.000	SUCCESS	SUCCESS	NULL	1	r2ctl-b31replay-post-ct-20260912-173418	2026-09-12 17:34:58.008	2026-09-12 17:39:51.973
+42	2026-09-01 00:00:00.000	SUCCESS	SUCCESS	NULL	1	r2-post-ct-20260912-172230	2026-09-12 17:22:48.200	2026-09-12 17:28:12.823
+41	2026-09-01 00:00:00.000	SUCCESS	SUCCESS	NULL	1	p1-06-t2-batch31-replay-20260912-092627	2026-09-12 09:26:27.592	2026-09-12 09:31:13.403
+40	2026-09-01 00:00:00.000	FAILED	FAILED	NULL	1	p1-06-t2-golden55-20260912	2026-09-12 09:23:15.867	2026-09-12 09:23:26.098
+--- [2] 有没有 run 的 input_batch_id 落在 43/44/45 ---
+--- [3] WAIT_LANDING 阶段行（最近 6 条）+ evidence 片段 ---
+id	run_id	status	records	evidence_head	started_at
+296	47	SUCCESS	51	{"batchId":43,"acceptedUri":"accepted/43","checksum":"71bbde63","acceptedRecords":51,"schemaVersions":["1.0"]}	2026-09-12 21:26:36.136
+292	46	SUCCESS	51	{"batchId":43,"acceptedUri":"accepted/43","checksum":"71bbde63","acceptedRecords":51,"schemaVersions":["1.0"]}	2026-09-12 21:17:06.236
+288	45	SUCCESS	51	{"batchId":43,"acceptedUri":"accepted/43","checksum":"71bbde63","acceptedRecords":51,"schemaVersions":["1.0"]}	2026-09-12 21:06:48.280
+284	44	SUCCESS	1000	{"batchId":42,"acceptedUri":"accepted/42","checksum":"89b82028","acceptedRecords":1000,"schemaVersions":["1.0"]}	2026-09-12 21:03:40.824
+276	43	SUCCESS	1000	{"batchId":42,"acceptedUri":"accepted/42","checksum":"89b82028","acceptedRecords":1000,"schemaVersions":["1.0"]}	2026-09-12 17:34:58.047
+268	42	SUCCESS	2740	{"batchId":41,"acceptedUri":"accepted/41","checksum":"4aa9fbd3","acceptedRecords":2740,"schemaVersions":["1.0"]}	2026-09-12 17:22:48.330
+--- [4] 全库 RUNNING 计数（跑链路前置检查）---
+RUNNING数
+0

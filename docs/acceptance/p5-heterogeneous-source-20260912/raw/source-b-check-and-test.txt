@@ -1,0 +1,176 @@
+### 源 B（id=2）画像校验 /test 原始响应（重建序列，时间 2026-09-12 22:07:26） 
+--- [3a] PUT /api/v1/sources/2 → 改回**故意含歧义**的 scenario-b3-ambiguous.v1.json ---
+{
+  "id": 2,
+  "sourceCode": "fixture-b",
+  "displayName": "异构源 B（P5 人工配置接入验证）",
+  "ingestMode": "FILE",
+  "profilePath": "docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b3-ambiguous.v1.json",
+  "timezone": "Asia/Shanghai",
+  "currency": "CNY",
+  "status": "DRAFT",
+  "profileVersion": "1.0",
+  "current": false,
+  "createdAt": "2026-09-12T22:07:13.583",
+  "updatedAt": "2026-09-12T22:07:26.269",
+  "warehousePrefix": "het"
+}
+--- [3b] POST /api/v1/sources/2/test （歧义画像）---
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "sourceId": 2,
+    "sourceCode": "fixture-b",
+    "ok": true,
+    "items": [
+      {
+        "name": "profile_path_policy",
+        "passed": true,
+        "applicable": true,
+        "detail": "profile_path 是仓库相对路径：docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b3-ambiguous.v1.json"
+      },
+      {
+        "name": "profile_file_exists",
+        "passed": true,
+        "applicable": true,
+        "detail": "画像文件存在且可读：docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b3-ambiguous.v1.json"
+      },
+      {
+        "name": "profile_json_object",
+        "passed": true,
+        "applicable": true,
+        "detail": "顶层是合法 JSON 对象：docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b3-ambiguous.v1.json"
+      },
+      {
+        "name": "profile_source_code_matches",
+        "passed": true,
+        "applicable": true,
+        "detail": "画像 sourceCode 与登记一致：fixture-b"
+      },
+      {
+        "name": "profile_profile_version_matches",
+        "passed": true,
+        "applicable": true,
+        "detail": "画像 profileVersion 与登记一致：1.0"
+      },
+      {
+        "name": "profile_required_top_level_keys",
+        "passed": true,
+        "applicable": true,
+        "detail": "设计 §4.2 的 9 个顶层必备键齐全"
+      },
+      {
+        "name": "status_transition_allowed",
+        "passed": true,
+        "applicable": true,
+        "detail": "当前状态允许生命周期变更：DRAFT"
+      }
+    ]
+  },
+  "traceId": "03ed2fdc-c2c2-46c3-84f4-fbb351978be2"
+}
+--- [4] PUT /api/v1/sources/2 → 改绑正式画像 analytics-server/source-profiles/fixture-b.v1.json ---
+{
+  "id": 2,
+  "sourceCode": "fixture-b",
+  "displayName": "异构源 B（P5 人工配置接入验证）",
+  "ingestMode": "FILE",
+  "profilePath": "analytics-server/source-profiles/fixture-b.v1.json",
+  "timezone": "Asia/Shanghai",
+  "currency": "CNY",
+  "status": "DRAFT",
+  "profileVersion": "1.0",
+  "current": false,
+  "createdAt": "2026-09-12T22:07:13.583",
+  "updatedAt": "2026-09-12T22:07:26.288",
+  "warehousePrefix": "het"
+}
+--- [5] POST /api/v1/sources/2/test （正式画像）---
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "sourceId": 2,
+    "sourceCode": "fixture-b",
+    "ok": true,
+    "items": [
+      {
+        "name": "profile_path_policy",
+        "passed": true,
+        "applicable": true,
+        "detail": "profile_path 是仓库相对路径：analytics-server/source-profiles/fixture-b.v1.json"
+      },
+      {
+        "name": "profile_file_exists",
+        "passed": true,
+        "applicable": true,
+        "detail": "画像文件存在且可读：analytics-server/source-profiles/fixture-b.v1.json"
+      },
+      {
+        "name": "profile_json_object",
+        "passed": true,
+        "applicable": true,
+        "detail": "顶层是合法 JSON 对象：analytics-server/source-profiles/fixture-b.v1.json"
+      },
+      {
+        "name": "profile_source_code_matches",
+        "passed": true,
+        "applicable": true,
+        "detail": "画像 sourceCode 与登记一致：fixture-b"
+      },
+      {
+        "name": "profile_profile_version_matches",
+        "passed": true,
+        "applicable": true,
+        "detail": "画像 profileVersion 与登记一致：1.0"
+      },
+      {
+        "name": "profile_required_top_level_keys",
+        "passed": true,
+        "applicable": true,
+        "detail": "设计 §4.2 的 9 个顶层必备键齐全"
+      },
+      {
+        "name": "status_transition_allowed",
+        "passed": true,
+        "applicable": true,
+        "detail": "当前状态允许生命周期变更：DRAFT"
+      }
+    ]
+  },
+  "traceId": "d7af4604-81d1-445f-af1d-489cd5e40479"
+}
+--- [6] GET /api/v1/sources （登记表全量）---
+[
+  {
+    "id": 2,
+    "sourceCode": "fixture-b",
+    "displayName": "异构源 B（P5 人工配置接入验证）",
+    "ingestMode": "FILE",
+    "profilePath": "analytics-server/source-profiles/fixture-b.v1.json",
+    "timezone": "Asia/Shanghai",
+    "currency": "CNY",
+    "status": "DRAFT",
+    "profileVersion": "1.0",
+    "current": false,
+    "createdAt": "2026-09-12T22:07:13.583",
+    "updatedAt": "2026-09-12T22:07:26.288",
+    "warehousePrefix": "het"
+  },
+  {
+    "id": 1,
+    "sourceCode": "mock-mall",
+    "displayName": "参考商城（源 A）",
+    "ingestMode": "FILE",
+    "profilePath": "analytics-server/source-profiles/mock-mall.v1.json",
+    "timezone": "Asia/Shanghai",
+    "currency": "CNY",
+    "status": "ACTIVE",
+    "profileVersion": "1.0",
+    "current": true,
+    "createdAt": "2026-09-11T19:56:28.02",
+    "updatedAt": "2026-09-11T19:56:28.02",
+    "warehousePrefix": "dw"
+  }
+]

@@ -1,0 +1,17 @@
+### 登记源 B 之前的现状快照（只读）
+时间: 
+2026-09-12 22:07:05 +08:00
+
+--- pipeline_run 是否有 RUNNING（跑链路/采集前的安全检查）---
+id	status	business_time	source_data_version	started_at	finished_at
+47	SUCCESS	2026-09-01 00:00:00.000	m3s8-golden55d-202609122126	2026-09-12 21:26:36.126	2026-09-12 21:29:27.334
+46	FAILED	2026-09-01 00:00:00.000	m3s8-golden55c-202609122117	2026-09-12 21:17:06.223	2026-09-12 21:18:12.669
+45	FAILED	2026-09-01 00:00:00.000	m3s8-golden55b-20260912210642	2026-09-12 21:06:48.261	2026-09-12 21:08:08.801
+running_now
+0
+--- source_registry 现状 ---
+id	source_code	display_name	ingest_mode	profile_path	timezone	currency	status	profile_version	warehouse_prefix
+1	mock-mall	参考商城（源 A）	FILE	analytics-server/source-profiles/mock-mall.v1.json	Asia/Shanghai	CNY	ACTIVE	1.0	dw
+--- runtime_profile 现状（当前绑定源）---
+id	profile_code	status	landing_uri	source_id
+1	local-dev	ACTIVE	file://./landing	1

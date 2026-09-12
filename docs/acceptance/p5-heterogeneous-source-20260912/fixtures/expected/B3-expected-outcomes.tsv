@@ -1,0 +1,61 @@
+row_id	family	expected_outcome	expected_reason_class	note
+b3a-evt-0001	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: payment_id	order_paid 缺闸门必查字段 payment_id
+b3a-evt-0002	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: amount	order_paid 缺闸门必查字段 amount
+b3a-evt-0003	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: session_id	behavior 缺闸门必查字段 session_id
+b3a-evt-0004	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: behavior_type	behavior 缺闸门必查字段 behavior_type
+b3a-evt-0005	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: price	product_created 缺闸门必查字段 price
+b3a-evt-0006	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: category_id	product_created 缺闸门必查字段 category_id
+b3a-evt-0007	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: total_amount	order_created 缺闸门必查字段 total_amount
+b3a-evt-0008	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: items	order_created 缺闸门必查字段 items
+b3a-evt-0009	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: member_level	user_registered 缺闸门必查字段 member_level
+b3a-evt-0010	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: age_group	user_registered 缺闸门必查字段 age_group
+b3a-evt-0011	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: reason	order_cancelled 缺闸门必查字段 reason
+b3a-evt-0012	B3A-1-缺闸门必需字段	QUARANTINE	payload 缺失必要字段: refund_id	refund_created 缺闸门必查字段 refund_id
+b3a-evt-0013	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 paid_at（不得静默按可选处理）	order_paid 缺 canonical-event.v1.schema.json required 字段 paid_at
+b3a-evt-0014	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 channel（不得静默按可选处理）	behavior 缺 canonical-event.v1.schema.json required 字段 channel
+b3a-evt-0015	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 brand_id（不得静默按可选处理）	product_created 缺 canonical-event.v1.schema.json required 字段 brand_id
+b3a-evt-0016	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 status（不得静默按可选处理）	product_created 缺 canonical-event.v1.schema.json required 字段 status
+b3a-evt-0017	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 city_level（不得静默按可选处理）	user_registered 缺 canonical-event.v1.schema.json required 字段 city_level
+b3a-evt-0018	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 register_time（不得静默按可选处理）	user_registered 缺 canonical-event.v1.schema.json required 字段 register_time
+b3a-evt-0019	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 status（不得静默按可选处理）	order_created 缺 canonical-event.v1.schema.json required 字段 status
+b3a-evt-0020	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 created_at（不得静默按可选处理）	order_created 缺 canonical-event.v1.schema.json required 字段 created_at
+b3a-evt-0021	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 completed_at（不得静默按可选处理）	refund_completed 缺 canonical-event.v1.schema.json required 字段 completed_at
+b3a-evt-0022	B3A-2-缺契约必需(闸门未查)	QUARANTINE	拒绝或隔离并指明缺失必需字段 available_qty（不得静默按可选处理）	stock_reserved 缺 canonical-event.v1.schema.json required 字段 available_qty
+b3a-missing-envelope-0023	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: event_id	信封缺 event_id
+b3a-evt-0024	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: trace_id	信封缺 trace_id
+b3a-evt-0025	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: source_system	信封缺 source_system
+b3a-evt-0026	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: schema_version	信封缺 schema_version
+b3a-evt-0027	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: event_type	信封缺 event_type
+b3a-evt-0028	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: ingest_time	信封缺 ingest_time
+b3a-evt-0029	B3A-3-缺信封必需字段	QUARANTINE	缺失必要字段: event_time	信封缺 event_time
+b3a-evt-0030	B3A-3-缺信封必需字段	QUARANTINE	payload 缺失或非对象	信封无 payload
+b3b-evt-0001	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	扁平 fieldMapping 无法唯一确定 amount 来源 ⇒ 不得任选其一
+b3b-evt-0002	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	扁平 fieldMapping 无法唯一确定 amount 来源 ⇒ 不得任选其一
+b3b-evt-0003	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	扁平 fieldMapping 无法唯一确定 amount 来源 ⇒ 不得任选其一
+b3b-evt-0004	B3B-A1-字段映射歧义(无规范字段)	QUARANTINE	拒绝或隔离并指明"字段映射歧义"（pay_money 与 settle_amount 都可归一为 amount 且取值不等）	扁平 fieldMapping 无法唯一确定 amount 来源 ⇒ 不得任选其一
+b3b-evt-0005	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	存在未裁定权威来源 ⇒ 不得静默采信 amount 而丢弃 pay_money
+b3b-evt-0006	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	存在未裁定权威来源 ⇒ 不得静默采信 amount 而丢弃 pay_money
+b3b-evt-0007	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	存在未裁定权威来源 ⇒ 不得静默采信 amount 而丢弃 pay_money
+b3b-evt-0008	B3B-A2-字段映射歧义(有规范字段)	QUARANTINE	拒绝或隔离并指明歧义（amount 与 pay_money 取值不等，谁是权威未裁定）	存在未裁定权威来源 ⇒ 不得静默采信 amount 而丢弃 pay_money
+b3b-evt-0009	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["purchase"] = null）	D-140 §3：观测到但未裁定的取值（"purchase"）不得猜语义
+b3b-evt-0010	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["add_cart"] = null）	D-140 §3：观测到但未裁定的取值（"add_cart"）不得猜语义
+b3b-evt-0011	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["pay_later"] = null）	D-140 §3：观测到但未裁定的取值（"pay_later"）不得猜语义
+b3b-evt-0012	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["cancel"] = null）	D-140 §3：观测到但未裁定的取值（"cancel"）不得猜语义
+b3b-evt-0013	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["purchase"] = null）	D-140 §3：观测到但未裁定的取值（"purchase"）不得猜语义
+b3b-evt-0014	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["add_cart"] = null）	D-140 §3：观测到但未裁定的取值（"add_cart"）不得猜语义
+b3b-evt-0015	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["pay_later"] = null）	D-140 §3：观测到但未裁定的取值（"pay_later"）不得猜语义
+b3b-evt-0016	B3B-B-未裁定枚举	QUARANTINE	拒绝或隔离并指明未裁定取值（画像 enumSemantics.behavior["cancel"] = null）	D-140 §3：观测到但未裁定的取值（"cancel"）不得猜语义
+b3b-evt-0017	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	画像 timePolicy/金额形态未声明，闸门 findBadAmount 对 isNumber() 直接放行
+b3b-evt-0018	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	画像 timePolicy/金额形态未声明，闸门 findBadAmount 对 isNumber() 直接放行
+b3b-evt-0019	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	画像 timePolicy/金额形态未声明，闸门 findBadAmount 对 isNumber() 直接放行
+b3b-evt-0020	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	画像 timePolicy/金额形态未声明，闸门 findBadAmount 对 isNumber() 直接放行
+b3b-evt-0021	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	画像 timePolicy/金额形态未声明，闸门 findBadAmount 对 isNumber() 直接放行
+b3b-evt-0022	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	画像 timePolicy/金额形态未声明，闸门 findBadAmount 对 isNumber() 直接放行
+b3b-evt-0023	B3B-C-金额类型歧义	QUARANTINE	拒绝或隔离并指明金额类型/单位歧义（数字无法判定是"分"还是"元"）	画像 timePolicy/金额形态未声明，闸门 findBadAmount 对 isNumber() 直接放行
+b3b-evt-0024	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	event_time=05/03/2026 14:00:00；画像 timePolicy.formats 同时列出两种候选格式 ⇒ 不得猜；闸门对 event_time 完全不校验
+b3b-evt-0025	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	event_time=07/04/2026 09:30:00；画像 timePolicy.formats 同时列出两种候选格式 ⇒ 不得猜；闸门对 event_time 完全不校验
+b3b-evt-0026	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	event_time=11/02/2026 20:15:00；画像 timePolicy.formats 同时列出两种候选格式 ⇒ 不得猜；闸门对 event_time 完全不校验
+b3b-evt-0027	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	event_time=03/05/2026 08:45:00；画像 timePolicy.formats 同时列出两种候选格式 ⇒ 不得猜；闸门对 event_time 完全不校验
+b3b-evt-0028	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	event_time=09/06/2026 12:20:00；画像 timePolicy.formats 同时列出两种候选格式 ⇒ 不得猜；闸门对 event_time 完全不校验
+b3b-evt-0029	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	event_time=02/07/2026 19:05:00；画像 timePolicy.formats 同时列出两种候选格式 ⇒ 不得猜；闸门对 event_time 完全不校验
+b3b-evt-0030	B3B-D-时间格式歧义	QUARANTINE	拒绝或隔离并指明时间格式歧义（n/d/yyyy 同时匹配 dd/MM/yyyy 与 MM/dd/yyyy）	event_time=10/08/2026 07:40:00；画像 timePolicy.formats 同时列出两种候选格式 ⇒ 不得猜；闸门对 event_time 完全不校验

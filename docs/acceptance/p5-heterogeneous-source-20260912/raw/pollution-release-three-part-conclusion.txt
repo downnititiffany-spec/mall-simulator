@@ -1,0 +1,11 @@
+### 当前文件面判据指向的批次 43 的实测归属（读产物）
+
+accepted/43 文件: m3s8-golden55-20260912210313.jsonl (17419 B)
+首行: event_type=user_registered  event_time=2026/9/1 9:00:00  source_system=mock-mall  schema_version=1.0
+⇒ 业务日 = 2026-09-01；source_system = mock-mall
+43.json 的 files[].file = m3s8-golden55-20260912210313.jsonl ；与我的 5 个夹具文件名（b1a-*/b1b-*/b2-*/b3a-*/b3b-*）无交集
+
+--- 结论三段式（供父裁决核对）---
+① 判据来源 = 磁盘 landing/manifests/*.json（PipelineService.java:978-1013 扫描文件；:959-971 读文件；DB 只在 :938-956 提供'钉住'的 batchId，且仍须读同名文件，读不到即回落磁盘扫描）⇒ park 文件对本判据有效
+② 当前 max accepted 批次实测值：文件面 = 43（accepted 51/quarantined 4，mock-mall，业务日 2026-09-01）；DB 面(ingestion_batch) = 45（我的，accepted 84）；排除我的 45/46 后 DB 面 = 44（E5 的，accepted 1，业务日 2026-09-12）
+③ park 之后：文件面判据 43.json 不含任何夹具批次（files[].file 与 5 个夹具名无交集、sourceCode=mock-mall、sourceId=1）；夹具数据的唯一入口 accepted/45 由清单对象带出(PipelineService.java:377-379)⇒已不可达。DB 面仍留有我的批次行 45/46（未获批准不得改状态行，我未改）

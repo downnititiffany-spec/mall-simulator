@@ -1,0 +1,30 @@
+### CMD (READ ONLY): Select-String on test sources for jdbc url / DELETE / TRUNCATE / metric_pub (READ ONLY)
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\AiSqlSecurityTest.java:168: assertRejected("DELETE FROM ads_sale_trend_m WHERE dt = '20260904'", SqlPolicy.SQL_NOT_SELECT);
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\AiSqlSecurityTest.java:171: assertRejected("TRUNCATE TABLE ads_sale_trend_m", SqlPolicy.SQL_NOT_SELECT);
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\AiSqlSecurityTest.java:372: assertEquals(SqlPolicy.METRIC_READ_SOURCE_MISSING, e.code());
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\QuestionSafetyScreenTest.java:31: "SELECT dt FROM ads_sale_trend_m; DELETE FROM metric_value",
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\QuestionSafetyScreenTest.java:35: "TRUNCATE TABLE metric_value",
+analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\LocalFileIngestorConsumableDataTest.java:163: void truncatedFileIsConsumable(@TempDir Path dir) throws IOException {
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:54: * <p>只读：只用 metric_read / meta_app 两个只读账号 SELECT，不写任何库、不清理任何数据
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:69: metricRead = new JdbcTemplate(dataSource("analytics_metric", "metric_read", "metric_read_pw_2026"));
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:273: ds.setUrl("jdbc:mysql://127.0.0.1:3306/" + database + "?useSSL=false&allowPublicKeyRetrieval=true"
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\MetricAdsDaoTest.java:127: .startsWith("DELETE FROM `ads_")
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\MetricAdsMySqlIT.java:44: publish = new JdbcTemplate(dataSource("metric_pub", "metric_pub_pw_2026"));
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\MetricAdsMySqlIT.java:46: reader = new MetricAdsReader(new JdbcTemplate(dataSource("metric_read", "metric_read_pw_2026")));
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\MetricAdsMySqlIT.java:137: publish.update("DELETE FROM metric_snapshot WHERE snapshot_id IN (?,?,?)",
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\MetricAdsMySqlIT.java:139: publish.update("DELETE FROM metric_snapshot WHERE runtime_profile_id = ?", PROFILE_ID);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\MetricAdsMySqlIT.java:145: ds.setUrl("jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&allowPublicKeyRetrieval=true"
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:60: publish = new JdbcTemplate(dataSource("metric_pub", "metric_pub_pw_2026"));
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:61: read = new JdbcTemplate(dataSource("metric_read", "metric_read_pw_2026"));
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:295: publish.update("DELETE FROM metric_value WHERE snapshot_id=?", sid);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:296: publish.update("DELETE FROM metric_snapshot WHERE snapshot_id=?", sid);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:298: publish.update("DELETE FROM metric_snapshot WHERE runtime_profile_id=?", PROFILE_ID);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:304: ds.setUrl("jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&allowPublicKeyRetrieval=true"
+analytics-server\platform-app\src\test\java\com\graduation\analytics\source\FileCheckpointSourceMigrationScriptTest.java:58: @DisplayName("唯一的删除动作是删索引 uk_ckpt：无 DROP TABLE/COLUMN、无 TRUNCATE、无 DELETE")
+analytics-server\platform-app\src\test\java\com\graduation\analytics\source\FileCheckpointSourceMigrationScriptTest.java:67: .doesNotContainPattern("(?i)\\btruncate\\b")
+analytics-server\platform-app\src\test\java\com\graduation\analytics\source\SourceRegistryMigrationMySqlIT.java:363: ds.setUrl("jdbc:mysql://127.0.0.1:3306/" + META_DB
+analytics-server\platform-app\src\test\java\com\graduation\analytics\source\SourceRegistryMigrationScriptTest.java:63: @DisplayName("迁移是加性变更：不含 DROP / TRUNCATE / DELETE / RENAME / MODIFY / CHANGE")
+analytics-server\platform-app\src\test\java\com\graduation\analytics\source\SourceRegistryMigrationScriptTest.java:70: .doesNotContainPattern("(?i)\\btruncate\\b")
+analytics-server\platform-app\src\test\java\com\graduation\analytics\source\SourceWarehousePrefixMigrationScriptTest.java:131: .doesNotContainPattern("(?i)\\btruncate\\b")
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:650: assertThat(parsed).doesNotContainKey("_evidenceTruncated");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:660: assertThat(reducedParsed).containsEntry("_evidenceTruncated", true);

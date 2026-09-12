@@ -1,0 +1,16 @@
+### 采集测量收尾：还原基线文件 + 源 B 最终登记态（时间 2026-09-12 22:12:00） 
+--- [D] 我的两批次 DB 记录（更正列名后重查，保留不删）---
+id	batch_no	status	record_count	quarantine_count	error_count	start_time	end_time
+45	ing-20260912220805-04beeb43	QUARANTINED	84	96	0	2026-09-12 22:08:05.906	2026-09-12 22:08:06.052
+46	ing-20260912221107-afc698b5	SUCCESS	0	0	0	2026-09-12 22:11:07.709	2026-09-12 22:11:07.716
+--- [E] 夹具文件先撤出 landing\events ---
+  撤出: b1a-envelope-vocab.jsonl
+  撤出: b1b-payload-vocab.jsonl
+  撤出: b2-missing-optional.jsonl
+  撤出: b3a-missing-required.jsonl
+  撤出: b3b-ambiguous-mapping.jsonl
+--- [F] 基线 62 个文件原路还原 ---
+  landing\events 现有 .jsonl: 62
+  停车目录剩余: 0
+--- [G] 还原后逐文件 sha256 对拍（含别道新增的 2026091221.jsonl）---
+  对拍 62 个文件，不符 0 个；总字节 = 406496908

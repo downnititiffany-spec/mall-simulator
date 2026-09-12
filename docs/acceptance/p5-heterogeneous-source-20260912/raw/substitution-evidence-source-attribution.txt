@@ -1,0 +1,38 @@
+### 替代证据（不激活源 B）：逐行 source_system 与产物归属（时间 2026-09-12 22:12:31） 
+--- [1] landing\accepted\45 中各 source_system 取值计数（逐行）---
+  b1a-envelope-vocab.jsonl         行数=  0  source_system=fixture-b 的行=     source_system=mock-mall 的行=
+  b1b-payload-vocab.jsonl          行数=  0  source_system=fixture-b 的行=     source_system=mock-mall 的行=
+  b2-missing-optional.jsonl        行数= 56  source_system=fixture-b 的行= 56  source_system=mock-mall 的行=0
+  b3a-missing-required.jsonl       行数= 10  source_system=fixture-b 的行= 10  source_system=mock-mall 的行=0
+  b3b-ambiguous-mapping.jsonl      行数= 18  source_system=fixture-b 的行= 18  source_system=mock-mall 的行=0
+--- [2] 产物归属：manifest 45.json 的 sourceCode / sourceId / mappingVersion ---
+  batchId=45 status=READY sourceCode=mock-mall sourceId=1 profileVersion=1.0 mappingVersion=null（JSON null）
+  manifest 全文出现 fixture-b 次数 = 0
+--- [3] GET /api/v1/ingestion/status —— 是否有任何能力限制字段 ---
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "profileState": "ACTIVE",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "landingUri": "file://./landing",
+    "landingError": null,
+    "eventsDir": "D:\\Develop_code\\GraduationProject\\landing\\events",
+    "pendingFiles": 62,
+    "pendingBytes": 406496908,
+    "checkpointFiles": 62,
+    "newFileCount": 0,
+    "lastArrivalAt": "2026-09-12T21:57:22.3636897",
+    "latestBatch": {
+      "batchId": 46,
+      "runtimeProfileId": 1,
+      "sourceId": 1,
+      "batchNo": "ing-20260912221107-afc698b5",
+      "status": "SUCCESS",
+      "recordCount": 0,
+      "quarantineCount": 0
+    }
+  },
+  "traceId": "b0573d20-3e93-4da5-aa32-38613cca288a"
+}

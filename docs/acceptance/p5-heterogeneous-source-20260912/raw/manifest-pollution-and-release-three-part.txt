@@ -1,0 +1,67 @@
+### 父裁决升级要求：三段式「已解除污染」证据（只读，时间 2026-09-12 22:17:10）
+
+--- [1] 判据来源 = 磁盘 manifest 文件（不是 DB 状态）---
+  PipelineService.java:978-1013  findReadyManifest: Files.list(landingRoot.resolve("manifests")) 逐个 readManifest 文件 → status=="READY" → accepted+quarantined>0 → 取 max(batchId)
+  PipelineService.java:959-971   readManifest: 直接 Files.readString(landing/manifests/<N>.json)；文件不存在返回 null
+  PipelineService.java:938-956   manifestForRun: 只有本 run 已有 WAIT_LANDING 证据(DB pipeline_stage_run.evidence 里的 batchId)才"钉住"，且仍要读磁盘 manifests/<batchId>.json；读不到就回落 findReadyManifest（仍是磁盘）
+  PipelineService.java:377-379   LOAD_ODS 输入目录 = landingRoot.resolve(manifest.get("acceptedUri")) —— 输入目录由清单对象决定 ⇒ 清单文件不在 manifests 目录里，accepted/<id> 对链路不可达
+
+--- [2] ingestion_batch 列（确认有没有业务日列）---
+Field	Type	Null	Key	Default	Extra
+id	bigint	NO	PRI	NULL	auto_increment
+batch_no	varchar(64)	NO	UNI	NULL	
+source	varchar(32)	NO		local-file	
+runtime_profile_id	bigint	NO		1	
+source_id	bigint	YES	MUL	NULL	
+status	varchar(24)	NO		NULL	
+record_count	bigint	NO		0	
+error_count	bigint	NO		0	
+quarantine_count	bigint	NO		0	
+landing_dir	varchar(255)	YES		NULL	
+start_time	datetime(3)	NO		NULL	
+end_time	datetime(3)	YES		NULL	
+--- [2b] 批次 43 / 44 / 45 实测行 ---
+id	batch_no	status	record_count	quarantine_count	error_count	start_time
+43	ing-20260912210642-e4588aa7	QUARANTINED	51	4	0	2026-09-12 21:06:42.277
+44	ing-20260912215733-85b570e5	SUCCESS	1	0	0	2026-09-12 21:57:33.734
+45	ing-20260912220805-04beeb43	QUARANTINED	84	96	0	2026-09-12 22:08:05.906
+--- [2c] DB 面三个口径的实测值 ---
+全域max有数据批次
+45
+排除45_46后max
+44
+仅accepted大于0的max
+45
+--- [3] 有没有任何已存在的链路 run 钉住了批次 44/45（WAIT_LANDING 证据）---
+提及batchId44或45的阶段行
+3
+--- [4] 停车后文件面结果 + 43.json 全文（证明 43 不是我的批次）---
+  batchId=43  43.json  accepted=51 quarantined=4 status=READY
+=> findReadyManifest 结果: batchId=43 (43.json)
+{
+  "batchId" : 43,
+  "batchNo" : "ing-20260912210642-e4588aa7",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T21:06:42.282509200",
+  "finishedAt" : "2026-09-12T21:06:42.305672",
+  "files" : [ {
+    "file" : "m3s8-golden55-20260912210313.jsonl",
+    "endOffset" : 18430,
+    "startOffset" : 0,
+    "acceptedRecords" : 51,
+    "quarantinedRecords" : 4
+  } ],
+  "acceptedRecords" : 51,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 17419,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/43",
+  "quarantineUri" : "quarantine/43",
+  "checksum" : "71bbde63",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}

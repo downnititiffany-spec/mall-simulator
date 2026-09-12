@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>电商用户行为分析系统</title>
+  <!-- 设计系统（ui-ux-pro-max Data-Dense Dashboard）：Fira Sans 正文 / Fira Code 数据。
+       字体不走外网 CDN：离线/答辩环境访问 fonts.googleapis.com 会失败并在控制台留下请求错误。
+       改为「本机装了 Fira 就用，否则回落系统字体」，字体族见 src/styles/theme.css 的 --font-sans/--font-mono。 -->
+  <script type="module" crossorigin src="/assets/index-fSqJLSqj.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BMH_WCJy.css">
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>

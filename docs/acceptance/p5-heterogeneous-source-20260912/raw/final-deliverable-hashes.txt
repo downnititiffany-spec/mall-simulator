@@ -1,0 +1,92 @@
+### P5 交付物哈希清单（最终版，生成时间 2026-09-12 22:25:28）
+### 说明：初版曾把契约 schema 的登记哈希中段臆造（假「不符」），已于 22:25 修正；登记值必须整串留档，见 raw/measurement-integrity-and-corroboration.txt §[7]
+
+--- [1] 本泳道目录内全部文件（相对路径 / 字节 / sha256）---
+  注：本文件自身的行已被排除（自指哈希在写入后即失效，排除以免误导）
+  docs/acceptance/p5-heterogeneous-source-20260912/EXPECTED.md	14843	D09CD579FB74B0E08C4DBAC54DC1E3AEBAAD04A63931480DB5B58027E949141F
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/b1a-envelope-vocab.jsonl	8950	8986C3D08B17B29538797903CC3BBF0B5FA648F639BD61374474C48707AFD594
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/b1b-payload-vocab.jsonl	10406	CB5B1FC3ADD2773DB10C56ED1F245B8F171C145DF39A12839ABD16B52EA7FAD1
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/b2-missing-optional.jsonl	20507	B07E505E21CB272B1000F79A4777E097CA7FC57D2C1E983D8356F32121208054
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/b3a-missing-required.jsonl	9537	70BDEBE126E224D1BF4FA730FDB1B8AD0432C4A6C32DD2FD929FBEA74CD6329F
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/b3b-ambiguous-mapping.jsonl	9894	DD5030F17D592930E0739E3D9A9D6F136C9FAB7F27D2FA388DF86450FEEE407C
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/expected/B1-expected-outcomes.tsv	12277	FE87B0DF7F0C03B3C9A1DE91710C4494A51C0F566073C7EBA952639FADE27EAB
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/expected/B2-expected-outcomes.tsv	17590	7F050B79DD9A9821A8603DF43CD083A7465528D9DE890C923987A5877C2B1C0A
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/expected/B3-expected-outcomes.tsv	12100	BDF301170E0D6912618977CCF24CAF26537DD25DBA8D1CB2C7B57EE9EC2D0852
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/expected/fixture-manifest.json	1983	A5212467AD1E7F6C793B9BF89FD149D73677600B68E8824AC04BAAEC81F8ABEF
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/expected/ground-truth-metrics.json	904	D97FFEF3853E22A23B6B94C5E883CE92452354051DCFD854A60BC9E5BAC86C39
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/tools/check-ready-manifest.mjs	1592	FE4E79A805BAECC917700E1367BB95C7924C268BDFC49F51CB5A6B6400B672B1
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/tools/contract-vs-gate-subset.mjs	3461	D0B895BC04FA82A2CCF710080E92DD3FE1FE8D9B6D1731C64F206E3785CA5F09
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/tools/gen-fixtures.mjs	31383	5C437FDDE4CB96519C122F384CE8934891D1D8D174F67EEED2F4A89B966E59F4
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/tools/read-canonical-required.mjs	1904	83102C2431174719E3DDEAF819CD57C34F9B30C83290F3ED3DE7E5EE0F0EC4D7
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/tools/reconcile-actual.mjs	7376	5D05490CAA4C9C924E0EF8A094B17B96218C5720C48154746109199766ACB68F
+  docs/acceptance/p5-heterogeneous-source-20260912/fixtures/tools/verify-fixtures.mjs	4899	34752FD54C2982CFFFA6FBB3611C893AFBA129A458D9715F03EEA8CC0E6BF04D
+  docs/acceptance/p5-heterogeneous-source-20260912/IMPL-REPORT.md	31247	30D158C71352627FA68B68F20F6F8789D4F201E7798DACE10FD9BE8179B6BBFF
+  docs/acceptance/p5-heterogeneous-source-20260912/mapping/fixture-b.v1.json	3581	CE2E6DBC791F9FA65592C1CF37242CCFA86B3B293CA65BD713D62E7D7FEF13BD
+  docs/acceptance/p5-heterogeneous-source-20260912/mapping/MAPPING-NOTES.md	9854	3A45EC36A474339E9908DF4FACD7F0AD9D93BF1CE5D546388C0D9D12B7D9C340
+  docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b2-canonical.v1.json	3125	57DE1116409BBB2E5B5F20233FAF6986A8A3C5F0C177F75C9B50BDFE49E3266E
+  docs/acceptance/p5-heterogeneous-source-20260912/mapping/scenario-b3-ambiguous.v1.json	1596	1188B19E91336640A72BEC5595D79CB07D9455273A7DE3450D600F5265F1E36A
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/actual-outcomes-batch45.tsv	40609	B797DB94F8BD67CFC4A9E31D689AD8735EAD87F9D961A3EB00C420D0F56DD531
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/b1-quarantine-traceability.txt	612	074F00261730485A640DD1D3C143AE6FC451BEE25D1D0D503E111528784ECC98
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/baseline-profile-fingerprints.txt	590	A4BC430A1BD5B78E94AF65F55D45C32C80C480D938423D78B2DE9FC646179072
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/batch44-attribution-and-pinned-batch.txt	1336	1593A9E27F229DE13CD19C21348DD03E8D819B5BEC9D2785B75EC335BC7E549D
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/canonical-schema-required.txt	3084	D679C61B751664DBC1FBE9064A60421D1BAB73E610128DFAB9370D5E25320A4E
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/contract-vs-gate-subset.txt	1467	DD55B57EC73CAE493297F9BE41E5375AE70816EECBA34A9C58EDE1141E233993
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/gen-fixtures-output.txt	1007	C2AC825990F711008F47CB1BE897EA0501D933A239B5DACA92F42C5BE5108F50
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/ingest-run-1-quarantine-reasons.txt	14616	3C07589A21143191774D231D5BD9E1FA9AE7B7BA9E670D81DD4E37EABA8C1AC6
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/ingest-run-1.txt	2255	AE38B79357F8DC9C6B9D44BA378B90F32B71739F1E9F0436D23508779B907660
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/ingest-run-2-idempotency.txt	4472	B1DD4CDE7E5B83F867A8402115CD8DFBE9A5AFBF6BE9DCCDED1A4D0B077E18E5
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/ingest-step1-park-baseline.txt	2881	F4D413C53F380B2A260E7A55447C2A30C3E5C050B429EE3AA1BB5B8064204F0B
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/ingest-step2-restore-baseline.txt	947	93DF92D9D2A400FD2111BCBC546CADBB33E9AE71AA38B1B58112ABAC1C4C90BB
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/manifest-parked/45.json	1388	BAE2B69623326E46B2AA9683CDE7C719055AD8C0119DFBCC28B06C1420D63958
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/manifest-parked/46.json	571	B0A915BA0135BC669AB0645315C213948AFAB035164EAD771F1022ABD9D0D8D0
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/manifest-pollution-and-release-three-part.txt	3037	3209C12518D324E2CDC6D9790EB3C41D36010D4B79243ABC85F69B4D2800882A
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/manifest-pollution-and-release.txt	5382	0F4F5AE129A676CB487DC1995775C987278061354E6F92583AA6BB95DA29A202
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/measurement-integrity-and-corroboration.txt	7263	A8F1C8DDAB25326D6364007831BCA595F309760D7E55C38D1367347035D61919
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/pinned-batch-and-parking-interaction.txt	2567	4FF4413BBC96186BEA245873A0383DD33364F04ABDE25A58D86FBEB21E8AF732
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/pinned-batch-authoritative.txt	2031	E573A5F07D6F85A63A95A2F7AB382CBCE3EFA5C3F850A2A065A062D8678381B2
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/pollution-release-three-part-conclusion.txt	1373	9464571BBF48AB54639FC37C6D0447F9F09A24BDB03863CFF8FD02910A22A1DE
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/pre-db-snapshot.txt	1526	00E69FB9A1630573F85E4D3682C9424908905D516C708EF57E4FA3C5FFAF62E0
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/pre-landing-events-inventory.txt	5872	03E2D7B66B13D08C3C0464717C26AE7C78F1651398DC4D532C73D7AE05BC28C6
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/quarantine-reasons-batch45.tsv	7685	CE0AAB5B6DEB2BF4B17AAC98B4CA81105CD9AA768B92FE7B6D7E00CC3457843A
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/reconcile-batch45-output.txt	4924	53F7DCEBB0B0E1E6884FD126F0C5FFF70112378EA29FABD41599B98E1125978D
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/register-source-b.txt	1437	E071837C502DED03B00E77CD253BCE505781321B9C3B56AD9D4B7297A7C36F75
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/source-b-check-and-test.txt	5700	E7C0055FD4CA129F74FB5F1DF3BE9CF28B83B8B354EC18C2DEE6C4DC18464218
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/source-b-preregistration-snapshot.txt	996	431E1AF3809D87AC29AA2493076D6CD65754AF7E8E4E498BEA070CDDCB8F12BB
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/source-b-registry-final-state.txt	3051	E0CB984E10517B5172A57FF68C9E78A030D0ED48B7611864E8D88D2962BCE1C6
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/static-contrast-absent-knobs-and-wording.txt	2512	BCEA0E7716E31799E1D8E1CFB998A3D60BEC60562DDCFBCC66D4D59D2E07A219
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/static-contrast-mapping-executor-absent.txt	10161	4FB41AFD428F01A3C8E5D1684318E104F9E8CC1922FC08C37D9544D89A7ADB69
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/static-contrast-profile-keys-consumed.txt	17140	51C9F1249120076FA7507FC361AEBA84D2DE24AFADDCB6D090DDDCB2CECABA89
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/substitution-evidence-source-attribution.txt	1835	8C49EA32B213F560F6A8CF1643A15F83B0F4C4BC0575586F05DE9DB6C63CD72E
+  docs/acceptance/p5-heterogeneous-source-20260912/raw/verify-fixtures-output.txt	3472	3A649379AB445EE31DFCD39C054FAA29CA03646378A01615F4447CEACC079537
+  docs/acceptance/p5-heterogeneous-source-20260912/README.md	21933	E2DCB8C7B066B711AC73ED390787903D0A3152D4DC126ADE1C03D47184DBB5C9
+
+--- [2] 冻结件与未改动件的对拍（登记值一律整串；来源标注）---
+  EXPECTED.md（跑前冻结；登记来源=冻结时刻落盘 + mtime 22:06:00 < 运行#1 22:08:05）
+    登记=D09CD579FB74B0E08C4DBAC54DC1E3AEBAAD04A63931480DB5B58027E949141F
+    实测=D09CD579FB74B0E08C4DBAC54DC1E3AEBAAD04A63931480DB5B58027E949141F
+    ⇒ 一致 ✅
+  源A画像（登记来源=raw/baseline-profile-fingerprints.txt:4）
+    登记=0BB8A05C8D5E466864DCB90B8D7B97105DC65497DC3CCB463D104F27F021170B
+    实测=0BB8A05C8D5E466864DCB90B8D7B97105DC65497DC3CCB463D104F27F021170B
+    ⇒ 一致 ✅
+  契约schema（登记来源=raw/canonical-schema-required.txt:3 + 跨泳道 p2-02-.../source-fingerprints-20260912.txt + ct-batch-.../refresh-fingerprints.log）
+    登记=A70AF90110FBB5D36CA93F5C89C9E2E9D4C93A5F8C5973F7721D6464B2D7ADE5
+    实测=A70AF90110FBB5D36CA93F5C89C9E2E9D4C93A5F8C5973F7721D6464B2D7ADE5
+    ⇒ 一致 ✅
+  M3映射文档（登记来源=raw/baseline-profile-fingerprints.txt:8 + 跨泳道 m3-.../raw/mapping-fingerprint-before-run.txt）
+    登记=E80B357CD8FCE13CD69D6DC0919FEBDB40127EB1974FF5F1A2F50CDED642F52F
+    实测=E80B357CD8FCE13CD69D6DC0919FEBDB40127EB1974FF5F1A2F50CDED642F52F
+    ⇒ 一致 ✅
+  源B画像=归档副本（登记来源=raw/verify-fixtures-output.txt §④ 逐字节相等）
+    登记=CE2E6DBC791F9FA65592C1CF37242CCFA86B3B293CA65BD713D62E7D7FEF13BD
+    实测=CE2E6DBC791F9FA65592C1CF37242CCFA86B3B293CA65BD713D62E7D7FEF13BD
+    ⇒ 一致 ✅
+
+--- [2] 小结：5 项对拍全部一致 = True ---
+
+--- [3] 关键计数 ---
+  raw/ 文件数 = 34
+  fixtures/ 文件数 = 16
+  mapping/ 文件数 = 4
+
+

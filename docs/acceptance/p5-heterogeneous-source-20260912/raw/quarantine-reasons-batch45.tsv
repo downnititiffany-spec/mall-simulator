@@ -1,0 +1,99 @@
+# 批次 45 隔离记录（只读导出，含文件内序号 qline 作为与夹具行序的连接键）
+# 导出时间: 2026-09-12 22:09:55  来源: analytics_meta.quarantine_record WHERE batch_id=45
+file	qline	rec_id	event_id	reason
+b1a-envelope-vocab.jsonl	1	113	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	2	114	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	3	115	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	4	116	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	5	117	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	6	118	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	7	119	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	8	120	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	9	121	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	10	122	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	11	123	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	12	124	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	13	125	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	14	126	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	15	127	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	16	128	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	17	129	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	18	130	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	19	131	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	20	132	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	21	133	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	22	134	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	23	135	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	24	136	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	25	137	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	26	138	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	27	139	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	28	140	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	29	141	<NULL>	缺失必要字段: event_id
+b1a-envelope-vocab.jsonl	30	142	<NULL>	缺失必要字段: event_id
+b1b-payload-vocab.jsonl	1	143	b1b-evt-0001	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	2	144	b1b-evt-0002	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	3	145	b1b-evt-0003	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	4	146	b1b-evt-0004	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	5	147	b1b-evt-0005	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	6	148	b1b-evt-0006	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	7	149	b1b-evt-0007	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	8	150	b1b-evt-0008	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	9	151	b1b-evt-0009	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	10	152	b1b-evt-0010	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	11	153	b1b-evt-0011	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	12	154	b1b-evt-0012	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	13	155	b1b-evt-0013	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	14	156	b1b-evt-0014	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	15	157	b1b-evt-0015	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	16	158	b1b-evt-0016	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	17	159	b1b-evt-0017	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	18	160	b1b-evt-0018	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	19	161	b1b-evt-0019	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	20	162	b1b-evt-0020	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	21	163	b1b-evt-0021	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	22	164	b1b-evt-0022	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	23	165	b1b-evt-0023	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	24	166	b1b-evt-0024	payload 缺失必要字段: order_id
+b1b-payload-vocab.jsonl	25	167	b1b-evt-0025	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	26	168	b1b-evt-0026	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	27	169	b1b-evt-0027	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	28	170	b1b-evt-0028	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	29	171	b1b-evt-0029	payload 缺失必要字段: user_id
+b1b-payload-vocab.jsonl	30	172	b1b-evt-0030	payload 缺失必要字段: user_id
+b2-missing-optional.jsonl	1	173	b2-2-evt-0025	金额格式违规: cost 类型异常
+b2-missing-optional.jsonl	2	174	b2-2-evt-0030	金额格式违规: cost 类型异常
+b2-missing-optional.jsonl	3	175	b2-2-evt-0035	金额格式违规: cost 类型异常
+b2-missing-optional.jsonl	4	176	b2-2-evt-0040	金额格式违规: cost 类型异常
+b3a-missing-required.jsonl	1	177	b3a-evt-0001	payload 缺失必要字段: payment_id
+b3a-missing-required.jsonl	2	178	b3a-evt-0002	payload 缺失必要字段: amount
+b3a-missing-required.jsonl	3	179	b3a-evt-0003	payload 缺失必要字段: session_id
+b3a-missing-required.jsonl	4	180	b3a-evt-0004	payload 缺失必要字段: behavior_type
+b3a-missing-required.jsonl	5	181	b3a-evt-0005	payload 缺失必要字段: price
+b3a-missing-required.jsonl	6	182	b3a-evt-0006	payload 缺失必要字段: category_id
+b3a-missing-required.jsonl	7	183	b3a-evt-0007	payload 缺失必要字段: total_amount
+b3a-missing-required.jsonl	8	184	b3a-evt-0008	payload 缺失必要字段: items
+b3a-missing-required.jsonl	9	185	b3a-evt-0009	payload 缺失必要字段: member_level
+b3a-missing-required.jsonl	10	186	b3a-evt-0010	payload 缺失必要字段: age_group
+b3a-missing-required.jsonl	11	187	b3a-evt-0011	payload 缺失必要字段: reason
+b3a-missing-required.jsonl	12	188	b3a-evt-0012	payload 缺失必要字段: refund_id
+b3a-missing-required.jsonl	13	189	<NULL>	缺失必要字段: event_id
+b3a-missing-required.jsonl	14	190	b3a-evt-0024	缺失必要字段: trace_id
+b3a-missing-required.jsonl	15	191	b3a-evt-0025	缺失必要字段: source_system
+b3a-missing-required.jsonl	16	192	b3a-evt-0026	缺失必要字段: schema_version
+b3a-missing-required.jsonl	17	193	b3a-evt-0027	缺失必要字段: event_type
+b3a-missing-required.jsonl	18	194	b3a-evt-0028	缺失必要字段: ingest_time
+b3a-missing-required.jsonl	19	195	b3a-evt-0029	缺失必要字段: event_time
+b3a-missing-required.jsonl	20	196	b3a-evt-0030	payload 缺失或非对象
+b3b-ambiguous-mapping.jsonl	1	197	b3b-evt-0001	payload 缺失必要字段: amount
+b3b-ambiguous-mapping.jsonl	2	198	b3b-evt-0002	payload 缺失必要字段: amount
+b3b-ambiguous-mapping.jsonl	3	199	b3b-evt-0003	payload 缺失必要字段: amount
+b3b-ambiguous-mapping.jsonl	4	200	b3b-evt-0004	payload 缺失必要字段: amount
+b3b-ambiguous-mapping.jsonl	5	201	b3b-evt-0009	非法 behavior_type: purchase
+b3b-ambiguous-mapping.jsonl	6	202	b3b-evt-0010	非法 behavior_type: add_cart
+b3b-ambiguous-mapping.jsonl	7	203	b3b-evt-0011	非法 behavior_type: pay_later
+b3b-ambiguous-mapping.jsonl	8	204	b3b-evt-0012	非法 behavior_type: cancel
+b3b-ambiguous-mapping.jsonl	9	205	b3b-evt-0013	非法 behavior_type: purchase
+b3b-ambiguous-mapping.jsonl	10	206	b3b-evt-0014	非法 behavior_type: add_cart
+b3b-ambiguous-mapping.jsonl	11	207	b3b-evt-0015	非法 behavior_type: pay_later
+b3b-ambiguous-mapping.jsonl	12	208	b3b-evt-0016	非法 behavior_type: cancel

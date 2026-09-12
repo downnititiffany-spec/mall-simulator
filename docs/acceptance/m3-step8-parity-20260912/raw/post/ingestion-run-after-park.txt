@@ -1,0 +1,23 @@
+### POST /api/v1/ingestion/runs  2026-09-12 21:06:42
+### purpose: actually ingest the single golden copy now sitting in landing/events
+
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "batchId": 43,
+    "batchNo": "ing-20260912210642-e4588aa7",
+    "status": "QUARANTINED",
+    "recordCount": 51,
+    "quarantineCount": 4,
+    "errorCount": 0,
+    "fileCount": 1,
+    "acceptedBytes": 17419,
+    "acceptedDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\43",
+    "quarantineDir": "D:\\Develop_code\\GraduationProject\\landing\\quarantine\\43",
+    "manifestPath": "file:///D:/Develop_code/GraduationProject/landing/manifests/43.json",
+    "noNewData": false
+  },
+  "traceId": "6929fe1f-da70-4c15-bcb3-fac46b07454b"
+}
+elapsed_s=0

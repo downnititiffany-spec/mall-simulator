@@ -1,0 +1,29 @@
+### ingestion/status AFTER parking 61 files + placing golden copy
+captured_at=2026-09-12 21:03:19
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "profileState": "ACTIVE",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "landingUri": "file://./landing",
+    "landingError": null,
+    "eventsDir": "D:\\Develop_code\\GraduationProject\\landing\\events",
+    "pendingFiles": 1,
+    "pendingBytes": 18430,
+    "checkpointFiles": 0,
+    "newFileCount": 1,
+    "lastArrivalAt": "2026-09-10T16:52:06.1890573",
+    "latestBatch": {
+      "batchId": 42,
+      "runtimeProfileId": 1,
+      "sourceId": 1,
+      "batchNo": "ing-20260912173453-cf5576fe",
+      "status": "SUCCESS",
+      "recordCount": 1000,
+      "quarantineCount": 0
+    }
+  },
+  "traceId": "49f0a747-4fc1-4e2d-b349-f0ce5d42425c"
+}

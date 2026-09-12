@@ -1,0 +1,4921 @@
+
+=========================== CONTEXT ===========================
+COMMIT/*!*/;
+# at 47880175
+#260912 22:23:52 server id 1  end_log_pos 47880254 CRC32 0x885626fe 	Anonymous_GTID	last_committed=13223	sequence_number=13224	rbr_only=no	original_committed_timestamp=1789223033003248	immediate_commit_timestamp=1789223033003248	transaction_length=316
+# original_commit_timestamp=1789223033003248 (2026-09-12 22:23:53.003248 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223033003248 (2026-09-12 22:23:53.003248 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223033003248*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47880254
+#260912 22:23:52 server id 1  end_log_pos 47880491 CRC32 0x46e2c2bb 	Query	thread_id=8368	exec_time=1	error_code=0	Xid = 157463
+SET TIMESTAMP=1789223032/*!*/;
+/*!80016 SET @@session.default_table_encryption=0*//*!*/;
+CREATE DATABASE IF NOT EXISTS analytics_verify_m3_parity CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
+/*!*/;
+# at 47880491
+#260912 22:24:02 server id 1  end_log_pos 47880570 CRC32 0x5bd948a5 	Anonymous_GTID	last_committed=13224	sequence_number=13225	rbr_only=no	original_committed_timestamp=1789223042325935	immediate_commit_timestamp=1789223042325935	transaction_length=905
+# original_commit_timestamp=1789223042325935 (2026-09-12 22:24:02.325935 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042325935 (2026-09-12 22:24:02.325935 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042325935*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47880570
+#260912 22:24:02 server id 1  end_log_pos 47881396 CRC32 0x824eeb1e 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157651
+use `analytics_verify_m3_parity`/*!*/;
+SET TIMESTAMP=1789223042/*!*/;
+SET @@session.foreign_key_checks=0, @@session.unique_checks=0/*!*/;
+SET @@session.sql_mode=524288/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_operation_overview_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `pv` bigint NOT NULL DEFAULT '0',
+  `uv` bigint NOT NULL DEFAULT '0',
+  `dau` bigint NOT NULL DEFAULT '0',
+  `order_count` bigint NOT NULL DEFAULT '0',
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+SET @@session.sql_mode=524288/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+CREATE TABLE `ads_operation_overview_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `pv` bigint NOT NULL DEFAULT '0',
+  `uv` bigint NOT NULL DEFAULT '0',
+  `dau` bigint NOT NULL DEFAULT '0',
+  `order_count` bigint NOT NULL DEFAULT '0',
+  `sale_amount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `net_sale_amount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `avg_order_value` decimal(18,2) DEFAULT NULL,
+  `refund_rate` decimal(8,4) DEFAULT NULL,
+  `full_refund_rate` decimal(8,4) DEFAULT NULL,
+  PRIMARY KEY (`snapshot_id`,`dt`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 运营大盘（快照发布后写入）'
+/*!*/;
+# at 47881396
+#260912 22:24:02 server id 1  end_log_pos 47881475 CRC32 0x2b8a7a77 	Anonymous_GTID	last_committed=13225	sequence_number=13226	rbr_only=no	original_committed_timestamp=1789223042353731	immediate_commit_timestamp=1789223042353731	transaction_length=656
+# original_commit_timestamp=1789223042353731 (2026-09-12 22:24:02.353731 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042353731 (2026-09-12 22:24:02.353731 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042353731*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47881475
+#260912 22:24:02 server id 1  end_log_pos 47882052 CRC32 0x5bf92134 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157655
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_sale_trend_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `order_count` bigint NOT NULL DEFAULT '0',
+  `buyer_count` bigint NOT NULL DEFAULT '0',
+  `sale_amount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `avg_order_value` decimal(18,2) DEFAULT NULL,
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47881475
+#260912 22:24:02 server id 1  end_log_pos 47882052 CRC32 0x5bf92134 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157655
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+CREATE TABLE `ads_sale_trend_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `order_count` bigint NOT NULL DEFAULT '0',
+  `buyer_count` bigint NOT NULL DEFAULT '0',
+  `sale_amount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `avg_order_value` decimal(18,2) DEFAULT NULL,
+  PRIMARY KEY (`snapshot_id`,`dt`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 销售趋势'
+/*!*/;
+# at 47882052
+#260912 22:24:02 server id 1  end_log_pos 47882131 CRC32 0xf9441463 	Anonymous_GTID	last_committed=13226	sequence_number=13227	rbr_only=no	original_committed_timestamp=1789223042369632	immediate_commit_timestamp=1789223042369632	transaction_length=764
+# original_commit_timestamp=1789223042369632 (2026-09-12 22:24:02.369632 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042369632 (2026-09-12 22:24:02.369632 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042369632*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47882131
+#260912 22:24:02 server id 1  end_log_pos 47882816 CRC32 0xf4dd6ea1 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157659
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_behavior_funnel_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `stage` varchar(16) NOT NULL COMMENT 'view/intent/order/pay',
+  `user_count` bigint NOT NULL DEFAULT '0',
+  `conversion_rate` decimal(8,4) DEFAULT NULL COMMENT '相对上一阶段转化率',
+  `overall_buy_rate` decimal(8,4) DEFAULT NULL COMMENT '相对首阶段累计购买率',
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47882131
+#260912 22:24:02 server id 1  end_log_pos 47882816 CRC32 0xf4dd6ea1 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157659
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+CREATE TABLE `ads_behavior_funnel_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `stage` varchar(16) NOT NULL COMMENT 'view/intent/order/pay',
+  `user_count` bigint NOT NULL DEFAULT '0',
+  `conversion_rate` decimal(8,4) DEFAULT NULL COMMENT '相对上一阶段转化率',
+  `overall_buy_rate` decimal(8,4) DEFAULT NULL COMMENT '相对首阶段累计购买率',
+  PRIMARY KEY (`snapshot_id`,`dt`,`stage`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 行为转化漏斗'
+/*!*/;
+# at 47882816
+#260912 22:24:02 server id 1  end_log_pos 47882895 CRC32 0x2280ea68 	Anonymous_GTID	last_committed=13227	sequence_number=13228	rbr_only=no	original_committed_timestamp=1789223042386339	immediate_commit_timestamp=1789223042386339	transaction_length=553
+# original_commit_timestamp=1789223042386339 (2026-09-12 22:24:02.386339 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042386339 (2026-09-12 22:24:02.386339 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042386339*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47882895
+#260912 22:24:02 server id 1  end_log_pos 47883369 CRC32 0xc095f0d5 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157663
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_active_trend_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `dau` bigint NOT NULL DEFAULT '0',
+  `behavior_count` bigint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`snapshot_id`,`dt`),
+  KEY `idx_dt` (`dt`)
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+# immediate_commit_timestamp=1789223042386339 (2026-09-12 22:24:02.386339 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042386339*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47882895
+#260912 22:24:02 server id 1  end_log_pos 47883369 CRC32 0xc095f0d5 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157663
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+CREATE TABLE `ads_active_trend_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `dau` bigint NOT NULL DEFAULT '0',
+  `behavior_count` bigint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`snapshot_id`,`dt`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 日活跃趋势'
+/*!*/;
+# at 47883369
+#260912 22:24:02 server id 1  end_log_pos 47883448 CRC32 0x79178fd2 	Anonymous_GTID	last_committed=13228	sequence_number=13229	rbr_only=no	original_committed_timestamp=1789223042402800	immediate_commit_timestamp=1789223042402800	transaction_length=796
+# original_commit_timestamp=1789223042402800 (2026-09-12 22:24:02.402800 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042402800 (2026-09-12 22:24:02.402800 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042402800*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47883448
+#260912 22:24:02 server id 1  end_log_pos 47884165 CRC32 0xb469fc9f 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157667
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_hot_product_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `product_id` bigint NOT NULL,
+  `product_name` varchar(200) NOT NULL DEFAULT '',
+  `heat_score` decimal(18,4) NOT NULL DEFAULT '0.0000',
+  `pv` bigint NOT NULL DEFAULT '0',
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+#260912 22:24:02 server id 1  end_log_pos 47884165 CRC32 0xb469fc9f 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157667
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+CREATE TABLE `ads_hot_product_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `product_id` bigint NOT NULL,
+  `product_name` varchar(200) NOT NULL DEFAULT '',
+  `heat_score` decimal(18,4) NOT NULL DEFAULT '0.0000',
+  `pv` bigint NOT NULL DEFAULT '0',
+  `fav` bigint NOT NULL DEFAULT '0',
+  `cart` bigint NOT NULL DEFAULT '0',
+  `buy` bigint NOT NULL DEFAULT '0',
+  `rank_no` int NOT NULL,
+  PRIMARY KEY (`snapshot_id`,`dt`,`rank_no`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 热门商品热度榜'
+/*!*/;
+# at 47884165
+#260912 22:24:02 server id 1  end_log_pos 47884244 CRC32 0x37a33e10 	Anonymous_GTID	last_committed=13229	sequence_number=13230	rbr_only=no	original_committed_timestamp=1789223042414897	immediate_commit_timestamp=1789223042414897	transaction_length=648
+# original_commit_timestamp=1789223042414897 (2026-09-12 22:24:02.414897 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042414897 (2026-09-12 22:24:02.414897 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042414897*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47884244
+#260912 22:24:02 server id 1  end_log_pos 47884813 CRC32 0xd9e5fc0d 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157671
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_product_conversion_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `product_id` bigint NOT NULL,
+  `pv_users` bigint NOT NULL DEFAULT '0',
+  `buy_users` bigint NOT NULL DEFAULT '0',
+  `conversion_rate` decimal(8,4) DEFAULT NULL,
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47884244
+#260912 22:24:02 server id 1  end_log_pos 47884813 CRC32 0xd9e5fc0d 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157671
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+CREATE TABLE `ads_product_conversion_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `product_id` bigint NOT NULL,
+  `pv_users` bigint NOT NULL DEFAULT '0',
+  `buy_users` bigint NOT NULL DEFAULT '0',
+  `conversion_rate` decimal(8,4) DEFAULT NULL,
+  PRIMARY KEY (`snapshot_id`,`dt`,`product_id`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 商品转化'
+/*!*/;
+# at 47884813
+#260912 22:24:02 server id 1  end_log_pos 47884892 CRC32 0x30a73187 	Anonymous_GTID	last_committed=13230	sequence_number=13231	rbr_only=no	original_committed_timestamp=1789223042431517	immediate_commit_timestamp=1789223042431517	transaction_length=1195
+# original_commit_timestamp=1789223042431517 (2026-09-12 22:24:02.431517 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042431517 (2026-09-12 22:24:02.431517 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042431517*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47884892
+#260912 22:24:02 server id 1  end_log_pos 47886008 CRC32 0x0b758fcc 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157675
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_user_profile_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `user_id` bigint NOT NULL,
+  `r` int NOT NULL DEFAULT '0' COMMENT 'R 分（1..5）',
+  `f` int NOT NULL DEFAULT '0' COMMENT 'F 分（1..5）',
+  `m` int NOT NULL DEFAULT '0' COMMENT 'M 分（1..5）',
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `user_id` bigint NOT NULL,
+  `r` int NOT NULL DEFAULT '0' COMMENT 'R 分（1..5）',
+  `f` int NOT NULL DEFAULT '0' COMMENT 'F 分（1..5）',
+  `m` int NOT NULL DEFAULT '0' COMMENT 'M 分（1..5）',
+  `value_group` varchar(32) NOT NULL DEFAULT '' COMMENT 'RFM 八类价值分组',
+  `active_level` varchar(32) NOT NULL DEFAULT '',
+  `favorite_category` bigint NOT NULL DEFAULT '0' COMMENT '偏好分类 id',
+  `last_active_date` varchar(32) NOT NULL DEFAULT '',
+  `last_buy_date` varchar(32) NOT NULL DEFAULT '',
+  `lifecycle_state` varchar(32) NOT NULL DEFAULT '' COMMENT '活跃/沉默/流失风险',
+  `rule_version` varchar(32) NOT NULL DEFAULT '',
+  `calc_date` varchar(32) NOT NULL DEFAULT '',
+  PRIMARY KEY (`snapshot_id`,`dt`,`user_id`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 用户画像（RFM 分层）'
+/*!*/;
+# at 47886008
+#260912 22:24:02 server id 1  end_log_pos 47886087 CRC32 0xb79d6d1e 	Anonymous_GTID	last_committed=13231	sequence_number=13232	rbr_only=no	original_committed_timestamp=1789223042448478	immediate_commit_timestamp=1789223042448478	transaction_length=783
+# original_commit_timestamp=1789223042448478 (2026-09-12 22:24:02.448478 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042448478 (2026-09-12 22:24:02.448478 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042448478*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47886087
+#260912 22:24:02 server id 1  end_log_pos 47886791 CRC32 0x69915e09 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157679
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `ads_data_quality_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `rule_code` varchar(64) NOT NULL,
+  `check_count` bigint NOT NULL DEFAULT '0',
+  `error_count` bigint NOT NULL DEFAULT '0',
+  `error_rate` decimal(12,6) NOT NULL DEFAULT '0.000000',
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47886087
+#260912 22:24:02 server id 1  end_log_pos 47886791 CRC32 0x69915e09 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157679
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+CREATE TABLE `ads_data_quality_m` (
+  `snapshot_id` varchar(64) NOT NULL,
+  `dt` varchar(16) NOT NULL,
+  `rule_code` varchar(64) NOT NULL,
+  `check_count` bigint NOT NULL DEFAULT '0',
+  `error_count` bigint NOT NULL DEFAULT '0',
+  `error_rate` decimal(12,6) NOT NULL DEFAULT '0.000000',
+  `passed` int NOT NULL DEFAULT '0' COMMENT '1=通过 0=未通过',
+  `threshold` varchar(200) NOT NULL DEFAULT '',
+  PRIMARY KEY (`snapshot_id`,`dt`,`rule_code`),
+  KEY `idx_dt` (`dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='ADS 数据质量结果'
+/*!*/;
+# at 47886791
+#260912 22:24:02 server id 1  end_log_pos 47886870 CRC32 0x5dd9550f 	Anonymous_GTID	last_committed=13232	sequence_number=13233	rbr_only=no	original_committed_timestamp=1789223042465285	immediate_commit_timestamp=1789223042465285	transaction_length=1850
+# original_commit_timestamp=1789223042465285 (2026-09-12 22:24:02.465285 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042465285 (2026-09-12 22:24:02.465285 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042465285*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47886870
+#260912 22:24:02 server id 1  end_log_pos 47888641 CRC32 0x1b2adb80 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157683
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `metric_snapshot` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `snapshot_id` varchar(64) NOT NULL COMMENT '快照发布号（唯一）',
+  `runtime_profile_id` bigint NOT NULL DEFAULT '1' COMMENT '运行环境；同 profile 最多一个 ACTIVE',
+  `runtime_profile_version` int DEFAULT NULL COMMENT '§8.1 实际 profile 版本',
+  `business_time` datetime(3) NOT NULL COMMENT '快照业务时间',
+  `pipeline_run_id` bigint DEFAULT NULL COMMENT '来源流水线实例',
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+  `runtime_profile_version` int DEFAULT NULL COMMENT '§8.1 实际 profile 版本',
+  `business_time` datetime(3) NOT NULL COMMENT '快照业务时间',
+  `pipeline_run_id` bigint DEFAULT NULL COMMENT '来源流水线实例',
+  `status` varchar(24) NOT NULL COMMENT 'BUILDING/VERIFYING/ACTIVE/ARCHIVED/FAILED',
+  `version` int NOT NULL DEFAULT '1' COMMENT '同一业务时间的第 N 次发布',
+  `definition_version` varchar(16) NOT NULL DEFAULT '' COMMENT '本次快照使用的指标口径版本',
+  `data_updated_at` datetime(3) NOT NULL COMMENT 'ADS 数据时间',
+  `published_at` datetime(3) DEFAULT NULL COMMENT '切换为 ACTIVE 的时间',
+  `source` varchar(32) NOT NULL DEFAULT 'spark-ads' COMMENT '§17.6 成功快照只接受 spark-ads',
+  `failure_reason` varchar(512) DEFAULT NULL COMMENT 'FAILED 原因（§17.5 第 6 步）',
+  `active_flag` tinyint DEFAULT NULL COMMENT 'ACTIVE=1，其它状态=NULL：可空唯一列实现同 profile 唯一 ACTIVE',
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_snapshot_id` (`snapshot_id`),
+  UNIQUE KEY `uk_active_profile` (`runtime_profile_id`,`active_flag`),
+  KEY `idx_snapshot_status` (`runtime_profile_id`,`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='指标快照（唯一所有者 analytics_metric）'
+/*!*/;
+# at 47888641
+#260912 22:24:02 server id 1  end_log_pos 47888720 CRC32 0xe93f48a8 	Anonymous_GTID	last_committed=13233	sequence_number=13234	rbr_only=no	original_committed_timestamp=1789223042489021	immediate_commit_timestamp=1789223042489021	transaction_length=1125
+# original_commit_timestamp=1789223042489021 (2026-09-12 22:24:02.489021 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223042489021 (2026-09-12 22:24:02.489021 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223042489021*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47888720
+#260912 22:24:02 server id 1  end_log_pos 47889766 CRC32 0x2ab52f57 	Query	thread_id=8370	exec_time=0	error_code=0	Xid = 157687
+SET TIMESTAMP=1789223042/*!*/;
+/*!80013 SET @@session.sql_require_primary_key=0*//*!*/;
+------------------------- TRIGGER ----------------------------
+CREATE TABLE `metric_value` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `snapshot_id` varchar(64) NOT NULL,
+  `metric_code` varchar(64) NOT NULL,
+  `metric_value` decimal(18,4) NOT NULL,
+  `unit` varchar(16) NOT NULL DEFAULT '',
+  `period` varchar(32) NOT NULL DEFAULT '' COMMENT 'day:2026-09-01',
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+# original_commit_timestamp=1789223095760070 (2026-09-12 22:24:55.760070 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223095760070 (2026-09-12 22:24:55.760070 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223095760070*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47890460
+#260912 22:24:55 server id 1  end_log_pos 47890550 CRC32 0x28768ec4 	Query	thread_id=8377	exec_time=0	error_code=0
+SET TIMESTAMP=1789223095/*!*/;
+FLUSH PRIVILEGES
+/*!*/;
+# at 47890550
+#260912 22:25:22 server id 1  end_log_pos 47890629 CRC32 0x01b5f800 	Anonymous_GTID	last_committed=13237	sequence_number=13238	rbr_only=yes	original_committed_timestamp=1789223122169961	immediate_commit_timestamp=1789223122169961	transaction_length=463
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223122169961 (2026-09-12 22:25:22.169961 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223122169961 (2026-09-12 22:25:22.169961 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223122169961*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47890629
+#260912 22:25:22 server id 1  end_log_pos 47890738 CRC32 0x5766abd9 	Query	thread_id=8382	exec_time=0	error_code=0
+SET TIMESTAMP=1789223122.167922/*!*/;
+BEGIN
+/*!*/;
+# at 47890738
+#260912 22:25:22 server id 1  end_log_pos 47890855 CRC32 0x28c7105e 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47890855
+#260912 22:25:22 server id 1  end_log_pos 47890982 CRC32 0x83071d1e 	Write_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_snapshot`
+### SET
+###   @1=28
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47'
+###   @2='20260901'
+###   @3='ENUM_WHITELIST'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0'
+# at 47897424
+#260912 22:25:22 server id 1  end_log_pos 47897455 CRC32 0x587243da 	Xid = 157845
+COMMIT/*!*/;
+# at 47897455
+#260912 22:25:22 server id 1  end_log_pos 47897534 CRC32 0xfcc66b5c 	Anonymous_GTID	last_committed=13246	sequence_number=13247	rbr_only=yes	original_committed_timestamp=1789223122314786	immediate_commit_timestamp=1789223122314786	transaction_length=554
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223122314786 (2026-09-12 22:25:22.314786 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223122314786 (2026-09-12 22:25:22.314786 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223122314786*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47897534
+#260912 22:25:22 server id 1  end_log_pos 47897640 CRC32 0xa48a3ebd 	Query	thread_id=8392	exec_time=0	error_code=0
+SET TIMESTAMP=1789223122/*!*/;
+BEGIN
+/*!*/;
+# at 47897640
+#260912 22:25:22 server id 1  end_log_pos 47897757 CRC32 0x83fa0147 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47897757
+#260912 22:25:22 server id 1  end_log_pos 47897978 CRC32 0xbc5abde6 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=28
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11=NULL
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=NULL
+###   @15='2026-09-12 22:25:22.167'
+# at 47897978
+#260912 22:25:22 server id 1  end_log_pos 47898009 CRC32 0xf88997de 	Xid = 157855
+COMMIT/*!*/;
+# at 47898009
+#260912 22:25:22 server id 1  end_log_pos 47898088 CRC32 0x13797dbb 	Anonymous_GTID	last_committed=13247	sequence_number=13248	rbr_only=yes	original_committed_timestamp=1789223122330004	immediate_commit_timestamp=1789223122330004	transaction_length=2772
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223122330004 (2026-09-12 22:25:22.330004 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223122330004 (2026-09-12 22:25:22.330004 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223122330004*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47898088
+#260912 22:25:22 server id 1  end_log_pos 47898193 CRC32 0xfc709643 	Query	thread_id=8393	exec_time=0	error_code=0
+SET TIMESTAMP=1789223122/*!*/;
+BEGIN
+/*!*/;
+# at 47898193
+#260912 22:25:22 server id 1  end_log_pos 47898305 CRC32 0x23bc5ff1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898305
+#260912 22:25:22 server id 1  end_log_pos 47898409 CRC32 0x37d3ec3a 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=151
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47898088
+#260912 22:25:22 server id 1  end_log_pos 47898193 CRC32 0xfc709643 	Query	thread_id=8393	exec_time=0	error_code=0
+SET TIMESTAMP=1789223122/*!*/;
+BEGIN
+/*!*/;
+# at 47898193
+#260912 22:25:22 server id 1  end_log_pos 47898305 CRC32 0x23bc5ff1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898305
+#260912 22:25:22 server id 1  end_log_pos 47898409 CRC32 0x37d3ec3a 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=151
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47898409
+#260912 22:25:22 server id 1  end_log_pos 47898521 CRC32 0xe65727da 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898521
+#260912 22:25:22 server id 1  end_log_pos 47898625 CRC32 0xc2af83cf 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=152
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47898409
+#260912 22:25:22 server id 1  end_log_pos 47898521 CRC32 0xe65727da 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898521
+#260912 22:25:22 server id 1  end_log_pos 47898625 CRC32 0xc2af83cf 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=152
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47898625
+#260912 22:25:22 server id 1  end_log_pos 47898737 CRC32 0x6bf69ff3 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898737
+#260912 22:25:22 server id 1  end_log_pos 47898842 CRC32 0xb6aa7bfb 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=153
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47898625
+#260912 22:25:22 server id 1  end_log_pos 47898737 CRC32 0x6bf69ff3 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898737
+#260912 22:25:22 server id 1  end_log_pos 47898842 CRC32 0xb6aa7bfb 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=153
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47898842
+#260912 22:25:22 server id 1  end_log_pos 47898954 CRC32 0x8a56f2f1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898954
+#260912 22:25:22 server id 1  end_log_pos 47899070 CRC32 0x6e1ec39c 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=154
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47898842
+#260912 22:25:22 server id 1  end_log_pos 47898954 CRC32 0x8a56f2f1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47898954
+#260912 22:25:22 server id 1  end_log_pos 47899070 CRC32 0x6e1ec39c 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=154
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899070
+#260912 22:25:22 server id 1  end_log_pos 47899182 CRC32 0xea0c4eb3 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899182
+#260912 22:25:22 server id 1  end_log_pos 47899287 CRC32 0xd144cc7a 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=155
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899070
+#260912 22:25:22 server id 1  end_log_pos 47899182 CRC32 0xea0c4eb3 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899182
+#260912 22:25:22 server id 1  end_log_pos 47899287 CRC32 0xd144cc7a 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=155
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899287
+#260912 22:25:22 server id 1  end_log_pos 47899399 CRC32 0x17fd256c 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899399
+#260912 22:25:22 server id 1  end_log_pos 47899509 CRC32 0x476f0d86 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=156
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899287
+#260912 22:25:22 server id 1  end_log_pos 47899399 CRC32 0x17fd256c 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899399
+#260912 22:25:22 server id 1  end_log_pos 47899509 CRC32 0x476f0d86 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=156
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899509
+#260912 22:25:22 server id 1  end_log_pos 47899621 CRC32 0x67c90284 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899621
+#260912 22:25:22 server id 1  end_log_pos 47899738 CRC32 0xc523bb09 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=157
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899509
+#260912 22:25:22 server id 1  end_log_pos 47899621 CRC32 0x67c90284 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899621
+#260912 22:25:22 server id 1  end_log_pos 47899738 CRC32 0xc523bb09 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=157
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899738
+#260912 22:25:22 server id 1  end_log_pos 47899850 CRC32 0x97e93a6f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899850
+#260912 22:25:22 server id 1  end_log_pos 47899960 CRC32 0x83da3d76 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=158
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899738
+#260912 22:25:22 server id 1  end_log_pos 47899850 CRC32 0x97e93a6f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47899850
+#260912 22:25:22 server id 1  end_log_pos 47899960 CRC32 0x83da3d76 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=158
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899960
+#260912 22:25:22 server id 1  end_log_pos 47900072 CRC32 0xb1fa4830 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47900072
+#260912 22:25:22 server id 1  end_log_pos 47900187 CRC32 0xc1b1dbd3 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=159
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:22.318'
+# at 47899960
+#260912 22:25:22 server id 1  end_log_pos 47900072 CRC32 0xb1fa4830 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47900072
+#260912 22:25:22 server id 1  end_log_pos 47900187 CRC32 0xc1b1dbd3 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=159
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47900187
+#260912 22:25:22 server id 1  end_log_pos 47900299 CRC32 0xcd49ece1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47900299
+#260912 22:25:22 server id 1  end_log_pos 47900406 CRC32 0x9897f78c 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=160
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47900187
+#260912 22:25:22 server id 1  end_log_pos 47900299 CRC32 0xcd49ece1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47900299
+#260912 22:25:22 server id 1  end_log_pos 47900406 CRC32 0x9897f78c 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=160
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47900406
+#260912 22:25:22 server id 1  end_log_pos 47900523 CRC32 0x6a19292d 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47900523
+#260912 22:25:22 server id 1  end_log_pos 47900750 CRC32 0x30eb072c 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=28
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47'
+###   @2='20260901'
+###   @3='REQUIRED_FIELD_NULL_RATE'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0.001'
+# at 47905152
+#260912 22:25:32 server id 1  end_log_pos 47905183 CRC32 0xae33b0e0 	Xid = 157991
+COMMIT/*!*/;
+# at 47905183
+#260912 22:25:32 server id 1  end_log_pos 47905262 CRC32 0x0d75c5a1 	Anonymous_GTID	last_committed=13256	sequence_number=13257	rbr_only=yes	original_committed_timestamp=1789223132289877	immediate_commit_timestamp=1789223132289877	transaction_length=1088
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223132289877 (2026-09-12 22:25:32.289877 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223132289877 (2026-09-12 22:25:32.289877 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223132289877*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47905262
+#260912 22:25:32 server id 1  end_log_pos 47905359 CRC32 0x4ee5d185 	Query	thread_id=8415	exec_time=0	error_code=0
+SET TIMESTAMP=1789223132/*!*/;
+BEGIN
+/*!*/;
+# at 47905359
+#260912 22:25:32 server id 1  end_log_pos 47905471 CRC32 0x700aa296 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47905471
+#260912 22:25:32 server id 1  end_log_pos 47906240 CRC32 0x9e4036ba 	Delete_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=151
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+#260912 22:25:32 server id 1  end_log_pos 47905262 CRC32 0x0d75c5a1 	Anonymous_GTID	last_committed=13256	sequence_number=13257	rbr_only=yes	original_committed_timestamp=1789223132289877	immediate_commit_timestamp=1789223132289877	transaction_length=1088
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223132289877 (2026-09-12 22:25:32.289877 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223132289877 (2026-09-12 22:25:32.289877 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223132289877*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47905262
+#260912 22:25:32 server id 1  end_log_pos 47905359 CRC32 0x4ee5d185 	Query	thread_id=8415	exec_time=0	error_code=0
+SET TIMESTAMP=1789223132/*!*/;
+BEGIN
+/*!*/;
+# at 47905359
+#260912 22:25:32 server id 1  end_log_pos 47905471 CRC32 0x700aa296 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47905471
+#260912 22:25:32 server id 1  end_log_pos 47906240 CRC32 0x9e4036ba 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=151
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=152
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!*/;
+# at 47905359
+#260912 22:25:32 server id 1  end_log_pos 47905471 CRC32 0x700aa296 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47905471
+#260912 22:25:32 server id 1  end_log_pos 47906240 CRC32 0x9e4036ba 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=151
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=152
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=153
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=152
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=153
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=154
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=153
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=154
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=155
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=154
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=155
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=156
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=155
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=156
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=157
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=156
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=157
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=158
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=157
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=158
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=159
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=158
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:22.318'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=159
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=160
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:22.318'
+# at 47906240
+#260912 22:25:32 server id 1  end_log_pos 47906271 CRC32 0xf6133f2b 	Xid = 157992
+COMMIT/*!*/;
+# at 47906271
+#260912 22:25:32 server id 1  end_log_pos 47906350 CRC32 0xdfffbdcb 	Anonymous_GTID	last_committed=13257	sequence_number=13258	rbr_only=yes	original_committed_timestamp=1789223132291128	immediate_commit_timestamp=1789223132291128	transaction_length=457
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223132291128 (2026-09-12 22:25:32.291128 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223132291128 (2026-09-12 22:25:32.291128 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223132291128*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47906350
+#260912 22:25:32 server id 1  end_log_pos 47906447 CRC32 0x16172e4c 	Query	thread_id=8415	exec_time=0	error_code=0
+SET TIMESTAMP=1789223132/*!*/;
+BEGIN
+/*!*/;
+# at 47906447
+#260912 22:25:32 server id 1  end_log_pos 47906564 CRC32 0x7a841253 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47906564
+#260912 22:25:32 server id 1  end_log_pos 47906697 CRC32 0xbc76eced 	Delete_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=28
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11='2026-09-12 22:25:22.318'
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=1
+###   @15='2026-09-12 22:25:22.167'
+# at 47906697
+#260912 22:25:32 server id 1  end_log_pos 47906728 CRC32 0xd547937b 	Xid = 157993
+COMMIT/*!*/;
+# at 47906728
+#260912 22:25:47 server id 1  end_log_pos 47906807 CRC32 0x010b41ce 	Anonymous_GTID	last_committed=13258	sequence_number=13259	rbr_only=yes	original_committed_timestamp=1789223147658424	immediate_commit_timestamp=1789223147658424	transaction_length=463
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223147658424 (2026-09-12 22:25:47.658424 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223147658424 (2026-09-12 22:25:47.658424 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223147658424*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47906807
+#260912 22:25:47 server id 1  end_log_pos 47906916 CRC32 0x307150b4 	Query	thread_id=8420	exec_time=0	error_code=0
+SET TIMESTAMP=1789223147.656835/*!*/;
+BEGIN
+/*!*/;
+# at 47906916
+#260912 22:25:47 server id 1  end_log_pos 47907033 CRC32 0x82c56a2e 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47907033
+#260912 22:25:47 server id 1  end_log_pos 47907160 CRC32 0xb06586d9 	Write_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_snapshot`
+### SET
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47'
+###   @2='20260901'
+###   @3='ENUM_WHITELIST'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0'
+# at 47913602
+#260912 22:25:47 server id 1  end_log_pos 47913633 CRC32 0xa1b14e65 	Xid = 158115
+COMMIT/*!*/;
+# at 47913633
+#260912 22:25:47 server id 1  end_log_pos 47913712 CRC32 0x329cc446 	Anonymous_GTID	last_committed=13267	sequence_number=13268	rbr_only=yes	original_committed_timestamp=1789223147748181	immediate_commit_timestamp=1789223147748181	transaction_length=554
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223147748181 (2026-09-12 22:25:47.748181 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223147748181 (2026-09-12 22:25:47.748181 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223147748181*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47913712
+#260912 22:25:47 server id 1  end_log_pos 47913818 CRC32 0xb8edc02e 	Query	thread_id=8430	exec_time=0	error_code=0
+SET TIMESTAMP=1789223147/*!*/;
+BEGIN
+/*!*/;
+# at 47913818
+#260912 22:25:47 server id 1  end_log_pos 47913935 CRC32 0x0457b08f 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47913935
+#260912 22:25:47 server id 1  end_log_pos 47914156 CRC32 0xdde19d77 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11=NULL
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=NULL
+###   @15='2026-09-12 22:25:47.656'
+# at 47914156
+#260912 22:25:47 server id 1  end_log_pos 47914187 CRC32 0x4a34d638 	Xid = 158125
+COMMIT/*!*/;
+# at 47914187
+#260912 22:25:47 server id 1  end_log_pos 47914266 CRC32 0xe56fbd22 	Anonymous_GTID	last_committed=13268	sequence_number=13269	rbr_only=yes	original_committed_timestamp=1789223147759584	immediate_commit_timestamp=1789223147759584	transaction_length=2772
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223147759584 (2026-09-12 22:25:47.759584 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223147759584 (2026-09-12 22:25:47.759584 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223147759584*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47914266
+#260912 22:25:47 server id 1  end_log_pos 47914371 CRC32 0x83712695 	Query	thread_id=8431	exec_time=0	error_code=0
+SET TIMESTAMP=1789223147/*!*/;
+BEGIN
+/*!*/;
+# at 47914371
+#260912 22:25:47 server id 1  end_log_pos 47914483 CRC32 0xf1c7258b 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47914483
+#260912 22:25:47 server id 1  end_log_pos 47914587 CRC32 0x2814f537 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=161
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47914266
+#260912 22:25:47 server id 1  end_log_pos 47914371 CRC32 0x83712695 	Query	thread_id=8431	exec_time=0	error_code=0
+SET TIMESTAMP=1789223147/*!*/;
+BEGIN
+/*!*/;
+# at 47914371
+#260912 22:25:47 server id 1  end_log_pos 47914483 CRC32 0xf1c7258b 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47914483
+#260912 22:25:47 server id 1  end_log_pos 47914587 CRC32 0x2814f537 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=161
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47914587
+#260912 22:25:47 server id 1  end_log_pos 47914699 CRC32 0x72b587c9 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47914699
+#260912 22:25:47 server id 1  end_log_pos 47914803 CRC32 0x08b8f4a2 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=162
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47914587
+#260912 22:25:47 server id 1  end_log_pos 47914699 CRC32 0x72b587c9 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47914699
+#260912 22:25:47 server id 1  end_log_pos 47914803 CRC32 0x08b8f4a2 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=162
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47914803
+#260912 22:25:47 server id 1  end_log_pos 47914915 CRC32 0x1d90f72c 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47914915
+#260912 22:25:47 server id 1  end_log_pos 47915020 CRC32 0xeb7e4c3b 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=163
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47914803
+#260912 22:25:47 server id 1  end_log_pos 47914915 CRC32 0x1d90f72c 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47914915
+#260912 22:25:47 server id 1  end_log_pos 47915020 CRC32 0xeb7e4c3b 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=163
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915020
+#260912 22:25:47 server id 1  end_log_pos 47915132 CRC32 0xd2a045ce 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915132
+#260912 22:25:47 server id 1  end_log_pos 47915248 CRC32 0xb8aa0f36 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=164
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915020
+#260912 22:25:47 server id 1  end_log_pos 47915132 CRC32 0xd2a045ce 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915132
+#260912 22:25:47 server id 1  end_log_pos 47915248 CRC32 0xb8aa0f36 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=164
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915248
+#260912 22:25:47 server id 1  end_log_pos 47915360 CRC32 0xa1042782 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915360
+#260912 22:25:47 server id 1  end_log_pos 47915465 CRC32 0x7c35f6f5 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=165
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915248
+#260912 22:25:47 server id 1  end_log_pos 47915360 CRC32 0xa1042782 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915360
+#260912 22:25:47 server id 1  end_log_pos 47915465 CRC32 0x7c35f6f5 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=165
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915465
+#260912 22:25:47 server id 1  end_log_pos 47915577 CRC32 0xcaf993b1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915577
+#260912 22:25:47 server id 1  end_log_pos 47915687 CRC32 0x977c78d7 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=166
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915465
+#260912 22:25:47 server id 1  end_log_pos 47915577 CRC32 0xcaf993b1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915577
+#260912 22:25:47 server id 1  end_log_pos 47915687 CRC32 0x977c78d7 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=166
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915687
+#260912 22:25:47 server id 1  end_log_pos 47915799 CRC32 0xdf57fa6b 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915799
+#260912 22:25:47 server id 1  end_log_pos 47915916 CRC32 0x4c9ed862 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=167
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915687
+#260912 22:25:47 server id 1  end_log_pos 47915799 CRC32 0xdf57fa6b 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47915799
+#260912 22:25:47 server id 1  end_log_pos 47915916 CRC32 0x4c9ed862 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=167
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915916
+#260912 22:25:47 server id 1  end_log_pos 47916028 CRC32 0x4cf3ddcd 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47916028
+#260912 22:25:47 server id 1  end_log_pos 47916138 CRC32 0x13cf116b 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=168
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47915916
+#260912 22:25:47 server id 1  end_log_pos 47916028 CRC32 0x4cf3ddcd 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47916028
+#260912 22:25:47 server id 1  end_log_pos 47916138 CRC32 0x13cf116b 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=168
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:47.752'
+# at 47916138
+#260912 22:25:47 server id 1  end_log_pos 47916250 CRC32 0x5f43e568 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47916250
+#260912 22:25:47 server id 1  end_log_pos 47916365 CRC32 0x1eb9c4ab 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=169
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:47.752'
+# at 47916138
+#260912 22:25:47 server id 1  end_log_pos 47916250 CRC32 0x5f43e568 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47916250
+#260912 22:25:47 server id 1  end_log_pos 47916365 CRC32 0x1eb9c4ab 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=169
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47916365
+#260912 22:25:47 server id 1  end_log_pos 47916477 CRC32 0x5dcb966a 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47916477
+#260912 22:25:47 server id 1  end_log_pos 47916584 CRC32 0xe530d376 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=170
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47916365
+#260912 22:25:47 server id 1  end_log_pos 47916477 CRC32 0x5dcb966a 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47916477
+#260912 22:25:47 server id 1  end_log_pos 47916584 CRC32 0xe530d376 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=170
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47916584
+#260912 22:25:47 server id 1  end_log_pos 47916701 CRC32 0xa0b5ebd6 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47916701
+#260912 22:25:47 server id 1  end_log_pos 47916928 CRC32 0x5ba00b10 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11='2026-09-12 22:25:47.752'
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=1
+###   @15='2026-09-12 22:25:47.656'
+# at 47916928
+#260912 22:25:47 server id 1  end_log_pos 47916959 CRC32 0xfd12e32b 	Xid = 158131
+COMMIT/*!*/;
+# at 47916959
+#260912 22:26:11 server id 1  end_log_pos 47917038 CRC32 0x6135c9c2 	Anonymous_GTID	last_committed=13269	sequence_number=13270	rbr_only=yes	original_committed_timestamp=1789223171104139	immediate_commit_timestamp=1789223171104139	transaction_length=574
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223171104139 (2026-09-12 22:26:11.104139 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223171104139 (2026-09-12 22:26:11.104139 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223171104139*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47917038
+#260912 22:26:11 server id 1  end_log_pos 47917152 CRC32 0xdc84f855 	Query	thread_id=8456	exec_time=0	error_code=0
+SET TIMESTAMP=1789223171/*!*/;
+BEGIN
+/*!*/;
+# at 47917152
+#260912 22:26:11 server id 1  end_log_pos 47917269 CRC32 0xb91333d8 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47917269
+#260912 22:26:11 server id 1  end_log_pos 47917502 CRC32 0xe122855c 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47'
+###   @2='20260901'
+###   @3='ENUM_WHITELIST'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0'
+# at 47926897
+#260912 22:26:11 server id 1  end_log_pos 47926928 CRC32 0xbc2e4926 	Xid = 158388
+COMMIT/*!*/;
+# at 47926928
+#260912 22:26:11 server id 1  end_log_pos 47927007 CRC32 0x5a94b450 	Anonymous_GTID	last_committed=13279	sequence_number=13280	rbr_only=yes	original_committed_timestamp=1789223171222647	immediate_commit_timestamp=1789223171222647	transaction_length=568
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223171222647 (2026-09-12 22:26:11.222647 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223171222647 (2026-09-12 22:26:11.222647 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223171222647*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47927007
+#260912 22:26:11 server id 1  end_log_pos 47927113 CRC32 0x3b2ac759 	Query	thread_id=8468	exec_time=0	error_code=0
+SET TIMESTAMP=1789223171/*!*/;
+BEGIN
+/*!*/;
+# at 47927113
+#260912 22:26:11 server id 1  end_log_pos 47927230 CRC32 0x0e119a57 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47927230
+#260912 22:26:11 server id 1  end_log_pos 47927465 CRC32 0x1e566e94 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11='2026-09-12 22:25:47.752'
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=NULL
+###   @15='2026-09-12 22:25:47.656'
+# at 47927465
+#260912 22:26:11 server id 1  end_log_pos 47927496 CRC32 0x775d2a2f 	Xid = 158398
+COMMIT/*!*/;
+# at 47927496
+#260912 22:26:11 server id 1  end_log_pos 47927575 CRC32 0x759f20b2 	Anonymous_GTID	last_committed=13280	sequence_number=13281	rbr_only=yes	original_committed_timestamp=1789223171233993	immediate_commit_timestamp=1789223171233993	transaction_length=3652
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223171233993 (2026-09-12 22:26:11.233993 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223171233993 (2026-09-12 22:26:11.233993 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223171233993*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47927575
+#260912 22:26:11 server id 1  end_log_pos 47927672 CRC32 0x70fe07d8 	Query	thread_id=8469	exec_time=0	error_code=0
+SET TIMESTAMP=1789223171/*!*/;
+BEGIN
+/*!*/;
+# at 47927672
+#260912 22:26:11 server id 1  end_log_pos 47927784 CRC32 0xd3d777ae 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47927784
+#260912 22:26:11 server id 1  end_log_pos 47928553 CRC32 0xca7c4a04 	Delete_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=161
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+#260912 22:26:11 server id 1  end_log_pos 47927575 CRC32 0x759f20b2 	Anonymous_GTID	last_committed=13280	sequence_number=13281	rbr_only=yes	original_committed_timestamp=1789223171233993	immediate_commit_timestamp=1789223171233993	transaction_length=3652
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223171233993 (2026-09-12 22:26:11.233993 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223171233993 (2026-09-12 22:26:11.233993 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223171233993*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47927575
+#260912 22:26:11 server id 1  end_log_pos 47927672 CRC32 0x70fe07d8 	Query	thread_id=8469	exec_time=0	error_code=0
+SET TIMESTAMP=1789223171/*!*/;
+BEGIN
+/*!*/;
+# at 47927672
+#260912 22:26:11 server id 1  end_log_pos 47927784 CRC32 0xd3d777ae 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47927784
+#260912 22:26:11 server id 1  end_log_pos 47928553 CRC32 0xca7c4a04 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=161
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=162
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!*/;
+# at 47927672
+#260912 22:26:11 server id 1  end_log_pos 47927784 CRC32 0xd3d777ae 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47927784
+#260912 22:26:11 server id 1  end_log_pos 47928553 CRC32 0xca7c4a04 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=161
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=162
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=163
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=162
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=163
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=164
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=163
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=164
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=165
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=164
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=165
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=166
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=165
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=166
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=167
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=166
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=167
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=168
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=167
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=168
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=169
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=168
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=169
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=170
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=169
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=170
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47928553
+#260912 22:26:11 server id 1  end_log_pos 47928665 CRC32 0x66fed088 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47928665
+#260912 22:26:11 server id 1  end_log_pos 47928769 CRC32 0x921528d2 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=171
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:25:47.752'
+# at 47928553
+#260912 22:26:11 server id 1  end_log_pos 47928665 CRC32 0x66fed088 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47928665
+#260912 22:26:11 server id 1  end_log_pos 47928769 CRC32 0x921528d2 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=171
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47928769
+#260912 22:26:11 server id 1  end_log_pos 47928881 CRC32 0xc1af6dd9 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47928881
+#260912 22:26:11 server id 1  end_log_pos 47928985 CRC32 0x1a80defc 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=172
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47928769
+#260912 22:26:11 server id 1  end_log_pos 47928881 CRC32 0xc1af6dd9 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47928881
+#260912 22:26:11 server id 1  end_log_pos 47928985 CRC32 0x1a80defc 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=172
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47928985
+#260912 22:26:11 server id 1  end_log_pos 47929097 CRC32 0x8aa9022f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929097
+#260912 22:26:11 server id 1  end_log_pos 47929202 CRC32 0xfbf70acc 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=173
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47928985
+#260912 22:26:11 server id 1  end_log_pos 47929097 CRC32 0x8aa9022f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929097
+#260912 22:26:11 server id 1  end_log_pos 47929202 CRC32 0xfbf70acc 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=173
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929202
+#260912 22:26:11 server id 1  end_log_pos 47929314 CRC32 0x190d2589 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929314
+#260912 22:26:11 server id 1  end_log_pos 47929430 CRC32 0x06e833a5 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=174
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929202
+#260912 22:26:11 server id 1  end_log_pos 47929314 CRC32 0x190d2589 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929314
+#260912 22:26:11 server id 1  end_log_pos 47929430 CRC32 0x06e833a5 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=174
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929430
+#260912 22:26:11 server id 1  end_log_pos 47929542 CRC32 0x51482426 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929542
+#260912 22:26:11 server id 1  end_log_pos 47929647 CRC32 0x55c3246e 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=175
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929430
+#260912 22:26:11 server id 1  end_log_pos 47929542 CRC32 0x51482426 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929542
+#260912 22:26:11 server id 1  end_log_pos 47929647 CRC32 0x55c3246e 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=175
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929647
+#260912 22:26:11 server id 1  end_log_pos 47929759 CRC32 0xf2c15da1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929759
+#260912 22:26:11 server id 1  end_log_pos 47929869 CRC32 0xe6550769 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=176
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929647
+#260912 22:26:11 server id 1  end_log_pos 47929759 CRC32 0xf2c15da1 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929759
+#260912 22:26:11 server id 1  end_log_pos 47929869 CRC32 0xe6550769 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=176
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929869
+#260912 22:26:11 server id 1  end_log_pos 47929981 CRC32 0x2ebbd127 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929981
+#260912 22:26:11 server id 1  end_log_pos 47930098 CRC32 0x60426c00 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=177
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47929869
+#260912 22:26:11 server id 1  end_log_pos 47929981 CRC32 0x2ebbd127 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47929981
+#260912 22:26:11 server id 1  end_log_pos 47930098 CRC32 0x60426c00 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=177
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47930098
+#260912 22:26:11 server id 1  end_log_pos 47930210 CRC32 0xf7b9b19f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47930210
+#260912 22:26:11 server id 1  end_log_pos 47930320 CRC32 0xaba5fee1 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=178
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47930098
+#260912 22:26:11 server id 1  end_log_pos 47930210 CRC32 0xf7b9b19f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47930210
+#260912 22:26:11 server id 1  end_log_pos 47930320 CRC32 0xaba5fee1 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=178
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:26:11.226'
+# at 47930320
+#260912 22:26:11 server id 1  end_log_pos 47930432 CRC32 0xa6f089cb 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47930432
+#260912 22:26:11 server id 1  end_log_pos 47930547 CRC32 0x19c0d432 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=179
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:26:11.226'
+# at 47930320
+#260912 22:26:11 server id 1  end_log_pos 47930432 CRC32 0xa6f089cb 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47930432
+#260912 22:26:11 server id 1  end_log_pos 47930547 CRC32 0x19c0d432 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=179
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47930547
+#260912 22:26:11 server id 1  end_log_pos 47930659 CRC32 0xe681fa38 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47930659
+#260912 22:26:11 server id 1  end_log_pos 47930766 CRC32 0x584fcae8 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=180
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47930547
+#260912 22:26:11 server id 1  end_log_pos 47930659 CRC32 0xe681fa38 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47930659
+#260912 22:26:11 server id 1  end_log_pos 47930766 CRC32 0x584fcae8 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=180
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47930766
+#260912 22:26:11 server id 1  end_log_pos 47930883 CRC32 0xe9aa40a3 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47930883
+#260912 22:26:11 server id 1  end_log_pos 47931117 CRC32 0x14506664 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11='2026-09-12 22:26:11.226'
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=1
+###   @15='2026-09-12 22:25:47.656'
+# at 47931117
+#260912 22:26:11 server id 1  end_log_pos 47931148 CRC32 0xb6dbe54a 	Xid = 158404
+COMMIT/*!*/;
+# at 47931148
+#260912 22:26:54 server id 1  end_log_pos 47931227 CRC32 0x3a11f9f3 	Anonymous_GTID	last_committed=13281	sequence_number=13282	rbr_only=yes	original_committed_timestamp=1789223214655129	immediate_commit_timestamp=1789223214655129	transaction_length=465
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223214655129 (2026-09-12 22:26:54.655129 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223214655129 (2026-09-12 22:26:54.655129 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223214655129*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47931227
+#260912 22:26:54 server id 1  end_log_pos 47931336 CRC32 0x2aae8ffd 	Query	thread_id=8511	exec_time=0	error_code=0
+SET TIMESTAMP=1789223214.653062/*!*/;
+BEGIN
+/*!*/;
+# at 47931336
+#260912 22:26:54 server id 1  end_log_pos 47931453 CRC32 0x3052cd70 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47931453
+#260912 22:26:54 server id 1  end_log_pos 47931582 CRC32 0xea63c4b2 	Write_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_snapshot`
+### SET
+###   @1=30
+###   @2='S20260901_47RH'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47RH'
+###   @2='20260901'
+###   @3='ENUM_WHITELIST'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0'
+# at 47937833
+#260912 22:26:54 server id 1  end_log_pos 47937864 CRC32 0x3adba13f 	Xid = 158748
+COMMIT/*!*/;
+# at 47937864
+#260912 22:26:54 server id 1  end_log_pos 47937943 CRC32 0xf150b4f7 	Anonymous_GTID	last_committed=13290	sequence_number=13291	rbr_only=yes	original_committed_timestamp=1789223214796218	immediate_commit_timestamp=1789223214796218	transaction_length=592
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223214796218 (2026-09-12 22:26:54.796218 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223214796218 (2026-09-12 22:26:54.796218 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223214796218*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47937943
+#260912 22:26:54 server id 1  end_log_pos 47938049 CRC32 0x91bfe275 	Query	thread_id=8521	exec_time=0	error_code=0
+SET TIMESTAMP=1789223214/*!*/;
+BEGIN
+/*!*/;
+# at 47938049
+#260912 22:26:54 server id 1  end_log_pos 47938166 CRC32 0xc5f14755 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47938166
+#260912 22:26:54 server id 1  end_log_pos 47938425 CRC32 0xa98b99ec 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=30
+###   @2='S20260901_47RH'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47RH'
+###   @2='20260901'
+###   @3='REQUIRED_FIELD_NULL_RATE'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0.001'
+# at 47941331
+#260912 22:26:54 server id 1  end_log_pos 47941362 CRC32 0x786a0f29 	Xid = 158764
+COMMIT/*!*/;
+# at 47941362
+#260912 22:27:21 server id 1  end_log_pos 47941441 CRC32 0xcb389b2f 	Anonymous_GTID	last_committed=13292	sequence_number=13293	rbr_only=yes	original_committed_timestamp=1789223241685137	immediate_commit_timestamp=1789223241685137	transaction_length=465
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223241685137 (2026-09-12 22:27:21.685137 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223241685137 (2026-09-12 22:27:21.685137 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223241685137*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47941441
+#260912 22:27:21 server id 1  end_log_pos 47941550 CRC32 0x4f8d9a9b 	Query	thread_id=8538	exec_time=0	error_code=0
+SET TIMESTAMP=1789223241.683471/*!*/;
+BEGIN
+/*!*/;
+# at 47941550
+#260912 22:27:21 server id 1  end_log_pos 47941667 CRC32 0x4e9cb008 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47941667
+#260912 22:27:21 server id 1  end_log_pos 47941796 CRC32 0xc9f66603 	Write_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_snapshot`
+### SET
+###   @1=31
+###   @2='S20260901_47RC'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+### INSERT INTO `analytics_verify_m3_parity`.`ads_product_conversion_m`
+### SET
+###   @1='S20260901_47RC'
+###   @2='20260901'
+###   @3=1
+###   @4=2
+###   @5=2
+###   @6=1.0000
+# at 47946159
+#260912 22:27:21 server id 1  end_log_pos 47946190 CRC32 0xe9db3799 	Xid = 158925
+COMMIT/*!*/;
+# at 47946190
+#260912 22:27:21 server id 1  end_log_pos 47946269 CRC32 0xec82a02d 	Anonymous_GTID	last_committed=13299	sequence_number=13300	rbr_only=yes	original_committed_timestamp=1789223241805359	immediate_commit_timestamp=1789223241805359	transaction_length=795
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223241805359 (2026-09-12 22:27:21.805359 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223241805359 (2026-09-12 22:27:21.805359 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223241805359*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47946269
+#260912 22:27:21 server id 1  end_log_pos 47946375 CRC32 0x18623332 	Query	thread_id=8546	exec_time=0	error_code=0
+SET TIMESTAMP=1789223241/*!*/;
+BEGIN
+/*!*/;
+# at 47946375
+#260912 22:27:21 server id 1  end_log_pos 47946492 CRC32 0x3e57c139 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47946492
+#260912 22:27:21 server id 1  end_log_pos 47946954 CRC32 0x5d2e6daa 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=31
+###   @2='S20260901_47RC'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+### DELETE FROM `analytics_verify_m3_parity`.`ads_product_conversion_m`
+### WHERE
+###   @1='S20260901_47RC'
+###   @2='20260901'
+###   @3=4
+###   @4=1
+###   @5=0
+###   @6=0.0000
+# at 47948989
+#260912 22:27:21 server id 1  end_log_pos 47949020 CRC32 0x52e97322 	Xid = 158941
+COMMIT/*!*/;
+# at 47949020
+#260912 22:32:10 server id 1  end_log_pos 47949099 CRC32 0x83db85ae 	Anonymous_GTID	last_committed=13301	sequence_number=13302	rbr_only=yes	original_committed_timestamp=1789223530632755	immediate_commit_timestamp=1789223530632755	transaction_length=574
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223530632755 (2026-09-12 22:32:10.632755 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223530632755 (2026-09-12 22:32:10.632755 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223530632755*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47949099
+#260912 22:32:10 server id 1  end_log_pos 47949213 CRC32 0x8d7e6f8c 	Query	thread_id=8578	exec_time=0	error_code=0
+SET TIMESTAMP=1789223530/*!*/;
+BEGIN
+/*!*/;
+# at 47949213
+#260912 22:32:10 server id 1  end_log_pos 47949330 CRC32 0xab8c6308 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47949330
+#260912 22:32:10 server id 1  end_log_pos 47949563 CRC32 0x485701a9 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47'
+###   @2='20260901'
+###   @3='ENUM_WHITELIST'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0'
+# at 47958958
+#260912 22:32:10 server id 1  end_log_pos 47958989 CRC32 0x968fe72f 	Xid = 160199
+COMMIT/*!*/;
+# at 47958989
+#260912 22:32:10 server id 1  end_log_pos 47959068 CRC32 0xe32e1025 	Anonymous_GTID	last_committed=13311	sequence_number=13312	rbr_only=yes	original_committed_timestamp=1789223530817932	immediate_commit_timestamp=1789223530817932	transaction_length=568
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223530817932 (2026-09-12 22:32:10.817932 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223530817932 (2026-09-12 22:32:10.817932 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223530817932*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47959068
+#260912 22:32:10 server id 1  end_log_pos 47959174 CRC32 0xd10c2285 	Query	thread_id=8590	exec_time=0	error_code=0
+SET TIMESTAMP=1789223530/*!*/;
+BEGIN
+/*!*/;
+# at 47959174
+#260912 22:32:10 server id 1  end_log_pos 47959291 CRC32 0xddfcda00 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47959291
+#260912 22:32:10 server id 1  end_log_pos 47959526 CRC32 0x74a61653 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11='2026-09-12 22:26:11.226'
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=NULL
+###   @15='2026-09-12 22:25:47.656'
+# at 47959526
+#260912 22:32:10 server id 1  end_log_pos 47959557 CRC32 0x82c26dc8 	Xid = 160211
+COMMIT/*!*/;
+# at 47959557
+#260912 22:32:10 server id 1  end_log_pos 47959636 CRC32 0x30b1078c 	Anonymous_GTID	last_committed=13312	sequence_number=13313	rbr_only=yes	original_committed_timestamp=1789223530835861	immediate_commit_timestamp=1789223530835861	transaction_length=3652
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223530835861 (2026-09-12 22:32:10.835861 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223530835861 (2026-09-12 22:32:10.835861 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223530835861*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47959636
+#260912 22:32:10 server id 1  end_log_pos 47959733 CRC32 0xe37357c3 	Query	thread_id=8591	exec_time=0	error_code=0
+SET TIMESTAMP=1789223530/*!*/;
+BEGIN
+/*!*/;
+# at 47959733
+#260912 22:32:10 server id 1  end_log_pos 47959845 CRC32 0x9a27ade6 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47959845
+#260912 22:32:10 server id 1  end_log_pos 47960614 CRC32 0xba3c93c4 	Delete_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=171
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+#260912 22:32:10 server id 1  end_log_pos 47959636 CRC32 0x30b1078c 	Anonymous_GTID	last_committed=13312	sequence_number=13313	rbr_only=yes	original_committed_timestamp=1789223530835861	immediate_commit_timestamp=1789223530835861	transaction_length=3652
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223530835861 (2026-09-12 22:32:10.835861 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223530835861 (2026-09-12 22:32:10.835861 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223530835861*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47959636
+#260912 22:32:10 server id 1  end_log_pos 47959733 CRC32 0xe37357c3 	Query	thread_id=8591	exec_time=0	error_code=0
+SET TIMESTAMP=1789223530/*!*/;
+BEGIN
+/*!*/;
+# at 47959733
+#260912 22:32:10 server id 1  end_log_pos 47959845 CRC32 0x9a27ade6 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47959845
+#260912 22:32:10 server id 1  end_log_pos 47960614 CRC32 0xba3c93c4 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=171
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=172
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!*/;
+# at 47959733
+#260912 22:32:10 server id 1  end_log_pos 47959845 CRC32 0x9a27ade6 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47959845
+#260912 22:32:10 server id 1  end_log_pos 47960614 CRC32 0xba3c93c4 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=171
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=172
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=173
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=172
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=173
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=174
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=173
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=174
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=175
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=174
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=175
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=176
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=175
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=176
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=177
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=176
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=177
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=178
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=177
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=178
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=179
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=178
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=179
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=180
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=179
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=180
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47960614
+#260912 22:32:10 server id 1  end_log_pos 47960726 CRC32 0xe5d227f5 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47960726
+#260912 22:32:10 server id 1  end_log_pos 47960830 CRC32 0xca63a095 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=181
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:26:11.226'
+# at 47960614
+#260912 22:32:10 server id 1  end_log_pos 47960726 CRC32 0xe5d227f5 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47960726
+#260912 22:32:10 server id 1  end_log_pos 47960830 CRC32 0xca63a095 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=181
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47960830
+#260912 22:32:10 server id 1  end_log_pos 47960942 CRC32 0x687f61f8 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47960942
+#260912 22:32:10 server id 1  end_log_pos 47961046 CRC32 0x21da2eba 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=182
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47960830
+#260912 22:32:10 server id 1  end_log_pos 47960942 CRC32 0x687f61f8 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47960942
+#260912 22:32:10 server id 1  end_log_pos 47961046 CRC32 0x21da2eba 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=182
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961046
+#260912 22:32:10 server id 1  end_log_pos 47961158 CRC32 0x70005b16 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961158
+#260912 22:32:10 server id 1  end_log_pos 47961263 CRC32 0xa7636dbc 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=183
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961046
+#260912 22:32:10 server id 1  end_log_pos 47961158 CRC32 0x70005b16 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961158
+#260912 22:32:10 server id 1  end_log_pos 47961263 CRC32 0xa7636dbc 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=183
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961263
+#260912 22:32:10 server id 1  end_log_pos 47961375 CRC32 0xd3892291 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961375
+#260912 22:32:10 server id 1  end_log_pos 47961491 CRC32 0xe027af8b 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=184
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961263
+#260912 22:32:10 server id 1  end_log_pos 47961375 CRC32 0xd3892291 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961375
+#260912 22:32:10 server id 1  end_log_pos 47961491 CRC32 0xe027af8b 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=184
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961491
+#260912 22:32:10 server id 1  end_log_pos 47961603 CRC32 0x68598d69 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961603
+#260912 22:32:10 server id 1  end_log_pos 47961708 CRC32 0x879914fe 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=185
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961491
+#260912 22:32:10 server id 1  end_log_pos 47961603 CRC32 0x68598d69 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961603
+#260912 22:32:10 server id 1  end_log_pos 47961708 CRC32 0x879914fe 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=185
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961708
+#260912 22:32:10 server id 1  end_log_pos 47961820 CRC32 0x13caa2f0 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961820
+#260912 22:32:10 server id 1  end_log_pos 47961930 CRC32 0x304ed7a8 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=186
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961708
+#260912 22:32:10 server id 1  end_log_pos 47961820 CRC32 0x13caa2f0 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47961820
+#260912 22:32:10 server id 1  end_log_pos 47961930 CRC32 0x304ed7a8 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=186
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961930
+#260912 22:32:10 server id 1  end_log_pos 47962042 CRC32 0x7720d05e 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962042
+#260912 22:32:10 server id 1  end_log_pos 47962159 CRC32 0x4de4356c 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=187
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47961930
+#260912 22:32:10 server id 1  end_log_pos 47962042 CRC32 0x7720d05e 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962042
+#260912 22:32:10 server id 1  end_log_pos 47962159 CRC32 0x4de4356c 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=187
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47962159
+#260912 22:32:10 server id 1  end_log_pos 47962271 CRC32 0x5907d05d 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962271
+#260912 22:32:10 server id 1  end_log_pos 47962381 CRC32 0xe1eb547a 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=188
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47962159
+#260912 22:32:10 server id 1  end_log_pos 47962271 CRC32 0x5907d05d 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962271
+#260912 22:32:10 server id 1  end_log_pos 47962381 CRC32 0xe1eb547a 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=188
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:32:10.824'
+# at 47962381
+#260912 22:32:10 server id 1  end_log_pos 47962493 CRC32 0x4d09916f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962493
+#260912 22:32:10 server id 1  end_log_pos 47962608 CRC32 0x2a417bc3 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=189
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:32:10.824'
+# at 47962381
+#260912 22:32:10 server id 1  end_log_pos 47962493 CRC32 0x4d09916f 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962493
+#260912 22:32:10 server id 1  end_log_pos 47962608 CRC32 0x2a417bc3 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=189
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47962608
+#260912 22:32:10 server id 1  end_log_pos 47962720 CRC32 0x90bb3f3b 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962720
+#260912 22:32:10 server id 1  end_log_pos 47962827 CRC32 0xf9f00a2a 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=190
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47962608
+#260912 22:32:10 server id 1  end_log_pos 47962720 CRC32 0x90bb3f3b 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47962720
+#260912 22:32:10 server id 1  end_log_pos 47962827 CRC32 0xf9f00a2a 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=190
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47962827
+#260912 22:32:10 server id 1  end_log_pos 47962944 CRC32 0x8ebb9fb4 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47962944
+#260912 22:32:10 server id 1  end_log_pos 47963178 CRC32 0xacb331ed 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11='2026-09-12 22:32:10.824'
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=1
+###   @15='2026-09-12 22:25:47.656'
+# at 47963178
+#260912 22:32:10 server id 1  end_log_pos 47963209 CRC32 0xac15044d 	Xid = 160217
+COMMIT/*!*/;
+# at 47963209
+#260912 22:32:37 server id 1  end_log_pos 47963288 CRC32 0xc579e532 	Anonymous_GTID	last_committed=13313	sequence_number=13314	rbr_only=yes	original_committed_timestamp=1789223557818121	immediate_commit_timestamp=1789223557818121	transaction_length=574
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223557818121 (2026-09-12 22:32:37.818121 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223557818121 (2026-09-12 22:32:37.818121 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223557818121*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47963288
+#260912 22:32:37 server id 1  end_log_pos 47963402 CRC32 0x90b6f7ea 	Query	thread_id=8619	exec_time=0	error_code=0
+SET TIMESTAMP=1789223557/*!*/;
+BEGIN
+/*!*/;
+# at 47963402
+#260912 22:32:37 server id 1  end_log_pos 47963519 CRC32 0xca4b428e 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47963519
+#260912 22:32:37 server id 1  end_log_pos 47963752 CRC32 0x1f856e61 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @1='S20260901_47'
+###   @2='20260901'
+###   @3='ENUM_WHITELIST'
+###   @4=14
+###   @5=0
+###   @6=0.000000
+###   @7=1
+###   @8='0'
+# at 47973147
+#260912 22:32:37 server id 1  end_log_pos 47973178 CRC32 0x3c3e70e6 	Xid = 161638
+COMMIT/*!*/;
+# at 47973178
+#260912 22:32:37 server id 1  end_log_pos 47973257 CRC32 0x6c565a7f 	Anonymous_GTID	last_committed=13323	sequence_number=13324	rbr_only=yes	original_committed_timestamp=1789223557969078	immediate_commit_timestamp=1789223557969078	transaction_length=568
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223557969078 (2026-09-12 22:32:37.969078 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223557969078 (2026-09-12 22:32:37.969078 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223557969078*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47973257
+#260912 22:32:37 server id 1  end_log_pos 47973363 CRC32 0x434cea07 	Query	thread_id=8631	exec_time=0	error_code=0
+SET TIMESTAMP=1789223557/*!*/;
+BEGIN
+/*!*/;
+# at 47973363
+#260912 22:32:37 server id 1  end_log_pos 47973480 CRC32 0x9edb59fd 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47973480
+#260912 22:32:37 server id 1  end_log_pos 47973715 CRC32 0x7d56f5a4 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @8=1
+###   @9='v2'
+###   @10='2026-09-01 00:00:00.000'
+###   @11='2026-09-12 22:32:10.824'
+###   @12='spark-ads'
+###   @13=NULL
+###   @14=NULL
+###   @15='2026-09-12 22:25:47.656'
+# at 47973715
+#260912 22:32:37 server id 1  end_log_pos 47973746 CRC32 0x16ca792d 	Xid = 161650
+COMMIT/*!*/;
+# at 47973746
+#260912 22:32:37 server id 1  end_log_pos 47973825 CRC32 0x08f6a904 	Anonymous_GTID	last_committed=13324	sequence_number=13325	rbr_only=yes	original_committed_timestamp=1789223557981394	immediate_commit_timestamp=1789223557981394	transaction_length=3652
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223557981394 (2026-09-12 22:32:37.981394 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223557981394 (2026-09-12 22:32:37.981394 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223557981394*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47973825
+#260912 22:32:37 server id 1  end_log_pos 47973922 CRC32 0xc3db13ed 	Query	thread_id=8632	exec_time=0	error_code=0
+SET TIMESTAMP=1789223557/*!*/;
+BEGIN
+/*!*/;
+# at 47973922
+#260912 22:32:37 server id 1  end_log_pos 47974034 CRC32 0xcbe2b6f6 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47974034
+#260912 22:32:37 server id 1  end_log_pos 47974803 CRC32 0x69aa3c04 	Delete_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=181
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+#260912 22:32:37 server id 1  end_log_pos 47973825 CRC32 0x08f6a904 	Anonymous_GTID	last_committed=13324	sequence_number=13325	rbr_only=yes	original_committed_timestamp=1789223557981394	immediate_commit_timestamp=1789223557981394	transaction_length=3652
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+# original_commit_timestamp=1789223557981394 (2026-09-12 22:32:37.981394 �й���׼ʱ��)
+# immediate_commit_timestamp=1789223557981394 (2026-09-12 22:32:37.981394 �й���׼ʱ��)
+/*!80001 SET @@session.original_commit_timestamp=1789223557981394*//*!*/;
+/*!80014 SET @@session.original_server_version=80041*//*!*/;
+/*!80014 SET @@session.immediate_server_version=80041*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 47973825
+#260912 22:32:37 server id 1  end_log_pos 47973922 CRC32 0xc3db13ed 	Query	thread_id=8632	exec_time=0	error_code=0
+SET TIMESTAMP=1789223557/*!*/;
+BEGIN
+/*!*/;
+# at 47973922
+#260912 22:32:37 server id 1  end_log_pos 47974034 CRC32 0xcbe2b6f6 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47974034
+#260912 22:32:37 server id 1  end_log_pos 47974803 CRC32 0x69aa3c04 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=181
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=182
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+/*!*/;
+# at 47973922
+#260912 22:32:37 server id 1  end_log_pos 47974034 CRC32 0xcbe2b6f6 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47974034
+#260912 22:32:37 server id 1  end_log_pos 47974803 CRC32 0x69aa3c04 	Delete_rows: table id 661 flags: STMT_END_F
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=181
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=182
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=183
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=182
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=183
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=184
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=183
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=184
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=185
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=184
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=185
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=186
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=185
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=186
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=187
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=186
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=187
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=188
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=187
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=188
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=189
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=188
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=189
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+------------------------- TRIGGER ----------------------------
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=190
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=189
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+### DELETE FROM `analytics_verify_m3_parity`.`metric_value`
+### WHERE
+###   @1=190
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47974803
+#260912 22:32:37 server id 1  end_log_pos 47974915 CRC32 0x93a126c9 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47974915
+#260912 22:32:37 server id 1  end_log_pos 47975019 CRC32 0xc5975b1b 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=191
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:10.824'
+# at 47974803
+#260912 22:32:37 server id 1  end_log_pos 47974915 CRC32 0x93a126c9 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47974915
+#260912 22:32:37 server id 1  end_log_pos 47975019 CRC32 0xc5975b1b 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=191
+###   @2='S20260901_47'
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975019
+#260912 22:32:37 server id 1  end_log_pos 47975131 CRC32 0x006d0b55 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975131
+#260912 22:32:37 server id 1  end_log_pos 47975235 CRC32 0xf3605e31 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=192
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='pv'
+###   @4=7.0000
+###   @5='次'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975019
+#260912 22:32:37 server id 1  end_log_pos 47975131 CRC32 0x006d0b55 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975131
+#260912 22:32:37 server id 1  end_log_pos 47975235 CRC32 0xf3605e31 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=192
+###   @2='S20260901_47'
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975235
+#260912 22:32:37 server id 1  end_log_pos 47975347 CRC32 0x6f487bb0 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975347
+#260912 22:32:37 server id 1  end_log_pos 47975452 CRC32 0xb2027fad 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=193
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='uv'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975235
+#260912 22:32:37 server id 1  end_log_pos 47975347 CRC32 0x6f487bb0 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975347
+#260912 22:32:37 server id 1  end_log_pos 47975452 CRC32 0xb2027fad 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=193
+###   @2='S20260901_47'
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975452
+#260912 22:32:37 server id 1  end_log_pos 47975564 CRC32 0x4ffd46de 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975564
+#260912 22:32:37 server id 1  end_log_pos 47975680 CRC32 0xd03cafa6 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=194
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='dau'
+###   @4=3.0000
+###   @5='人'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975452
+#260912 22:32:37 server id 1  end_log_pos 47975564 CRC32 0x4ffd46de 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975564
+#260912 22:32:37 server id 1  end_log_pos 47975680 CRC32 0xd03cafa6 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=194
+###   @2='S20260901_47'
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975680
+#260912 22:32:37 server id 1  end_log_pos 47975792 CRC32 0x80a90022 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975792
+#260912 22:32:37 server id 1  end_log_pos 47975897 CRC32 0x7ddd5ec0 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=195
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='paid_order_cnt'
+###   @4=5.0000
+###   @5='单'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975680
+#260912 22:32:37 server id 1  end_log_pos 47975792 CRC32 0x80a90022 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47975792
+#260912 22:32:37 server id 1  end_log_pos 47975897 CRC32 0x7ddd5ec0 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=195
+###   @2='S20260901_47'
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975897
+#260912 22:32:37 server id 1  end_log_pos 47976009 CRC32 0x65b9a3cc 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976009
+#260912 22:32:37 server id 1  end_log_pos 47976119 CRC32 0x802d4026 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=196
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='gmv'
+###   @4=2042.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47975897
+#260912 22:32:37 server id 1  end_log_pos 47976009 CRC32 0x65b9a3cc 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976009
+#260912 22:32:37 server id 1  end_log_pos 47976119 CRC32 0x802d4026 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=196
+###   @2='S20260901_47'
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976119
+#260912 22:32:37 server id 1  end_log_pos 47976231 CRC32 0x84a1d080 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976231
+#260912 22:32:37 server id 1  end_log_pos 47976348 CRC32 0x499b305d 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=197
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='net_sale'
+###   @4=1493.0000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976119
+#260912 22:32:37 server id 1  end_log_pos 47976231 CRC32 0x84a1d080 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976231
+#260912 22:32:37 server id 1  end_log_pos 47976348 CRC32 0x499b305d 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=197
+###   @2='S20260901_47'
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976348
+#260912 22:32:37 server id 1  end_log_pos 47976460 CRC32 0x545aa02d 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976460
+#260912 22:32:37 server id 1  end_log_pos 47976570 CRC32 0xfb2fceb7 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=198
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='avg_order_value'
+###   @4=408.4000
+###   @5='元'
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976348
+#260912 22:32:37 server id 1  end_log_pos 47976460 CRC32 0x545aa02d 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976460
+#260912 22:32:37 server id 1  end_log_pos 47976570 CRC32 0xfb2fceb7 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=198
+###   @2='S20260901_47'
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976570
+#260912 22:32:37 server id 1  end_log_pos 47976682 CRC32 0x66978734 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976682
+#260912 22:32:37 server id 1  end_log_pos 47976797 CRC32 0x8ed59c5f 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=199
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='refund_rate'
+###   @4=0.6000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v2'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976570
+#260912 22:32:37 server id 1  end_log_pos 47976682 CRC32 0x66978734 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976682
+#260912 22:32:37 server id 1  end_log_pos 47976797 CRC32 0x8ed59c5f 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=199
+###   @2='S20260901_47'
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976797
+#260912 22:32:37 server id 1  end_log_pos 47976909 CRC32 0x90a9eea0 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976909
+#260912 22:32:37 server id 1  end_log_pos 47977016 CRC32 0x5965b098 	Write_rows: table id 661 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=200
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+======================= END CONTEXT ===========================
+
+=========================== CONTEXT ===========================
+###   @3='full_refund_rate'
+###   @4=0.2000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47976797
+#260912 22:32:37 server id 1  end_log_pos 47976909 CRC32 0x90a9eea0 	Table_map: `analytics_verify_m3_parity`.`metric_value` mapped to number 661
+# has_generated_invisible_primary_key=0
+# at 47976909
+#260912 22:32:37 server id 1  end_log_pos 47977016 CRC32 0x5965b098 	Write_rows: table id 661 flags: STMT_END_F
+### INSERT INTO `analytics_verify_m3_parity`.`metric_value`
+### SET
+###   @1=200
+###   @2='S20260901_47'
+###   @3='buy_rate'
+###   @4=1.0000
+###   @5=''
+###   @6='day:2026-09-01'
+###   @7=NULL
+###   @8=''
+###   @9='v1'
+###   @10='2026-09-12 22:32:37.973'
+# at 47977016
+#260912 22:32:37 server id 1  end_log_pos 47977133 CRC32 0x487de6c2 	Table_map: `analytics_verify_m3_parity`.`metric_snapshot` mapped to number 652
+# has_generated_invisible_primary_key=0
+# at 47977133
+#260912 22:32:37 server id 1  end_log_pos 47977367 CRC32 0x2ba0e00b 	Update_rows: table id 652 flags: STMT_END_F
+------------------------- TRIGGER ----------------------------
+### UPDATE `analytics_verify_m3_parity`.`metric_snapshot`
+### WHERE
+###   @1=29
+###   @2='S20260901_47'
+###   @3=1
+###   @4=3
+###   @5='2026-09-01 00:00:00.000'
+======================= END CONTEXT ===========================
+### extractor done: binlog=LAPTOP-8F8T3J1B-bin.000131 window=2026-09-12 22:00:00..2026-09-12 23:20:00 metric_hits=120 total_lines=200

@@ -1,0 +1,29 @@
+section
+== A. metric_snapshot rows for failed attempts ==
+snapshot_id	status	active_flag	version	definition_version	failure_reason_head
+S20260901_47RC	FAILED	NULL	3	v2	MP_ADS_WRITE_FAILED: 导出文件第 1 行含非白名单列（D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\fx-c-unkn
+S20260901_47RH	FAILED	NULL	2	v2	MP_VERIFY_FAILED: MP_ADS_ROWS_MATCH
+section
+== B. residual ADS rows for failed snapshot ids (expect 0 each) ==
+sid	residual_ads_rows
+S20260901_47FX	0
+S20260901_47RH	0
+S20260901_47RC	0
+section
+== C. residual metric_value rows for failed snapshot ids (expect 0 each) ==
+section
+== D. ACTIVE pointer after all failure paths (must still be S20260901_47) ==
+snapshot_id	status	active_flag	version	published_at
+S20260901_47	ACTIVE	1	1	2026-09-12 22:26:11.226
+section
+== E. ACTIVE snapshot data intact? ==
+metric_values	gmv	paid_order_cnt	uv	hot_product_rows
+10	2042.0000	5.0000	3	4
+section
+== F. whole-DB snapshot inventory (all rows in the isolated DB) ==
+snapshot_id	status	active_flag	version
+S20260901_47	ACTIVE	1	1
+S20260901_47RH	FAILED	NULL	2
+S20260901_47RC	FAILED	NULL	3
+total_metric_value_rows
+10

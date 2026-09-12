@@ -1,0 +1,104 @@
+### CMD: Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8091/api/v1/auth/login -ContentType 'application/json' -Body '{"username":"admin","password":"admin123"}'  (login only; no data write)
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "token": "57786db3bb4e423cb95388f703367714",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "realName": "系统管理员",
+      "role": "admin"
+    }
+  },
+  "traceId": "0827380f-4eac-4da9-930b-d9dde6e5fb93"
+}
+### token_present=True len=32
+### CMD: GET http://127.0.0.1:8091/api/v1/metrics/overview (Authorization: Bearer <token>)
+{
+  "code": "OK",
+  "message": "success",
+  "data": [
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "元",
+      "definitionVersion": "v1",
+      "value": 408.4,
+      "metricCode": "avg_order_value"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "",
+      "definitionVersion": "v1",
+      "value": 1.0,
+      "metricCode": "buy_rate"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "人",
+      "definitionVersion": "v1",
+      "value": 3.0,
+      "metricCode": "dau"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "",
+      "definitionVersion": "v1",
+      "value": 0.2,
+      "metricCode": "full_refund_rate"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "元",
+      "definitionVersion": "v1",
+      "value": 2042.0,
+      "metricCode": "gmv"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "元",
+      "definitionVersion": "v1",
+      "value": 1493.0,
+      "metricCode": "net_sale"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "单",
+      "definitionVersion": "v1",
+      "value": 5.0,
+      "metricCode": "paid_order_cnt"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "次",
+      "definitionVersion": "v1",
+      "value": 7.0,
+      "metricCode": "pv"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "",
+      "definitionVersion": "v2",
+      "value": 0.6,
+      "metricCode": "refund_rate"
+    },
+    {
+      "period": "day:2026-09-01",
+      "snapshotId": "S20260901_47",
+      "unit": "人",
+      "definitionVersion": "v1",
+      "value": 3.0,
+      "metricCode": "uv"
+    }
+  ],
+  "traceId": "fac3b27b-f0e7-4935-84f4-1f5e49831ed4"
+}

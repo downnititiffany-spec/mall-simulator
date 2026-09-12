@@ -1,0 +1,39 @@
+===== 第2项 落盘文件与批次清单 =====
+--- landing\manifests\44.json ---
+{
+  "batchId" : 44,
+  "batchNo" : "ing-20260912215733-85b570e5",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T21:57:33.738279",
+  "finishedAt" : "2026-09-12T21:57:33.829161800",
+  "files" : [ {
+    "file" : "2026091221.jsonl",
+    "endOffset" : 497,
+    "startOffset" : 0,
+    "acceptedRecords" : 1,
+    "quarantinedRecords" : 0
+  } ],
+  "acceptedRecords" : 1,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 496,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/44",
+  "quarantineUri" : "quarantine/44",
+  "checksum" : "d3bdd2bf",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}
+--- landing\accepted\44 目录 ---
+2026091221.jsonl  496 B  2026-09-12 21:57:33
+golden-r615-20260910164859.jsonl  0 B  2026-09-12 21:57:33
+--- landing\accepted\44 内容 ---
+{"event_id":"eb22c6ca-58be-47c4-87d2-1467cc79bbe2","event_type":"behavior","event_time":"2026-09-12T21:57:19.6892274+08:00","ingest_time":"2026-09-12T21:57:19.6912275+08:00","source_system":"mock-mall","schema_version":"1.0","trace_id":"ec5eb977-cc2d-4544-b7d2-8f751ebc3a69","payload":{"user_id":"2098607950599319554","product_id":"1001","session_id":"session-ec5eb977-cc2d-4544-b7d2-8f751ebc3a69","behavior_type":"cart_add","channel":"app","event_time_utc":"2026-09-12T21:57:19.6892274+08:00"}}
+
+--- landing\events 文件数（应为 62，原有 61 个未动）---
+count = 62
+--- landing\quarantine\44 目录 ---
+count = 2

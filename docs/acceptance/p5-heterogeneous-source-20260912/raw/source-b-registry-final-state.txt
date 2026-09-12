@@ -1,0 +1,31 @@
+### 源 B 登记动作的审计留痕 + 最终登记态（只读，时间 2026-09-12 22:13:49） 
+--- operation_audit_log 最近 10 条（本轮 API 动作的留痕）---
+id	trace_id	user_id	role	action	resource_type	resource_id	result	reason	created_at
+96	51ca4a0f-f414-47fa-bbf5-5461f3212221	admin	admin	SOURCE_UPDATE	SOURCE_REGISTRY	2	SUCCESS	修改源登记 fixture-b	2026-09-12 22:07:26.291
+95	040299e8-da3a-465d-8fab-97a7a71a830e	admin	admin	SOURCE_UPDATE	SOURCE_REGISTRY	2	SUCCESS	修改源登记 fixture-b	2026-09-12 22:07:26.272
+94	57eb30bc-a9c2-4c9e-932c-827915aa1270	admin	admin	SOURCE_UPDATE	SOURCE_REGISTRY	2	SUCCESS	修改源登记 fixture-b	2026-09-12 22:07:18.749
+93	807a4221-71fc-4ad5-827d-7d7456359c99	admin	admin	SOURCE_CREATE	SOURCE_REGISTRY	2	SUCCESS	登记新源 fixture-b	2026-09-12 22:07:13.587
+92	fd291bd7-b1ea-4cef-bd6e-1cdcfff16c15	admin	admin	AI_QUERY	AI_QUERY	q-32c266a4	SUCCESS	AI 问数	2026-09-11 09:53:56.678
+91	c2cc8215-aa60-47c9-a0ca-d96a7f0a93ba	admin	admin	DECISION_REJECT	DECISION_TASK	8	FAILED	缺少必填字段: 驳回原因（§20.3 驳回必须记录原因）	2026-09-11 09:53:32.127
+90	1cab2db4-25fd-4bcb-b5f2-b071512f1779	admin	admin	DECISION_CREATE	DECISION_TASK	8	SUCCESS	source=ai（AI 只能 DRAFT，§20.3）	2026-09-11 09:53:32.117
+89	9263f8cd-131c-4839-8fab-c8c2c2130c6e	admin	admin	DECISION_EVALUATE	DECISION_TASK	7	SUCCESS	INSUFFICIENT_DATA：完成后尚未发布新快照（当前 ACTIVE=S20260901_22 即基线快照）：完	2026-09-11 09:53:32.104
+88	634cffef-1a37-4e1b-858a-f3ab8184b12f	admin	admin	DECISION_COMPLETE	DECISION_TASK	7	SUCCESS	执行完成（完成不代表有效，需等评价窗口）	2026-09-11 09:53:32.090
+87	c47a7293-8d4e-4d2f-ae51-57a084ff60de	admin	admin	DECISION_START	DECISION_TASK	7	SUCCESS	开始执行	2026-09-11 09:53:32.077
+--- 最终登记态：source_registry 全量 + runtime_profile 绑定 ---
+id	source_code	status	warehouse_prefix	profile_path
+1	mock-mall	ACTIVE	dw	analytics-server/source-profiles/mock-mall.v1.json
+2	fixture-b	DRAFT	het	analytics-server/source-profiles/fixture-b.v1.json
+id	profile_code	status	source_id
+1	local-dev	ACTIVE	1
+--- 我新增的 file_checkpoint 行（仅我的 5 个夹具文件）---
+id	runtime_profile_id	source_id	file_path	next_offset	identity16	updated_at
+114	1	1	D:\Develop_code\GraduationProject\landing\events\b1a-envelope-vocab.jsonl	8950	1789222076777	2026-09-12 22:08:05.949
+115	1	1	D:\Develop_code\GraduationProject\landing\events\b1b-payload-vocab.jsonl	10406	1789222076795	2026-09-12 22:08:05.987
+116	1	1	D:\Develop_code\GraduationProject\landing\events\b2-missing-optional.jsonl	20507	1789222076812	2026-09-12 22:08:05.999
+117	1	1	D:\Develop_code\GraduationProject\landing\events\b3a-missing-required.jsonl	9537	1789222076827	2026-09-12 22:08:06.027
+118	1	1	D:\Develop_code\GraduationProject\landing\events\b3b-ambiguous-mapping.jsonl	9894	1789222076848	2026-09-12 22:08:06.050
+--- file_checkpoint 总数（应=原 112 + 我新增 5）---
+total_checkpoints
+118
+my_checkpoints
+5

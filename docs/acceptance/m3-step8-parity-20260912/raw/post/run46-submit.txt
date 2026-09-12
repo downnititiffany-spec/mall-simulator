@@ -1,0 +1,8 @@
+### run 46 submission (2026-09-12 21:17:06)
+request={"businessTime":"2026-09-01T00:00:00","pipelineCode":"ODS_TO_ADS","sourceDataVersion":"m3s8-golden55c-202609122117","runtimeProfileId":1}
+response.runId=46
+response.status=PENDING
+sourceDataVersion=m3s8-golden55c-202609122117
+WAIT_LANDING_status=SUCCESS
+WAIT_LANDING_records=51
+WAIT_LANDING_evidence={"batchId":43,"acceptedUri":"accepted/43","checksum":"71bbde63","acceptedRecords":51,"schemaVersions":["1.0"]}

@@ -1,0 +1,259 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.graduation:spark-jobs >----------------------
+[INFO] Building spark-jobs 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ spark-jobs ---
+[WARNING] Using platform encoding (GBK actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:compile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__52.0-1.8.0_20221110T195421.jar
+[INFO] Compiler bridge file is not installed yet
+warning: one deprecation
+warning: three deprecations (since 2.12.0)
+warning: one deprecation (since 2.12.13)
+warning: two deprecations (since 2.12.9)
+warning: 7 deprecations in total; re-run with -deprecation for details
+warning: two feature warnings; re-run with -feature for details
+6 warnings found
+[INFO] Compiler bridge installed
+[INFO] compile in 9.2 s
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ spark-jobs ---
+[WARNING] Using platform encoding (GBK actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:testCompile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[WARNING] Plugin is modifying testCompileSourceRoots through add(), which will not work in Maven 4.0.0. Use MavenProject.addTestCompileSourceRoot()/removeTestCompileSourceRoot() methods instead. If using a plugin, please upgrade to the latest version or report the issue to the plugin maintainer. To disable these warnings, set -Dmaven.project.sourceRoots.warningsDisabled=true on the command line, in the .mvn/maven.config file, or in project POM properties.
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__52.0-1.8.0_20221110T195421.jar
+[INFO] compile in 0.6 s
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ spark-jobs ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junit.JUnit3Provider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.MetricAdsSpecTest
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in com.graduation.analytics.MetricAdsSpecTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- scalatest:2.2.0:test (test) @ spark-jobs ---
+[INFO] ScalaTest report directory: D:\Develop_code\GraduationProject\spark-jobs\target\surefire-reports
+Discovery starting.
+Discovery completed in 517 milliseconds.
+Run starting. Expected test count is: 111
+OdsV2SqlContractSpec:
+OdsLoadSql
+- should A9 �ĸ�ģ��� SELECT ����ʽ��Ŀ�������λ���루������ + dt/hour ���������У�
+- should A9b ���� 'landing' AS source_file ����ʧ��source_file �� landing_file ͬԴֵͬ
+- should A10 source_system ����ƽ̨ע��ֵ����������ֵ��������ԭֵֻ�� raw_source_system
+- should A10b ע��ֵ�� SQL ��������Ⱦ���� ' ת�壨ֵ����ƽ̨������ƴ����ע�� SQL��
+- should A9c raw_event_type Ϊ���� event_type ԭ��ֵ��payload_json/payload_hash ��ԭ����Ƭ����
+- should A9d INSERT Ŀ������ SELECT ����ʽ�ı���/�����Ӿ䱣�ָ���ǰ��̬
+- should A9e ���ű���ҵ���б���ʽ�Դ� payload �ṹ��ȡ��v1 �ھ�δ��
+- should A12b ���� DWD ģ��һ���������� v2 �����У��ӷ����в�ǣ�����Σ�
+QuartileStatsRfmSpec:
+QuartileStats
+- should ���Բ�ֵ��λ����ȷ
+- should �������λ��֣�Խ���Խ��
+- should �������λ��֣����ԽС��Խ�ߣ�R ά�ȣ�
+RfmScorer
+- should �����ǩӳ����ȷ
+- should ��������״̬�ж���ȷ
+WarehouseNamespaceSpec:
+WarehouseNamespace
+- should �������� rule ������һ�£�����˳������˳��
+- should ��� vectors ���������ˣ�Scala �ࣩ
+- should ��Ϊ������null/�մ�ȱʡ���� trim��δ֪����Ƿ�����ֱ��ʧ��
+- should fromArgs �� --hiveDatabasePrefix��ȱʡ�� dw���Ƿ�ǰ׺����ҵ��Ҳ����ʧ��
+- should ���� SQL ģ���� INIT_SCHEMA �������ռ��ߣ���ǰ׺�󲻲��� dw_* ������
+- should INIT_SCHEMA �� 37 �� DDL ȫ��ֻ���õ�ǰ�����ռ�Ŀ⣨5 ���� + 32 ������
+OrderTradeCompilerSpec:
+OrderTradeCompiler
+- should CREATED��PAID��COMPLETED �ϲ�Ϊ PAID ��Ч֧��
+- should ������Ʒ�����ڶ�����ϸ�в������У���Ʒչ����
+- should ȡ������������֧����final_paid_flag=0��
+- should ��֧����ȫ���˿GMV ����֧��������۶�Ϊ��
+- should �����˿� �� REFUNDING �� final_refunded_flag=0
+- should ����˿��¼��� refund_id ȥ�ػ��ܣ�ͬһ refund_id ֻ��һ�Σ�
+- should ��������ҵ������ order_created �������ٵ��¼����㵽ԭ����
+OdsV2EdgeCaseSpec:
+JsonObjectSlicer on controlled fixtures
+- should A5c Ƕ��/ת�����г���ԭ����Դ����һ�����ֽ���ͬ
+- should A6 �� payload �����У�ȱ payload / ֵ�Ƕ��������ճ������˫ NULL�����в�ȱ�����߼��� valid բ�ܾ�
+- should A6b ��ͬ payload �� hash ��ͬ�����ж��ڣ�hash ����ϣ�����ȥ�ؼ���
+- should A7b source_system ȫ������ע��ֵ��raw_source_system �������ڲ��죨row-src/other-src��
+- should A8b ���� landing_file ��ָ���ܿؼо��ļ���source_file ��֮���
+MetricAdsSpecTest:
+MetricAdsSpec
+- should ���� 8 �� ADS �� Hive/MySQL ����һһ��Ӧ
+- should P1-04������ǰ׺���滻������ӳ�䲻д������Դʱͬһ�׹���ã�
+- should ���嵥�� Java �� MetricAdsCatalog ��ȫһ�£���˳��
+- should R7-0 �ھ����ѹ�ͨ�������ھ���full_refund_rate ���뵼����
+MetricExportJob.posix
+- should �� Windows ·���淶����б�ܣ��嵥�� JSON����б�ܻ��Ƿ�ת�壩
+SqlTemplateSpec:
+OdsLoadSql
+- should �汾���˲����� dt/hour ����
+- should �û����� ODS ���� user_registered �ұ��������ֶ�
+- should ��Ʒ���� ODS ������Ʒ�����¼��ҽ��ת DECIMAL
+- should �������� ODS ���Ƕ���/֧��/�˿��Ҳ��� behavior ���˵�
+- should �����а�δ֪�汾��ȱʧ����ɸѡ
+DimSql
+- should �û�ά��ȡÿ user_id �����¼����ɿ��ղ�������Դ����
+- should ��Ʒά��ȡÿ product_id ���½����¼����� unknown key ���ף�����¼��������գ�
+DwdSql
+- should event_id ȥ����ֻ�����Ϸ�ö��
+- should �ظ��¼�д��ܾ���¼
+DwsSql
+- should �û��տ�������Ϊ���� CASE �ۺ��� buy ���Զ�����ϸ
+- should ©�� DWS Ϊ�����û��ھ��� order/pay �û����Զ�����ϸ����Ӳ���� 0��
+- should ��Ʒ��Ϊ�� buy ������Ч֧������������Ϊö�٣���ת���ʲ��ܳ�״̬
+- should �����ջ��ܰ���Ч֧���ھ���order_count=֧������������������ĸ 0
+- should ��Ʒ������/�û���������/����������ģ������ҿھ���ȷ
+AdsSql
+- should �����˿��ʷ�ĸ 0 �� null������������ TopN
+- should DEF-08��������Ʒ��ȡά�ȶ��ף�ȱʧά�ȵ���Ʒ���ò��� NULL �������� BLOCKING �չؼ�����Ϸ�����
+- should R7-0 �ھ���PV ֻ�� view���˿��ʰ�����������˿�Ķ�����������ȫ���˿���
+- should ©�� ADS չ�� 4 �� stage ��
+- should ��Ʒת�� buy_users ȡ��Ʒ���� DWS ȥ����������� buy ����
+- should �û����� RFM �ֲ㣺���λ + �����ǩ + ��������
+- should DEF-10���û������ NOT NULL �в��ò��� NULL���µ�����������Ϊ���û���ѷ��� INSERT ��ң�
+- should �����������̰��� 4 �� QualityChecker ͬ������
+FunnelHeatAnomalySpec:
+FunnelComputer
+- should �Ľ׶�ת���������幺��ת������ȷ
+- should ��ĸΪ 0 ʱ���� None
+ProductHeat
+- should ����Ȩ���ȶȣ�����>�ӹ�>�ղ�>���
+- should ͷ�����׶ȼ��㣨��β��
+AnomalyDetector
+- should z-score ��ֵ�ж�
+- should IQR �߽���ά�ȹ���
+Cleaners
+- should ʱ���׼����У��ν��
+JobArgsRegistrySpec:
+JobArgs.parse
+- should ������׼������У�����
+- should �ܾ�ȱ����Ƿ�����
+JobRegistry
+- should ע��ȫ�� 11 ��ҵ������˳����ȷ
+OdsV2ByteFidelitySpec:
+JsonObjectSlicer
+- should A5 payload ȱʧ/����һ�� Left�������� Right ��Ϊԭʼ�Ӵ�
+- should A5b �޿հ�/��հ�/ת�� ������̬��ԭ�����أ������ո񡢲���ԭת�壩
+- should A4b golden �� 1 �� payload �� SHA-256 ����� oracle ���ֽ�һ�£�122 �ֽڣ�
+- should A4 ���бȶԣ�Դ�� payload ԭ�� == ���� payload_json��SHA-256 == ���� payload_hash
+- should A6 landing ԭ���в�����ȥ�ؼ���ͬһ payload_hash �����ж�������hash ����ϣ�
+- should A7 source_system ȡƽ̨ע��ֵ����������ֵ����raw_source_system ������ԭ��
+- should A8 landing_file/source_file ȡ��ʵ����ļ�·�����ǳ��� 'landing'��
+- should A12c �˵������ܣ�golden 55 �ж��룬��������ϼ� 52 �У�3 �� rejected��
+- should A12d metastore ���صı��ṹ�� 12 �й����У�˳����Ψһ������һ��
+SurrogateKeySpec:
+��Լ������
+- should �ɱ�����������Ϊ 23���� 3 �� NULL_KEY��
+- should ÿһ�� KEY ������normalized / material / sha256 / keyHex16 / keyBigint ȫ������
+- should ÿһ�� NULL_KEY �����������ɼ���None��������Լ rawInput ���������ֿ� rawInputNotation
+- should category / brand / coupon �����������У�������ɴ���������ݣ�
+- should ��Լö�����ʵ��һ�ɾܾ���D-093��order �������ô������㷨��
+- should ͬһ��Ԫ���ͬ�����ݵȣ�����ͬ��Ԫ�鲻ͬ�������䣬17 ������ײ��
+- should ������ [1, 2^63-1]�������λ + ȫ��ȡ 1��D-085��
+SurrogateKey.toBIGINT��SQL ����ʽ��
+[vector] id  | kind           | expect   | SQL                  | contract
+[vector] V01 | UUID           | KEY      | 2447453834011197358  | 2447453834011197358
+[vector] V02 | ѩ�� 19 λ        | KEY      | 5315975343567279541  | 5315975343567279541
+[vector] V03 | ������            | KEY      | 3315011698423901889  | 3315011698423901889
+[vector] V04 | ǰ׺����           | KEY      | 5981468240952732083  | 5981468240952732083
+[vector] V05 | ������(Ŀ¼��Ʒ)      | KEY      | 6483880395745046246  | 6483880395745046246
+[vector] V06 | ǰ׺����(����)       | KEY      | 1671956594246542886  | 1671956594246542886
+[vector] V07 | ǰ׺Сд           | KEY      | 5981468240952732083  | 5981468240952732083
+[vector] V08 | ��β�ո�           | KEY      | 5981468240952732083  | 5981468240952732083
+[vector] V09 | �� ASCII        | KEY      | 1135207786598686877  | 1135207786598686877
+[vector] V10 | ���� 256         | KEY      | 1676764569004255147  | 1676764569004255147
+[vector] V11 | �� ASCII ���ո�    | KEY      | 5776179213896010825  | 5776179213896010825
+[vector] V12 | UUID ��д        | KEY      | 2447453834011197358  | 2447453834011197358
+[vector] V13 | �մ�             | NULL_KEY | NULL                 | NULL
+[vector] V14 | ���հ�            | NULL_KEY | NULL                 | NULL
+[vector] V15 | null           | NULL_KEY | NULL                 | NULL
+[vector] V16 | ͬ raw ��ͬ source | KEY      | 3436230387295700     | 3436230387295700
+[vector] V17 | ͬ raw ��ͬ����     | KEY      | 2297900066440525769  | 2297900066440525769
+[vector] V18 | �����ַ��� vs ��ֵ    | KEY      | 6603676604773133034  | 6603676604773133034
+[vector] V19 | �ɽ���Ϊ����         | KEY      | 6407942324792645581  | 6407942324792645581
+[vector] V20 | ���ָ���           | KEY      | 7762353590738385298  | 7762353590738385298
+[vector] V21 | ��ηָ���          | KEY      | 8192779654316538825  | 8192779654316538825
+[vector] V22 | ����+ð��          | KEY      | 6604609974941637228  | 6604609974941637228
+[vector] V23 | ���ָ��� id        | KEY      | 192898393099506332   | 192898393099506332
+- should ����ʵ Spark �����������ڴ�ʵ��ֵͬ
+- should �մ� / ���հ� / NULL ���������� SQL �඼�õ� NULL�������ڱ������ϲ���
+���������������� warehouse + �ƽ� 55 ����
+[A5] �ɿھ� JOIN ���� = 15
+[A5] �¿ھ� JOIN ���� = 15
+[A5] �ɿھ�ά���������� = 16
+[A5] �¿ھ�ά���������� = 16
+[A7] dim_product ���� = 4
+[A7] product_key        �� NULL = 4
+[A7] category_key       �� NULL = 4
+[A7] parent_category_key �� NULL = 0
+[A7] brand_key          �� NULL = 4
+- should ���в������¼�������Լֵͬ��A6��/A6�ݣ�
+- should ��д��һ�����Ļ��޹أ�Locale.ROOT�������������������²��ñ���
+OdsV2SchemaOwnerSpec:
+- should A3c v1 �����е�����/˳�����������������ǰ������λһ�£�һ��������������Ư��
+- should A1 v2 ������ȫ��׷���� v1 ��֮�󣨼����е����һ�񲻶���
+- should A1b 12 �����������ű��ﶼ�ڣ��ҹ����Σ��ŷ� 7 �У���λһ��
+- should A2 event_time ���� STRING�������������ڱ�����Χ��
+- should A3 ���ű�������ͬ��ҵ���и������У����ǰ�ͬһ�� payload_* ���ı飩
+- should A3b �ŷ⹲���������� payload_ ǰ׺��ҵ���������뺬 payload_ ǰ׺���ֲ㲻�죩
+- should A11 warehouse/ddl/00-ods.sql �����ű�����/����/˳����Ψһ����������һ��
+- should A11b ��̬ DDL �� v1 ȫ���������ǰ������λһ�£�ֻ������β��׷�ӣ�
+- should A11c ��̬ DDL �������м���Ψһ����������һ�£��������� PARTITIONED BY ��
+- should A12 LocalSchemaInitJob �� ODS ��������Ψһ����������������һ���������������
+IdCodecSpec:
+IdCodec
+- should ������Լ id ����ĸǰ׺��U/P/O/C/B����ת����
+- should ������ id ԭ��ͨ�������ݾɼо����̳�����������
+- should �޷����ֻ���ȡֵ���� None ������ 0������Ĭ���ף�
+- should ���������һ�µ� SQL ����ʽ��ȫƥ����״����ƥ�� �� NULL��
+���� id �нӵ�
+- should �� IdCodec ��һ��������ֱ�� CAST ��Լ id
+- should ��Ϊ/ά��/�������� id ���Ĺ�һ���������ж�Ӧ��ȷ
+- should ODS ����㱣���ַ���ԭ�ģ����� ODS ��ǰת�ͣ�
+JsonObjectSlicerSpec:
+JsonObjectSlicer
+- should A5 �������г�ԭʼ�Ӵ���ȱʧ/Ƕ��/�ظ���/δ��ƽ/�Ƕ��� һ�� Left
+- should A5b �޿հ�/��հ�/ת�� ������̬��ԭ�����أ������ո񡢲���ԭת�壩
+- should A5c ������/ת�������Ƕ����������ȷ�ҵ������������������Ƕ�׶����ﲻ�㶥�㣩
+- should A5d ȱð��/ȱֵ/δ��ֹ�ַ��� һ�� Left�������쳣��
+- should A4b �ƽ�оߵ� 1 �� payload �� SHA-256 ����� oracle ���ֽ�һ�£�122 �ֽڣ�
+- should A4c �ƽ�о����У���Ƭ���������Դ�е�ԭʼ�Ӵ������������л����
+Run completed in 21 seconds, 422 milliseconds.
+Total number of tests run: 111
+Suites: completed 15, aborted 0
+Tests: succeeded 111, failed 0, canceled 0, ignored 0, pending 0
+All tests passed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  34.387 s
+[INFO] Finished at: 2026-09-12T21:15:55+08:00
+[INFO] ------------------------------------------------------------------------

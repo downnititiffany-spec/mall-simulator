@@ -1,0 +1,23 @@
+### LOCAL CHAIN SUBMIT #2 2026-09-12 21:06:48
+body={
+  "businessTime": "2026-09-01T00:00:00",
+  "sourceDataVersion": "m3s8-golden55b-20260912210642",
+  "pipelineCode": "ODS_TO_ADS",
+  "runtimeProfileId": 1
+}
+
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "runId": 45,
+    "idempotencyKey": "1|ODS_TO_ADS|2026-09-01T00:00|m3s8-golden55b-20260912210642",
+    "status": "PENDING",
+    "currentStage": "PENDING",
+    "errorCode": null,
+    "attemptNo": 1,
+    "targetSnapshotId": null,
+    "stages": []
+  },
+  "traceId": "7b5ed395-ed7e-4453-b49b-17c6f9cd2c04"
+}

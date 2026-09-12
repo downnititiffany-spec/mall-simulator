@@ -1,0 +1,177 @@
+# P2-03 回归证据专章（P2-03-m 修复 + run 46 复跑）
+
+- 生成人：专职执行泳道
+- 分支：`remediation/r1-boundary`
+- 状态：**修复已构建并已实测复跑；复跑仍失败，根因由「`nullSafe` 裸 NULL」被证伪（或至少不完整）⇒ 已停手上报，未再改代码。**
+  - **【21:26 后续】** 真根因随后被实测钉死（INSERT/DDL **位置错位**），完成 P2-03-m2 修复，
+    **run 47 八阶段全绿**。本专章保留为「假设一被证伪」的原始证据链；
+    结论与后续见 §6 的更新块及 `raw/post/p2-03-m2-rootcause-evidence.txt`。
+  - 本书内的「未改代码 / 已停手 / 假设未经实测」等表述，均为 **21:20 之前**的状态，**已过时但保留备查**。
+
+---
+
+## 1. 时间线（全部为实测时刻）
+
+| 时刻 | 事件 | 证据 |
+|---|---|---|
+| 17:37:56 | **run 43 `tdw` SUCCESS**（旧 jar，同一 1,000 行输入 batch 42） | `pipeline-43-BUILD_DWD-tdw-*.log`（138 行，30 分区） |
+| 20:48:56 | commit `ccc1dff` P2-03（代理键统一实现 + 维表/明细接入 + DDL 对齐，白名单 11 文件） | `git show -s ccc1dff` |
+| 20:52:06 | 重建 jar **296,327 B** sha256 `B3E0F8F5…7E3A` | `raw/mapping-fingerprint-before-run.txt` |
+| 21:03:40→21:06:07 | **run 44 FAILED**（`BUILD_DWD` `RUN_JOB_FAILED`） | `raw/post/MISFIRE-run44-evidence.txt` |
+| 21:06:48→21:08:08 | **run 45 FAILED**（`tdw` `CANNOT_SAFELY_CAST`） | `raw/post/local-chain-submit-run45.txt` |
+| 21:09 | 总控裁决 D-141：P2-03 `REVIEW` → `REGRESSED`，授权 P2-03-m 最小定型修复 | 本泳道收到的指令 |
+| 21:13–21:15 | **E1 编译 ✓**（JDK17，36 Scala 源，12.1 s，0 错误）；**E2 111/111 通过**（JDK8） | `raw/post/p2-03-m-build.log`、`raw/post/p2-03-m-e2-tests.log` |
+| 21:16:11 | **重建 jar 296,334 B** sha256 `E8E8C9372E0190BA86CF5B8464FDD730F51911E60CCB57939E02DC6E10E1B1A3` | `raw/post/p2-03-m-new-jar-fingerprint.txt` |
+| 21:17:06 | **run 46 提交**（`sourceDataVersion=m3s8-golden55c-202609122117`） | `raw/post/run46-submit.txt` |
+| 21:17:06 | `WAIT_LANDING` SUCCESS **records=51**（命中 batch 43） | 同上 |
+| 21:18:12 | **run 46 FAILED**，`tdw` 报**完全相同**的 `CANNOT_SAFELY_CAST` | `raw/post/run46-final.json` |
+
+---
+
+## 2. 受控对照（变量只有 jar）
+
+| 维度 | 旧 jar 组 | 新 jar 组 |
+|---|---|---|
+| jar | 296,327 B / 20:52:06 前的构建 | 296,327 B / 20:52:06 sha256 `B3E0F8F5…` |
+| 输入 | batch 42，1,000 行 | batch 42，1,000 行 |
+| run | run 43 | run 44 |
+| `tdw` 结果 | **SUCCESS**（138 行） | **FAILED**（`CANNOT_SAFELY_CAST`） |
+
+⇒ 变量只有 jar，故 **`ccc1dff` 引入的构建缺陷成立**（该结论由总控 D-141 采纳）。
+
+### 2.1 修复组的对照（本专章新增）
+
+| 维度 | run 45（修复前） | run 46（修复后） |
+|---|---|---|
+| jar | 296,327 B sha256 `B3E0F8F5…` | **296,334 B** sha256 `E8E8C937…`（+7 B） |
+| jar 内是否含定型修复 | 否 | **是**（类常量池含 `THEN CAST(NULL AS BIGINT) ELSE`） |
+| class major | 52 | **52**（JDK8 target，未漂移） |
+| 输入 batch | 43（accepted 51） | 43（accepted 51），`WAIT_LANDING records=51` |
+| `LOAD_ODS` | SUCCESS 51 | SUCCESS 51 |
+| `bdw` | SUCCESS in15/out14/rej1 | SUCCESS in15/out14/rej1 |
+| `dim` | SUCCESS in18/out7 | SUCCESS in18/out7 |
+| **`tdw`** | **FAILED** `CANNOT_SAFELY_CAST user_key "STRING" to "BIGINT"` | **FAILED 同一错误码、同一列名、同一文案** |
+
+**⇒ 修复无效。`nullSafe` 的裸 `NULL` 不是（或不只是）该错误的原因。**
+
+---
+
+## 3. 修复 diff 摘要（P2-03-m，最小改动）
+
+`git diff --stat`：**2 文件，24 insertions(+)，3 deletions(-)**；完整 diff 见 `raw/post/p2-03-m-fix.diff`。
+
+### 3.1 `spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala`
+
+```diff
+   def nullSafe(expr: String, guards: String*): String = {
+     require(guards.nonEmpty, "nullSafe 至少需要一个 guard（无 guard 时不该调用 nullSafe）")
+     val cond = guards.mkString(" OR ")
+-    s"CASE WHEN $cond THEN NULL ELSE $expr END"
++    s"CASE WHEN $cond THEN CAST(NULL AS BIGINT) ELSE $expr END"
+   }
+```
+
+- 调用点仅 **2 处**，均在 `SurrogateKey` 内（`toBIGINT` :282、`literalSource` :301），`expr` 均来自
+  `keyExpr` → `keyFormula`，出口为 `GREATEST(cast(conv(…) AS BIGINT), …)`，**同族不变量**为 BIGINT。
+- 另加实测缺陷说明（缺陷 3 / P2-03-m）注释 **21 行**，记录 run 44/45 的报错原文与「显式定型」的修法与理由。
+- **未动**：D-116 枚举护栏、D-087 的 NULL 语义、`keyFormula` 公式、任何 SQL 语义、`*_key` 的 `-1` 兜底。
+
+### 3.2 `spark-jobs/src/test/scala/com/graduation/analytics/SurrogateKeyVectorSupport.scala`
+
+```diff
+-       |     THEN NULL ELSE ${SurrogateKey.keyFormula(sourceExpr, entity, rawIdExpr)} END""".stripMargin
++       |     THEN CAST(NULL AS BIGINT) ELSE ${SurrogateKey.keyFormula(sourceExpr, entity, rawIdExpr)} END""".stripMargin
+```
+
+理由：该夹具自带**内联**判空包装（不调用生产 `nullSafe`），若停在裸 `NULL`，夹具与生产就不再是
+「同一个表达式」——正是该夹具注释所警告的漂移。修后夹具与生产同形态。
+
+---
+
+## 4. 为什么两个「嫌疑犯」都被排除（证据）
+
+### 4.1 目标表结构 = 正确（排除「表旧」）
+
+只读 `DESCRIBE dw_dwd.dwd_order_detail`（本地嵌入式 Derby 元数据库，未走集群 metastore）：
+
+- 23 列，列序与 `LocalSchemaInitJob.scala:63-72` **完全一致**
+- `user_key bigint`（第 20 列）、`product_key bigint`、`category_key bigint`
+- 证据：`raw/post/describe-dwd-order-detail.txt`（`Fetched 26 row(s)`，含 3 行分区信息表头）
+
+⇒ 表结构正确，**不是**「`CREATE TABLE IF NOT EXISTS` 没追上 DDL」。
+另注：run 43 用旧 jar 成功写入同一张表 138 行，也证明该表可被写。
+
+### 4.2 代码字面 = 已定型（排除「没重新编译 / 没生效」）
+
+- `IdCodec.toBIGINT` = `CAST(REGEXP_EXTRACT(…) AS BIGINT)` → BIGINT
+- `SurrogateKey.keyFormula` → `GREATEST(cast(conv(…) AS BIGINT), 1)` → BIGINT
+- 修复后 `nullSafe` 的 NULL 分支 = `CAST(NULL AS BIGINT)`
+
+**且已证明新 jar 真的被加载**：jar mtime `21:16:11`，`tdw` 作业提交于 `21:18:02`
+（`lp-1789219082585-2b979c`，见 `raw/post/run46-final.json` 的 `externalJobId`）⇒ 提交时刻**晚于**
+jar 重建时刻 ⇒ spark-submit 读到的是新 jar。
+
+---
+
+## 5. 报错原文（原样，未改写）
+
+```
+进程退出码非0(exit=1): [INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] Cannot write incompatible
+data for the table `spark_catalog`.`dw_dwd`.`dwd_order_detail`: Cannot safely cast `user_key`
+"STRING" to "BIGINT".
+```
+
+- 作业 JSON 行原文：`raw/post/run46-final.json` 的 `BUILD_DWD.jobs[tdw].errorMessage`
+- 作业日志：`landing/logs/pipeline-46-BUILD_DWD-tdw-a1__lp-1789219082585-2b979c.log`
+- run 45 的同一行（对照）：`landing/logs/pipeline-45-BUILD_DWD-tdw-a1__lp-1789218476735-099b1f.log`
+
+---
+
+## 6. 下一步线索 → **已升级为「已实测的根因」**（本节为历史记录，结论见更新块）
+
+> **【2026-09-12 21:26 更新 · 状态：假设 → 已证实】**
+> 本节原登记的「假设，未经实测」**已被实测钉死为真根因**，并据此完成 P2-03-m2 修复：
+> - **机制**：`INSERT OVERWRITE TABLE … PARTITION (dt)` 未给分区值时，Spark 仍要求 SELECT 提供该列，
+>   且它**必须落在 SELECT 最末位**。**`ccc1dff` 之前没有错位**：旧表 = 19 个普通列 ＋ 动态分区列 `dt`，
+>   旧 SELECT = 19 个普通值 ＋ `t.dt` ⇒ `t.dt` 前面已有 19 个普通字段，它是**第 20 项**，位置**正确**。
+> - **`ccc1dff`(P2-03) 才引入缺陷**：新增 3 个 `BIGINT` 代理键并**追加在 `t.dt` 之后**（`t.dt` 位置未动）
+>   ⇒ 按位置匹配时，第 20 个**普通列**已变成 `user_key`(BIGINT) ⇒ STRING 的 `t.dt` 落入其中。
+>   STRING→BIGINT **不安全** ⇒ `CANNOT_SAFELY_CAST` ⇒ 阶段失败。
+>   报错里的 STRING 就是 **`t.dt`**，不是 `user_key` 表达式。
+> - **正确顺序**：19 个数据字段 → `user_key` → `product_key` → `category_key` → `t.dt`（与 DDL 列序一致）。
+> - **撤回**：早先本块写的「旧表第 19 列 `final_refunded_flag`(INT) ⇒ STRING→INT 安全 ⇒ run 43 静默写错」
+>   **不成立，已删除**：旧形态 `t.dt` 恰好落在分区位，写入是正确的；也**不得**用 run 43 与 run 47 的
+>   行数/分区数差异论证数据损坏（两者输入批次不同）。
+> - **实验 1**（复刻错位形态：19 个普通值后紧跟 STRING 的 `t.dt`，即 `t.dt` 为**第 20 项**，一次性表）
+>   ⇒ **逐字复现**同一报错。
+> - **实验 2**（同一 SELECT，**仅** `t.dt` 移到末位）⇒ 写入成功，读回 `EXPERIMENT2_OK 111 222 333 20260901 0`。
+> - **m2 修复**后 **run 47 八阶段全绿**，`tdw` in18/out139/rej0，本地快照 `S20260901_47` 已产出。
+> - **假设一（`nullSafe` 裸 NULL）＝ 已证伪（hypothesis-1 / FALSIFIED）**：必要但不充分；
+>   修复保留的理由**仅限**「改善类型确定性」，**不得**作为根因。
+> - 实验库/表已彻底删除并二次确认。
+>
+> 详见 `raw/post/p2-03-m2-rootcause-evidence.txt`（含 23 行逐列位置对照表与全量结果）。
+
+### 6.1 原始线索记录（保留备查）
+
+已排除 `nullSafe`。剩余最可疑点是 `TradeDwdJob.orderDetailInsertSql`（`:136-158`）的
+**INSERT 无列名 + 与 DDL 列序的位置约定**：该 SELECT 把 `t.dt` 放在第 19 个取值，
+而 DDL 里 `dt` 在**列尾**（第 23）；源码注释自称「位置必须对齐」。若位置不齐，
+错位后落进 `user_key`（`BIGINT`）的取值可能是 STRING 列（如 `order_date`/`order_status`），
+报错形态与实测**一致**。
+
+当时状态：**假设，未经实测**（验证需把作业生成的 SQL 原文取出，或对比 `OUT_SCHEMA` 与 DDL 的逐列位置）。
+
+**事后核对（订正原始线索的一处猜测）**：错位落进 `user_key` 的**不是** `order_date`/`order_status`，
+而是 **`t.dt` 本身**——因为 `t.dt` 在 SELECT 里位于 `final_refunded_flag` 之后、代理键之前。
+这一点已由实验 1/2 与 23 行位置对照表钉死。
+
+---
+
+## 7. 边界与合规
+
+- 未 `git add/commit/push`（留总控入库）
+- 未触碰 `e4c1000`、`/graduation/export/e4c1000`、`/graduation/export/m3s8-55`
+- 未写 MySQL 业务数据（仅只读 SELECT + 平台自身的 run 记录）
+- 未改平台配置、未重启平台（PID 61104 仍在）
+- landing 未再停放/未再采集；未复用 runId；`S20260901_45` 未动

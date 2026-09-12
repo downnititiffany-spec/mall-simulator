@@ -1,0 +1,9 @@
+### CMD (READ ONLY) 2026-09-12 23:11:06
+### KEY: information_schema.TABLES.TABLE_ROWS is an InnoDB ESTIMATE, not COUNT(*).
+now_ts
+2026-09-12 23:11:06
+tbl	exact_count	is_table_rows	auto_inc	max_id
+analytics_metric.metric_snapshot	12	9	25	27
+analytics_metric.metric_value	110	80	121	150
+analytics_meta.metric_snapshot	9	9	10	9
+analytics_meta.metric_value	132	132	133	132

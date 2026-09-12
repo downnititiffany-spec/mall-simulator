@@ -1,0 +1,72 @@
+### 采集运行 #1（时间 2026-09-12 22:08:05） 
+--- POST /api/v1/ingestion/runs  body={} ---
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "batchId": 45,
+    "batchNo": "ing-20260912220805-04beeb43",
+    "status": "QUARANTINED",
+    "recordCount": 84,
+    "quarantineCount": 96,
+    "errorCount": 0,
+    "fileCount": 5,
+    "acceptedBytes": 28349,
+    "acceptedDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\45",
+    "quarantineDir": "D:\\Develop_code\\GraduationProject\\landing\\quarantine\\45",
+    "manifestPath": "file:///D:/Develop_code/GraduationProject/landing/manifests/45.json",
+    "noNewData": false
+  },
+  "traceId": "65497a61-519a-4406-a5ca-0cd2ab103064"
+}
+耗时: 0.1560926 s
+--- GET /api/v1/ingestion/batches?limit=3 ---
+{
+  "code": "OK",
+  "message": "success",
+  "data": [
+    {
+      "id": 45,
+      "batchNo": "ing-20260912220805-04beeb43",
+      "runtimeProfileId": 1,
+      "sourceId": 1,
+      "source": "local-file",
+      "status": "QUARANTINED",
+      "recordCount": 84,
+      "errorCount": 0,
+      "quarantineCount": 96,
+      "landingDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\45",
+      "startTime": "2026-09-12T22:08:05.906",
+      "endTime": "2026-09-12T22:08:06.052"
+    },
+    {
+      "id": 44,
+      "batchNo": "ing-20260912215733-85b570e5",
+      "runtimeProfileId": 1,
+      "sourceId": 1,
+      "source": "local-file",
+      "status": "SUCCESS",
+      "recordCount": 1,
+      "errorCount": 0,
+      "quarantineCount": 0,
+      "landingDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\44",
+      "startTime": "2026-09-12T21:57:33.734",
+      "endTime": "2026-09-12T21:57:33.826"
+    },
+    {
+      "id": 43,
+      "batchNo": "ing-20260912210642-e4588aa7",
+      "runtimeProfileId": 1,
+      "sourceId": 1,
+      "source": "local-file",
+      "status": "QUARANTINED",
+      "recordCount": 51,
+      "errorCount": 0,
+      "quarantineCount": 4,
+      "landingDir": "D:\\Develop_code\\GraduationProject\\landing\\accepted\\43",
+      "startTime": "2026-09-12T21:06:42.277",
+      "endTime": "2026-09-12T21:06:42.303"
+    }
+  ],
+  "traceId": "a76527a3-e62c-427b-be04-65ca7b6d96bb"
+}

@@ -1,0 +1,16 @@
+21:06:57 run45=RUNNING|LOAD_ODS|-|NULL|S20260901_45  WAIT_LANDING=[WAIT_LANDING records=51 SUCCESS]
+21:07:02  run45=RUNNING|LOAD_ODS|-|NULL|S20260901_45
+21:07:22  run45=RUNNING|LOAD_ODS|-|NULL|S20260901_45
+21:07:42  run45=RUNNING|BUILD_DWD|-|NULL|S20260901_45
+21:08:02  run45=RUNNING|BUILD_DWD|-|NULL|S20260901_45
+21:08:22  run45=FAILED|FAILED|RUN_JOB_FAILED|NULL|S20260901_45
+--- full stage rows for run 45 ---
++-----+--------------+---------+---------+-------------------------+-------------------------+
+| id  | stage_code   | status  | records | started_at              | finished_at             |
++-----+--------------+---------+---------+-------------------------+-------------------------+
+| 288 | WAIT_LANDING | SUCCESS |      51 | 2026-09-12 21:06:48.280 | 2026-09-12 21:06:48.287 |
+| 289 | INIT_SCHEMA  | SUCCESS |      37 | 2026-09-12 21:06:48.288 | 2026-09-12 21:06:56.367 |
+| 290 | LOAD_ODS     | SUCCESS |      51 | 2026-09-12 21:06:56.371 | 2026-09-12 21:07:26.547 |
+| 291 | BUILD_DWD    | FAILED  |      21 | 2026-09-12 21:07:26.552 | 2026-09-12 21:08:08.798 |
++-----+--------------+---------+---------+-------------------------+-------------------------+
+RESULT final='FAILED|FAILED|RUN_JOB_FAILED|NULL|S20260901_45' elapsed_s=80.2

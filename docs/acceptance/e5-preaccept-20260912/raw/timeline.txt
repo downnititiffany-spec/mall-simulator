@@ -1,0 +1,8 @@
+E5-PREACCEPT-BASELINE  generated=2026-09-12 21:52:55
+== 发现时进程/端口状态（本轮开始，未启停任何东西）==
+LISTEN :::8091 owningPid=61104
+PID 61104 name=java.exe cmd="D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dplatform.metric.publish.export-dir=D:\Develop_code\GraduationProject\metric-staging -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+landing/events 文件数 = 61
+landing/manifests 文件数 = 43
+
+===== 第1项 HTTP 原始取证 2026-09-12 21:53:30 =====

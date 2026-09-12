@@ -1,0 +1,47 @@
+=== ① 画像 ===
+PASS fixture-b.v1.json 顶层键=9 且覆盖冻结契约: profileVersion,sourceCode,canonical,eventTypeMapping,fieldMapping,enumSemantics,identityPolicy,timePolicy,quarantinePolicy
+PASS fixture-b.v1.json sourceCode=fixture-b (实际 fixture-b)
+     bytes=3581 sha256=CE2E6DBC791F9FA65592C1CF37242CCFA86B3B293CA65BD713D62E7D7FEF13BD
+     同目标多来源: status<-sale_state|order_state, quantity<-qty|hold_qty, amount<-line_amount_fen|paid_fen
+PASS scenario-b2-canonical.v1.json 顶层键=9 且覆盖冻结契约: profileVersion,sourceCode,canonical,eventTypeMapping,fieldMapping,enumSemantics,identityPolicy,timePolicy,quarantinePolicy
+PASS scenario-b2-canonical.v1.json sourceCode=fixture-b (实际 fixture-b)
+     bytes=3125 sha256=57DE1116409BBB2E5B5F20233FAF6986A8A3C5F0C177F75C9B50BDFE49E3266E
+     同目标多来源: 无
+PASS scenario-b3-ambiguous.v1.json 顶层键=9 且覆盖冻结契约: profileVersion,sourceCode,canonical,eventTypeMapping,fieldMapping,enumSemantics,identityPolicy,timePolicy,quarantinePolicy
+PASS scenario-b3-ambiguous.v1.json sourceCode=fixture-b (实际 fixture-b)
+     bytes=1596 sha256=1188B19E91336640A72BEC5595D79CB07D9455273A7DE3450D600F5265F1E36A
+     同目标多来源: amount<-amount|pay_money|settle_amount
+=== ② 夹具 ===
+PASS b1a-envelope-vocab.jsonl sha256 与 manifest 一致
+PASS b1a-envelope-vocab.jsonl 行数=30（实际 30）
+PASS b1a-envelope-vocab.jsonl 逐行 JSON 可解析（坏行 0）
+PASS b1b-payload-vocab.jsonl sha256 与 manifest 一致
+PASS b1b-payload-vocab.jsonl 行数=30（实际 30）
+PASS b1b-payload-vocab.jsonl 逐行 JSON 可解析（坏行 0）
+PASS b2-missing-optional.jsonl sha256 与 manifest 一致
+PASS b2-missing-optional.jsonl 行数=60（实际 60）
+PASS b2-missing-optional.jsonl 逐行 JSON 可解析（坏行 0）
+PASS b3a-missing-required.jsonl sha256 与 manifest 一致
+PASS b3a-missing-required.jsonl 行数=30（实际 30）
+PASS b3a-missing-required.jsonl 逐行 JSON 可解析（坏行 0）
+PASS b3b-ambiguous-mapping.jsonl sha256 与 manifest 一致
+PASS b3b-ambiguous-mapping.jsonl 行数=30（实际 30）
+PASS b3b-ambiguous-mapping.jsonl 逐行 JSON 可解析（坏行 0）
+=== ③ 逐行期望 ===
+PASS expected/B1-expected-outcomes.tsv 表头正确
+PASS expected/B1-expected-outcomes.tsv 期望行数=60（实际 60）
+     族: B1A-信封异构 / B1B-payload异构
+     期望结论分布: {"ACCEPT":60}
+PASS expected/B2-expected-outcomes.tsv 表头正确
+PASS expected/B2-expected-outcomes.tsv 期望行数=60（实际 60）
+     族: B2-1-缺契约必需(闸门未查) / B2-2-字段为null / B2-3-缺源声明可选字段
+     期望结论分布: {"ACCEPT":60}
+PASS expected/B3-expected-outcomes.tsv 表头正确
+PASS expected/B3-expected-outcomes.tsv 期望行数=60（实际 60）
+     族: B3A-1-缺闸门必需字段 / B3A-2-缺契约必需(闸门未查) / B3A-3-缺信封必需字段 / B3B-A1-字段映射歧义(无规范字段) / B3B-A2-字段映射歧义(有规范字段) / B3B-B-未裁定枚举 / B3B-C-金额类型歧义 / B3B-D-时间格式歧义
+     期望结论分布: {"QUARANTINE":60}
+=== ④ 登记绑定画像 与 验收留档副本 必须逐字节一致 ===
+PASS binding=analytics-server/source-profiles/fixture-b.v1.json 与 archive=mapping/fixture-b.v1.json 字节一致
+     绑定画像 sha256=CE2E6DBC791F9FA65592C1CF37242CCFA86B3B293CA65BD713D62E7D7FEF13BD
+
+ALL CHECKS PASSED

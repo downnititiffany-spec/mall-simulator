@@ -1,0 +1,46 @@
+### COMMAND LINE (reproducible) ###
+"D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Drehearsal.publish.url=jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true -Drehearsal.publish.user=metric_pub -Drehearsal.publish.password=metric_pub_pw_2026 -Drehearsal.read.url=jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true -Drehearsal.read.user=metric_read -Drehearsal.read.password=metric_read_pw_2026 -Drehearsal.meta.url=jdbc:mysql://127.0.0.1:3306/analytics_meta?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true -Drehearsal.meta.user=meta_app -Drehearsal.meta.password=meta_app_pw_2026 -cp <classes;libs> RehearsalRunner FAIL-A-WRONG-DIR S20260901_47FX 20260901 2026-09-01T00:00 1 3 47 "D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\no-such-export-dir"
+### EXECUTION ###
+=== REHEARSAL RUN [FAIL-A-WRONG-DIR] ===
+snapshotId        = S20260901_47FX
+businessDate      = 20260901
+businessTime      = 2026-09-01T00:00
+runtimeProfileId  = 1
+profileVersion    = 3
+pipelineRunId     = 47
+exportDir         = D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\no-such-export-dir
+publishJdbcUrl    = jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+readJdbcUrl       = jdbc:mysql://127.0.0.1:3306/analytics_verify_m3_parity?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+publishUser       = metric_pub
+readUser          = metric_read
+metaJdbcUrl       = jdbc:mysql://127.0.0.1:3306/analytics_meta?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+metric_definition rows = 16 codes=[avg_order_value, buy_rate, cart_rate, dau, full_refund_rate, gmv, net_sale, paid_order_cnt, product_heat, pv, refund_rate, repeat_rate, stock_days, stock_shortage_rate, user_value_level, uv]
+publisher impl    = com.graduation.analytics.metric.publish.MetricPublisher
+22:26:47.533 [main] WARN com.graduation.analytics.metric.publish.MetricPublisher -- metric publish 失败[MP_MANIFEST_READ] 快照 S20260901_47FX：发布清单不存在: D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\no-such-export-dir\_export.json
+--- PublishReport ---
+ok            = false
+errorCode     = MP_MANIFEST_READ
+message       = 发布清单不存在: D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\no-such-export-dir\_export.json
+adsRows       = 0
+metricValues  = 0
+--- evidence ---
+  snapshotId = S20260901_47FX
+  businessDate = 20260901
+  exportDir = D:\Develop_code\GraduationProject\docs\acceptance\m3-step8-parity-20260912\raw\post\export-import-rehearsal\build\no-such-export-dir
+  errorCode = MP_MANIFEST_READ
+  elapsedMs = 0
+--- checks (0) ---
+--- read-back (metric_read) ---
+metric_snapshot: status/active_flag/version = <no row>
+metric_value rows = 0
+  ads_operation_overview_m rows = 0
+  ads_sale_trend_m rows = 0
+  ads_behavior_funnel_m rows = 0
+  ads_active_trend_m rows = 0
+  ads_hot_product_m rows = 0
+  ads_product_conversion_m rows = 0
+  ads_user_profile_m rows = 0
+  ads_data_quality_m rows = 0
+run elapsedMs = 3413
+=== REHEARSAL RESULT [FAIL-A-WRONG-DIR] ok=false errorCode=MP_MANIFEST_READ ===
+### EXIT CODE = 3 ; WALL CLOCK = 3.917 s ###

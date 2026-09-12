@@ -1,0 +1,88 @@
+### 清单污染：停车前 / 停车后 的 findReadyManifest 判据复刻（时间 2026-09-12 22:11:40） 
+--- [A] 停车前：文件面复刻（权威） ---
+landing/manifests 下 .json 文件 45 个；满足判据(READY 且 accepted+quarantined>0)的批次：
+  batchId=2  2.json  accepted=866680 quarantined=0 status=READY
+  batchId=4  4.json  accepted=0 quarantined=3 status=READY
+  batchId=5  5.json  accepted=1 quarantined=2 status=READY
+  batchId=7  7.json  accepted=997 quarantined=3 status=READY
+  batchId=8  8.json  accepted=1000 quarantined=0 status=READY
+  batchId=9  9.json  accepted=3 quarantined=0 status=READY
+  batchId=11  11.json  accepted=1 quarantined=0 status=READY
+  batchId=13  13.json  accepted=2 quarantined=1 status=READY
+  batchId=14  14.json  accepted=1 quarantined=0 status=READY
+  batchId=15  15.json  accepted=1 quarantined=0 status=READY
+  batchId=16  16.json  accepted=3 quarantined=0 status=READY
+  batchId=17  17.json  accepted=51 quarantined=3 status=READY
+  batchId=18  18.json  accepted=51 quarantined=4 status=READY
+  batchId=19  19.json  accepted=51 quarantined=4 status=READY
+  batchId=20  20.json  accepted=51 quarantined=4 status=READY
+  batchId=21  21.json  accepted=51 quarantined=4 status=READY
+  batchId=22  22.json  accepted=51 quarantined=4 status=READY
+  batchId=23  23.json  accepted=51 quarantined=4 status=READY
+  batchId=24  24.json  accepted=51 quarantined=4 status=READY
+  batchId=25  25.json  accepted=51 quarantined=4 status=READY
+  batchId=26  26.json  accepted=51 quarantined=4 status=READY
+  batchId=27  27.json  accepted=51 quarantined=4 status=READY
+  batchId=28  28.json  accepted=51 quarantined=4 status=READY
+  batchId=29  29.json  accepted=869148 quarantined=44 status=READY
+  batchId=30  30.json  accepted=51 quarantined=4 status=READY
+  batchId=31  31.json  accepted=1000 quarantined=0 status=READY
+  batchId=34  34.json  accepted=40 quarantined=0 status=READY
+  batchId=36  36.json  accepted=2 quarantined=0 status=READY
+  batchId=39  39.json  accepted=2 quarantined=0 status=READY
+  batchId=40  40.json  accepted=1667 quarantined=0 status=READY
+  batchId=41  41.json  accepted=2740 quarantined=4 status=READY
+  batchId=42  42.json  accepted=1000 quarantined=0 status=READY
+  batchId=43  43.json  accepted=51 quarantined=4 status=READY
+  batchId=45  45.json  accepted=84 quarantined=96 status=READY
+=> findReadyManifest 结果: batchId=45 (45.json)
+--- [A2] 停车前：只读 SQL 代理（ingestion_batch，record_count+quarantine_count>0 的最大 id）---
+max_batch_with_data
+45
+id	status	record_count	quarantine_count
+45	QUARANTINED	84	96
+44	SUCCESS	1	0
+43	QUARANTINED	51	4
+42	SUCCESS	1000	0
+--- [B] 已把 45.json / 46.json 移出 landing\manifests（移至 docs\acceptance\p5-heterogeneous-source-20260912\raw\manifest-parked\）---
+  landing\manifests 剩余 .json 数: 43
+--- [C] 停车后：文件面复刻（权威） ---
+landing/manifests 下 .json 文件 43 个；满足判据(READY 且 accepted+quarantined>0)的批次：
+  batchId=2  2.json  accepted=866680 quarantined=0 status=READY
+  batchId=4  4.json  accepted=0 quarantined=3 status=READY
+  batchId=5  5.json  accepted=1 quarantined=2 status=READY
+  batchId=7  7.json  accepted=997 quarantined=3 status=READY
+  batchId=8  8.json  accepted=1000 quarantined=0 status=READY
+  batchId=9  9.json  accepted=3 quarantined=0 status=READY
+  batchId=11  11.json  accepted=1 quarantined=0 status=READY
+  batchId=13  13.json  accepted=2 quarantined=1 status=READY
+  batchId=14  14.json  accepted=1 quarantined=0 status=READY
+  batchId=15  15.json  accepted=1 quarantined=0 status=READY
+  batchId=16  16.json  accepted=3 quarantined=0 status=READY
+  batchId=17  17.json  accepted=51 quarantined=3 status=READY
+  batchId=18  18.json  accepted=51 quarantined=4 status=READY
+  batchId=19  19.json  accepted=51 quarantined=4 status=READY
+  batchId=20  20.json  accepted=51 quarantined=4 status=READY
+  batchId=21  21.json  accepted=51 quarantined=4 status=READY
+  batchId=22  22.json  accepted=51 quarantined=4 status=READY
+  batchId=23  23.json  accepted=51 quarantined=4 status=READY
+  batchId=24  24.json  accepted=51 quarantined=4 status=READY
+  batchId=25  25.json  accepted=51 quarantined=4 status=READY
+  batchId=26  26.json  accepted=51 quarantined=4 status=READY
+  batchId=27  27.json  accepted=51 quarantined=4 status=READY
+  batchId=28  28.json  accepted=51 quarantined=4 status=READY
+  batchId=29  29.json  accepted=869148 quarantined=44 status=READY
+  batchId=30  30.json  accepted=51 quarantined=4 status=READY
+  batchId=31  31.json  accepted=1000 quarantined=0 status=READY
+  batchId=34  34.json  accepted=40 quarantined=0 status=READY
+  batchId=36  36.json  accepted=2 quarantined=0 status=READY
+  batchId=39  39.json  accepted=2 quarantined=0 status=READY
+  batchId=40  40.json  accepted=1667 quarantined=0 status=READY
+  batchId=41  41.json  accepted=2740 quarantined=4 status=READY
+  batchId=42  42.json  accepted=1000 quarantined=0 status=READY
+  batchId=43  43.json  accepted=51 quarantined=4 status=READY
+=> findReadyManifest 结果: batchId=43 (43.json)
+--- [C2] 停车后：只读 SQL 代理（排除我造成的 45/46 后应为 43）---
+max_batch_with_data_except_mine
+44
+--- [D] 我的两批次在 DB 里的最终记录（保留，不删）---
