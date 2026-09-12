@@ -1,0 +1,152 @@
+$ 生成时间 2026-09-12 11:19:51
+$ git diff --no-index --stat "docs/项目完整实施指导书 V2.2.md" "docs/项目完整实施指导书 V2.3.md"
+...75\346\214\207\345\257\274\344\271\246 V2.3.md" | 135 +++++++++++++++++++--
+ 1 file changed, 128 insertions(+), 7 deletions(-)
+
+$ git diff --no-index -U0 …（仅差异行，用于人工核对"除头部 7 处自指 + §4.1.1 外无其他改动"）
+diff --git "a/docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.2.md" "b/docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.3.md"
+index e606d10..829567f 100644
+--- "a/docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.2.md"	
++++ "b/docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.3.md"	
+@@ -1 +1 @@
+-# 项目完整实施指导书 V2.2
++# 项目完整实施指导书 V2.3
+@@ -4 +4 @@
+-> 版本日期：2026-09-11
++> 版本日期：2026-09-12（V2.2 的迭代版；相对 V2.2 的唯一实质变化＝新增 §4.1.1）
+@@ -6,2 +6,2 @@
+-> 当前实施基线：Git 提交 `076f5d2`（M1-12）；最新状态以配套看板为准。
+-> 配套看板：`docs/项目实施进度与任务看板 V2.2.md`。
++> 当前实施基线：Git 提交 `3b7e9b2`（M1-4 的 D10/D12/S5 收口后）；最新状态以配套看板为准。
++> 配套看板：`docs/项目实施进度与任务看板 V2.2.md`（看板版本号不变：本次迭代只补契约条款，未改变需求范围；见看板 §5.1 裁决 D-049）。
+@@ -11 +11 @@
+-> 历史文档：V2.0、V2.1 与未编号旧看板保留追溯；凡与本文件冲突，以 V2.2 为准。
++> 历史文档：V2.0、V2.1、V2.2 与未编号旧看板保留追溯（V2.2 自 2026-09-12 起转历史，其正文逐字未改）；凡与本文件冲突，以 V2.3 为准。
+@@ -19 +19 @@
+-V2.2 不推翻已完成链路，重点完成五件事：
++V2.3 沿用 V2.2 的阶段判断：不推翻已完成链路，重点完成五件事：
+@@ -40 +40 @@ V2.2 不推翻已完成链路，重点完成五件事：
+-2. 本指导书 V2.2。
++2. 本指导书 V2.3。
+@@ -140,0 +141,121 @@ interface EventSink {
++### 4.1.1 核心接口的追认与补全（2026-09-12，M1-9 契约先行）
++
++> **为什么有本节**：§4.1 只给出九个方法签名——没有 `TargetConfig` 的字段定义、没有任何 DTO 的字段定义，
++> 也没有约定"谁拥有商城路由"。S4a/S4b 在这些空白处做了实现侧选择，并逐条登记为偏离
++> （`docs/acceptance/m1-4-s4b-mall-api-20260911/README.md` §6 的 D1–D12）。M1-9
++> 「第二 `MallTargetAdapter`，证明未写死 `mock-mall`」开工前必须先补契约（看板 M1-9 必办项 ①、决策记录 D-041），
++> 否则"新增一家商城"就会在契约未定义的区域内继续扩张。本节把其中经复核确认合理的选择**追认为契约**，
++> 并补齐实现侧必须遵守的硬约束；**§4.1 正文保持逐字不变**。
++> 逐条取证（`path:line`）、变更清单与未取证清单见 `docs/acceptance/m1-9-contract-first-20260912/README.md`。
++
++**条款性质标注**：【追认】= 与当前实现一致，本节只是把既有事实写成契约；【新增要求】= 当前实现**尚未满足**，
++排在 M1-9 ② 交付，**不得因为写进契约就当作已完成**。
++
++#### 4.1.1.1 接口签名（以本节为准；§4.1 的骨架写法按本节读）
++
++```java
++interface MallTargetAdapter {
++    /** 本实现负责的 adapter_type：注册表的唯一查找键，比较不区分大小写；取值集合不冻结。 */
++    String adapterType();
++
++    /** 对目标做一次真实检查（可联网），返回实测能力判定与过程说明。 */
++    TargetCheckResult test(TargetConfig config);
++
++    /** 按当前配置**声明**本适配器支持的能力（不联网）。默认实现"什么都没声明"。 */
++    default TargetCapabilities capabilities(TargetConfig config) { return TargetCapabilities.none(); }
++
++    /** 本适配器在各操作上真实使用的 HTTP 方法与路径（供运行流水如实记录）；无 HTTP 语义的操作不给条目。 */
++    default Map<String, TargetRoute> operationRoutes(TargetConfig config) { return Map.of(); }
++
++    default ProductPage listProducts(TargetConfig config, ProductQuery query) { throw unsupported("listProducts"); }
++
++    default ExternalUser createSyntheticUser(TargetConfig config, UserCommand command) { throw unsupported("createSyntheticUser"); }
++
++    default void emitBehavior(TargetConfig config, BehaviorCommand command) { throw unsupported("emitBehavior"); }
++
++    default ExternalOrder createOrder(TargetConfig config, OrderCommand command) { throw unsupported("createOrder"); }
++
++    default ExternalOrder pay(TargetConfig config, PayCommand command) { throw unsupported("pay"); }
++
++    default ExternalOrder cancel(TargetConfig config, CancelCommand command) { throw unsupported("cancel"); }
++
++    default ExternalRefund refund(TargetConfig config, RefundCommand command) { throw unsupported("refund"); }
++
++    private MallOperationException unsupported(String operation) {
++        return new MallOperationException(operation, "本适配器未实现：" + operation);
++    }
++}
++
++/** 一次操作的 HTTP 方法与路径模板（如 `/api/v1/mall/orders/{orderId}/pay`）；不含 base_url 与凭据。 */
++record TargetRoute(String method, String path) { }
++
++interface EventSink extends AutoCloseable {
++    void write(CanonicalEvent event);
++
++    Optional<Artifact> rotateIfNeeded();
++
++    void flush();
++
++    ArtifactManifest closeAndBuildManifest();
++
++    @Override
++    default void close() { closeAndBuildManifest(); }
++}
++```
++
++`TargetConfig`（契约定义，字段名以此为准）：
++
++| 字段 | 类型 | 来自 `generator_target`（§4.2） | 语义 |
++|---|---|---|---|
++| `id` | `long` | `id` | 目标 ID；一次运行内冻结 |
++| `adapterType` | `String` | `adapter_type` | 适配器查找键（见下 1） |
++| `baseUrl` | `String` | `base_url` | 商城公开接口基地址；文件模式实现把它当输出目录 |
++| `credentialRef` | `String` | `credential_ref` | 凭据**引用**（环境变量名/别名）；值绝不进配置、日志、流水与异常 |
++| `configJson` | `String` | `config_json` | 适配器私有配置 JSON（如 `behavior_path` / `reset_path`）；内部结构由适配器自述 |
++
++【追认】`generator_target` 其余五列（`name` / `config_version` / `status` / `test_environment` / `capabilities`）
++**不进入** `TargetConfig`，也不参与任何适配器判定：能力判定一律取自 `capabilities(config)`（声明）与
++`test(config)`（实测），运营登记的 `capabilities` 列只是台账。
++
++#### 4.1.1.2 实现硬约束
++
++1. **无状态 + 目标作首参 + 唯一登记处**【追认】：适配器实例不持有目标，目标一律作首参传入；`MallTargetAdapterRegistry` 是 `adapter_type → 实现` 的唯一登记处，一个类型只允许一个所有者；未注册与重复注册都必须响亮失败并列出已注册类型。禁止"每个目标一份适配器实例"这种第二所有者。
++2. **跨目标状态不得进实例**【新增要求】：目录缓存、外部 ID 映射一类跨目标状态属于运行期/仓储，不得放进适配器实例字段。
++3. **做不到就响亮失败**【追认】：未实现或不支持的操作抛 `MallOperationException`（携带操作名），不得返回 `null` 或空对象冒充成功；引擎侧按"整类降级 + 记缺口"处理，绝不把跳过写成成功。
++4. **凭据纪律**【追认】：`credentialRef` 只是引用名；取不到凭据时抛异常，日志、流水与异常信息里只允许出现引用**名**（如 `GENERATOR_TARGET_TOKEN`），绝不出现值；契约文本本身也只写引用名。
++5. **能力三态**【追认】：判定只有 `SUPPORTED` / `ABSENT` / `UNDETERMINED`；缺键、未知、探测不到一律 `UNDETERMINED`，**不得**把 `UNDETERMINED` 说成 `SUPPORTED`。`capabilities` 是声明（不联网），`test` 是实测；运行预检以声明为准并强制 `product` / `user` / `order` 三项。
++6. **路由所有权**【新增要求】：运行流水与运行报告里的 `http_method` / `route` **必须取自 `operationRoutes(config)`**；引擎、报告与页面不得内置任何商城的路由字面量。适配器对自报路由的真实性负责（它就是实际发起请求的一方）；未声明路由的操作只写占位说明。理由：流水里的路由是"我们到底请求了什么"的证据，换一家商城却继续写参考商城的路径等于在证据里说谎（与 D12 同类问题）。
++7. **新增一家商城 = 新增一个 Adapter + 登记处加一行**【新增要求】：不得为此修改场景引擎、事件契约、表结构或页面；引擎里不得出现"哪家商城"的分支（`adapter_type` 只用于选实现，不用于业务分支）。
++8. **只经公开接口**【追认】：`MALL_API` 模式只允许经商城**公开 REST 接口**；不得直连商城数据库，不得依赖商城 Java 包、业务表名或 `mall.*` 配置键。
++9. **运行期单一配置实例**【追认】：一次运行只解析一次 `TargetConfig`，并贯穿探测、预检、派发与流水；同一运行内不得出现第二份目标配置。
++10. **金额与精度**【新增要求】：不同商城的金额标度可能不同（元/分），适配器负责换算到与参考商城同口径后再交给引擎；换算系数必须是适配器内的显式常量并有单测覆盖；金额一律 `BigDecimal`，禁止 `double`；对账与校验一律用整数分比较。规范事件的金额口径以已冻结的事件契约与参考商城实现为准，本指导书不另立单位。
++11. **契约纪律**【新增要求】：`TargetRoute`、`operationRoutes` 以及 §4.1.1.3 之外的新增字段/方法，必须先改本节再实现（§2.1）。`contract-specs/openapi/generator-api.v1.yaml` 现在把这一区域标为 `x-unspecified`，待 M1-5 收口时按本节同步（含 `TargetCheckResult` 的空对象声明与 `adapter_type` 取值集合）。
++
++#### 4.1.1.3 DTO 最小字段表【追认】
++
++字段名与类型以此表为准；**在已列字段之外新增字段，必须先改本节再实现**。构造校验（非空、范围、枚举白名单）同在契约内。
++
++| 类型 | 字段 | 关键约束 |
++|---|---|---|
++| `TargetCheckResult` | `targetId`(long)、`reachable`(boolean)、`detail`(String)、`capabilities`(Map) | `detail` 只写过程说明，不含凭据值 |
++| `TargetCapabilities` | `verdicts`(Map)、`declared`(boolean) | 缺键 ⇒ `UNDETERMINED`；`none()` = 空表 + `declared=false` |
++| `MallCapability` | `product`、`user`、`order`、`refund`、`behavior`、`reset_state`、`admin` | 生成器侧实现词汇，不是跨程序契约；新增能力名须先改本节 |
++| `CapabilityVerdict` | `SUPPORTED` / `ABSENT` / `UNDETERMINED` | 见 4.1.1.2 之 5 |
++| `ProductQuery` | `categoryId`(Long)、`keyword`(String)、`offset`(int)、`limit`(int) | `offset ≥ 0`；`limit ∈ [1,500]` |
++| `ProductPage` | `products`(List)、`total`(int) | `total` 不小于 `products.size()` |
++| `ExternalProduct` | `productId`、`name`、`categoryId`(Long)、`price`(BigDecimal)、`status`(String) | `price ≥ 0`；`onSale()` 只认商城原样返回的 `on_sale` |
++| `UserCommand` | `ageGroup`、`cityLevel`、`memberLevel`(String) | 取值受契约枚举白名单约束 |
++| `ExternalUser` | `userId`、`memberLevel`(String) | — |
++| `BehaviorCommand` | `userId`、`productId`、`sessionId`、`behaviorType`、`channel`(String) | 均非空 |
++| `OrderCommand` | `userId`(String)、`items`(List) | 非空；`Item` = (`productId`, `quantity ≥ 1`) |
++| `ExternalOrder` | `orderId`、`userId`、`status`(String)、`totalAmount`(BigDecimal)、`itemCount`(int) | `status` 是商城原样文本；读不到记 `UNKNOWN`，未返回记 `null` / `-1` |
++| `PayCommand` | `orderId`、`userId`(String) | — |
++| `CancelCommand` | `orderId`、`userId`、`reason`(String) | `reason` 必填、去空白后非空 |
++| `RefundCommand` | `orderId`、`userId`、`amount`(BigDecimal)、`reason`(String) | `amount > 0`；`reason` 必填 |
++| `ExternalRefund` | `refundId`、`orderId`、`status`(String)、`amount`(BigDecimal) | `status` 是商城原样文本；读不到记 `UNKNOWN` |
++| `MallOperationException` | `operation`(String) + 消息 | 只承载操作名与脱敏说明 |
++
++`EventSink` 另追认两点【追认】：① 返回类型名是 `ArtifactManifest`（§4.1 骨架里的 `Manifest` 与 `java.util.jar.Manifest` 同名，只作 Java 类名调整，语义与字段不变）；② 追加 `extends AutoCloseable` 与 `default close()`（关闭即产出清单，便于 try-with-resources）。
++
++---
++
