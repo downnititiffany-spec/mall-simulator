@@ -6,10 +6,22 @@ import com.graduation.analytics.warehouse.WarehouseNamespace
  * DWD 清洗 SQL（§7.1/§7.2）：event_id 去重、枚举/空值过滤、时间标准化、reject 记录。
  *
  * P1-04：库名不再写字面量，一律由 {@link WarehouseNamespace} 派生（首个参数）。
+ *
+ * P2-03（代理键，裁决 D-083…D-092）：**只加不改**——旧列 `user_id`/`product_id`/`category_id`
+ * 与其 `-1` 哨兵逐字保留（D-094），新增 `<entity>_key` 列**追加在 SELECT 列表末尾**
+ * （`INSERT OVERWRITE` 按位置对齐）。**A5：JOIN 谓词本轮保持旧口径不变**（改 JOIN 属 P2-04）。
  */
 object DwdSql {
 
-  /** 行为清洗：回到正常行（row_number 去重 + 过滤非法枚举/空 user_id）；id 归一化见 IdCodec（DEF-05） */
+  /**
+   * 行为清洗：回到正常行（row_number 去重 + 过滤非法枚举/空 user_id）；id 归一化见 IdCodec（DEF-05）。
+   *
+   * P2-03 追加列：`user_key` / `product_key` / `category_key`。
+   *  - `user_key`/`product_key` 取**原始** `rn.payload_user_id` / `rn.payload_product_id`（A2，不得由
+   *    `IdCodec` 的结果再算——那条路已把 `U00000001`/`O00000001` 折叠成 1，命名空间永久丢失）；
+   *  - `category_key` 取**维表**的 `p.category_key`（LEFT JOIN 未命中时随之为 NULL），
+   *    **刻意不取** `COALESCE(p.category_id, -1)`——旧列保留哨兵，新键列不许有哨兵（D-087/D-094）。
+   */
   def behaviorClean(ns: WarehouseNamespace, dt: String): String =
     s"""
        |INSERT OVERWRITE TABLE ${ns.dwd}.dwd_user_behavior_detail PARTITION(dt = '$dt')
@@ -25,7 +37,10 @@ object DwdSql {
        |  u.city_level AS city_level,
        |  rn.payload_channel AS channel,
        |  rn.payload_session_id AS session_id,
-       |  rn.ingest_batch_id AS source_batch_id
+       |  rn.ingest_batch_id AS source_batch_id,
+       |  ${SurrogateKey.toBIGINT("rn.source_system", "user", "rn.payload_user_id")} AS user_key,
+       |  ${SurrogateKey.toBIGINT("rn.source_system", "product", "rn.payload_product_id")} AS product_key,
+       |  p.category_key AS category_key
        |FROM (
        |  SELECT *,
        |         ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY ingest_time) AS rn

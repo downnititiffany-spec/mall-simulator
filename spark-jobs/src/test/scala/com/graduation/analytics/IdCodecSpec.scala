@@ -75,7 +75,8 @@ class IdCodecSpec extends AnyFlatSpec with Matchers {
     assertNormalized("DwdSql.behaviorClean", DwdSql.behaviorClean(ns, "20260901"))
     assertNormalized("DimSql.userSnapshot", DimSql.userSnapshot(ns, "20260901"))
     assertNormalized("DimSql.productSnapshot", DimSql.productSnapshot(ns, "20260901"))
-    assertNormalized("TradeDwdJob.orderDetailInsertSql", TradeDwdJob.orderDetailInsertSql(ns, "20260901"))
+    assertNormalized("TradeDwdJob.orderDetailInsertSql",
+      TradeDwdJob.orderDetailInsertSql(ns, "20260901", SrcSys))
     // 下游（DWS/ADS）与 ODS 载入层不得自行转换契约 id：ODS 保留字符串原文，DWS/ADS 只读 DWD 数字键
     assertNoDirectCast("AdsSql.operationOverview", AdsSql.operationOverview(ns, "20260901"))
     assertNoDirectCast("DwsSql.userBehaviorDay", DwsSql.userBehaviorDay(ns, "20260901"))
@@ -84,9 +85,33 @@ class IdCodecSpec extends AnyFlatSpec with Matchers {
 
   it should "行为/维度/交易三条 id 链的归一化次数与列对应正确" in {
     val behavior = DwdSql.behaviorClean(ns, "20260901")
-    behavior.sliding("payload_user_id".length).count(_ == "payload_user_id") shouldBe 3 // select + join + not null 过滤
+    // P2-03 施工单 D-094 允许的**唯一**计数变更：新增 `user_key`/`product_key` 两列各自再引用
+    // 一次原始 id（A2：新键必须从 ODS 原始 id 派生，不得由 IdCodec 的结果再算）。
+    //
+    // 数值来源 = **程序计数**（不是肉眼数）：`P2CountProbeSpec` 实测读数
+    // （证据 `impl/probe-counts.txt`，sha256 见 IMPL-REPORT）。`behaviorClean` 全文实测：
+    //   `payload_user_id`    = **7**
+    //   `payload_product_id` = **7**
+    // 为什么是 7 而不是「旧 3 + 新 2 = 5」：新键表达式**不是**只引用一次原始 id——
+    // D-087 要求「空/缺 ⇒ NULL 键」，故键列表表达式形如
+    //   `CASE WHEN <src> IS NULL OR trim(<raw>) IS NULL OR trim(<raw>) = ''
+    //         THEN NULL ELSE GREATEST(cast(conv(… <raw> …) AS BIGINT), 1) END`
+    // 其中 `<raw>` 出现 **1** 次（取值段）+ **2** 次（两条判空）= **3** 次；
+    // 旧列 2 次（`user_id` 表达式 + JOIN 谓词）+ `IS NOT NULL` 过滤 1 次 = 3 次 ⇒ 3+3+1=7。
+    //
+    // **口径未放宽**：仍是 `shouldBe` **精确值**（非 `>=`、非范围、未删断言）。
+    // 我第一轮曾凭肉眼写成 5 / 4，第二轮 5 / 5，两次都被实测推翻——保留该错以证口径。
+    behavior.sliding("payload_user_id".length).count(_ == "payload_user_id") shouldBe 7
+    behavior.sliding("payload_product_id".length).count(_ == "payload_product_id") shouldBe 7
     behavior should include(IdCodec.toBIGINT("rn.payload_user_id"))
     behavior should include(IdCodec.toBIGINT("rn.payload_product_id"))
+    // 旧列必须**逐字保留**（D-094：只加不改）
+    behavior should include("COALESCE(p.category_id, -1) AS category_id")
+    // A5：JOIN 谓词本轮不得改动（仍在 IdCodec 旧口径上）
+    behavior should include(s"LEFT JOIN ${ns.dim}.dim_user u ON u.user_id = " +
+      IdCodec.toBIGINT("rn.payload_user_id"))
+    behavior should include(s"LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = " +
+      IdCodec.toBIGINT("rn.payload_product_id"))
 
     val dimUser = DimSql.userSnapshot(ns, "20260901")
     dimUser should include(IdCodec.toBIGINT("u.payload_user_id"))
@@ -97,13 +122,18 @@ class IdCodecSpec extends AnyFlatSpec with Matchers {
     // category/parent/brand 的 unknown key 兜底（-1）必须仍存在
     dimProduct.sliding("-1".length).count(_ == "-1") should be >= 3
 
-    val order = TradeDwdJob.orderDetailInsertSql(ns, "20260901")
+    val order = TradeDwdJob.orderDetailInsertSql(ns, "20260901", SrcSys)
     order should include(IdCodec.toBIGINT("t.order_id"))
     order should include(IdCodec.toBIGINT("t.user_id"))
     order should include(IdCodec.toBIGINT("t.product_id"))
     // 维度分区谓词不得丢失（R9 修正 D-R9-2）
     order should include("p.dt = '20260901'")
     order should include("u.dt = '20260901'")
+    // P2-03 / D-093：订单级**不得**出现代理键列（`order` 不在契约实体枚举）
+    order should not include "order_key"
+    order should include("user_key")
+    order should include("product_key")
+    order should include("category_key")
   }
 
   it should "ODS 载入层保留字符串原文（不在 ODS 提前转型）" in {

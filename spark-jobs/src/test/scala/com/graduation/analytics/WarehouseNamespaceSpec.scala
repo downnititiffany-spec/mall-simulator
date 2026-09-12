@@ -249,7 +249,7 @@ object WarehouseNamespaceSpec {
       "AdsSql.dataQuality" -> (ns => AdsSql.dataQuality(ns, "20260901")),
       "AdsSql.staging" -> (ns => AdsSql.staging(ns, "ads_operation_overview")),
       "AdsSql.formal" -> (ns => AdsSql.formal(ns, "ads_operation_overview")),
-      "TradeDwdJob.orderDetailInsertSql" -> (ns => TradeDwdJob.orderDetailInsertSql(ns, "20260901")),
+      "TradeDwdJob.orderDetailInsertSql" -> (ns => TradeDwdJob.orderDetailInsertSql(ns, "20260901", srcSys)),
       "MetricAdsSpec.hiveTable" -> (ns => MetricAdsSpec.TABLES.map(_.hiveTable(ns)).mkString("\n")),
       "LocalSchemaInitJob.statements" -> (ns => LocalSchemaInitJob.statements(ns).map(_._2).mkString("\n"))
     )

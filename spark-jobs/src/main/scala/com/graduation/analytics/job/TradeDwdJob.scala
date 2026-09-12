@@ -1,7 +1,7 @@
 package com.graduation.analytics.job
 
 import com.graduation.analytics.algorithm.{OrderTradeCompiler, TradeEvent, TradeOrderDetail}
-import com.graduation.analytics.sql.IdCodec
+import com.graduation.analytics.sql.{IdCodec, OdsLoadSql, SurrogateKey}
 import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -75,7 +75,10 @@ class TradeDwdJob extends WarehouseJob {
       //   实测 dt=20260901 订单明细 7 行被放大为 28 行（无维度分区 2 个 × 用户分区 2 个），
       //   GMV 2042.00 → 8168.00、net_sale 1493.00 → 5972.00。
       val dimDt = args.businessDate
-      spark.sql(TradeDwdJob.orderDetailInsertSql(ns, dimDt))
+      // P2-03：代理键需要本运行源编码。取值点与 ODS 载入**同一个所有者**
+      // （`OdsLoadSql.ArgSourceSystem` + `OdsLoadSql.sourceSystemLiteral` 的校验/转义），不另建解析链。
+      val sourceSystem = args.extra.getOrElse(OdsLoadSql.ArgSourceSystem, "")
+      spark.sql(TradeDwdJob.orderDetailInsertSql(ns, dimDt, sourceSystem))
     }
 
     val outputCount = spark.sql(s"SELECT COUNT(*) c FROM ${ns.dwd}.dwd_order_detail").collect()(0).getLong(0)
@@ -110,14 +113,26 @@ object TradeDwdJob {
    * - **id 归一化**：契约字符串 id（`O00000001`/`U000065`/`P00030`）在 ODS→DWD 边界一次性转 `BIGINT`，
    *   规则只在 `IdCodec` 定义（DEF-05 / 决策 B-07 候选 ② / D-023），此处不得再手写 `CAST(... AS BIGINT)`；
    * - **维度分区谓词**：R9 修正（D-R9-2）——`dim_*` 必须按生效日期分区过滤，否则 JOIN 笛卡尔放大（GMV 2042.00→8168.00）。
+   * - **P2-03 代理键（只加不改）**：列尾追加 `user_key` / `product_key` / `category_key`
+   *   （契约 `SurrogateKey` 派生，源编码取 `tdw_tmp` 未携带 → 见下方 `srcSys` 说明）。
+   *   **`order_key` 刻意不存在**：契约实体枚举为 `{user, product, category, brand, coupon}`，**无 `order`**，
+   *   按裁决 **D-093** 订单级身份一律不得套用代理键算法（否则物料 `<entity>` 段是自造的），
+   *   登记为**契约缺口**，须走契约升版新增 `order` 实体后方可实现。原 `IdCodec` 的 `order_id` 列保持原样。
    *
    * @param ns 数仓命名空间（库名由唯一所有者派生）
    * @param dimDt 维度快照生效日期分区（= 业务日 `yyyyMMdd`）
+   * @param sourceSystem 本运行源编码（= `--sourceSystem` 注入的 `source_registry.source_code`，D-056）。
+   *                     `tdw_tmp` 由 `TradeDwdJob.run` 在内存里拼出（`OUT_SCHEMA` 不含 `source_system`），
+   *                     故源身份只能经**参数通道**进入本 SQL，而不是从临时视图读列。
    */
-  def orderDetailInsertSql(ns: WarehouseNamespace, dimDt: String): String = {
+  def orderDetailInsertSql(ns: WarehouseNamespace, dimDt: String, sourceSystem: String): String = {
     val orderKey = IdCodec.toBIGINT("t.order_id")
     val userKey = IdCodec.toBIGINT("t.user_id")
     val productKey = IdCodec.toBIGINT("t.product_id")
+    // 源编码字面量走唯一所有者（校验 + `'` 转义）；空值在此抛参数错误，与本项目既有口径一致
+    val src = OdsLoadSql.sourceSystemLiteral(sourceSystem)
+    val userSurrogate = SurrogateKey.toBIGINT(src, "user", "t.user_id")
+    val productSurrogate = SurrogateKey.toBIGINT(src, "product", "t.product_id")
     s"""INSERT OVERWRITE TABLE ${ns.dwd}.dwd_order_detail PARTITION (dt)
        |SELECT
        |  $orderKey,
@@ -133,7 +148,10 @@ object TradeDwdJob {
        |  CASE WHEN t.paid_at IS NULL THEN NULL ELSE TO_TIMESTAMP(t.paid_at) END AS paid_at,
        |  t.order_amount, t.paid_amount, t.refund_amount, t.net_paid_amount,
        |  t.final_paid_flag, t.final_refunded_flag,
-       |  t.dt
+       |  t.dt,                                 -- 静态分区列（DDL 里在列尾，位置必须对齐）
+       |  $userSurrogate AS user_key,
+       |  $productSurrogate AS product_key,
+       |  p.category_key AS category_key
        |FROM tdw_tmp t
        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = CASE WHEN t.product_id = ''
        |     THEN -1 ELSE $productKey END AND p.dt = '$dimDt'

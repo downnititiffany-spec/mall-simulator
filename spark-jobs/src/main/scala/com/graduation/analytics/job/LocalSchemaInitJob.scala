@@ -1,6 +1,6 @@
 package com.graduation.analytics.job
 
-import com.graduation.analytics.sql.OdsV2Columns
+import com.graduation.analytics.sql.{OdsV2Columns, SurrogateKey}
 import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.SparkSession
 
@@ -51,7 +51,8 @@ object LocalSchemaInitJob {
           behavior_id STRING, user_id BIGINT, product_id BIGINT, category_id BIGINT,
           behavior_type STRING, event_time TIMESTAMP, event_date STRING,
           event_hour INT, city_level STRING, channel STRING, session_id STRING,
-          source_batch_id BIGINT)
+          source_batch_id BIGINT,
+          user_key BIGINT, product_key BIGINT, category_key BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.dwd, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dwd}.dwd_reject_record (
@@ -66,20 +67,23 @@ object LocalSchemaInitJob {
           order_date STRING, city_level STRING, paid_at TIMESTAMP,
           order_amount DECIMAL(18,2), paid_amount DECIMAL(18,2),
           refund_amount DECIMAL(18,2), net_paid_amount DECIMAL(18,2),
-          final_paid_flag INT, final_refunded_flag INT)
+          final_paid_flag INT, final_refunded_flag INT,
+          user_key BIGINT, product_key BIGINT, category_key BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     (ns.dim, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_user (
           user_id BIGINT, age_group STRING, city_level STRING, member_level STRING,
-          register_date STRING, register_time TIMESTAMP, source_batch_id BIGINT)
+          register_date STRING, register_time TIMESTAMP, source_batch_id BIGINT,
+          user_key BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.dim, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_product (
           product_id BIGINT, product_name STRING, category_id BIGINT, category_name STRING,
           parent_category_id BIGINT, parent_category_name STRING,
           brand_id BIGINT, price DECIMAL(18,2), cost DECIMAL(18,2), status STRING,
-          source_batch_id BIGINT)
+          source_batch_id BIGINT,
+          product_key BIGINT, category_key BIGINT, parent_category_key BIGINT, brand_key BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     (ns.dws, s"""
@@ -283,6 +287,34 @@ object LocalSchemaInitJob {
       }
     }
     actions ++= reconcileOdsV2(spark, ns)
+    actions ++= reconcileSurrogateKeys(spark, ns)
+    actions.toList
+  }
+
+  /**
+   * P2-03 代理键列对账（**只用 `ALTER TABLE ADD COLUMNS`，绝不 DROP/重建**）。
+   *
+   * 与 `reconcileOdsV2` 第 1 类同口径：缺列 → 非破坏性补齐。历史 parquet 文件缺该列时读出 `null`，
+   * 下一次 `INSERT OVERWRITE` 即被真实值覆盖；**不重建表**（真数仓 `dw_*` 有真实数据，D-071 零迁移前提）。
+   *
+   * 列清单的唯一所有者是 `SurrogateKey.KeyColumns`（算法所有者）——DDL（本文件 `statements`）
+   * 与对账（本方法）都必须与它一致，避免「建表一处、补列一处」两份清单漂移。
+   *
+   * @return 动作行（`RECONCILE_SURROGATE_KEY ...` 前缀；无漂移时为空）
+   */
+  def reconcileSurrogateKeys(spark: SparkSession, ns: WarehouseNamespace): List[String] = {
+    val actions = scala.collection.mutable.ListBuffer[String]()
+    SurrogateKey.keyColumnPlan.foreach { case (layer, name, cols) =>
+      val full = ns.table(layer, name)
+      if (spark.catalog.tableExists(ns.layerDb(layer), name)) {
+        val existing = spark.table(full).schema.fieldNames.toSet
+        val missing = cols.map(_._1).filterNot(existing.contains)
+        if (missing.nonEmpty) {
+          spark.sql(s"ALTER TABLE $full ADD COLUMNS (${missing.map(c => s"$c BIGINT").mkString(", ")})")
+          actions += s"RECONCILE_SURROGATE_KEY $full 补齐代理键列: ${missing.mkString(", ")}"
+        }
+      }
+    }
     actions.toList
   }
 
