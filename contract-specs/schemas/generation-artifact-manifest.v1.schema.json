@@ -70,13 +70,20 @@
   },
   "x-synthetic-marker": {
     "x-unspecified": true,
-    "rationale": "V2.1 §3.3 B L90 只规定『该模式必须显示 synthetic=true』，未规定该标记落在制品清单、运行报告还是响应体；本文件选择制品清单作为载体，需契约任务确认。"
+    "rationale": "V2.1 §3.3 B L90 只规定『该模式必须显示 synthetic=true』，未规定该标记落在制品清单、运行报告还是响应体；本文件选择制品清单作为载体，需契约任务确认。★补记（2026-09-12，M1-5 收口同步）：V2.3 L675 已明确『synthetic=true 放在 generation run、artifact manifest 和验收元数据中，不加入 8 字段事件信封』⇒ 本文件选择『制品清单』作为载体之一**已被追认**，不再是待确认项；随之而来的实现要求是**三处载体都要写**（generation run、artifact manifest、验收元数据），是否已满足属生成器侧取证范围，本契约不代为宣称。原文保留为历史（V2.1 已降为历史参考）。"
   },
   "x-evidence": [
     "docs/项目完整实施指导书 V2.1.md §3.3 B L88-L90 (CANONICAL_EVENT_FILE 模式与 synthetic 标记)",
     "docs/项目完整实施指导书 V2.1.md §4.1 L118-L123 (EventSink.write/rotateIfNeeded/flush/closeAndBuildManifest)",
     "docs/项目完整实施指导书 V2.1.md §4.2 L135 (generation_artifact 关键字段)",
     "docs/项目完整实施指导书 V2.1.md §4.3 L149 (manifest 记录期望隔离数 → 与 §4.2 字段清单冲突)",
+    "【补记 2026-09-12，M1-5 收口同步：以下 V2.3 锚点为当前权威；上方 V2.1 锚点保留为历史来源（V2.1 已降为历史参考），行号与 V2.3 不同】",
+    "docs/项目完整实施指导书 V2.3.md §3.3 B L101-L103 (CANONICAL_EVENT_FILE 模式与 synthetic=true)",
+    "docs/项目完整实施指导书 V2.3.md §4.1 L131-L136 (EventSink 四方法；V2.3 另在 §4.1.1.3 L258 追认 extends AutoCloseable / default close() 与返回类型更名 ArtifactManifest)",
+    "docs/项目完整实施指导书 V2.3.md §4.2 L281 (generation_artifact 关键字段；对应 V2.1 §4.2 L136——本文件上方原注解写作 L135，实测少算一行，勘误见 ../README.md §11)",
+    "【勘误 2026-09-12，M1-5 收口同步：本文件上方 V2.1 锚点**全部比实际行号少一行**（已逐条比对 V2.1 原文，勘误表见 ../README.md §11、事实记录 F-29）。引用历史锚点请先 +1 再按 V2.1 复核；当前权威锚点为上方 V2.3 行号。】",
+    "docs/项目完整实施指导书 V2.3.md §4.3 L295 (manifest 记录期望隔离数 → 与 §4.2 字段清单冲突，冲突仍在)",
+    "docs/项目完整实施指导书 V2.3.md L675 (synthetic=true 的三处载体：generation run / artifact manifest / 验收元数据)",
     "docs/contracts/event-contract.md §1 L25 (时间一律 ISO-8601 带时区)"
   ]
 }

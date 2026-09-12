@@ -83,7 +83,7 @@
 
 1. **Q1 信封是否允许多余字段**：来源未规定（§1 L28 只覆盖 payload）。本目录取「允许」（`additionalProperties: true` + `x-unspecified`）。需决定：保持宽松，还是收紧为 `false` 并在 §1 补一句信封字段封闭。
 2. **Q2 ID 形态**：§1 L27 要求 ID 为数值字符串、`event_id`/`trace_id` 为 UUID 字符串；真实夹具 `landing/events/r9-m1-123006.jsonl` 用的是 `golden-evt-001`/`golden-trace-001`，且 `refund_id=R-1003-A`、`payment_id=P-1001` 非数值字符串，却都被采集层接受。本目录对所有 ID 只约束 `string`。需决定：补 UUID/数值正则并修夹具，还是修订 §1 L27。
-3. **Q3 `source_system` 与 `synthetic`**：§1 L16 固定 `mock-mall`（对账测试也要求 `const`），而 §3.3 B L90 要求文件模式「必须显示 `synthetic=true`」；信封只有 8 个字段，放不下该标记，本目录把它放在生成器制品清单上。需决定：(a) 确认该落点，文件模式事件仍写 `source_system=mock-mall`；或 (b) 允许生成器使用另一个 `source_system` 值（等于改契约，需升版本）。
+3. **Q3 `source_system` 与 `synthetic`**：§1 L16 固定 `mock-mall`（对账测试也要求 `const`），而 §3.3 B L90 要求文件模式「必须显示 `synthetic=true`」；信封只有 8 个字段，放不下该标记，本目录把它放在生成器制品清单上。需决定：(a) 确认该落点，文件模式事件仍写 `source_system=mock-mall`；或 (b) 允许生成器使用另一个 `source_system` 值（等于改契约，需升版本）。**补记（2026-09-12，M1-5 收口同步）**：选项 (a) 的「落点」部分已被 V2.3 L675 追认（`synthetic=true` 放 generation run / artifact manifest / 验收元数据，不进 8 字段信封）；**仍未决**的是 `source_system` 的取值（文件模式事件是否仍写 `mock-mall`）⇒ 本条降级为「仅 `source_system` 取值待决」。
 4. **Q4 枚举漂移（真实数据 vs §2 表格）**：
    - `channel = "web"`：夹具 6 行（L12/L13/L14/L34/L35/L36）使用 `web`，不在 §2.3 L69 的 `app/pc/h5` 内；采集层只校验 `behavior_type`（`EventContractValidator` L75-L80），因此这 6 行**被判为干净并被接受**。
    - `behavior_type = "purchase"`（L38）与 `age_group = "45-54"`（L54，该行同时 `schema_version="2.0"`）：均**已被正确隔离**，属隔离区正常表现，不构成漏洞，但说明生成器的场景取值超出了枚举，需统一。
@@ -93,9 +93,9 @@
 6. **Q6 「必填」在采集层的执行强度（本目录最重要的一条差距）**：`EventContractValidator.missingPayloadField`（L89-L111）只校验各类型的**子集**（例如 `order_cancelled` 只要 `order_id/user_id/reason`；`stock_*` 只要 `product_id`），而 §1 L28 说「缺失必需字段视为脏数据」、§2 各表把时间/status 字段标为必填。建立时实测：**按 `EventContractValidator` 的全部规则逐条复刻**（Python 复现，未运行 Java/Maven）回放夹具 55 行，得到**接受 51 / 隔离 4**，与 `landing/manifests/30.json` 的 `acceptedRecords=51 / quarantinedRecords=4` 完全一致（隔离的 4 行是 L38 非法 `behavior_type`、L53 JSON 不可解析、L54 未支持 `schema_version="2.0"`、L55 缺 `event_id`）；而用本目录的 `canonical-event.v1` 校验同一文件只有 **26 行通过 / 29 行不通过**。即：**采集层接受的 51 行里约 25 行按契约是脏数据**（缺 `status`/`created_at`/`paid_at`/`cancelled_at`/`completed_at`、`items` 字符串、`channel=web`）。需决定：把校验器补齐到契约（会让这批 golden 数据大批转隔离，影响既有指标口径），还是把契约的必填降级（需说明哪些字段可空）。**在此决定之前，不得以任一侧为唯一真值。**
 7. **Q7 平台清单 `batchId` 类型漂移**：`landing/manifests/1.json`–`5.json` 为字符串 `"1"`…`"5"`，`6.json`–`30.json` 为数字。本 schema 以任务指定的 `30.json` 为准取 `integer`。需决定：是否重生成/迁移历史清单，或让 schema 接受两种类型。
 8. **Q8 采集清单是否允许多余键**：来源未规定，本目录取「允许」并标 `x-unspecified`。需决定：是否收紧为封闭集合（会影响未来连接器写扩展字段）。
-9. **Q9 「期望隔离数」字段缺失**：§4.3 L149 要求「在 manifest 中记录期望隔离数」，但 §4.2 L135 的 `generation_artifact` 字段清单里没有它。本目录不擅自加字段（`additionalProperties: false`）。需决定：字段名与所属对象（制品清单或运行报告），然后升契约版本。
-10. **Q10 制品轮转与运行级清单**：§4.1 L120 `Optional<Artifact> rotateIfNeeded()` 意味着一次运行可能有多个制品文件，而 §4.2 L135 只有单制品字段。本目录描述「单文件一份清单」。需决定：是否需要运行级清单（含制品数组）及其字段。
-11. **Q11 生成器命名与类型未冻结**：§4.2 L134 写作 `started/finished`、L133 写作 `start/end`，均未给出完整键名（本目录按字面取 `started`/`finished`/`start`/`end`）；`run_id`（§4.2）与 `runId`（§4.4 L153）命名不一致；`plan_id`/`run_id`/`version` 的序列化类型未规定。需决定：统一命名与类型并冻结。
+9. **Q9 「期望隔离数」字段缺失**：V2.3 §4.3 L295 要求「在 manifest 中记录期望隔离数」，但 V2.3 §4.2 L281 的 `generation_artifact` 字段清单里没有它。本目录不擅自加字段（`additionalProperties: false`）。需决定：字段名与所属对象（制品清单或运行报告），然后升契约版本。
+10. **Q10 制品轮转与运行级清单**：V2.3 §4.1 L133 `Optional<Artifact> rotateIfNeeded()` 意味着一次运行可能有多个制品文件，而 V2.3 §4.2 L281 只有单制品字段。本目录描述「单文件一份清单」。需决定：是否需要运行级清单（含制品数组）及其字段。
+11. **Q11 生成器命名与类型未冻结**：V2.3 §4.2 L280 写作 `started/finished`、L279 写作 `start/end`，均未给出完整键名（本目录按字面取 `started`/`finished`/`start`/`end`）；`run_id`（V2.3 §4.2 L280）与 `runId`（V2.3 §4.4 L299）命名不一致；`plan_id`/`run_id`/`version` 的序列化类型未规定。需决定：统一命名与类型并冻结。
 12. **Q12 生成器 API 的非字段约定**：HTTP 成功状态码（本契约按 200 记录并标 `x-unspecified`）、错误响应体形状、`PUT /api/v1/targets` 是否应为 `PUT /api/v1/targets/{id}`、`/targets/{id}/test` 是否带 `/api/v1` 前缀、`GET /generation-runs/{id}` 的「进度」字段名与口径。需决定后补齐 `generator-api.v1`。
 13. **Q13 生成器制品 `checksum` 与 `uri` 形态**：算法/编码/URI 基准目录未规定；是否与采集清单的 CRC32 十六进制一致也未规定（本契约明确「不得默认相同」）。
 14. **Q14 采集校验器接受数字型金额**：`EventContractValidator.findBadAmount`（L120-L122）允许金额字段是 JSON number，而 §1 L26 要求「一律十进制字符串」。本 schema 只接受字符串。需决定：收紧校验器还是修订 §1 L26。
@@ -126,6 +126,49 @@
 - **生成器 5 张表的 DDL**（Q15）与**第二个 `MallTargetAdapter` 的字段夹具**（M1-9）。
 - **滚动日志 / Landing 目录布局契约**：`landing/events`、`landing/accepted/{batchId}`、`landing/quarantine/{batchId}`、`landing/manifests/{batchId}.json` 目前只在 `IngestionService` 与 `RuntimeProfile.landingUri` 中体现，尚无独立契约文件；是否纳入本目录待总控决定。
 
+## 11. 补记：M1-5 收口同步（2026-09-12）
+
+**为什么有本节**：指导书 V2.3 §4.1.1 之 11【新增要求】原文——「`contract-specs/openapi/generator-api.v1.yaml`
+现在把这一区域标为 `x-unspecified`，待 M1-5 收口时按本节同步（含 `TargetCheckResult` 的空对象声明与
+`adapter_type` 取值集合）」。本节记录该同步做了什么、依据是什么、还有什么没做。
+
+**同步清单（只增不删；原文若被废止，均以「以此为准作废」+ 日期标注）**：
+
+| # | 对象 | 同步前（`VERSION` 1.2.0） | 同步后（`VERSION` 1.3.0） | 依据 |
+|---|---|---|---|---|
+| 1 | `TargetCheckResult`（`generator-api.v1`） | 空对象 + `x-unspecified`，明写"指导书没有给出它的任何字段，不发明检查项字段" | 按 DTO 最小字段表声明 `targetId`/`reachable`/`detail`/`capabilities` 四个 properties；**不声明 `required`**（来源未给必填性，不发明约束） | V2.3 §4.1.1.3 L240；实现侧 `adapter/TargetCheckResult.java`（同一 schema 提交） |
+| 2 | `TargetCapabilities` | **不存在**（`generator_target.capabilities` 只写"结构未冻结"） | 新增 schema：`verdicts`（能力名→三态）+ `declared` | V2.3 §4.1.1.3 L241、§4.1.1.2 之 5（三态、缺键⇒`UNDETERMINED`） |
+| 3 | `adapter_type` 取值集合 | "取值集合未冻结（§4.1 L126 只说明第一版实现…）" | "**按契约不冻结**（V2.3 §4.1.1.1 L158 明示）"，第一版实现锚点改 V2.3 §4.1 L139 | 同上；语义由"来源漏规定"改成"契约明确留开"，两者不是一回事 |
+| 4 | `generator_target.capabilities` 列 | "能力集合（对应 §4.1 L108 `capabilities()`）。结构未冻结" | "能力**台账列**，**不参与任何能力判定**"，判定取自 `capabilities(config)` 声明与 `test(config)` 实测 | V2.3 §4.1.1.1 L216-218【追认】 |
+| 5 | `credential_ref` | "凭据只存引用；引用形态未冻结" | 追加 V2.3 §4.1.1.2 之 4 的凭据纪律（日志/流水/异常里只允许出现引用名） | V2.3 §4.1.1.2 之 4 |
+| 6 | `generation-artifact-manifest.v1` 的 `x-synthetic-marker` | "未规定该标记落在制品清单、运行报告还是响应体；需契约任务确认" | **落点已被追认**（制品清单是三个载体之一），并要求三处载体都写；是否已满足留给生成器侧取证 | V2.3 L675 |
+| 7 | 全部 `§x.y Lzzz` 锚点 | 指向 V2.1/V2.2 行号 | 加 `V2.3 ` 前缀并改为 V2.3 行号（本文件 §4.1 区域 + 逐条复核过的 §4.2/§4.3/§4.4 锚点） | 指导书已迭代到 V2.3，裸行号会指向错误段落 |
+
+**勘误（2026-09-12 实测：拿 V2.1 原文逐条比对，不是推断）**：本目录与相邻契约文件里的 **V2.1 锚点全部比实际行号少一行**。
+
+| 旧锚点（原文写法） | V2.1 该行**实际**内容 | V2.1 正确行号 | V2.3 行号 |
+|---|---|---|---|
+| §4.1 L107 `test(TargetConfig)` | `interface MallTargetAdapter {` | L108 | L120 |
+| §4.1 L108 `capabilities()` | `TargetCheckResult test(TargetConfig config);` | L109 | L121 |
+| §4.1 L126 「第一版实现 `ReferenceMallHttpAdapter`」 | 空行（该句在 L127） | L127 | L139 |
+| §4.1 L118-L123（EventSink 四方法） | EventSink 块实际在 L119-L124 | L119-L124 | L131-L136 |
+| §4.2 L132 `generator_target` | 表格分隔行 `\|---|---|---\|` | L133 | L278 |
+| §4.2 L134 `generation_run` 字段 | `generation_plan` 行 | L135 | L280 |
+| §4.2 L135 `generation_artifact` 字段 | `generation_run` 行 | L136 | L281 |
+| §4.2 L138 `generation_event_stat` 字段 | 空行（该行在 L137） | L137 | L282 |
+| §4.3 L149 异常样本 / 期望隔离数 | 「可复现」条目 | L150 | L295 |
+| §4.4 L153 响应写作 `runId` | 空行（该句在 L154） | L154 | L299 |
+| §4.4 L158 连通性检查 | `GET /api/v1/scenarios` | L159 | L304 |
+
+**规律（残留项机械重算的依据）**：V2.1 锚点 = 实际行号 **−1**；V2.3 相对 V2.1 的偏移为 §4.1 **+12**、§4.2/§4.3/§4.4 **+145**（后三者同偏移，因为 V2.3 在 §4.1 之后插入了 §4.1.1）。据此可对残留裸锚点机械重算，但**本轮未做** ⇒ 不得声称全部锚点已校正。事实记录：**F-29**。
+
+**未做 / 未取证（不得当作已完成）**：
+
+- **未逐条重核全部锚点（已量化）**：机械扫描（脚本第 7 步，判据＝未带 `V2.3 `/`V2.1 ` 前缀的 `§x.y Lzzz`）在 6 个文件中命中 **258 处**裸锚点（同步后基线 247 处；另 11 处是本勘误表刻意保留的旧锚点原文，用于对照）；本轮只核了 `generator-api.v1` 的 §4.1 区域与 §4.2/§4.3/§4.4 已读到段落、README §7 的 Q9/Q10/Q11、制品清单 schema 的 `x-evidence`（另有 11 处已在上面勘误表中给出正确行号）⇒ 残留项 **R-M1-5-1**（看板 M1-5 行）；重算规则见上（+1 与 +12/+145）。
+- **Q12 未被本节解决**：§4.1.1 覆盖的是 SPI/DTO，不覆盖 REST 约定（成功状态码、错误体形状、`/targets` 的动词与前缀、进度字段名）⇒ Q12 保持待决。
+- **新增 Q16**：V2.3 §4.1.1.2 之 6【新增要求】要求运行流水/报告的路由取自 `operationRoutes(config)`，但**生成器对外 API 与页面尚未规定如何暴露该路由信息**（`GET /generation-runs/{id}` 无对应字段）⇒ 需决定：是否在运行详情/产物中增加路由字段（会改本 OpenAPI）。
+- **平台侧 `IngestionManifestSourceSchemaTest` 类注释里的"目录级 `1.2.0`"未改**：那是 P1-05 加法扩展发生时的版本，属历史陈述；本轮升到 1.3.0 不改动测试文件（避免跨模块无谓改动），如需同步由平台侧泳道带出。
+- **`VERSION` 升版未同步 `analytics-server` 侧任何断言**：已实测全仓唯一命中是上述注释一处（`contract-specs 1.2.0`/`"1.2.0"` 检索），故升版不影响 E2。
 ## 10. 冻结指纹（文件级，2026-09-11 总控复核时实测）
 
 目的：让"证据对应的是哪一版契约"可被**独立复核**——引用本目录任何结论前先核对指纹；指纹不符 ⇒ 该结论应按新版本重取。

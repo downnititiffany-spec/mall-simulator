@@ -1,0 +1,43 @@
+== M1-5 收口同步：状态复核 2026-09-12 11:42:26（可重复运行） ==
+
+-- 1. VERSION 内容 --
+   contract-specs 1.3.0
+
+-- 2. 11 条锚点对照（正向：正确行确实含声称内容；负向：旧锚点行确实是相邻内容） --
+   PASS  V2.1 §4.1 L107 声称 test(TargetConfig) → 实为 interface 行
+   PASS  V2.1 §4.1 L108 声称 capabilities() → 实为 test 行
+   PASS  V2.1 §4.1 L126 声称第一版实现 → 实为空行
+   PASS  V2.1 §4.2 L132 声称 generator_target → 实为分隔行
+   PASS  V2.1 §4.2 L135 声称 generation_artifact → 实为 generation_run
+   PASS  V2.1 §4.3 L149 声称异常样本 → 实为「可复现」
+   PASS  V2.1 §4.4 L153 声称返回 runId → 实为空行
+   PASS  V2.3 §4.2 L281 = generation_artifact 行
+   PASS  V2.3 §4.4 L304 = 连通性检查行
+   PASS  V2.3 §4.1 L131 = §4.1 骨架 EventSink（不带 extends）
+   PASS  V2.3 §4.1.1.1 L192 = 追认版 EventSink（带 extends AutoCloseable）
+   ⇒ 11/11 通过（全部通过才说明"旧锚点 = 实际行号 −1"这一勘误前提成立）
+
+-- 3. 契约文件解析/结构复验（Python 3.14 + PyYAML + jsonschema） --
+   openapi YAML 解析 OK；components.schemas = 12 ；paths = 7
+      TargetCheckResult properties = ['capabilities', 'detail', 'reachable', 'targetId'] | required = 未声明 | x-unspecified = 无
+      TargetCapabilities properties = ['declared', 'verdicts'] | required = 未声明 | x-unspecified = 无
+     头部锚点说明含“少一行”与 F-29 = True
+   generation-artifact-manifest.v1 check_schema OK；x-evidence 条数 = 12 ；含勘误条 = True
+   README 含 §11 补记 = True ；含勘误表 = True ；残留计数 258 = True
+   对照（本轮未改动）：canonical-event.v1 与 ingestion-manifest.v1 check_schema 均 OK
+
+-- 4. 本轮改动范围（git diff --numstat，含未提交） --
+   47	4	contract-specs/README.md    1	1	contract-specs/VERSION    70	24	contract-specs/openapi/generator-api.v1.yaml    8	1	contract-specs/schemas/generation-artifact-manifest.v1.schema.json
+
+-- 5. contract-specs 全目录 SHA-256（VERSION 1.3.0 后的基线） --
+   openapi\generator-api.v1.yaml  98A07A52D9AF11665C034F5BC51E03FDF9B95E665DE3E4EB17B205D5BB6531B9
+   README.md  07D2F02E31CEFB28665B32C00B7D7E554621D4B4991EB64C617601B7455E33BB
+   schemas\canonical-event.v1.schema.json  0E2E4ED2B17D7DB7A981100ABB35AFCCBF8B75CE72BB12D8D033010AE37302B2
+   schemas\generation-artifact-manifest.v1.schema.json  04D09045757135E5E8BCB08CD14DF37866A9269BBC41E5CB3200A35404D0189C
+   schemas\ingestion-manifest.v1.schema.json  0993E1474228E2EE895E5804D20212DBF1662EF74C22F7EB2A4FAF2E2EF93603
+   specs\warehouse-namespace.v1.json  463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A
+   VERSION  B6BAB8E0547C6BC0EB7005128E177B891E32534FA3522D54B079E7AEC384EC89
+
+-- 6. 残留裸锚点复算（判据：未带 V2.3 /V2.1 前缀的 §x.y Lzzz） --
+   残留裸锚点 = 258 处（残留项 R-M1-5-1；重算规则：V2.1 锚点 +1，再按 §4.1 +12 / §4.2-§4.4 +145 映射到 V2.3）
+

@@ -1,0 +1,102 @@
+== M1-5 收口同步 2026-09-12 11:39:01 ==
+
+-- 1. 同步前 SHA-256 --
+   contract-specs\openapi\generator-api.v1.yaml  51306FE81A7468FA16DB79BB4627CE5EB7B401007141F7A08886931F6E68FDF2
+   contract-specs\schemas\generation-artifact-manifest.v1.schema.json  865D2B283A33AEBA29982159891DF570FB2C282C23EB1C4B7DEBEFB03FB8D732
+   contract-specs\README.md  13D2D6A6BF91A56F4BF53D642F52D2BDDF8AC88480A112B1245882D9E360BB34
+   contract-specs\VERSION  C9E89F9DC5A13DD44A5F75BE0F69F7239723875F4685B11E93AAB09B6DDBC4A0
+
+-- 2. 逐条替换（每条断言命中 1 次） --
+   OK  Y1 test 端点描述
+   OK  Y2 路径参数锚点
+   OK  Y3 200 响应标注
+   OK  Y4 RunId 参数锚点
+   OK  Y5 GeneratorTarget 标题
+   OK  Y6 GeneratorTarget 字段来源
+   OK  Y7 adapter_type 取值集合
+   OK  Y8 adapter_type 字段
+   OK  Y9 credential_ref 字段
+   OK  Y10 config_version 字段
+   OK  Y11 capabilities 台账列
+   OK  Y12 TargetCheckResult 空对象→字段表
+   OK  Y13 Scenario 标题
+   OK  Y14 Scenario 描述锚点
+   OK  Y15 GenerationArtifact 标题
+   OK  Y16 GenerationArtifact 字段来源
+   OK  M1 synthetic 标记落点
+   OK  M2 x-evidence 追加 V2.3 锚点
+   OK  R1 Q9 锚点
+   OK  R2 Q10 锚点
+   OK  R3 Q11 锚点
+   OK  R4 Q3 部分解决
+   合计 22 条替换全部唯一命中
+
+-- 3. VERSION 升版（加性：声明 TargetCheckResult 字段表 + 新增 TargetCapabilities） --
+   contract-specs 1.2.0  ->  contract-specs 1.3.0
+
+-- 4. 追加 README §11 补记 --
+   OK  §11 补记已插入（§10 之前）
+
+-- 5. 写盘 --
+   写入 contract-specs\schemas\generation-artifact-manifest.v1.schema.json
+   写入 contract-specs\README.md
+   写入 contract-specs\openapi\generator-api.v1.yaml
+   写入 contract-specs\VERSION = contract-specs 1.3.0
+
+-- 6. 同步后 SHA-256 --
+   contract-specs\openapi\generator-api.v1.yaml  9BE328D950F2170FFED5B333B1753C981C2FBC62C6ADEBDF6BAB5C22314130EE
+   contract-specs\schemas\generation-artifact-manifest.v1.schema.json  87CD9013461848BB6DD570970E64DF4E2394AB3038E3138B1C1026DAF7A4B577
+   contract-specs\README.md  F3C0635D741FAE1896FCB7D3FE2AA3E7AD267518A1F0F5347799808BF2FFABA6
+   contract-specs\VERSION  B6BAB8E0547C6BC0EB7005128E177B891E32534FA3522D54B079E7AEC384EC89
+
+== 6 文件解析/校验（Python 3.14.5 + PyYAML 6.0.3 + jsonschema 4.26.0） ==
+     openapi YAML ���� OK��schemas = 12 ��paths = 7
+        TargetCheckResult properties = ['capabilities', 'detail', 'reachable', 'targetId'] required = δ���� x-unspecified = ��
+        TargetCapabilities properties = ['declared', 'verdicts'] required = δ���� x-unspecified = ��
+     generation-artifact-manifest.v1 check_schema OK��x-evidence ���� = 11
+     canonical-event.v1 check_schema OK��δ�Ķ��������գ�
+     ingestion-manifest.v1 check_schema OK��δ�Ķ��������գ�
+
+-- 7. 残留裸锚点扫描（未加 V2.3 前缀的 §x.y Lzzz，供 R-M1-5-1 用） --
+   残留 247 处（正向对照：本扫描对已加前缀的锚点不匹配，故只列裸锚点）
+     contract-specs\openapi\generator-api.v1.yaml:19  §3.1 L62
+     contract-specs\openapi\generator-api.v1.yaml:26  §4.4 L158
+     contract-specs\openapi\generator-api.v1.yaml:27  §4.4 L158
+     contract-specs\openapi\generator-api.v1.yaml:28  §4.4 L154
+     contract-specs\openapi\generator-api.v1.yaml:28  §4.2 L134
+     contract-specs\openapi\generator-api.v1.yaml:29  §4.4 L156
+     contract-specs\openapi\generator-api.v1.yaml:35  §4.4 L153
+     contract-specs\openapi\generator-api.v1.yaml:37  §4.4 L157
+     contract-specs\openapi\generator-api.v1.yaml:39  §4.4 L158
+     contract-specs\openapi\generator-api.v1.yaml:48  §4.4 L153
+     contract-specs\openapi\generator-api.v1.yaml:49  §4.2 L133
+     contract-specs\openapi\generator-api.v1.yaml:50  §4.2 L133
+     contract-specs\openapi\generator-api.v1.yaml:74  §4.4 L154
+     contract-specs\openapi\generator-api.v1.yaml:75  §4.2 L138
+     contract-specs\openapi\generator-api.v1.yaml:75  §4.2 L134
+     contract-specs\openapi\generator-api.v1.yaml:96  §4.4 L155
+     contract-specs\openapi\generator-api.v1.yaml:96  §4.2 L134
+     contract-specs\openapi\generator-api.v1.yaml:97  §4.2 L138
+     contract-specs\openapi\generator-api.v1.yaml:117  §4.4 L156
+     contract-specs\openapi\generator-api.v1.yaml:118  §4.2 L135
+     contract-specs\openapi\generator-api.v1.yaml:142  §4.4 L157
+     contract-specs\openapi\generator-api.v1.yaml:162  §4.4 L158
+     contract-specs\openapi\generator-api.v1.yaml:162  §4.2 L132
+     contract-specs\openapi\generator-api.v1.yaml:179  §4.4 L158
+     contract-specs\openapi\generator-api.v1.yaml:201  §4.4 L158
+     contract-specs\openapi\generator-api.v1.yaml:203  §4.2 L132
+     contract-specs\openapi\generator-api.v1.yaml:255  §4.4 L304
+     contract-specs\openapi\generator-api.v1.yaml:262  §4.4 L153
+     contract-specs\openapi\generator-api.v1.yaml:264  §4.2 L133
+     contract-specs\openapi\generator-api.v1.yaml:267  §4.2 L133
+     contract-specs\openapi\generator-api.v1.yaml:270  §4.2 L133
+     contract-specs\openapi\generator-api.v1.yaml:270  §4.2 L133
+     contract-specs\openapi\generator-api.v1.yaml:277  §4.4 L153
+     contract-specs\openapi\generator-api.v1.yaml:279  §4.4 L153
+     contract-specs\openapi\generator-api.v1.yaml:279  §4.2 L134
+     contract-specs\openapi\generator-api.v1.yaml:289  §4.2 L134
+     contract-specs\openapi\generator-api.v1.yaml:292  §4.2 L134
+     contract-specs\openapi\generator-api.v1.yaml:297  §4.4 L153
+     contract-specs\openapi\generator-api.v1.yaml:303  §4.2 L132
+     contract-specs\openapi\generator-api.v1.yaml:308  §4.2 L138
+

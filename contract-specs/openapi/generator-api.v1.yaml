@@ -17,6 +17,10 @@ info:
     - HTTP 状态码与错误响应体形状：指导书未规定。成功响应统一记为 200 并标 `x-unspecified`，
       另给一个只有文字说明的 `default` 响应。
     - 未定义 `servers`：§3.1 L62 只写「8092 或 CLI」，未冻结主机/端口/基路径。
+    - 行号锚点来源：本文件的 `§x.y Lzzz` 锚点**多数按 V2.1 的行号记录，且一律比实际行号少一行**（勘误 2026-09-12：
+      已逐条比对 V2.1 原文，勘误表见 `../README.md` §11、事实记录 F-29）。引用这些历史锚点时请**先 +1** 再按
+      `docs/项目完整实施指导书 V2.1.md` 复核；当前权威是 V2.3。按 V2.3 复核过的锚点一律带 `V2.3 ` 前缀；
+      未逐条复核的裸锚点数量与重算规则见残留项 R-M1-5-1。
 
     相关契约文件：
     - `../schemas/canonical-event.v1.schema.json`（文件模式产出的 JSONL 每行必须通过该校验）
@@ -224,20 +228,20 @@ paths:
       operationId: testTarget
       summary: 目标商城连通性检查
       description: |
-        §4.4 L158：`POST /targets/{id}/test`（前缀按本文件规范化）。
-        语义对应 §4.1 L107 的 `TargetCheckResult test(TargetConfig config)`；TargetCheckResult 与
-        TargetConfig 的字段在指导书中均未定义，故响应只标 x-unspecified，不发明检查项字段。
+        V2.3 §4.4 L304：`POST /targets/{id}/test`（前缀按本文件规范化）。
+        语义对应 V2.3 §4.1 L120 的 `TargetCheckResult test(TargetConfig config)`。
+        补记（2026-09-12，M1-5 收口同步）：字段表已由 V2.3 §4.1.1.3（L240）追认，响应 schema 按该表声明 properties；
+        原文"TargetConfig/TargetCheckResult 字段均未定义、不发明检查项字段"**以此为准作废**（旧文本见 git 历史与 `VERSION` 1.2.0）。
       parameters:
         - name: id
           in: path
           required: true
-          description: generator_target.id（§4.2 L132）。类型未冻结，故不声明 schema。
+          description: generator_target.id（V2.3 §4.2 L278）。类型未冻结，故不声明 schema。
           schema:
             x-unspecified: true
       responses:
         '200':
-          description: 连通性检查结果。字段未冻结，待契约任务。指导书未规定状态码，按 200 记录。
-          x-unspecified: true
+          description: 连通性检查结果。字段按 V2.3 §4.1.1.3（L240）声明；指导书未规定成功状态码，按 200 记录（状态码仍属待决 Q12）。
           content:
             application/json:
               schema:
@@ -252,7 +256,7 @@ components:
       in: path
       required: true
       description: |
-        运行标识。§4.4 写作 `{id}`，§4.2 L134 的字段名为 run_id，§4.4 L153 的响应写作 runId；
+        运行标识。V2.3 §4.4 写作 `{id}`（L300/§4.4 L304），V2.3 §4.2 L280 的字段名为 run_id，V2.3 §4.4 L299 的响应写作 runId；
         三者命名不一致，类型亦未冻结，故此处不声明 schema，登记在 README 待决策。
       schema:
         x-unspecified: true
@@ -400,13 +404,13 @@ components:
         - CANONICAL_EVENT_FILE
 
     GeneratorTarget:
-      title: 目标商城配置（§4.2 L132 generator_target）
+      title: 目标商城配置（V2.3 §4.2 L278 generator_target）
       type: object
       description: |
-        字段名逐项取自 §4.2 L132：id、name、adapter_type、base_url、credential_ref、config_json、
+        字段名逐项取自 V2.3 §4.2 L278：id、name、adapter_type、base_url、credential_ref、config_json、
         config_version、status、test_environment、capabilities。约束：『凭据只存引用』（credential_ref），
-        『每次运行冻结版本』（config_version）。adapter_type 的取值集合未冻结（§4.1 L126 只说明第一版实现
-        ReferenceMallHttpAdapter 与 JsonlEventSink）。
+        『每次运行冻结版本』（config_version）。adapter_type 的取值集合**按契约不冻结**（V2.3 §4.1.1.1 L158 明示
+        "取值集合不冻结"）；V2.3 §4.1 L139 只说明第一版实现 ReferenceMallHttpAdapter 与 JsonlEventSink。
       properties:
         id:
           description: 目标 ID。类型未冻结。
@@ -415,19 +419,19 @@ components:
           description: 目标名称。类型未冻结。
           x-unspecified: true
         adapter_type:
-          description: 适配器类型；取值集合未冻结（§4.1 L126 第一版为 ReferenceMallHttpAdapter）。
+          description: 适配器类型；取值集合**按契约不冻结**（V2.3 §4.1.1.1 L158）；第一版为 ReferenceMallHttpAdapter（V2.3 §4.1 L139）。
           x-unspecified: true
         base_url:
           description: 商城公开接口基地址。类型未冻结。
           x-unspecified: true
         credential_ref:
-          description: 凭据引用（不得为明文凭据）。§4.2 L132『凭据只存引用』；引用形态未冻结。
+          description: 凭据引用（不得为明文凭据）。V2.3 §4.2 L278『凭据只存引用』；纪律见 V2.3 §4.1.1.2 之 4（日志/流水/异常里只允许出现引用名，值绝不出现）；引用形态未冻结。
           x-unspecified: true
         config_json:
           description: 适配器配置 JSON。内部结构未冻结。
           x-unspecified: true
         config_version:
-          description: 配置版本，用于运行冻结（§4.2 L132『每次运行冻结版本』）。类型未冻结。
+          description: 配置版本，用于运行冻结（V2.3 §4.2 L278『每次运行冻结版本』）。类型未冻结。
           x-unspecified: true
         status:
           description: 目标状态。取值集合未冻结。
@@ -436,36 +440,78 @@ components:
           description: 是否/何种测试环境标记。类型与取值未冻结。
           x-unspecified: true
         capabilities:
-          description: 能力集合（对应 §4.1 L108 capabilities()）。结构未冻结。
+          description: 能力**台账列**（V2.3 §4.1 L121 `capabilities()` / §4.2 L278 的 capabilities 列）。**不参与任何能力判定**（V2.3 §4.1.1.1 L216-218：判定一律取自 `capabilities(config)` 声明与 `test(config)` 实测，本列只是台账）；列内结构未冻结。
           x-unspecified: true
       required: [name, adapter_type]
       additionalProperties: false
       x-unspecified: true
 
     TargetCheckResult:
-      title: 连通性检查结果（§4.1 L107 / §4.4 L158）
+      title: 连通性检查结果（V2.3 §4.1 L120 / §4.1.1.3 L240 / §4.4 L304）
       type: object
       description: |
-        §4.1 L107 `TargetCheckResult test(TargetConfig config)` 与 §4.4 L158 的连通性检查均已提出该对象，
-        但指导书没有给出它的任何字段，故本契约不声明 properties（空对象 + x-unspecified），
-        不发明『检查项/是否通过/耗时』等字段。
+        字段表由 **V2.3 §4.1.1.3（L240）追认**：`targetId`(long)、`reachable`(boolean)、`detail`(String)、
+        `capabilities`(Map)。`detail` 只写过程说明，**不得含凭据值**（V2.3 §4.1.1.2 之 4）。
+        `capabilities` 是本次探测的**实测**判定，与 `generator_target.capabilities` 台账列不是一回事
+        （V2.3 §4.1.1.1 L216-218）。
+        必填性未在指导书中明示：实现侧 `adapter/TargetCheckResult.java` 的四组件都是构造参数，其中
+        `capabilities` 由构造器把 null/空表归一为 `Map.of()` ⇒ 本契约不声明 `required`（不发明来源未给的约束）。
+        补记（2026-09-12，M1-5 收口同步）：本对象此前为「空对象 + x-unspecified、不声明 properties」
+        （`VERSION` 1.2.0），该写法**以此为准作废**。
+      properties:
+        targetId:
+          type: integer
+          format: int64
+          description: generator_target.id（V2.3 §4.2 L278）；一次检查内冻结。
+        reachable:
+          type: boolean
+          description: 本次实测目标是否可达。
+        detail:
+          type: string
+          description: 过程说明；只写过程，不得含凭据值。
+        capabilities:
+          type: object
+          description: 实测能力判定表：键为能力名（V2.3 §4.1.1.3 L242），值为三态判定（L243）。
+          additionalProperties:
+            type: string
+            enum: [SUPPORTED, ABSENT, UNDETERMINED]
       additionalProperties: true
-      x-unspecified: true
+
+    TargetCapabilities:
+      title: 能力声明/判定集合（V2.3 §4.1.1.1 L165 / §4.1.1.3 L241）
+      type: object
+      description: |
+        判定只有三态（V2.3 §4.1.1.2 之 5）：`SUPPORTED` / `ABSENT` / `UNDETERMINED`；缺键、未知、探测不到
+        一律 `UNDETERMINED`，**不得**说成 `SUPPORTED`。`capabilities(config)` 是**声明**（不联网），
+        `test(config)` 里的 `capabilities` 是**实测**。实现侧 `adapter/TargetCapabilities.java` = (`verdicts`, `declared`)，
+        `none()` = 空表 + `declared=false`。能力名（`product`/`user`/`order`/`refund`/`behavior`/`reset_state`/`admin`）
+        是生成器侧词汇、不是跨程序契约；新增能力名须先改 V2.3 §4.1.1.3（L242）。
+      properties:
+        verdicts:
+          type: object
+          description: 能力名 → 三态判定。
+          additionalProperties:
+            type: string
+            enum: [SUPPORTED, ABSENT, UNDETERMINED]
+        declared:
+          type: boolean
+          description: 该表是「声明」（true）还是「实测」（false）；`none()` 为 false。
+      additionalProperties: true
 
     Scenario:
-      title: 场景定义与输入约束（§4.4 L157）
+      title: 场景定义与输入约束（V2.3 §4.4 L303）
       type: object
       description: |
-        §4.4 L157 要求返回『场景定义和输入约束』，§4.3（L140-L149）给出了算法维度但未冻结字段名，
+        V2.3 §4.4 L303 要求返回『场景定义和输入约束』，V2.3 §4.3（L286-L295）给出了算法维度但未冻结字段名，
         故本契约不声明 properties（空对象 + x-unspecified）。生成器实现不得据此发明对外字段后回写成契约。
       additionalProperties: true
       x-unspecified: true
 
     GenerationArtifact:
-      title: 生成制品（§4.2 L135 generation_artifact）
+      title: 生成制品（V2.3 §4.2 L281 generation_artifact）
       type: object
       description: |
-        字段名逐项取自 §4.2 L135：run_id、uri、checksum、bytes、record_count、min_event_time、
+        字段名逐项取自 V2.3 §4.2 L281：run_id、uri、checksum、bytes、record_count、min_event_time、
         max_event_time、schema_version（其中 min/max_event_time 展开为两个键）；文件模式下另有 synthetic 标记，
         完整清单契约见 ../schemas/generation-artifact-manifest.v1.schema.json。
       properties:

@@ -1,0 +1,42 @@
+== M1-5 勘误写入 2026-09-12 11:40:24 ==
+
+-- 0. 先复现"少一行"（正向对照 + 负向对照，防止我算错） --
+   OK   §4.1 L107 声称 test(TargetConfig)  ⇒ v1 L107 = "interface MallTargetAdapter {"
+   OK   §4.1 L108 声称 capabilities()  ⇒ v1 L108 = "TargetCheckResult test(TargetConfig config);"
+   OK   §4.1 L126 声称第一版实现  ⇒ v1 L126 = ""
+   OK   §4.2 L132 声称 generator_target  ⇒ v1 L132 = "|---|---|---|"
+   OK   §4.2 L135 声称 generation_artifact  ⇒ v1 L135 = "| `generation_run` | run_id、plan_version、targe"
+   OK   §4.3 L149 声称异常样本  ⇒ v1 L149 = "- 可复现：所有随机源由一个根 seed 派生；并行线程也使用确定性子 seed。"
+   OK   §4.4 L153 声称返回 runId  ⇒ v1 L153 = ""
+   OK   V2.3 §4.2 L281 = generation_artifact（我写的新锚点）  ⇒ v3 L281 = "| `generation_artifact` | run_id、uri、checksum、"
+   OK   V2.3 §4.4 L304 = 连通性检查（我写的新锚点）  ⇒ v3 L304 = "- `POST/PUT/GET /api/v1/targets` 与 `POST /targ"
+   OK   V2.3 §4.1 L131 = §4.1 骨架的 EventSink（不带 extends AutoCloseable）  ⇒ v3 L131 = "interface EventSink {"
+   OK   V2.3 §4.1.1.1 L192 = 追认版 EventSink（带 extends AutoCloseable）  ⇒ v3 L192 = "interface EventSink extends AutoCloseable {"
+   ⇒ 10 条对照全部成立：旧锚点行 = 相邻错误内容、正确行 = 声称内容（"少一行"成立）
+
+-- 1. 逐条替换（每条断言命中 1 次） --
+   OK  E1 修正我自己写的 V2.1 对应行号 + 追加勘误条
+   OK  E2 头部说明补入"少一行"结论
+   OK  E3 §11 追加勘误表与规律
+   OK  E4 残留项量化
+
+-- 2. 写盘 + 同步后哈希 --
+   写入 contract-specs\README.md  A00051DAFB017A8F0005240412D2A6906D1451CDE86F1ADCCC84390FF902E0FE
+   写入 contract-specs\schemas\generation-artifact-manifest.v1.schema.json  04D09045757135E5E8BCB08CD14DF37866A9269BBC41E5CB3200A35404D0189C
+   写入 contract-specs\openapi\generator-api.v1.yaml  98A07A52D9AF11665C034F5BC51E03FDF9B95E665DE3E4EB17B205D5BB6531B9
+
+-- 3. 复验（Python 解析 + jsonschema，确保勘误没写坏文件） --
+     openapi YAML ���� OK��schemas = 12 paths = 7
+     ͷ���Ѻ�����˵�� = True
+     manifest check_schema OK��x-evidence ���� = 12
+     ���������� x-evidence = True
+     canonical-event.v1 check_schema OK�����գ�δ�ģ�
+
+-- 4. contract-specs 全目录哈希（VERSION 1.3.0 后的冻结指纹基线） --
+   openapi\generator-api.v1.yaml  98A07A52D9AF11665C034F5BC51E03FDF9B95E665DE3E4EB17B205D5BB6531B9
+   README.md  A00051DAFB017A8F0005240412D2A6906D1451CDE86F1ADCCC84390FF902E0FE
+   schemas\canonical-event.v1.schema.json  0E2E4ED2B17D7DB7A981100ABB35AFCCBF8B75CE72BB12D8D033010AE37302B2
+   schemas\generation-artifact-manifest.v1.schema.json  04D09045757135E5E8BCB08CD14DF37866A9269BBC41E5CB3200A35404D0189C
+   schemas\ingestion-manifest.v1.schema.json  0993E1474228E2EE895E5804D20212DBF1662EF74C22F7EB2A4FAF2E2EF93603
+   specs\warehouse-namespace.v1.json  463D9DC3503D563D8DD8EB844C1AB5EDE9AAEE073251F07957D410C13911AE5A
+   VERSION  B6BAB8E0547C6BC0EB7005128E177B891E32534FA3522D54B079E7AEC384EC89
