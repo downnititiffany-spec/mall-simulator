@@ -153,3 +153,15 @@ CT-4 = `canonical-event.v1` **冻结前置**，其两项未决：**B-06**（文�
 - 文档面：`docs/contracts/event-contract.md` 两处（CT-1 一处、CT-2 两处，其中 `:12` 与 CT-2 同一行见 §2 —— **施工顺序：CT-1 先改该行注释同一处，避免两次触碰同一行**）。
 - 证据分级：本批只做 E1（编译＋模块单测）＋契约结构对账；**不产生** E3/E4/E5 证据；T2 黄金链重跑（M1-11）**必须**排在本批之后**重新**执行一次（jar/契约都已变）。
 - 历史纪律：`README.md` §10 冻结指纹表的**历史行一律原文保留**，新值以**新增行**方式登记（CT-0 已确立的做法）。
+
+---
+
+## 6. 补记（2026-09-12 13:3x 总控）：VERSION 目标值勘误 —— CT 批次改为「按落盘时 minor 递增」
+
+**背景**：P2-07（源级数仓命名空间）只读取证完成后裁决为**破坏性契约变更**（`docs/acceptance/p2-07-source-prefix-20260912/RULINGS-20260912.md` D-072）：`warehouse-namespace.v1.json` 的 `sourceOfTruth` 由 `runtime_profile.hive_database_prefix` 改为源级，按 `contract-specs/README.md:42`「不原地改语义」⇒ 新增 `warehouse-namespace.v2.json` 并把目录 `VERSION` 推到 **2.0.0**。
+
+**勘误**：本批次原定 `VERSION 1.3.0 → 1.4.0`（见 D-061…D-065 与本目录 PLAN）。因两个批次共用同一份 `contract-specs/VERSION`，P2-07 先落 2.0.0 ⇒ **本批次的 VERSION 目标值改为「按落盘时的当前值 minor 递增」**：
+- 若 P2-07（2.0.0）已落盘 ⇒ 本批次落 **2.1.0**；
+- 若本批次先落 ⇒ 仍为 **1.4.0**，P2-07 后落则按 major 规则落 2.0.0。
+
+**不变项**：CT-1/CT-2/CT-3 的裁决内容、施工单、验收面（E1/E2/T2 排序）、以及「锚点规则与守卫」全部不变；**变的只有 `VERSION` 这一行的目标数值**。落盘时必须在 `contract-specs/README.md` 的变更记录里写明本次是「加法变更(minor)」还是「破坏性变更(major)」并给日期。
