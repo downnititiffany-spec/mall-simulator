@@ -165,3 +165,30 @@ CT-4 = `canonical-event.v1` **冻结前置**，其两项未决：**B-06**（文�
 - 若本批次先落 ⇒ 仍为 **1.4.0**，P2-07 后落则按 major 规则落 2.0.0。
 
 **不变项**：CT-1/CT-2/CT-3 的裁决内容、施工单、验收面（E1/E2/T2 排序）、以及「锚点规则与守卫」全部不变；**变的只有 `VERSION` 这一行的目标数值**。落盘时必须在 `contract-specs/README.md` 的变更记录里写明本次是「加法变更(minor)」还是「破坏性变更(major)」并给日期。
+
+---
+
+## 7. 补记（2026-09-12，总控）：**D-061「未取证②」回填** —— 全仓扫描实测，CT-1 变更清单由此**完备化**
+
+- **触发**：D-061 自述「未做全仓扫描」，即"除 `event-contract.md` 外是否还有别处复述 `source_system` 固定值"**未取证**。若另有复述而 CT-1 清单未列，CT-1 落地后会留下**自相矛盾的仓库**（契约已放宽、别处仍称固定值）。
+- **扫描口径（可复现）**：`git ls-files -z` 取全量入库文件 ⇒ 按扩展名过滤（`.md/.json/.yaml/.yml/.java/.scala/.ps1/.sql/.py/.txt/.tsv/.proto/.xml/.properties` ＋ `contract-specs/VERSION`）⇒ **排除** `docs/acceptance/**`（历史报告，按定义不改）与 `target/**` ⇒ **扫描 589 个文件**；四组正则：**P1** `固定值`；**P2** `SOURCE_SYSTEM\s*=\s*"`；**P3** `"const"\s*:\s*"mock-mall"`；**P4** `(等于|==|必须是).{0,12}mock-mall|mock-mall.{0,12}(固定|常量|唯一)`。
+- **正向对照（证明扫描非空转）**：P1 命中 `docs/contracts/event-contract.md`＝**是**；P2 命中 `platform-common/.../EventContract.java`＝**是**。⇒ 扫描确能发现该类文本，零命中不等于漏扫。
+- **未覆盖边界（未取证）**：① **未入库文件**（`git ls-files` 不含，含在飞泳道新建文件）；② `docs/acceptance/**` 历史报告（按定义不改，但其中确有复述，勿据此判"仓库无复述"）；③ `target/` 构建产物与 `logs/`。
+
+### 7.1 命中分类（15 个文件）
+
+| 分类 | 文件（行） | 处置 |
+|---|---|---|
+| **CT-1 已列** | `docs/contracts/event-contract.md:16`；`contract-specs/schemas/canonical-event.v1.schema.json:39,40`；`analytics-server/platform-common/.../EventContract.java:17`；`contract-specs/README.md`（见下行，需细化） | 按 D-061 第 1–6 条执行 |
+| **★ 新命中·必须在 CT-1 清单内细化** | **`contract-specs/README.md:43`**（§3 规则：「当前仓库里 … 两侧常量值经核对一致：`SCHEMA_VERSION="1.0"`、`SOURCE_SYSTEM="mock-mall"`」）与 **`:71`**（§5 建模决定：「**`source_system` 取 `const: "mock-mall"`**：…且 `EventContract.SOURCE_SYSTEM` 两侧实现同值，`CanonicalEventSchemaParityTest` 也要求 `const`」） | **CT-1 落地后这两句即变为假**：`:71` 的 `const` 与"parity 测试要求 const"双双反转；`:43` 的平台侧常量副本被退休。⇒ **CT-1 第 6 条"README 随批升版＋指纹重登记"须展开为"逐句更新 `:43`/`:71`"**，否则 README 与 schema 互相矛盾 |
+| **新命中·**不改**（假阳性，防误改）** | `analytics-server/warehouse-pipeline/.../JobCommandBuilder.java:48` ＝ `ARG_SOURCE_SYSTEM = "sourceSystem"`（**参数名**，非商城名）；`analytics-server/platform-app/src/test/.../PlatformMallBoundarySourcePolicyTest.java:63`（**注释**说明小写串 `source_system="mock-mall"` 不受"商城命名遗留"守卫约束） | **不动**。二者与"固定值"无关；若被当作命中而改，属破坏 |
+| **新命中·**不改**（行为不变）** | `synthetic-data-generator/src/test/.../FileModeGenerationEngineTest.java:525-527`（断言生成器产出 `source_system == "mock-mall"`） | CT-1 **明确不改生成器**（B-06 未决）⇒ 该断言**仍然正确**，不得随之改动 |
+| **新命中·**不改**（商城侧副本，B-06 未决）** | `mall-simulator/src/main/java/.../outbox/EventContract.java:10`；`mall-simulator/src/test/.../GoldenDatasetTest.java:155`（用**商城自己**的常量） | CT-1 只退休**平台侧**常量（D-061 第 3 条）⇒ 商城侧常量与其测试**不受影响**；"两侧副本"的收敛仍属 **B-06** |
+| **新命中·**不改**（历史/他级权威文本）** | `docs/开发过程事实与决策记录.md:427,875`；`docs/项目完整实施指导书 V2.0.md:1417`（**历史版本**）；`docs/superpowers/plans/2026-09-06-slice01-mall-outbox.md:72`；`docs/项目实施进度与任务看板 V2.2.md:431,445`（看板历史行，含本轮 CT/A12 行）；`docs/superpowers/specs/2026-09-11-mall-agnostic-platform-design.md:23` | **一律不改**（append-only 历史件）。设计书 `:23` 是**审计问题陈述**（把 `source_system == "mock-mall"` 列为**待修硬耦合**），与 CT-1 **同向**，不构成冲突；如需标注"该问题由 CT-1 关闭"，走补记而非改原文 |
+
+### 7.2 结论与效力
+
+- **D-061「未取证②」就此关闭**：全仓（589 个入库文件）**无第三处"必须随 CT-1 改"的新文件**；唯一增量是 **`contract-specs/README.md:43` 与 `:71` 两句必须逐句更新**，已并入 CT-1 第 6 条，**不改变 CT-1 的裁决内容**（原裁决方向不变，仅使变更清单完备）。
+- 本补记**不新立裁决号**（避免重复所有者）：它是对 **D-061** 的取证回填。
+- **同时实测到的一处现状（只读，非裁决）**：平台侧 **A12 已在工作树落地** —— `JobCommandBuilder.java:124-126`（`// A12：源编码与库名并列下发` ＋ `cmd.add("--" + ARG_SOURCE_SYSTEM + "=" + source.sourceCode());`），Javadoc `:32–48` 同步写明"值 = `source_registry.source_code`"与 spark-jobs 侧 fail-closed 的呼应。**该文件属在飞泳道（P2-07）** ⇒ 总控**只读确认存在**，**E1/E2 未复核**，**不得**据此声称 A12 已通过验证。
+- **未做**：未改任何代码/契约/历史文档；本轮无库写；未停启 809x。
