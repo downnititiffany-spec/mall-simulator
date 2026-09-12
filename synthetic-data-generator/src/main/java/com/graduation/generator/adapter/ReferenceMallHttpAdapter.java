@@ -80,6 +80,351 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         return ADAPTER_TYPE;
     }
 
+    // ---------- §4.1 capabilities()：静态声明（不联网） ----------
+
+    /**
+     * 按 {@code base_url} + 凭据 + {@code config_json} 的声明给出"这台适配器应该能做什么"。
+     *
+     * <p>判定规则（三条都是"不猜"）：① 公开目录路由（product/user/order/refund）在 base_url 合法、
+     * 凭据可取时声明为 {@code SUPPORTED}，缺凭据时一律 {@code UNDETERMINED}（D-033 实测：参考商城
+     * 对公开路由同样要求 Bearer，匿名连不上就等于没证实）；② {@code behavior}/{@code reset_state}
+     * 只有 {@code config_json} 显式声明了路径才可能为 {@code SUPPORTED}，否则 {@code UNDETERMINED}；
+     * ③ {@code admin} 依赖凭据，缺凭据即 {@code UNDETERMINED}。</p>
+     *
+     * <p><b>它不是实测</b>：{@code declared=true}。运行报告记录的是 {@link #test(TargetConfig)} 的结果。</p>
+     */
+    @Override
+    public TargetCapabilities capabilities(TargetConfig config) {
+        Map<MallCapability, CapabilityVerdict> verdicts = new EnumMap<>(MallCapability.class);
+        Credential credential = credentialState(config.credentialRef());
+        boolean usableBase = baseUri(config) != null;
+        Map<String, String> declared = declaredPaths(config.configJson());
+
+        for (MallCapability capability : MallCapability.values()) {
+            verdicts.put(capability, CapabilityVerdict.UNDETERMINED);
+        }
+        if (usableBase && credential.available()) {
+            verdicts.put(MallCapability.PRODUCT, CapabilityVerdict.SUPPORTED);
+            verdicts.put(MallCapability.USER, CapabilityVerdict.SUPPORTED);
+            verdicts.put(MallCapability.ORDER, CapabilityVerdict.SUPPORTED);
+            verdicts.put(MallCapability.REFUND, CapabilityVerdict.SUPPORTED);
+            verdicts.put(MallCapability.ADMIN, CapabilityVerdict.SUPPORTED);
+        }
+        if (usableBase && declared.containsKey(CONFIG_BEHAVIOR_PATH)) {
+            verdicts.put(MallCapability.BEHAVIOR, CapabilityVerdict.SUPPORTED);
+        }
+        if (usableBase && credential.available() && declared.containsKey(CONFIG_RESET_PATH)) {
+            verdicts.put(MallCapability.RESET_STATE, CapabilityVerdict.SUPPORTED);
+        }
+        return TargetCapabilities.declared(verdicts);
+    }
+
+    // ---------- §4.1 其余七项：真实调用 ----------
+
+    @Override
+    public ProductPage listProducts(TargetConfig config, ProductQuery query) {
+        if (query == null) {
+            throw new MallOperationException("listProducts", "ProductQuery 不得为 null");
+        }
+        JsonNode data = call(config, "listProducts", "GET",
+                "/api/v1/mall/products" + categoryQuery(query.categoryId()),
+                null, query.offset() + query.limit());
+        if (!data.isArray()) {
+            throw new MallOperationException("listProducts",
+                    "应答 data 不是数组，无法解析商品列表：" + abbreviate(data));
+        }
+        List<ExternalProduct> all = new ArrayList<>();
+        for (JsonNode node : data) {
+            all.add(toProduct(node));
+        }
+        List<ExternalProduct> filtered = query.keyword() == null ? all : all.stream()
+                .filter(product -> product.name() != null
+                        && product.name().toLowerCase().contains(query.keyword().toLowerCase()))
+                .toList();
+        return new ProductPage(query.window(filtered), filtered.size());
+    }
+
+    @Override
+    public ExternalUser createSyntheticUser(TargetConfig config, UserCommand command) {
+        if (command == null) {
+            throw new MallOperationException("createSyntheticUser", "UserCommand 不得为 null");
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("ageGroup", command.ageGroup());
+        body.put("cityLevel", command.cityLevel());
+        body.put("memberLevel", command.memberLevel());
+        JsonNode data = call(config, "createSyntheticUser", "POST", "/api/v1/mall/users", body, 0);
+        return new ExternalUser(requireId(data, "userId", "createSyntheticUser"), command.memberLevel());
+    }
+
+    @Override
+    public void emitBehavior(TargetConfig config, BehaviorCommand command) {
+        if (command == null) {
+            throw new MallOperationException("emitBehavior", "BehaviorCommand 不得为 null");
+        }
+        String path = declaredPaths(config.configJson()).get(CONFIG_BEHAVIOR_PATH);
+        if (path == null) {
+            throw new MallOperationException("emitBehavior", "目标未声明行为埋点接口：请在 config_json."
+                    + CONFIG_BEHAVIOR_PATH + " 里给出公开埋点路径（B-04：参考商城当前尚无该接口，"
+                    + "未声明即能力 ABSENT，生成器不会猜一个路由去发、也不会静默跳过）");
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("userId", command.userId());
+        body.put("productId", command.productId());
+        body.put("sessionId", command.sessionId());
+        body.put("behaviorType", command.behaviorType());
+        body.put("channel", command.channel());
+        call(config, "emitBehavior", "POST", path, body, 0);
+    }
+
+    @Override
+    public ExternalOrder createOrder(TargetConfig config, OrderCommand command) {
+        if (command == null) {
+            throw new MallOperationException("createOrder", "OrderCommand 不得为 null");
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("userId", command.userId());
+        body.put("items", command.items().stream().map(item -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("productId", item.productId());
+            row.put("quantity", item.quantity());
+            return row;
+        }).toList());
+        JsonNode data = call(config, "createOrder", "POST", "/api/v1/mall/orders", body, 0);
+        return readOrder(data, command.userId(), "createOrder", null);
+    }
+
+    @Override
+    public ExternalOrder pay(TargetConfig config, PayCommand command) {
+        if (command == null) {
+            throw new MallOperationException("pay", "PayCommand 不得为 null");
+        }
+        // 参考商城的支付应答是 ApiResponse<Void>（data=null，实测商城订单接口 L80）：HTTP 2xx + code=OK
+        // 就是"已支付"，没有可读的状态字段可解析——这里的 PAID 是"调用成功"的记录，不是从应答里读来的值。
+        call(config, "pay", "POST",
+                "/api/v1/mall/orders/" + encode(command.orderId()) + "/pay",
+                Map.of("userId", command.userId()), 0);
+        return new ExternalOrder(command.orderId(), command.userId(), "PAID", null, -1);
+    }
+
+    @Override
+    public ExternalOrder cancel(TargetConfig config, CancelCommand command) {
+        if (command == null) {
+            throw new MallOperationException("cancel", "CancelCommand 不得为 null");
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("userId", command.userId());
+        body.put("reason", command.reason());
+        // 同上：取消也是 ApiResponse<Void>
+        call(config, "cancel", "POST",
+                "/api/v1/mall/orders/" + encode(command.orderId()) + "/cancel", body, 0);
+        return new ExternalOrder(command.orderId(), command.userId(), "CANCELLED", null, -1);
+    }
+
+    @Override
+    public ExternalRefund refund(TargetConfig config, RefundCommand command) {
+        if (command == null) {
+            throw new MallOperationException("refund", "RefundCommand 不得为 null");
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("userId", command.userId());
+        body.put("amount", command.amount());
+        body.put("reason", command.reason());
+        JsonNode data = call(config, "refund", "POST",
+                "/api/v1/mall/orders/" + encode(command.orderId()) + "/refunds", body, 0);
+        String refundId = requireId(data, "refundId", "refund");
+        // 参考商城的退款是两步（申请 + 完成）；只申请不完成会留下"永远不完成"的退款单，
+        // 因此这里把完成也走一遍——两步都成，返回的退款项才算 COMPLETED。
+        call(config, "refund", "POST", "/api/v1/mall/refunds/" + encode(refundId) + "/complete",
+                Map.of("userId", command.userId()), 0);
+        return new ExternalRefund(refundId, command.orderId(), "COMPLETED", command.amount());
+    }
+
+    // ---------- 调用原语 ----------
+
+    /**
+     * 一次真实业务调用：附凭据 → 发请求 → 解信封 → 校验 {@code code==OK} → 返回 {@code data}。
+     *
+     * <p>四条失败路径都抛 {@link MallOperationException}，信息里带操作名、URL 与商城原话：
+     * 缺凭据（发请求之前就抛，绝不匿名发）、连不上、HTTP 状态非 2xx、{@code code != OK}。</p>
+     *
+     * @param expectSize 期望的 {@code data} 是数组时其大小（用于内存上界）；非数组传 0
+     */
+    private JsonNode call(TargetConfig config, String operation, String method, String path,
+                          Object body, int expectSize) {
+        URI uri = baseUri(config);
+        if (uri == null) {
+            throw new MallOperationException(operation,
+                    "base_url 非法或为空，无法调用：" + config.baseUrl());
+        }
+        String token = requireCredential(config, operation);
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(stripTrailingSlash(uri.toString()) + path))
+                .timeout(timeout)
+                .header("Accept", "application/json")
+                .header("Authorization", "Bearer " + token);
+        if ("GET".equals(method)) {
+            builder.GET();
+        } else {
+            byte[] payload;
+            try {
+                payload = mapper.writeValueAsBytes(body == null ? Map.of() : body);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                throw new MallOperationException(operation, "请求体无法序列化：" + e.getOriginalMessage(), e);
+            }
+            builder.header("Content-Type", "application/json")
+                    .method(method, HttpRequest.BodyPublishers.ofByteArray(payload));
+        }
+
+        String responseBody;
+        int status;
+        try {
+            HttpResponse<String> response = client().send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            status = response.statusCode();
+            responseBody = response.body();
+        } catch (IOException e) {
+            throw new MallOperationException(operation, "无法连接 " + uri + "：" + abbreviateException(e), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new MallOperationException(operation, "调用被中断：" + uri, e);
+        }
+
+        JsonNode envelope;
+        try {
+            envelope = mapper.readTree(responseBody);
+        } catch (IOException e) {
+            throw new MallOperationException(operation, "HTTP " + status + " 应答不是合法 JSON（"
+                    + abbreviateText(responseBody) + "）", e);
+        }
+        String code = envelope.path("code").asText("");
+        if (status < 200 || status >= 300 || !"OK".equals(code)) {
+            String message = envelope.path("message").asText("");
+            throw new MallOperationException(operation, "商城拒绝：" + uri + " → HTTP " + status
+                    + " code=" + (code.isEmpty() ? "(缺失)" : code)
+                    + " message=" + (message.isEmpty() ? "(无)" : message));
+        }
+        JsonNode data = envelope.path("data");
+        if (data.isArray() && expectSize > 0 && data.size() > expectSize) {
+            // 参考商城无分页参数（客户端侧分页），这里只做"别把整表读进内存"的上界保护
+            log.debug("{} 返回 {} 条，超出本次请求上界 {}（客户端侧分页仍会裁剪）", path, data.size(), expectSize);
+        }
+        return data;
+    }
+
+    private HttpClient client() {
+        return HttpClient.newBuilder()
+                .connectTimeout(timeout)
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+    }
+
+    /** 取凭据；取不到就抛（响亮失败），信息只出现引用名，绝不出现取值 */
+    private String requireCredential(TargetConfig config, String operation) {
+        Credential credential = credentialState(config.credentialRef());
+        if (credential.available()) {
+            return credential.token();
+        }
+        String why = credential.ref() == null
+                ? "目标未配置 credential_ref，而参考商城对 /api/v1/** 全部要求 Bearer（D-033 实测），"
+                + "匿名调用必然 401"
+                : "凭据引用 " + credential.ref() + " 指向的环境变量未设置或为空";
+        throw new MallOperationException(operation, "缺少凭据，拒绝发送匿名请求：" + why
+                + "（credential_ref 只存引用，取值由部署环境注入，见 D-033）");
+    }
+
+    private Credential credentialState(String credentialRef) {
+        if (credentialRef == null || credentialRef.isBlank()) {
+            return new Credential(null, null);
+        }
+        return new Credential(credentialRef.trim(), resolveToken(credentialRef));
+    }
+
+    /** 商品应答 → {@link ExternalProduct}；缺 productId 直接抛，不返回半成品 */
+    private static ExternalProduct toProduct(JsonNode node) {
+        JsonNode id = node.path("productId");
+        if (id.isMissingNode() || id.isNull() || id.asText().isBlank()) {
+            throw new MallOperationException("listProducts",
+                    "商品缺少 productId，无法作为可引用主体：" + abbreviate(node));
+        }
+        JsonNode price = node.path("price");
+        java.math.BigDecimal amount = price.isNumber() || price.isTextual()
+                ? new java.math.BigDecimal(price.asText())
+                : java.math.BigDecimal.ZERO;
+        JsonNode category = node.path("categoryId");
+        JsonNode status = node.path("status");
+        return new ExternalProduct(id.asText(), node.path("productName").asText(null),
+                category.isNumber() ? category.asLong() : null, amount,
+                status.isMissingNode() || status.isNull() ? null : status.asText());
+    }
+
+    /**
+     * 订单类应答 → {@link ExternalOrder}。
+     *
+     * <p>{@code defaultStatus} 用于商城只回 {@code {"orderId": "..."}}（下单）或 {@code data=null}
+     * （支付/取消）的情形——没有状态字段时记调用成功对应的状态，而不是编造服务端返回值。</p>
+     */
+    private static ExternalOrder readOrder(JsonNode data, String userId, String operation, String defaultStatus) {
+        String orderId = requireId(data, "orderId", operation);
+        JsonNode status = data.path("status");
+        JsonNode total = data.path("totalAmount");
+        JsonNode items = data.path("items");
+        return new ExternalOrder(orderId, userId,
+                status.isMissingNode() || status.isNull() ? defaultStatus : status.asText(),
+                total.isNumber() || total.isTextual() ? new java.math.BigDecimal(total.asText()) : null,
+                items.isArray() ? items.size() : -1);
+    }
+
+    private static String requireId(JsonNode data, String field, String operation) {
+        if (data == null || !data.isObject()) {
+            throw new MallOperationException(operation,
+                    "应答缺少 data 对象，读不到 " + field + "：" + abbreviate(data));
+        }
+        JsonNode value = data.path(field);
+        if (value.isMissingNode() || value.isNull() || value.asText().isBlank()) {
+            throw new MallOperationException(operation, "应答 data 缺少字段 " + field + "（实际=" + abbreviate(data)
+                    + "）；不返回空 ID 冒充成功");
+        }
+        return value.asText();
+    }
+
+    private static String categoryQuery(Long categoryId) {
+        return categoryId == null ? "" : "?categoryId=" + categoryId;
+    }
+
+    private static String encode(String pathSegment) {
+        return java.net.URLEncoder.encode(pathSegment, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /** 报文/异常摘要：单行、限长，避免把整页 HTML 或长栈塞进运行报告 */
+    private static String abbreviate(JsonNode node) {
+        if (node == null || node.isMissingNode()) {
+            return "(无)";
+        }
+        return abbreviateText(node.toString());
+    }
+
+    private static String abbreviateText(String text) {
+        if (text == null) {
+            return "(无)";
+        }
+        String collapsed = text.replaceAll("\\s+", " ").trim();
+        return collapsed.length() <= 200 ? collapsed : collapsed.substring(0, 200) + "…";
+    }
+
+    private static String abbreviateException(Throwable e) {
+        String message = e.getMessage();
+        return e.getClass().getSimpleName() + ": " + (message == null ? "(无消息)"
+                : message.length() <= 160 ? message : message.substring(0, 160) + "…");
+    }
+
+    /** 凭据状态：引用名 + 取值（取值只在本对象里流转，永不进日志/异常/库） */
+    private record Credential(String ref, String token) {
+
+        boolean available() {
+            return token != null && !token.isBlank();
+        }
+    }
+
     @Override
     public TargetCheckResult test(TargetConfig config) {
         if (config.baseUrl() == null || config.baseUrl().isBlank()) {
@@ -243,6 +588,19 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
     }
 
     // ---------- 配置与凭据 ----------
+
+    /** base_url → {@link URI}；非法或缺 host 时返回 null（调用方据此响亮失败） */
+    private static URI baseUri(TargetConfig config) {
+        if (config == null || config.baseUrl() == null || config.baseUrl().isBlank()) {
+            return null;
+        }
+        try {
+            URI uri = URI.create(config.baseUrl().trim());
+            return uri.getHost() == null ? null : uri;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 
     private Map<String, String> declaredPaths(String configJson) {
         Map<String, String> declared = new LinkedHashMap<>();

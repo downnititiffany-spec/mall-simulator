@@ -1,0 +1,470 @@
+package com.graduation.generator.engine;
+
+import com.graduation.generator.adapter.BehaviorCommand;
+import com.graduation.generator.adapter.CancelCommand;
+import com.graduation.generator.adapter.CapabilityVerdict;
+import com.graduation.generator.adapter.ExternalOrder;
+import com.graduation.generator.adapter.ExternalProduct;
+import com.graduation.generator.adapter.ExternalRefund;
+import com.graduation.generator.adapter.ExternalUser;
+import com.graduation.generator.adapter.MallCapability;
+import com.graduation.generator.adapter.MallOperationException;
+import com.graduation.generator.adapter.MallTargetAdapter;
+import com.graduation.generator.adapter.OrderCommand;
+import com.graduation.generator.adapter.PayCommand;
+import com.graduation.generator.adapter.RefundCommand;
+import com.graduation.generator.adapter.TargetCapabilities;
+import com.graduation.generator.adapter.TargetConfig;
+import com.graduation.generator.adapter.UserCommand;
+import com.graduation.generator.contract.CanonicalEvent;
+import com.graduation.generator.contract.EventTypes;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * MALL_API 模式的派发器：把生成计划里的<b>一条</b>事件翻成<b>一次真实商城调用</b>，
+ * 并回答"这条事件到底有没有在商城里发生过"。
+ *
+ * <p><b>为什么是"逐条派发"而不是"自己再实现一遍场景逻辑"</b>：两个模式必须读同一份生成计划
+ * （§4.2 冻结版本 + seed + 时间窗）。若 MALL_API 另写一份场景/分布，两份实现迟早漂移，
+ * "生成计划一致"就退化成一句口号。因此场景与分布仍然由 {@code FileModeGenerationEngine} 产生，
+ * 本类只在落点上分流——计划一致是<b>构造上</b>保证的（对账见 {@code MallApiGenerationEngineTest}）。</p>
+ *
+ * <p><b>硬约束（§3.3 A）</b>：只调 {@link MallTargetAdapter} 上的 §4.1 七项，绝不直连商城库、
+ * 绝不注入商城内部类、绝不绕过商城校验。本类里的"商城知识"只有操作名与请求路径（写进流水），
+ * 真正的 HTTP 细节全在适配器里。</p>
+ *
+ * <p><b>返回值语义</b>：{@link #write(CanonicalEvent)} 返回 {@code true} 仅当这次调用真的成功了。
+ * 返回 {@code false} 的三种情形——能力未 {@code SUPPORTED}、事件类型在商城无公开写操作、
+ * 适配器调用失败且未开启 fail-fast——都不写入规范事件流，只记操作流水。
+ * <b>绝不"跳过不发还照记成功"。</b></p>
+ */
+public final class MallApiDispatchSink {
+
+    /** 无商城动作支撑时的缺口说明 */
+    static final String GAP_NO_MALL_OPERATION = "商城无公开写接口，事件不写入规范流（只记缺口）";
+
+    private final MallTargetAdapter adapter;
+    private final TargetConfig target;
+    private final TargetCapabilities capabilities;
+    private final OperationJournal journal;
+    private final List<ExternalProduct> productCatalog;
+    private final boolean failFast;
+
+    private final Map<String, String> externalUserByCanonical = new LinkedHashMap<>();
+    private final Map<String, String> externalOrderByCanonical = new LinkedHashMap<>();
+    private final Map<String, String> externalRefundByOrder = new LinkedHashMap<>();
+    private final Map<String, String> productRefByCanonical = new LinkedHashMap<>();
+    private final Deque<ExternalProduct> availableProducts;
+    private final Set<String> recordedGapEventTypes = new LinkedHashSet<>();
+    private final List<String> notes = new ArrayList<>();
+
+    private long succeeded;
+    private long failed;
+    private long skipped;
+
+    public MallApiDispatchSink(MallTargetAdapter adapter,
+                               TargetConfig target,
+                               TargetCapabilities capabilities,
+                               OperationJournal journal,
+                               List<ExternalProduct> productCatalog,
+                               boolean failFast) {
+        this.adapter = adapter;
+        this.target = target;
+        this.capabilities = capabilities;
+        this.journal = journal;
+        this.productCatalog = List.copyOf(productCatalog);
+        this.availableProducts = new ArrayDeque<>(this.productCatalog);
+        this.failFast = failFast;
+    }
+
+    /**
+     * 派发一条事件。
+     *
+     * @return {@code true} 表示商城侧真的做成了这件事（调用方可以把它写入规范事件流）
+     */
+    public boolean write(CanonicalEvent event) {
+        MallDispatchPlan plan = MallDispatchPlan.of(event.eventType());
+
+        if (!MallDispatchPlan.OP_LIST_PRODUCTS.equals(plan.operation()) && !isSupported(plan.capability())) {
+            skipped++;
+            recordGap(event.eventType(), plan, "能力 " + plan.capability().key() + " 判定为 "
+                    + verdict(plan.capability()) + "，不调用 " + plan.operation());
+            return false;
+        }
+        if (!plan.isMallBacked()) {
+            skipped++;
+            recordGap(event.eventType(), plan, GAP_NO_MALL_OPERATION);
+            return false;
+        }
+        try {
+            boolean ok = dispatch(event, plan);
+            if (ok) {
+                succeeded++;
+            } else {
+                skipped++;
+            }
+            return ok;
+        } catch (MallOperationException e) {
+            failed++;
+            journal.append(plan.operation(), true, plan.method(), plan.route(),
+                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED, e.getMessage());
+            if (failFast) {
+                throw e;
+            }
+            notes.add("商城调用失败（未写入规范流）：" + plan.operation() + " → " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean dispatch(CanonicalEvent event, MallDispatchPlan plan) {
+        return switch (event.eventType()) {
+            case EventTypes.USER_REGISTERED -> dispatchUser(event, plan);
+            case EventTypes.PRODUCT_CREATED -> dispatchProduct(event, plan);
+            case EventTypes.BEHAVIOR -> dispatchBehavior(event, plan);
+            case EventTypes.ORDER_CREATED -> dispatchOrder(event, plan);
+            case EventTypes.ORDER_PAID -> dispatchPay(event, plan);
+            case EventTypes.ORDER_CANCELLED -> dispatchCancel(event, plan);
+            case EventTypes.REFUND_CREATED -> dispatchRefundApply(event, plan);
+            case EventTypes.REFUND_COMPLETED -> dispatchRefundComplete(event, plan);
+            default -> throw new IllegalStateException("事件类型未实现派发：" + event.eventType());
+        };
+    }
+
+    private boolean dispatchUser(CanonicalEvent event, MallDispatchPlan plan) {
+        String canonicalId = canonicalIdOf(event);
+        String existing = externalUserByCanonical.get(canonicalId);
+        if (existing != null) {
+            // 同一用户第二次注册：不重复建号，但要留一行"复用"，否则流水条数会对不上事件条数
+            journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, existing,
+                    OperationJournalEntry.STATUS_OK, "复用已创建用户");
+            return true;
+        }
+        ExternalUser user = adapter.createSyntheticUser(target,
+                new UserCommand(text(event, "age_group"), text(event, "city_level"), text(event, "member_level")));
+        externalUserByCanonical.put(canonicalId, user.userId());
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, user.userId(),
+                OperationJournalEntry.STATUS_OK, "member_level=" + user.memberLevel());
+        return true;
+    }
+
+    /**
+     * 商品：计划里的商品池与商城目录<b>按位对齐</b>（第 N 件计划商品 → 目录第 N 件真实商品）。
+     *
+     * <p>参考商城的公开接口只能"读目录"，没有公开建品/改价（写商品走受保护的 admin 接口，
+     * 本引擎不使用）。因此 {@code product_created} 记的是"商城里确实存在的这件商品"，
+     * 价格/分类/名称全部来自商城应答（由引擎改写进事件），不是计划里的估价。</p>
+     */
+    private boolean dispatchProduct(CanonicalEvent event, MallDispatchPlan plan) {
+        String canonicalId = canonicalIdOf(event);
+        ExternalProduct product = availableProducts.pollFirst();
+        if (product == null) {
+            throw new MallOperationException(plan.operation(),
+                    "商城目录商品不足：计划需要 " + productCatalog.size() + " 件，已用尽"
+                            + "（参考商城公开接口不提供建品，B-04：MALL_API 只能使用目录里真实存在的商品）");
+        }
+        productRefByCanonical.put(canonicalId, product.productId());
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, product.productId(),
+                OperationJournalEntry.STATUS_OK, "对齐商城目录商品：" + product.name());
+        return true;
+    }
+
+    private boolean dispatchBehavior(CanonicalEvent event, MallDispatchPlan plan) {
+        String externalUser = requireUser(event, plan.operation());
+        adapter.emitBehavior(target, new BehaviorCommand(externalUser,
+                externalProductOf(text(event, "product_id")), text(event, "session_id"),
+                text(event, "behavior_type"), text(event, "channel")));
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalIdOf(event), null,
+                OperationJournalEntry.STATUS_OK, "behavior_type=" + text(event, "behavior_type"));
+        return true;
+    }
+
+    private boolean dispatchOrder(CanonicalEvent event, MallDispatchPlan plan) {
+        String canonicalId = canonicalIdOf(event);
+        List<OrderCommand.Item> items = new ArrayList<>();
+        for (Object raw : list(event, "items")) {
+            Map<?, ?> item = (Map<?, ?>) raw;
+            items.add(new OrderCommand.Item(externalProductOf(String.valueOf(item.get("product_id"))),
+                    ((Number) item.get("quantity")).intValue()));
+        }
+        ExternalOrder order = adapter.createOrder(target,
+                new OrderCommand(requireUser(event, plan.operation()), items));
+        externalOrderByCanonical.put(canonicalId, order.orderId());
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalId, order.orderId(),
+                OperationJournalEntry.STATUS_OK, "件数=" + items.size());
+        return true;
+    }
+
+    private boolean dispatchPay(CanonicalEvent event, MallDispatchPlan plan) {
+        String canonicalOrder = text(event, "order_id");
+        ExternalOrder paid = adapter.pay(target, new PayCommand(requireOrder(canonicalOrder, plan.operation()),
+                requireUser(event, plan.operation())));
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, paid.orderId(),
+                OperationJournalEntry.STATUS_OK, "status=" + paid.status());
+        return true;
+    }
+
+    private boolean dispatchCancel(CanonicalEvent event, MallDispatchPlan plan) {
+        String canonicalOrder = text(event, "order_id");
+        ExternalOrder cancelled = adapter.cancel(target, new CancelCommand(
+                requireOrder(canonicalOrder, plan.operation()), requireUser(event, plan.operation()),
+                text(event, "reason")));
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, cancelled.orderId(),
+                OperationJournalEntry.STATUS_OK, "status=" + cancelled.status());
+        return true;
+    }
+
+    private boolean dispatchRefundApply(CanonicalEvent event, MallDispatchPlan plan) {
+        String canonicalOrder = text(event, "order_id");
+        String externalOrder = requireOrder(canonicalOrder, plan.operation());
+        ExternalRefund refund = adapter.refund(target, new RefundCommand(externalOrder,
+                requireUser(event, plan.operation()), amount(event, "amount"), text(event, "reason")));
+        externalRefundByOrder.put(canonicalOrder, refund.refundId());
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, refund.refundId(),
+                OperationJournalEntry.STATUS_OK, "status=" + refund.status());
+        return true;
+    }
+
+    /** 参考商城的退款两步（申请 + 完成）已在上一条事件里一次走完；这里不重复提交，只记"复用" */
+    private boolean dispatchRefundComplete(CanonicalEvent event, MallDispatchPlan plan) {
+        String canonicalOrder = text(event, "order_id");
+        String refundId = externalRefundByOrder.get(canonicalOrder);
+        journal.append(plan.operation(), true, plan.method(), plan.route(), canonicalOrder, refundId,
+                OperationJournalEntry.STATUS_OK,
+                refundId == null ? "未找到已完成退款（记缺口）" : "复用已完成退款");
+        return refundId != null;
+    }
+
+    // ---------- 转写：规范 ID → 商城外部 ID ----------
+
+    /**
+     * 把事件载荷里的规范 ID 换成商城的真实 ID。
+     *
+     * <p>不换会怎样：产物里记的是 {@code U000001} 这类生成器内部序号，拿它去商城查任何东西都查不到，
+     * "这份产物对应商城里的哪些数据"就断了。商品事件额外按商城真实商品事实重写
+     * （见 {@link #dispatchProduct}）。</p>
+     */
+    public CanonicalEvent rewrite(CanonicalEvent event) {
+        Map<String, Object> payload = new LinkedHashMap<>(event.payload());
+        replace(payload, "user_id", externalUserByCanonical);
+        replace(payload, "order_id", externalOrderByCanonical);
+        replace(payload, "refund_id", externalRefundByOrder);
+        if (EventTypes.PRODUCT_CREATED.equals(event.eventType())) {
+            rewriteProduct(payload);
+        }
+        rewriteNestedProductIds(payload);
+        return new CanonicalEvent(event.eventId(), event.eventType(), event.eventTime(), event.ingestTime(),
+                event.sourceSystem(), event.schemaVersion(), event.traceId(), payload);
+    }
+
+    /**
+     * 改写嵌套在 {@code items[]} 里的商品 ID。
+     *
+     * <p>只改顶层 {@code product_id} 是不够的：{@code order_created} 的商品挂在
+     * {@code items[].product_id} 上（见 {@code CanonicalPayloads.orderCreated}）。
+     * 2026-09-11 的真实运行暴露过这一点——顶层商品被换成了商城 ID，明细里还留着 {@code P00014}，
+     * 于是产物里同一张订单的主档与明细对不上商城。</p>
+     *
+     * <p>{@code items} 是新造的列表（原事件的 {@code List} 不动），改写只发生在副本上。</p>
+     */
+    private void rewriteNestedProductIds(Map<String, Object> payload) {
+        Object items = payload.get("items");
+        if (!(items instanceof List<?> list) || list.isEmpty()) {
+            return;
+        }
+        List<Object> rewritten = new ArrayList<>(list.size());
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> map)) {
+                rewritten.add(item);
+                continue;
+            }
+            Map<String, Object> copy = new LinkedHashMap<>();
+            map.forEach((key, value) -> copy.put(String.valueOf(key), value));
+            Object canonicalProduct = copy.get("product_id");
+            if (canonicalProduct != null) {
+                String externalId = productRefByCanonical.get(String.valueOf(canonicalProduct));
+                if (externalId != null) {
+                    copy.put("product_id", externalId);
+                }
+            }
+            rewritten.add(copy);
+        }
+        payload.put("items", rewritten);
+    }
+
+    /** 商品快照按商城应答改写：价格/分类/品牌/名称都以商城为准（计划里的估价只是生成用的中间量） */
+    private void rewriteProduct(Map<String, Object> payload) {
+        String canonicalProduct = String.valueOf(payload.get("product_id"));
+        String externalId = productRefByCanonical.get(canonicalProduct);
+        if (externalId == null) {
+            return;
+        }
+        productCatalog.stream().filter(p -> externalId.equals(p.productId())).findFirst().ifPresent(product -> {
+            payload.put("product_id", product.productId());
+            payload.put("product_name", product.name());
+            if (product.categoryId() != null) {
+                payload.put("category_id", product.categoryId());
+            }
+            if (product.price() != null) {
+                payload.put("price", product.price().setScale(2, RoundingMode.HALF_UP).toPlainString());
+            }
+            if (product.status() != null) {
+                payload.put("status", product.status());
+            }
+        });
+    }
+
+    private static void replace(Map<String, Object> payload, String key, Map<String, String> mapping) {
+        Object value = payload.get(key);
+        if (value == null) {
+            return;
+        }
+        String external = mapping.get(String.valueOf(value));
+        if (external != null) {
+            payload.put(key, external);
+        }
+    }
+
+    private void recordGap(String eventType, MallDispatchPlan plan, String detail) {
+        journal.append(plan.operation(), false, null, null, null, null,
+                OperationJournalEntry.STATUS_SKIPPED, eventType + "：" + detail);
+        if (recordedGapEventTypes.add(eventType)) {
+            notes.add("缺口 " + eventType + "（" + plan.capability().key() + "）：" + detail);
+        }
+    }
+
+    // ---------- 结果 ----------
+
+    public DispatchResult result() {
+        Map<String, String> traceability = new LinkedHashMap<>();
+        externalUserByCanonical.forEach((canonical, external) -> traceability.put("user:" + canonical, external));
+        externalOrderByCanonical.forEach((canonical, external) -> traceability.put("order:" + canonical, external));
+        externalRefundByOrder.forEach((canonical, external) -> traceability.put("refund:" + canonical, external));
+        productRefByCanonical.forEach((canonical, external) -> traceability.put("product:" + canonical, external));
+        return new DispatchResult(succeeded, failed, skipped, Map.copyOf(traceability),
+                List.copyOf(notes), journal.entries());
+    }
+
+    public Set<String> gapEventTypes() {
+        return Set.copyOf(recordedGapEventTypes);
+    }
+
+    public List<ExternalProduct> productCatalog() {
+        return productCatalog;
+    }
+
+    private boolean isSupported(MallCapability capability) {
+        return capabilities != null && capabilities.isSupported(capability);
+    }
+
+    private CapabilityVerdict verdict(MallCapability capability) {
+        return capabilities == null ? CapabilityVerdict.UNDETERMINED : capabilities.verdict(capability);
+    }
+
+    private String requireUser(CanonicalEvent event, String operation) {
+        String canonical = text(event, "user_id");
+        String external = externalUserByCanonical.get(canonical);
+        if (external == null) {
+            throw new MallOperationException(operation,
+                    "用户 " + canonical + " 在商城侧还没有外部 ID（注册事件未成功派发），拒绝用假 ID 继续");
+        }
+        return external;
+    }
+
+    private String requireOrder(String canonicalOrder, String operation) {
+        String external = externalOrderByCanonical.get(canonicalOrder);
+        if (external == null) {
+            throw new MallOperationException(operation,
+                    "订单 " + canonicalOrder + " 在商城侧还没有外部 ID（下单事件未成功派发），拒绝用假 ID 继续");
+        }
+        return external;
+    }
+
+    private String externalProductOf(String canonicalProduct) {
+        String external = productRefByCanonical.get(canonicalProduct);
+        if (external == null) {
+            throw new MallOperationException(MallDispatchPlan.OP_LIST_PRODUCTS,
+                    "商品 " + canonicalProduct + " 未与商城目录对齐（商品事件未成功派发），拒绝用假 ID 继续");
+        }
+        return external;
+    }
+
+    private static String text(CanonicalEvent event, String key) {
+        Object value = event.payload().get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("事件 " + event.eventType() + " 缺少载荷字段 " + key
+                    + "（契约 required），无法派发到商城");
+        }
+        return String.valueOf(value);
+    }
+
+    private static BigDecimal amount(CanonicalEvent event, String key) {
+        return new BigDecimal(text(event, key)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> list(CanonicalEvent event, String key) {
+        Object value = event.payload().get(key);
+        if (!(value instanceof List<?> rows)) {
+            throw new IllegalArgumentException("事件 " + event.eventType() + " 的载荷字段 " + key + " 必须是数组");
+        }
+        return (List<Object>) rows;
+    }
+
+    /**
+     * 这条事件<b>自己是谁</b>的规范 ID —— 也就是要拿去映射商城外部 ID 的那个键。
+     *
+     * <p>不能按"载荷里第一个非空的 ID 字段"去猜：订单事件的载荷里同时有 {@code user_id} 与 {@code order_id}，
+     * 猜错会把外部订单号记到用户键上，后面 {@code pay}/{@code cancel} 拿着 {@code O00000001} 查不到映射，
+     * 就会以"下单事件未成功派发"整批失败——2026-09-11 的一次真实跑批就是这么炸出来的（先记 ID 再判定归属，
+     * 是这里唯一正确的顺序）。</p>
+     */
+    private static String canonicalIdOf(CanonicalEvent event) {
+        String key = switch (event.eventType()) {
+            case EventTypes.USER_REGISTERED -> "user_id";
+            case EventTypes.PRODUCT_CREATED, EventTypes.PRODUCT_UPDATED -> "product_id";
+            case EventTypes.BEHAVIOR -> "session_id";
+            case EventTypes.ORDER_CREATED, EventTypes.ORDER_PAID, EventTypes.ORDER_CANCELLED -> "order_id";
+            case EventTypes.REFUND_CREATED, EventTypes.REFUND_COMPLETED -> "refund_id";
+            case EventTypes.STOCK_RESERVED, EventTypes.STOCK_RELEASED, EventTypes.STOCK_CHANGED -> "product_id";
+            default -> null;
+        };
+        if (key == null) {
+            return null;
+        }
+        Object value = event.payload().get(key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    /**
+     * 一次 MALL_API 运行的派发结果。
+     *
+     * @param succeeded    商城侧真实做成的操作数（＝写入规范流的事件数）
+     * @param failed       商城调用失败数
+     * @param skipped      因能力缺口/无对应公开接口而未调用的条数
+     * @param traceability 规范 ID → 商城外部 ID（{@code user:U000001} → 雪花 ID），"可追溯"的物证
+     * @param notes        缺口说明（逐类一条）
+     * @param entries      操作流水（落成 {@code OPERATION_JOURNAL} 制品）
+     */
+    public record DispatchResult(long succeeded,
+                                 long failed,
+                                 long skipped,
+                                 Map<String, String> traceability,
+                                 List<String> notes,
+                                 List<OperationJournalEntry> entries) {
+        public DispatchResult {
+            traceability = Map.copyOf(traceability);
+            notes = List.copyOf(notes);
+            entries = List.copyOf(entries);
+        }
+    }
+}

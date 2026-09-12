@@ -1,6 +1,9 @@
 package com.graduation.generator.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.generator.adapter.MallTargetAdapter;
+import com.graduation.generator.adapter.MallTargetAdapterRegistry;
+import com.graduation.generator.adapter.TargetConfig;
 import com.graduation.generator.contract.Artifact;
 import com.graduation.generator.contract.ArtifactManifest;
 import com.graduation.generator.contract.ContractFormat;
@@ -10,10 +13,12 @@ import com.graduation.generator.engine.EngineOutcome;
 import com.graduation.generator.engine.EventTypeStat;
 import com.graduation.generator.engine.GenerationEngine;
 import com.graduation.generator.engine.GenerationRequest;
+import com.graduation.generator.engine.MallApiGenerationEngine;
 import com.graduation.generator.meta.GeneratorMetaStore;
 import com.graduation.generator.meta.GeneratorMetaStore.ArtifactRow;
 import com.graduation.generator.meta.GeneratorMetaStore.PlanRow;
 import com.graduation.generator.meta.GeneratorMetaStore.RunRow;
+import com.graduation.generator.meta.GeneratorMetaStore.TargetRow;
 import com.graduation.generator.meta.RunStatus;
 import com.graduation.generator.report.RunReport;
 import com.graduation.generator.web.dto.GeneratorApiDtos.ArtifactView;
@@ -46,6 +51,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
@@ -65,17 +71,20 @@ import java.util.stream.Collectors;
  *
  * <p><b>本实现的已知局限（如实登记，不掩盖）</b>：① 运行没有"进度"字段与端点——契约明确说进度口径未冻结、
  * 不建模；② 进程重启时停在 RUNNING 的运行不会自动收口（没有恢复扫描），需要人工按运行报告判断；
- * ③ {@code MALL_API} 模式尚未实现（S4 的 {@code ReferenceMallHttpAdapter}），本服务对它明确报"未实现"而不是
- * 走文件模式冒充。</p>
+ * ③ {@code MALL_API} 模式<b>不做同 seed 逐字节复现</b>的承诺：商城侧会分配雪花 ID、库存会真实扣减，
+ * 第二次运行面对的是变了的世界；本模式保证的是"可追溯的场景分布"（B-04），逐字节复现只属于文件模式。</p>
  */
 @Service
 public class GenerationRunService {
 
     private static final Logger log = LoggerFactory.getLogger(GenerationRunService.class);
 
-    /** 支持的模式（§3.3）：本切片只有文件模式；MALL_API 由 S4 补 */
+    /** 支持的模式（§3.3）：文件模式与 MALL_API；其它模式一律响亮拒绝 */
     public static final String MODE_CANONICAL_EVENT_FILE = "CANONICAL_EVENT_FILE";
     public static final String MODE_MALL_API = "MALL_API";
+
+    /** MALL_API 运行的操作流水制品文件名（本实现的增量制品，见 {@link Artifact#KIND_OPERATION_JOURNAL}） */
+    static final String OPERATION_JOURNAL_FILE = "operation-journal.jsonl";
 
     /** 失败码（写入 generation_run.error_code；契约只冻结了 error 的语义，未冻结取值） */
     static final String ERROR_RUN_FAILED = "RUN_FAILED";
@@ -90,6 +99,8 @@ public class GenerationRunService {
 
     private final GeneratorMetaStore store;
     private final GenerationEngine engine;
+    private final MallApiGenerationEngine mallEngine;
+    private final MallTargetAdapterRegistry adapterRegistry;
     private final ObjectMapper mapper;
     private final Path outputRoot;
     private final int maxRecordsPerFile;
@@ -101,12 +112,19 @@ public class GenerationRunService {
     private final Map<String, AtomicBoolean> cancelFlags = new ConcurrentHashMap<>();
 
     public GenerationRunService(GeneratorMetaStore store,
+                                @org.springframework.beans.factory.annotation.Qualifier("generationEngine")
                                 GenerationEngine engine,
                                 ObjectMapper mapper,
                                 @Value("${generator.output.root:./generator-output}") String outputRoot,
-                                @Value("${generator.output.max-records-per-file:100000}") int maxRecordsPerFile) {
+                                @Value("${generator.output.max-records-per-file:100000}") int maxRecordsPerFile,
+                                @org.springframework.beans.factory.annotation.Autowired(required = false)
+                                MallApiGenerationEngine mallEngine,
+                                @org.springframework.beans.factory.annotation.Autowired(required = false)
+                                MallTargetAdapterRegistry adapterRegistry) {
         this.store = store;
         this.engine = engine;
+        this.mallEngine = mallEngine;
+        this.adapterRegistry = adapterRegistry;
         this.mapper = mapper;
         this.outputRoot = Path.of(outputRoot).toAbsolutePath().normalize();
         this.maxRecordsPerFile = maxRecordsPerFile;
@@ -121,20 +139,114 @@ public class GenerationRunService {
         PlanRow plan = store.findPlan(request.planId(), request.version())
                 .orElseThrow(() -> new RunNotFoundException(
                         "计划版本不存在：plan_id=%s version=%d".formatted(request.planId(), request.version())));
-        if (!MODE_CANONICAL_EVENT_FILE.equals(plan.mode())) {
-            throw new UnsupportedModeException("模式 %s 尚未实现：%s 需要 ReferenceMallHttpAdapter（S4，且依赖 B-04 裁决）；"
-                    .formatted(plan.mode(), MODE_MALL_API)
-                    + "本服务当前只支持 " + MODE_CANONICAL_EVENT_FILE);
-        }
+        MallRunContext mallContext = mallContextFor(plan);
         String runId = newRunId(plan);
+        if (mallContext != null) {
+            // 预检结果在这里就被求值：能力不足/凭据不对/目录不足 → 直接抛给 HTTP 层，不留下半截运行记录
+            mallContext.preflight();
+        }
         store.insertRun(new RunRow(null, runId, plan.planId(), plan.version(), plan.targetId(),
                 plan.targetId() == null ? null : targetConfigVersion(plan.targetId()),
                 RunStatus.PENDING, null, null, 0, 0, null, null, null, false));
         cancelFlags.put(runId, new AtomicBoolean(false));
-        executor.submit(() -> execute(runId, plan));
-        log.info("生成运行已入队：runId={} plan={} v{} scenario={} eventCount={}", runId, plan.planId(),
-                plan.version(), plan.scenario(), plan.eventCount());
+        executor.submit(() -> execute(runId, plan, mallContext));
+        log.info("生成运行已入队：runId={} plan={} v{} mode={} scenario={} eventCount={}", runId, plan.planId(),
+                plan.version(), plan.mode(), plan.scenario(), plan.eventCount());
         return new RunStarted(runId);
+    }
+
+    /**
+     * 模式解析 + MALL_API 运行前预检，<b>全部发生在 {@code insertRun} 之前</b>。
+     *
+     * <p>顺序是刻意的：未知模式、未知 {@code adapter_type}、能力不足、凭据不可用、脏数据档位不支持——
+     * 这些一律在<b>任何状态落库、任何写操作发生之前</b>响亮失败。否则会留下"一行 PENDING/FAILED 的运行记录 +
+     * 商城侧半截数据"，排查时谁也说不清到底做了什么。</p>
+     *
+     * <p>预检里唯一一次真实调用是只读的 {@code listProducts}，它同时充当凭据校验
+     * （D-033：每一次 MALL_API 调用都必须带凭据，凭据不对会当场 401）。</p>
+     */
+    private MallRunContext mallContextFor(PlanRow plan) {
+        if (MODE_CANONICAL_EVENT_FILE.equals(plan.mode())) {
+            return null;
+        }
+        if (!MODE_MALL_API.equals(plan.mode())) {
+            throw new UnsupportedModeException("模式 %s 未实现：本服务只支持 %s 与 %s"
+                    .formatted(plan.mode(), MODE_CANONICAL_EVENT_FILE, MODE_MALL_API));
+        }
+        if (mallEngine == null || adapterRegistry == null) {
+            throw new UnsupportedModeException("MALL_API 模式未装配：缺少 MallApiGenerationEngine 或 "
+                    + "MallTargetAdapterRegistry（见 GeneratorBeans）；不降级成 " + MODE_CANONICAL_EVENT_FILE + " 冒充");
+        }
+        if (plan.targetId() == null) {
+            throw new IllegalArgumentException("MALL_API 计划必须绑定 generator_target（target_id 必填），"
+                    + "否则不知道要打哪台商城：" + plan.planId() + " v" + plan.version());
+        }
+        TargetRow target = store.findTarget(plan.targetId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "计划绑定的目标不存在：target_id=" + plan.targetId()));
+        if (MODE_CANONICAL_EVENT_FILE.equals(target.adapterType())) {
+            throw new IllegalArgumentException("目标 %s 的 adapter_type 是 %s，它没有商城能力，不能用于 MALL_API 计划"
+                    .formatted(target.name(), target.adapterType()));
+        }
+        if (plan.dirtyProfile() != null && !GenerationRequest.DIRTY_NONE.equalsIgnoreCase(plan.dirtyProfile())) {
+            // 文件模式里脏样本只是"多写几行 JSONL"；MALL_API 里它会变成真实的非法请求打到商城。
+            // 因此在这里、在任何插入运行记录/任何商城调用之前就拒绝，不做任何"过滤掉脏样本"的降级。
+            throw new IllegalArgumentException("MALL_API 计划不支持脏数据档位 %s（只支持 %s）："
+                    .formatted(plan.dirtyProfile(), GenerationRequest.DIRTY_NONE)
+                    + "脏样本会真实写进商城，这种计划要么改档位、要么走 " + MODE_CANONICAL_EVENT_FILE);
+        }
+        MallTargetAdapter adapter = adapterRegistry.require(target.adapterType());
+        TargetConfig config = new TargetConfig(target.id(), target.adapterType(), target.baseUrl(),
+                target.credentialRef(), target.configJson());
+        GenerationRequest probe = new GenerationRequest("preflight", plan.scenario(), plan.seed(),
+                plan.startTime(), plan.endTime(), plan.eventCount(), plan.ratePerSecond(), plan.dirtyProfile());
+        return new MallRunContext(config, adapter, engineFor(plan), target, probe);
+    }
+
+    /** 计划模式 → 引擎。文件模式用宿主注入的引擎（便于测试替身），MALL_API 用商城引擎 */
+    private GenerationEngine engineFor(PlanRow plan) {
+        return MODE_MALL_API.equals(plan.mode()) ? mallEngine : engine;
+    }
+
+    /**
+     * MALL_API 运行上下文：承载"打哪台商城、用哪个适配器"，并把<b>运行前预检</b>做成一次性的懒加载。
+     *
+     * <p>为什么懒加载：预检要真实调商城（只读 {@code listProducts}），它必须发生在 {@code start()} 返回之前，
+     * 让"能力不足/凭据不对"当场变成 HTTP 错误码而不是一个异步失败的运行；但预检结果又要给运行线程用。
+     * 因此这里只做一次并缓存——不会出现"启动时查一次、运行时又查一次"的口径漂移。</p>
+     */
+    private final class MallRunContext {
+
+        private final TargetConfig config;
+        private final MallTargetAdapter adapter;
+        private final GenerationEngine runEngine;
+        private final TargetRow target;
+        private final GenerationRequest probe;
+        private final AtomicReference<MallApiGenerationEngine.Preflight> preflight = new AtomicReference<>();
+
+        MallRunContext(TargetConfig config, MallTargetAdapter adapter, GenerationEngine runEngine,
+                       TargetRow target, GenerationRequest probe) {
+            this.config = config;
+            this.adapter = adapter;
+            this.runEngine = runEngine;
+            this.target = target;
+            this.probe = probe;
+        }
+
+        MallApiGenerationEngine.Preflight preflight() {
+            MallApiGenerationEngine.Preflight cached = preflight.get();
+            if (cached != null) {
+                return cached;
+            }
+            synchronized (preflight) {
+                MallApiGenerationEngine.Preflight current = preflight.get();
+                if (current == null) {
+                    current = mallEngine.preflight(probe, config, adapter);
+                    preflight.set(current);
+                }
+                return current;
+            }
+        }
     }
 
     // ---------- §4.4 L154：查询 ----------
@@ -173,7 +285,7 @@ public class GenerationRunService {
 
     // ---------- 运行主体 ----------
 
-    private void execute(String runId, PlanRow plan) {
+    private void execute(String runId, PlanRow plan, MallRunContext mallContext) {
         if (!store.markRunning(runId)) {
             // 计划入队后被取消（PENDING → CANCELLED）或已被别的线程接手：不重复执行
             log.info("运行未取得 RUNNING 迁移，跳过执行：runId={}", runId);
@@ -182,6 +294,7 @@ public class GenerationRunService {
         Path runDir = outputRoot.resolve(runId);
         JsonlEventSink sink = new JsonlEventSink(runId, outputRoot, ContractFormat.SCHEMA_VERSION, maxRecordsPerFile);
         EngineOutcome outcome = null;
+        MallApiGenerationEngine.MallRunOutcome mallOutcome = null;
         ArtifactManifest manifest = null;
         RunStatus terminal;
         String errorCode = null;
@@ -189,7 +302,15 @@ public class GenerationRunService {
         try {
             GenerationRequest request = new GenerationRequest(runId, plan.scenario(), plan.seed(),
                     plan.startTime(), plan.endTime(), plan.eventCount(), plan.ratePerSecond(), plan.dirtyProfile());
-            outcome = engine.run(request, sink, cancelSupplier(runId));
+            if (mallContext == null) {
+                outcome = engine.run(request, sink, cancelSupplier(runId));
+            } else {
+                // 复用落库前那一次预检：预检里的目录读取是真实 HTTP 调用，重复做会让
+                // "目录读了几次"对不上账，也会让商城侧凭空多一次调用。
+                mallOutcome = mallEngine.runForTarget(request, mallContext.config, mallContext.adapter, sink,
+                        cancelSupplier(runId), mallContext.preflight());
+                outcome = mallOutcome.outcome();
+            }
             manifest = sink.closeAndBuildManifest();
             terminal = isCancelled(runId) ? RunStatus.CANCELLED : RunStatus.SUCCESS;
         } catch (RuntimeException e) {
@@ -204,15 +325,22 @@ public class GenerationRunService {
         if (dirtyArtifact != null) {
             artifacts.add(dirtyArtifact);
         }
+        Artifact journalArtifact = writeOperationJournal(runDir, mallContext == null ? null
+                : (mallOutcome == null ? mallContext.preflight().journal() : mallOutcome.preflight().journal()));
+        if (journalArtifact != null) {
+            artifacts.add(journalArtifact);
+        }
         String checksum = aggregateChecksum(artifacts);
-        long successCount = outcome == null ? artifacts.stream().mapToLong(Artifact::recordCount).sum()
-                : outcome.successCount();
+        // 失败路径没有 EngineOutcome，但 success_count 的语义不能跟着变：它一直是"写进规范流的事件条数"。
+        // 早先这里把 generation_artifact 的 record_count 直接求和，等于把清单和操作流水也算成了事件——
+        // 2026-09-11 真机 E3 因此报出 success_count=632（实际入流 231 条，event_count 才 400）。
+        long successCount = outcome == null ? sink.eventRecords() : outcome.successCount();
         long failedCount = outcome == null ? 0 : outcome.failedCount();
         try {
             persistArtifacts(runId, artifacts);
             persistEventStats(runId, outcome);
             writeReport(runDir, runId, plan, terminal, successCount, failedCount, checksum, outcome, artifacts,
-                    errorCode, errorMessage);
+                    errorCode, errorMessage, mallOutcome);
         } catch (RuntimeException e) {
             // 落库/报告失败比"运行失败"更严重：状态必须收口成 FAILED，且原始失败信息不能被覆盖掉
             log.error("运行对账落库失败：runId={}", runId, e);
@@ -227,6 +355,29 @@ public class GenerationRunService {
         log.info("生成运行收口：runId={} status={} success={} failed={} artifacts={} manifestRecords={}",
                 runId, terminal, successCount, failedCount, artifacts.size(),
                 manifest == null ? 0 : manifest.recordCount());
+    }
+
+    /**
+     * MALL_API 操作流水落成独立制品 {@code <runDir>/operation-journal.jsonl}。
+     *
+     * <p>为什么非落不可：本模式的数据长在商城里，运行报告里的几个计数没有说服力——逐条记录
+     * "哪个规范 ID 变成了商城的哪个外部 ID、走的是哪条路径、成功还是被能力门挡下"才是可核对的凭据。
+     * 文件模式不产生该制品（{@code journal == null} → 返回 {@code null}）。</p>
+     */
+    private Artifact writeOperationJournal(Path runDir, com.graduation.generator.engine.OperationJournal journal) {
+        if (journal == null || journal.size() == 0) {
+            return null;
+        }
+        byte[] bytes = journal.toJsonl();
+        Path file = runDir.resolve(OPERATION_JOURNAL_FILE);
+        try {
+            Files.createDirectories(runDir);
+            Files.write(file, bytes);
+        } catch (IOException e) {
+            throw new UncheckedIOException("操作流水制品写入失败：" + file, e);
+        }
+        return new Artifact(file.toUri().toString(), Artifact.KIND_OPERATION_JOURNAL, sha256(bytes), bytes.length,
+                journal.size(), null, null);
     }
 
     /**
@@ -306,7 +457,8 @@ public class GenerationRunService {
 
     private void writeReport(Path runDir, String runId, PlanRow plan, RunStatus terminal, long successCount,
                              long failedCount, String checksum, EngineOutcome outcome, List<Artifact> artifacts,
-                             String errorCode, String errorMessage) {
+                             String errorCode, String errorMessage,
+                             MallApiGenerationEngine.MallRunOutcome mallOutcome) {
         List<RunReport.ArtifactLine> artifactLines = new ArrayList<>();
         for (Artifact artifact : artifacts) {
             artifactLines.add(new RunReport.ArtifactLine(artifact.uri(), artifact.kind(), artifact.checksum(),
@@ -321,6 +473,18 @@ public class GenerationRunService {
         List<String> notes = new ArrayList<>();
         if (outcome != null) {
             notes.addAll(outcome.notes());
+        }
+        if (mallOutcome != null) {
+            MallApiGenerationEngine.Preflight preflight = mallOutcome.preflight();
+            notes.add("MALL_API 目标：adapter_type=%s，能力声明 %s（不联网；实测结果见 operation-journal 与 target probe）"
+                    .formatted(preflight.adapterType(), preflight.capabilities()));
+            notes.add("MALL_API 对账：写规范流 %d 条；商城操作成功 %d / 失败 %d / 因能力缺口跳过 %d"
+                    .formatted(mallOutcome.forwardedCount(), mallOutcome.dispatch().succeeded(),
+                            mallOutcome.dispatch().failed(), mallOutcome.dispatch().skipped()));
+            notes.add("规范 ID → 商城外部 ID 映射 " + mallOutcome.dispatch().traceability().size()
+                    + " 条，逐条见 " + OPERATION_JOURNAL_FILE);
+            notes.add("MALL_API 不承诺同 seed 逐字节复现（商城会分配雪花 ID 并真实扣减库存）："
+                    + "本模式保证可追溯的场景分布，见 B-04");
         }
         notes.add("事件统计与制品已分别落 generation_event_stat / generation_artifact；清单为每个制品文件同名一份");
         RunReport report = new RunReport(runId, plan.planId(), plan.version(), plan.mode(), plan.scenario(),

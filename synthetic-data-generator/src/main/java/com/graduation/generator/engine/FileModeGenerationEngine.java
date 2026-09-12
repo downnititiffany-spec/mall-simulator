@@ -122,6 +122,29 @@ public final class FileModeGenerationEngine implements GenerationEngine {
         return (int) clamp(eventCount / 20.0, 4, 2_000);
     }
 
+    /**
+     * 给定请求下，计划里<b>允许产出</b>的事件类型（按契约 enum 顺序）。
+     *
+     * <p>对文件模式它就是全部 12 类；MALL_API 模式摘掉商城公开接口不存在的动作后，这里返回的就是
+     * 该商城真实能承载的事件类型集合——引擎、运行服务与验收用<b>同一个</b>方法算，不各算一份。</p>
+     */
+    public static Set<String> plannedEventTypes(GenerationRequest request) {
+        Set<String> planned = new LinkedHashSet<>();
+        for (String eventType : EventTypes.ALL) {
+            if (request.acceptsEventType(eventType)) {
+                planned.add(eventType);
+            }
+        }
+        return Set.copyOf(planned);
+    }
+
+    /** 计划被摘掉的事件类型（商城公开接口不存在对应动作的那些） */
+    public static Set<String> filteredEventTypes(GenerationRequest request) {
+        Set<String> filtered = new LinkedHashSet<>(EventTypes.ALL);
+        filtered.removeAll(plannedEventTypes(request));
+        return Set.copyOf(filtered);
+    }
+
     /** 一次运行的可变状态（单次调用内使用，不跨线程共享） */
     private final class Run {
 
@@ -151,6 +174,7 @@ public final class FileModeGenerationEngine implements GenerationEngine {
         private final Map<String, String> categoryByProduct = new LinkedHashMap<>();
         private final Set<String> affectedCategories = new LinkedHashSet<>();
         private final Set<String> shortageProducts = new LinkedHashSet<>();
+        private final Set<String> filteredEventTypes = new LinkedHashSet<>();
 
         private final int userCount;
         private final int productCount;
@@ -218,6 +242,10 @@ public final class FileModeGenerationEngine implements GenerationEngine {
             notes.add("ingest_time 取事件时间：文件模式无真实采集链路，取时钟会破坏可复现（§4.2）");
             notes.add("单线程生成，子种子按数据流派生：users/products/behaviors/orders/time/dirty");
             notes.add("用户数 %d、商品池 %d（按事件预算派生，属引擎自定规则）".formatted(userCount, productCount));
+            if (!filteredEventTypes.isEmpty()) {
+                notes.add("事件白名单已摘掉 %d 类事件（商城公开接口无对应动作，计划里从不生成）：%s"
+                        .formatted(filteredEventTypes.size(), String.join(",", new java.util.TreeSet<>(filteredEventTypes))));
+            }
 
             buildProductPool();
             emitUsers();
@@ -605,6 +633,12 @@ public final class FileModeGenerationEngine implements GenerationEngine {
         private boolean write(CanonicalEvent event, BigDecimal amount) {
             if (emitted >= request.eventCount()) {
                 return false;
+            }
+            if (!request.acceptsEventType(event.eventType())) {
+                // 计划白名单外的事件类型（MALL_API 模式摘掉"商城无公开接口"的动作）：
+                // 既不进产物、也不占预算、也不动 counters —— 但"被摘掉了什么"要能被上层如实记录。
+                filteredEventTypes.add(event.eventType());
+                return true;
             }
             try {
                 sink.write(event);

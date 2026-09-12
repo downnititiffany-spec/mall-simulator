@@ -1,0 +1,342 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8 -XX:+UseSerialGC
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\synthetic-data-generator\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 15 source files with javac [debug release 17] to target\test-classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[79,9] 找不到符号
+  符号:   类 TargetCapabilities
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[79,48] 找不到符号
+  符号:   方法 capabilities(com.graduation.generator.adapter.TargetConfig)
+  位置: 类 com.graduation.generator.adapter.ReferenceMallHttpAdapter
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[87,9] 找不到符号
+  符号:   类 TargetCapabilities
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[88,17] 找不到符号
+  符号:   方法 capabilities(com.graduation.generator.adapter.TargetConfig)
+  位置: 类 com.graduation.generator.adapter.ReferenceMallHttpAdapter
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[102,9] 找不到符号
+  符号:   类 ProductPage
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[102,61] 找不到符号
+  符号:   类 ProductQuery
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[104,9] 找不到符号
+  符号:   类 ExternalProduct
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[110,9] 找不到符号
+  符号:   类 ExternalUser
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[111,21] 找不到符号
+  符号:   类 UserCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[114,42] 找不到符号
+  符号:   类 BehaviorCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[117,9] 找不到符号
+  符号:   类 ExternalOrder
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[118,21] 找不到符号
+  符号:   类 OrderCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[118,73] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[124,9] 找不到符号
+  符号:   类 ExternalOrder
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[124,54] 找不到符号
+  符号:   类 PayCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[128,9] 找不到符号
+  符号:   类 ExternalOrder
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[129,21] 找不到符号
+  符号:   类 CancelCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[132,9] 找不到符号
+  符号:   类 ExternalRefund
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[133,21] 找不到符号
+  符号:   类 RefundCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[158,42] 找不到符号
+  符号:   类 ProductQuery
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[159,49] 找不到符号
+  符号:   类 UserCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[174,49] 找不到符号
+  符号:   类 UserCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[175,41] 找不到符号
+  符号:   类 OrderCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[176,41] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[177,49] 找不到符号
+  符号:   类 UserCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[199,9] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[199,49] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[200,56] 找不到符号
+  符号:   类 ProductQuery
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[212,9] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[212,58] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[214,29] 找不到符号
+  符号:   类 BehaviorCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[223,9] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[223,54] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[225,29] 找不到符号
+  符号:   类 BehaviorCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[239,9] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[239,49] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[241,29] 找不到符号
+  符号:   类 UserCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[254,9] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[254,49] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[256,29] 找不到符号
+  符号:   类 OrderCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[257,57] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[268,9] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[268,49] 找不到符号
+  符号:   类 MallOperationException
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[269,56] 找不到符号
+  符号:   类 ProductQuery
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[279,64] 找不到符号
+  符号:   类 UserCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[280,64] 找不到符号
+  符号:   类 UserCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[281,64] 找不到符号
+  符号:   类 OrderCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[283,27] 找不到符号
+  符号:   类 OrderCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[283,69] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[285,27] 找不到符号
+  符号:   类 RefundCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[286,64] 找不到符号
+  符号:   类 CancelCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[287,64] 找不到符号
+  符号:   类 BehaviorCommand
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[288,64] 找不到符号
+  符号:   类 ProductQuery
+  位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[INFO] 53 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.706 s
+[INFO] Finished at: 2026-09-11T19:54:49+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:testCompile (default-testCompile) on project synthetic-data-generator: Compilation failure: Compilation failure: 
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[79,9] 找不到符号
+[ERROR]   符号:   类 TargetCapabilities
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[79,48] 找不到符号
+[ERROR]   符号:   方法 capabilities(com.graduation.generator.adapter.TargetConfig)
+[ERROR]   位置: 类 com.graduation.generator.adapter.ReferenceMallHttpAdapter
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[87,9] 找不到符号
+[ERROR]   符号:   类 TargetCapabilities
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[88,17] 找不到符号
+[ERROR]   符号:   方法 capabilities(com.graduation.generator.adapter.TargetConfig)
+[ERROR]   位置: 类 com.graduation.generator.adapter.ReferenceMallHttpAdapter
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[102,9] 找不到符号
+[ERROR]   符号:   类 ProductPage
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[102,61] 找不到符号
+[ERROR]   符号:   类 ProductQuery
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[104,9] 找不到符号
+[ERROR]   符号:   类 ExternalProduct
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[110,9] 找不到符号
+[ERROR]   符号:   类 ExternalUser
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[111,21] 找不到符号
+[ERROR]   符号:   类 UserCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[114,42] 找不到符号
+[ERROR]   符号:   类 BehaviorCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[117,9] 找不到符号
+[ERROR]   符号:   类 ExternalOrder
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[118,21] 找不到符号
+[ERROR]   符号:   类 OrderCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[118,73] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[124,9] 找不到符号
+[ERROR]   符号:   类 ExternalOrder
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[124,54] 找不到符号
+[ERROR]   符号:   类 PayCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[128,9] 找不到符号
+[ERROR]   符号:   类 ExternalOrder
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[129,21] 找不到符号
+[ERROR]   符号:   类 CancelCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[132,9] 找不到符号
+[ERROR]   符号:   类 ExternalRefund
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[133,21] 找不到符号
+[ERROR]   符号:   类 RefundCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[158,42] 找不到符号
+[ERROR]   符号:   类 ProductQuery
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[159,49] 找不到符号
+[ERROR]   符号:   类 UserCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[174,49] 找不到符号
+[ERROR]   符号:   类 UserCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[175,41] 找不到符号
+[ERROR]   符号:   类 OrderCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[176,41] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[177,49] 找不到符号
+[ERROR]   符号:   类 UserCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[199,9] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[199,49] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[200,56] 找不到符号
+[ERROR]   符号:   类 ProductQuery
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[212,9] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[212,58] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[214,29] 找不到符号
+[ERROR]   符号:   类 BehaviorCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[223,9] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[223,54] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[225,29] 找不到符号
+[ERROR]   符号:   类 BehaviorCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[239,9] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[239,49] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[241,29] 找不到符号
+[ERROR]   符号:   类 UserCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[254,9] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[254,49] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[256,29] 找不到符号
+[ERROR]   符号:   类 OrderCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[257,57] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[268,9] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[268,49] 找不到符号
+[ERROR]   符号:   类 MallOperationException
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[269,56] 找不到符号
+[ERROR]   符号:   类 ProductQuery
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[279,64] 找不到符号
+[ERROR]   符号:   类 UserCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[280,64] 找不到符号
+[ERROR]   符号:   类 UserCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[281,64] 找不到符号
+[ERROR]   符号:   类 OrderCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[283,27] 找不到符号
+[ERROR]   符号:   类 OrderCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[283,69] 程序包OrderCommand不存在
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[285,27] 找不到符号
+[ERROR]   符号:   类 RefundCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[286,64] 找不到符号
+[ERROR]   符号:   类 CancelCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[287,64] 找不到符号
+[ERROR]   符号:   类 BehaviorCommand
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] /D:/Develop_code/GraduationProject/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/MallTargetAdapterOperationsTest.java:[288,64] 找不到符号
+[ERROR]   符号:   类 ProductQuery
+[ERROR]   位置: 类 com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

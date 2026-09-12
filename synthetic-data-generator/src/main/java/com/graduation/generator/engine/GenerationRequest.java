@@ -1,6 +1,9 @@
 package com.graduation.generator.engine;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * 一次生成任务的输入（由运行服务从 {@code generation_plan} 的冻结版本 + {@code generation_run} 组装）。
@@ -17,11 +20,21 @@ import java.time.Instant;
  * @param eventCount    目标事件总量
  * @param ratePerSecond 负载上限（0 表示不限）
  * @param dirtyProfile  脏数据档位（{@code none} 表示不注入；仅文件模式有效，§3.3 B）
+ * @param eventFilter   只允许进入产物的<b>事件类型</b>白名单（{@code null} = 全部允许）。
+ *                      MALL_API 模式用它把"商城公开接口根本不存在的动作"（改价、库存预留/释放/入库）
+ *                      从计划里<b>摘掉</b>——见 {@link #withEventFilter} 的说明。
  */
 public record GenerationRequest(String runId, String scenario, long seed, Instant startTime, Instant endTime,
-                                long eventCount, int ratePerSecond, String dirtyProfile) {
+                                long eventCount, int ratePerSecond, String dirtyProfile,
+                                Predicate<String> eventFilter) {
 
     public static final String DIRTY_NONE = "none";
+
+    /** 不设事件类型白名单（全部 12 类都可产出）——文件模式与既有调用方的入口 */
+    public GenerationRequest(String runId, String scenario, long seed, Instant startTime, Instant endTime,
+                             long eventCount, int ratePerSecond, String dirtyProfile) {
+        this(runId, scenario, seed, startTime, endTime, eventCount, ratePerSecond, dirtyProfile, null);
+    }
 
     public GenerationRequest {
         if (runId == null || runId.isBlank()) {
@@ -49,6 +62,26 @@ public record GenerationRequest(String runId, String scenario, long seed, Instan
 
     public boolean injectsDirtySamples() {
         return !DIRTY_NONE.equalsIgnoreCase(dirtyProfile);
+    }
+
+    /** 该事件类型是否允许进入产物（未设白名单时一律允许，向后兼容既有调用方） */
+    public boolean acceptsEventType(String eventType) {
+        return eventFilter == null || eventFilter.test(eventType);
+    }
+
+    /**
+     * 派生一个"只产出给定事件类型"的请求（其余字段原样保留，因此 <b>seed 与时间窗不变、场景分布不变</b>）。
+     *
+     * <p><b>为什么要在计划层摘，而不是在落点层丢</b>：文件引擎的 {@code event_count} 是"事件预算"，
+     * 计数器 {@code emitted} 在<b>每次成功写入</b>时自增，而事件时间、抽样权重、订单序号都派生自 {@code emitted}。
+     * 如果等事件生成出来再在 {@code EventSink} 处丢弃，{@code emitted} 的推进节奏就变了，后面的整条事件流随之漂移——
+     * "两个模式读同一份计划"当场失效。把白名单交给引擎，被摘掉的事件类型<b>从不进入计划</b>，
+     * 剩余事件流与文件模式逐字节同构（对账见 {@code MallApiGenerationEngineTest}）。</p>
+     */
+    public GenerationRequest withEventFilter(Set<String> allowedEventTypes) {
+        Set<String> frozen = new LinkedHashSet<>(allowedEventTypes);
+        return new GenerationRequest(runId, scenario, seed, startTime, endTime, eventCount, ratePerSecond,
+                dirtyProfile, frozen::contains);
     }
 
     /** 可复现键（不含 runId；用于对账两次运行是否同参） */

@@ -2,6 +2,7 @@ package com.graduation.generator.config;
 
 import com.graduation.generator.engine.FileModeGenerationEngine;
 import com.graduation.generator.engine.GenerationEngine;
+import com.graduation.generator.engine.MallApiGenerationEngine;
 import com.graduation.generator.meta.GeneratorMetaStore;
 import com.graduation.generator.adapter.FileModeTargetAdapter;
 import com.graduation.generator.adapter.MallTargetAdapterRegistry;
@@ -13,6 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * 生成器装配。
@@ -30,15 +32,25 @@ public class GeneratorBeans {
     }
 
     /**
-     * 当前只有文件模式引擎（§3.3 B）。
+     * 宿主注入的引擎：<b>文件模式</b>（§3.3 B）。
      *
-     * <p>{@code MALL_API} 的 HTTP 适配属于 S4，届时按模式选择实现由运行服务决定；
-     * 在那之前对 {@code MALL_API} 计划显式返回 501（见 {@code GenerationRunService.start}），
-     * 绝不用文件模式顶替。</p>
+     * <p>{@code MALL_API} 不走这个 bean——它需要目标适配器，签名不同（见 {@link #mallApiGenerationEngine()}）。
+     * 运行服务按计划的 {@code mode} 二选一，绝不互相顶替。</p>
      */
     @Bean
     public GenerationEngine generationEngine() {
         return new FileModeGenerationEngine();
+    }
+
+    /**
+     * MALL_API 生成引擎（§3.3 A）：读同一份生成计划，把事件驱动成对目标商城公开接口的真实调用。
+     *
+     * <p>内部复用文件模式的场景与分布实现，只在落点上分流；商城公开接口不存在的动作在计划层被摘掉，
+     * 不会"跳过不发还照记成功"。无参构造，便于单元测试直接 {@code new}。</p>
+     */
+    @Bean
+    public MallApiGenerationEngine mallApiGenerationEngine() {
+        return new MallApiGenerationEngine();
     }
 
     /**
@@ -53,6 +65,28 @@ public class GeneratorBeans {
             @Value("${generator.target.probe-timeout-ms:3000}") long probeTimeoutMs) {
         return new MallTargetAdapterRegistry(List.of(
                 new FileModeTargetAdapter(outputRoot),
-                ReferenceMallHttpAdapter.withEnvironment(Duration.ofMillis(probeTimeoutMs))));
+                new ReferenceMallHttpAdapter(credentialResolver(), Duration.ofMillis(probeTimeoutMs))));
+    }
+
+    /**
+     * 凭据解析顺序：JVM 系统属性优先，其次环境变量（生产形态）。
+     *
+     * <p>为什么要留系统属性这一档：自动化测试里没法给<b>已经启动的</b> JVM 注入环境变量，
+     * 于是"真实 HTTP 端到端"要么改成打桩、要么被迫依赖外部进程里已有的环境变量——两者都比这更糟。
+     * 系统属性只是<b>同一台机器上的另一个取值来源</b>，不改变"凭据只按引用名取、绝不落库/落盘"的约束。</p>
+     */
+    @Bean
+    public Function<String, String> generatorCredentialResolver() {
+        return credentialResolver();
+    }
+
+    private static Function<String, String> credentialResolver() {
+        return name -> {
+            if (name == null || name.isBlank()) {
+                return null;
+            }
+            String fromProperty = System.getProperty(name);
+            return fromProperty != null && !fromProperty.isBlank() ? fromProperty : System.getenv(name);
+        };
     }
 }

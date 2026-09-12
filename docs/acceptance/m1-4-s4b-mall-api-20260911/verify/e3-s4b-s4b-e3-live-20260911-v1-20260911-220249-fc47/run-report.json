@@ -1,0 +1,36 @@
+{
+  "run_id" : "s4b-e3-live-20260911-v1-20260911-220249-fc47",
+  "plan_id" : "s4b-e3-live-20260911",
+  "plan_version" : 1,
+  "mode" : "MALL_API",
+  "scenario" : "normal",
+  "seed" : 20260911,
+  "start_time" : "2026-09-01T00:00:00+08:00",
+  "end_time" : "2026-09-08T00:00:00+08:00",
+  "event_count" : 400,
+  "status" : "FAILED",
+  "success_count" : 195,
+  "failed_count" : 0,
+  "checksum" : "9cc7f5a7ee06135095c9c8e0d48d2d758f427dffc58c89affa1e3a38d48544cc",
+  "expected_quarantine_counts" : { },
+  "dirty_sample_types" : [ ],
+  "event_stats" : [ ],
+  "artifacts" : [ {
+    "uri" : "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/s4b-e3-live-20260911-v1-20260911-220249-fc47/events-0001.jsonl",
+    "kind" : "EVENT_JSONL",
+    "checksum" : "9cc7f5a7ee06135095c9c8e0d48d2d758f427dffc58c89affa1e3a38d48544cc",
+    "bytes" : 81283,
+    "record_count" : 195,
+    "min_event_time" : "2026-09-01T00:17:38+08:00",
+    "max_event_time" : "2026-09-07T21:57:49+08:00"
+  }, {
+    "uri" : "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/s4b-e3-live-20260911-v1-20260911-220249-fc47/operation-journal.jsonl",
+    "kind" : "OPERATION_JOURNAL",
+    "checksum" : "e86d63ca71bbed527d1f6af0e1d5831902250f39fdffe487c8060dc8747f64a2",
+    "bytes" : 103308,
+    "record_count" : 401
+  } ],
+  "notes" : [ "事件统计与制品已分别落 generation_event_stat / generation_artifact；清单为每个制品文件同名一份" ],
+  "error_code" : "RUN_FAILED",
+  "error_message" : "MallOperationException: [runForTarget] 运行中有 204 次商城操作被真实拒绝（已写入规范流 195 条）：createOrder → [createOrder] 商城拒绝：http://127.0.0.1:8090 → HTTP 400 code=INSUFFICIENT_STOCK message=库存不足: 1002。商城侧不回滚，已成功的写操作真实存在；请清理后再重跑，或调小 event_count 让订单量落在库存可承受范围内"
+}

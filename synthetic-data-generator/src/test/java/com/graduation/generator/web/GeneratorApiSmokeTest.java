@@ -167,19 +167,33 @@ class GeneratorApiSmokeTest {
                 "运行缺口必须如实写进 notes，而不是留空");
     }
 
-    // ---------- 2. 未实现模式显式失败 ----------
+    // ---------- 2. 未实现/不可用模式显式失败 ----------
 
     @Test
     void unimplementedModeFailsLoudlyInsteadOfSwitchingMode() {
-        Plan plan = appendPlan(MODE_MALL, "none");
+        // S4b 之后 MALL_API 已经是<b>已实现</b>模式，所以这里改用"引擎不认识的模式"来钉同一条约束：
+        // 不认识就必须响亮拒绝，绝不用文件模式顶替。真正的 MALL_API 链路在 MallApiGenerationSmokeTest 里实测。
+        Plan plan = appendPlan("SOME_UNKNOWN_MODE", "none");
         // 注意：TestRestTemplate 默认不因 4xx/5xx 抛异常（它返回响应本身），所以这里直接断言状态码，
         // 而不是 assertThrows——踩过一次才发现，记在测试里省得下次再猜。
         ResponseEntity<String> response = rest.postForEntity("/api/v1/generation-runs",
                 new StartRunRequest(plan.planId(), plan.version()), String.class);
         assertEquals(501, response.getStatusCode().value(),
-                "MALL_API 未实现必须显式 501，绝不用文件模式顶替");
+                "未实现的模式必须显式 501，绝不用文件模式顶替");
         assertTrue(Objects.requireNonNull(response.getBody()).contains(MODE_FILE),
-                "错误信息必须说清当前只支持哪种模式");
+                "错误信息必须说清当前支持哪种模式");
+    }
+
+    @Test
+    void mallApiWithoutAdapterTargetFailsLoudly() {
+        // MALL_API 必须绑定一个真实的商城目标；没有目标就无从谈"打真实接口"，只能是响亮失败。
+        Plan plan = appendPlan(MODE_MALL, "none");
+        ResponseEntity<String> response = rest.postForEntity("/api/v1/generation-runs",
+                new StartRunRequest(plan.planId(), plan.version()), String.class);
+        assertEquals(400, response.getStatusCode().value(),
+                "MALL_API 缺少商城目标必须 400：" + response.getBody());
+        assertTrue(Objects.requireNonNull(response.getBody()).contains("target_id"),
+                "错误信息必须点名缺的是 target_id：" + response.getBody());
     }
 
     // ---------- 3. 场景端点 ----------

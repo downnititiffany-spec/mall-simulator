@@ -1,0 +1,11 @@
+{
+  "run_id" : "s4b-e3-live-20260911-v1-20260911-220249-fc47",
+  "uri" : "file:///D:/Develop_code/GraduationProject/synthetic-data-generator/generator-output/s4b-e3-live-20260911-v1-20260911-220249-fc47/events-0001.jsonl",
+  "checksum" : "9cc7f5a7ee06135095c9c8e0d48d2d758f427dffc58c89affa1e3a38d48544cc",
+  "bytes" : 81283,
+  "record_count" : 195,
+  "min_event_time" : "2026-09-01T00:17:38+08:00",
+  "max_event_time" : "2026-09-07T21:57:49+08:00",
+  "schema_version" : "1.0",
+  "synthetic" : true
+}

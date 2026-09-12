@@ -56,6 +56,7 @@ public final class JsonlEventSink implements EventSink {
     private Path currentFile;
     private long fileBytes;
     private long fileRecords;
+    private long writtenRecords;
     private String minEventTime;
     private String maxEventTime;
     private OffsetDateTime minParsed;
@@ -179,6 +180,17 @@ public final class JsonlEventSink implements EventSink {
         return List.copyOf(rotated);
     }
 
+    /**
+     * 本 sink 已写出的规范事件条数（只数 {@code events-*.jsonl} 里的行）。
+     *
+     * <p>运行失败时它是"真实入流了多少条"的唯一可信来源：{@code generation_artifact} 里还躺着
+     * 清单和操作流水，把它们一起加进 {@code success_count} 会得出比 {@code event_count} 还大的数
+     * （2026-09-11 真机 E3 就报过 {@code success_count=632}，实际入流 231 条）。</p>
+     */
+    public long eventRecords() {
+        return writtenRecords + fileRecords;
+    }
+
     /** 当前制品对应的清单文件路径（未 close 时为预期路径） */
     public Path currentManifestPath() {
         return currentFile.resolveSibling(
@@ -193,6 +205,7 @@ public final class JsonlEventSink implements EventSink {
 
     private void openNextFile() {
         fileSequence++;
+        writtenRecords += fileRecords;
         currentFile = runDir.resolve(FILE_PREFIX + String.format(Locale.ROOT, "%04d", fileSequence) + JSONL_SUFFIX);
         fileBytes = 0;
         fileRecords = 0;

@@ -8,7 +8,7 @@ import java.util.Optional;
  * （不含 run_id——run 由调用方在持久化时补上）。
  *
  * @param uri          制品位置（本实现写绝对 {@code file:///} URI：与采集清单的 acceptedUri 形态一致，便于人工对账）
- * @param kind         制品类型：{@code EVENT_JSONL} / {@code MANIFEST} / {@code DIRTY_SAMPLE}
+ * @param kind         制品类型：{@code EVENT_JSONL} / {@code MANIFEST} / {@code DIRTY_SAMPLE} / {@code OPERATION_JOURNAL}
  * @param checksum     内容校验和（算法见 {@link JsonlEventSink#CHECKSUM_ALGORITHM}）
  * @param bytes        文件字节数
  * @param recordCount  JSONL 行数（清单类制品为 0）
@@ -21,6 +21,16 @@ public record Artifact(String uri, String kind, String checksum, long bytes, lon
     public static final String KIND_EVENT_JSONL = "EVENT_JSONL";
     public static final String KIND_MANIFEST = "MANIFEST";
     public static final String KIND_DIRTY_SAMPLE = "DIRTY_SAMPLE";
+
+    /**
+     * MALL_API 运行的操作流水制品（本实现的<b>增量扩展</b>，V2.1 §4.2 的 {@code kind} 未冻结取值集合）。
+     *
+     * <p>为什么必须落成制品：MALL_API 模式的数据长在商城里，"这次运行到底对商城做了什么"不能只留在日志里。
+     * 流水逐条记录操作名、真实路径、规范 ID → 商城外部 ID、成功/失败/跳过，是与商城侧对账的唯一凭据。</p>
+     *
+     * <p>取值长度 17 ≤ {@code generation_artifact.kind} 的 {@code VARCHAR(32)}，无需改 Flyway 迁移。</p>
+     */
+    public static final String KIND_OPERATION_JOURNAL = "OPERATION_JOURNAL";
 
     public Artifact {
         if (uri == null || uri.isBlank()) {
