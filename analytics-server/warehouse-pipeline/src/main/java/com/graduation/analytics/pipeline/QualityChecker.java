@@ -188,9 +188,19 @@ public class QualityChecker {
      * 「超过阈值阻断」）。因此同一规则码在通过/未通过两种情况下**落库的严重度可以不同**，
      * 这是设计意图，不是不一致。</p>
      *
+     * <p><b>F-88：两列档位 + 版本化四要素一次填满</b>（{@link DataQualityResult}）。{@code severity}
+     * 存<b>声明</b>档位（{@code verdict.declaredSeverity()}），{@code effectiveSeverity} 存<b>生效</b>档位；
+     * 另落 {@code ruleVersion}/{@code compatPolicyVersion}/{@code ruleFingerprint} —— 具体约定见
+     * {@link #applyVersionedSeverity}（写侧唯一实现）。旧实现在本处只写了「生效档位」而且是写成
+     * {@code severity} 一列，声明档位就此丢失，事后无法区分「声明 WARN 超阈值生效阻断」
+     * 与「本就是阻断」—— 本方法现在把两者分别落库。</p>
+     *
      * <p>未登记规则码：{@link RuleSeverity#resolve} 会给出 {@code registered=false}；
-     * 本方法仍落一个保守值（{@code UNREGISTERED}=BLOCKING），而**停机决策**由
-     * {@link DataQualityGate#decisionForRun} 负责 —— 那里会把未登记码单独列出并要求先登记规则版本
+     * 本方法仍落一个保守值到 {@code effectiveSeverity}（{@code UNREGISTERED}=阻断），
+     * 而 {@code severity}/{@code ruleVersion} 落 NULL（<b>不落 0</b>：0 会被下游读成「第 0 版」，
+     * 见实体注释）；{@code compatPolicyVersion}/{@code ruleFingerprint} 照写 —— 这样「新产生但未登记」
+     * 的行与「版本化之前的历史行」可由 {@code effective_severity} 是否为 NULL 可靠区分。
+     * <b>停机决策</b>由 {@link DataQualityGate#decisionForRun} 负责 —— 那里会把未登记码单独列出并要求先登记规则版本
      * （§7.3.1 line 524）。本类不静默放行，也不在此抛异常打断整批检查。</p>
      */
     private DataQualityResult rule(long runId, String code, long checks, long errors,
@@ -200,7 +210,8 @@ public class QualityChecker {
         r.setRunId(runId);
         r.setRuleCode(code);
         RuleSeverity.RuleVerdict verdict = RuleSeverity.resolve(rules, code, passed ? 1 : 0);
-        r.setSeverity(verdict.effectiveSeverity());
+        // 声明档位/生效档位/版本/策略版本/指纹：契约与另两个写点共用同一实现，避免漏写半套版本信息。
+        applyVersionedSeverity(r, verdict, rules);
         r.setCheckCount(checks);
         r.setErrorCount(errors);
         r.setErrorRate(checks == 0 ? BigDecimal.ZERO
@@ -218,6 +229,54 @@ public class QualityChecker {
 
     private static boolean isBlank(Object v) {
         return v == null || String.valueOf(v).isBlank();
+    }
+
+    /**
+     * <b>写侧版本化四列的单一实现</b>（F-88 / V20）：把一条判定结论写进结果行的
+     * {@code severity / effectiveSeverity / ruleVersion / compatPolicyVersion / ruleFingerprint}。
+     *
+     * <p>为什么抽成一处：写侧有三个写点（本类 {@link #rule}、{@code PipelineService.persistQuality}、
+     * {@code PipelineService.persistChecks}）。「声明 vs 生效」「未登记落 NULL 而不是 0」
+     * 「策略版本与指纹无论是否登记都要写」这三条约定若各写一遍，任何一处漏写都会产生
+     * 一个**只有部分版本信息**的行 —— 而 V20 的全部意义就是让结果行能自证按哪一版规则判的。
+     * 契约只有一处定义，才可能被一次改对。</p>
+     *
+     * <p>约定（与 V20 迁移注释逐条对应）：</p>
+     * <ul>
+     *   <li>{@code severity} = {@code verdict.declaredSeverity()}（规则<b>声明</b>档位）；
+     *       {@code effectiveSeverity} = {@code verdict.effectiveSeverity()}（条件判定后的<b>生效</b>档位）；</li>
+     *   <li>未登记规则码：{@code severity=null}、{@code ruleVersion=null}（<b>不落 0</b>——0 会被下游
+     *       读成「第 0 版规则」）、{@code effectiveSeverity=UNREGISTERED}
+     *       （本仓库 {@code UNREGISTERED} 是 {@code BLOCKING} 的别名常量，故落库字面是 {@code "BLOCKING"}；
+     *       想区分「未登记」与「已登记且声明即阻断」，要看 {@code severity IS NULL AND rule_version IS NULL}
+     *       这一组合，<b>不能</b>只看 {@code effective_severity} 一列），
+     *       但 {@code compatPolicyVersion}/{@code ruleFingerprint} **照写**：否则「写侧接入后新产生的
+     *       未登记行」与「版本化之前的历史行」在库里外观完全相同，无法区分；</li>
+     *   <li>禁止回填/猜测：版本号只来自本次判定的冻结集与判定结论。</li>
+     * </ul>
+     *
+     * @param r       待写的结果行（原地修改）
+     * @param verdict 本次判定结论；{@code null}（理论上不会发生）时保留行上原有 severity，
+     *                四个版本化列落 NULL —— 宁可留 NULL 也不猜一个值
+     * @param rules   本次 run 冻结的规则集
+     */
+    static void applyVersionedSeverity(DataQualityResult r, RuleSeverity.RuleVerdict verdict,
+                                       QualityRuleCatalog.FrozenRules rules) {
+        if (verdict == null) {
+            r.setEffectiveSeverity(null);
+            r.setRuleVersion(null);
+            r.setCompatPolicyVersion(rules == null ? null : rules.compatPolicyVersion());
+            r.setRuleFingerprint(rules == null ? null : rules.fingerprint());
+            return;
+        }
+        // 声明档位与生效档位分别落库：未登记时声明档位为 null（目录里没有这条规则），
+        // 生效档位是保守值 UNREGISTERED —— 两者都如实记录，不互相顶替。
+        r.setSeverity(verdict.declaredSeverity());
+        r.setEffectiveSeverity(verdict.effectiveSeverity());
+        // 内存哨兵 0 → NULL：0 是"像版本号"的值，落库会让"未登记"伪装成"登记过的第 0 版"。
+        r.setRuleVersion(verdict.registered() ? verdict.ruleVersion() : null);
+        r.setCompatPolicyVersion(rules.compatPolicyVersion());
+        r.setRuleFingerprint(rules.fingerprint());
     }
 
     /** 从同一批事件里抽取订单总额索引（保留旧的两参重载语义：对账范围=传入事件集）。 */

@@ -340,8 +340,11 @@ public class PipelineService {
      * 「不同 run 之间口径随库中版本变化」—— 因为目录随代码发布而变。
      * 真正闭合需要：① 总控批准迁移号建 {@code quality_rule_definition}（DDL 草案见
      * {@code docs/acceptance/f88-dq-severity-20260912/raw/q01-quality-rule-definition-ddl-draft.sql}）
-     * ② {@code data_quality_result} 增列 rule_version／effective_severity／compat_policy_version／
-     * rule_fingerprint 以持久化「该 run 实际用了哪一版」。</p>
+     * ② <b>已由 V20 + F-88 完成</b>：{@code data_quality_result} 增列
+     * {@code rule_version/effective_severity/compat_policy_version/rule_fingerprint}，
+     * 且写侧三个写点（本类 persistQuality/persistChecks 与 {@code QualityChecker.rule}）
+     * 经 {@code QualityChecker.applyVersionedSeverity} 按同一契约填满。
+     * 注意 ①「{@code rulesFor()} 改读库」仍属未做项，因此本方法依旧是进程内目录。</p>
      */
     private QualityRuleCatalog.FrozenRules rulesFor(PipelineRun run) {
         return QualityRuleCatalog.DEFAULT.freeze(run.getPipelineCode());
@@ -736,7 +739,10 @@ public class PipelineService {
             r.setLayer(cap(layer, 32));
             // 有效严重度按**本 run 冻结的规则集**解析：QualityChecker 已按同一 rules 写入，
             // 此处再解析一次结果必然一致（同一 rules、同一 passed），而非回落到全局 of(ruleCode)。
-            r.setSeverity(RuleSeverity.resolve(rules, r.getRuleCode(), r.getPassed()).effectiveSeverity());
+            // F-88：声明档位/生效档位/版本/策略版本/指纹走写侧唯一实现（QualityChecker.applyVersionedSeverity），
+            // 旧实现只写 severity=生效档位，声明档位在此丢失（本文件 :739 是缺口所在）。
+            RuleSeverity.RuleVerdict verdict = RuleSeverity.resolve(rules, r.getRuleCode(), r.getPassed());
+            QualityChecker.applyVersionedSeverity(r, verdict, rules);
             r.setTargetTable(cap("landing/events", 500));
             r.setSnapshotId(cap(snapshotId, 64));
             r.setDetail(cap(r.getDetail(), 2000));
@@ -759,6 +765,10 @@ public class PipelineService {
      * 把「必须阻断」写成 ERROR（如 REQUIRED_FIELD_NULL_RATE 的 ADS 侧同名规则）。归一化只改
      * 落库标签，作业自身的成败判据（BLOCKING 未过即 FAILED）不变。</p>
      *
+     * <p>V20/F-88 起归一化值落两列：{@code severity}=目录**声明**档位、
+     * {@code effectiveSeverity}=条件判定后的**生效**档位；另落 {@code ruleVersion}/
+     * {@code compatPolicyVersion}/{@code ruleFingerprint}，使「这条结果按哪一版规则判的」可事后复算。</p>
+     *
      * @return 实际写库的规则条数
      */
     private int persistChecks(Long runId, String snapshotId, List<JobResultParser.CheckInfo> checks,
@@ -773,8 +783,16 @@ public class PipelineService {
             r.setRunId(runId);
             r.setRuleCode(cap(c.ruleCode(), 64));
             r.setLayer(cap(c.layer(), 32));
-            r.setSeverity(cap(RuleSeverity.resolve(rules, c.ruleCode(),
-                    RuleSeverity.failedFlag(c.passed())).effectiveSeverity(), 16));
+            // F-88：解析一次拿全四要素，与 QualityChecker/persistQuality 共用写侧唯一实现。
+            // severity = 目录**声明**档位（不再照抄作业回传字面量，也不再顶替生效档位）；
+            // effectiveSeverity = 条件判定后的**生效**档位。两者不同时（如声明 WARN 超阈值生效 BLOCKING）
+            // 正是本改动要能事后区分的信息，不能只留一个。
+            RuleSeverity.RuleVerdict verdict = RuleSeverity.resolve(rules, c.ruleCode(),
+                    RuleSeverity.failedFlag(c.passed()));
+            QualityChecker.applyVersionedSeverity(r, verdict, rules);
+            // 列宽保护只加在真正落库的字符串列上（severity/effective_severity 均为 VARCHAR(16)）。
+            r.setSeverity(cap(r.getSeverity(), 16));
+            r.setEffectiveSeverity(cap(r.getEffectiveSeverity(), 16));
             r.setTargetTable(cap(c.targetTable(), 500));
             r.setSnapshotId(cap(snapshotId, 64));
             r.setCheckCount(c.checkCount());

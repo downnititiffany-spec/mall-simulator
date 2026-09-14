@@ -231,7 +231,14 @@ class RuleSeverityPathConsistencyTest {
                 .isTrue();
     }
 
-    /** 一条质量结果行；{@code literalSeverity} 是**会被归一化覆盖**的字面标签，不参与判定。 */
+    /**
+     * 一条质量结果行；{@code literalSeverity} 是**会被归一化覆盖**的字面标签，不参与判定。
+     *
+     * <p>F-88/V20 起结果行还带 {@code effectiveSeverity}（生效档位）与版本化三列；本夹具刻意
+     * **只设 {@code severity}**、其余留空，以同时钉住「门禁不看结果行任何档位列」：
+     * 判定输入只有 (冻结规则集, ruleCode, passed)，两列写什么都不改变结论
+     * （单测侧的反证见 warehouse-pipeline 的 {@code DataQualityGateTest#gateIgnoresBothSeverityColumns}）。</p>
+     */
     private static DataQualityResult result(String ruleCode, String literalSeverity, Integer passed) {
         DataQualityResult r = new DataQualityResult();
         r.setRuleCode(ruleCode);

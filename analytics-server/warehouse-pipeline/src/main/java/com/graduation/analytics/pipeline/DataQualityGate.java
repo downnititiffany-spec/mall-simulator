@@ -31,15 +31,22 @@ import java.util.Objects;
  * {@code EVENT_ID_UNIQUE} / {@code PUB_DQ_EVENT_ID_UNIQUE} / {@code ADS_STAGING_SNAPSHOT_ISOLATION}
  * 在库里是 {@code ERROR}（run 24 与 run 47 各 3 行），而目录口径是观察项。</p>
  *
+ * <p><b>F-88/V20 之后：结果行自带的 {@code effectiveSeverity} 也不参与判定</b>（反证见
+ * {@code DataQualityGateTest#gateIgnoresBothSeverityColumns}）。两列含义不同：
+ * 结果行的 {@code effective_severity} 是**写入当时**按当时冻结集判出的档位（用于事后复算「当时怎么判的」），
+ * 而本类要回答的是「按**本次**规则集，这个 run 的结果算不算阻断」。若读库中列，会立刻出现两套口径，
+ * 且版本化引入前的历史行（该列为 NULL）与漏填行都会污染结论。因此判定输入仍然只有
+ * (冻结规则集, ruleCode, passed) 三元组。</p>
+ *
  * <p><b>未登记规则码 ⇒ FAIL</b>（不再静默放行）：§7.3.1 line 524「未知规则码不可盲信传来的 WARN，
  * 应停止发布并报未登记规则」。因此本类把「未登记码」与「阻断级未通过」分开统计，
  * 由 {@link #decisionForRun(Long)} 同时给出结论、未登记码列表与可定位的规则码。</p>
  *
- * <p><b>已知缺口（显式声明，不掩盖）</b>：真正「按 run 冻结」需要写侧把该 run 使用的
- * 规则版本与指纹落库（{@code data_quality_result} 增列：rule_version/effective_severity/
- * compat_policy_version/rule_fingerprint）。该增列属写侧（{@code PipelineService}）与 DDL 范围，
- * 本任务**未做**（迁移号由总控分配）。当前冻结集取目录的默认版本集，
- * 因此**同一规则码跨版本的历史差异仍未被冻结**，见报告「未做」清单。</p>
+ * <p><b>已知缺口（显式声明，不掩盖）</b>：写侧已按 F-88 把「该 run 用的规则版本与规则集指纹」落进
+ * {@code data_quality_result}（{@code rule_version/effective_severity/compat_policy_version/rule_fingerprint}，V20），
+ * 但本类仍以**调用方传入的冻结集**为准来判定，不按结果行上的 {@code rule_fingerprint} 选版本 ——
+ * 「读侧按行内指纹重算历史 run 的当时结论」属 F-93，**不在 F-88 范围内**。
+ * 当前冻结集取目录的默认版本集，因此同一规则码跨版本的历史差异仍未被读侧冻结。</p>
  *
  * <p>run 号为空或该 run 没有任何质量结果 → UNKNOWN（取不到就是取不到，不冒充 PASS）。</p>
  */

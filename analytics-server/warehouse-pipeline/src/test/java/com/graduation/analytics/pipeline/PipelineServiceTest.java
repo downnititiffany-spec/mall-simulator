@@ -2,6 +2,7 @@ package com.graduation.analytics.pipeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.metric.QualityRuleCatalog;
 import com.graduation.analytics.metric.RuleSeverity;
 import com.graduation.analytics.pipeline.entity.DataQualityResult;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
@@ -411,11 +412,60 @@ class PipelineServiceTest {
         assertThat(captor.getAllValues())
                 .anySatisfy(q -> {
                     assertThat(q.getRuleCode()).isEqualTo("ADS_STAGING_PRESENT");
+                    // F-88：固定档位码两列同值（声明 BLOCKING、生效 BLOCKING）
                     assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+                    assertThat(q.getEffectiveSeverity()).isEqualTo("BLOCKING");
                     assertThat(q.getLayer()).isEqualTo("ADS_STAGING");
                     assertThat(q.getPassed()).isZero();
                     assertThat(q.getSnapshotId()).startsWith("S20260901_");
                 });
+    }
+
+    /**
+     * F-88（V20）：**第二个写点** {@code PipelineService.persistChecks}（Spark 作业回传的 checks）
+     * 也必须落齐版本化信息，并与 {@code QualityChecker.rule} 用同一契约。
+     *
+     * <p>为什么单独钉这个写点：两个写点走的是不同代码路径（内联规则结果 vs 作业回传 checks），
+     * 旧实现两处都是 {@code r.setSeverity(resolve(...).effectiveSeverity())} —— 只改一处的话，
+     * 另一处产出的行仍会丢掉声明档位，而这类"半套版本信息"的行在库里看不出异常。</p>
+     *
+     * <p>夹具 {@code PUB_DQ_EVENT_ID_UNIQUE} 声明 WARN 且是条件观察项，作业回传字面 severity 写
+     * {@code ERROR}、{@code passed=false}（超阈值）：因此正确结果是
+     * {@code severity=WARN}（目录声明档位，**不是**作业回传的 ERROR）+
+     * {@code effectiveSeverity=BLOCKING}（超阈值升档）。</p>
+     */
+    @Test
+    void sparkCheckResultsCarryDeclaredAndEffectiveSeverityPlusVersionInfo() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        when(stageExecutor.executeStage(any(), anyLong(), org.mockito.ArgumentMatchers.eq("QUALITY_CHECK"),
+                anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> qualityBlockedExecution("QUALITY_CHECK"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-persist-checks", "trace-1");
+        executor.drain();
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+
+        QualityRuleCatalog.FrozenRules rules = QualityRuleCatalog.DEFAULT.freeze(null);
+        assertThat(qualityRows)
+                .as("作业回传的 checks 必须写库（INFO 审计项除外）")
+                .anySatisfy(q -> {
+                    assertThat(q.getRuleCode()).isEqualTo("PUB_DQ_EVENT_ID_UNIQUE");
+                    assertThat(q.getSeverity())
+                            .as("声明档位列取目录声明值 WARN，不照抄作业回传字面 ERROR")
+                            .isEqualTo(RuleSeverity.WARN);
+                    assertThat(q.getEffectiveSeverity())
+                            .as("超阈值 ⇒ 生效档位升为 BLOCKING")
+                            .isEqualTo(RuleSeverity.BLOCKING);
+                    assertThat(q.getRuleVersion())
+                            .isEqualTo(rules.find("PUB_DQ_EVENT_ID_UNIQUE").orElseThrow().version());
+                    assertThat(q.getCompatPolicyVersion()).isEqualTo(rules.compatPolicyVersion());
+                    assertThat(q.getRuleFingerprint()).isEqualTo(rules.fingerprint());
+                });
+        // INFO 审计项不落规则表（原有纪律不因本次改动松动）
+        assertThat(qualityRows).noneSatisfy(q ->
+                assertThat(q.getRuleCode()).isEqualTo("PUB_STAGING_PRUNE"));
     }
 
     // ── ⑥c F-88（D-142 §1）：发布前门断言 —— 阻断级未过 ⇒ 不发布新快照 ────────
@@ -493,7 +543,16 @@ class PipelineServiceTest {
         assertThat(qualityRows).anySatisfy(q -> {
             assertThat(q.getRuleCode()).isEqualTo("EVENT_ID_UNIQUE");
             assertThat(q.getPassed()).isZero();
-            assertThat(q.getSeverity()).isEqualTo(RuleSeverity.BLOCKING);
+            // F-88（V20）新契约：severity 落**声明**档位 WARN，effectiveSeverity 落**生效**档位 BLOCKING。
+            // 两列必须不同 —— 这正是「声明 WARN 但超阈值生效阻断」与「本来就是阻断」可区分的依据；
+            // 旧实现只写一列（severity=生效档位），声明档位 WARN 在库里永久丢失。
+            assertThat(q.getSeverity()).isEqualTo(RuleSeverity.WARN);
+            assertThat(q.getEffectiveSeverity()).isEqualTo(RuleSeverity.BLOCKING);
+            // 版本化三要素同行落库，且与本次 run 冻结集一致（期望值从冻结集算，不硬编码指纹）
+            QualityRuleCatalog.FrozenRules rules = QualityRuleCatalog.DEFAULT.freeze(null);
+            assertThat(q.getRuleVersion()).isEqualTo(rules.find("EVENT_ID_UNIQUE").orElseThrow().version());
+            assertThat(q.getCompatPolicyVersion()).isEqualTo(rules.compatPolicyVersion());
+            assertThat(q.getRuleFingerprint()).isEqualTo(rules.fingerprint());
         });
         // 关键负向断言：不发布 ⇒ 不产生新 ACTIVE
         verify(publisherPort, never()).publish(any());

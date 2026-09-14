@@ -1,0 +1,58 @@
+=== [cmd3-1] git diff --stat (工作区相对 HEAD 00a38e8e) ===
+warning: in the working copy of 'analytics-server/platform-app/src/test/java/com/graduation/analytics/guard/RuleSeverityPathConsistencyTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/entity/DataQualityResult.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java', LF will be replaced by CRLF the next time Git touches it
+ .../guard/RuleSeverityPathConsistencyTest.java     |  9 +-
+ .../analytics/pipeline/DataQualityGate.java        | 17 ++--
+ .../analytics/pipeline/PipelineService.java        | 28 +++++--
+ .../analytics/pipeline/QualityChecker.java         | 65 +++++++++++++-
+ .../pipeline/entity/DataQualityResult.java         | 69 ++++++++++++++-
+ .../analytics/pipeline/DataQualityGateTest.java    | 58 +++++++++++++
+ .../analytics/pipeline/PipelineServiceTest.java    | 61 +++++++++++++-
+ .../pipeline/QualityCheckerSeverityTest.java       | 98 +++++++++++++++++++---
+ 8 files changed, 379 insertions(+), 26 deletions(-)
+
+=== [cmd3-2] grep -rn "setSeverity(\|getSeverity(" analytics-server --include=*.java ===
+analytics-server\platform-app\src\test\java\com\graduation\analytics\guard\RuleSeverityPathConsistencyTest.java:245:r.setSeverity(literalSeverity);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:794:r.setSeverity(cap(r.getSeverity(), 16));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:274:r.setSeverity(verdict.declaredSeverity());
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:282:assertThat(row.getSeverity()).isEqualTo("WARN");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:333:assertThat(historical.getSeverity()).isNull();
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:375:entity.setSeverity(severity);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:416:assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:429:* 旧实现两处都是 {@code r.setSeverity(resolve(...).effectiveSeverity())} —— 只改一处的话，
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:455:assertThat(q.getSeverity())
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:549:assertThat(q.getSeverity()).isEqualTo(RuleSeverity.WARN);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:573:row.setSeverity(severity);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerSeverityTest.java:58:assertThat(ruleOf(results, code).getSeverity())
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerSeverityTest.java:79:assertThat(dup.getSeverity()).isEqualTo(RuleSeverity.WARN);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerSeverityTest.java:99:assertThat(dup.getSeverity()).isEqualTo(RuleSeverity.WARN);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerSeverityTest.java:100:assertThat(dup.getEffectiveSeverity()).isNotEqualTo(dup.getSeverity());
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerSeverityTest.java:173:assertThat(r.getSeverity()).as("未登记 ⇒ 没有声明档位可记，必须落 null").isNull();
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerSeverityTest.java:183:assertThat(r.getSeverity()).isNull();
+
+命中总数: 17
+
+=== [cmd3-3] 同上，仅主代码（排除 src\test\）===
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:794:r.setSeverity(cap(r.getSeverity(), 16));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:274:r.setSeverity(verdict.declaredSeverity());
+
+主代码命中数: 2
+
+=== [cmd3-4] 除 warehouse-pipeline 外，源码中是否还有写 data_quality_result 的位置（.scala/.java/.py，排除 target 与 docs/backups）===
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:49:* analytics_meta.data_quality_result 里有 3 条 <b>字面</b> {@code severity='ERROR', passed=0} 的行
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:54:* 只读 SELECT analytics_meta.data_quality_result 实测：run 24 的 {@code EVENT_ID_UNIQUE}
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:299:"SELECT rule_code, severity, passed FROM data_quality_result WHERE run_id = ?", pipelineRunId);
+analytics-server\platform-app\src\test\java\com\graduation\analytics\migration\QualityRuleVersionMigrationScriptTest.java:48:private static final String V20 = "V20__data_quality_result_rule_version.sql";
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:6:* <p>为什么放在 platform-common：结论来自 {@code analytics_meta.data_quality_result}，
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\QualityRuleCatalog.java:90:/** 指标库发布对账规则码（{@code MetricPublishValidator}，只进发布报告证据，不落 data_quality_result）。 */
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\RuleSeverity.java:20:* <p><b>F-94 读侧归一化</b>：{@code data_quality_result.severity} 存的是**作业回传的字面量**，
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\RuleSeverity.java:144:// 与 §7.2「跨库发布对账」同类。它们**不进** data_quality_result（只进发布报告证据），
+analytics-server\platform-common\src\test\java\com\graduation\analytics\metric\RuleSeverityTest.java:34:* 它们**不进** data_quality_result，只进发布报告证据，因此不经过落库归一化；
+analytics-server\platform-common\src\test\java\com\graduation\analytics\metric\RuleSeverityTest.java:164:// 实测（只读 SELECT analytics_meta.data_quality_result）：
+spark-jobs\src\main\scala\com\graduation\analytics\sql\SurrogateKey.scala:359:// `data_quality_result`，按现有通道语义择一并说明）」，**未授权新建任何表**。
+
+命中数: 11

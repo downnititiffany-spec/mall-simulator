@@ -280,7 +280,57 @@ class DataQualityGateTest {
         // 门禁结论按版本化判据（未登记 ⇒ 停止发布），但**原始结果字段不被改写**
         assertThat(gate.decisionForRun(24L).stopPublish()).isTrue();
         assertThat(row.getSeverity()).isEqualTo("WARN");
+        // F-88：读侧也不得把生效档位回填到实体上（夹具未设 effectiveSeverity，判定后仍须为 null）
+        assertThat(row.getEffectiveSeverity()).isNull();
         assertThat(row.getPassed()).isZero();
+    }
+
+    /**
+     * F-88（V20）读侧纪律：{@code severity}（声明档位）与 {@code effectiveSeverity}（生效档位）
+     * <b>两列都不参与门禁判定</b> —— 结论只由 (冻结规则集, 规则码, passed) 决定。
+     *
+     * <p>为什么必须钉这一条：本次改动刚把两列填满，很容易被人"顺手"改成读
+     * {@code row.getEffectiveSeverity()} 当结论。那会立刻制造第二个口径来源：库里某行的
+     * {@code effective_severity} 是**当时**按当时规则集判的，而门禁要回答的是「按本次规则集，
+     * 这个 run 的结果算不算阻断」；一旦读库中列，历史行（NULL 或旧档位）与漏填行就会污染结论，
+     * 且与 §7.3.1 line 524「不回填历史结论」冲突。本用例用**两列同时说谎**的夹具反证。</p>
+     */
+    @Test
+    @DisplayName("F-88：门禁不看 severity/effectiveSeverity 任何一列 —— 两列同时说谎也改不了结论")
+    void gateIgnoresBothSeverityColumns() {
+        // (a) 已登记的 BLOCKING 码、passed=0（必须阻断），但两列都写最"无害"的 WARN
+        DataQualityResult lie = result(BLOCKING_CODE, "WARN", 0);
+        lie.setEffectiveSeverity("WARN");
+        when(qualityMapper.selectList(any())).thenReturn(List.of(lie));
+        assertThat(gate.statusForRun(24L))
+                .as("库里两列都写 WARN 也挡不住 BLOCKING 码判定失败 ⇒ FAIL")
+                .isEqualTo(MetricQualityGate.FAIL);
+        assertThat(gate.blockingFailuresForRun(24L)).containsExactly(BLOCKING_CODE);
+
+        // (b) 条件观察项未超阈值（passed=1 ⇒ 不阻断），但两列都写最"吓人"的 BLOCKING。
+        //     夹具故意"说谎"：作业侧历史上确实会把观察项写成 ERROR（见类注释的实测漂移），
+        //     这里把谎说得更极端（写成 BLOCKING）以证明门禁只认 (规则码, passed)。
+        DataQualityResult scary = result(THRESHOLD_OBSERVATION_CODE, "BLOCKING", 1);
+        scary.setEffectiveSeverity("BLOCKING");
+        when(qualityMapper.selectList(any())).thenReturn(List.of(scary));
+        assertThat(gate.statusForRun(24L))
+                .as("库里两列都写 BLOCKING，但该码是未超阈值的条件观察项 ⇒ 仍 PASS")
+                .isEqualTo(MetricQualityGate.PASS);
+        assertThat(gate.blockingFailuresForRun(24L)).isEmpty();
+
+        // 版本化引入前的历史行（两列均为 NULL，V20 未回填）同样按规则码判定：BLOCKING 码 passed=0 ⇒ FAIL
+        DataQualityResult historical = result(BLOCKING_CODE, null, 0);
+        historical.setEffectiveSeverity(null);
+        historical.setRuleVersion(null);
+        historical.setCompatPolicyVersion(null);
+        historical.setRuleFingerprint(null);
+        when(qualityMapper.selectList(any())).thenReturn(List.of(historical));
+        assertThat(gate.statusForRun(24L))
+                .as("历史行无版本信息（两列 NULL）也按规则码判定，不因缺列而放行")
+                .isEqualTo(MetricQualityGate.FAIL);
+        // 且判定过程不改写实体（读侧不得回填猜测值）
+        assertThat(historical.getEffectiveSeverity()).isNull();
+        assertThat(historical.getSeverity()).isNull();
     }
 
     @Test
@@ -310,6 +360,14 @@ class DataQualityGateTest {
         assertThat(gate.blockingFailuresForRun(null)).isEmpty();
     }
 
+    /**
+     * 一条质量结果行夹具。
+     *
+     * <p>{@code severity} 是**能被归一化覆盖**的字面标签，不参与判定（见类注释的夹具纪律）。
+     * F-88/V20 起 {@code effectiveSeverity} 也是结果行自带的档位列，同样**不参与**门禁判定
+     * （反证见 {@code gateIgnoresBothSeverityColumns}）；本夹具默认不设它，
+     * 由需要区分两列的用例自行设置。</p>
+     */
     private static DataQualityResult result(String ruleCode, String severity, Integer passed) {
         DataQualityResult entity = new DataQualityResult();
         entity.setRunId(24L);
