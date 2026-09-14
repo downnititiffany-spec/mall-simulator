@@ -65,9 +65,11 @@
                  maven.compiler.target，换算成 `-release <target>` 并**追加在 <args> 之后**；scalac 后者覆盖前者。
                  此前只在 <args> 放 `-release:8`，被追加的 `-release 17` 静默覆盖 ⇒ 闸门形同虚设，
                  Java 11 的 String.isBlank() 被编入 class（major=52，运行时 JDK 1.8.0_351 上 NoSuchMethodError）。
-              ② 生效证据（worktree 内）：.verify/final-positive-control.log —— 最终配置下把
+              ② 生效证据（2026-09-14 由 m3-jdk8fix worktree 的 .verify/ 迁入仓内归档，见该目录 README）：
+                 docs/acceptance/m3-jdk8fix-evidence-20260914/verify/final-positive-control.log —— 最终配置下把
                  MetricExportJob.scala 的 `_.trim.isEmpty` 临时改回 `_.isBlank` 必须编译失败并点名 isBlank；
-                 .verify/final-effective-scalac-args.log —— 实际传给 scalac 的选项行（-release 出现次数/取值/生效者）。
+                 docs/acceptance/m3-jdk8fix-evidence-20260914/verify/final-effective-scalac-args.log
+                 —— 实际传给 scalac 的选项行（-release 出现次数/取值/生效者）。
               ③ 规则：class 文件 major ≤ 52 **不等于** API 在 JDK 8 上存在；集群计算节点 JDK 1.8.0_351，
                  必须用 -release 8 按 ct.sym 校验 Java API，而不是只保证 class 版本。
             -->

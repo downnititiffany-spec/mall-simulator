@@ -1,0 +1,15 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.graduation:spark-jobs >----------------------
+[INFO] Building spark-jobs 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- help:3.5.1:effective-pom (default-cli) @ spark-jobs ---
+[INFO] Effective-POM written to: D:\Develop_code\GraduationProject-wt\m3-jdk8fix\.verify\effective-pom.xml
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.171 s
+[INFO] Finished at: 2026-09-12T16:00:29+08:00
+[INFO] ------------------------------------------------------------------------

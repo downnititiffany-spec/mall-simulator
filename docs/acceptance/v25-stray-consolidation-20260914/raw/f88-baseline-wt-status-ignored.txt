@@ -1,0 +1,2 @@
+!! analytics-server/metric-analysis/target/
+!! analytics-server/platform-common/target/

@@ -1,0 +1,20 @@
+# P2-01 泳道「改动前备份」清单（相对仓库根，UTF-8）
+# 说明：本清单在动手前一次性登记**所有可能改动**的文件（含"最后决定不改"的），
+#       宁多勿少——ORDER-1 §3.4 要求"每改一个文件前先复制一份"。
+warehouse/ddl/00-ods.sql
+docs/acceptance/p2-01-ods-v2-20260912/ORDER-1.md
+spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala
+spark-jobs/src/main/scala/com/graduation/analytics/job/EventOdsLoadJob.scala
+spark-jobs/src/main/scala/com/graduation/analytics/job/LocalSchemaInitJob.scala
+spark-jobs/src/test/scala/com/graduation/analytics/SqlTemplateSpec.scala
+spark-jobs/src/test/scala/com/graduation/analytics/IdCodecSpec.scala
+spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala
+spark-jobs/src/test/scala/com/graduation/analytics/JobArgsRegistrySpec.scala
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobCommandBuilder.java
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobCommandBuilderTest.java
+analytics-server/platform-common/src/main/java/com/graduation/analytics/warehouse/WarehouseNamespace.java
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNamespaceContractTest.java
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileSnapshot.java

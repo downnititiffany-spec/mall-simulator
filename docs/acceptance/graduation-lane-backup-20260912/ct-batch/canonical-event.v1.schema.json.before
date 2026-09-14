@@ -1,0 +1,867 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://graduation.local/contract-specs/schemas/canonical-event.v1.schema.json",
+  "title": "canonical-event v1.0 — 统一事件信封与 12 类 typed payload",
+  "description": "机器可读投影，语义权威是 docs/contracts/event-contract.md（schema_version 1.0）。本文件逐项对齐该文档 §1（8 字段信封）、§2.1-§2.10（12 类 payload 字段/必填/枚举）、§3（event_type 全集）、§4（金额正则）。两者冲突时以 markdown 文档为准，并须按 V2.1 §9.1 登记契约任务（本目录 README 的权威顺序声明）。\n\n信封是否允许多出未知字段：指导书与事件契约均未规定。event-contract.md §1 L28 的『多出的未知字段不阻止消费（向后兼容）』字面只针对 payload；本 Schema 对根对象采用同样宽松策略（additionalProperties: true），依据是该兼容性原则与 EventEnvelope.java:18 的 @JsonIgnoreProperties(ignoreUnknown = true)（读取侧忽略未知信封字段）。此项未获契约明确授权，见 x-envelope-additional-properties。\n\npayload 内部多余字段：按 §1 L28 明确允许（每个 payload 定义 additionalProperties: true）。缺失必需字段按 §1 L28『视为脏数据』，故 required 严格按 §2 表格取全集。\n\n本文件由 analytics-server/platform-common 的 CanonicalEventSchemaParityTest 做结构对账（信封 8 字段 / 12 类枚举 / schema_version / source_system / 金额正则 / payload 路由）。\n\n真实数据符合度（建立时的实测，供审阅者判断契约与实现的差距）：用本 Schema 校验真实夹具 landing/events/r9-m1-123006.jsonl 的 55 行，26 行通过、29 行不通过（含 1 行 JSON 本身不可解析）。而采集层 EventContractValidator 的规则对同一文件回放的结果是接受 51 行、隔离 4 行，与 landing/manifests/30.json 记录的 acceptedRecords=51 / quarantinedRecords=4 完全一致。也就是说：采集层实际接受的 51 行中约有 25 行按 event-contract.md §2 是脏数据（缺必填时间/status 字段、items 为字符串、channel 取 web 等）。这不表示 Schema 写错，而是表示『契约要求的必填』严于『采集层实际执行的必填』，必须由契约任务决定收紧实现还是放宽契约（README 第 7 节 Q4-Q6）。",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "全局唯一事件 ID，ODS/DWD 按此去重（允许 at-least-once 投递）。来源：event-contract.md §1 L12。契约 §1 L27 规定 event_id 为 UUID 字符串；但真实夹具 landing/events/r9-m1-123006.jsonl 使用 golden-evt-001 这类非 UUID 值且被采集层接受（landing/manifests/30.json acceptedRecords=51），两处冲突，故本 Schema 只约束 string，不强制 UUID 格式（待契约任务冻结，见 README 待决策）。"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "user_registered",
+        "product_created",
+        "product_updated",
+        "behavior",
+        "order_created",
+        "order_paid",
+        "order_cancelled",
+        "refund_created",
+        "refund_completed",
+        "stock_reserved",
+        "stock_released",
+        "stock_changed"
+      ],
+      "description": "事件类型取值全集，合计 12 类。来源：event-contract.md §3 L152-L160；与 EventContract.EVENT_TYPES / EVENT_TYPES 键集一致。未知 event_type → 隔离区（quarantine），不进入 DWD（§3 L160）。"
+    },
+    "event_time": {
+      "$ref": "#/$defs/iso8601_time",
+      "description": "业务时间（带时区），指标归属依据。来源：event-contract.md §1 L14 + §1 L25（时间一律 ISO-8601 带时区）。"
+    },
+    "ingest_time": {
+      "$ref": "#/$defs/iso8601_time",
+      "description": "该行的采集时间（Java 侧生成）；链路延迟 = ingest_time - event_time。来源：event-contract.md §1 L15 + §4 L169（每个事件必须同时包含 event_time 与 ingest_time）。"
+    },
+    "source_system": {
+      "const": "mock-mall",
+      "description": "固定值：mock-mall。来源：event-contract.md §1 L16『固定值：mock-mall』；与 EventContract.SOURCE_SYSTEM（EventContract.java:17）及 mall-simulator 侧 EventContract.SOURCE_SYSTEM 一致，并由 CanonicalEventSchemaParityTest 锁定为 const。生成器 CANONICAL_EVENT_FILE 模式的 synthetic 标记不落在信封上（信封只有这 8 个字段），见 README 待决策。"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "description": "契约版本，当前唯一支持值 1.0。来源：event-contract.md 标题 L1 与 §1 L17；EventContract.SCHEMA_VERSION（EventContract.java:16）。未知版本 → 进入隔离区（quarantine_record），不进入 DWD。升版本规则：新增字段 → 1.1 起；破坏性变更 → 新主版本 + 转换器（event-contract.md L4）。"
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "一次业务操作一个 trace_id，贯穿 商城→Outbox→日志→批次→ODS。来源：event-contract.md §1 L18。契约 §1 L27 规定 trace_id 为 UUID 字符串；真实夹具（golden-trace-001 形式）与之一致性同 event_id，故只约束 string（见 README 待决策）。"
+    },
+    "payload": {
+      "type": "object",
+      "description": "业务字段容器。字段以 §2.1-§2.10 每类事件的表格为准；多出的未知字段不阻止消费（向后兼容），缺失必需字段视为脏数据。来源：event-contract.md §1 L19 + §1 L28。具体 payload 结构由本文件 allOf 中 event_type → $ref 的路由给出。",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "event_time",
+    "ingest_time",
+    "source_system",
+    "schema_version",
+    "trace_id",
+    "payload"
+  ],
+  "additionalProperties": true,
+  "x-contract-status": "DRAFT",
+  "x-envelope-additional-properties": {
+    "decision": "allowed (additionalProperties: true)",
+    "x-unspecified": true,
+    "rationale": "指导书与 event-contract.md 均未规定信封本身是否允许多出未知字段；§1 L28 的兼容性语句字面只覆盖 payload。此处沿用同一宽松策略，并在 README 待决策中登记，需总控按 V2.1 §9.1 冻结或收紧。"
+  },
+  "x-id-convention": {
+    "x-unspecified": true,
+    "rationale": "event-contract.md §1 L27 约定所有 ID（user_id/order_id/product_id 等）为数值字符串、event_id/trace_id 为 UUID 字符串；真实夹具 r9-m1-123006.jsonl 中 refund_id=R-1003-A、payment_id=P-1001 并非数值字符串，且 event_id/trace_id 并非 UUID，却均被采集层接受。为确保 schema 与真实可接受数据不矛盾，本文件对所有 ID 只约束 string，不强制数值/UUID 正则，冲突登记在 README 待决策。"
+  },
+  "x-evidence": [
+    "docs/contracts/event-contract.md (schema_version 1.0)",
+    "docs/项目完整实施指导书 V2.1.md §3.1/§3.3/§4.2",
+    "landing/events/r9-m1-123006.jsonl (55 行真实夹具)",
+    "landing/manifests/30.json (真实采集清单)",
+    "analytics-server/platform-common/src/main/java/com/graduation/analytics/contracts/EventEnvelope.java",
+    "analytics-server/platform-common/src/main/java/com/graduation/analytics/contracts/EventContract.java",
+    "analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "user_registered"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/user_registered"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "product_created"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/product_created"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "product_updated"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/product_updated"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "behavior"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/behavior"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "order_created"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/order_created"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "order_paid"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/order_paid"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "order_cancelled"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/order_cancelled"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "refund_created"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/refund_created"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "refund_completed"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/refund_completed"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "stock_reserved"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/stock_reserved"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "stock_released"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/stock_released"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "stock_changed"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/stock_changed"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "amount": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d{1,2})?$",
+      "description": "金额/金额类快照一律十进制字符串（保持精度，禁止 double 序列化）。来源：event-contract.md §1 L26 + §4 L168（正则即 L168 原文）；DB 侧 DECIMAL(18,2)（§1 L26）。"
+    },
+    "iso8601_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?([+-]\\d{2}:\\d{2}|Z)$",
+      "description": "ISO-8601 带时区（业务统一 Asia/Shanghai，+08:00）；解析失败视为脏数据。来源：event-contract.md §1 L25。小数秒位数契约未规定，按 ISO-8601 允许 0-9 位；偏移必须显式给出（『一律带时区』）。"
+    },
+    "user_registered": {
+      "x-source": "docs/contracts/event-contract.md §2.1 L39-L47",
+      "title": "user_registered — 用户注册",
+      "type": "object",
+      "description": "§2.1 表格 5 个字段全部『是』（必填）。通用字段约定见 §2 L32-L37。",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "用户 ID。§2.1 L43；ID 类型约定见本文件 x-id-convention。"
+        },
+        "age_group": {
+          "type": "string",
+          "enum": [
+            "under18",
+            "18-24",
+            "25-34",
+            "35-44",
+            "45+"
+          ],
+          "description": "年龄段。§2.1 L44。真实数据冲突：夹具 L54 使用 \"45-54\"（不在枚举内）；该行因 schema_version=\"2.0\" 已被采集层正确隔离，故不构成『非法枚举被接受』的证据，但同样登记在 README Q4。"
+        },
+        "city_level": {
+          "type": "string",
+          "enum": [
+            "tier1",
+            "tier2",
+            "tier3",
+            "other"
+          ],
+          "description": "城市等级。§2.1 L45。"
+        },
+        "member_level": {
+          "type": "string",
+          "enum": [
+            "normal",
+            "silver",
+            "gold",
+            "platinum"
+          ],
+          "description": "会员等级。§2.1 L46。"
+        },
+        "register_time": {
+          "$ref": "#/$defs/iso8601_time",
+          "description": "注册时间（ISO-8601）。§2.1 L47。"
+        }
+      },
+      "required": [
+        "user_id",
+        "age_group",
+        "city_level",
+        "member_level",
+        "register_time"
+      ],
+      "additionalProperties": true
+    },
+    "product_created": {
+      "x-source": "docs/contracts/event-contract.md §2.2 L49-L59",
+      "title": "product_created — 商品建档",
+      "type": "object",
+      "description": "§2.2 表格 7 个字段全部『是』（必填）。§2.2 的同一张表同时定义 product_created 与 product_updated；跨字段约束 price ≥ cost（L57）无法用本文件的关键字表达，属运行期校验。",
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "description": "商品 ID。§2.2 L53。"
+        },
+        "product_name": {
+          "type": "string",
+          "description": "商品名称。§2.2 L54。"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "末级分类 ID。§2.2 L55。"
+        },
+        "brand_id": {
+          "type": "string",
+          "description": "品牌 ID。§2.2 L56。"
+        },
+        "price": {
+          "$ref": "#/$defs/amount",
+          "description": "售价（decimal 字符串），price ≥ cost。§2.2 L57；金额正则见 §4 L168。"
+        },
+        "cost": {
+          "$ref": "#/$defs/amount",
+          "description": "成本价，留作库存周转等口径。§2.2 L58；金额正则见 §4 L168。"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "on_sale",
+            "off_sale",
+            "pending"
+          ],
+          "description": "商品状态。§2.2 L59。"
+        }
+      },
+      "required": [
+        "product_id",
+        "product_name",
+        "category_id",
+        "brand_id",
+        "price",
+        "cost",
+        "status"
+      ],
+      "additionalProperties": true
+    },
+    "product_updated": {
+      "x-source": "docs/contracts/event-contract.md §2.2 L49-L59",
+      "x-shared-table-with": "product_created",
+      "title": "product_updated — 商品变更",
+      "type": "object",
+      "description": "§2.2 的同一张表同时定义 product_created 与 product_updated，字段/必填/枚举与 product_created 逐项相同（本文件为可读性重复展开，任何一侧改动必须同步；x-shared-table-with 标记该约束）。",
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "description": "商品 ID。§2.2 L53。"
+        },
+        "product_name": {
+          "type": "string",
+          "description": "商品名称。§2.2 L54。"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "末级分类 ID。§2.2 L55。"
+        },
+        "brand_id": {
+          "type": "string",
+          "description": "品牌 ID。§2.2 L56。"
+        },
+        "price": {
+          "$ref": "#/$defs/amount",
+          "description": "售价（decimal 字符串），price ≥ cost。§2.2 L57；金额正则见 §4 L168。"
+        },
+        "cost": {
+          "$ref": "#/$defs/amount",
+          "description": "成本价。§2.2 L58；金额正则见 §4 L168。"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "on_sale",
+            "off_sale",
+            "pending"
+          ],
+          "description": "商品状态。§2.2 L59。"
+        }
+      },
+      "required": [
+        "product_id",
+        "product_name",
+        "category_id",
+        "brand_id",
+        "price",
+        "cost",
+        "status"
+      ],
+      "additionalProperties": true
+    },
+    "behavior": {
+      "x-source": "docs/contracts/event-contract.md §2.3 L61-L69",
+      "title": "behavior — 用户行为",
+      "type": "object",
+      "description": "§2.3 表格 5 个字段全部『是』（必填）。真实数据冲突：夹具 r9-m1-123006.jsonl 的 6 行 behavior 使用 channel=\"web\"（L12/L13/L14/L34/L35/L36），不在 §2.3 L69 的 app/pc/h5 枚举内，但采集层只校验 behavior_type（EventContractValidator L75-L80），故这 6 行被判为干净并被接受（manifest 30 acceptedRecords=51）。本 Schema 保留 §2.3 枚举原文，冲突见 README Q4。",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "用户 ID。§2.3 L65。"
+        },
+        "product_id": {
+          "type": "string",
+          "description": "商品 ID（search 事件也指向被检索/点击的商品）。§2.3 L66。"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "会话 ID。§2.3 L67。"
+        },
+        "behavior_type": {
+          "type": "string",
+          "enum": [
+            "view",
+            "favorite",
+            "cart_add",
+            "cart_remove",
+            "search"
+          ],
+          "description": "行为类型枚举。§2.3 L68 + §3 L154。真实数据冲突：夹具 L38 使用 \"purchase\"（不在枚举内），已被采集层正确隔离（EventContractValidator L75-L80 校验该枚举），属隔离区正常表现，登记在 README Q4。"
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "app",
+            "pc",
+            "h5"
+          ],
+          "description": "渠道。§2.3 L69。"
+        }
+      },
+      "required": [
+        "user_id",
+        "product_id",
+        "session_id",
+        "behavior_type",
+        "channel"
+      ],
+      "additionalProperties": true
+    },
+    "order_created": {
+      "x-source": "docs/contracts/event-contract.md §2.4 L71-L90",
+      "title": "order_created — 订单创建",
+      "type": "object",
+      "description": "§2.4 表格 6 个字段全部『是』（必填），其中 items 为订单项数组（L82-L90 子表）。total_amount = Σ item.amount（L78）属跨字段一致性约束，§4 未给出可机读表达，留运行期校验。真实数据冲突（全部 6 行 order_created 均如此，L18/L20/L22/L39/L43/L47，且都被采集层接受）：(1) items 被写成 JSON 字符串（如 \"[{\\\"product_id\\\":\\\"2\\\",...}]\"）而不是数组；(2) 缺 status；(3) 缺 created_at。见 README Q5、Q6。",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "订单 ID。§2.4 L75。"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户 ID。§2.4 L76。"
+        },
+        "items": {
+          "type": "array",
+          "description": "订单项数组。§2.4 L77；子表字段见 §2.4 L84-L90。",
+          "items": {
+            "type": "object",
+            "description": "订单项（items[]）。§2.4 L84-L90，5 个字段全部『是』（必填）。",
+            "properties": {
+              "product_id": {
+                "type": "string",
+                "description": "商品 ID。§2.4 L86。"
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "数量（正整数）。§2.4 L87。"
+              },
+              "unit_price": {
+                "$ref": "#/$defs/amount",
+                "description": "成交单价。§2.4 L88；金额正则见 §4 L168。"
+              },
+              "discount": {
+                "$ref": "#/$defs/amount",
+                "description": "优惠分摊（默认 \"0.00\"）。§2.4 L89。"
+              },
+              "amount": {
+                "$ref": "#/$defs/amount",
+                "description": "= quantity × unit_price − discount。§2.4 L90。"
+              }
+            },
+            "required": [
+              "product_id",
+              "quantity",
+              "unit_price",
+              "discount",
+              "amount"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "total_amount": {
+          "$ref": "#/$defs/amount",
+          "description": "订单总额 = Σ item.amount（decimal）。§2.4 L78；与 order_paid.amount 的一致性见 §4 L166。"
+        },
+        "status": {
+          "const": "CREATED",
+          "description": "固定 CREATED。§2.4 L79『固定 `CREATED`』。"
+        },
+        "created_at": {
+          "$ref": "#/$defs/iso8601_time",
+          "description": "下单时间。§2.4 L80。"
+        }
+      },
+      "required": [
+        "order_id",
+        "user_id",
+        "items",
+        "total_amount",
+        "status",
+        "created_at"
+      ],
+      "additionalProperties": true
+    },
+    "order_paid": {
+      "x-source": "docs/contracts/event-contract.md §2.5 L92-L100",
+      "title": "order_paid — 支付成功",
+      "type": "object",
+      "description": "§2.5 表格 5 个字段全部『是』（必填）。§4 L166 要求 order_paid.amount = 该订单 order_created.total_amount（跨事件约束，运行期校验）。真实数据冲突：5 行 order_paid 全部缺 paid_at（L19/L23/L40/L44/L48），均被采集层接受（README Q6）。",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "订单 ID。§2.5 L96。"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户 ID。§2.5 L97。"
+        },
+        "payment_id": {
+          "type": "string",
+          "description": "支付流水 ID。§2.5 L98。"
+        },
+        "amount": {
+          "$ref": "#/$defs/amount",
+          "description": "支付金额（= 订单总额）。§2.5 L99。"
+        },
+        "paid_at": {
+          "$ref": "#/$defs/iso8601_time",
+          "description": "支付时间。§2.5 L100。"
+        }
+      },
+      "required": [
+        "order_id",
+        "user_id",
+        "payment_id",
+        "amount",
+        "paid_at"
+      ],
+      "additionalProperties": true
+    },
+    "order_cancelled": {
+      "x-source": "docs/contracts/event-contract.md §2.6 L102-L109",
+      "title": "order_cancelled — 订单取消",
+      "type": "object",
+      "description": "§2.6 表格 4 个字段全部『是』（必填）。真实数据冲突：唯一的 order_cancelled 行（L21）缺 cancelled_at，被采集层接受（README Q6）。",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "订单 ID。§2.6 L106。"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户 ID。§2.6 L107。"
+        },
+        "reason": {
+          "type": "string",
+          "description": "取消原因（code 或文本）。§2.6 L108。"
+        },
+        "cancelled_at": {
+          "$ref": "#/$defs/iso8601_time",
+          "description": "取消时间。§2.6 L109。"
+        }
+      },
+      "required": [
+        "order_id",
+        "user_id",
+        "reason",
+        "cancelled_at"
+      ],
+      "additionalProperties": true
+    },
+    "refund_created": {
+      "x-source": "docs/contracts/event-contract.md §2.7 L111-L120",
+      "title": "refund_created — 退款申请",
+      "type": "object",
+      "description": "§2.7 表格 6 个字段全部『是』（必填）。amount ≤ 已付金额（L118）为运行期约束。真实数据冲突：3 行 refund_created 全部缺 created_at（L24/L41/L45），被采集层接受（README Q6）。",
+      "properties": {
+        "refund_id": {
+          "type": "string",
+          "description": "退款单 ID。§2.7 L115。"
+        },
+        "order_id": {
+          "type": "string",
+          "description": "订单 ID。§2.7 L116。"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户 ID。§2.7 L117。"
+        },
+        "amount": {
+          "$ref": "#/$defs/amount",
+          "description": "申请退款金额 ≤ 已付金额。§2.7 L118。"
+        },
+        "reason": {
+          "type": "string",
+          "description": "退款原因。§2.7 L119。"
+        },
+        "created_at": {
+          "$ref": "#/$defs/iso8601_time",
+          "description": "申请时间。§2.7 L120。"
+        }
+      },
+      "required": [
+        "refund_id",
+        "order_id",
+        "user_id",
+        "amount",
+        "reason",
+        "created_at"
+      ],
+      "additionalProperties": true
+    },
+    "refund_completed": {
+      "x-source": "docs/contracts/event-contract.md §2.8 L122-L130",
+      "title": "refund_completed — 退款完成",
+      "type": "object",
+      "description": "§2.8 表格 5 个字段全部『是』（必填）。§4 L167：refund_completed.amount 不得大于对应订单已支付金额（运行期约束）。真实数据冲突：3 行 refund_completed 全部缺 completed_at（L25/L42/L46），被采集层接受（README Q6）。",
+      "properties": {
+        "refund_id": {
+          "type": "string",
+          "description": "退款单 ID。§2.8 L126。"
+        },
+        "order_id": {
+          "type": "string",
+          "description": "订单 ID。§2.8 L127。"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "用户 ID。§2.8 L128。"
+        },
+        "amount": {
+          "$ref": "#/$defs/amount",
+          "description": "实际退款金额。§2.8 L129。"
+        },
+        "completed_at": {
+          "$ref": "#/$defs/iso8601_time",
+          "description": "完成时间。§2.8 L130。"
+        }
+      },
+      "required": [
+        "refund_id",
+        "order_id",
+        "user_id",
+        "amount",
+        "completed_at"
+      ],
+      "additionalProperties": true
+    },
+    "stock_reserved": {
+      "x-source": "docs/contracts/event-contract.md §2.9 L132-L139",
+      "title": "stock_reserved — 库存预留",
+      "type": "object",
+      "description": "§2.9 表格同时定义 stock_reserved / stock_released：product_id、quantity、reserved_qty、available_qty 必填（『是』），order_id 为条件字段（『预留时必填，释放时如有』，L138）——本 Schema 不把它列入 required，条件语义见该属性 description；该条件是否要收紧为机读 if/then 待契约任务冻结。",
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "description": "商品 ID。§2.9 L136。"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "数量（正整数）。§2.9 L137。"
+        },
+        "order_id": {
+          "type": "string",
+          "description": "关联订单：预留时必填，释放时如有。§2.9 L138（该行『必填』列为『条件』）。本 Schema 因条件语义不列入 required。",
+          "x-conditional": "stock_reserved 必填 / stock_released 如有则填"
+        },
+        "reserved_qty": {
+          "$ref": "#/$defs/amount",
+          "description": "操作后预留量快照（decimal 字符串）。§2.9 L139（reserved_qty / available_qty 行）；金额正则见 §4 L168。"
+        },
+        "available_qty": {
+          "$ref": "#/$defs/amount",
+          "description": "操作后可用库存快照（decimal 字符串）。§2.9 L139；金额正则见 §4 L168。"
+        }
+      },
+      "required": [
+        "product_id",
+        "quantity",
+        "reserved_qty",
+        "available_qty"
+      ],
+      "additionalProperties": true
+    },
+    "stock_released": {
+      "x-source": "docs/contracts/event-contract.md §2.9 L132-L139",
+      "x-shared-table-with": "stock_reserved",
+      "title": "stock_released — 库存释放",
+      "type": "object",
+      "description": "§2.9 的同一张表同时定义 stock_reserved / stock_released，字段/必填/枚举与 stock_reserved 逐项相同（本文件为可读性重复展开，任何一侧改动必须同步；x-shared-table-with 标记该约束）。order_id 的差异仅在条件语义：预留时必填、释放时如有（L138）。",
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "description": "商品 ID。§2.9 L136。"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "数量（正整数）。§2.9 L137。"
+        },
+        "order_id": {
+          "type": "string",
+          "description": "关联订单：释放时如有则填（预留时必填）。§2.9 L138（该行『必填』列为『条件』）。本 Schema 因条件语义不列入 required。",
+          "x-conditional": "stock_reserved 必填 / stock_released 如有则填"
+        },
+        "reserved_qty": {
+          "$ref": "#/$defs/amount",
+          "description": "操作后预留量快照（decimal 字符串）。§2.9 L139；金额正则见 §4 L168。"
+        },
+        "available_qty": {
+          "$ref": "#/$defs/amount",
+          "description": "操作后可用库存快照（decimal 字符串）。§2.9 L139；金额正则见 §4 L168。"
+        }
+      },
+      "required": [
+        "product_id",
+        "quantity",
+        "reserved_qty",
+        "available_qty"
+      ],
+      "additionalProperties": true
+    },
+    "stock_changed": {
+      "x-source": "docs/contracts/event-contract.md §2.10 L141-L148",
+      "title": "stock_changed — 库存变动（入库/出库/调整）",
+      "type": "object",
+      "description": "§2.10 表格 4 个字段全部『是』（必填）。change_type 枚举按 §2.10 L146 原文；真实夹具 r9-m1-123006.jsonl 中出现 restock（不在枚举内）且被采集层接受（EventContractValidator 只校验 product_id），该冲突登记在 README 待决策。",
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "description": "商品 ID。§2.10 L145。"
+        },
+        "change_type": {
+          "type": "string",
+          "enum": [
+            "inbound",
+            "outbound",
+            "adjust"
+          ],
+          "description": "变动类型。§2.10 L146。"
+        },
+        "quantity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "变动数量（正数）。§2.10 L147。原文只写『正数』未限定整数，故用 number + exclusiveMinimum 0（对比 §2.4 L87/§2.9 L137 的『正整数』用 integer + minimum 1）。"
+        },
+        "available_qty": {
+          "$ref": "#/$defs/amount",
+          "description": "变动后可用库存快照。§2.10 L148；金额正则见 §4 L168。"
+        }
+      },
+      "required": [
+        "product_id",
+        "change_type",
+        "quantity",
+        "available_qty"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

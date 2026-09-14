@@ -1,0 +1,3384 @@
+Classfile jar:file:///D:/maven_repository/net/alchim31/maven/scala-maven-plugin/4.8.1/scala-maven-plugin-4.8.1.jar!/scala_maven/ScalaMojoSupport.class
+  Last modified 2023��3��6��; size 22056 bytes
+  SHA-256 checksum 58fef646506775a3776431e329d634934f32bc4cfcc4d68bf4cd69d4a8ecdf4b
+  Compiled from "ScalaMojoSupport.java"
+public abstract class scala_maven.ScalaMojoSupport extends org.apache.maven.plugin.AbstractMojo
+  minor version: 0
+  major version: 52
+  flags: (0x0421) ACC_PUBLIC, ACC_SUPER, ACC_ABSTRACT
+  this_class: #229                        // scala_maven/ScalaMojoSupport
+  super_class: #230                       // org/apache/maven/plugin/AbstractMojo
+  interfaces: 0, fields: 32, methods: 30, attributes: 1
+Constant pool:
+    #1 = Methodref          #230.#456     // org/apache/maven/plugin/AbstractMojo."<init>":()V
+    #2 = Fieldref           #229.#457     // scala_maven/ScalaMojoSupport.javacGenerateDebugSymbols:Z
+    #3 = Fieldref           #229.#458     // scala_maven/ScalaMojoSupport.fork:Z
+    #4 = Fieldref           #229.#459     // scala_maven/ScalaMojoSupport.forceUseArgFile:Z
+    #5 = Fieldref           #229.#460     // scala_maven/ScalaMojoSupport.failOnMultipleScalaVersions:Z
+    #6 = Fieldref           #229.#461     // scala_maven/ScalaMojoSupport.useCanonicalPath:Z
+    #7 = Fieldref           #229.#462     // scala_maven/ScalaMojoSupport.detectedScalaVersion:Lscala_maven/VersionNumber;
+    #8 = Fieldref           #229.#463     // scala_maven/ScalaMojoSupport.mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+    #9 = Class              #464          // scala_maven/MavenArtifactResolver
+   #10 = Fieldref           #229.#465     // scala_maven/ScalaMojoSupport.factory:Lorg/apache/maven/repository/RepositorySystem;
+   #11 = Fieldref           #229.#466     // scala_maven/ScalaMojoSupport.session:Lorg/apache/maven/execution/MavenSession;
+   #12 = Methodref          #9.#467       // scala_maven/MavenArtifactResolver."<init>":(Lorg/apache/maven/repository/RepositorySystem;Lorg/apache/maven/execution/MavenSession;)V
+   #13 = Fieldref           #229.#468     // scala_maven/ScalaMojoSupport.scalaContext:Lscala_maven_dependency/Context;
+   #14 = Methodref          #229.#469     // scala_maven/ScalaMojoSupport.findScalaVersion:()Lscala_maven/VersionNumber;
+   #15 = Fieldref           #94.#470      // scala_maven/VersionNumber.major:I
+   #16 = Class              #471          // scala_maven_dependency/ArtifactIds4Scala3
+   #17 = Methodref          #16.#472      // scala_maven_dependency/ArtifactIds4Scala3."<init>":(Lscala_maven/VersionNumber;)V
+   #18 = Class              #473          // scala_maven_dependency/ArtifactIds4Scala2
+   #19 = Methodref          #18.#456      // scala_maven_dependency/ArtifactIds4Scala2."<init>":()V
+   #20 = Fieldref           #229.#474     // scala_maven/ScalaMojoSupport.scalaCompatVersion:Ljava/lang/String;
+   #21 = Methodref          #475.#476     // org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+   #22 = Class              #477          // scala_maven/VersionNumberMask
+   #23 = Methodref          #22.#478      // scala_maven/VersionNumberMask."<init>":(Ljava/lang/String;)V
+   #24 = Methodref          #94.#479      // scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+   #25 = String             #480          // Scala library detected %s doesn\'t match scala.compat.version : %s
+   #26 = Class              #481          // java/lang/Object
+   #27 = Methodref          #147.#482     // java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+   #28 = Methodref          #229.#483     // scala_maven/ScalaMojoSupport.getLog:()Lorg/apache/maven/plugin/logging/Log;
+   #29 = InterfaceMethodref #484.#485     // org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+   #30 = Class              #486          // org/apache/maven/plugin/MojoFailureException
+   #31 = Methodref          #30.#478      // org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+   #32 = InterfaceMethodref #484.#487     // org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+   #33 = Fieldref           #229.#488     // scala_maven/ScalaMojoSupport.scalaHome:Ljava/lang/String;
+   #34 = Class              #489          // scala_maven_dependency/Context4ScalaHome
+   #35 = Class              #490          // java/io/File
+   #36 = Methodref          #35.#478      // java/io/File."<init>":(Ljava/lang/String;)V
+   #37 = Methodref          #34.#491      // scala_maven_dependency/Context4ScalaHome."<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/io/File;)V
+   #38 = Class              #492          // scala_maven_dependency/Context4ScalaRemote
+   #39 = Fieldref           #229.#493     // scala_maven/ScalaMojoSupport.scalaOrganization:Ljava/lang/String;
+   #40 = Methodref          #229.#494     // scala_maven/ScalaMojoSupport.findMavenArtifactResolver:()Lscala_maven/MavenArtifactResolver;
+   #41 = Methodref          #38.#495      // scala_maven_dependency/Context4ScalaRemote."<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/lang/String;Lscala_maven/MavenArtifactResolver;)V
+   #42 = Methodref          #9.#496       // scala_maven/MavenArtifactResolver.getJarAndDependencies:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Set;
+   #43 = InterfaceMethodref #497.#498     // java/util/Set.iterator:()Ljava/util/Iterator;
+   #44 = InterfaceMethodref #499.#500     // java/util/Iterator.hasNext:()Z
+   #45 = InterfaceMethodref #499.#501     // java/util/Iterator.next:()Ljava/lang/Object;
+   #46 = Class              #502          // org/apache/maven/artifact/Artifact
+   #47 = InterfaceMethodref #46.#503      // org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+   #48 = InterfaceMethodref #497.#504     // java/util/Set.add:(Ljava/lang/Object;)Z
+   #49 = Methodref          #9.#505       // scala_maven/MavenArtifactResolver.getJar:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/apache/maven/artifact/Artifact;
+   #50 = Methodref          #229.#506     // scala_maven/ScalaMojoSupport.findScalaContext:()Lscala_maven_dependency/Context;
+   #51 = InterfaceMethodref #507.#508     // scala_maven_dependency/Context.findCompilerAndDependencies:()Ljava/util/Set;
+   #52 = InterfaceMethodref #507.#509     // scala_maven_dependency/Context.findLibraryAndDependencies:()Ljava/util/Set;
+   #53 = String             #510          // maven.scala.version
+   #54 = Methodref          #511.#512     // java/lang/System.getProperty:(Ljava/lang/String;)Ljava/lang/String;
+   #55 = String             #513          // using \'maven.scala.version\' is deprecated, use \'scala.version\' instead
+   #56 = Fieldref           #229.#514     // scala_maven/ScalaMojoSupport.scalaVersion:Ljava/lang/String;
+   #57 = String             #515          // maven.scala.displayCmd
+   #58 = String             #516          // using \'maven.scala.displayCmd\' is deprecated, use \'displayCmd\' instead
+   #59 = Fieldref           #229.#517     // scala_maven/ScalaMojoSupport.displayCmd:Z
+   #60 = Methodref          #518.#519     // java/lang/Boolean.parseBoolean:(Ljava/lang/String;)Z
+   #61 = Methodref          #229.#520     // scala_maven/ScalaMojoSupport.checkScalaVersion:()V
+   #62 = Methodref          #229.#521     // scala_maven/ScalaMojoSupport.doExecute:()V
+   #63 = Class              #522          // org/apache/maven/plugin/MojoExecutionException
+   #64 = Class              #523          // java/lang/RuntimeException
+   #65 = Class              #524          // java/lang/Exception
+   #66 = Class              #525          // java/lang/StringBuilder
+   #67 = Methodref          #66.#456      // java/lang/StringBuilder."<init>":()V
+   #68 = String             #526          // wrap:
+   #69 = Methodref          #66.#527      // java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+   #70 = Methodref          #66.#528      // java/lang/StringBuilder.append:(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+   #71 = Methodref          #66.#529      // java/lang/StringBuilder.toString:()Ljava/lang/String;
+   #72 = Methodref          #63.#530      // org/apache/maven/plugin/MojoExecutionException."<init>":(Ljava/lang/String;Ljava/lang/Exception;)V
+   #73 = Fieldref           #229.#531     // scala_maven/ScalaMojoSupport.project:Lorg/apache/maven/project/MavenProject;
+   #74 = Methodref          #532.#533     // org/apache/maven/project/MavenProject.getCompileDependencies:()Ljava/util/List;
+   #75 = Methodref          #229.#534     // scala_maven/ScalaMojoSupport.findScalaVersion0:()Lscala_maven/VersionNumber;
+   #76 = Methodref          #475.#535     // org/codehaus/plexus/util/StringUtils.isEmpty:(Ljava/lang/String;)Z
+   #77 = Fieldref           #536.#537     // scala_maven_dependency/ArtifactIds.SCALA_LIBRARY_PATTERN:Ljava/util/regex/Pattern;
+   #78 = Methodref          #229.#538     // scala_maven/ScalaMojoSupport.findVersionFromDependencies:(Ljava/lang/String;Ljava/util/regex/Pattern;)Ljava/lang/String;
+   #79 = String             #539          // pom
+   #80 = Methodref          #532.#540     // org/apache/maven/project/MavenProject.getPackaging:()Ljava/lang/String;
+   #81 = Methodref          #147.#541     // java/lang/String.equals:(Ljava/lang/Object;)Z
+   #82 = String             #542          // %s:%s is missing from project dependencies
+   #83 = Methodref          #543.#544     // java/util/regex/Pattern.pattern:()Ljava/lang/String;
+   #84 = Class              #545          // java/lang/UnsupportedOperationException
+   #85 = Methodref          #84.#478      // java/lang/UnsupportedOperationException."<init>":(Ljava/lang/String;)V
+   #86 = Methodref          #546.#547     // org/apache/maven/artifact/ArtifactUtils.isSnapshot:(Ljava/lang/String;)Z
+   #87 = String             #548          // -SNAPSHOT
+   #88 = Methodref          #147.#549     // java/lang/String.endsWith:(Ljava/lang/String;)Z
+   #89 = Methodref          #147.#550     // java/lang/String.lastIndexOf:(I)I
+   #90 = Methodref          #147.#551     // java/lang/String.lastIndexOf:(II)I
+   #91 = Methodref          #147.#552     // java/lang/String.substring:(II)Ljava/lang/String;
+   #92 = String             #553          // no scalaVersion detected or set
+   #93 = String             #554          // scala library version defined in dependencies doesn\'t match the scalaVersion of the plugin
+   #94 = Class              #555          // scala_maven/VersionNumber
+   #95 = Methodref          #94.#478      // scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+   #96 = String             #556          // 0.0.0
+   #97 = Methodref          #229.#557     // scala_maven/ScalaMojoSupport.getDependencies:()Ljava/util/List;
+   #98 = InterfaceMethodref #558.#498     // java/util/List.iterator:()Ljava/util/Iterator;
+   #99 = Class              #559          // org/apache/maven/model/Dependency
+  #100 = Methodref          #99.#560      // org/apache/maven/model/Dependency.getGroupId:()Ljava/lang/String;
+  #101 = Methodref          #99.#561      // org/apache/maven/model/Dependency.getArtifactId:()Ljava/lang/String;
+  #102 = Methodref          #543.#562     // java/util/regex/Pattern.matcher:(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+  #103 = Methodref          #563.#564     // java/util/regex/Matcher.find:()Z
+  #104 = Methodref          #99.#565      // org/apache/maven/model/Dependency.getVersion:()Ljava/lang/String;
+  #105 = Methodref          #94.#566      // scala_maven/VersionNumber.max:(Lscala_maven/VersionNumber;)Lscala_maven/VersionNumber;
+  #106 = Class              #567          // java/util/ArrayList
+  #107 = Methodref          #106.#456     // java/util/ArrayList."<init>":()V
+  #108 = Methodref          #532.#568     // org/apache/maven/project/MavenProject.getModel:()Lorg/apache/maven/model/Model;
+  #109 = Methodref          #569.#557     // org/apache/maven/model/Model.getDependencies:()Ljava/util/List;
+  #110 = InterfaceMethodref #558.#570     // java/util/List.addAll:(Ljava/util/Collection;)Z
+  #111 = Methodref          #569.#571     // org/apache/maven/model/Model.getDependencyManagement:()Lorg/apache/maven/model/DependencyManagement;
+  #112 = Methodref          #572.#557     // org/apache/maven/model/DependencyManagement.getDependencies:()Ljava/util/List;
+  #113 = Methodref          #94.#529      // scala_maven/VersionNumber.toString:()Ljava/lang/String;
+  #114 = String             #573          // local scala-library.jar and scala-compiler.jar from scalaHome(%s) used instead of scala %s
+  #115 = Fieldref           #229.#574     // scala_maven/ScalaMojoSupport.checkMultipleScalaVersions:Z
+  #116 = Methodref          #229.#575     // scala_maven/ScalaMojoSupport.checkCorrectVersionsOfScalaLibrary:(Ljava/lang/String;)V
+  #117 = String             #576          // Checking for multiple versions of scala
+  #118 = InterfaceMethodref #484.#577     // org/apache/maven/plugin/logging/Log.debug:(Ljava/lang/CharSequence;)V
+  #119 = Class              #578          // org/apache/maven/project/DefaultProjectBuildingRequest
+  #120 = Methodref          #579.#580     // org/apache/maven/execution/MavenSession.getProjectBuildingRequest:()Lorg/apache/maven/project/ProjectBuildingRequest;
+  #121 = Methodref          #119.#581     // org/apache/maven/project/DefaultProjectBuildingRequest."<init>":(Lorg/apache/maven/project/ProjectBuildingRequest;)V
+  #122 = InterfaceMethodref #582.#583     // org/apache/maven/project/ProjectBuildingRequest.setProject:(Lorg/apache/maven/project/MavenProject;)V
+  #123 = Fieldref           #229.#584     // scala_maven/ScalaMojoSupport.dependencyGraphBuilder:Lorg/apache/maven/shared/dependency/graph/DependencyGraphBuilder;
+  #124 = InterfaceMethodref #585.#586     // org/apache/maven/shared/dependency/graph/DependencyGraphBuilder.buildDependencyGraph:(Lorg/apache/maven/project/ProjectBuildingRequest;Lorg/apache/maven/artifact/resolver/filter/ArtifactFilter;)Lorg/apache/maven/shared/dependency/graph/DependencyNode;
+  #125 = Methodref          #229.#587     // scala_maven/ScalaMojoSupport.checkArtifactForScalaVersion:(Lscala_maven_dependency/Context;Lorg/apache/maven/shared/dependency/graph/DependencyNode;)V
+  #126 = Class              #588          // scala_maven_dependency/CheckScalaVersionVisitor
+  #127 = Methodref          #126.#589     // scala_maven_dependency/CheckScalaVersionVisitor."<init>":(Lscala_maven_dependency/Context;Lorg/apache/maven/plugin/logging/Log;)V
+  #128 = Class              #590          // org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor
+  #129 = Methodref          #128.#456     // org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor."<init>":()V
+  #130 = Class              #591          // org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor
+  #131 = Methodref          #229.#592     // scala_maven/ScalaMojoSupport.createScalaDistroDependencyFilter:()Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+  #132 = Methodref          #130.#593     // org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor."<init>":(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;)V
+  #133 = InterfaceMethodref #594.#595     // org/apache/maven/shared/dependency/graph/DependencyNode.accept:(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;)Z
+  #134 = Class              #596          // org/apache/maven/shared/dependency/graph/filter/AncestorOrSelfDependencyNodeFilter
+  #135 = Methodref          #128.#597     // org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor.getNodes:()Ljava/util/List;
+  #136 = Methodref          #134.#598     // org/apache/maven/shared/dependency/graph/filter/AncestorOrSelfDependencyNodeFilter."<init>":(Ljava/util/List;)V
+  #137 = Methodref          #126.#599     // scala_maven_dependency/CheckScalaVersionVisitor.isFailed:()Z
+  #138 = Methodref          #126.#600     // scala_maven_dependency/CheckScalaVersionVisitor.logScalaDependents:()V
+  #139 = String             #601          // Multiple versions of scala libraries detected!
+  #140 = Class              #602          // scala_maven_dependency/ScalaDistroArtifactFilter
+  #141 = Methodref          #140.#603     // scala_maven_dependency/ScalaDistroArtifactFilter."<init>":(Lscala_maven_dependency/Context;)V
+  #142 = InterfaceMethodref #558.#504     // java/util/List.add:(Ljava/lang/Object;)Z
+  #143 = Class              #604          // org/apache/maven/shared/dependency/graph/filter/AndDependencyNodeFilter
+  #144 = Methodref          #143.#598     // org/apache/maven/shared/dependency/graph/filter/AndDependencyNodeFilter."<init>":(Ljava/util/List;)V
+  #145 = Methodref          #229.#605     // scala_maven/ScalaMojoSupport.getEmptyScalaCommand:(Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+  #146 = Methodref          #229.#606     // scala_maven/ScalaMojoSupport.getScalacOptions:()Ljava/util/List;
+  #147 = Class              #607          // java/lang/String
+  #148 = InterfaceMethodref #608.#609     // scala_maven_executions/JavaMainCaller.addArgs:([Ljava/lang/String;)V
+  #149 = Fieldref           #229.#610     // scala_maven/ScalaMojoSupport.jvmArgs:[Ljava/lang/String;
+  #150 = InterfaceMethodref #608.#611     // scala_maven_executions/JavaMainCaller.addJvmArgs:([Ljava/lang/String;)V
+  #151 = Methodref          #230.#483     // org/apache/maven/plugin/AbstractMojo.getLog:()Lorg/apache/maven/plugin/logging/Log;
+  #152 = String             #612          // Fork behavior overridden
+  #153 = InterfaceMethodref #484.#613     // org/apache/maven/plugin/logging/Log.info:(Ljava/lang/CharSequence;)V
+  #154 = String             #614          // Fork for this execution is %s.
+  #155 = Methodref          #147.#615     // java/lang/String.valueOf:(Z)Ljava/lang/String;
+  #156 = Methodref          #229.#616     // scala_maven/ScalaMojoSupport.getToolClasspath:()Ljava/lang/String;
+  #157 = Fieldref           #229.#617     // scala_maven/ScalaMojoSupport.args:[Ljava/lang/String;
+  #158 = String             #618          // -nobootcp
+  #159 = String             #619          //
+  #160 = Fieldref           #229.#620     // scala_maven/ScalaMojoSupport.addScalacArgs:Ljava/lang/String;
+  #161 = Methodref          #147.#621     // java/lang/String.contains:(Ljava/lang/CharSequence;)Z
+  #162 = String             #622          // use java command with args in file forced :
+  #163 = Methodref          #66.#623      // java/lang/StringBuilder.append:(Z)Ljava/lang/StringBuilder;
+  #164 = Class              #624          // scala_maven_executions/JavaMainCallerByFork
+  #165 = Methodref          #229.#625     // scala_maven/ScalaMojoSupport.getToolchain:()Lorg/apache/maven/toolchain/Toolchain;
+  #166 = Methodref          #626.#627     // util/JavaLocator.findExecutableFromToolchain:(Lorg/apache/maven/toolchain/Toolchain;)Ljava/io/File;
+  #167 = Methodref          #164.#628     // scala_maven_executions/JavaMainCallerByFork."<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/io/File;)V
+  #168 = String             #629          // -Xbootclasspath/a:
+  #169 = Class              #630          // scala_maven_executions/JavaMainCallerInProcess
+  #170 = Methodref          #169.#631     // scala_maven_executions/JavaMainCallerInProcess."<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
+  #171 = Fieldref           #229.#632     // scala_maven/ScalaMojoSupport.toolchainManager:Lorg/apache/maven/toolchain/ToolchainManager;
+  #172 = String             #633          // jdk
+  #173 = InterfaceMethodref #634.#635     // org/apache/maven/toolchain/ToolchainManager.getToolchainFromBuildContext:(Ljava/lang/String;Lorg/apache/maven/execution/MavenSession;)Lorg/apache/maven/toolchain/Toolchain;
+  #174 = Class              #636          // java/util/TreeSet
+  #175 = Methodref          #174.#456     // java/util/TreeSet."<init>":()V
+  #176 = Methodref          #229.#637     // scala_maven/ScalaMojoSupport.addLibraryToClasspath:(Ljava/util/Set;)V
+  #177 = Methodref          #229.#638     // scala_maven/ScalaMojoSupport.addCompilerToClasspath:(Ljava/util/Set;)V
+  #178 = Fieldref           #229.#639     // scala_maven/ScalaMojoSupport.dependencies:[Lscala_maven/BasicArtifact;
+  #179 = Fieldref           #640.#641     // scala_maven/BasicArtifact.groupId:Ljava/lang/String;
+  #180 = Fieldref           #640.#642     // scala_maven/BasicArtifact.artifactId:Ljava/lang/String;
+  #181 = Fieldref           #640.#643     // scala_maven/BasicArtifact.version:Ljava/lang/String;
+  #182 = Methodref          #229.#644     // scala_maven/ScalaMojoSupport.addToClasspath:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+  #183 = Methodref          #645.#646     // util/FileUtils.toMultiPath:(Ljava/util/Collection;)Ljava/lang/String;
+  #184 = String             #647          // 1.5
+  #185 = String             #648          // 5
+  #186 = String             #649          // jvm-1.5
+  #187 = String             #650          // 1.6
+  #188 = String             #651          // 6
+  #189 = String             #652          // jvm-1.6
+  #190 = String             #653          // 1.7
+  #191 = String             #654          // 7
+  #192 = String             #655          // jvm-1.7
+  #193 = String             #656          // 1.8
+  #194 = String             #657          // 8
+  #195 = String             #658          // jvm-1.8
+  #196 = String             #659          // 2.12.0
+  #197 = String             #660          // 3.1.2
+  #198 = String             #661          // -java-output-version
+  #199 = String             #662          // -release
+  #200 = Methodref          #229.#663     // scala_maven/ScalaMojoSupport.computeReleaseOptionFromTarget:(Ljava/lang/String;)Ljava/lang/String;
+  #201 = Methodref          #229.#664     // scala_maven/ScalaMojoSupport.computeTargetOption:(Ljava/lang/String;)Ljava/lang/String;
+  #202 = String             #665          // -target:
+  #203 = Methodref          #666.#667     // java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+  #204 = String             #668          // |
+  #205 = Methodref          #475.#669     // org/codehaus/plexus/util/StringUtils.split:(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+  #206 = Methodref          #229.#670     // scala_maven/ScalaMojoSupport.getCompilerPluginOptions:()Ljava/util/List;
+  #207 = Fieldref           #229.#671     // scala_maven/ScalaMojoSupport.target:Ljava/lang/String;
+  #208 = Fieldref           #229.#672     // scala_maven/ScalaMojoSupport.release:Ljava/lang/String;
+  #209 = Methodref          #229.#673     // scala_maven/ScalaMojoSupport.computeBytecodeVersionOptions:(Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List;
+  #210 = Fieldref           #229.#674     // scala_maven/ScalaMojoSupport.javacArgs:[Ljava/lang/String;
+  #211 = Fieldref           #229.#675     // scala_maven/ScalaMojoSupport.addJavacArgs:Ljava/lang/String;
+  #212 = String             #676          // -g
+  #213 = String             #677          // --release
+  #214 = String             #678          // -target
+  #215 = Fieldref           #229.#679     // scala_maven/ScalaMojoSupport.source:Ljava/lang/String;
+  #216 = String             #680          // -source
+  #217 = Fieldref           #229.#681     // scala_maven/ScalaMojoSupport.encoding:Ljava/lang/String;
+  #218 = String             #682          // -encoding
+  #219 = String             #683          // 2.7.2
+  #220 = Methodref          #229.#684     // scala_maven/ScalaMojoSupport.getCompilerPlugins:()Ljava/util/Set;
+  #221 = String             #685          // -Xplugin:
+  #222 = Methodref          #35.#686      // java/io/File.getPath:()Ljava/lang/String;
+  #223 = Fieldref           #229.#687     // scala_maven/ScalaMojoSupport.compilerPlugins:[Lscala_maven/BasicArtifact;
+  #224 = String             #688          // compiler plugin:
+  #225 = Methodref          #640.#529     // scala_maven/BasicArtifact.toString:()Ljava/lang/String;
+  #226 = Fieldref           #640.#689     // scala_maven/BasicArtifact.classifier:Ljava/lang/String;
+  #227 = InterfaceMethodref #497.#690     // java/util/Set.removeAll:(Ljava/util/Collection;)Z
+  #228 = InterfaceMethodref #497.#570     // java/util/Set.addAll:(Ljava/util/Collection;)Z
+  #229 = Class              #691          // scala_maven/ScalaMojoSupport
+  #230 = Class              #692          // org/apache/maven/plugin/AbstractMojo
+  #231 = Utf8               project
+  #232 = Utf8               Lorg/apache/maven/project/MavenProject;
+  #233 = Utf8               RuntimeInvisibleAnnotations
+  #234 = Utf8               Lorg/apache/maven/plugins/annotations/Parameter;
+  #235 = Utf8               property
+  #236 = Utf8               required
+  #237 = Integer            1
+  #238 = Utf8               readonly
+  #239 = Utf8               session
+  #240 = Utf8               Lorg/apache/maven/execution/MavenSession;
+  #241 = Utf8               factory
+  #242 = Utf8               Lorg/apache/maven/repository/RepositorySystem;
+  #243 = Utf8               Lorg/apache/maven/plugins/annotations/Component;
+  #244 = Utf8               dependencies
+  #245 = Utf8               [Lscala_maven/BasicArtifact;
+  #246 = Utf8               compilerPlugins
+  #247 = Utf8               jvmArgs
+  #248 = Utf8               [Ljava/lang/String;
+  #249 = Utf8               args
+  #250 = Utf8               addScalacArgs
+  #251 = Utf8               Ljava/lang/String;
+  #252 = Utf8               scalaClassName
+  #253 = Integer            0
+  #254 = Utf8               maven.scala.className
+  #255 = Utf8               scalaVersion
+  #256 = Utf8               scala.version
+  #257 = Utf8               scalaOrganization
+  #258 = Utf8               scala.organization
+  #259 = Utf8               defaultValue
+  #260 = Utf8               org.scala-lang
+  #261 = Utf8               scalaCompatVersion
+  #262 = Utf8               scala.compat.version
+  #263 = Utf8               scalaHome
+  #264 = Utf8               scala.home
+  #265 = Utf8               javacArgs
+  #266 = Utf8               javacGenerateDebugSymbols
+  #267 = Utf8               Z
+  #268 = Utf8               true
+  #269 = Utf8               addJavacArgs
+  #270 = Utf8               source
+  #271 = Utf8               maven.compiler.source
+  #272 = Utf8               target
+  #273 = Utf8               maven.compiler.target
+  #274 = Utf8               release
+  #275 = Utf8               maven.compiler.release
+  #276 = Utf8               encoding
+  #277 = Utf8               project.build.sourceEncoding
+  #278 = Utf8               UTF-8
+  #279 = Utf8               displayCmd
+  #280 = Utf8               false
+  #281 = Utf8               fork
+  #282 = Utf8               forceUseArgFile
+  #283 = Utf8               checkMultipleScalaVersions
+  #284 = Utf8               maven.scala.checkConsistency
+  #285 = Utf8               failOnMultipleScalaVersions
+  #286 = Utf8               useCanonicalPath
+  #287 = Utf8               maven.scala.useCanonicalPath
+  #288 = Utf8               dependencyGraphBuilder
+  #289 = Utf8               Lorg/apache/maven/shared/dependency/graph/DependencyGraphBuilder;
+  #290 = Utf8               toolchainManager
+  #291 = Utf8               Lorg/apache/maven/toolchain/ToolchainManager;
+  #292 = Utf8               pluginArtifacts
+  #293 = Utf8               Ljava/util/List;
+  #294 = Utf8               Signature
+  #295 = Utf8               Ljava/util/List<Lorg/apache/maven/artifact/Artifact;>;
+  #296 = Utf8               ${plugin.artifacts}
+  #297 = Utf8               mavenArtifactResolver
+  #298 = Utf8               Lscala_maven/MavenArtifactResolver;
+  #299 = Utf8               scalaContext
+  #300 = Utf8               Lscala_maven_dependency/Context;
+  #301 = Utf8               detectedScalaVersion
+  #302 = Utf8               Lscala_maven/VersionNumber;
+  #303 = Utf8               <init>
+  #304 = Utf8               ()V
+  #305 = Utf8               Code
+  #306 = Utf8               LineNumberTable
+  #307 = Utf8               LocalVariableTable
+  #308 = Utf8               this
+  #309 = Utf8               Lscala_maven/ScalaMojoSupport;
+  #310 = Utf8               findMavenArtifactResolver
+  #311 = Utf8               ()Lscala_maven/MavenArtifactResolver;
+  #312 = Utf8               StackMapTable
+  #313 = Utf8               findScalaContext
+  #314 = Utf8               ()Lscala_maven_dependency/Context;
+  #315 = Utf8               msg
+  #316 = Utf8               aids
+  #317 = Utf8               Lscala_maven_dependency/ArtifactIds;
+  #318 = Utf8               requiredScalaVersion
+  #319 = Class              #555          // scala_maven/VersionNumber
+  #320 = Class              #693          // scala_maven_dependency/ArtifactIds
+  #321 = Class              #607          // java/lang/String
+  #322 = Class              #691          // scala_maven/ScalaMojoSupport
+  #323 = Class              #694          // scala_maven_dependency/Context
+  #324 = Utf8               Exceptions
+  #325 = Utf8               addToClasspath
+  #326 = Utf8               (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+  #327 = Utf8               a
+  #328 = Utf8               Lorg/apache/maven/artifact/Artifact;
+  #329 = Utf8               groupId
+  #330 = Utf8               artifactId
+  #331 = Utf8               version
+  #332 = Utf8               classifier
+  #333 = Utf8               classpath
+  #334 = Utf8               Ljava/util/Set;
+  #335 = Utf8               addDependencies
+  #336 = Utf8               mar
+  #337 = Utf8               LocalVariableTypeTable
+  #338 = Utf8               Ljava/util/Set<Ljava/io/File;>;
+  #339 = Class              #464          // scala_maven/MavenArtifactResolver
+  #340 = Class              #695          // java/util/Iterator
+  #341 = Utf8               (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set<Ljava/io/File;>;Z)V
+  #342 = Utf8               addCompilerToClasspath
+  #343 = Utf8               (Ljava/util/Set;)V
+  #344 = Utf8               dep
+  #345 = Utf8               sc
+  #346 = Utf8               (Ljava/util/Set<Ljava/io/File;>;)V
+  #347 = Utf8               addLibraryToClasspath
+  #348 = Utf8               execute
+  #349 = Utf8               oldWay
+  #350 = Utf8               exc
+  #351 = Utf8               Lorg/apache/maven/plugin/MojoExecutionException;
+  #352 = Utf8               Ljava/lang/Exception;
+  #353 = Class              #522          // org/apache/maven/plugin/MojoExecutionException
+  #354 = Class              #524          // java/lang/Exception
+  #355 = Utf8               getDependencies
+  #356 = Utf8               ()Ljava/util/List;
+  #357 = Utf8               ()Ljava/util/List<Lorg/apache/maven/model/Dependency;>;
+  #358 = Utf8               findScalaVersion
+  #359 = Utf8               ()Lscala_maven/VersionNumber;
+  #360 = Utf8               findScalaVersion0
+  #361 = Utf8               error
+  #362 = Utf8               isSnapshot
+  #363 = Utf8               findVersionFromDependencies
+  #364 = Utf8               (Ljava/lang/String;Ljava/util/regex/Pattern;)Ljava/lang/String;
+  #365 = Utf8               Lorg/apache/maven/model/Dependency;
+  #366 = Utf8               deps
+  #367 = Utf8               Ljava/util/regex/Pattern;
+  #368 = Utf8               Ljava/util/List<Lorg/apache/maven/model/Dependency;>;
+  #369 = Class              #696          // java/util/List
+  #370 = Utf8               checkScalaVersion
+  #371 = Utf8               sv
+  #372 = Utf8               checkCorrectVersionsOfScalaLibrary
+  #373 = Utf8               (Ljava/lang/String;)V
+  #374 = Utf8               scalaDefVersion
+  #375 = Utf8               request
+  #376 = Utf8               Lorg/apache/maven/project/ProjectBuildingRequest;
+  #377 = Utf8               checkArtifactForScalaVersion
+  #378 = Utf8               (Lscala_maven_dependency/Context;Lorg/apache/maven/shared/dependency/graph/DependencyNode;)V
+  #379 = Utf8               rootNode
+  #380 = Utf8               Lorg/apache/maven/shared/dependency/graph/DependencyNode;
+  #381 = Utf8               visitor
+  #382 = Utf8               Lscala_maven_dependency/CheckScalaVersionVisitor;
+  #383 = Utf8               collectingVisitor
+  #384 = Utf8               Lorg/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor;
+  #385 = Utf8               firstPassVisitor
+  #386 = Utf8               Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;
+  #387 = Utf8               secondPassFilter
+  #388 = Utf8               Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+  #389 = Utf8               filteredVisitor
+  #390 = Class              #697          // org/apache/maven/shared/dependency/graph/DependencyNode
+  #391 = Class              #588          // scala_maven_dependency/CheckScalaVersionVisitor
+  #392 = Class              #590          // org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor
+  #393 = Class              #698          // org/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor
+  #394 = Class              #699          // org/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter
+  #395 = Utf8               createScalaDistroDependencyFilter
+  #396 = Utf8               ()Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+  #397 = Utf8               filters
+  #398 = Utf8               Ljava/util/List<Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;>;
+  #399 = Utf8               doExecute
+  #400 = Utf8               getScalaCommand
+  #401 = Utf8               (ZLjava/lang/String;)Lscala_maven_executions/JavaMainCaller;
+  #402 = Utf8               option
+  #403 = Utf8               forkOverride
+  #404 = Utf8               mainClass
+  #405 = Utf8               cmd
+  #406 = Utf8               Lscala_maven_executions/JavaMainCaller;
+  #407 = Class              #700          // scala_maven_executions/JavaMainCaller
+  #408 = Utf8               getEmptyScalaCommand
+  #409 = Utf8               (Ljava/lang/String;)Lscala_maven_executions/JavaMainCaller;
+  #410 = Utf8               (Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+  #411 = Utf8               arg
+  #412 = Utf8               bootcp
+  #413 = Utf8               cp
+  #414 = Utf8               toolcp
+  #415 = Class              #248          // "[Ljava/lang/String;"
+  #416 = Utf8               getToolchain
+  #417 = Utf8               ()Lorg/apache/maven/toolchain/Toolchain;
+  #418 = Utf8               getToolClasspath
+  #419 = Utf8               ()Ljava/lang/String;
+  #420 = Utf8               artifact
+  #421 = Utf8               Lscala_maven/BasicArtifact;
+  #422 = Class              #701          // java/util/Set
+  #423 = Class              #245          // "[Lscala_maven/BasicArtifact;"
+  #424 = Utf8               computeTargetOption
+  #425 = Utf8               (Ljava/lang/String;)Ljava/lang/String;
+  #426 = Utf8               computeReleaseOptionFromTarget
+  #427 = Utf8               computeBytecodeVersionOptions
+  #428 = Utf8               (Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List;
+  #429 = Utf8               correctTarget
+  #430 = Utf8               options
+  #431 = Utf8               targetIsDefined
+  #432 = Utf8               releaseIsDefined
+  #433 = Utf8               releaseIsSupported
+  #434 = Utf8               releaseOrJavaOutputVersionOptionName
+  #435 = Utf8               Ljava/util/List<Ljava/lang/String;>;
+  #436 = Utf8               (Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List<Ljava/lang/String;>;
+  #437 = Utf8               getScalacOptions
+  #438 = Utf8               ()Ljava/util/List<Ljava/lang/String;>;
+  #439 = Utf8               getJavacOptions
+  #440 = Utf8               isJavaSupportedByCompiler
+  #441 = Utf8               ()Z
+  #442 = Utf8               addCompilerPluginOptions
+  #443 = Utf8               (Lscala_maven_executions/JavaMainCaller;)V
+  #444 = Utf8               scalac
+  #445 = Utf8               getCompilerPluginOptions
+  #446 = Utf8               plugin
+  #447 = Utf8               Ljava/io/File;
+  #448 = Utf8               getCompilerPlugins
+  #449 = Utf8               ()Ljava/util/Set;
+  #450 = Utf8               pluginClassPath
+  #451 = Utf8               ignoreClasspath
+  #452 = Utf8               plugins
+  #453 = Utf8               ()Ljava/util/Set<Ljava/io/File;>;
+  #454 = Utf8               SourceFile
+  #455 = Utf8               ScalaMojoSupport.java
+  #456 = NameAndType        #303:#304     // "<init>":()V
+  #457 = NameAndType        #266:#267     // javacGenerateDebugSymbols:Z
+  #458 = NameAndType        #281:#267     // fork:Z
+  #459 = NameAndType        #282:#267     // forceUseArgFile:Z
+  #460 = NameAndType        #285:#267     // failOnMultipleScalaVersions:Z
+  #461 = NameAndType        #286:#267     // useCanonicalPath:Z
+  #462 = NameAndType        #301:#302     // detectedScalaVersion:Lscala_maven/VersionNumber;
+  #463 = NameAndType        #297:#298     // mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+  #464 = Utf8               scala_maven/MavenArtifactResolver
+  #465 = NameAndType        #241:#242     // factory:Lorg/apache/maven/repository/RepositorySystem;
+  #466 = NameAndType        #239:#240     // session:Lorg/apache/maven/execution/MavenSession;
+  #467 = NameAndType        #303:#702     // "<init>":(Lorg/apache/maven/repository/RepositorySystem;Lorg/apache/maven/execution/MavenSession;)V
+  #468 = NameAndType        #299:#300     // scalaContext:Lscala_maven_dependency/Context;
+  #469 = NameAndType        #358:#359     // findScalaVersion:()Lscala_maven/VersionNumber;
+  #470 = NameAndType        #703:#704     // major:I
+  #471 = Utf8               scala_maven_dependency/ArtifactIds4Scala3
+  #472 = NameAndType        #303:#705     // "<init>":(Lscala_maven/VersionNumber;)V
+  #473 = Utf8               scala_maven_dependency/ArtifactIds4Scala2
+  #474 = NameAndType        #261:#251     // scalaCompatVersion:Ljava/lang/String;
+  #475 = Class              #706          // org/codehaus/plexus/util/StringUtils
+  #476 = NameAndType        #707:#708     // isNotEmpty:(Ljava/lang/String;)Z
+  #477 = Utf8               scala_maven/VersionNumberMask
+  #478 = NameAndType        #303:#373     // "<init>":(Ljava/lang/String;)V
+  #479 = NameAndType        #709:#710     // compareTo:(Lscala_maven/VersionNumber;)I
+  #480 = Utf8               Scala library detected %s doesn\'t match scala.compat.version : %s
+  #481 = Utf8               java/lang/Object
+  #482 = NameAndType        #711:#712     // format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+  #483 = NameAndType        #713:#714     // getLog:()Lorg/apache/maven/plugin/logging/Log;
+  #484 = Class              #715          // org/apache/maven/plugin/logging/Log
+  #485 = NameAndType        #361:#716     // error:(Ljava/lang/CharSequence;)V
+  #486 = Utf8               org/apache/maven/plugin/MojoFailureException
+  #487 = NameAndType        #717:#716     // warn:(Ljava/lang/CharSequence;)V
+  #488 = NameAndType        #263:#251     // scalaHome:Ljava/lang/String;
+  #489 = Utf8               scala_maven_dependency/Context4ScalaHome
+  #490 = Utf8               java/io/File
+  #491 = NameAndType        #303:#718     // "<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/io/File;)V
+  #492 = Utf8               scala_maven_dependency/Context4ScalaRemote
+  #493 = NameAndType        #257:#251     // scalaOrganization:Ljava/lang/String;
+  #494 = NameAndType        #310:#311     // findMavenArtifactResolver:()Lscala_maven/MavenArtifactResolver;
+  #495 = NameAndType        #303:#719     // "<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/lang/String;Lscala_maven/MavenArtifactResolver;)V
+  #496 = NameAndType        #720:#721     // getJarAndDependencies:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Set;
+  #497 = Class              #701          // java/util/Set
+  #498 = NameAndType        #722:#723     // iterator:()Ljava/util/Iterator;
+  #499 = Class              #695          // java/util/Iterator
+  #500 = NameAndType        #724:#441     // hasNext:()Z
+  #501 = NameAndType        #725:#726     // next:()Ljava/lang/Object;
+  #502 = Utf8               org/apache/maven/artifact/Artifact
+  #503 = NameAndType        #727:#728     // getFile:()Ljava/io/File;
+  #504 = NameAndType        #729:#730     // add:(Ljava/lang/Object;)Z
+  #505 = NameAndType        #731:#732     // getJar:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/apache/maven/artifact/Artifact;
+  #506 = NameAndType        #313:#314     // findScalaContext:()Lscala_maven_dependency/Context;
+  #507 = Class              #694          // scala_maven_dependency/Context
+  #508 = NameAndType        #733:#449     // findCompilerAndDependencies:()Ljava/util/Set;
+  #509 = NameAndType        #734:#449     // findLibraryAndDependencies:()Ljava/util/Set;
+  #510 = Utf8               maven.scala.version
+  #511 = Class              #735          // java/lang/System
+  #512 = NameAndType        #736:#425     // getProperty:(Ljava/lang/String;)Ljava/lang/String;
+  #513 = Utf8               using \'maven.scala.version\' is deprecated, use \'scala.version\' instead
+  #514 = NameAndType        #255:#251     // scalaVersion:Ljava/lang/String;
+  #515 = Utf8               maven.scala.displayCmd
+  #516 = Utf8               using \'maven.scala.displayCmd\' is deprecated, use \'displayCmd\' instead
+  #517 = NameAndType        #279:#267     // displayCmd:Z
+  #518 = Class              #737          // java/lang/Boolean
+  #519 = NameAndType        #738:#708     // parseBoolean:(Ljava/lang/String;)Z
+  #520 = NameAndType        #370:#304     // checkScalaVersion:()V
+  #521 = NameAndType        #399:#304     // doExecute:()V
+  #522 = Utf8               org/apache/maven/plugin/MojoExecutionException
+  #523 = Utf8               java/lang/RuntimeException
+  #524 = Utf8               java/lang/Exception
+  #525 = Utf8               java/lang/StringBuilder
+  #526 = Utf8               wrap:
+  #527 = NameAndType        #739:#740     // append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+  #528 = NameAndType        #739:#741     // append:(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+  #529 = NameAndType        #742:#419     // toString:()Ljava/lang/String;
+  #530 = NameAndType        #303:#743     // "<init>":(Ljava/lang/String;Ljava/lang/Exception;)V
+  #531 = NameAndType        #231:#232     // project:Lorg/apache/maven/project/MavenProject;
+  #532 = Class              #744          // org/apache/maven/project/MavenProject
+  #533 = NameAndType        #745:#356     // getCompileDependencies:()Ljava/util/List;
+  #534 = NameAndType        #360:#359     // findScalaVersion0:()Lscala_maven/VersionNumber;
+  #535 = NameAndType        #746:#708     // isEmpty:(Ljava/lang/String;)Z
+  #536 = Class              #693          // scala_maven_dependency/ArtifactIds
+  #537 = NameAndType        #747:#367     // SCALA_LIBRARY_PATTERN:Ljava/util/regex/Pattern;
+  #538 = NameAndType        #363:#364     // findVersionFromDependencies:(Ljava/lang/String;Ljava/util/regex/Pattern;)Ljava/lang/String;
+  #539 = Utf8               pom
+  #540 = NameAndType        #748:#419     // getPackaging:()Ljava/lang/String;
+  #541 = NameAndType        #749:#730     // equals:(Ljava/lang/Object;)Z
+  #542 = Utf8               %s:%s is missing from project dependencies
+  #543 = Class              #750          // java/util/regex/Pattern
+  #544 = NameAndType        #751:#419     // pattern:()Ljava/lang/String;
+  #545 = Utf8               java/lang/UnsupportedOperationException
+  #546 = Class              #752          // org/apache/maven/artifact/ArtifactUtils
+  #547 = NameAndType        #362:#708     // isSnapshot:(Ljava/lang/String;)Z
+  #548 = Utf8               -SNAPSHOT
+  #549 = NameAndType        #753:#708     // endsWith:(Ljava/lang/String;)Z
+  #550 = NameAndType        #754:#755     // lastIndexOf:(I)I
+  #551 = NameAndType        #754:#756     // lastIndexOf:(II)I
+  #552 = NameAndType        #757:#758     // substring:(II)Ljava/lang/String;
+  #553 = Utf8               no scalaVersion detected or set
+  #554 = Utf8               scala library version defined in dependencies doesn\'t match the scalaVersion of the plugin
+  #555 = Utf8               scala_maven/VersionNumber
+  #556 = Utf8               0.0.0
+  #557 = NameAndType        #355:#356     // getDependencies:()Ljava/util/List;
+  #558 = Class              #696          // java/util/List
+  #559 = Utf8               org/apache/maven/model/Dependency
+  #560 = NameAndType        #759:#419     // getGroupId:()Ljava/lang/String;
+  #561 = NameAndType        #760:#419     // getArtifactId:()Ljava/lang/String;
+  #562 = NameAndType        #761:#762     // matcher:(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+  #563 = Class              #763          // java/util/regex/Matcher
+  #564 = NameAndType        #764:#441     // find:()Z
+  #565 = NameAndType        #765:#419     // getVersion:()Ljava/lang/String;
+  #566 = NameAndType        #766:#767     // max:(Lscala_maven/VersionNumber;)Lscala_maven/VersionNumber;
+  #567 = Utf8               java/util/ArrayList
+  #568 = NameAndType        #768:#769     // getModel:()Lorg/apache/maven/model/Model;
+  #569 = Class              #770          // org/apache/maven/model/Model
+  #570 = NameAndType        #771:#772     // addAll:(Ljava/util/Collection;)Z
+  #571 = NameAndType        #773:#774     // getDependencyManagement:()Lorg/apache/maven/model/DependencyManagement;
+  #572 = Class              #775          // org/apache/maven/model/DependencyManagement
+  #573 = Utf8               local scala-library.jar and scala-compiler.jar from scalaHome(%s) used instead of scala %s
+  #574 = NameAndType        #283:#267     // checkMultipleScalaVersions:Z
+  #575 = NameAndType        #372:#373     // checkCorrectVersionsOfScalaLibrary:(Ljava/lang/String;)V
+  #576 = Utf8               Checking for multiple versions of scala
+  #577 = NameAndType        #776:#716     // debug:(Ljava/lang/CharSequence;)V
+  #578 = Utf8               org/apache/maven/project/DefaultProjectBuildingRequest
+  #579 = Class              #777          // org/apache/maven/execution/MavenSession
+  #580 = NameAndType        #778:#779     // getProjectBuildingRequest:()Lorg/apache/maven/project/ProjectBuildingRequest;
+  #581 = NameAndType        #303:#780     // "<init>":(Lorg/apache/maven/project/ProjectBuildingRequest;)V
+  #582 = Class              #781          // org/apache/maven/project/ProjectBuildingRequest
+  #583 = NameAndType        #782:#783     // setProject:(Lorg/apache/maven/project/MavenProject;)V
+  #584 = NameAndType        #288:#289     // dependencyGraphBuilder:Lorg/apache/maven/shared/dependency/graph/DependencyGraphBuilder;
+  #585 = Class              #784          // org/apache/maven/shared/dependency/graph/DependencyGraphBuilder
+  #586 = NameAndType        #785:#786     // buildDependencyGraph:(Lorg/apache/maven/project/ProjectBuildingRequest;Lorg/apache/maven/artifact/resolver/filter/ArtifactFilter;)Lorg/apache/maven/shared/dependency/graph/DependencyNode;
+  #587 = NameAndType        #377:#378     // checkArtifactForScalaVersion:(Lscala_maven_dependency/Context;Lorg/apache/maven/shared/dependency/graph/DependencyNode;)V
+  #588 = Utf8               scala_maven_dependency/CheckScalaVersionVisitor
+  #589 = NameAndType        #303:#787     // "<init>":(Lscala_maven_dependency/Context;Lorg/apache/maven/plugin/logging/Log;)V
+  #590 = Utf8               org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor
+  #591 = Utf8               org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor
+  #592 = NameAndType        #395:#396     // createScalaDistroDependencyFilter:()Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+  #593 = NameAndType        #303:#788     // "<init>":(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;)V
+  #594 = Class              #697          // org/apache/maven/shared/dependency/graph/DependencyNode
+  #595 = NameAndType        #789:#790     // accept:(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;)Z
+  #596 = Utf8               org/apache/maven/shared/dependency/graph/filter/AncestorOrSelfDependencyNodeFilter
+  #597 = NameAndType        #791:#356     // getNodes:()Ljava/util/List;
+  #598 = NameAndType        #303:#792     // "<init>":(Ljava/util/List;)V
+  #599 = NameAndType        #793:#441     // isFailed:()Z
+  #600 = NameAndType        #794:#304     // logScalaDependents:()V
+  #601 = Utf8               Multiple versions of scala libraries detected!
+  #602 = Utf8               scala_maven_dependency/ScalaDistroArtifactFilter
+  #603 = NameAndType        #303:#795     // "<init>":(Lscala_maven_dependency/Context;)V
+  #604 = Utf8               org/apache/maven/shared/dependency/graph/filter/AndDependencyNodeFilter
+  #605 = NameAndType        #408:#410     // getEmptyScalaCommand:(Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+  #606 = NameAndType        #437:#356     // getScalacOptions:()Ljava/util/List;
+  #607 = Utf8               java/lang/String
+  #608 = Class              #700          // scala_maven_executions/JavaMainCaller
+  #609 = NameAndType        #796:#797     // addArgs:([Ljava/lang/String;)V
+  #610 = NameAndType        #247:#248     // jvmArgs:[Ljava/lang/String;
+  #611 = NameAndType        #798:#797     // addJvmArgs:([Ljava/lang/String;)V
+  #612 = Utf8               Fork behavior overridden
+  #613 = NameAndType        #799:#716     // info:(Ljava/lang/CharSequence;)V
+  #614 = Utf8               Fork for this execution is %s.
+  #615 = NameAndType        #800:#801     // valueOf:(Z)Ljava/lang/String;
+  #616 = NameAndType        #418:#419     // getToolClasspath:()Ljava/lang/String;
+  #617 = NameAndType        #249:#248     // args:[Ljava/lang/String;
+  #618 = Utf8               -nobootcp
+  #619 = Utf8
+  #620 = NameAndType        #250:#251     // addScalacArgs:Ljava/lang/String;
+  #621 = NameAndType        #802:#803     // contains:(Ljava/lang/CharSequence;)Z
+  #622 = Utf8               use java command with args in file forced :
+  #623 = NameAndType        #739:#804     // append:(Z)Ljava/lang/StringBuilder;
+  #624 = Utf8               scala_maven_executions/JavaMainCallerByFork
+  #625 = NameAndType        #416:#417     // getToolchain:()Lorg/apache/maven/toolchain/Toolchain;
+  #626 = Class              #805          // util/JavaLocator
+  #627 = NameAndType        #806:#807     // findExecutableFromToolchain:(Lorg/apache/maven/toolchain/Toolchain;)Ljava/io/File;
+  #628 = NameAndType        #303:#808     // "<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/io/File;)V
+  #629 = Utf8               -Xbootclasspath/a:
+  #630 = Utf8               scala_maven_executions/JavaMainCallerInProcess
+  #631 = NameAndType        #303:#809     // "<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
+  #632 = NameAndType        #290:#291     // toolchainManager:Lorg/apache/maven/toolchain/ToolchainManager;
+  #633 = Utf8               jdk
+  #634 = Class              #810          // org/apache/maven/toolchain/ToolchainManager
+  #635 = NameAndType        #811:#812     // getToolchainFromBuildContext:(Ljava/lang/String;Lorg/apache/maven/execution/MavenSession;)Lorg/apache/maven/toolchain/Toolchain;
+  #636 = Utf8               java/util/TreeSet
+  #637 = NameAndType        #347:#343     // addLibraryToClasspath:(Ljava/util/Set;)V
+  #638 = NameAndType        #342:#343     // addCompilerToClasspath:(Ljava/util/Set;)V
+  #639 = NameAndType        #244:#245     // dependencies:[Lscala_maven/BasicArtifact;
+  #640 = Class              #813          // scala_maven/BasicArtifact
+  #641 = NameAndType        #329:#251     // groupId:Ljava/lang/String;
+  #642 = NameAndType        #330:#251     // artifactId:Ljava/lang/String;
+  #643 = NameAndType        #331:#251     // version:Ljava/lang/String;
+  #644 = NameAndType        #325:#326     // addToClasspath:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+  #645 = Class              #814          // util/FileUtils
+  #646 = NameAndType        #815:#816     // toMultiPath:(Ljava/util/Collection;)Ljava/lang/String;
+  #647 = Utf8               1.5
+  #648 = Utf8               5
+  #649 = Utf8               jvm-1.5
+  #650 = Utf8               1.6
+  #651 = Utf8               6
+  #652 = Utf8               jvm-1.6
+  #653 = Utf8               1.7
+  #654 = Utf8               7
+  #655 = Utf8               jvm-1.7
+  #656 = Utf8               1.8
+  #657 = Utf8               8
+  #658 = Utf8               jvm-1.8
+  #659 = Utf8               2.12.0
+  #660 = Utf8               3.1.2
+  #661 = Utf8               -java-output-version
+  #662 = Utf8               -release
+  #663 = NameAndType        #426:#425     // computeReleaseOptionFromTarget:(Ljava/lang/String;)Ljava/lang/String;
+  #664 = NameAndType        #424:#425     // computeTargetOption:(Ljava/lang/String;)Ljava/lang/String;
+  #665 = Utf8               -target:
+  #666 = Class              #817          // java/util/Collections
+  #667 = NameAndType        #771:#818     // addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+  #668 = Utf8               |
+  #669 = NameAndType        #819:#820     // split:(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+  #670 = NameAndType        #445:#356     // getCompilerPluginOptions:()Ljava/util/List;
+  #671 = NameAndType        #272:#251     // target:Ljava/lang/String;
+  #672 = NameAndType        #274:#251     // release:Ljava/lang/String;
+  #673 = NameAndType        #427:#428     // computeBytecodeVersionOptions:(Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List;
+  #674 = NameAndType        #265:#248     // javacArgs:[Ljava/lang/String;
+  #675 = NameAndType        #269:#251     // addJavacArgs:Ljava/lang/String;
+  #676 = Utf8               -g
+  #677 = Utf8               --release
+  #678 = Utf8               -target
+  #679 = NameAndType        #270:#251     // source:Ljava/lang/String;
+  #680 = Utf8               -source
+  #681 = NameAndType        #276:#251     // encoding:Ljava/lang/String;
+  #682 = Utf8               -encoding
+  #683 = Utf8               2.7.2
+  #684 = NameAndType        #448:#449     // getCompilerPlugins:()Ljava/util/Set;
+  #685 = Utf8               -Xplugin:
+  #686 = NameAndType        #821:#419     // getPath:()Ljava/lang/String;
+  #687 = NameAndType        #246:#245     // compilerPlugins:[Lscala_maven/BasicArtifact;
+  #688 = Utf8               compiler plugin:
+  #689 = NameAndType        #332:#251     // classifier:Ljava/lang/String;
+  #690 = NameAndType        #822:#772     // removeAll:(Ljava/util/Collection;)Z
+  #691 = Utf8               scala_maven/ScalaMojoSupport
+  #692 = Utf8               org/apache/maven/plugin/AbstractMojo
+  #693 = Utf8               scala_maven_dependency/ArtifactIds
+  #694 = Utf8               scala_maven_dependency/Context
+  #695 = Utf8               java/util/Iterator
+  #696 = Utf8               java/util/List
+  #697 = Utf8               org/apache/maven/shared/dependency/graph/DependencyNode
+  #698 = Utf8               org/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor
+  #699 = Utf8               org/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter
+  #700 = Utf8               scala_maven_executions/JavaMainCaller
+  #701 = Utf8               java/util/Set
+  #702 = Utf8               (Lorg/apache/maven/repository/RepositorySystem;Lorg/apache/maven/execution/MavenSession;)V
+  #703 = Utf8               major
+  #704 = Utf8               I
+  #705 = Utf8               (Lscala_maven/VersionNumber;)V
+  #706 = Utf8               org/codehaus/plexus/util/StringUtils
+  #707 = Utf8               isNotEmpty
+  #708 = Utf8               (Ljava/lang/String;)Z
+  #709 = Utf8               compareTo
+  #710 = Utf8               (Lscala_maven/VersionNumber;)I
+  #711 = Utf8               format
+  #712 = Utf8               (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+  #713 = Utf8               getLog
+  #714 = Utf8               ()Lorg/apache/maven/plugin/logging/Log;
+  #715 = Utf8               org/apache/maven/plugin/logging/Log
+  #716 = Utf8               (Ljava/lang/CharSequence;)V
+  #717 = Utf8               warn
+  #718 = Utf8               (Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/io/File;)V
+  #719 = Utf8               (Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/lang/String;Lscala_maven/MavenArtifactResolver;)V
+  #720 = Utf8               getJarAndDependencies
+  #721 = Utf8               (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Set;
+  #722 = Utf8               iterator
+  #723 = Utf8               ()Ljava/util/Iterator;
+  #724 = Utf8               hasNext
+  #725 = Utf8               next
+  #726 = Utf8               ()Ljava/lang/Object;
+  #727 = Utf8               getFile
+  #728 = Utf8               ()Ljava/io/File;
+  #729 = Utf8               add
+  #730 = Utf8               (Ljava/lang/Object;)Z
+  #731 = Utf8               getJar
+  #732 = Utf8               (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/apache/maven/artifact/Artifact;
+  #733 = Utf8               findCompilerAndDependencies
+  #734 = Utf8               findLibraryAndDependencies
+  #735 = Utf8               java/lang/System
+  #736 = Utf8               getProperty
+  #737 = Utf8               java/lang/Boolean
+  #738 = Utf8               parseBoolean
+  #739 = Utf8               append
+  #740 = Utf8               (Ljava/lang/String;)Ljava/lang/StringBuilder;
+  #741 = Utf8               (Ljava/lang/Object;)Ljava/lang/StringBuilder;
+  #742 = Utf8               toString
+  #743 = Utf8               (Ljava/lang/String;Ljava/lang/Exception;)V
+  #744 = Utf8               org/apache/maven/project/MavenProject
+  #745 = Utf8               getCompileDependencies
+  #746 = Utf8               isEmpty
+  #747 = Utf8               SCALA_LIBRARY_PATTERN
+  #748 = Utf8               getPackaging
+  #749 = Utf8               equals
+  #750 = Utf8               java/util/regex/Pattern
+  #751 = Utf8               pattern
+  #752 = Utf8               org/apache/maven/artifact/ArtifactUtils
+  #753 = Utf8               endsWith
+  #754 = Utf8               lastIndexOf
+  #755 = Utf8               (I)I
+  #756 = Utf8               (II)I
+  #757 = Utf8               substring
+  #758 = Utf8               (II)Ljava/lang/String;
+  #759 = Utf8               getGroupId
+  #760 = Utf8               getArtifactId
+  #761 = Utf8               matcher
+  #762 = Utf8               (Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+  #763 = Utf8               java/util/regex/Matcher
+  #764 = Utf8               find
+  #765 = Utf8               getVersion
+  #766 = Utf8               max
+  #767 = Utf8               (Lscala_maven/VersionNumber;)Lscala_maven/VersionNumber;
+  #768 = Utf8               getModel
+  #769 = Utf8               ()Lorg/apache/maven/model/Model;
+  #770 = Utf8               org/apache/maven/model/Model
+  #771 = Utf8               addAll
+  #772 = Utf8               (Ljava/util/Collection;)Z
+  #773 = Utf8               getDependencyManagement
+  #774 = Utf8               ()Lorg/apache/maven/model/DependencyManagement;
+  #775 = Utf8               org/apache/maven/model/DependencyManagement
+  #776 = Utf8               debug
+  #777 = Utf8               org/apache/maven/execution/MavenSession
+  #778 = Utf8               getProjectBuildingRequest
+  #779 = Utf8               ()Lorg/apache/maven/project/ProjectBuildingRequest;
+  #780 = Utf8               (Lorg/apache/maven/project/ProjectBuildingRequest;)V
+  #781 = Utf8               org/apache/maven/project/ProjectBuildingRequest
+  #782 = Utf8               setProject
+  #783 = Utf8               (Lorg/apache/maven/project/MavenProject;)V
+  #784 = Utf8               org/apache/maven/shared/dependency/graph/DependencyGraphBuilder
+  #785 = Utf8               buildDependencyGraph
+  #786 = Utf8               (Lorg/apache/maven/project/ProjectBuildingRequest;Lorg/apache/maven/artifact/resolver/filter/ArtifactFilter;)Lorg/apache/maven/shared/dependency/graph/DependencyNode;
+  #787 = Utf8               (Lscala_maven_dependency/Context;Lorg/apache/maven/plugin/logging/Log;)V
+  #788 = Utf8               (Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;)V
+  #789 = Utf8               accept
+  #790 = Utf8               (Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;)Z
+  #791 = Utf8               getNodes
+  #792 = Utf8               (Ljava/util/List;)V
+  #793 = Utf8               isFailed
+  #794 = Utf8               logScalaDependents
+  #795 = Utf8               (Lscala_maven_dependency/Context;)V
+  #796 = Utf8               addArgs
+  #797 = Utf8               ([Ljava/lang/String;)V
+  #798 = Utf8               addJvmArgs
+  #799 = Utf8               info
+  #800 = Utf8               valueOf
+  #801 = Utf8               (Z)Ljava/lang/String;
+  #802 = Utf8               contains
+  #803 = Utf8               (Ljava/lang/CharSequence;)Z
+  #804 = Utf8               (Z)Ljava/lang/StringBuilder;
+  #805 = Utf8               util/JavaLocator
+  #806 = Utf8               findExecutableFromToolchain
+  #807 = Utf8               (Lorg/apache/maven/toolchain/Toolchain;)Ljava/io/File;
+  #808 = Utf8               (Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/io/File;)V
+  #809 = Utf8               (Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
+  #810 = Utf8               org/apache/maven/toolchain/ToolchainManager
+  #811 = Utf8               getToolchainFromBuildContext
+  #812 = Utf8               (Ljava/lang/String;Lorg/apache/maven/execution/MavenSession;)Lorg/apache/maven/toolchain/Toolchain;
+  #813 = Utf8               scala_maven/BasicArtifact
+  #814 = Utf8               util/FileUtils
+  #815 = Utf8               toMultiPath
+  #816 = Utf8               (Ljava/util/Collection;)Ljava/lang/String;
+  #817 = Utf8               java/util/Collections
+  #818 = Utf8               (Ljava/util/Collection;[Ljava/lang/Object;)Z
+  #819 = Utf8               split
+  #820 = Utf8               (Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+  #821 = Utf8               getPath
+  #822 = Utf8               removeAll
+{
+  protected org.apache.maven.project.MavenProject project;
+    descriptor: Lorg/apache/maven/project/MavenProject;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#231,#236=Z#237,#238=Z#237)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="project"
+          required=true
+          readonly=true
+        )
+
+  protected org.apache.maven.execution.MavenSession session;
+    descriptor: Lorg/apache/maven/execution/MavenSession;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#239,#236=Z#237,#238=Z#237)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="session"
+          required=true
+          readonly=true
+        )
+
+  org.apache.maven.repository.RepositorySystem factory;
+    descriptor: Lorg/apache/maven/repository/RepositorySystem;
+    flags: (0x0000)
+    RuntimeInvisibleAnnotations:
+      0: #243()
+        org.apache.maven.plugins.annotations.Component
+
+  protected scala_maven.BasicArtifact[] dependencies;
+    descriptor: [Lscala_maven/BasicArtifact;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234()
+        org.apache.maven.plugins.annotations.Parameter
+
+  private scala_maven.BasicArtifact[] compilerPlugins;
+    descriptor: [Lscala_maven/BasicArtifact;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #234()
+        org.apache.maven.plugins.annotations.Parameter
+
+  protected java.lang.String[] jvmArgs;
+    descriptor: [Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234()
+        org.apache.maven.plugins.annotations.Parameter
+
+  protected java.lang.String[] args;
+    descriptor: [Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234()
+        org.apache.maven.plugins.annotations.Parameter
+
+  private java.lang.String addScalacArgs;
+    descriptor: Ljava/lang/String;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#250)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="addScalacArgs"
+        )
+
+  protected java.lang.String scalaClassName;
+    descriptor: Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#236=Z#253,#235=s#254)
+        org.apache.maven.plugins.annotations.Parameter(
+          required=false
+          property="maven.scala.className"
+        )
+
+  private java.lang.String scalaVersion;
+    descriptor: Ljava/lang/String;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#256)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="scala.version"
+        )
+
+  private java.lang.String scalaOrganization;
+    descriptor: Ljava/lang/String;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#258,#259=s#260)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="scala.organization"
+          defaultValue="org.scala-lang"
+        )
+
+  private java.lang.String scalaCompatVersion;
+    descriptor: Ljava/lang/String;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#262)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="scala.compat.version"
+        )
+
+  private java.lang.String scalaHome;
+    descriptor: Ljava/lang/String;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#264)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="scala.home"
+        )
+
+  protected java.lang.String[] javacArgs;
+    descriptor: [Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#265)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="javacArgs"
+        )
+
+  protected boolean javacGenerateDebugSymbols;
+    descriptor: Z
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#266,#259=s#268)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="javacGenerateDebugSymbols"
+          defaultValue="true"
+        )
+
+  protected java.lang.String addJavacArgs;
+    descriptor: Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#269)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="addJavacArgs"
+        )
+
+  protected java.lang.String source;
+    descriptor: Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#271)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="maven.compiler.source"
+        )
+
+  protected java.lang.String target;
+    descriptor: Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#273)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="maven.compiler.target"
+        )
+
+  protected java.lang.String release;
+    descriptor: Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#275)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="maven.compiler.release"
+        )
+
+  protected java.lang.String encoding;
+    descriptor: Ljava/lang/String;
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#277,#259=s#278)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="project.build.sourceEncoding"
+          defaultValue="UTF-8"
+        )
+
+  public boolean displayCmd;
+    descriptor: Z
+    flags: (0x0001) ACC_PUBLIC
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#279,#259=s#280,#236=Z#237)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="displayCmd"
+          defaultValue="false"
+          required=true
+        )
+
+  protected boolean fork;
+    descriptor: Z
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#259=s#268)
+        org.apache.maven.plugins.annotations.Parameter(
+          defaultValue="true"
+        )
+
+  protected boolean forceUseArgFile;
+    descriptor: Z
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#259=s#280)
+        org.apache.maven.plugins.annotations.Parameter(
+          defaultValue="false"
+        )
+
+  protected boolean checkMultipleScalaVersions;
+    descriptor: Z
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#284,#259=s#268)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="maven.scala.checkConsistency"
+          defaultValue="true"
+        )
+
+  protected boolean failOnMultipleScalaVersions;
+    descriptor: Z
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#259=s#280)
+        org.apache.maven.plugins.annotations.Parameter(
+          defaultValue="false"
+        )
+
+  protected boolean useCanonicalPath;
+    descriptor: Z
+    flags: (0x0004) ACC_PROTECTED
+    RuntimeInvisibleAnnotations:
+      0: #234(#235=s#287,#259=s#268)
+        org.apache.maven.plugins.annotations.Parameter(
+          property="maven.scala.useCanonicalPath"
+          defaultValue="true"
+        )
+
+  private org.apache.maven.shared.dependency.graph.DependencyGraphBuilder dependencyGraphBuilder;
+    descriptor: Lorg/apache/maven/shared/dependency/graph/DependencyGraphBuilder;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #243()
+        org.apache.maven.plugins.annotations.Component
+
+  private org.apache.maven.toolchain.ToolchainManager toolchainManager;
+    descriptor: Lorg/apache/maven/toolchain/ToolchainManager;
+    flags: (0x0002) ACC_PRIVATE
+    RuntimeInvisibleAnnotations:
+      0: #243()
+        org.apache.maven.plugins.annotations.Component
+
+  protected java.util.List<org.apache.maven.artifact.Artifact> pluginArtifacts;
+    descriptor: Ljava/util/List;
+    flags: (0x0004) ACC_PROTECTED
+    Signature: #295                         // Ljava/util/List<Lorg/apache/maven/artifact/Artifact;>;
+    RuntimeInvisibleAnnotations:
+      0: #234(#259=s#296)
+        org.apache.maven.plugins.annotations.Parameter(
+          defaultValue="${plugin.artifacts}"
+        )
+
+  private scala_maven.MavenArtifactResolver mavenArtifactResolver;
+    descriptor: Lscala_maven/MavenArtifactResolver;
+    flags: (0x0002) ACC_PRIVATE
+
+  private scala_maven_dependency.Context scalaContext;
+    descriptor: Lscala_maven_dependency/Context;
+    flags: (0x0002) ACC_PRIVATE
+
+  private scala_maven.VersionNumber detectedScalaVersion;
+    descriptor: Lscala_maven/VersionNumber;
+    flags: (0x0002) ACC_PRIVATE
+
+  public scala_maven.ScalaMojoSupport();
+    descriptor: ()V
+    flags: (0x0001) ACC_PUBLIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: aload_0
+         1: invokespecial #1                  // Method org/apache/maven/plugin/AbstractMojo."<init>":()V
+         4: aload_0
+         5: iconst_1
+         6: putfield      #2                  // Field javacGenerateDebugSymbols:Z
+         9: aload_0
+        10: iconst_1
+        11: putfield      #3                  // Field fork:Z
+        14: aload_0
+        15: iconst_0
+        16: putfield      #4                  // Field forceUseArgFile:Z
+        19: aload_0
+        20: iconst_0
+        21: putfield      #5                  // Field failOnMultipleScalaVersions:Z
+        24: aload_0
+        25: iconst_1
+        26: putfield      #6                  // Field useCanonicalPath:Z
+        29: aload_0
+        30: aconst_null
+        31: putfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+        34: return
+      LineNumberTable:
+        line 41: 0
+        line 140: 4
+        line 176: 9
+        line 180: 14
+        line 191: 19
+        line 201: 24
+        line 324: 29
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      35     0  this   Lscala_maven/ScalaMojoSupport;
+
+  public scala_maven.MavenArtifactResolver findMavenArtifactResolver();
+    descriptor: ()Lscala_maven/MavenArtifactResolver;
+    flags: (0x0001) ACC_PUBLIC
+    Code:
+      stack=5, locals=1, args_size=1
+         0: aload_0
+         1: getfield      #8                  // Field mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+         4: ifnonnull     26
+         7: aload_0
+         8: new           #9                  // class scala_maven/MavenArtifactResolver
+        11: dup
+        12: aload_0
+        13: getfield      #10                 // Field factory:Lorg/apache/maven/repository/RepositorySystem;
+        16: aload_0
+        17: getfield      #11                 // Field session:Lorg/apache/maven/execution/MavenSession;
+        20: invokespecial #12                 // Method scala_maven/MavenArtifactResolver."<init>":(Lorg/apache/maven/repository/RepositorySystem;Lorg/apache/maven/execution/MavenSession;)V
+        23: putfield      #8                  // Field mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+        26: aload_0
+        27: getfield      #8                  // Field mavenArtifactResolver:Lscala_maven/MavenArtifactResolver;
+        30: areturn
+      LineNumberTable:
+        line 217: 0
+        line 218: 7
+        line 220: 26
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      31     0  this   Lscala_maven/ScalaMojoSupport;
+      StackMapTable: number_of_entries = 1
+        frame_type = 26 /* same */
+
+  public scala_maven_dependency.Context findScalaContext() throws java.lang.Exception;
+    descriptor: ()Lscala_maven_dependency/Context;
+    flags: (0x0001) ACC_PUBLIC
+    Code:
+      stack=9, locals=5, args_size=1
+         0: aload_0
+         1: getfield      #13                 // Field scalaContext:Lscala_maven_dependency/Context;
+         4: ifnonnull     187
+         7: aload_0
+         8: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+        11: astore_1
+        12: aload_1
+        13: getfield      #15                 // Field scala_maven/VersionNumber.major:I
+        16: iconst_3
+        17: if_icmpne     31
+        20: new           #16                 // class scala_maven_dependency/ArtifactIds4Scala3
+        23: dup
+        24: aload_1
+        25: invokespecial #17                 // Method scala_maven_dependency/ArtifactIds4Scala3."<init>":(Lscala_maven/VersionNumber;)V
+        28: goto          38
+        31: new           #18                 // class scala_maven_dependency/ArtifactIds4Scala2
+        34: dup
+        35: invokespecial #19                 // Method scala_maven_dependency/ArtifactIds4Scala2."<init>":()V
+        38: astore_2
+        39: aload_0
+        40: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+        43: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        46: ifeq          63
+        49: new           #22                 // class scala_maven/VersionNumberMask
+        52: dup
+        53: aload_0
+        54: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+        57: invokespecial #23                 // Method scala_maven/VersionNumberMask."<init>":(Ljava/lang/String;)V
+        60: goto          64
+        63: aload_1
+        64: astore_3
+        65: aload_3
+        66: aload_1
+        67: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+        70: ifeq          131
+        73: ldc           #25                 // String Scala library detected %s doesn\'t match scala.compat.version : %s
+        75: iconst_2
+        76: anewarray     #26                 // class java/lang/Object
+        79: dup
+        80: iconst_0
+        81: aload_1
+        82: aastore
+        83: dup
+        84: iconst_1
+        85: aload_3
+        86: aastore
+        87: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+        90: astore        4
+        92: aload_0
+        93: getfield      #5                  // Field failOnMultipleScalaVersions:Z
+        96: ifeq          120
+        99: aload_0
+       100: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       103: aload         4
+       105: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+       110: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+       113: dup
+       114: aload         4
+       116: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+       119: athrow
+       120: aload_0
+       121: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       124: aload         4
+       126: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+       131: aload_0
+       132: aload_0
+       133: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+       136: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+       139: ifeq          166
+       142: new           #34                 // class scala_maven_dependency/Context4ScalaHome
+       145: dup
+       146: aload_1
+       147: aload_3
+       148: aload_2
+       149: new           #35                 // class java/io/File
+       152: dup
+       153: aload_0
+       154: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+       157: invokespecial #36                 // Method java/io/File."<init>":(Ljava/lang/String;)V
+       160: invokespecial #37                 // Method scala_maven_dependency/Context4ScalaHome."<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/io/File;)V
+       163: goto          184
+       166: new           #38                 // class scala_maven_dependency/Context4ScalaRemote
+       169: dup
+       170: aload_1
+       171: aload_3
+       172: aload_2
+       173: aload_0
+       174: getfield      #39                 // Field scalaOrganization:Ljava/lang/String;
+       177: aload_0
+       178: invokevirtual #40                 // Method findMavenArtifactResolver:()Lscala_maven/MavenArtifactResolver;
+       181: invokespecial #41                 // Method scala_maven_dependency/Context4ScalaRemote."<init>":(Lscala_maven/VersionNumber;Lscala_maven/VersionNumber;Lscala_maven_dependency/ArtifactIds;Ljava/lang/String;Lscala_maven/MavenArtifactResolver;)V
+       184: putfield      #13                 // Field scalaContext:Lscala_maven_dependency/Context;
+       187: aload_0
+       188: getfield      #13                 // Field scalaContext:Lscala_maven_dependency/Context;
+       191: areturn
+      LineNumberTable:
+        line 228: 0
+        line 229: 7
+        line 231: 12
+        line 233: 39
+        line 234: 43
+        line 237: 65
+        line 238: 73
+        line 239: 87
+        line 242: 92
+        line 243: 99
+        line 244: 110
+        line 246: 120
+        line 248: 131
+        line 249: 136
+        line 256: 178
+        line 258: 187
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           92      39     4   msg   Ljava/lang/String;
+           12     175     1 scalaVersion   Lscala_maven/VersionNumber;
+           39     148     2  aids   Lscala_maven_dependency/ArtifactIds;
+           65     122     3 requiredScalaVersion   Lscala_maven/VersionNumber;
+            0     192     0  this   Lscala_maven/ScalaMojoSupport;
+      StackMapTable: number_of_entries = 9
+        frame_type = 252 /* append */
+          offset_delta = 31
+          locals = [ class scala_maven/VersionNumber ]
+        frame_type = 70 /* same_locals_1_stack_item */
+          stack = [ class scala_maven_dependency/ArtifactIds ]
+        frame_type = 252 /* append */
+          offset_delta = 24
+          locals = [ class scala_maven_dependency/ArtifactIds ]
+        frame_type = 64 /* same_locals_1_stack_item */
+          stack = [ class scala_maven/VersionNumber ]
+        frame_type = 253 /* append */
+          offset_delta = 55
+          locals = [ class scala_maven/VersionNumber, class java/lang/String ]
+        frame_type = 250 /* chop */
+          offset_delta = 10
+        frame_type = 98 /* same_locals_1_stack_item */
+          stack = [ class scala_maven/ScalaMojoSupport ]
+        frame_type = 255 /* full_frame */
+          offset_delta = 17
+          locals = [ class scala_maven/ScalaMojoSupport, class scala_maven/VersionNumber, class scala_maven_dependency/ArtifactIds, class scala_maven/VersionNumber ]
+          stack = [ class scala_maven/ScalaMojoSupport, class scala_maven_dependency/Context ]
+        frame_type = 248 /* chop */
+          offset_delta = 2
+    Exceptions:
+      throws java.lang.Exception
+
+  protected void addToClasspath(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Set<java.io.File>, boolean);
+    descriptor: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+    flags: (0x0004) ACC_PROTECTED
+    Code:
+      stack=5, locals=10, args_size=7
+         0: aload_0
+         1: invokevirtual #40                 // Method findMavenArtifactResolver:()Lscala_maven/MavenArtifactResolver;
+         4: astore        7
+         6: iload         6
+         8: ifeq          71
+        11: aload         7
+        13: aload_1
+        14: aload_2
+        15: aload_3
+        16: aload         4
+        18: invokevirtual #42                 // Method scala_maven/MavenArtifactResolver.getJarAndDependencies:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/Set;
+        21: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+        26: astore        8
+        28: aload         8
+        30: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        35: ifeq          68
+        38: aload         8
+        40: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        45: checkcast     #46                 // class org/apache/maven/artifact/Artifact
+        48: astore        9
+        50: aload         5
+        52: aload         9
+        54: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+        59: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+        64: pop
+        65: goto          28
+        68: goto          98
+        71: aload         7
+        73: aload_1
+        74: aload_2
+        75: aload_3
+        76: aload         4
+        78: invokevirtual #49                 // Method scala_maven/MavenArtifactResolver.getJar:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/apache/maven/artifact/Artifact;
+        81: astore        8
+        83: aload         5
+        85: aload         8
+        87: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+        92: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+        97: pop
+        98: return
+      LineNumberTable:
+        line 268: 0
+        line 269: 6
+        line 270: 11
+        line 271: 50
+        line 272: 65
+        line 274: 71
+        line 275: 83
+        line 277: 98
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           50      15     9     a   Lorg/apache/maven/artifact/Artifact;
+           83      15     8     a   Lorg/apache/maven/artifact/Artifact;
+            0      99     0  this   Lscala_maven/ScalaMojoSupport;
+            0      99     1 groupId   Ljava/lang/String;
+            0      99     2 artifactId   Ljava/lang/String;
+            0      99     3 version   Ljava/lang/String;
+            0      99     4 classifier   Ljava/lang/String;
+            0      99     5 classpath   Ljava/util/Set;
+            0      99     6 addDependencies   Z
+            6      93     7   mar   Lscala_maven/MavenArtifactResolver;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            0      99     5 classpath   Ljava/util/Set<Ljava/io/File;>;
+      StackMapTable: number_of_entries = 4
+        frame_type = 253 /* append */
+          offset_delta = 28
+          locals = [ class scala_maven/MavenArtifactResolver, class java/util/Iterator ]
+        frame_type = 250 /* chop */
+          offset_delta = 39
+        frame_type = 2 /* same */
+        frame_type = 26 /* same */
+    Signature: #341                         // (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set<Ljava/io/File;>;Z)V
+
+  void addCompilerToClasspath(java.util.Set<java.io.File>) throws java.lang.Exception;
+    descriptor: (Ljava/util/Set;)V
+    flags: (0x0000)
+    Code:
+      stack=2, locals=5, args_size=2
+         0: aload_0
+         1: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+         4: astore_2
+         5: aload_2
+         6: invokeinterface #51,  1           // InterfaceMethod scala_maven_dependency/Context.findCompilerAndDependencies:()Ljava/util/Set;
+        11: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+        16: astore_3
+        17: aload_3
+        18: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        23: ifeq          54
+        26: aload_3
+        27: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        32: checkcast     #46                 // class org/apache/maven/artifact/Artifact
+        35: astore        4
+        37: aload_1
+        38: aload         4
+        40: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+        45: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+        50: pop
+        51: goto          17
+        54: return
+      LineNumberTable:
+        line 280: 0
+        line 281: 5
+        line 282: 37
+        line 283: 51
+        line 284: 54
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           37      14     4   dep   Lorg/apache/maven/artifact/Artifact;
+            0      55     0  this   Lscala_maven/ScalaMojoSupport;
+            0      55     1 classpath   Ljava/util/Set;
+            5      50     2    sc   Lscala_maven_dependency/Context;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            0      55     1 classpath   Ljava/util/Set<Ljava/io/File;>;
+      StackMapTable: number_of_entries = 2
+        frame_type = 253 /* append */
+          offset_delta = 17
+          locals = [ class scala_maven_dependency/Context, class java/util/Iterator ]
+        frame_type = 250 /* chop */
+          offset_delta = 36
+    Exceptions:
+      throws java.lang.Exception
+    Signature: #346                         // (Ljava/util/Set<Ljava/io/File;>;)V
+
+  void addLibraryToClasspath(java.util.Set<java.io.File>) throws java.lang.Exception;
+    descriptor: (Ljava/util/Set;)V
+    flags: (0x0000)
+    Code:
+      stack=2, locals=5, args_size=2
+         0: aload_0
+         1: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+         4: astore_2
+         5: aload_2
+         6: invokeinterface #52,  1           // InterfaceMethod scala_maven_dependency/Context.findLibraryAndDependencies:()Ljava/util/Set;
+        11: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+        16: astore_3
+        17: aload_3
+        18: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        23: ifeq          54
+        26: aload_3
+        27: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        32: checkcast     #46                 // class org/apache/maven/artifact/Artifact
+        35: astore        4
+        37: aload_1
+        38: aload         4
+        40: invokeinterface #47,  1           // InterfaceMethod org/apache/maven/artifact/Artifact.getFile:()Ljava/io/File;
+        45: invokeinterface #48,  2           // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+        50: pop
+        51: goto          17
+        54: return
+      LineNumberTable:
+        line 287: 0
+        line 288: 5
+        line 289: 37
+        line 290: 51
+        line 291: 54
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           37      14     4   dep   Lorg/apache/maven/artifact/Artifact;
+            0      55     0  this   Lscala_maven/ScalaMojoSupport;
+            0      55     1 classpath   Ljava/util/Set;
+            5      50     2    sc   Lscala_maven_dependency/Context;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            0      55     1 classpath   Ljava/util/Set<Ljava/io/File;>;
+      StackMapTable: number_of_entries = 2
+        frame_type = 253 /* append */
+          offset_delta = 17
+          locals = [ class scala_maven_dependency/Context, class java/util/Iterator ]
+        frame_type = 250 /* chop */
+          offset_delta = 36
+    Exceptions:
+      throws java.lang.Exception
+    Signature: #346                         // (Ljava/util/Set<Ljava/io/File;>;)V
+
+  public void execute() throws org.apache.maven.plugin.MojoExecutionException, org.apache.maven.plugin.MojoFailureException;
+    descriptor: ()V
+    flags: (0x0001) ACC_PUBLIC
+    Code:
+      stack=4, locals=2, args_size=1
+         0: ldc           #53                 // String maven.scala.version
+         2: invokestatic  #54                 // Method java/lang/System.getProperty:(Ljava/lang/String;)Ljava/lang/String;
+         5: astore_1
+         6: aload_1
+         7: ifnull        33
+        10: aload_0
+        11: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+        14: ldc           #55                 // String using \'maven.scala.version\' is deprecated, use \'scala.version\' instead
+        16: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+        21: aload_0
+        22: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+        25: ifnull        33
+        28: aload_0
+        29: aload_1
+        30: putfield      #56                 // Field scalaVersion:Ljava/lang/String;
+        33: ldc           #57                 // String maven.scala.displayCmd
+        35: invokestatic  #54                 // Method java/lang/System.getProperty:(Ljava/lang/String;)Ljava/lang/String;
+        38: astore_1
+        39: aload_1
+        40: ifnull        77
+        43: aload_0
+        44: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+        47: ldc           #58                 // String using \'maven.scala.displayCmd\' is deprecated, use \'displayCmd\' instead
+        49: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+        54: aload_0
+        55: aload_0
+        56: getfield      #59                 // Field displayCmd:Z
+        59: ifne          69
+        62: aload_1
+        63: invokestatic  #60                 // Method java/lang/Boolean.parseBoolean:(Ljava/lang/String;)Z
+        66: ifeq          73
+        69: iconst_1
+        70: goto          74
+        73: iconst_0
+        74: putfield      #59                 // Field displayCmd:Z
+        77: aload_0
+        78: invokevirtual #61                 // Method checkScalaVersion:()V
+        81: aload_0
+        82: invokevirtual #62                 // Method doExecute:()V
+        85: goto          123
+        88: astore_1
+        89: aload_1
+        90: athrow
+        91: astore_1
+        92: aload_1
+        93: athrow
+        94: astore_1
+        95: new           #63                 // class org/apache/maven/plugin/MojoExecutionException
+        98: dup
+        99: new           #66                 // class java/lang/StringBuilder
+       102: dup
+       103: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+       106: ldc           #68                 // String wrap:
+       108: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       111: aload_1
+       112: invokevirtual #70                 // Method java/lang/StringBuilder.append:(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+       115: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       118: aload_1
+       119: invokespecial #72                 // Method org/apache/maven/plugin/MojoExecutionException."<init>":(Ljava/lang/String;Ljava/lang/Exception;)V
+       122: athrow
+       123: return
+      Exception table:
+         from    to  target type
+             0    85    88   Class org/apache/maven/plugin/MojoExecutionException
+             0    85    91   Class org/apache/maven/plugin/MojoFailureException
+             0    85    91   Class java/lang/RuntimeException
+             0    85    94   Class java/lang/Exception
+      LineNumberTable:
+        line 296: 0
+        line 297: 6
+        line 298: 10
+        line 299: 21
+        line 300: 28
+        line 304: 33
+        line 305: 39
+        line 306: 43
+        line 307: 54
+        line 309: 77
+        line 310: 81
+        line 317: 85
+        line 311: 88
+        line 312: 89
+        line 313: 91
+        line 314: 92
+        line 315: 94
+        line 316: 95
+        line 318: 123
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            6      79     1 oldWay   Ljava/lang/String;
+           89       2     1   exc   Lorg/apache/maven/plugin/MojoExecutionException;
+           92       2     1   exc   Ljava/lang/Exception;
+           95      28     1   exc   Ljava/lang/Exception;
+            0     124     0  this   Lscala_maven/ScalaMojoSupport;
+      StackMapTable: number_of_entries = 9
+        frame_type = 252 /* append */
+          offset_delta = 33
+          locals = [ class java/lang/String ]
+        frame_type = 99 /* same_locals_1_stack_item */
+          stack = [ class scala_maven/ScalaMojoSupport ]
+        frame_type = 67 /* same_locals_1_stack_item */
+          stack = [ class scala_maven/ScalaMojoSupport ]
+        frame_type = 255 /* full_frame */
+          offset_delta = 0
+          locals = [ class scala_maven/ScalaMojoSupport, class java/lang/String ]
+          stack = [ class scala_maven/ScalaMojoSupport, int ]
+        frame_type = 2 /* same */
+        frame_type = 255 /* full_frame */
+          offset_delta = 10
+          locals = [ class scala_maven/ScalaMojoSupport ]
+          stack = [ class org/apache/maven/plugin/MojoExecutionException ]
+        frame_type = 66 /* same_locals_1_stack_item */
+          stack = [ class java/lang/Exception ]
+        frame_type = 66 /* same_locals_1_stack_item */
+          stack = [ class java/lang/Exception ]
+        frame_type = 28 /* same */
+    Exceptions:
+      throws org.apache.maven.plugin.MojoExecutionException, org.apache.maven.plugin.MojoFailureException
+
+  protected java.util.List<org.apache.maven.model.Dependency> getDependencies();
+    descriptor: ()Ljava/util/List;
+    flags: (0x0004) ACC_PROTECTED
+    Code:
+      stack=1, locals=1, args_size=1
+         0: aload_0
+         1: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+         4: invokevirtual #74                 // Method org/apache/maven/project/MavenProject.getCompileDependencies:()Ljava/util/List;
+         7: areturn
+      LineNumberTable:
+        line 321: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0       8     0  this   Lscala_maven/ScalaMojoSupport;
+    Signature: #357                         // ()Ljava/util/List<Lorg/apache/maven/model/Dependency;>;
+
+  private scala_maven.VersionNumber findScalaVersion() throws java.lang.Exception;
+    descriptor: ()Lscala_maven/VersionNumber;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=2, locals=1, args_size=1
+         0: aload_0
+         1: getfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+         4: ifnonnull     15
+         7: aload_0
+         8: aload_0
+         9: invokespecial #75                 // Method findScalaVersion0:()Lscala_maven/VersionNumber;
+        12: putfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+        15: aload_0
+        16: getfield      #7                  // Field detectedScalaVersion:Lscala_maven/VersionNumber;
+        19: areturn
+      LineNumberTable:
+        line 327: 0
+        line 328: 7
+        line 330: 15
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      20     0  this   Lscala_maven/ScalaMojoSupport;
+      StackMapTable: number_of_entries = 1
+        frame_type = 15 /* same */
+    Exceptions:
+      throws java.lang.Exception
+
+  private scala_maven.VersionNumber findScalaVersion0() throws java.lang.Exception;
+    descriptor: ()Lscala_maven/VersionNumber;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=7, locals=3, args_size=1
+         0: aload_0
+         1: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+         4: astore_1
+         5: aload_1
+         6: invokestatic  #76                 // Method org/codehaus/plexus/util/StringUtils.isEmpty:(Ljava/lang/String;)Z
+         9: ifeq          24
+        12: aload_0
+        13: aload_0
+        14: getfield      #39                 // Field scalaOrganization:Ljava/lang/String;
+        17: getstatic     #77                 // Field scala_maven_dependency/ArtifactIds.SCALA_LIBRARY_PATTERN:Ljava/util/regex/Pattern;
+        20: invokespecial #78                 // Method findVersionFromDependencies:(Ljava/lang/String;Ljava/util/regex/Pattern;)Ljava/lang/String;
+        23: astore_1
+        24: aload_1
+        25: invokestatic  #76                 // Method org/codehaus/plexus/util/StringUtils.isEmpty:(Ljava/lang/String;)Z
+        28: ifeq          91
+        31: ldc           #79                 // String pom
+        33: aload_0
+        34: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+        37: invokevirtual #80                 // Method org/apache/maven/project/MavenProject.getPackaging:()Ljava/lang/String;
+        40: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        43: ifne          147
+        46: ldc           #82                 // String %s:%s is missing from project dependencies
+        48: iconst_2
+        49: anewarray     #26                 // class java/lang/Object
+        52: dup
+        53: iconst_0
+        54: aload_0
+        55: getfield      #39                 // Field scalaOrganization:Ljava/lang/String;
+        58: aastore
+        59: dup
+        60: iconst_1
+        61: getstatic     #77                 // Field scala_maven_dependency/ArtifactIds.SCALA_LIBRARY_PATTERN:Ljava/util/regex/Pattern;
+        64: invokevirtual #83                 // Method java/util/regex/Pattern.pattern:()Ljava/lang/String;
+        67: aastore
+        68: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+        71: astore_2
+        72: aload_0
+        73: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+        76: aload_2
+        77: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+        82: new           #84                 // class java/lang/UnsupportedOperationException
+        85: dup
+        86: aload_2
+        87: invokespecial #85                 // Method java/lang/UnsupportedOperationException."<init>":(Ljava/lang/String;)V
+        90: athrow
+        91: aload_1
+        92: invokestatic  #86                 // Method org/apache/maven/artifact/ArtifactUtils.isSnapshot:(Ljava/lang/String;)Z
+        95: istore_2
+        96: iload_2
+        97: ifeq          147
+       100: aload_1
+       101: ldc           #87                 // String -SNAPSHOT
+       103: invokevirtual #88                 // Method java/lang/String.endsWith:(Ljava/lang/String;)Z
+       106: ifne          147
+       109: new           #66                 // class java/lang/StringBuilder
+       112: dup
+       113: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+       116: aload_1
+       117: iconst_0
+       118: aload_1
+       119: bipush        45
+       121: aload_1
+       122: bipush        45
+       124: invokevirtual #89                 // Method java/lang/String.lastIndexOf:(I)I
+       127: iconst_1
+       128: isub
+       129: invokevirtual #90                 // Method java/lang/String.lastIndexOf:(II)I
+       132: invokevirtual #91                 // Method java/lang/String.substring:(II)Ljava/lang/String;
+       135: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       138: ldc           #87                 // String -SNAPSHOT
+       140: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       143: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       146: astore_1
+       147: aload_1
+       148: invokestatic  #76                 // Method org/codehaus/plexus/util/StringUtils.isEmpty:(Ljava/lang/String;)Z
+       151: ifeq          164
+       154: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+       157: dup
+       158: ldc           #92                 // String no scalaVersion detected or set
+       160: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+       163: athrow
+       164: aload_0
+       165: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+       168: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+       171: ifeq          196
+       174: aload_0
+       175: getfield      #56                 // Field scalaVersion:Ljava/lang/String;
+       178: aload_1
+       179: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+       182: ifne          196
+       185: aload_0
+       186: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       189: ldc           #93                 // String scala library version defined in dependencies doesn\'t match the scalaVersion of the plugin
+       191: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+       196: new           #94                 // class scala_maven/VersionNumber
+       199: dup
+       200: aload_1
+       201: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+       204: areturn
+      LineNumberTable:
+        line 334: 0
+        line 335: 5
+        line 336: 12
+        line 337: 20
+        line 339: 24
+        line 340: 31
+        line 341: 46
+        line 344: 64
+        line 342: 68
+        line 345: 72
+        line 346: 82
+        line 356: 91
+        line 357: 96
+        line 358: 109
+        line 362: 124
+        line 361: 129
+        line 359: 132
+        line 366: 147
+        line 367: 154
+        line 369: 164
+        line 370: 174
+        line 371: 185
+        line 372: 191
+        line 378: 196
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           72      19     2 error   Ljava/lang/String;
+           96      51     2 isSnapshot   Z
+            0     205     0  this   Lscala_maven/ScalaMojoSupport;
+            5     200     1 detectedScalaVersion   Ljava/lang/String;
+      StackMapTable: number_of_entries = 5
+        frame_type = 252 /* append */
+          offset_delta = 24
+          locals = [ class java/lang/String ]
+        frame_type = 251 /* same_frame_extended */
+          offset_delta = 66
+        frame_type = 55 /* same */
+        frame_type = 16 /* same */
+        frame_type = 31 /* same */
+    Exceptions:
+      throws java.lang.Exception
+
+  private java.lang.String findVersionFromDependencies(java.lang.String, java.util.regex.Pattern);
+    descriptor: (Ljava/lang/String;Ljava/util/regex/Pattern;)Ljava/lang/String;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=4, locals=7, args_size=3
+         0: new           #94                 // class scala_maven/VersionNumber
+         3: dup
+         4: ldc           #96                 // String 0.0.0
+         6: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+         9: astore_3
+        10: aload_0
+        11: invokevirtual #97                 // Method getDependencies:()Ljava/util/List;
+        14: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+        19: astore        4
+        21: aload         4
+        23: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        28: ifeq          90
+        31: aload         4
+        33: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        38: checkcast     #99                 // class org/apache/maven/model/Dependency
+        41: astore        5
+        43: aload_1
+        44: aload         5
+        46: invokevirtual #100                // Method org/apache/maven/model/Dependency.getGroupId:()Ljava/lang/String;
+        49: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        52: ifeq          87
+        55: aload_2
+        56: aload         5
+        58: invokevirtual #101                // Method org/apache/maven/model/Dependency.getArtifactId:()Ljava/lang/String;
+        61: invokevirtual #102                // Method java/util/regex/Pattern.matcher:(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+        64: invokevirtual #103                // Method java/util/regex/Matcher.find:()Z
+        67: ifeq          87
+        70: aload_3
+        71: new           #94                 // class scala_maven/VersionNumber
+        74: dup
+        75: aload         5
+        77: invokevirtual #104                // Method org/apache/maven/model/Dependency.getVersion:()Ljava/lang/String;
+        80: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+        83: invokevirtual #105                // Method scala_maven/VersionNumber.max:(Lscala_maven/VersionNumber;)Lscala_maven/VersionNumber;
+        86: astore_3
+        87: goto          21
+        90: aload_3
+        91: getfield      #15                 // Field scala_maven/VersionNumber.major:I
+        94: ifne          236
+        97: new           #106                // class java/util/ArrayList
+       100: dup
+       101: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+       104: astore        4
+       106: aload         4
+       108: aload_0
+       109: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+       112: invokevirtual #108                // Method org/apache/maven/project/MavenProject.getModel:()Lorg/apache/maven/model/Model;
+       115: invokevirtual #109                // Method org/apache/maven/model/Model.getDependencies:()Ljava/util/List;
+       118: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+       123: pop
+       124: aload_0
+       125: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+       128: invokevirtual #108                // Method org/apache/maven/project/MavenProject.getModel:()Lorg/apache/maven/model/Model;
+       131: invokevirtual #111                // Method org/apache/maven/model/Model.getDependencyManagement:()Lorg/apache/maven/model/DependencyManagement;
+       134: ifnull        158
+       137: aload         4
+       139: aload_0
+       140: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+       143: invokevirtual #108                // Method org/apache/maven/project/MavenProject.getModel:()Lorg/apache/maven/model/Model;
+       146: invokevirtual #111                // Method org/apache/maven/model/Model.getDependencyManagement:()Lorg/apache/maven/model/DependencyManagement;
+       149: invokevirtual #112                // Method org/apache/maven/model/DependencyManagement.getDependencies:()Ljava/util/List;
+       152: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+       157: pop
+       158: aload         4
+       160: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+       165: astore        5
+       167: aload         5
+       169: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+       174: ifeq          236
+       177: aload         5
+       179: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+       184: checkcast     #99                 // class org/apache/maven/model/Dependency
+       187: astore        6
+       189: aload_1
+       190: aload         6
+       192: invokevirtual #100                // Method org/apache/maven/model/Dependency.getGroupId:()Ljava/lang/String;
+       195: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+       198: ifeq          233
+       201: aload_2
+       202: aload         6
+       204: invokevirtual #101                // Method org/apache/maven/model/Dependency.getArtifactId:()Ljava/lang/String;
+       207: invokevirtual #102                // Method java/util/regex/Pattern.matcher:(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+       210: invokevirtual #103                // Method java/util/regex/Matcher.find:()Z
+       213: ifeq          233
+       216: aload_3
+       217: new           #94                 // class scala_maven/VersionNumber
+       220: dup
+       221: aload         6
+       223: invokevirtual #104                // Method org/apache/maven/model/Dependency.getVersion:()Ljava/lang/String;
+       226: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+       229: invokevirtual #105                // Method scala_maven/VersionNumber.max:(Lscala_maven/VersionNumber;)Lscala_maven/VersionNumber;
+       232: astore_3
+       233: goto          167
+       236: aload_3
+       237: getfield      #15                 // Field scala_maven/VersionNumber.major:I
+       240: ifne          247
+       243: aconst_null
+       244: goto          251
+       247: aload_3
+       248: invokevirtual #113                // Method scala_maven/VersionNumber.toString:()Ljava/lang/String;
+       251: areturn
+      LineNumberTable:
+        line 383: 0
+        line 384: 10
+        line 385: 43
+        line 386: 70
+        line 388: 87
+        line 389: 90
+        line 390: 97
+        line 391: 106
+        line 392: 124
+        line 393: 137
+        line 395: 158
+        line 396: 189
+        line 397: 216
+        line 399: 233
+        line 401: 236
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           43      44     5   dep   Lorg/apache/maven/model/Dependency;
+          189      44     6   dep   Lorg/apache/maven/model/Dependency;
+          106     130     4  deps   Ljava/util/List;
+            0     252     0  this   Lscala_maven/ScalaMojoSupport;
+            0     252     1 groupId   Ljava/lang/String;
+            0     252     2 artifactId   Ljava/util/regex/Pattern;
+           10     242     3 version   Lscala_maven/VersionNumber;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+          106     130     4  deps   Ljava/util/List<Lorg/apache/maven/model/Dependency;>;
+      StackMapTable: number_of_entries = 9
+        frame_type = 253 /* append */
+          offset_delta = 21
+          locals = [ class scala_maven/VersionNumber, class java/util/Iterator ]
+        frame_type = 251 /* same_frame_extended */
+          offset_delta = 65
+        frame_type = 250 /* chop */
+          offset_delta = 2
+        frame_type = 252 /* append */
+          offset_delta = 67
+          locals = [ class java/util/List ]
+        frame_type = 252 /* append */
+          offset_delta = 8
+          locals = [ class java/util/Iterator ]
+        frame_type = 251 /* same_frame_extended */
+          offset_delta = 65
+        frame_type = 249 /* chop */
+          offset_delta = 2
+        frame_type = 10 /* same */
+        frame_type = 67 /* same_locals_1_stack_item */
+          stack = [ class java/lang/String ]
+
+  void checkScalaVersion() throws java.lang.Exception;
+    descriptor: ()V
+    flags: (0x0000)
+    Code:
+      stack=6, locals=2, args_size=1
+         0: aload_0
+         1: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+         4: invokevirtual #113                // Method scala_maven/VersionNumber.toString:()Ljava/lang/String;
+         7: astore_1
+         8: aload_0
+         9: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+        12: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        15: ifeq          47
+        18: aload_0
+        19: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+        22: ldc           #114                // String local scala-library.jar and scala-compiler.jar from scalaHome(%s) used instead of scala %s
+        24: iconst_2
+        25: anewarray     #26                 // class java/lang/Object
+        28: dup
+        29: iconst_0
+        30: aload_0
+        31: getfield      #33                 // Field scalaHome:Ljava/lang/String;
+        34: aastore
+        35: dup
+        36: iconst_1
+        37: aload_1
+        38: aastore
+        39: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+        42: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+        47: aload_0
+        48: getfield      #115                // Field checkMultipleScalaVersions:Z
+        51: ifeq          59
+        54: aload_0
+        55: aload_1
+        56: invokespecial #116                // Method checkCorrectVersionsOfScalaLibrary:(Ljava/lang/String;)V
+        59: return
+      LineNumberTable:
+        line 405: 0
+        line 406: 8
+        line 407: 18
+        line 409: 39
+        line 408: 42
+        line 413: 47
+        line 414: 54
+        line 416: 59
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      60     0  this   Lscala_maven/ScalaMojoSupport;
+            8      52     1    sv   Ljava/lang/String;
+      StackMapTable: number_of_entries = 2
+        frame_type = 252 /* append */
+          offset_delta = 47
+          locals = [ class java/lang/String ]
+        frame_type = 11 /* same */
+    Exceptions:
+      throws java.lang.Exception
+
+  private void checkCorrectVersionsOfScalaLibrary(java.lang.String) throws java.lang.Exception;
+    descriptor: (Ljava/lang/String;)V
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=5, locals=5, args_size=2
+         0: aload_0
+         1: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+         4: ldc           #117                // String Checking for multiple versions of scala
+         6: invokeinterface #118,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.debug:(Ljava/lang/CharSequence;)V
+        11: new           #94                 // class scala_maven/VersionNumber
+        14: dup
+        15: aload_1
+        16: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+        19: astore_2
+        20: aload_0
+        21: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+        24: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        27: ifeq          44
+        30: new           #22                 // class scala_maven/VersionNumberMask
+        33: dup
+        34: aload_0
+        35: getfield      #20                 // Field scalaCompatVersion:Ljava/lang/String;
+        38: invokespecial #23                 // Method scala_maven/VersionNumberMask."<init>":(Ljava/lang/String;)V
+        41: goto          45
+        44: aload_2
+        45: astore_3
+        46: aload_3
+        47: aload_2
+        48: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+        51: ifeq          112
+        54: ldc           #25                 // String Scala library detected %s doesn\'t match scala.compat.version : %s
+        56: iconst_2
+        57: anewarray     #26                 // class java/lang/Object
+        60: dup
+        61: iconst_0
+        62: aload_2
+        63: aastore
+        64: dup
+        65: iconst_1
+        66: aload_3
+        67: aastore
+        68: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+        71: astore        4
+        73: aload_0
+        74: getfield      #5                  // Field failOnMultipleScalaVersions:Z
+        77: ifeq          101
+        80: aload_0
+        81: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+        84: aload         4
+        86: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+        91: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+        94: dup
+        95: aload         4
+        97: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+       100: athrow
+       101: aload_0
+       102: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       105: aload         4
+       107: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+       112: new           #119                // class org/apache/maven/project/DefaultProjectBuildingRequest
+       115: dup
+       116: aload_0
+       117: getfield      #11                 // Field session:Lorg/apache/maven/execution/MavenSession;
+       120: invokevirtual #120                // Method org/apache/maven/execution/MavenSession.getProjectBuildingRequest:()Lorg/apache/maven/project/ProjectBuildingRequest;
+       123: invokespecial #121                // Method org/apache/maven/project/DefaultProjectBuildingRequest."<init>":(Lorg/apache/maven/project/ProjectBuildingRequest;)V
+       126: astore        4
+       128: aload         4
+       130: aload_0
+       131: getfield      #73                 // Field project:Lorg/apache/maven/project/MavenProject;
+       134: invokeinterface #122,  2          // InterfaceMethod org/apache/maven/project/ProjectBuildingRequest.setProject:(Lorg/apache/maven/project/MavenProject;)V
+       139: aload_0
+       140: aload_0
+       141: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+       144: aload_0
+       145: getfield      #123                // Field dependencyGraphBuilder:Lorg/apache/maven/shared/dependency/graph/DependencyGraphBuilder;
+       148: aload         4
+       150: aconst_null
+       151: invokeinterface #124,  3          // InterfaceMethod org/apache/maven/shared/dependency/graph/DependencyGraphBuilder.buildDependencyGraph:(Lorg/apache/maven/project/ProjectBuildingRequest;Lorg/apache/maven/artifact/resolver/filter/ArtifactFilter;)Lorg/apache/maven/shared/dependency/graph/DependencyNode;
+       156: invokespecial #125                // Method checkArtifactForScalaVersion:(Lscala_maven_dependency/Context;Lorg/apache/maven/shared/dependency/graph/DependencyNode;)V
+       159: return
+      LineNumberTable:
+        line 424: 0
+        line 427: 11
+        line 428: 20
+        line 429: 24
+        line 430: 46
+        line 431: 54
+        line 432: 68
+        line 435: 73
+        line 436: 80
+        line 437: 91
+        line 439: 101
+        line 441: 112
+        line 442: 120
+        line 443: 128
+        line 444: 139
+        line 445: 141
+        line 444: 156
+        line 446: 159
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           73      39     4   msg   Ljava/lang/String;
+            0     160     0  this   Lscala_maven/ScalaMojoSupport;
+            0     160     1 scalaDefVersion   Ljava/lang/String;
+           20     140     2    sv   Lscala_maven/VersionNumber;
+           46     114     3 requiredScalaVersion   Lscala_maven/VersionNumber;
+          128      32     4 request   Lorg/apache/maven/project/ProjectBuildingRequest;
+      StackMapTable: number_of_entries = 4
+        frame_type = 252 /* append */
+          offset_delta = 44
+          locals = [ class scala_maven/VersionNumber ]
+        frame_type = 64 /* same_locals_1_stack_item */
+          stack = [ class scala_maven/VersionNumber ]
+        frame_type = 253 /* append */
+          offset_delta = 55
+          locals = [ class scala_maven/VersionNumber, class java/lang/String ]
+        frame_type = 250 /* chop */
+          offset_delta = 10
+    Exceptions:
+      throws java.lang.Exception
+
+  private void checkArtifactForScalaVersion(scala_maven_dependency.Context, org.apache.maven.shared.dependency.graph.DependencyNode) throws java.lang.Exception;
+    descriptor: (Lscala_maven_dependency/Context;Lorg/apache/maven/shared/dependency/graph/DependencyNode;)V
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=4, locals=8, args_size=3
+         0: new           #126                // class scala_maven_dependency/CheckScalaVersionVisitor
+         3: dup
+         4: aload_1
+         5: aload_0
+         6: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+         9: invokespecial #127                // Method scala_maven_dependency/CheckScalaVersionVisitor."<init>":(Lscala_maven_dependency/Context;Lorg/apache/maven/plugin/logging/Log;)V
+        12: astore_3
+        13: new           #128                // class org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor
+        16: dup
+        17: invokespecial #129                // Method org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor."<init>":()V
+        20: astore        4
+        22: new           #130                // class org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor
+        25: dup
+        26: aload         4
+        28: aload_0
+        29: invokespecial #131                // Method createScalaDistroDependencyFilter:()Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+        32: invokespecial #132                // Method org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor."<init>":(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;)V
+        35: astore        5
+        37: aload_2
+        38: aload         5
+        40: invokeinterface #133,  2          // InterfaceMethod org/apache/maven/shared/dependency/graph/DependencyNode.accept:(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;)Z
+        45: pop
+        46: new           #134                // class org/apache/maven/shared/dependency/graph/filter/AncestorOrSelfDependencyNodeFilter
+        49: dup
+        50: aload         4
+        52: invokevirtual #135                // Method org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor.getNodes:()Ljava/util/List;
+        55: invokespecial #136                // Method org/apache/maven/shared/dependency/graph/filter/AncestorOrSelfDependencyNodeFilter."<init>":(Ljava/util/List;)V
+        58: astore        6
+        60: new           #130                // class org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor
+        63: dup
+        64: aload_3
+        65: aload         6
+        67: invokespecial #132                // Method org/apache/maven/shared/dependency/graph/traversal/FilteringDependencyNodeVisitor."<init>":(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;)V
+        70: astore        7
+        72: aload_2
+        73: aload         7
+        75: invokeinterface #133,  2          // InterfaceMethod org/apache/maven/shared/dependency/graph/DependencyNode.accept:(Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;)Z
+        80: pop
+        81: aload_3
+        82: invokevirtual #137                // Method scala_maven_dependency/CheckScalaVersionVisitor.isFailed:()Z
+        85: ifeq          131
+        88: aload_3
+        89: invokevirtual #138                // Method scala_maven_dependency/CheckScalaVersionVisitor.logScalaDependents:()V
+        92: aload_0
+        93: getfield      #5                  // Field failOnMultipleScalaVersions:Z
+        96: ifeq          120
+        99: aload_0
+       100: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       103: ldc           #139                // String Multiple versions of scala libraries detected!
+       105: invokeinterface #29,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.error:(Ljava/lang/CharSequence;)V
+       110: new           #30                 // class org/apache/maven/plugin/MojoFailureException
+       113: dup
+       114: ldc           #139                // String Multiple versions of scala libraries detected!
+       116: invokespecial #31                 // Method org/apache/maven/plugin/MojoFailureException."<init>":(Ljava/lang/String;)V
+       119: athrow
+       120: aload_0
+       121: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       124: ldc           #139                // String Multiple versions of scala libraries detected!
+       126: invokeinterface #32,  2           // InterfaceMethod org/apache/maven/plugin/logging/Log.warn:(Ljava/lang/CharSequence;)V
+       131: return
+      LineNumberTable:
+        line 451: 0
+        line 453: 13
+        line 454: 22
+        line 455: 29
+        line 456: 37
+        line 458: 46
+        line 459: 52
+        line 460: 60
+        line 463: 72
+        line 465: 81
+        line 466: 88
+        line 467: 92
+        line 468: 99
+        line 469: 110
+        line 471: 120
+        line 473: 131
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0     132     0  this   Lscala_maven/ScalaMojoSupport;
+            0     132     1 scalaContext   Lscala_maven_dependency/Context;
+            0     132     2 rootNode   Lorg/apache/maven/shared/dependency/graph/DependencyNode;
+           13     119     3 visitor   Lscala_maven_dependency/CheckScalaVersionVisitor;
+           22     110     4 collectingVisitor   Lorg/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor;
+           37      95     5 firstPassVisitor   Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;
+           60      72     6 secondPassFilter   Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+           72      60     7 filteredVisitor   Lorg/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor;
+      StackMapTable: number_of_entries = 2
+        frame_type = 255 /* full_frame */
+          offset_delta = 120
+          locals = [ class scala_maven/ScalaMojoSupport, class scala_maven_dependency/Context, class org/apache/maven/shared/dependency/graph/DependencyNode, class scala_maven_dependency/CheckScalaVersionVisitor, class org/apache/maven/shared/dependency/graph/traversal/CollectingDependencyNodeVisitor, class org/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor, class org/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter, class org/apache/maven/shared/dependency/graph/traversal/DependencyNodeVisitor ]
+          stack = []
+        frame_type = 10 /* same */
+    Exceptions:
+      throws java.lang.Exception
+
+  private org.apache.maven.shared.dependency.graph.filter.DependencyNodeFilter createScalaDistroDependencyFilter() throws java.lang.Exception;
+    descriptor: ()Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=4, locals=2, args_size=1
+         0: new           #106                // class java/util/ArrayList
+         3: dup
+         4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+         7: astore_1
+         8: aload_1
+         9: new           #140                // class scala_maven_dependency/ScalaDistroArtifactFilter
+        12: dup
+        13: aload_0
+        14: invokevirtual #50                 // Method findScalaContext:()Lscala_maven_dependency/Context;
+        17: invokespecial #141                // Method scala_maven_dependency/ScalaDistroArtifactFilter."<init>":(Lscala_maven_dependency/Context;)V
+        20: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        25: pop
+        26: new           #143                // class org/apache/maven/shared/dependency/graph/filter/AndDependencyNodeFilter
+        29: dup
+        30: aload_1
+        31: invokespecial #144                // Method org/apache/maven/shared/dependency/graph/filter/AndDependencyNodeFilter."<init>":(Ljava/util/List;)V
+        34: areturn
+      LineNumberTable:
+        line 477: 0
+        line 478: 8
+        line 479: 26
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      35     0  this   Lscala_maven/ScalaMojoSupport;
+            8      27     1 filters   Ljava/util/List;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            8      27     1 filters   Ljava/util/List<Lorg/apache/maven/shared/dependency/graph/filter/DependencyNodeFilter;>;
+    Exceptions:
+      throws java.lang.Exception
+
+  protected abstract void doExecute() throws java.lang.Exception;
+    descriptor: ()V
+    flags: (0x0404) ACC_PROTECTED, ACC_ABSTRACT
+    Exceptions:
+      throws java.lang.Exception
+
+  final scala_maven_executions.JavaMainCaller getScalaCommand(boolean, java.lang.String) throws java.lang.Exception;
+    descriptor: (ZLjava/lang/String;)Lscala_maven_executions/JavaMainCaller;
+    flags: (0x0010) ACC_FINAL
+    Code:
+      stack=5, locals=6, args_size=3
+         0: aload_0
+         1: aload_2
+         2: iload_1
+         3: invokespecial #145                // Method getEmptyScalaCommand:(Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+         6: astore_3
+         7: aload_0
+         8: invokevirtual #146                // Method getScalacOptions:()Ljava/util/List;
+        11: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+        16: astore        4
+        18: aload         4
+        20: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        25: ifeq          58
+        28: aload         4
+        30: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        35: checkcast     #147                // class java/lang/String
+        38: astore        5
+        40: aload_3
+        41: iconst_1
+        42: anewarray     #147                // class java/lang/String
+        45: dup
+        46: iconst_0
+        47: aload         5
+        49: aastore
+        50: invokeinterface #148,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addArgs:([Ljava/lang/String;)V
+        55: goto          18
+        58: aload_3
+        59: aload_0
+        60: getfield      #149                // Field jvmArgs:[Ljava/lang/String;
+        63: invokeinterface #150,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addJvmArgs:([Ljava/lang/String;)V
+        68: aload_3
+        69: areturn
+      LineNumberTable:
+        line 499: 0
+        line 500: 7
+        line 501: 40
+        line 502: 55
+        line 503: 58
+        line 504: 68
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           40      15     5 option   Ljava/lang/String;
+            0      70     0  this   Lscala_maven/ScalaMojoSupport;
+            0      70     1 forkOverride   Z
+            0      70     2 mainClass   Ljava/lang/String;
+            7      63     3   cmd   Lscala_maven_executions/JavaMainCaller;
+      StackMapTable: number_of_entries = 2
+        frame_type = 253 /* append */
+          offset_delta = 18
+          locals = [ class scala_maven_executions/JavaMainCaller, class java/util/Iterator ]
+        frame_type = 250 /* chop */
+          offset_delta = 39
+    Exceptions:
+      throws java.lang.Exception
+
+  final scala_maven_executions.JavaMainCaller getEmptyScalaCommand(java.lang.String) throws java.lang.Exception;
+    descriptor: (Ljava/lang/String;)Lscala_maven_executions/JavaMainCaller;
+    flags: (0x0010) ACC_FINAL
+    Code:
+      stack=3, locals=2, args_size=2
+         0: aload_0
+         1: aload_1
+         2: aload_0
+         3: getfield      #3                  // Field fork:Z
+         6: invokespecial #145                // Method getEmptyScalaCommand:(Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+         9: areturn
+      LineNumberTable:
+        line 515: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      10     0  this   Lscala_maven/ScalaMojoSupport;
+            0      10     1 mainClass   Ljava/lang/String;
+    Exceptions:
+      throws java.lang.Exception
+
+  private scala_maven_executions.JavaMainCaller getEmptyScalaCommand(java.lang.String, boolean) throws java.lang.Exception;
+    descriptor: (Ljava/lang/String;Z)Lscala_maven_executions/JavaMainCaller;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=9, locals=10, args_size=3
+         0: iload_2
+         1: aload_0
+         2: getfield      #3                  // Field fork:Z
+         5: if_icmpeq     44
+         8: aload_0
+         9: invokespecial #151                // Method org/apache/maven/plugin/AbstractMojo.getLog:()Lorg/apache/maven/plugin/logging/Log;
+        12: ldc           #152                // String Fork behavior overridden
+        14: invokeinterface #153,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.info:(Ljava/lang/CharSequence;)V
+        19: aload_0
+        20: invokespecial #151                // Method org/apache/maven/plugin/AbstractMojo.getLog:()Lorg/apache/maven/plugin/logging/Log;
+        23: ldc           #154                // String Fork for this execution is %s.
+        25: iconst_1
+        26: anewarray     #26                 // class java/lang/Object
+        29: dup
+        30: iconst_0
+        31: iload_2
+        32: invokestatic  #155                // Method java/lang/String.valueOf:(Z)Ljava/lang/String;
+        35: aastore
+        36: invokestatic  #27                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+        39: invokeinterface #153,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.info:(Ljava/lang/CharSequence;)V
+        44: aload_0
+        45: invokespecial #156                // Method getToolClasspath:()Ljava/lang/String;
+        48: astore        4
+        50: iload_2
+        51: ifeq          268
+        54: iconst_1
+        55: istore        5
+        57: aload_0
+        58: getfield      #157                // Field args:[Ljava/lang/String;
+        61: ifnull        120
+        64: aload_0
+        65: getfield      #157                // Field args:[Ljava/lang/String;
+        68: astore        6
+        70: aload         6
+        72: arraylength
+        73: istore        7
+        75: iconst_0
+        76: istore        8
+        78: iload         8
+        80: iload         7
+        82: if_icmpge     120
+        85: aload         6
+        87: iload         8
+        89: aaload
+        90: astore        9
+        92: iload         5
+        94: ifeq          111
+        97: ldc           #158                // String -nobootcp
+        99: aload         9
+       101: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+       104: ifne          111
+       107: iconst_1
+       108: goto          112
+       111: iconst_0
+       112: istore        5
+       114: iinc          8, 1
+       117: goto          78
+       120: iload         5
+       122: ifeq          130
+       125: ldc           #159                // String
+       127: goto          132
+       130: aload         4
+       132: astore        6
+       134: iload         5
+       136: ifeq          165
+       139: aload_0
+       140: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+       143: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+       146: ifeq          161
+       149: aload_0
+       150: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+       153: ldc           #158                // String -nobootcp
+       155: invokevirtual #161                // Method java/lang/String.contains:(Ljava/lang/CharSequence;)Z
+       158: ifne          165
+       161: iconst_1
+       162: goto          166
+       165: iconst_0
+       166: istore        5
+       168: aload_0
+       169: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       172: new           #66                 // class java/lang/StringBuilder
+       175: dup
+       176: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+       179: ldc           #162                // String use java command with args in file forced :
+       181: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       184: aload_0
+       185: getfield      #4                  // Field forceUseArgFile:Z
+       188: invokevirtual #163                // Method java/lang/StringBuilder.append:(Z)Ljava/lang/StringBuilder;
+       191: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       194: invokeinterface #118,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.debug:(Ljava/lang/CharSequence;)V
+       199: new           #164                // class scala_maven_executions/JavaMainCallerByFork
+       202: dup
+       203: aload_0
+       204: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       207: aload_1
+       208: aload         6
+       210: aconst_null
+       211: aconst_null
+       212: aload_0
+       213: getfield      #4                  // Field forceUseArgFile:Z
+       216: aload_0
+       217: invokevirtual #165                // Method getToolchain:()Lorg/apache/maven/toolchain/Toolchain;
+       220: invokestatic  #166                // Method util/JavaLocator.findExecutableFromToolchain:(Lorg/apache/maven/toolchain/Toolchain;)Ljava/io/File;
+       223: invokespecial #167                // Method scala_maven_executions/JavaMainCallerByFork."<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/io/File;)V
+       226: astore_3
+       227: iload         5
+       229: ifeq          265
+       232: aload_3
+       233: iconst_1
+       234: anewarray     #147                // class java/lang/String
+       237: dup
+       238: iconst_0
+       239: new           #66                 // class java/lang/StringBuilder
+       242: dup
+       243: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+       246: ldc           #168                // String -Xbootclasspath/a:
+       248: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       251: aload         4
+       253: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       256: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       259: aastore
+       260: invokeinterface #150,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addJvmArgs:([Ljava/lang/String;)V
+       265: goto          285
+       268: new           #169                // class scala_maven_executions/JavaMainCallerInProcess
+       271: dup
+       272: aload_0
+       273: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+       276: aload_1
+       277: aload         4
+       279: aconst_null
+       280: aconst_null
+       281: invokespecial #170                // Method scala_maven_executions/JavaMainCallerInProcess."<init>":(Lorg/apache/maven/plugin/logging/Log;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
+       284: astore_3
+       285: aload_3
+       286: areturn
+      LineNumberTable:
+        line 532: 0
+        line 533: 8
+        line 534: 19
+        line 535: 32
+        line 540: 44
+        line 541: 50
+        line 543: 54
+        line 544: 57
+        line 545: 64
+        line 546: 92
+        line 545: 114
+        line 549: 120
+        line 550: 134
+        line 551: 143
+        line 555: 168
+        line 556: 199
+        line 558: 204
+        line 564: 217
+        line 565: 227
+        line 566: 232
+        line 568: 265
+        line 569: 268
+        line 571: 285
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           92      22     9   arg   Ljava/lang/String;
+           57     208     5 bootcp   Z
+          134     131     6    cp   Ljava/lang/String;
+          227      41     3   cmd   Lscala_maven_executions/JavaMainCaller;
+            0     287     0  this   Lscala_maven/ScalaMojoSupport;
+            0     287     1 mainClass   Ljava/lang/String;
+            0     287     2 forkOverride   Z
+          285       2     3   cmd   Lscala_maven_executions/JavaMainCaller;
+           50     237     4 toolcp   Ljava/lang/String;
+      StackMapTable: number_of_entries = 13
+        frame_type = 44 /* same */
+        frame_type = 255 /* full_frame */
+          offset_delta = 33
+          locals = [ class scala_maven/ScalaMojoSupport, class java/lang/String, int, top, class java/lang/String, int, class "[Ljava/lang/String;", int, int ]
+          stack = []
+        frame_type = 252 /* append */
+          offset_delta = 32
+          locals = [ class java/lang/String ]
+        frame_type = 64 /* same_locals_1_stack_item */
+          stack = [ int ]
+        frame_type = 255 /* full_frame */
+          offset_delta = 7
+          locals = [ class scala_maven/ScalaMojoSupport, class java/lang/String, int, top, class java/lang/String, int ]
+          stack = []
+        frame_type = 9 /* same */
+        frame_type = 65 /* same_locals_1_stack_item */
+          stack = [ class java/lang/String ]
+        frame_type = 252 /* append */
+          offset_delta = 28
+          locals = [ class java/lang/String ]
+        frame_type = 3 /* same */
+        frame_type = 64 /* same_locals_1_stack_item */
+          stack = [ int ]
+        frame_type = 255 /* full_frame */
+          offset_delta = 98
+          locals = [ class scala_maven/ScalaMojoSupport, class java/lang/String, int, class scala_maven_executions/JavaMainCaller, class java/lang/String ]
+          stack = []
+        frame_type = 255 /* full_frame */
+          offset_delta = 2
+          locals = [ class scala_maven/ScalaMojoSupport, class java/lang/String, int, top, class java/lang/String ]
+          stack = []
+        frame_type = 255 /* full_frame */
+          offset_delta = 16
+          locals = [ class scala_maven/ScalaMojoSupport, class java/lang/String, int, class scala_maven_executions/JavaMainCaller, class java/lang/String ]
+          stack = []
+    Exceptions:
+      throws java.lang.Exception
+
+  protected org.apache.maven.toolchain.Toolchain getToolchain();
+    descriptor: ()Lorg/apache/maven/toolchain/Toolchain;
+    flags: (0x0004) ACC_PROTECTED
+    Code:
+      stack=3, locals=1, args_size=1
+         0: aload_0
+         1: getfield      #171                // Field toolchainManager:Lorg/apache/maven/toolchain/ToolchainManager;
+         4: ldc           #172                // String jdk
+         6: aload_0
+         7: getfield      #11                 // Field session:Lorg/apache/maven/execution/MavenSession;
+        10: invokeinterface #173,  3          // InterfaceMethod org/apache/maven/toolchain/ToolchainManager.getToolchainFromBuildContext:(Ljava/lang/String;Lorg/apache/maven/execution/MavenSession;)Lorg/apache/maven/toolchain/Toolchain;
+        15: areturn
+      LineNumberTable:
+        line 575: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      16     0  this   Lscala_maven/ScalaMojoSupport;
+
+  private java.lang.String getToolClasspath() throws java.lang.Exception;
+    descriptor: ()Ljava/lang/String;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=7, locals=6, args_size=1
+         0: new           #174                // class java/util/TreeSet
+         3: dup
+         4: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+         7: astore_1
+         8: aload_0
+         9: aload_1
+        10: invokevirtual #176                // Method addLibraryToClasspath:(Ljava/util/Set;)V
+        13: aload_0
+        14: aload_1
+        15: invokevirtual #177                // Method addCompilerToClasspath:(Ljava/util/Set;)V
+        18: aload_0
+        19: getfield      #178                // Field dependencies:[Lscala_maven/BasicArtifact;
+        22: ifnull        77
+        25: aload_0
+        26: getfield      #178                // Field dependencies:[Lscala_maven/BasicArtifact;
+        29: astore_2
+        30: aload_2
+        31: arraylength
+        32: istore_3
+        33: iconst_0
+        34: istore        4
+        36: iload         4
+        38: iload_3
+        39: if_icmpge     77
+        42: aload_2
+        43: iload         4
+        45: aaload
+        46: astore        5
+        48: aload_0
+        49: aload         5
+        51: getfield      #179                // Field scala_maven/BasicArtifact.groupId:Ljava/lang/String;
+        54: aload         5
+        56: getfield      #180                // Field scala_maven/BasicArtifact.artifactId:Ljava/lang/String;
+        59: aload         5
+        61: getfield      #181                // Field scala_maven/BasicArtifact.version:Ljava/lang/String;
+        64: ldc           #159                // String
+        66: aload_1
+        67: iconst_1
+        68: invokevirtual #182                // Method addToClasspath:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+        71: iinc          4, 1
+        74: goto          36
+        77: aload_1
+        78: invokestatic  #183                // Method util/FileUtils.toMultiPath:(Ljava/util/Collection;)Ljava/lang/String;
+        81: areturn
+      LineNumberTable:
+        line 579: 0
+        line 580: 8
+        line 581: 13
+        line 582: 18
+        line 583: 25
+        line 584: 48
+        line 583: 71
+        line 588: 77
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           48      23     5 artifact   Lscala_maven/BasicArtifact;
+            0      82     0  this   Lscala_maven/ScalaMojoSupport;
+            8      74     1 classpath   Ljava/util/Set;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            8      74     1 classpath   Ljava/util/Set<Ljava/io/File;>;
+      StackMapTable: number_of_entries = 2
+        frame_type = 255 /* full_frame */
+          offset_delta = 36
+          locals = [ class scala_maven/ScalaMojoSupport, class java/util/Set, class "[Lscala_maven/BasicArtifact;", int, int ]
+          stack = []
+        frame_type = 248 /* chop */
+          offset_delta = 40
+    Exceptions:
+      throws java.lang.Exception
+
+  private static java.lang.String computeTargetOption(java.lang.String);
+    descriptor: (Ljava/lang/String;)Ljava/lang/String;
+    flags: (0x000a) ACC_PRIVATE, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: aload_0
+         1: ldc           #184                // String 1.5
+         3: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+         6: ifne          18
+         9: aload_0
+        10: ldc           #185                // String 5
+        12: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        15: ifeq          21
+        18: ldc           #186                // String jvm-1.5
+        20: areturn
+        21: aload_0
+        22: ldc           #187                // String 1.6
+        24: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        27: ifne          39
+        30: aload_0
+        31: ldc           #188                // String 6
+        33: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        36: ifeq          42
+        39: ldc           #189                // String jvm-1.6
+        41: areturn
+        42: aload_0
+        43: ldc           #190                // String 1.7
+        45: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        48: ifne          60
+        51: aload_0
+        52: ldc           #191                // String 7
+        54: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        57: ifeq          63
+        60: ldc           #192                // String jvm-1.7
+        62: areturn
+        63: aload_0
+        64: ldc           #193                // String 1.8
+        66: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        69: ifne          81
+        72: aload_0
+        73: ldc           #194                // String 8
+        75: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        78: ifeq          84
+        81: ldc           #195                // String jvm-1.8
+        83: areturn
+        84: aconst_null
+        85: areturn
+      LineNumberTable:
+        line 592: 0
+        line 593: 18
+        line 594: 21
+        line 595: 39
+        line 596: 42
+        line 597: 60
+        line 598: 63
+        line 599: 81
+        line 601: 84
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      86     0 target   Ljava/lang/String;
+      StackMapTable: number_of_entries = 8
+        frame_type = 18 /* same */
+        frame_type = 2 /* same */
+        frame_type = 17 /* same */
+        frame_type = 2 /* same */
+        frame_type = 17 /* same */
+        frame_type = 2 /* same */
+        frame_type = 17 /* same */
+        frame_type = 2 /* same */
+
+  private static java.lang.String computeReleaseOptionFromTarget(java.lang.String);
+    descriptor: (Ljava/lang/String;)Ljava/lang/String;
+    flags: (0x000a) ACC_PRIVATE, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: aload_0
+         1: ldc           #184                // String 1.5
+         3: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+         6: ifeq          12
+         9: ldc           #185                // String 5
+        11: areturn
+        12: aload_0
+        13: ldc           #187                // String 1.6
+        15: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        18: ifeq          24
+        21: ldc           #188                // String 6
+        23: areturn
+        24: aload_0
+        25: ldc           #190                // String 1.7
+        27: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        30: ifeq          36
+        33: ldc           #191                // String 7
+        35: areturn
+        36: aload_0
+        37: ldc           #193                // String 1.8
+        39: invokevirtual #81                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        42: ifeq          48
+        45: ldc           #194                // String 8
+        47: areturn
+        48: aload_0
+        49: areturn
+      LineNumberTable:
+        line 605: 0
+        line 606: 9
+        line 607: 12
+        line 608: 21
+        line 609: 24
+        line 610: 33
+        line 611: 36
+        line 612: 45
+        line 614: 48
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      50     0 target   Ljava/lang/String;
+      StackMapTable: number_of_entries = 4
+        frame_type = 12 /* same */
+        frame_type = 11 /* same */
+        frame_type = 11 /* same */
+        frame_type = 11 /* same */
+
+  static java.util.List<java.lang.String> computeBytecodeVersionOptions(java.lang.String, java.lang.String, scala_maven.VersionNumber);
+    descriptor: (Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List;
+    flags: (0x0008) ACC_STATIC
+    Code:
+      stack=4, locals=9, args_size=3
+         0: new           #106                // class java/util/ArrayList
+         3: dup
+         4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+         7: astore_3
+         8: aload_0
+         9: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        12: istore        4
+        14: aload_1
+        15: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        18: istore        5
+        20: aload_2
+        21: new           #94                 // class scala_maven/VersionNumber
+        24: dup
+        25: ldc           #196                // String 2.12.0
+        27: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+        30: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+        33: iflt          40
+        36: iconst_1
+        37: goto          41
+        40: iconst_0
+        41: istore        6
+        43: aload_2
+        44: new           #94                 // class scala_maven/VersionNumber
+        47: dup
+        48: ldc           #197                // String 3.1.2
+        50: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+        53: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+        56: iflt          64
+        59: ldc           #198                // String -java-output-version
+        61: goto          66
+        64: ldc           #199                // String -release
+        66: astore        7
+        68: iload         5
+        70: ifeq          98
+        73: iload         6
+        75: ifeq          98
+        78: aload_3
+        79: aload         7
+        81: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        86: pop
+        87: aload_3
+        88: aload_1
+        89: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        94: pop
+        95: goto          169
+        98: iload         4
+       100: ifeq          169
+       103: iload         6
+       105: ifeq          131
+       108: aload_3
+       109: aload         7
+       111: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       116: pop
+       117: aload_3
+       118: aload_0
+       119: invokestatic  #200                // Method computeReleaseOptionFromTarget:(Ljava/lang/String;)Ljava/lang/String;
+       122: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       127: pop
+       128: goto          169
+       131: aload_0
+       132: invokestatic  #201                // Method computeTargetOption:(Ljava/lang/String;)Ljava/lang/String;
+       135: astore        8
+       137: aload         8
+       139: ifnull        169
+       142: aload_3
+       143: new           #66                 // class java/lang/StringBuilder
+       146: dup
+       147: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+       150: ldc           #202                // String -target:
+       152: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       155: aload         8
+       157: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       160: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       163: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       168: pop
+       169: aload_3
+       170: areturn
+      LineNumberTable:
+        line 620: 0
+        line 621: 8
+        line 622: 14
+        line 623: 20
+        line 624: 43
+        line 625: 53
+        line 629: 68
+        line 631: 78
+        line 632: 87
+        line 633: 98
+        line 635: 103
+        line 636: 108
+        line 637: 117
+        line 639: 131
+        line 640: 137
+        line 641: 142
+        line 645: 169
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+          137      32     8 correctTarget   Ljava/lang/String;
+            0     171     0 target   Ljava/lang/String;
+            0     171     1 release   Ljava/lang/String;
+            0     171     2 scalaVersion   Lscala_maven/VersionNumber;
+            8     163     3 options   Ljava/util/List;
+           14     157     4 targetIsDefined   Z
+           20     151     5 releaseIsDefined   Z
+           43     128     6 releaseIsSupported   Z
+           68     103     7 releaseOrJavaOutputVersionOptionName   Ljava/lang/String;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            8     163     3 options   Ljava/util/List<Ljava/lang/String;>;
+      StackMapTable: number_of_entries = 7
+        frame_type = 254 /* append */
+          offset_delta = 40
+          locals = [ class java/util/List, int, int ]
+        frame_type = 64 /* same_locals_1_stack_item */
+          stack = [ int ]
+        frame_type = 252 /* append */
+          offset_delta = 22
+          locals = [ int ]
+        frame_type = 65 /* same_locals_1_stack_item */
+          stack = [ class java/lang/String ]
+        frame_type = 252 /* append */
+          offset_delta = 31
+          locals = [ class java/lang/String ]
+        frame_type = 32 /* same */
+        frame_type = 37 /* same */
+    Signature: #436                         // (Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List<Ljava/lang/String;>;
+
+  protected java.util.List<java.lang.String> getScalacOptions() throws java.lang.Exception;
+    descriptor: ()Ljava/util/List;
+    flags: (0x0004) ACC_PROTECTED
+    Code:
+      stack=4, locals=2, args_size=1
+         0: new           #106                // class java/util/ArrayList
+         3: dup
+         4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+         7: astore_1
+         8: aload_0
+         9: getfield      #157                // Field args:[Ljava/lang/String;
+        12: ifnull        24
+        15: aload_1
+        16: aload_0
+        17: getfield      #157                // Field args:[Ljava/lang/String;
+        20: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+        23: pop
+        24: aload_0
+        25: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+        28: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        31: ifeq          48
+        34: aload_1
+        35: aload_0
+        36: getfield      #160                // Field addScalacArgs:Ljava/lang/String;
+        39: ldc           #204                // String |
+        41: invokestatic  #205                // Method org/codehaus/plexus/util/StringUtils.split:(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+        44: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+        47: pop
+        48: aload_1
+        49: aload_0
+        50: invokespecial #206                // Method getCompilerPluginOptions:()Ljava/util/List;
+        53: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+        58: pop
+        59: aload_1
+        60: aload_0
+        61: getfield      #207                // Field target:Ljava/lang/String;
+        64: aload_0
+        65: getfield      #208                // Field release:Ljava/lang/String;
+        68: aload_0
+        69: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+        72: invokestatic  #209                // Method computeBytecodeVersionOptions:(Ljava/lang/String;Ljava/lang/String;Lscala_maven/VersionNumber;)Ljava/util/List;
+        75: invokeinterface #110,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+        80: pop
+        81: aload_1
+        82: areturn
+      LineNumberTable:
+        line 649: 0
+        line 650: 8
+        line 651: 24
+        line 652: 34
+        line 654: 48
+        line 655: 59
+        line 657: 81
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      83     0  this   Lscala_maven/ScalaMojoSupport;
+            8      75     1 options   Ljava/util/List;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            8      75     1 options   Ljava/util/List<Ljava/lang/String;>;
+      StackMapTable: number_of_entries = 2
+        frame_type = 252 /* append */
+          offset_delta = 24
+          locals = [ class java/util/List ]
+        frame_type = 23 /* same */
+    Exceptions:
+      throws java.lang.Exception
+    Signature: #438                         // ()Ljava/util/List<Ljava/lang/String;>;
+
+  protected java.util.List<java.lang.String> getJavacOptions();
+    descriptor: ()Ljava/util/List;
+    flags: (0x0004) ACC_PROTECTED
+    Code:
+      stack=3, locals=2, args_size=1
+         0: new           #106                // class java/util/ArrayList
+         3: dup
+         4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+         7: astore_1
+         8: aload_0
+         9: getfield      #210                // Field javacArgs:[Ljava/lang/String;
+        12: ifnull        24
+        15: aload_1
+        16: aload_0
+        17: getfield      #210                // Field javacArgs:[Ljava/lang/String;
+        20: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+        23: pop
+        24: aload_0
+        25: getfield      #211                // Field addJavacArgs:Ljava/lang/String;
+        28: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        31: ifeq          48
+        34: aload_1
+        35: aload_0
+        36: getfield      #211                // Field addJavacArgs:Ljava/lang/String;
+        39: ldc           #204                // String |
+        41: invokestatic  #205                // Method org/codehaus/plexus/util/StringUtils.split:(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+        44: invokestatic  #203                // Method java/util/Collections.addAll:(Ljava/util/Collection;[Ljava/lang/Object;)Z
+        47: pop
+        48: aload_0
+        49: getfield      #2                  // Field javacGenerateDebugSymbols:Z
+        52: ifeq          64
+        55: aload_1
+        56: ldc           #212                // String -g
+        58: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        63: pop
+        64: aload_0
+        65: getfield      #208                // Field release:Ljava/lang/String;
+        68: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+        71: ifeq          97
+        74: aload_1
+        75: ldc           #213                // String --release
+        77: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        82: pop
+        83: aload_1
+        84: aload_0
+        85: getfield      #208                // Field release:Ljava/lang/String;
+        88: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        93: pop
+        94: goto          157
+        97: aload_0
+        98: getfield      #207                // Field target:Ljava/lang/String;
+       101: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+       104: ifeq          127
+       107: aload_1
+       108: ldc           #214                // String -target
+       110: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       115: pop
+       116: aload_1
+       117: aload_0
+       118: getfield      #207                // Field target:Ljava/lang/String;
+       121: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       126: pop
+       127: aload_0
+       128: getfield      #215                // Field source:Ljava/lang/String;
+       131: invokestatic  #21                 // Method org/codehaus/plexus/util/StringUtils.isNotEmpty:(Ljava/lang/String;)Z
+       134: ifeq          157
+       137: aload_1
+       138: ldc           #216                // String -source
+       140: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       145: pop
+       146: aload_1
+       147: aload_0
+       148: getfield      #215                // Field source:Ljava/lang/String;
+       151: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       156: pop
+       157: aload_0
+       158: getfield      #217                // Field encoding:Ljava/lang/String;
+       161: ifnull        184
+       164: aload_1
+       165: ldc           #218                // String -encoding
+       167: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       172: pop
+       173: aload_1
+       174: aload_0
+       175: getfield      #217                // Field encoding:Ljava/lang/String;
+       178: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       183: pop
+       184: aload_1
+       185: areturn
+      LineNumberTable:
+        line 661: 0
+        line 662: 8
+        line 663: 24
+        line 664: 34
+        line 668: 48
+        line 669: 55
+        line 671: 64
+        line 672: 74
+        line 673: 83
+        line 675: 97
+        line 676: 107
+        line 677: 116
+        line 679: 127
+        line 680: 137
+        line 681: 146
+        line 684: 157
+        line 685: 164
+        line 686: 173
+        line 688: 184
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0     186     0  this   Lscala_maven/ScalaMojoSupport;
+            8     178     1 options   Ljava/util/List;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            8     178     1 options   Ljava/util/List<Ljava/lang/String;>;
+      StackMapTable: number_of_entries = 7
+        frame_type = 252 /* append */
+          offset_delta = 24
+          locals = [ class java/util/List ]
+        frame_type = 23 /* same */
+        frame_type = 15 /* same */
+        frame_type = 32 /* same */
+        frame_type = 29 /* same */
+        frame_type = 29 /* same */
+        frame_type = 26 /* same */
+    Signature: #438                         // ()Ljava/util/List<Ljava/lang/String;>;
+
+  protected boolean isJavaSupportedByCompiler() throws java.lang.Exception;
+    descriptor: ()Z
+    flags: (0x0004) ACC_PROTECTED
+    Code:
+      stack=4, locals=1, args_size=1
+         0: aload_0
+         1: invokespecial #14                 // Method findScalaVersion:()Lscala_maven/VersionNumber;
+         4: new           #94                 // class scala_maven/VersionNumber
+         7: dup
+         8: ldc           #219                // String 2.7.2
+        10: invokespecial #95                 // Method scala_maven/VersionNumber."<init>":(Ljava/lang/String;)V
+        13: invokevirtual #24                 // Method scala_maven/VersionNumber.compareTo:(Lscala_maven/VersionNumber;)I
+        16: iflt          23
+        19: iconst_1
+        20: goto          24
+        23: iconst_0
+        24: ireturn
+      LineNumberTable:
+        line 696: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      25     0  this   Lscala_maven/ScalaMojoSupport;
+      StackMapTable: number_of_entries = 2
+        frame_type = 23 /* same */
+        frame_type = 64 /* same_locals_1_stack_item */
+          stack = [ int ]
+    Exceptions:
+      throws java.lang.Exception
+
+  protected void addCompilerPluginOptions(scala_maven_executions.JavaMainCaller) throws java.lang.Exception;
+    descriptor: (Lscala_maven_executions/JavaMainCaller;)V
+    flags: (0x0004) ACC_PROTECTED
+    Code:
+      stack=5, locals=4, args_size=2
+         0: aload_0
+         1: invokespecial #206                // Method getCompilerPluginOptions:()Ljava/util/List;
+         4: invokeinterface #98,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+         9: astore_2
+        10: aload_2
+        11: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        16: ifeq          46
+        19: aload_2
+        20: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        25: checkcast     #147                // class java/lang/String
+        28: astore_3
+        29: aload_1
+        30: iconst_1
+        31: anewarray     #147                // class java/lang/String
+        34: dup
+        35: iconst_0
+        36: aload_3
+        37: aastore
+        38: invokeinterface #148,  2          // InterfaceMethod scala_maven_executions/JavaMainCaller.addArgs:([Ljava/lang/String;)V
+        43: goto          10
+        46: return
+      LineNumberTable:
+        line 706: 0
+        line 707: 29
+        line 708: 43
+        line 709: 46
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           29      14     3 option   Ljava/lang/String;
+            0      47     0  this   Lscala_maven/ScalaMojoSupport;
+            0      47     1 scalac   Lscala_maven_executions/JavaMainCaller;
+      StackMapTable: number_of_entries = 2
+        frame_type = 252 /* append */
+          offset_delta = 10
+          locals = [ class java/util/Iterator ]
+        frame_type = 250 /* chop */
+          offset_delta = 35
+    Exceptions:
+      throws java.lang.Exception
+
+  private java.util.List<java.lang.String> getCompilerPluginOptions() throws java.lang.Exception;
+    descriptor: ()Ljava/util/List;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=3, locals=4, args_size=1
+         0: new           #106                // class java/util/ArrayList
+         3: dup
+         4: invokespecial #107                // Method java/util/ArrayList."<init>":()V
+         7: astore_1
+         8: aload_0
+         9: invokespecial #220                // Method getCompilerPlugins:()Ljava/util/Set;
+        12: invokeinterface #43,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+        17: astore_2
+        18: aload_2
+        19: invokeinterface #44,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        24: ifeq          69
+        27: aload_2
+        28: invokeinterface #45,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        33: checkcast     #35                 // class java/io/File
+        36: astore_3
+        37: aload_1
+        38: new           #66                 // class java/lang/StringBuilder
+        41: dup
+        42: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+        45: ldc           #221                // String -Xplugin:
+        47: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        50: aload_3
+        51: invokevirtual #222                // Method java/io/File.getPath:()Ljava/lang/String;
+        54: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        57: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        60: invokeinterface #142,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        65: pop
+        66: goto          18
+        69: aload_1
+        70: areturn
+      LineNumberTable:
+        line 712: 0
+        line 713: 8
+        line 714: 37
+        line 715: 66
+        line 716: 69
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           37      29     3 plugin   Ljava/io/File;
+            0      71     0  this   Lscala_maven/ScalaMojoSupport;
+            8      63     1 options   Ljava/util/List;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+            8      63     1 options   Ljava/util/List<Ljava/lang/String;>;
+      StackMapTable: number_of_entries = 2
+        frame_type = 253 /* append */
+          offset_delta = 18
+          locals = [ class java/util/List, class java/util/Iterator ]
+        frame_type = 250 /* chop */
+          offset_delta = 50
+    Exceptions:
+      throws java.lang.Exception
+    Signature: #438                         // ()Ljava/util/List<Ljava/lang/String;>;
+
+  private java.util.Set<java.io.File> getCompilerPlugins() throws java.lang.Exception;
+    descriptor: ()Ljava/util/Set;
+    flags: (0x0002) ACC_PRIVATE
+    Code:
+      stack=7, locals=8, args_size=1
+         0: new           #174                // class java/util/TreeSet
+         3: dup
+         4: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+         7: astore_1
+         8: aload_0
+         9: getfield      #223                // Field compilerPlugins:[Lscala_maven/BasicArtifact;
+        12: ifnull        150
+        15: new           #174                // class java/util/TreeSet
+        18: dup
+        19: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+        22: astore_2
+        23: aload_0
+        24: aload_2
+        25: invokevirtual #177                // Method addCompilerToClasspath:(Ljava/util/Set;)V
+        28: aload_0
+        29: aload_2
+        30: invokevirtual #176                // Method addLibraryToClasspath:(Ljava/util/Set;)V
+        33: aload_0
+        34: getfield      #223                // Field compilerPlugins:[Lscala_maven/BasicArtifact;
+        37: astore_3
+        38: aload_3
+        39: arraylength
+        40: istore        4
+        42: iconst_0
+        43: istore        5
+        45: iload         5
+        47: iload         4
+        49: if_icmpge     150
+        52: aload_3
+        53: iload         5
+        55: aaload
+        56: astore        6
+        58: aload_0
+        59: invokevirtual #28                 // Method getLog:()Lorg/apache/maven/plugin/logging/Log;
+        62: new           #66                 // class java/lang/StringBuilder
+        65: dup
+        66: invokespecial #67                 // Method java/lang/StringBuilder."<init>":()V
+        69: ldc           #224                // String compiler plugin:
+        71: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        74: aload         6
+        76: invokevirtual #225                // Method scala_maven/BasicArtifact.toString:()Ljava/lang/String;
+        79: invokevirtual #69                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        82: invokevirtual #71                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        85: invokeinterface #153,  2          // InterfaceMethod org/apache/maven/plugin/logging/Log.info:(Ljava/lang/CharSequence;)V
+        90: new           #174                // class java/util/TreeSet
+        93: dup
+        94: invokespecial #175                // Method java/util/TreeSet."<init>":()V
+        97: astore        7
+        99: aload_0
+       100: aload         6
+       102: getfield      #179                // Field scala_maven/BasicArtifact.groupId:Ljava/lang/String;
+       105: aload         6
+       107: getfield      #180                // Field scala_maven/BasicArtifact.artifactId:Ljava/lang/String;
+       110: aload         6
+       112: getfield      #181                // Field scala_maven/BasicArtifact.version:Ljava/lang/String;
+       115: aload         6
+       117: getfield      #226                // Field scala_maven/BasicArtifact.classifier:Ljava/lang/String;
+       120: aload         7
+       122: iconst_0
+       123: invokevirtual #182                // Method addToClasspath:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+       126: aload         7
+       128: aload_2
+       129: invokeinterface #227,  2          // InterfaceMethod java/util/Set.removeAll:(Ljava/util/Collection;)Z
+       134: pop
+       135: aload_1
+       136: aload         7
+       138: invokeinterface #228,  2          // InterfaceMethod java/util/Set.addAll:(Ljava/util/Collection;)Z
+       143: pop
+       144: iinc          5, 1
+       147: goto          45
+       150: aload_1
+       151: areturn
+      LineNumberTable:
+        line 726: 0
+        line 727: 8
+        line 728: 15
+        line 729: 23
+        line 730: 28
+        line 731: 33
+        line 732: 58
+        line 734: 90
+        line 735: 99
+        line 742: 126
+        line 743: 135
+        line 731: 144
+        line 746: 150
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+           99      45     7 pluginClassPath   Ljava/util/Set;
+           58      86     6 artifact   Lscala_maven/BasicArtifact;
+           23     127     2 ignoreClasspath   Ljava/util/Set;
+            0     152     0  this   Lscala_maven/ScalaMojoSupport;
+            8     144     1 plugins   Ljava/util/Set;
+      LocalVariableTypeTable:
+        Start  Length  Slot  Name   Signature
+           99      45     7 pluginClassPath   Ljava/util/Set<Ljava/io/File;>;
+           23     127     2 ignoreClasspath   Ljava/util/Set<Ljava/io/File;>;
+            8     144     1 plugins   Ljava/util/Set<Ljava/io/File;>;
+      StackMapTable: number_of_entries = 2
+        frame_type = 255 /* full_frame */
+          offset_delta = 45
+          locals = [ class scala_maven/ScalaMojoSupport, class java/util/Set, class java/util/Set, class "[Lscala_maven/BasicArtifact;", int, int ]
+          stack = []
+        frame_type = 255 /* full_frame */
+          offset_delta = 104
+          locals = [ class scala_maven/ScalaMojoSupport, class java/util/Set ]
+          stack = []
+    Exceptions:
+      throws java.lang.Exception
+    Signature: #453                         // ()Ljava/util/Set<Ljava/io/File;>;
+}
+SourceFile: "ScalaMojoSupport.java"

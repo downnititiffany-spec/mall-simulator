@@ -1,0 +1,45 @@
+package com.graduation.analytics
+
+import com.graduation.analytics.job.{JobArgs, JobRegistry}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
+class JobArgsRegistrySpec extends AnyFlatSpec with Matchers {
+
+  "JobArgs.parse" should "解析标准参数并校验必填" in {
+    val args = Array(
+      "--runtimeProfileId=1", "--jobCode=bdw", "--businessDate=20260901",
+      "--inputVersion=v1", "--attemptNo=2", "--shufflePartitions=100")
+    val parsed = JobArgs.parse(args).toOption.get
+    parsed.runtimeProfileId should be(1L)
+    parsed.jobCode should be("bdw")
+    parsed.businessDate should be("20260901")
+    parsed.inputVersion should be(Some("v1"))
+    parsed.attemptNo should be(2)
+    parsed.extra("shufflePartitions") should be("100")
+  }
+
+  it should "拒绝缺参与非法日期" in {
+    JobArgs.parse(Array("--jobCode=bdw", "--businessDate=20260901")) should be('left)
+    JobArgs.parse(Array("--runtimeProfileId=1", "--jobCode=bdw", "--businessDate=2026-09-01")) should be('left)
+  }
+
+  "JobRegistry" should "注册全部 11 作业且依赖顺序正确" in {
+    JobRegistry.allCodes should contain allOf ("odl", "bdw", "dim", "tdw", "usw", "fna", "ljp", "sci", "dqc", "pub", "mxp")
+    JobRegistry.jobs.size should be(11)
+    JobRegistry.dependencies("bdw") should be(List("odl"))
+    JobRegistry.dependencies("dim") should be(List("odl"))
+    JobRegistry.dependencies("tdw") should be(List("odl", "dim"))
+    JobRegistry.dependencies("usw") should be(List("bdw", "tdw"))
+    JobRegistry.dependencies("fna") should be(List("usw"))
+    // R6-13：fna 写暂存 → dqc 只查暂存 → pub 元数据指针发布正式分区
+    JobRegistry.dependencies("dqc") should be(List("fna"))
+    JobRegistry.dependencies("pub") should be(List("dqc"))
+    // R7-3：pub 之后才允许导出（导出必须读已发布的正式分区）
+    JobRegistry.dependencies("mxp") should be(List("pub"))
+    JobRegistry.dependencies("odl") should be(List.empty)
+    JobRegistry.dependencies("ljp") should be(List.empty)
+    JobRegistry.dependencies("sci") should be(List.empty)
+    JobRegistry.lookup("unknown") should be(None)
+  }
+}

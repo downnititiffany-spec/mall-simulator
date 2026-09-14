@@ -1,0 +1,6 @@
+snapshot_time=2026-09-14 14:07:28 +08:00
+HEAD=fd3cee5b806b3570ce273e2346e1d14014e0dae2
+origin/main=fd3cee5b806b3570ce273e2346e1d14014e0dae2
+gp_headcheck: HEAD=f00462c51023ce5b12e0b649e7813ed789f6f17e ancestorOfOriginMain=True ancestorOfHEAD=True containedIn=[  origin/HEAD -> origin/main,   origin/main]
+m3-jdk8fix: HEAD=f26be2624262a12d92f0cdc7a97415c4f07a1b35 ancestorOfOriginMain=True ancestorOfHEAD=True containedIn=[  origin/HEAD -> origin/main,   origin/main]
+f88-baseline-wt: HEAD=dba438135271de18b289caebaf500f0590a0345a ancestorOfOriginMain=True ancestorOfHEAD=True containedIn=[  origin/HEAD -> origin/main,   origin/main]

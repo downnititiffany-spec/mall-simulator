@@ -1,0 +1,1627 @@
+diff --git a/docs/acceptance/p1-05-8091-swap-20260911/8091-stdout.log b/docs/acceptance/p1-05-8091-swap-20260911/8091-stdout.log
+index f844e8a..70571d9 100644
+--- a/docs/acceptance/p1-05-8091-swap-20260911/8091-stdout.log
++++ b/docs/acceptance/p1-05-8091-swap-20260911/8091-stdout.log
+@@ -47,3 +47,37 @@
+ 2026-09-12T09:15:05.120+08:00  INFO 47132 --- [nio-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+ 2026-09-12T09:15:05.121+08:00  INFO 47132 --- [nio-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+ 2026-09-12T09:15:05.183+08:00  INFO 47132 --- [           main] c.g.a.pipeline.PipelineRecoveryService   : R6-14 启动对账完成: pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]
++2026-09-12T09:23:15.738+08:00  INFO 47132 --- [nio-8091-exec-1] c.g.a.ingestion.LocalFileIngestor        : ingest 2026091120.jsonl: collected=1013 quarantined=0 acceptedBytes=459013 offset 0→460026 identity=1789131012544
++2026-09-12T09:23:15.762+08:00  INFO 47132 --- [nio-8091-exec-1] c.g.a.ingestion.LocalFileIngestor        : ingest 2026091121.jsonl: collected=367 quarantined=0 acceptedBytes=165249 offset 0→165616 identity=1789131902638
++2026-09-12T09:23:15.781+08:00  INFO 47132 --- [nio-8091-exec-1] c.g.a.ingestion.LocalFileIngestor        : ingest 2026091122.jsonl: collected=287 quarantined=0 acceptedBytes=129974 offset 0→130261 identity=1789135371820
++2026-09-12T09:23:15.791+08:00  INFO 47132 --- [nio-8091-exec-1] c.g.a.ingestion.LocalFileIngestor        : ingest golden-r615-20260910164859.jsonl: 尾部残行 290 字节留待文件增长
++2026-09-12T09:23:15.792+08:00  INFO 47132 --- [nio-8091-exec-1] c.g.a.ingestion.LocalFileIngestor        : ingest golden-r615-20260910164859.jsonl: collected=0 quarantined=0 acceptedBytes=0 offset 18139→18139 identity=1789030139330
++2026-09-12T09:23:15.811+08:00  INFO 47132 --- [nio-8091-exec-1] c.g.a.ingestion.IngestionService         : ingestion run ing-20260912092315-fef96b66: status=SUCCESS records=1667 quarantine=0 errors=0 files=3 bytes=754236 noNewData=false
++2026-09-12T09:23:16.023+08:00  INFO 47132 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176196004-08a17a -> pid=47932 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-40-INIT_SCHEMA-sci-a1__lp-1789176196004-08a17a.log
++2026-09-12T09:23:26.100+08:00  WARN 47132 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 40 failed: accepted 无归属业务日事件
++2026-09-12T09:26:27.645+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176387642-3c2a91 -> pid=43964 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-INIT_SCHEMA-sci-a1__lp-1789176387642-3c2a91.log
++2026-09-12T09:26:35.736+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176395723-0abc5a -> pid=21256 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-LOAD_ODS-odl-a1__lp-1789176395723-0abc5a.log
++2026-09-12T09:28:30.322+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176510315-f048ff -> pid=36304 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-BUILD_DWD-bdw-a1__lp-1789176510315-f048ff.log
++2026-09-12T09:28:44.408+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176524398-6d797f -> pid=32000 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-BUILD_DWD-dim-a1__lp-1789176524398-6d797f.log
++2026-09-12T09:28:58.503+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176538497-5c70a2 -> pid=34580 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-BUILD_DWD-tdw-a1__lp-1789176538497-5c70a2.log
++2026-09-12T09:29:24.640+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176564626-9fd5ae -> pid=32996 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-BUILD_DWS-usw-a1__lp-1789176564626-9fd5ae.log
++2026-09-12T09:29:44.761+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176584751-7b78c8 -> pid=19620 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-BUILD_ADS-fna-a1__lp-1789176584751-7b78c8.log
++2026-09-12T09:30:12.954+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.pipeline.QualityChecker    : quality check: rules=4 corePassed=true
++2026-09-12T09:30:12.977+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176612965-8cf2d6 -> pid=47984 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-QUALITY_CHECK-dqc-a1__lp-1789176612965-8cf2d6.log
++2026-09-12T09:30:31.067+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176631061-0aa4be -> pid=41888 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-PUBLISH_METRIC-pub-a1__lp-1789176631061-0aa4be.log
++2026-09-12T09:30:57.193+08:00  INFO 47132 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789176657183-98a117 -> pid=21956 log=D:\Develop_code\GraduationProject\.\landing\logs\pipeline-41-PUBLISH_METRIC-mxp-a1__lp-1789176657183-98a117.log
++2026-09-12T09:31:13.315+08:00  INFO 47132 --- [     pipeline-2] com.zaxxer.hikari.HikariDataSource       : metric-read-ds - Starting...
++2026-09-12T09:31:13.327+08:00  INFO 47132 --- [     pipeline-2] com.zaxxer.hikari.pool.HikariPool        : metric-read-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@1a0251e8
++2026-09-12T09:31:13.328+08:00  INFO 47132 --- [     pipeline-2] com.zaxxer.hikari.HikariDataSource       : metric-read-ds - Start completed.
++2026-09-12T09:31:13.338+08:00  INFO 47132 --- [     pipeline-2] c.g.a.m.publish.MetricPublishRepository  : metric publish: 快照 S20260901_41 登记 BUILDING（profile=1, version=9, businessDate=20260901）
++2026-09-12T09:31:13.344+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads delete snapshot S20260901_41: 共删除 0 行（8 张表）
++2026-09-12T09:31:13.346+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_operation_overview_m (snapshot=S20260901_41, dt=20260901): 1 行 / 11 列
++2026-09-12T09:31:13.348+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_sale_trend_m (snapshot=S20260901_41, dt=20260901): 1 行 / 6 列
++2026-09-12T09:31:13.353+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_behavior_funnel_m (snapshot=S20260901_41, dt=20260901): 4 行 / 6 列
++2026-09-12T09:31:13.361+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_active_trend_m (snapshot=S20260901_41, dt=20260901): 1 行 / 4 列
++2026-09-12T09:31:13.366+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_hot_product_m (snapshot=S20260901_41, dt=20260901): 9 行 / 10 列
++2026-09-12T09:31:13.371+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_product_conversion_m (snapshot=S20260901_41, dt=20260901): 9 行 / 6 列
++2026-09-12T09:31:13.376+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_user_profile_m (snapshot=S20260901_41, dt=20260901): 1 行 / 14 列
++2026-09-12T09:31:13.381+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_data_quality_m (snapshot=S20260901_41, dt=20260901): 4 行 / 8 列
++2026-09-12T09:31:13.391+08:00  INFO 47132 --- [     pipeline-2] c.g.analytics.metric.MySqlMetricStore    : metric publish: profile 1 旧 ACTIVE 归档 1 条
++2026-09-12T09:31:13.399+08:00  INFO 47132 --- [     pipeline-2] c.g.a.metric.publish.MetricPublisher     : metric publish: 快照 S20260901_41 发布成功（ADS 30 行，指标值 10 条，旧 ACTIVE=S20260901_39）
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalOrder.java b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalOrder.java
+index a47fce6..99febc2 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalOrder.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalOrder.java
+@@ -10,7 +10,14 @@ import java.math.BigDecimal;
+  *
+  * @param orderId     商城侧订单 ID
+  * @param userId      商城侧用户 ID
+- * @param status      商城侧状态原文；无法读取时为 {@code "UNKNOWN"}，且不得据此推断成功
++ * @param status      商城侧状态原文（逐字符透出）。<b>商城没给状态字段（或给了空白）时是
++ *                    {@code null}</b>：这个 {@code null} 是"商城没给"的标记，<b>不是商城原词、
++ *                    不得当作状态使用</b>。这里永远不会出现生成器自己编的状态词
++ *                    （曾经的 UNKNOWN 就是这么一个词）：编一个词会让"商城说的是它"
++ *                    与"生成器猜的它"在同一个字段里长得一模一样，按状态聚合或对账时再也分不开，
++ *                    还会把"读不到"伪装成一个具体的商城状态。需要非空状态才能继续的调用方，
++ *                    必须<b>自己响亮失败</b>（见 {@code engine/MallApiDispatchSink} 对商品规范状态的
++ *                    处理），不许把这里的 {@code null} 当状态用、更不许替换成占位词
+  * @param totalAmount 订单总额（元）；商城未回传时为 null
+  * @param itemCount   明细条数；商城未回传时为 -1
+  */
+@@ -26,15 +33,27 @@ public record ExternalOrder(String orderId, String userId, String status,
+         if (orderId == null || orderId.isBlank()) {
+             throw new IllegalArgumentException("orderId 必填（商城侧唯一键）");
+         }
+-        if (status == null || status.isBlank()) {
+-            status = "UNKNOWN";
++        // 空白状态词 = 商城没给（不是"商城给了一个空状态词"）：落成 null 这一个"未给"语义，
++        // 而不是落成某个词。改这一行的方向只能是"更少地造值"，不允许再出现任何编出来的词。
++        if (status != null && status.isBlank()) {
++            status = null;
+         }
+     }
+ 
++    /**
++     * 商城原文是否等于它自己的 {@code CANCELLED}。
++     *
++     * <p>只对<b>商城原词</b>成立：商城没给状态（{@code status == null}）或给的是别的词时都是
++     * {@code false}——<b>不要把 {@code false} 读成"商城说它没取消"</b>，那两件事在这里没有区分手段。</p>
++     */
+     public boolean cancelled() {
+         return "CANCELLED".equals(status);
+     }
+ 
++    /**
++     * 商城原文是否等于它自己的 {@code PAID}。语义与 {@link #cancelled()} 同：{@code false} 不等于
++     * "商城说它没支付"，也可能只是商城没给状态词。
++     */
+     public boolean paid() {
+         return "PAID".equals(status);
+     }
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalProduct.java b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalProduct.java
+index 421ab46..fe06266 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalProduct.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalProduct.java
+@@ -22,7 +22,8 @@ import java.math.BigDecimal;
+  *                   <p>两条禁令（F-25，硬约束 3）：<b>(1)</b> 绝不把商城原词（参考商城的 {@code PAID}、
+  *                   第二家的 {@code SALE}）放进这个字段——规范事件契约对 {@code status} 是
+  *                   required + 枚举，写原词就是产出违约数据；<b>(2)</b> 映射不到时不许静默丢弃，
+- *                   适配器要用 {@link MallStatusVocabulary#unmappedStatusWords()} 把原词报出来，
++ *                   适配器要把它随本次读取的 {@link ProductPage#unmappedStateWords()} 报出来
++ *                   （商城没给字段的另记 {@link ProductPage#stateFieldMissing()}），
+  *                   由引擎记成"目录缺口（K 件被排除）"。</p>
+  *                   <p>由此得到的读法：{@code status == null} ⇒ 该商品既不能算"在售"、也不能算"下架"，
+  *                   只能被排除在可用目录之外，并且必须留下可见的缺口记录。</p>
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalRefund.java b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalRefund.java
+index 9e07ef6..1921e8d 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalRefund.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ExternalRefund.java
+@@ -7,7 +7,13 @@ import java.math.BigDecimal;
+  *
+  * @param refundId 商城侧退款单 ID
+  * @param orderId  归属订单 ID
+- * @param status   商城侧状态原文（参考商城为 {@code COMPLETED}/{@code PENDING} 等）
++ * @param status   商城侧状态原文（参考商城为 {@code COMPLETED}/{@code PENDING} 等，逐字符透出）。
++ *                 <b>商城没给状态字段（或给了空白）时是 {@code null}</b>：它是"商城没给"的标记，
++ *                 <b>不是商城原词、不得当作状态使用</b>；这里永远不会出现生成器自己编的状态词
++ *                 （曾经的 UNKNOWN 就是这么一个词——它会把"读不到"伪装成一个具体的
++ *                 商城状态，让"商城说的是它"与"生成器猜的它"在同一个字段里再也分不开）。
++ *                 需要非空状态才能继续的调用方必须<b>自己响亮失败</b>，不许拿 {@code null} 当状态、
++ *                 也不许替换成占位词
+  * @param amount   退款金额（元）；商城未回传时为 null
+  */
+ public record ExternalRefund(String refundId, String orderId, String status, BigDecimal amount) {
+@@ -19,11 +25,19 @@ public record ExternalRefund(String refundId, String orderId, String status, Big
+         if (orderId == null || orderId.isBlank()) {
+             throw new IllegalArgumentException("orderId 必填（退款必须能归到订单）");
+         }
+-        if (status == null || status.isBlank()) {
+-            status = "UNKNOWN";
++        // 空白状态词 = 商城没给（不是"商城给了一个空状态词"）：落成 null 这一个"未给"语义，
++        // 而不是落成某个词。改这一行的方向只能是"更少地造值"，不允许再出现任何编出来的词。
++        if (status != null && status.isBlank()) {
++            status = null;
+         }
+     }
+ 
++    /**
++     * 商城原文是否等于它自己的 {@code COMPLETED}。
++     *
++     * <p>只对<b>商城原词</b>成立：商城没给状态（{@code status == null}）或给的是别的词时都是
++     * {@code false}——<b>不要把 {@code false} 读成"商城说它没完成"</b>，两件事在这里没有区分手段。</p>
++     */
+     public boolean completed() {
+         return "COMPLETED".equals(status);
+     }
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/MallStatusVocabulary.java b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/MallStatusVocabulary.java
+index b784041..4af621e 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/MallStatusVocabulary.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/MallStatusVocabulary.java
+@@ -1,26 +1,32 @@
+ package com.graduation.generator.adapter;
+ 
+ /**
+- * 商城状态词表（F-25 的可选能力面）：<b>拥有词表的适配器</b>才能报出"哪些商城原词没被映射"。
++ * 商城状态词表（F-25 的<b>适配器侧</b>可选窄接口）：只有"拥有一张自己的状态词映射表"的适配器
++ * 才有资格谈"哪些商城原词没被映射"。
+  *
+- * <p>为什么单独立一个接口，而不是加到 {@link MallTargetAdapter}：</p>
+- * <ul>
+- *   <li>词表是<b>某一家商城独有</b>的知识（参考商城的 {@code on_sale}、第二家的 {@code SALE}），
+- *       不是"每家适配器都必须回答"的问题——把它塞进 SPI 会逼着所有实现（含文件模式）回答一个
+- *       与它们无关的问题；</li>
+- *   <li>而"缺口要能看见"是引擎的义务：引擎按 {@link ExternalProduct#status()} 为 {@code null}
+- *       统计件数（这不需要懂任何词表），再通过本接口问一句"原词是什么"。
+- *       于是分工是干净的——<b>映射与词表归适配器，计数与报缺口归引擎</b>。</li>
+- * </ul>
++ * <h2>本接口不再被引擎使用（修复轮记录）</h2>
++ * <p>引擎曾经用 {@code adapter instanceof MallStatusVocabulary} 判断"能不能问出原词"——
++ * 那是一条<b>旁路</b>：引擎一旦按适配器类型分支，就说明它知道"哪家商城有词表"，
++ * 于是"换一家商城"要改引擎，而不是只加一个适配器。</p>
+  *
+- * <p>不实现本接口的适配器不会因此失去缺口报告：引擎照样报"K 件读不懂状态词"，只是给不出原词。</p>
++ * <p>现在事实的载体是 {@code ProductPage}：<b>适配器在读取目录时</b>把本次读取的两个缺口清单
++ * （{@code unmappedStateWords} / {@code stateFieldMissing}）随返回值带走，引擎只读页、
++ * 不按类型分支、不认识任何一家商城的词表。本接口因此<b>退役</b>：
++ * 新适配器要报缺口，请把清单放进 {@code ProductPage}，不要实现本接口。</p>
++ *
++ * <p>不报缺口的适配器不会因此失去缺口报告：引擎照样按 {@code status() == null} 报
++ * "K 件读不懂状态词"（那不需要懂任何词表）。</p>
++ *
++ * @deprecated 缺口已随 {@code ProductPage} 返回，引擎不再经本接口取原词；
++ *             保留此类型仅为记录"词表归适配器"这条分工，新实现请勿使用。
+  */
++@Deprecated
+ public interface MallStatusVocabulary {
+ 
+     /**
+      * 最近一次目录读取里出现过、且<b>没能映射到规范状态词表</b>的商城原词（去重，顺序不限）。
+      *
+-     * <p>约定：这些原词<b>绝不</b>出现在 {@link ExternalProduct#status()} 里——那个字段只装规范词
++     * <p>约定：这些原词<b>绝不</b>出现在 {@code ExternalProduct#status()} 里——那个字段只装规范词
+      * （{@code on_sale}/{@code off_sale}/{@code pending}），或装 {@code null} 表示"映射不到"。
+      * 把商城原词塞进规范字段会在下游撞上契约枚举校验（F-25 的原始症状）。</p>
+      */
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ProductPage.java b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ProductPage.java
+index e505b99..d58f732 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ProductPage.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/ProductPage.java
+@@ -5,23 +5,53 @@ import java.util.List;
+ /**
+  * 商品目录的一页（§4.1 {@code listProducts} 的返回类型；指导书未定义字段，此处为最小设计）。
+  *
+- * @param products 本页商品（可能为空——"这一页没有商品"是<b>实测结果</b>，不是错误）
+- * @param total    施加分页前适配器看到的候选总数（用于运行报告说明"分页截断"是否发生）
++ * <p><b>缺口随页返回，不留在适配器实例上</b>（硬约束 2/9）：适配器是单例（见
++ * {@code config/GeneratorBeans}），凡是"本次目录读取"的事实都必须挂在这一页上随调用返回；
++ * 放进适配器的字段就会跨运行、跨目标累计，让 B 商城这次的报告里出现 A 商城上次见过的词。
++ * 引擎侧因此也只读本页，不需要认识任何一家商城的词表，更不需要按适配器类型分支。</p>
++ *
++ * @param products          本页商品（可能为空——"这一页没有商品"是<b>实测结果</b>，不是错误）
++ * @param total             施加分页前适配器看到的候选总数（用于运行报告说明"分页截断"是否发生）
++ * @param unmappedStateWords 本次读取里出现过、但映射不到规范状态词表的<b>商城原词</b>
++ *                           （去重、按字典序；与 {@link ExternalProduct#status()} 为 {@code null}
++ *                           的件数对应）。约定两条：<b>(1)</b> 只装商城真的返回过的值——字段缺失
++ *                           不是"商城给了一个词"，见 {@code stateFieldMissing}；<b>(2)</b> 装的是
++ *                           原词，便于运维知道该在适配器映射表里补哪一行。
++ * @param stateFieldMissing 本次读取里<b>商城没给状态字段（或为空）</b>的商品 ID（去重、按字典序）。
++ *                           刻意与 {@code unmappedStateWords} 分开：两者的修法不同（一个补商城侧数据、
++ *                           一个补适配器映射表），混进同一个集合会让报告像是在说"商城返回过这个词"。
+  */
+-public record ProductPage(List<ExternalProduct> products, int total) {
++public record ProductPage(List<ExternalProduct> products, int total,
++                          List<String> unmappedStateWords, List<String> stateFieldMissing) {
+ 
+     public ProductPage {
+         products = products == null ? List.of() : List.copyOf(products);
+         if (total < products.size()) {
+             total = products.size();
+         }
++        unmappedStateWords = unmappedStateWords == null ? List.of() : List.copyOf(unmappedStateWords);
++        stateFieldMissing = stateFieldMissing == null ? List.of() : List.copyOf(stateFieldMissing);
++    }
++
++    /**
++     * 不带缺口信息的页："这一页没有读不懂的状态词"（参考商城的词表就是规范词表，F-25 无缺口）。
++     *
++     * <p>两个缺口清单为空是<b>如实声明</b>，不是"没算"：有缺口的适配器必须用四参构造器把原词带上。</p>
++     */
++    public ProductPage(List<ExternalProduct> products, int total) {
++        this(products, total, List.of(), List.of());
+     }
+ 
+     public static ProductPage empty() {
+-        return new ProductPage(List.of(), 0);
++        return new ProductPage(List.of(), 0, List.of(), List.of());
+     }
+ 
+     public boolean isEmpty() {
+         return products.isEmpty();
+     }
++
++    /** 本次读取有没有"读不懂/没给"的状态字段缺口——预检据此决定要不要记一行缺口 */
++    public boolean hasStateVocabularyGap() {
++        return !unmappedStateWords.isEmpty() || !stateFieldMissing.isEmpty();
++    }
+ }
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java
+index 2fa2464..b877fe4 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java
+@@ -15,9 +15,10 @@ import java.time.Duration;
+ import java.util.ArrayList;
+ import java.util.EnumMap;
+ import java.util.LinkedHashMap;
++import java.util.LinkedHashSet;
+ import java.util.List;
+ import java.util.Map;
+-import java.util.concurrent.ConcurrentHashMap;
++import java.util.Set;
+ import java.util.function.Function;
+ 
+ /**
+@@ -52,13 +53,17 @@ import java.util.function.Function;
+  *   <li><b>状态词映射归适配器（F-25）</b>：第二家说 {@code SALE}，规范事件契约对
+  *       {@code product_created.status} 只认 {@code on_sale/off_sale/pending}。
+  *       映射表 {@link #CANONICAL_PRODUCT_STATUS} 是本适配器内的显式常量，引擎不参与；
+- *       <b>认不出的词映射为 {@code null}（表示"映射不到"）并登记进
+- *       {@link #unmappedStatusWords()}，由引擎报成缺口</b>——既不把商城原词塞进规范字段
+- *       （那会撞契约枚举），也不让它无声消失。原词与件数都会出现在预检流水与运行报告里，
+- *       见 {@link #unmappedStatusWords()} 的说明。</li>
++ *       <b>认不出的词映射为 {@code null}（表示"映射不到"）并随本次目录读取的
++ *       {@link ProductPage#unmappedStateWords()} 返回</b>——既不把商城原词塞进规范字段
++ *       （那会撞契约枚举），也不让它无声消失。原词与件数都会出现在预检流水与运行报告里。
++ *       <b>缺口是"本次读取"的事实，随返回值走，不留在适配器实例上</b>（适配器是单例，见
++ *       {@code config/GeneratorBeans}）：留在实例上就会跨运行、跨目标累计，让 B 商城这次的报告里
++ *       出现 A 商城上次见过的词。</li>
+  *   <li><b>能力差异如实声明</b>：不支持 {@code admin}（没有改价/改库存）与 {@code refund}
+- *       （没有退款单接口），{@code reset_state} 也不支持。不支持的必须走"记缺口"路径，
+- *       <b>不得伪造成功</b>——写操作的方法体由接口默认实现抛
++ *       （没有退款单接口），{@code reset_state} 也不支持。这三项的 {@code ABSENT} 是
++ *       <b>静态声明</b>（读配置即得，不联网、不探测），不是探测结论——见
++ *       {@link #capabilities(TargetConfig)} 的说明与探测文案里"未探测"的原话。
++ *       不支持的必须走"记缺口"路径，<b>不得伪造成功</b>——写操作的方法体由接口默认实现抛
+  *       {@link MallOperationException}，这里连覆盖都不覆盖。</li>
+  * </ol>
+  *
+@@ -69,7 +74,7 @@ import java.util.function.Function;
+  * <p><b>本类不联网做声明</b>：{@link #capabilities(TargetConfig)} 只按 {@code base_url} + 凭据可取
+  * + {@code config_json.format} 给出声明；行不行由每次调用的真实应答证明。</p>
+  */
+-public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatusVocabulary {
++public final class SecondMallHttpAdapter implements MallTargetAdapter {
+ 
+     private static final Logger log = LoggerFactory.getLogger(SecondMallHttpAdapter.class);
+ 
+@@ -79,8 +84,24 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+     /** {@code config_json} 里声明公开行为埋点接口路径的键（路径未冻结，必须显式声明） */
+     public static final String CONFIG_BEHAVIOR_PATH = "behavior_path";
+ 
+-    /** {@code config_json.format} 必须等于它，否则声明一律 {@code UNDETERMINED}——不猜对方是什么格式 */
+-    public static final String CONFIG_FORMAT = "open-v2";
++    /**
++     * {@code config_json} 里声明"接口是哪一版形态"的<b>键名</b>（单点定义：读取、校验与运维话术
++     * 都走这个常量，因此全类只有这一处出现键名的字面量）。
++     *
++     * <p><b>键名是本适配器与本地夹具之间的约定，契约没有规定任何键名</b>：§4.1/§4.1.1.3 与
++     * {@code contract-specs/**} 都没有定义 {@code config_json.format}；{@code generator_target.config_json}
++     * 只是一个自由 JSON 列（{@code V1__generator_meta.sql} 注释："适配器扩展配置（JSON）"）。
++     * 所以这是<b>适配器私有声明</b>，不是平台契约的一部分——换一家商城就换自己的键。</p>
++     */
++    public static final String CONFIG_FORMAT_KEY = "format";
++
++    /**
++     * {@link #CONFIG_FORMAT_KEY} 的取值：只有它等于该值时，公开的 {@code product/user/order} 三段
++     * 才被声明为 {@code SUPPORTED}——不猜对方是什么格式。
++     *
++     * <p>取值同样只在本适配器与夹具之间约定（见 {@link #CONFIG_FORMAT_KEY} 的说明）。</p>
++     */
++    public static final String CONFIG_FORMAT_VALUE = "open-v2";
+ 
+     /** 整数分 → 元的进制（显式常量；金额换算只经 BigDecimal，绝不经 double） */
+     public static final int CENTS_PER_YUAN = 100;
+@@ -151,12 +172,6 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+             "OFF_SHELF", "off_sale",
+             "PENDING", "pending");
+ 
+-    /** 订单支付状态：第二家的词 → 流水里可读的原文（订单状态机归商城，这里只标注等价词，不翻译规范枚举） */
+-    private static final Map<String, String> ORDER_STATE_ALIAS = Map.of(
+-            "NEW", "CREATED",
+-            "SETTLED", "PAID",
+-            "VOID", "CANCELLED");
+-
+     private final Function<String, String> credentialLookup;
+     private final Duration timeout;
+     private final ObjectMapper mapper = new ObjectMapper();
+@@ -164,9 +179,6 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+     /** 探测说明文本在静态上下文里拼装，因此另备一个只读 JSON 的 ObjectMapper */
+     private static final ObjectMapper CONFIG_READER = new ObjectMapper();
+ 
+-    /** 本适配器见过的"映射不到"的商城原词 → 出现次数（{@link #unmappedStatusWords()} 的数据源） */
+-    private final Map<String, Integer> unmappedStatusWords = new ConcurrentHashMap<>();
+-
+     /**
+      * @param credentialLookup 按 {@code credential_ref} 取凭据（生产传 {@code System::getenv}）
+      * @param timeout          建连与单条请求的超时
+@@ -190,12 +202,17 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+ 
+     /**
+      * 声明第二家商城能做什么：{@code product}/{@code user}/{@code order} 三段公开接口是它的固定形态，
+-     * 在 {@code base_url} 合法、凭据可取、{@code config_json.format=open-v2} 时声明为 {@code SUPPORTED}；
+-     * {@code behavior} 只有显式声明了 {@code behavior_path} 才 {@code SUPPORTED}。
++     * 在 {@code base_url} 合法、凭据可取、{@code config_json.format} 等于 {@link #CONFIG_FORMAT_VALUE}
++     * 时声明为 {@code SUPPORTED}；{@code behavior} 还要求显式声明了 {@code behavior_path}
++     * ——<b>与三段同一个门控</b>：格式没声明清楚时连埋点能力也不给（同一个 if，
++     * 不留"格式门管不到它"的并列旁路）。
+      *
+      * <p><b>刻意不支持的</b>：{@code admin}（第二家没有改价/改库存接口）与 {@code refund}
+-     * （没有退款单接口）恒为 {@code ABSENT}——不是"没证实"，是"这家商城就没有"。{@code reset_state}
+-     * 同样 {@code ABSENT}。这三项由引擎的能力门转成"记缺口"，不会被伪造成成功。</p>
++     * （没有退款单接口）、{@code reset_state}。这三项写 {@code ABSENT} 是 <b>静态声明</b>：
++     * 本方法<b>不联网</b>（§4.1 的 {@code capabilities} 就是声明口），这个 {@code ABSENT}
++     * <b>不是探测结论</b>；{@link #test(TargetConfig)} 对它们<b>不发探测请求</b>，也从不谎称测过
++     * （探测文案里写的是"静态声明（未探测）"）。它们不去猜 {@code SUPPORTED}，
++     * 由引擎的能力门转成"记缺口"，不会被伪造成成功。</p>
+      */
+     @Override
+     public TargetCapabilities capabilities(TargetConfig config) {
+@@ -203,20 +220,23 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         for (MallCapability capability : MallCapability.values()) {
+             verdicts.put(capability, CapabilityVerdict.UNDETERMINED);
+         }
++        // 静态声明（未探测）：写操作类能力第二家根本没有对应接口，声明成 ABSENT 而不是"没证实"；
++        // 这是本方法不联网就能给出的结论，取值来源是"这家商城的公开接口清单"，不是一次测量。
+         verdicts.put(MallCapability.ADMIN, CapabilityVerdict.ABSENT);
+         verdicts.put(MallCapability.REFUND, CapabilityVerdict.ABSENT);
+         verdicts.put(MallCapability.RESET_STATE, CapabilityVerdict.ABSENT);
+ 
+         boolean usableBase = baseUri(config) != null;
+         boolean credentialAvailable = credentialState(config.credentialRef()).available();
+-        boolean formatMatches = CONFIG_FORMAT.equals(declaredFormat(config.configJson()));
++        boolean formatMatches = CONFIG_FORMAT_VALUE.equals(declaredFormat(config.configJson()));
++        // 单一门控：格式声明不成立 ⇒ 三段与埋点一并保持 UNDETERMINED，不猜对方是哪一版接口
+         if (usableBase && credentialAvailable && formatMatches) {
+             verdicts.put(MallCapability.PRODUCT, CapabilityVerdict.SUPPORTED);
+             verdicts.put(MallCapability.USER, CapabilityVerdict.SUPPORTED);
+             verdicts.put(MallCapability.ORDER, CapabilityVerdict.SUPPORTED);
+-        }
+-        if (usableBase && credentialAvailable && declaredBehaviorPath(config.configJson()) != null) {
+-            verdicts.put(MallCapability.BEHAVIOR, CapabilityVerdict.SUPPORTED);
++            if (declaredBehaviorPath(config.configJson()) != null) {
++                verdicts.put(MallCapability.BEHAVIOR, CapabilityVerdict.SUPPORTED);
++            }
+         }
+         return TargetCapabilities.declared(verdicts);
+     }
+@@ -250,21 +270,55 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         if (query == null) {
+             throw new MallOperationException("listProducts", "ProductQuery 不得为 null");
+         }
+-        String path = ITEMS_PATH + (query.categoryId() == null ? "" : "?category_code=" + query.categoryId());
++        ProductPage page = readCatalog(config, query.categoryId() == null
++                ? ITEMS_PATH
++                : ITEMS_PATH + "?category_code=" + query.categoryId());
++        if (query.keyword() == null) {
++            return page;
++        }
++        // 关键字过滤只改本页的商品集合；缺口是"本次读取"的事实（商城确实返回过这些词），不随过滤增减
++        List<ExternalProduct> filtered = page.products().stream()
++                .filter(product -> product.name() != null
++                        && product.name().toLowerCase().contains(query.keyword().toLowerCase()))
++                .toList();
++        return new ProductPage(query.window(filtered), filtered.size(),
++                page.unmappedStateWords(), page.stateFieldMissing());
++    }
++
++    /**
++     * 一次目录读取：把"本次读取"的缺口事实（读不懂的原词、没给状态字段的商品）收集在<b>方法局部</b>，
++     * 随 {@link ProductPage} 一起返回。
++     *
++     * <p><b>为什么不放在适配器字段上</b>：适配器是单例（{@code config/GeneratorBeans}），
++     * 放字段就会跨运行、跨目标累计，让下一次运行（甚至另一家商城）的报告里出现上一次见过的词。
++     * 缺口是"这一次读取"的事实，只能挂在这一次的返回值上。</p>
++     */
++    private ProductPage readCatalog(TargetConfig config, String path) {
+         JsonNode result = call(config, "listProducts", "GET", path, null);
+         if (!result.isArray()) {
+             throw new MallOperationException("listProducts",
+                     "应答 result 不是数组，无法解析商品列表：" + abbreviate(result));
+         }
+-        List<ExternalProduct> all = new ArrayList<>();
++        List<ExternalProduct> products = new ArrayList<>();
++        List<String> unmappedWords = new ArrayList<>();
++        List<String> stateMissing = new ArrayList<>();
++        List<String> priceUnreadable = new ArrayList<>();
+         for (JsonNode node : result) {
+-            all.add(toProduct(node));
++            ExternalProduct product = toProduct(node, unmappedWords, stateMissing, priceUnreadable);
++            if (product != null) {
++                products.add(product);
++            }
+         }
+-        List<ExternalProduct> filtered = query.keyword() == null ? all : all.stream()
+-                .filter(product -> product.name() != null
+-                        && product.name().toLowerCase().contains(query.keyword().toLowerCase()))
+-                .toList();
+-        return new ProductPage(query.window(filtered), filtered.size());
++        // 报价读不懂的商品被排除在目录之外——但绝不静默：一件都不剩时响亮失败，
++        // 否则引擎会拿着空目录继续跑，运行报告里看不出差别
++        if (products.isEmpty() && !priceUnreadable.isEmpty()) {
++            throw new MallOperationException("listProducts",
++                    "本次目录 " + priceUnreadable.size() + " 件商品的报价都读不懂（"
++                            + String.join("、", sortedDistinct(priceUnreadable))
++                            + "）：目录为空即响亮失败，绝不静默返回空目录继续跑");
++        }
++        return new ProductPage(products, products.size(),
++                sortedDistinct(unmappedWords), sortedDistinct(stateMissing));
+     }
+ 
+     @Override
+@@ -301,20 +355,25 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         call(config, "emitBehavior", "POST", path, body);
+     }
+ 
++    /**
++     * 下单：请求体只放"要买什么"（{@code sku}/{@code quantity}），<b>不放单价</b>——
++     * 单价是商城按自己的目录定的，生成器凭空报一个价既没有出处、又会在商城侧撞价格校验。
++     *
++     * <p><b>金额从下单应答里读</b>（{@code result.lines[].unit_price_cents}，即商城真实记账的单价）：
++     * 读不到就<b>响亮失败</b>（{@link MallOperationException}）。以前这里会在下单前额外拉一次目录、
++     * 拉不到就把 {@code unit_price_cents: null} 发出去继续下单——那是把"价格未知"静默降级成
++     * "商城自己算"，流水里看不出差别（硬约束 3 要的是响亮失败，不是 catch 掉）。</p>
++     */
+     @Override
+     public ExternalOrder createOrder(TargetConfig config, OrderCommand command) {
+         if (command == null) {
+             throw new MallOperationException("createOrder", "OrderCommand 不得为 null");
+         }
+-        Map<String, BigDecimal> pricesBySku = catalogPricesBySku(config);
+         List<Map<String, Object>> lines = new ArrayList<>();
+         for (OrderCommand.Item item : command.items()) {
+             Map<String, Object> line = new LinkedHashMap<>();
+             line.put(FIELD_SKU, item.productId());
+             line.put(FIELD_QUANTITY, item.quantity());
+-            BigDecimal unitPrice = pricesBySku.get(item.productId());
+-            // 单价只有从目录真读到才写；读不到就交给商城按自己的目录定价——绝不编一个金额发出去
+-            line.put(FIELD_UNIT_PRICE_CENTS, unitPrice == null ? null : yuanToCents(unitPrice));
+             lines.add(line);
+         }
+         Map<String, Object> body = new LinkedHashMap<>();
+@@ -323,7 +382,7 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+ 
+         JsonNode result = call(config, "createOrder", "POST", ORDERS_PATH, body);
+         String orderNo = requireText(result, RESULT_ORDER_NO, "createOrder");
+-        return readOrder(result, orderNo, command.userId(), "createOrder");
++        return readCreatedOrder(result, orderNo, command.userId());
+     }
+ 
+     /**
+@@ -366,8 +425,9 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+      * <p>与参考商城同法（不是抄它的代码，是同一套判据）：只要有一条 404 就 {@code ABSENT}，
+      * 401/403、非预期状态码或无应答只能 {@code UNDETERMINED}，全部 2xx 才 {@code SUPPORTED}。
+      * 唯一不同之处是：第二家没有的段（{@code refund}/{@code admin}/{@code reset_state}）
+-     * 连代表路由都不发——<b>"这家商城根本没有该接口"是已知事实，不需要靠探测才发现</b>，
+-     * 直接按 {@code ABSENT} 收口。</p>
++     * 连代表路由都不发——这三项在 {@link #capabilities(TargetConfig)} 里已是<b>静态声明</b>，
++     * 这里<b>不对它们做探测（未探测）</b>，也就不存在"测出来的结论"被当成声明的情况：
++     * 报告里它们是"声明为 ABSENT（未探测）"，而不是"实测 ABSENT"。</p>
+      */
+     @Override
+     public TargetCheckResult test(TargetConfig config) {
+@@ -408,7 +468,8 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         for (MallCapability capability : MallCapability.values()) {
+             verdicts.put(capability, CapabilityVerdict.UNDETERMINED);
+         }
+-        // 这家商城没有的段：按已知事实收口，不靠探测"碰巧没测到"
++        // 静态声明（未探测）：这三项没有代表路由、也就不发探测请求；取值与 capabilities() 同源，
++        // 不写成 SUPPORTED，也不谎称是探测结果
+         verdicts.put(MallCapability.ADMIN, CapabilityVerdict.ABSENT);
+         verdicts.put(MallCapability.REFUND, CapabilityVerdict.ABSENT);
+         verdicts.put(MallCapability.RESET_STATE, CapabilityVerdict.ABSENT);
+@@ -513,10 +574,27 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         text.append("。").append(ref == null || ref.isBlank()
+                 ? "未配置 credential_ref：第二家商城对 /open/v2/** 全部要求 Bearer，匿名探测一律 401，能力只能判 UNDETERMINED"
+                 : "已按凭据引用 " + ref.trim() + " 取值并对所有代表路由附带（值不回显）");
+-        text.append("。admin/refund/reset_state 按已知事实收口为 ABSENT：第二家商城没有改价/改库存、"
+-                + "没有退款单接口、没有重置接口");
++        // 声明门（不联网）：capabilities() 判 UNDETERMINED 最常见的原因就是这一段声明没写。
++        // 运维看得到的就是这段文字，所以必须点名"哪个键、该写什么值"——否则他只能去读源码；
++        // 键名与取值一律经常量拼，不为了写话术再抄一遍字面量（全类单点定义）。
++        String declaredFormat = declaredFormatStatic(config.configJson());
++        boolean formatMatches = CONFIG_FORMAT_VALUE.equals(declaredFormat);
++        text.append("。声明门（不联网，决定 capabilities() 的取值）：product/user/order 三段需要 config_json.")
++                .append(CONFIG_FORMAT_KEY).append('=').append(CONFIG_FORMAT_VALUE);
++        if (formatMatches) {
++            text.append("（当前已声明 = ").append(declaredFormat).append("）");
++        } else {
++            text.append("，当前").append(declaredFormat == null
++                            ? CONFIG_FORMAT_KEY + " 没声明（键缺失、取值不是文本，或 config_json 不是合法 JSON）"
++                            : "声明为 " + declaredFormat + "，不等于 " + CONFIG_FORMAT_VALUE)
++                    .append(" ⇒ 三段一律 UNDETERMINED，引擎的能力门会在发任何请求之前挡下整个运行；"
++                            + "上面的 OPTIONS 判定只反映探测本身的应答形态，不能当成\"配置已按格式声明\"");
++        }
++        text.append("。admin/refund/reset_state 是静态声明为 ABSENT（未探测）：它们没有代表路由，"
++                + "本次探测一条请求都没为它们发——不要把这三个 ABSENT 读成\"测过所以没有\"，"
++                + "它们来自\"第二家商城的公开接口清单\"这份声明");
+         if (declaredBehaviorPathStatic(config.configJson()) == null) {
+-            text.append("。behavior 需在 config_json.").append(CONFIG_BEHAVIOR_PATH)
++            text.append("。behavior 另需在 config_json.").append(CONFIG_BEHAVIOR_PATH)
+                     .append(" 声明埋点路径（路径未冻结，B-04）");
+         }
+         return text.toString();
+@@ -572,11 +650,6 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+                 .setScale(YUAN_SCALE);
+     }
+ 
+-    /** 元 → 整数分（下单时把目录单价报给商城）；只经 BigDecimal，不经 double */
+-    static long yuanToCents(BigDecimal yuan) {
+-        return yuan.movePointRight(CENTS_PER_YUAN_LOG10).longValueExact();
+-    }
+-
+     // ---------- 词表映射（F-25 的被测对象） ----------
+ 
+     /**
+@@ -584,7 +657,7 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+      *
+      * @return 规范词（{@code on_sale}/{@code off_sale}/{@code pending}）；
+      *         <b>{@code null} 的语义是"商城的词映射不到规范词表"</b>（含字段缺失/空值），
+-     *         绝不允许把商城原词放进这个位置——见 {@link #unmappedStatusWords()}
++     *         绝不允许把商城原词放进这个位置——原词要随 {@link ProductPage#unmappedStateWords()} 上报
+      */
+     public static String toCanonicalProductStatus(String mallState) {
+         if (mallState == null) {
+@@ -593,34 +666,12 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         return CANONICAL_PRODUCT_STATUS.get(mallState.trim());
+     }
+ 
+-    /**
+-     * 登记一个"映射不到"的商城原词（按出现次数计数，线程安全）。
+-     *
+-     * <p>为什么要留下原词：只说"有 K 件读不懂"无法指导修复；原词直接指向适配器映射表里要补的那一行。
+-     * 空值/字段缺失单独记成 {@link #MISSING_STATE_WORD}，与"给了个怪词"分开——两者的修法不同。</p>
+-     */
+-    private void recordUnmappedStatus(String mallState) {
+-        String word = mallState == null || mallState.isBlank() ? MISSING_STATE_WORD : mallState.trim();
+-        unmappedStatusWords.merge(word, 1, Integer::sum);
+-    }
+-
+-    /**
+-     * 最近一次目录读取里出现过的、映射不到的商城原词（去重、按字典序）。
+-     *
+-     * <p>这是 {@link MallStatusVocabulary} 的实现，也是"被排除的商品"在流水/报告里能被点名的唯一来源：
+-     * 引擎只会按 {@code status == null} 数件数，原词只有拥有词表的适配器知道。</p>
+-     *
+-     * <p>计数只增不减（同一次运行里读多次目录时会累计），因为它的用途是"本次运行见过哪些读不懂的词"，
+-     * 而不是"当前目录里还剩几件"——件数由引擎按目录快照统计，两者分开才不会互相污染。</p>
+-     */
+-    @Override
+-    public List<String> unmappedStatusWords() {
+-        return unmappedStatusWords.keySet().stream().sorted().toList();
++    /** 去重 + 字典序（缺口清单要可复现：同一批应答在任何一次运行里得到同一串顺序） */
++    private static List<String> sortedDistinct(List<String> words) {
++        Set<String> unique = new LinkedHashSet<>(words);
++        return unique.stream().sorted().toList();
+     }
+ 
+-    /** 字段缺失/空值在缺口里的原词占位（与"给了个怪词"分开登记） */
+-    public static final String MISSING_STATE_WORD = "(商城未给 state 字段)";
+-
+     // ---------- 调用原语 ----------
+ 
+     /**
+@@ -720,29 +771,100 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         return new Credential(credentialRef.trim(), resolveToken(credentialRef));
+     }
+ 
+-    /** 商品应答 → {@link ExternalProduct}：第二家的 {@code sku/title/unit_price_cents/state} 在这里落成规范字段 */
+-    private ExternalProduct toProduct(JsonNode node) {
++    /**
++     * 商品应答 → {@link ExternalProduct}：第二家的 {@code sku/title/unit_price_cents/state} 在这里落成规范字段。
++     *
++     * <p>两个缺口清单由<b>调用方（本次读取）</b>持有并传入：<b>(1)</b> 认不出的状态原词进
++     * {@code unmappedWords}；<b>(2)</b> 商城没给状态字段的商品 ID 进 {@code stateMissing}——
++     * 两者刻意分开：前者要补适配器映射表，后者要补商城侧数据，混在一起会让报告说成
++     * "商城返回过这个词"。</p>
++     *
++     * @param priceUnreadable 商城没给 {@code unit_price_cents}（或给的不是整数分）的商品 ID 出口；
++     *                        被记进去的商品<b>不会</b>出现在返回页里，但一定会被点名报出来
++     * @return 规范商品；报价读不懂时返回 {@code null}（由调用方排除并报缺口），绝不返回带 null 金额的商品
++     */
++    private ExternalProduct toProduct(JsonNode node, List<String> unmappedWords, List<String> stateMissing,
++                                      List<String> priceUnreadable) {
+         String sku = requireText(node, RESULT_SKU, "listProducts");
+         JsonNode category = node.path(RESULT_CATEGORY);
+         JsonNode state = node.path(RESULT_STATE);
+         String mallState = state.isMissingNode() || state.isNull() ? null : state.asText();
+         String canonical = toCanonicalProductStatus(mallState);
+         if (canonical == null) {
+-            // "读不懂的词"必须留痕：登记原词，交引擎报成缺口（件数 + 原词）。
+-            // 绝不静默丢弃，也绝不把原词写进规范字段 status（那会产出违约数据）。
+-            recordUnmappedStatus(mallState);
++            if (mallState == null || mallState.isBlank()) {
++                // 字段缺失/空值不是"商城给了一个词"：只记商品 ID，绝不混进未映射原词清单
++                stateMissing.add(sku);
++            } else {
++                // "读不懂的词"必须留痕：登记原词，交引擎报成缺口（件数 + 原词）。
++                // 绝不静默丢弃，也绝不把原词写进规范字段 status（那会产出违约数据）。
++                unmappedWords.add(mallState.trim());
++            }
+             log.debug("第二家商城返回了未登记的商品状态词，已登记为目录缺口：state={} sku={}", mallState, sku);
+         }
++        // 报价：整数分 → 元。这一段的失败不许被 catch 成 null 继续跑——"读不懂的价格"
++        // 与"读不懂的状态词"不同，它会给下游留一个**看起来正常**的金额口径。
++        // 处理方式是"排除 + 点名"（与状态缺口同一形态：商品进不了可用目录，缺口被报出来），
++        // 而不是把一件金额未知的商品留在目录里。
++        BigDecimal price;
++        try {
++            price = centsToYuan(node.path(RESULT_UNIT_PRICE_CENTS).asText(null));
++        } catch (MallOperationException e) {
++            priceUnreadable.add(sku);
++            log.debug("第二家商城的报价读不懂，商品已排除并登记为目录缺口：sku={} 原因={}", sku, e.getMessage());
++            return null;
++        }
+         return new ExternalProduct(sku, node.path(RESULT_TITLE).asText(null),
+                 category.isNumber() ? category.asLong() : parseLongOrNull(category.asText(null)),
+-                centsToYuan(node.path(RESULT_UNIT_PRICE_CENTS).asText(null)), canonical);
++                price, canonical);
++    }
++
++    /**
++     * 下单应答 → {@link ExternalOrder}：除了通用订单快照，还<b>必须</b>带回商城记账的明细单价
++     * （{@code result.lines[].unit_price_cents}）。
++     *
++     * <p><b>价格缺失即响亮失败</b>：下单成功了却读不到单价，说明"这一单到底按什么价成交"这个事实
++     * 在本次调用里不成立——此时返回一个 {@code totalAmount} 可能非空的订单，会让流水与运行报告
++     * 看起来一切正常，把"读不懂的金额"静默带过（硬约束 3 与 §4.1.1 的金额口径）。因此这里逐行校验：
++     * 没有 {@code lines}、某行没有 {@code unit_price_cents}、或该值不是合法整数分，一律抛
++     * {@link MallOperationException}，绝不带 {@code null} 继续。</p>
++     */
++    private static ExternalOrder readCreatedOrder(JsonNode result, String orderNo, String buyerRef) {
++        if (result == null || !result.isObject()) {
++            throw new MallOperationException("createOrder",
++                    "应答 result 不是对象，读不到订单快照：" + abbreviate(result));
++        }
++        JsonNode lines = result.path(RESULT_LINES);
++        if (!lines.isArray() || lines.isEmpty()) {
++            throw new MallOperationException("createOrder",
++                    "应答 result 缺少 lines 明细，读不到商城记账单价：" + abbreviate(result)
++                            + "；本适配器不接受\"下单成功但成交价未知\"");
++        }
++        for (JsonNode line : lines) {
++            String cents = line.path(RESULT_UNIT_PRICE_CENTS).asText(null);
++            if (cents == null || cents.isBlank()) {
++                throw new MallOperationException("createOrder",
++                        "应答 result 的明细行缺少 " + RESULT_UNIT_PRICE_CENTS + "（sku="
++                                + line.path(RESULT_SKU).asText("?") + "）：价格缺失即响亮失败，"
++                                + "绝不带 null 金额继续：" + abbreviate(result));
++            }
++            // 复用同一条换算口径：小数分/非整数在这里就炸，不留到下游才发现"金额对不上"
++            centsToYuan(cents);
++        }
++        return readOrder(result, orderNo, buyerRef, "createOrder");
+     }
+ 
+     /**
+      * 订单类应答 → {@link ExternalOrder}：第二家的 {@code order_no/pay_state/total_cents} 落成规范字段。
+      *
+-     * <p>{@code pay_state} 是<b>商城原文</b>（{@code NEW}/{@code SETTLED}/{@code VOID}）——订单状态机归商城所有，
+-     * 这里只按 {@link #ORDER_STATE_ALIAS} 在流水里附上可读的等价词，<b>不</b>把它翻译成生成器自己的枚举。</p>
++     * <p><b>{@code status} 是商城原文的逐字符透出</b>（指导书 V2.3 §4.1.1.3"商城原样文本"）：
++     * {@code pay_state} 是什么就写什么（{@code NEW}/{@code SETTLED}/{@code VOID}），
++     * <b>不加括号别名、不翻译成生成器的枚举</b>——一旦拼上"等价词"，同一个字段就有了两种口径，
++     * 按状态词聚合/对账的消费方会被分成两个桶；而且没有任何契约字段声明过"别名后缀"这种东西。
++     * 商城没给 {@code pay_state} 时保持 {@code null}（{@link ExternalOrder} 的紧凑构造器把它读成
++     * "无法读取"），<b>不编造一个商城没给过的词</b>。</p>
++     *
++     * <p>{@code pay}/{@code cancel} 的应答按商城自己的形态可能不带明细行，因此这里对 {@code lines}
++     * 只做"有就计数"的处理；下单路径的单价校验在 {@link #readCreatedOrder} 里单独做。</p>
+      */
+     private static ExternalOrder readOrder(JsonNode result, String orderNo, String buyerRef, String operation) {
+         if (result == null || !result.isObject()) {
+@@ -750,8 +872,7 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+                     "应答 result 不是对象，读不到订单快照：" + abbreviate(result));
+         }
+         String mallState = result.path(RESULT_PAY_STATE).asText(null);
+-        String status = mallState == null || mallState.isBlank() ? "UNKNOWN"
+-                : mallState + (ORDER_STATE_ALIAS.containsKey(mallState) ? "(" + ORDER_STATE_ALIAS.get(mallState) + ")" : "");
++        String status = mallState == null || mallState.isBlank() ? null : mallState;
+         JsonNode total = result.path(RESULT_TOTAL_CENTS);
+         BigDecimal totalYuan = total.isNumber() || total.isTextual()
+                 ? centsToYuan(total.asText())
+@@ -760,20 +881,6 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         return new ExternalOrder(orderNo, buyerRef, status, totalYuan, lines.isArray() ? lines.size() : -1);
+     }
+ 
+-    /** 目录单价表（下单时报给商城用）；读不到就返回空表，让商城按自己的目录定价，绝不编金额 */
+-    private Map<String, BigDecimal> catalogPricesBySku(TargetConfig config) {
+-        Map<String, BigDecimal> prices = new LinkedHashMap<>();
+-        try {
+-            for (ExternalProduct product : listProducts(config, ProductQuery.firstPage(ProductQuery.MAX_LIMIT))
+-                    .products()) {
+-                prices.put(product.productId(), product.price());
+-            }
+-        } catch (RuntimeException e) {
+-            log.debug("下单前读取目录失败，单价交由商城按自己的目录定价：{}", e.getMessage());
+-        }
+-        return prices;
+-    }
+-
+     private static Long parseLongOrNull(String text) {
+         if (text == null || text.isBlank()) {
+             return null;
+@@ -814,13 +921,28 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter, MallStatu
+         return null;
+     }
+ 
++    /** 读 {@code config_json} 的 {@link #CONFIG_FORMAT_KEY} 取值；读法与判定都走这一个键常量（单点定义） */
+     private String declaredFormat(String configJson) {
+-        JsonNode root = readConfig(configJson);
+-        if (root == null) {
++        return declaredFormatStatic(configJson);
++    }
++
++    /**
++     * 与 {@link #declaredFormat(String)} 同口径的静态版本（运维可见的探测说明在静态上下文里拼装）。
++     *
++     * <p>只认<b>文本</b>取值：键不存在、值是数字/对象、或 {@code config_json} 不是合法 JSON，一律当作
++     * "没声明"——不猜、不做类型转换、不发请求。</p>
++     */
++    private static String declaredFormatStatic(String configJson) {
++        if (configJson == null || configJson.isBlank()) {
++            return null;
++        }
++        try {
++            JsonNode value = CONFIG_READER.readTree(configJson).path(CONFIG_FORMAT_KEY);
++            return value.isTextual() ? value.asText() : null;
++        } catch (IOException e) {
++            log.warn("config_json 不是合法 JSON，已忽略其中的声明：{}", e.getMessage());
+             return null;
+         }
+-        JsonNode value = root.path("format");
+-        return value.isTextual() ? value.asText() : null;
+     }
+ 
+     private JsonNode readConfig(String configJson) {
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java b/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java
+index 7ae0ad5..345cd08 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java
+@@ -249,7 +249,7 @@ public final class MallApiDispatchSink {
+         ExternalOrder paid = adapter.pay(target, new PayCommand(requireOrder(canonicalOrder, plan.operation()),
+                 requireUser(event, plan.operation())));
+         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, paid.orderId(),
+-                OperationJournalEntry.STATUS_OK, "status=" + paid.status(), false);
++                OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(paid.status()), false);
+         return true;
+     }
+ 
+@@ -259,7 +259,7 @@ public final class MallApiDispatchSink {
+                 requireOrder(canonicalOrder, plan.operation()), requireUser(event, plan.operation()),
+                 text(event, "reason")));
+         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, cancelled.orderId(),
+-                OperationJournalEntry.STATUS_OK, "status=" + cancelled.status(), false);
++                OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(cancelled.status()), false);
+         return true;
+     }
+ 
+@@ -272,7 +272,7 @@ public final class MallApiDispatchSink {
+         // 一行流水 = 两次 HTTP（参考商城的退款是"申请 + 完成"两步，适配器内一次走完）：
+         // 因此"真实调用条数"与"HTTP 请求次数"不是同一个数，对账时按后者要再加上本条数。
+         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, refund.refundId(),
+-                OperationJournalEntry.STATUS_OK, "status=" + refund.status(), false);
++                OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(refund.status()), false);
+         return true;
+     }
+ 
+@@ -395,6 +395,21 @@ public final class MallApiDispatchSink {
+         });
+     }
+ 
++    /**
++     * 流水明细里的"商城侧状态"渲染：商城没给状态字段时写清"未给"，而不是让 {@code null}
++     * 变成字符串 {@code null}（那既不是商城原词，也读不出是"商城没给"还是"我们读漏了"）。
++     *
++     * <p><b>这里为什么不响亮失败</b>：订单与退款的状态只进这一行<b>说明文字</b>，没有任何消费方
++     * 需要它非空（{@code ExternalOrder}/{@code ExternalRefund} 的状态判定方法全项目零调用点）；
++     * 而这一行记的是"这次 HTTP 调用真的成功了"——商城有没有回状态字段与调用成不成功是两件事，
++     * 因为后者把一次<b>真实发生过的商城写操作</b>记成失败，反而是错的账。
++     * 真正<b>需要</b>非空状态的地方（商品的规范状态要写进规范事件）走的是响亮失败，见
++     * {@link #rewriteProduct}。</p>
++     */
++    private static String describeMallStatus(String status) {
++        return status == null || status.isBlank() ? "（商城未给状态字段）" : status;
++    }
++
+     private static void replace(Map<String, Object> payload, String key, Map<String, String> mapping) {
+         Object value = payload.get(key);
+         if (value == null) {
+diff --git a/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiGenerationEngine.java b/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiGenerationEngine.java
+index 8247e4b..616bff4 100644
+--- a/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiGenerationEngine.java
++++ b/synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiGenerationEngine.java
+@@ -8,7 +8,6 @@ import com.graduation.generator.adapter.MallTargetAdapter;
+ import com.graduation.generator.adapter.ProductPage;
+ import com.graduation.generator.adapter.ProductQuery;
+ import com.graduation.generator.adapter.TargetCapabilities;
+-import com.graduation.generator.adapter.MallStatusVocabulary;
+ import com.graduation.generator.adapter.TargetConfig;
+ import com.graduation.generator.adapter.TargetRoute;
+ import com.graduation.generator.contract.CanonicalEvent;
+@@ -257,21 +256,23 @@ public final class MallApiGenerationEngine implements GenerationEngine {
+         // 只报"目录 N 件、在售 M 件"会让 N-M 里混着两种完全不同的东西——"商城说它下架了"（正常）
+         // 与"生成器读不懂商城的状态词"（缺口）。后者必须能看出件数与商城原词，
+         // 否则商品只是无声消失，运维会以为是商城没货。
+-        String unmapped = describeUnmappedStatuses(page.products(), adapter);
++        String unmapped = describeUnmappedStatuses(page.products(),
++                page.unmappedStateWords(), page.stateFieldMissing());
+         journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, true,
+                 routeMethod(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
+                 routePath(operationRoutes, MallDispatchPlan.OP_LIST_PRODUCTS),
+                 null, null, OperationJournalEntry.STATUS_OK,
+                 "目录 %d 件，在售 %d 件（预检兼凭据校验）".formatted(page.total(), catalog.size()), false);
+         if (unmapped != null) {
+-            // 缺口单独占一行（SKIPPED，且不是真实调用）：这样"预检读了几次目录""在售几件""多少件因词表被排除"
++            // 缺口单独占一行（SKIPPED，且不是真实调用）：这样"预检读了几次目录""在售几件""多少件因状态缺口被排除"
+             // 三件事在流水里各自可数，不会被合并成一句话而失去可核对性。
+             journal.append(MallDispatchPlan.OP_LIST_PRODUCTS, false, null, null, null, null,
+                     OperationJournalEntry.STATUS_SKIPPED,
+-                    "商城状态词无法映射到规范状态词表，%s 商品被排除在可用目录之外".formatted(unmapped), false);
+-            notes.add(("目录缺口：%s 商品的状态词无法映射到规范状态词表——它们不会进入规范事件流，"
+-                    + "也绝不会被静默当成「在售」；若要使用，需在对应适配器的状态词映射表里补齐"
+-                    + "（状态词映射归适配器，见 F-25）").formatted(unmapped));
++                    "商城状态词无法映射到规范状态词表/商城未给状态字段，%s 商品被排除在可用目录之外".formatted(unmapped),
++                    false);
++            notes.add(("目录缺口：%s 商品的状态词无法映射到规范状态词表（或商城未给状态字段）——"
++                    + "它们不会进入规范事件流，也绝不会被静默当成「在售」；若要使用，"
++                    + "需在对应适配器的状态词映射表里补齐（状态词映射归适配器，见 F-25）").formatted(unmapped));
+         }
+         if (catalog.isEmpty()) {
+             throw new IllegalArgumentException("商城商品目录里没有在售商品，MALL_API 无法生成任何订单："
+@@ -313,21 +314,31 @@ public final class MallApiGenerationEngine implements GenerationEngine {
+     }
+ 
+     /**
+-     * 目录里"读不懂状态词"的商品：<b>件数</b> + <b>商城原词</b>（原词按字典序，输出可复现）。
++     * 目录的<b>状态缺口</b>：<b>件数</b> + <b>商城原词</b> + <b>未给状态字段的商品</b>
++     * （清单按字典序，输出可复现）。
+      *
+-     * <p>判据只有一件事：{@link ExternalProduct#status()} 为 {@code null}。按 F-25 的约定，
+-     * 适配器把"商城的词映射不到规范词表"表达成 {@code null}（而不是把原词塞进规范字段），
+-     * 于是引擎不需要认识任何一家商城的词表，也能把缺口如实报出来——这就是"映射归适配器、
+-     * 报缺口归引擎"的分工。</p>
++     * <p><b>引擎对任何一家商城的词表零知识</b>：本方法只吃两个<b>通用</b>清单
++     * （{@link ProductPage#unmappedStateWords()} 与 {@link ProductPage#stateFieldMissing()}），
++     * 不认识也不去问"这家适配器属于哪个类型"。谁有词表、谁缺字段是<b>适配器在读目录时</b>的事，
++     * 事实随 {@link ProductPage} 一起返回；引擎只读页，不按适配器类型分支——
++     * 这正是"映射与词表归适配器、计数与报缺口归引擎"的分工。</p>
+      *
+-     * <p>原词从哪来：适配器实现 {@link MallStatusVocabulary} 的话，直接问它要（词表本来就在适配器里）。
+-     * 没实现的适配器只能说"K 件读不懂"——这仍然远好过不说。</p>
++     * <p>判据仍然是 {@link ExternalProduct#status()} 为 {@code null}（F-25 的约定：适配器把
++     * "商城的词映射不到规范词表/商城没给"表达成 {@code null}，而不是把原词塞进规范字段）。
++     * 两个清单只用来把 {@code null} 的<b>成因</b>说清楚，不参与计数：
++     * <b>(1)</b> 商城返回过、但映射表里没有的原词；（2）商城根本没给状态字段。</p>
+      *
+      * <p>为什么必须单独报：这些商品既不是"商城说下架"（那是正常业务事实），也不能被当作在售，
+      * 只能被排除；不报出来，它们就只是"目录里少了几件"，运维会以为是商城没货。</p>
++     *
++     * @param unmappedStateWords 本次目录读取里商城返回过、但映射不到规范词表的原词（可为 null/空）
++     * @param stateFieldMissing  本次目录读取里商城没给状态字段的商品 ID（可为 null/空）
++     * @return 一句可直接写进流水/运行报告的中文；没有缺口时返回 {@code null}
+      */
+-    public static String describeUnmappedStatuses(List<ExternalProduct> products, MallTargetAdapter adapter) {
+-        if (products == null || adapter == null) {
++    public static String describeUnmappedStatuses(List<ExternalProduct> products,
++                                                  List<String> unmappedStateWords,
++                                                  List<String> stateFieldMissing) {
++        if (products == null) {
+             return null;
+         }
+         int count = 0;
+@@ -339,11 +350,27 @@ public final class MallApiGenerationEngine implements GenerationEngine {
+         if (count == 0) {
+             return null;
+         }
+-        List<String> words = adapter instanceof MallStatusVocabulary vocabulary
+-                ? vocabulary.unmappedStatusWords()
+-                : List.of();
+-        return count + " 件" + (words.isEmpty() ? ""
+-                : "（商城原词：" + words.stream().distinct().sorted().collect(Collectors.joining("、")) + "）");
++        List<String> words = distinctSorted(unmappedStateWords);
++        List<String> missing = distinctSorted(stateFieldMissing);
++        StringBuilder detail = new StringBuilder();
++        if (!words.isEmpty()) {
++            detail.append("商城原词：").append(String.join("、", words));
++        }
++        if (!missing.isEmpty()) {
++            if (detail.length() > 0) {
++                detail.append("；");
++            }
++            detail.append("商城未给状态字段的商品：").append(String.join("、", missing));
++        }
++        return count + " 件" + (detail.length() == 0 ? "" : "（" + detail + "）");
++    }
++
++    /** 去重 + 字典序：缺口说明在任何一次运行里都要是同一串（可复现的取证口径） */
++    private static List<String> distinctSorted(List<String> values) {
++        if (values == null || values.isEmpty()) {
++            return List.of();
++        }
++        return values.stream().filter(java.util.Objects::nonNull).distinct().sorted().toList();
+     }
+ 
+     /**
+diff --git a/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/SecondMallAdapterOperationsTest.java b/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/SecondMallAdapterOperationsTest.java
+index 559e8e0..1534574 100644
+--- a/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/SecondMallAdapterOperationsTest.java
++++ b/synthetic-data-generator/src/test/java/com/graduation/generator/adapter/SecondMallAdapterOperationsTest.java
+@@ -134,6 +134,63 @@ class SecondMallAdapterOperationsTest {
+     /** 进制必须是 100：换算常量不许被改成 1000 之类而无人察觉 */
+     private static final int CENTS_PER_YUAN_IS_EXPLICIT = 100;
+ 
++    // ---------- T2b：价格缺失 ⇒ 响亮失败（绝不静默 null） ----------
++
++    @Test
++    @DisplayName("T2b 价格缺失：商城没给 unit_price_cents 时下单必须响亮失败，绝不静默 null 或当成 0 元")
++    void missingPriceFailsLoudly() throws IOException {
++        mall = new SecondMallFakeServer(null, null, ITEM_COUNT);
++        SecondMallHttpAdapter adapter = adapter();
++        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
++
++        // 夹具形态先被独立钉住：目录里这件商品**整条 unit_price_cents 字段都没有**
++        // （不是 0、也不是 null 文本）；正文里那个 null 才是"价格缺失"的判据。
++        String sku = mall.itemSkus().get(0);
++        mall.removeItemPrice(sku);
++        JsonNode raw = mall.itemJson(sku);
++        assertFalse(raw.has("unit_price_cents"),
++                "夹具必须先去掉价格字段，否则这条用例没有对照物：" + raw);
++        assertFalse(mall.itemHasPrice(sku), "夹具侧事实：这件商品没有价格：" + sku);
++
++        ExternalUser buyer = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
++
++        // 1) 下单时这件商品没有可信单价 ⇒ 商城拒单、适配器必须抛，绝不返回含 null 金额的订单
++        MallOperationException e = assertThrows(MallOperationException.class,
++                () -> adapter.createOrder(target, OrderCommand.single(buyer.userId(), sku, 1)),
++                "价格缺失必须响亮失败：返回订单（哪怕金额是 null）会把\"读不懂的金额\"静默带进流水");
++        assertTrue(e.getMessage().contains("E_NO_PRICE") && e.getMessage().contains(sku),
++                "异常必须点名缺失的价格与哪件商品（错误码 + SKU）：" + e.getMessage());
++        assertTrue(e.getMessage().contains("no price") || e.getMessage().contains("价格")
++                        || e.getMessage().contains("单价"),
++                "异常必须直说价格/单价缺失（不许只丢一句\"失败\"）：" + e.getMessage());
++
++        // 2) 商城侧"确实没有留下成交"必须被独立证明：否则第 1 条的抛可能只是别的原因
++        assertEquals(0, mall.orderCount(),
++                "价格缺失时商城侧不许留下一笔成交（订单数必须 0，实际：" + mall.orderCount() + "）");
++        assertNull(mall.orderJson("ON1"), "价格缺失时不该建成任何订单快照");
++        // 3) 反向对照：目录读取本身仍然正常；报价读不懂的那件**被排除并响亮报错**，
++        //    而不是留在目录里带着 null 金额继续跑（与"读不懂的状态词"同一形态：排除 + 点名）
++        ProductPage page = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
++        assertEquals(ITEM_COUNT - 1, page.products().size(),
++                "报价读不懂的那件必须被排除在可用目录之外（目录 " + ITEM_COUNT + " 件 → 在售 "
++                        + page.products().size() + " 件）");
++        assertTrue(page.products().stream().noneMatch(p -> sku.equals(p.productId())),
++                "报价读不懂的商品不许留在可用目录里：" + sku);
++        assertTrue(page.products().stream().allMatch(p -> p.price() != null),
++                "可用目录里不许有任何金额为 null 的商品：" + page.products().stream()
++                        .filter(p -> p.price() == null).map(ExternalProduct::productId).toList());
++        // 目录成空时更不许"静默返回空目录"：那是把"读不懂"伪装成"商城没货"
++        mall = new SecondMallFakeServer(null, null, 1);
++        String onlySku = mall.itemSkus().get(0);
++        mall.removeItemPrice(onlySku);
++        TargetConfig singleItemTarget = target(mall.baseUrl(), FORMAT_DECLARED);
++        MallOperationException empty = assertThrows(MallOperationException.class,
++                () -> adapter().listProducts(singleItemTarget, ProductQuery.firstPage(1)),
++                "整份目录的报价都读不懂时必须响亮失败，绝不静默返回空目录");
++        assertTrue(empty.getMessage().contains(onlySku),
++                "空目录失败必须点名是哪件商品读不懂：" + empty.getMessage());
++    }
++
+     // ---------- T3：信封不同仍能解析 / 响亮失败 ----------
+ 
+     @Test
+@@ -209,14 +266,19 @@ class SecondMallAdapterOperationsTest {
+         ExternalUser buyer = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
+         ExternalOrder created = adapter.createOrder(target,
+                 OrderCommand.single(buyer.userId(), product.productId(), 2));
+-        // 订单状态 = 商城原词（NEW），括号里只是给流水看的人读别名（CREATED）——原词必须在前，不许被别名顶掉
+-        assertTrue(created.status().startsWith("NEW"), "下单后必须保留第二家原词 NEW：" + created.status());
+-        assertFalse(created.status().startsWith("CREATED"), "不许把别名当成商城原词：" + created.status());
++        // 订单状态 = 商城原文的**逐字符**透出（指导书 V2.3 §4.1.1.3"商城原样文本"）：
++        // 这里必须是逐字相等的 "NEW"，不许加括号别名、不许大小写改写、不许加前后缀——
++        // 用 startsWith 断言会把 "NEW(CREATED)" 这种"拼了别名"的实现放过去，所以这里写死全等。
++        assertEquals("NEW", created.status(), "下单后必须是第二家原文 NEW 的逐字符透出：" + created.status());
++        // 反向对照（商城侧）：不是应答好看，商城自己真的记着 NEW
++        assertEquals("NEW", mall.orderJson(created.orderId()).path("pay_state").asText(),
++                "商城侧下单后就是 NEW（正向对照：上面的 NEW 确实来自商城）");
+         assertNotNull(created.orderId());
+         assertTrue(created.orderId().startsWith("ON"), created.orderId());
+ 
+         ExternalOrder paid = adapter.pay(target, new PayCommand(created.orderId(), buyer.userId()));
+-        assertEquals("SETTLED", paid.status().split("\\(")[0], "支付后必须回 SETTLED（不是参考商城的 PAID）");
++        assertEquals("SETTLED", paid.status(),
++                "支付后必须是第二家原文 SETTLED 的逐字符透出（不是参考商城的 PAID，也不是 PAID(SETTLED)）");
+         assertEquals("SETTLED", mall.orderJson(created.orderId()).path("pay_state").asText(),
+                 "商城侧状态真的迁移了（不是只有应答好看）");
+         // 明细条数取"应答里的行数"（1 行），件数是行内的 quantity（2）——两者不是一个东西，
+@@ -225,15 +287,45 @@ class SecondMallAdapterOperationsTest {
+         assertEquals(2, mall.orderJson(created.orderId()).path("lines").get(0).path("quantity").asInt(),
+                 "商城收到的件数必须是 2（订单命令里的 quantity 真的发出去了）");
+ 
++        // 4b-2：第三个状态词 VOID 也要逐字透出（另起一单来作废，因为商城侧 SETTLED 之后不能再 VOID）
++        ExternalOrder toCancel = adapter.createOrder(target,
++                OrderCommand.single(buyer.userId(), product.productId(), 1));
++        assertEquals("NEW", toCancel.status(), "新单仍是商城原文 NEW");
++        ExternalOrder cancelled = adapter.cancel(target,
++                new CancelCommand(toCancel.orderId(), buyer.userId(), "测试用：作废"));
++        assertEquals("VOID", cancelled.status(), "作废后必须是第二家原文 VOID 的逐字符透出（不是 CANCELLED）");
++        assertEquals("VOID", mall.orderJson(toCancel.orderId()).path("pay_state").asText(),
++                "商城侧真的迁移到了 VOID（正向对照）");
++        // 商城侧原词分布要和"逐字透出"对得上：只有 SETTLED/VOID 两个原词，各 1 单。
++        // 拼过别名的实现会让这里的桶名/桶数都对不上（这也是别名为什么必须删掉）。
++        assertEquals(Map.of("SETTLED", 1, "VOID", 1), mall.orderStateHistogram(),
++                "商城侧只该有 SETTLED/VOID 两个原词，各 1 单：" + mall.orderStateHistogram());
++
+         // 4c：引擎侧不按字面量判定 —— 适配器不认识的状态词映射成 null（而不是把原词塞进规范字段）
+         mall.overrideItemState(mall.itemSkus().get(5), "ARCHIVED");
+-        ExternalProduct unknown = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT)).products()
++        ProductPage afterArchive = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
++        ExternalProduct unknown = afterArchive.products()
+                 .stream().filter(p -> "SKU00006".equals(p.productId())).findFirst().orElseThrow();
+         assertNull(unknown.status(), "映射不到必须是 null，绝不能是商城原词 ARCHIVED");
+         assertFalse(unknown.onSale(), "映射不到的不能被当成在售");
+-        // 4d：原词必须留痕（供引擎报成目录缺口），而不是无声丢弃
+-        assertTrue(adapter.unmappedStatusWords().contains("ARCHIVED"),
+-                "适配器必须报出读不懂的商城原词：" + adapter.unmappedStatusWords());
++        // 4d：原词必须留痕（供引擎报成目录缺口），而不是无声丢弃。
++        //     留痕的**载体是本次读取的返回页**（ProductPage），不是适配器实例上的字段：
++        //     适配器是单例无状态的，"上一轮读到过什么"不许跨运行留在它身上。
++        assertTrue(afterArchive.unmappedStateWords().contains("ARCHIVED"),
++                "本次读取的返回页必须报出读不懂的商城原词：" + afterArchive.unmappedStateWords());
++        assertEquals(List.of("ARCHIVED"), afterArchive.unmappedStateWords(),
++                "原词清单是把商城原词照实列出（去重、字典序），不是把规范词或商品 ID 混进去");
++        // 4e：第二次读取（状态已改回 SALE）的返回页里**不许**还留着上一轮的原词——
++        //     这是"事实随返回值走、不随单例走"的正向对照
++        mall.overrideItemState(mall.itemSkus().get(5), "SALE");
++        ProductPage afterRevert = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
++        assertEquals("on_sale", afterRevert.products().stream()
++                        .filter(p -> "SKU00006".equals(p.productId())).findFirst().orElseThrow().status(),
++                "改回 SALE 后必须重新映射成 on_sale");
++        assertTrue(afterRevert.unmappedStateWords().isEmpty(),
++                "上一轮读到的原词不许留在下一次读取的结果里：" + afterRevert.unmappedStateWords());
++        assertTrue(afterRevert.stateFieldMissing().isEmpty(),
++                "商城明明给了 state 字段，不该被记成\"没给状态字段\"：" + afterRevert.stateFieldMissing());
+     }
+ 
+     // ---------- T5：路由不同，且流水记的是适配器自报的路由 ----------
+@@ -285,13 +377,39 @@ class SecondMallAdapterOperationsTest {
+         assertEquals(CapabilityVerdict.SUPPORTED, capabilities.verdict(MallCapability.PRODUCT));
+         assertEquals(CapabilityVerdict.SUPPORTED, capabilities.verdict(MallCapability.USER));
+         assertEquals(CapabilityVerdict.SUPPORTED, capabilities.verdict(MallCapability.ORDER));
++        // 第二家没有改价/改库存、退款单、重置状态这三类接口 ⇒ 静态声明为 ABSENT。
++        // 口径必须说清："值（ABSENT） + 静态声明（未探测）"——即这是适配器**不联网**给出的声明，
++        // 不是一次探测的结论；本用例只断言到"声明成 ABSENT 且调用走响亮失败"，
++        // **不断言**"被探测定性为不存在"（那需要真的发探测请求，本适配器刻意不发）。
+         assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.ADMIN),
+-                "第二家没有改价/改库存接口 ⇒ ABSENT（不是 UNDETERMINED：这是已知事实）");
+-        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.REFUND));
+-        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.RESET_STATE));
++                "第二家没有改价/改库存接口 ⇒ 静态声明 ABSENT（未探测；不是 UNDETERMINED 的\"没证实\"）");
++        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.REFUND),
++                "退款：静态声明 ABSENT（未探测）");
++        assertEquals(CapabilityVerdict.ABSENT, capabilities.verdict(MallCapability.RESET_STATE),
++                "重置状态：静态声明 ABSENT（未探测）");
+         assertEquals(CapabilityVerdict.UNDETERMINED, capabilities.verdict(MallCapability.BEHAVIOR),
+                 "没声明 behavior_path ⇒ UNDETERMINED（没证实，但不是没有）");
+ 
++        // 反向对照：这三项 ABSENT 是**静态声明（未探测）**，不是探测结论 —— 声明式能力判定不许联网，
++        // 因此 capabilities() 之后商城侧一条请求都不该多出来
++        assertEquals(0, mall.exchanges().size(),
++                "capabilities() 是声明口，不许联网：实际收到的请求=" + mall.exchanges());
++        // 同理：test() 里对这三项**不发探测请求**，也从不谎称测过（它只探 product/user/order/behavior）
++        int beforeProbe = mall.exchanges().size();
++        TargetCheckResult check = adapter.test(target);
++        List<String> probeRequests = mall.exchanges().subList(beforeProbe, mall.exchanges().size());
++        assertTrue(probeRequests.stream().noneMatch(request -> request.contains("admin")
++                        || request.contains("refund") || request.contains("reset")),
++                "对 admin/refund/reset_state 不许发探测请求（发了就只能算\"未证实\"，不能算\"不存在\"）："
++                        + probeRequests);
++        assertFalse(probeRequests.isEmpty(),
++                "test() 至少要探一次代表路由，否则\"没探那三项\"是因为它什么都没探（空对照）：" + probeRequests);
++        // test() 的结果同样把这三项写成静态声明（未探测），而不是"测出来的不存在"
++        assertEquals(CapabilityVerdict.ABSENT, check.verdict(MallCapability.REFUND),
++                "test() 里退款仍是静态声明 ABSENT（未探测）：" + check.detail());
++        assertTrue(check.detail().contains("未探测") || check.detail().contains("静态声明"),
++                "test() 的文案必须自报\"未探测/静态声明\"，不许把声明说成测量：" + check.detail());
++
+         // 不支持的必须响亮失败：绝不能返回一个"成功"对象让调用方记账
+         MallOperationException refund = assertThrows(MallOperationException.class,
+                 () -> adapter.refund(target, new RefundCommand("ON1", "BR1", new BigDecimal("1.00"), "test")));
+@@ -314,6 +432,128 @@ class SecondMallAdapterOperationsTest {
+                 "没声明 open-v2 格式 ⇒ UNDETERMINED，而不是乐观的 SUPPORTED");
+     }
+ 
++    // ---------- T8：商城没给状态字段 ⇒ 保持"未给"，绝不造词 ----------
++
++    @Test
++    @DisplayName("T8 缺状态：商城没给 state/pay_state 时保持\"未给\"（null），绝不产出 UNKNOWN 这类编出来的商城词")
++    void missingStateNeverInventsAMallWord() throws IOException {
++        mall = new SecondMallFakeServer(null, null, ITEM_COUNT);
++        SecondMallHttpAdapter adapter = adapter();
++        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
++
++        // 0) 夹具形态先被独立钉住：这件商品的应答里**整条 state 字段都没有**（不是空串、不是怪词）
++        String sku = mall.itemSkus().get(0);
++        mall.overrideItemState(sku, null);
++        JsonNode rawItem = mall.itemJson(sku);
++        assertFalse(rawItem.has("state"), "夹具必须先去掉 state 字段，否则这条用例没有对照物：" + rawItem);
++
++        // 1) "商城没给字段"与"给了一个读不懂的词"是两件事：前者**没有商城原词可报**，
++        //    因此不许出现在 unmappedStateWords（那个列表里每个词都必须是商城真的说过的）
++        ProductPage page = adapter.listProducts(target, ProductQuery.firstPage(ITEM_COUNT));
++        assertTrue(page.unmappedStateWords().isEmpty(),
++                "没给字段不是\"给了读不懂的词\"，这里不许凭空冒出一个商城原词：" + page.unmappedStateWords());
++        assertTrue(page.stateFieldMissing().contains(sku),
++                "缺状态字段的商品必须进 stateFieldMissing（可核对的缺口事实）：" + page.stateFieldMissing());
++        // 这一行本身要留着（不静默丢商品），但它的规范状态必须是 null：不是 UNKNOWN、也不是任何词
++        ExternalProduct missingState = page.products().stream()
++                .filter(p -> sku.equals(p.productId())).findFirst()
++                .orElseThrow(() -> new AssertionError("缺状态字段的商品不许从目录里静默消失：" + sku));
++        assertNull(missingState.status(),
++                "商城没给 state 字段 ⇒ 规范状态必须是 null（\"未给\"），实际=" + missingState.status());
++        assertFalse(missingState.onSale(), "\"未给\"不许被当成在售");
++        long usable = page.products().stream().filter(ExternalProduct::onSale).count();
++        assertEquals(ITEM_COUNT - 1, usable,
++                "缺状态字段的商品必须被排除在可用目录之外（目录 " + ITEM_COUNT + " 件 → 可用 " + usable + " 件）");
++
++        // 2) 订单侧的正向对照：商城给了 pay_state 时必须逐字符透出（否则下面的 null 没有对照物）
++        ExternalUser buyer = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
++        String sellable = mall.itemSkus().get(1);
++        ExternalOrder withState = adapter.createOrder(target, OrderCommand.single(buyer.userId(), sellable, 1));
++        assertEquals("NEW", withState.status(),
++                "商城给了 pay_state=NEW ⇒ 必须原样透出（这条正向对照是下面那条断言的前提）");
++
++        // 3) 商城从此不回 pay_state 字段 ⇒ status 必须保持 null：不是 UNKNOWN、不是任何编出来的词
++        mall.omitOrderStateInResponse();
++        ExternalOrder withoutState = adapter.createOrder(target, OrderCommand.single(buyer.userId(), sellable, 1));
++        assertNull(withoutState.status(),
++                "商城没给状态字段时 status 必须是 null（\"未给\"），实际=" + withoutState.status()
++                        + "；编一个词会让\"商城说的是它\"与\"生成器猜的它\"在同一个字段里再也分不开");
++        assertFalse(withoutState.paid(), "\"未给\"不许被读成\"已支付\"");
++        assertFalse(withoutState.cancelled(), "\"未给\"不许被读成\"已取消\"");
++        assertEquals("NEW", mall.orderJson(withoutState.orderId()).path("pay_state").asText(),
++                "商城内部状态照旧是它自己的词 ⇒ \"状态缺失\"是应答形态，不是夹具坏了");
++        assertEquals("NEW", mall.orderJson(withState.orderId()).path("pay_state").asText(),
++                "那笔带状态的正向对照订单在商城侧也仍是 NEW（只创建、没支付）");
++
++        // 4) 支付应答同样不给状态字段：调用成功照样成功，但状态不造词
++        ExternalOrder paid = adapter.pay(target, new PayCommand(withoutState.orderId(), buyer.userId()));
++        assertNull(paid.status(), "支付应答没给状态字段 ⇒ 保持 null，不许写 UNKNOWN：" + paid.status());
++        assertFalse(paid.paid(), "不许把\"未给\"当成\"已支付\"");
++        assertEquals("SETTLED", mall.orderJson(withoutState.orderId()).path("pay_state").asText(),
++                "商城侧确实收下了这次支付（state=SETTLED）——状态字段缺失与调用成不成功是两件事");
++
++        // 5) 退款单同口径（第二家没有退款接口，这里只能直接观测 DTO 的\"未给\"语义）
++        ExternalRefund refund = new ExternalRefund("RF1", withoutState.orderId(), null, new BigDecimal("1.00"));
++        assertNull(refund.status(), "退款状态没给就是 null：绝不许出现 UNKNOWN 这类编出来的词");
++        assertFalse(refund.completed(), "\"未给\"不许被读成\"已完成\"");
++        // 空白状态词也按"没给"处理：它同样不是商城说过的词
++        assertNull(new ExternalOrder("ON9", "BR9", "   ", null, -1).status(),
++                "空白状态词不是商城原词，必须落成\"未给\"而不是留着空白串冒充状态");
++        assertNull(new ExternalRefund("RF9", "ON9", "   ", null).status(), "退款单同理");
++    }
++
++    // ---------- T9：格式声明缺失时，运维话术必须点名键名与可接受取值 ----------
++
++    @Test
++    @DisplayName("T9 格式声明缺失/不匹配：运维看得到的话术必须点名 config_json.format=open-v2（键名与取值都走常量）")
++    void formatGateIsNamedInOperatorFacingText() throws IOException {
++        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT);
++        SecondMallHttpAdapter adapter = adapter();
++
++        // 9a：base_url 与凭据都没问题，只是 config_json 里没有格式声明 —— 这正是"运维只能看到一串
++        //     UNDETERMINED、却不知道缺哪个键"的场景，话术必须直接告诉他键名与可接受取值
++        TargetConfig undeclaredTarget = target(mall.baseUrl(), "{}");
++        assertEquals(CapabilityVerdict.UNDETERMINED,
++                adapter.capabilities(undeclaredTarget).verdict(MallCapability.PRODUCT),
++                "声明门：没声明格式 ⇒ 三段一律 UNDETERMINED（这条断言是下面话术断言的前提）");
++        assertEquals(0, mall.exchanges().size(),
++                "能力声明不许联网：运维在配置写对之前不该已经在打商城了：" + mall.exchanges());
++        TargetCheckResult undeclared = adapter.test(undeclaredTarget);
++        assertTrue(undeclared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_KEY),
++                "话术必须点名缺的是哪个键（经常量断言，不硬编码字面量）：" + undeclared.detail());
++        assertTrue(undeclared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
++                "话术必须点名该键可接受的取值（经常量断言，不硬编码字面量）：" + undeclared.detail());
++        assertTrue(undeclared.detail().contains(
++                        SecondMallHttpAdapter.CONFIG_FORMAT_KEY + "=" + SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
++                "键名与取值必须以 \"<键>=<取值>\" 的形态连在一起出现，运维才能照着改：" + undeclared.detail());
++        assertTrue(undeclared.detail().contains(SecondMallHttpAdapter.CONFIG_BEHAVIOR_PATH),
++                "behavior 还要另外声明哪个键，也要在同一段话术里说清：" + undeclared.detail());
++
++        // 9b：声明了、但取值不对 ⇒ 与"根本没声明"同一个结论，话术要回显当前那份声明
++        TargetConfig wrongValueTarget = target(mall.baseUrl(),
++                "{\"" + SecondMallHttpAdapter.CONFIG_FORMAT_KEY + "\":\"open-v1\"}");
++        assertEquals(CapabilityVerdict.UNDETERMINED,
++                adapter.capabilities(wrongValueTarget).verdict(MallCapability.PRODUCT),
++                "声明了但取值不对 ⇒ 同样是 UNDETERMINED，绝不降级成 ABSENT"
++                        + "（ABSENT 会被读成\"商城没有这个接口\"，而事实是配置写错了）");
++        TargetCheckResult wrongValue = adapter.test(wrongValueTarget);
++        assertTrue(wrongValue.detail().contains("open-v1"),
++                "话术必须回显当前那份声明，运维才知道自己写的是什么：" + wrongValue.detail());
++        assertTrue(wrongValue.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
++                "取值不对时同样要点名可接受取值：" + wrongValue.detail());
++
++        // 9c：正向对照 —— 声明正确时声明门给 SUPPORTED，话术也必须说"已声明"，不能反过来吓人
++        TargetConfig declaredTarget = target(mall.baseUrl(), FORMAT_DECLARED);
++        assertTrue(adapter.capabilities(declaredTarget).isSupported(MallCapability.PRODUCT),
++                "声明正确 + base_url/凭据没问题 ⇒ 声明门给 SUPPORTED（否则 9a/9b 的 UNDETERMINED 没有对照物）");
++        TargetCheckResult declared = adapter.test(declaredTarget);
++        assertTrue(declared.detail().contains("已声明"),
++                "声明成立时话术要明说已声明，而不是继续提示缺失：" + declared.detail());
++        assertTrue(declared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_KEY)
++                        && declared.detail().contains(SecondMallHttpAdapter.CONFIG_FORMAT_VALUE),
++                "无论成立与否，这段话术都要能自解释（键名 + 取值）：" + declared.detail());
++    }
++
+     /** {@code config_json}：显式声明第二家的接口格式（能力判定的输入之一） */
+     private static final String FORMAT_DECLARED = "{\"format\":\"open-v2\"}";
+ 
+diff --git a/synthetic-data-generator/src/test/java/com/graduation/generator/engine/SecondMallDualTargetTest.java b/synthetic-data-generator/src/test/java/com/graduation/generator/engine/SecondMallDualTargetTest.java
+index 09eeb90..6a0214a 100644
+--- a/synthetic-data-generator/src/test/java/com/graduation/generator/engine/SecondMallDualTargetTest.java
++++ b/synthetic-data-generator/src/test/java/com/graduation/generator/engine/SecondMallDualTargetTest.java
+@@ -162,6 +162,13 @@ class SecondMallDualTargetTest {
+         assertEquals(1, counting.routeResolutions,
+                 "operationRoutes 必须每次运行只解析一次（预检），实际=" + counting.routeResolutions
+                         + "；每条事件问一次会让\"同一次运行里路由中途变了\"无法察觉");
++        // 上一条钉的是"恰好一次"；这两条把上下两个边界也写成显式断言：
++        // 下界挡住"一次都没问"（那样上面的等式会因为 0≠1 而失败，这条让原因直接写在断言里），
++        // 上界挡住"重试/重复解析"——一次运行里路由表变了必须靠别的信号暴露，不能靠多问几次掩盖。
++        assertTrue(counting.routeResolutions <= 1,
++                "operationRoutes 的解析次数不许超过 1（一次运行一次）：实际=" + counting.routeResolutions);
++        assertTrue(counting.routeResolutions >= 1,
++                "operationRoutes 必须真的被问过至少 1 次：实际=" + counting.routeResolutions);
+         // 能力判定可以被问多次（预检一次、构造落点一次），但它必须是不联网的纯本地判定——
+         // 这里只要求"次数是常数级"，不把它钉成 1，避免把实现细节当成契约。
+         assertTrue(counting.capabilityResolutions >= 1 && counting.capabilityResolutions <= 4,
+@@ -275,6 +282,120 @@ class SecondMallDualTargetTest {
+                 "正向对照：SALE 是有映射的，说明上面的 null 不是\"映射表整个坏了\"");
+     }
+ 
++    // ---------- S5：缺口事实不许跨运行（跨目标）残留 ----------
++
++    @Test
++    @DisplayName("跨运行不串台：上一轮读到的状态缺口不许留在下一轮（同一个适配器实例，两个目标）")
++    void gapFactsDoNotLeakAcrossRuns() throws IOException {
++        // 两个**同时存在**的第二家商城，用的是**同一个适配器实例**：这正是生产形态
++        // （适配器是单例，见 config/GeneratorBeans）。第一轮故意让商品状态读不懂，
++        // 第二轮完全正常——如果缺口被记在适配器字段上，第二轮就会"继承"上一轮的词。
++        SecondMallFakeServer firstTargetMall = new SecondMallFakeServer(SECOND_TOKEN, null, CATALOG_SIZE);
++        secondMall = new SecondMallFakeServer(SECOND_TOKEN, null, CATALOG_SIZE);
++        try {
++            SecondMallHttpAdapter sharedAdapter = secondAdapter();
++
++            String unmappableSku = firstTargetMall.itemSkus().get(0);
++            firstTargetMall.overrideItemState(unmappableSku, UNMAPPABLE_STATE);
++            TargetConfig firstTarget = new TargetConfig(51L, SecondMallHttpAdapter.ADAPTER_TYPE,
++                    firstTargetMall.baseUrl(), SECOND_ENV, "{\"format\":\"open-v2\"}");
++            TargetConfig secondTarget = new TargetConfig(52L, SecondMallHttpAdapter.ADAPTER_TYPE,
++                    secondMall.baseUrl(), SECOND_ENV, "{\"format\":\"open-v2\"}");
++
++            MallApiGenerationEngine.MallRunOutcome firstRun = engine.runForTarget(
++                    request("run-leak-1"), firstTarget, sharedAdapter, new RecordingSink(), () -> false);
++            MallApiGenerationEngine.MallRunOutcome secondRun = engine.runForTarget(
++                    request("run-leak-2"), secondTarget, sharedAdapter, new RecordingSink(), () -> false);
++
++            // 正向对照：第一轮**确实**观测到了缺口（否则下面"第二轮没有"可能是"从来没报过"）
++            String firstGapText = runGapText(firstRun);
++            assertTrue(firstGapText.contains(UNMAPPABLE_STATE),
++                    "第一轮必须报出读不懂的原词（没有这个对照，下面的\"不残留\"就是空断言）：\n" + firstGapText);
++            assertEquals(CATALOG_SIZE - 1, firstRun.preflight().catalog().size(),
++                    "第一轮必须真的排除了那件读不懂的商品");
++
++            // 1) 第二轮（另一家商城、同一个适配器实例）的目录必须完整：没有被上一轮的缺口影响
++            String secondGapText = runGapText(secondRun);
++            assertEquals(CATALOG_SIZE, secondRun.preflight().catalog().size(),
++                    "第二轮的可用目录必须完整：" + CATALOG_SIZE + " 件；被上一轮的缺口影响了就会少件");
++            assertTrue(secondRun.preflight().catalog().stream().allMatch(product -> product.status() != null),
++                    "第二轮的目录里不该有\"状态读不懂\"的商品（null 状态即缺口）："
++                            + secondRun.preflight().catalog().stream()
++                            .filter(product -> product.status() == null)
++                            .map(ExternalProduct::productId).toList());
++
++            // 2) 第二轮的缺口说明里绝不能出现上一轮的原词（跨运行残留的可观测形态）
++            assertFalse(secondGapText.contains(UNMAPPABLE_STATE),
++                    "上一轮读到的商城原词不许出现在第二轮的流水/报告里（跨运行残留）：\n" + secondGapText);
++            assertFalse(secondGapText.contains(unmappableSku),
++                    "上一轮的商品 ID 不许出现在第二轮的说明里：" + unmappableSku);
++            // 3) 第二轮自己的商城必须真的被读到一次目录（否则上面的"没缺口"可能只是"根本没读"）
++            assertEquals(1, secondMall.hits(SecondMallFakeServer.ITEMS_ROUTE),
++                    "第二轮自己的商城必须被读到目录（正向对照）");
++            // 4) 第二轮绝不该再打第一轮的商城（否则"跨目标"也串了）
++            assertEquals(1, firstTargetMall.hits(SecondMallFakeServer.ITEMS_ROUTE),
++                    "第二轮绝不该再打第一轮的商城：" + firstTargetMall.exchanges());
++            // 5) 第二轮的流水里只该有第二家商城自己的路由，且真的留下了调用行
++            assertFalse(journalRoutes(secondRun).isEmpty(), "第二轮必须留下真实调用行");
++            assertTrue(journalRoutes(secondRun).stream().allMatch(route -> route.startsWith("/open/v2/")),
++                    "第二轮的流水里混进了别的路由：" + distinct(journalRoutes(secondRun)));
++        } finally {
++            firstTargetMall.close();
++        }
++    }
++
++    // ---------- 商城未给状态字段：不造词，也不把成功的调用记成失败 ----------
++
++    @Test
++    @DisplayName("商城未给状态字段：订单流水不造状态词（明细写明\"未给\"），成功的调用仍记 OK、规范事件照常产出")
++    void missingOrderStateIsNotInventedInJournal() throws IOException {
++        secondMall = new SecondMallFakeServer(SECOND_TOKEN, null, CATALOG_SIZE);
++        // 商城应答里不回 pay_state（内部状态照旧推进）：这就是"商城没给状态字段"的可观测形态
++        secondMall.omitOrderStateInResponse();
++        TargetConfig target = new TargetConfig(53L, SecondMallHttpAdapter.ADAPTER_TYPE,
++                secondMall.baseUrl(), SECOND_ENV, "{\"format\":\"open-v2\"}");
++
++        RecordingSink sink = new RecordingSink();
++        MallApiGenerationEngine.MallRunOutcome outcome =
++                engine.runForTarget(request("run-nostate"), target, secondAdapter(), sink, () -> false);
++
++        List<OperationJournalEntry> payRows = outcome.dispatch().entries().stream()
++                .filter(entry -> MallDispatchPlan.OP_PAY.equals(entry.operation())).toList();
++        assertFalse(payRows.isEmpty(),
++                "这次运行必须真的支付过（否则\"状态不造词\"没有对照物）；实际操作=" + distinct(outcome.dispatch()
++                        .entries().stream().map(OperationJournalEntry::operation).distinct().toList()));
++        for (OperationJournalEntry row : payRows) {
++            // 1) 状态字段缺失 ≠ 这次调用失败：HTTP 真的成功了，把它记成 FAILED 才是错的账
++            assertEquals(OperationJournalEntry.STATUS_OK, row.status(),
++                    "商城没回状态字段不等于调用失败：" + row);
++            // 2) 明细里不许出现任何"像商城状态词"的值，必须写明\"未给\"
++            assertTrue(row.detail().contains("未给状态"),
++                    "明细必须写明\"商城未给状态字段\"，而不是留一个 null 冒充状态：" + row.detail());
++            assertFalse(row.detail().contains("null"),
++                    "明细里出现 null 会让\"商城没给\"与\"我们读漏了\"分不开：" + row.detail());
++            assertFalse(row.detail().contains("UNKNOWN") || row.detail().contains("CREATED")
++                            || row.detail().contains("PAID") || row.detail().contains("CANCELLED"),
++                    "明细里出现了生成器编出来的状态词：" + row.detail());
++        }
++
++        // 3) 商城侧的事实照旧：状态真的推进了（说明"状态缺失"是应答形态，不是商城没干活）
++        assertFalse(secondMall.orderStateHistogram().isEmpty(), "商城侧必须真的留下了订单状态");
++        assertEquals(0, outcome.dispatch().entries().stream()
++                        .filter(entry -> OperationJournalEntry.STATUS_FAILED.equals(entry.status())).count(),
++                "状态字段缺失不许把任何一行记成 FAILED");
++        // 4) 规范事件照常产出、条数不变：商城没回状态字段是"少了一个可对账的字段"，
++        //    不是"这次支付没发生"——既不降级成文件模式，也不把事件悄悄吞掉
++        assertEquals(EVENT_COUNT, outcome.forwardedCount(),
++                "支付/取消仍然成功 ⇒ 计划条数必须照常跑满（不许因为状态字段缺失而少产出）");
++    }
++
++    /** 一次运行的"缺口说明"全文：流水明细 + 预检备注（缺口必须在这两处之一被看见） */
++    private static String runGapText(MallApiGenerationEngine.MallRunOutcome outcome) {
++        return String.join("\n", outcome.dispatch().entries().stream()
++                .map(entry -> String.valueOf(entry.detail())).toList())
++                + "\n" + String.join("\n", outcome.preflight().notes());
++    }
++
+     // ---------- 断言辅助 ----------
+ 
+     private static void assertReferenceEventsUseCanonicalStatus(RecordingSink sink) {
+diff --git a/synthetic-data-generator/src/test/java/com/graduation/generator/fixture/SecondMallFakeServer.java b/synthetic-data-generator/src/test/java/com/graduation/generator/fixture/SecondMallFakeServer.java
+index 5017f45..2ccba3d 100644
+--- a/synthetic-data-generator/src/test/java/com/graduation/generator/fixture/SecondMallFakeServer.java
++++ b/synthetic-data-generator/src/test/java/com/graduation/generator/fixture/SecondMallFakeServer.java
+@@ -97,18 +97,35 @@ public final class SecondMallFakeServer implements AutoCloseable {
+     private final Map<String, List<String>> bodiesByRoute = new ConcurrentHashMap<>();
+     private final List<Integer> statuses = new CopyOnWriteArrayList<>();
+     private final Map<String, Integer> routeHits = new ConcurrentHashMap<>();
++
++    /** {@code true} ⇒ 订单类应答里不回 {@code pay_state} 字段（商城内部状态照旧，只改应答形态） */
++    private volatile boolean omitOrderStateInResponse;
+     private final AtomicLong sequence = new AtomicLong();
+     private final AtomicLong orderAttempts = new AtomicLong();
+ 
+     /**
+      * 一条商品记录（第二家的字段名与单位）
+      *
+-     * @param state 第二家的状态词（{@code SALE}/{@code OFF_SHELF}/{@code PENDING}）；
+-     *              可被构造成未登记的怪词，用于验证适配器"认不出就不硬塞进规范枚举"
++     * @param state          第二家的状态词（{@code SALE}/{@code OFF_SHELF}/{@code PENDING}）；
++     *                       可被构造成未登记的怪词，用于验证适配器"认不出就不硬塞进规范枚举"；
++     *                       {@code null} 表示<b>商城这条应答里根本没有 state 字段</b>
++     *                       （与"给了一个读不懂的词"是两种不同的缺口，见
++     *                       {@link #putItemWithoutState(String, String, long)}）
++     * @param unitPriceCents 整数分；{@link #MISSING_UNIT_PRICE_CENTS} 表示<b>这条应答里根本没有
++     *                       unit_price_cents 字段</b>（用于验证"价格缺失必须响亮失败"）
+      */
+     private record Item(String sku, String title, long categoryCode, long unitPriceCents, String state) {
+     }
+ 
++    /**
++     * 单价缺失的哨兵：带这个值的商品在应答里<b>整条 {@code unit_price_cents} 字段都不写</b>
++     * （不是写 0、也不是写 null 文本）——模拟"商城这条记录里根本没有价格"。
++     *
++     * <p>用 {@code -1} 当哨兵而不是用 {@code null}：{@code long} 的取值域里负数不是合法价格，
++     * 因此"哨兵"与"真实价格"不会混。</p>
++     */
++    public static final long MISSING_UNIT_PRICE_CENTS = -1L;
++
+     public SecondMallFakeServer(String token, String behaviorPath, int itemCount) throws IOException {
+         this(token, behaviorPath, itemCount, Long.MAX_VALUE, null);
+     }
+@@ -211,7 +228,12 @@ public final class SecondMallFakeServer implements AutoCloseable {
+         return histogram;
+     }
+ 
+-    /** 把某件商品的状态词改成任意值（用于验证未登记状态词的处理策略） */
++    /**
++     * 把某件商品的状态词改成任意值（用于验证未登记状态词的处理策略）。
++     *
++     * @param state 商城状态词；传 {@code null} 表示<b>这条应答里根本没有 state 字段</b>
++     *              （用于验证"商城没给字段"与"给了一个读不懂的词"被分成两件事）
++     */
+     public void overrideItemState(String sku, String state) {
+         Item item = items.get(sku);
+         if (item != null) {
+@@ -219,6 +241,65 @@ public final class SecondMallFakeServer implements AutoCloseable {
+         }
+     }
+ 
++    /** 新增一件商品，带一个合法的在售状态词（其余字段为第二家的形状） */
++    public void putItem(String sku, String title, long categoryCode, long unitPriceCents) {
++        items.put(sku, new Item(sku, title, categoryCode, unitPriceCents, "SALE"));
++    }
++
++    /**
++     * 新增一件<b>应答里没有 unit_price_cents</b> 的商品（价格缺失的夹具形态）。
++     *
++     * <p>存在的理由只有一个：验证适配器在"商城这条记录里没有价格"时<b>响亮失败</b>，
++     * 而不是把 {@code null} 金额静默带进流水与运行报告。</p>
++     */
++    public void putItemWithoutPrice(String sku, String title, long categoryCode) {
++        items.put(sku, new Item(sku, title, categoryCode, MISSING_UNIT_PRICE_CENTS, "SALE"));
++    }
++
++    /** 新增一件<b>应答里没有 state 字段</b>的商品（字段缺失的夹具形态；与"读不懂的词"分开） */
++    public void putItemWithoutState(String sku, String title, long unitPriceCents) {
++        items.put(sku, new Item(sku, title, 21L, unitPriceCents, null));
++    }
++
++    /** 把某件商品的单价改成"商城没给"（应答里整条字段不写）：复用同一件商品，不新增规模 */
++    public void removeItemPrice(String sku) {
++        Item item = items.get(sku);
++        if (item != null) {
++            items.put(sku, new Item(item.sku(), item.title(), item.categoryCode(),
++                    MISSING_UNIT_PRICE_CENTS, item.state()));
++        }
++    }
++
++    /** 目录里这件商品的应答里到底有没有 {@code unit_price_cents}（测试侧独立可判的事实） */
++    public boolean itemHasPrice(String sku) {
++        Item item = items.get(sku);
++        return item != null && item.unitPriceCents() != MISSING_UNIT_PRICE_CENTS;
++    }
++
++    /**
++     * 让订单类应答（下单/支付/取消）<b>不带 {@code pay_state} 字段</b>，而商城自己记的状态照旧推进。
++     *
++     * <p>存在的理由只有一个：验证"商城没给状态字段"时，生成器<b>不造词</b>——
++     * {@code ExternalOrder#status()} 必须是 {@code null}（而不是 {@code "UNKNOWN"} 这类编出来的词），
++     * 且这次调用仍然算成功（HTTP 真的成功了，与商城回没回状态字段是两件事）。</p>
++     *
++     * <p>它只改<b>应答形态</b>：{@link #orderJson(String)} 与 {@link #orderStateHistogram()} 读的是
++     * 商城内部那份快照，仍然带着 {@code pay_state}——因此"状态缺失"是应答的事实，
++     * 而不是夹具被改坏了。</p>
++     */
++    public void omitOrderStateInResponse() {
++        this.omitOrderStateInResponse = true;
++    }
++
++    /** 订单应答体：默认原样深拷贝；开了"不回状态字段"时，删掉 {@code pay_state} 再回 */
++    private ObjectNode orderResponse(ObjectNode order) {
++        ObjectNode copy = order.deepCopy();
++        if (omitOrderStateInResponse) {
++            copy.remove("pay_state");
++        }
++        return copy;
++    }
++
+     // ---------- HTTP ----------
+ 
+     private void handle(HttpExchange exchange) throws IOException {
+@@ -313,18 +394,35 @@ public final class SecondMallFakeServer implements AutoCloseable {
+                     return;
+                 }
+                 int quantity = line.path("quantity").asInt();
+-                // 商城按<b>自己的目录</b>定价并回算总额；请求里带的 unit_price_cents 只做校验，
+-                // 对不上就拒单——这样"适配器有没有正确报单价"也是可观测的事实
++                // 目录里这件商品没有价格 ⇒ 商城自己也算不出可信总额，只能拒单（E_NO_PRICE）。
++                // 真实商城也是这个形状：不可能用"未知单价"去记一笔账；拒单而不是回一笔
++                // 带 null 单价的订单，正好让"价格缺失不许变成一笔成交"在**商城侧**也成立。
++                if (item.unitPriceCents() == MISSING_UNIT_PRICE_CENTS) {
++                    fail(exchange, 409, "E_NO_PRICE",
++                            "item has no price, cannot quote: " + item.sku());
++                    return;
++                }
++                // 商城按<b>自己的目录</b>定价并回算总额；请求里若带了 unit_price_cents 就做校验，
++                // 对不上就拒单——这样"适配器有没有乱报价"也是可观测的事实。
++                // 注意：Jackson 里"字段不存在"读到的是 MissingNode（isNull() 为 false、asLong() 为 0），
++                // 所以这里必须同时判 missing 与 null，否则"没带价格"会被误判成"报了 0 分"。
+                 JsonNode quoted = line.path("unit_price_cents");
+-                if (!quoted.isNull() && quoted.asLong() != item.unitPriceCents()) {
++                if (!quoted.isMissingNode() && !quoted.isNull() && quoted.asLong() != item.unitPriceCents()) {
+                     fail(exchange, 409, "E_PRICE_MISMATCH", "unit_price_cents mismatch for " + item.sku());
+                     return;
+                 }
+                 totalCents += item.unitPriceCents() * quantity;
+-                lines.add(MAPPER.createObjectNode()
++                ObjectNode lineNode = MAPPER.createObjectNode()
+                         .put("sku", item.sku())
+-                        .put("quantity", quantity)
+-                        .put("unit_price_cents", item.unitPriceCents()));
++                        .put("quantity", quantity);
++                // 下单应答的明细行如实回显"商城记账的单价"；商品价格缺失时这条**没有真实取值**
++                // （写显式 null，不编一个数），适配器据此必须响亮失败
++                if (item.unitPriceCents() == MISSING_UNIT_PRICE_CENTS) {
++                    lineNode.putNull("unit_price_cents");
++                } else {
++                    lineNode.put("unit_price_cents", item.unitPriceCents());
++                }
++                lines.add(lineNode);
+             }
+             String orderNo = "ON" + String.format("%015d", sequence.incrementAndGet());
+             order.put("order_no", orderNo);
+@@ -334,7 +432,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
+             order.set("lines", lines);
+             orders.put(orderNo, order);
+             hit(ORDERS_ROUTE);
+-            ok(exchange, order.deepCopy());
++            ok(exchange, orderResponse(order));
+             return;
+         }
+         Matcher settle = SETTLE.matcher(path);
+@@ -350,7 +448,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
+             }
+             order.put("pay_state", "SETTLED");
+             hit(SETTLE_ROUTE);
+-            ok(exchange, order.deepCopy());
++            ok(exchange, orderResponse(order));
+             return;
+         }
+         Matcher cancel = VOID.matcher(path);
+@@ -366,7 +464,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
+             }
+             order.put("pay_state", "VOID");
+             hit(VOID_ROUTE);
+-            ok(exchange, order.deepCopy());
++            ok(exchange, orderResponse(order));
+             return;
+         }
+         // 第二家没有的路由（含 /open/v2/admin/**、任何 /refund* 变体）：404 + E_NO_ROUTE
+@@ -379,8 +477,15 @@ public final class SecondMallFakeServer implements AutoCloseable {
+         node.put("sku", item.sku());
+         node.put("title", item.title());
+         node.put("category_code", item.categoryCode());
+-        node.put("unit_price_cents", item.unitPriceCents());
+-        node.put("state", item.state());
++        // 价格缺失时**整条字段不写**（不是写 0、也不是写 null）：这样"商城这条记录里没有价格"
++        // 才是真的可观测形态，适配器也就没有"当成 0 元"的机会。
++        if (item.unitPriceCents() != MISSING_UNIT_PRICE_CENTS) {
++            node.put("unit_price_cents", item.unitPriceCents());
++        }
++        // 状态字段同理：null 表示商城这条记录里没有 state 字段，与"给了一个读不懂的词"分开
++        if (item.state() != null) {
++            node.put("state", item.state());
++        }
+         // 第二家还会给一些生成器用不上的字段：多给字段必须不影响解析（参考商城也有 brandId/cost）
+         node.put("marketing_tag", "NONE");
+         return node;
