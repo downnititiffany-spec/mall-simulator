@@ -1,0 +1,163 @@
+V25-E3 宿主 3306「窗口内无新行」存在性检查（只读）  2026-09-14 14:17:37
+实例指纹 @@port|@@server_uuid|@@hostname = 3306|85191145-1491-11f0-b4e2-60cf84d55629|dahaishui
+取证窗口 = [2026-09-14 13:50:00 , 2026-09-14 14:20:00]   （应用进程 8091 的运行区间 13:59:37–14:15:09 内含于其中）
+判据：下表列出的每一张「应用会写的表」中，任何时间戳列都不得落在窗口内；且不得出现本 run 标识。
+
+### 1) 发现带时间戳列的表 23 张，生成判据语句
+  生成的只读脚本: 35-3306-window-absence.sql（140 条语句，已逐条校验全部为 SELECT）
+
+### 2) 逐表判据（k = 表.指标）
+KEY                                                      VALUE
+zz_instance                                              3306|85191145-1491-11f0-b4e2-60cf84d55629|dahaishui
+analytics_meta.ai_call_log.rows_total                    0
+analytics_meta.ai_call_log.max_id                        NULL
+analytics_meta.ai_call_log.max_created_at                NULL
+analytics_meta.ai_call_log.inwin_created_at              0
+analytics_meta.ai_query_history.rows_total               54
+analytics_meta.ai_query_history.max_id                   54
+analytics_meta.ai_query_history.max_created_at           2026-09-11 09:53:56.665
+analytics_meta.ai_query_history.inwin_created_at         0
+analytics_meta.data_quality_result.rows_total            467
+analytics_meta.data_quality_result.max_id                467
+analytics_meta.data_quality_result.max_created_at        2026-09-12 21:29:27.266
+analytics_meta.data_quality_result.inwin_created_at      0
+analytics_meta.decision_evaluation.rows_total            4
+analytics_meta.decision_evaluation.max_id                4
+analytics_meta.decision_evaluation.max_created_at        2026-09-11 09:53:32.099
+analytics_meta.decision_evaluation.inwin_created_at      0
+analytics_meta.decision_task.rows_total                  8
+analytics_meta.decision_task.max_id                      8
+analytics_meta.decision_task.max_created_at              2026-09-11 09:53:32.115
+analytics_meta.decision_task.inwin_created_at            0
+analytics_meta.decision_task.max_updated_at              2026-09-11 09:53:32.115
+analytics_meta.decision_task.inwin_updated_at            0
+analytics_meta.decision_task.max_started_at              2026-09-11 09:53:32.074
+analytics_meta.decision_task.inwin_started_at            0
+analytics_meta.decision_task.max_completed_at            2026-09-11 09:53:32.087
+analytics_meta.decision_task.inwin_completed_at          0
+analytics_meta.decision_task.max_evaluated_at            2026-09-11 09:53:32.102
+analytics_meta.decision_task.inwin_evaluated_at          0
+analytics_meta.decision_task.max_approved_at             2026-09-11 09:53:32.049
+analytics_meta.decision_task.inwin_approved_at           0
+analytics_meta.file_checkpoint.rows_total                118
+analytics_meta.file_checkpoint.max_id                    118
+analytics_meta.file_checkpoint.max_updated_at            2026-09-12 22:08:06.050
+analytics_meta.file_checkpoint.inwin_updated_at          0
+analytics_meta.flyway_schema_history.rows_total          17
+analytics_meta.flyway_schema_history.max_installed_on    2026-09-12 15:06:05
+analytics_meta.flyway_schema_history.inwin_installed_on  0
+analytics_meta.ingestion_batch.rows_total                46
+analytics_meta.ingestion_batch.max_id                    46
+analytics_meta.ingestion_batch.max_start_time            2026-09-12 22:11:07.709
+analytics_meta.ingestion_batch.inwin_start_time          0
+analytics_meta.ingestion_batch.max_end_time              2026-09-12 22:11:07.716
+analytics_meta.ingestion_batch.inwin_end_time            0
+analytics_meta.metric_snapshot.rows_total                9
+analytics_meta.metric_snapshot.max_id                    9
+analytics_meta.metric_snapshot.max_business_time         2026-09-07 20:00:00.000
+analytics_meta.metric_snapshot.inwin_business_time       0
+analytics_meta.metric_snapshot.max_data_updated_at       2026-09-07 19:33:50.118
+analytics_meta.metric_snapshot.inwin_data_updated_at     0
+analytics_meta.metric_snapshot.max_published_at          2026-09-07 19:33:50.123
+analytics_meta.metric_snapshot.inwin_published_at        0
+analytics_meta.metric_snapshot.max_created_at            2026-09-07 19:33:50.118
+analytics_meta.metric_snapshot.inwin_created_at          0
+analytics_meta.metric_value.rows_total                   132
+analytics_meta.metric_value.max_id                       132
+analytics_meta.metric_value.max_updated_at               2026-09-07 19:33:50.123
+analytics_meta.metric_value.inwin_updated_at             0
+analytics_meta.operation_audit_log.rows_total            96
+analytics_meta.operation_audit_log.max_id                96
+analytics_meta.operation_audit_log.max_created_at        2026-09-12 22:07:26.291
+analytics_meta.operation_audit_log.inwin_created_at      0
+analytics_meta.pipeline_run.rows_total                   46
+analytics_meta.pipeline_run.max_id                       47
+analytics_meta.pipeline_run.max_business_time            2026-09-07 20:00:00.000
+analytics_meta.pipeline_run.inwin_business_time          0
+analytics_meta.pipeline_run.max_created_at               2026-09-12 21:26:36.119
+analytics_meta.pipeline_run.inwin_created_at             0
+analytics_meta.pipeline_run.max_started_at               2026-09-12 21:26:36.126
+analytics_meta.pipeline_run.inwin_started_at             0
+analytics_meta.pipeline_run.max_finished_at              2026-09-12 21:29:27.334
+analytics_meta.pipeline_run.inwin_finished_at            0
+analytics_meta.pipeline_run.max_updated_at               2026-09-12 21:26:36.126
+analytics_meta.pipeline_run.inwin_updated_at             0
+analytics_meta.pipeline_stage_run.rows_total             288
+analytics_meta.pipeline_stage_run.max_id                 303
+analytics_meta.pipeline_stage_run.max_started_at         2026-09-12 21:28:49.023
+analytics_meta.pipeline_stage_run.inwin_started_at       0
+analytics_meta.pipeline_stage_run.max_finished_at        2026-09-12 21:29:27.333
+analytics_meta.pipeline_stage_run.inwin_finished_at      0
+analytics_meta.quarantine_record.rows_total              208
+analytics_meta.quarantine_record.max_id                  208
+analytics_meta.quarantine_record.max_created_at          2026-09-12 22:08:06.047
+analytics_meta.quarantine_record.inwin_created_at        0
+analytics_meta.runtime_profile.rows_total                1
+analytics_meta.runtime_profile.max_id                    1
+analytics_meta.runtime_profile.max_created_at            2026-09-07 17:15:57.615
+analytics_meta.runtime_profile.inwin_created_at          0
+analytics_meta.runtime_profile.max_updated_at            2026-09-10 16:48:17.303
+analytics_meta.runtime_profile.inwin_updated_at          0
+analytics_meta.source_registry.rows_total                2
+analytics_meta.source_registry.max_id                    2
+analytics_meta.source_registry.max_created_at            2026-09-12 22:07:13.583
+analytics_meta.source_registry.inwin_created_at          0
+analytics_meta.source_registry.max_updated_at            2026-09-12 22:07:26.288
+analytics_meta.source_registry.inwin_updated_at          0
+analytics_meta.spark_job_run.rows_total                  261
+analytics_meta.spark_job_run.max_id                      261
+analytics_meta.spark_job_run.max_started_at              2026-09-12 21:29:11.159
+analytics_meta.spark_job_run.inwin_started_at            0
+analytics_meta.spark_job_run.max_finished_at             2026-09-12 21:29:27.250
+analytics_meta.spark_job_run.inwin_finished_at           0
+analytics_meta.sys_user.rows_total                       3
+analytics_meta.sys_user.max_id                           3
+analytics_meta.sys_user.max_created_at                   2026-09-07 16:04:26
+analytics_meta.sys_user.inwin_created_at                 0
+analytics_meta.t_ckpt_test.rows_total                    0
+analytics_meta.t_ckpt_test.max_id                        NULL
+analytics_meta.t_ckpt_test.max_updated_at                NULL
+analytics_meta.t_ckpt_test.inwin_updated_at              0
+analytics_meta.user_session.rows_total                   233
+analytics_meta.user_session.max_id                       233
+analytics_meta.user_session.max_expires_at               2026-09-13 23:11:19
+analytics_meta.user_session.inwin_expires_at             0
+analytics_meta.user_session.max_created_at               2026-09-12 23:11:19
+analytics_meta.user_session.inwin_created_at             0
+analytics_metric.flyway_schema_history.rows_total        3
+analytics_metric.flyway_schema_history.max_installed_on  2026-09-10 20:04:15
+analytics_metric.flyway_schema_history.inwin_installed_on 0
+analytics_metric.metric_snapshot.rows_total              12
+analytics_metric.metric_snapshot.max_id                  27
+analytics_metric.metric_snapshot.max_business_time       2026-09-01 00:00:00.000
+analytics_metric.metric_snapshot.inwin_business_time     0
+analytics_metric.metric_snapshot.max_data_updated_at     2026-09-01 00:00:00.000
+analytics_metric.metric_snapshot.inwin_data_updated_at   0
+analytics_metric.metric_snapshot.max_published_at        2026-09-12 21:29:27.321
+analytics_metric.metric_snapshot.inwin_published_at      0
+analytics_metric.metric_snapshot.max_created_at          2026-09-12 21:29:27.282
+analytics_metric.metric_snapshot.inwin_created_at        0
+analytics_metric.metric_value.rows_total                 110
+analytics_metric.metric_value.max_id                     150
+analytics_metric.metric_value.max_updated_at             2026-09-12 21:29:27.321
+analytics_metric.metric_value.inwin_updated_at           0
+run2_source_data_version_rows_3306                       0
+run2_target_snapshot_rows_3306                           0
+batch_ings_20260914_rows_3306                            0
+v25it_users_3306                                         0
+metric_snapshot_s2_rows_3306                             0
+meta_flyway_count_3306                                   17
+meta_flyway_max_installed_on_3306                        2026-09-12 15:06:05
+
+### 3) 结论
+  PASS：analytics_meta / analytics_metric 两库中全部带时间戳列的表，其在窗口 [2026-09-14 13:50:00,2026-09-14 14:20:00] 内的行数均为 0；
+        且 3306 上不存在本 run 的任何标识（source_data_version/v25it 前缀 0 行、target_snapshot_id=S20260901_2 0 行、
+        2026-09-14 的 ingestion batch 0 行、v25it 账号 0 个）。
+        ⇒ 与 fingerprint-3306.sql 的 before/after 逐字节一致结论互为独立佐证：本轮对宿主 3306 零写入。
+
+### 4) 局限（不夸大）
+  · 本检查证明的是「窗口内没有新行 / 没有本 run 标识」；它**不能**证明窗口外的历史情况，
+    也不覆盖 3306 上与本项目无关的其它库。
+  · analytics_meta 侧没有「窗口前」的全表内容指纹 baseline（只有本文件的行数/最大时间戳），
+    因此若攻击者以「改旧行且保持计数不变」的方式写入，本检查无法发现 —— 但本轮不存在此类写入方
+    （应用是唯一写入者，且其链路日志显示它只连 3307，见 raw/30-app-connections-during-window.txt）。

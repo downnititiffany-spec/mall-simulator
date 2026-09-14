@@ -1,0 +1,69 @@
+[E3-1/3] 登录取 token  http://127.0.0.1:8091
+      00-login                     HTTP 200  (181 bytes)
+[E3-步1] POST /api/v1/ingestion/runs（landing/events → accepted + manifest）
+      01-ingestion-run             HTTP 200  (634 bytes)
+      01b-ingestion-status         HTTP 200  (598 bytes)
+      01c-ingestion-batches        HTTP 200  (461 bytes)
+[E3-步2] POST /api/v1/pipeline-runs businessTime=2026-09-01T00:00:00 profile=1 pipeline=ODS_TO_ADS
+      02-pipeline-run-created      HTTP 200  (286 bytes)
+      runId=1
+      [   5s] status=RUNNING stage=INIT_SCHEMA error=
+      [  10s] status=RUNNING stage=INIT_SCHEMA error=
+      [  15s] status=RUNNING stage=INIT_SCHEMA error=
+      [  20s] status=RUNNING stage=INIT_SCHEMA error=
+      [  25s] status=RUNNING stage=LOAD_ODS error=
+      [  30s] status=RUNNING stage=LOAD_ODS error=
+      [  35s] status=RUNNING stage=LOAD_ODS error=
+      [  40s] status=RUNNING stage=LOAD_ODS error=
+      [  45s] status=RUNNING stage=LOAD_ODS error=
+      [  50s] status=RUNNING stage=LOAD_ODS error=
+      [  55s] status=RUNNING stage=LOAD_ODS error=
+      [  60s] status=RUNNING stage=LOAD_ODS error=
+      [  65s] status=RUNNING stage=LOAD_ODS error=
+      [  70s] status=RUNNING stage=LOAD_ODS error=
+      [  75s] status=RUNNING stage=LOAD_ODS error=
+      [  80s] status=RUNNING stage=LOAD_ODS error=
+      [  85s] status=RUNNING stage=LOAD_ODS error=
+      [  90s] status=RUNNING stage=LOAD_ODS error=
+      [  95s] status=RUNNING stage=LOAD_ODS error=
+      [ 100s] status=RUNNING stage=LOAD_ODS error=
+      [ 105s] status=RUNNING stage=LOAD_ODS error=
+      [ 110s] status=RUNNING stage=LOAD_ODS error=
+      [ 115s] status=RUNNING stage=LOAD_ODS error=
+      [ 120s] status=RUNNING stage=LOAD_ODS error=
+      [ 125s] status=RUNNING stage=LOAD_ODS error=
+      [ 131s] status=RUNNING stage=LOAD_ODS error=
+      [ 136s] status=RUNNING stage=LOAD_ODS error=
+      [ 141s] status=RUNNING stage=LOAD_ODS error=
+      [ 146s] status=RUNNING stage=BUILD_DWD error=
+      [ 151s] status=RUNNING stage=BUILD_DWD error=
+      [ 156s] status=RUNNING stage=BUILD_DWD error=
+      [ 161s] status=RUNNING stage=BUILD_DWD error=
+      [ 166s] status=RUNNING stage=BUILD_DWD error=
+      [ 171s] status=RUNNING stage=BUILD_DWD error=
+      [ 176s] status=RUNNING stage=BUILD_DWD error=
+      [ 181s] status=RUNNING stage=BUILD_DWD error=
+      [ 186s] status=RUNNING stage=BUILD_DWD error=
+      [ 191s] status=RUNNING stage=BUILD_DWD error=
+      [ 196s] status=RUNNING stage=BUILD_DWD error=
+      [ 201s] status=RUNNING stage=BUILD_DWD error=
+      [ 206s] status=RUNNING stage=BUILD_DWD error=
+      [ 211s] status=RUNNING stage=BUILD_DWD error=
+      [ 216s] status=RUNNING stage=BUILD_DWS error=
+      [ 221s] status=RUNNING stage=BUILD_DWS error=
+      [ 226s] status=RUNNING stage=BUILD_DWS error=
+      [ 231s] status=RUNNING stage=BUILD_DWS error=
+      [ 236s] status=RUNNING stage=BUILD_DWS error=
+      [ 241s] status=RUNNING stage=BUILD_ADS error=
+      [ 246s] status=RUNNING stage=BUILD_ADS error=
+      [ 251s] status=RUNNING stage=BUILD_ADS error=
+      [ 256s] status=RUNNING stage=BUILD_ADS error=
+      [ 261s] status=RUNNING stage=BUILD_ADS error=
+      [ 266s] status=RUNNING stage=BUILD_ADS error=
+      [ 271s] status=FAILED stage=FAILED error=PIPELINE_QUALITY_FAILED
+      02b-pipeline-run-final       HTTP 200  (17943 bytes)
+[E3-步3] GET /api/v1/metrics/overview
+      03-metrics-overview          HTTP 200  (92 bytes)
+      03b-metrics-quality          HTTP 200  (1441 bytes)
+
+[E3 汇总] 步1 HTTP 200 / 步2 HTTP 200 runId=1 终态=FAILED / 步3 HTTP 200

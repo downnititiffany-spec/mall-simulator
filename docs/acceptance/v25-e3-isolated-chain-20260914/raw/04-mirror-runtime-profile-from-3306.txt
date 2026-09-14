@@ -1,0 +1,45 @@
+### 只读读宿主 3306 analytics_meta.runtime_profile（用于镜像到隔离库；本条查询无写）
+*************************** 1. row ***************************
+                     id: 1
+           profile_code: local-dev
+           profile_name: LOCAL 开发环境（本机 Win）
+                   type: LOCAL
+                 status: ACTIVE
+            landing_uri: file://./landing
+               hdfs_uri: NULL
+          hive_jdbc_url: NULL
+   hive_database_prefix: NULL
+           spark_master: local[2]
+            deploy_mode: NULL
+             yarn_queue: NULL
+               ssh_host: NULL
+               ssh_port: NULL
+               ssh_user: NULL
+      spark_submit_path: D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd
+      spark_job_jar_uri: D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar
+      metric_store_type: MYSQL
+metric_store_config_ref: NULL
+         credential_ref: NULL
+               timezone: Asia/Shanghai
+                version: 3
+             created_at: 2026-09-07 17:15:57.615
+             updated_at: 2026-09-10 16:48:17.303
+              source_id: 1
+### 只读：宿主 3306 的 ACTIVE profile（确认唯一）
++----+--------------+--------+------------------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+
+| id | profile_code | status | landing_uri      | spark_master | spark_submit_path                                       | spark_job_jar_uri                                                                 | source_id |
++----+--------------+--------+------------------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+
+|  1 | local-dev    | ACTIVE | file://./landing | local[2]     | D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd | D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar |         1 |
++----+--------------+--------+------------------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+
+### 在隔离库执行 04b-mirror-runtime-profile.sql（写 3307）
++----+--------------+--------+------------------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+| id | profile_code | status | landing_uri      | spark_master | spark_submit_path                                       | spark_job_jar_uri                                                                 | source_id | version |
++----+--------------+--------+------------------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+|  1 | local-dev    | ACTIVE | file://./landing | local[2]     | D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd | D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar |         1 |       3 |
++----+--------------+--------+------------------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
++---------------------+
+| active_profile_rows |
++---------------------+
+|                   1 |
++---------------------+
+执行退出码 = 0

@@ -1,0 +1,6 @@
+{
+  "step": "41-ingestion-run",
+  "status": 200,
+  "url": null,
+  "body": "{\"code\":\"OK\",\"message\":\"success\",\"data\":{\"batchId\":2,\"batchNo\":\"ing-20260914140837-a3484b12\",\"status\":\"SUCCESS\",\"recordCount\":1000,\"quarantineCount\":0,\"errorCount\":0,\"fileCount\":1,\"acceptedBytes\":363848,\"acceptedDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\target\\\\e3-run\\\\v25it-20260914-1358-l4e3\\\\landing\\\\accepted\\\\2\",\"quarantineDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\target\\\\e3-run\\\\v25it-20260914-1358-l4e3\\\\landing\\\\quarantine\\\\2\",\"manifestPath\":\"file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/landing/manifests/2.json\",\"noNewData\":false},\"traceId\":\"287368b4-74c8-4484-b64c-665591c9b13f\"}"
+}

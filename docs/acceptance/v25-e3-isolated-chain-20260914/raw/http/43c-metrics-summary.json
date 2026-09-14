@@ -1,0 +1,6 @@
+{
+  "step": "43c-metrics-summary",
+  "status": 403,
+  "url": null,
+  "body": "{\"code\":\"FORBIDDEN_PERMISSION\",\"message\":\"接口未声明权限码，按最小权限拒绝访问: GET /api/v1/metrics/summary\",\"data\":null,\"traceId\":\"670cc28d-9a1d-4053-b083-1c1facee849d\"}"
+}

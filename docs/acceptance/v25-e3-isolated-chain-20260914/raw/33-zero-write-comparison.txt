@@ -1,0 +1,22 @@
+V25-E3 宿主正式实例 3306 零写入比对  2026-09-14 14:16:13
+指纹算法（本泳道自定义，SQL 见 scripts/fingerprint-3306.sql）：
+  行指纹 h = MD5(CONCAT_WS('|', IFNULL(CAST(col AS CHAR),'\\N') ... 全列按 ORDINAL_POSITION))
+  表指纹 fp = MD5(GROUP_CONCAT(h ORDER BY h SEPARATOR ''))  ⇒ 行序无关（集合语义）
+  group_concat_max_len = 1073741824（避免静默截断）
+
+KEY                          BEFORE                                         AFTER                                          判定
+metric_snapshot_rows         12                                             12                                             一致
+metric_value_rows            110                                            110                                            一致
+metric_snapshot_fp           c224e4e9d44c98f5389607f7beb9d6d2               c224e4e9d44c98f5389607f7beb9d6d2               一致
+metric_value_fp              a1a073114d8232c5fcb11c56157466c2               a1a073114d8232c5fcb11c56157466c2               一致
+active_pointer               id=27 / S20260901_47 / version=12 / active_flag=1 id=27 / S20260901_47 / version=12 / active_flag=1 一致
+flyway_3306_count            3                                              3                                              一致
+flyway_3306_latest           3 / 3@2026-09-10 20:04:15                      3 / 3@2026-09-10 20:04:15                      一致
+runtime_profile_v25it_rows   0                                              0                                              一致
+
+不一致项数 = 0
+结论：取证窗口内宿主 3306 的 analytics_metric.metric_snapshot / metric_value 行数、全表内容指纹、ACTIVE 指针、flyway_schema_history 均逐字节一致 ⇒ 本轮对本实例**零写入**。
+
+注意（另一条独立结论）：3306 的 flyway_schema_history 记录数/最新记录在窗口前后一致，
+只说明「本轮没有新的迁移被应用到 3306」，并不等于「本项目历史上从未有迁移能碰 3306」——
+见 README 的独立结论段。

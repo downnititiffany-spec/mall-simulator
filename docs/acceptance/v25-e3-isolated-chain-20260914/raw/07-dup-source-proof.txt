@@ -1,0 +1,48 @@
+V25-E3 链路 1 被质量门禁阻断的『重复 event_id』—— 原始文件级取证   2026-09-14 14:23:16
+目的：链路 1 终态 FAILED（errorCode=PIPELINE_QUALITY_FAILED）是**产品按规则正确阻断**，还是环境/数据异常？
+      本文件用只读的方式证明：被投递的 fixture 里**真的**存在同一 event_id 出现两次，重复是数据事实，不是误报。
+
+--- [1] 被投递文件与投递结果（应用日志原文） ---
+raw/10-app-8091-console.log:93
+  ingest golden-r73-clean-20260910.jsonl: collected=51 quarantined=4 acceptedBytes=17419 offset 0→18430 identity=1789365577682
+  ⇒ 55 行原文 - 4 行隔离 = 51 行入选，入选字节 17419（与下面 [2] 的 accepted 文件大小逐字节吻合）
+
+--- [2] 三个文件（源 / 入选 / 隔离）的实况 ---
+  D:\Develop_code\GraduationProject\landing\events\golden-r73-clean-20260910.jsonl
+      size=18430 B   mtime=2026-09-10 20:23:36   lines=55   sha256=2351BCC35E04CCD278638F07247BC37E9C4D402CC4736CD2A4D4B70F4232B11C
+  D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\accepted\1\golden-r73-clean-20260910.jsonl
+      size=17419 B   mtime=2026-09-14 14:01:58   lines=51   sha256=0426AD1C8EB45273B654C5370459960482F4BD49A1F25367073683FEB0321CB6
+  D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\quarantine\1\golden-r73-clean-20260910.jsonl
+      size=1011 B   mtime=2026-09-14 14:01:58   lines=4   sha256=9C752F2B25876286E25636121CBEBEE1F8AE587A028EEA9681F7C35CF75FB636
+
+--- [3] 只读解析源文件：重复在哪里 ---
+命令（PowerShell，纯只读）：Get-Content <源文件> | ConvertFrom-Json 后按 event_id 分组
+  总行数            = 55
+  JSON 解析成功      = 54
+  event_id 非空      = 53
+  distinct event_id  = 52
+  重复 event_id：
+    golden-evt-008 出现 2 次：
+        event_type=behavior  event_time=2026-09-01 10:01:00  trace_id=golden-trace-008  payload.user_id=1
+        event_type=behavior  event_time=2026-09-01 10:01:00  trace_id=golden-trace-037  payload.user_id=1
+
+--- [4] 4 行隔离的去向（对照 raw/22b-isolated-meta-evidence-run2.txt:159-170 的 quarantine_record） ---
+  golden-evt-038 非法 behavior_type: purchase       ← 枚举白名单
+  (无 event_id) JSON 解析失败: Unrecognized token 'not'  ← 完全无法解析（对应 JSON 解析成功=54/55）
+  golden-evt-054 未支持 schema_version: 2.0         ← 版本白名单
+  (无 event_id) 缺失必要字段: event_id              ← 必填校验（对应 event_id 非空=53/54）
+  ⇒ 55 - 4 = 51 = collected，与 [1] 完全自洽。
+
+--- [5] 与质量规则读数的对照 ---
+  data_quality_result (run 1, rule_code=EVENT_ID_UNIQUE):
+    check_count=91  error_count=1  error_rate=0.010989  threshold<=0.0005  severity=BLOCKING  passed=0
+    detail='event_id 重复率=0.010989（超批准阈值，阻断） FAILED [阈值判定未通过 ⇒ 由观察项升为阻断（§7.3.1 line 522「超过阈值阻断」）]'
+  (raw/22b-isolated-meta-evidence-run2.txt:82-114)  1/91 = 0.010989 与 error_count=1 吻合。
+  **未取证**：check_count=91 的精确构成（两个投递文件中哪些事件被该规则纳入）—— dqc 侧输入明细未导出，
+  故只声明『91 条纳入检查的事件中有 1 条重复』，不推断其分文件拆分。
+
+--- [6] 结论 ---
+  ① fixture 内确有重复：golden-evt-008 出现 2 次（trace 008 与 037，同 user_id=1、同 event_time）。
+  ② 因此链路 1 的 FAILED 是**质量门禁按规则正确阻断**：观察项（severity=WARN + THRESHOLD_OBSERVATION）因重复率超阈值被升为 BLOCKING 并停止发布。
+  ③ 这不是产品缺陷、不是环境故障；反过来它是『宁可不出数也不出错数』的正面证据。
+  ④ 同时它构成 F-88 观察 3 的关键样本：同一条 rule_code 在 run 1 落 BLOCKING、run 2 落 WARN，落库值随 passed 变化。

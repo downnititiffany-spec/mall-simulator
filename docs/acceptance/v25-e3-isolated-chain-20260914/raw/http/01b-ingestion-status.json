@@ -1,0 +1,6 @@
+{
+  "step": "01b-ingestion-status",
+  "status": 200,
+  "url": null,
+  "body": "{\"code\":\"OK\",\"message\":\"success\",\"data\":{\"profileState\":\"ACTIVE\",\"runtimeProfileId\":1,\"sourceId\":1,\"landingUri\":\"file://./landing\",\"landingError\":null,\"eventsDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\target\\\\e3-run\\\\v25it-20260914-1358-l4e3\\\\landing\\\\events\",\"pendingFiles\":2,\"pendingBytes\":382278,\"checkpointFiles\":2,\"newFileCount\":0,\"lastArrivalAt\":\"2026-09-11T13:17:40.226042900\",\"latestBatch\":{\"batchId\":1,\"runtimeProfileId\":1,\"sourceId\":1,\"batchNo\":\"ing-20260914140158-5f085e03\",\"status\":\"QUARANTINED\",\"recordCount\":1051,\"quarantineCount\":4}},\"traceId\":\"8dcb1c19-d49c-4594-b3c3-7ad3ffa1dc61\"}"
+}

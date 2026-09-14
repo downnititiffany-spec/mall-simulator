@@ -89,3 +89,15 @@ D:/Develop_code/GraduationProject-wt/m3-jdk8fix  f26be26 (detached HEAD)
   2. **删除三件套**：任何删除前必须「归并入仓 ＋ 逐字节校验全绿 ＋ 文件数清单比对」，缺一不删。
   3. **泳道交付模板增列「新建文件全路径」**，避免再出现「文件建到仓外而总控不知情」。
 - **保密警示**：`docs/backups/strays-20260914/` 内含**正式库真实数据**（PII／会话／审计／`sys_user` bcrypt 哈希）与**明文口令字面量**，该目录被 gitignore，**禁止提交、禁止外发**（另见该目录 `README-DO-NOT-COMMIT.md`）。
+
+## 7. 补记：入库行尾归一化（2026-09-14 15:2x 实测）
+
+`git ls-files --eol` 实测两批归并入仓目录：**`i/lf w/lf` 114 件、`i/lf w/crlf` 79 件、`i/-text w/-text` 2 件**（`i`＝索引 blob，`w`＝工作树）。
+
+- ⇒ 第 3 节的 **BYTE-IDENTICAL 是对「工作树副本 vs 仓外原件」**（校验发生在 commit **之前**），结论**成立**；
+- 但本仓 `core.autocrlf=true` ⇒ **CRLF 文本的索引 blob 被 LF 归一化**，`git cat-file blob` 的 sha256 **不等于**原文件
+  （例：被 `pom.xml` 点名的 `final-positive-control.log` 原件 `D88E6090…F70BA`、`final-effective-scalac-args.log` 原件 `1E60F07F…CA021`）；
+- 在 `core.autocrlf=true` 的克隆里 checkout 会还原 CRLF ⇒ 原字节可复原；**该配置被改变则不保证**。
+  "原字节"的权威＝**工作树副本 ＋ 归档目录 `INVENTORY.txt`／本节 `raw/exec/merge-verify-*` 的 sha256**；
+- 已同步写入 `m3-jdk8fix-evidence-20260914/README.md §6`、`graduation-lane-backup-20260912/README.md §6`
+  （后者并提示 `*.patch` 应使用工作树副本应用）。

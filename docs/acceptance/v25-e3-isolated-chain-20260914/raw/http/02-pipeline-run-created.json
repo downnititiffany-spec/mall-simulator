@@ -1,0 +1,6 @@
+{
+  "step": "02-pipeline-run-created",
+  "status": 200,
+  "url": null,
+  "body": "{\"code\":\"OK\",\"message\":\"success\",\"data\":{\"runId\":1,\"idempotencyKey\":\"1|ODS_TO_ADS|2026-09-01T00:00|v25it-20260914-1358-l4e3\",\"status\":\"PENDING\",\"currentStage\":\"PENDING\",\"errorCode\":null,\"attemptNo\":1,\"targetSnapshotId\":null,\"stages\":[]},\"traceId\":\"85e9e3fc-6c4f-4b94-97da-8c32e5cf50d3\"}"
+}

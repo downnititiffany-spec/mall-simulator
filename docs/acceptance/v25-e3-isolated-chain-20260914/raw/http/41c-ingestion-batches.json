@@ -1,0 +1,6 @@
+{
+  "step": "41c-ingestion-batches",
+  "status": 200,
+  "url": null,
+  "body": "{\"code\":\"OK\",\"message\":\"success\",\"data\":[{\"id\":2,\"batchNo\":\"ing-20260914140837-a3484b12\",\"runtimeProfileId\":1,\"sourceId\":1,\"source\":\"local-file\",\"status\":\"SUCCESS\",\"recordCount\":1000,\"errorCount\":0,\"quarantineCount\":0,\"landingDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\target\\\\e3-run\\\\v25it-20260914-1358-l4e3\\\\landing\\\\accepted\\\\2\",\"startTime\":\"2026-09-14T14:08:37.65\",\"endTime\":\"2026-09-14T14:08:37.696\"},{\"id\":1,\"batchNo\":\"ing-20260914140158-5f085e03\",\"runtimeProfileId\":1,\"sourceId\":1,\"source\":\"local-file\",\"status\":\"QUARANTINED\",\"recordCount\":1051,\"errorCount\":0,\"quarantineCount\":4,\"landingDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\target\\\\e3-run\\\\v25it-20260914-1358-l4e3\\\\landing\\\\accepted\\\\1\",\"startTime\":\"2026-09-14T14:01:58.02\",\"endTime\":\"2026-09-14T14:01:58.182\"}],\"traceId\":\"67925dc6-dd11-462d-9cff-39109d8f9af7\"}"
+}

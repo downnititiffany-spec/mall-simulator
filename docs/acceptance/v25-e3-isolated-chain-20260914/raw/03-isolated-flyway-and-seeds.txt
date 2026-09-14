@@ -1,0 +1,77 @@
+### 隔离 meta 库 flyway_schema_history
++----------------+---------+-------------------------------------------+---------+---------------------+
+| installed_rank | version | description                               | success | installed_on        |
++----------------+---------+-------------------------------------------+---------+---------------------+
+|              1 | 1       | platform ingestion                        |       1 | 2026-09-14 13:59:41 |
+|              2 | 2       | platform pipeline quality                 |       1 | 2026-09-14 13:59:42 |
+|              3 | 3       | platform ai audit                         |       1 | 2026-09-14 13:59:42 |
+|              4 | 4       | platform decisions                        |       1 | 2026-09-14 13:59:42 |
+|              5 | 5       | platform users                            |       1 | 2026-09-14 13:59:42 |
+|              6 | 7       | platform runtime profile                  |       1 | 2026-09-14 13:59:42 |
+|              7 | 8       | platform ingestion r3                     |       1 | 2026-09-14 13:59:42 |
+|              8 | 9       | platform stage evidence widen             |       1 | 2026-09-14 13:59:42 |
+|              9 | 10      | spark job run output partitions           |       1 | 2026-09-14 13:59:42 |
+|             10 | 11      | data quality layers                       |       1 | 2026-09-14 13:59:42 |
+|             11 | 12      | quality detail width                      |       1 | 2026-09-14 13:59:42 |
+|             12 | 13      | metric definition r7                      |       1 | 2026-09-14 13:59:42 |
+|             13 | 14      | r8 identity decision                      |       1 | 2026-09-14 13:59:42 |
+|             14 | 15      | stage evidence mediumtext                 |       1 | 2026-09-14 13:59:43 |
+|             15 | 16      | source registry                           |       1 | 2026-09-14 13:59:43 |
+|             16 | 17      | source dimension for checkpoint and batch |       1 | 2026-09-14 13:59:43 |
+|             17 | 18      | source warehouse prefix                   |       1 | 2026-09-14 13:59:43 |
++----------------+---------+-------------------------------------------+---------+---------------------+
+### 隔离 metric 库 flyway_schema_history
++----------------+---------+-------------------------+---------+---------------------+
+| installed_rank | version | description             | success | installed_on        |
++----------------+---------+-------------------------+---------+---------------------+
+|              1 | 1       | metric store            |       1 | 2026-09-14 13:59:43 |
+|              2 | 2       | metric ads materialized |       1 | 2026-09-14 13:59:43 |
+|              3 | 3       | metric ads r7           |       1 | 2026-09-14 13:59:43 |
++----------------+---------+-------------------------+---------+---------------------+
+### runtime_profile
+ERROR 1054 (42S22) at line 1: Unknown column 'profile_type' in 'field list'
+### source_registry
++----+-------------+--------+----------------------------------------------------+------------------+
+| id | source_code | status | profile_path                                       | warehouse_prefix |
++----+-------------+--------+----------------------------------------------------+------------------+
+|  1 | mock-mall   | ACTIVE | analytics-server/source-profiles/mock-mall.v1.json | dw               |
++----+-------------+--------+----------------------------------------------------+------------------+
+### pipeline_definition
+ERROR 1146 (42S02) at line 1: Table 'analytics_meta_v25it_20260914_1358_l4e3.pipeline_definition' doesn't exist
+### runtime_profile 全部列
+*************************** 1. row ***************************
+                     id: 1
+           profile_code: local-dev
+           profile_name: LOCAL 开发环境（本机 Win）
+                   type: LOCAL
+                 status: DRAFT
+            landing_uri: file://./landing
+               hdfs_uri: NULL
+          hive_jdbc_url: NULL
+   hive_database_prefix: NULL
+           spark_master: NULL
+            deploy_mode: NULL
+             yarn_queue: NULL
+               ssh_host: NULL
+               ssh_port: NULL
+               ssh_user: NULL
+      spark_submit_path: NULL
+      spark_job_jar_uri: NULL
+      metric_store_type: MYSQL
+metric_store_config_ref: NULL
+         credential_ref: NULL
+               timezone: Asia/Shanghai
+                version: 1
+             created_at: 2026-09-14 13:59:42.445
+             updated_at: 2026-09-14 13:59:42.445
+              source_id: 1
+### sys_user
++----+----------+--------+
+| id | username | status |
++----+----------+--------+
+|  1 | admin    |      1 |
+|  2 | operator |      1 |
+|  3 | analyst  |      1 |
++----+----------+--------+
+### metric_definition 条数
+ERROR 1146 (42S02) at line 1: Table 'analytics_metric_v25it_20260914_1358_l4e3.metric_definition' doesn't exist

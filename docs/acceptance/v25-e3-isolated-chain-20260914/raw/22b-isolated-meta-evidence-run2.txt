@@ -1,0 +1,218 @@
+V25-E3 隔离库只读证据导出  2026-09-14 14:14:49  实例 port=3307
+
+### pipeline_run
+SQL: SELECT id,pipeline_code,business_time,source_data_version,input_batch_id,status,current_stage,error_code,attempt_no,target_snapshot_id,started_at,finished_at FROM analytics_meta_v25it_20260914_1358_l4e3.pipeline_run ORDER BY id;
++----+---------------+-------------------------+-----------------------------+----------------+---------+---------------+-------------------------+------------+--------------------+-------------------------+-------------------------+
+| id | pipeline_code | business_time           | source_data_version         | input_batch_id | status  | current_stage | error_code              | attempt_no | target_snapshot_id | started_at              | finished_at             |
++----+---------------+-------------------------+-----------------------------+----------------+---------+---------------+-------------------------+------------+--------------------+-------------------------+-------------------------+
+|  1 | ODS_TO_ADS    | 2026-09-01 00:00:00.000 | v25it-20260914-1358-l4e3    |           NULL | FAILED  | FAILED        | PIPELINE_QUALITY_FAILED |          1 | S20260901_1        | 2026-09-14 14:01:58.313 | 2026-09-14 14:06:26.102 |
+|  2 | ODS_TO_ADS    | 2026-09-01 00:00:00.000 | v25it-20260914-1358-l4e3-r2 |           NULL | SUCCESS | SUCCESS       | NULL                    |          1 | S20260901_2        | 2026-09-14 14:08:37.752 | 2026-09-14 14:13:27.773 |
++----+---------------+-------------------------+-----------------------------+----------------+---------+---------------+-------------------------+------------+--------------------+-------------------------+-------------------------+
+
+### pipeline_stage_run
+SQL: SELECT id,run_id,stage_code,status,records,COALESCE(error_code,'') AS error_code,LEFT(COALESCE(evidence,''),160) AS evidence_head FROM analytics_meta_v25it_20260914_1358_l4e3.pipeline_stage_run ORDER BY id;
++----+--------+----------------+---------+---------+-------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| id | run_id | stage_code     | status  | records | error_code              | evidence_head                                                                                                                                                                      |
++----+--------+----------------+---------+---------+-------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  1 |      1 | WAIT_LANDING   | SUCCESS |    1051 |                         | {"batchId":1,"acceptedUri":"accepted/1","checksum":"c5a71497","acceptedRecords":1051,"schemaVersions":["1.0"]}                                                                     |
+|  2 |      1 | INIT_SCHEMA    | SUCCESS |      37 |                         | {"stageCode":"INIT_SCHEMA","jobs":[{"jobCode":"sci","externalJobId":"lp-1789365718420-827016","status":"SUCCESS","inputRecords":0,"outputRecords":37,"rejectedRe                   |
+|  3 |      1 | LOAD_ODS       | SUCCESS |    1051 |                         | {"_evidenceTruncated":true,"_originalLength":206923,"_note":"证据超长，仅保留作业摘要（完整内容见 landing/logs 作业日志）","jobCodes":["odl"],"jobCount":1}                        |
+|  4 |      1 | BUILD_DWD      | SUCCESS |     191 |                         | {"stageCode":"BUILD_DWD","jobs":[{"jobCode":"bdw","externalJobId":"lp-1789365859288-facddd","status":"SUCCESS","inputRecords":28,"outputRecords":27,"rejectedRec                   |
+|  5 |      1 | BUILD_DWS      | SUCCESS |      13 |                         | {"stageCode":"BUILD_DWS","jobs":[{"jobCode":"usw","externalJobId":"lp-1789365931703-01173d","status":"SUCCESS","inputRecords":27,"outputRecords":13,"rejectedRec                   |
+|  6 |      1 | BUILD_ADS      | SUCCESS |      35 |                         | {"stageCode":"BUILD_ADS","jobs":[{"jobCode":"fna","externalJobId":"lp-1789365957888-f98224","status":"SUCCESS","inputRecords":1,"outputRecords":35,"rejectedReco                   |
+|  7 |      1 | QUALITY_CHECK  | FAILED  |       0 | PIPELINE_QUALITY_FAILED | {"batchOrderTotalsSize":144,"businessDayEvents":91,"landingRules":[{"checkCount":7,"errorCount":0,"ruleCode":"AMOUNT_RECONCILE","passed":1},{"checkCount":28,"er                   |
+|  8 |      2 | WAIT_LANDING   | SUCCESS |    1000 |                         | {"batchId":2,"acceptedUri":"accepted/2","checksum":"89b82028","acceptedRecords":1000,"schemaVersions":["1.0"]}                                                                     |
+|  9 |      2 | INIT_SCHEMA    | SUCCESS |      37 |                         | {"stageCode":"INIT_SCHEMA","jobs":[{"jobCode":"sci","externalJobId":"lp-1789366117813-225787","status":"SUCCESS","inputRecords":0,"outputRecords":37,"rejectedRe                   |
+| 10 |      2 | LOAD_ODS       | SUCCESS |    1000 |                         | {"_evidenceTruncated":true,"_originalLength":204105,"_note":"证据超长，仅保留作业摘要（完整内容见 landing/logs 作业日志）","jobCodes":["odl"],"jobCount":1}                        |
+| 11 |      2 | BUILD_DWD      | SUCCESS |     159 |                         | {"stageCode":"BUILD_DWD","jobs":[{"jobCode":"bdw","externalJobId":"lp-1789366242490-7a17c8","status":"SUCCESS","inputRecords":13,"outputRecords":13,"rejectedRec                   |
+| 12 |      2 | BUILD_DWS      | SUCCESS |      10 |                         | {"stageCode":"BUILD_DWS","jobs":[{"jobCode":"usw","externalJobId":"lp-1789366300903-2ae398","status":"SUCCESS","inputRecords":13,"outputRecords":10,"rejectedRec                   |
+| 13 |      2 | BUILD_ADS      | SUCCESS |      30 |                         | {"stageCode":"BUILD_ADS","jobs":[{"jobCode":"fna","externalJobId":"lp-1789366323029-c11c5a","status":"SUCCESS","inputRecords":1,"outputRecords":30,"rejectedReco                   |
+| 14 |      2 | QUALITY_CHECK  | SUCCESS |       6 |                         | {"batchOrderTotalsSize":138,"businessDayEvents":42,"landingRules":[{"checkCount":2,"errorCount":0,"ruleCode":"AMOUNT_RECONCILE","passed":1},{"checkCount":13,"er                   |
+| 15 |      2 | PUBLISH_METRIC | SUCCESS |      60 |                         | {"stageCode":"PUBLISH_METRIC","jobs":[{"jobCode":"pub","externalJobId":"lp-1789366367359-f83f4c","status":"SUCCESS","inputRecords":30,"outputRecords":30,"reject                   |
++----+--------+----------------+---------+---------+-------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+### spark_job_run
+SQL: SELECT id,pipeline_run_id,stage_code,job_code,status,input_records,output_records,rejected_records,submitter_type,COALESCE(error_code,'') AS error_code FROM analytics_meta_v25it_20260914_1358_l4e3.spark_job_run ORDER BY id;
++----+-----------------+----------------+----------+---------+---------------+----------------+------------------+----------------+------------+
+| id | pipeline_run_id | stage_code     | job_code | status  | input_records | output_records | rejected_records | submitter_type | error_code |
++----+-----------------+----------------+----------+---------+---------------+----------------+------------------+----------------+------------+
+|  1 |               1 | INIT_SCHEMA    | sci      | SUCCESS |             0 |             37 |                0 | local-process  |            |
+|  2 |               1 | LOAD_ODS       | odl      | SUCCESS |          1051 |           1051 |                0 | local-process  |            |
+|  3 |               1 | BUILD_DWD      | bdw      | SUCCESS |            28 |             27 |                1 | local-process  |            |
+|  4 |               1 | BUILD_DWD      | dim      | SUCCESS |            36 |             15 |                0 | local-process  |            |
+|  5 |               1 | BUILD_DWD      | tdw      | SUCCESS |           299 |            149 |                0 | local-process  |            |
+|  6 |               1 | BUILD_DWS      | usw      | SUCCESS |            27 |             13 |                0 | local-process  |            |
+|  7 |               1 | BUILD_ADS      | fna      | SUCCESS |             1 |             35 |                0 | local-process  |            |
+|  8 |               2 | INIT_SCHEMA    | sci      | SUCCESS |             0 |             37 |                0 | local-process  |            |
+|  9 |               2 | LOAD_ODS       | odl      | SUCCESS |          1000 |           1000 |                0 | local-process  |            |
+| 10 |               2 | BUILD_DWD      | bdw      | SUCCESS |            13 |             13 |                0 | local-process  |            |
+| 11 |               2 | BUILD_DWD      | dim      | SUCCESS |            18 |              8 |                0 | local-process  |            |
+| 12 |               2 | BUILD_DWD      | tdw      | SUCCESS |           281 |            138 |                0 | local-process  |            |
+| 13 |               2 | BUILD_DWS      | usw      | SUCCESS |            13 |             10 |                0 | local-process  |            |
+| 14 |               2 | BUILD_ADS      | fna      | SUCCESS |             1 |             30 |                0 | local-process  |            |
+| 15 |               2 | QUALITY_CHECK  | dqc      | SUCCESS |            30 |              6 |                8 | local-process  |            |
+| 16 |               2 | PUBLISH_METRIC | pub      | SUCCESS |            30 |             30 |                0 | local-process  |            |
+| 17 |               2 | PUBLISH_METRIC | mxp      | SUCCESS |            30 |             30 |                0 | local-process  |            |
++----+-----------------+----------------+----------+---------+---------------+----------------+------------------+----------------+------------+
+
+### spark_job_run 提交参数（arguments_json，看 --master/--businessDate）
+SQL: SELECT id,job_code,LEFT(arguments_json,400) AS args FROM analytics_meta_v25it_20260914_1358_l4e3.spark_job_run ORDER BY id;
++----+----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| id | job_code | args                                                                                                                                                                                                                                                                                                                                                                                                             |
++----+----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  1 | sci      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  2 | odl      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  3 | bdw      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  4 | dim      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  5 | tdw      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  6 | usw      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  7 | fna      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  8 | sci      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+|  9 | odl      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 10 | bdw      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 11 | dim      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 12 | tdw      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 13 | usw      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 14 | fna      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 15 | dqc      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 16 | pub      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
+| 17 | mxp      | ["D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd","--master","local[2]","--conf","spark.sql.warehouse.dir=file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/spark-warehouse","--conf","spark.sql.session.timeZone=Asia/Shanghai","--conf","spark.driver.host=127.0.0.1","--conf","spark.driver.bindAddress=127.0.0.1","--conf","spark.hadoop.javax.jdo.option.Connec |
++----+----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+### data_quality_result（F-88 关注）
+SQL: SELECT id,run_id,layer,rule_code,severity,passed,check_count,error_count,threshold,LEFT(COALESCE(detail,''),160) AS detail FROM analytics_meta_v25it_20260914_1358_l4e3.data_quality_result ORDER BY id;
++----+--------+-------------+--------------------------------+----------+--------+-------------+-------------+------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| id | run_id | layer       | rule_code                      | severity | passed | check_count | error_count | threshold                                            | detail                                                                                                                                                                                                                   |
++----+--------+-------------+--------------------------------+----------+--------+-------------+-------------+------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  1 |      1 | LANDING     | AMOUNT_RECONCILE               | BLOCKING |      1 |           7 |           0 | 0.01                                                 | 支付金额 vs 订单总额（对账范围=整批订单；金额不等 0 笔 / 整批无订单 0 笔） OK [固定严重度（LANDING 阶段）]                                                                                                               |
+|  2 |      1 | LANDING     | REQUIRED_FIELD_NULL_RATE       | BLOCKING |      1 |          28 |           0 | <=0.001                                              | user_id/product_id 空值率 OK [固定严重度（LANDING 阶段）]                                                                                                                                                                |
+|  3 |      1 | LANDING     | EVENT_ID_UNIQUE                | BLOCKING |      0 |          91 |           1 | <=0.0005                                             | event_id 重复率=0.010989（超批准阈值，阻断） FAILED [阈值判定未通过 ⇒ 由观察项升为阻断（§7.3.1 line 522「超过阈值阻断」）]                                                                                               |
+|  4 |      1 | LANDING     | ENUM_WHITELIST                 | BLOCKING |      1 |          28 |           0 | 0                                                    | 行为枚举白名单 OK [固定严重度（LANDING 阶段）]                                                                                                                                                                           |
+|  5 |      2 | LANDING     | AMOUNT_RECONCILE               | BLOCKING |      1 |           2 |           0 | 0.01                                                 | 支付金额 vs 订单总额（对账范围=整批订单；金额不等 0 笔 / 整批无订单 0 笔） OK [固定严重度（LANDING 阶段）]                                                                                                               |
+|  6 |      2 | LANDING     | REQUIRED_FIELD_NULL_RATE       | BLOCKING |      1 |          13 |           0 | <=0.001                                              | user_id/product_id 空值率 OK [固定严重度（LANDING 阶段）]                                                                                                                                                                |
+|  7 |      2 | LANDING     | EVENT_ID_UNIQUE                | WARN     |      1 |          42 |           0 | <=0.0005                                             | event_id 重复率=0.000000（未超批准阈值，观察项） OK [阈值判定通过 ⇒ 观察项，不阻断（确定性去重已证且重复率未超批准阈值）]                                                                                                |
+|  8 |      2 | LANDING     | ENUM_WHITELIST                 | BLOCKING |      1 |          13 |           0 | 0                                                    | 行为枚举白名单 OK [固定严重度（LANDING 阶段）]                                                                                                                                                                           |
+|  9 |      2 | ADS_STAGING | ADS_STAGING_PRESENT            | BLOCKING |      1 |           8 |           0 | 每表行数>0                                           | 8 张暂存表行数均>0（合计 30 行）                                                                                                                                                                                         |
+| 10 |      2 | ADS_STAGING | ADS_STAGING_SNAPSHOT_ISOLATION | WARN     |      0 |          16 |           8 | 0 个非本次快照分区（观察项）                         | 存在其它快照暂存分区（不阻断发布，pub 将按引用关系清理）: dw_ads.ads_active_trend__staging/S20260901_1(1行),dw_ads.ads_behavior_funnel__staging/S20260901_1(4行),dw_ads.ads_data_quality__st                             |
+| 11 |      2 | ADS_STAGING | ADS_STAGING_KEY_NOT_NULL       | BLOCKING |      1 |          30 |           0 | 0 空关键列                                           | 30 行关键列全部非空                                                                                                                                                                                                      |
+| 12 |      2 | PUBLISH     | PUB_DQ_BLOCKING_RULES          | BLOCKING |      1 |           3 |           0 | 全部 passed=1                                        | 阻断规则结果: AMOUNT_RECONCILE=passed=1,err=0; ENUM_WHITELIST=passed=1,err=0; REQUIRED_FIELD_NULL_RATE=passed=1,err=0                                                                                                    |
+| 13 |      2 | PUBLISH     | PUB_DQ_EVENT_ID_UNIQUE         | WARN     |      1 |          13 |           0 | 0.0005                                               | 观察项：重复 event_id 比率，不阻断发布                                                                                                                                                                                   |
+| 14 |      2 | ADS_STAGING | ADS_DWS_FUNNEL_RECONCILE       | BLOCKING |      1 |           4 |           0 | 逐 stage 差值=0                                      | 4 个 stage 汇总与 dws_behavior_funnel_day 一致                                                                                                                                                                           |
+| 15 |      2 | PUBLISH     | PUB_STAGING_READY              | BLOCKING |      1 |           8 |           0 | 8 张暂存分区就绪                                     | 8 张暂存分区就绪，合计 30 行                                                                                                                                                                                             |
+| 16 |      2 | PUBLISH     | PUB_FORMAL_PARTITION_MATCH     | BLOCKING |      1 |           8 |           0 | 正式=暂存行数                                        | 8 张正式分区行数与暂存一致（合计 30 行）                                                                                                                                                                                 |
+| 17 |      2 | PUBLISH     | MXP_SNAPSHOT_PINNED            | BLOCKING |      1 |           8 |           0 | 正式分区 Location 指向 snapshot_id=S20260901_2       | 8 张正式分区均指向 snapshot_id=S20260901_2                                                                                                                                                                               |
+| 18 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           1 |           0 | 导出文件行数 = Hive 分区行数                         | ads_operation_overview_m: hive=1 export=1                                                                                                                                                                                |
+| 19 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           1 |           0 | 导出文件行数 = Hive 分区行数                         | ads_sale_trend_m: hive=1 export=1                                                                                                                                                                                        |
+| 20 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           4 |           0 | 导出文件行数 = Hive 分区行数                         | ads_behavior_funnel_m: hive=4 export=4                                                                                                                                                                                   |
+| 21 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           1 |           0 | 导出文件行数 = Hive 分区行数                         | ads_active_trend_m: hive=1 export=1                                                                                                                                                                                      |
+| 22 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           9 |           0 | 导出文件行数 = Hive 分区行数                         | ads_hot_product_m: hive=9 export=9                                                                                                                                                                                       |
+| 23 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           9 |           0 | 导出文件行数 = Hive 分区行数                         | ads_product_conversion_m: hive=9 export=9                                                                                                                                                                                |
+| 24 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           1 |           0 | 导出文件行数 = Hive 分区行数                         | ads_user_profile_m: hive=1 export=1                                                                                                                                                                                      |
+| 25 |      2 | PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |           4 |           0 | 导出文件行数 = Hive 分区行数                         | ads_data_quality_m: hive=4 export=4                                                                                                                                                                                      |
+| 26 |      2 | PUBLISH     | MXP_EXPORT_COMPLETE            | BLOCKING |      1 |           8 |           0 | 8 张表导出完成且行数一致                             | 合计导出 30 行 / 8 张表                                                                                                                                                                                                  |
++----+--------+-------------+--------------------------------+----------+--------+-------------+-------------+------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+### data_quality_result 严重度落地分布
+SQL: SELECT layer,rule_code,severity,passed,COUNT(*) AS rows_cnt FROM analytics_meta_v25it_20260914_1358_l4e3.data_quality_result GROUP BY layer,rule_code,severity,passed ORDER BY layer,rule_code;
++-------------+--------------------------------+----------+--------+----------+
+| layer       | rule_code                      | severity | passed | rows_cnt |
++-------------+--------------------------------+----------+--------+----------+
+| ADS_STAGING | ADS_DWS_FUNNEL_RECONCILE       | BLOCKING |      1 |        1 |
+| ADS_STAGING | ADS_STAGING_KEY_NOT_NULL       | BLOCKING |      1 |        1 |
+| ADS_STAGING | ADS_STAGING_PRESENT            | BLOCKING |      1 |        1 |
+| ADS_STAGING | ADS_STAGING_SNAPSHOT_ISOLATION | WARN     |      0 |        1 |
+| LANDING     | AMOUNT_RECONCILE               | BLOCKING |      1 |        2 |
+| LANDING     | ENUM_WHITELIST                 | BLOCKING |      1 |        2 |
+| LANDING     | EVENT_ID_UNIQUE                | BLOCKING |      0 |        1 |
+| LANDING     | EVENT_ID_UNIQUE                | WARN     |      1 |        1 |
+| LANDING     | REQUIRED_FIELD_NULL_RATE       | BLOCKING |      1 |        2 |
+| PUBLISH     | MXP_EXPORT_COMPLETE            | BLOCKING |      1 |        1 |
+| PUBLISH     | MXP_EXPORT_ROWS                | BLOCKING |      1 |        8 |
+| PUBLISH     | MXP_SNAPSHOT_PINNED            | BLOCKING |      1 |        1 |
+| PUBLISH     | PUB_DQ_BLOCKING_RULES          | BLOCKING |      1 |        1 |
+| PUBLISH     | PUB_DQ_EVENT_ID_UNIQUE         | WARN     |      1 |        1 |
+| PUBLISH     | PUB_FORMAL_PARTITION_MATCH     | BLOCKING |      1 |        1 |
+| PUBLISH     | PUB_STAGING_READY              | BLOCKING |      1 |        1 |
++-------------+--------------------------------+----------+--------+----------+
+
+### data_quality_result 表结构（F-88：有无 rule_version/effective_severity/rule_fingerprint 列）
+SQL: SELECT ORDINAL_POSITION,COLUMN_NAME,DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta_v25it_20260914_1358_l4e3' AND TABLE_NAME='data_quality_result' ORDER BY ORDINAL_POSITION;
++------------------+--------------+-----------+
+| ORDINAL_POSITION | COLUMN_NAME  | DATA_TYPE |
++------------------+--------------+-----------+
+|                1 | id           | bigint    |
+|                2 | run_id       | bigint    |
+|                3 | rule_code    | varchar   |
+|                4 | layer        | varchar   |
+|                5 | severity     | varchar   |
+|                6 | target_table | varchar   |
+|                7 | snapshot_id  | varchar   |
+|                8 | check_count  | bigint    |
+|                9 | error_count  | bigint    |
+|               10 | error_rate   | decimal   |
+|               11 | threshold    | varchar   |
+|               12 | passed       | int       |
+|               13 | detail       | varchar   |
+|               14 | created_at   | datetime  |
++------------------+--------------+-----------+
+
+### quarantine_record
+SQL: SELECT * FROM analytics_meta_v25it_20260914_1358_l4e3.quarantine_record ORDER BY id LIMIT 20;
++----+----------+----------------+----------------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+-------------------------+
+| id | batch_id | event_id       | schema_version | reason                                                                                                                             | raw_path                                                                                                                      | created_at              |
++----+----------+----------------+----------------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+-------------------------+
+|  1 |        1 | golden-evt-038 | 1.0            | 非法 behavior_type: purchase                                                                                                       | D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\quarantine\1\golden-r73-clean-20260910.jsonl | 2026-09-14 14:01:58.150 |
+|  2 |        1 | NULL           | NULL           | JSON 解析失败: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')     | D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\quarantine\1\golden-r73-clean-20260910.jsonl | 2026-09-14 14:01:58.158 |
+|  3 |        1 | golden-evt-054 | 2.0            | 未支持 schema_version: 2.0                                                                                                         | D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\quarantine\1\golden-r73-clean-20260910.jsonl | 2026-09-14 14:01:58.163 |
+|  4 |        1 | NULL           | 1.0            | 缺失必要字段: event_id                                                                                                             | D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\quarantine\1\golden-r73-clean-20260910.jsonl | 2026-09-14 14:01:58.168 |
++----+----------+----------------+----------------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+-------------------------+
+
+### metric_definition 条数
+SQL: SELECT COUNT(*) AS metric_defs FROM analytics_meta_v25it_20260914_1358_l4e3.metric_definition;
++-------------+
+| metric_defs |
++-------------+
+|          16 |
++-------------+
+
+### metric_snapshot
+SQL: SELECT snapshot_id,status,source,pipeline_run_id,created_at FROM analytics_metric_v25it_20260914_1358_l4e3.metric_snapshot ORDER BY created_at;
++-------------+--------+-----------+-----------------+-------------------------+
+| snapshot_id | status | source    | pipeline_run_id | created_at              |
++-------------+--------+-----------+-----------------+-------------------------+
+| S20260901_2 | ACTIVE | spark-ads |               2 | 2026-09-14 14:13:27.682 |
++-------------+--------+-----------+-----------------+-------------------------+
+
+### metric_value 按快照计数
+SQL: SELECT snapshot_id,COUNT(*) AS rows_cnt,COUNT(DISTINCT metric_code) AS metrics FROM analytics_metric_v25it_20260914_1358_l4e3.metric_value GROUP BY snapshot_id ORDER BY snapshot_id;
++-------------+----------+---------+
+| snapshot_id | rows_cnt | metrics |
++-------------+----------+---------+
+| S20260901_2 |       10 |      10 |
++-------------+----------+---------+
+
+### metric_value 样本（前 20 行）
+SQL: SELECT snapshot_id,metric_code,period,dimension_key,metric_value,definition_version FROM analytics_metric_v25it_20260914_1358_l4e3.metric_value ORDER BY id LIMIT 20;
++-------------+------------------+----------------+---------------+--------------+--------------------+
+| snapshot_id | metric_code      | period         | dimension_key | metric_value | definition_version |
++-------------+------------------+----------------+---------------+--------------+--------------------+
+| S20260901_2 | pv               | day:2026-09-01 |               |       5.0000 | v1                 |
+| S20260901_2 | uv               | day:2026-09-01 |               |       5.0000 | v1                 |
+| S20260901_2 | dau              | day:2026-09-01 |               |      10.0000 | v1                 |
+| S20260901_2 | paid_order_cnt   | day:2026-09-01 |               |       1.0000 | v1                 |
+| S20260901_2 | gmv              | day:2026-09-01 |               |      88.1600 | v1                 |
+| S20260901_2 | net_sale         | day:2026-09-01 |               |      88.1600 | v1                 |
+| S20260901_2 | avg_order_value  | day:2026-09-01 |               |      88.1600 | v1                 |
+| S20260901_2 | refund_rate      | day:2026-09-01 |               |       0.0000 | v2                 |
+| S20260901_2 | full_refund_rate | day:2026-09-01 |               |       0.0000 | v1                 |
+| S20260901_2 | buy_rate         | day:2026-09-01 |               |       0.2000 | v1                 |
++-------------+------------------+----------------+---------------+--------------+--------------------+
+
+### ingestion_batch
+SQL: SELECT id,batch_no,source,status,record_count,error_count,quarantine_count,source_id FROM analytics_meta_v25it_20260914_1358_l4e3.ingestion_batch ORDER BY id;
++----+-----------------------------+------------+-------------+--------------+-------------+------------------+-----------+
+| id | batch_no                    | source     | status      | record_count | error_count | quarantine_count | source_id |
++----+-----------------------------+------------+-------------+--------------+-------------+------------------+-----------+
+|  1 | ing-20260914140158-5f085e03 | local-file | QUARANTINED |         1051 |           0 |                4 |         1 |
+|  2 | ing-20260914140837-a3484b12 | local-file | SUCCESS     |         1000 |           0 |                0 |         1 |
++----+-----------------------------+------------+-------------+--------------+-------------+------------------+-----------+

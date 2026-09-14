@@ -1,0 +1,22 @@
+[指纹] OK port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 datadir=/data/mysql-isolated/data/
+=========== 将创建（3307 隔离实例）===========
+  metaDb        : analytics_meta_v25it_20260914_1358_l4e3
+  metricDb      : analytics_metric_v25it_20260914_1358_l4e3
+  meta user     : v25it_1358_l4e3_meta@'%'   -> analytics_meta_v25it_20260914_1358_l4e3.*  (SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,INDEX,REFERENCES,DROP)
+  publish user  : v25it_1358_l4e3_metric_pub@'%'    -> analytics_metric_v25it_20260914_1358_l4e3.*(同上)
+  read user     : v25it_1358_l4e3_metric_read@'%'   -> analytics_metric_v25it_20260914_1358_l4e3.*(仅 SELECT)
+  credref       : D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\credref.properties  (仓库内 target/，已 gitignore；口令不回显)
++--------+-------------------------------------------+
+| SCHEMA | SCHEMA_NAME                               |
++--------+-------------------------------------------+
+| SCHEMA | analytics_meta_v25it_20260914_1358_l4e3   |
+| SCHEMA | analytics_metric_v25it_20260914_1358_l4e3 |
++--------+-------------------------------------------+
++-------+-----------------------------------+-------------------------------------------+----------------------------------------------------------------+
+| GRANT | GRANTEE                           | TABLE_SCHEMA                              | GROUP_CONCAT(PRIVILEGE_TYPE ORDER BY PRIVILEGE_TYPE)           |
++-------+-----------------------------------+-------------------------------------------+----------------------------------------------------------------+
+| GRANT | 'v25it_1358_l4e3_meta'@'%'        | analytics_meta_v25it_20260914_1358_l4e3   | ALTER,CREATE,DELETE,DROP,INDEX,INSERT,REFERENCES,SELECT,UPDATE |
+| GRANT | 'v25it_1358_l4e3_metric_pub'@'%'  | analytics_metric_v25it_20260914_1358_l4e3 | ALTER,CREATE,DELETE,DROP,INDEX,INSERT,REFERENCES,SELECT,UPDATE |
+| GRANT | 'v25it_1358_l4e3_metric_read'@'%' | analytics_metric_v25it_20260914_1358_l4e3 | SELECT                                                         |
++-------+-----------------------------------+-------------------------------------------+----------------------------------------------------------------+
+[2/2] 凭据已写 D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\credref.properties （不回显口令）

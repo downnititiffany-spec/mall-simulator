@@ -52,3 +52,14 @@
 - **本目录**：`提交完成` ✅（内容已在版本库）；**未做**人工价值判读（仅机械哈希判定）。
 - **仓外 worktree `m3-jdk8fix`**：**本批未删**（用户批准范围只含 W1/W3/S1/S2/S3/S4 六项）⇒ 其独有内容已全部入仓，**现为「可删候选」，待用户逐项批准**；空父容器 `D:\Develop_code\GraduationProject-wt` 一并保留。
 - **未取证**：`verify/` 内 22 个非点名文件的具体价值（未逐一人工判读）；jar/zip 内部未展开。
+
+## 6. 入库行尾归一化（fidelity 实测，2026-09-14 补记）
+
+- 本仓 `core.autocrlf=true`。被 `pom.xml` 点名的两份证据入库后实测（`git ls-files --eol`）＝ **`i/lf  w/crlf`**：
+  **索引/blob 为 LF（提交时归一化），工作树副本仍是 CRLF**（＝原 worktree 文件字节）。
+- ⇒ **§3 的 BYTE-IDENTICAL 是对「工作树副本 vs 仓外原件」**（校验发生在 commit 之前），成立；
+  但 `git cat-file blob` 取出的字节是 LF，**sha256 不等于原文件**。原字节 sha256：
+  `final-positive-control.log` ＝ `D88E6090379F9C513B5D602A63D488845875C80B772E8BDDDE154503890F70BA`（2653 B）；
+  `final-effective-scalac-args.log` ＝ `1E60F07FC1ABFC5C2C69832497C0BBF1DE447F80F8D825910B7A3E4CBD6CA021`（140080 B）。
+- 在 `core.autocrlf=true` 的克隆里 checkout 会还原 CRLF ⇒ 原字节可复原；**若该配置被改变则不保证**。
+  ⇒ **"原字节"的权威＝本目录工作树副本 ＋ 上述 sha256**（另见 `…v25-stray-consolidation-20260914/raw/exec/merge-verify-W2-verify-*.txt`）。

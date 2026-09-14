@@ -1,0 +1,150 @@
+V25-E3 | F-88 三项观察（只读，未改任何代码）
+观察时点：2026-09-14 13:59–14:15（隔离实例 127.0.0.1:3307）
+被观察工件：analytics-server/platform-app/target/platform-app-0.1.0-SNAPSHOT.jar
+            构建 2026-09-14 13:58:40，33159377 字节
+            SHA256 = 7BE717A974DE613574DE9829EC93627345E83BF87FC27837342C5E3EC9397561
+            （jar 内 db/meta 仅 V1–V18，见 raw/40-out-of-repo-audit.txt 第 1 段）
+观察样本：**两条真实链路**（不是单点探测）
+  · 链路 1 = runId 1（终态 FAILED / PIPELINE_QUALITY_FAILED）→ 4 条 LANDING 质量行
+  · 链路 2 = runId 2（终态 SUCCESS，走完 PUBLISH_METRIC）→ 22 条质量行，覆盖 LANDING / ADS_STAGING / PUBLISH 三层
+  合计 26 行，全部取自 raw/22b-isolated-meta-evidence-run2.txt（只读导出）。
+
+原始出处：
+  · raw/22b-isolated-meta-evidence-run2.txt:82-137   data_quality_result 逐行（26 行）+ severity 分布
+  · raw/22b-isolated-meta-evidence-run2.txt:138-158  data_quality_result 列清单（information_schema）
+  · raw/10-app-8091-console.log:95 / :103 / :104 / :107 / :115 / :117   规则冻结、质量结论、失败原因
+  · raw/http/02b-pipeline-run-final.json（run 1 终态）、raw/http/42b-pipeline-run-final.json（run 2 终态）
+  · raw/22b-isolated-meta-evidence-run2.txt   pipeline_stage_run / spark_job_run / metric_snapshot / metric_value
+
+────────────────────────────────────────────────────────────────────────
+观察 1：质量规则的「版本 / 指纹」是否按 run 冻结？
+────────────────────────────────────────────────────────────────────────
+结论分三层，避免把「内存冻结」说成「已持久化」：
+
+(1) 内存内**确实按 run 冻结一次**（已实测，两条链路各冻结一次，指纹相同）
+    · warehouse-pipeline/.../PipelineService.java:346-348
+        private QualityRuleCatalog.FrozenRules rulesFor(PipelineRun run) {
+            return QualityRuleCatalog.DEFAULT.freeze(run.getPipelineCode());
+        }
+    · PipelineService.java:369-374  一次 run 只解析一次目录，并打印指纹：
+        log.info("pipeline {}: 规则冻结 ruleFingerprint={} catalog={} compatPolicy={}", ...)
+    · 该 rules 对象向下贯穿写侧与读侧，run 内不会二次解析：
+      QualityChecker.java:69-71（check(..., FrozenRules)）、QualityChecker.java:196-217（rule(...) 用它归一化严重度）、
+      DataQualityGate.java:78-101（decisionForRun(id, rules)）
+    · 指纹算法：QualityRuleCatalog.java:304-326 FrozenRules.of(...) → QualityRuleDefinition.sha256Hex(...)；
+      QualityRuleDefinition.java:120-133 checksum() = SHA-256(
+        ruleCode ␟ version ␟ sourceScope ␟ stage ␟ severity ␟ severityMode ␟ thresholdJson ␟ enabled ␟ effectiveFrom ␟ effectiveTo)
+      （字段分隔符 \u001f，**不含 rationale** ⇒ 只改文案不会改指纹）。目录版本常量：QualityRuleCatalog.java CATALOG_VERSION="qrc-1"、COMPAT_POLICY_VERSION="compat-v1"。
+    实测：
+        run 1  raw/10-app-8091-console.log:95   ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6  catalog=qrc-1 compatPolicy=compat-v1
+        run 2  raw/10-app-8091-console.log:107   ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6  catalog=qrc-1 compatPolicy=compat-v1
+    ⇒ 同一工件、两个 run、指纹逐字符相同：冻结是**确定性**的（可复算），而不是每次现算一个随机值。
+
+(2) **没有落库** —— 本次 run 的库里查不到「用了哪一版」
+    · raw/22b-isolated-meta-evidence-run2.txt:138-158 information_schema 实测 data_quality_result 共 14 列：
+        id, run_id, rule_code, layer, severity, target_table, snapshot_id, check_count, error_count,
+        error_rate, threshold, passed, detail, created_at
+      ⇒ **无** rule_version / effective_severity / compat_policy_version / rule_fingerprint。
+    · 该库由本 jar 内 Flyway 迁到 **v18** 为止；21 张 meta 表清单（raw/06-isolated-table-inventory.txt）里**没有** quality_rule_definition 表。
+    · 指纹只出现在应用日志里，DB 侧无副本 ⇒ 事后仅凭库**无法复算**「该 run 当时用的是哪一版口径」；
+      日志一旦滚动/丢失，26 条质量结论的「口径版本」就永久不可考。
+    · 代码自己承认这是缺口：PipelineService.java:340-345 javadoc 明写
+      「真正闭合需要：① 总控批准迁移号建 quality_rule_definition ② data_quality_result 增列
+        rule_version／effective_severity／compat_policy_version／rule_fingerprint」。
+    · 目录来源是**代码内常量**而非数据库：QualityRuleCatalog.java:290 `DEFAULT = new QualityRuleCatalog(FrozenRules.of(DEFINITIONS))`
+      ⇒ 只有「同一发布内的 run 间一致」，没有「跨发布不可追溯改写」的保证（换一次发布，历史 run 的判定口径会被追溯改变）。
+
+(3) 【本轮窗口内发生的外部变更，必须单列，否则结论会被误读】
+    · 观察窗口内，仓库源码出现两份**晚于本 jar** 的迁移（raw/40-out-of-repo-audit.txt:10）：
+        platform-app/src/main/resources/db/meta/V19__quality_rule_definition.sql      mtime 2026-09-14 14:02:53
+        platform-app/src/main/resources/db/meta/V20__data_quality_result_rule_version.sql mtime 2026-09-14 14:03:11
+      （另有 platform-app/src/test/java/.../QualityRuleVersionMi*.java mtime 14:05:32）
+    · 二者 mtime 晚于本 jar 的 13:58:40 ⇒ 本 jar **不可能**包含它们（已核对 jar 内条目：18 个脚本 = V1–V18）。
+    · 内容正好是 (2) 里缺的那张表与那 4 列（V19:65 CREATE TABLE quality_rule_definition；V20:59 ALTER TABLE data_quality_result ADD ... 四列）。
+    · 同时**没有任何 main 源码**在本 jar 之后被修改（raw/40-out-of-repo-audit.txt 第 4.2 段：platform-common / warehouse-pipeline 的 git diff 为空）
+      ⇒ 写侧仍无写入这 4 列的实现。旁证：本 run 的 26 行是在**没有这 4 列**的表上插入成功的。
+    · 因此正确表述是：**「schema 侧在本轮末尾被补齐（V19/V20，晚于被观察工件），写侧实现尚未见到」**；
+      本泳道**不**据此宣称 F-88 已闭合，也**未**把 V19/V20 纳入实测范围。
+    · 须总控裁决的事项：V19/V20 的应用后写侧行为、以及它们是否应由本泳道复测（见 README §未取证）。
+
+────────────────────────────────────────────────────────────────────────
+观察 2：是否存在「未登记规则码」路径？
+────────────────────────────────────────────────────────────────────────
+结论：存在**判定路径**（可达、语义明确），但**类型化异常是死代码**（声明了、全仓无人 throw）；本轮 26 行**未触发**。
+
+(a) 判定路径
+    · RuleSeverity.java:274-280 resolve(rules, ruleCode, passed)：`rules.find(ruleCode)` 为空 ⇒ return RuleVerdict.unregistered(ruleCode)（registered=false）
+    · RuleSeverity.java:160  default -> UNREGISTERED；:62 `UNREGISTERED = BLOCKING`（保守默认，宁可阻断不停机静默放行）
+    · RuleSeverity.java:366-370 RuleVerdict.unregistered(...) 的说明即「未登记规则码：按保守默认阻断，须先登记规则版本（§7.3.1 line 524：不得盲信传来的 WARN）」
+    · DataQualityGate.java:84-101：未登记码同时进 unregisteredRules 与 blockingRules（注释说明了为何两处都要进）
+    · DataQualityGate.java:115-118：unregistered 非空 ⇒ status=FAIL，reason="存在未登记规则码，停止发布：" + 列表
+    · 写侧不抛异常而是落保守值：QualityChecker.java:196-217，其中 :212-215 未登记时打 WARN 日志，仍落 effectiveSeverity()（=UNREGISTERED=BLOCKING）
+    · 陷阱（代码自己写明）：RuleSeverity.java:52-62 因 UNREGISTERED == BLOCKING，
+      **不能用 of(code)==BLOCKING 判断「是否已登记」**，必须用 FrozenRules.find（或已废弃的 registered(String)）。
+
+(b) 异常路径：**声明但从不抛出**（dead code）
+    · RuleSeverity.java:326-331  class UnknownRuleException extends RuntimeException
+    · DataQualityGate.java:208-214 class UnregisteredRuleException extends RuleSeverity.UnknownRuleException
+    · 全仓正则实测 `throw new .*(Unknown|Unregistered)RuleException|UnknownRuleException\(`：唯一命中是 RuleSeverity.java:331（构造器声明本身），**无任何 throw 站点**。
+    · 后果：上游若真出现未登记码，调用方拿到的是「GateDecision FAIL + 理由文本」，而不是可 catch 的类型化异常 ——
+      即「错误上报在值域里，而不在控制流里」。是否要补 throw（以及补哪里）需总控裁决。
+
+(c) 实测：本轮**未出现**未登记码
+    · raw/22b-isolated-meta-evidence-run2.txt 的 severity 分布里，26 行共涉及 15 个规则码：
+        LANDING: AMOUNT_RECONCILE / REQUIRED_FIELD_NULL_RATE / EVENT_ID_UNIQUE / ENUM_WHITELIST
+        ADS_STAGING: ADS_STAGING_PRESENT / ADS_STAGING_SNAPSHOT_ISOLATION / ADS_STAGING_KEY_NOT_NULL / ADS_DWS_FUNNEL_RECONCILE
+        PUBLISH: PUB_DQ_BLOCKING_RULES / PUB_DQ_EVENT_ID_UNIQUE / PUB_STAGING_READY / PUB_FORMAL_PARTITION_MATCH /
+                 MXP_SNAPSHOT_PINNED / MXP_EXPORT_ROWS / MXP_EXPORT_COMPLETE
+      与 QualityRuleCatalog.java:111-200 的 DEFINITIONS 逐条比对，**15/15 均已登记**（catalog=qrc-1）。
+      应用日志中亦无 QualityChecker.java:213 的「未登记规则码」WARN。
+    · 未取证：主动构造一个未登记码并观察门禁行为 —— 需改 spark-jobs 侧（本泳道禁改）或跑单元测试（本轮未跑），
+      故**不下结论**，只报告「路径读起来是通的、异常是死的」。
+
+────────────────────────────────────────────────────────────────────────
+观察 3：data_quality_result 的 severity 落地成什么？
+────────────────────────────────────────────────────────────────────────
+结论（本轮 26 行实测）：落库的是**平台归一化后的有效档位**，不是作业/规则的字面量；
+      **条件观察项的两个分支都真实出现了**：通过 ⇒ 落 WARN，未通过 ⇒ 升为 BLOCKING；
+      也存在「WARN 且 passed=0」的行（观察项未通过但不阻断）。
+      因此不能把这一列当作「声明档位」来统计，也不能把「severity=BLOCKING」直接读成「声明为阻断」。
+
+实测分布（raw/22b-isolated-meta-evidence-run2.txt:115-137「data_quality_result 严重度落地分布」）：
+    BLOCKING 23 行 / WARN 3 行 / ERROR 0 / INFO 0 / UNREGISTERED 0
+    三条 WARN 行（全在 run 2）：
+      id=7  LANDING     EVENT_ID_UNIQUE                WARN passed=1  detail「event_id 重复率=0.000000（未超批准阈值，观察项） OK
+                                                                   [阈值判定通过 ⇒ 观察项，不阻断（确定性去重已证且重复率未超批准阈值）]」
+      id=10 ADS_STAGING ADS_STAGING_SNAPSHOT_ISOLATION  WARN passed=0  detail「存在其它快照暂存分区（不阻断发布，pub 将按引用关系清理）…」
+      id=13 PUBLISH     PUB_DQ_EVENT_ID_UNIQUE          WARN passed=1  detail「观察项：重复 event_id 比率，不阻断发布」
+    对照 run 1 同一规则码的相反分支：
+      id=3  LANDING     EVENT_ID_UNIQUE                BLOCKING passed=0 detail「event_id 重复率=0.010989（超批准阈值，阻断） FAILED
+                                                                   [阈值判定未通过 ⇒ 由观察项升为阻断（§7.3.1 line 522「超过阈值阻断」）]」
+    ⇒ 同一 rule_code=running 同一定义，落库档位随 passed 变化（WARN↔BLOCKING）—— 这是**设计意图**，
+      QualityChecker.java:186-189 的 javadoc 明写「同一规则码在通过/未通过两种情况下落库的严重度可以不同，这是设计意图，不是不一致」。
+    ⇒ 但也有真缺陷面：**列名 `severity` 同时承担两种语义**（声明档位 / 有效档位），且 V19/V20 才补的
+      `effective_severity` 正说明「有效档位应与声明档位分列」。当前 14 列版本下，做统计的人极易把 id=7 的 WARN
+      读成「声明 WARN」，把 id=3 的 BLOCKING 读成「声明 BLOCKING」——两个结论都不对。属**可裁决的语义缺陷**。
+
+口径出处（写侧归一化）：
+    · QualityChecker.java:196-217 rule(...)：
+        :202 `RuleSeverity.RuleVerdict verdict = RuleSeverity.resolve(rules, code, passed ? 1 : 0);`
+        :203 `r.setSeverity(verdict.effectiveSeverity());`   ← 落库的是**有效**档位
+        :210 detail 追加 `[<verdict.explanation()>]`（升级/降级原因在 detail 文本里）
+        :212-215 未登记码打 WARN 日志但仍落保守值（不抛异常、不打断整批）
+    · 条件严重度判据：RuleSeverity.java:284-293 —— THRESHOLD_OBSERVATION 且未通过 ⇒ effective=BLOCKING；
+      未通过判定 failed(passed)：:374-376（passed 为 NULL 也算未通过）
+    · 声明档位来源：QualityRuleCatalog.java:138-143 EVENT_ID_UNIQUE = WARN + THRESHOLD_OBSERVATION + {dupRateMax:0.0005}；
+      :152-155 PUB_DQ_EVENT_ID_UNIQUE 同档；:158-160 ADS_STAGING_SNAPSHOT_ISOLATION = WARN（固定档，故 passed=0 也不阻断）
+    · 读侧不看这一列、按冻结目录重算：RuleSeverity.java:254-294 resolve(...)；
+      旁证 RuleSeverity.java:20-23 的 F-94 javadoc 记录过「全库 severity='WARN' 行数为 0」的漂移现象 ——
+      本轮 26 行里 WARN 有 3 行，说明该现象至少不再由 Java 写侧造成（Spark 作业侧是否写入字面量：本轮 dqc/pub/mxp 也已产出行，
+      但它们的 severity 同样与目录一致 ⇒ **未观察到**新漂移，仅此而已，不能反推「永不会漂移」）。
+
+────────────────────────────────────────────────────────────────────────
+三项观察与本轮「隔离真链」的关系（防止误读）
+────────────────────────────────────────────────────────────────────────
+  · 以上观察全部在**隔离实例 3307**上完成，读的全是本轮自建库，与宿主正式库 3306 无关（零写入证明见 README §7）。
+  · 链路 1 的 FAILED **不是缺陷、也不是环境故障**：它是 EVENT_ID_UNIQUE 这条阻断级规则**如实**拦下了
+    golden-r73-clean-20260910.jsonl 里 golden-evt-008 的重复行（重复率 0.010989 > 阈值 0.0005；该 id 在 fixture 内出现 2 次，
+    trace_id 分别为 golden-trace-008 / golden-trace-037，文件级取证见 raw/07-dup-source-proof.txt）——
+    即质量门禁「宁可不出数也不出错数」的预期行为；链路 2 用同内容不同路径的干净文件即 SUCCESS。
+  · 本文件不含任何「应该/大概」的推断：凡未实测的都用「未取证」标注。

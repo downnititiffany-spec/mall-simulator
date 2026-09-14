@@ -1,0 +1,65 @@
+V25-E3 隔离实例 (127.0.0.1:3307) 表清单 —— 只读 information_schema   2026-09-14 14:23:04
+说明：本轮建表者是应用启动期的 Flyway（jar 内 db/meta + db/metric），不是本脚本；本文件只是事后只读盘点。
+口径：COUNT(*) 取 information_schema.TABLES（表数量，非行数）。
+
+--- [1] meta 库：命令（用 meta 账号，最小权限） ---
+mysql --host=127.0.0.1 --port=3307 --user=<meta.user> -t -e "SELECT TABLE_SCHEMA, COUNT(*) AS tables_cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA IN ('analytics_meta_...','analytics_metric_...') GROUP BY TABLE_SCHEMA; SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='analytics_meta_...' ORDER BY TABLE_NAME;"
++-----------------------------------------+------------+
+| TABLE_SCHEMA                            | tables_cnt |
++-----------------------------------------+------------+
+| analytics_meta_v25it_20260914_1358_l4e3 |         21 |
++-----------------------------------------+------------+
++-----------------------+
+| TABLE_NAME            |
++-----------------------+
+| ai_call_log           |
+| ai_query_history      |
+| data_quality_result   |
+| decision_evaluation   |
+| decision_task         |
+| file_checkpoint       |
+| flyway_schema_history |
+| ingestion_batch       |
+| ingestion_batch_file  |
+| metric_definition     |
+| metric_snapshot       |
+| metric_value          |
+| operation_audit_log   |
+| pipeline_run          |
+| pipeline_stage_run    |
+| quarantine_record     |
+| runtime_profile       |
+| source_registry       |
+| spark_job_run         |
+| sys_user              |
+| user_session          |
++-----------------------+
+⇒ 观察：meta 账号在 GROUP BY 结果里**只看到 meta 库**（看不到 metric 库），与 raw/02-isolated-account-connectivity.txt 的跨库被拒 1142 一致，是最小权限的正面证据。
+
+--- [2] metric 库：命令（用 metric_read 账号，只读） ---
+mysql --host=127.0.0.1 --port=3307 --user=<read.user> -t -e "SELECT COUNT(*) AS metric_tables FROM information_schema.TABLES WHERE TABLE_SCHEMA='analytics_metric_...'; SELECT TABLE_NAME ... ORDER BY TABLE_NAME;"
++---------------+
+| metric_tables |
++---------------+
+|            11 |
++---------------+
++--------------------------+
+| TABLE_NAME               |
++--------------------------+
+| ads_active_trend_m       |
+| ads_behavior_funnel_m    |
+| ads_data_quality_m       |
+| ads_hot_product_m        |
+| ads_operation_overview_m |
+| ads_product_conversion_m |
+| ads_sale_trend_m         |
+| ads_user_profile_m       |
+| flyway_schema_history    |
+| metric_snapshot          |
+| metric_value             |
++--------------------------+
+
+--- [3] 结论 ---
+meta 库 21 张表（含 flyway_schema_history），metric 库 11 张表（含 flyway_schema_history）。
+两库表名清单中**都不存在** quality_rule_definition ⇒ F-88 的 schema 缺口在本轮被实测工件上是真实的（见 raw/05-f88-observations.txt 观察 1）。
+meta 库表数 21 与 README §4 表格一致；本文件即该数字的原始出处（此前 README 只写了『见 raw/21-...』，那份文件其实是内容导出，不含表清单 —— 已修正）。

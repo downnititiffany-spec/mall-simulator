@@ -1,0 +1,75 @@
+[E3-0/3] 投递新文件 gen-s3b-1000-20260911-r2.jsonl  SHA256=5397907A6016936805FFAB694E9799B25154251849DA7EC933C18064BEBB0257（与源一致=True）
+[E3-1/3] 登录取 token  http://127.0.0.1:8091
+      40-login                     HTTP 200  (181 bytes)
+[E3-步1] POST /api/v1/ingestion/runs
+      41-ingestion-run             HTTP 200  (630 bytes)
+      41b-ingestion-status         HTTP 200  (594 bytes)
+      41c-ingestion-batches        HTTP 200  (827 bytes)
+[E3-步2] POST /api/v1/pipeline-runs businessTime=2026-09-01T00:00:00 profile=1 pipeline=ODS_TO_ADS sourceDataVersion=v25it-20260914-1358-l4e3-r2
+      42-pipeline-run-created      HTTP 200  (289 bytes)
+      runId=2
+      [   5s] status=RUNNING stage=INIT_SCHEMA error=
+      [  10s] status=RUNNING stage=INIT_SCHEMA error=
+      [  15s] status=RUNNING stage=LOAD_ODS error=
+      [  20s] status=RUNNING stage=LOAD_ODS error=
+      [  25s] status=RUNNING stage=LOAD_ODS error=
+      [  30s] status=RUNNING stage=LOAD_ODS error=
+      [  35s] status=RUNNING stage=LOAD_ODS error=
+      [  40s] status=RUNNING stage=LOAD_ODS error=
+      [  45s] status=RUNNING stage=LOAD_ODS error=
+      [  50s] status=RUNNING stage=LOAD_ODS error=
+      [  55s] status=RUNNING stage=LOAD_ODS error=
+      [  60s] status=RUNNING stage=LOAD_ODS error=
+      [  65s] status=RUNNING stage=LOAD_ODS error=
+      [  70s] status=RUNNING stage=LOAD_ODS error=
+      [  75s] status=RUNNING stage=LOAD_ODS error=
+      [  80s] status=RUNNING stage=LOAD_ODS error=
+      [  85s] status=RUNNING stage=LOAD_ODS error=
+      [  90s] status=RUNNING stage=LOAD_ODS error=
+      [  95s] status=RUNNING stage=LOAD_ODS error=
+      [ 100s] status=RUNNING stage=LOAD_ODS error=
+      [ 105s] status=RUNNING stage=LOAD_ODS error=
+      [ 110s] status=RUNNING stage=LOAD_ODS error=
+      [ 115s] status=RUNNING stage=LOAD_ODS error=
+      [ 120s] status=RUNNING stage=LOAD_ODS error=
+      [ 125s] status=RUNNING stage=BUILD_DWD error=
+      [ 130s] status=RUNNING stage=BUILD_DWD error=
+      [ 135s] status=RUNNING stage=BUILD_DWD error=
+      [ 140s] status=RUNNING stage=BUILD_DWD error=
+      [ 146s] status=RUNNING stage=BUILD_DWD error=
+      [ 151s] status=RUNNING stage=BUILD_DWD error=
+      [ 156s] status=RUNNING stage=BUILD_DWD error=
+      [ 161s] status=RUNNING stage=BUILD_DWD error=
+      [ 166s] status=RUNNING stage=BUILD_DWD error=
+      [ 171s] status=RUNNING stage=BUILD_DWD error=
+      [ 176s] status=RUNNING stage=BUILD_DWD error=
+      [ 181s] status=RUNNING stage=BUILD_DWD error=
+      [ 186s] status=RUNNING stage=BUILD_DWS error=
+      [ 191s] status=RUNNING stage=BUILD_DWS error=
+      [ 196s] status=RUNNING stage=BUILD_DWS error=
+      [ 201s] status=RUNNING stage=BUILD_DWS error=
+      [ 206s] status=RUNNING stage=BUILD_ADS error=
+      [ 211s] status=RUNNING stage=BUILD_ADS error=
+      [ 216s] status=RUNNING stage=BUILD_ADS error=
+      [ 221s] status=RUNNING stage=BUILD_ADS error=
+      [ 226s] status=RUNNING stage=BUILD_ADS error=
+      [ 231s] status=RUNNING stage=BUILD_ADS error=
+      [ 236s] status=RUNNING stage=QUALITY_CHECK error=
+      [ 241s] status=RUNNING stage=QUALITY_CHECK error=
+      [ 246s] status=RUNNING stage=QUALITY_CHECK error=
+      [ 251s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 256s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 261s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 266s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 271s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 276s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 281s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 286s] status=RUNNING stage=PUBLISH_METRIC error=
+      [ 291s] status=SUCCESS stage=SUCCESS error=
+      42b-pipeline-run-final       HTTP 200  (52542 bytes)
+[E3-步3] GET /api/v1/metrics/overview
+      43-metrics-overview          HTTP 200  (1394 bytes)
+      43b-metrics-quality          HTTP 200  (8725 bytes)
+      43c-metrics-summary          HTTP 403  (152 bytes)
+
+[E3 汇总2] 步1 HTTP 200 / 步2 HTTP 200 runId=2 终态=SUCCESS / 步3 HTTP 200

@@ -1,0 +1,27 @@
+{
+  "loginHttp": 200,
+  "ingestionHttp": 200,
+  "ingestionData": {
+    "batchId": 1,
+    "batchNo": "ing-20260914140158-5f085e03",
+    "status": "QUARANTINED",
+    "recordCount": 1051,
+    "quarantineCount": 4,
+    "errorCount": 0,
+    "fileCount": 2,
+    "acceptedBytes": 381267,
+    "acceptedDir": "D:\\Develop_code\\GraduationProject\\target\\e3-run\\v25it-20260914-1358-l4e3\\landing\\accepted\\1",
+    "quarantineDir": "D:\\Develop_code\\GraduationProject\\target\\e3-run\\v25it-20260914-1358-l4e3\\landing\\quarantine\\1",
+    "manifestPath": "file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/landing/manifests/1.json",
+    "noNewData": false
+  },
+  "pipelineCreateHttp": 200,
+  "runId": "1",
+  "runStatus": "FAILED",
+  "runStage": "FAILED",
+  "runErrorCode": "PIPELINE_QUALITY_FAILED",
+  "runSnapshot": "S20260901_1",
+  "elapsedSec": 271,
+  "overviewHttp": 200,
+  "qualityHttp": 200
+}

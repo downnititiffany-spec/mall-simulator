@@ -1,0 +1,18 @@
+采样时间: 2026-09-14 14:15:08  app PID=62984  监听=127.0.0.1:8091
+remotePort connections
+---------- -----------
+3307                30
+指向 3306 的已建立连接数 = 0
+指向 3307 的已建立连接数 = 30
+进程命令行 = "D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Xmx2g -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091
+应用控制台日志中 3306 出现次数 = 1
+  L14:   任何 3306 出现即为门禁失败：URL 中只有 3307
+停止时间: 2026-09-14 14:15:09  Stop-Process -Id 62984（java）
+停止后 8091 监听: 已释放
+残留 java 进程: 55804
+
+[二次运行 2026-09-14 14:16:12] 8091 已无监听，本次未覆盖上面的采样
+
+[二次运行 2026-09-14 14:16:12] 日志 3306 扫描已在上面记录，不重复追加
+停止后 8091 监听: 已释放
+残留 java 进程: 55804

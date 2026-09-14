@@ -44,3 +44,14 @@
 - **本目录**：`提交完成` ✅（内容已在版本库，引用路径已改指仓内）；**未做**人工价值判读（仅机械哈希判定）。
 - **仓外原件**：已删除（批准项 S3，删除前校验 BYTE-IDENTICAL）。
 - **未取证**：`retired/` 内文件是否仍被运行期代码引用（仅做了仓内文本引用统计，未做运行期核对）。
+
+## 6. 入库行尾归一化（fidelity 实测，2026-09-14 补记）
+
+- 本仓 `core.autocrlf=true`。本目录与 `m3-jdk8fix-evidence` 合并实测（`git ls-files --eol`）：
+  **`i/lf w/lf` 114 件、`i/lf w/crlf` 79 件、`i/-text w/-text` 2 件**。
+- ⇒ **§3 的 BYTE-IDENTICAL 是对「工作树副本 vs 仓外原件」**（校验发生在 commit 之前），成立；
+  但其中 **CRLF 文本的索引 blob 被 LF 归一化**，`git cat-file blob` 的 sha256 与原文件不同。
+- 逐文件原字节 sha256 见 `INVENTORY.txt`（在工作树副本上计算）与
+  `…v25-stray-consolidation-20260914/raw/exec/merge-verify-S3-*.txt`。
+- 在 `core.autocrlf=true` 的克隆里 checkout 会还原 CRLF ⇒ 原字节可复原；**若该配置被改变则不保证**。
+  ⚠️ 其中 `*.patch` 类文件若被工具改写成 LF 再应用，可能补丁失配——**应用补丁请用本目录工作树副本**。

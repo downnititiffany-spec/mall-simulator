@@ -1,0 +1,48 @@
+V25-E3 命令清单与退出码语义  2026-09-14 14:18:47
+
+### A) 先确定「退出码」怎么读（实测，不是推测）
+背景：链路 1 的作业报告 exit code 1，而脚本 20 的失败分支是 exit 4 —— 差异必须先解释清楚才能引用退出码。
+探针脚本 D:\Develop_code\GraduationProject\target\e3-run\_exittest\exit4.ps1 内容： Write-Host "reached end"; exit 4
+
+A-1 前台直接调用（无管道）:
+    PS> & pwsh -NoProfile -File "D:\Develop_code\GraduationProject\target\e3-run\_exittest\exit4.ps1"; $LASTEXITCODE
+    reached end
+    LASTEXITCODE=4
+A-2 前台 + 与作业相同的管道包装 (*>&1 | Tee-Object -FilePath ...):
+    LASTEXITCODE=4     （管道不会吞掉内部脚本的 exit 4）
+A-3 同一条命令**作为后台作业**运行:
+    作业输出: reached end
+    作业最终状态: [status: completed, exit code: 1]
+
+结论（可复现）：本会话的**后台作业层把任何非零退出码归一化为 1**，因此：
+  · 作业 pwsh-44（链路 2）exit 0  ⇔ 脚本走到 xit 0（SUCCESS 分支）
+  · 作业 pwsh-43（链路 1）exit 1  ⇔ 脚本走到 xit 4（runStatus -ne SUCCESS 分支）——**不是**异常/崩溃
+  · 作业 pwsh-37（启动 8091）exit 0  ⇔ java 进程结束、启动脚本正常返回
+  反之，凡我在前台直接执行的脚本，退出码为真实值（见 B 表 where=前台）。
+  未取证：链路 1 那次作业是否可能因别的原因非零 —— 判据是 raw/20-chain-console.log 末行完整打印了
+  "[E3 汇总] ... 终态=FAILED"，即脚本执行到最后一行才退出。
+
+### B) 本轮执行的命令与退出码
+#    命令（工作目录=D:\Develop_code\GraduationProject）                 退出码        依据/产物
+1    pwsh -NoProfile -File docs/acceptance/v25-e3-isolated-chain-20260914/scripts/00-create-isolation.ps1 -RunId v25it-20260914-1358-l4e3 -Confirm -AllowRootOnIsolated 未落盘(判定0)   raw/01-create-isolation.txt（输出完整至 [2/2]，无 Exception；该次为前台执行但当时未写入 $LASTEXITCODE）
+2    pwsh -NoProfile -File .../scripts/10-start-app-isolated.ps1（后台作业 pwsh-37） 0（作业层）     raw/10-app-8091-console.log；Started AnalyticsApplication in 7.193 seconds
+3    pwsh -NoProfile -File .../scripts/20-run-chain-isolated.ps1（后台作业 pwsh-43） 1（作业层）= 脚本内 exit 4 raw/20-chain-console.log 末行“[E3 汇总] 步1 HTTP 200 / 步2 HTTP 200 runId=1 终态=FAILED / 步3 HTTP 200”；raw/20-chain-summary.json
+4    pwsh -NoProfile -File .../scripts/21-dump-isolated-evidence.ps1 0（前台真实值）   raw/21-isolated-meta-evidence.txt
+5    pwsh -NoProfile -File .../scripts/22-run-chain2-isolated.ps1（后台作业 pwsh-44） 0（作业层）     raw/22-chain2-console.log 末行“...终态=SUCCESS...”；raw/22-chain2-summary.json
+6    pwsh -NoProfile -File .../scripts/21-dump-isolated-evidence.ps1 -OutName 22b-isolated-meta-evidence-run2.txt 0（前台真实值）   raw/22b-isolated-meta-evidence-run2.txt
+7    pwsh -NoProfile -File .../scripts/30-stop-and-postcheck.ps1（第 1 次） 5（前台真实值）   raw/33-zero-write-comparison.txt 第 1 版：解析器把 mysql -t 表头 `| k | v |` 误当数据行 ⇒ 1 项假不一致 ⇒ exit 5
+8    pwsh -NoProfile -File .../scripts/30-stop-and-postcheck.ps1（第 2 次，修好解析后） 0（前台真实值）   raw/33-zero-write-comparison.txt 第 2 版：不一致项数 = 0
+9    pwsh -NoProfile -File .../scripts/35-3306-window-absence-check.ps1 0（前台真实值）   raw/35-3306-window-absence.txt；raw/35-3306-window-absence.sql
+10   pwsh -NoProfile -File .../scripts/40-out-of-repo-audit.ps1 0（前台真实值）   raw/40-out-of-repo-audit.txt
+11   （读数）mysql --host=127.0.0.1 --port=3306 --user=root -e "source scripts/fingerprint-3306.sql"（由脚本 30 内部调用两次） 0          raw/baseline-3306-before.txt / raw/baseline-3306-after.txt
+12   （读数）mysql --host=127.0.0.1 --port=3307 --user=<meta 账号 / read 账号> -t -e "SELECT ... information_schema.TABLES ..." 0（前台真实值）   raw/06-isolated-table-inventory.txt（meta 21 表 / metric 11 表）
+13   （读数）PowerShell 只读解析 landing/events/golden-r73-clean-20260910.jsonl（ConvertFrom-Json 后按 event_id 分组） 不适用（非外部命令）   raw/07-dup-source-proof.txt（55 行 / distinct 52 / golden-evt-008 重复 2 次）
+
+### C) 脚本 30 第 1 次的假不一致（自曝缺陷，保留证据不删）
+  raw/33-zero-write-comparison.txt 现为第 2 版（覆盖写）。第 1 版的现象已在本表 #7 记录：
+  多出一行 k | v，因为 mysql -t 会在结果前打印表头 | k | v |，而正则 ^\|\s*([A-Za-z0-9_]+)\s*\|\s*(.*?)\s*\|$ 把它当成了数据行。
+  修正：解析时跳过 k/v 表头行（脚本 30 的 Parse 函数已加注释说明）。**原始指纹文件未被修改**，只是解析层修复。
+
+### D) 未取证（必须显式列出）
+  · 命令 #1（隔离准备）的退出码没有落盘，只有输出完整性作为佐证 —— 判定 0 属**推断**，不是取证。
+  · 本轮**未**执行任何自动化测试（mvn test / IT），因此不存在测试退出码可引用（见 README 四级状态的『测试通过』）。

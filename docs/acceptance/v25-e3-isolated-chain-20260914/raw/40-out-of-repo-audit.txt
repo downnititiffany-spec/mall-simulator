@@ -1,0 +1,111 @@
+V25-E3 收尾合规核查  2026-09-14 14:16:40
+
+### 1) 被实测工件身份（不可变引用）
+  analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+    bytes=33159377  mtime=2026-09-14 13:58:40  sha256=7BE717A974DE613574DE9829EC93627345E83BF87FC27837342C5E3EC9397561
+  spark-jobs\target\spark-jobs-0.1.0-SNAPSHOT.jar
+    bytes=296359  mtime=2026-09-12 21:58:08  sha256=71C2BCCB54066996E7197DEA004E88F16B4DF912481CB723B4D84CC33CE0C966
+  jar 内 db/meta 迁移脚本 18 个: meta, V1__platform_ingestion.sql, V10__spark_job_run_output_partitions.sql, V11__data_quality_layers.sql, V12__quality_detail_width.sql, V13__metric_definition_r7.sql, V14__r8_identity_decision.sql, V15__stage_evidence_mediumtext.sql, V16__source_registry.sql, V17__source_dimension_for_checkpoint_and_batch.sql, V18__source_warehouse_prefix.sql, V2__platform_pipeline_quality.sql, V3__platform_ai_audit.sql, V4__platform_decisions.sql, V5__platform_users.sql, V7__platform_runtime_profile.sql, V8__platform_ingestion_r3.sql, V9__platform_stage_evidence_widen.sql
+  源码 db/meta 迁移脚本 19 个: V1__platform_ingestion.sql, V10__spark_job_run_output_partitions.sql, V11__data_quality_layers.sql, V12__quality_detail_width.sql, V13__metric_definition_r7.sql, V14__r8_identity_decision.sql, V15__stage_evidence_mediumtext.sql, V16__source_registry.sql, V17__source_dimension_for_checkpoint_and_batch.sql, V18__source_warehouse_prefix.sql, V19__quality_rule_definition.sql, V2__platform_pipeline_quality.sql, V20__data_quality_result_rule_version.sql, V3__platform_ai_audit.sql, V4__platform_decisions.sql, V5__platform_users.sql, V7__platform_runtime_profile.sql, V8__platform_ingestion_r3.sql, V9__platform_stage_evidence_widen.sql
+  **源码有、jar 内没有**（即晚于被实测工件，未被本次实测覆盖）: V19__quality_rule_definition.sql (mtime 2026-09-14 14:02:53); V20__data_quality_result_rule_version.sql (mtime 2026-09-14 14:03:11)
+
+### 2) 本泳道允许写入的两处，实际路径
+  证据目录 : D:\Develop_code\GraduationProject\docs\acceptance\v25-e3-isolated-chain-20260914
+  运行目录 : D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3
+  运行目录存在=True；其父目录 target\e3-run 下条目：
+    - v25it-20260914-1358-l4e3  (mtime 2026-09-14 14:13:24)
+
+### 3) 仓库外产物审计（硬约束：仓库外不得新建任何文件/目录）
+  3.1 已放弃的候选路径（应不存在）
+    C:\Users\ASUS\.graduation -> 不存在 OK
+    D:\e3-run -> 不存在 OK
+    D:\e3-evidence -> 不存在 OK
+    D:\e3-artifacts -> 不存在 OK
+    D:\maven_jars -> 不存在 OK
+  3.2 D:\ 根目录下匹配 e3 / p*-e3 的条目
+    命中 2 条：p103-e3, p105-e3
+  3.3 D:\ 根目录下今天新建的 *.dump / *.sql / *.jar / *.log / *.txt
+    命中 0 条 OK
+  3.4 C:\ 根目录下今天新建的目录
+    命中 0 条 OK（注意：系统目录自身 mtime 会被无关程序触碰，仅作提示）
+  3.5 本泳道**已披露**的唯一仓库外副作用：Spark/Derby 自建 OS 临时目录
+    C:\Users\ASUS\AppData\Local\Temp 下 spark-*/derby* 残留 186 个
+      - spark-6dc9f079-8070-4cc8-abfb-93099f517197  (mtime 2026-09-14 14:11:17)
+      - spark-fe210258-4ec8-4e3f-94e0-137ff710350c  (mtime 2026-09-14 14:11:43)
+      - spark-5b318798-1e40-4003-9d1a-525e76461786  (mtime 2026-09-14 14:12:05)
+      - spark-f5a04fe4-38e6-4067-8921-37da1a6f90df  (mtime 2026-09-14 14:12:31)
+      - spark-4320c232-b098-4569-a32e-c9e1934b7fb5  (mtime 2026-09-14 14:12:49)
+      - spark-e3add761-43bc-44b9-bdc8-da51d1d433c9  (mtime 2026-09-14 14:13:13)
+    说明：这些由 spark-submit / Derby 自身在 OS 临时目录创建，路径非本泳道选择，作业日志里有其自删告警（ShutdownHookManager 清理失败告警，见 raw 作业日志），不作为「主动写在仓库外」计。
+
+### 4) 仓库内变更面（本泳道未改任何已提交文件）
+  4.1 git status --porcelain（含其它泳道并行改动，逐条归属见下）
+    ?? after-reboot-cleanup.ps1
+    ?? alibaba-fix-src.txt
+    ?? alibaba-fix.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/
+    ?? docs/acceptance/v25-stray-consolidation-20260914/
+    ?? fix-autostart.ps1
+    ?? optimize-src.txt
+    ?? optimize.ps1
+    ?? orphan-cleanup-report.txt
+    ?? orphan2-src.txt
+    ?? orphan2.ps1
+    ?? post-opt-verify-src.txt
+    ?? post-opt-verify.ps1
+    ?? post-reboot-check-src.txt
+    ?? post-reboot-check.ps1
+  4.2 本泳道声明「零修改」的关键已提交文件，逐个做 git diff --stat（空=未改）
+    analytics-server/platform-app/src/main/resources/application.yml       diff: <空> 未改
+    analytics-server/platform-app/src/main/resources/db/meta               diff: <空> 未改
+    analytics-server/platform-app/src/main/resources/db/metric             diff: <空> 未改
+    analytics-server/warehouse-pipeline/src/main/java                      diff: <空> 未改
+    analytics-server/platform-common/src/main/java                         diff: <空> 未改
+    spark-jobs/src                                                         diff: <空> 未改
+    mall-simulator/src                                                     diff: <空> 未改
+    contract-specs                                                         diff: <空> 未改
+  4.3 本泳道新增文件（未跟踪）过滤
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/01-create-isolation.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/02-isolated-account-connectivity.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/03-isolated-flyway-and-seeds.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/04-mirror-runtime-profile-from-3306.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/04b-mirror-runtime-profile.sql
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/05-f88-observations.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/10-app-8091-console.log
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/20-chain-console.log
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/20-chain-summary.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/21-isolated-meta-evidence.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/22-chain2-console.log
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/22-chain2-summary.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/22b-isolated-meta-evidence-run2.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/30-app-connections-during-window.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/33-zero-write-comparison.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/baseline-3306-after.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/baseline-3306-before.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/00-login.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/01-ingestion-run.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/01b-ingestion-status.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/01c-ingestion-batches.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/02-pipeline-run-created.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/02b-pipeline-run-final.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/02c-pipeline-run-poll-trace.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/03-metrics-overview.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/03b-metrics-quality.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/40-login.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/41-ingestion-run.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/41b-ingestion-status.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/41c-ingestion-batches.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/42-pipeline-run-created.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/42b-pipeline-run-final.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/42c-pipeline-run-poll-trace.txt
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/43-metrics-overview.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/43b-metrics-quality.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/raw/http/43c-metrics-summary.json
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/00-create-isolation.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/10-start-app-isolated.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/20-run-chain-isolated.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/21-dump-isolated-evidence.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/22-run-chain2-isolated.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/30-stop-and-postcheck.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/40-out-of-repo-audit.ps1
+    ?? docs/acceptance/v25-e3-isolated-chain-20260914/scripts/fingerprint-3306.sql

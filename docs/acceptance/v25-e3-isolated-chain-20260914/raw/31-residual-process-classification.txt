@@ -1,0 +1,19 @@
+V25-E3 残留进程归属核查  2026-09-14 14:17:57
+复现命令： pwsh -NoProfile -Command "Get-CimInstance Win32_Process -Filter 'ProcessId=55804' | Select ProcessId,CreationDate,CommandLine"
+（背景：raw/30-app-connections-during-window.txt 末行 "残留 java 进程: 55804" 需要归属，否则会被误读为本泳道残留）
+
+PID            = 55804
+Name           = java.exe
+CreationDate   = 09/14/2026 11:46:08   (本泳道运行窗口为 2026-09-14 13:58–14:16，此为 11:46 ⇒ 早于本泳道)
+ExecutablePath = D:\Develop\jetbrains\DataGrip 2024.1.1\jbr\bin\java.exe
+CommandLine    = "D:\Develop\jetbrains\DataGrip 2024.1.1\jbr\bin\java" -Djava.rmi.server.hostname=127.0.0.1 -Duser.timezone=UTC -Xmx4048m -Xms128m "-Djdbc.classpath=D:\Develop\jetbrains\DataGrip 2024.1.1\plugins\DatabaseTools\lib\jdbc-console.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\DataGrip2024.1\jdbc-drivers\MySQL ConnectorJ\9.7.0\com\mysql\mysql-connector-j\9.7.0\mysql-connector-j-9.7.0.jar;C:\Users\ASUS\App
+监听端口       = 127.0.0.1:37977, 127.0.0.1:6301
+
+结论：55804 = JetBrains DataGrip 2024.1.1 自带的 JBR java 进程（JDBC 控制台），
+      启动于 2026-09-14 11:46:08，早于本泳道开工（13:58 构建被实测工件），且不是 SparkSubmit / 平台应用；
+      **非本泳道残留**，本泳道未启动也未终止它。
+
+本泳道自建进程的收尾状态（同文件第 3 段）：
+  8091 应用 java PID 62984 —— 已于 14:15:09 用 Stop-Process -Id 62984 停止，8091 监听已释放
+  SparkSubmit JVM 残留数 = 0  （每个作业被 LocalProcessSparkSubmitter 同步 waitFor，无孤儿）
+  8090 / 8091 / 8092 当前监听 = 全部空闲

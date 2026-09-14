@@ -1,0 +1,32 @@
+{
+  "deliveredFile": "D:\\Develop_code\\GraduationProject\\target\\e3-run\\v25it-20260914-1358-l4e3\\landing\\events\\gen-s3b-1000-20260911-r2.jsonl",
+  "deliveredFileSha256": "5397907A6016936805FFAB694E9799B25154251849DA7EC933C18064BEBB0257",
+  "deliveredFileSameAsSource": true,
+  "loginHttp": 200,
+  "ingestionHttp": 200,
+  "ingestionData": {
+    "batchId": 2,
+    "batchNo": "ing-20260914140837-a3484b12",
+    "status": "SUCCESS",
+    "recordCount": 1000,
+    "quarantineCount": 0,
+    "errorCount": 0,
+    "fileCount": 1,
+    "acceptedBytes": 363848,
+    "acceptedDir": "D:\\Develop_code\\GraduationProject\\target\\e3-run\\v25it-20260914-1358-l4e3\\landing\\accepted\\2",
+    "quarantineDir": "D:\\Develop_code\\GraduationProject\\target\\e3-run\\v25it-20260914-1358-l4e3\\landing\\quarantine\\2",
+    "manifestPath": "file:///D:/Develop_code/GraduationProject/target/e3-run/v25it-20260914-1358-l4e3/landing/manifests/2.json",
+    "noNewData": false
+  },
+  "pipelineCreateHttp": 200,
+  "runId": "2",
+  "runStatus": "SUCCESS",
+  "runStage": "SUCCESS",
+  "runErrorCode": null,
+  "runSnapshot": "S20260901_2",
+  "elapsedSec": 291,
+  "overviewHttp": 200,
+  "overviewBodyLength": 1394,
+  "qualityHttp": 200,
+  "summaryHttp": 403
+}

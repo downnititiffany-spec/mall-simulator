@@ -1,0 +1,129 @@
+=========== 目标已覆盖为隔离实例 ===========
+  meta.url          = jdbc:mysql://127.0.0.1:3307/analytics_meta_v25it_20260914_1358_l4e3?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  meta.user         = v25it_1358_l4e3_meta  password=<redacted:24 chars>
+  metric.publish.url= jdbc:mysql://127.0.0.1:3307/analytics_metric_v25it_20260914_1358_l4e3?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  metric.publish.user=v25it_1358_l4e3_metric_pub
+  metric.read.url   = jdbc:mysql://127.0.0.1:3307/analytics_metric_v25it_20260914_1358_l4e3?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  metric.read.user  = v25it_1358_l4e3_metric_read
+  landing.local-root= D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing
+  source.profile-root=D:\Develop_code\GraduationProject
+  spark.warehouse   = D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\spark-warehouse
+  spark.metastore   = D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\derby-metastore
+  工作目录(CWD)      = D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3
+  绑定              = 127.0.0.1:8091
+  任何 3306 出现即为门禁失败：URL 中只有 3307
+  启动命令: D:\Develop\JAVA17\bin\java.exe -Dfile.encoding=UTF-8 -Xmx2g -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T13:59:38.776+08:00  INFO 62984 --- [           main] c.g.analytics.AnalyticsApplication       : Starting AnalyticsApplication v0.1.0-SNAPSHOT using Java 17.0.12 with PID 62984 (D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar started by ASUS in D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3)
+2026-09-14T13:59:38.780+08:00  INFO 62984 --- [           main] c.g.analytics.AnalyticsApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-09-14T13:59:40.389+08:00  INFO 62984 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8091 (http)
+2026-09-14T13:59:40.392+08:00  INFO 62984 --- [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-14T13:59:40.395+08:00  INFO 62984 --- [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-14T13:59:40.403+08:00  INFO 62984 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-14T13:59:40.403+08:00  INFO 62984 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-14T13:59:40.439+08:00  INFO 62984 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-14T13:59:40.440+08:00  INFO 62984 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1570 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T13:59:41.285+08:00  INFO 62984 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Starting...
+2026-09-14T13:59:41.502+08:00  INFO 62984 --- [           main] com.zaxxer.hikari.pool.HikariPool        : meta-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@7c70aae1
+2026-09-14T13:59:41.503+08:00  INFO 62984 --- [           main] com.zaxxer.hikari.HikariDataSource       : meta-ds - Start completed.
+2026-09-14T13:59:41.594+08:00  INFO 62984 --- [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-14T13:59:41.594+08:00  INFO 62984 --- [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-14T13:59:41.594+08:00  INFO 62984 --- [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-14T13:59:41.626+08:00  INFO 62984 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/analytics_meta_v25it_20260914_1358_l4e3 (MySQL 8.0)
+2026-09-14T13:59:41.674+08:00  INFO 62984 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `analytics_meta_v25it_20260914_1358_l4e3`.`flyway_schema_history` does not exist yet
+2026-09-14T13:59:41.679+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 17 migrations (execution time 00:00.019s)
+2026-09-14T13:59:41.704+08:00  INFO 62984 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `analytics_meta_v25it_20260914_1358_l4e3`.`flyway_schema_history` ...
+2026-09-14T13:59:41.780+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_meta_v25it_20260914_1358_l4e3`: << Empty Schema >>
+2026-09-14T13:59:41.792+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "1 - platform ingestion"
+2026-09-14T13:59:41.906+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "2 - platform pipeline quality"
+2026-09-14T13:59:42.105+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "3 - platform ai audit"
+2026-09-14T13:59:42.161+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "4 - platform decisions"
+2026-09-14T13:59:42.224+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "5 - platform users"
+2026-09-14T13:59:42.300+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "7 - platform runtime profile"
+2026-09-14T13:59:42.461+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "8 - platform ingestion r3"
+2026-09-14T13:59:42.614+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "9 - platform stage evidence widen"
+2026-09-14T13:59:42.638+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "10 - spark job run output partitions"
+2026-09-14T13:59:42.693+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "11 - data quality layers"
+2026-09-14T13:59:42.751+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "12 - quality detail width"
+2026-09-14T13:59:42.776+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "13 - metric definition r7"
+2026-09-14T13:59:42.796+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "14 - r8 identity decision"
+2026-09-14T13:59:42.956+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "15 - stage evidence mediumtext"
+2026-09-14T13:59:43.021+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "16 - source registry"
+2026-09-14T13:59:43.118+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "17 - source dimension for checkpoint and batch"
+2026-09-14T13:59:43.291+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25it_20260914_1358_l4e3` to version "18 - source warehouse prefix"
+2026-09-14T13:59:43.376+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 17 migrations to schema `analytics_meta_v25it_20260914_1358_l4e3`, now at version v18 (execution time 00:01.332s)
+2026-09-14T13:59:43.379+08:00  INFO 62984 --- [           main] c.g.a.config.MetaFlywayInitializer       : analytics_meta 迁移完成: 执行 17 个脚本，版本 18
+2026-09-14T13:59:43.381+08:00  INFO 62984 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Starting...
+2026-09-14T13:59:43.387+08:00  INFO 62984 --- [           main] com.zaxxer.hikari.pool.HikariPool        : metric-publish-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@639c7f9c
+2026-09-14T13:59:43.387+08:00  INFO 62984 --- [           main] com.zaxxer.hikari.HikariDataSource       : metric-publish-ds - Start completed.
+2026-09-14T13:59:43.393+08:00  INFO 62984 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/analytics_metric_v25it_20260914_1358_l4e3 (MySQL 8.0)
+2026-09-14T13:59:43.401+08:00  INFO 62984 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `analytics_metric_v25it_20260914_1358_l4e3`.`flyway_schema_history` does not exist yet
+2026-09-14T13:59:43.402+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.003s)
+2026-09-14T13:59:43.409+08:00  INFO 62984 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `analytics_metric_v25it_20260914_1358_l4e3`.`flyway_schema_history` ...
+2026-09-14T13:59:43.442+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `analytics_metric_v25it_20260914_1358_l4e3`: << Empty Schema >>
+2026-09-14T13:59:43.444+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_metric_v25it_20260914_1358_l4e3` to version "1 - metric store"
+2026-09-14T13:59:43.506+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_metric_v25it_20260914_1358_l4e3` to version "2 - metric ads materialized"
+2026-09-14T13:59:43.579+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_metric_v25it_20260914_1358_l4e3` to version "3 - metric ads r7"
+2026-09-14T13:59:43.690+08:00  INFO 62984 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 3 migrations to schema `analytics_metric_v25it_20260914_1358_l4e3`, now at version v3 (execution time 00:00.214s)
+2026-09-14T13:59:43.706+08:00  INFO 62984 --- [           main] c.g.a.config.MetricFlywayInitializer     : analytics_metric 迁移完成: 执行 3 个脚本，当前版本 3 (迁移历史 analytics_metric.flyway_schema_history)
+2026-09-14T13:59:44.162+08:00  INFO 62984 --- [           main] c.g.a.r.storage.LocalLandingStorage      : LocalLandingStorage root = D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing
+2026-09-14T13:59:44.505+08:00  INFO 62984 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T13:59:45.499+08:00  INFO 62984 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8091 (http) with context path ''
+2026-09-14T13:59:45.518+08:00  INFO 62984 --- [           main] c.g.analytics.AnalyticsApplication       : Started AnalyticsApplication in 7.193 seconds (process running for 7.802)
+2026-09-14T13:59:45.867+08:00  INFO 62984 --- [           main] c.g.a.pipeline.PipelineRecoveryService   : R6-14 启动对账完成: pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]
+2026-09-14T14:00:01.818+08:00  INFO 62984 --- [0.1-8091-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-14T14:00:01.818+08:00  INFO 62984 --- [0.1-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-14T14:00:01.819+08:00  INFO 62984 --- [0.1-8091-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-09-14T14:00:23.192+08:00  INFO 62984 --- [0.1-8091-exec-3] com.zaxxer.hikari.HikariDataSource       : metric-read-ds - Starting...
+2026-09-14T14:00:23.197+08:00  INFO 62984 --- [0.1-8091-exec-3] com.zaxxer.hikari.pool.HikariPool        : metric-read-ds - Added connection com.mysql.cj.jdbc.ConnectionImpl@7bfdacea
+2026-09-14T14:00:23.197+08:00  INFO 62984 --- [0.1-8091-exec-3] com.zaxxer.hikari.HikariDataSource       : metric-read-ds - Start completed.
+2026-09-14T14:01:58.126+08:00  INFO 62984 --- [0.1-8091-exec-7] c.g.a.ingestion.LocalFileIngestor        : ingest gen-s3b-1000-20260911.jsonl: collected=1000 quarantined=0 acceptedBytes=363848 offset 0→363848 identity=1789365577680
+2026-09-14T14:01:58.178+08:00  INFO 62984 --- [0.1-8091-exec-7] c.g.a.ingestion.LocalFileIngestor        : ingest golden-r73-clean-20260910.jsonl: collected=51 quarantined=4 acceptedBytes=17419 offset 0→18430 identity=1789365577682
+2026-09-14T14:01:58.200+08:00  INFO 62984 --- [0.1-8091-exec-7] c.g.a.ingestion.IngestionService         : ingestion run ing-20260914140158-5f085e03: status=QUARANTINED records=1051 quarantine=4 errors=0 files=2 bytes=381267 noNewData=false
+2026-09-14T14:01:58.308+08:00  INFO 62984 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+2026-09-14T14:01:58.444+08:00  INFO 62984 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789365718420-827016 -> pid=72092 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-1-INIT_SCHEMA-sci-a1__lp-1789365718420-827016.log
+2026-09-14T14:02:22.634+08:00  INFO 62984 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789365742623-028c9b -> pid=81340 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-1-LOAD_ODS-odl-a1__lp-1789365742623-028c9b.log
+2026-09-14T14:04:19.297+08:00  INFO 62984 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789365859288-facddd -> pid=70724 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-1-BUILD_DWD-bdw-a1__lp-1789365859288-facddd.log
+2026-09-14T14:04:39.399+08:00  INFO 62984 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789365879390-232607 -> pid=79432 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-1-BUILD_DWD-dim-a1__lp-1789365879390-232607.log
+2026-09-14T14:04:59.526+08:00  INFO 62984 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789365899517-1b143a -> pid=75204 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-1-BUILD_DWD-tdw-a1__lp-1789365899517-1b143a.log
+2026-09-14T14:05:31.711+08:00  INFO 62984 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789365931703-01173d -> pid=35964 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-1-BUILD_DWS-usw-a1__lp-1789365931703-01173d.log
+2026-09-14T14:05:57.897+08:00  INFO 62984 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789365957888-f98224 -> pid=73660 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-1-BUILD_ADS-fna-a1__lp-1789365957888-f98224.log
+2026-09-14T14:06:26.071+08:00  INFO 62984 --- [     pipeline-1] c.g.analytics.pipeline.QualityChecker    : quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+2026-09-14T14:06:26.105+08:00  WARN 62984 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 1 failed: 阻断级 Landing 质量规则未通过，正式分区未发布
+2026-09-14T14:08:37.682+08:00  INFO 62984 --- [0.1-8091-exec-3] c.g.a.ingestion.LocalFileIngestor        : ingest gen-s3b-1000-20260911-r2.jsonl: collected=1000 quarantined=0 acceptedBytes=363848 offset 0→363848 identity=1789366117427
+2026-09-14T14:08:37.704+08:00  INFO 62984 --- [0.1-8091-exec-3] c.g.a.ingestion.IngestionService         : ingestion run ing-20260914140837-a3484b12: status=SUCCESS records=1000 quarantine=0 errors=0 files=1 bytes=363848 noNewData=false
+2026-09-14T14:08:37.750+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.pipeline.PipelineService   : pipeline 2: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+2026-09-14T14:08:37.823+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366117813-225787 -> pid=80776 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-INIT_SCHEMA-sci-a1__lp-1789366117813-225787.log
+2026-09-14T14:08:49.922+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366129914-d7eb0c -> pid=77728 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-LOAD_ODS-odl-a1__lp-1789366129914-d7eb0c.log
+2026-09-14T14:10:42.497+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366242490-7a17c8 -> pid=79708 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-BUILD_DWD-bdw-a1__lp-1789366242490-7a17c8.log
+2026-09-14T14:10:58.607+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366258599-2ff663 -> pid=45328 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-BUILD_DWD-dim-a1__lp-1789366258599-2ff663.log
+2026-09-14T14:11:14.723+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366274715-814589 -> pid=73424 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-BUILD_DWD-tdw-a1__lp-1789366274715-814589.log
+2026-09-14T14:11:40.909+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366300903-2ae398 -> pid=67576 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-BUILD_DWS-usw-a1__lp-1789366300903-2ae398.log
+2026-09-14T14:12:03.038+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366323029-c11c5a -> pid=57856 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-BUILD_ADS-fna-a1__lp-1789366323029-c11c5a.log
+2026-09-14T14:12:29.191+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.pipeline.QualityChecker    : quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+2026-09-14T14:12:29.211+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366349204-9e29a1 -> pid=71772 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-QUALITY_CHECK-dqc-a1__lp-1789366349204-9e29a1.log
+2026-09-14T14:12:47.367+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366367359-f83f4c -> pid=77644 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-PUBLISH_METRIC-pub-a1__lp-1789366367359-f83f4c.log
+2026-09-14T14:13:11.479+08:00  INFO 62984 --- [     pipeline-2] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789366391474-07a0b3 -> pid=83204 log=D:\Develop_code\GraduationProject\target\e3-run\v25it-20260914-1358-l4e3\landing\logs\pipeline-2-PUBLISH_METRIC-mxp-a1__lp-1789366391474-07a0b3.log
+2026-09-14T14:13:27.684+08:00  INFO 62984 --- [     pipeline-2] c.g.a.m.publish.MetricPublishRepository  : metric publish: 快照 S20260901_2 登记 BUILDING（profile=1, version=1, businessDate=20260901）
+2026-09-14T14:13:27.696+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads delete snapshot S20260901_2: 共删除 0 行（8 张表）
+2026-09-14T14:13:27.701+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_operation_overview_m (snapshot=S20260901_2, dt=20260901): 1 行 / 11 列
+2026-09-14T14:13:27.705+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_sale_trend_m (snapshot=S20260901_2, dt=20260901): 1 行 / 6 列
+2026-09-14T14:13:27.710+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_behavior_funnel_m (snapshot=S20260901_2, dt=20260901): 4 行 / 6 列
+2026-09-14T14:13:27.715+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_active_trend_m (snapshot=S20260901_2, dt=20260901): 1 行 / 4 列
+2026-09-14T14:13:27.722+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_hot_product_m (snapshot=S20260901_2, dt=20260901): 9 行 / 10 列
+2026-09-14T14:13:27.728+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_product_conversion_m (snapshot=S20260901_2, dt=20260901): 9 行 / 6 列
+2026-09-14T14:13:27.732+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_user_profile_m (snapshot=S20260901_2, dt=20260901): 1 行 / 14 列
+2026-09-14T14:13:27.736+08:00  INFO 62984 --- [     pipeline-2] c.g.analytics.metric.MetricAdsWriter     : metric ads insert ads_data_quality_m (snapshot=S20260901_2, dt=20260901): 4 行 / 8 列
+2026-09-14T14:13:27.764+08:00  INFO 62984 --- [     pipeline-2] c.g.a.metric.publish.MetricPublisher     : metric publish: 快照 S20260901_2 发布成功（ADS 30 行，指标值 10 条，旧 ACTIVE=null）
