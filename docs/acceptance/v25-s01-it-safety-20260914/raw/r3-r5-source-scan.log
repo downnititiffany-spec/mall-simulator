@@ -1,0 +1,77 @@
+=== V25-S03 R-3 证据：SourceRegistryMigrationMySqlIT 不再有正式库默认值 ===
+--- (1) META_DB 定义处（应为 requiredProperty，无默认值）---
+  :59: private static final String META_DB = requiredProperty("p1.it.metaDb",
+  :65: private static final String META_HOST = requiredProperty("p1.it.metaHost",
+  :70: private static final String META_USER = requiredProperty("p1.it.metaUser",
+  :79: private static final String META_PASSWORD = requiredProperty("p1.it.metaPassword",
+  :84: private static final String TEST_RUN_ID = requiredProperty("p1.it.testRunId",
+  :88: private static final String SERVER_FINGERPRINT = requiredProperty("p1.it.serverFingerprint",
+  :96: * {@link com.graduation.analytics.testsupport.TestIsolationGuard#requiredProperty(String)}
+  :99: private static String requiredProperty(String key, String purpose) {
+  :107: return com.graduation.analytics.testsupport.TestIsolationGuard.requiredProperty(bare);
+  :124: private static void verifyBeforeWrite(DataSource ds, String database) {
+  :125: com.graduation.analytics.testsupport.TestIsolationGuard.verifyBeforeWrite(
+  :132: TEST_RUN_ID, SERVER_FINGERPRINT, META_DB, META_DB,
+  :136: "credref:" + META_USER,
+  :209: verifyBeforeWrite(meta.getDataSource(), META_DB);
+  :211: var first = Flyway.configure().dataSource(meta.getDataSource()).locations("classpath:db/meta").load().migrate();
+  :215: var second = Flyway.configure().dataSource(meta.getDataSource()).locations("classpath:db/meta").load().migrate();
+  :315: }, META_DB);
+  :327: String.class, META_DB);
+  :333: String.class, META_DB);
+  :362: String.class, META_DB);
+  :387: String.class, META_DB);
+  :394: + "AND k.column_name = 'source_id' AND k.referenced_table_name IS NOT NULL", META_DB);
+  :408: String.class, META_DB);
+  :414: String.class, META_DB);
+  :420: String.class, META_DB);
+  :440: + "AND column_name = 'hive_database_prefix'", Integer.class, META_DB);
+  :451: ds.setUrl("jdbc:mysql://" + META_HOST + "/" + META_DB
+  :453: ds.setUsername(META_USER);
+  :454: ds.setPassword(META_PASSWORD);
+
+--- (2) 原扫描指认的 :55 行现状（git diff 对照，只看这一处是否仍有 analytics_meta 字面量）---
+  :21: * <p>验证对象是**真 MySQL 8.0 的 analytics_meta**：连两次 Flyway 迁移（模拟两次应用启动），
+  :29: * 但真库 {@code analytics_meta} 在 P1-05 交付时仍是 V16（V17 由总控在其"同批次换 jar"窗口应用）,
+  :34: * 并且本类本身也被 {@code -Dp1.it.metaDb=analytics_meta_p105it} 指向另一份"真库 dump 的副本库"
+  :40: * {@code analytics_meta} 仍是 V17，连上去就会把它迁到 V18（越界写库，D-080）。本轮的替代证据是
+  :50: * <p>整改前这里是 {@code System.getProperty("p1.it.metaDb", "analytics_meta")}：默认值就是
+  :51: * **正式库** {@code analytics_meta}。而本类在 {@link #twoApplicationStartups()} 里跑
+  :54: * {@code analytics_meta} 迁移到当前代码版本——这正是 D-080 记录的越界写库形态。</p>
+  :60: "目标 meta 库名。整改后无默认值：不得回退到正式库 analytics_meta。"
+  :62: + "-Dp1.it.metaDb=analytics_meta_<runId>it");
+  :218: System.out.println("[P1-02] analytics_meta 首次启动执行脚本数=" + firstStartupExecuted
+  （上面若出现 analytics_meta，仅允许出现在注释/说明中，不得作为默认取值）
+
+--- (3) R-5：SparkStageExecutorSmokeTest 的旧无门禁删除是否已消失 ---
+  :35: * {@code <repo>/tests/r6-smoke-warehouse}，入口处直接
+  :36: * {@code Files.walk(SMOKE_ROOT).sorted(reverseOrder()).forEach(Files::deleteIfExists)}
+  :58: // V25-S03 R-5：工作根不再用仓库内固定常量，改由 SparkItGuard 按允许根 + testRunId 解析。
+  :59: private static Path smokeRoot() {
+  :60: return com.graduation.analytics.testsupport.SparkItGuard.runRoot();
+  :66: com.graduation.analytics.testsupport.SparkItGuard.requireEnabled(
+  :69: com.graduation.analytics.testsupport.SparkItGuard.deleteOwnedRunDir();
+  :71: Path SMOKE_ROOT = smokeRoot();
+  :197: // 直接检查分区目录（dt=...），walker 异常场景更容易误判
+  :203: try (var walk = Files.walk(partition)) {
+  :204: return walk.anyMatch(p -> p.getFileName().toString().startsWith("part-"));
+  :206: System.out.println("[smoke] partition walk error: " + e.getMessage());
+
+--- (4) 仓库级明文口令扫描（scripts/**，只报不改的见 §3.1）---
+  accept-p1-baseline.ps1:28: [string]$DbPassword = '123456',
+  accept-three-programs.ps1:9: [string]$MallDbPassword = '123456'
+  smoke-pipeline.ps1:28: * 口令**无默认值**：整改前是 `root` + `123456` 两个硬编码默认值，现在默认账号是只读的
+  smoke-pipeline.ps1:52: #   整改前：`[string]$MysqlUser = 'root'` + `[string]$MysqlPassword = '123456'`
+  smoke-pipeline.ps1:55: #   现在：① 口令**无默认值**，未提供即拒绝执行（不再有 123456 兜底）；
+  smoke-pipeline.ps1:87: Write-Host '拒绝执行：未提供数据库口令。整改后不再有 123456 兜底。'
+  start-all.ps1:19: [string]$MallDbPassword = $(if ($env:MALL_DB_PASSWORD) { $env:MALL_DB_PASSWORD } else { '123456' })
+
+--- (5) 测试资源里残留的宿主 3306 连接串（应只剩注释/说明）---
+  application-test.yml:5: #   url: jdbc:mysql://127.0.0.1:3306/mall_simulator_test?createDatabaseIfNotExist=true
+  application-test.yml:9: #   ① 默认落到**宿主正式实例端口 3306**（与正式库共用实例、datadir、全局账号）；
+  application-test.yml:19: #   * 实例必须是 WSL 独立 MySQL 实例（端口 3307）。宿主 3306 一律拒绝。
+  application-test.yml:34: #        mysql.url=jdbc:mysql://127.0.0.1:3307/<testRunId>_mall
+  application-test.yml:58: # 默认关闭：整改前这里是 true 且指向宿主 3306
+  it-guard.local.properties:8: #   * application.yml 默认：jdbc:mysql://127.0.0.1:3306/generator_meta
+  it-guard.local.properties:14: #   * 结论：本模块的测试默认落在宿主正式实例 3306 + root，
+  it-guard.local.properties:28: # url=jdbc:mysql://127.0.0.1:3307/<runId>_generator?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false

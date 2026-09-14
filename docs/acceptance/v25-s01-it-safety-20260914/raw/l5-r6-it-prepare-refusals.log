@@ -1,0 +1,16 @@
+### L5 R-6: scripts/it-prepare-isolation.ps1 observed dry behaviour (no -Confirm => nothing executed)
+### time: 2026-09-14T14:01:12.0838299+08:00
+
+########## CASE 1: -RunId l5probe-20260914-x1 -Port 3306 -Confirm  (expect refusal exit 2; no credref file written) ##########
+WriteError: 无法覆盖变量 Host ，因为它是只读变量或常量。
+### EXITCODE=1
+
+########## CASE 2: -RunId l5probe-20260914-x1 (no -Confirm, no -DryRun) => prints object list only ##########
+WriteError: 无法覆盖变量 Host ，因为它是只读变量或常量。
+### EXITCODE=1
+
+########## CASE 3: -RunId bad (shape) => expect exit 2 ##########
+WriteError: 无法覆盖变量 Host ，因为它是只读变量或常量。
+### EXITCODE=1
+### credref 探测 C:\Users\ASUS\.graduation\credref-l5probe-20260914-x1.properties => False
+### credref 探测 C:\Users\ASUS\.graduation\credref-ab.properties => False

@@ -10,6 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.graduation.mall.support.MallIsolationTestConfig;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Map;
@@ -21,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@Import(MallIsolationTestConfig.class)
 class AdminProductApiTest {
 
     @Autowired

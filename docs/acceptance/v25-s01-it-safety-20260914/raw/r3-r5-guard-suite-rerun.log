@@ -1,0 +1,53 @@
+[START] 集群路径护栏：hdfsRoot 指向 hdfs:///graduation/** 一律拒
+[PASS ] 集群路径护栏：hdfsRoot 指向 hdfs:///graduation/** 一律拒
+[START] 配置缺失 → 立即拒绝运行（MissingConfigurationException，不是跳过）
+[PASS ] 配置缺失 → 立即拒绝运行（MissingConfigurationException，不是跳过）
+[START] 合法隔离配置可构造 context，字段与 startedAt 齐备
+[PASS ] 合法隔离配置可构造 context，字段与 startedAt 齐备
+[START] TRUNCATE / 递归删仓库根 / 删历史 manifest 一律被拒
+[PASS ] TRUNCATE / 递归删仓库根 / 删历史 manifest 一律被拒
+[START] 内容指纹：计数相同但内容不同必须能区分（行数相等不足以证明零修改）
+[PASS ] 内容指纹：计数相同但内容不同必须能区分（行数相等不足以证明零修改）
+[START] 给正式库配置时：在开连接之前就失败，绝不「先在正式库试写再回滚」
+[PASS ] 给正式库配置时：在开连接之前就失败，绝不「先在正式库试写再回滚」
+[START] metaDb 指向正式库同样被拒（只改 JDBC URL 不算隔离）
+[PASS ] metaDb 指向正式库同样被拒（只改 JDBC URL 不算隔离）
+[START] 连接参数解析：系统属性优先；两处都没有则拒绝，绝不回退正式地址/正式账号
+[PASS ] 连接参数解析：系统属性优先；两处都没有则拒绝，绝不回退正式地址/正式账号
+[START] 声明库与登记范围不符（只改 JDBC URL 到另一个库）→ 写前拒绝
+[PASS ] 声明库与登记范围不符（只改 JDBC URL 到另一个库）→ 写前拒绝
+[START] 账号最小权限：root / 正式写账号 metric_pub 在禁止清单内
+[PASS ] 账号最小权限：root / 正式写账号 metric_pub 在禁止清单内
+[START] 隔离范围不一致：hiveNamespace / hdfsRoot / manifestRoot / credentialsRef 缺 testRunId 一律拒
+[PASS ] 隔离范围不一致：hiveNamespace / hdfsRoot / manifestRoot / credentialsRef 缺 testRunId 一律拒
+[START] 隔离实例端口白名单：宿主 3306 一律拒，只有 WSL 隔离实例 3307 放行
+[PASS ] 隔离实例端口白名单：宿主 3306 一律拒，只有 WSL 隔离实例 3307 放行
+[START] testRunId 形状非法 → 拒绝（不可复用/不可复查的标识不算隔离范围）
+[PASS ] testRunId 形状非法 → 拒绝（不可复用/不可复查的标识不算隔离范围）
+[START] 隔离根不接受 file:// 与 hdfs:// URI 写法（URI 会让「归属校验/安全删除」失去判据）
+[PASS ] 隔离根不接受 file:// 与 hdfs:// URI 写法（URI 会让「归属校验/安全删除」失去判据）
+[START] cleanup：目标清单必须逐条匹配 testRunId 前缀与本次 profileId
+[isolation-guard] cleanup 目标清单（删除前核对）count=2
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-bad runtime_profile_id=999101 status=FAILED active_flag=null
+[isolation-guard] cleanup 目标清单核对通过 testRunId=v25it-20260914-120000-a1b2
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=1 status=ACTIVE active_flag=1
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=S20260901_47 runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ghost runtime_profile_id=999101 status=ACTIVE active_flag=1
+[PASS ] cleanup：目标清单必须逐条匹配 testRunId 前缀与本次 profileId
+[START] 配置不完整（少一个键）→ 拒绝，且不使用任何默认值补齐
+[PASS ] 配置不完整（少一个键）→ 拒绝，且不使用任何默认值补齐
+[START] 正式库配置 → 在构造 TestRunContext 时就被拒（不提供 analytics_metric fallback）
+[PASS ] 正式库配置 → 在构造 TestRunContext 时就被拒（不提供 analytics_metric fallback）
+[START] 没有 TestRunContext / 没有 DataSource → 直接拒绝（配置缺失即失败）
+[PASS ] 没有 TestRunContext / 没有 DataSource → 直接拒绝（配置缺失即失败）
+[START] 服务实例指纹不匹配 → 拒绝（同库名但换了一台实例不算同一隔离范围）
+[PASS ] 服务实例指纹不匹配 → 拒绝（同库名但换了一台实例不算同一隔离范围）
+[START] WorkScope 拒绝空/共享范围，requireOwnedSnapshot 要求 testRunId 前缀
+[PASS ] WorkScope 拒绝空/共享范围，requireOwnedSnapshot 要求 testRunId 前缀
+
+=== V25-S01 直接 JUnit 执行汇总 ===
+started=20 succeeded=20 failed=0 aborted=0 skipped=0

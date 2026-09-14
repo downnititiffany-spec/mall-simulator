@@ -1,20 +1,71 @@
+# ───────────────────────────────────────────────────────────────────────────
+# mall-simulator 测试档案（V25-S03 R-1 整改后）
+#
+# ── 整改前的问题（保留原状描述，便于对照）──────────────────────────────────
+#   url: jdbc:mysql://127.0.0.1:3306/mall_simulator_test?createDatabaseIfNotExist=true
+#   username: ${MALL_DB_USER:root}
+#   spring.flyway.enabled: true
+# 三个问题叠加：
+#   ① 默认落到**宿主正式实例端口 3306**（与正式库共用实例、datadir、全局账号）；
+#   ② 默认账号 root；
+#   ③ createDatabaseIfNotExist=true 会**建库**、Flyway 会**建表**，
+#      随后 MallTestSupport.freshState() 对业务表做 delete(null) 全表清空。
+#   只要有人把库名指向 mall_simulator（真实业务库，834,550 行），
+#   跑一次 mvn test 就会清空生产数据。**库名含 _test 不构成安全证明。**
+#
+# ── 整改后的规则（默认拒绝）───────────────────────────────────────────────
+#   * 目标库名**不再硬编码**：必须由隔离档案提供，且必须以本次 testRunId 为前缀
+#     —— 每次运行用新建的库，不能复用同名库。
+#   * 实例必须是 WSL 独立 MySQL 实例（端口 3307）。宿主 3306 一律拒绝。
+#   * 账号必须来自隔离档案（本次运行自己的受限账号），禁止 root / mall_app。
+#   * **禁止 createDatabaseIfNotExist**：测试不得创建数据库。
+#   * **Flyway 默认关闭**：只有隔离门禁通过后才允许显式打开。
+#   * 口令一律走 credentialsRef / 环境变量，**不落明文**。
+#
+# ── 怎么让它跑起来 ────────────────────────────────────────────────────────
+#   1. 由 scripts/it-prepare-isolation.ps1（幂等，执行前需人工确认）在 WSL 3307
+#      实例上建好本次运行的库与受限账号，并生成
+#      mall-simulator/src/test/resources/mall-isolation.local.properties；
+#   2. 该档案至少包含：
+#        enabled=true
+#        testRunId=mallit-<yyyyMMdd-HHmmss>-<4 位>
+#        serverFingerprint=<@@hostname 或 host:port>
+#        mysql.host=127.0.0.1:3307
+#        mysql.url=jdbc:mysql://127.0.0.1:3307/<testRunId>_mall
+#        mysql.username=<testRunId>_app
+#        mysql.password=credref:...
+#        flyway.enabled=true
+#   3. 未提供该档案时：测试**失败并说明原因**，不是"跳过算过"。
+#
+# ── 未提供隔离档案时的行为 ────────────────────────────────────────────────
+#   spring.datasource.url 用 ${MALL_ISOLATION_URL}（无默认值）：占位符无法解析会让
+#   上下文创建直接失败；同时 MallIsolationGuard 在任何 DML 之前还会再拒一次。
+#   两者都属"默认关闭"，都不存在回退到宿主正式库的路径。
+#
+# 说明：原 mall.reader.*（AI 只读数据源）与 llm.*（AI 大模型）只服务于已删除的
+# ai/**、ingestion/**、metric/**、pipeline/** 平台复制代码，属 analytics-server 职责，故删除。
+# ───────────────────────────────────────────────────────────────────────────
+
 spring:
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/mall_simulator_test?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
-    username: ${MALL_DB_USER:root}
-    password: ${MALL_DB_PASSWORD:}
+    # 无默认值：必须由隔离档案 / 环境变量显式提供
+    url: ${MALL_ISOLATION_URL}
+    # 无默认值：绝不再回退 root
+    username: ${MALL_ISOLATION_USER}
+    password: ${MALL_ISOLATION_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
-    enabled: true
+    # 默认关闭：整改前这里是 true 且指向宿主 3306
+    enabled: ${MALL_ISOLATION_FLYWAY_ENABLED:false}
     locations: classpath:db/migration
     # 与 application.yml 同因：平台侧迁移文件（V2-V6）已移出本模块，
     # 忽略历史库中已应用但本地已不存在的迁移，避免 validate 失败。
     ignore-migration-patterns: "*:missing"
 
-# 说明：原 mall.reader.*（AI 只读数据源）与 llm.*（AI 大模型）只服务于已删除的
-# ai/**、ingestion/**、metric/**、pipeline/** 平台复制代码，属 analytics-server 职责，故删除。
 mall:
   landing:
-    path: ${java.io.tmpdir}/mall-landing-test
+    # Landing 根由 MallTestSupport 用 @DynamicPropertySource 指向每测试临时目录
+    path: ${MALL_LANDING_PATH:./landing}
   outbox:
     batch-size: 200
     poll-seconds: 3600   # 测试时关闭自动轮询，仅手动 publishOnce

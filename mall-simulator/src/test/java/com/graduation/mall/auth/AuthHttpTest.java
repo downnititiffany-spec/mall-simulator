@@ -11,6 +11,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import com.graduation.mall.support.MallIsolationTestConfig;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Map;
@@ -32,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@Import(MallIsolationTestConfig.class)
 class AuthHttpTest {
 
     /** 仍保留的受保护商城端点：仅用于验证拦截器对无/错 token 的 401 行为 */

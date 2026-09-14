@@ -1,0 +1,31 @@
+### L5 R-6 script refusal cases (smoke-pipeline.ps1, real execution, reject branches only)
+### time: 2026-09-14T13:59:59.9777196+08:00
+
+########## CASE: A MetricDb=mall_simulator (not whitelisted) ##########
+### extra args: -MetricDb mall_simulator
+拒绝执行：-MetricDb 'mall_simulator' 不在允许清单 analytics_metric, analytics_metric_v25it 内。
+  发布库口径写错会让"未发布"看起来像已发布；如需新增目标请先登记到本白名单。
+### EXITCODE=5
+
+########## CASE: B no password provided ##########
+### extra args: 
+拒绝执行：未提供数据库口令。整改后不再有 123456 兜底。
+  请用 -MysqlPassword <口令>，或设置环境变量 $env:MYSQL_PWD / $env:SMOKE_DB_PASSWORD。
+  当前目标：库=analytics_metric 账号=metric_read。脚本对库只读，但仍需凭据。
+### EXITCODE=5
+
+########## CASE: C MysqlUser=root ##########
+### extra args: -MysqlUser root -MysqlPassword dummy-not-used
+拒绝执行：账号为 root。本脚本只需要读权限，请改用只读账号（默认 metric_read）。
+  若确需 root，请说明理由后显式放开——当前脚本不接受隐式 root（V25-S03 R-6）。
+### EXITCODE=5
+
+########## CASE: D MetricDb=analytics_metric_v25it with bogus password (whitelisted name; judgement should move to connection stage) ##########
+### extra args: -MetricDb analytics_metric_v25it -MysqlPassword probe-not-a-secret
+[目标] MetricDb=analytics_metric_v25it 账号=metric_read（只读 SELECT；口令以环境变量/参数传入，不回显）
+[1/7] 登录 http://127.0.0.1:8091
+[2/7] 基线
+[Q] mysql 退出码 1：ERROR 1045 (28000): Access denied for user 'metric_read'@'localhost' (using password: YES)
+[Q] 目标 MetricDb=analytics_metric_v25it 账号=metric_read
+smoke-pipeline.ps1: 无法将类型“ERROR 1045 (28000): Access denied for user 'metric_read'@'localhost' (using password: YES)”的“System.Management.Automation.ErrorRecord”值转换为类型“System.Int64”。
+### EXITCODE=1

@@ -1,0 +1,3 @@
+未就绪: 模拟商城 http://127.0.0.1:8090（请先 pwsh -File scripts/start-all.ps1）
+未就绪: 分析平台 http://127.0.0.1:8091（请先 pwsh -File scripts/start-all.ps1）
+未就绪: 合成数据生成器 http://127.0.0.1:8092（请先 pwsh -File scripts/start-all.ps1）

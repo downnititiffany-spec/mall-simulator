@@ -1,0 +1,29 @@
+### L5 R-6: scripts/it-prepare-isolation.ps1 实测致命缺陷（参数名与 PowerShell 只读自动变量 $Host 冲突）
+### time: 2026-09-14T14:01:31.5021716+08:00
+### $PSVersionTable.PSVersion = 7.6.6
+### 复现命令 1: pwsh -NoProfile -File scripts/it-prepare-isolation.ps1 -RunId l5probe-20260914-x1 -Port 3306 -Confirm
+WriteError: 无法覆盖变量 Host ，因为它是只读变量或常量。
+### EXITCODE=1
+### 复现命令 2（默认参数、不带 -Confirm）: pwsh -NoProfile -File scripts/it-prepare-isolation.ps1 -RunId l5probe-20260914-x1
+WriteError: 无法覆盖变量 Host ，因为它是只读变量或常量。
+### EXITCODE=1
+### 复现命令 3（--% 停止解析）: pwsh -NoProfile -File scripts/it-prepare-isolation.ps1 --% -RunId l5probe-20260914-x1
+
+### EXITCODE=1
+### 结论：三种调用方式均在参数绑定阶段失败 => 脚本主体（含 3306 拒绝分支、对象清单、凭据写入）从未执行；未产生任何副作用
+
+### 补充：把脚本第 55-66 行的"端口白名单 + 主机白名单"判据**原文**放到独立片段里求值（只为证明判据逻辑本身有效，不代表整脚本可跑）
+
+--- fragment args: -Port 3306
+拒绝：-Port 3306 不在允许的隔离实例端口清单 3307 内。
+  3306 是宿主正式 MySQL 实例：它上面的任何库（含 *_test）都不是隔离环境。
+### EXITCODE=2
+
+--- fragment args: -Port 3307
+通过：端口 3307 主机 127.0.0.1 属允许范围
+### EXITCODE=0
+
+--- fragment args: -Port 3307 -TargetHost 10.0.0.9
+拒绝：-Host '10.0.0.9' 不是本机。隔离实例必须是本机 WSL 成员。
+### EXITCODE=2
+### 片段文件已删除（mall-simulator/target/ 属构建产物目录）

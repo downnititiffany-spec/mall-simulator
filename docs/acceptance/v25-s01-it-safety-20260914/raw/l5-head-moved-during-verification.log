@@ -1,0 +1,23 @@
+### L5: HEAD moved while this lane was verifying (total-control commits landing) - read-only record
+### time: 2026-09-14T14:00:32.9397798+08:00
+=== git reflog -5 ===
+fd3cee5 HEAD@{0}: commit: docs(v25): 补齐上一提交遗漏的看板与S03证据（勘误：83afc49 因 pathspec 不匹配仅含 Spark IT 改名）
+83afc49 HEAD@{1}: commit: docs(v25): 登记隔离实链路线与Q01裁决；S03 Spark门禁改名为*IT退出默认套件
+f00462c HEAD@{2}: commit: docs(board): R01 v2 登记（T02 从未在 Maven 下执行/正确 surefire 键；spark-jobs EXIT=0 但 Tests run:0 假绿⇒基线降级；E1 绿须带时点）＋ 总控只读跨库普查（9 个 analytics_ 库、§5.2 五对象全库不存在、metric_snapshot 9 库 12/15 列分叉、ACTIVE 权威库=analytics_metric ⇒ E-03 消解）＋ 裁决 D-10（用 uk_active_profile，不新增 source_id 列）与 ADS 实名以 _m 为准
+bcc2045 HEAD@{3}: commit: docs(board): 勘误 Q01 编译事故记录（MetricPublishValidator:48 系编辑中间态，已 grep 核验六处迁移完成）＋ 登记 L2 未跟踪 IngestionManifestRuntimePatrolTest:134/135 IOException 造成 platform-app test-compile 失败并阻塞跨路径护栏证据
+52a0e2f HEAD@{4}: commit: docs(board): S01 登记四级=测试通过（T0 20/20、负向建连前失败、正式库内容指纹零写入）＋ S02 部分交付＋ 新开 V25-S03（R-1/R-3/R-4/R-5/R-6 同类写入面收口）＋ 四级标记表达约定＋ 构建槽纪律补强（Q01 二次编译红卡住 L1 的 T1）
+=== git log --oneline -5 ===
+fd3cee5 docs(v25): 补齐上一提交遗漏的看板与S03证据（勘误：83afc49 因 pathspec 不匹配仅含 Spark IT 改名）
+83afc49 docs(v25): 登记隔离实链路线与Q01裁决；S03 Spark门禁改名为*IT退出默认套件
+f00462c docs(board): R01 v2 登记（T02 从未在 Maven 下执行/正确 surefire 键；spark-jobs EXIT=0 但 Tests run:0 假绿⇒基线降级；E1 绿须带时点）＋ 总控只读跨库普查（9 个 analytics_ 库、§5.2 五对象全库不存在、metric_snapshot 9 库 12/15 列分叉、ACTIVE 权威库=analytics_metric ⇒ E-03 消解）＋ 裁决 D-10（用 uk_active_profile，不新增 source_id 列）与 ADS 实名以 _m 为准
+bcc2045 docs(board): 勘误 Q01 编译事故记录（MetricPublishValidator:48 系编辑中间态，已 grep 核验六处迁移完成）＋ 登记 L2 未跟踪 IngestionManifestRuntimePatrolTest:134/135 IOException 造成 platform-app test-compile 失败并阻塞跨路径护栏证据
+52a0e2f docs(board): S01 登记四级=测试通过（T0 20/20、负向建连前失败、正式库内容指纹零写入）＋ S02 部分交付＋ 新开 V25-S03（R-1/R-3/R-4/R-5/R-6 同类写入面收口）＋ 四级标记表达约定＋ 构建槽纪律补强（Q01 二次编译红卡住 L1 的 T1）
+=== 关键文件在旧/新 HEAD 的 blob 对照（判断"既有缺陷"是否跨两次 HEAD 都成立）===
+--- synthetic-data-generator/src/test/java/com/graduation/generator/contract/GeneratorContractParityTest.java
+  f00462c5 (自查开始时 HEAD): f43859f10b20e48456278b7dbb3cf5bd083a7835
+  fd3cee5b (当前 HEAD)      : f43859f10b20e48456278b7dbb3cf5bd083a7835
+  工作区                    : f43859f10b20e48456278b7dbb3cf5bd083a7835
+--- contract-specs/schemas/canonical-event.v1.schema.json
+  f00462c5 (自查开始时 HEAD): 1e4f2d8565c0901067ceafafdc6116feb96b3b48
+  fd3cee5b (当前 HEAD)      : 1e4f2d8565c0901067ceafafdc6116feb96b3b48
+  工作区                    : 1e4f2d8565c0901067ceafafdc6116feb96b3b48

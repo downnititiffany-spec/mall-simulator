@@ -14,7 +14,9 @@ import com.graduation.generator.web.dto.GeneratorApiDtos.TargetRequest;
 import com.graduation.generator.web.dto.GeneratorApiDtos.TargetView;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.graduation.itguard.GeneratorIsolationTestConfig;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 
@@ -55,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {"generator.output.root=target/it-generator-output", "generator.cli="})
+@Import(GeneratorIsolationTestConfig.class)
 class GeneratorApiSmokeTest {
 
     private static final long EVENT_COUNT = 200L;

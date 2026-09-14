@@ -1,0 +1,428 @@
+### L5 复核 R-6：改动前字面值（git show HEAD:<path>，只读）与改动后写法对照
+### 采集时间: 2026-09-14T13:57:08.1888695+08:00  HEAD=f00462c51023ce5b12e0b649e7813ed789f6f17e
+
+===== git show HEAD:mall-simulator/src/test/resources/application-test.yml =====
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/mall_simulator_test?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: ${MALL_DB_USER:root}
+    password: ${MALL_DB_PASSWORD:}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # 与 application.yml 同因：平台侧迁移文件（V2-V6）已移出本模块，
+    # 忽略历史库中已应用但本地已不存在的迁移，避免 validate 失败。
+    ignore-migration-patterns: "*:missing"
+
+# 说明：原 mall.reader.*（AI 只读数据源）与 llm.*（AI 大模型）只服务于已删除的
+# ai/**、ingestion/**、metric/**、pipeline/** 平台复制代码，属 analytics-server 职责，故删除。
+mall:
+  landing:
+    path: ${java.io.tmpdir}/mall-landing-test
+  outbox:
+    batch-size: 200
+    poll-seconds: 3600   # 测试时关闭自动轮询，仅手动 publishOnce
+
+===== git show HEAD:scripts/run-demo.ps1 =====
+# 一键演示脚本：生成(8092)→发布/采集(8090→8091)→流水线(8091)→证据输出(8091)
+#
+# 【三程序边界，勿合并】本系统由三个**独立程序**构成，各自独立进程/端口/库/构建产物：
+#   模拟商城        mall-simulator            :8090  库 mall_simulator
+#   分析平台        analytics-server/platform-app :8091  库 analytics_meta + analytics_metric（**分析入口**）
+#   合成数据生成器  synthetic-data-generator  :8092  库 generator_meta
+# 端点归属的唯一依据：各程序自己的 @RequestMapping（见 docs/acceptance/docs-sync-3programs-20260911/README.md）。
+# 本脚本的每一步只打它真正所属程序的那个 base URL，绝不把三个程序的端点混指向同一端口。
+#
+# 用法:
+#   pwsh -File scripts/run-demo.ps1                          # 三个进程必须已启动（scripts/start-all.ps1）
+#   pwsh -File scripts/run-demo.ps1 -Clean                   # 先清空演示数据（**直连商城库/商城 landing，仅商城侧**）
+#   pwsh -File scripts/run-demo.ps1 -Days 3 -Users 60        # 自定义规模（仅影响生成步骤计划版本，见 [1]）
+param(
+  [string]$Mall      = 'http://127.0.0.1:8090',  # 模拟商城（参考数据源）
+  [string]$Platform  = 'http://127.0.0.1:8091',  # 分析平台（采集/流水线/指标，**分析入口**）
+  [string]$Generator = 'http://127.0.0.1:8092',  # 合成数据生成器（只负责造数）
+  [int]$Days = 1,          # 默认 1 天窗口 ≈ 3.2 万事件（~3 分钟）；演示建议 ≤2 天
+  [int]$Users = 60,
+  [int]$Eps = 2,
+  [double]$Conv = 0.05,
+  [string]$Scenario = 'normal',
+  [long]$Seed = 20260906,
+  [switch]$Clean
+)
+$ErrorActionPreference = 'Stop'
+
+# ── 0. 三程序健康检查（各打自己的探活端点，均属各自程序） ─────────────
+# 探活端点归属：商城 GET /（SpaFallbackController.java:16）｜平台 GET /api/v1/metrics/health
+#（MetricController.java:59）｜生成器 GET /api/v1/scenarios（ScenarioController.java:26）
+$missing = @()
+try { $null = Invoke-RestMethod "$Mall/" -TimeoutSec 5 }
+catch { $missing += "模拟商城 $Mall（请先 pwsh -File scripts/start-all.ps1）" }
+try { $null = Invoke-RestMethod "$Platform/api/v1/metrics/health" -TimeoutSec 5 }
+catch { $missing += "分析平台 $Platform（请先 pwsh -File scripts/start-all.ps1）" }
+try { $null = Invoke-RestMethod "$Generator/api/v1/scenarios" -TimeoutSec 5 }
+catch { $missing += "合成数据生成器 $Generator（请先 pwsh -File scripts/start-all.ps1）" }
+if ($missing.Count -gt 0) {
+  $missing | ForEach-Object { Write-Host "未就绪: $_" }
+  exit 1
+}
+Write-Host "[0] 三程序就绪: 商城 $Mall ｜ 平台 $Platform ｜ 生成器 $Generator"
+
+# ── 0.1 两个程序各自登录（**令牌不通用**：商城 token 只认商城会话，平台 token 只认平台会话） ──
+# 登录端点两边同形：AuthController.java:31,43（商城）/ AuthController.java:31,43（平台）
+$mallLogin = Invoke-RestMethod -Method Post "$Mall/api/v1/auth/login" -ContentType 'application/json' `
+  -Body '{"username":"admin","password":"admin123"}'
+$mallAuth = @{ Authorization = "Bearer $($mallLogin.data.token)"; 'Content-Type' = 'application/json' }
+
+$pfLogin = Invoke-RestMethod -Method Post "$Platform/api/v1/auth/login" -ContentType 'application/json' `
+  -Body '{"username":"admin","password":"admin123"}'
+$pfAuth = @{ Authorization = "Bearer $($pfLogin.data.token)"; 'Content-Type' = 'application/json' }
+Write-Host "[0.1] 已登录：商城 $($mallLogin.data.user.realName)（$($mallLogin.data.user.role)）｜ 平台 $($pfLogin.data.user.realName)（$($pfLogin.data.user.role)）"
+
+# ── 0.5 清场（可选；**只清商城侧**，不碰平台库与数仓） ────────────────
+if ($Clean) {
+  # 清场只清**商城侧**。平台侧没有"清空演示数据/重置采集断点"的端点（见下方 TODO(缺口)），
+  # 本脚本**不**替平台清库——尤其不许凭空删平台库/数仓数据。
+  # TODO(缺口): 平台侧无 reset/cleanup 端点（platform-app 全部 @RequestMapping 见证据 README §2.2）。
+  #   平台库的采集断点表在 analytics-server/platform-app/src/main/resources/db/meta/V1__platform_ingestion.sql
+  #   （:8 ingestion_batch、:24 ingestion_batch_file、:37 file_checkpoint、:45 quarantine_record）——
+  #   它们**属于平台**（权威库是 analytics_meta），故本脚本的商城库 SQL 里**不得**出现这四张表：
+  #   旧版曾写 `DELETE FROM mall_simulator.file_checkpoint; …`。⚠️ 实测（2026-09-11，只读）：
+  #   mall_simulator 库里**确实存在**这四张同名表且部分非空（file_checkpoint=3 行、ingestion_batch=1、
+  #   pipeline_run=10，共 30 张表中的平台侧遗留表，证据 README §5.7），所以旧语句**会真的删掉数据**
+  #   ——只是删的是**平台侧遗留行**，而不是它声称的"演示数据"。这正是必须移除的理由。
+  #   若确需重置平台断点，请由人工作为**单独步骤**在平台库（analytics_meta）执行。
+  if (-not $env:MALL_DB_PASSWORD) {
+    Write-Host '[0.5] 跳过清场：未提供 $env:MALL_DB_PASSWORD（清场是直连商城库的步骤，仅商城侧）'
+  } else {
+    # 直连**商城库**清 event_outbox —— 这是商城**自有表**：
+    #   mall-simulator/src/main/resources/db/migration/V1__init_mall.sql:116
+    # ⚠️ 实测（2026-09-11，只读探测）：root **不是免密**（`mysql -uroot` 报 ERROR 1045），
+    #   且 mall_simulator 库里**同时存在平台侧遗留表**（file_checkpoint/ingestion_batch/… ，
+    #   旧单进程架构留下的，见证据 README §5.7）——那些表**一律不在这里删**。
+    #   init-three-dbs.sql 授权的 mall_app 账号对本库无权限（README §5.8），故清库必须用有权限的账号。
+    # ⚠️ 不许再吞错误（本泳道自己认定的缺陷同型）：旧写法 `… 2>$null` 会把 ERROR 1045（口令错）
+    #   等失败全部隐藏，脚本却报告"已清场"。这里显式读退出码 + 回显真实删除行数，失败就如实说。
+    $env:MYSQL_PWD = $env:MALL_DB_PASSWORD
+    $delOut = & mysql -uroot -N -B -e "DELETE FROM mall_simulator.event_outbox; SELECT ROW_COUNT();" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host ("[0.5] ⚠️ 清 event_outbox **失败**（mysql 退出码 {0}）：{1}" -f $LASTEXITCODE, (($delOut | Out-String).Trim()))
+      Write-Host '      常见原因：MALL_DB_PASSWORD 与商城库账号不符（root 非免密）。清场未生效，脚本继续（不清场不等于演示会失败）。'
+    } else {
+      Write-Host ("[0.5] 已清商城 event_outbox：删除 {0} 行（商城自有表，仅 -Clean 时执行）" -f (($delOut | Select-Object -Last 1) -replace '\s', ''))
+    }
+    # 清商城自己的 landing 产物目录。
+    # ⚠️ 实测（2026-09-11，只读）：**商城当前配置写的不是** mall-simulator\landing（那个目录是空的），
+    #   而是**仓库根** landing\events —— 依据：mall-simulator application.yml:33 `mall.landing.path` 默认
+    #   `./landing`，而 scripts/start-all.ps1:48 以 `-WorkingDirectory $root`（仓库根）启动，
+    #   故相对路径解析到 <仓库根>\landing；实证是根目录 landing\events\2026091122.jsonl 里
+    #   `"source_system":"mock-mall"`（商城产物）。
+    # ⚠️ 但同一个目录里**混有平台真实采过的数据**（landing\events 共 55 个文件，2026090509.jsonl 等，
+    #   12–17 MB/个，2026-09-06 写入）——所以这里**不能**无脑 `Remove-Item *.jsonl`，
+    #   否则会把平台侧真实 landing 数据一起删掉（那正是本泳道被禁止的动作）。
+    # 处置：只删"最近 2 小时内新产生"的文件（演示刚造的数据），并对更早的文件**明确报告并跳过**。
+    #   注意 2 小时窗口是保守启发式：若演示中断超过 2 小时，本次产生的文件也会落入"跳过"那一类
+    #   —— 宁可少删（脚本会打印跳过数量），不可多删。
+    $landingDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'landing\events'
+    if (Test-Path $landingDir) {
+      $cut = (Get-Date).AddHours(-2)
+      $fresh = @(Get-ChildItem $landingDir -Filter '*.jsonl' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -ge $cut })
+      $old   = @(Get-ChildItem $landingDir -Filter '*.jsonl' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $cut })
+      $fresh | Remove-Item -Force -ErrorAction SilentlyContinue
+      Write-Host ("[0.5] 已清本次演示新产生的 landing 文件 {0} 个（{1}）" -f $fresh.Count, $landingDir)
+      if ($old.Count -gt 0) {
+        Write-Host ("[0.5] ⚠️ 跳过 {0} 个更早的 landing 文件（疑似平台已采数据，删了可能破坏平台侧证据）" -f $old.Count)
+        Write-Host '      如需彻底重置，请人工确认这些文件确实无用后再单独删除——脚本不替你做这个决定。'
+      }
+    } else {
+      Write-Host ("[0.5] 未找到 landing 目录 {0}（商城可能尚未产出）" -f $landingDir)
+    }
+    Write-Host '[0.5] 商城侧演示数据已清空（event_outbox + landing 新文件）；平台库/数仓未清（无此端点）'
+  }
+}
+
+# ── 1. 生成（生成器 8092；**只负责造数**） ─────────────────────────────
+# TODO(缺口): 原脚本调用 POST http://127.0.0.1:8090/api/v1/generator/runs —— 该端点已不存在。
+#   • M1-7 已把生成器整体移出商城：mall-simulator 中 /api/v1/generator/** 已下线
+#     （mall-simulator/src/main/java/com/graduation/mall/auth/AuthInterceptor.java:35-37 注释即在说明此事），
+#     实测带 token 打 8090 的 /api/v1/generator/runs 与 /api/v1/generator/scenarios 均为 404。
+#   • 生成器（8092）的真实现存端点是 POST /api/v1/generation-runs
+#     （synthetic-data-generator/src/main/java/com/graduation/generator/web/GenerationRunController.java:25,35），
+#     但它**只接受 {plan_id, version}**（GeneratorApiDtos.java:31-34，required=[plan_id,version]），
+#     不接受 userCount/eventsPerSecond/baseConversionRate/startTime/... 这套旧参数体。
+#   • **计划版本只能由生成器 CLI 创建**——冻结契约的七个端点里没有"创建计划"入口
+#     （GeneratorCli.java:29-31 原话）。故本步骤无法只靠 HTTP 完成，必须在生成器侧先跑 CLI 两跳：
+#       java -jar synthetic-data-generator/target/synthetic-data-generator-0.1.0-SNAPSHOT.jar \
+#         --generator.cli=plan-append --plan-id=demo --scenario=normal --seed=<Seed> \
+#         --start=<start>T09:00:00 --end=<end>T18:00:00 --event-count=<事件预算>
+#       java -jar ... --generator.cli=run-start --plan-id=demo --version=<上一步输出的 version>
+#     注意参数语义已变：旧脚本的 eventsPerSecond 对应 CLI 的 --rate（且**文件模式不生效**，
+#     FileModeGenerationEngine.java:59）；旧脚本没有"总事件数"上限，新 CLI 是 --event-count（必填）。
+#   本步骤保留为显式缺口：请按上面两跳造数后，把下面两行换成读取产物的只读校验，再继续 [2]。
+# $g = Invoke-RestMethod -Method Post "$Generator/api/v1/generation-runs" -Headers $pfAuth `
+#   -Body (@{ plan_id = 'demo'; version = 1 } | ConvertTo-Json) -ContentType 'application/json'
+$end = (Get-Date).ToString('yyyy-MM-dd')
+$start = (Get-Date).AddDays(-$Days + 1).ToString('yyyy-MM-dd')
+Write-Host "[1] TODO(缺口): 生成步骤需在生成器侧用 CLI 完成（plan-append → run-start），参数窗口 $start → $end，"
+Write-Host "    事件预算与 --rate 见上方说明；本脚本不伪造该调用。生成后产物写入生成器自有目录（synthetic=true）。"
+
+# ── 2. 等待 Outbox 发布 → 采集（发布在商城 8090，采集在平台 8091） ──────
+# GET  http://127.0.0.1:8090/api/v1/mall/outbox/status  ← OutboxController.java:21,27（商城侧）
+# POST http://127.0.0.1:8090/api/v1/mall/outbox/publish ← OutboxController.java:21,40（商城侧）
+$wait = (Get-Date).AddMinutes(5)
+do {
+  Start-Sleep -Seconds 5
+  $st = Invoke-RestMethod "$Mall/api/v1/mall/outbox/status" -Headers $mallAuth
+  if ($st.data.pendingCount -gt 0) {
+    # 商城 Outbox 本就有定时发布（mall-simulator application.yml:34-36 poll-seconds: 3 / batch-size: 5000），
+    # 这里显式推一次只是不等定时轮、立即排空；不是"必须手动发布"。
+    $null = Invoke-RestMethod -Method Post "$Mall/api/v1/mall/outbox/publish" -Headers $mallAuth
+  }
+} while ($st.data.pendingCount -gt 0 -and (Get-Date) -lt $wait)
+if ($st.data.pendingCount -gt 0) { Write-Host '[2] 警告：outbox 发布超时，仍有积压'; exit 2 }
+
+# POST http://127.0.0.1:8091/api/v1/ingestion/runs ← IngestionController.java:25,37（平台侧）
+# 返回体 RunResult 字段（connection-ingestion/.../IngestionService.java:67-70）：
+#   batchId/batchNo/status/recordCount/quarantineCount/errorCount/fileCount/…/noNewData
+$ing = Invoke-RestMethod -Method Post "$Platform/api/v1/ingestion/runs" -Headers $pfAuth
+Write-Host ("[2] 采集完成（平台）：批次 {0}（{1}）{2} 行，隔离 {3} 行" -f $ing.data.batchNo, $ing.data.status, $ing.data.recordCount, $ing.data.quarantineCount)
+if ($ing.data.noNewData) {
+  # noNewData=true ⇒ 本轮没读到任何新字节（IngestionService.java:63-65 明示"数据源未产出"），
+  # 不是"采集成功但 0 行"。若这里为 true，后面的流水线会 WAIT_LANDING/空跑，演示会失真，故直接停。
+  Write-Host '[2] 停止：noNewData=true（本次无新数据，商城未产出 landing）——请先完成步骤 [1]'
+  exit 4
+}
+
+# ── 3. 流水线（平台 8091；**异步**：POST 立即返回 PENDING，必须轮询） ────
+# POST http://127.0.0.1:8091/api/v1/pipeline-runs      ← PipelineController.java:31,45（平台侧）
+# GET  http://127.0.0.1:8091/api/v1/pipeline-runs/{id} ← PipelineController.java:31,55（平台侧）
+$p = Invoke-RestMethod -Method Post "$Platform/api/v1/pipeline-runs" -Headers $pfAuth -Body (@{ runtimeProfileId=1; pipelineCode='DAILY_CORE';
+  businessTime = "$($end)T00:00:00"; sourceDataVersion = "demo-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" } | ConvertTo-Json) -ContentType 'application/json'
+$runId = $p.data.runId
+# 八阶段权威顺序（PipelineService.java:205-207 STAGE_ORDER）：WAIT_LANDING→INIT_SCHEMA→LOAD_ODS→BUILD_DWD
+#   →BUILD_DWS→BUILD_ADS→QUALITY_CHECK→PUBLISH_METRIC —— 共 **8** 个，不是 7 个。
+$wait = (Get-Date).AddMinutes(30)
+do {
+  Start-Sleep -Seconds 5
+  $p = Invoke-RestMethod "$Platform/api/v1/pipeline-runs/$runId" -Headers $pfAuth
+} while ($p.data.status -in @('PENDING','RUNNING') -and (Get-Date) -lt $wait)
+$okStages = @($p.data.stages | Where-Object { $_.status -eq 'SUCCESS' }).Count
+Write-Host ("[3] 流水线 runId={0}：{1}（阶段 {2}/8 成功）{3}" -f $runId, $p.data.status, $okStages,
+  $(if ($p.data.errorCode) { "错误码=$($p.data.errorCode)" } else { '' }))
+if ($p.data.status -ne 'SUCCESS') { exit 3 }
+
+# ── 4. 证据输出（平台 8091） ───────────────────────────────────────────
+# GET http://127.0.0.1:8091/api/v1/metrics/overview ← MetricController.java:28,36（平台侧）
+$ov = Invoke-RestMethod "$Platform/api/v1/metrics/overview" -Headers $pfAuth
+$snap = ($ov.data | Select-Object -First 1)
+Write-Host "[4] 证据："
+Write-Host "    快照: $($snap.snapshotId)"
+$ov.data | ForEach-Object { "    $($_.metricCode) = $($_.value) $($_.unit)" } | Select-Object -First 8
+Write-Host "[OK] 演示数据就绪：分析平台看板 http://127.0.0.1:8091/ 可直接查看（商城前端 8090 只演示经营行为，不展示分析看板）"
+
+===== git show HEAD:scripts/smoke-pipeline.ps1 =====
+<#
+本地真实链路小规模冒烟（平台 API 驱动，小规模：单业务日、单快照）
+
+用途：每完成一处数仓/质量/发布改动，用**同一条真实链路**验证端到端结果，而不是只跑单测。
+依赖：平台已启动（scripts\start-all.ps1 -PlatformOnly），MySQL 可连，spark-jobs jar 已按最新代码打包。
+
+流程：
+  [1/7] 登录取 token
+  [2/7] 记录基线（pipeline_run 最大 id、metric_value 总行数）
+  [3/7] POST /api/v1/pipeline-runs（Idempotency-Key 头）创建真实 run
+  [4/7] 轮询 GET /api/v1/pipeline-runs/{id} 直到终态
+  [5/7] 收集阶段/作业状态 + data_quality_result 逐条规则
+  [6/7] 收集发布结果（发布库 metric_value 行数 + 快照注册状态 + /metrics/* 响应）
+  [7/7] 落证据（JSON + Markdown）并按门禁判定退出码
+
+库归属（application.yml 已冻结）：pipeline_run / pipeline_stage_run / spark_job_run /
+data_quality_result 在 analytics_meta；metric_value / metric_snapshot（发布库=读库）在
+analytics_metric（`-MetricDb` 可覆盖）。analytics_meta 下另有历史遗留的 metric_* 表，
+**不得**用它判定发布结果（口径错误会让"未发布"看起来像已发布）。
+
+退出码：0 = 门禁全过；2 = 链路未达成功态；3 = 存在 BLOCKING 质量失败；4 = 未发布任何指标值。
+
+示例：
+  pwsh scripts\smoke-pipeline.ps1 -BusinessTime '2026-09-01T00:00:00' -SourceDataVersion 'm1-4s3b-gen1000-def05fix'
+#>
+param(
+  [string]$BaseUrl = 'http://127.0.0.1:8091',
+  [string]$Username = 'admin',
+  [string]$Password = 'admin123',
+  [long]$RuntimeProfileId = 1,
+  [string]$PipelineCode = 'ODS_TO_ADS',
+  [Parameter(Mandatory = $true)][string]$BusinessTime,
+  [string]$SourceDataVersion = '',
+  [string]$IdempotencyKey = '',
+  [int]$TimeoutSec = 900,
+  [int]$PollSec = 10,
+  [string]$Name = 'smoke',
+  [string]$OutDir = 'docs\acceptance',
+  [string]$MysqlExe = 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe',
+  [string]$MysqlUser = 'root',
+  [string]$MetricDb = 'analytics_metric',
+  [string]$MysqlPassword = '123456'
+)
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+
+function Q([string]$sql) {
+  $out = & $MysqlExe "-u$MysqlUser" "-p$MysqlPassword" -N -B --default-character-set=utf8mb4 -e $sql 2>$null
+  return @($out | Where-Object { $_ -ne '' })
+}
+function Cells([string]$line) { return ($line -split "`t") }
+# 单元格取值必须显式两步：`[long](Cells $row)[0]` 会被 PowerShell 解析成
+# `([long](Cells $row))[0]`（先整体转数值再索引），实测把 `10<TAB>3963.2000` 读成 49 —— 静默错数。
+function CellLong([string]$line, [int]$i) {
+  $c = Cells $line
+  if ($c.Count -le $i) { return 0 }
+  $v = 0L; [void][long]::TryParse($c[$i], [ref]$v); return $v
+}
+function CellStr([string]$line, [int]$i) {
+  $c = Cells $line
+  if ($c.Count -le $i) { return '' }
+  return $c[$i]
+}
+
+Write-Host "[1/7] 登录 $BaseUrl"
+$login = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/v1/auth/login" -ContentType 'application/json' `
+  -Body (@{ username = $Username; password = $Password } | ConvertTo-Json)
+if (-not $login.data.token) { Write-Host '登录失败：无 token'; exit 2 }
+$headers = @{ Authorization = "Bearer $($login.data.token)" }
+
+Write-Host '[2/7] 基线'
+$beforeMaxRun = [long](Q 'SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run' | Select-Object -First 1)
+$beforeMetricRows = [long](Q "SELECT COUNT(*) FROM $MetricDb.metric_value" | Select-Object -First 1)
+Write-Host "      pipeline_run maxId=$beforeMaxRun, $MetricDb.metric_value rows=$beforeMetricRows"
+
+Write-Host "[3/7] 创建 run：businessTime=$BusinessTime profile=$RuntimeProfileId"
+$body = @{ runtimeProfileId = $RuntimeProfileId; pipelineCode = $PipelineCode; businessTime = $BusinessTime }
+if ($SourceDataVersion) { $body.sourceDataVersion = $SourceDataVersion }
+$hdr = @{} + $headers
+if ($IdempotencyKey) { $hdr['Idempotency-Key'] = $IdempotencyKey }
+$created = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/v1/pipeline-runs" -Headers $hdr `
+  -ContentType 'application/json' -Body ($body | ConvertTo-Json)
+$runId = $created.data.runId
+if (-not $runId) { $runId = [long](Q 'SELECT MAX(id) FROM analytics_meta.pipeline_run' | Select-Object -First 1) }
+Write-Host "      runId=$runId snapshot(预期)=$($created.data.targetSnapshotId)"
+
+Write-Host "[4/7] 轮询终态（最多 $TimeoutSec s）"
+$deadline = (Get-Date).AddSeconds($TimeoutSec); $run = $null; $t0 = Get-Date
+$terminal = @('SUCCESS', 'FAILED', 'RUN_INTERRUPTED', 'CANCELLED', 'DEGRADED')
+while ($true) {
+  Start-Sleep -Seconds $PollSec
+  $run = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/v1/pipeline-runs/$runId" -Headers $headers
+  $st = $run.data.status
+  $el = [int]((Get-Date) - $t0).TotalSeconds
+  Write-Host ("      [{0,4}s] {1} stage={2}" -f $el, $st, $run.data.currentStage)
+  if ($terminal -contains $st) { break }
+  if ((Get-Date) -gt $deadline) { Write-Host '      超时，按非终态处理'; break }
+}
+$status = $run.data.status
+$snapshot = $run.data.targetSnapshotId
+
+Write-Host '[5/7] 阶段/作业/质量规则'
+$stages = Q "SELECT stage_code,status,records,COALESCE(error_code,'') FROM analytics_meta.pipeline_stage_run WHERE run_id=$runId ORDER BY id"
+$jobs = Q "SELECT job_code,status,input_records,output_records,rejected_records FROM analytics_meta.spark_job_run WHERE pipeline_run_id=$runId ORDER BY id"
+$rules = Q "SELECT rule_code,severity,passed,check_count,error_count,COALESCE(detail,'') FROM analytics_meta.data_quality_result WHERE run_id=$runId ORDER BY id"
+$blockingFail = @($rules | Where-Object { $c = Cells $_; $c[1] -eq 'BLOCKING' -and $c[2] -ne '1' })
+$jobFail = @($jobs | Where-Object { (Cells $_)[1] -ne 'SUCCESS' })
+
+Write-Host '[6/7] 发布结果'
+# DEF-09 二次现场（run 39 实测）：**别用 `$x = if (...) { @(Q ...) }`**
+# `if` 当表达式用时，块内输出会被重新摊平成流：单行结果 → 赋给变量后是**字符串**而不是数组，
+# 于是 `$pubRaw[0]` 退化成"取首字符"（`10<TAB>285.6800` → `1`），行数报错、合计变空，门禁还被蒙过去。
+# 正确写法：先在赋值处 `@(...)`，再做 if 分支。
+$pubRaw = @()
+if ($snapshot) { $pubRaw = @(Q "SELECT COUNT(*),COALESCE(SUM(metric_value),0) FROM $MetricDb.metric_value WHERE snapshot_id='$snapshot'") }
+$pubRows = if ($pubRaw.Count -gt 0) { CellLong $pubRaw[0] 0 } else { 0 }
+$pubSum = if ($pubRaw.Count -gt 0) { CellStr $pubRaw[0] 1 } else { '0' }
+# 解析自检：SQL 选了两列，正确解析必然得到 ≥2 个单元格；只有 1 个就说明又踩了摊平成标量的坑。
+if ($pubRaw.Count -gt 0 -and (Cells $pubRaw[0]).Count -lt 2) {
+  Write-Host "门禁：发布行数解析异常（单元格数=$((Cells $pubRaw[0]).Count)，原文=[$($pubRaw[0])]）"; exit 5
+}
+# 快照注册状态：SUCCESS 的 run 应留下 ACTIVE 快照；失败 run 允许缺席（发布阶段未执行）
+$snapReg = @()
+if ($snapshot) { $snapReg = @(Q "SELECT snapshot_id,status,source,pipeline_run_id FROM $MetricDb.metric_snapshot WHERE snapshot_id='$snapshot'") }
+$snapRegText = if ($snapReg.Count -gt 0) { $snapReg[0] } else { '(无注册行)' }
+if ($snapReg.Count -gt 0 -and (Cells $snapReg[0]).Count -lt 4) {
+  Write-Host "门禁：快照注册解析异常（单元格数=$((Cells $snapReg[0]).Count)，原文=[$($snapReg[0])]）"; exit 5
+}
+$afterMetricRows = [long](Q "SELECT COUNT(*) FROM $MetricDb.metric_value" | Select-Object -First 1)
+$overview = $null; $quality = $null
+try { $overview = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/v1/metrics/overview" -Headers $headers } catch { Write-Host "      /metrics/overview 失败: $($_.Exception.Message)" }
+try { $quality = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/v1/metrics/quality?limit=20" -Headers $headers } catch { Write-Host "      /metrics/quality 失败: $($_.Exception.Message)" }
+
+Write-Host '[7/7] 落证据'
+$evidence = [ordered]@{
+  name            = $Name
+  timestamp       = (Get-Date).ToString('s')
+  runId           = $runId
+  status          = $status
+  snapshot        = $snapshot
+  businessTime    = $BusinessTime
+  sourceDataVersion = $SourceDataVersion
+  idempotencyKey  = $created.data.idempotencyKey
+  errorCode       = $run.data.errorCode
+  currentStage    = $run.data.currentStage
+  baseline        = @{ metricValueRows = $beforeMetricRows; maxRunId = $beforeMaxRun }
+  stages          = $stages
+  jobs            = $jobs
+  rules           = $rules
+  published       = @{ metricDb = $MetricDb; snapshotRows = $pubRows; snapshotValueSum = $pubSum
+                       metricValueRowsTotal = $afterMetricRows; snapshotRegistry = $snapRegText }
+  metricOverview  = $overview.data
+  metricQuality   = $quality.data
+}
+$jsonPath = Join-Path $OutDir "$Name-$stamp.json"
+$evidence | ConvertTo-Json -Depth 12 | Set-Content $jsonPath -Encoding utf8
+
+$md = @()
+$md += "# 真实链路冒烟记录（$Name）"
+$md += ''
+$md += "- 时间：$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss'))"
+$md += "- 平台：$BaseUrl（runtimeProfileId=$RuntimeProfileId，pipeline=$PipelineCode）"
+$md += "- businessTime=$BusinessTime；sourceDataVersion=$SourceDataVersion"
+$md += "- runId=**$runId**；快照=**$snapshot**；终态=**$status**；耗时 $([int]((Get-Date) - $t0).TotalSeconds) s"
+$md += ''
+$md += '## 阶段'
+$md += ''
+$md += '| stage | status | records | error |'
+$md += '| --- | --- | --- | --- |'
+foreach ($s in $stages) { $c = Cells $s; $md += "| $($c[0]) | $($c[1]) | $($c[2]) | $($c[3]) |" }
+$md += ''
+$md += '## 作业'
+$md += ''
+$md += '| job | status | in | out | rejected |'
+$md += '| --- | --- | --- | --- | --- |'
+foreach ($j in $jobs) { $c = Cells $j; $md += "| $($c[0]) | $($c[1]) | $($c[2]) | $($c[3]) | $($c[4]) |" }
+$md += ''
+$md += '## 质量规则（data_quality_result）'
+$md += ''
+$md += '| rule | severity | passed | check | error | detail |'
+$md += '| --- | --- | --- | --- | --- | --- |'
+foreach ($r in $rules) { $c = Cells $r; $md += "| $($c[0]) | $($c[1]) | $($c[2]) | $($c[3]) | $($c[4]) | $($c[5]) |" }
+$md += ''
+$md += '## 发布结果'
+$md += ''
+$md += "- 快照 $snapshot 的 $MetricDb.metric_value 行数：**$pubRows**（值合计 $pubSum）"
+$md += "- $MetricDb.metric_value 总行数：$beforeMetricRows → $afterMetricRows"
+$md += "- 快照注册（$MetricDb.metric_snapshot）：$snapRegText"
+$md += ''
+$mdPath = Join-Path $OutDir "$Name-$stamp.md"
+$md | Set-Content $mdPath -Encoding utf8
+
+Write-Host ''
+Write-Host "run $runId 终态=$status 快照=$snapshot"
+Write-Host "阶段 $(($stages | Where-Object { (Cells $_)[1] -ne 'SUCCESS' }).Count) 个非 SUCCESS / 共 $($stages.Count)"
+Write-Host "作业 $(($jobs | Where-Object { (Cells $_)[1] -ne 'SUCCESS' }).Count) 个非 SUCCESS / 共 $($jobs.Count)"
+Write-Host "BLOCKING 失败 $($blockingFail.Count) 条；发布行数 $pubRows"
+Write-Host "证据：$mdPath / $jsonPath"
+
+if ($status -ne 'SUCCESS') { Write-Host '门禁：链路未达 SUCCESS'; exit 2 }
+if ($blockingFail.Count -gt 0) { Write-Host '门禁：存在 BLOCKING 质量失败'; exit 3 }
+if ($pubRows -le 0) { Write-Host '门禁：未发布任何指标值'; exit 4 }
+Write-Host '门禁：全过'
+exit 0

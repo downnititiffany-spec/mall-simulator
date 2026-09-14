@@ -21,7 +21,16 @@ param(
   [double]$Conv = 0.05,
   [string]$Scenario = 'normal',
   [long]$Seed = 20260906,
-  [switch]$Clean
+  [switch]$Clean,
+  # ── V25-S03 R-6：清场目标与账号必须显式给出（不再隐式 root / 隐式库名）────────
+  #   整改前清场命令写死 `& mysql -uroot -N -B -e "DELETE FROM mall_simulator.event_outbox; …"`：
+  #   账号写死 root、库名写死 mall_simulator、且只用 $env:MALL_DB_PASSWORD 一个门槛。
+  #   现在：账号 + 库名都成为参数；目标库与账号必须命中白名单并有**显式确认**
+  #   （-ConfirmCleanTarget），否则拒绝执行清场（不清场 ≠ 演示失败，脚本继续）。
+  [string]$MallDbName = 'mall_simulator',
+  [string]$MallDbUser = 'mall_app',
+  [string]$MysqlExe = 'mysql',
+  [switch]$ConfirmCleanTarget
 )
 $ErrorActionPreference = 'Stop'
 
@@ -67,6 +76,14 @@ if ($Clean) {
   #   若确需重置平台断点，请由人工作为**单独步骤**在平台库（analytics_meta）执行。
   if (-not $env:MALL_DB_PASSWORD) {
     Write-Host '[0.5] 跳过清场：未提供 $env:MALL_DB_PASSWORD（清场是直连商城库的步骤，仅商城侧）'
+  } elseif (-not $ConfirmCleanTarget) {
+    # ── V25-S03 R-6：目标不明确即拒绝 ────────────────────────────────────
+    # 整改前的门槛只有"有没有口令"一个：给上口令就删。库名写死在语句里、
+    # 账号写死 root，脚本自己并不校验"我要删的到底是哪个库的哪张表"。
+    # 现在要求显式 -ConfirmCleanTarget，并把目标与影响面**先打印出来**。
+    Write-Host "[0.5] 跳过清场：未提供 -ConfirmCleanTarget（目标不明确即拒绝）。"
+    Write-Host "      若要清场，请显式确认：pwsh -File scripts/run-demo.ps1 -Clean -ConfirmCleanTarget"
+    Write-Host "      当前目标：库=$MallDbName 表=event_outbox 账号=$MallDbUser"
   } else {
     # 直连**商城库**清 event_outbox —— 这是商城**自有表**：
     #   mall-simulator/src/main/resources/db/migration/V1__init_mall.sql:116
@@ -76,14 +93,43 @@ if ($Clean) {
     #   init-three-dbs.sql 授权的 mall_app 账号对本库无权限（README §5.8），故清库必须用有权限的账号。
     # ⚠️ 不许再吞错误（本泳道自己认定的缺陷同型）：旧写法 `… 2>$null` 会把 ERROR 1045（口令错）
     #   等失败全部隐藏，脚本却报告"已清场"。这里显式读退出码 + 回显真实删除行数，失败就如实说。
-    $env:MYSQL_PWD = $env:MALL_DB_PASSWORD
-    $delOut = & mysql -uroot -N -B -e "DELETE FROM mall_simulator.event_outbox; SELECT ROW_COUNT();" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host ("[0.5] ⚠️ 清 event_outbox **失败**（mysql 退出码 {0}）：{1}" -f $LASTEXITCODE, (($delOut | Out-String).Trim()))
-      Write-Host '      常见原因：MALL_DB_PASSWORD 与商城库账号不符（root 非免密）。清场未生效，脚本继续（不清场不等于演示会失败）。'
+    #
+    # ── V25-S03 R-6：写前校验（目标白名单 + 影响面预览）─────────────────
+    # • 库名只允许商城自有库；平台库（analytics_meta/analytics_metric）与生成器库
+    #   （generator_meta）**一律拒绝**——本脚本没有清它们的所有权（三程序边界）。
+    # • 账号：保留"可用任意有权限账号"的能力，但 root 必须显式写出并确认。
+    $allowedDbs = @('mall_simulator')
+    # 只有走完「白名单 + 账号 + 影响面预览」三道关，才把 $cleanTargetOk 置为 $true；
+    # landing 清理据此决定跑不跑（同一道门禁，不是第二套判据）。
+    $cleanTargetOk = $false
+    if ($allowedDbs -notcontains $MallDbName) {
+      Write-Host ("[0.5] ⚠️ 拒绝清场：目标库 '{0}' 不在商城自有库白名单 {1} 内。" -f $MallDbName, ($allowedDbs -join ', '))
+      Write-Host '      平台库/生成器库不归本脚本清理（三程序边界）；如需重置请由人在对应程序内单独执行。'
+    } elseif ($MallDbUser -eq 'root') {
+      Write-Host '[0.5] ⚠️ 拒绝清场：账号为 root。请改用本库的受限账号（如 -MallDbUser mall_app）。'
+      Write-Host '      改写为 root 需要显式理由；当前脚本不接受隐式 root（V25-S03 R-6）。'
     } else {
-      Write-Host ("[0.5] 已清商城 event_outbox：删除 {0} 行（商城自有表，仅 -Clean 时执行）" -f (($delOut | Select-Object -Last 1) -replace '\s', ''))
+      # 影响面预览：先看要删多少行，再删。预览失败就拒绝（不盲删）。
+      $env:MYSQL_PWD = $env:MALL_DB_PASSWORD
+      $previewSql = "SELECT COUNT(*) FROM $MallDbName.event_outbox;"
+      $previewOut = & $MysqlExe "-u$MallDbUser" -N -B -e $previewSql 2>&1
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host ("[0.5] ⚠️ 清场预览失败（mysql 退出码 {0}）：{1}" -f $LASTEXITCODE, (($previewOut | Out-String).Trim()))
+        Write-Host '      预览不可得即不删除（V25-S03 R-6：清理范围必须先可预览）。清场未生效，脚本继续。'
+      } else {
+        $previewRows = (($previewOut | Select-Object -Last 1) -replace '\s', '')
+        Write-Host ("[0.5] 待清目标预览：{0}.event_outbox（账号 {1}）当前 {2} 行，将全部删除。" -f $MallDbName, $MallDbUser, $previewRows)
+        $delOut = & $MysqlExe "-u$MallDbUser" -N -B -e "DELETE FROM $MallDbName.event_outbox; SELECT ROW_COUNT();" 2>&1
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host ("[0.5] ⚠️ 清 event_outbox **失败**（mysql 退出码 {0}）：{1}" -f $LASTEXITCODE, (($delOut | Out-String).Trim()))
+          Write-Host '      常见原因：MALL_DB_PASSWORD 与商城库账号不符。清场未生效，脚本继续（不清场不等于演示会失败）。'
+        } else {
+          Write-Host ("[0.5] 已清商城 event_outbox：删除 {0} 行（商城自有表，仅 -Clean -ConfirmCleanTarget 时执行）" -f (($delOut | Select-Object -Last 1) -replace '\s', ''))
+          $cleanTargetOk = $true
+        }
+      }
     }
+    if ($cleanTargetOk) {
     # 清商城自己的 landing 产物目录。
     # ⚠️ 实测（2026-09-11，只读）：**商城当前配置写的不是** mall-simulator\landing（那个目录是空的），
     #   而是**仓库根** landing\events —— 依据：mall-simulator application.yml:33 `mall.landing.path` 默认
@@ -96,21 +142,28 @@ if ($Clean) {
     # 处置：只删"最近 2 小时内新产生"的文件（演示刚造的数据），并对更早的文件**明确报告并跳过**。
     #   注意 2 小时窗口是保守启发式：若演示中断超过 2 小时，本次产生的文件也会落入"跳过"那一类
     #   —— 宁可少删（脚本会打印跳过数量），不可多删。
-    $landingDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'landing\events'
-    if (Test-Path $landingDir) {
-      $cut = (Get-Date).AddHours(-2)
-      $fresh = @(Get-ChildItem $landingDir -Filter '*.jsonl' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -ge $cut })
-      $old   = @(Get-ChildItem $landingDir -Filter '*.jsonl' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $cut })
-      $fresh | Remove-Item -Force -ErrorAction SilentlyContinue
-      Write-Host ("[0.5] 已清本次演示新产生的 landing 文件 {0} 个（{1}）" -f $fresh.Count, $landingDir)
-      if ($old.Count -gt 0) {
-        Write-Host ("[0.5] ⚠️ 跳过 {0} 个更早的 landing 文件（疑似平台已采数据，删了可能破坏平台侧证据）" -f $old.Count)
-        Write-Host '      如需彻底重置，请人工确认这些文件确实无用后再单独删除——脚本不替你做这个决定。'
+    # V25-S03 R-6：landing 清理同样受目标校验约束——只有走完上面的
+    # 「目标白名单 + 账号校验 + -ConfirmCleanTarget + 影响面预览」才允许走到这里。
+    # 清理范围仍然只看"最近 2 小时内产生的 *.jsonl"，更早的一律报告并跳过。
+      $landingDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'landing\events'
+      if (Test-Path $landingDir) {
+        $cut = (Get-Date).AddHours(-2)
+        $fresh = @(Get-ChildItem $landingDir -Filter '*.jsonl' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -ge $cut })
+        $old   = @(Get-ChildItem $landingDir -Filter '*.jsonl' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $cut })
+        if ($fresh.Count -gt 0) {
+          Write-Host ("[0.5] landing 清理预览：将删除 {0} 个最近 2 小时内产生的文件（{1}）" -f $fresh.Count, $landingDir)
+        }
+        $fresh | Remove-Item -Force -ErrorAction SilentlyContinue
+        Write-Host ("[0.5] 已清本次演示新产生的 landing 文件 {0} 个（{1}）" -f $fresh.Count, $landingDir)
+        if ($old.Count -gt 0) {
+          Write-Host ("[0.5] ⚠️ 跳过 {0} 个更早的 landing 文件（疑似平台已采数据，删了可能破坏平台侧证据）" -f $old.Count)
+          Write-Host '      如需彻底重置，请人工确认这些文件确实无用后再单独删除——脚本不替你做这个决定。'
+        }
+      } else {
+        Write-Host ("[0.5] 未找到 landing 目录 {0}（商城可能尚未产出）" -f $landingDir)
       }
-    } else {
-      Write-Host ("[0.5] 未找到 landing 目录 {0}（商城可能尚未产出）" -f $landingDir)
+      Write-Host '[0.5] 商城侧演示数据已清空（event_outbox + landing 新文件）；平台库/数仓未清（无此端点）'
     }
-    Write-Host '[0.5] 商城侧演示数据已清空（event_outbox + landing 新文件）；平台库/数仓未清（无此端点）'
   }
 }
 

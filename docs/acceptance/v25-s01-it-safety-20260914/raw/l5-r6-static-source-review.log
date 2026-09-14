@@ -1,0 +1,97 @@
+### L5 R-6 static (read-only) source review with file:line
+### time: 2026-09-14T14:01:02.1025778+08:00
+
+===== scripts/smoke-pipeline.ps1 =====
+  74: $allowedMetricDbs = @('analytics_metric', 'analytics_metric_v25it')
+  75: if ($allowedMetricDbs -notcontains $MetricDb) {
+  76: Write-Host ("拒绝执行：-MetricDb '{0}' 不在允许清单 {1} 内。" -f $MetricDb, ($allowedMetricDbs -join ', '))
+  75: if ($allowedMetricDbs -notcontains $MetricDb) {
+  52: #   整改前：`[string]$MysqlUser = 'root'` + `[string]$MysqlPassword = '123456'`
+  59: [string]$MysqlUser = 'metric_read',
+  93: if ($MysqlUser -eq 'root') {
+  78: exit 5
+  90: exit 5
+  96: exit 5
+  185: Write-Host "门禁：发布行数解析异常（单元格数=$((Cells $pubRaw[0]).Count)，原文=[$($pubRaw[0])]）"; exit 5
+  192: Write-Host "门禁：快照注册解析异常（单元格数=$((Cells $snapReg[0]).Count)，原文=[$($snapReg[0])]）"; exit 5
+  104: $env:MYSQL_PWD = $MysqlPassword
+  112: $env:MYSQL_PWD = $old
+  22: * 本脚本**没有任何清理/写入步骤**：全部 SQL 都是 SELECT COUNT/MAX/SUM（见下方 Q() 的唯一
+  69: # 本脚本对数据库**只读**（全部是 SELECT COUNT/MAX），但它读的是正式库，
+  138: $beforeMetricRows = [long](Q "SELECT COUNT(*) FROM $MetricDb.metric_value" | Select-Object -First 1)
+  180: if ($snapshot) { $pubRaw = @(Q "SELECT COUNT(*),COALESCE(SUM(metric_value),0) FROM $MetricDb.metric_value WHERE snapshot_id='$snapshot'") }
+  194: $afterMetricRows = [long](Q "SELECT COUNT(*) FROM $MetricDb.metric_value" | Select-Object -First 1)
+  137: $beforeMaxRun = [long](Q 'SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run' | Select-Object -First 1)
+  29: metric_read，root 直接拒绝；口令须由 -MysqlPassword 或 $env:MYSQL_PWD /
+  52: #   整改前：`[string]$MysqlUser = 'root'` + `[string]$MysqlPassword = '123456'`
+  61: [string]$MysqlPassword = ''
+  80: if (-not $MysqlPassword) {
+  83: $MysqlPassword = $env:MYSQL_PWD
+  85: $MysqlPassword = $env:SMOKE_DB_PASSWORD
+  88: Write-Host '  请用 -MysqlPassword <口令>，或设置环境变量 $env:MYSQL_PWD / $env:SMOKE_DB_PASSWORD。'
+  104: $env:MYSQL_PWD = $MysqlPassword
+
+===== scripts/run-demo.ps1 =====
+  30: [string]$MallDbName = 'mall_simulator',
+  31: [string]$MallDbUser = 'mall_app',
+  29: #   （-ConfirmCleanTarget），否则拒绝执行清场（不清场 ≠ 演示失败，脚本继续）。
+  33: [switch]$ConfirmCleanTarget
+  79: } elseif (-not $ConfirmCleanTarget) {
+  83: # 现在要求显式 -ConfirmCleanTarget，并把目标与影响面**先打印出来**。
+  84: Write-Host "[0.5] 跳过清场：未提供 -ConfirmCleanTarget（目标不明确即拒绝）。"
+  85: Write-Host "      若要清场，请显式确认：pwsh -File scripts/run-demo.ps1 -Clean -ConfirmCleanTarget"
+  127: Write-Host ("[0.5] 已清商城 event_outbox：删除 {0} 行（商城自有表，仅 -Clean -ConfirmCleanTarget 时执行）" -f (($delOut | Select-Object -Last 1) -replace '\s', ''))
+  146: # 「目标白名单 + 账号校验 + -ConfirmCleanTarget + 影响面预览」才允许走到这里。
+  108: } elseif ($MallDbUser -eq 'root') {
+  114: $previewSql = "SELECT COUNT(*) FROM $MallDbName.event_outbox;"
+  26: #   整改前清场命令写死 `& mysql -uroot -N -B -e "DELETE FROM mall_simulator.event_outbox; …"`：
+  72: #   旧版曾写 `DELETE FROM mall_simulator.file_checkpoint; …`。⚠️ 实测（2026-09-11，只读）：
+  122: $delOut = & $MysqlExe "-u$MallDbUser" -N -B -e "DELETE FROM $MallDbName.event_outbox; SELECT ROW_COUNT();" 2>&1
+  113: $env:MYSQL_PWD = $env:MALL_DB_PASSWORD
+
+===== scripts/it-prepare-isolation.ps1 =====
+  31: [int[]]$AllowedPorts = @(3307),
+  56: if ($AllowedPorts -notcontains $Port) {
+  57: Write-Host ("拒绝：-Port {0} 不在允许的隔离实例端口清单 {1} 内。" -f $Port, ($AllowedPorts -join ', '))
+  140: $sql | & wsl @wslArgs -- mysql -h 127.0.0.1 -P $Port -uroot --batch --silent 2>&1
+  140: $sql | & wsl @wslArgs -- mysql -h 127.0.0.1 -P $Port -uroot --batch --silent 2>&1
+  23: #   pwsh -File scripts/it-prepare-isolation.ps1 -RunId <runId> -Confirm
+  37: [switch]$Confirm,
+  46: $execute = $Confirm -and (-not $DryRun)
+  98: Write-Host '  确认 W03 已交付 3307 实例、且 parent 已确认后，加 -Confirm 重跑：'
+  99: Write-Host ("    pwsh -File scripts/it-prepare-isolation.ps1 -RunId {0} -Confirm" -f $RunId)
+  22: #   pwsh -File scripts/it-prepare-isolation.ps1 -RunId mallit-20260914-130000-a1b2 -DryRun
+  35: [switch]$DryRun,
+  46: $execute = $Confirm -and (-not $DryRun)
+  12: #   * 每次运行用 **runId 前缀**命名库与账号：库名必须带 runId，
+  14: #   * 账号是**本次运行自己的受限账号**（只对本 runId 的库有权限），
+  22: #   pwsh -File scripts/it-prepare-isolation.ps1 -RunId mallit-20260914-130000-a1b2 -DryRun
+  23: #   pwsh -File scripts/it-prepare-isolation.ps1 -RunId <runId> -Confirm
+  26: [Parameter(Mandatory = $true)][string]$RunId,
+  48: # ── 1. runId 形状校验（与 TestIsolationGuard.TEST_RUN_ID 同一形状）────
+  49: if ($RunId -notmatch '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$') {
+  50: Write-Host "拒绝：-RunId '$RunId' 形状非法（要求 ^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$）。"
+  69: $mallDb      = "${RunId}_mall"
+  70: $generatorDb = "${RunId}_generator"
+  71: $mallUser    = "${RunId}_mallapp"
+  72: $genUser     = "${RunId}_genapp"
+  73: $credRefId   = $RunId
+  80: Write-Host (" runId       : {0}" -f $RunId)
+  99: Write-Host ("    pwsh -File scripts/it-prepare-isolation.ps1 -RunId {0} -Confirm" -f $RunId)
+  116: "# runId=$RunId instance=$Host`:$Port",
+  154: Write-Host ("  testRunId={0}" -f $RunId)
+  162: Write-Host ("  # synthetic-data-generator：it-guard.local.properties（键名 runId/url/user/password/instancePorts）")
+  163: Write-Host ("  runId={0}" -f $RunId)
+  17: #     配置文件里只放 credref:<id> 引用。
+  39: [string]$CredRefDir = (Join-Path $env:USERPROFILE '.graduation')
+  73: $credRefId   = $RunId
+  74: $credRefFile = Join-Path $CredRefDir "credref-$credRefId.properties"
+  87: Write-Host ("               : {0}" -f $credRefFile)
+  113: if (-not (Test-Path $CredRefDir)) { New-Item -ItemType Directory -Force -Path $CredRefDir | Out-Null }
+  121: ) | Set-Content -Path $credRefFile -Encoding utf8
+  122: Write-Host ("[1/2] 已写凭据文件：{0}（不回显口令）" -f $credRefFile)
+  159: Write-Host ("  mysql.password=credref:{0}" -f $credRefId)
+  167: Write-Host ("  password=credref:{0}" -f $credRefId)
+  52: exit 2
+  61: exit 2
+  65: exit 2

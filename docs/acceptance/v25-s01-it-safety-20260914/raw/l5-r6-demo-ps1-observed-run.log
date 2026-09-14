@@ -1,0 +1,7 @@
+### L5 R-6: scripts/run-demo.ps1 real execution (health-check stage only; NO cleanup branch reached)
+### precondition: three programs 8090/8091/8092 are NOT running in this lane (forbidden to start/stop them)
+### MALL_DB_PASSWORD deliberately NOT set, so the -Clean cleanup branch is double-disabled
+### started: 2026-09-14T14:00:20.7514823+08:00
+未就绪: 模拟商城 http://127.0.0.1:8090（请先 pwsh -File scripts/start-all.ps1）
+未就绪: 合成数据生成器 http://127.0.0.1:8092（请先 pwsh -File scripts/start-all.ps1）
+### EXITCODE=1

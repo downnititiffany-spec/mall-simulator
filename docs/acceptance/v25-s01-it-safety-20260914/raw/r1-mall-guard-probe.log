@@ -1,0 +1,14 @@
+=== V25-S03 R-1 mall-simulator 门禁探针 ===
+[PASS] 1. 默认关闭（无隔离档案/无 -Dmall.it.enabled） -> 被拒: 缺少测试隔离配置项 it.guard.testRunId（系统属性 / 环境变量 IT_GUARD_TESTRUNID / 档案 it-guard.local.properties）：拒绝运行（不用正式地址/正式账号兜底）
+[PASS] 1b. 默认关闭：Flyway 回调路径必须拒（未显式开启） -> 被拒: Flyway 迁移被拒绝：mall 测试默认关闭，未提供 -Dmall.it.enabled=true 与隔离档案
+[PASS] 2.1 整改前 URL（宿主 3306 + createDatabaseIfNotExist） -> 被拒: [probe] 禁止 createDatabaseIfNotExist=true：测试不得创建数据库。
+[PASS] 2.2 宿主正式端口 3306（即使库名含 _test） -> 被拒: [probe] 实例端口 3306 是宿主正式 MySQL 实例端口：宿主上的任何库都不是隔离环境。隔离必须落在独立实例（端口 [3306]）；库名含 test 不构成安全证明。
+[PASS] 2.3 真实业务库 mall_simulator（834,550 行） -> 被拒: [probe] 目标库 mall_simulator 属内置禁止清单（真实业务库）：测试绝不写它。
+[PASS] 2.4 库名不复用防护（不以前缀 runId 开头） -> 被拒: [probe] 目标库 mall_simulator_test 不以本次 runId（mallit-20260914-130000-a1b2）为前缀：拒绝运行。测试库必须是本次运行新建的，不能复用同名库。
+[PASS] 3. 读不到 URL 时失败关闭（拒绝先于连接，connAttempts=0） -> 被拒: [probe.verifyBeforeWrite] 无法从 DataSource（jdk.proxy1.$Proxy0）读取 JDBC URL：不满足「拒绝必须先于任何连接尝试」这一条，拒绝运行。请改用能暴露 URL 的 DataSource，或显式声明 -Dit.guard.allowUnreadableUrl=true 以仅依赖实连判据。
+[PASS] 3b. 连接尝试次数为 0（拒绝不留连接痕迹）
+[PASS] 3c. 显式 allowUnreadableUrl=true 后确实走到实连判据（attempts>=1）
+[PASS] 4. 正向：隔离实例 3307 + runId 前缀库被接受
+     门禁范围描述：enabled=true testRunId=<未提供> serverFingerprint=WSL-V25IT-ISOLATED mysql.host=<未提供>
+
+== R-1 探针结论：全部符合预期 ==

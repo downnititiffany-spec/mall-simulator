@@ -20,7 +20,9 @@ import com.graduation.generator.web.dto.GeneratorApiDtos.TargetRequest;
 import com.graduation.generator.web.dto.GeneratorApiDtos.TargetView;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.graduation.itguard.GeneratorIsolationTestConfig;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 
@@ -65,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {"generator.output.root=target/it-mall-output", "generator.cli=",
                 "generator.target.probe-timeout-ms=5000"})
+@Import(GeneratorIsolationTestConfig.class)
 class MallApiGenerationSmokeTest {
 
     /** 夹具按商品<b>存在性</b>校验订单，所以目录规模要够探针分页与商品动作（{@code eventCount/20}，下限 4） */

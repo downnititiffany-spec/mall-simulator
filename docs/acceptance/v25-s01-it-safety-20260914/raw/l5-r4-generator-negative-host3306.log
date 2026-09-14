@@ -1,0 +1,127 @@
+### L5 R-4 negative: isolation explicitly enabled (all keys present, instancePorts=3307) but URL target = host formal instance 3306
+### expected: GuardViolation from assertUrlAllowed BEFORE any connection; log must contain no connected-trace
+### command: mvn -o -f synthetic-data-generator/pom.xml -Dmaven.repo.local=D:\maven_repository -Dtest=GeneratorMetaStoreTest -DfailIfNoSpecifiedTests=false -Dit.guard.enabled=true -Dit.guard.runId=l5probe-20260914-x1 -Dit.guard.instancePorts=3307 -Dit.guard.url=jdbc:mysql://127.0.0.1:3306/l5probe-20260914-x1_gen -Dit.guard.user=l5probe-20260914-x1_genapp -Dit.guard.password=probe-not-a-secret test
+### started: 2026-09-14T14:00:04.4741442+08:00
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.meta.GeneratorMetaStoreTest
+[ERROR] Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.043 s <<< FAILURE! -- in com.graduation.generator.meta.GeneratorMetaStoreTest
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.cancelIsIdempotent -- Time elapsed: 0.010 s <<< ERROR!
+java.lang.ExceptionInInitializerError
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480)
+	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: com.graduation.itguard.IsolationGuard$GuardViolation: [GeneratorMetaStoreTest:url] ʵ���˿� 3306 ��������ʽ MySQL ʵ���˿ڣ������ϵ��κοⶼ���Ǹ��뻷��������������ڶ���ʵ�����˿� [3307]���������� test �����ɰ�ȫ֤����
+	at com.graduation.itguard.IsolationGuard.assertPortAllowed(IsolationGuard.java:261)
+	at com.graduation.itguard.IsolationGuard.assertUrlAllowed(IsolationGuard.java:233)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.<clinit>(GeneratorMetaStoreTest.java:74)
+	... 5 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.artifactsAndStatsAreIdempotent -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.NoClassDefFoundError: Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480)
+	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ExceptionInInitializerError: Exception com.graduation.itguard.IsolationGuard$GuardViolation: [GeneratorMetaStoreTest:url] ʵ���˿� 3306 ��������ʽ MySQL ʵ���˿ڣ������ϵ��κοⶼ���Ǹ��뻷��������������ڶ���ʵ�����˿� [3307]���������� test �����ɰ�ȫ֤���� [in thread "main"]
+	at com.graduation.itguard.IsolationGuard.assertPortAllowed(IsolationGuard.java:261)
+	at com.graduation.itguard.IsolationGuard.assertUrlAllowed(IsolationGuard.java:233)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.<clinit>(GeneratorMetaStoreTest.java:74)
+	... 5 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.targetCrudIncrementsConfigVersion -- Time elapsed: 0 s <<< ERROR!
+java.lang.NoClassDefFoundError: Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480)
+	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ExceptionInInitializerError: Exception com.graduation.itguard.IsolationGuard$GuardViolation: [GeneratorMetaStoreTest:url] ʵ���˿� 3306 ��������ʽ MySQL ʵ���˿ڣ������ϵ��κοⶼ���Ǹ��뻷��������������ڶ���ʵ�����˿� [3307]���������� test �����ɰ�ȫ֤���� [in thread "main"]
+	at com.graduation.itguard.IsolationGuard.assertPortAllowed(IsolationGuard.java:261)
+	at com.graduation.itguard.IsolationGuard.assertUrlAllowed(IsolationGuard.java:233)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.<clinit>(GeneratorMetaStoreTest.java:74)
+	... 5 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.planVersionsAreAppendOnly -- Time elapsed: 0 s <<< ERROR!
+java.lang.NoClassDefFoundError: Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480)
+	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ExceptionInInitializerError: Exception com.graduation.itguard.IsolationGuard$GuardViolation: [GeneratorMetaStoreTest:url] ʵ���˿� 3306 ��������ʽ MySQL ʵ���˿ڣ������ϵ��κοⶼ���Ǹ��뻷��������������ڶ���ʵ�����˿� [3307]���������� test �����ɰ�ȫ֤���� [in thread "main"]
+	at com.graduation.itguard.IsolationGuard.assertPortAllowed(IsolationGuard.java:261)
+	at com.graduation.itguard.IsolationGuard.assertUrlAllowed(IsolationGuard.java:233)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.<clinit>(GeneratorMetaStoreTest.java:74)
+	... 5 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.runLifecycleIsSingleWayAndTerminalProtected -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NoClassDefFoundError: Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480)
+	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ExceptionInInitializerError: Exception com.graduation.itguard.IsolationGuard$GuardViolation: [GeneratorMetaStoreTest:url] ʵ���˿� 3306 ��������ʽ MySQL ʵ���˿ڣ������ϵ��κοⶼ���Ǹ��뻷��������������ڶ���ʵ�����˿� [3307]���������� test �����ɰ�ȫ֤���� [in thread "main"]
+	at com.graduation.itguard.IsolationGuard.assertPortAllowed(IsolationGuard.java:261)
+	at com.graduation.itguard.IsolationGuard.assertUrlAllowed(IsolationGuard.java:233)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.<clinit>(GeneratorMetaStoreTest.java:74)
+	... 5 more
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   GeneratorMetaStoreTest.artifactsAndStatsAreIdempotent ? NoClassDefFound Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+[ERROR]   GeneratorMetaStoreTest.cancelIsIdempotent ? ExceptionInInitializer
+[ERROR]   GeneratorMetaStoreTest.planVersionsAreAppendOnly ? NoClassDefFound Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+[ERROR]   GeneratorMetaStoreTest.runLifecycleIsSingleWayAndTerminalProtected ? NoClassDefFound Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+[ERROR]   GeneratorMetaStoreTest.targetCrudIncrementsConfigVersion ? NoClassDefFound Could not initialize class com.graduation.generator.meta.GeneratorMetaStoreTest
+[INFO] 
+[ERROR] Tests run: 5, Failures: 0, Errors: 5, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.683 s
+[INFO] Finished at: 2026-09-14T14:00:09+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project synthetic-data-generator: 
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\synthetic-data-generator\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+### EXITCODE=1

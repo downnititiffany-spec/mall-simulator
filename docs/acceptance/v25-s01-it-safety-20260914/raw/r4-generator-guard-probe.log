@@ -1,0 +1,20 @@
+=== V25-S03 R-4 synthetic-data-generator 门禁探针 ===
+[PASS] 1. 默认关闭时 requireEnabled 必须抛错（不许 skip 冒充通过） -> GuardViolation: [GeneratorMetaStoreTest] 测试默认关闭：未提供 -Dit.guard.enabled=true（或档案 it-guard.local.properties）。这些用例会建库/建表/清表，必须显式声明目标隔离环境后才允许运行。
+[PASS] 2. 缺 url 即拒跑（无默认值兜底） -> GuardViolation: 缺少测试隔离配置项 it.guard.url（系统属性 / 环境变量 IT_GUARD_URL / 档案 it-guard.local.properties）：拒绝运行（不用正式地址/正式账号兜底）
+[PASS] 2b. 缺 runId 即拒跑 -> GuardViolation: 缺少测试隔离配置项 it.guard.runId（系统属性 / 环境变量 IT_GUARD_RUNID / 档案 it-guard.local.properties）：拒绝运行（不用正式地址/正式账号兜底）
+[PASS] 3.1 宿主 3306 + createDatabaseIfNotExist（整改前形态） -> GuardViolation: [probe] 禁止 createDatabaseIfNotExist=true：测试不得创建数据库。
+[PASS] 3.2 缺 instancePorts 即拒跑（连带：无法把端口写成 3306 蒙混） -> GuardViolation: 缺少测试隔离配置项 it.guard.instancePorts（系统属性 / 环境变量 IT_GUARD_INSTANCEPORTS / 档案 it-guard.local.properties）：拒绝运行（不用正式地址/正式账号兜底）
+[PASS] 3.2b instancePorts 被写成 3306 时，正式端口仍被无条件拒 -> GuardViolation: [probe] 实例端口 3306 是宿主正式 MySQL 实例端口：宿主上的任何库都不是隔离环境。隔离必须落在独立实例（端口 [3306]）；库名含 test 不构成安全证明。
+[PASS] 3.3 真实库 generator_meta -> GuardViolation: [probe] 目标库 generator_meta 属内置禁止清单（真实业务库）：测试绝不写它。
+[PASS] 3.4 正式只读库 analytics_metric -> GuardViolation: [probe] 目标库 analytics_metric 属内置禁止清单（真实业务库）：测试绝不写它。
+[PASS] 3.5 库名不含本次 runId 前缀 -> GuardViolation: [probe] 目标库 generator_meta_test 不以本次 runId（genit-20260914-130000-a1b2）为前缀：拒绝运行。测试库必须是本次运行新建的，不能复用同名库。
+[PASS] 3.6 非本机主机 -> GuardViolation: [probe] 主机 10.0.0.5 不是本机：测试只允许连本机隔离实例。
+[PASS] 4.1 root 账号 -> GuardViolation: [probe] 账号 root 属禁止清单（正式账号）：测试必须用本次运行自己的受限账号。
+[PASS] 4.2 meta_app 账号 -> GuardViolation: [probe] 账号 meta_app 属禁止清单（正式账号）：测试必须用本次运行自己的受限账号。
+[PASS] 5.1 普通取值按原样解析（引用解析在下一行验证）
+[PASS] 5.2 credref 引用指向不存在的文件必须拒跑（不静默返回空） -> GuardViolation: [probe.password] 未找到凭据引用 credref:no-such-runid-xxxx（期望 credref-no-such-runid-xxxx.properties）：拒绝运行。
+[PASS] 6. 读不到 URL 时失败关闭（connAttempts 必须为 0） -> GuardViolation: [GeneratorMetaStoreTest.setUp] 无法从 DataSource（jdk.proxy1.$Proxy0）读取 JDBC URL：不满足「拒绝必须先于任何连接尝试」这一条，拒绝运行。请改用能暴露 URL 的 DataSource，或显式声明 -Dit.guard.allowUnreadableUrl=true 以仅依赖实连判据。
+[PASS] 6b. 连接尝试次数为 0
+[PASS] 7. 正向：隔离实例 3307 + runId 前缀库被接受
+
+== R-4 探针结论：全部符合预期 ==

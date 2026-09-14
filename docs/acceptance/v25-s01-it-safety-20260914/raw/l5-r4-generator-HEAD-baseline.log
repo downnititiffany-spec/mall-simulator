@@ -1,0 +1,75 @@
+### L5 复核：改动前（HEAD f00462c 干净工作树）synthetic-data-generator 默认套件基线
+### command: mvn -o -f D:\Develop_code\_gp_headcheck\synthetic-data-generator\pom.xml -Dmaven.repo.local=D:\maven_repository test
+### started: 2026-09-14T13:57:42.7429613+08:00
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 70 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\_gp_headcheck\synthetic-data-generator\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 21 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.687 s -- in com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[INFO] Running com.graduation.generator.adapter.MallTargetAdapterRegistryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.graduation.generator.adapter.MallTargetAdapterRegistryTest
+[INFO] Running com.graduation.generator.adapter.ReferenceMallHttpAdapterTest
+13:57:54.462 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+13:57:54.487 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=ABSENT, RESET_STATE=SUPPORTED, ADMIN=SUPPORTED}
+13:57:54.508 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+13:57:54.526 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+13:57:54.545 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=UNDETERMINED}
+13:57:54.564 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=SUPPORTED, RESET_STATE=SUPPORTED, ADMIN=SUPPORTED}
+13:57:54.575 [main] WARN com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽��ʧ�ܣ�id=42 �޷����� http://127.0.0.1:7064��ConnectException: null��
+13:57:54.592 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.172 s -- in com.graduation.generator.adapter.ReferenceMallHttpAdapterTest
+[INFO] Running com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+13:57:54.673 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:57:54.751 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:57:54.757 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+13:57:54.762 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.230 s -- in com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+[INFO] Running com.graduation.generator.boundary.GeneratorBoundarySourcePolicyTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in com.graduation.generator.boundary.GeneratorBoundarySourcePolicyTest
+[INFO] Running com.graduation.generator.contract.GeneratorContractParityTest
+[ERROR] Tests run: 7, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.063 s <<< FAILURE! -- in com.graduation.generator.contract.GeneratorContractParityTest
+[ERROR] com.graduation.generator.contract.GeneratorContractParityTest.constantsAndPatternsMatchContract -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.fasterxml.jackson.databind.JsonNode.asText()" because the return value of "com.fasterxml.jackson.databind.JsonNode.get(String)" is null
+	at com.graduation.generator.contract.GeneratorContractParityTest.constantsAndPatternsMatchContract(GeneratorContractParityTest.java:86)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.generator.contract.JsonlEventSinkTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.135 s -- in com.graduation.generator.contract.JsonlEventSinkTest
+[INFO] Running com.graduation.generator.core.BehaviorChainTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.graduation.generator.core.BehaviorChainTest
+[INFO] Running com.graduation.generator.core.DistributionKitTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.graduation.generator.core.DistributionKitTest
+[INFO] Running com.graduation.generator.core.GeneratorDeterminismTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.graduation.generator.core.GeneratorDeterminismTest
+[INFO] Running com.graduation.generator.core.ScenarioEffectTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.graduation.generator.core.ScenarioEffectTest
+[INFO] Running com.graduation.generator.core.ScenarioRegistryTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.graduation.generator.core.ScenarioRegistryTest
+[INFO] Running com.graduation.generator.engine.FileModeGenerationEngineTest

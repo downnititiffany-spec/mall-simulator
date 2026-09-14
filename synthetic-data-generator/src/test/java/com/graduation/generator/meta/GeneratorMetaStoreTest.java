@@ -18,25 +18,60 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * {@link GeneratorMetaStore} 对真实 MySQL 独立库 {@code generator_meta} 的集成测试（E2，真库真表，无 Mock）。
+ * {@link GeneratorMetaStore} 对真实 MySQL 独立库的集成测试（E2，真库真表，无 Mock）。
  *
  * <p>为什么必须真库：本类里的风险全在 SQL 与类型/时区映射上——条件 UPDATE 的幂等语义、
  * 唯一键冲突、{@code ON DUPLICATE KEY UPDATE}、{@code DATETIME(3)} 与 {@link Instant} 的换算。
  * 这些用 Mock 测等于什么都没测。</p>
  *
- * <p>库不可达时用例 <b>跳过</b>（Assumptions），不伪装成通过；跳过原因会打印在测试输出里。
- * 连接参数与 {@code application.yml} 同源（环境变量优先）。</p>
+ * <h3>V25-S03 R-4 整改：把「skip 后 PASS」改成「显式失败」</h3>
+ *
+ * <p><b>整改前</b>：{@code URL/USER/PASSWORD} 是
+ * {@code jdbc:mysql://127.0.0.1:3306/generator_meta…} / {@code root} / {@code 123456}
+ * 三个硬编码默认值；库不可达时走 {@code assumeTrue(false, "跳过：…")}。
+ * 两处都违反 §9.4：</p>
+ * <ul>
+ *   <li>默认值把目标钉在**宿主正式实例 3306**（且带 {@code createDatabaseIfNotExist=true}
+ *       形态的同类配置见 application.yml），而本类的 {@link #cleanUp()} 会
+ *       {@code DELETE FROM …} 四张表——连错库就是删正式数据；</li>
+ *   <li>{@code assumeTrue(false)} 让「没连上库」表现为 <b>skipped</b>。
+ *       Surefire 把 skipped 算进绿，于是"环境不具备"被伪装成"测试通过"。</li>
+ * </ul>
+ *
+ * <p><b>处置：选「环境不具备时显式失败」（而不是登记 DEFERRED 移出用例集）。</b>
+ * 理由：本类覆盖的是 SQL/类型/幂等语义，是{@code GeneratorMetaStore} 唯一的真库证据；
+ * 把它移出用例集会留下一个无证据的核心持久层。改成显式失败后，
+ * 用例集里保留着一个"要么真跑、要么红"的用例——红灯就是提醒，
+ * 而不是一块永远绿的空白。代价是：未准备隔离环境时 {@code mvn test} 会红，
+ * 这是**有意**的（见 README §R-4 证据）。</p>
+ *
+ * <p>配置改为门禁读取（无默认值）：{@code -Dit.guard.enabled=true} 必须显式给出，
+ * 目标只能是登记的隔离实例（端口白名单），库名必须以本次 runId 为前缀。
+ * 口令支持 {@code credref:<id>} 引用，源码与命令行都不落明文。
+ * 连接参数与 {@code application.yml} 同源但**不再继承它的 root 默认值**。</p>
  */
 class GeneratorMetaStoreTest {
 
-    private static final String URL = env("GENERATOR_DB_URL",
-            "jdbc:mysql://127.0.0.1:3306/generator_meta?useUnicode=true&characterEncoding=utf8"
-                    + "&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false");
-    private static final String USER = env("GENERATOR_DB_USER", "root");
-    private static final String PASSWORD = env("GENERATOR_DB_PASSWORD", "123456");
+    static {
+        // 在任何断言/连接之前把门禁打开并做 URL 预检（缺配置 -> 类初始化失败 -> 用例红，不是 skip）
+        com.graduation.itguard.IsolationGuard.requireEnabled("GeneratorMetaStoreTest");
+    }
+
+    /** 目标 URL：**无默认值**。整改前默认 {@code 127.0.0.1:3306/generator_meta…}。 */
+    private static final String URL = com.graduation.itguard.IsolationGuard.require("url");
+
+    /** 目标账号：**无默认值**。整改前默认 {@code root}。 */
+    private static final String USER = com.graduation.itguard.IsolationGuard.require("user");
+
+    /** 目标口令：**无默认值、不落明文**。整改前默认 {@code 123456}。 */
+    private static final String PASSWORD = com.graduation.itguard.IsolationGuard.requireCredential(
+            com.graduation.itguard.IsolationGuard.require("password"), "GeneratorMetaStoreTest");
+
+    /** 声明目标库（从 URL 解出后与实连核对，防配置漂移）。 */
+    private static final String EXPECTED_DB =
+            com.graduation.itguard.IsolationGuard.assertUrlAllowed(URL, "GeneratorMetaStoreTest:url");
 
     private final String suffix = UUID.randomUUID().toString().substring(0, 8);
     private final String planId = "it-plan-" + suffix;
@@ -51,11 +86,18 @@ class GeneratorMetaStoreTest {
     void setUp() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USER, PASSWORD);
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        jdbc = new JdbcTemplate(dataSource);
+        // V25-S03 R-4：整改前这里 catch(RuntimeException) -> assumeTrue(false, "跳过：…")，
+        // 于是「隔离库没准备好」= skipped = 绿。现在改成显式失败：环境不具备就是红。
+        // 写前门禁也在这里顶住：目标不是登记的隔离实例/库、账号是正式账号、
+        // 库名不带本次 runId 前缀时，都在任何 DELETE 之前拒绝。
         try {
-            jdbc = new JdbcTemplate(dataSource);
-            jdbc.queryForObject("SELECT 1", Integer.class);
+            com.graduation.itguard.IsolationGuard.verifyBeforeWrite(
+                    dataSource, EXPECTED_DB, "GeneratorMetaStoreTest.setUp");
         } catch (RuntimeException e) {
-            assumeTrue(false, "跳过：generator_meta 不可达（" + URL + "）：" + e.getMessage());
+            throw new AssertionError("测试无法开始：隔离库未就绪或被门禁拒绝——"
+                    + "本用例不提供 skip 形态的通过（V25-S03 R-4）。"
+                    + "请按 it-guard.local.properties 准备隔离实例后重跑。原因：" + e.getMessage(), e);
         }
         store = new GeneratorMetaStore(jdbc);
     }
@@ -187,10 +229,5 @@ class GeneratorMetaStoreTest {
         return new PlanRow(null, planId, 0, "CANONICAL_EVENT_FILE", null, "baseline_55",
                 20260911L, Instant.parse("2026-09-01T00:00:00Z"), Instant.parse("2026-09-02T00:00:00Z"),
                 55, 0, "none", "file:///D:/Develop_code/GraduationProject/generator-output");
-    }
-
-    private static String env(String name, String fallback) {
-        String value = System.getenv(name);
-        return value == null || value.isBlank() ? fallback : value;
     }
 }

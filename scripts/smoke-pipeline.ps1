@@ -18,7 +18,19 @@ data_quality_result 在 analytics_meta；metric_value / metric_snapshot（发布
 analytics_metric（`-MetricDb` 可覆盖）。analytics_meta 下另有历史遗留的 metric_* 表，
 **不得**用它判定发布结果（口径错误会让"未发布"看起来像已发布）。
 
-退出码：0 = 门禁全过；2 = 链路未达成功态；3 = 存在 BLOCKING 质量失败；4 = 未发布任何指标值。
+V25-S03 R-6 整改说明（本脚本对数据库**只读**）：
+  * 本脚本**没有任何清理/写入步骤**：全部 SQL 都是 SELECT COUNT/MAX/SUM（见下方 Q() 的唯一
+    用法），不执行 DELETE / TRUNCATE / DROP / INSERT / UPDATE / CREATE。整改前外部扫描把
+    "直删 mall_simulator.event_outbox" 记在本脚本名下，实测与文件不符——那条直删在
+    run-demo.ps1（已单独整改）。
+  * `-MetricDb` 现在是**白名单**（默认只允许 analytics_metric / analytics_metric_v25it）：
+    指错库会让"未发布"看起来像已发布，所以目标不明确即拒绝（退出码 5）。
+  * 口令**无默认值**：整改前是 `root` + `123456` 两个硬编码默认值，现在默认账号是只读的
+    metric_read，root 直接拒绝；口令须由 -MysqlPassword 或 $env:MYSQL_PWD /
+    $env:SMOKE_DB_PASSWORD 提供，且经 MYSQL_PWD 传给客户端，不出现在命令行参数里。
+
+退出码：0 = 门禁全过；2 = 链路未达成功态；3 = 存在 BLOCKING 质量失败；4 = 未发布任何指标值；
+        5 = 目标/凭据不明确被拒（V25-S03 R-6）。
 
 示例：
   pwsh scripts\smoke-pipeline.ps1 -BusinessTime '2026-09-01T00:00:00' -SourceDataVersion 'm1-4s3b-gen1000-def05fix'
@@ -36,18 +48,69 @@ param(
   [int]$PollSec = 10,
   [string]$Name = 'smoke',
   [string]$OutDir = 'docs\acceptance',
+  # ── V25-S03 R-6：目标与凭据必须显式给出 ────────────────────────────────
+  #   整改前：`[string]$MysqlUser = 'root'` + `[string]$MysqlPassword = '123456'`
+  #   两个默认值，配合 `-MetricDb` 可指向任意库——也就是说默认配置就是
+  #   「用 root 连宿主实例、查 analytics_metric 正式库」。
+  #   现在：① 口令**无默认值**，未提供即拒绝执行（不再有 123456 兜底）；
+  #   ② 账号默认改为只读账号，root 需显式写出；
+  #   ③ 库名只允许正式只读清单（本脚本对库**只读**，仍然不放任指向任意库）。
   [string]$MysqlExe = 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe',
-  [string]$MysqlUser = 'root',
+  [string]$MysqlUser = 'metric_read',
   [string]$MetricDb = 'analytics_metric',
-  [string]$MysqlPassword = '123456'
+  [string]$MysqlPassword = ''
 )
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
+# ── V25-S03 R-6：目标不明确即拒绝 ──────────────────────────────────────
+# 本脚本对数据库**只读**（全部是 SELECT COUNT/MAX），但它读的是正式库，
+# 所以要挡住两种"目标不明确"：库名不在白名单、以及没有可用的凭据来源。
+# 为什么要挡库名：`-MetricDb` 是自由字符串，整改前可以指到任意库；
+# 而第 [6/7] 步的判据是"这个库的 metric_value 行数有没有涨"——
+# 指错库会让"未发布"看起来像已发布（本脚本头部注释自己就写明了这个坑）。
+$allowedMetricDbs = @('analytics_metric', 'analytics_metric_v25it')
+if ($allowedMetricDbs -notcontains $MetricDb) {
+  Write-Host ("拒绝执行：-MetricDb '{0}' 不在允许清单 {1} 内。" -f $MetricDb, ($allowedMetricDbs -join ', '))
+  Write-Host '  发布库口径写错会让"未发布"看起来像已发布；如需新增目标请先登记到本白名单。'
+  exit 5
+}
+if (-not $MysqlPassword) {
+  if ($env:MYSQL_PWD) {
+    # 复用环境变量里的口令（不落命令行、不落源码）
+    $MysqlPassword = $env:MYSQL_PWD
+  } elseif ($env:SMOKE_DB_PASSWORD) {
+    $MysqlPassword = $env:SMOKE_DB_PASSWORD
+  } else {
+    Write-Host '拒绝执行：未提供数据库口令。整改后不再有 123456 兜底。'
+    Write-Host '  请用 -MysqlPassword <口令>，或设置环境变量 $env:MYSQL_PWD / $env:SMOKE_DB_PASSWORD。'
+    Write-Host ("  当前目标：库={0} 账号={1}。脚本对库只读，但仍需凭据。" -f $MetricDb, $MysqlUser)
+    exit 5
+  }
+}
+if ($MysqlUser -eq 'root') {
+  Write-Host '拒绝执行：账号为 root。本脚本只需要读权限，请改用只读账号（默认 metric_read）。'
+  Write-Host '  若确需 root，请说明理由后显式放开——当前脚本不接受隐式 root（V25-S03 R-6）。'
+  exit 5
+}
+Write-Host ("[目标] MetricDb={0} 账号={1}（只读 SELECT；口令以环境变量/参数传入，不回显）" -f $MetricDb, $MysqlUser)
+
 function Q([string]$sql) {
-  $out = & $MysqlExe "-u$MysqlUser" "-p$MysqlPassword" -N -B --default-character-set=utf8mb4 -e $sql 2>$null
+  # V25-S03 R-6：口令走 MYSQL_PWD 环境变量，不再出现在 `-p<口令>` 命令行参数里
+  # （命令行参数在进程列表里对其他本地进程可见）。这里也不再把 stderr 整个吞掉为 $null。
+  $old = $env:MYSQL_PWD
+  $env:MYSQL_PWD = $MysqlPassword
+  try {
+    $out = & $MysqlExe "-u$MysqlUser" -N -B --default-character-set=utf8mb4 -e $sql 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host ("[Q] mysql 退出码 {0}：{1}" -f $LASTEXITCODE, (($out | Out-String).Trim()))
+      Write-Host ("[Q] 目标 MetricDb={0} 账号={1}" -f $MetricDb, $MysqlUser)
+    }
+  } finally {
+    $env:MYSQL_PWD = $old
+  }
   return @($out | Where-Object { $_ -ne '' })
 }
 function Cells([string]$line) { return ($line -split "`t") }

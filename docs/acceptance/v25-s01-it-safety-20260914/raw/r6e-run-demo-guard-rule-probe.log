@@ -1,0 +1,21 @@
+── 1) 目标库不在白名单（mall_prod）
+  [拒绝] 目标库 'mall_prod' 不在商城自有库白名单 mall_simulator 内。
+  → cleanTargetOk = False
+
+── 2) 账号 root
+  [拒绝] 账号为 root（不接受隐式 root）。
+  → cleanTargetOk = False
+
+── 3) 目标在内、账号非 root，但预览取不到（伪 mysql 不存在）
+&: C:\Users\ASUS\AppData\Local\Temp\v25probe\R6RunDemoGuardProbe.ps1:32
+Line |
+  32 |          $previewOut = & $MysqlExe "-u$MallDbUser" -N -B -e "SELECT CO …
+     |                          ~~~~~~~~~
+     | 术语 'Z:\no-such-mysql.exe' 不会被识别为 cmdlet、函数、脚本文件或可执行程序的名称。 请检查名称的拼写或验证路径是否正确(如果包含路径)，然后重试。
+  [拒绝] 清场预览失败（mysql 退出码 ）：预览不可得即不删除。
+  → cleanTargetOk = False
+
+结论：三条都必须 cleanTargetOk=false —— 即"目标不明确/预览不可得"时绝不进入删除。
+
+另：-ConfirmCleanTarget 缺失时不会走到这个函数（run-demo.ps1:79 的分支直接打印
+    「未提供 -ConfirmCleanTarget（目标不明确即拒绝）」并保持不清场）。

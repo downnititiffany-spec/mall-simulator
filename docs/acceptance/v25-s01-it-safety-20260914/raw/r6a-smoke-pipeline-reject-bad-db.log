@@ -1,0 +1,2 @@
+拒绝执行：-MetricDb 'not_in_whitelist_db' 不在允许清单 analytics_metric, analytics_metric_v25it 内。
+  发布库口径写错会让"未发布"看起来像已发布；如需新增目标请先登记到本白名单。

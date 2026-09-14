@@ -1,0 +1,4 @@
+class = jdk.proxy1.$Proxy0
+getUrl -> NoSuchMethodException: jdk.proxy1.$Proxy0.getUrl()
+getURL -> NoSuchMethodException: jdk.proxy1.$Proxy0.getURL()
+getJdbcUrl -> NoSuchMethodException: jdk.proxy1.$Proxy0.getJdbcUrl()

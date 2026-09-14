@@ -1,0 +1,3 @@
+拒绝执行：未提供数据库口令。整改后不再有 123456 兜底。
+  请用 -MysqlPassword <口令>，或设置环境变量 $env:MYSQL_PWD / $env:SMOKE_DB_PASSWORD。
+  当前目标：库=analytics_metric 账号=metric_read。脚本对库只读，但仍需凭据。

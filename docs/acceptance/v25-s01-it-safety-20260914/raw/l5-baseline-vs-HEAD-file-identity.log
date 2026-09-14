@@ -1,0 +1,27 @@
+### L5: "existing vs new" adjudication WITHOUT a clean worktree (parent-endorsed method)
+### time: 2026-09-14T14:00:25.8719470+08:00
+### git rev-parse HEAD: fd3cee5b806b3570ce273e2346e1d14014e0dae2
+
+=== synthetic-data-generator/src/test/java/com/graduation/generator/contract/GeneratorContractParityTest.java ===
+git status --porcelain -- <file> => []
+git log -1 --format=%H -- <file> => 81f9f0680d1528a114aabdb16d5ebac2a4848e44
+git hash-object <file>          => f43859f10b20e48456278b7dbb3cf5bd083a7835
+git rev-parse HEAD:<file>       => f43859f10b20e48456278b7dbb3cf5bd083a7835
+
+=== contract-specs/schemas/canonical-event.v1.schema.json ===
+git status --porcelain -- <file> => []
+git log -1 --format=%H -- <file> => 5690ffb8286c81d57df7f6963f2e7eb54c36d407
+git hash-object <file>          => 1e4f2d8565c0901067ceafafdc6116feb96b3b48
+git rev-parse HEAD:<file>       => 1e4f2d8565c0901067ceafafdc6116feb96b3b48
+
+=== synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java ===
+git status --porcelain -- <file> => [ M synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java]
+git log -1 --format=%H -- <file> => 81f9f0680d1528a114aabdb16d5ebac2a4848e44
+git hash-object <file>          => fff0682bdf9dace8112ccac61341998d4eb5c188
+git rev-parse HEAD:<file>       => b3d2876346f031c76e78ba3a08ad7cb5257be784
+
+=== mall-simulator/src/test/resources/application-test.yml ===
+git status --porcelain -- <file> => [ M mall-simulator/src/test/resources/application-test.yml]
+git log -1 --format=%H -- <file> => 4e42fe65ad5d1ee33c7b0f090c771f7a35665747
+git hash-object <file>          => 1ba2ad4d332008cfe0907132d5a161d6e2e9172d
+git rev-parse HEAD:<file>       => 8d194b36fdf58b1688e4b4658674f8365e642bfd

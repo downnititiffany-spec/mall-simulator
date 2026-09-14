@@ -1,0 +1,35 @@
+=== V25-S03 R-5 SparkStageExecutorSmokeTest 门禁探针 ===
+repoRoot = D:\Develop_code\GraduationProject
+[PASS] 1. 默认关闭（无 -Dv25.spark.it=true） -> MissingConfigurationException: [SparkStageExecutorSmokeTest] 真实 Spark 冒烟默认关闭：未提供 -Dv25.spark.it=true。本用例会启动真实 spark-submit（外部进程）并递归删除工作目录，必须显式声明后才允许运行（不提供 skip 形态的通过）。
+[PASS] 1b. 默认关闭时 allowedRoot() 取安全默认值（不趁机放开）
+[PASS] 2.1 目标根 = 仓库根（拒绝） -> IsolationViolationException: 允许根等于仓库根：D:\Develop_code\GraduationProject —— 递归删除会清掉仓库，拒绝运行。
+[PASS] 2.2 目标根 = 仓库内一级子目录 tests/（拒绝，整改前 SMOKE_ROOT 所在位置） -> IsolationViolationException: 允许根 D:\Develop_code\GraduationProject\tests 是仓库根的一级子目录（如 tests/、docs/、src/）：递归删除风险过高，拒绝运行。请用 target/v25-spark-it 或 -Dv25.spark.it.root 指定更深的白名单目录。
+[PASS] 2.3 目标根 = 仓库内 graduation/（拒绝） -> IsolationViolationException: 允许根 D:\Develop_code\GraduationProject\graduation 是仓库根的一级子目录（如 tests/、docs/、src/）：递归删除风险过高，拒绝运行。请用 target/v25-spark-it 或 -Dv25.spark.it.root 指定更深的白名单目录。
+[PASS] 2.4 目标根是 URI（file:///... 拒绝） -> IsolationViolationException: [v25.spark.it.root] 不接受 URI 形态的目标根：file:///D:/tmp/v25spark（只允许本地文件系统路径）
+[PASS] 2.5a 目标根 = D:\（盘根自身，拒绝） -> IsolationViolationException: 允许根 D:\ 是文件系统根/盘根：递归删除会清掉整盘，拒绝运行。
+[PASS] 2.5b 目标根 = D:\v25spark（盘根下一级，拒绝） -> IsolationViolationException: 允许根 D:\v25spark 过于靠近盘根：拒绝运行。
+[PASS] 3. 缺 testRunId 即拒跑（不许默认值，拒跑优先于任何跑） -> MissingConfigurationException: 未找到测试隔离档案（classpath:integration.local.properties 或 D:\Develop_code\GraduationProject\analytics-server\integration.local.properties）：拒绝运行（不用正式账号/正式地址兜底）
+[PASS] 3.2 runId 形状非法即拒跑（含空格，形状校验集中在 requireTestRunId） -> IsolationViolationException: testRunId 形状非法：bad id with spaces（要求 ^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$）：拒绝运行——它会被拼进路径/库名/目录名，非法形状不得进入。
+[PASS] 3.3 runId 含路径分隔符即拒跑（防拼出界目录） -> IsolationViolationException: testRunId 形状非法：../escape（要求 ^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$）：拒绝运行——它会被拼进路径/库名/目录名，非法形状不得进入。
+allowedRoot = D:\Develop_code\GraduationProject\target\v25-spark-it
+--- 清理预览（删除前先列出待删目标）---
+
+a.txt
+nested
+nested\b.txt
+[PASS] 4.1 预览包含本次 runId 目录下的两个文件
+[PASS] 4.2 预览**不**包含别的 runId 目录
+[PASS] 4.3 预览**不**包含同根游离文件
+[spark-it] 清理预览：根=D:\Develop_code\GraduationProject\target\v25-spark-it\sparkit-20260914-130000-a1b2 待删条目数=4（仅限本次 runId 拥有的目录）
+[spark-it]   将删除: 
+[spark-it]   将删除: a.txt
+[spark-it]   将删除: nested
+[spark-it]   将删除: nested\b.txt
+[spark-it] 清理完成：已删除 5 个条目（含目录本身）
+deleted entries = 5
+[PASS] 5.1 本次 runId 目录已被删除
+[PASS] 5.2 别的 runId 目录仍在（未被越界删除）
+[PASS] 5.3 同根游离文件仍在（未被越界删除）
+探针残留已自行清理：D:\Develop_code\GraduationProject\target\v25-spark-it
+
+== R-5 探针结论：全部符合预期 ==

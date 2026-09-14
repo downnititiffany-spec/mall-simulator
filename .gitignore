@@ -79,3 +79,5 @@ generator-output/
 # 策略：单文件超过 5 MB 的证据不入库，改为在报告中记「外部路径 + sha256」。
 !docs/acceptance/**/*.log
 !docs/acceptance/**/*.jar
+credref-*.properties
+*.local.properties
