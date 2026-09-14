@@ -1,0 +1,304 @@
+=== V25-R01 取证 #03 RuleSeverity/QualityRuleCatalog/DataQualityGate 版本边界现状（未提交工作树）===
+采集时刻: 2026-09-14 12:09:28 +08:00
+
+--- analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\RuleSeverity.java ---
+行数=386
+8: * <p>口径（D-142 §1 人裁决，指导书正文不改）：<b>{@code BLOCKING} 与 {@code ERROR} 失败即阻断发布</b>；
+9: * {@code WARN}/{@code INFO} 记录并展示，<b>不阻断</b>。</p>
+13: * {@code ERROR}）。本类把「规则码 → 严重度」的映射集中到**一处**，由
+21: * 因此它会与平台口径漂移（例如全库 {@code severity='WARN'} 行数为 0，而本目录把两条重复率规则
+22: * 判为 WARN）。所以阻断判据是 {@link #blocks(String, String)}：**先按规则码查本目录**，
+25: * <p>阈值的来源与「批准」含义：阈值一律沿用设计文稿 §5.4.2「默认阈值」与既有 SQL，本类
+26: * <b>不改任何阈值</b>。降级为 {@code WARN} 只能在「下游已确定性去重（或该现象本身不是错误）
+27: * 且错误率未超已批准阈值」时成立；这一点逐条写在 {@link #rationale(String)} 里。</p>
+36: * 未登记码兜底 {@link #UNREGISTERED}。</p>
+38: public final class RuleSeverity {
+41: public static final String BLOCKING = "BLOCKING";
+43: /** 阻断发布：与 {@link #BLOCKING} 同等阻断，仅语义上表示「错误」而非「硬门」。 */
+44: public static final String ERROR = "ERROR";
+47: public static final String WARN = "WARN";
+50: public static final String INFO = "INFO";
+53: * 未登记规则码的兜底严重度。取 {@code BLOCKING} 是**故意的保守默认**：
+56: * <p><b>注意（F-88 实测踩到的坑）</b>：本常量与 {@link #BLOCKING} **取值相同**，因此
+57: * 「{@code of(code) == BLOCKING}」**不能**用来判断规则码是否已登记 —— 必须用
+60: * {@code WARN} 而被静默放行。</p>
+62: public static final String UNREGISTERED = BLOCKING;
+71: "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE",
+78: "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
+88: * @param ruleCode 规则码（大小写不敏感，前后空白忽略）
+89: * @return {@link #BLOCKING}/{@link #ERROR}/{@link #WARN}/{@link #INFO}；未登记返回 {@link #UNREGISTERED}
+90: * @deprecated V2.5 §7.3.1 line 520：全局 {@code ruleCode} 覆盖**不是最终完成形态**。
+97: public static String of(String ruleCode) {
+98: String code = ruleCode == null ? "" : ruleCode.trim().toUpperCase(java.util.Locale.ROOT);
+100: // ── Landing 层（Java QualityChecker 内联规则，规则码与 AdsSql.dataQuality 同名同阈值）──
+102: case "AMOUNT_RECONCILE" -> BLOCKING;
+105: case "REQUIRED_FIELD_NULL_RATE" -> BLOCKING;
+107: // 同样**静默丢弃**（设计文稿 §5.4.2「非法行为类型比例为 0」），超阈值必须阻断
+108: case "ENUM_WHITELIST" -> BLOCKING;
+111: // TradeDwdJob 的 dropDuplicates("event_id")），重复行记入 dwd_reject_record 的
+113: // 阈值 = 设计文稿 §5.4.2「主键重复率不超过 0.05%」(0.0005)，本类**不放宽**该阈值
+114: case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" -> WARN;
+117: case "ADS_STAGING_PRESENT" -> BLOCKING;          // 8 张暂存表本次快照分区必须存在且非空
+121: // 「当前发布读取或混入其他快照数据 ⇒ 阻断」由 MXP_SNAPSHOT_PINNED(BLOCKING) 承担
+122: case "ADS_STAGING_SNAPSHOT_ISOLATION" -> WARN;
+123: // ADS 关键列非空：逐表真实 COUNT，阈值 0，NULL 即口径破坏 ⇒ 阻断
+124: case "ADS_STAGING_KEY_NOT_NULL" -> BLOCKING;
+127: case "PUB_DQ_BLOCKING_RULES" -> BLOCKING;
+129: case "ADS_DWS_FUNNEL_RECONCILE" -> BLOCKING;
+132: case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
+133: case "PUB_FORMAL_PARTITION_MATCH" -> BLOCKING;   // 正式分区行数必须等于暂存分区行数
+134: case "PUB_POINTER_SWITCH" -> INFO;               // 发布操作审计（切换表数）
+135: case "PUB_STAGING_PRUNE" -> INFO;                // 发布操作审计（清理计数）
+138: case "MXP_SNAPSHOT_PINNED" -> BLOCKING;
+139: case "MXP_EXPORT_ROWS" -> BLOCKING;              // 导出文件行数 = Hive 分区行数
+140: case "MXP_EXPORT_COMPLETE" -> BLOCKING;          // 8 张表导出完成且行数一致
+146: // 未登记的兜底也是 BLOCKING，所以此处登记只增可读性、不改变行为。
+150: "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
+152: "MP_METRIC_VALUE_DB_MATCH" -> BLOCKING;
+156: case "MP_ADS_WRITE_MATCH" -> BLOCKING;
+157: // 上一个 ACTIVE 是否已归档：**由实现显式声明为 INFO**（不是阻断项）
+158: case "MP_OLD_ACTIVE_ARCHIVED" -> INFO;
+160: default -> UNREGISTERED;
+167: * <p>为什么需要独立方法而不是比较 {@link #of(String)} 与 {@link #UNREGISTERED}：
+168: * 两者取值相同（{@code "BLOCKING"}），比较无法区分「显式登记为阻断」与「未登记」。</p>
+170: * @param ruleCode 规则码
+178: public static boolean registered(String ruleCode) {
+179: return REGISTERED.contains(ruleCode == null
+180: ? "" : ruleCode.trim().toUpperCase(java.util.Locale.ROOT));
+186: * @param ruleCode 规则码
+189: public static String rationale(String ruleCode) {
+190: String code = ruleCode == null ? "" : ruleCode.trim().toUpperCase(java.util.Locale.ROOT);
+197: + "重复行进 dwd_reject_record 的 DUPLICATE_EVENT；阈值 0.0005 来自设计文稿 §5.4.2，未放宽";
+202: case "ADS_STAGING_KEY_NOT_NULL" -> "ADS 关键列 NULL ⇒ 口径破坏（阈值 0）";
+203: case "PUB_DQ_BLOCKING_RULES" -> "暂存宽表内 3 条阻断规则必须全过（与 Java corePassed 同口径）";
+219: case "MP_METRIC_DICT_VERSION" -> "指标码不在字典内或版本不一致 ⇒ 无口径可溯";
+229: "上一个 ACTIVE 的归档情况说明（发布结果告知项），由实现显式声明为 INFO，不阻断";
+230: default -> "未登记规则码，按保守默认 BLOCKING 处理（宁可阻断也不静默放行）";
+237: * <p>大小写不敏感；{@code null}/空/未知值一律按阻断处理（与 {@link #UNREGISTERED} 同一条保守原则）。</p>
+251: return !WARN.equals(s) && !INFO.equals(s);
+259: * 这正是 §7.3.1 line 520 的要求 —— 全局 {@code ruleCode} 覆盖不是最终形态。</p>
+262: * （本泳道禁改作业侧），已实测与平台口径漂移（两条重复率规则在库里是 {@code ERROR}，
+265: * <p><b>未登记码不得盲信传来的 WARN</b>（§7.3.1 line 524 原文）：未登记 ⇒ 返回
+266: * {@link RuleVerdict#UNREGISTERED_RULE}，调用方（发布路径）必须**停止发布并报未登记规则**，
+269: * @param rules    本次 run 冻结的规则集
+270: * @param ruleCode 规则码
+271: * @param passed   {@code passed}（{@code null} 或 {@code != 1} 视为未通过）
+274: public static RuleVerdict resolve(QualityRuleCatalog.FrozenRules rules, String ruleCode, Integer passed) {
+276: ? java.util.Optional.empty() : rules.find(ruleCode);
+279: return RuleVerdict.unregistered(ruleCode);
+282: // 条件严重度：未超批准阈值 ⇒ 观察项（WARN，不阻断）；超阈值 ⇒ 阻断。
+283: // §7.3.1 line 522：「原始重复事件仅在确定性去重已证且重复率不超批准阈值时为观察项；超过阈值阻断」
+284: String effective = d.severityMode() == QualityRuleDefinition.SeverityMode.THRESHOLD_OBSERVATION
+285: ? (failed(passed) ? BLOCKING : d.severity())
+287: String explanation = d.severityMode() == QualityRuleDefinition.SeverityMode.THRESHOLD_OBSERVATION
+289: ? "阈值判定未通过 ⇒ 由观察项升为阻断（§7.3.1 line 522「超过阈值阻断」）"
+290: : "阈值判定通过 ⇒ 观察项，不阻断（确定性去重已证且重复率未超批准阈值）")
+292: boolean blocks = (BLOCKING.equals(effective) || ERROR.equals(effective)) && failed(passed);
+293: return new RuleVerdict(true, d.ruleCode(), d.version(), d.severity(), effective, blocks, explanation);
+302: public static boolean blocks(QualityRuleCatalog.FrozenRules rules, String ruleCode, Integer passed) {
+303: return resolve(rules, ruleCode, passed).blocks();
+307: * 严重度是否为已知档位（{@code BLOCKING}/{@code ERROR}/{@code WARN}/{@code INFO}）。
+315: return BLOCKING.equals(s) || ERROR.equals(s) || WARN.equals(s) || INFO.equals(s);
+319: * 未登记规则码的报错（§7.3.1 line 524：「未知规则码不可盲信传来的 WARN，
+326: public static class UnknownRuleException extends RuntimeException {
+327: private static final long serialVersionUID = 1L;
+329: private final transient List<String> ruleCodes;
+331: public UnknownRuleException(List<String> ruleCodes) {
+332: super("检测到未登记规则码，停止发布：" + ruleCodes + "（§7.3.1 line 524：未知规则码不可盲信传来的 WARN）");
+333: this.ruleCodes = List.copyOf(ruleCodes == null ? List.of() : ruleCodes);
+337: public List<String> ruleCodes() {
+338: return ruleCodes;
+349: * @param registered     规则码是否已在目录登记
+350: * @param ruleCode       规范化规则码
+351: * @param ruleVersion    生效版本（未登记为 {@code 0}）
+352: * @param declaredSeverity 定义里声明的严重度（未登记为 {@code null}）
+353: * @param effectiveSeverity 有效严重度（未登记为 {@link #UNREGISTERED}）
+354: * @param blocks         未通过时是否阻断发布
+355: * @param explanation    中文解释（页面/证据展示兼容口径用）
+357: public record RuleVerdict(
+359: String ruleCode,
+360: int ruleVersion,
+367: static RuleVerdict unregistered(String ruleCode) {
+368: return new RuleVerdict(false, QualityRuleDefinition.normalize(ruleCode), 0, null, UNREGISTERED, true,
+369: "未登记规则码：按保守默认阻断，须先登记规则版本（§7.3.1 line 524：不得盲信传来的 WARN）");
+
+--- analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\QualityRuleCatalog.java ---
+行数=228
+14: * <p><b>本类取代「全局 ruleCode 覆盖」</b>：§7.3.1 line 520 原文指出
+15: * 「当前 {@code RuleSeverity} 的全局 {@code ruleCode} 覆盖不是最终完成形态」。
+26: * <p><b>执行顺序</b>（§7.3.1 line 522）：选择作用域/版本 → 计算指标与阈值判定 →
+28: * 第 2/3 步由 {@link RuleSeverity#resolve} 承担（它同时看阈值判定结果 {@code passed}）；
+31: public final class QualityRuleCatalog {
+34: public static final String CATALOG_VERSION = "qrc-1";
+39: * <p>取值依据见 {@code raw/q01-version-scope.md}。要点：兼容只对
+43: public static final String COMPAT_POLICY_VERSION = "compat-v1";
+54: * Landing 层规则定义（version 均为 1）。
+56: * <p>阈值出处：设计文稿 §5.4.2「默认阈值」。其中 {@code EVENT_ID_UNIQUE} 的 {@code 0.0005}
+57: * 由 §7.3.1 line 522 明确「历史阈值未经新裁决不得修改」，此处只是把它搬进契约。</p>
+61: RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, "{\"maxAbsDiff\":0.01}",
+63: "金额对账不一致（支付金额 vs 订单总额）⇒ 必须阻断；§7.3.1 line 522 明确此类失败不得被降 WARN"),
+65: RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, "{\"nullRateMax\":0.001}",
+67: "必需字段缺失；下游 DwdSql.behaviorClean 静默丢弃该行 ⇒ 必须阻断；§7.3.1 line 522 禁止降 WARN"),
+69: RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, "{\"illegalRatio\":0}",
+71: "非法枚举；下游静默丢弃该行（设计文稿 §5.4.2 比例为 0）⇒ 必须阻断；§7.3.1 line 522 禁止降 WARN"),
+73: RuleSeverity.WARN, QualityRuleDefinition.SeverityMode.THRESHOLD_OBSERVATION,
+77: + "超阈值即阻断（§7.3.1 line 522）；阈值未经新裁决不得修改"));
+89: * @param sourceId 源标识；{@code null} 时只取全源（{@code *}）定义
+102: /** 全部定义（未按作用域过滤），按 {@code (source_scope, rule_code, version)} 排序，保证指纹稳定。 */
+113: public String catalogVersion() {
+114: return frozen.catalogVersion();
+120: * @param ruleCode 规则码（大小写不敏感）
+121: * @param sourceId 源标识（可为 {@code null}）
+124: public Optional<QualityRuleDefinition> find(String ruleCode, String sourceId) {
+125: String code = QualityRuleDefinition.normalize(ruleCode);
+131: if (!d.enabled() || !d.ruleCode().equals(code) || !d.appliesToSource(sourceId)) {
+135: || d.version() > best.version()
+137: || (d.version() == best.version()
+146: public boolean registered(String ruleCode) {
+147: String code = QualityRuleDefinition.normalize(ruleCode);
+149: .anyMatch(d -> d.enabled() && d.ruleCode().equals(code));
+154: return "QualityRuleCatalog[" + frozen.catalogVersion() + ", defs=" + frozen.definitions().size()
+174: * @param definitions       冻结的全部定义（不可变）
+175: * @param fingerprint       整体指纹
+176: * @param catalogVersion    目录契约版本
+177: * @param compatPolicyVersion 兼容策略版本
+179: public record FrozenRules(
+182: String catalogVersion,
+183: String compatPolicyVersion) {
+189: .thenComparing(QualityRuleDefinition::ruleCode)
+190: .thenComparingInt(QualityRuleDefinition::version));
+196: FrozenRules ordered = new FrozenRules(definitions, "", CATALOG_VERSION, COMPAT_POLICY_VERSION);
+197: StringBuilder sb = new StringBuilder(CATALOG_VERSION).append('\u001f').append(COMPAT_POLICY_VERSION);
+202: CATALOG_VERSION, COMPAT_POLICY_VERSION);
+206: public Optional<QualityRuleDefinition> find(String ruleCode) {
+207: String code = QualityRuleDefinition.normalize(ruleCode);
+210: if (d.enabled() && d.ruleCode().equals(code) && (best == null || d.version() > best.version())) {
+218: public Map<String, List<QualityRuleDefinition>> byRuleCode() {
+221: map.computeIfAbsent(d.ruleCode(), k -> new ArrayList<>()).add(d);
+
+--- analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\QualityRuleDefinition.java ---
+行数=155
+11: * <p>指导书原文要求 {@code quality_rule_definition} 含：{@code rule_code}、{@code version}、
+12: * {@code source_scope}、{@code stage}、{@code severity}、{@code threshold_json}、{@code enabled}、
+13: * {@code effective_from/to}、{@code checksum}，且 {@code (scope, rule_code, version)} 唯一。
+14: * 本 record 是它的**Java 投影**：一个实例 = 一行 {@code quality_rule_definition}。</p>
+16: * <p><b>为什么要有版本</b>：§7.3.1 line 520 明确「当前 {@code RuleSeverity} 的全局 {@code ruleCode}
+19: * 一次 run 冻结的是一组 {@code (rule_code, version)} 与指纹，结论可复算。</p>
+21: * <p><b>阈值一律不放宽</b>：{@code thresholdJson} 只是把既有阈值搬进契约；
+25: * <p><b>条件严重度</b>：{@link SeverityMode#THRESHOLD_OBSERVATION} 表示「未超批准阈值时是观察项
+26: * （{@code WARN}），超阈值即阻断」。§7.3.1 line 522 原文：「原始重复事件仅在确定性去重已证
+27: * 且重复率不超批准阈值时为观察项；超过阈值阻断」。因此把重复率规则写成**固定 WARN**
+30: * @param ruleCode      规则码（大写、去空白后的规范形式）
+31: * @param version       规则版本号（同一规则码可有多个版本，逐版升）
+32: * @param sourceScope   适用作用域（{@code *} 表示全源；否则为具体 source_id）
+33: * @param stage         所属阶段：{@code LANDING}/{@code DWD}/{@code DWS}/{@code ADS}/{@code PUBLISH}/{@code METRIC_PUBLISH}
+34: * @param severity      该版本的严重度（{@code BLOCKING}/{@code ERROR}/{@code WARN}/{@code INFO}）
+35: * @param severityMode  严重度是固定值还是按阈值条件判定
+36: * @param thresholdJson 阈值（JSON 文本）；无阈值时为 {@code null}
+37: * @param enabled       是否启用
+38: * @param effectiveFrom 生效起始（ISO-8601 日期或日期时间文本，可为 {@code null} 表示不设下界）
+39: * @param effectiveTo   生效结束（同上，可为 {@code null} 表示不设上界）
+40: * @param rationale     中文依据（审计与页面展示用）
+42: public record QualityRuleDefinition(
+43: String ruleCode,
+44: int version,
+49: String thresholdJson,
+59: public enum SeverityMode {
+60: /** 严重度恒为 {@link #severity()}，与阈值是否超限无关。 */
+63: * 未超阈值 ⇒ 观察项（{@code WARN}，不阻断）；超阈值 ⇒ 阻断（{@code BLOCKING}）。
+65: * <p>用于「重复率」这类规则：§7.3.1 line 522 要求「不超批准阈值时为观察项；超过阈值阻断」。
+66: * 采用本模式时 {@link #severity()} 必须为 {@code WARN}（即"观察项"档），
+67: * 超阈值后的阻断档由 {@link RuleSeverity#BLOCKING} 给出。</p>
+69: THRESHOLD_OBSERVATION
+74: ruleCode = normalize(ruleCode);
+75: if (ruleCode.isEmpty()) {
+76: throw new IllegalArgumentException("ruleCode 不得为空");
+78: if (version < 1) {
+79: throw new IllegalArgumentException("version 必须 >= 1：" + ruleCode);
+86: "severity 必须是 BLOCKING/ERROR/WARN/INFO 之一：" + ruleCode + " -> " + severity);
+89: if (severityMode == SeverityMode.THRESHOLD_OBSERVATION && !RuleSeverity.WARN.equals(severity)) {
+91: "THRESHOLD_OBSERVATION 的基准 severity 必须是 WARN（观察项档）：" + ruleCode + " -> " + severity);
+93: if (severityMode == SeverityMode.THRESHOLD_OBSERVATION && (thresholdJson == null || thresholdJson.isBlank())) {
+94: throw new IllegalArgumentException("THRESHOLD_OBSERVATION 必须给出 thresholdJson：" + ruleCode);
+99: public static String normalize(String ruleCode) {
+100: return ruleCode == null ? "" : ruleCode.trim().toUpperCase(Locale.ROOT);
+122: sb.append(ruleCode).append('\u001f')
+123: .append(version).append('\u001f')
+128: .append(thresholdJson == null ? "" : thresholdJson).append('\u001f')
+151: /** 唯一键 {@code (source_scope, rule_code, version)} 的文本形式（用于去重与报错信息）。 */
+153: return sourceScope + '/' + ruleCode + '@' + version;
+
+--- analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java ---
+行数=207
+24: * <p>判定口径（D-142 §1，指导书 §7.3 原文不变）：<b>{@code BLOCKING} 与 {@code ERROR} 未通过都算阻断</b>
+25: * （{@code passed != 1}，含 NULL=未判定）；{@code WARN}/{@code INFO} 未通过只记录、不阻断。</p>
+27: * <p><b>版本化判定（V2.5 §7.3.1 line 520，替代原「全局 ruleCode 覆盖」）</b>：严重度取自
+32: * 在库里是 {@code ERROR}（run 24 与 run 47 各 3 行），而目录口径是观察项。</p>
+34: * <p><b>未登记规则码 ⇒ FAIL</b>（不再静默放行）：§7.3.1 line 524「未知规则码不可盲信传来的 WARN，
+39: * 规则版本与指纹落库（{@code data_quality_result} 增列：rule_version/effective_severity/
+40: * compat_policy_version/rule_fingerprint）。该增列属写侧（{@code PipelineService}）与 DDL 范围，
+48: public class DataQualityGate implements MetricQualityGate {
+64: * @param pipelineRunId 流水线 run 号
+74: * @param pipelineRunId run 号
+75: * @param rules         冻结规则集
+84: List<String> blocking = new ArrayList<>();
+85: List<String> unregistered = new ArrayList<>();
+88: RuleSeverity.RuleVerdict verdict = RuleSeverity.resolve(rules, r.getRuleCode(), r.getPassed());
+90: if (r.getRuleCode() != null && !unregistered.contains(r.getRuleCode())) {
+91: unregistered.add(r.getRuleCode());
+95: if (verdict.blocks() && !blocking.contains(verdict.ruleCode())) {
+96: blocking.add(verdict.ruleCode());
+99: String note = verdict.ruleCode() + "(" + verdict.effectiveSeverity() + "): " + verdict.explanation();
+107: if (!unregistered.isEmpty()) {
+110: reason = "存在未登记规则码，停止发布：" + unregistered;
+111: } else if (!blocking.isEmpty()) {
+113: reason = "阻断级规则未通过：" + blocking;
+118: return new GateDecision(status, blocking, unregistered, rules == null ? "" : rules.fingerprint(),
+129: * @param pipelineRunId 流水线 run 号；为空时返回空列表（无 run 无从判定，由调用方决定语义）
+132: public List<String> blockingFailuresForRun(Long pipelineRunId) {
+133: return decisionForRun(pipelineRunId).blockingRules();
+148: * @param status           {@link MetricQualityGate#PASS}/{@link MetricQualityGate#FAIL}/{@link MetricQualityGate#UNKNOWN}
+149: * @param blockingRules    阻断级且未通过的规则码（可定位到 rule）
+150: * @param unregisteredRules 未登记规则码（须先登记规则版本，不是改数据）
+151: * @param rulesFingerprint 本次判定所用冻结规则集的指纹
+152: * @param reason           中文解释（含兼容解释，§7.3.1 line 524）
+154: public record GateDecision(
+156: List<String> blockingRules,
+157: List<String> unregisteredRules,
+162: blockingRules = List.copyOf(blockingRules == null ? List.of() : blockingRules);
+163: unregisteredRules = List.copyOf(unregisteredRules == null ? List.of() : unregisteredRules);
+172: public List<String> allRuleCodes() {
+173: List<String> all = new ArrayList<>(blockingRules);
+174: for (String u : unregisteredRules) {
+189: public static class UnregisteredRuleException extends RuleSeverity.UnknownRuleException {
+190: private static final long serialVersionUID = 1L;
+192: public UnregisteredRuleException(List<String> ruleCodes) {
+193: super(ruleCodes);
+197: /** 该结果是否来自「阈值判定未通过」的条件观察项（用于展示层区分）。 */
+202: return rules.find(r.getRuleCode())
+203: .map(d -> d.severityMode() == QualityRuleDefinition.SeverityMode.THRESHOLD_OBSERVATION
+
+--- 全仓搜 ruleVersion / 版本边界相关 ---
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/AnalysisService.java:121:                            List<RfmService.CategoryPreference> preference, String ruleVersion) {
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/AnalysisService.java:125:                          String ruleVersion) {
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/AnalysisService.java:251:                profile.ruleVersion());
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/AnalysisService.java:273:        RfmData data = new RfmData(profile.segments(), profile.matrix(), profile.ruleVersion());
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:72:     * @param ruleVersion 画像规则版本（rule_version 列回显；多版本时取字典序最小并给 warning）
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:74:    public record RfmProfile(String snapshotId, String ruleVersion, long userCount,
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:96:        TreeSet<String> ruleVersions = new TreeSet<>();
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:103:            String ruleVersion = AdsRows.asString(row.get("rule_version"));
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:104:            if (!ruleVersion.isEmpty()) {
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:105:                ruleVersions.add(ruleVersion);
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:137:        String ruleVersion = ruleVersions.isEmpty() ? null : ruleVersions.first();
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:138:        if (ruleVersions.size() > 1) {
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/analysis/RfmService.java:141:        return new RfmProfile(snapshotId, ruleVersion, total, segments, matrix, lifecycle, preference, warnings);
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java:195:        assertThat(users.data().ruleVersion()).isEqualTo("rfm-v1");
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java:207:        assertThat(rfm.data().ruleVersion()).isEqualTo("rfm-v1");
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisServiceTest.java:209:        assertThat(users.data().ruleVersion()).isEqualTo("rfm-v1");
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisServiceTest.java:221:        assertThat(rfm.data().ruleVersion()).isEqualTo("rfm-v1");
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/RfmServiceTest.java:49:        assertThat(profile.ruleVersion()).isEqualTo("rfm-v1");
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/RfmServiceTest.java:106:        assertThat(profile.ruleVersion()).isEqualTo("rfm-v1");
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/RfmServiceTest.java:123:        assertThat(profile.ruleVersion()).isNull();
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/RfmServiceTest.java:137:        assertThat(profile.ruleVersion()).isEqualTo("rfm-v1");
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/RfmServiceTest.java:154:                                                 String lifecycleState, String ruleVersion, String calcDate,
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/RfmServiceTest.java:161:        row.put("rule_version", ruleVersion);

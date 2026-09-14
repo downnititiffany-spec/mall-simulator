@@ -1,0 +1,204 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/4]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.156 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Running com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Running com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.198 s <<< FAILURE! -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[ERROR] com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest.noBareWarehouseNameLiterals -- Time elapsed: 0.142 s <<< FAILURE!
+java.lang.AssertionError: 
+[��������ֻ�� WarehouseNamespace ������Ψһ�����ߣ�����������������ǰ׺ƴ�ӣ�
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����
+spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`] 
+Expecting empty but was: ["spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����",
+    "spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`"]
+	at com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest.noBareWarehouseNameLiterals(WarehouseNameLiteralGateTest.java:109)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.114 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   WarehouseNameLiteralGateTest.noBareWarehouseNameLiterals:109 [��������ֻ�� WarehouseNamespace ������Ψһ�����ߣ�����������������ǰ׺ƴ�ӣ�
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����
+spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`] 
+Expecting empty but was: ["spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����",
+    "spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`"]
+[INFO] 
+[ERROR] Tests run: 41, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[ERROR] There are test failures.
+
+Please refer to D:\Develop_code\GraduationProject\analytics-server\platform-common\target\surefire-reports for the individual test results.
+Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[INFO] 
+[INFO] --------------< com.graduation.analytics:metric-analysis >--------------
+[INFO] Building metric-analysis 0.1.0-SNAPSHOT                            [3/4]
+[INFO]   from metric-analysis\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ metric-analysis ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 9 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsDaoTest.java: D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\MetricAdsDaoTest.javaʹ����δ�����򲻰�ȫ�Ĳ�����
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsDaoTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ metric-analysis ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.analysis.AnalysisServiceTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+22:15:37.623 [main] WARN com.graduation.analytics.analysis.AnalysisService -- quality gate unavailable for run 24: meta �ⲻ����
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.562 s -- in com.graduation.analytics.analysis.AnalysisServiceTest
+[INFO] Running com.graduation.analytics.analysis.AnalysisSourcePolicyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.graduation.analytics.analysis.AnalysisSourcePolicyTest
+[INFO] Running com.graduation.analytics.analysis.AnalysisViewModelTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.graduation.analytics.analysis.AnalysisViewModelTest
+[INFO] Running com.graduation.analytics.analysis.RfmServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in com.graduation.analytics.analysis.RfmServiceTest
+[INFO] Running com.graduation.analytics.metric.MetricAdsDaoTest
+22:15:37.866 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads delete snapshot snap-r7: ��ɾ�� 16 �У�8 �ű���
+22:15:37.911 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_operation_overview_m (snapshot=snap-r7, dt=2026-09-04): 2 �� / 3 ��
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.174 s -- in com.graduation.analytics.metric.MetricAdsDaoTest
+[INFO] Running com.graduation.analytics.metric.publish.MetricPublishValidatorTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.394 s -- in com.graduation.analytics.metric.publish.MetricPublishValidatorTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 38, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ----------------< com.graduation.analytics:ai-decision >----------------
+[INFO] Building ai-decision 0.1.0-SNAPSHOT                                [4/4]
+[INFO]   from ai-decision\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ ai-decision ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ ai-decision ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ ai-decision ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.ai.AiSqlDriftTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 s -- in com.graduation.analytics.ai.AiSqlDriftTest
+[INFO] Running com.graduation.analytics.ai.AiSqlSecurityTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.883 s -- in com.graduation.analytics.ai.AiSqlSecurityTest
+[INFO] Running com.graduation.analytics.ai.evidence.EvidenceBuilderTest
+22:15:41.584 [main] WARN com.graduation.analytics.ai.evidence.EvidenceBuilder -- ֤�ݰ���Ʒά�ȶ�ȡʧ�ܣ�����Ϊ��ά�ȣ�: metricReadDataSource δ����
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.639 s -- in com.graduation.analytics.ai.evidence.EvidenceBuilderTest
+[INFO] Running com.graduation.analytics.ai.ExplanationEvidenceTest
+22:15:41.970 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite failed, fallback to template: timeout
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.365 s -- in com.graduation.analytics.ai.ExplanationEvidenceTest
+[INFO] Running com.graduation.analytics.ai.QuestionSafetyScreenTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.graduation.analytics.ai.QuestionSafetyScreenTest
+[INFO] Running com.graduation.analytics.ai.sql.ComponentWiringContractTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.160 s -- in com.graduation.analytics.ai.sql.ComponentWiringContractTest
+[INFO] Running com.graduation.analytics.ai.TextToSqlAuditTest
+22:15:42.278 [main] WARN com.graduation.analytics.ai.TextToSqlService -- text-to-sql rejected at stage SCOPE_RESOLVE: [NO_ACTIVE_SNAPSHOT] metric_snapshot ��û�� status='ACTIVE'
+22:15:42.696 [main] WARN com.graduation.analytics.ai.TextToSqlService -- text-to-sql rejected at stage REPAIR: [SQL_JOIN] �޸�����δͨ����ȫУ��: ��ֹ JOIN����һ�׶�ǿ�Ƶ�����ѯ��
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.545 s -- in com.graduation.analytics.ai.TextToSqlAuditTest
+[INFO] Running com.graduation.analytics.decision.AuditActorTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.graduation.analytics.decision.AuditActorTest
+[INFO] Running com.graduation.analytics.decision.DecisionServiceTest
+22:15:42.872 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ��׼ by=alice ����=100.0000������ S20260901_24������ 3 ��
+22:15:42.877 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=EFFECTIVE ����=100.0000 ʵ��=80.0000 ������=0.2000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.889 [main] INFO com.graduation.analytics.decision.DecisionService -- ���߲ݸ崴�� id=null no=DC-20260912221542-6bcd source=ai by=alice
+22:15:42.895 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=EFFECTIVE ����=100.0000 ʵ��=120.0000 ������=0.2000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.904 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=0.0000 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.912 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=100 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.916 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=100.0000 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.919 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=EFFECTIVE ����=100.0000 ʵ��=110.0000 ������=0.1000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.927 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=PARTIAL ����=100.0000 ʵ��=102.0000 ������=0.0200������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.932 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=100.0000 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+22:15:42.938 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INEFFECTIVE ����=100.0000 ʵ��=90.0000 ������=-0.1000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.225 s -- in com.graduation.analytics.decision.DecisionServiceTest
+[INFO] Running com.graduation.analytics.decision.DecisionStateMachineTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.graduation.analytics.decision.DecisionStateMachineTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.002 s]
+[INFO] platform-common .................................... SUCCESS [  2.285 s]
+[INFO] metric-analysis .................................... SUCCESS [  6.228 s]
+[INFO] ai-decision ........................................ SUCCESS [  4.798 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.614 s
+[INFO] Finished at: 2026-09-12T22:15:43+08:00
+[INFO] ------------------------------------------------------------------------

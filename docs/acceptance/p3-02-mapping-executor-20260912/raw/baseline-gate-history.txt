@@ -1,0 +1,59 @@
+=== 引入违反行的提交 ===
+959626e fix(spark-jobs): P2-03 动态分区列位置错位修复（t.dt 移至 SELECT 末位）+ nullSafe 类型定型 + 回归守卫；D-141 裁决（假说一证伪/真因列序/run 47 全绿/P2-03 维持 REVIEW/F-88 质量门口径冲突）
+fb8f459 feat(warehouse): 库名前缀收归 WarehouseNamespace 唯一 owner，实现按源隔离（P1-04/D-031）
+6b34d94 R6-12: 输出分区证据贯通 Spark 作业到 spark_job_run (真实 run 15 验证)
+
+=== 引入/最后修改门禁测试的提交 ===
+cdd36db P2-07 源级数仓命名空间 · 实现面补入库（27 改 + 6 新 = 33 文件，+603/−131）
+fb8f459 feat(warehouse): 库名前缀收归 WarehouseNamespace 唯一 owner，实现按源隔离（P1-04/D-031）
+
+=== 两者时间顺序（谁是后到的） ===
+--- 违反行最后改动 ---
+fc53f62 2026-09-12 23:17:19 +0800 docs(acceptance): 入库四卷证据（B-13 假警报勘误卷／M3 集群门禁与导出导入预演卷／P5 异构源卷／E5 预验收卷）＋ P5 唯一生产树改动 source-profiles/fixture-b.v1.json ＋ TradeDwdJob.scala:176 叙述修正（M3 所有，1 行注释）；F-88 返工代码与其证据卷仍未入库
+--- 门禁测试最后改动 ---
+cdd36db 2026-09-12 14:41:59 +0800 P2-07 源级数仓命名空间 · 实现面补入库（27 改 + 6 新 = 33 文件，+603/−131）
+--- 门禁是否在本分支上被改过（vs 分支点） ---
+fc53f62 docs(acceptance): 入库四卷证据（B-13 假警报勘误卷／M3 集群门禁与导出导入预演卷／P5 异构源卷／E5 预验收卷）＋ P5 唯一生产树改动 source-profiles/fixture-b.v1.json ＋ TradeDwdJob.scala:176 叙述修正（M3 所有，1 行注释）；F-88 返工代码与其证据卷仍未入库
+
+=== 该测试当前是 @Disabled / 标签 / 条件跳过吗 ===
+1: package com.graduation.analytics.warehouse;
+2: 
+3: import com.graduation.analytics.testsupport.RepoRoot;
+4: import org.junit.jupiter.api.DisplayName;
+5: import org.junit.jupiter.api.Test;
+6: 
+7: import java.io.IOException;
+8: import java.io.UncheckedIOException;
+9: import java.nio.file.FileVisitResult;
+10: import java.nio.file.Files;
+11: import java.nio.file.Path;
+12: import java.nio.file.SimpleFileVisitor;
+13: import java.nio.file.attribute.BasicFileAttributes;
+14: import java.util.ArrayList;
+15: import java.util.LinkedHashSet;
+16: import java.util.List;
+17: import java.util.Locale;
+18: import java.util.Set;
+19: import java.util.regex.Matcher;
+20: import java.util.regex.Pattern;
+21: 
+22: import static org.assertj.core.api.Assertions.assertThat;
+23: 
+24: /**
+25:  * 库名字面量门禁（P1-04 的 DoD 自动化）。
+26:  *
+27:  * <p>数仓库名只能由唯一所有者派生：Java {@code WarehouseNamespace} 与 Scala {@code WarehouseNamespace}
+28:  * （同名镜像，规格 {@code contract-specs/specs/warehouse-namespace.v2.json}，P2-07 起；
+29:  * v1 为历史冻结件）。本测试扫**生产源码**
+30:  * （两个程序的 {@code src/main}、{@code warehouse/ddl}、{@code scripts}），
+
+=== 结论（本轮复核） ===
+1) 违反行位于注释中，且两文件 git diff 为空 ⇒ 非任何泳道的未提交改动所致。
+2) 两处违反行在 HEAD 版本中逐字存在（git show HEAD:<file> 实测，见上）。
+3) 门禁测试最后改动 cdd36db 2026-09-12 14:41:59；违反行引入 959626e 2026-09-12 21:46:16（晚 7h04m）。
+4) cdd36db 与 959626e 均为 HEAD(fc53f62) 的祖先 ⇒ 该门禁在 HEAD 上为红，属既有基线缺陷。
+5) 测试无 @Disabled、无标签过滤、无 assumeTrue 条件跳过（源码 1-30 行实测）。
+
+=== 观察（未裁定，仅登记） ===
+两处违反行都是'叙述性注释'：TradeDwdJob:145 陈述实验未触碰该表；SurrogateKey:160 引述 Spark 真实报错文本。
+即门禁把'文档里提到库名'与'代码里硬编码库名'同等对待 ⇒ 口径是否应收窄（例如排除注释行/'*' 行首）属规格问题，本泳道不自行裁定。

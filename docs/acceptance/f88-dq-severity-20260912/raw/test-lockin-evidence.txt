@@ -1,0 +1,905 @@
+====================================================================================================
+F88 DQ 严重度口径 —— 测试锁死证据（raw 捕获）
+生成时间: 2026-09-12 21:58:58 +08:00
+工作目录: D:\Develop_code\GraduationProject
+主机: DAHAISHUI ; PowerShell: 7.6.6
+ripgrep 可用性: Get-Command rg -> NOT FOUND
+说明: 本机未安装 ripgrep(rg)。按任务要求，以下每条命令均以等价的 Select-String 命令执行并逐字记录。
+说明: 未运行 Maven，未执行任何测试/编译；本文件仅为静态检索输出。
+====================================================================================================
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "ERROR 不阻断|非阻断|不阻断|只记录|仅记录|nonBlocking|blocking\(\)|BLOCKING" analytics-server/warehouse-pipeline/src/test analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+# 替代说明: 本机无 rg；用 Select-String 对同一目录树/同一正则执行。
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server\warehouse-pipeline\src\test -Recurse -File -Filter *.java | Select-String -Pattern 'ERROR 不阻断','非阻断','不阻断','只记录','仅记录','nonBlocking','blocking\(\)','BLOCKING' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path, $_.LineNumber, $_.Line }; Select-String -Path 'analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java','analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java' -Pattern 'ERROR 不阻断','非阻断','不阻断','只记录','仅记录','nonBlocking','blocking\(\)','BLOCKING' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path, $_.LineNumber, $_.Line }
+#====================================================================================================
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:35:    @DisplayName("存在 BLOCKING 未通过 → FAIL")
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:36:    void blockingFailureFailsTheGate() {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:38:                result("BLOCKING", 1), result("ERROR", 0), result("BLOCKING", 0)));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:44:    @DisplayName("只有非阻断规则失败（ERROR/INFO）→ PASS，不误报为 FAIL")
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:45:    void nonBlockingFailureKeepsPass() {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:47:                result("ERROR", 0), result("INFO", 0), result("BLOCKING", 1)));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:55:        when(qualityMapper.selectList(any())).thenReturn(List.of(result("BLOCKING", 1), result("ERROR", 1)));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:61:    @DisplayName("BLOCKING 的 passed 为 NULL（未判定）按未通过处理 → FAIL")
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:62:    void nullPassedOnBlockingIsTreatedAsFailed() {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:63:        when(qualityMapper.selectList(any())).thenReturn(List.of(result("BLOCKING", null)));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:171:    /** R6-13：dqc 通过时的质量检查结果（BLOCKING 全通过 + 1 条 INFO 审计项） */
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:179:                        "BLOCKING", true, "8 张暂存表行数均>0"),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:184:    /** R6-13：dqc 阻断（BLOCKING 未通过）时的执行结果 */
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:189:                        "BLOCKING", false, "空/缺失暂存表: dw_ads.ads_hot_product__staging"),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:219:    void submitReturnsPendingTaskIdImmediatelyWithoutBlocking() throws Exception {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:364:        // Landing 层内联规则通过，但 dqc（ADS 暂存层 BLOCKING 规则）未过
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:379:        // 失败也要留下检查证据：BLOCKING 未过的规则写库（运维页可见失败原因）
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:386:                    assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:17: * DEF-04 回归：金额对账（AMOUNT_RECONCILE，BLOCKING）的**对账范围**必须覆盖整批订单，而不是业务日切片。
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:39:    void parsesQualityChecksAndBlockingFailures() {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:41:        // 缺失 severity 的检查按 BLOCKING 处理（安全默认：不放过未知严重度）
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:47:                "\"threshold\":\"每表行数>0\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:59:        assertThat(r.checks().get(0).blocking()).isTrue();
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:60:        assertThat(r.checks().get(1).blocking()).isFalse(); // ERROR 不阻断发布
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:61:        assertThat(r.checks().get(2).severity()).isEqualTo("BLOCKING"); // 缺省保守判定
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:62:        // 只有 BLOCKING 且未通过的算阻断失败；PUB_DQ_EVENT_ID_UNIQUE 是观察项
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:63:        assertThat(r.blockingFailures()).extracting(JobResultParser.CheckInfo::ruleCode)
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:19: * <p>判定与解析一致：severity=BLOCKING 且 passed≠1 才算阻断（ERROR/INFO 只记录，§16.3）；
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:38:        boolean blockingFailed = results.stream().anyMatch(r ->
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:39:                BLOCKING.equalsIgnoreCase(r.getSeverity()) && (r.getPassed() == null || r.getPassed() != 1));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:40:        return blockingFailed ? FAIL : PASS;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:237:            boolean blockingFailed = rows.stream().anyMatch(row ->
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:238:                    BLOCKING.equalsIgnoreCase(String.valueOf(row.get("severity")))
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:240:            return blockingFailed ? FAIL : PASS;
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "severity" analytics-server --glob "*.java" -l
+# 替代说明: 等价于 rg -l（只列文件）。
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Where-Object { Select-String -LiteralPath $_.FullName -Pattern 'severity' -Quiet } | ForEach-Object { $_.FullName.Replace('D:\Develop_code\GraduationProject\','') }
+#====================================================================================================
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\ExplanationService.java
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidencePackage.java
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceTemplates.java
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\publish\MetricPublisherPort.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\entity\DataQualityResult.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "severity" analytics-server --glob "*.java"
+# 替代说明: 本机无 rg；用 Select-String 全量列出匹配行（文件:行号:内容）。
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'severity' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path, $_.LineNumber, $_.Line }
+#====================================================================================================
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\ExplanationService.java:287:            m.put("severity", a.severity());
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:71:                                 String severity, String snapshotId) {
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:76:        out.add(new AnomalyCandidate(ruleCode, metricCode, severity,
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:85:                                 String severity, String snapshotId) {
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:90:        out.add(new AnomalyCandidate(ruleCode, metricCode, severity,
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:117:        String severity = EvidencePackage.DataQuality.GATE_FAIL.equals(quality.gateStatus()) ? "HIGH" : "MEDIUM";
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:119:            out.add(new AnomalyCandidate(RULE_QUALITY_RULE_FAILED, null, severity,
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidencePackage.java:137:    public record AnomalyCandidate(String ruleCode, String metricCode, String severity,
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceTemplates.java:167:            lines.add("核查规则 " + a.ruleCode() + "（" + blankToDash(a.severity()) + "）：" + a.statement()
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java:225:        return checks.stream().anyMatch(c -> "BLOCKING".equals(c.severity()) && !c.passed());
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java:230:        return checks.stream().filter(c -> "BLOCKING".equals(c.severity()) && !c.passed())
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:233:                    "SELECT severity, passed FROM data_quality_result WHERE run_id = ?", pipelineRunId);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:238:                    BLOCKING.equalsIgnoreCase(String.valueOf(row.get("severity")))
+D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:12: * 有 severity=BLOCKING 且未通过 → {@link #FAIL}；有结果且无阻断失败 → {@link #PASS}；
+D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\publish\MetricPublisherPort.java:53:                 String severity, boolean passed, String detail) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:19: * <p>判定与解析一致：severity=BLOCKING 且 passed≠1 才算阻断（ERROR/INFO 只记录，§16.3）；
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:39:                BLOCKING.equalsIgnoreCase(r.getSeverity()) && (r.getPassed() == null || r.getPassed() != 1));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:508:                        "ruleCode", c.ruleCode(), "layer", c.layer(), "severity", c.severity(),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:544:                            "ruleCode", c.ruleCode(), "severity", c.severity(),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:565:                            "ruleCode", c.ruleCode(), "severity", c.severity(),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:682:            r.setSeverity("AMOUNT_RECONCILE".equals(String.valueOf(r.getRuleCode())) ? "BLOCKING" : "ERROR");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:698:     * severity=INFO 的是发布操作审计项（切换/清理计数），只进阶段证据，不冒充质量规则写库。
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:705:            if ("INFO".equalsIgnoreCase(c.severity())) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:712:            r.setSeverity(cap(c.severity(), 16));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:763:            // R6-13：质量检查结果逐作业入证据（含 severity=INFO 的发布操作审计项）
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:769:                    cm.put("severity", c.severity());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\entity\DataQualityResult.java:29:    private String severity;
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:32:     * severity=BLOCKING 的规则未通过即发布阻断（§16.3）；ERROR 只记录。
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:36:                            String severity, boolean passed, String detail) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:38:            return "BLOCKING".equalsIgnoreCase(severity);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:144:    /** 质量检查数组 → 强类型列表（缺 severity 视为 BLOCKING：契约缺失不得当作放行） */
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:158:                    c.path("severity").asText("BLOCKING"),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:84:    private static DataQualityResult result(String severity, Integer passed) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:87:        entity.setSeverity(severity);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:386:                    assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:40:        // R6-13：dqc/pub 的 checks 数组必须被解析出来（含 severity/layer/targetTable），
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:41:        // 缺失 severity 的检查按 BLOCKING 处理（安全默认：不放过未知严重度）
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:47:                "\"threshold\":\"每表行数>0\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:49:                "\"errorCount\":3,\"threshold\":\"0.0005\",\"severity\":\"ERROR\",\"passed\":false}," +
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:50:                "{\"ruleCode\":\"LEGACY_NO_SEVERITY\",\"checkCount\":1,\"errorCount\":1,\"passed\":false}" +
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:61:        assertThat(r.checks().get(2).severity()).isEqualTo("BLOCKING"); // 缺省保守判定
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:64:                .containsExactly("ADS_STAGING_PRESENT", "LEGACY_NO_SEVERITY");
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "WARN|INFO" analytics-server/warehouse-pipeline/src/main analytics-server/warehouse-pipeline/src/test --glob "*.java"
+# 替代说明: 本机无 rg；用 Select-String 对 warehouse-pipeline 的 main+test 执行同一正则。
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server\warehouse-pipeline\src -Recurse -File -Filter *.java | Select-String -Pattern 'WARN','\bINFO\b' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path, $_.LineNumber, $_.Line }
+#====================================================================================================
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:19: * <p>判定与解析一致：severity=BLOCKING 且 passed≠1 才算阻断（ERROR/INFO 只记录，§16.3）；
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineRecoveryService.java:60:        log.info("R6-14 启动对账完成: pending重排={} running判定中断={} 孤立作业置UNKNOWN={} errors={}",
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineRecoveryService.java:95:                log.warn("R6-14 run {} 对账失败", run.getId(), e);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineRecoveryService.java:107:                log.warn("R6-14 run {} 重排失败", run.getId(), e);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:237:        log.info("pipeline {} resumed by {} ({}) attempt={}", runId, operator, reason, run.getAttemptNo());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:255:        log.warn("pipeline {} marked FAILED by {} ({})", runId, operator, reason);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:280:        log.warn("pipeline {} retry-from-stage {} by {} ({})", runId, stageCode, operator, reason);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:324:            log.warn("pipeline async: run {} 不存在，跳过执行", runId);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:589:            log.warn("pipeline {} failed: {}", run.getId(), e.getMessage());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:698:     * severity=INFO 的是发布操作审计项（切换/清理计数），只进阶段证据，不冒充质量规则写库。
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:705:            if ("INFO".equalsIgnoreCase(c.severity())) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:763:            // R6-13：质量检查结果逐作业入证据（含 severity=INFO 的发布操作审计项）
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:813:            log.info("pipeline {}: stage {} 已成功，重试跳过（不重复执行）", runId, stageCode);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:873:    @SuppressWarnings("unchecked")
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:884:            log.warn("阶段证据解析失败 run={} stage={}: {}", runId, stageCode, e.getMessage());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:906:                    log.info("pipeline {}: 复用本 run 原批次 batchId={}（重试/恢复不切换输入）",
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:925:            log.warn("manifest 解析失败 {}: {}", file.getFileName(), e.getMessage());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:963:                    log.warn("manifest 解析失败 {}: {}", m.getFileName(), e.getMessage());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:967:            log.warn("manifests 扫描失败: {}", e.getMessage());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:1114:                        log.warn("pipeline skip bad line in {}: {}", f.getFileName(), e.getMessage());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:1119:            log.warn("accepted 读取失败 {}: {}", acceptedDir, e.getMessage());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:117:        log.info("quality check: rules={} corePassed={}", results.size(), corePassed);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:159:            log.warn("order {} 缺 total_amount，不进入对账索引", orderId);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:165:            log.warn("order {} 的 total_amount 非法：{}", orderId, totalAmount);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\entity\DataQualityResult.java:28:    /** 严重度（BLOCKING 阻断发布 / ERROR 记录 / INFO 操作审计） */
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:80:                // 非 JobResult 的普通 JSON（如 INFO 日志）直接跳过
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:139:                log.warn("stage {} fail-fast: job {} 失败（{}），不再提交剩余作业 {}",
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:195:        JobResultParser.JobResultInfo info = resolve(st, parsed, jobCode);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:196:        run.setInputRecords(info.inputRecords());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:197:        run.setOutputRecords(info.outputRecords());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:198:        run.setRejectedRecords(info.rejectedRecords());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:200:        if (!info.outputPartitions().isEmpty()) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:201:            run.setOutputPartitionsJson(toJson(info.outputPartitions()));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:204:        run.setStatus(info.success() ? SparkJobRun.STATUS_SUCCESS : SparkJobRun.STATUS_FAILED);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:206:        if (!info.success()) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:208:            run.setErrorMessage(info.message());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:214:                run.getLogUri(), info.success() ? null : info.message(), info.outputPartitions(),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:215:                info.checks());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:44:    @DisplayName("只有非阻断规则失败（ERROR/INFO）→ PASS，不误报为 FAIL")
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:47:                result("ERROR", 0), result("INFO", 0), result("BLOCKING", 1)));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:171:    /** R6-13：dqc 通过时的质量检查结果（BLOCKING 全通过 + 1 条 INFO 审计项） */
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:181:                        "保留被引用快照", "INFO", true, "无待清理历史暂存分区"));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:18:                    "{\"level\":\"INFO\",\"event\":\"landing read ok\"}\n" +
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:80:        String log = "spark-submit started\nsome warning line\n(no result json)\n";
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:162:        JobResultParser.JobResultInfo info = null;
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:167:                info = parsed.get();
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:168:                if ("SUCCESS".equals(info.status()) || "FAILED".equals(info.status())) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:169:                    return info;
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorTest.java:75:        return "INFO some spark log\n{\"jobCode\":\"" + jobCode + "\",\"inputRecords\":" + in
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorTest.java:177:        submitter.program("SUBMITTED", "INFO spark running...");
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "qualityStatus|MetricQualityGate|statusForRun" analytics-server --glob "*.java"
+# 替代说明: 本机无 rg；用 Select-String 执行同一正则。
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'qualityStatus','MetricQualityGate','statusForRun' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path, $_.LineNumber, $_.Line }
+#====================================================================================================
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceBuilder.java:297:                overview.qualityStatus() == null
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceBuilder.java:298:                        ? EvidencePackage.DataQuality.GATE_UNKNOWN : overview.qualityStatus(),
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:4:import com.graduation.analytics.metric.MetricQualityGate;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:70:    private final MetricQualityGate qualityGate;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:304:    /** 统一信封：元数据来自快照行，qualityStatus 来自质量门，data 为各端点结构 */
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:311:                qualityStatus(meta, allWarnings), filters, data, allWarnings);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:318:    private String qualityStatus(MetricSnapshot meta, List<String> warnings) {
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:320:            return qualityGate.statusForRun(meta.getPipelineRunId());
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:324:            return MetricQualityGate.UNKNOWN;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:3:import com.graduation.analytics.metric.MetricQualityGate;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:24: * @param qualityStatus     质量门结论：PASS / FAIL / UNKNOWN
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:35:        String qualityStatus,
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:67:                                             String definitionVersion, String qualityStatus,
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:70:                qualityStatus, filters, data, warnings);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:74:     * 无可用快照：snapshotId/时间/口径版本一律 null，qualityStatus=UNKNOWN，data 为空对象。
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:85:        return new AnalysisViewModel<>(null, null, null, null, MetricQualityGate.UNKNOWN,
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:13:import com.graduation.analytics.metric.MetricQualityGate;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:75:        assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.PASS);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:219:    private static final class MetaQualityGate implements MetricQualityGate {
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:228:        public String statusForRun(Long pipelineRunId) {
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:12:import com.graduation.analytics.metric.MetricQualityGate;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:53:    private MetricQualityGate qualityGate;
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:61:        qualityGate = mock(MetricQualityGate.class);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:62:        when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.PASS);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:83:            assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:104:        assertThat(model.qualityStatus()).isEqualTo("PASS");
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:250:        assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:258:    void qualityStatusReflectsGateResult() {
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:261:        when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.FAIL);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:262:        assertThat(service.overview(null, null, null).qualityStatus()).isEqualTo("FAIL");
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:264:        when(qualityGate.statusForRun(any())).thenThrow(new IllegalStateException("meta 库不可用"));
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:266:        assertThat(degraded.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisViewModelTest.java:28:        assertThat(model.qualityStatus()).isEqualTo("UNKNOWN");
+D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:4: * R7-4：快照对应的**质量门结论**查询（契约 docs/contracts/analysis-viewmodel-r7-4.md §2 的 qualityStatus）。
+D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:15:public interface MetricQualityGate {
+D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:35:    String statusForRun(Long pipelineRunId);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:4:import com.graduation.analytics.metric.MetricQualityGate;
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:16: * 分析服务只通过 platform-common 的 {@link MetricQualityGate} 接口取结论，不自己查这张表 ——
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:24:public class DataQualityGate implements MetricQualityGate {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:29:    public String statusForRun(Long pipelineRunId) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:3:import com.graduation.analytics.metric.MetricQualityGate;
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:22: * <p>为什么单独测这个组件：看板信封的 {@code qualityStatus} 直接由它决定，
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:40:        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.FAIL);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:49:        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.PASS);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:57:        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.PASS);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:65:        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.FAIL);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:72:        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.UNKNOWN);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:75:        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.UNKNOWN);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:81:        assertThat(gate.statusForRun(null)).isEqualTo(MetricQualityGate.UNKNOWN);
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "EVENT_ID_UNIQUE|AMOUNT_RECONCILE|REQUIRED_FIELD_NULL_RATE|ENUM_WHITELIST|ADS_STAGING_SNAPSHOT_ISOLATION|PUB_DQ_BLOCKING_RULES|PUB_DQ_EVENT_ID_UNIQUE|ADS_STAGING_PRESENT|ADS_STAGING_KEY_NOT_NULL|ADS_DWS_FUNNEL_RECONCILE|PUB_STAGING_READY|PUB_FORMAL_PARTITION_MATCH|MXP_SNAPSHOT_PINNED|MXP_EXPORT_ROWS|MXP_EXPORT_COMPLETE|PUB_POINTER_SWITCH|PUB_STAGING_PRUNE" analytics-server --glob "*.java"
+# 替代说明: 本机无 rg；用 Select-String 执行同一正则（规则码并集）。
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'EVENT_ID_UNIQUE','AMOUNT_RECONCILE','REQUIRED_FIELD_NULL_RATE','ENUM_WHITELIST','ADS_STAGING_SNAPSHOT_ISOLATION','PUB_DQ_BLOCKING_RULES','PUB_DQ_EVENT_ID_UNIQUE','ADS_STAGING_PRESENT','ADS_STAGING_KEY_NOT_NULL','ADS_DWS_FUNNEL_RECONCILE','PUB_STAGING_READY','PUB_FORMAL_PARTITION_MATCH','MXP_SNAPSHOT_PINNED','MXP_EXPORT_ROWS','MXP_EXPORT_COMPLETE','PUB_POINTER_SWITCH','PUB_STAGING_PRUNE' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path, $_.LineNumber, $_.Line }
+#====================================================================================================
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\ExplanationEvidenceTest.java:60:                new EvidencePackage.DataQuality("PASS", 4, 3, List.of("EVENT_ID_UNIQUE"), List.of()),
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\evidence\EvidenceBuilderTest.java:103:                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of());
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\evidence\EvidenceBuilderTest.java:120:                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of(), List.of());
+D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\evidence\EvidenceBuilderTest.java:173:        assertThat(pkg.dataQuality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:101:        assertThat(data.quality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:134:        assertThat(data.quality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:369:                row("dt", "20260901", "rule_code", "AMOUNT_RECONCILE", "passed", 1),
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:370:                row("dt", "20260901", "rule_code", "ENUM_WHITELIST", "passed", 1),
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:371:                row("dt", "20260901", "rule_code", "EVENT_ID_UNIQUE", "passed", 0),
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:372:                row("dt", "20260901", "rule_code", "REQUIRED_FIELD_NULL_RATE", "passed", 1)));
+D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:199:        quality.put("rule_code", "EVENT_ID_UNIQUE");
+D:\Develop_code\GraduationProject\analytics-server\platform-app\src\test\java\com\graduation\analytics\controller\EvidenceTestFixtures.java:35:                        List.of("ADS_STAGING_PRESENT"), List.of()),
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:493:                evidence.put("blocking", "AMOUNT_RECONCILE（支付金额 vs 订单总额）");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:675:     * 严重度按规则语义标注：AMOUNT_RECONCILE 为阻断项，其余为记录项（与 QualityChecker.corePassed 一致）。
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:682:            r.setSeverity("AMOUNT_RECONCILE".equals(String.valueOf(r.getRuleCode())) ? "BLOCKING" : "ERROR");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:71:            results.add(rule(runId, "AMOUNT_RECONCILE", checks, errors, "0.01", errors == 0,
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:91:            results.add(rule(runId, "REQUIRED_FIELD_NULL_RATE", checks, missing,
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:100:            results.add(rule(runId, "EVENT_ID_UNIQUE", checks, dup,
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:115:            results.add(rule(runId, "ENUM_WHITELIST", checks, bad, "0", bad == 0, "行为枚举白名单"));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:177:                new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:180:                new JobResultParser.CheckInfo("PUB_STAGING_PRUNE", "PUBLISH", "staging", 0L, 0L,
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:187:                new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:190:                new JobResultParser.CheckInfo("PUB_DQ_EVENT_ID_UNIQUE", "PUBLISH",
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:196:                "质量门阻断发布: ADS_STAGING_PRESENT", List.of(), checks));
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:198:                "dqc: 质量门阻断发布: ADS_STAGING_PRESENT");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:385:                    assertThat(q.getRuleCode()).isEqualTo("ADS_STAGING_PRESENT");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:17: * DEF-04 回归：金额对账（AMOUNT_RECONCILE，BLOCKING）的**对账范围**必须覆盖整批订单，而不是业务日切片。
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:90:                .filter(r -> "AMOUNT_RECONCILE".equals(r.getRuleCode()))
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:45:                "{\"ruleCode\":\"ADS_STAGING_PRESENT\",\"layer\":\"ADS_STAGING\"," +
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:48:                "{\"ruleCode\":\"PUB_DQ_EVENT_ID_UNIQUE\",\"layer\":\"PUBLISH\",\"checkCount\":51," +
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:56:        assertThat(r.checks().get(0).ruleCode()).isEqualTo("ADS_STAGING_PRESENT");
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:62:        // 只有 BLOCKING 且未通过的算阻断失败；PUB_DQ_EVENT_ID_UNIQUE 是观察项
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:64:                .containsExactly("ADS_STAGING_PRESENT", "LEGACY_NO_SEVERITY");
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "corePassed" analytics-server --glob "*.java"
+# 替代说明: 本机无 rg；用 Select-String 执行同一正则。
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'corePassed' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path, $_.LineNumber, $_.Line }
+#====================================================================================================
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:492:                evidence.put("landingCorePassed", quality.corePassed());
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:494:                if (!quality.corePassed()) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:675:     * 严重度按规则语义标注：AMOUNT_RECONCILE 为阻断项，其余为记录项（与 QualityChecker.corePassed 一致）。
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:29:    public record QualitySummary(List<DataQualityResult> results, boolean corePassed) {
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:47:        boolean corePassed = true;
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:74:                corePassed = false;
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:117:        log.info("quality check: rules={} corePassed={}", results.size(), corePassed);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:118:        return new QualitySummary(results, corePassed);
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:56:        assertThat(summary.corePassed()).isFalse();
+D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:71:        assertThat(summary.corePassed()).isFalse();
+
+[退出码: 0]
+
+====================================================================================================
+附加统计（用于 D 节「未发现项」的穷尽性说明）
+====================================================================================================
+analytics-server 下 *.java 文件总数: 231
+含 severity 字样的 *.java 文件数: 15
+全仓 *.java 中 severity 取值字面量 WARN 的文件数: 0
+全仓 *.java 中 severity 取值字面量 INFO 的文件数: 4
+  - analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java (severity 取值字面量 INFO x1)
+  - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java (severity 取值字面量 INFO x1)
+  - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java (severity 取值字面量 INFO x1)
+  - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java (severity 取值字面量 INFO x1)
+
+含 severity/Severity/SEVERITY 的行总数（全仓 *.java）: 42
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:71: String severity, String snapshotId) {
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:76: out.add(new AnomalyCandidate(ruleCode, metricCode, severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:85: String severity, String snapshotId) {
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:90: out.add(new AnomalyCandidate(ruleCode, metricCode, severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:117: String severity = EvidencePackage.DataQuality.GATE_FAIL.equals(quality.gateStatus()) ? "HIGH" : "MEDIUM";
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:119: out.add(new AnomalyCandidate(RULE_QUALITY_RULE_FAILED, null, severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidencePackage.java:137: public record AnomalyCandidate(String ruleCode, String metricCode, String severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceTemplates.java:167: lines.add("核查规则 " + a.ruleCode() + "（" + blankToDash(a.severity()) + "）：" + a.statement()
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\ExplanationService.java:287: m.put("severity", a.severity());
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java:225: return checks.stream().anyMatch(c -> "BLOCKING".equals(c.severity()) && !c.passed());
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java:230: return checks.stream().filter(c -> "BLOCKING".equals(c.severity()) && !c.passed())
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:233: "SELECT severity, passed FROM data_quality_result WHERE run_id = ?", pipelineRunId);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:238: BLOCKING.equalsIgnoreCase(String.valueOf(row.get("severity")))
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:12: * 有 severity=BLOCKING 且未通过 → {@link #FAIL}；有结果且无阻断失败 → {@link #PASS}；
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\publish\MetricPublisherPort.java:53: String severity, boolean passed, String detail) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:19: * <p>判定与解析一致：severity=BLOCKING 且 passed≠1 才算阻断（ERROR/INFO 只记录，§16.3）；
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:39: BLOCKING.equalsIgnoreCase(r.getSeverity()) && (r.getPassed() == null || r.getPassed() != 1));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\entity\DataQualityResult.java:29: private String severity;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:508: "ruleCode", c.ruleCode(), "layer", c.layer(), "severity", c.severity(),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:544: "ruleCode", c.ruleCode(), "severity", c.severity(),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:565: "ruleCode", c.ruleCode(), "severity", c.severity(),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:682: r.setSeverity("AMOUNT_RECONCILE".equals(String.valueOf(r.getRuleCode())) ? "BLOCKING" : "ERROR");
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:698: * severity=INFO 的是发布操作审计项（切换/清理计数），只进阶段证据，不冒充质量规则写库。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:705: if ("INFO".equalsIgnoreCase(c.severity())) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:712: r.setSeverity(cap(c.severity(), 16));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:763: // R6-13：质量检查结果逐作业入证据（含 severity=INFO 的发布操作审计项）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:769: cm.put("severity", c.severity());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:32: * severity=BLOCKING 的规则未通过即发布阻断（§16.3）；ERROR 只记录。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:36: String severity, boolean passed, String detail) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:38: return "BLOCKING".equalsIgnoreCase(severity);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:144: /** 质量检查数组 → 强类型列表（缺 severity 视为 BLOCKING：契约缺失不得当作放行） */
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:158: c.path("severity").asText("BLOCKING"),
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:84: private static DataQualityResult result(String severity, Integer passed) {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:87: entity.setSeverity(severity);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:386: assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:40: // R6-13：dqc/pub 的 checks 数组必须被解析出来（含 severity/layer/targetTable），
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:41: // 缺失 severity 的检查按 BLOCKING 处理（安全默认：不放过未知严重度）
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:47: "\"threshold\":\"每表行数>0\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:49: "\"errorCount\":3,\"threshold\":\"0.0005\",\"severity\":\"ERROR\",\"passed\":false}," +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:50: "{\"ruleCode\":\"LEGACY_NO_SEVERITY\",\"checkCount\":1,\"errorCount\":1,\"passed\":false}" +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:61: assertThat(r.checks().get(2).severity()).isEqualTo("BLOCKING"); // 缺省保守判定
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:64: .containsExactly("ADS_STAGING_PRESENT", "LEGACY_NO_SEVERITY");
+
+==== 证据文件结束 ====
+
+
+####################################################################################################
+补充证据（与主证据同一会话内追加；用于支撑 inventory 的 B/C/D/E 节）
+生成时间: 2026-09-12 22:01:15 +08:00
+####################################################################################################
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "blockingFailures|\.blocking\(\)" (全仓 *.java，排除 docs/backups 与 target)
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path . -Recurse -File -Filter *.java | Where-Object { $_.FullName -notlike '*\docs\backups\*' -and $_.FullName -notlike '*\target\*' } | Select-String -Pattern 'blockingFailures','\.blocking\(\)' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:37:return blockingFailures(results).isEmpty() ? PASS : FAIL;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:47:public List<String> blockingFailuresForRun(Long pipelineRunId) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:48:return blockingFailures(resultsOf(pipelineRunId));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:61:private static List<String> blockingFailures(List<DataQualityResult> results) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:779:.filter(c -> c.blocking() && !c.passed()).map(JobResultParser.CheckInfo::ruleCode).toList());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:53:public List<CheckInfo> blockingFailures() {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:54:return checks.stream().filter(c -> c.blocking() && !c.passed()).toList();
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:39:void parsesQualityChecksAndBlockingFailures() {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:59:assertThat(r.checks().get(0).blocking()).isTrue();
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:60:assertThat(r.checks().get(1).blocking()).isFalse(); // ERROR 不阻断发布
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:63:assertThat(r.blockingFailures()).extracting(JobResultParser.CheckInfo::ruleCode)
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "implements MetricQualityGate" (全仓 *.java，确认实现者数量)
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path . -Recurse -File -Filter *.java | Where-Object { $_.FullName -notlike '*\target\*' } | Select-String -Pattern 'implements MetricQualityGate' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:219:private static final class MetaQualityGate implements MetricQualityGate {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:27:public class DataQualityGate implements MetricQualityGate {
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "severity|BLOCKING|WARN|ERROR" spark-jobs/src --glob "*.scala" (范围外补充：Spark 作业侧严重度判定)
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path 'spark-jobs\src' -Recurse -File -Filter *.scala | Select-String -Pattern 'severity','BLOCKING','WARN','ERROR' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsPublishJob.scala:54:tables.size, notReady.size, "8 张暂存分区就绪", "BLOCKING", notReady.isEmpty,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsPublishJob.scala:82:tables.size, mismatch.size, "正式=暂存行数", "BLOCKING", mismatch.isEmpty,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsPublishJob.scala:118:val blockingFailed = all.filter(c => c.severity == "BLOCKING" && !c.passed)
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsPublishJob.scala:120:if (blockingFailed.nonEmpty) {
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsPublishJob.scala:122:s"发布校验失败: ${blockingFailed.map(_.ruleCode).mkString(",")}", elapsed, formalParts, all)
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:14:*  1. ADS_STAGING_PRESENT        BLOCKING  8 张暂存表本次快照分区必须存在且行数 > 0
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:15:*  2. ADS_STAGING_SNAPSHOT_ISOLATION BLOCKING 同一 dt 下不得混入其它 snapshot_id 的暂存分区
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:16:*  3. ADS_STAGING_KEY_NOT_NULL   BLOCKING  关键列不得为空（逐表真实 COUNT）
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:17:*  4. PUB_DQ_BLOCKING_RULES      BLOCKING  staging.ads_data_quality 的阻断规则必须 passed=1
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:18:*  5. PUB_DQ_EVENT_ID_UNIQUE     ERROR     仅记录不阻断（与 Java QualityChecker.corePassed 口径一致）
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:19:*  6. ADS_DWS_FUNNEL_RECONCILE   BLOCKING  ADS 漏斗 stage 汇总 = DWS 漏斗对应列（§16.4 跨层对账）
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:21:* 任一 BLOCKING 未通过 → JobResult.status=FAILED（JobRunner 退出码 1）→ 编排方置阶段失败、
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:51:staging.size, empty.size, "每表行数>0", "BLOCKING", empty.isEmpty,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:55:// 规则 2：同一 dt 的快照隔离 —— 只记录不阻断（ERROR）。
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:57:// 陈旧暂存分区**不可能**污染正式分区；若把它设为 BLOCKING，则清理只发生在 pub（发布成功后）而
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:61:parts.size.max(staging.size), foreign.size, "0 个非本次快照分区（观察项）", "ERROR", foreign.isEmpty,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:77:var keyErrors = 0L
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:86:keyErrors += bad
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:90:keyChecked, keyErrors, "0 空关键列", "BLOCKING", keyErrors == 0L,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:91:if (keyErrors == 0L) s"$keyChecked 行关键列全部非空" else s"空关键列: ${keyDetail.mkString(",")}")
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:94:val blockingRules = Set("AMOUNT_RECONCILE", "REQUIRED_FIELD_NULL_RATE", "ENUM_WHITELIST")
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:97:s"SELECT rule_code, check_count, error_count, passed FROM $dqTable " +
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:100:val missingRules = blockingRules.filterNot(byRule.contains)
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:101:val failedBlocking = blockingRules.filter(r => byRule.get(r).exists(_.getInt(3) != 1))
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:102:checks += QualityCheck("PUB_DQ_BLOCKING_RULES", "PUBLISH", dqTable,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:103:blockingRules.size, (missingRules ++ failedBlocking).size, "全部 passed=1", "BLOCKING",
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:104:missingRules.isEmpty && failedBlocking.isEmpty,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:105:s"阻断规则结果: ${blockingRules.toSeq.sorted.map(r =>
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:109:r.getLong(1), r.getLong(2), "0.0005", "ERROR", r.getInt(3) == 1,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:127:stageMap.size, mismatch.size, "逐 stage 差值=0", "BLOCKING", mismatch.isEmpty,
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:132:val blockingFailed = all.filter(c => c.severity == "BLOCKING" && !c.passed)
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:134:if (blockingFailed.nonEmpty) {
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:136:s"质量门阻断发布: ${blockingFailed.map(_.ruleCode).mkString(",")}", elapsed, current, all)
+spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala:139:all.map(_.errorCount).sum, Some(sid), args.attemptNo, elapsed, current, all)
+spark-jobs\src\main\scala\com\graduation\analytics\job\JobResult.scala:17:* severity=BLOCKING 的规则不通过时作业必须 FAILED（不得 catch 后继续，§16 末尾）；
+spark-jobs\src\main\scala\com\graduation\analytics\job\JobResult.scala:18:* severity=ERROR 只记录不阻断（如 gold 夹具中的重复 event_id 观察项）。
+spark-jobs\src\main\scala\com\graduation\analytics\job\JobResult.scala:25:errorCount: Long,
+spark-jobs\src\main\scala\com\graduation\analytics\job\JobResult.scala:27:severity: String,
+spark-jobs\src\main\scala\com\graduation\analytics\job\JobRunner.scala:99:o.put("errorCount", c.errorCount)
+spark-jobs\src\main\scala\com\graduation\analytics\job\JobRunner.scala:101:o.put("severity", c.severity)
+spark-jobs\src\main\scala\com\graduation\analytics\job\LocalSchemaInitJob.scala:166:rule_code STRING, check_count BIGINT, error_count BIGINT,
+spark-jobs\src\main\scala\com\graduation\analytics\job\LocalSchemaInitJob.scala:167:error_rate DECIMAL(8,6), passed INT, threshold STRING)
+spark-jobs\src\main\scala\com\graduation\analytics\job\LocalSchemaInitJob.scala:213:rule_code STRING, check_count BIGINT, error_count BIGINT,
+spark-jobs\src\main\scala\com\graduation\analytics\job\LocalSchemaInitJob.scala:214:error_rate DECIMAL(8,6), passed INT, threshold STRING)
+spark-jobs\src\main\scala\com\graduation\analytics\job\LocalSchemaInitJob.scala:228:// 写成 `) COMMENT '…'` + `USING parquet` 会 PARSE_SYNTAX_ERROR at or near 'USING'
+spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:57:formalTables.size, unpinned.size, s"正式分区 Location 指向 snapshot_id=$sid", "BLOCKING",
+spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:78:"导出文件行数 = Hive 分区行数", "BLOCKING", written == hiveRows,
+spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:87:val exportFailed = checks.exists(c => c.severity == "BLOCKING" && !c.passed)
+spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:89:MetricAdsSpec.TABLES.size, checks.count(c => c.severity == "BLOCKING" && !c.passed),
+spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:90:"8 张表导出完成且行数一致", "BLOCKING", !exportFailed,
+spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala:111:s"ADS 导出校验失败: ${checks.filter(c => c.severity == "BLOCKING" && !c.passed).map(_.ruleCode).mkString(",")}",
+spark-jobs\src\main\scala\com\graduation\analytics\job\SparkSessionFactory.scala:24:spark.sparkContext.setLogLevel("WARN")
+spark-jobs\src\main\scala\com\graduation\analytics\metric\MetricAdsSpec.scala:46:Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold")))
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:101:* BLOCKING 规则 `ADS_STAGING_KEY_NOT_NULL` 拦截整条发布。故名称按维度表既有 unknown 约定兜底
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:229:|SELECT rule_code, check_count, error_count, error_rate, passed, threshold FROM (
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:232:|         CAST(SUM(bad) AS BIGINT) AS error_count,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:234:|              ELSE CAST(SUM(bad) AS DECIMAL(8,6)) / SUM(fp) END AS error_rate,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:249:|         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:250:|         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:258:|         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS BIGINT) AS error_count,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:260:|           / (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS error_rate,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:267:|         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\AdsSql.scala:268:|         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
+spark-jobs\src\main\scala\com\graduation\analytics\sql\IdCodec.scala:10:* 导致 `PUB_DQ_BLOCKING_RULES`(13/13) 与 `ADS_STAGING_KEY_NOT_NULL`(3/14) 阻断发布。
+spark-jobs\src\main\scala\com\graduation\analytics\sql\OdsLoadSql.scala:67:* 声明顺序初始化 ⇒ 这里读到 `null`，类初始化抛 `ExceptionInInitializerError`
+spark-jobs\src\main\scala\com\graduation\analytics\sql\SurrogateKey.scala:144:* **实测缺陷 1（第一轮 E2，三个用例同时报 `PARSE_SYNTAX_ERROR`）**：早先写成
+spark-jobs\src\main\scala\com\graduation\analytics\sql\SurrogateKey.scala:288:* `PARSE_SYNTAX_ERROR: Syntax error at or near ''mock-mall''`。
+spark-jobs\src\test\scala\com\graduation\analytics\MetricAdsSpecTest.scala:29:"ads_data_quality_m" -> Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold"))
+spark-jobs\src\test\scala\com\graduation\analytics\P2TestSupport.scala:98:session.sparkContext.setLogLevel("ERROR")
+spark-jobs\src\test\scala\com\graduation\analytics\SqlTemplateSpec.scala:188:it should "DEF-08：热门商品名取维度兜底，缺失维度的商品不得产出 NULL 名（否则 BLOCKING 空关键列阻断发布）" in {
+spark-jobs\src\test\scala\com\graduation\analytics\WarehouseNamespaceSpec.scala:48:rule.get("errorCodes").size() should be(4)
+spark-jobs\src\test\scala\com\graduation\analytics\sql\SurrogateKeySpec.scala:242:// 生成 `CASE WHEN 'mock-mall' IS NULL` ⇒ `PARSE_SYNTAX_ERROR`。
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "负向|原 ACTIVE|ACTIVE 不变|不发布新快照" analytics-server spark-jobs/src (D-142 §1.1 第 5 条要求的负向测试是否存在)
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path 'analytics-server','spark-jobs\src' -Recurse -File -Include *.java,*.scala | Select-String -Pattern '负向','原 ACTIVE','ACTIVE 不变','不发布新快照' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\connection-ingestion\src\main\java\com\graduation\analytics\runtime\RuntimeProfileService.java:10:* 激活流程（§8.3）：DRAFT → 测试四项 → ACTIVE（原 ACTIVE 变 DISABLED，version 递增）。
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisSourcePolicyTest.java:27:* 这里直接扫描分析包的生产源码，作为"旧路径确实死掉了"的负向证据（契约 §1.1/§1.3）。</p>
+analytics-server\platform-app\src\test\java\com\graduation\analytics\boundary\PlatformMallBoundarySourcePolicyTest.java:23:* V2.1 §3.4-4 边界守卫（L0，源码级负向证据）：分析平台不得引用商城/生成器 Java 包、商城业务表或 {@code mall.*} 配置键。
+spark-jobs\src\main\scala\com\graduation\analytics\job\LocalSchemaInitJob.scala:231://  负向对照退出码 1、正向对照退出码 0 且 SHOW CREATE TABLE 回显出 COMMENT 与分区列）。
+spark-jobs\src\main\scala\com\graduation\analytics\sql\IdCodec.scala:18:* （`IdCodecSpec` 会扫描三个 SQL 模板对象做负向守卫）。
+spark-jobs\src\test\scala\com\graduation\analytics\IdCodecSpec.scala:14:* 2. **负向守卫**：五张 SQL 模板（含 `TradeDwdJob.orderDetailInsertSql`）不得再出现
+spark-jobs\src\test\scala\com\graduation\analytics\IdCodecSpec.scala:58:/** 负向守卫：任何模板都不得对契约 id 直接 CAST */
+
+[退出码: 0]
+
+----------------------------------------------------------------------------------------------------
+统计（用于 D 节「未发现项」穷尽性）：severity 取值字面量计数
+----------------------------------------------------------------------------------------------------
+字面量 "WARN" 出现总次数 = 2，涉及 2 个文件
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java x1
+   - spark-jobs\src\main\scala\com\graduation\analytics\job\SparkSessionFactory.scala x1
+字面量 "INFO" 出现总次数 = 7，涉及 6 个文件
+   - analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java x1
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java x1
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java x1
+   - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java x1
+   - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java x1
+   - spark-jobs\src\main\scala\com\graduation\analytics\job\AdsPublishJob.scala x2
+字面量 "ERROR" 出现总次数 = 10，涉及 7 个文件
+   - analytics-server\platform-app\src\main\java\com\graduation\analytics\controller\AiController.java x1
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java x1
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java x1
+   - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java x3
+   - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java x1
+   - spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala x2
+   - spark-jobs\src\test\scala\com\graduation\analytics\P2TestSupport.scala x1
+字面量 "BLOCKING" 出现总次数 = 32，涉及 11 个文件
+   - analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java x4
+   - analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java x1
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java x2
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java x1
+   - analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java x1
+   - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java x1
+   - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java x5
+   - analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java x3
+   - spark-jobs\src\main\scala\com\graduation\analytics\job\AdsPublishJob.scala x3
+   - spark-jobs\src\main\scala\com\graduation\analytics\job\AdsQualityJob.scala x5
+   - spark-jobs\src\main\scala\com\graduation\analytics\job\MetricExportJob.scala x6
+
+==== 补充证据结束 ====
+
+####################################################################################################
+★ 权威快照（第一遍捕获之后，生产代码于 22:00:49–22:01:02 被改成 D-142 §1 新口径；
+  本节把任务要求的 6 条命令在同一当前工作树上重跑一遍，作为 inventory 引用的最终依据）
+重跑时间: 2026-09-12 22:02:10 +08:00
+####################################################################################################
+
+----------------------------------------------------------------------------------------------------
+★ 关键文件最后修改时间（用于说明「测试未改、生产已改」这一事实）
+----------------------------------------------------------------------------------------------------
+2026-09-12 22:00:49  analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java
+2026-09-12 22:01:02  analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java
+2026-09-12 22:01:30  analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java
+2026-09-11 14:08:48  analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java
+2026-09-10 18:24:48  analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java
+2026-09-10 20:16:21  analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java
+2026-09-10 20:55:28  analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java
+2026-09-10 21:02:23  analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java
+2026-09-10 18:37:37  analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java
+2026-09-11 14:10:23  analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java
+2026-09-11 14:08:45  analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java
+2026-09-10 21:03:16  analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java
+2026-09-10 20:21:03  analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublishValidatorTest.java
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "ERROR 不阻断|非阻断|不阻断|只记录|仅记录|nonBlocking|blocking\(\)|BLOCKING" analytics-server/warehouse-pipeline/src/test analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server\warehouse-pipeline\src\test -Recurse -File -Filter *.java | Select-String -Pattern 'ERROR 不阻断','非阻断','不阻断','只记录','仅记录','nonBlocking','blocking\(\)','BLOCKING' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }; Select-String -Path 'analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java','analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java' -Pattern 'ERROR 不阻断','非阻断','不阻断','只记录','仅记录','nonBlocking','blocking\(\)','BLOCKING' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:35:@DisplayName("存在 BLOCKING 未通过 → FAIL")
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:36:void blockingFailureFailsTheGate() {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:38:result("BLOCKING", 1), result("ERROR", 0), result("BLOCKING", 0)));
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:44:@DisplayName("只有非阻断规则失败（ERROR/INFO）→ PASS，不误报为 FAIL")
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:45:void nonBlockingFailureKeepsPass() {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:47:result("ERROR", 0), result("INFO", 0), result("BLOCKING", 1)));
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:55:when(qualityMapper.selectList(any())).thenReturn(List.of(result("BLOCKING", 1), result("ERROR", 1)));
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:61:@DisplayName("BLOCKING 的 passed 为 NULL（未判定）按未通过处理 → FAIL")
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:62:void nullPassedOnBlockingIsTreatedAsFailed() {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:63:when(qualityMapper.selectList(any())).thenReturn(List.of(result("BLOCKING", null)));
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:171:/** R6-13：dqc 通过时的质量检查结果（BLOCKING 全通过 + 1 条 INFO 审计项） */
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:179:"BLOCKING", true, "8 张暂存表行数均>0"),
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:184:/** R6-13：dqc 阻断（BLOCKING 未通过）时的执行结果 */
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:189:"BLOCKING", false, "空/缺失暂存表: dw_ads.ads_hot_product__staging"),
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:219:void submitReturnsPendingTaskIdImmediatelyWithoutBlocking() throws Exception {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:364:// Landing 层内联规则通过，但 dqc（ADS 暂存层 BLOCKING 规则）未过
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:379:// 失败也要留下检查证据：BLOCKING 未过的规则写库（运维页可见失败原因）
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:386:assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:17:* DEF-04 回归：金额对账（AMOUNT_RECONCILE，BLOCKING）的**对账范围**必须覆盖整批订单，而不是业务日切片。
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:39:void parsesQualityChecksAndBlockingFailures() {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:41:// 缺失 severity 的检查按 BLOCKING 处理（安全默认：不放过未知严重度）
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:47:"\"threshold\":\"每表行数>0\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:59:assertThat(r.checks().get(0).blocking()).isTrue();
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:60:assertThat(r.checks().get(1).blocking()).isFalse(); // ERROR 不阻断发布
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:61:assertThat(r.checks().get(2).severity()).isEqualTo("BLOCKING"); // 缺省保守判定
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:62:// 只有 BLOCKING 且未通过的算阻断失败；PUB_DQ_EVENT_ID_UNIQUE 是观察项
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:63:assertThat(r.blockingFailures()).extracting(JobResultParser.CheckInfo::ruleCode)
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:19:* <p>判定口径（D-142 §1，指导书 §7.3 原文不变）：<b>{@code BLOCKING} 与 {@code ERROR} 未通过都算阻断</b>
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:20:* （{@code passed != 1}，含 NULL=未判定）；{@code WARN}/{@code INFO} 未通过只记录、不阻断。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:37:return blockingFailures(results).isEmpty() ? PASS : FAIL;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:47:public List<String> blockingFailuresForRun(Long pipelineRunId) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:48:return blockingFailures(resultsOf(pipelineRunId));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:60:/** 阻断级（BLOCKING/ERROR）且未通过的规则码。 */
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:61:private static List<String> blockingFailures(List<DataQualityResult> results) {
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:237:boolean blockingFailed = rows.stream().anyMatch(row ->
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:238:BLOCKING.equalsIgnoreCase(String.valueOf(row.get("severity")))
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:240:return blockingFailed ? FAIL : PASS;
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "severity" analytics-server --glob "*.java" -l
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Where-Object { Select-String -LiteralPath $_.FullName -Pattern 'severity' -Quiet } | ForEach-Object { $_.FullName.Replace('D:\Develop_code\GraduationProject\','') }
+#====================================================================================================
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\ExplanationService.java
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidencePackage.java
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceTemplates.java
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\publish\MetricPublisherPort.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\entity\DataQualityResult.java
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "severity" analytics-server --glob "*.java"
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'severity' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\ExplanationService.java:287:m.put("severity", a.severity());
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:71:String severity, String snapshotId) {
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:76:out.add(new AnomalyCandidate(ruleCode, metricCode, severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:85:String severity, String snapshotId) {
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:90:out.add(new AnomalyCandidate(ruleCode, metricCode, severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:117:String severity = EvidencePackage.DataQuality.GATE_FAIL.equals(quality.gateStatus()) ? "HIGH" : "MEDIUM";
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\AnomalyRules.java:119:out.add(new AnomalyCandidate(RULE_QUALITY_RULE_FAILED, null, severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidencePackage.java:137:public record AnomalyCandidate(String ruleCode, String metricCode, String severity,
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceTemplates.java:167:lines.add("核查规则 " + a.ruleCode() + "（" + blankToDash(a.severity()) + "）：" + a.statement()
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java:225:return checks.stream().anyMatch(c -> "BLOCKING".equals(c.severity()) && !c.passed());
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\MetricPublishValidator.java:230:return checks.stream().filter(c -> "BLOCKING".equals(c.severity()) && !c.passed())
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:233:"SELECT severity, passed FROM data_quality_result WHERE run_id = ?", pipelineRunId);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:238:BLOCKING.equalsIgnoreCase(String.valueOf(row.get("severity")))
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:12:* 有 severity=BLOCKING 且未通过 → {@link #FAIL}；有结果且无阻断失败 → {@link #PASS}；
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\publish\MetricPublisherPort.java:53:String severity, boolean passed, String detail) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:21:* 严重度本身由 {@link RuleSeverity}（唯一所有者）在落库时归一化，本类不重复定义映射，
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:66:.filter(r -> RuleSeverity.blocks(r.getSeverity()) && RuleSeverity.failed(r.getPassed()))
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:508:"ruleCode", c.ruleCode(), "layer", c.layer(), "severity", c.severity(),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:544:"ruleCode", c.ruleCode(), "severity", c.severity(),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:565:"ruleCode", c.ruleCode(), "severity", c.severity(),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:682:r.setSeverity("AMOUNT_RECONCILE".equals(String.valueOf(r.getRuleCode())) ? "BLOCKING" : "ERROR");
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:698:* severity=INFO 的是发布操作审计项（切换/清理计数），只进阶段证据，不冒充质量规则写库。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:705:if ("INFO".equalsIgnoreCase(c.severity())) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:712:r.setSeverity(cap(c.severity(), 16));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:763:// R6-13：质量检查结果逐作业入证据（含 severity=INFO 的发布操作审计项）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:769:cm.put("severity", c.severity());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:121:* 阻断级规则（{@link RuleSeverity#blocks}）是否有未通过项 —— 与 {@link DataQualityGate}
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:128:.anyMatch(r -> RuleSeverity.blocks(r.getSeverity()) && RuleSeverity.failed(r.getPassed()));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:136:// 严重度只由 RuleSeverity（唯一所有者）决定，本类不再各写各的（D-142 §1：BLOCKING/ERROR 都阻断）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:137:r.setSeverity(RuleSeverity.of(code));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:10:* 回传的 severity 是作业侧写死的字面量，历史上与 §7.3 不一致（例如把"只记录"的观察项写成
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:19:public final class RuleSeverity {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:39:private RuleSeverity() {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:134:public static boolean blocks(String severity) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:135:if (severity == null) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:138:String s = severity.trim().toUpperCase(java.util.Locale.ROOT);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\entity\DataQualityResult.java:29:private String severity;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:32:* severity=BLOCKING 的规则未通过即发布阻断（§16.3）；ERROR 只记录。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:36:String severity, boolean passed, String detail) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:38:return "BLOCKING".equalsIgnoreCase(severity);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:144:/** 质量检查数组 → 强类型列表（缺 severity 视为 BLOCKING：契约缺失不得当作放行） */
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:158:c.path("severity").asText("BLOCKING"),
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:84:private static DataQualityResult result(String severity, Integer passed) {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:87:entity.setSeverity(severity);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:386:assertThat(q.getSeverity()).isEqualTo("BLOCKING");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:40:// R6-13：dqc/pub 的 checks 数组必须被解析出来（含 severity/layer/targetTable），
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:41:// 缺失 severity 的检查按 BLOCKING 处理（安全默认：不放过未知严重度）
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:47:"\"threshold\":\"每表行数>0\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:49:"\"errorCount\":3,\"threshold\":\"0.0005\",\"severity\":\"ERROR\",\"passed\":false}," +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:50:"{\"ruleCode\":\"LEGACY_NO_SEVERITY\",\"checkCount\":1,\"errorCount\":1,\"passed\":false}" +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:61:assertThat(r.checks().get(2).severity()).isEqualTo("BLOCKING"); // 缺省保守判定
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:64:.containsExactly("ADS_STAGING_PRESENT", "LEGACY_NO_SEVERITY");
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "WARN|INFO" analytics-server/warehouse-pipeline/src/main analytics-server/warehouse-pipeline/src/test --glob "*.java"
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server\warehouse-pipeline\src -Recurse -File -Filter *.java | Select-String -Pattern 'WARN','\bINFO\b' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:20:* （{@code passed != 1}，含 NULL=未判定）；{@code WARN}/{@code INFO} 未通过只记录、不阻断。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineRecoveryService.java:60:log.info("R6-14 启动对账完成: pending重排={} running判定中断={} 孤立作业置UNKNOWN={} errors={}",
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineRecoveryService.java:95:log.warn("R6-14 run {} 对账失败", run.getId(), e);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineRecoveryService.java:107:log.warn("R6-14 run {} 重排失败", run.getId(), e);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:237:log.info("pipeline {} resumed by {} ({}) attempt={}", runId, operator, reason, run.getAttemptNo());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:255:log.warn("pipeline {} marked FAILED by {} ({})", runId, operator, reason);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:280:log.warn("pipeline {} retry-from-stage {} by {} ({})", runId, stageCode, operator, reason);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:324:log.warn("pipeline async: run {} 不存在，跳过执行", runId);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:589:log.warn("pipeline {} failed: {}", run.getId(), e.getMessage());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:698:* severity=INFO 的是发布操作审计项（切换/清理计数），只进阶段证据，不冒充质量规则写库。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:705:if ("INFO".equalsIgnoreCase(c.severity())) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:763:// R6-13：质量检查结果逐作业入证据（含 severity=INFO 的发布操作审计项）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:813:log.info("pipeline {}: stage {} 已成功，重试跳过（不重复执行）", runId, stageCode);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:873:@SuppressWarnings("unchecked")
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:884:log.warn("阶段证据解析失败 run={} stage={}: {}", runId, stageCode, e.getMessage());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:906:log.info("pipeline {}: 复用本 run 原批次 batchId={}（重试/恢复不切换输入）",
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:925:log.warn("manifest 解析失败 {}: {}", file.getFileName(), e.getMessage());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:963:log.warn("manifest 解析失败 {}: {}", m.getFileName(), e.getMessage());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:967:log.warn("manifests 扫描失败: {}", e.getMessage());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:1114:log.warn("pipeline skip bad line in {}: {}", f.getFileName(), e.getMessage());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:1119:log.warn("accepted 读取失败 {}: {}", acceptedDir, e.getMessage());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:116:log.info("quality check: rules={} corePassed={}", results.size(), corePassed);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:171:log.warn("order {} 缺 total_amount，不进入对账索引", orderId);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:177:log.warn("order {} 的 total_amount 非法：{}", orderId, totalAmount);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:7:* {@code WARN}/{@code INFO} 记录并展示，<b>不阻断</b>。</p>
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:16:* <b>不改任何阈值</b>。降级为 {@code WARN} 只能在「下游已确定性去重（或该现象本身不是错误）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:28:public static final String WARN = "WARN";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:31:public static final String INFO = "INFO";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:46:* @return {@link #BLOCKING}/{@link #ERROR}/{@link #WARN}/{@link #INFO}；未登记返回 {@link #UNREGISTERED}
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:65:case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" -> WARN;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:73:case "ADS_STAGING_SNAPSHOT_ISOLATION" -> WARN;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:85:case "PUB_POINTER_SWITCH" -> INFO;               // 发布操作审计（切换表数）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:86:case "PUB_STAGING_PRUNE" -> INFO;                // 发布操作审计（清理计数）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:142:return !WARN.equals(s) && !INFO.equals(s);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\entity\DataQualityResult.java:28:/** 严重度（BLOCKING 阻断发布 / ERROR 记录 / INFO 操作审计） */
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\JobResultParser.java:80:// 非 JobResult 的普通 JSON（如 INFO 日志）直接跳过
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:139:log.warn("stage {} fail-fast: job {} 失败（{}），不再提交剩余作业 {}",
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:195:JobResultParser.JobResultInfo info = resolve(st, parsed, jobCode);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:196:run.setInputRecords(info.inputRecords());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:197:run.setOutputRecords(info.outputRecords());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:198:run.setRejectedRecords(info.rejectedRecords());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:200:if (!info.outputPartitions().isEmpty()) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:201:run.setOutputPartitionsJson(toJson(info.outputPartitions()));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:204:run.setStatus(info.success() ? SparkJobRun.STATUS_SUCCESS : SparkJobRun.STATUS_FAILED);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:206:if (!info.success()) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:208:run.setErrorMessage(info.message());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:214:run.getLogUri(), info.success() ? null : info.message(), info.outputPartitions(),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\spark\SparkStageExecutor.java:215:info.checks());
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:44:@DisplayName("只有非阻断规则失败（ERROR/INFO）→ PASS，不误报为 FAIL")
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:47:result("ERROR", 0), result("INFO", 0), result("BLOCKING", 1)));
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:171:/** R6-13：dqc 通过时的质量检查结果（BLOCKING 全通过 + 1 条 INFO 审计项） */
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:181:"保留被引用快照", "INFO", true, "无待清理历史暂存分区"));
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:18:"{\"level\":\"INFO\",\"event\":\"landing read ok\"}\n" +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:80:String log = "spark-submit started\nsome warning line\n(no result json)\n";
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:162:JobResultParser.JobResultInfo info = null;
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:167:info = parsed.get();
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:168:if ("SUCCESS".equals(info.status()) || "FAILED".equals(info.status())) {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorSmokeTest.java:169:return info;
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorTest.java:75:return "INFO some spark log\n{\"jobCode\":\"" + jobCode + "\",\"inputRecords\":" + in
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\SparkStageExecutorTest.java:177:submitter.program("SUBMITTED", "INFO spark running...");
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "qualityStatus|MetricQualityGate|statusForRun" analytics-server --glob "*.java"
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'qualityStatus','MetricQualityGate','statusForRun' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceBuilder.java:297:overview.qualityStatus() == null
+analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\evidence\EvidenceBuilder.java:298:? EvidencePackage.DataQuality.GATE_UNKNOWN : overview.qualityStatus(),
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:4:import com.graduation.analytics.metric.MetricQualityGate;
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:70:private final MetricQualityGate qualityGate;
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:304:/** 统一信封：元数据来自快照行，qualityStatus 来自质量门，data 为各端点结构 */
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:311:qualityStatus(meta, allWarnings), filters, data, allWarnings);
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:318:private String qualityStatus(MetricSnapshot meta, List<String> warnings) {
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:320:return qualityGate.statusForRun(meta.getPipelineRunId());
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisService.java:324:return MetricQualityGate.UNKNOWN;
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:3:import com.graduation.analytics.metric.MetricQualityGate;
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:24:* @param qualityStatus     质量门结论：PASS / FAIL / UNKNOWN
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:35:String qualityStatus,
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:67:String definitionVersion, String qualityStatus,
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:70:qualityStatus, filters, data, warnings);
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:74:* 无可用快照：snapshotId/时间/口径版本一律 null，qualityStatus=UNKNOWN，data 为空对象。
+analytics-server\metric-analysis\src\main\java\com\graduation\analytics\analysis\AnalysisViewModel.java:85:return new AnalysisViewModel<>(null, null, null, null, MetricQualityGate.UNKNOWN,
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:13:import com.graduation.analytics.metric.MetricQualityGate;
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:75:assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.PASS);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:219:private static final class MetaQualityGate implements MetricQualityGate {
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:228:public String statusForRun(Long pipelineRunId) {
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:12:import com.graduation.analytics.metric.MetricQualityGate;
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:53:private MetricQualityGate qualityGate;
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:61:qualityGate = mock(MetricQualityGate.class);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:62:when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.PASS);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:83:assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:104:assertThat(model.qualityStatus()).isEqualTo("PASS");
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:250:assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:258:void qualityStatusReflectsGateResult() {
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:261:when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.FAIL);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:262:assertThat(service.overview(null, null, null).qualityStatus()).isEqualTo("FAIL");
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:264:when(qualityGate.statusForRun(any())).thenThrow(new IllegalStateException("meta 库不可用"));
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:266:assertThat(degraded.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisViewModelTest.java:28:assertThat(model.qualityStatus()).isEqualTo("UNKNOWN");
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:4:* R7-4：快照对应的**质量门结论**查询（契约 docs/contracts/analysis-viewmodel-r7-4.md §2 的 qualityStatus）。
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:15:public interface MetricQualityGate {
+analytics-server\platform-common\src\main\java\com\graduation\analytics\metric\MetricQualityGate.java:35:String statusForRun(Long pipelineRunId);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:4:import com.graduation.analytics.metric.MetricQualityGate;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:16:* 分析服务只通过 platform-common 的 {@link MetricQualityGate} 接口取结论，不自己查这张表 ——
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:27:public class DataQualityGate implements MetricQualityGate {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\DataQualityGate.java:32:public String statusForRun(Long pipelineRunId) {
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:3:import com.graduation.analytics.metric.MetricQualityGate;
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:22:* <p>为什么单独测这个组件：看板信封的 {@code qualityStatus} 直接由它决定，
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:40:assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.FAIL);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:49:assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.PASS);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:57:assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.PASS);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:65:assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.FAIL);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:72:assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.UNKNOWN);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:75:assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.UNKNOWN);
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\DataQualityGateTest.java:81:assertThat(gate.statusForRun(null)).isEqualTo(MetricQualityGate.UNKNOWN);
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "EVENT_ID_UNIQUE|AMOUNT_RECONCILE|REQUIRED_FIELD_NULL_RATE|ENUM_WHITELIST|ADS_STAGING_SNAPSHOT_ISOLATION|PUB_DQ_BLOCKING_RULES|PUB_DQ_EVENT_ID_UNIQUE|ADS_STAGING_PRESENT|ADS_STAGING_KEY_NOT_NULL|ADS_DWS_FUNNEL_RECONCILE|PUB_STAGING_READY|PUB_FORMAL_PARTITION_MATCH|MXP_SNAPSHOT_PINNED|MXP_EXPORT_ROWS|MXP_EXPORT_COMPLETE|PUB_POINTER_SWITCH|PUB_STAGING_PRUNE" analytics-server --glob "*.java"
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'EVENT_ID_UNIQUE','AMOUNT_RECONCILE','REQUIRED_FIELD_NULL_RATE','ENUM_WHITELIST','ADS_STAGING_SNAPSHOT_ISOLATION','PUB_DQ_BLOCKING_RULES','PUB_DQ_EVENT_ID_UNIQUE','ADS_STAGING_PRESENT','ADS_STAGING_KEY_NOT_NULL','ADS_DWS_FUNNEL_RECONCILE','PUB_STAGING_READY','PUB_FORMAL_PARTITION_MATCH','MXP_SNAPSHOT_PINNED','MXP_EXPORT_ROWS','MXP_EXPORT_COMPLETE','PUB_POINTER_SWITCH','PUB_STAGING_PRUNE' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\ExplanationEvidenceTest.java:60:new EvidencePackage.DataQuality("PASS", 4, 3, List.of("EVENT_ID_UNIQUE"), List.of()),
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\evidence\EvidenceBuilderTest.java:103:new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of());
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\evidence\EvidenceBuilderTest.java:120:new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of(), List.of());
+analytics-server\ai-decision\src\test\java\com\graduation\analytics\ai\evidence\EvidenceBuilderTest.java:173:assertThat(pkg.dataQuality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisGoldenMySqlIT.java:101:assertThat(data.quality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:134:assertThat(data.quality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:369:row("dt", "20260901", "rule_code", "AMOUNT_RECONCILE", "passed", 1),
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:370:row("dt", "20260901", "rule_code", "ENUM_WHITELIST", "passed", 1),
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:371:row("dt", "20260901", "rule_code", "EVENT_ID_UNIQUE", "passed", 0),
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\analysis\AnalysisServiceTest.java:372:row("dt", "20260901", "rule_code", "REQUIRED_FIELD_NULL_RATE", "passed", 1)));
+analytics-server\metric-analysis\src\test\java\com\graduation\analytics\metric\publish\MetricPublisherMySqlIT.java:199:quality.put("rule_code", "EVENT_ID_UNIQUE");
+analytics-server\platform-app\src\test\java\com\graduation\analytics\controller\EvidenceTestFixtures.java:35:List.of("ADS_STAGING_PRESENT"), List.of()),
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:493:evidence.put("blocking", "AMOUNT_RECONCILE（支付金额 vs 订单总额）");
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:675:* 严重度按规则语义标注：AMOUNT_RECONCILE 为阻断项，其余为记录项（与 QualityChecker.corePassed 一致）。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:682:r.setSeverity("AMOUNT_RECONCILE".equals(String.valueOf(r.getRuleCode())) ? "BLOCKING" : "ERROR");
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:70:results.add(rule(runId, "AMOUNT_RECONCILE", checks, errors, "0.01", errors == 0,
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:87:results.add(rule(runId, "REQUIRED_FIELD_NULL_RATE", checks, missing,
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:96:results.add(rule(runId, "EVENT_ID_UNIQUE", checks, dup,
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:111:results.add(rule(runId, "ENUM_WHITELIST", checks, bad, "0", bad == 0, "行为枚举白名单"));
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:114:// 旧实现只看 AMOUNT_RECONCILE 一条，导致「必需字段缺失/非法枚举未过」时编排仍放行。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:53:case "AMOUNT_RECONCILE" -> BLOCKING;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:56:case "REQUIRED_FIELD_NULL_RATE" -> BLOCKING;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:59:case "ENUM_WHITELIST" -> BLOCKING;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:65:case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" -> WARN;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:68:case "ADS_STAGING_PRESENT" -> BLOCKING;          // 8 张暂存表本次快照分区必须存在且非空
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:72:// 「当前发布读取或混入其他快照数据 ⇒ 阻断」由 MXP_SNAPSHOT_PINNED(BLOCKING) 承担
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:73:case "ADS_STAGING_SNAPSHOT_ISOLATION" -> WARN;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:75:case "ADS_STAGING_KEY_NOT_NULL" -> BLOCKING;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:76:// ADS 暂存宽表内 3 条阻断规则（AMOUNT_RECONCILE/REQUIRED_FIELD_NULL_RATE/ENUM_WHITELIST）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:78:case "PUB_DQ_BLOCKING_RULES" -> BLOCKING;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:80:case "ADS_DWS_FUNNEL_RECONCILE" -> BLOCKING;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:83:case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:84:case "PUB_FORMAL_PARTITION_MATCH" -> BLOCKING;   // 正式分区行数必须等于暂存分区行数
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:85:case "PUB_POINTER_SWITCH" -> INFO;               // 发布操作审计（切换表数）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:86:case "PUB_STAGING_PRUNE" -> INFO;                // 发布操作审计（清理计数）
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:89:case "MXP_SNAPSHOT_PINNED" -> BLOCKING;
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:90:case "MXP_EXPORT_ROWS" -> BLOCKING;              // 导出文件行数 = Hive 分区行数
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:91:case "MXP_EXPORT_COMPLETE" -> BLOCKING;          // 8 张表导出完成且行数一致
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:106:case "AMOUNT_RECONCILE" -> "金额对账不一致（D-142 §1 必须阻断）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:107:case "REQUIRED_FIELD_NULL_RATE" -> "必需字段缺失；下游 DwdSql.behaviorClean 静默丢弃该行（D-142 §1 必须阻断）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:108:case "ENUM_WHITELIST" -> "非法枚举；下游 DwdSql.behaviorClean 静默丢弃该行（设计文稿 §5.4.2 比例为 0）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:109:case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" ->
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:112:case "ADS_STAGING_PRESENT" -> "ADS 暂存分区缺失/为空 ⇒ 发布无数据可切（硬门）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:113:case "ADS_STAGING_SNAPSHOT_ISOLATION" ->
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:115:+ "真阻断点由 MXP_SNAPSHOT_PINNED 承担（设为阻断会造成发布死锁）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:116:case "ADS_STAGING_KEY_NOT_NULL" -> "ADS 关键列 NULL ⇒ 口径破坏（阈值 0）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:117:case "PUB_DQ_BLOCKING_RULES" -> "暂存宽表内 3 条阻断规则必须全过（与 Java corePassed 同口径）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:118:case "ADS_DWS_FUNNEL_RECONCILE" -> "ADS↔DWS 跨层漏斗对账不一致 ⇒ 口径破坏";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:119:case "PUB_STAGING_READY" -> "暂存未就绪不得切换正式分区（发布前预检）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:120:case "PUB_FORMAL_PARTITION_MATCH" -> "正式分区行数 ≠ 暂存分区行数 ⇒ 发布不完整";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:121:case "MXP_SNAPSHOT_PINNED" -> "正式分区未指向本次 snapshot_id ⇒ 混入其他快照数据（D-142 §1 必须阻断）";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:122:case "MXP_EXPORT_ROWS" -> "导出文件行数 ≠ Hive 分区行数 ⇒ 指标库会写入残缺数据";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:123:case "MXP_EXPORT_COMPLETE" -> "存在未完成/行数不一致的导出表 ⇒ 指标库快照不完整";
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:124:case "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE" -> "发布操作审计项（切换/清理计数），不冒充质量规则";
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:177:new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:180:new JobResultParser.CheckInfo("PUB_STAGING_PRUNE", "PUBLISH", "staging", 0L, 0L,
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:187:new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:190:new JobResultParser.CheckInfo("PUB_DQ_EVENT_ID_UNIQUE", "PUBLISH",
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:196:"质量门阻断发布: ADS_STAGING_PRESENT", List.of(), checks));
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:198:"dqc: 质量门阻断发布: ADS_STAGING_PRESENT");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\PipelineServiceTest.java:385:assertThat(q.getRuleCode()).isEqualTo("ADS_STAGING_PRESENT");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:17:* DEF-04 回归：金额对账（AMOUNT_RECONCILE，BLOCKING）的**对账范围**必须覆盖整批订单，而不是业务日切片。
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:90:.filter(r -> "AMOUNT_RECONCILE".equals(r.getRuleCode()))
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:45:"{\"ruleCode\":\"ADS_STAGING_PRESENT\",\"layer\":\"ADS_STAGING\"," +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:48:"{\"ruleCode\":\"PUB_DQ_EVENT_ID_UNIQUE\",\"layer\":\"PUBLISH\",\"checkCount\":51," +
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:56:assertThat(r.checks().get(0).ruleCode()).isEqualTo("ADS_STAGING_PRESENT");
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:62:// 只有 BLOCKING 且未通过的算阻断失败；PUB_DQ_EVENT_ID_UNIQUE 是观察项
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\spark\JobResultParserTest.java:64:.containsExactly("ADS_STAGING_PRESENT", "LEGACY_NO_SEVERITY");
+
+[退出码: 0]
+
+#====================================================================================================
+# 命令（逻辑形式，使用 ripgrep）: rg -n "corePassed" analytics-server --glob "*.java"
+# 实际执行（PowerShell Select-String）:
+# Get-ChildItem -Path analytics-server -Recurse -File -Filter *.java | Select-String -Pattern 'corePassed' | ForEach-Object { '{0}:{1}:{2}' -f $_.Path.Replace('D:\Develop_code\GraduationProject\',''), $_.LineNumber, $_.Line.Trim() }
+#====================================================================================================
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:492:evidence.put("landingCorePassed", quality.corePassed());
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:494:if (!quality.corePassed()) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\PipelineService.java:675:* 严重度按规则语义标注：AMOUNT_RECONCILE 为阻断项，其余为记录项（与 QualityChecker.corePassed 一致）。
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:29:public record QualitySummary(List<DataQualityResult> results, boolean corePassed) {
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:115:boolean corePassed = !anyBlockingFailed(results);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:116:log.info("quality check: rules={} corePassed={}", results.size(), corePassed);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\QualityChecker.java:117:return new QualitySummary(results, corePassed);
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:77:// 必须全部 passed=1 —— 与 Java 侧 corePassed 同口径，缺失即阻断
+analytics-server\warehouse-pipeline\src\main\java\com\graduation\analytics\pipeline\RuleSeverity.java:117:case "PUB_DQ_BLOCKING_RULES" -> "暂存宽表内 3 条阻断规则必须全过（与 Java corePassed 同口径）";
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:56:assertThat(summary.corePassed()).isFalse();
+analytics-server\warehouse-pipeline\src\test\java\com\graduation\analytics\pipeline\QualityCheckerAmountReconcileTest.java:71:assertThat(summary.corePassed()).isFalse();
+
+[退出码: 0]
+
+
+==== 权威快照结束 ====

@@ -1,0 +1,28 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+section
+--- analytics_metric.metric_snapshot (latest 16) ---
+snapshot_id	runtime_profile_id	pipeline_run_id	version	status	active_flag	published_at	failure_reason
+S20260901_47	1	47	12	ACTIVE	1	2026-09-12 21:29:27.321	NULL
+S20260901_43	1	43	11	ARCHIVED	NULL	2026-09-12 17:39:51.953	NULL
+S20260901_42	1	42	10	ARCHIVED	NULL	2026-09-12 17:28:12.779	NULL
+S20260901_41	1	41	9	ARCHIVED	NULL	2026-09-12 09:31:13.388	NULL
+S20260901_39	1	39	8	ARCHIVED	NULL	2026-09-11 15:12:22.013	NULL
+S20260901_38	1	38	7	FAILED	NULL	NULL	MP_ADS_WRITE_FAILED: PreparedStatementCallback; SQL [INSERT INTO `ads_user_profile_m` (`snapshot_id`,`dt`,`user_id`,`r`,`f`,`m`,`value_group`,`active_level`,`favorite_category`,`last_active_date`,`last_buy_date`,`lifecycle_state`,`rule_version`,`calc_date`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)]; Column 'favorite_category' cannot be null
+S20260901_30	1	30	6	ARCHIVED	NULL	2026-09-11 11:09:19.753	NULL
+S20260901_29	1	29	5	ARCHIVED	NULL	2026-09-11 11:02:25.364	NULL
+S20260901_25	1	25	4	ARCHIVED	NULL	2026-09-11 10:41:49.858	NULL
+S20260901_22	1	22	3	ARCHIVED	NULL	2026-09-11 09:50:54.425	NULL
+S20260901_24	1	24	2	ARCHIVED	NULL	2026-09-10 20:44:11.886	NULL
+S20260901_23	1	23	1	ARCHIVED	NULL	2026-09-10 20:38:54.103	NULL
+section
+--- ACTIVE rows per profile ---
+runtime_profile_id	active_cnt	actives	flags
+1	1	S20260901_47	1
+section
+--- FAILED rows ---
+snapshot_id	pipeline_run_id	status	active_flag	published_at	failure_reason
+S20260901_38	38	FAILED	NULL	NULL	MP_ADS_WRITE_FAILED: PreparedStatementCallback; SQL [INSERT INTO `ads_user_profile_m` (`snapshot_id`,`dt`,`user_id`,`r`,`f`,`m`,`value_group`,`active_level`,`favorite_category`,`last_active_date`,`last_buy_date`,`lifecycle_state`,`rule_version`,`calc_date`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)]; Column 'favorite_category' cannot be null
+section
+--- archives of S20260901_24 ---
+snapshot_id	version	status	active_flag	published_at
+S20260901_24	2	ARCHIVED	NULL	2026-09-10 20:44:11.886

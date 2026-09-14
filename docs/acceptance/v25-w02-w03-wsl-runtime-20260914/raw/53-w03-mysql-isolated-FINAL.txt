@@ -1,0 +1,67 @@
+### S0: compat soname fix (Ubuntu 26.04: libaio.so.1 -> libaio.so.1t64)
+lrwxrwxrwx 1 root root 34 Sep 14 12:29 /opt/mysql-libs/libaio.so.1 -> /opt/mysql-libs/libaio.so.1t64.0.2
+lrwxrwxrwx 1 root root 17 Sep 14 12:29 /opt/mysql-libs/libncurses.so.6 -> libncurses.so.6.6
+lrwxrwxrwx 1 root root 16 Sep 14 12:29 /opt/mysql-libs/libnuma.so.1 -> libnuma.so.1.0.0
+--- ldd must be fully resolved now ---
+mysqld: ALL LIBS RESOLVED
+mysql client: ALL LIBS RESOLVED
+--- versions now runnable ---
+/opt/mysql-8.0.41/bin/mysqld  Ver 8.0.41 for Linux on x86_64 (MySQL Community Server - GPL)
+/opt/mysql-8.0.41/bin/mysql  Ver 8.0.41 for Linux on x86_64 (MySQL Community Server - GPL)
+### S1: initialize datadir (only if absent)
+init exit=0
+2026-09-14T04:29:26.594512Z 0 [System] [MY-013169] [Server] /opt/mysql-8.0.41/bin/mysqld (mysqld 8.0.41) initializing of server in progress as process 2009
+2026-09-14T04:29:26.600678Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-09-14T04:29:26.898064Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-09-14T04:29:28.189520Z 5 [Warning] [MY-010453] [Server] root@localhost is created with an empty password ! Please consider switching off the --initialize-insecure option.
+--- datadir ---
+#ib_16384_0.dblwr
+#ib_16384_1.dblwr
+#innodb_redo
+#innodb_temp
+auto.cnf
+ca-key.pem
+ca.pem
+client-cert.pem
+client-key.pem
+ib_buffer_pool
+ibdata1
+mysql
+### S2: start on 127.0.0.1:3307 (loopback only)
+launched bg pid=2055
+mysqld UP after 2s
+UP=yes
+### S3: account + isolated databases (idempotent)
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1130 (HY000): Host '127.0.0.1' is not allowed to connect to this MySQL server
+account/db exit=1
+### S4: DELIVERABLE EVIDENCE — 库名/账号/端口/连接串/实测连通性
+--- [1] identity ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1130 (HY000): Host '127.0.0.1' is not allowed to connect to this MySQL server
+--- [2] databases in ISOLATED instance ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1130 (HY000): Host '127.0.0.1' is not allowed to connect to this MySQL server
+--- [3] users ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1130 (HY000): Host '127.0.0.1' is not allowed to connect to this MySQL server
+--- [4] TCP connectivity 127.0.0.1:3307 ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1130 (HY000): Host '127.0.0.1' is not allowed to connect to this MySQL server
+--- [5] unix socket connectivity ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+--- [6] CREATE/INSERT/SELECT round-trip in analytics_metric ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1130 (HY000): Host '127.0.0.1' is not allowed to connect to this MySQL server
+--- [7] listeners: 3307 on loopback only ---
+LISTEN 0      151         127.0.0.1:3307      0.0.0.0:*   
+--- [8] process identity ---
+2055 /opt/mysql-8.0.41/bin/mysqld --no-defaults --basedir=/opt/mysql-8.0.41 --datadir=/data/mysql-isolated/data --port=3307 --bind-address=127.0.0.1 --mysqlx=OFF --socket=/data/mysql-isolated/run/mysql3307.sock --pid-file=/data/mysql-isolated/run/mysql.pid --log-error=/data/mysql-isolated/log/error.log --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --skip-name-resolve
+--- [9] isolation proof: no 3306 in WSL; host 3306 is a SEPARATE process ---
+  WSL mysqld: datadir=/data/mysql-isolated/data port=3307 bind=127.0.0.1
+--- [10] sizes ---
+1.6G	/opt/mysql-8.0.41
+193M	/data/mysql-isolated
+/dev/sdd       1007G  7.9G  948G   1% /
+### DONE rc=0

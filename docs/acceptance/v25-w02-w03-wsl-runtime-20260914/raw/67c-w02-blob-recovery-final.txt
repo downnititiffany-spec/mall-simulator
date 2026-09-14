@@ -1,0 +1,31 @@
+=== [1] line endings + filter config ===
+  live file CRLF count: 18
+  core.autocrlf: unset
+  eol:           unset
+  filters:       none
+  .gitattributes present: no
+
+=== [2] hash-object WITH --no-filters (raw bytes) vs live ===
+  --no-filters blob: d9c39827d41f784c0999c5bd2b0ea8926462225c
+  RESULT: still differs
+    live: 659 B, blob: 0 B
+cmp: EOF on ‘/tmp/v25-bc/nf.out’ which is empty
+
+=== [3] plain hash-object vs --no-filters (are they the same object?) ===
+  plain blob:       d9c39827d41f784c0999c5bd2b0ea8926462225c
+  --no-filters blob:d9c39827d41f784c0999c5bd2b0ea8926462225c
+  identical? YES
+
+=== [4] decode the actual difference (first divergence) ===
+
+=== [5] FINAL correct check: all 9 via hash-object --no-filters ===
+  DIFF analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java
+  DIFF analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java
+  DIFF analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java
+  DIFF mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java
+  DIFF analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java
+  DIFF analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java
+  DIFF analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java
+  DIFF mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java
+  DIFF docs/acceptance/e4-cluster-1000-20260912/raw/f80-fix/twotoken-print.txt
+  -> recoverable byte-identical: 0 / 9   failed: 9

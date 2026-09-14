@@ -1,0 +1,39 @@
+mkdir: Permission denied
+--- download libaio1t64_0.3.113-8build1_amd64.deb ---
+  ok 7356 bytes
+--- download libnuma1_2.0.19-1build1_amd64.deb ---
+  ok 23654 bytes
+--- download libncurses6_6.6+20251231-1_amd64.deb ---
+  ok 114146 bytes
+### extract libs (dpkg-deb -x, no installation needed)
+extracted libaio1t64_0.3.113-8build1_amd64.deb
+extracted libnuma1_2.0.19-1build1_amd64.deb
+extracted libncurses6_6.6+20251231-1_amd64.deb
+--- .so files found ---
+/tmp/v25debs/x/usr/lib/x86_64-linux-gnu/libaio.so.1t64.0.2
+/tmp/v25debs/x/usr/lib/x86_64-linux-gnu/libform.so.6.6
+/tmp/v25debs/x/usr/lib/x86_64-linux-gnu/libmenu.so.6.6
+/tmp/v25debs/x/usr/lib/x86_64-linux-gnu/libncurses.so.6.6
+/tmp/v25debs/x/usr/lib/x86_64-linux-gnu/libnuma.so.1.0.0
+/tmp/v25debs/x/usr/lib/x86_64-linux-gnu/libpanel.so.6.6
+### install into /opt/mysql-libs (isolated, no system change)
+--- /opt/mysql-libs ---
+total 368
+lrwxrwxrwx 1 root root     18 Sep 14 12:29 libaio.so.1t64 -> libaio.so.1t64.0.2
+-rw-r--r-- 1 root root  14416 Sep 14 12:29 libaio.so.1t64.0.2
+lrwxrwxrwx 1 root root     14 Sep 14 12:29 libform.so.6 -> libform.so.6.6
+-rw-r--r-- 1 root root  69152 Sep 14 12:29 libform.so.6.6
+lrwxrwxrwx 1 root root     14 Sep 14 12:29 libmenu.so.6 -> libmenu.so.6.6
+-rw-r--r-- 1 root root  43656 Sep 14 12:29 libmenu.so.6.6
+lrwxrwxrwx 1 root root     17 Sep 14 12:29 libncurses.so.6 -> libncurses.so.6.6
+-rw-r--r-- 1 root root 166280 Sep 14 12:29 libncurses.so.6.6
+lrwxrwxrwx 1 root root     16 Sep 14 12:29 libnuma.so.1 -> libnuma.so.1.0.0
+-rw-r--r-- 1 root root  52328 Sep 14 12:29 libnuma.so.1.0.0
+lrwxrwxrwx 1 root root     15 Sep 14 12:29 libpanel.so.6 -> libpanel.so.6.6
+-rw-r--r-- 1 root root  22768 Sep 14 12:29 libpanel.so.6.6
+### ldd recheck WITH LD_LIBRARY_PATH and WITHOUT
+[without]
+	libaio.so.1 => not found
+	libnuma.so.1 => not found
+[with]
+	libaio.so.1 => not found

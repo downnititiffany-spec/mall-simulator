@@ -1,0 +1,16 @@
+=== LocalFileIngestor validator.check 调用点 ===
+76: String abs = checkpointKey(file);
+136: EventContractValidator.Violation v = validator.check(text, 0);
+231: static String checkpointKey(Path file) {
+366: FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, checkpointKey(file));
+
+=== EventContractValidator 行锚 ===
+56: for (String required : new String[]{"event_id", "event_type", "event_time", "ingest_time",
+117: if (v != null && v.isTextual() && !AMOUNT.matcher(v.asText()).matches()) {
+121: return key + " 类型异常";
+129: if (v != null && v.isTextual() && !AMOUNT.matcher(v.asText()).matches()) {
+
+=== mock-mall timePolicy ===
+116: "timePolicy": {
+117: "field": "event_time",
+118: "formats": ["ISO_OFFSET_DATE_TIME"]

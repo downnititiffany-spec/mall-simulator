@@ -1,0 +1,93 @@
+=== [1] 测试源码定位 ===
+D:\Develop_code\GraduationProject\analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSourceSchemaTest.java
+
+=== [2] 断言原文（:140-175） ===
+140:         List<String> files = new ArrayList<>();
+141:         try (var stream = Files.list(dir)) {
+142:             stream.filter(Files::isRegularFile)
+143:                     .filter(p -> p.getFileName().toString().endsWith(".json"))
+144:                     .forEach(p -> files.add(p.getFileName().toString()));
+145:         }
+146:         files.sort(java.util.Comparator.comparingInt(n -> Integer.parseInt(n.substring(0, n.length() - 5))));
+147:         assertThat(files).as("目录里应当有已落盘清单").isNotEmpty();
+148: 
+149:         // 基线 = 现行 schema **去掉** P1-05 新增的四个属性。这样"加法是否让旧清单变非法"
+150:         // 就成了同一套子集实现、同一批文件上的**集合差**，而不是一句无法证伪的口头保证。
+151:         JsonNode current = schema();
+152:         JsonNode baseline = withoutNewSourceProperties(current);
+153: 
+154:         List<String> before = new ArrayList<>();
+155:         List<String> after = new ArrayList<>();
+156:         List<String> backfilled = new ArrayList<>();
+157:         for (String name : files) {
+158:             JsonNode node = MAPPER.readTree(Files.readString(dir.resolve(name), StandardCharsets.UTF_8));
+159:             if (fieldNames(node).stream().anyMatch(NEW_SOURCE_KEYS::contains)) {
+160:                 backfilled.add(name);
+161:             }
+162:             validate(node, baseline).forEach(v -> before.add(name + ": " + v));
+163:             validate(node, current).forEach(v -> after.add(name + ": " + v));
+164:         }
+165: 
+166:         assertThat(backfilled)
+167:                 .as("前提校验：历史清单一个都不许被回填/改写（D-037 裁决 6）——否则下面的集合对比没有意义")
+168:                 .isEmpty();
+169:         assertThat(after)
+170:                 .as("P1-05 的契约扩展必须是加法：旧清单的违规集合不得增加任何一条")
+171:                 .isEqualTo(before);
+172: 
+173:         // 观测事实（不是本 lane 造成的，也不是本 lane 该修的）：1.json-5.json 的 batchId 是字符串。
+174:         // 该漂移在权威文件自己的 batchId description 里就有记载（"存在历史漂移：1.json-5.json 为字符串"），
+175:         // 因此这里把它**显式钉住**，而不是把断言放宽到"什么都不查"。
+
+=== [3] 40-43.json 是否受版本控制 ===
+-- untracked/ignored 检查 --
+-- check-ignore --
+.gitignore:30:landing/	landing/manifests/40.json
+
+=== [4] 这三个文件的 mtime ===
+
+Name    Length LastWriteTime
+----    ------ -------------
+4.json     614 2026/9/7 18:23:54
+40.json   1051 2026/9/12 9:23:15
+41.json   1365 2026/9/12 17:22:22
+42.json    763 2026/9/12 17:34:54
+43.json    754 2026/9/12 21:06:42
+
+
+
+=== [5] 测试最后改动 ===
+f646604 2026-09-12 09:09:19 +0800 feat(p1-05): 「源」维度进采集链——断点按源隔离 + 批次/清单归属 + 未绑定源失败关闭（总控独立 E2 500 例复核后合入）
+
+=== [6] 更正：测试实际所在模块与 reactor 归属 ===
+测试路径 = analytics-server/platform-app/src/test/java/... ⇒ 归属 platform-app（不是 connection-ingestion）
+platform-app Results = Tests run 100, Failures 1（同一 test 类 8 例中 1 例）
+connection-ingestion Results = Tests run 156, Failures 0 ⇒ 该模块全绿
+
+=== [7] NEW_SOURCE_KEYS 定义 ===
+28: *   <li>已落盘的历史清单（{@code landing/manifests/*.json}，实测 39 个，每个 15 个键、无新键）
+56: private static final List<String> NEW_SOURCE_KEYS =
+70: assertThat(props).containsAll(NEW_SOURCE_KEYS);
+79: .as("P1-05 之前落盘的 landing/manifests/*.json 没有这些键，进 required 会让它们立刻判非法")
+80: .doesNotContainAnyElementsOf(NEW_SOURCE_KEYS);
+119: @DisplayName("回归：真实历史清单 landing/manifests/30.json 仍通过现行 schema（15 键、无新键）")
+121: Path manifest = RepoRoot.path("landing/manifests/30.json");
+130: .doesNotContainAnyElementsOf(NEW_SOURCE_KEYS);
+137: Path dir = RepoRoot.path("landing/manifests");
+159: if (fieldNames(node).stream().anyMatch(NEW_SOURCE_KEYS::contains)) {
+190: NEW_SOURCE_KEYS.forEach(props::remove);
+
+=== [8] 39-43.json 实际键集合 ===
+39.json  keys(15): batchId, batchNo, runtimeProfileId, source, status, startedAt, finishedAt, files, acceptedRecords, quarantinedRecords, acceptedBytes, schemaVersions, acceptedUri, quarantineUri, checksum
+40.json  keys(19): batchId, batchNo, runtimeProfileId, source, status, startedAt, finishedAt, files, acceptedRecords, quarantinedRecords, acceptedBytes, schemaVersions, acceptedUri, quarantineUri, checksum, sourceCode, sourceId, profileVersion, mappingVersion
+41.json  keys(19): batchId, batchNo, runtimeProfileId, source, status, startedAt, finishedAt, files, acceptedRecords, quarantinedRecords, acceptedBytes, schemaVersions, acceptedUri, quarantineUri, checksum, sourceCode, sourceId, profileVersion, mappingVersion
+42.json  keys(19): batchId, batchNo, runtimeProfileId, source, status, startedAt, finishedAt, files, acceptedRecords, quarantinedRecords, acceptedBytes, schemaVersions, acceptedUri, quarantineUri, checksum, sourceCode, sourceId, profileVersion, mappingVersion
+43.json  keys(19): batchId, batchNo, runtimeProfileId, source, status, startedAt, finishedAt, files, acceptedRecords, quarantinedRecords, acceptedBytes, schemaVersions, acceptedUri, quarantineUri, checksum, sourceCode, sourceId, profileVersion, mappingVersion
+
+=== [9] landing/ 是否 gitignore ===
+.gitignore:30:landing/	landing/manifests/43.json
+
+=== [10] 结论 ===
+该失败是'机器状态相关'门禁：断言历史清单不得被回填 P1-05 的 4 个源维度键（D-037 裁决 6）。
+landing/ 被 .gitignore 排除 ⇒ 清单由真实采集 run 在运行期写入/演变，非仓库内固定件。
+40-43.json 的 mtime 为 2026-09-12 09:23 / 17:22 / 17:34 / 21:06，均晚于测试引入提交 f646604(09:09) ⇒ 期间有新 run 落盘并被回填。

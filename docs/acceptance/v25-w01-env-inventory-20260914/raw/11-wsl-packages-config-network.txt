@@ -1,0 +1,225 @@
+### dpkg-java-spark-hadoop-hive-mysql
+ca-certificates-java	20260311
+java-common	0.77
+libaopalliance-java	20070526-7
+libapache-pom-java	33-2build1
+libasm-java	9.9.1-1
+libatinject-jsr330-api-java	1.0+ds1-6build1
+libatk-wrapper-java	0.44.0-1
+libatk-wrapper-java-jni:amd64	0.44.0-1
+libcdi-api-java	1.2-4build1
+libcommons-cli-java	1.6.0-1
+libcommons-codec-java	1.18.0-1
+libcommons-io-java	2.19.0-1
+libcommons-lang3-java	3.17.0-2
+libcommons-logging-java	1.3.0-1ubuntu1
+libcommons-parent-java	56-1build1
+liberror-prone-java	2.18.0-1build1
+libgeronimo-annotation-1.3-spec-java	1.3-1build1
+libgeronimo-interceptor-3.0-spec-java	1.0.1-5fakesyncbuild1
+libguava-java	32.0.1-1build1
+libguice-java	5.1.0-1build1
+libhttpclient-java	4.5.14-1build1
+libhttpcore-java	4.4.16-1build1
+libjansi-java	2.4.2-1
+libjsoup-java	1.15.3-1build1
+libjsr305-java	0.1~+svn49-12
+libmaven-parent-java	43-2build1
+libmaven-resolver-java	1.9.25-1
+libmaven-shared-utils-java	3.4.2-1build1
+libmaven3-core-java	3.9.12-1
+libplexus-cipher-java	2.0-1build1
+libplexus-classworlds-java	2.7.0-1build1
+libplexus-component-annotations-java	2.1.1-1build1
+libplexus-interpolation-java	1.27-1build1
+libplexus-sec-dispatcher-java	2.0-3build1
+libplexus-utils2-java	3.4.2-1build1
+libpython3-stdlib:amd64	3.14.3-0ubuntu2
+libpython3.14:amd64	3.14.4-1ubuntu0.1
+libpython3.14-minimal:amd64	3.14.4-1ubuntu0.1
+libpython3.14-stdlib:amd64	3.14.4-1ubuntu0.1
+libsisu-inject-java	0.3.5-1build1
+libsisu-plexus-java	0.3.5-1build1
+libslf4j-java	1.7.32-2
+libwagon-file-java	3.5.3-2
+libwagon-http-java	3.5.3-2
+libwagon-provider-api-java	3.5.3-2
+maven	3.9.12-1
+mysql-client	8.4.10-0ubuntu0.26.04.1
+mysql-client-core	8.4.10-0ubuntu0.26.04.1
+mysql-common	5.8+1.1.1ubuntu2
+openjdk-11-jdk:amd64	11.0.32+9-1ubuntu1~26.04
+openjdk-11-jdk-headless:amd64	11.0.32+9-1ubuntu1~26.04
+openjdk-11-jre:amd64	11.0.32+9-1ubuntu1~26.04
+openjdk-11-jre-headless:amd64	11.0.32+9-1ubuntu1~26.04
+python3	3.14.3-0ubuntu2
+python3-apport	2.34.0-0ubuntu2
+python3-apt	3.1.0ubuntu1
+python3-attr	25.4.0-1build1
+python3-autocommand	2.2.2-4
+python3-automat	25.4.16-1build1
+python3-babel	2.17.0-2
+python3-bcrypt	5.0.0-3build1
+python3-blinker	1.9.0-2build1
+python3-certifi	2026.1.4+ds-1
+python3-cffi-backend:amd64	2.0.0-3build1
+python3-chardet	5.2.0+dfsg-2build1
+python3-click	8.2.0+0.really.8.1.8-1build1
+python3-commandnotfound	23.04.0build1
+python3-configobj	5.0.9-1build1
+python3-constantly	23.10.4-2build1
+python3-cryptography	46.0.5-1ubuntu2
+python3-dbus	1.4.0-1build2
+python3-debconf	1.5.92
+python3-distro	1.9.0-1build1
+python3-distro-info	1.15
+python3-distupgrade	1:26.04.22
+python3-gdbm	3.14.3-0ubuntu2
+python3-gi	3.56.2-1
+python3-hamcrest	2.1.0-3
+python3-httplib2	0.22.0-1ubuntu0.1
+python3-hyperlink	21.0.0-6build1
+python3-idna	3.11-1ubuntu0.1
+python3-incremental	24.7.2-4
+python3-inflect	7.5.0-1build1
+python3-jaraco.context	6.0.1-2
+python3-jaraco.functools	4.1.0-1build1
+python3-jaraco.text	4.0.0-1build1
+python3-jinja2	3.1.6-1build1
+python3-json-pointer	2.4-4
+python3-jsonpatch	1.32-6
+python3-jsonschema	4.19.2-6ubuntu2
+python3-jsonschema-specifications	2023.12.1-4
+python3-jwt	2.10.1-4ubuntu1
+python3-launchpadlib	2.1.0-1build1
+python3-lazr.restfulclient	0.14.6-3build1
+python3-lazr.uri	1.0.6-7build1
+python3-linkify-it	2.0.3-1ubuntu3
+python3-markdown-it	3.0.0-3build1
+python3-markupsafe	3.0.3-1build1
+python3-mdurl	0.1.2-1build1
+python3-minimal	3.14.3-0ubuntu2
+python3-more-itertools	10.8.0-1build1
+python3-netifaces:amd64	0.11.0-2build7
+python3-netplan	1.2-1ubuntu5
+python3-newt:amd64	0.52.25-1ubuntu3
+python3-oauthlib	3.3.1-1build1
+python3-openssl	25.3.0-1ubuntu1
+python3-packaging	26.0-1
+python3-passlib	1.9.3-1ubuntu1
+python3-pkg-resources	78.1.1-0.1build1
+python3-problem-report	2.34.0-0ubuntu2
+python3-pyasn1	0.6.3-1
+python3-pyasn1-modules	0.4.1-2build1
+python3-pycurl	7.45.7-3build1
+python3-pygments	2.19.2+dfsg-1
+python3-pyparsing	3.3.2-2
+python3-referencing	0.36.2-1ubuntu2
+python3-requests	2.32.5+dfsg-1ubuntu1
+python3-rich	13.9.4-1.2
+python3-rpds-py	0.27.1-2ubuntu3
+python3-serial	3.5-2build1
+python3-service-identity	24.2.0-1build1
+python3-setuptools	78.1.1-0.1build1
+python3-software-properties	0.120.1
+python3-systemd	235-1build9
+python3-twisted	25.5.0-5ubuntu0.1
+python3-typeguard	4.4.4-2
+python3-typing-extensions	4.15.0-2
+python3-uc-micro	1.0.3-1build1
+python3-update-manager	1:26.04.5
+python3-urllib3	2.6.3-1ubuntu1.1
+python3-wadllib	2.0.0-3
+python3-yaml	6.0.3-1build1
+python3-zipp	3.23.0-1build1
+python3-zope.interface	8.2-1build1
+python3.14	3.14.4-1ubuntu0.1
+python3.14-gdbm	3.14.4-1ubuntu0.1
+python3.14-minimal	3.14.4-1ubuntu0.1
+### /etc/alternatives java
+lrwxrwxrwx 1 root root 43 Apr 26 17:25 /etc/alternatives/java -> /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+lrwxrwxrwx 1 root root 44 Apr 26 17:25 /etc/alternatives/javac -> /usr/lib/jvm/java-11-openjdk-amd64/bin/javac
+### java pkg owner
+dpkg-query: no path found matching pattern /usr/bin/java
+### HOME subdirs deeper
+--- bd-case
+total 12
+drwxr-xr-x  3 asus asus 4096 Aug 26 20:37 .
+drwxr-x--- 10 asus asus 4096 Sep  7 17:45 ..
+drwxr-xr-x  2 asus asus 4096 Aug 26 20:37 data
+--- ds_logs
+total 8
+drwxr-xr-x  2 asus asus 4096 Sep  7 17:45 .
+drwxr-x--- 10 asus asus 4096 Sep  7 17:45 ..
+-rw-r--r--  1 asus asus    0 Sep  7 17:45 ds_logs.tgz
+--- spark-dl
+total 8
+drwxr-xr-x  2 asus asus 4096 Aug 26 20:29 .
+drwxr-x--- 10 asus asus 4096 Sep  7 17:45 ..
+-rw-r--r--  1 asus asus    0 Aug 26 20:29 spark-3.3.2-bin-hadoop3.2.tgz
+### find spark/hive/hadoop under HOME and /opt (depth 2)
+/home/asus/spark-dl
+/home/asus/spark-dl/spark-3.3.2-bin-hadoop3.2.tgz
+/opt/spark-3.3.2-bin-hadoop3
+### /opt/spark-3.3.2 RELEASE
+Spark 3.3.2 (git revision 5103e00c4c) built for Hadoop 3.3.2
+Build flags: -B -Pmesos -Pyarn -Pkubernetes -Psparkr -Pscala-2.12 -Phadoop-3 -Phive -Phive-thriftserver
+### java8 in /opt
+java version "1.8.0_351"
+Java(TM) SE Runtime Environment (build 1.8.0_351-b10)
+Java HotSpot(TM) 64-Bit Server VM (build 25.351-b10, mixed mode)
+### spark-shell/submit in /opt
+-rwxr-xr-x 1 asus asus 1040 Feb 11  2023 /opt/spark-3.3.2-bin-hadoop3/bin/spark-submit
+### bashrc/profile env exports (grep)
+/home/asus/.bashrc:123:export JAVA_HOME=/opt/jdk-8u351
+/home/asus/.bashrc:124:export PATH=$JAVA_HOME/bin:$PATH
+/home/asus/.bashrc:125:export SPARK_HOME=/opt/spark-3.3.2-bin-hadoop3
+/home/asus/.bashrc:126:export PATH=$SPARK_HOME/bin:$PATH
+### mysql server local?
+inactive
+inactive
+State  Recv-Q Send-Q  Local Address:Port Peer Address:PortProcess
+LISTEN 0      4096       127.0.0.54:53        0.0.0.0:*          
+LISTEN 0      1000   10.255.255.254:53        0.0.0.0:*          
+LISTEN 0      4096    127.0.0.53%lo:53        0.0.0.0:*          
+LISTEN 0      4096          0.0.0.0:22        0.0.0.0:*          
+LISTEN 0      4096             [::]:22           [::]:*          
+### mysql client version
+mysql  Ver 8.4.10-0ubuntu0.26.04.1 for Linux on x86_64 ((Ubuntu))
+### apt dry-run install (DOWNLOAD ONLY, no changes)
+NOTE: This is only a simulation!
+      apt-get needs root privileges for real execution.
+      Keep also in mind that locking is deactivated,
+      so don't depend on the relevance to the real current situation!
+Reading package lists...
+Building dependency tree...
+Reading state information...
+openjdk-11-jdk is already the newest version (11.0.32+9-1ubuntu1~26.04).
+Solving dependencies...
+0 upgraded, 0 newly installed, 0 to remove and 33 not upgraded.
+### apt list installed count
+677
+### network egress
+archive.ubuntu.com HTTP=200 time=0.973385
+dlcdn.apache.org HTTP=200 time=1.209241
+### resolv
+# This file was automatically generated by WSL. To stop automatic generation of this file, add the following entry to /etc/wsl.conf:
+# [network]
+# generateResolvConf = false
+nameserver 10.255.255.254
+### dns test
+28.0.0.217      archive.ubuntu.com
+### lsblk
+NAME MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+sda    8:0    0 356.9M  1 disk 
+sdb    8:16   0 159.4M  1 disk 
+sdc    8:32   0     4G  0 disk [SWAP]
+sdd    8:48   0     1T  0 disk /mnt/wslg/distro
+                               /
+### root disk
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdd       1007G  3.5G  953G   1% /
+### /mnt/d/Develop_code exists in WSL?
+/mnt/d/Develop_code/GraduationProject
+### WSL_INTEROP / shared
+WSL_DISTRO_NAME=Ubuntu  WSL_INTEROP=/run/WSL/575_interop

@@ -1,0 +1,170 @@
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-app -am test
+### JDK: 
+### 开始: 2026-09-14 12:17:01
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] platform-app                                                       [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/7]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Running com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Running com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Running com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.137 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Running com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Running com.graduation.analytics.testsupport.TestIsolationGuardTest
+[isolation-guard] cleanup 目标清单（删除前核对）count=2
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-bad runtime_profile_id=999101 status=FAILED active_flag=null
+[isolation-guard] cleanup 目标清单核对通过 testRunId=v25it-20260914-120000-a1b2
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=1 status=ACTIVE active_flag=1
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=S20260901_47 runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ghost runtime_profile_id=999101 status=ACTIVE active_flag=1
+[ERROR] Tests run: 17, Failures: 1, Errors: 3, Skipped: 0, Time elapsed: 0.121 s <<< FAILURE! -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[ERROR] com.graduation.analytics.testsupport.TestIsolationGuardTest.validConfigurationBuildsContext(Path) -- Time elapsed: 0.008 s <<< ERROR!
+com.graduation.analytics.testsupport.TestIsolationGuard$IsolationViolationException: hdfsRoot 不接受 file:// URI：请直接写本机绝对路径（实际 file:///D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-a1b2/hdfs）
+	at com.graduation.analytics.testsupport.TestIsolationGuard.requireScopedPath(TestIsolationGuard.java:720)
+	at com.graduation.analytics.testsupport.TestIsolationGuard$TestRunContext.<init>(TestIsolationGuard.java:265)
+	at com.graduation.analytics.testsupport.TestIsolationGuard.contextOf(TestIsolationGuard.java:306)
+	at com.graduation.analytics.testsupport.TestIsolationGuardTest.validConfigurationBuildsContext(TestIsolationGuardTest.java:283)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.testsupport.TestIsolationGuardTest.verificationFailsBeforeAnyConnectionIsOpened(Path) -- Time elapsed: 0.006 s <<< ERROR!
+com.graduation.analytics.testsupport.TestIsolationGuard$IsolationViolationException: hdfsRoot 不接受 file:// URI：请直接写本机绝对路径（实际 file:///D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-a1b2/hdfs）
+	at com.graduation.analytics.testsupport.TestIsolationGuard.requireScopedPath(TestIsolationGuard.java:720)
+	at com.graduation.analytics.testsupport.TestIsolationGuard$TestRunContext.<init>(TestIsolationGuard.java:265)
+	at com.graduation.analytics.testsupport.TestIsolationGuard.verifyContext(TestIsolationGuard.java:299)
+	at com.graduation.analytics.testsupport.TestIsolationGuardTest.verificationFailsBeforeAnyConnectionIsOpened(TestIsolationGuardTest.java:129)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.testsupport.TestIsolationGuardTest.declaredDatabaseOutsideScopeIsRejected(Path) -- Time elapsed: 0.003 s <<< ERROR!
+com.graduation.analytics.testsupport.TestIsolationGuard$IsolationViolationException: hdfsRoot 不接受 file:// URI：请直接写本机绝对路径（实际 file:///D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-a1b2/hdfs）
+	at com.graduation.analytics.testsupport.TestIsolationGuard.requireScopedPath(TestIsolationGuard.java:720)
+	at com.graduation.analytics.testsupport.TestIsolationGuard$TestRunContext.<init>(TestIsolationGuard.java:265)
+	at com.graduation.analytics.testsupport.TestIsolationGuard.verifyContext(TestIsolationGuard.java:299)
+	at com.graduation.analytics.testsupport.TestIsolationGuardTest.declaredDatabaseOutsideScopeIsRejected(TestIsolationGuardTest.java:145)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.testsupport.TestIsolationGuardTest.nullInputsAreRefused -- Time elapsed: 0.009 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual throwable to be an instance of:
+  com.graduation.analytics.testsupport.TestIsolationGuard.MissingConfigurationException
+but was:
+  com.graduation.analytics.testsupport.TestIsolationGuard$IsolationViolationException: hdfsRoot 必须是绝对路径的隔离根：/tmp/v25it-20260914-120000-a1b2
+	at com.graduation.analytics.testsupport.TestIsolationGuard.requireScopedPath(TestIsolationGuard.java:729)
+	at com.graduation.analytics.testsupport.TestIsolationGuard$TestRunContext.<init>(TestIsolationGuard.java:265)
+	at com.graduation.analytics.testsupport.TestIsolationGuardTest.lambda$nullInputsAreRefused$10(TestIsolationGuardTest.java:161)
+	...(76 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at com.graduation.analytics.testsupport.TestIsolationGuardTest.nullInputsAreRefused(TestIsolationGuardTest.java:162)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[V25-T01 见证] 原文命中（注释内，已按词法排除）: spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 → * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：
+[V25-T01 见证] 原文命中（注释内，已按词法排除）: spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 → *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.581 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   TestIsolationGuardTest.nullInputsAreRefused:162 
+Expecting actual throwable to be an instance of:
+  com.graduation.analytics.testsupport.TestIsolationGuard.MissingConfigurationException
+but was:
+  com.graduation.analytics.testsupport.TestIsolationGuard$IsolationViolationException: hdfsRoot 必须是绝对路径的隔离根：/tmp/v25it-20260914-120000-a1b2
+	at com.graduation.analytics.testsupport.TestIsolationGuard.requireScopedPath(TestIsolationGuard.java:729)
+	at com.graduation.analytics.testsupport.TestIsolationGuard$TestRunContext.<init>(TestIsolationGuard.java:265)
+	at com.graduation.analytics.testsupport.TestIsolationGuardTest.lambda$nullInputsAreRefused$10(TestIsolationGuardTest.java:161)
+	...(76 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR] Errors: 
+[ERROR]   TestIsolationGuardTest.declaredDatabaseOutsideScopeIsRejected:145 » IsolationViolation hdfsRoot 不接受 file:// URI：请直接写本机绝对路径（实际 file:///D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-a1b2/hdfs）
+[ERROR]   TestIsolationGuardTest.validConfigurationBuildsContext:283 » IsolationViolation hdfsRoot 不接受 file:// URI：请直接写本机绝对路径（实际 file:///D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-a1b2/hdfs）
+[ERROR]   TestIsolationGuardTest.verificationFailsBeforeAnyConnectionIsOpened:129 » IsolationViolation hdfsRoot 不接受 file:// URI：请直接写本机绝对路径（实际 file:///D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-a1b2/hdfs）
+[INFO] 
+[ERROR] Tests run: 78, Failures: 1, Errors: 3, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.007 s]
+[INFO] platform-common .................................... FAILURE [  3.820 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.227 s
+[INFO] Finished at: 2026-09-14T12:17:06+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project platform-common: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\analytics-server\platform-common\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :platform-common
+### EXIT=1
+### 结束: 2026-09-14 12:17:06

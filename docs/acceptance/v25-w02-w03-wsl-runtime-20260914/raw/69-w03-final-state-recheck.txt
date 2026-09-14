@@ -1,0 +1,50 @@
+=== FINAL STATE RE-PROBE  2026-09-14 12:50:48 +0800 ===
+
+--- [1] 隔离 MySQL 仍在? (E3/E5 启动门的唯一硬依赖) ---
+LISTEN 0      151         127.0.0.1:3307      0.0.0.0:*    users:(("mysqld",pid=2055,fd=17))
+  mysqld pid: 2055 
+TCP_OK	8.0.41	3307	127.0.0.1
+analytics_meta
+analytics_metric
+information_schema
+mall_simulator
+mysql
+performance_schema
+sys
+  -> TCP round-trip OK
+
+--- [2] WSL 状态 / 资源 ---
+               total        used        free      shared  buff/cache   available
+Mem:            7942        1101         752          13        6293        6840
+  nproc=4
+  swap: /dev/sdc 4G 
+
+--- [3] 是否误启动服务 / 是否 format 过 NameNode ---
+  OK: no cluster services running
+  /data/hdfs/name entries: 0  (0 = never formatted)
+
+--- [4] sshd 仍关闭? ---
+disabled
+inactive
+disabled
+inactive
+  OK: no :22 listener
+
+--- [5] 组件版本最终复核 ---
+  /opt/jdk-17.0.12/bin/java    openjdk version "17.0.12" 2024-07-16
+  /opt/jdk-8u351/bin/java      java version "1.8.0_351"
+  hadoop                       Hadoop 3.3.4
+  spark                          hive                         Hive 3.1.3
+
+--- [6] 全部交付文件清单（本任务目录） ---
+  README.md: 498 行 / 60K
+  raw/      : 49 文件 / 1.2M
+
+--- [7] 备份最终账 ---
+  v25-w02-20260914                                224 files     2.8M
+  v25-w02-20260914-snap2                         1100 files      47M
+  v25-w02-20260914-snap3                         1121 files      48M
+  v25-w02-20260914-snap4-worktrees               2750 files      93M
+  TOTAL: 5195 files / 189M
+
+### PROBE DONE rc=0

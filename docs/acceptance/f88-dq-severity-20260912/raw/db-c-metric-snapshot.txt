@@ -1,0 +1,24 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+section
+--- C1: metric_snapshot schema ---
+Table	Create Table
+metric_snapshot	CREATE TABLE `metric_snapshot` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `snapshot_id` varchar(64) NOT NULL,
+  `runtime_profile_id` bigint NOT NULL DEFAULT '1',
+  `runtime_profile_version` int NOT NULL DEFAULT '1',
+  `business_time` datetime(3) NOT NULL COMMENT '快照业务时间',
+  `pipeline_run_id` bigint DEFAULT NULL,
+  `status` varchar(24) NOT NULL COMMENT 'BUILDING/VERIFYING/ACTIVE/ARCHIVED/FAILED',
+  `version` int NOT NULL DEFAULT '1',
+  `data_updated_at` datetime(3) NOT NULL,
+  `published_at` datetime(3) DEFAULT NULL,
+  `source` varchar(32) NOT NULL DEFAULT 'local-calculator' COMMENT 'spark-job / local-calculator',
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_snapshot_id` (`snapshot_id`),
+  KEY `idx_snapshot_status` (`runtime_profile_id`,`status`)
+ERROR 1054 (42S22) at line 4: Unknown column 'business_date' in 'field list'
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='指标快照'
+section
+--- C2: metric_snapshot rows (all) ---

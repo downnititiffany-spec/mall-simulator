@@ -1,0 +1,114 @@
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -Dmaven.test.failure.ignore=true test
+### JAVA_HOME: D:\Develop\JAVA17  →  Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+### 开始: 2026-09-14 12:20:53  HEAD=eb08ed6a6e7fbe995ff362a9250fce9dc660743a
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] platform-app                                                       [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/7]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 12 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\java\com\graduation\analytics\metric\RuleSeverityTest.java使用或覆盖了已过时的 API。
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] 某些消息已经过简化; 请使用 -Xdiags:verbose 重新编译以获得完整输出
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[129,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[131,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[133,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[134,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[135,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[136,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[143,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[144,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[146,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[147,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[161,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[162,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[163,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[165,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[206,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[207,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[208,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[209,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[210,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[INFO] 19 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.008 s]
+[INFO] platform-common .................................... FAILURE [  7.403 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.760 s
+[INFO] Finished at: 2026-09-14T12:21:03+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:testCompile (default-testCompile) on project platform-common: Compilation failure: Compilation failure: 
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[129,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[131,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[133,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[134,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[135,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[136,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[143,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[144,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[146,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[147,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[161,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[162,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[163,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[165,44] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[206,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[207,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[208,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[209,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java:[210,40] 不兼容的类型: java.lang.String无法转换为com.graduation.analytics.metric.QualityRuleCatalog.FrozenRules
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :platform-common
+### EXIT=1
+### 结束: 2026-09-14 12:21:03

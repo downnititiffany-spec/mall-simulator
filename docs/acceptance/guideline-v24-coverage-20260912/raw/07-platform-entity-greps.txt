@@ -1,0 +1,62 @@
+[审计原始取证 07] 生成时刻 = 2026-09-12 23:0x-23:1x +08:00
+取证者 = 主审计者本人（read-only；命令全部为 git grep / Select-String / Get-ChildItem，对 HEAD 或工作树只读）
+用途 = 为「完全没做」类判定提供**正向 0 命中**证据（0 命中必须写明搜索范围，否则不算证据）
+
+== A. 平台侧实体存在性（git grep 于 HEAD） ==
+命令: git grep -l "interface SourceConnector" HEAD   → 命中仅 docs/*.md（V2.0–V2.4 指导书、看板、docs/v2-completeness-audit.md）⇒ **代码 0 命中**
+命令: git grep -l "class EventNormalizer|interface EventNormalizer" HEAD → 同上仅 docs ⇒ **代码 0 命中**
+命令: git grep -l "MetricStoreFactory" HEAD → 同上仅 docs ⇒ **代码 0 命中**
+命令: git grep -l "LocalFileConnector|FlumeLandingConnector" HEAD → 同上仅 docs ⇒ **代码 0 命中**
+命令: git grep -ln "source_connector|schema_mapping|source_instance\b" HEAD -- "*.sql" → **0 命中**
+命令: git grep -ln "source_manifest" HEAD -- "*.sql" "*.java" → **0 命中**
+命令: git grep -ln "quality_rule_definition" HEAD -- "*.sql" "*.java" → **0 命中**
+命令: git grep -ln "Blueprint|source_profile_draft|SourceProfileDraft" HEAD -- "*.java" "*.sql" "*.vue" → **0 命中**
+命令: git grep -ln "AIW-|modeling_wizard|ModelingWizard" HEAD → 命中仅 docs/README.md、docs/superpowers/plans/...v1.0.md、看板 V2.2 ⇒ **代码 0 命中**
+命令: git grep -n "LATE_ARRIVAL|late_arrival|迟到率|UV_PV|PAY_USER|REFUND_AMOUNT|STATE_JUMP" HEAD -- "*.java" "*.scala" → **0 命中**
+命令: git grep -n "TEMPLATE|templateCode" HEAD -- "analytics-server/ai-decision/src/main/java/com/graduation/analytics/decision/*.java" → **0 命中**
+命令: git grep -on "AMOUNT_RECONCILE|REQUIRED_FIELD_NULL_RATE|ENUM_WHITELIST|EVENT_ID_UNIQUE|LATE_ARRIVAL|SCHEMA_VERSION|JSON_PARSE|STATE_TRANSITION|REFUND|UV_PV|GMV" HEAD -- "*.java" "*.scala" | Sort -Unique
+        → 实测命中集合 = {AMOUNT_RECONCILE, ENUM_WHITELIST, EVENT_ID_UNIQUE, GMV, JSON_PARSE, REFUND, REQUIRED_FIELD_NULL_RATE, SCHEMA_VERSION}
+        （注：REFUND/GMV 为业务词汇而非规则码，规则码层面的实测集合见 raw/08）
+
+== B. 平台侧实体存在性（正向） ==
+命令: git grep -n "CREATE TABLE" HEAD -- "synthetic-data-generator/src/main/resources/db/generator/V1__generator_meta.sql"
+   → :12 generator_target / :30 generation_plan / :50 generation_run / :74 generation_artifact / :92 generation_event_stat  ⇒ 五表齐
+命令: git grep -n "CREATE TABLE" HEAD -- "analytics-server/platform-app/src/main/resources/db/meta/V3__platform_ai_audit.sql"
+   → :3 ai_query_history / :20 ai_call_log  ⇒ 仅 2 表（§8.2.2 要求 7 表）
+命令: git grep -n "CREATE TABLE" HEAD -- "analytics-server/platform-app/src/main/resources/db/meta/V4__platform_decisions.sql"
+   → :5 decision_task / :34 decision_evaluation  ⇒ 两表；decision_task 含 suggestion_snapshot_id / target_metric_code / target_direction / baseline_value / status（12 态）
+命令: git grep -ln "source_registry" HEAD -- "*.sql"
+   → analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql、V17__source_dimension_for_checkpoint_and_batch.sql、V18__source_warehouse_prefix.sql
+   ⇒ §5.2 表中的 `source_instance` 实体名在全仓 SQL 中**不存在**；实际落地的是 `source_registry`（V2.4 §12.3-3 自身裁决过该改名）
+命令: git grep -ln "ingestion_batch_file" HEAD -- "*.sql" "*.java"
+   → V1__platform_ingestion.sql、IngestionBatchFile.java 等 4 处 ⇒ 该实体存在
+命令: git grep -ln "implements LlmProvider|class .*LlmProvider" HEAD -- "*.java"
+   → MockLlmProvider.java、OpenAiCompatLlmProvider.java ⇒ 存在真实 HTTP 实现类，但**无真实凭据证据**（B-03 仍 BLOCKED）
+命令: git grep -ln "data_dev" HEAD -- "*.java" "*.sql" "*.vue" "*.js"
+   → AuthInterceptor/AuthService/PermissionCode/RolePermissions/UserEntity + 3 个测试 + 2 个 Controller ⇒ 角色与权限存在
+
+== C. 页面清单（工作树） ==
+命令: Get-ChildItem -Recurse -Path . -Include "*.vue" | Where FullName -notmatch node_modules
+  平台前端 web/src/views = {Overview, Behavior, Products, Sales, Rfm, Pipeline, Ops, Decisions, AiAssistant, Login}.vue；web/src/components = {AnalysisContext, BaseChart, ChartState, DataTable}.vue
+  商城前端 mall-frontend/src/views = {Login, Mall, AdminProducts}.vue
+  ⇒ **无 DataSources.vue / 数据源管理页面**（§8.1 与 V2.4 §12.3-5「数据源管理不能永久只有 API」所需）
+  ⇒ 生成器模块内 0 个页面文件（见 raw/06 第 11 项）
+
+== D. 数据质量闸门口径（工作树，未提交改动） ==
+命令: Select-String analytics-server\warehouse-pipeline\...\DataQualityGate.java -Pattern 'blocks|BLOCKING|ERROR|WARN'
+   → :20-21 注释「判定口径（D-142 §1，指导书 §7.3 原文不变）：BLOCKING 与 ERROR 未通过都算阻断」
+     :51 注释「F-94：判定走 RuleSeverity#blocks(String, String, Integer)（先按规则码归一化）」
+     :44 statusForRun → blockingFailures(results).isEmpty() ? PASS : FAIL
+     :73-74 不用单参版本（会把库里字面 ERROR 当阻断）
+   → 新增文件 analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/RuleSeverity.java = 存在（未提交）
+   → git status 显示本组文件为 ` M`（已修改未提交）与 `??`（未跟踪）⇒ F-88 修复**未入库**
+
+== E. 工作树 / HEAD 事实 ==
+命令: git log -1 --format="%h %ci %s"
+   → eeccf2d 2026-09-12 22:59:46 +0800 docs(board): 台账行 521 —— M3 撤回幽灵阻塞…裁决 G4 仍不裁/G2 仅入册/B-12 一次有界探测
+命令: git rev-parse --abbrev-ref HEAD → remediation/r1-boundary
+命令: git status --porcelain → 见 raw/04-git-facts.txt（含 11 个已修改文件 + 若干未跟踪验收目录）
+命令: git grep -n "priceUnreadable" HEAD -- "synthetic-data-generator/*"
+   → ProductPage.java:14,16,31,39,48,77 与 SecondMallHttpAdapter.java:313,326,337,339,346,348 **已在 HEAD**
+   ⇒ 指导书 V2.4 第 718 行写的「`priceUnreadable`（D-067 已裁、尚未落地）」在审计时刻**已过期**（该项已落地并入库）
+命令: git grep -n "class SecondMallHttpAdapter" HEAD → SecondMallHttpAdapter.java:77 ⇒ **已在 HEAD**

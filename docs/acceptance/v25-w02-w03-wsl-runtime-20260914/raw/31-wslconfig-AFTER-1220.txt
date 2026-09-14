@@ -1,0 +1,5 @@
+[wsl2]
+networkingMode=mirrored
+dnsTunneling=true
+memory=6GB
+processors=2

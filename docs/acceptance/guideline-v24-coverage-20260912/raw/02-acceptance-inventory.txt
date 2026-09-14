@@ -1,0 +1,32 @@
+[审计原始取证 02] 生成时刻 = 2026-09-12 23:06:07 +08:00
+== docs/acceptance 证据盘点（只读枚举）==
+验收子目录数 = 49
+文件总数 = 1416
+总字节 = 89292982
+
+== 按 LastWriteTime 倒序（前 25）==
+p3-02-mapping-executor-20260912  files=2  mtime=2026-09-12 23:06:06
+guideline-v24-coverage-20260912  files=2  mtime=2026-09-12 23:06:00
+b13-db-forensics-20260912  files=5  mtime=2026-09-12 23:03:40
+f88-dq-severity-20260912  files=28  mtime=2026-09-12 23:03:20
+p5-heterogeneous-source-20260912  files=57  mtime=2026-09-12 22:25:35
+e5-preaccept-20260912  files=110  mtime=2026-09-12 22:17:39
+m3-step8-parity-20260912  files=209  mtime=2026-09-12 22:02:36
+p3-01a-mock-mall-profile-20260912  files=29  mtime=2026-09-12 20:59:45
+p2-03-surrogate-key-20260912  files=56  mtime=2026-09-12 20:50:20
+p2-02-multiformat-time-20260912  files=19  mtime=2026-09-12 20:42:42
+p2-05-ods-rebuild-guard-20260912  files=6  mtime=2026-09-12 20:23:48
+p2-04-dwd-source-projection-20260912  files=6  mtime=2026-09-12 20:23:48
+p2-01-ods-v2-spec-draft-20260912  files=4  mtime=2026-09-12 20:18:31
+p2-01-ods-v2-20260912  files=84  mtime=2026-09-12 19:46:27
+t2rerun-golden55-post-ct-20260912  files=53  mtime=2026-09-12 19:32:40
+ct-batch-20260912  files=94  mtime=2026-09-12 17:15:22
+ct-integration-20260912  files=16  mtime=2026-09-12 17:13:34
+p1-baseline-r39-20260911  files=45  mtime=2026-09-12 16:46:29
+e4-cluster-1000-20260912  files=96  mtime=2026-09-12 16:32:14
+m3-cluster-probe-20260912  files=21  mtime=2026-09-12 15:45:09
+m1-3-dead-sql-20260912  files=2  mtime=2026-09-12 15:23:42
+m1-9-second-adapter-20260912  files=34  mtime=2026-09-12 15:09:29
+m3-preflight-20260912  files=1  mtime=2026-09-12 15:08:32
+v18-real-db-20260912  files=17  mtime=2026-09-12 15:06:01
+p2-07-source-prefix-20260912  files=20  mtime=2026-09-12 13:57:07

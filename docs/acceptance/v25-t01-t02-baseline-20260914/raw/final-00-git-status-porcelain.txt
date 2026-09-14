@@ -1,0 +1,59 @@
+ M analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java
+ M analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java
+ M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+ M analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+ M docs/README.md
+ M docs/acceptance/b13-db-forensics-20260912/README.md
+?? after-reboot-cleanup.ps1
+?? alibaba-fix-src.txt
+?? alibaba-fix.ps1
+?? analytics-server/integration.local.properties.template
+?? analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublishValidatorSeverityTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestRuntimePatrolTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSchemaSubset.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/ManifestFreezePatrol.java
+?? analytics-server/platform-app/src/test/resources/
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleCatalog.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleDefinition.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/RuleSeverity.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/IsolationProfileCondition.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuard.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuardTest.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestRunDigest.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralScanner.java
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? docs/acceptance/b13-db-forensics-20260912/raw/14-binlog-coverage-map.txt
+?? docs/acceptance/b13-db-forensics-20260912/raw/15-000125-analytics_meta-metric-sept7.log
+?? docs/acceptance/b13-db-forensics-20260912/raw/16-000129-analytics_meta-metric-events.log
+?? docs/acceptance/f88-dq-severity-20260912/
+?? docs/acceptance/guideline-v24-coverage-20260912/
+?? docs/acceptance/local-readiness-20260914.md
+?? docs/acceptance/p3-02-mapping-executor-20260912/
+?? docs/acceptance/v25-document-release-20260914.md
+?? docs/acceptance/v25-r01-coverage-20260914/
+?? docs/acceptance/v25-t01-t02-baseline-20260914/
+?? docs/acceptance/v25-w01-env-inventory-20260914/
+?? "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.5.md"
+?? fix-autostart.ps1
+?? optimize-src.txt
+?? optimize.ps1
+?? orphan-cleanup-report.txt
+?? orphan2-src.txt
+?? orphan2.ps1
+?? post-opt-verify-src.txt
+?? post-opt-verify.ps1
+?? post-reboot-check-src.txt
+?? post-reboot-check.ps1
+?? target-cp-pc.txt
+?? target-deps-pc.txt

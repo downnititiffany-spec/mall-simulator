@@ -1,0 +1,33 @@
+=== git worktree list --porcelain (read-only) ===
+worktree /mnt/d/Develop_code/GraduationProject
+HEAD f00462c51023ce5b12e0b649e7813ed789f6f17e
+branch refs/heads/remediation/r1-boundary
+
+worktree /mnt/d/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt/D:/Develop/GraduationProject/.f88-baseline-wt
+HEAD dba438135271de18b289caebaf500f0590a0345a
+detached
+prunable gitdir file points to non-existent location
+
+worktree /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix/D:/Develop_code/GraduationProject-wt/m3-jdk8fix
+HEAD f26be2624262a12d92f0cdc7a97415c4f07a1b35
+detached
+prunable gitdir file points to non-existent location
+
+
+=== per-worktree status counts (NUL-safe, via git -z | tr) ===
+--- /mnt/d/Develop_code/GraduationProject
+    830  M
+    282 ??
+    total entries: 1113
+--- /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix
+    total entries: 0
+[/mnt/d/Develop_code/GraduationProject/.git/worktrees/.f88-baseline-wt] MISSING
+
+=== MAIN: tracked-change breakdown (first 25 paths per code) ===
+[ M] 831
+[M ] 0
+[MM] 0
+[A ] 0
+[AM] 0
+[D ] 0
+[R ] 0

@@ -1,0 +1,27 @@
+=== backing up the 9 false-positive files ===
+  GRABBED m3-jdk8fix/analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java (659 B)
+  GRABBED m3-jdk8fix/analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java (642 B)
+  GRABBED m3-jdk8fix/analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java (2482 B)
+  GRABBED m3-jdk8fix/mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java (654 B)
+  GRABBED f88-baseline-wt/analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java (659 B)
+  GRABBED f88-baseline-wt/analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java (642 B)
+  GRABBED f88-baseline-wt/analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java (2482 B)
+  GRABBED f88-baseline-wt/mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java (654 B)
+  GRABBED f88-baseline-wt/docs/acceptance/e4-cluster-1000-20260912/raw/f80-fix/twotoken-print.txt (259 B)
+
+=== sanity: do these files actually contain credential MATERIAL? (scan for assignments) ===
+--- EnvCredentialService.java
+20:            @Value("${platform.metric.read.password:metric_read_pw_2026}") String defaultMetricPassword) {
+22:        this.defaultMetricPassword = defaultMetricPassword;
+--- twotoken-print.txt
+
+=== final verdict tally in snapshot-4 manifest ===
+   2741 BACKED_UP:VERIFIED
+      9 BACKED_UP:VERIFIED_FALSE_POSITIVE
+
+=== final counts ===
+  manifest rows: 2750
+  files on disk: 2750
+  m3-jdk8fix   : 1226
+  f88-baseline : 1524
+  size         : 93M

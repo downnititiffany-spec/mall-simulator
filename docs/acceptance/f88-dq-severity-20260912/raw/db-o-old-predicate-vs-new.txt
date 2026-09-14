@@ -1,0 +1,17 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
++--------+-----------------------------+-----------------------------+
+| run_id | old_predicate_blocking_rows | new_predicate_blocking_rows |
++--------+-----------------------------+-----------------------------+
+|     24 |                           3 |                           0 |
+|     47 |                           3 |                           0 |
++--------+-----------------------------+-----------------------------+
++--------+--------------------------------+----------+--------+
+| run_id | rule_code                      | severity | passed |
++--------+--------------------------------+----------+--------+
+|     24 | ADS_STAGING_SNAPSHOT_ISOLATION | ERROR    |      0 |
+|     24 | EVENT_ID_UNIQUE                | ERROR    |      0 |
+|     24 | PUB_DQ_EVENT_ID_UNIQUE         | ERROR    |      0 |
+|     47 | ADS_STAGING_SNAPSHOT_ISOLATION | ERROR    |      0 |
+|     47 | EVENT_ID_UNIQUE                | ERROR    |      0 |
+|     47 | PUB_DQ_EVENT_ID_UNIQUE         | ERROR    |      0 |
++--------+--------------------------------+----------+--------+

@@ -1,0 +1,18 @@
+### CMD (READ ONLY, recheck at 2026-09-14 12:38:59): production state of analytics_metric + analytics_meta (COUNT(*) not TABLE_ROWS)
+### NOTE: http://127.0.0.1:8091 now REFUSES connection (target machine actively refused) -> the 23:1x read-only HTTP reading cannot be reproduced; see erratum §12.4 leg (iii)
+src	exact_rows	min_id	max_id
+analytics_metric.metric_snapshot	12	4	27
+analytics_metric.metric_value	110	NULL	NULL
+analytics_meta.metric_snapshot	9	1	9
+analytics_meta.metric_value	132	NULL	NULL
+### analytics_metric.metric_snapshot rows (id>=20):
+id	snapshot_id	status	active_flag	version	definition_version	source	created_at
+22	S20260901_38	FAILED	NULL	7	v2	spark-ads	2026-09-11 15:01:02.630
+23	S20260901_39	ARCHIVED	NULL	8	v2	spark-ads	2026-09-11 15:12:21.981
+24	S20260901_41	ARCHIVED	NULL	9	v2	spark-ads	2026-09-12 09:31:13.337
+25	S20260901_42	ARCHIVED	NULL	10	v2	spark-ads	2026-09-12 17:28:12.666
+26	S20260901_43	ARCHIVED	NULL	11	v2	spark-ads	2026-09-12 17:39:51.900
+27	S20260901_47	ACTIVE	1	12	v2	spark-ads	2026-09-12 21:29:27.282
+### S20260901_47 metric_value (10 rows) max/min:
+rows_n	min_v	max_v
+10	0.2000	2042.0000

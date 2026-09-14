@@ -1,0 +1,77 @@
+=== [1] raw contents of the two worktree .git pointer files ===
+--- m3-jdk8fix/.git
+gitdir: D:/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix
+--- f88/.git
+gitdir: D:/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt
+
+=== [2] the CORRECT gitdir string should be the main admin dir: ===
+    /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix
+    /mnt/d/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt
+
+=== [3] admin dirs still intact? ===
+total 200
+drwxrwxrwx 1 asus asus    512 Sep 14 12:20 .
+drwxrwxrwx 1 asus asus    512 Sep 12 22:31 ..
+-rwxrwxrwx 1 asus asus     41 Sep 12 15:59 HEAD
+-rwxrwxrwx 1 asus asus     41 Sep 12 15:59 ORIG_HEAD
+-rwxrwxrwx 1 asus asus      6 Sep 12 15:59 commondir
+-rwxrwxrwx 1 asus asus     53 Sep 12 15:59 gitdir
+-rwxrwxrwx 1 asus asus 204254 Sep 12 16:08 index
+drwxrwxrwx 1 asus asus    512 Sep 12 15:59 logs
+drwxrwxrwx 1 asus asus    512 Sep 12 15:59 refs
+---
+total 248
+drwxrwxrwx 1 asus asus    512 Sep 14 12:20 .
+drwxrwxrwx 1 asus asus    512 Sep 12 22:31 ..
+-rwxrwxrwx 1 asus asus     41 Sep 12 22:08 HEAD
+-rwxrwxrwx 1 asus asus     41 Sep 12 22:08 ORIG_HEAD
+-rwxrwxrwx 1 asus asus      6 Sep 12 22:08 commondir
+-rwxrwxrwx 1 asus asus     51 Sep 12 22:08 gitdir
+-rwxrwxrwx 1 asus asus 252619 Sep 14 12:20 index
+drwxrwxrwx 1 asus asus    512 Sep 12 22:08 logs
+drwxrwxrwx 1 asus asus    512 Sep 12 22:08 refs
+
+=== [4] read-only verification: can we run git with an EXPLICIT work-tree, no writes? ===
+--- m3-jdk8fix vs HEAD f26be26 (using --git-dir + --work-tree) ---
+ M .gitignore
+ M README.md
+ M analytics-server/ai-decision/pom.xml
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/ExplanationService.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/QuestionSafetyScreen.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/RuleBasedSqlFallback.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/SemanticCatalog.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/TextToSqlService.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/entity/AiCallLog.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/entity/AiQueryHistory.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/AnomalyRules.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/EvidenceBuilder.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/EvidencePackage.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/EvidenceRequest.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/EvidenceService.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/EvidenceTemplates.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/MetricLineage.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/llm/JsonExtractor.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/llm/LlmProvider.java
+ M analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/llm/MockLlmProvider.java
+rc=0
+
+=== [5] mtimes of the 4 known-modified m3-jdk8fix files (compare to snapshot-1 12:20 / HEAD) ===
+  2026-09-12 16:06:04  len=5849    sha=148180b477feee94
+  2026-09-12 16:09:09  len=10166   sha=bac985bbf206958d
+  2026-09-12 16:05:58  len=5884    sha=dfc54da2ebef2df4
+  2026-09-12 16:04:55  len=13404   sha=e429865bb97b4845
+
+=== [6] compare LIVE m3 files against SNAPSHOT-1 backup copies (byte-identical?) ===
+  IDENTICAL-TO-SNAP1: spark-jobs/pom.xml
+  IDENTICAL-TO-SNAP1: spark-jobs/src/main/scala/com/graduation/analytics/job/MetricExportJob.scala
+  IDENTICAL-TO-SNAP1: spark-jobs/src/test/scala/com/graduation/analytics/P2TestSupport.scala
+  IDENTICAL-TO-SNAP1: spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala
+
+=== [7] .f88-baseline-wt clean? mtime sample of its files ===
+2026-09-12 22:08:54.773028800 +0800  /mnt/d/Develop/GraduationProject/.f88-baseline-wt/README.md
+newest 5 files in f88:
+2026-09-12 23:02 /mnt/d/Develop/GraduationProject/.f88-baseline-wt/analytics-server/metric-analysis/target/surefire-reports/TEST-com.graduation.analytics.analysis.AnalysisGoldenMySqlIT.xml
+2026-09-12 23:02 /mnt/d/Develop/GraduationProject/.f88-baseline-wt/analytics-server/metric-analysis/target/surefire-reports/com.graduation.analytics.analysis.AnalysisGoldenMySqlIT.txt
+2026-09-12 23:02 /mnt/d/Develop/GraduationProject/.f88-baseline-wt/analytics-server/metric-analysis/target/surefire-reports/2026-09-12T23-02-46_381.dumpstream
+2026-09-12 23:02 /mnt/d/Develop/GraduationProject/.f88-baseline-wt/analytics-server/metric-analysis/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+2026-09-12 23:02 /mnt/d/Develop/GraduationProject/.f88-baseline-wt/analytics-server/metric-analysis/target/test-classes/com/graduation/analytics/metric/publish/MetricPublishValidatorTest.class

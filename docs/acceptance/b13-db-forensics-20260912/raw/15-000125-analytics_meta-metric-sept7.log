@@ -1,0 +1,74 @@
+### CMD (READ ONLY): mysqlbinlog -R LAPTOP-8F8T3J1B-bin.000125 --start-datetime='2026-09-07 00:00:00' --stop-datetime='2026-09-08 00:00:00' --base64-output=DECODE-ROWS -v | grep exact pair nalytics_meta.metric_(snapshot|value)
+### file 000125 covers 260907 21:41:35 (prev 000124 last) .. 260907 21:41:35 ; note previous file 000125 first=260906 21:48:19 last=260907 21:41:35
+### elapsed_s=24  total_lines=14953954
+### hits=334
+#260907 17:31:43 server id 1  end_log_pos 487441113 CRC32 0x89a7cd70 	Table_map: `analytics_meta`.`metric_snapshot` mapped to number 307
+### INSERT INTO `analytics_meta`.`metric_snapshot`
+#260907 17:31:43 server id 1  end_log_pos 487441553 CRC32 0x684f2d81 	Table_map: `analytics_meta`.`metric_snapshot` mapped to number 307
+### UPDATE `analytics_meta`.`metric_snapshot`
+#260907 17:31:43 server id 1  end_log_pos 487442794 CRC32 0xd6aec318 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487442984 CRC32 0x870319b4 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487443171 CRC32 0xbdda4058 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487443359 CRC32 0xb5ae6049 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487443551 CRC32 0xf7f92cc0 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487443748 CRC32 0xe2a217e9 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487443947 CRC32 0x8ce2803e 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487444138 CRC32 0x94f98f91 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487444334 CRC32 0xe66296ae 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487444537 CRC32 0xe9bc7729 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487444733 CRC32 0x6779a98b 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487444926 CRC32 0x9b5a4b62 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487445120 CRC32 0x3edd7642 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487445316 CRC32 0x4c466f7d 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487445514 CRC32 0xa7d8f56a 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487445711 CRC32 0xa75f9af6 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:31:43 server id 1  end_log_pos 487445911 CRC32 0xda95bfee 	Table_map: `analytics_meta`.`metric_snapshot` mapped to number 307
+### UPDATE `analytics_meta`.`metric_snapshot`
+#260907 17:38:54 server id 1  end_log_pos 487456401 CRC32 0xca3fb32b 	Table_map: `analytics_meta`.`metric_snapshot` mapped to number 307
+### INSERT INTO `analytics_meta`.`metric_snapshot`
+#260907 17:38:54 server id 1  end_log_pos 487456841 CRC32 0x189dc021 	Table_map: `analytics_meta`.`metric_snapshot` mapped to number 307
+### UPDATE `analytics_meta`.`metric_snapshot`
+#260907 17:38:54 server id 1  end_log_pos 487458082 CRC32 0x6d1cdd2d 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487458272 CRC32 0x70b4a989 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487458459 CRC32 0x46231bdb 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487458647 CRC32 0x9d8b9e92 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487458839 CRC32 0xc3791719 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487459036 CRC32 0xf9a04ef5 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487459235 CRC32 0xb862bbe7 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487459426 CRC32 0x33ee54a6 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+#260907 17:38:54 server id 1  end_log_pos 487459622 CRC32 0xd2e2ad77 	Table_map: `analytics_meta`.`metric_value` mapped to number 312
+### INSERT INTO `analytics_meta`.`metric_value`
+### --- DDL/DML keywords anywhere in 000125 (counts) ---
+### CREATE TABLE `metric_snapshot` = 0
+### CREATE TABLE `metric_value` = 0
+### TRUNCATE = 0
+### DROP TABLE = 3
+### use `analytics_meta` = 1
+### last 3 event ts in 000125:
+#260907 19:33:50 server id 1  end_log_pos 487659879 CRC32 0xe902e559 	Update_rows: table id 305 flags: STMT_END_F
+#260907 19:33:50 server id 1  end_log_pos 487659910 CRC32 0x6d49bf88 	Xid = 14724210
+#260907 21:41:35 server id 1  end_log_pos 487659933 CRC32 0xea3e85e1 	Stop

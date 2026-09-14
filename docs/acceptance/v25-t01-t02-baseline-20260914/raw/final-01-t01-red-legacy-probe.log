@@ -1,0 +1,97 @@
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-common -am -Dtest=WarehouseNameLiteralGateLegacyProbeTest -DfailIfNoSpecifiedTests=false test
+### JDK: 
+### 开始: 2026-09-14 12:16:29
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/2]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/2]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 13 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\java\com\graduation\analytics\metric\RuleSeverityTest.java使用或覆盖了已过时的 API。
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.256 s <<< FAILURE! -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest
+[ERROR] com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest.noBareWarehouseNameLiterals -- Time elapsed: 0.133 s <<< FAILURE!
+java.lang.AssertionError: 
+[库名必须只由 WarehouseNamespace 派生（唯一所有者）；发现裸字面量或前缀拼接：
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 → * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：
+spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 → *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`] 
+Expecting empty but was: ["spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 → * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：",
+    "spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 → *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`"]
+	at com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest.noBareWarehouseNameLiterals(WarehouseNameLiteralGateLegacyProbeTest.java:113)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   WarehouseNameLiteralGateLegacyProbeTest.noBareWarehouseNameLiterals:113 [库名必须只由 WarehouseNamespace 派生（唯一所有者）；发现裸字面量或前缀拼接：
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 → * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：
+spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 → *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`] 
+Expecting empty but was: ["spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 → * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：",
+    "spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 → *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`"]
+[INFO] 
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... FAILURE [  6.272 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.618 s
+[INFO] Finished at: 2026-09-14T12:16:37+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project platform-common: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\analytics-server\platform-common\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :platform-common
+### EXIT=1
+### 结束: 2026-09-14 12:16:37

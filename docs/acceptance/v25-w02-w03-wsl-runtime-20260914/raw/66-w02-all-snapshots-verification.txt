@@ -1,0 +1,43 @@
+=== [1] the 9 SECRET-EXCLUDED paths (presence only; content NOT copied) ===
+m3-jdk8fix	analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java
+m3-jdk8fix	analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java
+m3-jdk8fix	analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java
+m3-jdk8fix	mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java
+f88-baseline-wt	analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java
+f88-baseline-wt	analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java
+f88-baseline-wt	analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java
+f88-baseline-wt	docs/acceptance/e4-cluster-1000-20260912/raw/f80-fix/twotoken-print.txt
+f88-baseline-wt	mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java
+
+=== [2] per-worktree MANIFEST tallies ===
+   1524 f88-baseline-wt
+   1226 m3-jdk8fix
+--- m3 status tally from manifest ---
+   1226  M
+--- f88 status tally from manifest ---
+   1524  M
+
+=== [3] RE-HASH every backed-up file against the manifest (integrity proof) ===
+re-verified OK: 2741   mismatches/missing: 0
+
+=== [4] LIVE-vs-BACKUP byte comparison for a random 12 m3 files ===
+  live=fa8fc5501b4b back=fa8fc5501b4b SAME  .gitignore
+  live=eae6c299373a back=eae6c299373a SAME  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/mapper/SourceRegistryMapper.java
+  live=86dce90b108a back=86dce90b108a SAME  analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixMigrationScriptTest.java
+  live=9a203c5a5f4f back=9a203c5a5f4f SAME  docs/acceptance/m1-4-d10-failpath-20260912/raw/e1-d10-compile-20260912-105719.log
+  live=e8dc8a2c1191 back=e8dc8a2c1191 SAME  docs/acceptance/m1-9-second-adapter-20260912/evidence/R2-baseline-sha256-before.txt
+  live=3929a03eb386 back=3929a03eb386 SAME  docs/acceptance/p1-03-source-registry-api-20260911/raw/green-01-test-compile.log
+  live=343b3586c747 back=343b3586c747 SAME  docs/acceptance/p2-01-ods-v2-20260912/evidence/e2-full-20260912.log
+  live=e5657d709bad back=e5657d709bad SAME  docs/acceptance/p2-03-surrogate-key-20260912/raw/grep-surrogate-key-per-file.tsv
+  live=7c527cb49577 back=7c527cb49577 SAME  docs/acceptance/r9-20260911-fabc6cb-run22-S20260901_22/13-ads-overview-active.tsv
+  live=3333448addd2 back=3333448addd2 SAME  experiments/spark-chain-local-20260906-174311.json
+  live=77f36e65d237 back=77f36e65d237 SAME  mall-simulator/src/test/java/com/graduation/mall/support/SeqEventIdGenerator.java
+  live=57e535ef0ea7 back=57e535ef0ea7 SAME  synthetic-data-generator/src/main/java/com/graduation/generator/adapter/TargetConfig.java
+  live=47da4284d608 back=47da4284d608 SAME  web/src/utils/exportCsv.js
+
+=== [5] FINAL: all four snapshots on disk ===
+  v25-w02-20260914                                  224 files      2.8M
+  v25-w02-20260914-snap2                           1100 files       47M
+  v25-w02-20260914-snap3                           1121 files       48M
+  v25-w02-20260914-snap4-worktrees                 2741 files       93M
+  GRAND TOTAL: 5186 files, 189M

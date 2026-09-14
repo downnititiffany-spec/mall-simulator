@@ -1,0 +1,30 @@
+### 命令（逐字，第二版；冻结登记全部 43 个文件）
+###   javac -encoding UTF-8 -cp "<jackson 2.17.2>" -d D:\Develop_code\GraduationProject\docs\acceptance\v25-t01-t02-baseline-20260914\raw\probe\t02tamperout 
+###       <仓>\analytics-server\platform-common\src\test\java\com\graduation\analytics\testsupport\RepoRoot.java 
+###       <仓>\analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\IngestionManifestSchemaSubset.java 
+###       <仓>\analytics-server\platform-app\src\test\java\com\graduation\analytics\ingestion\ManifestFreezePatrol.java 
+###       <仓>\docs\acceptance\v25-t01-t02-baseline-20260914\raw\probe\T02TamperProbe.java
+###   java -Dfile.encoding=UTF-8 -cp "D:\Develop_code\GraduationProject\docs\acceptance\v25-t01-t02-baseline-20260914\raw\probe\t02tamperout;<仓>\analytics-server\platform-app\src\test\resources;<jackson 2.17.2>" 
+###       com.graduation.analytics.ingestion.T02TamperProbe <仓> <临时工作目录>
+### JDK: D:\Develop\JAVA17
+### 时间: 2026-09-14 12:23:17   HEAD: 3fcf90e30962ae528b2079dc5c40070f1f6b7257
+### 目的: 证明巡检判红依赖 sha256 而非文件名存在性：等长改写（字节数不变、内容不同）
+### 第一版运行见 t02-tamper-negative-firstrun.log（第一版只冻结了 2.json 一个条目，
+### 其余 42 个文件因此按设计被登记为"新到件"，探针自己的期望写错了；巡检行为本身正确）
+### JAVAC-EXIT=0
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+  [PASS] 前提：改写前后字符串长度相同（等长改写，靠大小/存在性抓不到）
+  [PASS] 前提：改写前后内容确实不同
+被改写文件: 2.json
+  冻结 sha256 : d0dfb5d9af70249561edb437d73e8bcb62b23b33f84f05543dc458a23e12ffed
+  盘上 sha256 : 3ea57218ac66aef21e7fe9003c7f33f3d45b890c8e87703eb68870412ec086bd
+  冻结 bytes  : 5944   盘上 bytes: 5944   （字节数相同 ⇒ 只有 sha256 能发现）
+  差异片段: "local-file" → "local-filf"
+[巡检输出] 冻结登记 43 个（全部 43 个），只有 2.json 被改写；冻结清单核对: 43 个；违规: 1
+  [违规] 2.json 内容被改动：sha256 3ea57218ac66aef21e7fe9003c7f33f3d45b890c8e87703eb68870412ec086bd ≠ 冻结 d0dfb5d9af70249561edb437d73e8bcb62b23b33f84f05543dc458a23e12ffed
+新到文件（不判红）: 0
+  [PASS] 负例：同名字节改写被判红（1 条违规）
+  [PASS] 负例：违规文案点明 sha256 不一致
+  [PASS] 负例：被改写的冻结文件没有被降级成「新到文件」放过（新到件数为 0）
+TAMPER-PROBE-OK（0 处失败）
+### JAVA-EXIT=0

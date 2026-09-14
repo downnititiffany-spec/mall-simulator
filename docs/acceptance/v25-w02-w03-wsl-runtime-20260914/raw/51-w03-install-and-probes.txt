@@ -1,0 +1,56 @@
+### PHASE A: versions locked (see README compat matrix)
+Mon Sep 14 12:22:38 CST 2026
+               total        used        free      shared  buff/cache   available
+Mem:            7942         754        4334           3        3028        7188
+/dev/sdd       1007G  5.1G  951G   1% /
+### PHASE B: JDK17 install (host-matching Temurin 17.0.12)
+tar (child): /mnt/d/Develop/dl/v25/temurin17.dl: Cannot open: No such file or directory
+tar (child): Error is not recoverable: exiting now
+tar: Child returned status 2
+tar: Error is not recoverable: exiting now
+extracted: 
+chown: cannot access '/opt/jdk-17.0.12': No such file or directory
+--- JDK17 explicit path probe ---
+bash: line 22: /opt/jdk-17.0.12/bin/java: No such file or directory
+--- JDK8 explicit path probe (pre-existing, untouched) ---
+java version "1.8.0_351"
+Java(TM) SE Runtime Environment (build 1.8.0_351-b10)
+Java HotSpot(TM) 64-Bit Server VM (build 25.351-b10, mixed mode)
+### PHASE C: Hadoop 3.3.4 install
+tar (child): /mnt/d/Develop/dl/v25/hadoop-3.3.4.dl: Cannot open: No such file or directory
+tar (child): Error is not recoverable: exiting now
+tar: Child returned status 2
+tar: Error is not recoverable: exiting now
+chown: cannot access '/opt/hadoop-3.3.4': No such file or directory
+--- hadoop version (JAVA_HOME=JDK8 explicit) ---
+bash: line 32: /opt/hadoop-3.3.4/bin/hadoop: No such file or directory
+### PHASE D: Spark 3.5.1 (for Hadoop 3.3) install
+--- RELEASE ---
+Spark 3.5.1 (git revision fd86f85e181) built for Hadoop 3.3.4
+Build flags: -B -Pmesos -Pyarn -Pkubernetes -Psparkr -Pscala-2.12 -Phadoop-3 -Phive -Phive-thriftserver
+--- bundled hive metastore client jars ---
+datanucleus-api-jdo-4.2.4.jar
+datanucleus-core-4.1.17.jar
+datanucleus-rdbms-4.1.19.jar
+hive-common-2.3.9.jar
+hive-exec-2.3.9-core.jar
+hive-metastore-2.3.9.jar
+--- bundled scala ---
+scala-library-2.12.18.jar
+### PHASE E: Hive 3.1.3 install (chosen: NOT 4.x — see compat matrix)
+--- hive version (JAVA_HOME=JDK8 explicit, HIVE_HOME explicit) ---
+Cannot find hadoop installation: $HADOOP_HOME or $HADOOP_PREFIX must be set or hadoop must be in the path
+--- hive lib counts ---
+259
+--- guava versions in hive lib ---
+guava-19.0.jar
+jersey-guava-2.25.1.jar
+### PHASE F: MySQL Connector/J for HMS (download)
+downloaded 2481560 bytes
+-rw-r--r-- 1 asus asus 2481560 Sep 14 12:22 /opt/hive-3.1.3/lib/mysql-connector-j-8.0.33.jar
+### PHASE G: data dirs for hdfs/metastore/spark-scratch (ext4 only)
+drwxr-xr-x 2 asus asus 4096 Sep 14 12:22 /data/hdfs/data
+drwxr-xr-x 2 asus asus 4096 Sep 14 12:22 /data/hdfs/name
+drwxr-xr-x 2 asus asus 4096 Sep 14 12:22 /data/metastore
+drwxr-xr-x 2 asus asus 4096 Sep 14 12:22 /data/spark-scratch
+### PHASE H: apt installs (nodejs/npm, flume); project-scope dev deps

@@ -1,0 +1,643 @@
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-app -am test
+### 开始: 2026-09-14 12:33:43  HEAD=f00462c51023ce5b12e0b649e7813ed789f6f17e
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] platform-app                                                       [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/7]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Running com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.184 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Running com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Running com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.174 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Running com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Running com.graduation.analytics.testsupport.TestIsolationGuardTest
+[isolation-guard] cleanup 目标清单（删除前核对）count=2
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-bad runtime_profile_id=999101 status=FAILED active_flag=null
+[isolation-guard] cleanup 目标清单核对通过 testRunId=v25it-20260914-120000-a1b2
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=1 status=ACTIVE active_flag=1
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=S20260901_47 runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] cleanup 目标清单（删除前核对）count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ghost runtime_profile_id=999101 status=ACTIVE active_flag=1
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[V25-T01 见证] 原文命中（注释内，已按词法排除）: spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 → * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：
+[V25-T01 见证] 原文命中（注释内，已按词法排除）: spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 → *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.883 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.081 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 81, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/7]
+[INFO]   from connection-ingestion\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ connection-ingestion ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Running com.graduation.analytics.auth.AuthInterceptorTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+SLF4J(W): Class path contains multiple SLF4J providers.
+SLF4J(W): Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@7144655b]
+SLF4J(W): Found provider [org.slf4j.reload4j.Reload4jServiceProvider@5c82cd4f]
+SLF4J(W): See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J(I): Actual provider is of type [ch.qos.logback.classic.spi.LogbackServiceProvider@7144655b]
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.787 s -- in com.graduation.analytics.auth.AuthInterceptorTest
+[INFO] Running com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.741 s -- in com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Running com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+12:33:56.136 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-744f5b7c: status=QUARANTINED records=0 quarantine=4 errors=0 files=1 bytes=0 noNewData=false
+12:33:56.404 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-d007926d: status=SUCCESS records=0 quarantine=0 errors=0 files=0 bytes=0 noNewData=true
+12:33:56.417 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-fdfe2d75: status=SUCCESS records=3 quarantine=0 errors=0 files=1 bytes=64 noNewData=false
+12:33:56.427 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-b02fbc01: status=SUCCESS records=0 quarantine=0 errors=0 files=0 bytes=0 noNewData=true
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.602 s -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionServiceStatusTest
+12:33:56.662 [main] WARN com.graduation.analytics.ingestion.IngestionService -- landingUri 不可解析（profile 1）：暂不支持的 landingUri 协议：hdfs://（当前仅支持本地 file:// 与裸路径）
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.257 s -- in com.graduation.analytics.ingestion.IngestionServiceStatusTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionSourceManifestTest
+12:33:56.714 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-fec8fe9d: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+12:33:56.742 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-1696307f: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+12:33:56.759 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-347b3ee3: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+12:33:56.768 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-e711905d: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+12:33:56.822 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-05f859e9: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.132 s -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+12:33:56.881 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-3cc13fdf: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+12:33:57.111 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0→16 identity=1789360437101
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.241 s -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+12:33:57.265 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437253
+12:33:57.286 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437280
+12:33:57.289 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437280
+12:33:57.309 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437302
+12:33:57.311 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437302
+12:33:57.320 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: 尾部残行 7 字节留待文件增长
+12:33:57.321 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437316
+12:33:57.324 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: 尾部残行 7 字节留待文件增长
+12:33:57.325 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437316
+12:33:57.337 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0→16 identity=1789360437332
+12:33:57.340 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0→16 identity=1789360437332
+12:33:57.346 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437343
+12:33:57.350 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 8→16 identity=1789360437343
+12:33:57.361 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437355
+12:33:57.374 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437369
+12:33:57.377 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437369
+12:33:57.393 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0→8 identity=1789360437387
+12:33:57.397 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0→16 identity=1789360437387
+12:33:57.402 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 8→16 identity=1789360437387
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+[INFO] Running com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.078 s -- in com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+12:33:57.609 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789360437574-7952fa -> pid=63276 log=C:\Users\ASUS\AppData\Local\Temp\junit7487998874493543050\m1-11-ok__lp-1789360437574-7952fa.log
+12:33:57.728 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789360437715-3f55c8 -> pid=67844 log=C:\Users\ASUS\AppData\Local\Temp\junit7487998874493543050\m1-11-bad__lp-1789360437715-3f55c8.log
+12:33:57.852 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789360437841-c28540 -> pid=64056 log=C:\Users\ASUS\AppData\Local\Temp\junit17325936846079337724\m1-11-cancel__lp-1789360437841-c28540.log
+12:33:57.874 [main] WARN com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- 本地进程任务已终止: lp-1789360437841-c28540 pid=64056 子进程=1
+12:33:57.877 [spark-log-lp-1789360437841-c28540] WARN com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- capture spark-submit log failed: C:\Users\ASUS\AppData\Local\Temp\junit17325936846079337724\m1-11-cancel__lp-1789360437841-c28540.log
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.312 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+[INFO] Running com.graduation.analytics.source.SourceProfileValidatorTest
+12:33:57.920 [main] WARN com.graduation.analytics.source.SourceProfileValidator -- 源画像解析失败 path=analytics-server/source-profiles/p1-03-probe-1.v1.json: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: (String)"not json at all"; line: 1, column: 4]
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[INFO] Running com.graduation.analytics.source.SourceRegistryConcurrencyTest
+12:33:57.982 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-1 id=1 status=DRAFT
+12:33:57.982 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-2 id=2 status=DRAFT
+12:33:57.990 [pool-2-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:57.991 [pool-2-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:57.993 [pool-2-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:57.994 [pool-2-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.000 [pool-3-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.001 [pool-3-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.001 [pool-3-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.003 [pool-3-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.008 [pool-4-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.009 [pool-4-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.010 [pool-4-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.015 [pool-5-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.015 [pool-5-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.016 [pool-5-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.020 [pool-6-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.021 [pool-6-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.022 [pool-6-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.024 [pool-6-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.026 [pool-7-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.027 [pool-7-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.028 [pool-7-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.028 [pool-7-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.029 [pool-7-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.030 [pool-7-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.033 [pool-8-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.034 [pool-8-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.034 [pool-8-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.035 [pool-8-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.036 [pool-8-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.037 [pool-8-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.041 [pool-9-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.042 [pool-9-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.043 [pool-9-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.046 [pool-10-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.048 [pool-10-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.048 [pool-10-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.049 [pool-10-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.053 [pool-11-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.053 [pool-11-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.054 [pool-11-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.056 [pool-11-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.060 [pool-12-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.061 [pool-12-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.062 [pool-12-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.063 [pool-12-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.063 [pool-12-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.068 [pool-13-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.069 [pool-13-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.069 [pool-13-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.070 [pool-13-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.070 [pool-13-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.071 [pool-13-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.077 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-1 id=1 status=DRAFT
+12:33:58.077 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-2 id=2 status=DRAFT
+12:33:58.080 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.093 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-1 id=1 status=DRAFT
+12:33:58.093 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-2 id=2 status=DRAFT
+12:33:58.097 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.104 [pool-15-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.106 [pool-15-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.106 [pool-15-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.107 [pool-15-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.107 [pool-15-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.108 [pool-15-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.115 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-1 id=1 status=DRAFT
+12:33:58.115 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-2 id=2 status=DRAFT
+12:33:58.122 [pool-16-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.122 [pool-16-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.124 [pool-16-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.124 [pool-16-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-2 id=2
+12:33:58.125 [pool-16-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.125 [pool-16-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.125 [pool-16-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.126 [pool-16-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.131 [pool-17-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.133 [pool-17-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.134 [pool-17-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.134 [pool-17-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-2 id=2
+12:33:58.134 [pool-17-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.134 [pool-17-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.138 [pool-18-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.138 [pool-18-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.139 [pool-18-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.139 [pool-18-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.139 [pool-18-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.143 [pool-19-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.144 [pool-19-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.144 [pool-19-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.148 [pool-20-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.149 [pool-20-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-2 id=2
+12:33:58.149 [pool-20-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.149 [pool-20-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.153 [pool-21-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.153 [pool-21-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.154 [pool-21-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.154 [pool-21-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.158 [pool-22-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.158 [pool-22-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-2 id=2
+12:33:58.158 [pool-22-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.158 [pool-22-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.158 [pool-22-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.159 [pool-22-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.162 [pool-23-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.162 [pool-23-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.162 [pool-23-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.163 [pool-23-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.166 [pool-24-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.166 [pool-24-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.167 [pool-24-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.167 [pool-24-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.168 [pool-24-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.168 [pool-24-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.171 [pool-25-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.171 [pool-25-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.172 [pool-25-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-2 id=2
+12:33:58.172 [pool-25-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.176 [pool-26-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.177 [pool-26-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.177 [pool-26-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.181 [pool-27-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.181 [pool-27-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-2 id=2
+12:33:58.182 [pool-27-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-2 id=2 绑定 runtime_profile.id=1
+12:33:58.182 [pool-27-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=1
+12:33:58.189 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-1 id=1 status=DRAFT
+12:33:58.189 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-2 id=2 status=DRAFT
+12:33:58.193 [pool-28-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.270 s -- in com.graduation.analytics.source.SourceRegistryConcurrencyTest
+[INFO] Running com.graduation.analytics.source.SourceRegistryServiceTest
+12:33:58.209 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=1 绑定 runtime_profile.id=1
+12:33:58.329 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源暂停 sourceCode=p1-03-probe-1 id=2
+12:33:58.348 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-1 id=1 status=DRAFT
+12:33:58.367 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源激活 sourceCode=p1-03-probe-1 id=2 绑定 runtime_profile.id=1
+12:33:58.402 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p1-03-probe-1 id=1 status=PAUSED
+12:33:58.410 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记修改 id=1 sourceCode=mock-mall
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.212 s -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[INFO] Running com.graduation.analytics.source.SourceWarehousePrefixGateTest
+12:33:58.504 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p2-07-probe-1 id=1 status=DRAFT
+12:33:58.511 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p2-07-probe-1 id=1 status=DRAFT
+12:33:58.513 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p2-07-probe-1 id=1 status=DRAFT
+12:33:58.515 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p2-07-probe-1 id=1 status=DRAFT
+12:33:58.518 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p2-07-probe-1 id=1 status=DRAFT
+12:33:58.521 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记创建 sourceCode=p2-07-probe-1 id=1 status=DRAFT
+12:33:58.541 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- 源登记修改 id=1 sourceCode=mock-mall
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ------------< com.graduation.analytics:warehouse-pipeline >-------------
+[INFO] Building warehouse-pipeline 0.1.0-SNAPSHOT                         [4/7]
+[INFO]   from warehouse-pipeline\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ warehouse-pipeline ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ warehouse-pipeline ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ warehouse-pipeline ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ warehouse-pipeline ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ warehouse-pipeline ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Running com.graduation.analytics.contracts.EventContractTest
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.271 s -- in com.graduation.analytics.contracts.EventContractTest
+[INFO] Running com.graduation.analytics.pipeline.DataQualityGateTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.156 s -- in com.graduation.analytics.pipeline.DataQualityGateTest
+[INFO] Running com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.403 s -- in com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[INFO] Running com.graduation.analytics.pipeline.PipelineServiceTest
+12:34:02.054 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.246 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.293 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.306 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.317 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.326 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.344 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.354 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.378 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.393 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.409 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.417 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.427 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.443 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.453 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.457 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: accepted 无归属业务日事件
+12:34:02.507 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.519 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.529 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.532 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: accepted 无归属业务日事件
+12:34:02.539 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.547 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+12:34:02.556 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.563 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: BUILD_DWD 作业失败: bdw: 作业失败
+12:34:02.570 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.573 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: accepted 无归属业务日事件
+12:34:02.575 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+12:34:02.578 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: stage WAIT_LANDING 已成功，重试跳过（不重复执行）
+12:34:02.580 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: 阶段 QUALITY_CHECK 内部错误: Cannot invoke "com.graduation.analytics.pipeline.QualityChecker$QualitySummary.results()" because "quality" is null
+[ERROR] Tests run: 15, Failures: 10, Errors: 0, Skipped: 0, Time elapsed: 0.767 s <<< FAILURE! -- in com.graduation.analytics.pipeline.PipelineServiceTest
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.adsQualityGateFailureBlocksFormalPartitionPublish -- Time elapsed: 0.437 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "PIPELINE_QUALITY_FAILED"
+ but was: "STAGE_INTERNAL"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.adsQualityGateFailureBlocksFormalPartitionPublish(PipelineServiceTest.java:400)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.waitLandingSuccessThenLoadOdsInStageOrder -- Time elapsed: 0.024 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "SUCCESS"
+ but was: "FAILED"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.waitLandingSuccessThenLoadOdsInStageOrder(PipelineServiceTest.java:299)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.sameIdempotencyKeyReturnsOriginalTask -- Time elapsed: 0.023 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "SUCCESS"
+ but was: "FAILED"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.sameIdempotencyKeyReturnsOriginalTask(PipelineServiceTest.java:279)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.errorSeverityFailureBlocksPublishAndLeavesActiveUntouched -- Time elapsed: 0.022 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "PIPELINE_QUALITY_FAILED"
+ but was: "STAGE_INTERNAL"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.errorSeverityFailureBlocksPublishAndLeavesActiveUntouched(PipelineServiceTest.java:436)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateBeyondThresholdBlocksPublish -- Time elapsed: 0.030 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting any element of:
+  []
+to satisfy the given assertions requirements but none did:
+
+
+	at com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateBeyondThresholdBlocksPublish(PipelineServiceTest.java:490)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.stageRecordsComeFromJobResultNotJavaEstimate -- Time elapsed: 0.017 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "SUCCESS"
+ but was: "FAILED"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.stageRecordsComeFromJobResultNotJavaEstimate(PipelineServiceTest.java:627)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.qualityFailureBlocksPublish -- Time elapsed: 0.026 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "PIPELINE_QUALITY_FAILED"
+ but was: "STAGE_INTERNAL"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.qualityFailureBlocksPublish(PipelineServiceTest.java:377)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateWithinThresholdIsObservationAndStillPublishes -- Time elapsed: 0.023 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "SUCCESS"
+ but was: "FAILED"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateWithinThresholdIsObservationAndStillPublishes(PipelineServiceTest.java:462)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.submitReturnsPendingTaskIdImmediatelyWithoutBlocking -- Time elapsed: 0.015 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "SUCCESS"
+ but was: "FAILED"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.submitReturnsPendingTaskIdImmediatelyWithoutBlocking(PipelineServiceTest.java:258)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.retryReexecutesOnlyFailedStage -- Time elapsed: 0.017 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "SUCCESS"
+ but was: "FAILED"
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.pipeline.PipelineServiceTest.retryReexecutesOnlyFailedStage(PipelineServiceTest.java:350)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+12:34:02.599 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.601 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.602 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.602 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.603 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+[INFO] Running com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+12:34:02.608 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.613 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.614 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.617 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+12:34:02.618 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+[INFO] Running com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Running com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Running com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Running com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeTest
+12:34:02.810 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789360442775-b1f376 -> pid=67452 log=D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\tests\r6-smoke-warehouse\logs\smoke-sci__lp-1789360442775-b1f376.log
+12:34:16.507 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789360456494-c8c1d8 -> pid=45376 log=D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\tests\r6-smoke-warehouse\logs\pipeline-1-LOAD_ODS-odl-a1__lp-1789360456494-c8c1d8.log
+[smoke] warehouse=D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\tests\r6-smoke-warehouse\warehouse
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 35.60 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeTest
+[INFO] Running com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+12:34:38.339 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl 失败（外部任务被取消），不再提交剩余作业 []
+12:34:38.346 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl 失败（进程退出码非0(exit=1): schema mismatch），不再提交剩余作业 []
+12:34:40.354 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl 失败（未找到 JobResult 结果行），不再提交剩余作业 []
+12:34:40.357 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl 失败（进程退出码非0(exit=1): ok），不再提交剩余作业 []
+12:34:40.359 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage BUILD_DWD fail-fast: job dim 失败（进程退出码非0(exit=1): 维度构建失败），不再提交剩余作业 [tdw]
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.025 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+[INFO] Running com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Running com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+12:34:40.401 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789360480388-379794 -> pid=64588 log=C:\Users\ASUS\AppData\Local\Temp\junit2986984328734348153\prefix-1789360480388__lp-1789360480388-379794.log
+12:34:40.523 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789360480512-8eed5e -> pid=63116 log=C:\Users\ASUS\AppData\Local\Temp\junit5379940513618742139\pipeline-9-LOAD_ODS__lp-1789360480512-8eed5e.log
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.250 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   PipelineServiceTest.adsQualityGateFailureBlocksFormalPartitionPublish:400 
+expected: "PIPELINE_QUALITY_FAILED"
+ but was: "STAGE_INTERNAL"
+[ERROR]   PipelineServiceTest.duplicateRateBeyondThresholdBlocksPublish:490 
+Expecting any element of:
+  []
+to satisfy the given assertions requirements but none did:
+
+
+[ERROR]   PipelineServiceTest.duplicateRateWithinThresholdIsObservationAndStillPublishes:462 
+expected: "SUCCESS"
+ but was: "FAILED"
+[ERROR]   PipelineServiceTest.errorSeverityFailureBlocksPublishAndLeavesActiveUntouched:436 
+expected: "PIPELINE_QUALITY_FAILED"
+ but was: "STAGE_INTERNAL"
+[ERROR]   PipelineServiceTest.qualityFailureBlocksPublish:377 
+expected: "PIPELINE_QUALITY_FAILED"
+ but was: "STAGE_INTERNAL"
+[ERROR]   PipelineServiceTest.retryReexecutesOnlyFailedStage:350 
+expected: "SUCCESS"
+ but was: "FAILED"
+[ERROR]   PipelineServiceTest.sameIdempotencyKeyReturnsOriginalTask:279 
+expected: "SUCCESS"
+ but was: "FAILED"
+[ERROR]   PipelineServiceTest.stageRecordsComeFromJobResultNotJavaEstimate:627 
+expected: "SUCCESS"
+ but was: "FAILED"
+[ERROR]   PipelineServiceTest.submitReturnsPendingTaskIdImmediatelyWithoutBlocking:258 
+expected: "SUCCESS"
+ but was: "FAILED"
+[ERROR]   PipelineServiceTest.waitLandingSuccessThenLoadOdsInStageOrder:299 
+expected: "SUCCESS"
+ but was: "FAILED"
+[INFO] 
+[ERROR] Tests run: 132, Failures: 10, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.007 s]
+[INFO] platform-common .................................... SUCCESS [  6.021 s]
+[INFO] connection-ingestion ............................... SUCCESS [  7.525 s]
+[INFO] warehouse-pipeline ................................. FAILURE [ 42.046 s]
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  55.924 s
+[INFO] Finished at: 2026-09-14T12:34:40+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project warehouse-pipeline: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :warehouse-pipeline
+### EXIT=1
+### 结束: 2026-09-14 12:34:40

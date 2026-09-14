@@ -1,0 +1,59 @@
+=== V25-R01 取证 #01 身份与 git 事实 ===
+采集时刻(local): 2026-09-14 12:08:47 +08:00
+采集时刻(utc)  : 2026-09-14 04:08:47
+FILE docs\项目完整实施指导书 V2.5.md | lines=769 | bytes=74100 | sha256=33A2C5B3234B1C724C6A9C9C0492B2480D43EFA392D2DB72C3F4902805E55F6F | mtime=2026-09-14 09:13:07
+FILE docs\项目实施进度与任务看板 V2.5.md | lines=122 | bytes=16593 | sha256=9E9CC76571A57E74647D8342F0EFA6168BD12B4977F53EDDD477B7D2702373AE | mtime=2026-09-14 12:06:05
+FILE docs\项目完整实施指导书 V2.4.md | lines=720 | bytes=57442 | sha256=580AD7BE46B2F395400D9CD0812C58D4D3621794B8604B4E606EF44420C4535D | mtime=2026-09-12 13:01:32
+FILE docs\项目实施进度与任务看板 V2.2.md | lines=525 | bytes=505935 | sha256=E2EDA458950098870B1A26EE8940352E95FDCA735055842C66CC830D98B608E6 | mtime=2026-09-12 23:21:43
+FILE docs\README.md | lines=52 | bytes=4931 | sha256=06016FFF7964227C2BC9F01B8B6E01169E495532A76E688823F8C8251716BCB6 | mtime=2026-09-14 09:15:42
+
+--- git ---
+HEAD: 6062434792cf086600b67b38b562737ee6f65eb0
+HEAD(date): 6062434792cf086600b67b38b562737ee6f65eb0 2026-09-14 12:06:44 +0800 docs(board): V2.5 看板开工登记（S01/S02=S01泳道L1、T01/T02=L2、W01=只读盘点L3、Q01=总控、R01=审计；状态按就地上单元格更新）＋ 记录本地服务全停（8090/8091/8092 无监听、PID61104 不存在）＋ 泳道配额（3 开发+2 只读/文档）＋ 备份 docs/backups/v25-board-reg-20260914/
+branch: remediation/r1-boundary
+origin/main: 6062434792cf086600b67b38b562737ee6f65eb0
+status --porcelain 行数: 38
+--- status 全部 ---
+ M analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+ M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+ M docs/README.md
+?? after-reboot-cleanup.ps1
+?? alibaba-fix-src.txt
+?? alibaba-fix.ps1
+?? analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublishValidatorSeverityTest.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleCatalog.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleDefinition.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/RuleSeverity.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? docs/acceptance/b13-db-forensics-20260912/raw/14-binlog-coverage-map.txt
+?? docs/acceptance/f88-dq-severity-20260912/
+?? docs/acceptance/guideline-v24-coverage-20260912/
+?? docs/acceptance/local-readiness-20260914.md
+?? docs/acceptance/p3-02-mapping-executor-20260912/
+?? docs/acceptance/v25-document-release-20260914.md
+?? docs/acceptance/v25-w01-env-inventory-20260914/
+?? "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.5.md"
+?? fix-autostart.ps1
+?? optimize-src.txt
+?? optimize.ps1
+?? orphan-cleanup-report.txt
+?? orphan2-src.txt
+?? orphan2.ps1
+?? post-opt-verify-src.txt
+?? post-opt-verify.ps1
+?? post-reboot-check-src.txt
+?? post-reboot-check.ps1
+
+--- git worktree list ---
+D:/Develop_code/GraduationProject               6062434 [remediation/r1-boundary]
+D:/Develop/GraduationProject/.f88-baseline-wt   dba4381 (detached HEAD)
+D:/Develop_code/GraduationProject-wt/m3-jdk8fix f26be26 (detached HEAD)

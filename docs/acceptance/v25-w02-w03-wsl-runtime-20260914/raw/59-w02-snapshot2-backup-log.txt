@@ -1,0 +1,27 @@
+### scanning [main] /mnt/d/Develop_code/GraduationProject
+### scanning [m3-jdk8fix] /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix
+### scanning [f88-baseline-wt] /mnt/d/Develop_code/GraduationProject/.git/worktrees/.f88-baseline-wt
+
+### retry locked files (other lanes may have released them)
+
+### secret-path exclusion hits (presence only, content NEVER copied)
+  (none)
+
+================ SNAPSHOT-2 SUMMARY ================
+entries scanned : 1100
+VERIFIED        : 1100
+still locked    : 0
+secret-excluded : 0
+bytes           : 46783325
+backup tree     : /mnt/d/Develop/backup/v25-w02-20260914-snap2
+--- file counts on disk ---
+main          : 1100
+m3-jdk8fix    : 0
+f88-baseline  : 0
+total         : 1100
+size          : 47M
+--- verdict tally in manifest ---
+   1100 BACKED_UP:VERIFIED
+--- manifest ---
+1103 /mnt/d/Develop_code/GraduationProject/docs/acceptance/v25-w02-w03-wsl-runtime-20260914/raw/60-w02-backup-manifest-snap2-sha256.txt
+### DONE rc=0

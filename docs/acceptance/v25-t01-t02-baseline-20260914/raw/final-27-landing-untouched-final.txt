@@ -1,0 +1,8 @@
+最终确认时间: 2026-09-14 12:33:06   HEAD=bcc20450addf175347a7d5e38caddf798155fbd5
+文件数: 43（应 43）
+与采集前逐行相同 ⇒ 1..43.json 内容/字节/mtime/sha256 全程未变
+--- git status --porcelain landing（应为空）---
+
+--- git check-ignore -v landing/manifests/40.json ---
+.gitignore:30:landing/	landing/manifests/40.json
+

@@ -1,0 +1,36 @@
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+ M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+ M spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala
+?? analytics-server/source-profiles/fixture-b.v1.json
+?? analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/RuleSeverity.java
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/RuleSeverityTest.java
+?? docs/acceptance/e5-preaccept-20260912/
+?? docs/acceptance/f88-dq-severity-20260912/
+?? docs/acceptance/m3-step8-parity-20260912/IMPL-REPORT.md
+?? docs/acceptance/m3-step8-parity-20260912/MAPPING-20260912.md
+?? docs/acceptance/m3-step8-parity-20260912/raw/ads-mirror-schemas.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/ads-operation-overview-row-S20260901_43.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-ads-counts-S20260901_43.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-metric-snapshot.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-metric-value-S20260901_43.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-metric-value-counts.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-pipeline-run-last5.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/golden-copy-name.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/mapping-fingerprint-before-run.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/mapping-poll.log
+?? docs/acceptance/m3-step8-parity-20260912/raw/park-move-back.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/park-move-out.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/post/
+?? docs/acceptance/m3-step8-parity-20260912/raw/pre-run-ingestion-status-after-park.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/pre-run-ingestion-status.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/pre-run40-contrast.txt
+?? docs/acceptance/m3-step8-parity-20260912/tools/
+?? docs/acceptance/p5-heterogeneous-source-20260912/

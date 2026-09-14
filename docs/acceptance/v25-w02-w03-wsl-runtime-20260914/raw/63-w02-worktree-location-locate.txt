@@ -1,0 +1,91 @@
+=== [1] does D:\Develop_code\GraduationProject-wt exist? ===
+total 0
+drwxrwxrwx 1 asus asus 512 Sep 12 17:15 .
+drwxrwxrwx 1 asus asus 512 Sep 12 22:31 ..
+drwxrwxrwx 1 asus asus 512 Sep 12 15:59 m3-jdk8fix
+
+=== [2] does D:\Develop\GraduationProject\.f88-baseline-wt exist? ===
+total 20
+drwxrwxrwx 1 asus asus   512 Sep 12 22:08 .
+drwxrwxrwx 1 asus asus   512 Sep 12 22:08 ..
+-rwxrwxrwx 1 asus asus    74 Sep 12 22:08 .git
+-rwxrwxrwx 1 asus asus  2522 Sep 12 22:08 .gitignore
+-rwxrwxrwx 1 asus asus 14535 Sep 12 22:08 README.md
+drwxrwxrwx 1 asus asus   512 Sep 12 22:08 analytics-server
+drwxrwxrwx 1 asus asus   512 Sep 12 22:08 contract-specs
+drwxrwxrwx 1 asus asus   512 Sep 12 22:08 docs
+drwxrwxrwx 1 asus asus   512 Sep 12 22:08 experiments
+
+=== [3] the gitdir pointer files (what git recorded) ===
+--- /mnt/d/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt/
+  gitdir: D:/Develop/GraduationProject/.f88-baseline-wt/.git
+  HEAD:   dba438135271de18b289caebaf500f0590a0345a
+--- /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix/
+  gitdir: D:/Develop_code/GraduationProject-wt/m3-jdk8fix/.git
+  HEAD:   f26be2624262a12d92f0cdc7a97415c4f07a1b35
+
+=== [4] are those target dirs real work trees? ===
+--- /mnt/d/Develop_code/GraduationProject-wt/m3-jdk8fix
+  EXISTS
+README.md
+analytics-server
+contract-specs
+docs
+experiments
+ingestion
+mall-frontend
+mall-simulator
+  has .git: yes
+--- /mnt/d/Develop/GraduationProject/.f88-baseline-wt
+  EXISTS
+README.md
+analytics-server
+contract-specs
+docs
+experiments
+ingestion
+mall-frontend
+mall-simulator
+  has .git: yes
+
+=== [5] m3-jdk8fix: are the 4 files still modified vs HEAD f26be26? ===
+--- status of /mnt/d/Develop_code/GraduationProject-wt/m3-jdk8fix
+fatal: not a git repository: /mnt/d/Develop_code/GraduationProject-wt/m3-jdk8fix/D:/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix
+--- status of /mnt/d/Develop/GraduationProject/.f88-baseline-wt
+fatal: not a git repository: /mnt/d/Develop/GraduationProject/.f88-baseline-wt/D:/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt
+
+=== [6] search filesystem for the real worktree dirs ===
+/mnt/d/Develop_code/AMybatisDemo/
+/mnt/d/Develop_code/Docker-bigData/
+/mnt/d/Develop_code/GraduationProject-wt/
+/mnt/d/Develop_code/GraduationProject/
+/mnt/d/Develop_code/JAVAWEB/
+/mnt/d/Develop_code/Java/
+/mnt/d/Develop_code/MyBatisiDemo/
+/mnt/d/Develop_code/c/
+/mnt/d/Develop_code/graduation-lane-backup/
+/mnt/d/Develop_code/maven/
+/mnt/d/Develop_code/smtest/
+/mnt/d/Develop_code/yjx/
+/mnt/d/Develop_code/yjxxt/
+---
+/mnt/d/Develop/Android/
+/mnt/d/Develop/Docker/
+/mnt/d/Develop/GraduationProject/
+/mnt/d/Develop/JAVA11/
+/mnt/d/Develop/JDK1.8/
+/mnt/d/Develop/Java/
+/mnt/d/Develop/Navicat Premium17.0.4(64bit)/
+/mnt/d/Develop/Notepad/
+/mnt/d/Develop/Python314/
+/mnt/d/Develop/Reasonix/
+/mnt/d/Develop/Snipaste-2.7（64bit）/
+/mnt/d/Develop/Vmware/
+/mnt/d/Develop/WireShark/
+/mnt/d/Develop/backup/
+/mnt/d/Develop/db-backup-20260912/
+/mnt/d/Develop/dl/
+/mnt/d/Develop/eclipse-jee/
+/mnt/d/Develop/eclipse/
+/mnt/d/Develop/hive-docker/
+/mnt/d/Develop/jar-backup-20260912/

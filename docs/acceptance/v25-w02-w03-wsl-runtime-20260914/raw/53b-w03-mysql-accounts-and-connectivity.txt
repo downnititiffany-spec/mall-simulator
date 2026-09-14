@@ -1,0 +1,56 @@
+### F1: connect via SOCKET as root@localhost (empty password from --initialize-insecure)
+user	host	plugin
+mysql.infoschema	localhost	caching_sha2_password
+mysql.session	localhost	caching_sha2_password
+mysql.sys	localhost	caching_sha2_password
+root	localhost	caching_sha2_password
+
+### F2: create the TCP accounts + isolated databases
+exit=0
+
+### F3: accounts after
+mysql: [Warning] Using a password on the command line interface can be insecure.
+user	host	plugin
+mysql.infoschema	localhost	caching_sha2_password
+mysql.session	localhost	caching_sha2_password
+mysql.sys	localhost	caching_sha2_password
+root	%	mysql_native_password
+root	127.0.0.1	mysql_native_password
+root	localhost	mysql_native_password
+
+### F4: ===== DELIVERABLE: 库名/账号/端口/连接串/实测连通性 =====
+--- [1] identity ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+version	port	datadir	socket	bind_addr	hostname	skip_name_resolve
+8.0.41	3307	/data/mysql-isolated/data/	/data/mysql-isolated/run/mysql3307.sock	127.0.0.1	dahaishui	1
+--- [2] databases ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Database
+analytics_meta
+analytics_metric
+information_schema
+mall_simulator
+mysql
+performance_schema
+sys
+--- [3] TCP connectivity 127.0.0.1:3307 ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+tcp_ok	server_time	conn_id
+1	2026-09-14 12:29:42	20
+--- [4] unix socket connectivity ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+sock_ok	p
+1	3307
+--- [5] CREATE/INSERT/SELECT round-trip in ISOLATED analytics_metric ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+id	note
+1	wsl-isolated-3307
+--- [6] listener: loopback ONLY ---
+LISTEN 0      151         127.0.0.1:3307      0.0.0.0:*   
+--- [7] no 3306 in WSL (host 3306 untouched) ---
+OK: WSL has NO 3306 listener
+--- [8] databases created for the project (row counts, all empty=isolated) ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+db	tables_cnt
+analytics_metric	1
+### DONE rc=0

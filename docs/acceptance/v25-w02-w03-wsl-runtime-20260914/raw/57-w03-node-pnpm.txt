@@ -1,0 +1,5 @@
+=== node/npm preinstalled on host (T1-style passthrough check) ===
+command -v node -> none
+bash: line 4: node: command not found
+command -v npm  -> /mnt/c/Program Files/nodejs/npm
+11.13.0

@@ -1,0 +1,90 @@
+### COMMAND: Get-NetTCPConnection -State Listen (unique ports)
+
+LocalAddress  LocalPort Proc                           OwningProcess
+------------  --------- ----                           -------------
+0.0.0.0             135 svchost                                 2404
+172.16.208.83       139 System                                     4
+::                  445 System                                     4
+0.0.0.0             902 vmware-authd                           67428
+0.0.0.0             912 vmware-authd                           67428
+0.0.0.0            1040 services                                1356
+127.0.0.1          1042 asus_framework                         46224
+127.0.0.1          1053 FlClashCore                            55500
+::                 1832 idea64                                 61204
+127.0.0.1          3000 node                                   55100
+28.0.0.1           3248 FlClashCore                            55500
+::                 3306 mysqld                                  9460
+0.0.0.0            5040 svchost                                15856
+127.0.0.1          5283 SGTool                                 49876
+::                 5357 System                                     4
+127.0.0.1          6079 datagrip64                             67248
+127.0.0.1          6301 java                                   55804
+127.0.0.1          6817 java                                   49736
+127.0.0.1          6850 AacAmbientLighting                     48296
+::                 7680 svchost                                30608
+127.0.0.1          7778 ArmouryCrateControlInterface            6208
+::                 7890 FlClashCore                            55500
+127.0.0.1          9010 lghub_agent                            54328
+127.0.0.1          9012 ArmourySocketServer                    50556
+127.0.0.1          9013 ArmourySocketServer                    50556
+127.0.0.1          9014 ArmouryHtmlDebugServer                 51508
+127.0.0.1          9180 lghub_updater                          29760
+127.0.0.1          9602 idea64                                 61204
+127.0.0.1         13030 ROGLiveService                          6736
+127.0.0.1         13031 ArmouryCrate.Service                    6504
+127.0.0.1         13032 ArmouryCrate.Service                    6504
+127.0.0.1         22112 ROGLiveService                          6736
+127.0.0.1         24830 AsusSoftwareManager                     6228
+127.0.0.1         27339 System                                     4
+127.0.0.1         28317 svchost                                 6704
+::                33060 mysqld                                  9460
+127.0.0.1         37977 java                                   55804
+::1               42050 OneDrive.Sync.Service                  67924
+127.0.0.1         45654 lghub_agent                            54328
+127.0.0.1         47890 FlClashHelperService                    6432
+0.0.0.0           49664 lsass                                   1560
+0.0.0.0           49665 wininit                                 1260
+0.0.0.0           49666 svchost                                 2244
+0.0.0.0           49669 svchost                                 4328
+::                49670 spoolsv                                 5792
+127.0.0.1         49671 jhi_service                             6612
+127.0.0.1         50100 ArmouryCrate.Service                    6504
+127.0.0.1         50923 ArmouryCrateControlInterface            6208
+127.0.0.1         51100 ArmouryCrate.UserSessionHelper         43780
+127.0.0.1         63342 idea64                                 61204
+127.0.0.1         63343 datagrip64                             67248
+
+
+### COMMAND: targeted port probe 8090,8091,8092 + HDFS/Hive/Spark/Meta ports
+PORT 8090 : no listener
+PORT 8091 : no listener
+PORT 8092 : no listener
+PORT 9870 : no listener
+PORT 9864 : no listener
+PORT 9083 : no listener
+PORT 10000 : no listener
+PORT 10002 : no listener
+PORT 8020 : no listener
+PORT 9000 : no listener
+PORT 7077 : no listener
+PORT 4040 : no listener
+PORT 8088 : no listener
+PORT 8042 : no listener
+PORT 3306 : LISTENING -> PID 9460 mysqld
+PORT 5432 : no listener
+### COMMAND: Get-Service -Name '*mysql*'
+
+Name     Status StartType
+----     ------ ---------
+MySQL80 Running Automatic
+
+
+### COMMAND: Get-CimInstance Win32_Process -Filter Name='java.exe'
+
+ProcessId : 49736
+Cmd       : D:\Develop\JDK1.8\bin\java.exe -cp C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/scala-nailgun-runner.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/jps/nailgun.jar -Xmx2048m -server -Xss2m -XX:+UseParallelGC -XX:MaxInlineLevel=20 "-Djna.boot.library.path=D:\Develop\jetbrains\IntelliJ IDEA 2024.1/lib/jna/amd64" -Djna.nosys=true -Djna.noclasspath=true -Dshutdown.delay.seconds=7200 -Dij.scala.compile.server=true -Djps.backward.ref.index.builder=true -Dkotlin.incremental.compilation=true -Dkotlin.incremental.compilation.js=true -Dkotlin.daemon.enabled "-Dkotlin.daemon.client.alive.path=\"C:\Users\ASUS\AppData\Local\Temp\kotlin-idea-10462171629088259843-is-running\"" -Dcompile.parallel.max.threads=4 -Dcompile.parallel=true -Dsbt.process.dependencies.recursively=true -Dscala.compile.server.system.dir=C:\Users\ASUS\AppData\Local\JetBrains\IntelliJIdea2024.1\scala-compile-server -Dscala.compile.server.socket.connect.timeout.milliseconds=10000 -Djps.backward.ref.index.builder=false org.jetbrains.plugins.scala.nailgun.NailgunRunner 6817 ad21e378-8c67-47de-b244-00130eed5822 "D:/Develop/JDK1.8/lib/tools.jar;D:/Develop/jetbrains/IntelliJ IDEA 2024.1/plugins/java/lib/jps-builders.jar;D:/Develop/jetbrains/IntelliJ IDEA 2024.1/lib/util-8.jar;D:/Develop/jetbrains/IntelliJ IDEA 2024.1/lib/util_rt.jar;D:/Develop/jetbrains/IntelliJ IDEA 2024.1/lib/protobuf.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/scala-parser-combinators_2.13-1.1.2.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/scala-library.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/scala-reflect.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/compiler-shared.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/scala-jps.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/jps/compiler-interface.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/jps/sbt-interface.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/jps/incremental-compiler.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/jps/compile-server.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/jps/compiler-jps.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/repl-interface.jar;C:/Users/ASUS/AppData/Roaming/JetBrains/IntelliJIdea2024.1/plugins/Scala/lib/utils_rt.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\JavaEE\lib\jasper-v2-rt.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\Kotlin\lib\jps\kotlin-jps-plugin.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\util-8.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\eclipse\lib\eclipse-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\eclipse\lib\eclipse-common.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\JavaEE\lib\javaee-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\uiDesigner\lib\jps\java-guiForms-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\platform-langInjection\lib\java-langInjection-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\javaFX\lib\javaFX-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\javaFX\lib\javaFX-common.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\Groovy\lib\groovy-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\Groovy\lib\groovy-constants-rt.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\maven\lib\maven-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\gradle-java\lib\gradle-jps.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\JPA\lib\jps\javaee-jpa-jps.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\scala-library.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\compiler-shared.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\scala-jps.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\utils_rt.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\jps\nailgun.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\jps\compile-server.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\jps\compiler-jps.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\jps\compiler-interface.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\jps\sbt-interface.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\jps\incremental-compiler.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\jps\scala-parallel-collections.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\scala-parser-combinators_2.13-1.1.2.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\spray-json_2.13-1.3.6.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\scala-compiler-indices-protocol_2.13-1.0.14.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\scala-play-2-jps-plugin.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\IntelliJIdea2024.1\plugins\Scala\lib\..\launcher\sbt-launch.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\jps-builders.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\jps-builders-6.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\jps-javac-extension.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\util-8.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\util_rt.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\platform-loader.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\annotations.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\trove.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\jetbrains.kotlinx.metadata.jvm.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\protobuf.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\jps-model.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\javac2.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\forms_rt.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\util.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\aether-dependency-resolver.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\maven-resolver-connector-basic.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\maven-resolver-transport-file.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\plugins\java\lib\maven-resolver-transport-http.jar;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\lib\idea_rt.jar" C:\Users\ASUS\AppData\Local\JetBrains\IntelliJIdea2024.1\scala-compile-server
+
+ProcessId : 55804
+Cmd       : "D:\Develop\jetbrains\DataGrip 2024.1.1\jbr\bin\java" -Djava.rmi.server.hostname=127.0.0.1 -Duser.timezone=UTC -Xmx4048m -Xms128m "-Djdbc.classpath=D:\Develop\jetbrains\DataGrip 2024.1.1\plugins\DatabaseTools\lib\jdbc-console.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\DataGrip2024.1\jdbc-drivers\MySQL ConnectorJ\9.7.0\com\mysql\mysql-connector-j\9.7.0\mysql-connector-j-9.7.0.jar;C:\Users\ASUS\AppData\Roaming\JetBrains\DataGrip2024.1\jdbc-drivers\MySQL ConnectorJ\9.7.0\com\google\protobuf\protobuf-java\4.31.1\protobuf-java-4.31.1.jar" --add-exports java.desktop/sun.awt=ALL-UNNAMED --add-exports java.desktop/java.awt.peer=ALL-UNNAMED --add-opens java.desktop/java.awt=ALL-UNNAMED --add-opens=jdk.unsupported/sun.misc=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED -Dfile.encoding=UTF-8 -classpath "D:\Develop\jetbrains\DataGrip 2024.1.1\lib\util_rt.jar;D:\Develop\jetbrains\DataGrip 2024.1.1\lib\util-8.jar;D:\Develop\jetbrains\DataGrip 2024.1.1\lib\groovy.jar;D:\Develop\jetbrains\DataGrip 2024.1.1\plugins\DatabaseTools\lib\jdbc-console.jar;D:\Develop\jetbrains\DataGrip 2024.1.1\plugins\grid-core-impl\lib\jdbc-console-types.jar;D:\Develop\jetbrains\DataGrip 2024.1.1\lib\util.jar" com.intellij.database.remote.RemoteJdbcServer com.mysql.cj.jdbc.Driver
+
+

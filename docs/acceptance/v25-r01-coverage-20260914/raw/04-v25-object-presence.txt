@@ -1,0 +1,84 @@
+=== V25-R01 取证 #04 V2.5 新增对象在 HEAD 6062434 工作树的存在性（只读 grep）===
+采集时刻: 2026-09-14 12:11:39 +08:00
+--- A. §5.2/§5.7 元数据表（SQL DDL）---
+[table:source_connector] 0 命中
+[table:schema_mapping] 0 命中
+[table:source_manifest] 0 命中
+[table:quality_rule_definition] 0 命中
+[table:source_registry] 命中 40：
+    analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql:4:-- source_registry：一台被分析的「源」（商城）的长期身份登记——它是谁、
+    analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql:16:--   再删 source_registry 表——两者都是本次新增的登记结构，不含业务事实数据。
+    analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql:20:CREATE TABLE source_registry (
+    analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql:33:    UNIQUE KEY uk_source_registry_code (source_code),
+    analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql:34:    KEY idx_source_registry_status (status)
+    analytics-server/platform-app/src/main/resources/db/meta/V16__source_registry.sql:41:INSERT INTO source_registry (source_code, display_name, ingest_mode, profile_path, timezone, currency, status, profile_version)
+[table:source_profile] 0 命中
+[table:mapping_version] 0 命中
+[table:data_quality_result] 命中 10：
+    analytics-server/platform-app/src/main/resources/db/meta/V11__data_quality_layers.sql:1:-- R6-13（V2.0 §16.1/§16.5）：data_quality_result 增加规则层次/严重度/作用对象/快照号。
+    analytics-server/platform-app/src/main/resources/db/meta/V11__data_quality_layers.sql:5:ALTER TABLE data_quality_result
+    analytics-server/platform-app/src/main/resources/db/meta/V12__quality_detail_width.sql:6:ALTER TABLE data_quality_result
+    analytics-server/platform-app/src/main/resources/db/meta/V2__platform_pipeline_quality.sql:36:CREATE TABLE data_quality_result (
+    docs/acceptance/p1-05-8091-swap-20260911/pre-v17-schema.sql:71:-- Table structure for table `data_quality_result`
+    docs/acceptance/p1-05-8091-swap-20260911/pre-v17-schema.sql:74:DROP TABLE IF EXISTS `data_quality_result`;
+--- B. §5.3/§6.5 连接器与 Landing 接口（Java/Scala）---
+[class:SourceConnector] 0 命中
+[class:LocalFileConnector] 0 命中
+[class:FlumeLandingConnector] 0 命中
+[class:LandingStorage] 命中 5：
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileServiceImpl.java:10:import com.graduation.analytics.runtime.storage.LandingStorage;
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileServiceImpl.java:236:    private CheckDetail wrap(String name, LandingStorage.HealthResult h) {
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/storage/HdfsLandingStorage.java:23:public class HdfsLandingStorage implements LandingStorage {
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/storage/LandingStorage.java:12:public interface LandingStorage {
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/storage/LocalLandingStorage.java:24:public class LocalLandingStorage implements LandingStorage {
+[class:HdfsLandingStorage] 命中 6：
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileServiceImpl.java:9:import com.graduation.analytics.runtime.storage.HdfsLandingStorage;
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileServiceImpl.java:31: *   - landing：LOCAL→LocalLandingStorage 读写；REMOTE_CLUSTER→HdfsLandingStorage
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileServiceImpl.java:165:                HdfsLandingStorage hdfs = new HdfsLandingStorage(p.getLandingUri());
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/RuntimeProfileServiceImpl.java:170:                HdfsLandingStorage hdfs = new HdfsLandingStorage(profileUri);
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/storage/HdfsLandingStorage.java:23:public class HdfsLandingStorage implements LandingStorage {
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/storage/HdfsLandingStorage.java:29:    public HdfsLandingStorage(String hdfsUri) {
+[class:EventNormalizer] 0 命中
+[class:MetricStoreFactory] 0 命中
+[class:SourceProfileLoader] 0 命中
+[class:ProfileValidator] 0 命中
+[class:MappingCompiler] 0 命中
+[class:NormalizeResult] 0 命中
+--- C. §5.7 新 API 路径 ---
+[api:dry-run] 0 命中
+--- D. §8.2 AI 受控建仓对象 ---
+[ai:WarehouseBlueprint] 0 命中
+[ai:BlueprintValidator] 0 命中
+[ai:SourceProfileDraft] 0 命中
+[ai:ModelingWizard] 0 命中
+[ai:SandboxExecutor] 0 命中
+--- E. D6 新增原因码 ---
+[reason:new] 命中 26：
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryService.java:19: *   <li>{@code SOURCE_PROFILE_INVALID} — 画像文件缺失/非法/与登记不一致（409）</li>
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryService.java:41:     * ① 画像校验（不通过 → {@code SOURCE_PROFILE_INVALID}）→ ② 源置 ACTIVE →
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java:268:        //    种子源 mock-mall 的预期结果（SOURCE_PROFILE_INVALID）就取不到了（D-035 裁决 11）。
+    analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java:272:            throw new PlatformBizException(PlatformBizException.SOURCE_PROFILE_INVALID,
+    analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionSourceNotBoundTest.java:117:        assertThat(PlatformBizException.SOURCE_PROFILE_INVALID).isEqualTo("SOURCE_PROFILE_INVALID");
+    analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:476:    @DisplayName("activate 种子源：画像未落盘 → SOURCE_PROFILE_INVALID（D-035 §11 预期行为，非缺陷）")
+--- F. Landing/manifest 运行期文件 40-43 ---
+landing/manifests 文件数=43
+EXISTS 30.json bytes=631 mtime=2026-09-11 12:30:06
+EXISTS 40.json bytes=1051 mtime=2026-09-12 09:23:15
+EXISTS 41.json bytes=1365 mtime=2026-09-12 17:22:22
+EXISTS 42.json bytes=763 mtime=2026-09-12 17:34:54
+EXISTS 43.json bytes=754 mtime=2026-09-12 21:06:42
+--- G. 269 条基线文件定位 ---
+  docs/README.md
+  docs/acceptance/m3-step8-parity-20260912/RULINGS-M3-STEP8-BATCH3-20260912.md
+  docs/remediation-status.md
+  docs/superpowers/plans/2026-09-11-mall-agnostic-platform-implementation.md
+  docs/v2-completeness-audit.md
+  "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.1.md"
+  "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.2.md"
+  "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.3.md"
+  "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.4.md"
+  "docs/\351\241\271\347\233\256\345\256\236\346\226\275\350\277\233\345\272\246\344\270\216\344\273\273\345\212\241\347\234\213\346\235\277 V2.2.md"
+  "docs/\351\241\271\347\233\256\345\256\236\346\226\275\350\277\233\345\272\246\344\270\216\344\273\273\345\212\241\347\234\213\346\235\277 V2.5.md"
+  "docs/\351\241\271\347\233\256\345\256\236\346\226\275\350\277\233\345\272\246\344\270\216\344\273\273\345\212\241\347\234\213\346\235\277.md"
+--- H. 前端页面清单（analysis-web pages）---
+  目录不存在

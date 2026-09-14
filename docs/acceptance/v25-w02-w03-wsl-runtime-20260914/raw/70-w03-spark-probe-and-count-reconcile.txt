@@ -1,0 +1,31 @@
+=== spark-submit --version (raw, both JDKs) ===
+--- JDK17 ---
+26/09/14 12:51:20 WARN Utils: Your hostname, dahaishui resolves to a loopback address: 127.0.1.1; using 10.255.255.254 instead (on interface lo)
+26/09/14 12:51:20 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 3.5.1
+      /_/
+                        
+Using Scala version 2.12.18, OpenJDK 64-Bit Server VM, 17.0.12
+Branch HEAD
+Compiled by user heartsavior on 2024-02-15T11:24:58Z
+--- JDK8 ---
+26/09/14 12:51:21 WARN Utils: Your hostname, dahaishui resolves to a loopback address: 127.0.1.1; using 10.255.255.254 instead (on interface lo)
+26/09/14 12:51:21 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+
+=== file-count reconciliation ===
+  snap-4 on-disk files : 2750
+  (2741 = manifest VERIFIED + 9 = F1 false-positive files added later)
+  manifest rows total  : 2750
+  v25-w02-20260914                                224
+  v25-w02-20260914-snap2                         1100
+  v25-w02-20260914-snap3                         1121
+  v25-w02-20260914-snap4-worktrees               2750
+  GRAND TOTAL          : 5195

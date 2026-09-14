@@ -1,0 +1,37 @@
+=== [1] m3-jdk8fix: full uncommitted inventory via explicit git-dir/--work-tree ===
+git-dir : /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix
+worktree: /mnt/d/Develop_code/GraduationProject/../GraduationProject-wt/m3-jdk8fix
+HEAD    : f26be2624262a12d92f0cdc7a97415c4f07a1b35
+
+--- status code tally ---
+   1226  M
+
+=== [2] backing up m3-jdk8fix uncommitted files ===
+
+=== [3] .f88-baseline-wt inventory (expected clean) ===
+worktree: /mnt/d/Develop/GraduationProject/.f88-baseline-wt   HEAD: dba438135271de18b289caebaf500f0590a0345a
+entries: 1524  (0 = clean, nothing to back up)
+
+### retry locked
+
+=== [4] the 4 spark-jobs files: live vs snapshot-1 vs current HEAD ===
+  live=148180b477feee94  snap1=148180b477feee94  snap4=148180b477feee94  SAME  pom.xml
+  live=bac985bbf206958d  snap1=bac985bbf206958d  snap4=bac985bbf206958d  SAME  MetricExportJob.scala
+  live=dfc54da2ebef2df4  snap1=dfc54da2ebef2df4  snap4=dfc54da2ebef2df4  SAME  P2TestSupport.scala
+  live=e429865bb97b4845  snap1=e429865bb97b4845  snap4=e429865bb97b4845  SAME  WarehouseNamespaceSpec.scala
+
+================ SNAPSHOT-4 SUMMARY ================
+entries scanned  : 1226 (+f88 entries)
+VERIFIED         : 2741
+still locked     : 0
+secret-excluded  : 9
+build-output skip: 0
+bytes            : 91654641
+--- on disk ---
+  f88-baseline-wt       1519 files      52M
+  m3-jdk8fix            1222 files      41M
+--- verdict tally ---
+   2741 BACKED_UP:VERIFIED
+      9 SECRET_EXCLUDED_PRESENCE_ONLY
+--- manifest lines: 2754
+### DONE rc=0

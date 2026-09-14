@@ -1,0 +1,20 @@
+### COMMAND: git remote -v
+origin	https://github.com/downnititiffany-spec/mall-simulator.git (fetch)
+origin	https://github.com/downnititiffany-spec/mall-simulator.git (push)
+### COMMAND: git branch -a
+  master
+* remediation/r1-boundary
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main
+### COMMAND: git for-each-ref --format='%(refname) %(objectname:short) %(upstream)' refs/heads refs/remotes
+refs/heads/master 01c6bbf upstream=
+refs/heads/remediation/r1-boundary 31b4b65 upstream=refs/remotes/origin/main
+refs/remotes/origin/HEAD 31b4b65 upstream=
+refs/remotes/origin/main 31b4b65 upstream=
+### COMMAND: git log --oneline origin/main..HEAD
+### COMMAND: git rev-list --count origin/main..HEAD
+0
+### COMMAND: git log --oneline HEAD..origin/main (behind)
+### COMMAND: git rev-list --count HEAD..origin/main
+0
+### COMMAND: git fetch --dry-run (readonly, no ref update test)

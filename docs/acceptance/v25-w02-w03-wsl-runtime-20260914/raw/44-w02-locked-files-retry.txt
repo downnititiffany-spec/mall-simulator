@@ -1,0 +1,2 @@
+docs/acceptance/f88-dq-severity-20260912/raw/e2-full-reactor-q01b.log	sha=3DC5F8D5B74D92ED	bytes=61271	RETRY_BACKED_UP:VERIFIED
+docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-14-verbatim-full-reactor-test.log	sha=1501C094093D6BBA	bytes=15480	RETRY_BACKED_UP:VERIFIED

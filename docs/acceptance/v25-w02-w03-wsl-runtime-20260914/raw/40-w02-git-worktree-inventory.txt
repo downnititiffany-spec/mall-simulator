@@ -1,0 +1,303 @@
+### COMMAND: git worktree list --porcelain
+worktree D:/Develop_code/GraduationProject
+HEAD 31b4b65e542c1b872925a6f3a5378bce983222c9
+branch refs/heads/remediation/r1-boundary
+
+worktree D:/Develop/GraduationProject/.f88-baseline-wt
+HEAD dba438135271de18b289caebaf500f0590a0345a
+detached
+
+worktree D:/Develop_code/GraduationProject-wt/m3-jdk8fix
+HEAD f26be2624262a12d92f0cdc7a97415c4f07a1b35
+detached
+
+### COMMAND: git worktree list
+D:/Develop_code/GraduationProject               31b4b65 [remediation/r1-boundary]
+D:/Develop/GraduationProject/.f88-baseline-wt   dba4381 (detached HEAD)
+D:/Develop_code/GraduationProject-wt/m3-jdk8fix f26be26 (detached HEAD)
+### COMMAND: git branch -vv
+  master                  01c6bbf feat(ai): 界面/审计直接显示实际模型名（providerName 返回模型名）
+* remediation/r1-boundary 31b4b65 [origin/main] docs(board): 登记用户四项授权（WSL 全部安装与 ext4 目录／追加 .wslconfig 限额并重启复位／关闭 sshd／MySQL 默认不动）＋ 其余 W01 问题就地按指导书裁决；W02/W03 置 IN_PROGRESS 并登记泳道 L3 与证据路径
+### COMMAND: git remote -v
+origin	https://github.com/downnititiffany-spec/mall-simulator.git (fetch)
+origin	https://github.com/downnititiffany-spec/mall-simulator.git (push)
+### COMMAND: git stash list
+### COMMAND: git log --oneline -3
+31b4b65 docs(board): 登记用户四项授权（WSL 全部安装与 ext4 目录／追加 .wslconfig 限额并重启复位／关闭 sshd／MySQL 默认不动）＋ 其余 W01 问题就地按指导书裁决；W02/W03 置 IN_PROGRESS 并登记泳道 L3 与证据路径
+09d7046 docs(board): V2.5 看板就地更新 —— W01 首版 DONE_LIMITED（71 项已确定/10 项未取证/12 项待用户确认）＋ 三条硬约束（HDFS 必须落 WSL ext4、WSL 内 Hadoop 须原生安装不得复用 /mnt/d 假 hadoop、.bashrc 在非交互 shell 不生效）＋ 新增「盘点类任务副作用」纪律（启动已停止的发行版属状态变更）
+7296fda docs(board): V2.5 看板就地更新 —— T01/T02 根因定位与阻塞（等 Q01 编译绿方可 E2）＋ Q01 优先恢复 platform-common 可编译（QualityRuleDefinition.java:84 缺 isKnownSeverity）＋ 新增构建槽纪律（同一工作树同一时刻仅一泳道跑 Maven；编译红不得记作他人测试失败）
+### COMMAND: git rev-parse HEAD
+31b4b65e542c1b872925a6f3a5378bce983222c9
+### COMMAND: git status --porcelain=v1 -uall  (main worktree)
+ M analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java
+ M analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java
+ M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+ M analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+ M docs/README.md
+ M docs/acceptance/b13-db-forensics-20260912/README.md
+?? after-reboot-cleanup.ps1
+?? alibaba-fix-src.txt
+?? alibaba-fix.ps1
+?? analytics-server/integration.local.properties.template
+?? analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublishValidatorSeverityTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestRuntimePatrolTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSchemaSubset.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/ManifestFreezePatrol.java
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/freeze.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/1.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/10.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/11.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/12.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/13.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/14.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/15.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/16.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/17.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/18.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/19.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/2.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/20.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/21.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/22.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/23.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/24.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/25.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/26.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/27.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/28.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/29.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/3.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/30.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/31.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/32.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/33.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/34.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/35.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/36.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/37.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/38.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/39.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/4.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/5.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/6.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/7.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/8.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/9.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/new/40.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/new/41.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/new/42.json
+?? analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/new/43.json
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleCatalog.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleDefinition.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/RuleSeverity.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/IsolationProfileCondition.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuard.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuardTest.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestRunDigest.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralScanner.java
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? docs/acceptance/b13-db-forensics-20260912/raw/14-binlog-coverage-map.txt
+?? docs/acceptance/b13-db-forensics-20260912/raw/15-000125-analytics_meta-metric-sept7.log
+?? docs/acceptance/b13-db-forensics-20260912/raw/16-000129-analytics_meta-metric-events.log
+?? docs/acceptance/f88-dq-severity-20260912/IMPL-REPORT.md
+?? docs/acceptance/f88-dq-severity-20260912/INVENTORY.md
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-a-rule-severity-inventory.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-b-run47-and-snapshots.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-c-metric-snapshot.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-d-run24-and-impact.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-e-snapshot-scope.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-f-metric-db-snapshots.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-g-ads-quality.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-h-impact-and-warn.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-i-quality-stage-evidence.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-j-post-impl-severity-state.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-k-metric-snapshot-after-impl.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-l-golden-values-24-vs-47.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-m-f94-severity-drift.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-o-old-predicate-vs-new.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-p-pre-state-24-47.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/db-q-quality-rows-24-47.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/e0-baseline-HEAD-platform-common.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e1-compile.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e2-all-modules-test.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e2-full-reactor-q01b.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e2-it-analysis-golden-mysql.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e2-metric-analysis-test.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e2-warehouse-pipeline-test.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e2b-diagnosis-ruleseverity.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e3-diagnosis-fixture-npe.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/e4-git-status-readonly-prep.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/e5-baseline-IT-analysis-golden.log
+?? docs/acceptance/f88-dq-severity-20260912/raw/e6-IT-before-db-state.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/e7-IT-after-db-state.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/q01-ddl-draft-notes.md
+?? docs/acceptance/f88-dq-severity-20260912/raw/q01-quality-rule-definition-ddl-draft.sql
+?? docs/acceptance/f88-dq-severity-20260912/raw/test-lockin-evidence.txt
+?? docs/acceptance/f88-dq-severity-20260912/raw/test-lockin-inventory.md
+?? docs/acceptance/guideline-v24-coverage-20260912/COVERAGE.md
+?? docs/acceptance/guideline-v24-coverage-20260912/raw/01-identity-v24-kanban.txt
+?? docs/acceptance/guideline-v24-coverage-20260912/raw/02-acceptance-inventory.txt
+?? docs/acceptance/guideline-v24-coverage-20260912/raw/03-v24-heading-index.txt
+?? docs/acceptance/guideline-v24-coverage-20260912/raw/04-git-facts.txt
+?? docs/acceptance/guideline-v24-coverage-20260912/raw/05-v24-6.5-userinput-verbatim.txt
+?? docs/acceptance/guideline-v24-coverage-20260912/raw/06-generator-entities-spotcheck.txt
+?? docs/acceptance/guideline-v24-coverage-20260912/raw/07-platform-entity-greps.txt
+?? docs/acceptance/local-readiness-20260914.md
+?? docs/acceptance/p3-02-mapping-executor-20260912/INVENTORY.md
+?? docs/acceptance/p3-02-mapping-executor-20260912/README.md
+?? docs/acceptance/p3-02-mapping-executor-20260912/SPEC-CHANGE-DRAFT.md
+?? docs/acceptance/p3-02-mapping-executor-20260912/raw/baseline-blame-verify.txt
+?? docs/acceptance/p3-02-mapping-executor-20260912/raw/baseline-gate-history.txt
+?? docs/acceptance/p3-02-mapping-executor-20260912/raw/baseline-manifest-failure.txt
+?? docs/acceptance/p3-02-mapping-executor-20260912/raw/e1-e2-full-reactor-all-modules.txt
+?? docs/acceptance/p3-02-mapping-executor-20260912/raw/e1-e2-platform-app-tests.txt
+?? docs/acceptance/p3-02-mapping-executor-20260912/raw/line-anchors-verify.txt
+?? docs/acceptance/p3-02-mapping-executor-20260912/raw/static-contrast-inventory.txt
+?? docs/acceptance/v25-document-release-20260914.md
+?? docs/acceptance/v25-r01-coverage-20260914/MATRIX.md
+?? docs/acceptance/v25-r01-coverage-20260914/README.md
+?? docs/acceptance/v25-r01-coverage-20260914/raw/01-identity-git.txt
+?? docs/acceptance/v25-r01-coverage-20260914/raw/02-acceptance-inventory.txt
+?? docs/acceptance/v25-r01-coverage-20260914/raw/03-ruleseverity-version-boundary.txt
+?? docs/acceptance/v25-r01-coverage-20260914/raw/04-v25-object-presence.txt
+?? docs/acceptance/v25-r01-coverage-20260914/raw/05-269-baseline.txt
+?? docs/acceptance/v25-r01-coverage-20260914/raw/06-selfcheck.txt
+?? docs/acceptance/v25-r01-coverage-20260914/raw/07-baseline-drift.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/README.md
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-01-platform-common-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-02-platform-app-am-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-03-platform-app-am-test-failure-ignore.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-04-full-reactor-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-env-java.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-env-maven.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-exit-codes.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-git-diff-stat.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-git-head.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-git-status-porcelain.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/baseline-landing-manifests-mtime-sha256.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-00-git-diff-stat.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-00-git-head.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-00-git-status-porcelain.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-00-java.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-00-landing-before.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-00-maven.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-01-t01-legacy-probe-provenance.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-01-t01-legacy-probe-source-head.java
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-01-t01-red-legacy-probe.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-02-platform-app-am-masking-repro.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-03-platform-common-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-04a-t02-contract-group.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-04b-t02-runtime-patrol-group.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-05-platform-app-am-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-06-full-reactor-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-07-spark-jobs-jdk8-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-08-landing-after.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-08-landing-untouched-verdict.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-09-summary.txt
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-10a-t02-contract-group.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-10b-t02-runtime-patrol-group.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-11-t01-warehouse-gate-green.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-12-verbatim-platform-common-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/final-13-verbatim-platform-app-am-test.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/probe/T01Probe.java
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/probe/T02Probe.java
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/probe/t01-probe.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/probe/t02-probe.log
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/run-baseline.ps1
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/run-final.ps1
+?? docs/acceptance/v25-t01-t02-baseline-20260914/raw/run-final2.ps1
+?? docs/acceptance/v25-w01-env-inventory-20260914/README.md
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/00-wsl-host-side-inventory.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/01-host-system.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/02-host-toolchain-versions.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/03-host-ports-services.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/04-env-vars-and-path.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/10-wsl-internal-inventory.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/11-wsl-packages-config-network.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/12-wsl-ports-systemd.conf.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/20-mysql-topology.txt
+?? docs/acceptance/v25-w01-env-inventory-20260914/raw/21-mysql-schema-sizes.txt
+?? docs/acceptance/v25-w02-w03-wsl-runtime-20260914/raw/30-wslconfig-BEFORE-1220.txt
+?? docs/acceptance/v25-w02-w03-wsl-runtime-20260914/raw/31-wslconfig-AFTER-1220.txt
+?? "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.5.md"
+?? fix-autostart.ps1
+?? optimize-src.txt
+?? optimize.ps1
+?? orphan-cleanup-report.txt
+?? orphan2-src.txt
+?? orphan2.ps1
+?? post-opt-verify-src.txt
+?? post-opt-verify.ps1
+?? post-reboot-check-src.txt
+?? post-reboot-check.ps1
+?? target-cp-pc.txt
+?? target-deps-pc.txt
+### COMMAND: git ls-files -m (modified tracked)
+analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java
+analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java
+analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java
+analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+docs/README.md
+docs/acceptance/b13-db-forensics-20260912/README.md
+### COMMAND: git diff --stat (unstaged)
+warning: in the working copy of 'analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/acceptance/b13-db-forensics-20260912/README.md', LF will be replaced by CRLF the next time Git touches it
+ .../metric/publish/MetricPublishValidator.java     |  31 +-
+ .../analytics/analysis/AnalysisGoldenMySqlIT.java  |  63 +++-
+ .../analytics/metric/MetricAdsMySqlIT.java         | 227 +++++++++++---
+ .../metric/publish/MetricPublisherMySqlIT.java     | 284 ++++++++++++++---
+ .../IngestionManifestSourceSchemaTest.java         | 270 ++++++-----------
+ .../analytics/metric/MetricQualityGate.java        |   9 +-
+ .../warehouse/WarehouseNameLiteralGateTest.java    | 336 ++++++++++++++-------
+ .../analytics/pipeline/DataQualityGate.java        | 191 +++++++++++-
+ .../analytics/pipeline/PipelineService.java        |  60 +++-
+ .../analytics/pipeline/QualityChecker.java         | 106 ++++++-
+ .../analytics/pipeline/spark/JobResultParser.java  |  15 +-
+ .../analytics/pipeline/DataQualityGateTest.java    | 248 ++++++++++++++-
+ .../analytics/pipeline/PipelineServiceTest.java    | 121 +++++++-
+ .../pipeline/spark/JobResultParserTest.java        |   8 +-
+ docs/README.md                                     |  29 +-
+ .../acceptance/b13-db-forensics-20260912/README.md |   9 +-
+ 16 files changed, 1545 insertions(+), 462 deletions(-)
+### COMMAND: git diff --cached --stat (staged)
+### COMMAND: git log --oneline origin/remediation/r1-boundary..HEAD (unpushed)
+fatal: ambiguous argument 'origin/remediation/r1-boundary..HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+### COMMAND: git rev-list --count origin/remediation/r1-boundary..HEAD
+fatal: ambiguous argument 'origin/remediation/r1-boundary..HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'

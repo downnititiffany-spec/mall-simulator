@@ -1,0 +1,69 @@
+[审计原始取证 06] 生成时刻 = 2026-09-12 23:1x +08:00
+取证者 = 只读子代理（spawn 时固定只读权限；未改文件、未做 git 写、未启停服务、未跑链路）
+范围 = synthetic-data-generator/**（生成器侧实体），判据只有 PRESENT / PARTIAL / ABSENT
+
+== 15 项判定 ==
+1  MallTargetAdapter SPI + TargetRoute ................ PRESENT
+   .../adapter/MallTargetAdapter.java:31,34,37 (abstract: adapterType/test) ; :48-50 capabilities default ; :68-70 operationRoutes default ; :73-103 七个业务方法 default 且 throw unsupported
+   .../adapter/TargetRoute.java:20 record TargetRoute(String method, String path)
+2  注册表 + 未知/重复 adapter_type 响亮失败 + 单一装配点 ... PRESENT
+   .../adapter/MallTargetAdapterRegistry.java:28,32-34,45-48,55-57 ; .../config/GeneratorBeans.java:64-71
+3  EventSink 契约与实现 ................................ PRESENT
+   .../contract/EventSink.java:11,14,17,20,23,26-29 ; .../contract/JsonlEventSink.java:38,103,130,143,155
+   注：生产实现只有 JsonlEventSink；MallApiGenerationEngine.java:490 是装饰器；其余两个是测试内 RecordingSink
+4  ProductPage 三个缺口通道并列 ........................ PRESENT
+   .../adapter/ProductPage.java:37-39 五元组(products,total,unmappedStateWords,stateFieldMissing,priceUnreadable) ; :57-59 两参便捷构造 ; :61 empty() ; :76-78 hasGap()
+5  商城没给状态 → null（绝不编 UNKNOWN） ................ PRESENT
+   .../adapter/ExternalOrder.java:38-40 ; .../adapter/ExternalRefund.java:30-32 ; grep "UNKNOWN" 于 src/main → 0 代码字面量（仅 javadoc 2 处提及旧词）
+6  F-25 状态词映射归适配器所有，引擎对商城词表零知识 ... PRESENT
+   .../adapter/SecondMallHttpAdapter.java:195-198 CANONICAL_PRODUCT_STATUS ; :701-713 toCanonicalProductStatus 未映射返回 null ; :854-866 读页时分离 add
+   .../engine/MallApiGenerationEngine.java:319-326,344-358 describeCatalogGaps 无 adapterType 分支
+7  第二家真实商城适配器存在 ............................ PRESENT
+   .../adapter/SecondMallHttpAdapter.java:82 ADAPTER_TYPE="SECOND_MALL_HTTP" ; :145-149 /open/v2/items,members,orders,{orderId}/settle,{orderId}/void ; :164-168 自有信封词表
+   .../config/GeneratorBeans.java:67-70 三适配器同点注册 ; .../engine/SecondMallDualTargetTest.java:284-347 双目标端到端
+8  路由来自 adapter.operationRoutes()，日志显示真实路由，引擎零商城字面量 ... PRESENT
+   .../engine/MallApiGenerationEngine.java:213-216,142-143,244-247,261-264,303-315 ; .../engine/MallApiDispatchSink.java:105-124（刻意无"退回参考商城"分支） ; .../service/GenerationRunService.java:88,376-383
+   .../boundary/GeneratorBoundarySourcePolicyTest.java:181-211 正则 routeLiteral：引擎源码 0 命中 + /adapter/ 正对照
+9  五张生成器表 DDL ..................................... PRESENT
+   .../src/main/resources/application.yml:26 locations: classpath:db/generator ; .../db/generator/V1__generator_meta.sql:12,30,50,74,92（generator_target / generation_plan / generation_run / generation_artifact / generation_event_stat）
+10 §4.4 六组端点 ....................................... PRESENT
+   .../web/GenerationRunController.java:25,35,41,47,53 ; .../web/TargetController.java:32,43,48,55,80,113-120 ; .../web/ScenarioController.java:23,26 ; .../web/dto/GeneratorApiDtos.java:31-154
+   测试：GeneratorApiSmokeTest(5)、MallApiGenerationSmokeTest(9)
+11 §4.5 页面 / CLI ..................................... PARTIAL
+   PRESENT：.../cli/GeneratorCli.java:42-43 ApplicationRunner、:35-38 用法 plan-append / run-start
+   ABSENT ：synthetic-data-generator/src 下 .vue/.html/.js/.css = 0 文件；src/main/resources 仅 application.yml + db/generator/V1__generator_meta.sql ⇒ 模块内无任何页面
+   ABSENT ：mall-frontend/src/router.js 搜 generator = 0 命中，路由仅 '/'、'/login'、'/mall'、'/admin-products'
+   文档漂移：mall-frontend/src/api.js:99 注释称生成器"自带前端"——无文件支撑；synthetic-data-generator/README.md:80 仍把 S5「页面或 CLI」标 ⬜
+12 priceUnreadable 收集并有真实出口 ................... PARTIAL
+   PRESENT：.../adapter/SecondMallHttpAdapter.java:867-875 读不懂即 add 且剔除该商品 ; :294-314 进 ProductPage
+           .../engine/MallApiGenerationEngine.java:259-260,383-390,270-277 第三通道文案 + 独立 journal 行
+           .../service/GenerationRunService.java:497-538 notes → run-report.json；journal → operation-journal.jsonl 产物
+   ABSENT ：web/dto/GeneratorApiDtos.java 搜 priceUnreadable|notes|catalog|gap = 0 命中 ⇒ HTTP 响应无该字段，纯 API 消费者看不到
+13 契约侧 TargetCheckResult / TargetCapabilities / adapter_type 取值集 ... PARTIAL
+   PRESENT：contract-specs/openapi/generator-api.v1.yaml:449-478 TargetCheckResult（targetId/reachable/detail/capabilities 枚举 SUPPORTED|ABSENT|UNDETERMINED）；:480-499 TargetCapabilities；:406-447 GeneratorTarget 必填 name/adapter_type
+   PARTIAL：:412-413 与 :421-423 明示 adapter_type 取值集合「按契约不冻结」并标 x-unspecified: true ⇒ 契约内没有可枚举的取值集合
+   ABSENT ：全 contract-specs/** 搜 TargetRoute = 0 命中 ⇒ SPI 路由记录未进契约
+   contract-specs/VERSION:1 = "contract-specs 2.2.0"；generator-api.v1.yaml:28 x-contract-status: DRAFT；残余 x-unspecified 共 21 处
+14 确定性：根 seed 派生子种子 / 脏数据仅 FILE 模式 / 期望隔离数被记录 ... PARTIAL
+   PRESENT：.../engine/FileModeGenerationEngine.java:42-43,738-740,217-222,108-111,53,547-550 ; .../engine/MallApiGenerationEngine.java:120-123 响亮拒绝脏数据档
+   测试：FileModeGenerationEngineTest:85,351,389 ; GeneratorDeterminismTest:33,47 ; JsonlEventSinkTest:123 ; GeneratorApiSmokeTest:151-165
+   PARTIAL：contract-specs/schemas/generation-artifact-manifest.v1.schema.json:5 自述「§4.3 L149 要求 manifest 记录期望隔离数，但 §4.2 字段里没有」；JsonlEventSinkTest:84 清单字段固定 9 个 ⇒ 期望隔离数落在 run-report.json（GenerationRunService.java:535），不在 manifest
+15 引擎只经适配器驱动商城；不得把 UNDETERMINED 说成 SUPPORTED ... PRESENT
+   .../engine/MallApiGenerationEngine.java:55,212-216,117-143 ; .../adapter/TargetCapabilities.java:32-34,37-39 ; .../adapter/MallTargetAdapter.java:43
+   .../adapter/ReferenceMallHttpAdapter.java:107,113-127（BEHAVIOR/RESET_STATE 须 config_json 声明才 SUPPORTED）
+   .../adapter/SecondMallHttpAdapter.java:243-265,462-467,630-631（ADMIN/REFUND/RESET_STATE 静态声明 ABSENT，并写明"不要把 ABSENT 读成测过所以没有"）
+   负向：grep RESET_STATE 于 engine 包 = 0 命中
+
+== 测试清单（静态计数，未执行） ==
+synthetic-data-generator/src/test/java = 21 个 .java，其中 19 个测试类（共 120 个 @Test）、2 个夹具（fixture/FakeMallServer.java、fixture/SecondMallFakeServer.java）
+GeneratorBoundarySourcePolicyTest.java = 274 行 / 5 个 @Test：:72 无商城与平台耦合、:94 自有命名空间与端口、:125 迁移只建自有契约表、:151 pom 不依赖另两程序且无 <modules>、:181 引擎源码零商城路由字面量（含 /adapter/ 正对照与 /open/v2/ 前缀检查）
+  ⇒ 该文件 README.md:66-72 自称 4 例，实为 5 例（文档漂移）
+
+== 子代理明示的「不能判定」 ==
+- 生成器页面是否为契约必需 = 指导书解释问题，代码层不可判；模块内只有 CLI、无页面。
+- priceUnreadable 是否必须有 API 级出口 = 不可判；实测出口只在产物与运行报告。
+- adapter_type 的"契约取值集合" = 契约自身刻意不冻结，故设计上不可判。
+- manifest 与期望隔离数冲突由哪一侧修改 = 不可判（schema 自述仍未决）。
+- 未对真实商城做任何运行期探测（只读授权：未启服务、未跑链路）⇒ 能力判定均为静态源码事实。
+- 未执行任何测试；测试清单是注解的静态计数。
+- synthetic-data-generator/README.md 阶段表 S2–S6 标 ⬜ 与实际已有代码不符（README 状态陈旧）。

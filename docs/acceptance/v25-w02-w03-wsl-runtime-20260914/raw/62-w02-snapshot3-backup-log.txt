@@ -1,0 +1,50 @@
+=== worktree list BEFORE (authoritative source of paths) ===
+worktree /mnt/d/Develop_code/GraduationProject
+HEAD f00462c51023ce5b12e0b649e7813ed789f6f17e
+branch refs/heads/remediation/r1-boundary
+
+worktree /mnt/d/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt/D:/Develop/GraduationProject/.f88-baseline-wt
+HEAD dba438135271de18b289caebaf500f0590a0345a
+detached
+prunable gitdir file points to non-existent location
+
+worktree /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix/D:/Develop_code/GraduationProject-wt/m3-jdk8fix
+HEAD f26be2624262a12d92f0cdc7a97415c4f07a1b35
+detached
+prunable gitdir file points to non-existent location
+
+
+=== HEAD per worktree (recorded for evidence) ===
+/mnt/d/Develop_code/GraduationProject  HEAD=f00462c51023ce5b12e0b649e7813ed789f6f17e
+/mnt/d/Develop_code/GraduationProject  branch=refs/heads/remediation/r1-boundary
+/mnt/d/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt/D:/Develop/GraduationProject/.f88-baseline-wt  HEAD=dba438135271de18b289caebaf500f0590a0345a
+/mnt/d/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt/D:/Develop/GraduationProject/.f88-baseline-wt  detached
+/mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix/D:/Develop_code/GraduationProject-wt/m3-jdk8fix  HEAD=f26be2624262a12d92f0cdc7a97415c4f07a1b35
+/mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix/D:/Develop_code/GraduationProject-wt/m3-jdk8fix  detached
+### [main] /mnt/d/Develop_code/GraduationProject
+  entries this worktree: 1121 verified
+### [f88-baseline-wt] /mnt/d/Develop_code/GraduationProject/.git/worktrees/-f88-baseline-wt/D:/Develop/GraduationProject/.f88-baseline-wt
+  ROOT ABSENT — skipped
+### [m3-jdk8fix] /mnt/d/Develop_code/GraduationProject/.git/worktrees/m3-jdk8fix/D:/Develop_code/GraduationProject-wt/m3-jdk8fix
+  ROOT ABSENT — skipped
+
+### retry locked files
+
+=== secret-path exclusions (presence only; content NEVER copied) ===
+  count: 0
+
+================ SNAPSHOT-3 SUMMARY ================
+entries scanned : 1121
+VERIFIED        : 1121
+still locked    : 0
+src gone/dirs   : 0
+secret-excluded : 0
+bytes           : 47321948
+backup tree     : /mnt/d/Develop/backup/v25-w02-20260914-snap3
+--- files on disk per worktree ---
+  main                      1121 files      48M
+  TOTAL 1121 files, 48M
+--- verdict tally ---
+   1121 BACKED_UP:VERIFIED
+--- manifest lines: 1125
+### DONE rc=0

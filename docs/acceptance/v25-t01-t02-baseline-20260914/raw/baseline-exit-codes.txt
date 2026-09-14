@@ -1,0 +1,4 @@
+baseline-01-platform-common-test : EXIT=1
+baseline-02-platform-app-am-test : EXIT=1
+baseline-03-platform-app-am-test-failure-ignore : EXIT=1
+baseline-04-full-reactor-test : EXIT=1

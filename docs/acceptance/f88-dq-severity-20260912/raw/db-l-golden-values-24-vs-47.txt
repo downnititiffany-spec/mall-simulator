@@ -1,0 +1,12 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+snapshot_id	metric_code	metric_value
+S20260901_24	gmv	2042.0000
+S20260901_47	gmv	2042.0000
+S20260901_24	net_sale	1493.0000
+S20260901_47	net_sale	1493.0000
+S20260901_24	paid_order_cnt	5.0000
+S20260901_47	paid_order_cnt	5.0000
+S20260901_24	pv	7.0000
+S20260901_47	pv	7.0000
+S20260901_24	refund_rate	0.6000
+S20260901_47	refund_rate	0.6000

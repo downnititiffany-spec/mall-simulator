@@ -1,0 +1,92 @@
+--- PATH entries (head) ---
+/usr/local/sbin
+/usr/local/bin
+/usr/sbin
+/usr/bin
+/sbin
+/bin
+/usr/games
+/usr/local/games
+/usr/lib/wsl/lib
+/mnt/c/Program Files/WindowsApps/Microsoft.PowerShell_7.6.6.0_x64__8wekyb3d8bbwe
+/mnt/c/Users/ASUS/AppData/Local/npm-cache/_npx/1e7f6d9597241db0/node_modules/.bin
+/mnt/c/Users/ASUS/Desktop/node_modules/.bin
+--- does /mnt/d come before /opt? ---
+10:/mnt/c/Program Files/WindowsApps/Microsoft.PowerShell_7.6.6.0_x64__8wekyb3d8bbwe
+11:/mnt/c/Users/ASUS/AppData/Local/npm-cache/_npx/1e7f6d9597241db0/node_modules/.bin
+12:/mnt/c/Users/ASUS/Desktop/node_modules/.bin
+13:/mnt/c/Users/ASUS/node_modules/.bin
+14:/mnt/c/Users/node_modules/.bin
+15:/mnt/c/node_modules/.bin
+16:/mnt/c/Program Files/nodejs/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin
+17:/mnt/d/Develop/JAVA17/bin
+18:/mnt/d/Develop/Vmware/bin/
+19:/mnt/c/Windows/system32
+20:/mnt/c/Windows
+21:/mnt/c/Windows/System32/Wbem
+22:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/
+23:/mnt/c/Windows/System32/OpenSSH/
+24:/mnt/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common
+25:/mnt/c/Program Files/dotnet/
+26:/mnt/c/Program Files/MySQL/MySQL Server 8.0/bin
+27:/mnt/c/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR
+28:/mnt/d/apache-maven-3.9.14/bin
+29:/mnt/c/Program Files/Git/cmd
+30:/mnt/d/apache-tomcat-10.1.53/bin
+31:/mnt/c/Users/ASUS/AppData/Local/Android/Sdk/platform-tools
+32:/mnt/c/Program Files/nodejs/
+33:/mnt/c/Users/ASUS/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/LocalCache/local-packages/Python313/Scripts
+34:/mnt/d/soft/XShell/
+35:/mnt/d/soft/Xftp/
+36:/mnt/d/soft/hadoop/hadoop-3.3.4/bin
+37:/mnt/d/soft/hadoop/hadoop-3.3.4/sbin
+38:/mnt/c/Program Files/Docker/Docker/resources/bin
+39:/mnt/d/Develop/scala/bin
+40:/mnt/d/Develop/scala/bin
+41:/mnt/d/Develop/Python314/Scripts/
+42:/mnt/d/Develop/Python314/
+43:/mnt/c/Users/ASUS/AppData/Local/Programs/Python/Launcher/
+44:/mnt/c/Users/ASUS/AppData/Local/agy/bin
+45:/mnt/c/Program Files/MySQL/MySQL Shell 8.0/bin/
+46:/mnt/c/Users/ASUS/AppData/Local/Microsoft/WindowsApps
+47:/mnt/d/vscode/Microsoft VS Code/bin
+48:/mnt/d/Develop/jetbrains/DataGrip 2024.1.1/bin
+49:/mnt/c/Users/ASUS/AppData/Local/Programs/cursor/resources/app/bin
+50:/mnt/d/Develop/jetbrains/PyCharm 2024.1/bin
+51:/mnt/d/Develop/jetbrains/CLion 2024.1/bin
+52:/mnt/d/Develop/jetbrains/GoLand 2024.1/bin
+53:/mnt/d/Develop/jetbrains/IntelliJ IDEA 2024.1/bin
+54:/mnt/d/Develop/jetbrains/JetBrains Rider 2024.1/bin
+55:/mnt/d/Develop/jetbrains/PhpStorm 2024.1/bin
+56:/mnt/d/Develop/jetbrains/WebStorm 2024.1/bin
+57:/mnt/d/Develop/jetbrains/RubyMine 2024.1/bin
+58:/mnt/c/Users/ASUS/AppData/Roaming/npm
+59:/mnt/c/Users/ASUS/AppData/Local/Microsoft/WinGet/Packages/JohnMacFarlane.Pandoc_Microsoft.Winget.Source_8wekyb3d8bbwe/pandoc-3.9.0.2
+60:/mnt/c/Users/ASUS/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1.2-full_build/bin
+61:/mnt/c/Users/ASUS/AppData/Local/Programs/Antigravity IDE/bin
+62:/mnt/c/Users/ASUS/AppData/Local/GitHubDesktop/bin
+--- stage Hive 3.1.3 client jars for spark.sql.hive.metastore.jars=path ---
+258
+guava in dir: guava-19.0.jar guava-27.0-jre.jar jersey-guava-2.25.1.jar 
+hive-metastore: hive-metastore-3.1.3.jar 
+--- write hive-site.xml (idempotent) ---
+--- append Spark-side HMS 3.1.3 jars-mode overrides to spark-defaults.conf ---
+--- resulting spark-defaults.conf ---
+
+# v25-w03:hms313 — Spark 3.5.1 default hive client is 2.3.9 (builtin); HMS here is 3.1.3
+# so jars must be 'path' pointing at Hive 3.1.3 client jars (per Spark 3.5.1 official docs).
+spark.sql.hive.metastore.version        3.1.3
+spark.sql.hive.metastore.jars           path
+spark.sql.hive.metastore.jars.path      file:///data/spark-scratch/hive-3.1.3-client/*.jar
+spark.sql.warehouse.dir                 /data/metastore/warehouse
+spark.driver.extraJavaOptions           -Dderby.system.home=/data/spark-scratch/derby
+spark.sql.catalogImplementation         hive
+--- resulting hive-site.xml (head) ---
+<?xml version="1.0"?>
+<configuration>
+  <property><name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:mysql://127.0.0.1:3307/analytics_meta?createDatabaseIfNotExist=true&amp;useSSL=false&amp;allowPublicKeyRetrieval=true&amp;characterEncoding=UTF-8</value></property>
+  <property><name>javax.jdo.option.ConnectionDriverName</name><value>com.mysql.cj.jdbc.Driver</value></property>
+### PATH FIX (for docs; .bashrc intentionally NOT modified) ###
+export PATH=/opt/hadoop-3.3.4/bin:/opt/hive-3.1.3/bin:/opt/spark-3.5.1-bin-hadoop3/bin:$PATH
+### DONE rc=0

@@ -1,0 +1,172 @@
+=== [1] @keep 全仓命中（含生产代码对照） ===
+analytics-server/source-profiles/mock-mall.v1.json:35:    "event_time_utc": "@keep",
+analytics-server/source-profiles/p1-03-probe-1.v1.json:16:    "coupon_code": "@keep"
+docs/acceptance/p2-01-ods-v2-spec-draft-20260912/draft/p2-01-spec-draft.md:75:- **L127 / L148**：`"@keep"` 字段（例：`coupon_code`）**仅保留在 `payload_json`**。
+docs/acceptance/p2-01-ods-v2-spec-draft-20260912/draft/p2-01-spec-draft.md:333:- 输入：**新建**夹具文件，某行 payload 含画像与契约里都不存在的键（建议用 `source-profiles/p1-03-probe-1.v1.json:16` 已定义的 `"coupon_code": "@keep"` 语义，键名 `coupon_code`），其余字段与既有夹具同构。
+docs/acceptance/p2-semantic-registry-20260912/RECON.md:486:| **3** | `docs/superpowers/specs/2026-09-11-mall-agnostic-platform-design.md` §4.2 + §4.3 | §4.2 **`:109-149`**（源画像 9 键的**散文规格**，含 `@keep` 哨兵语义 `:148`）；§4.3 **`:151-159`**（`semantic_registry` / `dimension_registry` / `metric_definition` 增列的**表规格**）；§4.3 **`:213`**（归属边界原则） | **本层真正的规格来源**，但**不是** `contract-specs/` 制品、**不是**机器可读 schema、**不在** `contract-specs/VERSION` 的版本管辖内 |
+docs/acceptance/p2-semantic-registry-20260912/RECON.md:579:                      "created_at": "event_time", "coupon_code": "@keep" },
+docs/acceptance/p2-semantic-registry-20260912/RECON.md:806:| **G-1** | **缺契约**：没有映射/语义注册表的机器可读契约 | `contract-specs/` 9 文件中无一个（§6.1）；`README.md:122` 明文把它排除在目录之外 | 新增 `contract-specs/specs/source-profile.v1.json`（或 `semantic-mapping.v1.json`）：把设计 §4.2 的 9 键**升格**为 JSON Schema，含 `eventTypeMapping` 枚举闭集、`@keep` 哨兵、`identityPolicy.shape/surrogate` 闭集、`timePolicy.formats` 闭集、`quarantinePolicy` 取值闭集；`VERSION` 按加法 `2.0.0 → 2.1.0` |
+docs/acceptance/p3-01a-mock-mall-profile-20260912/IMPL-REPORT.md:179:| I4 | `fieldMapping` 覆盖 payload 字段全集；`@keep` 仅用于契约外字段（契约外 = `{event_time_utc}` **恰好**等于 `@keep` 集） | PASS |
+docs/acceptance/p3-01a-mock-mall-profile-20260912/IMPL-REPORT.md:248:本画像只能取恒等（改 `@keep` 会把**骨架字段**误判成额外字段，错得更重）。待裁定。
+docs/acceptance/p3-01a-mock-mall-profile-20260912/README.md:27:| payload 字段 | 实测 **31** 个：30 个恒等命中契约骨架，**1** 个契约外（`event_time_utc` → `@keep`） |
+docs/acceptance/p3-01a-mock-mall-profile-20260912/RULINGS-P3-01A-BATCH2-20260912.md:14:| 词汇出处（父侧检索，含阳性对照） | `@keep` → 设计书 **:127／:148**；`HASH64` → 设计书 **:134／:135** ＋ `SourceProfileValidatorTest.java:51`；`"ANY"` → 设计书 **:136**；`ISO_OFFSET_DATE_TIME` → 设计书 **:140** ＋ 测试 `:52`；`EPOCH_MILLIS` → 设计书 **:140**（备用形态）。阳性对照 `SourceProfile` = 32 命中 ⇒ 检索有效。**结论：画像词汇源自冻结设计，非自造** |
+docs/acceptance/p3-01a-mock-mall-profile-20260912/draft/p3-01a-profile-rationale.md:24:⇒ 因此 `fieldMapping` 是 31 条：30 条恒等 + 1 条 `@keep`。这不是"照抄契约"，是**实测出来的恒等**。
+docs/acceptance/p3-01a-mock-mall-profile-20260912/draft/p3-01a-profile-rationale.md:81:## 4. `fieldMapping`：30 条恒等 + `event_time_utc: "@keep"`
+docs/acceptance/p3-01a-mock-mall-profile-20260912/draft/p3-01a-profile-rationale.md:84:`raw/11` 断言 I4 复核：实测字段 31、未登记 0、契约外字段 `{event_time_utc}` == `@keep` 集合。
+docs/acceptance/p3-01a-mock-mall-profile-20260912/draft/p3-01a-profile-rationale.md:86:### 4.1 唯一 `@keep`：`event_time_utc`
+docs/acceptance/p3-01a-mock-mall-profile-20260912/draft/p3-01a-profile-rationale.md:89:- 判定依据：它**不在**契约任何 `$defs` 的属性里（`raw/09` 第 P 节：behavior 的"需 @keep 的源侧额外字段" =
+docs/acceptance/p3-01a-mock-mall-profile-20260912/draft/p3-01a-profile-rationale.md:91:- §4.2 原文：`"@keep"` 表示字段不映射到骨架，仅保留在 `payload_json`，不参与标准指标。
+docs/acceptance/p3-01a-mock-mall-profile-20260912/draft/p3-01a-profile-rationale.md:104:本画像只能取"恒等"（若改成 `@keep`，会连带把 `order_paid.amount` 这类**骨架字段**判成额外字段，
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:27:## P. 实测 payload 字段 × 契约骨架（判定 fieldMapping 是恒等还是有 @keep）
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:31:      >>> 需 @keep 的源侧额外字段(3): ['amount', 'event_time_utc', 'product_name']
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:35:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:39:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:43:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:47:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:51:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:55:      >>> 需 @keep 的源侧额外字段(1): ['reason']
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:59:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:63:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:67:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:71:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck-output.txt:75:      >>> 需 @keep 的源侧额外字段(0): []
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck.py:9:  - 实测字段 ∉ 契约骨架              => 需 @keep（有证据）
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck.py:122:    print("\n## P. 实测 payload 字段 × 契约骨架（判定 fieldMapping 是恒等还是有 @keep）")
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/09-skeleton-crosscheck.py:132:        print("      >>> 需 @keep 的源侧额外字段(%d): %s" % (len(extra), extra))
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/11-profile-conformance-output.txt:10:   [PASS] I4 fieldMapping 覆盖 payload 字段全集，@keep 仅用于契约外字段  实测字段=31；未登记=无；契约外=['event_time_utc']；@keep=['event_time_utc']；恒等条目落在契约外(应为空)=无
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/11-profile-conformance.py:13:  I4  fieldMapping 覆盖 payload 字段全集（恒等）∪ {@keep 白名单}
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/11-profile-conformance.py:162:    declared_keep = {k for k, v in fm.items() if v == "@keep"}
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/11-profile-conformance.py:163:    identity = {k for k, v in fm.items() if v != "@keep"}
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/11-profile-conformance.py:171:        "I4 fieldMapping 覆盖 payload 字段全集，@keep 仅用于契约外字段",
+docs/acceptance/p3-01a-mock-mall-profile-20260912/raw/11-profile-conformance.py:173:        "实测字段=%d；未登记=%s；契约外=%s；@keep=%s；恒等条目落在契约外(应为空)=%s" % (
+docs/superpowers/specs/2026-09-11-mall-agnostic-platform-design.md:127:    "coupon_code":  "@keep"                     // 规范骨架没有的字段：保留在 payload_json，不参与标准指标
+docs/superpowers/specs/2026-09-11-mall-agnostic-platform-design.md:148:- `"@keep"` 表示字段不映射到骨架，仅保留在 `payload_json`。
+"docs/\351\241\271\347\233\256\345\256\236\346\226\275\350\277\233\345\272\246\344\270\216\344\273\273\345\212\241\347\234\213\346\235\277 V2.2.md":511:| | 2026-09-12 20:50 | **P3-01-a 中途物（画像文件）落盘 ＋ 校验器亲测通过 ＋ 裁决 D-139**。**① 实测**：`analytics-server/source-profiles/mock-mall.v1.json` ＝ **3,339 B / mtime 20:48:24 / sha256 `FBA70E3C3B1D4D81…`**；顶层键**恰为设计 §4.2 的 9 个** ✓；`timePolicy.formats = ["ISO_OFFSET_DATE_TIME"]` **只列实测形态** ✓（符合 D-112）；**无 `timezone`／`currency` 键** ✓（符合 D-136）。**② 词汇出处检索（含阳性对照）**：`@keep` → 设计书 `:127`／`:148`；`HASH64` → 设计书 `:134`／`:135` ＋ `SourceProfileValidatorTest.java:51`；`"ANY"` → 设计书 `:136`；`ISO_OFFSET_DATE_TIME` → 设计书 `:140`；`EPOCH_MILLIS` → 设计书 `:140`；阳性对照 `SourceProfile` **32** ⇒ **我原以为的「自造词汇」被实测否掉，画像词汇源自冻结设计** ✓。**③ 校验器亲测（父侧亲自调用，非转述）**：`POST /api/v1/sources/1/test` ⇒ **HTTP 200 / `ok=true` / 7 项全 `passed=true`**（含 `profile_file_exists`、`profile_required_top_level_keys`「设计 §4.2 的 9 个必备键齐全」、`status_transition_allowed`）⇒ **D-136 的 409 阻塞已实质解除** ✓；`GET /api/v1/sources` 实测 `id=1 / mock-mall / FILE / Asia/Shanghai / CNY / ACTIVE / 1.0 / current=true / dw` ✓。**④ 裁决 D-139**（`RULINGS-P3-01A-BATCH2-20260912.md`）：**P2-02 的「格式列表」依赖在材料上已具备 ⇒ 可开工**，但开工前**必须复测该文件 sha256 未变**（泳道仍在飞）且 **P2-02 只读不改**该文件；**校验器口径必须如实限定** ✗ —— 7 项均为**浅检**，**不校验** `formats` 元素语法与顺序／`fieldMapping` 取值／`enumSemantics` 的 `null` 语义／`identityPolicy` 的 `shape`／`surrogate` 合法性 ⇒ **不得**把「`ok=true`」写成「画像语义已合规」，也**不得**当作 E2/E3 证据；**D-136 更新**（存储态 ＋ 校验器两层阻塞均不再成立，但泳道**未报告** ⇒ 不构成 P3-01-a 完成证据，**不得**声称种子源已激活 —— 父侧**未**调用 `/activate`）；**未验证项**：`enumSemantics` 以 `null` 表示「已知但无规范映射」是否为设计书定义的合法表达，**父侧未读该段落**，须由泳道给出设计书行号后方可采纳；该文件**暂不**由父侧提交（泳道在飞，待 final sha256 再入库）。**⑤ 未做**：未跑 Maven、未启停 809x（仅只读调用 login ＋ `GET /api/v1/sources` ＋ `POST /api/v1/sources/1/test`）、未调 `/activate`、未连集群、未改任何文件。 |
+
+=== [2] 生产代码读取画像语义键的命中（java/scala 主源码） ===
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:21: * 每个键内部的子结构（{@code eventTypeMapping} 的枚举闭集、{@code identityPolicy} 的字段形状等）
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:39:            "eventTypeMapping",
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:40:            "fieldMapping",
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:41:            "enumSemantics",
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:42:            "identityPolicy",
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:48:                  "eventTypeMapping": { "product_viewed": "view" },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:49:                  "fieldMapping": { "buyer_id": "user_id" },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:50:                  "enumSemantics": { "behavior": { "browse": "view" } },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:51:                  "identityPolicy": { "user": { "rawField": "buyer_id", "shape": "UUID", "surrogate": "HASH64" } },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:62:                "profileVersion", "sourceCode", "canonical", "eventTypeMapping", "fieldMapping",
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:63:                "enumSemantics", "identityPolicy", "timePolicy", "quarantinePolicy");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:115:                "eventTypeMapping", "fieldMapping", "enumSemantics",
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:116:                "identityPolicy", "timePolicy", "quarantinePolicy");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java:95:                  "eventTypeMapping": {},
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java:96:                  "fieldMapping": {},
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java:97:                  "enumSemantics": {},
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java:98:                  "identityPolicy": {},
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:89:                      "eventTypeMapping": { "product_viewed": "view" },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:90:                      "fieldMapping": { "buyer_id": "user_id" },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:91:                      "enumSemantics": { "behavior": { "browse": "view" } },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:92:                      "identityPolicy": { "user": { "rawField": "buyer_id", "shape": "UUID", "surrogate": "HASH64" } },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:448:                    assertThat(item.detail()).contains("canonical", "eventTypeMapping", "quarantinePolicy");
+spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:54:  /** 契约算法名（源画像 `identityPolicy.*.surrogate` 唯一允许值，D-089） */
+
+=== [3] timePolicy 命中（java/scala 主源码） ===
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:43:            "timePolicy",
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:52:                  "timePolicy": { "field": "created_at", "formats": ["ISO_OFFSET_DATE_TIME"] },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:63:                "enumSemantics", "identityPolicy", "timePolicy", "quarantinePolicy");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:116:                "identityPolicy", "timePolicy", "quarantinePolicy");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java:99:                  "timePolicy": {},
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:93:                      "timePolicy": { "field": "created_at", "formats": ["ISO_OFFSET_DATE_TIME"] },
+
+=== [4] canonical 骨架/规范字段名 owner ===
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java:232:        return canonical(file.toAbsolutePath().toString());
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java:240:    private static String canonical(String absolutePath) {
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/ingestion/LocalFileIngestor.java:258:                .map(ckpt -> canonical(ckpt.getFilePath()))
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:38:            "canonical",
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:47:                  "canonical": { "schemaVersion": "1.0" },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:62:                "profileVersion", "sourceCode", "canonical", "eventTypeMapping", "fieldMapping",
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:109:                {"profileVersion":"1.0","sourceCode":"%s","canonical":{"schemaVersion":"1.0"}}
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:138:        write(REL, validProfile(CODE, "1.0").replace("\"canonical\": { \"schemaVersion\": \"1.0\" }",
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:139:                "\"canonical\": null"));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java:94:                  "canonical": {},
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:88:                      "canonical": { "schemaVersion": "1.0" },
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:448:                    assertThat(item.detail()).contains("canonical", "eventTypeMapping", "quarantinePolicy");
+analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java:26: * M1-5 契约防漂移：中立目录 {@code contract-specs/schemas/canonical-event.v1.schema.json}
+analytics-server/platform-common/src/test/java/com/graduation/analytics/contracts/CanonicalEventSchemaParityTest.java:39:    private static final String ENVELOPE_SCHEMA = "canonical-event.v1.schema.json";
+synthetic-data-generator/src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java:855:        String canonical = toCanonicalProductStatus(mallState);
+synthetic-data-generator/src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java:856:        if (canonical == null) {
+synthetic-data-generator/src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java:881:                price, canonical);
+synthetic-data-generator/src/main/java/com/graduation/generator/contract/CanonicalEvent.java:10: * 规范事件信封（契约 {@code canonical-event.v1.schema.json} 顶层 8 个字段，全部必填）。
+synthetic-data-generator/src/main/java/com/graduation/generator/contract/CanonicalPayloads.java:8: * 12 类事件的载荷构造器（契约 {@code canonical-event.v1.schema.json} 的 {@code $defs} 逐条对应）。
+synthetic-data-generator/src/main/java/com/graduation/generator/contract/ContractEnums.java:8: * 契约枚举常量（{@code canonical-event.v1.schema.json} 的 {@code $defs} 中每个 enum 一份）。
+synthetic-data-generator/src/main/java/com/graduation/generator/contract/ContractFormat.java:17: * <p>来源：{@code contract-specs/schemas/canonical-event.v1.schema.json} 的 {@code $defs/amount} 与
+synthetic-data-generator/src/main/java/com/graduation/generator/contract/EventTypes.java:7: * 规范事件类型常量（contract-specs/schemas/canonical-event.v1.schema.json 的 {@code event_type.enum}，12 类）。
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:159:                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED, e.getMessage(), false);
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:183:        String canonicalId = canonicalIdOf(event);
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:184:        String existing = externalUserByCanonical.get(canonicalId);
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:188:            journal.appendLocal(plan.operation(), canonicalId, existing, "复用已创建用户");
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:193:        externalUserByCanonical.put(canonicalId, user.userId());
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:194:        journal.append(plan.operation(), true, route.method(), route.path(), canonicalId, user.userId(),
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:207:        String canonicalId = canonicalIdOf(event);
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:214:        productRefByCanonical.put(canonicalId, product.productId());
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:216:        journal.appendLocal(plan.operation(), canonicalId, product.productId(),
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:226:        journal.append(plan.operation(), true, route.method(), route.path(), canonicalIdOf(event), null,
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:232:        String canonicalId = canonicalIdOf(event);
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:241:        externalOrderByCanonical.put(canonicalId, order.orderId());
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:242:        journal.append(plan.operation(), true, route.method(), route.path(), canonicalId, order.orderId(),
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:248:        String canonicalOrder = text(event, "order_id");
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:249:        ExternalOrder paid = adapter.pay(target, new PayCommand(requireOrder(canonicalOrder, plan.operation()),
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:251:        journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, paid.orderId(),
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:257:        String canonicalOrder = text(event, "order_id");
+synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java:259:                requireOrder(canonicalOrder, plan.operation()), requireUser(event, plan.operation()),
+
+=== [5] SourceProfile DTO / 解析入口 是否存在 ===
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:30:public class SourceProfileValidator {
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceProfileValidator.java:49:    public SourceProfileValidator(@Value("${platform.source.profile-root:.}") String profileRoot,
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java:47:    private final SourceProfileValidator profileValidator;
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java:51:                                     SourceProfileValidator profileValidator) {
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java:199:        SourceProfileValidator.ProfileCheck check =
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java:230:                                ? "设计 §4.2 的 " + SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS.size() + " 个顶层必备键齐全"
+analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourceRegistryServiceImpl.java:269:        SourceProfileValidator.ProfileCheck check =
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:22:class SourceProfileValidatorTest {
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:32:    private SourceProfileValidator validator() {
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:33:        return new SourceProfileValidator(root.toString(), objectMapper);
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:61:        assertThat(SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS).containsExactly(
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:69:        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:81:        SourceProfileValidator.ProfileCheck broken = validator().check(REL, CODE, "1.0");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:87:        SourceProfileValidator.ProfileCheck array = validator().check(REL, CODE, "1.0");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:97:        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:112:        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:125:        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java:141:        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryConcurrencyTest.java:60:                new SourceProfileValidator(profileRoot.toString(), new ObjectMapper()));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java:49:                new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixGateTest.java:50:                new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixGateTest.java:94:                    new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixGateTest.java:116:                    new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixGateTest.java:140:                    new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixGateTest.java:167:                    new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixGateTest.java:209:                new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceWarehousePrefixGateTest.java:225:                new SourceProfileValidator(profileRoot.toString(), objectMapper));
+analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceProfileFixtureTest.java:25:class SourceProfileFixtureTest {
+analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceProfileFixtureTest.java:63:            List<String> missing = SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS.stream()
+
+=== [6] dry-run 能力 ===
+docs/acceptance/p2-04-dwd-source-projection-20260912/raw/RUN-20260912-2015.txt:358:L348: 未知源版本、没有 ACTIVE mapping、必填字段缺失和不允许的转换全部进入 quarantine，并保存 source instance、mapping version、reason code 和原始位置。映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数。
+docs/acceptance/p2-semantic-registry-20260912/RECON.md:36:> 未知源版本、没有 ACTIVE mapping、必填字段缺失和不允许的转换全部进入 quarantine，并保存 source instance、mapping version、reason code 和原始位置。映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数。
+docs/acceptance/p2-semantic-registry-20260912/RECON.md:815:| **G-10** | **缺 dry-run** | L348 要求"映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数"；全仓无 dry-run 实现 | 激活前置校验接口：输入样本 → 输出 accepted/quarantined/error 三计数；**未通过不得置 ACTIVE** |
+docs/acceptance/p2-semantic-registry-20260912/RECON.md:817:| **G-12** | **缺测试** | 无 dry-run 覆盖率测试、无"新映射零 Java/Scala 修改"测试（看板 `:232` P3-06 验收项） | 计划 `:223`"新增映射无需改 Java/Scala" ＋ `:224`"源 A 指标不变"的两条验收测试 |
+docs/acceptance/p2-semantic-registry-20260912/RECON.md:969:4. **不得**声称"映射层完全空白" —— 画像**文件形态**与**校验机制**已存在（§10.1），缺的是**契约升格、加载器、执行者、注册表表、dry-run**。
+docs/superpowers/plans/2026-09-11-mall-agnostic-platform-implementation.md:225:- profile dry-run 输出 input/accepted/quarantine/reason counts/field coverage/enum coverage。
+docs/superpowers/plans/2026-09-11-mall-agnostic-platform-implementation.md:251:- 管理员：列表、状态、最后采集时间、可采集文件数、测试连接、启停、设为当前源、查看画像版本和 dry-run 结果。
+docs/superpowers/plans/2026-09-11-mall-agnostic-platform-implementation.md:286:1. profile dry-run。
+docs/superpowers/specs/2026-09-11-mall-agnostic-platform-design.md:298:4. 先导出 20–100 条小样本做 mapping dry-run，检查接受、隔离、缺字段和枚举覆盖。
+docs/v2-completeness-audit.md:200:| §14.2 | 可选参数 sourceBatchId/rebuildPartitions/dryRun | 部分 | extra 透传；`JobCommandBuilder.java:87-102` | 无显式字段与语义定义 |
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.0.md":683:必需参数：jobCode、runtimeProfileId/version、pipelineRunId、stageCode、businessDate、windowStart/windowEnd、landingUri、warehousePrefix、outputSnapshotId、attemptNo。可选参数：sourceBatchId、rebuildPartitions、dryRun。
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.1.md":203:未知源版本、没有 ACTIVE mapping、必填字段缺失和不允许的转换全部进入 quarantine，并保存 source instance、mapping version、reason code 和原始位置。映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数。
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.2.md":215:未知源版本、没有 ACTIVE mapping、必填字段缺失和不允许的转换全部进入 quarantine，并保存 source instance、mapping version、reason code 和原始位置。映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数。
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.2.md":384:  -> sandbox 命名空间用 20–100 条数据 dry-run
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.3.md":348:未知源版本、没有 ACTIVE mapping、必填字段缺失和不允许的转换全部进入 quarantine，并保存 source instance、mapping version、reason code 和原始位置。映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数。
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.3.md":517:  -> sandbox 命名空间用 20–100 条数据 dry-run
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.4.md":348:未知源版本、没有 ACTIVE mapping、必填字段缺失和不允许的转换全部进入 quarantine，并保存 source instance、mapping version、reason code 和原始位置。映射激活必须先用样本 dry-run，并输出接受/隔离/错误计数。
+"docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.4.md":517:  -> sandbox 命名空间用 20–100 条数据 dry-run
+"docs/\351\241\271\347\233\256\345\256\236\346\226\275\350\277\233\345\272\246\344\270\216\344\273\273\345\212\241\347\234\213\346\235\277 V2.2.md":229:| P3-02 | EventNormalizer 映射流水线 | `TODO` | A | P3-01 | dry-run 覆盖率与六类原因码 |
+"docs/\351\241\271\347\233\256\345\256\236\346\226\275\350\277\233\345\272\246\344\270\216\344\273\273\345\212\241\347\234\213\346\235\277.md":196:| P3-02 | EventNormalizer 映射流水线 | `TODO` | A | P3-01 | dry-run 覆盖率与六类原因码 |

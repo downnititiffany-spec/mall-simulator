@@ -1,0 +1,33 @@
+=== 外部泳道红线归属（TestIsolationGuard / TestIsolationGuardTest 不是本泳道产物）===
+采集时间: 2026-09-14 12:21:38
+HEAD: 3fcf90e30962ae528b2079dc5c40070f1f6b7257
+
+--- 这两个文件在 HEAD 中是否存在（不存在 ⇒ 本泳道运行期间由其他泳道新建/改动）---
+analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuard.java  →  git cat-file -e HEAD 退出码=128  （非 0 = HEAD 里没有这个文件 ⇒ 本泳道运行期间由其他泳道新建）
+analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuardTest.java  →  git cat-file -e HEAD 退出码=128  （非 0 = HEAD 里没有这个文件 ⇒ 本泳道运行期间由其他泳道新建）
+
+--- git status（本泳道只碰 warehouse/ingestion 两个目录）---
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/IsolationProfileCondition.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuard.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuardTest.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestRunDigest.java
+
+
+--- 文件 mtime / sha256（用于说明"正在被其他泳道改动"）---
+IsolationProfileCondition.java	2342	2026-09-14 12:19:19	7110CE9419780E7F8F65C527FEF13B288B92B5D94194CDC45B78C42B1DC016E0
+RepoRoot.java	1465	2026-09-11 18:00:49	F97DE1306FED4A9B31C3A91AF3074CEE7935E748035992A01A74B13E9F12C773
+TestIsolationGuard.java	48665	2026-09-14 12:20:03	DCE5F220EE39474B90DC3A44132E4D4A7CD752D8B8C36145989E4B388CD5AA7E
+TestIsolationGuardTest.java	25842	2026-09-14 12:20:09	649B4D15C7B16B08FC5C557EE5ECFD63F02E825FE8E338326FC041FB4469B959
+TestRunDigest.java	1396	2026-09-14 12:09:05	4AAF6EFD4CD335CB2DF72898E9B908DAAFC357CF5EB9C0E8DC912225F99D1CD2
+
+--- 本泳道是否改动过 testsupport（应为空）---
+本泳道改动清单（git status 里属于本泳道的条目）:
+ M analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java
+ M analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestRuntimePatrolTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSchemaSubset.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/ManifestFreezePatrol.java
+?? analytics-server/platform-app/src/test/resources/
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralScanner.java
+?? docs/acceptance/v25-t01-t02-baseline-20260914/
+

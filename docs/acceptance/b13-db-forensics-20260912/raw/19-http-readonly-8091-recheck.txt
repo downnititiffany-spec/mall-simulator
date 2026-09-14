@@ -1,0 +1,2 @@
+### CMD (READ ONLY, recheck at 2026-09-14 12:38:29): POST /api/v1/auth/login (token only) + GET /api/v1/metrics/overview; NO write endpoint called, /pipeline-runs and /ingestion/runs NOT called
+### ERROR: 由于目标计算机积极拒绝，无法连接。 (127.0.0.1:8091)

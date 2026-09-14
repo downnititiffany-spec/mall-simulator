@@ -1,0 +1,22 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+section
+ERROR 1146 (42S02) at line 9: Table 'analytics_meta.ads_operation_overview_m' doesn't exist
+--- E1: snapshots matching 20260901 ---
+section
+--- E2: ACTIVE rows in metric_snapshot ---
+snapshot_id	runtime_profile_id	status	published_at
+S20260907_11	1	ACTIVE	2026-09-07 19:33:50.123
+section
+--- E3: metric_value snapshot ids ---
+snapshot_id	value_cnt	sample_code
+S20260905_1	16	avg_order_value
+S20260905_2	16	avg_order_value
+S20260907_10	14	buy_rate
+S20260907_11	14	buy_rate
+S20260907_5	16	avg_order_value
+S20260907_6	14	avg_order_value
+S20260907_7	14	buy_rate
+S20260907_8	14	buy_rate
+S20260907_9	14	buy_rate
+section
+--- E4: ADS table row counts by snapshot_id ---

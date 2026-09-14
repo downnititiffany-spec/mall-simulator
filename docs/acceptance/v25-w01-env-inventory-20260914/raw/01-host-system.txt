@@ -1,0 +1,54 @@
+### COMMAND: Get-CimInstance Win32_OperatingSystem
+
+Caption                : Microsoft Windows 11 家庭版 中文版
+Version                : 10.0.26100
+BuildNumber            : 26100
+OSArchitecture         : 64 位
+TotalVisibleMemorySize : 33163788
+FreePhysicalMemory     : 2895920
+
+
+### COMMAND: Get-CimInstance Win32_Processor
+
+Name                      : Intel(R) Core(TM) i9-14900HX
+NumberOfCores             : 24
+NumberOfLogicalProcessors : 32
+MaxClockSpeed             : 2200
+
+
+### COMMAND: Get-CimInstance Win32_ComputerSystem
+
+Manufacturer        : ASUSTeK COMPUTER INC.
+Model               : ASUS TUF Gaming F16 FX607JIR_FX607JIR
+TotalPhysicalMemory : 33959718912
+HypervisorPresent   : True
+
+
+### COMMAND: Get-Volume
+
+DriveLetter FileSystemLabel FileSystem          Size SizeRemaining
+----------- --------------- ----------          ---- -------------
+          C OS              NTFS        362160656384   80331673600
+          D 新加卷          NTFS        630245552128  466952949760
+          E 新加卷          NTFS       2000381014016  379098877952
+
+
+### COMMAND: Get-Disk
+
+Number Friendly Name                      Serial Number                            HealthStatus OperationalStatus Total
+                                                                                                                    Size
+------ -------------                      -------------                            ------------ ----------------- ------
+1      NVMe WD Blue SN5000 2TB            E823_8FA6_BF53_0001_001B_448B_4D08_7E64. Healthy      Online            …82 TB
+0      NVMe WD PC SN560 SDDPNQE-1T00-1102 E823_8FA6_BF53_0001_001B_448B_40D2_69BF. Healthy      Online            …87 GB
+
+
+### COMMAND: Get-PSDrive
+
+Name Used (GB) Free (GB) Provider   Root                                             CurrentLocation
+---- --------- --------- --------   ----                                             ---------------
+C       262.47     74.81 FileSystem C:\                                                             
+D       152.08    434.88 FileSystem D:\                               Develop_code\GraduationProject
+E      1509.94    353.06 FileSystem E:\                                                             
+Temp    262.47     74.81 FileSystem C:\Users\ASUS\AppData\Local\Temp\                               
+
+

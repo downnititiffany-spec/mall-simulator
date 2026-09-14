@@ -1,0 +1,35 @@
+仓根 = D:\Develop_code\GraduationProject
+scanned=234
+RAW(旧门禁口径) hits=2
+  RAW  spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 → * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：
+  RAW  spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 → *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`
+CODE(新门禁口径) hits=0
+commentOnly=2
+  [PASS] 真实仓：原文命中非空（历史注释仍在）
+  [PASS] 真实仓：词法剥离后零命中
+  [PASS] 真实仓：原文命中全部落在注释里
+  [PASS] lexer-java/scala: 代码行仍命中
+  [PASS] lexer-java/scala: 行注释被剥离
+  [PASS] lexer-java/scala: 块注释被剥离
+  [PASS] lexer-java/scala: 块注释首行不再命中
+  [PASS] lexer-java/scala: 行数不变
+  [PASS] lexer-sql: 语句命中
+  [PASS] lexer-sql: -- 注释被剥离
+  [PASS] lexer-sql: 字符串字面量保留
+  [PASS] lexer-yml: 引号值保留
+  [PASS] lexer-yml: # 注释剥离
+  [PASS] lexer-ps1: 行注释与块注释都剥离
+  [PASS] lexer-ps1: 字符串保留
+  [PASS] lexer-xml: 正文保留
+  [PASS] lexer-xml: <!-- --> 剥离
+  [PASS] lexer-json: NONE 一字不改
+夹具 CODE hits=[spark-jobs/src/main/scala/f/Bad.scala:2 → val s = s"INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1", analytics-server/platform-common/src/main/java/f/BadTextBlock.java:3 → CREATE TABLE IF NOT EXISTS dw_ods.ods_order (id BIGINT);, warehouse/ddl/bad.sql:2 → INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1;, scripts/bad.sh:3 → spark-sql -e "SELECT * FROM dw_ads.ads_overview"]
+夹具 RAW  hits=[spark-jobs/src/main/scala/f/Bad.scala:2 → val s = s"INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1", spark-jobs/src/main/scala/f/Commented.scala:2 → * 表 spark_catalog.dw_dwd.dwd_order_detail 的 user_key, spark-jobs/src/main/scala/f/Commented.scala:3 → * 前缀写法 dw_$layer 也只是文档, analytics-server/platform-common/src/main/java/f/BadTextBlock.java:3 → CREATE TABLE IF NOT EXISTS dw_ods.ods_order (id BIGINT);, warehouse/ddl/bad.sql:1 → -- 这行是注释 dw_ods.x, warehouse/ddl/bad.sql:2 → INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1;, scripts/bad.sh:2 → # dw_ods.ods_order 只在注释里, scripts/bad.sh:3 → spark-sql -e "SELECT * FROM dw_ads.ads_overview"]
+  [PASS] 负例：真 SQL（scala 三引号）报红
+  [PASS] 负例：Java 文本块报红
+  [PASS] 负例：SQL 文件报红且行号为 2（注释行被剥离）
+  [PASS] 负例：shell 字符串报红
+  [PASS] 负例：仅注释的文件不报红
+  [PASS] 负例：仅注释的文件在原文口径下确实命中（否则是空跑）
+  [PASS] fail-closed：未登记扩展名抛异常
+PROBE-OK（0 处失败）

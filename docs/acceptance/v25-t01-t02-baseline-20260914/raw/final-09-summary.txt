@@ -1,0 +1,100 @@
+=== 关键行摘要 ===
+--- final-01-t01-red-legacy-probe.log ---
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.256 s <<< FAILURE! -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... FAILURE [  6.272 s]
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-02-platform-app-am-masking-repro.log ---
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.212 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.149 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[ERROR] Tests run: 17, Failures: 2, Errors: 3, Skipped: 0, Time elapsed: 0.122 s <<< FAILURE! -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.214 s <<< FAILURE! -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.499 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[ERROR] Tests run: 81, Failures: 3, Errors: 3, Skipped: 0
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... FAILURE [  3.902 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-03-platform-common-test.log ---
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... FAILURE [  4.218 s]
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-04a-t02-contract-group.log ---
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... FAILURE [  4.106 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-04b-t02-runtime-patrol-group.log ---
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... FAILURE [  4.395 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-05-platform-app-am-test.log ---
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.137 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[ERROR] Tests run: 17, Failures: 1, Errors: 3, Skipped: 0, Time elapsed: 0.121 s <<< FAILURE! -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.581 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[ERROR] Tests run: 78, Failures: 1, Errors: 3, Skipped: 0
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] analytics-server ................................... SUCCESS [  0.007 s]
+[INFO] platform-common .................................... FAILURE [  3.820 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-06-full-reactor-test.log ---
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.203 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.164 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.058 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[ERROR] Tests run: 17, Failures: 1, Errors: 3, Skipped: 0, Time elapsed: 0.156 s <<< FAILURE! -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.693 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[ERROR] Tests run: 78, Failures: 1, Errors: 3, Skipped: 0
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... FAILURE [  3.923 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-07-spark-jobs-jdk8-test.log ---
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.074 s -- in com.graduation.analytics.MetricAdsSpecTest
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
+### EXIT=1

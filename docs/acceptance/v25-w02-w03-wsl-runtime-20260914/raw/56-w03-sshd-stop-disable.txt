@@ -1,0 +1,63 @@
+=== ④ sshd BEFORE ===
+--- is-enabled ---
+disabled
+--- is-active ---
+inactive
+--- status (short) ---
+○ ssh.service - OpenBSD Secure Shell server
+     Loaded: loaded (/usr/lib/systemd/system/ssh.service; disabled; preset: enabled)
+     Active: inactive (dead)
+TriggeredBy: ● ssh.socket
+       Docs: man:sshd(8)
+             man:sshd_config(5)
+--- listener before ---
+LISTEN 0      4096          0.0.0.0:22        0.0.0.0:*                                     
+LISTEN 0      4096             [::]:22           [::]:*                                     
+--- sshd unit files ---
+UNIT FILE                STATE    PRESET
+ssh.service              disabled enabled
+sshd-keygen.service      enabled  enabled
+sshd-unix-local@.service alias    -
+sshd.service             alias    -
+sshd@.service            indirect enabled
+--- socket-activated variants ---
+UNIT FILE              STATE     PRESET
+ssh.socket             enabled   enabled
+sshd-unix-local.socket generated -
+
+2 unit files listed.
+
+=== ④ ACTION: stop + disable ssh ===
+Stopping 'ssh.service', but its triggering units are still active:
+ssh.socket
+stop exit=0
+Synchronizing state of ssh.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install disable ssh
+Disabling 'ssh.service', but its triggering units are still active:
+ssh.socket
+disable exit=0
+--- also check/disable ssh.socket if present ---
+Removed '/etc/systemd/system/sockets.target.wants/ssh.socket'.
+Removed '/etc/systemd/system/ssh.service.requires/ssh.socket'.
+
+=== ④ sshd AFTER ===
+--- is-enabled ---
+disabled
+--- is-active ---
+inactive
+--- is-failed ---
+inactive
+--- listener after (must be empty) ---
+OK: no :22 listener
+--- process after ---
+OK: no sshd process
+--- all remaining listeners in WSL (for the record) ---
+State  Recv-Q Send-Q  Local Address:Port Peer Address:PortProcess                           
+LISTEN 0      4096    127.0.0.53%lo:53        0.0.0.0:*                                     
+LISTEN 0      4096       127.0.0.54:53        0.0.0.0:*                                     
+LISTEN 0      1000   10.255.255.254:53        0.0.0.0:*                                     
+LISTEN 0      151         127.0.0.1:3307      0.0.0.0:*    users:(("mysqld",pid=2055,fd=17))
+
+=== note: .bashrc / wsl.conf / /etc/ssh NOT modified ===
+-rw-r--r-- 1 root root 4307 Jul 10 02:06 /etc/ssh/sshd_config
+### DONE rc=0

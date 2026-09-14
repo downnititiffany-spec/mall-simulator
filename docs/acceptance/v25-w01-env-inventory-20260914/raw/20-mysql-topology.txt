@@ -1,0 +1,48 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+version	datadir	port	socket
+8.0.41	C:\ProgramData\MySQL\MySQL Server 8.0\Data\	3306	MySQL
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Database
+analytics_meta
+analytics_meta_p103
+analytics_meta_p105
+analytics_meta_p105it
+analytics_meta_v17probe
+analytics_metric
+analytics_metric_p103
+analytics_metric_p105
+analytics_verify_m3_parity
+blog_system
+company
+crm
+emp
+generator_meta
+information_schema
+itcast
+library
+mall_business
+mall_simulator
+mall_simulator_test
+mybatis
+mybatis_db
+mybatis_library
+mydb
+mysql
+performance_schema
+regexp_test
+sakila
+school
+school1
+school2
+scott
+shop_db
+shopping
+spark
+springboot_demo
+sys
+teaching_db
+teachingdb
+test-0628
+test260720
+test_db
+world

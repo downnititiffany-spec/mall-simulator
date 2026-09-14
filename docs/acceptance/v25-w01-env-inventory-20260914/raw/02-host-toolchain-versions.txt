@@ -1,0 +1,62 @@
+### COMMAND: Test-Path for each expected install root
+D:\Develop\JAVA17                                       True
+D:\Develop\JDK1.8                                       True
+D:\apache-maven-3.9.14                                  True
+D:\maven_repository                                     True
+C:\Program Files\MySQL\MySQL Server 8.0                 True
+D:\Develop\spark-3.5.1-bin-hadoop3                      True
+D:\soft\hadoop\hadoop-3.3.4                             True
+D:\Develop\Python314                                    True
+D:\Develop\scala                                        True
+
+### COMMAND: D:\Develop\JAVA17\bin\java.exe -version
+java version "17.0.12" 2024-07-16 LTS
+Java(TM) SE Runtime Environment (build 17.0.12+8-LTS-286)
+Java HotSpot(TM) 64-Bit Server VM (build 17.0.12+8-LTS-286, mixed mode, sharing)
+
+### COMMAND: D:\Develop\JDK1.8\bin\java.exe -version
+java version "1.8.0_202"
+Java(TM) SE Runtime Environment (build 1.8.0_202-b08)
+Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
+
+### COMMAND: D:\apache-maven-3.9.14\bin\mvn.cmd -v
+Apache Maven 3.9.14 (996c630dbc656c76214ce58821dcc58be960875b)
+Maven home: D:\apache-maven-3.9.14
+Java version: 17.0.12, vendor: Oracle Corporation, runtime: D:\Develop\JAVA17
+Default locale: zh_CN, platform encoding: GBK
+OS name: "windows 11", version: "10.0", arch: "amd64", family: "windows"
+
+### COMMAND: C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe --version
+C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe  Ver 8.0.41 for Win64 on x86_64 (MySQL Community Server - GPL)
+
+### COMMAND: D:\Develop\Python314\python.exe --version
+Python 3.14.5
+
+### COMMAND: node --version; npm --version; pnpm --version
+v24.16.0
+11.13.0
+11.21.0
+### COMMAND: git --version
+git version 2.53.0.windows.2
+### COMMAND: Get-Content D:\Develop\spark-3.5.1-bin-hadoop3\RELEASE
+Spark 3.5.1 (git revision fd86f85e181) built for Hadoop 3.3.4
+Build flags: -B -Pmesos -Pyarn -Pkubernetes -Psparkr -Pscala-2.12 -Phadoop-3 -Phive -Phive-thriftserver
+### COMMAND: Get-ChildItem D:\soft\hadoop\hadoop-3.3.4\share\hadoop\common -Filter hadoop-common-*.jar
+hadoop-common-3.3.4-tests.jar
+hadoop-common-3.3.4.jar
+### COMMAND: Get-ChildItem D:\Develop\scala
+
+Name
+----
+api
+bin
+doc
+lib
+
+
+### COMMAND: Test-Path spark env scripts / hive
+D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd                True
+D:\soft\hive                                                           False
+D:\Develop\hive                                                        False
+D:\apache-hive-3.1.3-bin                                               False
+C:\ProgramData\MySQL\MySQL Server 8.0\Data                             True

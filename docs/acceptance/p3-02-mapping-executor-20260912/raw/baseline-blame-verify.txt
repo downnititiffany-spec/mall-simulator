@@ -1,0 +1,80 @@
+=== [1] 失败测试所属断言（platform-common 测试源码） ===
+22: import static org.assertj.core.api.Assertions.assertThat;
+30: * （两个程序的 {@code src/main}、{@code warehouse/ddl}、{@code scripts}），
+45: "analytics-server/platform-common/src/main/java/com/graduation/analytics/warehouse/WarehouseNamespace.java",
+46: "spark-jobs/src/main/scala/com/graduation/analytics/warehouse/WarehouseNamespace.scala");
+48: /** 裸库名：dw_ods / dw_dwd / dw_dim / dw_dws / dw_ads */
+54: private static final List<String> SCOPES = List.of("spark-jobs/src/main/", "warehouse/ddl/", "scripts/");
+56: Pattern.compile("analytics-server/[^/]+/src/main/.*");
+97: assertThat(scanned).as("扫描到的生产文件数（过少说明范围失效）").hasSizeGreaterThan(60);
+99: assertThat(scanned).as("唯一所有者必须落在扫描范围内: %s", owner)
+102: assertThat(scanned).as("必须扫到两个程序各自的文件")
+103: .anyMatch(p -> p.toString().replace('\\', '/').contains("/spark-jobs/src/main/"))
+106: assertThat(offenders)
+115: assertThat(SCOPES).isNotEmpty();
+116: assertThat(OWNER_FILES).hasSize(2);
+117: assertThat(collect()).as("collect() 至少能找到所有者的文件")
+118: .contains(RepoRoot.path("spark-jobs/src/main/scala/com/graduation/analytics/warehouse/WarehouseNamespace.scala"));
+131: assertThat(files).as("warehouse/ddl 下的 SQL 文件").hasSize(5);
+146: assertThat(text)
+159: assertThat(layers).as("DDL 覆盖的层后缀（五层都要有）")
+161: assertThat(variables).as("DDL 里只允许 WAREHOUSE_PREFIX 一个变量：另造第二个前缀名就是第二处所有者")
+
+=== [2] git status（谁改了什么，--porcelain） ===
+ M analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+ M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+?? analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublishValidatorSeverityTest.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/RuleSeverity.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? docs/acceptance/f88-dq-severity-20260912/
+?? docs/acceptance/guideline-v24-coverage-20260912/
+?? docs/acceptance/p3-02-mapping-executor-20260912/
+
+=== [3] TradeDwdJob.scala:145 当前内容 ===
+143:    *
+144:    * 一次性实验钉死（`raw/post/align-experiment-1-*.sql` / `-2-*.sql`，实验表 `dw_exp.t_align_bad`
+145:    * 建后即删，未碰 `dw_dwd.dwd_order_detail`）：
+146:    *  - 实验 1：23 列同构表，`dt` 放第 19 项（STRING）⇒ 复现**逐字相同**的报错；
+147:    *  - 实验 2：同一 SELECT 仅把 `dt` 移到末尾 ⇒ 写入成功，读回 `user_key=111/product_key=222/
+148:    *    category_key=333/dt=20260901` 逐列落位正确。
+
+=== [4] SurrogateKey.scala:160 当前内容 ===
+158:    * 表达式是 STRING，写进 `BIGINT` 列时被 Spark 3.5 的**安全转换**直接拒绝：
+159:    *   `[INCOMPATIBLE_DATA_FOR_TABLE.CANNOT_SAFELY_CAST] Cannot write incompatible data for the
+160:    *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`
+161:    * 对照实测：run 43（旧 jar）`tdw` SUCCESS @17:37:56 ↔ run 44（新 jar 296,327 B）`BUILD_DWD` FAILED，
+162:    * 变量只有 jar（详见 `docs/acceptance/m3-step8-parity-20260912/raw/post/p2-03-regression-evidence.txt`）。
+163:    *
+
+=== [5] git diff --stat（两文件是否被本分支未提交修改触碰） ===
+
+=== [6] 该测试的扫描根是否含 spark-jobs ===
+analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/RepoRoot.java:11: * {@code contract-specs/}、{@code spark-jobs/} 等目录，而 Maven 的 {@code user.dir}
+analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/RepoRoot.java:34:            if (Files.isDirectory(dir.resolve("contract-specs")) && Files.isDirectory(dir.resolve("spark-jobs"))) {
+analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/RepoRoot.java:39:                "找不到仓库根：从 " + start + " 向上未发现同时含 contract-specs/ 与 spark-jobs/ 的目录");
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java:46:            "spark-jobs/src/main/scala/com/graduation/analytics/warehouse/WarehouseNamespace.scala");
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java:54:    private static final List<String> SCOPES = List.of("spark-jobs/src/main/", "warehouse/ddl/", "scripts/");
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java:103:                .anyMatch(p -> p.toString().replace('\\', '/').contains("/spark-jobs/src/main/"))
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java:118:                .contains(RepoRoot.path("spark-jobs/src/main/scala/com/graduation/analytics/warehouse/WarehouseNamespace.scala"));
+analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java:170:        walk(root.resolve("spark-jobs"), root, out);
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/contracts/EventContractTest.java:129:     * <p>DEF-16：此前用相对路径 {@code ../../spark-jobs/...} + {@code assumeTrue(存在)}，
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/contracts/EventContractTest.java:135:        Path scala = RepoRoot.path("spark-jobs/src/main/scala/com/graduation/analytics/sql/OdsLoadSql.scala");
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java:132:        profile.setSparkJobJarUri("spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobCommandBuilderTest.java:34:            "spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobCommandBuilderTest.java:38:            "hdfs://node01:9000/app/spark-jobs/spark-jobs-0.1.0-SNAPSHOT.jar");
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobCommandBuilderTest.java:58:        assertThat(cmd).anyMatch(a -> a.endsWith("spark-jobs-0.1.0-SNAPSHOT.jar"));
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobCommandBuilderTest.java:96:                "D:\\Program Files\\spark\\bin\\spark-submit.cmd", "some dir/jar/spark-jobs.jar");
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobCommandBuilderTest.java:183:        // 参数名是跨进程字面量：spark-jobs 侧 OdsLoadSql.ArgSourceSystem 必须同名，
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorFactoryTest.java:51:        p.setSparkJobJarUri("spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorSmokeTest.java:33: * 前置：spark-jobs jar 已构建；本机 D:\Develop\spark-3.5.1-bin-hadoop3。
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorSmokeTest.java:66:        profileEntity.setSparkJobJarUri("file:///D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
+analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorTest.java:59:        entity.setSparkJobJarUri("spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");

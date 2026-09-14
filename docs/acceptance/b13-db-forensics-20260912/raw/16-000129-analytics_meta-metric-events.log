@@ -1,0 +1,4 @@
+### CMD (READ ONLY): mysqlbinlog -R LAPTOP-8F8T3J1B-bin.000129 ... | grep exact pair nalytics_meta.metric_(snapshot|value)  [file covers 260909 23:50:12 .. 260910 22:20:05]
+### elapsed_s=4  total_lines=1956295
+### hits=0
+### last event ts: #260910 22:20:05 server id 1  end_log_pos 63704239 CRC32 0x7b203211 	Stop

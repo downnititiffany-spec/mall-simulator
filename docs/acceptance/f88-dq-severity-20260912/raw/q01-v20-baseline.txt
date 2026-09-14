@@ -1,0 +1,7 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+probe	existing_cols
+Q8 V20 目标列是否已存在	0
+probe	total_rows
+Q9 历史行现状	467
+probe	null_severity_rows
+Q9b severity 为 NULL 的历史行	48

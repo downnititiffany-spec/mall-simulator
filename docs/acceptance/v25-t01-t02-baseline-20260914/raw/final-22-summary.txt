@@ -1,0 +1,44 @@
+=== 第三批关键行摘要 ===
+--- final-20a-t02-contract-group.log ---
+### 尝试 1 / 8   开始: 2026-09-14 12:23:19   HEAD=3fcf90e30962ae528b2079dc5c40070f1f6b7257
+[INFO] analytics-server ................................... FAILURE [  0.003 s]
+[INFO] platform-common .................................... SKIPPED
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-20b-t02-runtime-patrol-group.log ---
+### 尝试 1 / 8   开始: 2026-09-14 12:23:21   HEAD=3fcf90e30962ae528b2079dc5c40070f1f6b7257
+[INFO] analytics-server ................................... FAILURE [  0.003 s]
+[INFO] platform-common .................................... SKIPPED
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-20c-t02-tamper-method.log ---
+### 尝试 1 / 8   开始: 2026-09-14 12:23:22   HEAD=3fcf90e30962ae528b2079dc5c40070f1f6b7257
+[INFO] analytics-server ................................... FAILURE [  0.003 s]
+[INFO] platform-common .................................... SKIPPED
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1
+--- final-21-full-reactor-collect.log ---
+[INFO] analytics-server ................................... FAILURE [  0.003 s]
+[INFO] platform-common .................................... SKIPPED
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+### EXIT=1

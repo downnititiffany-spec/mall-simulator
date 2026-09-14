@@ -1,0 +1,481 @@
+# 关键数字（从日志本体抽取）  生成时间: 2026-09-14 12:35:11   HEAD=f00462c51023ce5b12e0b649e7813ed789f6f17e
+
+===== final-01-t01-red-legacy-probe.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-common -am -Dtest=WarehouseNameLiteralGateLegacyProbeTest -DfailIfNoSpecifiedTests=false test
+### 开始: 2026-09-14 12:16:29
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.256 s <<< FAILURE! -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest
+[ERROR] com.graduation.analytics.warehouse.WarehouseNameLiteralGateLegacyProbeTest.noBareWarehouseNameLiterals -- Time elapsed: 0.133 s <<< FAILURE!
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... FAILURE [  6.272 s]
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project platform-common: There are test failures.
+### EXIT=1
+
+===== final-11-t01-warehouse-gate-green.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-common -am -Dtest=Warehouse* -DfailIfNoSpecifiedTests=false test
+### 开始: 2026-09-14 12:19:06  HEAD=31b4b65e542c1b872925a6f3a5378bce983222c9
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.789 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.257 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.007 s]
+[INFO] platform-common .................................... SUCCESS [  3.739 s]
+[INFO] BUILD SUCCESS
+### EXIT=0
+
+===== final-12-verbatim-platform-common-test.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-common -am test
+### 开始: 2026-09-14 12:19:11  HEAD=31b4b65e542c1b872925a6f3a5378bce983222c9
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.187 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.158 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.146 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.871 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.089 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 79, Failures: 0, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.004 s]
+[INFO] platform-common .................................... SUCCESS [  4.198 s]
+[INFO] BUILD SUCCESS
+### EXIT=0
+
+===== final-13-verbatim-platform-app-am-test.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-app -am test
+### 开始: 2026-09-14 12:19:17  HEAD=31b4b65e542c1b872925a6f3a5378bce983222c9
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.165 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.144 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.058 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.120 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.733 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.101 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 79, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.772 s -- in com.graduation.analytics.auth.AuthInterceptorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.641 s -- in com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.497 s -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.249 s -- in com.graduation.analytics.ingestion.IngestionServiceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.101 s -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.040 s -- in com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.090 s -- in com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.059 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.327 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.074 s -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.312 s -- in com.graduation.analytics.source.SourceRegistryConcurrencyTest
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.192 s -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0
+[ERROR] Tests run: 28, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.316 s <<< FAILURE! -- in com.graduation.analytics.contracts.EventContractTest
+[ERROR] com.graduation.analytics.contracts.EventContractTest.odsRoutingMatchesScalaLoadSql -- Time elapsed: 0.005 s <<< ERROR!
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.500 s -- in com.graduation.analytics.pipeline.DataQualityGateTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.748 s -- in com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[ERROR] Tests run: 14, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.163 s <<< FAILURE! -- in com.graduation.analytics.pipeline.PipelineServiceTest
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.warnSeverityFailureStillPublishes -- Time elapsed: 0.068 s <<< FAILURE!
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.094 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 52.01 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.029 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.266 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[ERROR] Tests run: 131, Failures: 1, Errors: 1, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... SUCCESS [ 12.900 s]
+[INFO] connection-ingestion ............................... SUCCESS [  7.066 s]
+[INFO] warehouse-pipeline ................................. FAILURE [01:02 min]
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project warehouse-pipeline: There are test failures.
+### EXIT=1
+
+===== final-16-spark-jobs-jdk8-test.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f spark-jobs/pom.xml test
+### 开始: 2026-09-14 12:21:03  HEAD=eb08ed6a6e7fbe995ff362a9250fce9dc660743a
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.097 s -- in com.graduation.analytics.MetricAdsSpecTest
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+Total number of tests run: 111
+Suites: completed 15, aborted 0
+All tests passed.
+[INFO] BUILD SUCCESS
+### EXIT=0
+
+===== final-23a-t02-contract-group.log =====
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.392 s -- in com.graduation.analytics.ingestion.IngestionManifestSourceSchemaTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.008 s]
+[INFO] platform-common .................................... SUCCESS [  1.452 s]
+[INFO] connection-ingestion ............................... SUCCESS [  0.457 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [  0.080 s]
+[INFO] metric-analysis .................................... SUCCESS [  0.063 s]
+[INFO] ai-decision ........................................ SUCCESS [  0.104 s]
+[INFO] platform-app ....................................... SUCCESS [  9.946 s]
+[INFO] BUILD SUCCESS
+
+===== final-23b-t02-runtime-patrol-group.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-app -am -Dtest=IngestionManifestRuntimePatrolTest -Dsurefire.failIfNoSpecifiedTests=false test
+### 开始: 2026-09-14 12:30:01   HEAD=52a0e2ffe8830fd49205e39308335260c2876579
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.446 s -- in com.graduation.analytics.ingestion.IngestionManifestRuntimePatrolTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... SUCCESS [  1.087 s]
+[INFO] connection-ingestion ............................... SUCCESS [  0.377 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [  0.065 s]
+[INFO] metric-analysis .................................... SUCCESS [  4.791 s]
+[INFO] ai-decision ........................................ SUCCESS [  0.066 s]
+[INFO] platform-app ....................................... SUCCESS [  7.491 s]
+[INFO] BUILD SUCCESS
+### EXIT=0
+
+===== final-23c-t02-tamper-method.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-app -am -Dtest=IngestionManifestRuntimePatrolTest#patrolSeparatesArrivalsFromRealViolations -Dsurefire.failIfNoSpecifiedTests=false test
+### 开始: 2026-09-14 12:30:17   HEAD=52a0e2ffe8830fd49205e39308335260c2876579
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.302 s -- in com.graduation.analytics.ingestion.IngestionManifestRuntimePatrolTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... SUCCESS [  1.114 s]
+[INFO] connection-ingestion ............................... SUCCESS [  0.420 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [  0.084 s]
+[INFO] metric-analysis .................................... SUCCESS [  0.046 s]
+[INFO] ai-decision ........................................ SUCCESS [  0.051 s]
+[INFO] platform-app ....................................... SUCCESS [  7.677 s]
+[INFO] BUILD SUCCESS
+### EXIT=0
+
+===== final-24-full-reactor-collect.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -Dmaven.test.failure.ignore=true test
+### 开始: 2026-09-14 12:31:34   HEAD=bcc20450addf175347a7d5e38caddf798155fbd5
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.176 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.166 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.172 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.773 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 81, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.391 s -- in com.graduation.analytics.auth.AuthInterceptorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.807 s -- in com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.587 s -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.262 s -- in com.graduation.analytics.ingestion.IngestionServiceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.156 s -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.076 s -- in com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.337 s -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.158 s -- in com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.083 s -- in com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.336 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.353 s -- in com.graduation.analytics.source.SourceRegistryConcurrencyTest
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.219 s -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.105 s -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.288 s -- in com.graduation.analytics.contracts.EventContractTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.383 s -- in com.graduation.analytics.pipeline.DataQualityGateTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.607 s -- in com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[ERROR] Tests run: 15, Failures: 10, Errors: 0, Skipped: 0, Time elapsed: 1.166 s <<< FAILURE! -- in com.graduation.analytics.pipeline.PipelineServiceTest
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.adsQualityGateFailureBlocksFormalPartitionPublish -- Time elapsed: 0.762 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.waitLandingSuccessThenLoadOdsInStageOrder -- Time elapsed: 0.029 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.sameIdempotencyKeyReturnsOriginalTask -- Time elapsed: 0.028 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.errorSeverityFailureBlocksPublishAndLeavesActiveUntouched -- Time elapsed: 0.025 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateBeyondThresholdBlocksPublish -- Time elapsed: 0.030 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.stageRecordsComeFromJobResultNotJavaEstimate -- Time elapsed: 0.020 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.qualityFailureBlocksPublish -- Time elapsed: 0.027 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateWithinThresholdIsObservationAndStillPublishes -- Time elapsed: 0.030 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.submitReturnsPendingTaskIdImmediatelyWithoutBlocking -- Time elapsed: 0.018 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.retryReexecutesOnlyFailedStage -- Time elapsed: 0.023 s <<< FAILURE!
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s -- in com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.127 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 42.15 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.035 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.246 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[ERROR] Tests run: 132, Failures: 10, Errors: 0, Skipped: 0
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.784 s -- in com.graduation.analytics.analysis.AnalysisServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.graduation.analytics.analysis.AnalysisSourcePolicyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.graduation.analytics.analysis.AnalysisViewModelTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in com.graduation.analytics.analysis.RfmServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.253 s -- in com.graduation.analytics.metric.MetricAdsDaoTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.161 s -- in com.graduation.analytics.metric.publish.MetricPublishValidatorSeverityTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.519 s -- in com.graduation.analytics.metric.publish.MetricPublishValidatorTest
+[INFO] Tests run: 48, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.093 s -- in com.graduation.analytics.ai.AiSqlDriftTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.482 s -- in com.graduation.analytics.ai.AiSqlSecurityTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.793 s -- in com.graduation.analytics.ai.evidence.EvidenceBuilderTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.377 s -- in com.graduation.analytics.ai.ExplanationEvidenceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.graduation.analytics.ai.QuestionSafetyScreenTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.140 s -- in com.graduation.analytics.ai.sql.ComponentWiringContractTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.720 s -- in com.graduation.analytics.ai.TextToSqlAuditTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.graduation.analytics.decision.AuditActorTest
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.291 s -- in com.graduation.analytics.decision.DecisionServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.graduation.analytics.decision.DecisionStateMachineTest
+[INFO] Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.631 s -- in com.graduation.analytics.auth.UserAdminControllerAuditTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.234 s -- in com.graduation.analytics.boundary.PlatformMallBoundarySourcePolicyTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.718 s -- in com.graduation.analytics.controller.AiControllerIdentityTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.192 s -- in com.graduation.analytics.controller.AiExplanationEndpointTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.821 s -- in com.graduation.analytics.controller.AuthResponseMeasurementTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.graduation.analytics.controller.CallerContextTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.729 s -- in com.graduation.analytics.controller.ControllerPermissionCoverageTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in com.graduation.analytics.controller.DecisionControllerAuditTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.graduation.analytics.controller.DecisionControllerIdentityTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.163 s -- in com.graduation.analytics.controller.SourceRegistryControllerAuditTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.174 s -- in com.graduation.analytics.ingestion.IngestionManifestRuntimePatrolTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.081 s -- in com.graduation.analytics.ingestion.IngestionManifestSourceSchemaTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.graduation.analytics.source.FileCheckpointSourceMigrationScriptTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.graduation.analytics.source.SourceProfileFixtureTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.graduation.analytics.source.SourceWarehousePrefixMigrationScriptTest
+[INFO] Tests run: 104, Failures: 0, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.007 s]
+[INFO] platform-common .................................... SUCCESS [  5.447 s]
+[INFO] connection-ingestion ............................... SUCCESS [  9.916 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [ 49.636 s]
+[INFO] metric-analysis .................................... SUCCESS [  5.434 s]
+[INFO] ai-decision ........................................ SUCCESS [  6.856 s]
+[INFO] platform-app ....................................... SUCCESS [ 13.335 s]
+[INFO] BUILD SUCCESS
+### EXIT=0
+
+===== final-26-verbatim-full-reactor-test.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml test
+### 开始: 2026-09-14 12:30:28   HEAD=52a0e2ffe8830fd49205e39308335260c2876579
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.197 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.180 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.062 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.193 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.222 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.137 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 81, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.611 s -- in com.graduation.analytics.auth.AuthInterceptorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.933 s -- in com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.534 s -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.359 s -- in com.graduation.analytics.ingestion.IngestionServiceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.176 s -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s -- in com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.274 s -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s -- in com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.103 s -- in com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.333 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.079 s -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.389 s -- in com.graduation.analytics.source.SourceRegistryConcurrencyTest
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.238 s -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.083 s -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.305 s -- in com.graduation.analytics.contracts.EventContractTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.623 s -- in com.graduation.analytics.pipeline.DataQualityGateTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.571 s -- in com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[ERROR] Tests run: 15, Failures: 10, Errors: 0, Skipped: 0, Time elapsed: 1.075 s <<< FAILURE! -- in com.graduation.analytics.pipeline.PipelineServiceTest
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.adsQualityGateFailureBlocksFormalPartitionPublish -- Time elapsed: 0.685 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.waitLandingSuccessThenLoadOdsInStageOrder -- Time elapsed: 0.040 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.sameIdempotencyKeyReturnsOriginalTask -- Time elapsed: 0.031 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.errorSeverityFailureBlocksPublishAndLeavesActiveUntouched -- Time elapsed: 0.020 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateBeyondThresholdBlocksPublish -- Time elapsed: 0.027 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.stageRecordsComeFromJobResultNotJavaEstimate -- Time elapsed: 0.022 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.qualityFailureBlocksPublish -- Time elapsed: 0.027 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateWithinThresholdIsObservationAndStillPublishes -- Time elapsed: 0.028 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.submitReturnsPendingTaskIdImmediatelyWithoutBlocking -- Time elapsed: 0.015 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.retryReexecutesOnlyFailedStage -- Time elapsed: 0.024 s <<< FAILURE!
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.043 s -- in com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.114 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 42.80 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.040 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.256 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[ERROR] Tests run: 132, Failures: 10, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... SUCCESS [  4.650 s]
+[INFO] connection-ingestion ............................... SUCCESS [  8.832 s]
+[INFO] warehouse-pipeline ................................. FAILURE [ 50.691 s]
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project warehouse-pipeline: There are test failures.
+### EXIT=1
+
+===== final-29-platform-app-test-compile.log =====
+[INFO] analytics-server ................................... SUCCESS [  0.004 s]
+[INFO] platform-common .................................... SUCCESS [  0.841 s]
+[INFO] connection-ingestion ............................... SUCCESS [  0.546 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [  0.084 s]
+[INFO] metric-analysis .................................... SUCCESS [  0.047 s]
+[INFO] ai-decision ........................................ SUCCESS [  0.052 s]
+[INFO] platform-app ....................................... SUCCESS [  6.243 s]
+[INFO] BUILD SUCCESS
+
+===== final-30-verbatim-platform-app-am-test.log =====
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f analytics-server/pom.xml -pl platform-app -am test
+### 开始: 2026-09-14 12:33:43  HEAD=f00462c51023ce5b12e0b649e7813ed789f6f17e
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.184 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.174 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.883 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.081 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 81, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.787 s -- in com.graduation.analytics.auth.AuthInterceptorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.741 s -- in com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.602 s -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.257 s -- in com.graduation.analytics.ingestion.IngestionServiceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.132 s -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.241 s -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.170 s -- in com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.078 s -- in com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.312 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.270 s -- in com.graduation.analytics.source.SourceRegistryConcurrencyTest
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.212 s -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.271 s -- in com.graduation.analytics.contracts.EventContractTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.156 s -- in com.graduation.analytics.pipeline.DataQualityGateTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.403 s -- in com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[ERROR] Tests run: 15, Failures: 10, Errors: 0, Skipped: 0, Time elapsed: 0.767 s <<< FAILURE! -- in com.graduation.analytics.pipeline.PipelineServiceTest
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.adsQualityGateFailureBlocksFormalPartitionPublish -- Time elapsed: 0.437 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.waitLandingSuccessThenLoadOdsInStageOrder -- Time elapsed: 0.024 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.sameIdempotencyKeyReturnsOriginalTask -- Time elapsed: 0.023 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.errorSeverityFailureBlocksPublishAndLeavesActiveUntouched -- Time elapsed: 0.022 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateBeyondThresholdBlocksPublish -- Time elapsed: 0.030 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.stageRecordsComeFromJobResultNotJavaEstimate -- Time elapsed: 0.017 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.qualityFailureBlocksPublish -- Time elapsed: 0.026 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.duplicateRateWithinThresholdIsObservationAndStillPublishes -- Time elapsed: 0.023 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.submitReturnsPendingTaskIdImmediatelyWithoutBlocking -- Time elapsed: 0.015 s <<< FAILURE!
+[ERROR] com.graduation.analytics.pipeline.PipelineServiceTest.retryReexecutesOnlyFailedStage -- Time elapsed: 0.017 s <<< FAILURE!
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 35.60 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.025 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.250 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[ERROR] Tests run: 132, Failures: 10, Errors: 0, Skipped: 0
+[INFO] analytics-server ................................... SUCCESS [  0.007 s]
+[INFO] platform-common .................................... SUCCESS [  6.021 s]
+[INFO] connection-ingestion ............................... SUCCESS [  7.525 s]
+[INFO] warehouse-pipeline ................................. FAILURE [ 42.046 s]
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project warehouse-pipeline: There are test failures.
+### EXIT=1
+
+===== t01-probe.log =====
+  [PASS] lexer-xml: <!-- --> 剥离
+  [PASS] lexer-json: NONE 一字不改
+夹具 CODE hits=[spark-jobs/src/main/scala/f/Bad.scala:2 → val s = s"INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1", analytics-server/platform-common/src/main/java/f/BadTextBlock.java:3 → CREATE TABLE IF NOT EXISTS dw_ods.ods_order (id BIGINT);, warehouse/ddl/bad.sql:2 → INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1;, scripts/bad.sh:3 → spark-sql -e "SELECT * FROM dw_ads.ads_overview"]
+夹具 RAW  hits=[spark-jobs/src/main/scala/f/Bad.scala:2 → val s = s"INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1", spark-jobs/src/main/scala/f/Commented.scala:2 → * 表 spark_catalog.dw_dwd.dwd_order_detail 的 user_key, spark-jobs/src/main/scala/f/Commented.scala:3 → * 前缀写法 dw_$layer 也只是文档, analytics-server/platform-common/src/main/java/f/BadTextBlock.java:3 → CREATE TABLE IF NOT EXISTS dw_ods.ods_order (id BIGINT);, warehouse/ddl/bad.sql:1 → -- 这行是注释 dw_ods.x, warehouse/ddl/bad.sql:2 → INSERT OVERWRITE TABLE dw_dwd.dwd_order_detail PARTITION (dt) SELECT 1;, scripts/bad.sh:2 → # dw_ods.ods_order 只在注释里, scripts/bad.sh:3 → spark-sql -e "SELECT * FROM dw_ads.ads_overview"]
+  [PASS] 负例：真 SQL（scala 三引号）报红
+  [PASS] 负例：Java 文本块报红
+  [PASS] 负例：SQL 文件报红且行号为 2（注释行被剥离）
+  [PASS] 负例：shell 字符串报红
+  [PASS] 负例：仅注释的文件不报红
+  [PASS] 负例：仅注释的文件在原文口径下确实命中（否则是空跑）
+  [PASS] fail-closed：未登记扩展名抛异常
+PROBE-OK（0 处失败）
+
+===== t02-probe.log =====
+  [违规] 1.json 内容被改动：sha256 4c5f0a424c820e8aef1f80e224215a48a62d2d46e4cd2af3ce0b9f4d71869838 ≠ 冻结 98a418186e88bc6893eac859382626bbadf0f4b25551757a86228219a7c5f2f9
+新到文件（不判红）: 0
+  [PASS] 负例：等长字节改写被 sha256 抓到
+[负例-缺失] 冻结清单核对: 2 个；违规: 1
+  [违规] 1.json 缺失（冻结清单里的历史文件必须留在原地）
+新到文件（不判红）: 0
+  [PASS] 负例：缺失判红
+[负例-目录不在] 冻结清单核对: 0 个；违规: 1
+  [违规] 清单目录不存在: C:\Users\ASUS\AppData\Local\Temp\t02-probe172269903526216069\no-such-dir —— 历史清单必须留在原地；被忽略的目录删掉不会在 git status 里显形，因此这里显式判红
+新到文件（不判红）: 0
+  [PASS] 负例：目录整个不在 ⇒ 显式判红
+PROBE-OK（0 处失败）
+
+===== t02-tamper-negative.log =====
+  冻结 sha256 : d0dfb5d9af70249561edb437d73e8bcb62b23b33f84f05543dc458a23e12ffed
+  盘上 sha256 : 3ea57218ac66aef21e7fe9003c7f33f3d45b890c8e87703eb68870412ec086bd
+  冻结 bytes  : 5944   盘上 bytes: 5944   （字节数相同 ⇒ 只有 sha256 能发现）
+  差异片段: "local-file" → "local-filf"
+[巡检输出] 冻结登记 43 个（全部 43 个），只有 2.json 被改写；冻结清单核对: 43 个；违规: 1
+  [违规] 2.json 内容被改动：sha256 3ea57218ac66aef21e7fe9003c7f33f3d45b890c8e87703eb68870412ec086bd ≠ 冻结 d0dfb5d9af70249561edb437d73e8bcb62b23b33f84f05543dc458a23e12ffed
+新到文件（不判红）: 0
+  [PASS] 负例：同名字节改写被判红（1 条违规）
+  [PASS] 负例：违规文案点明 sha256 不一致
+  [PASS] 负例：被改写的冻结文件没有被降级成「新到文件」放过（新到件数为 0）
+TAMPER-PROBE-OK（0 处失败）
+### JAVA-EXIT=0
+
+===== t02-tamper-negative-firstrun.log =====
+  [新到] 37.json sha256=a584356dcb29 keys=15 含新键=false
+  [新到] 38.json sha256=1654eda9fb6a keys=15 含新键=false
+  [新到] 39.json sha256=4037d9955df8 keys=15 含新键=false
+  [新到] 40.json sha256=f85a9ca95250 keys=19 含新键=true
+  [新到] 41.json sha256=c59cc84a10a1 keys=19 含新键=true
+  [新到] 42.json sha256=8037655b74d0 keys=19 含新键=true
+  [新到] 43.json sha256=e83d9bee11af keys=19 含新键=true
+  [PASS] 负例：同名字节改写被判红（1 条违规）
+  [PASS] 负例：违规文案点明 sha256 不一致
+  [FAIL] 负例：篡改件没有被当成「新到文件」放过
+TAMPER-PROBE-FAILED（1）
+### JAVA-EXIT=1
+
+===== landing/manifests 复核 =====
+最终确认时间: 2026-09-14 12:33:06   HEAD=bcc20450addf175347a7d5e38caddf798155fbd5
+文件数: 43（应 43）
+与采集前逐行相同 ⇒ 1..43.json 内容/字节/mtime/sha256 全程未变
+--- git status --porcelain landing（应为空）---
+
+--- git check-ignore -v landing/manifests/40.json ---
+.gitignore:30:landing/	landing/manifests/40.json
+
+
+===== 工作树（仅本包相关，确认未提交）=====
+ M analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java
+ M analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/SparkStageExecutorSmokeTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestRuntimePatrolTest.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSchemaSubset.java
+?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/ManifestFreezePatrol.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralScanner.java
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? docs/acceptance/v25-t01-t02-baseline-20260914/
+
+===== HEAD 序列（证据窗口）=====
+09d70468d2f5e229e33cc150c2731dd64a750b20  12:19  final-10a（窗口内最早登记）
+31b4b65e542c1b872925a6f3a5378bce983222c9  12:19  final-11
+eb08ed6a6e7fbe995ff362a9250fce9dc660743a  12:20  final-14
+3fcf90e30962ae528b2079dc5c40070f1f6b7257  12:23  final-20a
+52a0e2ffe8830fd49205e39308335260c2876579  12:30  final-23b（当前）

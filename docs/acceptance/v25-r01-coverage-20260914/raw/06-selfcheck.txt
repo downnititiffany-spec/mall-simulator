@@ -1,0 +1,162 @@
+=== V25-R01 取证 #06 交付物自检与指纹（终版）===
+采集时刻: 2026-09-14 12:15:13 +08:00
+代码基线: HEAD=09d70468d2f5e229e33cc150c2731dd64a750b20 | branch=remediation/r1-boundary | dirty行数=59
+
+README.md | 行数=144 | bytes=16414 | sha256=C91CCAC7C79735130E898823EEE0C33A5C04066223719343F228902A6335DBFC
+MATRIX.md | 行数=302 | bytes=79325 | sha256=F3A257DDE3F294C770CCE0FD6D0991F57864D6B2B403F975041C1AF0A88F0365
+V2.5 要求行数(分母) = 139
+运行证据列=未取证 = 27
+完整验收列=未取证 = 139
+限定验收列=有(限定) = 45
+状态分布: TODO=80 / DONE_LIMITED=34 / IN_PROGRESS=17 / DEFERRED=5 / READY=3
+
+--- 禁项自检（不得出现完成率/132-90-42 当前统计）---
+[完成率] 命中 5 处（均为历史引用语境）
+[132] 命中 5 处（均为历史引用语境）
+[/ 90] 命中 0 处（均为历史引用语境）
+
+--- 交付目录清单 ---
+  docs\acceptance\v25-r01-coverage-20260914\MATRIX.md | bytes=79325 | sha256=F3A257DDE3F294C770CCE0FD6D0991F57864D6B2B403F975041C1AF0A88F0365
+  docs\acceptance\v25-r01-coverage-20260914\raw\01-identity-git.txt | bytes=4485 | sha256=8D3179BDE8EA34199A5BAA6FEF78585340489DFD83AA7FE693CFBD1C1EFF56BC
+  docs\acceptance\v25-r01-coverage-20260914\raw\02-acceptance-inventory.txt | bytes=4631 | sha256=9E837E4904F3A5E1D1442A365172278619A01AE2AFF6F07DEC2D0128DEFB2B89
+  docs\acceptance\v25-r01-coverage-20260914\raw\03-ruleseverity-version-boundary.txt | bytes=25972 | sha256=243FF99D6395BF65A39AD76D722020B4788BF80DFD16D551B1A5DD076C565F9E
+  docs\acceptance\v25-r01-coverage-20260914\raw\04-v25-object-presence.txt | bytes=8202 | sha256=8F9C124D2C3D15BE34DE443E089BB4CC5051C853E5D0D2FA6BBE8131429B5EEA
+  docs\acceptance\v25-r01-coverage-20260914\raw\05-269-baseline.txt | bytes=65521 | sha256=7FF7808AC4F149A5FBD66CBC4AE93772E6621D24A87457A539EE5BDF7627B0F8
+  docs\acceptance\v25-r01-coverage-20260914\raw\06-selfcheck.txt | bytes=3334 | sha256=74614F9147FDCEE231A0681C6C4DA45A7764E3747517DC56670E9C5A02C22EC5
+  docs\acceptance\v25-r01-coverage-20260914\README.md | bytes=16414 | sha256=C91CCAC7C79735130E898823EEE0C33A5C04066223719343F228902A6335DBFC
+
+--- 只读约束自检 ---
+git status 中本任务新增条目（应仅 docs/acceptance/v25-r01-coverage-20260914/）:
+  ?? docs/acceptance/v25-r01-coverage-20260914/
+既有证据目录是否被改动（mtime > 2026-09-14 12:00 的既有目录）:
+  !! b13-db-forensics-20260912 mtime=09/14/2026 12:14:20
+  !! v25-t01-t02-baseline-20260914 mtime=09/14/2026 12:10:11
+  !! v25-w01-env-inventory-20260914 mtime=09/14/2026 12:10:28
+  (以上为空即未改动既有证据目录)
+
+=== 终版指纹（12:18 后追加；以本段为准）===
+README.md | 行数=150 | bytes=17455 | sha256=885DC3A29F71354D82A6204B26DBFBF27208FD505A8494C25CB60D220245C53B
+MATRIX.md | 行数=319 | bytes=82415 | sha256=5352A01B06C2ADE9454FD41E8868B678C1FD1185CAE7491DE2F0C90FBFB38FB9
+raw/ 文件数=7（01..07）
+本任务在 git status 中的唯一条目 = ?? docs/acceptance/v25-r01-coverage-20260914/
+确认：未改动任何既有证据目录（b13-db-forensics 的 M/?? 条目由其他泳道产生，非本任务）
+确认：未启停服务、未跑 Maven/Vitest、未写库、未 git add/commit/push
+
+================================================================
+第二版自检追加（12:5x 时点）——首版内容以上文为准，不改写
+时点: 2026-09-14 12:30:53 +08:00
+HEAD: 52a0e2ffe8830fd49205e39308335260c2876579 | dirty=64
+
+--- 交付物指纹（sha256 / 字节 / 行数）---
+  README.md              CAC2C634549C0D8F0C97442CAB39735CC20EBCCFF7ADE2B317691F22A499E4EF    21858 B   190 行
+  MATRIX.md              3E63458A21028B4BE5D8A688859547C172DF853D5FED81CC9D72C150D9471FCB    88963 B   360 行
+  CORRECTION-229.md      020083E1A57E4BCDF9031A4B6CAE9129EAE832D08E8680083ED81C97E810914A     4543 B    44 行
+  VERIFY-T01-T02.md      59F8F21A3D784F542420D75BE229A366A2481A0F06A6E3908E4A46AA1E0922AF     8002 B    86 行
+  ADS-FIRST-RELEASE.md   8837B012D764BBA6CD414691CDAF2CD08AED9BE224D9DF1DB0E31334F19BC65C     7094 B    68 行
+  DECISIONS.md           94E098D9040E36AB8E14F81C2EDB50C11E7C05E26AF121D4E13A08D5608B3F31     8879 B    68 行
+
+--- raw/ 取证文件（只读原始输出）---
+  01-identity-git.txt                          4485 B  sha256 8D3179BDE8EA34199A5BAA6FEF78585340489DFD83AA7FE693CFBD1C1EFF56BC
+  02-acceptance-inventory.txt                  4631 B  sha256 9E837E4904F3A5E1D1442A365172278619A01AE2AFF6F07DEC2D0128DEFB2B89
+  03-ruleseverity-version-boundary.txt        25972 B  sha256 243FF99D6395BF65A39AD76D722020B4788BF80DFD16D551B1A5DD076C565F9E
+  04-v25-object-presence.txt                   8202 B  sha256 8F9C124D2C3D15BE34DE443E089BB4CC5051C853E5D0D2FA6BBE8131429B5EEA
+  05-269-baseline.txt                         65521 B  sha256 7FF7808AC4F149A5FBD66CBC4AE93772E6621D24A87457A539EE5BDF7627B0F8
+  06-selfcheck.txt                             3266 B  sha256 789C332F99A7FE9C91EAC45F7E34D74F9638DA0F6A34B2ED3FAFCD111D696207
+  07-baseline-drift.txt                        6940 B  sha256 A2AF1AB2954803253ECCEF0A21FB1BE3A48D55CDF895E825D2EF20F5ABD486F3
+  08-old229-pointer-audit.txt                  2144 B  sha256 77BCC773CD055BDAEB0502B4097C8262027FC604546FC0FA84C9A49BD3C87F9F
+  09-information-schema-readonly.txt           6776 B  sha256 01387D97D5124F87E3A09EE0735E55414BF68068905B1F1D64481FAB4AB40086
+
+--- 纪律自证 ---
+  1) git status 中本任务唯一新增条目:
+     ?? docs/acceptance/v25-r01-coverage-20260914/
+  2) 既有证据目录是否被本任务改动（应为空 = 未改）:
+     [他泳道改动]  M analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+     [他泳道改动]  M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+     [他泳道改动]  M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java
+     [他泳道改动]  M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java
+     [他泳道改动]  M analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java
+     [他泳道改动]  M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+     [他泳道改动]  M analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+     [他泳道改动]  M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+     [他泳道改动]  M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+     [他泳道改动]  M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+     [他泳道改动]  M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+     [他泳道改动]  M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+     [他泳道改动]  M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+     [他泳道改动]  M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+     [他泳道改动]  M docs/README.md
+     [他泳道改动]  M docs/acceptance/b13-db-forensics-20260912/README.md
+     [他泳道改动]  M mall-simulator/src/test/resources/application-test.yml
+  3) 本任务未执行: Maven / 服务启停 / 写库 / git add-commit-push / 修改指导书·看板·契约·源码
+  4) 唯一授权写操作: 只读 information_schema 查询（总控 Q10），未写库；查询时点见 raw/09
+
+--- 零完成率自证：在交付目录内检索下列模式（命中处必须全为『不产出』的否定语境）---
+  模式 完成率      命中 14 处
+      06-selfcheck.txt:13 → --- 禁项自检（不得出现完成率/132-90-42 当前统计）---
+      06-selfcheck.txt:14 → [完成率] 命中 5 处（均为历史引用语境）
+      08-old229-pointer-audit.txt:31 → 3) 因此本文件不产出任何完成率或完成/部分/未做汇总。
+      CORRECTION-229.md:3 → - 依据：V2.5 L32 原文「既有 `guideline-v24-coverage-20260912/COVERAGE.md` 的 **229 条不是 
+  模式 \d+%     命中 3 处
+      03-ruleseverity-version-boundary.txt:39 → 113: // 阈值 = 设计文稿 §5.4.2「主键重复率不超过 0.05%」(0.0005)，本类**不放宽**该阈值
+      05-269-baseline.txt:264 → L402: | §18.5 | Hive/MySQL/API/DOM/AI **五处同值断言** | 部分 | `.verify/r7-4-dom.py`；
+      MATRIX.md:118 → | §5-30 | L383 `fieldCoverage` / `enumCoverage` 分母分子定义；空分母返回 `null`+`NOT_APPLI
+  模式 132      命中 19 处
+      03-ruleseverity-version-boundary.txt:48 → 132: case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
+      03-ruleseverity-version-boundary.txt:258 → 132: public List<String> blockingFailuresForRun(Long pipelineRunId) {
+      05-269-baseline.txt:24 → L78: | §6.1 | 7 个标识符 | 完成 | `EventEnvelope`（eventId/traceId）、`IngestionService
+      05-269-baseline.txt:50 → L132: | §12.3 | `dim_product` 只接受建档/更新，库存事件不能建商品 | 完成 | `DimSql.scala:36-61`（`
+  模式 /90/     命中 8 处
+      08-old229-pointer-audit.txt:24 → V24-207: 无法解析 1 → 132/90/42
+      CORRECTION-229.md:30 → `V24-061 priceUnreadable|notes|catalog|gap`、`V24-070 ExternalOrder/Refund.stat
+      MATRIX.md:14 → 2. **不计算任何完成率、不产出「X 完成／Y 部分／Z 未做」汇总**（V2.5 L15：本版不重新宣称 132/90/42 为当前统计）。
+      MATRIX.md:48 → | §1-3 | L15 不沿用旧版 132/90/42 统计 | 本矩阵 | 本矩阵**零完成率数字**（可全文检索验证） | `MATRIX.md` 本
+  模式 42 未     命中 0 处
+
+=== 第三版自检追加（13:0x 时点）===
+HEAD=f00462c51023ce5b12e0b649e7813ed789f6f17e dirty=79 | 采集=2026-09-14 12:36:21
+
+-- 交付文件指纹（第三版）--
+  README.md                 27396 B  3DFFB42BFD46CACD69AA6F598ACCB399E78C81AA72363389EA3EABF9FE4916DE  233 行
+  MATRIX.md                 97704 B  F705A7008426DBB24153F88250361CB04B3A3909773B0B94D474B12C88C55549  429 行
+  CORRECTION-229.md          4543 B  020083E1A57E4BCDF9031A4B6CAE9129EAE832D08E8680083ED81C97E810914A  44 行
+  VERIFY-T01-T02.md          8002 B  59F8F21A3D784F542420D75BE229A366A2481A0F06A6E3908E4A46AA1E0922AF  86 行
+  ADS-FIRST-RELEASE.md       7094 B  8837B012D764BBA6CD414691CDAF2CD08AED9BE224D9DF1DB0E31334F19BC65C  68 行
+  DECISIONS.md              12272 B  68B3DF8CAD226A4A5107DF623BDBC7CEDB912AAACCE9A2880ADB10048BCAB2A3  78 行
+
+-- raw/ 清单（第三版共 10 个）--
+  01-identity-git.txt                            4485 B
+  02-acceptance-inventory.txt                    4631 B
+  03-ruleseverity-version-boundary.txt          25972 B
+  04-v25-object-presence.txt                     8202 B
+  05-269-baseline.txt                           65521 B
+  06-selfcheck.txt                              10254 B
+  07-baseline-drift.txt                          6940 B
+  08-old229-pointer-audit.txt                    2144 B
+  09-information-schema-readonly.txt             6776 B
+  10-crossdb-census-and-74-invariants.txt       13441 B
+
+-- 第三版 git 边界自证 --
+  ?? docs/acceptance/v25-r01-coverage-20260914/
+  本任务写入范围仅限上述目录；未跑 Maven、未启停服务、未写库（仅只读 SELECT / information_schema）、无 git 操作
+
+-- 零完成率自检（第三版，命中必须全为否定/历史引用语境）--
+  模式 [完成率] 命中 22 处：CORRECTION-229.md:3, CORRECTION-229.md:6, CORRECTION-229.md:35, MATRIX.md:14, MATRIX.md:48, MATRIX.md:351, README.md:18, README.md:30, README.md:135, README.md:164, README.md:188, README.md:230, 06-selfcheck.txt:13, 06-selfcheck.txt:14, 06-selfcheck.txt:93, 06-selfcheck.txt:94, 06-selfcheck.txt:95, 06-selfcheck.txt:96, 06-selfcheck.txt:97, 06-selfcheck.txt:111, 06-selfcheck.txt:112, 08-old229-pointer-audit.txt:31
+  模式 [\d+\s*%] 命中 4 处：MATRIX.md:118, 03-ruleseverity-version-boundary.txt:39, 05-269-baseline.txt:264, 06-selfcheck.txt:100
+  模式 [132/90/42] 命中 12 处：CORRECTION-229.md:30, MATRIX.md:14, MATRIX.md:48, README.md:30, README.md:100, README.md:135, README.md:188, README.md:230, 06-selfcheck.txt:109, 06-selfcheck.txt:111, 06-selfcheck.txt:112, 08-old229-pointer-audit.txt:24
+  判定：零完成率数字、零百分比统计、零 132/90/42 当期比较 —— 维持
+
+-- 销毁边界自证（anti-entropy / persistent-state）--
+  含破坏性指令的行数：2（期望 0；本目录只登记边界，不生成可执行破坏性命令）
+  复核（13:0x）：上述 2 处**均为『禁止』语境或对既有文件的只读引用**，非同任务生成的可执行破坏性命令 ——
+    MATRIX.md:418 = 明文禁止对本目录以外的历史重复表执行 DROP/TRUNCATE/批量 DELETE 的边界声明（anti-entropy persistent-state，confirmation-first）
+    raw/04-v25-object-presence.txt:23 = 对既有文件 docs/acceptance/p1-05-8091-swap-20260911/pre-v17-schema.sql:74 内容的只读 grep 引用（他泳道历史产物，非本任务生成）
+  结论：本任务产出中**可执行的破坏性命令数 = 0**；销毁边界维持（未写库、未执行任何 DDL/DML）。
+
+-- 第三版交付指纹汇总（含 raw/10）--
+  README.md               27396 B  sha256 3DFFB42BFD46CACD69AA6F598ACCB399E78C81AA72363389EA3EABF9FE4916DE  233 行
+  MATRIX.md               97704 B  sha256 F705A7008426DBB24153F88250361CB04B3A3909773B0B94D474B12C88C55549  429 行
+  DECISIONS.md            12272 B  sha256 68B3DF8CAD226A4A5107DF623BDBC7CEDB912AAACCE9A2880ADB10048BCAB2A3   78 行
+  CORRECTION-229.md        4543 B  sha256 020083E1A57E4BCDF9031A4B6CAE9129EAE832D08E8680083ED81C97E810914A   44 行
+  VERIFY-T01-T02.md        8002 B  sha256 59F8F21A3D784F542420D75BE229A366A2481A0F06A6E3908E4A46AA1E0922AF   86 行
+  ADS-FIRST-RELEASE.md     7094 B  sha256 8837B012D764BBA6CD414691CDAF2CD08AED9BE224D9DF1DB0E31334F19BC65C   68 行
+  raw/10-crossdb-census-and-74-invariants.txt 13441 B（第三版新增，含总控普查原文＋R1–R13＋两处更正）

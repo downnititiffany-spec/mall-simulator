@@ -1,0 +1,12 @@
+
+InputObject                                                      SideIndicator
+-----------                                                      -------------
+--- landing/manifests 采集后快照（名字/字节/时间/sha256）---     =>
+--- git status --porcelain landing（应为空）---                  =>
+--- 采集后 git HEAD ---                                          =>
+09d70468d2f5e229e33cc150c2731dd64a750b20                         =>
+                                                                 =>
+--- landing/manifests 采集前快照（名字/字节/时间/sha256）---     <=
+--- git status --porcelain landing（应为空：landing/ 被忽略）--- <=
+
+

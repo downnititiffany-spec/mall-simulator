@@ -1,0 +1,81 @@
+=== V25-R01 取证 #07 审计期间基线漂移（重要）===
+采集时刻: 2026-09-14 12:15:48 +08:00
+
+raw/01 采集时 HEAD = 6062434792cf086600b67b38b562737ee6f65eb0（12:06:44）+ dirty 38 行
+本次实测     HEAD = 09d70468d2f5e229e33cc150c2731dd64a750b20 | dirty = 59 行
+
+--- 6062434..HEAD 新增提交 ---
+  09d70468d2f5e229e33cc150c2731dd64a750b20 | 2026-09-14 12:12:36 +0800 | docs(board): V2.5 看板就地更新 —— W01 首版 DONE_LIMITED（71 项已确定/10 项未取证/12 项待用户确认）＋ 三条硬约束（HDFS 必须落 WSL ext4、WSL 内 Hadoop 须原生安装不得复用 /mnt/d 假 hadoop、.bashrc 在非交互 shell 不生效）＋ 新增「盘点类任务副作用」纪律（启动已停止的发行版属状态变更）
+  7296fda491d9a449d2a18d56221090e33ed386b5 | 2026-09-14 12:09:55 +0800 | docs(board): V2.5 看板就地更新 —— T01/T02 根因定位与阻塞（等 Q01 编译绿方可 E2）＋ Q01 优先恢复 platform-common 可编译（QualityRuleDefinition.java:84 缺 isKnownSeverity）＋ 新增构建槽纪律（同一工作树同一时刻仅一泳道跑 Maven；编译红不得记作他人测试失败）
+
+--- 新 HEAD 提交涉及文件 ---
+  09d70468d2f5e229e33cc150c2731dd64a750b20 2026-09-14 12:12:36 +0800 docs(board): V2.5 看板就地更新 —— W01 首版 DONE_LIMITED（71 项已确定/10 项未取证/12 项待用户确认）＋ 三条硬约束（HDFS 必须落 WSL ext4、WSL 内 Hadoop 须原生安装不得复用 /mnt/d 假 hadoop、.bashrc 在非交互 shell 不生效）＋ 新增「盘点类任务副作用」纪律（启动已停止的发行版属状态变更）
+  
+   ...70\216\344\273\273\345\212\241\347\234\213\346\235\277 V2.5.md" | 7 ++++---
+   1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- V2.5 指导书 / 看板 是否在漂移中被改动 ---
+  docs\项目完整实施指导书 V2.5.md | bytes=74100 | mtime=2026-09-14 09:13:07 | sha256=33A2C5B3234B1C724C6A9C9C0492B2480D43EFA392D2DB72C3F4902805E55F6F
+  docs\项目实施进度与任务看板 V2.5.md | bytes=19127 | mtime=2026-09-14 12:11:51 | sha256=71A99A60E687CB02D43784F84EC2D58B0B69A99982D2EB27E3844187E209CF6B
+  对照 raw/01：V2.5 = 33A2C5B3…05E55F6F（74100 B）；看板 = 9E9CC765…02373AE（16593 B）
+
+--- 当前 dirty 清单（按状态）---
+   M analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+   M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+   M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java
+   M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java
+   M analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSourceSchemaTest.java
+   M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+   M analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+   M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+   M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+   M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+   M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+   M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+   M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+   M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+   M docs/README.md
+   M docs/acceptance/b13-db-forensics-20260912/README.md
+  ?? after-reboot-cleanup.ps1
+  ?? alibaba-fix-src.txt
+  ?? alibaba-fix.ps1
+  ?? analytics-server/integration.local.properties.template
+  ?? analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublishValidatorSeverityTest.java
+  ?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestRuntimePatrolTest.java
+  ?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/IngestionManifestSchemaSubset.java
+  ?? analytics-server/platform-app/src/test/java/com/graduation/analytics/ingestion/ManifestFreezePatrol.java
+  ?? analytics-server/platform-app/src/test/resources/
+  ?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleCatalog.java
+  ?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/QualityRuleDefinition.java
+  ?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/RuleSeverity.java
+  ?? analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/
+  ?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/IsolationProfileCondition.java
+  ?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuard.java
+  ?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestIsolationGuardTest.java
+  ?? analytics-server/platform-common/src/test/java/com/graduation/analytics/testsupport/TestRunDigest.java
+  ?? analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralScanner.java
+  ?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+  ?? docs/acceptance/b13-db-forensics-20260912/raw/14-binlog-coverage-map.txt
+  ?? docs/acceptance/b13-db-forensics-20260912/raw/15-000125-analytics_meta-metric-sept7.log
+  ?? docs/acceptance/b13-db-forensics-20260912/raw/16-000129-analytics_meta-metric-events.log
+  ?? docs/acceptance/f88-dq-severity-20260912/
+  ?? docs/acceptance/guideline-v24-coverage-20260912/
+  ?? docs/acceptance/local-readiness-20260914.md
+  ?? docs/acceptance/p3-02-mapping-executor-20260912/
+  ?? docs/acceptance/v25-document-release-20260914.md
+  ?? docs/acceptance/v25-r01-coverage-20260914/
+  ?? docs/acceptance/v25-t01-t02-baseline-20260914/
+  ?? docs/acceptance/v25-w01-env-inventory-20260914/
+  ?? "docs/\351\241\271\347\233\256\345\256\214\346\225\264\345\256\236\346\226\275\346\214\207\345\257\274\344\271\246 V2.5.md"
+  ?? fix-autostart.ps1
+  ?? optimize-src.txt
+  ?? optimize.ps1
+  ?? orphan-cleanup-report.txt
+  ?? orphan2-src.txt
+  ?? orphan2.ps1
+  ?? post-opt-verify-src.txt
+  ?? post-opt-verify.ps1
+  ?? post-reboot-check-src.txt
+  ?? post-reboot-check.ps1
+  ?? target-cp-pc.txt
+  ?? target-deps-pc.txt

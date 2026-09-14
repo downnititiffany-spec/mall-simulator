@@ -1,0 +1,48 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+section
+--- F1: metric DB tables ---
+Tables_in_analytics_metric
+ads_active_trend_m
+ads_behavior_funnel_m
+ads_data_quality_m
+ads_hot_product_m
+ads_operation_overview_m
+ads_product_conversion_m
+ads_sale_trend_m
+ads_user_profile_m
+flyway_schema_history
+metric_snapshot
+metric_value
+section
+--- F2: metric_snapshot in analytics_metric ---
+id	snapshot_id	runtime_profile_id	business_time	pipeline_run_id	status	version	published_at	created_at
+27	S20260901_47	1	2026-09-01 00:00:00.000	47	ACTIVE	12	2026-09-12 21:29:27.321	2026-09-12 21:29:27.282
+26	S20260901_43	1	2026-09-01 00:00:00.000	43	ARCHIVED	11	2026-09-12 17:39:51.953	2026-09-12 17:39:51.900
+25	S20260901_42	1	2026-09-01 00:00:00.000	42	ARCHIVED	10	2026-09-12 17:28:12.779	2026-09-12 17:28:12.666
+24	S20260901_41	1	2026-09-01 00:00:00.000	41	ARCHIVED	9	2026-09-12 09:31:13.388	2026-09-12 09:31:13.337
+23	S20260901_39	1	2026-09-01 00:00:00.000	39	ARCHIVED	8	2026-09-11 15:12:22.013	2026-09-11 15:12:21.981
+22	S20260901_38	1	2026-09-01 00:00:00.000	38	FAILED	7	NULL	2026-09-11 15:01:02.630
+17	S20260901_30	1	2026-09-01 00:00:00.000	30	ARCHIVED	6	2026-09-11 11:09:19.753	2026-09-11 11:09:19.733
+16	S20260901_29	1	2026-09-01 00:00:00.000	29	ARCHIVED	5	2026-09-11 11:02:25.364	2026-09-11 11:02:25.331
+15	S20260901_25	1	2026-09-01 00:00:00.000	25	ARCHIVED	4	2026-09-11 10:41:49.858	2026-09-11 10:41:49.814
+14	S20260901_22	1	2026-09-01 00:00:00.000	22	ARCHIVED	3	2026-09-11 09:50:54.425	2026-09-11 09:50:54.384
+5	S20260901_24	1	2026-09-01 00:00:00.000	24	ARCHIVED	2	2026-09-10 20:44:11.886	2026-09-10 20:44:11.835
+4	S20260901_23	1	2026-09-01 00:00:00.000	23	ARCHIVED	1	2026-09-10 20:38:54.103	2026-09-10 20:38:54.036
+section
+--- F3: metric DB ACTIVE rows ---
+snapshot_id	runtime_profile_id	status	published_at
+S20260901_47	1	ACTIVE	2026-09-12 21:29:27.321
+section
+--- F4: ads_operation_overview_m rows by snapshot ---
+snapshot_id	c
+S20260901_47	1
+S20260901_43	1
+S20260901_42	1
+S20260901_41	1
+S20260901_39	1
+S20260901_30	1
+S20260901_29	1
+S20260901_25	1
+S20260901_24	1
+S20260901_23	1
+S20260901_22	1

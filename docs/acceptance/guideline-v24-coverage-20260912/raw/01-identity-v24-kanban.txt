@@ -1,0 +1,25 @@
+[审计原始取证 01] 生成时刻 = 2026-09-12 23:06:07 +08:00
+生成命令 = Get-FileHash / Get-Content -Raw / (Get-Content).Count（PowerShell, 只读）
+
+== 被审计对象身份指纹 ==
+文件 = docs\项目完整实施指导书 V2.4.md
+  Length(字节, 磁盘) = 57442
+  行数 (Get-Content .Count) = 720
+  字符数 (Get-Content -Raw .ToCharArray().Count) = 32468
+  SHA256 = 580AD7BE46B2F395400D9CD0812C58D4D3621794B8604B4E606EF44420C4535D
+  LastWriteTime = 2026-09-12 13:01:32
+
+文件 = docs\项目实施进度与任务看板 V2.2.md
+  Length(字节, 磁盘) = 490814
+  行数 (Get-Content .Count) = 522
+  字符数 (Get-Content -Raw .ToCharArray().Count) = 297583
+  SHA256 = 2A27913F42BA199244E0C7E41C5FA219BB0DE798A39CEA44F77BC28C6AA2C05E
+  LastWriteTime = 2026-09-12 23:03:42
+
+文件 = docs\README.md
+  Length(字节, 磁盘) = 5867
+  行数 (Get-Content .Count) = 57
+  字符数 (Get-Content -Raw .ToCharArray().Count) = 3117
+  SHA256 = F494DF28EB9909967D2A9002AAA56F974DE416B6AF527C7418C35C9A5954A96A
+  LastWriteTime = 2026-09-12 13:03:06
+

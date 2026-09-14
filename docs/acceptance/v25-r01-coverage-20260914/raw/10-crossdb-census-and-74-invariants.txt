@@ -1,0 +1,227 @@
+=== V25-R01 取证 #10：跨库普查（总控 12:4x 代跑原文）＋ §7.4 不变量核对（root 只读）===
+采集时点: 2026-09-14 12:33:33 +08:00
+HEAD: f00462c51023ce5b12e0b649e7813ed789f6f17e | dirty=71
+
+【连接与口令脱敏声明】
+  命令形态（总控提供，口令以 *** 脱敏，真实字面值不写入任何证据文件）:
+    mysql --host=127.0.0.1 --port=3306 --user=root --password=*** --batch --raw --skip-column-names --execute="…"
+  性质: 只读（仅 SELECT + information_schema 元数据查询）；零写：无 INSERT/UPDATE/DELETE/DDL/GRANT/FLUSH；未启停服务；未跑 Maven。
+  授权: 总控 v3 范围②『授权你使用 root 只读连接』；约束: schema 限定 / 仅 COUNT(*) / 禁用 TABLE_ROWS / 带时点 / 零写。
+
+########## 第一部分：总控 12:4x 跨库普查原文（照抄，供引用） ##########
+  实例指纹: port=3306 / host=dahaishui / server_uuid=85191145-1491-11f0-b4e2-60cf84d55629
+    ⇒ 判定依据：这是宿主正式实例（非临时/探针实例）。
+  analytics_* 共 9 个库：
+    analytics_meta(+_p103/_p105/_p105it/_v17probe) = 22 表
+    analytics_metric(+_p103/_p105) = 11 表
+    analytics_verify_m3_parity = 10 表
+  §4.2/§5.2 五个对象(source_connector/schema_mapping/source_manifest/quality_rule_definition/source_profile)
+    在全部 9 个 schema 中都不存在；仅 source_registry、data_quality_result 存在于 5 个 meta 库
+  metric_snapshot 出现在 9 个库：
+    meta 族 12 列（PRIMARY(id) + uk_snapshot_id + idx_snapshot_status）
+    metric 族 15 列，且独有 uk_active_profile(runtime_profile_id, active_flag)
+  ADS 实名只有 ads_*_m 8 张；无后缀名在任何 schema 都不存在
+
+########## 第二部分：本泳道独立复核（同实例、同只读口径） ##########
+
+--- R1 实例指纹自证（与总控给出的 server_uuid 比对） ---
+SQL: SELECT @@server_uuid AS server_uuid, @@port AS port, @@hostname AS hostname, VERSION() AS version, DATABASE() AS cur_db;
+  server_uuid	port	hostname	version	cur_db
+  85191145-1491-11f0-b4e2-60cf84d55629	3306	dahaishui	8.0.41	NULL
+EXIT=0
+
+--- R2 analytics_* 各库表数（不含 TABLE_ROWS） ---
+SQL: SELECT TABLE_SCHEMA, COUNT(*) AS table_cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA LIKE 'analytics\_%' GROUP BY TABLE_SCHEMA ORDER BY TABLE_SCHEMA;
+  TABLE_SCHEMA	table_cnt
+  analytics_meta	22
+  analytics_meta_p103	22
+  analytics_meta_p105	22
+  analytics_meta_p105it	22
+  analytics_meta_v17probe	22
+  analytics_metric	11
+  analytics_metric_p103	11
+  analytics_metric_p105	11
+  analytics_verify_m3_parity	10
+EXIT=0
+
+--- R3 十个待核对象在全部 schema 中的命中（含 §4.2 五个 + §5.2 五个） ---
+SQL: SELECT TABLE_NAME, TABLE_SCHEMA FROM information_schema.TABLES WHERE TABLE_NAME IN ('generator_target','generation_plan','generation_run','generation_artifact','generation_event_stat','source_connector','schema_mapping','source_manifest','quality_rule_definition','source_profile') ORDER BY TABLE_NAME, TABLE_SCHEMA;
+  TABLE_NAME	TABLE_SCHEMA
+  generation_artifact	generator_meta
+  generation_event_stat	generator_meta
+  generation_plan	generator_meta
+  generation_run	generator_meta
+  generator_target	generator_meta
+EXIT=0
+
+--- R4 metric_snapshot 出现在哪些库、各多少列 ---
+SQL: SELECT TABLE_SCHEMA, COUNT(*) AS col_cnt FROM information_schema.COLUMNS WHERE TABLE_NAME='metric_snapshot' GROUP BY TABLE_SCHEMA ORDER BY TABLE_SCHEMA;
+  TABLE_SCHEMA	col_cnt
+  analytics_meta	12
+  analytics_meta_p103	12
+  analytics_meta_p105	12
+  analytics_meta_p105it	12
+  analytics_meta_v17probe	12
+  analytics_metric	15
+  analytics_metric_p103	15
+  analytics_metric_p105	15
+  analytics_verify_m3_parity	15
+  mall_simulator	11
+  mall_simulator_test	11
+EXIT=0
+
+
+--- R5 §4.2 五个对象的行数（schema 限定 generator_meta，仅 COUNT(*)） ---
+SQL: SELECT 'generator_target' AS obj, COUNT(*) AS rows_cnt FROM generator_meta.generator_target UNION ALL SELECT 'generation_plan', COUNT(*) FROM generator_meta.generation_plan UNION ALL SELECT 'generation_run', COUNT(*) FROM generator_meta.generation_run UNION ALL SELECT 'generation_artifact', COUNT(*) FROM generator_meta.generation_artifact UNION ALL SELECT 'generation_event_stat', COUNT(*) FROM generator_meta.generation_event_stat;
+obj	rows_cnt
+generator_target	422
+generation_plan	430
+generation_run	184
+generation_artifact	551
+generation_event_stat	947
+EXIT=0
+
+--- R6 generator_meta 全表清单与各表行数（COUNT(*)，逐表 schema 限定） ---
+SQL: SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='generator_meta' ORDER BY TABLE_NAME;
+TABLE_NAME
+flyway_schema_history
+generation_artifact
+generation_event_stat
+generation_plan
+generation_run
+generator_target
+EXIT=0
+
+--- R7 metric_snapshot 的 11 个库中唯一键分布（同一表名在不同库约束不同 = schema 漂移） ---
+SQL: SELECT TABLE_SCHEMA, INDEX_NAME, GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS cols FROM information_schema.STATISTICS WHERE TABLE_NAME='metric_snapshot' AND NON_UNIQUE=0 GROUP BY TABLE_SCHEMA, INDEX_NAME ORDER BY TABLE_SCHEMA, INDEX_NAME;
+TABLE_SCHEMA	INDEX_NAME	cols
+analytics_meta	PRIMARY	id
+analytics_meta	uk_snapshot_id	snapshot_id
+analytics_meta_p103	PRIMARY	id
+analytics_meta_p103	uk_snapshot_id	snapshot_id
+analytics_meta_p105	PRIMARY	id
+analytics_meta_p105	uk_snapshot_id	snapshot_id
+analytics_meta_p105it	PRIMARY	id
+analytics_meta_p105it	uk_snapshot_id	snapshot_id
+analytics_meta_v17probe	PRIMARY	id
+analytics_meta_v17probe	uk_snapshot_id	snapshot_id
+analytics_metric	PRIMARY	id
+analytics_metric	uk_active_profile	runtime_profile_id,active_flag
+analytics_metric	uk_snapshot_id	snapshot_id
+analytics_metric_p103	PRIMARY	id
+analytics_metric_p103	uk_active_profile	runtime_profile_id,active_flag
+analytics_metric_p103	uk_snapshot_id	snapshot_id
+analytics_metric_p105	PRIMARY	id
+analytics_metric_p105	uk_active_profile	runtime_profile_id,active_flag
+analytics_metric_p105	uk_snapshot_id	snapshot_id
+analytics_verify_m3_parity	PRIMARY	id
+analytics_verify_m3_parity	uk_active_profile	runtime_profile_id,active_flag
+analytics_verify_m3_parity	uk_snapshot_id	snapshot_id
+mall_simulator	PRIMARY	id
+mall_simulator	uk_snapshot_id	snapshot_id
+mall_simulator_test	PRIMARY	id
+mall_simulator_test	uk_snapshot_id	snapshot_id
+EXIT=0
+
+--- R8 analytics_metric 表清单 ---
+SQL: SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='analytics_metric' ORDER BY TABLE_NAME;
+TABLE_NAME
+ads_active_trend_m
+ads_behavior_funnel_m
+ads_data_quality_m
+ads_hot_product_m
+ads_operation_overview_m
+ads_product_conversion_m
+ads_sale_trend_m
+ads_user_profile_m
+flyway_schema_history
+metric_snapshot
+metric_value
+EXIT=0
+
+--- R9 §7.4 不变量①：active_flag 取值分布（判定 uk_active_profile 的语义：1 vs 0 vs NULL） ---
+SQL: SELECT active_flag, COUNT(*) AS rows_cnt FROM analytics_metric.metric_snapshot GROUP BY active_flag ORDER BY active_flag;
+active_flag	rows_cnt
+NULL	11
+1	1
+EXIT=0
+
+--- R10 §7.4 不变量②：是否存在同一 runtime_profile_id 多行 active_flag=1（应为 0 行） ---
+SQL: SELECT COUNT(*) AS profiles_with_multi_active FROM (SELECT runtime_profile_id FROM analytics_metric.metric_snapshot WHERE active_flag=1 GROUP BY runtime_profile_id HAVING COUNT(*) > 1) t;
+profiles_with_multi_active
+0
+EXIT=0
+
+--- R11 §7.4 不变量③：是否存在无 active 行的 runtime_profile_id ---
+SQL: SELECT COUNT(*) AS profiles_without_active FROM (SELECT runtime_profile_id FROM analytics_metric.metric_snapshot GROUP BY runtime_profile_id HAVING SUM(CASE WHEN active_flag=1 THEN 1 ELSE 0 END)=0) t;
+profiles_without_active
+0
+EXIT=0
+
+--- R12 §7.4 规模：总行数 / 去重 profile 数 / active 行数 ---
+SQL: SELECT COUNT(*) AS total_rows, COUNT(DISTINCT runtime_profile_id) AS distinct_profiles, SUM(CASE WHEN active_flag=1 THEN 1 ELSE 0 END) AS active_rows FROM analytics_metric.metric_snapshot;
+total_rows	distinct_profiles	active_rows
+12	1	1
+EXIT=0
+
+--- R13 metric 族 15 列结构（与 meta 族 12 列对比，定位 schema 漂移） ---
+SQL: SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_metric' AND TABLE_NAME='metric_snapshot' ORDER BY ORDINAL_POSITION;
+COLUMN_NAME	COLUMN_TYPE	IS_NULLABLE
+id	bigint	NO
+snapshot_id	varchar(64)	NO
+runtime_profile_id	bigint	NO
+runtime_profile_version	int	YES
+business_time	datetime(3)	NO
+pipeline_run_id	bigint	YES
+status	varchar(24)	NO
+version	int	NO
+definition_version	varchar(16)	NO
+data_updated_at	datetime(3)	NO
+published_at	datetime(3)	YES
+source	varchar(32)	NO
+failure_reason	varchar(512)	YES
+active_flag	tinyint	YES
+created_at	datetime(3)	NO
+EXIT=0
+
+########## 第三部分：本泳道复核结论与对普查的两处更正 ##########
+
+【更正 A·高】§4.2 五个对象**存在且有数据**——普查结论被推翻，原因是普查范围按 nalytics_* 前缀过滤。
+  实测（R3/R5/R6）：它们全部位于 schema = generator_meta（该库共 6 张表 = 5 张业务表 + flyway_schema_history）:
+    generator_target=422 行 / generation_plan=430 / generation_run=184 / generation_artifact=551 / generation_event_stat=947
+  代码侧同样在用（排除 target/）: GeneratorMetaStore.java:100,105,111,116,142,148,169,246,250,258；
+    GeneratorRunService.java:531；MallCapability.java:7；MallTargetAdapter.java:10,25；Artifact.java:7,31；JsonlEventSink.java:178,186
+  ⇒ 正确口径: §4.2 的物理载体**已存在并已投产**；我此前写的『可见范围内 0 命中』与总控普查的『全部 9 个 schema 都不存在』**均作废**（前者受权限限制，后者受前缀过滤限制）。
+  ⇒ 纪律教训（第二次同类错误）: **按前缀/按账号过滤的普查不能得出『不存在』结论**。存在性结论必须覆盖全 schema 且说明过滤条件。
+  ⇒ 仍然未取证的部分: 这 5 张表是否与 V2.5 §4.2 的字段要求逐项一致（列结构/约束未核对）；行数只证明『在用』，不证明『符合规格』。
+
+【更正 B·中】metric_snapshot 实际出现在 **11** 个 schema，不是 9 个。
+  实测（R4/R7）: meta 族 5 个（analytics_meta/_p103/_p105/_p105it/_v17probe，各 12 列）
+                 metric 族 4 个（analytics_metric/_p103/_p105/analytics_verify_m3_parity，各 15 列）
+                 **mall_simulator、mall_simulator_test（各 11 列）** ← 普查未计入
+  ⇒ 总控提示的『同名表在 11 个库里』在本表名上**字面成立**。
+
+【§7.4 不变量核对结论（授权项②，analytics_metric，时点见首行）】
+  1. 约束实测存在: metric 族 4 个库均有 uk_active_profile(runtime_profile_id, active_flag)（R7）；meta 族没有（旧副本）。
+  2. 语义实测: active_flag 取值为 **NULL=11 行 / 1=1 行**（R9）⇒ 『ACTIVE 行 active_flag=1、非 ACTIVE 行 NULL』，借助 MySQL 唯一键允许多 NULL 才使 1 行/档案成立。
+  3. 不变量①（同一 runtime_profile_id 不得多于一行 active）: profiles_with_multi_active = **0** ✔（R10）
+  4. 不变量②（不得有档案完全没有 active 行）: profiles_without_active = **0** ✔（R11）
+  5. 规模: total_rows=**12** / distinct_profiles=**1** / active_rows=**1**（R12）
+  ⇒ 结论: §7.4『按发布作用域唯一』在 analytics_metric **实际成立**（以 uk_active_profile 等价列满足，与总控 D-10 裁决一致）。
+  ⇒ 但**样本极小（1 档案 / 12 行 / 1 ACTIVE）**：上述两个不变量只是在极小规模上成立，**不能**表述为『已通过并发/压力验证』。不变量在并发发布下的原子性**仍未取证**。
+
+【schema 漂移确认（R13 vs 早前 meta 族 12 列）】
+  metric 族 15 列**独有**: definition_version varchar(16) NOT NULL、failure_reason varchar(512) NULL、active_flag tinyint NULL
+  ⇒ §7.16 要求的 ACTIVE 元信息 definitionVersion 在**权威库中确实存在且 NOT NULL**；此前我基于 meta 族 12 列写的『无 definitionVersion』应按此更正（那是历史副本）。
+  ⇒ 两族**均无 source_id 列**（只有 source varchar(32)）⇒ 总控 D-10『用 uk_active_profile 满足、不新增 source_id 列』在实现上无阻碍。
+
+【ADS 实名（R8）】analytics_metric 共 11 张表 = 8 张 ads_*_m + metric_snapshot + metric_value + flyway_schema_history
+  ads_active_trend_m / ads_behavior_funnel_m / ads_data_quality_m / ads_hot_product_m /
+  ads_operation_overview_m / ads_product_conversion_m / ads_sale_trend_m / ads_user_profile_m
+  ⇒ 与代码一致（MetricAdsSpec.scala:42,45 用 _m）；DDL 文字（warehouse/ddl/04-ads.sql，无后缀）待 C01 冻结时订正。缺口 #12 处置 = 以库内 _m 为准。
+
+【本文件不能证明什么】
+  1. 五个 §4.2 表与 V2.5 规格的字段级一致性（未核对列结构/约束）。
+  2. §7.4 不变量在并发/多进程发布下的原子性（样本 1 档案，未取证）。
+  3. 9 个 analytics_* 库中哪一个是『当前生产用库』（只证明并存，未取证谁是权威被应用指向——唯一依据是 application.yml 默认值 + uk_active_profile 的存在）。
+  4. 未执行任何写操作；未跑 Maven；未启停服务。

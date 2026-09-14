@@ -1,0 +1,175 @@
+仓根 = D:\Develop_code\GraduationProject
+冻结登记: frozenAt=2026-09-14 legacyFrozenCount=39 newFrozenCount=4
+冻结依据: D-037 裁决 6：历史清单不可变、不许回填。本清单是版本库内唯一的不可变基准；landing/ 本身被 .gitignore:30 排除，属运行期产物。
+  [PASS] 冻结名单: legacy=39
+  [PASS] 冻结名单: new=4（40-43.json）
+  [PASS] 冻结副本存在 legacy/1.json
+  [PASS] sha256 一致 legacy/1.json
+  [PASS] 键数一致 legacy/1.json=15
+  [PASS] 冻结副本存在 legacy/2.json
+  [PASS] sha256 一致 legacy/2.json
+  [PASS] 键数一致 legacy/2.json=15
+  [PASS] 冻结副本存在 legacy/3.json
+  [PASS] sha256 一致 legacy/3.json
+  [PASS] 键数一致 legacy/3.json=15
+  [PASS] 冻结副本存在 legacy/4.json
+  [PASS] sha256 一致 legacy/4.json
+  [PASS] 键数一致 legacy/4.json=15
+  [PASS] 冻结副本存在 legacy/5.json
+  [PASS] sha256 一致 legacy/5.json
+  [PASS] 键数一致 legacy/5.json=15
+  [PASS] 冻结副本存在 legacy/6.json
+  [PASS] sha256 一致 legacy/6.json
+  [PASS] 键数一致 legacy/6.json=15
+  [PASS] 冻结副本存在 legacy/7.json
+  [PASS] sha256 一致 legacy/7.json
+  [PASS] 键数一致 legacy/7.json=15
+  [PASS] 冻结副本存在 legacy/8.json
+  [PASS] sha256 一致 legacy/8.json
+  [PASS] 键数一致 legacy/8.json=15
+  [PASS] 冻结副本存在 legacy/9.json
+  [PASS] sha256 一致 legacy/9.json
+  [PASS] 键数一致 legacy/9.json=15
+  [PASS] 冻结副本存在 legacy/10.json
+  [PASS] sha256 一致 legacy/10.json
+  [PASS] 键数一致 legacy/10.json=15
+  [PASS] 冻结副本存在 legacy/11.json
+  [PASS] sha256 一致 legacy/11.json
+  [PASS] 键数一致 legacy/11.json=15
+  [PASS] 冻结副本存在 legacy/12.json
+  [PASS] sha256 一致 legacy/12.json
+  [PASS] 键数一致 legacy/12.json=15
+  [PASS] 冻结副本存在 legacy/13.json
+  [PASS] sha256 一致 legacy/13.json
+  [PASS] 键数一致 legacy/13.json=15
+  [PASS] 冻结副本存在 legacy/14.json
+  [PASS] sha256 一致 legacy/14.json
+  [PASS] 键数一致 legacy/14.json=15
+  [PASS] 冻结副本存在 legacy/15.json
+  [PASS] sha256 一致 legacy/15.json
+  [PASS] 键数一致 legacy/15.json=15
+  [PASS] 冻结副本存在 legacy/16.json
+  [PASS] sha256 一致 legacy/16.json
+  [PASS] 键数一致 legacy/16.json=15
+  [PASS] 冻结副本存在 legacy/17.json
+  [PASS] sha256 一致 legacy/17.json
+  [PASS] 键数一致 legacy/17.json=15
+  [PASS] 冻结副本存在 legacy/18.json
+  [PASS] sha256 一致 legacy/18.json
+  [PASS] 键数一致 legacy/18.json=15
+  [PASS] 冻结副本存在 legacy/19.json
+  [PASS] sha256 一致 legacy/19.json
+  [PASS] 键数一致 legacy/19.json=15
+  [PASS] 冻结副本存在 legacy/20.json
+  [PASS] sha256 一致 legacy/20.json
+  [PASS] 键数一致 legacy/20.json=15
+  [PASS] 冻结副本存在 legacy/21.json
+  [PASS] sha256 一致 legacy/21.json
+  [PASS] 键数一致 legacy/21.json=15
+  [PASS] 冻结副本存在 legacy/22.json
+  [PASS] sha256 一致 legacy/22.json
+  [PASS] 键数一致 legacy/22.json=15
+  [PASS] 冻结副本存在 legacy/23.json
+  [PASS] sha256 一致 legacy/23.json
+  [PASS] 键数一致 legacy/23.json=15
+  [PASS] 冻结副本存在 legacy/24.json
+  [PASS] sha256 一致 legacy/24.json
+  [PASS] 键数一致 legacy/24.json=15
+  [PASS] 冻结副本存在 legacy/25.json
+  [PASS] sha256 一致 legacy/25.json
+  [PASS] 键数一致 legacy/25.json=15
+  [PASS] 冻结副本存在 legacy/26.json
+  [PASS] sha256 一致 legacy/26.json
+  [PASS] 键数一致 legacy/26.json=15
+  [PASS] 冻结副本存在 legacy/27.json
+  [PASS] sha256 一致 legacy/27.json
+  [PASS] 键数一致 legacy/27.json=15
+  [PASS] 冻结副本存在 legacy/28.json
+  [PASS] sha256 一致 legacy/28.json
+  [PASS] 键数一致 legacy/28.json=15
+  [PASS] 冻结副本存在 legacy/29.json
+  [PASS] sha256 一致 legacy/29.json
+  [PASS] 键数一致 legacy/29.json=15
+  [PASS] 冻结副本存在 legacy/30.json
+  [PASS] sha256 一致 legacy/30.json
+  [PASS] 键数一致 legacy/30.json=15
+  [PASS] 冻结副本存在 legacy/31.json
+  [PASS] sha256 一致 legacy/31.json
+  [PASS] 键数一致 legacy/31.json=15
+  [PASS] 冻结副本存在 legacy/32.json
+  [PASS] sha256 一致 legacy/32.json
+  [PASS] 键数一致 legacy/32.json=15
+  [PASS] 冻结副本存在 legacy/33.json
+  [PASS] sha256 一致 legacy/33.json
+  [PASS] 键数一致 legacy/33.json=15
+  [PASS] 冻结副本存在 legacy/34.json
+  [PASS] sha256 一致 legacy/34.json
+  [PASS] 键数一致 legacy/34.json=15
+  [PASS] 冻结副本存在 legacy/35.json
+  [PASS] sha256 一致 legacy/35.json
+  [PASS] 键数一致 legacy/35.json=15
+  [PASS] 冻结副本存在 legacy/36.json
+  [PASS] sha256 一致 legacy/36.json
+  [PASS] 键数一致 legacy/36.json=15
+  [PASS] 冻结副本存在 legacy/37.json
+  [PASS] sha256 一致 legacy/37.json
+  [PASS] 键数一致 legacy/37.json=15
+  [PASS] 冻结副本存在 legacy/38.json
+  [PASS] sha256 一致 legacy/38.json
+  [PASS] 键数一致 legacy/38.json=15
+  [PASS] 冻结副本存在 legacy/39.json
+  [PASS] sha256 一致 legacy/39.json
+  [PASS] 键数一致 legacy/39.json=15
+  [PASS] 冻结副本存在 new/40.json
+  [PASS] sha256 一致 new/40.json
+  [PASS] 键数一致 new/40.json=19
+  [PASS] 冻结副本存在 new/41.json
+  [PASS] sha256 一致 new/41.json
+  [PASS] 键数一致 new/41.json=19
+  [PASS] 冻结副本存在 new/42.json
+  [PASS] sha256 一致 new/42.json
+  [PASS] 键数一致 new/42.json=19
+  [PASS] 冻结副本存在 new/43.json
+  [PASS] sha256 一致 new/43.json
+  [PASS] 键数一致 new/43.json=19
+  [PASS] 契约：P1-05 前 39 个清单的违规集合扩展前后逐字相同
+  [PASS] 契约：既有违规恰好是已记载的 batchId 漂移
+  既有违规（历史漂移，非本 lane 引入）: [1.json: batchId 类型不符：期望 [integer]，实际 STRING, 2.json: batchId 类型不符：期望 [integer]，实际 STRING, 3.json: batchId 类型不符：期望 [integer]，实际 STRING, 4.json: batchId 类型不符：期望 [integer]，实际 STRING, 5.json: batchId 类型不符：期望 [integer]，实际 STRING]
+  [PASS] 新格式副本四键齐备 40.json
+  [PASS] 新格式副本通过现行 schema 40.json
+  [PASS] 新格式副本四键齐备 41.json
+  [PASS] 新格式副本通过现行 schema 41.json
+  [PASS] 新格式副本四键齐备 42.json
+  [PASS] 新格式副本通过现行 schema 42.json
+  [PASS] 新格式副本四键齐备 43.json
+  [PASS] 新格式副本通过现行 schema 43.json
+[真实目录巡检] 冻结清单核对: 43 个；违规: 0
+新到文件（不判红）: 0
+  [PASS] 巡检：冻结 43 个
+  [PASS] 巡检：零违规（历史原样留存、未被回填）
+  真实目录文件总数=43（冻结 43 ＋ 新到 0）
+[负例-新到] 冻结清单核对: 2 个；违规: 0
+新到文件（不判红）: 2
+  [新到] 44.json sha256=f85a9ca95250 keys=19 含新键=true
+  [新到] 45.json sha256=d0dfb5d9af70 keys=15 含新键=false
+  [PASS] 负例：新到文件不判红（这正是 2026-09-12 的误报）
+  [PASS] 负例：新到文件被逐个报告
+[负例-回填] 冻结清单核对: 2 个；违规: 2
+  [违规] 1.json 内容被改动：sha256 f85a9ca9525086d21a0621ccdfe21a72c89f10c12d3d2d98125e7c8e70d63bb7 ≠ 冻结 98a418186e88bc6893eac859382626bbadf0f4b25551757a86228219a7c5f2f9
+  [违规] 1.json 疑似被回填：旧格式清单里出现了 P1-05 新增键 [sourceCode, sourceId, profileVersion, mappingVersion]
+新到文件（不判红）: 0
+  [PASS] 负例：回填被报'内容被改动'
+  [PASS] 负例：回填被报'疑似被回填'＋新增键
+[负例-改写] 冻结清单核对: 2 个；违规: 1
+  [违规] 1.json 内容被改动：sha256 4c5f0a424c820e8aef1f80e224215a48a62d2d46e4cd2af3ce0b9f4d71869838 ≠ 冻结 98a418186e88bc6893eac859382626bbadf0f4b25551757a86228219a7c5f2f9
+新到文件（不判红）: 0
+  [PASS] 负例：等长字节改写被 sha256 抓到
+[负例-缺失] 冻结清单核对: 2 个；违规: 1
+  [违规] 1.json 缺失（冻结清单里的历史文件必须留在原地）
+新到文件（不判红）: 0
+  [PASS] 负例：缺失判红
+[负例-目录不在] 冻结清单核对: 0 个；违规: 1
+  [违规] 清单目录不存在: C:\Users\ASUS\AppData\Local\Temp\t02-probe172269903526216069\no-such-dir —— 历史清单必须留在原地；被忽略的目录删掉不会在 git status 里显形，因此这里显式判红
+新到文件（不判红）: 0
+  [PASS] 负例：目录整个不在 ⇒ 显式判红
+PROBE-OK（0 处失败）

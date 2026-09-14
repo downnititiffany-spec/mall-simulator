@@ -1,0 +1,83 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/5]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/5]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 18 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/5]
+[INFO]   from connection-ingestion\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 53 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] ------------< com.graduation.analytics:warehouse-pipeline >-------------
+[INFO] Building warehouse-pipeline 0.1.0-SNAPSHOT                         [4/5]
+[INFO]   from warehouse-pipeline\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ warehouse-pipeline ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ warehouse-pipeline ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 17 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --------------< com.graduation.analytics:metric-analysis >--------------
+[INFO] Building metric-analysis 0.1.0-SNAPSHOT                            [5/5]
+[INFO]   from metric-analysis\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ metric-analysis ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 13 source files with javac [debug release 17] to target\classes
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/AdsExportReader.java: D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\java\com\graduation\analytics\metric\publish\AdsExportReader.javaʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/AdsExportReader.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.002 s]
+[INFO] platform-common .................................... SUCCESS [  2.570 s]
+[INFO] connection-ingestion ............................... SUCCESS [  2.548 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [  1.502 s]
+[INFO] metric-analysis .................................... SUCCESS [  1.196 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.103 s
+[INFO] Finished at: 2026-09-12T22:07:52+08:00
+[INFO] ------------------------------------------------------------------------

@@ -1,0 +1,115 @@
+=== V25-R01 取证 #09：只读 information_schema 核对（总控 Q10 授权）===
+查询时点: 2026-09-14 12:23:06 +08:00
+HEAD: 3fcf90e30962ae528b2079dc5c40070f1f6b7257 | dirty=61
+授权约束遵守: schema 限定 / 仅 COUNT(*) / 无 TABLE_ROWS / 无 AUTO_INCREMENT / 只读
+连接: 127.0.0.1:3306 user=meta_app（口令取自 platform-app/src/main/resources/application.yml 缺省值，不落盘）
+
+--- Q-A §4.2 五个生成器对象是否存在（全库范围，schema 限定） ---
+SQL: SELECT TABLE_SCHEMA, TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME IN ('generator_target','generation_plan','generation_run','generation_artifact','generation_event_stat') ORDER BY TABLE_SCHEMA, TABLE_NAME;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+EXIT=0
+--- Q-B §5.2/§5.7 相关表是否存在（全库范围） ---
+SQL: SELECT TABLE_SCHEMA, TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME IN ('source_connector','schema_mapping','source_manifest','quality_rule_definition','source_profile','mapping_version','source_registry','data_quality_result') ORDER BY TABLE_SCHEMA, TABLE_NAME;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+TABLE_SCHEMA	TABLE_NAME
+analytics_meta	data_quality_result
+analytics_meta	source_registry
+EXIT=0
+
+--- Q-C analytics_metric 全部表 ---
+SQL: SELECT TABLE_SCHEMA, TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='analytics_metric' ORDER BY TABLE_NAME;
+EXIT=0
+
+--- Q-D analytics_metric / analytics_meta 唯一索引（NON_UNIQUE=0，§7.4 发布作用域唯一性） ---
+SQL: SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS cols FROM information_schema.STATISTICS WHERE TABLE_SCHEMA IN ('analytics_metric','analytics_meta') AND NON_UNIQUE=0 GROUP BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME;
+TABLE_SCHEMA	TABLE_NAME	INDEX_NAME	cols
+analytics_meta	ai_call_log	PRIMARY	id
+analytics_meta	ai_query_history	PRIMARY	id
+analytics_meta	data_quality_result	PRIMARY	id
+analytics_meta	decision_evaluation	PRIMARY	id
+analytics_meta	decision_task	PRIMARY	id
+analytics_meta	decision_task	uk_decision_no	decision_no
+analytics_meta	file_checkpoint	PRIMARY	id
+analytics_meta	file_checkpoint	uk_ckpt_source	runtime_profile_id,source_id,file_path,file_identity
+analytics_meta	flyway_schema_history	PRIMARY	installed_rank
+analytics_meta	ingestion_batch	PRIMARY	id
+analytics_meta	ingestion_batch	uk_batch_no	batch_no
+analytics_meta	ingestion_batch_file	PRIMARY	id
+analytics_meta	ingestion_batch_file	uk_batch_file	batch_id,file_path
+analytics_meta	metric_definition	PRIMARY	metric_code
+analytics_meta	metric_snapshot	PRIMARY	id
+analytics_meta	metric_snapshot	uk_snapshot_id	snapshot_id
+analytics_meta	metric_value	PRIMARY	id
+analytics_meta	metric_value	uk_snapshot_metric	snapshot_id,metric_code
+analytics_meta	operation_audit_log	PRIMARY	id
+analytics_meta	pipeline_run	PRIMARY	id
+analytics_meta	pipeline_run	uk_idempotency	idempotency_key
+analytics_meta	pipeline_stage_run	PRIMARY	id
+analytics_meta	quarantine_record	PRIMARY	id
+analytics_meta	runtime_profile	PRIMARY	id
+analytics_meta	runtime_profile	uk_profile_code	profile_code
+analytics_meta	source_registry	PRIMARY	id
+analytics_meta	source_registry	uk_source_registry_code	source_code
+analytics_meta	spark_job_run	PRIMARY	id
+analytics_meta	sys_user	PRIMARY	id
+analytics_meta	sys_user	username	username
+analytics_meta	t_ckpt_test	PRIMARY	id
+analytics_meta	t_ckpt_test	uk_ckpt	runtime_profile_id,file_path,file_identity
+analytics_meta	user_session	PRIMARY	id
+analytics_meta	user_session	token	token
+EXIT=0
+
+--- Q-E COUNT(*) 实测（schema 限定；不使用 TABLE_ROWS） ---
+SQL: SELECT 'analytics_meta.source_registry' AS obj, COUNT(*) AS rows_cnt FROM analytics_meta.source_registry UNION ALL SELECT 'analytics_meta.data_quality_result', COUNT(*) FROM analytics_meta.data_quality_result;
+obj	rows_cnt
+analytics_meta.source_registry	2
+analytics_meta.data_quality_result	467
+EXIT=0
+
+--- Q-F 每个 schema 的表数量（无 TABLE_ROWS，仅计数 information_schema.TABLES） ---
+SQL: SELECT TABLE_SCHEMA, COUNT(*) AS table_cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA NOT IN ('information_schema','mysql','performance_schema','sys') GROUP BY TABLE_SCHEMA ORDER BY table_cnt DESC, TABLE_SCHEMA;
+TABLE_SCHEMA	table_cnt
+analytics_meta	22
+EXIT=0
+
+--- Q-G 名称含 metric/publish 的表在哪些库 ---
+SQL: SELECT TABLE_SCHEMA, TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME LIKE '%metric%' OR TABLE_NAME LIKE '%publish%' ORDER BY TABLE_SCHEMA, TABLE_NAME;
+TABLE_SCHEMA	TABLE_NAME
+analytics_meta	metric_definition
+analytics_meta	metric_snapshot
+analytics_meta	metric_value
+information_schema	INNODB_METRICS
+EXIT=0
+
+--- Q-H metric_snapshot 列（§7.4 ACTIVE 元信息：sourceCode/sourceId/businessDate/definitionVersion） ---
+SQL: SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta' AND TABLE_NAME='metric_snapshot' ORDER BY ORDINAL_POSITION;
+COLUMN_NAME	COLUMN_TYPE	IS_NULLABLE
+id	bigint	NO
+snapshot_id	varchar(64)	NO
+runtime_profile_id	bigint	NO
+runtime_profile_version	int	NO
+business_time	datetime(3)	NO
+pipeline_run_id	bigint	YES
+status	varchar(24)	NO
+version	int	NO
+data_updated_at	datetime(3)	NO
+published_at	datetime(3)	YES
+source	varchar(32)	NO
+created_at	datetime(3)	NO
+EXIT=0
+
+=== 权限边界更正（必须与上文结果同时引用）===
+上列 Q-A/Q-B/Q-C/Q-F 的零命中结果**不能**读作"这些表在全库不存在"：
+information_schema 只显示**当前账号有权限**的对象。实测证据：
+  Q-F 输出中除 analytics_meta（22 表）外**没有任何其他 schema 出现在结果里**——
+  而 W01 盘点（docs/acceptance/v25-w01-env-inventory-20260914/raw/20-mysql-topology.txt）
+  已列出 25 个库（含 mall_business / mall_simulator / generator_meta 等），其中多个库
+  按项目设计必然有表 ⇒ 结果为空是**权限过滤**，不是"库为空"。
+结论口径：
+  - 可以说："在 meta_app 可见范围内（analytics_meta，22 表），§4.2 五个生成器对象 0 命中、
+    quality_rule_definition 0 命中。"（实测）
+  - 不可以说："全库不存在"。（未取证；需逐库授权或更高权限账号）
+  - analytics_metric 对 meta_app 不可见 ⇒ §7.4 的 ACTIVE 发布表结构**未取证**；
+    下文 §7.4 结论只基于 analytics_meta.metric_snapshot（可见且确有该表）。
+  - 跨库同名表问题（总控提示"同名表在 11 个库里"）在 meta_app 权限下**无法枚举** ⇒ 记为未取证。
+=== 更正结束 ===

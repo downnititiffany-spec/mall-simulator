@@ -1,0 +1,33 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+section
+ERROR 1054 (42S22) at line 8: Unknown column 'source_id' in 'field list'
+--- B1: run 47 all quality rows ---
+id	run_id	rule_code	layer	severity	snapshot_id	check_count	error_count	error_rate	threshold	passed	detail
+446	47	AMOUNT_RECONCILE	LANDING	BLOCKING	S20260901_47	5	0	0.000000	0.01	1	֧����� vs �����ܶ���˷�Χ=�������������� 0 �� / �����޶��� 0 �ʣ� OK
+447	47	REQUIRED_FIELD_NULL_RATE	LANDING	ERROR	S20260901_47	15	0	0.000000	<=0.001	1	user_id/product_id ��ֵ�� OK
+448	47	EVENT_ID_UNIQUE	LANDING	ERROR	S20260901_47	49	1	0.020408	<=0.0005	0	event_id �ظ��� FAILED
+449	47	ENUM_WHITELIST	LANDING	ERROR	S20260901_47	15	0	0.000000	0	1	��Ϊö�ٰ����� OK
+450	47	ADS_STAGING_PRESENT	ADS_STAGING	BLOCKING	S20260901_47	8	0	0.000000	ÿ������>0	1	8 ���ݴ��������>0���ϼ� 22 �У�
+451	47	ADS_STAGING_SNAPSHOT_ISOLATION	ADS_STAGING	ERROR	S20260901_47	16	8	0.500000	0 ���Ǳ��ο��շ������۲��	0	�������������ݴ����������Ϸ�����pub �������ù�ϵ������: dw_ads.ads_active_trend__staging/S20260901_43(1��),dw_ads.ads_behavior_funnel__staging/S20260901_43(4��),dw_ads.ads_data_quality__staging/S20260901_43(4��),dw_ads.ads_hot_product__staging/S20260901_43(9��),dw_ads.ads_operation_overview__staging/S20260901_43(1��),dw_ads.ads_product_conversion__staging/S20260901_43(9��),dw_ads.ads_sale_trend__staging/S20260901_43(1��),dw_ads.ads_user_profile__staging/S20260901_43(1��)
+452	47	ADS_STAGING_KEY_NOT_NULL	ADS_STAGING	BLOCKING	S20260901_47	22	0	0.000000	0 �չؼ���	1	22 �йؼ���ȫ���ǿ�
+453	47	PUB_DQ_BLOCKING_RULES	PUBLISH	BLOCKING	S20260901_47	3	0	0.000000	ȫ�� passed=1	1	��Ϲ�����: AMOUNT_RECONCILE=passed=1,err=0; ENUM_WHITELIST=passed=1,err=0; REQUIRED_FIELD_NULL_RATE=passed=1,err=0
+454	47	PUB_DQ_EVENT_ID_UNIQUE	PUBLISH	ERROR	S20260901_47	14	1	0.071429	0.0005	0	�۲���ظ� event_id ���ʣ�����Ϸ���
+455	47	ADS_DWS_FUNNEL_RECONCILE	ADS_STAGING	BLOCKING	S20260901_47	4	0	0.000000	�� stage ��ֵ=0	1	4 �� stage ������ dws_behavior_funnel_day һ��
+456	47	PUB_STAGING_READY	PUBLISH	BLOCKING	S20260901_47	8	0	0.000000	8 ���ݴ��������	1	8 ���ݴ�����������ϼ� 22 ��
+457	47	PUB_FORMAL_PARTITION_MATCH	PUBLISH	BLOCKING	S20260901_47	8	0	0.000000	��ʽ=�ݴ�����	1	8 ����ʽ�����������ݴ�һ�£��ϼ� 22 �У�
+458	47	MXP_SNAPSHOT_PINNED	PUBLISH	BLOCKING	S20260901_47	8	0	0.000000	��ʽ���� Location ָ�� snapshot_id=S20260901_47	1	8 ����ʽ������ָ�� snapshot_id=S20260901_47
+459	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	1	0	0.000000	�����ļ����� = Hive ��������	1	ads_operation_overview_m: hive=1 export=1
+460	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	1	0	0.000000	�����ļ����� = Hive ��������	1	ads_sale_trend_m: hive=1 export=1
+461	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	4	0	0.000000	�����ļ����� = Hive ��������	1	ads_behavior_funnel_m: hive=4 export=4
+462	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	1	0	0.000000	�����ļ����� = Hive ��������	1	ads_active_trend_m: hive=1 export=1
+463	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	4	0	0.000000	�����ļ����� = Hive ��������	1	ads_hot_product_m: hive=4 export=4
+464	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	4	0	0.000000	�����ļ����� = Hive ��������	1	ads_product_conversion_m: hive=4 export=4
+465	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	3	0	0.000000	�����ļ����� = Hive ��������	1	ads_user_profile_m: hive=3 export=3
+466	47	MXP_EXPORT_ROWS	PUBLISH	BLOCKING	S20260901_47	4	0	0.000000	�����ļ����� = Hive ��������	1	ads_data_quality_m: hive=4 export=4
+467	47	MXP_EXPORT_COMPLETE	PUBLISH	BLOCKING	S20260901_47	8	0	0.000000	8 �ű��������������һ��	1	�ϼƵ��� 22 �� / 8 �ű�
+section
+--- B2: run 47 run header ---
+id	status	current_stage	error_code	error_message	business_time	attempt_no
+47	SUCCESS	SUCCESS	NULL	NULL	2026-09-01 00:00:00.000	1
+section
+--- B3: metric_snapshot ACTIVE/ARCHIVED around 47 ---

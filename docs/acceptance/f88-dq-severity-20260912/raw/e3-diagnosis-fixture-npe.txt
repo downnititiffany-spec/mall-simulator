@@ -1,0 +1,5 @@
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java:[482,27] �����ݵ�����: int�޷�ת��Ϊjava.lang.Long
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java:[483,61] �����ݵ�����: ��������ʽ�е����ʹ���
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java:[482,27] �����ݵ�����: int�޷�ת��Ϊjava.lang.Long
+[ERROR] /D:/Develop_code/GraduationProject/analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java:[483,61] �����ݵ�����: ��������ʽ�е����ʹ���

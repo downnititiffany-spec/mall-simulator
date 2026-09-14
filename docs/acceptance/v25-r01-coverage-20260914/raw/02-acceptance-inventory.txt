@@ -1,0 +1,65 @@
+=== V25-R01 取证 #02 验收目录盘点 + 看板 §4 证据链接存在性 ===
+采集时刻: 2026-09-14 12:08:57 +08:00
+docs/acceptance 子目录数: 51
+docs/acceptance 文件数: 1461 | 字节: 89890322
+
+--- 按 mtime 倒序 top 14 目录 ---
+v25-r01-coverage-20260914 | files=1 | bytes=4485 | mtime=2026-09-14 12:08:47
+v25-w01-env-inventory-20260914 | files=10 | bytes=45386 | mtime=2026-09-14 12:06:58
+f88-dq-severity-20260912 | files=32 | bytes=520954 | mtime=2026-09-12 23:26:43
+p3-02-mapping-executor-20260912 | files=10 | bytes=237457 | mtime=2026-09-12 23:25:43
+guideline-v24-coverage-20260912 | files=8 | bytes=116955 | mtime=2026-09-12 23:15:48
+b13-db-forensics-20260912 | files=19 | bytes=400989 | mtime=2026-09-12 23:15:02
+p5-heterogeneous-source-20260912 | files=57 | bytes=415728 | mtime=2026-09-12 22:25:35
+e5-preaccept-20260912 | files=110 | bytes=2534906 | mtime=2026-09-12 22:17:39
+m3-step8-parity-20260912 | files=209 | bytes=34912058 | mtime=2026-09-12 22:02:36
+p3-01a-mock-mall-profile-20260912 | files=29 | bytes=338765 | mtime=2026-09-12 20:59:45
+p2-03-surrogate-key-20260912 | files=56 | bytes=755559 | mtime=2026-09-12 20:50:20
+p2-02-multiformat-time-20260912 | files=19 | bytes=187480 | mtime=2026-09-12 20:42:42
+p2-05-ods-rebuild-guard-20260912 | files=6 | bytes=94879 | mtime=2026-09-12 20:23:48
+p2-04-dwd-source-projection-20260912 | files=6 | bytes=80205 | mtime=2026-09-12 20:23:48
+
+--- 看板 V2.5 §4 声明的证据链接是否存在 ---
+NOT-EXIST v25-t01-t02-baseline-20260914
+NOT-EXIST v25-s01-it-safety-20260914
+EXISTS v25-w01-env-inventory-20260914 | files=10 | bytes=45386 | mtime=2026-09-14 12:06:58
+EXISTS v25-r01-coverage-20260914 | files=1 | bytes=4485 | mtime=2026-09-14 12:08:47
+EXISTS f88-dq-severity-20260912 | files=32 | bytes=520954 | mtime=2026-09-12 23:26:43
+EXISTS m3-step8-parity-20260912 | files=209 | bytes=34912058 | mtime=2026-09-12 22:02:36
+EXISTS e4-cluster-1000-20260912 | files=96 | bytes=8977662 | mtime=2026-09-12 16:32:14
+EXISTS p5-heterogeneous-source-20260912 | files=57 | bytes=415728 | mtime=2026-09-12 22:25:35
+EXISTS p3-02-mapping-executor-20260912 | files=10 | bytes=237457 | mtime=2026-09-12 23:25:43
+
+--- docs/acceptance 顶层 .md 文件 ---
+v25-document-release-20260914.md | bytes=2178 | mtime=2026-09-14 09:16:34
+local-readiness-20260914.md | bytes=5726 | mtime=2026-09-14 08:46:41
+b11-def13-20260911-1630.json | bytes=3858 | mtime=2026-09-11 16:30:01
+b11-def13-20260911-1630.md | bytes=6300 | mtime=2026-09-11 16:29:54
+m1-8-20260911-1555.md | bytes=8944 | mtime=2026-09-11 15:56:57
+m1-8-20260911-1555.json | bytes=11401 | mtime=2026-09-11 15:56:57
+m1-8-20260911-1550.md | bytes=8721 | mtime=2026-09-11 15:51:48
+m1-8-20260911-1550.json | bytes=11075 | mtime=2026-09-11 15:51:48
+def10-publish-20260911-150759.md | bytes=4040 | mtime=2026-09-11 15:12:31
+def10-publish-20260911-150759.json | bytes=17607 | mtime=2026-09-11 15:12:31
+M1-8-三程序独立启停验收记录.md | bytes=9648 | mtime=2026-09-11 15:08:17
+def08-publish-20260911-145640.md | bytes=5624 | mtime=2026-09-11 15:01:12
+def08-publish-20260911-145640.json | bytes=21081 | mtime=2026-09-11 15:01:12
+def05-ids-20260911-144801.md | bytes=3859 | mtime=2026-09-11 14:51:43
+def05-ids-20260911-144801.json | bytes=19766 | mtime=2026-09-11 14:51:43
+m1-8-20260911-1430.md | bytes=8303 | mtime=2026-09-11 14:32:24
+m1-8-20260911-1430.json | bytes=10417 | mtime=2026-09-11 14:32:24
+m1-8-20260911-1425.md | bytes=7361 | mtime=2026-09-11 14:28:21
+m1-8-20260911-1425.json | bytes=9605 | mtime=2026-09-11 14:28:21
+
+--- v25-w01-env-inventory-20260914 内容 ---
+docs\acceptance\v25-w01-env-inventory-20260914\raw | bytes=1
+docs\acceptance\v25-w01-env-inventory-20260914\raw\00-wsl-host-side-inventory.txt | bytes=3944
+docs\acceptance\v25-w01-env-inventory-20260914\raw\01-host-system.txt | bytes=2393
+docs\acceptance\v25-w01-env-inventory-20260914\raw\02-host-toolchain-versions.txt | bytes=2742
+docs\acceptance\v25-w01-env-inventory-20260914\raw\03-host-ports-services.txt | bytes=12761
+docs\acceptance\v25-w01-env-inventory-20260914\raw\04-env-vars-and-path.txt | bytes=5105
+docs\acceptance\v25-w01-env-inventory-20260914\raw\10-wsl-internal-inventory.txt | bytes=6069
+docs\acceptance\v25-w01-env-inventory-20260914\raw\11-wsl-packages-config-network.txt | bytes=8464
+docs\acceptance\v25-w01-env-inventory-20260914\raw\12-wsl-ports-systemd.conf.txt | bytes=1988
+docs\acceptance\v25-w01-env-inventory-20260914\raw\20-mysql-topology.txt | bytes=838
+docs\acceptance\v25-w01-env-inventory-20260914\raw\21-mysql-schema-sizes.txt | bytes=1082

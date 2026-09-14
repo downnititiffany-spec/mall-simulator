@@ -1,0 +1,48 @@
+[审计原始取证 04] 生成时刻 = 2026-09-12 23:06:07 +08:00
+== git 事实（时间轴唯一权威口径 = git log --format=%ci）==
+HEAD = 0442f80 2026-09-12 23:03:42 +0800 docs(board): 台账行 522 —— B-13 破坏性事件（metric_snapshot 于 22:00-23:00 被清空/重置，run 47 发布结果消失）＋ 止损与取证 ＋ 硬纪律（真实库 IT 一律禁用）＋ 陷阱 #66 ＋ 人裁决（暂不考虑集群／授权投入 P3-02 映射执行器）＋ M3 三处引用更正
+分支 = remediation/r1-boundary
+origin/main = 0442f80
+
+== 工作树未提交改动（git status --porcelain，仅统计 + 前 40 行）==
+条目数 = 41
+ M analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/publish/MetricPublishValidator.java
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/analysis/AnalysisGoldenMySqlIT.java
+ M analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/MetricQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/DataQualityGate.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/PipelineService.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java
+ M analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/spark/JobResultParser.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/DataQualityGateTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/PipelineServiceTest.java
+ M analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/spark/JobResultParserTest.java
+ M spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala
+?? analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublishValidatorSeverityTest.java
+?? analytics-server/platform-common/src/main/java/com/graduation/analytics/metric/RuleSeverity.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/
+?? analytics-server/source-profiles/fixture-b.v1.json
+?? analytics-server/warehouse-pipeline/src/test/java/com/graduation/analytics/pipeline/QualityCheckerSeverityTest.java
+?? docs/acceptance/b13-db-forensics-20260912/
+?? docs/acceptance/e5-preaccept-20260912/
+?? docs/acceptance/f88-dq-severity-20260912/
+?? docs/acceptance/guideline-v24-coverage-20260912/
+?? docs/acceptance/m3-step8-parity-20260912/IMPL-REPORT.md
+?? docs/acceptance/m3-step8-parity-20260912/MAPPING-20260912.md
+?? docs/acceptance/m3-step8-parity-20260912/raw/ads-mirror-schemas.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/ads-operation-overview-row-S20260901_43.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-ads-counts-S20260901_43.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-metric-snapshot.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-metric-value-S20260901_43.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-metric-value-counts.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/baseline-pre-pipeline-run-last5.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/golden-copy-name.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/mapping-fingerprint-before-run.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/mapping-poll.log
+?? docs/acceptance/m3-step8-parity-20260912/raw/park-move-back.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/park-move-out.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/post/
+?? docs/acceptance/m3-step8-parity-20260912/raw/pre-run-ingestion-status-after-park.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/pre-run-ingestion-status.txt
+?? docs/acceptance/m3-step8-parity-20260912/raw/pre-run40-contrast.txt
+?? docs/acceptance/m3-step8-parity-20260912/tools/
+?? docs/acceptance/p3-02-mapping-executor-20260912/

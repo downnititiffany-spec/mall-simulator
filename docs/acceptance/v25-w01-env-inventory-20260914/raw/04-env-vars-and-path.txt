@@ -1,0 +1,94 @@
+### COMMAND: [Environment]::GetEnvironmentVariable(name,'Machine'|'User')
+NOTE: values below captured 2026-09-14 before any change in this task; process PATH also shown.
+
+--- JAVA_HOME
+  [Machine] D:\Develop\JAVA17
+  [User]    
+--- SPARK_HOME
+  [Machine] 
+  [User]    
+--- HADOOP_HOME
+  [Machine] D:\soft\hadoop\hadoop-3.3.4
+  [User]    
+--- HADOOP_HOME_WARN_SUPPRESS
+  [Machine] 
+  [User]    
+--- MAVEN_HOME
+  [Machine] D:\apache-maven-3.9.14
+  [User]    
+--- M2_HOME
+  [Machine] 
+  [User]    
+--- PYTHON_HOME
+  [Machine] 
+  [User]    
+--- NODE_HOME
+  [Machine] 
+  [User]    
+--- HIVE_HOME
+  [Machine] 
+  [User]    
+--- SCALA_HOME
+  [Machine] D:\Develop\scala
+  [User]    
+--- WSLENV
+  [Machine] 
+  [User]    
+--- Path
+  [Machine] D:\Develop\JAVA17\bin;D:\Develop\Vmware\bin\;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\dotnet\;C:\Program Files\MySQL\MySQL Server 8.0\bin;C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;D:\apache-maven-3.9.14\bin;C:\Program Files\Git\cmd;D:\apache-tomcat-10.1.53\bin;C:\Users\ASUS\AppData\Local\Android\Sdk\platform-tools;C:\Program Files\nodejs\;C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts;D:\soft\XShell\;D:\soft\Xftp\;D:\soft\hadoop\hadoop-3.3.4\bin;D:\soft\hadoop\hadoop-3.3.4\sbin;C:\Program Files\Docker\Docker\resources\bin;D:\Develop\scala\bin;D:\Develop\scala\bin;
+  [User]    D:\Develop\Python314\Scripts\;D:\Develop\Python314\;C:\Users\ASUS\AppData\Local\Programs\Python\Launcher\;C:\Users\ASUS\AppData\Local\agy\bin;C:\Program Files\MySQL\MySQL Shell 8.0\bin\;C:\Users\ASUS\AppData\Local\Microsoft\WindowsApps;D:\vscode\Microsoft VS Code\bin;D:\Develop\jetbrains\DataGrip 2024.1.1\bin;C:\Users\ASUS\AppData\Local\Programs\cursor\resources\app\bin;D:\Develop\jetbrains\PyCharm 2024.1\bin;D:\Develop\jetbrains\CLion 2024.1\bin;D:\Develop\jetbrains\GoLand 2024.1\bin;D:\Develop\jetbrains\IntelliJ IDEA 2024.1\bin;D:\Develop\jetbrains\JetBrains Rider 2024.1\bin;D:\Develop\jetbrains\PhpStorm 2024.1\bin;D:\Develop\jetbrains\WebStorm 2024.1\bin;D:\Develop\jetbrains\RubyMine 2024.1\bin;C:\Users\ASUS\AppData\Roaming\npm;C:\Users\ASUS\AppData\Local\Microsoft\WinGet\Packages\JohnMacFarlane.Pandoc_Microsoft.Winget.Source_8wekyb3d8bbwe\pandoc-3.9.0.2;C:\Users\ASUS\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.2-full_build\bin;C:\Users\ASUS\AppData\Local\Programs\Antigravity IDE\bin;C:\Users\ASUS\AppData\Local\GitHubDesktop\bin
+
+### COMMAND: process PATH entries
+C:\Program Files\WindowsApps\Microsoft.PowerShell_7.6.6.0_x64__8wekyb3d8bbwe
+C:\Users\ASUS\AppData\Local\npm-cache\_npx\1e7f6d9597241db0\node_modules\.bin
+C:\Users\ASUS\Desktop\node_modules\.bin
+C:\Users\ASUS\node_modules\.bin
+C:\Users\node_modules\.bin
+C:\node_modules\.bin
+C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\run-script\lib\node-gyp-bin
+D:\Develop\JAVA17\bin
+D:\Develop\Vmware\bin\
+C:\Windows\system32
+C:\Windows
+C:\Windows\System32\Wbem
+C:\Windows\System32\WindowsPowerShell\v1.0\
+C:\Windows\System32\OpenSSH\
+C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common
+C:\Program Files\dotnet\
+C:\Program Files\MySQL\MySQL Server 8.0\bin
+C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR
+D:\apache-maven-3.9.14\bin
+C:\Program Files\Git\cmd
+D:\apache-tomcat-10.1.53\bin
+C:\Users\ASUS\AppData\Local\Android\Sdk\platform-tools
+C:\Program Files\nodejs\
+C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts
+D:\soft\XShell\
+D:\soft\Xftp\
+D:\soft\hadoop\hadoop-3.3.4\bin
+D:\soft\hadoop\hadoop-3.3.4\sbin
+C:\Program Files\Docker\Docker\resources\bin
+D:\Develop\scala\bin
+D:\Develop\scala\bin
+D:\Develop\Python314\Scripts\
+D:\Develop\Python314\
+C:\Users\ASUS\AppData\Local\Programs\Python\Launcher\
+C:\Users\ASUS\AppData\Local\agy\bin
+C:\Program Files\MySQL\MySQL Shell 8.0\bin\
+C:\Users\ASUS\AppData\Local\Microsoft\WindowsApps
+D:\vscode\Microsoft VS Code\bin
+D:\Develop\jetbrains\DataGrip 2024.1.1\bin
+C:\Users\ASUS\AppData\Local\Programs\cursor\resources\app\bin
+D:\Develop\jetbrains\PyCharm 2024.1\bin
+D:\Develop\jetbrains\CLion 2024.1\bin
+D:\Develop\jetbrains\GoLand 2024.1\bin
+D:\Develop\jetbrains\IntelliJ IDEA 2024.1\bin
+D:\Develop\jetbrains\JetBrains Rider 2024.1\bin
+D:\Develop\jetbrains\PhpStorm 2024.1\bin
+D:\Develop\jetbrains\WebStorm 2024.1\bin
+D:\Develop\jetbrains\RubyMine 2024.1\bin
+C:\Users\ASUS\AppData\Roaming\npm
+C:\Users\ASUS\AppData\Local\Microsoft\WinGet\Packages\JohnMacFarlane.Pandoc_Microsoft.Winget.Source_8wekyb3d8bbwe\pandoc-3.9.0.2
+C:\Users\ASUS\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.2-full_build\bin
+C:\Users\ASUS\AppData\Local\Programs\Antigravity IDE\bin
+C:\Users\ASUS\AppData\Local\GitHubDesktop\bin

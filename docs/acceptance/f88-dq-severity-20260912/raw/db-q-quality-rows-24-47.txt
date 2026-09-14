@@ -1,0 +1,59 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
++--------+--------------------------------+----------+--------+-------------+
+| run_id | rule_code                      | severity | passed | layer       |
++--------+--------------------------------+----------+--------+-------------+
+|     24 | ADS_DWS_FUNNEL_RECONCILE       | BLOCKING |      1 | ADS_STAGING |
+|     24 | ADS_STAGING_KEY_NOT_NULL       | BLOCKING |      1 | ADS_STAGING |
+|     24 | ADS_STAGING_PRESENT            | BLOCKING |      1 | ADS_STAGING |
+|     24 | ADS_STAGING_SNAPSHOT_ISOLATION | ERROR    |      0 | ADS_STAGING |
+|     24 | AMOUNT_RECONCILE               | BLOCKING |      1 | LANDING     |
+|     24 | ENUM_WHITELIST                 | ERROR    |      1 | LANDING     |
+|     24 | EVENT_ID_UNIQUE                | ERROR    |      0 | LANDING     |
+|     24 | MXP_EXPORT_COMPLETE            | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     24 | MXP_SNAPSHOT_PINNED            | BLOCKING |      1 | PUBLISH     |
+|     24 | PUB_DQ_BLOCKING_RULES          | BLOCKING |      1 | PUBLISH     |
+|     24 | PUB_DQ_EVENT_ID_UNIQUE         | ERROR    |      0 | PUBLISH     |
+|     24 | PUB_FORMAL_PARTITION_MATCH     | BLOCKING |      1 | PUBLISH     |
+|     24 | PUB_STAGING_READY              | BLOCKING |      1 | PUBLISH     |
+|     24 | REQUIRED_FIELD_NULL_RATE       | ERROR    |      1 | LANDING     |
+|     47 | ADS_DWS_FUNNEL_RECONCILE       | BLOCKING |      1 | ADS_STAGING |
+|     47 | ADS_STAGING_KEY_NOT_NULL       | BLOCKING |      1 | ADS_STAGING |
+|     47 | ADS_STAGING_PRESENT            | BLOCKING |      1 | ADS_STAGING |
+|     47 | ADS_STAGING_SNAPSHOT_ISOLATION | ERROR    |      0 | ADS_STAGING |
+|     47 | AMOUNT_RECONCILE               | BLOCKING |      1 | LANDING     |
+|     47 | ENUM_WHITELIST                 | ERROR    |      1 | LANDING     |
+|     47 | EVENT_ID_UNIQUE                | ERROR    |      0 | LANDING     |
+|     47 | MXP_EXPORT_COMPLETE            | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_EXPORT_ROWS                | BLOCKING |      1 | PUBLISH     |
+|     47 | MXP_SNAPSHOT_PINNED            | BLOCKING |      1 | PUBLISH     |
+|     47 | PUB_DQ_BLOCKING_RULES          | BLOCKING |      1 | PUBLISH     |
+|     47 | PUB_DQ_EVENT_ID_UNIQUE         | ERROR    |      0 | PUBLISH     |
+|     47 | PUB_FORMAL_PARTITION_MATCH     | BLOCKING |      1 | PUBLISH     |
+|     47 | PUB_STAGING_READY              | BLOCKING |      1 | PUBLISH     |
+|     47 | REQUIRED_FIELD_NULL_RATE       | ERROR    |      1 | LANDING     |
++--------+--------------------------------+----------+--------+-------------+
++--------+--------------------------------+----------+--------+
+| run_id | rule_code                      | severity | passed |
++--------+--------------------------------+----------+--------+
+|     24 | ADS_STAGING_SNAPSHOT_ISOLATION | ERROR    |      0 |
+|     24 | EVENT_ID_UNIQUE                | ERROR    |      0 |
+|     24 | PUB_DQ_EVENT_ID_UNIQUE         | ERROR    |      0 |
+|     47 | ADS_STAGING_SNAPSHOT_ISOLATION | ERROR    |      0 |
+|     47 | EVENT_ID_UNIQUE                | ERROR    |      0 |
+|     47 | PUB_DQ_EVENT_ID_UNIQUE         | ERROR    |      0 |
++--------+--------------------------------+----------+--------+

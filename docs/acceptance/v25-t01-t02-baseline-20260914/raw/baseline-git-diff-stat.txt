@@ -1,0 +1,12 @@
+ .../metric/publish/MetricPublishValidator.java     |  31 +++-
+ .../analytics/analysis/AnalysisGoldenMySqlIT.java  |  63 +++++--
+ .../analytics/metric/MetricQualityGate.java        |   9 +-
+ .../analytics/pipeline/DataQualityGate.java        | 183 ++++++++++++++++++++-
+ .../analytics/pipeline/PipelineService.java        |  59 ++++++-
+ .../analytics/pipeline/QualityChecker.java         | 106 ++++++++++--
+ .../analytics/pipeline/spark/JobResultParser.java  |  15 +-
+ .../analytics/pipeline/DataQualityGateTest.java    | 120 +++++++++++++-
+ .../analytics/pipeline/PipelineServiceTest.java    | 121 +++++++++++++-
+ .../pipeline/spark/JobResultParserTest.java        |   8 +-
+ docs/README.md                                     |  29 ++--
+ 11 files changed, 654 insertions(+), 90 deletions(-)

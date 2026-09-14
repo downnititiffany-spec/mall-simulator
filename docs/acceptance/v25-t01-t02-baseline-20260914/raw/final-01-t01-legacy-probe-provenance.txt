@@ -1,0 +1,8 @@
+探针文件=analytics-server\platform-common\src\test\java\com\graduation\analytics\warehouse\WarehouseNameLiteralGateLegacyProbeTest.java
+探针 sha256=CF8ADD425F9CB2625B90C267EF63726535746D50AE5E00FC9B2DD8ABC7D9B9B0
+来源=HEAD:.../WarehouseNameLiteralGateTest.java（仅改类名）
+删除时间=2026-09-14 12:16:42
+删除后 Test-Path=False
+ M analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralGateTest.java
+?? analytics-server/platform-common/src/test/java/com/graduation/analytics/warehouse/WarehouseNameLiteralScanner.java
+

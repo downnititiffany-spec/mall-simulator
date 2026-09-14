@@ -1,0 +1,17 @@
+ .../metric/publish/MetricPublishValidator.java     |  31 +-
+ .../analytics/analysis/AnalysisGoldenMySqlIT.java  |  63 +++-
+ .../analytics/metric/MetricAdsMySqlIT.java         | 227 +++++++++++---
+ .../metric/publish/MetricPublisherMySqlIT.java     | 284 ++++++++++++++---
+ .../IngestionManifestSourceSchemaTest.java         | 270 ++++++-----------
+ .../analytics/metric/MetricQualityGate.java        |   9 +-
+ .../warehouse/WarehouseNameLiteralGateTest.java    | 336 ++++++++++++++-------
+ .../analytics/pipeline/DataQualityGate.java        | 183 ++++++++++-
+ .../analytics/pipeline/PipelineService.java        |  60 +++-
+ .../analytics/pipeline/QualityChecker.java         | 106 ++++++-
+ .../analytics/pipeline/spark/JobResultParser.java  |  15 +-
+ .../analytics/pipeline/DataQualityGateTest.java    | 218 ++++++++++++-
+ .../analytics/pipeline/PipelineServiceTest.java    | 121 +++++++-
+ .../pipeline/spark/JobResultParserTest.java        |   8 +-
+ docs/README.md                                     |  29 +-
+ .../acceptance/b13-db-forensics-20260912/README.md |   9 +-
+ 16 files changed, 1507 insertions(+), 462 deletions(-)

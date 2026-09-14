@@ -1,0 +1,114 @@
+=== 命令 ===
+D:\apache-maven-3.9.14\bin\mvn.cmd -o -f analytics-server/pom.xml -pl platform-app -am test
+JAVA_HOME=D:\Develop\JAVA17
+开始=2026-09-12 23:17:07
+
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] platform-app                                                       [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/7]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.185 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Running com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Running com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.127 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Running com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.220 s <<< FAILURE! -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[ERROR] com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest.noBareWarehouseNameLiterals -- Time elapsed: 0.169 s <<< FAILURE!
+java.lang.AssertionError: 
+[��������ֻ�� WarehouseNamespace ������Ψһ�����ߣ�����������������ǰ׺ƴ�ӣ�
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����
+spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`] 
+Expecting empty but was: ["spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����",
+    "spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`"]
+	at com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest.noBareWarehouseNameLiterals(WarehouseNameLiteralGateTest.java:109)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   WarehouseNameLiteralGateTest.noBareWarehouseNameLiterals:109 [��������ֻ�� WarehouseNamespace ������Ψһ�����ߣ�����������������ǰ׺ƴ�ӣ�
+spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����
+spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`] 
+Expecting empty but was: ["spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����",
+    "spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`"]
+[INFO] 
+[ERROR] Tests run: 49, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.006 s]
+[INFO] platform-common .................................... FAILURE [  2.428 s]
+[INFO] connection-ingestion ............................... SKIPPED
+[INFO] warehouse-pipeline ................................. SKIPPED
+[INFO] metric-analysis .................................... SKIPPED
+[INFO] ai-decision ........................................ SKIPPED
+[INFO] platform-app ....................................... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.739 s
+[INFO] Finished at: 2026-09-12T23:17:11+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project platform-common: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\analytics-server\platform-common\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :platform-common
+EXIT_CODE=1
+结束=2026-09-12 23:17:11

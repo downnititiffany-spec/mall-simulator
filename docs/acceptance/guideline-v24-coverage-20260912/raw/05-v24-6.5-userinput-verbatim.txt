@@ -1,0 +1,49 @@
+[审计原始取证 05] 生成时刻 = 2026-09-12 23:1x +08:00
+来源 = docs\项目完整实施指导书 V2.4.md  第 428–441 行（read 工具逐行测得，行号即文件行号）
+sha256(V2.4) = 580AD7BE46B2F395400D9CD0812C58D4D3621794B8604B4E606EF44420C4535D
+
+== 原文逐字复制（含空行） ==
+
+428: ### 6.5 需要用户提供的信息
+429:
+430: 以下内容登记为 `USER-INPUT` 阻塞项，不得由 Agent 猜测：
+431:
+432: - node01、node02、node03 的主机名/IP和 NameNode、DataNode、ResourceManager、NodeManager、Hive、Spark 等角色。
+433: - HDFS NameNode URI/端口、允许写入的根目录、warehouse 路径和服务用户权限。
+434: - Spark 是 YARN client、YARN cluster 还是 standalone，队列名称和提交命令路径。
+435: - HiveServer2 JDBC 或 Metastore URI、数据库名前缀。
+436: - SSH 主机、端口、用户、密钥/凭据引用、是否经过跳板机。
+437: - Hadoop/Spark/Hive/Java 版本与安装目录；作业 jar 位于提交节点还是 HDFS。
+438: - 是否启用 Kerberos，以及 principal/keytab 的安全提供方式。
+439: - Flume agent 运行位置，商城事件到 agent spool 的传输方式和监听目录。
+440: - 平台、商城、MySQL 与集群之间实际开放的端口。
+441:
+442: ## 7. 数仓、算法与剩余实现规格
+
+== 条目计数 ==
+- 第 432–440 行 = 9 个 bullet（即 9 条 USER-INPUT 项），编号 U1..U9（本审计自编，非原文）。
+
+== 相关看板登记（对照用，逐字摘录） ==
+docs\项目实施进度与任务看板 V2.2.md
+  第 324 行：| B-02 | 集群参数：node01–03 主机名/IP 与角色、HDFS URI 与可写根、warehouse 路径、Spark 提交模式与队列、Hive JDBC/Metastore、SSH 用户与凭据、Kerberos、Flume agent 位置与 spool 传输方式、开放端口 | `USER-INPUT` | `BLOCKED`（不得猜测，V2.1 §6.5） |
+  第 325 行：| B-03 | 真实 LLM 接入所需的 `LLM_BASE_URL`/`LLM_API_KEY`/模型名与预算额度 | `USER-INPUT` | `BLOCKED` |
+  ⇒ B-02 覆盖 U1..U9 全部 9 项；B-03 不在 §6.5 内，属另一类 USER-INPUT（真实 LLM 凭据）。
+
+== 与本审计相关的测量事实（来源见各文件，均为只读探测的既有产物） ==
+docs\acceptance\m3-cluster-probe-20260912\PROBE-RESULTS.md
+  第 3 行：用户授权原文三问三答：A)「授权我以 root 身份在 `/graduation` 建目录」；B)「先提 1 个最小探针作业，再跑 E4」；C)「暂时不需要」SSH。
+  第 14-24 行：HDFS 可写根 `/graduation/{warehouse,jars,staging,probe}` 建立 ✓；`--master yarn --deploy-mode cluster` 提交 SUCCEEDED（application_1789195359269_0004）✓；
+             `java.version=1.8.0_351`、`spark.version=3.5.1`、`scala.version=2.12.18`、`defaultFS=hdfs://node01:8020`、队列 `default`、`sparkUser=root` ✓
+  第 20 行：`SHOW DATABASES` 7 库 `default, exam, ods, scott, shop, tmp, yjxxt`
+  第 52 行：集群内部路径 JDK `/usr/java/jdk1.8.0_351-amd64`、Hadoop `/opt/yjx/hadoop-3.3.4`
+docs\acceptance\m3-cluster-probe-20260912\README.md
+  第 19 行：HiveServer2 TCP 10000 = closed；走 Metastore/Spark 直连
+  第 20 行：`simple` 认证（无 Kerberos）—— 未配置任何 Kerberos 票据即成功
+docs\acceptance\m3-cluster-probe-20260912\port-probe.txt（13 行实测端口表）
+  2181 OPEN / 8030 OPEN / 8031 OPEN / 8032 OPEN / 8033 OPEN / 8041 closed / 8042 OPEN / 9083 OPEN / 9866 OPEN / 9867 OPEN / 10020 closed / 16020 closed / 19888 closed
+
+== 本审计对「是否已销项」的边界声明 ==
+- 上述测量事实能证明的只是「Agent 自己把 U1–U4、U6、U7、U9 的一部分测出来了」；
+  它**不能**证明「用户已按 §6.5 逐条提供了信息」。
+- 看板 B-02/B-03 的状态单元格在本审计测量时刻仍是 `BLOCKED`（第 324/325 行，未改动）。
+  ⇒ 该项矛盾登记为发现 R-06，本审计不自行调和。

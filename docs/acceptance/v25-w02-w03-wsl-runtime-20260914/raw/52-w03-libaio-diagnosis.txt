@@ -1,0 +1,26 @@
+--- ldd mysqld missing libs ---
+	libaio.so.1 => not found
+	libnuma.so.1 => not found
+--- apt-cache libaio ---
+libaio1t64:
+  Installed: (none)
+  Candidate: 0.3.113-8build1
+  Version table:
+     0.3.113-8build1 500
+        500 http://archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+libncurses6:
+  Installed: (none)
+  Candidate: 6.6+20251231-1
+  Version table:
+     6.6+20251231-1 500
+        500 http://archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+libtinfo6:
+  Installed: 6.6+20251231-1
+  Candidate: 6.6+20251231-1
+  Version table:
+ *** 6.6+20251231-1 500
+        500 http://archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+        100 /var/lib/dpkg/status
+--- apt list libaio ---
+libaio-dev - Linux kernel AIO access library - development files
+libaio1t64 - Linux kernel AIO access library - shared library

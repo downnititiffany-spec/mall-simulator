@@ -1,0 +1,5 @@
+Apache Maven 3.9.14 (996c630dbc656c76214ce58821dcc58be960875b)
+Maven home: D:\apache-maven-3.9.14
+Java version: 17.0.12, vendor: Oracle Corporation, runtime: D:\Develop\JAVA17
+Default locale: zh_CN, platform encoding: GBK
+OS name: "windows 11", version: "10.0", arch: "amd64", family: "windows"

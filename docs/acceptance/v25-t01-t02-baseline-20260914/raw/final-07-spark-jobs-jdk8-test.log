@@ -1,0 +1,128 @@
+### 命令: mvn.cmd -o -Dmaven.repo.local=D:\maven_repository -f spark-jobs/pom.xml test
+### JDK: 
+### 开始: 2026-09-14 12:17:12
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.graduation:spark-jobs >----------------------
+[INFO] Building spark-jobs 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ spark-jobs ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:compile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__61.0-1.8.0_20221110T195421.jar
+[INFO] compile in 2.7 s
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ spark-jobs ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:testCompile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[WARNING] Plugin is modifying testCompileSourceRoots through add(), which will not work in Maven 4.0.0. Use MavenProject.addTestCompileSourceRoot()/removeTestCompileSourceRoot() methods instead. If using a plugin, please upgrade to the latest version or report the issue to the plugin maintainer. To disable these warnings, set -Dmaven.project.sourceRoots.warningsDisabled=true on the command line, in the .mvn/maven.config file, or in project POM properties.
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__61.0-1.8.0_20221110T195421.jar
+[INFO] compile in 0.8 s
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ spark-jobs ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junit.JUnit3Provider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Running com.graduation.analytics.MetricAdsSpecTest
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.074 s -- in com.graduation.analytics.MetricAdsSpecTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- scalatest:2.2.0:test (test) @ spark-jobs ---
+[INFO] ScalaTest report directory: D:\Develop_code\GraduationProject\spark-jobs\target\surefire-reports
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+Discovery starting.
+Discovery completed in 377 milliseconds.
+Run starting. Expected test count is: 111
+OdsV2SqlContractSpec:
+OdsLoadSql
+- should A9 四个模板的 SELECT 表达式与目标表列逐位对齐（数据列 + dt/hour 分区派生列）
+- should A9b 常量 'landing' AS source_file 已消失，source_file 与 landing_file 同源同值
+- should A10 source_system 来自平台注入值（不是行内值），行内原值只落 raw_source_system
+- should A10b 注入值经 SQL 字面量渲染并做 ' 转义（值来自平台，不得拼出可注入 SQL）
+- should A9c raw_event_type 为行内 event_type 原样值，payload_json/payload_hash 由原样切片产出
+- should A9d INSERT 目标列与 SELECT 表达式的表名/分区子句保持改造前形态
+- should A9e 四张表的业务列表达式仍从 payload 结构体取，v1 口径未变
+- should A12b 既有 DWD 模板一个都不引用 v2 新增列（加法扩列不牵连下游）
+QuartileStatsRfmSpec:
+QuartileStats
+- should 线性插值分位点正确
+- should 正向五分位打分：越大分越高
+- should 反向五分位打分：间隔越小分越高（R 维度）
+RfmScorer
+- should 八类标签映射正确
+- should 生命周期状态判定正确
+WarehouseNamespaceSpec:
+WarehouseNamespace
+- should 常量与规格 rule 段逐字一致（含层顺序与检查顺序）
+- should 规格 vectors 逐向量对账（Scala 侧）
+- should 行为护栏：null/空串缺省、不 trim、未知层与非法表名直接失败
+- should fromArgs 读 --hiveDatabasePrefix，缺省走 dw，非法前缀在作业内也照样失败
+- should 所有 SQL 模板与 INIT_SCHEMA 随命名空间走（换前缀后不残留 dw_* 库名）
+- should INIT_SCHEMA 的 37 条 DDL 全部只引用当前命名空间的库（5 建库 + 32 建表）
+OrderTradeCompilerSpec:
+OrderTradeCompiler
+- should CREATED→PAID→COMPLETED 合并为 PAID 有效支付
+- should 两件商品订单在订单明细中产生两行（商品展开）
+- should 取消订单不进入支付（final_paid_flag=0）
+- should 已支付后全额退款：GMV 保留支付额，净销售额为零
+- should 部分退款 → REFUNDING 且 final_refunded_flag=0
+- should 多次退款事件按 refund_id 去重汇总（同一 refund_id 只计一次）
+- should 订单归属业务日由 order_created 决定，迟到事件重算到原分区
+OdsV2EdgeCaseSpec:
+*** RUN ABORTED ***
+
+An exception or error caused a run to abort: class org.apache.spark.storage.StorageUtils$ (in unnamed module @0x254c0871) cannot access class sun.nio.ch.DirectBuffer (in module java.base) because module java.base does not export sun.nio.ch to unnamed module @0x254c0871 
+  java.lang.IllegalAccessError: class org.apache.spark.storage.StorageUtils$ (in unnamed module @0x254c0871) cannot access class sun.nio.ch.DirectBuffer (in module java.base) because module java.base does not export sun.nio.ch to unnamed module @0x254c0871
+  at org.apache.spark.storage.StorageUtils$.<init>(StorageUtils.scala:213)
+  at org.apache.spark.storage.StorageUtils$.<clinit>(StorageUtils.scala)
+  at org.apache.spark.storage.BlockManagerMasterEndpoint.<init>(BlockManagerMasterEndpoint.scala:121)
+  at org.apache.spark.SparkEnv$.$anonfun$create$9(SparkEnv.scala:358)
+  at org.apache.spark.SparkEnv$.registerOrLookupEndpoint$1(SparkEnv.scala:295)
+  at org.apache.spark.SparkEnv$.create(SparkEnv.scala:344)
+  at org.apache.spark.SparkEnv$.createDriverEnv(SparkEnv.scala:196)
+  at org.apache.spark.SparkContext.createSparkEnv(SparkContext.scala:284)
+  at org.apache.spark.SparkContext.<init>(SparkContext.scala:483)
+  at org.apache.spark.SparkContext$.getOrCreate(SparkContext.scala:2888)
+  ...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  19.826 s
+[INFO] Finished at: 2026-09-14T12:17:33+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.scalatest:scalatest-maven-plugin:2.2.0:test (test) on project spark-jobs: There are test failures -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+### EXIT=1
+### 结束: 2026-09-14 12:17:33

@@ -1,0 +1,82 @@
+### port-availability-probe (from WSL, mirrored networking)
+port 8090: closed/refused
+port 8091: closed/refused
+port 8092: closed/refused
+port 9870: closed/refused
+port 9864: closed/refused
+port 9083: closed/refused
+port 10000: closed/refused
+port 10002: closed/refused
+port 8020: closed/refused
+port 9000: closed/refused
+port 7077: closed/refused
+port 4040: closed/refused
+port 8088: closed/refused
+port 8042: closed/refused
+port 3306: OPEN/CONNECTABLE
+port 5432: closed/refused
+### wsl.conf
+[boot]
+systemd=true
+
+[user]
+default=asus
+### systemd state
+running
+chrony.service
+cron.service
+dbus.service
+getty@tty1.service
+networkd-dispatcher.service
+rsyslog.service
+snapd.service
+systemd-journald.service
+systemd-logind.service
+systemd-resolved.service
+systemd-udevd.service
+unattended-upgrades.service
+user@1000.service
+wsl-pro.service
+### cgroup/mem limits
+cgroup v1
+### cpu info count
+32
+### uptime
+ 12:08:19 up 0 min,  1 user,  load average: 0.11, 0.03, 0.01
+### date
+Mon Sep 14 12:08:19 CST 2026
+### disk free on /mnt/d
+Filesystem      Size  Used Avail Use% Mounted on
+D:\             587G  153G  435G  26% /mnt/d
+### existing project checkout visibility
+README.md
+after-reboot-cleanup.ps1
+alibaba-fix-src.txt
+alibaba-fix.ps1
+analytics-server
+contract-specs
+derby-metastore
+derby.log
+docs
+experiments
+fix-autostart.ps1
+generator-output
+ingestion
+landing
+logs
+mall-frontend
+mall-simulator
+metastore_db
+metric-staging
+optimize-src.txt
+### is project on /mnt/d writable by asus
+WRITABLE_BY_ASUS
+### hive/mysql-server presence recheck
+NO_HIVE_NO_MYSQL_SERVER_NO_PG_SERVER
+### /opt jdk-8u351 java8 & spark3.3.2 owner
+/opt/jdk-8u351 asus:asus 755
+/opt/spark-3.3.2-bin-hadoop3 asus:asus 755
+### free -h
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       1.1Gi        13Gi       3.6Mi       1.5Gi        14Gi
+Swap:          4.0Gi          0B       4.0Gi

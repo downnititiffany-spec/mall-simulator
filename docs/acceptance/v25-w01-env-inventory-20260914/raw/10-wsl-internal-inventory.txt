@@ -1,0 +1,140 @@
+### lsb_release
+Distributor ID:	Ubuntu
+Description:	Ubuntu 26.04 LTS
+Release:	26.04
+Codename:	resolute
+### uname
+Linux dahaishui 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 GNU/Linux
+### os-release
+PRETTY_NAME="Ubuntu 26.04 LTS"
+NAME="Ubuntu"
+VERSION_ID="26.04"
+VERSION="26.04 LTS (Resolute Raccoon)"
+VERSION_CODENAME=resolute
+### nproc
+32
+### mem
+               total        used        free      shared  buff/cache   available
+Mem:           15797        1241       13403           3        1353       14555
+Swap:           4096           0        4096
+### df
+Filesystem      Size  Used Avail Use% Mounted on
+none            7.8G     0  7.8G   0% /usr/lib/modules/6.18.33.2-microsoft-standard-WSL2
+none            7.8G  4.0K  7.8G   1% /mnt/wsl
+drivers         338G  263G   75G  78% /usr/lib/wsl/drivers
+/dev/sdd       1007G  3.5G  953G   1% /
+none            7.8G   36K  7.8G   1% /mnt/wslg
+none            7.8G     0  7.8G   0% /usr/lib/wsl/lib
+rootfs          7.8G  2.8M  7.8G   1% /init
+none            7.8G  672K  7.8G   1% /run
+none            7.8G     0  7.8G   0% /run/lock
+none            7.8G     0  7.8G   0% /run/shm
+none            7.8G   68K  7.8G   1% /mnt/wslg/versions.txt
+none            7.8G   68K  7.8G   1% /mnt/wslg/doc
+C:\             338G  263G   75G  78% /mnt/c
+D:\             587G  153G  435G  26% /mnt/d
+E:\             1.9T  1.5T  354G  82% /mnt/e
+none            1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+tmpfs           7.8G     0  7.8G   0% /tmp
+none            1.0M     0  1.0M   0% /run/credentials/systemd-resolved.service
+none            1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
+tmpfs           1.6G   12K  1.6G   1% /run/user/1000
+### whoami
+asus
+uid=1000(asus) gid=1000(asus) groups=1000(asus),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),100(users)
+### sudo-test
+SUDO_NOPASSWD_OK
+### tools
+java           /usr/bin/java
+javac          /usr/bin/javac
+spark-submit   MISSING
+hadoop         /mnt/d/soft/hadoop/hadoop-3.3.4/bin/hadoop
+hive           MISSING
+beeline        MISSING
+mysql          /usr/bin/mysql
+python3        /usr/bin/python3
+pip3           MISSING
+mvn            /usr/bin/mvn
+scala          /mnt/d/Develop/scala/bin/scala
+node           MISSING
+npm            /mnt/c/Program Files/nodejs/npm
+pnpm           /mnt/c/Users/ASUS/AppData/Roaming/npm/pnpm
+git            /usr/bin/git
+psql           MISSING
+### java-version
+openjdk version "11.0.32" 2026-07-21
+OpenJDK Runtime Environment (build 11.0.32+9-post-1ubuntu1-26.04-Ubuntu)
+OpenJDK 64-Bit Server VM (build 11.0.32+9-post-1ubuntu1-26.04-Ubuntu, mixed mode, sharing)
+### python3-version
+Python 3.14.4
+### home
+HOME=/home/asus
+total 72
+drwxr-x--- 10 asus asus 4096 Sep  7 17:45 .
+drwxr-xr-x  3 root root 4096 Jul 16 08:54 ..
+-rw-------  1 asus asus 1113 Sep 14 09:06 .bash_history
+-rw-r--r--  1 asus asus  220 Jul 16 08:54 .bash_logout
+-rw-r--r--  1 asus asus 3966 Aug 27 09:09 .bashrc
+-rw-r--r--  1 asus asus 4065 Aug 26 21:33 .bashrc.bak.1787751187
+-rw-r--r--  1 asus asus 3976 Aug 27 09:09 .bashrc.bak.migrate
+-rw-r--r--  1 asus asus 4023 Aug 26 21:33 .bashrc.bak2.1787751228
+drwxr-x---  5 asus asus 4096 Aug 26 18:10 .cache
+drwxr-x---  7 asus asus 4096 Aug 26 18:10 .config
+drwxr-xr-x  2 asus asus 4096 Jul 16 08:54 .landscape
+drwxr-xr-x  3 asus asus 4096 Aug 26 18:10 .local
+-rw-rw-r--  1 asus asus    0 Sep 14 08:52 .motd_shown
+-rw-r--r--  1 asus asus  807 Jul 16 08:54 .profile
+drwx------  2 asus asus 4096 Aug 26 20:35 .ssh
+-rw-r--r--  1 asus asus  183 Aug 26 20:29 .wget-hsts
+drwxr-xr-x  3 asus asus 4096 Aug 26 20:37 bd-case
+drwxr-xr-x  2 asus asus 4096 Sep  7 17:45 ds_logs
+drwxr-xr-x  2 asus asus 4096 Aug 26 20:29 spark-dl
+### opt
+total 16
+drwxr-xr-x  4 root root 4096 Aug 27 09:09 .
+drwxr-xr-x 24 root root 4096 Sep 14 12:07 ..
+drwxr-xr-x  8 asus asus 4096 Aug 26 20:17 jdk-8u351
+drwxr-xr-x 13 asus asus 4096 Feb 11  2023 spark-3.3.2-bin-hadoop3
+### usr-local
+total 44
+drwxr-xr-x 11 root root 4096 Apr 21 02:05 .
+drwxr-xr-x 12 root root 4096 Apr 21 02:05 ..
+drwxr-xr-x  2 root root 4096 Apr 21 02:05 bin
+drwxr-xr-x  2 root root 4096 Apr 21 02:05 etc
+drwxr-xr-x  2 root root 4096 Apr 21 02:05 games
+drwxr-xr-x  2 root root 4096 Apr 21 02:05 include
+drwxr-xr-x  3 root root 4096 Jul 16 09:06 lib
+drwxr-xr-x  2 root root 4096 Apr 21 02:05 libexec
+lrwxrwxrwx  1 root root    9 Apr 21 02:05 man -> share/man
+drwxr-xr-x  2 root root 4096 Apr 21 02:05 sbin
+drwxr-xr-x  7 root root 4096 Jul 16 09:06 share
+drwxr-xr-x  2 root root 4096 Apr 21 02:05 src
+### home-related-dirs
+/home/asus/spark-dl
+NONE
+### os-user
+USER=asus
+### apt-policy
+Package files:
+ 100 /var/lib/dpkg/status
+     release a=now
+ 500 http://security.ubuntu.com/ubuntu resolute-security/multiverse amd64 Packages
+     release v=26.04,o=Ubuntu,a=resolute-security,n=resolute,l=Ubuntu,c=multiverse,b=amd64
+     origin security.ubuntu.com
+ 500 http://security.ubuntu.com/ubuntu resolute-security/restricted amd64 Packages
+     release v=26.04,o=Ubuntu,a=resolute-security,n=resolute,l=Ubuntu,c=restricted,b=amd64
+     origin security.ubuntu.com
+ 500 http://security.ubuntu.com/ubuntu resolute-security/universe amd64 Packages
+     release v=26.04,o=Ubuntu,a=resolute-security,n=resolute,l=Ubuntu,c=universe,b=amd64
+     origin security.ubuntu.com
+ 500 http://security.ubuntu.com/ubuntu resolute-security/main amd64 Packages
+     release v=26.04,o=Ubuntu,a=resolute-security,n=resolute,l=Ubuntu,c=main,b=amd64
+     origin security.ubuntu.com
+ 100 http://archive.ubuntu.com/ubuntu resolute-backports/universe amd64 Packages
+     release v=26.04,o=Ubuntu,a=resolute-backports,n=resolute,l=Ubuntu,c=universe,b=amd64
+     origin archive.ubuntu.com
+ 500 http://archive.ubuntu.com/ubuntu resolute-updates/multiverse amd64 Packages
+     release v=26.04,o=Ubuntu,a=resolute-updates,n=resolute,l=Ubuntu,c=multiverse,b=amd64
+### systemd
+systemd
+### network-egress-test-skipped

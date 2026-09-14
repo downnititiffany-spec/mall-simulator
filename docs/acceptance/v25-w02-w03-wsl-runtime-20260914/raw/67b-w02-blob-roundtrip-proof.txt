@@ -1,0 +1,28 @@
+=== blob round-trip proof (hash-object -> cat-file -> file) for all 9 flagged files ===
+  DIFF  blob=d9c39827d41f784c0999c5bd2b0ea8926462225c  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java
+  DIFF  blob=7ddc1b061dd4963dec80e9859357fd0dc4ef5dca  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java
+  DIFF  blob=60e68316fe23a32ea17ce0c1e5766fe15f2d4434  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java
+  DIFF  blob=b94d87f62d42e3dfd4782c4bbdc67dc0dc4fe9eb  mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java
+  DIFF  blob=d9c39827d41f784c0999c5bd2b0ea8926462225c  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/auth/config/PasswordEncoderConfig.java
+  DIFF  blob=7ddc1b061dd4963dec80e9859357fd0dc4ef5dca  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/CredentialService.java
+  DIFF  blob=60e68316fe23a32ea17ce0c1e5766fe15f2d4434  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/runtime/credential/EnvCredentialService.java
+  DIFF  blob=b94d87f62d42e3dfd4782c4bbdc67dc0dc4fe9eb  mall-simulator/src/main/java/com/graduation/mall/auth/config/PasswordEncoderConfig.java
+  DIFF  blob=2be706d716d86f0f7d7f27c511cf0cd4cb0d7e33  docs/acceptance/e4-cluster-1000-20260912/raw/f80-fix/twotoken-print.txt
+  -> byte-identical via git object store: 0   failed: 9
+
+=== does the twotoken-print.txt actually contain a secret? (inspection, not backup) ===
+259 /mnt/d/Develop/GraduationProject/.f88-baseline-wt/docs/acceptance/e4-cluster-1000-20260912/raw/f80-fix/twotoken-print.txt
+-release:8
+-usejavacp
+-d
+D:\Develop_code\<REDACTED-LONG-TOKEN>\m3-jdk8fix\.verify\probe-C
+-Xprint-args
+D:\Develop_code\<REDACTED-LONG-TOKEN>\m3-jdk8fix\.verify\twotoken-print.txt
+D:\Develop_code\<REDACTED-LONG-TOKEN>\m3-jdk8fix\.verify\ReleaseProbe.scala
+
+=== FINAL on-disk backup inventory ===
+  v25-w02-20260914                                  224 files      2.8M
+  v25-w02-20260914-snap2                           1100 files       47M
+  v25-w02-20260914-snap3                           1121 files       48M
+  v25-w02-20260914-snap4-worktrees                 2741 files       93M
+  GRAND TOTAL: 5186 files, 189M
