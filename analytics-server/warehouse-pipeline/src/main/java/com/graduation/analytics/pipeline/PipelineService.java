@@ -7,6 +7,8 @@ import com.graduation.analytics.common.LandingUri;
 import com.graduation.analytics.contracts.EventContract;
 import com.graduation.analytics.contracts.EventEnvelope;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.metric.QualityRuleCatalog;
+import com.graduation.analytics.metric.RuleSeverity;
 import com.graduation.analytics.metric.dict.MetricDefinition;
 import com.graduation.analytics.metric.dict.MetricDefinitionMapper;
 import com.graduation.analytics.metric.publish.MetricPublisherPort;
@@ -108,6 +110,17 @@ public class PipelineService {
 
     /** R7-3：发布前读指标字典做「指标码 + 口径版本」对账（字典属 analytics_meta，§17.2） */
     private final MetricDefinitionMapper metricDefinitionMapper;
+
+    /**
+     * F-88（D-142 §1 / 指导书 §7.3）：发布前的质量门断言端口。
+     *
+     * <p>QUALITY_CHECK 阶段失败会 fail-fast，但那是**阶段顺序**的保证，不是发布前的显式断言；
+     * 重试、作业退出码与 severity 判定不一致时，可能出现「质量结果里存在未通过的阻断级规则，
+     * 但流水线仍然走到发布」。因此在真正调用 {@code metricPublisher.publish} 之前再查一次
+     * analytics_meta.data_quality_result，用与质量门**同一口径**（{@link RuleSeverity#blocks}）
+     * 复判：有未通过的阻断级规则就抛 {@code PIPELINE_QUALITY_FAILED}，不发布新快照。</p>
+     */
+    private final DataQualityGate qualityGate;
 
     /** R7-3：Spark `mxp` 导出目录根（清单 + 各表 JSONL），可配置便于运维定位 */
     @org.springframework.beans.factory.annotation.Value("${platform.metric.publish.export-dir:metric-staging}")
@@ -317,6 +330,23 @@ public class PipelineService {
 
     // ── 执行链（幂等检查之外，run()/retry() 共用的异步入口） ──────────────
 
+    /**
+     * 某个 run 的冻结规则集（§7.3.1 line 520：一次 run 冻结完整规则版本与指纹）。
+     *
+     * <p><b>过渡形态（必须写清，否则不能声称"版本化已闭合"）</b>：{@code quality_rule_definition}
+     * 表尚未落地（实测 0 命中），因此冻结集**不是从库里读的**，而是由进程内
+     * {@link QualityRuleCatalog} 常量目录按 sourceScope 过滤得到。它能保证的只有
+     * 「**同一次 run 内**判定只解析一次、fingerprint 恒定」；它**不能**保证
+     * 「不同 run 之间口径随库中版本变化」—— 因为目录随代码发布而变。
+     * 真正闭合需要：① 总控批准迁移号建 {@code quality_rule_definition}（DDL 草案见
+     * {@code docs/acceptance/f88-dq-severity-20260912/raw/q01-quality-rule-definition-ddl-draft.sql}）
+     * ② {@code data_quality_result} 增列 rule_version／effective_severity／compat_policy_version／
+     * rule_fingerprint 以持久化「该 run 实际用了哪一版」。</p>
+     */
+    private QualityRuleCatalog.FrozenRules rulesFor(PipelineRun run) {
+        return QualityRuleCatalog.DEFAULT.freeze(run.getPipelineCode());
+    }
+
     /** 后台异步执行：读取 run → 顺序执行七阶段 → 更新状态（§13.1 异步契约） */
     private void executeInBackground(Long runId) {
         PipelineRun run = runMapper.selectById(runId);
@@ -335,6 +365,13 @@ public class PipelineService {
             RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile);
             SparkStageExecutor executor = stageExecutorFactory.create(snapshot);
             Path landingRoot = LandingUri.resolve(profile.getLandingUri());
+
+            // §7.3.1 line 520：**一次 run 冻结完整规则版本与指纹**。
+            // 本 run 内所有严重度判定（写侧 QualityChecker、读侧 DataQualityGate、证据留痕）
+            // 全部使用这一份 rules；run 期间不再重新解析目录 ⇒ run 内不可能出现两套口径。
+            QualityRuleCatalog.FrozenRules rules = rulesFor(run);
+            log.info("pipeline {}: 规则冻结 ruleFingerprint={} catalog={} compatPolicy={}",
+                    run.getId(), rules.fingerprint(), rules.catalogVersion(), rules.compatPolicyVersion());
 
             // §13.4 恢复：重试时已成功阶段不重复执行（阶段记录不再重复写入）
             Set<String> completedStages = stageMapper.selectList(new LambdaQueryWrapper<PipelineStageRun>()
@@ -478,10 +515,10 @@ public class PipelineService {
             final String snapshotIdRef = snapshotId;
             stage(run.getId(), "QUALITY_CHECK", completedStages, () -> {
                 Map<String, Object> evidence = new LinkedHashMap<>();
-                // ① 内联规则（§5.4.1）：金额对账阻断，空值率/枚举白名单/event_id 唯一为记录项
+                // ① 内联规则（§5.4.1）：严重度由**本 run 冻结的规则集**决定，BLOCKING/ERROR 未过即阻断（D-142 §1）
                 QualityChecker.QualitySummary quality =
-                        qualityChecker.check(events, run.getId(), batchOrderTotals);
-                persistQuality(run.getId(), snapshotIdRef, "LANDING", quality.results());
+                        qualityChecker.check(events, run.getId(), batchOrderTotals, rules);
+                persistQuality(run.getId(), snapshotIdRef, "LANDING", quality.results(), rules);
                 evidence.put("batchOrderTotalsSize", batchOrderTotals.size());
                 evidence.put("businessDayEvents", events.size());
                 evidence.put("landingRules", quality.results().stream().map(r -> Map.of(
@@ -490,20 +527,20 @@ public class PipelineService {
                         "errorCount", r.getErrorCount(),
                         "passed", r.getPassed())).toList());
                 evidence.put("landingCorePassed", quality.corePassed());
-                evidence.put("blocking", "AMOUNT_RECONCILE（支付金额 vs 订单总额）");
+                evidence.put("blocking", "RuleSeverity.blocks：BLOCKING/ERROR 未过即阻断（D-142 §1）");
                 if (!quality.corePassed()) {
                     // 失败证据必须先落库，再抛出阻断（否则失败原因丢失）
                     evidence.put("published", false);
                     updateStageEvidence(run.getId(), "QUALITY_CHECK", evidence);
                     throw new PipelineStageException("PIPELINE_QUALITY_FAILED",
-                            "金额对账未通过，正式分区未发布");
+                            "阻断级 Landing 质量规则未通过，正式分区未发布");
                 }
                 // ② ADS 暂存层质量门：读 staging 结果 + DWS 对账，任一 BLOCKING 未过 → 阶段失败、不发布
                 SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
                         "QUALITY_CHECK", businessDate, run.getAttemptNo(),
                         Map.of("outputSnapshotId", snapshotIdRef), confs);
-                evidence.putAll(jobEvidence(ex));
-                evidence.put("adsChecksPersisted", persistChecks(run.getId(), snapshotIdRef, ex.checks()));
+                evidence.putAll(jobEvidence(ex, rules));
+                evidence.put("adsChecksPersisted", persistChecks(run.getId(), snapshotIdRef, ex.checks(), rules));
                 evidence.put("adsChecks", ex.checks().stream().map(c -> Map.of(
                         "ruleCode", c.ruleCode(), "layer", c.layer(), "severity", c.severity(),
                         "checkCount", c.checkCount(), "errorCount", c.errorCount(),
@@ -535,11 +572,11 @@ public class PipelineService {
                     SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
                             "PUBLISH_METRIC", businessDate, run.getAttemptNo(),
                             publishArgs, confs);
-                    Map<String, Object> evidence = jobEvidence(ex);
+                    Map<String, Object> evidence = jobEvidence(ex, rules);
                     evidence.put("adsSnapshotId", snapshotIdRef);
                     evidence.put("adsJobs", adsEvidence.get("jobs"));
                     evidence.put("hiveAds", "正式分区以 Hive 元数据指针指向本次暂存路径（§14.4）");
-                    evidence.put("adsChecksPersisted", persistChecks(run.getId(), snapshotIdRef, ex.checks()));
+                    evidence.put("adsChecksPersisted", persistChecks(run.getId(), snapshotIdRef, ex.checks(), rules));
                     evidence.put("adsChecks", ex.checks().stream().map(c -> Map.of(
                             "ruleCode", c.ruleCode(), "severity", c.severity(),
                             "passed", c.passed(), "detail", c.detail())).toList());
@@ -547,6 +584,21 @@ public class PipelineService {
                         return new StageOutcome(ex.totalOutputRecords(), evidence,
                                 new PipelineStageException("RUN_PUBLISH_FAILED",
                                         "正式分区发布失败: " + ex.errorMessage()));
+                    }
+
+                    // ── F-88：发布前质量门断言（D-142 §1 / §7.3）──────────────────────────
+                    // BLOCKING 与 ERROR 未通过 ⇒ 不发布新快照；WARN/INFO 未通过只记录、放行。
+                    // 断言读的是刚落库的 data_quality_result（同一 run），与质量门同一口径。
+                    List<String> gateFailures = qualityGate.blockingFailuresForRun(run.getId(), rules);
+                    evidence.put("prePublishGate", Map.of(
+                            "rule", "RuleSeverity.blocks：BLOCKING/ERROR 未通过即阻断",
+                            "blockingFailures", gateFailures,
+                            "passed", gateFailures.isEmpty()));
+                    if (!gateFailures.isEmpty()) {
+                        evidence.put("published", false);
+                        updateStageEvidence(run.getId(), "PUBLISH_METRIC", evidence);
+                        throw new PipelineStageException("PIPELINE_QUALITY_FAILED",
+                                "阻断级质量规则未通过，不发布新快照（旧 ACTIVE 不变）: " + String.join(", ", gateFailures));
                     }
 
                     // ── R7-3：Hive 正式分区已发布 → 指标库 ADS→MySQL 写入 + 快照 ACTIVE 原子切换 ──
@@ -622,7 +674,7 @@ public class PipelineService {
             }
             SparkStageExecutor.StageExecution ex = executor.executeStage(snapshot, run.getId(),
                     stageCode, businessDate, run.getAttemptNo(), extraArgs, confs);
-            Map<String, Object> evidence = jobEvidence(ex);
+            Map<String, Object> evidence = jobEvidence(ex, rulesFor(run));
             if (ex.failed()) {
                 // 失败证据先落库（stage() 的 finally 写记录），再阻断：后续依赖阶段保持未执行
                 return new StageOutcome(ex.totalOutputRecords(), evidence,
@@ -672,14 +724,19 @@ public class PipelineService {
 
     /**
      * R6-13：落 Landing 层内联质量规则结果（§16.1 layer=LANDING，§16.5 运维页字段）。
-     * 严重度按规则语义标注：AMOUNT_RECONCILE 为阻断项，其余为记录项（与 QualityChecker.corePassed 一致）。
+     * 严重度一律取 {@link RuleSeverity}（唯一所有者，D-142 §1）：AMOUNT_RECONCILE /
+     * REQUIRED_FIELD_NULL_RATE / ENUM_WHITELIST 为阻断项（BLOCKING），event_id 重复率为 WARN
+     * ——「下游已确定性去重且重复率未超已批准阈值」才允许降级，理由见
+     * {@link RuleSeverity#rationale(String)}。
      */
     private void persistQuality(Long runId, String snapshotId, String layer,
-                               List<DataQualityResult> results) {
+                               List<DataQualityResult> results, QualityRuleCatalog.FrozenRules rules) {
         for (DataQualityResult r : results) {
             r.setRunId(runId);
             r.setLayer(cap(layer, 32));
-            r.setSeverity("AMOUNT_RECONCILE".equals(String.valueOf(r.getRuleCode())) ? "BLOCKING" : "ERROR");
+            // 有效严重度按**本 run 冻结的规则集**解析：QualityChecker 已按同一 rules 写入，
+            // 此处再解析一次结果必然一致（同一 rules、同一 passed），而非回落到全局 of(ruleCode)。
+            r.setSeverity(RuleSeverity.resolve(rules, r.getRuleCode(), r.getPassed()).effectiveSeverity());
             r.setTargetTable(cap("landing/events", 500));
             r.setSnapshotId(cap(snapshotId, 64));
             r.setDetail(cap(r.getDetail(), 2000));
@@ -697,19 +754,27 @@ public class PipelineService {
      * R6-13：落 Spark 作业回传的质量检查结果（dqc 的 ADS_STAGING/PUBLISH 层规则、pub 的发布校验）。
      * severity=INFO 的是发布操作审计项（切换/清理计数），只进阶段证据，不冒充质量规则写库。
      *
+     * <p>F-88：落库的 severity 以 {@link RuleSeverity}（唯一所有者，D-142 §1）为准，**不原样照抄**
+     * 作业回传字面量 —— 作业侧历史上把「观察项」写成 ERROR（如 ADS_STAGING_SNAPSHOT_ISOLATION）、
+     * 把「必须阻断」写成 ERROR（如 REQUIRED_FIELD_NULL_RATE 的 ADS 侧同名规则）。归一化只改
+     * 落库标签，作业自身的成败判据（BLOCKING 未过即 FAILED）不变。</p>
+     *
      * @return 实际写库的规则条数
      */
-    private int persistChecks(Long runId, String snapshotId, List<JobResultParser.CheckInfo> checks) {
+    private int persistChecks(Long runId, String snapshotId, List<JobResultParser.CheckInfo> checks,
+                              QualityRuleCatalog.FrozenRules rules) {
         int inserted = 0;
         for (JobResultParser.CheckInfo c : checks) {
-            if ("INFO".equalsIgnoreCase(c.severity())) {
+            // 审计项判据不经过 RuleSeverity：作业回传 INFO 的一律只进证据，不写规则表
+            if (RuleSeverity.INFO.equalsIgnoreCase(String.valueOf(c.severity()).trim())) {
                 continue;
             }
             DataQualityResult r = new DataQualityResult();
             r.setRunId(runId);
             r.setRuleCode(cap(c.ruleCode(), 64));
             r.setLayer(cap(c.layer(), 32));
-            r.setSeverity(cap(c.severity(), 16));
+            r.setSeverity(cap(RuleSeverity.resolve(rules, c.ruleCode(),
+                    RuleSeverity.failedFlag(c.passed())).effectiveSeverity(), 16));
             r.setTargetTable(cap(c.targetTable(), 500));
             r.setSnapshotId(cap(snapshotId, 64));
             r.setCheckCount(c.checkCount());
@@ -738,7 +803,8 @@ public class PipelineService {
     }
 
     /** 阶段作业证据：逐作业 externalJobId/计数/日志位置（§15.3 R6-12） */
-    private Map<String, Object> jobEvidence(SparkStageExecutor.StageExecution ex) {
+    private Map<String, Object> jobEvidence(SparkStageExecutor.StageExecution ex,
+                                            QualityRuleCatalog.FrozenRules rules) {
         Map<String, Object> evidence = new LinkedHashMap<>();
         List<Map<String, Object>> jobs = new ArrayList<>();
         for (SparkStageExecutor.JobExecution j : ex.jobs()) {
@@ -766,7 +832,11 @@ public class PipelineService {
                     Map<String, Object> cm = new LinkedHashMap<>();
                     cm.put("ruleCode", c.ruleCode());
                     cm.put("layer", c.layer());
+                    // 作业回传的原始 severity 与平台归一化后的 severity 都留痕：
+                    // 两者不同时（如 ERROR→WARN）证据必须能看出「是平台改判的」，不能只剩一个值。
                     cm.put("severity", c.severity());
+                    cm.put("normalizedSeverity", RuleSeverity.resolve(rules, c.ruleCode(),
+                            RuleSeverity.failedFlag(c.passed())).effectiveSeverity());
                     cm.put("targetTable", c.targetTable());
                     cm.put("checkCount", c.checkCount());
                     cm.put("errorCount", c.errorCount());
@@ -775,7 +845,12 @@ public class PipelineService {
                     cm.put("detail", c.detail());
                     return cm;
                 }).toList());
+                // 平台口径下「未通过的阻断级规则」（BLOCKING/ERROR 未过；作业回传 ERROR 但被改判
+                // WARN 的观察项不算）。作业自身为什么 FAILED 看 blockingFailedRaw（作业侧判据）。
                 item.put("blockingFailed", j.checks().stream()
+                        .filter(c -> RuleSeverity.blocks(rules, c.ruleCode(), RuleSeverity.failedFlag(c.passed())))
+                        .map(JobResultParser.CheckInfo::ruleCode).toList());
+                item.put("blockingFailedRawJobSeverity", j.checks().stream()
                         .filter(c -> c.blocking() && !c.passed()).map(JobResultParser.CheckInfo::ruleCode).toList());
             }
             jobs.add(item);

@@ -1,0 +1,23 @@
+{
+  "batchId" : 26,
+  "batchNo" : "ing-20260911103736-50a9f8cb",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-11T10:37:36.483275600",
+  "finishedAt" : "2026-09-11T10:37:36.560601500",
+  "files" : [ {
+    "quarantinedRecords" : 4,
+    "file" : "r9-qualityfail-103736.jsonl",
+    "endOffset" : 18430,
+    "startOffset" : 0,
+    "acceptedRecords" : 51
+  } ],
+  "acceptedRecords" : 51,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 17419,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/26",
+  "quarantineUri" : "quarantine/26",
+  "checksum" : "5f4d3904"
+}

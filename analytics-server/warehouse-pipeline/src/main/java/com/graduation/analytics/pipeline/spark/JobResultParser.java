@@ -29,11 +29,17 @@ public final class JobResultParser {
 
     /**
      * 质量检查结果（R6-13，V2.0 §16.1/§16.5）：层次 + 目标表 + 检查数/错误数/阈值/严重度。
-     * severity=BLOCKING 的规则未通过即发布阻断（§16.3）；ERROR 只记录。
+     *
+     * <p><b>职责边界（F-88）</b>：本 record 是**作业回传 JSON 的忠实适配器**，severity 原样透传，
+     * 并按 spark-jobs 自身契约（{@code JobResult.scala:17-18}）把 {@code BLOCKING} 解释为
+     * 「作业未过必须 FAILED」。**平台侧的口径**（{@code BLOCKING}/{@code ERROR} 都阻断发布，
+     * 见 D-142 §1）由 {@code RuleSeverity} 拥有，并在 {@code PipelineService.persistChecks}
+     * 落库时归一化 —— 两个口径不混在同一个类里，避免"谁说了算"再次分叉。</p>
      */
     public record CheckInfo(String ruleCode, String layer, String targetTable,
                             long checkCount, long errorCount, String threshold,
                             String severity, boolean passed, String detail) {
+        /** 作业契约里的阻断标签（只 BLOCKING；ERROR 在作业侧只是记录项）。 */
         public boolean blocking() {
             return "BLOCKING".equalsIgnoreCase(severity);
         }
@@ -49,7 +55,12 @@ public final class JobResultParser {
             return "SUCCESS".equals(status);
         }
 
-        /** 严重度为 BLOCKING 且未通过的规则（作业失败时用于定位阻断原因） */
+        /**
+         * 作业返回 severity=BLOCKING 且未通过的规则（作业失败时用于定位"作业为什么 FAILED"）。
+         *
+         * <p>注意：这是**作业侧**判据，不等于平台发布门（平台门见
+         * {@code RuleSeverity.blocks} 与 {@code DataQualityGate}）。</p>
+         */
         public List<CheckInfo> blockingFailures() {
             return checks.stream().filter(c -> c.blocking() && !c.passed()).toList();
         }

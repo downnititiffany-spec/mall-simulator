@@ -2,6 +2,7 @@ package com.graduation.analytics.pipeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.metric.RuleSeverity;
 import com.graduation.analytics.pipeline.entity.DataQualityResult;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.entity.PipelineStageRun;
@@ -89,6 +90,12 @@ class PipelineServiceTest {
 
     private PipelineService service;
 
+    /**
+     * F-88：data_quality_result 的内存替身（预置行 + insert 累积）。
+     * 发布前质量门断言读的就是这张表，所以测试必须能"预置一行未通过的阻断级规则"。
+     */
+    private final List<DataQualityResult> qualityRows = new ArrayList<>();
+
     @BeforeEach
     void setUp() throws IOException {
         PipelineRun repoRun = new PipelineRun();
@@ -131,23 +138,44 @@ class PipelineServiceTest {
         when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
                 .thenAnswer(inv -> successExecution(inv.getArgument(2)));
 
-        // 质量检查默认通过（个别测试覆盖为失败）；DEF-04 后生产路径走三参重载（带整批订单总额索引）
-        when(qualityChecker.check(any(), anyLong(), any()))
-                .thenReturn(new QualityChecker.QualitySummary(List.of(mock(DataQualityResult.class)), true));
+        // 质量检查默认通过（个别测试覆盖为失败）。
+        // V25-Q01 起生产路径走**四参**重载（多一个 FrozenRules：该 run 冻结的规则集）。
+        // 若此处仍 stub 三参重载，Mockito 会对未 stub 的四参调用返回 null，
+        // QUALITY_CHECK 随即抛 STAGE_INTERNAL —— 实测 10 个用例因此集体翻红。
+        when(qualityChecker.check(any(), anyLong(), any(), any()))
+                .thenReturn(new QualityChecker.QualitySummary(List.of(), true));
+
+        // F-88：质量结果表内存替身（默认空 → 发布前门断言通过；个别测试预置失败行）
+        when(qualityMapper.insert(any(DataQualityResult.class))).thenAnswer(inv -> {
+            qualityRows.add(inv.getArgument(0));
+            return 1;
+        });
+        when(qualityMapper.selectList(any())).thenAnswer(inv -> List.copyOf(qualityRows));
+
+        stubPublisherSuccess();
 
         service = new PipelineService(runMapper, stageMapper, qualityMapper, qualityChecker,
                 eventClock, objectMapper, runtimeProfileService, stageExecutorFactory, executor,
-                metricPublisherPort(), metricDefinitionMapper());
+                publisherPort, metricDefinitionMapper(), new DataQualityGate(qualityMapper));
     }
 
     /**
      * R7-3：L1 用假发布端口（不连指标库）——本类只验证编排与状态机；
      * ADS→MySQL 的真实写入/对账/ACTIVE 切换由 metric-analysis 的单测 + 真实小链（run 21）覆盖。
+     *
+     * <p>F-88：改为 Mockito mock + 固定成功报告，便于断言「阻断时**从不调用**发布」
+     * （不调用 = 不产生新快照、不切 ACTIVE 指针 = 旧 ACTIVE 保持可读）。</p>
      */
-    private static com.graduation.analytics.metric.publish.MetricPublisherPort metricPublisherPort() {
-        return request -> new com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport(
-                true, null, "L1 stub", request.snapshotId(), 22L, 10, List.of(),
-                Map.of("stub", true));
+    private final com.graduation.analytics.metric.publish.MetricPublisherPort publisherPort =
+            org.mockito.Mockito.mock(com.graduation.analytics.metric.publish.MetricPublisherPort.class);
+
+    private void stubPublisherSuccess() {
+        when(publisherPort.publish(any())).thenAnswer(inv -> {
+            com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest request = inv.getArgument(0);
+            return new com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport(
+                    true, null, "L1 stub", request.snapshotId(), 22L, 10, List.of(),
+                    Map.of("stub", true));
+        });
     }
 
     /** R7-3：字典 mapper 用 Mockito 假实现（返回空字典；L1 不校验指标码） */
@@ -340,8 +368,8 @@ class PipelineServiceTest {
         writeLanding("accepted/2026-09-01",
                 event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"),
                 event("e2", "order_paid", "2026-09-01T10:05:00", "{\"order_id\":\"o1\",\"amount\":\"99\"}"));
-        when(qualityChecker.check(any(), anyLong(), any()))
-                .thenReturn(new QualityChecker.QualitySummary(List.of(mock(DataQualityResult.class)), false));
+        when(qualityChecker.check(any(), anyLong(), any(), any()))
+                .thenReturn(new QualityChecker.QualitySummary(List.of(amountRuleFailed()), false));
 
         PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
                 LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-quality", "trace-1");
@@ -388,6 +416,115 @@ class PipelineServiceTest {
                     assertThat(q.getPassed()).isZero();
                     assertThat(q.getSnapshotId()).startsWith("S20260901_");
                 });
+    }
+
+    // ── ⑥c F-88（D-142 §1）：发布前门断言 —— 阻断级未过 ⇒ 不发布新快照 ────────
+
+    @Test
+    void errorSeverityFailureBlocksPublishAndLeavesActiveUntouched() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        // F-94：规则码才是判定输入。这里必须用**已登记的阻断级规则码**——
+        // 早期夹具写的是 PUB_DQ_EVENT_ID_UNIQUE，而该码在目录里是 WARN（下游确定性去重），
+        // 于是"ERROR 失败 ⇒ 不发布"这条用例实际测的是"WARN 失败 ⇒ 仍发布"，断言由 FAILED 变 SUCCESS。
+        // 字面 severity 仍写 ERROR，用来证明目录覆盖了字面标签。
+        qualityRows.add(qualityRow("ADS_STAGING_PRESENT", "ERROR", 0));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-err-pre", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(r.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("PIPELINE_QUALITY_FAILED");
+        // 发布前门断言在 PUBLISH_METRIC 内触发：阶段已创建但 FAILED（不是"未创建"）
+        assertThat(stageStatus("PUBLISH_METRIC")).isEqualTo(PipelineStageRun.STATUS_FAILED);
+        // 关键负向断言：从不调用发布端口 ⇒ 不产生新快照、不切 ACTIVE（旧 ACTIVE 保持可读）
+        verify(publisherPort, never()).publish(any());
+        // 证据留痕：失败原因与规则码写进阶段证据（运维可见）
+        assertThat(stageOf("PUBLISH_METRIC").getEvidence())
+                .contains("prePublishGate").contains("ADS_STAGING_PRESENT");
+    }
+
+    @Test
+    void duplicateRateWithinThresholdIsObservationAndStillPublishes() throws Exception {
+        // 单个事件、无重复 ⇒ 重复率 0.000000 <= 0.0005 ⇒ EVENT_ID_UNIQUE passed=1 ⇒ 观察项，不阻断。
+        // （本用例原为「重复率 0.5 仍发布成功」；§7.3.1 line 522 明确「超过阈值阻断」且
+        //  「测试不得为通过把高重复率直接放行」，故 0.5 的情形已移到下面的阻断用例。）
+        writeLanding("accepted/2026-09-01",
+                event("e1", "behavior", "2026-09-01T10:00:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\",\"behavior_type\":\"view\"}"));
+        when(qualityChecker.check(any(), anyLong(), any(), any()))
+                .thenAnswer(inv -> new QualityChecker().check(inv.getArgument(0), inv.getArgument(1),
+                        inv.getArgument(2), inv.getArgument(3)));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-obs", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult done = service.get(r.runId());
+        assertThat(done.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(stageStatus("PUBLISH_METRIC")).isEqualTo(PipelineStageRun.STATUS_SUCCESS);
+        // 观察项未过也要写库留痕（运维页可见），但不阻断发布
+        assertThat(qualityRows).anySatisfy(q -> {
+            assertThat(q.getRuleCode()).isEqualTo("EVENT_ID_UNIQUE");
+            assertThat(q.getPassed()).isEqualTo(1);
+        });
+        verify(publisherPort).publish(any());
+    }
+
+    @Test
+    void duplicateRateBeyondThresholdBlocksPublish() throws Exception {
+        // 两个事件互为重复 ⇒ 重复率 0.5 >> 0.0005 ⇒ EVENT_ID_UNIQUE passed=0
+        // ⇒ 有效严重度由 WARN 升为 BLOCKING ⇒ 必须阻断发布（§7.3.1 line 522）。
+        writeLanding("accepted/2026-09-01",
+                event("dup", "behavior", "2026-09-01T10:00:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\",\"behavior_type\":\"view\"}"),
+                event("dup", "behavior", "2026-09-01T10:01:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\",\"behavior_type\":\"view\"}"));
+        when(qualityChecker.check(any(), anyLong(), any(), any()))
+                .thenAnswer(inv -> new QualityChecker().check(inv.getArgument(0), inv.getArgument(1),
+                        inv.getArgument(2), inv.getArgument(3)));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-dup", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult done = service.get(r.runId());
+        assertThat(done.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        // 原始档位仍是 WARN、但有效严重度升为 BLOCKING：两个字段都要留痕（§7.3.1 line 520）
+        assertThat(qualityRows).anySatisfy(q -> {
+            assertThat(q.getRuleCode()).isEqualTo("EVENT_ID_UNIQUE");
+            assertThat(q.getPassed()).isZero();
+            assertThat(q.getSeverity()).isEqualTo(RuleSeverity.BLOCKING);
+        });
+        // 关键负向断言：不发布 ⇒ 不产生新 ACTIVE
+        verify(publisherPort, never()).publish(any());
+    }
+
+    /**
+     * 预置一条质量结果行（模拟库里已存在的未过规则）。
+     *
+     * <p>checkCount/errorCount 必须非空：QUALITY_CHECK 证据里的 landingRules 用 {@code Map.of}
+     * 构造，null 会直接抛 NPE 并把阶段错误码变成 STAGE_INTERNAL（实测踩过 —— 断言只看到
+     * "expected PIPELINE_QUALITY_FAILED but was STAGE_INTERNAL"）。</p>
+     */
+    private static DataQualityResult qualityRow(String ruleCode, String severity, Integer passed) {
+        DataQualityResult row = new DataQualityResult();
+        row.setRunId(1L);
+        row.setRuleCode(ruleCode);
+        row.setLayer("PUBLISH");
+        row.setSeverity(severity);
+        row.setPassed(passed);
+        row.setCheckCount(1L);
+        row.setErrorCount(Integer.valueOf(0).equals(passed) ? 1L : 0L);
+        row.setThreshold("0.01");
+        row.setDetail("F-88 测试夹具");
+        return row;
+    }
+
+    /** AMOUNT_RECONCILE（BLOCKING）未过的内联规则结果。 */
+    private static DataQualityResult amountRuleFailed() {
+        DataQualityResult row = qualityRow("AMOUNT_RECONCILE", RuleSeverity.BLOCKING, 0);
+        row.setLayer("LANDING");
+        return row;
     }
 
     // ── ⑦重试 attempt_no 递增（§23.1 恢复） ────────────────────────────────

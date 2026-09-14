@@ -1,0 +1,17 @@
+{
+  "batchId" : 10,
+  "batchNo" : "ing-20260907183837-36b5bdd2",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-07T18:38:37.280921200",
+  "finishedAt" : "2026-09-07T18:38:37.300998400",
+  "files" : [ ],
+  "acceptedRecords" : 0,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 0,
+  "schemaVersions" : [ ],
+  "acceptedUri" : "accepted/10",
+  "quarantineUri" : "quarantine/10",
+  "checksum" : "0"
+}

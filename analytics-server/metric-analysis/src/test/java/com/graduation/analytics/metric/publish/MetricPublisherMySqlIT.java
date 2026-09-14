@@ -7,28 +7,39 @@ import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.publish.MetricPublisherPort.DefinitionRef;
 import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport;
 import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest;
+import com.graduation.analytics.testsupport.IsolationProfileCondition;
+import com.graduation.analytics.testsupport.TestIsolationGuard;
+import com.graduation.analytics.testsupport.TestIsolationGuard.DeletionTarget;
+import com.graduation.analytics.testsupport.TestIsolationGuard.IsolationViolationException;
+import com.graduation.analytics.testsupport.TestIsolationGuard.LiveFacts;
+import com.graduation.analytics.testsupport.TestIsolationGuard.TestRunContext;
+import com.graduation.analytics.testsupport.TestIsolationGuard.WorkScope;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * R7-3 真库集成测试（默认跳过：需同时满足 {@code -Dmetric.it=true} 与 surefire 显式指定本类）。
+ * R7-3 真库集成测试（**默认关闭**：没有登记测试隔离档案时整个类不执行，见
+ * {@link IsolationProfileCondition} 与指导书 V2.5 §9.4）。
  *
  * <p>证明发布器最关键的两条安全性质（§17.5）：</p>
  * <ol>
@@ -37,80 +48,156 @@ import static org.assertj.core.api.Assertions.assertThat;
  *       <b>旧 ACTIVE 指针原样保留</b>——即"发不出去也不影响线上看板"。</li>
  * </ol>
  *
- * <p>只使用合成命名空间（snapshot_id 前缀 {@code it-r7-3-}、runtime_profile_id 999002），
- * 结束前清理自己写入的 ADS 行、指标值与快照行，不触碰真实快照数据。</p>
+ * <p><b>V25-S01 整改</b>：过去本类写死 {@code analytics_metric} ＋ 正式写账号 {@code metric_pub}，
+ * cleanup 还按固定 {@code runtime_profile_id = 999002} 批量 DELETE。现在：目标库/账号来自本次
+ * {@link TestRunContext}；写前用实际连接核对库名＋服务实例指纹＋账号权限；快照号带 testRunId 前缀、
+ * 档案 id 是本次自己登记的行；cleanup 先出清单再按「快照号 + 本次档案 id」删除；
+ * {@link #productionDatabaseIsRejectedBeforeAnyWrite()} 是**负向测试**：给正式库配置必须**在任何写入之前**失败，
+ * 且**不**在正式库试写再回滚。</p>
+ *
+ * <p><b>为什么隔离上下文放在 {@code @BeforeAll} 而不是 static 字段</b>：static 初始化在<b>类加载</b>时求值，
+ * 那时 JUnit 尚未评估 {@link IsolationProfileCondition}，配置缺失会抛 {@code ExceptionInInitializerError}
+ * 把整个测试套件打红，而不是按 §9.4「默认关闭」。放进 {@code @BeforeAll} 后顺序为
+ * 「先判定启用 → 再加载配置 → 启用但配置非法仍硬失败」。</p>
  */
-@EnabledIfSystemProperty(named = "metric.it", matches = "true")
+@ExtendWith(IsolationProfileCondition.class)
 class MetricPublisherMySqlIT {
 
-    private static final long PROFILE_ID = 999002L;
     private static final String DT = "20260901";
-    private static final String SID_OK = "it-r7-3-ok-" + System.currentTimeMillis();
-    private static final String SID_BAD = "it-r7-3-bad-" + System.currentTimeMillis();
+
+    private static TestRunContext context;
+    private static String sidOk;
+    private static String sidBad;
+
+    private static final List<String> OWNED_ADS_TABLES = new ArrayList<>();
+
+    static {
+        for (MetricAdsCatalog spec : MetricAdsCatalog.ALL) {
+            OWNED_ADS_TABLES.add(spec.name());
+        }
+    }
 
     private static JdbcTemplate publish;
     private static JdbcTemplate read;
     private static MetricAdsWriter writer;
     private static MetricPublisher publisher;
     private static ObjectMapper mapper;
+    private static WorkScope scope;
+    private static long profileId;
 
     @BeforeAll
     static void setUp() {
+        // 到这里说明类已被判定为「启用」，因此配置缺失/非法必须硬失败，不能静默跳过
+        context = TestIsolationGuard.loadContext();
+        String run = context.testRunId();
+        sidOk = run + "-pub-ok";
+        sidBad = run + "-pub-bad";
+        System.out.println("[MetricPublisherMySqlIT] 隔离上下文：" + context.redactedSummary());
         mapper = new ObjectMapper();
-        publish = new JdbcTemplate(dataSource("metric_pub", "metric_pub_pw_2026"));
-        read = new JdbcTemplate(dataSource("metric_read", "metric_read_pw_2026"));
+        // 键名不带 v25.it. 前缀：TestIsolationGuard.requiredProperty 内部会先查系统属性
+        // -Dv25.it.<key>，再查隔离档案文件，两处都没有才拒绝（无正式目标兜底）。
+        DataSource publishDs = dataSource("metric.publish.username", "metric.publish.password");
+        DataSource readDs = dataSource("metric.read.username", "metric.read.password");
+
+        LiveFacts publishFacts = TestIsolationGuard.verifyBeforeWrite(context, publishDs, context.metricDb());
+        LiveFacts readFacts = TestIsolationGuard.verifyBeforeWrite(context, readDs, context.metricDb());
+        System.out.println("[MetricPublisherMySqlIT] publish 连接事实：" + publishFacts.redactedSummary());
+        System.out.println("[MetricPublisherMySqlIT] read 连接事实：" + readFacts.redactedSummary());
+
+        publish = new JdbcTemplate(publishDs);
+        read = new JdbcTemplate(readDs);
         writer = new MetricAdsWriter(publish);
         MetricPublishRepository repository = new MetricPublishRepository(publish, read);
         MySqlMetricStore store = new MySqlMetricStore(publish, read);
         publisher = new MetricPublisher(repository, writer, new AdsExportReader(), store,
                 new MetricPublishValidator(), mapper);
+
+        profileId = registerOwnProfile();
+        scope = new WorkScope(context.testRunId(), profileId, new LinkedHashSet<>(List.of(sidOk, sidBad)),
+                new LinkedHashSet<>(OWNED_ADS_TABLES));
+        System.out.println("[MetricPublisherMySqlIT] 本次拥有范围：profileId=" + profileId
+                + " snapshots=" + List.of(sidOk, sidBad));
         cleanup();
     }
 
     @AfterAll
     static void tearDown() {
-        cleanup();
+        if (scope != null) {
+            cleanup();
+        }
     }
 
     @Test
     @DisplayName("成功发布 → ACTIVE 切换；写库后对账失败 → FAILED + 补偿清理 + 旧 ACTIVE 保留")
     void publishActivationAndFailureCompensation(@TempDir Path dir) throws Exception {
         // ── 阶段 1：正常发布 → ACTIVE ──
-        Path okDir = Files.createDirectories(dir.resolve(SID_OK));
-        writeFixture(okDir, SID_OK, allTables());
-        PublishReport ok = publisher.publish(request(SID_OK, okDir, fullDictionary()));
+        Path okDir = Files.createDirectories(dir.resolve(sidOk));
+        writeFixture(okDir, sidOk, allTables());
+        PublishReport ok = publisher.publish(request(sidOk, okDir, fullDictionary()));
 
         assertThat(ok.ok()).as("失败码=%s 说明=%s checks=%s", ok.errorCode(), ok.message(),
                 MetricPublishValidator.failedRules(ok.checks())).isTrue();
         assertThat(ok.adsRows()).isEqualTo(expectedAdsRows());
         assertThat(ok.metricValues()).isEqualTo(10);
-        assertThat(activeSnapshot()).isEqualTo(SID_OK);
-        assertThat(status(SID_OK)).isEqualTo("ACTIVE");
-        assertThat(metricValueCount(SID_OK)).isEqualTo(10);
-        assertThat(overviewPv(SID_OK)).isEqualTo(7L);
-        assertThat(metricValue(SID_OK, "refund_rate")).isEqualByComparingTo(new BigDecimal("0.6000"));
+        assertThat(activeSnapshot()).isEqualTo(sidOk);
+        assertThat(status(sidOk)).isEqualTo("ACTIVE");
+        assertThat(metricValueCount(sidOk)).isEqualTo(10);
+        assertThat(overviewPv(sidOk)).isEqualTo(7L);
+        assertThat(metricValue(sidOk, "refund_rate")).isEqualByComparingTo(new BigDecimal("0.6000"));
 
         // ── 阶段 2：清单与 ADS 都正常，但字典缺 gmv → 写库后对账 BLOCKING 失败 ──
-        Path badDir = Files.createDirectories(dir.resolve(SID_BAD));
+        Path badDir = Files.createDirectories(dir.resolve(sidBad));
         Map<String, DefinitionRef> partialDict = new LinkedHashMap<>(fullDictionary());
         partialDict.remove("gmv");
-        writeFixture(badDir, SID_BAD, allTables());
-        PublishReport bad = publisher.publish(request(SID_BAD, badDir, partialDict));
+        writeFixture(badDir, sidBad, allTables());
+        PublishReport bad = publisher.publish(request(sidBad, badDir, partialDict));
 
         assertThat(bad.ok()).isFalse();
         assertThat(bad.errorCode()).isEqualTo("MP_VERIFY_FAILED");
         assertThat(MetricPublishValidator.failedRules(bad.checks())).contains("MP_METRIC_DICT_VERSION");
-        assertThat(status(SID_BAD)).isEqualTo("FAILED");
-        assertThat(activeSnapshot()).as("失败不得改变 ACTIVE 指针").isEqualTo(SID_OK);
-        assertThat(metricValueCount(SID_BAD)).as("失败快照不得留下指标值").isZero();
-        assertThat(adsRowCount(SID_BAD)).as("失败补偿必须清掉本次写入的 ADS 行").isZero();
-        assertThat(metricValueCount(SID_OK)).as("旧快照数据不受影响").isEqualTo(10);
+        assertThat(status(sidBad)).isEqualTo("FAILED");
+        assertThat(activeSnapshot()).as("失败不得改变 ACTIVE 指针").isEqualTo(sidOk);
+        assertThat(metricValueCount(sidBad)).as("失败快照不得留下指标值").isZero();
+        assertThat(adsRowCount(sidBad)).as("失败补偿必须清掉本次写入的 ADS 行").isZero();
+        assertThat(metricValueCount(sidOk)).as("旧快照数据不受影响").isEqualTo(10);
+    }
+
+    /**
+     * §9.4 负向测试：把目标库换成正式库 {@code analytics_metric} 时，必须在**任何写入之前**失败。
+     *
+     * <p>做法是 mock 写调用/无权限账号这一类"不产生副作用"的方式：这里用
+     * {@link RejectingDataSource} —— 它连 {@code getConnection()} 都不会被调用；
+     * 一旦 guard 的判断顺序退化（先连库再判断），本用例立刻变红。
+     * <b>绝不在正式库试写再回滚。</b></p>
+     */
+    @Test
+    @DisplayName("负向：正式库配置在任何写入之前被拒（不进正式库、不试写、不回滚）")
+    void productionDatabaseIsRejectedBeforeAnyWrite() {
+        RejectingDataSource probe = new RejectingDataSource();
+
+        assertThatThrownBy(() -> TestIsolationGuard.verifyBeforeWrite(context, probe, "analytics_metric"))
+                .isInstanceOf(IsolationViolationException.class)
+                .hasMessageContaining("analytics_metric")
+                .hasMessageContaining("禁止");
+        assertThat(probe.connectionAttempts()).as("正式库上不得建立任何连接").isZero();
+        assertThat(probe.statementAttempts()).as("正式库上不得执行任何语句").isZero();
+    }
+
+    /** 负向：把库名换成正式库之外的其他库（只改 JDBC URL）同样被拒，证明「单改 URL 不算隔离」。 */
+    @Test
+    @DisplayName("负向：声明库不在登记隔离范围 → 写前被拒")
+    void databaseOutsideRegisteredScopeIsRejected() {
+        RejectingDataSource probe = new RejectingDataSource();
+        assertThatThrownBy(() -> TestIsolationGuard.verifyBeforeWrite(context, probe, "analytics_metric_p103"))
+                .isInstanceOf(IsolationViolationException.class);
+        assertThat(probe.connectionAttempts()).isZero();
     }
 
     // ── 夹具 ────────────────────────────────────────────────────────────────
 
     private PublishRequest request(String sid, Path dir, Map<String, DefinitionRef> dict) {
-        return new PublishRequest(PROFILE_ID, 7, sid, DT, "2026-09-01T00:00", 99001L, dir, dict);
+        scope.requireOwnedSnapshot(sid);
+        return new PublishRequest(profileId, 7, sid, DT, "2026-09-01T00:00", 99001L, dir, dict);
     }
 
     private static Map<String, DefinitionRef> fullDictionary() {
@@ -212,6 +299,7 @@ class MetricPublisherMySqlIT {
 
     /** 按 MetricAdsCatalog 逐表写 JSONL + `_export.json` 清单（路径用正斜杠，与 Spark 侧一致） */
     private void writeFixture(Path dir, String sid, Map<String, List<Map<String, Object>>> rows) throws Exception {
+        scope.requireOwnedSnapshot(sid);
         List<Map<String, Object>> tables = new ArrayList<>();
         int total = 0;
         for (MetricAdsCatalog spec : MetricAdsCatalog.ALL) {
@@ -233,7 +321,7 @@ class MetricPublisherMySqlIT {
             table.put("mysqlTable", spec.name());
             table.put("rowCount", tableRows.size());
             table.put("columns", spec.columns());
-            table.put("hivePath", "file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/"
+            table.put("hivePath", context.hdfsRoot() + "/warehouse/dw_ads.db/"
                     + spec.name() + "/snapshot_id=" + sid + "/dt=" + DT);
             table.put("exportFile", file.toAbsolutePath().toString().replace('\\', '/'));
             tables.add(table);
@@ -255,7 +343,7 @@ class MetricPublisherMySqlIT {
     private String activeSnapshot() {
         List<String> ids = read.queryForList(
                 "SELECT snapshot_id FROM metric_snapshot WHERE runtime_profile_id=? AND active_flag=1",
-                String.class, PROFILE_ID);
+                String.class, profileId);
         return ids.isEmpty() ? null : ids.get(0);
     }
 
@@ -289,22 +377,135 @@ class MetricPublisherMySqlIT {
         return total;
     }
 
-    private static void cleanup() {
-        for (String sid : List.of(SID_OK, SID_BAD)) {
-            writer.deleteSnapshot(sid);
-            publish.update("DELETE FROM metric_value WHERE snapshot_id=?", sid);
-            publish.update("DELETE FROM metric_snapshot WHERE snapshot_id=?", sid);
-        }
-        publish.update("DELETE FROM metric_snapshot WHERE runtime_profile_id=?", PROFILE_ID);
+    // ── 自有档案登记与 cleanup ──────────────────────────────────────────────
+
+    /** 登记本 run 自己的 runtime_profile 行（不使用可复用的固定 id）。 */
+    private static long registerOwnProfile() {
+        String profileCode = "v25it-" + context.testRunId();
+        publish.update("INSERT INTO runtime_profile (profile_code, profile_name, type, status, landing_uri, "
+                        + "spark_master, metric_store_type, timezone, version, credential_ref) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?,?) "
+                        + "ON DUPLICATE KEY UPDATE profile_name = VALUES(profile_name), updated_at = CURRENT_TIMESTAMP(3)",
+                profileCode, "V25-S01 隔离测试档案 " + context.testRunId(), "LOCAL", "ACTIVE", context.hdfsRoot() + "/landing",
+                "local[1]", "MYSQL", "Asia/Shanghai", 1, context.credentialsRef());
+        Long id = publish.queryForObject("SELECT id FROM runtime_profile WHERE profile_code = ?", Long.class, profileCode);
+        assertThat(id).as("本次运行必须有自己的 runtime_profile 行").isNotNull();
+        System.out.println("[MetricPublisherMySqlIT] 本次登记档案 id=" + id + " profile_code=" + profileCode);
+        return id;
     }
 
-    private static javax.sql.DataSource dataSource(String user, String password) {
+    /** cleanup：先查目标清单并验范围，再按「快照号 + 本次档案 id」删除。 */
+    private static void cleanup() {
+        for (String sid : List.of(sidOk, sidBad)) {
+            safeDeleteSnapshot(sid);
+        }
+        int profiles = publish.update("DELETE FROM runtime_profile WHERE id = ? AND profile_code = ?",
+                profileId, "v25it-" + context.testRunId());
+        System.out.println("[MetricPublisherMySqlIT] cleanup runtime_profile 行数=" + profiles + " id=" + profileId);
+    }
+
+    private static void safeDeleteSnapshot(String sid) {
+        List<DeletionTarget> targets = read.query(
+                "SELECT snapshot_id, runtime_profile_id, status, active_flag FROM metric_snapshot WHERE snapshot_id = ?",
+                (rs, rowNum) -> new DeletionTarget(rs.getString("snapshot_id"), rs.getLong("runtime_profile_id"),
+                        rs.getString("status"), (Integer) rs.getObject("active_flag")),
+                sid);
+        TestIsolationGuard.assertDeletionTargets(scope, targets);
+        if (targets.isEmpty()) {
+            return;
+        }
+        for (MetricAdsCatalog spec : MetricAdsCatalog.ALL) {
+            scope.requireOwnedTable(spec.name());
+            int ads = publish.update("DELETE FROM " + spec.name() + " WHERE snapshot_id = ?", sid);
+            if (ads > 0) {
+                System.out.println("[MetricPublisherMySqlIT] cleanup " + spec.name() + " rows=" + ads);
+            }
+        }
+        int values = publish.update("DELETE FROM metric_value WHERE snapshot_id = ?", sid);
+        int snapshots = publish.update("DELETE FROM metric_snapshot WHERE snapshot_id = ? AND runtime_profile_id = ?",
+                sid, profileId);
+        System.out.println("[MetricPublisherMySqlIT] cleanup snapshot_id=" + sid
+                + " metric_value_rows=" + values + " metric_snapshot_rows=" + snapshots);
+    }
+
+    private static DataSource dataSource(String userProperty, String passwordProperty) {
         DriverManagerDataSource ds = new DriverManagerDataSource();
         ds.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        ds.setUrl("jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&allowPublicKeyRetrieval=true"
-                + "&characterEncoding=utf8&serverTimezone=Asia/Shanghai");
-        ds.setUsername(user);
-        ds.setPassword(password);
+        ds.setUrl("jdbc:mysql://" + requiredProperty("mysql.host") + "/" + context.metricDb()
+                + "?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai");
+        ds.setUsername(requiredProperty(userProperty));
+        ds.setPassword(requiredProperty(passwordProperty));
         return ds;
+    }
+
+    private static String requiredProperty(String key) {
+        return TestIsolationGuard.requiredProperty(key);
+    }
+
+    /**
+     * 只用于负向测试的探针数据源：任何 {@code getConnection()} 都计数并失败。
+     * 它不是数据库，也不会执行任何写入 —— 用来证明「拒绝发生在建立连接之前」。
+     */
+    private static final class RejectingDataSource implements DataSource {
+
+        private final java.util.concurrent.atomic.AtomicInteger connections =
+                new java.util.concurrent.atomic.AtomicInteger();
+        private final java.util.concurrent.atomic.AtomicInteger statements =
+                new java.util.concurrent.atomic.AtomicInteger();
+
+        int connectionAttempts() {
+            return connections.get();
+        }
+
+        int statementAttempts() {
+            return statements.get();
+        }
+
+        @Override
+        public java.sql.Connection getConnection() throws java.sql.SQLException {
+            connections.incrementAndGet();
+            statements.incrementAndGet();
+            throw new java.sql.SQLException("负向测试探针：不允许连接（正式库上不得有任何连接/语句）");
+        }
+
+        @Override
+        public java.sql.Connection getConnection(String username, String password) throws java.sql.SQLException {
+            return getConnection();
+        }
+
+        @Override
+        public java.io.PrintWriter getLogWriter() {
+            return null;
+        }
+
+        @Override
+        public void setLogWriter(java.io.PrintWriter out) {
+            // 探针不需要日志
+        }
+
+        @Override
+        public void setLoginTimeout(int seconds) {
+            // 探针不需要超时
+        }
+
+        @Override
+        public int getLoginTimeout() {
+            return 0;
+        }
+
+        @Override
+        public java.util.logging.Logger getParentLogger() {
+            return java.util.logging.Logger.getLogger("rejecting-datasource");
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) throws java.sql.SQLException {
+            throw new java.sql.SQLException("不是真实数据源");
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) {
+            return false;
+        }
     }
 }

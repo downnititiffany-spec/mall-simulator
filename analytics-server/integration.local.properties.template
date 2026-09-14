@@ -1,0 +1,67 @@
+# ───────────────────────────────────────────────────────────────────────────
+# V25-S02 本地全链测试隔离档案（指导书 V2.5 §6.6 / §9.4）
+#
+#   * 本文件是**模板 / 登记样本**：真实运行时应由 scripts/it-prepare-isolation.ps1
+#     生成 `analytics-server/integration.local.properties`（该文件不入库、含本次
+#     testRunId 生成的库名与账号引用），或直接用 -Dv25.it.* 系统属性覆盖。
+#   * TestIsolationGuard 按 testRunId → classpath:integration.local.properties
+#     → 仓库根 analytics-server/integration.local.properties 的顺序查找；
+#     三者都没有时**拒绝运行**（MissingConfigurationException，不是 skip 后 PASS）。
+#   * 这里出现的口令一律是 `credref:` 引用，不是明文口令。
+#
+# ── 隔离落点（用户 R2 裁决 / Q9 裁定，2026-09-14 更新）────────────────────
+#   隔离实例 = WSL 内**独立 MySQL 实例，端口 3307**。
+#   宿主 3306 上的**任何**库（含 test_db、mall_simulator_test、analytics_*）
+#   都不在允许清单内——**库名含 test 不构成安全证明**：实例、datadir、
+#   全局账号权限仍与正式库共享。
+#   TestIsolationGuard 的连接级判据：
+#     ALLOWED_INSTANCE_PORTS = {3307}；HOST_FORMAL_PORT = 3306（显式点名拒绝）；
+#     写前实连核对 SELECT DATABASE() / CURRENT_USER() / @@server_uuid /
+#     @@hostname / @@port。
+# ───────────────────────────────────────────────────────────────────────────
+
+# 本次运行唯一标识：v25it-<yyyyMMdd-HHmmss>-<4+ 位>
+testRunId=v25it-20260914-120000-sample
+
+# 服务实例标识：必须与写前校验实际取到的 @@server_uuid 或 @@hostname 一致
+# 形式 server_uuid / hostname / hostname:port 均可
+# 【等 W03 交付】WSL 隔离实例的 @@server_uuid 由 L3 建库时产生，此处为占位样本
+serverFingerprint=WSL-V25IT-ISOLATED
+
+# 元数据库与指标库（本次运行新建；禁止 analytics_meta / analytics_metric 及历史副本）
+# 【等 W03 交付】这两个库建在 WSL 独立实例（3307）上，由 L3 的建库脚本产出
+metaDb=analytics_meta_v25it
+metricDb=analytics_metric_v25it
+
+# ── 连接参数（写入型 IT 组装 JDBC URL 用；TestIsolationGuard.requiredProperty 解析）──
+# 主机必须带端口。**只有 3307 会被放行**；写成 3306 / 省略端口 / 非本机主机都会在
+# 建立连接之前被拒绝（TestIsolationGuard#assertJdbcTargetAllowed）。
+mysql.host=127.0.0.1:3307
+
+# 账号与口令引用：口令一律走 credentialsRef，不落明文。
+# 【等 W03 交付】这三个账号由 L3 在建库时按最小权限创建
+mysql.publish.username=v25it_sample_metric_pub
+mysql.publish.password=credref:v25it-20260914-120000-sample-metric-pub
+mysql.read.username=v25it_sample_metric_read
+mysql.read.password=credref:v25it-20260914-120000-sample-metric-read
+
+# Hive namespace（必须带 testRunId 前缀）
+# 【等 W03 交付】Hive/HDFS 侧隔离——未做·环境不具备，本机无 Hive/HDFS 服务
+hiveNamespace=v25it-20260914-120000-sample_hive
+
+# HDFS/本地落地根（必须绝对路径且含 testRunId；不得是 /graduation/**）
+# 注意：本门禁**不接受** file:// 或 hdfs:// URI 写法，只能写本机绝对路径。
+# 【等 W03 交付】W03 交付 WSL 侧路径后替换为实际落地根
+hdfsRoot=D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-sample/hdfs
+manifestRoot=D:/Develop_code/GraduationProject/target/v25-it/v25it-20260914-120000-sample/manifest
+
+# 凭据引用（不落明文口令；必须含 testRunId，指向本次运行自己的受限账号）
+credentialsRef=credref:v25it-20260914-120000-sample
+
+# ── 由 scripts/it-prepare-isolation.ps1 使用、供人工核对的账号计划（非门禁读取）──
+# 账号名                                 授权范围                         权限
+# v25it_<run>_meta                       <metaDb>.*                       SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,INDEX,REFERENCES
+# v25it_<run>_metric_pub                 <metricDb>.*                     同上（只对本库）
+# v25it_<run>_metric_read                <metricDb>.*                     SELECT
+# 禁止：root、metric_pub、meta_app、metric_read、mall_app
+# 禁止：任何宿主 3306 实例上的库 —— 即使库名以 _test 结尾

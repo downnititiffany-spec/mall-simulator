@@ -1,0 +1,23 @@
+{
+  "batchId" : 36,
+  "batchNo" : "ing-20260911155648-ddbd14d4",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-11T15:56:48.345977100",
+  "finishedAt" : "2026-09-11T15:56:48.417589900",
+  "files" : [ {
+    "acceptedRecords" : 2,
+    "quarantinedRecords" : 0,
+    "file" : "b08-gate-20260911-1555.jsonl",
+    "endOffset" : 586,
+    "startOffset" : 0
+  } ],
+  "acceptedRecords" : 2,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 584,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/36",
+  "quarantineUri" : "quarantine/36",
+  "checksum" : "c625ef4e"
+}

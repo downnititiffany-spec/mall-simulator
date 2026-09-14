@@ -1,0 +1,27 @@
+{
+  "batchId" : 42,
+  "batchNo" : "ing-20260912173453-cf5576fe",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T17:34:53.970704400",
+  "finishedAt" : "2026-09-12T17:34:54.056595",
+  "files" : [ {
+    "file" : "r2ctl-b31replay-20260912-173418.jsonl",
+    "endOffset" : 363848,
+    "startOffset" : 0,
+    "acceptedRecords" : 1000,
+    "quarantinedRecords" : 0
+  } ],
+  "acceptedRecords" : 1000,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 363848,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/42",
+  "quarantineUri" : "quarantine/42",
+  "checksum" : "89b82028",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}

@@ -1,0 +1,23 @@
+{
+  "batchId" : 28,
+  "batchNo" : "ing-20260911110644-4223656e",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-11T11:06:44.517270500",
+  "finishedAt" : "2026-09-11T11:06:44.567233700",
+  "files" : [ {
+    "quarantinedRecords" : 4,
+    "file" : "r9-prunefix-110637.jsonl",
+    "endOffset" : 18430,
+    "startOffset" : 0,
+    "acceptedRecords" : 51
+  } ],
+  "acceptedRecords" : 51,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 17419,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/28",
+  "quarantineUri" : "quarantine/28",
+  "checksum" : "71bbde63"
+}

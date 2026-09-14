@@ -1,0 +1,27 @@
+{
+  "batchId" : 43,
+  "batchNo" : "ing-20260912210642-e4588aa7",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T21:06:42.282509200",
+  "finishedAt" : "2026-09-12T21:06:42.305672",
+  "files" : [ {
+    "file" : "m3s8-golden55-20260912210313.jsonl",
+    "endOffset" : 18430,
+    "startOffset" : 0,
+    "acceptedRecords" : 51,
+    "quarantinedRecords" : 4
+  } ],
+  "acceptedRecords" : 51,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 17419,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/43",
+  "quarantineUri" : "quarantine/43",
+  "checksum" : "71bbde63",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}

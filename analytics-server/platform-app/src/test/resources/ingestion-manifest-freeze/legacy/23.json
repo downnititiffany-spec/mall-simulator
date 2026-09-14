@@ -1,0 +1,23 @@
+{
+  "batchId" : 23,
+  "batchNo" : "ing-20260910202936-a5361a33",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-10T20:29:36.657954",
+  "finishedAt" : "2026-09-10T20:29:36.746896800",
+  "files" : [ {
+    "startOffset" : 0,
+    "endOffset" : 18430,
+    "file" : "golden-r73b-clean-20260910.jsonl",
+    "quarantinedRecords" : 4,
+    "acceptedRecords" : 51
+  } ],
+  "acceptedRecords" : 51,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 17419,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/23",
+  "quarantineUri" : "quarantine/23",
+  "checksum" : "71bbde63"
+}

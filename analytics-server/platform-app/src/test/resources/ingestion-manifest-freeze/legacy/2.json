@@ -1,0 +1,227 @@
+{
+  "batchId" : "2",
+  "batchNo" : "ing-20260907182037-da509e7b",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-07T18:20:37.627779900",
+  "finishedAt" : "2026-09-07T18:20:43.322493400",
+  "files" : [ {
+    "acceptedRecords" : 26027,
+    "startOffset" : 0,
+    "endOffset" : 12089941,
+    "file" : "2026090509.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 32847,
+    "startOffset" : 0,
+    "endOffset" : 15268153,
+    "file" : "2026090510.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 36576,
+    "startOffset" : 0,
+    "endOffset" : 17000746,
+    "file" : "2026090511.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 39227,
+    "startOffset" : 0,
+    "endOffset" : 18234895,
+    "file" : "2026090512.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 34698,
+    "startOffset" : 0,
+    "endOffset" : 16127604,
+    "file" : "2026090513.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 32826,
+    "startOffset" : 0,
+    "endOffset" : 15258744,
+    "file" : "2026090514.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 30581,
+    "startOffset" : 0,
+    "endOffset" : 14216195,
+    "file" : "2026090515.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 28366,
+    "startOffset" : 0,
+    "endOffset" : 13184054,
+    "file" : "2026090516.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 36058,
+    "startOffset" : 0,
+    "endOffset" : 16761473,
+    "file" : "2026090517.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 43763,
+    "startOffset" : 0,
+    "endOffset" : 20344587,
+    "file" : "2026090518.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 41654,
+    "startOffset" : 0,
+    "endOffset" : 19363647,
+    "file" : "2026090519.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 43249,
+    "startOffset" : 0,
+    "endOffset" : 20103891,
+    "file" : "2026090520.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 38988,
+    "startOffset" : 0,
+    "endOffset" : 18125058,
+    "file" : "2026090521.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 30570,
+    "startOffset" : 0,
+    "endOffset" : 14209197,
+    "file" : "2026090522.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 17347,
+    "startOffset" : 0,
+    "endOffset" : 8062834,
+    "file" : "2026090523.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 6338,
+    "startOffset" : 0,
+    "endOffset" : 2946673,
+    "file" : "2026090600.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 4459,
+    "startOffset" : 0,
+    "endOffset" : 2072574,
+    "file" : "2026090601.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 3590,
+    "startOffset" : 0,
+    "endOffset" : 1668224,
+    "file" : "2026090602.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 2462,
+    "startOffset" : 0,
+    "endOffset" : 1144345,
+    "file" : "2026090603.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 2161,
+    "startOffset" : 0,
+    "endOffset" : 1005211,
+    "file" : "2026090604.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 2209,
+    "startOffset" : 0,
+    "endOffset" : 1026537,
+    "file" : "2026090605.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 4443,
+    "startOffset" : 0,
+    "endOffset" : 2065794,
+    "file" : "2026090606.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 10959,
+    "startOffset" : 0,
+    "endOffset" : 5094599,
+    "file" : "2026090607.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 19357,
+    "startOffset" : 0,
+    "endOffset" : 8996315,
+    "file" : "2026090608.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 26016,
+    "startOffset" : 0,
+    "endOffset" : 12092686,
+    "file" : "2026090609.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 32444,
+    "startOffset" : 0,
+    "endOffset" : 15080217,
+    "file" : "2026090610.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 37197,
+    "startOffset" : 0,
+    "endOffset" : 17291695,
+    "file" : "2026090611.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 39803,
+    "startOffset" : 0,
+    "endOffset" : 18502991,
+    "file" : "2026090612.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 34735,
+    "startOffset" : 0,
+    "endOffset" : 16147426,
+    "file" : "2026090613.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 33759,
+    "startOffset" : 0,
+    "endOffset" : 15692460,
+    "file" : "2026090614.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 30706,
+    "startOffset" : 0,
+    "endOffset" : 14275535,
+    "file" : "2026090615.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 28457,
+    "startOffset" : 0,
+    "endOffset" : 13227116,
+    "file" : "2026090616.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 34788,
+    "startOffset" : 0,
+    "endOffset" : 16168955,
+    "file" : "2026090617.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 4,
+    "startOffset" : 0,
+    "endOffset" : 1846,
+    "file" : "2026090620.jsonl",
+    "quarantinedRecords" : 0
+  }, {
+    "acceptedRecords" : 16,
+    "startOffset" : 0,
+    "endOffset" : 7041,
+    "file" : "2026090621.jsonl",
+    "quarantinedRecords" : 0
+  } ],
+  "acceptedRecords" : 866680,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 401992579,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/2",
+  "quarantineUri" : "quarantine/2",
+  "checksum" : "0"
+}

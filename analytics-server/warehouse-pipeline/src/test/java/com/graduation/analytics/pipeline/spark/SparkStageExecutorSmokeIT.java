@@ -29,29 +29,56 @@ import static org.mockito.Mockito.when;
  * 验证 §四 边界：提交器真实启动 spark-submit、参数被 JobRunner
  * 正确解析、externalJobId/记录数/状态落库（spark_job_run）、Spark 确实写出目标分区。
  *
- * 运行：mvn -pl warehouse-pipeline -Dtest=SparkStageExecutorSmokeTest test
- * 前置：spark-jobs jar 已构建；本机 D:\Develop\spark-3.5.1-bin-hadoop3。
+ * <h3>V25-S03 R-5 整改：加门禁 + 只删本次 runId 拥有的目录</h3>
+ *
+ * <p><b>整改前</b>：工作根是仓库内<b>固定常量</b>
+ * {@code <repo>/tests/r6-smoke-warehouse}，入口处直接
+ * {@code Files.walk(SMOKE_ROOT).sorted(reverseOrder()).forEach(Files::deleteIfExists)}
+ * ——无门禁、无预览、无目标校验。只要有人把常量改成 {@code tests} 或 {@code .}，
+ * 这段递归删除就会清掉整个目录树；而且直接 {@code mvn test} 就会启动真实
+ * {@code spark-submit} 外部进程。</p>
+ *
+ * <p><b>整改后</b>：</p>
+ * <ul>
+ *   <li>默认关闭：必须 {@code -Dv25.spark.it=true}；未开启则**显式失败**（不是 skip）；</li>
+ *   <li>允许根白名单：默认 {@code <repo>/target/v25-spark-it}，且拒绝仓库根、
+ *       仓库根一级子目录、集群 {@code /graduation/**}；</li>
+ *   <li>工作目录 {@code <允许根>/<testRunId>/}，删除**只**作用于该目录；</li>
+ *   <li>删除前打印待删清单（相对路径 + 数量），再执行删除。</li>
+ * </ul>
+ *
+ * <p><b>类名由 {@code SparkStageExecutorSmokeTest} 改为 {@code SparkStageExecutorSmokeIT}
+ * （总控 2026-09-14 裁决）</b>：surefire 默认 includes 只含 {@code *Test}/{@code Test*}/{@code *Tests}/
+ * {@code *TestCase}，因此改名后本类**不再进入 {@code mvn test} 默认套件**——这既是 R-5「默认关闭」的
+ * 落地方式，也与仓库既有 {@code *MySqlIT} 一族同一约定。**不得**为了让它默认跑而改回 {@code *Test}：
+ * 那会让每次默认构建都启动真实 {@code spark-submit} 外部进程（历史上还因内存不足崩过，见 DEF-15），
+ * 并让默认反应堆因「未开开关」而永久 1 error。</p>
+ *
+ * <p>运行（**必须显式给出开关与 runId**）：{@code mvn -pl warehouse-pipeline
+ * -Dtest=SparkStageExecutorSmokeIT -Dv25.spark.it=true -Dv25.it.testRunId=<runId> test}
+ * 前置：spark-jobs jar 已构建；本机 {@code D:\Develop\spark-3.5.1-bin-hadoop3}。
+ * 未给开关时本类会**显式报错拒绝**（{@code MissingConfigurationException}），不是 skip。</p>
+ *
+ * <p>凡触库/触 HDFS 的部分等 W03 交付隔离实例；本轮只把门禁与"拒跑"做实。</p>
  */
-class SparkStageExecutorSmokeTest {
+class SparkStageExecutorSmokeIT {
 
-    // 用仓库内固定目录（非 @TempDir）：失败后分区证据可事后检查
-    private static final Path SMOKE_ROOT =
-            java.nio.file.Paths.get("tests", "r6-smoke-warehouse").toAbsolutePath();
+    // V25-S03 R-5：工作根不再用仓库内固定常量，改由 SparkItGuard 按允许根 + testRunId 解析。
+    private static Path smokeRoot() {
+        return com.graduation.analytics.testsupport.SparkItGuard.runRoot();
+    }
 
     @Test
     void realSparkOdlLoadsGoldenDataset() throws Exception {
+        // 门禁：默认关闭。未显式开启就红，不提供 skip 形态的通过。
+        com.graduation.analytics.testsupport.SparkItGuard.requireEnabled(
+                "SparkStageExecutorSmokeIT.realSparkOdlLoadsGoldenDataset");
+        // 清理：先列预览、只删本次 runId 拥有的目录
+        com.graduation.analytics.testsupport.SparkItGuard.deleteOwnedRunDir();
+
+        Path SMOKE_ROOT = smokeRoot();
         Path warehouse = SMOKE_ROOT.resolve("warehouse");
         Path logRoot = SMOKE_ROOT.resolve("logs");
-        if (Files.exists(SMOKE_ROOT)) {
-            try (var walk = Files.walk(SMOKE_ROOT)) {
-                walk.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
-                    try {
-                        Files.deleteIfExists(p);
-                    } catch (java.io.IOException ignored) {
-                    }
-                });
-            }
-        }
         Files.createDirectories(warehouse);
         Files.createDirectories(logRoot);
 

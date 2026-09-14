@@ -1,0 +1,39 @@
+{
+  "batchId" : 40,
+  "batchNo" : "ing-20260912092315-fef96b66",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T09:23:15.611959300",
+  "finishedAt" : "2026-09-12T09:23:15.808421800",
+  "files" : [ {
+    "startOffset" : 0,
+    "endOffset" : 460026,
+    "file" : "2026091120.jsonl",
+    "quarantinedRecords" : 0,
+    "acceptedRecords" : 1013
+  }, {
+    "startOffset" : 0,
+    "endOffset" : 165616,
+    "file" : "2026091121.jsonl",
+    "quarantinedRecords" : 0,
+    "acceptedRecords" : 367
+  }, {
+    "startOffset" : 0,
+    "endOffset" : 130261,
+    "file" : "2026091122.jsonl",
+    "quarantinedRecords" : 0,
+    "acceptedRecords" : 287
+  } ],
+  "acceptedRecords" : 1667,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 754236,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/40",
+  "quarantineUri" : "quarantine/40",
+  "checksum" : "a89ddd9d",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}

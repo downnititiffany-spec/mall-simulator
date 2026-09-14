@@ -1,0 +1,23 @@
+{
+  "batchId" : 30,
+  "batchNo" : "ing-20260911123006-bc6e7ea2",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-11T12:30:06.247400",
+  "finishedAt" : "2026-09-11T12:30:06.324068200",
+  "files" : [ {
+    "startOffset" : 0,
+    "acceptedRecords" : 51,
+    "quarantinedRecords" : 4,
+    "file" : "r9-m1-123006.jsonl",
+    "endOffset" : 18430
+  } ],
+  "acceptedRecords" : 51,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 17419,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/30",
+  "quarantineUri" : "quarantine/30",
+  "checksum" : "71bbde63"
+}

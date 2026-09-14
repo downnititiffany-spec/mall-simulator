@@ -45,14 +45,98 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SourceRegistryMigrationMySqlIT {
 
     /**
-     * 目标库名。默认就是真库 {@code analytics_meta}（本类的语义不变：跑的仍是"真 MySQL 8.0 上的迁移链"）。
+     * 目标库名。**没有默认值**——V25-S03 R-3 整改点。
      *
-     * <p>允许用 {@code -Dp1.it.metaDb=...} 指向一个**从真库 dump 出来的字节等价副本库**：P1-05 的 V17
-     * 在真库上属越界写（真库仍是 V16，由总控在同批次换 jar 时才应用），但"本类在 V16→V17 的库上到底
-     * 绿不绿"不能靠推理。副本库跑通的是同一份脚本链、同一份存量数据，因此是本轮能拿到的最强证据；
-     * 真库上的本类运行仍留给总控换 jar 之后。凭证同理，默认值不写库外账号。</p>
+     * <p>整改前这里是 {@code System.getProperty("p1.it.metaDb", "analytics_meta")}：默认值就是
+     * **正式库** {@code analytics_meta}。而本类在 {@link #twoApplicationStartups()} 里跑
+     * {@code Flyway.migrate()} 两次（属 DDL 写操作）。也就是说，只要有人敲
+     * {@code -Dp1.it=true} 而**忘了**带 {@code -Dp1.it.metaDb=...}，就会把正式
+     * {@code analytics_meta} 迁移到当前代码版本——这正是 D-080 记录的越界写库形态。</p>
+     *
+     * <p>整改后：缺配置 → **拒跑**（抛异常），不存在回退到正式库的路径。
+     * 取值仍沿用 {@code p1.it.metaDb} 键，以保持既有验收命令与历史证据可复现。</p>
      */
-    private static final String META_DB = System.getProperty("p1.it.metaDb", "analytics_meta");
+    private static final String META_DB = requiredProperty("p1.it.metaDb",
+            "目标 meta 库名。整改后无默认值：不得回退到正式库 analytics_meta。"
+                    + "请显式指定一份从真库 dump 出来的副本库，例如 "
+                    + "-Dp1.it.metaDb=analytics_meta_<runId>it");
+
+    /** 目标实例主机:端口。**没有默认值**：默认 3306 意味着宿主正式实例。 */
+    private static final String META_HOST = requiredProperty("p1.it.metaHost",
+            "目标 MySQL 实例 host:port。整改后无默认值：不得回退到宿主正式实例 3306。"
+                    + "隔离实例应形如 127.0.0.1:3307");
+
+    /** 执行账号。**没有默认值**：整改前默认 {@code meta_app}（正式账号）。 */
+    private static final String META_USER = requiredProperty("p1.it.metaUser",
+            "执行账号。整改后无默认值：不得回退到正式账号 meta_app。");
+
+    /**
+     * 执行账号口令。**没有默认值、且仓库内不落明文**。
+     *
+     * <p>整改前源码里直接写着 {@code "meta_app_pw_2026"}。整改后口令必须由外部提供
+     * （系统属性或隔离档案），取值支持 {@code credref:<id>} 引用形式。</p>
+     */
+    private static final String META_PASSWORD = requiredProperty("p1.it.metaPassword",
+            "执行账号口令。整改后无默认值、仓库不落明文：请用系统属性或隔离档案提供"
+                    + "（可写 credref:<id> 引用）");
+
+    /** 本次运行标识：用于「库名必须属于本次运行」与证据可复查。 */
+    private static final String TEST_RUN_ID = requiredProperty("p1.it.testRunId",
+            "本次运行标识（testRunId）：整改后无默认值，用于证明目标是本次新建的副本库。");
+
+    /** 登记的目标实例指纹（@@hostname 或 host:port）：同库名换实例也必须拒绝。 */
+    private static final String SERVER_FINGERPRINT = requiredProperty("p1.it.serverFingerprint",
+            "登记的目标实例指纹（@@hostname 或 host:port）：整改后无默认值。");
+
+    /**
+     * 读取必填配置项：系统属性 → 隔离档案 → **抛异常拒跑**。
+     *
+     * <p>与 V25-S01/V25-S02 的两个 {@code *MySqlIT} 同一门禁模式，唯一区别是键前缀沿用
+     * {@code p1.it.*}（保持既有验收命令），并委托平台侧共享的
+     * {@link com.graduation.analytics.testsupport.TestIsolationGuard#requiredProperty(String)}
+     * 做「档案兜底 + 拒绝文案」——避免这里再长出第二套解析逻辑。</p>
+     */
+    private static String requiredProperty(String key, String purpose) {
+        String value = System.getProperty(key);
+        if (value != null && !value.isBlank()) {
+            return value.trim();
+        }
+        // 档案兜底：V25-S02 的隔离档案（v25.it.* / integration.local.properties）
+        final String bare = key.substring(key.lastIndexOf('.') + 1);
+        try {
+            return com.graduation.analytics.testsupport.TestIsolationGuard.requiredProperty(bare);
+        } catch (RuntimeException e) {
+            throw new com.graduation.analytics.testsupport.TestIsolationGuard
+                    .MissingConfigurationException("缺少测试隔离配置项 -D" + key + "（" + purpose
+                    + "）：拒绝运行（不用正式账号/正式地址兜底）。档案兜底亦未命中：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 写前门禁：在任何 DDL/DML 之前核对**真实连接**。
+     *
+     * <p>与两个 {@code *MySqlIT} 同一模式：{@code SELECT DATABASE()} 必须等于声明目标库、
+     * 实例端口必须命中隔离白名单（3307）、账号不得是 root/正式写账号、实例指纹必须匹配。</p>
+     *
+     * <p>注意调用点：必须在 {@code Flyway.migrate()} <b>之前</b>。整改前本类没有任何写前校验，
+     * V17/V18 迁移一旦连上正式库就会先改表再断言。</p>
+     */
+    private static void verifyBeforeWrite(DataSource ds, String database) {
+        com.graduation.analytics.testsupport.TestIsolationGuard.verifyBeforeWrite(
+                context(), ds, database);
+    }
+
+    /** 由 {@code p1.it.*} 构造平台侧共享的 {@link com.graduation.analytics.testsupport.TestRunContext}。 */
+    private static com.graduation.analytics.testsupport.TestIsolationGuard.TestRunContext context() {
+        return new com.graduation.analytics.testsupport.TestIsolationGuard.TestRunContext(
+                TEST_RUN_ID, SERVER_FINGERPRINT, META_DB, META_DB,
+                System.getProperty("p1.it.hiveNamespace", "unused-no-hive"),
+                System.getProperty("p1.it.hdfsRoot", "unused-no-hdfs"),
+                System.getProperty("p1.it.manifestRoot", "unused-no-manifest"),
+                "credref:" + META_USER,
+                System.currentTimeMillis(),
+                java.nio.file.Path.of("p1.it.properties"));
+    }
 
     /**
      * meta 库应当存在的迁移脚本清单（P1-05 起含 V17，D-037）。
@@ -120,6 +204,9 @@ class SourceRegistryMigrationMySqlIT {
     @BeforeAll
     static void twoApplicationStartups() {
         meta = new JdbcTemplate(dataSource());
+        // V25-S03 R-3：写前门禁必须在第一次 Flyway.migrate() 之前。
+        // 整改前本类直接在正式库上跑 migrate（V17/V18 是 DDL），连错库就先改表再断言。
+        verifyBeforeWrite(meta.getDataSource(), META_DB);
         // 第一次「启动」：MetaFlywayInitializer 等价调用（同 classpath:db/meta）
         var first = Flyway.configure().dataSource(meta.getDataSource()).locations("classpath:db/meta").load().migrate();
         firstStartupExecuted = first.migrationsExecuted;
@@ -360,10 +447,11 @@ class SourceRegistryMigrationMySqlIT {
     private static DataSource dataSource() {
         DriverManagerDataSource ds = new DriverManagerDataSource();
         ds.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        ds.setUrl("jdbc:mysql://127.0.0.1:3306/" + META_DB
+        // V25-S03 R-3：主机:端口与口令都不再有默认值（整改前分别是 3306 与明文 meta_app_pw_2026）
+        ds.setUrl("jdbc:mysql://" + META_HOST + "/" + META_DB
                 + "?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true");
-        ds.setUsername(System.getProperty("p1.it.metaUser", "meta_app"));
-        ds.setPassword(System.getProperty("p1.it.metaPassword", "meta_app_pw_2026"));
+        ds.setUsername(META_USER);
+        ds.setPassword(META_PASSWORD);
         return ds;
     }
 }

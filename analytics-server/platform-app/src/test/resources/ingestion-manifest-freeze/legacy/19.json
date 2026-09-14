@@ -1,0 +1,23 @@
+{
+  "batchId" : 19,
+  "batchNo" : "ing-20260910193153-14bf87a3",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-10T19:31:53.570782900",
+  "finishedAt" : "2026-09-10T19:31:53.721342300",
+  "files" : [ {
+    "quarantinedRecords" : 4,
+    "file" : "golden-r618-tampered-20260910.jsonl",
+    "endOffset" : 18430,
+    "startOffset" : 0,
+    "acceptedRecords" : 51
+  } ],
+  "acceptedRecords" : 51,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 17419,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/19",
+  "quarantineUri" : "quarantine/19",
+  "checksum" : "bf47dbbf"
+}

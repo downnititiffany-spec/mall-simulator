@@ -57,9 +57,13 @@ class JobResultParserTest {
         assertThat(r.checks().get(0).layer()).isEqualTo("ADS_STAGING");
         assertThat(r.checks().get(0).targetTable()).isEqualTo("dw_ads.ads_hot_product__staging");
         assertThat(r.checks().get(0).blocking()).isTrue();
-        assertThat(r.checks().get(1).blocking()).isFalse(); // ERROR 不阻断发布
+        // F-88：这里断言的是**作业回传标签**的原样透传（该适配器不负责平台口径）。
+        // 平台口径（ERROR 也阻断发布，D-142 §1）由 RuleSeverity + DataQualityGate 拥有，
+        // 由 PipelineService.persistChecks 落库时归一化 —— 见 RuleSeverityTest / DataQualityGateTest。
+        assertThat(r.checks().get(1).severity()).isEqualTo("ERROR");
+        assertThat(r.checks().get(1).blocking()).isFalse();
         assertThat(r.checks().get(2).severity()).isEqualTo("BLOCKING"); // 缺省保守判定
-        // 只有 BLOCKING 且未通过的算阻断失败；PUB_DQ_EVENT_ID_UNIQUE 是观察项
+        // 作业侧判据：只有 BLOCKING 且未通过的算"作业为什么会 FAILED"
         assertThat(r.blockingFailures()).extracting(JobResultParser.CheckInfo::ruleCode)
                 .containsExactly("ADS_STAGING_PRESENT", "LEGACY_NO_SEVERITY");
     }

@@ -1,0 +1,51 @@
+{
+  "batchId" : 41,
+  "batchNo" : "ing-20260912172222-6c163e45",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-12T17:22:22.015786700",
+  "finishedAt" : "2026-09-12T17:22:22.381312900",
+  "files" : [ {
+    "file" : "2026091209.jsonl",
+    "endOffset" : 1131,
+    "startOffset" : 0,
+    "acceptedRecords" : 3,
+    "quarantinedRecords" : 0
+  }, {
+    "file" : "2026091210.jsonl",
+    "endOffset" : 584644,
+    "startOffset" : 0,
+    "acceptedRecords" : 1293,
+    "quarantinedRecords" : 0
+  }, {
+    "file" : "2026091211.jsonl",
+    "endOffset" : 631946,
+    "startOffset" : 0,
+    "acceptedRecords" : 1391,
+    "quarantinedRecords" : 0
+  }, {
+    "file" : "2026091215.jsonl",
+    "endOffset" : 994,
+    "startOffset" : 0,
+    "acceptedRecords" : 2,
+    "quarantinedRecords" : 0
+  }, {
+    "file" : "r2-golden55-20260912-172221.jsonl",
+    "endOffset" : 18430,
+    "startOffset" : 0,
+    "acceptedRecords" : 51,
+    "quarantinedRecords" : 4
+  } ],
+  "acceptedRecords" : 2740,
+  "quarantinedRecords" : 4,
+  "acceptedBytes" : 1233445,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/41",
+  "quarantineUri" : "quarantine/41",
+  "checksum" : "4aa9fbd3",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null
+}

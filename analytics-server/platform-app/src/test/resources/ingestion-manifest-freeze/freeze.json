@@ -1,0 +1,268 @@
+{
+  "frozenAt": "2026-09-14",
+  "basis": "D-037 裁决 6：历史清单不可变、不许回填。本清单是版本库内唯一的不可变基准；landing/ 本身被 .gitignore:30 排除，属运行期产物。",
+  "legacyFrozenCount": 39,
+  "newFrozenCount": 4,
+  "legacy": [
+    {
+      "name": "1.json",
+      "sha256": "98a418186e88bc6893eac859382626bbadf0f4b25551757a86228219a7c5f2f9",
+      "keys": 15,
+      "bytes": 463
+    },
+    {
+      "name": "2.json",
+      "sha256": "d0dfb5d9af70249561edb437d73e8bcb62b23b33f84f05543dc458a23e12ffed",
+      "keys": 15,
+      "bytes": 5944
+    },
+    {
+      "name": "3.json",
+      "sha256": "21d02dd4384b1bc391a3327925ff6cbe6a303a4cf8843cf6bb5284e83b0ce454",
+      "keys": 15,
+      "bytes": 463
+    },
+    {
+      "name": "4.json",
+      "sha256": "0f3c99da9e225cf48074ae0845c0209496d7c838cf4283a8026eb7c5a4886ce7",
+      "keys": 15,
+      "bytes": 614
+    },
+    {
+      "name": "5.json",
+      "sha256": "57e5e3d8e5278b70db45e7d209d10ec1c9ec3029ea87a0fc94a55182ce181900",
+      "keys": 15,
+      "bytes": 622
+    },
+    {
+      "name": "6.json",
+      "sha256": "af0ef40deffd97c2b66d29eede524339757af53804bea59498c5294b09b79df0",
+      "keys": 15,
+      "bytes": 461
+    },
+    {
+      "name": "7.json",
+      "sha256": "2e4915c465a2d1c57e15033e5857a51e2ad67a8f781db10fc9a261a037b294e2",
+      "keys": 15,
+      "bytes": 626
+    },
+    {
+      "name": "8.json",
+      "sha256": "af960ed704d97a73f3ac6a784ddf0dc54237d74fff9057c31b1440cf3cee77bf",
+      "keys": 15,
+      "bytes": 628
+    },
+    {
+      "name": "9.json",
+      "sha256": "d92bea9f4c3713ea7927fc6266fcaebdcc4d020bfb460ca666c925091d30204b",
+      "keys": 15,
+      "bytes": 625
+    },
+    {
+      "name": "10.json",
+      "sha256": "c5d94a24835e4bf86c439c8a07b56fc2cf66f5d38c113292665dcb2e8a520007",
+      "keys": 15,
+      "bytes": 464
+    },
+    {
+      "name": "11.json",
+      "sha256": "4ea7a564707a315b2148db0d7d5381bc044a8068e3b8de6cb6d717d229602ade",
+      "keys": 15,
+      "bytes": 631
+    },
+    {
+      "name": "12.json",
+      "sha256": "630f0fd786db61b6c95dd684471c3dbb6caa6f02b8e265b82647edd0d82631bf",
+      "keys": 15,
+      "bytes": 464
+    },
+    {
+      "name": "13.json",
+      "sha256": "39e76a4daf6ceca70139fcd96f0d95a79ad79a533c0d1b8e5bb4daa55584c2e0",
+      "keys": 15,
+      "bytes": 634
+    },
+    {
+      "name": "14.json",
+      "sha256": "080faa7aa76bf1abcbfb05a8e2a1f810d3c271e56846677b095eca8540c504e8",
+      "keys": 15,
+      "bytes": 634
+    },
+    {
+      "name": "15.json",
+      "sha256": "a0a674770e1c3a9cf84657abbbaeafe83d86eaa42313d2eeff4740b614fc8249",
+      "keys": 15,
+      "bytes": 634
+    },
+    {
+      "name": "16.json",
+      "sha256": "aa1f36fe7243d3e8de5ecbda02d89546382bc09f467a14647d0600ae0691e48e",
+      "keys": 15,
+      "bytes": 623
+    },
+    {
+      "name": "17.json",
+      "sha256": "d7993f7f2b9865523075221773595077681a456f0b7fc8082e886ce40394b500",
+      "keys": 15,
+      "bytes": 648
+    },
+    {
+      "name": "18.json",
+      "sha256": "1a31bfa388506be34168c2e71df8c6c9bfc5652c4534b581c7e74866ead8a7d7",
+      "keys": 15,
+      "bytes": 649
+    },
+    {
+      "name": "19.json",
+      "sha256": "8ff4699a2e2934ae296b3e914f98fc6ea3b407afbd8a085284ef122594418485",
+      "keys": 15,
+      "bytes": 651
+    },
+    {
+      "name": "20.json",
+      "sha256": "53c7b7148bad3cff2cdc6cb24b9771c07ba0403e50b0444fddbbcd3bd9f4c559",
+      "keys": 15,
+      "bytes": 648
+    },
+    {
+      "name": "21.json",
+      "sha256": "02468e84fa79e1600cd5f170552e2b5cc1a9e4df3bc12829836e218ec7810390",
+      "keys": 15,
+      "bytes": 647
+    },
+    {
+      "name": "22.json",
+      "sha256": "01bfa87250d03dbfbd891089c2c9945b081ad6b436885ee76f7b53446796f6f7",
+      "keys": 15,
+      "bytes": 647
+    },
+    {
+      "name": "23.json",
+      "sha256": "e091421674ace63f5b7bc6cdef1348bf5f8c997b37c912b3e95c244d7526668a",
+      "keys": 15,
+      "bytes": 645
+    },
+    {
+      "name": "24.json",
+      "sha256": "0c6d143273117677632c9688e39340fac031064fcd87be58e4d9b9378ca29d75",
+      "keys": 15,
+      "bytes": 648
+    },
+    {
+      "name": "25.json",
+      "sha256": "4504073e7a7389583708becfbfca6ae7e24caa73e36e9f9510a1534ed59f01be",
+      "keys": 15,
+      "bytes": 648
+    },
+    {
+      "name": "26.json",
+      "sha256": "e31fe7a5d06c1f03612b18a191b42ab44226d3b4c5bf9476b5fe84683f096a44",
+      "keys": 15,
+      "bytes": 643
+    },
+    {
+      "name": "27.json",
+      "sha256": "a580a73b2bb593b9cd2369e84d9ec2016b90fd7b1f54acf9bd81b665733f49ff",
+      "keys": 15,
+      "bytes": 640
+    },
+    {
+      "name": "28.json",
+      "sha256": "6b2c7cbf0e8e2895e3f1f89a4518410784b8c2e90c22283b2cabc1663b678f0a",
+      "keys": 15,
+      "bytes": 640
+    },
+    {
+      "name": "29.json",
+      "sha256": "2f4d35053e04d3d8c62d226bbe8f42ceb70ab50374f1d7e876b6f8906ccc5904",
+      "keys": 15,
+      "bytes": 7889
+    },
+    {
+      "name": "30.json",
+      "sha256": "a68566db7c38ffa0c45e250713b1c30c90650b910591b476b578d462f93d277e",
+      "keys": 15,
+      "bytes": 631
+    },
+    {
+      "name": "31.json",
+      "sha256": "55c20c185cad505f4e64f722693e2f31f7039a5e54d5e7324479e21422b5ae31",
+      "keys": 15,
+      "bytes": 649
+    },
+    {
+      "name": "32.json",
+      "sha256": "9d6bf74a453ae6e424f4a631102c9da794d7b0600b909bc725e52579c915253b",
+      "keys": 15,
+      "bytes": 464
+    },
+    {
+      "name": "33.json",
+      "sha256": "539607f3386c6108c6ddcf65bfde4f2350c27f3b692ea908a6afd5571a9f7b6f",
+      "keys": 15,
+      "bytes": 464
+    },
+    {
+      "name": "34.json",
+      "sha256": "0d8fd00946380a98574584359aa06d8750fd349a84878134130294b6f690ba31",
+      "keys": 15,
+      "bytes": 629
+    },
+    {
+      "name": "35.json",
+      "sha256": "28d35162b5aeb673d0caf3a5d5abe5fb70dc9048c6e8cc2a7ebd177b94923a23",
+      "keys": 15,
+      "bytes": 464
+    },
+    {
+      "name": "36.json",
+      "sha256": "12f8f255d24622b73252b950f45d91072f129439e6615c398a89421933e67aaf",
+      "keys": 15,
+      "bytes": 638
+    },
+    {
+      "name": "37.json",
+      "sha256": "a584356dcb293745c064ff52a322a7eb15dd175453de30a22d720fda85b23126",
+      "keys": 15,
+      "bytes": 464
+    },
+    {
+      "name": "38.json",
+      "sha256": "1654eda9fb6ac342e900dbc2433522a40e04cfa6ea78984d044cddf9acdbee75",
+      "keys": 15,
+      "bytes": 464
+    },
+    {
+      "name": "39.json",
+      "sha256": "4037d9955df843d0ed4b6c0e27dbe4d8c74bdedf22f513efe61606711a7cd16f",
+      "keys": 15,
+      "bytes": 642
+    }
+  ],
+  "new": [
+    {
+      "name": "40.json",
+      "sha256": "f85a9ca9525086d21a0621ccdfe21a72c89f10c12d3d2d98125e7c8e70d63bb7",
+      "keys": 19,
+      "bytes": 1051
+    },
+    {
+      "name": "41.json",
+      "sha256": "c59cc84a10a1099066aa3d96358dbaa9845a2e2d8689d7eea94ed7b2fe154c93",
+      "keys": 19,
+      "bytes": 1365
+    },
+    {
+      "name": "42.json",
+      "sha256": "8037655b74d084c28966c31fb4c82aa829b80fdae4ed4a617430a9fc9290bd61",
+      "keys": 19,
+      "bytes": 763
+    },
+    {
+      "name": "43.json",
+      "sha256": "e83d9bee11af071a506958e63a06d23ac075cc1ecaf3ca84542d5b9fd91a25f2",
+      "keys": 19,
+      "bytes": 754
+    }
+  ]
+}
