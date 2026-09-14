@@ -31,7 +31,13 @@ foreach ($s in $statements) {
 }
 
 $old = $env:MYSQL_PWD
-$env:MYSQL_PWD = if ($env:HOST3306_PWD) { $env:HOST3306_PWD } else { '123456' }
+# 总控复核补记 2026-09-14（以此为准）：原写法在未设 HOST3306_PWD 时回退明文 '123456'。
+# 本仓库正在收口存量明文默认口令（V25-S05），取证工具不得**新增**明文默认值；
+# 且与同泳道 K-04/K-05「无口令即拒绝」的姿态不一致 ⇒ 改为 fail-fast，不回退任何默认口令。
+if (-not $env:HOST3306_PWD) {
+  throw '未提供 3306 只读口令：请设置环境变量 HOST3306_PWD（不写入仓库）。本脚本不回退任何默认口令。'
+}
+$env:MYSQL_PWD = $env:HOST3306_PWD
 try {
   # 1. 目标指纹断言：必须是宿主正式实例
   $fp = (& $MysqlExe --host=127.0.0.1 --port=3306 --user=root --batch --raw --skip-column-names `

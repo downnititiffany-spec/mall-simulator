@@ -1,0 +1,15 @@
+id	snapshot_id	version	active_flag
+27	S20260901_47	12	1
+v20_cols
+0
+qrd_tables
+0
+meta_flyway_v18plus
+1
+meta_flyway_v1920
+0
+v25it_profile_rows
+0
+v25it_schemas
+0
+ERROR 1054 (42S22) at line 8: Unknown column 'rule_version' in 'field list'
