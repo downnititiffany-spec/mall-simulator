@@ -5,8 +5,8 @@
 - 起始 HEAD：`00a38e8e0c10bbca80d19d8ddd2d947c8726553e`（工作区干净）
 - 环境：Windows + PowerShell 7，`JAVA_HOME=D:\Develop\JAVA17`，Maven `D:\apache-maven-3.9.14`，离线仓库 `D:\maven_repository`
 - 时间：2026-09-14
-- 提交：`f5a8c1b`（分支 `remediation/r1-boundary`，12 files changed / 1269 insertions / 26 deletions）
-  - **短哈希为本报告自身的引用**：本提交在写入本文件后做过一次 `--amend`（仅追加 §9 与提交信息回填，无代码改动），因此完整 40 位哈希由 `git rev-parse HEAD` 现取；短哈希 `f5a8c1b` 与本文件内容互相一致
+- 提交：**以 `git log --oneline -3` 为准**（分支 `remediation/r1-boundary`；两个提交：① 写侧代码 + 测试 + 本报告，② 仅本报告的哈希自指订正）
+  - 为什么正文不写死自身提交的完整哈希：本报告写死哈希后，任何对报告的修订都会改哈希 —— 形成「改报告 → 哈希变 → 再改报告」的自指循环（本轮实测连撞 3 次）。故报告只描述内容，**哈希一律现取**
   - **未推送**（本分支无远端对应分支，`git branch -r` 只有 `origin/main`；推送由总控在本泳道评审后执行）
   - 提交后 `git status --porcelain=v1` 为空
 - **本次未连接任何数据库**（3306 / 3307 均未连接；未启动/停止任何服务；未执行迁移）
@@ -220,7 +220,7 @@ V19/V20 与本次写侧改造落地后该句不再成立，已改为：写侧已
 
 ## 9. 提交与文件清单
 
-- 提交：`f5a8c1b`（`remediation/r1-boundary`），**未推送**
+- 提交：`remediation/r1-boundary` 上两个提交（① 写侧代码+测试+本报告；② 仅本报告哈希自指订正），**未推送**；具体哈希用 `git log --oneline -3` 现取
 - 提交涉及的 8 个源文件 + 4 个本报告文件（`git show --stat HEAD` 原始输出可复现）：
   1. `analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/entity/DataQualityResult.java`
   2. `analytics-server/warehouse-pipeline/src/main/java/com/graduation/analytics/pipeline/QualityChecker.java`
@@ -235,4 +235,4 @@ V19/V20 与本次写侧改造落地后该句不再成立，已改为：写侧已
   11. `docs/acceptance/v26-f88-writeside-20260914/raw/02-mvn-platform-app-test-compile.log`
   12. `docs/acceptance/v26-f88-writeside-20260914/raw/03-static-selfcheck-grep-diffstat.log`
 - 报告行号引用基于提交后版本核对（与提交时的行号一致，第 1–8 项在本提交后未再改动）。
-- 本报告自身的 hash 引用约定：正文只引用**短哈希 `f5a8c1b`**（40 位完整哈希请用 `git rev-parse HEAD` 现取），避免「改报告 → 哈希变 → 再改报告」的自指循环。
+- 本报告**不引用自身所在提交的哈希**（自指循环：改报告 → 哈希变 → 再改报告，本轮实测连撞 3 次）；需要哈希时用 `git log --oneline -3` / `git rev-parse HEAD` 现取。
