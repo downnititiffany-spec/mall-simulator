@@ -1,0 +1,8 @@
+=== G3-04 取证探针：仅把手写指纹换成门禁可接受值（@@hostname / host:port / 纯端口），其余与 runner 完全一致 ===
+探针不改任何代码、不改 runner；只改注入的环境变量值 IT_GUARD_SERVERFINGERPRINT: de8ebbea-aff4-11f1-8037-00155d5dba47 -> 3307
+3307 实际 @@hostname=dahaishui @@port=3307 @@server_uuid=de8ebbea-aff4-11f1-8037-00155d5dba47
+mall exit=0
+generator exit=1
+--- 末行 Tests run ---
+mall : [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+generator : [ERROR] Tests run: 19, Failures: 0, Errors: 5, Skipped: 0

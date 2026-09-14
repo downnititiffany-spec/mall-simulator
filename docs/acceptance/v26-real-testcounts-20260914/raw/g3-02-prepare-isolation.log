@@ -1,0 +1,85 @@
+════════════════════════════════════════════════════════════════
+ 测试隔离环境准备 —— 将创建的对象清单
+════════════════════════════════════════════════════════════════
+ 实例        : 127.0.0.1:3307（WSL 内独立 MySQL；宿主 3306 不参与）
+ runId       : v26it_20260914_1700
+ 将创建（幂等，IF NOT EXISTS）：
+   数据库     : v26it_20260914_1700_mall
+   数据库     : v26it_20260914_1700_generator
+   受限账号   : v26it_20260914_1700_mallapp@'%'  （只对 v26it_20260914_1700_mall 有权限）
+   受限账号   : v26it_20260914_1700_genapp@'%'  （只对 v26it_20260914_1700_generator 有权限）
+ 将写入的凭据文件（仓内、gitignore 覆盖、单键 password）：
+               : C:\Users\ASUS\AppData\Local\Temp\v26it-cred-v26it_20260914_1700\credref-v26it_20260914_1700-mall.properties
+               : C:\Users\ASUS\AppData\Local\Temp\v26it-cred-v26it_20260914_1700\credref-v26it_20260914_1700-generator.properties
+ 不会做的事：
+   * 不触碰宿主 3306 上的任何库
+   * 不创建/修改 root、metric_pub、mall_app、meta_app 等正式账号
+   * 不写入任何业务数据（只建空库 + 授权）
+   * 不修改仓库内任何已提交文件
+   * 不在仓库外创建任何文件（凭据文件落两模块工作目录）
+════════════════════════════════════════════════════════════════
+[1/2] 已写凭据文件：C:\Users\ASUS\AppData\Local\Temp\v26it-cred-v26it_20260914_1700\credref-v26it_20260914_1700-mall.properties
+               : C:\Users\ASUS\AppData\Local\Temp\v26it-cred-v26it_20260914_1700\credref-v26it_20260914_1700-generator.properties（均不回显口令）
+[admin] 管理员口令取自环境变量 V25IT_ADMIN_PWD（不回显）。
+created	v26it_20260914_1700_generator
+created	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_genapp'@'%'	v26it_20260914_1700_generator
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+granted	'v26it_20260914_1700_mallapp'@'%'	v26it_20260914_1700_mall
+[2/2] 建库/授权完成。
+
+把下面内容写入各模块的隔离档案（口令只放引用，不放明文）：
+  # mall-simulator/mall-isolation.local.properties（写到模块工作目录，即 CWD 候选；勿提交）
+  enabled=true
+  testRunId=v26it_20260914_1700
+  serverFingerprint=<在 3307 实例上执行 SELECT @@hostname 得到；若与宿主同名，用 port/uuid 区分>
+  mysql.host=127.0.0.1:3307
+  mysql.url=jdbc:mysql://127.0.0.1:3307/v26it_20260914_1700_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  mysql.username=v26it_20260914_1700_mallapp
+  mysql.password=credref:v26it_20260914_1700-mall
+  flyway.enabled=true
+
+  # synthetic-data-generator/it-guard.local.properties（写到模块工作目录，即 CWD 候选；勿提交）
+  # 键名 runId/url/user/password/instancePorts
+  runId=v26it_20260914_1700
+  instancePorts=3307
+  url=jdbc:mysql://127.0.0.1:3307/v26it_20260914_1700_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  user=v26it_20260914_1700_genapp
+  password=credref:v26it_20260914_1700-generator
+
+  # 注意：这两个档案只被各模块的门禁(IsolationGuard)读取，Spring 不读它们；
+  #       数据源地址仍须用环境变量/系统属性提供（见 application-test.yml）。
+EXITCODE=0

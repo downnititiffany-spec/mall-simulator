@@ -1,0 +1,44 @@
+=== 隔离套件运行门禁（V25-S02 唯一入口）===
+  目标      : 127.0.0.1:3307  （库前缀 v26it_20260914_1700_*）
+  实例指纹  : 期望 @@server_uuid = de8ebbea-aff4-11f1-8037-00155d5dba47
+  模块      : both
+  [门禁1] 端口 OK：3307 ∈ [3307] 且 != 3306
+  [门禁2] RunId 形状 OK：v26it_20260914_1700
+  [门禁3] 派生目标 OK：mall->v26it_20260914_1700_mall/v26it_20260914_1700_mallapp  generator->v26it_20260914_1700_generator/v26it_20260914_1700_genapp
+  [门禁4] mall      口令来源 IT_GUARD_PASSWORD_MALL       值 <T******…长度 24>
+  [门禁4] generator 口令来源 IT_GUARD_PASSWORD_GENERATOR  值 <h******…长度 24>
+  [门禁5] 确认 OK：-Confirm
+
+将要注入当前进程的环境变量（真值不落盘、不进命令行；口令 masked）：
+  IT_GUARD_ENABLED             = true
+  IT_GUARD_INSTANCEPORTS       = 3307
+  IT_GUARD_RUNID               = v26it_20260914_1700
+  IT_GUARD_SERVERFINGERPRINT   = de8ebbea-aff4-11f1-8037-00155d5dba47
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/v26it_20260914_1700_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (mall)
+  IT_GUARD_USER                = v26it_20260914_1700_mallapp   (mall)
+  IT_GUARD_PASSWORD            = <T******…长度 24>   (mall)
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/v26it_20260914_1700_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (generator)
+  IT_GUARD_USER                = v26it_20260914_1700_genapp   (generator)
+  IT_GUARD_PASSWORD            = <h******…长度 24>   (generator)
+  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，
+        因此两个模块不会串用彼此的口令/库（见下方循环内的重设语句）。
+  MALL_ISOLATION_URL           = jdbc:mysql://127.0.0.1:3307/v26it_20260914_1700_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  MALL_ISOLATION_USER          = v26it_20260914_1700_mallapp
+  MALL_ISOLATION_PASSWORD      = <T******…长度 24>
+  MALL_ISOLATION_FLYWAY_ENABLED = true
+  [门禁6] mall      探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hist=dahaishui 库存在
+  [门禁6] generator 探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hist=dahaishui 库存在
+
+=== 运行 mall 隔离套件：mvn -o -Dmaven.repo.local=... -f mall-simulator\pom.xml test （MAVEN_ARGS=-Pisolated-tests）===
+  mall      exit=1   [ERROR] Tests run: 30, Failures: 0, Errors: 30, Skipped: 0
+
+=== 运行 generator 隔离套件：mvn -o -Dmaven.repo.local=... -f synthetic-data-generator\pom.xml test （MAVEN_ARGS=-Pisolated-tests）===
+  generator exit=1   [ERROR] Tests run: 19, Failures: 5, Errors: 14, Skipped: 0
+
+=== 结果 ===
+  mall      exit=1  [ERROR] Tests run: 30, Failures: 0, Errors: 30, Skipped: 0
+            日志 D:\Develop_code\GraduationProject\docs\acceptance\v26-real-testcounts-20260914\raw\g3-03-isolated\isolated-mall.log
+  generator exit=1  [ERROR] Tests run: 19, Failures: 5, Errors: 14, Skipped: 0
+            日志 D:\Develop_code\GraduationProject\docs\acceptance\v26-real-testcounts-20260914\raw\g3-03-isolated\isolated-generator.log
+[FAIL exit=7] 2 个模块套件非 0 退出。
+EXITCODE=7

@@ -1,0 +1,50 @@
+# G1b：显式点名跑 5 个 *IT 类（**不带任何隔离配置**）——门禁行为取证
+# 采集时间: 2026-09-14 16:53:48
+# 关键结论：只有 SparkStageExecutorSmokeIT 是硬失败；其余 4 个是 **JUnit disabled 静默跳过**，退出码 0。
+
+===== SourceRegistryMigrationMySqlIT (@EnabledIfSystemProperty p1.it)
+日志文件: docs/acceptance/v26-real-testcounts-20260914/raw/g1b-01-platform-app-SourceRegistryMigrationMySqlIT.log
+  L3: [INFO] Reactor Build Order:
+  L145: [INFO] Running com.graduation.analytics.source.SourceRegistryMigrationMySqlIT
+  L146: [WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 7, Time elapsed: 0.006 s -- in com.graduation.analytics.source.SourceRegistryMigrationMySqlIT
+  L150: [WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 7
+  L163: [INFO] BUILD SUCCESS
+  L168: EXITCODE=0
+
+===== MetricAdsMySqlIT (@ExtendWith IsolationProfileCondition)
+日志文件: docs/acceptance/v26-real-testcounts-20260914/raw/g1b-02-metric-analysis-MetricAdsMySqlIT.log
+  L3: [INFO] Reactor Build Order:
+  L58: [INFO] Running com.graduation.analytics.metric.MetricAdsMySqlIT
+  L59: [WARNING] Tests run: 2, Failures: 0, Errors: 0, Skipped: 2, Time elapsed: 0.004 s -- in com.graduation.analytics.metric.MetricAdsMySqlIT
+  L63: [WARNING] Tests run: 2, Failures: 0, Errors: 0, Skipped: 2
+  L72: [INFO] BUILD SUCCESS
+  L77: EXITCODE=0
+
+===== SparkStageExecutorSmokeIT (无类级注解, 内部 SparkItGuard.requireEnabled)
+日志文件: docs/acceptance/v26-real-testcounts-20260914/raw/g1b-03-warehouse-pipeline-SparkStageExecutorSmokeIT.log
+  L3: [INFO] Reactor Build Order:
+  L80: [INFO] Running com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeIT
+  L81: [ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.033 s <<< FAILURE! -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeIT
+  L96: [ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0
+  L106: [INFO] BUILD FAILURE
+  L123: [ERROR] After correcting the problems, you can resume the build with the command
+  L125: EXITCODE=1
+
+===== MetricPublisherMySqlIT (@ExtendWith IsolationProfileCondition)
+日志文件: docs/acceptance/v26-real-testcounts-20260914/raw/g1b-04-metric-analysis-MetricPublisherMySqlIT.log
+  L3: [INFO] Reactor Build Order:
+  L58: [INFO] Running com.graduation.analytics.metric.publish.MetricPublisherMySqlIT
+  L59: [WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 3, Time elapsed: 0.004 s -- in com.graduation.analytics.metric.publish.MetricPublisherMySqlIT
+  L63: [WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 3
+  L72: [INFO] BUILD SUCCESS
+  L77: EXITCODE=0
+
+===== AnalysisGoldenMySqlIT (@EnabledIfSystemProperty metric.it)
+日志文件: docs/acceptance/v26-real-testcounts-20260914/raw/g1b-05-metric-analysis-AnalysisGoldenMySqlIT.log
+  L3: [INFO] Reactor Build Order:
+  L58: [INFO] Running com.graduation.analytics.analysis.AnalysisGoldenMySqlIT
+  L59: [WARNING] Tests run: 6, Failures: 0, Errors: 0, Skipped: 6, Time elapsed: 0.006 s -- in com.graduation.analytics.analysis.AnalysisGoldenMySqlIT
+  L63: [WARNING] Tests run: 6, Failures: 0, Errors: 0, Skipped: 6
+  L72: [INFO] BUILD SUCCESS
+  L77: EXITCODE=0
+

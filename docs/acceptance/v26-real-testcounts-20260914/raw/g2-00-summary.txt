@@ -1,0 +1,4 @@
+G2 结果（真实退出码，参数已修正为逐个字符串插值）:
+g2-01 metric-analysis MetricAdsMySqlIT+MetricPublisherMySqlIT  EXITCODE=1
+g2-02 platform-app SourceRegistryMigrationMySqlIT              EXITCODE=1
+g2-03 metric-analysis AnalysisGoldenMySqlIT                   EXITCODE=1

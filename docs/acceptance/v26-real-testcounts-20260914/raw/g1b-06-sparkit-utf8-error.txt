@@ -1,0 +1,16 @@
+# SparkStageExecutorSmokeIT 报错原文（取自 surefire UTF-8 报告，规避控制台 mojibake）
+# 源文件: analytics-server/warehouse-pipeline/target/surefire-reports/com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeIT.txt
+# 采集时间: 2026-09-14 16:53:48
+
+-------------------------------------------------------------------------------
+Test set: com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeIT
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.033 s <<< FAILURE! -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeIT
+com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeIT.realSparkOdlLoadsGoldenDataset -- Time elapsed: 0.018 s <<< ERROR!
+com.graduation.analytics.testsupport.TestIsolationGuard$MissingConfigurationException: [SparkStageExecutorSmokeIT.realSparkOdlLoadsGoldenDataset] 真实 Spark 冒烟默认关闭：未提供 -Dv25.spark.it=true。本用例会启动真实 spark-submit（外部进程）并递归删除工作目录，必须显式声明后才允许运行（不提供 skip 形态的通过）。
+	at com.graduation.analytics.testsupport.SparkItGuard.requireEnabled(SparkItGuard.java:79)
+	at com.graduation.analytics.pipeline.spark.SparkStageExecutorSmokeIT.realSparkOdlLoadsGoldenDataset(SparkStageExecutorSmokeIT.java:74)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+

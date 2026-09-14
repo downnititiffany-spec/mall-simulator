@@ -1,0 +1,59 @@
+# G1 默认档（analytics-server 整反应堆 mvn test，无任何隔离配置）
+# 日志: docs/acceptance/v26-real-testcounts-20260914/raw/g1-01-default-reactor-test.log
+# 采集时间: 2026-09-14 16:52:46
+
+## 模块级汇总行（surefire 每模块最后一条 Tests run）与 Results 段
+L71: [INFO] Tests run: 81, Failures: 0, Errors: 0, Skipped: 0
+        L68: [INFO] 
+        L69: [INFO] Results:
+        L70: [INFO] 
+        L72: [INFO] 
+        L73: [INFO] 
+        L74: [INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+        L75: [INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/7]
+
+L338: [INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0
+        L335: [INFO] 
+        L336: [INFO] Results:
+        L337: [INFO] 
+        L339: [INFO] 
+        L340: [INFO] 
+        L341: [INFO] ------------< com.graduation.analytics:warehouse-pipeline >-------------
+        L342: [INFO] Building warehouse-pipeline 0.1.0-SNAPSHOT                         [4/7]
+
+L439: [INFO] Tests run: 134, Failures: 0, Errors: 0, Skipped: 0
+        L436: [INFO] 
+        L437: [INFO] Results:
+        L438: [INFO] 
+        L440: [INFO] 
+        L441: [INFO] 
+        L442: [INFO] --------------< com.graduation.analytics:metric-analysis >--------------
+        L443: [INFO] Building metric-analysis 0.1.0-SNAPSHOT                            [5/7]
+
+L487: [INFO] Tests run: 48, Failures: 0, Errors: 0, Skipped: 0
+        L484: [INFO] 
+        L485: [INFO] Results:
+        L486: [INFO] 
+        L488: [INFO] 
+        L489: [INFO] 
+        L490: [INFO] ----------------< com.graduation.analytics:ai-decision >----------------
+        L491: [INFO] Building ai-decision 0.1.0-SNAPSHOT                                [6/7]
+
+L553: [INFO] Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+        L550: [INFO] 
+        L551: [INFO] Results:
+        L552: [INFO] 
+        L554: [INFO] 
+        L555: [INFO] 
+        L556: [INFO] ---------------< com.graduation.analytics:platform-app >----------------
+        L557: [INFO] Building platform-app 0.1.0-SNAPSHOT                               [7/7]
+
+L814: [INFO] Tests run: 114, Failures: 0, Errors: 0, Skipped: 0
+        L811: [INFO] 
+        L812: [INFO] Results:
+        L813: [INFO] 
+        L815: [INFO] 
+        L816: [INFO] ------------------------------------------------------------------------
+        L817: [INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+        L818: [INFO] 
+

@@ -1,0 +1,7 @@
+跑前已删除 spark-jobs/target/surefire-reports（内容已留档 g4-00）
+JDK: D:\Develop\JDK1.8  -> java version "1.8.0_202"
+工作树: D:\Develop_code\GraduationProject (main, HEAD 064b733b78a02d72c7150f6ac21d686ef8fdc114)
+命令: cd spark-jobs && mvn -o -Dmaven.repo.local=D:\maven_repository test
+开始: 2026-09-14T17:02:11.2386261+08:00
+退出码: 0
+结束: 2026-09-14T17:02:45.9266270+08:00

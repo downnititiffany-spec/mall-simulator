@@ -1,0 +1,27 @@
+# G1 安全取证：日志中所有 jdbc:mysql / 3306 / 3307 / SourceRegistryMigration 命中行
+# 目标：证明默认档运行期间从未建立到 3306 的连接
+# 采集时间: 2026-09-14 16:52:46
+
+===== pattern: jdbc:mysql =====
+命中数: 0
+
+===== pattern: 3306 =====
+命中数: 0
+
+===== pattern: 3307 =====
+命中数: 0
+
+===== pattern: SourceRegistryMigration =====
+命中数: 2
+L807: [INFO] Running com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+L808: [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+
+===== pattern: Connection refused =====
+命中数: 0
+
+===== pattern: Communications link failure =====
+命中数: 0
+
+===== pattern: CommunicationsException =====
+命中数: 0
+

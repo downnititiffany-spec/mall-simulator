@@ -1,0 +1,89 @@
+# G1：surefire 实际 'Running' 的类清单 + 5 个 IT 类是否出现
+# 采集时间: 2026-09-14 16:52:51
+
+## surefire 实际拾取并执行的类数: 72
+com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+com.graduation.analytics.common.LandingUriTest
+com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+com.graduation.analytics.metric.RuleSeverityTest
+com.graduation.analytics.testsupport.TestIsolationGuardTest
+com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+com.graduation.analytics.auth.AuthInterceptorTest
+com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+com.graduation.analytics.auth.RolePermissionsTest
+com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+com.graduation.analytics.ingestion.IngestionServiceStatusTest
+com.graduation.analytics.ingestion.IngestionSourceManifestTest
+com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+com.graduation.analytics.source.SourceProfileValidatorTest
+com.graduation.analytics.source.SourceRegistryConcurrencyTest
+com.graduation.analytics.source.SourceRegistryServiceTest
+com.graduation.analytics.source.SourceWarehousePrefixGateTest
+com.graduation.analytics.contracts.EventContractTest
+com.graduation.analytics.pipeline.DataQualityGateTest
+com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+com.graduation.analytics.pipeline.PipelineServiceTest
+com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+com.graduation.analytics.pipeline.spark.JobResultParserTest
+com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+com.graduation.analytics.analysis.AnalysisServiceTest
+com.graduation.analytics.analysis.AnalysisSourcePolicyTest
+com.graduation.analytics.analysis.AnalysisViewModelTest
+com.graduation.analytics.analysis.RfmServiceTest
+com.graduation.analytics.metric.MetricAdsDaoTest
+com.graduation.analytics.metric.publish.MetricPublishValidatorSeverityTest
+com.graduation.analytics.metric.publish.MetricPublishValidatorTest
+com.graduation.analytics.ai.AiSqlDriftTest
+com.graduation.analytics.ai.AiSqlSecurityTest
+com.graduation.analytics.ai.evidence.EvidenceBuilderTest
+com.graduation.analytics.ai.ExplanationEvidenceTest
+com.graduation.analytics.ai.QuestionSafetyScreenTest
+com.graduation.analytics.ai.sql.ComponentWiringContractTest
+com.graduation.analytics.ai.TextToSqlAuditTest
+com.graduation.analytics.decision.AuditActorTest
+com.graduation.analytics.decision.DecisionServiceTest
+com.graduation.analytics.decision.DecisionStateMachineTest
+com.graduation.analytics.auth.UserAdminControllerAuditTest
+com.graduation.analytics.boundary.PlatformMallBoundarySourcePolicyTest
+com.graduation.analytics.controller.AiControllerIdentityTest
+com.graduation.analytics.controller.AiExplanationEndpointTest
+com.graduation.analytics.controller.AuthResponseMeasurementTest
+com.graduation.analytics.controller.CallerContextTest
+com.graduation.analytics.controller.ControllerPermissionCoverageTest
+com.graduation.analytics.controller.DecisionControllerAuditTest
+com.graduation.analytics.controller.DecisionControllerIdentityTest
+com.graduation.analytics.controller.SourceRegistryControllerAuditTest
+com.graduation.analytics.guard.RuleSeverityPathConsistencyTest
+com.graduation.analytics.ingestion.IngestionManifestRuntimePatrolTest
+com.graduation.analytics.ingestion.IngestionManifestSourceSchemaTest
+com.graduation.analytics.migration.QualityRuleVersionMigrationScriptTest
+com.graduation.analytics.source.FileCheckpointSourceMigrationScriptTest
+com.graduation.analytics.source.SourceProfileFixtureTest
+com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+com.graduation.analytics.source.SourceWarehousePrefixMigrationScriptTest
+
+## 5 个 *IT 类在整份日志中的出现次数（期望 0）
+  AnalysisGoldenMySqlIT               出现次数=0
+  MetricAdsMySqlIT                    出现次数=0
+  MetricPublisherMySqlIT              出现次数=0
+  SourceRegistryMigrationMySqlIT      出现次数=0
+  SparkStageExecutorSmokeIT           出现次数=0
+
+## 也检查 TestIsolationGuard.java / TestRunDigest.java（匹配 Test*.java 前缀模式）
+  TestIsolationGuardTest    出现次数=2
+        L50: [INFO] Running com.graduation.analytics.testsupport.TestIsolationGuardTest
+        L61: [INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.217 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+  TestRunDigest             出现次数=0
