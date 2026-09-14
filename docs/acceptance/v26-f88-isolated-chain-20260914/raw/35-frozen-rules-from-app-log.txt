@@ -1,0 +1,49 @@
+V26-F88 规则指纹两路交叉核对  2026-09-14 16:32:47
+来源日志 = D:\Develop_code\GraduationProject\docs\acceptance\v26-f88-isolated-chain-20260914\raw\20-app-8091-console.log
+期望常量 = 6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+
+===== 路 1：应用日志中的规则冻结行 =====
+  L96: 2026-09-14T16:28:19.552+08:00  INFO 62948 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+
+[路1 读数] ruleFingerprint(from app log) = 6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+[路1 读数] catalog(from app log)          = qrc-1
+[路1 读数] compatPolicy(from app log)     = compat-v1
+
+===== 本 run 关键日志行（ingest / spark-submit / 质量 / 中断）=====
+
+---- pattern: ingestion run  ----
+  L95: 2026-09-14T16:28:19.434+08:00  INFO 62948 --- [.1-8091-exec-10] c.g.a.ingestion.IngestionService         : ingestion run ing-20260914162819-8f7fa800: status=QUARANTINED records=1051 quarantine=4 errors=0 files=2 bytes=381267 noNewData=false
+
+---- pattern: spark-submit  ----
+  L97: 2026-09-14T16:28:19.685+08:00  INFO 62948 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789374499665-7d511f -> pid=75044 log=D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\landing\logs\pipeline-1-INIT_SCHEMA-sci-a1__lp-1789374499665-7d511f.log
+  L98: 2026-09-14T16:28:39.824+08:00  INFO 62948 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789374519817-5bf5dc -> pid=75564 log=D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\landing\logs\pipeline-1-LOAD_ODS-odl-a1__lp-1789374519817-5bf5dc.log
+  L99: 2026-09-14T16:30:22.376+08:00  INFO 62948 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789374622367-15f276 -> pid=4544 log=D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\landing\logs\pipeline-1-BUILD_DWD-bdw-a1__lp-1789374622367-15f276.log
+  L100: 2026-09-14T16:30:38.473+08:00  INFO 62948 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789374638467-e8cdca -> pid=82512 log=D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\landing\logs\pipeline-1-BUILD_DWD-dim-a1__lp-1789374638467-e8cdca.log
+  L101: 2026-09-14T16:30:54.579+08:00  INFO 62948 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789374654572-f62d29 -> pid=77432 log=D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\landing\logs\pipeline-1-BUILD_DWD-tdw-a1__lp-1789374654572-f62d29.log
+  L102: 2026-09-14T16:31:18.730+08:00  INFO 62948 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789374678722-a79175 -> pid=74416 log=D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\landing\logs\pipeline-1-BUILD_DWS-usw-a1__lp-1789374678722-a79175.log
+  L103: 2026-09-14T16:31:38.840+08:00  INFO 62948 --- [     pipeline-1] c.g.a.r.s.LocalProcessSparkSubmitter     : spark-submit lp-1789374698833-2b4c71 -> pid=86440 log=D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\landing\logs\pipeline-1-BUILD_ADS-fna-a1__lp-1789374698833-2b4c71.log
+
+---- pattern: QualityChecker|质量|quality ----
+  L51: 2026-09-14T16:26:30.176+08:00  INFO 62948 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25f88_20260914_1624` to version "2 - platform pipeline quality"
+  L59: 2026-09-14T16:26:30.774+08:00  INFO 62948 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25f88_20260914_1624` to version "11 - data quality layers"
+  L60: 2026-09-14T16:26:30.816+08:00  INFO 62948 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25f88_20260914_1624` to version "12 - quality detail width"
+  L67: 2026-09-14T16:26:31.443+08:00  INFO 62948 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25f88_20260914_1624` to version "19 - quality rule definition"
+  L69: 2026-09-14T16:26:31.484+08:00  INFO 62948 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `analytics_meta_v25f88_20260914_1624` to version "20 - data quality result rule version"
+  L104: 2026-09-14T16:31:58.970+08:00  INFO 62948 --- [     pipeline-1] c.g.analytics.pipeline.QualityChecker    : quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+  L105: 2026-09-14T16:31:58.992+08:00  WARN 62948 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 1 failed: 阻断级 Landing 质量规则未通过，正式分区未发布
+
+---- pattern: PipelineService|pipeline \d+: ----
+  L96: 2026-09-14T16:28:19.552+08:00  INFO 62948 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 1: 规则冻结 ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+  L105: 2026-09-14T16:31:58.992+08:00  WARN 62948 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 1 failed: 阻断级 Landing 质量规则未通过，正式分区未发布
+
+---- pattern: ERROR|WARN.*FAIL|失败 ----
+  L68: 2026-09-14T16:26:31.468+08:00  WARN 62948 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: Integer display width is deprecated and will be removed in a future release. (SQL State: HY000 - Error Code: 1681)
+  L89: 2026-09-14T16:26:33.749+08:00  INFO 62948 --- [           main] c.g.a.pipeline.PipelineRecoveryService   : R6-14 启动对账完成: pending重排=[] running判定中断=[] 孤立作业置UNKNOWN=0 errors=[]
+  L95: 2026-09-14T16:28:19.434+08:00  INFO 62948 --- [.1-8091-exec-10] c.g.a.ingestion.IngestionService         : ingestion run ing-20260914162819-8f7fa800: status=QUARANTINED records=1051 quarantine=4 errors=0 files=2 bytes=381267 noNewData=false
+  L105: 2026-09-14T16:31:58.992+08:00  WARN 62948 --- [     pipeline-1] c.g.analytics.pipeline.PipelineService   : pipeline 1 failed: 阻断级 Landing 质量规则未通过，正式分区未发布
+
+===== 判定 =====
+[路1] 日志指纹 == 期望常量 : PASS
+[路1] 日志 catalog = 'qrc-1' : PASS
+[路1] 日志 compatPolicy = 'compat-v1' : PASS
+（路 2 的读回值见 raw/40-four-column-assertions.txt 的 S5-A2b/读数行；两路相等才构成交叉核对）

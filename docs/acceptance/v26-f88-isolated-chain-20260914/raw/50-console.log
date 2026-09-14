@@ -1,0 +1,70 @@
+V26-F88 S6 3306 零写入核对  2026-09-14 16:32:51
+同窗口 = [2026-09-14 16:20:00 , 2026-09-14 23:59:59]   before=D:\Develop_code\GraduationProject\docs\acceptance\v26-f88-isolated-chain-20260914\raw\00-fingerprint-3306-before.txt
+
+===== 1) 重跑 3306 只读指纹（phase=after，同 SQL）=====
+### phase: after
+### collected at: 2026-09-14 16:32:52
+### command: mysql --host=127.0.0.1 --port=3306 --user=root (HOST3306_PWD 注入) --batch --raw --skip-column-names -e 'source <sql>'
+### instance fingerprint (port|uuid|datadir|hostname): 3306|85191145-1491-11f0-b4e2-60cf84d55629|C:\ProgramData\MySQL\MySQL Server 8.0\Data\|dahaishui
+### sql sha256: 3777ACC66976B610412C2B2F3643377B2BADA18F9F13FE2AA0B765E7CC1DF706
+### window: [2026-09-14 16:20:00 , 2026-09-14 23:59:59]
+### ---- raw output (k<TAB>v) ----
+instance	3306|85191145-1491-11f0-b4e2-60cf84d55629|C:\ProgramData\MySQL\MySQL Server 8.0\Data\|dahaishui|8.0.41
+metric_snapshot_rows	12
+metric_value_rows	110
+metric_snapshot_fp	c224e4e9d44c98f5389607f7beb9d6d2
+metric_value_fp	a1a073114d8232c5fcb11c56157466c2
+active_pointer	id=27 / S20260901_47 / version=12 / active_flag=1
+flyway_metric_count	3
+flyway_metric_latest	3 / 3@2026-09-10 20:04:15
+flyway_meta_count	17
+flyway_meta_versions	1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17,18
+flyway_meta_latest_installed_on	17 / 2026-09-12 15:06:05
+flyway_meta_checksum_sum	-178375320
+dqr_rows	467
+dqr_severity_null_rows	48
+dqr_fp	7d40e747353c83a3f058a037c9599b11
+dqr_v20_columns_present_on_3306	0
+dqr_column_count_on_3306	14
+qrd_table_present_on_3306	0
+meta_table_count_on_3306	22
+v25it_databases_on_3306	0
+v25f88_databases_on_3306	0
+v25it_accounts_on_3306	0
+v25f88_accounts_on_3306	0
+runtime_profile_v25_prefix_rows	0
+runtime_profile_total_rows	1
+dqr_rows_created_in_window	0
+pipeline_run_rows_in_window	0
+### exit code: 0
+[00] 指纹已写 D:\Develop_code\GraduationProject\docs\acceptance\v26-f88-isolated-chain-20260914\raw\50-fingerprint-3306-after.txt
+[after 指纹脚本 exit code] = 0
+
+
+===== 2) 逐项 diff（before vs after）=====
+KEY                                        BEFORE                                         AFTER                                          VERDICT
+instance                                   3306|85191145-1491-11f0-b4e2-60cf84d55629|C:\ProgramData\MySQL\MySQL Server 8.0\Data\|dahaishui|8.0.41 3306|85191145-1491-11f0-b4e2-60cf84d55629|C:\ProgramData\MySQL\MySQL Server 8.0\Data\|dahaishui|8.0.41 IDENTICAL
+metric_snapshot_rows                       12                                             12                                             IDENTICAL
+metric_value_rows                          110                                            110                                            IDENTICAL
+metric_snapshot_fp                         c224e4e9d44c98f5389607f7beb9d6d2               c224e4e9d44c98f5389607f7beb9d6d2               IDENTICAL
+metric_value_fp                            a1a073114d8232c5fcb11c56157466c2               a1a073114d8232c5fcb11c56157466c2               IDENTICAL
+active_pointer                             id=27 / S20260901_47 / version=12 / active_flag=1 id=27 / S20260901_47 / version=12 / active_flag=1 IDENTICAL
+flyway_metric_count                        3                                              3                                              IDENTICAL
+flyway_metric_latest                       3 / 3@2026-09-10 20:04:15                      3 / 3@2026-09-10 20:04:15                      IDENTICAL
+flyway_meta_count                          17                                             17                                             IDENTICAL
+flyway_meta_versions                       1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17,18     1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17,18     IDENTICAL
+flyway_meta_latest_installed_on            17 / 2026-09-12 15:06:05                       17 / 2026-09-12 15:06:05                       IDENTICAL
+flyway_meta_checksum_sum                   -178375320                                     -178375320                                     IDENTICAL
+dqr_rows                                   467                                            467                                            IDENTICAL
+dqr_severity_null_rows                     48                                             48                                             IDENTICAL
+dqr_fp                                     7d40e747353c83a3f058a037c9599b11               7d40e747353c83a3f058a037c9599b11               IDENTICAL
+dqr_v20_columns_present_on_3306            0                                              0                                              IDENTICAL
+dqr_column_count_on_3306                   14                                             14                                             IDENTICAL
+qrd_table_present_on_3306                  0                                              0                                              IDENTICAL
+meta_table_count_on_3306                   22                                             22                                             IDENTICAL
+v25it_databases_on_3306                    0                                              0                                              IDENTICAL
+v25f88_databases_on_3306                   0                                              0                                              IDENTICAL
+v25it_accounts_on_3306                     0                                              0                                              IDENTICAL
+v25f88_accounts_on_3306                    0                                              0                                              IDENTICAL
+runtime_profile_v25_prefix_rows            0                                              0                                              IDENTICAL
+runtime_profile_total_rows                 1                                              1                                              IDENTICAL

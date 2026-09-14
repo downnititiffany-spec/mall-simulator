@@ -1,0 +1,6 @@
+{
+  "step": "02c-ingestion-batches",
+  "status": 200,
+  "url": null,
+  "body": "{\"code\":\"OK\",\"message\":\"success\",\"data\":[{\"id\":1,\"batchNo\":\"ing-20260914162819-8f7fa800\",\"runtimeProfileId\":1,\"sourceId\":1,\"source\":\"local-file\",\"status\":\"QUARANTINED\",\"recordCount\":1051,\"errorCount\":0,\"quarantineCount\":4,\"landingDir\":\"D:\\\\Develop_code\\\\GraduationProject\\\\target\\\\f88-run\\\\v25f88_20260914_1624\\\\landing\\\\accepted\\\\1\",\"startTime\":\"2026-09-14T16:28:19.266\",\"endTime\":\"2026-09-14T16:28:19.42\"}],\"traceId\":\"31cfd6d2-d5fa-4e6c-a6dd-8e2cc11c9f65\"}"
+}

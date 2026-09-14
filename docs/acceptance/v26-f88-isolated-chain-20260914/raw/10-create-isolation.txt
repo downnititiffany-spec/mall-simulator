@@ -1,0 +1,23 @@
+[指纹] OK port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 datadir=/data/mysql-isolated/data/
+=========== 将创建（3307 隔离实例）===========
+  runId         : v25f88_20260914_1624
+  metaDb        : analytics_meta_v25f88_20260914_1624
+  metricDb      : analytics_metric_v25f88_20260914_1624
+  meta user     : v25f88_20260914_1624_meta@'%'   -> analytics_meta_v25f88_20260914_1624.*
+  publish user  : v25f88_20260914_1624_metric_pub@'%'    -> analytics_metric_v25f88_20260914_1624.*
+  read user     : v25f88_20260914_1624_metric_read@'%'   -> analytics_metric_v25f88_20260914_1624.*(仅 SELECT)
+  credref       : D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\credref.properties  (仓库内 target/，已 gitignore；口令不回显)
++--------+---------------------------------------+
+| SCHEMA | SCHEMA_NAME                           |
++--------+---------------------------------------+
+| SCHEMA | analytics_meta_v25f88_20260914_1624   |
+| SCHEMA | analytics_metric_v25f88_20260914_1624 |
++--------+---------------------------------------+
++-------+----------------------------------------+---------------------------------------+----------------------------------------------------------------+
+| GRANT | GRANTEE                                | TABLE_SCHEMA                          | GROUP_CONCAT(PRIVILEGE_TYPE ORDER BY PRIVILEGE_TYPE)           |
++-------+----------------------------------------+---------------------------------------+----------------------------------------------------------------+
+| GRANT | 'v25f88_20260914_1624_meta'@'%'        | analytics_meta_v25f88_20260914_1624   | ALTER,CREATE,DELETE,DROP,INDEX,INSERT,REFERENCES,SELECT,UPDATE |
+| GRANT | 'v25f88_20260914_1624_metric_pub'@'%'  | analytics_metric_v25f88_20260914_1624 | ALTER,CREATE,DELETE,DROP,INDEX,INSERT,REFERENCES,SELECT,UPDATE |
+| GRANT | 'v25f88_20260914_1624_metric_read'@'%' | analytics_metric_v25f88_20260914_1624 | SELECT                                                         |
++-------+----------------------------------------+---------------------------------------+----------------------------------------------------------------+
+[2/2] 凭据已写 D:\Develop_code\GraduationProject\target\f88-run\v25f88_20260914_1624\credref.properties （不回显口令）

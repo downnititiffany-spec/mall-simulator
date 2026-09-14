@@ -1,0 +1,32 @@
+{
+  "runId": "v25f88_20260914_1624",
+  "sourceDataVersion": "v25f88_20260914_1624",
+  "startedAt": "2026-09-14 16:28:18",
+  "healthHttp": 200,
+  "loginHttp": 200,
+  "ingestionHttp": 200,
+  "ingestionData": {
+    "batchId": 1,
+    "batchNo": "ing-20260914162819-8f7fa800",
+    "status": "QUARANTINED",
+    "recordCount": 1051,
+    "quarantineCount": 4,
+    "errorCount": 0,
+    "fileCount": 2,
+    "acceptedBytes": 381267,
+    "acceptedDir": "D:\\Develop_code\\GraduationProject\\target\\f88-run\\v25f88_20260914_1624\\landing\\accepted\\1",
+    "quarantineDir": "D:\\Develop_code\\GraduationProject\\target\\f88-run\\v25f88_20260914_1624\\landing\\quarantine\\1",
+    "manifestPath": "file:///D:/Develop_code/GraduationProject/target/f88-run/v25f88_20260914_1624/landing/manifests/1.json",
+    "noNewData": false
+  },
+  "pipelineCreateHttp": 200,
+  "pipelineRunId": 1,
+  "runStatus": "FAILED",
+  "runStage": "FAILED",
+  "runErrorCode": "PIPELINE_QUALITY_FAILED",
+  "runSnapshot": "S20260901_1",
+  "elapsedSec": 221,
+  "overviewHttp": 200,
+  "qualityHttp": 200,
+  "finishedAt": "2026-09-14 16:32:00"
+}

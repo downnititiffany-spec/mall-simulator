@@ -1,0 +1,6 @@
+{
+  "step": "00-health",
+  "status": 200,
+  "url": null,
+  "body": "{\"code\":\"OK\",\"app\":\"analytics-server\",\"stage\":\"R1-skleton\"}"
+}

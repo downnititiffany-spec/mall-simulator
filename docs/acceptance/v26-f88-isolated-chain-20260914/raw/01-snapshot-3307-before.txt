@@ -1,0 +1,135 @@
+V26-F88 隔离实例 3307 现状快照  2026-09-14 16:24:20
+### instance fingerprint (port|uuid|datadir|version): 3307|de8ebbea-aff4-11f1-8037-00155d5dba47|/data/mysql-isolated/data/|8.0.41
+
+### 3307 上全部 schema
+SQL: SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA ORDER BY SCHEMA_NAME;
++-------------------------------------------+----------------------------+
+| SCHEMA_NAME                               | DEFAULT_CHARACTER_SET_NAME |
++-------------------------------------------+----------------------------+
+| analytics_meta                            | utf8mb4                    |
+| analytics_meta_v25it_20260914_1358_l4e3   | utf8mb4                    |
+| analytics_metric                          | utf8mb4                    |
+| analytics_metric_v25it_20260914_1358_l4e3 | utf8mb4                    |
+| information_schema                        | utf8mb3                    |
+| mall_simulator                            | utf8mb4                    |
+| mysql                                     | utf8mb4                    |
+| performance_schema                        | utf8mb4                    |
+| sys                                       | utf8mb4                    |
++-------------------------------------------+----------------------------+
+
+### 3307 上全部 v25* / analytics* 账号
+SQL: SELECT User, Host FROM mysql.user WHERE User LIKE 'v25%' OR User LIKE 'analytics%' ORDER BY User;
++-----------------------------+------+
+| User                        | Host |
++-----------------------------+------+
+| v25it_1358_l4e3_meta        | %    |
+| v25it_1358_l4e3_metric_pub  | %    |
+| v25it_1358_l4e3_metric_read | %    |
++-----------------------------+------+
+
+### [analytics_meta] flyway 版本清单
+SQL: SELECT installed_rank, version, description, success, installed_on FROM analytics_meta.flyway_schema_history ORDER BY installed_rank;
+ERROR 1146 (42S02) at line 1: Table 'analytics_meta.flyway_schema_history' doesn't exist
+
+### [analytics_meta] flyway 版本号汇总
+SQL: SELECT COUNT(*) AS cnt, GROUP_CONCAT(version ORDER BY installed_rank) AS versions, MAX(installed_rank) AS max_rank FROM analytics_meta.flyway_schema_history;
+ERROR 1146 (42S02) at line 1: Table 'analytics_meta.flyway_schema_history' doesn't exist
+
+### [analytics_meta] 无 data_quality_result 表
+
+### [analytics_meta] quality_rule_definition 是否存在（V19）
+SQL: SELECT COUNT(*) AS qrd FROM information_schema.TABLES WHERE TABLE_SCHEMA='analytics_meta' AND TABLE_NAME='quality_rule_definition';
++-----+
+| qrd |
++-----+
+|   0 |
++-----+
+
+### [analytics_meta_v25it_20260914_1358_l4e3] flyway 版本清单
+SQL: SELECT installed_rank, version, description, success, installed_on FROM analytics_meta_v25it_20260914_1358_l4e3.flyway_schema_history ORDER BY installed_rank;
++----------------+---------+-------------------------------------------+---------+---------------------+
+| installed_rank | version | description                               | success | installed_on        |
++----------------+---------+-------------------------------------------+---------+---------------------+
+|              1 | 1       | platform ingestion                        |       1 | 2026-09-14 13:59:41 |
+|              2 | 2       | platform pipeline quality                 |       1 | 2026-09-14 13:59:42 |
+|              3 | 3       | platform ai audit                         |       1 | 2026-09-14 13:59:42 |
+|              4 | 4       | platform decisions                        |       1 | 2026-09-14 13:59:42 |
+|              5 | 5       | platform users                            |       1 | 2026-09-14 13:59:42 |
+|              6 | 7       | platform runtime profile                  |       1 | 2026-09-14 13:59:42 |
+|              7 | 8       | platform ingestion r3                     |       1 | 2026-09-14 13:59:42 |
+|              8 | 9       | platform stage evidence widen             |       1 | 2026-09-14 13:59:42 |
+|              9 | 10      | spark job run output partitions           |       1 | 2026-09-14 13:59:42 |
+|             10 | 11      | data quality layers                       |       1 | 2026-09-14 13:59:42 |
+|             11 | 12      | quality detail width                      |       1 | 2026-09-14 13:59:42 |
+|             12 | 13      | metric definition r7                      |       1 | 2026-09-14 13:59:42 |
+|             13 | 14      | r8 identity decision                      |       1 | 2026-09-14 13:59:42 |
+|             14 | 15      | stage evidence mediumtext                 |       1 | 2026-09-14 13:59:43 |
+|             15 | 16      | source registry                           |       1 | 2026-09-14 13:59:43 |
+|             16 | 17      | source dimension for checkpoint and batch |       1 | 2026-09-14 13:59:43 |
+|             17 | 18      | source warehouse prefix                   |       1 | 2026-09-14 13:59:43 |
++----------------+---------+-------------------------------------------+---------+---------------------+
+
+### [analytics_meta_v25it_20260914_1358_l4e3] flyway 版本号汇总
+SQL: SELECT COUNT(*) AS cnt, GROUP_CONCAT(version ORDER BY installed_rank) AS versions, MAX(installed_rank) AS max_rank FROM analytics_meta_v25it_20260914_1358_l4e3.flyway_schema_history;
++-----+--------------------------------------------+----------+
+| cnt | versions                                   | max_rank |
++-----+--------------------------------------------+----------+
+|  17 | 1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17,18 |       17 |
++-----+--------------------------------------------+----------+
+
+### [analytics_meta_v25it_20260914_1358_l4e3] data_quality_result 列清单
+SQL: SELECT ORDINAL_POSITION, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta_v25it_20260914_1358_l4e3' AND TABLE_NAME='data_quality_result' ORDER BY ORDINAL_POSITION;
++------------------+--------------+-----------+-------------+----------------------+
+| ORDINAL_POSITION | COLUMN_NAME  | DATA_TYPE | IS_NULLABLE | COLUMN_DEFAULT       |
++------------------+--------------+-----------+-------------+----------------------+
+|                1 | id           | bigint    | NO          | NULL                 |
+|                2 | run_id       | bigint    | NO          | NULL                 |
+|                3 | rule_code    | varchar   | NO          | NULL                 |
+|                4 | layer        | varchar   | YES         | NULL                 |
+|                5 | severity     | varchar   | YES         | NULL                 |
+|                6 | target_table | varchar   | YES         | NULL                 |
+|                7 | snapshot_id  | varchar   | YES         | NULL                 |
+|                8 | check_count  | bigint    | NO          | NULL                 |
+|                9 | error_count  | bigint    | NO          | NULL                 |
+|               10 | error_rate   | decimal   | NO          | NULL                 |
+|               11 | threshold    | varchar   | NO          | NULL                 |
+|               12 | passed       | int       | NO          | NULL                 |
+|               13 | detail       | varchar   | YES         | NULL                 |
+|               14 | created_at   | datetime  | NO          | CURRENT_TIMESTAMP(3) |
++------------------+--------------+-----------+-------------+----------------------+
+
+### [analytics_meta_v25it_20260914_1358_l4e3] data_quality_result 行数 + run 分布
+SQL: SELECT COUNT(*) AS rows_cnt, COUNT(DISTINCT run_id) AS runs, MIN(created_at) AS first_at, MAX(created_at) AS last_at FROM analytics_meta_v25it_20260914_1358_l4e3.data_quality_result;
++----------+------+-------------------------+-------------------------+
+| rows_cnt | runs | first_at                | last_at                 |
++----------+------+-------------------------+-------------------------+
+|       26 |    2 | 2026-09-14 14:06:26.069 | 2026-09-14 14:13:27.658 |
++----------+------+-------------------------+-------------------------+
+
+### [analytics_meta_v25it_20260914_1358_l4e3] V20 四列是否存在
+SQL: SELECT COUNT(*) AS v20_cols FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta_v25it_20260914_1358_l4e3' AND TABLE_NAME='data_quality_result' AND COLUMN_NAME IN ('rule_version','effective_severity','compat_policy_version','rule_fingerprint');
++----------+
+| v20_cols |
++----------+
+|        0 |
++----------+
+
+### [analytics_meta_v25it_20260914_1358_l4e3] quality_rule_definition 是否存在（V19）
+SQL: SELECT COUNT(*) AS qrd FROM information_schema.TABLES WHERE TABLE_SCHEMA='analytics_meta_v25it_20260914_1358_l4e3' AND TABLE_NAME='quality_rule_definition';
++-----+
+| qrd |
++-----+
+|   0 |
++-----+
+
+### [analytics_metric] flyway 版本号汇总
+SQL: SELECT COUNT(*) AS cnt, GROUP_CONCAT(version ORDER BY installed_rank) AS versions FROM analytics_metric.flyway_schema_history;
+ERROR 1146 (42S02) at line 1: Table 'analytics_metric.flyway_schema_history' doesn't exist
+
+### [analytics_metric_v25it_20260914_1358_l4e3] flyway 版本号汇总
+SQL: SELECT COUNT(*) AS cnt, GROUP_CONCAT(version ORDER BY installed_rank) AS versions FROM analytics_metric_v25it_20260914_1358_l4e3.flyway_schema_history;
++-----+----------+
+| cnt | versions |
++-----+----------+
+|   3 | 1,2,3    |
++-----+----------+

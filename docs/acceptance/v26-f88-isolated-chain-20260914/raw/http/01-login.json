@@ -1,0 +1,6 @@
+{
+  "step": "01-login",
+  "status": 200,
+  "url": null,
+  "body": "{\"code\":\"OK\",\"message\":\"success\",\"data\":{\"token\":\"<REDACTED>\",\"user\":{\"id\":1,\"username\":\"admin\",\"realName\":\"系统管理员\",\"role\":\"admin\"}},\"traceId\":\"38b874f7-9bd2-4b4c-a21f-2a39561e67c1\"}"
+}

@@ -1,0 +1,109 @@
+V26-F88 S5b V20 不回填专用探测  2026-09-14 16:32:26
+目标实例(仅 3307) = 3307|de8ebbea-aff4-11f1-8037-00155d5dba47
+probe 库          = analytics_meta_f88v20probe_20260914_1632
+历史行来源库       = analytics_meta_v25it_20260914_1358_l4e3
+V20 迁移文件       = D:\Develop_code\GraduationProject\analytics-server\platform-app\src\main\resources\db\meta\V20__data_quality_result_rule_version.sql
+V20 sha256        = A2052CA5EAFF6F268502EBC9F61CF39D072040133EFDE048BE349E965AD2981C
+历史行数（预期 26）= 26
+
+===== 1) 建 probe 库并复制历史行（写 3307）=====
+
+### P1 probe 库列数（V20 之前，预期 14）
+SQL: SELECT COUNT(*) AS cols_before_v20 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta_f88v20probe_20260914_1632' AND TABLE_NAME='data_quality_result';
++-----------------+
+| cols_before_v20 |
++-----------------+
+|              14 |
++-----------------+
+
+### P2 probe 库行数（预期 = 历史行数）
+SQL: SELECT COUNT(*) AS rows_in_probe FROM analytics_meta_f88v20probe_20260914_1632.data_quality_result;
++---------------+
+| rows_in_probe |
++---------------+
+|            26 |
++---------------+
+
+### P3 历史行样本（含 severity 为 NULL 的行，证明是真实历史数据）
+SQL: SELECT COUNT(*) AS total, IFNULL(SUM(severity IS NULL),0) AS severity_null, MIN(created_at) AS first_at, MAX(created_at) AS last_at FROM analytics_meta_f88v20probe_20260914_1632.data_quality_result;
++-------+---------------+-------------------------+-------------------------+
+| total | severity_null | first_at                | last_at                 |
++-------+---------------+-------------------------+-------------------------+
+|    26 |             0 | 2026-09-14 14:06:26.069 | 2026-09-14 14:13:27.658 |
++-------+---------------+-------------------------+-------------------------+
+
+===== 2) 对 probe 库执行 V20 迁移文件本体（sha256 同上，未做任何改写）=====
+命令: mysql --host=127.0.0.1 --port=3307 --user=root --database=analytics_meta_f88v20probe_20260914_1632 -e "source D:/Develop_code/GraduationProject/analytics-server/platform-app/src/main/resources/db/meta/V20__data_quality_result_rule_version.sql"
+[V20 执行输出] exit=0
+
+
+===== 3) 断言 =====
+
+### P4 probe 库列数（V20 之后，预期 18）+ 四列明细
+SQL: SELECT COUNT(*) AS cols_after_v20 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta_f88v20probe_20260914_1632' AND TABLE_NAME='data_quality_result';
++----------------+
+| cols_after_v20 |
++----------------+
+|             18 |
++----------------+
+
+### P5 新增四列的定义（IS_NULLABLE 必须 YES，COLUMN_DEFAULT 必须 NULL）
+SQL: SELECT ORDINAL_POSITION,COLUMN_NAME,DATA_TYPE,IS_NULLABLE,COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='analytics_meta_f88v20probe_20260914_1632' AND TABLE_NAME='data_quality_result' AND COLUMN_NAME IN ('rule_version','effective_severity','compat_policy_version','rule_fingerprint') ORDER BY ORDINAL_POSITION;
++------------------+-----------------------+-----------+-------------+----------------+
+| ORDINAL_POSITION | COLUMN_NAME           | DATA_TYPE | IS_NULLABLE | COLUMN_DEFAULT |
++------------------+-----------------------+-----------+-------------+----------------+
+|               15 | rule_version          | int       | YES         | NULL           |
+|               16 | effective_severity    | varchar   | YES         | NULL           |
+|               17 | compat_policy_version | varchar   | YES         | NULL           |
+|               18 | rule_fingerprint      | char      | YES         | NULL           |
++------------------+-----------------------+-----------+-------------+----------------+
+
+### P6 四列非空行数（必须 0）与总行数
+SQL: SELECT COUNT(*) AS total_rows, IFNULL(SUM(rule_version IS NOT NULL),0) AS rv_nn, IFNULL(SUM(effective_severity IS NOT NULL),0) AS eff_nn, IFNULL(SUM(compat_policy_version IS NOT NULL),0) AS cp_nn, IFNULL(SUM(rule_fingerprint IS NOT NULL),0) AS fp_nn FROM analytics_meta_f88v20probe_20260914_1632.data_quality_result;
++------------+-------+--------+-------+-------+
+| total_rows | rv_nn | eff_nn | cp_nn | fp_nn |
++------------+-------+--------+-------+-------+
+|         26 |     0 |      0 |     0 |     0 |
++------------+-------+--------+-------+-------+
+
+### P7 全量 26 行四列原值（应为整列 NULL，逐行可核）
+SQL: SELECT id,run_id,rule_code,severity,rule_version,effective_severity,compat_policy_version,rule_fingerprint FROM analytics_meta_f88v20probe_20260914_1632.data_quality_result ORDER BY id;
++----+--------+--------------------------------+----------+--------------+--------------------+-----------------------+------------------+
+| id | run_id | rule_code                      | severity | rule_version | effective_severity | compat_policy_version | rule_fingerprint |
++----+--------+--------------------------------+----------+--------------+--------------------+-----------------------+------------------+
+|  1 |      1 | AMOUNT_RECONCILE               | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+|  2 |      1 | REQUIRED_FIELD_NULL_RATE       | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+|  3 |      1 | EVENT_ID_UNIQUE                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+|  4 |      1 | ENUM_WHITELIST                 | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+|  5 |      2 | AMOUNT_RECONCILE               | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+|  6 |      2 | REQUIRED_FIELD_NULL_RATE       | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+|  7 |      2 | EVENT_ID_UNIQUE                | WARN     |         NULL | NULL               | NULL                  | NULL             |
+|  8 |      2 | ENUM_WHITELIST                 | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+|  9 |      2 | ADS_STAGING_PRESENT            | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 10 |      2 | ADS_STAGING_SNAPSHOT_ISOLATION | WARN     |         NULL | NULL               | NULL                  | NULL             |
+| 11 |      2 | ADS_STAGING_KEY_NOT_NULL       | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 12 |      2 | PUB_DQ_BLOCKING_RULES          | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 13 |      2 | PUB_DQ_EVENT_ID_UNIQUE         | WARN     |         NULL | NULL               | NULL                  | NULL             |
+| 14 |      2 | ADS_DWS_FUNNEL_RECONCILE       | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 15 |      2 | PUB_STAGING_READY              | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 16 |      2 | PUB_FORMAL_PARTITION_MATCH     | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 17 |      2 | MXP_SNAPSHOT_PINNED            | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 18 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 19 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 20 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 21 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 22 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 23 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 24 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 25 |      2 | MXP_EXPORT_ROWS                | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
+| 26 |      2 | MXP_EXPORT_COMPLETE            | BLOCKING |         NULL | NULL               | NULL                  | NULL             |
++----+--------+--------------------------------+----------+--------------+--------------------+-----------------------+------------------+
+
+[断言] P4 列数 14 -> 18 : actual=18 expected=18 => PASS
+[断言] P6 行数不变        : actual=26 expected=26 => PASS
+[断言] P6b 四列非空行数=0 : actual=0 (行级 0) expected=0 => PASS
+[断言] P5 四列无 DEFAULT   : actual=0 expected=0 => PASS
+
+[遗留物] probe 库 analytics_meta_f88v20probe_20260914_1632 保留作为可复核证据（3307 隔离实例内）；人工清理命令：
+  mysql -h127.0.0.1 -P3307 -uroot -e 'DROP DATABASE IF EXISTS analytics_meta_f88v20probe_20260914_1632;'
+[70] 证据已写 D:\Develop_code\GraduationProject\docs\acceptance\v26-f88-isolated-chain-20260914\raw\70-v20-nobackfill-probe.txt

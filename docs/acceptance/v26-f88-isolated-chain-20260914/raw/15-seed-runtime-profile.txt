@@ -1,0 +1,52 @@
+V26-F88 隔离准备：runtime_profile 激活  2026-09-14 16:27:45
+spark_submit_path = D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd
+  sha256 = 343A088F3363F6D288FA9A33699FA5AB2199282BE284868AA34EF903FE4D9F1C
+spark_job_jar_uri = D:\Develop_code\GraduationProject\spark-jobs\target\spark-jobs-0.1.0-SNAPSHOT.jar
+  sha256 = 71C2BCCB54066996E7197DEA004E88F16B4DF912481CB723B4D84CC33CE0C966
+  （对照 E3 记录值 71C2BCCB54066996E7197DEA004E88F16B4DF912481CB723B4D84CC33CE0C966 ⇒ 相等: True)
+spark_master = local[2]   目标库 = analytics_meta_v25f88_20260914_1624   实例 = 127.0.0.1:3307
+
+### 写前指纹核对通过（仅 3307）: 3307|de8ebbea-aff4-11f1-8037-00155d5dba47
+
+### 写前：runtime_profile
+SQL: SELECT id, profile_code, status, spark_master, spark_submit_path, spark_job_jar_uri, source_id, version FROM analytics_meta_v25f88_20260914_1624.runtime_profile;
++----+--------------+--------+--------------+-------------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+| id | profile_code | status | spark_master | spark_submit_path                                           | spark_job_jar_uri                                                                 | source_id | version |
++----+--------------+--------+--------------+-------------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+|  1 | local-dev    | ACTIVE | local[2]     | D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd | D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar |         1 |       3 |
++----+--------------+--------+--------------+-------------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+
+### 执行隔离准备 UPDATE（写 3307）
+SQL: UPDATE analytics_meta_v25f88_20260914_1624.runtime_profile
+   SET status            = 'ACTIVE',
+       spark_master      = 'local[2]',
+       spark_submit_path = 'D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd',
+       spark_job_jar_uri = 'D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar',
+       source_id         = 1,
+       version           = 3,
+       updated_at        = NOW(6)
+ WHERE id = 1 AND profile_code = 'local-dev';
+
+### 写后：runtime_profile
+SQL: SELECT id, profile_code, status, spark_master, spark_submit_path, spark_job_jar_uri, source_id, version FROM analytics_meta_v25f88_20260914_1624.runtime_profile;
++----+--------------+--------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+| id | profile_code | status | spark_master | spark_submit_path                                       | spark_job_jar_uri                                                                 | source_id | version |
++----+--------------+--------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+|  1 | local-dev    | ACTIVE | local[2]     | D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd | D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar |         1 |       3 |
++----+--------------+--------+--------------+---------------------------------------------------------+-----------------------------------------------------------------------------------+-----------+---------+
+
+### ACTIVE profile 行数（必须 = 1）
+SQL: SELECT COUNT(*) AS active_profile_rows FROM analytics_meta_v25f88_20260914_1624.runtime_profile WHERE status='ACTIVE';
++---------------------+
+| active_profile_rows |
++---------------------+
+|                   1 |
++---------------------+
+
+### source_registry（source_id=1 必须 ACTIVE）
+SQL: SELECT id, source_code, status FROM analytics_meta_v25f88_20260914_1624.source_registry;
++----+-------------+--------+
+| id | source_code | status |
++----+-------------+--------+
+|  1 | mock-mall   | ACTIVE |
++----+-------------+--------+

@@ -1,0 +1,90 @@
+V26-F88 | S2 工件身份与「jar 内已含 V19/V20」取证
+采集时间: 2026-09-14 16:25 (本地)
+命令: git rev-parse HEAD / mvn -pl platform-app -am package -DskipTests / jar tf
+
+### 0. 构建命令与退出码
+$env:JAVA_HOME='D:\Develop\JAVA17'
+& 'D:\apache-maven-3.9.14\bin\mvn.cmd' -o "-Dmaven.repo.local=D:\maven_repository" -f analytics-server/pom.xml -pl platform-app -am package "-DskipTests"
+MVN_EXIT=0        （BUILD SUCCESS，Total time 8.478 s，Finished at 2026-09-14T16:24:59+08:00）
+完整原始输出: docs/acceptance/v26-f88-isolated-chain-20260914/raw/02-mvn-package.log
+Reactor: analytics-server, platform-common, connection-ingestion, warehouse-pipeline, metric-analysis, ai-decision, platform-app —— 7/7 SUCCESS
+
+### 1. 被实测工件（不可变引用）
+路径   : D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar
+size   : 33169747
+mtime  : 2026-09-14 16:24:59
+sha256 : 86B39A592FE9689D9B300BDC2B1F7A749EA6A1B1356316931DDCF91FE8C61473
+
+对照：重建前的旧 jar（= V25-E3 被实测的那一个）
+size   : 33159377
+mtime  : 2026-09-14 13:58:40
+sha256 : 7BE717A974DE613574DE9829EC93627345E83BF87FC27837342C5E3EC9397561
+⇒ sha256 不同（86B3… vs 7BE7…），本泳道实测的是**新工件**，不是 E3 的旧工件。
+
+### 2. jar 内 db/meta 与 db/metric 条目（jar tf 原始输出）
+BOOT-INF/classes/db/meta/
+BOOT-INF/classes/db/metric/
+BOOT-INF/classes/db/meta/V10__spark_job_run_output_partitions.sql
+BOOT-INF/classes/db/meta/V11__data_quality_layers.sql
+BOOT-INF/classes/db/meta/V12__quality_detail_width.sql
+BOOT-INF/classes/db/meta/V13__metric_definition_r7.sql
+BOOT-INF/classes/db/meta/V14__r8_identity_decision.sql
+BOOT-INF/classes/db/meta/V15__stage_evidence_mediumtext.sql
+BOOT-INF/classes/db/meta/V16__source_registry.sql
+BOOT-INF/classes/db/meta/V17__source_dimension_for_checkpoint_and_batch.sql
+BOOT-INF/classes/db/meta/V18__source_warehouse_prefix.sql
+BOOT-INF/classes/db/meta/V19__quality_rule_definition.sql
+BOOT-INF/classes/db/meta/V1__platform_ingestion.sql
+BOOT-INF/classes/db/meta/V20__data_quality_result_rule_version.sql
+BOOT-INF/classes/db/meta/V2__platform_pipeline_quality.sql
+BOOT-INF/classes/db/meta/V3__platform_ai_audit.sql
+BOOT-INF/classes/db/meta/V4__platform_decisions.sql
+BOOT-INF/classes/db/meta/V5__platform_users.sql
+BOOT-INF/classes/db/meta/V7__platform_runtime_profile.sql
+BOOT-INF/classes/db/meta/V8__platform_ingestion_r3.sql
+BOOT-INF/classes/db/meta/V9__platform_stage_evidence_widen.sql
+BOOT-INF/classes/db/metric/V1__metric_store.sql
+BOOT-INF/classes/db/metric/V2__metric_ads_materialized.sql
+BOOT-INF/classes/db/metric/V3__metric_ads_r7.sql
+
+筛选证据（关键断言）:
+$ & 'D:\Develop\JAVA17\bin\jar.exe' tf <jar> | Select-String 'db/meta/V(19|20)__'
+BOOT-INF/classes/db/meta/V19__quality_rule_definition.sql
+BOOT-INF/classes/db/meta/V20__data_quality_result_rule_version.sql
+⇒ **V19/V20 已在被实测 jar 内**（E3 的旧 jar 内只有 V1–V18，见 E3 README §5）。
+
+### 3. 写侧代码是否真的进了工件（不只比 mtime）—— 常量池字符串实测
+方法：从 platform-app jar 抽出 BOOT-INF/lib/warehouse-pipeline-0.1.0-SNAPSHOT.jar
+      (sha256=19BC95B184E547C879B5298D01B7F53D7F67B738079E3FD0745773088BEF29D2)，
+      再抽 com/graduation/analytics/pipeline/QualityChecker.class (14771 B) 与
+      .../entity/DataQualityResult.class (10791 B)，在字节流里检索标识符。
+
+QualityChecker.class 常量池:
+  applyVersionedSeverity   True
+  declaredSeverity         True
+  effectiveSeverity        True
+  setEffectiveSeverity     True
+  setRuleVersion           True
+  setCompatPolicyVersion   True
+  setRuleFingerprint       True
+
+DataQualityResult.class 字段:
+  ruleVersion              True
+  effectiveSeverity        True
+  compatPolicyVersion      True
+  ruleFingerprint          True
+
+源代码 - 编译产物 mtime 顺序（辅助，不单独作判据）:
+  QualityChecker.java    src=09-14 16:14:20  class=09-14 16:14:46  classNewer=True
+  RuleSeverity.java      src=09-14 12:20:28  class=09-14 12:22:34  classNewer=True
+  QualityRuleCatalog.java src=09-14 12:13:59 class=09-14 12:22:34  classNewer=True
+  QualityChecker.java 在 8853730 的提交时间 = 2026-09-14 16:19:50（源 mtime 早于提交，符合正常流程）
+
+### 4. 工作树状态
+`git status --porcelain -- analytics-server` ⇒ 空（analytics-server 无未提交改动）
+⇒ 被实测工件由 HEAD(=37561dc，含 8853730) 的主代码构建，无工作树污染。
+
+### 5. 本步结论与边界
+* 已取证：V19/V20 在工件内；写侧 4 列实现（方法名 + 实体字段）在工件内；工作树干净。
+* **未取证**：本步不构成「测试通过」——构建用了 `-DskipTests`，surefire 逐模块打印
+  `Tests are skipped.`（见 02-mvn-package.log）。写侧行为是否真落库由 S5 单独判定。

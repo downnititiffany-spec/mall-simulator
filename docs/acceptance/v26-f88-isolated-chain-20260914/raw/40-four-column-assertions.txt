@@ -1,0 +1,132 @@
+V26-F88 S5 四列落库六条断言  2026-09-14 16:32:25
+runId=v25f88_20260914_1624  metaDb=analytics_meta_v25f88_20260914_1624  目标 pipeline_run.id=1  实例=3307|de8ebbea-aff4-11f1-8037-00155d5dba47
+期望常量 rule_fingerprint  = 6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+期望常量 compat_policy_version = compat-v1
+
+### S5-0 目标 pipeline_run 行（核对口径：run_id 指向它）
+SQL: SELECT id,pipeline_code,status,current_stage,error_code,source_data_version,started_at,finished_at FROM analytics_meta_v25f88_20260914_1624.pipeline_run WHERE id=1;
++----+---------------+--------+---------------+-------------------------+----------------------+-------------------------+-------------------------+
+| id | pipeline_code | status | current_stage | error_code              | source_data_version  | started_at              | finished_at             |
++----+---------------+--------+---------------+-------------------------+----------------------+-------------------------+-------------------------+
+|  1 | ODS_TO_ADS    | FAILED | FAILED        | PIPELINE_QUALITY_FAILED | v25f88_20260914_1624 | 2026-09-14 16:28:19.556 | 2026-09-14 16:31:58.990 |
++----+---------------+--------+---------------+-------------------------+----------------------+-------------------------+-------------------------+
+
+### S5-A1 本次 run 的 data_quality_result 逐行明细
+SQL: SELECT id,rule_code,layer,severity,effective_severity,rule_version,compat_policy_version,LEFT(rule_fingerprint,8) AS fp8,LENGTH(rule_fingerprint) AS fp_len,passed FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1 ORDER BY id;
++----+--------------------------+---------+----------+--------------------+--------------+-----------------------+----------+--------+--------+
+| id | rule_code                | layer   | severity | effective_severity | rule_version | compat_policy_version | fp8      | fp_len | passed |
++----+--------------------------+---------+----------+--------------------+--------------+-----------------------+----------+--------+--------+
+|  1 | AMOUNT_RECONCILE         | LANDING | BLOCKING | BLOCKING           |            1 | compat-v1             | 6bc272d7 |     64 |      1 |
+|  2 | REQUIRED_FIELD_NULL_RATE | LANDING | BLOCKING | BLOCKING           |            1 | compat-v1             | 6bc272d7 |     64 |      1 |
+|  3 | EVENT_ID_UNIQUE          | LANDING | WARN     | BLOCKING           |            1 | compat-v1             | 6bc272d7 |     64 |      0 |
+|  4 | ENUM_WHITELIST           | LANDING | BLOCKING | BLOCKING           |            1 | compat-v1             | 6bc272d7 |     64 |      1 |
++----+--------------------------+---------+----------+--------------------+--------------+-----------------------+----------+--------+--------+
+
+[读数] 本次 run 行数 row_count = 4
+
+### S5-A2 SUM(rule_fingerprint = 期望常量)
+SQL: SELECT IFNULL(SUM(rule_fingerprint = '6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6'),0) AS fp_match_rows, IFNULL(SUM(rule_fingerprint IS NULL),0) AS fp_null_rows, COUNT(*) AS total_rows FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1;
++---------------+--------------+------------+
+| fp_match_rows | fp_null_rows | total_rows |
++---------------+--------------+------------+
+|             4 |            0 |          4 |
++---------------+--------------+------------+
+[读数] 库内 distinct rule_fingerprint = 6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+
+[断言] A2 fingerprint 命中行数 = 行数: actual=4 (NULL=0) expected=4 => PASS
+
+[断言] A2b 库内指纹 = 任务书期望常量: actual=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 expected=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 => PASS
+
+### S5-A3 SUM(compat_policy_version = 期望常量)
+SQL: SELECT IFNULL(SUM(compat_policy_version = 'compat-v1'),0) AS cp_match_rows, IFNULL(SUM(compat_policy_version IS NULL),0) AS cp_null_rows, COUNT(*) AS total_rows FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1;
++---------------+--------------+------------+
+| cp_match_rows | cp_null_rows | total_rows |
++---------------+--------------+------------+
+|             4 |            0 |          4 |
++---------------+--------------+------------+
+[读数] 库内 distinct compat_policy_version = compat-v1
+
+[断言] A3 compat_policy_version 命中行数 = 行数: actual=4 expected=4 => PASS
+
+### S5-A4 SUM(rule_version IS NOT NULL)
+SQL: SELECT IFNULL(SUM(rule_version IS NOT NULL),0) AS rv_notnull_rows, IFNULL(SUM(rule_version IS NULL),0) AS rv_null_rows, COUNT(*) AS total_rows FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1;
++-----------------+--------------+------------+
+| rv_notnull_rows | rv_null_rows | total_rows |
++-----------------+--------------+------------+
+|               4 |            0 |          4 |
++-----------------+--------------+------------+
+
+### S5-A4b 未登记行判据（总控裁决①）：severity IS NULL AND rule_version IS NULL
+SQL: SELECT id,rule_code,severity,effective_severity,rule_version,compat_policy_version,LEFT(rule_fingerprint,8) AS fp8 FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1 AND severity IS NULL AND rule_version IS NULL ORDER BY id;
+[读数] 未登记行数 = 0
+
+### S5-A4c 全部 rule_version 分布
+SQL: SELECT rule_version, COUNT(*) AS rows_cnt, GROUP_CONCAT(DISTINCT rule_code ORDER BY rule_code) AS codes FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1 GROUP BY rule_version ORDER BY rule_version;
++--------------+----------+--------------------------------------------------------------------------+
+| rule_version | rows_cnt | codes                                                                    |
++--------------+----------+--------------------------------------------------------------------------+
+|            1 |        4 | AMOUNT_RECONCILE,ENUM_WHITELIST,EVENT_ID_UNIQUE,REQUIRED_FIELD_NULL_RATE |
++--------------+----------+--------------------------------------------------------------------------+
+
+[断言] A4 rule_version 非空行数 = 行数: actual=4 (NULL=0) expected=4 => PASS
+
+### S5-A5 SUM(severity <> effective_severity)
+SQL: SELECT COUNT(*) AS total_rows, IFNULL(SUM(severity <> effective_severity),0) AS diff_rows, IFNULL(SUM(severity IS NULL),0) AS sev_null_rows, IFNULL(SUM(effective_severity IS NULL),0) AS eff_null_rows FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1;
++------------+-----------+---------------+---------------+
+| total_rows | diff_rows | sev_null_rows | eff_null_rows |
++------------+-----------+---------------+---------------+
+|          4 |         1 |             0 |             0 |
++------------+-----------+---------------+---------------+
+
+### S5-A5b 声明档位 × 生效档位 交叉分布
+SQL: SELECT severity AS declared, effective_severity AS effective, passed, COUNT(*) AS rows_cnt FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1 GROUP BY severity,effective_severity,passed ORDER BY declared,effective;
++----------+-----------+--------+----------+
+| declared | effective | passed | rows_cnt |
++----------+-----------+--------+----------+
+| BLOCKING | BLOCKING  |      1 |        3 |
+| WARN     | BLOCKING  |      0 |        1 |
++----------+-----------+--------+----------+
+
+### S5-A5c 两列不同的行（「声明 WARN 但生效阻断」的真实落库证据，抄原值）
+SQL: SELECT id,rule_code,severity AS declared_severity,effective_severity AS effective_severity,rule_version,compat_policy_version,LEFT(rule_fingerprint,8) AS fp8,passed,check_count,error_count,error_rate,threshold,LEFT(detail,220) AS detail_head FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id=1 AND severity <> effective_severity ORDER BY id;
++----+-----------------+-------------------+--------------------+--------------+-----------------------+----------+--------+-------------+-------------+------------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| id | rule_code       | declared_severity | effective_severity | rule_version | compat_policy_version | fp8      | passed | check_count | error_count | error_rate | threshold | detail_head                                                                                                                                                         |
++----+-----------------+-------------------+--------------------+--------------+-----------------------+----------+--------+-------------+-------------+------------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  3 | EVENT_ID_UNIQUE | WARN              | BLOCKING           |            1 | compat-v1             | 6bc272d7 |      0 |          91 |           1 |   0.010989 | <=0.0005  | event_id 重复率=0.010989（超批准阈值，阻断） FAILED [阈值判定未通过 ⇒ 由观察项升为阻断（§7.3.1 line 522「超过阈值阻断」）]                                          |
++----+-----------------+-------------------+--------------------+--------------+-----------------------+----------+--------+-------------+-------------+------------+-----------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+[读数] severity <> effective_severity 行数 = 1（>0：已逐行抄原值，见上）
+
+[断言] A5 两列不同行数: actual=1 expected=(报告值；0 与 >0 均合法，但必须与逐行原文一致) => INFO
+
+### S5-A6 本次 run 之前的老行（run_id <> 目标）四列是否全 NULL
+SQL: SELECT COUNT(*) AS other_run_rows, IFNULL(SUM(rule_version IS NOT NULL),0) AS rv_notnull, IFNULL(SUM(effective_severity IS NOT NULL),0) AS eff_notnull, IFNULL(SUM(compat_policy_version IS NOT NULL),0) AS cp_notnull, IFNULL(SUM(rule_fingerprint IS NOT NULL),0) AS fp_notnull FROM analytics_meta_v25f88_20260914_1624.data_quality_result WHERE run_id <> 1;
++----------------+------------+-------------+------------+------------+
+| other_run_rows | rv_notnull | eff_notnull | cp_notnull | fp_notnull |
++----------------+------------+-------------+------------+------------+
+|              0 |          0 |           0 |          0 |          0 |
++----------------+------------+-------------+------------+------------+
+
+### S5-A6b 本表全部行的 run_id 分布（看是否存在本次之外的行）
+SQL: SELECT run_id, COUNT(*) AS rows_cnt, MIN(created_at) AS first_at, MAX(created_at) AS last_at FROM analytics_meta_v25f88_20260914_1624.data_quality_result GROUP BY run_id ORDER BY run_id;
++--------+----------+-------------------------+-------------------------+
+| run_id | rows_cnt | first_at                | last_at                 |
++--------+----------+-------------------------+-------------------------+
+|      1 |        4 | 2026-09-14 16:31:58.970 | 2026-09-14 16:31:58.971 |
++--------+----------+-------------------------+-------------------------+
+[读数] 本隔离库 data_quality_result 内**没有**本次 run 之外的行（库为本次 Flyway V1→V20 一次性新建，无版本化之前的历史行）⇒ A6 在本实例上『无样本可验』，如实记为 不适用/未取证，见 S5b 专用 probe。
+
+### S5-A6c 旁证：V20 四列在 analytics_meta / E3 历史库 上各存在几列（预期 0 / 0 ⇒ 连列都没有，比 NULL 更强）
+SQL: SELECT SUM(TABLE_SCHEMA='analytics_meta') AS v20_cols_on_analytics_meta, SUM(TABLE_SCHEMA='analytics_meta_v25it_20260914_1358_l4e3') AS v20_cols_on_e3_db, COUNT(*) AS total_matched FROM information_schema.COLUMNS WHERE TABLE_NAME='data_quality_result' AND COLUMN_NAME IN ('rule_version','effective_severity','compat_policy_version','rule_fingerprint');
++----------------------------+-------------------+---------------+
+| v20_cols_on_analytics_meta | v20_cols_on_e3_db | total_matched |
++----------------------------+-------------------+---------------+
+|                          0 |                 0 |             4 |
++----------------------------+-------------------+---------------+
+
+### S5-A6d 旁证：本实例历史 run 库 data_quality_result 行数
+SQL: SELECT COUNT(*) AS e3_rows FROM analytics_meta_v25it_20260914_1358_l4e3.data_quality_result;
++---------+
+| e3_rows |
++---------+
+|      26 |
++---------+

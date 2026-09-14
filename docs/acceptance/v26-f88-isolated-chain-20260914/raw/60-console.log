@@ -1,0 +1,33 @@
+V26-F88 S7 停止 8091  2026-09-14 16:33:06
+
+===== 1) 停前取证 =====
+8091 监听条数 = 1   监听 PID = 62948
+  PID=62948 name=java start=2026-09-14 16:26:26 path=D:\Develop\JAVA17\bin\java.exe
+  cmdline="D:\Develop\JAVA17\bin\java.exe" -Dfile.encoding=UTF-8 -Xmx2g -jar D:\Develop_code\GraduationProject\analytics-server\platform-app\target\platform-app-0.1.0-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091
+停前：3307 上本 run 账号连接数 = 30
+停前：8091 health 探测 =>
+  HTTP 200 {"code":"OK","app":"analytics-server","stage":"R1-skleton"}
+
+===== 2) 停止 =====
+  Stop-Process -Id 62948 -Force
+
+===== 3) 停后复验 =====
+8091 监听条数（必须 0）= 0
+  PID 62948 是否仍存在 = 否（已退出）
+停后：3307 上本 run 账号连接数 = 0
+停后：8091 health 探测 =>
+  不可达（预期）: 由于目标计算机积极拒绝，无法连接。 (127.0.0.1:8091)
+
+===== 4) 端口占用总览（不得留僵尸）=====
+  端口 8090: 监听条数 = 0 (空闲)
+  端口 8091: 监听条数 = 0 (空闲)
+  端口 8092: 监听条数 = 0 (空闲)
+
+===== 5) 相关 java 进程（说明归属，勿误杀 IDE）=====
+  PID=55804 start=2026-09-14 11:46:08 path=D:\Develop\jetbrains\DataGrip 2024.1.1\jbr\bin\java.exe
+  PID=58580 start=2026-09-14 14:53:53 path=D:\Develop\JDK1.8\bin\java.exe
+  PID=66224 start=2026-09-14 14:35:45 path=D:\Develop\jetbrains\DataGrip 2024.1.1\jbr\bin\java.exe
+  PID=76836 start=2026-09-14 14:31:10 path=D:\Develop\JDK1.8\bin\java.exe
+
+[结论] 8091 已停净 = PASS ; 本 run 连接数 30 -> 0
+[60] 证据已写 D:\Develop_code\GraduationProject\docs\acceptance\v26-f88-isolated-chain-20260914\raw\60-stop-app-8091.txt
