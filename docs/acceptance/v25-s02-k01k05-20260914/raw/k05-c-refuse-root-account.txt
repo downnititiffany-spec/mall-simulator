@@ -1,0 +1,13 @@
+### case: c-refuse-root-account
+### 期望: 退出码 5
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\smoke-pipeline.ps1 -BusinessTime 2026-09-01T00:00:00 -BaseUrl http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -OutDir D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\raw -MysqlUser root
+### env: SMOKE_DB_PASSWORD=<set>
+### exit code: 5
+### mysql-stub invocations: 0
+### PASS 断言 退出码=5（实测 5）
+### PASS 断言 stubCalls=0（实测 0）
+### PASS 断言输出含 '账号为 root'
+### case verdict: PASS
+### ---- raw output ----
+拒绝执行：账号为 root。本脚本只需要读权限，请改用只读账号（默认 metric_read）。
+  若确需 root，请说明理由后显式放开——当前脚本不接受隐式 root（V25-S03 R-6）。

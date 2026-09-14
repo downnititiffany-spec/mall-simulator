@@ -1,0 +1,79 @@
+[
+  {
+    "class": "com.graduation.mall.auth.AdminProductApiTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 2,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.auth.AuthHttpTest",
+    "tests": 5,
+    "failures": 0,
+    "errors": 5,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.auth.AuthServiceTest",
+    "tests": 5,
+    "failures": 0,
+    "errors": 5,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.auth.UserAdminServiceTest",
+    "tests": 6,
+    "failures": 0,
+    "errors": 6,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.controller.OutboxControllerTest",
+    "tests": 1,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.domain.OrderStateMachineTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.domain.service.MallBusinessServiceTest",
+    "tests": 6,
+    "failures": 0,
+    "errors": 6,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.domain.service.OutboxTransactionTest",
+    "tests": 1,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.golden.GoldenDatasetTest",
+    "tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.outbox.EventOutboxServiceTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 2,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.outbox.OutboxPublisherTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 2,
+    "skipped": 0
+  }
+]

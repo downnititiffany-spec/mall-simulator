@@ -1,0 +1,19 @@
+### command: mvn -o -Dmaven.repo.local=D:\maven_repository -f mall-simulator/pom.xml test
+### started: 2026-09-14T14:35:18
+### exit code: 1
+### finished: 2026-09-14T14:35:19
+### ---- raw output ----
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.478 s
+[INFO] Finished at: 2026-09-14T14:35:19+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] No plugin found for prefix '.repo.local=D' in the current project and in the plugin groups [org.springframework.boot, org.flywaydb, io.github.git-commit-id, org.jooq, org.jetbrains.kotlin, org.liquibase, org.graalvm.buildtools, org.apache.maven.plugins, org.codehaus.mojo] available from the repositories [local (D:\maven_repository), aliyunmaven (https://maven.aliyun.com/repository/public)] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/NoPluginFoundForPrefixException

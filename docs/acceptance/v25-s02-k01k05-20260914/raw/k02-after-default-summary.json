@@ -1,0 +1,22 @@
+[
+  {
+    "phase": "default",
+    "module": "mall-simulator",
+    "exit": 0,
+    "classes": 2,
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "phase": "default",
+    "module": "synthetic-data-generator",
+    "exit": 0,
+    "classes": 16,
+    "tests": 101,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+]

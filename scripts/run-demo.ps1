@@ -30,6 +30,26 @@ param(
   [string]$MallDbName = 'mall_simulator',
   [string]$MallDbUser = 'mall_app',
   [string]$MysqlExe = 'mysql',
+  # ── V25-S02 / K-04：清场只能落在**隔离实例**上 ─────────────────────────
+  #   整改前 `& $MysqlExe "-u$MallDbUser" -N -B -e "DELETE FROM …"` 没有 --host/--port：
+  #   mysql 客户端默认连 127.0.0.1:3306 = 宿主正式实例，于是"清场"会真删宿主
+  #   mall_simulator.event_outbox。旧的门槛只有「库名白名单 + 非 root」，
+  #   挡得住"删错库"，挡不住"删对库但删在正式实例上"。
+  #   现在：端口必须是白名单里的隔离实例（3306 一律拒绝），连上后还要核对
+  #   实例指纹（port|uuid|datadir）**先于任何 DML**，且库名必须带本次 runId 前缀。
+  [int]$MysqlPort = 3307,
+  [string[]]$AllowedMysqlPorts = @(3307),
+  [string]$ExpectedServerUuid = 'de8ebbea-aff4-11f1-8037-00155d5dba47',
+  [string]$RunId = '',
+  # ── V25-S02 / K-04（补）：清场库名白名单必须**可显式扩展** ─────────────
+  #   自查发现的矛盾：R-6 的 $allowedDbs 只有 'mall_simulator' 一个库名，
+  #   而 K-04 又要求库名必须带本次 runId 前缀（例如 v25it-…_mall）。
+  #   两者**不可能同时满足**（除非 RunId 为空），于是"合规清场"这条路被自己堵死
+  #   ——门禁永远拒绝，功能等于被删除。实测证据：raw/k04-d-happy-isolated.txt
+  #   （库名 v25it-20260914-1400-k04_mall 被判"不在白名单"，stub 调用数 0）。
+  #   处置：库名仍必须命中白名单，但白名单由调用方显式声明（默认保持原值）。
+  #   实例指纹（门禁①）与 runId 前缀（门禁②）不受影响，仍是强制的。
+  [string[]]$AllowedCleanDbs = @('mall_simulator'),
   [switch]$ConfirmCleanTarget
 )
 $ErrorActionPreference = 'Stop'
@@ -98,34 +118,73 @@ if ($Clean) {
     # • 库名只允许商城自有库；平台库（analytics_meta/analytics_metric）与生成器库
     #   （generator_meta）**一律拒绝**——本脚本没有清它们的所有权（三程序边界）。
     # • 账号：保留"可用任意有权限账号"的能力，但 root 必须显式写出并确认。
-    $allowedDbs = @('mall_simulator')
-    # 只有走完「白名单 + 账号 + 影响面预览」三道关，才把 $cleanTargetOk 置为 $true；
-    # landing 清理据此决定跑不跑（同一道门禁，不是第二套判据）。
+    #
+    # ── V25-S02 / K-04：**实例**白名单（新增，且先于库名/账号/预览）──────
+    # 顺序：实例白名单 → 实例指纹（只读） → 库名 → 账号 → 影响面预览 → DML。
+    # 任何一道不过都**不执行任何语句**（包括只读预览都不打，避免把口令送到错误实例上）。
+    $allowedDbs = $AllowedCleanDbs
+    # 只有走完「实例指纹 + 白名单 + 账号 + 影响面预览」四道关，才把 $cleanTargetOk 置为 $true；
+    # landing 清理与后续 DML 据此决定跑不跑（同一道门禁，不是第二套判据）。
     $cleanTargetOk = $false
-    if ($allowedDbs -notcontains $MallDbName) {
+    $cleanPortOk = $AllowedMysqlPorts -contains $MysqlPort
+    $cleanDbNamesOk = ($allowedDbs -contains $MallDbName)
+    # 库名必须带本次 runId 前缀：把"清对库但清在正式实例上"这条路也堵死。
+    $cleanRunIdOk = ($RunId -and $MallDbName.StartsWith($RunId, [System.StringComparison]::Ordinal))
+    # 连接参数：清场语句从此**显式带 --host/--port**，不再吃 mysql 客户端的 3306 默认值。
+    $cleanCon = @('--host=127.0.0.1', "--port=$MysqlPort", "-u$MallDbUser")
+    # 门禁自身用的只读连接串（--protocol=TCP 防止把 127.0.0.1 解析成命名管道/套接字）
+    $gateUser = if ($MallDbUser -eq 'root') { 'root' } else { $MallDbUser }
+    $gateCon = @('--protocol=TCP', '--host=127.0.0.1', "--port=$MysqlPort", "--user=$gateUser")
+    # 只读指纹探针返回的单行；非空即代表"确实连上了且拿到了实例指纹"
+    function Invoke-FingerprintProbe([string[]]$conn, [string]$sql) {
+      $r = & $MysqlExe @conn '--batch' '--raw' '--skip-column-names' -e $sql 2>&1
+      return [pscustomobject]@{ exit = $LASTEXITCODE; text = (($r | Out-String).Trim()) }
+    }
+
+    if (-not $cleanPortOk) {
+      $why = if ($MysqlPort -eq 3306) { '3306 = 宿主正式 MySQL 实例（含 mall_simulator 等正式库）' } else { '不在隔离实例白名单内' }
+      Write-Host ("[0.5] ⚠️ 拒绝清场：端口 {0} {1}（白名单 {2}）。" -f $MysqlPort, $why, ($AllowedMysqlPorts -join ', '))
+      Write-Host '      清场只允许落在隔离实例上（V25-S02/K-04）；正式实例的数据不由本脚本删除。'
+      Write-Host '      若要在隔离实例上清场：-MysqlPort 3307 -RunId <runId> -MallDbName <runId>_mall'
+    } elseif (-not $cleanRunIdOk) {
+      Write-Host ("[0.5] ⚠️ 拒绝清场：库名 '{0}' 未带 runId 前缀（当前 -RunId='{1}'）。" -f $MallDbName, $RunId)
+      Write-Host "      隔离实例上的库必须是本次 runId 命名的库，例如 -RunId v25it-20260914-1358-l4e3 -MallDbName v25it-20260914-1358-l4e3_mall"
+    } elseif (-not $cleanDbNamesOk) {
       Write-Host ("[0.5] ⚠️ 拒绝清场：目标库 '{0}' 不在商城自有库白名单 {1} 内。" -f $MallDbName, ($allowedDbs -join ', '))
       Write-Host '      平台库/生成器库不归本脚本清理（三程序边界）；如需重置请由人在对应程序内单独执行。'
     } elseif ($MallDbUser -eq 'root') {
-      Write-Host '[0.5] ⚠️ 拒绝清场：账号为 root。请改用本库的受限账号（如 -MallDbUser mall_app）。'
+      Write-Host '[0.5] ⚠️ 拒绝清场：账号为 root。请改用本库的受限账号（如 -MallDbUser <runId>_mallapp）。'
       Write-Host '      改写为 root 需要显式理由；当前脚本不接受隐式 root（V25-S03 R-6）。'
     } else {
-      # 影响面预览：先看要删多少行，再删。预览失败就拒绝（不盲删）。
       $env:MYSQL_PWD = $env:MALL_DB_PASSWORD
-      $previewSql = "SELECT COUNT(*) FROM $MallDbName.event_outbox;"
-      $previewOut = & $MysqlExe "-u$MallDbUser" -N -B -e $previewSql 2>&1
-      if ($LASTEXITCODE -ne 0) {
-        Write-Host ("[0.5] ⚠️ 清场预览失败（mysql 退出码 {0}）：{1}" -f $LASTEXITCODE, (($previewOut | Out-String).Trim()))
-        Write-Host '      预览不可得即不删除（V25-S03 R-6：清理范围必须先可预览）。清场未生效，脚本继续。'
+      # ── 门禁①：实例指纹必须与登记的隔离实例一致，且先于任何 DML ──
+      $fpSql = "SELECT CONCAT(@@port,'|',@@server_uuid,'|',@@datadir,'|',@@hostname);"
+      $fp = Invoke-FingerprintProbe $gateCon $fpSql
+      if ($fp.exit -ne 0 -or -not $fp.text) {
+        Write-Host ("[0.5] ⚠️ 拒绝清场：无法读取实例指纹（mysql 退出码 {0}）：{1}" -f $fp.exit, $fp.text)
+        Write-Host '      连不上/读不到实例身份 ⇒ 不执行任何语句（含只读预览）。'
+      } elseif ($fp.text -notmatch ("^" + [regex]::Escape("$MysqlPort|$ExpectedServerUuid") + "\|")) {
+        Write-Host ("[0.5] ⚠️ 拒绝清场：实例指纹不符，期望 '{0}|{1}|…'，实测 '{2}'。" -f $MysqlPort, $ExpectedServerUuid, $fp.text)
+        Write-Host '      说明 -MysqlPort 上跑的不是登记的隔离实例（两实例 @@hostname 相同，故用 port+uuid+datadir 区分）。'
       } else {
-        $previewRows = (($previewOut | Select-Object -Last 1) -replace '\s', '')
-        Write-Host ("[0.5] 待清目标预览：{0}.event_outbox（账号 {1}）当前 {2} 行，将全部删除。" -f $MallDbName, $MallDbUser, $previewRows)
-        $delOut = & $MysqlExe "-u$MallDbUser" -N -B -e "DELETE FROM $MallDbName.event_outbox; SELECT ROW_COUNT();" 2>&1
-        if ($LASTEXITCODE -ne 0) {
-          Write-Host ("[0.5] ⚠️ 清 event_outbox **失败**（mysql 退出码 {0}）：{1}" -f $LASTEXITCODE, (($delOut | Out-String).Trim()))
-          Write-Host '      常见原因：MALL_DB_PASSWORD 与商城库账号不符。清场未生效，脚本继续（不清场不等于演示会失败）。'
+        # ── 门禁②：影响面预览（先看要删多少行，再删；预览失败即拒绝，不盲删）──
+        $previewSql = "SELECT COUNT(*) FROM $MallDbName.event_outbox;"
+        $preview = Invoke-FingerprintProbe $cleanCon $previewSql
+        if ($preview.exit -ne 0) {
+          Write-Host ("[0.5] ⚠️ 清场预览失败（mysql 退出码 {0}）：{1}" -f $preview.exit, $preview.text)
+          Write-Host '      预览不可得即不删除（V25-S03 R-6：清理范围必须先可预览）。清场未生效，脚本继续。'
         } else {
-          Write-Host ("[0.5] 已清商城 event_outbox：删除 {0} 行（商城自有表，仅 -Clean -ConfirmCleanTarget 时执行）" -f (($delOut | Select-Object -Last 1) -replace '\s', ''))
-          $cleanTargetOk = $true
+          $previewRows = (($preview.text -split "`n" | Select-Object -Last 1) -replace '\s', '')
+          Write-Host ("[0.5] 实例指纹核对通过：{0}" -f $fp.text)
+          Write-Host ("[0.5] 待清目标预览：{0}.event_outbox（{1}:{2} 账号 {3}）当前 {4} 行，将全部删除。" -f $MallDbName, '127.0.0.1', $MysqlPort, $MallDbUser, $previewRows)
+          $del = Invoke-FingerprintProbe $cleanCon "DELETE FROM $MallDbName.event_outbox; SELECT ROW_COUNT();"
+          if ($del.exit -ne 0) {
+            Write-Host ("[0.5] ⚠️ 清 event_outbox **失败**（mysql 退出码 {0}）：{1}" -f $del.exit, $del.text)
+            Write-Host '      常见原因：MALL_DB_PASSWORD 与商城库账号不符。清场未生效，脚本继续（不清场不等于演示会失败）。'
+          } else {
+            Write-Host ("[0.5] 已清商城 event_outbox：删除 {0} 行（商城自有表，仅 -Clean -ConfirmCleanTarget 时执行）" -f (($del.text -split "`n" | Select-Object -Last 1) -replace '\s', ''))
+            $cleanTargetOk = $true
+          }
         }
       }
     }
@@ -143,7 +202,9 @@ if ($Clean) {
     #   注意 2 小时窗口是保守启发式：若演示中断超过 2 小时，本次产生的文件也会落入"跳过"那一类
     #   —— 宁可少删（脚本会打印跳过数量），不可多删。
     # V25-S03 R-6：landing 清理同样受目标校验约束——只有走完上面的
-    # 「目标白名单 + 账号校验 + -ConfirmCleanTarget + 影响面预览」才允许走到这里。
+    # 「实例指纹 + 目标白名单 + 账号校验 + -ConfirmCleanTarget + 影响面预览」才允许走到这里。
+    # V25-S02/K-04：landing 清理与库清场共用**同一道**门禁（$cleanTargetOk），
+    #   不再另立第二套判据——门禁没过就一行文件都不删。
     # 清理范围仍然只看"最近 2 小时内产生的 *.jsonl"，更早的一律报告并跳过。
       $landingDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'landing\events'
       if (Test-Path $landingDir) {

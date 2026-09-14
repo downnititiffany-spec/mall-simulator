@@ -26,6 +26,14 @@
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!--
+          V25-S02/K-02：默认套件排除哪些 JUnit5 tag。
+          做成属性而不是在 <configuration> 里写死 `it`：Maven **用户属性优先于插件配置**，
+          写死会导致显式 IT profile 清不掉排除项（实测 `-DexcludedGroups=` 与
+          <excludedGroups combine.self="override"/> 均无效），从而出现
+          "Tests run: 0 / BUILD SUCCESS" 的零用例假绿——正是本轮要消灭的形态。
+        -->
+        <v25.it.excluded.groups>it</v25.it.excluded.groups>
     </properties>
 
     <dependencies>
@@ -63,10 +71,55 @@
 
     <build>
         <plugins>
+            <!--
+              V25-S02 / K-02：默认纯测试与显式集成测试（IT）分离。
+
+              问题（默认套件实测 19 个类 120 用例 / 0 failures / 20 errors）：
+                GeneratorMetaStoreTest 的 static 初始化就调 IsolationGuard.requireEnabled
+                （缺 it.guard.enabled=true -> 类初始化失败 -> 5 个用例全红）；
+                GeneratorApiSmokeTest / MallApiGenerationSmokeTest 用 @SpringBootTest 起
+                默认 profile，其 application.yml 指向宿主 3306 + root 且 flyway enabled，
+                隔离门禁在上下文阶段硬拒 -> 各 5 / 9 个用例全红。
+                这些红是**有意**的（不允许 skip 后算绿），但不该被默认 `mvn test` 选中。
+
+              分离口径：
+                * 需要真实数据库隔离实例的类标 @Tag("it")；默认套件用 <excludedGroups> 排除。
+                * 显式集成套件 = `mvn test -Pisolated-tests`（见下方 profile）。
+                  缺隔离档案时它照样红（硬拒），**不是** skip 后算绿。
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${v25.it.excluded.groups}</excludedGroups>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- 显式集成套件（V25-S02 / K-02）：只选中 @Tag("it")；缺隔离档案即红。 -->
+        <profile>
+            <id>isolated-tests</id>
+            <properties>
+                <!-- 清空默认排除（写死 excludedGroups 时清不掉，见文首说明） -->
+                <v25.it.excluded.groups></v25.it.excluded.groups>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>it</groups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

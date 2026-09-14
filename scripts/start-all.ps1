@@ -11,13 +11,17 @@
 #   pwsh -File scripts/start-all.ps1 -MallOnly                 # 只起模拟商城（商城演示）
 #   pwsh -File scripts/start-all.ps1 -GeneratorOnly            # 只起生成器（造数据）
 # 前置: pwsh -File scripts/build-web-and-package.ps1（商城/生成器各自也可独立构建：见接受验收记录 §2）
-# 环境变量: MALL_DB_PASSWORD（商城库口令，默认取本机 LOCAL 演示口令）
+# 环境变量: MALL_DB_PASSWORD（商城库口令；与 -MallDbPassword 二者必居其一）
+# V25-S02/K-04：原先这里在两者都缺时回退明文 '123456' 并注入到子进程环境。
+#   该回退已被移除——口令必须由调用方显式给出，否则本脚本拒绝启动商城进程（"默认口令即等于无口令"）。
+# 退出码：0 成功；1 探活超时（含商城库口令错误）；4 需要启动商城但未提供口令（拒绝启动，不拉起任何进程）。
 param(
   [switch]$PlatformOnly,
   [switch]$MallOnly,
   [switch]$GeneratorOnly,
-  [string]$MallDbPassword = $(if ($env:MALL_DB_PASSWORD) { $env:MALL_DB_PASSWORD } else { '123456' })
+  [string]$MallDbPassword = ''
 )
+if (-not $MallDbPassword -and $env:MALL_DB_PASSWORD) { $MallDbPassword = $env:MALL_DB_PASSWORD }
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $logDir = Join-Path $root '.verify'
@@ -69,6 +73,12 @@ if ($startPlatform) {
 }
 
 if ($startMall) {
+  if (-not $MallDbPassword) {
+    Write-Host '[3/6] 拒绝启动模拟商城：未提供商城库口令。'
+    Write-Host "      请给出 -MallDbPassword '<口令>' 或设置环境变量 MALL_DB_PASSWORD；"
+    Write-Host '      本脚本不再回退任何内置默认口令（V25-S02/K-04）。'
+    exit 4
+  }
   Write-Host '[3/6] 启动模拟商城（reference-mall, 8090）...'
   $env:MALL_DB_PASSWORD = $MallDbPassword
   $mLog = Start-Jar -JarGlob (Join-Path $root 'mall-simulator\target\*.jar') -JvmArgs @() -LogName 'start-mall.log'

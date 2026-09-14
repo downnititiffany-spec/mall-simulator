@@ -1,0 +1,4 @@
+### command: pwsh -NoProfile -File scripts/it-prepare-isolation.ps1
+### exit code: 1   elapsed_ms: 526
+### output:
+it-prepare-isolation.ps1: 无法处理命令，因为缺少一个或多个必需参数: RunId。

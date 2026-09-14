@@ -1,0 +1,30 @@
+[
+  {
+    "case": "a-refuse-no-password",
+    "exit": 5,
+    "stubCalls": 0,
+    "failed": 0,
+    "file": "k05-a-refuse-no-password.txt"
+  },
+  {
+    "case": "b-refuse-db-not-in-whitelist",
+    "exit": 5,
+    "stubCalls": 0,
+    "failed": 0,
+    "file": "k05-b-refuse-db-not-in-whitelist.txt"
+  },
+  {
+    "case": "c-refuse-root-account",
+    "exit": 5,
+    "stubCalls": 0,
+    "failed": 0,
+    "file": "k05-c-refuse-root-account.txt"
+  },
+  {
+    "case": "d-query-fails",
+    "exit": 6,
+    "stubCalls": 1,
+    "failed": 0,
+    "file": "k05-d-query-fails.txt"
+  }
+]

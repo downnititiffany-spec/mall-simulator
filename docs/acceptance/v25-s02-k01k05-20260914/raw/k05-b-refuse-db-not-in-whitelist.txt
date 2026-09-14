@@ -1,0 +1,13 @@
+### case: b-refuse-db-not-in-whitelist
+### 期望: 退出码 5
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\smoke-pipeline.ps1 -BusinessTime 2026-09-01T00:00:00 -BaseUrl http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -OutDir D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\raw -MetricDb analytics_metric_evil
+### env: SMOKE_DB_PASSWORD=<set>
+### exit code: 5
+### mysql-stub invocations: 0
+### PASS 断言 退出码=5（实测 5）
+### PASS 断言 stubCalls=0（实测 0）
+### PASS 断言输出含 '不在允许清单'
+### case verdict: PASS
+### ---- raw output ----
+拒绝执行：-MetricDb 'analytics_metric_evil' 不在允许清单 analytics_metric, analytics_metric_v25it 内。
+  发布库口径写错会让"未发布"看起来像已发布；如需新增目标请先登记到本白名单。

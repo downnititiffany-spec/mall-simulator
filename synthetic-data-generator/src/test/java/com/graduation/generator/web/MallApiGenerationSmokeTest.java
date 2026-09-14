@@ -19,6 +19,7 @@ import com.graduation.generator.web.dto.GeneratorApiDtos.StartRunRequest;
 import com.graduation.generator.web.dto.GeneratorApiDtos.TargetRequest;
 import com.graduation.generator.web.dto.GeneratorApiDtos.TargetView;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.graduation.itguard.GeneratorIsolationTestConfig;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -68,6 +69,10 @@ import static org.junit.jupiter.api.Assertions.fail;
         properties = {"generator.output.root=target/it-mall-output", "generator.cli=",
                 "generator.target.probe-timeout-ms=5000"})
 @Import(GeneratorIsolationTestConfig.class)
+// 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+//   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+//   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+@Tag("it")
 class MallApiGenerationSmokeTest {
 
     /** 夹具按商品<b>存在性</b>校验订单，所以目录规模要够探针分页与商品动作（{@code eventCount/20}，下限 4） */

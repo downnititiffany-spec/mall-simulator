@@ -77,13 +77,32 @@ class GeneratorContractParityTest {
     }
 
     @Test
-    @DisplayName("schema_version / source_system / 金额与时间正则在生成器侧取同一值")
-    void constantsAndPatternsMatchContract() {
+    @DisplayName("schema_version 锁 const；source_system 只受形状约束（可替换来源）；金额与时间正则在生成器侧取同一值")
+    void versionSourceShapeAndPatternsMatchContract() {
         JsonNode schema = contract();
+        // 正向对照：schema_version 仍然锁定 const —— 证明下面那条"source_system 不得锁 const"
+        // 的守卫不是空转（与 platform-common 的 CanonicalEventSchemaParityTest 同一判据）。
         assertThat(ContractFormat.SCHEMA_VERSION)
                 .isEqualTo(schema.get("properties").get("schema_version").get("const").asText());
-        assertThat(ContractFormat.SOURCE_SYSTEM)
-                .isEqualTo(schema.get("properties").get("source_system").get("const").asText());
+        // D-061「可替换来源」契约：source_system 的值域**不归契约所有**
+        // （归 source_registry.source_code 的单一所有者），契约只约束形状。
+        // 迁移前这里读 schema...get("source_system").get("const")，而当前 Schema 刻意没有 const 列，
+        // get("const") 返回 null -> asText() 抛 NPE（K-03）。改成对形状断言，而不是再写死 mock-mall。
+        JsonNode source = schema.get("properties").get("source_system");
+        assertThat(source.has("const"))
+                .as("D-061：契约不得把 source_system 锁成 const，否则每接一个源都要改契约"
+                        + "（值域单一所有者是 source_registry.source_code）")
+                .isFalse();
+        assertThat(source.get("type").asText()).as("D-061：source_system 必须是 string 形状约束").isEqualTo("string");
+        assertThat(source.get("minLength").asInt()).as("D-061：source_system 必须带 minLength=1（非空）").isEqualTo(1);
+        // 生成器侧实际产出的源标识必须满足该形状（非空字符串），且不得与契约冻结版本混淆。
+        assertThat(ContractFormat.SOURCE_SYSTEM).as("生成器产出的 source_system 必须非空").isNotBlank();
+        assertThat(ContractFormat.SOURCE_SYSTEM).as("生成器产出的 source_system 必须是字符串形状（无枚举约束）")
+                .isInstanceOf(String.class);
+        // 取值必须真的落进信封，且不含契约只在 schema_version 上冻结的版本号。
+        ObjectNode envelope = MAPPER.valueToTree(sampleEvent(EventTypes.BEHAVIOR));
+        assertThat(envelope.get("source_system").asText()).isEqualTo(ContractFormat.SOURCE_SYSTEM);
+        assertThat(envelope.get("source_system").asText()).isNotEqualTo(ContractFormat.SCHEMA_VERSION);
         assertThat(ContractFormat.AMOUNT_PATTERN.pattern())
                 .isEqualTo(schema.get("$defs").get("amount").get("pattern").asText());
         assertThat(ContractFormat.ISO8601_PATTERN.pattern())

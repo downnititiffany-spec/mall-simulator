@@ -30,7 +30,19 @@ V25-S03 R-6 整改说明（本脚本对数据库**只读**）：
     $env:SMOKE_DB_PASSWORD 提供，且经 MYSQL_PWD 传给客户端，不出现在命令行参数里。
 
 退出码：0 = 门禁全过；2 = 链路未达成功态；3 = 存在 BLOCKING 质量失败；4 = 未发布任何指标值；
-        5 = 目标/凭据不明确被拒（V25-S03 R-6）。
+        5 = 目标/凭据不明确被拒（V25-S03 R-6）；6 = 只读取数失败/结果不可解析（V25-S02/K-05）。
+
+V25-S02/K-05 整改说明（只读取数失败必须**立即响亮失败**）：
+  * 整改前 Q()（下:100）在 mysql 退出码非 0 时只 Write-Host 一行诊断，**随后照常返回**——
+    于是取数失败被下游当成"空结果"继续跑：
+      - `[long](Q '…' | Select-Object -First 1)` 把空流转成 0（基线被读成 0）；
+      - `$blockingFail = @($rules | Where-Object …)` 在 $rules 为空时得到 0 条 ⇒
+        **质量门禁会把"查不到"当成"全过"**，脚本继续走到后面并可能给出 0/绿。
+    这是典型的"删掉/跳过判据换绿色"同型缺陷，只是换成了"读不到就不判"。
+  * 现在：① Q() 失败即 `throw`，异常里保留 **mysql 原始退出码 + 原始 stderr 文本 + 目标库/账号**；
+    ② 外层用 fail-fast 包装（Invoke-SafeQuery）把该异常翻译成**退出码 6** 并立即停止，
+    不再继续聚合、不再打印任何门禁结论；③ 退出码 5 与 6 语义分开并写入本注释与 README：
+    5 = 目标/凭据在**执行前**就不明确（白名单/口令/账号）；6 = 执行中只读取数真的失败。
 
 示例：
   pwsh scripts\smoke-pipeline.ps1 -BusinessTime '2026-09-01T00:00:00' -SourceDataVersion 'm1-4s3b-gen1000-def05fix'
@@ -97,21 +109,57 @@ if ($MysqlUser -eq 'root') {
 }
 Write-Host ("[目标] MetricDb={0} 账号={1}（只读 SELECT；口令以环境变量/参数传入，不回显）" -f $MetricDb, $MysqlUser)
 
+# ── V25-S02/K-05：只读取数失败 = 立即失败，绝不降级成"空结果" ────────────
+class SmokeQueryException : System.Exception {
+  [int]$MysqlExit
+  [string]$RawError
+  [string]$Target
+  SmokeQueryException([string]$message, [int]$mysqlExit, [string]$rawError, [string]$target)
+      : base($message) {
+    $this.MysqlExit = $mysqlExit
+    $this.RawError = $rawError
+    $this.Target = $target
+  }
+}
+
 function Q([string]$sql) {
   # V25-S03 R-6：口令走 MYSQL_PWD 环境变量，不再出现在 `-p<口令>` 命令行参数里
   # （命令行参数在进程列表里对其他本地进程可见）。这里也不再把 stderr 整个吞掉为 $null。
+  #
+  # V25-S02/K-05：退出码非 0 时**抛异常**（不再"打印一行然后照常返回"）。
+  #   理由见文件头 V25-S02/K-05 说明：返回空流会让下游把"查不到"读成 0/全过。
   $old = $env:MYSQL_PWD
   $env:MYSQL_PWD = $MysqlPassword
   try {
     $out = & $MysqlExe "-u$MysqlUser" -N -B --default-character-set=utf8mb4 -e $sql 2>&1
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host ("[Q] mysql 退出码 {0}：{1}" -f $LASTEXITCODE, (($out | Out-String).Trim()))
-      Write-Host ("[Q] 目标 MetricDb={0} 账号={1}" -f $MetricDb, $MysqlUser)
-    }
+    $code = $LASTEXITCODE
   } finally {
     $env:MYSQL_PWD = $old
   }
+  if ($code -ne 0) {
+    $raw = (($out | Out-String).Trim())
+    throw [SmokeQueryException]::new(
+      ("只读取数失败（mysql 退出码 {0}）：{1}" -f $code, $raw), $code, $raw,
+      ("MetricDb={0} 账号={1} sql={2}" -f $MetricDb, $MysqlUser, $sql))
+  }
   return @($out | Where-Object { $_ -ne '' })
+}
+
+# fail-fast 包装：任何只读取数异常 ⇒ 打印结构化诊断（含原始退出码/原始文本）
+# 并以退出码 6 立即停止；不落任何证据文件（避免留下"看起来跑完了"的半成品）。
+function Invoke-SafeQuery([string]$what, [string]$sql) {
+  try {
+    return ,@(Q $sql)
+  } catch [SmokeQueryException] {
+    Write-Host ''
+    Write-Host '[FAIL] 只读取数失败，立即停止（不继续聚合、不给门禁结论）。'
+    Write-Host ("       阶段      : {0}" -f $what)
+    Write-Host ("       mysql 退出 : {0}" -f $_.Exception.MysqlExit)
+    Write-Host ("       原始文本   : {0}" -f $_.Exception.RawError)
+    Write-Host ("       目标       : {0}" -f $_.Exception.Target)
+    Write-Host '       退出码 6 = 只读取数失败/结果不可解析（V25-S02/K-05）。'
+    exit 6
+  }
 }
 function Cells([string]$line) { return ($line -split "`t") }
 # 单元格取值必须显式两步：`[long](Cells $row)[0]` 会被 PowerShell 解析成
@@ -134,8 +182,8 @@ if (-not $login.data.token) { Write-Host '登录失败：无 token'; exit 2 }
 $headers = @{ Authorization = "Bearer $($login.data.token)" }
 
 Write-Host '[2/7] 基线'
-$beforeMaxRun = [long](Q 'SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run' | Select-Object -First 1)
-$beforeMetricRows = [long](Q "SELECT COUNT(*) FROM $MetricDb.metric_value" | Select-Object -First 1)
+$beforeMaxRun = [long]((Invoke-SafeQuery '基线 pipeline_run 最大 id' 'SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run') | Select-Object -First 1)
+$beforeMetricRows = [long]((Invoke-SafeQuery '基线 metric_value 行数' "SELECT COUNT(*) FROM $MetricDb.metric_value") | Select-Object -First 1)
 Write-Host "      pipeline_run maxId=$beforeMaxRun, $MetricDb.metric_value rows=$beforeMetricRows"
 
 Write-Host "[3/7] 创建 run：businessTime=$BusinessTime profile=$RuntimeProfileId"
@@ -146,7 +194,7 @@ if ($IdempotencyKey) { $hdr['Idempotency-Key'] = $IdempotencyKey }
 $created = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/v1/pipeline-runs" -Headers $hdr `
   -ContentType 'application/json' -Body ($body | ConvertTo-Json)
 $runId = $created.data.runId
-if (-not $runId) { $runId = [long](Q 'SELECT MAX(id) FROM analytics_meta.pipeline_run' | Select-Object -First 1) }
+if (-not $runId) { $runId = [long]((Invoke-SafeQuery '兜底取最新 pipeline_run.id' 'SELECT MAX(id) FROM analytics_meta.pipeline_run') | Select-Object -First 1) }
 Write-Host "      runId=$runId snapshot(预期)=$($created.data.targetSnapshotId)"
 
 Write-Host "[4/7] 轮询终态（最多 $TimeoutSec s）"
@@ -165,9 +213,9 @@ $status = $run.data.status
 $snapshot = $run.data.targetSnapshotId
 
 Write-Host '[5/7] 阶段/作业/质量规则'
-$stages = Q "SELECT stage_code,status,records,COALESCE(error_code,'') FROM analytics_meta.pipeline_stage_run WHERE run_id=$runId ORDER BY id"
-$jobs = Q "SELECT job_code,status,input_records,output_records,rejected_records FROM analytics_meta.spark_job_run WHERE pipeline_run_id=$runId ORDER BY id"
-$rules = Q "SELECT rule_code,severity,passed,check_count,error_count,COALESCE(detail,'') FROM analytics_meta.data_quality_result WHERE run_id=$runId ORDER BY id"
+$stages = Invoke-SafeQuery '阶段状态 pipeline_stage_run' "SELECT stage_code,status,records,COALESCE(error_code,'') FROM analytics_meta.pipeline_stage_run WHERE run_id=$runId ORDER BY id"
+$jobs = Invoke-SafeQuery '作业状态 spark_job_run' "SELECT job_code,status,input_records,output_records,rejected_records FROM analytics_meta.spark_job_run WHERE pipeline_run_id=$runId ORDER BY id"
+$rules = Invoke-SafeQuery '质量规则 data_quality_result' "SELECT rule_code,severity,passed,check_count,error_count,COALESCE(detail,'') FROM analytics_meta.data_quality_result WHERE run_id=$runId ORDER BY id"
 $blockingFail = @($rules | Where-Object { $c = Cells $_; $c[1] -eq 'BLOCKING' -and $c[2] -ne '1' })
 $jobFail = @($jobs | Where-Object { (Cells $_)[1] -ne 'SUCCESS' })
 
@@ -177,21 +225,26 @@ Write-Host '[6/7] 发布结果'
 # 于是 `$pubRaw[0]` 退化成"取首字符"（`10<TAB>285.6800` → `1`），行数报错、合计变空，门禁还被蒙过去。
 # 正确写法：先在赋值处 `@(...)`，再做 if 分支。
 $pubRaw = @()
-if ($snapshot) { $pubRaw = @(Q "SELECT COUNT(*),COALESCE(SUM(metric_value),0) FROM $MetricDb.metric_value WHERE snapshot_id='$snapshot'") }
+if ($snapshot) { $pubRaw = Invoke-SafeQuery '发布行数/合计' "SELECT COUNT(*),COALESCE(SUM(metric_value),0) FROM $MetricDb.metric_value WHERE snapshot_id='$snapshot'" }
 $pubRows = if ($pubRaw.Count -gt 0) { CellLong $pubRaw[0] 0 } else { 0 }
 $pubSum = if ($pubRaw.Count -gt 0) { CellStr $pubRaw[0] 1 } else { '0' }
 # 解析自检：SQL 选了两列，正确解析必然得到 ≥2 个单元格；只有 1 个就说明又踩了摊平成标量的坑。
+# V25-S02/K-05：结果不可解析与"取数失败"同属"读不出来"，统一退出码 6（原先误用 5）。
 if ($pubRaw.Count -gt 0 -and (Cells $pubRaw[0]).Count -lt 2) {
-  Write-Host "门禁：发布行数解析异常（单元格数=$((Cells $pubRaw[0]).Count)，原文=[$($pubRaw[0])]）"; exit 5
+  Write-Host ("[FAIL] 发布行数解析异常：单元格数={0}，原始文本=[{1}]（目标 {2}，账号 {3}）" -f (Cells $pubRaw[0]).Count, $pubRaw[0], $MetricDb, $MysqlUser)
+  Write-Host '       退出码 6 = 只读取数失败/结果不可解析（V25-S02/K-05）。'
+  exit 6
 }
 # 快照注册状态：SUCCESS 的 run 应留下 ACTIVE 快照；失败 run 允许缺席（发布阶段未执行）
 $snapReg = @()
-if ($snapshot) { $snapReg = @(Q "SELECT snapshot_id,status,source,pipeline_run_id FROM $MetricDb.metric_snapshot WHERE snapshot_id='$snapshot'") }
+if ($snapshot) { $snapReg = Invoke-SafeQuery '快照注册行' "SELECT snapshot_id,status,source,pipeline_run_id FROM $MetricDb.metric_snapshot WHERE snapshot_id='$snapshot'" }
 $snapRegText = if ($snapReg.Count -gt 0) { $snapReg[0] } else { '(无注册行)' }
 if ($snapReg.Count -gt 0 -and (Cells $snapReg[0]).Count -lt 4) {
-  Write-Host "门禁：快照注册解析异常（单元格数=$((Cells $snapReg[0]).Count)，原文=[$($snapReg[0])]）"; exit 5
+  Write-Host ("[FAIL] 快照注册解析异常：单元格数={0}，原始文本=[{1}]（目标 {2}，账号 {3}）" -f (Cells $snapReg[0]).Count, $snapReg[0], $MetricDb, $MysqlUser)
+  Write-Host '       退出码 6 = 只读取数失败/结果不可解析（V25-S02/K-05）。'
+  exit 6
 }
-$afterMetricRows = [long](Q "SELECT COUNT(*) FROM $MetricDb.metric_value" | Select-Object -First 1)
+$afterMetricRows = [long]((Invoke-SafeQuery '收尾 metric_value 行数' "SELECT COUNT(*) FROM $MetricDb.metric_value") | Select-Object -First 1)
 $overview = $null; $quality = $null
 try { $overview = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/v1/metrics/overview" -Headers $headers } catch { Write-Host "      /metrics/overview 失败: $($_.Exception.Message)" }
 try { $quality = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/v1/metrics/quality?limit=20" -Headers $headers } catch { Write-Host "      /metrics/quality 失败: $($_.Exception.Message)" }

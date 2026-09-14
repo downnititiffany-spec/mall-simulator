@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -52,6 +53,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 口令支持 {@code credref:<id>} 引用，源码与命令行都不落明文。
  * 连接参数与 {@code application.yml} 同源但**不再继承它的 root 默认值**。</p>
  */
+// 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+//   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+//   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+@Tag("it")
 class GeneratorMetaStoreTest {
 
     static {

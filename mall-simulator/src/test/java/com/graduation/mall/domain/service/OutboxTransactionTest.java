@@ -14,6 +14,7 @@ import com.graduation.mall.support.SeqEventIdGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -35,6 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * 使用 NOT_SUPPORTED 让 createOrder 的 REQUIRED 事务独立开启并真正回滚，
  * 这样回滚断言看到的是提交后的真实数据库状态（同事务内无法观察到回滚）。
  */
+// 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+//   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+//   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+@Tag("it")
 class OutboxTransactionTest extends MallTestSupport {
 
     @TestConfiguration

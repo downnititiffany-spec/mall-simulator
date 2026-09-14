@@ -1,0 +1,27 @@
+### command: pwsh -NoProfile -Command & 'scripts/it-prepare-isolation.ps1' -RunId k01probe-20260914-a1b2
+### exit code: 0
+### output:
+════════════════════════════════════════════════════════════════
+ 测试隔离环境准备 —— 将创建的对象清单
+════════════════════════════════════════════════════════════════
+ 实例        : 127.0.0.1:3307（WSL 内独立 MySQL；宿主 3306 不参与）
+ runId       : k01probe-20260914-a1b2
+ 将创建（幂等，IF NOT EXISTS）：
+   数据库     : k01probe-20260914-a1b2_mall
+   数据库     : k01probe-20260914-a1b2_generator
+   受限账号   : k01probe-20260914-a1b2_mallapp@'%'  （只对 k01probe-20260914-a1b2_mall 有权限）
+   受限账号   : k01probe-20260914-a1b2_genapp@'%'  （只对 k01probe-20260914-a1b2_generator 有权限）
+ 将写入的凭据文件（仓内、gitignore 覆盖、单键 password）：
+               : D:\Develop_code\GraduationProject\mall-simulator\credref-k01probe-20260914-a1b2-mall.properties
+               : D:\Develop_code\GraduationProject\synthetic-data-generator\credref-k01probe-20260914-a1b2-generator.properties
+ 不会做的事：
+   * 不触碰宿主 3306 上的任何库
+   * 不创建/修改 root、metric_pub、mall_app、meta_app 等正式账号
+   * 不写入任何业务数据（只建空库 + 授权）
+   * 不修改仓库内任何已提交文件
+   * 不在仓库外创建任何文件（凭据文件落两模块工作目录）
+════════════════════════════════════════════════════════════════
+
+默认不执行：上面只是清单。
+  确认 W03 已交付 3307 实例、且 parent 已确认后，加 -Confirm 重跑：
+    pwsh -File scripts/it-prepare-isolation.ps1 -RunId k01probe-20260914-a1b2 -Confirm

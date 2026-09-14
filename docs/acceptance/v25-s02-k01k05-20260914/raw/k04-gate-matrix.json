@@ -1,0 +1,51 @@
+[
+  {
+    "case": "a-refuse-host3306",
+    "exit": 0,
+    "stubCalls": 0,
+    "failedAssertions": 0,
+    "file": "k04-a-refuse-host3306.txt"
+  },
+  {
+    "case": "b-refuse-no-runid-prefix",
+    "exit": 0,
+    "stubCalls": 0,
+    "failedAssertions": 0,
+    "file": "k04-b-refuse-no-runid-prefix.txt"
+  },
+  {
+    "case": "c-skip-no-password",
+    "exit": 0,
+    "stubCalls": 0,
+    "failedAssertions": 0,
+    "file": "k04-c-skip-no-password.txt"
+  },
+  {
+    "case": "d-refuse-db-not-in-whitelist",
+    "exit": 0,
+    "stubCalls": 0,
+    "failedAssertions": 0,
+    "file": "k04-d-refuse-db-not-in-whitelist.txt"
+  },
+  {
+    "case": "e-refuse-fingerprint-mismatch",
+    "exit": 0,
+    "stubCalls": 1,
+    "failedAssertions": 0,
+    "file": "k04-e-refuse-fingerprint-mismatch.txt"
+  },
+  {
+    "case": "f-delete-fails",
+    "exit": 0,
+    "stubCalls": 3,
+    "failedAssertions": 0,
+    "file": "k04-f-delete-fails.txt"
+  },
+  {
+    "case": "g-happy-isolated",
+    "exit": 0,
+    "stubCalls": 3,
+    "failedAssertions": 0,
+    "file": "k04-g-happy-isolated.txt"
+  }
+]

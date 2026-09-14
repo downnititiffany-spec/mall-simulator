@@ -1,0 +1,22 @@
+[
+  {
+    "phase": "isolated-hard-reject",
+    "module": "mall-simulator",
+    "exit": 1,
+    "classes": 9,
+    "tests": 30,
+    "failures": 0,
+    "errors": 30,
+    "skipped": 0
+  },
+  {
+    "phase": "isolated-hard-reject",
+    "module": "synthetic-data-generator",
+    "exit": 1,
+    "classes": 3,
+    "tests": 19,
+    "failures": 0,
+    "errors": 19,
+    "skipped": 0
+  }
+]

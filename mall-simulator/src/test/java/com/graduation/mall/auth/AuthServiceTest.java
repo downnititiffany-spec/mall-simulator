@@ -5,6 +5,7 @@ import com.graduation.mall.common.MallBizException;
 import com.graduation.mall.support.MallTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,6 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 认证服务测试（§21.5 会话）：正确密码登录取 token、错误密码拒绝、
  * 登出失效、随机 token 无效、三种子角色均可登录。
  */
+// 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+//   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+//   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+@Tag("it")
 class AuthServiceTest extends MallTestSupport {
 
     @Autowired

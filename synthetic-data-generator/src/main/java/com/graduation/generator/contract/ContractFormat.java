@@ -33,12 +33,16 @@ public final class ContractFormat {
     public static final String SCHEMA_VERSION = "1.0";
 
     /**
-     * 信封 {@code source_system} 取值。
+     * 信封 {@code source_system} 取值：**可替换来源**契约下生成器侧的默认源标识。
      *
-     * <p><b>未冻结项（B-06）</b>：契约当前把它冻结为 const {@code mock-mall}。这意味着文件模式
-     * （{@code CANONICAL_EVENT_FILE}）产出的行在信封上仍自称来自 mock-mall，而 §3.3 B 要求该模式"必须显示
-     * synthetic=true"——该标记当前落在**制品清单**（{@code ArtifactManifest.synthetic}）而非信封上。
-     * 若裁决要求文件模式使用独立 source_system，则契约须把 const 放宽为 enum，本常量是唯一改动点。</p>
+     * <p><b>契约已不再冻结该值（D-061，2026-09-12 CT 批次）</b>：Schema 去掉了 {@code const}，
+     * 只保留 {@code type: string} + {@code minLength: 1} 两条形状约束；值域的单一所有者是
+     * {@code source_registry.source_code}（D-035）。契约不复述命名规则——否则每接入一个源
+     * 都要改契约，契约会成为第二个命名规则所有者。</p>
+     *
+     * <p>故本常量是生成器侧的缺省值而非契约固定值；「这是合成数据」的标记落在**制品清单**
+     * （{@code ArtifactManifest.synthetic}）而非信封上。按源产出时由调用方经
+     * {@code CanonicalEventFactory} 注入。</p>
      */
     public static final String SOURCE_SYSTEM = "mock-mall";
 

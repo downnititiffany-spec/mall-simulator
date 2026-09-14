@@ -1,0 +1,20 @@
+[
+  {
+    "module": "mall-simulator",
+    "exit": 1,
+    "classes": 11,
+    "tests": 38,
+    "failures": 0,
+    "errors": 30,
+    "skipped": 0
+  },
+  {
+    "module": "synthetic-data-generator",
+    "exit": 1,
+    "classes": 19,
+    "tests": 120,
+    "failures": 0,
+    "errors": 20,
+    "skipped": 0
+  }
+]

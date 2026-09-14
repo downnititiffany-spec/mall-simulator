@@ -5,6 +5,7 @@ import com.graduation.mall.common.MallBizException;
 import com.graduation.mall.support.MallTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -18,6 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 用户管理服务测试（§3.2）：创建/唯一性/禁用后登录失败/重置密码/禁停自身。
  * 用户名带时间戳保证跨测试运行可重复（种子与历史用户不清除）。
  */
+// 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+//   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+//   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+@Tag("it")
 class UserAdminServiceTest extends MallTestSupport {
 
     @Autowired

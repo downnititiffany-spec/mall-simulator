@@ -1,0 +1,85 @@
+### case: a-refuse-no-password
+### 期望: 退出码 5
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\smoke-pipeline.ps1 -BusinessTime 2026-09-01T00:00:00 -BaseUrl http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -OutDir D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\raw 
+### exit code: 5
+### mysql-stub invocations: 0
+### PASS 断言 退出码=5（实测 5）
+### PASS 断言 stubCalls=0（实测 0）
+### PASS 断言输出含 '未提供数据库口令'
+### case verdict: PASS
+### ---- raw output ----
+拒绝执行：未提供数据库口令。整改后不再有 123456 兜底。
+  请用 -MysqlPassword <口令>，或设置环境变量 $env:MYSQL_PWD / $env:SMOKE_DB_PASSWORD。
+  当前目标：库=analytics_metric 账号=metric_read。脚本对库只读，但仍需凭据。
+
+### case: b-refuse-db-not-in-whitelist
+### 期望: 退出码 5
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\smoke-pipeline.ps1 -BusinessTime 2026-09-01T00:00:00 -BaseUrl http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -OutDir D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\raw -MetricDb analytics_metric_evil
+### env: SMOKE_DB_PASSWORD=<set>
+### exit code: 5
+### mysql-stub invocations: 0
+### PASS 断言 退出码=5（实测 5）
+### PASS 断言 stubCalls=0（实测 0）
+### PASS 断言输出含 '不在允许清单'
+### case verdict: PASS
+### ---- raw output ----
+拒绝执行：-MetricDb 'analytics_metric_evil' 不在允许清单 analytics_metric, analytics_metric_v25it 内。
+  发布库口径写错会让"未发布"看起来像已发布；如需新增目标请先登记到本白名单。
+
+### case: c-refuse-root-account
+### 期望: 退出码 5
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\smoke-pipeline.ps1 -BusinessTime 2026-09-01T00:00:00 -BaseUrl http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -OutDir D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\raw -MysqlUser root
+### env: SMOKE_DB_PASSWORD=<set>
+### exit code: 5
+### mysql-stub invocations: 0
+### PASS 断言 退出码=5（实测 5）
+### PASS 断言 stubCalls=0（实测 0）
+### PASS 断言输出含 '账号为 root'
+### case verdict: PASS
+### ---- raw output ----
+拒绝执行：账号为 root。本脚本只需要读权限，请改用只读账号（默认 metric_read）。
+  若确需 root，请说明理由后显式放开——当前脚本不接受隐式 root（V25-S03 R-6）。
+
+### case: d-query-fails
+### 期望: 退出码 6
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\smoke-pipeline.ps1 -BusinessTime 2026-09-01T00:00:00 -BaseUrl http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -OutDir D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\raw -MysqlUser metric_read
+### env: K04_STUB_EXIT=7
+### env: K04_STUB_MODE=fail
+### env: K04_STUB_MSG=ERROR 2013 (HY000): Lost connection to MySQL server during query (stub)
+### env: SMOKE_DB_PASSWORD=<set>
+### exit code: 6
+### mysql-stub invocations: 1
+###   stub-call: -umetric_read -N -B --default-character-set utf8mb4 -e SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run	MYSQL_PWD=<set>
+### PASS 断言 退出码=6（实测 6）
+### PASS 断言 stubCalls=1（实测 1）
+### PASS 断言输出含 '只读取数失败，立即停止'
+### PASS 断言输出含 'Lost connection to MySQL server during query (stub)'
+### PASS 断言输出含 'mysql 退出 : 7'
+### PASS 断言输出含 'SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run'
+### PASS 断言输出含 '退出码 6'
+### PASS 断言输出不得含 '阶段状态'
+### PASS 断言输出不得含 '已发布'
+### PASS 断言输出不得含 'BLOCKING'
+### PASS 断言输出不得含 '证据'
+### case verdict: PASS
+### ---- raw output ----
+[目标] MetricDb=analytics_metric 账号=metric_read（只读 SELECT；口令以环境变量/参数传入，不回显）
+[1/7] 登录 http://127.0.0.1:18099
+[2/7] 基线
+
+[FAIL] 只读取数失败，立即停止（不继续聚合、不给门禁结论）。
+       阶段      : 基线 pipeline_run 最大 id
+       mysql 退出 : 7
+       原始文本   : ERROR 2013 (HY000): Lost connection to MySQL server during query (stub)
+       目标       : MetricDb=analytics_metric 账号=metric_read sql=SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run
+       退出码 6 = 只读取数失败/结果不可解析（V25-S02/K-05）。
+
+=== matrix ===
+
+case                         exit stubCalls failed file
+----                         ---- --------- ------ ----
+a-refuse-no-password            5         0      0 k05-a-refuse-no-password.txt
+b-refuse-db-not-in-whitelist    5         0      0 k05-b-refuse-db-not-in-whitelist.txt
+c-refuse-root-account           5         0      0 k05-c-refuse-root-account.txt
+d-query-fails                   6         1      0 k05-d-query-fails.txt
+

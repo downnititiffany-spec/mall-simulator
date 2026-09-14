@@ -1,0 +1,8 @@
+== mall-simulator exit=1 classes=11 tests=38 failures=0 errors=30 skipped=0
+== synthetic-data-generator exit=1 classes=19 tests=120 failures=0 errors=20 skipped=0
+
+module                   exit classes tests failures errors skipped
+------                   ---- ------- ----- -------- ------ -------
+mall-simulator              1      11    38        0     30       0
+synthetic-data-generator    1      19   120        0     20       0
+

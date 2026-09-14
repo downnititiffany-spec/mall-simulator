@@ -23,6 +23,7 @@ import com.graduation.mall.outbox.TraceContext;
 import com.graduation.mall.support.MallTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 库存预扣/释放；退款不超过已付；同一事务写 Outbox 事件。
  */
 @Transactional
+// 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+//   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+//   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+@Tag("it")
 class MallBusinessServiceTest extends MallTestSupport {
 
     @Autowired

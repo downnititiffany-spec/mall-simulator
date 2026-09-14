@@ -1,0 +1,16 @@
+[
+  {
+    "class": "com.graduation.mall.domain.OrderStateMachineTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.mall.golden.GoldenDatasetTest",
+    "tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+]

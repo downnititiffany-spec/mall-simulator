@@ -1,0 +1,33 @@
+### case: d-query-fails
+### 期望: 退出码 6
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\smoke-pipeline.ps1 -BusinessTime 2026-09-01T00:00:00 -BaseUrl http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -OutDir D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\raw -MysqlUser metric_read
+### env: K04_STUB_EXIT=7
+### env: K04_STUB_MODE=fail
+### env: K04_STUB_MSG=ERROR 2013 (HY000): Lost connection to MySQL server during query (stub)
+### env: SMOKE_DB_PASSWORD=<set>
+### exit code: 6
+### mysql-stub invocations: 1
+###   stub-call: -umetric_read -N -B --default-character-set utf8mb4 -e SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run	MYSQL_PWD=<set>
+### PASS 断言 退出码=6（实测 6）
+### PASS 断言 stubCalls=1（实测 1）
+### PASS 断言输出含 '只读取数失败，立即停止'
+### PASS 断言输出含 'Lost connection to MySQL server during query (stub)'
+### PASS 断言输出含 'mysql 退出 : 7'
+### PASS 断言输出含 'SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run'
+### PASS 断言输出含 '退出码 6'
+### PASS 断言输出不得含 '阶段状态'
+### PASS 断言输出不得含 '已发布'
+### PASS 断言输出不得含 'BLOCKING'
+### PASS 断言输出不得含 '证据'
+### case verdict: PASS
+### ---- raw output ----
+[目标] MetricDb=analytics_metric 账号=metric_read（只读 SELECT；口令以环境变量/参数传入，不回显）
+[1/7] 登录 http://127.0.0.1:18099
+[2/7] 基线
+
+[FAIL] 只读取数失败，立即停止（不继续聚合、不给门禁结论）。
+       阶段      : 基线 pipeline_run 最大 id
+       mysql 退出 : 7
+       原始文本   : ERROR 2013 (HY000): Lost connection to MySQL server during query (stub)
+       目标       : MetricDb=analytics_metric 账号=metric_read sql=SELECT COALESCE(MAX(id),0) FROM analytics_meta.pipeline_run
+       退出码 6 = 只读取数失败/结果不可解析（V25-S02/K-05）。

@@ -1,0 +1,22 @@
+[
+  {
+    "Case": "k01-a-normal-file",
+    "ExitCode": 0,
+    "OutLines": 24
+  },
+  {
+    "Case": "k01-b-missing-runid",
+    "ExitCode": 1,
+    "OutLines": 1
+  },
+  {
+    "Case": "k01-c-bad-runid",
+    "ExitCode": 2,
+    "OutLines": 2
+  },
+  {
+    "Case": "k01-d-unknown-param",
+    "ExitCode": 1,
+    "OutLines": 1
+  }
+]

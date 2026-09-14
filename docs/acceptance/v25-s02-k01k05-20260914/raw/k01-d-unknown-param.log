@@ -1,0 +1,4 @@
+### command: pwsh -NoProfile -File scripts/it-prepare-isolation.ps1 -RunId k01probe-20260914-a1b2 -NoSuchSwitch
+### exit code: 1   elapsed_ms: 518
+### output:
+it-prepare-isolation.ps1: 找不到与参数名称 'NoSuchSwitch' 匹配的参数。

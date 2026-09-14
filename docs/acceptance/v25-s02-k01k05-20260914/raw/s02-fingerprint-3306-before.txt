@@ -1,0 +1,20 @@
+### phase: before
+### command: mysql --host=127.0.0.1 --port=3306 --user=root (MYSQL_PWD 注入) --batch --raw --skip-column-names -e 'source D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\fingerprint-3306-readonly.sql'
+### instance fingerprint (port|uuid|datadir|hostname): 3306|85191145-1491-11f0-b4e2-60cf84d55629|C:\ProgramData\MySQL\MySQL Server 8.0\Data\|dahaishui
+### sql file sha256: 73DD90C59EBB3F3ECE6EDEDF27A1C7C49AA6E49B52D5D25E9045C4DC0822A402
+### collected at: 2026-09-14 14:36:44
+### ---- raw output (k<TAB>v) ----
+metric_snapshot_rows	12
+metric_value_rows	110
+metric_snapshot_fp	c224e4e9d44c98f5389607f7beb9d6d2
+metric_value_fp	a1a073114d8232c5fcb11c56157466c2
+active_pointer	id=27 / S20260901_47 / version=12 / active_flag=1
+flyway_metric_count	3
+flyway_metric_latest	3 / 3@2026-09-10 20:04:15
+flyway_meta_count	17
+flyway_meta_latest	17 / 18@2026-09-12 15:06:05
+v25it_databases_on_3306	0
+v25it_accounts_on_3306	0
+runtime_profile_v25it_rows	0
+runtime_profile_total_rows	1
+### exit code: 0

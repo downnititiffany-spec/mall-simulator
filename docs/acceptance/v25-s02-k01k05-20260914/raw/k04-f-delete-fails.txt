@@ -1,0 +1,33 @@
+### case: f-delete-fails
+### 期望: 放行到 DML；删除失败被如实报出，不得称"已清场"
+### command: pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\run-demo.ps1 -Mall http://127.0.0.1:18099 -Platform http://127.0.0.1:18099 -Generator http://127.0.0.1:18099 -MysqlExe D:\Develop_code\GraduationProject\docs\acceptance\v25-s02-k01k05-20260914\tools\mysql-stub.cmd -Clean -ConfirmCleanTarget -MysqlPort 3307 -RunId v25it-20260914-1400-k04 -MallDbName v25it-20260914-1400-k04_mall -MallDbUser v25it-20260914-1400-k04_mallapp -AllowedCleanDbs v25it-20260914-1400-k04_mall -ExpectedServerUuid de8ebbea-aff4-11f1-8037-00155d5dba47
+### env: K04_STUB_FAIL_ON=DELETE
+### env: K04_STUB_PREVIEW_ROWS=7
+### env: K04_STUB_ROWS=3307|de8ebbea-aff4-11f1-8037-00155d5dba47|/data/mysql-isolated/data/|dahaishui
+### env: MALL_DB_PASSWORD=<set>
+### exit code: 0
+### mysql-stub invocations: 3
+###   stub-call: --protocol TCP --host 127.0.0.1 --port 3307 --user v25it-20260914-1400-k04_mallapp --batch --raw --skip-column-names -e SELECT CONCAT(@@port,'|',@@server_uuid,'|',@@datadir,'|',@@hostname);	MYSQL_PWD=<set>
+###   stub-call: --host 127.0.0.1 --port 3307 -uv25it-20260914-1400-k04_mallapp --batch --raw --skip-column-names -e	MYSQL_PWD=<set>
+###   stub-call: --host 127.0.0.1 --port 3307 -uv25it-20260914-1400-k04_mallapp --batch --raw --skip-column-names -e DELETE FROM v25it-20260914-1400-k04_mall.event_outbox; SELECT ROW_COUNT();	MYSQL_PWD=<set>
+### PASS 断言 stubCalls=3（实测 3）
+### PASS 断言stub 命令行含 'DELETE'
+### PASS 断言stub 命令行含 '--port 3307'
+### PASS 断言输出含 '清 event_outbox **失败**'
+### PASS 断言输出不得含 '已清商城 event_outbox'
+### case verdict: PASS
+### ---- raw output ----
+[0] 三程序就绪: 商城 http://127.0.0.1:18099 ｜ 平台 http://127.0.0.1:18099 ｜ 生成器 http://127.0.0.1:18099
+[0.1] 已登录：商城 stub-admin（ADMIN）｜ 平台 stub-admin（ADMIN）
+[0.5] 实例指纹核对通过：3307|de8ebbea-aff4-11f1-8037-00155d5dba47|/data/mysql-isolated/data/|dahaishui
+[0.5] 待清目标预览：v25it-20260914-1400-k04_mall.event_outbox（127.0.0.1:3307 账号 v25it-20260914-1400-k04_mallapp）当前 3307|de8ebbea-aff4-11f1-8037-00155d5dba47|/data/mysql-isolated/data/|dahaishui 行，将全部删除。
+[0.5] ⚠️ 清 event_outbox **失败**（mysql 退出码 1）：ERROR 1045 (28000): Access denied for user (stub, kind=DELETE)
+      常见原因：MALL_DB_PASSWORD 与商城库账号不符。清场未生效，脚本继续（不清场不等于演示会失败）。
+[1] TODO(缺口): 生成步骤需在生成器侧用 CLI 完成（plan-append → run-start），参数窗口 2026-09-14 → 2026-09-14，
+    事件预算与 --rate 见上方说明；本脚本不伪造该调用。生成后产物写入生成器自有目录（synthetic=true）。
+[2] 采集完成（平台）：批次 （） 行，隔离  行
+[3] 流水线 runId=0：SUCCESS（阶段 0/8 成功）
+[4] 证据：
+    快照: 
+     =  
+[OK] 演示数据就绪：分析平台看板 http://127.0.0.1:8091/ 可直接查看（商城前端 8090 只演示经营行为，不展示分析看板）

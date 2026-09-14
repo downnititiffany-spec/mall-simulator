@@ -1,0 +1,23 @@
+[
+  {
+    "class": "com.graduation.generator.meta.GeneratorMetaStoreTest",
+    "tests": 5,
+    "failures": 0,
+    "errors": 5,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.generator.web.GeneratorApiSmokeTest",
+    "tests": 5,
+    "failures": 0,
+    "errors": 5,
+    "skipped": 0
+  },
+  {
+    "class": "com.graduation.generator.web.MallApiGenerationSmokeTest",
+    "tests": 9,
+    "failures": 0,
+    "errors": 9,
+    "skipped": 0
+  }
+]

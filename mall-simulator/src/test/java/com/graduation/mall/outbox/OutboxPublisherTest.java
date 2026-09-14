@@ -7,6 +7,7 @@ import com.graduation.mall.support.MallTestSupport;
 import com.graduation.mall.support.SeqEventIdGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 发布 → 滚动 JSON 日志行数一致；published_at 落库；重复发布零新增；事件可反序列化。
  */
 @Transactional
+// 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+//   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+//   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+@Tag("it")
 class OutboxPublisherTest extends MallTestSupport {
 
     @TestConfiguration

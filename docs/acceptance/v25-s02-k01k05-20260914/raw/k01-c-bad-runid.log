@@ -1,0 +1,5 @@
+### command: pwsh -NoProfile -File scripts/it-prepare-isolation.ps1 -RunId ab
+### exit code: 2   elapsed_ms: 362
+### output:
+拒绝：-RunId 'ab' 形状非法（要求 ^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$）。
+  例：mallit-20260914-130000-a1b2

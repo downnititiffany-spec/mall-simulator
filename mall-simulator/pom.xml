@@ -20,6 +20,15 @@
     <properties>
         <java.version>17</java.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
+        <!--
+          V25-S02/K-02：默认套件排除哪些 JUnit5 tag。
+          做成属性（而不是在 <configuration> 里写死 `it`）的原因：Maven **用户属性优先于
+          插件配置**，写死就无法在 profile 里清空——实测 `-DexcludedGroups=` 与 profile 内
+          <excludedGroups combine.self="override"/> **都清不掉**写死的值，结果是显式 IT 套件
+          只报 "Tests run: 0 / BUILD SUCCESS"，正是本轮要消灭的"零用例算绿"。
+          改成占位属性后，显式 IT profile 只需换属性值（见文末 profile）。
+        -->
+        <v25.it.excluded.groups>it</v25.it.excluded.groups>
     </properties>
 
     <dependencies>
@@ -75,6 +84,28 @@
 
     <build>
         <plugins>
+            <!--
+              V25-S02 / K-02：默认纯测试与显式集成测试（IT）分离。
+
+              问题（默认套件实测 11 个类 38 用例 / 0 failures / 30 errors）：
+                @SpringBootTest 起的测试在缺隔离档案时「硬拒」——application-test.yml 的
+                url 占位符 ${MALL_ISOLATION_URL} 无默认值，上下文创建直接失败；
+                MallTestSupport.freshState() 的写前门禁也会拒。这些红是**有意**的
+                （不允许 skip 后算绿），但被默认 `mvn test` 选中，于是默认套件 30 个 ERROR。
+
+              分离口径：
+                * 需要真实数据库隔离实例的类标 @Tag("it")；默认套件用 <excludedGroups> 排除。
+                * 排除而非删除/跳过：这些用例仍然存在、仍可执行，只是不在默认套件里。
+                * 显式集成套件 = `mvn test -Pisolated-tests`（见下方 profile）。
+                  缺隔离档案时它照样红（硬拒），**不是** skip 后算绿。
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${v25.it.excluded.groups}</excludedGroups>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -89,4 +120,33 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+          显式集成套件（V25-S02 / K-02）。用法：
+            pwsh -File scripts/it-prepare-isolation.ps1 -RunId <runId> -Confirm -AllowRootOnIsolated
+            mvn -o -Dmaven.repo.local=D:\maven_repository -f mall-simulator/pom.xml test -Pisolated-tests
+
+          语义：只选中 @Tag("it")；缺隔离档案/档案指向 3306/库名不带 runId 前缀时，
+          用例**失败（红）**而不是被跳过——skip 不算通过。
+        -->
+        <profile>
+            <id>isolated-tests</id>
+            <properties>
+                <!-- 清空默认排除：只改属性值即可（写死 excludedGroups 时清不掉，见文首说明） -->
+                <v25.it.excluded.groups></v25.it.excluded.groups>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>it</groups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
