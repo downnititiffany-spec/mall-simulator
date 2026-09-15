@@ -63,7 +63,7 @@ $paths = @(
   'landing/events/2026091211.jsonl',
   'landing/events/2026091210.jsonl',
   'docs/acceptance/p2-01-ods-v2-spec-draft-20260912/RULINGS.md',
-  'docs/项目实施进度与任务看板 V2.2.md',
+  'docs/status-history/项目实施进度与任务看板 V2.2.md',
   'docs/superpowers/plans/2026-09-11-mall-agnostic-platform-implementation.md',
   'docs/superpowers/specs/2026-09-11-mall-agnostic-platform-design.md'
 )

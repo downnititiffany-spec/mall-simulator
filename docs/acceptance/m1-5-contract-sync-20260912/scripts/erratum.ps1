@@ -13,8 +13,8 @@ $readme = 'contract-specs\README.md'
 Say ('== M1-5 勘误写入 ' + (Get-Date).ToString('yyyy-MM-dd HH:mm:ss') + ' ==')
 Say ''
 Say '-- 0. 先复现"少一行"（正向对照 + 负向对照，防止我算错） --'
-$v1 = [IO.File]::ReadAllText('docs\项目完整实施指导书 V2.1.md', $enc) -split "`n"
-$v3 = [IO.File]::ReadAllText('docs\项目完整实施指导书 V2.3.md', $enc) -split "`n"
+$v1 = [IO.File]::ReadAllText('docs\guidance\history\项目完整实施指导书 V2.1.md', $enc) -split "`n"
+$v3 = [IO.File]::ReadAllText('docs\guidance\history\项目完整实施指导书 V2.3.md', $enc) -split "`n"
 $probe = @(
   @{ name = '§4.1 L107 声称 test(TargetConfig)'; file = 'v1'; line = 107; want = 'interface MallTargetAdapter {'; also = 108; alsoWant = 'TargetCheckResult test(TargetConfig config);' },
   @{ name = '§4.1 L108 声称 capabilities()'; file = 'v1'; line = 108; want = 'TargetCheckResult test(TargetConfig config);'; also = 109; alsoWant = 'TargetCapabilities capabilities();' },

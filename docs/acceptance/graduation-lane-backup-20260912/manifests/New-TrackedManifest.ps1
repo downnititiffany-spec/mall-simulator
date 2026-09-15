@@ -51,7 +51,7 @@ try {
 
     # 正向对照：这些路径必须各命中 1 行，否则清单本身无效
     $controls = @(
-        'docs/项目实施进度与任务看板 V2.2.md',
+        'docs/status-history/项目实施进度与任务看板 V2.2.md',
         'docs/acceptance/p2-01-ods-v2-20260912/ORDER-1.md'
     )
     foreach ($c in $controls) {

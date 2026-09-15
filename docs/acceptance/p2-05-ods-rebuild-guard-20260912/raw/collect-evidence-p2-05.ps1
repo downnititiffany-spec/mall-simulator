@@ -58,7 +58,7 @@ for ($i = 20; $i -lt 40 -and $i -lt $c.Count; $i++) { "{0,4}: {1}" -f ($i + 1), 
 
 # ---------------------------------------------------------------- R-07
 Sec "R-07 指导书 V2.4 §12.3 重建授权条文（P2-05 核心依据）"
-$f = 'docs/项目完整实施指导书 V2.4.md'
+$f = 'docs/guidance/history/项目完整实施指导书 V2.4.md'
 Write-Output "blob=$(git hash-object $f) lines=$((Get-Content -LiteralPath $f -Encoding UTF8).Count)"
 $c = Get-Content -LiteralPath $f -Encoding UTF8
 for ($i = 660; $i -lt 672; $i++) { "{0,4}: {1}" -f ($i + 1), $c[$i] }

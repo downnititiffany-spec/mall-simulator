@@ -7,7 +7,7 @@
 $ErrorActionPreference = 'Stop'
 $root  = Split-Path -Parent $PSScriptRoot
 $e4    = Join-Path $root 'docs\acceptance\e4-cluster-1000-20260912'
-$board = Join-Path $root 'docs\项目实施进度与任务看板 V2.2.md'
+$board = Join-Path $root 'docs\status-history\项目实施进度与任务看板 V2.2.md'
 
 $results = New-Object System.Collections.ArrayList
 function Add-Result([string]$name, [bool]$ok, [string]$detail) {
@@ -151,7 +151,7 @@ Add-Result 'J4 看板真地址仅剩 1 处且在 15:46 已公开行' (($leftBoar
 $porcelain = & git -C $root -c core.quotepath=false status --porcelain
 $stray = @($porcelain | Where-Object { $_ -match 'hs_err_pid|replay_pid|\.hprof' })
 Add-Result 'K1 无 JVM 崩溃残留文件' ($stray.Count -eq 0) $(if ($stray.Count) { $stray -join '; ' } else { '无' })
-$expected = @('docs/项目实施进度与任务看板 V2.2.md','spark-jobs/pom.xml',
+$expected = @('docs/status-history/项目实施进度与任务看板 V2.2.md','spark-jobs/pom.xml',
   'spark-jobs/src/main/scala/com/graduation/analytics/job/MetricExportJob.scala',
   'spark-jobs/src/test/scala/com/graduation/analytics/P2TestSupport.scala',
   'spark-jobs/src/test/scala/com/graduation/analytics/WarehouseNamespaceSpec.scala',
@@ -171,7 +171,7 @@ Add-Result 'L1 README 含 §10 追加补记' ($readme.Contains('# 10. 附录')) 
 Add-Result 'L2 README §1–§9 原文锚点仍在' ($readme.Contains('# 9.') -and $readme.Contains('# 1.')) '章节锚点在'
 Add-Result 'L3 看板含本轮新行（F-80 闭环）' ((Count-Regex $bt 'F-80 已在真集群闭环修复') -eq 1) "命中 $(Count-Regex $bt 'F-80 已在真集群闭环修复')"
 Add-Result 'L4 看板本轮新行含自检留痕 ⑮' ((Count-Regex $bt 'F-80 已在真集群闭环修复.*自检门禁') -eq 1) "命中 $(Count-Regex $bt 'F-80 已在真集群闭环修复.*自检门禁')"
-$numstat = & git -C $root diff --numstat -- 'docs/项目实施进度与任务看板 V2.2.md'
+$numstat = & git -C $root diff --numstat -- 'docs/status-history/项目实施进度与任务看板 V2.2.md'
 $parts = ($numstat -split "`t")
 Add-Result 'L5 看板 diff = 净增 1 行 / 删除 0' (($parts[0] -eq '1') -and ($parts[1] -eq '0')) "实际 $($parts[0]) $($parts[1])"
 Add-Result 'L6 MASKING.md 已落' (Test-Path -LiteralPath (Join-Path $e4 'MASKING.md')) 'MASKING.md'
