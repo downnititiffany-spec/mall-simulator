@@ -1,213 +1,113 @@
 # 基于 Spark 大数据平台和智能分析模型的电商用户行为分析系统
 
-毕业设计主体工程：把「事件接入 → Hive 四层数仓（ODS/DWD/DWS/ADS）→ Spark 真实作业链 → 指标快照发布 → Web 看板 / AI 解释 / 决策跟踪」
-做成普通员工可用的 Web 系统，而不是手工登录虚拟机执行 Spark 脚本。
+面向普通运营员工的商城数据分析 Web 系统：数据采集 → Hive 分层数仓 → Spark SQL → ADS 指标快照 → Spring Boot 查询服务 → Vue 看板、AI 分析与决策跟踪。
 
-> 当前权威文档（三文件治理，自指导书 V2.8 起）：
-> - 项目决策权威：[`docs/毕业设计指导书 V2.8.md`](docs/毕业设计指导书%20V2.8.md)
-> - 正式设计权威：[`docs/design/项目设计文档 V2.5.md`](docs/design/项目设计文档%20V2.5.md)
-> - 实际开发状态：`docs/PROJECT_STATUS.md`（治理规则已确立，待下一轮由代码 Agent 创建）
->
-> 历史指导书（整改稿 V1.0、V2.0～V2.7）与历史设计文稿（V1.0、V2.1～V2.4）均为只读历史，有效期止于各自发布时点，不再作为当前实施或设计依据。
+## 当前权威入口（V3.0）
 
-## 1. 历史状态快照（2026-09-11，仅供追溯，不代表当前项目状态）
+| 权威文件 | 职责 |
+|---|---|
+| [项目完整实施指导书 V3.0](docs/guidance/项目完整实施指导书%20V3.0.md) | 项目目标、范围、八个开发阶段、完成标准、总控裁决 |
+| [项目设计文档 V3.0](docs/design/项目设计文档%20V3.0.md) | 当前实现、模块/数据/接口/算法、部署、安全与待开发方案 |
+| [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) | 当前代码、进度、问题、测试、证据与下一步 |
 
-> 本节是 2026-09-11 的时点快照，其中的测试数字、快照编号与验收结论均已过期，仅供追溯。
-> 当前实际开发状态以后统一见 `docs/PROJECT_STATUS.md`；在该文件创建前，**不得把本节数字作为当前验收结果引用**。
-> 本节数字与其它时点口径（303、566、624、111 等）的差异不在本节解决，统一交由 `PROJECT_STATUS.md` 的「证据 / 待总控裁决」栏处理，本轮不做统一。
+**历史整理阶段已结束；项目正式进入毕业设计功能开发阶段。** 发布代码基线为`e3c1070c02964512cdd3444c76e3e39ec833bcc8`。V3.0发布后只读，正式变更由总控发布V3.1。代码Agent可维护PROJECT_STATUS，不得自行改变目标/架构、提升backlog或宣布完整验收。
 
-R6、R7、R8 均已收口，**不再是「组件完成、生产接线尚未收口」**：
+全部V2.x指导书、设计稿、历史看板、remediation-status与历史契约/验收资料均为**历史只读**，保持原路径。旧资料的“当前”只指历史时点，不是现行开发指令。更多导航见[docs/README](docs/README.md)。
 
-- **生产流水线已接线**：`PipelineService` 编排 8 阶段，计算阶段由 `SparkStageExecutor` 真实提交 `spark-submit` 作业
-  （作业码 `sci/odl/bdw/tdw/usw/dim/fna/dqc/pub/mxp/ljp`），每阶段落 `pipeline_stage_run`，Spark 作业明细落 `spark_job_run`。
-- **最近一次真实完整链**：run **22** 终态 **SUCCESS**，业务日 2026-09-01，指标库 `ACTIVE=S20260901_22`
-  （`S20260901_23`、`S20260901_24` 为 ARCHIVED），导出 8 张 ADS 宽表；该 run 经
-  `POST /api/v1/admin/pipeline-runs/22/retry-from-stage?stage=BUILD_ADS` 真实重跑后转绿。
-  证据：`.verify/r7-3-run22-run.json`、`.verify/r7-3-run22.log`，以及 R9 证据目录
-  [`docs/acceptance/r9-20260911-fabc6cb-run22-S20260901_22/`](docs/acceptance/r9-20260911-fabc6cb-run22-S20260901_22/)
-  （run 22 终态 SUCCESS（attempt 4）、`ACTIVE=S20260901_22`、黄金标准答案对账**不一致项 0**、8 张 ADS 宽表行数）；
-  口径与遗留边界见 `docs/remediation-status.md`。
-- **黄金夹具**：`tests/golden-dataset/events/golden-20260901.jsonl`（55 行）+ 标准答案
-  `tests/golden-dataset/expected/golden-20260901-expected.json`。
+## 系统边界与目录
 
-### 测试与验收结果
+| 程序 | 代码 | 端口 | 职责 |
+|---|---|---:|---|
+| 分析平台 | analytics-server + web | 8091 | 采集、计算编排、质量、指标、AI与决策 |
+| 参考商城 | mall-simulator + mall-frontend | 8090 | 商品、订单、模拟支付退款、Outbox |
+| 独立生成器 | synthetic-data-generator | 8092 | 目标适配、场景计划、限速HTTP操作或文件夹具 |
 
-| 套件 | 命令 | 最近结果 | 证据 |
-|---|---|---|---|
-| 平台后端单元测试 | `mvn -f analytics-server/pom.xml test` | **303/303**（0 failure / 0 error） | `analytics-server/**/target/surefire-reports` 汇总（2026-09-11） |
-| Spark 作业单元测试 | `mvn -f spark-jobs/pom.xml package`（ScalaTest） | **46/46** | `spark-jobs/target/surefire-reports/TEST-*.xml` 汇总 |
-| 分析前端单元测试 | `cd web; npm test`（Node `node --test`） | **74/74** | 2026-09-11 本机实跑 |
-| 模拟商城单元测试 | `cd mall-simulator; mvn test` | **54/54** | `docs/remediation-status.md` R7-4 条登记 |
-| 平台真机验收 | `pwsh .verify/r8-accept.ps1` | **53/53 PASS** | `.verify/r8-accept-report.json`（身份 / 证据包 / 六段解释 / 安全问数 / 攻击集 / 决策闭环+审计） |
-| 证据截断复验 | `pwsh .verify/r8-evidence-truncation-proof.ps1` | **12/12 PASS** | `.verify/r8-evidence-truncation-proof.json` |
-| 分析端页面 DOM | `python .verify/r7-4-dom.py`（需两个进程已启动） | **22/22 PASS** | `.verify/r7-4-dom-report.json` |
-| 商城端页面 DOM | `python .verify/r7-4-mall-dom.py` | **17/17 PASS** | `.verify/r7-4-mall-dom-report.json` |
+商城/生成器不是平台必需的在线依赖；停止后仍可查询已发布指标。分析平台不直连商城业务库，生成器不直接写商城业务表。前端开发端口分别5173/5174，生产构建分别交由自己的后端承载。
 
-已提交的相关里程碑：`fabc6cb`（R8 AI 证据包 / 安全问数 / 身份与决策）、`247559e`、`4e42fe6`、`e32cca9`、`1615b1c`（R7）、`891164e`（文档收尾）。
-**R9（最终验收与论文证据）进行中**，进度见 `docs/remediation-status.md` 末尾未勾选项。
-
-## 2. 硬边界：两个系统、两个进程、两个库、两个前端
-
-| 系统 | 模块 | 端口 | 数据库 | 前端 |
-|---|---|---|---|---|
-| 分析平台 | `analytics-server`（启动模块 `platform-app`） | **8091** | `analytics_meta`（元数据）+ `analytics_metric`（指标库） | `web/`（Vue 3 + ECharts）构建后进入 platform-app 静态目录 |
-| 模拟商城 | `mall-simulator` | **8090** | `mall_simulator` | `mall-frontend/` 构建后进入 mall-simulator 静态目录 |
-
-- 平台不依赖商城业务库、不含生成器代码；商城只为平台提供可重复测试数据（事件滚动文件）。
-- 平台可直接以黄金夹具作为 Landing 输入跑完整链，不需要商城进程（`.verify/r7-3-run22.ps1`、`.verify/r6-8b-full-chain-smoke.ps1` 均可复现）。
-- 两个前端各自构建、各自进自己的 jar；`scripts/build-web-and-package.ps1` 在源目录与 jar 内两层断言越界页面 chunk。
-- 商城进程不提供任何平台接口（8090 访问 `/api/v1/dashboards/overview`、`/api/v1/metrics/health` 均 401）。
-
-## 3. 架构与数据链
-
-### 3.1 数据库（MySQL 8.0.41，本机 `127.0.0.1:3306`）
-
-| 库 | 归属 | 内容 | 迁移 |
-|---|---|---|---|
-| `analytics_meta` | 分析平台 | 流水线 / 阶段 / Spark 作业、采集、质量、AI 审计、决策、操作审计、`runtime_profile` 等 | Flyway `classpath:db/meta`，已应用到 **V15** |
-| `analytics_metric` | 分析平台（指标库） | 8 张 ADS 宽表 + `metric_snapshot` + `metric_value` | Flyway `classpath:db/metric` V1–V3 |
-| `mall_simulator` | 模拟商城 | 商城业务表 30 张（用户 / 商品 / 订单 / 退款 / outbox 等） | 商城自带 `classpath:db/migration` |
-| `mall_business` | 无（`warehouse/migrations/init-three-dbs.sql` 创建） | 当前为空；商城进程实际连 `mall_simulator` | — |
-
-账号最小权限：`meta_app`（`analytics_meta` 读写）、`metric_pub`（`analytics_metric` 读写 + 迁移 DDL）、
-`metric_read`（**仅 `SELECT ON analytics_metric.*`**，看板与 AI 只读 SQL 必须走它；缺失时 AI fail-closed，不回退元库）。
-初始化命令：`mysql -uroot -p < warehouse/migrations/init-three-dbs.sql`。
-
-### 3.2 数仓与计算（LOCAL 真实执行）
-
-- Hive on Spark，四层 `ods/dwd/dws/ads` + 维度库 `dw_dim`；质量规则 + 指标导出在同一作业链内完成。
-- Spark 3.5.1（本机 `D:\Develop\spark-3.5.1-bin-hadoop3`）、JDK 17；`runtime_profile` 登记 `spark_submit_path` 与作业 jar，master `local[2]`。
-- Hive 仓库目录：`file:///D:/Develop_code/GraduationProject/spark-warehouse`（库目录 `dw_ods` / `dw_dwd` / `dw_dws` / `dw_ads` / `dw_dim`）；
-  元数据库为嵌入式 Derby `derby-metastore/`（同一时刻只允许一个进程持有，见 `docs/deployment.md` §5）。
-
-### 3.3 生产流水线（8 阶段，唯一真实链）
+平台六模块：platform-common、connection-ingestion、warehouse-pipeline、metric-analysis、ai-decision、platform-app。spark-jobs为独立Scala工程；仓库无根聚合POM。
 
 ```text
-WAIT_LANDING → INIT_SCHEMA → LOAD_ODS → BUILD_DWD → BUILD_DWS → BUILD_ADS → QUALITY_CHECK → PUBLISH_METRIC
+analytics-server/           Java/Spring Boot平台六模块
+web/                        分析Vue前端
+mall-simulator/             独立商城后端
+mall-frontend/              商城Vue前端
+synthetic-data-generator/   独立生成器
+spark-jobs/                 Spark SQL/Scala作业
+warehouse/                  分层DDL与迁移制品
+ingestion/                  Flume配置等采集材料
+scripts/                    构建/启动/测试入口
+tests/                      黄金数据及预期结果
+docs/guidance/              正式指导书
+docs/design/                正式设计及原位历史设计
+docs/PROJECT_STATUS.md     唯一动态状态
+docs/acceptance/            历史证据（本轮只读）
 ```
 
-| 阶段 | 真实动作 |
-|---|---|
-| `WAIT_LANDING` | 只认 READY manifest（采集批次门） |
-| `INIT_SCHEMA` | `sci` 幂等自举四层库表 |
-| `LOAD_ODS` | `odl` 装载四主题 |
-| `BUILD_DWD` | `bdw` 行为明细 / 拒绝 + `dim` 维度 + `tdw` 订单交易明细 |
-| `BUILD_DWS` | `usw` 生成 DWS 宽表（观察期 = 业务日） |
-| `BUILD_ADS` | `fna` 只写 `{table}__staging/snapshot_id=S/dt=D` 暂存分区 |
-| `QUALITY_CHECK` | ODS/DWD 内联规则 + `dqc` 暂存层质量门 |
-| `PUBLISH_METRIC` | 正式分区发布 → `mxp` 导出 → 导入指标库并原子切换快照 |
-
-`SUCCESS` 是 run 终态，不是阶段。
-
-### 3.4 发布与保旧快照语义
-
-Hive ADS 宽表 → `metric-staging/<snapshotId>/*.jsonl` → 导入 `analytics_metric` → `metric_snapshot` **原子切换** `ACTIVE`；
-质量门未过或发布失败时保留旧 `ACTIVE`（新快照停在 FAILED / BUILDING）。看板只读 `ACTIVE` 快照，页面数值与 AI 证据包同源。
-
-## 4. 快速开始
-
-### 4.1 前置条件
-
-JDK 17（本机 17.0.12）、Maven 3.9+（本机 3.9.14）、Node 18+（本机 v24.16.0）、MySQL 8.0（本机 8.0.41，服务运行）、
-Spark 3.5.1 解压即可（`D:\Develop\spark-3.5.1-bin-hadoop3`，路径登记在 `runtime_profile.spark_submit_path`，不是环境变量）。
-可选 `LLM_API_KEY`：不配置时 AI 走模板回退，不阻塞主链路。
-
-### 4.2 构建与启动（两个进程）
-
-```powershell
-# 一键构建（web dist → platform-app 静态资源 → clean package；mall-frontend dist → mall-simulator → clean package）
-pwsh -File scripts/build-web-and-package.ps1
-
-# 启动（工作目录固定为仓库根：landing / spark-warehouse / derby-metastore 都是相对路径）
-pwsh -File scripts/start-all.ps1                 # 平台 8091 + 商城 8090
-pwsh -File scripts/start-all.ps1 -PlatformOnly   # 只起分析平台
-pwsh -File scripts/start-all.ps1 -MallOnly       # 只起模拟商城
-pwsh -File scripts/start-all.ps1 -MallDbPassword '<商城库口令>'
-```
-
-- 分析平台入口 <http://127.0.0.1:8091/>，探活 `GET /api/v1/metrics/health`；演示账号
-  **admin/admin123**（管理员）、**operator/operator123**（运营）、**analyst/analyst123**（分析师）。
-- 模拟商城入口 <http://127.0.0.1:8090/>（商城演示 / 商品后台 / 数据生成器），账号 **admin/admin123**。
-
-### 4.3 跑一次真实小链（55 行黄金夹具，LOCAL）
-
-实测复现路径见 `.verify/r7-3-run22.ps1`（run 22 的脚本）：
-
-```powershell
-# ① 把夹具放进平台 Landing（新文件名 → 采集 checkpoint 从 0 读，形成新批次）
-#    夹具 55 行，需带末尾换行：tests/golden-dataset/events/golden-20260901.jsonl
-Copy-Item tests\golden-dataset\events\golden-20260901.jsonl landing\events\golden-r9-clean-20260911.jsonl
-
-# ② 登录（8091）取 token：POST /api/v1/auth/login  {"username":"admin","password":"admin123"}
-
-# ③ 采集一轮（断点续采，产出 READY manifest）
-#    POST /api/v1/ingestion/runs
-#    对账：GET /api/v1/ingestion/status、/api/v1/ingestion/batches；该夹具的契约口径为 52 接受 / 3 拒绝
-#    （见 R9 证据目录 20-reconciliation.tsv「黄金数据集契约口径」）
-
-# ④ 创建流水线（8 阶段真实提交 Spark 作业）
-#    POST /api/v1/pipeline-runs
-#    {"runtimeProfileId":1,"pipelineCode":"ODS_TO_ADS","businessTime":"2026-09-01T00:00:00","sourceDataVersion":"<tag>"}
-
-# ⑤ 查证据与看结果
-#    GET /api/v1/pipeline-runs/{id}   → 阶段、records、errorCode、evidence
-#    8091 Ops 页（快照状态 + 质量门）、看板页（只读 ACTIVE 快照）
-```
-
-只跑 Spark 侧单作业链（不经平台编排）可用 `.verify/r6-8b-full-chain-smoke.ps1`；它是验证脚本，不是平台链路入口。
-
-### 4.4 跑测试
-
-命令与当前通过数见 §1 的测试表。日常用小样本（55 行黄金夹具）小链，完整规模实验在里程碑 / R9 执行。
-
-## 5. 文档入口
-
-| 文档 | 说明 |
-|---|---|
-| [`docs/毕业设计指导书 V2.8.md`](docs/毕业设计指导书%20V2.8.md) | **当前项目决策权威**（项目目标 / 范围 / 技术路线 / 阶段规划 / 验收原则 / 项目级裁决 / 重大架构决策）；仅总控可写，代码 Agent 只读 |
-| [`docs/design/项目设计文档 V2.5.md`](docs/design/项目设计文档%20V2.5.md) | **当前正式设计权威**（架构 / 模块 / 数据库 / 数仓 / 数据流 / 接口 / Spark / AI / 部署 / 测试设计 / 正式实现方案）；仅总控可写，代码 Agent 只读 |
-| `docs/PROJECT_STATUS.md` | **实际开发状态报告**（当前 commit、阶段、可运行状态、已完成/进行中/待实现、阻塞、DEV 问题、测试与验收状态、证据、工作记录、待总控裁决）；由代码 Agent 持续维护、不设版本号。治理规则已确立，待下一步由代码 Agent 创建 |
-| [`docs/项目完整实施指导书 V2.0.md`](docs/项目完整实施指导书%20V2.0.md) | 历史指导书（只读）；不再是最高依据 |
-| [`docs/design/项目设计文稿 V2.2.md`](docs/design/基于Spark大数据平台和智能分析模型的电商用户行为分析系统设计与实现——项目设计文稿%20V2.2.md) | 历史设计方案（只读）；不再是当前设计依据，V1.0 / V2.1 亦为历史版本 |
-| [`docs/remediation-status.md`](docs/remediation-status.md) | 整改状态登记（含各阶段「如实登记的边界」） |
-| [`docs/deployment.md`](docs/deployment.md) | 部署说明（两进程 LOCAL 真实链路、配置与排障） |
-| [`docs/api-overview.md`](docs/api-overview.md) | API 总览（已按 R8 真实实现对齐） |
-| [`docs/acceptance/`](docs/acceptance/) | R9 真机验收证据（库导出 + API 响应 + 页面截图 + 对账表，每目录自带 README） |
-| [`docs/contracts/`](docs/contracts/) | 事件契约、指标字典、指标血缘、R7-4 看板信封、R8 证据 / 安全 / 决策契约 |
-| [`docs/README.md`](docs/README.md) | 文档总索引 |
-
-## 6. 如实标注：未做项与已知边界
-
-- **集群 / 远程环境未实跑**：`SINGLE_NODE`、`REMOTE_CLUSTER` 目前只有代码路径与文档（`docs/deployment.md` §8）；
-  Hadoop client 在 `docs/compatibility-matrix.md` 中标记为 ⏳（仅编译期依赖），Flume 只交付模板、未在集群运行。
-- **真实 LLM 对照实验需 API key**：未配置 `LLM_API_KEY` 时 AI 走模板 / 规则回退，官方模型对照数值未做。
-- **大规模性能实验刚在 R9 起步**：已有本机三档记录（1.44 万 / 6.48 万 / 12.96 万事件，
-  `experiments/spark-scale-local-20260906.json`），但那是**遗留单作业链脚本** `scripts/run-spark-chain.ps1`
-  （`sci→odl→bdw→usw→fna`）的产物，不是平台 8 阶段链；平台链的 10 万+ 规模与集群分档实验尚未完成。
-- **Hive 为单机嵌入式 Derby metastore**，不是独立 Hive 集群；同一时刻只允许一个进程持有（`docs/deployment.md` §5）。
-- **其它已登记边界**（如 `metric_snapshot.version` 恒为 1、归档快照未做权限校验、类目 / 地区 ADS 无数据载体等）
-  见 `docs/remediation-status.md` 的 R7-4 / R8 各条「如实登记的边界」，本文件不重复展开。
-
-## 7. 目录结构
+## 数据链与实现边界
 
 ```text
-analytics-server/       Java/Spring Boot 分析平台后端（多模块 reactor，platform-app 为启动模块）
-web/                    分析平台前端（Vue 3 + ECharts），构建后进入 platform-app 静态目录
-mall-frontend/          模拟商城前端，构建后进入 mall-simulator 静态目录
-mall-simulator/         独立模拟商城进程（商城演示 / 商品后台 / 数据生成器 / outbox）
-spark-jobs/             Scala Spark 作业（四层数仓、质量、导出；作业码注册于 JobRegistry）
-warehouse/              四层 DDL、数据库与账号初始化脚本
-ingestion/              Flume 采集模板（集群模式用）
-tests/                  黄金夹具与标准答案
-experiments/            可复现实验记录
-scripts/                构建、启动、验证、演示脚本
-docs/                   指导书、契约、部署、论文与答辩材料（总索引 docs/README.md）
-.verify/                真机验收脚本与证据报告（不是产品代码）
+商城/外部来源 → 日志或导出 → LocalFile / Flume → Landing
+→ ODS → DIM + DWD → DWS → ADS → MySQL指标快照
+→ Spring Boot → Vue / AI证据解释 / 决策跟踪
 ```
 
-`landing/`、`metric-staging/`、`spark-warehouse/`、`derby-metastore/`、`target/`、`node_modules/` 是本地运行或构建产物，不属于源代码交付物。
+平台已有8阶段编排：WAIT_LANDING、INIT_SCHEMA、LOAD_ODS、BUILD_DWD、BUILD_DWS、BUILD_ADS、QUALITY_CHECK、PUBLISH_METRIC。JobRegistry注册11码，其中ljp是独立验证作业；历史完整业务链为10个Spark作业，不把阶段数当作业数。
 
-## 8. 文档修改规则
+MySQL是默认指标服务库，不替代Hive数仓。元数据analytics_meta与指标analytics_metric分库；商城mall_simulator和生成器generator_meta独立。Doris后续优先，ClickHouse延后；Hive显式降级为设计目标，不随机按数据大小切引擎。
 
-修改任何文稿前，先把原文件复制到 `docs/backups/` 并带日期或阶段名；结论以《毕业设计指导书 V2.8》《项目设计文档 V2.5》与 `docs/PROJECT_STATUS.md`（待建）为准，
-历史计划、旧截图和旧日志不可当作当前完成证据。
+AI只消费稳定ADS/指标快照及其证据，不直接扫描原始DWD。真实模型、模板回退和Mock须区分；AI辅助建仓是后续独立方向，不是当前AI分析层的原始数据访问许可。
+
+已有本地/隔离实链证据，不代表当前全部功能、Flume/HDFS、真实模型和集群都已验收。**F-88仍为限定验收，完整验收未宣布。**
+
+## 运行环境与安全
+
+后端Java17/Spring Boot3.2.5；Spark3.5.1/Scala2.12；Vue3/Vite5/ECharts5。Spark算法测试显式JDK8，与后端JDK17区分。
+
+Windows可运行应用并使用WSL隔离依赖。WSL单节点可按需模拟HDFS/HMS/Spark，远程集群通过配置接入，不能绑定node01–03。实际部署与连接前置见[设计文档](docs/design/项目设计文档%20V3.0.md)。
+
+- 开发写入型测试目标是批准的3307隔离实例和runId专属库/受限账号。
+- 宿主3306为正式/历史实例，保持写入、迁移、ACTIVE切换冻结；不能为运行演示盲用默认配置。
+- 本轮未启动应用或复查进程，不声明三个服务当前在线。
+- 凭据通过受保护环境注入；README不提供实际账号密码或直接连接正式库的初始化命令。
+- 旧部署/验收脚本属于历史参考，执行前按当前隔离规则审查，不能直接复制旧清理动作。
+
+## 统一测试入口与fresh基线
+
+入口：`scripts/run-tests.ps1`。以下来自2026-09-15[DEV-003c fresh证据](docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md)，本次文档发布未重新跑测试。
+
+| 档位 | CLI参数 | 当前登记结果 |
+|---|---|---|
+| default-tests | -Suite default | analytics632 + mall13 + generator106 = **751** |
+| isolated-tests | -Suite isolated | mall30 + generator19 + metric-analysis IT6 = **55** |
+| spark-tests | -Suite spark | **111**，JDK8、ScalaTest |
+| all-tests | -Suite all | 顺序执行三档；任一失败或0 tests整体失败；fresh exit0 |
+
+```powershell
+pwsh -NoProfile -File scripts/run-tests.ps1 -Suite default
+pwsh -NoProfile -File scripts/run-tests.ps1 -Suite spark
+# 隔离实例、对应runId库/受限账号、环境凭据已按批准流程准备后：
+pwsh -NoProfile -File scripts/run-tests.ps1 -Suite isolated -RunId dev3_20260915_case01 -Confirm
+```
+
+Maven/JDK路径不同需传入口支持的覆盖参数。隔离/all需要Confirm和环境凭据，入口不会因此自动授权建库或清理。正式计数变动须总控批准，不能用AllowCountDrift掩盖缺失用例。
+
+Spark仅以本轮新写TestSuite.txt的实跑数、failed/aborted和成功标记判断；Surefire的Tests run:0/BUILD SUCCESS不能代表ScalaTest成功。**local[1] + in-memory catalog通过 ≠ 生产Hive/Spark集群验收通过。**
+
+日常优先受影响单测；跨模块再default，数据库用isolated，Spark改动用spark，阶段性再all/小链。55条验证语义，1000条轻量联调，不每次大规模压测。前端仍可用web内npm test/build；尚未并入统一入口，不计入751。
+
+## 接下来如何开发
+
+1. 开发基线与核心链路确认。
+2. 数据采集与ODS/DWD/DWS/ADS数仓主链。
+3. Spark SQL指标计算与ADS体系。
+4. Spring Boot查询/分析服务。
+5. Vue可视化页面。
+6. AI智能分析。
+7. 业务联调与真实数据链路。
+8. 部署、验收、论文证据与答辩材料。
+
+DEV-003整理阶段收口完成；DEV-003d、DEV-004、历史IT收编、F-88完整剩余、F-93、3307旧对象清理、GitHub Actions和前端统一入口转development backlog，仅总控可在真阻塞当前阶段时提升。具体任务和权限看指导书；当下事实看PROJECT_STATUS。
+
+## 文档维护
+
+本轮只新增两份V3.0正式文档，更新本README、docs/README和PROJECT_STATUS。更新前三文件原件备份在`docs/backups/v3-release-20260915/`。历史指导书、设计、看板和证据均不移动、不删除、不覆盖。V2.x正式结束，不再发布“毕业设计指导书V2.9”。正式文档下一版V3.1由总控决策。

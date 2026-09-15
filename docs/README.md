@@ -1,57 +1,61 @@
 # 项目文档索引
 
-此目录只保存项目自身的设计、实施、论文和答辩材料。
+## V3.0权威入口
 
-## 当前权威文档
-
-- `毕业设计指导书 V2.8.md`：**当前项目决策权威**（项目目标、项目范围、技术路线、阶段规划、验收原则、项目级裁决、做/不做事项、重大架构决策）；仅总控可写，代码 Agent 只读。
-- `design/项目设计文档 V2.5.md`：**当前项目正式设计权威**（系统架构、模块设计、数据库、数仓、数据流、接口、Spark、AI、部署、测试设计、正式实现方案）；仅总控可写，代码 Agent 只读。
-- `PROJECT_STATUS.md`：**实际开发状态报告**（当前代码 commit、当前阶段、当前可运行状态、已完成、正在进行、待实现、阻塞、DEV 问题、测试结果、验收状态、关键证据、代码 Agent 工作记录、待总控裁决、下一步建议）；不设 Vx.x / Sxxx 文件版本号，始终只有一份，历史由 Git 保存，由代码 Agent 持续维护，不具有修改指导书或项目设计文档的权力。治理规则已确立，待下一步由代码 Agent 创建。
-- 三者职责不得混用：指导书＝项目决策权威，项目设计文档＝正式设计权威，PROJECT_STATUS＝实际开发状态报告。
-- `项目实施进度与任务看板 V2.5.md`：历史执行队列（只读），38 个任务包，含状态、依赖、允许范围、验收及反馈字段；已不再是当前执行队列的唯一所有者（当前队列见项目设计文档 §19，日常状态见 PROJECT_STATUS）。旧编号通过 V25-R01 保留交叉映射，不能遗漏旧要求。
-- `contracts/` 与 `contract-specs/`：已冻结业务契约；优先于实现。V2.5 新映射语法须先执行 V25-C01 冻结载体，不能就地改变旧 profile 的含义。
-- `superpowers/specs/2026-09-11-mall-agnostic-platform-design.md`、`superpowers/plans/2026-09-11-mall-agnostic-platform-implementation.md`：既有商城无关化专项与文件导航，和 V2.5 冲突处按新版裁决先更新契约。
-- `superpowers/specs/2026-09-11-ai-assisted-warehouse-onboarding-design-v1.0.md`、对应 implementation-v1.0：AIW-001～020 详细计划继续保留，生产接线等待 P5。
-- `design/基于Spark大数据平台和智能分析模型的电商用户行为分析系统设计与实现——项目设计文稿 V2.2.md`：总体设计历史基线（只读）；已不再是当前设计依据，当前设计见 `design/项目设计文档 V2.5.md`。历史文稿不修改、不移动。
-- 指导书整改稿 V1.0 与 V2.0～V2.7、项目设计文档/设计文稿 V2.2～V2.4、看板 V2.2 与 V2.5 及未编号旧看板、旧事实记录：只读历史，不再用于追加新任务或新裁决；不得移动、改名或删除（多份被 `acceptance/**` 脚本在运行期按路径读取）。
-- `acceptance/local-readiness-20260914.md`：09-14 实测与 WSL 准备度；`acceptance/v25-document-release-20260914.md`：本次文档备份与发布检查。
-- `remediation-status.md`、`deployment.md`、历史验收清单：辅助历史信息，尚未全部同步 WSL；不作为 WSL 已部署或全项目完成证明。
-- `acceptance/`：独立、脱敏的验收证据。旧覆盖表229项不等于原269项复查，错误指针与结论由 V25-R01 修复。
-
-> **全局提醒**：文档中的目标、规划和设计不代表功能已经实现；实际完成情况、测试结果和验收状态以 `PROJECT_STATUS.md`（待建）及对应 `acceptance/` 证据为准。
-
-## 子目录
-
-| 目录 | 内容 |
+| 文件 | 定位与权限 |
 |---|---|
-| `acceptance/` | R9 验收证据（每个目录一份 `README.md` 说明文件清单与关键结论） |
-| `design/` | 项目设计历史文稿与当前项目设计文档；当前权威版本见本页「当前权威文档」 |
-| `architecture/` | `毕业设计架构评审摘要.md`：架构评审与边界摘要 |
-| `contracts/` | 事件契约、指标字典等唯一业务口径（5 份契约文件） |
-| `demo/` | `demo-script.md`：演示流程；R7-4 已拆成"分析平台 8091 + 模拟商城 8090"两进程，演示前按 `deployment.md` 第 3/5 节核对步骤 |
-| `thesis-draft/` | 历史论文草稿；当前状态 `DEFERRED`，项目完成前不继续撰写 |
-| `thesis-materials/` | 历史论文材料；当前只允许追加真实证据，不提前组织论文结论 |
-| `presentation/` | 答辩网页 PPT（`index.html` + `motion.min.js` + `images/`） |
-| `backups/` | 每次修改文稿前的原文备份，不作为当前依据 |
-| `superpowers/plans/` | 实施计划；是否有效看文件头状态，按 V2.5 看板重新确认前置，不继承旧 READY |
+| [项目完整实施指导书 V3.0](guidance/项目完整实施指导书%20V3.0.md) | 项目决策权威：目标、范围、八阶段、任务/标准、权限；仅总控 |
+| [项目设计文档 V3.0](design/项目设计文档%20V3.0.md) | 正式设计权威：实现基线、模块/数据/接口/算法、部署、安全；仅总控 |
+| [PROJECT_STATUS.md](PROJECT_STATUS.md) | 动态开发事实：HEAD、进度、Bug、测试、证据与下一步；代码Agent可维护，同名无版本号 |
 
-## 根目录单篇文档
+**历史整理阶段已结束，正式进入毕业设计功能开发。** V3.0发布后不可原地修改，下一指导书和设计文档分别为V3.1；V2.x结束，不创建V2.9。Code Agent不可自行改两正式文档、项目目标、架构、范围、backlog优先级或宣布完整验收。
 
-- `acceptance-checklist.md`：验收项目；部分条目仍指向已删除的旧文件（如旧流水线测试、根目录 PPT），
-  核对前先看 `remediation-status.md` 与 `acceptance/` 的真机证据。
-- `api-overview.md`：API 概览（已按 R8 真实实现对齐）。
-- `compatibility-matrix.md`：技术版本与兼容性记录；集群相关行未实跑，以 `remediation-status.md` 为准。
-- `deployment.md`：部署说明（两进程 LOCAL 真实链路）。
-- `r6-verification-strategy.md`：R6 分级测试策略。
-- `session-handover-2026-09-07.md`、`session-handover-2026-09-10.md`：历史交接记录（含各自的下一步与遗留边界）。
+本页与根README只是导航，不是第四份权威。目标不代表已实现；当前状态见PROJECT_STATUS，证据按对应代码/输入/环境理解。
 
-## 文档规则
+## 阅读顺序
 
-1. 修改任何文稿前，复制原文件到 `backups/` 并带上日期或阶段名。
-2. 指导书与项目设计文档各自使用**独立的 `Vx.x` 线性版本**；已发布版本**不可回改**，需继续演进时新建下一版本（指导书 V2.8→V2.9，设计文档 V2.5→V2.6）。同一建设阶段用 `V2.x` 迭代；V2 系列出口完成且核心架构/主数据模型/建设阶段发生大变化时建立 `V3.0`。
-3. `PROJECT_STATUS.md` **不使用版本号**（始终一份，历史由 Git 保存）；日常代码状态、测试结果、Bug、阻塞与代码 Agent 工作记录**只更新 `PROJECT_STATUS.md`**。旧规则「指导书与进度看板版本一致、日常执行只修改当前看板的状态和证据字段」自指导书 V2.8 起**废止**。
-4. 当前结论以 **《毕业设计指导书 V2.8》**、**《项目设计文档 V2.5》** 与 `PROJECT_STATUS.md`（待建）为准；269 条统计是 `34f37a8` 的冻结快照，不随代码变化自动更新。
-5. 文件名使用清楚的主题和版本；测试日志、临时 JSON、token 不进入 `docs/`。
-6. 文档中引用的证据必须能在仓库内定位（`.verify/` 报告、`docs/acceptance/` 导出、测试报告）；
-   仓库外材料不进入本索引，也不作为完成证据。
-7. 新的重大决策和开发事实使用独立 ADR/验收文件，不继续扩写旧的巨型事实日志；当前阶段不写论文正文。没有同环境基线时不得声称提升百分比。
+1. 指导书：决定做什么，按八个阶段推进。
+2. 设计文档：落实模块、数据、接口、算法及测试边界。
+3. PROJECT_STATUS：领取当前切片，核对已做/未做、阻塞与最新证据。
+
+开发阶段：基线确认 → 采集/数仓 → Spark指标 → Spring Boot服务 → Vue页面 → AI → 业务实链联调 → 部署验收与论文答辩。
+
+## 现行测试导航
+
+统一入口`scripts/run-tests.ps1`，档位default-tests/isolated-tests/spark-tests/all-tests，CLI值分别default/isolated/spark/all。
+
+fresh：default **751**（632+13+106），isolated **55**（30+19+6），spark **111**（JDK8/ScalaTest/TestSuite.txt）；all顺序执行，任一失败或0 tests即失败。来源：[DEV-003c报告](acceptance/dev003c-unified-test-entry-20260915/REPORT.md)。本轮未重跑；单机in-memory测试不等于Hive/集群验收。
+
+## 历史只读资料
+
+以下原文、原名、原路径全部保留；不再作为当前任务或裁决入口：
+
+- 所有《项目完整实施指导书V2.x》《毕业设计指导书V2.6/V2.7/V2.8》及更早指导书。
+- design/内V1/V2设计文稿、设计文档和讨论稿。
+- 所有历史任务看板、旧开发事实/决策日志、remediation-status.md。
+- acceptance/**、contract-specs/**（根目录）、contracts/**、superpowers/**及历史专项材料。
+- deployment.md、api-overview.md、compatibility-matrix.md、acceptance-checklist.md、demo/。
+- 论文草稿、论文参考资料、答辩材料、实验和旧交接说明。
+
+旧验收脚本可能按路径读取旧文档，因此禁止以目录美观为由搬移、重命名或删文件。历史文件自称“唯一”“当前”不推翻V3.0；旧测试结果仅用于对应历史时点。历史契约的有效语义已纳入新设计；若代码变更需调整契约，先报总控，不在本轮修改。
+
+## 子目录用途
+
+| 位置 | 用途 |
+|---|---|
+| guidance/ | V3系列正式实施指导书，已发布版只读 |
+| design/ | 正式设计与原位历史稿，当前入口见顶部 |
+| PROJECT_STATUS.md | 唯一动态状态，不再建并行看板 |
+| acceptance/ | 既有证据本轮只读；未来开发可在授权下新增必要脱敏evidence |
+| contracts/、architecture/、superpowers/ | 历史契约/架构/专项参考，不是当前事实源 |
+| thesis-draft/、thesis-materials/、presentation/ | 既有论文/答辩材料保留；阶段8按实际交付统一编写 |
+| backups/ | 授权修改前的原件备份，不是权威版本 |
+| demo/ | 历史演示流程，使用前按V3部署和安全规则复核 |
+
+## 更新规则
+
+- 项目“要不要做”由总控更新指导书后继；“具体怎么做”由总控更新设计后继；实际做到了什么由代码Agent更新PROJECT_STATUS。
+- 正式V3.0只读，后继V3.1，禁止final/new/(2)平行版本。代码Agent不能自行发布后继。
+- 普通调试、日志、实验不进入指导书；状态文件记录事实与证据，不能改写目标。
+- 本轮索引/状态修改前三份原件在`backups/v3-release-20260915/`；其他历史材料完全不动。
+- DEV-003已整理收口，DEV-003d等进入development backlog；F-88仍限定验收。backlog只由总控在确实阻塞阶段时提升。
