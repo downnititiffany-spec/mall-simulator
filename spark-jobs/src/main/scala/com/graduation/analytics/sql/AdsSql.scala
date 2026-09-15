@@ -100,6 +100,12 @@ object AdsSql {
    * LEFT JOIN 会把商品名全部打成 NULL → `ads_hot_product__staging` 9/9 行 `product_name` 为空 →
    * BLOCKING 规则 `ADS_STAGING_KEY_NOT_NULL` 拦截整条发布。故名称按维度表既有 unknown 约定兜底
    * （`DimSql.productSnapshot` 同样写 'UNKNOWN'），**不用 NULL**：宁可显式 unknown，不留空关键列。
+   *
+   * 稳定次序键（§11.5 L455「商品排行按热度/销量/金额并有**稳定次序键**」）：热度并列时按 `product_id`
+   * 升序定名次。无此键时同热度商品的名次取决于扫描/落文件顺序，重跑会改变 `rank_no`（实测 S2-06：
+   * 同热度三商品升序落盘得 `{101→1,102→2,103→3}`、降序落盘得 `{103→1,102→2,101→3}`）；而 `rank_no`
+   * 既是 `WHERE rank_no <= topN` 的入选判据，又是 `ads_hot_product_m` 的键列与榜单排序键
+   * （`AnalysisService` 按 `rank_no` 升序取 TopN）⇒ 名次漂移会直接改变用户看到的榜单内容。
    */
   def hotProduct(ns: WarehouseNamespace, dt: String, topN: Int, snapshotId: Option[String] = None): String =
     s"""
@@ -109,7 +115,8 @@ object AdsSql {
        |  SELECT product_id,
        |         1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score,
        |         pv, fav, cart, buy,
-       |         ROW_NUMBER() OVER (ORDER BY 1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) DESC) AS rank_no
+       |         ROW_NUMBER() OVER (ORDER BY 1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) DESC,
+                                         product_id ASC) AS rank_no
        |  FROM ${ns.dws}.dws_product_behavior_day
        |  WHERE dt = '$dt'
        |) t
@@ -157,6 +164,12 @@ object AdsSql {
    * （`Column 'favorite_category' cannot be null`）。故按库内既有 unknown 约定兜底：
    * 分类用哨兵 **-1**（与 `DwdSql.behaviorClean` 的 `COALESCE(p.category_id, -1)` 同口径），
    * 日期用 **''**（DDL 自身声明的 unknown 载体），此时 `active_level` 的 ELSE 分支给 '低'。
+   *
+   * 稳定次序键（§11.4 L447「NTILE 的同值加**稳定源/用户 ID 排序**保证可复现」）：三个 NTILE 的排序键
+   * 后均追加 `user_id ASC`（库名已按源派生，单次计算只含一个源 ⇒ 稳定源即用户 ID）。原值并列时
+   * （同日下单、单数与金额相同）无此键则桶号随物理顺序变化：实测 S2-06 同值 5 用户升序落盘得
+   * `1→(5,1,1) … 5→(1,5,5)`、降序落盘得完全相反的 `1→(1,5,5) … 5→(5,1,1)` ⇒ 同一份数据重跑会
+   * 给人打上相反的 RFM 标签，八类 `value_group` 也随之翻转。
    */
   def userProfile(ns: WarehouseNamespace, dt: String, periodStart: String, periodEnd: String,
                   snapshotId: Option[String] = None): String =
@@ -197,9 +210,9 @@ object AdsSql {
        |         regexp_replace('$periodStart', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3') AS ps,
        |         regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3') AS pe,
        |         NTILE(5) OVER (ORDER BY DATEDIFF(
-       |           regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3'), last_buy_date) ASC) AS r_ntile,
-       |         NTILE(5) OVER (ORDER BY order_count ASC) AS f_ntile,
-       |         NTILE(5) OVER (ORDER BY sale_amount ASC) AS m_ntile
+       |           regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3'), last_buy_date) ASC, user_id ASC) AS r_ntile,
+       |         NTILE(5) OVER (ORDER BY order_count ASC, user_id ASC) AS f_ntile,
+       |         NTILE(5) OVER (ORDER BY sale_amount ASC, user_id ASC) AS m_ntile
        |  FROM ${ns.dws}.dws_user_trade_period
        |  WHERE dt = '$dt'
        |) tp

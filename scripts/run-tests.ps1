@@ -112,7 +112,7 @@ $BaselineDefault = [ordered]@{
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
-$BaselineSpark = 143
+$BaselineSpark = 177
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
