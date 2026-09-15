@@ -1,0 +1,29 @@
+# DEV-003c 收口轮 —— 隔离实例事实与本轮遗留对象（只读取数，采集 2026-09-15 11:5x）
+# 采集者：代码 Agent；唯一隔离实例 127.0.0.1:3307；本轮未连接 3306（未做 3306 指纹复取，见 REPORT.md §9）
+# 命令：mysql --host=127.0.0.1 --port=3307 --user=root --batch --skip-column-names（口令仅经 MYSQL_PWD 环境变量）
+
+## 1 实例事实
+@@hostname	dahaishui
+@@port	3307
+@@server_uuid	de8ebbea-aff4-11f1-8037-00155d5dba47
+VERSION()	8.0.41
+dev003c_20260915_1150_generator
+dev003c_20260915_1150_mall
+dev003c_20260915_1205_generator
+dev003c_20260915_1205_mall
+dev003c_20260915_1150_generator	6
+dev003c_20260915_1150_mall	13
+dev003c_20260915_1205_generator	6
+dev003c_20260915_1205_mall	13
+
+## 2 本轮 runId 库内 flyway 历史（generator 侧，DEV-003a 前置迁移的落地证明）
+generator flyway: installed_rank=1 version=1 success=1 installed_on=2026-09-15 11:49:44
+
+## 3 本轮 runId 遗留的受限账号（未清理）
+User=dev003c_20260915_1150_genapp Host=%
+User=dev003c_20260915_1150_mallapp Host=%
+User=dev003c_20260915_1205_genapp Host=%
+User=dev003c_20260915_1205_mallapp Host=%
+
+## 4 清理口径
+本轮未清理任何库/账号：按 docs/PROJECT_STATUS.md:60 走 F-93 后的 -AllowedCleanDbs 白名单，禁止手写 DROP。

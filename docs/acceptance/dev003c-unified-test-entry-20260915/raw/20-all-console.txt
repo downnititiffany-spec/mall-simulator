@@ -1,0 +1,1360 @@
+=== 项目级统一测试入口（DEV-003c）===
+  档位      : all
+  RunId     : dev003c_20260915_1205
+  日志目录  : C:\Users\ASUS\AppData\Local\Temp\v25tests-dev003c_20260915_1205
+  Maven     : D:\apache-maven-3.9.14\bin\mvn.cmd   （-o 离线，repo=D:\maven_repository）
+  JDK       : 默认档/隔离档 D:\Develop\JAVA17 ；spark 档 D:\Develop\JDK1.8
+  计数基线  : default analytics-server=632 / mall=13 / generator=106 ；spark=111 ；isolated mall=30/generator=19/analytics=6
+  不计入通过总数：MetricAdsMySqlIT / MetricPublisherMySqlIT（backlog）、SourceRegistryMigrationMySqlIT（DEV-004）、
+                  SparkStageExecutorSmokeIT（spark 专项 backlog）、AnalysisGoldenMySqlIT（D 类，永久排除）、web 前端（范围外）
+
+=== default-tests：analytics-server → mall-simulator → synthetic-data-generator（JDK17，命令语义不变） ===
+
+--- 默认档 analytics-server ---
+  JAVA_HOME = D:\Develop\JAVA17
+  mvn -o -Dmaven.repo.local=D:\maven_repository -f D:\Develop_code\GraduationProject\analytics-server\pom.xml test
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] warehouse-pipeline                                                 [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] platform-app                                                       [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/7]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.143 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Running com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Running com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.121 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Running com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Running com.graduation.analytics.testsupport.TestIsolationGuardTest
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `mall_simulator_test`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT INSERT ON `analytics_metric`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[isolation-guard] дǰУ��ͨ�� testRunId=v25it-20260914-120000-a1b2 account=v25it_rw currentDb=analytics_metric_v25it serverUuid=uuid-v25it hostname=host-v25it port=3307 serverVersionMajor=8 privileges=[analytics_metric_v25it.ALTER, analytics_metric_v25it.CREATE, analytics_metric_v25it.DELETE, analytics_metric_v25it.DROP, analytics_metric_v25it.INDEX, analytics_metric_v25it.INSERT, analytics_metric_v25it.REFERENCES, analytics_metric_v25it.SELECT, analytics_metric_v25it.UPDATE] schemasWithWritePrivilege=[] fingerprintSha1=62537363fed2468d36570369f7591f8b6c983843
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=2
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-bad runtime_profile_id=999101 status=FAILED active_flag=null
+[isolation-guard] cleanup Ŀ���嵥�˶�ͨ�� testRunId=v25it-20260914-120000-a1b2
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=1 status=ACTIVE active_flag=1
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=S20260901_47 runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ghost runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.190 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[V25-T01 ��֤] ԭ�����У�ע���ڣ��Ѱ��ʷ��ų���: spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����
+[V25-T01 ��֤] ԭ�����У�ע���ڣ��Ѱ��ʷ��ų���: spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.779 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.070 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 89, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/7]
+[INFO]   from connection-ingestion\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\connection-ingestion\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ connection-ingestion ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.auth.AuthInterceptorTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+SLF4J(W): Class path contains multiple SLF4J providers.
+SLF4J(W): Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@5c82cd4f]
+SLF4J(W): Found provider [org.slf4j.reload4j.Reload4jServiceProvider@35835e65]
+SLF4J(W): See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J(I): Actual provider is of type [ch.qos.logback.classic.spi.LogbackServiceProvider@5c82cd4f]
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.476 s -- in com.graduation.analytics.auth.AuthInterceptorTest
+[INFO] Running com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.545 s -- in com.graduation.analytics.auth.AuthServiceRoleWhitelistTest
+[INFO] Running com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.graduation.analytics.auth.RolePermissionsTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+11:48:37.650 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-e14a80a7: status=QUARANTINED records=0 quarantine=4 errors=0 files=1 bytes=0 noNewData=false
+11:48:37.767 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-750b4328: status=SUCCESS records=0 quarantine=0 errors=0 files=0 bytes=0 noNewData=true
+11:48:37.780 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-139ecf8a: status=SUCCESS records=3 quarantine=0 errors=0 files=1 bytes=64 noNewData=false
+11:48:37.791 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-02822ab7: status=SUCCESS records=0 quarantine=0 errors=0 files=0 bytes=0 noNewData=true
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.383 s -- in com.graduation.analytics.ingestion.IngestionRunNoNewDataTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionServiceStatusTest
+11:48:37.981 [main] WARN com.graduation.analytics.ingestion.IngestionService -- landingUri ���ɽ�����profile 1�����ݲ�֧�ֵ� landingUri Э�飺hdfs://����ǰ��֧�ֱ��� file:// ����·����
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.212 s -- in com.graduation.analytics.ingestion.IngestionServiceStatusTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionSourceManifestTest
+11:48:38.030 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-4fdf8675: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+11:48:38.052 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-3078029d: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+11:48:38.068 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-bd21f287: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+11:48:38.079 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-2926d8a1: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+11:48:38.126 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-b8db0a45: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.116 s -- in com.graduation.analytics.ingestion.IngestionSourceManifestTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+11:48:38.168 [main] INFO com.graduation.analytics.ingestion.IngestionService -- ingestion run ing-20260912100000-d2f0b8f3: status=SUCCESS records=1 quarantine=0 errors=0 files=1 bytes=16 noNewData=false
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in com.graduation.analytics.ingestion.IngestionSourceNotBoundTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+11:48:38.414 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789444118410
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.252 s -- in com.graduation.analytics.ingestion.LocalFileIngestorCheckpointKeyTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in com.graduation.analytics.ingestion.LocalFileIngestorConsumableDataTest
+[INFO] Running com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+11:48:38.518 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118509
+11:48:38.533 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118529
+11:48:38.535 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118529
+11:48:38.546 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118543
+11:48:38.548 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118543
+11:48:38.556 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: β������ 7 �ֽ������ļ�����
+11:48:38.556 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118553
+11:48:38.558 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: β������ 7 �ֽ������ļ�����
+11:48:38.558 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118553
+11:48:38.563 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789444118560
+11:48:38.566 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789444118560
+11:48:38.574 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118570
+11:48:38.578 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 8��16 identity=1789444118570
+11:48:38.587 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118582
+11:48:38.593 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118590
+11:48:38.595 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118590
+11:48:38.604 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 0��8 identity=1789444118602
+11:48:38.607 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=2 quarantined=0 acceptedBytes=16 offset 0��16 identity=1789444118602
+11:48:38.609 [main] INFO com.graduation.analytics.ingestion.LocalFileIngestor -- ingest a.jsonl: collected=1 quarantined=0 acceptedBytes=8 offset 8��16 identity=1789444118602
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.117 s -- in com.graduation.analytics.ingestion.LocalFileIngestorSourceIsolationTest
+[INFO] Running com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.082 s -- in com.graduation.analytics.runtime.ActiveProfileWarehouseNamespaceProviderTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+11:48:38.800 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789444118764-937225 -> pid=78068 log=C:\Users\ASUS\AppData\Local\Temp\junit9550450342508498390\m1-11-ok__lp-1789444118764-937225.log
+11:48:38.922 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789444118909-93b999 -> pid=81620 log=C:\Users\ASUS\AppData\Local\Temp\junit9550450342508498390\m1-11-bad__lp-1789444118909-93b999.log
+11:48:39.043 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789444119035-b5aab8 -> pid=27392 log=C:\Users\ASUS\AppData\Local\Temp\junit12636853909802261867\m1-11-cancel__lp-1789444119035-b5aab8.log
+11:48:39.061 [main] WARN com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- ���ؽ�����������ֹ: lp-1789444119035-b5aab8 pid=27392 �ӽ���=1
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.309 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterProcessTest
+[INFO] Running com.graduation.analytics.source.SourceProfileValidatorTest
+11:48:39.078 [spark-log-lp-1789444119035-b5aab8] WARN com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- capture spark-submit log failed: C:\Users\ASUS\AppData\Local\Temp\junit12636853909802261867\m1-11-cancel__lp-1789444119035-b5aab8.log
+11:48:39.114 [main] WARN com.graduation.analytics.source.SourceProfileValidator -- Դ�������ʧ�� path=analytics-server/source-profiles/p1-03-probe-1.v1.json: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: (String)"not json at all"; line: 1, column: 4]
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[INFO] Running com.graduation.analytics.source.SourceRegistryConcurrencyTest
+11:48:39.174 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+11:48:39.174 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+11:48:39.181 [pool-2-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.182 [pool-2-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.183 [pool-2-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.184 [pool-2-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.184 [pool-2-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.185 [pool-2-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.191 [pool-3-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.192 [pool-3-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.193 [pool-3-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.193 [pool-3-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.194 [pool-3-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.198 [pool-4-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.198 [pool-4-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.200 [pool-4-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.200 [pool-4-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.201 [pool-4-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.203 [pool-5-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.204 [pool-5-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.205 [pool-5-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.206 [pool-5-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.206 [pool-5-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.207 [pool-5-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.210 [pool-6-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.210 [pool-6-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.211 [pool-6-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.211 [pool-6-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.211 [pool-6-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.212 [pool-6-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.212 [pool-6-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.213 [pool-6-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.216 [pool-7-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.217 [pool-7-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.217 [pool-7-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.218 [pool-7-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.221 [pool-8-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.222 [pool-8-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.223 [pool-8-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.223 [pool-8-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.224 [pool-8-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.224 [pool-8-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.227 [pool-9-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.228 [pool-9-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.228 [pool-9-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.229 [pool-9-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.229 [pool-9-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.230 [pool-9-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.232 [pool-10-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.233 [pool-10-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.233 [pool-10-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.234 [pool-10-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.234 [pool-10-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.235 [pool-10-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.239 [pool-11-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.239 [pool-11-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.240 [pool-11-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.240 [pool-11-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.241 [pool-11-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.241 [pool-11-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.244 [pool-12-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.245 [pool-12-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.245 [pool-12-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.246 [pool-12-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.246 [pool-12-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.247 [pool-12-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.250 [pool-13-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.250 [pool-13-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.251 [pool-13-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.251 [pool-13-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.252 [pool-13-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.253 [pool-13-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.259 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+11:48:39.260 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+11:48:39.262 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.275 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+11:48:39.275 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+11:48:39.277 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.282 [pool-15-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.283 [pool-15-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.283 [pool-15-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.284 [pool-15-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.285 [pool-15-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.291 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+11:48:39.291 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+11:48:39.297 [pool-16-thread-8] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.297 [pool-16-thread-7] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.298 [pool-16-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.299 [pool-16-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.300 [pool-16-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.304 [pool-17-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.304 [pool-17-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.304 [pool-17-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.305 [pool-17-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.305 [pool-17-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.308 [pool-18-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.308 [pool-18-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+11:48:39.309 [pool-18-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.309 [pool-18-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.309 [pool-18-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.309 [pool-18-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.314 [pool-19-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.315 [pool-19-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+11:48:39.315 [pool-19-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.315 [pool-19-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.318 [pool-20-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.319 [pool-20-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.322 [pool-21-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.322 [pool-21-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.323 [pool-21-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.323 [pool-21-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.323 [pool-21-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.327 [pool-22-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.327 [pool-22-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+11:48:39.327 [pool-22-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.327 [pool-22-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.330 [pool-23-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.331 [pool-23-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.331 [pool-23-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.332 [pool-23-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.332 [pool-23-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.335 [pool-24-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.335 [pool-24-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.336 [pool-24-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.338 [pool-25-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.338 [pool-25-thread-4] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-2 id=2
+11:48:39.339 [pool-25-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.339 [pool-25-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.342 [pool-26-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.342 [pool-26-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.343 [pool-26-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.343 [pool-26-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.343 [pool-26-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.346 [pool-27-thread-5] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.346 [pool-27-thread-6] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.346 [pool-27-thread-1] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=1
+11:48:39.347 [pool-27-thread-3] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.347 [pool-27-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-2 id=2 �� runtime_profile.id=1
+11:48:39.353 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+11:48:39.353 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-2 id=2 status=DRAFT
+11:48:39.358 [pool-28-thread-2] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.237 s -- in com.graduation.analytics.source.SourceRegistryConcurrencyTest
+[INFO] Running com.graduation.analytics.source.SourceRegistryServiceTest
+11:48:39.372 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+11:48:39.479 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=2
+11:48:39.493 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+11:48:39.513 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=2 �� runtime_profile.id=1
+11:48:39.537 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=PAUSED
+11:48:39.542 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�Ǽ��޸� id=1 sourceCode=mock-mall
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.178 s -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[INFO] Running com.graduation.analytics.source.SourceWarehousePrefixGateTest
+11:48:39.574 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+11:48:39.579 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+11:48:39.580 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+11:48:39.582 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+11:48:39.584 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+11:48:39.585 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p2-07-probe-1 id=1 status=DRAFT
+11:48:39.597 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�Ǽ��޸� id=1 sourceCode=mock-mall
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in com.graduation.analytics.source.SourceWarehousePrefixGateTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 156, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ------------< com.graduation.analytics:warehouse-pipeline >-------------
+[INFO] Building warehouse-pipeline 0.1.0-SNAPSHOT                         [4/7]
+[INFO]   from warehouse-pipeline\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ warehouse-pipeline ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ warehouse-pipeline ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ warehouse-pipeline ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\warehouse-pipeline\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ warehouse-pipeline ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ warehouse-pipeline ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.contracts.EventContractTest
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.275 s -- in com.graduation.analytics.contracts.EventContractTest
+[INFO] Running com.graduation.analytics.pipeline.DataQualityGateTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.164 s -- in com.graduation.analytics.pipeline.DataQualityGateTest
+[INFO] Running com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.465 s -- in com.graduation.analytics.pipeline.PipelineRecoveryServiceTest
+[INFO] Running com.graduation.analytics.pipeline.PipelineServiceTest
+11:48:42.440 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.643 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: ADS �ݴ�������δͨ������ʽ����δ����: dqc: ��������Ϸ���: ADS_STAGING_PRESENT
+11:48:42.664 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.699 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.724 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.735 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: ��ϼ���������δͨ�����������¿��գ��� ACTIVE ���䣩: ADS_STAGING_PRESENT
+11:48:42.756 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.777 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:42.778 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: ��ϼ� Landing ��������δͨ������ʽ����δ����
+11:48:42.813 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.836 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.845 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: ��ϼ� Landing ��������δͨ������ʽ����δ����
+11:48:42.853 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.858 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: accepted �޹���ҵ�����¼�
+11:48:42.905 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.912 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:42.922 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.925 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: accepted �޹���ҵ�����¼�
+11:48:42.932 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.947 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.975 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: ADS �ݴ�������δͨ������ʽ����δ����: dqc: ��������Ϸ���: ADS_STAGING_PRESENT
+11:48:42.989 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:42.995 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: BUILD_DWD ��ҵʧ��: bdw: ��ҵʧ��
+11:48:43.002 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:43.005 [main] WARN com.graduation.analytics.pipeline.PipelineService -- pipeline 1 failed: accepted �޹���ҵ�����¼�
+11:48:43.007 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: ���򶳽� ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6 catalog=qrc-1 compatPolicy=compat-v1
+11:48:43.009 [main] INFO com.graduation.analytics.pipeline.PipelineService -- pipeline 1: stage WAIT_LANDING �ѳɹ����������������ظ�ִ�У�
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.865 s -- in com.graduation.analytics.pipeline.PipelineServiceTest
+[INFO] Running com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+11:48:43.025 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.028 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.028 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.028 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.029 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.graduation.analytics.pipeline.QualityCheckerAmountReconcileTest
+[INFO] Running com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+11:48:43.034 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.040 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.041 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.051 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=true ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+11:48:43.051 [main] INFO com.graduation.analytics.pipeline.QualityChecker -- quality check: rules=4 corePassed=false ruleFingerprint=6bc272d7324b435d2a3c7d1afabfb5f9ca18310bad03970219b0ef132f4f3ac6
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.graduation.analytics.pipeline.QualityCheckerSeverityTest
+[INFO] Running com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in com.graduation.analytics.pipeline.spark.JobCommandBuilderTest
+[INFO] Running com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.graduation.analytics.pipeline.spark.JobResultParserTest
+[INFO] Running com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.076 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorFactoryTest
+[INFO] Running com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+11:48:43.199 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl ʧ�ܣ��ⲿ����ȡ�����������ύʣ����ҵ []
+11:48:43.207 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl ʧ�ܣ������˳����0(exit=1): schema mismatch���������ύʣ����ҵ []
+11:48:45.217 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl ʧ�ܣ�δ�ҵ� JobResult ����У��������ύʣ����ҵ []
+11:48:45.219 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage LOAD_ODS fail-fast: job odl ʧ�ܣ������˳����0(exit=1): ok���������ύʣ����ҵ []
+11:48:45.220 [main] WARN com.graduation.analytics.pipeline.spark.SparkStageExecutor -- stage BUILD_DWD fail-fast: job dim ʧ�ܣ������˳����0(exit=1): ά�ȹ���ʧ�ܣ��������ύʣ����ҵ [tdw]
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.027 s -- in com.graduation.analytics.pipeline.spark.SparkStageExecutorTest
+[INFO] Running com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.graduation.analytics.runtime.submit.FakeJobSubmitterTest
+[INFO] Running com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.graduation.analytics.runtime.submit.JobSubmitterFactoryTest
+[INFO] Running com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+11:48:45.262 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789444125242-4294a2 -> pid=74852 log=C:\Users\ASUS\AppData\Local\Temp\junit5178583176121034985\prefix-1789444125241__lp-1789444125242-4294a2.log
+11:48:45.379 [main] INFO com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter -- spark-submit lp-1789444125366-1f94e5 -> pid=67472 log=C:\Users\ASUS\AppData\Local\Temp\junit17031117716660239726\pipeline-9-LOAD_ODS__lp-1789444125366-1f94e5.log
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.254 s -- in com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitterLogTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 134, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --------------< com.graduation.analytics:metric-analysis >--------------
+[INFO] Building metric-analysis 0.1.0-SNAPSHOT                            [5/7]
+[INFO]   from metric-analysis\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ metric-analysis ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.analysis.AnalysisServiceTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+11:48:47.390 [main] WARN com.graduation.analytics.analysis.AnalysisService -- quality gate unavailable for run 24: meta �ⲻ����
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.390 s -- in com.graduation.analytics.analysis.AnalysisServiceTest
+[INFO] Running com.graduation.analytics.analysis.AnalysisSourcePolicyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.graduation.analytics.analysis.AnalysisSourcePolicyTest
+[INFO] Running com.graduation.analytics.analysis.AnalysisViewModelTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.graduation.analytics.analysis.AnalysisViewModelTest
+[INFO] Running com.graduation.analytics.analysis.RfmServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.graduation.analytics.analysis.RfmServiceTest
+[INFO] Running com.graduation.analytics.metric.MetricAdsDaoTest
+11:48:47.589 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads delete snapshot snap-r7: ��ɾ�� 16 �У�8 �ű���
+11:48:47.635 [main] INFO com.graduation.analytics.metric.MetricAdsWriter -- metric ads insert ads_operation_overview_m (snapshot=snap-r7, dt=2026-09-04): 2 �� / 3 ��
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.150 s -- in com.graduation.analytics.metric.MetricAdsDaoTest
+[INFO] Running com.graduation.analytics.metric.publish.MetricPublishValidatorSeverityTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.092 s -- in com.graduation.analytics.metric.publish.MetricPublishValidatorSeverityTest
+[INFO] Running com.graduation.analytics.metric.publish.MetricPublishValidatorTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.349 s -- in com.graduation.analytics.metric.publish.MetricPublishValidatorTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 48, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ----------------< com.graduation.analytics:ai-decision >----------------
+[INFO] Building ai-decision 0.1.0-SNAPSHOT                                [6/7]
+[INFO]   from ai-decision\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ ai-decision ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\ai-decision\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ ai-decision ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ ai-decision ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.ai.AiSqlDriftTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in com.graduation.analytics.ai.AiSqlDriftTest
+[INFO] Running com.graduation.analytics.ai.AiSqlSecurityTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.532 s -- in com.graduation.analytics.ai.AiSqlSecurityTest
+[INFO] Running com.graduation.analytics.ai.evidence.EvidenceBuilderTest
+11:48:50.706 [main] WARN com.graduation.analytics.ai.evidence.EvidenceBuilder -- ֤�ݰ���Ʒά�ȶ�ȡʧ�ܣ�����Ϊ��ά�ȣ�: metricReadDataSource δ����
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.403 s -- in com.graduation.analytics.ai.evidence.EvidenceBuilderTest
+[INFO] Running com.graduation.analytics.ai.ExplanationEvidenceTest
+11:48:51.022 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite failed, fallback to template: timeout
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.302 s -- in com.graduation.analytics.ai.ExplanationEvidenceTest
+[INFO] Running com.graduation.analytics.ai.QuestionSafetyScreenTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.graduation.analytics.ai.QuestionSafetyScreenTest
+[INFO] Running com.graduation.analytics.ai.sql.ComponentWiringContractTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 s -- in com.graduation.analytics.ai.sql.ComponentWiringContractTest
+[INFO] Running com.graduation.analytics.ai.TextToSqlAuditTest
+11:48:51.203 [main] WARN com.graduation.analytics.ai.TextToSqlService -- text-to-sql rejected at stage SCOPE_RESOLVE: [NO_ACTIVE_SNAPSHOT] metric_snapshot ��û�� status='ACTIVE'
+11:48:51.631 [main] WARN com.graduation.analytics.ai.TextToSqlService -- text-to-sql rejected at stage REPAIR: [SQL_JOIN] �޸�����δͨ����ȫУ��: ��ֹ JOIN����һ�׶�ǿ�Ƶ�����ѯ��
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.512 s -- in com.graduation.analytics.ai.TextToSqlAuditTest
+[INFO] Running com.graduation.analytics.decision.AuditActorTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.graduation.analytics.decision.AuditActorTest
+[INFO] Running com.graduation.analytics.decision.DecisionServiceTest
+11:48:51.772 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ��׼ by=alice ����=100.0000������ S20260901_24������ 3 ��
+11:48:51.777 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=EFFECTIVE ����=100.0000 ʵ��=80.0000 ������=0.2000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.784 [main] INFO com.graduation.analytics.decision.DecisionService -- ���߲ݸ崴�� id=null no=DC-20260915114851-0b09 source=ai by=alice
+11:48:51.791 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=EFFECTIVE ����=100.0000 ʵ��=120.0000 ������=0.2000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.796 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=0.0000 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.803 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=100 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.806 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=100.0000 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.808 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=EFFECTIVE ����=100.0000 ʵ��=110.0000 ������=0.1000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.815 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=PARTIAL ����=100.0000 ʵ��=102.0000 ������=0.0200������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.818 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INSUFFICIENT_DATA ����=100.0000 ʵ��=null ������=null������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+11:48:51.822 [main] INFO com.graduation.analytics.decision.DecisionService -- ���� DC-20260901120000-abcd ���۽��=INEFFECTIVE ����=100.0000 ʵ��=90.0000 ������=-0.1000������ 2026-09-05~2026-09-07���ھ� r8-window-v1��
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.179 s -- in com.graduation.analytics.decision.DecisionServiceTest
+[INFO] Running com.graduation.analytics.decision.DecisionStateMachineTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.graduation.analytics.decision.DecisionStateMachineTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ---------------< com.graduation.analytics:platform-app >----------------
+[INFO] Building platform-app 0.1.0-SNAPSHOT                               [7/7]
+[INFO]   from platform-app\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-app ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 47 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-app ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 20 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-app ---
+[INFO] Copying 44 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-app ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 22 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-app ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.auth.UserAdminControllerAuditTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.271 s -- in com.graduation.analytics.auth.UserAdminControllerAuditTest
+[INFO] Running com.graduation.analytics.boundary.PlatformMallBoundarySourcePolicyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.175 s -- in com.graduation.analytics.boundary.PlatformMallBoundarySourcePolicyTest
+[INFO] Running com.graduation.analytics.controller.AiControllerIdentityTest
+11:48:59.012 [main] WARN com.graduation.analytics.controller.AiController -- AI ����δȡ������ê�㣨֤�ݰ�=����ʧ�ܣ������=null������ null ��¼����ʹ��ռλֵ
+11:48:59.181 [main] WARN com.graduation.analytics.controller.AiController -- AI ����δȡ������ê�㣨֤�ݰ�=����ʧ�ܣ������=null������ null ��¼����ʹ��ռλֵ
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.660 s -- in com.graduation.analytics.controller.AiControllerIdentityTest
+[INFO] Running com.graduation.analytics.controller.AiExplanationEndpointTest
+11:48:59.311 [main] WARN com.graduation.analytics.controller.AiController -- ֤�ݽ������д��ʧ�ܣ�operation_audit_log �Ƿ����� V14 ��������: Table 'analytics_meta.operation_audit_log' doesn't exist
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.140 s -- in com.graduation.analytics.controller.AiExplanationEndpointTest
+[INFO] Running com.graduation.analytics.controller.AuthResponseMeasurementTest
+11:48:59.888 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 8.0.1.Final
+11:49:00.257 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+11:49:00.258 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+11:49:00.260 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+11:49:00.449 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+11:49:00.449 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+11:49:00.449 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+11:49:00.469 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+11:49:00.469 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+11:49:00.469 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+11:49:00.487 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+11:49:00.487 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+11:49:00.487 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+11:49:00.512 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+11:49:00.512 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+11:49:00.512 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+11:49:00.531 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+11:49:00.531 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+11:49:00.531 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.201 s -- in com.graduation.analytics.controller.AuthResponseMeasurementTest
+[INFO] Running com.graduation.analytics.controller.CallerContextTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.graduation.analytics.controller.CallerContextTest
+[INFO] Running com.graduation.analytics.controller.ControllerPermissionCoverageTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.390 s -- in com.graduation.analytics.controller.ControllerPermissionCoverageTest
+[INFO] Running com.graduation.analytics.controller.DecisionControllerAuditTest
+11:49:00.965 [main] ERROR com.graduation.analytics.controller.DecisionController -- ����ʧ�����д��ʧ��: action=DECISION_REJECT, id=3
+java.lang.RuntimeException: audit db down
+	at com.graduation.analytics.decision.OperationAuditService.failure(OperationAuditService.java:61)
+	at com.graduation.analytics.controller.DecisionController.action(DecisionController.java:151)
+	at com.graduation.analytics.controller.DecisionController.reject(DecisionController.java:88)
+	at com.graduation.analytics.controller.DecisionControllerAuditTest.lambda$auditFailureDoesNotMaskBusinessError$2(DecisionControllerAuditTest.java:97)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:53)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3115)
+	at com.graduation.analytics.controller.DecisionControllerAuditTest.auditFailureDoesNotMaskBusinessError(DecisionControllerAuditTest.java:96)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.graduation.analytics.controller.DecisionControllerAuditTest
+[INFO] Running com.graduation.analytics.controller.DecisionControllerIdentityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.graduation.analytics.controller.DecisionControllerIdentityTest
+[INFO] Running com.graduation.analytics.controller.SourceRegistryControllerAuditTest
+11:49:01.091 [main] ERROR com.graduation.analytics.controller.SourceRegistryController -- Դ�Ǽ����д��ʧ�ܣ����ڸ�ԭʼ�쳣�� action=SOURCE_ACTIVATE id=3 trace=bdd2bd57-ebeb-4689-b7bc-c701998c9174
+java.lang.RuntimeException: audit db down
+	at com.graduation.analytics.decision.OperationAuditService.failure(OperationAuditService.java:61)
+	at com.graduation.analytics.controller.SourceRegistryController.auditFailure(SourceRegistryController.java:146)
+	at com.graduation.analytics.controller.SourceRegistryController.mutate(SourceRegistryController.java:128)
+	at com.graduation.analytics.controller.SourceRegistryController.activate(SourceRegistryController.java:100)
+	at com.graduation.analytics.controller.SourceRegistryControllerAuditTest.lambda$auditFailureDoesNotMaskBusinessError$1(SourceRegistryControllerAuditTest.java:137)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:63)
+	at org.assertj.core.api.AssertionsForClassTypes.catchThrowable(AssertionsForClassTypes.java:892)
+	at org.assertj.core.api.Assertions.catchThrowable(Assertions.java:1366)
+	at org.assertj.core.api.Assertions.assertThatThrownBy(Assertions.java:1210)
+	at com.graduation.analytics.controller.SourceRegistryControllerAuditTest.auditFailureDoesNotMaskBusinessError(SourceRegistryControllerAuditTest.java:137)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.106 s -- in com.graduation.analytics.controller.SourceRegistryControllerAuditTest
+[INFO] Running com.graduation.analytics.guard.RuleSeverityPathConsistencyTest
+[GUARD-EVIDENCE] catalogDefinitions=35 comparisons=70 blockingCodesOnFailure=31
+[GUARD-EVIDENCE] rowsCompared=35 blockingCodes=31 => [ADS_DWS_FUNNEL_RECONCILE, ADS_STAGING_KEY_NOT_NULL, ADS_STAGING_PRESENT, AMOUNT_RECONCILE, DWD_DWS_AMOUNT_RECONCILE, ENUM_WHITELIST, EVENT_ID_UNIQUE, MP_ACTIVE_SNAPSHOT, MP_ADS_ROWS_DB_MATCH, MP_ADS_ROWS_MATCH, MP_ADS_WRITE_MATCH, MP_EXPORT_FILES, MP_HIVE_PATH_PINNED, MP_MANIFEST_SNAPSHOT, MP_MANIFEST_TABLES, MP_METRIC_DICT_VERSION, MP_METRIC_VALUE_COUNT, MP_METRIC_VALUE_DB_MATCH, MP_OVERVIEW_CORE_NOT_NULL, MP_REQUIRED_TABLES_NONEMPTY, MP_ROW_SHAPE_CONSISTENT, MP_VALUE_MATCH_ADS, MXP_EXPORT_COMPLETE, MXP_EXPORT_ROWS, MXP_SNAPSHOT_PINNED, ORDER_ITEM_AMOUNT_FORMULA, PUB_DQ_BLOCKING_RULES, PUB_DQ_EVENT_ID_UNIQUE, PUB_FORMAL_PARTITION_MATCH, PUB_STAGING_READY, REQUIRED_FIELD_NULL_RATE]
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.127 s -- in com.graduation.analytics.guard.RuleSeverityPathConsistencyTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionManifestRuntimePatrolTest
+[V25-T02 Ѳ��] Ŀ¼=D:\Develop_code\GraduationProject\landing\manifests
+�����嵥�˶�: 43 ����Υ��: 0
+�µ��ļ������к죩: 0
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.109 s -- in com.graduation.analytics.ingestion.IngestionManifestRuntimePatrolTest
+[INFO] Running com.graduation.analytics.ingestion.IngestionManifestSourceSchemaTest
+[V25-T02 ����Ǽ�] frozenAt=2026-09-14 ����=D-037 �þ� 6����ʷ�嵥���ɱ䡢����������嵥�ǰ汾����Ψһ�Ĳ��ɱ��׼��landing/ ������ .gitignore:30 �ų����������ڲ��
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in com.graduation.analytics.ingestion.IngestionManifestSourceSchemaTest
+[INFO] Running com.graduation.analytics.migration.QualityRuleVersionMigrationScriptTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.graduation.analytics.migration.QualityRuleVersionMigrationScriptTest
+[INFO] Running com.graduation.analytics.source.FileCheckpointSourceMigrationScriptTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.graduation.analytics.source.FileCheckpointSourceMigrationScriptTest
+[INFO] Running com.graduation.analytics.source.SourceProfileFixtureTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.graduation.analytics.source.SourceProfileFixtureTest
+[INFO] Running com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.graduation.analytics.source.SourceRegistryMigrationScriptTest
+[INFO] Running com.graduation.analytics.source.SourceWarehousePrefixMigrationScriptTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.graduation.analytics.source.SourceWarehousePrefixMigrationScriptTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 114, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... SUCCESS [  2.936 s]
+[INFO] connection-ingestion ............................... SUCCESS [  5.242 s]
+[INFO] warehouse-pipeline ................................. SUCCESS [  5.857 s]
+[INFO] metric-analysis .................................... SUCCESS [  2.603 s]
+[INFO] ai-decision ........................................ SUCCESS [  3.836 s]
+[INFO] platform-app ....................................... SUCCESS [  9.528 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  30.270 s
+[INFO] Finished at: 2026-09-15T11:49:01+08:00
+[INFO] ------------------------------------------------------------------------
+
+--- 默认档 mall-simulator ---
+  JAVA_HOME = D:\Develop\JAVA17
+  mvn -o -Dmaven.repo.local=D:\maven_repository -f D:\Develop_code\GraduationProject\mall-simulator\pom.xml test
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.graduation:mall-simulator >--------------------
+[INFO] Building mall-simulator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ mall-simulator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 9 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ mall-simulator ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 65 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ mall-simulator ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ mall-simulator ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 17 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ mall-simulator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.itguard.IsolationGuardFingerprintTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in com.graduation.itguard.IsolationGuardFingerprintTest
+[INFO] Running com.graduation.mall.domain.OrderStateMachineTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.graduation.mall.domain.OrderStateMachineTest
+[INFO] Running com.graduation.mall.golden.GoldenDatasetTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.179 s -- in com.graduation.mall.golden.GoldenDatasetTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.570 s
+[INFO] Finished at: 2026-09-15T11:49:09+08:00
+[INFO] ------------------------------------------------------------------------
+
+--- 默认档 synthetic-data-generator ---
+  JAVA_HOME = D:\Develop\JAVA17
+  mvn -o -Dmaven.repo.local=D:\maven_repository -f D:\Develop_code\GraduationProject\synthetic-data-generator\pom.xml test
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.536 s -- in com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[INFO] Running com.graduation.generator.adapter.MallTargetAdapterRegistryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.graduation.generator.adapter.MallTargetAdapterRegistryTest
+[INFO] Running com.graduation.generator.adapter.ReferenceMallHttpAdapterTest
+11:49:12.750 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+11:49:12.773 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=ABSENT, RESET_STATE=SUPPORTED, ADMIN=SUPPORTED}
+11:49:12.791 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+11:49:12.806 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+11:49:12.826 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=UNDETERMINED}
+11:49:12.845 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=SUPPORTED, RESET_STATE=SUPPORTED, ADMIN=SUPPORTED}
+11:49:12.857 [main] WARN com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽��ʧ�ܣ�id=42 �޷����� http://127.0.0.1:3242��ConnectException: null��
+11:49:12.876 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.152 s -- in com.graduation.generator.adapter.ReferenceMallHttpAdapterTest
+[INFO] Running com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+11:49:12.932 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+11:49:13.006 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+11:49:13.010 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+11:49:13.015 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.214 s -- in com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+[INFO] Running com.graduation.generator.boundary.GeneratorBoundarySourcePolicyTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.095 s -- in com.graduation.generator.boundary.GeneratorBoundarySourcePolicyTest
+[INFO] Running com.graduation.generator.contract.GeneratorContractParityTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.graduation.generator.contract.GeneratorContractParityTest
+[INFO] Running com.graduation.generator.contract.JsonlEventSinkTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in com.graduation.generator.contract.JsonlEventSinkTest
+[INFO] Running com.graduation.generator.core.BehaviorChainTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.graduation.generator.core.BehaviorChainTest
+[INFO] Running com.graduation.generator.core.DistributionKitTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.graduation.generator.core.DistributionKitTest
+[INFO] Running com.graduation.generator.core.GeneratorDeterminismTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.graduation.generator.core.GeneratorDeterminismTest
+[INFO] Running com.graduation.generator.core.ScenarioEffectTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.graduation.generator.core.ScenarioEffectTest
+[INFO] Running com.graduation.generator.core.ScenarioRegistryTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.graduation.generator.core.ScenarioRegistryTest
+[INFO] Running com.graduation.generator.engine.FileModeGenerationEngineTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.980 s -- in com.graduation.generator.engine.FileModeGenerationEngineTest
+[INFO] Running com.graduation.generator.engine.MallApiGenerationEngineTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.825 s -- in com.graduation.generator.engine.MallApiGenerationEngineTest
+[INFO] Running com.graduation.generator.engine.SecondMallDualTargetTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.194 s -- in com.graduation.generator.engine.SecondMallDualTargetTest
+[INFO] Running com.graduation.generator.meta.RunStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.graduation.generator.meta.RunStatusTest
+[INFO] Running com.graduation.itguard.IsolationGuardFingerprintTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.graduation.itguard.IsolationGuardFingerprintTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 106, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.597 s
+[INFO] Finished at: 2026-09-15T11:49:21+08:00
+[INFO] ------------------------------------------------------------------------
+
+--- default-tests 摘要（本轮 fresh）---
+  analytics-server           exit=0  Tests run: 632 (F=0 E=0 S=0)  模块汇总行 6 明细 89+156+134+48+91+114
+                             tests=632 MATCH
+  mall-simulator             exit=0  Tests run: 13 (F=0 E=0 S=0)  模块汇总行 1 明细 13
+                             tests=13 MATCH
+  synthetic-data-generator   exit=0  Tests run: 106 (F=0 E=0 S=0)  模块汇总行 1 明细 106
+                             tests=106 MATCH
+  default 三棵树                合计 = 751（基线 751）
+
+=== isolated-tests：调度既有 scripts/run-isolated-tests.ps1（-Module all -Confirm） ===
+  说明：不重实现 DEV-001/002/003a/003b 的任何隔离逻辑；本档只调度 + 复核计数。
+  pwsh -NoProfile -File D:\Develop_code\GraduationProject\scripts\run-isolated-tests.ps1 -RunId dev003c_20260915_1205 -Module all -Confirm -LogDir C:\Users\ASUS\AppData\Local\Temp\v25tests-dev003c_20260915_1205\isolated-mvn -MavenCmd D:\apache-maven-3.9.14\bin\mvn.cmd -MavenRepoLocal D:\maven_repository
+  （口令经环境变量传入子进程；子进程自身门禁 1-6 原样生效）
+=== 隔离套件运行门禁（V25-S02 唯一入口）===
+  目标      : 127.0.0.1:3307  （库前缀 dev003c_20260915_1205_*）
+  实例指纹  : 运行期由门禁6探针取 @@hostname:@@port 注入 IT_GUARD_SERVERFINGERPRINT；并校验 @@server_uuid = de8ebbea-aff4-11f1-8037-00155d5dba47
+  模块      : all
+  [门禁1] 端口 OK：3307 ∈ [3307] 且 != 3306
+  [门禁2] RunId 形状 OK：dev003c_20260915_1205
+  [门禁3] 派生目标 OK：mall->dev003c_20260915_1205_mall/dev003c_20260915_1205_mallapp  generator->dev003c_20260915_1205_generator/dev003c_20260915_1205_genapp  analytics->dev003c_20260915_1205_mall/dev003c_20260915_1205_mallapp
+  [门禁4] mall      口令来源 IT_GUARD_PASSWORD_MALL       值 <c******…长度 24>
+  [门禁4] generator 口令来源 IT_GUARD_PASSWORD_GENERATOR  值 <h******…长度 24>
+  [门禁4] analytics 口令来源 IT_GUARD_PASSWORD_MALL       值 <c******…长度 24>
+  [门禁5] 确认 OK：-Confirm
+
+将要注入当前进程的环境变量（真值不落盘、不进命令行；口令 masked）：
+  IT_GUARD_ENABLED             = true
+  IT_GUARD_INSTANCEPORTS       = 3307
+  IT_GUARD_RUNID               = dev003c_20260915_1205
+  IT_GUARD_SERVERFINGERPRINT   = <运行期由门禁6探针确定：@@hostname:@@port>
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (mall)
+  IT_GUARD_USER                = dev003c_20260915_1205_mallapp   (mall)
+  IT_GUARD_PASSWORD            = <c******…长度 24>   (mall)
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (generator)
+  IT_GUARD_USER                = dev003c_20260915_1205_genapp   (generator)
+  IT_GUARD_PASSWORD            = <h******…长度 24>   (generator)
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (analytics)
+  IT_GUARD_USER                = dev003c_20260915_1205_mallapp   (analytics)
+  IT_GUARD_PASSWORD            = <c******…长度 24>   (analytics)
+  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，
+        因此各模块不会串用彼此的口令/库（见下方循环内的重设语句）。
+        IT_GUARD_SERVERFINGERPRINT 由门禁6探针读到 @@hostname:@@port 后填入（预演阶段还没有值）。
+  SPRING_DATASOURCE_URL        = jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  SPRING_DATASOURCE_USERNAME   = dev003c_20260915_1205_genapp
+  SPRING_DATASOURCE_PASSWORD   = <h******…长度 24>
+        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键
+          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。
+  DEV001_IT_URL                = jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  DEV001_IT_USER               = dev003c_20260915_1205_mallapp
+  DEV001_IT_PASSWORD           = <c******…长度 24>
+  DEV001_IT_RUNID              = dev003c_20260915_1205
+  DEV001_IT_FINGERPRINT        = <运行期由门禁6探针确定为 @@hostname:@@port>
+        ↑ analytics 侧（TestIsolationGuard / IsolationGuardMySqlIT）只认这 5 个键：
+          它没有 mall/generator 那种 *.local.properties 档案，缺任一项即失败（不 skip）。
+  MALL_ISOLATION_URL           = jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  MALL_ISOLATION_USER          = dev003c_20260915_1205_mallapp
+  MALL_ISOLATION_PASSWORD      = <c******…长度 24>
+  MALL_ISOLATION_FLYWAY_ENABLED = true
+  [门禁6] mall      探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] generator 探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] analytics 探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] 唯一的实例身份（注入 IT_GUARD_SERVERFINGERPRINT）= dahaishui:3307
+
+=== 运行 mall 隔离套件：mvn -o -Dmaven.repo.local=... -f mall-simulator\pom.xml  test （MAVEN_ARGS=-Pisolated-tests）===
+  mall      exit=0   [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+
+=== 运行 generator 隔离套件：mvn -o -Dmaven.repo.local=... -f synthetic-data-generator\pom.xml  test （MAVEN_ARGS=-Pisolated-tests）===
+  generator exit=0   [INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+
+=== 运行 analytics 隔离套件：mvn -o -Dmaven.repo.local=... -f analytics-server\pom.xml -pl metric-analysis -am test （MAVEN_ARGS=-Pisolated-tests）===
+  analytics exit=0   [IsolationGuardMySqlIT] [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.297 s -- in com.graduation.analytics.metric.IsolationGuardMySqlIT
+
+=== 结果 ===
+  mall      exit=0  [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+            日志 C:\Users\ASUS\AppData\Local\Temp\v25tests-dev003c_20260915_1205\isolated-mvn\isolated-mall.log
+  generator exit=0  [INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+            日志 C:\Users\ASUS\AppData\Local\Temp\v25tests-dev003c_20260915_1205\isolated-mvn\isolated-generator.log
+  analytics exit=0  [IsolationGuardMySqlIT] [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.297 s -- in com.graduation.analytics.metric.IsolationGuardMySqlIT
+            日志 C:\Users\ASUS\AppData\Local\Temp\v25tests-dev003c_20260915_1205\isolated-mvn\isolated-analytics.log
+[PASS exit=0] 全部门块隔离套件通过。
+
+--- isolated-tests 摘要（本轮 fresh）---
+  mall       Tests run: 30 (F=0 E=0 S=0)  模块汇总行 1  tests=30 MATCH 
+  generator  Tests run: 19 (F=0 E=0 S=0)  模块汇总行 1  tests=19 MATCH 
+  analytics  Tests run: 6 (F=0 E=0 S=0)  模块汇总行 1  tests=6 MATCH IsolationGuardMySqlIT 已执行；同 reactor 依赖构建不计入：platform-common=89
+  isolated   合计 = 55（基线 55）；runner exit=0
+  口径：mall 30 ＋ generator 19 ＋ metric-analysis IT 6 = 55；analytics 侧同 reactor 的 platform-common 89 为依赖构建，不计入隔离档。
+
+=== spark-tests：mvn -f spark-jobs/pom.xml test（显式 JDK8 ＋ 本轮 -Dp2.test.runId） ===
+  TestSuite.txt 运行前：存在 mtime=2026-09-15 11:47:39 bytes=10218 sha256=45672155E5F81082
+Apache Maven 3.9.14 (996c630dbc656c76214ce58821dcc58be960875b)
+Maven home: D:\apache-maven-3.9.14
+Java version: 1.8.0_202, vendor: Oracle Corporation, runtime: D:\Develop\JDK1.8\jre
+Default locale: zh_CN, platform encoding: GBK
+OS name: "windows 10", version: "10.0", arch: "amd64", family: "windows"
+  JDK8 取证：mvn -version 输出含 'Java version: 1.8' = True
+  显式固定：JAVA_HOME=D:\Develop\JDK1.8 ；PATH 前置 D:\Develop\JDK1.8\\bin
+  JAVA_HOME = D:\Develop\JDK1.8
+  mvn -o -Dmaven.repo.local=D:\maven_repository -f D:\Develop_code\GraduationProject\spark-jobs\pom.xml test -Dp2.test.runId=dev003c_20260915_1205
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.graduation:spark-jobs >----------------------
+[INFO] Building spark-jobs 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ spark-jobs ---
+[WARNING] Using platform encoding (GBK actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:compile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__52.0-1.8.0_20221110T195421.jar
+[INFO] compile in 1.3 s
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ spark-jobs ---
+[WARNING] Using platform encoding (GBK actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\spark-jobs\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spark-jobs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- scala:4.8.1:testCompile (default) @ spark-jobs ---
+[WARNING]  Expected all dependencies to require Scala version: 2.12.19
+[WARNING]  org.apache.spark:spark-core_2.12:3.5.1 requires scala version: 2.12.18
+[WARNING] Multiple versions of scala libraries detected!
+[WARNING] Plugin is modifying testCompileSourceRoots through add(), which will not work in Maven 4.0.0. Use MavenProject.addTestCompileSourceRoot()/removeTestCompileSourceRoot() methods instead. If using a plugin, please upgrade to the latest version or report the issue to the plugin maintainer. To disable these warnings, set -Dmaven.project.sourceRoots.warningsDisabled=true on the command line, in the .mvn/maven.config file, or in project POM properties.
+[INFO] Compiler bridge file: C:\Users\ASUS\.sbt\1.0\zinc\org.scala-sbt\org.scala-sbt-compiler-bridge_2.12-1.8.0-bin_2.12.19__52.0-1.8.0_20221110T195421.jar
+[INFO] compile in 0.1 s
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ spark-jobs ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junit.JUnit3Provider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.MetricAdsSpecTest
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.065 s -- in com.graduation.analytics.MetricAdsSpecTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- scalatest:2.2.0:test (test) @ spark-jobs ---
+[INFO] ScalaTest report directory: D:\Develop_code\GraduationProject\spark-jobs\target\surefire-reports
+Discovery starting.
+Discovery completed in 441 milliseconds.
+Run starting. Expected test count is: 111
+OdsV2SqlContractSpec:
+OdsLoadSql
+- should A9 �ĸ�ģ��� SELECT ����ʽ��Ŀ�������λ���루������ + dt/hour ���������У�
+- should A9b ���� 'landing' AS source_file ����ʧ��source_file �� landing_file ͬԴֵͬ
+- should A10 source_system ����ƽ̨ע��ֵ����������ֵ��������ԭֵֻ�� raw_source_system
+- should A10b ע��ֵ�� SQL ��������Ⱦ���� ' ת�壨ֵ����ƽ̨������ƴ����ע�� SQL��
+- should A9c raw_event_type Ϊ���� event_type ԭ��ֵ��payload_json/payload_hash ��ԭ����Ƭ����
+- should A9d INSERT Ŀ������ SELECT ����ʽ�ı���/�����Ӿ䱣�ָ���ǰ��̬
+- should A9e ���ű���ҵ���б���ʽ�Դ� payload �ṹ��ȡ��v1 �ھ�δ��
+- should A12b ���� DWD ģ��һ���������� v2 �����У��ӷ����в�ǣ�����Σ�
+QuartileStatsRfmSpec:
+QuartileStats
+- should ���Բ�ֵ��λ����ȷ
+- should �������λ��֣�Խ���Խ��
+- should �������λ��֣����ԽС��Խ�ߣ�R ά�ȣ�
+RfmScorer
+- should �����ǩӳ����ȷ
+- should ��������״̬�ж���ȷ
+WarehouseNamespaceSpec:
+WarehouseNamespace
+- should �������� rule ������һ�£�����˳������˳��
+- should ��� vectors ���������ˣ�Scala �ࣩ
+- should ��Ϊ������null/�մ�ȱʡ���� trim��δ֪����Ƿ�����ֱ��ʧ��
+- should fromArgs �� --hiveDatabasePrefix��ȱʡ�� dw���Ƿ�ǰ׺����ҵ��Ҳ����ʧ��
+- should ���� SQL ģ���� INIT_SCHEMA �������ռ��ߣ���ǰ׺�󲻲��� dw_* ������
+- should INIT_SCHEMA �� 37 �� DDL ȫ��ֻ���õ�ǰ�����ռ�Ŀ⣨5 ���� + 32 ������
+OrderTradeCompilerSpec:
+OrderTradeCompiler
+- should CREATED��PAID��COMPLETED �ϲ�Ϊ PAID ��Ч֧��
+- should ������Ʒ�����ڶ�����ϸ�в������У���Ʒչ����
+- should ȡ������������֧����final_paid_flag=0��
+- should ��֧����ȫ���˿GMV ����֧��������۶�Ϊ��
+- should �����˿� �� REFUNDING �� final_refunded_flag=0
+- should ����˿��¼��� refund_id ȥ�ػ��ܣ�ͬһ refund_id ֻ��һ�Σ�
+- should ��������ҵ������ order_created �������ٵ��¼����㵽ԭ����
+OdsV2EdgeCaseSpec:
+JsonObjectSlicer on controlled fixtures
+- should A5c Ƕ��/ת�����г���ԭ����Դ����һ�����ֽ���ͬ
+- should A6 �� payload �����У�ȱ payload / ֵ�Ƕ��������ճ������˫ NULL�����в�ȱ�����߼��� valid բ�ܾ�
+- should A6b ��ͬ payload �� hash ��ͬ�����ж��ڣ�hash ����ϣ�����ȥ�ؼ���
+- should A7b source_system ȫ������ע��ֵ��raw_source_system �������ڲ��죨row-src/other-src��
+- should A8b ���� landing_file ��ָ���ܿؼо��ļ���source_file ��֮���
+MetricAdsSpecTest:
+MetricAdsSpec
+- should ���� 8 �� ADS �� Hive/MySQL ����һһ��Ӧ
+- should P1-04������ǰ׺���滻������ӳ�䲻д������Դʱͬһ�׹���ã�
+- should ���嵥�� Java �� MetricAdsCatalog ��ȫһ�£���˳��
+- should R7-0 �ھ����ѹ�ͨ�������ھ���full_refund_rate ���뵼����
+MetricExportJob.posix
+- should �� Windows ·���淶����б�ܣ��嵥�� JSON����б�ܻ��Ƿ�ת�壩
+SqlTemplateSpec:
+OdsLoadSql
+- should �汾���˲����� dt/hour ����
+- should �û����� ODS ���� user_registered �ұ��������ֶ�
+- should ��Ʒ���� ODS ������Ʒ�����¼��ҽ��ת DECIMAL
+- should �������� ODS ���Ƕ���/֧��/�˿��Ҳ��� behavior ���˵�
+- should �����а�δ֪�汾��ȱʧ����ɸѡ
+DimSql
+- should �û�ά��ȡÿ user_id �����¼����ɿ��ղ�������Դ����
+- should ��Ʒά��ȡÿ product_id ���½����¼����� unknown key ���ף�����¼��������գ�
+DwdSql
+- should event_id ȥ����ֻ�����Ϸ�ö��
+- should �ظ��¼�д��ܾ���¼
+DwsSql
+- should �û��տ�������Ϊ���� CASE �ۺ��� buy ���Զ�����ϸ
+- should ©�� DWS Ϊ�����û��ھ��� order/pay �û����Զ�����ϸ����Ӳ���� 0��
+- should ��Ʒ��Ϊ�� buy ������Ч֧������������Ϊö�٣���ת���ʲ��ܳ�״̬
+- should �����ջ��ܰ���Ч֧���ھ���order_count=֧������������������ĸ 0
+- should ��Ʒ������/�û���������/����������ģ������ҿھ���ȷ
+AdsSql
+- should �����˿��ʷ�ĸ 0 �� null������������ TopN
+- should DEF-08��������Ʒ��ȡά�ȶ��ף�ȱʧά�ȵ���Ʒ���ò��� NULL �������� BLOCKING �չؼ�����Ϸ�����
+- should R7-0 �ھ���PV ֻ�� view���˿��ʰ�����������˿�Ķ�����������ȫ���˿���
+- should ©�� ADS չ�� 4 �� stage ��
+- should ��Ʒת�� buy_users ȡ��Ʒ���� DWS ȥ����������� buy ����
+- should �û����� RFM �ֲ㣺���λ + �����ǩ + ��������
+- should DEF-10���û������ NOT NULL �в��ò��� NULL���µ�����������Ϊ���û���ѷ��� INSERT ��ң�
+- should �����������̰��� 4 �� QualityChecker ͬ������
+FunnelHeatAnomalySpec:
+FunnelComputer
+- should �Ľ׶�ת���������幺��ת������ȷ
+- should ��ĸΪ 0 ʱ���� None
+ProductHeat
+- should ����Ȩ���ȶȣ�����>�ӹ�>�ղ�>���
+- should ͷ�����׶ȼ��㣨��β��
+AnomalyDetector
+- should z-score ��ֵ�ж�
+- should IQR �߽���ά�ȹ���
+Cleaners
+- should ʱ���׼����У��ν��
+JobArgsRegistrySpec:
+JobArgs.parse
+- should ������׼������У�����
+- should �ܾ�ȱ����Ƿ�����
+JobRegistry
+- should ע��ȫ�� 11 ��ҵ������˳����ȷ
+OdsV2ByteFidelitySpec:
+JsonObjectSlicer
+- should A5 payload ȱʧ/����һ�� Left�������� Right ��Ϊԭʼ�Ӵ�
+- should A5b �޿հ�/��հ�/ת�� ������̬��ԭ�����أ������ո񡢲���ԭת�壩
+- should A4b golden �� 1 �� payload �� SHA-256 ����� oracle ���ֽ�һ�£�122 �ֽڣ�
+- should A4 ���бȶԣ�Դ�� payload ԭ�� == ���� payload_json��SHA-256 == ���� payload_hash
+- should A6 landing ԭ���в�����ȥ�ؼ���ͬһ payload_hash �����ж�������hash ����ϣ�
+- should A7 source_system ȡƽ̨ע��ֵ����������ֵ����raw_source_system ������ԭ��
+- should A8 landing_file/source_file ȡ��ʵ����ļ�·�����ǳ��� 'landing'��
+- should A12c �˵������ܣ�golden 55 �ж��룬��������ϼ� 52 �У�3 �� rejected��
+- should A12d metastore ���صı��ṹ�� 12 �й����У�˳����Ψһ������һ��
+SurrogateKeySpec:
+��Լ������
+- should �ɱ�����������Ϊ 23���� 3 �� NULL_KEY��
+- should ÿһ�� KEY ������normalized / material / sha256 / keyHex16 / keyBigint ȫ������
+- should ÿһ�� NULL_KEY �����������ɼ���None��������Լ rawInput ���������ֿ� rawInputNotation
+- should category / brand / coupon �����������У�������ɴ���������ݣ�
+- should ��Լö�����ʵ��һ�ɾܾ���D-093��order �������ô������㷨��
+- should ͬһ��Ԫ���ͬ�����ݵȣ�����ͬ��Ԫ�鲻ͬ�������䣬17 ������ײ��
+- should ������ [1, 2^63-1]�������λ + ȫ��ȡ 1��D-085��
+SurrogateKey.toBIGINT��SQL ����ʽ��
+[vector] id  | kind           | expect   | SQL                  | contract
+[vector] V01 | UUID           | KEY      | 2447453834011197358  | 2447453834011197358
+[vector] V02 | ѩ�� 19 λ        | KEY      | 5315975343567279541  | 5315975343567279541
+[vector] V03 | ������            | KEY      | 3315011698423901889  | 3315011698423901889
+[vector] V04 | ǰ׺����           | KEY      | 5981468240952732083  | 5981468240952732083
+[vector] V05 | ������(Ŀ¼��Ʒ)      | KEY      | 6483880395745046246  | 6483880395745046246
+[vector] V06 | ǰ׺����(����)       | KEY      | 1671956594246542886  | 1671956594246542886
+[vector] V07 | ǰ׺Сд           | KEY      | 5981468240952732083  | 5981468240952732083
+[vector] V08 | ��β�ո�           | KEY      | 5981468240952732083  | 5981468240952732083
+[vector] V09 | �� ASCII        | KEY      | 1135207786598686877  | 1135207786598686877
+[vector] V10 | ���� 256         | KEY      | 1676764569004255147  | 1676764569004255147
+[vector] V11 | �� ASCII ���ո�    | KEY      | 5776179213896010825  | 5776179213896010825
+[vector] V12 | UUID ��д        | KEY      | 2447453834011197358  | 2447453834011197358
+[vector] V13 | �մ�             | NULL_KEY | NULL                 | NULL
+[vector] V14 | ���հ�            | NULL_KEY | NULL                 | NULL
+[vector] V15 | null           | NULL_KEY | NULL                 | NULL
+[vector] V16 | ͬ raw ��ͬ source | KEY      | 3436230387295700     | 3436230387295700
+[vector] V17 | ͬ raw ��ͬ����     | KEY      | 2297900066440525769  | 2297900066440525769
+[vector] V18 | �����ַ��� vs ��ֵ    | KEY      | 6603676604773133034  | 6603676604773133034
+[vector] V19 | �ɽ���Ϊ����         | KEY      | 6407942324792645581  | 6407942324792645581
+[vector] V20 | ���ָ���           | KEY      | 7762353590738385298  | 7762353590738385298
+[vector] V21 | ��ηָ���          | KEY      | 8192779654316538825  | 8192779654316538825
+[vector] V22 | ����+ð��          | KEY      | 6604609974941637228  | 6604609974941637228
+[vector] V23 | ���ָ��� id        | KEY      | 192898393099506332   | 192898393099506332
+- should ����ʵ Spark �����������ڴ�ʵ��ֵͬ
+- should �մ� / ���հ� / NULL ���������� SQL �඼�õ� NULL�������ڱ������ϲ���
+���������������� warehouse + �ƽ� 55 ����
+[A5] �ɿھ� JOIN ���� = 15
+[A5] �¿ھ� JOIN ���� = 15
+[A5] �ɿھ�ά���������� = 16
+[A5] �¿ھ�ά���������� = 16
+[A7] dim_product ���� = 4
+[A7] product_key        �� NULL = 4
+[A7] category_key       �� NULL = 4
+[A7] parent_category_key �� NULL = 0
+[A7] brand_key          �� NULL = 4
+- should ���в������¼�������Լֵͬ��A6��/A6�ݣ�
+- should ��д��һ�����Ļ��޹أ�Locale.ROOT�������������������²��ñ���
+OdsV2SchemaOwnerSpec:
+- should A3c v1 �����е�����/˳�����������������ǰ������λһ�£�һ��������������Ư��
+- should A1 v2 ������ȫ��׷���� v1 ��֮�󣨼����е����һ�񲻶���
+- should A1b 12 �����������ű��ﶼ�ڣ��ҹ����Σ��ŷ� 7 �У���λһ��
+- should A2 event_time ���� STRING�������������ڱ�����Χ��
+- should A3 ���ű�������ͬ��ҵ���и������У����ǰ�ͬһ�� payload_* ���ı飩
+- should A3b �ŷ⹲���������� payload_ ǰ׺��ҵ���������뺬 payload_ ǰ׺���ֲ㲻�죩
+- should A11 warehouse/ddl/00-ods.sql �����ű�����/����/˳����Ψһ����������һ��
+- should A11b ��̬ DDL �� v1 ȫ���������ǰ������λһ�£�ֻ������β��׷�ӣ�
+- should A11c ��̬ DDL �������м���Ψһ����������һ�£��������� PARTITIONED BY ��
+- should A12 LocalSchemaInitJob �� ODS ��������Ψһ����������������һ���������������
+IdCodecSpec:
+IdCodec
+- should ������Լ id ����ĸǰ׺��U/P/O/C/B����ת����
+- should ������ id ԭ��ͨ�������ݾɼо����̳�����������
+- should �޷����ֻ���ȡֵ���� None ������ 0������Ĭ���ף�
+- should ���������һ�µ� SQL ����ʽ��ȫƥ����״����ƥ�� �� NULL��
+���� id �нӵ�
+- should �� IdCodec ��һ��������ֱ�� CAST ��Լ id
+- should ��Ϊ/ά��/�������� id ���Ĺ�һ���������ж�Ӧ��ȷ
+- should ODS ����㱣���ַ���ԭ�ģ����� ODS ��ǰת�ͣ�
+JsonObjectSlicerSpec:
+JsonObjectSlicer
+- should A5 �������г�ԭʼ�Ӵ���ȱʧ/Ƕ��/�ظ���/δ��ƽ/�Ƕ��� һ�� Left
+- should A5b �޿հ�/��հ�/ת�� ������̬��ԭ�����أ������ո񡢲���ԭת�壩
+- should A5c ������/ת�������Ƕ����������ȷ�ҵ������������������Ƕ�׶����ﲻ�㶥�㣩
+- should A5d ȱð��/ȱֵ/δ��ֹ�ַ��� һ�� Left�������쳣��
+- should A4b �ƽ�оߵ� 1 �� payload �� SHA-256 ����� oracle ���ֽ�һ�£�122 �ֽڣ�
+- should A4c �ƽ�о����У���Ƭ���������Դ�е�ԭʼ�Ӵ������������л����
+Run completed in 21 seconds, 425 milliseconds.
+Total number of tests run: 111
+Suites: completed 15, aborted 0
+Tests: succeeded 111, failed 0, canceled 0, ignored 0, pending 0
+All tests passed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  25.646 s
+[INFO] Finished at: 2026-09-15T11:50:26+08:00
+[INFO] ------------------------------------------------------------------------
+  [对照·不作成功依据] surefire 汇总行：[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+  TestSuite.txt 运行后：mtime=2026-09-15 11:50:26 bytes=10214 sha256=B4CAEC3667C59211
+  本轮新写（mtime ≥ 启动时刻 11:50:00）= True
+  Total number of tests run = 111 ；Suites: completed 15, aborted 0 ；Tests: succeeded 111, failed 0, canceled 0, ignored 0, pending 0 ；All tests passed = True
+  基线比对：tests=111 MATCH
+
+--- spark-tests 摘要（本轮 fresh）---
+  spark-jobs Tests run: 111 (failed=0 aborted=0 ignored=0)  套件 15  mvn exit=0  新写=True  JDK8=True
+  证明边界：仅证明 Scala local[1] ＋ in-memory catalog 下测试通过；**不得**表述为生产 Hive/Spark 集群已通过。
+
+=== 最终摘要（各档独立，不合并计数） ===
+  default   PASS （751 个用例）
+  isolated  PASS （55 个用例；runner exit=0）
+  spark     PASS （Total number of tests run=111；新写=True；JDK8=True）
+
+  不计入通过总数（总控 2026-09-15 裁决）：MetricAdsMySqlIT、MetricPublisherMySqlIT（backlog）；
+    SourceRegistryMigrationMySqlIT（DEV-004）；SparkStageExecutorSmokeIT（spark 专项 backlog）；
+    AnalysisGoldenMySqlIT（D 类，永久排除 unified isolated-tests）；web 前端（整理阶段范围外）。
+  日志目录：C:\Users\ASUS\AppData\Local\Temp\v25tests-dev003c_20260915_1205
+
+[PASS exit=0] 所选档全部通过。

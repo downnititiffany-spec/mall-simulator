@@ -1,0 +1,60 @@
+# DEV-003c 收口轮 —— 原始证据清单（append-only）
+# 生成时间：2026-09-15 11:54:15
+# 采集者：代码 Agent（本轮唯一动作 DEV-003c）
+# 唯一隔离实例：127.0.0.1:3307（canonical dahaishui:3307，uuid de8ebbea-aff4-11f1-8037-00155d5dba47）；宿主 3306 本轮未连接（未做指纹复取）
+# 哈希口径：Windows 工作区文件的 SHA256（非 Git blob 口径，见 HASH-REPRODUCIBILITY-NOTE.md）
+# 本轮状态：未提交、未 push；CODE/EVIDENCE 提交由总控复核后另批
+# 被判定的调度器自身缺陷留档（09/19-*）与验收跑动（20/23/24/25/27-*）同池存放，文件名自带 SELFBUG 标记
+
+raw/01-prepare-isolation-dev003c_20260915_1150.txt           6502 B  sha256=9efd51d2b135b1b0ce42f4e67899d7ad7d468cdff0670b7b03572a00b9932b1a
+     attempt1（runId dev003c_20260915_1150）隔离库/受限账号准备控制台：门禁全过、两库两账号创建
+raw/03-isolated-instance-facts.txt                           1327 B  sha256=ade76a4e7a03a465bbc8130e379c1fde11eb9f26d3d51497ad36193fe92f9b4f
+     3307 实例事实（@@hostname=dahaishui/@@port=3307/uuid/VERSION 8.0.41）＋ 本轮 4 个 dev003c% 库与表数＋generator flyway V1 installed_on 11:49:44＋4 个受限账号（未清理）
+raw/04-code-diff-and-status.txt                              3631 B  sha256=3a4812de5e3d596045635cdfcb05ee9f17e5015db90f753864e9f2ae17f3d955
+     代码状态与边界自查：git status/diff/log、run-isolated-tests.ps1 与六个 *IT.java diff 为空、根 pom 与 .github 均不存在、AST parse_errors=0、敏感串 0 命中
+raw/09-spark-console-SELFBUG-rbad-count.txt                 22905 B  sha256=6b60ca75149c8f5d1871c93e2751cb34f42617e923033f465b74f3c80fdcb109
+     自查缺陷②控制台：spark 档本身 PASS，但摘要空数组展开致 $r.bad.Count 抛错 ⇒ exit 1（修复前留档）
+raw/10-spark-console.txt                                    22984 B  sha256=0b90b4129db7ea3f5cd68e4d4b0b4d8b741b011e7fd24075014658895f142193
+     独立 -Suite spark（runId dev003c_20260915_1155s）控制台：JDK8 取证 True、TestSuite.txt 111/新写 True、surefire 对照行 Tests run: 0、[PASS exit=0]
+raw/11-spark-jobs-maven.log                                 20003 B  sha256=465b0a89fa366af1df1ff7e30fc1f5c98c4c3ac61a51d639e27c445ba7242efd
+     独立 -Suite spark 的 mvn -f spark-jobs/pom.xml test 原样日志（含 -Dp2.test.runId 与 JDK8 启动行）
+raw/12-spark-jdk-version.log                                  306 B  sha256=ac01b26a84973151023f7d1cdb58048aa9bc2b5d0c06bfecc78f78bc30cfe0a2
+     spark 档运行时 mvn -version 原样输出：Java version: 1.8.0_202, runtime: D:\Develop\JDK1.8\jre
+raw/13-ScalaTest-TestSuite.txt                              10223 B  sha256=c1cfc9730fd3c695305aea6c93266344c1fb78aa6fd6d62ebd6bed2e3420927f
+     独立 -Suite spark 的 TestSuite.txt 副本（111/15 suites/0 failed/0 aborted；sha256 c1cfc973…；mtime 11:44:45）
+raw/19-all-console-SELFBUG-attempt1.txt                    141572 B  sha256=29f169f4296e8659c9eeec31b4eaed726b225595b4a684278a710ece3e60cad3
+     自查缺陷③控制台：attempt1 -Suite all（runId dev003c_20260915_1150）——default 751 PASS＋spark 111 PASS，isolated 因调度器全文相加（89+6=95 ≠ 基线 6）误判 DRIFT ⇒ [all exit=7]
+raw/19-isolated-analytics-SELFBUG-attempt1.log              10248 B  sha256=f6c0ddc633dbdc73c5f4f122bef1325009f432df0730d6ca4dc3278434181a03
+     同一 attempt1 的隔离 analytics 原样日志：platform-common 89（依赖构建）与 metric-analysis 6 两条汇总行，证明误判来源
+raw/20-all-console.txt                                     143077 B  sha256=54a2cfcf03bd96d2811f98f42cd28da417768f8673da5bdf213af47ec5179434
+     验收跑动 -Suite all（runId dev003c_20260915_1205）控制台 143,077 B：default 751／isolated 55／spark 111 三档 PASS ⇒ [all exit=0]
+raw/20-default-analytics-reactor.log                       100317 B  sha256=d0229a58437018b4be4a938388960f4fe9dc2624b59649a41915cb9b05108fe3
+     default 档 analytics-server reactor 原样日志：6 条模块汇总行 89/156/134/48/91/114 ＝ 632，F/E/S 全 0
+raw/21-default-mall.log                                      2513 B  sha256=5dda4d365931976ec235c12b88c4a7a7ca4fb06c6f9c378b4ad554445ff5409c
+     default 档 mall-simulator 原样日志：5+2+6 ＝ 13，F/E/S 全 0
+raw/22-default-generator.log                                 8577 B  sha256=01cf4d0522fd36e32cb4aeff603f75b28dc312e68d1fedb91979c0c50d6e2bfe
+     default 档 synthetic-data-generator 原样日志：17 个测试类 ＝ 106，F/E/S 全 0
+raw/23-isolated-console.txt                                  6167 B  sha256=c6d0e76a7ffb064c93486edf487b350e259f8b6e2b51299a46c5f01d6a01ddc4
+     isolated 档调度既有 run-isolated-tests.ps1 -RunId dev003c_20260915_1205 -Module all -Confirm 的控制台：门禁 1-6、pre/post 取数、30/19/6、runner exit 0
+raw/24-isolated-analytics.log                               10248 B  sha256=62dc1e246dfcf7e4c72e82f52d5be846375c4c48cf227c5b00cc488159899da1
+     隔离 analytics 原样日志：metric-analysis 6/0/0/0（IsolationGuardMySqlIT），同 reactor platform-common 89 为依赖构建（调度器已排除）
+raw/24-isolated-generator.log                               21924 B  sha256=b9fd83fa26ce86cf80bfb4ef414f96168b0a430f5074bd97081e95088546b7c4
+     隔离 generator 原样日志：19/0/0/0（GeneratorMetaStoreTest 5/0/0/0 —— 全新 runId 首跑即全绿）
+raw/24-isolated-mall.log                                    38054 B  sha256=50eca06b7ce01adf3a092739d6ed83a2bcfb03fff2e714eeb3036c1557fb4664
+     隔离 mall 原样日志：30/0/0/0（9 个类）
+raw/25-spark-jobs-maven.log                                 20003 B  sha256=fb5460672a9aff589378cd4b69120efbb01804756030890a0a5a0ff6015f507c
+     -Suite all 内 spark 档的原样 mvn 日志（JDK8 + -Dp2.test.runId=dev003c_20260915_1205）
+raw/26-spark-jdk-version.log                                  306 B  sha256=ac01b26a84973151023f7d1cdb58048aa9bc2b5d0c06bfecc78f78bc30cfe0a2
+     -Suite all 内 spark 档的 mvn -version 原样输出：Java version: 1.8.0_202
+raw/27-all-ScalaTest-TestSuite.txt                          10214 B  sha256=b4caec3667c59211c797b16b38dbbff028d5d9351444cb9d4d2d8ab87a3c3ad1
+     -Suite all 内 spark 档的 TestSuite.txt 副本（111/15 suites/0 failed/0 aborted；sha256 b4caec36…；mtime 11:50:26 ⇒ 本轮新写）
+
+# 非 raw 产物（同泳道 / 交付物）：
+docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md    15695 B  sha256=8d2712f511bc738fd59e6b21359abd4395b212e8381e12fbc4a1ca7a3e181ac3
+     本轮实施与验收报告（含缺陷 3 项、未收编清单、复现命令、未取证项、README 陈旧登记）
+scripts\run-tests.ps1                                          27091 B  sha256=373333c7cc570fe51446ad06457ec70901a50c5838b390cbd7731f86d80956b7
+     新增交付物（未提交）：412 行，-Suite default|isolated|spark|all；mtime=2026-09-15 11:48:13（早于本轮验收跑动，跑后未再改动）
+
+# 敏感扫描（raw/ 全目录 + REPORT.md）：password/passwd/pwd=/MYSQL_PWD=/Authorization/Bearer/secret/apiKey/access_key/私钥头/123456
+sensitive_hits=1（**唯一命中是 REPORT.md §7 自身引用的扫描模式串**，属自指文本、非口令；raw/ 全目录 0 命中。口令一律以环境变量传入，raw 内无明文口令）
+  REPORT.md:146: - 敏感串扫描（对新增脚本）：`Select-String -Pattern '123456|password\s*=\s*[''"]|secret|token'` ⇒ **0 命中**；脚本不提供 `-Password`、不读 `cred

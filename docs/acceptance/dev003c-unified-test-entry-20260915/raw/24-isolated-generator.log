@@ -1,0 +1,160 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.meta.GeneratorMetaStoreTest
+[IsolationGuard] дǰ�˶�ͨ����isolated-schema-init:GeneratorMetaStoreTest����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+11:49:44.301 [main] INFO org.flywaydb.core.internal.license.VersionPrinter -- Flyway Community Edition 9.22.3 by Redgate
+11:49:44.302 [main] INFO org.flywaydb.core.internal.license.VersionPrinter -- See release notes here: https://rd.gt/416ObMi
+11:49:44.302 [main] INFO org.flywaydb.core.internal.license.VersionPrinter -- 
+11:49:44.323 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_generator (MySQL 8.0)
+11:49:44.350 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table `dev003c_20260915_1205_generator`.`flyway_schema_history` does not exist yet
+11:49:44.353 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 1 migration (execution time 00:00.013s)
+11:49:44.367 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table `dev003c_20260915_1205_generator`.`flyway_schema_history` ...
+11:49:44.417 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema `dev003c_20260915_1205_generator`: << Empty Schema >>
+11:49:44.430 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema `dev003c_20260915_1205_generator` to version "1 - generator meta"
+11:49:44.565 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 1 migration to schema `dev003c_20260915_1205_generator`, now at version v1 (execution time 00:00.114s)
+[DEV-003a] GeneratorMetaStoreTest ǰ�ñ�����ɣ�database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205 | flyway ����ִ��Ǩ����=1 Ŀ��汾=1
+[DEV-003a] GeneratorMetaStoreTest flyway_schema_history: rank=1 version=1 description=generator meta installed_on=2026-09-15 11:49:44.0 success=true
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.985 s -- in com.graduation.generator.meta.GeneratorMetaStoreTest
+[INFO] Running com.graduation.generator.web.GeneratorApiSmokeTest
+11:49:45.085 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.graduation.generator.web.GeneratorApiSmokeTest]: GeneratorApiSmokeTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+11:49:45.165 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.graduation.generator.GeneratorApplication for test class com.graduation.generator.web.GeneratorApiSmokeTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-15T11:49:45.566+08:00  INFO 69452 --- [synthetic-data-generator] [           main] c.g.generator.web.GeneratorApiSmokeTest  : Starting GeneratorApiSmokeTest using Java 17.0.12 with PID 69452 (started by ASUS in D:\Develop_code\GraduationProject\synthetic-data-generator)
+2026-09-15T11:49:45.567+08:00  INFO 69452 --- [synthetic-data-generator] [           main] c.g.generator.web.GeneratorApiSmokeTest  : No active profile set, falling back to 1 default profile: "default"
+2026-09-15T11:49:46.964+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-09-15T11:49:46.971+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-15T11:49:46.974+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-15T11:49:46.994+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-15T11:49:46.994+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-15T11:49:47.060+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-15T11:49:47.061+08:00  INFO 69452 --- [synthetic-data-generator] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1481 ms
+2026-09-15T11:49:47.240+08:00  INFO 69452 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-15T11:49:47.288+08:00  INFO 69452 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@20dd5870
+2026-09-15T11:49:47.292+08:00  INFO 69452 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-15T11:49:47.386+08:00  INFO 69452 --- [synthetic-data-generator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_generator (MySQL 8.0)
+2026-09-15T11:49:47.397+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.007s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+2026-09-15T11:49:47.423+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev003c_20260915_1205_generator`: 1
+2026-09-15T11:49:47.424+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev003c_20260915_1205_generator` is up to date. No migration necessary.
+2026-09-15T11:49:48.368+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 2725 (http) with context path ''
+2026-09-15T11:49:48.382+08:00  INFO 69452 --- [synthetic-data-generator] [           main] c.g.generator.web.GeneratorApiSmokeTest  : Started GeneratorApiSmokeTest in 3.056 seconds (process running for 4.79)
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-09-15T11:49:49.111+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-15T11:49:49.112+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-15T11:49:49.112+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-09-15T11:49:49.192+08:00  WARN 69452 --- [synthetic-data-generator] [o-auto-1-exec-3] c.g.generator.web.ApiExceptionHandler    : Ψһ����ͻ��Duplicate entry 'it-file-target-ed5dbb' for key 'generator_target.uk_generator_target_name'
+2026-09-15T11:49:49.328+08:00  WARN 69452 --- [synthetic-data-generator] [o-auto-1-exec-2] c.g.generator.web.ApiExceptionHandler    : ��������δʵ�ֵ�������ģʽ SOME_UNKNOWN_MODE δʵ�֣�������ֻ֧�� CANONICAL_EVENT_FILE �� MALL_API
+2026-09-15T11:49:49.375+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-1-exec-5] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s3b-4b44b21d-v1-20260915-114949-40ed plan=it-s3b-4b44b21d v1 mode=CANONICAL_EVENT_FILE scenario=normal eventCount=200
+2026-09-15T11:49:49.497+08:00  INFO 69452 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s3b-4b44b21d-v1-20260915-114949-40ed status=SUCCESS success=200 failed=0 artifacts=2 manifestRecords=200
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.618 s -- in com.graduation.generator.web.GeneratorApiSmokeTest
+[INFO] Running com.graduation.generator.web.MallApiGenerationSmokeTest
+2026-09-15T11:49:49.650+08:00  INFO 69452 --- [synthetic-data-generator] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.graduation.generator.web.MallApiGenerationSmokeTest]: MallApiGenerationSmokeTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-09-15T11:49:49.654+08:00  INFO 69452 --- [synthetic-data-generator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.generator.GeneratorApplication for test class com.graduation.generator.web.MallApiGenerationSmokeTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-15T11:49:49.672+08:00  INFO 69452 --- [synthetic-data-generator] [           main] c.g.g.web.MallApiGenerationSmokeTest     : Starting MallApiGenerationSmokeTest using Java 17.0.12 with PID 69452 (started by ASUS in D:\Develop_code\GraduationProject\synthetic-data-generator)
+2026-09-15T11:49:49.673+08:00  INFO 69452 --- [synthetic-data-generator] [           main] c.g.g.web.MallApiGenerationSmokeTest     : No active profile set, falling back to 1 default profile: "default"
+2026-09-15T11:49:49.841+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-09-15T11:49:49.842+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-15T11:49:49.842+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-15T11:49:49.854+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-09-15T11:49:49.854+08:00  INFO 69452 --- [synthetic-data-generator] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 180 ms
+2026-09-15T11:49:49.883+08:00  INFO 69452 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-09-15T11:49:49.890+08:00  INFO 69452 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5c46a957
+2026-09-15T11:49:49.891+08:00  INFO 69452 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-09-15T11:49:49.905+08:00  INFO 69452 --- [synthetic-data-generator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev003c_20260915_1205_generator (MySQL 8.0)
+2026-09-15T11:49:49.916+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.005s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev003c_20260915_1205_generator account=dev003c_20260915_1205_genapp@% hostname=dahaishui port=3307 runId=dev003c_20260915_1205
+2026-09-15T11:49:49.957+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev003c_20260915_1205_generator`: 1
+2026-09-15T11:49:49.958+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev003c_20260915_1205_generator` is up to date. No migration necessary.
+2026-09-15T11:49:50.051+08:00  INFO 69452 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 14036 (http) with context path ''
+2026-09-15T11:49:50.053+08:00  INFO 69452 --- [synthetic-data-generator] [           main] c.g.g.web.MallApiGenerationSmokeTest     : Started MallApiGenerationSmokeTest in 0.396 seconds (process running for 6.461)
+2026-09-15T11:49:50.094+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-2-exec-1] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-15T11:49:50.094+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-2-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-15T11:49:50.096+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-2-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-09-15T11:49:50.691+08:00  INFO 69452 --- [synthetic-data-generator] [o-auto-2-exec-4] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s4b-5330515b-v1-20260915-114950-3894 plan=it-s4b-5330515b v1 mode=MALL_API scenario=normal eventCount=60
+2026-09-15T11:49:50.898+08:00 ERROR 69452 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ��������ʧ�ܣ�runId=it-s4b-5330515b-v1-20260915-114950-3894 code=RUN_FAILED
+
+com.graduation.generator.adapter.MallOperationException: [runForTarget] �������� 39 ���̳ǲ�������ʵ�ܾ�����д��淶�� 21 ������createOrder �� [createOrder] �̳Ǿܾ���http://127.0.0.1:14040 �� HTTP 400 code=INSUFFICIENT_STOCK message=��治��: 910000000000000002���̳ǲ಻�ع����ѳɹ���д������ʵ���ڣ��������������ܣ����С event_count �ö��������ڿ��ɳ��ܷ�Χ��
+	at com.graduation.generator.engine.MallApiGenerationEngine.runForTarget(MallApiGenerationEngine.java:155) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.execute(GenerationRunService.java:314) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.lambda$start$2(GenerationRunService.java:153) ~[classes/:na]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:842) ~[na:na]
+
+2026-09-15T11:49:50.954+08:00  INFO 69452 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s4b-5330515b-v1-20260915-114950-3894 status=FAILED success=21 failed=0 artifacts=2 manifestRecords=21
+2026-09-15T11:49:51.203+08:00  INFO 69452 --- [synthetic-data-generator] [-auto-2-exec-10] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s4b-66bc601e-v1-20260915-114951-d79f plan=it-s4b-66bc601e v1 mode=MALL_API scenario=normal eventCount=60
+2026-09-15T11:49:51.333+08:00 ERROR 69452 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ��������ʧ�ܣ�runId=it-s4b-66bc601e-v1-20260915-114951-d79f code=RUN_FAILED
+
+com.graduation.generator.adapter.MallOperationException: [runForTarget] �������� 39 ���̳ǲ�������ʵ�ܾ�����д��淶�� 21 ������createOrder �� [createOrder] �̳Ǿܾ���http://127.0.0.1:3034 �� HTTP 400 code=INSUFFICIENT_STOCK message=��治��: 910000000000000002���̳ǲ಻�ع����ѳɹ���д������ʵ���ڣ��������������ܣ����С event_count �ö��������ڿ��ɳ��ܷ�Χ��
+	at com.graduation.generator.engine.MallApiGenerationEngine.runForTarget(MallApiGenerationEngine.java:155) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.execute(GenerationRunService.java:314) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.lambda$start$2(GenerationRunService.java:153) ~[classes/:na]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:842) ~[na:na]
+
+2026-09-15T11:49:51.365+08:00  INFO 69452 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s4b-66bc601e-v1-20260915-114951-d79f status=FAILED success=21 failed=0 artifacts=2 manifestRecords=21
+2026-09-15T11:49:51.544+08:00  INFO 69452 --- [synthetic-data-generator] [-auto-2-exec-10] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s4b-e46f6622-v1-20260915-114951-8862 plan=it-s4b-e46f6622 v1 mode=MALL_API scenario=normal eventCount=1000
+2026-09-15T11:49:53.601+08:00  INFO 69452 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s4b-e46f6622-v1-20260915-114951-8862 status=SUCCESS success=1000 failed=0 artifacts=2 manifestRecords=1000
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.216 s -- in com.graduation.generator.web.MallApiGenerationSmokeTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.770 s
+[INFO] Finished at: 2026-09-15T11:49:55+08:00
+[INFO] ------------------------------------------------------------------------

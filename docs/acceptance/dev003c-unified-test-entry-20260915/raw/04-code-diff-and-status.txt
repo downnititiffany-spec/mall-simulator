@@ -1,0 +1,67 @@
+# DEV-003c 收口轮 —— 代码状态与边界自查（采集 2026-09-15 11:5x）
+# 采集者：代码 Agent；本轮未提交、未 push
+
+## 1 工作区状态（git status --porcelain）
+ M docs/PROJECT_STATUS.md
+?? docs/acceptance/dev003c-unified-test-entry-20260915/
+?? scripts/run-tests.ps1
+
+## 2 HEAD 与最近提交
+451e8e2 docs(acceptance): archive DEV-003a DEV-003b isolated test evidence
+deba29f fix(it): close DEV-003a DEV-003b isolated test bootstrap and entry
+eb6bd27 docs(acceptance): clarify DEV-001 DEV-002 evidence hash reproducibility
+
+## 3 git diff --stat（已跟踪文件）
+ docs/PROJECT_STATUS.md | 40 +++++++++++++++++++++++++++++++---------
+ 1 file changed, 31 insertions(+), 9 deletions(-)
+
+## 4 未跟踪新文件清单（脚本 + 泳道）
+ M docs/PROJECT_STATUS.md
+?? docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/01-prepare-isolation-dev003c_20260915_1150.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/03-isolated-instance-facts.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/09-spark-console-SELFBUG-rbad-count.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/10-spark-console.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/11-spark-jobs-maven.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/12-spark-jdk-version.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/13-ScalaTest-TestSuite.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/19-all-console-SELFBUG-attempt1.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/19-isolated-analytics-SELFBUG-attempt1.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/20-all-console.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/20-default-analytics-reactor.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/21-default-mall.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/22-default-generator.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/23-isolated-console.txt
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/24-isolated-analytics.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/24-isolated-generator.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/24-isolated-mall.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/25-spark-jobs-maven.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/26-spark-jdk-version.log
+?? docs/acceptance/dev003c-unified-test-entry-20260915/raw/27-all-ScalaTest-TestSuite.txt
+?? scripts/run-tests.ps1
+
+## 5 scripts/run-isolated-tests.ps1 是否被改动（期望：diff 为空）
+（空 ⇒ 未改动）
+
+## 6 六个 *IT.java 是否被改动（期望：diff 为空）
+（空 ⇒ 未改动）
+
+## 7 新增脚本规模与哈希
+scripts/run-tests.ps1  lines=412  bytes=27091  sha256=373333c7cc570fe51446ad06457ec70901a50c5838b390cbd7731f86d80956b7
+
+## 8 PowerShell 解析检查（AST Parse，期望 errors=0）
+scripts\run-tests.ps1  parse_errors=0
+scripts\run-isolated-tests.ps1  parse_errors=0
+
+## 9 敏感串扫描（新增脚本，期望 0 命中）
+hits=0
+
+## 10 根 pom.xml / .github 工作流（期望：均不存在；本轮未新增）
+root_pom_exists=False
+github_workflows_dir_exists=False
+
+## 11 本轮未改动清单（逐条 git diff 应为空）
+README.md  diff=(空)
+spark-jobs\pom.xml  diff=(空)
+analytics-server\metric-analysis\pom.xml  diff=(空)
+mall-simulator\src\test\resources\application-test.yml  diff=(空)

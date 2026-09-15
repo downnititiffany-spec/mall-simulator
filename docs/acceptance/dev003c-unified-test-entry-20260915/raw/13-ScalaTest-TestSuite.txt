@@ -1,0 +1,159 @@
+Discovery starting.
+Discovery completed in 437 milliseconds.
+Run starting. Expected test count is: 111
+OdsV2SqlContractSpec:
+OdsLoadSql
+- should A9 四个模板的 SELECT 表达式与目标表列逐位对齐（数据列 + dt/hour 分区派生列） (15 milliseconds)
+- should A9b 常量 'landing' AS source_file 已消失，source_file 与 landing_file 同源同值 (5 milliseconds)
+- should A10 source_system 来自平台注入值（不是行内值），行内原值只落 raw_source_system (5 milliseconds)
+- should A10b 注入值经 SQL 字面量渲染并做 ' 转义（值来自平台，不得拼出可注入 SQL） (2 milliseconds)
+- should A9c raw_event_type 为行内 event_type 原样值，payload_json/payload_hash 由原样切片产出 (3 milliseconds)
+- should A9d INSERT 目标列与 SELECT 表达式的表名/分区子句保持改造前形态 (22 milliseconds)
+- should A9e 四张表的业务列表达式仍从 payload 结构体取，v1 口径未变 (1 millisecond)
+- should A12b 既有 DWD 模板一个都不引用 v2 新增列（加法扩列不牵连下游） (4 milliseconds)
+QuartileStatsRfmSpec:
+QuartileStats
+- should 线性插值分位点正确 (2 milliseconds)
+- should 正向五分位打分：越大分越高 (0 milliseconds)
+- should 反向五分位打分：间隔越小分越高（R 维度） (0 milliseconds)
+RfmScorer
+- should 八类标签映射正确 (0 milliseconds)
+- should 生命周期状态判定正确 (0 milliseconds)
+WarehouseNamespaceSpec:
+WarehouseNamespace
+- should 常量与规格 rule 段逐字一致（含层顺序与检查顺序） (123 milliseconds)
+- should 规格 vectors 逐向量对账（Scala 侧） (11 milliseconds)
+- should 行为护栏：null/空串缺省、不 trim、未知层与非法表名直接失败 (2 milliseconds)
+- should fromArgs 读 --hiveDatabasePrefix，缺省走 dw，非法前缀在作业内也照样失败 (6 milliseconds)
+- should 所有 SQL 模板与 INIT_SCHEMA 随命名空间走（换前缀后不残留 dw_* 库名） (13 milliseconds)
+- should INIT_SCHEMA 的 37 条 DDL 全部只引用当前命名空间的库（5 建库 + 32 建表） (2 milliseconds)
+OrderTradeCompilerSpec:
+OrderTradeCompiler
+- should CREATED→PAID→COMPLETED 合并为 PAID 有效支付 (15 milliseconds)
+- should 两件商品订单在订单明细中产生两行（商品展开） (6 milliseconds)
+- should 取消订单不进入支付（final_paid_flag=0） (0 milliseconds)
+- should 已支付后全额退款：GMV 保留支付额，净销售额为零 (1 millisecond)
+- should 部分退款 → REFUNDING 且 final_refunded_flag=0 (0 milliseconds)
+- should 多次退款事件按 refund_id 去重汇总（同一 refund_id 只计一次） (1 millisecond)
+- should 订单归属业务日由 order_created 决定，迟到事件重算到原分区 (0 milliseconds)
+OdsV2EdgeCaseSpec:
+JsonObjectSlicer on controlled fixtures
+- should A5c 嵌套/转义行切出的原文与源行那一段逐字节相同 (0 milliseconds)
+- should A6 坏 payload 不丢行：缺 payload / 值非对象两行照常入库且双 NULL；整行残缺的行走既有 valid 闸拒绝 (142 milliseconds)
+- should A6b 相同 payload 的 hash 相同但两行都在（hash 仅诊断，不是去重键） (228 milliseconds)
+- should A7b source_system 全表等于注入值；raw_source_system 保留行内差异（row-src/other-src） (209 milliseconds)
+- should A8b 五行 landing_file 都指向受控夹具文件，source_file 与之相等 (111 milliseconds)
+MetricAdsSpecTest:
+MetricAdsSpec
+- should 覆盖 8 张 ADS 且 Hive/MySQL 表名一一对应 (2 milliseconds)
+- should P1-04：库名前缀可替换，表名映射不写死（换源时同一套规格复用） (1 millisecond)
+- should 列清单与 Java 侧 MetricAdsCatalog 完全一致（含顺序） (0 milliseconds)
+- should R7-0 口径列已贯通到导出口径（full_refund_rate 必须导出） (4 milliseconds)
+MetricExportJob.posix
+- should 把 Windows 路径规范成正斜杠（清单是 JSON，反斜杠会变非法转义） (1 millisecond)
+SqlTemplateSpec:
+OdsLoadSql
+- should 版本过滤并派生 dt/hour 分区 (0 milliseconds)
+- should 用户主题 ODS 覆盖 user_registered 且保留画像字段 (0 milliseconds)
+- should 商品主题 ODS 覆盖商品与库存事件且金额转 DECIMAL (1 millisecond)
+- should 交易主题 ODS 覆盖订单/支付/退款且不被 behavior 过滤掉 (0 milliseconds)
+- should 隔离行按未知版本或缺失主键筛选 (0 milliseconds)
+DimSql
+- should 用户维度取每 user_id 最新事件生成快照并保留来源批次 (0 milliseconds)
+- should 商品维度取每 product_id 最新建档事件并做 unknown key 兜底（库存事件不进快照） (0 milliseconds)
+DwdSql
+- should event_id 去重且只保留合法枚举 (0 milliseconds)
+- should 重复事件写入拒绝记录 (0 milliseconds)
+DwsSql
+- should 用户日宽表按行为类型 CASE 聚合且 buy 来自订单明细 (0 milliseconds)
+- should 漏斗 DWS 为宽松用户口径且 order/pay 用户来自订单明细（禁硬编码 0） (1 millisecond)
+- should 商品行为日 buy 来自有效支付订单而非行为枚举，且转化率不能乘状态 (0 milliseconds)
+- should 交易日汇总按有效支付口径（order_count=支付订单数）并处理分母 0 (0 milliseconds)
+- should 商品销售日/用户交易周期/地区销售日模板存在且口径正确 (0 milliseconds)
+AdsSql
+- should 大盘退款率分母 0 → null；热门排行限 TopN (0 milliseconds)
+- should DEF-08：热门商品名取维度兜底，缺失维度的商品不得产出 NULL 名（否则 BLOCKING 空关键列阻断发布） (0 milliseconds)
+- should R7-0 口径：PV 只计 view、退款率按「有已完成退款的订单」、另立全额退款率 (0 milliseconds)
+- should 漏斗 ADS 展开 4 个 stage 行 (0 milliseconds)
+- should 商品转化 buy_users 取商品销售 DWS 去重买家数而非 buy 件数 (0 milliseconds)
+- should 用户画像 RFM 分层：五分位 + 八类标签 + 生命周期 (0 milliseconds)
+- should DEF-10：用户画像的 NOT NULL 列不得产出 NULL（下单但当日无行为的用户会把发布 INSERT 打挂） (0 milliseconds)
+- should 数据质量大盘包含 4 条 QualityChecker 同名规则 (0 milliseconds)
+FunnelHeatAnomalySpec:
+FunnelComputer
+- should 四阶段转化率与整体购买转化率正确 (1 millisecond)
+- should 分母为 0 时返回 None (0 milliseconds)
+ProductHeat
+- should 对数权重热度：购买>加购>收藏>浏览 (1 millisecond)
+- should 头部贡献度计算（长尾） (0 milliseconds)
+AnomalyDetector
+- should z-score 阈值判定 (2 milliseconds)
+- should IQR 边界与维度贡献 (1 millisecond)
+Cleaners
+- should 时间标准化与校验谓词 (2 milliseconds)
+JobArgsRegistrySpec:
+JobArgs.parse
+- should 解析标准参数并校验必填 (0 milliseconds)
+- should 拒绝缺参与非法日期 (4 milliseconds)
+JobRegistry
+- should 注册全部 11 作业且依赖顺序正确 (2 milliseconds)
+OdsV2ByteFidelitySpec:
+JsonObjectSlicer
+- should A5 payload 缺失/畸形一律 Left，正常行 Right 且为原始子串 (0 milliseconds)
+- should A5b 无空白/多空白/转义 三种形态都原样返回（不补空格、不还原转义） (0 milliseconds)
+- should A4b golden 第 1 行 payload 的 SHA-256 与独立 oracle 逐字节一致（122 字节） (1 millisecond)
+- should A4 逐行比对：源行 payload 原文 == 表内 payload_json，SHA-256 == 表内 payload_hash (46 milliseconds)
+- should A6 landing 原样列不参与去重键：同一 payload_hash 的两行都保留（hash 仅诊断） (145 milliseconds)
+- should A7 source_system 取平台注入值（不是行内值），raw_source_system 保行内原样 (3 seconds, 968 milliseconds)
+- should A8 landing_file/source_file 取真实落地文件路径（非常量 'landing'） (51 milliseconds)
+- should A12c 端到端真跑：golden 55 行读入，四主题表合计 52 行（3 行 rejected） (340 milliseconds)
+- should A12d metastore 读回的表结构含 12 列公共列，顺序与唯一所有者一致 (5 milliseconds)
+SurrogateKeySpec:
+契约向量集
+- should 可被读到且条数为 23（含 3 条 NULL_KEY） (3 milliseconds)
+- should 每一条 KEY 向量：normalized / material / sha256 / keyHex16 / keyBigint 全部命中 (2 milliseconds)
+- should 每一条 NULL_KEY 向量：不生成键（None），且契约 rawInput 的三种区分靠 rawInputNotation (3 milliseconds)
+- should category / brand / coupon 向量复算命中（仅单测可达，真链无数据） (1 millisecond)
+- should 契约枚举外的实体一律拒绝（D-093：order 不得套用代理键算法） (1 millisecond)
+- should 同一三元组恒同键（幂等），不同三元组不同键（单射，17 组无碰撞） (1 millisecond)
+- should 键恒在 [1, 2^63-1]：清符号位 + 全零取 1（D-085） (3 milliseconds)
+SurrogateKey.toBIGINT（SQL 表达式）
+- should 在真实 Spark 上逐向量与内存实现同值 (820 milliseconds)
+- should 空串 / 仅空白 / NULL 三种输入在 SQL 侧都得到 NULL（不落哨兵、不合并） (86 milliseconds)
+代理键真链（隔离 warehouse + 黄金 55 条）
+- should 旧列不变且新键列与契约同值（A6③/A6⑤） (2 seconds, 839 milliseconds)
+- should 大写归一必须文化无关（Locale.ROOT）——土耳其语区域下不得变形 (1 millisecond)
+OdsV2SchemaOwnerSpec:
+- should A3c v1 数据列的列序/顺序在所有者中与改造前快照逐位一致（一个字面量都不许漂） (1 millisecond)
+- should A1 v2 新增列全部追加在 v1 列之后（既有列的序号一格不动） (0 milliseconds)
+- should A1b 12 公共列在四张表里都在，且共享段（信封 7 列）逐位一致 (2 milliseconds)
+- should A2 event_time 保持 STRING（类型收敛不在本任务范围） (2 milliseconds)
+- should A3 四张表两两不同（业务列各表自有，不是把同一份 payload_* 抄四遍） (1 millisecond)
+- should A3b 信封共享列名不含 payload_ 前缀，业务列名必须含 payload_ 前缀（分层不混） (2 milliseconds)
+- should A11 warehouse/ddl/00-ods.sql 的四张表列名/类型/顺序与唯一所有者逐列一致 (3 milliseconds)
+- should A11b 静态 DDL 中 v1 全部列与改造前快照逐位一致（只允许在尾部追加） (1 millisecond)
+- should A11c 静态 DDL 的最终列集与唯一所有者逐列一致，分区列在 PARTITIONED BY 中 (2 milliseconds)
+- should A12 LocalSchemaInitJob 的 ODS 建表列由唯一所有者派生，逐列一致且语句总数不变 (3 milliseconds)
+IdCodecSpec:
+IdCodec
+- should 剥掉契约 id 的字母前缀（U/P/O/C/B）并转数字 (0 milliseconds)
+- should 纯数字 id 原样通过（兼容旧夹具与商城自增主键） (0 milliseconds)
+- should 无法数字化的取值返回 None 而不是 0（不静默兜底） (1 millisecond)
+- should 生成与规则一致的 SQL 表达式（全匹配形状，不匹配 → NULL） (0 milliseconds)
+所有 id 承接点
+- should 经 IdCodec 归一化，不再直接 CAST 契约 id (1 millisecond)
+- should 行为/维度/交易三条 id 链的归一化次数与列对应正确 (10 milliseconds)
+- should ODS 载入层保留字符串原文（不在 ODS 提前转型） (1 millisecond)
+JsonObjectSlicerSpec:
+JsonObjectSlicer
+- should A5 正常行切出原始子串；缺失/嵌套/重复键/未配平/非对象 一律 Left (0 milliseconds)
+- should A5b 无空白/多空白/转义 三种形态都原样返回（不补空格、不还原转义） (0 milliseconds)
+- should A5c 大括号/转义在深层嵌套下仍能正确找到顶层键（键名出现在嵌套对象里不算顶层） (0 milliseconds)
+- should A5d 缺冒号/缺值/未终止字符串 一律 Left（不抛异常） (0 milliseconds)
+- should A4b 黄金夹具第 1 行 payload 的 SHA-256 与独立 oracle 逐字节一致（122 字节） (0 milliseconds)
+- should A4c 黄金夹具逐行：切片结果必须是源行的原始子串（不是重序列化产物） (5 milliseconds)
+Run completed in 20 seconds, 658 milliseconds.
+Total number of tests run: 111
+Suites: completed 15, aborted 0
+Tests: succeeded 111, failed 0, canceled 0, ignored 0, pending 0
+All tests passed.

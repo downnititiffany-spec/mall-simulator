@@ -1,0 +1,127 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/3]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.140 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+[INFO] Running com.graduation.analytics.common.LandingUriTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.graduation.analytics.common.LandingUriTest
+[INFO] Running com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.120 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+[INFO] Running com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.040 s -- in com.graduation.analytics.metric.RuleSeverityTest
+[INFO] Running com.graduation.analytics.testsupport.TestIsolationGuardTest
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `mall_simulator_test`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT INSERT ON `analytics_metric`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[isolation-guard] дǰУ��ͨ�� testRunId=v25it-20260914-120000-a1b2 account=v25it_rw currentDb=analytics_metric_v25it serverUuid=uuid-v25it hostname=host-v25it port=3307 serverVersionMajor=8 privileges=[analytics_metric_v25it.ALTER, analytics_metric_v25it.CREATE, analytics_metric_v25it.DELETE, analytics_metric_v25it.DROP, analytics_metric_v25it.INDEX, analytics_metric_v25it.INSERT, analytics_metric_v25it.REFERENCES, analytics_metric_v25it.SELECT, analytics_metric_v25it.UPDATE] schemasWithWritePrivilege=[] fingerprintSha1=62537363fed2468d36570369f7591f8b6c983843
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=2
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-bad runtime_profile_id=999101 status=FAILED active_flag=null
+[isolation-guard] cleanup Ŀ���嵥�˶�ͨ�� testRunId=v25it-20260914-120000-a1b2
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=1 status=ACTIVE active_flag=1
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=S20260901_47 runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ghost runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.195 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[V25-T01 ��֤] ԭ�����У�ע���ڣ��Ѱ��ʷ��ų���: spark-jobs/src/main/scala/com/graduation/analytics/job/TradeDwdJob.scala:145 �� * ����ɾ��δ�� `dw_dwd.dwd_order_detail`����
+[V25-T01 ��֤] ԭ�����У�ע���ڣ��Ѱ��ʷ��ų���: spark-jobs/src/main/scala/com/graduation/analytics/sql/SurrogateKey.scala:160 �� *    table spark_catalog.dw_dwd.dwd_order_detail: Cannot safely cast user_key "STRING" to "BIGINT".`
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.572 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+[INFO] Running com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 89, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --------------< com.graduation.analytics:metric-analysis >--------------
+[INFO] Building metric-analysis 0.1.0-SNAPSHOT                            [3/3]
+[INFO]   from metric-analysis\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\metric-analysis\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ metric-analysis ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.metric.IsolationGuardMySqlIT
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `dev003c_20260915_1205_mallapp`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `dev003c_20260915_1205_mall`.* TO `dev003c_20260915_1205_mallapp`@`%`
+[isolation-guard] дǰУ��ͨ�� testRunId=dev003c_20260915_1205 account=dev003c_20260915_1205_mallapp currentDb=dev003c_20260915_1205_mall serverUuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui port=3307 serverVersionMajor=8 privileges=[dev003c_20260915_1205_mall.ALL PRIVILEGES] schemasWithWritePrivilege=[] fingerprintSha1=411ea49eeff252c3c7b58c88c71b677d6d9673de
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `dev003c_20260915_1205_mallapp`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `dev003c_20260915_1205_mall`.* TO `dev003c_20260915_1205_mallapp`@`%`
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.297 s -- in com.graduation.analytics.metric.IsolationGuardMySqlIT
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... SUCCESS [  2.702 s]
+[INFO] metric-analysis .................................... SUCCESS [  0.878 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.885 s
+[INFO] Finished at: 2026-09-15T11:50:00+08:00
+[INFO] ------------------------------------------------------------------------
