@@ -1,0 +1,26 @@
+# DEV-003 根因证据：GeneratorMetaStoreTest 先跑，Flyway（唯一建表处）后跑
+# 首次 "doesn't exist" 在第 56 行；首次 Flyway Community Edition 在第 284 行；Successfully applied 1 migration 在第 294 行
+# 逐类结果：
+[ERROR] Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.424 s <<< FAILURE! -- in com.graduation.generator.meta.GeneratorMetaStoreTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.452 s -- in com.graduation.generator.web.GeneratorApiSmokeTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.360 s -- in com.graduation.generator.web.MallApiGenerationSmokeTest
+# 缺失表（全部由同一次运行 20:32:18 的 Flyway 创建）：
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_event_stat' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_run' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_event_stat' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_run' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_event_stat' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generator_target' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_event_stat' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_plan' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_event_stat' doesn't exist
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev002sem_20260914_2035_generator.generation_run' doesn't exist
+# Flyway 关键行：
+2026-09-14T20:32:17.957+08:00  INFO 52468 --- [synthetic-data-generator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev002sem_20260914_2035_generator (MySQL 8.0)
+2026-09-14T20:32:17.984+08:00  INFO 52468 --- [synthetic-data-generator] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `dev002sem_20260914_2035_generator`.`flyway_schema_history` does not exist yet
+2026-09-14T20:32:18.014+08:00  INFO 52468 --- [synthetic-data-generator] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `dev002sem_20260914_2035_generator`.`flyway_schema_history` ...
+2026-09-14T20:32:18.092+08:00  INFO 52468 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev002sem_20260914_2035_generator`: << Empty Schema >>
+2026-09-14T20:32:18.107+08:00  INFO 52468 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `dev002sem_20260914_2035_generator` to version "1 - generator meta"
+2026-09-14T20:32:18.241+08:00  INFO 52468 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema `dev002sem_20260914_2035_generator`, now at version v1 (execution time 00:00.120s)
+2026-09-14T20:32:20.359+08:00  INFO 52468 --- [synthetic-data-generator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev002sem_20260914_2035_generator (MySQL 8.0)
+2026-09-14T20:32:20.407+08:00  INFO 52468 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev002sem_20260914_2035_generator`: 1

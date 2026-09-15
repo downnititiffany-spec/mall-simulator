@@ -1,0 +1,35 @@
+=== 隔离套件运行门禁（V25-S02 唯一入口）===
+  目标      : 127.0.0.1:3307  （库前缀 dev12fix_20260914_1945_*）
+  实例指纹  : 运行期由门禁6探针取 @@hostname:@@port 注入 IT_GUARD_SERVERFINGERPRINT；并校验 @@server_uuid = de8ebbea-aff4-11f1-8037-00155d5dba47
+  模块      : mall
+  [门禁1] 端口 OK：3307 ∈ [3307] 且 != 3306
+  [门禁2] RunId 形状 OK：dev12fix_20260914_1945
+  [门禁3] 派生目标 OK：mall->dev12fix_20260914_1945_mall/dev12fix_20260914_1945_mallapp
+  [门禁4] mall      口令来源 IT_GUARD_PASSWORD            值 <3******…长度 24>
+  [门禁5] 确认 OK：-Confirm
+
+将要注入当前进程的环境变量（真值不落盘、不进命令行；口令 masked）：
+  IT_GUARD_ENABLED             = true
+  IT_GUARD_INSTANCEPORTS       = 3307
+  IT_GUARD_RUNID               = dev12fix_20260914_1945
+  IT_GUARD_SERVERFINGERPRINT   = <运行期由门禁6探针确定：@@hostname:@@port>
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (mall)
+  IT_GUARD_USER                = dev12fix_20260914_1945_mallapp   (mall)
+  IT_GUARD_PASSWORD            = <3******…长度 24>   (mall)
+  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，
+        因此两个模块不会串用彼此的口令/库（见下方循环内的重设语句）。
+        IT_GUARD_SERVERFINGERPRINT 由门禁6探针读到 @@hostname:@@port 后填入（预演阶段还没有值）。
+  MALL_ISOLATION_URL           = jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  MALL_ISOLATION_USER          = dev12fix_20260914_1945_mallapp
+  MALL_ISOLATION_PASSWORD      = <3******…长度 24>
+  MALL_ISOLATION_FLYWAY_ENABLED = true
+  [门禁6] mall      探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] 唯一的实例身份（注入 IT_GUARD_SERVERFINGERPRINT）= dahaishui:3307
+
+=== 运行 mall 隔离套件：mvn -o -Dmaven.repo.local=... -f mall-simulator\pom.xml test （MAVEN_ARGS=-Pisolated-tests）===
+  mall      exit=0   [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+
+=== 结果 ===
+  mall      exit=0  [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+            日志 C:\Users\ASUS\AppData\Local\Temp\v25it-logs-dev12fix_20260914_1945\isolated-mall.log
+[PASS exit=0] 全部门块隔离套件通过。

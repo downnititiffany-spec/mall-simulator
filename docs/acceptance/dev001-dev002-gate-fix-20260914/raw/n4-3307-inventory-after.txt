@@ -1,0 +1,30 @@
+dahaishui	3307	de8ebbea-aff4-11f1-8037-00155d5dba47
+analytics_meta
+analytics_meta_f88v20probe_20260914_1632
+analytics_meta_v25f88_20260914_1624
+analytics_meta_v25it_20260914_1358_l4e3
+analytics_metric
+analytics_metric_v25f88_20260914_1624
+analytics_metric_v25it_20260914_1358_l4e3
+dev002sem_20260914_2035_generator
+dev002sem_20260914_2035_mall
+dev12fix_20260914_1945_generator
+dev12fix_20260914_1945_mall
+information_schema
+mall_simulator
+mysql
+performance_schema
+sys
+dev002sem_20260914_2035_genapp	%
+dev002sem_20260914_2035_mallapp	%
+dev12fix_20260914_1945_genapp	%
+dev12fix_20260914_1945_mallapp	%
+root	%
+root	127.0.0.1
+root	localhost
+v25f88_20260914_1624_meta	%
+v25f88_20260914_1624_metric_pub	%
+v25f88_20260914_1624_metric_read	%
+v25it_1358_l4e3_meta	%
+v25it_1358_l4e3_metric_pub	%
+v25it_1358_l4e3_metric_read	%

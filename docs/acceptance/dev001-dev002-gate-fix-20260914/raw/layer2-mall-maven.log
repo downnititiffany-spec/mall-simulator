@@ -1,0 +1,304 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.graduation:mall-simulator >--------------------
+[INFO] Building mall-simulator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ mall-simulator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 9 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ mall-simulator ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 65 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ mall-simulator ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ mall-simulator ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 16 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ mall-simulator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.mall.auth.AdminProductApiTest
+19:56:23.055 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.graduation.mall.auth.AdminProductApiTest]: AdminProductApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:56:23.211 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.auth.AdminProductApiTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T19:56:23.725+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.auth.AdminProductApiTest        : Starting AdminProductApiTest using Java 17.0.12 with PID 81960 (started by ASUS in D:\Develop_code\GraduationProject\mall-simulator)
+2026-09-14T19:56:23.726+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.auth.AdminProductApiTest        : The following 1 profile is active: "test"
+2026-09-14T19:56:25.119+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-09-14T19:56:25.123+08:00  INFO 81960 --- [mall-simulator] [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-14T19:56:25.139+08:00  INFO 81960 --- [mall-simulator] [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-14T19:56:25.149+08:00  INFO 81960 --- [mall-simulator] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-14T19:56:25.149+08:00  INFO 81960 --- [mall-simulator] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-14T19:56:25.198+08:00  INFO 81960 --- [mall-simulator] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-14T19:56:25.199+08:00  INFO 81960 --- [mall-simulator] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1460 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T19:56:25.718+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-14T19:56:26.016+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6615237
+2026-09-14T19:56:26.017+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-14T19:56:26.112+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-14T19:56:26.112+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-14T19:56:26.113+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-14T19:56:26.165+08:00  INFO 81960 --- [mall-simulator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall (MySQL 8.0)
+2026-09-14T19:56:26.252+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `dev12fix_20260914_1945_mall`.`flyway_schema_history` does not exist yet
+2026-09-14T19:56:26.261+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.047s)
+2026-09-14T19:56:26.293+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `dev12fix_20260914_1945_mall`.`flyway_schema_history` ...
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:26.424+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev12fix_20260914_1945_mall`: << Empty Schema >>
+2026-09-14T19:56:26.496+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `dev12fix_20260914_1945_mall` to version "1 - init mall"
+2026-09-14T19:56:26.753+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `dev12fix_20260914_1945_mall` to version "7 - security auth"
+2026-09-14T19:56:26.821+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 2 migrations to schema `dev12fix_20260914_1945_mall`, now at version v7 (execution time 00:00.297s)
+2026-09-14T19:56:27.220+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T19:56:27.734+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 7290 (http) with context path ''
+2026-09-14T19:56:27.748+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.auth.AdminProductApiTest        : Started AdminProductApiTest in 4.418 seconds (process running for 5.443)
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-09-14T19:56:28.422+08:00  INFO 81960 --- [mall-simulator] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-14T19:56:28.422+08:00  INFO 81960 --- [mall-simulator] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-14T19:56:28.423+08:00  INFO 81960 --- [mall-simulator] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.945 s -- in com.graduation.mall.auth.AdminProductApiTest
+[INFO] Running com.graduation.mall.auth.AuthHttpTest
+2026-09-14T19:56:28.859+08:00  INFO 81960 --- [mall-simulator] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.graduation.mall.auth.AuthHttpTest]: AuthHttpTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-09-14T19:56:28.863+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.auth.AuthHttpTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.259 s -- in com.graduation.mall.auth.AuthHttpTest
+[INFO] Running com.graduation.mall.auth.AuthServiceTest
+2026-09-14T19:56:29.122+08:00  INFO 81960 --- [mall-simulator] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.graduation.mall.auth.AuthServiceTest]: AuthServiceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-09-14T19:56:29.128+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.auth.AuthServiceTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T19:56:29.154+08:00  INFO 81960 --- [mall-simulator] [           main] c.graduation.mall.auth.AuthServiceTest   : Starting AuthServiceTest using Java 17.0.12 with PID 81960 (started by ASUS in D:\Develop_code\GraduationProject\mall-simulator)
+2026-09-14T19:56:29.154+08:00  INFO 81960 --- [mall-simulator] [           main] c.graduation.mall.auth.AuthServiceTest   : The following 1 profile is active: "test"
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T19:56:29.476+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-09-14T19:56:29.484+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4724b2c1
+2026-09-14T19:56:29.484+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-09-14T19:56:29.495+08:00  INFO 81960 --- [mall-simulator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall (MySQL 8.0)
+2026-09-14T19:56:29.507+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.007s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:29.565+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev12fix_20260914_1945_mall`: 7
+2026-09-14T19:56:29.566+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev12fix_20260914_1945_mall` is up to date. No migration necessary.
+2026-09-14T19:56:29.708+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T19:56:29.746+08:00  INFO 81960 --- [mall-simulator] [           main] c.graduation.mall.auth.AuthServiceTest   : Started AuthServiceTest in 0.608 seconds (process running for 7.441)
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:30.287+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2026-09-14T19:56:30.296+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.176 s -- in com.graduation.mall.auth.AuthServiceTest
+[INFO] Running com.graduation.mall.auth.UserAdminServiceTest
+2026-09-14T19:56:30.302+08:00  INFO 81960 --- [mall-simulator] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.graduation.mall.auth.UserAdminServiceTest]: UserAdminServiceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-09-14T19:56:30.303+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.auth.UserAdminServiceTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T19:56:30.321+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.auth.UserAdminServiceTest       : Starting UserAdminServiceTest using Java 17.0.12 with PID 81960 (started by ASUS in D:\Develop_code\GraduationProject\mall-simulator)
+2026-09-14T19:56:30.321+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.auth.UserAdminServiceTest       : The following 1 profile is active: "test"
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T19:56:30.579+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-09-14T19:56:30.584+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection com.mysql.cj.jdbc.ConnectionImpl@2512155e
+2026-09-14T19:56:30.584+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-09-14T19:56:30.591+08:00  INFO 81960 --- [mall-simulator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall (MySQL 8.0)
+2026-09-14T19:56:30.602+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.006s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:30.645+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev12fix_20260914_1945_mall`: 7
+2026-09-14T19:56:30.646+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev12fix_20260914_1945_mall` is up to date. No migration necessary.
+2026-09-14T19:56:30.780+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T19:56:30.819+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.auth.UserAdminServiceTest       : Started UserAdminServiceTest in 0.515 seconds (process running for 8.515)
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:31.736+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2026-09-14T19:56:31.738+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.440 s -- in com.graduation.mall.auth.UserAdminServiceTest
+[INFO] Running com.graduation.mall.controller.OutboxControllerTest
+2026-09-14T19:56:31.740+08:00  INFO 81960 --- [mall-simulator] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.graduation.mall.controller.OutboxControllerTest]: OutboxControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-09-14T19:56:31.745+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.controller.OutboxControllerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.graduation.mall.controller.OutboxControllerTest
+[INFO] Running com.graduation.mall.domain.service.MallBusinessServiceTest
+2026-09-14T19:56:31.832+08:00  INFO 81960 --- [mall-simulator] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.graduation.mall.domain.service.MallBusinessServiceTest]: MallBusinessServiceTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-09-14T19:56:31.838+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.domain.service.MallBusinessServiceTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T19:56:31.854+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.m.d.service.MallBusinessServiceTest  : Starting MallBusinessServiceTest using Java 17.0.12 with PID 81960 (started by ASUS in D:\Develop_code\GraduationProject\mall-simulator)
+2026-09-14T19:56:31.854+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.m.d.service.MallBusinessServiceTest  : The following 1 profile is active: "test"
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T19:56:32.108+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2026-09-14T19:56:32.115+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7385a72f
+2026-09-14T19:56:32.115+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2026-09-14T19:56:32.127+08:00  INFO 81960 --- [mall-simulator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall (MySQL 8.0)
+2026-09-14T19:56:32.137+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.004s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:32.167+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev12fix_20260914_1945_mall`: 7
+2026-09-14T19:56:32.168+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev12fix_20260914_1945_mall` is up to date. No migration necessary.
+2026-09-14T19:56:32.282+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T19:56:32.314+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.m.d.service.MallBusinessServiceTest  : Started MallBusinessServiceTest in 0.474 seconds (process running for 10.009)
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:32.632+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2026-09-14T19:56:32.634+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.804 s -- in com.graduation.mall.domain.service.MallBusinessServiceTest
+[INFO] Running com.graduation.mall.domain.service.OutboxTransactionTest
+2026-09-14T19:56:32.639+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.domain.service.OutboxTransactionTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T19:56:32.652+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.m.d.service.OutboxTransactionTest    : Starting OutboxTransactionTest using Java 17.0.12 with PID 81960 (started by ASUS in D:\Develop_code\GraduationProject\mall-simulator)
+2026-09-14T19:56:32.652+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.m.d.service.OutboxTransactionTest    : The following 1 profile is active: "test"
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T19:56:32.905+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Starting...
+2026-09-14T19:56:32.911+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-5 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7473cfe2
+2026-09-14T19:56:32.911+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Start completed.
+2026-09-14T19:56:32.920+08:00  INFO 81960 --- [mall-simulator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall (MySQL 8.0)
+2026-09-14T19:56:32.930+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.005s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:32.986+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev12fix_20260914_1945_mall`: 7
+2026-09-14T19:56:32.990+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev12fix_20260914_1945_mall` is up to date. No migration necessary.
+2026-09-14T19:56:33.245+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T19:56:33.278+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.m.d.service.OutboxTransactionTest    : Started OutboxTransactionTest in 0.638 seconds (process running for 10.974)
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:33.525+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown initiated...
+2026-09-14T19:56:33.527+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown completed.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.891 s -- in com.graduation.mall.domain.service.OutboxTransactionTest
+[INFO] Running com.graduation.mall.outbox.EventOutboxServiceTest
+2026-09-14T19:56:33.538+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.outbox.EventOutboxServiceTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T19:56:33.552+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.EventOutboxServiceTest   : Starting EventOutboxServiceTest using Java 17.0.12 with PID 81960 (started by ASUS in D:\Develop_code\GraduationProject\mall-simulator)
+2026-09-14T19:56:33.552+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.EventOutboxServiceTest   : The following 1 profile is active: "test"
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T19:56:33.827+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Starting...
+2026-09-14T19:56:33.833+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-6 - Added connection com.mysql.cj.jdbc.ConnectionImpl@35f59dfe
+2026-09-14T19:56:33.833+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Start completed.
+2026-09-14T19:56:33.841+08:00  INFO 81960 --- [mall-simulator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall (MySQL 8.0)
+2026-09-14T19:56:33.853+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.006s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:33.893+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev12fix_20260914_1945_mall`: 7
+2026-09-14T19:56:33.894+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev12fix_20260914_1945_mall` is up to date. No migration necessary.
+2026-09-14T19:56:34.001+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T19:56:34.031+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.EventOutboxServiceTest   : Started EventOutboxServiceTest in 0.492 seconds (process running for 11.726)
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:34.098+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Shutdown initiated...
+2026-09-14T19:56:34.100+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Shutdown completed.
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.571 s -- in com.graduation.mall.outbox.EventOutboxServiceTest
+[INFO] Running com.graduation.mall.outbox.OutboxPublisherTest
+2026-09-14T19:56:34.104+08:00  INFO 81960 --- [mall-simulator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.mall.MallSimulatorApplication for test class com.graduation.mall.outbox.OutboxPublisherTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-14T19:56:34.120+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.OutboxPublisherTest      : Starting OutboxPublisherTest using Java 17.0.12 with PID 81960 (started by ASUS in D:\Develop_code\GraduationProject\mall-simulator)
+2026-09-14T19:56:34.120+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.OutboxPublisherTest      : The following 1 profile is active: "test"
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-09-14T19:56:34.381+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Starting...
+2026-09-14T19:56:34.385+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-7 - Added connection com.mysql.cj.jdbc.ConnectionImpl@38e46ea
+2026-09-14T19:56:34.385+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Start completed.
+2026-09-14T19:56:34.391+08:00  INFO 81960 --- [mall-simulator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_mall (MySQL 8.0)
+2026-09-14T19:56:34.400+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.004s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:34.430+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev12fix_20260914_1945_mall`: 7
+2026-09-14T19:56:34.430+08:00  INFO 81960 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev12fix_20260914_1945_mall` is up to date. No migration necessary.
+2026-09-14T19:56:34.521+08:00  INFO 81960 --- [mall-simulator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-09-14T19:56:34.550+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.OutboxPublisherTest      : Started OutboxPublisherTest in 0.444 seconds (process running for 12.245)
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:34.586+08:00  WARN 81960 --- [mall-simulator] [           main] c.g.mall.outbox.OutboxPublisher          : publish failed event_id=broken-001: �¼��ŷ����ʧ��: Unexpected character ('n' (code 110)): was expecting double-quote to start field name
+ at [Source: (String)"{not-json"; line: 1, column: 3]
+2026-09-14T19:56:34.587+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.OutboxPublisher          : outbox publish: ok=2 failed=1
+[IsolationGuard] дǰ�˶�ͨ����MallTestSupport.freshState����database=dev12fix_20260914_1945_mall account=dev12fix_20260914_1945_mallapp@% hostname=dahaishui port=3307 runId=dev12fix_20260914_1945
+2026-09-14T19:56:34.623+08:00  INFO 81960 --- [mall-simulator] [           main] c.g.mall.outbox.OutboxPublisher          : outbox publish: ok=5 failed=0
+2026-09-14T19:56:34.640+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Shutdown initiated...
+2026-09-14T19:56:34.641+08:00  INFO 81960 --- [mall-simulator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Shutdown completed.
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.539 s -- in com.graduation.mall.outbox.OutboxPublisherTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  19.246 s
+[INFO] Finished at: 2026-09-14T19:56:34+08:00
+[INFO] ------------------------------------------------------------------------

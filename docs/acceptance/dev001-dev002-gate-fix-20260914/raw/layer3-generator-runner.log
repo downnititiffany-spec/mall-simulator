@@ -1,0 +1,36 @@
+=== 隔离套件运行门禁（V25-S02 唯一入口）===
+  目标      : 127.0.0.1:3307  （库前缀 dev12fix_20260914_1945_*）
+  实例指纹  : 运行期由门禁6探针取 @@hostname:@@port 注入 IT_GUARD_SERVERFINGERPRINT；并校验 @@server_uuid = de8ebbea-aff4-11f1-8037-00155d5dba47
+  模块      : generator
+  [门禁1] 端口 OK：3307 ∈ [3307] 且 != 3306
+  [门禁2] RunId 形状 OK：dev12fix_20260914_1945
+  [门禁3] 派生目标 OK：generator->dev12fix_20260914_1945_generator/dev12fix_20260914_1945_genapp
+  [门禁4] generator 口令来源 IT_GUARD_PASSWORD            值 <h******…长度 24>
+  [门禁5] 确认 OK：-Confirm
+
+将要注入当前进程的环境变量（真值不落盘、不进命令行；口令 masked）：
+  IT_GUARD_ENABLED             = true
+  IT_GUARD_INSTANCEPORTS       = 3307
+  IT_GUARD_RUNID               = dev12fix_20260914_1945
+  IT_GUARD_SERVERFINGERPRINT   = <运行期由门禁6探针确定：@@hostname:@@port>
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (generator)
+  IT_GUARD_USER                = dev12fix_20260914_1945_genapp   (generator)
+  IT_GUARD_PASSWORD            = <h******…长度 24>   (generator)
+  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，
+        因此两个模块不会串用彼此的口令/库（见下方循环内的重设语句）。
+        IT_GUARD_SERVERFINGERPRINT 由门禁6探针读到 @@hostname:@@port 后填入（预演阶段还没有值）。
+  SPRING_DATASOURCE_URL        = jdbc:mysql://127.0.0.1:3307/dev12fix_20260914_1945_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  SPRING_DATASOURCE_USERNAME   = dev12fix_20260914_1945_genapp
+  SPRING_DATASOURCE_PASSWORD   = <h******…长度 24>
+        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键
+          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。
+  [门禁6] generator 探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] 唯一的实例身份（注入 IT_GUARD_SERVERFINGERPRINT）= dahaishui:3307
+
+=== 运行 generator 隔离套件：mvn -o -Dmaven.repo.local=... -f synthetic-data-generator\pom.xml test （MAVEN_ARGS=-Pisolated-tests）===
+  generator exit=1   [ERROR] Tests run: 19, Failures: 0, Errors: 5, Skipped: 0
+
+=== 结果 ===
+  generator exit=1  [ERROR] Tests run: 19, Failures: 0, Errors: 5, Skipped: 0
+            日志 C:\Users\ASUS\AppData\Local\Temp\v25it-logs-dev12fix_20260914_1945\isolated-generator.log
+[FAIL exit=7] 1 个模块套件非 0 退出。

@@ -1,0 +1,10 @@
+# 3306 正式实例 只读快照 pre/post 对照（15 项判据）
+
+pre 证据：`3306-readonly-pre.txt`（实例/版本/Flyway/counts）＋ `3306-readonly-pre-checksum.txt`（CHECKSUM TABLE）＋ `3306-readonly-pre-active.txt`（ACTIVE 快照）＋ `3306-readonly-pre-snapshots.txt`（12 行快照清单）
+post 证据：`3306-readonly-post.txt`（本轮 Layer 1~4 全部测试跑完后重取）
+判定方法：同一正则分别命中 pre 与 post 文本，两侧都命中才算一致。
+
+System.Object[]
+
+不一致项 = 0 / 15
+结论：15 项判据 pre/post 两侧全部一致 ⇒ 本轮（Layer 1 单测、Layer 2 mall 隔离档、Layer 3 generator 隔离档、Layer 4 真 3307 真链 IT，含一次指向 3306 的连接级预检）**未对 3306 产生任何写入**：Flyway 版本表未推进（meta 17 / metric 3）、五张表 CHECKSUM 未变、ACTIVE 仍是 S20260901_47(v12)、未新增任何快照/指标/质量行。

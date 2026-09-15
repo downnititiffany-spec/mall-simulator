@@ -1,0 +1,20 @@
+@@hostname/@@port/@@server_uuid	dahaishui	3307	de8ebbea-aff4-11f1-8037-00155d5dba47
+--gen tables--	
+flyway_schema_history	2026-09-14 20:32:18
+generation_artifact	2026-09-14 20:32:18
+generation_event_stat	2026-09-14 20:32:18
+generation_plan	2026-09-14 20:32:18
+generation_run	2026-09-14 20:32:18
+generator_target	2026-09-14 20:32:18
+--gen flyway--	
+1	generator meta	1	2026-09-14 20:32:18
+--mall tables count--	
+13
+--mall flyway max--	
+7	2	1
+--grants--	
+'dev002sem_20260914_2035_genapp'@'%'	dev002sem_20260914_2035_generator	ALTER,ALTER ROUTINE,CREATE,CREATE ROUTINE,CREATE TEMPORARY TABLES,CREATE VIEW,DELETE,DROP,EVENT,EXECUTE,INDEX,INSERT,LOCK TABLES,REFERENCES,SELECT,SHOW VIEW,TRIGGER,UPDATE
+'dev002sem_20260914_2035_mallapp'@'%'	dev002sem_20260914_2035_mall	ALTER,ALTER ROUTINE,CREATE,CREATE ROUTINE,CREATE TEMPORARY TABLES,CREATE VIEW,DELETE,DROP,EVENT,EXECUTE,INDEX,INSERT,LOCK TABLES,REFERENCES,SELECT,SHOW VIEW,TRIGGER,UPDATE
+--accounts--	
+dev002sem_20260914_2035_genapp	%
+dev002sem_20260914_2035_mallapp	%

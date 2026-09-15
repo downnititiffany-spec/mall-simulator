@@ -1,0 +1,9 @@
++----------------------------------------+------------+
+| Table                                  | Checksum   |
++----------------------------------------+------------+
+| analytics_meta.flyway_schema_history   | 1247589000 |
+| analytics_metric.flyway_schema_history | 3529054551 |
+| analytics_metric.metric_snapshot       |   69673863 |
+| analytics_metric.metric_value          |  988794366 |
+| analytics_meta.data_quality_result     | 1338236703 |
++----------------------------------------+------------+

@@ -1,0 +1,18 @@
+# 反例真跑（mall，IT_GUARD_SERVERFINGERPRINT=dahaishui 裸 hostname）——只保留根因与结论
+# 原始完整日志：%TEMP%\dev002n4-logs\n4-realpath-negative-bare-hostname.log（871033 B，未入库）
+# 失败链（去乱码，仅 ASCII 可读部分）：
+Caused by: com.graduation.mall.support.MallIsolationGuard$MallIsolationException: [flyway-before-migrate] .............. dahaishui..... hostname=dahaishui port=3307............... hostname:port.................... hostname.......127.0.0.1:port..localhost:port ..............................
+2026-09-14T20:39:23.245+08:00  WARN 69456 --- [mall-simulator] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'authInterceptor' defined in file [D:\Develop_code\GraduationProject\mall-simulator\target\classes\com\graduation\mall\auth\AuthInterceptor.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'authService' defined in file [D:\Develop_code\GraduationProject\mall-simulator\target\classes\com\graduation\mall\auth\AuthService.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'sysUserMapper' defined in file [D:\Develop_code\GraduationProject\mall-simulator\target\classes\com\graduation\mall\auth\mapper\SysUserMapper.class]: Unsatisfied dependency expressed through bean property 'sqlSessionTemplate': Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Error while executing beforeMigrate callback: [flyway-before-migrate] .............. dahaishui..... hostname=dahaishui port=3307............... hostname:port.................... hostname.......127.0.0.1:port..localhost:port ..............................
+# 结果行：
+[ERROR] Tests run: 30, Failures: 0, Errors: 30, Skipped: 0
+[INFO] BUILD FAILURE
+# 逐类错误数（全部 30 例均在 guard 处 fail-closed，无一例进入 DML/DDL）：
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 2.885 s <<< FAILURE! -- in com.graduation.mall.auth.AdminProductApiTest
+[ERROR] Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.023 s <<< FAILURE! -- in com.graduation.mall.auth.AuthHttpTest
+[ERROR] Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.465 s <<< FAILURE! -- in com.graduation.mall.auth.AuthServiceTest
+[ERROR] Tests run: 6, Failures: 0, Errors: 6, Skipped: 0, Time elapsed: 0.033 s <<< FAILURE! -- in com.graduation.mall.auth.UserAdminServiceTest
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.012 s <<< FAILURE! -- in com.graduation.mall.controller.OutboxControllerTest
+[ERROR] Tests run: 6, Failures: 0, Errors: 6, Skipped: 0, Time elapsed: 0.024 s <<< FAILURE! -- in com.graduation.mall.domain.service.MallBusinessServiceTest
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.456 s <<< FAILURE! -- in com.graduation.mall.domain.service.OutboxTransactionTest
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.421 s <<< FAILURE! -- in com.graduation.mall.outbox.EventOutboxServiceTest
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.387 s <<< FAILURE! -- in com.graduation.mall.outbox.OutboxPublisherTest

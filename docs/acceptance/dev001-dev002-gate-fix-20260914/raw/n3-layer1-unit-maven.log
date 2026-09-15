@@ -1,0 +1,62 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 13 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: D:\Develop_code\GraduationProject\analytics-server\platform-common\src\test\java\com\graduation\analytics\metric\RuleSeverityTest.javaʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /D:/Develop_code/GraduationProject/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.testsupport.TestIsolationGuardTest
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `mall_simulator_test`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT INSERT ON `analytics_metric`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[isolation-guard] дǰУ��ͨ�� testRunId=v25it-20260914-120000-a1b2 account=v25it_rw currentDb=analytics_metric_v25it serverUuid=uuid-v25it hostname=host-v25it port=3307 serverVersionMajor=8 privileges=[analytics_metric_v25it.ALTER, analytics_metric_v25it.CREATE, analytics_metric_v25it.DELETE, analytics_metric_v25it.DROP, analytics_metric_v25it.INDEX, analytics_metric_v25it.INSERT, analytics_metric_v25it.REFERENCES, analytics_metric_v25it.SELECT, analytics_metric_v25it.UPDATE] schemasWithWritePrivilege=[] fingerprintSha1=62537363fed2468d36570369f7591f8b6c983843
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=2
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-bad runtime_profile_id=999101 status=FAILED active_flag=null
+[isolation-guard] cleanup Ŀ���嵥�˶�ͨ�� testRunId=v25it-20260914-120000-a1b2
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ok runtime_profile_id=1 status=ACTIVE active_flag=1
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=S20260901_47 runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] cleanup Ŀ���嵥��ɾ��ǰ�˶ԣ�count=1
+[isolation-guard]   - snapshot_id=v25it-20260914-120000-a1b2-ghost runtime_profile_id=999101 status=ACTIVE active_flag=1
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT USAGE ON *.* TO `v25it_rw`@`%`
+[isolation-guard] �˺���Ȩԭ�ģ�GRANT ALL PRIVILEGES ON `analytics_metric_v25it`.* TO `v25it_rw`@`%`
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.558 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.901 s
+[INFO] Finished at: 2026-09-14T20:10:52+08:00
+[INFO] ------------------------------------------------------------------------

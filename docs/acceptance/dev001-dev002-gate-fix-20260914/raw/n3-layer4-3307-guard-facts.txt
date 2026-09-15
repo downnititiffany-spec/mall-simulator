@@ -1,0 +1,8 @@
+# 摘自 raw/n3-layer4-3307-realchain.log（该文件为字节级拷贝）
+# 说明：本机 Maven 控制台输出的中文标签在不同编码下不可靠还原，因此本文件只保留 ASCII 事实部分；
+#      中文原文请直接看 raw/n3-layer4-3307-realchain.log 的原始字节。
+[isolation-guard] <账号授权原文> GRANT USAGE ON *.* TO `dev12fix_20260914_1945_mallapp`@`%`
+[isolation-guard] <账号授权原文> GRANT ALL PRIVILEGES ON `dev12fix_20260914_1945_mall`.* TO `dev12fix_20260914_1945_mallapp`@`%`
+[isolation-guard] <写前校验通过> testRunId=dev12fix_20260914_1945 account=dev12fix_20260914_1945_mallapp currentDb=dev12fix_20260914_1945_mall serverUuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui port=3307 serverVersionMajor=8 privileges=[dev12fix_20260914_1945_mall.ALL PRIVILEGES] schemasWithWritePrivilege=[] fingerprintSha1=f228772cc9e4bc8f693f503dd6bdf09a61d370d9
+[isolation-guard] <账号授权原文> GRANT USAGE ON *.* TO `dev12fix_20260914_1945_mallapp`@`%`
+[isolation-guard] <账号授权原文> GRANT ALL PRIVILEGES ON `dev12fix_20260914_1945_mall`.* TO `dev12fix_20260914_1945_mallapp`@`%`

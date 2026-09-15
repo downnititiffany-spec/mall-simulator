@@ -1,0 +1,16 @@
++--------------+---------+-------------+----------+
+| snapshot_id  | version | active_flag | status   |
++--------------+---------+-------------+----------+
+| S20260901_23 |       1 |        NULL | ARCHIVED |
+| S20260901_24 |       2 |        NULL | ARCHIVED |
+| S20260901_22 |       3 |        NULL | ARCHIVED |
+| S20260901_25 |       4 |        NULL | ARCHIVED |
+| S20260901_29 |       5 |        NULL | ARCHIVED |
+| S20260901_30 |       6 |        NULL | ARCHIVED |
+| S20260901_38 |       7 |        NULL | FAILED   |
+| S20260901_39 |       8 |        NULL | ARCHIVED |
+| S20260901_41 |       9 |        NULL | ARCHIVED |
+| S20260901_42 |      10 |        NULL | ARCHIVED |
+| S20260901_43 |      11 |        NULL | ARCHIVED |
+| S20260901_47 |      12 |           1 | ACTIVE   |
++--------------+---------+-------------+----------+
