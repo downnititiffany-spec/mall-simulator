@@ -85,12 +85,23 @@ public final class SourcePathPolicy {
      * {@link #requireRepoRelative(String, String)}）。</p>
      */
     public static Path resolveUnderRoot(Path root, String rawPath) {
-        requireRepoRelative(rawPath, "profile_path");
+        return resolveUnderRoot(root, rawPath, "profile_path", "画像");
+    }
+
+    /**
+     * 与 {@link #resolveUnderRoot(Path, String)} 同一套包含判定，只把「字段名 + 根目录名」参数化，
+     * 供 {@code sampleRef} 等其它受控引用复用——**不复制**第二份越界判定（单一所有者）。
+     *
+     * <p>字段名与根名分开传，是为了让既有的 {@code profile_path/画像根目录} 文案一字不变
+     * （P1-03 已验收的报文不许因为复用而改写）。</p>
+     */
+    public static Path resolveUnderRoot(Path root, String rawPath, String fieldName, String rootLabel) {
+        requireRepoRelative(rawPath, fieldName);
         Path normalizedRoot = root.toAbsolutePath().normalize();
         Path resolved = normalizedRoot.resolve(rawPath.trim()).normalize();
         if (!resolved.startsWith(normalizedRoot)) {
             throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
-                    "profile_path 逃逸出画像根目录（值已脱敏，未回显）");
+                    fieldName + " 逃逸出" + rootLabel + "根目录（值已脱敏，未回显）");
         }
         return resolved;
     }

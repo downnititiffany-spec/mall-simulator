@@ -37,6 +37,9 @@ public class GlobalExceptionHandler {
      *
      * <p>返回 {@code ResponseEntity} 而不是继续用 {@code @ResponseStatus}：分状态无法用类级注解表达，
      * 而并列两个处理器会造成"同一异常两个所有者"。</p>
+     *
+     * <p>S2-01B（映射 dry-run）加法新增两个"资源不存在"码 → 404，理由见
+     * {@link PlatformBizException#DRY_RUN_SAMPLE_NOT_FOUND}；既有码状态不变。</p>
      */
     @ExceptionHandler(PlatformBizException.class)
     public ResponseEntity<ApiResponse<Void>> handleBiz(PlatformBizException e) {
@@ -53,7 +56,9 @@ public class GlobalExceptionHandler {
             return HttpStatus.BAD_REQUEST;
         }
         return switch (code) {
-            case PlatformBizException.SOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case PlatformBizException.SOURCE_NOT_FOUND,
+                 PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND,
+                 PlatformBizException.DRY_RUN_REPORT_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case PlatformBizException.SOURCE_CODE_IMMUTABLE,
                  PlatformBizException.SOURCE_PROFILE_INVALID,
                  PlatformBizException.SOURCE_IN_USE,

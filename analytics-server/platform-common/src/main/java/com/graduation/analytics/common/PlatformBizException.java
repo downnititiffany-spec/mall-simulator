@@ -48,6 +48,15 @@ public class PlatformBizException extends RuntimeException {
     // 断点挂到错误的源名下后，切源即产生**静默少采**（D-037 裁决 2 的同一条理由，从迁移侧延伸到运行侧）。
     public static final String SOURCE_NOT_BOUND = "SOURCE_NOT_BOUND";
 
+    // 映射 dry-run 域错误码（S2-01B，加法式新增；状态映射仍由 GlobalExceptionHandler.mapStatus 独有）：
+    //   DRY_RUN_SAMPLE_NOT_FOUND → 404（受控样本引用指向的位置没有这个文件）
+    //   DRY_RUN_REPORT_NOT_FOUND → 404（报告不在本进程内，或 reportId/sourceId 不匹配）
+    // 语义：两者都是"你要的那个资源不存在"，与 SOURCE_NOT_FOUND 同类，故归 404；
+    // 而"引用本身不被允许"（绝对路径/.. /协议前缀/符号链接）是**入参非法**，仍走 PARAM_INVALID(400)：
+    // 拦截越界引用不是"资源缺失"，把两者混成一个码会让调用方分不清"路径写错了"和"文件还没生成"。
+    public static final String DRY_RUN_SAMPLE_NOT_FOUND = "DRY_RUN_SAMPLE_NOT_FOUND";
+    public static final String DRY_RUN_REPORT_NOT_FOUND = "DRY_RUN_REPORT_NOT_FOUND";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

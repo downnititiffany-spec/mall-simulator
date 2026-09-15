@@ -53,6 +53,15 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
+    @DisplayName("dry-run 域两个码 → 404（S2-01B 加性新增：引用被允许但位置没有东西 / 报告不在本进程）")
+    void dryRunCodesMapTo404() {
+        assertThat(handle(PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND, "样本不存在").getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(handle(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND, "报告不存在").getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     @DisplayName("既有错误码状态不变（仍是 400）：改动必须是加性的，不得顺手改已有语义")
     void existingCodesKeepBadRequest() {
         assertThat(handle(PlatformBizException.PARAM_INVALID, "参数错").getStatusCode())
@@ -74,7 +83,7 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
-    @DisplayName("错误码常量本身是加性的：原有 5 个码逐字不变，新增 5 个码逐字取自任务书")
+    @DisplayName("错误码常量本身是加性的：原有 5 个码逐字不变，源域/dry-run 域新增码逐字取自任务书")
     void codesAreAdditiveAndVerbatim() {
         assertThat(PlatformBizException.USER_NOT_FOUND).isEqualTo("USER_NOT_FOUND");
         assertThat(PlatformBizException.PARAM_INVALID).isEqualTo("PARAM_INVALID");
@@ -88,5 +97,8 @@ class GlobalExceptionHandlerSourceStatusTest {
         assertThat(PlatformBizException.SOURCE_IN_USE).isEqualTo("SOURCE_IN_USE");
         // P1-05 加性新增（D-037）：未绑定源
         assertThat(PlatformBizException.SOURCE_NOT_BOUND).isEqualTo("SOURCE_NOT_BOUND");
+        // S2-01B 加性新增（映射 dry-run，仅预览、不激活）
+        assertThat(PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND).isEqualTo("DRY_RUN_SAMPLE_NOT_FOUND");
+        assertThat(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND).isEqualTo("DRY_RUN_REPORT_NOT_FOUND");
     }
 }

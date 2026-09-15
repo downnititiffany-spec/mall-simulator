@@ -30,6 +30,14 @@ platform:
   # 也让非"工作目录＝仓库根"的部署方式有一个明确说法而不是默默读错文件。
   source:
     profile-root: ${PLATFORM_SOURCE_PROFILE_ROOT:.}
+  # S2-01B 映射 dry-run（设计 §7.3 规则 10）：预览用候选画像与受控脱敏样本。
+  #   contract-path = canonical 契约位置（报告里 contractVersion/contractChecksum 的真相来源）
+  #   sample-root   = sampleRef 的**唯一**解析根；默认 ./sample-data 是"没有配置就没有样本"的
+  #                   fail-closed 默认值（缺失 ⇒ 平台侧 500，不回落仓库根、更不回落任意目录）
+  # 两者都是显式配置键：单测指向临时目录，部署方式不同时也有明确说法，而不是默默读错文件。
+  mapping:
+    contract-path: ${PLATFORM_MAPPING_CONTRACT_PATH:contract-specs/schemas/canonical-event.v1.schema.json}
+    sample-root: ${PLATFORM_MAPPING_SAMPLE_ROOT:./sample-data}
   # R6-11（V2.0 §15.3）：真实 Spark 作业阶段等待上限与轮询间隔（LOCAL 小样本秒级完成）
   spark:
     job-timeout-ms: ${PLATFORM_SPARK_JOB_TIMEOUT_MS:900000}
@@ -42,3 +50,10 @@ platform:
 spring:
   flyway:
     enabled: false
+  # 正式 HTTP 输出统一 ISO-8601（总控 2026-09-15 裁定）
+  # Spring Boot 默认即关闭该特性；这里显式声明，使「日期形状」有唯一配置文件所有者，
+  # 防止将来改全局 ObjectMapper 时静默退回时间戳数组（[2026,9,21,10,20,30]）。
+  # 测在 platform-app .../controller/MappingDryRunControllerTest#dateShapeIsIso8601OverHttp
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
