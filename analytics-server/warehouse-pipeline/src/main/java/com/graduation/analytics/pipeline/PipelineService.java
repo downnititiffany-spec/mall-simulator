@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.regex.Matcher;
@@ -121,6 +120,16 @@ public class PipelineService {
      * 复判：有未通过的阻断级规则就抛 {@code PIPELINE_QUALITY_FAILED}，不发布新快照。</p>
      */
     private final DataQualityGate qualityGate;
+
+    /**
+     * S2-04：本轮输入清单（Landing manifest）的选择器——**按源归属**取批次。
+     *
+     * <p>规则本体在 {@link LandingManifestSelector}（唯一所有者）：本类只负责"本 run 归属哪个源"
+     * 与"重试时钉住哪个批次"。之所以必须按源过滤：ODS 库名与 {@code --sourceSystem} 来自
+     * {@code profile.source_id}，而 {@code source_system} 是作业按 source_code 注入的常量字面量，
+     * 选中他源清单就会产出"标成本源、实际是他源"的 ODS 行且事后不可察觉（详见选择器 javadoc）。</p>
+     */
+    private final LandingManifestSelector manifestSelector;
 
     /** R7-3：Spark `mxp` 导出目录根（清单 + 各表 JSONL），可配置便于运维定位 */
     @org.springframework.beans.factory.annotation.Value("${platform.metric.publish.export-dir:metric-staging}")
@@ -366,6 +375,19 @@ public class PipelineService {
             // §8.1/§15.3 R6-10：一次 run 冻结一份环境快照（提交器与命令均取自该快照）
             RuntimeProfile profile = runtimeProfileService.get(run.getRuntimeProfileId());
             RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile);
+            // S2-04：本轮输入必须能归属到一个源，而"哪个源"唯一来自 profile.source_id。
+            // 必须**早于**执行器构造判定：装配路径下 `SparkStageExecutorFactory.create` 会抛
+            // PlatformBizException(SOURCE_NOT_BOUND)，那是业务异常、落到下面的通用 catch 会变成
+            // RUN_INTERNAL（真机实测口径：错误码被吞掉，运维看到的是"平台内部错误"而不是"未绑定源"）。
+            // 这里先判一次，让"未绑定源"永远以稳定错误码 SOURCE_NOT_BOUND 落在 run 上；
+            // 同时它也是"清单按源过滤"这一前提的显式化 —— 不依赖别的组件的副作用。
+            Long runSourceId = profile.getSourceId();
+            if (runSourceId == null) {
+                throw new PipelineStageException("SOURCE_NOT_BOUND",
+                        "运行环境未绑定源（runtime_profile.source_id 为空），无法确定数仓命名空间、"
+                                + "也无法按源选择 Landing 输入清单（runtime_profile_id=" + profile.getId()
+                                + "，请先激活一个源再运行）");
+            }
             SparkStageExecutor executor = stageExecutorFactory.create(snapshot);
             Path landingRoot = LandingUri.resolve(profile.getLandingUri());
 
@@ -402,7 +424,8 @@ public class PipelineService {
             // ── 数据准备（幂等读：即使重试跳过成功阶段，后续阶段仍有上下文） ──
             // §9.3：只认 manifests/ 下状态为 READY 的批次清单，不再看 source/events 目录
             // §13.4/§23.1：重试/恢复必须钉住**本 run 原有批次**（见 manifestForRun）
-            Map<String, Object> manifest = manifestForRun(landingRoot, run.getId());
+            // S2-04：并**按源归属**过滤（否则他源批次会落进本源的库，且事后不可察觉）
+            Map<String, Object> manifest = manifestForRun(landingRoot, run.getId(), runSourceId);
             // §9.1：ODS 只能读取 accepted（好的批次数据）；§5.3.3 只装载业务日事件
             Path acceptedDir = manifest == null ? null
                     : landingRoot.resolve(String.valueOf(manifest.get("acceptedUri")));
@@ -431,7 +454,12 @@ public class PipelineService {
                 evidence.put("checksum", manifest.get("checksum"));
                 evidence.put("acceptedRecords", manifest.get("acceptedRecords"));
                 evidence.put("schemaVersions", manifest.get("schemaVersions"));
-                return new StageOutcome(((Number) manifest.get("acceptedRecords")).longValue(), evidence);
+                // S2-04：把"这批字节属于哪个源"写进阶段证据。选择器已保证它与本轮运行源一致，
+                // 此处留痕是为了验收时能从证据直接回答"ODS 里这批行的 source_system 是注入的哪一行"。
+                evidence.put("sourceId", manifest.get("sourceId"));
+                evidence.put("sourceCode", manifest.get("sourceCode"));
+                return new StageOutcome(LandingManifestSelector.longOf(manifest.get("acceptedRecords")),
+                        evidence);
             });
 
             // 业务日预检在 LOAD_ODS 阶段内执行：accepted 目录与业务日事件必须存在，
@@ -475,9 +503,10 @@ public class PipelineService {
                 // §10.3：ODS 输入/输出/隔离数 = JobResult 真实计数（R6-12：非 Java 侧估算）
                 Map<String, Object> evidence = new LinkedHashMap<>(odsOutcome.evidence());
                 evidence.put("contracted", "odl: input=Landing 行数, output=四主题写入行数, rejected=版本/主键非法");
-                Number q = manifest == null ? null : (Number) manifest.get("quarantinedRecords");
-                if (q != null) {
-                    evidence.put("odsQuarantinedRecords", q.longValue());
+                // R6-13：老清单的计数可能是字符串，用选择器的同一口径读，避免 (Number) 强转炸成 RUN_INTERNAL
+                if (manifest != null && manifest.get("quarantinedRecords") != null) {
+                    evidence.put("odsQuarantinedRecords",
+                            LandingManifestSelector.longOf(manifest.get("quarantinedRecords")));
                 }
                 updateStageEvidence(run.getId(), "LOAD_ODS", evidence);
             }
@@ -984,97 +1013,24 @@ public class PipelineService {
      * 只有首跑（尚无 WAIT_LANDING 记录）才取"最新 READY 批次"。
      * R6-13 修正：原实现每次都取最新 READY，重试时会换输入（实测 run 18 retry：篡改批次 19
      * 被后来的干净批次 20 顶掉，同一 run 的 Landing 对账门从 FAILED 变 passed → 判定不可复现）。
+     *
+     * <p>S2-04：本方法只负责"钉住哪个批次"（从证据里正则读 batchId，见 §314 的列宽说明），
+     * 清单的**可归属性与新旧比较**全部交给 {@link LandingManifestSelector}；返回的清单必定属于
+     * {@code sourceId}，否则为 null（调用方按 RUN_EMPTY_LANDING 拒绝，不回落、不猜）。</p>
      */
-    private Map<String, Object> manifestForRun(Path landingRoot, Long runId) {
+    private Map<String, Object> manifestForRun(Path landingRoot, Long runId, long sourceId) {
         PipelineStageRun landing = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
                 .eq(PipelineStageRun::getRunId, runId)
                 .eq(PipelineStageRun::getStageCode, "WAIT_LANDING")
                 .orderByAsc(PipelineStageRun::getId).last("LIMIT 1"));
+        Long pinnedBatchId = null;
         if (landing != null && landing.getEvidence() != null) {
             Matcher m = Pattern.compile("\"batchId\"\\s*:\\s*(\\d+)").matcher(landing.getEvidence());
             if (m.find()) {
-                Map<String, Object> pinned = readManifest(
-                        landingRoot.resolve("manifests").resolve(m.group(1) + ".json"));
-                if (pinned != null) {
-                    log.info("pipeline {}: 复用本 run 原批次 batchId={}（重试/恢复不切换输入）",
-                            runId, m.group(1));
-                    return pinned;
-                }
+                pinnedBatchId = Long.valueOf(m.group(1));
             }
         }
-        return findReadyManifest(landingRoot);
-    }
-
-    /** 读取单个 manifest JSON（失败返回 null，不抛异常） */
-    private Map<String, Object> readManifest(Path file) {
-        try {
-            if (!Files.isRegularFile(file)) {
-                return null;
-            }
-            return objectMapper.readValue(Files.readString(file, StandardCharsets.UTF_8),
-                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
-                    });
-        } catch (Exception e) {
-            log.warn("manifest 解析失败 {}: {}", file.getFileName(), e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 扫描 landing/manifests/*.json，返回状态为 READY 且含数据（accepted+quarantined>0）
-     * 的最新批次清单（§9.3；空批次视为无新数据，不做 ODS 输入）。
-     * 按清单内 batchId 取最大者视为最新；无可用清单返回 null。
-     */
-    private Map<String, Object> findReadyManifest(Path landingRoot) {
-        Path manifestsDir = landingRoot.resolve("manifests");
-        if (!Files.isDirectory(manifestsDir)) {
-            return null;
-        }
-        AtomicReference<Long> maxBatchId = new AtomicReference<>(null);
-        AtomicReference<Map<String, Object>> best = new AtomicReference<>(null);
-        try (Stream<Path> list = Files.list(manifestsDir)) {
-            for (Path m : list.filter(p -> p.getFileName().toString().endsWith(".json")).toList()) {
-                try {
-                    Map<String, Object> manifest = readManifest(m);
-                    if (manifest == null || !"READY".equals(manifest.get("status"))) {
-                        continue;
-                    }
-                    // R6-13 修正：老批次清单里计数是字符串（实测 2.json/4.json/5.json 报
-                    // "class java.lang.String cannot be cast to class java.lang.Number"），
-                    // 按数字/字符串双兼容解析，避免整条清单被当作损坏而跳过。
-                    long accepted = longOf(manifest.get("acceptedRecords"));
-                    long quarantined = longOf(manifest.get("quarantinedRecords"));
-                    if (accepted + quarantined <= 0) {
-                        continue; // 空批次：无新数据，不阻塞也不作为输入（§9.3）
-                    }
-                    long batchId = longOf(manifest.get("batchId"));
-                    if (maxBatchId.get() == null || batchId > maxBatchId.get()) {
-                        maxBatchId.set(batchId);
-                        best.set(manifest);
-                    }
-                } catch (Exception e) {
-                    log.warn("manifest 解析失败 {}: {}", m.getFileName(), e.getMessage());
-                }
-            }
-        } catch (IOException e) {
-            log.warn("manifests 扫描失败: {}", e.getMessage());
-        }
-        return best.get();
-    }
-
-    /** 宽松取长整型：Number 直接用，字符串/空值按解析（老清单兼容） */
-    private static long longOf(Object v) {
-        if (v instanceof Number n) {
-            return n.longValue();
-        }
-        if (v == null) {
-            return 0L;
-        }
-        try {
-            return Long.parseLong(String.valueOf(v).trim());
-        } catch (NumberFormatException e) {
-            return 0L;
-        }
+        return manifestSelector.select(landingRoot, pinnedBatchId, sourceId);
     }
 
     private String toJson(Object o) {

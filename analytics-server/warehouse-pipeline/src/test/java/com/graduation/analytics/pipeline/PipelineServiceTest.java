@@ -65,6 +65,11 @@ import static org.mockito.Mockito.when;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class PipelineServiceTest {
 
+    /** S2-04：本类 fixture 的源（profile.source_id）与清单 sourceId 必须一致 */
+    private static final long SOURCE_ID = 7L;
+    /** S2-04：另一个源（用于验证"他源清单不被选中"） */
+    private static final long OTHER_SOURCE_ID = 9L;
+
     @TempDir
     Path landing;
 
@@ -128,6 +133,9 @@ class PipelineServiceTest {
         profile.setId(1L);
         profile.setVersion(7);
         profile.setType(RuntimeProfile.TYPE_LOCAL);
+        // S2-04：运行的源身份是 ODS 库名/--sourceSystem 的来源，也是清单归属判据。
+        // 真实环境里它由连接侧绑定（SOURCE_NOT_BOUND fail-closed），此处照实设成 SOURCE_ID。
+        profile.setSourceId(SOURCE_ID);
         profile.setLandingUri(landing.toAbsolutePath().toString());
         profile.setSparkSubmitPath("D:\\spark\\bin\\spark-submit.cmd");
         profile.setSparkJobJarUri("spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
@@ -157,7 +165,8 @@ class PipelineServiceTest {
 
         service = new PipelineService(runMapper, stageMapper, qualityMapper, qualityChecker,
                 eventClock, objectMapper, runtimeProfileService, stageExecutorFactory, executor,
-                publisherPort, metricDefinitionMapper(), new DataQualityGate(qualityMapper));
+                publisherPort, metricDefinitionMapper(), new DataQualityGate(qualityMapper),
+                new LandingManifestSelector(objectMapper));
     }
 
     /**
@@ -328,6 +337,102 @@ class PipelineServiceTest {
                         anyString(), anyInt(), any(), any());
         assertThat(stageOf("BUILD_DWD")).isNull();
         assertThat(stageOf("PUBLISH_METRIC")).isNull();
+    }
+
+    // ── S2-04：Landing 输入清单必须按源归属（fail-closed） ────────────────
+
+    @Test
+    void foreignSourceManifestIsNeverUsedAsInput() throws Exception {
+        // landing 根下只有**他源**的 READY 批次（A 源这次 run 没有自己的批次）
+        writeManifest(2, OTHER_SOURCE_ID, "accepted/2026-09-01-b", true);
+        writeEvents("accepted/2026-09-01-b",
+                event("e9", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o9\",\"total_amount\":\"999\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-foreign", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(r.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode())
+                .as("没有可归属的批次 ⇒ 如实报无输入，而不是拿他源字节充数（否则 B 的数据会进 A 的 ODS 库，"
+                        + "且 source_system 是注入的常量，事后无法察觉）")
+                .isEqualTo("RUN_EMPTY_LANDING");
+        assertThat(stageStatus("WAIT_LANDING")).isEqualTo(PipelineStageRun.STATUS_FAILED);
+        // 未通过 WAIT_LANDING 就不该有任何真正作业被提交（尤其不能把 B 的 accepted 当输入）
+        assertThat(stageOf("INIT_SCHEMA")).isNull();
+        assertThat(stageOf("LOAD_ODS")).isNull();
+        verify(stageExecutor, never()).executeStage(any(), anyLong(), anyString(), anyString(),
+                anyInt(), any(), any());
+    }
+
+    @Test
+    void newerForeignManifestDoesNotShadowOwnSourceBatch() throws Exception {
+        // A 源自己有批次 1；B 源后来写了更大的批次 2（共用同一 landing 根的常见实验场景）
+        writeManifest(1, SOURCE_ID, "accepted/2026-09-01-a", true);
+        writeEvents("accepted/2026-09-01-a",
+                event("e1", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        writeManifest(2, OTHER_SOURCE_ID, "accepted/2026-09-01-b", true);
+        writeEvents("accepted/2026-09-01-b",
+                event("e9", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o9\",\"total_amount\":\"999\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-shadow", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        PipelineStageRun landingStage = stageOf("WAIT_LANDING");
+        assertThat(landingStage.getEvidence())
+                .as("只能选本源的批次 1（batchId 更大的是他源）")
+                .contains("\"batchId\":1")
+                .contains("\"acceptedUri\":\"accepted/2026-09-01-a\"")
+                .contains("\"sourceId\":" + SOURCE_ID);
+        assertThat(landingStage.getEvidence()).doesNotContain("accepted/2026-09-01-b");
+    }
+
+    @Test
+    void manifestWithoutSourceIdIsNotAttributableInPipeline() throws Exception {
+        // P1-05 之前的清单（无 sourceId）：无法证明它属于本源的库 → 不猜
+        writeManifest(3, SOURCE_ID, "accepted/2026-09-01", false);
+        writeEvents("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-nosource", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(r.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("RUN_EMPTY_LANDING");
+    }
+
+    @Test
+    void profileWithoutSourceFailsClosedWithStableCodeBeforeBuildingExecutor() throws Exception {
+        // 未绑定源的运行环境：库名与 --sourceSystem 都不可知，绝不能猜一个源跑下去
+        RuntimeProfile unbound = new RuntimeProfile();
+        unbound.setId(1L);
+        unbound.setVersion(7);
+        unbound.setType(RuntimeProfile.TYPE_LOCAL);
+        unbound.setLandingUri(landing.toAbsolutePath().toString());
+        when(runtimeProfileService.get(1L)).thenReturn(unbound);
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-unbound", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(r.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode())
+                .as("装配路径下执行器工厂抛的是 PlatformBizException，会被通用 catch 吞成 RUN_INTERNAL；"
+                        + "故本判定必须早于执行器构造，让运维看到的始终是稳定码 SOURCE_NOT_BOUND")
+                .isEqualTo("SOURCE_NOT_BOUND");
+        // 判定早于执行器构造：一个作业都不该被准备
+        verify(stageExecutorFactory, never()).create(any());
+        assertThat(stages).isEmpty();
     }
 
     // ── ⑤重试跳过成功阶段：成功阶段不重复执行，失败阶段重跑（§13.4 恢复） ─
@@ -752,19 +857,34 @@ class PipelineServiceTest {
 
     // ── 辅助 ────────────────────────────────────────────────────────────────
     private void writeLanding(String acceptedUriDir, String... eventLines) throws IOException {
+        writeManifest(1, SOURCE_ID, acceptedUriDir, true);
+        writeEvents(acceptedUriDir, eventLines);
+    }
+
+    /**
+     * 写一条 READY 清单（S2-04：清单的源身份是选择判据，故必须可定制）。
+     *
+     * @param includeSourceId false = 模拟 P1-05 之前的清单（缺源身份 → 不可归属）
+     */
+    private void writeManifest(int batchId, long sourceId, String acceptedUri, boolean includeSourceId)
+            throws IOException {
         Files.createDirectories(landing.resolve("manifests"));
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("batchId", 1);
+        m.put("batchId", batchId);
         m.put("status", "READY");
-        // acceptedRecords 声明为 3（>0 保证 manifest 不被 findReadyManifest 当作空批次跳过；
+        // acceptedRecords 声明为 3（>0 保证 manifest 不被当作空批次跳过；
         // 目录无文件时 LOAD_ODS 抛 RUN_EMPTY_DATA，而非 RUN_EMPTY_LANDING）
         m.put("acceptedRecords", 3);
-        m.put("acceptedUri", acceptedUriDir);
+        m.put("acceptedUri", acceptedUri);
         m.put("quarantinedRecords", 0);
         m.put("checksum", "test-checksum");
         m.put("schemaVersions", List.of("1.0"));
-        Files.writeString(landing.resolve("manifests/b1.json"), objectMapper.writeValueAsString(m));
-        writeEvents(acceptedUriDir, eventLines);
+        if (includeSourceId) {
+            m.put("sourceId", sourceId);
+            m.put("sourceCode", sourceId == SOURCE_ID ? "mall-a" : "mall-b");
+        }
+        Files.writeString(landing.resolve("manifests/b" + batchId + ".json"),
+                objectMapper.writeValueAsString(m));
     }
 
     private void writeEvents(String acceptedUriDir, String... eventLines) throws IOException {

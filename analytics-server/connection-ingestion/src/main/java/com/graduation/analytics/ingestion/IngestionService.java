@@ -238,7 +238,8 @@ public class IngestionService {
         // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
         // S2-02B：**失败批次不产出清单**。清单 schema 的 status 是 const "READY"
         // （contract-specs/schemas/ingestion-manifest.v1.schema.json：清单文档只能断言"可交付"），
-        // 而 PipelineService.findReadyManifest 只扫 manifests/*.json 中 status=READY 且计数>0 的清单。
+        // 而流水线侧（S2-04 起为 LandingManifestSelector）只扫 manifests/*.json 中 status=READY
+        // 且计数>0、并且 sourceId 与本轮运行源一致的清单。
         // 系统异常时若照写一份 READY 清单，异常前已落盘的**半成品**（recordCount>0）就会被流水线
         // 当成本轮输入 —— 那是把系统异常伪装成"采集成功"。不写清单还顺带满足"失败保旧快照"：
         // 失败轮不占清单位，上一份好批次仍是流水线能取到的输入。
