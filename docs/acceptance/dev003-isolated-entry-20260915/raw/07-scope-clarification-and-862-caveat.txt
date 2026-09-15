@@ -1,0 +1,43 @@
+# 补记（2026-09-15）：DEV-003 范围澄清 ＋ 862 拆解口径 ＋ 已知局限登记（append-only）
+# 触发：总控 2026-09-15 复核通过，并明确「a/b 关闭 ≠ DEV-003 关闭」的边界。
+
+## 1. DEV-003 内部子项编号与最终状态（总控裁决，以此为准）
+DEV-003a  generator fresh schema / Flyway 前置初始化            -> CLOSED
+DEV-003b  IsolationGuardMySqlIT 标准 isolated-tests 入口        -> CLOSED
+DEV-003c  spark-jobs 111 个 ScalaTest 缺少项目级统一自动执行入口 -> OPEN
+DEV-003d  其余未打标 *IT 尚未纳入标准自动执行入口               -> OPEN
+结论：DEV-003 部分收口 —— a/b 已关闭；整体尚未关闭。
+口径：以上为 DEV-003 **内部**子项编号，不新立 DEV 主编号，不碰 DEV-004 / DEV-005。
+
+## 2. 当前默认档汇总口径 862（必须逐项拆开写）
+当前默认档汇总口径：862
+= 632  analytics-server（本轮实测）
++  13  mall（本轮实测）
++ 106  generator（本轮实测）
++ 111  spark-jobs（沿用既有证据口径，本轮未复跑）
+禁令：禁止只写 862 而不标 111 的旧口径；禁止把 spark-jobs 111 表述成本轮 fresh 实测。
+隔离档口径：本轮实测 55 = mall 30 + generator 19 + metric-analysis IT 6；
+          analytics 那次调用不得写成「隔离 IT 95」——正确写法「metric-analysis IT 6 + reactor 依赖 platform-common 89」。
+
+## 3. 本轮登记、不阻塞提交的已知局限（总控复核：接受 / 登记，本轮不重构）
+L-1  isolated-tests profile 只在 metric-analysis -> -am 会连带 platform-common 89 个默认档用例（接受，见上文案约束）
+L-2  零用例硬门禁依赖 Surefire 的 "-- in <class>" 文本格式（fail-closed，最多假红不会假绿，登记）
+L-3  IsolatedSchemaInitializer.REQUIRED_TABLES 硬编码 5 张表（维护性风险，后续迁移增表时再考虑派生）
+L-4  run-isolated-tests.ps1 自身无自动化测试（建议接 CI 之前单独补 Pester/PowerShell 测试，不塞进本轮）
+
+## 4. 落库归属
+CODE_COMMIT = deba29f41da410abbf3eb740c2c7f8fbaf5a0d90（短 deba29f）
+  message: fix(it): close DEV-003a DEV-003b isolated test bootstrap and entry
+  files  : analytics-server/metric-analysis/pom.xml
+           analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/IsolationGuardMySqlIT.java
+           scripts/run-isolated-tests.ps1
+           synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java
+           synthetic-data-generator/src/test/java/com/graduation/itguard/IsolatedSchemaInitializer.java
+  stat   : 5 files changed, 277 insertions(+), 15 deletions(-)
+EVIDENCE_COMMIT：本文件与 docs/PROJECT_STATUS.md、本泳道其余文件同属第二个 commit
+  message: docs(acceptance): archive DEV-003a DEV-003b isolated test evidence
+  说明：commit SHA 无法自引用，故其哈希不在本文件内回填（由总控复核时另行登记）。
+
+## 5. 不变项
+F-88 仍为限定验收，本轮不升级；3306 全程只读、零写入；未新建 .github/workflows/**、未接 CI；
+本轮未重跑 spark-jobs（111 沿用既有证据口径）；未触碰 contract-specs/**、已有 docs/acceptance/** 其它泳道、指导书 V2.8、设计 V2.5。

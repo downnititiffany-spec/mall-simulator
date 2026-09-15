@@ -1,0 +1,33 @@
+# DEV-003 隔离档入口／generator 首跑 schema 编排 —— 原始证据清单（append-only）
+# 生成时间：2026-09-15 11:20:06
+# 采集者：代码 Agent（本轮唯一动作 DEV-003a／DEV-003b）
+# 唯一隔离实例：127.0.0.1:3307（canonical dahaishui:3307，uuid de8ebbea-aff4-11f1-8037-00155d5dba47）；宿主 3306 全程只读
+# 哈希口径：Windows 工作区文件的 SHA256（非 Git blob 口径，见 PROJECT_STATUS「证据复现口径补记」）
+# 关联提交：CODE_COMMIT = deba29f41da410abbf3eb740c2c7f8fbaf5a0d90（5 路径）；本清单随 EVIDENCE_COMMIT 落库
+
+raw/00-prefix-RED-generator-firstrun-no-schema-init.log                43018 B  sha256=c2619e6fd38457fd3533327cda4d5206cb324842ea84e78401ca56f967d628aa
+     修复前红案：全新 runId dev003a_20260915_1040 首跑，GeneratorMetaStoreTest 5 errors（表不存在），Flyway 直到 Spring 上下文才迁移
+raw/01-runner-module-all-console-dev003_20260915_1110.txt              17934 B  sha256=1b92e97a2d7520399e9b8c052cafd915ae8b1252046349e2e2d67144ce8d197d
+     标准入口 -Module all -Confirm 全量控制台：门禁 1-6、pre/post 取数、三档结果、runner exit 0
+raw/03-isolated-instance-facts.txt                                       475 B  sha256=9898abfc87ec8480b160186298cd096d7b5d43b39b5cde88feefd588d5c73908
+     3307 实例事实（@@hostname/@@port/@@server_uuid/VERSION）＋ 首跑后表数 ＋ flyway 历史 ＋ 本轮受限账号
+raw/04-code-diff-and-status.txt                                        27797 B  sha256=df6f063a9b677afbeb599e13cbc685d9d352e8355c03fc81682e6ba069f4033e
+     本轮 5 个代码/配置路径 diff/stat/status ＋ 新增文件全文
+raw/05-sensitive-scan.txt                                               1091 B  sha256=80265651aaca4ea647ec4fff2bcd06c436339e7189b0ee5ebe12bc33dc29f78a
+     lane 入库前敏感词扫描（含明文口令硬判据：0 命中）
+raw/06-project-status-addendum.txt                                     32137 B  sha256=983c9a0462afc53aebda91b7bfaad4ca13764aa8be4fc82fbcb75cb85d7b2afb
+     补记：docs/PROJECT_STATUS.md 本轮 append-only 改动（9 insertions / 0 deletions）
+raw/07-scope-clarification-and-862-caveat.txt                           3345 B  sha256=56767e09efb35db5bc5a3b46947a96b4cfe44b9c35b163272cc1f93788e68242
+     总控复核后的范围澄清：DEV-003a/b CLOSED、c/d OPEN；862 拆解口径；L-1..L-4 登记；CODE_COMMIT=deba29f
+raw/10-isolated-mall.log                                               37942 B  sha256=81fe2db30b6817be081e12142acb12aa54c78c546d7e82b4dd449ff87156c430
+     mall 隔离档 30/0/0/0
+raw/11-isolated-generator.log                                          21885 B  sha256=2ab735002c17cdc227433bf5281237348367615d028fad3154642c687e8ed8f9
+     generator 隔离档 19/0/0/0；含 [DEV-003a] 前置编排（迁移数=1、目标版本=1）与 GeneratorMetaStoreTest 5/0/0/0
+raw/12-isolated-analytics.log                                          10238 B  sha256=d1a08f5f55d26cd617d97320f140163e5331a0674ca422e405f77b7b42005527
+     analytics 隔离档：IsolationGuardMySqlIT 由标准入口自动执行 6/0/0/0（platform-common 89 亦在同 reactor 内）
+raw/20-default-analytics-reactor.log                                   99564 B  sha256=9c8599d227ddc4311b68f3326a548e1fe13a12a415bd71fdc26e166928fcf48b
+     analytics-server 默认档回归：6 模块合计 632/0/0/0（metric-analysis 48 与改动前一致，无 *IT 被选中）
+raw/21-default-generator.log                                            8578 B  sha256=66f99b3092c68071f29ca0d0cfeecce02d166566b7ddbb46ab076c3d3752e32e
+     generator 默认档回归 106/0/0/0
+raw/22-default-mall.log                                                 2513 B  sha256=32b75bb27f93418295acf81a5021b674fc0711f9b1eab1b2af071941b7c942d8
+     mall 默认档回归 13/0/0/0

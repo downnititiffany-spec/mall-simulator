@@ -1,0 +1,446 @@
+# git diff --stat（本轮 5 路径；IsolatedSchemaInitializer.java 为未跟踪新增，不在 diff 中）
+ analytics-server/metric-analysis/pom.xml           | 52 ++++++++++++++
+ .../analytics/metric/IsolationGuardMySqlIT.java    | 13 +++-
+ scripts/run-isolated-tests.ps1                     | 84 ++++++++++++++++++----
+ .../generator/meta/GeneratorMetaStoreTest.java     | 15 ++++
+ 4 files changed, 149 insertions(+), 15 deletions(-)
+
+# git status --porcelain
+ M analytics-server/metric-analysis/pom.xml
+ M analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/IsolationGuardMySqlIT.java
+ M scripts/run-isolated-tests.ps1
+ M synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java
+?? docs/acceptance/dev003-isolated-entry-20260915/
+?? synthetic-data-generator/src/test/java/com/graduation/itguard/IsolatedSchemaInitializer.java
+
+# git diff（已跟踪的 4 路径）
+diff --git a/analytics-server/metric-analysis/pom.xml b/analytics-server/metric-analysis/pom.xml
+index 60dc06b..d3ea2ea 100644
+--- a/analytics-server/metric-analysis/pom.xml
++++ b/analytics-server/metric-analysis/pom.xml
+@@ -70,4 +70,56 @@
+       <scope>test</scope>
+     </dependency>
+   </dependencies>
++
++  <properties>
++    <!-- V25-S02 / K-02 分类口径：默认纯测试套件排除 @Tag("it")（真实 MySQL 的集成测试）。
++         刻意写成**用户属性**再引用：把字面量写死在 <configuration> 里就无法用
++         -DexcludedGroups= 清掉，隔离档会得到 "Tests run: 0 / BUILD SUCCESS" 的假绿。 -->
++    <v25.it.excluded.groups>it</v25.it.excluded.groups>
++  </properties>
++
++  <build>
++    <plugins>
++      <plugin>
++        <groupId>org.apache.maven.plugins</groupId>
++        <artifactId>maven-surefire-plugin</artifactId>
++        <configuration>
++          <!-- 默认档 = 普通单元测试（不连真实 DB）。只加 excludedGroups，刻意**不写** <includes>：
++               默认包含式（Test*/*Test/*Tests/*TestCase）保持有效，故本模块默认档的用例选中集合
++               与本改动前逐一致（回归口径见 DEV-003b 报告）。 -->
++          <excludedGroups>${v25.it.excluded.groups}</excludedGroups>
++        </configuration>
++      </plugin>
++    </plugins>
++  </build>
++
++  <profiles>
++    <!-- DEV-003b：隔离档。把本模块的真库 IT 接进项目统一入口
++         （scripts/run-isolated-tests.ps1 -Module analytics|all），不再要求人工 -Dtest= 点名。 -->
++    <profile>
++      <id>isolated-tests</id>
++      <properties>
++        <!-- 清空默认排除（写死 excludedGroups 时清不掉，故上面用属性引用） -->
++        <v25.it.excluded.groups></v25.it.excluded.groups>
++      </properties>
++      <build>
++        <plugins>
++          <plugin>
++            <groupId>org.apache.maven.plugins</groupId>
++            <artifactId>maven-surefire-plugin</artifactId>
++            <configuration>
++              <!-- 只选 @Tag("it")：未打标的 *IT（AnalysisGoldenMySqlIT / MetricAdsMySqlIT /
++                   MetricPublisherMySqlIT 等）即使被 <includes> 捞到也会被 tag 过滤掉，不会误跑 -->
++              <groups>it</groups>
++              <!-- 必须显式写 includes：本类的类名是 *IT，不在 surefire 默认包含式里，
++                   缺了它就会 "Tests run: 0"——那正是 DEV-003b 要消灭的假绿形态之一 -->
++              <includes>
++                <include>**/*IT.java</include>
++              </includes>
++            </configuration>
++          </plugin>
++        </plugins>
++      </build>
++    </profile>
++  </profiles>
+ </project>
+diff --git a/analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/IsolationGuardMySqlIT.java b/analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/IsolationGuardMySqlIT.java
+index 8368384..246f400 100644
+--- a/analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/IsolationGuardMySqlIT.java
++++ b/analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/IsolationGuardMySqlIT.java
+@@ -3,6 +3,7 @@ package com.graduation.analytics.metric;
+ import com.graduation.analytics.testsupport.TestIsolationGuard;
+ import com.graduation.analytics.testsupport.TestIsolationGuard.LiveFacts;
+ import com.graduation.analytics.testsupport.TestIsolationGuard.TestRunContext;
++import org.junit.jupiter.api.Tag;
+ import org.junit.jupiter.api.Test;
+ 
+ import javax.sql.DataSource;
+@@ -31,13 +32,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
+  * <p><b>本类只读</b>：全部语句都是 {@code SELECT} / {@code SHOW GRANTS} / {@code SHOW DATABASES} 级别的读取，
+  * 不下发任何 DDL/DML。因此它可以安全地对着隔离实例跑，也可以作为"未触碰 3306"的旁证。</p>
+  *
+- * <p><b>命名</b>：类名不以 {@code Test} 开头，surefire 默认包含式（{@code Test*}/{@code *Test}/{@code *Tests}/
+- * {@code *TestCase}）不会自动捞它（analytics-server 没有 surefire 配置，见 DEV-003）。必须显式
+- * {@code -Dtest=IsolationGuardMySqlIT} 才跑——它需要真实例与真凭据。</p>
++ * <p><b>入口（DEV-003b）</b>：本类打 {@code @Tag("it")}，由 {@code metric-analysis/pom.xml} 的
++ * {@code isolated-tests} profile 收集——默认档（{@code mvn test}）按
++ * {@code <excludedGroups>it</excludedGroups>} 排除它（普通单元测试不连真实 MySQL），
++ * 隔离档（{@code -Pisolated-tests}）按 {@code <groups>it</groups>} + {@code <includes>**&#47;*IT.java</includes>}
++ * 选中它。项目统一入口是
++ * {@code pwsh -NoProfile -File scripts/run-isolated-tests.ps1 -RunId <runId> -Module all -Confirm}：
++ * 该脚本注入本类需要的 {@code DEV001_IT_*} 环境变量，并在跑完后**强制核对**本类确实被执行到
++ * （零用例／未被选中一律按失败处理）；不再需要人工记类名走 {@code -Dtest=IsolationGuardMySqlIT}。</p>
+  *
+  * <p><b>凭据</b>：只从环境变量读（{@code DEV001_IT_*}），不进命令行、不落盘。
+  * 缺任一项直接**失败而不是跳过**：隔离档里 skip 不算证据。</p>
+  */
++@Tag("it")
+ public class IsolationGuardMySqlIT {
+ 
+     private static final String ENV_URL = "DEV001_IT_URL";
+diff --git a/scripts/run-isolated-tests.ps1 b/scripts/run-isolated-tests.ps1
+index 7b4b56b..7a272df 100644
+--- a/scripts/run-isolated-tests.ps1
++++ b/scripts/run-isolated-tests.ps1
+@@ -1,4 +1,5 @@
+-# 隔离档唯一入口：跑 mall-simulator / synthetic-data-generator 的隔离集成套件（V25-S02 闭环）
++# 隔离档唯一入口：跑 mall-simulator / synthetic-data-generator / analytics-server 的隔离集成套件
++# （V25-S02 闭环；analytics 侧接入 = DEV-003b）
+ #
+ # 解决什么：`scripts/it-prepare-isolation.ps1` 建好 3307 上的空库/受限账号后，只把两段
+ # 配置片段**打印**出来，由人手工抄进模块工作目录的 `*.local.properties`，口令还写成
+@@ -37,6 +38,14 @@
+ #     relaxed-binding 通道覆盖到 3307 隔离库，否则 generator 的 Spring 用例会连宿主正式实例
+ #     （DEV-002；3306 冻结期尤其不能靠"它恰好没有迁移"来兜底）。
+ #   * 库名/账号名与 `scripts/it-prepare-isolation.ps1:89-92` 同源：`<runId>_mall` /
++#   * DEV-003b：analytics-server 侧的真库 IT（`metric-analysis` 的 `IsolationGuardMySqlIT`）接进本入口，
++#     目标 = `-Module analytics`（`-Module all` = mall + generator + analytics）。它复用 mall 的库与受限账号
++#     （`<runId>_mall` / `<runId>_mallapp`，**不新建任何 3307 对象**），跑法固定为
++#     `mvn -f analytics-server\pom.xml -pl metric-analysis -am test`（+ `-Pisolated-tests`：该模块 profile 收集
++#     `@Tag("it")` 的 `*IT` 类）。跑完**强制核对日志里确实出现 `...IsolationGuardMySqlIT` 的 `Tests run:` 行**：
++#     零用例／类没被选中一律按失败（exit 7）处理，否则「自动执行」会退化成假绿。
++#     分析侧凭据通道与 mall/generator 不同（`IsolationGuardMySqlIT` 只读环境变量 `DEV001_IT_*`），
++#     本脚本按本 runId 的 mall 目标注入这 5 个键；指纹同样是探针读到的 `@@hostname:@@port`。
+ #     `<runId>_generator` / `<runId>_mallapp` / `<runId>_genapp`。
+ #
+ # 退出码（对齐 scripts/smoke-pipeline.ps1:32 的 0/2/3/4/5/6 契约中与本脚本相关的语义）：
+@@ -44,7 +53,8 @@
+ #   1 = 参数/环境错误（找不到 mvn、脚本自身错误）
+ #   5 = 执行前被门禁拒绝（端口/形状/账号/缺口令/未确认/指纹不符/目标库不存在）
+ #   6 = 只读探针取数失败（连不上、查不到）
+-#   7 = Maven 套件失败（有模块非 0 退出；各模块退出码在输出中列出）
++#   7 = Maven 套件失败（有模块非 0 退出；各模块退出码在输出中列出），
++#       或「要求被自动执行的隔离类没跑到」——见 DEV-003b 的零用例硬门禁
+ #
+ # 用法：
+ #   # 1) 预演：不连库、不跑 Maven、不落盘，只打印门禁与将要注入的环境变量（口令掩码）
+@@ -52,9 +62,11 @@
+ #   # 2) 真跑（先跑 it-prepare-isolation.ps1 建好库/账号；口令经环境变量给）
+ #   $env:IT_GUARD_PASSWORD = '<本 runId 的受限账号口令>'
+ #   pwsh -NoProfile -File scripts/run-isolated-tests.ps1 -RunId v25it_20260914_1700_ctl1 -Module both -Confirm
++#   # 3) 全档：mall + generator + analytics（IsolationGuardMySqlIT 自动进入，无需 -Dtest= 点名）
++#   pwsh -NoProfile -File scripts/run-isolated-tests.ps1 -RunId v25it_20260914_1700_ctl1 -Module all -Confirm
+ param(
+   [Parameter(Mandatory = $true)][string]$RunId,
+-  [ValidateSet('mall', 'generator', 'both')][string]$Module = 'both',
++  [ValidateSet('mall', 'generator', 'analytics', 'both', 'all')][string]$Module = 'both',
+   [Alias('Host', 'HostName')][string]$DbHost = '127.0.0.1',
+   [int]$Port = 3307,
+   [int[]]$AllowedPorts = @(3307),
+@@ -108,18 +120,29 @@ Write-Host ("  [门禁2] RunId 形状 OK：{0}" -f $RunId)
+ 
+ # ── 门禁 3：派生目标名 + 账号禁清单 ────────────────────────────────────────
+ $targets = @()
+-if ($Module -in @('mall', 'both')) {
++if ($Module -in @('mall', 'both', 'all')) {
+   $targets += [pscustomobject]@{
+     name = 'mall'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
+     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
+     pom = 'mall-simulator\pom.xml'
++    extraArgs = @(); requireClass = $null
+   }
+ }
+-if ($Module -in @('generator', 'both')) {
++if ($Module -in @('generator', 'both', 'all')) {
+   $targets += [pscustomobject]@{
+     name = 'generator'; db = "${RunId}_generator"; user = "${RunId}_genapp"
+     pwdEnv = @('IT_GUARD_PASSWORD_GENERATOR', 'IT_GUARD_PASSWORD')
+     pom = 'synthetic-data-generator\pom.xml'
++    extraArgs = @(); requireClass = $null
++  }
++}
++if ($Module -in @('analytics', 'all')) {
++  # DEV-003b：analytics 真库 IT 走同一入口。目标库/账号复用 mall 那一对（只读用例，不新建 3307 对象）。
++  $targets += [pscustomobject]@{
++    name = 'analytics'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
++    pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
++    pom = 'analytics-server\pom.xml'
++    extraArgs = @('-pl', 'metric-analysis', '-am'); requireClass = 'IsolationGuardMySqlIT'
+   }
+ }
+ foreach ($t in $targets) {
+@@ -180,9 +203,9 @@ foreach ($t in $targets) {
+   Write-Host ("  {0,-28} = {1}   {2}" -f 'IT_GUARD_PASSWORD', (Mask $t.pwd), $tag)
+ }
+ Write-Host '  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，'
+-Write-Host '        因此两个模块不会串用彼此的口令/库（见下方循环内的重设语句）。'
++Write-Host '        因此各模块不会串用彼此的口令/库（见下方循环内的重设语句）。'
+ Write-Host '        IT_GUARD_SERVERFINGERPRINT 由门禁6探针读到 @@hostname:@@port 后填入（预演阶段还没有值）。'
+-if ($Module -in @('generator', 'both')) {
++if ($Module -in @('generator', 'both', 'all')) {
+   $genTarget = $targets | Where-Object { $_.name -eq 'generator' }
+   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_URL', $genTarget.url)
+   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_USERNAME', $genTarget.user)
+@@ -190,7 +213,17 @@ if ($Module -in @('generator', 'both')) {
+   Write-Host '        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键'
+   Write-Host '          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。'
+ }
+-if ($Module -in @('mall', 'both')) {
++if ($Module -in @('analytics', 'all')) {
++  $anTarget = $targets | Where-Object { $_.name -eq 'analytics' }
++  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_URL', $anTarget.url)
++  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_USER', $anTarget.user)
++  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_PASSWORD', (Mask $anTarget.pwd))
++  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_RUNID', $RunId)
++  Write-Host ("  {0,-28} = <运行期由门禁6探针确定为 @@hostname:@@port>" -f 'DEV001_IT_FINGERPRINT')
++  Write-Host '        ↑ analytics 侧（TestIsolationGuard / IsolationGuardMySqlIT）只认这 5 个键：'
++  Write-Host '          它没有 mall/generator 那种 *.local.properties 档案，缺任一项即失败（不 skip）。'
++}
++if ($Module -in @('mall', 'both', 'all')) {
+   $mallTarget = $targets | Where-Object { $_.name -eq 'mall' }
+   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_URL', $mallTarget.url)
+   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_USER', "${RunId}_mallapp")
+@@ -274,16 +307,43 @@ foreach ($t in $targets) {
+     Remove-Item Env:\SPRING_DATASOURCE_URL, Env:\SPRING_DATASOURCE_USERNAME, `
+         Env:\SPRING_DATASOURCE_PASSWORD -ErrorAction SilentlyContinue
+   }
++  if ($t.name -eq 'analytics') {
++    # DEV-003b：analytics 的 IsolationGuardMySqlIT 只读 DEV001_IT_*（与 mall/generator 的 IT_GUARD_* 不同源）
++    $env:DEV001_IT_URL = $t.url
++    $env:DEV001_IT_USER = $t.user
++    $env:DEV001_IT_PASSWORD = $t.pwd
++    $env:DEV001_IT_RUNID = $RunId
++    $env:DEV001_IT_FINGERPRINT = $InstanceFingerprint
++  } else {
++    # 不留给别的模块：残留会让下一次运行的目标变得不可预期
++    Remove-Item Env:\DEV001_IT_URL, Env:\DEV001_IT_USER, Env:\DEV001_IT_PASSWORD, `
++        Env:\DEV001_IT_RUNID, Env:\DEV001_IT_FINGERPRINT -ErrorAction SilentlyContinue
++  }
+   # -Pisolated-tests 经 MAVEN_ARGS 注入（.cmd 包装器正是为绕开 pwsh→cmd 的 '-' 拆参问题）
+   $env:MAVEN_ARGS = '-Pisolated-tests'
+   $log = Join-Path $LogDir ("isolated-{0}.log" -f $t.name)
+   Write-Host ''
+-  Write-Host ("=== 运行 {0} 隔离套件：mvn -o -Dmaven.repo.local=... -f {1} test （MAVEN_ARGS=-Pisolated-tests）===" -f $t.name, $t.pom)
+-  & $MavenCmd -o "-Dmaven.repo.local=$MavenRepoLocal" -f $t.pom test 2>&1 | Set-Content -LiteralPath $log -Encoding utf8
++  Write-Host ("=== 运行 {0} 隔离套件：mvn -o -Dmaven.repo.local=... -f {1} {2} test （MAVEN_ARGS=-Pisolated-tests）===" -f `
++      $t.name, $t.pom, ($t.extraArgs -join ' '))
++  # extraArgs：analytics 目标需要 `-pl metric-analysis -am`（analytics-server 是 6 模块 reactor 的父 pom）
++  $mvnArgs = @('-o', "-Dmaven.repo.local=$MavenRepoLocal", '-f', $t.pom) + @($t.extraArgs) + @('test')
++  & $MavenCmd @mvnArgs 2>&1 | Set-Content -LiteralPath $log -Encoding utf8
+   $code = $LASTEXITCODE
+   $tests = (Select-String -LiteralPath $log -Pattern 'Tests run:' | Select-Object -Last 1)
+-  $results += [pscustomobject]@{ module = $t.name; exit = $code; summary = $(if ($tests) { $tests.Line.Trim() } else { '<无 Tests run 行>' }); log = $log }
+-  Write-Host ("  {0,-9} exit={1}   {2}" -f $t.name, $code, $results[-1].summary)
++  $summary = if ($tests) { $tests.Line.Trim() } else { '<无 Tests run 行>' }
++  if ($t.requireClass) {
++    # DEV-003b 硬门禁：被点名的隔离类必须**真的**被执行到。只跑出 "Tests run: 0"、或压根没选中该类
++    # （profile 没生效 / includes 写错）时 Maven 退出码仍是 0 —— 那正是「假绿」，这里一律按失败处理。
++    $hit = Select-String -LiteralPath $log -Pattern ('-- in .*' + [regex]::Escape($t.requireClass)) | Select-Object -Last 1
++    if ($hit) {
++      $summary = ('[{0}] {1}' -f $t.requireClass, $hit.Line.Trim())
++    } else {
++      $summary = ('✗ 标准入口未自动执行到 {0}（零用例/未被选中）：{1}' -f $t.requireClass, $summary)
++      if ($code -eq 0) { $code = 7 }
++    }
++  }
++  $results += [pscustomobject]@{ module = $t.name; exit = $code; summary = $summary; log = $log }
++  Write-Host ("  {0,-9} exit={1}   {2}" -f $t.name, $code, $summary)
+ }
+ Remove-Item Env:\MAVEN_ARGS -ErrorAction SilentlyContinue
+ 
+diff --git a/synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java b/synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java
+index 2858f25..7623427 100644
+--- a/synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java
++++ b/synthetic-data-generator/src/test/java/com/graduation/generator/meta/GeneratorMetaStoreTest.java
+@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.DisplayName;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.Tag;
++import org.junit.jupiter.api.extension.ExtendWith;
+ import org.springframework.jdbc.core.JdbcTemplate;
+ import org.springframework.jdbc.datasource.DriverManagerDataSource;
+ 
+@@ -52,11 +53,25 @@ import static org.assertj.core.api.Assertions.assertThat;
+  * 目标只能是登记的隔离实例（端口白名单），库名必须以本次 runId 为前缀。
+  * 口令支持 {@code credref:<id>} 引用，源码与命令行都不落明文。
+  * 连接参数与 {@code application.yml} 同源但**不再继承它的 root 默认值**。</p>
++ *
++ * <h3>DEV-003a 整改：本类不再依赖「库恰好事先有表」</h3>
++ *
++ * <p>本类走裸 {@code DriverManagerDataSource}，<b>没有 Spring 上下文</b>，因此不会触发 Spring 的
++ * Flyway 自动迁移；而 surefire 的执行顺序里它排在 {@code GeneratorApiSmokeTest}（启动 Spring 上下文、
++ * 顺带完成迁移）<b>之前</b>。于是全新 runId 首次执行时它必然撞
++ * {@code Table '&lt;runId&gt;_generator.generation_run' doesn't exist}——
++ * 而同一个库第二次执行又「绿」了（表已被上一轮的 Spring 上下文建好），属典型的**状态依赖假绿**。</p>
++ *
++ * <p>处置：由 {@link com.graduation.itguard.IsolatedSchemaInitializer} 在本类执行前完成
++ * 门禁 → Flyway 迁移 → 表存在性自检（该类 javadoc 说明了为何**不用**预建表／复用旧库／
++ * catch「表不存在」／跳过用例／写死执行顺序）。与用例顺序、与 Spring 上下文是否存在都无关；
++ * 全新 schema 首次执行即绿。</p>
+  */
+ // 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
+ //   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
+ //   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
+ @Tag("it")
++@ExtendWith(com.graduation.itguard.IsolatedSchemaInitializer.class)
+ class GeneratorMetaStoreTest {
+ 
+     static {
+
+# 新增文件全文（IsolatedSchemaInitializer.java，未跟踪）
+diff --git a/synthetic-data-generator/src/test/java/com/graduation/itguard/IsolatedSchemaInitializer.java b/synthetic-data-generator/src/test/java/com/graduation/itguard/IsolatedSchemaInitializer.java
+new file mode 100644
+index 0000000..90e53f4
+--- /dev/null
++++ b/synthetic-data-generator/src/test/java/com/graduation/itguard/IsolatedSchemaInitializer.java
+@@ -0,0 +1,128 @@
++package com.graduation.itguard;
++
++import org.flywaydb.core.Flyway;
++import org.flywaydb.core.api.output.MigrateResult;
++import org.junit.jupiter.api.extension.BeforeAllCallback;
++import org.junit.jupiter.api.extension.ExtensionContext;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.jdbc.datasource.DriverManagerDataSource;
++
++import java.util.List;
++import java.util.Map;
++
++/**
++ * DEV-003a：把「全新 schema → migration → test」变成确定性编排，供**裸 JDBC** 集成测试复用。
++ *
++ * <h3>要解决的问题（2026-09-15 在全新 runId 上实测复现）</h3>
++ *
++ * <p>{@code GeneratorMetaStoreTest} 用裸 {@code DriverManagerDataSource}，不依赖 Spring 上下文，
++ * 因此 <b>不享受 Spring 的 Flyway 自动迁移</b>。surefire 的类执行顺序里它排在
++ * {@code GeneratorApiSmokeTest} 之前，于是全新 runId 首次执行时：</p>
++ *
++ * <pre>
++ *   ...GeneratorMetaStoreTest  ← 先跑，表还不存在 ⇒ SQLSyntaxErrorException: Table '&lt;runId&gt;_generator.generation_run' doesn't exist
++ *   ...GeneratorApiSmokeTest   ← Spring 上下文启动时才 Flyway migrate（"Successfully applied 1 migration"）
++ * </pre>
++ *
++ * <p>后果是<b>状态依赖</b>：同一个库第二次执行就"假绿"（表已经被上一轮的 Spring 上下文建好了）。
++ * 证据见 {@code docs/acceptance/dev003-isolated-entry-20260915/REPORT.md}。</p>
++ *
++ * <h3>为什么用 JUnit5 扩展而不是其它办法</h3>
++ *
++ * <ul>
++ *   <li><b>不用</b>人工预建表、不用复用旧 runId、不在测试里 catch "table doesn't exist"、
++ *       不把用例改成 skip、不依赖前一个 Spring 测试恰好先跑、不写死用例执行顺序——
++ *       这些都会把"环境不具备"或"顺序凑巧"伪装成通过（§9.4）。</li>
++ *   <li>扩展在<b>每个标注它的测试类执行前</b>跑一次：与类顺序、与是否有 Spring 上下文都无关。</li>
++ *   <li>迁移参数与生产同源（库内迁移脚本 + {@code application.yml} 的 Flyway 口径），
++ *       不新增"测试专用 schema 定义"这第二个事实来源。</li>
++ *   <li>门禁仍然先于 DDL：{@link IsolationGuard#verifyBeforeWrite} 在真实连接上核对
++ *       库/账号/端口/hostname:port 指纹之后，才允许 Flyway 建表。**没有绕开隔离门禁的捷径。**</li>
++ * </ul>
++ *
++ * <h3>用法</h3>
++ *
++ * <pre>
++ * &#64;Tag("it")
++ * &#64;ExtendWith(IsolatedSchemaInitializer.class)
++ * class SomeBareJdbcIT { ... }
++ * </pre>
++ *
++ * <p>配置只从 {@link IsolationGuard} 的既有通道读取（系统属性 {@code -Dit.guard.*} →
++ * 环境变量 {@code IT_GUARD_*} → 档案 {@code it-guard.local.properties}），
++ * 因此与 {@code scripts/it-prepare-isolation.ps1} / {@code scripts/run-isolated-tests.ps1}
++ * 的注入方式一致，不需要任何新参数。</p>
++ */
++public final class IsolatedSchemaInitializer implements BeforeAllCallback {
++
++    /**
++     * 迁移脚本位置：与 {@code src/main/resources/application.yml} 的
++     * {@code spring.flyway.locations} 同源（{@code classpath:db/generator}）。
++     *
++     * <p>刻意写成编译期常量而不是再读一遍 yml：避免在测试里引入 YAML 解析这一条新依赖；
++     * 一致性由本模块的隔离档实测保证（迁移条数与 {@code flyway_schema_history} 对账）。</p>
++     */
++    static final String MIGRATION_LOCATIONS = "classpath:db/generator";
++
++    /** 迁移必须落地的表（{@code V1__generator_meta.sql} 的 5 张表）。缺一张即判初始化失败。 */
++    private static final List<String> REQUIRED_TABLES = List.of(
++            "generator_target", "generation_plan", "generation_run",
++            "generation_artifact", "generation_event_stat");
++
++    @Override
++    public void beforeAll(ExtensionContext context) {
++        String who = context.getRequiredTestClass().getSimpleName();
++        // 门禁与目标解析：与 GeneratorMetaStoreTest 完全同一套通道（无默认值、不猜目标）。
++        IsolationGuard.requireEnabled("IsolatedSchemaInitializer:" + who);
++        String url = IsolationGuard.require("url");
++        String user = IsolationGuard.require("user");
++        String password = IsolationGuard.requireCredential(IsolationGuard.require("password"),
++                "IsolatedSchemaInitializer:" + who);
++        String expectedDb = IsolationGuard.assertUrlAllowed(url, "IsolatedSchemaInitializer:" + who);
++
++        DriverManagerDataSource dataSource = new DriverManagerDataSource(url, user, password);
++        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
++
++        // 迁移 = DDL：先过写前门禁（实连核对库/账号/端口/指纹），再建表。
++        IsolationGuard.LiveFacts facts = IsolationGuard.verifyBeforeWrite(
++                dataSource, expectedDb, "isolated-schema-init:" + who);
++
++        MigrateResult result = Flyway.configure()
++                .dataSource(dataSource)
++                .locations(MIGRATION_LOCATIONS)
++                .baselineOnMigrate(true)
++                .ignoreMigrationPatterns("*:missing")
++                .load()
++                .migrate();
++
++        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
++        assertSchemaReady(jdbc, expectedDb, who);
++
++        System.out.printf("[DEV-003a] %s 前置编排完成：database=%s account=%s hostname=%s port=%d runId=%s"
++                        + " | flyway 本次执行迁移数=%d 目标版本=%s%n",
++                who, facts.database(), facts.account(), facts.hostname(), facts.port(), facts.runId(),
++                result.migrationsExecuted, result.targetSchemaVersion);
++
++        // 首次执行的第一手证据：把 flyway_schema_history 打进入口日志，便于"首跑即成功"的取证。
++        for (Map<String, Object> row : jdbc.queryForList(
++                "SELECT installed_rank, version, description, installed_on, success"
++                        + " FROM flyway_schema_history ORDER BY installed_rank")) {
++            System.out.printf("[DEV-003a] %s flyway_schema_history: rank=%s version=%s description=%s"
++                            + " installed_on=%s success=%s%n",
++                    who, row.get("installed_rank"), row.get("version"),
++                    row.get("description"), row.get("installed_on"), row.get("success"));
++        }
++    }
++
++    /** 迁移后自检：5 张表必须都在，否则说明本次编排没有真正把 schema 准备好（失败关闭）。 */
++    private static void assertSchemaReady(JdbcTemplate jdbc, String expectedDb, String who) {
++        List<String> present = jdbc.queryForList(
++                "SELECT table_name FROM information_schema.tables WHERE table_schema = ?",
++                String.class, expectedDb);
++        List<String> missing = REQUIRED_TABLES.stream().filter(t -> !present.contains(t)).toList();
++        if (!missing.isEmpty()) {
++            throw new IllegalStateException("[DEV-003a] " + who + " 前置迁移后仍缺表：" + missing
++                    + "（已存在：" + present + "）——拒绝在未就绪的 schema 上执行用例。");
++        }
++    }
++}

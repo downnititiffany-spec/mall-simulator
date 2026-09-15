@@ -1,0 +1,15 @@
+hostname	port	server_uuid	version
+dahaishui	3307	de8ebbea-aff4-11f1-8037-00155d5dba47	8.0.41
+db	tables_after
+dev003_20260915_1110_generator	6
+db	tables_after
+dev003_20260915_1110_mall	13
+version	description	installed_on	success
+1	generator meta	2026-09-15 10:42:04	1
+user	host
+dev003_20260915_1045_genapp	%
+dev003_20260915_1045_mallapp	%
+dev003_20260915_1055_genapp	%
+dev003_20260915_1055_mallapp	%
+dev003_20260915_1110_genapp	%
+dev003_20260915_1110_mallapp	%

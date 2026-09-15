@@ -1,0 +1,215 @@
+########## DEV-003 定案验证  runId=dev003_20260915_1110  开始 2026-09-15 10:41:42 ##########
+
+===== [1] prep（全新 runId 隔离对象）=====
+════════════════════════════════════════════════════════════════
+ 测试隔离环境准备 —— 将创建的对象清单
+════════════════════════════════════════════════════════════════
+ 实例        : 127.0.0.1:3307（WSL 内独立 MySQL；宿主 3306 不参与）
+ runId       : dev003_20260915_1110
+ 将创建（幂等，IF NOT EXISTS）：
+   数据库     : dev003_20260915_1110_mall
+   数据库     : dev003_20260915_1110_generator
+   受限账号   : dev003_20260915_1110_mallapp@'%'  （只对 dev003_20260915_1110_mall 有权限）
+   受限账号   : dev003_20260915_1110_genapp@'%'  （只对 dev003_20260915_1110_generator 有权限）
+ 将写入的凭据文件（仓内、gitignore 覆盖、单键 password）：
+               : D:\Develop_code\GraduationProject\mall-simulator\credref-dev003_20260915_1110-mall.properties
+               : D:\Develop_code\GraduationProject\synthetic-data-generator\credref-dev003_20260915_1110-generator.properties
+ 不会做的事：
+   * 不触碰宿主 3306 上的任何库
+   * 不创建/修改 root、metric_pub、mall_app、meta_app 等正式账号
+   * 不写入任何业务数据（只建空库 + 授权）
+   * 不修改仓库内任何已提交文件
+   * 不在仓库外创建任何文件（凭据文件落两模块工作目录）
+════════════════════════════════════════════════════════════════
+[1/2] 已写凭据文件：D:\Develop_code\GraduationProject\mall-simulator\credref-dev003_20260915_1110-mall.properties
+               : D:\Develop_code\GraduationProject\synthetic-data-generator\credref-dev003_20260915_1110-generator.properties（均不回显口令）
+[admin] 管理员口令取自环境变量 V25IT_ADMIN_PWD（不回显）。
+created	dev003_20260915_1110_generator
+created	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_mallapp'@'%'	dev003_20260915_1110_mall
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+granted	'dev003_20260915_1110_genapp'@'%'	dev003_20260915_1110_generator
+[2/2] 建库/授权完成。
+
+把下面内容写入各模块的隔离档案（口令只放引用，不放明文）：
+  # mall-simulator/mall-isolation.local.properties（写到模块工作目录，即 CWD 候选；勿提交）
+  enabled=true
+  testRunId=dev003_20260915_1110
+  serverFingerprint=<唯一权威形态 hostname:port，例 dahaishui:3307：在 3307 实例上执行 SELECT CONCAT(@@hostname, ':', @@port) 得到；登记值须与实连 @@hostname:@@port 规范化后完全相等。不接受裸 hostname／裸端口／127.0.0.1:port／localhost:port；@@server_uuid 是门禁6 的独立漂移事实，不是 fingerprint 替代值>
+  mysql.host=127.0.0.1:3307
+  mysql.url=jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  mysql.username=dev003_20260915_1110_mallapp
+  mysql.password=credref:dev003_20260915_1110-mall
+  flyway.enabled=true
+
+  # synthetic-data-generator/it-guard.local.properties（写到模块工作目录，即 CWD 候选；勿提交）
+  # 键名 runId/url/user/password/instancePorts
+  runId=dev003_20260915_1110
+  instancePorts=3307
+  url=jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  user=dev003_20260915_1110_genapp
+  password=credref:dev003_20260915_1110-generator
+
+  # 注意：这两个档案只被各模块的门禁(IsolationGuard)读取，Spring 不读它们；
+  #       数据源地址仍须用环境变量/系统属性提供（见 application-test.yml）。
+prep 退出码 = 0
+
+===== [2] 首跑前取证：schema 空 + 无 flyway_schema_history =====
+db	tables_now
+dev003_20260915_1110_generator	0
+db	tables_now
+dev003_20260915_1110_mall	0
+flyway_hist_generator
+0
+flyway_hist_mall
+0
+（tables_now=0 且 flyway_hist=0 ⇒ 全新库、从未迁移）
+
+===== [3] 口令（只报长度）=====
+mall 口令长度=24  generator 口令长度=24
+
+===== [4] 标准入口：run-isolated-tests.ps1 -Module all -Confirm =====
+=== 隔离套件运行门禁（V25-S02 唯一入口）===
+  目标      : 127.0.0.1:3307  （库前缀 dev003_20260915_1110_*）
+  实例指纹  : 运行期由门禁6探针取 @@hostname:@@port 注入 IT_GUARD_SERVERFINGERPRINT；并校验 @@server_uuid = de8ebbea-aff4-11f1-8037-00155d5dba47
+  模块      : all
+  [门禁1] 端口 OK：3307 ∈ [3307] 且 != 3306
+  [门禁2] RunId 形状 OK：dev003_20260915_1110
+  [门禁3] 派生目标 OK：mall->dev003_20260915_1110_mall/dev003_20260915_1110_mallapp  generator->dev003_20260915_1110_generator/dev003_20260915_1110_genapp  analytics->dev003_20260915_1110_mall/dev003_20260915_1110_mallapp
+  [门禁4] mall      口令来源 IT_GUARD_PASSWORD_MALL       值 <o******…长度 24>
+  [门禁4] generator 口令来源 IT_GUARD_PASSWORD_GENERATOR  值 <Q******…长度 24>
+  [门禁4] analytics 口令来源 IT_GUARD_PASSWORD_MALL       值 <o******…长度 24>
+  [门禁5] 确认 OK：-Confirm
+
+将要注入当前进程的环境变量（真值不落盘、不进命令行；口令 masked）：
+  IT_GUARD_ENABLED             = true
+  IT_GUARD_INSTANCEPORTS       = 3307
+  IT_GUARD_RUNID               = dev003_20260915_1110
+  IT_GUARD_SERVERFINGERPRINT   = <运行期由门禁6探针确定：@@hostname:@@port>
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (mall)
+  IT_GUARD_USER                = dev003_20260915_1110_mallapp   (mall)
+  IT_GUARD_PASSWORD            = <o******…长度 24>   (mall)
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (generator)
+  IT_GUARD_USER                = dev003_20260915_1110_genapp   (generator)
+  IT_GUARD_PASSWORD            = <Q******…长度 24>   (generator)
+  IT_GUARD_URL                 = jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true   (analytics)
+  IT_GUARD_USER                = dev003_20260915_1110_mallapp   (analytics)
+  IT_GUARD_PASSWORD            = <o******…长度 24>   (analytics)
+  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，
+        因此各模块不会串用彼此的口令/库（见下方循环内的重设语句）。
+        IT_GUARD_SERVERFINGERPRINT 由门禁6探针读到 @@hostname:@@port 后填入（预演阶段还没有值）。
+  SPRING_DATASOURCE_URL        = jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_generator?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  SPRING_DATASOURCE_USERNAME   = dev003_20260915_1110_genapp
+  SPRING_DATASOURCE_PASSWORD   = <Q******…长度 24>
+        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键
+          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。
+  DEV001_IT_URL                = jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  DEV001_IT_USER               = dev003_20260915_1110_mallapp
+  DEV001_IT_PASSWORD           = <o******…长度 24>
+  DEV001_IT_RUNID              = dev003_20260915_1110
+  DEV001_IT_FINGERPRINT        = <运行期由门禁6探针确定为 @@hostname:@@port>
+        ↑ analytics 侧（TestIsolationGuard / IsolationGuardMySqlIT）只认这 5 个键：
+          它没有 mall/generator 那种 *.local.properties 档案，缺任一项即失败（不 skip）。
+  MALL_ISOLATION_URL           = jdbc:mysql://127.0.0.1:3307/dev003_20260915_1110_mall?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+  MALL_ISOLATION_USER          = dev003_20260915_1110_mallapp
+  MALL_ISOLATION_PASSWORD      = <o******…长度 24>
+  MALL_ISOLATION_FLYWAY_ENABLED = true
+  [门禁6] mall      探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] generator 探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] analytics 探针 OK：port=3307 uuid=de8ebbea-aff4-11f1-8037-00155d5dba47 hostname=dahaishui hist=1 库存在
+  [门禁6] 唯一的实例身份（注入 IT_GUARD_SERVERFINGERPRINT）= dahaishui:3307
+
+=== 运行 mall 隔离套件：mvn -o -Dmaven.repo.local=... -f mall-simulator\pom.xml  test （MAVEN_ARGS=-Pisolated-tests）===
+  mall      exit=0   [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+
+=== 运行 generator 隔离套件：mvn -o -Dmaven.repo.local=... -f synthetic-data-generator\pom.xml  test （MAVEN_ARGS=-Pisolated-tests）===
+  generator exit=0   [INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+
+=== 运行 analytics 隔离套件：mvn -o -Dmaven.repo.local=... -f analytics-server\pom.xml -pl metric-analysis -am test （MAVEN_ARGS=-Pisolated-tests）===
+  analytics exit=0   [IsolationGuardMySqlIT] [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.299 s -- in com.graduation.analytics.metric.IsolationGuardMySqlIT
+
+=== 结果 ===
+  mall      exit=0  [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+            日志 C:\Users\ASUS\AppData\Local\Temp\dev003-allD-dev003_20260915_1110\isolated-mall.log
+  generator exit=0  [INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+            日志 C:\Users\ASUS\AppData\Local\Temp\dev003-allD-dev003_20260915_1110\isolated-generator.log
+  analytics exit=0  [IsolationGuardMySqlIT] [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.299 s -- in com.graduation.analytics.metric.IsolationGuardMySqlIT
+            日志 C:\Users\ASUS\AppData\Local\Temp\dev003-allD-dev003_20260915_1110\isolated-analytics.log
+[PASS exit=0] 全部门块隔离套件通过。
+runner 退出码 = 0
+
+===== [5] 三档日志关键行 =====
+  --- C:\Users\ASUS\AppData\Local\Temp\dev003-allD-dev003_20260915_1110\isolated-mall.log  (37942 B) ---
+    :68  2026-09-15T10:41:53.834+08:00  INFO 88236 --- [mall-simulator] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 2 migrations to schema `dev003_20260915_1110_mall`, now at version v7 (execution time 00:00.232s)
+    :76  [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.008 s -- in com.graduation.mall.auth.AdminProductApiTest
+    :80  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.253 s -- in com.graduation.mall.auth.AuthHttpTest
+    :116  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.187 s -- in com.graduation.mall.auth.AuthServiceTest
+    :153  [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.489 s -- in com.graduation.mall.auth.UserAdminServiceTest
+    :157  [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in com.graduation.mall.controller.OutboxControllerTest
+    :194  [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.889 s -- in com.graduation.mall.domain.service.MallBusinessServiceTest
+    :225  [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.810 s -- in com.graduation.mall.domain.service.OutboxTransactionTest
+    :257  [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.551 s -- in com.graduation.mall.outbox.EventOutboxServiceTest
+    :293  [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.525 s -- in com.graduation.mall.outbox.OutboxPublisherTest
+    :297  [INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+  --- C:\Users\ASUS\AppData\Local\Temp\dev003-allD-dev003_20260915_1110\isolated-generator.log  (21885 B) ---
+    :38  10:42:04.854 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 1 migration to schema `dev003_20260915_1110_generator`, now at version v1 (execution time 00:00.099s)
+    :39  [DEV-003a] GeneratorMetaStoreTest ǰ�ñ�����ɣ�database=dev003_20260915_1110_generator account=dev003_20260915_1110_genapp@% hostname=dahaishui port=3307 runId=dev003_20260915_1110 | flyway ����ִ��Ǩ����=1 Ŀ��汾=1
+    :40  [DEV-003a] GeneratorMetaStoreTest flyway_schema_history: rank=1 version=1 description=generator meta installed_on=2026-09-15 10:42:04.0 success=true
+    :46  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.948 s -- in com.graduation.generator.meta.GeneratorMetaStoreTest
+    :86  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.644 s -- in com.graduation.generator.web.GeneratorApiSmokeTest
+    :149  [INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.675 s -- in com.graduation.generator.web.MallApiGenerationSmokeTest
+    :153  [INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+  --- C:\Users\ASUS\AppData\Local\Temp\dev003-allD-dev003_20260915_1110\isolated-analytics.log  (10238 B) ---
+    :39  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.153 s -- in com.graduation.analytics.common.GlobalExceptionHandlerSourceStatusTest
+    :41  [INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.graduation.analytics.common.LandingUriTest
+    :43  [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.119 s -- in com.graduation.analytics.contracts.CanonicalEventSchemaParityTest
+    :45  [INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.034 s -- in com.graduation.analytics.metric.RuleSeverityTest
+    :67  [INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.194 s -- in com.graduation.analytics.testsupport.TestIsolationGuardTest
+    :71  [INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.964 s -- in com.graduation.analytics.warehouse.WarehouseNameLiteralGateTest
+    :73  [INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.070 s -- in com.graduation.analytics.warehouse.WarehouseNamespaceContractTest
+    :77  [INFO] Tests run: 89, Failures: 0, Errors: 0, Skipped: 0
+    :110  [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.299 s -- in com.graduation.analytics.metric.IsolationGuardMySqlIT
+    :114  [INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+
+===== [6] 首跑后 flyway 历史 =====
+db	tables_after
+dev003_20260915_1110_generator	6
+db	tables_after
+dev003_20260915_1110_mall	13
+version	description	installed_on	success
+1	generator meta	2026-09-15 10:42:04	1
+
+===== 结束 2026-09-15 10:42:21 =====

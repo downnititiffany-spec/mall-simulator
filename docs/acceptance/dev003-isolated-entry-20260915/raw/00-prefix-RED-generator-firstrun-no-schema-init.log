@@ -1,0 +1,397 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.meta.GeneratorMetaStoreTest
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003a_20260915_1040_generator account=dev003a_20260915_1040_genapp@% hostname=dahaishui port=3307 runId=dev003a_20260915_1040
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003a_20260915_1040_generator account=dev003a_20260915_1040_genapp@% hostname=dahaishui port=3307 runId=dev003a_20260915_1040
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003a_20260915_1040_generator account=dev003a_20260915_1040_genapp@% hostname=dahaishui port=3307 runId=dev003a_20260915_1040
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003a_20260915_1040_generator account=dev003a_20260915_1040_genapp@% hostname=dahaishui port=3307 runId=dev003a_20260915_1040
+[IsolationGuard] дǰ�˶�ͨ����GeneratorMetaStoreTest.setUp����database=dev003a_20260915_1040_generator account=dev003a_20260915_1040_genapp@% hostname=dahaishui port=3307 runId=dev003a_20260915_1040
+[ERROR] Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.479 s <<< FAILURE! -- in com.graduation.generator.meta.GeneratorMetaStoreTest
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.cancelIsIdempotent -- Time elapsed: 0.317 s <<< ERROR!
+org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar []
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1001)
+	at com.graduation.generator.meta.GeneratorMetaStore.insertRun(GeneratorMetaStore.java:146)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.cancelIsIdempotent(GeneratorMetaStoreTest.java:193)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	Suppressed: org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [DELETE FROM generation_event_stat WHERE run_id = ?]
+		at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+		at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+		at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:970)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1014)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1024)
+		at com.graduation.generator.meta.GeneratorMetaStoreTest.cleanUp(GeneratorMetaStoreTest.java:116)
+		... 3 more
+	Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_event_stat' doesn't exist
+		at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+		at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+		at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:975)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+		... 7 more
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_run' doesn't exist
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$3(JdbcTemplate.java:1002)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 6 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.artifactsAndStatsAreIdempotent -- Time elapsed: 0.015 s <<< ERROR!
+org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar []
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1001)
+	at com.graduation.generator.meta.GeneratorMetaStore.insertRun(GeneratorMetaStore.java:146)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.artifactsAndStatsAreIdempotent(GeneratorMetaStoreTest.java:206)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	Suppressed: org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [DELETE FROM generation_event_stat WHERE run_id = ?]
+		at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+		at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+		at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:970)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1014)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1024)
+		at com.graduation.generator.meta.GeneratorMetaStoreTest.cleanUp(GeneratorMetaStoreTest.java:116)
+		... 3 more
+	Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_event_stat' doesn't exist
+		at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+		at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+		at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:975)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+		... 7 more
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_run' doesn't exist
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$3(JdbcTemplate.java:1002)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 6 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.targetCrudIncrementsConfigVersion -- Time elapsed: 0.014 s <<< ERROR!
+org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar []
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1001)
+	at com.graduation.generator.meta.GeneratorMetaStore.insertTarget(GeneratorMetaStore.java:53)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.targetCrudIncrementsConfigVersion(GeneratorMetaStoreTest.java:127)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	Suppressed: org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [DELETE FROM generation_event_stat WHERE run_id = ?]
+		at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+		at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+		at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:970)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1014)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1024)
+		at com.graduation.generator.meta.GeneratorMetaStoreTest.cleanUp(GeneratorMetaStoreTest.java:116)
+		... 3 more
+	Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_event_stat' doesn't exist
+		at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+		at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+		at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:975)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+		... 7 more
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generator_target' doesn't exist
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$3(JdbcTemplate.java:1002)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 6 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.planVersionsAreAppendOnly -- Time elapsed: 0.042 s <<< ERROR!
+org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [SELECT COALESCE(MAX(version), 0) FROM generation_plan WHERE plan_id = ?]
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:723)
+	at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:754)
+	at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:767)
+	at org.springframework.jdbc.core.JdbcTemplate.queryForObject(JdbcTemplate.java:889)
+	at org.springframework.jdbc.core.JdbcTemplate.queryForObject(JdbcTemplate.java:916)
+	at com.graduation.generator.meta.GeneratorMetaStore.appendPlanVersion(GeneratorMetaStore.java:110)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.planVersionsAreAppendOnly(GeneratorMetaStoreTest.java:150)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	Suppressed: org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [DELETE FROM generation_event_stat WHERE run_id = ?]
+		at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+		at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+		at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:970)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1014)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1024)
+		at com.graduation.generator.meta.GeneratorMetaStoreTest.cleanUp(GeneratorMetaStoreTest.java:116)
+		... 3 more
+	Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_event_stat' doesn't exist
+		at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+		at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+		at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:975)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+		... 7 more
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_plan' doesn't exist
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeQuery(ClientPreparedStatement.java:968)
+	at org.springframework.jdbc.core.JdbcTemplate$1.doInPreparedStatement(JdbcTemplate.java:732)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 10 more
+
+[ERROR] com.graduation.generator.meta.GeneratorMetaStoreTest.runLifecycleIsSingleWayAndTerminalProtected -- Time elapsed: 0.013 s <<< ERROR!
+org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar []
+	at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1001)
+	at com.graduation.generator.meta.GeneratorMetaStore.insertRun(GeneratorMetaStore.java:146)
+	at com.graduation.generator.meta.GeneratorMetaStoreTest.runLifecycleIsSingleWayAndTerminalProtected(GeneratorMetaStoreTest.java:169)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	Suppressed: org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [DELETE FROM generation_event_stat WHERE run_id = ?]
+		at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:103)
+		at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+		at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:970)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1014)
+		at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:1024)
+		at com.graduation.generator.meta.GeneratorMetaStoreTest.cleanUp(GeneratorMetaStoreTest.java:116)
+		... 3 more
+	Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_event_stat' doesn't exist
+		at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+		at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+		at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+		at org.springframework.jdbc.core.JdbcTemplate.lambda$update$2(JdbcTemplate.java:975)
+		at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+		... 7 more
+Caused by: java.sql.SQLSyntaxErrorException: Table 'dev003a_20260915_1040_generator.generation_run' doesn't exist
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:121)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:912)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1054)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1003)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1312)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:988)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$3(JdbcTemplate.java:1002)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 6 more
+
+[INFO] Running com.graduation.generator.web.GeneratorApiSmokeTest
+10:34:46.533 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.graduation.generator.web.GeneratorApiSmokeTest]: GeneratorApiSmokeTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+10:34:46.648 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.graduation.generator.GeneratorApplication for test class com.graduation.generator.web.GeneratorApiSmokeTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-15T10:34:47.076+08:00  INFO 62708 --- [synthetic-data-generator] [           main] c.g.generator.web.GeneratorApiSmokeTest  : Starting GeneratorApiSmokeTest using Java 17.0.12 with PID 62708 (started by ASUS in D:\Develop_code\GraduationProject\synthetic-data-generator)
+2026-09-15T10:34:47.083+08:00  INFO 62708 --- [synthetic-data-generator] [           main] c.g.generator.web.GeneratorApiSmokeTest  : No active profile set, falling back to 1 default profile: "default"
+2026-09-15T10:34:48.619+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-09-15T10:34:48.624+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [2.0.14] using APR version [1.7.6].
+2026-09-15T10:34:48.638+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 3.5.5 27 Jan 2026]
+2026-09-15T10:34:48.648+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-15T10:34:48.649+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-15T10:34:48.749+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-15T10:34:48.750+08:00  INFO 62708 --- [synthetic-data-generator] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1654 ms
+2026-09-15T10:34:48.900+08:00  INFO 62708 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-15T10:34:48.929+08:00  INFO 62708 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4c5da4f9
+2026-09-15T10:34:48.932+08:00  INFO 62708 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-15T10:34:49.115+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-09-15T10:34:49.115+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-09-15T10:34:49.115+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-09-15T10:34:49.143+08:00  INFO 62708 --- [synthetic-data-generator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev003a_20260915_1040_generator (MySQL 8.0)
+2026-09-15T10:34:49.181+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `dev003a_20260915_1040_generator`.`flyway_schema_history` does not exist yet
+2026-09-15T10:34:49.185+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.022s)
+2026-09-15T10:34:49.198+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `dev003a_20260915_1040_generator`.`flyway_schema_history` ...
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev003a_20260915_1040_generator account=dev003a_20260915_1040_genapp@% hostname=dahaishui port=3307 runId=dev003a_20260915_1040
+2026-09-15T10:34:49.253+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev003a_20260915_1040_generator`: << Empty Schema >>
+2026-09-15T10:34:49.265+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `dev003a_20260915_1040_generator` to version "1 - generator meta"
+2026-09-15T10:34:49.402+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema `dev003a_20260915_1040_generator`, now at version v1 (execution time 00:00.120s)
+2026-09-15T10:34:50.058+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 10590 (http) with context path ''
+2026-09-15T10:34:50.066+08:00  INFO 62708 --- [synthetic-data-generator] [           main] c.g.generator.web.GeneratorApiSmokeTest  : Started GeneratorApiSmokeTest in 3.27 seconds (process running for 8.026)
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-09-15T10:34:50.843+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-15T10:34:50.843+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-15T10:34:50.844+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-09-15T10:34:50.931+08:00  WARN 62708 --- [synthetic-data-generator] [o-auto-1-exec-3] c.g.generator.web.ApiExceptionHandler    : Ψһ����ͻ��Duplicate entry 'it-file-target-67ea6a' for key 'generator_target.uk_generator_target_name'
+2026-09-15T10:34:51.073+08:00  WARN 62708 --- [synthetic-data-generator] [o-auto-1-exec-2] c.g.generator.web.ApiExceptionHandler    : ��������δʵ�ֵ�������ģʽ SOME_UNKNOWN_MODE δʵ�֣�������ֻ֧�� CANONICAL_EVENT_FILE �� MALL_API
+2026-09-15T10:34:51.118+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-1-exec-5] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s3b-463f4f3c-v1-20260915-103451-38cb plan=it-s3b-463f4f3c v1 mode=CANONICAL_EVENT_FILE scenario=normal eventCount=200
+2026-09-15T10:34:51.240+08:00  INFO 62708 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s3b-463f4f3c-v1-20260915-103451-38cb status=SUCCESS success=200 failed=0 artifacts=2 manifestRecords=200
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.912 s -- in com.graduation.generator.web.GeneratorApiSmokeTest
+[INFO] Running com.graduation.generator.web.MallApiGenerationSmokeTest
+2026-09-15T10:34:51.391+08:00  INFO 62708 --- [synthetic-data-generator] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.graduation.generator.web.MallApiGenerationSmokeTest]: MallApiGenerationSmokeTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-09-15T10:34:51.394+08:00  INFO 62708 --- [synthetic-data-generator] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.graduation.generator.GeneratorApplication for test class com.graduation.generator.web.MallApiGenerationSmokeTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-09-15T10:34:51.412+08:00  INFO 62708 --- [synthetic-data-generator] [           main] c.g.g.web.MallApiGenerationSmokeTest     : Starting MallApiGenerationSmokeTest using Java 17.0.12 with PID 62708 (started by ASUS in D:\Develop_code\GraduationProject\synthetic-data-generator)
+2026-09-15T10:34:51.413+08:00  INFO 62708 --- [synthetic-data-generator] [           main] c.g.g.web.MallApiGenerationSmokeTest     : No active profile set, falling back to 1 default profile: "default"
+2026-09-15T10:34:51.572+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-09-15T10:34:51.573+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-15T10:34:51.573+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-09-15T10:34:51.585+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-09-15T10:34:51.585+08:00  INFO 62708 --- [synthetic-data-generator] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 171 ms
+2026-09-15T10:34:51.611+08:00  INFO 62708 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-09-15T10:34:51.617+08:00  INFO 62708 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@633cad4d
+2026-09-15T10:34:51.617+08:00  INFO 62708 --- [synthetic-data-generator] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-09-15T10:34:51.628+08:00  INFO 62708 --- [synthetic-data-generator] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://127.0.0.1:3307/dev003a_20260915_1040_generator (MySQL 8.0)
+2026-09-15T10:34:51.639+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.005s)
+[IsolationGuard] дǰ�˶�ͨ����flyway-before-migrate����database=dev003a_20260915_1040_generator account=dev003a_20260915_1040_genapp@% hostname=dahaishui port=3307 runId=dev003a_20260915_1040
+2026-09-15T10:34:51.668+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `dev003a_20260915_1040_generator`: 1
+2026-09-15T10:34:51.669+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.f.core.internal.command.DbMigrate      : Schema `dev003a_20260915_1040_generator` is up to date. No migration necessary.
+2026-09-15T10:34:51.754+08:00  INFO 62708 --- [synthetic-data-generator] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 12884 (http) with context path ''
+2026-09-15T10:34:51.756+08:00  INFO 62708 --- [synthetic-data-generator] [           main] c.g.g.web.MallApiGenerationSmokeTest     : Started MallApiGenerationSmokeTest in 0.359 seconds (process running for 9.716)
+2026-09-15T10:34:51.801+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-2-exec-1] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-15T10:34:51.802+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-2-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-15T10:34:51.802+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-2-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-09-15T10:34:52.387+08:00  INFO 62708 --- [synthetic-data-generator] [o-auto-2-exec-4] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s4b-1f296fe1-v1-20260915-103451-80c6 plan=it-s4b-1f296fe1 v1 mode=MALL_API scenario=normal eventCount=60
+2026-09-15T10:34:52.586+08:00 ERROR 62708 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ��������ʧ�ܣ�runId=it-s4b-1f296fe1-v1-20260915-103451-80c6 code=RUN_FAILED
+
+com.graduation.generator.adapter.MallOperationException: [runForTarget] �������� 39 ���̳ǲ�������ʵ�ܾ�����д��淶�� 21 ������createOrder �� [createOrder] �̳Ǿܾ���http://127.0.0.1:12889 �� HTTP 400 code=INSUFFICIENT_STOCK message=��治��: 910000000000000002���̳ǲ಻�ع����ѳɹ���д������ʵ���ڣ��������������ܣ����С event_count �ö��������ڿ��ɳ��ܷ�Χ��
+	at com.graduation.generator.engine.MallApiGenerationEngine.runForTarget(MallApiGenerationEngine.java:155) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.execute(GenerationRunService.java:314) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.lambda$start$2(GenerationRunService.java:153) ~[classes/:na]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:842) ~[na:na]
+
+2026-09-15T10:34:52.687+08:00  INFO 62708 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s4b-1f296fe1-v1-20260915-103451-80c6 status=FAILED success=21 failed=0 artifacts=2 manifestRecords=21
+2026-09-15T10:34:52.901+08:00  INFO 62708 --- [synthetic-data-generator] [-auto-2-exec-10] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s4b-96c07ea6-v1-20260915-103452-4f3d plan=it-s4b-96c07ea6 v1 mode=MALL_API scenario=normal eventCount=60
+2026-09-15T10:34:53.011+08:00 ERROR 62708 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ��������ʧ�ܣ�runId=it-s4b-96c07ea6-v1-20260915-103452-4f3d code=RUN_FAILED
+
+com.graduation.generator.adapter.MallOperationException: [runForTarget] �������� 39 ���̳ǲ�������ʵ�ܾ�����д��淶�� 21 ������createOrder �� [createOrder] �̳Ǿܾ���http://127.0.0.1:12930 �� HTTP 400 code=INSUFFICIENT_STOCK message=��治��: 910000000000000002���̳ǲ಻�ع����ѳɹ���д������ʵ���ڣ��������������ܣ����С event_count �ö��������ڿ��ɳ��ܷ�Χ��
+	at com.graduation.generator.engine.MallApiGenerationEngine.runForTarget(MallApiGenerationEngine.java:155) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.execute(GenerationRunService.java:314) ~[classes/:na]
+	at com.graduation.generator.service.GenerationRunService.lambda$start$2(GenerationRunService.java:153) ~[classes/:na]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:842) ~[na:na]
+
+2026-09-15T10:34:53.049+08:00  INFO 62708 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s4b-96c07ea6-v1-20260915-103452-4f3d status=FAILED success=21 failed=0 artifacts=2 manifestRecords=21
+2026-09-15T10:34:53.259+08:00  INFO 62708 --- [synthetic-data-generator] [-auto-2-exec-10] c.g.g.service.GenerationRunService       : ������������ӣ�runId=it-s4b-309d8ff3-v1-20260915-103453-30cf plan=it-s4b-309d8ff3 v1 mode=MALL_API scenario=normal eventCount=1000
+2026-09-15T10:34:55.418+08:00  INFO 62708 --- [synthetic-data-generator] [  generator-run] c.g.g.service.GenerationRunService       : ���������տڣ�runId=it-s4b-309d8ff3-v1-20260915-103453-30cf status=SUCCESS success=1000 failed=0 artifacts=2 manifestRecords=1000
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.399 s -- in com.graduation.generator.web.MallApiGenerationSmokeTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   GeneratorMetaStoreTest.artifactsAndStatsAreIdempotent:206 ? BadSqlGrammar PreparedStatementCallback; bad SQL grammar []
+[ERROR]   GeneratorMetaStoreTest.cancelIsIdempotent:193 ? BadSqlGrammar PreparedStatementCallback; bad SQL grammar []
+[ERROR]   GeneratorMetaStoreTest.planVersionsAreAppendOnly:150 ? BadSqlGrammar PreparedStatementCallback; bad SQL grammar [SELECT COALESCE(MAX(version), 0) FROM generation_plan WHERE plan_id = ?]
+[ERROR]   GeneratorMetaStoreTest.runLifecycleIsSingleWayAndTerminalProtected:169 ? BadSqlGrammar PreparedStatementCallback; bad SQL grammar []
+[ERROR]   GeneratorMetaStoreTest.targetCrudIncrementsConfigVersion:127 ? BadSqlGrammar PreparedStatementCallback; bad SQL grammar []
+[INFO] 
+[ERROR] Tests run: 19, Failures: 0, Errors: 5, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  21.006 s
+[INFO] Finished at: 2026-09-15T10:34:56+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project synthetic-data-generator: 
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject\synthetic-data-generator\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

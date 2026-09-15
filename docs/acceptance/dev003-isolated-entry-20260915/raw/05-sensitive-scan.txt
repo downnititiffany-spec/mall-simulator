@@ -1,0 +1,17 @@
+# lane 敏感词扫描（2026-09-15 10:44:59） # 模式：password / passwd / pwd= / MYSQL_PWD / Authorization / Bearer / token / secret / 123456 / apiKey / access_key / PRIVATE KEY # 判读口径：命中不等于泄密。掩码形态 `<x******…长度 24>`、引用名 `credref:<runId>-<module>`、键名本身（IT_GUARD_PASSWORD 等）均非明文。 # 硬判据：以本轮真实口令（24 字符，从 gitignore 覆盖的 credref 文件读出、不落盘、不打印）在全 raw/ 内做子串搜索。 
+  01-runner-module-all-console-dev003_20260915_1110.txt password     14 行
+  04-code-diff-and-status.txt                    password     12 行
+  （无命中）passwd
+  （无命中）pwd=
+  （无命中）MYSQL_PWD
+  （无命中）Authorization
+  （无命中）Bearer
+  20-default-analytics-reactor.log               token        1 行
+  （无命中）secret
+  （无命中）123456
+  （无命中）apiKey
+  （无命中）access_key
+  （无命中）PRIVATE KEY
+
+# 明文口令硬判据结果
+  0 处命中：lane 内不存在本轮真实口令明文 ✔
