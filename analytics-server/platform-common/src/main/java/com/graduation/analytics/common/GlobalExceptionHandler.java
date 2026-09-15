@@ -53,6 +53,10 @@ public class GlobalExceptionHandler {
     /**
      * 业务码 → HTTP 状态（**唯一所有者**：新增错误码只在这里加一行，不得散落到控制器或第二个 advice）。
      * 未列出的码一律 400——保持 V1 以来的既有契约，改动只做加法。
+     *
+     * <p>S2-02B 加法：{@code INGEST_BATCH_INPUT_CONFLICT} → 409（同批次二次消费同一输入，
+     * 与 {@code MAPPING_*} 同族"状态不满足采集前提"，理由见
+     * {@link PlatformBizException#INGEST_BATCH_INPUT_CONFLICT}）；既有码状态不变。</p>
      */
     static HttpStatus mapStatus(String code) {
         if (code == null) {
@@ -67,7 +71,8 @@ public class GlobalExceptionHandler {
                  PlatformBizException.SOURCE_IN_USE,
                  PlatformBizException.SOURCE_NOT_BOUND,
                  PlatformBizException.MAPPING_PROFILE_INVALID,
-                 PlatformBizException.MAPPING_PROFILE_BLOCKED -> HttpStatus.CONFLICT;
+                 PlatformBizException.MAPPING_PROFILE_BLOCKED,
+                 PlatformBizException.INGEST_BATCH_INPUT_CONFLICT -> HttpStatus.CONFLICT;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

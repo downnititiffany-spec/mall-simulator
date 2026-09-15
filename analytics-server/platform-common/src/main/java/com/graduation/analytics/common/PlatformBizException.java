@@ -66,6 +66,15 @@ public class PlatformBizException extends RuntimeException {
     public static final String MAPPING_PROFILE_INVALID = "MAPPING_PROFILE_INVALID";
     public static final String MAPPING_PROFILE_BLOCKED = "MAPPING_PROFILE_BLOCKED";
 
+    // 批次重放口径错误码（S2-02B，加法式新增；状态映射仍由 GlobalExceptionHandler.mapStatus 独有）：
+    //   INGEST_BATCH_INPUT_CONFLICT → 409（同一批次已 LANDED 该文件，而本轮该文件又有新内容）
+    // 语义：这不是"这一行数据坏了"（那是隔离，批次 QUARANTINED），而是**批次与输入的绑定被破坏**
+    // ——同一批次不得二次消费同一输入。判据是既有唯一键 uk_batch_file(batch_id, file_path) 写下的
+    // ingestion_batch_file 行，不新造指纹；已 LANDED 且无新内容属同批次同输入的幂等重放，不算冲突。
+    // 处理：该文件记 errorCount ⇒ 批次 FAILED ⇒ 不产出 READY 清单（半成品不可交付），重放须开新批次。
+    // 与 SOURCE_NOT_BOUND / MAPPING_* 同族：都是"当前状态不满足继续采集的前提"，故归 409。
+    public static final String INGEST_BATCH_INPUT_CONFLICT = "INGEST_BATCH_INPUT_CONFLICT";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

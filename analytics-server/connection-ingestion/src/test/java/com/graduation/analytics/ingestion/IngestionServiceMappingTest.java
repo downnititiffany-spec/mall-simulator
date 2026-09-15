@@ -9,6 +9,7 @@ import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.ingestion.entity.FileCheckpoint;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
+import com.graduation.analytics.ingestion.entity.IngestionBatchFile;
 import com.graduation.analytics.ingestion.entity.QuarantineRecord;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
@@ -121,12 +122,15 @@ class IngestionServiceMappingTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 断点查询要经过 MyBatis-Plus 的 lambda 列名缓存（平时由 SqlSessionFactory 建），L0 测试手工建一次。
+     * 断点查询与批次文件账都要经过 MyBatis-Plus 的 lambda 列名缓存（平时由 SqlSessionFactory 建），
+     * L0 测试手工建一次。
      */
     @BeforeAll
     static void initLambdaCache() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
                 FileCheckpoint.class);
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
+                IngestionBatchFile.class);
     }
 
     // ---------------------------------------------------------------- 装配

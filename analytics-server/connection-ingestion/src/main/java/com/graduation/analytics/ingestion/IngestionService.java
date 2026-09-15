@@ -44,7 +44,11 @@ import java.util.zip.CRC32;
  *   由 {@link SourceRegistryService#currentSourceId()} 单点解析；**未绑定源即 fail-closed**
  *   （{@link PlatformBizException#SOURCE_NOT_BOUND}，绝不回落到某个固定源）；
  * - 输出目录职责（§9.1）：landing/accepted/{batchId} 校验通过、landing/quarantine/{batchId} 坏行、
- *   landing/manifests/{batchId}.json 批次清单（状态 READY，§9.3）；
+ *   landing/manifests/{batchId}.json 批次清单（状态 READY，§9.3；**只有 errorCount=0 的批次才产出**——
+ *   见 {@code runOne} 清单段：清单存在即"可交付"，失败批次不得发布半成品，S2-02B）；
+ * - S2-02B 失败三分类（互不伪装）：① 映射/业务数据问题 ⇒ 隔离行 + {@code reason}，批次 QUARANTINED；
+ *   ② canonical 契约不满足 ⇒ 隔离行 + 契约校验器原因（无 {@code MAPPING:} 前缀），批次 QUARANTINED；
+ *   ③ 系统自身异常 ⇒ 该文件记 errorCount、批次 FAILED、**断点不推进**、不产出清单；
  * - ODS 只能读取 accepted，禁止直接读 source/events（§9.1）。
  */
 @Slf4j
@@ -78,6 +82,10 @@ public class IngestionService {
      * <p>B-08 / D-022 候选①（最小明示）：{@code noNewData=true} 表示本次**没有读到任何新字节**
      * ——数据源停机时平台据此明示"本次无新数据（数据源未产出）"，而不是只回一个 {@code SUCCESS + 0 条}。
      * 判定口径不变（批次状态仍按错误/隔离行决定），不探活生产者、不新增外部依赖。</p>
+     *
+     * <p>S2-02B：{@code manifestPath} 在 {@code status=FAILED} 时为 {@code null}——失败批次不产出清单
+     * （清单 schema 的 {@code status} 是 {@code const "READY"}，清单存在即断言可交付）。
+     * 调用方不得把 null 当成"清单写失败"，它是"本轮不可交付"的正式表达。</p>
      */
     public record RunResult(Long batchId, String batchNo, String status,
                             long recordCount, long quarantineCount, long errorCount,
@@ -163,6 +171,25 @@ public class IngestionService {
                     // 字节记进 A 源的批次、并把断点写到 A 源名下 —— 本次记 FAILED 并中断，
                     // 宁可这一轮失败，也不产出**归属错误**的批次（那是事后无法察觉的错账）。
                     requireSourceUnchanged(runtimeProfileId, sourceId, entry.getKey().toString());
+                    // S2-02B（批次重放口径）：**同一批次不得二次消费同一输入**。
+                    // 判据不是新造的指纹，而是既有唯一键 uk_batch_file(batch_id, file_path) 已经写下的
+                    // 「本批次已 LANDED 该文件」这笔账（{@link IngestionBatchFile}，L186 就是它的写入点）：
+                    //   ① 已 LANDED + 无新内容 = 同批次、同输入的幂等重放 ⇒ 照常走，下游读到 0 条新记录；
+                    //   ② 已 LANDED + 有新内容（追加 / 重建）= 同批次换了输入 ⇒ **显式冲突**，
+                    //      这批字节不能再进本批次（那会产出既无法归属、也无法对账的重复行）。
+                    // 冲突按"本轮不得继续"处理：记 errorCount ⇒ 批次 FAILED ⇒（见下方清单段）不产出 READY 清单，
+                    // 因此半成品不会被下游当成本轮输入；重放须开新批次。
+                    String fileName = entry.getKey();
+                    Long landed = batchFileMapper.selectCount(new LambdaQueryWrapper<IngestionBatchFile>()
+                            .eq(IngestionBatchFile::getBatchId, batch.getId())
+                            .eq(IngestionBatchFile::getFilePath, fileName));
+                    if (landed != null && landed > 0
+                            && ingestor.hasConsumableData(entry.getValue(), runtimeProfileId, sourceId)) {
+                        throw new PlatformBizException(PlatformBizException.INGEST_BATCH_INPUT_CONFLICT,
+                                PlatformBizException.INGEST_BATCH_INPUT_CONFLICT + ": 批次 " + batchId
+                                        + " 已消费文件 " + fileName + "，本轮该文件又有新内容；"
+                                        + "同一批次不得二次消费同一输入（重放须开新批次）");
+                    }
                     var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId, sourceId,
                             acceptedDir, quarantineDir, trace, checksum, mapping);
                     // endOffset > startOffset ⇒ 真实推进了断点（有新内容可读），与 fileCount 的
@@ -209,10 +236,26 @@ public class IngestionService {
         batchMapper.updateById(batch);
 
         // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
-        String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
-                recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
-                source, mapping);
-        String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
+        // S2-02B：**失败批次不产出清单**。清单 schema 的 status 是 const "READY"
+        // （contract-specs/schemas/ingestion-manifest.v1.schema.json：清单文档只能断言"可交付"），
+        // 而 PipelineService.findReadyManifest 只扫 manifests/*.json 中 status=READY 且计数>0 的清单。
+        // 系统异常时若照写一份 READY 清单，异常前已落盘的**半成品**（recordCount>0）就会被流水线
+        // 当成本轮输入 —— 那是把系统异常伪装成"采集成功"。不写清单还顺带满足"失败保旧快照"：
+        // 失败轮不占清单位，上一份好批次仍是流水线能取到的输入。
+        // 失败证据不丢：ingestion_batch 行（status=FAILED / error_count）、accepted 与 quarantine 目录、
+        // 每个文件的 warn 日志都在原地；下一轮以新批次重读（断点未推进 ⇒ 不丢数据，重复投递由
+        // DWD 侧 event_id 去重兜底，见 D-107/D-117 的 DUPLICATE_EVENT 归属）。
+        String manifestUri = null;
+        if (errorCount == 0) {
+            String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
+                    recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
+                    source, mapping);
+            manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
+        } else {
+            log.warn("批次 {} 有 {} 个文件采集失败（status=FAILED）⇒ 不产出批次清单；"
+                            + "accepted/quarantine 目录保留为失败证据，重放须开新批次",
+                    batchId, errorCount);
+        }
 
         log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={} noNewData={}",
                 batchNo, batch.getStatus(), recordCount, quarantineCount, errorCount, fileCount, acceptedBytes,

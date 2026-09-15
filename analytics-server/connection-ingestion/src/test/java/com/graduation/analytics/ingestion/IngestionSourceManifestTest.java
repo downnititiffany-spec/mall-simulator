@@ -1,10 +1,14 @@
 package com.graduation.analytics.ingestion;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.ingestion.entity.FileCheckpoint;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
+import com.graduation.analytics.ingestion.entity.IngestionBatchFile;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
@@ -14,6 +18,8 @@ import com.graduation.analytics.source.dto.SourceRegistryView;
 import com.graduation.analytics.source.entity.SourceRegistry;
 import com.graduation.analytics.mapping.ingest.SourceMapper;
 import com.graduation.analytics.mapping.ingest.SourceMapping;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,6 +59,18 @@ import static org.mockito.Mockito.when;
  * </ul>
  */
 class IngestionSourceManifestTest {
+
+    /**
+     * 批次文件账（S2-02B 的重放口径读它）与断点查询都要经过 MyBatis-Plus 的 lambda 列名缓存
+     * （平时由 SqlSessionFactory 建），L0 测试手工建一次。
+     */
+    @BeforeAll
+    static void initLambdaCache() {
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
+                FileCheckpoint.class);
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
+                IngestionBatchFile.class);
+    }
 
     private final IngestionBatchMapper batchMapper = mock(IngestionBatchMapper.class);
     private final IngestionBatchFileMapper batchFileMapper = mock(IngestionBatchFileMapper.class);
