@@ -1,4 +1,5 @@
-# 隔离档唯一入口：跑 mall-simulator / synthetic-data-generator 的隔离集成套件（V25-S02 闭环）
+# 隔离档唯一入口：跑 mall-simulator / synthetic-data-generator / analytics-server 的隔离集成套件
+# （V25-S02 闭环；analytics 侧接入 = DEV-003b）
 #
 # 解决什么：`scripts/it-prepare-isolation.ps1` 建好 3307 上的空库/受限账号后，只把两段
 # 配置片段**打印**出来，由人手工抄进模块工作目录的 `*.local.properties`，口令还写成
@@ -37,6 +38,14 @@
 #     relaxed-binding 通道覆盖到 3307 隔离库，否则 generator 的 Spring 用例会连宿主正式实例
 #     （DEV-002；3306 冻结期尤其不能靠"它恰好没有迁移"来兜底）。
 #   * 库名/账号名与 `scripts/it-prepare-isolation.ps1:89-92` 同源：`<runId>_mall` /
+#   * DEV-003b：analytics-server 侧的真库 IT（`metric-analysis` 的 `IsolationGuardMySqlIT`）接进本入口，
+#     目标 = `-Module analytics`（`-Module all` = mall + generator + analytics）。它复用 mall 的库与受限账号
+#     （`<runId>_mall` / `<runId>_mallapp`，**不新建任何 3307 对象**），跑法固定为
+#     `mvn -f analytics-server\pom.xml -pl metric-analysis -am test`（+ `-Pisolated-tests`：该模块 profile 收集
+#     `@Tag("it")` 的 `*IT` 类）。跑完**强制核对日志里确实出现 `...IsolationGuardMySqlIT` 的 `Tests run:` 行**：
+#     零用例／类没被选中一律按失败（exit 7）处理，否则「自动执行」会退化成假绿。
+#     分析侧凭据通道与 mall/generator 不同（`IsolationGuardMySqlIT` 只读环境变量 `DEV001_IT_*`），
+#     本脚本按本 runId 的 mall 目标注入这 5 个键；指纹同样是探针读到的 `@@hostname:@@port`。
 #     `<runId>_generator` / `<runId>_mallapp` / `<runId>_genapp`。
 #
 # 退出码（对齐 scripts/smoke-pipeline.ps1:32 的 0/2/3/4/5/6 契约中与本脚本相关的语义）：
@@ -44,7 +53,8 @@
 #   1 = 参数/环境错误（找不到 mvn、脚本自身错误）
 #   5 = 执行前被门禁拒绝（端口/形状/账号/缺口令/未确认/指纹不符/目标库不存在）
 #   6 = 只读探针取数失败（连不上、查不到）
-#   7 = Maven 套件失败（有模块非 0 退出；各模块退出码在输出中列出）
+#   7 = Maven 套件失败（有模块非 0 退出；各模块退出码在输出中列出），
+#       或「要求被自动执行的隔离类没跑到」——见 DEV-003b 的零用例硬门禁
 #
 # 用法：
 #   # 1) 预演：不连库、不跑 Maven、不落盘，只打印门禁与将要注入的环境变量（口令掩码）
@@ -52,9 +62,11 @@
 #   # 2) 真跑（先跑 it-prepare-isolation.ps1 建好库/账号；口令经环境变量给）
 #   $env:IT_GUARD_PASSWORD = '<本 runId 的受限账号口令>'
 #   pwsh -NoProfile -File scripts/run-isolated-tests.ps1 -RunId v25it_20260914_1700_ctl1 -Module both -Confirm
+#   # 3) 全档：mall + generator + analytics（IsolationGuardMySqlIT 自动进入，无需 -Dtest= 点名）
+#   pwsh -NoProfile -File scripts/run-isolated-tests.ps1 -RunId v25it_20260914_1700_ctl1 -Module all -Confirm
 param(
   [Parameter(Mandatory = $true)][string]$RunId,
-  [ValidateSet('mall', 'generator', 'both')][string]$Module = 'both',
+  [ValidateSet('mall', 'generator', 'analytics', 'both', 'all')][string]$Module = 'both',
   [Alias('Host', 'HostName')][string]$DbHost = '127.0.0.1',
   [int]$Port = 3307,
   [int[]]$AllowedPorts = @(3307),
@@ -108,18 +120,29 @@ Write-Host ("  [门禁2] RunId 形状 OK：{0}" -f $RunId)
 
 # ── 门禁 3：派生目标名 + 账号禁清单 ────────────────────────────────────────
 $targets = @()
-if ($Module -in @('mall', 'both')) {
+if ($Module -in @('mall', 'both', 'all')) {
   $targets += [pscustomobject]@{
     name = 'mall'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
     pom = 'mall-simulator\pom.xml'
+    extraArgs = @(); requireClass = $null
   }
 }
-if ($Module -in @('generator', 'both')) {
+if ($Module -in @('generator', 'both', 'all')) {
   $targets += [pscustomobject]@{
     name = 'generator'; db = "${RunId}_generator"; user = "${RunId}_genapp"
     pwdEnv = @('IT_GUARD_PASSWORD_GENERATOR', 'IT_GUARD_PASSWORD')
     pom = 'synthetic-data-generator\pom.xml'
+    extraArgs = @(); requireClass = $null
+  }
+}
+if ($Module -in @('analytics', 'all')) {
+  # DEV-003b：analytics 真库 IT 走同一入口。目标库/账号复用 mall 那一对（只读用例，不新建 3307 对象）。
+  $targets += [pscustomobject]@{
+    name = 'analytics'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
+    pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
+    pom = 'analytics-server\pom.xml'
+    extraArgs = @('-pl', 'metric-analysis', '-am'); requireClass = 'IsolationGuardMySqlIT'
   }
 }
 foreach ($t in $targets) {
@@ -180,9 +203,9 @@ foreach ($t in $targets) {
   Write-Host ("  {0,-28} = {1}   {2}" -f 'IT_GUARD_PASSWORD', (Mask $t.pwd), $tag)
 }
 Write-Host '  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，'
-Write-Host '        因此两个模块不会串用彼此的口令/库（见下方循环内的重设语句）。'
+Write-Host '        因此各模块不会串用彼此的口令/库（见下方循环内的重设语句）。'
 Write-Host '        IT_GUARD_SERVERFINGERPRINT 由门禁6探针读到 @@hostname:@@port 后填入（预演阶段还没有值）。'
-if ($Module -in @('generator', 'both')) {
+if ($Module -in @('generator', 'both', 'all')) {
   $genTarget = $targets | Where-Object { $_.name -eq 'generator' }
   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_URL', $genTarget.url)
   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_USERNAME', $genTarget.user)
@@ -190,7 +213,17 @@ if ($Module -in @('generator', 'both')) {
   Write-Host '        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键'
   Write-Host '          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。'
 }
-if ($Module -in @('mall', 'both')) {
+if ($Module -in @('analytics', 'all')) {
+  $anTarget = $targets | Where-Object { $_.name -eq 'analytics' }
+  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_URL', $anTarget.url)
+  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_USER', $anTarget.user)
+  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_PASSWORD', (Mask $anTarget.pwd))
+  Write-Host ("  {0,-28} = {1}" -f 'DEV001_IT_RUNID', $RunId)
+  Write-Host ("  {0,-28} = <运行期由门禁6探针确定为 @@hostname:@@port>" -f 'DEV001_IT_FINGERPRINT')
+  Write-Host '        ↑ analytics 侧（TestIsolationGuard / IsolationGuardMySqlIT）只认这 5 个键：'
+  Write-Host '          它没有 mall/generator 那种 *.local.properties 档案，缺任一项即失败（不 skip）。'
+}
+if ($Module -in @('mall', 'both', 'all')) {
   $mallTarget = $targets | Where-Object { $_.name -eq 'mall' }
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_URL', $mallTarget.url)
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_USER', "${RunId}_mallapp")
@@ -274,16 +307,43 @@ foreach ($t in $targets) {
     Remove-Item Env:\SPRING_DATASOURCE_URL, Env:\SPRING_DATASOURCE_USERNAME, `
         Env:\SPRING_DATASOURCE_PASSWORD -ErrorAction SilentlyContinue
   }
+  if ($t.name -eq 'analytics') {
+    # DEV-003b：analytics 的 IsolationGuardMySqlIT 只读 DEV001_IT_*（与 mall/generator 的 IT_GUARD_* 不同源）
+    $env:DEV001_IT_URL = $t.url
+    $env:DEV001_IT_USER = $t.user
+    $env:DEV001_IT_PASSWORD = $t.pwd
+    $env:DEV001_IT_RUNID = $RunId
+    $env:DEV001_IT_FINGERPRINT = $InstanceFingerprint
+  } else {
+    # 不留给别的模块：残留会让下一次运行的目标变得不可预期
+    Remove-Item Env:\DEV001_IT_URL, Env:\DEV001_IT_USER, Env:\DEV001_IT_PASSWORD, `
+        Env:\DEV001_IT_RUNID, Env:\DEV001_IT_FINGERPRINT -ErrorAction SilentlyContinue
+  }
   # -Pisolated-tests 经 MAVEN_ARGS 注入（.cmd 包装器正是为绕开 pwsh→cmd 的 '-' 拆参问题）
   $env:MAVEN_ARGS = '-Pisolated-tests'
   $log = Join-Path $LogDir ("isolated-{0}.log" -f $t.name)
   Write-Host ''
-  Write-Host ("=== 运行 {0} 隔离套件：mvn -o -Dmaven.repo.local=... -f {1} test （MAVEN_ARGS=-Pisolated-tests）===" -f $t.name, $t.pom)
-  & $MavenCmd -o "-Dmaven.repo.local=$MavenRepoLocal" -f $t.pom test 2>&1 | Set-Content -LiteralPath $log -Encoding utf8
+  Write-Host ("=== 运行 {0} 隔离套件：mvn -o -Dmaven.repo.local=... -f {1} {2} test （MAVEN_ARGS=-Pisolated-tests）===" -f `
+      $t.name, $t.pom, ($t.extraArgs -join ' '))
+  # extraArgs：analytics 目标需要 `-pl metric-analysis -am`（analytics-server 是 6 模块 reactor 的父 pom）
+  $mvnArgs = @('-o', "-Dmaven.repo.local=$MavenRepoLocal", '-f', $t.pom) + @($t.extraArgs) + @('test')
+  & $MavenCmd @mvnArgs 2>&1 | Set-Content -LiteralPath $log -Encoding utf8
   $code = $LASTEXITCODE
   $tests = (Select-String -LiteralPath $log -Pattern 'Tests run:' | Select-Object -Last 1)
-  $results += [pscustomobject]@{ module = $t.name; exit = $code; summary = $(if ($tests) { $tests.Line.Trim() } else { '<无 Tests run 行>' }); log = $log }
-  Write-Host ("  {0,-9} exit={1}   {2}" -f $t.name, $code, $results[-1].summary)
+  $summary = if ($tests) { $tests.Line.Trim() } else { '<无 Tests run 行>' }
+  if ($t.requireClass) {
+    # DEV-003b 硬门禁：被点名的隔离类必须**真的**被执行到。只跑出 "Tests run: 0"、或压根没选中该类
+    # （profile 没生效 / includes 写错）时 Maven 退出码仍是 0 —— 那正是「假绿」，这里一律按失败处理。
+    $hit = Select-String -LiteralPath $log -Pattern ('-- in .*' + [regex]::Escape($t.requireClass)) | Select-Object -Last 1
+    if ($hit) {
+      $summary = ('[{0}] {1}' -f $t.requireClass, $hit.Line.Trim())
+    } else {
+      $summary = ('✗ 标准入口未自动执行到 {0}（零用例/未被选中）：{1}' -f $t.requireClass, $summary)
+      if ($code -eq 0) { $code = 7 }
+    }
+  }
+  $results += [pscustomobject]@{ module = $t.name; exit = $code; summary = $summary; log = $log }
+  Write-Host ("  {0,-9} exit={1}   {2}" -f $t.name, $code, $summary)
 }
 Remove-Item Env:\MAVEN_ARGS -ErrorAction SilentlyContinue
 

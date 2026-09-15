@@ -3,6 +3,7 @@ package com.graduation.analytics.metric;
 import com.graduation.analytics.testsupport.TestIsolationGuard;
 import com.graduation.analytics.testsupport.TestIsolationGuard.LiveFacts;
 import com.graduation.analytics.testsupport.TestIsolationGuard.TestRunContext;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -31,13 +32,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * <p><b>本类只读</b>：全部语句都是 {@code SELECT} / {@code SHOW GRANTS} / {@code SHOW DATABASES} 级别的读取，
  * 不下发任何 DDL/DML。因此它可以安全地对着隔离实例跑，也可以作为"未触碰 3306"的旁证。</p>
  *
- * <p><b>命名</b>：类名不以 {@code Test} 开头，surefire 默认包含式（{@code Test*}/{@code *Test}/{@code *Tests}/
- * {@code *TestCase}）不会自动捞它（analytics-server 没有 surefire 配置，见 DEV-003）。必须显式
- * {@code -Dtest=IsolationGuardMySqlIT} 才跑——它需要真实例与真凭据。</p>
+ * <p><b>入口（DEV-003b）</b>：本类打 {@code @Tag("it")}，由 {@code metric-analysis/pom.xml} 的
+ * {@code isolated-tests} profile 收集——默认档（{@code mvn test}）按
+ * {@code <excludedGroups>it</excludedGroups>} 排除它（普通单元测试不连真实 MySQL），
+ * 隔离档（{@code -Pisolated-tests}）按 {@code <groups>it</groups>} + {@code <includes>**&#47;*IT.java</includes>}
+ * 选中它。项目统一入口是
+ * {@code pwsh -NoProfile -File scripts/run-isolated-tests.ps1 -RunId <runId> -Module all -Confirm}：
+ * 该脚本注入本类需要的 {@code DEV001_IT_*} 环境变量，并在跑完后**强制核对**本类确实被执行到
+ * （零用例／未被选中一律按失败处理）；不再需要人工记类名走 {@code -Dtest=IsolationGuardMySqlIT}。</p>
  *
  * <p><b>凭据</b>：只从环境变量读（{@code DEV001_IT_*}），不进命令行、不落盘。
  * 缺任一项直接**失败而不是跳过**：隔离档里 skip 不算证据。</p>
  */
+@Tag("it")
 public class IsolationGuardMySqlIT {
 
     private static final String ENV_URL = "DEV001_IT_URL";

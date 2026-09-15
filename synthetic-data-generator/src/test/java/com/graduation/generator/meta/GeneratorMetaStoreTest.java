@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -52,11 +53,25 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 目标只能是登记的隔离实例（端口白名单），库名必须以本次 runId 为前缀。
  * 口令支持 {@code credref:<id>} 引用，源码与命令行都不落明文。
  * 连接参数与 {@code application.yml} 同源但**不再继承它的 root 默认值**。</p>
+ *
+ * <h3>DEV-003a 整改：本类不再依赖「库恰好事先有表」</h3>
+ *
+ * <p>本类走裸 {@code DriverManagerDataSource}，<b>没有 Spring 上下文</b>，因此不会触发 Spring 的
+ * Flyway 自动迁移；而 surefire 的执行顺序里它排在 {@code GeneratorApiSmokeTest}（启动 Spring 上下文、
+ * 顺带完成迁移）<b>之前</b>。于是全新 runId 首次执行时它必然撞
+ * {@code Table '&lt;runId&gt;_generator.generation_run' doesn't exist}——
+ * 而同一个库第二次执行又「绿」了（表已被上一轮的 Spring 上下文建好），属典型的**状态依赖假绿**。</p>
+ *
+ * <p>处置：由 {@link com.graduation.itguard.IsolatedSchemaInitializer} 在本类执行前完成
+ * 门禁 → Flyway 迁移 → 表存在性自检（该类 javadoc 说明了为何**不用**预建表／复用旧库／
+ * catch「表不存在」／跳过用例／写死执行顺序）。与用例顺序、与 Spring 上下文是否存在都无关；
+ * 全新 schema 首次执行即绿。</p>
  */
 // 分类标记（V25-S02 / K-02）：本类需要真实数据库隔离实例（3307）。
 //   * 默认纯测试套件（mvn test）按 pom 的 <excludedGroups>it</excludedGroups> 不选中本类；
 //   * 显式集成套件（mvn test -Pisolated-tests）选中本类，缺隔离档案时**硬拒（红）而非 skip**。
 @Tag("it")
+@ExtendWith(com.graduation.itguard.IsolatedSchemaInitializer.class)
 class GeneratorMetaStoreTest {
 
     static {

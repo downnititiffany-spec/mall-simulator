@@ -70,4 +70,56 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <!-- V25-S02 / K-02 分类口径：默认纯测试套件排除 @Tag("it")（真实 MySQL 的集成测试）。
+         刻意写成**用户属性**再引用：把字面量写死在 <configuration> 里就无法用
+         -DexcludedGroups= 清掉，隔离档会得到 "Tests run: 0 / BUILD SUCCESS" 的假绿。 -->
+    <v25.it.excluded.groups>it</v25.it.excluded.groups>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- 默认档 = 普通单元测试（不连真实 DB）。只加 excludedGroups，刻意**不写** <includes>：
+               默认包含式（Test*/*Test/*Tests/*TestCase）保持有效，故本模块默认档的用例选中集合
+               与本改动前逐一致（回归口径见 DEV-003b 报告）。 -->
+          <excludedGroups>${v25.it.excluded.groups}</excludedGroups>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- DEV-003b：隔离档。把本模块的真库 IT 接进项目统一入口
+         （scripts/run-isolated-tests.ps1 -Module analytics|all），不再要求人工 -Dtest= 点名。 -->
+    <profile>
+      <id>isolated-tests</id>
+      <properties>
+        <!-- 清空默认排除（写死 excludedGroups 时清不掉，故上面用属性引用） -->
+        <v25.it.excluded.groups></v25.it.excluded.groups>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <!-- 只选 @Tag("it")：未打标的 *IT（AnalysisGoldenMySqlIT / MetricAdsMySqlIT /
+                   MetricPublisherMySqlIT 等）即使被 <includes> 捞到也会被 tag 过滤掉，不会误跑 -->
+              <groups>it</groups>
+              <!-- 必须显式写 includes：本类的类名是 *IT，不在 surefire 默认包含式里，
+                   缺了它就会 "Tests run: 0"——那正是 DEV-003b 要消灭的假绿形态之一 -->
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
