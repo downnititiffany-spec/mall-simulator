@@ -3,6 +3,8 @@ package com.graduation.analytics.mapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.mapping.activation.ActiveMappingPointerStore;
+import com.graduation.analytics.mapping.activation.TestActiveMappingPointerStore;
 import com.graduation.analytics.mapping.ingest.MappedLine;
 import com.graduation.analytics.mapping.ingest.SourceMapper;
 import com.graduation.analytics.mapping.ingest.SourceMapping;
@@ -52,8 +54,15 @@ class SourceMapperTest {
             "source_system", "schema_version", "trace_id", "payload");
 
     private SourceMapper mapper(Path profileRoot) {
+        // 装配时给"S2-02 探针源"一份激活记录（内容 = 下面 v2Profile() 的字节）：
+        // S2-03 之后，磁盘上有一份能装载的 v2 画像**不等于**它已激活，正式采集只认激活指针。
+        return mapper(profileRoot, TestActiveMappingPointerStore.withActive(
+                7L, SOURCE_CODE, PROFILE_PATH, "2.0", MappingHash.sha256Hex(v2Profile())));
+    }
+
+    private SourceMapper mapper(Path profileRoot, ActiveMappingPointerStore pointers) {
         return new SourceMapper(profileRoot.toString(),
-                MappingTestSupport.repoFile(CONTRACT_PATH).toString(), CLOCK, MappingJson.mapper());
+                MappingTestSupport.repoFile(CONTRACT_PATH).toString(), CLOCK, MappingJson.mapper(), pointers);
     }
 
     private static SourceRegistryView view(String profilePath) {
@@ -108,8 +117,10 @@ class SourceMapperTest {
     @DisplayName("v1 兼容画像（种子源现状）⇒ 不映射：只读兼容模式不能激活，直通既有 canonical 校验")
     void v1ProfileKeepsLegacyPassthrough() {
         // 用仓内真实种子画像 + 仓根作为 profile-root：解析与登记行完全同路径（只读）
-        SourceMapper mapper = new SourceMapper(MappingTestSupport.repoFile(".").toString(),
-                MappingTestSupport.repoFile(CONTRACT_PATH).toString(), CLOCK, MappingJson.mapper());
+        SourceMapper mapper = mapper(MappingTestSupport.repoFile("."),
+                TestActiveMappingPointerStore.withActive(1L, "mock-mall",
+                        "analytics-server/source-profiles/mock-mall.v1.json", "1.0",
+                        MappingHash.sha256Hex("ignored-for-v1")));
         SourceRegistryView seed = new SourceRegistryView(1L, "mock-mall", "种子源", "LOCAL_FILE",
                 "analytics-server/source-profiles/mock-mall.v1.json", "Asia/Shanghai", "CNY",
                 "ACTIVE", "1.0", true, null, null, "mock_mall");

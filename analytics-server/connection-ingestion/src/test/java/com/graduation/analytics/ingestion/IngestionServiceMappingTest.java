@@ -16,6 +16,7 @@ import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import com.graduation.analytics.mapping.MappingHash;
+import com.graduation.analytics.mapping.activation.TestActiveMappingPointerStore;
 import com.graduation.analytics.mapping.ingest.SourceMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
@@ -136,8 +137,11 @@ class IngestionServiceMappingTest {
     // ---------------------------------------------------------------- 装配
 
     private IngestionService service(Path profileRoot) {
+        // S2-03：正式采集只使用"已激活"的画像，故装配时给源 3 一份激活记录（内容 = 写盘的 V2_PROFILE 字节）
         SourceMapper sourceMapper = new SourceMapper(profileRoot.toString(),
-                repoFile(CONTRACT_PATH).toString(), CLOCK, objectMapper);
+                repoFile(CONTRACT_PATH).toString(), CLOCK, objectMapper,
+                TestActiveMappingPointerStore.withActive(3L, SOURCE_CODE, PROFILE_PATH, "2.0",
+                        MappingHash.sha256Hex(V2_PROFILE)));
         LocalFileIngestor ingestor = new LocalFileIngestor(checkpointMapper, quarantineRecordMapper,
                 new EventContractValidator(objectMapper), objectMapper, sourceMapper);
         return new IngestionService(batchMapper, batchFileMapper, ingestor, CLOCK,

@@ -13,6 +13,8 @@ import com.graduation.analytics.mapping.MappingOutcome;
 import com.graduation.analytics.mapping.MappingProfile;
 import com.graduation.analytics.mapping.MappingProfileLoad;
 import com.graduation.analytics.mapping.MappingProfileLoader;
+import com.graduation.analytics.mapping.activation.ActiveMappingPointer;
+import com.graduation.analytics.mapping.activation.ActiveMappingPointerStore;
 import com.graduation.analytics.source.SourcePathPolicy;
 import com.graduation.analytics.source.dto.SourceRegistryView;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +41,7 @@ import java.util.stream.Collectors;
  * 两份实现会立刻产生"预览说可以、真跑说不行"的双所有者问题。</p>
  *
  * <h2>谁决定这一轮要不要映射</h2>
- * 判据只有一条：**登记画像自身是否可执行**（与 dry-run 的 {@code activationEligible} 同一把尺）。
- * 三个分支都在任何写入之前判完（{@code IngestionService.runOne} 里甚至在批次行 insert 之前），
+ * 判据只有两条，都在任何写入之前判完（{@code IngestionService.runOne} 里甚至在批次行 insert 之前），
  * 因此不存在"写了一半才发现画像不能用"的中间态：
  * <ol>
  *   <li>画像非法/缺失/与登记源不一致 ⇒ {@code MAPPING_PROFILE_INVALID}(409) 拒绝本轮；</li>
@@ -48,13 +49,22 @@ import java.util.stream.Collectors;
  *   <li>v1 兼容画像 ⇒ <b>不映射</b>（{@link SourceMapping#legacy()}）：v1 既有文件缺金额单位，
  *       逐行映射会把所有含金额的事件判成 {@code MISSING_AMOUNT_POLICY} 而全部隔离——
  *       那是在"接入映射"的名义下打断既有采集链路。v1 只读兼容是 Loader 自己声明的语法语义
- *       （{@code ProfileSyntax.V1_COMPATIBILITY}），这里只是尊重它。</li>
+ *       （{@code ProfileSyntax.V1_COMPATIBILITY}），这里只是尊重它；</li>
+ *   <li><b>S2-03 新增</b>：v2 画像还必须**正是该源当前已激活的那一份**
+ *       （{@link ActiveMappingPointerStore} 里的指针，判据见 {@link #requireActivated}）⇒
+ *       没有激活记录 {@code MAPPING_NOT_ACTIVE}(409)、已激活画像与磁盘现状不符
+ *       {@code MAPPING_ACTIVE_PROFILE_DRIFT}(409)。<b>磁盘上存在一份能装载的 v2 画像不等于它已激活</b>：
+ *       绝不 latest-wins，也绝不"能装载就用"。</li>
  * </ol>
  *
- * <p><b>未实施（如实登记的边界）</b>：设计 §7.4 的 {@code POST .../activate} 激活 API 与"激活指针"
- * 持久化尚未交付，所以当前判据是"画像可执行性"而不是"曾被显式激活过"。两者不冲突：
- * 将来激活指针落地后，本类的 {@link #prepare} 就是读那个指针的地方（唯一判据点），
- * 不需要在采集链路上再插第二处分支。</p>
+ * <p><b>采集侧只比对画像哈希，不比对契约哈希（如实登记的不对称）</b>：契约与画像的绑定关系在
+ * **激活时**已判过（契约字节漂移即 409，见 {@code MappingActivationService}），采集侧再比一次会得到
+ * 与激活侧不同的第二判据（契约文件在激活后被改动时：激活侧会拒绝下一次激活，而采集侧如果也比对，
+ * 就会把"已激活的映射"莫名其妙地停掉）。这里的选择是：采集侧只保证"跑的是被激活的那份画像字节"，
+ * 契约漂移由激活门与 dry-run 负责暴露。</p>
+ *
+ * <p><b>激活指针落地后的接线</b>：{@link #prepare} 是读那个指针的**唯一**位置，
+ * 采集链路上不再有第二处分叉。</p>
  *
  * <p><b>ingest_time 的所有者</b>：{@code ingest_time} 由平台采集层生成（{@code EventClock}，
  * 业务时区 Asia/Shanghai，秒级截断 + 显式偏移），Mapper 不写它、只登记源侧候选
@@ -78,6 +88,7 @@ public class SourceMapper {
     private final Path contractPath;
     private final EventClock clock;
     private final ObjectMapper mapper;
+    private final ActiveMappingPointerStore pointers;
 
     /** 契约 + 执行器的懒加载缓存（执行器无状态，可跨批次复用）。 */
     private volatile Holder holder;
@@ -85,11 +96,13 @@ public class SourceMapper {
     public SourceMapper(@Value("${platform.source.profile-root:.}") String profileRoot,
                         @Value("${platform.mapping.contract-path:" + DEFAULT_CONTRACT_PATH + "}") String contractPath,
                         EventClock clock,
-                        ObjectMapper mapper) {
+                        ObjectMapper mapper,
+                        ActiveMappingPointerStore pointers) {
         this.profileRoot = Path.of(profileRoot).toAbsolutePath().normalize();
         this.contractPath = Path.of(contractPath).toAbsolutePath().normalize();
         this.clock = clock;
         this.mapper = mapper;
+        this.pointers = pointers;
     }
 
     /**
@@ -141,9 +154,52 @@ public class SourceMapper {
                     "画像可装载但禁止激活，拒绝采集（sourceCode=" + sourceCode + " profileVersion="
                             + profile.profileVersion() + "）：" + String.join(",", profile.activationBlocks()));
         }
+        requireActivated(source, profile, repoRelative);
         log.info("映射生效：sourceCode={} profileVersion={} profileChecksum={} profile_path={}",
                 sourceCode, profile.profileVersion(), profile.profileChecksum(), repoRelative);
         return SourceMapping.of(profile);
+    }
+
+    /**
+     * S2-03 激活门：正式采集只使用**该源当前已激活**的那一份画像（设计 §7.4）。
+     *
+     * <p>两条判据，都在任何写入之前：</p>
+     * <ol>
+     *   <li>该源必须在 {@link ActiveMappingPointerStore} 里有激活记录，且记录指向的
+     *       {@code profile_path} 就是本次登记加载的那一份 ⇒ 否则 {@code MAPPING_NOT_ACTIVE}(409)。
+     *       覆盖两种事实：从来没有激活过；或者登记表后来被指到了另一个画像文件（那一份没被激活过）。</li>
+     *   <li>已激活画像字节的 sha256 必须等于磁盘上这一份的 sha256 ⇒ 否则
+     *       {@code MAPPING_ACTIVE_PROFILE_DRIFT}(409)：磁盘被换了内容而激活记录还是旧的。</li>
+     * </ol>
+     *
+     * <p>为什么比的是**哈希**而不是"文件修改时间/最新一份"：激活是一个显式动作（走
+     * {@code POST /mappings/activate}，要一张已通过的 dry-run 报告）。按 mtime 或"磁盘上最新"取用
+     * 等于让"往目录里丢一个文件"变成一次隐式激活——预览与运行脱钩，正是要禁止的 latest-wins。</p>
+     */
+    private void requireActivated(SourceRegistryView source, MappingProfile profile, String repoRelative) {
+        ActiveMappingPointer active = pointers.find(source.id()).orElse(null);
+        if (active == null || !repoRelative.equals(active.profilePath())) {
+            throw new PlatformBizException(PlatformBizException.MAPPING_NOT_ACTIVE,
+                    "该源没有已激活的映射画像，拒绝在正式采集上使用未激活画像（sourceCode="
+                            + source.sourceCode() + " profileVersion=" + profile.profileVersion()
+                            + (active == null ? "）：从未激活过"
+                            : "）：当前登记的 profile_path 与已激活记录不一致"
+                              + "（已激活=" + active.profilePath() + "，本次登记=" + repoRelative + "）")
+                            + "；请先对该画像执行 dry-run 并调用 activate");
+        }
+        if (!profile.profileChecksum().equals(active.profileChecksum())) {
+            throw new PlatformBizException(PlatformBizException.MAPPING_ACTIVE_PROFILE_DRIFT,
+                    "磁盘上的画像与已激活画像内容不一致，拒绝采集（sourceCode=" + source.sourceCode()
+                            + " profile_path=" + repoRelative
+                            + "）：已激活=" + shortHash(active.profileChecksum())
+                            + "，当前=" + shortHash(profile.profileChecksum())
+                            + "；激活记录不会被自动覆盖，请重新 dry-run 后显式 activate");
+        }
+    }
+
+    /** 哈希截断显示：足够区分两次激活，又不把整串哈希灌进日志/异常。 */
+    private static String shortHash(String checksum) {
+        return checksum == null ? "null" : checksum.substring(0, Math.min(12, checksum.length()));
     }
 
     /**

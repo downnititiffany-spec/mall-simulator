@@ -75,6 +75,31 @@ public class PlatformBizException extends RuntimeException {
     // 与 SOURCE_NOT_BOUND / MAPPING_* 同族：都是"当前状态不满足继续采集的前提"，故归 409。
     public static final String INGEST_BATCH_INPUT_CONFLICT = "INGEST_BATCH_INPUT_CONFLICT";
 
+    // 映射激活生命周期错误码（S2-03，加法式新增；状态映射仍由 GlobalExceptionHandler.mapStatus 独有）：
+    //   MAPPING_ACTIVATION_INELIGIBLE          → 409（报告存在但不满足激活前置：画像未通过装载 /
+    //                                                有违例 / 有系统异常 / activationBlocks / capabilityGaps）
+    //   MAPPING_ACTIVATION_CHECKSUM_MISMATCH   → 409（expectedProfileChecksum ≠ 该报告的 profileChecksum）
+    //   MAPPING_CONTRACT_DRIFT                 → 409（当前 canonical 契约字节 ≠ dry-run 时的契约字节）
+    //   MAPPING_PROFILE_CHANGED                → 409（当前待激活画像字节的 sha256 ≠ 报告的 profileChecksum）
+    //   MAPPING_NOT_ACTIVE                     → 409（采集侧：该源没有已激活映射，拒绝拿"可执行画像"冒充已激活）
+    //   MAPPING_ACTIVE_PROFILE_DRIFT           → 409（采集侧：已激活画像的字节与激活时钉住的 checksum 不一致）
+    // 语义：六个都是**状态不满足前提**（不是参数写错 400，也不是数据坏行），与 SOURCE_NOT_BOUND /
+    // INGEST_BATCH_INPUT_CONFLICT 同族，故归 409。关键取舍：激活用"比对 dry-run 时钉住的 hash"表达
+    // 「预览的内容就是激活的内容」，**不重新执行一遍 dry-run 再判"差不多一样"**——重跑会引入第二个判据。
+    //
+    // MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE → 501（激活指针的**正式持久化所有者尚未落地**；
+    // 需要给 source_registry 增列/建表的正式 Flyway 迁移，属总控决策门，本轮不自行加迁移）。
+    // 为什么不塞进 500：500 的语义是"服务端出错了"，而这里是"能力缺口已知且刻意 fail-closed"，
+    // 必须与真实故障可区分；也不用 409（这不是调用方状态冲突，重试无意义）。
+    public static final String MAPPING_ACTIVATION_INELIGIBLE = "MAPPING_ACTIVATION_INELIGIBLE";
+    public static final String MAPPING_ACTIVATION_CHECKSUM_MISMATCH = "MAPPING_ACTIVATION_CHECKSUM_MISMATCH";
+    public static final String MAPPING_CONTRACT_DRIFT = "MAPPING_CONTRACT_DRIFT";
+    public static final String MAPPING_PROFILE_CHANGED = "MAPPING_PROFILE_CHANGED";
+    public static final String MAPPING_NOT_ACTIVE = "MAPPING_NOT_ACTIVE";
+    public static final String MAPPING_ACTIVE_PROFILE_DRIFT = "MAPPING_ACTIVE_PROFILE_DRIFT";
+    public static final String MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE =
+            "MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.mapping.CanonicalContract;
-import com.graduation.analytics.mapping.CanonicalContractLoader;
+import com.graduation.analytics.mapping.ContractSnapshot;
 import com.graduation.analytics.mapping.MappingExecutor;
 import com.graduation.analytics.mapping.MappingHash;
 import com.graduation.analytics.mapping.MappingJson;
@@ -378,25 +378,14 @@ public class MappingDryRunService {
             synchronized (this) {
                 local = contract;
                 if (local == null) {
-                    if (!Files.isRegularFile(contractPath)) {
-                        throw new IllegalStateException("canonical 契约文件不存在（platform.mapping.contract-path）：" + contractPath);
-                    }
-                    byte[] bytes;
-                    try {
-                        bytes = Files.readAllBytes(contractPath);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException("读取 canonical 契约失败: " + contractPath, e);
-                    }
-                    local = new ContractSnapshot(CanonicalContractLoader.load(contractPath), MappingHash.sha256Hex(bytes));
+                    // S2-03：契约快照（装载 + 字节 sha256）的唯一所有者是 ContractSnapshot.load，
+                    // 激活侧用的是同一个工厂——两处各写一份就会算出两个"当前契约 checksum"。
+                    local = ContractSnapshot.load(contractPath);
                     contract = local;
                 }
             }
         }
         return local;
-    }
-
-    /** 契约 + 契约文件字节 sha256（同一份字节，避免"版本对了但内容变了"对不上） */
-    private record ContractSnapshot(CanonicalContract contract, String checksum) {
     }
 
     /**

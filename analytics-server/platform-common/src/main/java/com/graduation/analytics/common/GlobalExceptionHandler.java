@@ -57,6 +57,11 @@ public class GlobalExceptionHandler {
      * <p>S2-02B 加法：{@code INGEST_BATCH_INPUT_CONFLICT} → 409（同批次二次消费同一输入，
      * 与 {@code MAPPING_*} 同族"状态不满足采集前提"，理由见
      * {@link PlatformBizException#INGEST_BATCH_INPUT_CONFLICT}）；既有码状态不变。</p>
+     *
+     * <p>S2-03 加法（映射激活生命周期）：六个 {@code MAPPING_*} 状态码 → 409，
+     * 以及 {@code MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE} → 501（能力缺口，刻意 fail-closed，
+     * 与"服务端故障"500 必须可区分，理由见 {@link PlatformBizException#MAPPING_NOT_ACTIVE}
+     * 与 {@link PlatformBizException#MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE}）；既有码状态不变。</p>
      */
     static HttpStatus mapStatus(String code) {
         if (code == null) {
@@ -72,7 +77,14 @@ public class GlobalExceptionHandler {
                  PlatformBizException.SOURCE_NOT_BOUND,
                  PlatformBizException.MAPPING_PROFILE_INVALID,
                  PlatformBizException.MAPPING_PROFILE_BLOCKED,
-                 PlatformBizException.INGEST_BATCH_INPUT_CONFLICT -> HttpStatus.CONFLICT;
+                 PlatformBizException.INGEST_BATCH_INPUT_CONFLICT,
+                 PlatformBizException.MAPPING_ACTIVATION_INELIGIBLE,
+                 PlatformBizException.MAPPING_ACTIVATION_CHECKSUM_MISMATCH,
+                 PlatformBizException.MAPPING_CONTRACT_DRIFT,
+                 PlatformBizException.MAPPING_PROFILE_CHANGED,
+                 PlatformBizException.MAPPING_NOT_ACTIVE,
+                 PlatformBizException.MAPPING_ACTIVE_PROFILE_DRIFT -> HttpStatus.CONFLICT;
+            case PlatformBizException.MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE -> HttpStatus.NOT_IMPLEMENTED;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

@@ -388,4 +388,23 @@ class MappingProfileLoaderTest {
         assertThat(changed.profile().profileChecksum()).isNotEqualTo(first.profile().profileChecksum());
         assertThat(first.profile().profileChecksum()).matches("[0-9a-f]{64}");
     }
+
+    @Test
+    @DisplayName("实测缺陷登记（S2-03 发现，未修）：契约的**信封**必填表恒为空 ⇒ 信封缺映射不会阻断激活")
+    void envelopeRequiredTableIsAlwaysEmptyBecauseLoaderReadsTheWrongNode() {
+        // 事实链：CanonicalContractLoader:59 用 requiredNames(properties) 读信封必填，
+        // 而契约把 required 放在**根**（与 properties 同级），properties 内**没有** required 键
+        // （实测 contract-specs/schemas/canonical-event.v1.schema.json：根 required 有 8 个字段、
+        //  properties 无 required）⇒ 每个信封字段的 required 都是 false。
+        // 后果：MappingProfileLoader.collectUnmappedEnvelopeBlocks（:837-851）遍历的集合恒空，
+        // 该分支至今是**死代码** —— 画像漏映射某个信封字段**不会**进 activationBlocks。
+        CanonicalContract contract = MappingTestSupport.contract();
+        assertThat(contract.requiredEnvelopeFields())
+                .as("这条断言变红 = 有人修好了信封必填解析；请同时复核 activationBlocks 语义、"
+                        + "既有 v1/v2 画像的可激活判定与 SourceMapper 闸门，不要只改断言")
+                .isEmpty();
+
+        // 对照组：payload 侧读的是 $defs.<type>.required（与 properties 同级，存在）⇒ 工作正常
+        assertThat(contract.requiredPayloadFields("order_created")).isNotEmpty();
+    }
 }

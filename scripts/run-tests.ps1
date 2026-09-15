@@ -75,18 +75,22 @@ $RunIdPattern = '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$'
 $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 
 # 登记基线（口径来源：docs/PROJECT_STATUS.md「测试与验收状态」；漂移即失败，除非 -AllowCountDrift）
-# 2026-09-15 S2-02B 收口口径（analytics=773 / default=892）：相对上一版 764/883 只差 +9，
-#   全部来自 connection-ingestion 新增的两个用例类（IngestionFailureTaxonomyTest 6 + IngestionBoundaryMatrixTest 3）；
-#   其余五个模块逐一复核未变。
-#   analytics-server = 773 = 90(platform-common) + 290(connection-ingestion，跳过 1) + 134(warehouse-pipeline)
-#     + 48(metric-analysis) + 91(ai-decision) + 120(platform-app)；三树 892 = 773 + 13(mall) + 106(generator)。
-#   前序口径链：S2-01B 时 analytics 为 746（platform-app 119）；+18 = connection-ingestion +17（S2-02A 新增用例）+1。
+# 2026-09-15 S2-03 收口口径（analytics=801 / default=920）：相对上一版 773/892 只差 +28，
+#   全部来自本轮新增的四个用例 —— connection-ingestion +21（MappingActivationServiceTest 15
+#   + SourceMapperActivationTest 5 + MappingProfileLoaderTest 的信封必填表实测登记 1）、
+#   platform-app +7（MappingActivationControllerTest）；其余四个模块逐一复核未变。
+#   analytics-server = 801 = 90(platform-common) + 311(connection-ingestion，跳过 1) + 134(warehouse-pipeline)
+#     + 48(metric-analysis) + 91(ai-decision) + 127(platform-app)；三树 920 = 801 + 13(mall) + 106(generator)。
+#   前序口径链：S2-02B 时 analytics 为 773（connection-ingestion 290 / platform-app 120）；
+#     S2-01B 时 746（platform-app 119）；+18 = connection-ingestion +17（S2-02A 新增用例）+1。
+#   注意：**数量基线与通过状态是两回事** —— 801 这个数字里仍含 1 个已登记的环境性红
+#     （platform-app `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1），故本档 F/E 门禁照旧判失败。
 # 解析器修正（2026-09-15，总控认定属普通实现细节）：surefire 的模块汇总行在有跳过时为 `[WARNING]`、
 #   有失败时为 `[ERROR]`，旧正则只认 `[INFO]` ⇒ 这类模块**整块漏计**，其 F/E 一并丢失
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 773
+  'analytics-server'        = 801
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
