@@ -13,12 +13,18 @@ import java.util.Optional;
  * 进程内激活指针存储，**仅测试作用域**。
  *
  * <p><b>它不是"正式 active pointer"</b>（总控口径：禁止把 InMemoryMap 当成正式激活状态）。
- * 正式落库需要一个能承载 {@link ActiveMappingPointer} 的表/列，即一次新的 Flyway 迁移——
- * 属总控决策门，本轮未做，生产装配用的是 {@link UnavailableActiveMappingPointerStore}（fail-closed）。</p>
+ * S2-03.1 起正式存储是表 {@code source_mapping_active}（V21 迁移），生产装配由
+ * {@code MappingActivationPersistenceConfig} 装 {@link JdbcActiveMappingPointerStore}；
+ * 本类只在 L0 单测里替代它（无 DB 的 JUnit 环境）。真库往返与并发由 MySqlIT 取证。</p>
  *
  * <p>它存在的理由：被测逻辑（{@code MappingActivationService}、{@code SourceMapper} 的激活门）
- * 只依赖 {@link ActiveMappingPointerStore} 的 {@code find}/{@code save} 语义，替身如实实现这两个语义，
- * 并**记录每次写入**，使"幂等时不写、换 checksum 时写、未激活时不写"这些断言可被机械观测。</p>
+ * 只依赖 {@link ActiveMappingPointerStore} 的 {@code find}/{@code lockBySourceId}/{@code save} 语义，
+ * 替身如实实现这三个语义，并**记录每次写入**，使"幂等时不写、换 checksum 时写、未激活时不写"
+ * 这些断言可被机械观测。</p>
+ *
+ * <p>{@code lockBySourceId} 在这里与 {@code find} 同义：单线程测试里不存在"快照读看到旧版本"
+ * 的窗口，锁语义没有可观测差异。**它不能证明真库的锁行为**——那由 MySqlIT 取证
+ * （两事务并发 activate，断言只产生一次写入）。</p>
  */
 public class TestActiveMappingPointerStore implements ActiveMappingPointerStore {
 
@@ -57,6 +63,11 @@ public class TestActiveMappingPointerStore implements ActiveMappingPointerStore 
     @Override
     public Optional<ActiveMappingPointer> find(long sourceId) {
         return Optional.ofNullable(pointers.get(sourceId));
+    }
+
+    @Override
+    public Optional<ActiveMappingPointer> lockBySourceId(long sourceId) {
+        return find(sourceId);
     }
 
     @Override

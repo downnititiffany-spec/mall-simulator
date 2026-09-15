@@ -43,9 +43,10 @@ import java.util.regex.Pattern;
  * {@code SourceRegistryController} 同约定：审计写在控制器、失败也要留 FAILED 行）。
  * 本类返回 {@link MappingActivationOutcome}，把 before/after 事实交给调用方落审计。</p>
  *
- * <p><b>事务</b>：现在只有一次写入（等价单语句原子），{@code @Transactional} 是为落库实现准备的门槛——
- * 届时 {@code find + save} 必须落在同一事务里。L0 测试无事务管理器时代理不存在、注解不生效，
- * 与既有 {@code SourceRegistryServiceImpl} 的证据口径一致。</p>
+ * <p><b>事务</b>：{@code find(锁定读) + save} 必须落在同一事务里（S2-03.1 起正式存储为表
+ * {@code source_mapping_active}）：幂等判断依据取自 {@code lockBySourceId} 的 {@code SELECT ... FOR UPDATE}，
+ * 因此并发 activate 不会互相覆盖、也不会各写一行审计。L0 测试无事务管理器时代理不存在、注解不生效，
+ * 与既有 {@code SourceRegistryServiceImpl} 的证据口径一致（真库并发行为由 MySqlIT 取证）。</p>
  */
 @Service
 public class MappingActivationService {
@@ -138,7 +139,10 @@ public class MappingActivationService {
                 report.contractVersion(), report.contractChecksum(), id, clock.nowLdt(), operator);
 
         // ⑦ 幂等：同源 + 同画像字节 + 同契约字节 ⇒ 重复请求，不写第二个指针、不改激活时间与操作者
-        ActiveMappingPointer existing = pointers.find(sourceId).orElse(null);
+        //    必须用**锁定读**：普通 SELECT 在 REPEATABLE READ 事务里固定快照，
+        //    并发的第二个 activate 会把"别人刚写进去的指针"看成"还没有指针"而走替换分支
+        //    （与 SourceRegistryMapper#lockById 同一类坑）。
+        ActiveMappingPointer existing = pointers.lockBySourceId(sourceId).orElse(null);
         if (candidate.sameContentAs(existing)) {
             return MappingActivationOutcome.idempotent(existing);
         }

@@ -41,7 +41,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p><b>错误语义（不得用 500 表达业务冲突）</b>：报告不存在/不属于该源 → 404；报告不可激活、
  * 校验和不一致、契约漂移、画像内容变化 → 409；入参形状非法 → 400；
- * 落库能力尚未就绪（见 {@code UnavailableActiveMappingPointerStore}）→ 501，与"服务端故障"500 可区分。</p>
+ * 激活指针**没有持久化能力**（S2-03.1 起仅在装配缺 mapper 时才可能，见
+ * {@code MappingActivationPersistenceConfig}）→ 501，与"服务端故障"500 可区分。</p>
  *
  * <p><b>审计在控制器层写</b>：{@link OperationAuditService} 属 {@code ai-decision}，
  * 而 {@code connection-ingestion} 不依赖它（与 {@code SourceRegistryController}/{@code DecisionController} 同构）。

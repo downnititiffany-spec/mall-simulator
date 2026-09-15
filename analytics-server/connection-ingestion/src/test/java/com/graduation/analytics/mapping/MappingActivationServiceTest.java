@@ -42,8 +42,9 @@ import static org.mockito.Mockito.when;
  * S2-03：映射激活生命周期（设计 §7.4「dry-run → 激活指针」）的 fail-closed 矩阵与幂等口径。
  *
  * <p><b>取证口径</b>：除"受控故障执行器"一例外，所有报告都来自**真实 dry-run**（真实契约、真实装载器、
- * 真实执行器、真实样本文件），激活服务也一律用真实实现；只有"指针持久化"用替身，
- * 因为正式落库需要新增 Flyway 迁移（属总控决策门，本轮未做，见 {@code UnavailableActiveMappingPointerStore}）。
+ * 真实执行器、真实样本文件），激活服务也一律用真实实现；只有"指针持久化"用进程内替身
+ * （{@link TestActiveMappingPointerStore}）——S2-03.1 起正式存储是表 {@code source_mapping_active}
+ * （V21 迁移），其真库往返与锁行为由 MySqlIT 取证，不在本类的证明范围（见替身类注释）。
  * 也就是说：这里量的是"激活判据是否按事实拒绝"，不是"打桩之后流程能不能跑通"。</p>
  *
  * <p>核心不变式：**预览的内容必须就是激活的内容**——判据是字节哈希相等，不是"再跑一遍差不多一样"。</p>
@@ -180,6 +181,31 @@ class MappingActivationServiceTest {
         givenSource();
         MappingDryRunReport report = dryRun.run(SOURCE_TOKEN, profile, "s2-03.jsonl", 100);
         assertThat(report.violations()).isNotEmpty();
+
+        assertConflict(report, PlatformBizException.MAPPING_ACTIVATION_INELIGIBLE);
+    }
+
+    @Test
+    @DisplayName("⑦b 漏映射必填信封字段 ⇒ 409（S2-03.1：此前 Loader 漏读根级 required，这一份会被错误激活）")
+    void unmappedEnvelopeTargetBlocksActivation() throws IOException {
+        String profile = MappingActivationTestSupport.v2ProfileMissingEnvelopeTarget();
+        MappingActivationTestSupport.writeProfile(profileRoot, PROFILE_PATH, profile);
+        MappingActivationTestSupport.writeSample(sampleRoot, "s2-03.jsonl",
+                MappingActivationTestSupport.rawLine(), MappingActivationTestSupport.rawLine());
+        givenSource();
+        MappingDryRunReport report = dryRun.run(SOURCE_TOKEN, profile, "s2-03.jsonl", 100);
+
+        // 前置自证：装载成功、无系统异常，阻断同时出现在**两层**（这是修好信封必填解析的直接后果）：
+        //   ① 装载层：activationBlocks 点名缺的信封目标；
+        //   ② 逐行层：必填信封字段现在真的"必填"了 ⇒ 每行都因取不到 source_system 记 EMPTY_FIELD 违例。
+        assertThat(report.profileAccepted()).isTrue();
+        assertThat(report.systemErrors()).isEmpty();
+        assertThat(report.activationBlocks()).contains("unmappedEnvelope:source_system");
+        assertThat(report.violations())
+                .as("修复前这里必为空集：Loader 漏读根级 required 时 source_system 根本不是必填")
+                .isNotEmpty()
+                .allSatisfy(v -> assertThat(v.path()).contains("source_system"));
+        assertThat(report.activationEligible()).isFalse();
 
         assertConflict(report, PlatformBizException.MAPPING_ACTIVATION_INELIGIBLE);
     }

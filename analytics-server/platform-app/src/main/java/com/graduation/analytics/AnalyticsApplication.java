@@ -17,6 +17,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * P1-03（2026-09-11）：新增 {@code com.graduation.analytics.source.mapper}
  * （{@code source_registry} 与 {@code runtime_profile.source_id} 绑定的唯一读写口）。
+ * S2-03.1：新增 {@code com.graduation.analytics.mapping.activation.mapper}
+ * （{@code source_mapping_active} 激活指针的唯一读写口）。
  * 仍是**同一份** {@code @MapperScan} 列表——不新建第二个扫描配置，避免"哪些包被扫描"
  * 出现两个说法。
  */
@@ -28,7 +30,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.graduation.analytics.auth.mapper",
         "com.graduation.analytics.runtime.mapper",
         "com.graduation.analytics.metric.dict",
-        "com.graduation.analytics.source.mapper"})
+        "com.graduation.analytics.source.mapper",
+        "com.graduation.analytics.mapping.activation.mapper"})
 public class AnalyticsApplication {
 
     public static void main(String[] args) {

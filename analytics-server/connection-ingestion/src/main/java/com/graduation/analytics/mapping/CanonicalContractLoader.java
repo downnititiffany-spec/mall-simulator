@@ -56,7 +56,11 @@ public final class CanonicalContractLoader {
         }
 
         JsonNode defs = schema.path("$defs");
-        Map<String, FieldSpec> envelopeFields = fieldSpecs(properties, requiredNames(properties));
+        // S2-03.1 修复：信封的 required 在**根**节点（与 properties 同级，JSON Schema 的规定位置），
+        // properties 内没有 required 键。此前这里写 requiredNames(properties) ⇒ 信封必填表恒为空，
+        // 于是「漏映射必填信封字段」从不阻断激活（collectUnmappedEnvelopeBlocks 成了死代码）。
+        // payload 侧不受影响：$defs.<type>.required 与 $defs.<type>.properties 同级，本来就对。
+        Map<String, FieldSpec> envelopeFields = fieldSpecs(properties, requiredNames(schema));
         Map<String, Map<String, FieldSpec>> payloadFields = new LinkedHashMap<>();
         Map<String, FieldSpec> itemFields = Map.of();
         boolean itemsAllowString = false;

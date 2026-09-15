@@ -40,6 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code analytics_meta} 仍是 V17，连上去就会把它迁到 V18（越界写库，D-080）。本轮的替代证据是
  * "真库只读转储 → 副本库 → 由 Flyway 实际应用 V18"的日志（见
  * {@code docs/acceptance/p2-07-source-prefix-20260912/}）。</p>
+ *
+ * <p><b>S2-03.1（V19/V20/V21）</b>：{@code EXPECTED_META_SCRIPTS} 此前停在 V18，而 {@code db/meta}
+ * 已有 V19/V20/V21 —— 即"清单最后一项必须就是最后应用的脚本"这一断言早已与代码事实不符
+ * （任何一次真库运行都会红）。本轮把三个脚本补进清单，末端断言从 V18 改为 V21。
+ * 与 P1-05/P2-07 同理，**本轮仍不在真库 analytics_meta 上跑**（连上去就会把正式库迁到 V21，越界写库）：
+ * 本类的真库取证仍须指向副本/临时库，命令见类注释与《开发过程事实与决策记录》F-29。</p>
  */
 @EnabledIfSystemProperty(named = "p1.it", matches = "true")
 class SourceRegistryMigrationMySqlIT {
@@ -162,10 +168,14 @@ class SourceRegistryMigrationMySqlIT {
             "V15__stage_evidence_mediumtext.sql",
             "V16__source_registry.sql",
             "V17__source_dimension_for_checkpoint_and_batch.sql",
-            "V18__source_warehouse_prefix.sql");
+            "V18__source_warehouse_prefix.sql",
+            "V19__quality_rule_definition.sql",
+            "V20__data_quality_result_rule_version.sql",
+            "V21__source_mapping_active.sql");
 
     private static final String V17_SCRIPT = "V17__source_dimension_for_checkpoint_and_batch.sql";
     private static final String V18_SCRIPT = "V18__source_warehouse_prefix.sql";
+    private static final String V21_SCRIPT = "V21__source_mapping_active.sql";
 
 
     private static final List<String> FROZEN_RUNTIME_PROFILE_COLUMNS = List.of(
@@ -221,7 +231,7 @@ class SourceRegistryMigrationMySqlIT {
     }
 
     @Test
-    @DisplayName("P2-07：迁移历史含已登记的全部脚本（含 V16/V17/V18），全部成功、无失败行")
+    @DisplayName("P2-07/S2-03.1：迁移历史含已登记的全部脚本（含 V16/V17/V18/V19/V20/V21），全部成功、无失败行")
     void migrationHistoryContainsAllRegisteredScriptsAndNoFailedRuns() {
         List<Map<String, Object>> rows = meta.queryForList(
                 "SELECT installed_rank, version, script, success FROM flyway_schema_history ORDER BY installed_rank");
@@ -242,15 +252,15 @@ class SourceRegistryMigrationMySqlIT {
                         .map(name -> name.substring(1, name.indexOf("__")))
                         .toList());
 
-        // 清单最后一项（本轮 = V18）必须是最后应用的脚本 —— "新迁移只能往后加"的可判据形式。
+        // 清单最后一项（本轮 = V21）必须是最后应用的脚本 —— "新迁移只能往后加"的可判据形式。
         // 原 P1-05 版本把"最后"硬写成 V17，加 V18 后必然失败，故改为从清单推导。
         String newest = EXPECTED_META_SCRIPTS.get(EXPECTED_META_SCRIPTS.size() - 1);
         Map<String, Object> last = rows.get(rows.size() - 1);
-        assertThat(newest).as("本轮新增脚本即 V18").isEqualTo(V18_SCRIPT);
+        assertThat(newest).as("S2-03.1 起清单末端即 V21").isEqualTo(V21_SCRIPT);
         assertThat(String.valueOf(last.get("script")))
                 .as("清单最后一项必须就是最后应用的脚本")
                 .isEqualTo(newest);
-        assertThat(String.valueOf(last.get("version"))).as("V18 的 version 列").isEqualTo("18");
+        assertThat(String.valueOf(last.get("version"))).as("V21 的 version 列").isEqualTo("21");
 
         Map<String, Object> v17 = rows.stream()
                 .filter(r -> V17_SCRIPT.equals(String.valueOf(r.get("script"))))

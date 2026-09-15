@@ -87,8 +87,9 @@ public class PlatformBizException extends RuntimeException {
     // INGEST_BATCH_INPUT_CONFLICT 同族，故归 409。关键取舍：激活用"比对 dry-run 时钉住的 hash"表达
     // 「预览的内容就是激活的内容」，**不重新执行一遍 dry-run 再判"差不多一样"**——重跑会引入第二个判据。
     //
-    // MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE → 501（激活指针的**正式持久化所有者尚未落地**；
-    // 需要给 source_registry 增列/建表的正式 Flyway 迁移，属总控决策门，本轮不自行加迁移）。
+    // MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE → 501（**本次装配没有激活指针持久化能力**：
+    // 正常装配装 JdbcActiveMappingPointerStore（表 source_mapping_active，V21 迁移，S2-03.1 已交付），
+    // 只有在元数据 mapper 扫描缺包、容器里拿不到 SourceMappingActiveMapper 时才退 fail-closed 兜底并报此码）。
     // 为什么不塞进 500：500 的语义是"服务端出错了"，而这里是"能力缺口已知且刻意 fail-closed"，
     // 必须与真实故障可区分；也不用 409（这不是调用方状态冲突，重试无意义）。
     public static final String MAPPING_ACTIVATION_INELIGIBLE = "MAPPING_ACTIVATION_INELIGIBLE";

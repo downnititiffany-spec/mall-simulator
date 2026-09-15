@@ -69,7 +69,13 @@ final class MappingActivationTestSupport {
         return v2Profile(ORDER_PAID_FULL, ENVELOPE_FULL);
     }
 
-    /** 信封缺 {@code source_system} 目标 ⇒ 装载成功但 {@code activationBlocks} 非空（可装载≠可激活）。 */
+    /**
+     * 信封缺 {@code source_system} 目标 ⇒ 装载成功但 {@code activationBlocks} 非空（可装载≠可激活）。
+     *
+     * <p><b>S2-03.1 起才成立</b>：此前 {@code CanonicalContractLoader} 把信封必填读成
+     * {@code properties.required}（契约实际写在**根** required）⇒ 必填表恒空、这一份曾被**错误放行**。
+     * 用例必须前置自证阻断性，不得假设夹具性质。</p>
+     */
     static String v2ProfileMissingEnvelopeTarget() {
         return v2Profile(ORDER_PAID_FULL, ENVELOPE_NO_SOURCE_SYSTEM);
     }

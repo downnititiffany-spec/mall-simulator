@@ -72,8 +72,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * <p><b>指针存储为什么在本类里另写一个替身</b>：{@code TestActiveMappingPointerStore} 在
  * {@code connection-ingestion} 的 test 作用域，而 {@code platform-app} 只依赖该模块的 main 与
  * {@code platform-common} 的 test-jar（见 pom），因此本类自带一个最小替身。
- * 它**不是**正式 active pointer 的属主，只在 HTTP 层用作"落库能力已就绪"的对照组；
- * 落库能力未就绪时（生产装配的真实状态）另有 {@link UnavailableActiveMappingPointerStore} 的用例 → 501。</p>
+ * 它**不是**正式 active pointer 的属主（正式属主是 {@code JdbcActiveMappingPointerStore} +
+ * 表 {@code source_mapping_active}，S2-03.1/V21），只在 HTTP 层用作"落库能力已就绪"的对照组；
+ * 落库能力**不可用**那一支（仅在装配缺 mapper 时出现）另有 {@link UnavailableActiveMappingPointerStore}
+ * 的用例 → 501，两条分支都显式覆盖，不靠"默认走哪条"。</p>
  */
 class MappingActivationControllerTest {
 
@@ -89,6 +91,10 @@ class MappingActivationControllerTest {
     private static final String ENVELOPE_FULL = "{\"id\":\"event_id\",\"kind\":\"event_type\","
             + "\"at\":\"event_time\",\"sys\":\"source_system\",\"rev\":\"schema_version\","
             + "\"tr\":\"trace_id\",\"data\":\"payload\"}";
+
+    /** 信封缺 {@code source_system} 目标（S2-03.1 修好信封必填解析前，这一份曾被错误放行）。 */
+    private static final String ENVELOPE_NO_SOURCE_SYSTEM = "{\"id\":\"event_id\",\"kind\":\"event_type\","
+            + "\"at\":\"event_time\",\"rev\":\"schema_version\",\"tr\":\"trace_id\",\"data\":\"payload\"}";
 
     /** 必填 payload 字段 {@code payment_id} 没有映射 ⇒ 能力缺口 + 激活阻断（两者同时出现，是 loader 的既有事实）。 */
     private static final String ORDER_PAID_MISSING_PAYMENT_ID = "{\"ord\":\"order_id\",\"buyer\":\"user_id\","
@@ -339,8 +345,30 @@ class MappingActivationControllerTest {
         assertThat(store.find(SOURCE_ID)).as("四条冲突都必须在写入之前失败").isEmpty();
     }
 
-    // ---------------------------------------------------------------- 400
+    @Test
+    @DisplayName("S2-03.1：漏映射必填信封字段 ⇒ 预览就判不可激活，激活 409 —— Loader 不得再漏读根级 required")
+    void envelopeGapIsNotWronglyAdmitted() throws Exception {
+        String missingSys = v2ProfileMissingEnvelopeTarget();
+        String body = postDryRun("dev-token", missingSys, 200).getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
 
+        // 前置自证（不假设夹具性质）：这一份确实**装载成功**，但激活阻断里点名了缺的那个信封目标
+        assertThat((boolean) JsonPath.read(body, "$.data.profileAccepted"))
+                .as("漏映射信封字段属'可装载但禁止激活'，不是画像非法: " + body).isTrue();
+        assertThat((List<String>) JsonPath.read(body, "$.data.activationBlocks"))
+                .as("必须点名缺的信封目标；此前 Loader 读错节点时这里为空: " + body)
+                .contains("unmappedEnvelope:source_system");
+        assertThat((boolean) JsonPath.read(body, "$.data.activationEligible"))
+                .as("预览不得放行: " + body).isFalse();
+
+        // 拿着这份"预览说不行"的报告去激活 ⇒ 409（而不是被激活成功）
+        assertConflict(activate("dev-token", String.valueOf(SOURCE_ID),
+                        JsonPath.read(body, "$.data.reportId"), MappingHash.sha256Hex(missingSys)),
+                "MAPPING_ACTIVATION_INELIGIBLE");
+        assertThat(store.find(SOURCE_ID)).as("不可激活的报告不得写入激活指针").isEmpty();
+    }
+
+    // ---------------------------------------------------------------- 400
     @Test
     @DisplayName("400：入参形状非法（reportId 空白 / checksum 非 64 位 hex / body 非 JSON），不是 409")
     void invalidInputIs400() throws Exception {
@@ -368,7 +396,7 @@ class MappingActivationControllerTest {
     // ---------------------------------------------------------------- 501（能力缺口）
 
     @Test
-    @DisplayName("501：生产装配（落库能力未就绪）→ MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE，且审计写失败不掩盖它")
+    @DisplayName("501：装配无持久化能力（无 mapper ⇒ 兜底）→ MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE，且审计写失败不掩盖它")
     void persistenceGapIs501AndNotMasked() throws Exception {
         UnavailableActiveMappingPointerStore unavailable = new UnavailableActiveMappingPointerStore();
         MockMvc mvc = mockMvc(unavailable);
@@ -542,10 +570,19 @@ class MappingActivationControllerTest {
 
     /** 必填 payload 缺映射的那一份（可装载，但 capabilityGaps/activationBlocks 非空 ⇒ 不可激活）。 */
     private static String v2ProfileMissingRequiredPayload() {
-        return v2Profile(ORDER_PAID_MISSING_PAYMENT_ID);
+        return v2Profile(ORDER_PAID_MISSING_PAYMENT_ID, ENVELOPE_FULL);
+    }
+
+    /** 信封缺 {@code source_system} 目标的那一份（S2-03.1 修好信封必填解析后 ⇒ 不可激活）。 */
+    private static String v2ProfileMissingEnvelopeTarget() {
+        return v2Profile(ORDER_PAID_FULL, ENVELOPE_NO_SOURCE_SYSTEM);
     }
 
     private static String v2Profile(String orderPaidPayload) {
+        return v2Profile(orderPaidPayload, ENVELOPE_FULL);
+    }
+
+    private static String v2Profile(String orderPaidPayload, String envelope) {
         return """
                 {
                   "profileVersion": "2.0",
@@ -567,15 +604,16 @@ class MappingActivationControllerTest {
                   },
                   "amountPolicy": { "bySourceField": { "paid_fen": "FEN" } }
                 }
-                """.formatted(SOURCE_CODE, ENVELOPE_FULL, orderPaidPayload);
+                """.formatted(SOURCE_CODE, envelope, orderPaidPayload);
     }
 
     /**
      * HTTP 层最小指针替身（按 sourceId 保持"一个源最多一个激活指针"）。
      *
-     * <p>**它不是正式激活指针的属主**：正式属主是 {@link ActiveMappingPointerStore} 的落库实现
-     * （当前未就绪，见 {@link UnavailableActiveMappingPointerStore}）。这里只用于"落库能力已就绪"时
-     * HTTP 层行为（200 / 幂等 / 替换 / 审计）的实测对照。</p>
+     * <p><b>它不是正式激活指针的属主</b>：正式属主是 {@link ActiveMappingPointerStore} 的落库实现
+     * {@code JdbcActiveMappingPointerStore}（表 {@code source_mapping_active}，V21 迁移）。
+     * 这里只用于"落库能力已就绪"时 HTTP 层行为（200 / 幂等 / 替换 / 审计）的实测对照——
+     * 真库往返与锁行为不在本类取证范围（见 MySqlIT）。</p>
      */
     private static final class RecordingPointerStore implements ActiveMappingPointerStore {
 
@@ -584,6 +622,11 @@ class MappingActivationControllerTest {
         @Override
         public Optional<ActiveMappingPointer> find(long sourceId) {
             return Optional.ofNullable(pointers.get(sourceId));
+        }
+
+        @Override
+        public Optional<ActiveMappingPointer> lockBySourceId(long sourceId) {
+            return find(sourceId);
         }
 
         @Override

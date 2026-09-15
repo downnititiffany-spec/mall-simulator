@@ -390,21 +390,46 @@ class MappingProfileLoaderTest {
     }
 
     @Test
-    @DisplayName("实测缺陷登记（S2-03 发现，未修）：契约的**信封**必填表恒为空 ⇒ 信封缺映射不会阻断激活")
-    void envelopeRequiredTableIsAlwaysEmptyBecauseLoaderReadsTheWrongNode() {
-        // 事实链：CanonicalContractLoader:59 用 requiredNames(properties) 读信封必填，
-        // 而契约把 required 放在**根**（与 properties 同级），properties 内**没有** required 键
-        // （实测 contract-specs/schemas/canonical-event.v1.schema.json：根 required 有 8 个字段、
-        //  properties 无 required）⇒ 每个信封字段的 required 都是 false。
-        // 后果：MappingProfileLoader.collectUnmappedEnvelopeBlocks（:837-851）遍历的集合恒空，
-        // 该分支至今是**死代码** —— 画像漏映射某个信封字段**不会**进 activationBlocks。
+    @DisplayName("信封必填真相取自契约**根级** required：漏映射必填信封字段必须形成 activation block（S2-03.1 修复）")
+    void unmappedRequiredEnvelopeFieldBecomesActivationBlock() {
         CanonicalContract contract = MappingTestSupport.contract();
-        assertThat(contract.requiredEnvelopeFields())
-                .as("这条断言变红 = 有人修好了信封必填解析；请同时复核 activationBlocks 语义、"
-                        + "既有 v1/v2 画像的可激活判定与 SourceMapper 闸门，不要只改断言")
-                .isEmpty();
 
-        // 对照组：payload 侧读的是 $defs.<type>.required（与 properties 同级，存在）⇒ 工作正常
-        assertThat(contract.requiredPayloadFields("order_created")).isNotEmpty();
+        // 契约把信封必填写在**根** required（8 个字段，与 properties 同级）；
+        // ingest_time 也在其中，但由平台 ingestion 层生成、画像禁止写它 ⇒ 收集阻断时被豁免（见下一用例）。
+        assertThat(contract.requiredEnvelopeFields())
+                .as("根级 required 的 8 个信封字段必须全部被判定为必填")
+                .containsExactlyInAnyOrder("event_id", "event_type", "event_time", "ingest_time",
+                        "source_system", "schema_version", "trace_id", "payload");
+
+        // 夹具：把 valid() 里的 sys → source_system 这一条映射摘掉，其余 6 条仍在
+        String missingSys = valid().replace(", \"sys\": \"source_system\"", "");
+        assertThat(missingSys)
+                .as("夹具必须真的少了那一条映射，否则本用例什么也没验证")
+                .doesNotContain("source_system");
+        MappingProfileLoad load = MappingTestSupport.load(missingSys, "inline/envelope-missing-sys.v2.json");
+
+        assertThat(load.profile().syntax()).isEqualTo(MappingProfile.ProfileSyntax.V2_STRICT);
+        assertThat(load.ok())
+                .as("漏映射信封字段是**可装载但禁止激活**（规则 12），不是画像非法")
+                .isTrue();
+        assertThat(load.profile().activationBlocks())
+                .as("漏映射的必填信封目标必须进 activationBlocks，否则 dry-run 会错误放行")
+                .contains("unmappedEnvelope:source_system");
+        assertThat(load.profile().activationBlocked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("对照：平台生成的 ingest_time 未被映射**不**构成激活阻断（该字段本就禁止画像写）")
+    void unmappedPlatformIngestFieldIsNotAnActivationBlock() {
+        CanonicalContract contract = MappingTestSupport.contract();
+        MappingProfileLoad load = loadValid();
+
+        assertThat(load.profile().envelopeFieldMappings())
+                .as("对照前提：该画像确实没有映射 %s", contract.platformIngestField())
+                .doesNotContainValue(contract.platformIngestField());
+        assertThat(load.profile().activationBlocks())
+                .as("其余 7 个必填信封目标都映射了 ⇒ 不应有任何信封阻断")
+                .noneMatch(block -> block.startsWith("unmappedEnvelope:"));
+        assertThat(load.profile().activationBlocked()).isFalse();
     }
 }
