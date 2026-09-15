@@ -75,26 +75,30 @@ $RunIdPattern = '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$'
 $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 
 # 登记基线（口径来源：docs/PROJECT_STATUS.md「测试与验收状态」；漂移即失败，除非 -AllowCountDrift）
-# 2026-09-16 S2-04A 收口口径（analytics=834 / default=953）：相对上一版 821/940 只差 +13，
-#   全部来自本轮新增用例，且全在 warehouse-pipeline —— LandingManifestSelectorTest +9（清单选择：
-#   按源归属/他源不选中/缺 sourceId 不可归属/钉住他源回落/钉住本源优先/非 READY 与空批次过滤/
-#   字符串计数兼容/目录缺失/坏 JSON 不致命）+ PipelineServiceTest +4（他源清单不被当输入 ⇒
-#   RUN_EMPTY_LANDING、更近的他源批次不遮蔽本源批次、缺 sourceId 清单在流水线里不可归属、
-#   未绑定源 ⇒ 稳定码 SOURCE_NOT_BOUND 且早于执行器构造）；其余五个模块逐一复核未变。
-#   analytics-server = 834 = 90(platform-common) + 320(connection-ingestion，跳过 1) + 147(warehouse-pipeline)
-#     + 48(metric-analysis) + 91(ai-decision) + 138(platform-app)；三树 953 = 834 + 13(mall) + 106(generator)。
-#   前序口径链：S2-03.1 时 analytics 为 821（connection-ingestion 320 / platform-app 138）；
+# 2026-09-16 S2-04B 收口口径（analytics=871 / default=990）：相对上一版 834/953 只差 +37，
+#   全部来自本轮新增用例，且只落在两个模块 —— connection-ingestion +30（LandingInputScannerTest 6
+#   ＝枚举唯一所有者：完成文件规则、候选⊋完成、相对键、跨分区同名）；LandingLayoutTest 5（布局登记表、
+#   未登记值 fail-closed、列宽唯一所有者）；IngestionLandingLayoutTest 4（同一份输入在两种布局下的
+#   采集/账/清单差异）；RuntimeProfileLandingLayoutWriteTest 6（写入口径：null/空白/未登记值）；
+#   FlumeSpoolConfigTest 9（`ingestion/flume/flume-spooldir.conf` 的静态门禁：规则 1/3/5/6）；
+#   platform-app +7（RuntimeProfileLandingLayoutMigrationScriptTest：V22 只加一列、类型/可空/位置、
+#   无 DROP/DEFAULT/ENUM、版本已分配且唯一、实体字段存在、脚本恰好一条语句）。
+#   analytics-server = 871 = 90(platform-common) + 350(connection-ingestion，跳过 1) + 147(warehouse-pipeline)
+#     + 48(metric-analysis) + 91(ai-decision) + 145(platform-app)；三树 990 = 871 + 13(mall) + 106(generator)。
+#   前序口径链：S2-04A 时 analytics 为 834（connection-ingestion 320 / platform-app 138）、三树 953；
+#     S2-03.1 时 analytics 为 821（320 / 138）；
 #     S2-03 时 801（connection-ingestion 311 / platform-app 127）；
 #     S2-02B 时 773（connection-ingestion 290 / platform-app 120）；
 #     S2-01B 时 746（platform-app 119）；+18 = connection-ingestion +17（S2-02A 新增用例）+1。
-#   注意：**数量基线与通过状态是两回事** —— 834 这个数字里仍含 1 个已登记的环境性红
+#   注意：**数量基线与通过状态是两回事** —— 871 这个数字里仍含 1 个已登记的环境性红
 #     （platform-app `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1），故本档 F/E 门禁照旧判失败。
+#     S2-04B 的默认档实测因此是「计数 MATCH + 唯一红＝该已登记环境性红」，**不是** exit=0。
 # 解析器修正（2026-09-15，总控认定属普通实现细节）：surefire 的模块汇总行在有跳过时为 `[WARNING]`、
 #   有失败时为 `[ERROR]`，旧正则只认 `[INFO]` ⇒ 这类模块**整块漏计**，其 F/E 一并丢失
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 834
+  'analytics-server'        = 871
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }

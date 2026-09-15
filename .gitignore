@@ -31,6 +31,10 @@ landing/
 data/
 logs/
 *.log
+# 反选：`landing/` 这条是为运行时落地目录写的，但 Java 包名也可以叫 landing
+# （S2-04B 新增 `com.graduation.analytics.landing`）。不反选的话新类/新测试会被
+# **静默地**挡在提交之外——本地全绿、推上去编译不过。反选必须写在 `landing/` 之后。
+!analytics-server/**/src/**/landing/
 
 # ── Spark 本地实验残留（embedded Derby / warehouse）──
 metastore_db/

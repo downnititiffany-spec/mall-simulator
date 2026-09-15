@@ -2,6 +2,7 @@ package com.graduation.analytics.runtime;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.graduation.analytics.common.PlatformBizException;
+import com.graduation.analytics.landing.LandingLayout;
 import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.runtime.credential.CredentialService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
@@ -74,6 +75,7 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
         p.setCreatedAt(LocalDateTime.now());
         p.setUpdatedAt(LocalDateTime.now());
         rejectProfileHivePrefix(p);
+        normalizeLandingLayout(p);
         profileMapper.insert(p);
         return p;
     }
@@ -97,8 +99,23 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
         p.setCreatedAt(existed.getCreatedAt());
         p.setUpdatedAt(LocalDateTime.now());
         rejectProfileHivePrefix(p);
+        normalizeLandingLayout(p);
         profileMapper.updateById(p);
         return profileMapper.selectById(p.getId());
+    }
+
+    /**
+     * S2-04B：{@code landing_layout} 的写入侧归一（V22 新增列）。
+     *
+     * <p>空值（null/空白）归一为 {@code null}＝"没写"：该列在写入侧保持空置，读取侧才等价于默认
+     * 滚动日志。为什么不在这里补一个默认值：写死 {@code ROLLING_LOG} 会让"从未配置"与
+     * "显式配置成默认"在库里有两种表示，而 {@code runtime_profile} 的读取侧只需要一个口径。</p>
+     *
+     * <p>非空但未登记的值**拒绝**（{@code PARAM_INVALID}），绝不静默回落到默认布局：
+     * 拼写错误静默变成"去 events/ 采样"，会产出"采集成功但 0 条"这种事后无从察觉的结果。</p>
+     */
+    private static void normalizeLandingLayout(RuntimeProfile p) {
+        p.setLandingLayout(LandingLayout.normalizeForWrite(p.getLandingLayout()));
     }
 
     /**

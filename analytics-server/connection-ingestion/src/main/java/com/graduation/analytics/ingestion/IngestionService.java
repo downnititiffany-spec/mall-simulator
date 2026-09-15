@@ -10,6 +10,8 @@ import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.common.LandingUri;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
+import com.graduation.analytics.landing.LandingInputScanner;
+import com.graduation.analytics.landing.LandingLayout;
 import com.graduation.analytics.mapping.ingest.SourceMapper;
 import com.graduation.analytics.mapping.ingest.SourceMapping;
 import com.graduation.analytics.runtime.RuntimeProfileService;
@@ -120,7 +122,11 @@ public class IngestionService {
         // 一轮只装载一次：批内文件必须用同一份映射，中途改画像会让同一批次里的行语义不一致。
         SourceMapping mapping = sourceMapper.prepare(source);
         Path landingRoot = LandingUri.resolve(active.getLandingUri());
-        Path eventsDir = landingRoot.resolve("events");
+        // S2-04B（§8.2）：输入根由**布局**决定：滚动日志＝<landing>/events（一层、*.jsonl，
+        // V2 起的既有语义）；Flume 目标区＝<landing>/raw（递归，dt=/hour= 是目录层级）。
+        // 布局未配置（V22 之前的存量行）等价于滚动日志——不得因为新增一列而改变存量环境的读法。
+        LandingLayout layout = LandingLayout.effective(active.getLandingLayout());
+        Path inputRoot = layout.inputRoot(landingRoot);
         // 批次号带随机后缀，避免同秒多次运行撞唯一键；时间取**注入的业务时间源**（§20.3 不把系统当前时间
         // 当业务时间），与批次 createdAt（startedAt，同一时间源）保持一致，冻结契约的 ^ing-\d{14}-[0-9a-f]{8}$ 不变
         String batchNo = "ing-" + BATCH_NO.format(eventClock.nowLdt())
@@ -157,20 +163,17 @@ public class IngestionService {
         try {
             Files.createDirectories(acceptedDir);
             Files.createDirectories(quarantineDir);
-            Map<String, Path> hourFiles = new TreeMap<>(); // 文件名排序 → 确定性批次顺序
-            if (Files.isDirectory(eventsDir)) {
-                try (Stream<Path> s = Files.list(eventsDir)) {
-                    s.filter(p -> p.getFileName().toString().endsWith(".jsonl"))
-                            .forEach(p -> hourFiles.put(p.getFileName().toString(), p));
-                }
-            }
-            for (var entry : hourFiles.entrySet()) {
+            // S2-04B：枚举"哪些文件算本轮输入"的唯一所有者是 LandingInputScanner（§8.2 规则 4：
+            // in-use 临时文件不进清单，只枚举已完成文件）。它按 inputKey 升序返回 → 确定性批次顺序。
+            // 滚动日志布局下 inputKey 就是文件名，因此这里的顺序与既有 TreeMap<文件名> 完全一致。
+            for (LandingInputScanner.ScannedFile entry : LandingInputScanner.scan(inputRoot, layout)) {
+                String inputKey = entry.inputKey();
                 try {
                     // P1-05：逐文件复核"本轮归属的源"。批次行的 source_id 在开头就定了，
                     // 期间若有人切换激活源（D-035 只允许一个 ACTIVE 源），继续写就会把 B 源的
                     // 字节记进 A 源的批次、并把断点写到 A 源名下 —— 本次记 FAILED 并中断，
                     // 宁可这一轮失败，也不产出**归属错误**的批次（那是事后无法察觉的错账）。
-                    requireSourceUnchanged(runtimeProfileId, sourceId, entry.getKey().toString());
+                    requireSourceUnchanged(runtimeProfileId, sourceId, inputKey);
                     // S2-02B（批次重放口径）：**同一批次不得二次消费同一输入**。
                     // 判据不是新造的指纹，而是既有唯一键 uk_batch_file(batch_id, file_path) 已经写下的
                     // 「本批次已 LANDED 该文件」这笔账（{@link IngestionBatchFile}，L186 就是它的写入点）：
@@ -179,18 +182,20 @@ public class IngestionService {
                     //      这批字节不能再进本批次（那会产出既无法归属、也无法对账的重复行）。
                     // 冲突按"本轮不得继续"处理：记 errorCount ⇒ 批次 FAILED ⇒（见下方清单段）不产出 READY 清单，
                     // 因此半成品不会被下游当成本轮输入；重放须开新批次。
-                    String fileName = entry.getKey();
+                    // S2-04B：这笔账的 file_path 用**输入根相对键**（而非文件名）：嵌套布局下
+                    // "同名不同分区"必须是两个输入，否则第二个会撞唯一键并把整批拖成 FAILED。
+                    String fileName = inputKey;
                     Long landed = batchFileMapper.selectCount(new LambdaQueryWrapper<IngestionBatchFile>()
                             .eq(IngestionBatchFile::getBatchId, batch.getId())
                             .eq(IngestionBatchFile::getFilePath, fileName));
                     if (landed != null && landed > 0
-                            && ingestor.hasConsumableData(entry.getValue(), runtimeProfileId, sourceId)) {
+                            && ingestor.hasConsumableData(entry.file(), runtimeProfileId, sourceId)) {
                         throw new PlatformBizException(PlatformBizException.INGEST_BATCH_INPUT_CONFLICT,
                                 PlatformBizException.INGEST_BATCH_INPUT_CONFLICT + ": 批次 " + batchId
                                         + " 已消费文件 " + fileName + "，本轮该文件又有新内容；"
                                         + "同一批次不得二次消费同一输入（重放须开新批次）");
                     }
-                    var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId, sourceId,
+                    var res = ingestor.ingestFile(entry.file(), batch.getId(), runtimeProfileId, sourceId,
                             acceptedDir, quarantineDir, trace, checksum, mapping);
                     // endOffset > startOffset ⇒ 真实推进了断点（有新内容可读），与 fileCount 的
                     // "产出了记录"是两件事：全是坏行的文件同样说明数据源在产出（B-08 / D-022）
@@ -205,12 +210,21 @@ public class IngestionService {
                         res.schemaVersions().forEach(v -> schemaVersions.put(v, true));
                         IngestionBatchFile bf = new IngestionBatchFile();
                         bf.setBatchId(batch.getId());
-                        bf.setFilePath(res.filePath());
+                        // S2-04B：**账本**的 file_path 记输入根相对键（见上方 fileName 注释）——
+                        // ingestion_batch_file 不在 contract-specs 的既有契约里（README 列为
+                        // "V2.1 §5.2 待做"），因此这里的取值形状由本侧决定，嵌套布局才认得清分区。
+                        bf.setFilePath(inputKey);
                         bf.setStartOffset(res.startOffset());
                         bf.setEndOffset(res.endOffset());
                         bf.setRecordCount(res.collected());
                         bf.setStatus("LANDED");
                         batchFileMapper.insert(bf);
+                        // 清单的 files[].file 仍是**文件名**（res.filePath()＝FileResult 的既有语义）：
+                        // ingestion-manifest.v1.schema.json 明确写着「文件名（非绝对路径）」并引用
+                        // LocalFileIngestor 的 getFileName()，改它的取值域属于契约语义变更（真决策门）。
+                        // 代价是 **FLUME_RAW 布局下清单里可能出现同名条目**（不同分区同一天同一小时文件名
+                        // 相同）——这是**已登记的待裁决契约问题**（F-31），不是无声的取舍：
+                        // 账本已用相对键消歧，清单侧等裁决后再改一个表达式即可。
                         files.add(Map.of(
                                 "file", res.filePath(),
                                 "acceptedRecords", res.collected(),
@@ -220,7 +234,7 @@ public class IngestionService {
                     }
                 } catch (Exception e) {
                     errorCount++;
-                    log.warn("ingest file failed: {} ({})", entry.getKey(), e.getMessage());
+                    log.warn("ingest file failed: {} ({})", inputKey, e.getMessage());
                 }
             }
         } catch (IOException e) {
@@ -402,7 +416,11 @@ public class IngestionService {
                 log.warn("landingUri 不可解析（profile {}）：{}", active.getId(), e.getMessage());
             }
         }
-        Path eventsDir = landingRoot == null ? null : landingRoot.resolve("events");
+        // S2-04B：状态口与采集端**同源**取输入根——布局决定目录（滚动日志＝events/，Flume＝raw/）。
+        // 状态口按 events/ 扫而采集读 raw/ 会让运维看到 pendingFiles=0 却看着数据被采走。
+        LandingLayout layout = active == null ? LandingLayout.ROLLING_LOG
+                : LandingLayout.effective(active.getLandingLayout());
+        Path inputDir = landingRoot == null ? null : layout.inputRoot(landingRoot);
         long pendingFiles = 0;
         long pendingBytes = 0;
         // B-08 / D-022 候选①（最小明示）：D-016 的 pendingFiles/pendingBytes 是**整目录累计值**，
@@ -427,12 +445,17 @@ public class IngestionService {
                 ? Set.of()
                 : ingestor.checkpointKeys(active.getId(), sourceId);
         LocalDateTime lastArrivalAt = null;
-        if (eventsDir != null && Files.isDirectory(eventsDir)) {
-            try (Stream<Path> files = Files.list(eventsDir)) {
-                for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".jsonl")).toList()) {
+        if (inputDir != null) {
+            // S2-04B：枚举口径与采集端同源（LandingInputScanner），但**取的是候选集不是完成集**。
+            // 这里回答的是"源还在不在产出"（pendingFiles/pendingBytes/lastArrivalAt/断点覆盖），
+            // 不是"这一轮采哪些"：零字节文件确实是到达的文件（旧口径也算它），把它从观测里剔掉
+            // 会得到「目录里有文件、lastArrivalAt=null」这种自相矛盾的总览。
+            // 采集端用 scan()（只认完成文件，规则 4），两者共用同一份排除规则。
+            try {
+                for (LandingInputScanner.Candidate observed : LandingInputScanner.inspect(inputDir, layout)) {
+                    Path f = observed.file();
                     pendingFiles++;
-                    long size = Files.size(f);
-                    pendingBytes += size;
+                    pendingBytes += observed.size();
                     LocalDateTime arrivedAt = LocalDateTime.ofInstant(
                             Files.getLastModifiedTime(f).toInstant(), java.time.ZoneId.systemDefault());
                     if (lastArrivalAt == null || arrivedAt.isAfter(lastArrivalAt)) {
@@ -441,12 +464,12 @@ public class IngestionService {
                     if (checkpointKeys.contains(LocalFileIngestor.checkpointKey(f))) {
                         checkpointFiles++;
                     }
-                    if (ingestor.hasConsumableData(f, active.getId(), sourceId)) {
+                    if (observed.completed() && ingestor.hasConsumableData(f, active.getId(), sourceId)) {
                         newFileCount++;
                     }
                 }
-            } catch (IOException e) {
-                log.warn("events dir scan failed: {}", e.getMessage());
+            } catch (IOException | UncheckedIOException e) {
+                log.warn("landing input dir scan failed: {}", e.getMessage());
             }
         }
         IngestionBatch latest = batchMapper.selectOne(new LambdaQueryWrapper<IngestionBatch>()
@@ -457,7 +480,11 @@ public class IngestionService {
         result.put("sourceId", sourceId);
         result.put("landingUri", active == null ? null : active.getLandingUri());
         result.put("landingError", landingError);
-        result.put("eventsDir", eventsDir == null ? null : eventsDir.toString());
+        result.put("landingLayout", layout.name());
+        // eventsDir 这个名字是 V2 起的既有对外键（前端/运维脚本在读）。S2-04B 后它的值＝
+        // **本轮真实的输入根**：滚动日志布局下就是 events/（与 V2 完全一致），Flume 布局下是 raw/。
+        // 保留旧键名而不是换名（换名会静默打断既有消费者），但值必须与采集端同源、不得指向没读的目录。
+        result.put("eventsDir", inputDir == null ? null : inputDir.toString());
         result.put("pendingFiles", pendingFiles);
         result.put("pendingBytes", pendingBytes);
         result.put("checkpointFiles", checkpointFiles);
