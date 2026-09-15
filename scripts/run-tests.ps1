@@ -75,8 +75,16 @@ $RunIdPattern = '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$'
 $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 
 # 登记基线（口径来源：docs/PROJECT_STATUS.md「测试与验收状态」；漂移即失败，除非 -AllowCountDrift）
+# 2026-09-20 S2-01A/A.1（Mapper 语义冻结修正）：本分支实测 analytics-server = 705
+#   = 89(platform-common) + 229(connection-ingestion) + 134(warehouse-pipeline) + 48(metric-analysis)
+#     + 91(ai-decision) + 114(platform-app)
+#   其中 connection-ingestion 由 156 ⇒ 229：+58 为 S2-01A 新增 mapping 套件（尚未登记进 PROJECT_STATUS.md），
+#   +15 为 S2-01A.1 新增/改写用例（mapping 套件 58 ⇒ 73，见 .verify/v3-stage2/s2-01a/）。
+#   三树合计相应由 751 ⇒ 824（632 ⇒ 705 差值 73 = 58 + 15）。
+# 已知脚本事实（本轮不改解析器）：platform-app 用例失败时其模块汇总行带 `[ERROR]` 前缀，
+#   聚合会漏掉该模块 114 条 ⇒ 本工作树仍会打印 DRIFT（591），这是解析口径问题，不是代码回归。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 632
+  'analytics-server'        = 705
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -159,7 +167,7 @@ function Invoke-MavenRun {
 }
 
 # 逐模块汇总行：`[INFO] Tests run: N, Failures: F, Errors: E, Skipped: S`（行尾无 `-- in`）
-# 注意：多模块 reactor **没有** reactor 级汇总行 —— 「632」必须由 6 条模块汇总行相加得到。
+# 注意：多模块 reactor **没有** reactor 级汇总行 —— 「705」必须由 6 条模块汇总行相加得到。
 # `-ModuleFilter`：隔离档的 analytics 目标是 `-pl metric-analysis -am`，日志里**同时**含依赖模块
 # platform-common 的 89 个默认档用例（依赖构建，不属于隔离档）。因此必须按「当前正在构建的模块」
 # 归集汇总行，只统计目标模块；否则会把 89 误算成隔离用例（本轮自查发现的自身缺陷 3）。

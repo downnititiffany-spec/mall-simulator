@@ -1,0 +1,64 @@
+{
+  "profileVersion": "2.0",
+  "sourceCode": "s2-01a-order-items",
+  "contractVersion": "1.0",
+  "eventTypeMappings": {
+    "sourceField": "kind",
+    "values": {
+      "order_new_se": "order_created",
+      "order_paid_se": "order_paid"
+    }
+  },
+  "fieldMappings": {
+    "envelope": {
+      "id": "event_id",
+      "kind": "event_type",
+      "at": "event_time",
+      "sys": "source_system",
+      "rev": "schema_version",
+      "tr": "trace_id",
+      "data": "payload"
+    },
+    "payload": {
+      "order_created": {
+        "ord": "order_id",
+        "buyer": "user_id",
+        "lines": {
+          "target": "items[]",
+          "itemFields": {
+            "sku": "product_id",
+            "qty": "quantity",
+            "unit_fen": "unit_price",
+            "disc_fen": "discount",
+            "amt_fen": "amount"
+          }
+        },
+        "total_fen": "total_amount",
+        "state": "status",
+        "placed": "created_at"
+      },
+      "order_paid": {
+        "ord": "order_id",
+        "buyer": "user_id",
+        "pay": "payment_id",
+        "paid_fen": "amount",
+        "paid_at_ms": "paid_at"
+      }
+    }
+  },
+  "enumSemantics": {},
+  "timePolicy": {
+    "field": "at",
+    "formats": ["ISO_OFFSET_DATE_TIME"],
+    "zone": "Asia/Shanghai"
+  },
+  "amountPolicy": {
+    "bySourceField": {
+      "unit_fen": "FEN",
+      "disc_fen": "FEN",
+      "amt_fen": "FEN",
+      "total_fen": "FEN",
+      "paid_fen": "FEN"
+    }
+  }
+}

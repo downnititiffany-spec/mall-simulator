@@ -1,0 +1,40 @@
+{
+  "profileVersion": "2.0",
+  "sourceCode": "s2-01a-order-yuan-dst",
+  "contractVersion": "1.0",
+  "eventTypeMappings": {
+    "sourceField": "kind",
+    "values": {
+      "pay": "order_paid"
+    }
+  },
+  "fieldMappings": {
+    "envelope": {
+      "id": "event_id",
+      "kind": "event_type",
+      "local_ts": "event_time",
+      "sys": "source_system",
+      "rev": "schema_version",
+      "tr": "trace_id",
+      "data": "payload"
+    },
+    "payload": {
+      "order_paid": {
+        "ord": "order_id",
+        "buyer": "user_id",
+        "pay": "payment_id",
+        "paid": "amount",
+        "paid_at": "paid_at"
+      }
+    }
+  },
+  "enumSemantics": {},
+  "timePolicy": {
+    "field": "local_ts",
+    "formats": ["ISO_LOCAL_DATE_TIME", "dd/MM/yyyy HH:mm:ss"],
+    "zone": "America/New_York"
+  },
+  "amountPolicy": {
+    "bySourceField": { "paid": "YUAN" }
+  }
+}
