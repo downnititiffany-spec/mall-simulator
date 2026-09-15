@@ -22,7 +22,7 @@
 #   all       → default → isolated → spark，任一档失败/零用例/F/E 非 0 ⇒ 非 0 退出
 #
 # 成功判据（**必须**，缺一即失败）：
-#   * default / isolated：逐模块 Maven 汇总行 `Tests run: N, Failures: F, Errors: E, Skipped: S`
+#   * default / isolated：逐模块 Maven 汇总行 `Tests run: N, Failures: F, Errors: E, Skipped: S`（前缀不限级别：有跳过为 `[WARNING]`、有失败为 `[ERROR]`）
 #     满足 N > 0 且 F = 0 且 E = 0，且模块退出码 0；
 #   * spark：**只认** `spark-jobs/target/surefire-reports/TestSuite.txt`（ScalaTest 产物）的
 #     `Total number of tests run:` > 0，且 `failed = 0`、`aborted = 0`，且该文件是**本轮新写**的
@@ -75,16 +75,16 @@ $RunIdPattern = '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$'
 $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 
 # 登记基线（口径来源：docs/PROJECT_STATUS.md「测试与验收状态」；漂移即失败，除非 -AllowCountDrift）
-# 2026-09-20 S2-01A/A.1（Mapper 语义冻结修正）：本分支实测 analytics-server = 705
-#   = 89(platform-common) + 229(connection-ingestion) + 134(warehouse-pipeline) + 48(metric-analysis)
-#     + 91(ai-decision) + 114(platform-app)
-#   其中 connection-ingestion 由 156 ⇒ 229：+58 为 S2-01A 新增 mapping 套件（尚未登记进 PROJECT_STATUS.md），
-#   +15 为 S2-01A.1 新增/改写用例（mapping 套件 58 ⇒ 73，见 .verify/v3-stage2/s2-01a/）。
-#   三树合计相应由 751 ⇒ 824（632 ⇒ 705 差值 73 = 58 + 15）。
-# 已知脚本事实（本轮不改解析器）：platform-app 用例失败时其模块汇总行带 `[ERROR]` 前缀，
-#   聚合会漏掉该模块 114 条 ⇒ 本工作树仍会打印 DRIFT（591），这是解析口径问题，不是代码回归。
+# 2026-09-15 S2-02B 口径修正（总控追加口径：analytics=764 / default=883）：
+#   analytics-server = 764 = 90(platform-common) + 281(connection-ingestion，跳过 1) + 134(warehouse-pipeline)
+#     + 48(metric-analysis) + 91(ai-decision) + 120(platform-app)；三树 883 = 764 + 13(mall) + 106(generator)。
+#   S2-01B 时 analytics 为 746（platform-app 119）：+18 = connection-ingestion +17（S2-02A 新增用例）+ 1。
+# 解析器修正（2026-09-15，总控认定属普通实现细节）：surefire 的模块汇总行在有跳过时为 `[WARNING]`、
+#   有失败时为 `[ERROR]`，旧正则只认 `[INFO]` ⇒ 这类模块**整块漏计**，其 F/E 一并丢失
+#   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
+#   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 705
+  'analytics-server'        = 764
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -166,19 +166,19 @@ function Invoke-MavenRun {
   return [pscustomobject]@{ name = $Name; exit = $code; log = $log }
 }
 
-# 逐模块汇总行：`[INFO] Tests run: N, Failures: F, Errors: E, Skipped: S`（行尾无 `-- in`）
-# 注意：多模块 reactor **没有** reactor 级汇总行 —— 「705」必须由 6 条模块汇总行相加得到。
+# 逐模块汇总行：`[INFO|WARNING|ERROR] Tests run: N, Failures: F, Errors: E, Skipped: S`（行尾无 `-- in`）
+# 注意：多模块 reactor **没有** reactor 级汇总行 —— 「764」必须由 6 条模块汇总行相加得到。
 # `-ModuleFilter`：隔离档的 analytics 目标是 `-pl metric-analysis -am`，日志里**同时**含依赖模块
-# platform-common 的 89 个默认档用例（依赖构建，不属于隔离档）。因此必须按「当前正在构建的模块」
-# 归集汇总行，只统计目标模块；否则会把 89 误算成隔离用例（本轮自查发现的自身缺陷 3）。
+# platform-common 的 90 个默认档用例（依赖构建，不属于隔离档）。因此必须按「当前正在构建的模块」
+# 归集汇总行，只统计目标模块；否则会把 90 误算成隔离用例（本轮自查发现的自身缺陷 3）。
 function Get-MavenTotals {
   param([string]$Log, [string]$ModuleFilter = '')
   $t = 0; $f = 0; $e = 0; $s = 0; $blocks = 0; $detail = @(); $skippedModules = @{}
   $current = ''
   foreach ($line in (Get-Content -LiteralPath $Log)) {
-    if ($line -match '^\s*\[INFO\] Building (\S+) ') { $current = $Matches[1] }
-    elseif ($line -match '\[INFO\] --- .* @ (\S+) ---') { $current = $Matches[1] }
-    elseif ($line -match '^\[INFO\] Tests run: (\d+), Failures: (\d+), Errors: (\d+), Skipped: (\d+)\s*$') {
+    if ($line -match '^\s*\[(?:INFO|WARNING|ERROR)\] Building (\S+) ') { $current = $Matches[1] }
+    elseif ($line -match '\[(?:INFO|WARNING|ERROR)\] --- .* @ (\S+) ---') { $current = $Matches[1] }
+    elseif ($line -match '^\[(?:INFO|WARNING|ERROR)\] Tests run: (\d+), Failures: (\d+), Errors: (\d+), Skipped: (\d+)\s*$') {
       $n = [int]$Matches[1]; $ff = [int]$Matches[2]; $ee = [int]$Matches[3]; $ss = [int]$Matches[4]
       if ($ModuleFilter -and $current -ne $ModuleFilter) {
         if (-not $skippedModules.ContainsKey($current)) { $skippedModules[$current] = 0 }
@@ -280,7 +280,7 @@ function Invoke-IsolatedSuite {
       $bad += $n; continue
     }
     # analytics 目标是 `-pl metric-analysis -am`：日志里含依赖模块 platform-common 的默认档用例，
-    # 必须按模块归集（见 Get-MavenTotals 注释），否则 89 个依赖构建用例会被误算成隔离用例。
+    # 必须按模块归集（见 Get-MavenTotals 注释），否则 90 个依赖构建用例会被误算成隔离用例。
     $filter = $(if ($n -eq 'analytics') { 'metric-analysis' } else { '' })
     $tot = Get-MavenTotals -Log $log -ModuleFilter $filter
     $cmp = Compare-Baseline -Label 'tests' -Actual $tot.tests -Expected $expectedMap[$n]
@@ -307,7 +307,7 @@ function Invoke-IsolatedSuite {
         $row.name, $row.tests, $row.failures, $row.errors, $row.skipped, $row.blocks, $row.cmp)
   }
   Write-Host ("  {0,-10} 合计 = {1}（基线 {2}）；runner exit={3}" -f 'isolated', $total, (($expectedMap.Values | Measure-Object -Sum).Sum), $isoExit)
-  Write-Host '  口径：mall 30 ＋ generator 19 ＋ metric-analysis IT 6 = 55；analytics 侧同 reactor 的 platform-common 89 为依赖构建，不计入隔离档。'
+  Write-Host '  口径：mall 30 ＋ generator 19 ＋ metric-analysis IT 6 = 55；analytics 侧同 reactor 的 platform-common 90 为依赖构建，不计入隔离档。'
   $code = 0
   if ($isoExit -ne 0) { $code = $isoExit } elseif ($bad.Count -gt 0) { $code = 7 }
   return [pscustomobject]@{ suite = 'isolated'; exit = $code; total = $total; rows = $rows; bad = $bad; childExit = $isoExit; console = $isoConsole }

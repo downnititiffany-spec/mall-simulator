@@ -23,8 +23,8 @@
 ### 阶段2 进展（代码Agent 实测登记，2026-09-15）
 
 - 已交付（分支 `feature/v3-development`，**未 merge main**）：S2-01A `26b083d`、S2-01B `76e3032`、S2-02A `23d781b`；映射核心/干跑预览/真实采集接线三段均已提交。
-- 本轮实测（fresh，日志 `.verify/v3-stage2/s2-02/`）：analytics 六模块 90 / 281（跳过1）/ 134 / 48 / 91 / 120 = **764**；新增 17 例全绿；**唯一红**仍是已登记环境性 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched:61`，本轮未修、未用 `-AllowCountDrift`、未复制 manifest。
-- 计数口径：§测试与验收当前口径表中 default-tests 行（analytics632 + mall13 + generator106 = 751）与 `scripts/run-tests.ps1` 常量**本轮均未改**；analytics 实测 764 与上述口径的差异原因与请求见 `docs/开发过程事实与决策记录.md` F-24/F-25，**是否调整由总控裁定**。
+- 本轮实测（fresh，日志 `.verify/v3-stage2/s2-02/`）：analytics 六模块 90 / 281（跳过1）/ 134 / 48 / 91 / 120 = **764**；新增 17 例全绿；**唯一红**仍是已登记环境性 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched:61`，本轮未修、未用 `-AllowCountDrift`、未复制 manifest。总控 2026-09-15 追加口径：analytics 数量基线 **764**、default **883**（764+13+106）；S2-01B 为 **746**（platform-app 119），+18 = connection-ingestion +17 + platform-app +1；**「platform-app 有 1 个环境性失败」与「该模块 120 条计入基线」是两回事**。
+- 计数口径（2026-09-15 总控裁定）：analytics = **764**、default = **883**；`scripts/run-tests.ps1` 登记基线已由 705/824 修正为 764/883，并修复「`[WARNING]`/`[ERROR]` 前缀的模块汇总行被整块漏计、连带丢失该模块 F/E」的解析器缺陷（见 F-26）。§测试与验收当前口径表中 default-tests 行（analytics632 … = 751）保留为 2026-09-15 发布轮历史口径，**不再作为当前基线**。
 - 能力边界：真实采集现在按登记画像决定是否逐行映射（v2 可执行画像 → canonical/隔离；v1 只读兼容画像 → 直通不映射）；设计 §7.4 激活接口与激活指针持久化**尚未实现**；本轮**未**做任何真机（8091）HTTP 观测、**未**触碰 3306/3307/ACTIVE。
 
 ### 已完成
