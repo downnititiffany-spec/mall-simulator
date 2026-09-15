@@ -22,10 +22,11 @@
 
 ### 阶段2 进展（代码Agent 实测登记，2026-09-15）
 
-- 已交付（分支 `feature/v3-development`，**未 merge main**）：S2-01A `26b083d`、S2-01B `76e3032`、S2-02A `23d781b`、S2-02B `a673e32`、**S2-03（激活生命周期闭环，本轮）**；映射核心/干跑预览/真实采集接线/批次重放口径/预览→激活五段均已提交。另：计数口径修复 `7f49055`、`origin/main` 文档重组同步 `d89bd20`。
-- 本轮实测（fresh，全量 default 档真 Maven，日志 `.verify/v3-stage2/s2-03/r11-default-suite-baseline-801/`）：analytics 六模块 90 / 311（跳过1）/ 134 / 48 / 91 / 127 = **801**；`connection-ingestion` 311 = 上一版 290 + **21**（`MappingActivationServiceTest` 15 + `SourceMapperActivationTest` 5 + `MappingProfileLoaderTest` 信封必填表实测登记 1）、`platform-app` 127 = 120 + **7**（`MappingActivationControllerTest`）；default 三棵树 **920** = 801 + 13 + 106。**唯一红**仍是已登记环境性 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，本轮未修、未用 `-AllowCountDrift` 掩盖失败（该开关只在 r8 取数时用一次）、未复制 manifest；无新增红。
-- 计数口径链（2026-09-15）：当前基线 analytics = **801**、default = **920**；上一版 773/892（S2-02B）、772/891、764/883（S2-01B 746 + 18）的来历与 `run-tests.ps1` 汇总行漏计解析器缺陷的修复见 F-26；`scripts/run-tests.ps1` 登记基线已同步为 801/920。§测试与验收当前口径表中 default-tests 行（analytics632 … = 751）保留为 2026-09-15 发布轮历史口径，**不再作为当前基线**。
-- 能力边界（S2-03 后）：激活生命周期已实现 —— 干跑报告 → `POST /api/v1/sources/{sourceId}/mappings/activate`（只收 `reportId` + `expectedProfileChecksum`，**不接受新画像**）→ **active mapping pointer** → `SourceMapper` **只认 active**（磁盘上有 v2 画像但没激活 ⇒ `MAPPING_NOT_ACTIVE`；active 的 checksum 与磁盘字节不符 ⇒ `MAPPING_ACTIVE_PROFILE_DRIFT`；**没有 latest-wins**）。**持久化子项触发决策门、已暂停**：active pointer 无合法落库位置（Flyway 已到 V20，任何新列/新表都要 V21）⇒ 生产装配仍用 `UnavailableActiveMappingPointerStore`，activate 返回 **501**，**V21 落地前 v2 画像无法激活**、真实采集对 v2 画像一律 `MAPPING_NOT_ACTIVE` 拒绝（fail-closed），v1 只读兼容画像（`mock-mall.v1.json`）直通行为**不变**。失败三分类与批次口径同 S2-02B；本轮全部为 L0（未连库），**未**做任何真机（8091）HTTP 观测、**未**触碰 3306/3307/ACTIVE。**新登记缺口**：契约的信封必填表恒为空（`CanonicalContractLoader:59` 读 `properties.required`，实际 `required` 在根节点）⇒ 信封缺映射不阻断激活，`collectUnmappedEnvelopeBlocks` 为死代码，**本轮只登记不修**（属 S2-01A 冻结语义，见 F-28）。
+- 已交付（分支 `feature/v3-development`，**未 merge main**）：S2-01A `26b083d`、S2-01B `76e3032`、S2-02A `23d781b`、S2-02B `a673e32`、S2-03 `beddc3e`、**S2-03.1 `849ef66`（激活指针真实持久化 + 信封必填缺陷修复，本轮）**；映射核心/干跑预览/真实采集接线/批次重放口径/预览→激活五段、以及"预览→激活"的落库闭环均已提交。另：计数口径修复 `7f49055`、`origin/main` 文档重组同步 `d89bd20`。
+- **治理基线（2026-09-16 起，权威）**：**默认自主连续开发 + 仅破坏性变更停工**。旧门「新增 Flyway migration／新表 ⇒ 暂停等总控」**已废止**（F-28 中"持久化子项暂停"的结论自本轮起作废）；真决策门收窄为 11 条破坏性变更（DROP TABLE/COLUMN、改既有字段类型或业务语义、改已发布迁移、写正式 3306、切 ACTIVE、改 `contract-specs/**` 语义、改 V3.0 架构、扩缩项目范围、删已发布能力、长期架构分叉、引入未规划大型组件）。V21 属**加性**迁移，经总控明确批准后落地。详见 F-29。
+- 本轮实测（fresh，全量 default 档真 Maven，日志 `.verify/v3-stage2/s2-03.1/r14-default-suite/raw-console.log`）：analytics 六模块 90 / 320（跳过1）/ 134 / 48 / 91 / 138 = **821**；`connection-ingestion` 320 = 上一版 311 + **9**（`MappingProfileLoaderTest` 删 1 加 2、`MappingActivationServiceTest` +1、`JdbcActiveMappingPointerStoreTest` +4、`MappingActivationPersistenceConfigTest` +3）、`platform-app` 138 = 127 + **11**（`MappingActivationControllerTest` +1、`SourceMappingActiveMigrationScriptTest` +5、`SourceMappingActivePersistenceContractTest` +5）；default 三棵树 **940** = 821 + 13 + 106。**唯一红**仍是已登记环境性 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，本轮未修、未复制 manifest、未用开关掩盖失败（`-AllowCountDrift` 只在量数那一次用）、无新增红。
+- 计数口径链（2026-09-16）：当前基线 analytics = **821**、default = **940**；上一版 801/920（S2-03）、773/892（S2-02B）、772/891、764/883（S2-01B 746 + 18）的来历与 `run-tests.ps1` 汇总行漏计解析器缺陷的修复见 F-26/F-29；`scripts/run-tests.ps1` 登记基线已同步为 821/940。§测试与验收当前口径表中 default-tests 行（analytics632 … = 751）保留为 2026-09-15 发布轮历史口径，**不再作为当前基线**。
+- 能力边界（S2-03.1 后）：激活生命周期闭环**已具备真实落库能力** —— 干跑报告 → `POST /api/v1/sources/{sourceId}/mappings/activate`（只收 `reportId` + `expectedProfileChecksum`，**不接受新画像**）→ active mapping pointer **写入 MySQL 表 `source_mapping_active`（V21，一源一行、PK `source_id`、FK → `source_registry(id)`）** → `SourceMapper` **只认 active**（磁盘上有 v2 画像但没激活 ⇒ `MAPPING_NOT_ACTIVE`；active 的 checksum 与磁盘字节不符 ⇒ `MAPPING_ACTIVE_PROFILE_DRIFT`；**没有 latest-wins**）。装配由 `MappingActivationPersistenceConfig` 单点决定：有 mapper ⇒ `JdbcActiveMappingPointerStore`，无 ⇒ fail-closed 兜底 + WARN（`MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE` = 501 **只剩装配缺失这一种成因**）。幂等判断走 `SELECT … FOR UPDATE`（REPEATABLE READ 快照坑）。信封必填缺陷已修：`CanonicalContractLoader` 改从契约**根节点** `required` 取信封必填表 ⇒ 信封漏映射现在会阻断激活。**边界（不得越界表述）**：①V21 **只存在于代码**，正式库 `analytics_meta` 仍是 V18（本轮未连库、未迁移、未写 3306）；②真库往返/结构/FK **未实测**，新写的 `SourceMappingActiveMySqlIT` **本轮未运行**；③并发 activate 的真实互斥**未测**；④"生产装配下 activate 返回 200"**未做真机（8091）端到端观测**，现有证据是装配层 + L0 语义证据的合成；⑤v1 只读兼容画像（`mock-mall.v1.json`）直通行为**不变**。本轮全部为 L0（未连库），未触碰 3306/3307/ACTIVE，未改 `contract-specs/**` 已发布语义。
 
 ### 已完成
 
@@ -64,7 +65,11 @@
 | 项 | 状态 |
 |---|---|
 | DEV-003d | development backlog |
-| DEV-004 | development backlog，迁移IT与V19/V20覆盖 |
+| DEV-004 | development backlog，迁移IT（现覆盖 V19/V20/V21）与真库往返 |
+| S2-03.1 真库取证未跑（`SourceMappingActiveMySqlIT`：表结构/FK/upsert 覆盖语义/锁定读） | development backlog，需副本库 + 受限账号，禁止直连正式库 |
+| 并发 activate 的真库互斥未测（`FOR UPDATE` 只有 L0 替身证据） | development backlog，同上，归 DEV-004 下一步 |
+| 激活不校验画像自声明的 `sourceCode`（采集侧会以 `MAPPING_PROFILE_INVALID` 拒绝） | development backlog，属已登记能力边界 |
+| repo 根查找已有第四份本地实现（`RepoRoot` 提到 test-jar 后删除四处副本） | development backlog |
 | MetricAdsMySqlIT / MetricPublisherMySqlIT收编 | development backlog，禁止未经隔离直连正式库运行 |
 | SparkStageExecutorSmokeIT | development backlog，真实Spark专项 |
 | AnalysisGoldenMySqlIT历史复验 | development backlog，D类手工/专项只读，排除统一isolated |
