@@ -1,5 +1,104 @@
 # PROJECT_STATUS
 
+> 当前阶段：**历史整理阶段已结束；项目正式进入毕业设计功能开发阶段。**
+> 最后更新时间：2026-09-15，总控批准V3.0正式发布与状态提交。
+> 当前代码基线：`e3c1070c02964512cdd3444c76e3e39ec833bcc8`（业务/测试/runner基线，不随本轮文档提交变化）。
+> 当前治理基线（V3_RELEASE_COMMIT）：`7e8de648f1ff0d7306bbecdedeca985218229fe6`。
+> 当前指导书：`docs/guidance/项目完整实施指导书 V3.0.md`，见[指导书](guidance/项目完整实施指导书%20V3.0.md)。
+> 当前设计：`docs/design/项目设计文档 V3.0.md`，见[设计文档](design/项目设计文档%20V3.0.md)。
+> 发布状态：V3.0正式文档已提交并冻结；本状态文件单独提交后统一推送origin/main。业务代码、测试、runner及历史acceptance不变；最终状态提交哈希与远端确认见本轮交付报告。
+
+## 当前摘要（V3.0发布后适用）
+
+本节是当前状态；下方折叠区保留发布前状态原文及全部问题、证据、工作记录。历史原文中的“当前”“本轮未提交”“DEV-003开启”“等待创建状态文件”等只代表其原记录时点，不覆盖本节及V3.0总控裁决。
+
+指导书和设计V3.0仅总控有决策/发布权，发布后只读；下一版各为V3.1。代码Agent可在工作包内改业务/测试、跑测试、新建必要脱敏evidence及更新本文件；不可自行改变目标/范围/架构、提升backlog或宣布完整验收。本文件不设版本号，不建并行看板。
+
+### 当前阶段与下一工作
+
+按八阶段功能开发推进：1基线与核心链确认 → 2采集/数仓 → 3Spark指标 → 4Spring Boot服务 → 5Vue → 6AI → 7业务实链联调 → 8部署/验收/论文答辩。
+
+下一工作先确认阶段1的运行档案和允许范围，复用现有fresh测试基线，不重开历史测试整理。首选业务切片为来源确定性映射/采集到数仓，任务规格见设计§7–10；冻结接口后服务/页面可并行。新一轮代码任务尚未在本发布轮启动。
+
+### 已完成
+
+| 项 | 当前判定 |
+|---|---|
+| DEV-001 / DEV-002 | 已修复并实测关闭，原证据保留 |
+| DEV-003a | generator新runId先门禁、迁移再测试，首跑问题已关闭 |
+| DEV-003b | metric-analysis隔离IT接入统一隔离入口，已关闭 |
+| DEV-003c | scripts/run-tests.ps1统一四档入口与fresh基线，已关闭 |
+| **DEV-003整体** | **整理阶段收口完成**，不再因DEV-003d后置保持OPEN |
+| 三程序基础 | 独立平台、商城、生成器已存在，不等于多源全部完成 |
+| F-88写侧/3307证据 | 四列落库与质量阻断已有证据，仍限定验收 |
+| V3.0正式文档 | 指导书、设计及两个README已由7e8de648f1ff0d7306bbecdedeca985218229fe6发布；两份正文冻结，后继V3.1 |
+
+### 当前可运行功能及证据边界
+
+历史证据支持本地/隔离采集、Spark八阶段链、MySQL发布、查询和部分页面/AI决策基础。当前HEAD的统一测试已fresh通过；本轮仅文档核对，未重跑业务链、未复查在线端口、不声明三服务正在运行。
+
+分析平台8091、商城8090、生成器8092；WSL隔离MySQL3307。平台无需依赖商城在线才能读取已有快照。Spark local[1]+in-memory测试不是Hive/集群验收；真实模型效果与完整第二来源仍需业务开发取证。
+
+### 测试与验收当前口径
+
+| 档位 | fresh基线 | 证据/限制 |
+|---|---|---|
+| default-tests | analytics632 + mall13 + generator106 = **751** | JDK17；不含前端和Spark |
+| isolated-tests | mall30 + generator19 + metric-analysis IT6 = **55** | 新runId、3307；依赖common89不重复计 |
+| spark-tests | **111** | JDK8/ScalaTest，以本轮新写TestSuite.txt为准 |
+| all-tests | default→isolated→spark，fresh exit0 | 任一档失败或0 tests整体失败 |
+
+来源：`docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md`及raw。上述是既有fresh结果，不是文档轮复跑。旧303/46/54等不再是当前基线。统一入口实际CLI为-Suite default|isolated|spark|all，计数漂移须总控批准，不能自行放宽。
+
+**F-88仍限定验收；完整验收未宣布。** 将完整剩余转backlog不等于证据补齐，也不应阻止无关功能开发。旧五条硬理由/八项未取证留历史区按各自时点理解，后续逐条补证时不得简单清空。
+
+### Development backlog（非正式开发前置）
+
+| 项 | 状态 |
+|---|---|
+| DEV-003d | development backlog |
+| DEV-004 | development backlog，迁移IT与V19/V20覆盖 |
+| MetricAdsMySqlIT / MetricPublisherMySqlIT收编 | development backlog，禁止未经隔离直连正式库运行 |
+| SparkStageExecutorSmokeIT | development backlog，真实Spark专项 |
+| AnalysisGoldenMySqlIT历史复验 | development backlog，D类手工/专项只读，排除统一isolated |
+| F-88完整验收剩余项 | development backlog，维持限定验收 |
+| F-93清理 | development backlog，历史读侧规则等未完成 |
+| 3307历史测试对象清理 | development backlog，未执行清理 |
+| GitHub Actions | development backlog |
+| 前端统一测试入口 | development backlog，现有模块测试仍可用 |
+
+仅总控可在真正阻塞当前开发阶段时提升。代码Agent先报告受影响交付物、复现和最小修复，不自行返回治理泳道。
+
+### 当前阻塞与安全约束
+
+- **无新增阻塞本轮文档发布的问题。** 功能任务的实际阻塞在领取时按环境/输入核查，不虚构全部就绪。
+- 3306新写入/迁移/ACTIVE切换仍冻结；D-5启动前全DataSource门禁未完整，不因测试入口已完成而解除。
+- 3307历史库/账号不自动清理；旧F-93、P-01及其他问题全部保留在历史记录中，不因文档收敛删除。
+- G-01～G-07既有待裁决：WSL独立验收门、AIW学校范围、profile换源历史隔离、漏斗粒度、RFM退款窗口、Linux主目录切换、学校期限/模型预算/外部样例授权。触及才提交总控，不阻塞无关任务。
+- AI阶段6只消费稳定ADS/指标快照，不扫描DWD；AIW未来方向不能作为扩大权限的依据。
+
+### 本版本代码/设计变更
+
+本轮**零代码变更、零测试/runner变更、零历史acceptance变更**。新增两份V3.0正式文档，更新README.md、docs/README.md与本文件；修改前三份原件已复制到`docs/backups/v3-release-20260915/`。
+
+设计范围按总控指令切至八阶段功能开发；保留有效数据/模块规格，区分目标与当前实现；将历史测试治理残留移入非阻塞backlog。未移动、删除、覆盖任何历史指导书、设计稿、看板或证据。总控现已批准两次显式提交及统一推送；V3.0正文不再改动。本轮临时backup不提交，仅在推送成功且远端确认后按授权清理；清理结果见交付报告。
+
+### 后续每轮更新格式
+
+任务ID/所属阶段；输入及允许文件；完成/未完成；代码HEAD与工作区；测试档位/用例数/失败跳过/证据；可运行范围；问题与待裁决；下一小步。只报告事实，完整验收由总控决定。正式设计改变需提交差异请求，不自行修改V3.0。
+
+## 最近工作记录（V3.0起）
+
+- 2026-09-15｜总控批准发布｜Commit 1为7e8de648f1ff0d7306bbecdedeca985218229fe6，仅README.md、docs/README.md及两份V3.0正式文档；Commit 2仅本状态文件，区分代码基线与治理基线。DEV-003整理阶段收口、DEV-003d development backlog、F-88限定验收不变；不改历史验收结论，不启动任何开发或历史整理任务。
+- 2026-09-15｜总控文档发布轮｜核对HEAD/origin/main=e3c1070c02964512cdd3444c76e3e39ec833bcc8，初始工作区干净；发布指导书V3.0/设计V3.0和三文件入口；DEV-003整理收口、DEV-003d等转backlog、F-88限定不变；无代码/测试/runner/历史证据修改；不提交不推送。
+
+## 发布前历史状态与问题（只作追溯）
+
+<details>
+<summary>展开V3.0发布前PROJECT_STATUS原文（全部问题和工作记录保留，不作为当前阶段指令）</summary>
+
+# PROJECT_STATUS
+
 指导书基线：V2.8（`docs/毕业设计指导书 V2.8.md`，300 行 / 30,565 B / sha256 `00CE7AA9EAEB57A46B709A7B4D93C35CD2D282353E85532E76C6940E3344AF6F`）
 项目设计基线：V2.5（`docs/design/项目设计文档 V2.5.md`，1,041 行 / 100,726 B / sha256 `400131173C2059F26A93E5B5ED75113CABAC8330E52E6B5E8ACE8650DF6A09BB`）
 当前代码 commit：`db77654`（＝ `db776547f6158a540430807b8262ef12e6498171`，`fix(it-guard): close DEV-001 DEV-002 isolation guard defects`，2026-09-15；上一代码提交 `8853730` F-88 写侧闭环；当前治理基线 `11919ed` ＝ `docs(治理): 发布指导书 V2.8 与项目设计文档 V2.5 —— 权威索引与冲突收口`，2026-09-14 19:28 +0800）
@@ -270,3 +369,5 @@
   - 证据目录日期 ≠ 跑动日期 ≠ 工作树（R-C3）：`GraduationProject-wt\m3-jdk8fix` 的 09-12 旧跑动（日志 `Finished at: 2026-09-12T16:12:17`）**不得引用为当前主树值**。
   - 「首跑错误值被复跑覆盖」（`15-seed-runtime-profile.ps1`）＝已采认的证据残缺项，不得据此推断脚本当前行为。
   - 本文件中所有「未取证」条目，在取得证据前**不得**改写为通过。
+
+</details>
