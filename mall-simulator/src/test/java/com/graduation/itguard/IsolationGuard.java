@@ -36,7 +36,11 @@ import java.util.regex.Pattern;
  *   -Dit.guard.runId=&lt;本次运行标识&gt;       目标库名必须以此前缀开头
  *   -Dit.guard.forbiddenDatabases=...    额外禁止库名（逗号分隔，追加到内置清单）
  *   -Dit.guard.forbiddenAccounts=...     额外禁止账号（逗号分隔，追加到内置清单）
- *   -Dit.guard.serverFingerprint=...     登记实例指纹（@@hostname 或 host:port）
+ *   -Dit.guard.serverFingerprint=hostname:port
+ *                                        登记实例指纹，**唯一权威形态**（如 {@code dahaishui:3307}）；
+ *                                        不接受裸 hostname／裸端口／{@code 127.0.0.1:port}／
+ *                                        {@code localhost:port}；{@code @@server_uuid} 是独立漂移事实，
+ *                                        不是 fingerprint 替代值
  *   -Dit.guard.url / user / password     目标连接（口令可写 credref:&lt;id&gt;）
  * </pre>
  *
@@ -376,7 +380,10 @@ public final class IsolationGuard {
             String expected = require("serverFingerprint");
             if (!fingerprintMatches(expected, hostname, port)) {
                 throw new GuardViolation("[" + reason + "] 实例指纹不匹配：登记为 " + expected
-                        + "，实际 hostname=" + hostname + " port=" + port + "（同库名换实例也必须拒绝）。");
+                        + "，实际 hostname=" + hostname + " port=" + port
+                        + "（唯一权威身份形如 hostname:port，规范化后必须完全相等；"
+                        + "裸 hostname／裸端口／127.0.0.1:port／localhost:port 一律不接受，"
+                        + "同库名换实例也必须拒绝）。");
             }
             try (Statement st = conn.createStatement();
                  ResultSet rs = st.executeQuery("SELECT @@version_comment")) {
@@ -393,13 +400,28 @@ public final class IsolationGuard {
         }
     }
 
-    private static boolean fingerprintMatches(String expected, String hostname, int port) {
-        String e = expected.trim();
-        if (hostname != null && (e.equalsIgnoreCase(hostname) || e.equalsIgnoreCase(hostname + ":" + port))) {
-            return true;
+    /**
+     * 实例指纹判据：唯一权威实例身份＝{@code hostname:port}。
+     *
+     * <p>登记值必须与实连实例的 {@code @@hostname + ":" + @@port} <b>规范化后完全相等</b>：
+     * 两侧去首尾空白、hostname 段大小写归一。**端口不做模糊匹配、hostname 不做前缀匹配**；
+     * 裸 {@code hostname}、裸 {@code port}、{@code 127.0.0.1:port}、{@code localhost:port}
+     * 一律拒绝（用连接地址代替真实 hostname 等于没核对）；{@code @@server_uuid} 同样
+     * <b>不是</b> fingerprint 的替代值——它是门禁 6（runner 探针）的独立漂移事实。</p>
+     *
+     * <p>端口白名单（{@link #assertPortAllowed}）是**另一层独立约束**，不由本判据兜底，
+     * 也不替代本判据。本方法与 analytics 侧
+     * {@code com.graduation.analytics.testsupport.TestIsolationGuard.fingerprintMatches}
+     * 语义一致。</p>
+     *
+     * <p>包内可见（原 {@code private}）以供同包单测
+     * {@code IsolationGuardFingerprintTest} 直接验证反例集；判据本身只多不少。</p>
+     */
+    static boolean fingerprintMatches(String expected, String hostname, int port) {
+        if (expected == null || expected.isBlank() || hostname == null || hostname.isBlank() || port <= 0) {
+            return false;
         }
-        return e.equals(String.valueOf(port)) || e.equalsIgnoreCase("127.0.0.1:" + port)
-                || e.equalsIgnoreCase("localhost:" + port);
+        return expected.trim().equalsIgnoreCase(hostname.trim() + ":" + port);
     }
 
     private static String readUrl(DataSource ds) {

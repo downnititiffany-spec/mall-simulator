@@ -16,7 +16,12 @@
 #   4) 口令只从环境变量取，缺失即拒（本脚本**没有** -Password 参数，避免出现在进程列表）
 #   5) 未显式 -Confirm 不跑（除 -DryRun）
 #   6) 只读探针：用**本次 runId 的受限账号**连目标实例，核对 @@port / @@server_uuid /
-#      目标库存在性 —— 同时验证"账号能连"和"实例是隔离实例"
+#      目标库存在性 —— 同时验证"账号能连"和"实例是隔离实例"，并据此得出**唯一的实例身份**
+#      `@@hostname:@@port`（探针读到的真实值，不写死）注入 IT_GUARD_SERVERFINGERPRINT。
+#      DEV-002：此前注入的是 `@@server_uuid`，而 mall/generator 两侧 `IsolationGuard.fingerprintMatches`
+#      只认 hostname / hostname:port / port / 127.0.0.1:port / localhost:port —— 两侧判据都不认 uuid，
+#      于是登录成功的用例在写前校验里被判"服务实例指纹不匹配"（30 个 mall 用例假红）。
+#      `@@server_uuid` 不取消：它继续作为「是不是那台预定隔离实例」的独立校验（门禁 6 的 Fail 5）。
 #
 # 取值顺序与键名依据（源码事实）：
 #   * `itguard.IsolationGuard`（mall / generator 两侧同源）：`-Dit.guard.<key>` → `IT_GUARD_<KEY>`
@@ -25,6 +30,12 @@
 #     `IT_GUARD_URL` / `IT_GUARD_USER` / `IT_GUARD_PASSWORD`。
 #   * mall 的 Spring 测试上下文读 `${MALL_ISOLATION_URL|USER|PASSWORD|FLYWAY_ENABLED}`
 #     （`mall-simulator/src/test/resources/application-test.yml`，**无默认值**）。
+#   * generator 的 Spring 测试上下文**没有**自己的 test application.yml，直接用主
+#     `synthetic-data-generator/src/main/resources/application.yml`——那份配置指向
+#     `jdbc:mysql://127.0.0.1:3306/generator_meta?...createDatabaseIfNotExist=true`、flyway
+#     `classpath:db/generator`。必须用 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD` 这个标准
+#     relaxed-binding 通道覆盖到 3307 隔离库，否则 generator 的 Spring 用例会连宿主正式实例
+#     （DEV-002；3306 冻结期尤其不能靠"它恰好没有迁移"来兜底）。
 #   * 库名/账号名与 `scripts/it-prepare-isolation.ps1:89-92` 同源：`<runId>_mall` /
 #     `<runId>_generator` / `<runId>_mallapp` / `<runId>_genapp`。
 #
@@ -77,7 +88,7 @@ function Mask([string]$v) {
 
 Write-Host '=== 隔离套件运行门禁（V25-S02 唯一入口）==='
 Write-Host ("  目标      : {0}:{1}  （库前缀 {2}_*）" -f $DbHost, $Port, $RunId)
-Write-Host ("  实例指纹  : 期望 @@server_uuid = {0}" -f $InstanceUuid)
+Write-Host ("  实例指纹  : 运行期由门禁6探针取 @@hostname:@@port 注入 IT_GUARD_SERVERFINGERPRINT；并校验 @@server_uuid = {0}" -f $InstanceUuid)
 Write-Host ("  模块      : {0}" -f $Module)
 
 # ── 门禁 1：端口 ───────────────────────────────────────────────────────────
@@ -147,11 +158,14 @@ if (-not $DryRun -and -not $Confirm) {
 Write-Host ("  [门禁5] 确认 OK：{0}" -f ($(if ($DryRun) { '-DryRun 预演' } else { '-Confirm' })))
 
 # ── 构造环境变量清单（真值只在内存）─────────────────────────────────────────
+# 实例身份只有一处：`@@hostname:@@port`（门禁 6 探针从目标实例读到后填进来）。
+# 不在这里写死，也不用 server_uuid 冒充——mall/generator 两侧判据的共同接受形态就是它。
+$InstanceFingerprint = '<运行期由门禁6探针确定：@@hostname:@@port>'
 $envCommon = [ordered]@{
   'IT_GUARD_ENABLED'          = 'true'
   'IT_GUARD_INSTANCEPORTS'    = "$Port"
   'IT_GUARD_RUNID'            = $RunId
-  'IT_GUARD_SERVERFINGERPRINT' = $InstanceUuid
+  'IT_GUARD_SERVERFINGERPRINT' = $InstanceFingerprint
 }
 foreach ($t in $targets) {
   $t | Add-Member -NotePropertyName url -NotePropertyValue ('jdbc:mysql://{0}:{1}/{2}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true' -f $DbHost, $Port, $t.db)
@@ -167,6 +181,15 @@ foreach ($t in $targets) {
 }
 Write-Host '  说明：IT_GUARD_URL/USER/PASSWORD 为共用键名，本脚本在每个模块运行前重设为本模块的值，'
 Write-Host '        因此两个模块不会串用彼此的口令/库（见下方循环内的重设语句）。'
+Write-Host '        IT_GUARD_SERVERFINGERPRINT 由门禁6探针读到 @@hostname:@@port 后填入（预演阶段还没有值）。'
+if ($Module -in @('generator', 'both')) {
+  $genTarget = $targets | Where-Object { $_.name -eq 'generator' }
+  Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_URL', $genTarget.url)
+  Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_USERNAME', $genTarget.user)
+  Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_PASSWORD', (Mask $genTarget.pwd))
+  Write-Host '        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键'
+  Write-Host '          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。'
+}
 if ($Module -in @('mall', 'both')) {
   $mallTarget = $targets | Where-Object { $_.name -eq 'mall' }
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_URL', $mallTarget.url)
@@ -203,8 +226,18 @@ foreach ($t in $targets) {
   if ($parts[0] -ne "$Port") { Fail 5 ("探针读到的 @@port={0} 与请求 {1} 不符：拒绝" -f $parts[0], $Port) }
   if ($parts[1] -ne $InstanceUuid) { Fail 5 ("实例指纹不符：@@server_uuid={0}，期望 {1}（疑似打到别的实例）：拒绝" -f $parts[1], $InstanceUuid) }
   if ([int]$parts[3] -lt 1) { Fail 5 ("目标库 {0} 不存在：先执行 scripts/it-prepare-isolation.ps1 -RunId {1} -Confirm -AllowRootOnIsolated" -f $t.db, $RunId) }
-  Write-Host ("  [门禁6] {0,-9} 探针 OK：port={1} uuid={2} hist={3} 库存在" -f $t.name, $parts[0], $parts[1], $parts[2])
+  # 唯一的实例身份 = 探针读到的 @@hostname:@@port（真实值；不写死，也不用 server_uuid 冒充）
+  $probeFingerprint = '{0}:{1}' -f $parts[2], $parts[0]
+  if ($InstanceFingerprint -like '<*') {
+    $InstanceFingerprint = $probeFingerprint
+  } elseif ($InstanceFingerprint -ne $probeFingerprint) {
+    Fail 5 ("同一轮里不同模块连到了不同实例：{0} vs {1}（实例漂移，拒绝）：" -f $InstanceFingerprint, $probeFingerprint)
+  }
+  Write-Host ("  [门禁6] {0,-9} 探针 OK：port={1} uuid={2} hostname={3} hist={4} 库存在" -f `
+      $t.name, $parts[0], $parts[1], $parts[2], $parts[3])
 }
+$envCommon['IT_GUARD_SERVERFINGERPRINT'] = $InstanceFingerprint
+Write-Host ("  [门禁6] 唯一的实例身份（注入 IT_GUARD_SERVERFINGERPRINT）= {0}" -f $InstanceFingerprint)
 
 # ── 注入环境变量并跑套件 ───────────────────────────────────────────────────
 if (-not $LogDir) { $LogDir = Join-Path $env:TEMP ("v25it-logs-{0}" -f $RunId) }
@@ -219,7 +252,8 @@ foreach ($t in $targets) {
   $env:IT_GUARD_ENABLED = 'true'
   $env:IT_GUARD_INSTANCEPORTS = "$Port"
   $env:IT_GUARD_RUNID = $RunId
-  $env:IT_GUARD_SERVERFINGERPRINT = $InstanceUuid
+  # 三个模块（mall / generator / analytics）共用同一份实例身份：探针读到的 @@hostname:@@port
+  $env:IT_GUARD_SERVERFINGERPRINT = $InstanceFingerprint
   $env:IT_GUARD_URL = $t.url
   $env:IT_GUARD_USER = $t.user
   $env:IT_GUARD_PASSWORD = $t.pwd
@@ -228,6 +262,17 @@ foreach ($t in $targets) {
     $env:MALL_ISOLATION_USER = $t.user
     $env:MALL_ISOLATION_PASSWORD = $t.pwd
     $env:MALL_ISOLATION_FLYWAY_ENABLED = 'true'
+  }
+  if ($t.name -eq 'generator') {
+    # generator 的 Spring 测试上下文没有自己的 test application.yml：用标准 relaxed binding 键
+    # 把主 application.yml 的 127.0.0.1:3306/generator_meta 覆盖成本次隔离库（DEV-002）
+    $env:SPRING_DATASOURCE_URL = $t.url
+    $env:SPRING_DATASOURCE_USERNAME = $t.user
+    $env:SPRING_DATASOURCE_PASSWORD = $t.pwd
+  } else {
+    # 不留给别的模块：mall 的上下文不吃这三个键，残留只会让下一次运行的目标变得不可预期
+    Remove-Item Env:\SPRING_DATASOURCE_URL, Env:\SPRING_DATASOURCE_USERNAME, `
+        Env:\SPRING_DATASOURCE_PASSWORD -ErrorAction SilentlyContinue
   }
   # -Pisolated-tests 经 MAVEN_ARGS 注入（.cmd 包装器正是为绕开 pwsh→cmd 的 '-' 拆参问题）
   $env:MAVEN_ARGS = '-Pisolated-tests'

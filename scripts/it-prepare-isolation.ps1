@@ -196,7 +196,7 @@ Write-Host '把下面内容写入各模块的隔离档案（口令只放引用�
 Write-Host ("  # mall-simulator/mall-isolation.local.properties（写到模块工作目录，即 CWD 候选；勿提交）")
 Write-Host ("  enabled=true")
 Write-Host ("  testRunId={0}" -f $RunId)
-Write-Host ("  serverFingerprint=<在 3307 实例上执行 SELECT @@hostname 得到；若与宿主同名，用 port/uuid 区分>")
+Write-Host ("  serverFingerprint=<唯一权威形态 hostname:port，例 dahaishui:3307：在 3307 实例上执行 SELECT CONCAT(@@hostname, ':', @@port) 得到；登记值须与实连 @@hostname:@@port 规范化后完全相等。不接受裸 hostname／裸端口／127.0.0.1:port／localhost:port；@@server_uuid 是门禁6 的独立漂移事实，不是 fingerprint 替代值>")
 Write-Host ("  mysql.host={0}:{1}" -f $DbHost, $Port)
 Write-Host ("  mysql.url=jdbc:mysql://{0}:{1}/{2}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true" -f $DbHost, $Port, $mallDb)
 Write-Host ("  mysql.username={0}" -f $mallUser)

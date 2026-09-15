@@ -37,7 +37,8 @@ import javax.sql.DataSource;
  *   <li><b>默认关闭、缺失即拒</b>：{@link #loadContext()} 找不到测试隔离配置就抛
  *       {@link MissingConfigurationException}；没有任何 {@code analytics_metric} 之类的正式库 fallback。</li>
  *   <li><b>写前校验</b>：{@link #verifyBeforeWrite} 用**实际连接**取 {@code SELECT DATABASE()} /
- *       {@code @@server_uuid} / {@code @@hostname}，与登记范围比对后放行；正式库地址**一定被拒**。</li>
+ *       {@code @@port} / {@code @@hostname}，与登记范围比对后放行；正式库地址**一定被拒**。
+ *       实例指纹的唯一权威身份是 {@code hostname:port}（{@code @@server_uuid} 只作独立漂移事实）。</li>
  *   <li><b>账号最小权限</b>：{@link #verifyBeforeWrite} 从 {@code information_schema} 读**本账号实际权限**；
  *       root 直接拒，对库外 schema 有任何非 SELECT 权限也拒。库名含 test **不作为**安全证明。</li>
  *   <li><b>同一隔离范围</b>：{@code TestRunContext} 的 metaDb/metricDb/hiveNamespace/hdfsRoot/manifestRoot
@@ -94,8 +95,9 @@ public final class TestIsolationGuard {
      * <p><b>为什么不能靠库名判断</b>：把宿主正式实例上的库改名为 {@code xxx_test}，或者新建一个
      * {@code analytics_metric_test}，在实例与账号层面仍然和正式库共享同一套进程、同一份
      * {@code datadir}、同一批全局账号权限。库名是**声明**，实例指纹与端口才是**事实**。
-     * 所以判据是「连接级」的：{@code JDBC URL} 预检端口 + 实连后 {@code @@port} /
-     * {@code @@server_uuid} / {@code @@hostname} 三项对齐。</p>
+     * 所以判据是「连接级」的：{@code JDBC URL} 预检端口 + 实连后 {@code @@port} 命中白名单
+     * + 实例指纹 {@code @@hostname:@@port} 与登记值规范化后**完全一致**（{@code @@server_uuid}
+     * 只作独立漂移事实，不参与指纹放行）。</p>
      */
     private static final Set<Integer> ALLOWED_INSTANCE_PORTS = Set.of(3307);
 
@@ -104,6 +106,17 @@ public final class TestIsolationGuard {
 
     /** 只读权限集合：出现在**非当前库**上可以接受。 */
     private static final Set<String> READ_ONLY_PRIVILEGES = Set.of("SELECT");
+
+    /**
+     * MySQL 的「不授予任何权限」占位标记。
+     *
+     * <p>{@code GRANT USAGE ON *.* TO `u`@`%`} 是 SHOW GRANTS 对**每个**账号（含刚建的最小权限
+     * 账号）输出的第一行，它本身不授予任何东西。不把它排除，「持有全局非只读权限」判据会被它
+     * 触发，最小权限账号在真实 MySQL 上必被拒——这是 DEV-001 版本识别修好之后暴露出的第二层阻断。</p>
+     *
+     * <p>只忽略「什么都不授予」的 USAGE；{@code ALL PRIVILEGES} 与具体写权限的判定一字未动。</p>
+     */
+    private static final Set<String> NO_EFFECT_PRIVILEGES = Set.of("USAGE");
 
     private TestIsolationGuard() {
     }
@@ -480,11 +493,16 @@ public final class TestIsolationGuard {
      * 执行任何 DDL/DML **之前**调用：用实际连接核对隔离白名单与账号最小权限。
      *
      * <p>校验项：① 实际 {@code SELECT DATABASE()} 必须等于 {@code context.metricDb()}/{@code metaDb()}；
-     * ② 服务实例指纹（{@code @@server_uuid} / {@code @@hostname}）必须与登记的
-     * {@code serverFingerprint} 一致；③ 账号不是 root/正式写账号；④ 该账号除当前库外不得对其他 schema
+     * ② 服务实例指纹必须与登记的 {@code serverFingerprint} 一致——**唯一权威身份是
+     * {@code hostname:port}**（{@code @@hostname + ":" + @@port}），规范化后必须完全相等；
+     * {@code @@server_uuid} 仍是必须取到的独立漂移事实（取不到即 fail-closed），但**不得**作为
+     * 指纹的替代合法值（总控 2026-09-14 复核裁定）；③ 账号不是 root/正式写账号；④ 该账号除当前库外不得对其他 schema
      * 有任何非 SELECT 权限，对禁止清单库不得有任何权限；⑤ **实例端口必须命中隔离实例白名单**
      * （{@code @@port} ∈ {@link #ALLOWED_INSTANCE_PORTS}）——这是「实例层面隔离」的判据，
      * 库名里有没有 test 字样不作为安全证明。</p>
+     *
+     * <p>⑤ 与 ② 是**两层独立约束**：端口白名单管「不许落在正式实例上」，指纹管「必须是登记的
+     * 那一台」，不靠其中一层兜底另一层。</p>
      *
      * @param dataSource 本次测试自己的数据源（只执行 SELECT）
      * @param database   调用方声明「这个连接应该落在哪个库」
@@ -506,9 +524,12 @@ public final class TestIsolationGuard {
         try (Connection connection = dataSource.getConnection()) {
             String currentDb = scalarString(connection, "SELECT DATABASE()");
             String account = scalarString(connection, "SELECT CURRENT_USER()");
-            String serverUuid = scalarString(connection, "SELECT @@server_uuid");
+            String serverUuid = requireServerUuid(connection);
             String hostname = scalarString(connection, "SELECT @@hostname");
-            int major = scalarInt(connection, "SELECT @@version_major");
+            // 主版本号必须用 VERSION() 解析：@@version_major 在本项目的两个真实例（宿主 3306 与
+            // WSL 3307，均 8.0.41）上实测直接 ERROR 1193 (HY000): Unknown system variable 'version_major'，
+            // 旧实现在这一条就抛异常退出，让下面的端口/账号/权限/指纹四项判据**一次都不执行**（DEV-001）。
+            int major = majorVersion(connection);
             int port = scalarInt(connection, "SELECT @@port");
             if (currentDb == null || currentDb.isBlank()) {
                 throw new IsolationViolationException("实际连接没有当前库（SELECT DATABASE() 为空）：JDBC URL 必须显式带库名");
@@ -531,9 +552,11 @@ public final class TestIsolationGuard {
             collectPrivileges(connection, privileges, schemasWithWrite, currentDb);
 
             String expected = context.serverFingerprint();
-            if (!fingerprintMatches(expected, serverUuid, hostname)) {
+            if (!fingerprintMatches(expected, hostname, port)) {
                 throw new IsolationViolationException("服务实例指纹不匹配：登记=" + expected
-                        + "，实际 server_uuid=" + serverUuid + " hostname=" + hostname);
+                        + "，实际 hostname=" + hostname + " port=" + port
+                        + "（唯一权威身份形如 hostname:port，规范化后必须完全相等；"
+                        + "独立漂移事实 server_uuid=" + serverUuid + " 不得替代指纹判定）");
             }
             LiveFacts facts = new LiveFacts(context.testRunId(), expected, bareAccount, currentDb,
                     serverUuid, hostname, major, port, privileges, schemasWithWrite);
@@ -570,15 +593,21 @@ public final class TestIsolationGuard {
             if (toIdx < 0) {
                 continue;
             }
+            // MySQL 的 SHOW GRANTS 把库名写成 `db`（实测 8.0.41）。归一化放在「剥掉 .* 之后」：
+            // 原文是 `db`.* ，反引号只包住库名，先剥 .* 再剥反引号才对得上判断。
+            // 不归一化会让「本次测试库」被判成「本次测试库之外」（合法受限账号被误拒），
+            // 同时让禁止清单库的写权限漏检。
             String scope = afterOn.substring(0, toIdx).trim();
             String privText = grant.substring(0, onIdx).replaceFirst("(?i)^GRANT\\s+", "").trim();
             for (String raw : privText.split(",")) {
                 String privilege = raw.trim().toUpperCase();
-                if (privilege.isEmpty()) {
+                if (privilege.isEmpty() || NO_EFFECT_PRIVILEGES.contains(privilege)) {
+                    // USAGE = 「不授予任何权限」的占位标记（每个 MySQL 账号都有 GRANT USAGE ON *.*）：
+                    // 它不属于任何权限，跳过它不是放宽判据，而是不让占位标记冒充全局写权限。
                     continue;
                 }
-                String schema = scope.endsWith(".*")
-                        ? scope.substring(0, scope.length() - 2) : scope;
+                String schema = unquoteIdentifier(scope.endsWith(".*")
+                        ? scope.substring(0, scope.length() - 2) : scope);
                 privileges.add(schema + "." + privilege);
                 boolean readOnly = READ_ONLY_PRIVILEGES.contains(privilege);
                 if (!readOnly && FORBIDDEN_DATABASES.contains(schema)) {
@@ -685,15 +714,50 @@ public final class TestIsolationGuard {
         return null;
     }
 
-    /** 指纹匹配：登记值可以是 server_uuid，也可以是 {@code hostname} 或 hostname 前缀形式。 */
-    public static boolean fingerprintMatches(String expected, String serverUuid, String hostname) {
-        if (expected == null || expected.isBlank()) {
+    /**
+     * 实例指纹匹配：**唯一权威身份是 {@code hostname:port}**（DEV-002 N-3 收口，2026-09-14 总控复核裁定）。
+     *
+     * <p>登记值必须形如 {@code <hostname>:<port>}；实连读到的是 {@code @@hostname} 与 {@code @@port}。
+     * 两侧各做 trim，hostname 段忽略大小写，**只有规范化后完全相等才通过**：</p>
+     *
+     * <ul>
+     *   <li>{@code expected=dahaishui:3307} ＋ 实际 {@code dahaishui:3307} ⇒ <b>通过</b></li>
+     *   <li>{@code expected=dahaishui:3307} ＋ 实际 {@code dahaishui:3306} ⇒ <b>拒绝</b>（同机不同实例）</li>
+     *   <li>{@code expected=dahaishui:3307} ＋ 实际 {@code otherhost:3307} ⇒ <b>拒绝</b>（同端口不同机）</li>
+     * </ul>
+     *
+     * <p><b>禁止 server_uuid 替代</b>：{@code expected} 若填成 {@code @@server_uuid} 的值，即便那台实例的
+     * uuid 真的等于登记值，也**一律拒绝**——不允许出现「hostname:port 不匹配，但因为 uuid 匹配所以指纹
+     * 仍然通过」的替代关系。{@code @@server_uuid} 仍是独立的 fail-closed 漂移事实（见
+     * {@link #requireServerUuid}、{@link LiveFacts#sha1()}），只是不参与指纹放行。</p>
+     *
+     * <p>旧实现额外接受裸 {@code hostname}、任意 {@code hostname:<端口>} 后缀、以及 uuid，属于「同一登记值
+     * 在不同判据下含义不同」的词汇表不对称，本次一并收紧；收紧只会让门禁更严，不会放宽任何条件。</p>
+     *
+     * @param expected 登记实例身份，形如 {@code hostname:port}
+     * @param hostname 实连读到的 {@code @@hostname}
+     * @param port     实连读到的 {@code @@port}
+     */
+    public static boolean fingerprintMatches(String expected, String hostname, int port) {
+        if (expected == null || expected.isBlank() || hostname == null || hostname.isBlank() || port <= 0) {
             return false;
         }
-        return expected.equalsIgnoreCase(nullToEmpty(serverUuid))
-                || expected.equalsIgnoreCase(nullToEmpty(hostname))
-                || expected.toLowerCase().startsWith(nullToEmpty(hostname).toLowerCase() + ":")
-                || nullToEmpty(hostname).equalsIgnoreCase(expected);
+        return expected.trim().equalsIgnoreCase(hostname.trim() + ":" + port);
+    }
+
+    /**
+     * 读 {@code @@server_uuid}：独立于指纹的**漂移事实**，缺失即 fail-closed。
+     *
+     * <p>它不再参与指纹放行（见 {@link #fingerprintMatches}），但仍然是「同一台实例」的第二重事实：
+     * 取值失败由上层包成「写前校验无法完成」，取到空值则在此直接拒绝，两者都不降级、不跳过。</p>
+     */
+    static String requireServerUuid(Connection connection) throws SQLException {
+        String uuid = scalarString(connection, "SELECT @@server_uuid");
+        if (uuid == null || uuid.isBlank()) {
+            throw new IsolationViolationException("无法读取 @@server_uuid（实际 " + uuid
+                    + "）：实例身份事实缺失，拒绝继续（写前校验不降级、不跳过）");
+        }
+        return uuid;
     }
 
     private static void printFacts(LiveFacts facts) {
@@ -710,6 +774,78 @@ public final class TestIsolationGuard {
         try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : -1;
         }
+    }
+
+    /**
+     * 读服务端主版本号：{@code SELECT VERSION()} 原文的**首段数字**。
+     *
+     * <p><b>为什么不用 {@code @@version_major}</b>：那是 MariaDB 的系统变量。MySQL 8.0 上执行
+     * {@code SELECT @@version_major} 会直接 {@code ERROR 1193 (HY000): Unknown system variable
+     * 'version_major'}，被下面的 {@code catch (SQLException)} 包成
+     * {@code IllegalStateException("写前校验无法完成")} 抛出——校验在这一条就中断，
+     * 端口/账号/权限/指纹四项判据一次都没跑（DEV-001：30 个 mall IT 假红）。</p>
+     *
+     * <p>{@code VERSION()} 在 MySQL 5.7 / 8.0 / 8.4 与 MariaDB 上都存在且稳定：
+     * {@code 8.0.41}、{@code 8.0.41-0ubuntu0.22.04.1}、{@code 5.7.44-log}、
+     * {@code 10.11.6-MariaDB} 都能取到首段数字。</p>
+     *
+     * <p><b>解析不出来即拒（fail-closed）</b>：不认识版本号的实例不允许继续写入——
+     * 宁可报「实例不可信」，也不把未知版本当成通过。这里不降级、不吞异常、不返回默认值。</p>
+     */
+    private static int majorVersion(Connection connection) throws SQLException {
+        String version = scalarString(connection, "SELECT VERSION()");
+        int major = parseMajorVersion(version);
+        if (major <= 0) {
+            throw new IsolationViolationException("无法从 SELECT VERSION() 识别服务端主版本号（实际 \""
+                    + version + "\"）：实例不可信，拒绝继续（写前校验不降级、不跳过）");
+        }
+        return major;
+    }
+
+    /**
+     * 从 {@code VERSION()} 原文解析主版本号；无法解析返回 {@code -1}。
+     *
+     * <p>包级可见是为了让 {@code TestIsolationGuardTest} 在不连库的情况下覆盖各种版本串形态
+     * （MySQL 8 是 DEV-001 的现场版本）。判据本身仍是 {@link #majorVersion(Connection)} 的 fail-closed。</p>
+     */
+    static int parseMajorVersion(String version) {
+        if (version == null) {
+            return -1;
+        }
+        Matcher matcher = VERSION_MAJOR.matcher(version.trim());
+        if (!matcher.find()) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(matcher.group(1));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    /** {@code VERSION()} 首段数字：要求「数字串位于开头，且其后是 '.' 或字符串结束」。 */
+    private static final Pattern VERSION_MAJOR = Pattern.compile("^(\\d{1,3})(?:\\.|$)");
+
+    /**
+     * 去掉标识符的一层反引号并还原转义：{@code `db`} → {@code db}，{@code `a``b`} → {@code a`b}。
+     *
+     * <p>判据来源是 {@code SHOW GRANTS} 原文，而 MySQL 把 {@code ON `db`.*} 作为标准输出形态
+     * （实测 8.0.41 隔离实例：{@code GRANT ALL PRIVILEGES ON `analytics_meta_...`.* TO ...}）。
+     * 不做这一步：
+     * ① 本次测试库会因为「多了两个反引号」被判成范围外，合法受限账号被误拒；
+     * ② 禁止清单库的写权限会**漏检**（{@code `analytics_metric`} 与 {@code analytics_metric} 不等）。</p>
+     *
+     * <p>只剥一层反引号，不改变任何权限语义；判据仍然要求「除当前库外没有任何非只读权限」。</p>
+     */
+    static String unquoteIdentifier(String identifier) {
+        if (identifier == null) {
+            return "";
+        }
+        String value = identifier.trim();
+        if (value.length() >= 2 && value.startsWith("`") && value.endsWith("`")) {
+            value = value.substring(1, value.length() - 1).replace("``", "`");
+        }
+        return value;
     }
 
     // ────────────────────────────────────────────────────────────────────────
