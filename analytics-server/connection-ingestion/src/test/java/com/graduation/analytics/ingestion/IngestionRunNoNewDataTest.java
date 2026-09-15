@@ -9,6 +9,8 @@ import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,12 +48,16 @@ class IngestionRunNoNewDataTest {
     private final LocalFileIngestor ingestor = mock(LocalFileIngestor.class);
     /** P1-05：采集必须归属一个已激活的源，故本夹具默认绑定源 1（未绑定的拒绝行为另有用例）。 */
     private final SourceRegistryService sourceRegistryService = mock(SourceRegistryService.class);
+    /** S2-02：本轮映射绑定由 SourceMapper 决定；本测试不考映射，固定返回"不映射"直通。 */
+    private final SourceMapper sourceMapper = mock(SourceMapper.class);
     private final EventClock clock = new EventClock(
             Clock.fixed(Instant.parse("2026-09-12T02:00:00Z"), ZoneId.of("Asia/Shanghai")));
 
     private IngestionService service() {
+        when(sourceMapper.prepare(any())).thenReturn(SourceMapping.legacy());
         return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class),
-                ingestor, clock, runtimeProfileService, sourceRegistryService, new ObjectMapper());
+                ingestor, clock, runtimeProfileService, sourceRegistryService, new ObjectMapper(),
+                sourceMapper);
     }
 
     /**
@@ -97,7 +103,7 @@ class IngestionRunNoNewDataTest {
     }
 
     private void stubIngest(long startOffset, long endOffset, long collected, long quarantined) {
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any()))
+        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
                 .thenReturn(new LocalFileIngestor.FileResult("events-001.jsonl", startOffset, endOffset,
                         "identity-1", collected, quarantined, collected > 0 ? 64L : 0L, Set.of("1.0")));
     }

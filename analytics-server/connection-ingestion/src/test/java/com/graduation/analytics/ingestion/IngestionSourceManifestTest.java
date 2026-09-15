@@ -12,6 +12,8 @@ import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
 import com.graduation.analytics.source.dto.SourceRegistryView;
 import com.graduation.analytics.source.entity.SourceRegistry;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -57,13 +59,16 @@ class IngestionSourceManifestTest {
     private final LocalFileIngestor ingestor = mock(LocalFileIngestor.class);
     private final RuntimeProfileService runtimeProfileService = mock(RuntimeProfileService.class);
     private final SourceRegistryService sourceRegistryService = mock(SourceRegistryService.class);
+    /** S2-02：本测试考的是清单四字段口径（登记列 vs 画像自述），映射由 SourceMapperTest 覆盖。 */
+    private final SourceMapper sourceMapper = mock(SourceMapper.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final EventClock clock = new EventClock(
             Clock.fixed(Instant.parse("2026-09-12T02:00:00Z"), ZoneId.of("Asia/Shanghai")));
 
     private IngestionService service() {
+        when(sourceMapper.prepare(any())).thenReturn(SourceMapping.legacy());
         return new IngestionService(batchMapper, batchFileMapper, ingestor, clock,
-                runtimeProfileService, sourceRegistryService, objectMapper);
+                runtimeProfileService, sourceRegistryService, objectMapper, sourceMapper);
     }
 
     private void stubRun(Path landingRoot, long sourceId, String sourceCode, String profileVersion)
@@ -80,7 +85,7 @@ class IngestionSourceManifestTest {
         when(sourceRegistryService.currentSourceId()).thenReturn(Optional.of(sourceId));
         SourceRegistry row = IngestionSourceNotBoundTest.sourceRow(sourceId, sourceCode, profileVersion);
         when(sourceRegistryService.get(sourceId)).thenReturn(SourceRegistryView.of(row, sourceId));
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any()))
+        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
                 .thenReturn(new LocalFileIngestor.FileResult("events-001.jsonl", 0, 16,
                         "identity-1", 1, 0, 16L, Set.of("1.0")));
         when(batchMapper.insert(any(IngestionBatch.class))).thenAnswer(inv -> {

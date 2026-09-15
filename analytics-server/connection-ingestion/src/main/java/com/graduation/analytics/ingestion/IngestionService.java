@@ -10,6 +10,8 @@ import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.common.LandingUri;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
@@ -64,6 +66,11 @@ public class IngestionService {
      */
     private final SourceRegistryService sourceRegistryService;
     private final ObjectMapper objectMapper;
+    /**
+     * 真实采集的映射适配器（S2-02）。装载**必须在任何写入之前**完成：画像不可用就整轮拒绝，
+     * 而不是写一半再发现"这一批根本没有可用的映射"。
+     */
+    private final SourceMapper sourceMapper;
 
     /**
      * 一轮采集的结果。
@@ -86,6 +93,10 @@ public class IngestionService {
      * 且拒绝发生在**任何写入之前**——批次行、accepted/quarantine 目录、清单都不产生。
      * 这样库里不会出现 source_id 为空的新行（与 V17 回填过的历史行混在一起就再也分不清
      * "历史未标注"和"新代码没写"）。</p>
+     *
+     * <p>S2-02：映射绑定与源解析同样是"拒绝发生在任何写入之前"的一环——画像缺失/不可读/与登记源
+     * 不一致（{@code MAPPING_PROFILE_INVALID}）或可装载但禁止激活（{@code MAPPING_PROFILE_BLOCKED}）
+     * 都在批次行 insert 之前抛出，因此库里不会出现"批次已建但一行都没映射"的残批。</p>
      */
     public RunResult runOne(TraceContext trace) {
         RuntimeProfile active = runtimeProfileService.getActive();
@@ -95,6 +106,11 @@ public class IngestionService {
         //   sourceCode / profileVersion 取 source_registry 的**列**（D-037 裁决 8：不解析画像 JSON 反推版本，
         //   那是第二个所有者，且画像文件在本轮尚未交付）；sourceId 取上面解析出的激活源。
         SourceRegistryView source = requireSourceView(sourceId);
+        // S2-02：本轮映射绑定在**批次行 insert 之前**定妥（fail-closed 三态见 SourceMapper.prepare）：
+        //   画像非法/缺失/与登记源不一致 → MAPPING_PROFILE_INVALID；可装载但禁止激活 → MAPPING_PROFILE_BLOCKED；
+        //   v1 只读兼容画像 → 不映射（SourceMapping.legacy()），既有采集链路行为不变。
+        // 一轮只装载一次：批内文件必须用同一份映射，中途改画像会让同一批次里的行语义不一致。
+        SourceMapping mapping = sourceMapper.prepare(source);
         Path landingRoot = LandingUri.resolve(active.getLandingUri());
         Path eventsDir = landingRoot.resolve("events");
         // 批次号带随机后缀，避免同秒多次运行撞唯一键；时间取**注入的业务时间源**（§20.3 不把系统当前时间
@@ -148,7 +164,7 @@ public class IngestionService {
                     // 宁可这一轮失败，也不产出**归属错误**的批次（那是事后无法察觉的错账）。
                     requireSourceUnchanged(runtimeProfileId, sourceId, entry.getKey().toString());
                     var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId, sourceId,
-                            acceptedDir, quarantineDir, trace, checksum);
+                            acceptedDir, quarantineDir, trace, checksum, mapping);
                     // endOffset > startOffset ⇒ 真实推进了断点（有新内容可读），与 fileCount 的
                     // "产出了记录"是两件事：全是坏行的文件同样说明数据源在产出（B-08 / D-022）
                     if (res.endOffset() > res.startOffset()) {
@@ -195,7 +211,7 @@ public class IngestionService {
         // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
         String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
                 recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
-                source);
+                source, mapping);
         String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
 
         log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={} noNewData={}",
@@ -254,9 +270,9 @@ public class IngestionService {
     }
 
     /**
-     * 批次清单（§9.3 的 15 个键 + P1-05 / D-037 裁决 6 新增的 4 个源身份键）。
+     * 批次清单（§9.3 的 15 个键 + P1-05 / D-037 裁决 6 新增的 4 个源身份键 + S2-02 新增的 {@code mappingProfileHash}）。
      *
-     * <p>四个新键的定位：**可选的来源标注**，全部不进 schema 的 {@code required}
+     * <p>新增键的定位：**可选的来源标注**，全部不进 schema 的 {@code required}
      * （裁决 6 的硬约束）——一旦进 required，V17 之前落盘的 39 个清单会立刻判非法。
      * 各字段口径：</p>
      * <ul>
@@ -264,8 +280,10 @@ public class IngestionService {
      *   <li>{@code sourceId} ← 本轮解析出的激活源 id；</li>
      *   <li>{@code profileVersion} ← {@code source_registry.profile_version} **列**
      *       （裁决 8：画像文件里的同名值是"文件自述版本"，两者一致性属 P3-01，不在此处校验）；</li>
-     *   <li>{@code mappingVersion} ← {@code null}：语义映射尚未实施，恒为 null 直到 P2。
-     *       写 {@code ""}/{@code "0"}/{@code "v1"} 之类占位值会让下游以为映射已生效，故显式放 null 键。</li>
+     *   <li>{@code mappingVersion} ← 本轮**生效画像**的 {@code profileVersion}（未应用映射时为 {@code null}；S2-02 起不再是"恒为 null"）。
+     *       写 {@code ""}/{@code "0"}/{@code "v1"} 之类占位值会让下游以为映射已生效，故未映射时显式放 null 键。</li>
+ *   <li>{@code mappingProfileHash} ← 生效画像**原文**的 sha256（与 dry-run 报告 {@code profileChecksum} 同算法）；
+ *       未映射时为 {@code null}。版本号会被人为复用，哈希不会，因此"预览合格"与"这批真用了它"可逐字节对账。</li>
      * </ul>
      *
      * <p>{@code source}（连接器类型，恒为 {@code local-file}）语义不变，**不是**源身份
@@ -275,7 +293,7 @@ public class IngestionService {
                                  LocalDateTime startedAt, long acceptedRecords, long quarantinedRecords,
                                  int files, long acceptedBytes, CRC32 checksum,
                                  Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList,
-                                 SourceRegistryView source) {
+                                 SourceRegistryView source, SourceMapping mapping) {
         Map<String, Object> manifest = new LinkedHashMap<>();
         manifest.put("batchId", Long.parseLong(batchId));
         manifest.put("batchNo", batchNo);
@@ -297,7 +315,13 @@ public class IngestionService {
         manifest.put("sourceCode", source.sourceCode());
         manifest.put("sourceId", source.id());
         manifest.put("profileVersion", source.profileVersion());
-        manifest.put("mappingVersion", null);
+        manifest.put("mappingVersion", mapping.profileVersion());
+        // S2-02 加法新增（第 20 个键，可选）：本次生效画像**原文**的 sha256。
+        // 与 dry-run 报告的 profileChecksum 同算法，因此"预览某画像合格"与"这批数据用了该画像"
+        // 可以逐字节对账——版本号会被人为复用，哈希不会。
+        // mappingVersion != null ⟺ mappingProfileHash != null ⟺ 本轮真的逐行映射过，
+        // 因此不再另加 mappingApplied 布尔键（同一事实两个表示必然漂移）。
+        manifest.put("mappingProfileHash", mapping.profileChecksum());
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest);
         } catch (Exception e) {

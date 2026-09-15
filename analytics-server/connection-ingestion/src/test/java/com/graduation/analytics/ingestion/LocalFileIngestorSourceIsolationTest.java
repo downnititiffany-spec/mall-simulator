@@ -10,6 +10,8 @@ import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -97,7 +99,7 @@ class LocalFileIngestorSourceIsolationTest {
                 return rowsMatching(inv.getArgument(0));
             });
             ingestor = new LocalFileIngestor(checkpointMapper, mock(QuarantineRecordMapper.class),
-                    validator, new ObjectMapper());
+                    validator, new ObjectMapper(), mock(SourceMapper.class));
         }
         return ingestor;
     }
@@ -200,7 +202,8 @@ class LocalFileIngestorSourceIsolationTest {
 
     private LocalFileIngestor.FileResult ingest(LocalFileIngestor ingestor, Path file, long sourceId, Path dir) {
         return ingestor.ingestFile(file, 7L, 1L, sourceId,
-                dir.resolve("accepted"), dir.resolve("quarantine"), TraceContext.create(), new CRC32());
+                dir.resolve("accepted"), dir.resolve("quarantine"), TraceContext.create(), new CRC32(),
+                SourceMapping.legacy());
     }
 
     // ---------- ① 两源互不推进（D-037 要关的洞） ----------
@@ -304,7 +307,7 @@ class LocalFileIngestorSourceIsolationTest {
 
         ingest(ingestor, file, 1L, dir);
         ingestor.ingestFile(file, 7L, 2L, 1L, dir.resolve("accepted"), dir.resolve("quarantine"),
-                TraceContext.create(), new CRC32());
+                TraceContext.create(), new CRC32(), SourceMapping.legacy());
 
         assertThat(store).hasSize(2);
         assertThat(store.keySet()).containsExactlyInAnyOrder(

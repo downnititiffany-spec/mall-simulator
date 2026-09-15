@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.ingestion.entity.FileCheckpoint;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,7 +38,7 @@ class LocalFileIngestorConsumableDataTest {
 
     private LocalFileIngestor ingestor() {
         return new LocalFileIngestor(checkpointMapper, mock(QuarantineRecordMapper.class),
-                mock(EventContractValidator.class), new ObjectMapper());
+                mock(EventContractValidator.class), new ObjectMapper(), mock(SourceMapper.class));
     }
 
     private static FileCheckpoint checkpointOf(Path file, String identity, Long nextOffset) {

@@ -57,6 +57,15 @@ public class PlatformBizException extends RuntimeException {
     public static final String DRY_RUN_SAMPLE_NOT_FOUND = "DRY_RUN_SAMPLE_NOT_FOUND";
     public static final String DRY_RUN_REPORT_NOT_FOUND = "DRY_RUN_REPORT_NOT_FOUND";
 
+    // 真实采集映射域错误码（S2-02，加法式新增；状态映射仍由 GlobalExceptionHandler.mapStatus 独有）：
+    //   MAPPING_PROFILE_INVALID → 409（登记画像缺失/不可读/装载失败/与登记源不一致；profile_path 违规时值脱敏）
+    //   MAPPING_PROFILE_BLOCKED → 409（画像可装载但被激活门阻止：关键目标未映射，禁止拿它跑真实采集）
+    // 语义：与 SOURCE_PROFILE_INVALID 同族——不是"参数写错了"（400），而是**当前状态不满足采集前提**，
+    // 与 SOURCE_NOT_BOUND 一样归 409。两者都在任何写入之前抛出（连批次行都不产生），
+    // 调用方拿到码即可判定"这一轮根本没开始"，不存在半成品批次。
+    public static final String MAPPING_PROFILE_INVALID = "MAPPING_PROFILE_INVALID";
+    public static final String MAPPING_PROFILE_BLOCKED = "MAPPING_PROFILE_BLOCKED";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

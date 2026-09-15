@@ -40,6 +40,9 @@ public class GlobalExceptionHandler {
      *
      * <p>S2-01B（映射 dry-run）加法新增两个"资源不存在"码 → 404，理由见
      * {@link PlatformBizException#DRY_RUN_SAMPLE_NOT_FOUND}；既有码状态不变。</p>
+     *
+     * <p>S2-02（真实采集映射）加法新增两个"状态不满足采集前提"码 → 409，理由见
+     * {@link PlatformBizException#MAPPING_PROFILE_INVALID}；既有码状态不变。</p>
      */
     @ExceptionHandler(PlatformBizException.class)
     public ResponseEntity<ApiResponse<Void>> handleBiz(PlatformBizException e) {
@@ -62,7 +65,9 @@ public class GlobalExceptionHandler {
             case PlatformBizException.SOURCE_CODE_IMMUTABLE,
                  PlatformBizException.SOURCE_PROFILE_INVALID,
                  PlatformBizException.SOURCE_IN_USE,
-                 PlatformBizException.SOURCE_NOT_BOUND -> HttpStatus.CONFLICT;
+                 PlatformBizException.SOURCE_NOT_BOUND,
+                 PlatformBizException.MAPPING_PROFILE_INVALID,
+                 PlatformBizException.MAPPING_PROFILE_BLOCKED -> HttpStatus.CONFLICT;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

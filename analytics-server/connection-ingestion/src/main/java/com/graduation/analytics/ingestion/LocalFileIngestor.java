@@ -8,6 +8,9 @@ import com.graduation.analytics.ingestion.entity.QuarantineRecord;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import com.graduation.analytics.common.TraceContext;
+import com.graduation.analytics.mapping.ingest.MappedLine;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -44,6 +47,12 @@ import java.util.zip.CRC32;
  * - 数据落地成功后 checkpoint 才推进（可恢复顺序）；at-least-once 重复投递由
  *   DWD 的 event_id 去重兜底。
  *
+ * <p><b>S2-02 起的第二道闸门</b>：本源若登记了可执行的 v2 画像，本类先把原始行交给
+ * {@link SourceMapper}（raw → canonical 或隔离），**再**让 canonical 产物过
+ * {@link EventContractValidator}——两道闸门串行，顺序不能颠倒：raw 行用的是源侧字段名，
+ * 契约校验器把它当 canonical 读只会得到"缺失必要字段: event_id"，全量隔离等于静默丢数据。
+ * v1 只读兼容画像走 {@link SourceMapping#legacy()} 直通，行为与 S2-01 之前逐字节一致。</p>
+ *
  * <p><b>源从哪来</b>：本类不依赖源登记（不注入 {@code SourceRegistryService}）——源由调用方
  * 解析后**显式传入**，与 {@code runtimeProfileId} 同样的处理方式。这样"写入用的源"和
  * "查询用的源"必然是同一个值，不会出现"写 A 查 B"这类只有并发时才暴露的错配；
@@ -61,18 +70,31 @@ public class LocalFileIngestor {
     private final QuarantineRecordMapper quarantineRecordMapper;
     private final EventContractValidator validator;
     private final ObjectMapper objectMapper;
+    /**
+     * 逐行映射器（S2-02）。采集器**不认识**画像：它只知道"本轮的映射绑定是什么"
+     * （{@link SourceMapping}，由编排层在本轮开始前定妥），因此装载/激活判定不在这里重复。
+     */
+    private final SourceMapper sourceMapper;
 
     /**
-     * 采集一个文件从断点之后的新内容（字节偏移）。
+     * 采集一个文件从断点之后的新内容（字节偏移），按 {@code mapping} 决定是否逐行映射（S2-02）。
+     *
+     * <p><b>签名里不允许出现"少一个参数"的重载</b>：本方法**唯一**，且同时强制
+     * {@code sourceId}（D-037 裁决 1：断点按源隔离）与 {@code mapping}（"没传映射"与"故意不映射"
+     * 必须由调用点显式声明，不能靠默认值兜底）。给 S2-02 之前的八参形态留一个转 legacy 的便捷重载
+     * 看似无害，实则是把"跳过映射"变成一个静默默认值——已有守卫用例
+     * {@code LocalFileIngestorSourceIsolationTest.noSourceLessOverloadExists} 正是为了防止这种重载增殖。</p>
      *
      * @param runtimeProfileId 归属运行环境
      * @param sourceId         归属数据源（{@code source_registry.id}，**必填**）：
      *                         断点按源隔离（D-037 裁决 1），缺省就会造出"来源不明"的断点行
+     * @param mapping          本轮本源的映射绑定：{@link SourceMapping#legacy()} 表示不映射（v1 兼容画像直通），
+     *                         否则每一行先经 {@link SourceMapper#map} 再落盘。**不能传 null**
      * @return 文件级结果
      */
     public FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
-                                 CRC32 checksum) {
+                                 CRC32 checksum, SourceMapping mapping) {
         String abs = checkpointKey(file);
         String identity = fileIdentity(file);
         FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, abs);
@@ -133,24 +155,47 @@ public class LocalFileIngestor {
                                 len--;
                             }
                             String text = new String(raw, 0, len, StandardCharsets.UTF_8);
-                            EventContractValidator.Violation v = validator.check(text, 0);
-                            if (v == null) {
-                                byte[] out = (text + "\n").getBytes(StandardCharsets.UTF_8);
+                            // S2-02：两道闸门**串行**——映射（可选）在前，canonical 契约在后。
+                            // decision 是要落盘的文本：映射生效时是 canonical 行，否则就是原始行。
+                            String decision = text;
+                            String reason = null;          // 非空 ⇒ 隔离，且已是终态原因
+                            String eventId = null;
+                            String schemaVersion = null;
+                            if (mapping.applied()) {
+                                MappedLine mapped = sourceMapper.map(mapping, text);
+                                if (mapped.accepted()) {
+                                    decision = mapped.canonicalText();
+                                } else {
+                                    // 映射判死：原因来自映射器。event_id/schema_version 留 null——
+                                    // raw 行用源侧字段名，取不到就别猜（DDL 注释：能解析出则填）。
+                                    reason = mapped.quarantineReason();
+                                }
+                            }
+                            if (reason == null) {
+                                EventContractValidator.Violation v = validator.check(decision, 0);
+                                if (v != null) {
+                                    reason = v.reason();
+                                    eventId = v.eventId();
+                                    schemaVersion = v.schemaVersion();
+                                }
+                            }
+                            if (reason == null) {
+                                byte[] out = (decision + "\n").getBytes(StandardCharsets.UTF_8);
                                 acceptedOut.write(out);
                                 acceptedBytes += out.length;
                                 if (checksum != null) {
                                     checksum.update(out);
                                 }
                                 collected++;
-                                schemaVersions.add(schemaVersionOf(text));
+                                schemaVersions.add(schemaVersionOf(decision));
                             } else {
                                 quarantineOut.write(raw);
                                 quarantineOut.write(LF);
                                 QuarantineRecord record = new QuarantineRecord();
                                 record.setBatchId(batchId);
-                                record.setEventId(v.eventId());
-                                record.setSchemaVersion(v.schemaVersion());
-                                record.setReason(v.reason());
+                                record.setEventId(eventId);
+                                record.setSchemaVersion(schemaVersion);
+                                record.setReason(reason);
                                 record.setRawPath(quarantineFile.toString());
                                 quarantineRecordMapper.insert(record);
                                 quarantined++;

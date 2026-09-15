@@ -10,6 +10,8 @@ import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,17 +44,20 @@ class IngestionServiceStatusTest {
     private final RuntimeProfileService runtimeProfileService = mock(RuntimeProfileService.class);
     /** P1-05：状态总览的断点口径要同时按 profile 与源过滤，故本夹具默认绑定源 1。 */
     private final SourceRegistryService sourceRegistryService = mock(SourceRegistryService.class);
+    /** S2-02：映射绑定替身；本测试只关心状态机与断点，固定"不映射"直通。 */
+    private final SourceMapper sourceMapper = mock(SourceMapper.class);
 
     /** 状态总览的"新数据"判定唯一所有者在采集器里（DEF-12），因此这里注入真实采集器（依赖全部是 mock）。 */
     private LocalFileIngestor ingestor() {
         return new LocalFileIngestor(checkpointMapper, mock(QuarantineRecordMapper.class),
-                mock(EventContractValidator.class), new ObjectMapper());
+                mock(EventContractValidator.class), new ObjectMapper(), mock(SourceMapper.class));
     }
 
     private IngestionService service() {
+        when(sourceMapper.prepare(any())).thenReturn(SourceMapping.legacy());
         when(sourceRegistryService.currentSourceId()).thenReturn(Optional.of(1L));
         return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class),
-                ingestor(), null, runtimeProfileService, sourceRegistryService, new ObjectMapper());
+                ingestor(), null, runtimeProfileService, sourceRegistryService, new ObjectMapper(), sourceMapper);
     }
 
     @Test
