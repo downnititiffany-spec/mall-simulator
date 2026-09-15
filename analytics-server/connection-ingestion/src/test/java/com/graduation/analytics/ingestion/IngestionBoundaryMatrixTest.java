@@ -78,6 +78,8 @@ class IngestionBoundaryMatrixTest {
     private static final String SOURCE_CODE = "s2-02b-raw-a";
     private static final String PROFILE_PATH = "profiles/boundary.v2.json";
     private static final String EVENT_FILE = "boundary.jsonl";
+    /** 合法的事件时间（自带 +08:00 偏移，第一声明的格式）。 */
+    private static final String OK_AT = "2026-09-21T09:30:00+08:00";
     private static final String LEGACY_PROFILE_PATH = "analytics-server/source-profiles/mock-mall.v1.json";
 
     /** 固定业务时间：2026-09-21T02:20:30Z = Asia/Shanghai 10:20:30（平台 ingest_time 的唯一来源）。 */
@@ -245,7 +247,51 @@ class IngestionBoundaryMatrixTest {
         assertThat(manifest.path("sourceCode").asText()).isEqualTo(SOURCE_CODE);
     }
 
-    // ---------------------------------------------------------------- ② 跨源同 ID
+    // ---------------------------------------------------------------- ② 缺失 / NULL / BLANK
+
+    /**
+     * 必填三态在**真实采集链路**上的可观测结果：三者都判 {@code EMPTY_FIELD}，原因文本完全相同
+     * （{@code MappingIssue} 只写 {@code MAPPING:<CODE>@<path>}，detail 不进原因）。
+     *
+     * <p>三态的**细分**（MISSING / NULL / BLANK）由执行器自身的用例钉住：
+     * {@code MappingExecutorTest} 规则 5 三条（缺键 / 显式 null / trim 后空白，detail 分别为
+     * MISSING / NULL / BLANK）。本用例只证明"到了采集链路上，三种写法都进隔离、原文一字不改"。</p>
+     */
+    @Test
+    @DisplayName("缺失 / NULL / BLANK：真实链路上都判 EMPTY_FIELD 进隔离，且隔离区保留原文")
+    void missingNullAndBlankAllQuarantineAsEmptyField(@TempDir Path landingRoot,
+                                                     @TempDir Path profileRoot) throws IOException {
+        writeProfile(profileRoot, PROFILE_PATH, V2_PROFILE);
+        String missing = paid("evt-missing", OK_AT, "100", null);
+        String nullValue = paidWith("evt-null", OK_AT, "100", "\"ord\":null,");
+        String blank = paidWith("evt-blank", OK_AT, "100", "\"ord\":\"\",");
+        stubRun(landingRoot, SOURCE_CODE, "2.0", PROFILE_PATH, List.of(missing, nullValue, blank));
+
+        IngestionService.RunResult result = service(profileRoot).runOne(TraceContext.create());
+
+        assertThat(result.errorCount()).isZero();
+        assertThat(result.recordCount()).as("三态都不产出 canonical").isZero();
+        assertThat(result.quarantineCount()).isEqualTo(3);
+        assertThat(result.status()).isEqualTo("QUARANTINED");
+
+        ArgumentCaptor<QuarantineRecord> captor = ArgumentCaptor.forClass(QuarantineRecord.class);
+        verify(quarantineRecordMapper, times(3)).insert(captor.capture());
+        assertThat(captor.getAllValues().stream().map(QuarantineRecord::getReason).toList())
+                .as("原因文本不含三态细分（细分归 MappingExecutorTest 规则 5）")
+                .containsExactly("MAPPING:EMPTY_FIELD@payload.order_id",
+                        "MAPPING:EMPTY_FIELD@payload.order_id",
+                        "MAPPING:EMPTY_FIELD@payload.order_id");
+        assertThat(Files.readAllLines(Path.of(result.quarantineDir()).resolve(EVENT_FILE),
+                StandardCharsets.UTF_8))
+                .as("NULL / BLANK 也是「读到就读到」，隔离区保留原文一字不改")
+                .containsExactly(missing, nullValue, blank);
+
+        JsonNode manifest = manifestOf(result);
+        assertThat(manifest.path("acceptedRecords").asLong()).isZero();
+        assertThat(manifest.path("quarantinedRecords").asLong()).isEqualTo(3);
+    }
+
+    // ---------------------------------------------------------------- ③ 跨源同 ID
 
     @Test
     @DisplayName("跨源同 ID：两个源各自成批次、各自留一份原文，第二个源不被第一个源的断点跳过")
@@ -361,9 +407,17 @@ class IngestionBoundaryMatrixTest {
     }
 
     private static String paid(String id, String at, String fen, String ord) {
+        return paidWith(id, at, fen, ord == null ? "" : "\"ord\":\"" + ord + "\",");
+    }
+
+    /**
+     * @param ordFragment 直接注入 payload 里的 order_id 片段（含尾逗号），用来表达三态：
+     *                    缺键 {@code ""} / 显式 null {@code "ord":null,} / 空白 {@code "ord":"",}
+     */
+    private static String paidWith(String id, String at, String fen, String ordFragment) {
         return "{\"id\":\"" + id + "\",\"kind\":\"paid_se\",\"at\":\"" + at + "\",\"sys\":\"" + SOURCE_CODE
                 + "\",\"rev\":\"1.0\",\"tr\":\"trace-" + id + "\",\"data\":{"
-                + (ord == null ? "" : "\"ord\":\"" + ord + "\",")
+                + ordFragment
                 + "\"buyer\":\"u-1\",\"pay\":\"p-1\",\"paid_fen\":\"" + fen + "\",\"paidAt\":\"" + at + "\"}}";
     }
 
