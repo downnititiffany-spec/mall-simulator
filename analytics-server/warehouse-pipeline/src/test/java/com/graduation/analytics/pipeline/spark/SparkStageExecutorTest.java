@@ -81,13 +81,30 @@ class SparkStageExecutorTest {
     void stageMappingCoversAllCalculationStages() {
         assertThat(SparkStageExecutor.stageJobs("INIT_SCHEMA")).containsExactly("sci");
         assertThat(SparkStageExecutor.stageJobs("LOAD_ODS")).containsExactly("odl");
-        assertThat(SparkStageExecutor.stageJobs("BUILD_DWD")).containsExactly("bdw", "dim", "tdw");
+        // BUILD_DWD 内 `dim` 必须排在 `bdw` 之前（见 buildDwdRunsDimBeforeBehaviorDwd 的理由）
+        assertThat(SparkStageExecutor.stageJobs("BUILD_DWD")).containsExactly("dim", "bdw", "tdw");
         assertThat(SparkStageExecutor.stageJobs("BUILD_DWS")).containsExactly("usw");
         assertThat(SparkStageExecutor.stageJobs("BUILD_ADS")).containsExactly("fna");
         // R6-13：质量门与发布由真实作业承载（dqc 读暂存分区，pub 用元数据指针发布正式分区）
         assertThat(SparkStageExecutor.stageJobs("QUALITY_CHECK")).containsExactly("dqc");
         // R7-3：发布后 mxp 把已发布的正式 ADS 导出给指标库发布器（Hive→MySQL 快照发布）
         assertThat(SparkStageExecutor.stageJobs("PUBLISH_METRIC")).containsExactly("pub", "mxp");
+    }
+
+    /**
+     * BUILD_DWD 内部的作业顺序是**依赖硬约束**，不是排版顺序。
+     *
+     * `bdw`（spark-jobs `DwdSql.behaviorClean`）的 SELECT 里有
+     * `LEFT JOIN <ns>_dim.dim_user u ON … AND u.dt = '<业务日>'` 与同形的 `dim_product`，
+     * 用来取 `city_level` / `category_id`（`COALESCE(p.category_id, -1)`）/ `category_key`
+     * ⇒ **同一阶段内 `dim` 必须先于 `bdw` 产出当日快照**，否则 `bdw` 在当日首次运行时
+     * LEFT JOIN 命中空维表，这三列静默退化成 `NULL` / `-1`（不报错、不失败）。
+     */
+    @Test
+    void buildDwdRunsDimBeforeBehaviorDwd() {
+        List<String> jobs = SparkStageExecutor.stageJobs("BUILD_DWD");
+        assertThat(jobs).contains("dim", "bdw");
+        assertThat(jobs.indexOf("dim")).isLessThan(jobs.indexOf("bdw"));
     }
 
     @Test
@@ -129,8 +146,8 @@ class SparkStageExecutorTest {
 
         assertThat(results).hasSize(3);
         assertThat(submitter.submitCount()).isEqualTo(3);
-        assertThat(submitter.submittedCommands().get(0)).contains("--jobCode=bdw");
-        assertThat(submitter.submittedCommands().get(1)).contains("--jobCode=dim");
+        assertThat(submitter.submittedCommands().get(0)).contains("--jobCode=dim");
+        assertThat(submitter.submittedCommands().get(1)).contains("--jobCode=bdw");
         assertThat(submitter.submittedCommands().get(2)).contains("--jobCode=tdw");
     }
 
@@ -210,24 +227,25 @@ class SparkStageExecutorTest {
 
     @Test
     void stageFailFastStopsRemainingJobsAfterFirstFailure() {
-        // BUILD_DWD = [bdw, dim, tdw]；bdw 成功、dim 失败 → tdw 不得提交
-        submitter.programJob("bdw", "SUBMITTED", successLog("bdw", 10, 9, 1));
-        submitter.programJob("dim", "SUBMITTED",
-                "{\"jobCode\":\"dim\",\"inputRecords\":4,\"outputRecords\":0,\"rejectedRecords\":4,"
-                        + "\"attemptNo\":1,\"status\":\"FAILED\",\"message\":\"维度构建失败\",\"elapsedMs\":300}");
+        // BUILD_DWD = [dim, bdw, tdw]；dim 成功、bdw 失败 → tdw 不得提交
+        submitter.programJob("dim", "SUBMITTED", successLog("dim", 4, 4, 0));
+        submitter.programJob("bdw", "SUBMITTED",
+                "{\"jobCode\":\"bdw\",\"inputRecords\":10,\"outputRecords\":0,\"rejectedRecords\":10,"
+                        + "\"attemptNo\":1,\"status\":\"FAILED\",\"message\":\"行为清洗失败\",\"elapsedMs\":300}");
 
         SparkStageExecutor.StageExecution stage =
                 executor.executeStage(profile, 21L, "BUILD_DWD", "20260901", 1, Map.of());
 
         assertThat(stage.failed()).isTrue();
-        assertThat(stage.errorMessage()).contains("dim").contains("维度构建失败");
-        // 只提交了 bdw + dim，tdw 未提交（fail-fast）
+        assertThat(stage.errorMessage()).contains("bdw").contains("行为清洗失败");
+        // 只提交了 dim + bdw，tdw 未提交（fail-fast）
         assertThat(submitter.submitCount()).isEqualTo(2);
-        assertThat(submitter.submittedCommands().get(0)).contains("--jobCode=bdw");
-        assertThat(submitter.submittedCommands().get(1)).contains("--jobCode=dim");
+        assertThat(submitter.submittedCommands().get(0)).contains("--jobCode=dim");
+        assertThat(submitter.submittedCommands().get(1)).contains("--jobCode=bdw");
         assertThat(submitter.submittedCommands()).noneMatch(c -> c.contains("--jobCode=tdw"));
         // 已提交的两个作业都留痕（失败作业也有记录）
         assertThat(stage.jobs()).hasSize(2);
+        assertThat(stage.jobs().get(0).success()).isTrue();
         assertThat(stage.jobs().get(1).success()).isFalse();
     }
 

@@ -43,7 +43,12 @@ public class SparkStageExecutor {
     private static final Map<String, List<String>> STAGE_JOBS = Map.of(
             "INIT_SCHEMA", List.of("sci"),
             "LOAD_ODS", List.of("odl"),
-            "BUILD_DWD", List.of("bdw", "dim", "tdw"),
+            // 顺序 = 依赖顺序（`:134` 按列表顺序**串行**提交，不做拓扑排序）：
+            // `bdw`（DwdSql.behaviorClean）LEFT JOIN `dim_user`/`dim_product` 且谓词带
+            // `u.dt = '<业务日>'` ⇒ `dim` 必须先产出当日快照，否则 `city_level`/`category_id`/
+            // `category_key` 在当日首次运行时静默退化为 NULL/-1（不报错、不失败）。
+            // `tdw` 同样依赖 `dim`（其 SQL 亦 JOIN 两张维表）⇒ `dim` 排在最前同时服务两者。
+            "BUILD_DWD", List.of("dim", "bdw", "tdw"),
             "BUILD_DWS", List.of("usw"),
             "BUILD_ADS", List.of("fna"),
             "QUALITY_CHECK", List.of("dqc"),

@@ -10,6 +10,13 @@ import com.graduation.analytics.warehouse.WarehouseNamespace
  * P2-03（代理键，裁决 D-083…D-092）：**只加不改**——旧列 `user_id`/`product_id`/`category_id`
  * 与其 `-1` 哨兵逐字保留（D-094），新增 `<entity>_key` 列**追加在 SELECT 列表末尾**
  * （`INSERT OVERWRITE` 按位置对齐）。**A5：JOIN 谓词本轮保持旧口径不变**（改 JOIN 属 P2-04）。
+ *
+ * P2-04-a（裁决 D-121/D-122/D-124）：**别名映射说明** —— 契约逻辑名 `source_instance_id`
+ * ⇔ 物理列 `source_system`（注入值，per-source 下发，唯一所有者为 `OdsLoadSql`）。
+ * 去重键由 `event_id` **单键扩为 (source_system, event_id) 复合键**（只扩键）：
+ * 源身份只在**去重键输入**位置引用 ODS 既有列，**不新增任何列、不动 DDL**（D-122「不新增列」＋
+ * 裁决「不授权任何 DDL」）；`event_id`/`behavior_id` 的生成、归一、编码**不得**随本轮改动，
+ * 行内原值 `raw_source_system` **不得**充当去重键输入（D-122 L35）。
  */
 object DwdSql {
 
@@ -43,14 +50,14 @@ object DwdSql {
        |  p.category_key AS category_key
        |FROM (
        |  SELECT *,
-       |         ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY ingest_time) AS rn
+       |         ROW_NUMBER() OVER (PARTITION BY source_system, event_id ORDER BY ingest_time) AS rn
        |  FROM ${ns.ods}.ods_behavior_event
        |  WHERE dt = '$dt'
        |    AND schema_version = '1.0'
        |) rn
        |LEFT JOIN ${ns.dim}.dim_user u ON u.user_id = ${IdCodec.toBIGINT("rn.payload_user_id")} AND u.dt = '$dt'
        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = ${IdCodec.toBIGINT("rn.payload_product_id")} AND p.dt = '$dt'
-       |WHERE rn.rn = 1                       -- event_id 去重
+       |WHERE rn.rn = 1                       -- (source_system, event_id) 复合去重（P2-04-a / D-121）
        |  AND rn.payload_user_id IS NOT NULL
        |  AND rn.payload_product_id IS NOT NULL
        |  AND rn.payload_behavior_type IN ('view','favorite','cart_add','cart_remove','search')
@@ -66,7 +73,7 @@ object DwdSql {
        |FROM (
        |  SELECT event_id, COUNT(*) AS c
        |  FROM ${ns.ods}.ods_behavior_event WHERE dt = '$dt'
-       |  GROUP BY event_id HAVING COUNT(*) > 1
+       |  GROUP BY source_system, event_id HAVING COUNT(*) > 1
        |) t
        |""".stripMargin
 }

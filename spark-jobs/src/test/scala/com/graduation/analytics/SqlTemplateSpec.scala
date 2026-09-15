@@ -103,19 +103,19 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     lower should not include "stock_reserved"
   }
 
-  "DwdSql" should "event_id 去重且只保留合法枚举" in {
+  "DwdSql" should "(source_system, event_id) 复合去重且只保留合法枚举（P2-04-a：跨源同名不得互相去重）" in {
     val sql = DwdSql.behaviorClean(ns, "20260901")
     val lower = sql.toLowerCase
-    lower should include("row_number() over (partition by event_id order by ingest_time)")
+    lower should include("row_number() over (partition by source_system, event_id order by ingest_time)")
     lower should include("rn.rn = 1")
     lower should include("behavior_type in ('view','favorite','cart_add','cart_remove','search')")
     lower should include("partition(dt = '20260901')")
     lower should include("payload_user_id is not null")
   }
 
-  it should "重复事件写入拒绝记录" in {
+  it should "重复事件写入拒绝记录（拒绝键与去重键同为复合键，跨源同名不算重复）" in {
     val sql = DwdSql.duplicateReject(ns, "20260901")
-    sql.toLowerCase should include("group by event_id having count(*) > 1")
+    sql.toLowerCase should include("group by source_system, event_id having count(*) > 1")
     sql.toLowerCase should include("'duplicate_event'")
   }
 
