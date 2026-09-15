@@ -125,7 +125,7 @@ Select-String -LiteralPath $f -Pattern 'source_system|去重' -Encoding UTF8 |
 
 # ---------------------------------------------------------------- R-15
 Sec "R-15 指导书 V2.4 权威条文（§2.1 权威顺序 / §5.1 去重键 / §7.3-7.4 质量与快照）"
-$f = 'docs/项目完整实施指导书 V2.4.md'
+$f = 'docs/guidance/history/项目完整实施指导书 V2.4.md'
 Write-Output "blob=$(git hash-object $f) lines=$((Get-Content -LiteralPath $f -Encoding UTF8).Count)"
 Select-String -LiteralPath $f -Pattern 'source_instance_id|去重|ACTIVE' -Encoding UTF8 |
   ForEach-Object { "L{0}: {1}" -f $_.LineNumber, $_.Line.Trim().Substring(0, [Math]::Min(240, $_.Line.Trim().Length)) }

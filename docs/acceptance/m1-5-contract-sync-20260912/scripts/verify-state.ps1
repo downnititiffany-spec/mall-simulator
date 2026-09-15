@@ -20,8 +20,8 @@ Say '-- 1. VERSION 内容 --'
 Say ('   ' + ([IO.File]::ReadAllText((Join-Path $root $ver), $enc)).Trim())
 Say ''
 Say '-- 2. 11 条锚点对照（正向：正确行确实含声称内容；负向：旧锚点行确实是相邻内容） --'
-$v1 = [IO.File]::ReadAllText('docs\项目完整实施指导书 V2.1.md', $enc) -split "`n"
-$v3 = [IO.File]::ReadAllText('docs\项目完整实施指导书 V2.3.md', $enc) -split "`n"
+$v1 = [IO.File]::ReadAllText('docs\guidance\history\项目完整实施指导书 V2.1.md', $enc) -split "`n"
+$v3 = [IO.File]::ReadAllText('docs\guidance\history\项目完整实施指导书 V2.3.md', $enc) -split "`n"
 $probe = @(
   @{ name = 'V2.1 §4.1 L107 声称 test(TargetConfig) → 实为 interface 行'; a = 'v1'; l = 107; w = 'interface MallTargetAdapter {'; a2 = 108; w2 = 'TargetCheckResult test(TargetConfig config);' },
   @{ name = 'V2.1 §4.1 L108 声称 capabilities() → 实为 test 行'; a = 'v1'; l = 108; w = 'TargetCheckResult test(TargetConfig config);'; a2 = 109; w2 = 'TargetCapabilities capabilities();' },

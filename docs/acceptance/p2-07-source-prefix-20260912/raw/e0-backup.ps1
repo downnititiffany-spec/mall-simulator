@@ -36,9 +36,9 @@ $Files = @(
     'analytics-server/platform-app/src/test/java/com/graduation/analytics/controller/SourceRegistryControllerAuditTest.java',
     'analytics-server/platform-app/src/test/java/com/graduation/analytics/source/SourceRegistryMigrationMySqlIT.java',
     'analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/evidence/EvidenceBuilder.java',
-    'docs/deployment.md',
+    'docs/reference/deployment.md',
     'docs/thesis-materials/thesis-outline.md',
-    'docs/开发过程事实与决策记录.md'
+    'docs/status-history/开发过程事实与决策记录.md'
 )
 
 New-Item -ItemType Directory -Path $BackupRoot -Force | Out-Null

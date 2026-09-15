@@ -26,36 +26,47 @@
 
 fresh：default **751**（632+13+106），isolated **55**（30+19+6），spark **111**（JDK8/ScalaTest/TestSuite.txt）；all顺序执行，任一失败或0 tests即失败。来源：[DEV-003c报告](acceptance/dev003c-unified-test-entry-20260915/REPORT.md)。本轮未重跑；单机in-memory测试不等于Hive/集群验收。
 
-## 历史只读资料
+## 历史资料导航
 
-以下原文、原名、原路径全部保留；不再作为当前任务或裁决入口：
-
-- 所有《项目完整实施指导书V2.x》《毕业设计指导书V2.6/V2.7/V2.8》及更早指导书。
-- design/内V1/V2设计文稿、设计文档和讨论稿。
-- 所有历史任务看板、旧开发事实/决策日志、remediation-status.md。
-- acceptance/**、contract-specs/**（根目录）、contracts/**、superpowers/**及历史专项材料。
-- deployment.md、api-overview.md、compatibility-matrix.md、acceptance-checklist.md、demo/。
-- 论文草稿、论文参考资料、答辩材料、实验和旧交接说明。
-
-旧验收脚本可能按路径读取旧文档，因此禁止以目录美观为由搬移、重命名或删文件。历史文件自称“唯一”“当前”不推翻V3.0；旧测试结果仅用于对应历史时点。历史契约的有效语义已纳入新设计；若代码变更需调整契约，先报总控，不在本轮修改。
-
-## 子目录用途
-
-| 位置 | 用途 |
+| 目录 | 内容 |
 |---|---|
-| guidance/ | V3系列正式实施指导书，已发布版只读 |
-| design/ | 正式设计与原位历史稿，当前入口见顶部 |
-| PROJECT_STATUS.md | 唯一动态状态，不再建并行看板 |
-| acceptance/ | 既有证据本轮只读；未来开发可在授权下新增必要脱敏evidence |
-| contracts/、architecture/、superpowers/ | 历史契约/架构/专项参考，不是当前事实源 |
-| thesis-draft/、thesis-materials/、presentation/ | 既有论文/答辩材料保留；阶段8按实际交付统一编写 |
-| backups/ | 授权修改前的原件备份，不是权威版本 |
-| demo/ | 历史演示流程，使用前按V3部署和安全规则复核 |
+| [guidance/history/](guidance/history/) | 10份V1/V2指导书，历史只读 |
+| [design/history/](design/history/) | 7份早期讨论稿及历史设计版本，历史只读 |
+| [status-history/](status-history/) | 5份旧看板、事实决策记录及remediation-status |
+| [audit/](audit/) | 4份完整性、兼容性、验证策略及验收参考 |
+| [handover/](handover/) | 2份历史会话交接单 |
+| [reference/](reference/) | 2份接口与部署参考，不代表最新实现 |
 
-## 更新规则
+当前docs根目录仅保留README.md和PROJECT_STATUS.md；不存在原位兼容锚点。指导书目录仅V3.0为正式当前版；设计目录中历史版本全部进入history。根目录contract-specs保持不动。
 
-- 项目“要不要做”由总控更新指导书后继；“具体怎么做”由总控更新设计后继；实际做到了什么由代码Agent更新PROJECT_STATUS。
-- 正式V3.0只读，后继V3.1，禁止final/new/(2)平行版本。代码Agent不能自行发布后继。
-- 普通调试、日志、实验不进入指导书；状态文件记录事实与证据，不能改写目标。
-- 本轮索引/状态修改前三份原件在`backups/v3-release-20260915/`；其他历史材料完全不动。
-- DEV-003已整理收口，DEV-003d等进入development backlog；F-88仍限定验收。backlog只由总控在确实阻塞阶段时提升。
+## 历史证据与当前路径
+
+V3.0 目录重构前形成的历史 acceptance / thesis evidence
+可能引用重构前路径；
+复核历史证据时应结合对应 Git commit 使用，
+不得用当前 HEAD 的目录布局反推历史路径错误。
+
+历史commit同时保留当时文件路径与脚本路径。历史资料正文及其相对链接不批量改写；查看历史互链时使用对应commit。当前导航全部指向迁移后目录。已发布V3.0正文不可改，正文内的历史路径同样按其发布commit解释。
+
+## 当前脚本迁移适配
+
+扫描当前scripts入口及全仓ps1/sh/py/js/ts/java/scala/xml/yaml等文本，包含隐藏.verify；排除.git、依赖/编译产物与备份。当前构建、启动、统一测试入口未发现直接读取被迁移Markdown的路径；代码中的说明性提及不是读取依赖。
+
+以下8个保留在HEAD的取证工具仍含文件读取、存在检查或Git路径检查，已定点适配13行路径。其余历史报告和脚本内用于重放旧文本的字符串不批量替换。此适配不等于授权重跑旧任务；脚本可能包含旧时点断言、写入或环境依赖，本轮均未执行。被忽略的.verify一次性历史修补脚本不作为现行工具，不修改也不运行。
+
+| 脚本（相对docs/acceptance/） | 用途 | 旧路径 → 新路径 |
+|---|---|---|
+| m1-5-contract-sync-20260912/scripts/verify-state.ps1 | 读取原指导书核对契约 | docs/项目完整实施指导书 V2.1.md、V2.3.md → docs/guidance/history/同名文件 |
+| m1-5-contract-sync-20260912/scripts/erratum.ps1 | 读取原指导书作历史勘误 | 同上；仅ReadAllText路径适配，不改旧文本替换条件 |
+| e4-cluster-1000-20260912/tools/e4-precommit-verify.ps1 | 看板读取及Git变更路径检查 | docs/项目实施进度与任务看板 V2.2.md → docs/status-history/同名文件 |
+| graduation-lane-backup-20260912/manifests/New-TrackedManifest.ps1 | 文件指纹正向对照 | 同上 |
+| p2-03-surrogate-key-20260912/raw/fingerprint-cited-files.ps1 | 引用文件指纹采集 | 同上 |
+| p2-04-dwd-source-projection-20260912/raw/collect-evidence-p2-04.ps1 | 读取指导书取证 | docs/项目完整实施指导书 V2.4.md → docs/guidance/history/同名文件 |
+| p2-05-ods-rebuild-guard-20260912/raw/collect-evidence-p2-05.ps1 | 读取重建授权条文 | 同上 |
+| p2-07-source-prefix-20260912/raw/e0-backup.ps1 | 备份前存在检查 | docs/deployment.md → docs/reference/deployment.md；docs/开发过程事实与决策记录.md → docs/status-history/开发过程事实与决策记录.md |
+
+## 本轮范围与维护规则
+
+本轮累计30次git mv（包含前轮5次），历史文档正文不变；只修改两个README和上述8个脚本的路径。PROJECT_STATUS、两份V3.0、业务代码、测试逻辑、历史验收结论、contract-specs均不改。不commit、不push、不amend、不force push，不开始新的开发或历史复验任务。
+
+修改前索引及适配脚本备份位于docs/backups/head-layout-20260915/，被现有Git规则忽略。前轮备份继续保留。本页是导航，不是第四份权威文档；正式指导书与设计的后继版本均为V3.1。

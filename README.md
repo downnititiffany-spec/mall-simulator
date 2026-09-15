@@ -12,7 +12,7 @@
 
 **历史整理阶段已结束；项目正式进入毕业设计功能开发阶段。** 发布代码基线为`e3c1070c02964512cdd3444c76e3e39ec833bcc8`。V3.0发布后只读，正式变更由总控发布V3.1。代码Agent可维护PROJECT_STATUS，不得自行改变目标/架构、提升backlog或宣布完整验收。
 
-全部V2.x指导书、设计稿、历史看板、remediation-status与历史契约/验收资料均为**历史只读**，保持原路径。旧资料的“当前”只指历史时点，不是现行开发指令。更多导航见[docs/README](docs/README.md)。
+全部V1/V2历史指导书、设计稿、看板与状态资料已按类别归档，正文保持历史只读。历史路径以对应Git commit为准，不要求当前HEAD保留旧位置。旧资料中的“当前”只指历史时点。更多导航见[docs/README](docs/README.md)。
 
 ## 系统边界与目录
 
@@ -38,7 +38,7 @@ ingestion/                  Flume配置等采集材料
 scripts/                    构建/启动/测试入口
 tests/                      黄金数据及预期结果
 docs/guidance/              正式指导书
-docs/design/                正式设计及原位历史设计
+docs/design/                正式设计及history历史设计
 docs/PROJECT_STATUS.md     唯一动态状态
 docs/acceptance/            历史证据（本轮只读）
 ```
@@ -108,6 +108,19 @@ Spark仅以本轮新写TestSuite.txt的实跑数、failed/aborted和成功标记
 
 DEV-003整理阶段收口完成；DEV-003d、DEV-004、历史IT收编、F-88完整剩余、F-93、3307旧对象清理、GitHub Actions和前端统一入口转development backlog，仅总控可在真阻塞当前阶段时提升。具体任务和权限看指导书；当下事实看PROJECT_STATUS。
 
+## 历史资料导航
+
+- [指导书历史](docs/guidance/history/)
+- [设计历史](docs/design/history/)
+- [历史状态与看板](docs/status-history/)
+- [审计与验证](docs/audit/)
+- [会话交接](docs/handover/)
+- [接口与部署参考](docs/reference/)
+
 ## 文档维护
 
-本轮只新增两份V3.0正式文档，更新本README、docs/README和PROJECT_STATUS。更新前三文件原件备份在`docs/backups/v3-release-20260915/`。历史指导书、设计、看板和证据均不移动、不删除、不覆盖。V2.x正式结束，不再发布“毕业设计指导书V2.9”。正式文档下一版V3.1由总控决策。
+V3.0两份正式正文及已发布commit保持不变，后继版本从V3.1开始。当前HEAD目录迁移不改变历史验收结论；只对8个已有取证脚本的13行文件路径做迁移适配，不执行历史脚本。普通acceptance报告、thesis evidence及contract-specs不改写。
+
+V3.0目录重构前形成的历史acceptance / thesis evidence可能引用重构前路径；复核历史证据时应结合对应Git commit使用，不得用当前HEAD的目录布局反推历史路径错误。历史文档内部相对链接也按其原commit解释。
+
+修改前索引与适配脚本已备份至被忽略的docs/backups/head-layout-20260915/，不提交。本轮不commit、不push。
