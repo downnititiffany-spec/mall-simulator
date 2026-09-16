@@ -57,6 +57,15 @@
       <artifactId>platform-common</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- S3-45：复用 platform-common 测试作用域的「仓库根定位」单一所有者 RepoRoot；
+         本模块测试不得再各自 walk-up 找仓根（改前 5 份，锚点文件还各不相同）。 -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>platform-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>

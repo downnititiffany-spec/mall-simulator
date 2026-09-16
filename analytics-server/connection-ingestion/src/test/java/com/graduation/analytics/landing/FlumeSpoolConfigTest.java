@@ -1,5 +1,7 @@
 package com.graduation.analytics.landing;
 
+import com.graduation.analytics.testsupport.RepoRoot;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -8,7 +10,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +32,8 @@ class FlumeSpoolConfigTest {
 
     private static final String CONF_PATH = "ingestion/flume/flume-spooldir.conf";
     private static final String README_PATH = "ingestion/flume/README.md";
-    private static final Path CONF = repoRoot().resolve(CONF_PATH);
-    private static final Path README = repoRoot().resolve(README_PATH);
+    private static final Path CONF = RepoRoot.path(CONF_PATH);
+    private static final Path README = RepoRoot.path(README_PATH);
 
     @Test
     @DisplayName("拓扑齐备：spooldir 源 + file 通道 + 一个 sink，且上下都用同一个通道")
@@ -211,19 +212,4 @@ class FlumeSpoolConfigTest {
                 .toList();
     }
 
-    /**
-     * 仓库根定位：本模块的测试类不能依赖 {@code platform-common} 的 test-jar
-     * （{@code com.graduation.analytics.testsupport.RepoRoot} 只在 platform-app 的测试类路径上），
-     * 因此与 {@code IngestionBoundaryMatrixTest} 同款自找一次——这是**已登记的重复项**
-     * （S2-02A 起就存在），不是新引入的第二所有者。找不到就失败，不退化成相对路径空跑。
-     */
-    private static Path repoRoot() {
-        Path start = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-        for (Path dir = start; dir != null; dir = dir.getParent()) {
-            if (Files.isRegularFile(dir.resolve(CONF_PATH))) {
-                return dir;
-            }
-        }
-        throw new IllegalStateException("找不到仓库根：从 " + start + " 向上未发现 " + CONF_PATH);
-    }
 }

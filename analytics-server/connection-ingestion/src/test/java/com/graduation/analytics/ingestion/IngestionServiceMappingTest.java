@@ -23,6 +23,7 @@ import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
 import com.graduation.analytics.source.dto.SourceRegistryView;
 import com.graduation.analytics.source.entity.SourceRegistry;
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +35,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -139,7 +139,7 @@ class IngestionServiceMappingTest {
     private IngestionService service(Path profileRoot) {
         // S2-03：正式采集只使用"已激活"的画像，故装配时给源 3 一份激活记录（内容 = 写盘的 V2_PROFILE 字节）
         SourceMapper sourceMapper = new SourceMapper(profileRoot.toString(),
-                repoFile(CONTRACT_PATH).toString(), CLOCK, objectMapper,
+                RepoRoot.path(CONTRACT_PATH).toString(), CLOCK, objectMapper,
                 TestActiveMappingPointerStore.withActive(3L, SOURCE_CODE, PROFILE_PATH, "2.0",
                         MappingHash.sha256Hex(V2_PROFILE)));
         LocalFileIngestor ingestor = new LocalFileIngestor(checkpointMapper, quarantineRecordMapper,
@@ -242,7 +242,7 @@ class IngestionServiceMappingTest {
         stubRun(landingRoot, "mock-mall", "1.0",
                 "analytics-server/source-profiles/mock-mall.v1.json", LEGACY_LINE);
 
-        IngestionService.RunResult result = service(repoRoot()).runOne(TraceContext.create());
+        IngestionService.RunResult result = service(RepoRoot.path()).runOne(TraceContext.create());
 
         assertThat(Files.readString(Path.of(result.acceptedDir()).resolve(EVENT_FILE), StandardCharsets.UTF_8))
                 .as("直通不得改写既有 canonical 行（含它自带的 ingest_time）")
@@ -280,24 +280,4 @@ class IngestionServiceMappingTest {
                 .isFalse();
     }
 
-    // ---------------------------------------------------------------- 仓根定位
-
-    /**
-     * 契约文件是仓库里的中立真相（只读）。{@code com.graduation.analytics.testsupport.RepoRoot} 在
-     * platform-common 的 **test** 作用域，本模块（未依赖 test-jar）看不到，故这里保留一个最小向上查找
-     * （与 {@code MappingTestSupport} 同款；已登记的重复项，等 RepoRoot 提到 test-jar 后一并删除）。
-     */
-    private static Path repoRoot() {
-        Path start = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-        for (Path dir = start; dir != null; dir = dir.getParent()) {
-            if (Files.isRegularFile(dir.resolve(CONTRACT_PATH))) {
-                return dir;
-            }
-        }
-        throw new IllegalStateException("找不到仓库根：从 " + start + " 向上未发现 " + CONTRACT_PATH);
-    }
-
-    private static Path repoFile(String repoRelative) {
-        return repoRoot().resolve(repoRelative);
-    }
 }

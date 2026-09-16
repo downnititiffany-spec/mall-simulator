@@ -23,6 +23,7 @@ import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
 import com.graduation.analytics.source.dto.SourceRegistryView;
 import com.graduation.analytics.source.entity.SourceRegistry;
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +36,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -316,7 +316,7 @@ class IngestionBoundaryMatrixTest {
                 + "\"paid_at\":\"2026-09-21T09:30:00+08:00\"}}";
         switchSource(4L);
         stubRun(landingRoot, "mock-mall", "1.0", LEGACY_PROFILE_PATH, List.of(legacy));
-        IngestionService.RunResult b = service(repoRoot()).runOne(TraceContext.create());
+        IngestionService.RunResult b = service(RepoRoot.path()).runOne(TraceContext.create());
 
         assertThat(a.batchId()).isEqualTo(101L);
         assertThat(b.batchId()).as("每个源各自成批次").isEqualTo(102L);
@@ -356,7 +356,7 @@ class IngestionBoundaryMatrixTest {
         // S2-03：正式采集只使用"已激活"的画像。本用例的源 3 是 v2（需要激活记录），
         // 源 4 走 v1 只读兼容（在激活门之前就返回 legacy），因此只需要源 3 的激活记录。
         SourceMapper sourceMapper = new SourceMapper(profileRoot.toString(),
-                repoFile(CONTRACT_PATH).toString(), CLOCK, objectMapper,
+                RepoRoot.path(CONTRACT_PATH).toString(), CLOCK, objectMapper,
                 TestActiveMappingPointerStore.withActive(3L, SOURCE_CODE, PROFILE_PATH, "2.0",
                         MappingHash.sha256Hex(V2_PROFILE)));
         LocalFileIngestor ingestor = new LocalFileIngestor(checkpointMapper, quarantineRecordMapper,
@@ -458,18 +458,4 @@ class IngestionBoundaryMatrixTest {
         Files.writeString(file, text, StandardCharsets.UTF_8);
     }
 
-    /** 契约文件是仓库里的中立真相（只读）；已登记的仓库根查找重复项，见 S2-02A 用例同款注释。 */
-    private static Path repoRoot() {
-        Path start = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-        for (Path dir = start; dir != null; dir = dir.getParent()) {
-            if (Files.isRegularFile(dir.resolve(CONTRACT_PATH))) {
-                return dir;
-            }
-        }
-        throw new IllegalStateException("找不到仓库根：从 " + start + " 向上未发现 " + CONTRACT_PATH);
-    }
-
-    private static Path repoFile(String repoRelative) {
-        return repoRoot().resolve(repoRelative);
-    }
 }

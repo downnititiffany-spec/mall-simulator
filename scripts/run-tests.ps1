@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 980
+  'analytics-server'        = 983
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -549,6 +549,32 @@ $BaselineDefault = [ordered]@{
 #   未改任何命令语义（`spark`／`isolated` 档**未重跑**）。
 #   详见 docs/acceptance/s3-44-ai-provider-http-client-timeout-20260916/。
 $BaselineSpark = 308
+# S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
+#   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
+#   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
+#   ＋ 5 处本地 walk-up 全部删除并改调唯一所有者 `RepoRoot`（`MappingTestSupport.repoFile` 保留为**转发**
+#   方法，4 个测试类仍在用）＋ **新增**结构守卫 `RepoRootSingleOwnerTest`（3 条：①全 analytics-server
+#   测试树 walk-up 所有者集合**恰好**＝`RepoRoot.java`、生产树零命中；②被收编 5 文件不得再自持 walk-up
+#   且必须引用 RepoRoot；③所有者真的定位到被 pin 的契约文件）。零连库、零外网、零契约变更。
+#   **量数轮 `s345-1`**：analytics-server `983 (F=1 E=0 S=1)` 明细 `93+**353**+169+97+114+157` ⇒
+#   `DRIFT(基线 980)`，**+3 全部落在 connection-ingestion（350→353）＝本轮新守卫 3 条**（被收编的 5 个
+#   测试类用例数一字未变）；mall-simulator 13／synthetic-data-generator 106 均 MATCH；唯一红仍是已登记
+#   环境性用例 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（F=1；expected 43 was 0，
+#   未修、未用开关掩盖）—— 该用例物理位于 **platform-app** 模块（包名仍是 `com.graduation.analytics.ingestion`），
+#   故红计入 platform-app 的 157（该模块 `Tests run: 157, Failures: 1`）；摘要里的 **S=1 与它无关**，
+#   是 connection-ingestion 的**既有** 1 条 skip（`mapping.dryrun.SampleRefPolicyTest`，S3-44 轮同款）；
+#   **更正 S3-44 注释**里「connection-ingestion F=1」属**模块归属笔误**（该轮 350 与本轮 353 均 F=0）；
+#   该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **analytics-server 980→983**（connection-ingestion 350→353，+3；其余五模块 93/169/97/114/157 未变）；
+#   **三棵树 1099→1102**。
+#   边界（诚实记录，不得越界表述）：① 守卫只覆盖 **analytics-server 的 Java 测试树**，**不含** `spark-jobs`
+#   （Scala／JDK8，另有 `RepoRootSingleOwnerSpec` 守护）与两个**独立 Maven 工程**（`mall-simulator` 的
+#   `user.dir` 父目录假设、`synthetic-data-generator` 的 Java walk-up）⇒ 那 2 处仍是 **B 类待总控裁决**
+#   （本轮未动）；② 判据是**源码文本片段**（字符串拼装防自匹配）＋**集合相等**，**不是**语义等价性证明
+#   ——把所有者改写成等价 while 循环会让 ① 变红（实测探针 P2，actual=[]），**这正是**「防恒真」的代价；
+#   ③ ③ 只证明「所有者定位到被 pin 的那份契约文件」，**不**证明各消费者读到的内容都正确；④ 本文件是
+#   **门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`spark`／`isolated` 档**未重跑**）。
+#   详见 docs/acceptance/s3-45-repo-root-single-owner-20260916/。
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

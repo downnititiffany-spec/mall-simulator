@@ -2,6 +2,7 @@ package com.graduation.analytics.mapping;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.testsupport.RepoRoot;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,7 +10,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,9 +22,9 @@ import static org.assertj.core.api.Assertions.fail;
  * <p>契约真相来自中立目录 {@code contract-specs/schemas/canonical-event.v1.schema.json}（只读），
  * 测试**不复制**契约内容；v2 测试画像放在 {@code src/test/resources/s2-01a/}。</p>
  *
- * <p>注意：{@code com.graduation.analytics.testsupport.RepoRoot} 位于 platform-common 的 test
- * 作用域，本模块看不到，因此此处保留一个最小「向上找仓根」实现（只在测试代码里，共 10 行）。
- * 若将来把 RepoRoot 提到主构件或 test-jar，应改用它并删除本实现（已在回报中登记）。</p>
+ * <p>S3-45 起「向上找仓根」统一走 platform-common **测试作用域**的唯一所有者
+ * {@code com.graduation.analytics.testsupport.RepoRoot}（本模块 pom 已引其 {@code test-jar}）：
+ * 本类不再自持 walk-up，{@code repoFile}/{@code repoText} 只是转发该唯一所有者。</p>
  */
 final class MappingTestSupport {
 
@@ -125,7 +125,7 @@ final class MappingTestSupport {
     }
 
     static Path repoFile(String repoRelative) {
-        return repoRoot().resolve(repoRelative);
+        return RepoRoot.path(repoRelative);
     }
 
     static String repoText(String repoRelative) {
@@ -140,13 +140,4 @@ final class MappingTestSupport {
         return repoFile("contract-specs/schemas/canonical-event.v1.schema.json");
     }
 
-    private static Path repoRoot() {
-        Path start = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-        for (Path dir = start; dir != null; dir = dir.getParent()) {
-            if (Files.isRegularFile(dir.resolve("contract-specs/schemas/canonical-event.v1.schema.json"))) {
-                return dir;
-            }
-        }
-        throw new IllegalStateException("找不到仓库根：从 " + start + " 向上未发现 contract-specs/schemas/canonical-event.v1.schema.json");
-    }
 }
