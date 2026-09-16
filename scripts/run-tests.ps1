@@ -196,7 +196,16 @@ $BaselineDefault = [ordered]@{
 #     净额无 NULL/负数且退款全 NULL 地区 net = sale；运行期表形含 net_sale_amount）
 #   + DwsAdsChainExecSpec 的 region oracle/读回补 net（既有用例内加断言，条数不变）
 #   ⇒ spark 240→244。纯 Spark 测试侧 + `warehouse/ddl/03-dws.sql` 文本，未连库、未改任何 Flyway 迁移。
-$BaselineSpark = 244
+# S3-13：DWD/DIM 物理表形的**三方一致**守卫（与 S3-11 同型，覆盖 DWD 3 张 + DIM 2 张有所有者的表）。
+#   新增 DwdDimSchemaOwnerSpec（10 条：01-dwd.sql/02-dims.sql 参考副本↔唯一所有者逐列（名/类型/序）、
+#   分区列 dt STRING 且不混进普通列、两份参考副本禁 ALTER 旁路、写入投影列序（DwdSql/DimSql/TradeDwdJob）、
+#   动态分区列必须落 SELECT 末位**且错序必须被检出**（守卫自检）、每表恰好一条 INSERT OVERWRITE（第二所有者扫描）、
+#   冻结快照、参考副本多出的 3 张 DIM 表白名单（dim_date/dim_region/dim_metric：无所有者且零写入）、表集一致）
+#   ⇒ spark 244→254。**含 1 处生产 SQL 改动**：TradeDwdJob.orderDetailInsertSql 的 4 个投影元素补显式别名
+#   （order_id/user_id/product_id/quantity）—— 位置写入下别名惰性、取值断言不变（DimDwdChainExecSpec/
+#   DwsAdsChainExecSpec 全绿即为实测依据），目的是让整条投影列序可被静态守卫逐位对账。
+#   纯 Spark 测试侧 + 该 SQL 文本，未连库、未改任何 Flyway 迁移、未改任何 DDL 表形。
+$BaselineSpark = 254
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
