@@ -23,6 +23,7 @@
           <div class="label">{{ m.metricName || m.metricCode }}</div>
           <div class="value">{{ m.text }}<span class="unit">{{ m.unit }}</span></div>
           <div v-if="m.periodText" class="period">{{ m.periodText }}</div>
+          <div v-if="m.dictionaryMissing" class="period">{{ DICTIONARY_MISSING_NOTE }}</div>
         </div>
       </div>
       <div v-if="windowNote" style="font-size:12px;color:#94A3B8;margin:-4px 0 8px">{{ windowNote }}</div>
@@ -83,6 +84,8 @@ import { salesTrendOption, activeTrendOption, NET_SALE_NOTE } from '../utils/cha
 import { exportAnalysisCsv } from '../utils/exportCsv'
 // S3-40：窗口口径（repeat_rate）的观察期解析与限制说明唯一属主在 utils/metricPeriod.js，视图只引用不自拼
 import { periodText, WINDOW_METRIC_NOTE } from '../utils/metricPeriod'
+// S3-41：清单外指标的量纲/展示名唯一属主在 utils/metricDisplay.js，视图只引用不自拼
+import { displayMetricName, formatOutsideMetricValue, DICTIONARY_MISSING_NOTE } from '../utils/metricDisplay'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
 
@@ -116,6 +119,10 @@ const cards = computed(() => {
   const list = Array.isArray(data.value.metrics) ? data.value.metrics : []
   const byCode = {}
   for (const m of list) if (m && m.metricCode) byCode[m.metricCode] = m
+  // S3-41：字典缺该码时明示「字典未登记口径」——字典整体为空时不逐卡重复（口径面板已统一说明）
+  const dict = Array.isArray(data.value.metricDictionary) ? data.value.metricDictionary : []
+  const dictCodes = new Set(dict.map((d) => d && d.metricCode).filter(Boolean))
+  const dictionaryMissing = (code) => dict.length > 0 && !dictCodes.has(code)
   const out = []
   for (const meta of CARD_META) {
     const m = byCode[meta.code]
@@ -123,12 +130,19 @@ const cards = computed(() => {
     const text = meta.percent
       ? formatPercent(m.value)
       : (meta.digits === 0 ? formatInteger(m.value) : formatNumber(m.value, meta.digits))
-    out.push({ metricCode: meta.code, metricName: meta.name || m.metricName, unit: m.unit || meta.unit, text, periodText: periodText(m.period) })
+    out.push({ metricCode: meta.code, metricName: meta.name || m.metricName, unit: m.unit || meta.unit, text, periodText: periodText(m.period), dictionaryMissing: dictionaryMissing(meta.code) })
   }
-  // 后端返回但不在固定清单内的指标也照实展示
+  // 后端返回但不在固定清单内的指标也照实展示：量纲/展示名见 utils/metricDisplay.js（比例不显示成裸小数）
   for (const m of list) {
     if (!m || !m.metricCode || CARD_META.some((c) => c.code === m.metricCode)) continue
-    out.push({ metricCode: m.metricCode, metricName: m.metricName || m.metricCode, unit: m.unit || '', text: formatNumber(m.value, 2), periodText: periodText(m.period) })
+    out.push({
+      metricCode: m.metricCode,
+      metricName: displayMetricName(m.metricCode, m.metricName),
+      unit: m.unit || '',
+      text: formatOutsideMetricValue(m.metricCode, m.value),
+      periodText: periodText(m.period),
+      dictionaryMissing: dictionaryMissing(m.metricCode)
+    })
   }
   return out
 })
