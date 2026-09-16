@@ -101,6 +101,43 @@ npm run verify
 - package script 与文档口径是否漂移；
 - 是否存在另一个实际前端入口绕过该统一命令。
 
+### V-003 — S3-54 AI 结论 summary 展示链
+
+- **Status**：PENDING
+- **Implementation baseline**：`80623a335e9df1b9fc758cb22172d72032b312db`
+- **Implementation commit**：`80623a3`
+- **Area**：`web/src/utils/context.js`、`web/src/views/AiAssistant.vue`、`web/tests/aiSummaryContext.test.js`
+- **Risk**：低；只修前端只读展示链，不改后端契约、LLM 生成、SQL、安全或数据库。
+- **Blocks further development**：NO。
+
+#### Invariants
+
+1. 页面结论只来自 `explanation.summary`；
+2. summary 缺失/空白时返回 `null`，页面显示“后端未给出结论文本”；
+3. `query.summary`、查询行或 evidence 字段不得替代 ExplanationResult.summary；
+4. 不在前端生成、推导或改写业务结论。
+
+#### Code Agent later
+
+在精确 SHA 上执行：
+
+```bash
+cd web
+npm run verify
+```
+
+返回测试总数、失败数、build 结果和日志位置。
+
+#### Codex Work later
+
+重点攻击：
+
+- 后端 summary 为 `''`、空白、null、非字符串；
+- query/evidence 同时出现伪造 summary 时是否被错误采用；
+- 页面是否还存在其它结论渲染路径绕过 `evidenceContext.summary`；
+- summary 包含 HTML/特殊字符时 Vue 是否按文本安全渲染；
+- developer tests 是否只覆盖工具函数而未钉住页面接线。
+
 ## 3. 批量验证触发点
 
 满足以下任一条件时优先集中跑本文件中的 PENDING 队列：
