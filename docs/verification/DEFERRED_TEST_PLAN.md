@@ -64,6 +64,43 @@ npm run build
 
 `docs/acceptance/s3-53-ai-evidence-id-fallback-20260916/TEST-HANDOFF.md`
 
+### V-002 — Web 统一验证入口
+
+- **Status**：PENDING
+- **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
+- **Implementation commits**：`e36a350`（`npm run verify`）+ `db810d6`（结构守卫）+ `351fee9`（Decision Log D-011）
+- **Area**：`web/package.json`、`web/tests/packageScripts.test.js`
+- **Risk**：低；只增加前端验证入口与守卫，不改生产运行时代码。
+- **Blocks further development**：NO。
+
+#### Invariants
+
+1. 统一入口唯一命令为 `npm run verify`；
+2. 先执行 `npm test`，成功后再执行 `npm run build`；
+3. 不把 build 成功替代单测通过；
+4. 该入口不宣称覆盖真实浏览器/E2E/后端联调。
+
+#### Code Agent later
+
+在精确 SHA 上执行：
+
+```bash
+cd web
+npm run verify
+```
+
+返回 Node/npm 版本、测试总数、失败数、build exit code 与日志位置。
+
+#### Codex Work later
+
+重点攻击：
+
+- 在单测失败时 build 是否仍被错误执行；
+- `verify` 是否出现递归调用自身；
+- Windows / PowerShell / cmd 下 npm script 链是否符合预期；
+- package script 与文档口径是否漂移；
+- 是否存在另一个实际前端入口绕过该统一命令。
+
 ## 3. 批量验证触发点
 
 满足以下任一条件时优先集中跑本文件中的 PENDING 队列：
