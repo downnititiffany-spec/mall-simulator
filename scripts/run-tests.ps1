@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 994
+  'analytics-server'        = 996
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -704,6 +704,46 @@ $BaselineSpark = 308
 #   语义，需裁决）；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`spark`／`isolated` 档
 #   **未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
 #   详见 docs/acceptance/s3-49-spark-rule-code-registry-guard-20260916/。
+# S3-50：S3-49 守卫的**逃逸面**收口（判据①只看得见字面量，看不见「码被动态拼出来」与「码换了宿主形态」）
+#   ——A 类（纯加性）：只改测试支撑/守卫两个类（SparkRuleCodeScan 加「宿主调用」槽位清点与调用点扫描；
+#   SparkRuleCodeRegistryGuardTest 加 2 条判据），**零生产代码改动、零契约改动、不连库**。
+#   判据④（qualityCheckCallSitesTakeStaticLiteralFirstArgs）：每个 `QualityCheck(` 调用点的首参必须是静态
+#   双引号字面量；类型声明（`case class QualityCheck(`）必须被单独认出来，否则定义点会被算成调用点。
+#   判据⑤（registeredCodeLiteralSitesHaveOnlyKnownSlotForms）：**已登记码**的字面量只能落在三类已清点
+#   槽位（`QualityCheck` 首参／策略表 `Set(`／按码查表 `.get(`），第四种形态即红；首参槽位数还必须与
+#   调用点数**自洽**（两次独立扫描互证）；策略表/按码查表槽位各有实测下限。
+#   实测（量数探针，量完即删、无残留）：36 个 .scala；大写 token 去重 52、站点 156；`QualityCheck(` 出现点
+#   21 ＝ 20 调用点（首参**全部**静态字面量）＋ 1 类型声明（job/JobResult.scala:20）；已登记码站点 24
+#   （去重 21）＝ 首参 20 ＋ AdsQualityJob.scala:94 策略表 3 ＋ :107 查表 1（宿主 `byRule.get`）；
+#   三类之外 UNKNOWN 的**已登记码**槽位＝0 ⇒ 今日逃逸面为空，但此前**没有任何判据钉住它**。
+#   定向真跑：Tests run: 29, Failures: 0, Errors: 0, Skipped: 0／BUILD SUCCESS（守卫 6 条 ＋
+#   RuleSeverityTest 14 ＋ WarehouseNameLiteralGateTest 9；`-Dtest` 的类名必须用逗号分隔）。
+#   变异探针 7 条（锚点命中均 =1、还原一致=True、spark-jobs 无残留）：P1 首参改动态构码 ⇒ 判据④红
+#   （＋⑤红：宿主随之变异）；P2 策略表 `Set(` 改 `Set.apply(` ⇒ ⑤红；P3 查表 `byRule.get(` 改
+#   `byRule.apply(` ⇒ ⑤红；P4 类型声明改名 ⇒ ④红；P5 **反例探针**（首参换行后仍是字面量）⇒ **不红**
+#   （证明判据不误报）；P6 新增第四种形态 `Map("CODE" -> 1)` ⇒ ⑤红；P7 策略表 3 码整块注释掉 ⇒ ⑤红
+#   （同时证明剥注释生效）。**P3 是探针发现的真实缺陷**：首版「120 字符窗口最近锚点」口径下，
+#   AdsQualityJob.scala:106 里无关的 `byRule.get(r)` 距 :107 的 `"EVENT_ID_UNIQUE"` 约 95 字符，
+#   被误判为宿主 ⇒ 该变异**不红**（探针值为绿）；改为「平衡括号回扫取宿主调用 ＋ 精确被调名」后
+#   P2/P3/P6/P7 才按预期红。
+#   **量数轮 `s350-1`**（跑的是首版口径；用例数同为 6 ⇒ 计数依据仍成立，收口轮跑最终实现）：
+#   analytics-server `996 (F=1 E=0 S=1)` 明细 `99+353+172+97+118+157` ⇒ `DRIFT(基线 994)`，
+#   **+2 全部落在 platform-common**（97→99，其余模块一字未变）；mall-simulator 13 MATCH；
+#   synthetic-data-generator 110 MATCH；`default 三棵树 1119（基线 1117）`；唯一红仍是已登记环境性用例
+#   （`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1；expected 43 was 0）；
+#   该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **analytics-server 994→996**（+2）；**三棵树 1117→1119**。
+#   边界（诚实记录，不得越界表述）：① 无经典 RED（同 S3-49：被守性质在写断言之前就成立，属
+#   characterization guard，「首跑即绿」不构成判据有效的证据）：非恒真性由上述 7 条探针逐条证明；
+#   ② 覆盖边界本轮实测收口：`spark-jobs/src/main/resources` 与 `src/test/resources` **不存在**（0 文件
+#   ⇒ 无覆盖对象）；`src/test` 树（39 个 .scala／389 处大写命中／97 个去重 token，多为夹具码）
+#   **刻意排除**（测试里的码是断言期望值，不是第二处所有者 —— 与库名门禁同口径）；
+#   ③ 仍**不解析 Scala 语法**：槽位宿主＝文本平衡括号回扫（字符串里的括号可能干扰），
+#   也**不证明**规则语义/阈值正确、**不证明**真集群上这些规则真的会跑（spark 档本轮未重跑）；
+#   ④ `AdsQualityJob.scala:94` 的第二声明仍**只登记不合并**（S3-49 台账③，待裁决）；
+#   ⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`spark`／`isolated` 档
+#   **未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
+#   详见 docs/acceptance/s3-50-spark-rule-code-slot-closure-20260916/。
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

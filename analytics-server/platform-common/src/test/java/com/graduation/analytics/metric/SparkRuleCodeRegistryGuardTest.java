@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 读侧会按 §7.3.1 判「未登记规则」而**拒发**，当时是**人工**发现的。同族的另一半
  * （{@code MetricAdsSpecTest} 硬编码 Java 列清单镜像）已由 S3-30 改为读唯一所有者；本类收口剩下一半。</p>
  *
- * <h2>三条判据（缺一不可）</h2>
+ * <h2>五条判据（缺一不可）</h2>
  * <ol>
  *   <li>{@link #sparkLiteralsAreRegisteredCodesOrDeclaredNonRuleTokens()}：Spark 生产源码里**每个**
  *       大写字面量，要么**已登记**，要么在**显式非规则 token 表**里。未登记的新码必然红
@@ -33,6 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>{@link #registeredSparkBearingCodesStillHaveSparkSites()}：**反向漂移** —— 登记表里
  *       由 Spark 承载的码（前缀族 {@code ADS_/DWS_/PUB_/MXP_}）必须**仍有** Spark 站点。
  *       只做正向会漏掉「规则被删、登记表留着」这类「登记为阻断但实际不执行」的静默失效。</li>
+ *   <li>{@link #qualityCheckCallSitesTakeStaticLiteralFirstArgs()}（S3-50）：**逃逸面①** ——
+ *       判据①只看得见字面量，看不见「码是拼出来的」。本判据要求每个 {@code QualityCheck} 调用点的
+ *       首参是静态双引号字面量，并把**类型声明**单独认出来（否则定义点会被当成调用点，判据失真）。</li>
+ *   <li>{@link #registeredCodeLiteralSitesHaveOnlyKnownSlotForms()}（S3-50）：**逃逸面②** ——
+ *       已登记码的字面量只允许出现在**三类已清点槽位**（{@code QualityCheck} 首参／策略表 {@code Set(}／
+ *       按码查表 {@code .get(}），出现第四种形态即红：新槽位形态必须显式登记，不得静默放过；
+ *       首参槽位数还必须与调用点数**自洽**（两次独立扫描互证）。</li>
  * </ol>
  *
  * <h2>诚实表述（不得越界）</h2>
@@ -41,13 +48,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  *       （实测 21 个字面量全部已登记）。「首跑绿」本身**不构成**判据有效的证据；
  *       非空性由 {@link #commentOnlyMentionsAreIgnoredWhileRealLiteralsAreFlagged()} 夹具
  *       与登记件 §5.2 的变异探针逐条证明（每条探针单独注入、单独红、注回后复原一致）。</li>
- *   <li>本门禁**只覆盖** {@code spark-jobs/src/main/scala} 的**双引号整串**大写 token；
- *      拼接码、{@code src/main/resources}、真集群运行期行为都**未覆盖、未测**。</li>
+ *   <li>本门禁**只覆盖** {@code spark-jobs/src/main/scala} 的**双引号整串**大写 token。
+ *       S3-50 已实测收口这条边界：{@code src/main/resources}／{@code src/test/resources}
+ *       **不存在**（0 文件 ⇒ 无覆盖对象）；{@code src/test} 树（39 个 {@code .scala}、389 处大写命中、
+ *       97 个去重 token，多为夹具码）是**刻意排除**（测试里的码是断言期望值，不是第二处所有者）。
+ *       真集群运行期行为、Spark 侧语义正确性仍**未覆盖、未测**。</li>
  *   <li>本门禁**不证明**规则语义正确、不证明阈值合理、不证明真集群上这些规则真的会跑
  *       —— 它只证明「两侧的码字面量集合没有各说各话」。</li>
  * </ul>
  *
- * <p>登记件：{@code docs/acceptance/s3-49-spark-rule-code-registry-guard-20260916/DESIGN-DIFF-REGISTER-20260916.md}。</p>
+ * <p>登记件：{@code docs/acceptance/s3-49-spark-rule-code-registry-guard-20260916/DESIGN-DIFF-REGISTER-20260916.md}
+ * （判据①②③）与 {@code docs/acceptance/s3-50-spark-rule-code-slot-closure-20260916/DESIGN-DIFF-REGISTER-20260916.md}（判据④⑤）。</p>
  */
 class SparkRuleCodeRegistryGuardTest {
 
@@ -71,6 +82,23 @@ class SparkRuleCodeRegistryGuardTest {
      * 同时反向检查这里的每条豁免：必须已登记，且**真的**不在 Spark 里（否则就是陈旧豁免）。</p>
      */
     private static final Set<String> REGISTERED_WITHOUT_SPARK_SITE = Set.of();
+
+    // ── S3-50 逃逸面标尺（判据④⑤）──────────────────────────────────────────
+
+    /** 非空性标尺：{@code QualityCheck(} **出现点**下限（实测 21 ＝ 20 调用点 ＋ 1 类型声明） */
+    private static final int MIN_QUALITY_CHECK_OCCURRENCES = 21;
+
+    /** 非空性标尺：{@code QualityCheck(} 调用点下限（实测 20） */
+    private static final int MIN_QUALITY_CHECK_CALL_SITES = 20;
+
+    /** 非空性标尺：**已登记码**的槽位下限（实测 24 ＝ 20 首参 ＋ 3 策略表 ＋ 1 按码查表） */
+    private static final int MIN_REGISTERED_SLOTS = 24;
+
+    /** 策略表（{@code Set(}）槽位下限（实测 3：{@code AdsQualityJob} 的发布阻断策略表） */
+    private static final int MIN_STRATEGY_SET_SLOTS = 3;
+
+    /** 按码查表（{@code .get(}）槽位下限（实测 1：{@code AdsQualityJob} 的 {@code byRule.get}） */
+    private static final int MIN_MAP_GET_SLOTS = 1;
 
     /**
      * 非规则 token 表：形态像规则码、但**不是**规则码的大写字面量（实测闭集，2026-09-16 全量扫描）。
@@ -203,6 +231,65 @@ class SparkRuleCodeRegistryGuardTest {
         String raw = SparkRuleCodeScan.read(fixture);
         assertThat(raw).as("行注释里的码仍在原文里").contains("S349_COMMENT_ONLY_PROBE");
         assertThat(raw).as("块注释里的码仍在原文里").contains("S349_BLOCK_COMMENT_PROBE");
+    }
+
+    @Test
+    @DisplayName("逃逸面①：QualityCheck 调用点的首参必须是静态双引号字面量（动态构码无处藏身）")
+    void qualityCheckCallSitesTakeStaticLiteralFirstArgs() {
+        List<SparkRuleCodeScan.CallSite> sites = SparkRuleCodeScan.callSites(RepoRoot.path());
+        List<SparkRuleCodeScan.CallSite> declarations =
+                sites.stream().filter(SparkRuleCodeScan.CallSite::typeDeclaration).toList();
+        List<SparkRuleCodeScan.CallSite> calls =
+                sites.stream().filter(s -> !s.typeDeclaration()).toList();
+        List<SparkRuleCodeScan.CallSite> dynamicArgs =
+                calls.stream().filter(s -> !s.staticLiteral()).toList();
+
+        assertThat(sites).as("扫描面必须真的认出 QualityCheck( 出现点（过少说明扫描面失效）")
+                .hasSizeGreaterThanOrEqualTo(MIN_QUALITY_CHECK_OCCURRENCES);
+        assertThat(declarations).as("类型声明必须恰好被认出来，否则「调用点」口径会把定义点也算进去 ⇒ 判据失真：%n%s", join(sites))
+                .isNotEmpty();
+        assertThat(calls).as("QualityCheck 调用点下限（实测 20）").hasSizeGreaterThanOrEqualTo(MIN_QUALITY_CHECK_CALL_SITES);
+
+        assertThat(dynamicArgs)
+                .as("下列 QualityCheck 调用点的首参**不是**静态双引号字面量 ⇒ 规则码可以被动态拼出来，"
+                        + "而判据①（字面量 ↔ 登记表）看不见这种码（Spark 侧写了、登记表里没有，读侧按 §7.3.1 拒发）。"
+                        + "修法：首参写成静态字面量并登记；确需动态构码必须先设计「运行期码集合」口径，"
+                        + "**不得**靠放宽本判据变绿。命中：%n%s", join(dynamicArgs))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("逃逸面②：已登记码只能落在已清点的三类槽位上（形态闭集，新形态必须显式登记）")
+    void registeredCodeLiteralSitesHaveOnlyKnownSlotForms() {
+        List<SparkRuleCodeScan.Slot> slots = SparkRuleCodeScan.slots(RepoRoot.path()).stream()
+                .filter(slot -> RuleSeverity.registered(slot.code()))
+                .toList();
+        List<SparkRuleCodeScan.CallSite> calls = SparkRuleCodeScan.callSites(RepoRoot.path()).stream()
+                .filter(s -> !s.typeDeclaration())
+                .toList();
+
+        assertThat(slots).as("已登记码的槽位下限（实测 24；过少说明扫描面失效或码被搬走）")
+                .hasSizeGreaterThanOrEqualTo(MIN_REGISTERED_SLOTS);
+
+        assertThat(slots.stream().filter(s -> SparkRuleCodeScan.FORM_UNKNOWN.equals(s.form())).toList())
+                .as("出现了**未知形态**的已登记码字面量（既不是 QualityCheck 首参、也不是策略表 Set(...)、"
+                        + "也不是按码查表 .get(...)）⇒ 「码槽位形态」的闭集被打破：新形态必须在本判据里显式登记"
+                        + "（并在登记件写清它的码所有者），**不得**静默放过。命中：%n%s",
+                        join(slots.stream().filter(s -> SparkRuleCodeScan.FORM_UNKNOWN.equals(s.form())).toList()))
+                .isEmpty();
+
+        long argSlots = slots.stream().filter(s -> SparkRuleCodeScan.FORM_QUALITY_CHECK_ARG.equals(s.form())).count();
+        assertThat(argSlots).as("首参槽位数必须等于调用点数（两次独立扫描必须自洽）: 槽位=%s 调用点=%s", argSlots, calls.size())
+                .isEqualTo(calls.size());
+
+        assertThat(slots.stream().filter(s -> SparkRuleCodeScan.FORM_STRATEGY_SET.equals(s.form())).count())
+                .as("策略表 Set(...) 槽位不得少于实测下限 %s ⇒ 低于它就是「策略表被改成动态构码或被整块删除」，"
+                        + "这类码同样会进库、同样被读侧按登记表判定", MIN_STRATEGY_SET_SLOTS)
+                .isGreaterThanOrEqualTo((long) MIN_STRATEGY_SET_SLOTS);
+
+        assertThat(slots.stream().filter(s -> SparkRuleCodeScan.FORM_MAP_GET.equals(s.form())).count())
+                .as("按码查表 .get(...) 槽位不得少于实测下限 %s", MIN_MAP_GET_SLOTS)
+                .isGreaterThanOrEqualTo((long) MIN_MAP_GET_SLOTS);
     }
 
     // ── 判据与小工具 ────────────────────────────────────────────────────────

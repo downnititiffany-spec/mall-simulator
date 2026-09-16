@@ -55,6 +55,55 @@ final class SparkRuleCodeScan {
     /** 大写字面量形态：至少 4 字符，避免把 {@code "ADS"}/{@code "DWS"} 这类层名短 token 混进来 */
     static final Pattern UPPER_LITERAL = Pattern.compile("\"([A-Z][A-Z0-9_]{3,})\"");
 
+    // ── S3-50 逃逸面：槽位形态清点 ─────────────────────────────────────────────
+
+    /** 槽位形态①：{@code QualityCheck("CODE", …)} 首参（实测 20 处） */
+    static final String FORM_QUALITY_CHECK_ARG = "QUALITY_CHECK_ARG";
+
+    /** 槽位形态②：策略表 {@code Set("CODE", …)}（实测 3 处，同一 `Set` 内） */
+    static final String FORM_STRATEGY_SET = "STRATEGY_SET";
+
+    /** 槽位形态③：按码查表 {@code map.get("CODE")}（实测 1 处） */
+    static final String FORM_MAP_GET = "MAP_GET";
+
+    /** 未知形态：三类之外 —— 守卫必须红（新增形态须显式登记） */
+    static final String FORM_UNKNOWN = "UNKNOWN";
+
+    /** 宿主被调名①：{@code QualityCheck}（精确匹配） */
+    static final String FORM_HOST_QUALITY_CHECK = "QualityCheck";
+
+    /** 宿主被调名②：{@code Set}（**精确匹配**：{@code ruleSet(}／{@code Set.apply(} 都不算策略表） */
+    static final String FORM_HOST_SET = "Set";
+
+    /** 宿主被调名后缀③：{@code .get}（{@code byRule.get("CODE")} 这类按码查表） */
+    static final String FORM_HOST_MAP_GET_SUFFIX = ".get";
+
+    /**
+     * 宿主调用判定（**平衡括号回扫**，不是「窗口内最近关键词」）。
+     *
+     * <p>从这个字面量向左回扫，遇到 {@code )} 记深度 ＋1、遇到深度 0 的 {@code (} 即为**宿主调用的左括号**，
+     * 取它前面的被调名（可带限定名，如 {@code byRule.get}）。</p>
+     *
+     * <p><b>为什么不用「固定窗口内最近锚点」</b>：S3-50 的 P3 变异探针实测暴露该口径不可靠 ——
+     * {@code AdsQualityJob.scala:107} 的 {@code byRule.get("EVENT_ID_UNIQUE")} 之前约 95 字符处
+     * 还有一个**无关的** {@code byRule.get(r)}（L106 的消息拼接里），窗口口径会把那个 {@code .get(}
+     * 当作宿主，于是「把查表键改成动态构码」这条变异**不红**（探针值为绿）。平衡回扫取的是**真正的宿主**，
+     * 该变异随即变红。</p>
+     */
+    private static final int HOST_LOOKBACK = 24;
+
+    /** 宿主调用标识符（取紧贴宿主 {@code (} 之前的标识符/限定名尾段） */
+    private static final Pattern HOST_IDENTIFIER = Pattern.compile("[A-Za-z0-9_$.]*$");
+
+    /** {@code QualityCheck(} 出现处（既可能是调用点，也可能是类型声明） */
+    private static final Pattern QUALITY_CHECK_CALL = Pattern.compile("QualityCheck\\s*\\(");
+
+    /** 类型声明前缀：{@code case class QualityCheck(} / {@code class QualityCheck(} */
+    private static final Pattern TYPE_DECLARATION = Pattern.compile("(?:case\\s+)?class\\s+$");
+
+    /** 首参快照取多长（仅供失败信息定位，不参与判据） */
+    private static final int ARG_SNAPSHOT = 40;
+
     private SparkRuleCodeScan() {
     }
 
@@ -82,6 +131,23 @@ final class SparkRuleCodeScan {
         }
     }
 
+    /** 一处规则码槽位：**宿主调用**（如 {@code QualityCheck}/{@code Set}/{@code byRule.get}）与由此判定的形态 */
+    record Slot(String file, int line, String code, String host, String form) {
+        @Override
+        public String toString() {
+            return file + ":" + line + " -> " + code + " [宿主 " + host + " ⇒ " + form + "]";
+        }
+    }
+
+    /** 一处 {@code QualityCheck(} 出现点：**调用点** 或 **类型声明**（S3-50 首参静态性判据） */
+    record CallSite(String file, int line, String firstArg, boolean staticLiteral, boolean typeDeclaration) {
+        @Override
+        public String toString() {
+            String kind = typeDeclaration ? "类型声明" : (staticLiteral ? "静态字面量首参" : "非字面量首参");
+            return file + ":" + line + " [" + kind + "] " + firstArg;
+        }
+    }
+
     /** 扫描仓根下的 Spark 生产树 */
     static Result scan(Path root) {
         Path dir = root.resolve(SPARK_MAIN);
@@ -100,6 +166,106 @@ final class SparkRuleCodeScan {
         }
         hits.sort(Comparator.comparing(Lit::file).thenComparingInt(Lit::line).thenComparing(Lit::code));
         return new Result(List.copyOf(files), List.copyOf(hits));
+    }
+
+    /**
+     * 槽位清点（S3-50）：Spark 生产树里**每个**大写字面量按其**宿主调用**归类
+     * —— {@code QualityCheck(}／{@code Set(}／{@code …get(}，三者之外一律 {@link #FORM_UNKNOWN}。
+     *
+     * <p>本方法**仍是纯提取**：它不判断「这个 token 是不是规则码」（那是守卫的非规则 token 表与
+     * {@link RuleSeverity#registeredCodes()} 的职责），只给出「若要当规则码用，它的宿主形态是哪一类」。
+     * 守卫据此对**已登记码**的槽位做形态闭集判定。</p>
+     */
+    static List<Slot> slots(Path root) {
+        Path dir = root.resolve(SPARK_MAIN);
+        List<Slot> slots = new ArrayList<>();
+        for (Path file : scalaFiles(dir)) {
+            String rel = root.relativize(file).toString().replace('\\', '/');
+            String stripped = CommentSyntax.strip(read(file), CommentSyntax.SLASH);
+            Matcher m = UPPER_LITERAL.matcher(stripped);
+            while (m.find()) {
+                String host = hostOf(stripped, m.start());
+                slots.add(new Slot(rel, lineAt(stripped, m.start()), m.group(1), host, formOfHost(host)));
+            }
+        }
+        slots.sort(Comparator.comparing(Slot::file).thenComparingInt(Slot::line).thenComparing(Slot::code));
+        return List.copyOf(slots);
+    }
+
+    /** 宿主调用：从这个字面量向左找第一个**未闭合**的 {@code (}，返回它前面的被调名（找不到 ⇒ 空串） */
+    private static String hostOf(String text, int literalStart) {
+        int depth = 0;
+        for (int i = literalStart - 1; i >= 0; i--) {
+            char c = text.charAt(i);
+            if (c == ')') {
+                depth++;
+            } else if (c == '(') {
+                if (depth == 0) {
+                    String head = text.substring(Math.max(0, i - HOST_LOOKBACK), i);
+                    Matcher m = HOST_IDENTIFIER.matcher(head);
+                    return m.find() ? m.group() : "";
+                }
+                depth--;
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 宿主被调名 → 槽位形态（**只认精确被调名**）。
+     *
+     * <p>精确匹配是必要的：{@code Set(} 是策略表，但 {@code ruleSet(}/{@code Set.apply(} 不是；
+     * {@code …get(} 只认 {@code x.get(} 这种带限定名的查表调用。</p>
+     */
+    private static String formOfHost(String host) {
+        if (FORM_HOST_QUALITY_CHECK.equals(host)) {
+            return FORM_QUALITY_CHECK_ARG;
+        }
+        if (FORM_HOST_SET.equals(host)) {
+            return FORM_STRATEGY_SET;
+        }
+        if (host.endsWith(FORM_HOST_MAP_GET_SUFFIX)) {
+            return FORM_MAP_GET;
+        }
+        return FORM_UNKNOWN;
+    }
+
+    /**
+     * 全部 {@code QualityCheck(} 出现点（**调用点**与**类型声明**分开标注，按文件/行号排序）。
+     *
+     * <p>{@code staticLiteral} ＝ 首参（跳过空白/换行后）以 {@code "} 开头。这样「规则码能不能被
+     * 动态拼出来」就从「靠人看」变成可判定：非字面量首参在守卫里必然红。</p>
+     */
+    static List<CallSite> callSites(Path root) {
+        Path dir = root.resolve(SPARK_MAIN);
+        List<CallSite> sites = new ArrayList<>();
+        for (Path file : scalaFiles(dir)) {
+            String rel = root.relativize(file).toString().replace('\\', '/');
+            String stripped = CommentSyntax.strip(read(file), CommentSyntax.SLASH);
+            Matcher m = QUALITY_CHECK_CALL.matcher(stripped);
+            while (m.find()) {
+                String before = stripped.substring(Math.max(0, m.start() - 20), m.start());
+                boolean declaration = TYPE_DECLARATION.matcher(before).find();
+                String after = stripped.substring(m.end());
+                String arg = after.length() > ARG_SNAPSHOT ? after.substring(0, ARG_SNAPSHOT) : after;
+                boolean literal = after.stripLeading().startsWith("\"");
+                sites.add(new CallSite(rel, lineAt(stripped, m.start()),
+                        arg.replace('\n', ' ').strip(), literal, declaration));
+            }
+        }
+        sites.sort(Comparator.comparing(CallSite::file).thenComparingInt(CallSite::line));
+        return List.copyOf(sites);
+    }
+
+    /** 1 起始行号 */
+    private static int lineAt(String text, int index) {
+        int line = 1;
+        for (int i = 0; i < index; i++) {
+            if (text.charAt(i) == '\n') {
+                line++;
+            }
+        }
+        return line;
     }
 
     /** {@code src/main/scala} 下的 {@code .scala} 文件（跳过 {@code target}，按路径排序 ⇒ 结果稳定） */
