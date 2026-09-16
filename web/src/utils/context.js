@@ -157,7 +157,7 @@ export function buildFallbackContext(input = {}) {
  * 后端 /ai/queries 不是统一信封：证据在 explanation.evidence（snapshotId/timeRange/definitions 等），
  * 因此这里只搬运证据里真实存在的字段；业务时间、数据更新时间、质量状态、指标口径版本
  * 都不在该接口返回里，一律标为「接口未提供」。
- * @param {{query?: object, explanation?: object}} result
+ * @param {{query?: object, explanation?: object, evidenceId?: string|null}} result
  */
 export function buildAiEvidenceContext(result) {
   const query = isRecord(result && result.query) ? result.query : {}
@@ -177,9 +177,16 @@ export function buildAiEvidenceContext(result) {
   const tables = Array.isArray(evidence.tables) ? evidence.tables : (Array.isArray(query.tables) ? query.tables : [])
   const definitions = pickText(evidence, ['definitions'])
   const timeRange = pickText(evidence, ['timeRange'])
-  // S3-42：证据包 ID 在响应**顶层**（问数分支 explanation.evidence.evidenceId 恒为 null，只有
-  // /ai/explanations 分支才填）；占位/空白按「未提供」处理——它是决策草稿的证据锚点，不能拿占位串当锚点。
-  const evidenceId = isRealSnapshotId(pickText(result, ['evidenceId'])) ? pickText(result, ['evidenceId']) : null
+
+  // S3-53：证据包 ID 的**值属主仍是后端**，这里只做形状兼容，不生成、不改写。
+  // `/ai/queries` 当前正式响应把 evidenceId 放在顶层；`/ai/explanations` 的 EvidencePackage
+  // 则把同一语义字段放在 `explanation.evidence.evidenceId` 形状中。前端先取顶层（保持现有
+  // `/ai/queries` 口径），顶层缺失/占位时再回退到嵌套证据包；两处都无真实值才返回 null。
+  const topLevelEvidenceId = pickText(result, ['evidenceId'])
+  const nestedEvidenceId = pickText(evidence, ['evidenceId'])
+  const evidenceId = isRealSnapshotId(topLevelEvidenceId)
+    ? topLevelEvidenceId
+    : (isRealSnapshotId(nestedEvidenceId) ? nestedEvidenceId : null)
 
   const missing = []
   if (!evidenceSnapshot) {
@@ -212,7 +219,8 @@ export function buildAiEvidenceContext(result) {
       timeRange,
       // AI 证据里的 definitions 是解释提示词版本（explain_v1），不是指标口径版本，分开命名避免混淆
       promptVersion: definitions,
-      // 证据包 ID：决策草稿的 evidence_package_id 锚点来源（顶层字段，占位值已归一为 null）
+      // 证据包 ID：决策草稿的 evidence_package_id 锚点来源。优先顶层，其次嵌套 EvidencePackage；
+      // 占位值已归一为 null，因此页面展示与 draftAnchor 共用同一归一化结果。
       evidenceId
     }
   }
