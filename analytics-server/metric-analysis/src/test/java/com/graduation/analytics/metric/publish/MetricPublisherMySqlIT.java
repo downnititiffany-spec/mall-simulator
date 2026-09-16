@@ -265,6 +265,8 @@ class MetricPublisherMySqlIT {
         hot.put("cart", 1L);
         hot.put("buy", 1L);
         hot.put("rank_no", 1);
+        // S3-07：ADS 行必须携带热度权重定义版本（夹具与该列保持一致，列集合不一致会让本 IT 假红）
+        hot.put("rule_version", "v1");
         rows.put("ads_hot_product_m", List.of(hot));
 
         Map<String, Object> conversion = new LinkedHashMap<>();

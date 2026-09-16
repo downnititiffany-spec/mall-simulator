@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 895
+  'analytics-server'        = 900
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -141,7 +141,18 @@ $BaselineDefault = [ordered]@{
 #     2 条，QualityRuleVersionMigrationScriptTest 加「V23 只追加种子（单条 INSERT IGNORE、不建表/不改列）」
 #     1 条，并随新规则码 MP_EXPORT_CHECKSUM 把种子并集 35→36、登记码 33→34
 #   ⇒ analytics-server 887→895。
-$BaselineSpark = 212
+# S3-07：`ads_hot_product` 接齐**热度权重定义版本**（`rule_version` = 指标字典 `product_heat.definition_version`）
+#   并补齐排行决胜键 `buy DESC`（V2 审计 L178 登记的目标形态 `order by heat desc, buy desc, product_id asc`），
+#   同时把热度公式从「抄两遍」收敛为**一处文字属主**（子查询算 heat_score、窗口按该列排）。
+#   spark 侧新增 AdsHotProductHeatRuleVersionSpec（8 条：夹具热并列前提 / 列清单末尾 rule_version 且仍 8 张表 /
+#     每行版本 = v1 / heat_score 与独立复算逐位相等且分量列透传 / 两种物理落下 rank 完全一致
+#     {103→1,102→2,101→3,105→4,104→5} / TopN=2 取 {103,102} 不再随扫描序漂移 / SQL 文本钉住公式只出现一次
+#     + 三级次序键 + 版本常量渲染 / formal+staging DDL 列序 == MetricAdsSpec）
+#   ⇒ spark 212→220。
+#   analytics-server 侧新增 AdsHotProductHeatWeightDriftTest（5 条，反熵守卫：字典版本/权重 ↔ AdsSql 逐字对账
+#   —— 版本一致 / 权重一致 / 公式单一属主 / 版本列引用单一常量 / 三级稳定次序键，漂移即红）
+#   ⇒ analytics-server 895→900（均不连库；`MetricPublisherMySqlIT` 夹具补 rule_version 属已登记未测项）。
+$BaselineSpark = 220
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

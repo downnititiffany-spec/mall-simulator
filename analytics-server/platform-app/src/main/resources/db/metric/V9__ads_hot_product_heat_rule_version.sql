@@ -1,0 +1,25 @@
+-- S3-07（设计 §11.2 L434「product_heat | 1·ln(1+PV)+2·ln(1+收藏)+3·ln(1+加购)+5·ln(1+支付件数) |
+--         **版本化业务权重**，不称学习模型」；
+--         设计 §9.3 L320「ADS…每行带 snapshot / 定义版本 / 业务日期，发布可追溯」；
+--         指标字典 `docs/contracts/metric-dictionary.md:31`「权重来自业务设定，**存配置表**」；
+--         V2 审计 `docs/audit/v2-completeness-audit.md` L177「权重必须保存在规则版本中 | 未做」）
+-- `ads_hot_product_m` 补**热度权重定义版本**列 `rule_version`：
+--   语义 = meta 库指标字典 `metric_definition` 里 `metric_code = 'product_heat'` 那一行的
+--   `definition_version`（种子见 `db/meta/V2__platform_pipeline_quality.sql:75`，当前 `v1`）；
+--   类型与 `ads_user_profile_m.rule_version`（`VARCHAR(16)`，取值 `'rfm-v2'`）一致，
+--   与 `metric_value.definition_version`（发布侧 `MP_METRIC_DICT_VERSION` 校验的那一列）同一命名空间
+--   ⇒ 「这一行是按哪一版权重算的」可以直接用同一枚键追问到指标字典。
+--
+-- 为什么是**加性 ALTER**而不是改 V2/V3 的建表语句：V2/V3 是已发布迁移，改动会破坏 Flyway checksum（治理门 ③）。
+-- Hive 侧（`LocalSchemaInitJob` 的 formal/staging 建表）与冻结点（`warehouse/ddl/04-ads.sql`）同样只在末尾追加列，
+-- 故 MySQL 也追加在**末尾**，与 `MetricAdsSpec`（Spark 列真源）和 `MetricAdsCatalog`（Java 白名单）末尾列序一致。
+--
+-- 空值语义：允许 NULL。历史快照（S3-07 之前发布的行）没有版本可填 ⇒ 保持 NULL 表示「未记录版本」，
+-- **不写 'v1' 冒充**（历史行的权重虽然字面相同，但没有任何证据表明当时按 v1 记账；补写即伪造可溯性）。
+-- 新发布由 Spark 侧按 `AdsSql.HeatRuleVersion` 写入，该常量与字典版本的一致性由
+-- `warehouse-pipeline` 的 `AdsHotProductHeatWeightDriftTest` 逐字对账。
+--
+-- 为什么现在只补版本列：本节不新增热度权重变体、不改权重取值、不做读侧历史版本复算
+-- （设计 §12.5 L520 读侧复算归 F-93「不阻塞无关业务开发」，已登记）。
+ALTER TABLE ads_hot_product_m
+    ADD COLUMN rule_version VARCHAR(16) NULL COMMENT '热度权重定义版本（指标字典 product_heat.definition_version；历史行 NULL）';

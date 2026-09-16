@@ -120,6 +120,21 @@ object AdsSql {
        |""".stripMargin
 
   /**
+   * 热度权重 / 规则定义版本（S3-07）：
+   *  - 设计 §11.2 L434「product_heat | 1·ln(1+PV)+2·ln(1+收藏)+3·ln(1+加购)+5·ln(1+支付件数) |
+   *    **版本化业务权重**，不称学习模型」；
+   *  - 指标字典 `docs/contracts/metric-dictionary.md:31`「权重来自业务设定，**存配置表**」。
+   *
+   * 语义所有者是 meta 库 `metric_definition` 的 `product_heat` 行
+   * （`db/meta/V2__platform_pipeline_quality.sql:75`）：该行 `formula` 保存权重公式文本、
+   * `definition_version` 保存版本（当前 `v1`）。Spark 侧只持有**同一枚版本字面量**并随 ADS 行落库
+   * （`rule_version`），与 `metric_value.definition_version` 同一命名空间；一致性由
+   * `warehouse-pipeline` 的 `AdsHotProductHeatWeightDriftTest` 逐字对账（字典版本/权重 ↔ 本文件），
+   * 漂移即红 —— 不允许 ADS 自造版本号，也不允许改权重只改一处。
+   */
+  val HeatRuleVersion: String = "v1"
+
+  /**
    * 热门商品 TopN（热度权重来自配置，默认 §21.7 对数公式）。
    *
    * DEF-08：`dim_product` 是**按业务日的快照**，只覆盖当日 `product_created/product_updated` 事件；
@@ -128,24 +143,38 @@ object AdsSql {
    * BLOCKING 规则 `ADS_STAGING_KEY_NOT_NULL` 拦截整条发布。故名称按维度表既有 unknown 约定兜底
    * （`DimSql.productSnapshot` 同样写 'UNKNOWN'），**不用 NULL**：宁可显式 unknown，不留空关键列。
    *
-   * 稳定次序键（§11.5 L455「商品排行按热度/销量/金额并有**稳定次序键**」）：热度并列时按 `product_id`
-   * 升序定名次。无此键时同热度商品的名次取决于扫描/落文件顺序，重跑会改变 `rank_no`（实测 S2-06：
+   * 稳定次序键（§11.5 L455「商品排行按热度/销量/金额并有**稳定次序键**」）：热度并列时按 `buy` 降序、
+   * 再按 `product_id` 升序定名次（S2-06 补商品号一级，S3-07 补齐销量一级，见下）。
+   * 无此键时同热度商品的名次取决于扫描/落文件顺序，重跑会改变 `rank_no`（实测 S2-06：
    * 同热度三商品升序落盘得 `{101→1,102→2,103→3}`、降序落盘得 `{103→1,102→2,101→3}`）；而 `rank_no`
    * 既是 `WHERE rank_no <= topN` 的入选判据，又是 `ads_hot_product_m` 的键列与榜单排序键
    * （`AnalysisService` 按 `rank_no` 升序取 TopN）⇒ 名次漂移会直接改变用户看到的榜单内容。
+   *
+   * 权重版本（S3-07，设计 §11.2 L434 / §9.3 L320「每行带 snapshot / 定义版本 / 业务日期」）：
+   * 每行携带 `rule_version = $HeatRuleVersion`（见上方常量注释），使「这一行是按哪一版权重算的」可追问；
+   * S3-07 之前 `ads_hot_product` 无此列，V2 审计 L177 登记为「权重调整无版本可溯」。
+   *
+   * S3-07 两处实现修正（均为加性，值语义只影响热度并列组）：
+   *  ① 补齐中间一级 `buy DESC`（V2 审计 L178 登记的目标形态
+   *     `row_number(order by heat desc, buy desc, product_id asc)`）：并列时销量高者排前；
+   *  ② 热度公式收敛为**一处文字属主** —— 子查询算 `heat_score`，窗口函数按该列排序，
+   *     不再把公式抄两遍（两处字面量将来会各自漂移）。
    */
   def hotProduct(ns: WarehouseNamespace, dt: String, topN: Int, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_hot_product", dt, snapshotId)}
-       |SELECT t.product_id, COALESCE(p.product_name, 'UNKNOWN') AS product_name, heat_score, pv, fav, cart, buy, rank_no
+       |SELECT t.product_id, COALESCE(p.product_name, 'UNKNOWN') AS product_name,
+       |       t.heat_score, t.pv, t.fav, t.cart, t.buy, t.rank_no, t.rule_version
        |FROM (
-       |  SELECT product_id,
-       |         1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score,
-       |         pv, fav, cart, buy,
-       |         ROW_NUMBER() OVER (ORDER BY 1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) DESC,
-                                         product_id ASC) AS rank_no
-       |  FROM ${ns.dws}.dws_product_behavior_day
-       |  WHERE dt = '$dt'
+       |  SELECT product_id, pv, fav, cart, buy, heat_score,
+       |         ROW_NUMBER() OVER (ORDER BY heat_score DESC, buy DESC, product_id ASC) AS rank_no,
+       |         '$HeatRuleVersion' AS rule_version
+       |  FROM (
+       |    SELECT product_id, pv, fav, cart, buy,
+       |           1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score
+       |    FROM ${ns.dws}.dws_product_behavior_day
+       |    WHERE dt = '$dt'
+       |  ) h
        |) t
        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = t.product_id AND p.dt = '$dt'
        |WHERE rank_no <= $topN

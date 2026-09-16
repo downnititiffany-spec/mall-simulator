@@ -51,7 +51,7 @@ PARTITIONED BY (dt STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_active_trend';
 
--- 热门商品排行（rank_no 按 heat_score 降序）
+-- 热门商品排行（rank_no 按 heat_score 降序，并列时 buy 降序、product_id 升序；rule_version = 热度权重定义版本）
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_hot_product (
     product_id   BIGINT,
     product_name STRING,
@@ -60,7 +60,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_hot_product (
     fav          BIGINT,
     cart         BIGINT,
     buy          BIGINT,
-    rank_no      INT
+    rank_no      INT,
+    rule_version STRING
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

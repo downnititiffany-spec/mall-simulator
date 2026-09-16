@@ -146,7 +146,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_hot_product (
           product_id BIGINT, product_name STRING, heat_score DECIMAL(18,4),
-          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT)
+          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT, rule_version STRING)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_product_conversion (
@@ -199,7 +199,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_hot_product__staging (
           product_id BIGINT, product_name STRING, heat_score DECIMAL(18,4),
-          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT)
+          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT, rule_version STRING)
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_product_conversion__staging (

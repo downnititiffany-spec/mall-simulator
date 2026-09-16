@@ -114,6 +114,9 @@ public class SemanticCatalog {
         hotProduct.put("cart", "该商品加购次数");
         hotProduct.put("buy", "该商品购买次数");
         hotProduct.put("rank_no", "热度排名，1 为最高");
+        // S3-07（设计 §11.2 L434 / §9.3 L320）：热度权重的定义版本，与指标字典 product_heat 的
+        // definition_version 同一枚键。此处登记是 AiSqlDriftTest 强制项（真实列不许在 Prompt 里缺列）。
+        hotProduct.put("rule_version", "热度权重定义版本（指标字典 product_heat 的 definition_version，当前 v1）");
         TABLES.put("ads_hot_product_m", hotProduct);
 
         Map<String, String> productConversion = new LinkedHashMap<>();
