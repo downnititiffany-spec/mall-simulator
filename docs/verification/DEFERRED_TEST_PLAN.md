@@ -19,7 +19,7 @@
 
 ### V-001 — S3-53 AI evidenceId 形状兼容
 
-- **Status**：PENDING
+- **Status**：SUPERSEDED → 由 V-004 覆盖最终 ID 形状与草稿锚点行为
 - **Implementation baseline**：`4480d28aa5473a24e09333ea09b7e1554d824fad`
 - **Implementation commits**：`0054870`（生产逻辑）、`0ebd0e8`（developer tests）、`f1e1205`（Decision Log）、`4480d28`（原 Test Handoff）
 - **Area**：`web/src/utils/context.js`、`web/src/utils/decisionDraft.js`、`web/src/views/AiAssistant.vue`
@@ -37,28 +37,11 @@
 
 #### Code Agent later
 
-在精确 SHA 上执行：
-
-```bash
-cd web
-npm test
-npm run build
-```
-
-返回：命令、exit code、测试总数/失败数、build 结果、日志位置、环境版本。
+本条已被 V-004 取代，不再单独测试旧 SHA。
 
 #### Codex Work later
 
-重点攻击：
-
-- 顶层/嵌套 ID 冲突；
-- 顶层为 `unknown`、嵌套真实；
-- 嵌套为 `unknown`、snapshot 真实；
-- 非字符串 ID、空白、大小写占位；
-- evidenceId 与 snapshot 同时出现时是否双提交；
-- `AiAssistant.vue` 是否确实消费归一化后的 `evidence.evidenceId`；
-- 嵌套路径变化是否被静默吞掉；
-- developer tests 是否只验证工具函数而没有覆盖真实页面接线。
+本条已被 V-004 取代；原攻击面并入 V-004。
 
 #### Existing detailed handoff
 
@@ -137,6 +120,47 @@ npm run verify
 - 页面是否还存在其它结论渲染路径绕过 `evidenceContext.summary`；
 - summary 包含 HTML/特殊字符时 Vue 是否按文本安全渲染；
 - developer tests 是否只覆盖工具函数而未钉住页面接线。
+
+### V-004 — S3-55/S3-56 AI 标识严格形状与草稿锚点单一判据
+
+- **Status**：PENDING
+- **Implementation baseline**：`88c715e3976469ead3ff1e8e73dfa00a41d22dc6`
+- **Implementation commits**：`617642c`（context 严格 ID 读取）+ `776bc74`（decisionDraft 去二次 trim）+ `88c715e`（developer tests）+ `28bd4ea`（Decision Log D-013）
+- **Area**：`web/src/utils/context.js`、`web/src/utils/decisionDraft.js`、`web/tests/decisionDraft.test.js`、`web/tests/aiEvidenceIdFallback.test.js`
+- **Risk**：低—中；前端 fail-closed 收紧，不改后端 ID 生成与决策契约。
+- **Blocks further development**：NO。后续若依赖“污染 ID 在真实浏览器链路确实被拒绝”才需要先验证；其它并列开发继续。
+
+#### Invariants
+
+1. ID 只能是后端返回的精确字符串，不 trim、不数字转串；
+2. `unknown` 任意大小写均无效；
+3. 顶层真实 evidenceId 仍优先，顶层无效才回退嵌套真实 evidenceId；
+4. `decisionDraft.js` 不再建立第二个 ID 归一化规则；
+5. evidence package 与 snapshot 锚点仍二选一；
+6. 两类 ID 都无效时 fail-closed，不构造草稿请求。
+
+#### Code Agent later
+
+在精确 SHA 上执行：
+
+```bash
+cd web
+npm run verify
+```
+
+返回测试总数/失败数、build 结果、Node/npm 版本和日志位置。
+
+#### Codex Work later
+
+重点攻击：
+
+- `" EV-... "`、`" S... "` 是否被任何路径 trim 后重新接受；
+- 数字、对象、数组、Boolean 是否被字符串化成 ID；
+- `unknown` 的任意大小写组合；
+- 顶层污染 ID + 嵌套真实 ID 是否正确回退；
+- 顶层真实 ID + 嵌套冲突 ID 是否保持顶层优先；
+- `AiAssistant.vue` 展示、`draftAnchor` 和最终 `buildDraftBody` 是否使用同一判据；
+- 是否还有其它工具函数对 ID 做隐式 `String()` / `trim()` 后进入决策请求。
 
 ## 3. 批量验证触发点
 
