@@ -149,6 +149,24 @@ object AdsSql {
        |""".stripMargin
 
   /**
+   * 观察窗口 → ISO 日期（yyyy-MM-dd）的唯一实现。
+   *
+   * **为什么不用 `regexp_replace(…, '(\d{4})…', …)`（S3-01 实测事实，不是偏好）**：
+   * Scala 的 `s"""…"""` 会把源码里的双反斜杠还原成一个反斜杠，而 **Spark SQL 的字符串字面量会吃掉
+   * 未识别的反斜杠转义** —— 实测 SQL 文本 `'(\d{4})'` 的解析结果是 `(d{4})`（写成 `'(\\d{4})'` 才是
+   * `(\d{4})`），于是 `regexp_replace` 不匹配、**原样返回** `20260901`；而
+   * `DATEDIFF('20260901','2026-09-01')` = NULL。旧写法正是前者 ⇒ `ads_user_profile` 的 `r_ntile`
+   * 排序键恒为 NULL（全平局 ⇒ R 分档退化成 user_id 次序）、`active_level` 恒「低」、
+   * `lifecycle_state` 恒「活跃」且「新用户」永不成立。
+   * 这里改用不含反斜杠的 `substr/concat`：无解析器歧义，8 位紧凑日期展开为 yyyy-MM-dd，
+   * 其他输入原样保留（与旧正则在 8 位紧凑/已是 ISO 两个域上的行为完全一致）。
+   */
+  private def isoDay(v: String): String =
+    s"""CASE WHEN length('$v') = 8
+       |     THEN concat(substr('$v', 1, 4), '-', substr('$v', 5, 2), '-', substr('$v', 7, 2))
+       |     ELSE '$v' END""".stripMargin
+
+  /**
    * 用户画像 RFM 分层（§21.6）：
    * r/f/m 为观察期 [periodStart, periodEnd] 的近似五分位（NTILE(5)）；
    * R 反向（间隔越小分越高），F/M 正向；观察期参数为 yyyyMMdd，SQL 内转 yyyy-MM-dd 比较；
@@ -170,6 +188,20 @@ object AdsSql {
    * （同日下单、单数与金额相同）无此键则桶号随物理顺序变化：实测 S2-06 同值 5 用户升序落盘得
    * `1→(5,1,1) … 5→(1,5,5)`、降序落盘得完全相反的 `1→(1,5,5) … 5→(5,1,1)` ⇒ 同一份数据重跑会
    * 给人打上相反的 RFM 标签，八类 `value_group` 也随之翻转。
+   *
+   * S3-01 原值与窗口（§11.4 L447「**记录 R/F/M 原值、score、segment、窗口、rule_version，不仅存标签**」，
+   * §9.3 L334「RFM 完整性需补」）：随分档一并落 **R/F/M 原值** `r_days`（窗口末日 − 末次购买日，天）/
+   * `f_count`（窗口内有效支付订单数）/ `m_amount`（窗口内有效支付金额）与**观察窗口**
+   * `period_start`/`period_end`。窗口取**本次评分实际使用的值**（即 SQL 参数派生、参与
+   * `DATEDIFF`/`NTILE` 的那个窗口），格式统一为 yyyy-MM-dd —— 与同表 `last_buy_date`/
+   * `last_active_date` 同形，因此 `r_days = DATEDIFF(period_end, last_buy_date)` 可被 SQL 直接复核；
+   * 上游 `dws_user_trade_period` 的 `period_start/period_end` 仍是原始 yyyyMMdd 口径，两者各自稳定、
+   * 不互相改写。只有分档没有原值时，"r=5" 究竟是「昨天买过」还是「窗口内最早一天买过」无从判断。
+   *
+   * S3-01 同轮修掉的既有缺陷：窗口转换原先走 `regexp_replace` + 反斜杠正则，被解析器吃掉转义后
+   * 窗口原样保留、`DATEDIFF` 恒 NULL（链路后果与实测见 {@link isoDay}）。**该修正改变了
+   * `r`/`value_group`/`active_level`/`lifecycle_state` 的取值**，故 `rule_version` 由 `rfm-v1`
+   * 升为 `rfm-v2`：新旧数据口径不同、不得混算（§11.4 要求记录规则版本正是为此）。
    */
   def userProfile(ns: WarehouseNamespace, dt: String, periodStart: String, periodEnd: String,
                   snapshotId: Option[String] = None): String =
@@ -203,14 +235,19 @@ object AdsSql {
        |       WHEN DATEDIFF(pe, tp.last_buy_date) > 60 THEN '流失风险'
        |       WHEN DATEDIFF(pe, tp.last_buy_date) > 30 THEN '沉默'
        |       ELSE '活跃' END AS lifecycle_state,
-       |  'rfm-v1' AS rule_version,
-       |  '$dt' AS calc_date
+       |  'rfm-v2' AS rule_version,
+       |  '$dt' AS calc_date,
+       |  DATEDIFF(pe, tp.last_buy_date) AS r_days,
+       |  tp.order_count AS f_count,
+       |  tp.sale_amount AS m_amount,
+       |  tp.ps AS period_start,
+       |  tp.pe AS period_end
        |FROM (
        |  SELECT user_id, last_buy_date, order_count, sale_amount,
-       |         regexp_replace('$periodStart', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3') AS ps,
-       |         regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3') AS pe,
+       |         ${isoDay(periodStart)} AS ps,
+       |         ${isoDay(periodEnd)} AS pe,
        |         NTILE(5) OVER (ORDER BY DATEDIFF(
-       |           regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3'), last_buy_date) ASC, user_id ASC) AS r_ntile,
+       |           ${isoDay(periodEnd)}, last_buy_date) ASC, user_id ASC) AS r_ntile,
        |         NTILE(5) OVER (ORDER BY order_count ASC, user_id ASC) AS f_ntile,
        |         NTILE(5) OVER (ORDER BY sale_amount ASC, user_id ASC) AS m_ntile
        |  FROM ${ns.dws}.dws_user_trade_period

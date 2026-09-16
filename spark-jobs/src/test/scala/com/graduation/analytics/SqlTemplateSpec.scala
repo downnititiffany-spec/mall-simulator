@@ -234,7 +234,9 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     sql should include("重要挽留")
     sql should include("流失风险")
     sql should include("新用户")
-    sql should include("'rfm-v1' as rule_version")
+    // S3-01：窗口转换反斜杠转义被 Spark SQL 解析器吃掉（`'(\d{4})'`→`(d{4})`）导致 DATEDIFF 恒 NULL、
+    // R 分档退化成 user_id 次序；修正后 r/active_level/lifecycle_state 取值改变 ⇒ 版本升 rfm-v2。
+    sql should include("'rfm-v2' as rule_version")
   }
 
   it should "DEF-10：用户画像的 NOT NULL 列不得产出 NULL（下单但当日无行为的用户会把发布 INSERT 打挂）" in {

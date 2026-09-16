@@ -280,6 +280,13 @@ class MetricPublisherMySqlIT {
         profile.put("lifecycle_state", "活跃期");
         profile.put("rule_version", "v1");
         profile.put("calc_date", "2026-09-01");
+        // S3-01：画像表补 R/F/M 原值与观察窗口（§11.4 L447）；发布侧 INSERT 按 MetricAdsSpec 列集合逐列绑定，
+        // 夹具缺列会让本 IT 在不该失败的地方失败（本机无 3306 写权限，只能靠列集合与其保持一致）。
+        profile.put("r_days", 0);
+        profile.put("f_count", 2L);
+        profile.put("m_amount", new BigDecimal("500.00"));
+        profile.put("period_start", "2026-09-01");
+        profile.put("period_end", "2026-09-01");
         rows.put("ads_user_profile_m", List.of(profile));
 
         Map<String, Object> quality = new LinkedHashMap<>();

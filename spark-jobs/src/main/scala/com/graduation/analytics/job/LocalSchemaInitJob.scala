@@ -154,12 +154,16 @@ object LocalSchemaInitJob {
           order_count BIGINT, buyer_count BIGINT, sale_amount DECIMAL(18,2),
           avg_order_value DECIMAL(18,2))
         USING parquet PARTITIONED BY (dt STRING)"""),
+    // S3-01：画像表末尾追加 R/F/M 原值 + 观察窗口（§11.4 L447）。注意 `IF NOT EXISTS` 对**已存在**的表
+    // 不生效 —— 已在产 Hive 建过该表的库需要显式 `ALTER TABLE … ADD COLUMNS` 才会长出新列
+    // （本地/内存目录每次新建，能直接看到新结构；生产 Hive 迁移不在本任务范围，见 F-34 未实测边界）。
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_user_profile (
           user_id BIGINT, r INT, f INT, m INT, value_group STRING,
           active_level STRING, favorite_category BIGINT, last_active_date STRING,
           last_buy_date STRING, lifecycle_state STRING, rule_version STRING,
-          calc_date STRING)
+          calc_date STRING, r_days INT, f_count BIGINT, m_amount DECIMAL(18,2),
+          period_start STRING, period_end STRING)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_data_quality (
@@ -206,7 +210,8 @@ object LocalSchemaInitJob {
           user_id BIGINT, r INT, f INT, m INT, value_group STRING,
           active_level STRING, favorite_category BIGINT, last_active_date STRING,
           last_buy_date STRING, lifecycle_state STRING, rule_version STRING,
-          calc_date STRING)
+          calc_date STRING, r_days INT, f_count BIGINT, m_amount DECIMAL(18,2),
+          period_start STRING, period_end STRING)
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_data_quality__staging (

@@ -41,7 +41,8 @@ object MetricAdsSpec {
       Seq("product_id", "pv_users", "buy_users", "conversion_rate")),
     MetricAdsTable("ads_user_profile", "ads_user_profile_m",
       Seq("user_id", "r", "f", "m", "value_group", "active_level", "favorite_category",
-        "last_active_date", "last_buy_date", "lifecycle_state", "rule_version", "calc_date")),
+        "last_active_date", "last_buy_date", "lifecycle_state", "rule_version", "calc_date",
+        "r_days", "f_count", "m_amount", "period_start", "period_end")),
     MetricAdsTable("ads_data_quality", "ads_data_quality_m",
       Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold")))
 

@@ -101,7 +101,7 @@ PARTITIONED BY (dt STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_region_sale';
 
--- 用户画像（RFM 规则分层，§21.6；definition_version 必须随结果保存）
+-- 用户画像（RFM 规则分层，§21.6；definition_version 必须随结果保存；S3-01 起随分档落 R/F/M 原值与观察窗口，§11.4 L447）
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_user_profile (
     user_id         BIGINT,
     r               INT COMMENT '反向五分位1-5',
@@ -114,7 +114,12 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_user_profile (
     last_buy_date   STRING,
     lifecycle_state STRING COMMENT '新用户/活跃/沉默/流失风险',
     rule_version    STRING COMMENT '规则版本',
-    calc_date       STRING
+    calc_date       STRING,
+    r_days          INT COMMENT 'R 原值：观察窗口末日-末次购买日（天，越小越近）',
+    f_count         BIGINT COMMENT 'F 原值：观察窗口内有效支付订单数',
+    m_amount        DECIMAL(18,2) COMMENT 'M 原值：观察窗口内有效支付金额',
+    period_start    STRING COMMENT '观察窗口起（yyyy-MM-dd，本次评分实际使用）',
+    period_end      STRING COMMENT '观察窗口止（yyyy-MM-dd，本次评分实际使用）'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
