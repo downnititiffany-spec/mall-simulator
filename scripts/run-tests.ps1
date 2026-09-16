@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 949
+  'analytics-server'        = 950
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -410,6 +410,15 @@ $BaselineDefault = [ordered]@{
 #   门禁实测（量数轮 `s325_20260916_spark1`/`s325_20260916_def1`；基线更新后收口轮
 #   `s325_20260916_spark2`/`s325_20260916_def2`）：量数轮实测 spark 303（DRIFT 基线 293）、
 #   analytics 949（`93+350+163+93+93+157`）、三棵树 1068；收口轮应 MATCH。
+# S3-29：`AiSqlDriftTest` 新增「迁移按版本序解析而非字典序」（1 条；把迁移解析顺序由**字典序**
+#   收归**版本序**唯一所有者 `migrationVersion(Path)`/`migrationFilesOrdered(Path)`，并带牙齿自检：
+#   变异回字典序时实测红 `[10, 1, 2, 3, 4, 5, 6, 7, 8, 9]`）⇒ analytics-server 949→**950**（ai-decision 93→94），
+#   spark **不变**（零 Scala 改动，303 沿用 S3-25）。**只改测试守卫**：零生产代码/DDL/迁移/前端/新依赖。
+#   门禁实测（量数轮 `s329_20260916_def1`）：analytics 950（`93+350+163+93+94+157`，DRIFT 基线 949，
+#   漂移量 = 新增 1 条）、mall 13、generator 106、三棵树 1069（基线 1068）、唯一红仍是已登记环境性红、
+#   `[FAIL exit=7]` 预期；基线更新后收口轮 `s329_20260916_def2` 应 MATCH。
+#   边界：**未测** 真库应用迁移、`warehouse/ddl` 同类读取点（顺序无语义，未改）、`db/meta` 读取点（未改）、
+#   isolated/spark 两档 ⇒ 不得称「DDL 守卫已完备」。
 $BaselineSpark = 303
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

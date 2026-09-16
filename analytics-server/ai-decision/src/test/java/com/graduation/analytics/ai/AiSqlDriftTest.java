@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,6 +49,8 @@ class AiSqlDriftTest {
     private static final Pattern FIELD_ARG = Pattern.compile(
             "FIELD\\s*\\(\\s*([a-z_][a-z0-9_]*)", Pattern.CASE_INSENSITIVE);
     private static final Pattern IDENT = Pattern.compile("[a-z_][a-z0-9_]*");
+    /** 迁移文件名 {@code V<n>__描述.sql}：版本号即解析顺序的**判定依据**（非字典序，见 {@code 迁移按版本序解析而非字典序}） */
+    private static final Pattern MIGRATION_NAME = Pattern.compile("V(\\d+)__.*\\.sql", Pattern.CASE_INSENSITIVE);
     private static final Set<String> NOT_COLUMNS = Set.of(
             "select", "from", "where", "and", "or", "order", "by", "desc", "asc", "limit", "group",
             "as", "distinct", "max", "min", "sum", "avg", "count", "date_sub", "curdate", "interval",
@@ -65,10 +68,8 @@ class AiSqlDriftTest {
     private static Map<String, Set<String>> ddlTables() throws IOException {
         Path dir = resolveDdlDir();
         StringBuilder all = new StringBuilder();
-        try (var files = Files.list(dir)) {
-            for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".sql")).sorted().toList()) {
-                all.append(Files.readString(f, StandardCharsets.UTF_8)).append('\n');
-            }
+        for (Path f : migrationFilesOrdered(dir)) {
+            all.append(Files.readString(f, StandardCharsets.UTF_8)).append('\n');
         }
         String sql = all.toString();
         Map<String, Set<String>> tables = new LinkedHashMap<>();
@@ -121,6 +122,64 @@ class AiSqlDriftTest {
         assertTrue(ddl.getOrDefault("ads_user_profile_m", Set.of()).containsAll(
                         List.of("r_days", "f_count", "m_amount", "period_start", "period_end")),
                 "加性迁移列未被解析：ads_user_profile_m 的 RFM 原值列（V4 ALTER）");
+    }
+
+    /**
+     * 守卫牙齿自检（S3-29 补 backlog「迁移文件名按字典序排序」残留）：迁移必须按**版本序**解析，不是字典序。
+     *
+     * <p>字典序下 {@code V10__…} 会排在 {@code V2__…} 之前，而真实目录里 V10 已存在。当前所有
+     * {@code ALTER} 都只往列集合里加列，错序对 Set 语义无害，但一旦后续迁移出现「依赖前序/按序覆盖」
+     * 的语义，错序就会**静默**改变判定依据 ⇒ 在此把顺序本身钉住（顺序是判定依据的一部分）。</p>
+     */
+    @Test
+    void 迁移按版本序解析而非字典序() throws IOException {
+        // ① 顺序函数本身：V2 必须早于 V10（字典序会判反）
+        assertTrue(migrationVersion(Path.of("V2__a.sql")) < migrationVersion(Path.of("V10__b.sql")),
+                "版本序错误：V2 应排在 V10 之前（字典序恰好判反）");
+        // ② 真实目录：解析顺序的版本号严格升序（字典序在含 V10 的目录上必然违反）
+        List<Integer> versions = new ArrayList<>();
+        for (Path f : migrationFilesOrdered(resolveDdlDir())) {
+            versions.add(migrationVersion(f));
+        }
+        assertFalse(versions.isEmpty(), "迁移目录未解析到任何 .sql 文件");
+        for (int i = 1; i < versions.size(); i++) {
+            assertTrue(versions.get(i - 1) < versions.get(i),
+                    "迁移解析顺序不是版本序（严格升序被破坏）：" + versions);
+        }
+        // ③ 反证（牙齿自检）：真实目录上「版本序 ≠ 字典序」确实成立，否则本用例没有牙齿
+        List<Path> lexicographic = new ArrayList<>();
+        try (var files = Files.list(resolveDdlDir())) {
+            files.filter(p -> p.getFileName().toString().endsWith(".sql")).sorted().forEach(lexicographic::add);
+        }
+        assertFalse(lexicographic.equals(migrationFilesOrdered(resolveDdlDir())),
+                "字典序与版本序在真实目录上已一致 ⇒ 本用例失去牙齿，请确认目录中是否仍有 V10+ 迁移");
+    }
+
+    /**
+     * 迁移文件名版本号（{@code V<n>__…}）⇒ {@code n}。
+     *
+     * <p>不符合命名规范的文件给 {@link Integer#MAX_VALUE}：排到最后且**不**静默参与顺序判定，
+     * 由 {@code 迁移按版本序解析而非字典序} 的严格升序断言把异常文件暴露出来。</p>
+     */
+    static int migrationVersion(Path f) {
+        Matcher m = MIGRATION_NAME.matcher(f.getFileName().toString());
+        return m.matches() ? Integer.parseInt(m.group(1)) : Integer.MAX_VALUE;
+    }
+
+    /**
+     * 迁移目录下的 {@code .sql} 文件，按**版本序**返回（S3-29 补 backlog 残留）。
+     *
+     * <p>此前用 {@code Path.sorted()}（**字典序**）：{@code V10__…} 会排在 {@code V2__…} 之前，
+     * 而真实目录里 V10 已存在。当前 {@code ALTER} 只往列集合加列 ⇒ 对 Set 语义无害，但顺序本身
+     * 是判定依据的一部分（后续若出现依赖前序/按序覆盖的迁移，错序会静默改变结论），故收归此处。</p>
+     */
+    static List<Path> migrationFilesOrdered(Path dir) throws IOException {
+        try (var files = Files.list(dir)) {
+            return files.filter(p -> p.getFileName().toString().endsWith(".sql"))
+                    .sorted(Comparator.comparingInt(AiSqlDriftTest::migrationVersion)
+                            .thenComparing(p -> p.getFileName().toString()))
+                    .toList();
+        }
     }
 
     /**
