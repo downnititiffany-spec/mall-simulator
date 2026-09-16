@@ -32,9 +32,12 @@ const isRecord = (v) => v && typeof v === 'object' && !Array.isArray(v)
 /**
  * 是否为真实快照号。
  * AI 证据包在规则回退分支会返回占位串 'unknown'，那不是快照号，页面必须按「未提供」展示。
+ * 后端标识属于精确值：前后空白不做静默 trim，出现即按无效标识处理（fail-closed）。
  */
 export function isRealSnapshotId(value) {
-  return typeof value === 'string' && value.trim() !== '' && value !== 'unknown' && value !== 'UNKNOWN'
+  if (typeof value !== 'string') return false
+  const text = value.trim()
+  return text !== '' && value === text && text !== 'unknown' && text !== 'UNKNOWN'
 }
 
 /** 从任意对象中取第一个非空字符串字段 */
