@@ -28,7 +28,8 @@ object MetricAdsSpec {
   val TABLES: Seq[MetricAdsTable] = Seq(
     MetricAdsTable("ads_operation_overview", "ads_operation_overview_m",
       Seq("pv", "uv", "dau", "order_count", "sale_amount", "net_sale_amount",
-        "avg_order_value", "refund_rate", "full_refund_rate")),
+        "avg_order_value", "refund_rate", "full_refund_rate", "repeat_rate",
+        "repeat_period_start", "repeat_period_end")),
     MetricAdsTable("ads_sale_trend", "ads_sale_trend_m",
       Seq("order_count", "buyer_count", "sale_amount", "avg_order_value", "net_sale_amount")),
     MetricAdsTable("ads_behavior_funnel", "ads_behavior_funnel_m",

@@ -134,6 +134,12 @@ object DwsSql {
   /**
    * 用户×统计周期交易汇总（复购/RFM 输入，§12.1 第 6 张）。
    * 观察期 [periodStart, periodEnd] 取有效支付订单；分区 dt 为统计日。
+   *
+   * S3-03（设计 §11.2 L433「完全退款不算有效复购订单」）：新增 `valid_order_count` =
+   * 观察期内**仍在有效状态**的支付订单数（`final_refunded_flag = 0`，即未发生全额退款）。
+   * 为什么不能复用 `order_count`：它含全额退款订单 ⇒ 用「`order_count >= 2`」算复购率会得到
+   * 支付复购率（黄金夹具同构口径下 0.6667），而复购率的默认变体是有效复购率（0.3333）。
+   * 列追加在表末尾（Hive 侧只能 `ADD COLUMNS` 追加，且本语句按位置写入，列序必须与 DDL 一致）。
    */
   def userTradePeriod(ns: WarehouseNamespace, dt: String, periodStart: String, periodEnd: String): String =
     s"""
@@ -144,7 +150,8 @@ object DwsSql {
       |  COUNT(DISTINCT order_id) AS order_count,
       |  SUM(amount) AS sale_amount,
       |  '$periodStart' AS period_start,
-      |  '$periodEnd' AS period_end
+      |  '$periodEnd' AS period_end,
+      |  COUNT(DISTINCT CASE WHEN final_refunded_flag = 0 THEN order_id END) AS valid_order_count
       |FROM ${ns.dwd}.dwd_order_detail
       |WHERE dt >= '$periodStart' AND dt <= '$periodEnd' AND final_paid_flag = 1
       |GROUP BY user_id

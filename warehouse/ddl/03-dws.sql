@@ -82,7 +82,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws.dws_user_trade_perio
     order_count  BIGINT COMMENT '有效支付订单数',
     sale_amount  DECIMAL(18,2),
     period_start STRING,
-    period_end   STRING
+    period_end   STRING,
+    valid_order_count BIGINT COMMENT '观察期内有效购买订单数（剔除全额退款，S3-03 复购率分子用）'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

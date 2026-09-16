@@ -80,13 +80,16 @@ class AdsRfmRawValueSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAl
    * user 4 的 `last_buy_date` 正是窗口起 `2026-08-01`。
    */
   private def writeUserTradePeriod(): Unit = {
+    // valid_order_count = order_count：本夹具不建模退款（S3-03 加列后按位置写入需补齐，语义=无全退）
     val row = (u: Long, lastBuy: String, orders: Long, amount: String) =>
       s"""SELECT ${u}L AS user_id, '$lastBuy' AS last_buy_date, ${orders}L AS order_count,
          |       CAST($amount AS DECIMAL(18,2)) AS sale_amount,
-         |       '$PeriodStart' AS period_start, '$PeriodEnd' AS period_end""".stripMargin
+         |       '$PeriodStart' AS period_start, '$PeriodEnd' AS period_end,
+         |       ${orders}L AS valid_order_count""".stripMargin
     spark.sql(
       s"""INSERT OVERWRITE TABLE ${ns.dws}.dws_user_trade_period PARTITION(dt = '$Dt')
-         |SELECT user_id, last_buy_date, order_count, sale_amount, period_start, period_end FROM (
+         |SELECT user_id, last_buy_date, order_count, sale_amount, period_start, period_end,
+         |       valid_order_count FROM (
          |  ${row(1L, "2026-06-01", 2L, "20.00")}
          |  UNION ALL ${row(2L, "2026-07-20", 4L, "40.00")}
          |  UNION ALL ${row(3L, "2026-08-20", 6L, "60.00")}

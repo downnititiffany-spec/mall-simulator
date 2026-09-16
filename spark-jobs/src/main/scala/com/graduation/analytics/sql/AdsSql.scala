@@ -38,8 +38,19 @@ object AdsSql {
    *  - uv   = view 行为去重用户数
    *  - refund_rate      = 发生**已完成**退款的订单数 / 支付订单数（部分/全部退款都算，字典口径）
    *  - full_refund_rate = 全额退款订单数 / 支付订单数（新增独立指标，不偷换 refund_rate）
+   *  - repeat_rate      = **有效复购率** = 有效购买 ≥2 次用户 / 支付用户（S3-03，设计 §11.2 L433）
    * 退款金额口径来自 OrderTradeCompiler：refund_amount 只累计 refund_completed 事件（按 refund_id 去重）。
    * 分母 0 → null（不满除零）。
+   *
+   * S3-03 复购率（设计 §11.2 L433「必须声明观察期和变体」/ §11.4 L449）：
+   *  - 分子/分母都取 `dws_user_trade_period`（字典登记的复购源表）：分母 = 该观察期内的**支付用户数**
+   *    （该表只收 `final_paid_flag = 1` 的行），分子 = 其中 `valid_order_count >= 2` 的用户数；
+   *  - 「有效」= 剔除**全额退款**订单（`valid_order_count` 由 `DwsSql.userTradePeriod` 按
+   *    `final_refunded_flag = 0` 计算）；本层不实现「支付复购率」变体（见 F-36 backlog）；
+   *  - **观察期声明落库**：`repeat_period_start/end` 取上游 DWS 行自己写入的 `period_start/period_end`
+   *    （即 `DwsSql.userTradePeriod` 的作业入参窗口，唯一所有者），ISO 化后随行发布 —— 这样 ADS 声明的窗口
+   *    必然等于真正参与聚合的窗口，不会出现「作业按 A 窗口算、ADS 声明 B 窗口」；
+   *  - 无支付用户时分子/分母与窗口声明**同时为 NULL**（不伪造窗口），由发布侧跳过该指标。
    */
   def operationOverview(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
@@ -49,7 +60,11 @@ object AdsSql {
        |  CASE WHEN t.order_count = 0 THEN NULL
        |       ELSE CAST(r.refunded_orders AS DECIMAL(18,2)) / t.order_count END AS refund_rate,
        |  CASE WHEN t.order_count = 0 THEN NULL
-       |       ELSE CAST(r.full_refunded_orders AS DECIMAL(18,2)) / t.order_count END AS full_refund_rate
+       |       ELSE CAST(r.full_refunded_orders AS DECIMAL(18,2)) / t.order_count END AS full_refund_rate,
+       |  CASE WHEN u.pay_users = 0 THEN NULL
+       |       ELSE CAST(u.repeat_users AS DECIMAL(8,4)) / u.pay_users END AS repeat_rate,
+       |  ${isoDayCol("u.period_start")} AS repeat_period_start,
+       |  ${isoDayCol("u.period_end")} AS repeat_period_end
        |FROM (SELECT
        |        COUNT(CASE WHEN behavior_type = 'view' THEN 1 END) AS pv,
        |        COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS uv,
@@ -62,7 +77,13 @@ object AdsSql {
        |              THEN order_id END) AS refunded_orders,
        |        COUNT(DISTINCT CASE WHEN final_paid_flag = 1 AND final_refunded_flag = 1
        |              THEN order_id END) AS full_refunded_orders
-       |      FROM ${ns.dwd}.dwd_order_detail WHERE dt = '$dt') r
+       |      FROM ${ns.dwd}.dwd_order_detail WHERE dt = '$dt') r,
+       |     (SELECT
+       |        COUNT(DISTINCT user_id) AS pay_users,
+       |        COUNT(DISTINCT CASE WHEN valid_order_count >= 2 THEN user_id END) AS repeat_users,
+       |        MAX(period_start) AS period_start,
+       |        MAX(period_end) AS period_end
+       |      FROM ${ns.dws}.dws_user_trade_period WHERE dt = '$dt') u
        |""".stripMargin
 
   /** 活跃趋势（dt 为分区列，由 INSERT PARTITION 提供，不再投影） */
@@ -176,6 +197,15 @@ object AdsSql {
     s"""CASE WHEN length('$v') = 8
        |     THEN concat(substr('$v', 1, 4), '-', substr('$v', 5, 2), '-', substr('$v', 7, 2))
        |     ELSE '$v' END""".stripMargin
+
+  /**
+   * 列版本的 8 位紧凑日期展开（yyyyMMdd → yyyy-MM-dd，与 `isoDay` 同构，但作用于**列**）。
+   * 用于把 DWS 行里声明的观察期窗口随 ADS 行一起发布（S3-03）；NULL 保持 NULL（不伪造窗口）。
+   * 单行表达式、不含反斜杠（避免解析器歧义，见 S3-01 的 `isoDay` 修复）。
+   */
+  private def isoDayCol(expr: String): String =
+    s"CASE WHEN $expr IS NULL THEN NULL WHEN length($expr) = 8 THEN " +
+      s"concat(substr($expr, 1, 4), '-', substr($expr, 5, 2), '-', substr($expr, 7, 2)) ELSE $expr END"
 
   /**
    * 用户画像 RFM 分层（§21.6）：

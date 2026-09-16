@@ -51,7 +51,7 @@ public final class MetricLineage {
     private static final Edge DATA_QUALITY =
             new Edge("ads_data_quality", "ads_data_quality_m");
 
-    /** 指标码 → 血缘边（按 metric-lineage.md 的 #1–#12） */
+    /** 指标码 → 血缘边（按 metric-lineage.md 的 #1–#13） */
     private static final Map<String, Edge> BY_METRIC_CODE = Map.ofEntries(
             Map.entry("pv", OVERVIEW),
             Map.entry("uv", OVERVIEW),
@@ -62,6 +62,7 @@ public final class MetricLineage {
             Map.entry("avg_order_value", OVERVIEW),
             Map.entry("refund_rate", OVERVIEW),
             Map.entry("full_refund_rate", OVERVIEW),
+            Map.entry("repeat_rate", OVERVIEW),
             Map.entry("buy_rate", BEHAVIOR_FUNNEL),
             Map.entry("product_heat", HOT_PRODUCT),
             Map.entry("user_value_level", USER_PROFILE));

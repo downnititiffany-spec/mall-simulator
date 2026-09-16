@@ -54,7 +54,16 @@ public class MetricPublisher implements MetricPublisherPort {
         OVERVIEW_TO_METRIC.put("avg_order_value", "avg_order_value");
         OVERVIEW_TO_METRIC.put("refund_rate", "refund_rate");
         OVERVIEW_TO_METRIC.put("full_refund_rate", "full_refund_rate");
+        // S3-03：复购率（观察期窗口型指标，period 声明见 periodOf）
+        OVERVIEW_TO_METRIC.put("repeat_rate", "repeat_rate");
     }
+
+    /** 观察期窗口型指标码：其 `metric_value.period` 必须声明 `window:<起>..<止>`，不得谎报单日 */
+    private static final String WINDOWED_REPEAT_RATE = "repeat_rate";
+
+    /** ADS 概览行里声明观察期的列（由 Spark 侧从 DWS 行的 period_start/period_end 展开） */
+    private static final String PERIOD_START_COLUMN = "repeat_period_start";
+    private static final String PERIOD_END_COLUMN = "repeat_period_end";
 
     private final MetricPublishRepository repository;
     private final MetricAdsWriter adsWriter;
@@ -232,7 +241,8 @@ public class MetricPublisher implements MetricPublisherPort {
                 log.warn("metric publish: 概览列 {} 为空，跳过指标 {}", e.getKey(), e.getValue());
                 continue;
             }
-            values.add(valueOf(request, e.getValue(), new BigDecimal(String.valueOf(raw))));
+            values.add(valueOf(request, e.getValue(), new BigDecimal(String.valueOf(raw)),
+                    periodOf(request, e.getValue(), row)));
         }
 
         List<Map<String, Object>> funnel = rowsByTable.getOrDefault("ads_behavior_funnel_m", List.of());
@@ -247,15 +257,49 @@ public class MetricPublisher implements MetricPublisherPort {
     }
 
     private MetricValue valueOf(PublishRequest request, String metricCode, BigDecimal value) {
+        return valueOf(request, metricCode, value, "day:" + isoDate(request.businessDate()));
+    }
+
+    private MetricValue valueOf(PublishRequest request, String metricCode, BigDecimal value, String period) {
         RefHolder ref = new RefHolder(request.definitionVersions().get(metricCode));
         MetricValue v = new MetricValue();
         v.setSnapshotId(request.snapshotId());
         v.setMetricCode(metricCode);
         v.setMetricValue(value);
         v.setUnit(ref.unit());
-        v.setPeriod("day:" + isoDate(request.businessDate()));
+        v.setPeriod(period);
         v.setDefinitionVersion(ref.version());
         return v;
+    }
+
+    /**
+     * 指标值的观察期声明（设计 §11.2 L433「必须声明观察期和变体」）。
+     *
+     * <p>单日指标 = {@code day:<ISO 业务日>}；复购率这类**窗口指标**必须写
+     * {@code window:<ISO 起>..<ISO 止>}，窗口取自 ADS 行里由上游 DWS 行自己声明的观察期
+     * （唯一所有者 = Spark 侧作业入参），发布器不自行推断、也不拿业务日冒充窗口。</p>
+     *
+     * <p>窗口声明缺失（老快照镜像行没有该列 / 值为空）时退回 {@code day:} 并告警 —— 失败保旧、
+     * 宁缺勿造：宁可声明得保守，也不编造一个没参与计算的窗口。</p>
+     */
+    private String periodOf(PublishRequest request, String metricCode, Map<String, Object> row) {
+        if (!WINDOWED_REPEAT_RATE.equals(metricCode)) {
+            return "day:" + isoDate(request.businessDate());
+        }
+        String start = isoDay(row.get(PERIOD_START_COLUMN));
+        String end = isoDay(row.get(PERIOD_END_COLUMN));
+        if (start.isEmpty() || end.isEmpty()) {
+            log.warn("metric publish: 指标 {} 的观察期声明缺失（{}={}, {}={}），period 退回 day:{}",
+                    metricCode, PERIOD_START_COLUMN, row.get(PERIOD_START_COLUMN),
+                    PERIOD_END_COLUMN, row.get(PERIOD_END_COLUMN), isoDate(request.businessDate()));
+            return "day:" + isoDate(request.businessDate());
+        }
+        return "window:" + start + ".." + end;
+    }
+
+    /** 观察期声明列的 ISO 化（20260831 与 2026-08-31 都归一成后者；空值 → 空串） */
+    private static String isoDay(Object raw) {
+        return raw == null ? "" : isoDate(String.valueOf(raw).trim());
     }
 
     /** 字典单位/版本的取值包装（字典缺该码时留空，由校验阶段以 BLOCKING 拦下） */

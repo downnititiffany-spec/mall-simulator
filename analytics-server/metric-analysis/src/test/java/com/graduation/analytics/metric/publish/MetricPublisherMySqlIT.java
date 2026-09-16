@@ -138,12 +138,13 @@ class MetricPublisherMySqlIT {
         assertThat(ok.ok()).as("失败码=%s 说明=%s checks=%s", ok.errorCode(), ok.message(),
                 MetricPublishValidator.failedRules(ok.checks())).isTrue();
         assertThat(ok.adsRows()).isEqualTo(expectedAdsRows());
-        assertThat(ok.metricValues()).isEqualTo(10);
+        assertThat(ok.metricValues()).isEqualTo(11);
         assertThat(activeSnapshot()).isEqualTo(sidOk);
         assertThat(status(sidOk)).isEqualTo("ACTIVE");
-        assertThat(metricValueCount(sidOk)).isEqualTo(10);
+        assertThat(metricValueCount(sidOk)).isEqualTo(11);
         assertThat(overviewPv(sidOk)).isEqualTo(7L);
         assertThat(metricValue(sidOk, "refund_rate")).isEqualByComparingTo(new BigDecimal("0.6000"));
+        assertThat(metricValue(sidOk, "repeat_rate")).isEqualByComparingTo(new BigDecimal("0.3333"));
 
         // ── 阶段 2：清单与 ADS 都正常，但字典缺 gmv → 写库后对账 BLOCKING 失败 ──
         Path badDir = Files.createDirectories(dir.resolve(sidBad));
@@ -159,7 +160,7 @@ class MetricPublisherMySqlIT {
         assertThat(activeSnapshot()).as("失败不得改变 ACTIVE 指针").isEqualTo(sidOk);
         assertThat(metricValueCount(sidBad)).as("失败快照不得留下指标值").isZero();
         assertThat(adsRowCount(sidBad)).as("失败补偿必须清掉本次写入的 ADS 行").isZero();
-        assertThat(metricValueCount(sidOk)).as("旧快照数据不受影响").isEqualTo(10);
+        assertThat(metricValueCount(sidOk)).as("旧快照数据不受影响").isEqualTo(11);
     }
 
     /**
@@ -211,6 +212,7 @@ class MetricPublisherMySqlIT {
         dict.put("avg_order_value", new DefinitionRef("v1", "元"));
         dict.put("refund_rate", new DefinitionRef("v2", ""));
         dict.put("full_refund_rate", new DefinitionRef("v1", ""));
+        dict.put("repeat_rate", new DefinitionRef("v1", ""));
         dict.put("buy_rate", new DefinitionRef("v1", ""));
         return dict;
     }
@@ -228,6 +230,10 @@ class MetricPublisherMySqlIT {
         overview.put("avg_order_value", new BigDecimal("408.40"));
         overview.put("refund_rate", new BigDecimal("0.6000"));
         overview.put("full_refund_rate", new BigDecimal("0.2000"));
+        // S3-03 加列：复购率 + 观察期声明（period 应落成 window:2026-08-31..2026-09-01）
+        overview.put("repeat_rate", new BigDecimal("0.3333"));
+        overview.put("repeat_period_start", "2026-08-31");
+        overview.put("repeat_period_end", "2026-09-01");
         rows.put("ads_operation_overview_m", List.of(overview));
 
         Map<String, Object> trend = new LinkedHashMap<>();

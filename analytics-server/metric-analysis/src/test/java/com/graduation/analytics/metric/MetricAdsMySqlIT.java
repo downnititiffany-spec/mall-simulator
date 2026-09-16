@@ -208,6 +208,10 @@ class MetricAdsMySqlIT {
         row.put("avg_order_value", new BigDecimal("246.9100"));
         row.put("refund_rate", new BigDecimal("0.012500"));
         row.put("full_refund_rate", new BigDecimal("0.005000"));
+        // S3-03 加列：复购率与观察期声明（MySQL V6 的三列类型/可空性也在本 IT 内被真实写入一次）
+        row.put("repeat_rate", new BigDecimal("0.3333"));
+        row.put("repeat_period_start", "2026-08-31");
+        row.put("repeat_period_end", "2026-09-01");
         return row;
     }
 

@@ -59,13 +59,15 @@ class AdsStableOrderSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAl
   /** 5 个用户 R/F/M **原值全同**（同 `last_buy_date`/`order_count`/`sale_amount` ⇒ 三个 NTILE 全并列） */
   private def writeUserTradePeriod(ascending: Boolean): Unit = {
     val order = if (ascending) "ASC" else "DESC"
+    // valid_order_count 与 order_count 同值：本夹具不建模退款（S3-03 加列后按位置写入需补齐，语义=无全退）
     val row = (u: Int) =>
       s"""SELECT ${u}L AS user_id, '2026-09-01' AS last_buy_date, 1L AS order_count,
          |       CAST(10.00 AS DECIMAL(18,2)) AS sale_amount,
-         |       '$Dt' AS period_start, '$Dt' AS period_end""".stripMargin
+         |       '$Dt' AS period_start, '$Dt' AS period_end, 1L AS valid_order_count""".stripMargin
     spark.sql(
       s"""INSERT OVERWRITE TABLE ${ns.dws}.dws_user_trade_period PARTITION(dt = '$Dt')
-         |SELECT user_id, last_buy_date, order_count, sale_amount, period_start, period_end FROM (
+         |SELECT user_id, last_buy_date, order_count, sale_amount, period_start, period_end,
+         |       valid_order_count FROM (
          |  ${row(1)}
          |  UNION ALL ${row(2)}
          |  UNION ALL ${row(3)}

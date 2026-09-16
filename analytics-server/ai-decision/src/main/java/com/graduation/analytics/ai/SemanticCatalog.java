@@ -73,6 +73,10 @@ public class SemanticCatalog {
         overview.put("avg_order_value", "客单价：销售额 ÷ 支付订单数；不可直接对明细求平均");
         overview.put("refund_rate", "退款率：退款订单数 ÷ 支付订单数");
         overview.put("full_refund_rate", "全额退款率：全额退款订单数 ÷ 支付订单数");
+        overview.put("repeat_rate", "有效复购率：观察期内有效购买≥2次用户数 ÷ 支付用户数（完全退款订单不算有效购买）；"
+                + "与下面两列一起构成观察期声明，跨窗口不可直接比较；无支付用户时为 NULL");
+        overview.put("repeat_period_start", "复购率的观察期起点（ISO yyyy-MM-dd，来自上游 DWS 行声明）");
+        overview.put("repeat_period_end", "复购率的观察期终点（ISO yyyy-MM-dd，来自上游 DWS 行声明）");
         TABLES.put("ads_operation_overview_m", overview);
 
         Map<String, String> saleTrend = new LinkedHashMap<>();
