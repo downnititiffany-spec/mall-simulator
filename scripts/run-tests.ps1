@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 906
+  'analytics-server'        = 908
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -163,6 +163,12 @@ $BaselineDefault = [ordered]@{
 #   + MetricPublisherMappingTest 加 fav_cnt/cart_add_cnt 映射与 day: 粒度 1 条
 #   ⇒ analytics-server 900→906（均不连库；`MetricPublisherMySqlIT`/`MetricAdsMySqlIT` 夹具补两列
 #   属已登记未测项：本轮仍未在真 MySQL 上应用 V10）。
+# S3-09：`AdsExportReader` 表形（schema）双向严格化 —— 导出 JSONL 的**声明列缺任何一列即拒绝**
+#   （旧实现 `putIfAbsent(null)` 静默补列，"版本落后的导出"会被当成"值全为空"发布成功，
+#   且没有任何 check 会点名它：补齐后各行完全一致，`MP_ROW_SHAPE_CONSISTENT` 看不出差别）。
+#   依据：设计 §12.5 L529「表形…验证」、指导书 §7 阶段三第 4 条「核 schema」。
+#   `MetricPublishValidatorTest` 加「显式 null（键在、值为空）仍可读」与「缺声明列 → 拒绝」
+#   2 条（原有「列白名单外字段」用例不变）⇒ analytics-server 906→908。纯 Java、不连库、不改 Spark。
 $BaselineSpark = 226
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

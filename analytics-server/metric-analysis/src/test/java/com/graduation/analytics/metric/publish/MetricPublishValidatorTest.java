@@ -198,7 +198,7 @@ class MetricPublishValidatorTest {
     }
 
     @Test
-    @DisplayName("AdsExportReader：列白名单外字段/缺列补齐/null 保留")
+    @DisplayName("AdsExportReader：声明列齐备的行 + null 保留")
     void exportReaderReadsRows(@TempDir Path dir) throws Exception {
         Path file = dir.resolve("ads_active_trend_m.jsonl");
         Files.writeString(file, "{\"dau\":3,\"behavior_count\":22}\n{\"dau\":null,\"behavior_count\":0}\n");
@@ -208,6 +208,34 @@ class MetricPublishValidatorTest {
         assertThat(rows).hasSize(2);
         assertThat(rows.get(0)).containsEntry("dau", 3L).containsEntry("behavior_count", 22L);
         assertThat(rows.get(1)).containsEntry("dau", null);
+    }
+
+    @Test
+    @DisplayName("AdsExportReader：null 值保留（有键无值）→ 仍可读")
+    void exportReaderKeepsExplicitNullValue(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("ads_active_trend_m.jsonl");
+        Files.writeString(file, "{\"dau\":null,\"behavior_count\":null}\n");
+
+        List<Map<String, Object>> rows = new AdsExportReader().readTable(file, "ads_active_trend_m",
+                List.of("dau", "behavior_count"));
+        assertThat(rows).hasSize(1);
+        // 显式 null（键在、值为空）是真实语义"当日没有该指标值"，必须保留
+        assertThat(rows.get(0)).containsEntry("dau", null).containsEntry("behavior_count", null);
+    }
+
+    @Test
+    @DisplayName("AdsExportReader：导出缺声明列 → 拒绝（不得补 null 冒充\"值为空\"）")
+    void exportReaderRejectsMissingDeclaredColumn(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("ads_active_trend_m.jsonl");
+        // 只写了 dau：behavior_count 整列缺失（例如导出侧版本落后于声明列集）
+        Files.writeString(file, "{\"dau\":3}\n");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new AdsExportReader()
+                        .readTable(file, "ads_active_trend_m", List.of("dau", "behavior_count")))
+                .as("缺列若被补成 null，发布侧会写出\"值为空\"的假数据，且没有任何 check 会点名它")
+                .isInstanceOf(java.io.IOException.class)
+                .hasMessageContaining("缺列")
+                .hasMessageContaining("behavior_count");
     }
 
     @Test
