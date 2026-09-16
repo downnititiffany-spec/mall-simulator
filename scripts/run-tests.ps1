@@ -44,7 +44,8 @@
 # 退出码（与 `scripts/run-isolated-tests.ps1` 契约对齐）：
 #   0 = 所选档全部通过
 #   1 = 参数/环境错误（找不到 mvn / JDK / 脚本自身错误）
-#   5 = 执行前被拒（缺 `-Confirm`、缺口令、RunId 形状非法）；隔离档的门禁 5/6 亦原样透传
+#   5 = 执行前被拒（缺 `-Confirm`、缺口令、RunId 形状非法、RunId/日志目录已被另一轮门禁占用）；
+#       隔离档的门禁 5/6 亦原样透传
 #   6 = 隔离档只读探针取数失败（原样透传）
 #   7 = 套件失败：非 0 退出 / 零用例 / F 或 E 非 0 / spark 产物非本轮新写 / 计数与登记基线漂移
 #
@@ -53,6 +54,9 @@
 #   $env:IT_GUARD_PASSWORD_MALL='<...>'; $env:IT_GUARD_PASSWORD_GENERATOR='<...>'
 #   pwsh -NoProfile -File scripts/run-tests.ps1 -Suite isolated -RunId dev003c_20260915_1145 -Confirm
 #   pwsh -NoProfile -File scripts/run-tests.ps1 -Suite all -RunId dev003c_20260915_1145 -Confirm
+#   `-RunId` 缺省（S3-51 起）＝ `dev003c_<yyyyMMdd_HHmmss>_<6 位随机>`（旧口径为分钟级 `yyyyMMdd_HHmm`，
+#   同一分钟内并发会派生同一 RunId ⇒ 同一日志目录 ⇒ 双方都拿不到证据）；无论显式还是缺省，
+#   同一日志目录**已被另一轮占用**时本次直接 `[REFUSE exit=5]`（互斥锁按日志目录派生、进程退出即释放）。
 param(
   [ValidateSet('default', 'isolated', 'spark', 'all')][string]$Suite = 'default',
   [string]$RunId = '',
@@ -744,6 +748,24 @@ $BaselineSpark = 308
 #   ⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`spark`／`isolated` 档
 #   **未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
 #   详见 docs/acceptance/s3-50-spark-rule-code-slot-closure-20260916/。
+# ── S3-51（F-84）：门禁入口并发健壮性 —— 默认 RunId 唯一化 ＋ 日志目录互斥 ─────────
+# 来源：backlog 行「`scripts/run-tests.ps1` 的日志目录由**分钟级 RunId** 派生 ⇒ 同一分钟内两个
+#   门禁并发会撞 `Tee-Object`（实测报 `The process cannot access the file … because it is being
+#   used by another process`，**两次运行都不产生测试证据**）」（判类：development backlog 入口健壮性）。
+# 开工前实测（改前，HEAD `6fe0756`）：①旧派生式 `'dev003c_' + (Get-Date -Format 'yyyyMMdd_HHmm')`
+#   在同一分钟内两次求值**恒等** ②`$LogDir`＝`$env:TEMP\v25tests-<RunId>` 随之为**同一路径**，
+#   且 `New-Item -Force` 不拦既有目录 ③证据写点 `Invoke-MavenRun` 用 `Tee-Object -FilePath $log`
+#   ⇒ 独占冲突 ④受影响面不止日志：isolated 档的库名/账号名同样由 RunId 派生（并发会互踩同一批库）。
+# 修法（判 **A 类**，只改门禁脚本、零生产代码）：①默认 RunId 加秒级时间戳 ＋ 6 位随机后缀
+#   （形状仍满足 `^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$`）②按**日志目录** SHA256 前 8 字节取 `Local\`
+#   命名互斥量，抢不到即 `[REFUSE exit=5]`（**响亮拒绝**，绝不静默降级）；互斥量由 OS 在持有进程
+#   退出时自动释放 ⇒ **不产生陈旧锁**；锁在全部前置门禁之后取得 ⇒ 被拒的运行不占锁。
+# 未改：`-Suite`/`-RunId`/`-LogDir`/`-Confirm`/`-AllowCountDrift` 的语义与各退出码含义；显式
+#   `-RunId` 仍原样采用（调用方自担唯一性 —— 只是撞车现在会被拒绝，而不是静默丢证据）。
+# 未测边界：跨会话/跨用户**不互斥**（未用 `Global\`）；两轮全档并发**未测**；不证明并发能通过
+#   （只证明撞车不会静默丢证据）；`docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md:19`
+#   记的是**当时的**默认口径（历史报告按纪律不改写，以本块为准）。
+# ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
@@ -759,7 +781,13 @@ function Resolve-JavaExe([string]$jdkHome) { Join-Path $jdkHome 'bin\java.exe' }
 # ── 参数与环境门禁 ─────────────────────────────────────────────────────────
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $IsolatedScript) { $IsolatedScript = Join-Path $PSScriptRoot 'run-isolated-tests.ps1' }
-if (-not $RunId) { $RunId = 'dev003c_' + (Get-Date -Format 'yyyyMMdd_HHmm') }
+if (-not $RunId) {
+  # S3-51：默认 RunId 由「分钟级」改为「秒级 ＋ 6 位随机后缀」——
+  # 旧口径同一分钟内两次运行派生**完全相同**的 RunId ⇒ 同一 LogDir、同一 `Tee-Object` 目标文件
+  # ⇒ 并发时两次运行都拿不到测试证据（实测报 `The process cannot access the file …`），
+  # 且隔离档的库名/账号名同源 ⇒ 并发还会互踩同一批库。
+  $RunId = 'dev003c_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '_' + ([guid]::NewGuid().ToString('N').Substring(0, 6))
+}
 if ($RunId -notmatch $RunIdPattern) {
   Fail 5 ("RunId '{0}' 形状非法（要求 {1}）：库名/账号名/Spark 测试根目录都由它派生，形状错会打到别处" -f $RunId, $RunIdPattern)
 }
@@ -1029,6 +1057,28 @@ function Invoke-SparkSuite {
   if (-not $ok) { $badList = @('spark-jobs') }
   return [pscustomobject]@{ suite = 'spark'; exit = $(if ($ok) { 0 } else { 7 }); total = $tot.total; rows = @($row); bad = $badList; jdkOk = $jdkOk; fresh = $fresh; mvnExit = $r.exit; suiteTxt = $suiteTxt }
 }
+
+# ── S3-51：并发门禁互斥（同 RunId / 同日志目录 ⇒ 直接拒绝，不静默丢证据）──
+# 背景（实测）：旧默认 RunId 分钟级 ⇒ 同一分钟内两次运行 LogDir 完全相同，`Tee-Object -FilePath`
+# 对同一路径互斥 ⇒ 两次运行**都不产生测试证据**。除日志外，隔离档的库名/账号名也由 RunId 派生。
+# 口径：①互斥键＝**日志目录**的 SHA256 前 8 字节（覆盖「同 RunId」与「显式传同 -LogDir」两种撞车）；
+#       ②用 OS 命名互斥量（`Local\`，本会话内有效）⇒ 持有进程退出即自动释放，**不产生陈旧锁**；
+#       ③抢不到锁＝`[REFUSE exit=5]`（响亮拒绝，绝不静默降级）；
+#       ④锁在全部前置门禁之后取得 ⇒ 被拒的运行不会占锁。
+# 未测边界：跨会话/跨用户不互斥（未用 `Global\`）；不证明并发本身会通过（只证明不静默丢证据）。
+$sha = [System.Security.Cryptography.SHA256]::Create()
+try {
+  $lockBytes = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($LogDir.ToLowerInvariant()))
+} finally { $sha.Dispose() }
+$LockName = 'Local\v25tests-' + (-join ($lockBytes[0..7] | ForEach-Object { $_.ToString('x2') }))
+$script:GateMutex = New-Object System.Threading.Mutex($false, $LockName)
+$lockTaken = $false
+try { $lockTaken = $script:GateMutex.WaitOne(0) }
+catch [System.Threading.AbandonedMutexException] { $lockTaken = $true }   # 前一轮异常终止 ⇒ 锁已由 OS 释放，可接管
+if (-not $lockTaken) {
+  Fail 5 ("日志目录已被另一轮门禁占用（RunId='{0}' LogDir='{1}'）：并发必须显式传不同 -RunId；默认 RunId 已含秒级时间戳与随机后缀。" -f $RunId, $LogDir)
+}
+Write-Host ("  并发锁    : {0}（已取得；进程退出即释放，无陈旧锁）" -f $LockName)
 
 # ── 按档执行 ───────────────────────────────────────────────────────────────
 if ($Suite -in @('default', 'all')) {
