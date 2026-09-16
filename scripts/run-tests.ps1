@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 956
+  'analytics-server'        = 960
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -495,6 +495,39 @@ $BaselineDefault = [ordered]@{
 #   边界：单测里 mapper 是 Mockito 替身 ⇒ 只证「`updateById` 带值被调用」，**不证真库写入**；历史行**不回填**
 #   （写正式库属 HARD DECISION 第④门，未做）；`/pipeline-runs` 接口会随实体下发该列，但前端 `pipelineRunRows`
 #   未映射 ⇒ **页面看不到批次**；零连库、零 DDL/迁移/前端改动。详见 S3-36 登记 §5/§7。
+# S3-39（2026-09-16，default 档）：backlog 行「跨树『后端信封告警码 ↔ 前端展示文案』无自动守卫」（台账 L443）
+#   的收口 —— **A 类/纯测试新增，零生产代码改动、零前端源码改动**。新增 Java 守卫 EnvelopeWarningCodeMirrorTest
+#   （metric-analysis 测试树，4 条；定位用**既有** RepoRoot 单一 owner，未新增 walk-up 实现）：
+#   ① AnalysisViewModel.WARN_* 的**码值集合** == web/src/utils/envelope.js 的 WARNING_TEXT **键集合**（双向一一
+#      对应；后端多一个 ⇒ 页面把原始编码打给用户，前端多一个 ⇒ 前端自造后端不认的码）；
+#   ② WARNING_TEXT ∩ WARNING_TEXT_EXTRA == ∅（两表互斥，同一码不得有两个文案 owner）；
+#   ③ 展示侧 12 个码值在后端 main 的「声明处数量」＝**已登记形态**（NO_ACTIVE_SNAPSHOT×3、UNKNOWN_SNAPSHOT／
+#      UNKNOWN_DIMENSION_TABLE／QUALITY_STATUS_UNAVAILABLE 各×2、其余 5 个各 1、3 个页面本地码各 0）——
+#      数量一变即红，逼先决定单一属主或登记，而不是让重复悄悄扩散；
+#   ④ 解析器自检：owner 新增码／前端漏键／两表重叠／重复声明四类合成都必须被抓到（含"表名找不到要显式
+#      抛错、不得静默返回空集"这条空跑防线）。
+#   扫描面＝6 个模块的 src/main/java（实测 203 个文件；键用「模块/文件名」且重名时显式抛错 ⇒ 同名文件不会
+#   互相覆盖使扫描面悄悄缩水）。**实测新发现**（同轮登记、本轮不擅自合并）：同一码值在后端**多处各自声明**
+#   确实存在 —— NO_ACTIVE_SNAPSHOT 有 **3** 处（AnalysisViewModel／EvidencePackage／SqlPolicy），另有 3 个码各 2 处；
+#   AI 证据包 EvidencePackage 另有 **6** 个专属码（前端两表都没有文案），见 S3-39 登记与台账新行。
+#   **真跑证据（RED 探针打在真实被测物上，不是只跑合成自检）**：P1（owner 侧加第 9 个 WARN_*）⇒ `Failures: 1`
+#   ＝①；P3（EXTRA 表塞入信封码）＋ P4（EvidencePackage 再复制一个信封码）⇒ `Failures: 2` ＝②③；三处探针后
+#   `git checkout --` 复原、`Get-FileHash` 与探针前**逐字相同**，复原后定向复跑 **4/4 绿**。
+#   **量数轮 `s339-count-1`**：analytics-server `960 (F=1 E=0 S=1)` 明细 `93+350+169+**97**+94+157` ⇒
+#   `DRIFT(基线 956)`，**+4 全部落在 metric-analysis（93→97）＝本轮新用例**；mall-simulator 13／
+#   synthetic-data-generator 106 均 MATCH；唯一红仍是已登记环境性用例（platform-app F=1，未修、未复制
+#   manifest、未用开关掩盖）；该轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   **收口轮 `s339-final-1`**：改基线后复跑，见下（计数 MATCH）。
+#   ⇒ **analytics-server 956→960**（metric-analysis 93→97，+4；其余五模块 93/350/169/94/157 未变）；
+#   **三棵树 1075→1079**。
+#   边界（诚实记录，不得越界表述）：① 本守卫只认「常量声明」形态（`public static final String NAME = "CODE";`）
+#   —— 若有人在 warnings 列表里直接写中文字符串或裸码字面量则看不见；本轮已用字面量扫描（`git grep -E`）
+#   确认信封 8 码在**两个声明类之外**没有裸字面量散落，消费方（AnalysisService／RfmService）都是引用常量；
+#   ② **前端渲染路径未运行验证**（`web/node_modules` 不存在，无法 build/跑浏览器），本守卫证的是**源码文本**
+#   对账，不是页面实际显示；③ AI 证据包 6 个专属码**当前未被前端以独立码形式消费**（`context.js:201` 只把
+#   「限制说明」散文并入 warnings，`EvidenceTemplates:194-196` 把它们以「数据缺口：<码>」形式嵌进散文），
+#   故本轮**不**给它们补中文文案（避免按猜测写语义），只登记待裁决；④ 零连库、零 DDL/迁移、零生产 Java 改动。
+#   详见 docs/acceptance/s3-39-warning-code-cross-tree-guard-20260916/。
 $BaselineSpark = 308
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
