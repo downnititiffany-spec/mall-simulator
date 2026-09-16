@@ -6,32 +6,35 @@ import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+
 /**
  * R7-3 回归：Hive 正式 ADS ↔ analytics_metric 宽表的映射清单必须与 Java 侧
  * `MetricAdsCatalog`（analytics_metric 建表/插入列白名单）**逐表逐列一致**。
  *
- * 这里刻意把 Java 侧清单**硬编码**一份：一旦任一侧加了列/改了顺序，本用例立刻变红，
- * 避免"Spark 导出的列与 MySQL 表不匹配"这种只会在发布时才炸的问题。
+ * S3-30：Java 侧清单**不再在本类里硬编码镜像**。原先那种写法使本类成为列清单的**第二所有者**，
+ * 实测（`s330_blindspot1.log`）：把 `MetricAdsCatalog.java` 的 `ads_operation_overview_m.cart_add_cnt`
+ * 删掉后本类**仍 5/5 绿**（本类只拿 Scala 导出与自己的副本相比），恰好放过它本该拦住的
+ * 「Java 侧少一列、Spark 照旧导出」事故。现改为**读取所有者源文件**（`MetricAdsCatalogSource.parse`）
+ * 取期望值，本类只负责比较。
+ *
+ * 「两侧一起漂」的拦截责任仍在三方链上：`MetricAdsCatalogDdlConsistencyTest`（Java 白名单 ↔ 迁移 DDL）
+ * ＋ `AdsSchemaOwnerSpec`（Spark 投影 ↔ DDL 所有者）⇒ 去掉副本后并无新的静默面（S3-30 登记 §3）。
  */
 class MetricAdsSpecTest extends AnyFlatSpec with Matchers {
 
-  /** Java 侧 MetricAdsCatalog.ALL（顺序与列必须逐字一致） */
-  private val javaCatalog = Seq(
-    "ads_operation_overview_m" -> Seq("pv", "uv", "dau", "order_count", "sale_amount", "net_sale_amount",
-      "avg_order_value", "refund_rate", "full_refund_rate", "repeat_rate",
-      "repeat_period_start", "repeat_period_end", "fav_cnt", "cart_add_cnt"),
-    "ads_sale_trend_m" -> Seq("order_count", "buyer_count", "sale_amount", "avg_order_value", "net_sale_amount"),
-    "ads_behavior_funnel_m" -> Seq("stage", "user_count", "conversion_rate", "overall_buy_rate",
-      "overall_cart_rate"),
-    "ads_active_trend_m" -> Seq("dau", "behavior_count"),
-    "ads_hot_product_m" -> Seq("product_id", "product_name", "heat_score", "pv", "fav", "cart", "buy", "rank_no",
-      "rule_version"),
-    "ads_product_conversion_m" -> Seq("product_id", "pv_users", "buy_users", "conversion_rate"),
-    "ads_user_profile_m" -> Seq("user_id", "r", "f", "m", "value_group", "active_level", "favorite_category",
-      "last_active_date", "last_buy_date", "lifecycle_state", "rule_version", "calc_date",
-      "r_days", "f_count", "m_amount", "period_start", "period_end"),
-    "ads_data_quality_m" -> Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold",
-      "rule_version"))
+  private val javaCatalogRelative =
+    "analytics-server/metric-analysis/src/main/java/com/graduation/analytics/metric/MetricAdsCatalog.java"
+  private val specSelfRelative =
+    "spark-jobs/src/test/scala/com/graduation/analytics/MetricAdsSpecTest.scala"
+
+  private def readRepoFile(relative: String): String =
+    new String(Files.readAllBytes(P2TestSupport.repoRoot.resolve(relative)), StandardCharsets.UTF_8)
+
+  /** 期望列清单＝**唯一所有者**（Java 白名单）源文件的解析结果；本类不自带任何副本。 */
+  private val javaCatalog: Seq[(String, Seq[String])] =
+    MetricAdsCatalogSource.parse(readRepoFile(javaCatalogRelative))
 
   private val javaCatalogMap = javaCatalog.toMap
 
@@ -60,6 +63,38 @@ class MetricAdsSpecTest extends AnyFlatSpec with Matchers {
         t.columns should be(expected)
       }
     }
+  }
+
+  it should "S3-30：期望列清单读取自唯一所有者文件（不是本类内的硬编码镜像）" in {
+    // 解析面非空自检：解析器与所有者形态脱节时必须红，而不是让下面的逐表比对空转
+    javaCatalog.size should be(8)
+    withClue("解析结果必须逐表非空：") {
+      javaCatalog.foreach { case (table, cols) => cols should not be empty }
+    }
+    val selfSource = readRepoFile(specSelfRelative)
+    withClue("本类源文件必须真的来自所有者文件：") {
+      selfSource should include("MetricAdsCatalogSource.parse")
+      selfSource should include("MetricAdsCatalog.java")
+    }
+    // 反证（第二所有者不许复活）：本类源文件里一旦再出现「表名 → Seq(列名…)」形态的镜像即红。
+    // 判定式取**行首条目**形态（真正的镜像是 `val ... = Seq(` 里一行一条映射；行内断言/合成样例
+    // 里的同名片段不算）。实测教训见 S3-30 登记 §6.1：前两版判定式先后匹配到本用例自己的注释文本
+    // 与合成样例 `Seq("ads_x_m" -> Seq("a", "b"))`，把自己判红两次。
+    val mirrorPattern = """(?m)^\s*"ads_[a-z0-9_]+_m"\s*->\s*Seq\(""".r
+    withClue("本类又出现了硬编码列清单镜像：") {
+      mirrorPattern.findFirstIn(selfSource) should be(None)
+    }
+  }
+
+  it should "S3-30：解析器有牙齿（所有者真加/减列时解析结果随之变化；形态脱节即抛错）" in {
+    val synthetic = """public static final List<MetricAdsCatalog> ALL = List.of(
+                     |        new MetricAdsCatalog("ads_x_m", List.of("a", "b"), List.of("a")),
+                     |        new MetricAdsCatalog("ads_y_m", List.of("c"), List.of()));""".stripMargin
+    MetricAdsCatalogSource.parse(synthetic) should be(Seq("ads_x_m" -> Seq("a", "b"), "ads_y_m" -> Seq("c")))
+    val dropped = synthetic.replace("""List.of("a", "b")""", """List.of("a")""")
+    MetricAdsCatalogSource.parse(dropped) should be(Seq("ads_x_m" -> Seq("a"), "ads_y_m" -> Seq("c")))
+    // 找不到 ALL 清单时必须抛错并说明，不得静默返回空清单（否则守卫会变成空转）
+    an[IllegalArgumentException] should be thrownBy MetricAdsCatalogSource.parse("class X {}")
   }
 
   it should "R7-0 口径列已贯通到导出口径（full_refund_rate 必须导出）" in {

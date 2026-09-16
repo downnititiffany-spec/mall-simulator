@@ -419,7 +419,24 @@ $BaselineDefault = [ordered]@{
 #   `[FAIL exit=7]` 预期；基线更新后收口轮 `s329_20260916_def2` 应 MATCH。
 #   边界：**未测** 真库应用迁移、`warehouse/ddl` 同类读取点（顺序无语义，未改）、`db/meta` 读取点（未改）、
 #   isolated/spark 两档 ⇒ 不得称「DDL 守卫已完备」。
-$BaselineSpark = 303
+# S3-30（2026-09-16，spark 档）：backlog「DDL 加列类变更第二所有者盲区」开放项 (b) 收口 ——
+#   `MetricAdsSpecTest`（Scala）原先在源码里**硬编码一份** `MetricAdsCatalog.ALL` 的列清单镜像，
+#   使该测试成为列清单的**第二所有者**。改前实测盲区（`s330_blindspot1.log`）：把所有者
+#   `MetricAdsCatalog.java` 的 `ads_operation_overview_m.cart_add_cnt` 删掉，本 spec **仍 5/5 绿**
+#   （它只拿 Scala 导出 ↔ 自己的副本相比）⇒ 恰好放过它本该拦住的「Java 少一列、Spark 照旧导出」。
+#   现改为读**所有者源文件**（新增测试专用 `MetricAdsCatalogSource.parse`，因 spark-jobs 是 JDK8
+#   且与 JDK17 的 metric-analysis **无** Maven 依赖，不能直接调 Java API），并新增两条自检：
+#   ①「期望列清单读取自唯一所有者文件」含**反证**（本类源文件里再出现行首 `"ads_…_m" -> Seq(` 形态
+#   的镜像即红）②「解析器有牙齿」（所有者真加/减列时解析结果随之变化；形态脱节即抛错，不静默空转）。
+#   `MetricAdsSpecTest` 5→7 条 ⇒ **spark 303→305**。
+#   证据：RED `s330_red1.log`（`not found: value MetricAdsCatalogSource`）；GREEN `s330_green4.log`
+#   （`Tests: succeeded 7, failed 0`）；牙齿探针 `s330_probeA1.log`（同一处所有者删列 ⇒ 改后**红**，
+#   与改前盲区绿形成对照）、`s330_probeB1.log`（镜像回流 ⇒ 反证用例红，`MetricAdsSpecTest.scala:89`）；
+#   量数轮 `s330_20260916_spark1`：`tests=305 DRIFT`（+2＝本项新增 2 条）、36 套件、`All tests passed`。
+#   边界：只改 spark-jobs **测试树**（零生产代码/DDL/迁移/前端/新依赖，Java 所有者字节未动）；
+#   移除镜像顺带移走了它的「冻结副本」作用，但该作用已由 `AdsSchemaOwnerSpec.Frozen`（Hive 侧 8 张表，
+#   与所有者逐列钉住）承担 ⇒ 不新增静默面；`isolated`/`default` 两档本轮未重跑（零 analytics-server 文件改动）。
+$BaselineSpark = 305
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
