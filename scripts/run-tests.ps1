@@ -178,7 +178,13 @@ $BaselineDefault = [ordered]@{
 #   analytics-server 侧 QualityRuleVersionMigrationScriptTest 新增 v25OnlyAppendsSeedRows
 #   （结构守卫：单条 INSERT IGNORE、不建表/不改列）并把目录全集断言 36→37
 #   ⇒ analytics-server 908→909（纯 Java、不连库；V25 在真库上**未执行**，属已登记未测项）。
-$BaselineSpark = 233
+# S3-11：DWS 物理表形的**三方一致**守卫（参考副本 03-dws.sql ↔ 唯一所有者 LocalSchemaInitJob
+#   ↔ 写入投影 DwsSql）+ 修参考副本 `dws_user_behavior_day` 的列序漂移（实测：
+#   参考副本原为 `… cart, buy, search, active_hours`，所有者/写入投影为 `… cart, search, active_hours, buy`
+#   ⇒ 按参考副本建表会静默串列）。spark 侧新增 DwsSchemaOwnerSpec（7 条：参考副本↔所有者逐列（名/类型/序）、
+#   分区列、禁 ALTER 旁路、写入投影列序、每表恰好一条 INSERT OVERWRITE、冻结快照、表集一致）
+#   ⇒ spark 233→240。纯 Spark 测试侧 + `warehouse/ddl/03-dws.sql` 文本，未连库、未改任何 Flyway 迁移。
+$BaselineSpark = 240
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
