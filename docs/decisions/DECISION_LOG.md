@@ -106,3 +106,21 @@
 **Reason**：`AiAssistant.vue` 已读取 `evidenceContext.summary`，但上下文构造器此前从未返回该字段，导致后端已经给出 `ExplanationResult.summary` 时页面仍固定显示缺失文案。
 
 **Boundary**：本改动只修展示链路，不改变 LLM/模板解释生成、证据数值、provider 判定、Text-to-SQL 或后端契约。
+
+## 2026-09-17
+
+### D-013 — AI 证据锚点 ID 保持后端原始形状
+
+**Decision**：所有用于决策草稿锚点的 `evidenceId` / `snapshotId` 必须是后端返回的**精确字符串**。前端不得对 ID 做 `trim()`、数字转字符串或其它“修复后再接受”的归一化；`unknown` 任意大小写、空串、带前后空白、非字符串都视为无效。
+
+**Reason**：S3-55 在 `context.js` 已把 ID 读取收紧为严格字符串，但 `decisionDraft.js` 仍先经过 `draftText()`，会把 `" EV-... "` / `" S... "` trim 成合法形状，形成第二个归一化所有者并绕过严格边界。S3-56 删除这层 ID trim，只让普通业务文本继续使用 `draftText()`。
+
+**Invariants**：
+
+- `context.js#isRealSnapshotId` 是当前前端 ID 真实性的单一判据；
+- evidence package ID 与 snapshot ID 均不做 trim；
+- 数字 ID 不自动转字符串；
+- evidence package 真实值仍优先于 snapshot；
+- 无真实锚点时仍 fail-closed，不构造决策草稿请求。
+
+**Implementation commits**：`617642c`（S3-55 上下文严格读取）+ `776bc74`（S3-56 草稿锚点去二次归一化）+ `88c715e`（developer tests）。
