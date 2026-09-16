@@ -22,6 +22,21 @@
 > 业务源身份由 per-source warehouse namespace 与 ODS/DWD 的 `source_system`/`source_instance_id` 承载，
 > 本期分析信封**不**提供源身份（缺口已登记，见 `PROJECT_STATUS` backlog）。
 
+> **v1.3（2026-09-16，S3-18 加性补充）**：按指导书 V3.0 §7 阶段4 **L158**「异步任务返回标识，提供阶段/
+> 失败/重试反馈；**分页**、限流、超时统一」与 §8 阶段4 完成标准（L200）「真实快照查询、权限/空态/错误、
+> **分页正确**；任务请求不阻塞到 Spark 结束」，设计 V3.0 **L693**「根路径 `/api/v1`；响应
+> `code/message/data/traceId`；**分页 `page`/`size`/`sort`**」与 **L675**「商品分析｜热度/销量/转化/退款、
+> **稳定排行、分页**」：`/api/v1/analysis/products` 的**热度榜**改真分页（`page`/`size`），
+> 排行**稳定化**（`rank_no` 升序、同 rank 以 `product_id` 升序打破平局）。
+>
+> **本版只落 L158 的「分页」一项**：`sort` 参数（设计 L693 同一行）与「限流」「超时统一」**本版未实现**，
+> 缺口逐条登记在 `docs/PROJECT_STATUS.md` backlog，**不得**因本版发布而声称 L158 已满足。
+>
+> **既有字段语义**：请求侧 `topN` 兼容不变（仍原样回显在 `filters`）；`data.topN` 由「前 N 名」收紧为
+> 「**本次窗口上限**（= 生效 `size`）」。**`page` 缺省即 1，旧前端不传 `page` ⇒ page=1 ⇒ 与 v1.2 行为
+> 逐字段相同**（`hot` 前 size 行、`topN` 同值、`conversion` 同全量），故对既有调用方零变化；
+> 新增的 `page`/`size`/`total`/`hasMore` 四个字段为加性，旧前端不读不会误读。
+
 ## 1. 总原则
 
 1. 分析服务（`AnalysisService`、`RfmService`）**只能读指标库**（`MetricStore` / `MetricAdsReader`，
@@ -96,14 +111,32 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 `gmv`/`netSale`/`refundRate`/`fullRefundRate` 一律取 `metric_value`（**不得前端或后端重算**）；
 `ads_category_sale_m` / `ads_region_sale_m` 本期不存在，维度结构字段返回空数组并在 `warnings` 说明。
 
-### 3.3 `GET /api/v1/analysis/products?snapshotId=&topN=`
+### 3.3 `GET /api/v1/analysis/products?snapshotId=&page=&size=&topN=&from=&to=`
 
 ```json
 { "hot": [ { "productId": 11, "productName": "…", "heat": 9.50, "pv": 100, "fav": 2,
-             "cart": 1, "buy": 1, "rank": 1 } ],
+             "cart": 1, "buy": 1, "rank": 11 } ],
   "conversion": [ { "productId": 11, "pvUsers": 3, "buyUsers": 1, "conversionRate": 0.3333 } ],
-  "topN": 10 }
+  "topN": 10, "page": 2, "size": 10, "total": 128, "hasMore": true }
 ```
+
+**v1.3 热度榜分页（加性）**：
+
+- **参数**：`page`（从 1 开始，缺省 1）、`size`（缺省 10，上限 100）。`size` 显式给定时以 `size` 为准；
+  未给定时 `size = min(topN, 100)`（`topN` 缺省 10）——即**旧参数 `topN` 退化为窗口大小**，
+  旧前端（只传 `topN`）行为不变。
+- **窗口语义**：`hot` 返回排行第 `[(page-1)*size+1, page*size]` 名；`total` = 该快照排行**可用总行数**；
+  `hasMore = page*size < total`；`page` 超出 `total` 时 `hot` 为**空数组**且 `total`/`hasMore` 如实返回
+  （**空页不是错误**，属四态里的「无数据」）。
+- **稳定排行**：先按 `rank_no` 升序，**同 `rank_no` 以 `product_id` 升序**打破平局（设计 L675「稳定排行」；
+  避免同 rank 行在不同请求/不同 JVM 下顺序漂移）。
+- **非法参数**：显式传入 `page < 1` 或 `size < 1` ⇒ 抛 `PARAM_INVALID`（HTTP 400，错误码所有者
+  `GlobalExceptionHandler.mapStatus`，**不新增错误码**），**不做静默钳制**——静默改值会让「回显值 ≠ 实际生效值」。
+  兼容保留：旧参数 `topN <= 0` 仍按 v1.2 语义取缺省 10（**不**因本版转为错误）。
+- **`conversion` 不分页**：`ads_product_conversion_m` 保持**全量**返回（既有实现理由：按 product_id 全量，
+  截断会漏商品），分页只作用于 `hot`。
+- `filters` 新增回显 `page`/`size`（**生效值**）；`filters.topN` 仍为**请求原值**（缺省时回显 10，
+  与 v1.2 一致）。
 
 ### 3.4 `GET /api/v1/analysis/funnel?snapshotId=`
 

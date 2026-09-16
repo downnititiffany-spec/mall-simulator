@@ -1,5 +1,6 @@
 package com.graduation.analytics.analysis;
 
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricAdsReader;
 import com.graduation.analytics.metric.MetricQualityGate;
 import com.graduation.analytics.metric.MetricStore;
@@ -63,6 +64,12 @@ public class AnalysisService {
     private static final int DEFAULT_TOP_N = 10;
     private static final int MAX_TOP_N = 100;
 
+    /**
+     * v1.3（S3-18）：分页窗口上限。与 {@link #MAX_TOP_N} **同值且刻意共用**——旧参数 `topN` 已退化为
+     * 「窗口大小」，两个上限若各写一个字面量迟早漂移；这里只留一个所有者。
+     */
+    private static final int MAX_PAGE_SIZE = MAX_TOP_N;
+
     private static final DateTimeFormatter ISO_SECONDS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final MetricAdsReader adsReader;
@@ -108,7 +115,16 @@ public class AnalysisService {
     public record ProductConversion(long productId, long pvUsers, long buyUsers, BigDecimal conversionRate) {
     }
 
-    public record ProductsData(List<HotProduct> hot, List<ProductConversion> conversion, int topN) {
+    /**
+     * 商品分析 data（契约 §3.3）。
+     *
+     * <p>v1.3（S3-18）加性补 4 个分页字段：`page`/`size` 为**生效值**，
+     * `total` = 该快照排行可用总行数，`hasMore = page*size &lt; total`。
+     * {@code topN} 语义由「前 N 名」收紧为「**本次窗口上限**」——`page` 缺省即 1，
+     * 旧前端行为逐字段不变（契约 v1.3）。</p>
+     */
+    public record ProductsData(List<HotProduct> hot, List<ProductConversion> conversion, int topN,
+                               int page, int size, long total, boolean hasMore) {
     }
 
     public record FunnelStage(String stage, String label, long users, BigDecimal rate) {
@@ -180,11 +196,28 @@ public class AnalysisService {
 
     // ── 商品分析（§3.3） ──────────────────────────────────────────────────────
 
-    public AnalysisViewModel<ProductsData> products(String snapshotId, int topN, LocalDate from, LocalDate to) {
+    /**
+     * 商品分析（契约 §3.3）。v1.3 起热度榜**真分页**（指导书 V3.0 §7 阶段4 L158「分页」、
+     * 设计 V3.0 L693「分页 page/size/sort」/ L675「稳定排行、分页」）。
+     *
+     * @param page 1 起始页码；{@code null} ⇒ 1
+     * @param size 窗口大小；{@code null} ⇒ 由旧参数 {@code topN} 决定（缺省 10，上限 100）
+     * @param topN 旧参数：仍原样回显进 {@code filters}；`size` 未显式给出时充当窗口大小
+     */
+    public AnalysisViewModel<ProductsData> products(String snapshotId, Integer page, Integer size, Integer topN,
+                                                    LocalDate from, LocalDate to) {
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
-        filters.put("topN", topN); // 原样回显请求值
+        // v1.2 兼容：旧参数原样回显（缺省回显 10，与旧 @RequestParam defaultValue="10" 的观测结果一致）
+        filters.put("topN", topN == null ? DEFAULT_TOP_N : topN);
+
+        // 显式传入的非法值 fail-fast：静默钳制会造成「回显值 ≠ 实际生效值」
+        int effectivePage = resolvePage(page);
+        int effectiveSize = resolveSize(size, topN);
+        filters.put("page", effectivePage);
+        filters.put("size", effectiveSize);
+
         Pinned pinned = pin(snapshotId);
         if (pinned.snapshotId() == null) {
             return AnalysisViewModel.empty(filters, pinned.warnings());
@@ -192,10 +225,39 @@ public class AnalysisService {
         String sid = pinned.snapshotId();
         filters.put("snapshotId", sid);
 
-        // 生效值才做上限保护（回显仍是请求原值，避免"回显值与实际不符"）
-        int effectiveTopN = topN <= 0 ? DEFAULT_TOP_N : Math.min(topN, MAX_TOP_N);
-        ProductsData data = new ProductsData(hotProducts(sid, effectiveTopN), productConversion(sid), effectiveTopN);
+        List<Map<String, Object>> ranked = rankedHotRows(sid);
+        long total = ranked.size();
+        List<HotProduct> hot = ranked.stream()
+                .skip((long) (effectivePage - 1) * effectiveSize)
+                .limit(effectiveSize)
+                .map(AnalysisService::toHotProduct)
+                .toList();
+        boolean hasMore = (long) effectivePage * effectiveSize < total;
+        ProductsData data = new ProductsData(hot, productConversion(sid), effectiveSize,
+                effectivePage, effectiveSize, total, hasMore);
         return view(pinned, filters, data, List.of());
+    }
+
+    /** v1.3：缺省 = 第 1 页；显式非法值抛 {@code PARAM_INVALID}（错误码所有者仍是 GlobalExceptionHandler）。 */
+    private static int resolvePage(Integer page) {
+        if (page == null) {
+            return 1;
+        }
+        if (page < 1) {
+            throw new PlatformBizException("PARAM_INVALID", "page 必须 >= 1，实际 " + page);
+        }
+        return page;
+    }
+
+    /** v1.3：显式 {@code size} 优先；未给出时沿用 v1.2 的旧参数口径（{@code topN<=0} 取缺省 10，不转错误）。 */
+    private static int resolveSize(Integer size, Integer legacyTopN) {
+        if (size != null) {
+            if (size < 1) {
+                throw new PlatformBizException("PARAM_INVALID", "size 必须 >= 1，实际 " + size);
+            }
+            return Math.min(size, MAX_PAGE_SIZE);
+        }
+        return legacyTopN == null || legacyTopN <= 0 ? DEFAULT_TOP_N : Math.min(legacyTopN, MAX_TOP_N);
     }
 
     // ── 行为漏斗（§3.4） ──────────────────────────────────────────────────────
@@ -425,17 +487,23 @@ public class AnalysisService {
         return new QualitySummary(passedByRule.size(), passed, failedRules);
     }
 
-    /** 热门商品榜（ads_hot_product_m，按 rank_no 升序取前 topN） */
-    private List<HotProduct> hotProducts(String snapshotId, int topN) {
+    /**
+     * 热门商品**全量排行**（ads_hot_product_m）：`rank_no` 升序，**同 rank 以 `product_id` 升序打破平局**
+     * （设计 L675「稳定排行」：不让同 rank 行随读取顺序漂移）。分页切片与 `total` 由调用方负责。
+     */
+    private List<Map<String, Object>> rankedHotRows(String snapshotId) {
         return AdsRows.latestPartition(adsReader, T_HOT_PRODUCT, snapshotId).stream()
-                .sorted(Comparator.comparingInt((Map<String, Object> row) -> AdsRows.asInt(row.get("rank_no"))))
-                .limit(topN)
-                .map(row -> new HotProduct(AdsRows.asLong(row.get("product_id")),
-                        AdsRows.asString(row.get("product_name")), AdsRows.asDecimal(row.get("heat_score")),
-                        AdsRows.asLong(row.get("pv")), AdsRows.asLong(row.get("fav")),
-                        AdsRows.asLong(row.get("cart")), AdsRows.asLong(row.get("buy")),
-                        AdsRows.asInt(row.get("rank_no"))))
+                .sorted(Comparator.comparingInt((Map<String, Object> row) -> AdsRows.asInt(row.get("rank_no")))
+                        .thenComparingLong(row -> AdsRows.asLong(row.get("product_id"))))
                 .toList();
+    }
+
+    private static HotProduct toHotProduct(Map<String, Object> row) {
+        return new HotProduct(AdsRows.asLong(row.get("product_id")),
+                AdsRows.asString(row.get("product_name")), AdsRows.asDecimal(row.get("heat_score")),
+                AdsRows.asLong(row.get("pv")), AdsRows.asLong(row.get("fav")),
+                AdsRows.asLong(row.get("cart")), AdsRows.asLong(row.get("buy")),
+                AdsRows.asInt(row.get("rank_no")));
     }
 
     /** 商品转化（ads_product_conversion_m，按 product_id 升序；不做 topN 截断，避免漏商品） */

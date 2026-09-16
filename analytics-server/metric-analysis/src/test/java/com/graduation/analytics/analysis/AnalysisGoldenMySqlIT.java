@@ -180,7 +180,8 @@ class AnalysisGoldenMySqlIT {
     @Test
     @DisplayName("商品分析：热度榜与转化取自 ADS 排行表")
     void productsComeFromAdsRankTables() {
-        AnalysisViewModel<ProductsData> model = service.products(SID, 10, null, null);
+        // S3-18：签名改为 (snapshotId, page, size, topN, from, to)——这里保持旧口径（topN=10 ⇒ page 1 窗口 10）
+        AnalysisViewModel<ProductsData> model = service.products(SID, null, null, 10, null, null);
 
         assertThat(model.data().hot()).hasSize(4);
         assertThat(model.data().hot().get(0).rank()).isEqualTo(1);

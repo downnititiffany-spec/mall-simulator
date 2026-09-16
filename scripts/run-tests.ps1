@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 915
+  'analytics-server'        = 924
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -248,6 +248,17 @@ $BaselineDefault = [ordered]@{
 #   `AnalysisService.view()` 用 `blankToEmpty(meta.getSource())` **原样回显**（空串保持空串，不臆造 spark-ads）。
 #   口径边界：`source` **不是**业务源身份（P2-04 裁决 ①）——源身份由 per-source warehouse namespace 承载。
 #   AnalysisServiceTest +1（空串回显）⇒ analytics-server 914→915（纯 Java、不连库；真库 `source` 取值**未测**）。
+# S3-18：`/api/v1/analysis/products` 热度榜**真分页**（`page`/`size`）+ **稳定排行**
+#   （`rank_no` 升序、同 rank 以 `product_id` 升序打破平局），落实指导书 §7 阶段4 **L158**「分页、限流、
+#   超时统一」（本版**只落「分页」一项**：`sort`/限流/超时未实现，见 backlog）与 §8 阶段4 完成标准 L200
+#   「分页正确」、设计 L693「分页 page/size/sort」/ L675「商品分析…稳定排行、分页」。
+#   加性改动：`products(snapshotId, page, size, topN, from, to)`（旧 `topN` 退化为窗口大小，page 缺省 1
+#   ⇒ 旧前端逐字段不变）、`ProductsData` 加性补 `page`/`size`/`total`/`hasMore`、
+#   显式 `page<1`/`size<1` ⇒ `PARAM_INVALID`（复用既有码，不静默钳制），`conversion` 仍全量不分页。
+#   AnalysisServiceTest +7（兼容/第二页窗口/旧 topN 退化/越界空页/空排行 total=0/平局决胜/非法参数）
+#   + AnalysisControllerTest（新类，+2：page/size/topN 接线按位置下传 + 全缺省传 null）
+#   ⇒ analytics-server 915→924（metric-analysis 73→80、platform-app 147→149；纯 Java、不连库；
+#   真库商品行数、真 HTTP 分页端到端**未测**）。
 $BaselineSpark = 275
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

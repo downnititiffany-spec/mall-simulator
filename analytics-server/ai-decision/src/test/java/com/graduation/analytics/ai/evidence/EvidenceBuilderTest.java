@@ -106,11 +106,12 @@ class EvidenceBuilderTest {
     }
 
     private void stubProducts() {
+        // S3-18：ProductsData 加性补 page/size/total/hasMore（AI 侧只读 hot，不参与分页）
         AnalysisService.ProductsData products = new AnalysisService.ProductsData(
                 List.of(new AnalysisService.HotProduct(3L, "保温杯", new BigDecimal("11.0904"), 1, 1, 1, 3, 1),
                         new AnalysisService.HotProduct(2L, "机械键盘", new BigDecimal("10.3972"), 3, 0, 1, 3, 2)),
-                List.of(), 10);
-        when(analysisService.products(eq(SNAP), anyInt(), eq(DAY), eq(DAY)))
+                List.of(), 10, 1, 10, 2, false);
+        when(analysisService.products(eq(SNAP), any(), any(), anyInt(), eq(DAY), eq(DAY)))
                 .thenReturn(AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "x", "v2", "PASS",
                         Map.of(), products, List.of()));
     }
@@ -279,7 +280,7 @@ class EvidenceBuilderTest {
         when(metricStore.findSnapshot(SNAP)).thenReturn(snapshot(SNAP, "ACTIVE", DAY, 21L));
         when(metricStore.listSnapshots(anyInt())).thenReturn(List.of(snapshot(SNAP, "ACTIVE", DAY, 21L)));
         when(analysisService.overview(eq(SNAP), eq(DAY), eq(DAY))).thenReturn(overview("2042.0000"));
-        when(analysisService.products(eq(SNAP), anyInt(), any(), any()))
+        when(analysisService.products(eq(SNAP), any(), any(), anyInt(), any(), any()))
                 .thenThrow(new IllegalStateException("metricReadDataSource 未配置"));
         stubSales();
 

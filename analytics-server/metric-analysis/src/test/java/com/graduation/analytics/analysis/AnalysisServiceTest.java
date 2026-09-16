@@ -8,6 +8,7 @@ import com.graduation.analytics.analysis.AnalysisService.ProductsData;
 import com.graduation.analytics.analysis.AnalysisService.RfmData;
 import com.graduation.analytics.analysis.AnalysisService.SalesData;
 import com.graduation.analytics.analysis.AnalysisService.UsersData;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricAdsReader;
 import com.graduation.analytics.metric.MetricQualityGate;
 import com.graduation.analytics.metric.MySqlMetricStore;
@@ -22,13 +23,16 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -72,7 +76,7 @@ class AnalysisServiceTest {
         List<AnalysisViewModel<?>> models = List.of(
                 service.overview(null, null, null),
                 service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)),
-                service.products(null, 10, null, null),
+                service.products(null, null, null, 10, null, null),
                 service.funnel(null, LocalDate.of(2026, 9, 1)),
                 service.users(null, null, null),
                 service.rfm(null, 50));
@@ -183,7 +187,7 @@ class AnalysisServiceTest {
     void productsEchoTopNButClampEffectiveValue() {
         stubActiveSnapshot();
 
-        AnalysisViewModel<ProductsData> model = service.products(null, 1000, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 1000, null, null);
 
         assertThat(model.filters()).containsEntry("topN", 1000);
         assertThat(model.data().topN()).isEqualTo(100);
@@ -194,6 +198,134 @@ class AnalysisServiceTest {
         assertThat(model.data().conversion()).extracting(AnalysisService.ProductConversion::productId)
                 .containsExactly(1L, 2L, 3L, 4L);
         assertThat(model.data().conversion().get(1).conversionRate()).isEqualByComparingTo("0.3333");
+        // v1.3：size 未显式传 ⇒ 生效窗口 = min(topN, 100)；page 缺省 1 ⇒ 与 v1.2 逐字段相同
+        assertThat(model.data().page()).isEqualTo(1);
+        assertThat(model.data().size()).isEqualTo(100);
+        assertThat(model.data().total()).isEqualTo(4);
+        assertThat(model.data().hasMore()).isFalse();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：只传旧参数 topN 时 page=1 语义与 v1.2 逐字段相同（兼容性）")
+    void productsFirstPageKeepsV12ShapeWhenOnlyLegacyTopNIsProvided() {
+        stubActiveSnapshot();
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 10, null, null);
+
+        assertThat(model.filters()).containsEntry("topN", 10).containsEntry("page", 1).containsEntry("size", 10);
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank).containsExactly(1, 2, 3, 4);
+        assertThat(model.data().topN()).isEqualTo(10);
+        assertThat(model.data().page()).isEqualTo(1);
+        assertThat(model.data().size()).isEqualTo(10);
+        assertThat(model.data().total()).isEqualTo(4);
+        assertThat(model.data().hasMore()).isFalse();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：page=2/size=5 返回第 6~10 名窗口，total/hasMore 如实，conversion 仍全量")
+    void productsSecondPageReturnsRequestedRankWindow() {
+        stubActiveSnapshot();
+        stubHotRows(hotRows(15));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 2, 5, null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank)
+                .containsExactly(6, 7, 8, 9, 10);
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(60L, 70L, 80L, 90L, 100L);
+        assertThat(model.data().page()).isEqualTo(2);
+        assertThat(model.data().size()).isEqualTo(5);
+        assertThat(model.data().total()).isEqualTo(15);
+        assertThat(model.data().hasMore()).isTrue();
+        // 旧参数 topN 缺省仍按 v1.2 回显 10（请求原值/缺省值），新参数回显生效值
+        assertThat(model.filters()).containsEntry("page", 2).containsEntry("size", 5).containsEntry("topN", 10);
+        assertThat(model.data().topN()).isEqualTo(5); // 窗口上限 = 生效 size
+        // 分页只作用于热度榜：转化保持全量，不漏商品
+        assertThat(model.data().conversion()).hasSize(4);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：size 未传时旧参数 topN 退化为窗口大小（topN=3 ⇒ 前 3 名）")
+    void productsLegacyTopNBecomesWindowSize() {
+        stubActiveSnapshot();
+        stubHotRows(hotRows(15));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 3, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank).containsExactly(1, 2, 3);
+        assertThat(model.data().page()).isEqualTo(1);
+        assertThat(model.data().size()).isEqualTo(3);
+        assertThat(model.data().total()).isEqualTo(15);
+        assertThat(model.data().hasMore()).isTrue();
+        assertThat(model.filters()).containsEntry("topN", 3);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：page 超出 total 返回空 hot 而不是错误，total/hasMore 如实")
+    void productsPageBeyondLastPageIsEmptyButNotAnError() {
+        stubActiveSnapshot();
+        stubHotRows(hotRows(15));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 4, 5, null, null, null);
+
+        assertThat(model.data().hot()).isEmpty();
+        assertThat(model.data().page()).isEqualTo(4);
+        assertThat(model.data().size()).isEqualTo(5);
+        assertThat(model.data().total()).isEqualTo(15);
+        assertThat(model.data().hasMore()).isFalse();
+        assertThat(model.warnings()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：排行空 ⇒ total=0、hasMore=false、hot 空数组（不是 null）")
+    void productsEmptyRankingYieldsZeroTotal() {
+        stubActiveSnapshot();
+        stubHotRows(List.of());
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 1, 10, null, null, null);
+
+        assertThat(model.data().hot()).isEmpty();
+        assertThat(model.data().total()).isZero();
+        assertThat(model.data().hasMore()).isFalse();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：稳定排行——同 rank_no 以 product_id 升序打破平局")
+    void productsTiesAreBrokenByProductIdForStableRanking() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRow(1, 7L, "P7"), hotRow(1, 3L, "P3"), hotRow(1, 5L, "P5")));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 10, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(3L, 5L, 7L);
+        assertThat(model.data().total()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：显式 page/size 非法 ⇒ PARAM_INVALID（不静默钳制）；旧参数 topN<=0 仍取缺省")
+    void productsRejectNonPositivePageOrSizeButTolerateLegacyTopN() {
+        stubActiveSnapshot();
+
+        assertThatThrownBy(() -> service.products(null, 0, null, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        assertThatThrownBy(() -> service.products(null, -1, null, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        assertThatThrownBy(() -> service.products(null, null, 0, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        assertThatThrownBy(() -> service.products(null, null, -5, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+
+        // 兼容保留：旧参数 topN<=0 沿用 v1.2 语义取缺省 10，不因 v1.3 转为错误（既有行为不变）
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 0, null, null);
+        assertThat(model.filters()).containsEntry("topN", 0);
+        assertThat(model.data().size()).isEqualTo(10);
+        assertThat(model.data().page()).isEqualTo(1);
     }
 
     @Test
@@ -336,6 +468,25 @@ class AnalysisServiceTest {
         Map<String, List<Map<String, Object>>> ads = adsRows();
         when(adsReader.selectBySnapshot(anyString(), anyString(), any()))
                 .thenAnswer(invocation -> ads.getOrDefault(invocation.getArgument(0), List.of()));
+    }
+
+    /** v1.3：只替换热度榜表，用于构造分页/平局场景（其余表沿用 {@link #adsRows()} 默认夹具）。 */
+    private void stubHotRows(List<Map<String, Object>> rows) {
+        when(adsReader.selectBySnapshot(eq("ads_hot_product_m"), anyString(), any())).thenReturn(rows);
+    }
+
+    /** 生成 count 行热度榜，rank_no 1..count，**故意倒序放入**以证明排序不依赖读取顺序。 */
+    private static List<Map<String, Object>> hotRows(int count) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int rank = count; rank >= 1; rank--) {
+            rows.add(hotRow(rank, rank * 10L, "P" + rank));
+        }
+        return rows;
+    }
+
+    private static Map<String, Object> hotRow(int rank, long productId, String name) {
+        return row("dt", "20260901", "product_id", productId, "product_name", name, "heat_score",
+                new BigDecimal(rank + ".0000"), "pv", 1L, "fav", 0L, "cart", 0L, "buy", 0L, "rank_no", rank);
     }
 
     private static MetricSnapshot snapshot(String snapshotId) {

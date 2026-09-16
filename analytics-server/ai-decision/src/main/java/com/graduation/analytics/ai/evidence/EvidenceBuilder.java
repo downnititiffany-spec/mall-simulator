@@ -233,7 +233,8 @@ public class EvidenceBuilder {
             String snapshotId, LocalDate from, LocalDate to, List<String> warnings) {
         List<AnalysisService.HotProduct> hot;
         try {
-            hot = analysisService.products(snapshotId, DIMENSION_TOP_N, from, to).data().hot();
+            // S3-18：分页参数按「旧 topN 口径」下传（page=null ⇒ 1、size=null ⇒ 由 topN 决定），行为不变
+            hot = analysisService.products(snapshotId, null, null, DIMENSION_TOP_N, from, to).data().hot();
         } catch (RuntimeException e) {
             log.warn("证据包商品维度读取失败（降级为空维度）: {}", e.getMessage());
             warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
