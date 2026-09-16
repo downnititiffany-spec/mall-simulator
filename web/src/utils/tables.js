@@ -74,12 +74,15 @@ export function aiCallRows(list) {
   }))
 }
 
-/** 流水线实例行（溯源链路：业务时间 / 目标快照 / 当前阶段） */
+/** 流水线实例行（溯源链路：业务时间 / 源数据版本 / 目标快照 / 当前阶段） */
 export function pipelineRunRows(list) {
   return (Array.isArray(list) ? list : []).map((r) => ({
     id: text(r.id),
     pipelineCode: text(r.pipelineCode),
     businessTime: formatDateTime(r.businessTime),
+    // S3-34：结果所属**数据源版本**（§PipelineService:169 逐次运行写入 'manual-<ms>' 等），
+    // V2 既有列；后端列表接口返回实体整行，前端只搬运，不重算。
+    sourceDataVersion: text(r.sourceDataVersion),
     targetSnapshotId: text(r.targetSnapshotId),
     attemptNo: formatInteger(r.attemptNo),
     status: text(r.status),
@@ -155,6 +158,7 @@ export const COLUMNS = {
     { key: 'id', label: '实例' },
     { key: 'pipelineCode', label: '流水线' },
     { key: 'businessTime', label: '业务时间' },
+    { key: 'sourceDataVersion', label: '源数据版本' },
     { key: 'targetSnapshotId', label: '目标快照' },
     { key: 'attemptNo', label: '尝试次数' },
     { key: 'status', label: '状态' },

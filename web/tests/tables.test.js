@@ -9,6 +9,7 @@ import {
   decisionRows,
   evaluationRows,
   metricRows,
+  pipelineRunRows,
   qualityRows,
   resultColumnLabel,
   snapshotRows,
@@ -112,6 +113,31 @@ test('aiResultTable 列名来自结果行键的并集（未登记键原样保留
 test('aiResultTable 非对象/空输入返回空表而不是抛错', () => {
   assert.deepEqual(aiResultTable(null), { headers: [], rows: [] })
   assert.deepEqual(aiResultTable([null, 1, 'x']), { headers: [], rows: [] })
+})
+
+// ── S3-34（E5-c /pipeline 与 /ops「结果所属数据源」）：流水线实例的溯源字段 ──
+test('pipelineRunRows 映射「源数据版本」（结果所属数据源版本），缺失给占位符', () => {
+  // 实测 §PipelineService:169 `run.setSourceDataVersion(sourceDataVersion)`（页面创建实例时传
+  // 'manual-<ms>'）、:420 `run.setTargetSnapshotId(snapshotId)`；两者都是 V2/V7 既有列，
+  // 后端列表接口本就把实体整行返回 ⇒ 前端此前只是**没搬运**，不得在页面重算或编造。
+  const rows = pipelineRunRows([
+    {
+      id: 47, pipelineCode: 'ODS_TO_ADS', businessTime: '2026-09-01T00:00:00',
+      sourceDataVersion: 'manual-1726000000000', targetSnapshotId: 'S20260901_47',
+      attemptNo: 1, status: 'SUCCESS'
+    },
+    { id: 48, pipelineCode: 'ODS_TO_ADS' }
+  ])
+  assert.equal(rows[0].sourceDataVersion, 'manual-1726000000000')
+  assert.equal(rows[0].targetSnapshotId, 'S20260901_47')
+  assert.equal(rows[1].sourceDataVersion, '—')
+  assert.equal(rows[1].targetSnapshotId, '—')
+})
+
+test('COLUMNS.opsPipelineRuns 含「源数据版本」列：/ops 流水线实例表可见结果所属数据源', () => {
+  const col = COLUMNS.opsPipelineRuns.find((c) => c.key === 'sourceDataVersion')
+  assert.ok(col, '运维页流水线实例表缺少 sourceDataVersion 列')
+  assert.equal(col.label, '源数据版本')
 })
 
 test('toTable 对空列表返回列头齐全、行为空', () => {
