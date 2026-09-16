@@ -41,7 +41,14 @@ class ControllerPermissionCoverageTest {
             "GET /api/v1/metrics/health",
             "GET /api/v1/health");
 
-    /** 前端 api.js 实际调用的端点 → 期望权限码（路径占位符统一写成 {id}） */
+    /**
+     * 端点 → 期望权限码冻结表（路径占位符统一写成 {id}）。
+     *
+     * <p><b>本表不等于「前端 api.js 实际调用面」</b>：本测试体只把本表与扫描到的控制器端点逐条对比
+     * （frozenFrontendExpectations()），从不读 web/src/api.js；表中哪些行真被前端调用、哪些行目前
+     * 没有前端调用，由 web 侧跨树对账守卫 web/tests/permissionReconcile.test.js 逐条登记
+     * （S3-43 实测：48 条中 15 条前端未接线，清单与原因见该守卫的 NOT_WIRED_IN_FRONTEND）。</p>
+     */
     private static final Map<String, String> FROZEN_FRONTEND_EXPECTATIONS = new LinkedHashMap<>();
 
     static {
