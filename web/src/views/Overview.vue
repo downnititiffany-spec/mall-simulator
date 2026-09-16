@@ -26,9 +26,10 @@
       </div>
 
       <div class="chart-box">
-        <div class="chart-title">销售趋势（销售额 / 订单数 / 买家数）</div>
+        <div class="chart-title">销售趋势（销售额 / 净销售额 / 订单数 / 买家数）</div>
         <ChartState :option="salesOption" :state="state" :error="error" :height="280"
                     empty-text="所选日期范围内没有销售趋势数据" />
+        <div style="font-size:12px;color:#94A3B8;margin-top:6px">{{ NET_SALE_NOTE }}</div>
       </div>
 
       <div class="chart-box">
@@ -67,7 +68,7 @@ import { useAnalysis } from '../composables/useAnalysis'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
 import { warningText } from '../utils/envelope'
-import { salesTrendOption, activeTrendOption } from '../utils/chartOptions'
+import { salesTrendOption, activeTrendOption, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'

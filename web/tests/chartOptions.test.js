@@ -9,24 +9,54 @@ import {
   productConversionOption,
   rfmMatrixOption,
   sortRows,
-  paginate
+  paginate,
+  NET_SALE_NOTE
 } from '../src/utils/chartOptions.js'
 
 test('销售趋势 option 的数值原样来自后端，不做换算', () => {
-  const opt = salesTrendOption([{ date: '2026-09-01', orderCount: 5, saleAmount: 2042, buyerCount: 3 }])
+  const opt = salesTrendOption([{ date: '2026-09-01', orderCount: 5, saleAmount: 2042, netSaleAmount: 1493, buyerCount: 3 }])
   assert.deepEqual(opt.xAxis.data, ['2026-09-01'])
   assert.deepEqual(opt.series[0].data, [2042])
-  assert.deepEqual(opt.series[1].data, [5])
-  assert.deepEqual(opt.series[2].data, [3])
+  assert.deepEqual(opt.series[2].data, [5])
+  assert.deepEqual(opt.series[3].data, [3])
+})
+
+// S3-27：契约 v1.4（字段新增）/ v1.7（读侧消费）——逐日净销售额与 GMV 并列，同一行同一 dt，不重算
+test('销售趋势并列展示净销售额：图例与序列都带「净销售额」，值取 netSaleAmount 原样', () => {
+  const opt = salesTrendOption([{ date: '2026-09-01', saleAmount: 2042, netSaleAmount: 1493 }])
+  assert.deepEqual(opt.legend.data, ['销售额', '净销售额', '订单数', '买家数'])
+  assert.equal(opt.series[1].name, '净销售额')
+  assert.deepEqual(opt.series[1].data, [1493])
+  // 与销售额同轴（同金额量纲）才可直接比较
+  assert.equal(opt.series[0].yAxisIndex, undefined)
+  assert.equal(opt.series[1].yAxisIndex, undefined)
+})
+
+test('净销售额缺失/畸形为 null（图表断点），0 原样保留 —— 不臆造 0、也不把 0 当缺值', () => {
+  const opt = salesTrendOption([
+    { date: '2026-08-30', saleAmount: 100 },
+    { date: '2026-08-31', saleAmount: 100, netSaleAmount: null },
+    { date: '2026-09-01', saleAmount: 100, netSaleAmount: '' },
+    { date: '2026-09-02', saleAmount: 100, netSaleAmount: 0 }
+  ])
+  assert.deepEqual(opt.series[1].data, [null, null, null, 0])
 })
 
 test('趋势数组缺失或为空时系列仍存在，长度一致（避免 ECharts 报错）', () => {
   for (const bad of [undefined, null, 'x', []]) {
     const opt = salesTrendOption(bad)
     assert.equal(opt.xAxis.data.length, 0)
-    assert.equal(opt.series.length, 3)
+    assert.equal(opt.series.length, 4)
     opt.series.forEach((s) => assert.deepEqual(s.data, []))
   }
+})
+
+test('净销售额限制文案是单一常量，写明逐日口径/占位 0/不得与汇总互相代入', () => {
+  assert.equal(typeof NET_SALE_NOTE, 'string')
+  assert.match(NET_SALE_NOTE, /逐日/)
+  assert.match(NET_SALE_NOTE, /退款归属期/)
+  assert.match(NET_SALE_NOTE, /占位/)
+  assert.match(NET_SALE_NOTE, /汇总/)
 })
 
 test('缺失字段映射为 null，不伪造 0', () => {

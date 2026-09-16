@@ -22,9 +22,10 @@
     </div>
 
     <div class="chart-box">
-      <div class="chart-title">销售趋势（销售额 / 订单数 / 买家数）</div>
+      <div class="chart-title">销售趋势（销售额 / 净销售额 / 订单数 / 买家数）</div>
       <ChartState :option="trendOpt" :state="state" :error="error" :height="280"
                   empty-text="所选日期范围内没有销售趋势数据" />
+      <div style="font-size:12px;color:#94A3B8;margin-top:6px">{{ NET_SALE_NOTE }}</div>
     </div>
 
     <div class="table-box">
@@ -45,10 +46,11 @@
             <td class="mono">{{ r.date }}</td>
             <td class="mono">{{ formatInteger(r.orderCount) }}</td>
             <td class="mono">{{ formatNumber(r.saleAmount, 2) }}</td>
+            <td class="mono">{{ formatNumber(r.netSaleAmount, 2) }}</td>
             <td class="mono">{{ formatInteger(r.buyerCount) }}</td>
             <td class="mono">{{ formatNumber(r.avgOrderValue, 2) }}</td>
           </tr>
-          <tr v-if="rows.length === 0"><td colspan="5" class="el-empty">所选日期范围内没有销售数据</td></tr>
+          <tr v-if="rows.length === 0"><td colspan="6" class="el-empty">所选日期范围内没有销售数据</td></tr>
         </tbody>
       </table>
       <div class="pager">
@@ -71,7 +73,7 @@ import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
-import { salesTrendOption, sortRows, paginate } from '../utils/chartOptions'
+import { salesTrendOption, sortRows, paginate, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
@@ -104,6 +106,8 @@ const columns = [
   { key: 'date', title: '日期' },
   { key: 'orderCount', title: '订单数' },
   { key: 'saleAmount', title: '销售额(元)' },
+  // S3-27：逐日净销售额与销售额并列（契约 v1.4 字段 + v1.7 读侧消费），原样展示、不重算
+  { key: 'netSaleAmount', title: '净销售额(元)' },
   { key: 'buyerCount', title: '买家数' },
   { key: 'avgOrderValue', title: '客单价(元)' }
 ]
@@ -139,8 +143,8 @@ function doExport() {
   exportAnalysisCsv({
     baseName: 'sales-analysis',
     context: exportContext.value,
-    headers: ['日期', '订单数', '销售额(元)', '买家数', '客单价(元)'],
-    rows: sortedRows.value.map((r) => [r.date, r.orderCount, formatNumber(r.saleAmount, 2, ''), r.buyerCount, formatNumber(r.avgOrderValue, 2, '')])
+    headers: ['日期', '订单数', '销售额(元)', '净销售额(元)', '买家数', '客单价(元)'],
+    rows: sortedRows.value.map((r) => [r.date, r.orderCount, formatNumber(r.saleAmount, 2, ''), formatNumber(r.netSaleAmount, 2, ''), r.buyerCount, formatNumber(r.avgOrderValue, 2, '')])
   })
 }
 
