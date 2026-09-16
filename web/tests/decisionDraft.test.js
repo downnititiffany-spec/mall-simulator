@@ -88,7 +88,7 @@ test('buildDraftBody：锚点优先证据包 ID，且两个锚点不得同时下
 })
 
 test('buildDraftBody：证据包 ID 缺失或占位 ⇒ 回退真实快照号；占位快照号不算真实值', () => {
-  for (const evidenceId of [null, '', '   ', 'unknown', 'UNKNOWN']) {
+  for (const evidenceId of [null, '', '   ', 'unknown', 'UNKNOWN', 'UnKnOwN']) {
     const r = buildDraftBody({ suggestion: MODEL_SUGGESTION, evidenceId, snapshotId: 'S20260901_24' })
     assert.equal(r.ok, true)
     assert.equal(r.body.suggestionSnapshotId, 'S20260901_24')
@@ -96,6 +96,26 @@ test('buildDraftBody：证据包 ID 缺失或占位 ⇒ 回退真实快照号；
   }
   assert.equal(draftAnchor({ evidenceId: null, snapshotId: 'unknown' }).kind, ANCHOR_KIND.NONE)
   assert.equal(draftAnchor({ evidenceId: 'unknown', snapshotId: null }).kind, ANCHOR_KIND.NONE)
+})
+
+test('S3-56：ID 逐字来自后端——带前后空白、数字、大小写 unknown 都不能被 trim/转串后接受', () => {
+  const fallback = buildDraftBody({
+    suggestion: MODEL_SUGGESTION,
+    evidenceId: ` ${EV} `,
+    snapshotId: 'S20260901_24'
+  })
+  assert.equal(fallback.ok, true)
+  assert.equal(fallback.body.suggestionSnapshotId, 'S20260901_24')
+  assert.equal(Object.prototype.hasOwnProperty.call(fallback.body, 'evidencePackageId'), false)
+
+  for (const evidenceId of [` ${EV}`, `${EV} `, 12345, 'uNkNoWn']) {
+    const a = draftAnchor({ evidenceId, snapshotId: null })
+    assert.equal(a.kind, ANCHOR_KIND.NONE, `evidenceId=${JSON.stringify(evidenceId)} 不得被前端归一成真实 ID`)
+  }
+  for (const snapshotId of [' S20260901_24', 'S20260901_24 ', 2026090124, 'uNkNoWn']) {
+    const a = draftAnchor({ evidenceId: null, snapshotId })
+    assert.equal(a.kind, ANCHOR_KIND.NONE, `snapshotId=${JSON.stringify(snapshotId)} 不得被前端归一成真实 ID`)
+  }
 })
 
 test('buildDraftBody：无可用锚点 ⇒ 拒绝构造（服务端 submit 要求二者之一，前端不造锚点）', () => {
@@ -141,9 +161,12 @@ test('buildDraftBody 是纯函数：不改入参，且不接受非对象建议',
   assert.equal(buildDraftBody({ suggestion: 'not-an-object', evidenceId: EV }).blocked, DRAFT_BLOCK.SUGGESTION_INCOMPLETE)
 })
 
-test('isRealEvidenceId / anchorText：占位与空白不算真实证据包 ID，文案点明锚点来源', () => {
+test('isRealEvidenceId / anchorText：占位、空白和形状污染不算真实证据包 ID，文案点明锚点来源', () => {
   assert.equal(isRealEvidenceId(EV), true)
+  assert.equal(isRealEvidenceId(` ${EV} `), false)
   assert.equal(isRealEvidenceId(' unknown '), false)
+  assert.equal(isRealEvidenceId('uNkNoWn'), false)
+  assert.equal(isRealEvidenceId(123), false)
   assert.equal(isRealEvidenceId(''), false)
   assert.equal(isRealEvidenceId(null), false)
   assert.match(anchorText({ kind: ANCHOR_KIND.EVIDENCE_PACKAGE, value: EV }), /^evidence_package:EV-/)
