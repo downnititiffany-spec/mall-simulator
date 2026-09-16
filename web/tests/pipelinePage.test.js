@@ -66,6 +66,20 @@ test('Pipeline.vue 实例表经 pipelineRunRows 单一映射所有者渲染，�
   assert.match(text, /:disabled="loading"/)
 })
 
+test('Pipeline.vue 实例表展示「输入批次」，且空态 colspan 与表头列数一致', () => {
+  // S3-37：S3-36 已让 `pipeline_run.input_batch_id` 真的落库，但前端 `pipelineRunRows` 没搬运
+  // ⇒ 页面上看不到批次。本守卫打在**页内硬编码表**上（该表不用 COLUMNS，必须同批改表头/单元格）；
+  // 同时固定「列数 ＝ 空态 colspan」这个既有不变量 —— 加列忘改 colspan 会让「暂无运行记录」错位。
+  assert.match(text, /<th>输入批次<\/th>/)
+  assert.match(text, /r\.inputBatchId/)
+  const head = text.match(/<thead><tr[^>]*>([\s\S]*?)<\/tr><\/thead>/)
+  assert.ok(head, '未找到实例表表头行')
+  const thCount = (head[1].match(/<th/g) || []).length
+  const span = text.match(/<td colspan="(\d+)"/)
+  assert.ok(span, '未找到空态单元格')
+  assert.equal(Number(span[1]), thCount, '空态 colspan 必须等于表头列数')
+})
+
 test('跨页共享属主 useAnalysis 的 exportContext 必须带 missingNotice（横幅与导出件的共同来源）', () => {
   // 页面绑 `exportContext`（与 Decisions/Ops 同形）⇒ 缺失告知要能到屏幕，就必须活过这一层；
   // 本守卫读的是共享属主源码，不是本页：改坏它 9 个页面一起受影响。

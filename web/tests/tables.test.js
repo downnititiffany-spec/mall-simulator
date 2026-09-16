@@ -140,6 +140,30 @@ test('COLUMNS.opsPipelineRuns 含「源数据版本」列：/ops 流水线实例
   assert.equal(col.label, '源数据版本')
 })
 
+// ── S3-37（`input_batch_id` **展示侧**）：让 S3-36 已落库的「输入批次」真的可见 ──
+test('pipelineRunRows 映射「输入批次」（ingestion_batch.id），缺失给占位符且不由其他字段顶替', () => {
+  // 实测：后端 `/api/v1/pipeline-runs` 返回 `ApiResponse<List<PipelineRun>>` **实体整行**
+  // （`PipelineController.java:70-72`），`inputBatchId` 是 V7 既有列（S3-36 起写入侧落库）
+  // ⇒ 前端此前只是**没搬运**。历史行仍为 NULL（S3-36 明确不回填）⇒ 必须显示占位符：
+  // 不得用 targetSnapshotId / sourceDataVersion 顶替，也不得显示 0 —— S3-36 的 fail-closed
+  // 语义是「NULL ＝ 未知」，写/显示 0 会被误读成"存在 0 号批次"。
+  const rows = pipelineRunRows([
+    { id: 47, pipelineCode: 'ODS_TO_ADS', sourceDataVersion: 'manual-1726000000000', inputBatchId: 128 },
+    { id: 48, pipelineCode: 'ODS_TO_ADS', sourceDataVersion: 'manual-999', inputBatchId: null },
+    { id: 49, pipelineCode: 'ODS_TO_ADS' }
+  ])
+  assert.equal(rows[0].inputBatchId, '128')
+  assert.equal(rows[1].inputBatchId, '—')
+  assert.equal(rows[1].sourceDataVersion, 'manual-999') // 同行的源数据版本不受影响
+  assert.equal(rows[2].inputBatchId, '—')
+})
+
+test('COLUMNS.opsPipelineRuns 含「输入批次」列：/ops 表格与 CSV 导出都能看到', () => {
+  const col = COLUMNS.opsPipelineRuns.find((c) => c.key === 'inputBatchId')
+  assert.ok(col, '运维页流水线实例表缺少 inputBatchId 列')
+  assert.equal(col.label, '输入批次')
+})
+
 test('toTable 对空列表返回列头齐全、行为空', () => {
   const table = toTable([], COLUMNS.decisions)
   assert.equal(table.headers.length, COLUMNS.decisions.length)

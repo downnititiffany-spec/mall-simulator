@@ -83,6 +83,11 @@ export function pipelineRunRows(list) {
     // S3-34：结果所属**数据源版本**（§PipelineService:169 逐次运行写入 'manual-<ms>' 等），
     // V2 既有列；后端列表接口返回实体整行，前端只搬运，不重算。
     sourceDataVersion: text(r.sourceDataVersion),
+    // S3-37：本 run **消费了哪一批**（`pipeline_run.input_batch_id` → `ingestion_batch.id`）。
+    // 该列由 V7 建好、S3-36 起写入侧真的落库（A 类加性），后端列表接口返回实体整行 ⇒
+    // 前端此前只是**没搬运**。S3-36 不回填历史行 ⇒ 老实例为 NULL ⇒ 显示占位符（NULL 是
+    // 「未知」，**不得**用 targetSnapshotId / sourceDataVersion 顶替，也不得显示 0）。
+    inputBatchId: text(r.inputBatchId),
     targetSnapshotId: text(r.targetSnapshotId),
     attemptNo: formatInteger(r.attemptNo),
     status: text(r.status),
@@ -159,6 +164,7 @@ export const COLUMNS = {
     { key: 'pipelineCode', label: '流水线' },
     { key: 'businessTime', label: '业务时间' },
     { key: 'sourceDataVersion', label: '源数据版本' },
+    { key: 'inputBatchId', label: '输入批次' },
     { key: 'targetSnapshotId', label: '目标快照' },
     { key: 'attemptNo', label: '尝试次数' },
     { key: 'status', label: '状态' },

@@ -4,11 +4,12 @@
     <div class="chart-box">
       <div class="chart-title">触发一次采集与流水线实例（分析平台侧，不调用模拟商城生成器）</div>
       <!-- S3-34（E5-c）：本页此前**不挂**上下文条（其余 8 个分析页都挂）⇒ 看不到结果所属数据源/发布方。
-           上下文条只描述**本页响应整体**的口径；每个实例自己的业务时间/源数据版本/目标快照见下表。 -->
+           上下文条只描述**本页响应整体**的口径；每个实例自己的业务时间/源数据版本/输入批次/目标快照见下表。 -->
       <AnalysisContext :context="exportContext" :state="state" :error="error" />
       <div class="window-note" style="font-size:12px;color:#6b7280;margin-bottom:8px">
         上下文条描述本页响应整体口径（/pipeline-runs 返回裸数组、无统一信封，故来源（发布方）/口径版本/质量状态显示「未知」）；
-        实例级溯源请看下表「源数据版本 / 目标快照」两列。
+        实例级溯源请看下表「源数据版本 / 输入批次 / 目标快照」三列（输入批次 ＝ 本 run 消费的
+        `ingestion_batch.id`，S3-36 起落库；老实例该列未记录、显示「—」）。
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <label style="font-size:13px">业务时间
@@ -41,7 +42,7 @@
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="text-align:left;color:#6b7280">
-          <th style="padding:8px">ID</th><th>流水线</th><th>业务时间</th><th>源数据版本</th><th>目标快照</th><th>状态</th><th>尝试</th><th>操作</th>
+          <th style="padding:8px">ID</th><th>流水线</th><th>业务时间</th><th>源数据版本</th><th>输入批次</th><th>目标快照</th><th>状态</th><th>尝试</th><th>操作</th>
         </tr></thead>
         <tbody>
           <tr v-for="r in runRows" :key="r.id" style="border-top:1px solid #f3f4f6">
@@ -49,6 +50,7 @@
             <td>{{ r.pipelineCode }}</td>
             <td>{{ r.businessTime }}</td>
             <td class="mono">{{ r.sourceDataVersion }}</td>
+            <td class="mono">{{ r.inputBatchId }}</td>
             <td class="mono">{{ r.targetSnapshotId }}</td>
             <td :style="{ color: r.status === 'SUCCESS' ? '#16a34a' : (r.status === 'FAILED' ? '#dc2626' : '#d97706') }">
               {{ r.status }}
@@ -56,7 +58,7 @@
             <td>{{ r.attemptNo }}</td>
             <td><button v-if="r.status === 'FAILED'" @click="retry(r.id)" style="font-size:12px">重试</button></td>
           </tr>
-          <tr v-if="runRows.length === 0"><td colspan="8" class="el-empty">暂无运行记录</td></tr>
+          <tr v-if="runRows.length === 0"><td colspan="9" class="el-empty">暂无运行记录</td></tr>
         </tbody>
       </table>
     </div>
