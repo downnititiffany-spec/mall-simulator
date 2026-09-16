@@ -60,6 +60,21 @@
 >    "页面已展示净销售额"。
 >
 > **旧调用方影响**：纯加性字段，旧前端不读不会误读；`page`/`size`/`total`/`hasMore` 等 v1.3 语义不变。
+>
+> **v1.5（2026-09-16，S3-21 加性补充）**：按设计 V3.0 **L693**「根路径 `/api/v1`；响应
+> `code/message/data/traceId`；**分页 `page`/`size`/`sort`**」与 **L675**「商品分析｜…**稳定排行、分页**」：
+> `/api/v1/analysis/products` **加性**新增 `sort` 参数（`字段` 或 `字段,asc|desc`，字段白名单
+> `rank`/`heat`/`pv`/`fav`/`cart`/`buy`，缺省 `rank,asc`），补齐 v1.3 明文留下的 L693 第三项（见 §3.3）。
+>
+> **本版只做「排序键」**：**不**改 ADS 数据、**不**改任何指标口径、**不**新增/改列、**不**改 `page`/`size`/
+> `total`/`hasMore` 语义；`filters.sort` 回显**生效值**（缺省也回显 `rank,asc`），未登记字段/非法方向
+> ⇒ `PARAM_INVALID`（不新增错误码、不静默降级）。
+>
+> **仍未实现（不得因本版发布而声称已满足）**：L158 的**限流**、L693/L158 的**「写操作幂等请求头」**、
+> L157「归档读取授权」「未知快照不静默回最新」的授权侧裁决、§12.3 L506 不变式。缺口逐条登记在
+> `docs/PROJECT_STATUS.md` backlog。
+>
+> **旧调用方影响**：不传 `sort` ⇒ 与 v1.4 逐行同序；`sort` 为纯加性参数，旧前端不受影响。
 
 ## 1. 总原则
 
@@ -146,7 +161,7 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 故 `netSaleAmount` **不是**"`from`~`to` 区间净额"，真实窗口过滤尚未实现（缺口登记在
 `docs/PROJECT_STATUS.md` backlog）。
 
-### 3.3 `GET /api/v1/analysis/products?snapshotId=&page=&size=&topN=&from=&to=`
+### 3.3 `GET /api/v1/analysis/products?snapshotId=&page=&size=&sort=&topN=&from=&to=`
 
 ```json
 { "hot": [ { "productId": 11, "productName": "…", "heat": 9.50, "pv": 100, "fav": 2,
@@ -154,6 +169,24 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
   "conversion": [ { "productId": 11, "pvUsers": 3, "buyUsers": 1, "conversionRate": 0.3333 } ],
   "topN": 10, "page": 2, "size": 10, "total": 128, "hasMore": true }
 ```
+
+**v1.5 热度榜排序（加性）**：
+
+- **参数 `sort`**（设计 L693「分页 `page`/`size`/`sort`」）：形式 `字段` 或 `字段,asc|desc`；去首尾空白、
+  大小写不敏感；`null`/空白 ⇒ `rank,asc`（**与 v1.4 前逐行同序**）。
+- **字段白名单（本契约显式冻结）**：`rank`（← `rank_no`）、`heat`（← `heat_score`）、`pv`、`fav`、
+  `cart`、`buy`。缺省方向：`rank` 为 `asc`（名次越小越热），其余五个为 `desc`（指标越大越靠前）。
+  显式方向覆盖缺省方向。
+- **未登记字段 / 非法方向 / 段数 > 2 / 给了逗号却不给方向** ⇒ `PARAM_INVALID`（HTTP 400，**不新增错误码**），
+  **不静默降级为缺省序**——静默降级会让客户端以为拿到了排序，且 `filters.sort` 与实际顺序都对不上。
+- **`sort` 只换首级排序键**：末级**固定** `product_id` 升序（v1.3「稳定排行」不变），
+  故任意 `sort` 下同值集合内顺序都稳定；`heat` 取不到值的行（`heat_score` 缺列/非数值）
+  **无论方向都排最后**（**不**当 0：当 0 会让缺值行在降序里冒充末位真值、在升序里直接霸榜）。
+- **`sort` 不改窗口口径**：先对**全量**榜排序，再按 `page`/`size` 切窗；`total`/`hasMore` 语义与 v1.3 相同。
+  `conversion` 与 `sort` 无关（仍按 `product_id` 升序、全量）。
+- `filters` 新增回显 `sort`（**生效值**，规范形式 `字段,asc|desc`，缺省时回显 `rank,asc`）；
+  `filters.page`/`filters.size` 仍为生效值，`filters.topN` 仍为请求原值。
+- **旧调用方影响**：不传 `sort` 时逐行同序，纯加性。
 
 **v1.3 热度榜分页（加性）**：
 

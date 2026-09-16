@@ -77,7 +77,7 @@ class AnalysisServiceTest {
         List<AnalysisViewModel<?>> models = List.of(
                 service.overview(null, null, null),
                 service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)),
-                service.products(null, null, null, 10, null, null),
+                service.products(null, null, null, null, 10, null, null),
                 service.funnel(null, LocalDate.of(2026, 9, 1)),
                 service.users(null, null, null),
                 service.rfm(null, 50));
@@ -239,7 +239,7 @@ class AnalysisServiceTest {
     void productsEchoTopNButClampEffectiveValue() {
         stubActiveSnapshot();
 
-        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 1000, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 1000, null, null);
 
         assertThat(model.filters()).containsEntry("topN", 1000);
         assertThat(model.data().topN()).isEqualTo(100);
@@ -262,7 +262,7 @@ class AnalysisServiceTest {
     void productsFirstPageKeepsV12ShapeWhenOnlyLegacyTopNIsProvided() {
         stubActiveSnapshot();
 
-        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 10, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 10, null, null);
 
         assertThat(model.filters()).containsEntry("topN", 10).containsEntry("page", 1).containsEntry("size", 10);
         assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank).containsExactly(1, 2, 3, 4);
@@ -279,7 +279,7 @@ class AnalysisServiceTest {
         stubActiveSnapshot();
         stubHotRows(hotRows(15));
 
-        AnalysisViewModel<ProductsData> model = service.products(null, 2, 5, null, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, 2, 5, null, null, null, null);
 
         assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank)
                 .containsExactly(6, 7, 8, 9, 10);
@@ -302,7 +302,7 @@ class AnalysisServiceTest {
         stubActiveSnapshot();
         stubHotRows(hotRows(15));
 
-        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 3, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 3, null, null);
 
         assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank).containsExactly(1, 2, 3);
         assertThat(model.data().page()).isEqualTo(1);
@@ -318,7 +318,7 @@ class AnalysisServiceTest {
         stubActiveSnapshot();
         stubHotRows(hotRows(15));
 
-        AnalysisViewModel<ProductsData> model = service.products(null, 4, 5, null, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, 4, 5, null, null, null, null);
 
         assertThat(model.data().hot()).isEmpty();
         assertThat(model.data().page()).isEqualTo(4);
@@ -334,7 +334,7 @@ class AnalysisServiceTest {
         stubActiveSnapshot();
         stubHotRows(List.of());
 
-        AnalysisViewModel<ProductsData> model = service.products(null, 1, 10, null, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, 1, 10, null, null, null, null);
 
         assertThat(model.data().hot()).isEmpty();
         assertThat(model.data().total()).isZero();
@@ -348,7 +348,7 @@ class AnalysisServiceTest {
         stubHotRows(List.of(
                 hotRow(1, 7L, "P7"), hotRow(1, 3L, "P3"), hotRow(1, 5L, "P5")));
 
-        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 10, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 10, null, null);
 
         assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
                 .containsExactly(3L, 5L, 7L);
@@ -360,24 +360,130 @@ class AnalysisServiceTest {
     void productsRejectNonPositivePageOrSizeButTolerateLegacyTopN() {
         stubActiveSnapshot();
 
-        assertThatThrownBy(() -> service.products(null, 0, null, null, null, null))
+        assertThatThrownBy(() -> service.products(null, 0, null, null, null, null, null))
                 .isInstanceOfSatisfying(PlatformBizException.class,
                         e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
-        assertThatThrownBy(() -> service.products(null, -1, null, null, null, null))
+        assertThatThrownBy(() -> service.products(null, -1, null, null, null, null, null))
                 .isInstanceOfSatisfying(PlatformBizException.class,
                         e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
-        assertThatThrownBy(() -> service.products(null, null, 0, null, null, null))
+        assertThatThrownBy(() -> service.products(null, null, 0, null, null, null, null))
                 .isInstanceOfSatisfying(PlatformBizException.class,
                         e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
-        assertThatThrownBy(() -> service.products(null, null, -5, null, null, null))
+        assertThatThrownBy(() -> service.products(null, null, -5, null, null, null, null))
                 .isInstanceOfSatisfying(PlatformBizException.class,
                         e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
 
         // 兼容保留：旧参数 topN<=0 沿用 v1.2 语义取缺省 10，不因 v1.3 转为错误（既有行为不变）
-        AnalysisViewModel<ProductsData> model = service.products(null, null, null, 0, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 0, null, null);
         assertThat(model.filters()).containsEntry("topN", 0);
         assertThat(model.data().size()).isEqualTo(10);
         assertThat(model.data().page()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：缺省 sort 仍是 rank 升序，并在 filters 回显生效值 rank,asc")
+    void productsDefaultSortIsRankAscendingAndEchoed() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(hotRow(2, 20L, "P20"), hotRow(1, 10L, "P10")));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank)
+                .containsExactly(1, 2);
+        assertThat(model.filters()).containsEntry("sort", "rank,asc");
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：sort=buy,desc 按购买数降序，同值仍以 product_id 升序打破平局")
+    void productsSortByBuyDescBreaksTiesByProductId() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 30L, "P30", "3.0000", 1L, 0L, 0L, 5L),
+                hotRowFull(2, 10L, "P10", "2.0000", 1L, 0L, 0L, 9L),
+                hotRowFull(3, 20L, "P20", "1.0000", 1L, 0L, 0L, 5L)));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, "buy,desc", null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(10L, 20L, 30L);
+        assertThat(model.filters()).containsEntry("sort", "buy,desc");
+        assertThat(model.data().total()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：字段自带缺省方向（rank 升序、其余降序），显式方向可覆盖")
+    void productsSortFieldDefaultsToItsOwnDirection() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 1L, "P1", "1.0000", 1L, 0L, 0L, 1L),
+                hotRowFull(2, 2L, "P2", "9.0000", 1L, 0L, 0L, 1L)));
+
+        assertThat(service.products(null, null, null, "rank", null, null, null).filters())
+                .containsEntry("sort", "rank,asc");
+        assertThat(service.products(null, null, null, "heat", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+        assertThat(service.products(null, null, null, "rank,desc", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：sort 去空白且大小写不敏感，回显规范化的 field,dir")
+    void productsSortIsTrimmedAndCaseInsensitive() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(hotRow(1, 1L, "P1")));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, "  BUY , DESC  ", null, null, null);
+
+        assertThat(model.filters()).containsEntry("sort", "buy,desc");
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：heat 取不到值的行无论方向都排最后（不把缺值当 0 排到榜首）")
+    void productsSortPutsMissingHeatLastRegardlessOfDirection() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 1L, "P1", null, 1L, 0L, 0L, 1L),
+                hotRowFull(2, 2L, "P2", "5.0000", 1L, 0L, 0L, 1L)));
+
+        assertThat(service.products(null, null, null, "heat,desc", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+        assertThat(service.products(null, null, null, "heat,asc", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：未登记 sort 字段/方向/多余段 ⇒ PARAM_INVALID；空白 sort 取缺省不报错")
+    void productsRejectUnknownSortFieldOrDirection() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(hotRow(1, 1L, "P1")));
+
+        for (String bad : List.of("price", "heat,up", "heat,desc,extra", ",")) {
+            assertThatThrownBy(() -> service.products(null, null, null, bad, null, null, null))
+                    .as("sort=%s", bad)
+                    .isInstanceOfSatisfying(PlatformBizException.class,
+                            e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        }
+        assertThat(service.products(null, null, null, "   ", null, null, null).filters())
+                .containsEntry("sort", "rank,asc");
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：sort 先对全量排序再切页（total 不变），且不改 conversion 表顺序")
+    void productsSortAppliesBeforePagingAndLeavesConversionOrderAlone() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 30L, "P30", "3.0000", 1L, 0L, 0L, 3L),
+                hotRowFull(2, 10L, "P10", "2.0000", 1L, 0L, 0L, 9L),
+                hotRowFull(3, 20L, "P20", "1.0000", 1L, 0L, 0L, 5L)));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 2, 2, "buy,desc", null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(30L);
+        assertThat(model.data().total()).isEqualTo(3);
+        assertThat(model.data().hasMore()).isFalse();
+        assertThat(model.data().conversion()).extracting(AnalysisService.ProductConversion::productId)
+                .isSorted();
     }
 
     @Test
@@ -544,6 +650,17 @@ class AnalysisServiceTest {
     private static Map<String, Object> hotRow(int rank, long productId, String name) {
         return row("dt", "20260901", "product_id", productId, "product_name", name, "heat_score",
                 new BigDecimal(rank + ".0000"), "pv", 1L, "fav", 0L, "cart", 0L, "buy", 0L, "rank_no", rank);
+    }
+
+    /**
+     * v1.5：可逐个指定 heat/pv/fav/cart/buy 的热度榜行，用于排序场景。
+     * {@code heat == null} 表示「这一行取不到 heat_score」（列缺失或非数值），用来验证缺值排序位置。
+     */
+    private static Map<String, Object> hotRowFull(int rank, long productId, String name, String heat,
+                                                  long pv, long fav, long cart, long buy) {
+        return row("dt", "20260901", "product_id", productId, "product_name", name, "heat_score",
+                heat == null ? null : new BigDecimal(heat), "pv", pv, "fav", fav, "cart", cart, "buy", buy,
+                "rank_no", rank);
     }
 
     private static MetricSnapshot snapshot(String snapshotId) {

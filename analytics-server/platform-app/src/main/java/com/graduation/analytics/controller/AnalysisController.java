@@ -64,16 +64,19 @@ public class AnalysisController {
     /**
      * 商品分析：热度榜 + 转化（§3.3）。v1.3 起热度榜真分页（契约 §3.3 v1.3 / 设计 L693、L675）：
      * `page`/`size` 为新增分页参数，`topN` 保持旧参数兼容（`size` 未给定时充当窗口大小）。
+     * v1.5（S3-21）补 `sort`（设计 L693「分页 page/size/sort」）：形如 `字段[,asc|desc]`，
+     * 字段须在服务层白名单内；缺省 = `rank,asc`（与 v1.4 前逐行同序）。
      */
     @GetMapping("/analysis/products")
     public ApiResponse<AnalysisViewModel<ProductsData>> products(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) Integer topN,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) String snapshotId) {
-        return ApiResponse.ok(analysisService.products(snapshotId, page, size, topN, from, to),
+        return ApiResponse.ok(analysisService.products(snapshotId, page, size, sort, topN, from, to),
                 TraceContext.create().traceId());
     }
 

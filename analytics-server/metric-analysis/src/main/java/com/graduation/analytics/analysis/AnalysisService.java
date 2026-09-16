@@ -22,7 +22,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 专题分析服务（R7-4 契约 docs/contracts/analysis-viewmodel-r7-4.md，指导书 §18.1/§18.2/§24.6）。
@@ -213,14 +215,20 @@ public class AnalysisService {
 
     /**
      * 商品分析（契约 §3.3）。v1.3 起热度榜**真分页**（指导书 V3.0 §7 阶段4 L158「分页」、
-     * 设计 V3.0 L693「分页 page/size/sort」/ L675「稳定排行、分页」）。
+     * 设计 V3.0 L693「分页 page/size/sort」/ L675「稳定排行、分页」）；
+     * v1.5（S3-21）补齐 L693 三件套里的 `sort`。
+     *
+     * <p><b>`sort` 只重排热度榜，不改口径</b>：`total`/`hasMore` 仍是全量榜的行数与窗口计算，
+     * `conversion` 列表与排序无关（始终按 `product_id` 升序），`topN` 旧口径不动。</p>
      *
      * @param page 1 起始页码；{@code null} ⇒ 1
      * @param size 窗口大小；{@code null} ⇒ 由旧参数 {@code topN} 决定（缺省 10，上限 100）
+     * @param sort `字段` 或 `字段,asc|desc`；{@code null}/空白 ⇒ {@code rank,asc}（与 v1.4 前逐行同序）；
+     *             未登记字段或非法方向 ⇒ {@code PARAM_INVALID}
      * @param topN 旧参数：仍原样回显进 {@code filters}；`size` 未显式给出时充当窗口大小
      */
-    public AnalysisViewModel<ProductsData> products(String snapshotId, Integer page, Integer size, Integer topN,
-                                                    LocalDate from, LocalDate to) {
+    public AnalysisViewModel<ProductsData> products(String snapshotId, Integer page, Integer size, String sort,
+                                                    Integer topN, LocalDate from, LocalDate to) {
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
@@ -230,8 +238,10 @@ public class AnalysisService {
         // 显式传入的非法值 fail-fast：静默钳制会造成「回显值 ≠ 实际生效值」
         int effectivePage = resolvePage(page);
         int effectiveSize = resolveSize(size, topN);
+        HotSort effectiveSort = resolveSort(sort);
         filters.put("page", effectivePage);
         filters.put("size", effectiveSize);
+        filters.put("sort", effectiveSort.echo());
 
         Pinned pinned = pin(snapshotId);
         if (pinned.snapshotId() == null) {
@@ -240,7 +250,7 @@ public class AnalysisService {
         String sid = pinned.snapshotId();
         filters.put("snapshotId", sid);
 
-        List<Map<String, Object>> ranked = rankedHotRows(sid);
+        List<Map<String, Object>> ranked = rankedHotRows(sid, effectiveSort);
         long total = ranked.size();
         List<HotProduct> hot = ranked.stream()
                 .skip((long) (effectivePage - 1) * effectiveSize)
@@ -273,6 +283,70 @@ public class AnalysisService {
             return Math.min(size, MAX_PAGE_SIZE);
         }
         return legacyTopN == null || legacyTopN <= 0 ? DEFAULT_TOP_N : Math.min(legacyTopN, MAX_TOP_N);
+    }
+
+    /**
+     * v1.5（S3-21）：解析后生效的排序（字段名 + 方向）。{@code echo} 是回显进 {@code filters} 的规范形式
+     * （`字段,asc|desc`），因此「回显值 = 实际生效值」可被测试与前端直接比对。
+     */
+    private record HotSort(String field, boolean descending) {
+
+        String echo() {
+            return field + (descending ? ",desc" : ",asc");
+        }
+    }
+
+    /**
+     * v1.5：`sort` 字段白名单 → ADS 列名。**只登记热度榜真实存在的列**；
+     * 未登记字段一律拒绝（设计 L693 只规定参数名，未规定字段集，故这里把字段集当成本服务的显式契约）。
+     */
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "rank", "rank_no",
+            "heat", "heat_score",
+            "pv", "pv",
+            "fav", "fav",
+            "cart", "cart",
+            "buy", "buy");
+
+    /** v1.5：字段缺省方向（true = 降序）。`rank` 是「越小越热」的名次列；其余指标越大越靠前。 */
+    private static final Set<String> SORT_DESC_FIELDS = Set.of("heat", "pv", "fav", "cart", "buy");
+
+    /** v1.5：缺省排序——与 v1.4 前逐行同序（`rank_no` 升序 + `product_id` 升序打破平局）。 */
+    private static final HotSort DEFAULT_HOT_SORT = new HotSort("rank", false);
+
+    /**
+     * v1.5（S3-21）：解析 `sort`（设计 L693「分页 page/size/sort」、L675「稳定排行」）。
+     *
+     * <p>形式：`字段` 或 `字段,asc|desc`；去首尾空白、大小写不敏感；{@code null}/空白 ⇒ {@code rank,asc}。
+     * 未登记字段、非法方向、段数 > 2、给了逗号却不给方向 ⇒ {@code PARAM_INVALID} fail-fast：
+     * **不静默降级成缺省序**——那会让客户端以为拿到了排序结果，而 {@code filters.sort} 与实际顺序都对不上。</p>
+     */
+    private static HotSort resolveSort(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return DEFAULT_HOT_SORT;
+        }
+        String[] parts = sort.trim().toLowerCase(Locale.ROOT).split(",", -1);
+        if (parts.length > 2) {
+            throw new PlatformBizException("PARAM_INVALID", "sort 段数过多（应为 字段[,asc|desc]）：" + sort);
+        }
+        String field = parts[0].trim();
+        if (!SORT_FIELDS.containsKey(field)) {
+            throw new PlatformBizException("PARAM_INVALID",
+                    "sort 字段未登记：" + parts[0] + "，可用 " + String.join("/", SORT_FIELDS.keySet()));
+        }
+        boolean descending = SORT_DESC_FIELDS.contains(field);
+        if (parts.length == 2) {
+            String direction = parts[1].trim();
+            if ("asc".equals(direction)) {
+                descending = false;
+            } else if ("desc".equals(direction)) {
+                descending = true;
+            } else {
+                throw new PlatformBizException("PARAM_INVALID",
+                        "sort 方向只支持 asc/desc，实际 " + parts[1]);
+            }
+        }
+        return new HotSort(field, descending);
     }
 
     // ── 行为漏斗（§3.4） ──────────────────────────────────────────────────────
@@ -508,14 +582,33 @@ public class AnalysisService {
     }
 
     /**
-     * 热门商品**全量排行**（ads_hot_product_m）：`rank_no` 升序，**同 rank 以 `product_id` 升序打破平局**
-     * （设计 L675「稳定排行」：不让同 rank 行随读取顺序漂移）。分页切片与 `total` 由调用方负责。
+     * 热门商品**全量排行**（ads_hot_product_m）：缺省 `rank_no` 升序，**末级一律以 `product_id` 升序打破平局**
+     * （设计 L675「稳定排行」：不让同值行随读取顺序漂移）。分页切片与 `total` 由调用方负责。
+     *
+     * <p>v1.5（S3-21）：`sort` 只换**首级**排序键；`product_id` 升序仍是固定的末级，因此
+     * 「同值集合内顺序稳定」在任意 `sort` 下都成立。</p>
      */
-    private List<Map<String, Object>> rankedHotRows(String snapshotId) {
+    private List<Map<String, Object>> rankedHotRows(String snapshotId, HotSort sort) {
         return AdsRows.latestPartition(adsReader, T_HOT_PRODUCT, snapshotId).stream()
-                .sorted(Comparator.comparingInt((Map<String, Object> row) -> AdsRows.asInt(row.get("rank_no")))
+                .sorted(hotKeyComparator(sort)
                         .thenComparingLong(row -> AdsRows.asLong(row.get("product_id"))))
                 .toList();
+    }
+
+    /**
+     * v1.5：`sort` 首级比较器。取不到 `heat_score` 的行**无论方向都排最后**
+     * （`AdsRows.asDecimal` 取不到返回 null；把 null 当 0 会让缺值行在降序里冒充末位真值、
+     * 在升序里直接霸榜——两种都会让「热度榜」结论失真）。
+     */
+    private static Comparator<Map<String, Object>> hotKeyComparator(HotSort sort) {
+        if ("heat".equals(sort.field())) {
+            Comparator<BigDecimal> order = sort.descending() ? Comparator.reverseOrder() : Comparator.naturalOrder();
+            return Comparator.comparing((Map<String, Object> row) -> AdsRows.asDecimal(row.get("heat_score")),
+                    Comparator.nullsLast(order));
+        }
+        Comparator<Map<String, Object>> numeric =
+                Comparator.comparingLong(row -> AdsRows.asLong(row.get(SORT_FIELDS.get(sort.field()))));
+        return sort.descending() ? numeric.reversed() : numeric;
     }
 
     private static HotProduct toHotProduct(Map<String, Object> row) {

@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 936
+  'analytics-server'        = 943
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -293,6 +293,26 @@ $BaselineDefault = [ordered]@{
 #   **未实现**（读侧不加启发式纠正）、`from`/`to` 实测**只回显不过滤**、阶段5 页面**未展示**该字段、
 #   真库取值与真 HTTP 响应**未测** —— 逐条登记在 `docs/PROJECT_STATUS.md` backlog 与 S3-20 登记文件。
 #   门禁实测（RunId `s320_20260916_def2`）：三棵树 1055 = analytics 936 + mall 13 + generator 106；
+#   唯一红 = 已登记环境性红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` ⇒
+#   「计数 MATCH + 唯一红＝该已登记环境性红」，**不是** exit=0。
+# S3-21：**商品热度榜排序键**（设计 **L693**「分页 page/size/sort」第三项、**L675**「商品分析｜…稳定排行、分页」；
+#   v1.3 契约明文留白「`sort` 参数…本版未实现」⇒ 本项补齐）。
+#   开工前实测：起点提交 `c4c09dc` 全仓**无任何 `sort` 请求参数**（`git grep -n -E "RequestParam[^)]*sort"` = 0 命中；
+#   仅有服务内 `List.sort(...)` 排序调用），`contract-specs/**` 中 `page|size|sort` = **0 命中**（门⑥不触）。
+#   加性改动：`AnalysisService.products(snapshotId, page, size, sort, topN, from, to)` 新增 `sort`
+#   （形式 `字段[,asc|desc]`；白名单 `rank|heat|pv|fav|cart|buy`——逐列落在 `MetricAdsCatalog:41`
+#   `ads_hot_product_m` 既有白名单内，**不新增列**；缺省 `rank,asc` ⇒ 不传时逐行同序）；
+#   末级固定 `product_id` 升序（沿用 v1.3 稳定排行），`heat` 缺值行**无论方向都排最后**（不当 0）；
+#   未登记字段/非法方向/段数>2 ⇒ `PARAM_INVALID`（HTTP 400，不新增错误码、**不静默降级**）；
+#   `filters.sort` 回显**生效值**（缺省也回显 `rank,asc`）；`page`/`size`/`total`/`hasMore`/`conversion` 语义不变。
+#   契约文档 R7-4 **v1.5** 加性升版（§3.3 排序规则 + 旧调用方影响）。
+#   新测试：`AnalysisServiceTest` +7（缺省序回显 / 同值 `product_id` 升序 / 单段按字段自身缺省方向 /
+#   去空白与大小写 / `heat` 缺值恒定最后 / 4 种非法 `sort` 与空白回缺省 / 排序先于分页且不动 `conversion`）
+#   ⇒ analytics-server 936→943（metric-analysis 83→90）；同步迁移 `EvidenceBuilder`、`AnalysisController`、
+#   `AnalysisGoldenMySqlIT`、`AnalysisControllerTest` 的 7 参调用点（调用点数不变，不新增条数）。
+#   边界：**未测**真 HTTP 查询参数解析（无 `@SpringBootTest`）、真库 ADS 数据与真实排序结果
+#   （`AnalysisGoldenMySqlIT` 未运行）、前端**未使用** `sort`（`web/src` 无该参数）；L158 的**限流**仍未实现。
+#   门禁实测（RunId `s321_20260916_def2`；基线更新前先用 `s321_20260916_def` 量到 943 真值）：三棵树 1062 = analytics 943 + mall 13 + generator 106；
 #   唯一红 = 已登记环境性红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` ⇒
 #   「计数 MATCH + 唯一红＝该已登记环境性红」，**不是** exit=0。
 $BaselineSpark = 275
