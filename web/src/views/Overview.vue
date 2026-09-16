@@ -38,6 +38,13 @@
                     empty-text="所选日期范围内没有活跃趋势数据" />
       </div>
 
+      <div class="chart-box">
+        <div class="chart-title">数据质量（快照 run）</div>
+        <div style="font-size:13px;color:#374151">质量规则：{{ qualityText }}</div>
+        <div style="font-size:13px;color:#374151;margin-top:4px">规则版本：{{ ruleVersionsText }}</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:6px">{{ RULE_VERSION_NOTE }}</div>
+      </div>
+
       <div v-if="showDictionary" class="table-box">
         <div class="chart-title">指标口径（来自 analytics_meta.metric_definition）</div>
         <table>
@@ -68,6 +75,8 @@ import { useAnalysis } from '../composables/useAnalysis'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
 import { warningText } from '../utils/envelope'
+// S3-28：质量文案（通过情况/规则版本）唯一属主在 utils/quality.js，视图只引用不自拼
+import { qualitySummaryText, ruleVersionText, RULE_VERSION_NOTE } from '../utils/quality'
 import { salesTrendOption, activeTrendOption, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
@@ -117,6 +126,10 @@ const cards = computed(() => {
   }
   return out
 })
+
+// S3-28：质量信息展示（契约 v1.6 字段 + v1.8 口径）——通过情况与规则版本都只透传、不重算
+const qualityText = computed(() => qualitySummaryText(data.value.quality))
+const ruleVersionsText = computed(() => ruleVersionText((data.value.quality || {}).ruleVersions))
 
 const dictionary = computed(() => (Array.isArray(data.value.metricDictionary) ? data.value.metricDictionary : []))
 const salesOption = computed(() => salesTrendOption(data.value.salesTrend))

@@ -60,6 +60,7 @@
       </div>
       <div class="table-hint">
         质量规则（快照 run）：{{ qualityText }}。
+        规则版本：{{ ruleVersionsText }}。限制说明：{{ RULE_VERSION_NOTE }}
         说明：分类结构、地区结构本期未在分析接口发布（契约 §3.2 中 ads_category_sale_m / ads_region_sale_m 不存在），
         页面不展示无数据来源的维度图。
       </div>
@@ -73,6 +74,7 @@ import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
+import { qualitySummaryText, ruleVersionText, RULE_VERSION_NOTE } from '../utils/quality'
 import { salesTrendOption, sortRows, paginate, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
@@ -114,13 +116,9 @@ const columns = [
 const sortedRows = computed(() => (sortKey.value ? sortRows(rows.value, sortKey.value, sortOrder.value) : rows.value))
 const paged = computed(() => paginate(sortedRows.value, page.value, pageSize))
 
-const qualityText = computed(() => {
-  const q = data.value.quality || {}
-  const ruleCount = formatInteger(q.ruleCount, '—')
-  const passedCount = formatInteger(q.passedCount, '—')
-  const failed = Array.isArray(q.failedRules) && q.failedRules.length ? q.failedRules.join('、') : '无'
-  return `规则 ${passedCount}/${ruleCount} 通过，失败规则：${failed}`
-})
+const qualityText = computed(() => qualitySummaryText(data.value.quality))
+// S3-28：规则定义版本读侧消费（契约 v1.6 字段 + v1.8 展示口径），原样透传、不为缺失码补版本
+const ruleVersionsText = computed(() => ruleVersionText((data.value.quality || {}).ruleVersions))
 
 const trendOpt = computed(() => salesTrendOption(rows.value))
 
