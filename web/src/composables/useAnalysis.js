@@ -42,7 +42,10 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [] }) {
       definitionVersion: ctx.definitionVersion || null,
       qualityStatus: ctx.qualityStatus || 'UNKNOWN',
       filters: ctx.filters && Object.keys(ctx.filters).length ? ctx.filters : null,
-      warnings: ctx.warnings || []
+      warnings: ctx.warnings || [],
+      // S3-35：缺失告知随上下文一起给页横幅与导出件（csv.js 写「# 上下文缺失」）；
+      // 统一信封接口没有该字段时为 null，横幅不显示、导出不写该行。
+      missingNotice: ctx.missingNotice || null
     }
   })
 

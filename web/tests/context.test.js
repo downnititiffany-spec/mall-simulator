@@ -10,6 +10,8 @@ import {
   NON_ANALYSIS_ROW_KEYS,
   warningTextAll
 } from '../src/utils/context.js'
+// S3-35：缺失告知要活过统一信封归一化才到得了屏幕/导出件 ⇒ 这条链必须一起验
+import { readEnvelope } from '../src/utils/envelope.js'
 
 test('collectSnapshotIds 兼容 snapshotId / snapshot_id / suggestionSnapshotId 三种字段并去重排序', () => {
   const rows = [
@@ -215,4 +217,31 @@ test('AI 证据上下文不含发布方：source 显式为 null，不借当前�
     rows: []
   })
   assert.equal(ctx.source, null)
+})
+
+// ── S3-35：/pipeline 页取数状态收敛到 useAnalysis 后，其行键也登记在同一属主 ──────────
+
+test('NON_ANALYSIS_ROW_KEYS 是「非信封接口页面的行键」唯一属主：/pipeline 行键已登记且各值非空', () => {
+  // /pipeline 的 data 形状＝{ pipelineRuns: [...] }（fetcher 内已构造），行键必须与 data 键同名
+  assert.deepEqual(NON_ANALYSIS_ROW_KEYS.pipelineRuns, ['pipelineRuns'])
+  // 既有键一个都不能少（加性登记，不得改名/删除既有页面的行键）
+  assert.deepEqual(Object.keys(NON_ANALYSIS_ROW_KEYS).sort(), ['aiQuery', 'decisions', 'opsAudit', 'opsMetrics', 'pipelineRuns'])
+  for (const [k, v] of Object.entries(NON_ANALYSIS_ROW_KEYS)) {
+    assert.ok(Array.isArray(v) && v.length > 0 && v.every((s) => typeof s === 'string' && s), `${k} 的行键必须是非空字符串数组`)
+  }
+})
+
+// ── S3-35：缺失告知（missingNotice）必须活过统一信封归一化，否则页面横幅与导出件都看不到 ──────
+
+test('buildFallbackContext 的 missingNotice 经 readEnvelope 归一化后仍在；真信封无该字段时为空', () => {
+  const ctx = buildFallbackContext({ rows: [] })
+  assert.match(ctx.missingNotice, /接口未提供/)
+  const normalized = readEnvelope(ctx)
+  // fetchRuns 这类 fetcher 返回的对象要经 readEnvelope 才进 useAnalysis：
+  // 若归一化丢掉 missingNotice，横幅（AnalysisContext）与导出元信息（csv.js）都拿不到，
+  // 「取不到就如实标注」就只停留在单元层、到不了屏幕。
+  assert.equal(normalized.missingNotice, ctx.missingNotice)
+  // 后端统一信封没有该字段：按本归一化器既有约定为 null（其余字段同为 asText ⇒ null），
+  // 页面 `v-if` 为假不显示、导出不写该行，不得凭空造缺失说明
+  assert.equal(readEnvelope({ snapshotId: 'S20260901_47', data: {} }).missingNotice, null)
 })

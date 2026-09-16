@@ -91,7 +91,9 @@ export default {
   // 流水线
   createPipelineRun: (body, idempotencyKey) =>
     client.post('/pipeline-runs', body, { headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {} }),
-  pipelineRuns: (limit = 10) => client.get('/pipeline-runs', { params: { limit } }),
+  // S3-35：options 可带 AbortSignal（与 snapshots/quality 同形），供 useAnalysis 的
+  // 「切换/卸载取消在途请求」使用；不传 options 时请求与改前完全一致。
+  pipelineRuns: (limit = 10, options) => client.get('/pipeline-runs', { params: { limit }, ...(options || {}) }),
   pipelineRun: (id) => client.get(`/pipeline-runs/${id}`),
   retryPipelineRun: (id) => client.post(`/pipeline-runs/${id}/retry`),
   // 指标/快照（非统一信封接口：/metrics/overview 返回指标数组，/metrics/snapshots 返回快照数组）

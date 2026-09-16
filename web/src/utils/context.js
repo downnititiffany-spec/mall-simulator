@@ -223,5 +223,7 @@ export const NON_ANALYSIS_ROW_KEYS = {
   opsAudit: ['snapshots', 'qualityResults', 'aiHistory', 'aiCalls'],
   opsMetrics: ['metrics'],
   aiQuery: ['queryRows'],
-  decisions: ['decisions']
+  decisions: ['decisions'],
+  // S3-35：/pipeline 页取数状态收敛到 useAnalysis 后，其 data 形状＝{ pipelineRuns: [...] }
+  pipelineRuns: ['pipelineRuns']
 }

@@ -35,6 +35,11 @@ export function readEnvelope(envelope) {
     filters: asRecord(src.filters),
     // 降级事实必须透传，不得吞掉
     warnings: asList(src.warnings).filter((w) => typeof w === 'string' && w.trim() !== ''),
+    // S3-35：缺失告知（非信封接口在 fetcher 内由 buildFallbackContext 生成）同样必须透传 ——
+    // fetcher 的返回要经本函数归一化才进 useAnalysis，丢掉它则页面横幅（AnalysisContext）
+    // 与导出元信息（csv.js「# 上下文缺失」）都拿不到，「取不到就如实标注」到不了屏幕。
+    // 后端统一信封不含该字段 ⇒ 归一化为空串，不凭空造缺失说明。
+    missingNotice: asText(src.missingNotice),
     data: asRecord(src.data)
   }
 }

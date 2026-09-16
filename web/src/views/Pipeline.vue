@@ -5,7 +5,7 @@
       <div class="chart-title">触发一次采集与流水线实例（分析平台侧，不调用模拟商城生成器）</div>
       <!-- S3-34（E5-c）：本页此前**不挂**上下文条（其余 8 个分析页都挂）⇒ 看不到结果所属数据源/发布方。
            上下文条只描述**本页响应整体**的口径；每个实例自己的业务时间/源数据版本/目标快照见下表。 -->
-      <AnalysisContext :context="context" :state="state" :error="error" />
+      <AnalysisContext :context="exportContext" :state="state" :error="error" />
       <div class="window-note" style="font-size:12px;color:#6b7280;margin-bottom:8px">
         上下文条描述本页响应整体口径（/pipeline-runs 返回裸数组、无统一信封，故来源（发布方）/口径版本/质量状态显示「未知」）；
         实例级溯源请看下表「源数据版本 / 目标快照」两列。
@@ -35,7 +35,9 @@
     <div class="chart-box">
       <div class="chart-title">
         最近流水线实例
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="loadRuns">刷新</button>
+        <button style="float:right;font-size:12px;padding:3px 10px" @click="load" :disabled="loading">
+          {{ loading ? '刷新中…' : '刷新' }}
+        </button>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="text-align:left;color:#6b7280">
@@ -62,37 +64,51 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import AnalysisContext from '../components/AnalysisContext.vue'
-import { buildFallbackContext } from '../utils/context.js'
+import { useAnalysis } from '../composables/useAnalysis'
+import { buildFallbackContext, NON_ANALYSIS_ROW_KEYS } from '../utils/context.js'
 import { pipelineRunRows } from '../utils/tables.js'
 
 const businessDate = ref(new Date().toISOString().slice(0, 10))
 const runtimeProfileId = ref(1)
 const busy = ref(false)
-const runs = ref([])
 const runResult = ref(null)
-// 上下文条状态：只描述「实例列表」这次取数，不把触发动作的失败算成数据加载失败
-const state = ref('loading')
-const error = ref('')
 
-// 取数形状守卫：api.js 解包 `body.data` ⇒ 这里是 List<PipelineRun>；
-// 形状意外时退化成空表（不抛错），与 Ops.vue 对同一实体的处理保持一致。
-const runList = computed(() => (Array.isArray(runs.value) ? runs.value : []))
+// 取数 fetcher：/pipeline-runs 是**裸数组**接口（无统一信封）⇒ 在这里用 buildFallbackContext
+// 拼响应级上下文（与 Decisions.vue / Ops.vue 同形）；快照号只取实例的 targetSnapshotId
+// （可能多个：由 buildFallbackContext 既有规则如实标注「未合并为单一快照」）。
+// 业务时间/数据更新时间/口径版本/质量状态是**响应级**字段、裸数组接口并不提供 ⇒ 交缺失清单如实标注，
+// 不从某一实例行挑一个值冒充整页口径。加载状态**一律**交给唯一属主 useAnalysis，页内不自造状态机。
+async function fetchRuns(_params, signal) {
+  const raw = await api.pipelineRuns(10, { signal })
+  // 形状守卫：api.js 解包 `body.data` ⇒ 这里是 List<PipelineRun>；形状意外时退化成空表（不抛错）
+  const list = Array.isArray(raw) ? raw : []
+  const ctx = buildFallbackContext({
+    rows: list,
+    warnings: ['ENVELOPE_MISSING'],
+    snapshotIds: list.map((r) => r && r.targetSnapshotId).filter(Boolean)
+  })
+  return {
+    snapshotId: ctx.snapshotId,
+    businessTime: ctx.businessTime,
+    dataUpdatedAt: ctx.dataUpdatedAt,
+    source: ctx.source,
+    definitionVersion: ctx.definitionVersion,
+    qualityStatus: ctx.qualityStatus,
+    filters: ctx.filters,
+    warnings: ctx.warnings,
+    missingNotice: ctx.missingNotice,
+    data: { pipelineRuns: list }
+  }
+}
+
+const analysis = useAnalysis({ fetcher: fetchRuns, rowKeys: NON_ANALYSIS_ROW_KEYS.pipelineRuns })
+const { data, state, loading, error, exportContext, load } = analysis
 
 // 实例表经 tables.js 的 pipelineRunRows 单一映射所有者渲染（不再自渲染裸行字段）
-const runRows = computed(() => pipelineRunRows(runList.value))
-
-// 响应级上下文：/pipeline-runs 是**裸数组**接口（无统一信封）⇒ 显式登记 ENVELOPE_MISSING；
-// 快照号取实例的目标快照（可能多个：由 buildFallbackContext 既有规则如实标注「未合并为单一快照」）；
-// 业务时间/数据更新时间/口径版本/质量状态是**响应级**字段，裸数组接口不提供 ⇒ 交给缺失清单如实标注，
-// 不从某一实例行挑一个值冒充整页口径。
-const context = computed(() => buildFallbackContext({
-  rows: runList.value,
-  warnings: ['ENVELOPE_MISSING'],
-  snapshotIds: runList.value.map((r) => r && r.targetSnapshotId).filter(Boolean)
-}))
+const runRows = computed(() => pipelineRunRows(data.value.pipelineRuns))
 
 async function runOnce() {
   busy.value = true
@@ -108,7 +124,7 @@ async function runOnce() {
       runtimeProfileId: runtimeProfileId.value, pipelineCode: 'ODS_TO_ADS',
       businessTime: businessDate.value + 'T00:00:00', sourceDataVersion: 'manual-' + Date.now()
     }, 'manual-' + Date.now())
-    await loadRuns()
+    await load()
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
   } finally {
@@ -116,23 +132,11 @@ async function runOnce() {
   }
 }
 
-async function loadRuns() {
-  state.value = 'loading'
-  error.value = ''
-  try {
-    runs.value = await api.pipelineRuns(10)
-    state.value = 'ready'
-  } catch (e) {
-    error.value = e.message || String(e)
-    state.value = 'error'
-    console.error(e)
-  }
-}
-
 async function retry(id) {
   runResult.value = await api.retryPipelineRun(id)
-  await loadRuns()
+  await load()
 }
 
-onMounted(loadRuns)
+onMounted(() => load())
+onBeforeUnmount(() => analysis.cancel())
 </script>
