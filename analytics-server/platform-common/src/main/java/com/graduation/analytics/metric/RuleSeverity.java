@@ -74,6 +74,7 @@ public final class RuleSeverity {
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE",
             // 指标库发布对账（MetricPublishValidator）
             "MP_MANIFEST_TABLES", "MP_MANIFEST_SNAPSHOT", "MP_HIVE_PATH_PINNED", "MP_EXPORT_FILES",
+            "MP_EXPORT_CHECKSUM",
             "MP_ADS_ROWS_MATCH", "MP_REQUIRED_TABLES_NONEMPTY", "MP_ROW_SHAPE_CONSISTENT",
             "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
             "MP_METRIC_VALUE_COUNT", "MP_ACTIVE_SNAPSHOT", "MP_ADS_ROWS_DB_MATCH",
@@ -146,6 +147,7 @@ public final class RuleSeverity {
             // 未登记的兜底也是 BLOCKING，所以此处登记只增可读性、不改变行为。
             // 名单 = 实读 MetricPublishValidator 全部 check(...) 调用产出（F-88 裁决 4 补齐 11 个漏登）。
             case "MP_MANIFEST_TABLES", "MP_MANIFEST_SNAPSHOT", "MP_HIVE_PATH_PINNED", "MP_EXPORT_FILES",
+                 "MP_EXPORT_CHECKSUM",
                  "MP_ADS_ROWS_MATCH", "MP_REQUIRED_TABLES_NONEMPTY", "MP_ROW_SHAPE_CONSISTENT",
                  "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
                  "MP_METRIC_VALUE_COUNT", "MP_ACTIVE_SNAPSHOT", "MP_ADS_ROWS_DB_MATCH",
@@ -212,6 +214,9 @@ public final class RuleSeverity {
             case "MP_MANIFEST_TABLES" -> "8 张宽表未齐备或清单列与白名单不一致 ⇒ 发布面不完整";
             case "MP_HIVE_PATH_PINNED" -> "来源分区未指向本次 snapshot_id ⇒ 会读到上一版数据";
             case "MP_EXPORT_FILES" -> "导出文件缺失 ⇒ 写入的是残缺数据";
+            case "MP_EXPORT_CHECKSUM" ->
+                    "导出制品内容摘要 ≠ 清单 checksum ⇒ 制品被截断/错位改写"
+                            + "（行数与文件存在性都可能同时正常，只有内容验证能发现）";
             case "MP_ADS_ROWS_MATCH" -> "写入行数 ≠ 导出清单行数 ⇒ 搬运不完整";
             case "MP_REQUIRED_TABLES_NONEMPTY" -> "概览/趋势/漏斗/活跃表为空 ⇒ 看板核心指标无来源";
             case "MP_ROW_SHAPE_CONSISTENT" -> "同表各行列集不一致 ⇒ 批量插入会错位";

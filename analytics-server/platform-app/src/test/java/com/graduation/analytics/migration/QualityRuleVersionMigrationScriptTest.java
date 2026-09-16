@@ -47,6 +47,17 @@ class QualityRuleVersionMigrationScriptTest {
     private static final String V19 = "V19__quality_rule_definition.sql";
     private static final String V20 = "V20__data_quality_result_rule_version.sql";
 
+    /**
+     * 追加式种子迁移（S3-06 / F-39）：`MP_EXPORT_CHECKSUM` 一行的登记。
+     *
+     * <p>V19 已发布、按门③不得再改，因此「契约全集」的落库载体自 V23 起由
+     * **V19 + 本迁移**共同构成；本类对二者的并集做与 Java 目录的零漂移对账。</p>
+     */
+    private static final String V23 = "V23__quality_rule_publish_export_checksum.sql";
+
+    /** 承载种子的迁移（顺序无关，对账取并集） */
+    private static final List<String> SEED_SCRIPTS = List.of(V19, V23);
+
     /** V20 的四个新列（顺序即脚本内的声明顺序）。 */
     private static final List<String> V20_COLUMNS = List.of(
             "rule_version", "effective_severity", "compat_policy_version", "rule_fingerprint");
@@ -62,7 +73,7 @@ class QualityRuleVersionMigrationScriptTest {
                     + "\\s*'([0-9a-f]{64})'\\s*\\)");
 
     @Test
-    @DisplayName("迁移号由总控分配且不冲突：V19/V20 存在，且 db/meta 内号位不重复")
+    @DisplayName("迁移号由总控分配且不冲突：V19/V20/V23 存在，且 db/meta 内号位不重复")
     void migrationVersionsAreAssignedAndUnique() {
         List<Integer> versions = scriptVersions();
         assertThat(versions).as("db/meta 下应有迁移脚本").isNotEmpty();
@@ -72,8 +83,35 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(versions)
                 .as("F-88/V25-Q01 的两个迁移号必须存在；改号/删号必在此处变红")
                 .contains(19, 20);
+        assertThat(versions)
+                .as("S3-06 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(23);
         assertThat(Files.isRegularFile(META_DIR.resolve(V19))).as("%s 必须存在", V19).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V20))).as("%s 必须存在", V20).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V23))).as("%s 必须存在", V23).isTrue();
+    }
+
+    @Test
+    @DisplayName("V23 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v23OnlyAppendsSeedRows() {
+        String sql = code(V23);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V23 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V23 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V23))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
     }
 
     @Test
@@ -156,16 +194,16 @@ class QualityRuleVersionMigrationScriptTest {
     }
 
     @Test
-    @DisplayName("V19 种子逐字段等于 Java 目录：35 行、version 全 1、档位/模式/阈值/指纹零漂移")
+    @DisplayName("种子（V19+V23 并集）逐字段等于 Java 目录：36 行、version 全 1、档位/模式/阈值/指纹零漂移")
     void v19SeedMatchesTheJavaCatalogExactly() {
         List<QualityRuleDefinition> definitions = QualityRuleCatalog.DEFAULT.definitions();
         assertThat(definitions)
-                .as("目录契约全集应为 35 条（本用例是 SQL 与 Java 的对账点，改数必在此处变红）")
-                .hasSize(35);
+                .as("目录契约全集应为 36 条（V19 的 35 条 + V23 追加 1 条；本用例是 SQL 与 Java 的对账点，改数必在此处变红）")
+                .hasSize(36);
 
         List<String> seed = seedRows();
         assertThat(seed)
-                .as("V19 种子行数必须等于目录定义数 —— 少登记一个码，该码一上线就会被读侧判为「未登记」而停止发布")
+                .as("种子行数必须等于目录定义数 —— 少登记一个码，该码一上线就会被读侧判为「未登记」而停止发布")
                 .hasSameSizeAs(definitions);
 
         List<String> expected = new ArrayList<>();
@@ -244,12 +282,31 @@ class QualityRuleVersionMigrationScriptTest {
         return read(scriptName).replaceAll("(?s)/\\*.*?\\*/", " ").replaceAll("(?m)--.*$", " ");
     }
 
-    /** 解析 V19 的种子行，输出 {@code 11 个字段以 | 连接} 的规范化文本（NULL 与缺省统一为空串）。 */
+    /**
+     * 解析承载种子的迁移（{@link #SEED_SCRIPTS} 并集），输出 {@code 11 个字段以 | 连接}
+     * 的规范化文本（NULL 与缺省统一为空串）。
+     *
+     * <p>为什么取并集：V19 已发布且按门③不得再改，新规则码只能由后续加性迁移登记；
+     * 契约全集 = 各迁移所登记行的并集（读侧同理，按 {@code (source_scope, rule_code, version)}
+     * 唯一键合并）。</p>
+     */
     private static List<String> seedRows() {
-        String sql = code(V19);
+        List<String> rows = new ArrayList<>();
+        for (String script : SEED_SCRIPTS) {
+            rows.addAll(seedRowsOf(script));
+        }
+        assertThat(rows)
+                .as("种子并集（%s）应解析出 36 行；解析结果说明格式已被改动", SEED_SCRIPTS)
+                .isNotEmpty();
+        return rows;
+    }
+
+    /** 解析单个迁移的 VALUES 段种子行。 */
+    private static List<String> seedRowsOf(String scriptName) {
+        String sql = code(scriptName);
         // 只在 VALUES 之后找行，避免把其它小括号结构误当种子
         int valuesAt = sql.toUpperCase(java.util.Locale.ROOT).indexOf("VALUES");
-        assertThat(valuesAt).as("V19 应有 VALUES 子句").isNotNegative();
+        assertThat(valuesAt).as("%s 应有 VALUES 子句", scriptName).isNotNegative();
         String tail = sql.substring(valuesAt);
 
         Matcher m = SEED_ROW.matcher(tail);
@@ -263,7 +320,7 @@ class QualityRuleVersionMigrationScriptTest {
                     threshold, m.group(9), from, to, m.group(14)));
         }
         assertThat(rows)
-                .as("V19 的 VALUES 段应解析出 35 行种子；解析到 %d 行说明格式已被改动", rows.size())
+                .as("%s 的 VALUES 段未解析出任何种子行：格式已被改动（或该迁移不再承载种子）", scriptName)
                 .isNotEmpty();
         return rows;
     }

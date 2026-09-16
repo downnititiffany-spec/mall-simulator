@@ -15,6 +15,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
+import java.util.zip.CRC32
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
@@ -385,6 +386,24 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       }
     }
 
+    "逐表 checksum 必须等于该导出文件真实字节的 CRC32（§12.5 L528 manifest/checksum、L529 内容验证）" in {
+      withClue(s"manifest checksum=${cap.manifestChecksums}：") {
+        cap.manifestChecksums.keySet should be(MetricAdsSpec.TABLES.map(_.mysqlTable).toSet)
+        MetricAdsSpec.TABLES.foreach { spec =>
+          val file = nioPath(cap.manifestExportFiles.getOrElse(spec.mysqlTable,
+            throw new IllegalStateException(s"清单缺 ${spec.mysqlTable} 的 exportFile")))
+          // 独立重算：直接读该文件全部原始字节（不复用导出作业的 Hadoop 流式实现）
+          val crc = new CRC32()
+          crc.update(Files.readAllBytes(file))
+          val expected = java.lang.Long.toHexString(crc.getValue)
+          withClue(s"${spec.mysqlTable}.jsonl checksum：") {
+            cap.manifestChecksums(spec.mysqlTable) should be(expected)
+            cap.manifestChecksums(spec.mysqlTable) should fullyMatch regex "^[0-9a-f]{1,8}$"
+          }
+        }
+      }
+    }
+
     "mxp 作业状态必须为 SUCCESS（设计 §10.2：导出完整才算发布制品就绪）" in {
       withClue(s"mxp 结果=${cap.step("mxp").desc}；checks=${cap.checks("mxp")}：") {
         cap.step("mxp").status should be("SUCCESS")
@@ -647,7 +666,8 @@ object DwsAdsChainExecSpec {
     manifestTotalRows: Option[Long],
     manifestRowCounts: Map[String, Long],
     manifestHivePaths: Map[String, String],
-    manifestExportFiles: Map[String, String]) {
+    manifestExportFiles: Map[String, String],
+    manifestChecksums: Map[String, String]) {
 
     /** 第 1 次执行的该码步骤（主链那一次） */
     def step(code: String): Step =
@@ -684,7 +704,7 @@ object DwsAdsChainExecSpec {
       exportDir = "", exportFileExists = Map.empty, exportFileLines = Map.empty,
       manifestExists = false, manifestRaw = "", manifestSnapshotId = None, manifestDt = None,
       manifestTotalRows = None, manifestRowCounts = Map.empty, manifestHivePaths = Map.empty,
-      manifestExportFiles = Map.empty)
+      manifestExportFiles = Map.empty, manifestChecksums = Map.empty)
   }
 
   // ── 采集主流程 ────────────────────────────────────────────────────────
@@ -916,20 +936,21 @@ object DwsAdsChainExecSpec {
       manifestTotalRows = manifest.totalRows,
       manifestRowCounts = manifest.rowCounts,
       manifestHivePaths = manifest.hivePaths,
-      manifestExportFiles = manifest.exportFiles)
+      manifestExportFiles = manifest.exportFiles,
+      manifestChecksums = manifest.checksums)
   }
 
   private final case class Manifest(snapshotId: Option[String], dt: Option[String], totalRows: Option[Long],
                                     rowCounts: Map[String, Long], hivePaths: Map[String, String],
-                                    exportFiles: Map[String, String])
+                                    exportFiles: Map[String, String], checksums: Map[String, String])
 
   private def parseManifest(raw: String): Manifest = {
-    if (raw.trim.isEmpty) return Manifest(None, None, None, Map.empty, Map.empty, Map.empty)
+    if (raw.trim.isEmpty) return Manifest(None, None, None, Map.empty, Map.empty, Map.empty, Map.empty)
     Try(new ObjectMapper().readTree(raw)).toOption match {
-      case None => Manifest(None, None, None, Map.empty, Map.empty, Map.empty)
+      case None => Manifest(None, None, None, Map.empty, Map.empty, Map.empty, Map.empty)
       case Some(node) =>
         def text(f: String): Option[String] = Option(node.get(f)).map(_.asText())
-        val rows = ListBuffer.empty[(String, Long, String, String)]
+        val rows = ListBuffer.empty[(String, Long, String, String, String)]
         val tables = node.get("tables")
         if (tables != null && tables.isArray) {
           val it = tables.elements()
@@ -938,13 +959,14 @@ object DwsAdsChainExecSpec {
             rows += ((Option(t.get("mysqlTable")).map(_.asText()).getOrElse(""),
               Option(t.get("rowCount")).map(_.asLong()).getOrElse(-1L),
               Option(t.get("hivePath")).map(_.asText()).getOrElse(""),
-              Option(t.get("exportFile")).map(_.asText()).getOrElse("")))
+              Option(t.get("exportFile")).map(_.asText()).getOrElse(""),
+              Option(t.get("checksum")).map(_.asText()).getOrElse("")))
           }
         }
         Manifest(text("snapshotId"), text("dt").orElse(text("businessDate")),
           Option(node.get("totalRows")).map(_.asLong()),
           rows.map(r => r._1 -> r._2).toMap, rows.map(r => r._1 -> r._3).toMap,
-          rows.map(r => r._1 -> r._4).toMap)
+          rows.map(r => r._1 -> r._4).toMap, rows.map(r => r._1 -> r._5).toMap)
     }
   }
 

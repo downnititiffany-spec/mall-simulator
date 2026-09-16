@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 887
+  'analytics-server'        = 895
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -130,7 +130,18 @@ $BaselineDefault = [ordered]@{
 # + QualityRuleThresholdDriftTest（5 条，Java 反熵守卫：规则码/版本/阈值三方对账
 #   —— quality_rule_definition 目录 ↔ AdsSql.dataQuality ↔ QualityChecker，漂移即红）
 # ⇒ spark 202→208，analytics-server 882→887。
-$BaselineSpark = 208
+# S3-06：`mxp` 导出制品 checksum 贯通（Spark 产出摘要 → 清单 checksum 键 → 发布侧 BLOCKING 重算比对）
+#   spark 侧新增 MetricExportChecksumSpec（3 条：CRC32 已知向量 / 200KB 实文件 == java.util.zip.CRC32 /
+#     内容敏感性 —— 同样行数不同内容摘要必须不同），
+#   DwsAdsChainExecSpec 加「逐表 checksum == 导出文件真实字节 CRC32」1 条
+#   ⇒ spark 208→212。
+#   analytics-server 侧新增 MetricExportManifestChecksumTest（5 条：crc32 已知向量 / 整文件读取 /
+#     内容敏感性 / 清单缺 checksum 即拒绝 / 带 checksum 可解析且原样保留），
+#   MetricPublishValidatorTest 加「内容被改写（行数不变）→ MP_EXPORT_CHECKSUM 拦下」「制品缺失两码各自点名」
+#     2 条，QualityRuleVersionMigrationScriptTest 加「V23 只追加种子（单条 INSERT IGNORE、不建表/不改列）」
+#     1 条，并随新规则码 MP_EXPORT_CHECKSUM 把种子并集 35→36、登记码 33→34
+#   ⇒ analytics-server 887→895。
+$BaselineSpark = 212
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

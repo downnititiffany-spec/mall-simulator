@@ -275,7 +275,8 @@ class MetricPublishValidatorSeverityTest {
                     spec.name(), rows.getOrDefault(spec.name(), List.of()).size(), spec.columns(),
                     "file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/" + spec.name()
                             + "/snapshot_id=" + SID + "/dt=" + DT,
-                    file.toString()));
+                    file.toString(),
+                    MetricExportManifest.crc32(file)));
         }
         return new MetricExportManifest(SID, DT, DT, "spark-ads",
                 tables.stream().mapToLong(MetricExportManifest.TableExport::rowCount).sum(), tables);

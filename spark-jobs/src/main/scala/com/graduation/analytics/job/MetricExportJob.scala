@@ -24,6 +24,11 @@ import scala.collection.mutable.ListBuffer
  *      否则说明发布指针还停在旧快照 → 拒绝导出（防把上一版数据当本次发布）；
  *   ② 导出文件真实回读行数必须等于 Hive 分区真实 `COUNT(*)`（逐表校验）；
  *   ③ JSONL 必须保留 null 字段：发布侧批量写入要求同一批列集一致（`ignoreNullFields=false`）。
+ *
+ * S3-06 起清单每表另带 `checksum`（该 JSONL 全部原始字节的 CRC32，`Long.toHexString` 形式）：
+ * 行数相等挡不住"内容被截断/错位搬运"，发布侧 `MetricPublishValidator` 的 `MP_EXPORT_CHECKSUM`
+ * 会逐表重算比对（§12.5 L528/L529、指导书 §7 阶段 3 L151）。
+ * 注意本作业**只产出摘要、不自行判定**自己是否可信 —— 判定权在发布侧唯一所有者。
  */
 class MetricExportJob extends WarehouseJob {
   override val code: String = "mxp"
@@ -74,6 +79,9 @@ class MetricExportJob extends WarehouseJob {
       val exportFile = s"$exportDir/${spec.mysqlTable}.jsonl"
       MetricExportJob.writeJsonl(spark, df, exportFile)
       val written = MetricExportJob.countLines(spark, exportFile)
+      // 内容摘要：随清单一起交付，发布侧（MetricPublishValidator 的 MP_EXPORT_CHECKSUM）重算比对。
+      // 只核行数时，行数相同但内容被截断/错位搬运的制品在发布侧没有判据（§12.5 L528/L529）。
+      val checksum = MetricExportJob.crc32(spark, exportFile)
       checks += QualityCheck("MXP_EXPORT_ROWS", "PUBLISH", spec.mysqlTable, hiveRows, if (written == hiveRows) 0L else 1L,
         "导出文件行数 = Hive 分区行数", "BLOCKING", written == hiveRows,
         s"${spec.mysqlTable}: hive=$hiveRows export=$written")
@@ -81,7 +89,7 @@ class MetricExportJob extends WarehouseJob {
       manifestRows +=
         s"""    {"hiveTable":"${spec.hiveTable(ns)}","mysqlTable":"${spec.mysqlTable}","rowCount":$written,""" +
           s""""columns":[${spec.columns.map(c => s""""$c"""").mkString(",")}],""" +
-          s""""hivePath":"$loc","exportFile":"${MetricExportJob.posix(exportFile)}"}"""
+          s""""hivePath":"$loc","exportFile":"${MetricExportJob.posix(exportFile)}","checksum":"$checksum"}"""
     }
 
     val exportFailed = checks.exists(c => c.severity == "BLOCKING" && !c.passed)
@@ -185,6 +193,45 @@ object MetricExportJob {
       } finally in.close()
     }
     total
+  }
+
+  /**
+   * 导出制品的**内容摘要**：CRC32 作用于该文件全部原始字节，输出 `Long.toHexString` 形式
+   * （小写十六进制、无前导零、空文件为 `"0"`）。
+   *
+   * <p>依据：设计 §12.5 L528 的发布顺序要求 `mxp` 导出随清单给出 checksum，L529 的 MySQL 暂存
+   * 验证含「内容验证」；指导书 §7 阶段 3 L151 要求「导出 ADS 制品核 schema/行数/checksum」。
+   * 只有行数（`MXP_EXPORT_ROWS` / `MP_ADS_ROWS_MATCH`）时，行数相同但内容被截断或改写的制品
+   * 在发布侧没有任何判据（`docs/audit/v2-completeness-audit.md:213` 已登记该缺口）。</p>
+   *
+   * <p>口径唯一性：与 landing 侧 `ingestion-manifest.v1` 的 checksum **同一写法**
+   * （`IngestionService` 用 `Long.toHexString(CRC32.getValue())`），因此同一制品在
+   * landing 清单与 `mxp` 清单里的摘要形式不会分裂成两套。</p>
+   *
+   * <p>为什么是 CRC32 而不是 SHA-256：本摘要的用途是**同一文件在 Spark 写出与 Java 读入之间的
+   * 一致性核对**（防截断/防错位搬运），不是抗篡改的密码学承诺；与既有 ingestion 清单保持同口径
+   * 比另立一套更强的哈希更重要（后者会让同一制品在两条链路上有两个"校验和"概念）。</p>
+   *
+   * <p>实现要点：必须**流式读满整个文件**（复用 `writeJsonl` 的字节缓冲方式），
+   * 不能只读首个缓冲区；文件不存在即抛错（缺失制品不该得到一个"合法摘要"）。</p>
+   */
+  def crc32(spark: SparkSession, file: String): String = {
+    val path = new Path(file)
+    val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
+    if (!fs.exists(path)) {
+      throw new java.io.FileNotFoundException(s"导出制品不存在，无法计算摘要：$file")
+    }
+    val crc = new java.util.zip.CRC32()
+    val in = fs.open(path)
+    try {
+      val buf = new Array[Byte](64 * 1024)
+      var n = in.read(buf)
+      while (n > 0) {
+        crc.update(buf, 0, n)
+        n = in.read(buf)
+      }
+    } finally in.close()
+    java.lang.Long.toHexString(crc.getValue)
   }
 
   def writeText(spark: SparkSession, file: String, content: String): Unit = {

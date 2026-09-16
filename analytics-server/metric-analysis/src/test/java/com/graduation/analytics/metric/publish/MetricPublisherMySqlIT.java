@@ -340,6 +340,8 @@ class MetricPublisherMySqlIT {
             table.put("hivePath", context.hdfsRoot() + "/warehouse/dw_ads.db/"
                     + spec.name() + "/snapshot_id=" + sid + "/dt=" + DT);
             table.put("exportFile", file.toAbsolutePath().toString().replace('\\', '/'));
+            // S3-06：清单必须带内容摘要（MetricExportManifest.read 缺该字段即拒绝整份清单）
+            table.put("checksum", MetricExportManifest.crc32(file));
             tables.add(table);
         }
         Map<String, Object> manifest = new LinkedHashMap<>();

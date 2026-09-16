@@ -92,6 +92,7 @@ public final class QualityRuleCatalog {
     public static final String RULE_MP_MANIFEST_SNAPSHOT = "MP_MANIFEST_SNAPSHOT";
     public static final String RULE_MP_HIVE_PATH_PINNED = "MP_HIVE_PATH_PINNED";
     public static final String RULE_MP_EXPORT_FILES = "MP_EXPORT_FILES";
+    public static final String RULE_MP_EXPORT_CHECKSUM = "MP_EXPORT_CHECKSUM";
     public static final String RULE_MP_ADS_ROWS_MATCH = "MP_ADS_ROWS_MATCH";
     public static final String RULE_MP_REQUIRED_TABLES_NONEMPTY = "MP_REQUIRED_TABLES_NONEMPTY";
     public static final String RULE_MP_ROW_SHAPE_CONSISTENT = "MP_ROW_SHAPE_CONSISTENT";
@@ -178,6 +179,8 @@ public final class QualityRuleCatalog {
             fixed(RULE_MP_MANIFEST_SNAPSHOT, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "清单快照一致性"),
             fixed(RULE_MP_HIVE_PATH_PINNED, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "Hive 路径必须钉住本次快照"),
             fixed(RULE_MP_EXPORT_FILES, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "导出文件齐备"),
+            fixed(RULE_MP_EXPORT_CHECKSUM, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING,
+                    "导出制品内容摘要 = 清单 checksum（逐表重算，防行数相同但内容被截断/错位搬运）"),
             fixed(RULE_MP_ADS_ROWS_MATCH, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "清单行数 = 文件行数"),
             fixed(RULE_MP_REQUIRED_TABLES_NONEMPTY, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING,
                     "必须有数据的表不得为空"),

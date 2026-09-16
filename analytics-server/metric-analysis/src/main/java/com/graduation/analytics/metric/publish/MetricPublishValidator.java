@@ -8,6 +8,7 @@ import com.graduation.analytics.metric.publish.MetricPublisherPort.Check;
 import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -87,6 +88,29 @@ public class MetricPublishValidator {
                 .count();
         checks.add(check("MP_EXPORT_FILES", manifest.tables().size(), missingFiles, missingFiles == 0,
                 "导出文件全部存在", "exportDir=" + request.exportDir(), rules));
+
+        // S3-06（§12.5 L528 manifest/checksum、L529 内容验证；指导书 §7 阶段 3 L151 核 checksum）：
+        // 只看"文件在不在"和"行数对不对"挡不住行数相同但内容被截断/错位搬运的制品，
+        // 所以逐表重算导出文件的内容摘要（CRC32，口径见 MetricExportManifest#crc32）与清单比对。
+        // 这是**发布侧唯一所有者**的判定：Spark 侧只产出摘要，不自行判定自己是否可信。
+        List<String> checksumMismatch = new ArrayList<>();
+        for (MetricExportManifest.TableExport t : manifest.tables()) {
+            String actual;
+            try {
+                actual = MetricExportManifest.crc32(java.nio.file.Path.of(t.exportFile()));
+            } catch (IOException | RuntimeException ex) {
+                // 文件缺失/不可读在此也算"摘要对不上"（不假装通过）：MP_EXPORT_FILES 会另行点名缺失文件
+                checksumMismatch.add(t.mysqlTable() + " 重算失败=" + ex.getClass().getSimpleName());
+                continue;
+            }
+            if (!actual.equals(t.checksum())) {
+                checksumMismatch.add(t.mysqlTable() + " 清单=" + t.checksum() + " 实算=" + actual);
+            }
+        }
+        checks.add(check("MP_EXPORT_CHECKSUM", manifest.tables().size(), checksumMismatch.size(),
+                checksumMismatch.isEmpty(),
+                "导出制品内容摘要 = 清单 checksum（逐表重算 CRC32）",
+                checksumMismatch.isEmpty() ? "逐表摘要一致" : String.join("; ", checksumMismatch), rules));
 
         return checks;
     }

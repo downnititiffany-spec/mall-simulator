@@ -36,6 +36,8 @@ class RuleSeverityTest {
      */
     private static final List<String> PUBLISH_VALIDATOR_CODES = List.of(
             "MP_MANIFEST_TABLES", "MP_MANIFEST_SNAPSHOT", "MP_HIVE_PATH_PINNED", "MP_EXPORT_FILES",
+            // S3-06：导出制品内容摘要（逐表重算 CRC32 与清单比对），与 MP_EXPORT_FILES 分开登记
+            "MP_EXPORT_CHECKSUM",
             "MP_ADS_ROWS_MATCH", "MP_REQUIRED_TABLES_NONEMPTY", "MP_ROW_SHAPE_CONSISTENT",
             "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
             "MP_METRIC_VALUE_COUNT", "MP_ACTIVE_SNAPSHOT", "MP_ADS_ROWS_DB_MATCH",
@@ -50,7 +52,7 @@ class RuleSeverityTest {
             "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE", "MP_OLD_ACTIVE_ARCHIVED");
 
     /**
-     * 全部已登记规则码（33 个）＝ 阻断级 12 + 指标库发布对账 15 + WARN 3 + INFO 3。
+     * 全部已登记规则码（34 个）＝ 阻断级 12 + 指标库发布对账 16 + WARN 3 + INFO 3。
      *
      * <p>与 {@link RuleSeverity} 的登记表、{@link QualityRuleCatalog} 的目录必须三者一致：
      * 按 §7.3.1 line 524，只在一处登记、目录里没有的码会判为「未登记规则」而停止发布。</p>
@@ -270,7 +272,7 @@ class RuleSeverityTest {
         }
         assertThat(missing).as("这些码只在 RuleSeverity.of 里登记、未进 quality_rule_definition 目录；"
                 + "按 §7.3.1 line 524 它们会被判为「未登记规则」而停止发布").isEmpty();
-        // 反向：目录里也不应有超出登记清单的码。35 = 33 个既有码 + 2 个本次按 §7.3.1 line 526
+        // 反向：目录里也不应有超出登记清单的码。36 = 34 个既有码 + 2 个本次按 §7.3.1 line 526
         // 新增的独立金额校验码（ORDER_ITEM_AMOUNT_FORMULA、DWD_DWS_AMOUNT_RECONCILE）。
         assertThat(rules.definitions()).hasSize(ALL_REGISTERED_CODES.size() + 2);
     }
@@ -306,7 +308,7 @@ class RuleSeverityTest {
         all.addAll(PUBLISH_VALIDATOR_CODES);
         all.addAll(WARN_CODES);
         all.addAll(INFO_CODES);
-        assertThat(all).hasSize(33);   // 12 BLOCKING + 15 发布对账 + 3 WARN + 3 INFO
+        assertThat(all).hasSize(34);   // 12 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
         assertThat(all).doesNotHaveDuplicates();
 
         for (String code : all) {
