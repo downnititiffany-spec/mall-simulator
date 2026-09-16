@@ -91,8 +91,23 @@ public class AnalysisService {
     public record QualitySummary(int ruleCount, int passedCount, List<String> failedRules) {
     }
 
+    /**
+     * 销售趋势点（契约 §3.1/§3.2）。
+     *
+     * <p>v1.4（S3-20）加性补 {@code netSaleAmount}：设计 §9.3 **L333**「历史已发布，**net_sale 等字段需补**」
+     * （该条原文以 Hive 侧表名开头；本包源码策略测试禁止白名单外的 ADS 裸表名，故此处不引该名）
+     * ＋ §11.2 **L428**「净销售 = 同口径支付金额 − 成功退款金额；真实收入方向，
+     * 退款归属期需冻结」。值 = ADS 列 `net_sale_amount` **原样透传**（口径所有者仍是 DWS/ADS，
+     * 服务层不重算），与 {@code saleAmount} 同一行、同一 dt。
+     *
+     * <p><b>口径边界（不得越界表述）</b>：① 跨业务日到账的退款**不会**回改历史业务日的净额
+     * （L428「退款归属期需冻结」尚未裁决，见 `PROJECT_STATUS` backlog），故本值**不等于**"最终到账净收入"；
+     * ② 历史快照该列由加性迁移的 `NOT NULL DEFAULT 0` 回填 ⇒ **0 可能是"未计算"占位**，
+     * 与"当日零净额"在当前数据上**不可区分**（不得据此判断"无退款"）；列整体缺失/畸形值 ⇒ {@code null}
+     * （不臆造 0）。
+     */
     public record SalesTrendPoint(String date, long orderCount, BigDecimal saleAmount, long buyerCount,
-                                  BigDecimal avgOrderValue) {
+                                  BigDecimal avgOrderValue, BigDecimal netSaleAmount) {
     }
 
     public record ActiveDay(String date, long dau, long behaviorCount) {
@@ -454,13 +469,18 @@ public class AnalysisService {
 
     // ── ADS 宽表映射 ──────────────────────────────────────────────────────────
 
-    /** 销售趋势（ads_sale_trend_m，按 dt 升序） */
+    /**
+     * 销售趋势（ads_sale_trend_m，按 dt 升序）。
+     *
+     * <p>v1.4（S3-20）：末列补 ADS `net_sale_amount`（净销售额）**原样透传**；缺列/畸形 ⇒ {@code null}。
+     */
     private List<SalesTrendPoint> salesTrend(String snapshotId) {
         return adsReader.selectBySnapshot(T_SALE_TREND, snapshotId, null).stream()
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new SalesTrendPoint(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("order_count")), AdsRows.asDecimal(row.get("sale_amount")),
-                        AdsRows.asLong(row.get("buyer_count")), AdsRows.asDecimal(row.get("avg_order_value"))))
+                        AdsRows.asLong(row.get("buyer_count")), AdsRows.asDecimal(row.get("avg_order_value")),
+                        AdsRows.asDecimal(row.get("net_sale_amount"))))
                 .toList();
     }
 

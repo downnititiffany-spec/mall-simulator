@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 933
+  'analytics-server'        = 936
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -277,6 +277,24 @@ $BaselineDefault = [ordered]@{
 #   真库上 queryTimeout 到点是否抛 `QueryTimeoutException`、真 HTTP 504**未测**）。
 #   边界：设计 L544 的 per-Store 能力描述（`supportsSnapshot`/`supportsDimensions`/`maxRows`/`queryTimeout`/
 #   `availability`）本轮**未实现**（全模块零命中，已登记）；限流（L158 同句）因设计零锚点**待总控批注**。
+# S3-20：**销售趋势净销售额消费侧**（设计 §9.3 **L333**「历史已发布，net_sale 等字段需补」、
+#   §11.2 **L428**「净销售｜同口径支付金额−成功退款金额」、指导书 §7 阶段3 L148「金额/退款口径」；
+#   backlog 原行：`ads_sale_trend_m.net_sale_amount` **尚无消费方**）。
+#   开工前实测：该列**上游已齐**（Spark `MetricAdsSpec:34` 末列 → `AdsSql:212-223` 从 `dws_trade_day` 透传 →
+#   MySQL `db/metric/V5__ads_sale_trend_net_sale.sql` 加性 ALTER → Java 白名单 `MetricAdsCatalog:31`），
+#   且读侧 `MetricAdsReader.selectSql()` 按白名单拼列 ⇒ **DAO 本来就返回该列**，缺口只在 `AnalysisService` 消费侧
+#   （`SalesTrendPoint` 旧 4 列直通，`net_sale_amount` 被丢弃）。
+#   加性改动：`SalesTrendPoint` 末尾追加 `netSaleAmount`（`AdsRows.asDecimal` 透传：缺列/畸形 ⇒ null，
+#   **不臆造 0**），`/dashboards/overview` 的 `salesTrend[*]` 与 `/analysis/sales` 的 `trend[*]` 同时生效
+#   （同一记录，无第二实现）；契约文档 R7-4 **v1.4** 加性升版（两处示例 JSON + 口径边界）。
+#   新测试：`AnalysisServiceTest` +3（ADS 缺列 ⇒ null 且**汇总 `netSale` 仍取 `metric_value`**、字符串/数值/
+#   畸形三种驱动形态、overview 与 sales 两处都给净额）⇒ analytics-server 933→936（metric-analysis 80→83）。
+#   边界：跨业务日退款归属期**未裁决**（L428「退款归属期需冻结」）、设计 L506「ADS GMV ≥ 净销售 ≥ 0」
+#   **未实现**（读侧不加启发式纠正）、`from`/`to` 实测**只回显不过滤**、阶段5 页面**未展示**该字段、
+#   真库取值与真 HTTP 响应**未测** —— 逐条登记在 `docs/PROJECT_STATUS.md` backlog 与 S3-20 登记文件。
+#   门禁实测（RunId `s320_20260916_def2`）：三棵树 1055 = analytics 936 + mall 13 + generator 106；
+#   唯一红 = 已登记环境性红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` ⇒
+#   「计数 MATCH + 唯一红＝该已登记环境性红」，**不是** exit=0。
 $BaselineSpark = 275
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

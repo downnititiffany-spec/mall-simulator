@@ -36,6 +36,30 @@
 > 「**本次窗口上限**（= 生效 `size`）」。**`page` 缺省即 1，旧前端不传 `page` ⇒ page=1 ⇒ 与 v1.2 行为
 > 逐字段相同**（`hot` 前 size 行、`topN` 同值、`conversion` 同全量），故对既有调用方零变化；
 > 新增的 `page`/`size`/`total`/`hasMore` 四个字段为加性，旧前端不读不会误读。
+>
+> **v1.4（2026-09-16，S3-20 加性补充）**：按设计 V3.0 §9.3 **L333**「`ads_sale_trend`：历史已发布，
+> **net_sale 等字段需补**」、§11.2 **L428**「净销售｜**同口径支付金额 − 成功退款金额**｜真实收入方向，
+> 退款归属期需冻结」与指导书 V3.0 §7 阶段3 L148「对每个指标固定粒度、分子分母、时间窗口、**金额/退款口径**、
+> 空值规则和版本」：`/dashboards/overview` 的 `salesTrend[*]` 与 `/analysis/sales` 的 `trend[*]`
+> **加性**新增字段 **`netSaleAmount`**（净销售额，元），值 = ADS 列 `ads_sale_trend_m.net_sale_amount`
+> **原样透传**（同一行、同一 `dt`，与 `saleAmount` 并列）。
+>
+> **本版只做「读出既有列」**，**不**改口径、**不**重算、**不**新增列：`gmv`/`netSale`（汇总）仍只取
+> `metric_value`（§3.2 原样保留）；`netSaleAmount` 与 `netSale` **不是一个东西**——前者是**逐日趋势**，
+> 后者是**该快照汇总**，两者可能因窗口不同而不相等（前端不得互相代入）。
+>
+> **口径边界（不得越界表述）**：
+> 1. 本值 = 当日口径净额，**跨业务日到账的退款不回改**历史业务日（设计 L428「退款归属期需冻结」尚**未裁决**，
+>    见 `docs/PROJECT_STATUS.md` backlog）⇒ **不得**称其为"最终到账净收入"。
+> 2. 该列由加性迁移以 `NOT NULL DEFAULT 0` 回填 ⇒ **历史快照的 `0` 可能是"未计算"占位**，与"当日零净额"
+>    在当前数据上**不可区分**；`0` **不得**被读作"无退款"。
+> 3. 列缺失或值畸形 ⇒ `null`（**不臆造 0**，与 `saleAmount` 同一 `AdsRows.asDecimal` 语义）。
+> 4. 设计 §12.3 **L506**「同归属口径 ADS GMV ≥ 净销售 ≥ 0」**本版未实现**（读侧**不做**启发式纠正，
+>    写侧规则缺口另行登记）⇒ 本响应**不保证**该不等式。
+> 5. 阶段5 页面**尚未**展示该字段（`web/src/views/Sales.vue`、`Overview.vue` 本版未改）⇒ 不构成
+>    "页面已展示净销售额"。
+>
+> **旧调用方影响**：纯加性字段，旧前端不读不会误读；`page`/`size`/`total`/`hasMore` 等 v1.3 语义不变。
 
 ## 1. 总原则
 
@@ -88,7 +112,8 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
     { "metricCode": "gmv", "metricName": "GMV", "value": 2042.00, "unit": "元",
       "period": "day:2026-09-01", "definitionVersion": "v1" }
   ],
-  "salesTrend": [ { "date": "2026-09-01", "orderCount": 5, "saleAmount": 2042.00, "buyerCount": 3 } ],
+  "salesTrend": [ { "date": "2026-09-01", "orderCount": 5, "saleAmount": 2042.00, "buyerCount": 3,
+                    "netSaleAmount": 1493.00 } ],
   "activeTrend": [ { "date": "2026-09-01", "dau": 3, "behaviorCount": 22 } ],
   "quality": { "ruleCount": 4, "passedCount": 4, "failedRules": [] },
   "metricDictionary": [ { "metricCode": "refund_rate", "metricName": "退款率", "formula": "…", "unit": "" } ]
@@ -97,19 +122,29 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 
 - `metrics` 来自 `metric_value`（ACTIVE 快照），按 `metricCode` 稳定排序。
 - `salesTrend` ← `ads_sale_trend_m`，`activeTrend` ← `ads_active_trend_m`（按 `dt` 升序）。
+  **v1.4**：`salesTrend[*].netSaleAmount` ← 同表 `net_sale_amount`（透传，缺列/畸形 = `null`；边界见文首 v1.4）。
 - `metricDictionary` ← `analytics_meta.metric_definition`（页面"查看指标口径"用）。
 
 ### 3.2 `GET /api/v1/analysis/sales?snapshotId=&from=&to=`
 
 ```json
 { "trend": [ { "date": "2026-09-01", "orderCount": 5, "saleAmount": 2042.00, "buyerCount": 3,
-               "avgOrderValue": 408.40 } ],
+               "avgOrderValue": 408.40, "netSaleAmount": 1493.00 } ],
   "gmv": 2042.00, "netSale": 1493.00, "refundRate": 0.6000, "fullRefundRate": 0.2000,
   "quality": { "ruleCount": 4, "passedCount": 4, "failedRules": [] } }
 ```
 
 `gmv`/`netSale`/`refundRate`/`fullRefundRate` 一律取 `metric_value`（**不得前端或后端重算**）；
 `ads_category_sale_m` / `ads_region_sale_m` 本期不存在，维度结构字段返回空数组并在 `warnings` 说明。
+
+**v1.4**：`trend[*]` 为 ADS 直读，**新增** `netSaleAmount`（← `ads_sale_trend_m.net_sale_amount`，透传）。
+它与汇总字段 `netSale`（← `metric_value`）**来源不同、粒度不同**（逐日 vs 快照汇总），
+两者**不得互相代入**。
+
+**实测边界（本版据实记录，不修）**：当前实现里 `from`/`to` **只回显在 `filters`，不参与任何过滤**——
+`trend` 与该快照全部 `metric_value` 都是**整快照原值**（`AnalysisService.sales()` L191-208 实测）。
+故 `netSaleAmount` **不是**"`from`~`to` 区间净额"，真实窗口过滤尚未实现（缺口登记在
+`docs/PROJECT_STATUS.md` backlog）。
 
 ### 3.3 `GET /api/v1/analysis/products?snapshotId=&page=&size=&topN=&from=&to=`
 

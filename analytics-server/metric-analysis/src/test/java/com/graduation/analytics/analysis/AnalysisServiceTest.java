@@ -7,6 +7,7 @@ import com.graduation.analytics.analysis.AnalysisService.OverviewData;
 import com.graduation.analytics.analysis.AnalysisService.ProductsData;
 import com.graduation.analytics.analysis.AnalysisService.RfmData;
 import com.graduation.analytics.analysis.AnalysisService.SalesData;
+import com.graduation.analytics.analysis.AnalysisService.SalesTrendPoint;
 import com.graduation.analytics.analysis.AnalysisService.UsersData;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricAdsReader;
@@ -127,6 +128,8 @@ class AnalysisServiceTest {
         assertThat(data.salesTrend().get(0).date()).isEqualTo("2026-08-31");
         assertThat(data.salesTrend().get(1).date()).isEqualTo("2026-09-01");
         assertThat(data.salesTrend().get(1).saleAmount()).isEqualByComparingTo("2042.00");
+        assertThat(data.salesTrend().get(1).netSaleAmount()).isEqualByComparingTo("1493.00");
+        assertThat(data.salesTrend().get(0).netSaleAmount()).isEqualByComparingTo("500.00");
         assertThat(data.salesTrend().get(1).orderCount()).isEqualTo(5L);
         assertThat(data.salesTrend().get(1).buyerCount()).isEqualTo(3L);
 
@@ -175,11 +178,60 @@ class AnalysisServiceTest {
         assertThat(model.data().refundRate()).isEqualByComparingTo("0.6000");
         assertThat(model.data().fullRefundRate()).isEqualByComparingTo("0.2000");
         assertThat(model.data().trend()).hasSize(2);
+        assertThat(model.data().trend().get(1).netSaleAmount()).isEqualByComparingTo("1493.00");
         assertThat(model.data().byCategory()).isEmpty();
         assertThat(model.data().byRegion()).isEmpty();
         assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
         // 快照一致性：ADS 查询带着与信封相同的 snapshotId
         verify(adsReader).selectBySnapshot("ads_sale_trend_m", SID, null);
+    }
+
+    @Test
+    @DisplayName("趋势净额：ADS 缺该列时返回 null，不臆造 0；汇总净额仍取 metric_value（两个来源不得互相顶替）")
+    void trendNetSaleAmountIsNullWhenAdsColumnAbsent() {
+        stubActiveSnapshot();
+        stubTrendRows(List.of(row("dt", "20260901", "order_count", 5L, "buyer_count", 3L,
+                "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"))));
+
+        AnalysisViewModel<SalesData> model = service.sales(null, null, null);
+
+        assertThat(model.data().trend()).hasSize(1);
+        assertThat(model.data().trend().get(0).netSaleAmount()).isNull();
+        assertThat(model.data().trend().get(0).saleAmount()).isEqualByComparingTo("2042.00");
+        assertThat(model.data().netSale()).isEqualByComparingTo("1493.00");
+    }
+
+    @Test
+    @DisplayName("趋势净额：字符串/数值两种驱动形态都吃，畸形值返回 null 且不抛异常（一律不猜 0）")
+    void trendNetSaleAmountParsesDriverForms() {
+        stubActiveSnapshot();
+        stubTrendRows(List.of(
+                row("dt", "20260831", "order_count", 2L, "buyer_count", 2L, "sale_amount", new BigDecimal("500.00"),
+                        "avg_order_value", new BigDecimal("250.00"), "net_sale_amount", "500.00"),
+                row("dt", "20260901", "order_count", 5L, "buyer_count", 3L, "sale_amount", new BigDecimal("2042.00"),
+                        "avg_order_value", new BigDecimal("408.40"), "net_sale_amount", new BigDecimal("1493.00")),
+                row("dt", "20260902", "order_count", 1L, "buyer_count", 1L, "sale_amount", new BigDecimal("100.00"),
+                        "avg_order_value", new BigDecimal("100.00"), "net_sale_amount", "abc")));
+
+        List<SalesTrendPoint> trend = service.sales(null, null, null).data().trend();
+
+        assertThat(trend).extracting(SalesTrendPoint::date)
+                .containsExactly("2026-08-31", "2026-09-01", "2026-09-02");
+        assertThat(trend.get(0).netSaleAmount()).isEqualByComparingTo("500.00");
+        assertThat(trend.get(1).netSaleAmount()).isEqualByComparingTo("1493.00");
+        assertThat(trend.get(2).netSaleAmount()).isNull();
+    }
+
+    @Test
+    @DisplayName("趋势净额：overview 与 sales 共用同一记录，两处都给净额（不得一处有一处没有）")
+    void overviewTrendAlsoCarriesNetSaleAmount() {
+        stubActiveSnapshot();
+
+        List<SalesTrendPoint> overviewTrend = service.overview(null, null, null).data().salesTrend();
+
+        assertThat(overviewTrend).isNotEmpty();
+        assertThat(overviewTrend).allSatisfy(point -> assertThat(point.netSaleAmount()).isNotNull());
+        assertThat(overviewTrend.get(overviewTrend.size() - 1).netSaleAmount()).isEqualByComparingTo("1493.00");
     }
 
     @Test
@@ -475,6 +527,11 @@ class AnalysisServiceTest {
         when(adsReader.selectBySnapshot(eq("ads_hot_product_m"), anyString(), any())).thenReturn(rows);
     }
 
+    /** v1.4：只替换销售趋势表，用于构造净额缺列/畸形值场景（其余表沿用 {@link #adsRows()} 默认夹具）。 */
+    private void stubTrendRows(List<Map<String, Object>> rows) {
+        when(adsReader.selectBySnapshot(eq("ads_sale_trend_m"), anyString(), any())).thenReturn(rows);
+    }
+
     /** 生成 count 行热度榜，rank_no 1..count，**故意倒序放入**以证明排序不依赖读取顺序。 */
     private static List<Map<String, Object>> hotRows(int count) {
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -540,9 +597,9 @@ class AnalysisServiceTest {
         Map<String, List<Map<String, Object>>> ads = new LinkedHashMap<>();
         ads.put("ads_sale_trend_m", List.of(
                 row("dt", "20260831", "order_count", 2L, "buyer_count", 2L, "sale_amount", new BigDecimal("500.00"),
-                        "avg_order_value", new BigDecimal("250.00")),
+                        "avg_order_value", new BigDecimal("250.00"), "net_sale_amount", new BigDecimal("500.00")),
                 row("dt", "20260901", "order_count", 5L, "buyer_count", 3L, "sale_amount", new BigDecimal("2042.00"),
-                        "avg_order_value", new BigDecimal("408.40"))));
+                        "avg_order_value", new BigDecimal("408.40"), "net_sale_amount", new BigDecimal("1493.00"))));
         ads.put("ads_active_trend_m", List.of(
                 row("dt", "20260901", "dau", 3L, "behavior_count", 14L)));
         ads.put("ads_behavior_funnel_m", List.of(
