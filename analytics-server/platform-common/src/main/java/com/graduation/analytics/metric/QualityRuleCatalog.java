@@ -79,6 +79,13 @@ public final class QualityRuleCatalog {
     public static final String RULE_ADS_DWS_FUNNEL_RECONCILE = "ADS_DWS_FUNNEL_RECONCILE";
     /** 漏斗**率列**跨层对账（S3-10）：ADS 率列必须逐格等于 DWS 全站行同 dt 率列。 */
     public static final String RULE_ADS_DWS_FUNNEL_RATE_RECONCILE = "ADS_DWS_FUNNEL_RATE_RECONCILE";
+    /**
+     * ADS 大盘**同归属口径不变量**（S3-22）：`sale_amount >= net_sale_amount >= 0`。
+     *
+     * <p>设计 §12.3 第 8 项「同归属口径 ADS GMV≥净销售≥0。」；第 9 项「UV≤PV」另立一码，
+     * 二者不得合并（同 line 512）。</p>
+     */
+    public static final String RULE_ADS_GMV_NET_SALE_INVARIANT = "ADS_GMV_NET_SALE_INVARIANT";
 
     /** 发布层（Spark pub / mxp）规则码。 */
     public static final String RULE_PUB_STAGING_READY = "PUB_STAGING_READY";
@@ -170,6 +177,11 @@ public final class QualityRuleCatalog {
                     "ADS 漏斗率列（conversion_rate/overall_buy_rate/overall_cart_rate）逐格等于 DWS 全站行同 dt 率列；"
                             + "ADS 只透传不重算，不一致即口径破坏。只判跨层一致性、不判比率数值是否异常"
                             + "（设计 §12.3 第 10 项：宽松口径异常不一概作为阻断规则）；NULL 与 NULL 判等（分母 0）"),
+            fixed(RULE_ADS_GMV_NET_SALE_INVARIANT, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "ADS 大盘同归属口径不变量（设计 §12.3 第 8 项）：GMV(sale_amount) ≥ 净销售(net_sale_amount) ≥ 0；"
+                            + "两列由同一次聚合产出、可逐行判定，故不设阈值（thresholdJson 为空）。"
+                            + "金额任一列为 NULL 判不通过（不可证明的不变量不得放行，与本表关键列非空口径一致）；"
+                            + "只判不变量、不改写数据。第 9 项「UV≤PV」另立一码，二者不得互相替代"),
 
             fixed(RULE_PUB_STAGING_READY, STAGE_PUBLISH, RuleSeverity.BLOCKING, "暂存分区未就绪不得切换正式分区"),
             fixed(RULE_PUB_FORMAL_PARTITION_MATCH, STAGE_PUBLISH, RuleSeverity.BLOCKING,

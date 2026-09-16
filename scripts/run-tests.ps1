@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 943
+  'analytics-server'        = 944
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -315,7 +315,32 @@ $BaselineDefault = [ordered]@{
 #   门禁实测（RunId `s321_20260916_def2`；基线更新前先用 `s321_20260916_def` 量到 943 真值）：三棵树 1062 = analytics 943 + mall 13 + generator 106；
 #   唯一红 = 已登记环境性红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` ⇒
 #   「计数 MATCH + 唯一红＝该已登记环境性红」，**不是** exit=0。
-$BaselineSpark = 275
+# S3-22：**ADS 大盘同归属口径不变量**「GMV ≥ 净销售 ≥ 0」（设计 §12.3 质量 12 项**第 8 项**，
+#   逐字锚点 **L506**；L512 要求「三者独立、不得用一个码覆盖」⇒ 本项**只**加第 8 项，
+#   第 9 项「UV ≤ PV」（L507）**另立一码**、本轮**不落地**）。
+#   开工前实测：起点提交 `8763667` 全仓**无** `ADS_GMV_NET_SALE_INVARIANT`（0 命中）；
+#   `AdsQualityJob.keyPredicates` 对 `ads_operation_overview` **只**断言 `pv/uv/dau` 非空，
+#   两个金额列**无任何在产守卫**（同表 `ads_sale_trend` 却已断言两列非空）⇒ 缺口真实存在。
+#   加性改动：新规则码 `ADS_GMV_NET_SALE_INVARIANT`（`BLOCKING`、`FIXED`、threshold NULL、
+#   `source_scope=*`、version 1）+ **加性**迁移 `V26__quality_rule_ads_gmv_net_sale_invariant.sql`
+#   （单条 `INSERT IGNORE`；V19/V25 **字节未改** ⇒ 门③不触）+ 在产判定
+#   `AdsQualityJob.gmvNetSaleInvariantCheck`（作用域=本次快照+本次 dt；**NULL 判不通过**；
+#   **只判不改**；未新增/未改任何列与既有规则）。
+#   偏差登记 D-1：落点取 `AdsQualityJob`（与规则 7 同族）而**非** `AdsSql.dataQuality` 的 UNION 分支
+#   （后者 4 个分支全是 Landing/DWD 侧口径）——设计语义不变、仅落点差异，理由见
+#   `docs/acceptance/s3-22-ads-gmv-net-sale-20260916/DESIGN-DIFF-REGISTER-20260916.md` §4.2。
+#   新测试：`AdsGmvNetSaleInvariantSpec` +9（真链路通过且金额有值 / 净销售>GMV / 净销售<0 / GMV<0 /
+#   金额 NULL / `GMV==净销售` 通过 / `0==0` 通过 / 快照隔离 / 判定后原值保留）；
+#   守卫同步：`RuleSeverityTest`（码集合 35→36，**方法数不变**）、
+#   `QualityRuleVersionMigrationScriptTest`（+`v26OnlyAppendsSeedRows`、目录 37→38）、
+#   `FixtureWriteShapeSpec`（写入点清单加本 spec，3 条）、`DwsAdsChainExecSpec`（dqc ≥8 且含新码，
+#   链路实测 `passed=true|check=1|err=0`，金额 2042.00/1493.00 = 设计 L437 黄金值）。
+#   ⇒ analytics-server 943→944（platform-app 154→155），spark 275→284。
+#   边界：**未测**真实 `spark-submit`/Hive metastore、V26 在真库的执行、生产 3306 的 ADS 实际值；
+#   设计 §12.3 的 5/6/9/11 项与第 10 项剩余部分**仍未实现**（不得称「12 项已完成」）。
+#   门禁实测（RunId `s322_20260916_def` / `s322_20260916_spark`；基线更新前先量到 944/284 真值）：
+#   三棵树 1063 = analytics 944 + mall 13 + generator 106；唯一红同上（已登记环境性红）。
+$BaselineSpark = 284
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

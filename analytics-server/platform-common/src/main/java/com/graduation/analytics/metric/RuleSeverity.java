@@ -37,7 +37,9 @@ import java.util.List;
  * 实际随 V23、S3-10 增长到 18/17）—— 唯一对账点是 {@code RuleSeverityTest} 的
  * {@code ALL_REGISTERED_CODES} 与 {@link QualityRuleCatalog} 目录；
  * 未登记码兜底 {@link #UNREGISTERED}。S3-10 新增
- * {@code ADS_DWS_FUNNEL_RATE_RECONCILE}（率列跨层对账）。</p>
+ * {@code ADS_DWS_FUNNEL_RATE_RECONCILE}（率列跨层对账）；S3-22 新增
+ * {@code ADS_GMV_NET_SALE_INVARIANT}（ADS 大盘「GMV ≥ 净销售 ≥ 0」同归属口径不变量，
+ * 设计 §12.3 第 8 项）。</p>
  */
 public final class RuleSeverity {
 
@@ -73,6 +75,7 @@ public final class RuleSeverity {
             // ADS 暂存层（Spark dqc）
             "ADS_STAGING_PRESENT", "ADS_STAGING_SNAPSHOT_ISOLATION", "ADS_STAGING_KEY_NOT_NULL",
             "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE", "ADS_DWS_FUNNEL_RATE_RECONCILE",
+            "ADS_GMV_NET_SALE_INVARIANT",
             // 发布层（Spark pub / mxp）
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH", "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE",
@@ -137,6 +140,12 @@ public final class RuleSeverity {
             // 只判跨层一致性：不判比率数值是否异常（设计 §12.3 第 10 项「宽松口径异常不一概阻断」），
             // NULL 与 NULL 判等（分母 0 时率列是 NULL）
             case "ADS_DWS_FUNNEL_RATE_RECONCILE" -> BLOCKING;
+            // 同归属口径不变量（S3-22）：ADS 大盘 GMV(sale_amount) ≥ 净销售(net_sale_amount) ≥ 0
+            // （设计 §12.3 第 8 项）。净销售是「支付 − 成功退款」的发布口径（设计 line 428），
+            // 一旦大于实付或为负，页面上的 GMV/净销售/退款率结论整体错 ⇒ 阻断；
+            // 金额任一列为 NULL 同样阻断（不可证明的不变量不得放行）。只判不改、不修数据。
+            // 第 9 项「UV ≤ PV」另立一码，二者独立（同 line 512）
+            case "ADS_GMV_NET_SALE_INVARIANT" -> BLOCKING;
 
             // ── 发布层（Spark pub / mxp）──
             case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
@@ -217,6 +226,10 @@ public final class RuleSeverity {
                     "ADS 漏斗率列 ≠ DWS 全站行同 dt 率列 ⇒ 发布出去的漏斗结论直接错"
                             + "（行数与关键列非空可能同时正常，只有逐格率对账能发现；"
                             + "只判跨层一致性，不判比率数值是否异常）";
+            case "ADS_GMV_NET_SALE_INVARIANT" ->
+                    "ADS 大盘同归属口径不变量被破坏（设计 §12.3 第 8 项）：净销售 > GMV，或净销售/GMV 为负，"
+                            + "或金额列为 NULL ⇒ GMV、净销售、退款率等结论整体不可信（净销售=支付−成功退款，"
+                            + "设计 line 428）；只判不变量、不修数据；第 9 项「UV≤PV」另立一码";
             case "PUB_STAGING_READY" -> "暂存未就绪不得切换正式分区（发布前预检）";
             case "PUB_FORMAL_PARTITION_MATCH" -> "正式分区行数 ≠ 暂存分区行数 ⇒ 发布不完整";
             case "MXP_SNAPSHOT_PINNED" -> "正式分区未指向本次 snapshot_id ⇒ 混入其他快照数据（D-142 §1 必须阻断）";

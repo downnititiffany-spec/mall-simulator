@@ -64,6 +64,10 @@ class FixtureWriteShapeSpec extends AnyFlatSpec with Matchers {
     "AdsCartRateSpec.scala" -> 2,
     "AdsFavCartCountSpec.scala" -> 2,
     "AdsFunnelRateReconcileSpec.scala" -> 2,
+    // S3-22：规则 8「ADS 大盘同归属口径不变量」的行为 spec。三条写入点 =
+    // `dwd_user_behavior_detail`（大盘 pv/uv/dau 的来源）+ `dwd_order_detail`（GMV/净销售来源）
+    // + `ads_operation_overview__staging`（制造违反形态的目标行，逐列命名的静态投影）。
+    "AdsGmvNetSaleInvariantSpec.scala" -> 3,
     "AdsHotProductHeatRuleVersionSpec.scala" -> 1,
     "AdsQualityRuleVersionSpec.scala" -> 3,
     "AdsRepeatRateSpec.scala" -> 2,

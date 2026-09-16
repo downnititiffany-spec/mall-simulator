@@ -19,6 +19,7 @@ import scala.collection.mutable.ListBuffer
  *  5. PUB_DQ_EVENT_ID_UNIQUE     ERROR     仅记录不阻断（与 Java QualityChecker.corePassed 口径一致）
  *  6. ADS_DWS_FUNNEL_RECONCILE   BLOCKING  ADS 漏斗 stage 汇总 = DWS 漏斗对应列（§16.4 跨层对账）
  *  7. ADS_DWS_FUNNEL_RATE_RECONCILE BLOCKING ADS 漏斗率列 = DWS 漏斗全站行同 dt 率列（S3-10）
+ *  8. ADS_GMV_NET_SALE_INVARIANT BLOCKING ADS 大盘同归属口径不变量 GMV≥净销售≥0（S3-22，含 NULL 判不通过）
  *
  * 任一 BLOCKING 未通过 → JobResult.status=FAILED（JobRunner 退出码 1）→ 编排方置阶段失败、
  * **不执行 PUBLISH_METRIC**，正式分区与旧 ACTIVE 快照保持不变（§16.3）。
@@ -125,6 +126,10 @@ class AdsQualityJob extends WarehouseJob {
     // 规则 7：跨层对账 ADS 漏斗**率列** vs DWS 漏斗全站行（S3-10，关闭 S3-04 R-1）；
     // 判据表与比对逻辑在伴生对象（可行为验证），本作业只负责把结论放进 JobResult.checks
     checks += AdsQualityJob.funnelRateCheck(spark, ns, sid, dt)
+
+    // 规则 8：ADS 大盘**同归属口径**不变量 GMV≥净销售≥0（S3-22，设计 §12.3 第 8 项 line 506）；
+    // 判据与比对逻辑在伴生对象（可行为验证），本作业只负责把结论放进 JobResult.checks
+    checks += AdsQualityJob.gmvNetSaleInvariantCheck(spark, ns, sid, dt)
 
     val all = checks.toList
     val blockingFailed = all.filter(c => c.severity == "BLOCKING" && !c.passed)
@@ -245,5 +250,70 @@ object AdsQualityJob {
       checked, bad.size.toLong, "逐 stage/率列 差值=0（NULL 与 NULL 判等）", "BLOCKING", bad.isEmpty,
       if (bad.isEmpty) s"$checked 个率单元格与 dws_behavior_funnel_day 全站行逐格相等"
       else s"率列跨层不一致 ${bad.size} 处: $shown" + (if (bad.size > 6) "…" else ""))
+  }
+
+  /**
+   * 规则 8「ADS 大盘同归属口径不变量 GMV ≥ 净销售 ≥ 0」的在产阻断守卫（S3-22，设计 §12.3 第 8 项）。
+   *
+   * 为什么需要它：`ads_operation_overview` 是页面大盘与指标库 `MP_OVERVIEW_CORE_NOT_NULL`、
+   * `MP_VALUE_MATCH_ADS` 的数值来源，但在此之前，在产阻断规则对这张表**只覆盖**
+   * `pv/uv/dau` 三个关键列非空（`keyPredicates`）；`sale_amount`/`net_sale_amount` 两个金额列
+   * **没有任何在产守卫**，等价断言只存在于各 spec 的黄金值里。而净销售是发布口径
+   * 「支付 − 成功退款」（设计 line 428）：一旦「净销售 > GMV」或金额为负，
+   * GMV、净销售、客单价、退款率一整组结论都不可信，而暂存存在性、关键列非空、漏斗对账
+   * 可能同时全绿 —— 只有同归属口径的不变量能发现本类破坏。
+   *
+   * 口径声明（设计只给不变量；落点与空值规则在此声明并登记，见 V26 的 rationale 与
+   * `docs/acceptance/s3-22-...` 下的差异登记）：
+   *  - **作用域**：`ads_operation_overview__staging` 的**本次快照 + 本次 dt** 分区；
+   *    该表按 `AdsSql.operationOverview` 的写法恒为**单行/分区**（两列由同一次聚合产出，
+   *    故「同归属口径」成立）；
+   *  - **判据**：`NOT (sale_amount >= net_sale_amount AND net_sale_amount >= 0)`；
+   *    `checkCount` = 该分区行数，`errorCount` = 违反该式的行数；
+   *  - **NULL 规则**：任一金额列为 NULL ⇒ **不通过**。理由：三值逻辑下 NULL 参与比较得 NULL，
+   *    若按「跳过」处理，「金额列整体未计算」（空跑绿）会被静默放行，与本表既有口径
+   *    （`keyPredicates` 对 `ads_sale_trend` 已要求两列非空）不一致；不可证明的不变量不得放行；
+   *  - **只判不改**：本规则不修改/回填/置 0 任何数据，只产出结论（读侧不加启发式纠正）；
+   *  - **不合并**：设计 §12.3 line 512 要求「付款 vs 订单、订单项公式、DWD/DWS 对账三者独立」，
+   *    第 9 项「UV ≤ PV」同为大盘行不变量但**另立一码**（本轮不落地，留作后续子项），本函数不判它；
+   *  - **不设阈值**：不变量逐行可判，无「宽松口径」问题，`threshold_json` 留 NULL。
+   *
+   * `detail`：通过时给出被检查行数与两列实际值（证明判据看到了真数据，而非空分区跑绿）；
+   * 不通过时给出最多 6 行违反行的两列实际值（NULL 显示为 `NULL`）。
+   */
+  def gmvNetSaleInvariantCheck(spark: SparkSession, ns: WarehouseNamespace,
+                               sid: String, dt: String): QualityCheck = {
+    val staging = AdsSql.staging(ns, "ads_operation_overview")
+    val where = s"snapshot_id = '$sid' AND dt = '$dt'"
+    // 违反式显式把 NULL 写进谓词：`sale_amount >= net_sale_amount` 在 NULL 时求值为 NULL，
+    // 若不显式判 NULL，空值行会**静默通过**（这正是本规则最容易写错的地方）
+    val violation = "(sale_amount IS NULL OR net_sale_amount IS NULL " +
+      "OR sale_amount < 0 OR net_sale_amount < 0 OR sale_amount < net_sale_amount)"
+
+    val agg = spark.sql(
+      s"SELECT COUNT(*) AS checked, " +
+        s"SUM(CASE WHEN $violation THEN 1 ELSE 0 END) AS bad, " +
+        s"MAX(sale_amount) AS max_sale, MAX(net_sale_amount) AS max_net " +
+        s"FROM $staging WHERE $where").collect()(0)
+    val checked = agg.getLong(0)
+    val bad = Option(agg.get(1)).map(_.toString.toLong).getOrElse(0L)
+
+    def dec(v: Any): String = Option(v).map(_.toString).getOrElse("NULL")
+
+    if (bad == 0L) {
+      QualityCheck("ADS_GMV_NET_SALE_INVARIANT", "ADS_STAGING", staging,
+        checked, 0L, "sale_amount ≥ net_sale_amount ≥ 0（NULL 判不通过）", "BLOCKING", passed = true,
+        s"$checked 行均满足 sale_amount ≥ net_sale_amount ≥ 0" +
+          s"（sale_amount 最大=${dec(agg.get(2))}, net_sale_amount 最大=${dec(agg.get(3))}；" +
+          s"本表按 dt 恒为单行）")
+    } else {
+      val rows = spark.sql(
+        s"SELECT sale_amount, net_sale_amount FROM $staging WHERE $where AND $violation LIMIT 6").collect()
+      val shown = rows.map(r => s"sale_amount=${dec(r.get(0))}/net_sale_amount=${dec(r.get(1))}").mkString(",")
+      QualityCheck("ADS_GMV_NET_SALE_INVARIANT", "ADS_STAGING", staging,
+        checked, bad, "sale_amount ≥ net_sale_amount ≥ 0（NULL 判不通过）", "BLOCKING", passed = false,
+        s"违反同归属口径不变量 $bad/$checked 行（净销售 > GMV，或金额为负，或金额列为 NULL）: $shown" +
+          (if (bad > 6L) "…" else ""))
+    }
   }
 }
