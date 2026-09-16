@@ -37,16 +37,29 @@ const isRecord = (v) => v && typeof v === 'object' && !Array.isArray(v)
 export function isRealSnapshotId(value) {
   if (typeof value !== 'string') return false
   const text = value.trim()
-  return text !== '' && value === text && text !== 'unknown' && text !== 'UNKNOWN'
+  return text !== '' && value === text && text.toLowerCase() !== 'unknown'
 }
 
-/** 从任意对象中取第一个非空字符串字段 */
+/** 从任意对象中取第一个非空字符串/有限数字字段；仅用于展示型普通字段，不用于 ID。 */
 function pickText(source, keys) {
   if (!isRecord(source)) return null
   for (const key of keys) {
     const v = source[key]
     if (typeof v === 'string' && v.trim() !== '') return v
     if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  }
+  return null
+}
+
+/**
+ * 从后端对象中读取标识字段。
+ * ID 不接受数字自动转字符串，也不做 trim；真实性统一交给 isRealSnapshotId 判定。
+ */
+function pickIdentifier(source, keys) {
+  if (!isRecord(source)) return null
+  for (const key of keys) {
+    const v = source[key]
+    if (typeof v === 'string') return v
   }
   return null
 }
@@ -64,7 +77,7 @@ export function collectSnapshotIds(values) {
       continue
     }
     if (!isRecord(v)) continue
-    const id = pickText(v, ['snapshotId', 'snapshot_id', 'suggestionSnapshotId'])
+    const id = pickIdentifier(v, ['snapshotId', 'snapshot_id', 'suggestionSnapshotId'])
     if (isRealSnapshotId(id)) set.add(id)
   }
   return [...set].sort()
@@ -168,9 +181,9 @@ export function buildAiEvidenceContext(result) {
   const evidence = isRecord(explanation.evidence) ? explanation.evidence : {}
   const rows = Array.isArray(query.rows) ? query.rows : []
 
-  const evidenceSnapshotId = pickText(evidence, ['snapshotId'])
-  const querySnapshotId = pickText(query, ['snapshotId'])
-  const rowSnapshotId = rows.length ? pickText(rows[0], ['snapshot_id', 'snapshotId']) : null
+  const evidenceSnapshotId = pickIdentifier(evidence, ['snapshotId'])
+  const querySnapshotId = pickIdentifier(query, ['snapshotId'])
+  const rowSnapshotId = rows.length ? pickIdentifier(rows[0], ['snapshot_id', 'snapshotId']) : null
   // 后端证据里的 snapshotId 在 AI 分支上是占位串 'unknown'（真实 SQL 用 MAX(snapshot_id) 锁定），
   // 这种占位值不能当快照号展示，必须按「未提供」处理并说明原因。
   const evidenceSnapshot = isRealSnapshotId(evidenceSnapshotId) ? evidenceSnapshotId : null
@@ -184,12 +197,10 @@ export function buildAiEvidenceContext(result) {
   // 这里必须显式搬运；缺失/空白就返回 null，让页面显示“后端未给出结论文本”，绝不前端拼结论。
   const summary = pickText(explanation, ['summary'])
 
-  // S3-53：证据包 ID 的**值属主仍是后端**，这里只做形状兼容，不生成、不改写。
-  // `/ai/queries` 当前正式响应把 evidenceId 放在顶层；`/ai/explanations` 的 EvidencePackage
-  // 则把同一语义字段放在 `explanation.evidence.evidenceId` 形状中。前端先取顶层（保持现有
-  // `/ai/queries` 口径），顶层缺失/占位时再回退到嵌套证据包；两处都无真实值才返回 null。
-  const topLevelEvidenceId = pickText(result, ['evidenceId'])
-  const nestedEvidenceId = pickText(evidence, ['evidenceId'])
+  // S3-53/S3-55：证据包 ID 的值属主仍是后端。ID 必须是精确字符串，禁止数字自动转串、
+  // 禁止前后空白静默 trim；顶层真实值优先，顶层无效时才回退嵌套 EvidencePackage。
+  const topLevelEvidenceId = pickIdentifier(result, ['evidenceId'])
+  const nestedEvidenceId = pickIdentifier(evidence, ['evidenceId'])
   const evidenceId = isRealSnapshotId(topLevelEvidenceId)
     ? topLevelEvidenceId
     : (isRealSnapshotId(nestedEvidenceId) ? nestedEvidenceId : null)
@@ -227,7 +238,7 @@ export function buildAiEvidenceContext(result) {
       // AI 证据里的 definitions 是解释提示词版本（explain_v1），不是指标口径版本，分开命名避免混淆
       promptVersion: definitions,
       // 证据包 ID：决策草稿的 evidence_package_id 锚点来源。优先顶层，其次嵌套 EvidencePackage；
-      // 占位值已归一为 null，因此页面展示与 draftAnchor 共用同一归一化结果。
+      // 无效/占位值归一为 null，因此页面展示与 draftAnchor 共用同一结果。
       evidenceId
     }
   }
