@@ -30,7 +30,10 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [] }) {
   const exportable = computed(() => canExport(state.value))
   const statusText = computed(() => stateText(state.value))
 
-  // 导出上下文：filters 来自后端回显，缺失时回退到本次请求参数
+  // 导出上下文：`filters` **只**取信封回显（后端回显的**生效筛选**，契约
+  // `docs/contracts/analysis-viewmodel-r7-4.md:182`）—— `load` 不保存请求参数，
+  // 信封缺 `filters` 时按**缺失**处理（导出件不写该行），因此**不**回退到本次请求参数；
+  // 副作用是 `@click="load"` 传进来的 MouseEvent 也不会污染它的内容。
   // S3-26：带上信封 `source`（发布方），导出件才能自证“数据由谁发布”（指导书阶段5 L164）
   const exportContext = computed(() => {
     const ctx = context.value || {}
