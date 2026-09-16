@@ -264,3 +264,42 @@ CREATE TABLE operation_audit_log (...)
 
 集成（主会话在两面完成后）：`/ai/explanations` 接 `EvidenceService`、`/ai/queries` 响应内嵌证据包摘要、
 RBAC 越权集端到端实测、DOM 回归（`.verify/r7-4-dom.py` 22 项不得退化）、`docs/remediation-status.md` 登记。
+
+## 5. 补遗（v1.1，2026-09-16，S3-42）：AI 建议 → 决策草稿的前端口径
+
+> 本节是**加性补遗**：v1 正文（§1–§4）一字不改。补充原因：§3.3 只规定了服务端「`source=ai` 只能落
+> `DRAFT`」，没有规定页面把哪几个字段装进 `POST /api/v1/decisions`；实现前端口径前按「先改本文件
+> 再改代码」补记，避免页面各自解释请求体。
+
+1. **入口**：`/ai/queries` 响应里每条 `explanation.suggestions[i]`（键 `title` / `action` /
+   `targetMetricCode`）对应一个「转决策草稿」入口。模型不可用时 `ExplanationService.ruleBased`
+   返回的 `suggestions` 是**空数组**，页面因此不显示入口，**不得**由前端补一条建议。
+
+2. **字段映射（只搬运，不推断）**：
+   - `title` → `title`，`action` → `action`（原样搬运，前端不加前缀、不改写）；
+   - `targetMetricCode` → `targetMetricCode`：模板分支固定给 `null`（`actionSuggestions`），
+     此时**留空**并在页面显示「接口未提供」，不得由前端从文案里猜指标编码；
+   - `targetDirection` **必须由员工显式选择** `UP`/`DOWN`，页面不得给默认值、不得由文案推断方向；
+   - `owner` 由员工填写，可空（服务端 `submit` 才强制）；
+   - `risk` 不在前端填写（本页不产生风险等级，留空即不传）。
+
+3. **证据锚点**（服务端 `missingForSubmit` 要求两者之一）：
+   - 首选 `evidence_package_id` = `/ai/queries` 响应**顶层** `evidenceId`（证据包 ID）。§1 规则 5 已冻结
+     「证据包不落库为文本，只落 `evidenceId`，决策任务 `evidence_package_id` 引用它」。注意
+     `explanation.evidence.evidenceId` 在问数分支恒为 `null`（只有 `/ai/explanations` 分支才填），
+     因此锚点必须取顶层字段，不能只读 `explanation.evidence`。
+   - 次选 `suggestion_snapshot_id` = 同一次问答的**真实**快照号；占位串 `unknown` / 空串不算真实值
+     （前端判据 `isRealSnapshotId`）。
+   - 证据包构建失败时 `AiController.buildEvidenceQuietly` 吞异常并返回 `null`（问答照常返回），此时
+     顶层 `evidenceId` 为 `null`；若快照号也是占位值 ⇒ **无可用锚点**，前端**不构造请求**，页面说明原因。
+   - 锚点**只能二选一**：同一次请求里不得同时提交 `evidencePackageId` 与 `suggestionSnapshotId`。
+
+4. **服务端固定项**：`source` 固定 `ai`、初始状态固定 `DRAFT`、`evalWindowDays` 取
+   `decision.eval.default-window-days`（§3.3）。前端**不传**这些字段，也不传 `status`。
+
+5. **提交审批前的齐全性判定归服务端**：`owner` / `targetMetricCode` / `targetDirection` /
+   `evalWindowDays` / 锚点是否齐全由 `DecisionService.missingForSubmit` 判定，前端**不复刻**该校验
+   （否则同一个规则会有第二个 owner），只原样展示服务端返回的错误文本（`PARAM_INVALID`）。
+
+6. **创建成功后**：页面只显示服务端返回的 `decisionNo` 与状态，并指向决策中心提交审批；
+   草稿的审批/执行/评价仍在决策中心按 §3.4 的状态机进行（AI 侧不执行商业动作）。
