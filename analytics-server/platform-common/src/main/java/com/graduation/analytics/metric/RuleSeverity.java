@@ -214,6 +214,23 @@ public final class RuleSeverity {
     }
 
     /**
+     * 全部已登记规则码的**只读视图**（S3-49 新增；内容与本类 {@code REGISTERED} 是同一实体，不是副本）。
+     *
+     * <p><b>为什么必须由本类暴露</b>：跨模块守卫（{@code SparkRuleCodeRegistryGuardTest}）要做
+     * **双向**核对 —— 「Spark 生产源码里的码都已登记」＋「登记表里由 Spark 承载的码都还有站点」。
+     * 若守卫在自己那里另抄一份码表，就等于**再造一个所有者**，正是 S3-30/S3-49 要消除的漂移面；
+     * 因此把唯一所有者按只读方式暴露出来，而不是复制。</p>
+     *
+     * <p>语义边界：本集合是**代码内默认目录**（与 {@link #registered(String)} 同一口径），
+     * 不代表某次 run 的冻结规则集（冻结口径见 {@link QualityRuleCatalog.FrozenRules}）。</p>
+     *
+     * @return 不可变集合（{@code Set.of} 语义）；空/未登记仍由 {@link #registered(String)} 回答
+     */
+    public static java.util.Set<String> registeredCodes() {
+        return REGISTERED;
+    }
+
+    /**
      * 该规则为什么是这个严重度（审计用，落 IMPL-REPORT 与运维页说明）。
      *
      * @param ruleCode 规则码

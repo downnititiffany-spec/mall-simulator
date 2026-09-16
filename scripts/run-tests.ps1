@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 990
+  'analytics-server'        = 994
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -666,6 +666,44 @@ $BaselineSpark = 308
 #   真库 `completedStages` 查询语义与真实 Spark 重跑**未测**；⑤ 本文件是**门禁基线**，本轮只改一个数字＋注释，
 #   未改任何命令语义（`spark`／`isolated` 档**未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
 #   详见 docs/acceptance/s3-48-pipeline-stage-chain-guard-20260916/。
+# S3-49：把「Spark 规则码字面量 ↔ 登记集」的跨模块漂移钉住（backlog 行「「Spark 规则码字面量 ↔ 登记集」没有自动守卫」收口）
+#   ——A 类（加性）：新增 2 个测试支撑/守卫类（SparkRuleCodeScan／SparkRuleCodeRegistryGuardTest，均在
+#   platform-common 测试树）＋ 测试支撑类 WarehouseNameLiteralScanner 的类/枚举/方法可见性放宽到 public
+#   ＋ **一个加性生产访问器** RuleSeverity.registeredCodes()（唯一所有者只读暴露；无行为变更、无契约变更、无连库）。
+#   实测（改前）：spark-jobs/src/main/scala 下 36 个 .scala；大写 token 去重 52 个，其中规则码字面量 21 个、
+#   规则码站点 24 处（`QualityCheck(` 首参 20 处 ＋ AdsQualityJob.scala:94 的策略表 3 码 ＋ :107 的查表 1 码）；
+#   除 QualityCheck 外**另有两处**写法的码同样会进库（说明「只抓 QualityCheck 首参」会漏）；
+#   Java 侧唯一登记表 RuleSeverity.REGISTERED 共 38 码；其中前缀族 ADS_/DWS_/PUB_/MXP_ 共 17 码**全部**
+#   在 Spark 有站点；此前**没有任何测试**做过这个双向核对（S3-10 的漏登记是人工发现的）。
+#   4 条用例：①闭集判据（每个大写 token 必须已登记或在显式非规则 token 表里；非空性：>30 文件、>45 站点、
+#   ≥15 个已登记码、3 个规则码承载文件在范围内）②非规则 token 表自身不得陈旧（每条都须仍在源码里出现）
+#   ③反向漂移（登记表里 Spark 承载前缀族必须仍有站点）＋ 豁免项不得陈旧 ④夹具负例/见证（行注释与块注释里的
+#   码必须被词法排除，代码里的未登记码必须红）。
+#   定向真跑：`Tests run: 4, Failures: 0, Errors: 0, Skipped: 0`（同批 RuleSeverityTest 14/14、
+#   WarehouseNameLiteralGateTest 9/9 ⇒ 合计 27）／BUILD SUCCESS。
+#   TDD：先写引用 registeredCodes() 的守卫 ⇒ 编译 RED（`SparkRuleCodeRegistryGuardTest.java:[158,45] 找不到符号`），
+#   再加访问器 ⇒ 绿（这是本轮唯一的经典 RED）。
+#   **量数轮 `s349-1`**：analytics-server `994 (F=1 E=0 S=1)` 明细 `97+353+172+97+118+157` ⇒ `DRIFT(基线 990)`，
+#   **+4 全部落在 platform-common**（93→97，其余模块一字未变）；mall-simulator 13 MATCH；
+#   synthetic-data-generator 110 MATCH；`default 三棵树 1117（基线 1113）`；唯一红仍是已登记环境性用例
+#   （`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1；expected 43 was 0）；
+#   该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **analytics-server 990→994**（+4）；**三棵树 1113→1117**。
+#   边界（诚实记录，不得越界表述）：① 本守卫**没有**经典 RED（被守性质在写断言之前就成立，属 characterization
+#   guard：「首跑即绿」不构成判据有效的证据）：非恒真性由**变异探针**证明——P1 新增未登记码站点 ⇒ 仅判据①红
+#   （报错带 `AdsPublishJob.scala:53 -> S349_PROBE_NEW_CODE` 定位）；P2 Spark 侧改码名 ⇒ 判据①＋③红；
+#   P3 把非规则 token `BLOCKING` 从表里删掉（模拟「新出现大写 token 未列入」）⇒ 仅判据①红；P4 把真实站点
+#   注释掉 ⇒ 仅判据③红（同时证明注释剥离确实生效：正向不红）；P5 表里加陈旧项 ⇒ 仅判据②红；P6 豁免项塞入
+#   仍在 Spark 的码 ⇒ 仅判据③红；P7 Java 登记表加一个无站点的 ADS_ 码 ⇒ 仅判据③红（反向判据从登记侧也生效）；
+#   七条探针锚点命中均 =1、`还原一致=True`、`git status` 无探针残留；② **只覆盖** `spark-jobs/src/main/scala`
+#   的**双引号整串**大写 token：拼接码（`s"$prefix_XXX"`）、`src/main/resources`、`src/test` 树**未覆盖**；
+#   ③ 只做词法剥注释 ＋ 文本扫描，**不解析 Scala 语法**，也**不证明**规则语义/阈值正确、**不证明**真集群上
+#   这些规则真的会跑（`spark` 档本轮未重跑）；④ `AdsQualityJob.scala:94` 的
+#   `Set("AMOUNT_RECONCILE","REQUIRED_FIELD_NULL_RATE","ENUM_WHITELIST")` 是「哪些 Landing 规则阻断发布」
+#   在 Spark 侧的**第二声明**（Java 侧 `RuleSeverity` 是所有者）——本轮**只登记不合并**（合并＝改 Spark 判定
+#   语义，需裁决）；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`spark`／`isolated` 档
+#   **未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
+#   详见 docs/acceptance/s3-49-spark-rule-code-registry-guard-20260916/。
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
