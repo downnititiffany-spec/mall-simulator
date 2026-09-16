@@ -183,6 +183,15 @@
 | `warnings` | string[] | 如 `["NO_ACTIVE_SNAPSHOT"]`、`["UNKNOWN_DIMENSION_TABLE"]`、`["RFM_AMOUNT_UNAVAILABLE"]`（v1.1 起 M 原值**可得时不再挂**）；**不吞掉**降级事实 |
 | `data` | object | 各端点自有结构（见 §3） |
 
+> **S3-35 补记（前端归一化视图，不改后端信封）**：后端信封字段表**不变**，仍以上表为准（**无** `missingNotice`）。
+> 前端归一化器 `web/src/utils/envelope.js readEnvelope()` 额外透传一个 `missingNotice`：
+> 仅当**非信封接口**（`/pipeline-runs`、`/metrics/*`、`/decisions` 等）在页面 fetcher 内由
+> `buildFallbackContext()` 生成「接口未提供（已如实标注，不代替后端编造）：…」时非空；
+> 后端统一信封不含该字段 ⇒ 归一化为 `null`（页横幅 `v-if` 为假不显示、导出不写该行，**不臆造缺失说明**）。
+> 页面上下文条与导出元信息（`csv.js` 的「# 上下文缺失」行）共用这一份字段：`useAnalysis.exportContext`
+> 必须带它，否则「取不到就如实标注」到不了屏幕与导出件。**口径边界**：该字段只描述"接口没给什么"，
+> 不是后端返回的字段，不得被当作后端证据引用。
+
 HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data` 内。
 
 ## 3. 端点与 `data` 结构
