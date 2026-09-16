@@ -398,6 +398,126 @@ class PipelineServiceTest {
                 .contains("CREATE DATABASE/TABLE IF NOT EXISTS");
     }
 
+    // ── S3-48：整链次序不变量 + 续跑不自举（S3-32 残余面收口） ─────────────
+
+    /**
+     * S3-48：S3-32 只钉了 `INIT_SCHEMA → LOAD_ODS` 一条边（该行登记为残余面 ②），
+     * 其余 6 条边（含 `WAIT_LANDING → INIT_SCHEMA`）此前**无任何断言**：把 BUILD_DWS 与
+     * BUILD_ADS 对调、或整段丢掉一个阶段，旧用例仍全绿。本守卫以**声明次序常量**
+     * `PipelineService.STAGE_ORDER`（唯一 owner，不另写镜像清单）为标尺，双向核对
+     * 「阶段记录的实际落库次序」与「Spark 承载阶段的实际提交次序」，一次钉住整链。
+     */
+    @Test
+    void stageChainMatchesDeclaredStageOrderForTheWholeChain() throws Exception {
+        List<String> submitted = new ArrayList<>();
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    submitted.add(inv.getArgument(2));
+                    return successExecution(inv.getArgument(2));
+                });
+        writeLanding("accepted/2026-09-01",
+                event("e1", "behavior", "2026-09-01T10:00:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\"}"));
+
+        service.run(1L, "ODS_TO_ADS", LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-chain", "trace-1");
+        executor.drain();
+
+        List<String> reached = stageList().stream().map(PipelineStageRun::getStageCode).toList();
+        assertThat(reached)
+                .as("实际落库的阶段次序必须与声明常量逐个相同（不得缺阶段、不得换序）；实测=" + reached)
+                .containsExactlyElementsOf(PipelineService.STAGE_ORDER);
+        List<String> jobBacked = PipelineService.STAGE_ORDER.stream()
+                .filter(code -> !"WAIT_LANDING".equals(code)).toList();
+        assertThat(submitted)
+                .as("WAIT_LANDING 是本地 READY 门（不提交 Spark 作业），其余阶段必须按声明次序各提交一次；实测="
+                        + submitted)
+                .containsExactlyElementsOf(jobBacked);
+    }
+
+    /**
+     * S3-48：失败路径此前只有三处**零散**断言（`stageFailureMarksRunFailed` 断 INIT_SCHEMA 成功、
+     * `BUILD_DWD` 与 `PUBLISH_METRIC` 无记录），没有「整链不变量」。本守卫在链中段
+     * （BUILD_DWS）注入作业失败，直接断言「落库阶段＝声明次序前缀」＋「后缀全空且从未被提交」。
+     */
+    @Test
+    void failedStageStopsEveryLaterStageOnTheWholeChain() throws Exception {
+        List<String> submitted = new ArrayList<>();
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    String code = inv.getArgument(2);
+                    submitted.add(code);
+                    return "BUILD_DWS".equals(code) ? failedExecution("BUILD_DWS", "usw")
+                            : successExecution(code);
+                });
+        writeLanding("accepted/2026-09-01",
+                event("e1", "behavior", "2026-09-01T10:00:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-chain-fail", "trace-1");
+        executor.drain();
+
+        int failedIdx = PipelineService.STAGE_ORDER.indexOf("BUILD_DWS");
+        assertThat(failedIdx).as("标尺常量必须真的含被注入失败的阶段，且它不在首位（否则下面的前缀断言是空转）")
+                .isGreaterThan(0);
+        List<String> reached = stageList().stream().map(PipelineStageRun::getStageCode).toList();
+        assertThat(reached)
+                .as("失败链的落库阶段必须**恰好**是声明次序的前缀（不得跳过、不得越过后继阶段）；实测=" + reached)
+                .containsExactlyElementsOf(PipelineService.STAGE_ORDER.subList(0, failedIdx + 1));
+        assertThat(submitted)
+                .as("被提交的 Spark 阶段同样只能是该前缀（去掉本地 WAIT_LANDING 门）；实测=" + submitted)
+                .containsExactlyElementsOf(PipelineService.STAGE_ORDER.subList(1, failedIdx + 1));
+        assertThat(stageStatus("BUILD_DWS")).isEqualTo(PipelineStageRun.STATUS_FAILED);
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        for (String later : PipelineService.STAGE_ORDER.subList(failedIdx + 1, PipelineService.STAGE_ORDER.size())) {
+            assertThat(stageOf(later)).as("失败阶段之后的 " + later + " 不得留下阶段记录").isNull();
+            assertThat(submitted).as("失败阶段之后的 " + later + " 不得被提交").doesNotContain(later);
+        }
+    }
+
+    /**
+     * S3-48：续跑/重试路径此前**未测**（该行登记为残余面 ①）。实测口径（读实现 + 本用例真跑）：
+     * `completedStages` 已含 `INIT_SCHEMA` 时既不重新提交自举作业，也**不重写**证据
+     * （`PipelineService.runSparkStage:714` 与 `stage():948` 的跳过门），首跑写入的 `contracted`
+     * 自举证据必须**原样保留** —— 既不能丢，也不能被空证据覆盖。
+     */
+    @Test
+    void resumeDoesNotRebootstrapAndKeepsBootstrapEvidence() throws Exception {
+        writeLanding("accepted/2026-09-01"); // 无业务日事件 → 首跑在 LOAD_ODS 预检处失败
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-resume", "trace-1");
+        executor.drain();
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+
+        PipelineStageRun firstBootstrap = stageOf("INIT_SCHEMA");
+        assertThat(firstBootstrap).as("首跑必须真的自举过（否则下面的续跑断言没有对象）").isNotNull();
+        long bootstrapRowId = firstBootstrap.getId();
+        String bootstrapEvidence = firstBootstrap.getEvidence();
+        assertThat(bootstrapEvidence).as("首跑自举证据必须带 contracted").contains("contracted");
+
+        List<String> submittedOnRetry = new ArrayList<>();
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    submittedOnRetry.add(inv.getArgument(2));
+                    return successExecution(inv.getArgument(2));
+                });
+        writeEvents("accepted/2026-09-01",
+                event("e2", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o2\",\"total_amount\":\"200\"}"));
+        service.retry(r.runId(), "trace-2");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        long bootstrapRows = stages.stream().filter(s -> "INIT_SCHEMA".equals(s.getStageCode())).count();
+        assertThat(bootstrapRows).as("续跑不得重新自举（不得新增阶段记录）；实测记录数=" + bootstrapRows).isEqualTo(1);
+        assertThat(stageOf("INIT_SCHEMA").getId()).isEqualTo(bootstrapRowId);
+        assertThat(stageOf("INIT_SCHEMA").getEvidence())
+                .as("续跑既不重写也不清空首跑的自举证据（contracted 原样保留）")
+                .isEqualTo(bootstrapEvidence);
+        List<String> expectedOnRetry = PipelineService.STAGE_ORDER.stream()
+                .filter(code -> !"WAIT_LANDING".equals(code) && !"INIT_SCHEMA".equals(code)).toList();
+        assertThat(submittedOnRetry)
+                .as("续跑只重跑未完成阶段，首个提交必须是 LOAD_ODS（不得再交 INIT_SCHEMA）；实测=" + submittedOnRetry)
+                .containsExactlyElementsOf(expectedOnRetry);
+    }
+
     // ── S2-04：Landing 输入清单必须按源归属（fail-closed） ────────────────
 
     @Test

@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 987
+  'analytics-server'        = 990
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -634,6 +634,38 @@ $BaselineSpark = 308
 #   变绿就声称 L85 已全项满足；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义
 #   （`spark`／`isolated` 档**未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
 #   详见 docs/acceptance/s3-47-platform-client-timeout-guard-20260916/。
+# S3-48：把 §13.2 八阶段编排链的**整链不变量**钉住（阶段6 反熵／S3-32 实测登记的残余面①②③收口）
+#   ——A 类：只在既有 `PipelineServiceTest` 内新增 3 条用例（+120/−0），零生产 Java 改动、零连库、零契约变更。
+#   实测（改前）：标尺常量 `PipelineService.STAGE_ORDER`（L227-229）声明 8 个阶段
+#   （WAIT_LANDING→INIT_SCHEMA→LOAD_ODS→BUILD_DWD→BUILD_DWS→BUILD_ADS→QUALITY_CHECK→PUBLISH_METRIC）；
+#   但断言面只有 S3-32 补的 `INIT_SCHEMA → LOAD_ODS` **一条边**，其余 6 条边无任何断言（对调 BUILD_DWS/
+#   BUILD_ADS 或整段丢掉一个阶段，旧用例不会红）；失败路径只有 3 处**零散**断言（INIT_SCHEMA 成功、
+#   BUILD_DWD 与 PUBLISH_METRIC 无记录），无「整链前缀」不变量；续跑/重试路径（`completedStages` 已含
+#   INIT_SCHEMA 时自举证据怎么办）**未测**。
+#   新增 3 条：①`stageChainMatchesDeclaredStageOrderForTheWholeChain`（阶段记录落库次序与 Spark 承载阶段的
+#   提交次序都必须逐个等于声明常量，标尺即常量本身、不另写镜像清单）②`failedStageStopsEveryLaterStageOnTheWholeChain`
+#   （链中段 BUILD_DWS 作业失败 ⇒ 落库/提交都恰好是声明次序前缀，后缀全空）③
+#   `resumeDoesNotRebootstrapAndKeepsBootstrapEvidence`（续跑不重新自举、不新增阶段记录、不自增行号，且首跑写入的
+#   `contracted` 自举证据**原样保留**——既不丢也不被空证据覆盖）。
+#   定向真跑：`Tests run: 29, Failures: 0, Errors: 0, Skipped: 0`／BUILD SUCCESS。
+#   **量数轮 `s348-1`**：analytics-server `990 (F=1 E=0 S=1)` 明细 `93+353+172+97+118+157` ⇒ `DRIFT(基线 987)`，
+#   **+3 全部落在 warehouse-pipeline**（169→172，其余模块一字未变）；mall-simulator 13 MATCH；
+#   synthetic-data-generator 110 MATCH；`default 三棵树 1113（基线 1110）`；唯一红仍是已登记环境性用例
+#   （`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1；expected 43 was 0）；
+#   该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **analytics-server 987→990**（+3）；**三棵树 1110→1113**。
+#   边界（诚实记录，不得越界表述）：① 本守卫**没有**经典 RED（被守性质在写断言之前就成立，属 characterization
+#   guard）：非恒真性由**变异探针**证明——P1 把 LOAD_ODS 调用点阶段码改成 BUILD_DWS ⇒ 8 红（含守卫①）；
+#   P3 BUILD_DWS 作业失败不再阻断 ⇒ **仅**守卫②红；P2b 两处跳过门同时豁免 INIT_SCHEMA ⇒ **仅**守卫③红；
+#   P4b 自举证据键改名 ⇒ 2 红（S3-32 的证据守卫 + 守卫③前置断言）；四条探针 `还原一致=True`、
+#   `PipelineService.java` sha256 探针前后同为 `2B6A6AAF…946C`、`git status` 无探针残留；
+#   ② 探针 P2（只改 `runSparkStage` 一处跳过门）实测 **0 红** ⇒ 发现「已成功则跳过」规则在
+#   `runSparkStage:714` 与 `stage():948` **各实现一次**（同一规则两个 owner），已在台账登记为**待裁决**
+#   （收敛需改生产代码，本轮只登记不擅动）；③ 只钉**编排不变量**（哪个阶段按什么次序被提交/落库），
+#   **不证明** Spark 侧作业真实执行次序（`spark` 档本轮未重跑）；④ 续跑口径只测「服务层 + 内存替身 store」，
+#   真库 `completedStages` 查询语义与真实 Spark 重跑**未测**；⑤ 本文件是**门禁基线**，本轮只改一个数字＋注释，
+#   未改任何命令语义（`spark`／`isolated` 档**未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
+#   详见 docs/acceptance/s3-48-pipeline-stage-chain-guard-20260916/。
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
