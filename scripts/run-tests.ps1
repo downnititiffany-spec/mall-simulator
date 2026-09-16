@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 960
+  'analytics-server'        = 980
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -528,6 +528,26 @@ $BaselineDefault = [ordered]@{
 #   「限制说明」散文并入 warnings，`EvidenceTemplates:194-196` 把它们以「数据缺口：<码>」形式嵌进散文），
 #   故本轮**不**给它们补中文文案（避免按猜测写语义），只登记待裁决；④ 零连库、零 DDL/迁移、零生产 Java 改动。
 #   详见 docs/acceptance/s3-39-warning-code-cross-tree-guard-20260916/。
+# S3-44：AI Provider HTTP 客户端可测化（阶段6 ④⑤，A 类）——`OpenAiCompatLlmProvider` 失败关闭
+#   （空报文／缺 choices／空 content 一律抛 FORMAT，不再把 `MissingNode.asText()=""` 当成功）、
+#   错误映射（429⇒RATE_LIMITED、401/403⇒AUTH、5xx⇒NETWORK、坏报文⇒FORMAT、超时⇒TIMEOUT）、
+#   请求级超时（新增 `llm.timeout-ms`，默认 30000ms，连接与读取同源；改前**无界等待**）
+#   ＋ 新增 `OpenAiCompatLlmProviderTest`（**20** 条，进程内 `com.sun.net.httpserver` stub，零连库零外网）。
+#   **量数轮 `s344-1`**：analytics-server `980 (F=1 E=0 S=1)` 明细 `93+350+169+97+**114**+157` ⇒
+#   `DRIFT(基线 960)`，**+20 全部落在 ai-decision（94→114）＝本轮新用例**；mall-simulator 13／
+#   synthetic-data-generator 106 均 MATCH；唯一红仍是已登记环境性用例（connection-ingestion F=1，
+#   `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` expected 43，未修、未用开关掩盖）；
+#   该轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **analytics-server 960→980**（ai-decision 94→114，+20；其余五模块 93/350/169/97/157 未变）；
+#   **三棵树 1079→1099**。
+#   边界（诚实记录，不得越界表述）：① 只证明本类对「协议形状 stub」的行为，**不**证明真实供应商可用性／
+#   密钥有效／模型质量，真实 Provider 调用**仍为未测**（无 key、无外网）；② **连接超时的行为未单独实测**
+#   （Spring Web 6.1.14 的 `SimpleClientHttpRequestFactory` 只有 setter、无 timeout getter，且建连超时
+#   难以确定性构造），只实测「读取超时到点即 TIMEOUT」＋代码里连接/读取同源设置；③ 默认 30000ms 的
+#   **合适性**未实测；④ 变异探针 **P6 存活**（删掉 5xx 分支结果同值 ⇒ 该分支对全部实测输入冗余，
+#   仅作顺序意图显式化，**不声称**有独立用例钉住）；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，
+#   未改任何命令语义（`spark`／`isolated` 档**未重跑**）。
+#   详见 docs/acceptance/s3-44-ai-provider-http-client-timeout-20260916/。
 $BaselineSpark = 308
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
