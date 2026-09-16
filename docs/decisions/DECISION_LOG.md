@@ -78,3 +78,13 @@
 **Batch point**：功能簇完成、阶段收口、进入真实 DB/Spark/Hive/E2E、合并 main 前，或延迟验证队列过长到显著增加定位成本时，集中跑一批。
 
 **Reason**：把本地测试作为独立验证队列，而不是把每个小实现变成人工停工点；同时保留精确 commit SHA 和独立测试计划，避免测试延期后无法定位回归。
+
+### D-010 — Git commit 主题显式携带精确时间
+
+**Decision**：从本决策起，由 ChatGPT 创建的 GitHub commit message 必须在主题中显式带项目时间戳，统一格式为 `[YYYY-MM-DD HH:mm:ss +08:00]`。
+
+**Reason**：GitHub 列表页经常只显示“几分钟前/几天前”的相对时间；虽然 commit 元数据本身保存精确 author/committer 时间，但把时间写进主题后，用户无需点进详情即可按分钟/秒核对开发顺序。
+
+**Identity**：通过当前 GitHub 连接写入仓库时，GitHub 使用连接账户的身份记录提交；当前实测提交的 author/committer 均显示 `downnititiffany-spec`。ChatGPT 不伪造额外作者身份。
+
+**Timezone**：项目研发记录继续使用 `+08:00`，与 V3 阶段既有开发事实记录保持一致。
