@@ -47,19 +47,18 @@ export const SUBMIT_REQUIREMENT_TEXT =
 
 const isRecord = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v)
 
-/** 去空白取文本；空白/非字符串一律 null（不把空串当值） */
+/** 去空白取普通文本；仅用于标题/动作/负责人等展示或业务文本，不用于任何后端 ID。 */
 export function draftText(value) {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null
 }
 
 /**
  * 是否为真实证据包 ID。
- * 与快照号共用同一个占位判据（`context.js` 的 `isRealSnapshotId`：空白与 'unknown' 都不算真实值），
- * 避免出现第二份「哪些字符串算占位」的清单。
+ * S3-55/S3-56：ID 必须保持后端原始形状——不 trim、不把数字转字符串。这里只复用
+ * `context.js` 的严格标识判据（空串、带前后空白、unknown 任意大小写均无效），避免第二份 ID 归一化。
  */
 export function isRealEvidenceId(value) {
-  const t = draftText(value)
-  return t !== null && isRealSnapshotId(t)
+  return isRealSnapshotId(value)
 }
 
 /** 方向严格校验：只认 'UP'/'DOWN' 原值，不做 trim（带空格的枚举值不是有效值，不猜） */
@@ -87,12 +86,17 @@ export function draftSuggestions(list) {
   return out
 }
 
-/** 证据锚点：证据包 ID 优先，其次真实快照号；两者皆无 → NONE */
+/**
+ * 证据锚点：证据包 ID 优先，其次真实快照号；两者皆无 → NONE。
+ * ID 不先经过 draftText：真实标识必须逐字来自后端，不能因为前端 trim 后“看起来合法”而被接受。
+ */
 export function draftAnchor({ evidenceId, snapshotId } = {}) {
-  const ev = draftText(evidenceId)
-  if (isRealEvidenceId(ev)) return { kind: ANCHOR_KIND.EVIDENCE_PACKAGE, value: ev }
-  const snap = draftText(snapshotId)
-  if (isRealSnapshotId(snap)) return { kind: ANCHOR_KIND.SUGGESTION_SNAPSHOT, value: snap }
+  if (isRealEvidenceId(evidenceId)) {
+    return { kind: ANCHOR_KIND.EVIDENCE_PACKAGE, value: evidenceId }
+  }
+  if (isRealSnapshotId(snapshotId)) {
+    return { kind: ANCHOR_KIND.SUGGESTION_SNAPSHOT, value: snapshotId }
+  }
   return { kind: ANCHOR_KIND.NONE, value: null }
 }
 
