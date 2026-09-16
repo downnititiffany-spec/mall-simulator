@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 909
+  'analytics-server'        = 914
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -229,6 +229,18 @@ $BaselineDefault = [ordered]@{
 #   ⇒ spark 266→275。**纯 Spark 测试侧**，未连库、未改任何 Flyway 迁移、未改任何 DDL 表形与生产 SQL。
 #   守卫边界：只判**表形**（目标表／列数／同位列名／分区子句），不判口径、不判指标值、不判真 Hive 物理落盘；
 #   「夹具与所有者同形」推不出「夹具数据正确」。扫描器只认大写 `INSERT`，且不识别字符串里的 `//`（偏严）。
+# S3-16：服务层消费 ADS 已落库的 **RFM 原值**（`m_amount`/`f_count`/`r_days`）与**观察窗口**
+#   （`period_start`/`period_end`），关闭 `PROJECT_STATUS:217` 登记项（设计 §11.2 L435「R距最后有效购买天数；
+#   F观察期有效订单数；M观察期金额」＋ §11.4 L449「M不明时保留 null+警告，不能把缺列当0」＋ §15 L676
+#   「R/F/M原值与score、8群体、观察期、复购」；指导书 §7 阶段4 L156「时间…信息」）。
+#   五列落库链（ADS SQL → mxp 清单 → MySQL V4 → Java 白名单）早在 S2-06/S3-01 已贯通，本轮**只补读取侧**：
+#   `RfmSegment` 追加 `orders`（Σf_count）、`amount` 改 Σm_amount、R 优先逐行 `r_days`（缺失才退回
+#   `calc_date − last_buy_date` 旧口径并挂警告）、`RfmProfile`/`UsersData`/`RfmData` 追加
+#   `periodStart`/`periodEnd`（行间不一致或缺列 ⇒ null，不猜）；新增两个唯一 owner 编码
+#   `RFM_RAW_VALUES_UNAVAILABLE`/`RFM_PERIOD_UNAVAILABLE`（`AnalysisViewModel`），
+#   `RFM_AMOUNT_UNAVAILABLE` 由「无条件」改为「仅原值不可用」（设计 §16.4 L732 单一 owner）。
+#   RfmServiceTest +4（原值齐备／窗口不一致／M 列缺失／R 列逐行缺失）+ AnalysisServiceTest +1（原值与
+#   窗口透传）⇒ analytics-server 909→914（纯 Java、不连库；真库 `m_amount` 非零与真镜像列存在性**未测**）。
 $BaselineSpark = 275
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

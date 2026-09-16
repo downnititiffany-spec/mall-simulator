@@ -210,7 +210,9 @@ class AnalysisServiceTest {
         assertThat(users.data().lifecycle()).extracting(RfmService.LifecycleState::state).containsExactly("活跃");
         assertThat(users.data().preference()).extracting(RfmService.CategoryPreference::categoryId)
                 .containsExactly(11L, 21L);
-        assertThat(users.warnings()).containsExactly(AnalysisViewModel.WARN_RFM_AMOUNT_UNAVAILABLE);
+        assertThat(users.warnings()).containsExactly(AnalysisViewModel.WARN_RFM_AMOUNT_UNAVAILABLE,
+                AnalysisViewModel.WARN_RFM_RAW_VALUES_UNAVAILABLE,
+                AnalysisViewModel.WARN_RFM_PERIOD_UNAVAILABLE);
 
         AnalysisViewModel<RfmData> rfm = service.rfm(null, 50);
         assertThat(rfm.filters()).containsEntry("limit", 50).containsEntry("snapshotId", SID);
@@ -219,6 +221,39 @@ class AnalysisServiceTest {
                 .containsExactlyElementsOf(RfmService.VALUE_GROUPS);
         assertThat(rfm.data().rfmMatrix().get(0).users()).isZero(); // 重要价值 真库无该分层 → 补 0
         assertThat(rfm.data().ruleVersion()).isEqualTo("rfm-v1");
+    }
+
+    @Test
+    @DisplayName("S3-16 原值列存在：M/F 原值与观察窗口透传到 users/rfm 的 data，且无降级警告")
+    void usersAndRfmCarryRawValuesAndWindow() {
+        stubActiveSnapshot();
+        Map<String, List<Map<String, Object>>> ads = new LinkedHashMap<>(adsRows());
+        ads.put("ads_user_profile_m", List.of(
+                row("dt", "20260901", "user_id", 1L, "r", 5, "f", 2, "m", 3, "value_group", "一般发展",
+                        "favorite_category", 11L, "lifecycle_state", "活跃", "rule_version", "rfm-v1",
+                        "calc_date", "20260901", "last_buy_date", "2026-09-01",
+                        "r_days", 7, "f_count", 2L, "m_amount", new BigDecimal("1496.00"),
+                        "period_start", "2026-08-02", "period_end", "2026-09-01")));
+        when(adsReader.selectBySnapshot(anyString(), anyString(), any()))
+                .thenAnswer(invocation -> ads.getOrDefault(invocation.getArgument(0), List.of()));
+
+        AnalysisViewModel<UsersData> users = service.users(null, null, null);
+        assertThat(users.data().rfmSegments().get(0).amount()).isEqualByComparingTo("1496.00");
+        assertThat(users.data().rfmSegments().get(0).orders()).isEqualTo(2L);
+        assertThat(users.data().rfmSegments().get(0).avgRecencyDays()).isEqualByComparingTo("7.0");
+        assertThat(users.data().periodStart()).isEqualTo("2026-08-02");
+        assertThat(users.data().periodEnd()).isEqualTo("2026-09-01");
+        assertThat(users.warnings()).isEmpty();
+
+        AnalysisViewModel<RfmData> rfm = service.rfm(null, null);
+        assertThat(rfm.data().periodStart()).isEqualTo("2026-08-02");
+        assertThat(rfm.data().periodEnd()).isEqualTo("2026-09-01");
+        assertThat(rfm.data().rfmMatrix()).filteredOn(segment -> "一般发展".equals(segment.valueGroup()))
+                .singleElement().satisfies(segment -> {
+                    assertThat(segment.amount()).isEqualByComparingTo("1496.00");
+                    assertThat(segment.orders()).isEqualTo(2L);
+                });
+        assertThat(rfm.warnings()).isEmpty();
     }
 
     @Test

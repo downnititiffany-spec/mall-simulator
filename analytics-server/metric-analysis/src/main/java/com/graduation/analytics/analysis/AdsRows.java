@@ -52,6 +52,37 @@ final class AdsRows {
         return (int) asLong(value);
     }
 
+    /**
+     * 可空长整数：{@code null}/空白/不可解析 → null。
+     *
+     * <p>与 {@link #asLong} 的区别是**语义**：{@code asLong} 把取不到当 0（适合计数兜底），
+     * 而 RFM 原值列（{@code r_days}/{@code f_count}）取不到必须与真值 0 区分——
+     * 把「缺列」当 0 会让页面显示「最近 0 天没买」「观察期 0 单」（设计 V3.0 §11.4 L449）。</p>
+     */
+    static Long asLongOrNull(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        String text = asString(value).trim();
+        if (text.isEmpty()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** 去空白的字符串；null/空白 → null（MySQL 侧观察窗口列是 {@code NOT NULL DEFAULT ''}） */
+    static String asTrimmedOrNull(Object value) {
+        String text = asString(value).trim();
+        return text.isEmpty() ? null : text;
+    }
+
     /** 金额/比率：取不到就是 null（不用 0 冒充"没有值"） */
     static BigDecimal asDecimal(Object value) {
         if (value == null) {

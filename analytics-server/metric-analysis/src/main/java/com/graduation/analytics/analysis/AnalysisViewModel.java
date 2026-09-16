@@ -49,6 +49,19 @@ public record AnalysisViewModel<T>(
     /** ads_user_profile_m 无消费额列，八类消费额无法从指标库取值（不用 m 分冒充金额） */
     public static final String WARN_RFM_AMOUNT_UNAVAILABLE = "RFM_AMOUNT_UNAVAILABLE";
 
+    /**
+     * S3-16：R/F 原值列（{@code r_days}/{@code f_count}）不可用——R 只能按旧口径
+     * {@code calc_date − last_buy_date} 回算、F 原值为 null。
+     *
+     * <p>为什么要单独声明：{@code r_days} 是 Spark 侧原始值所有者（观察窗口末日 − 末次购买日），
+     * 回算值用的是 {@code calc_date}，两者**定义不同**；静默切换口径比返回 null 更危险
+     * （设计 V3.0 §11.4 L449「不能把缺列当0」，§16.4 L732「所有新错误码统一 owner」）。</p>
+     */
+    public static final String WARN_RFM_RAW_VALUES_UNAVAILABLE = "RFM_RAW_VALUES_UNAVAILABLE";
+
+    /** S3-16：RFM 观察窗口（{@code period_start}/{@code period_end}）缺列或行间不一致，窗口留 null 不猜 */
+    public static final String WARN_RFM_PERIOD_UNAVAILABLE = "RFM_PERIOD_UNAVAILABLE";
+
     /** 同一快照内出现多个 rule_version（画像规则版本不唯一） */
     public static final String WARN_MULTIPLE_RULE_VERSIONS = "MULTIPLE_RULE_VERSIONS";
 

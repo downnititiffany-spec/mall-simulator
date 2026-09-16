@@ -117,12 +117,22 @@ public class AnalysisService {
     public record FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote) {
     }
 
+    /**
+     * 用户分群专题数据（§3.5）。
+     *
+     * <p>S3-16 加性补充：{@code periodStart}/{@code periodEnd} 是本次评分**实际使用的观察窗口**
+     * （来自 ads_user_profile_m 的 period_start/period_end）；不可用时为 null 并由
+     * {@code warnings} 声明（设计 V3.0 §15 L676「R/F/M 原值与 score、8 群体、观察期、复购」）。
+     * 分组行 {@code RfmSegment} 自 S3-16 起带 M 原值（{@code amount}）与 F 原值（{@code orders}）。</p>
+     */
     public record UsersData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.LifecycleState> lifecycle,
-                            List<RfmService.CategoryPreference> preference, String ruleVersion) {
+                            List<RfmService.CategoryPreference> preference, String ruleVersion,
+                            String periodStart, String periodEnd) {
     }
 
+    /** RFM 专题数据（§3.6）：字段语义与 {@link UsersData} 一致，另带八类全量矩阵 rfmMatrix */
     public record RfmData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.RfmSegment> rfmMatrix,
-                          String ruleVersion) {
+                          String ruleVersion, String periodStart, String periodEnd) {
     }
 
     // ── 运营总览（§3.1） ──────────────────────────────────────────────────────
@@ -248,7 +258,7 @@ public class AnalysisService {
 
         RfmService.RfmProfile profile = rfmService.profile(sid);
         UsersData data = new UsersData(profile.segments(), profile.lifecycle(), profile.preference(),
-                profile.ruleVersion());
+                profile.ruleVersion(), profile.periodStart(), profile.periodEnd());
         return view(pinned, filters, data, profile.warnings());
     }
 
@@ -270,7 +280,8 @@ public class AnalysisService {
         filters.put("snapshotId", sid);
 
         RfmService.RfmProfile profile = rfmService.profile(sid);
-        RfmData data = new RfmData(profile.segments(), profile.matrix(), profile.ruleVersion());
+        RfmData data = new RfmData(profile.segments(), profile.matrix(), profile.ruleVersion(),
+                profile.periodStart(), profile.periodEnd());
         return view(pinned, filters, data, profile.warnings());
     }
 

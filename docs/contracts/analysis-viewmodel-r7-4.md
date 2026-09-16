@@ -3,6 +3,13 @@
 > 依据：指导书 V2.0 §18.1 / §18.3 / §24.6。**本文件是 R7-4 后端与前端唯一契约**，
 > 两侧实现必须逐字段对齐；若实现中确需改动，先改本文件再改代码。
 
+> **v1.1（2026-09-16，S3-16 加性补充）**：按指导书 V3.0 §7 阶段4 L156 与设计 V3.0 §11.2 L435 /
+> §11.4 L449 / §15 L676，`/analysis/users` 与 `/analysis/rfm` 补**消费已落库的 RFM 原值**
+> （`r_days`/`f_count`/`m_amount`）与**观察窗口**（`period_start`/`period_end`）。
+> **既有字段语义一律不变**；新增字段与两个新增降级编码（`RFM_RAW_VALUES_UNAVAILABLE`、
+> `RFM_PERIOD_UNAVAILABLE`）均为加性，旧前端不读它们也不会误读。五列的落库链
+> （Hive ADS → mxp 清单 → MySQL `V4` → Java 白名单）在 S2-06/S3-01 已完成，v1.1 只补读取侧。
+
 ## 1. 总原则
 
 1. 分析服务（`AnalysisService`、`RfmService`）**只能读指标库**（`MetricStore` / `MetricAdsReader`，
@@ -37,7 +44,7 @@
 | `definitionVersion` | string | `metric_snapshot.definition_version`（核心指标口径版本） |
 | `qualityStatus` | `PASS` / `FAIL` / `UNKNOWN` | 该快照对应 run 的质量门结论（`analytics_meta` 质量结果）；取不到 = `UNKNOWN` |
 | `filters` | object | 原样回显生效筛选（含快照、日期区间、topN） |
-| `warnings` | string[] | 如 `["NO_ACTIVE_SNAPSHOT"]`、`["UNKNOWN_DIMENSION_TABLE"]`；**不吞掉**降级事实 |
+| `warnings` | string[] | 如 `["NO_ACTIVE_SNAPSHOT"]`、`["UNKNOWN_DIMENSION_TABLE"]`、`["RFM_AMOUNT_UNAVAILABLE"]`（v1.1 起 M 原值**可得时不再挂**）；**不吞掉**降级事实 |
 | `data` | object | 各端点自有结构（见 §3） |
 
 HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data` 内。
@@ -98,18 +105,32 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 ### 3.5 `GET /api/v1/analysis/users?snapshotId=`
 
 ```json
-{ "rfmSegments": [ { "valueGroup": "高价值", "users": 1, "amount": 1496.00, "avgRecencyDays": 0 } ],
+{ "rfmSegments": [ { "valueGroup": "高价值", "users": 1, "amount": 1496.00, "avgRecencyDays": 0,
+                     "orders": 2 } ],
   "lifecycle": [ { "state": "活跃期", "users": 3 } ],
   "preference": [ { "categoryId": 1, "users": 2 } ],
-  "ruleVersion": "v1" }
+  "ruleVersion": "v1",
+  "periodStart": "2026-08-02", "periodEnd": "2026-09-01" }
 ```
 
 全部来自 `ads_user_profile_m`（聚合，不返回个人明细）。`ads_user_profile_m` 只有聚合列时，
 `avgRecencyDays` 允许为 null（不得造数）。
 
+**v1.1 原值与观察窗口（加性）**：
+
+- `amount`：该分组用户的 **M 原值合计** Σ`m_amount`（观察期有效支付金额，`scale=2`）；
+  `orders`：**F 原值合计** Σ`f_count`（观察期有效支付订单数）；`avgRecencyDays`：**R 原值均值**，
+  逐行优先取 `r_days`（Spark 侧原值所有者），仅当该行无 `r_days` 时才退回
+  `calc_date − last_buy_date` 回算并在 `warnings` 里挂 `RFM_RAW_VALUES_UNAVAILABLE`。
+- `periodStart`/`periodEnd`：本次评分**实际使用的观察窗口**（ISO 日期），来自 `period_start`/`period_end`；
+  行间不一致或缺列时为 **null**（不猜窗口）并挂 `RFM_PERIOD_UNAVAILABLE`。
+- 原值列**不可用**时对应字段为 `null`（不用 0 或分档求和冒充，设计 V3.0 §11.4 L449）；
+  `m_amount` 全缺时另挂 `RFM_AMOUNT_UNAVAILABLE`（**该编码仅在原值不可用时出现**）。
+
 ### 3.6 `GET /api/v1/analysis/rfm?snapshotId=`
 
-见 §3.5 的 `rfmSegments` + `rfmMatrix`（8 类，缺失类目补 0 人数，注明 `ruleVersion`）。
+见 §3.5 的 `rfmSegments` + `rfmMatrix`（8 类，缺失类目补 0 人数，注明 `ruleVersion`）；
+v1.1 起 `data` 同样带 `periodStart`/`periodEnd`（与 §3.5 同义）。
 
 ## 4. 四态与前端约定
 
