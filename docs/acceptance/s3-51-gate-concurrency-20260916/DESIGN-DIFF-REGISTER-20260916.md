@@ -5,7 +5,7 @@
 - 工作树：`D:\Develop_code\GraduationProject-wt\v3-dev`（分支 `feature/v3-development`）
 - 开工前 HEAD：`6fe07563b6f5bf6be4db9328969579a9675e9234`（短 `6fe0756`，＝ `origin/feature/v3-development`，实测 `git rev-parse HEAD` / `git rev-parse --short origin/feature/v3-development`）
 - 差异类别：**A 类（纯加性 / 门禁脚本-only）** —— 零生产代码改动、零 Java/Scala/前端改动、零契约改动、零 DDL、零迁移、零连库、零新依赖
-- 来源：`docs/PROJECT_STATUS.md` backlog **L504**「`scripts/run-tests.ps1` 的日志目录由**分钟级 RunId** 派生 ⇒ 同一分钟内两个门禁并发会撞 `Tee-Object`（实测报 `The process cannot access the file … because it is being used by another process`，两次运行**都不产生测试证据**）」
+- 来源：`docs/PROJECT_STATUS.md` backlog **L504**（S3-51 行；S3-52 后为 **L519**）「`scripts/run-tests.ps1` 的日志目录由**分钟级 RunId** 派生 ⇒ 同一分钟内两个门禁并发会撞 `Tee-Object`（实测报 `The process cannot access the file … because it is being used by another process`，两次运行**都不产生测试证据**）」
 
 ---
 
@@ -157,10 +157,10 @@
 
 ## §8 顺带台账（登记，不在本轮处理）
 
-1. backlog **L504** 关闭（行内追加 S3-51 已实施说明）；**新增 1 行** backlog「S3-51 后继残余面」（含 §7 ①②③④⑤）。
+1. backlog **L504**（S3-51 行；S3-52 后为 **L519**）关闭（行内追加 S3-51 已实施说明）；**新增 1 行** backlog「S3-51 后继残余面」（含 §7 ①②③④⑤）。
 2. `docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md:19` 的缺省 RunId 描述自此成为**历史记录**（按纪律**不改写**）。
 3. `docs/PROJECT_STATUS.md` 滚动执行位置块（5 段／9 行）与阶段6 逐轮记录（新增 7 条）同步；`docs/status-history/开发过程事实与决策记录.md` 追加 **F-84**。
-4. 下一开发项候选（本轮**不**处理）：backlog **L505**（Spark SQL 反斜杠转义静态守卫；「注释/KDoc 误报」可由既有 `WarehouseNameLiteralScanner.CommentSyntax.strip` 化解，但**需先定白名单口径**）。
+4. 下一开发项候选（本轮**不**处理）：backlog **L505**（S3-51 行；S3-52 后为 **L520**）（Spark SQL 反斜杠转义静态守卫）。**（S3-52 已实施，2026-09-16；本节预测按实测更正）**：该守卫已落地（代码提交 `ca5e9b1`，登记 `docs/acceptance/s3-52-spark-sql-backslash-guard-20260916/DESIGN-DIFF-REGISTER-20260916.md`）—— 「注释/KDoc 误报」**不是**靠复用既有 `WarehouseNameLiteralScanner.CommentSyntax.strip` 化解（**实测定性**：它对三引号**只认第一个 `"""`**，与判据面所需的「连续 N≥3 引号取 N−3」口径**不同** ⇒ 直接当前置剥离会**失步**），而是靠「**限定形态 ＋ 限定像 SQL ＋ 白名单存在但为空 ＋ 闭集登记**」四件套化解 ⇒ 原文的乐观预测**已被实测否决**。
 
 ---
 
