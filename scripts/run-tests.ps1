@@ -216,7 +216,20 @@ $BaselineDefault = [ordered]@{
 #   ⇒ spark 254→266。**纯 Spark 测试侧**，未连库、未改任何 Flyway 迁移、未改任何 DDL 表形与生产 SQL。
 #   本轮**未**改 `warehouse/ddl/04-ads.sql`：删掉参考副本里已声明的一列落在门①（DROP COLUMN）邻域 ⇒
 #   只登记 + 精确钉住（理由与事实链见 AdsSchemaOwnerSpec 的 RegisteredSnapshotIdDriftTables 注释）。
-$BaselineSpark = 266
+# S3-15：测试夹具**手写** `INSERT … SELECT` 的列形守卫（`PROJECT_STATUS:224` 盲区条目的 (a) 一半）。
+#   S3-11/13/14 只盯 main 侧生产写入投影；S3-03 实测的 5 条红恰恰来自**夹具自己手写**的
+#   `INSERT OVERWRITE … dws_user_trade_period`（DWS 加列后按位置写入必然串列，定向跑新套件看不见）。
+#   新增 FixtureWriteShapeSpec（9 条，无需 Spark）：扫描 test 树全部手写 INSERT（本期 22 处／12 文件，
+#   清单冻结：新增或删除写入点都必须显式落地）、目标表静态可解性（`${ns.<层>}.<表>` /
+#   `${AdsSql.staging(formal)(ns,"x")}` / 同文件 val-def）↔ 已登记不可判清单双向核对、
+#   投影**项数** == 所有者列数 + 动态分区数、投影里**有名字的项**与所有者**同位列名**逐一核对
+#   （命名项 272/292 = 93.2%，防「列名核对形同虚设」）、`PARTITION(…)` 列名同序 + 静态值必须是字面量、
+#   自检（排除清单有效 / 注释里的 INSERT 不算数 / 真实夹具投影对调或删项时同一判定点必须红）、
+#   所有者裸表名唯一。判定只用唯一所有者 `LocalSchemaInitJob` + `StaticOdsDdl`，不连库。
+#   ⇒ spark 266→275。**纯 Spark 测试侧**，未连库、未改任何 Flyway 迁移、未改任何 DDL 表形与生产 SQL。
+#   守卫边界：只判**表形**（目标表／列数／同位列名／分区子句），不判口径、不判指标值、不判真 Hive 物理落盘；
+#   「夹具与所有者同形」推不出「夹具数据正确」。扫描器只认大写 `INSERT`，且不识别字符串里的 `//`（偏严）。
+$BaselineSpark = 275
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
