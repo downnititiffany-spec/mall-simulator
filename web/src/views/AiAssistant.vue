@@ -73,6 +73,59 @@
         </div>
       </div>
 
+      <!-- S3-42：AI 建议 → 决策草稿。字段口径的唯一属主是 utils/decisionDraft.js：
+           页面只搬运后端已给的字段（不猜方向/指标），锚点缺失就不让创建，
+           提交审批的齐全性由服务端提交校验判定，页面只转述错误原文。 -->
+      <div class="chart-box" v-if="explanation.suggestions && explanation.suggestions.length">
+        <div class="chart-title">核查建议 → 决策草稿（先草稿后审批，AI 不执行商业动作）</div>
+        <div class="table-hint">
+          证据锚点：<b class="mono">{{ anchorLabel }}</b>
+        </div>
+        <div v-for="s in draftSuggestions(explanation.suggestions)" :key="s.index"
+             style="padding:6px 0;font-size:13px;border-top:1px solid #f3f4f6">
+          <div style="line-height:1.7">{{ s.action }}</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
+            <button :disabled="!canCreateDraft" @click="openDraft(s)"
+                    style="padding:3px 10px;font-size:12px">转决策草稿</button>
+            <span v-if="!canCreateDraft" class="meta-hint">{{ blockedText(DRAFT_BLOCK.NO_EVIDENCE_ANCHOR) }}</span>
+            <span v-else-if="!s.targetMetricCode" class="meta-hint">目标指标：接口未提供（留空，不猜）</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-box" v-if="draftForm">
+        <div class="chart-title">新建决策草稿（内容取自本条建议，可修改；创建后到决策中心提交审批）</div>
+        <div v-if="draftError" class="banner banner-error">{{ draftError }}</div>
+        <div v-if="draftCreated" class="banner banner-stale">
+          草稿已创建：<b class="mono">{{ draftCreated.decisionNo || draftCreated.id || '未提供' }}</b>
+          （状态 {{ draftCreated.status || '未提供' }}）。请到
+          <router-link to="/decisions">决策中心</router-link> 提交审批；AI 侧不执行商业动作。
+        </div>
+        <template v-else>
+          <div style="display:flex;flex-direction:column;gap:8px;max-width:760px;font-size:13px">
+            <label>标题<input v-model="draftForm.title" style="width:100%;padding:6px" /></label>
+            <label>动作<textarea v-model="draftForm.action" rows="2" style="width:100%;padding:6px"></textarea></label>
+            <label>目标指标<input v-model="draftForm.metricCode" placeholder="接口未提供时留空，不猜"
+                              style="width:100%;padding:6px" /></label>
+            <label>目标方向（必选，页面不代选）
+              <select v-model="draftForm.direction" style="padding:6px">
+                <option v-for="c in DIRECTION_CHOICES" :key="c.value" :value="c.value">{{ c.label }}</option>
+              </select>
+            </label>
+            <label>负责人（可留空，提交审批前必填）<input v-model="draftForm.owner" style="width:100%;padding:6px" /></label>
+          </div>
+          <div class="table-hint">{{ SUBMIT_REQUIREMENT_TEXT }}</div>
+          <div class="table-hint">将提交：<span class="mono">{{ draftPreview }}</span></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button :disabled="draftBusy" @click="createDraft"
+                    style="padding:6px 16px;background:#7c3aed;color:#fff;border:none;border-radius:6px">
+              {{ draftBusy ? '创建中…' : '创建草稿' }}
+            </button>
+            <button :disabled="draftBusy" @click="closeDraft" style="padding:6px 16px">取消</button>
+          </div>
+        </template>
+      </div>
+
       <div class="chart-box">
         <div class="chart-title">证据（SQL + 口径）</div>
         <pre style="background:#f9fafb;padding:10px;border-radius:6px;font-size:12px;overflow:auto">{{ evidence.sql || '（后端未返回 SQL）' }}</pre>
@@ -82,6 +135,7 @@
             <b class="mono">{{ evidenceSnapshotText }}</b>
             <span class="meta-hint">{{ evidenceSnapshotHint }}</span>
           </span>
+          <span class="meta-item">证据包 ID <b class="mono">{{ evidence.evidenceId || '未提供' }}</b></span>
           <span class="meta-item">时间范围 <b class="mono">{{ evidence.timeRange || '未提供' }}</b></span>
           <span class="meta-item">提示词版本 <b class="mono">{{ evidence.promptVersion || '未提供' }}</b></span>
           <span class="meta-item">返回行数 <b class="mono">{{ evidence.returnedRows }}</b></span>
@@ -135,6 +189,16 @@ import AnalysisContext from '../components/AnalysisContext.vue'
 import { useAnalysis } from '../composables/useAnalysis'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { buildAiEvidenceContext, isRealSnapshotId, warningTextAll } from '../utils/context'
+import {
+  ANCHOR_KIND,
+  DIRECTION_CHOICES,
+  DRAFT_BLOCK,
+  SUBMIT_REQUIREMENT_TEXT,
+  anchorText,
+  buildDraftBody,
+  draftAnchor,
+  draftSuggestions
+} from '../utils/decisionDraft'
 import { formatDateTime } from '../utils/envelope'
 import { aiResultCsvHeaders, aiResultTable } from '../utils/tables'
 import { exportAnalysisCsv } from '../utils/exportCsv'
@@ -184,6 +248,68 @@ const pickRawEvidenceSnapshot = computed(() => {
 })
 const resultTable = computed(() => aiResultTable(query.value.rows))
 
+// ── S3-42：AI 建议 → 决策草稿（字段口径的唯一属主是 utils/decisionDraft.js）──
+const draftForm = ref(null)
+const draftBusy = ref(false)
+const draftError = ref('')
+const draftCreated = ref(null)
+
+// 证据锚点：优先顶层证据包 ID，其次真实快照号；两者皆无 ⇒ canCreateDraft=false，入口禁用
+const evidenceAnchor = computed(() => draftAnchor({
+  evidenceId: evidence.value.evidenceId,
+  snapshotId: evidence.value.snapshotId
+}))
+const canCreateDraft = computed(() => evidenceAnchor.value.kind !== ANCHOR_KIND.NONE)
+const anchorLabel = computed(() => anchorText(evidenceAnchor.value))
+
+const DRAFT_BLOCKED_TEXT = {
+  [DRAFT_BLOCK.SUGGESTION_INCOMPLETE]: '这条建议缺标题或动作，AI 侧没有给出可执行文案，无法创建草稿（不替模型补文案）。',
+  [DRAFT_BLOCK.NO_EVIDENCE_ANCHOR]: '本次问答没有可用的证据锚点（既无证据包 ID，快照号也是占位值），不能创建草稿。'
+}
+const blockedText = (code) => DRAFT_BLOCKED_TEXT[code] || '无法创建草稿'
+
+// 请求体由属主构造：页面只把「已展示的字段 ＋ 员工填的方向/负责人」交给它
+const draftPayload = computed(() => buildDraftBody({
+  suggestion: draftForm.value,
+  evidenceId: evidence.value.evidenceId,
+  snapshotId: evidence.value.snapshotId,
+  direction: draftForm.value ? draftForm.value.direction : '',
+  owner: draftForm.value ? draftForm.value.owner : ''
+}))
+const draftPreview = computed(() => (draftPayload.value.ok
+  ? JSON.stringify(draftPayload.value.body)
+  : blockedText(draftPayload.value.blocked)))
+
+function openDraft(s) {
+  draftError.value = ''
+  draftCreated.value = null
+  // 后端模板分支的 targetMetricCode 恒为 null ⇒ 页面留空并标注「接口未提供」，不猜指标编码
+  draftForm.value = { title: s.title, action: s.action, metricCode: s.targetMetricCode || '', direction: '', owner: '' }
+}
+
+function closeDraft() {
+  draftForm.value = null
+  draftCreated.value = null
+  draftError.value = ''
+}
+
+async function createDraft() {
+  const payload = draftPayload.value
+  draftError.value = ''
+  if (!payload.ok) {
+    draftError.value = blockedText(payload.blocked)
+    return
+  }
+  draftBusy.value = true
+  try {
+    // 服务端固定 source=ai / 状态 DRAFT；成功只回显服务端返回的编号，前端不改状态
+    draftCreated.value = (await api.decisionCreate(payload.body)) || {}
+  } catch (e) {
+    draftError.value = (e && (e.message || e.code)) || '创建草稿失败'
+  } finally {
+    draftBusy.value = false
+  }
+}
 const explanationSection = computed(() => {
   const out = []
   ;(explanation.value.possibleCauses || []).forEach((p) => out.push('可能原因：' + p.statement))
@@ -214,6 +340,7 @@ async function ask() {
   queryError.value = ''
   abortedNotice.value = ''
   queryResult.value = null
+  closeDraft()
   try {
     const resp = await api.aiQuery(text, '近30天', askController ? { signal: askController.signal } : undefined)
     if (mySeq !== askSeq) return // 已有更新的提问，丢弃过期响应

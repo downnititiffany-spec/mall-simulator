@@ -177,6 +177,9 @@ export function buildAiEvidenceContext(result) {
   const tables = Array.isArray(evidence.tables) ? evidence.tables : (Array.isArray(query.tables) ? query.tables : [])
   const definitions = pickText(evidence, ['definitions'])
   const timeRange = pickText(evidence, ['timeRange'])
+  // S3-42：证据包 ID 在响应**顶层**（问数分支 explanation.evidence.evidenceId 恒为 null，只有
+  // /ai/explanations 分支才填）；占位/空白按「未提供」处理——它是决策草稿的证据锚点，不能拿占位串当锚点。
+  const evidenceId = isRealSnapshotId(pickText(result, ['evidenceId'])) ? pickText(result, ['evidenceId']) : null
 
   const missing = []
   if (!evidenceSnapshot) {
@@ -208,7 +211,9 @@ export function buildAiEvidenceContext(result) {
       queryElapsedMs: Number.isFinite(evidence.queryElapsedMs) ? evidence.queryElapsedMs : null,
       timeRange,
       // AI 证据里的 definitions 是解释提示词版本（explain_v1），不是指标口径版本，分开命名避免混淆
-      promptVersion: definitions
+      promptVersion: definitions,
+      // 证据包 ID：决策草稿的 evidence_package_id 锚点来源（顶层字段，占位值已归一为 null）
+      evidenceId
     }
   }
 }

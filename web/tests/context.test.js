@@ -245,3 +245,34 @@ test('buildFallbackContext 的 missingNotice 经 readEnvelope 归一化后仍在
   // 页面 `v-if` 为假不显示、导出不写该行，不得凭空造缺失说明
   assert.equal(readEnvelope({ snapshotId: 'S20260901_47', data: {} }).missingNotice, null)
 })
+
+// ── S3-42：AI 证据包 ID（决策草稿的锚点来源）必须搬到页面；占位/缺失按「未提供」────────────
+
+test('buildAiEvidenceContext 搬运顶层 evidenceId（问数分支 explanation.evidence.evidenceId 恒为 null）', () => {
+  const ctx = buildAiEvidenceContext({
+    evidenceId: 'EV-20260916-3f2a9c',
+    query: { status: 'OK', rows: [] },
+    explanation: { evidence: { snapshotId: 'S20260901_24', evidenceId: null } }
+  })
+  assert.equal(ctx.evidence.evidenceId, 'EV-20260916-3f2a9c')
+})
+
+test('buildAiEvidenceContext 的 evidenceId 遇占位串/空白按未提供（null），不拿占位当锚点', () => {
+  for (const raw of ['unknown', 'UNKNOWN', '   ', null, undefined]) {
+    const ctx = buildAiEvidenceContext({
+      evidenceId: raw,
+      query: { status: 'OK', rows: [] },
+      explanation: { evidence: {} }
+    })
+    assert.equal(ctx.evidence.evidenceId, null, `evidenceId=${JSON.stringify(raw)} 必须归一为 null`)
+  }
+})
+
+test('证据包构建失败（顶层 evidenceId 缺失）时不编造 ID：快照号仍走既有回退', () => {
+  const ctx = buildAiEvidenceContext({
+    query: { status: 'OK', rows: [{ snapshot_id: 'S20260901_24' }] },
+    explanation: { evidence: {} }
+  })
+  assert.equal(ctx.evidence.evidenceId, null)
+  assert.equal(ctx.snapshotId, 'S20260901_24')
+})

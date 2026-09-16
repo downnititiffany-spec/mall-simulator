@@ -111,6 +111,8 @@ export default {
   decisions: (limit = 20, options) => client.get('/decisions', { params: { limit }, ...(options || {}) }),
   decisionEvaluations: (id, options) => client.get(`/decisions/${id}/evaluations`, { ...(options || {}) }),
   decisionAction: (id, action, body = {}) => client.post(`/decisions/${id}/${action}`, body),
+  // 决策创建（POST /decisions）：服务端把 source 固定为 ai、初始状态固定 DRAFT（r8 契约 §3.3/§5）
+  decisionCreate: (body) => client.post('/decisions', body),
   // 用户管理（运维页，admin 专属）
   adminUsers: (options) => client.get('/admin/users', { ...(options || {}) }),
   adminCreateUser: (body) => client.post('/admin/users', body),
