@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -89,8 +90,24 @@ public class AnalysisService {
     public record DictionaryItem(String metricCode, String metricName, String formula, String unit) {
     }
 
-    /** 质量卡：规则条数 / 通过条数 / 未通过规则码（营业页质量状态的可展开明细） */
-    public record QualitySummary(int ruleCount, int passedCount, List<String> failedRules) {
+    /**
+     * 质量卡：规则条数 / 通过条数 / 未通过规则码（营业页质量状态的可展开明细）。
+     *
+     * <p>S3-24 起补 {@code ruleVersions}（规则码 → **规则定义版本**）。</p>
+     *
+     * @param ruleVersions 本次快照最新分区里**记了版本**的规则码 → `rule_version`。键集是
+     *        `ruleCount` 的子集：**不出现的规则码 = 该行 `rule_version` 为 NULL（未记录版本）**，
+     *        不补 0、不冒充 v1（S3-05 加性迁移 `V8` 的空值语义）；按规则码升序稳定输出
+     */
+    public record QualitySummary(int ruleCount, int passedCount, List<String> failedRules,
+                                 Map<String, Integer> ruleVersions) {
+
+        /** 兜底：始终非 null、**不可变**、按规则码升序（同快照多次响应的键序不随读取顺序漂移） */
+        public QualitySummary {
+            ruleVersions = ruleVersions == null
+                    ? Map.of()
+                    : Collections.unmodifiableMap(new java.util.TreeMap<>(ruleVersions));
+        }
     }
 
     /**
@@ -567,18 +584,36 @@ public class AnalysisService {
                 .toList();
     }
 
-    /** 质量卡（ads_data_quality_m）：按规则码去重统计，未通过规则码升序列出 */
+    /**
+     * 质量卡（ads_data_quality_m）：按规则码去重统计，未通过规则码升序列出。
+     *
+     * <p>S3-24 起同时回显**规则定义版本**（`rule_version`）：指导书 V3.0 阶段4 L156「专题服务返回明确
+     * source、snapshot、definitionVersion、时间和质量信息」＋ 设计 V3.0 §12.3 L512「每条规则记录…
+     * **版本**…」；此前该列只有写入方（S3-05 加性迁移 `V8`，把 `rule_version` 追加到
+     * `ads_data_quality_m` 末尾）没有消费方（F-34 R-5 登记）。</p>
+     *
+     * <p><b>取不到版本不等于 v1</b>：`rule_version` 为 NULL（历史快照未记录）或不可解析时，该规则码
+     * **不出现**在 {@code ruleVersions} 里，键集只是 `ruleCount` 的子集；这里用
+     * {@link AdsRows#asLongOrNull} 而不是 {@code asInt}（后者取不到返回 0，会把「未记录」写成 v0）。
+     * 判据与写入侧同源：V8 空值语义「允许 NULL…不写 0 冒充 v1」。</p>
+     */
     private QualitySummary quality(String snapshotId) {
         Map<String, Integer> passedByRule = new java.util.TreeMap<>();
+        Map<String, Integer> ruleVersions = new java.util.TreeMap<>();
         for (Map<String, Object> row : AdsRows.latestPartition(adsReader, T_DATA_QUALITY, snapshotId)) {
-            passedByRule.put(AdsRows.asString(row.get("rule_code")), AdsRows.asInt(row.get("passed")));
+            String ruleCode = AdsRows.asString(row.get("rule_code"));
+            passedByRule.put(ruleCode, AdsRows.asInt(row.get("passed")));
+            Long ruleVersion = AdsRows.asLongOrNull(row.get("rule_version"));
+            if (ruleVersion != null) {
+                ruleVersions.put(ruleCode, ruleVersion.intValue());
+            }
         }
         int passed = (int) passedByRule.values().stream().filter(value -> value == 1).count();
         List<String> failedRules = passedByRule.entrySet().stream()
                 .filter(entry -> entry.getValue() != 1)
                 .map(Map.Entry::getKey)
                 .toList();
-        return new QualitySummary(passedByRule.size(), passed, failedRules);
+        return new QualitySummary(passedByRule.size(), passed, failedRules, ruleVersions);
     }
 
     /**

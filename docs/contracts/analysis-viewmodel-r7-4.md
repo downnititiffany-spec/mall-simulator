@@ -76,6 +76,27 @@
 >
 > **旧调用方影响**：不传 `sort` ⇒ 与 v1.4 逐行同序；`sort` 为纯加性参数，旧前端不受影响。
 
+> **v1.6（2026-09-16，S3-24 加性补充）**：按指导书 V3.0 §7 阶段4 **L156**「MetricStore/专题服务返回明确
+> source、snapshot、**definitionVersion**、时间和**质量信息**」与设计 V3.0 §12.3 **L512**「每条规则记录
+> 作用域、阈值、**版本**、阶段、实际值、passed、原始/生效严重度」：`/dashboards/overview`（§3.1）与
+> `/analysis/sales`（§3.2）的 `quality` 对象**加性**新增字段 **`ruleVersions`**（规则码 → 规则定义版本），
+> 值 = ADS 列 `ads_data_quality_m.rule_version` **原样透传**（同一行、同一 `dt`、同一快照）。
+> 该列的写入方在 S3-05 已落地（`V8__ads_data_quality_rule_version.sql`），本版补的是**读取侧消费**。
+>
+> **键集语义（不得越界表述）**：`ruleVersions` 的键集是 `ruleCount` 的**子集**——**不出现的规则码 =
+> 该行 `rule_version` 为 NULL（历史快照"未记录版本"）或不可解析**，**不补 0、不冒充 v1**
+> （与写入侧同源判据：`V8__ads_data_quality_rule_version.sql`「允许 NULL…**不写 0 冒充 v1**」）。
+> 键序按规则码升序稳定输出（同一快照多次响应键序一致）。
+>
+> **本版只做「读出既有列」**：不改口径、不重算、不新增/改列、不改 `ruleCount`/`passedCount`/`failedRules`
+> 语义（**无版本的行仍计入** `ruleCount`）；不新增错误码、不新增降级编码。
+>
+> **仍未实现（不得因本版发布而声称已满足）**：阶段5 页面**尚未**展示规则版本（`web/**` 本版未改）；
+> 设计 §9.3 **L335**「规则版本与**实时结果**待接齐」的另一半（发布链实时回写）、§12.3 规则 5/6/11、
+> L158 **限流**、L157 归档读取授权、§12.3 L506 不变式均**不变**，逐条登记在 `docs/PROJECT_STATUS.md` backlog。
+>
+> **旧调用方影响**：纯加性字段，旧前端不读不会误读。
+
 ## 1. 总原则
 
 1. 分析服务（`AnalysisService`、`RfmService`）**只能读指标库**（`MetricStore` / `MetricAdsReader`，
@@ -130,7 +151,8 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
   "salesTrend": [ { "date": "2026-09-01", "orderCount": 5, "saleAmount": 2042.00, "buyerCount": 3,
                     "netSaleAmount": 1493.00 } ],
   "activeTrend": [ { "date": "2026-09-01", "dau": 3, "behaviorCount": 22 } ],
-  "quality": { "ruleCount": 4, "passedCount": 4, "failedRules": [] },
+  "quality": { "ruleCount": 4, "passedCount": 4, "failedRules": [],
+               "ruleVersions": { "AMOUNT_RECONCILE": 1, "ENUM_WHITELIST": 1 } },
   "metricDictionary": [ { "metricCode": "refund_rate", "metricName": "退款率", "formula": "…", "unit": "" } ]
 }
 ```
@@ -139,6 +161,8 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 - `salesTrend` ← `ads_sale_trend_m`，`activeTrend` ← `ads_active_trend_m`（按 `dt` 升序）。
   **v1.4**：`salesTrend[*].netSaleAmount` ← 同表 `net_sale_amount`（透传，缺列/畸形 = `null`；边界见文首 v1.4）。
 - `metricDictionary` ← `analytics_meta.metric_definition`（页面"查看指标口径"用）。
+- **v1.6**：`quality.ruleVersions` ← `ads_data_quality_m.rule_version`（**原样透传**；键集语义与
+  「不补 0/不冒充 v1」的边界见文首 v1.6）。示例只列部分键：键集是 `ruleCount` 的**子集**。
 
 ### 3.2 `GET /api/v1/analysis/sales?snapshotId=&from=&to=`
 
@@ -146,7 +170,8 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 { "trend": [ { "date": "2026-09-01", "orderCount": 5, "saleAmount": 2042.00, "buyerCount": 3,
                "avgOrderValue": 408.40, "netSaleAmount": 1493.00 } ],
   "gmv": 2042.00, "netSale": 1493.00, "refundRate": 0.6000, "fullRefundRate": 0.2000,
-  "quality": { "ruleCount": 4, "passedCount": 4, "failedRules": [] } }
+  "quality": { "ruleCount": 4, "passedCount": 4, "failedRules": [],
+               "ruleVersions": { "AMOUNT_RECONCILE": 1, "ENUM_WHITELIST": 1 } } }
 ```
 
 `gmv`/`netSale`/`refundRate`/`fullRefundRate` 一律取 `metric_value`（**不得前端或后端重算**）；
@@ -155,6 +180,8 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 **v1.4**：`trend[*]` 为 ADS 直读，**新增** `netSaleAmount`（← `ads_sale_trend_m.net_sale_amount`，透传）。
 它与汇总字段 `netSale`（← `metric_value`）**来源不同、粒度不同**（逐日 vs 快照汇总），
 两者**不得互相代入**。
+
+**v1.6**：`quality.ruleVersions` 与 §3.1 同源同语义（同一个 `quality()` 所有者，两处逐字相同）。
 
 **实测边界（本版据实记录，不修）**：当前实现里 `from`/`to` **只回显在 `filters`，不参与任何过滤**——
 `trend` 与该快照全部 `metric_value` 都是**整快照原值**（`AnalysisService.sales()` L191-208 实测）。

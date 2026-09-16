@@ -5,6 +5,7 @@ import com.graduation.analytics.analysis.AnalysisService.FunnelStage;
 import com.graduation.analytics.analysis.AnalysisService.MetricItem;
 import com.graduation.analytics.analysis.AnalysisService.OverviewData;
 import com.graduation.analytics.analysis.AnalysisService.ProductsData;
+import com.graduation.analytics.analysis.AnalysisService.QualitySummary;
 import com.graduation.analytics.analysis.AnalysisService.RfmData;
 import com.graduation.analytics.analysis.AnalysisService.SalesData;
 import com.graduation.analytics.analysis.AnalysisService.SalesTrendPoint;
@@ -142,6 +143,43 @@ class AnalysisServiceTest {
         assertThat(data.quality().passedCount()).isEqualTo(3);
         assertThat(data.quality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
         assertThat(data.metricDictionary()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("S3-24 质量卡回显规则定义版本：记了版本的规则码按码升序进 ruleVersions")
+    void qualityCardCarriesRuleDefinitionVersion() {
+        stubActiveSnapshot();
+
+        QualitySummary quality = service.overview(null, null, null).data().quality();
+
+        // 夹具三行 rule_version=1、一行无该列（NULL）
+        assertThat(quality.ruleVersions()).containsExactly(
+                Map.entry("AMOUNT_RECONCILE", 1), Map.entry("ENUM_WHITELIST", 1), Map.entry("EVENT_ID_UNIQUE", 1));
+    }
+
+    @Test
+    @DisplayName("S3-24 rule_version 为 NULL 的规则：不进 ruleVersions，也不补 0/1 冒充 v1")
+    void qualityCardDoesNotFabricateVersionForNullRows() {
+        stubActiveSnapshot();
+
+        QualitySummary quality = service.overview(null, null, null).data().quality();
+
+        // 无版本那行**仍计入**规则条数（缺版本不等于缺规则）
+        assertThat(quality.ruleCount()).isEqualTo(4);
+        assertThat(quality.ruleVersions()).hasSize(3);
+        assertThat(quality.ruleVersions()).doesNotContainKey("REQUIRED_FIELD_NULL_RATE");
+        assertThat(quality.ruleVersions().values()).doesNotContain(0);
+    }
+
+    @Test
+    @DisplayName("S3-24 销售分析的质量卡与总览同源：同一 quality() 所有者，版本映射逐字相同")
+    void salesQualityCardSharesSameVersionsAsOverview() {
+        stubActiveSnapshot();
+
+        Map<String, Integer> overviewVersions = service.overview(null, null, null).data().quality().ruleVersions();
+        Map<String, Integer> salesVersions = service.sales(null, null, null).data().quality().ruleVersions();
+
+        assertThat(salesVersions).isEqualTo(overviewVersions).isNotEmpty();
     }
 
     @Test
@@ -747,9 +785,10 @@ class AnalysisServiceTest {
                 row("dt", "20260901", "product_id", 2L, "pv_users", 3L, "buy_users", 1L, "conversion_rate",
                         new BigDecimal("0.3333"))));
         ads.put("ads_data_quality_m", List.of(
-                row("dt", "20260901", "rule_code", "AMOUNT_RECONCILE", "passed", 1),
-                row("dt", "20260901", "rule_code", "ENUM_WHITELIST", "passed", 1),
-                row("dt", "20260901", "rule_code", "EVENT_ID_UNIQUE", "passed", 0),
+                row("dt", "20260901", "rule_code", "AMOUNT_RECONCILE", "passed", 1, "rule_version", 1),
+                row("dt", "20260901", "rule_code", "ENUM_WHITELIST", "passed", 1, "rule_version", 1),
+                row("dt", "20260901", "rule_code", "EVENT_ID_UNIQUE", "passed", 0, "rule_version", 1),
+                // 该行**没有** rule_version 列：历史快照的「未记录版本」，不得补 0/1（V8 空值语义）
                 row("dt", "20260901", "rule_code", "REQUIRED_FIELD_NULL_RATE", "passed", 1)));
         ads.put("ads_user_profile_m", List.of(
                 row("dt", "20260901", "user_id", 1L, "r", 5, "f", 2, "m", 3, "value_group", "一般发展",

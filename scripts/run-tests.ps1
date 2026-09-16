@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 945
+  'analytics-server'        = 948
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -369,6 +369,32 @@ $BaselineDefault = [ordered]@{
 #   设计 §12.3 的 5/6/11 项与第 10 项剩余部分**仍未实现**（不得称「12 项已完成」）。
 #   门禁实测（RunId `s323_20260916_def` / `s323_20260916_spark`；基线更新前先量到 945/293 真值）：
 #   三棵树 1064 = analytics 945 + mall 13 + generator 106；唯一红同上（已登记环境性红）。
+# S3-24：**质量卡接齐规则定义版本**（`rule_version` 消费侧）。逐字锚点：指导书 V3.0 阶段4 **L156**
+#   「MetricStore/专题服务返回明确 source、snapshot、**definitionVersion**、时间和**质量信息**」＋
+#   设计 V3.0 §12.3 **L512**「每条规则记录作用域、阈值、**版本**、阶段、实际值、passed、原始/生效严重度」；
+#   该列的**写入方** S3-05 已落地（加性迁移 `V8` 把 `rule_version` 追加到 `ads_data_quality_m` 末尾），
+#   但**读取侧无消费方**（F-34 R-5 明确登记「暂无消费方…归阶段4」）⇒ 缺口真实。
+#   开工前实测：`AnalysisService.quality()` 只读 `rule_code`/`passed`（哈希键只有规则码与通过位），
+#   S3-23 结束时的响应体无任何版本信息 ⇒ 质量卡「按哪一版规则判的」不可追问。
+#   加性改动：`QualitySummary` 加 `ruleVersions`（规则码 → 定义版本，不可变 + 规则码升序）＋
+#   `quality()` 用 `AdsRows.asLongOrNull` 读该列（**不用 `asInt`**：后者取不到返回 0，会把
+#   「未记录版本」写成 v0）；**取不到版本 ⇒ 该规则码不出现**在映射里（键集是 `ruleCount` 的子集），
+#   与写入侧 V8「允许 NULL…不写 0 冒充 v1」同源。既有 `ruleCount`/`passedCount`/`failedRules`
+#   语义**不变**（无版本的行仍计数）；未新增/未改列、未改迁移、未新增错误码、未新增权限码。
+#   契约同步：`docs/contracts/analysis-viewmodel-r7-4.md` 加性 v1.6（§3.1/§3.2 的 `quality` 样例
+#   + 键集语义与「仍未实现」边界；`contract-specs/**` **未动** ⇒ 门⑥不触）。
+#   新测试：`AnalysisServiceTest` +3（有版本三行按码升序回显 / NULL 行不进映射且 ruleCount 仍为 4
+#   且值域不含 0 / `sales` 与 `overview` 两处逐字相同——同一 quality() 所有者）；
+#   `EvidenceBuilderTest` 仅随记录组件更新两处构造点（断言不变）。
+#   ⇒ analytics-server 945→948（metric-analysis 90→93；platform-app/platform-common 不变），spark 293 不变
+#   （本轮 `git diff --stat` 实测 **0 个 spark-jobs 文件** ⇒ Spark 档未重跑，沿用 S3-23 已实测结论）。
+#   边界：**未测**真实 HTTP 响应 JSON 里的 `ruleVersions`、真实 MySQL/ADS 行上的 `rule_version` 实际取值、
+#   V8 在真库的执行；阶段5 页面**未展示**规则版本（`web/**` 本轮未改）；
+#   设计 §9.3 L335「规则版本与**实时结果**待接齐」的另一半（发布链实时回写）、§12.3 规则 5/6/11、
+#   L158 限流、L157 归档读取授权均**不变**（不得称「L335 已满足」）。
+#   门禁实测（RunId `s324_20260916_def2` 量数 / 基线更新后 `s324_20260916_def3` 收口；
+#   量数轮先量到 948 真值：`93+350+163+93+93+156`）：
+#   三棵树 1067 = analytics 948 + mall 13 + generator 106；唯一红同上（已登记环境性红）。
 $BaselineSpark = 293
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

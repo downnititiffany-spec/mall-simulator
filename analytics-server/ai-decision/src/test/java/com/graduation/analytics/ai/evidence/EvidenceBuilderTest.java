@@ -100,7 +100,7 @@ class EvidenceBuilderTest {
 
     private AnalysisViewModel<AnalysisService.OverviewData> overview(String gmv) {
         AnalysisService.OverviewData data = new AnalysisService.OverviewData(metrics(gmv), List.of(), List.of(),
-                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of());
+                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE"), Map.of("EVENT_ID_UNIQUE", 1)), List.of());
         return AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "2026-09-01T00:10:00", "v2", "PASS",
                 Map.of("snapshotId", SNAP), data, List.of());
     }
@@ -118,7 +118,7 @@ class EvidenceBuilderTest {
 
     private void stubSales() {
         AnalysisService.SalesData sales = new AnalysisService.SalesData(List.of(), null, null, null, null,
-                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of(), List.of());
+                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE"), Map.of("EVENT_ID_UNIQUE", 1)), List.of(), List.of());
         when(analysisService.sales(eq(SNAP), eq(DAY), eq(DAY)))
                 .thenReturn(AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "x", "v2", "PASS",
                         Map.of(), sales, List.of(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE)));
