@@ -172,3 +172,28 @@ test('NON_ANALYSIS_ROW_KEYS 与三页实际返回结构一致', () => {
   assert.deepEqual(NON_ANALYSIS_ROW_KEYS.aiQuery, ['queryRows'])
   assert.deepEqual(NON_ANALYSIS_ROW_KEYS.opsAudit, ['snapshots', 'qualityResults', 'aiHistory', 'aiCalls'])
 })
+
+// ── S3-26：来源（发布方）在非信封路径的处理 ────────────────────────────────
+
+test('buildFallbackContext 透传信封 source；信封与入参都没有时为 null（页面显示「未知」）', () => {
+  const withEnvelope = buildFallbackContext({
+    rows: [],
+    envelopeSource: { snapshotId: 'S20260901_24', source: 'spark-ads' }
+  })
+  assert.equal(withEnvelope.source, 'spark-ads')
+  // 显式入参在信封缺失时生效（运维页各行自带来源的场景）
+  assert.equal(buildFallbackContext({ rows: [], source: 'spark-ads' }).source, 'spark-ads')
+  assert.equal(buildFallbackContext({ rows: [] }).source, null)
+  // 来源不是业务源身份，也不进缺失清单：非信封接口已由 ENVELOPE_MISSING 标注
+  const ctx = buildFallbackContext({ rows: [], warnings: ['ENVELOPE_MISSING'] })
+  assert.doesNotMatch(ctx.missingNotice, /来源/)
+})
+
+test('AI 证据上下文不含发布方：source 显式为 null，不借当前快照冒充 AI 结果来源', () => {
+  const ctx = buildAiEvidenceContext({
+    explanation: { evidence: { snapshotId: 'S20260901_24', question: '复购率', sql: 'SELECT 1', tables: ['dws_user_trade_period'] } },
+    query: {},
+    rows: []
+  })
+  assert.equal(ctx.source, null)
+})

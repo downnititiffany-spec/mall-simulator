@@ -16,7 +16,7 @@ const asRecord = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {
  * 兼容两种入参：完整信封 { snapshotId, data, ... } 与仅含业务数据的裸对象。
  * @param {unknown} envelope 后端 data 字段（已由 api.js 剥掉 ApiResponse 外壳）
  * @returns {{snapshotId: string|null, businessTime: string|null, dataUpdatedAt: string|null,
- *            definitionVersion: string|null, qualityStatus: string, filters: object,
+ *            source: string|null, definitionVersion: string|null, qualityStatus: string, filters: object,
  *            warnings: string[], data: object}}
  */
 export function readEnvelope(envelope) {
@@ -25,6 +25,10 @@ export function readEnvelope(envelope) {
     snapshotId: asText(src.snapshotId),
     businessTime: asText(src.businessTime),
     dataUpdatedAt: asText(src.dataUpdatedAt),
+    // S3-26：`source` = metric_snapshot.source，即该快照的**发布方/生产者**（契约 v1.2 §2 字段表；
+    // §17.6 成功快照只接受 spark-ads）。**不是业务源身份**：业务源由 per-source namespace 与
+    // ODS/DWD 的 source_system/source_instance_id 承载，页面不得把它当源身份展示或过滤。
+    source: asText(src.source),
     definitionVersion: asText(src.definitionVersion),
     // 质量门结论取不到时按契约降级为 UNKNOWN
     qualityStatus: asText(src.qualityStatus) || 'UNKNOWN',
@@ -52,6 +56,16 @@ export function qualityText(status) {
   if (status === 'PASS') return '质量通过'
   if (status === 'FAIL') return '质量未通过'
   return '质量未知'
+}
+
+/**
+ * 来源（发布方）展示语义（S3-26）。
+ *
+ * 契约 v1.2 §2：`source` 取不到为 null、空串按缺字段处理；展示层同样**不臆造发布方**，
+ * 取不到一律显示「未知」——把缺失写成 `spark-ads` 会让归档/历史快照看起来像正常发布。
+ */
+export function sourceText(source) {
+  return asText(source) || '未知'
 }
 
 /** ISO 时间转本地可读文本：2026-09-10T20:12:33 -> 2026-09-10 20:12:33 */

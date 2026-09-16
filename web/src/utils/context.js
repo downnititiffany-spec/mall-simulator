@@ -85,7 +85,7 @@ function missingNotice(missing) {
  * @param {{rows?: unknown, warnings?: string[], snapshotIds?: string[],
  *          businessTime?: string|null, dataUpdatedAt?: string|null,
  *          definitionVersion?: string|null, qualityStatus?: string|null,
- *          filters?: object|null, envelopeSource?: object|null,
+ *          source?: string|null, filters?: object|null, envelopeSource?: object|null,
  *          extraMissing?: string[]}} input
  */
 export function buildFallbackContext(input = {}) {
@@ -97,6 +97,7 @@ export function buildFallbackContext(input = {}) {
     dataUpdatedAt = null,
     definitionVersion = null,
     qualityStatus = null,
+    source = null,
     filters = null,
     envelopeSource = null,
     extraMissing = []
@@ -117,6 +118,10 @@ export function buildFallbackContext(input = {}) {
   const version = env.definitionVersion || definitionVersion || rowVersion
   const quality = env.qualityStatus !== 'UNKNOWN' ? env.qualityStatus : qualityStatus
   const filterObj = env.filters && Object.keys(env.filters).length ? env.filters : filters
+  // S3-26：来源（发布方）优先取信封，其次取调用方显式给的入参；两者都没有就是 null，
+  // 页面显示「未知」。非信封接口本来就没有 source（已由 ENVELOPE_MISSING 标注），
+  // 因此这里**不**把它并入 missing 清单，避免把"接口非信封"重复报成"字段缺失"。
+  const sourceValue = env.source || source
 
   const missing = [...extraMissing]
   // 快照号是上下文的第一要素：取不到必须显式标注，不允许页面留空又不说明
@@ -132,6 +137,8 @@ export function buildFallbackContext(input = {}) {
     snapshotId,
     businessTime: business,
     dataUpdatedAt: updated,
+    // 来源（发布方）：取不到就是 null，由展示层统一显示「未知」（契约 v1.2，非业务源身份）
+    source: sourceValue,
     definitionVersion: version,
     // 质量状态取不到按契约降级为 UNKNOWN（不是编造 PASS）
     qualityStatus: quality || 'UNKNOWN',
@@ -181,6 +188,9 @@ export function buildAiEvidenceContext(result) {
     snapshotId,
     businessTime: null,
     dataUpdatedAt: null,
+    // S3-26：AI 证据包不含发布方字段（不是统一信封），显式给 null ⇒ 页面来源一栏显示「未知」，
+    // 不用"当前快照的发布方"代替 AI 结果来源
+    source: null,
     definitionVersion: null,
     qualityStatus: 'UNKNOWN',
     filters: { 问题: pickText(evidence, ['question']) || '', 时间范围: timeRange || '未指定' },

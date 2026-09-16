@@ -126,6 +126,7 @@ async function fetchDecisions(params, signal) {
     snapshotId: ctx.snapshotId,
     businessTime: ctx.businessTime,
     dataUpdatedAt: ctx.dataUpdatedAt,
+    source: ctx.source,
     definitionVersion: ctx.definitionVersion,
     qualityStatus: ctx.qualityStatus,
     filters: ctx.filters,

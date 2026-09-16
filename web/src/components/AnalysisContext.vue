@@ -4,6 +4,11 @@
       <span class="meta-item">快照 <b class="mono">{{ ctx.snapshotId || '无' }}</b></span>
       <span class="meta-item">业务时间 <b class="mono">{{ formatDateTime(ctx.businessTime) }}</b></span>
       <span class="meta-item">数据更新 <b class="mono">{{ formatDateTime(ctx.dataUpdatedAt) }}</b></span>
+      <span class="meta-item">
+        来源（发布方）
+        <b class="mono">{{ sourceText(ctx.source) }}</b>
+        <span class="meta-hint">非业务源身份</span>
+      </span>
       <span class="meta-item">口径版本 <b class="mono">{{ ctx.definitionVersion || '未知' }}</b></span>
       <span class="meta-item">
         质量
@@ -30,7 +35,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { formatDateTime, qualityText } from '../utils/envelope'
+import { formatDateTime, qualityText, sourceText } from '../utils/envelope'
 import { warningTextAll } from '../utils/context'
 
 const props = defineProps({

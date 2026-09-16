@@ -31,12 +31,14 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [] }) {
   const statusText = computed(() => stateText(state.value))
 
   // 导出上下文：filters 来自后端回显，缺失时回退到本次请求参数
+  // S3-26：带上信封 `source`（发布方），导出件才能自证“数据由谁发布”（指导书阶段5 L164）
   const exportContext = computed(() => {
     const ctx = context.value || {}
     return {
       snapshotId: ctx.snapshotId || null,
       businessTime: ctx.businessTime || null,
       dataUpdatedAt: ctx.dataUpdatedAt || null,
+      source: ctx.source || null,
       definitionVersion: ctx.definitionVersion || null,
       qualityStatus: ctx.qualityStatus || 'UNKNOWN',
       filters: ctx.filters && Object.keys(ctx.filters).length ? ctx.filters : null,
