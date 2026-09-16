@@ -67,7 +67,7 @@ export function collectSnapshotIds(values) {
   return [...set].sort()
 }
 
-/** 合并告警：去重、去空、保持出现顺序 */
+/** 合并告警：去重、丢空、保持首次出现顺序 */
 export function mergeWarnings(...lists) {
   const out = []
   for (const list of lists) {
@@ -177,6 +177,9 @@ export function buildAiEvidenceContext(result) {
   const tables = Array.isArray(evidence.tables) ? evidence.tables : (Array.isArray(query.tables) ? query.tables : [])
   const definitions = pickText(evidence, ['definitions'])
   const timeRange = pickText(evidence, ['timeRange'])
+  // S3-54：结论文本只来自后端 ExplanationResult.summary。页面已经读取 evidenceContext.summary，
+  // 这里必须显式搬运；缺失/空白就返回 null，让页面显示“后端未给出结论文本”，绝不前端拼结论。
+  const summary = pickText(explanation, ['summary'])
 
   // S3-53：证据包 ID 的**值属主仍是后端**，这里只做形状兼容，不生成、不改写。
   // `/ai/queries` 当前正式响应把 evidenceId 放在顶层；`/ai/explanations` 的 EvidencePackage
@@ -199,6 +202,7 @@ export function buildAiEvidenceContext(result) {
   missing.push('业务时间', '数据更新时间', '质量状态', '指标口径版本')
 
   return {
+    summary,
     snapshotId,
     businessTime: null,
     dataUpdatedAt: null,
@@ -230,7 +234,7 @@ export { WARNING_TEXT_EXTRA }
 
 /**
  * 各页面行数判定用的字段（与 chartState.ENDPOINT_ROW_KEYS 同构，供 useAnalysis 使用）
- * 运维/AI/决策接口不是分析端点，因此单独在这里声明，避免把非契约字段混入 ENDPOINT_ROW_KEYS。
+ * 运维、AI、决策接口不是分析端点，因此单独在这里声明，避免把非契约字段混入 ENDPOINT_ROW_KEYS。
  */
 export const NON_ANALYSIS_ROW_KEYS = {
   opsAudit: ['snapshots', 'qualityResults', 'aiHistory', 'aiCalls'],

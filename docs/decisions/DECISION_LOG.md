@@ -98,3 +98,11 @@
 **Boundary**：该入口只统一现有 Node 测试与 Vite production build，不代表真实浏览器/E2E、后端联调或权限链已经验证。
 
 **Implementation commits**：`e36a350`（package script）+ `db810d6`（结构守卫）。
+
+### D-012 — S3-54 AI 结论展示只消费后端 summary
+
+**Decision**：`buildAiEvidenceContext` 必须显式搬运 `explanation.summary` 为页面结论字段；缺失或空白时返回 `null`，由页面显示既有“后端未给出结论文本”降级文案。不得从查询结果、证据字段或前端规则自行生成结论。
+
+**Reason**：`AiAssistant.vue` 已读取 `evidenceContext.summary`，但上下文构造器此前从未返回该字段，导致后端已经给出 `ExplanationResult.summary` 时页面仍固定显示缺失文案。
+
+**Boundary**：本改动只修展示链路，不改变 LLM/模板解释生成、证据数值、provider 判定、Text-to-SQL 或后端契约。
