@@ -22,8 +22,10 @@
         <div v-for="m in cards" :key="m.metricCode" class="metric-card">
           <div class="label">{{ m.metricName || m.metricCode }}</div>
           <div class="value">{{ m.text }}<span class="unit">{{ m.unit }}</span></div>
+          <div v-if="m.periodText" class="period">{{ m.periodText }}</div>
         </div>
       </div>
+      <div v-if="windowNote" style="font-size:12px;color:#94A3B8;margin:-4px 0 8px">{{ windowNote }}</div>
 
       <div class="chart-box">
         <div class="chart-title">销售趋势（销售额 / 净销售额 / 订单数 / 买家数）</div>
@@ -79,6 +81,8 @@ import { warningText } from '../utils/envelope'
 import { qualitySummaryText, ruleVersionText, RULE_VERSION_NOTE } from '../utils/quality'
 import { salesTrendOption, activeTrendOption, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
+// S3-40：窗口口径（repeat_rate）的观察期解析与限制说明唯一属主在 utils/metricPeriod.js，视图只引用不自拼
+import { periodText, WINDOW_METRIC_NOTE } from '../utils/metricPeriod'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
 
@@ -103,7 +107,9 @@ const CARD_META = [
   { code: 'uv', name: '浏览用户(UV)', unit: '', digits: 0 },
   { code: 'dau', name: '活跃用户(DAU)', unit: '', digits: 0 },
   { code: 'avg_order_value', name: '客单价', unit: '元', digits: 2 },
-  { code: 'refund_rate', name: '退款率', unit: '', percent: true }
+  { code: 'refund_rate', name: '退款率', unit: '', percent: true },
+  // S3-40：窗口口径指标（period 为观察期声明、非单日）——比例按百分比展示，观察期另起副标题
+  { code: 'repeat_rate', name: '有效复购率', unit: '', percent: true }
 ]
 
 const cards = computed(() => {
@@ -117,12 +123,12 @@ const cards = computed(() => {
     const text = meta.percent
       ? formatPercent(m.value)
       : (meta.digits === 0 ? formatInteger(m.value) : formatNumber(m.value, meta.digits))
-    out.push({ metricCode: meta.code, metricName: meta.name || m.metricName, unit: m.unit || meta.unit, text })
+    out.push({ metricCode: meta.code, metricName: meta.name || m.metricName, unit: m.unit || meta.unit, text, periodText: periodText(m.period) })
   }
   // 后端返回但不在固定清单内的指标也照实展示
   for (const m of list) {
     if (!m || !m.metricCode || CARD_META.some((c) => c.code === m.metricCode)) continue
-    out.push({ metricCode: m.metricCode, metricName: m.metricName || m.metricCode, unit: m.unit || '', text: formatNumber(m.value, 2) })
+    out.push({ metricCode: m.metricCode, metricName: m.metricName || m.metricCode, unit: m.unit || '', text: formatNumber(m.value, 2), periodText: periodText(m.period) })
   }
   return out
 })
@@ -130,6 +136,9 @@ const cards = computed(() => {
 // S3-28：质量信息展示（契约 v1.6 字段 + v1.8 口径）——通过情况与规则版本都只透传、不重算
 const qualityText = computed(() => qualitySummaryText(data.value.quality))
 const ruleVersionsText = computed(() => ruleVersionText((data.value.quality || {}).ruleVersions))
+
+// S3-40：本次快照里出现过窗口口径指标时才提示"不同期"（无则不提，避免无谓噪声）
+const windowNote = computed(() => (cards.value.some((c) => c.periodText) ? WINDOW_METRIC_NOTE : ''))
 
 const dictionary = computed(() => (Array.isArray(data.value.metricDictionary) ? data.value.metricDictionary : []))
 const salesOption = computed(() => salesTrendOption(data.value.salesTrend))
@@ -142,11 +151,11 @@ const warningSummary = computed(() =>
 const load = () => analysis.load({ from: from.value, to: to.value })
 
 function doExport() {
-  const rows = cards.value.map((c) => [c.metricCode, c.metricName, c.text, c.unit])
+  const rows = cards.value.map((c) => [c.metricCode, c.metricName, c.text, c.unit, c.periodText || '—'])
   exportAnalysisCsv({
     baseName: 'overview-metrics',
     context: exportContext.value,
-    headers: ['指标编码', '指标名称', '数值', '单位'],
+    headers: ['指标编码', '指标名称', '数值', '单位', '口径周期'],
     rows
   })
 }
