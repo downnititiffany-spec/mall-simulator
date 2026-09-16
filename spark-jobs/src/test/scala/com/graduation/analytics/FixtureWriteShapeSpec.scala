@@ -73,6 +73,11 @@ class FixtureWriteShapeSpec extends AnyFlatSpec with Matchers {
     // （大盘 `t`/`r`/`u` 三个 DWS 子查询非空，否则大盘一行都不产出）+ 
     // `ads_operation_overview__staging`（制造违反/边界形态的目标行，逐列命名的静态投影）。
     "AdsUvPvInvariantSpec.scala" -> 3,
+    // S3-25：DWS 站点「逐商品同过滤条件不变量 UV≤PV」的行为 spec。同样三条写入点 =
+    // `dwd_user_behavior_detail`（pv/uv 来源，`DwsSql.productBehaviorDay` 的判据列）+
+    // `dwd_order_detail`（该 SQL 的 `buy` 来源，LEFT JOIN 的右表非空才算真跑链路）+
+    // `dws_product_behavior_day`（制造违反/边界/NULL 形态的目标行，逐列命名的静态投影）。
+    "DwsUvPvInvariantSpec.scala" -> 3,
     "AdsHotProductHeatRuleVersionSpec.scala" -> 1,
     "AdsQualityRuleVersionSpec.scala" -> 3,
     "AdsRepeatRateSpec.scala" -> 2,

@@ -84,8 +84,19 @@ class QualityRuleVersionMigrationScriptTest {
      */
     private static final String V27 = "V27__quality_rule_ads_uv_pv_invariant.sql";
 
+    /**
+     * 追加式种子迁移（S3-25 / F-58）：`DWS_UV_PV_INVARIANT` 一行的登记。
+     *
+     * <p>用途：设计 §12.3 第 9 项「同过滤条件 UV ≤ PV」在 **DWS 层**另有一个同型站点
+     * （`dws_product_behavior_day` 按 `product_id×category_id` 逐行、无 snapshot 维度），
+     * S3-23 只关闭了 ADS 大盘那一处；该表是 `ads_hot_product` / `ads_product_conversion` 的
+     * 直连来源，其 `pv`/`uv` 在产质量门里**没有任何守卫**。两处粒度/表/分区维度都不同 ⇒
+     * 独立成码（门⑦不触：不改架构；门③不触：不动已发布的 V19/V25/V26/V27，只追加）。</p>
+     */
+    private static final String V28 = "V28__quality_rule_dws_uv_pv_invariant.sql";
+
     /** 承载种子的迁移（顺序无关，对账取并集） */
-    private static final List<String> SEED_SCRIPTS = List.of(V19, V23, V25, V26, V27);
+    private static final List<String> SEED_SCRIPTS = List.of(V19, V23, V25, V26, V27, V28);
 
     /** V20 的四个新列（顺序即脚本内的声明顺序）。 */
     private static final List<String> V20_COLUMNS = List.of(
@@ -102,7 +113,7 @@ class QualityRuleVersionMigrationScriptTest {
                     + "\\s*'([0-9a-f]{64})'\\s*\\)");
 
     @Test
-    @DisplayName("迁移号由总控分配且不冲突：V19/V20/V23/V25/V26/V27 存在，且 db/meta 内号位不重复")
+    @DisplayName("迁移号由总控分配且不冲突：V19/V20/V23/V25/V26/V27/V28 存在，且 db/meta 内号位不重复")
     void migrationVersionsAreAssignedAndUnique() {
         List<Integer> versions = scriptVersions();
         assertThat(versions).as("db/meta 下应有迁移脚本").isNotEmpty();
@@ -124,12 +135,16 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(versions)
                 .as("S3-23 的加性种子迁移号必须存在（仅追加一行规则定义）")
                 .contains(27);
+        assertThat(versions)
+                .as("S3-25 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(28);
         assertThat(Files.isRegularFile(META_DIR.resolve(V19))).as("%s 必须存在", V19).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V20))).as("%s 必须存在", V20).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V23))).as("%s 必须存在", V23).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V25))).as("%s 必须存在", V25).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V26))).as("%s 必须存在", V26).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V27))).as("%s 必须存在", V27).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V28))).as("%s 必须存在", V28).isTrue();
     }
 
     @Test
@@ -153,6 +168,35 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(read(V27))
                 .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
                 .contains("未执行");
+    }
+
+    @Test
+    @DisplayName("V28 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v28OnlyAppendsSeedRows() {
+        String sql = code(V28);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V28 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V28 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V28))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
+        // 新增码是**新**规则码，不是给既有码换档：checksum 必须是本码本版本的指纹，
+        // 且不得与 V27 的 ADS 同型码共用一行（合并即违反设计 line 512）
+        assertThat(read(V28))
+                .as("必须是独立的 DWS_UV_PV_INVARIANT 行，不得复用 ADS_UV_PV_INVARIANT")
+                .contains("'DWS_UV_PV_INVARIANT'")
+                .doesNotContain("'ADS_UV_PV_INVARIANT'");
     }
 
     @Test
@@ -304,13 +348,13 @@ class QualityRuleVersionMigrationScriptTest {
     }
 
     @Test
-    @DisplayName("种子（V19+V23+V25+V26+V27 并集）逐字段等于 Java 目录：39 行、version 全 1、档位/模式/阈值/指纹零漂移")
+    @DisplayName("种子（V19+V23+V25+V26+V27+V28 并集）逐字段等于 Java 目录：40 行、version 全 1、档位/模式/阈值/指纹零漂移")
     void v19SeedMatchesTheJavaCatalogExactly() {
         List<QualityRuleDefinition> definitions = QualityRuleCatalog.DEFAULT.definitions();
         assertThat(definitions)
-                .as("目录契约全集应为 39 条（V19 的 35 条 + V23 追加 1 条 + V25 追加 1 条 + V26 追加 1 条"
-                        + " + V27 追加 1 条；本用例是 SQL 与 Java 的对账点，改数必在此处变红）")
-                .hasSize(39);
+                .as("目录契约全集应为 40 条（V19 的 35 条 + V23 追加 1 条 + V25 追加 1 条 + V26 追加 1 条"
+                        + " + V27 追加 1 条 + V28 追加 1 条；本用例是 SQL 与 Java 的对账点，改数必在此处变红）")
+                .hasSize(40);
 
         List<String> seed = seedRows();
         assertThat(seed)

@@ -36,6 +36,11 @@ class RuleSeverityTest {
             // 与第 8 项「GMV ≥ 净销售 ≥ 0」分开登记（同 line 512：不同校验不得合并成一个码；
             // 「同过滤条件」是本码作用域判据 —— 同表 dau 为全事件口径，dau > uv 合法）
             "ADS_UV_PV_INVARIANT",
+            // S3-25：**DWS 层**同型站点「逐商品同过滤条件 UV ≤ PV」（设计 §12.3 第 9 项 L507）。
+            // 与 ADS 侧同型但独立成码：两处的表、粒度（逐 product_id×category_id 行 vs 一次聚合成
+            // 一行）、分区维度（无 snapshot 维度 vs 按 snapshot_id 隔离）都不同，
+            // 一处通过不能证明另一处通过 ⇒ 不得合并（同 line 512）
+            "DWS_UV_PV_INVARIANT",
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE");
 
@@ -62,7 +67,7 @@ class RuleSeverityTest {
             "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE", "MP_OLD_ACTIVE_ARCHIVED");
 
     /**
-     * 全部已登记规则码（37 个）＝ 阻断级 15 + 指标库发布对账 16 + WARN 3 + INFO 3。
+     * 全部已登记规则码（38 个）＝ 阻断级 16 + 指标库发布对账 16 + WARN 3 + INFO 3。
      *
      * <p>与 {@link RuleSeverity} 的登记表、{@link QualityRuleCatalog} 的目录必须三者一致：
      * 按 §7.3.1 line 524，只在一处登记、目录里没有的码会判为「未登记规则」而停止发布。</p>
@@ -318,7 +323,7 @@ class RuleSeverityTest {
         all.addAll(PUBLISH_VALIDATOR_CODES);
         all.addAll(WARN_CODES);
         all.addAll(INFO_CODES);
-        assertThat(all).hasSize(37);   // 15 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
+        assertThat(all).hasSize(38);   // 16 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
         assertThat(all).doesNotHaveDuplicates();
 
         for (String code : all) {

@@ -40,7 +40,9 @@ import java.util.List;
  * {@code ADS_DWS_FUNNEL_RATE_RECONCILE}（率列跨层对账）；S3-22 新增
  * {@code ADS_GMV_NET_SALE_INVARIANT}（ADS 大盘「GMV ≥ 净销售 ≥ 0」同归属口径不变量，
  * 设计 §12.3 第 8 项）；S3-23 新增 {@code ADS_UV_PV_INVARIANT}（ADS 大盘「UV ≤ PV」同过滤条件
- * 不变量，设计 §12.3 第 9 项；与第 8 项分开成码）。</p>
+ * 不变量，设计 §12.3 第 9 项；与第 8 项分开成码）；S3-25 新增
+ * {@code DWS_UV_PV_INVARIANT}（DWS 商品×日期行为宽表「UV ≤ PV」，第 9 项在 DWS 层的**同型站点**；
+ * 与 ADS 侧同型但**不同码**——粒度、表、分区维度都不同，一处通过不能证明另一处通过）。</p>
  */
 public final class RuleSeverity {
 
@@ -78,6 +80,8 @@ public final class RuleSeverity {
             "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE", "ADS_DWS_FUNNEL_RATE_RECONCILE",
             "ADS_GMV_NET_SALE_INVARIANT",
             "ADS_UV_PV_INVARIANT",
+            // DWS 层（Spark dqc 读 DWS 宽表；第 9 项的同型站点，S3-25）
+            "DWS_UV_PV_INVARIANT",
             // 发布层（Spark pub / mxp）
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH", "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE",
@@ -149,6 +153,12 @@ public final class RuleSeverity {
             // 第 9 项「UV ≤ PV」另立一码，二者独立（同 line 512）
             case "ADS_GMV_NET_SALE_INVARIANT" -> BLOCKING;
             case "ADS_UV_PV_INVARIANT" -> BLOCKING;
+            // DWS 同型站点（S3-25）：DWS 商品×日期行为宽表按 product_id×category_id 分组，
+            // 一行一商品，`uv > pv` 同样是「两列已取自不同过滤条件」的口径破坏
+            // （同过滤条件下的去重用户数不可能超过次数）。该表无 snapshot 维度 ⇒ 作用域＝本次 dt 分区；
+            // NULL 在本层**没有**直接所有者（keyPredicates 只覆盖 ADS 暂存表）⇒ 由本码自判，
+            // 任一列为 NULL 即不通过。与 ADS 侧同型但不合并（粒度/表/分区维度不同，line 512）。
+            case "DWS_UV_PV_INVARIANT" -> BLOCKING;
 
             // ── 发布层（Spark pub / mxp）──
             case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
@@ -239,6 +249,15 @@ public final class RuleSeverity {
                             + "pv/uv 是转化率等结论的分子分母，口径一破则整组浏览类结论不可信；"
                             + "dau 是全事件口径（不同过滤条件），dau > uv 合法、不纳入本码；"
                             + "NULL 由 ADS_STAGING_KEY_NOT_NULL 唯一判定；只判不变量、不修数据";
+            case "DWS_UV_PV_INVARIANT" ->
+                    "DWS 商品×日期行为宽表同过滤条件不变量被破坏（设计 §12.3 第 9 项 L507 的同型站点，S3-25）："
+                            + "某商品去重浏览用户数 > 浏览次数 ⇒ 两列已取自**不同过滤条件**"
+                            + "（DwsSql.productBehaviorDay 中 pv/uv 同出一个 behavior_type = 'view' 条件）；"
+                            + "该表是商品热度/商品转化等 ADS 结论的直连来源，口径一破则整组商品浏览结论不可信。"
+                            + "与 ADS 侧 ADS_UV_PV_INVARIANT 同型但**不合并**（粒度＝商品×日期逐行、表、"
+                            + "分区维度（无 snapshot）都不同，一处通过不能证明另一处通过）；"
+                            + "pv/uv 任一为 NULL 由**本码**判不通过（该表无既有关键列非空守卫，唯一所有者空缺）；"
+                            + "只判不变量、不修数据";
             case "PUB_STAGING_READY" -> "暂存未就绪不得切换正式分区（发布前预检）";
             case "PUB_FORMAL_PARTITION_MATCH" -> "正式分区行数 ≠ 暂存分区行数 ⇒ 发布不完整";
             case "MXP_SNAPSHOT_PINNED" -> "正式分区未指向本次 snapshot_id ⇒ 混入其他快照数据（D-142 §1 必须阻断）";

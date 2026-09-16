@@ -133,12 +133,15 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
     "dqc 的质量规则、pub 的发布检查留在 JobResult.checks；fna 的完成证据留在 JobResult.outputPartitions" in {
       withClue(s"dqc(S1) checks=${cap.checks("dqc")}：") {
         // S3-10：规则 7（率列跨层对账）加入后实测 7 条；S3-22：规则 8（ADS 大盘 GMV≥净销售≥0）
-        // 加入后实测 8 条；同时钉住新码**确实被产出**
+        // 加入后实测 8 条；S3-25：规则 10（DWS 站点逐商品 UV≤PV）加入后实测 10 条；
+        // 同时钉住新码**确实被产出**
         // （只写函数不接线是本项目发生过的一类缺陷：断言存在不等于链路上被调用）
-        cap.checks("dqc").size should be >= 9
+        cap.checks("dqc").size should be >= 10
         cap.checks("dqc").map(_.split('|').head) should contain("ADS_DWS_FUNNEL_RATE_RECONCILE")
         cap.checks("dqc").map(_.split('|').head) should contain("ADS_GMV_NET_SALE_INVARIANT")
         cap.checks("dqc").map(_.split('|').head) should contain("ADS_UV_PV_INVARIANT")
+        // S3-25：DWS 同型站点独立成码（设计 §12.3 第 9 项 L507 + line 512 不得合并）
+        cap.checks("dqc").map(_.split('|').head) should contain("DWS_UV_PV_INVARIANT")
       }
       // 我最初的期望是 fna 也要有 checks —— 实测 List()（r3 L120）。核对 §10.2 L386：BUILD_ADS 的
       // 「完成证据」是「staging表/快照、各表行数」，由 PartitionEvidence 承载；§10.2 L387 明写

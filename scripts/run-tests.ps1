@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 948
+  'analytics-server'        = 949
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -395,7 +395,22 @@ $BaselineDefault = [ordered]@{
 #   门禁实测（RunId `s324_20260916_def2` 量数 / 基线更新后 `s324_20260916_def3` 收口；
 #   量数轮先量到 948 真值：`93+350+163+93+93+156`）：
 #   三棵树 1067 = analytics 948 + mall 13 + generator 106；唯一红同上（已登记环境性红）。
-$BaselineSpark = 293
+# ── S3-25（F-58）：设计 §12.3 第 9 项在 **DWS 层同型站点**的独立规则码 `DWS_UV_PV_INVARIANT` ──────
+#   落地内容：`dws_product_behavior_day`（按 `product_id×category_id` 逐行、无 snapshot 维度）的
+#   「UV ≤ PV」在产 BLOCKING 守卫 + 新规则码的目录/严重度登记 + 加性迁移 V28（只插一行）+
+#   `AdsQualityJob.dwsUvPvInvariantCheck` 接线进 dqc（链路实测 checks 10 条，含新码）。
+#   新测试：`DwsUvPvInvariantSpec` **+10**（真跑 `DwdSql`/`DwsSql` 链路通过且 pv=3/uv=2 有判别力 /
+#   `uv>pv` 违反 / `uv==pv`、`0==0` 边界 / pv、uv 为 NULL 由本码自判 / 唯一所有者耦合守卫 /
+#   只判不改 / 多行计数 / fav·cart·buy 不受牵连 / pv-uv 同过滤条件结构守卫 / 空分区不冒充违反）；
+#   `QualityRuleVersionMigrationScriptTest` **+1**（`v28OnlyAppendsSeedRows`：单条 INSERT IGNORE、
+#   不建表不改列、写明未在真库执行、独立成码不复用 ADS 码）。
+#   ⇒ spark 293→**303**（+10）；analytics-server 948→**949**（platform-app 156→157）。
+#   边界：**未测** V28 在真库的执行、`dws_product_behavior_day` 空分区/存在性的真实数据表现、
+#   12 项规则剩余（5/6/11 与第 10 项剩余）**不变** ⇒ 不得称「12 项完成」或「全仓 UV≤PV 已守卫」。
+#   门禁实测（量数轮 `s325_20260916_spark1`/`s325_20260916_def1`；基线更新后收口轮
+#   `s325_20260916_spark2`/`s325_20260916_def2`）：量数轮实测 spark 303（DRIFT 基线 293）、
+#   analytics 949（`93+350+163+93+93+157`）、三棵树 1068；收口轮应 MATCH。
+$BaselineSpark = 303
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

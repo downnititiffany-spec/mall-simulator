@@ -22,6 +22,9 @@ import scala.collection.mutable.ListBuffer
  *  8. ADS_GMV_NET_SALE_INVARIANT BLOCKING ADS 大盘同归属口径不变量 GMV≥净销售≥0（S3-22，含 NULL 判不通过）
  *  9. ADS_UV_PV_INVARIANT        BLOCKING ADS 大盘同过滤条件不变量 UV≤PV（S3-23；NULL 归规则 3，
  *     本规则不重复判定，见伴生对象方法注释）
+ * 10. DWS_UV_PV_INVARIANT       BLOCKING DWS 商品×日期行为宽表逐行同过滤条件不变量 UV≤PV（S3-25；
+ *     第 9 项在 DWS 层的**同型站点**，独立成码同 line 512。该表无 snapshot 维度 ⇒ 作用域＝本次
+ *     dt 分区；该表在本层**没有**直接的关键列非空所有者 ⇒ NULL 由本规则自判为不通过）
  *
  * 任一 BLOCKING 未通过 → JobResult.status=FAILED（JobRunner 退出码 1）→ 编排方置阶段失败、
  * **不执行 PUBLISH_METRIC**，正式分区与旧 ACTIVE 快照保持不变（§16.3）。
@@ -136,6 +139,11 @@ class AdsQualityJob extends WarehouseJob {
     // 规则 9：ADS 大盘**同过滤条件**不变量 UV≤PV（S3-23，设计 §12.3 第 9 项 line 507）；
     // 判据与比对逻辑在伴生对象（可行为验证），本作业只负责把结论放进 JobResult.checks
     checks += AdsQualityJob.uvPvInvariantCheck(spark, ns, sid, dt)
+
+    // 规则 9 的 **DWS 同型站点**：dws_product_behavior_day 逐商品**同过滤条件**不变量 UV≤PV
+    // （S3-25，同 line 507）。与上一行是两处独立站点、两个独立码（line 512 不得合并）：
+    // 该表按 product_id×category_id 逐行、且无 snapshot 维度（作用域＝本次 dt 分区）
+    checks += AdsQualityJob.dwsUvPvInvariantCheck(spark, ns, dt)
 
     val all = checks.toList
     val blockingFailed = all.filter(c => c.severity == "BLOCKING" && !c.passed)
@@ -382,6 +390,81 @@ object AdsQualityJob {
         checked, bad, "uv ≤ pv（同过滤条件 behavior_type = 'view'）", "BLOCKING", passed = false,
         s"违反同过滤条件不变量 $bad/$checked 行（去重浏览用户数 > 浏览次数，两列已取自不同过滤条件）: " +
           shown + (if (bad > 6L) "…" else ""))
+    }
+  }
+
+  /**
+   * 规则 9 的 **DWS 同型站点**「逐商品同过滤条件不变量 UV ≤ PV」（S3-25，
+   * 设计 §12.3 第 9 项 line 507；独立成码依据同 line 512）。
+   *
+   * 为什么需要它（实测缺口，不是推断）：`dws_product_behavior_day` 是 `ads_hot_product`
+   * （`1.0*LOG1P(pv)+2.0*LOG1P(fav)+3.0*LOG1P(cart)+5.0*LOG1P(buy)`，`AdsSql` 实测读本表）与
+   * `ads_product_conversion`（`b.uv AS pv_users`，实测直连）的**唯一直接来源**；而在本规则之前，
+   * 全仓 `git grep -E "uv *<=? *pv|pv *>=? *uv"` 在 `spark-jobs`/`analytics-server` 里
+   * **只命中 S3-23 规格中的注释**，本表的 uv≤pv **在产质量门里没有任何守卫**
+   * （`keyPredicates` 只覆盖 ADS 暂存表）。故 ADS 大盘那一行绿，并不能证明商品逐行也绿 ——
+   * 两处是**不同粒度、不同表、不同分区维度**的两次独立判定，不能合并成一个码。
+   *
+   * 为什么是构造性不变量（成立前提，须与生产 SQL 同步）：`DwsSql.productBehaviorDay` 里
+   * `pv = SUM(CASE WHEN b.behavior_type = 'view' THEN 1 ELSE 0 END)`、
+   * `uv = COUNT(DISTINCT CASE WHEN b.behavior_type = 'view' THEN b.user_id END)` ——
+   * 两列出自**同一个**过滤条件（同表别名 b、同 `b.dt = '$dt'`），同条件下的去重用户数
+   * 不可能超过次数。因此 `uv > pv` 只可能来自「两列被改成取不同过滤条件/不同来源」的口径破坏。
+   * 该前提由 `DwsUvPvInvariantSpec` 的结构守卫用例静态钉住（生产 SQL 一改即失败）。
+   *
+   * 作用域：**本次 dt 分区**。该表在 `LocalSchemaInitJob` 里是
+   * `(product_id, category_id, pv, uv, fav, cart, buy) PARTITIONED BY (dt)` —— **没有 snapshot 维度**，
+   * 因此本规则不接收 `sid`，与既有的 `ADS_DWS_FUNNEL_RECONCILE`（同 dt 读 DWS）作用域同型；
+   * 跨快照隔离由 ADS 侧规则负责（本规则不冒充）。
+   *
+   * 空值规则：`pv`/`uv` 任一为 NULL ⇒ **不通过**。理由：ADS 站点上这两列的 NULL 有**直接**
+   * 唯一所有者（`keyPredicates` 对大盘表的谓词含 `pv IS NULL OR uv IS NULL`，BLOCKING），
+   * 故 S3-23 的 ADS 规则不重复判定；但**本表没有**这样的所有者，按唯一所有者原则由本码承担。
+   * 三值逻辑下 `uv > pv` 在 NULL 时求值为 NULL，若不显式判 NULL，「两列整体未计算」会被静默放行
+   * （不可证明的不变量不得放行）。用例「NULL 判不通过」+「本表无既有关键列非空谓词」把这口径钉住。
+   *
+   * 空分区：本规则**不**把 `checked = 0` 判为不通过 —— 「存在性/非空」在本链路另有所有者
+   * （`ADS_STAGING_PRESENT` 要求 8 张暂存表本次快照分区行数 > 0，档位 BLOCKING；商品转化 ADS
+   * 直接由本表产出，本表空 ⇒ 暂存空 ⇒ 既有阻断），本规则只判不变量（避免同一缺陷双重阻断）。
+   * 用例「空分区不冒充违反」+「ADS 存在性守卫覆盖派生表」把这边界钉住。
+   *
+   * `detail`：通过时给出被检查行数与两列最大值（证明判据看到了真数据，而非空分区跑绿）；
+   * 不通过时给出最多 6 行违反行的 product_id 与两列实际值（NULL 显示为 `NULL`）。
+   */
+  def dwsUvPvInvariantCheck(spark: SparkSession, ns: WarehouseNamespace, dt: String): QualityCheck = {
+    val table = s"${ns.dws}.dws_product_behavior_day"
+    val where = s"dt = '$dt'"
+    // 违反式显式把 NULL 写进谓词：`uv > pv` 在 NULL 时求值为 NULL，
+    // 若不显式判 NULL，空值行会**静默通过**（这正是本规则最容易写错的地方）
+    val violation = "(pv IS NULL OR uv IS NULL OR uv > pv)"
+
+    val agg = spark.sql(
+      s"SELECT COUNT(*) AS checked, " +
+        s"SUM(CASE WHEN $violation THEN 1 ELSE 0 END) AS bad, " +
+        s"MAX(pv) AS max_pv, MAX(uv) AS max_uv " +
+        s"FROM $table WHERE $where").collect()(0)
+    val checked = agg.getLong(0)
+    val bad = Option(agg.get(1)).map(_.toString.toLong).getOrElse(0L)
+
+    def num(v: Any): String = Option(v).map(_.toString).getOrElse("NULL")
+
+    if (bad == 0L) {
+      QualityCheck("DWS_UV_PV_INVARIANT", "DWS", table,
+        checked, 0L, "uv ≤ pv（同过滤条件 behavior_type = 'view'，逐 product_id×category_id 行）",
+        "BLOCKING", passed = true,
+        s"$checked 行均满足 uv ≤ pv" +
+          s"（pv 最大=${num(agg.get(2))}, uv 最大=${num(agg.get(3))}；" +
+          s"作用域＝dt=$dt 分区，该表无 snapshot 维度）")
+    } else {
+      val rows = spark.sql(
+        s"SELECT product_id, pv, uv FROM $table WHERE $where AND $violation LIMIT 6").collect()
+      val shown = rows.map(r =>
+        s"product_id=${num(r.get(0))}/pv=${num(r.get(1))}/uv=${num(r.get(2))}").mkString(",")
+      QualityCheck("DWS_UV_PV_INVARIANT", "DWS", table,
+        checked, bad, "uv ≤ pv（同过滤条件 behavior_type = 'view'，逐 product_id×category_id 行）",
+        "BLOCKING", passed = false,
+        s"违反同过滤条件不变量 $bad/$checked 行（去重浏览用户数 > 浏览次数，或 pv/uv 为 NULL；" +
+          s"两列已取自不同过滤条件或整体未计算）: " + shown + (if (bad > 6L) "…" else ""))
     }
   }
 }

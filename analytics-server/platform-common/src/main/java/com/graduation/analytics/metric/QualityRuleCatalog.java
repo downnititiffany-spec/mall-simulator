@@ -95,6 +95,18 @@ public final class QualityRuleCatalog {
      * 而 {@code dau} 是全事件去重用户数（不同过滤条件），不得纳入本码。</p>
      */
     public static final String RULE_ADS_UV_PV_INVARIANT = "ADS_UV_PV_INVARIANT";
+    /**
+     * DWS 商品×日期行为宽表**同过滤条件**不变量「UV ≤ PV」（S3-25）—— 第 9 项在 DWS 层的
+     * **同型站点**，与 {@link #RULE_ADS_UV_PV_INVARIANT} 是**两处独立站点、两个独立码**。
+     *
+     * <p>同型不等于同码：ADS 大盘是「一次聚合成一行」，DWS 宽表是**按
+     * {@code product_id × category_id} 分组的逐行**结果，粒度、表、分区维度都不同，
+     * 一处通过不能证明另一处通过（设计 §12.3 line 512：不同校验不得合并）。
+     * 「同过滤条件」的作用域判据在 DWS 侧由 {@code DwsSql.productBehaviorDay} 的
+     * `pv`（次数）/`uv`（{@code COUNT(DISTINCT user_id)}）两行共同来自
+     * {@code behavior_type = 'view'} 这一事实保证。</p>
+     */
+    public static final String RULE_DWS_UV_PV_INVARIANT = "DWS_UV_PV_INVARIANT";
 
     /** 发布层（Spark pub / mxp）规则码。 */
     public static final String RULE_PUB_STAGING_READY = "PUB_STAGING_READY";
@@ -198,6 +210,17 @@ public final class QualityRuleCatalog {
                             + "（不同过滤条件），dau > uv 合法、不纳入本码 —— 这正是「同过滤条件」四字的作用域。"
                             + "pv/uv 为 NULL 由既有的 ADS_STAGING_KEY_NOT_NULL(BLOCKING) 唯一判定，"
                             + "本码不重复判定（避免同一缺陷被两条规则重复计数/双重阻断）；"
+                            + "只判不变量、不改写数据"),
+            fixed(RULE_DWS_UV_PV_INVARIANT, STAGE_DWS, RuleSeverity.BLOCKING,
+                    "DWS 商品×日期行为宽表同过滤条件不变量（设计 §12.3 第 9 项 L507 的 DWS 同型站点，S3-25）："
+                            + "UV(去重浏览用户) ≤ PV(浏览次数)。判据表＝dws_product_behavior_day 的本次 dt 分区"
+                            + "（该表无 snapshot 维度，与 ADS_DWS_FUNNEL_RECONCILE 读 DWS 的作用域同型）；"
+                            + "DwsSql.productBehaviorDay 里两列由同一个 behavior_type = 'view' 过滤条件、同表同 dt 产出，"
+                            + "按 product_id×category_id 分组后逐行可判，故不设阈值（thresholdJson 为空）。"
+                            + "NULL 归本码自判：该表在 ADS 暂存侧之外**没有**直接的关键列非空守卫"
+                            + "（AdsQualityJob.keyPredicates 只覆盖 ADS 暂存表），按唯一所有者原则由本码承担，"
+                            + "任一列为 NULL 即不通过（不可证明的不变量不得放行）。"
+                            + "与 ADS 侧 ADS_UV_PV_INVARIANT 是两处独立站点、两个独立码，不得互相替代（同 line 512）；"
                             + "只判不变量、不改写数据"),
 
             fixed(RULE_PUB_STAGING_READY, STAGE_PUBLISH, RuleSeverity.BLOCKING, "暂存分区未就绪不得切换正式分区"),
