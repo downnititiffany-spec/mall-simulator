@@ -235,7 +235,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       }
     }
 
-    "dws_region_sale_day：region=城市等级的 buyer/order/sale（§9.2 L319）" in {
+    "dws_region_sale_day：region=城市等级的 buyer/order/sale/net（§9.2 L319）" in {
       cancelIfNoUsW()
       withClue(s"oracle=${cap.oracle.region} 实测=${cap.measured.region}：") {
         cap.measured.region should be(cap.oracle.region)
@@ -601,7 +601,8 @@ object DwsAdsChainExecSpec {
                                saleAmount: BigDecimal, buyerCount: Long)
   final case class UserPeriod(userId: Long, lastBuyDate: String, orderCount: Long,
                               saleAmount: BigDecimal, periodStart: String, periodEnd: String)
-  final case class RegionSale(region: String, buyerCount: Long, orderCount: Long, saleAmount: BigDecimal)
+  final case class RegionSale(region: String, buyerCount: Long, orderCount: Long, saleAmount: BigDecimal,
+                              netSaleAmount: BigDecimal)
   final case class Funnel(categoryId: Long, channel: String, viewUsers: Long, intentUsers: Long,
                           orderUsers: Long, payUsers: Long, intentRate: Option[BigDecimal],
                           orderRate: Option[BigDecimal], payRate: Option[BigDecimal],
@@ -1017,7 +1018,7 @@ object DwsAdsChainExecSpec {
 
     val region = paid.groupBy(_.cityLevel).toSeq.sortBy(_._1).map { case (r, rs) =>
       RegionSale(r, rs.map(_.userId).distinct.size.toLong, rs.map(_.orderId).distinct.size.toLong,
-        rs.map(_.amount).sum)
+        rs.map(_.amount).sum, rs.map(_.amount).sum - rs.map(_.refundAmount).sum)
     }
 
     def rate(num: Long, den: Long): Option[BigDecimal] =
@@ -1072,9 +1073,10 @@ object DwsAdsChainExecSpec {
       .map(r => UserPeriod(r(0).toLong, r(1), r(2).toLong, BigDecimal(r(3)), r(4), r(5)))
 
     val region = readStrings(spark,
-      s"""SELECT region, CAST(buyer_count AS STRING), CAST(order_count AS STRING), CAST(sale_amount AS STRING)
+      s"""SELECT region, CAST(buyer_count AS STRING), CAST(order_count AS STRING), CAST(sale_amount AS STRING),
+         |       CAST(net_sale_amount AS STRING)
          |FROM ${Ns.dws}.dws_region_sale_day WHERE dt='$dt' ORDER BY region""".stripMargin)
-      .map(r => RegionSale(r(0), r(1).toLong, r(2).toLong, BigDecimal(r(3))))
+      .map(r => RegionSale(r(0), r(1).toLong, r(2).toLong, BigDecimal(r(3)), BigDecimal(r(4))))
 
     val funnel = readStrings(spark,
       s"""SELECT CAST(category_id AS STRING), channel, CAST(view_users AS STRING),

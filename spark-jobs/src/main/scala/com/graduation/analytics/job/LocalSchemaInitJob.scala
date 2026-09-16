@@ -122,7 +122,8 @@ object LocalSchemaInitJob {
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.dws, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_region_sale_day (
-          region STRING, buyer_count BIGINT, order_count BIGINT, sale_amount DECIMAL(18,2))
+          region STRING, buyer_count BIGINT, order_count BIGINT, sale_amount DECIMAL(18,2),
+          net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     (ns.ads, s"""

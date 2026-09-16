@@ -80,7 +80,7 @@ class DwsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
       "valid_order_count" -> "BIGINT"),
     "dws_region_sale_day" -> Seq(
       "region" -> "STRING", "buyer_count" -> "BIGINT", "order_count" -> "BIGINT",
-      "sale_amount" -> "DECIMAL(18,2)")
+      "sale_amount" -> "DECIMAL(18,2)", "net_sale_amount" -> "DECIMAL(18,2)")
   )
 
   // ── 夹具 ────────────────────────────────────────────────────────────────

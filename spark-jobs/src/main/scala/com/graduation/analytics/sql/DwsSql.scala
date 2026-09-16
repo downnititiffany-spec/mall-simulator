@@ -167,7 +167,15 @@ object DwsSql {
       |GROUP BY user_id
       |""".stripMargin
 
-  /** 地区×日期销售汇总（§12.1 第 7 张）：城市等级 = region */
+  /**
+   * 地区×日期销售汇总（§12.1 第 7 张）：城市等级 = region。
+   *
+   * `net_sale_amount`（S3-12 追加，设计 §12.1 L319「sale/net/order/buyer」）与 `tradeDay` **同式**：
+   * 分子 = 已支付行金额求和 − 已支付行退款求和，退款 NULL / 无退款 ⇒ `COALESCE(..., 0)`；
+   * 未支付行（`final_paid_flag <> 1`）在 `WHERE` 就整行排除，其 `refund_amount` 不得计入退款。
+   * 设计 §12.1 L455：金额求和必须**包含** `unknown`（未匹配地区行保留 `region = 'unknown'`，不得丢弃）。
+   * 列追加在表末尾（Hive 侧只能 `ADD COLUMNS` 追加，且本语句按位置写入，列序必须与 DDL 一致）。
+   */
   def regionSaleDay(ns: WarehouseNamespace, dt: String): String =
     s"""
       |INSERT OVERWRITE TABLE ${ns.dws}.dws_region_sale_day PARTITION(dt = '$dt')
@@ -175,7 +183,8 @@ object DwsSql {
       |  COALESCE(city_level, 'unknown') AS region,
       |  COUNT(DISTINCT user_id) AS buyer_count,
       |  COUNT(DISTINCT order_id) AS order_count,
-      |  SUM(amount) AS sale_amount
+      |  SUM(amount) AS sale_amount,
+      |  SUM(amount) - COALESCE(SUM(refund_amount), 0) AS net_sale_amount
       |FROM ${ns.dwd}.dwd_order_detail
       |WHERE dt = '$dt' AND final_paid_flag = 1
       |GROUP BY COALESCE(city_level, 'unknown')

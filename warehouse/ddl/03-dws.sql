@@ -103,7 +103,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws.dws_region_sale_day 
     region      STRING COMMENT '城市等级',
     buyer_count BIGINT,
     order_count BIGINT,
-    sale_amount DECIMAL(18,2)
+    sale_amount DECIMAL(18,2),
+    net_sale_amount DECIMAL(18,2) COMMENT '净销售额 = 已支付金额 − 已支付退款（与 dws_trade_day 同式，S3-12）'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

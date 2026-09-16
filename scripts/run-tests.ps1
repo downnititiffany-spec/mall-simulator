@@ -184,7 +184,19 @@ $BaselineDefault = [ordered]@{
 #   ⇒ 按参考副本建表会静默串列）。spark 侧新增 DwsSchemaOwnerSpec（7 条：参考副本↔所有者逐列（名/类型/序）、
 #   分区列、禁 ALTER 旁路、写入投影列序、每表恰好一条 INSERT OVERWRITE、冻结快照、表集一致）
 #   ⇒ spark 233→240。纯 Spark 测试侧 + `warehouse/ddl/03-dws.sql` 文本，未连库、未改任何 Flyway 迁移。
-$BaselineSpark = 240
+# S3-12：`dws_region_sale_day` 补 **净销售额** `net_sale_amount`（设计 §12.1 **L319** 逐字
+#   「source+region+dt，sale/net/order/buyer」；同表 §12.1 L455「分类/地区金额求和必须包含 unknown」）。
+#   口径与 `dws_trade_day` **同式**：已支付行（`WHERE final_paid_flag = 1`）金额求和 − 已支付行退款求和，
+#   退款 NULL/无退款 ⇒ `COALESCE(SUM(refund_amount), 0)`；列**追加在表末尾**（Hive 只能 ADD COLUMNS 追加，
+#   语句按位置写入）⇒ 四处同步（写入投影 DwsSql.regionSaleDay / 唯一所有者 LocalSchemaInitJob /
+#   参考副本 warehouse/ddl/03-dws.sql / 冻结快照 DwsSchemaOwnerSpec.Frozen）。
+#   spark 侧新增 DwsRegionNetSaleSpec（4 条：逐地区 net = 销售 − 已支付退款，未支付行整行不计（含
+#     部分/全额退款、退款 NULL 三种夹具行，若违法累计未支付退款则合计 190.00 → −310.00）；
+#     Σ各地区（含 unknown）sale/net = dws_trade_day 同 dt 值且排除 unknown 即不等（L455 非空转）；
+#     净额无 NULL/负数且退款全 NULL 地区 net = sale；运行期表形含 net_sale_amount）
+#   + DwsAdsChainExecSpec 的 region oracle/读回补 net（既有用例内加断言，条数不变）
+#   ⇒ spark 240→244。纯 Spark 测试侧 + `warehouse/ddl/03-dws.sql` 文本，未连库、未改任何 Flyway 迁移。
+$BaselineSpark = 244
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
