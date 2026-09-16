@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 944
+  'analytics-server'        = 945
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -340,7 +340,36 @@ $BaselineDefault = [ordered]@{
 #   设计 §12.3 的 5/6/9/11 项与第 10 项剩余部分**仍未实现**（不得称「12 项已完成」）。
 #   门禁实测（RunId `s322_20260916_def` / `s322_20260916_spark`；基线更新前先量到 944/284 真值）：
 #   三棵树 1063 = analytics 944 + mall 13 + generator 106；唯一红同上（已登记环境性红）。
-$BaselineSpark = 284
+# S3-23：**ADS 大盘同过滤条件不变量**「UV ≤ PV」（设计 §12.3 质量 12 项**第 9 项**，
+#   逐字锚点 **L507**；S3-22 已登记本项为「未实现、下一优先」，本轮承接）。
+#   开工前实测：起点提交 `2540bd2` 全仓 `uv *<=? *pv` / `pv *>=? *uv` **0 命中**；
+#   `AdsQualityJob.keyPredicates` 对大盘表**只**判 `pv/uv/dau` 非空（BLOCKING），
+#   两列之间**无任何不等式守卫** ⇒ 缺口真实。
+#   **「同过滤条件」是作用域判据**：`AdsSql.operationOverview` L77-78 两列同取
+#   `CASE WHEN behavior_type = 'view'`（同表同 dt）⇒ 不变量构造性成立；
+#   而同表 `dau = COUNT(DISTINCT user_id)`（L79，**全事件**）过滤条件不同 ⇒
+#   `dau > uv` **合法**，**不得**纳入判据（新增用例把该边界钉死）。
+#   加性改动：新规则码 `ADS_UV_PV_INVARIANT`（`BLOCKING`、`FIXED`、threshold NULL、
+#   `source_scope=*`、version 1）+ **加性**迁移 `V27__quality_rule_ads_uv_pv_invariant.sql`
+#   （单条 `INSERT IGNORE`；V19/V25/V26 **字节未改** ⇒ 门③不触）+ 在产判定
+#   `AdsQualityJob.uvPvInvariantCheck`（作用域=本次快照+本次 dt；违反式 `uv > pv` 行数须为 0；
+#   **NULL 不判** —— 唯一所有者是既有 `ADS_STAGING_KEY_NOT_NULL`（同层 BLOCKING），
+#   与 S3-22 第 8 项「金额两列当时无任何非空守卫故自行判 NULL 不通过」的差异已在登记文件 §3④ 说明；
+#   **只判不改**；未新增/未改任何列与既有规则）。
+#   新测试：`AdsUvPvInvariantSpec` +9（真链路 `pv=3/uv=2` 通过且先钉判别力 / `uv>pv` 命中给出实际值 /
+#   `uv==pv` 通过 / `0==0` 通过 / 快照隔离 / 只判不改 / `pv` NULL 时本规则不判但非空规则守卫仍在 /
+#   `dau>uv` 必须通过 / 生产 SQL 两列过滤谓词逐字相等的结构守卫）；
+#   守卫同步：`RuleSeverityTest`（码集合 36→37，**方法数不变**）、
+#   `QualityRuleVersionMigrationScriptTest`（+`v27OnlyAppendsSeedRows`、目录 38→39）、
+#   `FixtureWriteShapeSpec`（写入点清单加本 spec，3 条）、`DwsAdsChainExecSpec`（dqc ≥9 且含新码）、
+#   `SourceRegistryMigrationMySqlIT`（迁移清单 +V27，该 IT 属 D 类真库用例本轮**未运行**）。
+#   ⇒ analytics-server 944→945（platform-app 155→156，platform-common 仍 93），spark 284→293。
+#   边界：**未测**真实 `spark-submit`/Hive metastore、V27 在真库的执行、真实 HTTP/页面呈现；
+#   `dws_product_behavior_day` 的同型不变量（同过滤条件 pv/uv，DWS 侧）**本轮未落**；
+#   设计 §12.3 的 5/6/11 项与第 10 项剩余部分**仍未实现**（不得称「12 项已完成」）。
+#   门禁实测（RunId `s323_20260916_def` / `s323_20260916_spark`；基线更新前先量到 945/293 真值）：
+#   三棵树 1064 = analytics 945 + mall 13 + generator 106；唯一红同上（已登记环境性红）。
+$BaselineSpark = 293
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

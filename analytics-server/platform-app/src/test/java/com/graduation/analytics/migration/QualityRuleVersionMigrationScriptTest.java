@@ -74,8 +74,18 @@ class QualityRuleVersionMigrationScriptTest {
      */
     private static final String V26 = "V26__quality_rule_ads_gmv_net_sale_invariant.sql";
 
+    /**
+     * 追加式种子迁移（S3-23 / F-56）：`ADS_UV_PV_INVARIANT` 一行的登记。
+     *
+     * <p>用途：设计 §12.3 第 9 项要求「同过滤条件 UV ≤ PV」，而既有 ADS 阻断规则只覆盖
+     * 关键列**非空**（`pv`/`uv`/`dau`）、暂存存在性、漏斗对账与金额不变量，**没有任何规则**
+     * 判 `pv`/`uv` 两列之间的不等式。新规则的登记同样**不得**改已发布的 V19/V25/V26（门③），
+     * 只能由新的加性迁移追加。</p>
+     */
+    private static final String V27 = "V27__quality_rule_ads_uv_pv_invariant.sql";
+
     /** 承载种子的迁移（顺序无关，对账取并集） */
-    private static final List<String> SEED_SCRIPTS = List.of(V19, V23, V25, V26);
+    private static final List<String> SEED_SCRIPTS = List.of(V19, V23, V25, V26, V27);
 
     /** V20 的四个新列（顺序即脚本内的声明顺序）。 */
     private static final List<String> V20_COLUMNS = List.of(
@@ -92,7 +102,7 @@ class QualityRuleVersionMigrationScriptTest {
                     + "\\s*'([0-9a-f]{64})'\\s*\\)");
 
     @Test
-    @DisplayName("迁移号由总控分配且不冲突：V19/V20/V23/V25/V26 存在，且 db/meta 内号位不重复")
+    @DisplayName("迁移号由总控分配且不冲突：V19/V20/V23/V25/V26/V27 存在，且 db/meta 内号位不重复")
     void migrationVersionsAreAssignedAndUnique() {
         List<Integer> versions = scriptVersions();
         assertThat(versions).as("db/meta 下应有迁移脚本").isNotEmpty();
@@ -111,11 +121,38 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(versions)
                 .as("S3-22 的加性种子迁移号必须存在（仅追加一行规则定义）")
                 .contains(26);
+        assertThat(versions)
+                .as("S3-23 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(27);
         assertThat(Files.isRegularFile(META_DIR.resolve(V19))).as("%s 必须存在", V19).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V20))).as("%s 必须存在", V20).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V23))).as("%s 必须存在", V23).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V25))).as("%s 必须存在", V25).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V26))).as("%s 必须存在", V26).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V27))).as("%s 必须存在", V27).isTrue();
+    }
+
+    @Test
+    @DisplayName("V27 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v27OnlyAppendsSeedRows() {
+        String sql = code(V27);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V27 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V27 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V27))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
     }
 
     @Test
@@ -267,13 +304,13 @@ class QualityRuleVersionMigrationScriptTest {
     }
 
     @Test
-    @DisplayName("种子（V19+V23+V25+V26 并集）逐字段等于 Java 目录：38 行、version 全 1、档位/模式/阈值/指纹零漂移")
+    @DisplayName("种子（V19+V23+V25+V26+V27 并集）逐字段等于 Java 目录：39 行、version 全 1、档位/模式/阈值/指纹零漂移")
     void v19SeedMatchesTheJavaCatalogExactly() {
         List<QualityRuleDefinition> definitions = QualityRuleCatalog.DEFAULT.definitions();
         assertThat(definitions)
-                .as("目录契约全集应为 38 条（V19 的 35 条 + V23 追加 1 条 + V25 追加 1 条 + V26 追加 1 条；"
-                        + "本用例是 SQL 与 Java 的对账点，改数必在此处变红）")
-                .hasSize(38);
+                .as("目录契约全集应为 39 条（V19 的 35 条 + V23 追加 1 条 + V25 追加 1 条 + V26 追加 1 条"
+                        + " + V27 追加 1 条；本用例是 SQL 与 Java 的对账点，改数必在此处变红）")
+                .hasSize(39);
 
         List<String> seed = seedRows();
         assertThat(seed)
@@ -370,7 +407,7 @@ class QualityRuleVersionMigrationScriptTest {
             rows.addAll(seedRowsOf(script));
         }
         assertThat(rows)
-                .as("种子并集（%s）应解析出 38 行；解析结果说明格式已被改动", SEED_SCRIPTS)
+                .as("种子并集（%s）应解析出 39 行；解析结果说明格式已被改动", SEED_SCRIPTS)
                 .isNotEmpty();
         return rows;
     }

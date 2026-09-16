@@ -1,0 +1,79 @@
+-- =====================================================================
+-- V27: 追加一条质量规则定义 —— `ADS_UV_PV_INVARIANT`（F-56 / S3-23）
+--
+-- 依据（逐字）：设计 §12.3「质量12项」第 9 项 line 507「同过滤条件UV≤PV。」；
+--   同节 line 512「每条规则记录作用域、阈值、版本、阶段、实际值、passed、原始/生效严重度。
+--   付款 vs 订单、订单项公式、DWD/DWS 对账三者独立，不能用一个 AMOUNT_RECONCILE 覆盖。」
+--   （指导书 §7 阶段 3 line 148「每个指标固定粒度、分子分母、时间窗口、金额/退款口径、
+--     空值规则和版本」——「分子分母」对本项即 pv/uv 两列的来源必须同口径。）
+--   （落地前该缺口登记于 S3-22 的 §12.3 12 项覆盖核对表
+--     `docs/acceptance/s3-22-ads-gmv-net-sale-20260916/QUALITY-RULES-12-COVERAGE-20260916.md`：
+--     第 9 项「未实现」，且在 `spark-jobs`/`analytics-server` 全量 grep 中
+--     「uv ≤ pv」类断言 **0 命中**；`ads_operation_overview` 的关键列阻断断言只覆盖
+--     `pv`/`uv`/`dau` **非空**，两列之间的不变量在**在产质量门里没有任何守卫**。）
+--
+-- 「同过滤条件」是本规则的**作用域判据**，不是修饰词（实测事实）：
+--   `AdsSql.operationOverview` 中 `pv = COUNT(CASE WHEN behavior_type = 'view' THEN 1 END)`、
+--   `uv = COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END)` —— 两列出自
+--   **同一个**过滤条件（同表 `dwd_user_behavior_detail`、同 dt），故 `uv ≤ pv` 是构造性不变量。
+--   同表另有 `dau = COUNT(DISTINCT user_id)`（**全事件**去重用户数，属不同过滤条件），
+--   `dau > uv` 完全合法，**不得**纳入本规则。该前提由 `AdsUvPvInvariantSpec` 的结构守卫
+--   用例静态钉住（生产 SQL 若把两列改成不同过滤条件，该用例即失败），不是只写在注释里。
+--
+-- 为什么**新增迁移**而不是改 V19/V25/V26：
+--   V19、V25、V26 都是**已发布**的迁移（F-88 / F-43 / F-55），其内容按硬约束不得再改
+--   （改已发布迁移 = 决策门③）；且本规则与既有 ADS 规则的作用域两两不同、语义不可合并：
+--   `ADS_STAGING_KEY_NOT_NULL` 判「关键列非空」、`ADS_DWS_FUNNEL_RECONCILE` /
+--   `ADS_DWS_FUNNEL_RATE_RECONCILE` 判**跨层**一致性、`ADS_GMV_NET_SALE_INVARIANT` 判**金额**
+--   同归属口径不变量，本规则判**浏览口径**同过滤条件不变量（同一行的另两列之间）——
+--   四者互相不可替代（line 512）。新规则码必须**先登记再产出**：§7.3.1 line 524 规定未登记
+--   规则码一律「停止发布并报未登记规则」，若只加 Java 目录不落库，新码第一次产出结果就会被
+--   读侧判为未登记而整链翻红。故按「一次迁移一件事」追加一条**只插一行**的加性迁移。
+--
+-- 本迁移做什么（可逐条核对，全文无第二条语句）：
+--   1) `INSERT IGNORE` 一行 `(rule_code, version, source_scope, stage, severity, severity_mode,
+--      threshold_json, enabled, effective_from, effective_to, checksum)`。
+--   2) **不建表、不改列、不删行、不改任何既有行的档位或阈值**；对已手工登记过同键行的库幂等。
+--
+-- 档位为何是 BLOCKING（而不是 WARN/ERROR）：`pv`/`uv` 是页面与指标库的**基础计数分母**
+--   （转化率、人均浏览、浏览→支付漏斗等结论都以它们为分子/分母）。一旦 `uv > pv`，
+--   两列已明确取自**不同过滤条件**，则所有以「浏览量/浏览人数」为口径的结论整体不可信，
+--   而 ADS 暂存存在性、关键列非空、金额不变量可能同时全绿 —— 只判非空与金额无法发现本类破坏。
+--   `threshold_json` 留 NULL：不变量无阈值可调（放宽阈值 = 把口径破坏放行）。
+--   设计 line 508「宽松口径异常不一概作为阻断规则」说的是第 10 项「支付/浏览用户比及 cohort
+--   解释」这类**跨口径比率**，与本项的同口径不变量不是一回事，故不援引为放宽依据。
+--
+-- 空值规则为何**不**在本规则内判：`pv`/`uv` 任一为 NULL 时 `uv > pv` 求值为 NULL（三值逻辑），
+--   本规则不把它计为违反；NULL 的判定**唯一所有者**是同一次 job 内既有的
+--   `ADS_STAGING_KEY_NOT_NULL`（`AdsQualityJob.keyPredicates` 对 `ads_operation_overview`
+--   的谓词已含 `pv IS NULL OR uv IS NULL OR dau IS NULL`，档位 BLOCKING）——
+--   该行在**发布层面**依旧不放行，「不可证明者不得放行」未被削弱，且同一缺陷不被两条规则
+--   重复计数/双重阻断（唯一所有者原则）。`AdsUvPvInvariantSpec` 用「pv 为 NULL」用例把
+--   该唯一所有者钉住：谓词若被移除，该用例失败（届时本口径须重新裁决），而不是静默放行。
+--
+-- checksum 的算法（与 `QualityRuleDefinition#checksum()` 逐字节一致，不是另一套哈希）：
+--   SHA-256( ruleCode \x1f version \x1f sourceScope \x1f stage \x1f severity \x1f
+--            severityMode \x1f thresholdJson(缺省为空串) \x1f enabled(1/0) \x1f
+--            effectiveFrom(缺省为空串) \x1f effectiveTo(缺省为空串) )
+--   十六进制小写 64 字符；rationale 不参与（改错别字不应使指纹变化）。
+--   本行输入 = `ADS_UV_PV_INVARIANT` \x1f 1 \x1f `*` \x1f `ADS` \x1f `BLOCKING` \x1f
+--              `FIXED` \x1f `` \x1f 1 \x1f `` \x1f ``
+--   ⇒ 该行 checksum 与 `QualityRuleCatalog.DEFAULT` 里同名定义的 `checksum()` 必须相等，
+--     由 `QualityRuleVersionMigrationScriptTest` 逐行对账（零漂移）。
+--   （本值由独立脚本按上述算法重算，并先用 V26 的 `ADS_GMV_NET_SALE_INVARIANT`
+--     已知值 8326bc0d…1309a3 反向验证算法复现一致，再算本行。）
+--
+-- rationale 继续留 NULL：依据文本的唯一所有者在 Java 目录（`QualityRuleCatalog` 的 rationale
+--   字段）与 `RuleSeverity.rationale(String)`，本表只存契约（档位/模式/阈值/指纹）。
+--
+-- 【本迁移在真库上的执行状态：未执行】
+--   按本泳道硬约束（DB 冻结：不起停服务、不对 3306 执行任何 DDL/DML），本脚本只入版本库，
+--   未在任何正式库执行；「已在真库生效」不得由本文件推断。
+-- =====================================================================
+
+INSERT IGNORE INTO quality_rule_definition
+    (rule_code, version, source_scope, stage, severity, severity_mode,
+     threshold_json, enabled, effective_from, effective_to, checksum)
+VALUES
+    ('ADS_UV_PV_INVARIANT', 1, '*', 'ADS', 'BLOCKING', 'FIXED', NULL, 1, NULL, NULL,
+     '2140ab3ed572132f8a48b762eb8e7efc8e8e5667e086b668e51cd18cb382d296');

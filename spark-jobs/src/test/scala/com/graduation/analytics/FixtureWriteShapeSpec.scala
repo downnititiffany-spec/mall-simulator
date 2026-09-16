@@ -68,6 +68,11 @@ class FixtureWriteShapeSpec extends AnyFlatSpec with Matchers {
     // `dwd_user_behavior_detail`（大盘 pv/uv/dau 的来源）+ `dwd_order_detail`（GMV/净销售来源）
     // + `ads_operation_overview__staging`（制造违反形态的目标行，逐列命名的静态投影）。
     "AdsGmvNetSaleInvariantSpec.scala" -> 3,
+    // S3-23：规则 9「ADS 大盘同过滤条件不变量 UV≤PV」的行为 spec。同样三条写入点 =
+    // `dwd_user_behavior_detail`（pv/uv 来源，浏览序列构造判别力）+ `dwd_order_detail`
+    // （大盘 `t`/`r`/`u` 三个 DWS 子查询非空，否则大盘一行都不产出）+ 
+    // `ads_operation_overview__staging`（制造违反/边界形态的目标行，逐列命名的静态投影）。
+    "AdsUvPvInvariantSpec.scala" -> 3,
     "AdsHotProductHeatRuleVersionSpec.scala" -> 1,
     "AdsQualityRuleVersionSpec.scala" -> 3,
     "AdsRepeatRateSpec.scala" -> 2,

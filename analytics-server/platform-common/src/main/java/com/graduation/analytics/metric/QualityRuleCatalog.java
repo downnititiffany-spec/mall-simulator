@@ -86,6 +86,15 @@ public final class QualityRuleCatalog {
      * 二者不得合并（同 line 512）。</p>
      */
     public static final String RULE_ADS_GMV_NET_SALE_INVARIANT = "ADS_GMV_NET_SALE_INVARIANT";
+    /**
+     * ADS 大盘同过滤条件不变量「UV ≤ PV」（设计 §12.3 第 9 项 L507）。
+     *
+     * <p>与 {@link #RULE_ADS_GMV_NET_SALE_INVARIANT}（第 8 项）**分开的两个码**：
+     * line 512 要求不同校验不得合并，且「同过滤条件」是本规则的**作用域判据** ——
+     * 大盘的 {@code pv}/{@code uv} 出自同一个 {@code behavior_type = 'view'} 过滤条件，
+     * 而 {@code dau} 是全事件去重用户数（不同过滤条件），不得纳入本码。</p>
+     */
+    public static final String RULE_ADS_UV_PV_INVARIANT = "ADS_UV_PV_INVARIANT";
 
     /** 发布层（Spark pub / mxp）规则码。 */
     public static final String RULE_PUB_STAGING_READY = "PUB_STAGING_READY";
@@ -182,6 +191,14 @@ public final class QualityRuleCatalog {
                             + "两列由同一次聚合产出、可逐行判定，故不设阈值（thresholdJson 为空）。"
                             + "金额任一列为 NULL 判不通过（不可证明的不变量不得放行，与本表关键列非空口径一致）；"
                             + "只判不变量、不改写数据。第 9 项「UV≤PV」另立一码，二者不得互相替代"),
+            fixed(RULE_ADS_UV_PV_INVARIANT, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "ADS 大盘同过滤条件不变量（设计 §12.3 第 9 项 L507）：UV(去重浏览用户) ≤ PV(浏览次数)；"
+                            + "两列由生产 SQL 中同一个 behavior_type = 'view' 过滤条件产出、可逐行判定，"
+                            + "故不设阈值（thresholdJson 为空）。同表的 dau 是全事件去重用户数"
+                            + "（不同过滤条件），dau > uv 合法、不纳入本码 —— 这正是「同过滤条件」四字的作用域。"
+                            + "pv/uv 为 NULL 由既有的 ADS_STAGING_KEY_NOT_NULL(BLOCKING) 唯一判定，"
+                            + "本码不重复判定（避免同一缺陷被两条规则重复计数/双重阻断）；"
+                            + "只判不变量、不改写数据"),
 
             fixed(RULE_PUB_STAGING_READY, STAGE_PUBLISH, RuleSeverity.BLOCKING, "暂存分区未就绪不得切换正式分区"),
             fixed(RULE_PUB_FORMAL_PARTITION_MATCH, STAGE_PUBLISH, RuleSeverity.BLOCKING,

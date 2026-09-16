@@ -20,6 +20,8 @@ import scala.collection.mutable.ListBuffer
  *  6. ADS_DWS_FUNNEL_RECONCILE   BLOCKING  ADS 漏斗 stage 汇总 = DWS 漏斗对应列（§16.4 跨层对账）
  *  7. ADS_DWS_FUNNEL_RATE_RECONCILE BLOCKING ADS 漏斗率列 = DWS 漏斗全站行同 dt 率列（S3-10）
  *  8. ADS_GMV_NET_SALE_INVARIANT BLOCKING ADS 大盘同归属口径不变量 GMV≥净销售≥0（S3-22，含 NULL 判不通过）
+ *  9. ADS_UV_PV_INVARIANT        BLOCKING ADS 大盘同过滤条件不变量 UV≤PV（S3-23；NULL 归规则 3，
+ *     本规则不重复判定，见伴生对象方法注释）
  *
  * 任一 BLOCKING 未通过 → JobResult.status=FAILED（JobRunner 退出码 1）→ 编排方置阶段失败、
  * **不执行 PUBLISH_METRIC**，正式分区与旧 ACTIVE 快照保持不变（§16.3）。
@@ -130,6 +132,10 @@ class AdsQualityJob extends WarehouseJob {
     // 规则 8：ADS 大盘**同归属口径**不变量 GMV≥净销售≥0（S3-22，设计 §12.3 第 8 项 line 506）；
     // 判据与比对逻辑在伴生对象（可行为验证），本作业只负责把结论放进 JobResult.checks
     checks += AdsQualityJob.gmvNetSaleInvariantCheck(spark, ns, sid, dt)
+
+    // 规则 9：ADS 大盘**同过滤条件**不变量 UV≤PV（S3-23，设计 §12.3 第 9 项 line 507）；
+    // 判据与比对逻辑在伴生对象（可行为验证），本作业只负责把结论放进 JobResult.checks
+    checks += AdsQualityJob.uvPvInvariantCheck(spark, ns, sid, dt)
 
     val all = checks.toList
     val blockingFailed = all.filter(c => c.severity == "BLOCKING" && !c.passed)
@@ -314,6 +320,68 @@ object AdsQualityJob {
         checked, bad, "sale_amount ≥ net_sale_amount ≥ 0（NULL 判不通过）", "BLOCKING", passed = false,
         s"违反同归属口径不变量 $bad/$checked 行（净销售 > GMV，或金额为负，或金额列为 NULL）: $shown" +
           (if (bad > 6L) "…" else ""))
+    }
+  }
+
+  /**
+   * 规则 9「ADS 大盘**同过滤条件**不变量 UV≤PV」（S3-23，设计 §12.3 第 9 项 line 507，
+   * 独立成码依据同 line 512）。
+   *
+   * 为什么是构造性不变量（本规则的成立前提，须与生产 SQL 同步）：
+   * `AdsSql.operationOverview` 里 `pv = COUNT(CASE WHEN behavior_type = 'view' THEN 1 END)`、
+   * `uv = COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END)` —— 两列出自**同一个**
+   * 过滤条件（同表同 dt），同条件下的去重用户数不可能超过次数。因此 `uv > pv` 只可能来自
+   * 「两列被改成取不同过滤条件/不同来源」的口径破坏。这个前提由 `AdsUvPvInvariantSpec` 的
+   * 结构守卫用例静态钉住（生产 SQL 改了过滤条件即失败），不是只写在注释里。
+   *
+   * 作用域边界：同表的 `dau = COUNT(DISTINCT user_id)` 是**全事件**去重用户数，属**不同过滤条件**
+   * ⇒ `dau > uv` 合法，本规则不得牵连（用例「dau > uv」钉住该边界）；设计写「同过滤条件」
+   * 四个字防的正是把不同口径的两列拿来比。
+   *
+   * 空值规则：`pv`/`uv` 为 NULL 时 `uv > pv` 求值为 NULL，本规则**不**计为违反 —— NULL 的判定
+   * **唯一所有者**是同一次 job 内的 `ADS_STAGING_KEY_NOT_NULL`（`keyPredicates` 对大盘表的谓词
+   * 已含 `pv IS NULL … uv IS NULL`，档位 BLOCKING），该行在发布层面依旧不放行；
+   * 同一缺陷因此不被两条规则重复计数/双重阻断。用例「pv 为 NULL」把该唯一所有者钉住：
+   * 谓词若被移除即失败（届时本声明的口径须重新裁决）。
+   *
+   * 档位 BLOCKING：`uv > pv` 是口径破坏而非展示问题（与第 8 项、漏斗跨层对账同族）。
+   * 设计 L508「宽松口径异常不一概作为阻断规则」说的是第 10 项「支付/浏览用户比」这类
+   * **跨口径比率**，与本项的同口径不变量不是一回事，故不援引。
+   *
+   * `detail`：通过时给出被检查行数与两列实际值（证明判据看到了真数据，而非空分区跑绿）；
+   * 不通过时给出最多 6 行违反行的两列实际值。
+   */
+  def uvPvInvariantCheck(spark: SparkSession, ns: WarehouseNamespace,
+                         sid: String, dt: String): QualityCheck = {
+    val staging = AdsSql.staging(ns, "ads_operation_overview")
+    val where = s"snapshot_id = '$sid' AND dt = '$dt'"
+    // 判据只写不等式：NULL 行在此不命中（求值为 NULL⇒ELSE 0），由规则 3 承担（见上「空值规则」）
+    val violation = "uv > pv"
+
+    val agg = spark.sql(
+      s"SELECT COUNT(*) AS checked, " +
+        s"SUM(CASE WHEN $violation THEN 1 ELSE 0 END) AS bad, " +
+        s"MAX(pv) AS max_pv, MAX(uv) AS max_uv " +
+        s"FROM $staging WHERE $where").collect()(0)
+    val checked = agg.getLong(0)
+    val bad = Option(agg.get(1)).map(_.toString.toLong).getOrElse(0L)
+
+    def num(v: Any): String = Option(v).map(_.toString).getOrElse("NULL")
+
+    if (bad == 0L) {
+      QualityCheck("ADS_UV_PV_INVARIANT", "ADS_STAGING", staging,
+        checked, 0L, "uv ≤ pv（同过滤条件 behavior_type = 'view'）", "BLOCKING", passed = true,
+        s"$checked 行均满足 uv ≤ pv" +
+          s"（pv 最大=${num(agg.get(2))}, uv 最大=${num(agg.get(3))}；" +
+          s"本表按 dt 恒为单行；NULL 由 ADS_STAGING_KEY_NOT_NULL 判定，本规则不重复判定）")
+    } else {
+      val rows = spark.sql(
+        s"SELECT pv, uv FROM $staging WHERE $where AND $violation LIMIT 6").collect()
+      val shown = rows.map(r => s"pv=${num(r.get(0))}/uv=${num(r.get(1))}").mkString(",")
+      QualityCheck("ADS_UV_PV_INVARIANT", "ADS_STAGING", staging,
+        checked, bad, "uv ≤ pv（同过滤条件 behavior_type = 'view'）", "BLOCKING", passed = false,
+        s"违反同过滤条件不变量 $bad/$checked 行（去重浏览用户数 > 浏览次数，两列已取自不同过滤条件）: " +
+          shown + (if (bad > 6L) "…" else ""))
     }
   }
 }

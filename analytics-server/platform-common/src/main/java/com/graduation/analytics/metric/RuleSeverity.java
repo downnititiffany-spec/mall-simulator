@@ -39,7 +39,8 @@ import java.util.List;
  * 未登记码兜底 {@link #UNREGISTERED}。S3-10 新增
  * {@code ADS_DWS_FUNNEL_RATE_RECONCILE}（率列跨层对账）；S3-22 新增
  * {@code ADS_GMV_NET_SALE_INVARIANT}（ADS 大盘「GMV ≥ 净销售 ≥ 0」同归属口径不变量，
- * 设计 §12.3 第 8 项）。</p>
+ * 设计 §12.3 第 8 项）；S3-23 新增 {@code ADS_UV_PV_INVARIANT}（ADS 大盘「UV ≤ PV」同过滤条件
+ * 不变量，设计 §12.3 第 9 项；与第 8 项分开成码）。</p>
  */
 public final class RuleSeverity {
 
@@ -76,6 +77,7 @@ public final class RuleSeverity {
             "ADS_STAGING_PRESENT", "ADS_STAGING_SNAPSHOT_ISOLATION", "ADS_STAGING_KEY_NOT_NULL",
             "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE", "ADS_DWS_FUNNEL_RATE_RECONCILE",
             "ADS_GMV_NET_SALE_INVARIANT",
+            "ADS_UV_PV_INVARIANT",
             // 发布层（Spark pub / mxp）
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH", "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE",
@@ -146,6 +148,7 @@ public final class RuleSeverity {
             // 金额任一列为 NULL 同样阻断（不可证明的不变量不得放行）。只判不改、不修数据。
             // 第 9 项「UV ≤ PV」另立一码，二者独立（同 line 512）
             case "ADS_GMV_NET_SALE_INVARIANT" -> BLOCKING;
+            case "ADS_UV_PV_INVARIANT" -> BLOCKING;
 
             // ── 发布层（Spark pub / mxp）──
             case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
@@ -230,6 +233,12 @@ public final class RuleSeverity {
                     "ADS 大盘同归属口径不变量被破坏（设计 §12.3 第 8 项）：净销售 > GMV，或净销售/GMV 为负，"
                             + "或金额列为 NULL ⇒ GMV、净销售、退款率等结论整体不可信（净销售=支付−成功退款，"
                             + "设计 line 428）；只判不变量、不修数据；第 9 项「UV≤PV」另立一码";
+            case "ADS_UV_PV_INVARIANT" ->
+                    "ADS 大盘同过滤条件不变量被破坏（设计 §12.3 第 9 项 L507）：去重浏览用户数 > 浏览次数 "
+                            + "⇒ 两列已取自**不同过滤条件**（同过滤条件下的去重用户数不可能超过次数），"
+                            + "pv/uv 是转化率等结论的分子分母，口径一破则整组浏览类结论不可信；"
+                            + "dau 是全事件口径（不同过滤条件），dau > uv 合法、不纳入本码；"
+                            + "NULL 由 ADS_STAGING_KEY_NOT_NULL 唯一判定；只判不变量、不修数据";
             case "PUB_STAGING_READY" -> "暂存未就绪不得切换正式分区（发布前预检）";
             case "PUB_FORMAL_PARTITION_MATCH" -> "正式分区行数 ≠ 暂存分区行数 ⇒ 发布不完整";
             case "MXP_SNAPSHOT_PINNED" -> "正式分区未指向本次 snapshot_id ⇒ 混入其他快照数据（D-142 §1 必须阻断）";
