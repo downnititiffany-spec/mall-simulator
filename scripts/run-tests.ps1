@@ -112,7 +112,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 996
+  'analytics-server'        = 1002
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -765,6 +765,51 @@ $BaselineSpark = 308
 # 未测边界：跨会话/跨用户**不互斥**（未用 `Global\`）；两轮全档并发**未测**；不证明并发能通过
 #   （只证明撞车不会静默丢证据）；`docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md:19`
 #   记的是**当时的**默认口径（历史报告按纪律不改写，以本块为准）。
+# ───────────────────────────────────────────────────────────────────────────
+# ── S3-52（F-85）：Spark SQL 字面量「反斜杠形态」静态守卫（阶段6 反熵，A 类纯加性）────
+# 来源：backlog 行「Spark SQL 字面量**反斜杠转义被解析器吃掉**这一类缺陷目前只靠**人工审计**
+#   兜底」（判类：development backlog，候选静态守卫；此前两次挂起，理由是「注释/KDoc 会大量误报，
+#   需先定白名单口径」—— 本轮两个障碍都判为可自解的口径问题，故落地）。
+# 缺陷面（S3-01 的真实事故形态）：SQL 文本里写了正则 `\d`（三引号形态时源码里就是一个反斜杠），
+#   经 Spark SQL 解析后 `\d` 变 `d`，**静默**输出错值（正则不匹配 ⇒ 原样返回）。
+# 修法（A 类，只改测试支撑/守卫两个类，零生产代码、零契约改动、不连库）：
+#   新增 `SparkSqlBackslashScan`（一遍词法：行/块注释 ＋ 单行字符串/字符字面量的转义对 ＋
+#   三引号「连续 N≥3 个引号 ⇒ 内容取 N−3 并闭合」的引号串规则 ＋ 插值洞 `${…}` 按代码递归，
+#   洞内字面量单独登记、不计入外层内容）＋ `SparkSqlBackslashGateTest` 6 条判据：
+#   ① SQL 文本零反斜杠（白名单当前为空）② 反斜杠字面量按文件**双向**精确闭集
+#   ③ 判据面非空跑（下限只防塌缩，精确口径由② 独占）④ 注释载重（raw/code 双跑计数必不同）。
+#   固化形态口径（源码形态，不求值 Scala 转义）：三引号/`raw` ⇒ 记任意单反斜杠；
+#   单行字符串/字符字面量 ⇒ 只记 `\\`（值里才真带反斜杠）；「像 SQL」＝命中关键字表（表在扫描器内）。
+# 实测（RED-1：声明表先空跑 ⇒ 逐条打印实测清单，再按清单登记）：36 个 .scala / 1406 字面量
+#   （1368 字符串 + 38 字符）/ 像 SQL 132 / 带反斜杠 9（algorithm/Cleaners 1、job/JobArgs 1、
+#   job/LocalSchemaInitJob 2、job/MetricExportJob 1 **字符**、sql/JsonObjectSlicer 1 字符串 + 3 字符）；
+#   **像 SQL ∧ 反斜杠 = 0**。交叉仪器分叉（已解释，非漏报）：另一套 PowerShell 仪器给 1364 字面量 /
+#   135 像 SQL / MetricExportJob str=1 —— 差在「插值洞内容是否计入外层字面量」与关键字表口径，
+#   以本守卫为准（洞是代码，不是字面量内容）。
+# 变异探针 5 条（锚点命中均 =1、字节还原 sha256 一致、`spark-jobs` 无探针残留）：
+#   P1 三引号 SQL 文本注入单反斜杠 ⇒ 判据①＋②红（S3-01 事故形态被抓到）；
+#   P2 已声明文件里多一处反斜杠字面量 ⇒ 仅②红；P3 **同 P1 文本放进注释 ⇒ 全绿**（负对照：
+#   不是「见到反斜杠就红」）；P4 单行字符串 SQL 文本注入 `\\d` ⇒ ①＋②红；
+#   P5 外层三引号、反斜杠只出现在**插值洞内的嵌套字面量**里 ⇒ 仅②红（不递归扫洞则计数不变 ⇒
+#   该探针为绿，故这条证明洞确实被扫到）。夹具另钉住引号串/洞/单反斜杠不记的逐条形态。
+#   **量数轮 `s352_20260916_pre`**：analytics-server `1002 (F=1 E=0 S=1)` 明细 `105+353+172+97+118+157`
+#   ⇒ `DRIFT(基线 996)`，**+6 全部落在 platform-common**（99→105，其余模块一字未变）；
+#   mall-simulator 13 MATCH；synthetic-data-generator 110 MATCH；`default 三棵树 1125（基线 1119）`；
+#   唯一红仍是已登记环境性用例（`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，
+#   F=1；expected 43 was 0）；该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **analytics-server 996→1002**（+6）；**三棵树 1119→1125**。
+#   边界（诚实记录，不得越界表述）：① 判据面**只覆盖** `spark-jobs/src/main/scala`；`src/test/scala`
+#   （39 个 .scala，含 7 处 `""""…""""` 引号串形态、宿主多为 Scala 正则 `.r`，且实测到一套朴素词法
+#   在 `DimDwdChainExecSpec.scala:283` 处失步）与 `warehouse/**`（6 个 .sql，实测 0 反斜杠）
+#   **刻意排除**；② 只判**源码形态**，不判 Scala/Spark SQL 的转义**求值**语义，也**不证明**
+#   Spark 运行时行为（`spark` 档本轮未重跑）；③ 「像 SQL」是启发式，不证明该字面量真的被交给 Spark；
+#   ④ 判据② 按**文件计数**：在同一已声明文件内移动一处反斜杠**不可见**（残余行）；
+#   ⑤ 不覆盖 `SurrogateKeyVectorSupport.scala` 那类「Scala 转义产出 `\"` 进 JSON 正则」的另一缺陷类
+#   （已有 spec 钉住）；⑥ `WarehouseNameLiteralScanner.CommentSyntax.strip` 仍是区间剥注释的唯一所有者
+#   （S3-49/50 在用），本扫描器的内联注释识别**不声称与其等价**（其引号串闭合口径不同），两者并存；
+#   ⑦ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`isolated` 档未重跑：
+#   新用例无 `@Tag("it")`，不在 isolated 选择面内）。
+#   详见 docs/acceptance/s3-52-spark-sql-backslash-guard-20260916/。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
