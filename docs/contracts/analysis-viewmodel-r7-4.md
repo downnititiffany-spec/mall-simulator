@@ -142,6 +142,37 @@
 >
 > **仍未实现（不得因本版发布而声称已满足）**：设计 §9.3 L335 的「**实时结果**接齐」；§12.3 规则 5/6/11；
 > 阶段5 其余已登记项（`repeat_rate` 周期/口径版本展示、支付复购率变体、E5-c 剩余一半、
+>
+> **v1.9（2026-09-16，S3-40 加性补充·**读侧消费/展示口径**）**：关闭 v1.8 注记里已登记的阶段5 缺口
+> 「`repeat_rate` **周期**/口径版本展示」中的**周期展示**一项（**口径版本展示仍未做**），依据设计 V3.0
+> §11.2 **L428**「对每个指标固定粒度、分子分母、**时间窗口**、金额/退款口径、**空值规则和版本**」、
+> §11.4 **L449** 与指导书 V3.0 §8 阶段5 完成标准 **L201**「员工能完成主要操作并理解结果；页面
+> **不混源/混快照**；无数据不造数」。
+>
+> **契约事实（本版把已存在的取值域写进契约）**：§3.1 `metrics[*].period` 的取值域含两类 ——
+> ① `day:<yyyy-MM-dd>`（单日口径）；② **`window:<start>..<end>`**（窗口/观察期口径，`<start>`/`<end>`
+> 为 ISO `yyyy-MM-dd`）。该字段自 v1.0 起就在响应里**原样透传**（§3.1「来自 `metric_value`」），发布侧
+> 对窗口型指标强制声明 `window:`（`MetricPublisher.WINDOWED_REPEAT_RATE` ＋ `periodOf`）。
+> **本版不改任何既有字段语义、不改后端代码、不新增响应字段。**
+>
+> **展示义务（读侧对齐口径）**：
+> 1. 窗口口径指标（当前唯一在产码 `repeat_rate`）**必须**与单日指标在视觉上可区分：展示其**观察期**
+>    （取自该行 `period` 尾段）并给出「观察期口径」限制说明；**不得**让它看起来像"当日值"
+>    （与单日指标同处一面卡片墙即构成**混口径**）。
+> 2. 该码是 decimal **比例** ⇒ 按百分比格式化（与 `refund_rate` 同一 `formatPercent`）；
+>    `metric_value.metric_value` **不重算**（§1 总原则 4）。
+> 3. `period` 畸形/缺省 ⇒ 只显示占位符：**不猜**观察期、**不补**默认窗口（同 §1.4 空值规则 ——
+>    空值不得显示成 0、不得臆造）。
+> 4. 唯一解析属主：`web/src/utils/metricPeriod.js`（`parseMetricPeriod` / `isWindowPeriod` /
+>    `periodText` / `WINDOW_METRIC_NOTE`）；视图**不得**各自解析 `window:` 前缀（防第二属主）。
+> 5. `/dashboards/overview` 导出 CSV **加性**新增「口径周期」列（值＝`periodText`，无观察期按占位符）；
+>    既有列与元信息行（`filters`/`snapshotId`/生成时间，§337）**不变**。
+> 6. **`repeat_period_start`/`repeat_period_end` 两个 ADS 列在 `/dashboards/overview` 响应里仍不出现**
+>    —— 它们只被发布侧折进 `metric_value.period`（`MetricPublisher.PERIOD_START_COLUMN`/
+>    `PERIOD_END_COLUMN`）⇒ 读侧**不得**把它们当作已暴露字段，**不得**声称"观察期来自 ADS 列直读"。
+>
+> **仍未实现（不得因本版发布而声称已满足）**：v1.8 注记同列的其余项 —— `repeat_rate` **口径版本**展示、
+> 支付复购率变体、E5-c 剩余一半、`/analysis/sales` 真窗口过滤 —— 均**不变**。
 > `/analysis/sales` 真窗口过滤）均**不变**。
 
 ## 1. 总原则
@@ -219,6 +250,8 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 - `metricDictionary` ← `analytics_meta.metric_definition`（页面"查看指标口径"用）。
 - **v1.6**：`quality.ruleVersions` ← `ads_data_quality_m.rule_version`（**原样透传**；键集语义与
   「不补 0/不冒充 v1」的边界见文首 v1.6）。示例只列部分键：键集是 `ruleCount` 的**子集**。
+- **v1.9**：`metrics[*].period` 取值域＝`day:<yyyy-MM-dd>`（单日）或 **`window:<start>..<end>`**（窗口/观察期）；
+  窗口口径的展示义务（观察期副标题、比例按百分比、畸形不猜、唯一解析属主、导出加性加「口径周期」列）见文首 **v1.9**。
 
 ### 3.2 `GET /api/v1/analysis/sales?snapshotId=&from=&to=`
 
