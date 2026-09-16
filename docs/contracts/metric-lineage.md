@@ -2,10 +2,13 @@
 
 > 依据：指导书 V2.0 §24.2（"为每个指标建立输入事件→DWD 字段→DWS 字段→ADS 字段→MySQL 字段的 lineage 表"）、
 > §13.1 指标字典、§18.2 页面模块、§18.5 一致性验收。
-> 权威口径来源：`analytics_meta.metric_definition`（字典，16 行）+ `spark-jobs/.../sql/AdsSql.scala`（计算）。
+> 权威口径来源：`docs/contracts/metric-dictionary.md`（md 字典，**15 项**）+
+> `analytics_meta.metric_definition`（配置表种子；V2 的 15 行 + V13 补 `full_refund_rate` + V24 补 `fav_cnt`/`cart_add_cnt`
+> = **18 行**，其中 `stock_days`/`stock_shortage_rate` **只在配置表、md 未登记**，属已登记漂移）+
+> `spark-jobs/.../sql/AdsSql.scala`（计算）。
 > 本表是 R7-4 的交付物之一；**页面标签、字典公式、ADS 列、MySQL 列、论文公式必须与本表逐行一致**。
 
-## 1. 全链路血缘（已落地的 14 个指标）
+## 1. 全链路血缘（已落地的 16 个指标）
 
 图例：`DWD/DWS/ADS` 为 Hive 表（库前缀 `dw_dwd` / `dw_dws` / `dw_ads`），
 `MySQL` 为 `analytics_metric.ads_*_m`（宽表）与 `metric_value`（指标值），
@@ -28,6 +31,8 @@
 | 12 | `user_value_level` | 用户价值等级 | `order`/`payment` 事件 + `behavior` 事件（偏好分类） | `dwd_order_detail`、`dwd_user_behavior_detail.category_id`、`event_date` | `dws_user_trade_period.{last_buy_date, order_count, sale_amount}`（`NTILE(5)` 近似五分位） | `ads_user_profile.value_group`（八类） | `ads_user_profile_m.value_group`（不进 `metric_value`） | v1 | 用户分群 |
 | 13 | `repeat_rate` | 复购率(有效) | `order`/`payment` + `refund_completed` 事件 → `OrderTradeCompiler` | `dwd_order_detail.{user_id, order_id, final_paid_flag, final_refunded_flag}` | `dws_user_trade_period.{user_id, order_count, valid_order_count, period_start, period_end}`（S3-03 加 `valid_order_count`） | `ads_operation_overview.{repeat_rate, repeat_period_start, repeat_period_end}` | `ads_operation_overview_m` 同三列 + `metric_value(repeat_rate)`（`period = window:<start>..<end>`） | v1 | 用户行为、运营总览 |
 | 14 | `cart_rate` | 加购率 | `behavior` 事件（`behavior_type='cart_add'` 与 `='view'`） | `dwd_user_behavior_detail.{user_id, behavior_type, dt}` | `dws_behavior_funnel_day.{view_users, cart_users, cart_rate}`（S3-04 加 `cart_users`/`cart_rate`；分子 = `cart_add` 去重用户，**不含 favorite**） | `ads_behavior_funnel.overall_cart_rate`（**整体率列**，与 `overall_buy_rate` 同型，四行同值；**不新增 stage 行**） | `ads_behavior_funnel_m.overall_cart_rate` + `metric_value(cart_rate)`（`period = day:`） | v1 | 用户行为（漏斗） |
+| 15 | `fav_cnt` | 收藏次数 | `behavior` 事件（`behavior_type='favorite'`，**按事件条数**，不是收藏人数） | `dwd_user_behavior_detail.{behavior_type, event_time, dt}` | —（直接取 DWD；字典「数据来源」列即 DWD） | `ads_operation_overview.fav_cnt`（S3-08 补） | `ads_operation_overview_m.fav_cnt` + `metric_value(fav_cnt)`（`period = day:`） | v1 | 运营总览（待接页面，阶段4） |
+| 16 | `cart_add_cnt` | 加购次数 | `behavior` 事件（`behavior_type='cart_add'`，**按事件条数**；`cart_remove` 不计） | `dwd_user_behavior_detail.{behavior_type, event_time, dt}` | —（直接取 DWD） | `ads_operation_overview.cart_add_cnt`（S3-08 补；**与 `cart_rate` 并存不混淆**：一为次数、一为去重用户比率） | `ads_operation_overview_m.cart_add_cnt` + `metric_value(cart_add_cnt)`（`period = day:`） | v1 | 运营总览（待接页面，阶段4） |
 
 补充血缘（非字典码，但页面/运维使用）：
 
@@ -39,22 +44,26 @@
 | 质量大盘 | ODS/DWD 统计 | `dwd_order_detail`、`dwd_user_behavior_detail`、`dwd_reject_record` | — | `ads_data_quality.*`（4 规则） | `ads_data_quality_m` | 运维中心 |
 | 发布血缘（§16） | 一次 `pipeline_run` | — | — | Hive 正式分区 `snapshot_id` | `metric_snapshot.pipeline_run_id` | 运维中心 |
 
-## 2. 字典存在但**尚无 ADS 承载**的指标（如实登记，不得当成已实现）
+## 2. 登记了码但**尚无 ADS 承载**的指标（如实登记，不得当成已实现）
 
 | 指标码 | 指标名 | 字典公式 | 现状 | 原因 / 归属 |
 |---|---|---|---|---|
-| `stock_days` | 库存覆盖天数 | 可售库存/日均销量 | **未落地** | 库存不在事件流内（商城库存表属商城侧责任，§84 责任边界），分析平台不越界取数 |
-| `stock_shortage_rate` | 缺货率 | 缺货商品数/在售商品数 | **未落地** | 同上 |
+| `stock_days` | 库存覆盖天数 | 可售库存/日均销量 | **未落地**（且 md 字典未登记该码） | 库存不在事件流内（商城库存表属商城侧责任，§84 责任边界），分析平台不越界取数 |
+| `stock_shortage_rate` | 缺货率 | 缺货商品数/在售商品数 | **未落地**（且 md 字典未登记该码） | 同上 |
 
-> 结论：字典 16 行 = 14 行已全链路落地 + 2 行明确未落地。
+> 结论：**md 字典 15 项已全部全链路落地**（本节两条 `stock_*` 只在**配置表** `metric_definition` 里，
+> md 字典从未登记，故不计入「15 项」；两者互为镜像的缺口属**已登记漂移**，本表如实分列）。
+> 配置表口径：V2 的 15 行 + V13（`full_refund_rate`）+ V24（`fav_cnt`/`cart_add_cnt`）= **18 行**。
 > （`cart_rate` 于 S3-04 落地：DWS 加 `cart_users`+`cart_rate`、ADS 加整体率列 `overall_cart_rate` +
 > 加性迁移 `V7` + `metric_value(cart_rate)`；此前本表登记的「未落地」原因
 > 「需在 DWS 漏斗增加 `cart_users` 并扩 `ads_behavior_funnel`」即本轮实施的路径。
-> 注意 `cart_add_cnt`（加购**次数**，字典 L22）是另一个指标码，**仍**未落地，不因本轮而改变。）
+> `fav_cnt`/`cart_add_cnt` 于 **S3-08** 落地：ADS 概览表**末尾**加两列 + 加性迁移 `V10` + meta 种子 `V24` +
+> `metric_value` 两码（`period = day:`）；**次数≠去重人数**由 Spark 行为 spec 与 Java 反熵守卫双侧钉住。
+> 本节此前登记的「`cart_add_cnt` 仍**未**落地」即由此关闭。）
 > （`repeat_rate` 于 S3-03 落地：ADS `ads_operation_overview` 三列 + MySQL 加性迁移 `V6` +
 > `metric_value(repeat_rate)` + 观察期声明 `window:`；此前本表登记「未落地」的原因
 > 「DWS 只有 `order_count`，缺有效订单口径」已由 DWS `valid_order_count` 补齐。）
-> 页面不得展示这 2 个码的数值（没有来源就不显示），AI 语义目录（R8）登记时也必须排除它们。
+> 页面不得展示本表两个 `stock_*` 码的数值（没有来源就不显示），AI 语义目录（R8）登记时也必须排除它们。
 
 ## 3. 一致性校验锚点（§18.5，黄金 55 行夹具 / 快照 `S20260901_24`）
 

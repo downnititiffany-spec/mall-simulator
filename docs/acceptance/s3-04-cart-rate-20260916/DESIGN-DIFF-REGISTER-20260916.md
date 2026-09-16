@@ -188,6 +188,11 @@
   *本轮*：不动，登记 backlog。
 - **R-2｜`cart_add_cnt`（加购次数）**：字典 L22 存在但无 ADS 承载。是否在 `dws_product_behavior_day`
   已有 `cart` 件数之外，为「漏斗侧加购次数」另设落地位置？*本轮*：不动。
+  **→ 2026-09-16 由 S3-08 关闭**：落点裁决为 `ads_operation_overview.{fav_cnt, cart_add_cnt}`（**概览表**，
+  不是漏斗侧），理由与实现见 `docs/acceptance/s3-08-fav-cart-count-20260916/DESIGN-DIFF-REGISTER-20260916.md`
+  §2（漏斗 stage 行语义是各步去重用户数、设计 L441 固定四阶段；商品侧 `ads_hot_product.fav/cart` 是热度权重分量）。
+  同步落地：加性迁移 `db/metric/V10`、字典种子 `db/meta/V24`、发布映射与语义层两列、Spark 行为 spec 6 条 +
+  Java 五方对账守卫 5 条。**真库应用 V10/V24 仍未做**（与本文件 §6.2 同类未测边界）。
 - **R-3｜G-04（漏斗分类/渠道粒度）**：设计 L329/L443 两处都指向它。本轮按「未决不伪造」只做全站；
   若总控希望先按「`category_id=-1` 之外只补 `channel`」或某种降级方案落地，请批注。
 - **R-4｜加购率是否也应进 `OVERVIEW_TO_METRIC` 之类的发布码集合**：现状只进漏斗行映射
