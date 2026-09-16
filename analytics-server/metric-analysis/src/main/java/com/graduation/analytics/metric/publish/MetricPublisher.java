@@ -56,6 +56,9 @@ public class MetricPublisher implements MetricPublisherPort {
         OVERVIEW_TO_METRIC.put("full_refund_rate", "full_refund_rate");
         // S3-03：复购率（观察期窗口型指标，period 声明见 periodOf）
         OVERVIEW_TO_METRIC.put("repeat_rate", "repeat_rate");
+        // S3-08：收藏/加购**次数**（设计 §11.2 L425「对应行为事件数」；与 pv 同型、单日粒度）
+        OVERVIEW_TO_METRIC.put("fav_cnt", "fav_cnt");
+        OVERVIEW_TO_METRIC.put("cart_add_cnt", "cart_add_cnt");
     }
 
     /** 观察期窗口型指标码：其 `metric_value.period` 必须声明 `window:<起>..<止>`，不得谎报单日 */

@@ -51,6 +51,13 @@ object AdsSql {
    *    （即 `DwsSql.userTradePeriod` 的作业入参窗口，唯一所有者），ISO 化后随行发布 —— 这样 ADS 声明的窗口
    *    必然等于真正参与聚合的窗口，不会出现「作业按 A 窗口算、ADS 声明 B 窗口」；
    *  - 无支付用户时分子/分母与窗口声明**同时为 NULL**（不伪造窗口），由发布侧跳过该指标。
+   *
+   * S3-08 收藏/加购**次数**（设计 §11.2 L425「收藏/加购 | 对应行为事件数，用户转化时另算去重用户数 | 行为」；
+   * 字典 `metric-dictionary.md:21/:22`）：
+   *  - 口径 = `favorite` / `cart_add` **事件条数**（`cart_remove` 不算），与同表的 `pv` 同型（`COUNT(CASE … THEN 1 END)`）；
+   *  - 源表按字典给的 `dwd_user_behavior_detail` **直取**（不绕 DWS 二次聚合），跨层一致性由对账断言钉住；
+   *  - 无事件日为 0 而非 NULL（与 `pv` 同型：不存在即 0，不区分「没数据」与「没人收藏」）；
+   *  - 与「去重用户数」是两个指标：`uv` 型的 `COUNT(DISTINCT …)` 不得借来当次数用（L425 明确区分）。
    */
   def operationOverview(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
@@ -64,11 +71,14 @@ object AdsSql {
        |  CASE WHEN u.pay_users = 0 THEN NULL
        |       ELSE CAST(u.repeat_users AS DECIMAL(8,4)) / u.pay_users END AS repeat_rate,
        |  ${isoDayCol("u.period_start")} AS repeat_period_start,
-       |  ${isoDayCol("u.period_end")} AS repeat_period_end
+       |  ${isoDayCol("u.period_end")} AS repeat_period_end,
+       |  b.fav_cnt, b.cart_add_cnt
        |FROM (SELECT
        |        COUNT(CASE WHEN behavior_type = 'view' THEN 1 END) AS pv,
        |        COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS uv,
-       |        COUNT(DISTINCT user_id) AS dau
+       |        COUNT(DISTINCT user_id) AS dau,
+       |        COUNT(CASE WHEN behavior_type = 'favorite' THEN 1 END) AS fav_cnt,
+       |        COUNT(CASE WHEN behavior_type = 'cart_add' THEN 1 END) AS cart_add_cnt
        |      FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') b,
        |     (SELECT order_count, sale_amount, net_sale_amount, avg_order_value
        |      FROM ${ns.dws}.dws_trade_day WHERE dt = '$dt') t,

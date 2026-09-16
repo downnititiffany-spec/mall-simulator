@@ -68,7 +68,7 @@ class MetricPublisherMappingTest {
         List<MetricValue> values = publisher.buildCoreMetricValues(request(), rows(overview));
 
         for (String code : List.of("pv", "gmv", "net_sale", "refund_rate", "full_refund_rate",
-                "buy_rate", "cart_rate")) {
+                "buy_rate", "cart_rate", "fav_cnt", "cart_add_cnt")) {
             assertThat(value(values, code).orElseThrow().getPeriod())
                     .as("指标 %s 的 period", code)
                     .isEqualTo("day:2026-09-01");
@@ -84,6 +84,28 @@ class MetricPublisherMappingTest {
                 () -> new AssertionError("漏斗行有 overall_cart_rate 却没有映射成 cart_rate，码=" + codes(values)));
         assertThat(cart.getMetricValue()).isEqualByComparingTo("0.6000");
         assertThat(cart.getPeriod()).isEqualTo("day:2026-09-01");
+        assertThat(cart.getDefinitionVersion()).isEqualTo("v1");
+    }
+
+    @Test
+    @DisplayName("fav_cnt / cart_add_cnt 从概览行映射成同名指标码（phase 3 S3-08，次数口径）")
+    void favAndCartCountAreMappedFromOverviewRow() {
+        Map<String, Object> overview = overviewRow();
+        overview.put("fav_cnt", 3L);
+        overview.put("cart_add_cnt", 5L);
+
+        List<MetricValue> values = publisher.buildCoreMetricValues(request(), rows(overview));
+
+        MetricValue fav = value(values, "fav_cnt").orElseThrow(
+                () -> new AssertionError("概览行有 fav_cnt 却没有映射成指标值，码=" + codes(values)));
+        MetricValue cart = value(values, "cart_add_cnt").orElseThrow(
+                () -> new AssertionError("概览行有 cart_add_cnt 却没有映射成指标值，码=" + codes(values)));
+        assertThat(fav.getMetricValue()).isEqualByComparingTo("3");
+        assertThat(cart.getMetricValue()).isEqualByComparingTo("5");
+        // 次数是单日指标：period 必须是 day:<ISO 业务日>（不得谎报窗口、不得写成人数）
+        assertThat(fav.getPeriod()).isEqualTo("day:2026-09-01");
+        assertThat(cart.getPeriod()).isEqualTo("day:2026-09-01");
+        assertThat(fav.getDefinitionVersion()).isEqualTo("v1");
         assertThat(cart.getDefinitionVersion()).isEqualTo("v1");
     }
 
@@ -167,6 +189,9 @@ class MetricPublisherMappingTest {
         dict.put("repeat_rate", new DefinitionRef("v1", ""));
         dict.put("buy_rate", new DefinitionRef("v1", ""));
         dict.put("cart_rate", new DefinitionRef("v1", ""));
+        // S3-08（字典 metric-dictionary.md:21/:22）：收藏/加购**次数**两枚码，源表 dwd_user_behavior_detail
+        dict.put("fav_cnt", new DefinitionRef("v1", "次"));
+        dict.put("cart_add_cnt", new DefinitionRef("v1", "次"));
         return dict;
     }
 
@@ -193,6 +218,9 @@ class MetricPublisherMappingTest {
         row.put("avg_order_value", new BigDecimal("408.40"));
         row.put("refund_rate", new BigDecimal("0.6000"));
         row.put("full_refund_rate", new BigDecimal("0.2000"));
+        // S3-08：收藏/加购次数（次数口径；与人数口径 2/3 刻意不同，防「拿人数冒次数」）
+        row.put("fav_cnt", 3L);
+        row.put("cart_add_cnt", 5L);
         return row;
     }
 }

@@ -212,6 +212,9 @@ class MetricAdsMySqlIT {
         row.put("repeat_rate", new BigDecimal("0.3333"));
         row.put("repeat_period_start", "2026-08-31");
         row.put("repeat_period_end", "2026-09-01");
+        // S3-08 加列：收藏/加购次数（MySQL V10 两列的 BIGINT NULL 类型也在本 IT 内被真实写入一次）
+        row.put("fav_cnt", 4L);
+        row.put("cart_add_cnt", 6L);
         return row;
     }
 

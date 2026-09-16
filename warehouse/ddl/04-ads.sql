@@ -8,7 +8,8 @@ CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads COMMENT 'ADS 应用数据�
 
 -- 运营大盘
 -- full_refund_rate（R7-0 口径统一）、repeat_rate/repeat_period_start/repeat_period_end（S3-03，
--- 设计 §11.2 L433 复购率+观察期声明）：静态 DDL 与运行时 DDL（spark-jobs/LocalSchemaInitJob）逐列对齐。
+-- 设计 §11.2 L433 复购率+观察期声明）、fav_cnt/cart_add_cnt（S3-08，设计 §11.2 L425 收藏/加购次数）：
+-- 静态 DDL 与运行时 DDL（spark-jobs/LocalSchemaInitJob）逐列对齐。
 -- 注：本块的 snapshot_id 列定位与运行时（snapshot_id 只在 __staging 分区）仍不一致，属已登记
 -- 缺陷 D-09/V25-C01（静态 DDL 与运行时 DDL 漂移），不在本轮范围内。
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_operation_overview (
@@ -24,6 +25,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_operation_overvi
     repeat_rate  DECIMAL(8,4) COMMENT '有效复购率=有效购买≥2次用户数/支付用户数（全退不算有效购买，S3-03）',
     repeat_period_start STRING COMMENT '复购率观察期起点（ISO yyyy-MM-dd，来自 DWS 行声明）',
     repeat_period_end   STRING COMMENT '复购率观察期终点（ISO yyyy-MM-dd，来自 DWS 行声明）',
+    fav_cnt      BIGINT COMMENT '收藏次数=当日 favorite 行为事件条数（次数口径，不是收藏人数，S3-08）',
+    cart_add_cnt BIGINT COMMENT '加购次数=当日 cart_add 行为事件条数（次数口径，不是加购人数，S3-08）',
     snapshot_id  STRING COMMENT '指标快照ID（阶段6发布）'
 )
 PARTITIONED BY (dt STRING)

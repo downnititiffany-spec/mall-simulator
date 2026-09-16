@@ -131,7 +131,8 @@ object LocalSchemaInitJob {
           sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
           avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
           full_refund_rate DECIMAL(8,4), repeat_rate DECIMAL(8,4),
-          repeat_period_start STRING, repeat_period_end STRING)
+          repeat_period_start STRING, repeat_period_end STRING,
+          fav_cnt BIGINT, cart_add_cnt BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_behavior_funnel (
@@ -184,7 +185,8 @@ object LocalSchemaInitJob {
           sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
           avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
           full_refund_rate DECIMAL(8,4), repeat_rate DECIMAL(8,4),
-          repeat_period_start STRING, repeat_period_end STRING)
+          repeat_period_start STRING, repeat_period_end STRING,
+          fav_cnt BIGINT, cart_add_cnt BIGINT)
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_behavior_funnel__staging (
@@ -255,12 +257,14 @@ object LocalSchemaInitJob {
         sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
         avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
         full_refund_rate DECIMAL(8,4), repeat_rate DECIMAL(8,4),
-        repeat_period_start STRING, repeat_period_end STRING)
+        repeat_period_start STRING, repeat_period_end STRING,
+        fav_cnt BIGINT, cart_add_cnt BIGINT)
       USING parquet PARTITIONED BY (dt STRING)"""
 
   /**
    * 存量 ADS 表的**加性补列**清单（正式表 + 暂存表都补）：
-   * R7-0 起为口径统一新增 `full_refund_rate`；S3-03 追加复购率与其观察期声明三列。
+   * R7-0 起为口径统一新增 `full_refund_rate`；S3-03 追加复购率与其观察期声明三列；
+   * S3-08 追加收藏/加购**次数**两列（设计 §11.2 L425「对应行为事件数」）。
    *
    * 只允许追加列（`ALTER TABLE … ADD COLUMNS`）：历史 parquet 文件缺该列时读出 null，
    * 下一次成功发布即被新快照覆盖；新建表则由上方 `statements(ns)` 的 DDL 直接长齐。
@@ -268,9 +272,11 @@ object LocalSchemaInitJob {
    */
   val R7_ADDED_COLUMNS: Map[(String, String), Seq[String]] = Map(
     ("ads", "ads_operation_overview") -> Seq("full_refund_rate DECIMAL(8,4)",
-      "repeat_rate DECIMAL(8,4)", "repeat_period_start STRING", "repeat_period_end STRING"),
+      "repeat_rate DECIMAL(8,4)", "repeat_period_start STRING", "repeat_period_end STRING",
+      "fav_cnt BIGINT", "cart_add_cnt BIGINT"),
     ("ads", "ads_operation_overview__staging") -> Seq("full_refund_rate DECIMAL(8,4)",
-      "repeat_rate DECIMAL(8,4)", "repeat_period_start STRING", "repeat_period_end STRING"))
+      "repeat_rate DECIMAL(8,4)", "repeat_period_start STRING", "repeat_period_end STRING",
+      "fav_cnt BIGINT", "cart_add_cnt BIGINT"))
 
   /**
    * R6-13 结构对账（幂等，只在检测到漂移时动作）：

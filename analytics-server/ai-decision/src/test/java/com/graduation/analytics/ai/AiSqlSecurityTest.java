@@ -49,7 +49,7 @@ class AiSqlSecurityTest {
         Map<String, java.util.Set<String>> tables = new LinkedHashMap<>();
         tables.put("ads_operation_overview_m", java.util.Set.of("snapshot_id", "dt", "pv", "uv", "dau",
                 "order_count", "sale_amount", "net_sale_amount", "avg_order_value", "refund_rate", "full_refund_rate",
-                "repeat_rate", "repeat_period_start", "repeat_period_end"));
+                "repeat_rate", "repeat_period_start", "repeat_period_end", "fav_cnt", "cart_add_cnt"));
         tables.put("ads_sale_trend_m", java.util.Set.of("snapshot_id", "dt", "order_count", "buyer_count",
                 "sale_amount", "avg_order_value", "net_sale_amount"));
         tables.put("ads_behavior_funnel_m", java.util.Set.of("snapshot_id", "dt", "stage", "user_count",

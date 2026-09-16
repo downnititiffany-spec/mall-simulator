@@ -25,7 +25,7 @@ public record MetricAdsCatalog(String name, List<String> columns, List<String> k
             new MetricAdsCatalog("ads_operation_overview_m",
                     List.of("pv", "uv", "dau", "order_count", "sale_amount", "net_sale_amount",
                             "avg_order_value", "refund_rate", "full_refund_rate", "repeat_rate",
-                            "repeat_period_start", "repeat_period_end"),
+                            "repeat_period_start", "repeat_period_end", "fav_cnt", "cart_add_cnt"),
                     List.of()),
             new MetricAdsCatalog("ads_sale_trend_m",
                     List.of("order_count", "buyer_count", "sale_amount", "avg_order_value", "net_sale_amount"),

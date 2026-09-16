@@ -46,6 +46,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * （任何一次真库运行都会红）。本轮把三个脚本补进清单，末端断言从 V18 改为 V21。
  * 与 P1-05/P2-07 同理，**本轮仍不在真库 analytics_meta 上跑**（连上去就会把正式库迁到 V21，越界写库）：
  * 本类的真库取证仍须指向副本/临时库，命令见类注释与《开发过程事实与决策记录》F-29。</p>
+ *
+ * <p><b>S3-08（V22/V23/V24）</b>：清单自 S2-03.1 后再次落后于 {@code db/meta} —— V22
+ * （{@code runtime_profile_landing_layout}）与 V23（{@code quality_rule_publish_export_checksum}）
+ * 两轮落地时都未回填，本轮新加 V24（{@code metric_definition_fav_cart_cnt}）时一并对齐，
+ * 使清单与目录**逐项相等**（清单仍是"少一个/多一个都红"的显式全集）。</p>
  */
 @EnabledIfSystemProperty(named = "p1.it", matches = "true")
 class SourceRegistryMigrationMySqlIT {
@@ -171,7 +176,10 @@ class SourceRegistryMigrationMySqlIT {
             "V18__source_warehouse_prefix.sql",
             "V19__quality_rule_definition.sql",
             "V20__data_quality_result_rule_version.sql",
-            "V21__source_mapping_active.sql");
+            "V21__source_mapping_active.sql",
+            "V22__runtime_profile_landing_layout.sql",
+            "V23__quality_rule_publish_export_checksum.sql",
+            "V24__metric_definition_fav_cart_cnt.sql");
 
     private static final String V17_SCRIPT = "V17__source_dimension_for_checkpoint_and_batch.sql";
     private static final String V18_SCRIPT = "V18__source_warehouse_prefix.sql";

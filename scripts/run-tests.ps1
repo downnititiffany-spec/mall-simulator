@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 900
+  'analytics-server'        = 906
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -152,7 +152,18 @@ $BaselineDefault = [ordered]@{
 #   analytics-server 侧新增 AdsHotProductHeatWeightDriftTest（5 条，反熵守卫：字典版本/权重 ↔ AdsSql 逐字对账
 #   —— 版本一致 / 权重一致 / 公式单一属主 / 版本列引用单一常量 / 三级稳定次序键，漂移即红）
 #   ⇒ analytics-server 895→900（均不连库；`MetricPublisherMySqlIT` 夹具补 rule_version 属已登记未测项）。
-$BaselineSpark = 220
+# S3-08：`ads_operation_overview` 落**收藏/加购次数**（设计 §11.2 L425「对应行为事件数」；字典
+#   `metric-dictionary.md:21/:22` 的 `fav_cnt`/`cart_add_cnt`，源表 `dwd_user_behavior_detail`），
+#   并补齐发布侧字典行（db/meta V24）使两码能真正发布进 `metric_value`。
+#   spark 侧新增 AdsFavCartCountSpec（6 条：列序末尾 + 次数≠人数判别 / 与 DWD 重算逐值对账
+#     / 无事件日为 0 而非 NULL / formal+staging DDL 列序 == MetricAdsSpec）
+#   ⇒ spark 220→226。
+#   analytics-server 侧新增 AdsFavCartCountDriftTest（5 条，反熵守卫：字典行 ↔ meta 种子 ↔
+#   发布映射 ↔ metric V10 加性迁移 ↔ MetricAdsSpec 五方对账，且钉住"次数而非去重人数"）
+#   + MetricPublisherMappingTest 加 fav_cnt/cart_add_cnt 映射与 day: 粒度 1 条
+#   ⇒ analytics-server 900→906（均不连库；`MetricPublisherMySqlIT`/`MetricAdsMySqlIT` 夹具补两列
+#   属已登记未测项：本轮仍未在真 MySQL 上应用 V10）。
+$BaselineSpark = 226
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

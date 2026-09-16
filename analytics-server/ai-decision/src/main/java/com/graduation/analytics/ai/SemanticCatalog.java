@@ -77,6 +77,10 @@ public class SemanticCatalog {
                 + "与下面两列一起构成观察期声明，跨窗口不可直接比较；无支付用户时为 NULL");
         overview.put("repeat_period_start", "复购率的观察期起点（ISO yyyy-MM-dd，来自上游 DWS 行声明）");
         overview.put("repeat_period_end", "复购率的观察期终点（ISO yyyy-MM-dd，来自上游 DWS 行声明）");
+        // S3-08（设计 §11.2 L425 / 字典 metric-dictionary.md:21/:22）：收藏、加购都是**事件次数**，
+        // 不是去重用户数 —— AI 提示词必须说清，否则会被当成"多少人收藏/加购"使用。
+        overview.put("fav_cnt", "收藏次数：当日 favorite 行为事件条数（次数口径，不是收藏人数；未收藏为 0）");
+        overview.put("cart_add_cnt", "加购次数：当日 cart_add 行为事件条数（次数口径，不是加购人数；未加购为 0）");
         TABLES.put("ads_operation_overview_m", overview);
 
         Map<String, String> saleTrend = new LinkedHashMap<>();

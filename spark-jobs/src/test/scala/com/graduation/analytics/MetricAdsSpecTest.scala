@@ -19,7 +19,7 @@ class MetricAdsSpecTest extends AnyFlatSpec with Matchers {
   private val javaCatalog = Seq(
     "ads_operation_overview_m" -> Seq("pv", "uv", "dau", "order_count", "sale_amount", "net_sale_amount",
       "avg_order_value", "refund_rate", "full_refund_rate", "repeat_rate",
-      "repeat_period_start", "repeat_period_end"),
+      "repeat_period_start", "repeat_period_end", "fav_cnt", "cart_add_cnt"),
     "ads_sale_trend_m" -> Seq("order_count", "buyer_count", "sale_amount", "avg_order_value", "net_sale_amount"),
     "ads_behavior_funnel_m" -> Seq("stage", "user_count", "conversion_rate", "overall_buy_rate",
       "overall_cart_rate"),
