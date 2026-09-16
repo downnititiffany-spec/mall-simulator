@@ -88,3 +88,13 @@
 **Identity**：通过当前 GitHub 连接写入仓库时，GitHub 使用连接账户的身份记录提交；当前实测提交的 author/committer 均显示 `downnititiffany-spec`。ChatGPT 不伪造额外作者身份。
 
 **Timezone**：项目研发记录继续使用 `+08:00`，与 V3 阶段既有开发事实记录保持一致。
+
+### D-011 — Web 统一验证入口
+
+**Decision**：`web/package.json` 以 `npm run verify` 作为前端统一验证入口，固定顺序为 `npm test` 后 `npm run build`。
+
+**Reason**：延迟批量验证模式需要一个稳定、低歧义的前端入口；测试失败时不应继续把 build 成功误读为功能通过，因此单测先于生产构建。
+
+**Boundary**：该入口只统一现有 Node 测试与 Vite production build，不代表真实浏览器/E2E、后端联调或权限链已经验证。
+
+**Implementation commits**：`e36a350`（package script）+ `db810d6`（结构守卫）。
