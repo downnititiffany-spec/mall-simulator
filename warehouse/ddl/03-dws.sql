@@ -30,7 +30,9 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws.dws_behavior_funnel_
     intent_rate    DECIMAL(8,4) COMMENT 'intent/view，分母0→null',
     order_rate     DECIMAL(8,4),
     pay_rate       DECIMAL(8,4),
-    overall_buy_rate DECIMAL(8,4) COMMENT 'pay/view（整体购买转化率）'
+    overall_buy_rate DECIMAL(8,4) COMMENT 'pay/view（整体购买转化率）',
+    cart_users     BIGINT COMMENT '当日 cart_add 去重用户（不含 favorite）',
+    cart_rate      DECIMAL(8,4) COMMENT 'cart_add/view（整体加购率），分母0→null'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

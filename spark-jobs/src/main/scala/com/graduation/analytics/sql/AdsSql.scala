@@ -95,21 +95,27 @@ object AdsSql {
        |WHERE dt = '$dt'
        |""".stripMargin
 
-  /** 转化漏斗：dws_behavior_funnel_day 展开为 stage 行（dt 为分区列不投影） */
+  /**
+   * 转化漏斗：dws_behavior_funnel_day 展开为 stage 行（dt 为分区列不投影）。
+   *
+   * S3-04：四行各自携带同一个 `overall_cart_rate`（与 `overall_buy_rate` 同型：整体率，
+   * 分子/分母都取自 DWS，ADS 只透传不重算）。加购**不加 stage 行** —— 设计 §11.3 L441 的
+   * 阶段集合恒为 view/intent/order/pay。
+   */
   def funnel(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_behavior_funnel", dt, snapshotId)}
        |SELECT 'view' AS stage, view_users AS user_count, NULL AS conversion_rate,
-       |       overall_buy_rate
+       |       overall_buy_rate, cart_rate AS overall_cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
-       |SELECT 'intent', intent_users, intent_rate, overall_buy_rate
+       |SELECT 'intent', intent_users, intent_rate, overall_buy_rate, cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
-       |SELECT 'order', order_users, order_rate, overall_buy_rate
+       |SELECT 'order', order_users, order_rate, overall_buy_rate, cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
-       |SELECT 'pay', pay_users, pay_rate, overall_buy_rate
+       |SELECT 'pay', pay_users, pay_rate, overall_buy_rate, cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |""".stripMargin
 

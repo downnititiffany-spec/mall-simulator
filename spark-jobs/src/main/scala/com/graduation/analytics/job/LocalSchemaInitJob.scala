@@ -95,7 +95,8 @@ object LocalSchemaInitJob {
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_behavior_funnel_day (
           category_id BIGINT, channel STRING, view_users BIGINT, intent_users BIGINT,
           order_users BIGINT, pay_users BIGINT, intent_rate DECIMAL(8,4),
-          order_rate DECIMAL(8,4), pay_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4))
+          order_rate DECIMAL(8,4), pay_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4),
+          cart_users BIGINT, cart_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.dws, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_product_behavior_day (
@@ -135,7 +136,8 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_behavior_funnel (
           stage STRING, user_count BIGINT,
-          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4))
+          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4),
+          overall_cart_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_active_trend (
@@ -187,7 +189,8 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_behavior_funnel__staging (
           stage STRING, user_count BIGINT,
-          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4))
+          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4),
+          overall_cart_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_active_trend__staging (

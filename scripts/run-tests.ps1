@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 880
+  'analytics-server'        = 882
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -119,7 +119,12 @@ $BaselineDefault = [ordered]@{
 # S3-03：新增 AdsRepeatRateSpec（6 条，复购率有效口径/DWS valid_order_count/窗口声明/空值规则/列序）
 # + MetricPublisherMappingTest（4 条，发布侧复购率映射与 window: 观察期声明，不连库）
 # ⇒ spark 189→195，analytics-server 876→880。
-$BaselineSpark = 195
+# S3-04：新增 AdsCartRateSpec（6 条，加购率 = cart_add 去重 ÷ view 去重 / 与 intent 口径判别 /
+# 四行同值透传 / 分母 0→NULL / 不新增第五阶段 / ADS 列序）
+# + SqlTemplateSpec 加「漏斗 DWS 加购分子只取 cart_add」1 条
+# + MetricPublisherMappingTest 加 cart_rate 映射与 NULL 跳过 2 条
+# ⇒ spark 195→202，analytics-server 880→882。
+$BaselineSpark = 202
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

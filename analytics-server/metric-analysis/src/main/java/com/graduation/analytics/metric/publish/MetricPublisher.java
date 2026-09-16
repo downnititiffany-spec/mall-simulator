@@ -224,7 +224,8 @@ public class MetricPublisher implements MetricPublisherPort {
 
     /**
      * 从 ADS 概览/漏斗行映射核心指标值（**不重算业务指标**）。
-     * {@code buy_rate} 取漏斗行的 overall_buy_rate（全体用户购买率，与 ADS 同值）。
+     * {@code buy_rate} 取漏斗行的 overall_buy_rate、{@code cart_rate} 取 overall_cart_rate
+     * （两者都是整体率，四行同值，故「取首个非空行」与行序无关；与 ADS 同值）。
      */
     List<MetricValue> buildCoreMetricValues(PublishRequest request,
                                            Map<String, List<Map<String, Object>>> rowsByTable) {
@@ -245,13 +246,28 @@ public class MetricPublisher implements MetricPublisherPort {
                     periodOf(request, e.getValue(), row)));
         }
 
+        // 漏斗整体率：buy_rate ← overall_buy_rate、cart_rate ← overall_cart_rate。
+        // 两列都在四行上重复携带（行序无关）；某一列为空（如当日浏览用户为 0）时各自独立跳过，
+        // 不让一个空值带走另一个指标。
         List<Map<String, Object>> funnel = rowsByTable.getOrDefault("ads_behavior_funnel_m", List.of());
+        Object buyRate = null;
+        Object cartRate = null;
         for (Map<String, Object> funnelRow : funnel) {
-            Object rate = funnelRow.get("overall_buy_rate");
-            if (rate != null) {
-                values.add(valueOf(request, "buy_rate", new BigDecimal(String.valueOf(rate))));
+            if (buyRate == null) {
+                buyRate = funnelRow.get("overall_buy_rate");
+            }
+            if (cartRate == null) {
+                cartRate = funnelRow.get("overall_cart_rate");
+            }
+            if (buyRate != null && cartRate != null) {
                 break;
             }
+        }
+        if (buyRate != null) {
+            values.add(valueOf(request, "buy_rate", new BigDecimal(String.valueOf(buyRate))));
+        }
+        if (cartRate != null) {
+            values.add(valueOf(request, "cart_rate", new BigDecimal(String.valueOf(cartRate))));
         }
         return values;
     }

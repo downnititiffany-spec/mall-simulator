@@ -39,6 +39,12 @@ object DwsSql {
    * order_users=当日创建订单去重用户（订单明细全量）；
    * pay_users=当日有效支付去重用户（final_paid_flag=1）。
    * 转化率分母为 0 → NULL，绝不返回硬编码 0。
+   *
+   * S3-04（设计 §11.2 L432 / 字典 `metric-dictionary.md:23`）：末尾追加**加购率**两列 ——
+   * `cart_users` = 当日 `cart_add` 去重用户（**不是** `intent_users`：后者含 `favorite`，
+   * 字典 L22/L23 的分子只认 cart_add）；`cart_rate` = cart_users ÷ view_users，分母 0 → NULL。
+   * 加购**不是漏斗第五阶段**（§11.3 L441 只有 view/intent/order/pay），故只落在这一行上，
+   * 由 ADS 以 `overall_cart_rate` 整体率列透传，不展开成 stage 行。
    */
   def funnelDay(ns: WarehouseNamespace, dt: String): String =
     s"""
@@ -53,11 +59,15 @@ object DwsSql {
       |  CASE WHEN o.order_users = 0 THEN NULL
       |       ELSE CAST(p.pay_users AS DECIMAL(8,4)) / o.order_users END AS pay_rate,
       |  CASE WHEN b.view_users = 0 THEN NULL
-      |       ELSE CAST(p.pay_users AS DECIMAL(8,4)) / b.view_users END AS overall_buy_rate
+      |       ELSE CAST(p.pay_users AS DECIMAL(8,4)) / b.view_users END AS overall_buy_rate,
+      |  b.cart_users,
+      |  CASE WHEN b.view_users = 0 THEN NULL
+      |       ELSE CAST(b.cart_users AS DECIMAL(8,4)) / b.view_users END AS cart_rate
       |FROM (
       |  SELECT
       |    COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS view_users,
-      |    COUNT(DISTINCT CASE WHEN behavior_type IN ('favorite','cart_add') THEN user_id END) AS intent_users
+      |    COUNT(DISTINCT CASE WHEN behavior_type IN ('favorite','cart_add') THEN user_id END) AS intent_users,
+      |    COUNT(DISTINCT CASE WHEN behavior_type = 'cart_add' THEN user_id END) AS cart_users
       |  FROM ${ns.dwd}.dwd_user_behavior_detail
       |  WHERE dt = '$dt'
       |) b,

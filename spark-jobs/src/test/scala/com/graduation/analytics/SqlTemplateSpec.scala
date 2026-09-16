@@ -218,6 +218,17 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     sql should include("'order'")
     sql should include("'pay'")
     sql should include("overall_buy_rate")
+    // S3-04：整体加购率是**列**而不是第五个 stage 行（§11.3 L441 阶段集合恒为四阶）
+    sql should include("overall_cart_rate")
+    sql should not include "'cart'"
+  }
+
+  it should "漏斗 DWS 的加购分子只取 cart_add（不是 intent 的 favorite|cart_add）且分母 0 为 NULL" in {
+    val sql = DwsSql.funnelDay(ns, "20260901").toLowerCase
+    sql should include("behavior_type = 'cart_add'")
+    sql should include("as cart_users")
+    sql should include("as cart_rate")
+    sql should include("when b.view_users = 0 then null")
   }
 
   it should "商品转化 buy_users 取商品销售 DWS 去重买家数而非 buy 件数" in {

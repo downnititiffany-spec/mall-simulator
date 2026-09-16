@@ -35,7 +35,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_behavior_funnel 
     stage          STRING COMMENT 'view/intent/order/pay',
     user_count     BIGINT,
     conversion_rate DECIMAL(8,4) COMMENT '后一阶段/前一阶段，首阶段=1',
-    overall_buy_rate DECIMAL(8,4)
+    overall_buy_rate DECIMAL(8,4),
+    overall_cart_rate DECIMAL(8,4) COMMENT 'cart_add/view（整体加购率），四行同值，浏览为0→null'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

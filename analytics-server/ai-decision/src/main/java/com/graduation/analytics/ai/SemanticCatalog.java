@@ -98,6 +98,9 @@ public class SemanticCatalog {
         funnel.put("user_count", "该阶段去重用户数");
         funnel.put("conversion_rate", "阶段转化率（后一阶段/前一阶段，0-1）");
         funnel.put("overall_buy_rate", "整体购买转化率：pay 阶段 ÷ view 阶段");
+        // S3-04（设计 §11.2 L432 / 字典 metric-dictionary.md:23）：整体加购率，与上面的整体购买率同型。
+        // 加购不是漏斗阶段（§11.3 L441 恒为 view/intent/order/pay），故它是列而不是 stage 取值。
+        funnel.put("overall_cart_rate", "整体加购率：cart_add 去重用户数 ÷ view 去重用户数（四行同值；浏览为 0 时为 NULL）");
         TABLES.put("ads_behavior_funnel_m", funnel);
 
         Map<String, String> hotProduct = new LinkedHashMap<>();

@@ -67,11 +67,50 @@ class MetricPublisherMappingTest {
 
         List<MetricValue> values = publisher.buildCoreMetricValues(request(), rows(overview));
 
-        for (String code : List.of("pv", "gmv", "net_sale", "refund_rate", "full_refund_rate", "buy_rate")) {
+        for (String code : List.of("pv", "gmv", "net_sale", "refund_rate", "full_refund_rate",
+                "buy_rate", "cart_rate")) {
             assertThat(value(values, code).orElseThrow().getPeriod())
                     .as("指标 %s 的 period", code)
                     .isEqualTo("day:2026-09-01");
         }
+    }
+
+    @Test
+    @DisplayName("cart_rate 从漏斗行 overall_cart_rate 映射成同名指标码（phase 3 S3-04）")
+    void cartRateIsMappedFromFunnelRow() {
+        List<MetricValue> values = publisher.buildCoreMetricValues(request(), rows(overviewRow()));
+
+        MetricValue cart = value(values, "cart_rate").orElseThrow(
+                () -> new AssertionError("漏斗行有 overall_cart_rate 却没有映射成 cart_rate，码=" + codes(values)));
+        assertThat(cart.getMetricValue()).isEqualByComparingTo("0.6000");
+        assertThat(cart.getPeriod()).isEqualTo("day:2026-09-01");
+        assertThat(cart.getDefinitionVersion()).isEqualTo("v1");
+    }
+
+    @Test
+    @DisplayName("overall_cart_rate 为 NULL（当日浏览 0）时跳过 cart_rate，但不带走 buy_rate")
+    void nullCartRateIsSkippedWithoutAffectingBuyRate() {
+        Map<String, Object> overview = overviewRow();
+        Map<String, List<Map<String, Object>>> rows = new LinkedHashMap<>();
+        rows.put("ads_operation_overview_m", List.of(overview));
+        Map<String, Object> funnel = new LinkedHashMap<>();
+        funnel.put("stage", "pay");
+        funnel.put("user_count", 0L);
+        funnel.put("overall_buy_rate", null);
+        funnel.put("overall_cart_rate", null);
+        rows.put("ads_behavior_funnel_m", List.of(funnel));
+
+        // 同表四行时，只要任一行非空即可映射；这里四行全空（浏览 0）⇒ 两个率都不写
+        List<MetricValue> values = publisher.buildCoreMetricValues(request(), rows);
+        assertThat(value(values, "cart_rate")).isEmpty();
+        assertThat(value(values, "buy_rate")).isEmpty();
+        assertThat(value(values, "gmv")).isPresent();
+
+        // 反例对照：只有加购率为空时，购买率必须照常写入（一个空值不得带走另一个指标）
+        funnel.put("overall_buy_rate", new BigDecimal("0.2000"));
+        List<MetricValue> mixed = publisher.buildCoreMetricValues(request(), rows);
+        assertThat(value(mixed, "cart_rate")).isEmpty();
+        assertThat(value(mixed, "buy_rate")).isPresent();
     }
 
     @Test
@@ -127,6 +166,7 @@ class MetricPublisherMappingTest {
         dict.put("full_refund_rate", new DefinitionRef("v1", ""));
         dict.put("repeat_rate", new DefinitionRef("v1", ""));
         dict.put("buy_rate", new DefinitionRef("v1", ""));
+        dict.put("cart_rate", new DefinitionRef("v1", ""));
         return dict;
     }
 
@@ -137,6 +177,7 @@ class MetricPublisherMappingTest {
         funnel.put("stage", "pay");
         funnel.put("user_count", 3L);
         funnel.put("overall_buy_rate", new BigDecimal("1.0000"));
+        funnel.put("overall_cart_rate", new BigDecimal("0.6000"));
         rows.put("ads_behavior_funnel_m", List.of(funnel));
         return rows;
     }
