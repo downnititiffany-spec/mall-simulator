@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 952
+  'analytics-server'        = 956
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -475,6 +475,26 @@ $BaselineDefault = [ordered]@{
 #   ⇒ **analytics-server 950→952**（warehouse-pipeline 163→165，+2；其余五模块 93/350/93/94/157 未变）。
 #   边界：Java 侧执行器是 Mockito 替身 ⇒ 只证**编排次序与阶段证据**，不证真建表；零连库、零 DDL/迁移/前端；
 #   剩余开放项（续跑路径证据未守、整链次序只钉一条边）已登记 backlog，见 S3-32 登记 §7。
+# S3-36（2026-09-16，default 档）：backlog 行「`pipeline_run.input_batch_id` 恒 NULL（S3-34 实测新登记）」的
+#   **写入侧**收口（A 类/加性：列由 V7 建好、实体早有字段、全仓零生产者）。写入点＝`manifestForRun(...)` 之后、
+#   WAIT_LANDING 之前 —— manifest 一旦非空即为本 run 的输入批次，且重试路径在同一处重算必得**被钉住的同一批次**
+#   （`manifestForRun` 用该 run 的 WAIT_LANDING 证据 JSON 里的 batchId 钉批次）⇒ 幂等覆盖、不漂移。
+#   三条 fail-closed 分支**一律留 NULL**（NULL 是"未知"不是"缺失"）：manifest 为 null（无 READY 批次）／
+#   清单无 `batchId` 键／`longOf(batchId) <= 0`（非数字或 0 —— 选择器是宽松读且"首个合格候选即 best"，
+#   缺/坏批次号的清单**也会被选中**，故写入侧必须自己拦）。生产改动 1 文件（+14/−0）；测试 +4 条用例
+#   （写入值真落库／无 batchId／batchId 非数字／不可归属）＋既有重试用例追加「重试不漂移」断言
+#   ⇒ **analytics-server 952→956**（warehouse-pipeline 165→169，+4；其余五模块 93/350/93/94/157 未变）。
+#   **变异探针（真跑）**：H-干净版（写入点前无条件写 99）⇒ `Failures: 3`＝**三条 fail-closed 用例全红**
+#   （H 首轮因该守卫行在源内出现 2 次、整行 `Replace` 两处同改而**作废**，已如实登记）；J（去掉 `batchId > 0`）
+#   **首轮 0 红 ⇒ 该分支当时无任何测试覆盖**，据此补「batchId 非数字」用例后复跑 ⇒ `Failures: 1`（唯一红＝新用例）；
+#   I（证据写成固定 42）⇒ `Failures: 2`（本轮"同源"断言 ＋ 既有他源用例）。探针后 `Get-FileHash` 与备份**相同**。
+#   **门禁坑（本轮实测，务必沿用）**：探针用 `Copy-Item` 复原会把源文件 mtime 带回旧的 ⇒ maven 报
+#   `Nothing to compile - all classes are up to date` ⇒ 门禁实际跑的是**探针字节码**（首轮量数因此报
+#   `nonNumericBatchIdIsNotWrittenAsZero` 红且 `input_batch_id=0`，**该轮作废**）。改为先触碰源文件时间戳
+#   迫使重编译后，第二轮量数 `s336-count-2` 才有效（`warehouse-pipeline SUCCESS`）。
+#   边界：单测里 mapper 是 Mockito 替身 ⇒ 只证「`updateById` 带值被调用」，**不证真库写入**；历史行**不回填**
+#   （写正式库属 HARD DECISION 第④门，未做）；`/pipeline-runs` 接口会随实体下发该列，但前端 `pipelineRunRows`
+#   未映射 ⇒ **页面看不到批次**；零连库、零 DDL/迁移/前端改动。详见 S3-36 登记 §5/§7。
 $BaselineSpark = 308
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

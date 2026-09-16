@@ -18,6 +18,7 @@ import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +46,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -467,6 +469,101 @@ class PipelineServiceTest {
         assertThat(failed.errorCode()).isEqualTo("RUN_EMPTY_LANDING");
     }
 
+    // ── S3-36：批次级溯源 —— WAIT_LANDING 钉住的输入批次落库（pipeline_run.input_batch_id） ──
+    // 背景（S3-34 登记行）：V7 迁移建了该列、实体也有字段，但生产代码**零写入**，
+    // 于是"这个 run 吃的是哪个采集批次"只能靠 pipeline_stage_run.evidence 的 JSON 正则反查。
+    // 这两例把"该写"和"不该写"都钉住：有归属批次 → 写；无可归属批次 → 留 NULL，不猜。
+
+    @Test
+    void waitLandingPersistsInputBatchIdOfPinnedBatch() throws Exception {
+        // writeLanding 写的是 manifests/b1.json（batchId=1）→ 本 run 的输入批次就是 1
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-batchid", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        // ①真的落库：至少有一次 updateById 带着 input_batch_id=1（不是只改了内存对象）
+        ArgumentCaptor<PipelineRun> captor = ArgumentCaptor.forClass(PipelineRun.class);
+        verify(runMapper, atLeastOnce()).updateById(captor.capture());
+        assertThat(captor.getAllValues()).anyMatch(x -> Long.valueOf(1L).equals(x.getInputBatchId()));
+        // ②落库值与阶段证据同源（同一次 manifest 解析）
+        assertThat(insertedRun.get().getInputBatchId()).isEqualTo(1L);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"batchId\"\\s*:\\s*(\\d+)")
+                .matcher(stageOf("WAIT_LANDING").getEvidence());
+        assertThat(m.find()).isTrue();
+        assertThat(Long.parseLong(m.group(1))).isEqualTo(insertedRun.get().getInputBatchId());
+    }
+
+    @Test
+    void manifestWithoutUsableBatchIdDoesNotGuessInputBatch() throws Exception {
+        // 老/坏清单：READY、可归属、有数据，但**没有 batchId** —— 选择器仍会选中它
+        // （首个合格候选即 best），此时 input_batch_id 必须留 NULL：ingestion_batch 里
+        // 不存在 0 号批次，写 0 就是编造。
+        Files.createDirectories(landing.resolve("manifests"));
+        Files.writeString(landing.resolve("manifests/b-nobatch.json"),
+                "{\"status\":\"READY\",\"acceptedRecords\":3,\"acceptedUri\":\"accepted/2026-09-01\","
+                        + "\"quarantinedRecords\":0,\"sourceId\":" + SOURCE_ID + ",\"sourceCode\":\"mall-a\","
+                        + "\"schemaVersions\":[\"1.0\"]}");
+        writeEvents("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-nobatchid", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        ArgumentCaptor<PipelineRun> captor = ArgumentCaptor.forClass(PipelineRun.class);
+        verify(runMapper, atLeastOnce()).updateById(captor.capture());
+        assertThat(captor.getAllValues()).allMatch(x -> x.getInputBatchId() == null);
+    }
+
+    @Test
+    void nonNumericBatchIdIsNotWrittenAsZero() throws Exception {
+        // 更坏的老清单：batchId 存在但**不是数字** —— 选择器按 longOf 宽松读得 0，
+        // 且首个合格候选即 best，故它仍会被选中（WAIT_LANDING 通过）。
+        // 此时若把 0 写进 input_batch_id，就等于宣称"吃了 0 号批次"（ingestion_batch 无此行）⇒
+        // 必须留 NULL。本用例专门钉住写入侧的 `batchId > 0` fail-closed 守卫。
+        Files.createDirectories(landing.resolve("manifests"));
+        Files.writeString(landing.resolve("manifests/b-bad.json"),
+                "{\"batchId\":\"unknown\",\"status\":\"READY\",\"acceptedRecords\":3,"
+                        + "\"acceptedUri\":\"accepted/2026-09-01\",\"quarantinedRecords\":0,"
+                        + "\"sourceId\":" + SOURCE_ID + ",\"sourceCode\":\"mall-a\","
+                        + "\"schemaVersions\":[\"1.0\"]}");
+        writeEvents("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-badbatch", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        ArgumentCaptor<PipelineRun> captor = ArgumentCaptor.forClass(PipelineRun.class);
+        verify(runMapper, atLeastOnce()).updateById(captor.capture());
+        assertThat(captor.getAllValues()).allMatch(x -> x.getInputBatchId() == null);
+    }
+
+    @Test
+    void unattributableManifestLeavesInputBatchIdNull() throws Exception {
+        // 清单缺 sourceId（P1-05 之前的老清单）⇒ 不可归属 ⇒ 本 run 没有输入批次
+        writeManifest(3, SOURCE_ID, "accepted/2026-09-01", false);
+        writeEvents("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-nobatch", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        // 无法证明吃了哪个批次时，该列必须保持 NULL（宁可空，不可猜）
+        ArgumentCaptor<PipelineRun> captor = ArgumentCaptor.forClass(PipelineRun.class);
+        verify(runMapper, atLeastOnce()).updateById(captor.capture());
+        assertThat(captor.getAllValues()).allMatch(x -> x.getInputBatchId() == null);
+    }
+
     @Test
     void profileWithoutSourceFailsClosedWithStableCodeBeforeBuildingExecutor() throws Exception {
         // 未绑定源的运行环境：库名与 --sourceSystem 都不可知，绝不能猜一个源跑下去
@@ -522,6 +619,9 @@ class PipelineServiceTest {
                 .filter(s -> "LOAD_ODS".equals(s.getStageCode())).count();
         assertThat(waitLandingInsertsAfter).isEqualTo(1);
         assertThat(loadOdsInserts).isEqualTo(2);
+        // S3-36 追加断言：重试仍复用原批次（manifestForRun 钉住 b1.json），
+        // 输入批次不随重试漂移（第一轮 LOAD_ODS 失败时也已落库）
+        assertThat(insertedRun.get().getInputBatchId()).isEqualTo(1L);
     }
 
     // ── ⑥质量失败不得进发布（§5.4.1 阻断） ────────────────────────────────

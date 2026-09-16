@@ -426,6 +426,20 @@ public class PipelineService {
             // §13.4/§23.1：重试/恢复必须钉住**本 run 原有批次**（见 manifestForRun）
             // S2-04：并**按源归属**过滤（否则他源批次会落进本源的库，且事后不可察觉）
             Map<String, Object> manifest = manifestForRun(landingRoot, run.getId(), runSourceId);
+            // S3-36：批次级溯源落库。pipeline_run.input_batch_id 由 V7 建列、实体也有字段，
+            // 但此前**零写入**（S3-34 登记行）：批次只能靠 pipeline_stage_run.evidence 的 JSON
+            // 正则反查。此处与 WAIT_LANDING 证据（evidence.batchId）读的是**同一次** manifest 解析，
+            // 故两者同源、不会各说各话；重试路径钉住原批次（见 manifestForRun），故一次 run 内该值
+            // 稳定，可安全覆盖式写入（重试再写一次同值，不存在漂移）。
+            // manifest == null（无 READY 批次）时不写：该 run 没有输入批次，留 NULL 是如实，不是缺失。
+            // 值非法（缺 batchId / 解析为 0）同样不写：宁可空，不可猜一个批次号。
+            if (manifest != null && manifest.get("batchId") != null) {
+                long inputBatchId = LandingManifestSelector.longOf(manifest.get("batchId"));
+                if (inputBatchId > 0) {
+                    run.setInputBatchId(inputBatchId);
+                    runMapper.updateById(run);
+                }
+            }
             // §9.1：ODS 只能读取 accepted（好的批次数据）；§5.3.3 只装载业务日事件
             Path acceptedDir = manifest == null ? null
                     : landingRoot.resolve(String.valueOf(manifest.get("acceptedUri")));
