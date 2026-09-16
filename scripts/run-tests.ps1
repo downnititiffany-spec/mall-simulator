@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 914
+  'analytics-server'        = 915
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -241,6 +241,13 @@ $BaselineDefault = [ordered]@{
 #   `RFM_AMOUNT_UNAVAILABLE` 由「无条件」改为「仅原值不可用」（设计 §16.4 L732 单一 owner）。
 #   RfmServiceTest +4（原值齐备／窗口不一致／M 列缺失／R 列逐行缺失）+ AnalysisServiceTest +1（原值与
 #   窗口透传）⇒ analytics-server 909→914（纯 Java、不连库；真库 `m_amount` 非零与真镜像列存在性**未测**）。
+# S3-17：分析**统一信封**补 `source`（= `metric_snapshot.source`，发布方；§17.6 只接受 spark-ads），
+#   落实指导书 §7 阶段4 L156「返回明确 source…」与设计 §11.1 L414「MetricValue：source作用域…」
+#   （改前实测：`metric-analysis` 全模块 `getSource()` 零命中 ⇒ 该字段确实缺失）。
+#   加性改动：`AnalysisViewModel` 记录新增分量（紧随 snapshotId）、`of(...)` 增参、`empty()` 传 null；
+#   `AnalysisService.view()` 用 `blankToEmpty(meta.getSource())` **原样回显**（空串保持空串，不臆造 spark-ads）。
+#   口径边界：`source` **不是**业务源身份（P2-04 裁决 ①）——源身份由 per-source warehouse namespace 承载。
+#   AnalysisServiceTest +1（空串回显）⇒ analytics-server 914→915（纯 Java、不连库；真库 `source` 取值**未测**）。
 $BaselineSpark = 275
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

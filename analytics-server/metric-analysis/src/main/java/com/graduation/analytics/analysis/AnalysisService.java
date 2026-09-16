@@ -317,7 +317,9 @@ public class AnalysisService {
                                           List<String> warnings) {
         List<String> allWarnings = new ArrayList<>(warnings);
         MetricSnapshot meta = pinned.meta();
-        return AnalysisViewModel.of(pinned.snapshotId(), isoSeconds(meta.getBusinessTime()),
+        // source 是快照行的发布方（§17.6 只接受 spark-ads），原样回显；空串保持空串，不臆造值
+        return AnalysisViewModel.of(pinned.snapshotId(), blankToEmpty(meta.getSource()),
+                isoSeconds(meta.getBusinessTime()),
                 dataUpdatedAt(meta), blankToEmpty(meta.getDefinitionVersion()),
                 qualityStatus(meta, allWarnings), filters, data, allWarnings);
     }

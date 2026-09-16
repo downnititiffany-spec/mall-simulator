@@ -10,6 +10,18 @@
 > `RFM_PERIOD_UNAVAILABLE`）均为加性，旧前端不读它们也不会误读。五列的落库链
 > （Hive ADS → mxp 清单 → MySQL `V4` → Java 白名单）在 S2-06/S3-01 已完成，v1.1 只补读取侧。
 
+> **v1.2（2026-09-16，S3-17 加性补充）**：按指导书 V3.0 §7 阶段4 **L156**「MetricStore/专题服务返回
+> **明确 source**、snapshot、definitionVersion、时间和质量信息」与设计 V3.0 §11.1 **L414**「MetricValue：
+> **source作用域**、snapshotId…」/ §17.6，统一信封补 **`source`** 字段（值 = `metric_snapshot.source`）。
+> **既有字段语义一律不变**，新字段加性；旧前端不读它不会误读。
+>
+> **口径边界（不得越界表述，依 P2-04 裁决逐字）**：本字段是**发布方/生产者**标识
+> （`metric_snapshot.source`，§17.6「成功快照只接受 `spark-ads`」），**不是**业务源身份
+> —— `docs/acceptance/p2-04-dwd-source-projection-20260912/RULINGS-P2-04-20260912.md:40`
+> 「其 `source` 列实测值为发布方 `spark-ads`，**不是**源身份 ⇒ 不得把 `source` 当源身份使用」；
+> 业务源身份由 per-source warehouse namespace 与 ODS/DWD 的 `source_system`/`source_instance_id` 承载，
+> 本期分析信封**不**提供源身份（缺口已登记，见 `PROJECT_STATUS` backlog）。
+
 ## 1. 总原则
 
 1. 分析服务（`AnalysisService`、`RfmService`）**只能读指标库**（`MetricStore` / `MetricAdsReader`，
@@ -26,6 +38,7 @@
 ```json
 {
   "snapshotId": "S20260901_24",
+  "source": "spark-ads",
   "businessTime": "2026-09-01T00:00:00",
   "dataUpdatedAt": "2026-09-10T20:12:33",
   "definitionVersion": "v2",
@@ -39,6 +52,7 @@
 | 字段 | 类型 | 来源/口径 |
 |---|---|---|
 | `snapshotId` | string，可为 null | 本次请求固定的快照；无 ACTIVE 时为 null |
+| `source` | string，可为 null（**v1.2 新增**） | `metric_snapshot.source`——该快照的**发布方/生产者**（§17.6 成功快照只接受 `spark-ads`）；无可用快照时 null；取到快照但列为空串 ⇒ `""`（与 `definitionVersion` 同口径，不臆造值）。**不是业务源身份**，见文首 v1.2 口径边界 |
 | `businessTime` | string ISO，可为 null | `metric_snapshot.business_time` |
 | `dataUpdatedAt` | string ISO，可为 null | `metric_snapshot.data_updated_at`（无则 LOAD 时间） |
 | `definitionVersion` | string | `metric_snapshot.definition_version`（核心指标口径版本） |

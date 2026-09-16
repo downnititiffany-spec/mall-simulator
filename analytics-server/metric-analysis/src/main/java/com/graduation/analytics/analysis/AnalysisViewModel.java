@@ -18,6 +18,10 @@ import java.util.Map;
  * 放进 platform-common 只会让公共模块背上看板语义。</p>
  *
  * @param snapshotId        本次请求固定使用的快照号；无可用快照时为 null
+ * @param source            快照的**发布方/生产者**（`metric_snapshot.source`，§17.6 成功快照只接受
+ *                          `spark-ads`）；无可用快照时为 null。**不是业务源身份** —— 源身份由 per-source
+ *                          warehouse namespace 与 ODS/DWD 的 `source_system`/`source_instance_id` 承载
+ *                          （P2-04 裁决：不得把 `source` 当源身份使用）
  * @param businessTime      快照业务时间（ISO-8601，秒精度）
  * @param dataUpdatedAt     数据更新时间（ISO-8601）；取不到时退回快照创建时间
  * @param definitionVersion 快照使用的指标口径版本
@@ -29,6 +33,7 @@ import java.util.Map;
  */
 public record AnalysisViewModel<T>(
         String snapshotId,
+        String source,
         String businessTime,
         String dataUpdatedAt,
         String definitionVersion,
@@ -76,15 +81,15 @@ public record AnalysisViewModel<T>(
         warnings = warnings == null ? List.of() : List.copyOf(warnings);
     }
 
-    public static <T> AnalysisViewModel<T> of(String snapshotId, String businessTime, String dataUpdatedAt,
-                                             String definitionVersion, String qualityStatus,
+    public static <T> AnalysisViewModel<T> of(String snapshotId, String source, String businessTime,
+                                             String dataUpdatedAt, String definitionVersion, String qualityStatus,
                                              Map<String, Object> filters, T data, List<String> warnings) {
-        return new AnalysisViewModel<>(snapshotId, businessTime, dataUpdatedAt, definitionVersion,
+        return new AnalysisViewModel<>(snapshotId, source, businessTime, dataUpdatedAt, definitionVersion,
                 qualityStatus, filters, data, warnings);
     }
 
     /**
-     * 无可用快照：snapshotId/时间/口径版本一律 null，qualityStatus=UNKNOWN，data 为空对象。
+     * 无可用快照：snapshotId/source/时间/口径版本一律 null，qualityStatus=UNKNOWN，data 为空对象。
      *
      * <p>为什么 data 给空对象而不是 null：前端四态判空是"data 里没有行"（契约 §4 empty 态），
      * 给 null 会让解包层多一层特判。</p>
@@ -95,7 +100,7 @@ public record AnalysisViewModel<T>(
      */
     @SuppressWarnings("unchecked")
     public static <T> AnalysisViewModel<T> empty(Map<String, Object> filters, List<String> warnings) {
-        return new AnalysisViewModel<>(null, null, null, null, MetricQualityGate.UNKNOWN,
+        return new AnalysisViewModel<>(null, null, null, null, null, MetricQualityGate.UNKNOWN,
                 filters, (T) Map.of(), warnings);
     }
 }

@@ -101,7 +101,7 @@ class EvidenceBuilderTest {
     private AnalysisViewModel<AnalysisService.OverviewData> overview(String gmv) {
         AnalysisService.OverviewData data = new AnalysisService.OverviewData(metrics(gmv), List.of(), List.of(),
                 new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of());
-        return AnalysisViewModel.of(SNAP, "2026-09-01T00:00:00", "2026-09-01T00:10:00", "v2", "PASS",
+        return AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "2026-09-01T00:10:00", "v2", "PASS",
                 Map.of("snapshotId", SNAP), data, List.of());
     }
 
@@ -111,7 +111,7 @@ class EvidenceBuilderTest {
                         new AnalysisService.HotProduct(2L, "机械键盘", new BigDecimal("10.3972"), 3, 0, 1, 3, 2)),
                 List.of(), 10);
         when(analysisService.products(eq(SNAP), anyInt(), eq(DAY), eq(DAY)))
-                .thenReturn(AnalysisViewModel.of(SNAP, "2026-09-01T00:00:00", "x", "v2", "PASS",
+                .thenReturn(AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "x", "v2", "PASS",
                         Map.of(), products, List.of()));
     }
 
@@ -119,7 +119,7 @@ class EvidenceBuilderTest {
         AnalysisService.SalesData sales = new AnalysisService.SalesData(List.of(), null, null, null, null,
                 new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of(), List.of());
         when(analysisService.sales(eq(SNAP), eq(DAY), eq(DAY)))
-                .thenReturn(AnalysisViewModel.of(SNAP, "2026-09-01T00:00:00", "x", "v2", "PASS",
+                .thenReturn(AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "x", "v2", "PASS",
                         Map.of(), sales, List.of(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE)));
     }
 

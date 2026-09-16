@@ -79,6 +79,7 @@ class AnalysisServiceTest {
 
         for (AnalysisViewModel<?> model : models) {
             assertThat(model.snapshotId()).isNull();
+            assertThat(model.source()).isNull();
             assertThat(model.businessTime()).isNull();
             assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
             assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT);
@@ -91,13 +92,14 @@ class AnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("运营总览：信封 8 字段齐备，指标/趋势/质量/字典按契约 §3.1 组装")
+    @DisplayName("运营总览：信封 9 字段齐备，指标/趋势/质量/字典按契约 §3.1 组装")
     void overviewFillsEnvelopeAndSections() {
         stubActiveSnapshot();
 
         AnalysisViewModel<OverviewData> model = service.overview(null, null, null);
 
         assertThat(model.snapshotId()).isEqualTo(SID);
+        assertThat(model.source()).isEqualTo("spark-ads");
         assertThat(model.businessTime()).isEqualTo("2026-09-01T00:00:00");
         assertThat(model.dataUpdatedAt()).isEqualTo("2026-09-01T00:00:00");
         assertThat(model.definitionVersion()).isEqualTo("v2");
@@ -133,6 +135,24 @@ class AnalysisServiceTest {
         assertThat(data.quality().passedCount()).isEqualTo(3);
         assertThat(data.quality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
         assertThat(data.metricDictionary()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("信封 source 取快照行原值：空串原样回显，不臆造成 spark-ads（§17.6 只约束发布侧）")
+    void blankSnapshotSourceIsEchoedAsEmptyString() {
+        when(adsReader.activeSnapshotId()).thenReturn(SID);
+        MetricSnapshot blank = snapshot(SID);
+        blank.setSource("");
+        when(metricStore.findSnapshot(SID)).thenReturn(blank);
+        when(metricStore.query(any())).thenReturn(metricValues());
+        when(definitionMapper.selectList(any())).thenReturn(definitions());
+        stubAdsRows();
+
+        AnalysisViewModel<OverviewData> model = service.overview(null, null, null);
+
+        assertThat(model.snapshotId()).isEqualTo(SID);
+        assertThat(model.source()).isEmpty();
+        assertThat(model.warnings()).isEmpty(); // 空串不是降级事实：读到的就是"发布方未标注"
     }
 
     @Test
@@ -325,6 +345,7 @@ class AnalysisServiceTest {
         snapshot.setDataUpdatedAt(LocalDateTime.of(2026, 9, 1, 0, 0, 0));
         snapshot.setDefinitionVersion("v2");
         snapshot.setPipelineRunId(24L);
+        snapshot.setSource("spark-ads"); // §17.6：成功快照只接受 spark-ads（发布侧写入，读侧原样回显）
         snapshot.setStatus(MetricSnapshot.STATUS_ACTIVE);
         return snapshot;
     }

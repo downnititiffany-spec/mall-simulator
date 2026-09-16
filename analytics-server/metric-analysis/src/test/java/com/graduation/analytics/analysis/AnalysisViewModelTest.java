@@ -11,7 +11,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * R7-4 信封结构 L0 单测（不连库）：验证契约 §2 的 8 个字段与空信封语义。
+ * R7-4 信封结构 L0 单测（不连库）：验证契约 §2 的 9 个字段（v1.2 起含 `source`）与空信封语义。
  */
 class AnalysisViewModelTest {
 
@@ -22,6 +22,7 @@ class AnalysisViewModelTest {
                 AnalysisViewModel.empty(Map.of("from", "2026-09-01"), List.of(AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
 
         assertThat(model.snapshotId()).isNull();
+        assertThat(model.source()).isNull();
         assertThat(model.businessTime()).isNull();
         assertThat(model.dataUpdatedAt()).isNull();
         assertThat(model.definitionVersion()).isNull();
@@ -36,8 +37,9 @@ class AnalysisViewModelTest {
     @DisplayName("of()：filters/warnings 为 null 时收敛为空集合，不出现 null 字段")
     void nullCollectionsAreNormalized() {
         AnalysisViewModel<String> model =
-                AnalysisViewModel.of("S1", null, null, "v2", "PASS", null, "data", null);
+                AnalysisViewModel.of("S1", "spark-ads", null, null, "v2", "PASS", null, "data", null);
 
+        assertThat(model.source()).isEqualTo("spark-ads");
         assertThat(model.filters()).isEmpty();
         assertThat(model.warnings()).isEmpty();
     }
@@ -51,7 +53,7 @@ class AnalysisViewModelTest {
         warnings.add("W1");
 
         AnalysisViewModel<String> model =
-                AnalysisViewModel.of("S1", "2026-09-01T00:00:00", "2026-09-01T00:00:00", "v2", "PASS",
+                AnalysisViewModel.of("S1", "spark-ads", "2026-09-01T00:00:00", "2026-09-01T00:00:00", "v2", "PASS",
                         filters, "data", warnings);
         filters.put("snapshotId", "S2");
         warnings.add("W2");
