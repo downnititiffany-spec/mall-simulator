@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 /**
  * 全局异常映射：业务异常 → 400 + 业务码；参数校验 → 400 PARAM_INVALID；
  * 未知异常 → 500 INTERNAL（日志记录，不向调用方泄露堆栈/连接信息）。
+ * S3-19 起：只读查询超时 → 504 {@code QUERY_TIMEOUT}（不再落进"系统繁忙"兜底）。
  */
 @Slf4j
 @RestControllerAdvice
@@ -51,6 +52,32 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 只读查询超时 → 504 + {@code QUERY_TIMEOUT}（S3-19 加法，指导书 V3.0 L158「超时统一」）。
+     *
+     * <p>为什么单独立一个处理器而不是塞进 {@link #handleOther}：兜底处理器返回 500 INTERNAL
+     * "系统繁忙"，这个码对"到点中止"是错的——它把**可预期的容量/窗口问题**说成服务端故障，
+     * 调用方据此报障、运维据此翻日志找异常，两边都做错事。超时必须是可辨识的一类。</p>
+     *
+     * <p>为什么挂在异常类型上而不是业务码上：超时是 JDBC 驱动/Spring 抛出来的
+     * （{@code SQLTimeoutException} → {@link org.springframework.dao.QueryTimeoutException}），
+     * 不是我们主动判定的业务状态。状态码仍走 {@link #mapStatus} 单一属主，
+     * 码仍取 {@link PlatformBizException#QUERY_TIMEOUT} 单一常量。</p>
+     *
+     * <p>不向调用方回传驱动原文（与兜底处理器一致）：驱动消息里可能带语句片段/库名，
+     * 只暴露"超时了，请缩小窗口重试"这一层，细节进服务端日志。</p>
+     */
+    @ExceptionHandler(org.springframework.dao.QueryTimeoutException.class)
+    public ResponseEntity<ApiResponse<Void>> handleQueryTimeout(org.springframework.dao.QueryTimeoutException e) {
+        log.warn("read query exceeded unified timeout [{}] {}", describeCurrentRequest(), e.getMessage());
+        return ResponseEntity.status(mapStatus(PlatformBizException.QUERY_TIMEOUT))
+                .body(ApiResponse.error(PlatformBizException.QUERY_TIMEOUT,
+                        "查询超过统一超时（" + QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS
+                                + " 秒，可用 " + QueryTimeoutPolicy.READ_TIMEOUT_PROPERTY + " 调整）；"
+                                + "请缩小时间窗口或降低 topN 后重试",
+                        TraceContext.create().traceId()));
+    }
+
+    /**
      * 业务码 → HTTP 状态（**唯一所有者**：新增错误码只在这里加一行，不得散落到控制器或第二个 advice）。
      * 未列出的码一律 400——保持 V1 以来的既有契约，改动只做加法。
      *
@@ -62,6 +89,9 @@ public class GlobalExceptionHandler {
      * 以及 {@code MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE} → 501（能力缺口，刻意 fail-closed，
      * 与"服务端故障"500 必须可区分，理由见 {@link PlatformBizException#MAPPING_NOT_ACTIVE}
      * 与 {@link PlatformBizException#MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE}）；既有码状态不变。</p>
+     *
+     * <p>S3-19 加法：{@code QUERY_TIMEOUT} → 504（只读查询到点中止，属"依赖方太慢"而不是
+     * 调用方参数错或本服务故障，理由见 {@link PlatformBizException#QUERY_TIMEOUT}）；既有码状态不变。</p>
      */
     static HttpStatus mapStatus(String code) {
         if (code == null) {
@@ -85,6 +115,7 @@ public class GlobalExceptionHandler {
                  PlatformBizException.MAPPING_NOT_ACTIVE,
                  PlatformBizException.MAPPING_ACTIVE_PROFILE_DRIFT -> HttpStatus.CONFLICT;
             case PlatformBizException.MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE -> HttpStatus.NOT_IMPLEMENTED;
+            case PlatformBizException.QUERY_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 924
+  'analytics-server'        = 933
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -259,6 +259,24 @@ $BaselineDefault = [ordered]@{
 #   + AnalysisControllerTest（新类，+2：page/size/topN 接线按位置下传 + 全缺省传 null）
 #   ⇒ analytics-server 915→924（metric-analysis 73→80、platform-app 147→149；纯 Java、不连库；
 #   真库商品行数、真 HTTP 分页端到端**未测**）。
+# S3-19：**只读查询超时统一**（指导书 §7 阶段4 **L158**「…分页、限流、**超时统一**」剩余子项中的
+#   「超时统一」；设计锚点 L544 Store 能力含 `queryTimeout`、L569 只读 SQL 查询超时 30 秒、
+#   L572「setReadOnly + timeout/maxRows 同时生效」）。
+#   开工前实测：`MySqlMetricStore` / `MetricAdsReader`（阶段4 两条读路径，共用 `metricReadJdbcTemplate`）
+#   零超时设置；全仓只有 ai-decision `SqlExecutor:88,122` 自带字面量 30 ⇒ 同一平台两套超时。
+#   加性改动：新 `platform-common` 数值属主 `QueryTimeoutPolicy`（默认 30，可配
+#   `platform.query.read-timeout-seconds`，0/负数/非数字/溢出**一律回退默认值，绝不解释成"无超时"**）；
+#   `metricReadJdbcTemplate` 装配点 `setQueryTimeout(...)`（一次设定两条读路径同时生效）；
+#   新错误码 `QUERY_TIMEOUT` → 504（`mapStatus` 单点定状态、`PlatformBizException` 单点定码，
+#   超时不再落进兜底 500 INTERNAL）；`SqlExecutor.QUERY_TIMEOUT_SECONDS` 改引用该属主（值不变=30）。
+#   刻意排除：发布写模板与 meta 读写共用模板不加读超时（无真库长事务证据），`maxRows` 不进阶段4
+#   读路径（整分区读取，静默截断会算错 total/排行）。
+#   新测试：`GlobalExceptionHandlerQueryTimeoutTest`（+3）、`PlatformDataSourcesQueryTimeoutTest`（+5）、
+#   `QueryTimeoutOwnerDriftTest`（+1）⇒ analytics-server 924→933
+#   （platform-common 90→93、ai-decision 92→93、platform-app 149→154；纯 Java、不连库；
+#   真库上 queryTimeout 到点是否抛 `QueryTimeoutException`、真 HTTP 504**未测**）。
+#   边界：设计 L544 的 per-Store 能力描述（`supportsSnapshot`/`supportsDimensions`/`maxRows`/`queryTimeout`/
+#   `availability`）本轮**未实现**（全模块零命中，已登记）；限流（L158 同句）因设计零锚点**待总控批注**。
 $BaselineSpark = 275
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

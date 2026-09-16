@@ -101,6 +101,16 @@ public class PlatformBizException extends RuntimeException {
     public static final String MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE =
             "MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE";
 
+    // S3-19 加性新增（指导书 V3.0 §7 阶段4 L158「…分页、限流、超时统一」）：
+    //   QUERY_TIMEOUT → 504（GATEWAY_TIMEOUT）
+    // 语义：**只读查询超过了统一超时**（超时值由 QueryTimeoutPolicy 单点定义），既不是调用方把参数
+    // 写错（那是 400 PARAM_INVALID），也不是服务端故障（那是 500 INTERNAL）。三者必须可区分：
+    // 超时对调用方的正确动作是"缩小时间窗/降低 topN 后重试"，对运维是"看慢查询与索引"，
+    // 混成一个码会让两类人都做错事。为什么不复用 INTERNAL —— 兜底 500 会把"到点中止"写成
+    // "系统繁忙"，现场无法判断该重试还是该报障。状态取值仍由 GlobalExceptionHandler#mapStatus
+    // 单点决定，本常量只定码。
+    public static final String QUERY_TIMEOUT = "QUERY_TIMEOUT";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

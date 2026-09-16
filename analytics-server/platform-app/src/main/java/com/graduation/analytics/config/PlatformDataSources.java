@@ -1,5 +1,6 @@
 package com.graduation.analytics.config;
 
+import com.graduation.analytics.common.QueryTimeoutPolicy;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -117,15 +118,31 @@ public class PlatformDataSources {
     /**
      * 指标库读 JdbcTemplate（metricReadDataSource）。
      * §17.1：生产环境只读指标源缺失必须失败，禁止回退元数据库 → 这里启动即报错而不是降级。
+     *
+     * <p>S3-19（指导书 V3.0 L158「超时统一」）：这里是**阶段4 分析只读链路**的超时下发点。
+     * {@code MySqlMetricStore} 与 {@code MetricAdsReader} 注入的是同一个本 Bean，
+     * 因此在这里设一次 {@code setQueryTimeout} 两条路径同时生效，不必在两个 DAO 里各写一遍
+     * （设计 L572 只读链路「timeout/maxRows 同时生效」的同一条思路）。超时值取自
+     * {@link QueryTimeoutPolicy}（唯一数值属主，默认 30 秒 = 设计 L569 先例），
+     * 可用 {@code platform.query.read-timeout-seconds} 覆盖；0/负数/非法值一律回退默认值，
+     * 绝不解释成"无超时"。</p>
+     *
+     * <p><b>刻意不扩展</b>：{@code metricPublishJdbcTemplate}（批量写入/发布）与 meta 模板
+     * （读写共用）**不加**读超时——本机没有真库长事务证据，给未取证的写路径加语句超时会引入
+     * 新的生产失败模式。{@code maxRows} 也不在此设：ADS 读取是整分区读取，
+     * 静默截断会让"总数/排行"出错，行数上限只属于阶段6 的只读 SQL 路径（{@code SqlExecutor}）。</p>
      */
     @Bean("metricReadJdbcTemplate")
     public JdbcTemplate metricReadJdbcTemplate(
-            @Qualifier("metricReadDataSource") DataSource dataSource) {
+            @Qualifier("metricReadDataSource") DataSource dataSource,
+            Environment env) {
         if (dataSource == null) {
             throw new IllegalStateException(
                     "platform.metric.read.url 未配置：指标库只读源缺失，禁止回退 analytics_meta（§17.1）");
         }
-        return new JdbcTemplate(dataSource);
+        JdbcTemplate template = new JdbcTemplate(dataSource);
+        template.setQueryTimeout(QueryTimeoutPolicy.readTimeoutSeconds(env));
+        return template;
     }
 
     // ── 事务管理器（§17.1：meta 默认，指标发布独立，只读源无写事务） ──────────────────────

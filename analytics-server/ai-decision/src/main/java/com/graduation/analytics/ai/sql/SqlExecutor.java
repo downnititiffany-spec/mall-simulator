@@ -33,7 +33,14 @@ import java.util.Map;
 @Component
 public class SqlExecutor {
 
-    public static final int QUERY_TIMEOUT_SECONDS = 30;
+    /**
+     * 只读查询超时（秒）。S3-19 起**不再自带字面量**，改取平台唯一数值属主
+     * {@link com.graduation.analytics.common.QueryTimeoutPolicy}（指导书 V3.0 L158「超时统一」）：
+     * 阶段4 的分析只读链路在 {@code metricReadJdbcTemplate} 上取同一个值。
+     * 值不变（30 秒，设计 L569 先例），但改属主即两条路径同时改。
+     */
+    public static final int QUERY_TIMEOUT_SECONDS =
+            com.graduation.analytics.common.QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS;
 
     /** 契约 §2.3 rowLimit：结果行上限 200（LIMIT 不生效时由 JDBC 层兜底截断） */
     public static final int MAX_ROWS = AiScope.DEFAULT_ROW_LIMIT;
