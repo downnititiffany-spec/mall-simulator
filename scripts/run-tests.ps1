@@ -205,7 +205,18 @@ $BaselineDefault = [ordered]@{
 #   （order_id/user_id/product_id/quantity）—— 位置写入下别名惰性、取值断言不变（DimDwdChainExecSpec/
 #   DwsAdsChainExecSpec 全绿即为实测依据），目的是让整条投影列序可被静态守卫逐位对账。
 #   纯 Spark 测试侧 + 该 SQL 文本，未连库、未改任何 Flyway 迁移、未改任何 DDL 表形。
-$BaselineSpark = 254
+# S3-14：ADS 物理表形的**三方一致**守卫（与 S3-11/S3-13 同型，覆盖 ADS 8 张正式表 + 8 张 __staging）。
+#   新增 AdsSchemaOwnerSpec（12 条：04-ads.sql 参考副本↔唯一所有者逐列（名/类型/序）、
+#   参考副本表集 = 所有者 8 张 + 2 张镜像表白名单（ads_category_sale/ads_region_sale：无所有者且零写入）、
+#   已登记漂移 D-09/V25-C01 的**精确形态**（仅 ads_operation_overview 参考副本末位多一个 snapshot_id STRING，
+#   所有者不含该列；参考副本一旦被修正此用例会红＝要求删除白名单项）、分区列 dt STRING 且不混进普通列、
+#   参考副本禁 ALTER 旁路、所有者正式表集 == AdsSql.TABLES、暂存表列 == 正式表列且分区 snapshot_id+dt、
+#   8 张正式 + 8 张暂存的写入投影列序、写入唯一入口（每表恰好 1 处 insertTarget 调用 + 无 ads_ 表名直写旁路）、
+#   守卫自检（投影列序对调 / 静态分区子句换错时同一判定点必须红）、冻结快照第四份依据）
+#   ⇒ spark 254→266。**纯 Spark 测试侧**，未连库、未改任何 Flyway 迁移、未改任何 DDL 表形与生产 SQL。
+#   本轮**未**改 `warehouse/ddl/04-ads.sql`：删掉参考副本里已声明的一列落在门①（DROP COLUMN）邻域 ⇒
+#   只登记 + 精确钉住（理由与事实链见 AdsSchemaOwnerSpec 的 RegisteredSnapshotIdDriftTables 注释）。
+$BaselineSpark = 266
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
