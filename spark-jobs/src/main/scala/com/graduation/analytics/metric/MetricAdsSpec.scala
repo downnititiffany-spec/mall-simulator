@@ -30,7 +30,7 @@ object MetricAdsSpec {
       Seq("pv", "uv", "dau", "order_count", "sale_amount", "net_sale_amount",
         "avg_order_value", "refund_rate", "full_refund_rate")),
     MetricAdsTable("ads_sale_trend", "ads_sale_trend_m",
-      Seq("order_count", "buyer_count", "sale_amount", "avg_order_value")),
+      Seq("order_count", "buyer_count", "sale_amount", "avg_order_value", "net_sale_amount")),
     MetricAdsTable("ads_behavior_funnel", "ads_behavior_funnel_m",
       Seq("stage", "user_count", "conversion_rate", "overall_buy_rate")),
     MetricAdsTable("ads_active_trend", "ads_active_trend_m",

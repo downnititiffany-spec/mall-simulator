@@ -139,11 +139,22 @@ object AdsSql {
        |WHERE b.dt = '$dt'
        |""".stripMargin
 
-  /** 销售趋势 */
+  /**
+   * 销售趋势（§9.3 L333「`ads_sale_trend`：历史已发布，**net_sale 等字段需补**」）。
+   *
+   * 净销售额口径 = 设计 §11.2 **L428**「同口径支付金额 − 成功退款金额；真实收入方向，
+   * 退款归属期需冻结」。这里**直接透传** `dws_trade_day.net_sale_amount`，不在 ADS 另写算法：
+   *  - 退款只计 `final_paid_flag = 1` 的行（未支付/已取消订单的退款金额不参与扣减），
+   *    与 `operationOverview` 的净额同源；
+   *  - 由此保证同一 dt 上 `ads_sale_trend.net_sale_amount` 与 `ads_operation_overview.net_sale_amount`
+   *    逐值相等（两张 ADS 表不得给出两种收入口径，实测见 `AdsSaleTrendNetSaleSpec` 的跨表对账）；
+   *  - 「退款归属期冻结」的现状：退款金额由 `OrderTradeCompiler` 按 `refund_completed` 事件累计到
+   *    该订单所在业务日的明细行（与大盘表完全一致），**跨业务日的退款重结未实现**（见 F-35 边界）。
+   */
   def saleTrend(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_sale_trend", dt, snapshotId)}
-       |SELECT order_count, buyer_count, sale_amount, avg_order_value
+       |SELECT order_count, buyer_count, sale_amount, avg_order_value, net_sale_amount
        |FROM ${ns.dws}.dws_trade_day
        |WHERE dt = '$dt'
        |""".stripMargin

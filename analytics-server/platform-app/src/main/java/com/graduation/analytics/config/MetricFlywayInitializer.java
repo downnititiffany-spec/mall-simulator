@@ -10,7 +10,8 @@ import javax.sql.DataSource;
 
 /**
  * R7-1 指标库迁移执行器（V2.0 §17.2）：用 **metricPublishDataSource**（metric_pub）执行
- * {@code classpath:db/metric}（V1 快照/指标值 → V2 ADS 宽表 → V3 R7 ADS 补齐 → V4 画像 R/F/M 原值与窗口）。
+ * {@code classpath:db/metric}（V1 快照/指标值 → V2 ADS 宽表 → V3 R7 ADS 补齐 → V4 画像 R/F/M 原值与窗口
+ * → V5 销售趋势净销售额）。
  *
  * 与 {@link MetaFlywayInitializer} 完全分离：
  * <ul>

@@ -235,6 +235,7 @@ class MetricPublisherMySqlIT {
         trend.put("buyer_count", 3L);
         trend.put("sale_amount", new BigDecimal("2042.00"));
         trend.put("avg_order_value", new BigDecimal("408.40"));
+        trend.put("net_sale_amount", new BigDecimal("1493.00")); // S3-02 加列：与大盘净额同比
         rows.put("ads_sale_trend_m", List.of(trend));
 
         Map<String, Object> funnel = new LinkedHashMap<>();

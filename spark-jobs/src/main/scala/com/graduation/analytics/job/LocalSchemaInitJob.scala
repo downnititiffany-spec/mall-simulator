@@ -152,7 +152,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_sale_trend (
           order_count BIGINT, buyer_count BIGINT, sale_amount DECIMAL(18,2),
-          avg_order_value DECIMAL(18,2))
+          avg_order_value DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (dt STRING)"""),
     // S3-01：画像表末尾追加 R/F/M 原值 + 观察窗口（§11.4 L447）。注意 `IF NOT EXISTS` 对**已存在**的表
     // 不生效 —— 已在产 Hive 建过该表的库需要显式 `ALTER TABLE … ADD COLUMNS` 才会长出新列
@@ -203,7 +203,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_sale_trend__staging (
           order_count BIGINT, buyer_count BIGINT, sale_amount DECIMAL(18,2),
-          avg_order_value DECIMAL(18,2))
+          avg_order_value DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_user_profile__staging (

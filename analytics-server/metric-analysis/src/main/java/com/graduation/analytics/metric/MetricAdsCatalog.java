@@ -27,7 +27,7 @@ public record MetricAdsCatalog(String name, List<String> columns, List<String> k
                             "avg_order_value", "refund_rate", "full_refund_rate"),
                     List.of()),
             new MetricAdsCatalog("ads_sale_trend_m",
-                    List.of("order_count", "buyer_count", "sale_amount", "avg_order_value"),
+                    List.of("order_count", "buyer_count", "sale_amount", "avg_order_value", "net_sale_amount"),
                     List.of()),
             new MetricAdsCatalog("ads_behavior_funnel_m",
                     List.of("stage", "user_count", "conversion_rate", "overall_buy_rate"),

@@ -175,7 +175,7 @@ class TextToSqlAuditTest {
         SemanticCatalog mock = mock(SemanticCatalog.class);
         Map<String, Set<String>> stubs = new LinkedHashMap<>();
         stubs.put("ads_sale_trend_m", Set.of("snapshot_id", "dt", "order_count", "buyer_count",
-                "sale_amount", "avg_order_value"));
+                "sale_amount", "avg_order_value", "net_sale_amount"));
         stubs.put("ads_hot_product_m", Set.of("snapshot_id", "dt", "product_id", "product_name",
                 "heat_score", "pv", "fav", "cart", "buy", "rank_no"));
         stubs.forEach((t, cols) -> {

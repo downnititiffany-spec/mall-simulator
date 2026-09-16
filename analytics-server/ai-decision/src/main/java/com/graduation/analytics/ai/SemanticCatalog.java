@@ -82,6 +82,9 @@ public class SemanticCatalog {
         saleTrend.put("buyer_count", "支付用户数（去重）");
         saleTrend.put("sale_amount", "销售额(GMV)，单位元");
         saleTrend.put("avg_order_value", "客单价");
+        // S3-02（设计 §9.3 L333 / §11.2 L428）：趋势表补净销售额，与大盘表同义同口径，
+        // 使「净销售额」字段别名在本表也可解析（此前只有大盘表有该列）。
+        saleTrend.put("net_sale_amount", "净销售额：销售额减退款金额（只扣已支付订单的退款），单位元");
         TABLES.put("ads_sale_trend_m", saleTrend);
 
         Map<String, String> funnel = new LinkedHashMap<>();

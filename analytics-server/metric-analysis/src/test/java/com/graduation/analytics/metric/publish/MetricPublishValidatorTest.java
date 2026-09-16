@@ -217,7 +217,8 @@ class MetricPublishValidatorTest {
         Map<String, List<Map<String, Object>>> rows = new LinkedHashMap<>();
         rows.put("ads_operation_overview_m", List.of(overview()));
         rows.put("ads_sale_trend_m", List.of(new LinkedHashMap<>(Map.of("order_count", 5L, "buyer_count", 3L,
-                "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40")))));
+                "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"),
+                "net_sale_amount", new BigDecimal("1493.00")))));
         rows.put("ads_behavior_funnel_m", List.of(funnel("view"), funnel("pay")));
         rows.put("ads_active_trend_m", List.of(new LinkedHashMap<>(Map.of("dau", 3L, "behavior_count", 22L))));
         for (String table : List.of("ads_hot_product_m", "ads_product_conversion_m", "ads_user_profile_m",

@@ -69,11 +69,14 @@ STORED AS PARQUET
 LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_product_conversion';
 
 -- 销售趋势
+-- net_sale_amount（S3-02，设计 §9.3 L333 / §11.2 L428）：净销售额 = 销售额 − 已支付订单退款额，
+-- 与 ads_operation_overview.net_sale_amount 同义同源（同一 dt 必须逐值相等）。
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_sale_trend (
     order_count     BIGINT,
     buyer_count     BIGINT,
     sale_amount     DECIMAL(18,2),
-    avg_order_value DECIMAL(18,2)
+    avg_order_value DECIMAL(18,2),
+    net_sale_amount DECIMAL(18,2) COMMENT '净销售额：销售额-已支付订单退款额（与 ads_operation_overview 同口径）'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

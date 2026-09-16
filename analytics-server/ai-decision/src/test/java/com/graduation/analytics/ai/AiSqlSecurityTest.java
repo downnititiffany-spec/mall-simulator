@@ -50,7 +50,7 @@ class AiSqlSecurityTest {
         tables.put("ads_operation_overview_m", java.util.Set.of("snapshot_id", "dt", "pv", "uv", "dau",
                 "order_count", "sale_amount", "net_sale_amount", "avg_order_value", "refund_rate", "full_refund_rate"));
         tables.put("ads_sale_trend_m", java.util.Set.of("snapshot_id", "dt", "order_count", "buyer_count",
-                "sale_amount", "avg_order_value"));
+                "sale_amount", "avg_order_value", "net_sale_amount"));
         tables.put("ads_behavior_funnel_m", java.util.Set.of("snapshot_id", "dt", "stage", "user_count",
                 "conversion_rate", "overall_buy_rate"));
         tables.put("ads_hot_product_m", java.util.Set.of("snapshot_id", "dt", "product_id", "product_name",

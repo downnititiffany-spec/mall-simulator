@@ -28,12 +28,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code Unknown column 'net_sale_amount' in 'field list'}（query status=FAILED、0 行）。
  * 这类漂移不会让编译或普通单测变红，只有真库查询才暴露，故在此常驻比对 DDL。</p>
  *
- * <p>DDL 为唯一事实来源：platform-app/src/main/resources/db/metric/V2__metric_ads_materialized.sql。</p>
+ * <p>DDL 为唯一事实来源：platform-app/src/main/resources/db/metric/V*.sql（**全部**迁移，
+ * 含后续 {@code ALTER TABLE ... ADD COLUMN} 的加性迁移；只解析 {@code CREATE TABLE} 会漏掉加列，
+ * 导致"真实列已存在但语义层没写"这类漂移在守卫下静默通过，见 {@code 迁移解析覆盖后续ALTER加列}）。</p>
  */
 class AiSqlDriftTest {
 
     private static final Pattern CREATE_TABLE = Pattern.compile(
             "CREATE\\s+TABLE\\s+([a-z_][a-z0-9_]*)\\s*\\((.*?)\\)\\s*ENGINE", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    /** 加性迁移：{@code ALTER TABLE t ... ADD COLUMN c ...;}（列定义细节不解析，只要列名） */
+    private static final Pattern ALTER_TABLE = Pattern.compile(
+            "ALTER\\s+TABLE\\s+`?([a-z_][a-z0-9_]*)`?\\s+(.*?);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern ADD_COLUMN = Pattern.compile(
+            "ADD\\s+COLUMN\\s+`?([a-z_][a-z0-9_]*)`?", Pattern.CASE_INSENSITIVE);
     private static final Pattern FROM_TABLE = Pattern.compile(
             "(?:FROM|JOIN)\\s+([a-z_][a-z0-9_]*)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SELECT_LIST = Pattern.compile(
@@ -46,7 +53,15 @@ class AiSqlDriftTest {
             "as", "distinct", "max", "min", "sum", "avg", "count", "date_sub", "curdate", "interval",
             "day", "field", "case", "when", "then", "else", "end", "null", "true", "false");
 
-    /** 解析全部 metric 迁移 DDL（V2 大盘/趋势/漏斗 + V3 R7 商品/画像/质量）：表 → 列集合 */
+    /**
+     * 解析全部 metric 迁移 DDL（V1/V2 大盘/趋势/漏斗 + V3 R7 商品/画像/质量 + 后续加性 ALTER）：
+     * 表 → 列集合。
+     *
+     * <p>顺序无关：先把所有 {@code CREATE TABLE} 建好表集合，再按文件顺序应用
+     * {@code ALTER TABLE ... ADD COLUMN}。只解析 CREATE 会让"加性迁移新增的列"对守卫不可见
+     * （2026-09 S3-02 实测：V5 已给 {@code ads_sale_trend_m} 加了 {@code net_sale_amount}，
+     * 语义层没写该列时本测试**仍然全绿**）。</p>
+     */
     private static Map<String, Set<String>> ddlTables() throws IOException {
         Path dir = resolveDdlDir();
         StringBuilder all = new StringBuilder();
@@ -77,7 +92,35 @@ class AiSqlDriftTest {
             }
             tables.put(m.group(1).toLowerCase(), cols);
         }
+        // 加性迁移：只处理已建表的 ADD COLUMN（表不存在时说明 CREATE 解析漏了表，交由上游用例报错）
+        Matcher alter = ALTER_TABLE.matcher(sql);
+        while (alter.find()) {
+            Set<String> cols = tables.get(alter.group(1).toLowerCase());
+            if (cols == null) {
+                continue;
+            }
+            Matcher add = ADD_COLUMN.matcher(alter.group(2));
+            while (add.find()) {
+                cols.add(add.group(1).toLowerCase());
+            }
+        }
         return tables;
+    }
+
+    /**
+     * 守卫牙齿自检：加性 ALTER 迁移的列必须真的被解析进来。
+     *
+     * <p>没有这一条，"解析器退回只读 CREATE"这种退化不会被任何用例发现 ——
+     * 上面那条漂移比对会因为"真实列集合偏小"而变得更宽松，静默通过。</p>
+     */
+    @Test
+    void 迁移解析覆盖后续ALTER加列() throws IOException {
+        Map<String, Set<String>> ddl = ddlTables();
+        assertTrue(ddl.getOrDefault("ads_sale_trend_m", Set.of()).contains("net_sale_amount"),
+                "加性迁移列未被解析：ads_sale_trend_m.net_sale_amount（V5 ALTER）");
+        assertTrue(ddl.getOrDefault("ads_user_profile_m", Set.of()).containsAll(
+                        List.of("r_days", "f_count", "m_amount", "period_start", "period_end")),
+                "加性迁移列未被解析：ads_user_profile_m 的 RFM 原值列（V4 ALTER）");
     }
 
     /**

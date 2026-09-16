@@ -63,16 +63,8 @@ class AdsQualityJob extends WarehouseJob {
       else s"存在其它快照暂存分区（不阻断发布，pub 将按引用关系清理）: " +
         foreign.map(p => s"${p.table}/${p.snapshotId.getOrElse("null")}(${p.rowCount}行)").mkString(","))
 
-    // 规则 3：关键列非空（逐表真实 COUNT，阈值 0）
-    val keyPredicates = Map(
-      AdsSql.staging(ns, "ads_operation_overview") -> "pv IS NULL OR uv IS NULL OR dau IS NULL",
-      AdsSql.staging(ns, "ads_active_trend") -> "dau IS NULL",
-      AdsSql.staging(ns, "ads_behavior_funnel") -> "stage IS NULL OR user_count IS NULL",
-      AdsSql.staging(ns, "ads_hot_product") -> "product_id IS NULL OR product_name IS NULL OR heat_score IS NULL",
-      AdsSql.staging(ns, "ads_product_conversion") -> "product_id IS NULL OR pv_users IS NULL",
-      AdsSql.staging(ns, "ads_sale_trend") -> "order_count IS NULL OR sale_amount IS NULL",
-      AdsSql.staging(ns, "ads_user_profile") -> "user_id IS NULL OR r IS NULL OR f IS NULL OR m IS NULL",
-      AdsSql.staging(ns, "ads_data_quality") -> "rule_code IS NULL OR check_count IS NULL OR passed IS NULL")
+    // 规则 3：关键列非空（逐表真实 COUNT，阈值 0）；判据表见伴生对象（可行为验证，不只钉字符串）
+    val keyPredicates = AdsQualityJob.keyPredicates(ns)
     var keyChecked = 0L
     var keyErrors = 0L
     val keyDetail = ListBuffer.empty[String]
@@ -143,4 +135,21 @@ class AdsQualityJob extends WarehouseJob {
 
 object AdsQualityJob {
   val instance: AdsQualityJob = new AdsQualityJob()
+
+  /**
+   * 规则 3「关键列非空」判据表：**暂存表 → 谓词**（键必须覆盖 `FunnelAdsJob.stagingTables` 全部表）。
+   *
+   * 抽到伴生对象是为了让这条**发布前阻断**规则的覆盖范围可以被**行为验证**：判据命中一个
+   * 真构造出来的空值行，而不是只断言源码里有某个字符串（见 `AdsSaleTrendNetSaleSpec`）。
+   * 语义仍是"谓词为真的行数必须为 0"，与作业内使用方式一致。
+   */
+  def keyPredicates(ns: WarehouseNamespace): Map[String, String] = Map(
+    AdsSql.staging(ns, "ads_operation_overview") -> "pv IS NULL OR uv IS NULL OR dau IS NULL",
+    AdsSql.staging(ns, "ads_active_trend") -> "dau IS NULL",
+    AdsSql.staging(ns, "ads_behavior_funnel") -> "stage IS NULL OR user_count IS NULL",
+    AdsSql.staging(ns, "ads_hot_product") -> "product_id IS NULL OR product_name IS NULL OR heat_score IS NULL",
+    AdsSql.staging(ns, "ads_product_conversion") -> "product_id IS NULL OR pv_users IS NULL",
+    AdsSql.staging(ns, "ads_sale_trend") -> "order_count IS NULL OR sale_amount IS NULL OR net_sale_amount IS NULL",
+    AdsSql.staging(ns, "ads_user_profile") -> "user_id IS NULL OR r IS NULL OR f IS NULL OR m IS NULL",
+    AdsSql.staging(ns, "ads_data_quality") -> "rule_code IS NULL OR check_count IS NULL OR passed IS NULL")
 }
