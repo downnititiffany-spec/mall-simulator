@@ -52,3 +52,19 @@
 **Decision**：继续以 `feature/v3-development` 作为当前远端开发主线；仅 ChatGPT 对该分支写入。`main` 不自动合并，必须由用户明确批准。
 
 **Current baseline when recorded**：`d3a7a0b13d4ec24801230293df5b115a413c07cf`（S3-52 后）。
+
+### D-008 — S3-53 AI evidenceId 形状兼容
+
+**Decision**：`buildAiEvidenceContext` 对证据包 ID 采用“顶层优先、嵌套回退”的只读归一化：先读取 `/ai/queries` 当前响应顶层 `evidenceId`；若顶层缺失或为占位值，再读取 `explanation.evidence.evidenceId`。两处都无真实值时返回 `null`，不得生成 ID。
+
+**Reason**：`EvidencePackage` 本身拥有 `evidenceId` 字段，而当前前端只搬运顶层 `evidenceId`；这会使嵌套 EvidencePackage 已给出真实 ID 时，页面仍显示“未提供”，且 AI 建议转决策草稿无法使用已有 evidence package 锚点。该改动只做响应形状兼容，不改变后端值语义、决策契约或锚点优先级。
+
+**Invariants**：
+
+- 顶层真实 `evidenceId` 仍优先，保持现有 `/ai/queries` 行为；
+- `unknown` / `UNKNOWN` / 空白仍不是合法 evidenceId；
+- 真实 evidence package ID 优先于 snapshot 锚点；
+- 决策草稿请求中 evidence package 与 snapshot 锚点仍二选一；
+- 前端不得构造、改写或猜测 evidenceId。
+
+**Implementation commits**：`0054870`（生产逻辑）+ `0ebd0e8`（developer tests）。
