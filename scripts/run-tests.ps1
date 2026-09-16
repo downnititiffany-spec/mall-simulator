@@ -110,7 +110,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 $BaselineDefault = [ordered]@{
   'analytics-server'        = 983
   'mall-simulator'          = 13
-  'synthetic-data-generator' = 106
+  'synthetic-data-generator' = 110
 }
 # S3-01：新增 AdsRfmRawValueSpec（6 条，ADS 画像 R/F/M 原值与窗口）+ MetricAdsCatalogDdlConsistencyTest
 # （3 条，Java 侧迁移↔白名单一致性，计入默认档 analytics-server）⇒ spark 177→183，analytics-server 872→875。
@@ -575,6 +575,34 @@ $BaselineSpark = 308
 #   ③ ③ 只证明「所有者定位到被 pin 的那份契约文件」，**不**证明各消费者读到的内容都正确；④ 本文件是
 #   **门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`spark`／`isolated` 档**未重跑**）。
 #   详见 docs/acceptance/s3-45-repo-root-single-owner-20260916/。
+# S3-46：把设计 L85「每个客户端有连接/请求超时」中的**商城客户端超时面**用结构守卫钉住（阶段6 反熵／
+#   backlog 行「S3-19 遗留 R9：平台→商城 HTTP 请求级统一超时仍未做」的适用范围核对）——A 类：只新增
+#   1 个测试类，零生产 Java 改动、零连库、零外网、零契约变更。实测（改前）：全仓出站 HTTP 客户端只有
+#   3 个（平台侧 AI Provider，S3-44 已做请求级超时；生成器侧 `ReferenceMallHttpAdapter` 与
+#   `SecondMallHttpAdapter`，`java.net.http.HttpClient`），**analytics-server 里不存在「平台→商城」客户端**；
+#   两家商城适配器的 8 个站点（4 个 `HttpClient.newBuilder()` ＋ 4 个 `HttpRequest.newBuilder(`）**全都已经**
+#   在建连与单条请求上设了超时（值＝`GeneratorBeans` L66 `@Value("${generator.target.probe-timeout-ms:3000}")`，
+#   两家共用一个值；该键在 `application.yml` 里未声明），但**全仓测试树对超时零断言**（`connectTimeout` 0 命中）
+#   ⇒ 「新加一个客户端忘了设超时」此前不会让任何用例变红。新增 `MallHttpClientTimeoutGuardTest`（4 条：
+#   ①每个客户端站点同语句必须有 `.connectTimeout(`；②每个请求站点同语句必须有 `.timeout(`；
+#   ③站点集合**恰好**等于已登记所有者集合（文件→站点数）；④超时键**只有一个属主**、两家共用、默认值被钉住）。
+#   **量数轮 `s346-1`**：analytics-server `983 (F=1 E=0 S=1)` 明细 `93+353+169+97+114+157` ⇒ MATCH；
+#   mall-simulator 13 MATCH；synthetic-data-generator `110 (F=0 E=0 S=0)` ⇒ `DRIFT(基线 106)`，
+#   **+4 全部落在本轮新守卫**（其余用例数一字未变）；`default 三棵树 1106（基线 1102）`；唯一红仍是已登记
+#   环境性用例（`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1；expected 43 was 0）；
+#   该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **synthetic-data-generator 106→110**（+4）；**三棵树 1102→1106**。
+#   边界（诚实记录，不得越界表述）：① 本守卫**没有**经典 RED（被守性质在写守卫之前就成立，属 characterization
+#   guard）：非恒真性由**变异探针**证明——P1 删一处 `.timeout(` ⇒ 仅②红；P2 新增第三个「已带超时」的客户端
+#   文件 ⇒ ①②③全红（集合漂移逃不掉）；P3 把 `.timeout(` 注释掉 ⇒ ②仍红（注释剥离生效，不是靠注释过关）；
+#   P4 默认值 3000→5000 ⇒ ④红；四探针 `还原一致=True`、探针文件已删、`git status` 无残留；
+#   ② 判据是**源码文本 ＋ 语句边界 ＋ 注释剥离**，**不是**语义证明：它只钉「设了超时」，**不证明** 3000ms
+#   合适（无真实商城）；③ 只覆盖 `synthetic-data-generator/src/main/java`，**不含** `spark-jobs`、
+#   `analytics-server`（平台侧 AI Provider 由 S3-44 行为测试钉住）；④ L85 的「有限重试」「幂等」「错误映射」
+#   在商城客户端上**尚未实现**（本轮只登记、不实现；`MallOperationException` 无分类码），**不得**因本守卫
+#   变绿就声称 L85 已全项满足；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义
+#   （`spark`／`isolated` 档**未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
+#   详见 docs/acceptance/s3-46-mall-client-timeout-guard-20260916/。
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
