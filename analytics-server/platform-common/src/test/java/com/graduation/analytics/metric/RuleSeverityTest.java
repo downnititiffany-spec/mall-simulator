@@ -26,6 +26,9 @@ class RuleSeverityTest {
             "AMOUNT_RECONCILE", "REQUIRED_FIELD_NULL_RATE", "ENUM_WHITELIST",
             "ADS_STAGING_PRESENT", "ADS_STAGING_KEY_NOT_NULL", "PUB_DQ_BLOCKING_RULES",
             "ADS_DWS_FUNNEL_RECONCILE",
+            // S3-10：率列跨层对账（conversion_rate/overall_buy_rate/overall_cart_rate），
+            // 与 user_count 汇总对账分开登记（设计 §12.3 line 512「不同校验不能互相替代」）
+            "ADS_DWS_FUNNEL_RATE_RECONCILE",
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE");
 
@@ -52,7 +55,7 @@ class RuleSeverityTest {
             "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE", "MP_OLD_ACTIVE_ARCHIVED");
 
     /**
-     * 全部已登记规则码（34 个）＝ 阻断级 12 + 指标库发布对账 16 + WARN 3 + INFO 3。
+     * 全部已登记规则码（35 个）＝ 阻断级 13 + 指标库发布对账 16 + WARN 3 + INFO 3。
      *
      * <p>与 {@link RuleSeverity} 的登记表、{@link QualityRuleCatalog} 的目录必须三者一致：
      * 按 §7.3.1 line 524，只在一处登记、目录里没有的码会判为「未登记规则」而停止发布。</p>
@@ -308,7 +311,7 @@ class RuleSeverityTest {
         all.addAll(PUBLISH_VALIDATOR_CODES);
         all.addAll(WARN_CODES);
         all.addAll(INFO_CODES);
-        assertThat(all).hasSize(34);   // 12 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
+        assertThat(all).hasSize(35);   // 13 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
         assertThat(all).doesNotHaveDuplicates();
 
         for (String code : all) {

@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 908
+  'analytics-server'        = 909
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -169,7 +169,16 @@ $BaselineDefault = [ordered]@{
 #   依据：设计 §12.5 L529「表形…验证」、指导书 §7 阶段三第 4 条「核 schema」。
 #   `MetricPublishValidatorTest` 加「显式 null（键在、值为空）仍可读」与「缺声明列 → 拒绝」
 #   2 条（原有「列白名单外字段」用例不变）⇒ analytics-server 906→908。纯 Java、不连库、不改 Spark。
-$BaselineSpark = 226
+# S3-10：ADS 漏斗**率列**跨层对账（关闭 S3-04 R-1）—— 新增在产阻断规则
+#   `ADS_DWS_FUNNEL_RATE_RECONCILE`（Spark 规则 7，逐 stage/逐列比对 ADS 率列与 DWS 全站行同 dt 率列，
+#   NULL 与 NULL 判等；只判跨层一致性，不判比率数值是否异常）+ Java 契约登记 + 加性迁移 V25（只插一行）。
+#   spark 侧新增 AdsFunnelRateReconcileSpec（7 条：生产透传链路绿 + 三条率列族各自独立命中 +
+#   NULL==NULL 不误报 / NULL vs 有值必红 + 只对齐全站行不被维度行带偏）
+#   + DwsAdsChainExecSpec 钉子改为「dqc checks ≥ 7 且确实产出新码」 ⇒ spark 226→233。
+#   analytics-server 侧 QualityRuleVersionMigrationScriptTest 新增 v25OnlyAppendsSeedRows
+#   （结构守卫：单条 INSERT IGNORE、不建表/不改列）并把目录全集断言 36→37
+#   ⇒ analytics-server 908→909（纯 Java、不连库；V25 在真库上**未执行**，属已登记未测项）。
+$BaselineSpark = 233
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

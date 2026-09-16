@@ -31,9 +31,13 @@ import java.util.List;
  * {@code platform-common}；若把本类留在 {@code warehouse-pipeline}，就会制造
  * 「分析模块反向依赖流水线模块」的新耦合。包名 {@code metric} 与 {@link MetricQualityGate} 同族。</p>
  *
- * <p>覆盖范围：截至 2026-09-12 实测枚举到的规则码 —— Spark dqc/pub/mxp 与 Java Landing 共 17 个，
- * 指标库发布对账 15 个（{@code MetricPublishValidator} 的 {@code check(...)} 实际产出）；
- * 未登记码兜底 {@link #UNREGISTERED}。</p>
+ * <p>覆盖范围：本类只登记**实测枚举到**的规则码 —— Spark dqc/pub/mxp、Java Landing，以及
+ * 指标库发布对账（{@code MetricPublishValidator} 的 {@code check(...)} 调用产出）。
+ * 逐码清单与计数**不在本注释里维护第二份**（历史上两处计数已漂移过：F-88 时写 17/15，
+ * 实际随 V23、S3-10 增长到 18/17）—— 唯一对账点是 {@code RuleSeverityTest} 的
+ * {@code ALL_REGISTERED_CODES} 与 {@link QualityRuleCatalog} 目录；
+ * 未登记码兜底 {@link #UNREGISTERED}。S3-10 新增
+ * {@code ADS_DWS_FUNNEL_RATE_RECONCILE}（率列跨层对账）。</p>
  */
 public final class RuleSeverity {
 
@@ -68,7 +72,7 @@ public final class RuleSeverity {
             "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE",
             // ADS 暂存层（Spark dqc）
             "ADS_STAGING_PRESENT", "ADS_STAGING_SNAPSHOT_ISOLATION", "ADS_STAGING_KEY_NOT_NULL",
-            "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE",
+            "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE", "ADS_DWS_FUNNEL_RATE_RECONCILE",
             // 发布层（Spark pub / mxp）
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH", "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE",
@@ -128,6 +132,11 @@ public final class RuleSeverity {
             case "PUB_DQ_BLOCKING_RULES" -> BLOCKING;
             // 跨层对账（ADS 漏斗 stage 汇总 = DWS 漏斗对应列），不一致即口径破坏 ⇒ 阻断
             case "ADS_DWS_FUNNEL_RECONCILE" -> BLOCKING;
+            // 跨层对账（ADS 漏斗**率列**逐格 = DWS 全站行同 dt 率列；S3-10）：ADS 只透传不重算，
+            // 率列错位会让发布出去的漏斗结论直接错，而行数/关键列非空可能同时正常 ⇒ 阻断。
+            // 只判跨层一致性：不判比率数值是否异常（设计 §12.3 第 10 项「宽松口径异常不一概阻断」），
+            // NULL 与 NULL 判等（分母 0 时率列是 NULL）
+            case "ADS_DWS_FUNNEL_RATE_RECONCILE" -> BLOCKING;
 
             // ── 发布层（Spark pub / mxp）──
             case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
@@ -204,6 +213,10 @@ public final class RuleSeverity {
             case "ADS_STAGING_KEY_NOT_NULL" -> "ADS 关键列 NULL ⇒ 口径破坏（阈值 0）";
             case "PUB_DQ_BLOCKING_RULES" -> "暂存宽表内 3 条阻断规则必须全过（与 Java corePassed 同口径）";
             case "ADS_DWS_FUNNEL_RECONCILE" -> "ADS↔DWS 跨层漏斗对账不一致 ⇒ 口径破坏";
+            case "ADS_DWS_FUNNEL_RATE_RECONCILE" ->
+                    "ADS 漏斗率列 ≠ DWS 全站行同 dt 率列 ⇒ 发布出去的漏斗结论直接错"
+                            + "（行数与关键列非空可能同时正常，只有逐格率对账能发现；"
+                            + "只判跨层一致性，不判比率数值是否异常）";
             case "PUB_STAGING_READY" -> "暂存未就绪不得切换正式分区（发布前预检）";
             case "PUB_FORMAL_PARTITION_MATCH" -> "正式分区行数 ≠ 暂存分区行数 ⇒ 发布不完整";
             case "MXP_SNAPSHOT_PINNED" -> "正式分区未指向本次 snapshot_id ⇒ 混入其他快照数据（D-142 §1 必须阻断）";

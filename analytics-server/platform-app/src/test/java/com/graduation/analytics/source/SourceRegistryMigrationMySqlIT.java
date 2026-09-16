@@ -179,7 +179,8 @@ class SourceRegistryMigrationMySqlIT {
             "V21__source_mapping_active.sql",
             "V22__runtime_profile_landing_layout.sql",
             "V23__quality_rule_publish_export_checksum.sql",
-            "V24__metric_definition_fav_cart_cnt.sql");
+            "V24__metric_definition_fav_cart_cnt.sql",
+            "V25__quality_rule_ads_funnel_rate_reconcile.sql");
 
     private static final String V17_SCRIPT = "V17__source_dimension_for_checkpoint_and_batch.sql";
     private static final String V18_SCRIPT = "V18__source_warehouse_prefix.sql";

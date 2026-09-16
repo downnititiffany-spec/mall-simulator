@@ -77,6 +77,8 @@ public final class QualityRuleCatalog {
     public static final String RULE_ADS_STAGING_KEY_NOT_NULL = "ADS_STAGING_KEY_NOT_NULL";
     public static final String RULE_PUB_DQ_BLOCKING_RULES = "PUB_DQ_BLOCKING_RULES";
     public static final String RULE_ADS_DWS_FUNNEL_RECONCILE = "ADS_DWS_FUNNEL_RECONCILE";
+    /** 漏斗**率列**跨层对账（S3-10）：ADS 率列必须逐格等于 DWS 全站行同 dt 率列。 */
+    public static final String RULE_ADS_DWS_FUNNEL_RATE_RECONCILE = "ADS_DWS_FUNNEL_RATE_RECONCILE";
 
     /** 发布层（Spark pub / mxp）规则码。 */
     public static final String RULE_PUB_STAGING_READY = "PUB_STAGING_READY";
@@ -164,6 +166,10 @@ public final class QualityRuleCatalog {
                     "暂存宽表内 3 条阻断规则必须全 passed=1，与 Java 侧 corePassed 同口径"),
             fixed(RULE_ADS_DWS_FUNNEL_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
                     "ADS 漏斗 stage 汇总 = DWS 漏斗对应列，不一致即口径破坏"),
+            fixed(RULE_ADS_DWS_FUNNEL_RATE_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "ADS 漏斗率列（conversion_rate/overall_buy_rate/overall_cart_rate）逐格等于 DWS 全站行同 dt 率列；"
+                            + "ADS 只透传不重算，不一致即口径破坏。只判跨层一致性、不判比率数值是否异常"
+                            + "（设计 §12.3 第 10 项：宽松口径异常不一概作为阻断规则）；NULL 与 NULL 判等（分母 0）"),
 
             fixed(RULE_PUB_STAGING_READY, STAGE_PUBLISH, RuleSeverity.BLOCKING, "暂存分区未就绪不得切换正式分区"),
             fixed(RULE_PUB_FORMAL_PARTITION_MATCH, STAGE_PUBLISH, RuleSeverity.BLOCKING,
