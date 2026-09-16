@@ -339,6 +339,63 @@ class PipelineServiceTest {
         assertThat(stageOf("PUBLISH_METRIC")).isNull();
     }
 
+    // ── S3-32：INIT_SCHEMA 的「提交次序」与「自举证据」守卫 ───────────────────
+
+    /**
+     * S3-32：§14.1 要求**先自举四层库表**再装载 —— 自举若晚于装载，装载就打在尚未
+     * 存在的库表上。既有断言只证「提交过 / 状态 SUCCESS」，对**成功路径**的先后**无断言**：
+     * 把两段调用对调（变异探针 `s332_probeA1`）⇒ 本守卫红，另有 1 条既有**失败路径**用例
+     * （`stageFailureMarksRunFailed`）因「自举根本没被提交」而**间接**变红 —— 但没有任何
+     * 用例**直接**断言两者的先后，本守卫补的就是这条直接不变量。
+     */
+    @Test
+    void initSchemaIsSubmittedBeforeLoadOds() throws Exception {
+        List<String> submitted = new ArrayList<>();
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    submitted.add(inv.getArgument(2));
+                    return successExecution(inv.getArgument(2));
+                });
+        writeLanding("accepted/2026-09-01",
+                event("e1", "behavior", "2026-09-01T10:00:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\"}"));
+
+        service.run(1L, "ODS_TO_ADS", LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-order", "trace-1");
+        executor.drain();
+
+        assertThat(submitted).as("自举与装载都必须真的被提交（否则下面的次序断言是空转）")
+                .contains("INIT_SCHEMA", "LOAD_ODS");
+        assertThat(submitted.indexOf("INIT_SCHEMA"))
+                .as("INIT_SCHEMA 必须排在 LOAD_ODS 之前；实测提交次序=" + submitted)
+                .isLessThan(submitted.indexOf("LOAD_ODS"));
+        assertThat(submitted.get(0)).as("首个被提交的阶段必须是自举").isEqualTo("INIT_SCHEMA");
+    }
+
+    /**
+     * S3-32：自举成功后 `PipelineService` 会把「幂等 CREATE IF NOT EXISTS，可重复执行」
+     * 写进 INIT_SCHEMA 的阶段证据（`contracted` 键）。此前**无任何断言** ⇒ 删掉该写入
+     * 测试仍全绿（变异探针 `s332_probeB1`），本守卫把这条对外可见的事实钉住。
+     */
+    @Test
+    void initSchemaEvidenceCarriesSelfBootstrapContract() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "behavior", "2026-09-01T10:00:00", "{\"user_id\":\"u1\",\"product_id\":\"p1\"}"));
+
+        service.run(1L, "ODS_TO_ADS", LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-evidence", "trace-1");
+        executor.drain();
+
+        PipelineStageRun init = stageOf("INIT_SCHEMA");
+        assertThat(init).isNotNull();
+        assertThat(stageStatus("INIT_SCHEMA")).isEqualTo(PipelineStageRun.STATUS_SUCCESS);
+        assertThat(init.getEvidence()).as("自举阶段的证据不得为空").isNotBlank();
+        Map<String, Object> evidence = objectMapper.readValue(init.getEvidence(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                });
+        assertThat(evidence).containsKey("contracted");
+        assertThat(String.valueOf(evidence.get("contracted")))
+                .as("证据须写明自举是幂等的 CREATE … IF NOT EXISTS（可重复执行）")
+                .contains("CREATE DATABASE/TABLE IF NOT EXISTS");
+    }
+
     // ── S2-04：Landing 输入清单必须按源归属（fail-closed） ────────────────
 
     @Test

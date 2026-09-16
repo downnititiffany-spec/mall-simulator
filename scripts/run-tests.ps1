@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 950
+  'analytics-server'        = 952
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -458,6 +458,23 @@ $BaselineDefault = [ordered]@{
 #   Mapping/FlumeSpool/MappingTestSupport，且该模块未引 test-jar）与**跨工程 2 处**（mall-simulator 取
 #   `user.dir` 父目录、synthetic-data-generator 的 Java walk-up）⇒ 已实测登记（见 S3-31 登记 §2/§7），
 #   `default`/`isolated` 两档本轮未重跑（零 analytics-server 文件改动）。
+# S3-32（2026-09-16，default 档）：backlog 行「`PipelineServiceTest` 从不校验 `INIT_SCHEMA` 阶段」**按实测收口**。
+#   行措辞部分陈旧：该文件改前**已有 5 处** INIT_SCHEMA 断言（失败路径状态 SUCCESS／恰好 1 次提交并带
+#   `eq("INIT_SCHEMA")`／失败前恰好 3 个阶段／WAIT_LANDING 未过 ⇒ `stageOf` 为 null）；成立的表述是
+#   「只校验**存在性与次数**，不校验**提交次序**与**自举证据**」。两处真缺口补守卫（纯测试新增，零生产改动）：
+#   `initSchemaIsSubmittedBeforeLoadOds`（读执行器 mock 的**实际提交序列**，断言 INIT_SCHEMA 先于 LOAD_ODS
+#   且首个提交阶段即自举；先证两阶段都被提交 ⇒ 比较非空转）、`initSchemaEvidenceCarriesSelfBootstrapContract`
+#   （阶段证据含 `contracted` 且写明幂等 `CREATE DATABASE/TABLE IF NOT EXISTS`）。
+#   **变异探针**（真跑，均 `git checkout --` 字节还原，`diff`=0）：探针 B `s332_probeB1.log`（删
+#   `evidence.put("contracted", …)` 一行）⇒ `Failures: 1`，**唯一红＝新增证据守卫、既有 20 条全绿**
+#   ⇒ 该事实此前**无任何守卫**；探针 A `s332_probeA1.log`（INIT_SCHEMA 块移到 LOAD_ODS 之后）⇒
+#   `Failures: 2`＝新增次序守卫（**直接**）＋既有 `stageFailureMarksRunFailed:334`（**间接**：失败路径下
+#   自举根本没被提交）⇒ **不得**写成"既有断言对该变异完全不可见"。定向 GREEN `s332_green4.log`
+#   （`Tests run: 22, Failures: 0`，改前 20 ⇒ +2）。`INIT_SCHEMA` 的**实质**（37 条 DDL＝5 建库+32 建表）
+#   由 spark-jobs `WarehouseNamespaceSpec:156-159` 覆盖（本轮未重跑 spark 档）。
+#   ⇒ **analytics-server 950→952**（warehouse-pipeline 163→165，+2；其余五模块 93/350/93/94/157 未变）。
+#   边界：Java 侧执行器是 Mockito 替身 ⇒ 只证**编排次序与阶段证据**，不证真建表；零连库、零 DDL/迁移/前端；
+#   剩余开放项（续跑路径证据未守、整链次序只钉一条边）已登记 backlog，见 S3-32 登记 §7。
 $BaselineSpark = 308
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
