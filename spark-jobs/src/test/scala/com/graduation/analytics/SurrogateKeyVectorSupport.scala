@@ -23,16 +23,14 @@ object SurrogateKeyVectorSupport {
   /** 契约文件相对仓库根的路径（跨语言两侧共用同一路径，Java 侧同样按此定位） */
   val SpecRelative: String = "contract-specs/specs/surrogate-key.v1.json"
 
-  /** 向上找仓库根（Maven 的 CWD 是模块目录） */
-  lazy val repoRoot: Path = {
-    val start = java.nio.file.Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath.normalize()
-    var dir: Path = start
-    while (dir != null && !Files.isRegularFile(dir.resolve(SpecRelative))) dir = dir.getParent
-    if (dir == null) throw new IllegalStateException(s"找不到仓库根：从 $start 向上未发现 $SpecRelative")
-    dir
-  }
-
-  lazy val specPath: Path = repoRoot.resolve(SpecRelative)
+  /**
+   * 仓库根**不再自持** walk-up 循环（S3-31）：唯一所有者是 `P2TestSupport.repoRoot`。
+   *
+   * 此前本对象自带一份「向上找仓库根」，与 `P2TestSupport`、`WarehouseNamespaceSpec` 各持一份，同一件事
+   * 三份实现 ⇒ 任一份改了锚点/终止条件都不会被别处发现。收敛后本对象只负责**定位**契约向量，找根交给所有者。
+   * 结构守卫见 `RepoRootSingleOwnerSpec`。
+   */
+  lazy val specPath: Path = P2TestSupport.repoRoot.resolve(SpecRelative)
 
   /** 契约文件原始字节的 sha256（小写十六进制）——报告里必须落盘这个读数 */
   lazy val specSha256: String = {

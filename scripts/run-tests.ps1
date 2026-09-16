@@ -436,7 +436,29 @@ $BaselineDefault = [ordered]@{
 #   边界：只改 spark-jobs **测试树**（零生产代码/DDL/迁移/前端/新依赖，Java 所有者字节未动）；
 #   移除镜像顺带移走了它的「冻结副本」作用，但该作用已由 `AdsSchemaOwnerSpec.Frozen`（Hive 侧 8 张表，
 #   与所有者逐列钉住）承担 ⇒ 不新增静默面；`isolated`/`default` 两档本轮未重跑（零 analytics-server 文件改动）。
-$BaselineSpark = 305
+# S3-31（2026-09-16，spark 档）：backlog「repo 根查找已有第四份本地实现（`RepoRoot` 提到 test-jar 后
+#   删除四处副本）」**工程内**部分收口 —— `spark-jobs` 测试树里「向上找仓库根」此前有 **3 份**实现
+#   （`P2TestSupport.repoRoot`、`SurrogateKeyVectorSupport.repoRoot`、`WarehouseNamespaceSpec.findRepoRoot`），
+#   同一件事多份实现时任一份改锚点/终止条件都不会被别处发现。现收敛为**唯一所有者** `P2TestSupport.repoRoot`，
+#   另两份删除（含 `WarehouseNamespaceSpec` 随之失效的 `Path`/`Paths` 导入），并新增结构守卫
+#   `RepoRootSingleOwnerSpec`（3 条）：①全测试树扫描 walk-up 特征 ⇒ 所有者集合必须**恰好**为
+#   `{P2TestSupport.scala}`（不是"各处各写一份"）②两个被收编文件必须引用所有者且不再自持循环
+#   ③收编后契约向量仍定位到同一份真实文件（存在性＋SHA-256 独立复算＋status 非空）。
+#   特征片段用**字符串拼装**（`"var " + "dir: Path = start"` 等）：S3-30 的反证用例曾两次匹配到自己的
+#   注释与合成样例（`s330_green2.log`/`s330_green3.log`），拼装让本类源文件不含该片段，无需"排除自身"兜底。
+#   双侧牙齿实测：探针 A `s331_probeA1.log`（另放一份 walk-up ⇒ 所有者集合变成 2 元，仅 ①红，②③仍绿）；
+#   探针 B `s331_probeB1.log`（把所有者循环变量改名、功能不变 ⇒ 集合变**空**，`Set() was not equal to Set(...)`，
+#   证明守卫非"恒真"且确实钉住 P2TestSupport；②③仍绿 ⇒ 红的是**归属**而非可用性）。
+#   `RepoRootSingleOwnerSpec` +3 条 ⇒ **spark 305→308**。证据：RED `s331_red1.log`
+#   （`Tests: succeeded 1, failed 2`，诊断打印出 3 元所有者集合）；GREEN `s331_green3.log`
+#   （3 套件 `Tests: succeeded 20, failed 0`）；量数轮 `s331_20260916_spark1`：`tests=308 DRIFT`
+#   （+3＝本项新增 3 条）、37 套件、`All tests passed`、JDK8=True。
+#   边界：只改 spark-jobs **测试树**（零生产代码/DDL/迁移/前端/新依赖；`P2TestSupport` 字节未动）；
+#   本轮**未**收口同反应堆 `analytics-server` 内另 **5** 处同款循环（connection-ingestion：Boundary/Failure/
+#   Mapping/FlumeSpool/MappingTestSupport，且该模块未引 test-jar）与**跨工程 2 处**（mall-simulator 取
+#   `user.dir` 父目录、synthetic-data-generator 的 Java walk-up）⇒ 已实测登记（见 S3-31 登记 §2/§7），
+#   `default`/`isolated` 两档本轮未重跑（零 analytics-server 文件改动）。
+$BaselineSpark = 308
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
