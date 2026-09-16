@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 983
+  'analytics-server'        = 987
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -603,6 +603,37 @@ $BaselineSpark = 308
 #   变绿就声称 L85 已全项满足；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义
 #   （`spark`／`isolated` 档**未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
 #   详见 docs/acceptance/s3-46-mall-client-timeout-guard-20260916/。
+# S3-47：把设计 L85「每个客户端有连接/请求超时」中的**平台侧出站客户端**面用结构守卫钉住（阶段6 反熵／
+#   S3-46 §7 边界③④的覆盖面收口：S3-46 只覆盖生成器侧商城客户端，平台侧当时**无守卫**）——A 类：只新增
+#   1 个测试类（analytics-server 的 ai-decision 模块），零生产 Java 改动、零连库、零外网、零契约变更。
+#   实测（改前）：analytics-server main 树（203 个 Java 文件）**只有 1 个**出站 HTTP 客户端构造点——
+#   `OpenAiCompatLlmProvider` 的 `RestClient.builder()`（L54），该站点同语句挂
+#   `.requestFactory(requestFactory(timeoutMs))`（L56），工厂内 `setConnectTimeout`/`setReadTimeout` 同源设置
+#   （L87-88），超时值来自唯一注入点 `@Value("${llm.timeout-ms:30000}")`（L50；键在 application.yml 未声明）；
+#   S3-44 已用**行为**用例钉住这一个客户端自己的超时，但 analytics-server 测试树对 `setConnectTimeout`／
+#   `setReadTimeout`／`SimpleClientHttpRequestFactory` **零断言**、连 `RestClient` 字面量 0 命中 ⇒
+#   「将来新加一个不带超时的出站客户端」此前不会让任何用例变红。新增 `PlatformOutboundClientTimeoutGuardTest`
+#   （4 条：①每个客户端站点同语句必须挂该形态的超时接线；②站点所有者集合**恰好**等于已登记集合；
+#   ③请求工厂所在方法必须连接与读取**同源**设置；④超时值必须来自唯一注入键、内联默认与 `DEFAULT_TIMEOUT_MS`
+#   同值、客户端必须是注入参数而非字面量）。站点定位用 `RepoRoot.path("analytics-server")`（S3-45 的唯一所有者，
+#   不在新测试里重造「向上找仓根」）。
+#   **量数轮 `s347-1`**：analytics-server `987 (F=1 E=0 S=1)` 明细 `93+353+169+97+118+157` ⇒ `DRIFT(基线 983)`，
+#   **+4 全部落在本轮新守卫**（ai-decision 114→118，其余模块一字未变）；mall-simulator 13 MATCH；
+#   synthetic-data-generator 110 MATCH；`default 三棵树 1110（基线 1106）`；唯一红仍是已登记环境性用例
+#   （`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1；expected 43 was 0）；
+#   该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
+#   ⇒ **analytics-server 983→987**（+4）；**三棵树 1106→1110**。
+#   边界（诚实记录，不得越界表述）：① 本守卫**没有**经典 RED（被守性质在写守卫之前就成立，属 characterization
+#   guard）：非恒真性由**变异探针**证明——P1 删 `.requestFactory(...)` ⇒ ①④红；P2 新增一个「不带超时」的客户端
+#   文件 ⇒ ①②红（集合漂移逃不掉）；P3 把 `.requestFactory(...)` 注释掉 ⇒ ①④仍红（注释剥离生效，不是靠注释过关）；
+#   P4 删工厂里的 `setReadTimeout(...)` ⇒ 仅③红；P5 内联默认 30000→5000 ⇒ 仅④红；五探针 `还原一致=True`、
+#   探针文件已删、`git status` 无探针残留；② 判据是**源码文本 ＋ 语句边界 ＋ 注释剥离**，**不是**语义证明：
+#   只钉「超时被接上」，**不证明** 30000ms 合适（真实供应商仍为未测）；③ 只覆盖 `analytics-server/*/src/main/java`，
+#   **不含** `spark-jobs`（Scala／JDK8）、`mall-simulator`、`synthetic-data-generator`（生成器侧由 S3-46 守卫覆盖）；
+#   ④ L85 的「有限重试」「幂等」「错误映射」在平台侧**同样尚未实现**（本轮只登记、不实现），**不得**因本守卫
+#   变绿就声称 L85 已全项满足；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义
+#   （`spark`／`isolated` 档**未重跑**：新用例无 `@Tag("it")`，不在 isolated 选择面内）。
+#   详见 docs/acceptance/s3-47-platform-client-timeout-guard-20260916/。
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {
