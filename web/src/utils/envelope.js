@@ -44,10 +44,25 @@ export function hasWarnings(ctx) {
   return Boolean(ctx && Array.isArray(ctx.warnings) && ctx.warnings.length > 0)
 }
 
-/** 告警文案（中文展示，未知编码原样展示以便排查） */
-const WARNING_TEXT = {
+/**
+ * 告警文案（中文展示，未知编码原样展示以便排查）。
+ *
+ * S3-33：本表是**信封内置降级码**的展示文案，与后端 `AnalysisViewModel` 的 `WARN_*` 常量
+ * 一一对应；文案口径逐条对应各常量上方的 KDoc（契约 analysis-viewmodel-r7-4 §16.4 L732
+ * 「所有新错误码统一 owner ＝ AnalysisViewModel」），不得在本层发明语义。缺码 ⇒ 页面原样
+ * 打出编码，因此 S3-33 一次补齐 8 个信封码。
+ *
+ * 导出给 `context.js` 的 `warningTextAll` 链式复用（页面真正调用的渲染入口是它）。
+ */
+export const WARNING_TEXT = {
   NO_ACTIVE_SNAPSHOT: '当前没有 ACTIVE 快照，指标库尚未发布可用数据。',
-  UNKNOWN_DIMENSION_TABLE: '部分维度表本期不存在，对应维度为空。'
+  UNKNOWN_SNAPSHOT: '请求指定的快照在指标库中不存在，未读到该快照的任何数据（不假装读过）。',
+  UNKNOWN_DIMENSION_TABLE: '部分维度表本期不存在，对应维度为空。',
+  RFM_AMOUNT_UNAVAILABLE: '画像缺少消费额列：八类消费额无法从指标库取值（不用积分折算冒充金额）。',
+  RFM_RAW_VALUES_UNAVAILABLE: '画像缺少 R/F 原值列：R 已按「统计日 − 末次购买日」回算（与原值口径不同），F 原值为空。',
+  RFM_PERIOD_UNAVAILABLE: '画像观察窗口缺失或行间不一致：窗口起止留空，不猜测窗口。',
+  MULTIPLE_RULE_VERSIONS: '同一快照内出现多个画像规则版本，规则版本不唯一。',
+  QUALITY_STATUS_UNAVAILABLE: '质量结果查询失败：质量结论降级为「未知」（不伪造成通过）。'
 }
 export const warningText = (code) => WARNING_TEXT[code] || String(code)
 

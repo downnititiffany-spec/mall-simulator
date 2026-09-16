@@ -3,7 +3,7 @@
 // 这里把它们的公共字段拼成一个与信封同形的上下文，并显式记录哪些上下文信息「接口未提供」。
 // 纯逻辑，不依赖 vue/浏览器，可被 node:test 覆盖。
 // 原则：拼装出来的每个字段都必须来自后端真实响应，取不到就写「接口未提供」，绝不编造。
-import { readEnvelope } from './envelope.js'
+import { readEnvelope, WARNING_TEXT } from './envelope.js'
 
 /** 接口未提供该字段时的统一文案 */
 export const MISSING_TEXT = '接口未提供'
@@ -18,9 +18,13 @@ const WARNING_TEXT_EXTRA = {
 
 /**
  * 告警文案：先查信封内置映射，再查本模块补全，未知编码原样展示（不静默）。
+ *
+ * S3-33 实测缺陷：此前实现只查 `WARNING_TEXT_EXTRA`，与本 KDoc 声明的链式顺序不符 ⇒
+ * 信封侧降级码（`NO_ACTIVE_SNAPSHOT`、三个 `RFM_*` 等）在页面上原样打出编码。页面只有
+ * 本函数一个渲染入口（`AnalysisContext.vue`、`AiAssistant.vue`），故必须在此完成链式解析。
  */
 export function warningTextAll(code) {
-  return WARNING_TEXT_EXTRA[code] || String(code)
+  return WARNING_TEXT[code] || WARNING_TEXT_EXTRA[code] || String(code)
 }
 
 const isRecord = (v) => v && typeof v === 'object' && !Array.isArray(v)

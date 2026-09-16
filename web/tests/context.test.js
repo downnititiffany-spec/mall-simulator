@@ -58,6 +58,25 @@ test('warningTextAll 已知码给中文解释，未知码原样透出（新后�
   assert.equal(warningTextAll('SOME_NEW_CODE_2027'), 'SOME_NEW_CODE_2027')
 })
 
+// ── S3-33：告警文案的「信封内置 → 本模块补全」链 ────────────────────────────
+// 实测缺陷（S3-33）：`warningTextAll` 的 KDoc 写着「先查信封内置映射，再查本模块补全」，
+// 实现却只查 `WARNING_TEXT_EXTRA` ⇒ 信封侧降级码在页面上原样打出编码。页面**只有**这一个
+// 渲染入口（`AnalysisContext.vue:25`、`AiAssistant.vue:96` 都调 `warningTextAll`），
+// 而 `envelope.js` 的 `warningText` 当时零页面调用 ⇒ 只补 `envelope.js` 的表不会显示出来。
+
+test('S3-33：warningTextAll 链式解析——信封内置码给中文，不再原样打出编码', () => {
+  // 语义来源：AnalysisViewModel 常量 KDoc；NO_ACTIVE_SNAPSHOT/UNKNOWN_DIMENSION_TABLE 本就在信封表里
+  assert.match(warningTextAll('NO_ACTIVE_SNAPSHOT'), /ACTIVE/)
+  assert.match(warningTextAll('RFM_PERIOD_UNAVAILABLE'), /(不猜|留空|不一致)/)
+  assert.match(warningTextAll('RFM_RAW_VALUES_UNAVAILABLE'), /回算/)
+})
+
+test('S3-33：本模块补全码与未知码行为不变（补全仍生效、未知仍原样透出）', () => {
+  assert.match(warningTextAll('NO_SNAPSHOT_SELECTED'), /尚未选择快照/)
+  assert.match(warningTextAll('AI_EVIDENCE_PARTIAL'), /证据包/)
+  assert.equal(warningTextAll('SOME_NEW_CODE_2027'), 'SOME_NEW_CODE_2027')
+})
+
 test('buildFallbackContext 无任何可见字段时，快照/版本/质量都标注缺失，绝不编造', () => {
   const ctx = buildFallbackContext({ rows: [], warnings: ['ENVELOPE_MISSING'] })
   assert.equal(ctx.snapshotId, null)

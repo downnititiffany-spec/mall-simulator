@@ -118,3 +118,34 @@ test('来源展示文案：取不到给「未知」而不是编造 spark-ads', (
   assert.equal(sourceText('  '), '未知')
   assert.equal(sourceText(42), '未知')
 })
+
+// ── S3-33：信封内置降级码的中文文案（消费侧展示链） ─────────────────────────
+// 权威 owner ＝ 后端 `AnalysisViewModel`（契约 §16.4 L732「所有新错误码统一 owner」）；
+// 本表是**展示侧**文案，缺一个码页面上就原样打出编码。S3-33 实测：改前这 8 个信封码
+// **全部**没有中文文案（只有 2 个码在表里，且该表当时无渲染入口，见 context.test.js）。
+// 文案口径逐条对应 `AnalysisViewModel` 各常量上方的 KDoc，不得自行发明语义。
+const ENVELOPE_WARNING_CODES = [
+  'NO_ACTIVE_SNAPSHOT',
+  'UNKNOWN_SNAPSHOT',
+  'UNKNOWN_DIMENSION_TABLE',
+  'RFM_AMOUNT_UNAVAILABLE',
+  'RFM_RAW_VALUES_UNAVAILABLE',
+  'RFM_PERIOD_UNAVAILABLE',
+  'MULTIPLE_RULE_VERSIONS',
+  'QUALITY_STATUS_UNAVAILABLE'
+]
+
+test('S3-33：信封内置降级码全部有中文文案，不再原样打出编码', () => {
+  for (const code of ENVELOPE_WARNING_CODES) {
+    const text = warningText(code)
+    assert.notEqual(text, code, `${code} 没有中文文案（页面会原样显示编码）`)
+    assert.ok(text.length > 4 && /[\u4e00-\u9fa5]/.test(text), `${code} 的文案必须是中文且非空`)
+  }
+})
+
+test('S3-33：RFM 三个降级码的文案与后端冻结语义一致（回算 / 不猜窗口 / 不冒充金额）', () => {
+  // 语义来源：AnalysisViewModel L54-68 的 KDoc ＋ 契约 analysis-viewmodel-r7-4 §L313/L315
+  assert.match(warningText('RFM_RAW_VALUES_UNAVAILABLE'), /回算/, 'R 原值缺失时是按统计日回算，文案必须说明')
+  assert.match(warningText('RFM_PERIOD_UNAVAILABLE'), /(不猜|留空|不一致)/)
+  assert.match(warningText('RFM_AMOUNT_UNAVAILABLE'), /(消费额|金额)/)
+})
