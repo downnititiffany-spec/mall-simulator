@@ -303,6 +303,8 @@ class MetricPublisherMySqlIT {
         quality.put("error_rate", new BigDecimal("0.0000"));
         quality.put("passed", 1);
         quality.put("threshold", "error_count=0");
+        // S3-05：质量大盘补规则定义版本列；夹具与该列保持一致（同 profile 的注释：列集合不对齐会让本 IT 无辜变红）
+        quality.put("rule_version", 1);
         rows.put("ads_data_quality_m", List.of(quality));
         return rows;
     }

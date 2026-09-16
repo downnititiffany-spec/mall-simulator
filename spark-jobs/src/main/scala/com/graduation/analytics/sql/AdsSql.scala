@@ -317,20 +317,38 @@ object AdsSql {
        |""".stripMargin
 
   /**
+   * 质量规则定义版本（`rule_version`）—— S3-05。
+   *
+   * <p>语义 = `quality_rule_definition`（{@code QualityRuleCatalog}，版本化单一所有者）里该规则码的
+   * `version`，与 meta 侧 `data_quality_result.rule_version`（`V20__data_quality_result_rule_version.sql`，
+   * `INT`）**同名列同类型**。四条规则当前版本均为 1。</p>
+   *
+   * <p><b>为什么必须落列</b>：设计 §9.3 L320「ADS 每行带 snapshot / 定义版本 / 业务日期，发布可追溯」、
+   * L335「`ads_data_quality`…规则版本…待接齐」、§12.3 L512「每条规则记录…版本…」。
+   * 版本号真值由 Java 目录持有，本文件只是**复制**一份；两者一致由
+   * `warehouse-pipeline/QualityRuleThresholdDriftTest` 逐条钉住（漂移即红）。</p>
+   */
+  val QualityRuleVersion = 1
+
+  /**
    * 数据质量大盘（§5.4）：4 规则与 QualityChecker 同名同阈值，
    * 统计来自 ODS/DWD 真实数据，非 SQL 字符串自检。
+   *
+   * <p>S3-05 起每行追加 `rule_version`（规则定义版本，见上方 `QualityRuleVersion`）：
+   * 大盘行因此可回答「这一行是依据哪一版规则判的」。规则集合、阈值、实际值算法**均未改动**。</p>
    */
   def dataQuality(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_data_quality", dt, snapshotId)}
-       |SELECT rule_code, check_count, error_count, error_rate, passed, threshold FROM (
+       |SELECT rule_code, check_count, error_count, error_rate, passed, threshold, rule_version FROM (
        |  SELECT 'AMOUNT_RECONCILE' AS rule_code,
        |         CAST(SUM(fp) AS BIGINT) AS check_count,
        |         CAST(SUM(bad) AS BIGINT) AS error_count,
        |         CASE WHEN SUM(fp) = 0 THEN NULL
        |              ELSE CAST(SUM(bad) AS DECIMAL(8,6)) / SUM(fp) END AS error_rate,
        |         CASE WHEN SUM(bad) = 0 THEN 1 ELSE 0 END AS passed,
-       |         '0.01' AS threshold
+       |         '0.01' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  FROM (
        |    SELECT order_id,
        |           MAX(final_paid_flag) AS fp,
@@ -346,7 +364,8 @@ object AdsSql {
        |         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
        |         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
        |         CASE WHEN SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) * 1000 <= COUNT(*) THEN 1 ELSE 0 END AS passed,
-       |         '0.001' AS threshold
+       |         '0.001' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  FROM ${ns.dwd}.dwd_user_behavior_detail
        |  WHERE dt = '$dt'
        |  UNION ALL
@@ -357,14 +376,16 @@ object AdsSql {
        |           / (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS error_rate,
        |         CASE WHEN (SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') * 2000
        |                <= (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') THEN 1 ELSE 0 END AS passed,
-       |         '0.0005' AS threshold
+       |         '0.0005' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  UNION ALL
        |  SELECT 'ENUM_WHITELIST' AS rule_code,
        |         CAST(COUNT(*) AS BIGINT) AS check_count,
        |         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
        |         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
        |         CASE WHEN SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) = 0 THEN 1 ELSE 0 END AS passed,
-       |         '0' AS threshold
+       |         '0' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  FROM ${ns.dwd}.dwd_user_behavior_detail
        |  WHERE dt = '$dt'
        |) q

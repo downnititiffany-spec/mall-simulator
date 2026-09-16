@@ -45,7 +45,8 @@ object MetricAdsSpec {
         "last_active_date", "last_buy_date", "lifecycle_state", "rule_version", "calc_date",
         "r_days", "f_count", "m_amount", "period_start", "period_end")),
     MetricAdsTable("ads_data_quality", "ads_data_quality_m",
-      Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold")))
+      Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold",
+        "rule_version")))
 
   val EXPORT_MANIFEST: String = "_export.json"
 

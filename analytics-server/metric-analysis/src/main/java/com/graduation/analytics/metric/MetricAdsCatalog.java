@@ -49,7 +49,8 @@ public record MetricAdsCatalog(String name, List<String> columns, List<String> k
                             "r_days", "f_count", "m_amount", "period_start", "period_end"),
                     List.of("user_id")),
             new MetricAdsCatalog("ads_data_quality_m",
-                    List.of("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold"),
+                    List.of("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold",
+                            "rule_version"),
                     List.of("rule_code")));
 
     private static final Map<String, MetricAdsCatalog> BY_NAME =

@@ -138,13 +138,17 @@ STORED AS PARQUET
 LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_user_profile';
 
 -- 数据质量大盘（§5.4）
+-- rule_version（S3-05）：规则定义版本，语义 = quality_rule_definition 里该规则码的 version，
+-- 与 meta 侧 data_quality_result.rule_version 同名列同类型（INT）⇒ 大盘行可追溯「依据哪一版规则判的」
+-- （设计 §9.3 L335「规则版本…待接齐」、L320「每行带 snapshot/定义版本/业务日期」、§12.3 L512）。
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_data_quality (
-    rule_code   STRING,
-    check_count BIGINT,
-    error_count BIGINT,
-    error_rate  DECIMAL(8,6),
-    passed      INT COMMENT '1=通过 0=未通过',
-    threshold   STRING
+    rule_code    STRING,
+    check_count  BIGINT,
+    error_count  BIGINT,
+    error_rate   DECIMAL(8,6),
+    passed       INT COMMENT '1=通过 0=未通过',
+    threshold    STRING,
+    rule_version INT COMMENT '规则定义版本（QualityRuleCatalog 里该规则码的 version）'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

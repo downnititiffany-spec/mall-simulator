@@ -108,7 +108,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 882
+  'analytics-server'        = 887
   'mall-simulator'          = 13
   'synthetic-data-generator' = 106
 }
@@ -124,7 +124,13 @@ $BaselineDefault = [ordered]@{
 # + SqlTemplateSpec 加「漏斗 DWS 加购分子只取 cart_add」1 条
 # + MetricPublisherMappingTest 加 cart_rate 映射与 NULL 跳过 2 条
 # ⇒ spark 195→202，analytics-server 880→882。
-$BaselineSpark = 202
+# S3-05：新增 AdsQualityRuleVersionSpec（5 条，质量大盘四条规则逐行带规则定义版本 rule_version /
+# 与外层列清单一致 / 不含版本时列序不变 / 表结构 formal+staging 追加版本列 / 仍是 8 张 ADS）
+# + SqlTemplateSpec 加「大盘每行带版本且四分支同一常量」1 条
+# + QualityRuleThresholdDriftTest（5 条，Java 反熵守卫：规则码/版本/阈值三方对账
+#   —— quality_rule_definition 目录 ↔ AdsSql.dataQuality ↔ QualityChecker，漂移即红）
+# ⇒ spark 202→208，analytics-server 882→887。
+$BaselineSpark = 208
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
 function Fail([int]$code, [string]$msg) {

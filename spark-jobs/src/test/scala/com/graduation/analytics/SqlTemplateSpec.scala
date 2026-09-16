@@ -270,4 +270,14 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     lower should include("'duplicate_event'")
     lower should include("reject_record")
   }
+
+  it should "S3-05：数据质量大盘每行带规则定义版本，且四条分支只引用同一个版本常量" in {
+    val sql = AdsSql.dataQuality(ns, "20260901")
+    // 外查列清单把 rule_version 带出来（列序与 MetricAdsSpec 一致：追加在末尾）
+    sql should include("SELECT rule_code, check_count, error_count, error_rate, passed, threshold, rule_version FROM (")
+    // 四条规则分支由**同一个**版本常量渲染而成（渲染结果是 4 处 `1 AS rule_version`，不是各处手写不同字面量）；
+    // 常量真值是否等于目录版本，由 warehouse-pipeline 的 QualityRuleThresholdDriftTest 解析源码对账。
+    sql.sliding("1 AS rule_version".length).count(_ == "1 AS rule_version") should be(4)
+    AdsSql.QualityRuleVersion should be(1)
+  }
 }

@@ -172,7 +172,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_data_quality (
           rule_code STRING, check_count BIGINT, error_count BIGINT,
-          error_rate DECIMAL(8,6), passed INT, threshold STRING)
+          error_rate DECIMAL(8,6), passed INT, threshold STRING, rule_version INT)
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     // ---- R6-13 暂存分区（§14.4 分区幂等协议）----
@@ -222,7 +222,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_data_quality__staging (
           rule_code STRING, check_count BIGINT, error_count BIGINT,
-          error_rate DECIMAL(8,6), passed INT, threshold STRING)
+          error_rate DECIMAL(8,6), passed INT, threshold STRING, rule_version INT)
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)""")
   )
 

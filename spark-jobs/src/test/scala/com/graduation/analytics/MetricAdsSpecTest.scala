@@ -29,7 +29,8 @@ class MetricAdsSpecTest extends AnyFlatSpec with Matchers {
     "ads_user_profile_m" -> Seq("user_id", "r", "f", "m", "value_group", "active_level", "favorite_category",
       "last_active_date", "last_buy_date", "lifecycle_state", "rule_version", "calc_date",
       "r_days", "f_count", "m_amount", "period_start", "period_end"),
-    "ads_data_quality_m" -> Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold"))
+    "ads_data_quality_m" -> Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold",
+      "rule_version"))
 
   private val javaCatalogMap = javaCatalog.toMap
 
