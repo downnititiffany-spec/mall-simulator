@@ -6,7 +6,7 @@
       <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
       <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:#9ca3af">
-        分层口径版本：{{ ruleVersion || '未提供' }}；观察期：{{ periodText }}；只展示聚合结果，不展示个人敏感明细
+        分层口径版本：{{ ruleVersion || '未提供' }}；观察期：{{ observationWindow }}；只展示聚合结果，不展示个人敏感明细
       </span>
     </div>
 
@@ -36,7 +36,7 @@
       </table>
       <div class="table-hint">
         rfmMatrix 是后端维护的八类全量矩阵；页面不再自行追加另一套固定类目。若后端未提供 matrix，则仅展示 rfmSegments 的真实返回行，不伪造 0 人分组。
-        平均最近购买天数在聚合列缺失时按“—”展示，后端不造数、前端也不补零。观察期只消费后端 periodStart/periodEnd；任一缺失时不猜窗口。
+        平均最近购买天数在聚合列缺失时按“—”展示，后端不造数、前端也不补零。
       </div>
     </div>
 
@@ -64,7 +64,7 @@
           <tr v-if="preference.length === 0"><td colspan="2" class="el-empty">未取到偏好分类聚合数据</td></tr>
         </tbody>
       </table>
-      <div v-if="usersError" class="table-hint">用户聚合接口（/analysis/users）本次请求失败：{{ usersError }}</div>
+      <div v-if="usersError" class="table-hint">用户聚合接口（/analysis/users）本次请求未纳入：{{ usersError }}</div>
     </div>
   </div>
 </template>
@@ -87,7 +87,9 @@ const COLORS = {
 }
 const colorOf = (name) => COLORS[name] || '#1E40AF'
 
-// 一次请求取 RFM 分层 + 用户聚合（生命周期/偏好）；用户聚合失败不影响分层展示
+// 一次请求取 RFM 分层 + 用户聚合（生命周期/偏好）；用户聚合失败不影响分层展示。
+// 两个接口必须固定到同一 snapshotId：先以 /analysis/rfm 响应选定快照，再用该快照请求 /analysis/users，
+// 避免两次“取当前 ACTIVE”之间发生发布切换时把不同快照的数据拼到同一页。
 const usersError = ref('')
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
@@ -96,14 +98,20 @@ async function fetchRfm(params, signal) {
   const rfm = readEnvelope(rfmRaw)
   let usersData = {}
   let usersWarnings = []
-  try {
-    const users = readEnvelope(await api.users({}, { signal }))
-    usersData = users.data
-    usersWarnings = users.warnings
-  } catch (e) {
-    // 主动取消（切换刷新）不算失败，不写错误提示
-    if (!isAbort(e)) usersError.value = (e && (e.message || e.code)) || '请求失败'
+
+  if (!rfm.snapshotId) {
+    usersError.value = 'RFM 响应未提供 snapshotId，为避免混快照已跳过生命周期/偏好聚合请求'
+  } else {
+    try {
+      const users = readEnvelope(await api.users({ snapshotId: rfm.snapshotId }, { signal }))
+      usersData = users.data
+      usersWarnings = users.warnings
+    } catch (e) {
+      // 主动取消（切换刷新）不算失败，不写错误提示
+      if (!isAbort(e)) usersError.value = (e && (e.message || e.code)) || '请求失败'
+    }
   }
+
   return {
     snapshotId: rfm.snapshotId,
     businessTime: rfm.businessTime,
@@ -128,18 +136,19 @@ const analysis = useAnalysis({
   fetcher: fetchRfm,
   rowKeys: [...ENDPOINT_ROW_KEYS.rfm, 'lifecycle', 'preference'],
   defaults: {
-    rfmSegments: [], rfmMatrix: [], ruleVersion: null, periodStart: null, periodEnd: null,
+    rfmSegments: [], rfmMatrix: [], ruleVersion: null,
+    periodStart: null, periodEnd: null,
     lifecycle: [], preference: []
   }
 })
 const { data, context, state, error, loading, exportable, exportContext } = analysis
 
 const ruleVersion = computed(() => data.value.ruleVersion || (context.value && context.value.definitionVersion) || null)
-const periodStart = computed(() => data.value.periodStart || null)
-const periodEnd = computed(() => data.value.periodEnd || null)
-const periodText = computed(() => (
-  periodStart.value && periodEnd.value ? `${periodStart.value} 至 ${periodEnd.value}` : '未提供'
-))
+const observationWindow = computed(() => {
+  const start = data.value.periodStart
+  const end = data.value.periodEnd
+  return start && end ? `${start} 至 ${end}` : '未提供'
+})
 
 // §3.6 的八类补 0 口径由后端 RfmService.rfmMatrix 唯一维护；前端只搬运。
 // 若旧响应缺少 rfmMatrix，则降级为 rfmSegments 的真实行，不再把另一套固定类目追加进去制造额外 0 行。
@@ -174,12 +183,9 @@ function doExport() {
     context: exportContext.value,
     headers: ['分层', '用户数', '消费额(元)', '平均最近购买(天)', '观察期开始', '观察期结束'],
     rows: segmentRows.value.map((s) => [
-      s.valueGroup,
-      s.users,
-      formatNumber(s.amount, 2, ''),
+      s.valueGroup, s.users, formatNumber(s.amount, 2, ''),
       s.avgRecencyDays === null ? '' : s.avgRecencyDays,
-      periodStart.value || '',
-      periodEnd.value || ''
+      data.value.periodStart || '', data.value.periodEnd || ''
     ])
   })
 }
