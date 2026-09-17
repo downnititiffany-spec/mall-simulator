@@ -45,7 +45,7 @@
             <td>{{ d.title }}</td>
             <td>{{ d.source || '—' }}</td>
             <td>{{ d.targetMetricCode || '—' }} <span v-if="d.targetDirection">({{ d.targetDirection }})</span></td>
-            <td class="mono">{{ formatNumber(d.baselineValue) }}</td>
+            <td class="mono">{{ d.baselineValue }}</td>
             <td class="mono">{{ d.suggestionSnapshotId || '—' }}</td>
             <td>{{ d.owner || '—' }}</td>
             <td><span :style="{ color: statusColor(d.status), fontWeight: 600 }">{{ d.status }}</span></td>
@@ -90,7 +90,6 @@ import api from '../api'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import { useAnalysis } from '../composables/useAnalysis'
 import { buildFallbackContext, NON_ANALYSIS_ROW_KEYS } from '../utils/context'
-import { formatNumber } from '../utils/number'
 import { COLUMNS, decisionRows as mapDecisionRows, evaluationRows as mapEvaluationRows } from '../utils/tables'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 
