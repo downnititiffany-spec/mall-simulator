@@ -116,6 +116,7 @@ async function fetchRfm(params, signal) {
     snapshotId: rfm.snapshotId,
     businessTime: rfm.businessTime,
     dataUpdatedAt: rfm.dataUpdatedAt,
+    source: rfm.source,
     definitionVersion: rfm.definitionVersion,
     qualityStatus: rfm.qualityStatus,
     filters: rfm.filters,
