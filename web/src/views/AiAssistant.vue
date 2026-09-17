@@ -19,9 +19,9 @@
       <div style="display:flex;gap:10px">
         <input v-model="question" @keyup.enter="ask" placeholder="例如：最近 7 天销售额变化趋势如何？"
                style="flex:1;padding:8px" :disabled="busy" />
-        <button @click="ask" :disabled="busy || !question.trim()"
+        <button @click="handleAskAction" :disabled="!busy && !question.trim()"
                 style="padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:6px">
-          {{ busy ? '分析中…（再次点击可放弃上一次）' : '发送' }}
+          {{ busy ? '放弃本次分析' : '发送' }}
         </button>
       </div>
       <div v-if="busy" class="state-line">
@@ -158,7 +158,7 @@
     <div class="chart-box">
       <div class="chart-title">推荐问题</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <button v-for="q in recommended" :key="q" @click="askPreset(q)"
+        <button v-for="q in recommended" :key="q" @click="askPreset(q)" :disabled="busy"
                 style="padding:6px 12px;border:1px solid #e5e7eb;background:#fff;border-radius:16px;font-size:13px;cursor:pointer">
           {{ q }}
         </button>
@@ -169,7 +169,7 @@
       <div class="chart-title">我的最近问答（点击回填；来自 /ai/history/my，非统一信封）</div>
       <div v-if="historyError" class="banner banner-error">历史加载失败：{{ historyError }}</div>
       <div v-if="history.length" style="display:flex;flex-direction:column;gap:6px">
-        <button v-for="h in history" :key="h.id" @click="question = h.question"
+        <button v-for="h in history" :key="h.id" @click="question = h.question" :disabled="busy"
                 style="text-align:left;padding:6px 10px;border:1px solid #f3f4f6;background:#fafafa;border-radius:6px;font-size:13px;cursor:pointer">
           <span style="color:#111827">{{ h.question }}</span>
           <span style="float:right;color:#9ca3af;font-size:12px">
@@ -217,7 +217,7 @@ const { context: baseContext, state, error, load: loadBase, cancel: cancelBase }
 const history = ref([])
 const historyError = ref('')
 
-// 提问请求序号守卫：新提问发起时取消上一次在途请求，并丢弃过期响应
+// 提问请求序号守卫：显式取消时递增序号，任何旧请求随后完成都必须被丢弃
 let askSeq = 0
 let askController = null
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
@@ -330,6 +330,27 @@ async function loadHistory() {
   }
 }
 
+function cancelAsk() {
+  if (!busy.value) return
+  askSeq += 1
+  const controller = askController
+  askController = null
+  if (controller) controller.abort()
+  busy.value = false
+  queryError.value = ''
+  queryResult.value = null
+  closeDraft()
+  abortedNotice.value = '本次提问已取消，结果不会展示。'
+}
+
+function handleAskAction() {
+  if (busy.value) {
+    cancelAsk()
+    return
+  }
+  ask()
+}
+
 async function ask() {
   const text = question.value.trim()
   if (!text || busy.value) return
@@ -343,18 +364,21 @@ async function ask() {
   closeDraft()
   try {
     const resp = await api.aiQuery(text, '近30天', askController ? { signal: askController.signal } : undefined)
-    if (mySeq !== askSeq) return // 已有更新的提问，丢弃过期响应
+    if (mySeq !== askSeq) return // 已被显式取消或已有更新序号，丢弃过期响应
     queryResult.value = resp
     await loadHistory()
   } catch (e) {
     if (mySeq !== askSeq) return
     if (isAbort(e)) {
-      abortedNotice.value = '上一次提问已被新的提问取消，结果未展示（避免展示过期答案）。'
+      abortedNotice.value = '本次提问已取消，结果不会展示。'
       return
     }
     queryError.value = (e && (e.message || e.code)) || '请求失败'
   } finally {
-    if (mySeq === askSeq) busy.value = false
+    if (mySeq === askSeq) {
+      busy.value = false
+      askController = null
+    }
   }
 }
 
