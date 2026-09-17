@@ -4,11 +4,11 @@
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
       <label style="font-size:13px;color:#374151">趋势日期范围：</label>
-      <input type="date" v-model="from" style="padding:4px" />
+      <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
       <span style="color:#9ca3af">至</span>
-      <input type="date" v-model="to" style="padding:4px" />
+      <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
       <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
-      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
+      <button style="font-size:12px" :disabled="!metricExportable" @click="doExport">导出 CSV</button>
       <button style="font-size:12px" @click="showDictionary = !showDictionary">
         {{ showDictionary ? '收起指标口径' : '查看指标口径' }}
       </button>
@@ -176,11 +176,15 @@ const warningSummary = computed(() =>
   (context.value && context.value.warnings && context.value.warnings.length
     ? context.value.warnings.map(warningText).join('；')
     : '无告警，但快照内无数据行'))
+const metricExportable = computed(() => exportable.value && cards.value.length > 0)
 
-const load = () => analysis.load({ from: from.value, to: to.value })
+const load = () => {
+  if (loading.value) return
+  return analysis.load({ from: from.value, to: to.value })
+}
 
 function doExport() {
-  if (!exportable.value) return
+  if (!metricExportable.value) return
   const rows = cards.value.map((c) => [
     c.metricCode,
     c.metricName,
