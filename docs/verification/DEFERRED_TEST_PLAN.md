@@ -228,6 +228,37 @@
 
 普通错误说明修正不调用。阶段6正式安全/错误链验收时，如需要对抗验证，可攻击异常类型伪造、未知类型、原始 provider message 泄漏、fallback providerUsed 漂移等边界。
 
+### V-009 — S3-61 Overview 指标口径版本展示
+
+- **Status**：PENDING
+- **Implementation baseline**：`9b9caa53fd3d6b8f7f36e51dcfa44a9112d00664`
+- **Implementation commits**：`9f0f6d8`（页面/CSV 接线）+ `9b9caa5`（developer tests）
+- **Area**：`web/src/views/Overview.vue`、`web/tests/metricDefinitionVersionDisplay.test.js`
+- **Risk**：低；只消费既有 `metrics[*].definitionVersion`，不改后端契约、指标值、数据库、权限或口径算法。
+- **Blocks further development**：NO。
+
+#### Invariants
+
+1. Overview 每个指标卡都展示该行后端返回的 `definitionVersion`，不只对 `repeat_rate` 特判；
+2. 固定清单指标与清单外指标走同一搬运规则；
+3. 缺失版本显示 `—`，不得补 `v1`、`unknown` 或猜测版本；
+4. 不擅自给版本值拼 `v` 前缀，后端字符串原样显示；
+5. CSV 与卡片同步增加“口径版本”列，并复用同一已格式化字段；
+6. 本项只补展示，不改变 `repeat_period_start/end`、快照级 period 与窗口 period 的既有语义。
+
+#### Code Agent later
+
+在包含 `9f0f6d8` + `9b9caa5` 的精确 SHA 上执行：
+
+1. `cd web; npm run verify`；
+2. 确认新增 `metricDefinitionVersionDisplay.test.js` 4 条全部通过；
+3. 确认 Vite production build 成功，避免 Vue 模板/SFC 编译回归；
+4. 真实浏览器/后端联调仍不是本条 unit/build 层 PASS 的前提，留阶段5/7 E2E。
+
+#### Codex Work later
+
+普通展示项不调用。阶段5整体页面验收或合并 main 前如需要对抗验证，再检查空白/非字符串版本、CSV 与页面不一致、旧快照缺版本等边界。
+
 ## 3. 2026-09-17 独立执行结论
 
 ### 第一批：`080b8b0e1234416f1dc884bed4f1948e75464070`
