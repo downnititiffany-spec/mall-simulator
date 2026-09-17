@@ -47,6 +47,9 @@ import java.util.Locale;
  * {@code /ai/queries} 增补 {@code evidenceSummary}/{@code evidenceId}。快照锚点**只由证据包给出**
  * （{@link EvidenceService#build} 钉住 ACTIVE 或显式快照，§19.5 禁止在 SQL 里 {@code MAX(snapshot_id)}，
  * 也禁止写 {@code "unknown"} 占位值）；本控制器不计算任何数值、不拼业务文本，只做搬运与形状适配。</p>
+ *
+ * <p>S3-57：解释来源不再通过“摘要文本是否变化”推断；{@link ExplanationResult#providerUsed()}
+ * 由实际解释调用链记录最终采用的来源，控制器只原样搬运。</p>
  */
 @Slf4j
 @RestController
@@ -72,7 +75,7 @@ public class AiController {
     public record EvidenceExplanationResp(EvidencePackage evidence, ExplanationNarrative narrative) {
     }
 
-    /** 叙述形状（§19.3）：providerUsed=template 表示模型不可用也给出完整结论 */
+    /** 叙述形状（§19.3）：providerUsed=template 表示最终结论来自固定模板 */
     public record ExplanationNarrative(String summary, List<ExplanationSection> sections,
                                        List<String> limitations, String providerUsed,
                                        String templateVersion) {
@@ -107,7 +110,7 @@ public class AiController {
         auditExplanation(actor, pkg, body.question());
         return ApiResponse.ok(new EvidenceExplanationResp(pkg,
                 new ExplanationNarrative(explanation.summary(), sectionsOf(template),
-                        explanation.limitations(), providerUsed(explanation, template),
+                        explanation.limitations(), explanation.providerUsed(),
                         template.templateVersion())), trace.traceId());
     }
 
@@ -235,18 +238,6 @@ public class AiController {
         return template.sections().stream()
                 .map(section -> new ExplanationSection(section.title(), section.lines()))
                 .toList();
-    }
-
-    /**
-     * providerUsed：ai 层的 {@link ExplanationResult} 未携带该字段（ai 包不在 R8-3 改动面内），
-     * 因此按「最终摘要是否等于固定模板摘要」判定：相等 → 文本完全来自模板（模型不可用、或模型改写
-     * 被数值守卫拒绝两种情形都在内）；不等 → 模型改写已被采纳。ai 层若后续暴露 provider 字段，
-     * 这里应改为直读，删掉本推断。
-     */
-    private static String providerUsed(ExplanationResult explanation, EvidenceTemplates.Narrative template) {
-        String summary = explanation == null ? null : explanation.summary();
-        return summary != null && !summary.equals(template.summary())
-                ? "llm" : EvidenceTemplates.Narrative.PROVIDER_TEMPLATE;
     }
 
     /** 8 位短哈希：审计可对同一问题/同一 SQL 归并，又不落原文（§21.3 脱敏） */
