@@ -26,7 +26,7 @@
 | ID | 工作项 | 状态 | 当前证明边界 |
 |---|---|---|---|
 | V-001 | S3-53 AI evidenceId 兼容 | SUPERSEDED | 由 V-004 覆盖最终 ID 形状 |
-| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch K 261/261 |
+| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch L 271/271 |
 | V-003 | S3-54 AI summary 展示 | PARTIAL | 工具函数/源码接线；无浏览器 E2E |
 | V-004 | S3-55/56 AI ID 严格形状/草稿锚点 | PARTIAL | 纯逻辑/源码接线；无真实提交链 E2E |
 | V-005 | S3-57 provider provenance | PASS | unit/default；无真实 Provider |
@@ -47,6 +47,7 @@
 | V-020 | S3-73 商品页服务端分页/排序 | PASS | Node source guard + Web full gate；无真实 HTTP/DB 排序 E2E |
 | V-021 | S3-74 RFM matrix 类目唯一属主 | PASS | Node source guard + Web full gate；无真实 HTTP/DOM E2E |
 | V-022 | Post-J-R1 Web consistency hardening | PASS | 同快照/导出 freshness/reentry source guards + Web 261/261；无真实浏览器/HTTP/state-machine/DB E2E |
+| V-023 | Post-Batch-K Web interaction consistency | PASS | Ops admin/export + AI query/draft concurrency source guards + Web 271/271；无真实浏览器/HTTP/admin persistence/decision DB E2E |
 
 当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 写 `CURRENT_BATCH.md` + 对应永久 plan，并置 `READY`。
 
@@ -57,7 +58,7 @@
 - **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
 - `npm run verify = npm test && npm run build`。
 - 多轮独立执行均为 Node tests 全绿 + Vite production build 成功。
-- 最新 Batch K：**261/261 PASS** + Vite production build PASS。
+- 最新 Batch L：**271/271 PASS** + Vite production build PASS。
 
 ### V-005 — S3-57 Explanation provider provenance
 
@@ -154,6 +155,16 @@
 - 同快照组合/回声拒绝、RFM primary publisher 保留、Sales/Overview handler + shared CSV freshness/empty-subset fail-closed、Decision write-action busy reentry guards 均满足计划语义检查。
 - 未覆盖真实浏览器交互、真实 HTTP race、后端 decision 状态机/DB 写入、3307 与 Spark/Hive/Flume E2E。
 
+### V-023 — Post-Batch-K Web interaction consistency
+
+- **Final verification baseline**：`395eead89d78d0a40665f2b985002371943f5eb0`。
+- 永久测试计划：`docs/verification/batches/BATCH-L-WEB-INTERACTION-CONSISTENCY-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-L-WEB-INTERACTION-CONSISTENCY-RESULT.md`；raw result commit `c573a21a697ff48cbc6ee6184117555121464466`。
+- 定向：`opsInteractionHardening` 5/5、`aiDraftQueryConcurrency` 5/5、`aiAskCancellation` 5/5、`exportFreshnessGuard` 6/6，共 **21/21 PASS**。
+- Web full gate：**271/271 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 build PASS（672 modules，2.84s）。
+- Ops 三类 admin 写动作 handler 级 `busy` 防重入、指标/流水线/审计导出资格与 handler/UI 同源、AI 决策草稿创建与新问答互斥、既有 ask cancel 序号/abort 语义均满足计划 §7 十项复核。
+- 未覆盖真实浏览器双击/prompt 时序、真实 HTTP race、admin 权限与实际持久化、decision 状态机/DB 写入、AI provider/Text-to-SQL 运行时、3307 与 Spark/Hive/Flume E2E。
+
 ## 4. PARTIAL：后续阶段联调再补
 
 ### V-003 — AI summary 展示
@@ -221,6 +232,14 @@
 - 定向 22/22 PASS；计划 §7 十项语义复核全部满足。
 - Web full gate：**261/261 PASS**；Vite 5.4.21 production build PASS（672 modules，2.71s）；New failures 0；workspace clean。
 - 未覆盖真浏览器、真 HTTP race、后端 decision 状态机/DB 写入、3307 与 Spark/Hive/Flume E2E。
+
+### Batch L — `395eead89d78d0a40665f2b985002371943f5eb0`
+- 永久测试计划：`docs/verification/batches/BATCH-L-WEB-INTERACTION-CONSISTENCY-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-L-WEB-INTERACTION-CONSISTENCY-RESULT.md`。
+- Raw Code Agent result：`verification-results:docs/verification/results/BATCH-L-WEB-INTERACTION-CONSISTENCY-RESULT.md`，commit `c573a21a697ff48cbc6ee6184117555121464466`。
+- 定向 21/21 PASS；计划 §7 十项语义复核全部满足。
+- Web full gate：**271/271 PASS**；Vite 5.4.21 production build PASS（672 modules，2.84s）；New failures 0；workspace clean。
+- 未覆盖真浏览器双击/prompt 时序、真 HTTP race、admin 权限与持久化、decision 状态机/DB、AI provider/Text-to-SQL runtime、3307 与 Spark/Hive/Flume E2E。
 
 ## 6. 已知环境红与未覆盖面
 
