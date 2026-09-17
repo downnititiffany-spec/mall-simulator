@@ -15,6 +15,11 @@ const functionBody = (name, nextName) => {
   return source.slice(start, end)
 }
 
+const executableText = (text) => text
+  .split('\n')
+  .map((line) => line.replace(/\/\/.*$/, ''))
+  .join('\n')
+
 test('runOnce 自身受 busy fail-closed 保护，不能只依赖按钮 disabled', () => {
   const body = functionBody('runOnce', 'retry')
   const guardAt = body.indexOf('if (busy.value) return')
@@ -24,7 +29,7 @@ test('runOnce 自身受 busy fail-closed 保护，不能只依赖按钮 disabled
 })
 
 test('一次人工流水线触发只生成一个 operationId', () => {
-  const body = functionBody('runOnce', 'retry')
+  const body = executableText(functionBody('runOnce', 'retry'))
   assert.match(body, /const operationId = 'manual-' \+ Date\.now\(\)/)
   assert.equal((body.match(/Date\.now\(\)/g) || []).length, 1)
 })
