@@ -1,7 +1,7 @@
 # Deferred Verification Plan
 
 > 状态：CURRENT
-> 用途：统一登记“代码已实现、独立验证尚未执行”的工作项。Code Agent 与 Codex Work 后续按本文件批量验证。
+> 用途：统一登记“代码已实现、独立验证尚未执行/尚未完全执行”的工作项。Code Agent 后续按本文件批量验证；Codex Work 只在高价值节点按需调用。
 > 规则来源：`docs/governance/DEVELOPMENT_AND_VERIFICATION_RULES.md`、Decision Log D-009。
 
 ## 1. 使用规则
@@ -10,10 +10,10 @@
 - ChatGPT 可以继续开发并列模块；后续 commit 不自动改变旧条目的被测 SHA。
 - 若后续实现覆盖了旧工作项的行为，旧条目标记 `SUPERSEDED`，新增最终被测 SHA。
 - Code Agent：只跑既有测试/环境验证；不得改 Git。
-- Codex Work：主动找反例、故障注入、临时探针；不得改 Git。
+- Codex Work：只在核心安全、重大迁移、正式阶段验收等高价值节点做主动找反例/故障注入；普通小修与常规批次不默认调用，不得改 Git。
 - 独立验证结果返回 ChatGPT，由 ChatGPT 判断并修改生产代码/测试/设计。
 
-状态：`PENDING / RUNNING / PASS / FAIL / SUPERSEDED`。
+状态：`PENDING / PARTIAL / PASS / FAIL / SUPERSEDED`。
 
 ## 2. 当前待验证队列
 
@@ -41,7 +41,7 @@
 
 #### Codex Work later
 
-本条已被 V-004 取代；原攻击面并入 V-004。
+本条已被 V-004 取代；原攻击面并入 V-004，且只在后续高价值验收节点需要时调用。
 
 #### Existing detailed handoff
 
@@ -49,7 +49,7 @@
 
 ### V-002 — Web 统一验证入口
 
-- **Status**：PENDING
+- **Status**：PASS（2026-09-17 Code Agent，commit `080b8b0e1234416f1dc884bed4f1948e75464070`）
 - **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
 - **Implementation commits**：`e36a350`（`npm run verify`）+ `db810d6`（结构守卫）+ `351fee9`（Decision Log D-011）
 - **Area**：`web/package.json`、`web/tests/packageScripts.test.js`
@@ -63,30 +63,23 @@
 3. 不把 build 成功替代单测通过；
 4. 该入口不宣称覆盖真实浏览器/E2E/后端联调。
 
-#### Code Agent later
+#### Execution evidence — 2026-09-17
 
-在精确 SHA 上执行：
+- `cd web; npm run verify` → exit `0`；
+- Node `v24.16.0` / npm `11.13.0`；
+- Node tests `187/187` PASS；
+- Vite production build 成功（671 modules，6.45s）；
+- `verify` 实读为 `npm test && npm run build`。
 
-```bash
-cd web
-npm run verify
-```
-
-返回 Node/npm 版本、测试总数、失败数、build exit code 与日志位置。
+**Limit**：本轮测试全绿，因此“单测失败时 `&&` 是否真正阻止 build”只具结构性证据，没有故意制造失败的运行时证据；该限制不影响 V-002 当前 PASS，但后续若改脚本需重新验证。
 
 #### Codex Work later
 
-重点攻击：
-
-- 在单测失败时 build 是否仍被错误执行；
-- `verify` 是否出现递归调用自身；
-- Windows / PowerShell / cmd 下 npm script 链是否符合预期；
-- package script 与文档口径是否漂移；
-- 是否存在另一个实际前端入口绕过该统一命令。
+普通批次不调用。若未来前端发布/合并 main 前需要对抗验证，可重点看短路、递归入口、Windows shell 行为与旁路入口。
 
 ### V-003 — S3-54 AI 结论 summary 展示链
 
-- **Status**：PENDING
+- **Status**：PARTIAL（Code Agent：工具函数/源码接线测试通过；真实浏览器链未测）
 - **Implementation baseline**：`80623a335e9df1b9fc758cb22172d72032b312db`
 - **Implementation commit**：`80623a3`
 - **Area**：`web/src/utils/context.js`、`web/src/views/AiAssistant.vue`、`web/tests/aiSummaryContext.test.js`
@@ -100,30 +93,15 @@ npm run verify
 3. `query.summary`、查询行或 evidence 字段不得替代 ExplanationResult.summary；
 4. 不在前端生成、推导或改写业务结论。
 
-#### Code Agent later
+#### Execution evidence — 2026-09-17
 
-在精确 SHA 上执行：
+`npm run verify` 全绿，直接相关 4 条用例通过：只搬运 `explanation.summary`、空白降级、`query.summary` 不得覆盖、页面源码接线消费 `evidenceContext.summary`。
 
-```bash
-cd web
-npm run verify
-```
-
-返回测试总数、失败数、build 结果和日志位置。
-
-#### Codex Work later
-
-重点攻击：
-
-- 后端 summary 为 `''`、空白、null、非字符串；
-- query/evidence 同时出现伪造 summary 时是否被错误采用；
-- 页面是否还存在其它结论渲染路径绕过 `evidenceContext.summary`；
-- summary 包含 HTML/特殊字符时 Vue 是否按文本安全渲染；
-- developer tests 是否只覆盖工具函数而未钉住页面接线。
+**Remaining runtime gap**：没有真实 Vue/browser 渲染 + 后端联调；HTML/特殊字符实际渲染与页面是否存在运行时旁路仍未验证。阶段5真实页面联调时补证据，不为此单独停开发。
 
 ### V-004 — S3-55/S3-56 AI 标识严格形状与草稿锚点单一判据
 
-- **Status**：PENDING
+- **Status**：PARTIAL（Code Agent：工具函数/源码接线测试通过；真实浏览器→提交链未测）
 - **Implementation baseline**：`88c715e3976469ead3ff1e8e73dfa00a41d22dc6`
 - **Implementation commits**：`617642c`（context 严格 ID 读取）+ `776bc74`（decisionDraft 去二次 trim）+ `88c715e`（developer tests）+ `28bd4ea`（Decision Log D-013）
 - **Area**：`web/src/utils/context.js`、`web/src/utils/decisionDraft.js`、`web/tests/decisionDraft.test.js`、`web/tests/aiEvidenceIdFallback.test.js`
@@ -139,37 +117,21 @@ npm run verify
 5. evidence package 与 snapshot 锚点仍二选一；
 6. 两类 ID 都无效时 fail-closed，不构造草稿请求。
 
-#### Code Agent later
+#### Execution evidence — 2026-09-17
 
-在精确 SHA 上执行：
+`npm run verify` 187/187 全绿；相关用例确认：占位/空白 ID 为 null、证据包锚点优先且二选一、带空白/数字/任意大小写 unknown 不被 trim/转串接受、无锚点拒绝构造请求。
 
-```bash
-cd web
-npm run verify
-```
-
-返回测试总数/失败数、build 结果、Node/npm 版本和日志位置。
-
-#### Codex Work later
-
-重点攻击：
-
-- `" EV-... "`、`" S... "` 是否被任何路径 trim 后重新接受；
-- 数字、对象、数组、Boolean 是否被字符串化成 ID；
-- `unknown` 的任意大小写组合；
-- 顶层污染 ID + 嵌套真实 ID 是否正确回退；
-- 顶层真实 ID + 嵌套冲突 ID 是否保持顶层优先；
-- `AiAssistant.vue` 展示、`draftAnchor` 和最终 `buildDraftBody` 是否使用同一判据；
-- 是否还有其它工具函数对 ID 做隐式 `String()` / `trim()` 后进入决策请求。
+**Remaining runtime gap**：真实 `AiAssistant` 展示 → `draftAnchor` → `buildDraftBody` → HTTP 提交未做浏览器/E2E 联调；阶段5/6 联调时补。
 
 ### V-005 — S3-57 Explanation provider provenance
 
-- **Status**：PENDING
+- **Status**：PENDING（首次批测发现旧端点测试夹具与 D-014 新语义漂移；夹具已在 `3e0d3bc` 修正，待最小复测）
 - **Implementation baseline**：`a134df88aa9d31ef8b26fc00f4785a5cbc5c2362`
 - **Implementation commits**：`97ed8ac`（ExplanationResult/调用链来源）+ `d7780d4`（控制器直读 providerUsed）+ `a134df8`（developer tests）
+- **Fixture correction**：`3e0d3bc`（端点测试显式 stub `llm.providerName()="mock-provider"`，断言真实 provider 名称；生产逻辑不回退）
 - **Area**：`analytics-server/ai-decision`、`analytics-server/platform-app/AiController`
 - **Risk**：中；加性响应字段与来源事实修正，不改 LLM 安全策略。
-- **Blocks further development**：NO；但阶段6宣称“providerUsed 真实可审计”前必须验证。
+- **Blocks further development**：NO；但阶段6宣称“providerUsed 真实可审计”前必须完成复测。
 
 #### Invariants
 
@@ -178,28 +140,24 @@ npm run verify
 3. 模型输出即使与模板文本逐字相同，也不能被误判为 template；
 4. 控制器不得再通过文本比较反推 provider。
 
-#### Code Agent later
+#### First execution — 2026-09-17
 
-在批量目标 SHA 上执行 JDK17 default 测试，至少确认：
+- `ExplanationProviderProvenanceTest`：3/3 PASS；
+- 旧 `AiExplanationEndpointTest.providerUsedIsLlmWhenRewriteAccepted`：FAIL，expected `llm` but actual `null`；
+- 根因裁决：旧 Mockito fixture 没有 stub `providerName()`，而 D-014 已明确生产响应必须直读 provider 名称；真实 provider 实现返回非空名称。故修测试夹具，不回退生产代码。
 
-```powershell
-pwsh scripts/run-tests.ps1 -Suite default
-```
+#### Code Agent retest
 
-并确认 `ExplanationProviderProvenanceTest` 被收集且通过。
-
-#### Codex Work later
-
-重点攻击：模型文本与模板完全相同、providerName 为空/null、模型超时后模板成功、数值守卫 REJECTED、`/ai/explanations` 与 `/ai/analyses` 两种响应是否一致携带真实来源，以及是否仍存在其它“比较文本推 provider”的路径。
+至少执行该端点类的最小复测，然后执行 default；在 `scripts/run-tests.ps1` 数量基线更新完成前，default 可临时带 `-AllowCountDrift` 用于区分功能失败和登记漂移。最终仍需恢复无该开关的常规门禁。
 
 ### V-006 — S3-58 AI Text-to-SQL timeout classification
 
-- **Status**：PENDING
+- **Status**：PASS（unit/default 层；真实 3307/JDBC 超时仍未测）
 - **Implementation baseline**：`0c5df95ad835ba214ec1788cd76fba85d8ab7120`
 - **Implementation commits**：`054408e`（EXECUTE/服务层）+ `bc3dac5`（EXPLAIN）+ `0c5df95`（developer tests）
 - **Area**：`analytics-server/ai-decision`
 - **Risk**：中；错误分类修正，不改 SQL 允许/拒绝规则。
-- **Blocks further development**：NO；但进入真实 MySQL 慢查询/超时验收前必须验证。
+- **Blocks further development**：NO；但进入真实 MySQL 慢查询/超时验收前必须补运行证据。
 
 #### Invariants
 
@@ -209,22 +167,18 @@ pwsh scripts/run-tests.ps1 -Suite default
 4. 超时同样写 `ai_query_history`，errors 含稳定码；
 5. 本轮不声称 `/api/v1/ai/queries` 已改 HTTP 504。
 
-#### Code Agent later
+#### Execution evidence — 2026-09-17
 
-JDK17 default 全量，并确认 `AiQueryTimeoutMappingTest` 三条被收集通过。若有可控 3307 慢查询环境，可额外做真实 JDBC timeout 证据；无环境则明确未测。
-
-#### Codex Work later
-
-重点攻击：EXPLAIN 超时与执行超时是否都保留审计、超时异常被多层包装时是否漏映射、超时发生在 LLM 阶段是否被误标数据库 QUERY_TIMEOUT、`REPAIRED` 路径超时后状态是否仍错误保留成功语义、generic RuntimeException 是否被错误改成 timeout。
+`AiQueryTimeoutMappingTest` 3/3 PASS；ai-decision 当轮汇总相关模块无 F/E。未执行真实 3307 慢查询，不据此声称真实 JDBC timeout 或 HTTP 状态码已验收。
 
 ### V-007 — S3-59 AI operation audit failure classification
 
-- **Status**：PENDING
+- **Status**：PASS（unit/default 层；operation_audit_log 真库写入仍未测）
 - **Implementation baseline**：`eecd6839ad21ae12f2dbc5018a009741e929f025`
 - **Implementation commits**：`a6e3639`（生产逻辑）+ `eecd683`（developer tests）
 - **Area**：`analytics-server/platform-app/AiController`
 - **Risk**：低—中；只修 operation audit 成败分类。
-- **Blocks further development**：NO；但审计验收前必须验证。
+- **Blocks further development**：NO；但正式审计验收前必须补真库证据。
 
 #### Invariants
 
@@ -233,33 +187,26 @@ JDK17 default 全量，并确认 `AiQueryTimeoutMappingTest` 三条被收集通�
 3. `EXECUTED`、`REPAIRED`、`GENERATED` 不误记失败；
 4. QueryResult 状态机本身不被本项改写。
 
-#### Code Agent later
+#### Execution evidence — 2026-09-17
 
-JDK17 default 全量，并确认 `AiControllerAuditStatusTest` 被收集通过；若已有 operation audit 集成测试，额外验证 `FAILED` 真正写入 failure 结果而非只测 helper。
+`AiControllerAuditStatusTest` 3/3 PASS。测试环境未应用 V14，日志明确显示 `operation_audit_log` 不存在，因此当前只证明 helper/controller 分类；真实审计表写入留到数据库集成验收。
 
-#### Codex Work later
+## 3. 2026-09-17 首批独立执行结论
 
-重点攻击：大小写/复合状态、未来状态名包含 `FAIL` 的误判风险、`CANCELLED`/`TIMEOUT` 等潜在新状态、null question 导致 resourceId、audit.failure 自身异常的行为，以及查询失败后 `/ai/queries` 是否仍可能在其它路径写第二条 success。
+被测精确 SHA：`080b8b0e1234416f1dc884bed4f1948e75464070`。
 
-## 3. 当前批量验证点（2026-09-17）
+- Web：`npm run verify` exit 0，187/187 PASS，Vite build 成功；
+- JDK17 default：analytics-server 1011（F=2/E=0/S=1）、mall 13/13、generator 110/110；
+- 两个 analytics failure 中：
+  1. `AiExplanationEndpointTest.providerUsedIsLlmWhenRewriteAccepted` 是 D-014 后的旧 fixture 漂移，已由 `3e0d3bc` 修正，待复测；
+  2. `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` 是既有环境红（landing 历史文件不在当前工作区），继续保留，不删除/skip/放宽；
+- analytics 数量 `1002 → 1011` 的 +9 精确来自本批三组新测试：`ExplanationProviderProvenanceTest` 3 + `AiQueryTimeoutMappingTest` 3 + `AiControllerAuditStatusTest` 3。`scripts/run-tests.ps1` 数量登记需同步到 1011；同步前可用 `-AllowCountDrift` 做功能复测，但不能把该开关长期当常规入口。
 
-本轮已经从纯前端展示/锚点连续推进到 **AI provider provenance + Text-to-SQL 超时错误链 + operation audit 成败语义**。PENDING 队列已覆盖前端与 JDK17 后端两棵树，继续叠加会明显增加失败定位成本，因此按 D-009 触发一次批量验证点。
-
-**批量测试时不要逐条 checkout 旧 SHA**：先 checkout 本文件所在的最终 handoff SHA，再统一执行当前树；各条 `Implementation baseline` 仅用于定位引入点。Code Agent 必须回报最终被测完整 SHA。
-
-建议顺序：
-
-```text
-1. web: npm run verify
-2. analytics/server: pwsh scripts/run-tests.ps1 -Suite default
-3. Codex Work 对 V-003 ~ V-007 做对抗验证（V-002 也检查统一入口）
-```
-
-未运行 3307 / 真模型 / 真实浏览器时必须明确写“未测”，不得由 unit/default 结果推断通过。
+Codex Work 本批**暂不调用**。当前结果已经由 Code Agent 足够定位；按用户要求，只在核心安全/重大迁移/正式阶段验收等重要节点调用 Codex Work。
 
 ## 4. 批量验证触发点
 
-满足以下任一条件时优先集中跑本文件中的 PENDING 队列：
+满足以下任一条件时优先集中跑本文件中的 PENDING/PARTIAL 队列：
 
 1. 一个功能簇完成；
 2. 某阶段准备宣布完成；
@@ -281,7 +228,7 @@ Expected: ...
 Actual: ...
 Commands/Reproduction: ...
 Evidence: ...
-Result: PASS | FAIL
+Result: PASS | FAIL | PARTIAL
 ```
 
 ChatGPT 复核后才更新本文件最终状态。
