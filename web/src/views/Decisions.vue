@@ -65,7 +65,7 @@
               <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="act(d, 'reject')" :disabled="busy">驳回</button>
               <button v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="busy">开始</button>
               <button v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="busy">完成</button>
-              <button v-if="d.status === 'IN_PROGRESS'" style="background:#dc2626" @click="cancel(d)" :disabled="busy">取消</button>
+              <button v-if="d.status === 'IN_PROGRESS'" style="background:#dc2626" @click="cancelDecision(d)" :disabled="busy">取消</button>
               <button v-if="d.status === 'COMPLETED'" style="background:#7c3aed" @click="evaluate(d)" :disabled="busy">评价</button>
             </td>
           </tr>
