@@ -1,5 +1,5 @@
 // CSV 下载层：负责浏览器动作（BOM / Blob / 触发下载），拼装逻辑在 utils/csv.js
-import { buildCsvText, buildExportFilename } from './csv'
+import { buildCsvText, buildExportFilename } from './csv.js'
 
 /**
  * 下载层的最终 fail-closed 判定。
