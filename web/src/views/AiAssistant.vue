@@ -216,6 +216,8 @@ const { context: baseContext, state, error, load: loadBase, cancel: cancelBase }
 // 历史记录：/ai/history/my 返回裸数组，失败必须显式提示（不再静默）
 const history = ref([])
 const historyError = ref('')
+let historySeq = 0
+let historyController = null
 
 // 提问请求序号守卫：显式取消时递增序号，任何旧请求随后完成都必须被丢弃
 let askSeq = 0
@@ -325,11 +327,19 @@ const canExportResult = computed(() => Boolean(queryResult.value) && resultTable
 const exportButtonText = computed(() => (canExportResult.value ? '导出本次查询 CSV' : '导出（暂无可导出结果）'))
 
 async function loadHistory() {
+  const mySeq = ++historySeq
+  if (historyController) historyController.abort()
+  historyController = typeof AbortController === 'function' ? new AbortController() : null
   historyError.value = ''
   try {
-    history.value = (await api.aiHistoryMine(8)) || []
+    const rows = await api.aiHistoryMine(8, historyController ? { signal: historyController.signal } : undefined)
+    if (mySeq !== historySeq) return
+    history.value = Array.isArray(rows) ? rows : []
   } catch (e) {
+    if (mySeq !== historySeq) return
     if (!isAbort(e)) historyError.value = (e && (e.message || e.code)) || '请求失败'
+  } finally {
+    if (mySeq === historySeq) historyController = null
   }
 }
 
@@ -415,5 +425,8 @@ onUnmounted(() => {
   cancelBase()
   askSeq += 1
   if (askController) askController.abort()
+  historySeq += 1
+  if (historyController) historyController.abort()
+  historyController = null
 })
 </script>
