@@ -180,6 +180,7 @@ const warningSummary = computed(() =>
 const load = () => analysis.load({ from: from.value, to: to.value })
 
 function doExport() {
+  if (!exportable.value) return
   const rows = cards.value.map((c) => [
     c.metricCode,
     c.metricName,
