@@ -160,3 +160,13 @@
 **Decision**：D-010 的时间戳从本条起必须在每个提交前读取实时 `+08:00` 项目时钟，不再按连续操作耗时人工预估秒数。Git commit 元数据始终是最终权威时间。
 
 **Correction note**：本轮连续开发中 `d7780d4`、`054408e`、`bc3dac5`、`0c5df95` 的主题时间由人工顺延填写，可能与 GitHub commit 元数据相差数分钟；不重写共享历史。后续主题时间改用实时项目时钟，避免再次出现这种偏差。
+
+### D-018 — AI explanation 回退原因必须匹配真实失败类型
+
+**Decision**：`ExplanationService` 的模板回退必须区分至少三类原因：模型/Provider 调用失败、摘要形状/长度守卫拒绝、数值守卫拒绝。Provider 已被真实调用但失败时，不得再返回“未调用大模型”；Provider 超时/限流/网络/鉴权/格式失败不得冒充“数值校验失败”。所有最终回退仍保持 `providerUsed=template`。
+
+**Reason**：S3-57 已把“最终采用来源”从文本推断改成真实调用链，但 `rewriteSummary()` 仍用一个 `null` 同时表示形状失败、数值失败和 Provider 异常，调用方统一追加“数值校验失败”；问数解释的异常路径又复用硬编码“未调用大模型”的模板说明。这会让用户看到与真实执行事实相反的失败原因。
+
+**Safety boundary**：对外只暴露稳定、可解释的原因类别；不把 Provider 原始异常 message、响应体、URL、密钥或堆栈拼进 API limitation。原始异常仍只进入既有日志/审计路径。本项不新增自动重试、不改变 Provider 调用次数、不改变 SQL/权限/快照安全策略，也不新增公开响应字段。
+
+**Implementation commits**：`8ab0058`（生产逻辑）+ `97d6e83`（developer tests）。
