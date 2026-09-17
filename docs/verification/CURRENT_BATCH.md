@@ -1,56 +1,57 @@
 # Current Verification Batch
 
-> 状态：CLOSED
-> 当前没有待执行批次。
-> Code Agent 收到 `VERIFY_CURRENT_BATCH` 后必须先同步并读取最新 `CODE_AGENT_COMMANDS.md`；若状态不是 `READY`，返回 `NO_READY_BATCH`，不得自行挑测试运行。
+> 状态：READY
+> Code Agent 收到 `VERIFY_CURRENT_BATCH` 后，必须先同步并读取最新 `CODE_AGENT_COMMANDS.md`、`TEST_EXECUTION_PROTOCOL.md` 与本文件，并一次执行完整批次。
 
-## Last completed batch
+## Batch
 
-- Batch ID：`BATCH-G-WEB-DECISION-CONTEXT-LOCAL-DATES`
-- Tested commit：`4366bcb7dcc6347657744e115f0cc0706aa6baea`
-- Scope：S3-69/S3-70 决策执行上下文展示 + S3-71 本地日历日期默认值统一 + 决策中心回归
-- Result：**PASS**
-- Web：**226/226 PASS**，Vite production build PASS
-- Permanent plan：`docs/verification/batches/BATCH-G-WEB-DECISION-CONTEXT-LOCAL-DATES-PLAN.md`
-- Accepted result：`docs/verification/results/BATCH-G-WEB-DECISION-CONTEXT-LOCAL-DATES-RESULT.md`
-- Raw Code Agent result：`verification-results:docs/verification/results/BATCH-G-WEB-DECISION-CONTEXT-LOCAL-DATES-RESULT.md`
-- Raw result commit：`8d450b7c427c8ae14f72f86d2056aa6d6a262eb9`
+- **Batch ID**：`BATCH-H-WEB-PIPELINE-PRODUCT-RFM`
+- **Tested commit**：`20db9072c37e20ebecf6648f55d002d36aa452b0`
+- **Branch context**：`feature/v3-development`
+- **Scope**：S3-72 Pipeline retry 失败处理 + S3-73 商品页服务端分页/排序 + S3-74 RFM matrix 类目唯一属主，以及相关 Web 回归。
+- **Risk**：低—中；仅 Web 交互/展示/请求参数，不改后端 API、数据库、状态机、权限或 AI SQL。
+- **Permanent plan**：`docs/verification/batches/BATCH-H-WEB-PIPELINE-PRODUCT-RFM-PLAN.md`
 
-## When this file becomes READY
+## Execution
 
-ChatGPT 会一次性完成：
+完整命令、预期、回归范围、边界与 PASS 规则全部以永久计划为准。Code Agent 必须完整读取并执行该计划，不得自行拆轮、修代码或改测试。
 
-1. 把完整测试要求写入本文件；
-2. 同时冻结永久计划：
+核心命令顺序：
 
-```text
-docs/verification/batches/<Batch-ID>-PLAN.md
+```powershell
+git fetch origin
+git checkout --detach 20db9072c37e20ebecf6648f55d002d36aa452b0
+git rev-parse HEAD
+git status --short
+cd web
+node --test tests/pipelineRetryHandling.test.js
+node --test tests/productServerPagination.test.js
+node --test tests/rfmMatrixOwnership.test.js
+node --test tests/pipelineLocalBusinessDate.test.js tests/decisionExecutionContextDisplay.test.js
+npm run verify
 ```
 
-3. 写明：
-   - Batch ID
-   - 精确 commit SHA
-   - 必须执行的全部命令
-   - 受影响域完整门禁
-   - 重点工作项及预期
-   - 已知环境红
-   - 本地结果文件路径
-   - GitHub 结果路径
-   - Overall 判定规则
+预期定向：
 
-Code Agent 必须一次执行完整批次，同时保存：
+- S3-72：4/4 PASS；
+- S3-73：5/5 PASS；
+- S3-74：4/4 PASS；
+- 关键回归：9/9 PASS；
+- Web full gate：预计 239 tests，实际数量以运行结果为准；Failed/Cancelled=0；Vite build PASS。
+
+本批不运行 Java default/spark/isolated/3307，也不运行真实浏览器 E2E。
+
+## Result persistence
 
 ```text
 local:  .verify/CURRENT_BATCH_RESULT.md
-github: verification-results:docs/verification/results/<Batch-ID>-RESULT.md
+github: verification-results:docs/verification/results/BATCH-H-WEB-PIPELINE-PRODUCT-RFM-RESULT.md
 ```
 
-Code Agent 不得修改被测分支、源码、测试、脚本、docs 或测试计划；GitHub 唯一写例外遵循 `TEST_EXECUTION_PROTOCOL.md`。
+Code Agent 只能向上述结果分支/结果路径写本批结果；不得修改被测分支、源码、测试、脚本、docs 或测试计划。
 
-测试完成后，用户只需在总控聊天中说：
+完成后用户只需在总控聊天中说：
 
 ```text
 测试完成，测试结果已写入
 ```
-
-ChatGPT 会直接读取 GitHub 结果、复核、归档并继续推进，不再要求用户复制完整测试报告。
