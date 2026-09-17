@@ -11,7 +11,7 @@ import {
   LegendComponent
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 
 // ECharts 按需注册（指导书 §18.4）：只引入实际用到的图表与组件，避免整包引入造成大 chunk 告警
 echarts.use([
@@ -58,4 +58,7 @@ onBeforeUnmount(() => {
   chart && chart.dispose()
 })
 watch(() => props.option, render, { deep: true })
+// 高度可能由业务行数动态决定（如商品热度榜）。DOM 高度更新后必须主动通知 ECharts，
+// 否则实例仍保留初始化时的画布尺寸，直到浏览器窗口发生 resize。
+watch(() => props.height, () => nextTick(resize))
 </script>
