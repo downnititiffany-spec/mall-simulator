@@ -187,16 +187,45 @@ function requiredReason(actionLabel) {
   return reason
 }
 
+function requiredApprovalText(promptText, emptyMessage) {
+  const raw = prompt(promptText, '')
+  if (raw === null) return null
+  const value = raw.trim()
+  if (!value) {
+    actionError.value = emptyMessage
+    return null
+  }
+  return value
+}
+
+function requiredDueDate() {
+  const dueDate = requiredApprovalText('截止日期（必填，格式 YYYY-MM-DD）', '截止日期不能为空')
+  if (!dueDate) return null
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueDate)
+  if (!match) {
+    actionError.value = '截止日期格式必须为 YYYY-MM-DD'
+    return null
+  }
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    actionError.value = '截止日期不是有效日历日期'
+    return null
+  }
+  return dueDate
+}
+
 async function approve(d) {
-  const owner = prompt('负责人（如：运营-小李）', '运营-小李')
-  if (!owner) return
-  busy.value = true
   actionError.value = ''
+  const owner = requiredApprovalText('负责人（必填，例如：运营-小李）', '负责人不能为空')
+  if (!owner) return
+  const dueDate = requiredDueDate()
+  if (!dueDate) return
+  busy.value = true
   try {
-    await api.decisionAction(d.id, 'approve', {
-      owner,
-      dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
-    })
+    await api.decisionAction(d.id, 'approve', { owner, dueDate })
     await flush()
   } catch (e) {
     actionError.value = (e && (e.message || e.code)) || '批准失败'
