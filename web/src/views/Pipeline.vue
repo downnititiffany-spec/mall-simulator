@@ -26,7 +26,8 @@
         说明：事件由外部模拟商城按统一契约写入事件目录，分析平台只做采集与编排，不再内置“生成订单”入口（指导书 §18.4）。
       </div>
       <div v-if="runResult" style="margin-top:12px;font-size:13px">
-        流水线 run#{{ runResult.runId }}：{{ runResult.status }}
+        <template v-if="runResult.runId">流水线 run#{{ runResult.runId }}：{{ runResult.status }}</template>
+        <template v-else>{{ runResult.status }}</template>
         <span v-if="runResult.stages">
           （{{ runResult.stages.filter(s => s.status === 'SUCCESS').length }}/{{ runResult.stages.length }} 阶段成功）
         </span>
@@ -56,7 +57,7 @@
               {{ r.status }}
             </td>
             <td>{{ r.attemptNo }}</td>
-            <td><button v-if="r.status === 'FAILED'" @click="retry(r.id)" style="font-size:12px">重试</button></td>
+            <td><button v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="busy" style="font-size:12px">重试</button></td>
           </tr>
           <tr v-if="runRows.length === 0"><td colspan="9" class="el-empty">暂无运行记录</td></tr>
         </tbody>
@@ -136,8 +137,17 @@ async function runOnce() {
 }
 
 async function retry(id) {
-  runResult.value = await api.retryPipelineRun(id)
-  await load()
+  if (busy.value) return
+  busy.value = true
+  runResult.value = null
+  try {
+    runResult.value = await api.retryPipelineRun(id)
+    await load()
+  } catch (e) {
+    runResult.value = { status: 'FAILED: ' + (e.message || e) }
+  } finally {
+    busy.value = false
+  }
 }
 
 onMounted(() => load())
