@@ -97,8 +97,10 @@ export function pipelineRunRows(list) {
   }))
 }
 
-/** 决策任务行：基线/目标/快照号来自后端，不重算 */export function decisionRows(list) {
+/** 决策任务行：保留后端实体主键供行操作/评价索引使用；展示字段只搬运与格式化，不重算 */
+export function decisionRows(list) {
   return (Array.isArray(list) ? list : []).map((d) => ({
+    id: d.id === null || d.id === undefined ? null : d.id,
     decisionNo: text(d.decisionNo),
     title: text(d.title),
     source: text(d.source),
