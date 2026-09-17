@@ -50,3 +50,22 @@ test('runOnce 仍保持成功刷新、失败可见和 finally 释放 busy', () =
   assert.match(body, /catch \(e\) \{[\s\S]*runResult\.value = \{ status: 'FAILED: ' \+ \(e\.message \|\| e\) \}/)
   assert.match(body, /finally \{\s*busy\.value = false\s*\}/)
 })
+
+test('runOnce 在第一个 await 前冻结业务时间与运行环境，并只用冻结值创建实例', () => {
+  const body = functionBody('runOnce', 'retry')
+  const businessAt = body.indexOf('const requestedBusinessDate = businessDate.value')
+  const profileAt = body.indexOf('const requestedRuntimeProfileId = runtimeProfileId.value')
+  const firstAwaitAt = body.indexOf('await api.ingestionRun()')
+  assert.ok(businessAt >= 0 && profileAt >= 0)
+  assert.ok(firstAwaitAt > businessAt && firstAwaitAt > profileAt, '触发输入必须在任何异步等待前冻结')
+  assert.match(body, /runtimeProfileId:\s*requestedRuntimeProfileId/)
+  assert.match(body, /businessTime:\s*requestedBusinessDate \+ 'T00:00:00'/)
+  const createBlock = body.slice(body.indexOf('api.createPipelineRun('))
+  assert.doesNotMatch(createBlock, /runtimeProfileId\.value|businessDate\.value/)
+})
+
+test('流水线触发在途时锁住业务输入和手工刷新，避免操作上下文被 UI 改写', () => {
+  assert.match(source, /v-model="businessDate"[^>]*:disabled="busy"/)
+  assert.match(source, /v-model\.number="runtimeProfileId"[^>]*:disabled="busy"/)
+  assert.match(source, /@click="load"\s+:disabled="loading \|\| busy"/)
+})
