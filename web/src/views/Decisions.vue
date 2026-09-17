@@ -167,6 +167,7 @@ function exportDecisions() {
 }
 
 async function act(d, action) {
+  if (busy.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -221,6 +222,7 @@ function requiredDueDate() {
 }
 
 async function submitDecision(d) {
+  if (busy.value) return
   actionError.value = ''
   const currentOwner = d && d.owner && d.owner !== '—' ? String(d.owner).trim() : ''
   const owner = requiredApprovalText('负责人（提交审核前必填）', '负责人不能为空', currentOwner)
@@ -237,6 +239,7 @@ async function submitDecision(d) {
 }
 
 async function approve(d) {
+  if (busy.value) return
   actionError.value = ''
   const owner = requiredApprovalText('负责人（必填，例如：运营-小李）', '负责人不能为空')
   if (!owner) return
@@ -254,6 +257,7 @@ async function approve(d) {
 }
 
 async function rejectDecision(d) {
+  if (busy.value) return
   const reason = requiredReason('驳回')
   if (!reason) return
   busy.value = true
@@ -269,6 +273,7 @@ async function rejectDecision(d) {
 }
 
 async function cancelDecision(d) {
+  if (busy.value) return
   const reason = requiredReason('取消')
   if (!reason) return
   busy.value = true
@@ -284,6 +289,7 @@ async function cancelDecision(d) {
 }
 
 async function evaluate(d) {
+  if (busy.value) return
   busy.value = true
   actionError.value = ''
   try {
