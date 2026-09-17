@@ -115,9 +115,13 @@ const { data, state, loading, error, exportContext, load } = analysis
 const runRows = computed(() => pipelineRunRows(data.value.pipelineRuns))
 
 async function runOnce() {
+  if (busy.value) return
   busy.value = true
   runResult.value = null
   try {
+    // 一次人工触发使用同一个 operationId 同时作为 sourceDataVersion 与 Idempotency-Key：
+    // 两者描述的是同一逻辑操作，不能各自 Date.now() 导致毫秒级不一致，破坏排障/证据关联。
+    const operationId = 'manual-' + Date.now()
     // 采集一次事件目录（发布由定时器完成），再创建流水线实例
     await api.ingestionRun()
     await new Promise((r) => setTimeout(r, 3000))
@@ -126,8 +130,8 @@ async function runOnce() {
       // 早期页面写死过 DAILY_CORE（只在 V2 建表注释里出现过，平台不按它选阶段），
       // 会让面板里出现的编码与文档/脚本对不上，故对齐为 ODS_TO_ADS（M1-6 命名一致）。
       runtimeProfileId: runtimeProfileId.value, pipelineCode: 'ODS_TO_ADS',
-      businessTime: businessDate.value + 'T00:00:00', sourceDataVersion: 'manual-' + Date.now()
-    }, 'manual-' + Date.now())
+      businessTime: businessDate.value + 'T00:00:00', sourceDataVersion: operationId
+    }, operationId)
     await load()
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
