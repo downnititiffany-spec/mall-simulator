@@ -58,14 +58,14 @@ import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
 import { formatInteger, formatPercent } from '../utils/number'
 import { readEnvelope } from '../utils/envelope'
+import { localIsoDayOffset } from '../utils/localDate.js'
 import { activeTrendOption, funnelOption } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
 
-const isoDay = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
-const from = ref(isoDay(-6))
-const to = ref(isoDay(0))
+const from = ref(localIsoDayOffset(-6))
+const to = ref(localIsoDayOffset(0))
 
 // 一次请求同时取漏斗与活跃趋势：漏斗不接日期，趋势接日期范围
 async function fetchBehavior(params, signal) {
