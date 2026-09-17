@@ -1,8 +1,10 @@
 package com.graduation.analytics.ai.sql;
 
+import com.graduation.analytics.common.PlatformBizException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +29,10 @@ import java.util.Set;
  *
  * <p>与 {@link SqlExecutor} 同源：JdbcTemplate 由 {@code SqlExecutor#effectiveDataSource()}
  * （即 metricReadDataSource）构建，只读源缺失时构造即失败，不存在"换个源做 EXPLAIN"的路径。</p>
+ *
+ * <p>S3-58：EXPLAIN 本身超时是“查询超时”，不是“成本过高”。因此 Spring
+ * {@link QueryTimeoutException} 单独映射已有平台稳定码 {@code QUERY_TIMEOUT}；其它 EXPLAIN 故障仍按
+ * fail-closed 的 {@code SQL_COST_TOO_HIGH} 处理，避免把未知计划错误放行。</p>
  */
 @Slf4j
 @Component
@@ -70,7 +76,8 @@ public class QueryCostGuard {
     /**
      * EXPLAIN 并校验成本。
      *
-     * @throws AiSqlException {@code SQL_COST_TOO_HIGH} 成本超阈值、EXPLAIN 失败、或计划里读不出 rows
+     * @throws AiSqlException {@code SQL_COST_TOO_HIGH} 成本超阈值、普通 EXPLAIN 失败或计划无法解析；
+     *                        {@code QUERY_TIMEOUT} 表示 EXPLAIN 到点中止。
      */
     public CostEstimate check(String sql) {
         if (sql == null || sql.isBlank()) {
@@ -79,8 +86,11 @@ public class QueryCostGuard {
         List<Map<String, Object>> plan;
         try {
             plan = metricReadJdbcTemplate.queryForList("EXPLAIN " + sql);
+        } catch (QueryTimeoutException e) {
+            throw new AiSqlException(PlatformBizException.QUERY_TIMEOUT,
+                    "EXPLAIN 超过统一查询超时，按 fail-closed 中止", e);
         } catch (RuntimeException e) {
-            // fail-closed：EXPLAIN 失败绝不放行（宁可不答复，也不冒全表扫描风险）
+            // fail-closed：非超时 EXPLAIN 失败绝不放行（宁可不答复，也不冒全表扫描风险）
             throw new AiSqlException(SqlPolicy.SQL_COST_TOO_HIGH,
                     "EXPLAIN 执行失败，按 fail-closed 拒绝: " + e.getMessage(), e);
         }
