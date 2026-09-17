@@ -18,10 +18,10 @@
       <div class="chart-title">自然语言问数（语义层 → 受控 Text-to-SQL → 安全校验 → 证据解释）</div>
       <div style="display:flex;gap:10px">
         <input v-model="question" @keyup.enter="ask" placeholder="例如：最近 7 天销售额变化趋势如何？"
-               style="flex:1;padding:8px" :disabled="busy" />
-        <button @click="handleAskAction" :disabled="!busy && !question.trim()"
+               style="flex:1;padding:8px" :disabled="busy || draftBusy" />
+        <button @click="handleAskAction" :disabled="draftBusy || (!busy && !question.trim())"
                 style="padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:6px">
-          {{ busy ? '放弃本次分析' : '发送' }}
+          {{ busy ? '放弃本次分析' : (draftBusy ? '草稿创建中…' : '发送') }}
         </button>
       </div>
       <div v-if="busy" class="state-line">
@@ -85,7 +85,7 @@
              style="padding:6px 0;font-size:13px;border-top:1px solid #f3f4f6">
           <div style="line-height:1.7">{{ s.action }}</div>
           <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
-            <button :disabled="!canCreateDraft" @click="openDraft(s)"
+            <button :disabled="!canCreateDraft || draftBusy" @click="openDraft(s)"
                     style="padding:3px 10px;font-size:12px">转决策草稿</button>
             <span v-if="!canCreateDraft" class="meta-hint">{{ blockedText(DRAFT_BLOCK.NO_EVIDENCE_ANCHOR) }}</span>
             <span v-else-if="!s.targetMetricCode" class="meta-hint">目标指标：接口未提供（留空，不猜）</span>
@@ -158,7 +158,7 @@
     <div class="chart-box">
       <div class="chart-title">推荐问题</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <button v-for="q in recommended" :key="q" @click="askPreset(q)" :disabled="busy"
+        <button v-for="q in recommended" :key="q" @click="askPreset(q)" :disabled="busy || draftBusy"
                 style="padding:6px 12px;border:1px solid #e5e7eb;background:#fff;border-radius:16px;font-size:13px;cursor:pointer">
           {{ q }}
         </button>
@@ -169,7 +169,7 @@
       <div class="chart-title">我的最近问答（点击回填；来自 /ai/history/my，非统一信封）</div>
       <div v-if="historyError" class="banner banner-error">历史加载失败：{{ historyError }}</div>
       <div v-if="history.length" style="display:flex;flex-direction:column;gap:6px">
-        <button v-for="h in history" :key="h.id" @click="question = h.question" :disabled="busy"
+        <button v-for="h in history" :key="h.id" @click="question = h.question" :disabled="busy || draftBusy"
                 style="text-align:left;padding:6px 10px;border:1px solid #f3f4f6;background:#fafafa;border-radius:6px;font-size:13px;cursor:pointer">
           <span style="color:#111827">{{ h.question }}</span>
           <span style="float:right;color:#9ca3af;font-size:12px">
@@ -281,6 +281,7 @@ const draftPreview = computed(() => (draftPayload.value.ok
   : blockedText(draftPayload.value.blocked)))
 
 function openDraft(s) {
+  if (!canCreateDraft.value || draftBusy.value) return
   draftError.value = ''
   draftCreated.value = null
   // 后端模板分支的 targetMetricCode 恒为 null ⇒ 页面留空并标注「接口未提供」，不猜指标编码
@@ -288,12 +289,14 @@ function openDraft(s) {
 }
 
 function closeDraft() {
+  if (draftBusy.value) return
   draftForm.value = null
   draftCreated.value = null
   draftError.value = ''
 }
 
 async function createDraft() {
+  if (draftBusy.value) return
   const payload = draftPayload.value
   draftError.value = ''
   if (!payload.ok) {
@@ -344,6 +347,7 @@ function cancelAsk() {
 }
 
 function handleAskAction() {
+  if (draftBusy.value) return
   if (busy.value) {
     cancelAsk()
     return
@@ -353,7 +357,7 @@ function handleAskAction() {
 
 async function ask() {
   const text = question.value.trim()
-  if (!text || busy.value) return
+  if (!text || busy.value || draftBusy.value) return
   const mySeq = ++askSeq
   if (askController) askController.abort()
   askController = typeof AbortController === 'function' ? new AbortController() : null
@@ -383,6 +387,7 @@ async function ask() {
 }
 
 function askPreset(q) {
+  if (busy.value || draftBusy.value) return
   question.value = q
   ask()
 }
