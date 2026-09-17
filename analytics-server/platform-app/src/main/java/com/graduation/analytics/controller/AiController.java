@@ -100,7 +100,6 @@ public class AiController {
     public ApiResponse<EvidenceExplanationResp> explain(@RequestBody(required = false) ExplainReq req,
                                                        HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
-        // §21.2：请求人只取登录会话（请求对象只用于取 ip），请求头无法自报身份
         AuditActor actor = CallerContext.actor(request, trace.traceId());
         ExplainReq body = req == null ? new ExplainReq(null, null, null) : req;
         EvidencePackage pkg = evidenceService.build(
@@ -148,9 +147,7 @@ public class AiController {
 
     /** AI 查询审计落库（operation_audit_log）：只记状态/哈希/行数，不复制 SQL 与问题原文 */
     private void auditQuery(AuditActor actor, String question, String snapshotId, QueryResult query) {
-        boolean rejected = query != null && query.status() != null
-                && (query.status().toUpperCase(Locale.ROOT).contains("REJECT")
-                || query.status().toUpperCase(Locale.ROOT).contains("ERROR"));
+        boolean failed = queryAuditFailed(query);
         String digest = OperationAuditService.digest(
                 "status", query == null ? null : query.status(),
                 "questionHash", shortHash(question),
@@ -163,12 +160,25 @@ public class AiController {
         String action = OperationAuditService.ACTION_AI_QUERY;
         String resourceType = OperationAuditService.RESOURCE_AI_QUERY;
         String resourceId = "q-" + shortHash(question);
-        if (rejected) {
+        if (failed) {
             audit.failure(actor, action, resourceType, resourceId, null, digest,
                     "AI 问数被治理规则拒绝/失败：" + (query == null ? "无结果" : query.errorCode()));
         } else {
             audit.success(actor, action, resourceType, resourceId, null, digest, "AI 问数");
         }
+    }
+
+    /**
+     * operation_audit_log 的成功/失败判据唯一放在这里。
+     * S3-59 修正：此前只识别 REJECT/ERROR，TextToSqlService 的 FAILED（例如无 ACTIVE、只读源缺失、超时）
+     * 会被错误记成 audit.success。null 结果也按失败处理，不能把“无结果”记成成功。
+     */
+    static boolean queryAuditFailed(QueryResult query) {
+        if (query == null || query.status() == null) {
+            return true;
+        }
+        String status = query.status().toUpperCase(Locale.ROOT);
+        return status.contains("REJECT") || status.contains("ERROR") || status.contains("FAIL");
     }
 
     /**
@@ -194,10 +204,6 @@ public class AiController {
         }
     }
 
-    /**
-     * 建证据包（问数路径的「尽力而为」版本）：证据摘要属于增强信息，取数失败不能让问答整体失败。
-     * 失败返回 {@code null}，调用方按无证据处理并保留警告日志。
-     */
     private EvidencePackage buildEvidenceQuietly(String snapshotId, String timeRange, String requestedBy) {
         try {
             return evidenceService.build(new EvidenceRequest(snapshotId, null, timeRange, requestedBy));
@@ -207,10 +213,6 @@ public class AiController {
         }
     }
 
-    /**
-     * 快照锚点（§19.5/§3.5.2）：只认证据包钉住的快照；建包失败才退回结果行里的 {@code snapshot_id}；
-     * 两者都没有 → {@code null} + 警告。**绝不写 {@code "unknown"} 这类占位值**。
-     */
     private String resolveSnapshotId(EvidencePackage pkg, QueryResult query) {
         if (pkg != null && pkg.snapshotId() != null && !pkg.snapshotId().isBlank()) {
             return pkg.snapshotId();
@@ -225,7 +227,6 @@ public class AiController {
         return null;
     }
 
-    /** 证据摘要：固定模板的摘要原文（口径/口径版本/质量门由模板统一给出，控制器不另拼业务文本） */
     private static String summaryOf(EvidencePackage pkg) {
         return pkg == null ? null : EvidenceTemplates.render(pkg).summary();
     }
@@ -240,7 +241,6 @@ public class AiController {
                 .toList();
     }
 
-    /** 8 位短哈希：审计可对同一问题/同一 SQL 归并，又不落原文（§21.3 脱敏） */
     private static String shortHash(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -258,7 +258,6 @@ public class AiController {
         }
     }
 
-    /** AI 审计：问答历史（§8.9；仅 admin，analyst 必须 403） */
     @GetMapping("/audit/history")
     @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
     public ApiResponse<List<AiQueryHistory>> auditHistory(@RequestParam(defaultValue = "20") int limit) {
@@ -267,7 +266,6 @@ public class AiController {
                 .last("LIMIT " + Math.max(1, Math.min(200, limit)))), TraceContext.create().traceId());
     }
 
-    /** AI 审计：模型调用日志（§8.9；仅 admin） */
     @GetMapping("/audit/calls")
     @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
     public ApiResponse<List<AiCallLog>> auditCalls(@RequestParam(defaultValue = "20") int limit) {
@@ -276,7 +274,6 @@ public class AiController {
                 .last("LIMIT " + Math.max(1, Math.min(200, limit)))), TraceContext.create().traceId());
     }
 
-    /** 我的最近问答（登录用户自己的历史，用于 AI 页回填复问） */
     @GetMapping("/history/my")
     @RequiresPermission(PermissionCode.AI_QUERY)
     public ApiResponse<List<AiQueryHistory>> myHistory(@RequestParam(defaultValue = "10") int limit) {
