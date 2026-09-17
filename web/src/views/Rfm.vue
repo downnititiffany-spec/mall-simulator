@@ -13,13 +13,13 @@
     <AnalysisContext :context="context || {}" :state="state" :error="error" />
 
     <div class="chart-box">
-      <div class="chart-title">RFM 八类用户分布（缺失类目按 0 人展示，契约 §3.6）</div>
+      <div class="chart-title">RFM 八类用户分布（优先使用后端 rfmMatrix，缺失类目补 0 由后端口径负责）</div>
       <ChartState :option="matrixOpt" :state="state" :error="error" :height="300"
                   empty-text="当前快照没有 RFM 分层数据" />
     </div>
 
     <div class="table-box">
-      <div class="chart-title">八类分层明细</div>
+      <div class="chart-title">分层明细</div>
       <table>
         <thead>
           <tr><th>分层</th><th>用户数</th><th>消费额(元)</th><th>平均最近购买(天)</th></tr>
@@ -34,7 +34,10 @@
           <tr v-if="segmentRows.length === 0"><td colspan="4" class="el-empty">当前快照没有 RFM 分层数据</td></tr>
         </tbody>
       </table>
-      <div class="table-hint">平均最近购买天数在聚合列缺失时按“—”展示，后端不造数、前端也不补零。</div>
+      <div class="table-hint">
+        rfmMatrix 是后端维护的八类全量矩阵；页面不再自行追加另一套固定类目。若后端未提供 matrix，则仅展示 rfmSegments 的真实返回行，不伪造 0 人分组。
+        平均最近购买天数在聚合列缺失时按“—”展示，后端不造数、前端也不补零。
+      </div>
     </div>
 
     <div class="chart-box">
@@ -78,8 +81,6 @@ import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
 
-// RFM 八类固定类目（缺失补 0，契约 §3.6）
-const SEGMENTS = ['重要价值', '重要发展', '重要保持', '重要挽留', '一般价值', '一般发展', '一般保持', '一般挽留']
 const COLORS = {
   重要价值: '#059669', 重要发展: '#10B981', 重要保持: '#84CC16', 重要挽留: '#D97706',
   一般价值: '#1E40AF', 一般发展: '#3B82F6', 一般保持: '#7C3AED', 一般挽留: '#94A3B8'
@@ -130,31 +131,23 @@ const { data, context, state, error, loading, exportable, exportContext } = anal
 
 const ruleVersion = computed(() => data.value.ruleVersion || (context.value && context.value.definitionVersion) || null)
 
-// 后端返回的分层明细；空类目补 0 人数，保证类目齐全且不丢类
-// 注意：类目名以后端下发为准（本期实际值为「高价值」等），契约八类名仅作空数据的兜底展示，
-// 不能反过来用固定八类名去索引后端数据，否则会把真实人数全部显示成 0。
+// §3.6 的八类补 0 口径由后端 RfmService.rfmMatrix 唯一维护；前端只搬运。
+// 若旧响应缺少 rfmMatrix，则降级为 rfmSegments 的真实行，不再把另一套固定类目追加进去制造额外 0 行。
 const segmentRows = computed(() => {
-  const list = Array.isArray(data.value.rfmSegments) && data.value.rfmSegments.length
-    ? data.value.rfmSegments
-    : (Array.isArray(data.value.rfmMatrix) ? data.value.rfmMatrix : [])
-  if (!list.length) return []
-  const byName = {}
-  for (const s of list) if (s && s.valueGroup) byName[s.valueGroup] = s
-  const names = [...new Set([...list.map((s) => s.valueGroup).filter(Boolean), ...SEGMENTS])]
-  return names.map((name) => {
-    const s = byName[name] || {}
-    return {
-      valueGroup: name,
-      users: s.users === undefined ? 0 : s.users,
-      amount: s.amount === undefined ? null : s.amount,
-      avgRecencyDays: s.avgRecencyDays === undefined ? null : s.avgRecencyDays
-    }
-  })
+  const matrix = Array.isArray(data.value.rfmMatrix) ? data.value.rfmMatrix.filter((s) => s && s.valueGroup) : []
+  const source = matrix.length
+    ? matrix
+    : (Array.isArray(data.value.rfmSegments) ? data.value.rfmSegments.filter((s) => s && s.valueGroup) : [])
+  return source.map((s) => ({
+    valueGroup: s.valueGroup,
+    users: s.users === undefined || s.users === null ? 0 : s.users,
+    amount: s.amount === undefined ? null : s.amount,
+    avgRecencyDays: s.avgRecencyDays === undefined ? null : s.avgRecencyDays
+  }))
 })
 
 const lifecycle = computed(() => (Array.isArray(data.value.lifecycle) ? data.value.lifecycle : []))
 const preference = computed(() => (Array.isArray(data.value.preference) ? data.value.preference : []))
-// 图表类目与人数都取 segmentRows（后端类目优先），不再用固定八类名做索引
 const matrixOpt = computed(() =>
   rfmMatrixOption(segmentRows.value, segmentRows.value.map((s) => s.valueGroup), COLORS)
 )
@@ -165,6 +158,7 @@ const load = () => {
 }
 
 function doExport() {
+  if (!exportable.value) return
   exportAnalysisCsv({
     baseName: 'rfm-segments',
     context: exportContext.value,
