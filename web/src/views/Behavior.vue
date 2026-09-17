@@ -67,19 +67,29 @@ import ChartState from '../components/ChartState.vue'
 const from = ref(localIsoDayOffset(-6))
 const to = ref(localIsoDayOffset(0))
 
-// 一次请求同时取漏斗与活跃趋势：漏斗不接日期，趋势接日期范围
+// 先由漏斗接口固定主快照，再用同一 snapshotId 请求 Overview 的活跃趋势。
+// 不能两个接口各自解析“当前 ACTIVE”，否则发布切换窗口可能把不同快照拼进同一页。
 async function fetchBehavior(params, signal) {
-  const [funnelRaw, overviewRaw] = await Promise.all([
-    api.funnel({}, { signal }),
-    api.overview({ from: params.from, to: params.to }, { signal })
-  ])
-  const funnel = readEnvelope(funnelRaw)
-  const overview = readEnvelope(overviewRaw)
+  const funnel = readEnvelope(await api.funnel({}, { signal }))
+  let overview = readEnvelope({})
+
+  if (funnel.snapshotId) {
+    overview = readEnvelope(await api.overview({
+      from: params.from,
+      to: params.to,
+      snapshotId: funnel.snapshotId
+    }, { signal }))
+    if (overview.snapshotId && overview.snapshotId !== funnel.snapshotId) {
+      throw new Error(`跨接口快照不一致：funnel=${funnel.snapshotId}, overview=${overview.snapshotId}`)
+    }
+  }
+
   const warnings = [...funnel.warnings, ...overview.warnings]
   return {
-    snapshotId: funnel.snapshotId || overview.snapshotId,
+    snapshotId: funnel.snapshotId,
     businessTime: funnel.businessTime || overview.businessTime,
     dataUpdatedAt: funnel.dataUpdatedAt || overview.dataUpdatedAt,
+    source: funnel.source || overview.source,
     definitionVersion: funnel.definitionVersion || overview.definitionVersion,
     qualityStatus:
       funnel.qualityStatus === 'UNKNOWN' && overview.qualityStatus !== 'UNKNOWN'
@@ -112,6 +122,7 @@ const trendOpt = computed(() => activeTrendOption(data.value.activeTrend))
 const load = () => analysis.load({ from: from.value, to: to.value })
 
 function doExport() {
+  if (!exportable.value) return
   exportAnalysisCsv({
     baseName: 'behavior-funnel',
     context: exportContext.value,
