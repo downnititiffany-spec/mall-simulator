@@ -1,19 +1,22 @@
 # Deferred Verification Plan
 
 > 状态：CURRENT
-> 用途：工作项验证状态总账；完整批次命令与结果不再塞进聊天或本文件。
+> 用途：工作项验证状态总账；完整批次测试计划与结果分别永久保存在 `batches/` 与 `results/`。
 > 执行协议：`docs/verification/TEST_EXECUTION_PROTOCOL.md`
 > 当前批次入口：`docs/verification/CURRENT_BATCH.md`
-> 永久结果归档：`docs/verification/results/`
+> 永久测试计划：`docs/verification/batches/`
+> 永久接受结果：`docs/verification/results/`
+> Code Agent 原始结果：`verification-results:docs/verification/results/`
 
 ## 1. 规则
 
 - 每个批次固定精确 SHA；不得用“当前最新”替代。
+- 每次 `CURRENT_BATCH.md` 进入 `READY` 时，ChatGPT 同步保存 `docs/verification/batches/<Batch-ID>-PLAN.md`，避免后续覆盖当前批次文件后丢失测试要求。
 - 默认采用**批量延迟验证**：并列、低风险、接口稳定的工作先连续开发，累计到功能簇后一次性验证。
 - 只有后续实现直接依赖运行结果、公共契约/状态机/迁移/安全边界高风险、即将进入真库/E2E/阶段验收等情况才提前测试。
 - `PASS` 必须写清证据层级；unit/build 绿不等于浏览器、真库、真实 Provider 或集群 E2E 已验收。
-- Code Agent 不修改远端 Git；按 `CURRENT_BATCH.md` 一次执行整批测试，并将报告写入 `.verify/CURRENT_BATCH_RESULT.md`。
-- ChatGPT 复核结果后，永久归档到 `docs/verification/results/` 并更新本总账。
+- Code Agent 不修改开发分支；按 `CURRENT_BATCH.md` 一次执行整批测试，将完整结果写入本地 `.verify/CURRENT_BATCH_RESULT.md` 和 GitHub `verification-results:docs/verification/results/<Batch-ID>-RESULT.md`。
+- 用户无需复制完整报告；只需告诉 ChatGPT“测试完成，测试结果已写入”。ChatGPT 直接从 GitHub 读取、复核、归档并更新本总账。
 - Codex Work 只在核心安全、重大迁移、关键状态机/幂等恢复、正式阶段验收、合并 main 前等高价值节点按需调用；普通批次不用。
 
 状态：`PENDING / PARTIAL / PASS / FAIL / SUPERSEDED`。
@@ -36,8 +39,10 @@
 | V-012 | S3-64 决策 reject/cancel 原因采集 | PASS | Node test + build；无真实 HTTP/落库 E2E |
 | V-013 | S3-65 批准时显式负责人/截止日期 | PASS | Node test + build；无真实浏览器/HTTP E2E |
 | V-014 | S3-66 提交审核时补 owner | PASS | Node test + build；无真实浏览器/HTTP E2E |
+| V-015 | S3-67 决策行 identity 保留 | PASS | Node test + Web full gate；无真实 HTTP E2E |
+| V-016 | S3-68 决策基线单次格式化 | PASS | Node test + Web full gate；无真实浏览器 E2E |
 
-当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 更新 `CURRENT_BATCH.md` 为 `READY`。
+当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 写 `CURRENT_BATCH.md` + 对应永久 plan，并置 `READY`。
 
 ## 3. 已验证工作项摘要
 
@@ -46,7 +51,7 @@
 - **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
 - `npm run verify = npm test && npm run build`。
 - 多轮独立执行均为 Node tests 全绿 + Vite production build 成功。
-- 最新 Batch E：**212/212 PASS** + Vite build PASS。
+- 最新 Batch F：**217/217 PASS** + Vite build PASS。
 
 ### V-005 — S3-57 Explanation provider provenance
 
@@ -98,18 +103,31 @@
 ### V-013 — S3-65 批准时显式负责人/截止日期
 
 - **Final verification baseline**：`c42ee34d4bfb2364c646f060f675af67974a6a6c`
-- 实现链：`28778e8` + `49023a8` + `3d51b84`。
-- `decisionApprovalInput.test.js`：**5/5 PASS**。
+- `decisionApprovalInput.test.js`：5/5 PASS。
 - approve 不再硬编码负责人、不再自动 `+3天`；owner/dueDate 取消或空白时 API 前返回；dueDate 要求 `YYYY-MM-DD` 且经过真实日历日期校验；最终只发送 `{ owner, dueDate }`，成功后刷新。
 - 真实浏览器 prompt/HTTP/状态机未做 E2E。
 
 ### V-014 — S3-66 DRAFT 提交审核时补 owner
 
 - **Final verification baseline**：`c42ee34d4bfb2364c646f060f675af67974a6a6c`
-- 实现链：`12a440f` + `84153f1`。
-- `decisionSubmitOwner.test.js`：**4/4 PASS**。
+- `decisionSubmitOwner.test.js`：4/4 PASS。
 - DRAFT 提交不再走空 `{}`；已有 owner 仅作可编辑初始值，缺失时为空；取消/空白在 API 前 fail-closed；最终只发送 `{ owner }` 并刷新。
 - 真实浏览器/HTTP/后端提交校验未做 E2E。
+
+### V-015 — S3-67 决策行 identity 保留
+
+- **Final verification baseline**：`1671d3a8b09c296d70e1dfb74098a3cb1132b977`。
+- `decisionRowIdentity.test.js`：3/3 PASS。
+- `decisionRows()` 保留后端原始 `id`；数值 id 不转字符串；缺失/null 保持 null，不制造伪造身份。
+- 决策页面 `:key`、评价映射和 `decisionAction(d.id, ...)` 因此能消费真实 id。
+- 真实 HTTP `/decisions/{id}/...` 未做 E2E。
+
+### V-016 — S3-68 决策基线单次格式化
+
+- **Final verification baseline**：`1671d3a8b09c296d70e1dfb74098a3cb1132b977`。
+- `decisionBaselineDisplay.test.js`：2/2 PASS。
+- `decisionRows()` 负责一次格式化；`Decisions.vue` 直接展示映射后的 `baselineValue`，不再二次调用 `formatNumber`。
+- Batch F Web full gate 217/217 + Vite build PASS。
 
 ## 4. PARTIAL：后续阶段联调再补
 
@@ -128,36 +146,35 @@
 ## 5. 2026-09-17 独立执行批次
 
 ### Batch A — `080b8b0e1234416f1dc884bed4f1948e75464070`
-
 - Web 187/187 + build PASS。
 - default：analytics 1011；当时旧 provider fixture + 已知环境红各一条。
 
 ### Batch B — `e0c7d91052773dd2183bb24fc48969ada2613af2`
-
 - provider fixture 修复复测通过。
 - analytics 1011（F=1/E=0/S=1），唯一红为已知环境红。
 
 ### Batch C — `842f2e783fced8ddfe13678a7f401245d52a529b`
-
 - V-008 定向 10/10 PASS。
 - Web 194/194 + build PASS；V-009/V-010 通过。
 - analytics 1013（F=1/E=0/S=1），mall 13，generator 110，总 1136；无新回归。
 
 ### Batch D — `f69294444ceac09c25158996eca4324dc63c84c2`
-
 - Web 203/203 + build PASS；V-011/V-012 通过。
-- default 正式不带 `-AllowCountDrift`：analytics **1013 MATCH**，mall 13 MATCH，generator 110 MATCH，总 1136 MATCH。
+- default：analytics 1013 MATCH，mall 13 MATCH，generator 110 MATCH，总 1136 MATCH。
 - 唯一红仍为既有环境红。
 
 ### Batch E — `c42ee34d4bfb2364c646f060f675af67974a6a6c`
-
 - 永久报告：`docs/verification/results/BATCH-E-WEB-DECISION-INPUT-RESULT.md`。
-- Web：**212/212 PASS**；Vite production build PASS。
-- V-013：`decisionApprovalInput.test.js` 5/5 PASS。
-- V-014：`decisionSubmitOwner.test.js` 4/4 PASS。
-- 回归：`aiAskCancellation` 5/5、`decisionCancelWiring` 3/3、`decisionRequiredReason` 4/4。
-- New failures：0。
-- 未覆盖真浏览器 prompt、真 HTTP approve/submit、后端状态机与落库。
+- Web 212/212 PASS；Vite production build PASS。
+- V-013 5/5；V-014 4/4；New failures 0。
+
+### Batch F — `1671d3a8b09c296d70e1dfb74098a3cb1132b977`
+- 永久测试计划：`docs/verification/batches/BATCH-F-WEB-DECISION-IDENTITY-DISPLAY-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-F-WEB-DECISION-IDENTITY-DISPLAY-RESULT.md`。
+- Code Agent 原始结果：`verification-results:docs/verification/agent-results/BATCH-F-WEB-DECISION-IDENTITY-DISPLAY-RESULT.md`，commit `9e10e4e47a1990029b69842f915a91ecce23cdb3`。
+- V-015 3/3 PASS；V-016 2/2 PASS；决策回归 16/16 PASS。
+- Web full gate：**217/217 PASS**；Vite production build PASS；New failures 0。
+- 未覆盖真浏览器、真 HTTP、后端状态机与 DB 落库。
 
 ## 6. 已知环境红与未覆盖面
 
@@ -166,7 +183,7 @@
 
 ## 7. 下一批验证触发点
 
-达到以下任一节点时，把所有相关测试一次性写入 `CURRENT_BATCH.md`：
+达到以下任一节点时，把所有相关测试一次性写入 `CURRENT_BATCH.md` 并冻结 plan：
 
 1. 一个功能簇完成；
 2. 某阶段准备收口；
