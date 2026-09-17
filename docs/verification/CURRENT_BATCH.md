@@ -5,12 +5,12 @@
 
 ## Batch
 
-- **Batch ID**：`BATCH-I-WEB-PIPELINE-IDENTITY-RFM-WINDOW`
-- **Tested commit**：`b5e4972bdb272ca476be20b1638b0c78d905438b`
+- **Batch ID**：`BATCH-I-R1-WEB-PIPELINE-IDENTITY-RFM-WINDOW`
+- **Tested commit**：`2cf150b82168904fe6500089cf699d986c374514`
 - **Branch context**：`feature/v3-development`
-- **Scope**：S3-75 人工流水线操作 identity 一致性 + S3-76 RFM 观察窗口展示，以及相关 Web 回归。
-- **Risk**：低—中；仅 Web 请求组装/展示/导出，不改后端 API、数据库、状态机、权限或 AI SQL。
-- **Permanent plan**：`docs/verification/batches/BATCH-I-WEB-PIPELINE-IDENTITY-RFM-WINDOW-PLAN.md`
+- **Scope**：Batch I 失败复测：修正 pipeline identity 测试守卫误计 `//` 注释，并复验 S3-75 / S3-76、关键回归和 Web full gate。
+- **Risk**：低；相对 Batch I 生产代码未变，仅测试守卫修正。
+- **Permanent plan**：`docs/verification/batches/BATCH-I-R1-WEB-PIPELINE-IDENTITY-RFM-WINDOW-PLAN.md`
 
 ## Execution
 
@@ -20,7 +20,7 @@
 
 ```powershell
 git fetch origin
-git checkout --detach b5e4972bdb272ca476be20b1638b0c78d905438b
+git checkout --detach 2cf150b82168904fe6500089cf699d986c374514
 git rev-parse HEAD
 git status --short
 cd web
@@ -30,20 +30,13 @@ node --test tests/pipelineRetryHandling.test.js tests/pipelineLocalBusinessDate.
 npm run verify
 ```
 
-预期定向：
-
-- S3-75：4/4 PASS；
-- S3-76：4/4 PASS；
-- 关键回归：13/13 PASS；
-- Web full gate：预计 247 tests，实际数量以运行结果为准；Failed/Cancelled=0；Vite build PASS。
-
-本批不运行 Java default/spark/isolated/3307，也不运行真实浏览器 E2E。
+预期：S3-75 4/4；S3-76 4/4；关键回归 13/13；Web full gate 预计 247 tests（以实际为准）且 Vite production build PASS。
 
 ## Result persistence
 
 ```text
 local:  .verify/CURRENT_BATCH_RESULT.md
-github: verification-results:docs/verification/results/BATCH-I-WEB-PIPELINE-IDENTITY-RFM-WINDOW-RESULT.md
+github: verification-results:docs/verification/results/BATCH-I-R1-WEB-PIPELINE-IDENTITY-RFM-WINDOW-RESULT.md
 ```
 
 Code Agent 只能向上述结果分支/结果路径写本批结果；不得修改被测分支、源码、测试、脚本、docs 或测试计划。
