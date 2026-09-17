@@ -62,7 +62,7 @@
             <td style="white-space:nowrap">
               <button v-if="d.status === 'DRAFT'" @click="act(d, 'submit')" :disabled="busy">提交审核</button>
               <button v-if="d.status === 'PENDING_REVIEW'" style="background:#16a34a" @click="approve(d)" :disabled="busy">批准</button>
-              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="act(d, 'reject')" :disabled="busy">驳回</button>
+              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="rejectDecision(d)" :disabled="busy">驳回</button>
               <button v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="busy">开始</button>
               <button v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="busy">完成</button>
               <button v-if="d.status === 'IN_PROGRESS'" style="background:#dc2626" @click="cancelDecision(d)" :disabled="busy">取消</button>
@@ -176,6 +176,17 @@ async function act(d, action) {
   }
 }
 
+function requiredReason(actionLabel) {
+  const raw = prompt(`${actionLabel}原因（必填）`, '')
+  if (raw === null) return null
+  const reason = raw.trim()
+  if (!reason) {
+    actionError.value = `${actionLabel}原因不能为空`
+    return null
+  }
+  return reason
+}
+
 async function approve(d) {
   const owner = prompt('负责人（如：运营-小李）', '运营-小李')
   if (!owner) return
@@ -194,11 +205,28 @@ async function approve(d) {
   }
 }
 
-async function cancelDecision(d) {
+async function rejectDecision(d) {
+  const reason = requiredReason('驳回')
+  if (!reason) return
   busy.value = true
   actionError.value = ''
   try {
-    await api.decisionAction(d.id, 'cancel', { reason: '策略调整' })
+    await api.decisionAction(d.id, 'reject', { reason })
+    await flush()
+  } catch (e) {
+    actionError.value = (e && (e.message || e.code)) || '驳回失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function cancelDecision(d) {
+  const reason = requiredReason('取消')
+  if (!reason) return
+  busy.value = true
+  actionError.value = ''
+  try {
+    await api.decisionAction(d.id, 'cancel', { reason })
     await flush()
   } catch (e) {
     actionError.value = (e && (e.message || e.code)) || '取消失败'
