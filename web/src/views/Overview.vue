@@ -83,6 +83,7 @@ import { warningText } from '../utils/envelope'
 import { qualitySummaryText, ruleVersionText, RULE_VERSION_NOTE } from '../utils/quality'
 import { salesTrendOption, activeTrendOption, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
+import { localIsoDayOffset } from '../utils/localDate.js'
 // S3-40：窗口口径（repeat_rate）的观察期解析与限制说明唯一属主在 utils/metricPeriod.js，视图只引用不自拼
 import { periodText, WINDOW_METRIC_NOTE } from '../utils/metricPeriod'
 // S3-41：清单外指标的量纲/展示名唯一属主在 utils/metricDisplay.js，视图只引用不自拼
@@ -90,9 +91,8 @@ import { displayMetricName, formatOutsideMetricValue, DICTIONARY_MISSING_NOTE } 
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
 
-const isoDay = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
-const from = ref(isoDay(-6))
-const to = ref(isoDay(0))
+const from = ref(localIsoDayOffset(-6))
+const to = ref(localIsoDayOffset(0))
 const showDictionary = ref(false)
 
 const analysis = useAnalysis({
