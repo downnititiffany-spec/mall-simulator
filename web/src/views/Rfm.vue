@@ -4,7 +4,7 @@
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
       <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
-      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
+      <button style="font-size:12px" :disabled="!segmentExportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:#9ca3af">
         分层口径版本：{{ ruleVersion || '未提供' }}；观察期：{{ periodText }}；只展示聚合结果，不展示个人敏感明细
       </span>
@@ -175,14 +175,16 @@ const preference = computed(() => (Array.isArray(data.value.preference) ? data.v
 const matrixOpt = computed(() =>
   rfmMatrixOption(segmentRows.value, segmentRows.value.map((s) => s.valueGroup), COLORS)
 )
+const segmentExportable = computed(() => exportable.value && segmentRows.value.length > 0)
 
 const load = () => {
+  if (loading.value) return
   usersError.value = ''
   return analysis.load({})
 }
 
 function doExport() {
-  if (!exportable.value) return
+  if (!segmentExportable.value) return
   exportAnalysisCsv({
     baseName: 'rfm-segments',
     context: exportContext.value,
