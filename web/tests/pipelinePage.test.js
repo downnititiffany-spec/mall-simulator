@@ -62,8 +62,8 @@ test('Pipeline.vue 实例表经 pipelineRunRows 单一映射所有者渲染，�
   assert.match(text, /v-for="r in runRows"/)
   assert.match(text, /源数据版本/)
   assert.match(text, /目标快照/)
-  // 刷新按钮沿用既有 loading 口径（Ops/Decisions 同形）
-  assert.match(text, /:disabled="loading"/)
+  // 刷新在读请求 loading 或写动作 busy 期间都禁用，避免与触发/重试交错刷新。
+  assert.match(text, /:disabled="loading \|\| busy"/)
 })
 
 test('Pipeline.vue 实例表展示「输入批次」，且空态 colspan 与表头列数一致', () => {
