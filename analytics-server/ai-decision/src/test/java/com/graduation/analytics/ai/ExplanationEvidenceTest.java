@@ -24,6 +24,9 @@ import static org.mockito.Mockito.when;
 /**
  * R8-1 证据解释测试（§19.3）：模板优先；模型只改措辞且受**数值守卫**约束；
  * 模型不可用/越界/异常一律回退模板（永远有结论）。
+ *
+ * <p>S3-60：回退原因必须与真实故障一致，provider 失败不能冒充数值校验失败，
+ * 已尝试过模型调用的问数解释也不能声称“未调用大模型”。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class ExplanationEvidenceTest {
@@ -125,7 +128,27 @@ class ExplanationEvidenceTest {
     }
 
     @Test
-    @DisplayName("模型抛异常：回退模板，不把异常抛给调用方")
+    @DisplayName("模型摘要为空：按格式/长度约束回退，不冒充数值校验失败")
+    void rejectsBlankRewriteAsShapeFailure() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("mock");
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse("   ", 10, 1, "mock"));
+
+        ExplanationService.ExplanationResult result = service().explain(pkg(), "昨天卖得怎么样");
+
+        assertThat(result.summary()).isEqualTo(EvidenceTemplates.render(pkg()).summary());
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("格式/长度约束"));
+        assertThat(result.limitations()).noneSatisfy(l -> assertThat(l).contains("数值校验"));
+
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> captor =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("REJECTED");
+        assertThat(captor.getValue().getError()).isEqualTo("SUMMARY_LENGTH_GUARD");
+    }
+
+    @Test
+    @DisplayName("模型抛超时异常：回退模板并说明超时，不冒充数值校验失败")
     void fallsBackWhenProviderThrows() {
         when(llmProvider.healthCheck()).thenReturn(true);
         when(llmProvider.providerName()).thenReturn("openai-compat");
@@ -134,7 +157,26 @@ class ExplanationEvidenceTest {
         ExplanationService.ExplanationResult result = service().explain(pkg(), "昨天卖得怎么样");
 
         assertThat(result.summary()).isEqualTo(EvidenceTemplates.render(pkg()).summary());
-        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("数值校验"));
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("模型调用超时"));
+        assertThat(result.limitations()).noneSatisfy(l -> assertThat(l).contains("数值校验"));
+    }
+
+    @Test
+    @DisplayName("问数解释已尝试模型但超时：规则回退不得声称未调用大模型")
+    void queryFallbackDoesNotClaimModelWasNeverCalled() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("openai-compat");
+        when(llmProvider.complete(any())).thenThrow(new LlmProvider.LlmException("TIMEOUT", "timeout"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based");
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo(EvidenceTemplates.Narrative.PROVIDER_TEMPLATE);
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("模型调用超时"));
+        assertThat(result.limitations()).noneSatisfy(l -> assertThat(l).contains("未调用大模型"));
     }
 
     @Test
