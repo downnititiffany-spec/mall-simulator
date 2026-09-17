@@ -13,8 +13,8 @@
       </div>
       <AnalysisContext :context="exportContext" :state="state" :error="error" />
       <div class="table-hint">
-        说明：批准决策时会锁定当次快照基线，该快照号记录在决策行的「建议快照」字段；
-        多个决策可能来自不同快照，因此上方快照栏在存在多个值时逐个列出，不合并成单一快照。
+        说明：「建议快照」是 AI 建议来源；批准时真正锁定的评价基线来自「基线快照」，并同时记录口径版本。
+        多个决策可能来自不同建议快照，因此上方快照栏在存在多个值时逐个列出，不合并成单一快照。
       </div>
     </div>
 
@@ -37,7 +37,8 @@
       <table v-if="rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="text-align:left;color:#6b7280">
           <th style="padding:8px">编号</th><th>标题</th><th>来源</th><th>目标指标</th><th>基线</th>
-          <th>建议快照</th><th>负责人</th><th>状态</th><th>效果</th><th>操作</th>
+          <th>建议快照</th><th>基线快照</th><th>口径版本</th><th>负责人</th><th>截止日期</th>
+          <th>状态</th><th>效果</th><th>操作</th>
         </tr></thead>
         <tbody>
           <tr v-for="d in rows" :key="d.id" style="border-top:1px solid #f3f4f6">
@@ -47,7 +48,10 @@
             <td>{{ d.targetMetricCode || '—' }} <span v-if="d.targetDirection">({{ d.targetDirection }})</span></td>
             <td class="mono">{{ d.baselineValue }}</td>
             <td class="mono">{{ d.suggestionSnapshotId || '—' }}</td>
+            <td class="mono">{{ d.baselineSnapshotId || '—' }}</td>
+            <td class="mono">{{ d.definitionVersion || '—' }}</td>
             <td>{{ d.owner || '—' }}</td>
+            <td class="mono">{{ d.dueDate || '—' }}</td>
             <td><span :style="{ color: statusColor(d.status), fontWeight: 600 }">{{ d.status }}</span></td>
             <td>
               <span v-if="evaluations[d.id]">
@@ -78,7 +82,7 @@
 
     <div class="chart-box" style="font-size:13px;color:#6b7280;line-height:1.8">
       <b>口径说明：</b>AI 只能创建 DRAFT（§22.6）；从 PENDING_REVIEW 到 APPROVED 必须人工；
-      批准时锁定当前快照基线与目标指标；效果 = (实际−基线)/|基线|，"越低越好"指标（退款率等）取反；
+      批准时锁定基线快照、口径版本与目标指标；效果 = (实际−基线)/|基线|，"越低越好"指标（退款率等）取反；
       评价结果仅为前后对比，非因果推断（§21.10）。
     </div>
   </div>
