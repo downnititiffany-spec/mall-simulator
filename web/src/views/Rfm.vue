@@ -6,7 +6,7 @@
       <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
       <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:#9ca3af">
-        分层口径版本：{{ ruleVersion || '未提供' }}；观察期：{{ observationWindow }}；只展示聚合结果，不展示个人敏感明细
+        分层口径版本：{{ ruleVersion || '未提供' }}；观察期：{{ periodText }}；只展示聚合结果，不展示个人敏感明细
       </span>
     </div>
 
@@ -144,11 +144,12 @@ const analysis = useAnalysis({
 const { data, context, state, error, loading, exportable, exportContext } = analysis
 
 const ruleVersion = computed(() => data.value.ruleVersion || (context.value && context.value.definitionVersion) || null)
-const observationWindow = computed(() => {
-  const start = data.value.periodStart
-  const end = data.value.periodEnd
-  return start && end ? `${start} 至 ${end}` : '未提供'
-})
+// 保持 S3-76 已验收的具名观察期派生：显示和 CSV 共用同一后端原值所有者。
+const periodStart = computed(() => data.value.periodStart || null)
+const periodEnd = computed(() => data.value.periodEnd || null)
+const periodText = computed(() => (
+  periodStart.value && periodEnd.value ? `${periodStart.value} 至 ${periodEnd.value}` : '未提供'
+))
 
 // §3.6 的八类补 0 口径由后端 RfmService.rfmMatrix 唯一维护；前端只搬运。
 // 若旧响应缺少 rfmMatrix，则降级为 rfmSegments 的真实行，不再把另一套固定类目追加进去制造额外 0 行。
@@ -185,7 +186,7 @@ function doExport() {
     rows: segmentRows.value.map((s) => [
       s.valueGroup, s.users, formatNumber(s.amount, 2, ''),
       s.avgRecencyDays === null ? '' : s.avgRecencyDays,
-      data.value.periodStart || '', data.value.periodEnd || ''
+      periodStart.value || '', periodEnd.value || ''
     ])
   })
 }
