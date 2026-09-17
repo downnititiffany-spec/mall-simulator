@@ -7,8 +7,8 @@
     <div class="chart-box">
       <div class="chart-title">
         运维数据上下文
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="loadAll" :disabled="loading">
-          {{ loading ? '刷新中…' : '刷新' }}
+        <button style="float:right;font-size:12px;padding:3px 10px" @click="loadAll" :disabled="loading || busy">
+          {{ loading ? '刷新中…' : (busy ? '用户操作中…' : '刷新') }}
         </button>
       </div>
       <AnalysisContext :context="exportContext" :state="state" :error="error" />
@@ -24,7 +24,7 @@
           <option value="admin">系统管理员</option>
         </select>
         <input v-model="newUser.password" placeholder="初始密码(≥6位)" type="password" style="padding:4px" />
-        <button style="font-size:12px;background:#16a34a" @click="createUser" :disabled="busy">创建用户</button>
+        <button style="font-size:12px;background:#16a34a" @click="createUser" :disabled="loading || busy">创建用户</button>
       </div>
       <div class="table-hint">
         说明：/admin/users 的用户列表接口不返回启用状态（UserView 只有 id/username/realName/role），
@@ -49,12 +49,12 @@
             </td>
             <td style="white-space:nowrap">
               <template v-if="knownStatus(u.id) === null">
-                <button style="font-size:12px;background:#dc2626" @click="toggle(u, false)" :disabled="busy">禁用</button>
-                <button style="font-size:12px;background:#16a34a" @click="toggle(u, true)" :disabled="busy">启用</button>
+                <button style="font-size:12px;background:#dc2626" @click="toggle(u, false)" :disabled="loading || busy">禁用</button>
+                <button style="font-size:12px;background:#16a34a" @click="toggle(u, true)" :disabled="loading || busy">启用</button>
               </template>
-              <button v-else-if="knownStatus(u.id)" style="font-size:12px;background:#dc2626" @click="toggle(u, false)" :disabled="busy">禁用</button>
-              <button v-else style="font-size:12px;background:#16a34a" @click="toggle(u, true)" :disabled="busy">启用</button>
-              <button style="font-size:12px" @click="resetPwd(u)" :disabled="busy">重置密码</button>
+              <button v-else-if="knownStatus(u.id)" style="font-size:12px;background:#dc2626" @click="toggle(u, false)" :disabled="loading || busy">禁用</button>
+              <button v-else style="font-size:12px;background:#16a34a" @click="toggle(u, true)" :disabled="loading || busy">启用</button>
+              <button style="font-size:12px" @click="resetPwd(u)" :disabled="loading || busy">重置密码</button>
             </td>
           </tr>
         </tbody>
@@ -396,6 +396,7 @@ async function loadUsers() {
 }
 
 async function loadAll() {
+  if (loading.value || busy.value) return
   actionError.value = ''
   await Promise.all([load({}), loadUsers()])
 }
@@ -441,7 +442,7 @@ function exportAudit(which) {
 }
 
 async function createUser() {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -456,7 +457,7 @@ async function createUser() {
 }
 
 async function toggle(u, enable) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -472,7 +473,7 @@ async function toggle(u, enable) {
 }
 
 async function resetPwd(u) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   const pwd = prompt(`重置 ${u.username} 的密码（至少 6 位）`, '')
   if (!pwd) return
   busy.value = true
