@@ -15,9 +15,11 @@ const functionBody = (name, nextName) => {
   return source.slice(start, end)
 }
 
+// Normalize LF/CRLF before stripping line comments so the guard behaves the same
+// under core.autocrlf=true and LF-only checkouts.
 const executableText = (text) => text
-  .split('\n')
-  .map((line) => line.replace(/\/\/.*$/, ''))
+  .split(/\r?\n/)
+  .map((line) => line.replace(/\/\/.*/, ''))
   .join('\n')
 
 test('runOnce 自身受 busy fail-closed 保护，不能只依赖按钮 disabled', () => {
