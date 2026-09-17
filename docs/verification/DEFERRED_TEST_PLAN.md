@@ -35,14 +35,6 @@
 5. 决策草稿请求只提交一种锚点；
 6. 前端不得生成/猜测 evidenceId。
 
-#### Code Agent later
-
-本条已被 V-004 取代，不再单独测试旧 SHA。
-
-#### Codex Work later
-
-本条已被 V-004 取代；原攻击面并入 V-004，且只在后续高价值验收节点需要时调用。
-
 #### Existing detailed handoff
 
 `docs/acceptance/s3-53-ai-evidence-id-fallback-20260916/TEST-HANDOFF.md`
@@ -56,26 +48,14 @@
 - **Risk**：低；只增加前端验证入口与守卫，不改生产运行时代码。
 - **Blocks further development**：NO。
 
-#### Invariants
-
-1. 统一入口唯一命令为 `npm run verify`；
-2. 先执行 `npm test`，成功后再执行 `npm run build`；
-3. 不把 build 成功替代单测通过；
-4. 该入口不宣称覆盖真实浏览器/E2E/后端联调。
-
 #### Execution evidence — 2026-09-17
 
 - `cd web; npm run verify` → exit `0`；
 - Node `v24.16.0` / npm `11.13.0`；
-- Node tests `187/187` PASS；
-- Vite production build 成功（671 modules，6.45s）；
-- `verify` 实读为 `npm test && npm run build`。
+- 首批 Node tests `187/187` PASS；后续第三批在 `842f2e7` 上 `194/194` PASS；
+- Vite production build 两批均成功。
 
-**Limit**：本轮测试全绿，因此“单测失败时 `&&` 是否真正阻止 build”只具结构性证据，没有故意制造失败的运行时证据；该限制不影响 V-002 当前 PASS，但后续若改脚本需重新验证。
-
-#### Codex Work later
-
-普通批次不调用。若未来前端发布/合并 main 前需要对抗验证，可重点看短路、递归入口、Windows shell 行为与旁路入口。
+**Limit**：真实浏览器/E2E/后端联调仍不属于该入口。
 
 ### V-003 — S3-54 AI 结论 summary 展示链
 
@@ -95,9 +75,7 @@
 
 #### Execution evidence — 2026-09-17
 
-`npm run verify` 全绿，直接相关 4 条用例通过：只搬运 `explanation.summary`、空白降级、`query.summary` 不得覆盖、页面源码接线消费 `evidenceContext.summary`。
-
-**Remaining runtime gap**：没有真实 Vue/browser 渲染 + 后端联调；HTML/特殊字符实际渲染与页面是否存在运行时旁路仍未验证。阶段5真实页面联调时补证据，不为此单独停开发。
+`npm run verify` 全绿，直接相关 4 条用例通过。真实 Vue/browser 渲染 + 后端联调仍未覆盖。
 
 ### V-004 — S3-55/S3-56 AI 标识严格形状与草稿锚点单一判据
 
@@ -106,7 +84,7 @@
 - **Implementation commits**：`617642c`（context 严格 ID 读取）+ `776bc74`（decisionDraft 去二次 trim）+ `88c715e`（developer tests）+ `28bd4ea`（Decision Log D-013）
 - **Area**：`web/src/utils/context.js`、`web/src/utils/decisionDraft.js`、`web/tests/decisionDraft.test.js`、`web/tests/aiEvidenceIdFallback.test.js`
 - **Risk**：低—中；前端 fail-closed 收紧，不改后端 ID 生成与决策契约。
-- **Blocks further development**：NO。后续若依赖“污染 ID 在真实浏览器链路确实被拒绝”才需要先验证；其它并列开发继续。
+- **Blocks further development**：NO。
 
 #### Invariants
 
@@ -119,9 +97,7 @@
 
 #### Execution evidence — 2026-09-17
 
-`npm run verify` 187/187 全绿；相关用例确认：占位/空白 ID 为 null、证据包锚点优先且二选一、带空白/数字/任意大小写 unknown 不被 trim/转串接受、无锚点拒绝构造请求。
-
-**Remaining runtime gap**：真实 `AiAssistant` 展示 → `draftAnchor` → `buildDraftBody` → HTTP 提交未做浏览器/E2E 联调；阶段5/6 联调时补。
+`npm run verify` 全绿；相关纯逻辑/源码接线用例通过。真实 `AiAssistant → draftAnchor → buildDraftBody → HTTP` 浏览器链仍未测。
 
 ### V-005 — S3-57 Explanation provider provenance
 
@@ -133,27 +109,11 @@
 - **Risk**：中；加性响应字段与来源事实修正，不改 LLM 安全策略。
 - **Blocks further development**：NO；真实 provider/外网质量仍留到阶段6集成验收。
 
-#### Invariants
-
-1. 模型输出实际被采用时 `providerUsed = llmProvider.providerName()`；
-2. provider 不可用、调用异常、数值守卫拒绝而最终回退模板时 `providerUsed = template`；
-3. 模型输出即使与模板文本逐字相同，也不能被误判为 template；
-4. 控制器不得再通过文本比较反推 provider。
-
-#### First execution — 2026-09-17
-
-- `ExplanationProviderProvenanceTest`：3/3 PASS；
-- 旧 `AiExplanationEndpointTest.providerUsedIsLlmWhenRewriteAccepted`：FAIL，expected `llm` but actual `null`；
-- 根因裁决：旧 Mockito fixture 没有 stub `providerName()`，而 D-014 已明确生产响应必须直读 provider 名称；真实 provider 实现返回非空名称。故修测试夹具，不回退生产代码。
-
 #### Retest evidence — 2026-09-17
 
-被测精确 SHA：`e0c7d91052773dd2183bb24fc48969ada2613af2`。
-
-- 最小端点复测：`AiExplanationEndpointTest` 7/7 PASS，`providerUsedIsLlmWhenRewriteAccepted` 实际断言值为 `mock-provider`；
-- default 复测临时使用 `-AllowCountDrift` 只用于区分功能失败与登记漂移；analytics-server = 1011（F=1/E=0/S=1），`AiExplanationEndpointTest` 7/7 PASS、`ExplanationProviderProvenanceTest` 3/3 PASS；
-- 唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 but was 0）；没有新增失败；
-- 真实 LLM provider、真实外网、真实浏览器/E2E 本轮未覆盖，因此本条 PASS 只代表 unit/default 层。
+- `AiExplanationEndpointTest` 7/7 PASS；`providerUsed=mock-provider`；
+- `ExplanationProviderProvenanceTest` 3/3 PASS；
+- default 无新增失败，唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`。
 
 ### V-006 — S3-58 AI Text-to-SQL timeout classification
 
@@ -164,17 +124,9 @@
 - **Risk**：中；错误分类修正，不改 SQL 允许/拒绝规则。
 - **Blocks further development**：NO；但进入真实 MySQL 慢查询/超时验收前必须补运行证据。
 
-#### Invariants
-
-1. `SQLTimeoutException` → `FAILED + QUERY_TIMEOUT`；
-2. Spring `QueryTimeoutException`（EXPLAIN）→ `QUERY_TIMEOUT`，不得冒充 `SQL_COST_TOO_HIGH`；
-3. 普通 EXPLAIN 异常仍 fail-closed 为 `SQL_COST_TOO_HIGH`；
-4. 超时同样写 `ai_query_history`，errors 含稳定码；
-5. 本轮不声称 `/api/v1/ai/queries` 已改 HTTP 504。
-
 #### Execution evidence — 2026-09-17
 
-`AiQueryTimeoutMappingTest` 3/3 PASS；ai-decision 当轮汇总相关模块无 F/E。未执行真实 3307 慢查询，不据此声称真实 JDBC timeout 或 HTTP 状态码已验收。
+`AiQueryTimeoutMappingTest` 3/3 PASS。真实 3307 慢查询/JDBC timeout 未覆盖。
 
 ### V-007 — S3-59 AI operation audit failure classification
 
@@ -185,25 +137,19 @@
 - **Risk**：低—中；只修 operation audit 成败分类。
 - **Blocks further development**：NO；但正式审计验收前必须补真库证据。
 
-#### Invariants
-
-1. `FAILED`、`REJECTED`、`ERROR*`、`FAIL*` 均走 `audit.failure`；
-2. null QueryResult / null status fail-closed；
-3. `EXECUTED`、`REPAIRED`、`GENERATED` 不误记失败；
-4. QueryResult 状态机本身不被本项改写。
-
 #### Execution evidence — 2026-09-17
 
-`AiControllerAuditStatusTest` 3/3 PASS。测试环境未应用 V14，日志明确显示 `operation_audit_log` 不存在，因此当前只证明 helper/controller 分类；真实审计表写入留到数据库集成验收。
+`AiControllerAuditStatusTest` 3/3 PASS。真实 `operation_audit_log` 落库仍未测。
 
 ### V-008 — S3-60 AI explanation 回退原因准确性
 
-- **Status**：PENDING
+- **Status**：PASS（unit/default 层；真实 LLM provider/外网仍未测）
 - **Implementation baseline**：`0a77c21a21c3ccb782c75ca97f5c453f7a916f93`
 - **Implementation commits**：`8ab0058`（生产逻辑）+ `97d6e83`（developer tests）+ `0a77c21`（Decision Log D-018）
+- **Verified at**：`842f2e783fced8ddfe13678a7f401245d52a529b`
 - **Area**：`analytics-server/ai-decision/ExplanationService`、`ExplanationEvidenceTest`
 - **Risk**：低—中；只纠正模板回退原因与内部分类，不新增公开字段，不改 Provider 调用次数、SQL、权限或快照策略。
-- **Blocks further development**：NO；后续若要正式声称“AI 失败原因可解释”前必须完成独立验证。
+- **Blocks further development**：NO。
 
 #### Invariants
 
@@ -214,84 +160,89 @@
 5. 所有回退最终仍 `providerUsed=template`，成功采用模型时仍记录真实 provider；
 6. limitation 只暴露稳定原因类别，不回显 Provider 原始异常 message/响应体/URL/凭据/堆栈。
 
-#### Code Agent later
+#### Execution evidence — 2026-09-17
 
-在精确 SHA（至少包含 `8ab0058` + `97d6e83`）上执行：
-
-1. `ExplanationEvidenceTest`；预期当前源码定义 7 条用例全部通过；
-2. `ExplanationProviderProvenanceTest`；必须继续 3/3 PASS，证明 D-014 未回归；
-3. default 全量。以独立实测计数为准；按本轮代码增量推导 analytics-server **预计**从已确认 1011 增至 1013，但在 Code Agent 真跑前这只是预计值，不写成已验证事实。
-
-当前 `scripts/run-tests.ps1` 的 analytics 数量登记仍是 1002。因为 S3-60 又新增 2 条 developer tests，本轮暂不先把登记硬改成 1011；等 Code Agent 独立确认最终计数后，一次同步到最终稳定值，再恢复不带 `-AllowCountDrift` 的常规数量门禁。F/E 判据始终不放宽。
-
-#### Codex Work later
-
-普通错误说明修正不调用。阶段6正式安全/错误链验收时，如需要对抗验证，可攻击异常类型伪造、未知类型、原始 provider message 泄漏、fallback providerUsed 漂移等边界。
+- `ExplanationEvidenceTest`：7/7 PASS；
+- `ExplanationProviderProvenanceTest`：3/3 PASS；
+- `fallsBackWhenProviderThrows` 明确确认 TIMEOUT → “模型调用超时”，且不含“数值校验”；
+- `queryFallbackDoesNotClaimModelWasNeverCalled` 明确确认已调用后超时不得声称“未调用大模型”；
+- `rejectsBlankRewriteAsShapeFailure` → `SUMMARY_LENGTH_GUARD`；
+- `rejectsFabricatedNumbers` → `SUMMARY_NUMBER_GUARD`；
+- default 全量中相关类保持全绿。
 
 ### V-009 — S3-61 Overview 指标口径版本展示
 
-- **Status**：PENDING
+- **Status**：PASS（unit/build 层；真实浏览器/HTTP 联调仍未测）
 - **Implementation baseline**：`9b9caa53fd3d6b8f7f36e51dcfa44a9112d00664`
 - **Implementation commits**：`9f0f6d8`（页面/CSV 接线）+ `9b9caa5`（developer tests）
+- **Verified at**：`842f2e783fced8ddfe13678a7f401245d52a529b`
 - **Area**：`web/src/views/Overview.vue`、`web/tests/metricDefinitionVersionDisplay.test.js`
 - **Risk**：低；只消费既有 `metrics[*].definitionVersion`，不改后端契约、指标值、数据库、权限或口径算法。
 - **Blocks further development**：NO。
 
-#### Invariants
+#### Execution evidence — 2026-09-17
 
-1. Overview 每个指标卡都展示该行后端返回的 `definitionVersion`，不只对 `repeat_rate` 特判；
-2. 固定清单指标与清单外指标走同一搬运规则；
-3. 缺失版本显示 `—`，不得补 `v1`、`unknown` 或猜测版本；
-4. 不擅自给版本值拼 `v` 前缀，后端字符串原样显示；
-5. CSV 与卡片同步增加“口径版本”列，并复用同一已格式化字段；
-6. 本项只补展示，不改变 `repeat_period_start/end`、快照级 period 与窗口 period 的既有语义。
+- `metricDefinitionVersionDisplay.test.js`：4/4 PASS；
+- `npm run verify`：Node tests 194/194 PASS；Vite v5.4.21 production build PASS（671 modules）；
+- 固定清单和清单外指标都读取后端 `definitionVersion`；缺失显示 `—`；不硬编码 `v1`，不擅自拼 `v`；
+- CSV 与卡片复用同一 `definitionVersionText`。
 
-#### Code Agent later
-
-在包含 `9f0f6d8` + `9b9caa5` 的精确 SHA 上执行：
-
-1. `cd web; npm run verify`；
-2. 确认新增 `metricDefinitionVersionDisplay.test.js` 4 条全部通过；
-3. 确认 Vite production build 成功，避免 Vue 模板/SFC 编译回归；
-4. 真实浏览器/后端联调仍不是本条 unit/build 层 PASS 的前提，留阶段5/7 E2E。
-
-#### Codex Work later
-
-普通展示项不调用。阶段5整体页面验收或合并 main 前如需要对抗验证，再检查空白/非字符串版本、CSV 与页面不一致、旧快照缺版本等边界。
+**Remaining runtime gap**：真实浏览器渲染与真实后端响应联调未覆盖。
 
 ### V-010 — S3-62 决策中心取消动作接线修复
 
-- **Status**：PENDING
+- **Status**：PASS（unit/build 层；真实 HTTP 状态机/E2E 仍未测）
 - **Implementation baseline**：`a1a2eaba30dabd82a093a994a01704d83f3e9586`
 - **Implementation commits**：`bf5900d`（生产接线修复）+ `a1a2eab`（developer tests）
+- **Verified at**：`842f2e783fced8ddfe13678a7f401245d52a529b`
 - **Area**：`web/src/views/Decisions.vue`、`web/tests/decisionCancelWiring.test.js`
 - **Risk**：低—中；修复既有按钮调用错函数，不改后端状态机、权限码或 API 形状。
 - **Blocks further development**：NO；正式决策闭环验收前需要真实 HTTP/E2E。
 
+#### Execution evidence — 2026-09-17
+
+- `decisionCancelWiring.test.js`：3/3 PASS；
+- `IN_PROGRESS` 的“取消”按钮确认调用 `cancelDecision(d)`；
+- `cancelDecision` 确认调用 `api.decisionAction(d.id, 'cancel', { reason: '策略调整' })`，成功后 `flush()`；
+- `useAnalysis.cancel` 仍只用于 `onUnmounted(cancel)`；
+- 同一 `npm run verify`：194/194 + Vite build PASS。
+
+**Remaining runtime gap**：真实 `POST /decisions/{id}/cancel`、后端状态变化和刷新后的 DOM 未做 E2E。
+
+### V-011 — S3-63 AI 在途问数显式取消
+
+- **Status**：PENDING
+- **Implementation baseline**：`4079fd7a2a5427f0cea1dd622a6e1e23762cf3d4`
+- **Implementation commits**：`f085adc`（生产接线）+ `4079fd7`（developer source guards）
+- **Area**：`web/src/views/AiAssistant.vue`、`web/tests/aiAskCancellation.test.js`
+- **Risk**：低—中；只修前端请求取消/过期响应展示，不改后端 AI、SQL、Provider、权限或数据库。
+- **Blocks further development**：NO；真实 HTTP AbortController 行为留前端/后端联调。
+
 #### Defect fact
 
-`Decisions.vue` 原模板在 `IN_PROGRESS` 行把“取消”按钮写成 `@click="cancel(d)"`；但脚本中的 `cancel` 来自 `useAnalysis`，语义是中止列表取数请求。真正的业务取消函数 `cancelDecision(d)` 已存在且会调用 `api.decisionAction(d.id, 'cancel', { reason: '策略调整' })`，却没有被模板引用。因此点击“取消”不会走决策取消 API。
+旧模板按钮在 `busy` 时被 `:disabled="busy || !question.trim()"` 禁用，却同时显示“分析中…（再次点击可放弃上一次）”；因此用户实际上无法点击取消。同时推荐问题/历史回填在 busy 时仍可改变输入文字，使页面输入可能与仍在执行的旧请求错位。
 
 #### Invariants
 
-1. `IN_PROGRESS` 的“取消”按钮必须调用 `cancelDecision(d)`；
-2. `cancelDecision` 仍通过既有 `api.decisionAction(id, 'cancel', body)`，成功后 `flush()` 刷新列表；
-3. `useAnalysis.cancel` 只用于 `onUnmounted(cancel)` 中止页面取数，不承担业务动作；
-4. 不改 `DecisionService` 状态机、不绕过权限、不新增取消状态；
-5. 本轮不声称真实后端取消请求已经 E2E 验证。
+1. busy 时主按钮仍可点击，动作变为显式 `cancelAsk()`；
+2. `cancelAsk()` 必须先推进 `askSeq` 使旧响应失效，再 abort 当前 controller；
+3. 取消后立即 `busy=false`、清掉可能已经到达但尚未完成链路的 `queryResult`，并显示明确取消提示；
+4. 旧请求随后 resolve/reject 都不得重新写回结果或 busy 状态；
+5. 在途时推荐问题与历史回填禁用，避免输入文本与执行中的问题错位；
+6. 正常非 busy 状态仍走原 `ask()`，不改变 Text-to-SQL/证据链。
 
 #### Code Agent later
 
-在包含 `bf5900d` + `a1a2eab` 的精确 SHA 上执行：
+在精确包含 `f085adc` + `4079fd7` 的 SHA 上执行：
 
 1. `cd web; npm run verify`；
-2. 确认新增 `decisionCancelWiring.test.js` 3 条全部通过；
-3. Vite production build 必须通过；
-4. 阶段6/7 E2E 时再用真实 `IN_PROGRESS` 决策验证点击“取消”确实产生 `POST /decisions/{id}/cancel` 并刷新状态。
+2. 确认 `aiAskCancellation.test.js` 5/5 PASS；
+3. Vite production build PASS；
+4. 浏览器 E2E 后续再验证真实点击取消是否触发 AbortController、网络请求中止且旧结果不闪回。
 
 #### Codex Work later
 
-普通 UI 接线 bug 不调用。决策状态机正式验收属于高价值节点，届时再让 Codex Work 攻击越级状态、重复请求、并发取消/完成等边界。
+普通前端交互修复不调用；阶段6/7浏览器联调时若需要对抗验证，可攻击“响应恰好在点击取消前后到达”的竞态边界。
 
 ## 3. 2026-09-17 独立执行结论
 
@@ -299,20 +250,26 @@
 
 - Web：`npm run verify` exit 0，187/187 PASS，Vite build 成功；
 - JDK17 default：analytics-server 1011（F=2/E=0/S=1）、mall 13/13、generator 110/110；
-- 两个 analytics failure 中：
-  1. `AiExplanationEndpointTest.providerUsedIsLlmWhenRewriteAccepted` 是 D-014 后的旧 fixture 漂移，已由 `3e0d3bc` 修正；
-  2. `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` 是既有环境红（landing 历史文件不在当前工作区），继续保留，不删除/skip/放宽；
-- analytics 数量 `1002 → 1011` 的 +9 精确来自本批三组新测试：`ExplanationProviderProvenanceTest` 3 + `AiQueryTimeoutMappingTest` 3 + `AiControllerAuditStatusTest` 3。
+- 两个 analytics failure 中：旧 provider fixture 漂移后续已修；另一条是既有环境红；
+- analytics `1002 → 1011` 的 +9 精确来自 `ExplanationProviderProvenanceTest` 3 + `AiQueryTimeoutMappingTest` 3 + `AiControllerAuditStatusTest` 3。
 
 ### 第二批复测：`e0c7d91052773dd2183bb24fc48969ada2613af2`
 
-- 最小 provider 复测：`AiExplanationEndpointTest` 7/7 PASS，`providerUsed=mock-provider`；
-- default：analytics-server 1011（F=1/E=0/S=1）、mall 13/13、generator 110/110，总计 1134；
-- `ExplanationProviderProvenanceTest`、`AiQueryTimeoutMappingTest`、`AiControllerAuditStatusTest` 均 3/3 PASS；
-- 无新增失败，唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`；
-- 1011 已被连续两轮独立执行确认。`scripts/run-tests.ps1` 当前数量登记仍为 1002；由于 V-008 又新增测试，数量登记等 V-008 独立计数后一次同步。`-AllowCountDrift` 只能作为临时复测工具，不能成为常规入口。
+- `AiExplanationEndpointTest` 7/7 PASS，`providerUsed=mock-provider`；
+- default：analytics-server 1011（F=1/E=0/S=1）、mall 13、generator 110，总计 1134；
+- 无新增失败，唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`。
 
-Codex Work 这两批**暂不调用**。当前结果已经由 Code Agent 足够定位；按用户要求，只在核心安全/重大迁移/正式阶段验收等重要节点调用 Codex Work。
+### 第三批：`842f2e783fced8ddfe13678a7f401245d52a529b`
+
+- V-008 定向：`ExplanationEvidenceTest` 7/7、`ExplanationProviderProvenanceTest` 3/3，BUILD SUCCESS；
+- Web：`npm run verify` exit 0，**194/194 PASS**，Vite v5.4.21 build PASS（671 modules，2.74s）；
+- V-009：4/4 PASS；V-010：3/3 PASS；
+- default（临时 `-AllowCountDrift` 仅用于最终量数）：analytics-server **1013**（F=1/E=0/S=1）＝ `105+353+172+97+126+160`；mall 13；generator 110；总计 **1136**；
+- analytics `1011 → 1013` 的 +2 精确落在 ai-decision，来自 V-008 新增用例；
+- **1013 已独立确认，作为下一次门禁基线同步值**；`-AllowCountDrift` 不应继续作为常规入口；
+- 唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 but was 0），没有 NEW REGRESSION。
+
+Codex Work 这三批**暂不调用**。当前结果足以定位普通回归；继续只在核心安全/重大迁移/正式阶段验收等重要节点调用。
 
 ## 4. 批量验证触发点
 
