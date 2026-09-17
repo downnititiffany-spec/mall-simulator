@@ -109,8 +109,11 @@ export function decisionRows(list) {
     baselineValue: num(d.baselineValue),
     targetValue: num(d.targetValue),
     suggestionSnapshotId: text(d.suggestionSnapshotId),
+    baselineSnapshotId: text(d.baselineSnapshotId),
+    definitionVersion: text(d.definitionVersion),
     risk: text(d.risk),
     owner: text(d.owner),
+    dueDate: text(d.dueDate),
     status: text(d.status),
     createdAt: formatDateTime(d.createdAt)
   }))
@@ -206,8 +209,11 @@ export const COLUMNS = {
     { key: 'baselineValue', label: '基线' },
     { key: 'targetValue', label: '目标' },
     { key: 'suggestionSnapshotId', label: '建议快照' },
+    { key: 'baselineSnapshotId', label: '基线快照' },
+    { key: 'definitionVersion', label: '口径版本' },
     { key: 'risk', label: '风险' },
     { key: 'owner', label: '负责人' },
+    { key: 'dueDate', label: '截止日期' },
     { key: 'status', label: '状态' },
     { key: 'createdAt', label: '创建时间' }
   ],
