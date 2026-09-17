@@ -104,10 +104,13 @@ async function fetchRfm(params, signal) {
   } else {
     try {
       const users = readEnvelope(await api.users({ snapshotId: rfm.snapshotId }, { signal }))
+      if (users.snapshotId !== rfm.snapshotId) {
+        throw new Error(`用户聚合快照不一致：rfm=${rfm.snapshotId}, users=${users.snapshotId || '未提供'}`)
+      }
       usersData = users.data
       usersWarnings = users.warnings
     } catch (e) {
-      // 主动取消（切换刷新）不算失败，不写错误提示
+      // 主动取消（切换刷新）不算失败，不写错误提示；其余错误（含快照回声不一致）只降级用户聚合区块。
       if (!isAbort(e)) usersError.value = (e && (e.message || e.code)) || '请求失败'
     }
   }
