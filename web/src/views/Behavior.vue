@@ -4,11 +4,11 @@
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
       <label style="font-size:13px;color:#374151">活跃趋势日期范围：</label>
-      <input type="date" v-model="from" style="padding:4px" />
+      <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
       <span style="color:#9ca3af">至</span>
-      <input type="date" v-model="to" style="padding:4px" />
+      <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
       <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
-      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
+      <button style="font-size:12px" :disabled="!funnelExportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:#9ca3af">漏斗按快照整体口径返回，不受日期范围影响</span>
     </div>
 
@@ -118,11 +118,15 @@ const overallBuyRate = computed(() => (data.value.overallBuyRate === null || dat
 const windowNote = computed(() => data.value.windowNote || '未提供观察窗口说明')
 const funnelOpt = computed(() => funnelOption(stages.value))
 const trendOpt = computed(() => activeTrendOption(data.value.activeTrend))
+const funnelExportable = computed(() => exportable.value && stages.value.length > 0)
 
-const load = () => analysis.load({ from: from.value, to: to.value })
+const load = () => {
+  if (loading.value) return
+  return analysis.load({ from: from.value, to: to.value })
+}
 
 function doExport() {
-  if (!exportable.value) return
+  if (!funnelExportable.value) return
   exportAnalysisCsv({
     baseName: 'behavior-funnel',
     context: exportContext.value,
