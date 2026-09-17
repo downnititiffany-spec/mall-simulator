@@ -26,7 +26,7 @@
 | ID | 工作项 | 状态 | 当前证明边界 |
 |---|---|---|---|
 | V-001 | S3-53 AI evidenceId 兼容 | SUPERSEDED | 由 V-004 覆盖最终 ID 形状 |
-| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build |
+| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch H 239/239 |
 | V-003 | S3-54 AI summary 展示 | PARTIAL | 工具函数/源码接线；无浏览器 E2E |
 | V-004 | S3-55/56 AI ID 严格形状/草稿锚点 | PARTIAL | 纯逻辑/源码接线；无真实提交链 E2E |
 | V-005 | S3-57 provider provenance | PASS | unit/default；无真实 Provider |
@@ -41,6 +41,11 @@
 | V-014 | S3-66 提交审核时补 owner | PASS | Node test + build；无真实浏览器/HTTP E2E |
 | V-015 | S3-67 决策行 identity 保留 | PASS | Node test + Web full gate；无真实 HTTP E2E |
 | V-016 | S3-68 决策基线单次格式化 | PASS | Node test + Web full gate；无真实浏览器 E2E |
+| V-017 | S3-69/S3-70 决策执行上下文展示 | PASS | Node test + Web full gate；无真实 HTTP/DB E2E |
+| V-018 | S3-71 本地日历日期默认值 | PASS | Node helper/source guard + Web full gate；无真实浏览器跨时区 E2E |
+| V-019 | S3-72 Pipeline retry 失败处理 | PASS | Node source guard + Web full gate；无真实 retry HTTP/state-machine E2E |
+| V-020 | S3-73 商品页服务端分页/排序 | PASS | Node source guard + Web full gate；无真实 HTTP/DB 排序 E2E |
+| V-021 | S3-74 RFM matrix 类目唯一属主 | PASS | Node source guard + Web full gate；无真实 HTTP/DOM E2E |
 
 当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 写 `CURRENT_BATCH.md` + 对应永久 plan，并置 `READY`。
 
@@ -51,7 +56,7 @@
 - **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
 - `npm run verify = npm test && npm run build`。
 - 多轮独立执行均为 Node tests 全绿 + Vite production build 成功。
-- 最新 Batch F：**217/217 PASS** + Vite build PASS。
+- 最新 Batch H：**239/239 PASS** + Vite build PASS。
 
 ### V-005 — S3-57 Explanation provider provenance
 
@@ -114,20 +119,29 @@
 - DRAFT 提交不再走空 `{}`；已有 owner 仅作可编辑初始值，缺失时为空；取消/空白在 API 前 fail-closed；最终只发送 `{ owner }` 并刷新。
 - 真实浏览器/HTTP/后端提交校验未做 E2E。
 
-### V-015 — S3-67 决策行 identity 保留
+### V-015 / V-016 — S3-67/S3-68 决策 identity 与基线显示
 
 - **Final verification baseline**：`1671d3a8b09c296d70e1dfb74098a3cb1132b977`。
-- `decisionRowIdentity.test.js`：3/3 PASS。
-- `decisionRows()` 保留后端原始 `id`；数值 id 不转字符串；缺失/null 保持 null，不制造伪造身份。
-- 决策页面 `:key`、评价映射和 `decisionAction(d.id, ...)` 因此能消费真实 id。
-- 真实 HTTP `/decisions/{id}/...` 未做 E2E。
-
-### V-016 — S3-68 决策基线单次格式化
-
-- **Final verification baseline**：`1671d3a8b09c296d70e1dfb74098a3cb1132b977`。
-- `decisionBaselineDisplay.test.js`：2/2 PASS。
-- `decisionRows()` 负责一次格式化；`Decisions.vue` 直接展示映射后的 `baselineValue`，不再二次调用 `formatNumber`。
+- `decisionRowIdentity.test.js`：3/3；`decisionBaselineDisplay.test.js`：2/2。
+- `decisionRows()` 保留真实后端 id；页面直接展示已格式化 baselineValue，不再二次格式化。
 - Batch F Web full gate 217/217 + Vite build PASS。
+
+### V-017 / V-018 — S3-69/S3-70/S3-71 决策执行上下文与本地日期
+
+- **Final verification baseline**：`4366bcb7dcc6347657744e115f0cc0706aa6baea`。
+- `decisionExecutionContextDisplay.test.js`：4/4；`pipelineLocalBusinessDate.test.js`：5/5。
+- 决策页区分建议快照与批准锁定的基线快照，并展示 definitionVersion / dueDate；CSV 同步。
+- Pipeline / Behavior / Sales / Overview 的 HTML date 默认值统一走本地日历 helper，不再用 UTC `toISOString().slice(0,10)`。
+- Batch G Web full gate 226/226 + Vite build PASS。
+
+### V-019 / V-020 / V-021 — S3-72/S3-73/S3-74 Pipeline retry、商品服务端分页、RFM matrix 属主
+
+- **Final verification baseline**：`20db9072c37e20ebecf6648f55d002d36aa452b0`。
+- `pipelineRetryHandling.test.js`：4/4；`productServerPagination.test.js`：5/5；`rfmMatrixOwnership.test.js`：4/4。
+- Pipeline retry 有 busy 防重复、catch/finally 收口，失败不再显示 `run#undefined`。
+- 商品页按后端 `page/size/sort/hasMore` 工作，不再把单页结果本地伪装成全量分页/排序；CSV 明确只导出当前页。
+- RFM 八类矩阵由后端 `rfmMatrix` 唯一维护；旧响应只展示真实 `rfmSegments`，前端不制造第二套 0 人类目。
+- Batch H Web full gate：**239/239 PASS** + Vite build PASS。
 
 ## 4. PARTIAL：后续阶段联调再补
 
@@ -171,10 +185,23 @@
 ### Batch F — `1671d3a8b09c296d70e1dfb74098a3cb1132b977`
 - 永久测试计划：`docs/verification/batches/BATCH-F-WEB-DECISION-IDENTITY-DISPLAY-PLAN.md`。
 - 接受结果：`docs/verification/results/BATCH-F-WEB-DECISION-IDENTITY-DISPLAY-RESULT.md`。
-- Code Agent 原始结果：`verification-results:docs/verification/agent-results/BATCH-F-WEB-DECISION-IDENTITY-DISPLAY-RESULT.md`，commit `9e10e4e47a1990029b69842f915a91ecce23cdb3`。
-- V-015 3/3 PASS；V-016 2/2 PASS；决策回归 16/16 PASS。
-- Web full gate：**217/217 PASS**；Vite production build PASS；New failures 0。
-- 未覆盖真浏览器、真 HTTP、后端状态机与 DB 落库。
+- V-015 3/3；V-016 2/2；决策回归 16/16。
+- Web full gate：217/217 PASS；Vite build PASS。
+
+### Batch G — `4366bcb7dcc6347657744e115f0cc0706aa6baea`
+- 永久测试计划：`docs/verification/batches/BATCH-G-WEB-DECISION-CONTEXT-LOCAL-DATES-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-G-WEB-DECISION-CONTEXT-LOCAL-DATES-RESULT.md`。
+- Raw result commit：`8d450b7c427c8ae14f72f86d2056aa6d6a262eb9`。
+- S3-69/S3-70 4/4；S3-71 5/5；决策回归 21/21。
+- Web full gate：226/226 PASS；Vite build PASS；New failures 0。
+
+### Batch H — `20db9072c37e20ebecf6648f55d002d36aa452b0`
+- 永久测试计划：`docs/verification/batches/BATCH-H-WEB-PIPELINE-PRODUCT-RFM-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-H-WEB-PIPELINE-PRODUCT-RFM-RESULT.md`。
+- Raw Code Agent result：`verification-results:docs/verification/results/BATCH-H-WEB-PIPELINE-PRODUCT-RFM-RESULT.md`，commit `3fefe158dbaaf3448f8f59415c6585569f90c2ee`。
+- S3-72 4/4；S3-73 5/5；S3-74 4/4；关键回归 9/9。
+- Web full gate：**239/239 PASS**；Vite production build PASS；New failures 0。
+- 未覆盖真浏览器、真 HTTP、后端状态机/DB 排序与 Spark/Hive/Flume E2E。
 
 ## 6. 已知环境红与未覆盖面
 
