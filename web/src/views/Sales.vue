@@ -4,9 +4,9 @@
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
       <label style="font-size:13px;color:#374151">日期范围：</label>
-      <input type="date" v-model="from" style="padding:4px" />
+      <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
       <span style="color:#9ca3af">至</span>
-      <input type="date" v-model="to" style="padding:4px" />
+      <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
       <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
       <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:#9ca3af">汇总值取快照指标库，趋势取快照明细，页面不重算</span>
@@ -133,6 +133,7 @@ function toggleSort(key) {
 }
 
 const load = () => {
+  if (loading.value) return
   page.value = 1
   return analysis.load({ from: from.value, to: to.value })
 }
