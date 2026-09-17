@@ -26,11 +26,13 @@ test('批准流程不再硬编码负责人，也不再自动把截止日期设�
   assert.doesNotMatch(approve, /prompt\([^\n]*,\s*['"]运营-小李['"]\)/)
   assert.doesNotMatch(approve, /Date\.now\(\)\s*\+\s*3\s*\*\s*86400000/)
   assert.doesNotMatch(approve, /toISOString\(\)\.slice\(0,\s*10\)/)
+  assert.match(approve, /requiredApprovalText\('负责人（必填，例如：运营-小李）', '负责人不能为空'\)/)
 })
 
-test('requiredApprovalText 对取消和纯空白输入 fail-closed，不制造默认负责人', () => {
+test('requiredApprovalText 对取消和纯空白输入 fail-closed，默认初始值为空但允许调用方传真实已有值', () => {
   const fn = functionBody('requiredApprovalText', 'requiredDueDate')
-  assert.match(fn, /prompt\(promptText, ''\)/)
+  assert.match(fn, /function requiredApprovalText\(promptText, emptyMessage, initialValue = ''\)/)
+  assert.match(fn, /prompt\(promptText, initialValue\)/)
   assert.match(fn, /if \(raw === null\) return null/)
   assert.match(fn, /const value = raw\.trim\(\)/)
   assert.match(fn, /if \(!value\)/)
@@ -39,7 +41,7 @@ test('requiredApprovalText 对取消和纯空白输入 fail-closed，不制造�
 })
 
 test('截止日期必须是 YYYY-MM-DD 且是真实存在的日历日期', () => {
-  const fn = functionBody('requiredDueDate', 'approve')
+  const fn = functionBody('requiredDueDate', 'submitDecision')
   assert.match(fn, /\^\(\\d\{4\}\)-\(\\d\{2\}\)-\(\\d\{2\}\)\$/)
   assert.match(fn, /Date\.UTC\(year, month - 1, day\)/)
   assert.match(fn, /getUTCFullYear\(\) !== year/)
