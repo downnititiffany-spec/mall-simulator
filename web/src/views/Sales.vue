@@ -138,6 +138,7 @@ const load = () => {
 }
 
 function doExport() {
+  if (!exportable.value) return
   exportAnalysisCsv({
     baseName: 'sales-analysis',
     context: exportContext.value,
