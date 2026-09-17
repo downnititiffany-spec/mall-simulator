@@ -44,6 +44,7 @@ test('分析页默认近 7 天范围共用本地日历 helper，不再各自从 
   }
 })
 
-test('Pipeline 仍把用户确认的业务日原样组成本地午夜 businessTime', () => {
-  assert.match(pipelineSource, /businessTime: businessDate\.value \+ 'T00:00:00'/)
+test('Pipeline 仍把用户确认的业务日原样组成本地午夜 businessTime，允许先冻结再异步组包', () => {
+  assert.match(pipelineSource, /const requestedBusinessDate = businessDate\.value/)
+  assert.match(pipelineSource, /businessTime: requestedBusinessDate \+ 'T00:00:00'/)
 })
