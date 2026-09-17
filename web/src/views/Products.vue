@@ -4,9 +4,9 @@
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
       <label style="font-size:13px;color:#374151">每页：</label>
-      <input v-model.number="pageSize" type="number" min="1" max="100" style="width:80px;padding:4px" />
+      <input v-model.number="pageSize" type="number" min="1" max="100" :disabled="loading" style="width:80px;padding:4px" />
       <button style="font-size:12px" :disabled="loading" @click="applyFilters">{{ loading ? '加载中' : '加载' }}</button>
-      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出当前页 CSV</button>
+      <button style="font-size:12px" :disabled="!pageExportable" @click="doExport">导出当前页 CSV</button>
       <span style="font-size:12px;color:#9ca3af">
         热度与转化均取后端快照口径；热度榜分页/排序由后端执行，页面不对单页结果再次排序。
         当前第 {{ responsePage }} 页，每页 {{ responseSize }} 条，共 {{ totalText }} 条
@@ -122,6 +122,9 @@ const rows = computed(() => {
   })
 })
 
+// 整页 ready 只说明 hot / conversion 至少有一个区块有数据；“导出当前页”必须要求当前 hot 页确实有行。
+const pageExportable = computed(() => exportable.value && rows.value.length > 0)
+
 const columns = [
   { key: 'rank', title: '排名', sortKey: 'rank', defaultOrder: 'asc' },
   { key: 'productName', title: '商品' },
@@ -144,6 +147,7 @@ function requestParams() {
 const load = () => analysis.load(requestParams())
 
 function applyFilters() {
+  if (loading.value) return
   page.value = 1
   return load()
 }
@@ -174,7 +178,7 @@ const heatOpt = computed(() => productHeatOption(hotRows.value))
 const convOpt = computed(() => productConversionOption(conversionRows.value, nameOfProduct))
 
 function doExport() {
-  if (!exportable.value) return
+  if (!pageExportable.value) return
   exportAnalysisCsv({
     baseName: `product-analysis-page-${responsePage.value}`,
     context: exportContext.value,
