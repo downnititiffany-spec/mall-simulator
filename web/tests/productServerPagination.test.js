@@ -39,9 +39,23 @@ test('切换排序会回到第 1 页并重新请求后端', () => {
   assert.match(body, /return load\(\)/)
 })
 
-test('导出明确限定当前页，并继续受 exportable 门禁保护', () => {
+test('当前页导出资格要求整页 ready 且当前 hot 页确实非空，按钮和 handler 使用同一谓词', () => {
   assert.match(source, />导出当前页 CSV</)
-  assert.match(source, /function doExport\(\) \{[\s\S]*if \(!exportable\.value\) return/)
+  assert.match(source, /const pageExportable = computed\(\(\) => exportable\.value && rows\.value\.length > 0\)/)
+  assert.match(source, /:disabled="!pageExportable"\s+@click="doExport"/)
+  assert.match(source, /function doExport\(\) \{[\s\S]*if \(!pageExportable\.value\) return/)
   assert.match(source, /baseName: `product-analysis-page-\$\{responsePage\.value\}`/)
   assert.match(source, /rows: rows\.value\.map/)
+})
+
+test('分页大小在加载期间锁定，applyFilters 自身也拒绝 loading 重入', () => {
+  assert.match(source, /v-model\.number="pageSize"[^>]*:disabled="loading"/)
+  const start = source.indexOf('function applyFilters()')
+  const end = source.indexOf('\nfunction goPage', start)
+  assert.notEqual(start, -1)
+  assert.ok(end > start)
+  const body = source.slice(start, end)
+  assert.match(body, /if \(loading\.value\) return/)
+  assert.match(body, /page\.value = 1/)
+  assert.match(body, /return load\(\)/)
 })
