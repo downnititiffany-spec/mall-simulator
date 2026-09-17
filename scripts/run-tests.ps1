@@ -112,7 +112,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1002
+  'analytics-server'        = 1013
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -627,7 +627,7 @@ $BaselineSpark = 308
 #   （`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`，F=1；expected 43 was 0）；
 #   该量数轮因计数漂移记 FAIL，**只作量数依据、不作通过证据**。
 #   ⇒ **analytics-server 983→987**（+4）；**三棵树 1106→1110**。
-#   边界（诚实记录，不得越界表述）：① 本守卫**没有**经典 RED（被守性质在写守卫之前就成立，属 characterization
+#   边界（诚实记录，不得越界表述）：① 本守卫**没有**经典 RED（被守性质在写断言之前就成立，属 characterization
 #   guard）：非恒真性由**变异探针**证明——P1 删 `.requestFactory(...)` ⇒ ①④红；P2 新增一个「不带超时」的客户端
 #   文件 ⇒ ①②红（集合漂移逃不掉）；P3 把 `.requestFactory(...)` 注释掉 ⇒ ①④仍红（注释剥离生效，不是靠注释过关）；
 #   P4 删工厂里的 `setReadTimeout(...)` ⇒ 仅③红；P5 内联默认 30000→5000 ⇒ 仅④红；五探针 `还原一致=True`、
