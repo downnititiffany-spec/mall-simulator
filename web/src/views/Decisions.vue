@@ -60,7 +60,7 @@
               <span v-else>—</span>
             </td>
             <td style="white-space:nowrap">
-              <button v-if="d.status === 'DRAFT'" @click="act(d, 'submit')" :disabled="busy">提交审核</button>
+              <button v-if="d.status === 'DRAFT'" @click="submitDecision(d)" :disabled="busy">提交审核</button>
               <button v-if="d.status === 'PENDING_REVIEW'" style="background:#16a34a" @click="approve(d)" :disabled="busy">批准</button>
               <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="rejectDecision(d)" :disabled="busy">驳回</button>
               <button v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="busy">开始</button>
@@ -187,8 +187,8 @@ function requiredReason(actionLabel) {
   return reason
 }
 
-function requiredApprovalText(promptText, emptyMessage) {
-  const raw = prompt(promptText, '')
+function requiredApprovalText(promptText, emptyMessage, initialValue = '') {
+  const raw = prompt(promptText, initialValue)
   if (raw === null) return null
   const value = raw.trim()
   if (!value) {
@@ -215,6 +215,22 @@ function requiredDueDate() {
     return null
   }
   return dueDate
+}
+
+async function submitDecision(d) {
+  actionError.value = ''
+  const currentOwner = d && d.owner && d.owner !== '—' ? String(d.owner).trim() : ''
+  const owner = requiredApprovalText('负责人（提交审核前必填）', '负责人不能为空', currentOwner)
+  if (!owner) return
+  busy.value = true
+  try {
+    await api.decisionAction(d.id, 'submit', { owner })
+    await flush()
+  } catch (e) {
+    actionError.value = (e && (e.message || e.code)) || '提交审核失败'
+  } finally {
+    busy.value = false
+  }
 }
 
 async function approve(d) {
