@@ -5,22 +5,22 @@
 
 ## Batch
 
-- **Batch ID**：`BATCH-I-R1-WEB-PIPELINE-IDENTITY-RFM-WINDOW`
-- **Tested commit**：`2cf150b82168904fe6500089cf699d986c374514`
+- **Batch ID**：`BATCH-I-R2-WEB-PIPELINE-IDENTITY-RFM-WINDOW`
+- **Tested commit**：`4ae3b4c72cea9f01f3880c085bacab75f541c2b6`
 - **Branch context**：`feature/v3-development`
-- **Scope**：Batch I 失败复测：修正 pipeline identity 测试守卫误计 `//` 注释，并复验 S3-75 / S3-76、关键回归和 Web full gate。
-- **Risk**：低；相对 Batch I 生产代码未变，仅测试守卫修正。
-- **Permanent plan**：`docs/verification/batches/BATCH-I-R1-WEB-PIPELINE-IDENTITY-RFM-WINDOW-PLAN.md`
+- **Scope**：Batch I-R1 失败复测：使 pipeline identity 守卫对 LF/CRLF 检出一致，并复验 S3-75 / S3-76、关键回归和 Web full gate。
+- **Risk**：低；相对 Batch I 生产代码未变，仅测试守卫第二次修正。
+- **Permanent plan**：`docs/verification/batches/BATCH-I-R2-WEB-PIPELINE-IDENTITY-RFM-WINDOW-PLAN.md`
 
 ## Execution
 
-完整命令、预期、回归范围、边界与 PASS 规则全部以永久计划为准。Code Agent 必须完整读取并执行该计划，不得自行拆轮、修代码或改测试。
+完整命令、预期、CRLF 证据要求、回归范围、边界与 PASS 规则全部以永久计划为准。Code Agent 必须完整读取并执行该计划，不得自行拆轮、修代码、改 Git 配置或改测试。
 
 核心命令顺序：
 
 ```powershell
 git fetch origin
-git checkout --detach 2cf150b82168904fe6500089cf699d986c374514
+git checkout --detach 4ae3b4c72cea9f01f3880c085bacab75f541c2b6
 git rev-parse HEAD
 git status --short
 cd web
@@ -30,13 +30,13 @@ node --test tests/pipelineRetryHandling.test.js tests/pipelineLocalBusinessDate.
 npm run verify
 ```
 
-预期：S3-75 4/4；S3-76 4/4；关键回归 13/13；Web full gate 预计 247 tests（以实际为准）且 Vite production build PASS。
+预期：S3-75 4/4；S3-76 4/4；关键回归 13/13；Web full gate 全绿，且 Vite production build 必须实际执行并 PASS。
 
 ## Result persistence
 
 ```text
 local:  .verify/CURRENT_BATCH_RESULT.md
-github: verification-results:docs/verification/results/BATCH-I-R1-WEB-PIPELINE-IDENTITY-RFM-WINDOW-RESULT.md
+github: verification-results:docs/verification/results/BATCH-I-R2-WEB-PIPELINE-IDENTITY-RFM-WINDOW-RESULT.md
 ```
 
 Code Agent 只能向上述结果分支/结果路径写本批结果；不得修改被测分支、源码、测试、脚本、docs 或测试计划。
