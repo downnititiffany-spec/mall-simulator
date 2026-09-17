@@ -71,9 +71,10 @@ import api from '../api'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import { useAnalysis } from '../composables/useAnalysis'
 import { buildFallbackContext, NON_ANALYSIS_ROW_KEYS } from '../utils/context.js'
+import { localIsoDay } from '../utils/localDate.js'
 import { pipelineRunRows } from '../utils/tables.js'
 
-const businessDate = ref(new Date().toISOString().slice(0, 10))
+const businessDate = ref(localIsoDay())
 const runtimeProfileId = ref(1)
 const busy = ref(false)
 const runResult = ref(null)
