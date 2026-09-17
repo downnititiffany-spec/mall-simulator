@@ -16,10 +16,13 @@ import com.graduation.analytics.ai.sql.SqlExecutor;
 import com.graduation.analytics.ai.sql.SqlPolicy;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator.ValidationResult;
+import com.graduation.analytics.common.PlatformBizException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.stereotype.Service;
 
+import java.sql.SQLTimeoutException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +42,9 @@ import java.util.Map;
  * ① 提示词版本 {@code sql_v1 → sql_v2}：v1 教模型写「最近 30 天」并允许自锁快照，
  * 与「禁子查询 + 必须带 snapshot_id/dt 字面量」直接冲突；v2 把 scope 作为事实下发。<br>
  * ② 被拒绝的查询**也写审计行**（{@code status=REJECTED}，{@code errors=<规则码>}），
- * 否则「谁在试探校验器」在库里完全看不见（§19.6 全程审计）。</p>
+ * 否则「谁在试探校验器」在库里完全看不见（§19.6 全程审计）。<br>
+ * ③ S3-58：EXPLAIN/EXECUTE 的数据库超时必须落稳定 {@code QUERY_TIMEOUT}，不能被误记成
+ * {@code SQL_COST_TOO_HIGH} 或无错误码的泛化 FAILED；最终仍写 {@code ai_query_history}。</p>
  */
 @Slf4j
 @Service
@@ -174,15 +179,22 @@ public class TextToSqlService {
         } catch (AiSqlException e) {
             errorCode = e.code();
             error = truncate(e.getMessage(), 500);
-            // 作用域缺失 = 系统不具备问数条件（FAILED）；SQL 被规则拒绝 = REJECTED（契约 §2.3 审计）
-            boolean scopeFailure = SqlPolicy.NO_ACTIVE_SNAPSHOT.equals(e.code())
-                    || SqlPolicy.METRIC_READ_SOURCE_MISSING.equals(e.code());
-            if (scopeFailure) {
+            // 作用域/依赖超时 = 系统不具备本次问数条件（FAILED）；治理拒绝 = REJECTED。
+            boolean infrastructureFailure = SqlPolicy.NO_ACTIVE_SNAPSHOT.equals(e.code())
+                    || SqlPolicy.METRIC_READ_SOURCE_MISSING.equals(e.code())
+                    || PlatformBizException.QUERY_TIMEOUT.equals(e.code());
+            if (infrastructureFailure) {
                 status = "FAILED";
             } else {
                 status = STATUS_REJECTED;
             }
-            log.warn("text-to-sql rejected at stage {}: [{}] {}", stage, errorCode, error);
+            log.warn("text-to-sql rejected/failed at stage {}: [{}] {}", stage, errorCode, error);
+        } catch (SQLTimeoutException | QueryTimeoutException e) {
+            // raw JDBC execute 与 Spring/JdbcTemplate 两条路径的超时统一成已有平台稳定码。
+            errorCode = PlatformBizException.QUERY_TIMEOUT;
+            error = "只读查询超过统一超时（阶段=" + stage + "）";
+            status = "FAILED";
+            log.warn("text-to-sql timed out at stage {}: {}", stage, e.getMessage());
         } catch (Exception e) {
             error = truncate(e.getMessage(), 500);
             status = "FAILED";
