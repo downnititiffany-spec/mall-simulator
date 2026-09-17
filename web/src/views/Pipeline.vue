@@ -13,10 +13,10 @@
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <label style="font-size:13px">业务时间
-          <input v-model="businessDate" type="date" style="margin-left:6px;padding:4px">
+          <input v-model="businessDate" type="date" :disabled="busy" style="margin-left:6px;padding:4px">
         </label>
         <label style="font-size:13px">运行环境
-          <input v-model.number="runtimeProfileId" type="number" min="1" style="width:70px;margin-left:6px;padding:4px">
+          <input v-model.number="runtimeProfileId" type="number" min="1" :disabled="busy" style="width:70px;margin-left:6px;padding:4px">
         </label>
         <button @click="runOnce" :disabled="busy" style="padding:6px 16px">
           {{ busy ? '运行中…' : '触发采集并创建流水线实例' }}
@@ -37,7 +37,7 @@
     <div class="chart-box">
       <div class="chart-title">
         最近流水线实例
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="load" :disabled="loading">
+        <button style="float:right;font-size:12px;padding:3px 10px" @click="load" :disabled="loading || busy">
           {{ loading ? '刷新中…' : '刷新' }}
         </button>
       </div>
@@ -116,6 +116,10 @@ const runRows = computed(() => pipelineRunRows(data.value.pipelineRuns))
 
 async function runOnce() {
   if (busy.value) return
+  // 本次人工触发的输入必须在任何 await 之前冻结；否则 ingestionRun/3 秒等待期间修改表单，
+  // createPipelineRun 会读到另一组业务时间/运行环境，导致一次操作前后上下文漂移。
+  const requestedBusinessDate = businessDate.value
+  const requestedRuntimeProfileId = runtimeProfileId.value
   busy.value = true
   runResult.value = null
   try {
@@ -129,8 +133,8 @@ async function runOnce() {
       // 流水线编码是全项目唯一的编排标识：脚本 / 验收记录 / 论文一律用 ODS_TO_ADS。
       // 早期页面写死过 DAILY_CORE（只在 V2 建表注释里出现过，平台不按它选阶段），
       // 会让面板里出现的编码与文档/脚本对不上，故对齐为 ODS_TO_ADS（M1-6 命名一致）。
-      runtimeProfileId: runtimeProfileId.value, pipelineCode: 'ODS_TO_ADS',
-      businessTime: businessDate.value + 'T00:00:00', sourceDataVersion: operationId
+      runtimeProfileId: requestedRuntimeProfileId, pipelineCode: 'ODS_TO_ADS',
+      businessTime: requestedBusinessDate + 'T00:00:00', sourceDataVersion: operationId
     }, operationId)
     await load()
   } catch (e) {
