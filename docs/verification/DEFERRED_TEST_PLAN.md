@@ -191,23 +191,20 @@
 
 ### V-010 — S3-62 决策中心取消动作接线修复
 
-- **Status**：PASS（unit/build 层；真实 HTTP 状态机/E2E 仍未测）
+- **Status**：SUPERSEDED after PASS → 核心“取消按钮必须调用业务 cancel 而非 `useAnalysis.cancel`”已在 `842f2e7` 独立验证通过；后续 V-012 又收紧了 reason 语义，当前最终行为以 V-012 为准。
 - **Implementation baseline**：`a1a2eaba30dabd82a093a994a01704d83f3e9586`
 - **Implementation commits**：`bf5900d`（生产接线修复）+ `a1a2eab`（developer tests）
 - **Verified at**：`842f2e783fced8ddfe13678a7f401245d52a529b`
 - **Area**：`web/src/views/Decisions.vue`、`web/tests/decisionCancelWiring.test.js`
 - **Risk**：低—中；修复既有按钮调用错函数，不改后端状态机、权限码或 API 形状。
-- **Blocks further development**：NO；正式决策闭环验收前需要真实 HTTP/E2E。
 
-#### Execution evidence — 2026-09-17
+#### Historical execution evidence — 2026-09-17
 
 - `decisionCancelWiring.test.js`：3/3 PASS；
 - `IN_PROGRESS` 的“取消”按钮确认调用 `cancelDecision(d)`；
-- `cancelDecision` 确认调用 `api.decisionAction(d.id, 'cancel', { reason: '策略调整' })`，成功后 `flush()`；
+- 当时 `cancelDecision` 使用固定 `{ reason: '策略调整' }`；这一**固定原因形态已被 V-012 明确淘汰**，不能再当当前行为；
 - `useAnalysis.cancel` 仍只用于 `onUnmounted(cancel)`；
 - 同一 `npm run verify`：194/194 + Vite build PASS。
-
-**Remaining runtime gap**：真实 `POST /decisions/{id}/cancel`、后端状态变化和刷新后的 DOM 未做 E2E。
 
 ### V-011 — S3-63 AI 在途问数显式取消
 
@@ -244,6 +241,42 @@
 
 普通前端交互修复不调用；阶段6/7浏览器联调时若需要对抗验证，可攻击“响应恰好在点击取消前后到达”的竞态边界。
 
+### V-012 — S3-64 决策驳回/取消原因契约接线
+
+- **Status**：PENDING
+- **Implementation baseline**：`d024a2388edff4702802c34f45b4cf1cd4eb769c`
+- **Implementation commits**：`187fb88`（生产接线）+ `9733009`（更新取消守卫）+ `d024a23`（新增 reason 契约守卫）
+- **Area**：`web/src/views/Decisions.vue`、`web/tests/decisionCancelWiring.test.js`、`web/tests/decisionRequiredReason.test.js`
+- **Risk**：低—中；只修前端对既有 `ReasonReq.reason` 必填契约的调用，不改后端状态机、权限、API 路径或数据库。
+- **Blocks further development**：NO；真实 prompt/HTTP/状态变化仍留浏览器 E2E。
+
+#### Defect fact
+
+后端 `DecisionController` 对 `/{id}/reject` 与 `/{id}/cancel` 都接收 `ReasonReq`，`DecisionService.reject/cancel` 又明确要求 reason 非空。旧前端却有两种不一致：驳回按钮走通用 `act(d,'reject')` 并发送 `{}`，因此必然在后端被 `PARAM_INVALID` 拒绝；取消虽然已在 S3-62 接上正确业务函数，却写死 `{ reason: '策略调整' }`，会把前端默认文案冒充成员工真实取消原因写入审计。
+
+#### Invariants
+
+1. `PENDING_REVIEW` 的“驳回”按钮必须走独立 `rejectDecision(d)`，不得再走发送空 `{}` 的通用 `act`；
+2. reject/cancel 共用一个 `requiredReason` 前端判据：员工取消 prompt → 不发请求；纯空白 → 本地拒绝并提示；非空 → trim 后原样下发；
+3. `rejectDecision` 只发送 `{ reason }`，成功后 `flush()`；
+4. `cancelDecision` 同样只发送 `{ reason }`，不得写死“策略调整”等默认业务理由；
+5. 不改变 submit/start/complete/evaluate 的既有请求形状，不改变状态机；
+6. `useAnalysis.cancel` 仍只负责页面取数取消，与业务 cancel 分离。
+
+#### Code Agent later
+
+在精确包含 `187fb88` + `9733009` + `d024a23` 的 SHA 上执行：
+
+1. `cd web; npm run verify`；
+2. `decisionCancelWiring.test.js` 3/3 PASS；
+3. `decisionRequiredReason.test.js` 4/4 PASS；
+4. Vite production build PASS；
+5. 浏览器 E2E 后续再验证 prompt 取消/空白/真实 reason 三条路径以及真实 `PARAM_INVALID` 不再由空 reject 请求触发。
+
+#### Codex Work later
+
+普通前端契约接线不调用。正式决策状态机验收时再攻击越级状态、重复提交、并发 reject/approve/cancel 等边界。
+
 ## 3. 2026-09-17 独立执行结论
 
 ### 第一批：`080b8b0e1234416f1dc884bed4f1948e75464070`
@@ -266,7 +299,8 @@
 - V-009：4/4 PASS；V-010：3/3 PASS；
 - default（临时 `-AllowCountDrift` 仅用于最终量数）：analytics-server **1013**（F=1/E=0/S=1）＝ `105+353+172+97+126+160`；mall 13；generator 110；总计 **1136**；
 - analytics `1011 → 1013` 的 +2 精确落在 ai-decision，来自 V-008 新增用例；
-- **1013 已独立确认，作为下一次门禁基线同步值**；`-AllowCountDrift` 不应继续作为常规入口；
+- **1013 已独立确认**。提交 `5a64ad44229cf41cedf9f7aedb8265c2070c92ed` 已把 `$BaselineDefault['analytics-server']` 从 1002 同步为 **1013**，后续常规 default 门禁应恢复为**不带** `-AllowCountDrift`；
+- 对 `5a64ad4` 的 commit diff 复核显示：实际行为改动只有基线 `1002→1013`；另有一处历史注释词汇从“写守卫”变为“写断言”，不影响任何命令/判据/计数语义；
 - 唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 but was 0），没有 NEW REGRESSION。
 
 Codex Work 这三批**暂不调用**。当前结果足以定位普通回归；继续只在核心安全/重大迁移/正式阶段验收等重要节点调用。
