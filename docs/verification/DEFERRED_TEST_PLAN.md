@@ -125,13 +125,13 @@
 
 ### V-005 — S3-57 Explanation provider provenance
 
-- **Status**：PENDING（首次批测发现旧端点测试夹具与 D-014 新语义漂移；夹具已在 `3e0d3bc` 修正，待最小复测）
+- **Status**：PASS（unit/default 层；2026-09-17 Code Agent 在 `e0c7d91052773dd2183bb24fc48969ada2613af2` 复测确认）
 - **Implementation baseline**：`a134df88aa9d31ef8b26fc00f4785a5cbc5c2362`
 - **Implementation commits**：`97ed8ac`（ExplanationResult/调用链来源）+ `d7780d4`（控制器直读 providerUsed）+ `a134df8`（developer tests）
 - **Fixture correction**：`3e0d3bc`（端点测试显式 stub `llm.providerName()="mock-provider"`，断言真实 provider 名称；生产逻辑不回退）
 - **Area**：`analytics-server/ai-decision`、`analytics-server/platform-app/AiController`
 - **Risk**：中；加性响应字段与来源事实修正，不改 LLM 安全策略。
-- **Blocks further development**：NO；但阶段6宣称“providerUsed 真实可审计”前必须完成复测。
+- **Blocks further development**：NO；真实 provider/外网质量仍留到阶段6集成验收。
 
 #### Invariants
 
@@ -146,9 +146,14 @@
 - 旧 `AiExplanationEndpointTest.providerUsedIsLlmWhenRewriteAccepted`：FAIL，expected `llm` but actual `null`；
 - 根因裁决：旧 Mockito fixture 没有 stub `providerName()`，而 D-014 已明确生产响应必须直读 provider 名称；真实 provider 实现返回非空名称。故修测试夹具，不回退生产代码。
 
-#### Code Agent retest
+#### Retest evidence — 2026-09-17
 
-至少执行该端点类的最小复测，然后执行 default；在 `scripts/run-tests.ps1` 数量基线更新完成前，default 可临时带 `-AllowCountDrift` 用于区分功能失败和登记漂移。最终仍需恢复无该开关的常规门禁。
+被测精确 SHA：`e0c7d91052773dd2183bb24fc48969ada2613af2`。
+
+- 最小端点复测：`AiExplanationEndpointTest` 7/7 PASS，`providerUsedIsLlmWhenRewriteAccepted` 实际断言值为 `mock-provider`；
+- default 复测临时使用 `-AllowCountDrift` 只用于区分功能失败与登记漂移；analytics-server = 1011（F=1/E=0/S=1），`AiExplanationEndpointTest` 7/7 PASS、`ExplanationProviderProvenanceTest` 3/3 PASS；
+- 唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 but was 0）；没有新增失败；
+- 真实 LLM provider、真实外网、真实浏览器/E2E 本轮未覆盖，因此本条 PASS 只代表 unit/default 层。
 
 ### V-006 — S3-58 AI Text-to-SQL timeout classification
 
@@ -191,18 +196,26 @@
 
 `AiControllerAuditStatusTest` 3/3 PASS。测试环境未应用 V14，日志明确显示 `operation_audit_log` 不存在，因此当前只证明 helper/controller 分类；真实审计表写入留到数据库集成验收。
 
-## 3. 2026-09-17 首批独立执行结论
+## 3. 2026-09-17 独立执行结论
 
-被测精确 SHA：`080b8b0e1234416f1dc884bed4f1948e75464070`。
+### 第一批：`080b8b0e1234416f1dc884bed4f1948e75464070`
 
 - Web：`npm run verify` exit 0，187/187 PASS，Vite build 成功；
 - JDK17 default：analytics-server 1011（F=2/E=0/S=1）、mall 13/13、generator 110/110；
 - 两个 analytics failure 中：
-  1. `AiExplanationEndpointTest.providerUsedIsLlmWhenRewriteAccepted` 是 D-014 后的旧 fixture 漂移，已由 `3e0d3bc` 修正，待复测；
+  1. `AiExplanationEndpointTest.providerUsedIsLlmWhenRewriteAccepted` 是 D-014 后的旧 fixture 漂移，已由 `3e0d3bc` 修正；
   2. `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` 是既有环境红（landing 历史文件不在当前工作区），继续保留，不删除/skip/放宽；
-- analytics 数量 `1002 → 1011` 的 +9 精确来自本批三组新测试：`ExplanationProviderProvenanceTest` 3 + `AiQueryTimeoutMappingTest` 3 + `AiControllerAuditStatusTest` 3。`scripts/run-tests.ps1` 数量登记需同步到 1011；同步前可用 `-AllowCountDrift` 做功能复测，但不能把该开关长期当常规入口。
+- analytics 数量 `1002 → 1011` 的 +9 精确来自本批三组新测试：`ExplanationProviderProvenanceTest` 3 + `AiQueryTimeoutMappingTest` 3 + `AiControllerAuditStatusTest` 3。
 
-Codex Work 本批**暂不调用**。当前结果已经由 Code Agent 足够定位；按用户要求，只在核心安全/重大迁移/正式阶段验收等重要节点调用 Codex Work。
+### 第二批复测：`e0c7d91052773dd2183bb24fc48969ada2613af2`
+
+- 最小 provider 复测：`AiExplanationEndpointTest` 7/7 PASS，`providerUsed=mock-provider`；
+- default：analytics-server 1011（F=1/E=0/S=1）、mall 13/13、generator 110/110，总计 1134；
+- `ExplanationProviderProvenanceTest`、`AiQueryTimeoutMappingTest`、`AiControllerAuditStatusTest` 均 3/3 PASS；
+- 无新增失败，唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`；
+- 1011 已被连续两轮独立执行确认。`scripts/run-tests.ps1` 当前数量登记仍为 1002，需同步为 1011；同步前 `-AllowCountDrift` 只能作为临时复测工具，不能成为常规入口。
+
+Codex Work 这两批**暂不调用**。当前结果已经由 Code Agent 足够定位；按用户要求，只在核心安全/重大迁移/正式阶段验收等重要节点调用 Codex Work。
 
 ## 4. 批量验证触发点
 
