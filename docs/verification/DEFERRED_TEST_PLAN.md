@@ -259,6 +259,40 @@
 
 普通展示项不调用。阶段5整体页面验收或合并 main 前如需要对抗验证，再检查空白/非字符串版本、CSV 与页面不一致、旧快照缺版本等边界。
 
+### V-010 — S3-62 决策中心取消动作接线修复
+
+- **Status**：PENDING
+- **Implementation baseline**：`a1a2eaba30dabd82a093a994a01704d83f3e9586`
+- **Implementation commits**：`bf5900d`（生产接线修复）+ `a1a2eab`（developer tests）
+- **Area**：`web/src/views/Decisions.vue`、`web/tests/decisionCancelWiring.test.js`
+- **Risk**：低—中；修复既有按钮调用错函数，不改后端状态机、权限码或 API 形状。
+- **Blocks further development**：NO；正式决策闭环验收前需要真实 HTTP/E2E。
+
+#### Defect fact
+
+`Decisions.vue` 原模板在 `IN_PROGRESS` 行把“取消”按钮写成 `@click="cancel(d)"`；但脚本中的 `cancel` 来自 `useAnalysis`，语义是中止列表取数请求。真正的业务取消函数 `cancelDecision(d)` 已存在且会调用 `api.decisionAction(d.id, 'cancel', { reason: '策略调整' })`，却没有被模板引用。因此点击“取消”不会走决策取消 API。
+
+#### Invariants
+
+1. `IN_PROGRESS` 的“取消”按钮必须调用 `cancelDecision(d)`；
+2. `cancelDecision` 仍通过既有 `api.decisionAction(id, 'cancel', body)`，成功后 `flush()` 刷新列表；
+3. `useAnalysis.cancel` 只用于 `onUnmounted(cancel)` 中止页面取数，不承担业务动作；
+4. 不改 `DecisionService` 状态机、不绕过权限、不新增取消状态；
+5. 本轮不声称真实后端取消请求已经 E2E 验证。
+
+#### Code Agent later
+
+在包含 `bf5900d` + `a1a2eab` 的精确 SHA 上执行：
+
+1. `cd web; npm run verify`；
+2. 确认新增 `decisionCancelWiring.test.js` 3 条全部通过；
+3. Vite production build 必须通过；
+4. 阶段6/7 E2E 时再用真实 `IN_PROGRESS` 决策验证点击“取消”确实产生 `POST /decisions/{id}/cancel` 并刷新状态。
+
+#### Codex Work later
+
+普通 UI 接线 bug 不调用。决策状态机正式验收属于高价值节点，届时再让 Codex Work 攻击越级状态、重复请求、并发取消/完成等边界。
+
 ## 3. 2026-09-17 独立执行结论
 
 ### 第一批：`080b8b0e1234416f1dc884bed4f1948e75464070`
