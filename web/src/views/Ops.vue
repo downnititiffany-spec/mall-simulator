@@ -111,8 +111,8 @@
       <div class="chart-title">
         流水线实例（幂等键 / 尝试次数 / 目标快照，溯源链路）
         <button style="float:right;font-size:12px;padding:3px 10px"
-                :disabled="!exportable" @click="exportRuns">
-          {{ exportable ? '导出流水线 CSV' : '导出（' + statusText + '）' }}
+                :disabled="!pipelineExportable" @click="exportRuns">
+          {{ pipelineExportable ? '导出流水线 CSV' : '导出（当前无可导出流水线数据）' }}
         </button>
       </div>
       <table v-if="pipelineTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
@@ -151,7 +151,9 @@
       <div class="chart-box">
         <div class="chart-title">
           AI 问答审计（ai_query_history）
-          <button style="float:right;font-size:12px;padding:3px 10px" @click="exportAudit('ai')">导出 CSV</button>
+          <button style="float:right;font-size:12px;padding:3px 10px" :disabled="!aiHistoryExportable" @click="exportAudit('ai')">
+            {{ aiHistoryExportable ? '导出 CSV' : '导出（当前无可导出问答审计）' }}
+          </button>
         </div>
         <table v-if="aiHistoryTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead><tr style="text-align:left;color:#6b7280">
@@ -181,7 +183,9 @@
       <div class="chart-box">
         <div class="chart-title">
           模型调用审计（ai_call_log）
-          <button style="float:right;font-size:12px;padding:3px 10px" @click="exportAudit('calls')">导出 CSV</button>
+          <button style="float:right;font-size:12px;padding:3px 10px" :disabled="!aiCallExportable" @click="exportAudit('calls')">
+            {{ aiCallExportable ? '导出 CSV' : '导出（当前无可导出调用审计）' }}
+          </button>
         </div>
         <table v-if="aiCallTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead><tr style="text-align:left;color:#6b7280">
@@ -293,7 +297,7 @@ async function fetchOps(params, signal) {
 }
 
 const analysis = useAnalysis({ fetcher: fetchOps, rowKeys: NON_ANALYSIS_ROW_KEYS.opsAudit })
-const { data, state, loading, error, exportable, statusText, exportContext, load, cancel } = analysis
+const { data, state, loading, error, exportable, exportContext, load, cancel } = analysis
 
 // 快照指标单独取（点「查看指标」时）：/metrics/overview 支持快照号，且返回裸数组
 const metricAnalysis = useAnalysis({ fetcher: fetchMetrics, rowKeys: NON_ANALYSIS_ROW_KEYS.opsMetrics })
@@ -374,6 +378,9 @@ const aiHistoryTable = computed(() => toTable(mapAiHistoryRows(data.value.aiHist
 const aiCallTable = computed(() => toTable(mapAiCallRows(data.value.aiCalls), COLUMNS.opsAiCalls))
 const aiHistoryRows = computed(() => mapAiHistoryRows(data.value.aiHistory))
 const aiCallRows = computed(() => mapAiCallRows(data.value.aiCalls))
+const pipelineExportable = computed(() => exportable.value && pipelineTable.value.rows.length > 0)
+const aiHistoryExportable = computed(() => exportable.value && aiHistoryRows.value.length > 0)
+const aiCallExportable = computed(() => exportable.value && aiCallRows.value.length > 0)
 const metricStateText = computed(() => (metricState.value === 'empty' ? '暂无数据' : metricState.value === 'stale' ? '数据更新中' : metricState.value === 'error' ? '失败' : '加载中'))
 const metricEmptyText = computed(() =>
   selected.value ? `快照 ${selected.value} 没有指标数据，或该快照不属于当前 runtime profile` : '请先选择快照'
@@ -394,6 +401,7 @@ async function loadAll() {
 }
 
 function exportMetrics() {
+  if (!metricExportable.value) return
   const generatedAt = new Date().toISOString()
   // 行数据取映射后的对象，列头与表格完全一致，避免导出与页面两套字段
   exportAnalysisCsv({
@@ -406,7 +414,7 @@ function exportMetrics() {
 }
 
 function exportRuns() {
-  if (!exportable.value) return
+  if (!pipelineExportable.value) return
   const generatedAt = new Date().toISOString()
   exportAnalysisCsv({
     baseName: 'pipeline-runs',
@@ -418,8 +426,9 @@ function exportRuns() {
 }
 
 function exportAudit(which) {
-  const generatedAt = new Date().toISOString()
   const isAi = which === 'ai'
+  if (isAi ? !aiHistoryExportable.value : !aiCallExportable.value) return
+  const generatedAt = new Date().toISOString()
   const columns = isAi ? COLUMNS.opsAiHistory : COLUMNS.opsAiCalls
   const rows = isAi ? aiHistoryRows.value : aiCallRows.value
   exportAnalysisCsv({
@@ -432,6 +441,7 @@ function exportAudit(which) {
 }
 
 async function createUser() {
+  if (busy.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -446,6 +456,7 @@ async function createUser() {
 }
 
 async function toggle(u, enable) {
+  if (busy.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -461,6 +472,7 @@ async function toggle(u, enable) {
 }
 
 async function resetPwd(u) {
+  if (busy.value) return
   const pwd = prompt(`重置 ${u.username} 的密码（至少 6 位）`, '')
   if (!pwd) return
   busy.value = true
