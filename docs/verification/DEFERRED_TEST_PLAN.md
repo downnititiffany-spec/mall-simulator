@@ -162,7 +162,102 @@ npm run verify
 - `AiAssistant.vue` 展示、`draftAnchor` 和最终 `buildDraftBody` 是否使用同一判据；
 - 是否还有其它工具函数对 ID 做隐式 `String()` / `trim()` 后进入决策请求。
 
-## 3. 批量验证触发点
+### V-005 — S3-57 Explanation provider provenance
+
+- **Status**：PENDING
+- **Implementation baseline**：`a134df88aa9d31ef8b26fc00f4785a5cbc5c2362`
+- **Implementation commits**：`97ed8ac`（ExplanationResult/调用链来源）+ `d7780d4`（控制器直读 providerUsed）+ `a134df8`（developer tests）
+- **Area**：`analytics-server/ai-decision`、`analytics-server/platform-app/AiController`
+- **Risk**：中；加性响应字段与来源事实修正，不改 LLM 安全策略。
+- **Blocks further development**：NO；但阶段6宣称“providerUsed 真实可审计”前必须验证。
+
+#### Invariants
+
+1. 模型输出实际被采用时 `providerUsed = llmProvider.providerName()`；
+2. provider 不可用、调用异常、数值守卫拒绝而最终回退模板时 `providerUsed = template`；
+3. 模型输出即使与模板文本逐字相同，也不能被误判为 template；
+4. 控制器不得再通过文本比较反推 provider。
+
+#### Code Agent later
+
+在批量目标 SHA 上执行 JDK17 default 测试，至少确认：
+
+```powershell
+pwsh scripts/run-tests.ps1 -Suite default
+```
+
+并确认 `ExplanationProviderProvenanceTest` 被收集且通过。
+
+#### Codex Work later
+
+重点攻击：模型文本与模板完全相同、providerName 为空/null、模型超时后模板成功、数值守卫 REJECTED、`/ai/explanations` 与 `/ai/analyses` 两种响应是否一致携带真实来源，以及是否仍存在其它“比较文本推 provider”的路径。
+
+### V-006 — S3-58 AI Text-to-SQL timeout classification
+
+- **Status**：PENDING
+- **Implementation baseline**：`0c5df95ad835ba214ec1788cd76fba85d8ab7120`
+- **Implementation commits**：`054408e`（EXECUTE/服务层）+ `bc3dac5`（EXPLAIN）+ `0c5df95`（developer tests）
+- **Area**：`analytics-server/ai-decision`
+- **Risk**：中；错误分类修正，不改 SQL 允许/拒绝规则。
+- **Blocks further development**：NO；但进入真实 MySQL 慢查询/超时验收前必须验证。
+
+#### Invariants
+
+1. `SQLTimeoutException` → `FAILED + QUERY_TIMEOUT`；
+2. Spring `QueryTimeoutException`（EXPLAIN）→ `QUERY_TIMEOUT`，不得冒充 `SQL_COST_TOO_HIGH`；
+3. 普通 EXPLAIN 异常仍 fail-closed 为 `SQL_COST_TOO_HIGH`；
+4. 超时同样写 `ai_query_history`，errors 含稳定码；
+5. 本轮不声称 `/api/v1/ai/queries` 已改 HTTP 504。
+
+#### Code Agent later
+
+JDK17 default 全量，并确认 `AiQueryTimeoutMappingTest` 三条被收集通过。若有可控 3307 慢查询环境，可额外做真实 JDBC timeout 证据；无环境则明确未测。
+
+#### Codex Work later
+
+重点攻击：EXPLAIN 超时与执行超时是否都保留审计、超时异常被多层包装时是否漏映射、超时发生在 LLM 阶段是否被误标数据库 QUERY_TIMEOUT、`REPAIRED` 路径超时后状态是否仍错误保留成功语义、generic RuntimeException 是否被错误改成 timeout。
+
+### V-007 — S3-59 AI operation audit failure classification
+
+- **Status**：PENDING
+- **Implementation baseline**：`eecd6839ad21ae12f2dbc5018a009741e929f025`
+- **Implementation commits**：`a6e3639`（生产逻辑）+ `eecd683`（developer tests）
+- **Area**：`analytics-server/platform-app/AiController`
+- **Risk**：低—中；只修 operation audit 成败分类。
+- **Blocks further development**：NO；但审计验收前必须验证。
+
+#### Invariants
+
+1. `FAILED`、`REJECTED`、`ERROR*`、`FAIL*` 均走 `audit.failure`；
+2. null QueryResult / null status fail-closed；
+3. `EXECUTED`、`REPAIRED`、`GENERATED` 不误记失败；
+4. QueryResult 状态机本身不被本项改写。
+
+#### Code Agent later
+
+JDK17 default 全量，并确认 `AiControllerAuditStatusTest` 被收集通过；若已有 operation audit 集成测试，额外验证 `FAILED` 真正写入 failure 结果而非只测 helper。
+
+#### Codex Work later
+
+重点攻击：大小写/复合状态、未来状态名包含 `FAIL` 的误判风险、`CANCELLED`/`TIMEOUT` 等潜在新状态、null question 导致 resourceId、audit.failure 自身异常的行为，以及查询失败后 `/ai/queries` 是否仍可能在其它路径写第二条 success。
+
+## 3. 当前批量验证点（2026-09-17）
+
+本轮已经从纯前端展示/锚点连续推进到 **AI provider provenance + Text-to-SQL 超时错误链 + operation audit 成败语义**。PENDING 队列已覆盖前端与 JDK17 后端两棵树，继续叠加会明显增加失败定位成本，因此按 D-009 触发一次批量验证点。
+
+**批量测试时不要逐条 checkout 旧 SHA**：先 checkout 本文件所在的最终 handoff SHA，再统一执行当前树；各条 `Implementation baseline` 仅用于定位引入点。Code Agent 必须回报最终被测完整 SHA。
+
+建议顺序：
+
+```text
+1. web: npm run verify
+2. analytics/server: pwsh scripts/run-tests.ps1 -Suite default
+3. Codex Work 对 V-003 ~ V-007 做对抗验证（V-002 也检查统一入口）
+```
+
+未运行 3307 / 真模型 / 真实浏览器时必须明确写“未测”，不得由 unit/default 结果推断通过。
+
+## 4. 批量验证触发点
 
 满足以下任一条件时优先集中跑本文件中的 PENDING 队列：
 
@@ -173,7 +268,7 @@ npm run verify
 5. PENDING 队列已经长到继续开发会明显增加失败定位成本；
 6. 某个后续工作直接依赖一个 PENDING 项的运行行为。
 
-## 4. 独立验证结果登记格式
+## 5. 独立验证结果登记格式
 
 每个验证者返回：
 
