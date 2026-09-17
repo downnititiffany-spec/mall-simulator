@@ -35,6 +35,11 @@ import java.util.regex.Pattern;
  *       否则判为越界 → 回退模板结果（§19.3「LLM 失败 → 模板结果」）；</li>
  *   <li><b>问数解释（保留路径）</b>：针对一次真实执行结果做证据约束解释，供 /ai/queries 使用。</li>
  * </ul>
+ *
+ * <p>S3-57：{@link ExplanationResult#providerUsed()} 直接记录**最终被采用结果**的真实来源。
+ * 模型调用失败、数值守卫拒绝或 provider 不可用时，即使期间发生过网络调用，最终结果仍标记
+ * {@code template}；只有模型输出实际被采用时才记录 {@link LlmProvider#providerName()}。
+ * 控制器不得再通过“文本是否变化”反推 provider。</p>
  */
 @Slf4j
 @Service
@@ -57,10 +62,14 @@ public class ExplanationService {
                            String evidenceId, String templateVersion) {
     }
 
+    /**
+     * @param providerUsed 最终被采用解释的来源；模板/规则回退固定为 {@code template}，
+     *                     模型结果被实际采用时为 {@link LlmProvider#providerName()}。
+     */
     public record ExplanationResult(String summary, List<Map<String, Object>> facts,
                                     List<Map<String, Object>> possibleCauses,
                                     List<Map<String, Object>> suggestions,
-                                    List<String> limitations, Evidence evidence) {
+                                    List<String> limitations, String providerUsed, Evidence evidence) {
     }
 
     /**
@@ -111,6 +120,7 @@ public class ExplanationService {
                     toList(parsed.path("possibleCauses")),
                     toList(parsed.path("suggestions")),
                     toStringList(parsed.path("limitations")),
+                    llmProvider.providerName(),
                     new Evidence(snapshotId, question, query.sql(), query.tables(),
                             query.rowsReturned(), query.elapsedMs(), timeRange, PROMPT_VERSION, null, null));
         } catch (Exception e) {
@@ -141,6 +151,7 @@ public class ExplanationService {
         }
         return new ExplanationResult(summary, facts, List.of(), List.of(),
                 List.of("规则回退模式：未调用大模型，解释为模板摘要"),
+                EvidenceTemplates.Narrative.PROVIDER_TEMPLATE,
                 new Evidence(snapshotId, question, query.sql(), query.tables(),
                         query.rowsReturned(), query.elapsedMs(), timeRange, PROMPT_VERSION, null, null));
     }
@@ -156,12 +167,14 @@ public class ExplanationService {
     public ExplanationResult explain(EvidencePackage pkg, String question) {
         EvidenceTemplates.Narrative narrative = EvidenceTemplates.render(pkg);
         String summary = narrative.summary();
+        String providerUsed = EvidenceTemplates.Narrative.PROVIDER_TEMPLATE;
         List<String> limitations = new ArrayList<>(narrative.limitations());
 
         if (llmProvider.healthCheck()) {
             String rewritten = rewriteSummary(pkg, question, narrative);
             if (rewritten != null) {
                 summary = rewritten;
+                providerUsed = llmProvider.providerName();
             } else {
                 limitations.add("模型改写未通过数值校验，摘要回退固定模板（数值仍来自证据包）");
             }
@@ -169,11 +182,8 @@ public class ExplanationService {
             limitations.add("未调用大模型：结论完全来自固定模板");
         }
 
-        Map<String, List<String>> sections = new LinkedHashMap<>();
-        narrative.sections().forEach(s -> sections.put(s.title(), s.lines()));
-
         return new ExplanationResult(summary, evidenceFacts(pkg), anomalyCauses(pkg),
-                actionSuggestions(narrative), limitations,
+                actionSuggestions(narrative), limitations, providerUsed,
                 new Evidence(pkg.snapshotId(), question, null,
                         pkg.lineage() == null ? List.of() : pkg.lineage().mysqlTables(),
                         pkg.facts().size(), 0L, periodText(pkg), pkg.definitionVersion(),
