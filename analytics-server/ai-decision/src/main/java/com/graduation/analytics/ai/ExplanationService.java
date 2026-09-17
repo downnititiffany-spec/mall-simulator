@@ -40,6 +40,10 @@ import java.util.regex.Pattern;
  * 模型调用失败、数值守卫拒绝或 provider 不可用时，即使期间发生过网络调用，最终结果仍标记
  * {@code template}；只有模型输出实际被采用时才记录 {@link LlmProvider#providerName()}。
  * 控制器不得再通过“文本是否变化”反推 provider。</p>
+ *
+ * <p>S3-60：模板回退的 {@code limitations} 必须忠实描述**真实回退原因**。provider 超时/限流/网络/
+ * 鉴权/格式故障不得再伪装成“数值校验失败”；已经尝试过模型调用的问数解释也不得声称“未调用大模型”。
+ * 对外只暴露稳定的原因类别，不回显 provider 原始异常消息。</p>
  */
 @Slf4j
 @Service
@@ -72,6 +76,21 @@ public class ExplanationService {
                                     List<String> limitations, String providerUsed, Evidence evidence) {
     }
 
+    /** 内部改写结果：成功时带摘要；失败时只带可安全展示的稳定回退说明。 */
+    private record RewriteResult(String summary, String fallbackLimitation) {
+        private static RewriteResult accepted(String summary) {
+            return new RewriteResult(summary, null);
+        }
+
+        private static RewriteResult fallback(String limitation) {
+            return new RewriteResult(null, limitation);
+        }
+
+        private boolean accepted() {
+            return summary != null;
+        }
+    }
+
     /**
      * 对一次已执行查询生成证据解释。
      */
@@ -91,7 +110,8 @@ public class ExplanationService {
                 ? query.rows().subList(0, 200) : query.rows();
 
         if (!llmProvider.healthCheck()) {
-            return ruleBased(query, question, snapshotId, timeRange);
+            return ruleBased(query, question, snapshotId, timeRange,
+                    "规则回退模式：模型服务不可用，未调用大模型");
         }
 
         String prompt = """
@@ -127,13 +147,14 @@ public class ExplanationService {
             long elapsed = System.currentTimeMillis() - start;
             logCall("explanation", elapsed, "FAILED", e.getMessage());
             log.warn("explanation failed, fallback to rule-based: {}", e.getMessage());
-            return ruleBased(query, question, snapshotId, timeRange);
+            return ruleBased(query, question, snapshotId, timeRange,
+                    "规则回退模式：" + providerFailureLabel(e) + "，已回退模板摘要");
         }
     }
 
-    /** 规则化摘要（无 LLM 时的证据链兜底，§3.5.5） */
+    /** 规则化摘要（无 LLM 或 LLM 失败时的证据链兜底，§3.5.5） */
     private ExplanationResult ruleBased(TextToSqlService.QueryResult query, String question,
-                                        String snapshotId, String timeRange) {
+                                        String snapshotId, String timeRange, String limitation) {
         String summary;
         if (query.rows().isEmpty()) {
             summary = "当前时间范围无数据，不编造结论。";
@@ -150,7 +171,7 @@ public class ExplanationService {
             facts.add(f);
         }
         return new ExplanationResult(summary, facts, List.of(), List.of(),
-                List.of("规则回退模式：未调用大模型，解释为模板摘要"),
+                List.of(limitation),
                 EvidenceTemplates.Narrative.PROVIDER_TEMPLATE,
                 new Evidence(snapshotId, question, query.sql(), query.tables(),
                         query.rowsReturned(), query.elapsedMs(), timeRange, PROMPT_VERSION, null, null));
@@ -171,12 +192,12 @@ public class ExplanationService {
         List<String> limitations = new ArrayList<>(narrative.limitations());
 
         if (llmProvider.healthCheck()) {
-            String rewritten = rewriteSummary(pkg, question, narrative);
-            if (rewritten != null) {
-                summary = rewritten;
+            RewriteResult rewrite = rewriteSummary(pkg, question, narrative);
+            if (rewrite.accepted()) {
+                summary = rewrite.summary();
                 providerUsed = llmProvider.providerName();
             } else {
-                limitations.add("模型改写未通过数值校验，摘要回退固定模板（数值仍来自证据包）");
+                limitations.add(rewrite.fallbackLimitation());
             }
         } else {
             limitations.add("未调用大模型：结论完全来自固定模板");
@@ -198,10 +219,10 @@ public class ExplanationService {
     }
 
     /**
-     * 模型只改写摘要：返回 null 表示不可用/越界/失败（调用方回退模板）。
+     * 模型只改写摘要：成功返回摘要；失败返回可安全展示的稳定原因，调用方统一回退模板。
      * 数值守卫：改写字串中出现的每个数字都必须能在证据包叙述里找到（日期、计数、指标值都算）。
      */
-    private String rewriteSummary(EvidencePackage pkg, String question, EvidenceTemplates.Narrative narrative) {
+    private RewriteResult rewriteSummary(EvidencePackage pkg, String question, EvidenceTemplates.Narrative narrative) {
         String prompt = """
                 你是电商经营分析助手。下面是**已经算好并带证据引用**的分析结论，请只做措辞改写：
                 1) 不得新增、删除、修改任何数字；不得引入结论中没有的指标或事实；
@@ -218,22 +239,42 @@ public class ExplanationService {
             String candidate = content == null ? "" : content.trim().replaceAll("\\s+", " ");
             if (candidate.isEmpty() || candidate.length() > SUMMARY_MAX_CHARS) {
                 logCall("explanation_evidence", elapsed, "REJECTED", "SUMMARY_LENGTH_GUARD", PROMPT_VERSION_EVIDENCE);
-                return null;
+                return RewriteResult.fallback(
+                        "模型改写不符合摘要格式/长度约束，摘要回退固定模板（数值仍来自证据包）");
             }
             List<String> violations = numberViolations(candidate, narrative.toText());
             if (!violations.isEmpty()) {
                 logCall("explanation_evidence", elapsed, "REJECTED",
                         "SUMMARY_NUMBER_GUARD:" + violations, PROMPT_VERSION_EVIDENCE);
-                return null;
+                return RewriteResult.fallback(
+                        "模型改写未通过数值校验，摘要回退固定模板（数值仍来自证据包）");
             }
             logCall("explanation_evidence", elapsed, "OK", null, PROMPT_VERSION_EVIDENCE);
-            return candidate;
+            return RewriteResult.accepted(candidate);
         } catch (Exception e) {
             logCall("explanation_evidence", System.currentTimeMillis() - start, "FAILED",
                     e.getMessage(), PROMPT_VERSION_EVIDENCE);
             log.warn("evidence explanation rewrite failed, fallback to template: {}", e.getMessage());
-            return null;
+            return RewriteResult.fallback(
+                    providerFailureLabel(e) + "，摘要回退固定模板（数值仍来自证据包）");
         }
+    }
+
+    /**
+     * 把 provider 稳定故障类型映射成可安全展示的原因；不回显原始异常 message，避免把供应商细节/凭据带到响应。
+     */
+    private static String providerFailureLabel(Exception e) {
+        if (e instanceof LlmProvider.LlmException llmException) {
+            return switch (llmException.type()) {
+                case "TIMEOUT" -> "模型调用超时";
+                case "RATE_LIMITED" -> "模型服务限流";
+                case "NETWORK" -> "模型网络调用失败";
+                case "AUTH" -> "模型服务鉴权失败";
+                case "FORMAT" -> "模型返回格式不可用";
+                default -> "模型调用失败";
+            };
+        }
+        return "模型调用失败";
     }
 
     /** 返回候选摘要里「证据包叙述中找不到」的数字（空 = 通过） */
