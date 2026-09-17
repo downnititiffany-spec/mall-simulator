@@ -1,32 +1,41 @@
 # Current Verification Batch
 
-> 状态：CLOSED
-> 当前没有等待 Code Agent 执行的批次。总控按批量延迟验证继续累计低风险改动；只有达到功能簇、阶段收口、高风险边界或真实 E2E 前置点时才重新置为 `READY`。
+> 状态：READY
+> 已达到下一次功能簇级批量验证节点。用户只需把 `VERIFY_CURRENT_BATCH` 转发给 Code Agent；Code Agent 按永久计划一次执行整批测试，不修代码。
 
-## Last closed batch
+## Current batch
 
-- **Batch ID**：`BATCH-K-WEB-CONSISTENCY-HARDENING`
-- **Tested commit**：`bd7226b8e11e661b2b10a2cd37ab84eb7da98ddf`
-- **Verdict**：`PASS`
-- **Accepted result**：`docs/verification/results/BATCH-K-WEB-CONSISTENCY-HARDENING-RESULT.md`
-- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-K-WEB-CONSISTENCY-HARDENING-RESULT.md`
-- **Raw result commit**：`c5d06389c6d630e5376d8736f9d7996af2e2996a`
+- **Batch ID**：`BATCH-L-WEB-INTERACTION-CONSISTENCY`
+- **Tested commit**：`395eead89d78d0a40665f2b985002371943f5eb0`
+- **Branch context**：`feature/v3-development`
+- **Accepted predecessor**：`BATCH-K-WEB-CONSISTENCY-HARDENING` / `bd7226b8e11e661b2b10a2cd37ab84eb7da98ddf` / PASS
+- **Permanent plan**：`docs/verification/batches/BATCH-L-WEB-INTERACTION-CONSISTENCY-PLAN.md`
+- **Expected accepted result**：`docs/verification/results/BATCH-L-WEB-INTERACTION-CONSISTENCY-RESULT.md`
+- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-L-WEB-INTERACTION-CONSISTENCY-RESULT.md`
 
-## Accepted evidence
+## Scope summary
 
-- Targeted suites：**22/22 PASS**；
-- Web full gate：**261/261 PASS**，failed/cancelled/skipped = 0；
-- Expected 261 confirmed：YES，zero unexplained count drift；
-- Vite 5.4.21 production build：PASS，672 modules，2.71s；
-- Plan §7 semantic checks：10/10 satisfied；
-- Test workspace before/after：clean，Code Agent 未修改开发分支或测试对象。
+This batch verifies the next accumulated low-risk Web interaction consistency cluster:
+
+- Ops admin create/toggle/reset-password handler-level `busy` reentry guards;
+- Ops metrics export handler-level guard;
+- Ops pipeline / AI audit export eligibility split by actual non-empty export subset, with matching UI + handler fail-closed;
+- AI Assistant draft-create reentry guard;
+- AI Assistant mutual exclusion between decision-draft creation and starting/refilling a new question interaction;
+- regression of explicit AI-query cancellation and shared CSV freshness guard.
+
+No backend API, DB/Flyway, auth/security, AI SQL, decision state-machine semantics, 3307, or Spark/Hive/Flume E2E changes are part of this batch.
+
+## Execution rule
+
+Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name, do not modify source/tests/docs, and do not repair failures during verification.
+
+Required targeted suites total **21/21**. Required full gate is `cd web && npm run verify` with expected **271/271** tests: accepted Batch K was 261/261 and this batch adds 10 new tests while keeping the existing `aiAskCancellation` count unchanged.
 
 ## Acceptance boundary
 
-本批证明 Node unit/source-invariant tests 与 Vite production build 下的 Web 一致性加固：同快照组合/回声拒绝、RFM primary publisher 保留、导出 freshness/空子集 fail-closed、Decision 写动作 busy 重入守卫，以及既有 RFM 观察期与 matrix 属主回归。
+A PASS here means Node unit/source-invariant tests and Vite production build are green for the exact tested SHA. It does not elevate real browser timing, real HTTP races, admin permission/persistence, decision state-machine/DB behavior, AI provider/Text-to-SQL runtime, 3307, or Spark/Hive/Flume E2E to verified status.
 
-本批**不**提升真实浏览器交互、真实 HTTP 竞态、后端 decision 状态机/数据库写入、3307、Spark/Hive/Flume E2E 或真实数据库快照内容为已验收。
+## User action
 
-## Next execution rule
-
-当前不要运行 `VERIFY_CURRENT_BATCH`。总控继续开发并累计多个相关工作项；到达下一次真正的批量测试点后，再写新的 Batch ID、精确 tested SHA、永久 plan 与结果路径，并切换为 `READY`。
+`VERIFY_CURRENT_BATCH`
