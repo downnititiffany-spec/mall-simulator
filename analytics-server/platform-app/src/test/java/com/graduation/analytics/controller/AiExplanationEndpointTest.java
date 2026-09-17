@@ -136,18 +136,19 @@ class AiExplanationEndpointTest {
     }
 
     @Test
-    @DisplayName("模型可用且改写通过数值守卫 → providerUsed=llm")
+    @DisplayName("模型可用且改写通过数值守卫 → providerUsed=真实 provider 名称")
     void providerUsedIsLlmWhenRewriteAccepted() {
         CurrentUserHolder.set(new CurrentUser(1L, "admin", "admin"));
         when(builder.build(any())).thenReturn(EvidenceTestFixtures.packageOf(EvidenceTestFixtures.SNAPSHOT));
         when(llm.healthCheck()).thenReturn(true);
+        when(llm.providerName()).thenReturn("mock-provider");
         when(llm.complete(any())).thenReturn(new LlmProvider.AiResponse(
-                "本期经营平稳，未命中候选异常。", 12, 6, "mock"));
+                "本期经营平稳，未命中候选异常。", 12, 6, "mock-provider"));
 
         AiController.ExplanationNarrative narrative = controller.explain(
                 new AiController.ExplainReq(null, null, "整体情况如何"), request()).data().narrative();
 
-        assertEquals("llm", narrative.providerUsed());
+        assertEquals("mock-provider", narrative.providerUsed());
         assertEquals("本期经营平稳，未命中候选异常。", narrative.summary());
         assertEquals(6, narrative.sections().size(), "段落仍来自固定模板");
     }
