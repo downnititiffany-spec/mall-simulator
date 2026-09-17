@@ -6,7 +6,7 @@
       <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
       <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:#9ca3af">
-        分层口径版本：{{ ruleVersion || '未提供' }}；只展示聚合结果，不展示个人敏感明细
+        分层口径版本：{{ ruleVersion || '未提供' }}；观察期：{{ periodText }}；只展示聚合结果，不展示个人敏感明细
       </span>
     </div>
 
@@ -36,7 +36,7 @@
       </table>
       <div class="table-hint">
         rfmMatrix 是后端维护的八类全量矩阵；页面不再自行追加另一套固定类目。若后端未提供 matrix，则仅展示 rfmSegments 的真实返回行，不伪造 0 人分组。
-        平均最近购买天数在聚合列缺失时按“—”展示，后端不造数、前端也不补零。
+        平均最近购买天数在聚合列缺失时按“—”展示，后端不造数、前端也不补零。观察期只消费后端 periodStart/periodEnd；任一缺失时不猜窗口。
       </div>
     </div>
 
@@ -116,6 +116,8 @@ async function fetchRfm(params, signal) {
       rfmSegments: rfm.data.rfmSegments || [],
       rfmMatrix: rfm.data.rfmMatrix || [],
       ruleVersion: rfm.data.ruleVersion || null,
+      periodStart: rfm.data.periodStart || null,
+      periodEnd: rfm.data.periodEnd || null,
       lifecycle: usersData.lifecycle || [],
       preference: usersData.preference || []
     }
@@ -125,11 +127,19 @@ async function fetchRfm(params, signal) {
 const analysis = useAnalysis({
   fetcher: fetchRfm,
   rowKeys: [...ENDPOINT_ROW_KEYS.rfm, 'lifecycle', 'preference'],
-  defaults: { rfmSegments: [], rfmMatrix: [], ruleVersion: null, lifecycle: [], preference: [] }
+  defaults: {
+    rfmSegments: [], rfmMatrix: [], ruleVersion: null, periodStart: null, periodEnd: null,
+    lifecycle: [], preference: []
+  }
 })
 const { data, context, state, error, loading, exportable, exportContext } = analysis
 
 const ruleVersion = computed(() => data.value.ruleVersion || (context.value && context.value.definitionVersion) || null)
+const periodStart = computed(() => data.value.periodStart || null)
+const periodEnd = computed(() => data.value.periodEnd || null)
+const periodText = computed(() => (
+  periodStart.value && periodEnd.value ? `${periodStart.value} 至 ${periodEnd.value}` : '未提供'
+))
 
 // §3.6 的八类补 0 口径由后端 RfmService.rfmMatrix 唯一维护；前端只搬运。
 // 若旧响应缺少 rfmMatrix，则降级为 rfmSegments 的真实行，不再把另一套固定类目追加进去制造额外 0 行。
@@ -162,8 +172,15 @@ function doExport() {
   exportAnalysisCsv({
     baseName: 'rfm-segments',
     context: exportContext.value,
-    headers: ['分层', '用户数', '消费额(元)', '平均最近购买(天)'],
-    rows: segmentRows.value.map((s) => [s.valueGroup, s.users, formatNumber(s.amount, 2, ''), s.avgRecencyDays === null ? '' : s.avgRecencyDays])
+    headers: ['分层', '用户数', '消费额(元)', '平均最近购买(天)', '观察期开始', '观察期结束'],
+    rows: segmentRows.value.map((s) => [
+      s.valueGroup,
+      s.users,
+      formatNumber(s.amount, 2, ''),
+      s.avgRecencyDays === null ? '' : s.avgRecencyDays,
+      periodStart.value || '',
+      periodEnd.value || ''
+    ])
   })
 }
 
