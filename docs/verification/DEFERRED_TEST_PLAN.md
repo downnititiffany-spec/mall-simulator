@@ -196,6 +196,38 @@
 
 `AiControllerAuditStatusTest` 3/3 PASS。测试环境未应用 V14，日志明确显示 `operation_audit_log` 不存在，因此当前只证明 helper/controller 分类；真实审计表写入留到数据库集成验收。
 
+### V-008 — S3-60 AI explanation 回退原因准确性
+
+- **Status**：PENDING
+- **Implementation baseline**：`0a77c21a21c3ccb782c75ca97f5c453f7a916f93`
+- **Implementation commits**：`8ab0058`（生产逻辑）+ `97d6e83`（developer tests）+ `0a77c21`（Decision Log D-018）
+- **Area**：`analytics-server/ai-decision/ExplanationService`、`ExplanationEvidenceTest`
+- **Risk**：低—中；只纠正模板回退原因与内部分类，不新增公开字段，不改 Provider 调用次数、SQL、权限或快照策略。
+- **Blocks further development**：NO；后续若要正式声称“AI 失败原因可解释”前必须完成独立验证。
+
+#### Invariants
+
+1. Provider 超时/限流/网络/鉴权/格式失败不得显示为“数值校验失败”；
+2. 空摘要/超长摘要属于摘要形状/长度守卫，不属于数值守卫；
+3. 数值越界仍由原 `SUMMARY_NUMBER_GUARD` 拒绝并明确说明数值校验；
+4. 已经真实尝试模型调用后失败，问数解释不得声称“未调用大模型”；
+5. 所有回退最终仍 `providerUsed=template`，成功采用模型时仍记录真实 provider；
+6. limitation 只暴露稳定原因类别，不回显 Provider 原始异常 message/响应体/URL/凭据/堆栈。
+
+#### Code Agent later
+
+在精确 SHA（至少包含 `8ab0058` + `97d6e83`）上执行：
+
+1. `ExplanationEvidenceTest`；预期当前源码定义 7 条用例全部通过；
+2. `ExplanationProviderProvenanceTest`；必须继续 3/3 PASS，证明 D-014 未回归；
+3. default 全量。以独立实测计数为准；按本轮代码增量推导 analytics-server **预计**从已确认 1011 增至 1013，但在 Code Agent 真跑前这只是预计值，不写成已验证事实。
+
+当前 `scripts/run-tests.ps1` 的 analytics 数量登记仍是 1002。因为 S3-60 又新增 2 条 developer tests，本轮暂不先把登记硬改成 1011；等 Code Agent 独立确认最终计数后，一次同步到最终稳定值，再恢复不带 `-AllowCountDrift` 的常规数量门禁。F/E 判据始终不放宽。
+
+#### Codex Work later
+
+普通错误说明修正不调用。阶段6正式安全/错误链验收时，如需要对抗验证，可攻击异常类型伪造、未知类型、原始 provider message 泄漏、fallback providerUsed 漂移等边界。
+
 ## 3. 2026-09-17 独立执行结论
 
 ### 第一批：`080b8b0e1234416f1dc884bed4f1948e75464070`
@@ -213,7 +245,7 @@
 - default：analytics-server 1011（F=1/E=0/S=1）、mall 13/13、generator 110/110，总计 1134；
 - `ExplanationProviderProvenanceTest`、`AiQueryTimeoutMappingTest`、`AiControllerAuditStatusTest` 均 3/3 PASS；
 - 无新增失败，唯一失败仍是既有环境红 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`；
-- 1011 已被连续两轮独立执行确认。`scripts/run-tests.ps1` 当前数量登记仍为 1002，需同步为 1011；同步前 `-AllowCountDrift` 只能作为临时复测工具，不能成为常规入口。
+- 1011 已被连续两轮独立执行确认。`scripts/run-tests.ps1` 当前数量登记仍为 1002；由于 V-008 又新增测试，数量登记等 V-008 独立计数后一次同步。`-AllowCountDrift` 只能作为临时复测工具，不能成为常规入口。
 
 Codex Work 这两批**暂不调用**。当前结果已经由 Code Agent 足够定位；按用户要求，只在核心安全/重大迁移/正式阶段验收等重要节点调用 Codex Work。
 
