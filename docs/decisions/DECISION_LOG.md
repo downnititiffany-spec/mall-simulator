@@ -124,3 +124,39 @@
 - 无真实锚点时仍 fail-closed，不构造决策草稿请求。
 
 **Implementation commits**：`617642c`（S3-55 上下文严格读取）+ `776bc74`（S3-56 草稿锚点去二次归一化）+ `88c715e`（developer tests）。
+
+### D-014 — Explanation provider provenance 由调用链直接记录
+
+**Decision**：`ExplanationResult` 新增 `providerUsed`，其值由 `ExplanationService` 在**最终结果被采用时**直接记录。模型输出实际被采用时记录 `LlmProvider.providerName()`；provider 不可用、调用失败、数值守卫拒绝等最终回退模板的情况一律记录 `template`。`AiController` 只搬运该字段，不再通过“摘要文本是否等于模板”反推来源。
+
+**Reason**：正式设计 §13.1 明确指出“通过文本是否变化推断 providerUsed”不可靠；模型完全可能输出与模板逐字相同的文本，而模型调用失败后模板成功也不能记成真实模型成功。
+
+**Boundary**：这是加性响应字段与来源事实修正，不改变模型提示词、数值守卫、EvidencePackage、权限或 SQL 安全策略。
+
+**Implementation commits**：`97ed8ac`（ExplanationService）+ `d7780d4`（AiController）+ `a134df8`（developer tests）。
+
+### D-015 — AI Text-to-SQL 数据库超时统一使用 QUERY_TIMEOUT
+
+**Decision**：Text-to-SQL 的 `EXPLAIN` 与真实只读执行若发生数据库查询超时，统一使用已有平台稳定码 `QUERY_TIMEOUT`，状态记 `FAILED` 并写入 `ai_query_history`。`EXPLAIN` 的非超时故障仍按 `SQL_COST_TOO_HIGH` fail-closed；真正的成本超阈值语义不变。
+
+**Reason**：此前 `QueryCostGuard` 会把 Spring `QueryTimeoutException` 包装成 `SQL_COST_TOO_HIGH`，而 `SqlExecutor` 的 `SQLTimeoutException` 会落泛化 `FAILED` 且 `errorCode=null`，导致容量/超时故障与治理拒绝混淆。
+
+**Boundary**：本轮只统一 AI QueryResult/审计错误码，不宣称已把 `/api/v1/ai/queries` 改成 HTTP 504；该接口仍按既有“返回 QueryResult 状态”形状工作。全局非 AI 读接口的 504 映射保持不变。
+
+**Implementation commits**：`054408e`（TextToSqlService）+ `bc3dac5`（QueryCostGuard）+ `0c5df95`（developer tests）。
+
+### D-016 — AI operation audit 的 FAILED 必须记失败
+
+**Decision**：`AiController` 对 `operation_audit_log` 的问数成功/失败判据统一为：`REJECT*`、`ERROR*`、`FAIL*` 或 null 结果/状态均记 failure；`EXECUTED`、`REPAIRED`、`GENERATED` 等非失败状态记 success。
+
+**Reason**：旧实现只匹配 `REJECT`/`ERROR`，导致 `TextToSqlService` 的 `FAILED`（例如无 ACTIVE、只读源缺失、数据库超时）被错误写成 `audit.success`，与实际 QueryResult 和审计文案“拒绝/失败”自相矛盾。
+
+**Boundary**：只修审计分类，不改变 QueryResult 状态机或业务 API 返回形状。
+
+**Implementation commits**：`a6e3639`（生产逻辑）+ `eecd683`（developer tests）。
+
+### D-017 — Commit 主题时间戳以实时项目时钟为准
+
+**Decision**：D-010 的时间戳从本条起必须在每个提交前读取实时 `+08:00` 项目时钟，不再按连续操作耗时人工预估秒数。Git commit 元数据始终是最终权威时间。
+
+**Correction note**：本轮连续开发中 `d7780d4`、`054408e`、`bc3dac5`、`0c5df95` 的主题时间由人工顺延填写，可能与 GitHub commit 元数据相差数分钟；不重写共享历史。后续主题时间改用实时项目时钟，避免再次出现这种偏差。
