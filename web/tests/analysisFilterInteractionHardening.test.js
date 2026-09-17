@@ -8,6 +8,8 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const readView = (name) => fs.readFileSync(path.join(here, `../src/views/${name}.vue`), 'utf8')
 const behavior = readView('Behavior')
 const sales = readView('Sales')
+const overview = readView('Overview')
+const rfm = readView('Rfm')
 
 test('Behavior 日期输入在 loading 期间锁定，load handler 自身也拒绝重入', () => {
   assert.equal((behavior.match(/v-model="(?:from|to)" :disabled="loading"/g) || []).length, 2)
@@ -35,4 +37,34 @@ test('Sales load handler 在重置页码和请求前拒绝 loading 重入', () =
   assert.ok(guard >= 0, '缺少 loading handler guard')
   assert.ok(reset > guard, 'loading guard 必须早于页码重置')
   assert.ok(request > reset, '请求必须发生在页码重置之后')
+})
+
+test('Overview 日期输入与 load handler 在 loading 期间 fail-closed', () => {
+  assert.equal((overview.match(/v-model="(?:from|to)" :disabled="loading"/g) || []).length, 2)
+  assert.match(overview, /const load = \(\) => \{\s*if \(loading\.value\) return\s*return analysis\.load/)
+})
+
+test('Overview 指标 CSV 只在 cards 子集非空时允许导出', () => {
+  assert.match(overview, /const metricExportable = computed\(\(\) => exportable\.value && cards\.value\.length > 0\)/)
+  assert.match(overview, /:disabled="!metricExportable" @click="doExport"/)
+  assert.match(overview, /function doExport\(\) \{\s*if \(!metricExportable\.value\) return/)
+  assert.match(overview, /const rows = cards\.value\.map/)
+})
+
+test('RFM load handler 在清空降级错误与请求前拒绝 loading 重入', () => {
+  const block = rfm.match(/const load = \(\) => \{[\s\S]*?\n\}/)
+  assert.ok(block, '未找到 RFM load handler')
+  const guard = block[0].indexOf('if (loading.value) return')
+  const clearError = block[0].indexOf("usersError.value = ''")
+  const request = block[0].indexOf('analysis.load')
+  assert.ok(guard >= 0, '缺少 loading handler guard')
+  assert.ok(clearError > guard, 'loading guard 必须早于 usersError 清理')
+  assert.ok(request > clearError, '请求必须发生在错误清理之后')
+})
+
+test('RFM CSV 只在真实 segmentRows 子集非空时允许导出', () => {
+  assert.match(rfm, /const segmentExportable = computed\(\(\) => exportable\.value && segmentRows\.value\.length > 0\)/)
+  assert.match(rfm, /:disabled="!segmentExportable" @click="doExport"/)
+  assert.match(rfm, /function doExport\(\) \{\s*if \(!segmentExportable\.value\) return/)
+  assert.match(rfm, /rows: segmentRows\.value\.map/)
 })
