@@ -19,18 +19,36 @@ function functionBody(name, nextName) {
   return source.slice(actualStart, end)
 }
 
-test('admin 三类写动作在 prompt/API 前先拒绝 busy 重入', () => {
+test('admin 三类写动作在 prompt/API 前先拒绝 busy 或整页 loading 重入', () => {
   for (const [name, nextName, actionNeedle] of [
     ['createUser', 'toggle', 'api.adminCreateUser'],
     ['toggle', 'resetPwd', 'api.adminUserAction'],
     ['resetPwd', 'init', 'prompt(']
   ]) {
     const fn = functionBody(name, nextName)
-    const guardAt = fn.indexOf('if (busy.value) return')
+    const guardAt = fn.indexOf('if (busy.value || loading.value) return')
     const actionAt = fn.indexOf(actionNeedle)
-    assert.ok(guardAt >= 0, `${name} 必须有 busy 入口守卫`)
-    assert.ok(actionAt > guardAt, `${name} 的 prompt/API 必须位于 busy 守卫之后`)
+    assert.ok(guardAt >= 0, `${name} 必须有 busy/loading 入口守卫`)
+    assert.ok(actionAt > guardAt, `${name} 的 prompt/API 必须位于 busy/loading 守卫之后`)
   }
+})
+
+test('运维整页刷新 handler 在 loading 或 admin busy 时 fail-closed', () => {
+  const fn = functionBody('loadAll', 'exportMetrics')
+  const guardAt = fn.indexOf('if (loading.value || busy.value) return')
+  const clearAt = fn.indexOf("actionError.value = ''")
+  const loadAt = fn.indexOf('Promise.all([load({}), loadUsers()])')
+  assert.ok(guardAt >= 0)
+  assert.ok(clearAt > guardAt, '刷新守卫必须早于清理错误状态')
+  assert.ok(loadAt > clearAt, '请求必须发生在守卫之后')
+})
+
+test('刷新与 admin 写按钮共享 loading/busy UI 互斥', () => {
+  assert.match(source, /@click="loadAll" :disabled="loading \|\| busy"/)
+  assert.match(source, /loading \? '刷新中…' : \(busy \? '用户操作中…' : '刷新'\)/)
+  assert.match(source, /@click="createUser" :disabled="loading \|\| busy"/)
+  assert.match(source, /@click="resetPwd\(u\)" :disabled="loading \|\| busy"/)
+  assert.ok((source.match(/@click="toggle\(u, (?:false|true)\)" :disabled="loading \|\| busy"/g) || []).length >= 4)
 })
 
 test('快照指标导出 handler 自身检查 metricExportable', () => {
