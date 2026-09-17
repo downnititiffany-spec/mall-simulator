@@ -1,42 +1,43 @@
 # Current Verification Batch
 
-> 状态：CLOSED
-> 当前没有等待 Code Agent 的验证批次。Batch M 首轮因过时 characterization test 出现 `FAIL_NEW_REGRESSION`；R1 仅修正该测试守卫后已完成复测并 PASS。继续开发，直到下一次功能簇级批量验证节点再重新置 `READY`。
+> 状态：READY
+> Batch M-R1 已正式 PASS 并归档。当前又达到下一次功能簇级批量验证节点：Behavior / Sales / Overview / RFM 的 loading 交互锁与实际导出子集资格已统一收口。用户只需把 `VERIFY_CURRENT_BATCH` 转发给 Code Agent；Code Agent 按永久计划一次执行整批测试，不修代码。
 
-## Latest accepted batch
+## Current batch
 
-- **Batch ID**：`BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION`
-- **Verdict**：`PASS`
-- **Tested commit**：`7748caf8b2628bd47ed5075db62ec2cd26a42fe6`
+- **Batch ID**：`BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY`
+- **Tested commit**：`58411f92a8e5591c435f5597143896f4fadac020`
 - **Branch context**：`feature/v3-development`
-- **Accepted predecessor**：`BATCH-L-WEB-INTERACTION-CONSISTENCY` / `395eead89d78d0a40665f2b985002371943f5eb0` / PASS
-- **Permanent plan**：`docs/verification/batches/BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION-PLAN.md`
-- **Accepted result path**：`docs/verification/results/BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION-RESULT.md`
-- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION-RESULT.md`
-- **Raw result commit**：`6406880dd00ba13c769ba91a85a3a3a8b3464c35`
+- **Accepted predecessor**：`BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION` / `7748caf8b2628bd47ed5075db62ec2cd26a42fe6` / PASS
+- **Permanent plan**：`docs/verification/batches/BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY-PLAN.md`
+- **Expected accepted result**：`docs/verification/results/BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
+- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
 
-## Accepted evidence
+## Scope summary
 
-- Targeted suites：**33/33 PASS**。
-- Web full gate：**274/274 PASS**；failed/cancelled/skipped = **0/0/0**。
-- Vite 5.4.21 production build：**PASS**，672 modules transformed，built in 4.55s。
-- Workspace before/after：clean；Code Agent 未修源码、测试、文档或 Git 配置。
-- R1 相对失败批次 `61776daf52cfcd396325d7bbdf56e890f1731224` 仅修改 `web/tests/pipelineLocalBusinessDate.test.js`；`Pipeline.vue` / `Products.vue` 生产代码未回退。
-- 本地业务日语义仍为：先冻结 `requestedBusinessDate = businessDate.value`，再组装 `businessTime: requestedBusinessDate + 'T00:00:00'`；未重新引入 UTC `toISOString().slice(0,10)`。
+This batch verifies one coherent low-risk Web interaction cluster:
 
-## Failed attempt retained for audit
+- Behavior/Sales/Overview date inputs are locked while loading;
+- Behavior/Sales/Overview `load()` handlers reject loading reentry themselves;
+- Behavior funnel CSV is enabled only when the actual `stages` export subset is non-empty;
+- Overview metrics CSV is enabled only when the actual `cards` export subset is non-empty;
+- RFM refresh rejects loading reentry before mutating `usersError`;
+- RFM CSV is enabled only when actual `segmentRows` are non-empty;
+- button and handler predicates remain identical for each subset export;
+- existing RFM primary-publisher/fallback ownership and shared CSV freshness semantics remain regression-covered.
 
-- **Batch**：`BATCH-M-WEB-PIPELINE-PRODUCT-INTERACTION`
-- **Tested commit**：`61776daf52cfcd396325d7bbdf56e890f1731224`
-- **Verdict**：`FAIL_NEW_REGRESSION`
-- **Raw result commit**：`0c46b9c79ba82252ef1e8a961e9def0eb32fabba`
-- **Failure**：旧 `pipelineLocalBusinessDate.test.js` 仍绑定 `businessDate.value + 'T00:00:00'` 的旧源码文本；定向 28/28 通过，但 full gate 273/274，Vite build 因 `npm test` 失败未执行。
-- 原失败结果保持原样，不覆盖、不改写。
+No backend API, DB/Flyway, auth/security, AI SQL, decision state-machine semantics, 3307, or Spark/Hive/Flume behavior changes are part of this batch.
+
+## Execution rule
+
+Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name, do not modify source/tests/docs, and do not repair failures during verification.
+
+Required targeted suites total **30/30**. Required full gate is `cd web && npm run verify` with expected **282/282** tests: accepted Batch M-R1 was 274/274 and this batch adds exactly eight tests in `analysisFilterInteractionHardening.test.js`.
 
 ## Acceptance boundary
 
-本次 PASS 证明精确 SHA 上的 Node unit/source-invariant tests 与 Vite production build 为绿。它不证明真实浏览器时序、真实 HTTP race、实际 ingestion/pipeline 编排、后端幂等/状态机、数据库写入、3307、Spark/Hive/Flume E2E。
+A PASS proves Node unit/source-invariant tests and Vite production build for the exact tested SHA. It does not elevate real browser timing, real HTTP races, actual browser CSV download behavior, backend snapshot/runtime behavior, database writes, 3307, or Spark/Hive/Flume E2E to verified status.
 
 ## User action
 
-无需执行 `VERIFY_CURRENT_BATCH`。继续开发；下一次达到批量测试点时再更新本文件为 `READY`。
+`VERIFY_CURRENT_BATCH`
