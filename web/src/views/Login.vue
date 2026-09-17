@@ -5,11 +5,13 @@
       <div class="login-sub">请登录后进入运营看板</div>
       <div class="field">
         <label for="username">用户名</label>
-        <input id="username" v-model.trim="username" type="text" placeholder="请输入用户名" @keyup.enter="onSubmit" />
+        <input id="username" v-model.trim="username" type="text" placeholder="请输入用户名"
+               :disabled="loading" @keyup.enter="onSubmit" />
       </div>
       <div class="field">
         <label for="password">密码</label>
-        <input id="password" v-model.trim="password" type="password" placeholder="请输入密码" @keyup.enter="onSubmit" />
+        <input id="password" v-model.trim="password" type="password" placeholder="请输入密码"
+               :disabled="loading" @keyup.enter="onSubmit" />
       </div>
       <div v-if="error" class="login-error">{{ error }}</div>
       <button class="login-btn" :disabled="loading" @click="onSubmit">
