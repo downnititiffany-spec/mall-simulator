@@ -23,6 +23,7 @@
           <div class="label">{{ m.metricName || m.metricCode }}</div>
           <div class="value">{{ m.text }}<span class="unit">{{ m.unit }}</span></div>
           <div v-if="m.periodText" class="period">{{ m.periodText }}</div>
+          <div class="period">口径版本：{{ m.definitionVersionText }}</div>
           <div v-if="m.dictionaryMissing" class="period">{{ DICTIONARY_MISSING_NOTE }}</div>
         </div>
       </div>
@@ -115,6 +116,11 @@ const CARD_META = [
   { code: 'repeat_rate', name: '有效复购率', unit: '', percent: true }
 ]
 
+// S3-61：definitionVersion 只做后端字段展示，不补默认版本、不拼接 v 前缀。
+const definitionVersionText = (value) => (
+  value === null || value === undefined || value === '' ? '—' : String(value)
+)
+
 const cards = computed(() => {
   const list = Array.isArray(data.value.metrics) ? data.value.metrics : []
   const byCode = {}
@@ -130,7 +136,15 @@ const cards = computed(() => {
     const text = meta.percent
       ? formatPercent(m.value)
       : (meta.digits === 0 ? formatInteger(m.value) : formatNumber(m.value, meta.digits))
-    out.push({ metricCode: meta.code, metricName: meta.name || m.metricName, unit: m.unit || meta.unit, text, periodText: periodText(m.period), dictionaryMissing: dictionaryMissing(meta.code) })
+    out.push({
+      metricCode: meta.code,
+      metricName: meta.name || m.metricName,
+      unit: m.unit || meta.unit,
+      text,
+      periodText: periodText(m.period),
+      definitionVersionText: definitionVersionText(m.definitionVersion),
+      dictionaryMissing: dictionaryMissing(meta.code)
+    })
   }
   // 后端返回但不在固定清单内的指标也照实展示：量纲/展示名见 utils/metricDisplay.js（比例不显示成裸小数）
   for (const m of list) {
@@ -141,6 +155,7 @@ const cards = computed(() => {
       unit: m.unit || '',
       text: formatOutsideMetricValue(m.metricCode, m.value),
       periodText: periodText(m.period),
+      definitionVersionText: definitionVersionText(m.definitionVersion),
       dictionaryMissing: dictionaryMissing(m.metricCode)
     })
   }
@@ -165,11 +180,18 @@ const warningSummary = computed(() =>
 const load = () => analysis.load({ from: from.value, to: to.value })
 
 function doExport() {
-  const rows = cards.value.map((c) => [c.metricCode, c.metricName, c.text, c.unit, c.periodText || '—'])
+  const rows = cards.value.map((c) => [
+    c.metricCode,
+    c.metricName,
+    c.text,
+    c.unit,
+    c.periodText || '—',
+    c.definitionVersionText
+  ])
   exportAnalysisCsv({
     baseName: 'overview-metrics',
     context: exportContext.value,
-    headers: ['指标编码', '指标名称', '数值', '单位', '口径周期'],
+    headers: ['指标编码', '指标名称', '数值', '单位', '口径周期', '口径版本'],
     rows
   })
 }
