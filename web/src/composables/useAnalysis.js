@@ -48,7 +48,10 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [] }) {
       warnings: ctx.warnings || [],
       // S3-35：缺失告知随上下文一起给页横幅与导出件（csv.js 写「# 上下文缺失」）；
       // 统一信封接口没有该字段时为 null，横幅不显示、导出不写该行。
-      missingNotice: ctx.missingNotice || null
+      missingNotice: ctx.missingNotice || null,
+      // 下载层不能只信任按钮 disabled：把当前四态一起交给 exportCsv 做二次 fail-closed。
+      // 这样程序化调用 handler、快速刷新窗口或非统一信封页面也不会导出 stale/error/loading 数据。
+      viewState: state.value
     }
   })
 
