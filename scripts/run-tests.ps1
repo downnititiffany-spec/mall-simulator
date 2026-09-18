@@ -35,7 +35,6 @@
 # 「生产 Hive／Spark 集群已通过」——测试域与在产 Hive metastore 不等价（`P2TestSupport.scala:50-60` 自陈）。
 #
 # 不计入通过总数（总控 2026-09-15 裁决，转 backlog／另裁）：
-#   * `MetricAdsMySqlIT`、`MetricPublisherMySqlIT` → 后续测试完善 backlog（未纳入本入口）
 #   * `SourceRegistryMigrationMySqlIT` → DEV-004（结构性双必败，未修前不得纳入）
 #   * `SparkStageExecutorSmokeIT` → Spark 专项冒烟 backlog（真实 `spark-submit`，Windows 路径硬编码）
 #   * `AnalysisGoldenMySqlIT` → D 类历史黄金值只读复验，**永久排除** unified isolated-tests
@@ -853,7 +852,7 @@ $BaselineSpark = 308
 #   唯一红仍是既有环境 patrol（expected 43 / actual 0）。
 #   ⇒ baseline analytics-server **1016→1022**；这证明 L1 编排 fail-fast 矩阵，不证明真实 Spark 作业/集群失败模式。
 # ───────────────────────────────────────────────────────────────────────────
-$BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
+$BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 11 }
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)
@@ -897,9 +896,12 @@ if ($Suite -in @('isolated', 'all')) {
   }
   $pwdMall = [bool]$env:IT_GUARD_PASSWORD_MALL -or [bool]$env:IT_GUARD_PASSWORD
   $pwdGen = [bool]$env:IT_GUARD_PASSWORD_GENERATOR -or [bool]$env:IT_GUARD_PASSWORD
-  if (-not ($pwdMall -and $pwdGen)) {
-    Fail 5 ("缺隔离口令（mall={0} generator={1}）。本脚本不提供 -Password、不读 credref 文件。" -f `
-        $(if ($pwdMall) { 'OK' } else { '缺失' }), $(if ($pwdGen) { 'OK' } else { '缺失' }))
+  $pwdMeta = [bool]$env:V25_IT_META_PASSWORD
+  $pwdMetric = [bool]$env:V25_IT_METRIC_PUBLISH_PASSWORD
+  if (-not ($pwdMall -and $pwdGen -and $pwdMeta -and $pwdMetric)) {
+    Fail 5 ("缺隔离口令（mall={0} generator={1} analytics-meta={2} analytics-metric={3}）。本脚本不提供 -Password、不读 credref 文件。" -f `
+        $(if ($pwdMall) { 'OK' } else { '缺失' }), $(if ($pwdGen) { 'OK' } else { '缺失' }), `
+        $(if ($pwdMeta) { 'OK' } else { '缺失' }), $(if ($pwdMetric) { 'OK' } else { '缺失' }))
   }
 }
 
@@ -913,8 +915,8 @@ Write-Host ("  计数基线  : default analytics-server={0} / mall={1} / generat
     $BaselineDefault['analytics-server'], $BaselineDefault['mall-simulator'], $BaselineDefault['synthetic-data-generator'], `
     $BaselineSpark, $BaselineIsolated['mall'], $BaselineIsolated['generator'], $BaselineIsolated['analytics'], `
     $(if ($AllowCountDrift) { '（-AllowCountDrift：漂移不算失败）' } else { '' }))
-Write-Host '  不计入通过总数：MetricAdsMySqlIT / MetricPublisherMySqlIT（backlog）、SourceRegistryMigrationMySqlIT（DEV-004）、'
-Write-Host '                  SparkStageExecutorSmokeIT（spark 专项 backlog）、AnalysisGoldenMySqlIT（D 类，永久排除）、web 前端（范围外）'
+Write-Host '  不计入通过总数：SourceRegistryMigrationMySqlIT（DEV-004）、SparkStageExecutorSmokeIT（spark 专项 backlog）、'
+Write-Host '                  AnalysisGoldenMySqlIT（D 类，永久排除）、web 前端（范围外）'
 
 # ── 工具函数 ───────────────────────────────────────────────────────────────
 function Invoke-MavenRun {
@@ -1028,13 +1030,13 @@ function Invoke-DefaultSuite {
 
 # ── isolated 档 ────────────────────────────────────────────────────────────
 function Invoke-IsolatedSuite {
-  Write-Section 'isolated-tests：调度既有 scripts/run-isolated-tests.ps1（-Module all -Confirm）'
+  Write-Section 'isolated-tests：调度既有 scripts/run-isolated-tests.ps1（-Module all -IncludeAnalyticsWriteIts -Confirm）'
   Write-Host '  说明：不重实现 DEV-001/002/003a/003b 的任何隔离逻辑；本档只调度 + 复核计数。'
   # 隔离档走 JDK17（子进程自身还有 `if (-not $env:JAVA_HOME)` 兜底，这里显式给出，避免受 spark 档影响）
   $env:JAVA_HOME = $JdkDefault
   $isoMvnLogDir = Join-Path $LogDir 'isolated-mvn'
   $isoConsole = Join-Path $LogDir 'isolated-console.log'
-  $isoArgs = @('-NoProfile', '-File', $IsolatedScript, '-RunId', $RunId, '-Module', 'all', '-Confirm',
+  $isoArgs = @('-NoProfile', '-File', $IsolatedScript, '-RunId', $RunId, '-Module', 'all', '-IncludeAnalyticsWriteIts', '-Confirm',
     '-LogDir', $isoMvnLogDir, '-MavenCmd', $MavenCmd, '-MavenRepoLocal', $MavenRepoLocal)
   Write-Host ("  pwsh {0}" -f ($isoArgs -join ' '))
   Write-Host '  （口令经环境变量传入子进程；子进程自身门禁 1-6 原样生效）'
@@ -1042,7 +1044,7 @@ function Invoke-IsolatedSuite {
   $isoExit = $LASTEXITCODE
 
   $rows = @(); $total = 0; $bad = @()
-  $expectedMap = @{ mall = 30; generator = 19; analytics = 6 }
+  $expectedMap = @{ mall = 30; generator = 19; analytics = 11 }
   foreach ($n in @('mall', 'generator', 'analytics')) {
     $log = Join-Path $isoMvnLogDir ("isolated-{0}.log" -f $n)
     if (-not (Test-Path -LiteralPath $log)) {
@@ -1056,10 +1058,15 @@ function Invoke-IsolatedSuite {
     $cmp = Compare-Baseline -Label 'tests' -Actual $tot.tests -Expected $expectedMap[$n]
     $reqOk = $true; $reqNote = ''
     if ($n -eq 'analytics') {
-      # DEV-003b 零用例硬门禁的独立复核：被自动收集的隔离类必须真的出现
-      $hit = Select-String -LiteralPath $log -Pattern '-- in .*IsolationGuardMySqlIT' | Select-Object -Last 1
-      $reqOk = [bool]$hit
-      $reqNote = if ($hit) { 'IsolationGuardMySqlIT 已执行' } else { '✗ IsolationGuardMySqlIT 未执行' }
+      # DEV-003b/V-032 独立复核：三个已收编的真库 IT 类必须全部真实出现，少一个都算假绿。
+      $requiredClasses = @('IsolationGuardMySqlIT', 'MetricAdsMySqlIT', 'MetricPublisherMySqlIT')
+      $missingClasses = @()
+      foreach ($requiredClass in $requiredClasses) {
+        $hit = Select-String -LiteralPath $log -Pattern ('-- in .*' + [regex]::Escape($requiredClass)) | Select-Object -Last 1
+        if (-not $hit) { $missingClasses += $requiredClass }
+      }
+      $reqOk = ($missingClasses.Count -eq 0)
+      $reqNote = if ($reqOk) { '3 个 analytics IT 类均已执行' } else { '✗ 未执行：' + ($missingClasses -join ', ') }
       if ($tot.excluded) { $reqNote += ("；同 reactor 依赖构建不计入：" + $tot.excluded) }
     }
     $ok = ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and ($cmp -notmatch 'DRIFT') -and $reqOk
@@ -1077,7 +1084,7 @@ function Invoke-IsolatedSuite {
         $row.name, $row.tests, $row.failures, $row.errors, $row.skipped, $row.blocks, $row.cmp)
   }
   Write-Host ("  {0,-10} 合计 = {1}（基线 {2}）；runner exit={3}" -f 'isolated', $total, (($expectedMap.Values | Measure-Object -Sum).Sum), $isoExit)
-  Write-Host '  口径：mall 30 ＋ generator 19 ＋ metric-analysis IT 6 = 55；analytics 侧同 reactor 的 platform-common 90 为依赖构建，不计入隔离档。'
+  Write-Host '  口径：mall 30 ＋ generator 19 ＋ metric-analysis IT 11 = 60；analytics 11 = IsolationGuard 6 + MetricAds 2 + MetricPublisher 3；同 reactor 依赖构建不计入隔离档。'
   $code = 0
   if ($isoExit -ne 0) { $code = $isoExit } elseif ($bad.Count -gt 0) { $code = 7 }
   return [pscustomobject]@{ suite = 'isolated'; exit = $code; total = $total; rows = $rows; bad = $bad; childExit = $isoExit; console = $isoConsole }
@@ -1204,8 +1211,8 @@ foreach ($k in $suiteResults.Keys) {
   if (@($r.bad).Count -gt 0) { Write-Host ("            失败项：{0}" -f (@($r.bad) -join ', ')) }
 }
 Write-Host ''
-Write-Host '  不计入通过总数（总控 2026-09-15 裁决）：MetricAdsMySqlIT、MetricPublisherMySqlIT（backlog）；'
-Write-Host '    SourceRegistryMigrationMySqlIT（DEV-004）；SparkStageExecutorSmokeIT（spark 专项 backlog）；'
+Write-Host '  不计入通过总数（总控 2026-09-15 裁决）：SourceRegistryMigrationMySqlIT（DEV-004）；'
+Write-Host '    SparkStageExecutorSmokeIT（spark 专项 backlog）；'
 Write-Host '    AnalysisGoldenMySqlIT（D 类，永久排除 unified isolated-tests）；web 前端（整理阶段范围外）。'
 Write-Host ("  日志目录：{0}" -f $LogDir)
 
