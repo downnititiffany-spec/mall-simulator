@@ -57,6 +57,9 @@ git switch --detach 5f20c37784a4d28e3e452a9ea5aa75cd7ac3447e
 
 git rev-parse HEAD
 
+mvn -f .\mall-simulator\pom.xml -DskipTests package
+mvn -f .\synthetic-data-generator\pom.xml -DskipTests package
+
 pwsh -NoProfile -File .\scripts\stage7-producer-isolated.ps1 -RunId stage7q1_20260918_152245 -Confirm
 
 $BatchSR1Exit = $LASTEXITCODE
@@ -65,6 +68,9 @@ git switch feature/v3-development
 
 "BATCH_S_R1_EXIT=$BatchSR1Exit"
 ~~~
+
+两次 package 都必须在 detach 的 exact SHA 上成功后才能进入真跑；这用于保证 `target/*.jar`
+确实包含 `5f20c37` 的 Outbox 串行化修复，而不是沿用前一批次残留的旧可执行 JAR。
 
 ## 5. Next gate
 
