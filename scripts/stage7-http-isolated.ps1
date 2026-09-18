@@ -65,18 +65,19 @@ function Stop-OwnedProcessTree([int]$RootPid) {
   do {
     $changed = $false
     foreach ($p in $all) {
-      $pid = [int]$p.ProcessId
-      $ppid = [int]$p.ParentProcessId
-      if ($owned.Contains($ppid) -and -not $owned.Contains($pid)) {
-        [void]$owned.Add($pid)
+      # PowerShell 变量名大小写不敏感；$PID 是只读自动变量，不能使用 $pid 作为局部变量。
+      $processId = [int]$p.ProcessId
+      $parentProcessId = [int]$p.ParentProcessId
+      if ($owned.Contains($parentProcessId) -and -not $owned.Contains($processId)) {
+        [void]$owned.Add($processId)
         $changed = $true
       }
     }
   } while ($changed)
 
   $children = @($owned | Where-Object { $_ -ne $RootPid })
-  foreach ($pid in $children) {
-    Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+  foreach ($processId in $children) {
+    Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
   }
   Stop-Process -Id $RootPid -Force -ErrorAction SilentlyContinue
   return $children
