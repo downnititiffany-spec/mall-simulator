@@ -252,6 +252,16 @@
 - **边界**：只证明当前 Windows / `Local\` namespace 下的 abandoned owner 接管；不证明多用户/多会话 `Global\` 互斥、路径别名规范化、isolated/spark/all 并发、Windows PowerShell 5.1，也不证明两轮并发都能完成。
 - 零 3306/3307 操作；无生产代码、DDL、正式契约变更。
 
+### V-031 — Stage 7 真实 Spark smoke 启动前边界加固
+
+- **Implementation baseline**：`9c0556f`。
+- `SparkStageExecutorSmokeIT` 不再硬编码读取 `D:\\Develop_code\\GraduationProject` 的 Spark JAR / golden dataset；两者统一经测试侧唯一 `RepoRoot` 从**当前 worktree**解析，并显式断言仍位于该根下，避免“当前 Java + 旧 worktree Spark 产物”混成伪证据。
+- `spark-submit` 默认仍为既有 `D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd`，但可由 `-Dv25.spark.submit=<path>` 覆盖；启动前必须验证可执行文件真实存在。Windows 额外要求 `HADOOP_HOME` 非空且 `bin/winutils.exe` 存在，缺失时在启动任何 spark-submit 前 fail-fast。
+- JobResult 轮询新增进程状态短路：若 `LocalProcessSparkSubmitter.status(externalJobId)` 已为 `FAILED` / `CANCELLED`，立即携带子进程日志失败，不再把“进程早已死掉”误报成数分钟后的 JobResult 超时。
+- developer compile：`mvn -f analytics-server/pom.xml -pl warehouse-pipeline -am -DskipTests test-compile` **PASS**。
+- 当前机器真实触发：`SparkStageExecutorSmokeIT` 在约 3 秒内按预期 fail-fast，唯一失败为 `HADOOP_HOME` 未设置；常见本地开发目录未找到 `winutils.exe`。这证明**环境检查生效**，不构成真实 Spark PASS。
+- **Remaining / why PARTIAL**：补齐受信任的 Windows Hadoop 工具环境后，需重新构建当前 worktree 的 `spark-jobs` JAR 并真正执行 smoke，取得 spark-submit / ODL / golden dataset 行为证据；本项不涉及 3306/3307，不改变生产代码、DDL 或正式契约。
+
 ## 4. PARTIAL：后续阶段联调再补
 
 ### V-003 — AI summary 展示
