@@ -1,49 +1,71 @@
 # Current Verification Batch
 
-> 状态：CLOSED / PASS
-> Batch P 已正式接受。Sales / AI Draft / Pipeline 的在途交互锁与读写互斥已通过定向与全量 Web 门禁。
+> 状态：READY
+> Batch P 已正式 PASS 并归档，Web 基线为 307/307。当前进入 Stage 7 的第一道真实运行时门：先恢复并验证 3307 隔离运行能力，再进入真实 HTTP ingestion → pipeline 链。
 
-## Accepted batch
+## Current batch
 
-- **Batch ID**：`BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS`
-- **Tested commit**：`2f3e79f676e1b614fe9a57e71e7ecad68106a51f`
-- **Result**：PASS
+- **Batch ID**：`BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT`
+- **Exact code baseline**：`2f3e79f676e1b614fe9a57e71e7ecad68106a51f`
 - **Branch context**：`feature/v3-development`
-- **Permanent plan**：`docs/verification/batches/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-PLAN.md`
-- **Accepted result**：`docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`
-- **Raw result branch**：`verification-results`
-- **Raw result commit**：`4493bfa6818e9d3fb030616b55c4d6f345068cf4`
-- **Archived result commit**：`86ceda3764c2d11c25c3afc2192041c2fe7bcf00`
+- **Accepted predecessor**：`BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS` / `2f3e79f676e1b614fe9a57e71e7ecad68106a51f` / PASS
+- **Permanent plan**：`docs/verification/batches/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-PLAN.md`
+- **Expected result**：`docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
+- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
+- **RunId**：`stage7q_20260918_1100`
 
-## Verification summary
+## Why this batch exists
 
-- targeted suites: **41/41 PASS**;
-- full Web gate: **307/307 PASS**;
-- failed / cancelled / skipped: **0 / 0 / 0**;
-- Vite: **5.4.21**;
-- transformed modules: **672**;
-- production build: **PASS**, built in **2.90s**;
-- workspace clean before and after;
-- no repair performed during verification.
+The project is now crossing from source/unit/build hardening into Stage 7 runtime integration.
 
-## Accepted behavior boundary
+The repository already has governed isolation tooling:
+- `scripts/it-prepare-isolation.ps1`;
+- `scripts/run-tests.ps1 -Suite isolated`;
+- `scripts/run-isolated-tests.ps1`.
 
-The accepted SHA verifies:
+Before running the longer real HTTP/pipeline chain, Batch Q first proves that the current environment can safely create a fresh run-scoped target on **WSL MySQL 3307** and execute the current isolated integration lane.
 
-- Sales date-range reload cannot be interleaved with local sort/pagination mutations;
-- AI decision-draft editable fields remain visually consistent with the already-frozen payload while draft creation is in flight;
-- Pipeline manual refresh, trigger and retry actions share a `loading || busy` read/write exclusion boundary;
-- Pipeline successful writes still refresh internally through direct `load()` while their own busy flag is true;
-- prior AI ask cancellation/query-draft/history concurrency and Pipeline operation identity/date/context/retry semantics remain regression-covered.
+## Safety boundary
 
-PASS proves Node/source-invariant tests and Vite production build only. It does not claim real browser timing, real HTTP races, Pipeline backend execution/idempotency, AI decision-draft persistence/state-machine behavior, DB/3307, or Spark/Hive/Flume E2E.
+- **No writes to 3306.**
+- Never fall back from 3307 to 3306.
+- Fresh run-scoped databases/accounts only.
+- Root/admin use is allowed only inside the governed isolation-preparation script for 3307 object creation.
+- Restricted generated accounts are used by the tests.
+- No manual DROP/CREATE/GRANT outside the script.
+- No historical 3307 cleanup in this batch.
+- No source/test repair during verification.
 
-## Next state
+If 3307/runtime administration is unavailable, record `BLOCKED_ENV` and stop. That is an environment block, not permission to weaken guards.
 
-No verification batch is currently READY.
+## Expected runtime result
 
-The Web source/build baseline is now **307/307 PASS**. The next development priority shifts from broad Web interaction hardening toward Stage 7 real-chain readiness and integration evidence, while low-risk Web fixes may continue only when they directly protect that integration path.
+Current registered isolated baseline:
+
+- mall **30/30**
+- generator **19/19**
+- analytics **6/6**
+- total **55/55**
+- runner exit 0
+- `IsolationGuardMySqlIT` must actually execute
+- live guard facts must identify port 3307 / isolated instance
+- workspace clean before/after
+
+No Web 307/307 rerun is required in Batch Q; Batch P already accepted that source/build baseline.
+
+## Evidence boundary
+
+Batch Q PASS proves current real-MySQL-3307 isolation readiness only.
+
+It does not yet prove:
+- three-program HTTP E2E;
+- ingestion → pipeline → Spark → publish;
+- real Hive/HDFS;
+- browser E2E;
+- real LLM provider.
+
+Those are later Stage 7 gates.
 
 ## User action
 
-None.
+`VERIFY_CURRENT_BATCH`
