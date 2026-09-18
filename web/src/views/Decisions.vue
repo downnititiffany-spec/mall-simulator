@@ -7,7 +7,7 @@
     <div class="chart-box">
       <div class="chart-title">
         决策数据上下文
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="load" :disabled="loading">
+        <button style="float:right;font-size:12px;padding:3px 10px" @click="refresh" :disabled="loading || busy">
           {{ loading ? '刷新中…' : '刷新' }}
         </button>
       </div>
@@ -64,13 +64,13 @@
               <span v-else>—</span>
             </td>
             <td style="white-space:nowrap">
-              <button v-if="d.status === 'DRAFT'" @click="submitDecision(d)" :disabled="busy">提交审核</button>
-              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#16a34a" @click="approve(d)" :disabled="busy">批准</button>
-              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="rejectDecision(d)" :disabled="busy">驳回</button>
-              <button v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="busy">开始</button>
-              <button v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="busy">完成</button>
-              <button v-if="d.status === 'IN_PROGRESS'" style="background:#dc2626" @click="cancelDecision(d)" :disabled="busy">取消</button>
-              <button v-if="d.status === 'COMPLETED'" style="background:#7c3aed" @click="evaluate(d)" :disabled="busy">评价</button>
+              <button v-if="d.status === 'DRAFT'" @click="submitDecision(d)" :disabled="loading || busy">提交审核</button>
+              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#16a34a" @click="approve(d)" :disabled="loading || busy">批准</button>
+              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="rejectDecision(d)" :disabled="loading || busy">驳回</button>
+              <button v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="loading || busy">开始</button>
+              <button v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="loading || busy">完成</button>
+              <button v-if="d.status === 'IN_PROGRESS'" style="background:#dc2626" @click="cancelDecision(d)" :disabled="loading || busy">取消</button>
+              <button v-if="d.status === 'COMPLETED'" style="background:#7c3aed" @click="evaluate(d)" :disabled="loading || busy">评价</button>
             </td>
           </tr>
         </tbody>
@@ -154,6 +154,11 @@ const statusColor = (s) => {
   return map[s] || '#111827'
 }
 
+function refresh() {
+  if (loading.value || busy.value) return
+  return load({})
+}
+
 async function flush() {
   await load({})
 }
@@ -171,7 +176,7 @@ function exportDecisions() {
 }
 
 async function act(d, action) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -226,7 +231,7 @@ function requiredDueDate() {
 }
 
 async function submitDecision(d) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   actionError.value = ''
   const currentOwner = d && d.owner && d.owner !== '—' ? String(d.owner).trim() : ''
   const owner = requiredApprovalText('负责人（提交审核前必填）', '负责人不能为空', currentOwner)
@@ -243,7 +248,7 @@ async function submitDecision(d) {
 }
 
 async function approve(d) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   actionError.value = ''
   const owner = requiredApprovalText('负责人（必填，例如：运营-小李）', '负责人不能为空')
   if (!owner) return
@@ -261,7 +266,7 @@ async function approve(d) {
 }
 
 async function rejectDecision(d) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   const reason = requiredReason('驳回')
   if (!reason) return
   busy.value = true
@@ -277,7 +282,7 @@ async function rejectDecision(d) {
 }
 
 async function cancelDecision(d) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   const reason = requiredReason('取消')
   if (!reason) return
   busy.value = true
@@ -293,7 +298,7 @@ async function cancelDecision(d) {
 }
 
 async function evaluate(d) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -309,9 +314,7 @@ async function evaluate(d) {
   }
 }
 
-onMounted(() => {
-  load({})
-})
+onMounted(refresh)
 
 onUnmounted(() => {
   decisionFetchSeq += 1
