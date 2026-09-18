@@ -1,7 +1,7 @@
 # Current Verification Batch
 
-> 状态：READY
-> Batch P 已正式 PASS 并归档，Web 基线为 307/307。当前进入 Stage 7 的第一道真实运行时门：先恢复并验证 3307 隔离运行能力，再进入真实 HTTP ingestion → pipeline 链。
+> 状态：BLOCKED_ENV
+> Batch Q 已执行并由总控复核为环境阻塞；在 3307 管理员认证恢复并完成 Q-R1 之前，不开放真实 HTTP ingestion → pipeline 链。
 
 ## Current batch
 
@@ -12,7 +12,10 @@
 - **Permanent plan**：`docs/verification/batches/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-PLAN.md`
 - **Expected result**：`docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
 - **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
+- **Raw result commit**：`2c32a45fedfba65ab7c5510b1662631b2d0adce2`
+- **Accepted controller review**：`docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
 - **RunId**：`stage7q_20260918_1100`
+- **Overall**：`BLOCKED_ENV`
 
 ## Why this batch exists
 
@@ -66,6 +69,12 @@ It does not yet prove:
 
 Those are later Stage 7 gates.
 
-## User action
+## Controller review / current blocker
 
-`VERIFY_CURRENT_BATCH`
+- 原始执行在真实 preparation 前发现 3307 不可用，未运行 isolated 55 条，因此不能 PASS。
+- 后续总控复查已确认本机仍有既有 MySQL 8.0.41 binary 与独立 datadir，且 3307 可被诊断性启动；原始报告中“server/datadir 不存在”属于较早时点的环境观察，不再作为当前权威根因。
+- 当前治理脚本的实际阻塞点是：启动 coding-tools-mcp 的进程环境中 `V25IT_ADMIN_PWD` 未设置，root TCP 免密认证被正确拒绝。
+- 不允许把管理员密码写进 Git/命令日志，也不允许回退到 3306。
+- 当前开发 HEAD 已因不依赖 3307 的并行测试加固前进到 `0f773220ad6a29d4b839e52d29b5b5fb6124d94b`；该提交不是本 Batch Q 的被测基线。
+
+环境恢复后，不改写本历史批次；创建 `BATCH-Q-R1`，固定届时最新基线重新验证 3307 isolated 55/55。
