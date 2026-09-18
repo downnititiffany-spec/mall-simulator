@@ -181,6 +181,8 @@ class GeneratorBoundarySourcePolicyTest {
                 .contains("changeType='adjust'")
                 .contains("http://127.0.0.1:8092/api/v1/targets")
                 .contains("http://127.0.0.1:8092/api/v1/generation-runs")
+                .contains("Wait-Get 'http://127.0.0.1:8092/api/v1/scenarios' 120")
+                .contains("generator 启动进程提前退出")
                 .contains("--mode=MALL_API")
                 .contains("operation-journal.jsonl")
                 .contains("$artifactResponse | ForEach-Object { $_ }")

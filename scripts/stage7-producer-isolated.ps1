@@ -188,7 +188,12 @@ try {
   $env:GENERATOR_LOG_FILE = $generatorLog
   [Environment]::SetEnvironmentVariable($tokenRef,$mallToken,'Process')
   $genProc = Start-Process -FilePath 'java' -ArgumentList @('-Dfile.encoding=UTF-8','-jar',$genJar) -WorkingDirectory $root -RedirectStandardOutput "$generatorLog.stdout" -RedirectStandardError "$generatorLog.stderr" -PassThru
-  if (-not (Wait-Get 'http://127.0.0.1:8092/api/v1/scenarios')) { throw "generator 未就绪；日志：$generatorLog" }
+  if (-not (Wait-Get 'http://127.0.0.1:8092/api/v1/scenarios' 120)) {
+    if ($genProc.HasExited) {
+      throw "generator 启动进程提前退出 exit=$($genProc.ExitCode)；日志：$generatorLog"
+    }
+    throw "generator 60s 内未就绪；日志：$generatorLog"
+  }
 
   Write-Host '[3/9] 创建并实测 REFERENCE_MALL_HTTP target ...'
   $targetBody = @{
