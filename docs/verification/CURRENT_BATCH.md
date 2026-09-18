@@ -1,51 +1,62 @@
 # Current Verification Batch
 
 > 状态：READY
-> Batch R / R1 已永久保留为 FAIL_TEST_HARNESS；当前唯一可执行批次是 R2。
+> Batch R / R1 / R2 均保留历史结果；当前唯一可执行批次是 R3。
 
 ## Current batch
 
-- **Batch ID**：`BATCH-R2-STAGE7-HTTP-INGESTION-PIPELINE`
-- **Exact source/test baseline**：`37dae94c8acc124cfb6aecb86f18241d3b6a21d0`
+- **Batch ID**：`BATCH-R3-STAGE7-HTTP-INGESTION-PIPELINE`
+- **Exact source/test baseline**：`2765701c13b607cc1426024d7d4c948c4b99c365`
 - **Branch context**：`feature/v3-development`
-- **Predecessor**：`BATCH-R1-STAGE7-HTTP-INGESTION-PIPELINE` / FAIL_TEST_HARNESS
-- **Permanent plan**：`docs/verification/batches/BATCH-R2-STAGE7-HTTP-INGESTION-PIPELINE-PLAN.md`
+- **Predecessor**：`BATCH-R2-STAGE7-HTTP-INGESTION-PIPELINE` / FAIL_TEST_FIXTURE
+- **Permanent plan**：`docs/verification/batches/BATCH-R3-STAGE7-HTTP-INGESTION-PIPELINE-PLAN.md`
 - **Historical R result**：`docs/verification/results/BATCH-R-STAGE7-HTTP-INGESTION-PIPELINE-RESULT.md`
 - **Historical R1 result**：`docs/verification/results/BATCH-R1-STAGE7-HTTP-INGESTION-PIPELINE-RESULT.md`
+- **Historical R2 result**：`docs/verification/results/BATCH-R2-STAGE7-HTTP-INGESTION-PIPELINE-RESULT.md`
 - **RunId**：`stage7q1_20260918_152245`
 - **Overall**：`READY`
 
-## Why R2 exists
+## Why R3 exists
 
-R1 confirmed the attempt-scoped landing fix by consuming a fresh 55-row input
-(51 accepted + 4 quarantined, `noNewData=false`), but its Pipeline POST still used the same fixed
-`Idempotency-Key` as Batch R. Production correctly returned historical `runId=1` and did not re-execute Spark.
+R2 proved the fresh attempt-scoped Spark chain through ADS:
 
-Corrective SHA `37dae94` makes Pipeline idempotency and `sourceDataVersion` attempt-scoped.
+- runtime profile PASS;
+- ingestion fresh;
+- INIT_SCHEMA / LOAD_ODS / BUILD_DWD / BUILD_DWS / BUILD_ADS all SUCCESS;
+- QUALITY_CHECK blocked only `EVENT_ID_UNIQUE` with one duplicate.
+
+The original 55-line golden intentionally contains that duplicate as a negative DWD/quality fixture. V3.0 `12.4 requires the historical 0.0005 threshold to remain unchanged and requires positive/negative fixtures to be separated.
+
+Corrective SHA `2765701` therefore introduces a separate 50-line positive fixture instead of weakening the quality gate.
 
 ## Scope
 
-`8091 platform → HTTP login → runtime profile test/activate → fresh ingestion → fresh pipeline`
+`8091 platform → login → runtime profile test/activate → fresh positive ingestion → fresh pipeline → quality → publish`
 
-R2 must return a newly created Pipeline run for the current attempt and exercise the current attempt's Derby/Spark path.
+Default input is:
+
+`tests/golden-dataset/events/golden-20260901-positive.jsonl`
+
+The original 55-line golden remains unchanged for negative verification.
 
 ## Safety boundary
 
 - no 3306 writes/fallback;
-- only Q-R1 run-scoped 3307 meta/metric databases;
-- secrets only from current process environment;
-- no password CLI args or echo;
+- only Q-R1 run-scoped 3307 analytics databases;
+- analytics secrets only from current process environment;
+- fresh attempt root / fresh Pipeline idempotency key;
 - 8091 must be free;
-- only harness-owned platform PID may be stopped;
-- no Fake executor / skipped Spark check.
+- only harness-owned Java PID may be stopped;
+- no quality threshold/severity relaxation.
 
 ## PASS
 
-- applicable runtime-profile checks PASS;
-- ingestion `recordCount>0` and `noNewData=false`;
-- Pipeline run is fresh for this attempt;
-- Pipeline reaches `SUCCESS`;
+- ingestion = 50 accepted, 0 quarantine, noNewData=false;
+- all Spark stages through BUILD_ADS SUCCESS;
+- QUALITY_CHECK PASS;
+- PUBLISH_METRIC SUCCESS;
+- Pipeline SUCCESS;
 - harness exit 0;
-- latest evidence `outcome=PASS`;
+- evidence outcome=PASS;
 - no 3306 fallback.
 
