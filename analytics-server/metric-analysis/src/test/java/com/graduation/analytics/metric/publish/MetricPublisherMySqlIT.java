@@ -77,6 +77,7 @@ class MetricPublisherMySqlIT {
         }
     }
 
+    private static JdbcTemplate meta;
     private static JdbcTemplate publish;
     private static JdbcTemplate read;
     private static MetricAdsWriter writer;
@@ -96,14 +97,18 @@ class MetricPublisherMySqlIT {
         mapper = new ObjectMapper();
         // 键名不带 v25.it. 前缀：TestIsolationGuard.requiredProperty 内部会先查系统属性
         // -Dv25.it.<key>，再查隔离档案文件，两处都没有才拒绝（无正式目标兜底）。
-        DataSource publishDs = dataSource("metric.publish.username", "metric.publish.password");
-        DataSource readDs = dataSource("metric.read.username", "metric.read.password");
+        DataSource metaDs = dataSource(context.metaDb(), "meta.username", "meta.password");
+        DataSource publishDs = dataSource(context.metricDb(), "metric.publish.username", "metric.publish.password");
+        DataSource readDs = dataSource(context.metricDb(), "metric.read.username", "metric.read.password");
 
+        LiveFacts metaFacts = TestIsolationGuard.verifyBeforeWrite(context, metaDs, context.metaDb());
         LiveFacts publishFacts = TestIsolationGuard.verifyBeforeWrite(context, publishDs, context.metricDb());
         LiveFacts readFacts = TestIsolationGuard.verifyBeforeWrite(context, readDs, context.metricDb());
+        System.out.println("[MetricPublisherMySqlIT] meta 连接事实：" + metaFacts.redactedSummary());
         System.out.println("[MetricPublisherMySqlIT] publish 连接事实：" + publishFacts.redactedSummary());
         System.out.println("[MetricPublisherMySqlIT] read 连接事实：" + readFacts.redactedSummary());
 
+        meta = new JdbcTemplate(metaDs);
         publish = new JdbcTemplate(publishDs);
         read = new JdbcTemplate(readDs);
         writer = new MetricAdsWriter(publish);
@@ -408,13 +413,13 @@ class MetricPublisherMySqlIT {
     /** 登记本 run 自己的 runtime_profile 行（不使用可复用的固定 id）。 */
     private static long registerOwnProfile() {
         String profileCode = "v25it-" + context.testRunId();
-        publish.update("INSERT INTO runtime_profile (profile_code, profile_name, type, status, landing_uri, "
+        meta.update("INSERT INTO runtime_profile (profile_code, profile_name, type, status, landing_uri, "
                         + "spark_master, metric_store_type, timezone, version, credential_ref) "
                         + "VALUES (?,?,?,?,?,?,?,?,?,?) "
                         + "ON DUPLICATE KEY UPDATE profile_name = VALUES(profile_name), updated_at = CURRENT_TIMESTAMP(3)",
                 profileCode, "V25-S01 隔离测试档案 " + context.testRunId(), "LOCAL", "ACTIVE", context.hdfsRoot() + "/landing",
                 "local[1]", "MYSQL", "Asia/Shanghai", 1, context.credentialsRef());
-        Long id = publish.queryForObject("SELECT id FROM runtime_profile WHERE profile_code = ?", Long.class, profileCode);
+        Long id = meta.queryForObject("SELECT id FROM runtime_profile WHERE profile_code = ?", Long.class, profileCode);
         assertThat(id).as("本次运行必须有自己的 runtime_profile 行").isNotNull();
         System.out.println("[MetricPublisherMySqlIT] 本次登记档案 id=" + id + " profile_code=" + profileCode);
         return id;
@@ -425,7 +430,7 @@ class MetricPublisherMySqlIT {
         for (String sid : List.of(sidOk, sidBad)) {
             safeDeleteSnapshot(sid);
         }
-        int profiles = publish.update("DELETE FROM runtime_profile WHERE id = ? AND profile_code = ?",
+        int profiles = meta.update("DELETE FROM runtime_profile WHERE id = ? AND profile_code = ?",
                 profileId, "v25it-" + context.testRunId());
         System.out.println("[MetricPublisherMySqlIT] cleanup runtime_profile 行数=" + profiles + " id=" + profileId);
     }
@@ -454,10 +459,10 @@ class MetricPublisherMySqlIT {
                 + " metric_value_rows=" + values + " metric_snapshot_rows=" + snapshots);
     }
 
-    private static DataSource dataSource(String userProperty, String passwordProperty) {
+    private static DataSource dataSource(String database, String userProperty, String passwordProperty) {
         DriverManagerDataSource ds = new DriverManagerDataSource();
         ds.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        ds.setUrl("jdbc:mysql://" + requiredProperty("mysql.host") + "/" + context.metricDb()
+        ds.setUrl("jdbc:mysql://" + requiredProperty("mysql.host") + "/" + database
                 + "?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai");
         ds.setUsername(requiredProperty(userProperty));
         ds.setPassword(requiredProperty(passwordProperty));
