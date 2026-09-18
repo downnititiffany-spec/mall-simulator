@@ -1,76 +1,81 @@
 # Current Verification Batch
 
-> 状态：PASS
-> 历史 Batch Q 保持 `BLOCKED_ENV`；新的 Q-R1 已在真实 WSL MySQL 3307 上取得 **60/60 PASS**。Stage 7 的下一道真实 HTTP ingestion → pipeline 门可以进入单独验证，但本批本身不证明该链已通过。
+> 状态：READY
+> Batch R 是 Q-R1 60/60 PASS 后的下一道 Stage 7 真实门：run-scoped 3307 上的 HTTP ingestion → pipeline。
 
 ## Current batch
 
-- **Batch ID**：`BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT`
-- **Exact tested code baseline**：`9b2f18faf00872f364e26a9980b767854e96f9fa`
+- **Batch ID**：`BATCH-R-STAGE7-HTTP-INGESTION-PIPELINE`
+- **Exact source/test baseline**：`2714ffb801d08c7046a61da4652f086910a59183`
 - **Branch context**：`feature/v3-development`
-- **Accepted predecessor**：historical `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` / `BLOCKED_ENV`
-- **Permanent plan**：`docs/verification/batches/BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-PLAN.md`
-- **Accepted controller review**：`docs/verification/results/BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
+- **Accepted predecessor**：`BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` / PASS / 60/60
+- **Permanent plan**：`docs/verification/batches/BATCH-R-STAGE7-HTTP-INGESTION-PIPELINE-PLAN.md`
 - **RunId**：`stage7q1_20260918_152245`
-- **Overall**：`PASS`
-- **Post-verification baseline registration**：`a496434`
+- **Overall**：`READY`
 
-## Why this batch exists
+## Scope
 
-The project is now crossing from source/unit/build hardening into Stage 7 runtime integration.
+本批只验证 analytics platform 的最小真实 HTTP 链：
 
-The repository already has governed isolation tooling:
-- `scripts/it-prepare-isolation.ps1`;
-- `scripts/run-tests.ps1 -Suite isolated`;
-- `scripts/run-isolated-tests.ps1`.
+1. 在 `8091` 启动当前 platform JAR；
+2. JDBC 仅指向 RunId 派生的 3307 analytics meta / metric 双库；
+3. HTTP 登录；
+4. runtime profile 更新到 run-scoped landing / Spark 路径；
+5. runtime profile `test` + `activate`；
+6. 把冻结 golden dataset 作为本批独立 landing 输入；
+7. `POST /api/v1/ingestion/runs`；
+8. `POST /api/v1/pipeline-runs` 并轮询终态；
+9. 脱敏证据落在 `target/v25-it/<RunId>/http`。
 
-Before running the longer real HTTP/pipeline chain, Batch Q first proves that the current environment can safely create a fresh run-scoped target on **WSL MySQL 3307** and execute the current isolated integration lane.
+不启动 8090 模拟商城，不启动 8092 生成器。三程序 E2E 属后续独立门。
 
 ## Safety boundary
 
 - **No writes to 3306.**
-- Never fall back from 3307 to 3306.
-- Fresh run-scoped databases/accounts only.
-- Root/admin use is allowed only inside the governed isolation-preparation script for 3307 object creation.
-- Restricted generated accounts are used by the tests.
-- No manual DROP/CREATE/GRANT outside the script.
-- No historical 3307 cleanup in this batch.
-- No source/test repair during verification.
+- 不允许从 3307 回退 3306。
+- analytics meta / metric URL 都由 `scripts/stage7-http-isolated.ps1` 强制构造为 3307 run-scoped 库。
+- analytics 密码只读当前进程环境，不通过命令行参数，不回显。
+- 8091 已有监听则拒绝，防止误打其它实例。
+- 只停止本入口自己启动的 platform PID。
+- 不修改正式 runtime/profile/source 数据；本批所有 DB 写入只发生在 Q-R1 的 run-scoped 3307 双库。
 
-If 3307/runtime administration is unavailable, record `BLOCKED_ENV` and stop. That is an environment block, not permission to weaken guards.
+## Preflight evidence
 
-## Expected runtime result
+在置 READY 前已确认：
 
-Current registered isolated baseline after Q-R1:
+- HTTP harness DryRun exit 0，零连接/零启动；
+- MCP 无 analytics secrets 的真执行探针 exit 5，启动 Java 前 fail-closed；
+- `AnalyticsIsolationScriptsContractTest` **7/7 PASS**；
+- platform-app package BUILD SUCCESS；
+- default fresh：analytics **1033 MATCH**、mall **13 MATCH**、generator **110 MATCH**；
+  唯一红仍是既有 manifest patrol；
+- 3307 LISTENING；
+- 8091 FREE；
+- platform JAR / spark-jobs JAR PRESENT；
+- `spark-submit.cmd --version` exit 0；
+- `HADOOP_HOME` / `winutils.exe` 当前 MISSING。
 
-- mall **30/30**
-- generator **19/19**
-- analytics **11/11** = IsolationGuard 6 + MetricAds 2 + MetricPublisher 3
-- total **60/60**
-- runner exit 0
-- all three analytics IT classes must actually execute
-- live guard facts must identify port 3307 / isolated instance
-- workspace clean before/after
+最后一项必须由真实执行决定影响：如果 pipeline 的真实 Spark 子进程因此失败，按计划分类并保留证据；
+不得跳过 Spark check、伪造工具或改 Fake executor 换绿。
 
-No Web 307/307 rerun is required in Batch Q; Batch P already accepted that source/build baseline.
+## Exact execution
+
+命令及 SHA 切换纪律见永久计划 `5。执行必须来自仍持有
+`V25_IT_META_PASSWORD` / `V25_IT_METRIC_PUBLISH_PASSWORD` 的用户 PowerShell。
+
+## PASS criteria
+
+- runtime profile applicable checks 全通过并 activate；
+- ingestion `noNewData=false` 且 `recordCount>0`；
+- pipeline 终态 `SUCCESS`；
+- harness exit 0；
+- evidence `outcome=PASS`；
+- 无 3306 回退。
+
+若外部 Windows Spark/Hadoop 运行依赖缺失导致真实子进程无法执行，可判 `BLOCKED_ENV`；
+代码/API/契约自身失败则判 `FAIL`。
 
 ## Evidence boundary
 
-Batch Q PASS proves current real-MySQL-3307 isolation readiness only.
+本批不证明模拟商城/生成器三程序 E2E、Flume、REMOTE_CLUSTER、生产 Hive/HDFS、浏览器 E2E 或真实 LLM provider。
 
-It does not yet prove:
-- three-program HTTP E2E;
-- ingestion → pipeline → Spark → publish;
-- real Hive/HDFS;
-- browser E2E;
-- real LLM provider.
-
-Those are later Stage 7 gates.
-
-## Controller review / current status
-
-- Historical Batch Q remains unchanged as `BLOCKED_ENV`; its result file is still the authority for that earlier run.
-- Q-R1 recovered the 3307 environment without falling back to 3306 and completed governed run-scoped preparation.
-- Q-R1 real evidence: schema 1/1, mall 30/30, generator 19/19, analytics 11/11, total 60/60, all runner exits 0.
-- The connected MCP still intentionally filters the interactive shell's analytics secret environment variables. Therefore Q-R1 used two governed lower-level runner invocations against the same SHA/runId/instance; the controller then updated the top-level unified entrypoint in `a496434` so future isolated/all runs include the 11-test analytics lane automatically.
-- The next Stage 7 HTTP ingestion → pipeline chain is now eligible for its own batch; it is not included in Q-R1 PASS.
