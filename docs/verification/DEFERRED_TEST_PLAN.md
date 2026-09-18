@@ -270,7 +270,8 @@
 - 新增默认档结构守卫 `MetricMySqlItDatabaseOwnershipTest` **3/3 PASS**，防止以后把 `runtime_profile` 又写回 metric 连接；`metric-analysis` `test-compile` **BUILD SUCCESS**。
 - default 量数轮：analytics **1025 (F=1/E=0/S=1)**，相对旧 1022 **+3** 恰好来自新守卫（metric-analysis 97→100）；mall 13、generator 110 均 MATCH。基线 1022→1025 后 fresh 收口轮为 **1025 MATCH / 13 MATCH / 110 MATCH / 总计 1148 MATCH**；唯一失败仍是既有 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 / actual 0）。
 - **刻意未做**：未给两类 IT 加 `@Tag("it")`，未改变 isolated **55** 基线，未连接 3306/3307，未创建/迁移任何数据库。这样不会把尚未真跑的双库模型塞进标准门禁造成伪验收。
-- **Remaining / why PARTIAL**：第二层需要 runner 为同一 runId 创建 fresh metaDb + metricDb，分别使用仅对各自库有写权限的受限账号（`TestIsolationGuard` 会拒绝一个账号同时对两个库持写权限），并在测试前分别执行 `db/meta` 与 `db/metric` Flyway；之后才能加 `@Tag("it")`、纳入标准 isolated 并用 3307 fresh runId 真跑。当前管理员环境变量未进入 MCP，因此运行层保持 BLOCKED_ENV。
+- **配置入口补强 `31d5ed5`**：`TestIsolationGuard` 新增 `V25_IT_*` 环境变量来源，优先级固定为 `-Dv25.it.* → V25_IT_* → integration.local.properties`；camelCase/dot 键统一映射为 snake-case（例 `serverFingerprint→V25_IT_SERVER_FINGERPRINT`、`metric.publish.password→V25_IT_METRIC_PUBLISH_PASSWORD`）。一旦环境来源出现，8 个核心上下文字段必须完整，禁止与陈旧档案混拼；`requiredProperty` 同样按系统属性→环境变量→档案且无正式默认值。模板 `scripts/it-isolation.env.template` 已登记完整 analytics 双库变量契约。`TestIsolationGuardTest` **29/29 PASS**；新增 1 条默认测试使 analytics 1025→1026，量数轮 `DRIFT +1` 后基线更新，收口 **1026 MATCH / 13 MATCH / 110 MATCH / 1149 MATCH**，唯一红仍是既有 patrol。
+- **Remaining / why PARTIAL**：配置入口断层已关闭；现在只剩 runner/provisioning 的真实运行层——为同一 runId 创建 fresh metaDb + metricDb，分别使用仅对各自库有写权限的受限账号（`TestIsolationGuard` 会拒绝一个账号同时对两个库持写权限），并在测试前分别执行 `db/meta` 与 `db/metric` Flyway；之后才能加 `@Tag("it")`、纳入标准 isolated 并用 3307 fresh runId 真跑。当前管理员环境变量未进入 MCP，因此运行层保持 BLOCKED_ENV。
 
 ## 4. PARTIAL：后续阶段联调再补
 
