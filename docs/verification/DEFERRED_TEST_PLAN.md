@@ -262,6 +262,16 @@
 - 当前机器真实触发：`SparkStageExecutorSmokeIT` 在约 3 秒内按预期 fail-fast，唯一失败为 `HADOOP_HOME` 未设置；常见本地开发目录未找到 `winutils.exe`。这证明**环境检查生效**，不构成真实 Spark PASS。
 - **Remaining / why PARTIAL**：补齐受信任的 Windows Hadoop 工具环境后，需重新构建当前 worktree 的 `spark-jobs` JAR 并真正执行 smoke，取得 spark-submit / ODL / golden dataset 行为证据；本项不涉及 3306/3307，不改变生产代码、DDL 或正式契约。
 
+### V-032 — Metric 写入型 MySQL IT 双库所有权预收编
+
+- **Implementation baseline**：`3960cca`。
+- 开工复核发现 `MetricAdsMySqlIT` / `MetricPublisherMySqlIT` 虽已有 `IsolationProfileCondition`、`TestIsolationGuard`、runId 自有对象和 cleanup 白名单，但旧夹具仍通过 metric 连接写 `runtime_profile`，等价于假设 meta/metric 合库；V3 实际物理所有权是 `runtime_profile → analytics_meta`，`metric_snapshot`/`metric_value`/ADS → `analytics_metric`。
+- 两类 IT 已拆成三个实际连接角色：`metaDs(context.metaDb())`、`publishDs(context.metricDb())`、`readDs(context.metricDb())`；`runtime_profile` 登记/查询/cleanup 全部迁到 `JdbcTemplate meta`，指标快照/值/ADS 仍只走 metric；meta 与 metric 连接各自必须先通过 `verifyBeforeWrite`。
+- 新增默认档结构守卫 `MetricMySqlItDatabaseOwnershipTest` **3/3 PASS**，防止以后把 `runtime_profile` 又写回 metric 连接；`metric-analysis` `test-compile` **BUILD SUCCESS**。
+- default 量数轮：analytics **1025 (F=1/E=0/S=1)**，相对旧 1022 **+3** 恰好来自新守卫（metric-analysis 97→100）；mall 13、generator 110 均 MATCH。基线 1022→1025 后 fresh 收口轮为 **1025 MATCH / 13 MATCH / 110 MATCH / 总计 1148 MATCH**；唯一失败仍是既有 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 / actual 0）。
+- **刻意未做**：未给两类 IT 加 `@Tag("it")`，未改变 isolated **55** 基线，未连接 3306/3307，未创建/迁移任何数据库。这样不会把尚未真跑的双库模型塞进标准门禁造成伪验收。
+- **Remaining / why PARTIAL**：第二层需要 runner 为同一 runId 创建 fresh metaDb + metricDb，分别使用仅对各自库有写权限的受限账号（`TestIsolationGuard` 会拒绝一个账号同时对两个库持写权限），并在测试前分别执行 `db/meta` 与 `db/metric` Flyway；之后才能加 `@Tag("it")`、纳入标准 isolated 并用 3307 fresh runId 真跑。当前管理员环境变量未进入 MCP，因此运行层保持 BLOCKED_ENV。
+
 ## 4. PARTIAL：后续阶段联调再补
 
 ### V-003 — AI summary 展示
