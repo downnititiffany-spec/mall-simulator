@@ -3,6 +3,7 @@
 > 当前阶段：**历史整理阶段已结束；项目正式进入毕业设计功能开发阶段。**
 > 最后更新时间：2026-09-18，Stage 7 analytics 与 producer 声明范围均已通过，producer rolling 唯一性 S-R1 已置 READY。
 > 当前代码基线：`5f20c37`（Outbox 同 JVM 发布串行化 + rolling event_id 唯一性门禁；Q-R1 真正被测 SHA 为 `9b2f18f`）。
+> Batch T 预备基线：`cbc4191` 已落地真实 producer rolling → LocalFile/HTTP ingestion → Spark 接力 harness；状态仍为 **BLOCKED_BY_S_R1**，`CURRENT_BATCH` 不变。
 > 当前治理基线（V3_RELEASE_COMMIT）：`7e8de648f1ff0d7306bbecdedeca985218229fe6`。
 > 当前指导书：`docs/guidance/项目完整实施指导书 V3.0.md`，见[指导书](guidance/项目完整实施指导书%20V3.0.md)。
 > 当前设计：`docs/design/项目设计文档 V3.0.md`，见[设计文档](design/项目设计文档%20V3.0.md)。
