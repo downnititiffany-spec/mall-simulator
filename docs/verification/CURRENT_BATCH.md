@@ -1,50 +1,46 @@
 # Current Verification Batch
 
-> 状态：CLOSED / PASS
-> Batch O 已正式接受。RFM / Decision 组合读取旁路状态的晚到覆盖风险与 Decision 手工刷新/写动作读写互斥已通过定向与全量门禁。
+> 状态：READY
+> Batch O 已正式 PASS 并归档。当前达到下一次功能簇级批量验证节点：Sales / AI Draft / Pipeline 的在途交互锁与读写互斥已收口。
 
-## Accepted batch
+## Current batch
 
-- **Batch ID**：`BATCH-O-WEB-SECONDARY-READ-CONCURRENCY`
-- **Tested commit**：`d4a53a08d3121ce2ce8de9ee4e0582b7230835ef`
-- **Result**：PASS
+- **Batch ID**：`BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS`
+- **Tested commit**：`2f3e79f676e1b614fe9a57e71e7ecad68106a51f`
 - **Branch context**：`feature/v3-development`
-- **Permanent plan**：`docs/verification/batches/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-PLAN.md`
-- **Accepted result**：`docs/verification/results/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-RESULT.md`
-- **Raw result branch**：`verification-results`
-- **Raw result commit**：`0635bad33a29ca0b9b183dbaf8573e0d801f3296`
-- **Archived result commit**：`632502f3fa638ea2b00f0401e6bceff1ae7dfdc8`
+- **Accepted predecessor**：`BATCH-O-WEB-SECONDARY-READ-CONCURRENCY` / `d4a53a08d3121ce2ce8de9ee4e0582b7230835ef` / PASS
+- **Permanent plan**：`docs/verification/batches/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-PLAN.md`
+- **Expected accepted result**：`docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`
+- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`
 
-## Verification summary
+## Scope summary
 
-- targeted suites: **55/55 PASS**;
-- full Web gate: **305/305 PASS**;
-- failed / cancelled / skipped: **0 / 0 / 0**;
-- Vite: **5.4.21**;
-- transformed modules: **672**;
-- production build: **PASS**, built in **3.00s**;
-- workspace clean before and after;
-- no repair performed during verification.
+This batch verifies one coherent low-risk Web interaction cluster:
 
-## Accepted behavior boundary
+- Sales loading period locks local pagination and sort mutations as well as date filters;
+- AI decision-draft editable fields are locked while the already-frozen payload is being created;
+- Pipeline manual refresh, trigger and retry actions use a common `loading || busy` read/write exclusion boundary;
+- Pipeline internal post-write refresh still calls `load()` directly and is not blocked by its own busy flag;
+- existing AI ask cancellation/query-draft concurrency and Pipeline identity/date/context/retry semantics remain regression-covered.
 
-The accepted SHA verifies:
+No backend API/state-machine contract, DB/Flyway, auth/security, AI SQL, 3307, or Spark/Hive/Flume changes are part of this batch.
 
-- RFM composite-fetch side effects are protected by an independent latest-request sequence;
-- stale/aborted RFM secondary reads cannot overwrite the newest `usersError`;
-- Decision composite-fetch side effects are protected by an independent latest-request sequence;
-- stale Decision evaluation reads cannot overwrite newer `evaluations/evaluationError`;
-- RFM/Decision unmount invalidates those side-channel request owners before cancellation;
-- Decision manual refresh and state-write actions are mutually exclusive through `loading || busy`;
-- internal post-write `flush()` remains able to refresh while its own write action is busy;
-- prior Decision payload/state-action semantics and RFM snapshot/export semantics remain regression-covered.
+## Execution rule
 
-PASS proves Node/source-invariant tests and Vite production build only. It does not claim real browser timing, real HTTP race behavior, backend Decision state-machine execution/persistence, browser CSV behavior, 3307, or Spark/Hive/Flume E2E.
+Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name, do not modify source/tests/docs, and do not repair failures during verification.
 
-## Next state
+Required targeted suites total **41/41**.
 
-No verification batch is currently READY. Continue development from `feature/v3-development` and accumulate the next coherent low-risk cluster.
+Accepted Batch O full gate was 305/305. This batch adds exactly two tests, so required full gate is:
+
+- **307/307**;
+- 0 fail / 0 cancelled / 0 skipped;
+- Vite production build must actually execute and pass.
+
+## Acceptance boundary
+
+A PASS proves Node/source-invariant tests and Vite production build for the exact tested SHA. It does not elevate real browser timing, real HTTP races, Pipeline backend execution/idempotency, AI decision-draft persistence/state-machine behavior, DB/3307, or Spark/Hive/Flume E2E to verified status.
 
 ## User action
 
-None.
+`VERIFY_CURRENT_BATCH`
