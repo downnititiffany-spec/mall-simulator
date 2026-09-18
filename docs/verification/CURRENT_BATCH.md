@@ -1,42 +1,56 @@
 # Current Verification Batch
 
 > 状态：READY
-> Batch M-R1 已正式 PASS 并归档。当前又达到下一次功能簇级批量验证节点：Behavior / Sales / Overview / RFM 的 loading 交互锁与实际导出子集资格已统一收口。用户只需把 `VERIFY_CURRENT_BATCH` 转发给 Code Agent；Code Agent 按永久计划一次执行整批测试，不修代码。
+> Batch N 已经由 Code Agent 两次一致复现为 FAIL_NEW_REGRESSION：新增 8 条目标测试全部通过，但两条历史源码守卫仍绑定旧的 `exportable` 字面量，导致定向 29/30、全量 280/282，Vite build 未执行。当前进入 **Batch N-R1**：只同步这两条陈旧测试守卫，不改变 Overview/RFM 生产语义。
 
 ## Current batch
 
-- **Batch ID**：`BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY`
-- **Tested commit**：`58411f92a8e5591c435f5597143896f4fadac020`
+- **Batch ID**：`BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY`
+- **Tested commit**：`0c7af0dd0f09f4e5c0c097dc70fbe2647da7a54d`
 - **Branch context**：`feature/v3-development`
-- **Accepted predecessor**：`BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION` / `7748caf8b2628bd47ed5075db62ec2cd26a42fe6` / PASS
-- **Permanent plan**：`docs/verification/batches/BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY-PLAN.md`
-- **Expected accepted result**：`docs/verification/results/BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
-- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
+- **Failed predecessor**：`BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY` / `58411f92a8e5591c435f5597143896f4fadac020` / FAIL_NEW_REGRESSION
+- **Accepted predecessor before N**：`BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION` / `7748caf8b2628bd47ed5075db62ec2cd26a42fe6` / PASS
+- **Permanent plan**：`docs/verification/batches/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-PLAN.md`
+- **Expected accepted result**：`docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
+- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
 
-## Scope summary
+## Why R1 exists
 
-This batch verifies one coherent low-risk Web interaction cluster:
+Batch N itself implemented the intended stricter export predicates correctly:
 
-- Behavior/Sales/Overview date inputs are locked while loading;
-- Behavior/Sales/Overview `load()` handlers reject loading reentry themselves;
-- Behavior funnel CSV is enabled only when the actual `stages` export subset is non-empty;
-- Overview metrics CSV is enabled only when the actual `cards` export subset is non-empty;
-- RFM refresh rejects loading reentry before mutating `usersError`;
-- RFM CSV is enabled only when actual `segmentRows` are non-empty;
-- button and handler predicates remain identical for each subset export;
-- existing RFM primary-publisher/fallback ownership and shared CSV freshness semantics remain regression-covered.
+- Overview: `metricExportable = exportable && cards.length > 0`;
+- RFM: `segmentExportable = exportable && segmentRows.length > 0`.
 
-No backend API, DB/Flyway, auth/security, AI SQL, decision state-machine semantics, 3307, or Spark/Hive/Flume behavior changes are part of this batch.
+The new Batch N tests already proved those semantics. The two failures were older characterization tests that still required `if (!exportable.value) return`.
+
+R1 changes only:
+- `web/tests/rfmMatrixOwnership.test.js`;
+- `web/tests/postJr1WebHardening.test.js`.
+
+Relative to pre-repair development HEAD `dcc15740a70bdeb12b65b18d44863b4807f702ca`, no production file changes are part of the R1 repair.
+
+## Count boundary
+
+The development branch legitimately advanced after Batch N froze. The exact R1 tested SHA includes the post-N low-risk Web cluster already committed before this repair:
+
+- Login in-flight input locking;
+- AI history late-response/Abort protection;
+- BaseChart reactive height resize;
+- Ops refresh/admin-write mutual exclusion;
+- net +14 tests.
+
+Therefore R1 expected full gate is **296/296**, not 282/282.
+
+Required targeted suites total **53/53**. Full gate is `cd web && npm run verify`, expected:
+- 296 total / 296 pass;
+- 0 fail / 0 cancelled / 0 skipped;
+- Vite production build actually executes and passes.
 
 ## Execution rule
 
-Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name, do not modify source/tests/docs, and do not repair failures during verification.
+Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name. Do not modify or repair source/tests/docs during verification.
 
-Required targeted suites total **30/30**. Required full gate is `cd web && npm run verify` with expected **282/282** tests: accepted Batch M-R1 was 274/274 and this batch adds exactly eight tests in `analysisFilterInteractionHardening.test.js`.
-
-## Acceptance boundary
-
-A PASS proves Node unit/source-invariant tests and Vite production build for the exact tested SHA. It does not elevate real browser timing, real HTTP races, actual browser CSV download behavior, backend snapshot/runtime behavior, database writes, 3307, or Spark/Hive/Flume E2E to verified status.
+The original Batch N raw FAIL result remains preserved on `verification-results` and must not be overwritten.
 
 ## User action
 
