@@ -40,12 +40,12 @@ test('Sales 与 Overview 的导出 handler 都执行当前页面的最终 fail-c
   assert.match(overviewBody, /if \(!metricExportable\.value\) return/, 'Overview handler 必须使用实际 cards 子集资格')
 })
 
-test('Decision 所有写动作在 prompt/API 之前先拒绝 busy 重入', () => {
+test('Decision 所有写动作在 prompt/API 之前拒绝 busy 或列表 loading 并发', () => {
   for (const name of ['act', 'submitDecision', 'approve', 'rejectDecision', 'cancelDecision', 'evaluate']) {
     assert.match(
       decisions,
-      new RegExp(`async function ${name}\\([^)]*\\) \\{\\s*if \\(busy\\.value\\) return`),
-      `${name} 必须在函数入口 fail-closed`
+      new RegExp(`async function ${name}\\([^)]*\\) \\{\\s*if \\(busy\\.value \\|\\| loading\\.value\\) return`),
+      `${name} 必须在函数入口拒绝写写/读写并发`
     )
   }
 })
