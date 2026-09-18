@@ -82,14 +82,17 @@ if ($metaUrl -match ':3306/' -or $metricUrl -match ':3306/') {
 }
 
 $httpRoot = Join-Path $root "target\v25-it\$RunId\http"
-$landingRoot = Join-Path $httpRoot 'landing'
+$attemptId = 'attempt-' + (Get-Date -Format 'yyyyMMdd_HHmmss_fff')
+$attemptRoot = Join-Path $httpRoot $attemptId
+$landingRoot = Join-Path $attemptRoot 'landing'
 $eventsDir = Join-Path $landingRoot 'events'
-$warehouseDir = Join-Path $httpRoot 'spark-warehouse'
-$metastoreDir = Join-Path $httpRoot 'derby-metastore'
-$metricStaging = Join-Path $httpRoot 'metric-staging'
-$logDir = Join-Path $httpRoot 'logs'
+$warehouseDir = Join-Path $attemptRoot 'spark-warehouse'
+$metastoreDir = Join-Path $attemptRoot 'derby-metastore'
+$metricStaging = Join-Path $attemptRoot 'metric-staging'
+$logDir = Join-Path $attemptRoot 'logs'
 $platformLog = Join-Path $logDir 'platform.log'
-$evidencePath = Join-Path $httpRoot 'stage7-http-result.json'
+$evidencePath = Join-Path $attemptRoot 'stage7-http-result.json'
+$latestEvidencePath = Join-Path $httpRoot 'stage7-http-result.json'
 $goldenPath = Join-Path $root $GoldenDataset
 
 Write-Host '=== Stage 7 isolated HTTP preflight ==='
@@ -99,6 +102,7 @@ Write-Host "metric       : $metricDb / $metricUser @ 127.0.0.1:3307"
 Write-Host "meta password: $(Mask-State 'V25_IT_META_PASSWORD')"
 Write-Host "metric pwd   : $(Mask-State 'V25_IT_METRIC_PUBLISH_PASSWORD')"
 Write-Host "http root    : $httpRoot"
+Write-Host "attempt root : $attemptRoot"
 
 if ($DryRun) {
   Write-Host '[DRY-RUN] 不建目录、不启动 Java、不发 HTTP、不连接数据库。'
@@ -125,8 +129,10 @@ if (-not $jar) {
   Fail 5 '未找到 platform-app jar；请先构建当前 worktree。'
 }
 
-New-Item -ItemType Directory -Force -Path $eventsDir,$warehouseDir,$metastoreDir,$metricStaging,$logDir | Out-Null
-$inputFile = Join-Path $eventsDir ("stage7-$RunId-golden.jsonl")
+# Derby JDBC 使用 create=true；数据库目录自身必须不存在，由 Derby 首次启动创建。
+# 因此这里只创建 attempt 根及其它普通目录，绝不能预创建 $metastoreDir。
+New-Item -ItemType Directory -Force -Path $eventsDir,$warehouseDir,$metricStaging,$logDir | Out-Null
+$inputFile = Join-Path $eventsDir ("stage7-$RunId-$attemptId-golden.jsonl")
 Copy-Item -LiteralPath $goldenPath -Destination $inputFile -Force
 
 $env:PLATFORM_META_URL = $metaUrl
@@ -146,6 +152,8 @@ $env:PLATFORM_SPARK_METASTORE_DIR = $metastoreDir
 $proc = $null
 $result = [ordered]@{
   runId = $RunId
+  attemptId = $attemptId
+  attemptRoot = $attemptRoot
   testedAt = (Get-Date).ToString('s')
   metaDb = $metaDb
   metricDb = $metricDb
@@ -157,6 +165,14 @@ $result = [ordered]@{
   ingestion = $null
   pipeline = $null
   outcome = 'STARTED'
+}
+
+function Save-Evidence {
+  param([System.Collections.IDictionary]$Payload)
+  $json = $Payload | ConvertTo-Json -Depth 12
+  $json | Set-Content -LiteralPath $evidencePath -Encoding utf8
+  # latest 指针便于控制端固定读取；attempt 内原始证据永久区分每次执行。
+  $json | Set-Content -LiteralPath $latestEvidencePath -Encoding utf8
 }
 
 try {
@@ -194,7 +210,7 @@ try {
   $result.runtimeProfileTest = $profileTest.data
   if (-not $profileTest.data.allPassed) {
     $result.outcome = 'RUNTIME_PROFILE_TEST_FAILED'
-    $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $evidencePath -Encoding utf8
+    Save-Evidence $result
     Write-Host "[FAIL exit=7] runtime profile test 未全过；证据 $evidencePath"
     exit 7
   }
@@ -207,7 +223,7 @@ try {
   $result.ingestion = $ingestion.data
   if (-not $ingestion.data -or $ingestion.data.noNewData -or [long]$ingestion.data.recordCount -le 0) {
     $result.outcome = 'INGESTION_NO_DATA'
-    $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $evidencePath -Encoding utf8
+    Save-Evidence $result
     Write-Host "[FAIL exit=2] ingestion 未取得可消费数据；证据 $evidencePath"
     exit 2
   }
@@ -232,21 +248,21 @@ try {
   $result.pipeline = $last.data
   if ($last.data.status -ne 'SUCCESS') {
     $result.outcome = 'PIPELINE_NOT_SUCCESS'
-    $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $evidencePath -Encoding utf8
+    Save-Evidence $result
     Write-Host ("[FAIL exit=7] pipeline 终态={0} stage={1} error={2}；证据 {3}" -f $last.data.status, $last.data.currentStage, $last.data.errorCode, $evidencePath)
     exit 7
   }
 
   Write-Host '[7/7] 收口证据...'
   $result.outcome = 'PASS'
-  $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $evidencePath -Encoding utf8
+  Save-Evidence $result
   Write-Host "[PASS exit=0] Stage 7 isolated HTTP ingestion → pipeline 通过；证据 $evidencePath"
   exit 0
 }
 catch {
   $result.outcome = 'EXCEPTION'
   $result.exception = $_.Exception.Message
-  try { $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $evidencePath -Encoding utf8 } catch {}
+  try { Save-Evidence $result } catch {}
   Write-Host ("[FAIL exit=7] {0}" -f $_.Exception.Message)
   exit 7
 }

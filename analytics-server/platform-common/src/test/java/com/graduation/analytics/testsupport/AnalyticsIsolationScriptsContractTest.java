@@ -89,6 +89,8 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("jdbc:mysql://127.0.0.1:3307/$metaDb")
                 .contains("jdbc:mysql://127.0.0.1:3307/$metricDb")
                 .contains("target\\v25-it\\$RunId\\http")
+                .contains("$attemptId = 'attempt-' + (Get-Date -Format 'yyyyMMdd_HHmmss_fff')")
+                .contains("$attemptRoot = Join-Path $httpRoot $attemptId")
                 .contains("if ($metaUrl -match ':3306/' -or $metricUrl -match ':3306/')");
     }
 
@@ -113,6 +115,9 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("-PassThru")
                 .contains("if ($proc -and -not $proc.HasExited)")
                 .contains("Stop-Process -Id $proc.Id -Force")
+                .contains("New-Item -ItemType Directory -Force -Path $eventsDir,$warehouseDir,$metricStaging,$logDir")
+                .doesNotContain("-Path $eventsDir,$warehouseDir,$metastoreDir")
+                .contains("latest 指针便于控制端固定读取")
                 .doesNotContain("Get-Process java | Stop-Process");
     }
 }
