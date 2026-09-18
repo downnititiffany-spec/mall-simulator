@@ -112,7 +112,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1013
+  'analytics-server'        = 1015
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -810,6 +810,20 @@ $BaselineSpark = 308
 #   ⑦ 本文件是**门禁基线**，本轮只改这一个数字＋注释，未改任何命令语义（`isolated` 档未重跑：
 #   新用例无 `@Tag("it")`，不在 isolated 选择面内）。
 #   详见 docs/acceptance/s3-52-spark-sql-backslash-guard-20260916/。
+# 2026-09-18 Stage 7 被 3307 管理员认证环境门阻塞期间，并行收口 S3-48 的纯 Java 残余面：
+#   只改 `PipelineServiceTest`，新增 2 条 developer test，零生产代码/DDL/契约/外网/连库改动。
+#   ① `retryFromStagePreservesPrefixAndReexecutesExactSuffix`：从 BUILD_DWS 起重算时，验证 delete 已发出、
+#      SUCCESS 前缀阶段行与 snapshotId 保持不变，BUILD_DWS 及其后缀删除后重建，Spark 提交恰好等于后缀；
+#      纯 Mockito L1 不初始化 MyBatis-Plus lambda cache，因此只验证 mapper delete 调用，并在 drain 前由内存
+#      store 应用同一后缀删除语义；**不据此声称真库 LambdaQueryWrapper 删除语义已验证**。
+#   ② `repeatedRetriesKeepSuccessfulPrefixSingleAndAdvanceAttempt`：BUILD_DWS 连续两次失败、第三次成功，
+#      attempt 1→2→3；已成功前缀始终单行，BUILD_DWS 保留两失败+一成功三条证据，后继阶段只在最终成功后跑一次。
+#   定向真跑：`PipelineServiceTest` **31/31 PASS**（原 29，+2），BUILD SUCCESS。
+#   default 量数轮（`-AllowCountDrift`）：analytics-server **1015 (F=1 E=0 S=1)**，明细
+#   `105+353+174+97+126+160`，相对基线 1013 的 **+2 全部落在 warehouse-pipeline（172→174）**；
+#   mall 13、generator 110 均 MATCH；三棵树 1138。唯一红仍是既有环境性
+#   `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43, actual 0），与本轮改动无关。
+#   ⇒ baseline analytics-server **1013→1015**；spark/isolated 均未改覆盖面，基线不变。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

@@ -518,6 +518,125 @@ class PipelineServiceTest {
                 .containsExactlyElementsOf(expectedOnRetry);
     }
 
+    /**
+     * S3-48 后继残余面：retry-from-stage 此前在测试树里 0 覆盖。
+     * 从 BUILD_DWS 起重算时，已成功前缀必须保留原阶段行，后缀必须被删除后重新创建；
+     * 后台提交也只能从 BUILD_DWS 开始，不能悄悄重跑 INIT_SCHEMA/LOAD_ODS/BUILD_DWD。
+     */
+    @Test
+    void retryFromStagePreservesPrefixAndReexecutesExactSuffix() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        PipelineService.RunResult first = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-retry-from", "trace-1");
+        executor.drain();
+        PipelineService.RunResult firstDone = service.get(first.runId());
+        assertThat(firstDone.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+
+        Map<String, Long> firstStageIds = new LinkedHashMap<>();
+        for (PipelineStageRun s : stageList()) {
+            firstStageIds.put(s.getStageCode(), s.getId());
+        }
+        assertThat(firstStageIds.keySet())
+                .as("首跑必须真的完成整条声明链，否则 retry-from-stage 的前后缀断言没有对象")
+                .containsExactlyElementsOf(PipelineService.STAGE_ORDER);
+
+        List<String> submittedOnRetry = new ArrayList<>();
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    String code = inv.getArgument(2);
+                    submittedOnRetry.add(code);
+                    return successExecution(code);
+                });
+
+        int retryIdx = PipelineService.STAGE_ORDER.indexOf("BUILD_DWS");
+        List<String> preservedPrefix = PipelineService.STAGE_ORDER.subList(0, retryIdx);
+        List<String> rebuiltSuffix = PipelineService.STAGE_ORDER.subList(retryIdx, PipelineService.STAGE_ORDER.size());
+
+        service.retryFromStage(first.runId(), "BUILD_DWS", "operator:test", "rebuild suffix", "trace-2");
+        verify(stageMapper, org.mockito.Mockito.times(1)).delete(any());
+        // 纯 Mockito L1 不初始化 MyBatis-Plus lambda column cache，不能在这里真正执行 LambdaQueryWrapper。
+        // 生产方法已经发出 delete；在异步 drain 前让内存 store 应用同一后缀删除语义，模拟 DB 已提交后的可见状态。
+        stages.removeIf(s -> rebuiltSuffix.contains(s.getStageCode()));
+        executor.drain();
+
+        PipelineService.RunResult retried = service.get(first.runId());
+        assertThat(retried.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(retried.attemptNo()).isEqualTo(2);
+        assertThat(retried.targetSnapshotId())
+                .as("retry-from-stage 必须复用原 snapshotId，不得制造第二份发布身份")
+                .isEqualTo(firstDone.targetSnapshotId());
+
+        for (String code : preservedPrefix) {
+            assertThat(stageOf(code).getId())
+                    .as("成功前缀 " + code + " 不得被 retry-from-stage 删除/重建")
+                    .isEqualTo(firstStageIds.get(code));
+        }
+        for (String code : rebuiltSuffix) {
+            assertThat(stageOf(code).getId())
+                    .as("重算后缀 " + code + " 必须是新阶段记录，而不是把旧 SUCCESS 假装成已重跑")
+                    .isNotEqualTo(firstStageIds.get(code));
+            long rows = stages.stream().filter(s -> code.equals(s.getStageCode())).count();
+            assertThat(rows).as("删除旧后缀后每个阶段只应留下本次重算的一行：" + code).isEqualTo(1);
+        }
+        assertThat(submittedOnRetry)
+                .as("retry-from-stage 的真实 Spark 提交必须恰好等于指定阶段起的后缀")
+                .containsExactlyElementsOf(rebuiltSuffix);
+    }
+
+    /**
+     * S3-48 后继残余面：此前只有一次 retry 的证据。连续两次失败再成功时，
+     * 已成功前缀仍必须跨 attempt 保持单行；失败阶段可以按 attempt 留失败历史，
+     * 但其后阶段只有在该阶段最终成功后才允许首次执行。
+     */
+    @Test
+    void repeatedRetriesKeepSuccessfulPrefixSingleAndAdvanceAttempt() throws Exception {
+        AtomicLong dwsExecutions = new AtomicLong();
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    String code = inv.getArgument(2);
+                    if ("BUILD_DWS".equals(code) && dwsExecutions.incrementAndGet() <= 2) {
+                        return failedExecution("BUILD_DWS", "usw");
+                    }
+                    return successExecution(code);
+                });
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-retry-many", "trace-1");
+        executor.drain();
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(service.get(r.runId()).attemptNo()).isEqualTo(1);
+
+        service.retry(r.runId(), "trace-2");
+        executor.drain();
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(service.get(r.runId()).attemptNo()).isEqualTo(2);
+
+        service.retry(r.runId(), "trace-3");
+        executor.drain();
+        PipelineService.RunResult done = service.get(r.runId());
+        assertThat(done.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(done.attemptNo()).isEqualTo(3);
+        assertThat(dwsExecutions.get()).isEqualTo(3);
+
+        int dwsIdx = PipelineService.STAGE_ORDER.indexOf("BUILD_DWS");
+        for (String code : PipelineService.STAGE_ORDER.subList(0, dwsIdx)) {
+            long rows = stages.stream().filter(s -> code.equals(s.getStageCode())).count();
+            assertThat(rows).as("已成功前缀跨三次 attempt 仍只能有一行：" + code).isEqualTo(1);
+        }
+        assertThat(stages.stream().filter(s -> "BUILD_DWS".equals(s.getStageCode())).count())
+                .as("BUILD_DWS 应保留两次失败 + 第三次成功的三条 attempt 证据")
+                .isEqualTo(3);
+        for (String code : PipelineService.STAGE_ORDER.subList(dwsIdx + 1, PipelineService.STAGE_ORDER.size())) {
+            long rows = stages.stream().filter(s -> code.equals(s.getStageCode())).count();
+            assertThat(rows).as("后继阶段只能在 BUILD_DWS 最终成功后执行一次：" + code).isEqualTo(1);
+        }
+    }
+
     // ── S2-04：Landing 输入清单必须按源归属（fail-closed） ────────────────
 
     @Test
