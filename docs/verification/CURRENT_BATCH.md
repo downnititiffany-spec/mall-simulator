@@ -1,21 +1,19 @@
 # Current Verification Batch
 
-> 状态：BLOCKED_ENV
-> Batch Q 已执行并由总控复核为环境阻塞；在 3307 管理员认证恢复并完成 Q-R1 之前，不开放真实 HTTP ingestion → pipeline 链。
+> 状态：PASS
+> 历史 Batch Q 保持 `BLOCKED_ENV`；新的 Q-R1 已在真实 WSL MySQL 3307 上取得 **60/60 PASS**。Stage 7 的下一道真实 HTTP ingestion → pipeline 门可以进入单独验证，但本批本身不证明该链已通过。
 
 ## Current batch
 
-- **Batch ID**：`BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT`
-- **Exact code baseline**：`2f3e79f676e1b614fe9a57e71e7ecad68106a51f`
+- **Batch ID**：`BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT`
+- **Exact tested code baseline**：`9b2f18faf00872f364e26a9980b767854e96f9fa`
 - **Branch context**：`feature/v3-development`
-- **Accepted predecessor**：`BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS` / `2f3e79f676e1b614fe9a57e71e7ecad68106a51f` / PASS
-- **Permanent plan**：`docs/verification/batches/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-PLAN.md`
-- **Expected result**：`docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
-- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
-- **Raw result commit**：`2c32a45fedfba65ab7c5510b1662631b2d0adce2`
-- **Accepted controller review**：`docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
-- **RunId**：`stage7q_20260918_1100`
-- **Overall**：`BLOCKED_ENV`
+- **Accepted predecessor**：historical `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` / `BLOCKED_ENV`
+- **Permanent plan**：`docs/verification/batches/BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-PLAN.md`
+- **Accepted controller review**：`docs/verification/results/BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`
+- **RunId**：`stage7q1_20260918_152245`
+- **Overall**：`PASS`
+- **Post-verification baseline registration**：`a496434`
 
 ## Why this batch exists
 
@@ -43,14 +41,14 @@ If 3307/runtime administration is unavailable, record `BLOCKED_ENV` and stop. Th
 
 ## Expected runtime result
 
-Current registered isolated baseline:
+Current registered isolated baseline after Q-R1:
 
 - mall **30/30**
 - generator **19/19**
-- analytics **6/6**
-- total **55/55**
+- analytics **11/11** = IsolationGuard 6 + MetricAds 2 + MetricPublisher 3
+- total **60/60**
 - runner exit 0
-- `IsolationGuardMySqlIT` must actually execute
+- all three analytics IT classes must actually execute
 - live guard facts must identify port 3307 / isolated instance
 - workspace clean before/after
 
@@ -69,12 +67,10 @@ It does not yet prove:
 
 Those are later Stage 7 gates.
 
-## Controller review / current blocker
+## Controller review / current status
 
-- 原始执行在真实 preparation 前发现 3307 不可用，未运行 isolated 55 条，因此不能 PASS。
-- 后续总控复查已确认本机仍有既有 MySQL 8.0.41 binary 与独立 datadir，且 3307 可被诊断性启动；原始报告中“server/datadir 不存在”属于较早时点的环境观察，不再作为当前权威根因。
-- 当前治理脚本的实际阻塞点是：启动 coding-tools-mcp 的进程环境中 `V25IT_ADMIN_PWD` 未设置，root TCP 免密认证被正确拒绝。
-- 不允许把管理员密码写进 Git/命令日志，也不允许回退到 3306。
-- 当前开发 HEAD 已因不依赖 3307 的并行测试加固前进到 `0f773220ad6a29d4b839e52d29b5b5fb6124d94b`；该提交不是本 Batch Q 的被测基线。
-
-环境恢复后，不改写本历史批次；创建 `BATCH-Q-R1`，固定届时最新基线重新验证 3307 isolated 55/55。
+- Historical Batch Q remains unchanged as `BLOCKED_ENV`; its result file is still the authority for that earlier run.
+- Q-R1 recovered the 3307 environment without falling back to 3306 and completed governed run-scoped preparation.
+- Q-R1 real evidence: schema 1/1, mall 30/30, generator 19/19, analytics 11/11, total 60/60, all runner exits 0.
+- The connected MCP still intentionally filters the interactive shell's analytics secret environment variables. Therefore Q-R1 used two governed lower-level runner invocations against the same SHA/runId/instance; the controller then updated the top-level unified entrypoint in `a496434` so future isolated/all runs include the 11-test analytics lane automatically.
+- The next Stage 7 HTTP ingestion → pipeline chain is now eligible for its own batch; it is not included in Q-R1 PASS.

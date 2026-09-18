@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
 > 当前阶段：**历史整理阶段已结束；项目正式进入毕业设计功能开发阶段。**
-> 最后更新时间：2026-09-15，总控批准V3.0正式发布与状态提交。
-> 当前代码基线：`e3c1070c02964512cdd3444c76e3e39ec833bcc8`（业务/测试/runner基线，不随本轮文档提交变化）。
+> 最后更新时间：2026-09-18，Stage 7 Q-R1 3307 isolated 60/60 收口。
+> 当前代码基线：`a496434`（证据后统一 isolated 基线登记；Q-R1 真正被测 SHA 为 `9b2f18f`）。
 > 当前治理基线（V3_RELEASE_COMMIT）：`7e8de648f1ff0d7306bbecdedeca985218229fe6`。
 > 当前指导书：`docs/guidance/项目完整实施指导书 V3.0.md`，见[指导书](guidance/项目完整实施指导书%20V3.0.md)。
 > 当前设计：`docs/design/项目设计文档 V3.0.md`，见[设计文档](design/项目设计文档%20V3.0.md)。
@@ -18,7 +18,7 @@
 
 按八阶段功能开发推进：1基线与核心链确认 → 2采集/数仓 → 3Spark指标 → 4Spring Boot服务 → 5Vue → 6AI → 7业务实链联调 → 8部署/验收/论文答辩。
 
-**当前真实阶段（2026-09-18）**：已进入 **Stage 7 业务实链联调**。第一道运行时门 `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` 已由 Code Agent 执行并经总控复核为 **BLOCKED_ENV**，因此真实 HTTP ingestion → pipeline 链尚未开放。原始执行在其时点观察到 3307 未监听；总控随后重新盘点确认本机 `/opt/mysql-8.0.41/bin/mysqld` 与 `/data/mysql-isolated/data` 仍存在，且既有实例可以诊断性启动到 `127.0.0.1:3307`。当前实际阻塞已收敛为 **启动 coding-tools-mcp 的进程环境未注入 `V25IT_ADMIN_PWD`，仓库治理脚本无法通过 3307 root 管理员认证**；不得因此回退 3306，也不得手写 SQL 绕过 `it-prepare-isolation.ps1`。环境恢复后另开 `BATCH-Q-R1` 固定届时最新基线重跑 isolated 55/55。
+**当前真实阶段（2026-09-18）**：已进入 **Stage 7 业务实链联调**。历史 `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` 仍保持 **BLOCKED_ENV**，但环境恢复后已另开并完成 `BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT`：被测 SHA `9b2f18f`、RunId `stage7q1_20260918_152245`，真实 WSL MySQL 3307 上 governed preparation 成功，analytics 双库 Flyway **1/1 PASS**，mall **30/30**、generator **19/19**、analytics **11/11**（IsolationGuard 6 + MetricAds 2 + MetricPublisher 3），合计 **60/60 PASS**，全程未回退 3306。Q-R1 通过只开放“进入下一道 Stage 7 HTTP ingestion → pipeline 专项验证”的资格，**不代表该 HTTP/Spark/Hive/HDFS 实链已通过**。证据后基线登记 `a496434` 已把统一 isolated 基线从 55 更新为 60，并让顶层 runner 自动纳入 analytics 写入型 IT。
 
 **Stage 7 环境阻塞期间的并行开发**：不依赖 3307 的 A 类项继续推进。`0f77322` 已对 S3-48 恢复路径补齐多 attempt 与 `retryFromStage`；`96f4ad2` 把 `PipelineRecoveryService.reconcile()` 与真实 `PipelineService.resume()` 串成启动恢复 L1；`384dedf` 又把 fail-fast 从单一 `BUILD_DWS` 样例扩成 **7 个 Spark 承载阶段逐格失败矩阵**。定向 `PipelineServiceTest` **38/38 PASS**；default fresh 收口为 analytics **1022 (F=1/E=0/S=1) MATCH**、mall 13 MATCH、generator 110 MATCH、三棵树 1145 MATCH，唯一红仍是既有 patrol。`a253446` 继续收口 S3-51：为 `AbandonedMutexException` 接管增加显式可观测输出，并用真实 Windows named mutex 进程探针证明“owner 持锁异常退出、keeper 保持对象、下一轮真实 `run-tests.ps1` 安全接管”分支确实执行；另一次真实 Maven default 正常路径仍为 **1022/13/110 MATCH**，证明新增输出不改变正常门禁。`9c0556f` 又加固 Stage 7 的 `SparkStageExecutorSmokeIT`：JAR / golden dataset 强制解析自**当前 worktree**、`spark-submit` 可显式覆盖、Windows 在启动子进程前检查 `HADOOP_HOME/bin/winutils.exe`，且子进程若提前 FAILED/CANCELLED 会立即带日志失败，不再空等 JobResult 超时。当前本机实测 `test-compile` PASS；真实 smoke 在约 3 秒内 fail-fast 于 `HADOOP_HOME` 未设置，本机常见开发目录也未发现 `winutils.exe`，因此**真实 spark-submit 仍未通过**，只完成了运行前边界加固。至此 S3-48 当前纯 Java L1 项基本收口；S3-51 剩余路径等价/空目录等项涉及待定口径，不擅自修改。
 
