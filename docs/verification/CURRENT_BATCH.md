@@ -1,55 +1,57 @@
 # Current Verification Batch
 
 > 状态：READY
-> R4 已证明 Stage 7 analytics 正向业务链；R5 已证明修复后的 harness cleanup。当前唯一可执行批次是 producer Batch S。
+> Batch S 在其原声明范围内 PASS；下游 handoff 审计发现 rolling JSONL 有 171 个重复 event_id。当前唯一可执行批次是 S-R1。
 
 ## Current batch
 
-- **Batch ID**：`BATCH-S-STAGE7-PRODUCER-MALL-OUTBOX`
-- **Exact source/test baseline**：`b850493b11fb71b17db38a59b1d4196d519168a3`
+- **Batch ID**：`BATCH-S-R1-STAGE7-PRODUCER-ROLLING-UNIQUENESS`
+- **Exact source/test baseline**：`5f20c37784a4d28e3e452a9ea5aa75cd7ac3447e`
 - **Branch context**：`feature/v3-development`
 - **RunId**：`stage7q1_20260918_152245`
-- **Permanent plan**：`docs/verification/batches/BATCH-S-STAGE7-PRODUCER-MALL-OUTBOX-PLAN.md`
-- **R4 result**：`docs/verification/results/BATCH-R4-STAGE7-HTTP-INGESTION-PIPELINE-RESULT.md`
-- **R5 result**：`docs/verification/results/BATCH-R5-STAGE7-HARNESS-CLEANUP-RESULT.md`
+- **Permanent plan**：`docs/verification/batches/BATCH-S-R1-STAGE7-PRODUCER-ROLLING-UNIQUENESS-PLAN.md`
+- **Batch S result**：`docs/verification/results/BATCH-S-STAGE7-PRODUCER-MALL-OUTBOX-RESULT.md`
 - **Overall**：`READY`
 
-## Accepted predecessor evidence
+## Accepted Batch S facts
 
-R4 exact business SHA `4ef4d93`:
+Exact SHA `b850493` / attempt `attempt-20260918_193258_719`:
 
-- ingestion 50 accepted / 0 quarantine;
-- Pipeline SUCCESS;
-- INIT_SCHEMA / LOAD_ODS / BUILD_DWD / BUILD_DWS / BUILD_ADS / QUALITY_CHECK / PUBLISH_METRIC 全 SUCCESS;
-- 22 ADS rows / 14 metric values / active snapshot `S20260901_4`;
-- business evidence `outcome=PASS`.
+- harness exit 0;
+- generation SUCCESS 600 / failed 0;
+- real HTTP: createOrder 244 / pay 80 / cancel 164 / refund 16;
+- operation journal 601 rows / 555 successful real HTTP rows;
+- no current-run new Outbox failed IDs;
+- pending after drain returned to the one historical baseline failure;
+- current-run order/pay/refund correlation missing = 0.
 
-R4 outer shell exit 1 was only a finally cleanup variable collision. R5 on `3070911` separately proved the corrected real process-tree cleanup PASS.
+## Newly discovered handoff defect
 
-## Batch S scope
+The completed rolling file had:
 
-`generator :8092 → mall :8090 → order/pay/refund → Outbox → run-scoped rolling JSONL`
+- 1182 JSON lines;
+- 0 malformed JSON;
+- only 1011 unique event_id;
+- 171 duplicate event_id groups.
 
-Safety:
+1011 is exactly the current-run business event total, so the extra 171 lines are duplicate delivery.
 
-- 3307 only, no 3306 fallback;
-- mall/generator credentials from ignored credref only;
-- Mall token process-only;
-- 8090/8092 must be free;
-- stock repeatability reset only through protected admin HTTP;
-- no direct business DML.
+Root cause: scheduler and manual publish could concurrently execute `OutboxPublisher.publishOnce()` and both write the same pending event before either caller marked it published.
 
-PASS requires generation 600/0, operation journal real createOrder/pay/refund, Outbox pending=0, required rolling event types, and journal→rolling IDs correlated to the current run.
+Corrective SHA `5f20c37`:
 
-## Preflight on current exact baseline
+- serializes `publishOnce()` inside the singleton JVM;
+- deterministic concurrency test RED→GREEN;
+- producer harness now fails on any duplicate event_id and persists uniqueness evidence;
+- default fresh baseline = analytics 1034 / mall 14 / generator 111, only historical manifest patrol red.
 
-- key generator targeted tests: PASS；
-- producer harness DryRun: exit 0 / zero-I/O；
-- mall package: BUILD SUCCESS；
-- generator package: BUILD SUCCESS；
-- default fresh: analytics **1034 MATCH** / mall **13 MATCH** / generator **111 MATCH**；
-- only the historical manifest patrol remains red；
-- 3307 LISTENING，8090/8092 在真实执行前必须 FREE。
+## S-R1 PASS
 
-Connected coding-tool command execution cannot be used as the final Batch S host because its managed console interrupts long-lived `Start-Process` child JVMs with Windows `0xC000013A`. The same mall JAR remained alive in a foreground startup probe, so this is an execution-host boundary rather than a service crash. Final Batch S must run from an interactive PowerShell host.
+- all original Batch S producer criteria remain PASS;
+- `duplicateEventIdCount = 0`;
+- `uniqueEventIdCount = lineCount`;
+- no empty event_id;
+- harness exit 0 / outcome PASS.
+
+Only after S-R1 may Batch T consume that exact completed file via LocalFile/HTTP ingestion → Spark pipeline.
 
