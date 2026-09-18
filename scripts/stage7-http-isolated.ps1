@@ -23,7 +23,7 @@ param(
   [switch]$DryRun,
   [string]$BaseUrl = 'http://127.0.0.1:8091',
   [string]$BusinessTime = '2026-09-01T00:00:00',
-  [string]$GoldenDataset = 'tests/golden-dataset/events/golden-20260901.jsonl',
+  [string]$GoldenDataset = 'tests/golden-dataset/events/golden-20260901-positive.jsonl',
   [string]$SparkSubmitPath = 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd',
   [int]$PipelineTimeoutSec = 180,
   [int]$PollSec = 3

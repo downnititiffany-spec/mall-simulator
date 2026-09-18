@@ -98,6 +98,7 @@ class AnalyticsIsolationScriptsContractTest {
     void stage7HttpLaneKeepsSecretsOutOfCliAndUsesRealHttpBoundaries() throws IOException {
         String source = Files.readString(STAGE7_HTTP);
         assertThat(source)
+                .contains("[string]$GoldenDataset = 'tests/golden-dataset/events/golden-20260901-positive.jsonl'")
                 .contains("GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')")
                 .contains("GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')")
                 .doesNotContain("[string]$MetaPassword")
