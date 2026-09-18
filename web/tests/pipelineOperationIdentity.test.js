@@ -22,9 +22,9 @@ const executableText = (text) => text
   .map((line) => line.replace(/\/\/.*/, ''))
   .join('\n')
 
-test('runOnce 自身受 busy fail-closed 保护，不能只依赖按钮 disabled', () => {
+test('runOnce 自身受 busy/loading 双向 fail-closed 保护，不能只依赖按钮 disabled', () => {
   const body = functionBody('runOnce', 'retry')
-  const guardAt = body.indexOf('if (busy.value) return')
+  const guardAt = body.indexOf('if (busy.value || loading.value) return')
   const busyAt = body.indexOf('busy.value = true')
   assert.ok(guardAt >= 0)
   assert.ok(busyAt > guardAt)
@@ -64,8 +64,10 @@ test('runOnce 在第一个 await 前冻结业务时间与运行环境，并只�
   assert.doesNotMatch(createBlock, /runtimeProfileId\.value|businessDate\.value/)
 })
 
-test('流水线触发在途时锁住业务输入和手工刷新，避免操作上下文被 UI 改写', () => {
-  assert.match(source, /v-model="businessDate"[^>]*:disabled="busy"/)
-  assert.match(source, /v-model\.number="runtimeProfileId"[^>]*:disabled="busy"/)
-  assert.match(source, /@click="load"\s+:disabled="loading \|\| busy"/)
+test('流水线读写互斥时锁住业务输入和手工刷新，避免操作上下文被 UI 改写', () => {
+  assert.match(source, /v-model="businessDate"[^>]*:disabled="loading \|\| busy"/)
+  assert.match(source, /v-model\.number="runtimeProfileId"[^>]*:disabled="loading \|\| busy"/)
+  assert.match(source, /@click="runOnce"\s+:disabled="loading \|\| busy"/)
+  assert.match(source, /@click="refresh"\s+:disabled="loading \|\| busy"/)
+  assert.match(source, /function refresh\(\) \{\s*if \(loading\.value \|\| busy\.value\) return\s*return load\(\)\s*\}/)
 })
