@@ -56,6 +56,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+. (Join-Path $PSScriptRoot 'isolation-naming.ps1')
 
 # ── 0. 门禁：默认不执行 ────────────────────────────────────────────────
 $execute = $Confirm -and (-not $DryRun)
@@ -91,12 +92,12 @@ if ($execute -and (-not $AllowRootOnIsolated)) {
 # ── 3. 将创建的对象清单（**先打印，再决定是否执行**）──────────────────
 $mallDb      = "${RunId}_mall"
 $generatorDb = "${RunId}_generator"
-$mallUser    = "${RunId}_mallapp"
-$genUser     = "${RunId}_genapp"
+$mallUser    = New-IsolationUserName -RunId $RunId -Role 'mallapp'
+$genUser     = New-IsolationUserName -RunId $RunId -Role 'genapp'
 $analyticsMetaDb   = "${RunId}_analytics_meta"
 $analyticsMetricDb = "${RunId}_analytics_metric"
-$analyticsMetaUser = "${RunId}_metaapp"
-$analyticsMetricUser = "${RunId}_metricapp"
+$analyticsMetaUser = New-IsolationUserName -RunId $RunId -Role 'metaapp'
+$analyticsMetricUser = New-IsolationUserName -RunId $RunId -Role 'metricapp'
 # 守卫 requireCredential 的候选路径 = 各模块的工作目录（CWD-relative）。
 # surefire 的 CWD 就是模块目录，故凭据文件写到模块根即可被找到；
 # 两处都在仓库内，且被 .gitignore 的 credref-*.properties 覆盖。

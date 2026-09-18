@@ -13,18 +13,25 @@ class AnalyticsIsolationScriptsContractTest {
 
     private static final Path PREPARE = RepoRoot.path("scripts/it-prepare-isolation.ps1");
     private static final Path RUNNER = RepoRoot.path("scripts/run-isolated-tests.ps1");
+    private static final Path NAMING = RepoRoot.path("scripts/isolation-naming.ps1");
 
     @Test
     void prepareScriptCreatesAnalyticsScopeOnlyBehindExplicitOptIn() throws IOException {
         String source = Files.readString(PREPARE);
+        String naming = Files.readString(NAMING);
         assertThat(source)
                 .contains("[switch]$IncludeAnalytics")
                 .contains("\"${RunId}_analytics_meta\"")
                 .contains("\"${RunId}_analytics_metric\"")
-                .contains("\"${RunId}_metaapp\"")
-                .contains("\"${RunId}_metricapp\"")
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metaapp'")
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metricapp'")
+                .contains("isolation-naming.ps1")
                 .contains("GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')")
                 .contains("GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')");
+        assertThat(naming)
+                .contains("if ($raw.Length -le 32)")
+                .contains("SHA256")
+                .contains("if ($name.Length -gt 32)");
     }
 
     @Test
@@ -34,8 +41,9 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("[switch]$IncludeAnalyticsWriteIts")
                 .contains("metaDb = \"${RunId}_analytics_meta\"")
                 .contains("metricDb = \"${RunId}_analytics_metric\"")
-                .contains("metaUser = \"${RunId}_metaapp\"")
-                .contains("metricUser = \"${RunId}_metricapp\"")
+                .contains("metaUser = (New-IsolationUserName -RunId $RunId -Role 'metaapp')")
+                .contains("metricUser = (New-IsolationUserName -RunId $RunId -Role 'metricapp')")
+                .contains("isolation-naming.ps1")
                 .contains("$env:V25_IT_META_DB = $analyticsWrite.metaDb")
                 .contains("$env:V25_IT_METRIC_DB = $analyticsWrite.metricDb")
                 .contains("MAVEN_ARGS = '-Pisolated-analytics-schema'")

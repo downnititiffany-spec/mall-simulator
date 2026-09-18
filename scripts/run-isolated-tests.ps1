@@ -85,6 +85,7 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'isolation-naming.ps1')
 
 $FormalPort = 3306
 $RunIdPattern = '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$'
@@ -129,7 +130,7 @@ Write-Host ("  [门禁2] RunId 形状 OK：{0}" -f $RunId)
 $targets = @()
 if ($Module -in @('mall', 'both', 'all')) {
   $targets += [pscustomobject]@{
-    name = 'mall'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
+    name = 'mall'; db = "${RunId}_mall"; user = (New-IsolationUserName -RunId $RunId -Role 'mallapp')
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
     pom = 'mall-simulator\pom.xml'
     extraArgs = @(); requireClass = $null
@@ -137,7 +138,7 @@ if ($Module -in @('mall', 'both', 'all')) {
 }
 if ($Module -in @('generator', 'both', 'all')) {
   $targets += [pscustomobject]@{
-    name = 'generator'; db = "${RunId}_generator"; user = "${RunId}_genapp"
+    name = 'generator'; db = "${RunId}_generator"; user = (New-IsolationUserName -RunId $RunId -Role 'genapp')
     pwdEnv = @('IT_GUARD_PASSWORD_GENERATOR', 'IT_GUARD_PASSWORD')
     pom = 'synthetic-data-generator\pom.xml'
     extraArgs = @(); requireClass = $null
@@ -146,7 +147,7 @@ if ($Module -in @('generator', 'both', 'all')) {
 if ($Module -in @('analytics', 'all')) {
   # DEV-003b：analytics 真库 IT 走同一入口。目标库/账号复用 mall 那一对（只读用例，不新建 3307 对象）。
   $targets += [pscustomobject]@{
-    name = 'analytics'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
+    name = 'analytics'; db = "${RunId}_mall"; user = (New-IsolationUserName -RunId $RunId -Role 'mallapp')
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
     pom = 'analytics-server\pom.xml'
     extraArgs = @('-pl', 'metric-analysis', '-am'); requireClass = 'IsolationGuardMySqlIT'
@@ -160,8 +161,8 @@ if ($IncludeAnalyticsWriteIts) {
   $analyticsWrite = [pscustomobject]@{
     metaDb = "${RunId}_analytics_meta"
     metricDb = "${RunId}_analytics_metric"
-    metaUser = "${RunId}_metaapp"
-    metricUser = "${RunId}_metricapp"
+    metaUser = (New-IsolationUserName -RunId $RunId -Role 'metaapp')
+    metricUser = (New-IsolationUserName -RunId $RunId -Role 'metricapp')
     metaPwd = [Environment]::GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')
     metricPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')
     hiveNamespace = "${RunId}_analytics"
@@ -292,7 +293,7 @@ if ($IncludeAnalyticsWriteIts) {
 if ($Module -in @('mall', 'both', 'all')) {
   $mallTarget = $targets | Where-Object { $_.name -eq 'mall' }
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_URL', $mallTarget.url)
-  Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_USER', "${RunId}_mallapp")
+  Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_USER', $mallTarget.user)
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_PASSWORD', (Mask $mallTarget.pwd))
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_FLYWAY_ENABLED', 'true')
 }
