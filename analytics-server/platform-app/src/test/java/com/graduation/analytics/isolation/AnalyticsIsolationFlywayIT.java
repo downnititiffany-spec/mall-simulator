@@ -20,7 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>执行顺序严格是：加载完整隔离上下文 → 分别建立 meta/metric 最小权限连接 → 两边各自
  * {@link TestIsolationGuard#verifyBeforeWrite} → Flyway migrate。不会碰 3306、不会合库、不会用
- * 一个跨库写账号。第二次 migrate 必须 0 个脚本，顺便证明 fresh schema 初始化后的幂等启动。</p>
+ * 一个跨库写账号。无论本次是 fresh 初始化还是对已初始化隔离库的重复验证，第二次 migrate 都必须
+ * 0 个脚本，并且 Flyway 必须能报告当前版本、关键表必须实际存在。</p>
  */
 @Tag("analytics-schema-it")
 class AnalyticsIsolationFlywayIT {
@@ -48,8 +49,10 @@ class AnalyticsIsolationFlywayIT {
         var metaSecond = metaFlyway.migrate();
         var metricSecond = metricFlyway.migrate();
 
-        assertThat(metaFirst.targetSchemaVersion).isNotNull();
-        assertThat(metricFirst.targetSchemaVersion).isNotNull();
+        // MigrateResult.targetSchemaVersion 在“schema 已是最新，本次执行 0 条迁移”时允许为 null，
+        // 因此不能把它当作 schema 已初始化的判据。重复使用同一隔离 RunId 时，正确行为正是首轮 0 条。
+        assertThat(metaFlyway.info().current()).as("meta Flyway 必须已有当前版本").isNotNull();
+        assertThat(metricFlyway.info().current()).as("metric Flyway 必须已有当前版本").isNotNull();
         assertThat(metaSecond.migrationsExecuted).as("meta 第二次启动必须空跑").isZero();
         assertThat(metricSecond.migrationsExecuted).as("metric 第二次启动必须空跑").isZero();
 
