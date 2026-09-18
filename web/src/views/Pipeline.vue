@@ -13,12 +13,12 @@
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <label style="font-size:13px">业务时间
-          <input v-model="businessDate" type="date" :disabled="busy" style="margin-left:6px;padding:4px">
+          <input v-model="businessDate" type="date" :disabled="loading || busy" style="margin-left:6px;padding:4px">
         </label>
         <label style="font-size:13px">运行环境
-          <input v-model.number="runtimeProfileId" type="number" min="1" :disabled="busy" style="width:70px;margin-left:6px;padding:4px">
+          <input v-model.number="runtimeProfileId" type="number" min="1" :disabled="loading || busy" style="width:70px;margin-left:6px;padding:4px">
         </label>
-        <button @click="runOnce" :disabled="busy" style="padding:6px 16px">
+        <button @click="runOnce" :disabled="loading || busy" style="padding:6px 16px">
           {{ busy ? '运行中…' : '触发采集并创建流水线实例' }}
         </button>
       </div>
@@ -37,7 +37,7 @@
     <div class="chart-box">
       <div class="chart-title">
         最近流水线实例
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="load" :disabled="loading || busy">
+        <button style="float:right;font-size:12px;padding:3px 10px" @click="refresh" :disabled="loading || busy">
           {{ loading ? '刷新中…' : '刷新' }}
         </button>
       </div>
@@ -57,7 +57,7 @@
               {{ r.status }}
             </td>
             <td>{{ r.attemptNo }}</td>
-            <td><button v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="busy" style="font-size:12px">重试</button></td>
+            <td><button v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="loading || busy" style="font-size:12px">重试</button></td>
           </tr>
           <tr v-if="runRows.length === 0"><td colspan="9" class="el-empty">暂无运行记录</td></tr>
         </tbody>
@@ -114,8 +114,13 @@ const { data, state, loading, error, exportContext, load } = analysis
 // 实例表经 tables.js 的 pipelineRunRows 单一映射所有者渲染（不再自渲染裸行字段）
 const runRows = computed(() => pipelineRunRows(data.value.pipelineRuns))
 
+function refresh() {
+  if (loading.value || busy.value) return
+  return load()
+}
+
 async function runOnce() {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   // 本次人工触发的输入必须在任何 await 之前冻结；否则 ingestionRun/3 秒等待期间修改表单，
   // createPipelineRun 会读到另一组业务时间/运行环境，导致一次操作前后上下文漂移。
   const requestedBusinessDate = businessDate.value
@@ -145,7 +150,7 @@ async function runOnce() {
 }
 
 async function retry(id) {
-  if (busy.value) return
+  if (busy.value || loading.value) return
   busy.value = true
   runResult.value = null
   try {
@@ -158,6 +163,6 @@ async function retry(id) {
   }
 }
 
-onMounted(() => load())
+onMounted(refresh)
 onBeforeUnmount(() => analysis.cancel())
 </script>
