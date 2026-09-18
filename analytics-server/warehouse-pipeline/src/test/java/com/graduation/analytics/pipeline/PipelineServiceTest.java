@@ -18,6 +18,8 @@ import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -434,18 +436,22 @@ class PipelineServiceTest {
     }
 
     /**
-     * S3-48：失败路径此前只有三处**零散**断言（`stageFailureMarksRunFailed` 断 INIT_SCHEMA 成功、
-     * `BUILD_DWD` 与 `PUBLISH_METRIC` 无记录），没有「整链不变量」。本守卫在链中段
-     * （BUILD_DWS）注入作业失败，直接断言「落库阶段＝声明次序前缀」＋「后缀全空且从未被提交」。
+     * S3-48 后继收口：fail-fast 不能只在 BUILD_DWS 单点成立。
+     * 对全部 Spark 承载阶段逐个注入失败，统一断言「落库阶段＝声明次序前缀」＋
+     * 「后缀全空且从未被提交」。这样阶段增删/换序或某个分支漏掉 return 时都会有对应参数红。
      */
-    @Test
-    void failedStageStopsEveryLaterStageOnTheWholeChain() throws Exception {
+    @ParameterizedTest(name = "fail-fast at {0}")
+    @ValueSource(strings = {
+            "INIT_SCHEMA", "LOAD_ODS", "BUILD_DWD", "BUILD_DWS",
+            "BUILD_ADS", "QUALITY_CHECK", "PUBLISH_METRIC"
+    })
+    void failedStageStopsEveryLaterStageOnTheWholeChain(String failedStage) throws Exception {
         List<String> submitted = new ArrayList<>();
         when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
                 .thenAnswer(inv -> {
                     String code = inv.getArgument(2);
                     submitted.add(code);
-                    return "BUILD_DWS".equals(code) ? failedExecution("BUILD_DWS", "usw")
+                    return failedStage.equals(code) ? failedExecution(code, "probe-" + code.toLowerCase())
                             : successExecution(code);
                 });
         writeLanding("accepted/2026-09-01",
@@ -455,7 +461,7 @@ class PipelineServiceTest {
                 LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-chain-fail", "trace-1");
         executor.drain();
 
-        int failedIdx = PipelineService.STAGE_ORDER.indexOf("BUILD_DWS");
+        int failedIdx = PipelineService.STAGE_ORDER.indexOf(failedStage);
         assertThat(failedIdx).as("标尺常量必须真的含被注入失败的阶段，且它不在首位（否则下面的前缀断言是空转）")
                 .isGreaterThan(0);
         List<String> reached = stageList().stream().map(PipelineStageRun::getStageCode).toList();
@@ -465,7 +471,7 @@ class PipelineServiceTest {
         assertThat(submitted)
                 .as("被提交的 Spark 阶段同样只能是该前缀（去掉本地 WAIT_LANDING 门）；实测=" + submitted)
                 .containsExactlyElementsOf(PipelineService.STAGE_ORDER.subList(1, failedIdx + 1));
-        assertThat(stageStatus("BUILD_DWS")).isEqualTo(PipelineStageRun.STATUS_FAILED);
+        assertThat(stageStatus(failedStage)).isEqualTo(PipelineStageRun.STATUS_FAILED);
         assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
         for (String later : PipelineService.STAGE_ORDER.subList(failedIdx + 1, PipelineService.STAGE_ORDER.size())) {
             assertThat(stageOf(later)).as("失败阶段之后的 " + later + " 不得留下阶段记录").isNull();

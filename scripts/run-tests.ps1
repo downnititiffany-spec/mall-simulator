@@ -112,7 +112,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1016
+  'analytics-server'        = 1022
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -836,6 +836,16 @@ $BaselineSpark = 308
 #   `105+353+175+97+126+160`，相对基线 1015 的 **+1 全部落在 warehouse-pipeline（174→175）**；
 #   mall 13、generator 110 均 MATCH；三棵树 1139。唯一红仍是既有环境 patrol（expected 43 / actual 0）。
 #   ⇒ baseline analytics-server **1015→1016**；该测试仍是 L1，不证明真实 Spring 进程重启/真库事务/Spark 集群行为。
+# 2026-09-18 继续收口 S3-48 fail-fast 残余面（只改测试，不改生产语义）：
+#   原 `failedStageStopsEveryLaterStageOnTheWholeChain` 只在 BUILD_DWS 单点注入失败；现改为参数化矩阵，
+#   对全部 7 个 Spark 承载阶段 `INIT_SCHEMA/LOAD_ODS/BUILD_DWD/BUILD_DWS/BUILD_ADS/QUALITY_CHECK/PUBLISH_METRIC`
+#   逐个注入 FAILED，并对每一格统一断言：阶段记录恰好截止到失败阶段、Spark 提交恰好截止到失败阶段、
+#   run=FAILED、所有后继阶段既不落阶段记录也不被提交。原 1 个样例 → 7 个参数实例，**净增 +6**。
+#   定向 `PipelineServiceTest` **38/38 PASS**；default 量数轮（`-AllowCountDrift`）：analytics-server
+#   **1022 (F=1 E=0 S=1)**，明细 `105+353+181+97+126+160`，相对 1016 的 **+6 全部落在
+#   warehouse-pipeline（175→181）**；mall 13、generator 110 均 MATCH；三棵树 1145。
+#   唯一红仍是既有环境 patrol（expected 43 / actual 0）。
+#   ⇒ baseline analytics-server **1016→1022**；这证明 L1 编排 fail-fast 矩阵，不证明真实 Spark 作业/集群失败模式。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 
