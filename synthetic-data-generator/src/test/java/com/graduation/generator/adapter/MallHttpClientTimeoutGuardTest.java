@@ -65,22 +65,23 @@ class MallHttpClientTimeoutGuardTest {
     private static final String TIMEOUT_OWNER_FILE = "src/main/java/com/graduation/generator/config/GeneratorBeans.java";
 
     /**
-     * 已登记的商城客户端所有者：文件 ⇒ 站点数（S3-46 实测 8 个站点）。
+     * 已登记的商城客户端所有者：文件 ⇒ 站点数。ReferenceMall 在 Stage 7 Batch S 后将
+     * 两个 HttpClient build 点合并成一个实例级客户端，因此当前共 7 个站点。
      *
      * <p>集合相等式判据：新增/删除任何客户端文件、或某文件里的站点数变化，都必须先在这里登记，
      * 否则守卫变红 —— 这就是"新客户端不得静默逃过超时纪律"的强制点。</p>
      */
     private static final Map<String, Integer> REGISTERED_SITES = registeredSites();
 
-    /** S3-46 实测：两家适配器里 HttpClient.newBuilder() 站点共 4 个（各 2 个） */
-    private static final int REGISTERED_CLIENT_SITES = 4;
+    /** 当前实测：ReferenceMall 1 个 + SecondMall 2 个 HttpClient build 点，共 3 个 */
+    private static final int REGISTERED_CLIENT_SITES = 3;
 
     /** S3-46 实测：两家适配器里 HttpRequest.newBuilder( 站点共 4 个（各 2 个） */
     private static final int REGISTERED_REQUEST_SITES = 4;
 
     private static Map<String, Integer> registeredSites() {
         Map<String, Integer> sites = new LinkedHashMap<>();
-        sites.put("src/main/java/com/graduation/generator/adapter/ReferenceMallHttpAdapter.java", 4);
+        sites.put("src/main/java/com/graduation/generator/adapter/ReferenceMallHttpAdapter.java", 3);
         sites.put("src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java", 4);
         return Map.copyOf(sites);
     }
@@ -104,7 +105,7 @@ class MallHttpClientTimeoutGuardTest {
             }
         }
 
-        assertThat(sites).as("必须真的扫到出站客户端站点（S3-46 实测 4 个：两家适配器各 2 个）")
+        assertThat(sites).as("必须真的扫到出站客户端站点（当前 3 个：ReferenceMall 1 + SecondMall 2）")
                 .isEqualTo(REGISTERED_CLIENT_SITES);
         assertThat(offenders)
                 .as("设计 §3.3 L85：每个客户端的建连必须有超时，禁止无界等待")

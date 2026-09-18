@@ -69,6 +69,12 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
 
     private final Function<String, String> credentialLookup;
     private final Duration timeout;
+    /**
+     * JDK HttpClient 自带连接池/Selector 线程，必须按适配器实例复用。
+     * 如果每次请求都 newBuilder().build()，600-event MALL_API 真跑会持续创建新的内部线程，
+     * 最终把 Windows 原生线程额度耗尽（Stage 7 Batch S 曾实测到 _beginthreadex EACCES）。
+     */
+    private final HttpClient httpClient;
     private final ObjectMapper mapper = new ObjectMapper();
 
     /**
@@ -78,6 +84,10 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
     public ReferenceMallHttpAdapter(Function<String, String> credentialLookup, Duration timeout) {
         this.credentialLookup = credentialLookup;
         this.timeout = timeout;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(timeout)
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
     }
 
     /** 生产装配形态：凭据取环境变量 */
@@ -317,7 +327,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         String responseBody;
         int status;
         try {
-            HttpResponse<String> response = client().send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             status = response.statusCode();
             responseBody = response.body();
         } catch (IOException e) {
@@ -347,13 +357,6 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
             log.debug("{} 返回 {} 条，超出本次请求上界 {}（客户端侧分页仍会裁剪）", path, data.size(), expectSize);
         }
         return data;
-    }
-
-    private HttpClient client() {
-        return HttpClient.newBuilder()
-                .connectTimeout(timeout)
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
     }
 
     /** 取凭据；取不到就抛（响亮失败），信息只出现引用名，绝不出现取值 */
@@ -489,16 +492,11 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         declare(routes, declared.get(CONFIG_BEHAVIOR_PATH), MallCapability.BEHAVIOR);
         declare(routes, declared.get(CONFIG_RESET_PATH), MallCapability.RESET_STATE);
 
-        HttpClient client = HttpClient.newBuilder()
-                .connectTimeout(timeout)
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
-
         Map<String, RouteOutcome> outcomes = new LinkedHashMap<>();
         int answered = 0;
         IOException lastFailure = null;
         for (String path : routes.keySet()) {
-            RouteOutcome outcome = send(client, base, path, token);
+            RouteOutcome outcome = send(httpClient, base, path, token);
             outcomes.put(path, outcome);
             if (outcome.answered()) {
                 answered++;

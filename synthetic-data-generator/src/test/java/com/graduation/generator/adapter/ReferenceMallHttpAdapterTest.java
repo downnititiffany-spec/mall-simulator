@@ -173,6 +173,7 @@ class ReferenceMallHttpAdapterTest {
         return new ReferenceMallHttpAdapter(credentialLookup, java.time.Duration.ofSeconds(3));
     }
 
+
     private static TargetConfig config(String baseUrl, String credentialRef, String configJson) {
         return new TargetConfig(42L, "REFERENCE_MALL_HTTP", baseUrl, credentialRef, configJson);
     }
