@@ -26,7 +26,7 @@
 | ID | 工作项 | 状态 | 当前证明边界 |
 |---|---|---|---|
 | V-001 | S3-53 AI evidenceId 兼容 | SUPERSEDED | 由 V-004 覆盖最终 ID 形状 |
-| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch L 271/271 |
+| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch N-R1 296/296 |
 | V-003 | S3-54 AI summary 展示 | PARTIAL | 工具函数/源码接线；无浏览器 E2E |
 | V-004 | S3-55/56 AI ID 严格形状/草稿锚点 | PARTIAL | 纯逻辑/源码接线；无真实提交链 E2E |
 | V-005 | S3-57 provider provenance | PASS | unit/default；无真实 Provider |
@@ -48,6 +48,8 @@
 | V-021 | S3-74 RFM matrix 类目唯一属主 | PASS | Node source guard + Web full gate；无真实 HTTP/DOM E2E |
 | V-022 | Post-J-R1 Web consistency hardening | PASS | 同快照/导出 freshness/reentry source guards + Web 261/261；无真实浏览器/HTTP/state-machine/DB E2E |
 | V-023 | Post-Batch-K Web interaction consistency | PASS | Ops admin/export + AI query/draft concurrency source guards + Web 271/271；无真实浏览器/HTTP/admin persistence/decision DB E2E |
+| V-024 | Batch M/M-R1 Pipeline + Product interaction consistency | PASS | M 初次因陈旧测试守卫 FAIL；M-R1 33/33 + Web 274/274 + build PASS；无真实 HTTP/DB E2E |
+| V-025 | Batch N/N-R1 analysis + post-N interaction consistency | PASS | N 初次因两条陈旧守卫 FAIL；N-R1 53/53 + Web 296/296 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
 
 当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 写 `CURRENT_BATCH.md` + 对应永久 plan，并置 `READY`。
 
@@ -58,7 +60,7 @@
 - **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
 - `npm run verify = npm test && npm run build`。
 - 多轮独立执行均为 Node tests 全绿 + Vite production build 成功。
-- 最新 Batch L：**271/271 PASS** + Vite production build PASS。
+- 最新 Batch N-R1：**296/296 PASS** + Vite 5.4.21 production build PASS（672 modules，4.66s）。
 
 ### V-005 — S3-57 Explanation provider provenance
 
@@ -165,6 +167,28 @@
 - Ops 三类 admin 写动作 handler 级 `busy` 防重入、指标/流水线/审计导出资格与 handler/UI 同源、AI 决策草稿创建与新问答互斥、既有 ask cancel 序号/abort 语义均满足计划 §7 十项复核。
 - 未覆盖真实浏览器双击/prompt 时序、真实 HTTP race、admin 权限与实际持久化、decision 状态机/DB 写入、AI provider/Text-to-SQL 运行时、3307 与 Spark/Hive/Flume E2E。
 
+
+### V-024 — Batch M/M-R1 Pipeline + Product interaction consistency
+
+- **Failed Batch M baseline**：`61776daf52cfcd396325d7bbdf56e890f1731224`，定向 28/28 绿，但全量 **273/274**，失败为 `pipelineLocalBusinessDate.test.js` 仍绑定旧的直接 `businessDate.value` 字面量；生产代码方向正确。Raw FAIL result commit：`0c46b9c79ba82252ef1e8a961e9def0eb32fabba`。
+- **Final verification baseline / M-R1**：`7748caf8b2628bd47ed5075db62ec2cd26a42fe6`。
+- 接受结果：`docs/verification/results/BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION-RESULT.md`；raw result commit `6406880dd00ba13c769ba91a85a3a3a8b3464c35`。
+- 定向 **33/33 PASS**；Web full gate **274/274 PASS**；Vite 5.4.21 production build PASS（672 modules，4.55s）。
+- Pipeline 在首次 await 前冻结 business date/runtime profile，busy 期间锁输入/刷新；Products 服务端分页导出资格与 loading 交互收口；M-R1 仅同步陈旧测试守卫，生产文件与 M 失败批次逐字节一致。
+- 初次 FAIL 保留用于审计，不改写历史。
+- 未覆盖真实浏览器交互、真实 HTTP race、后端/DB 运行时与 3307 E2E。
+
+### V-025 — Batch N/N-R1 analysis + post-N interaction consistency
+
+- **Failed Batch N baseline**：`58411f92a8e5591c435f5597143896f4fadac020`。新增目标测试 8/8 全绿；定向 **29/30**、Web full gate **280/282**，两条既有 characterization guard 仍绑定旧 `exportable` 字面量，Vite build 因 test fail 未执行。Raw FAIL result commit：`bd4f41d46cd021177f85792d52c4cdc5e36326f6`。
+- **Final verification baseline / N-R1**：`0c7af0dd0f09f4e5c0c097dc70fbe2647da7a54d`。
+- 永久测试计划：`docs/verification/batches/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`；raw result commit `23c02d5c4410a0f49786a18c4645ac34ef625875`；accepted archive commit `d379d39d8d59288e9487a002468b410649454001`。
+- 定向 **53/53 PASS**；Web full gate **296/296 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 production build PASS（672 modules，4.66s）。
+- Behavior / Sales / Overview / RFM loading 防重入与实际导出子集资格已收口；同时验收 Login in-flight input lock、AI history sequence/Abort late-response protection、BaseChart reactive-height resize、Ops refresh/admin-write `loading || busy` 双向互斥。
+- N-R1 修复只改 `rfmMatrixOwnership.test.js` 与 `postJr1WebHardening.test.js` 两个测试文件，不改生产语义；初次 N FAIL 结果完整保留。
+- 未覆盖真实浏览器时序、真实 HTTP race、浏览器 CSV、后端 runtime/DB、3307 与 Spark/Hive/Flume E2E。
+
 ## 4. PARTIAL：后续阶段联调再补
 
 ### V-003 — AI summary 展示
@@ -240,6 +264,35 @@
 - 定向 21/21 PASS；计划 §7 十项语义复核全部满足。
 - Web full gate：**271/271 PASS**；Vite 5.4.21 production build PASS（672 modules，2.84s）；New failures 0；workspace clean。
 - 未覆盖真浏览器双击/prompt 时序、真 HTTP race、admin 权限与持久化、decision 状态机/DB、AI provider/Text-to-SQL runtime、3307 与 Spark/Hive/Flume E2E。
+
+
+### Batch M — `61776daf52cfcd396325d7bbdf56e890f1731224`
+- Pipeline / Product interaction cluster 初次验证。
+- 定向 28/28 PASS；Web full gate **273/274 FAIL**。
+- 唯一失败：`pipelineLocalBusinessDate.test.js` 仍要求旧 `businessDate.value + 'T00:00:00'` 字面量，而生产已正确冻结 `requestedBusinessDate`。
+- Vite build 未执行（test fail 短路）；raw FAIL result commit `0c46b9c79ba82252ef1e8a961e9def0eb32fabba`。
+- 失败历史保留，不覆盖。
+
+### Batch M-R1 — `7748caf8b2628bd47ed5075db62ec2cd26a42fe6`
+- 仅同步陈旧 `pipelineLocalBusinessDate` characterization guard；生产语义不变。
+- 定向 **33/33 PASS**。
+- Web full gate：**274/274 PASS**；Vite 5.4.21 build PASS（672 modules，4.55s）。
+- Raw result commit：`6406880dd00ba13c769ba91a85a3a3a8b3464c35`。
+- 接受结果：`docs/verification/results/BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION-RESULT.md`。
+
+### Batch N — `58411f92a8e5591c435f5597143896f4fadac020`
+- Behavior / Sales / Overview / RFM interaction/export-subset cluster 初次验证。
+- 新增 `analysisFilterInteractionHardening` 8/8 PASS；定向 **29/30 FAIL**。
+- Web full gate：**280/282 FAIL**；两条既有守卫仍绑定旧 `exportable` 字面量；Vite build 未执行。
+- Raw FAIL result commit：`bd4f41d46cd021177f85792d52c4cdc5e36326f6`。
+- 失败历史保留，不覆盖。
+
+### Batch N-R1 — `0c7af0dd0f09f4e5c0c097dc70fbe2647da7a54d`
+- R1 相对修复前开发 HEAD `dcc15740...` 只修改两个测试守卫，生产文件零改动；同时继承 post-N 的 Login / AI history / BaseChart / Ops 低风险簇。
+- 定向 **53/53 PASS**。
+- Web full gate：**296/296 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 build PASS（672 modules，4.66s）；workspace clean。
+- Raw result commit：`23c02d5c4410a0f49786a18c4645ac34ef625875`。
+- 接受结果：`docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`；archive commit `d379d39d8d59288e9487a002468b410649454001`。
 
 ## 6. 已知环境红与未覆盖面
 
