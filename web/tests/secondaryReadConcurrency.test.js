@@ -56,3 +56,23 @@ test('Decision evaluations 与 evaluationError 作为同一旁路状态只允许
 test('Decision 卸载先使旁路 fetch 序号失效，再取消 useAnalysis 请求', () => {
   assert.match(decisions, /onUnmounted\(\(\) => \{\s*decisionFetchSeq \+= 1\s*cancel\(\)\s*\}\)/)
 })
+
+test('Decision 外部刷新在 loading 或写操作 busy 期间 fail-closed', () => {
+  assert.match(decisions, /@click="refresh" :disabled="loading \|\| busy"/)
+  const body = between(decisions, 'function refresh()', 'async function flush()')
+  assert.match(body, /if \(loading\.value \|\| busy\.value\) return/)
+  assert.ok(body.indexOf('if (loading.value || busy.value) return') < body.indexOf('return load({})'))
+})
+
+test('Decision 内部写后 flush 不复用外部 refresh 守卫，busy 期间仍能刷新最新列表', () => {
+  const body = between(decisions, 'async function flush()', 'function exportDecisions()')
+  assert.match(body, /await load\(\{\}\)/)
+  assert.doesNotMatch(body, /loading\.value \|\| busy\.value/)
+  assert.doesNotMatch(body, /refresh\(\)/)
+})
+
+test('Decision 状态动作按钮在列表 loading 或写操作 busy 时统一禁用', () => {
+  const matches = decisions.match(/:disabled="loading \|\| busy"/g) || []
+  assert.ok(matches.length >= 8, `刷新 + 7 个状态动作至少需要 8 处双向互斥，实际 ${matches.length}`)
+})
+
