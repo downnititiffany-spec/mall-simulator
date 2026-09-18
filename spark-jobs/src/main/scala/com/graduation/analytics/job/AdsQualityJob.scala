@@ -17,7 +17,7 @@ import scala.collection.mutable.ListBuffer
  *  3. ADS_STAGING_KEY_NOT_NULL   BLOCKING  关键列不得为空（逐表真实 COUNT）
  *  4. PUB_DQ_BLOCKING_RULES      BLOCKING  staging.ads_data_quality 的阻断规则必须 passed=1
  *  5. PUB_DQ_EVENT_ID_UNIQUE     ERROR     仅记录不阻断（与 Java QualityChecker.corePassed 口径一致）
- *  6. ADS_DWS_FUNNEL_RECONCILE   BLOCKING  ADS 漏斗 stage 汇总 = DWS 漏斗对应列（§16.4 跨层对账）
+ *  6. ADS_DWS_FUNNEL_RECONCILE   BLOCKING  ADS 漏斗 stage 汇总 = DWS 漏斗对应列（设计 §12.3 跨层对账）
  *  7. ADS_DWS_FUNNEL_RATE_RECONCILE BLOCKING ADS 漏斗率列 = DWS 漏斗全站行同 dt 率列（S3-10）
  *  8. ADS_GMV_NET_SALE_INVARIANT BLOCKING ADS 大盘同归属口径不变量 GMV≥净销售≥0（S3-22，含 NULL 判不通过）
  *  9. ADS_UV_PV_INVARIANT        BLOCKING ADS 大盘同过滤条件不变量 UV≤PV（S3-23；NULL 归规则 3，
