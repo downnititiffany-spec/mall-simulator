@@ -27,13 +27,17 @@ test('RFM 保留主响应 publisher source，并拒绝 users 聚合回声成另�
   assert.match(rfm, /用户聚合快照不一致/)
 })
 
-test('Sales 与 Overview 的导出 handler 自身也执行 exportable fail-closed', () => {
-  for (const [name, source] of [['Sales', sales], ['Overview', overview]]) {
-    const exportAt = source.indexOf('function doExport()')
-    assert.ok(exportAt >= 0, `${name} 必须存在 doExport`)
-    const body = source.slice(exportAt, exportAt + 500)
-    assert.match(body, /if \(!exportable\.value\) return/, `${name} handler 不能只依赖按钮 disabled`)
-  }
+test('Sales 与 Overview 的导出 handler 都执行当前页面的最终 fail-closed 谓词', () => {
+  const salesAt = sales.indexOf('function doExport()')
+  assert.ok(salesAt >= 0, 'Sales 必须存在 doExport')
+  const salesBody = sales.slice(salesAt, salesAt + 500)
+  assert.match(salesBody, /if \(!exportable\.value\) return/, 'Sales handler 仍应使用页面级 exportable')
+
+  const overviewAt = overview.indexOf('function doExport()')
+  assert.ok(overviewAt >= 0, 'Overview 必须存在 doExport')
+  const overviewBody = overview.slice(overviewAt, overviewAt + 500)
+  assert.match(overview, /const metricExportable = computed\(\(\) => exportable\.value && cards\.value\.length > 0\)/)
+  assert.match(overviewBody, /if \(!metricExportable\.value\) return/, 'Overview handler 必须使用实际 cards 子集资格')
 })
 
 test('Decision 所有写动作在 prompt/API 之前先拒绝 busy 重入', () => {
