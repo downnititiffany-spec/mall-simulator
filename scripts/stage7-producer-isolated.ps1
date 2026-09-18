@@ -233,7 +233,12 @@ try {
     if ([int]$journalCounts[$requiredOp] -lt 1) { throw "operation journal 未出现真实 $requiredOp HTTP：$($journalCounts | ConvertTo-Json -Compress)" }
   }
   if (@($journalRows | Where-Object { $_.status -eq 'FAILED' }).Count -gt 0) { throw 'operation journal 出现 FAILED 行，但 generation_run 却声称 SUCCESS' }
-  $result.journal = @{artifactUri=$journalArtifact.uri;recordCount=$journalArtifact.record_count;realHttpOk=$realRows.Count;realOperationCounts=$journalCounts}
+  $currentOrderIds = @($realRows | Where-Object { $_.operation -eq 'createOrder' } | ForEach-Object { [string]$_.external_id } | Sort-Object -Unique)
+  $currentRefundIds = @($realRows | Where-Object { $_.operation -eq 'refund' } | ForEach-Object { [string]$_.external_id } | Sort-Object -Unique)
+  $result.journal = @{
+    artifactUri=$journalArtifact.uri;recordCount=$journalArtifact.record_count;realHttpOk=$realRows.Count
+    realOperationCounts=$journalCounts;createdOrderIds=$currentOrderIds;refundIds=$currentRefundIds
+  }
 
   Write-Host '[7/9] 商城 Outbox 显式发布到 run-scoped rolling log ...'
   $statusBefore = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/status' -Headers $mallHeaders
@@ -254,6 +259,10 @@ try {
   if ($eventFiles.Count -lt 1) { throw "商城 landing 没有 JSONL：$mallLanding" }
   $eventTypeCounts = [ordered]@{}
   $eventLines = 0
+  $loggedOrderCreatedIds = [System.Collections.Generic.HashSet[string]]::new()
+  $loggedOrderPaidIds = [System.Collections.Generic.HashSet[string]]::new()
+  $loggedRefundCreatedIds = [System.Collections.Generic.HashSet[string]]::new()
+  $loggedRefundCompletedIds = [System.Collections.Generic.HashSet[string]]::new()
   foreach ($file in $eventFiles) {
     foreach ($line in Get-Content -LiteralPath $file.FullName -Encoding utf8) {
       if ([string]::IsNullOrWhiteSpace($line)) { continue }
@@ -261,13 +270,38 @@ try {
       $type = [string]$node.event_type
       if (-not $eventTypeCounts.Contains($type)) { $eventTypeCounts[$type] = 0 }
       $eventTypeCounts[$type] = [int]$eventTypeCounts[$type] + 1
+      if ($type -eq 'order_created') { [void]$loggedOrderCreatedIds.Add([string]$node.payload.order_id) }
+      if ($type -eq 'order_paid') { [void]$loggedOrderPaidIds.Add([string]$node.payload.order_id) }
+      if ($type -eq 'refund_created') { [void]$loggedRefundCreatedIds.Add([string]$node.payload.refund_id) }
+      if ($type -eq 'refund_completed') { [void]$loggedRefundCompletedIds.Add([string]$node.payload.refund_id) }
       $eventLines++
     }
   }
   foreach ($requiredType in @('order_created','order_paid','refund_created','refund_completed')) {
     if (-not $eventTypeCounts.Contains($requiredType) -or [int]$eventTypeCounts[$requiredType] -lt 1) { throw "rolling JSONL 缺 $requiredType：$($eventTypeCounts | ConvertTo-Json -Compress)" }
   }
-  $result.rollingLog = @{files=@($eventFiles | ForEach-Object {$_.FullName});lineCount=$eventLines;eventTypeCounts=$eventTypeCounts}
+  $currentPaidOrderIds = @($realRows | Where-Object { $_.operation -eq 'pay' } | ForEach-Object {
+    $canonicalOrder = [string]$_.canonical_id
+    $created = $realRows | Where-Object { $_.operation -eq 'createOrder' -and $_.canonical_id -eq $canonicalOrder } | Select-Object -First 1
+    if ($created) { [string]$created.external_id }
+  } | Where-Object { $_ } | Sort-Object -Unique)
+  $missingCreatedOrders = @($currentOrderIds | Where-Object { -not $loggedOrderCreatedIds.Contains($_) })
+  $missingPaidOrders = @($currentPaidOrderIds | Where-Object { -not $loggedOrderPaidIds.Contains($_) })
+  $missingRefundCreated = @($currentRefundIds | Where-Object { -not $loggedRefundCreatedIds.Contains($_) })
+  $missingRefundCompleted = @($currentRefundIds | Where-Object { -not $loggedRefundCompletedIds.Contains($_) })
+  if ($missingCreatedOrders.Count -gt 0 -or $missingPaidOrders.Count -gt 0 -or
+      $missingRefundCreated.Count -gt 0 -or $missingRefundCompleted.Count -gt 0) {
+    throw ("rolling JSONL 与本次 operation journal 关联不完整：order_created missing={0}, order_paid missing={1}, refund_created missing={2}, refund_completed missing={3}" -f
+      $missingCreatedOrders.Count,$missingPaidOrders.Count,$missingRefundCreated.Count,$missingRefundCompleted.Count)
+  }
+  $result.rollingLog = @{
+    files=@($eventFiles | ForEach-Object {$_.FullName});lineCount=$eventLines;eventTypeCounts=$eventTypeCounts
+    correlatedCurrentRun=@{
+      createdOrders=$currentOrderIds.Count;paidOrders=$currentPaidOrderIds.Count;refunds=$currentRefundIds.Count
+      missingCreatedOrders=$missingCreatedOrders.Count;missingPaidOrders=$missingPaidOrders.Count
+      missingRefundCreated=$missingRefundCreated.Count;missingRefundCompleted=$missingRefundCompleted.Count
+    }
+  }
 
   Write-Host '[9/9] 收口 producer 证据 ...'
   $result.outcome='PASS'

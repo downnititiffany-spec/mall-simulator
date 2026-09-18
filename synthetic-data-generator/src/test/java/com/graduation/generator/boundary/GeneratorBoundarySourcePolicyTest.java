@@ -184,6 +184,9 @@ class GeneratorBoundarySourcePolicyTest {
                 .contains("--mode=MALL_API")
                 .contains("operation-journal.jsonl")
                 .contains("$artifactResponse | ForEach-Object { $_ }")
+                .contains("$missingCreatedOrders")
+                .contains("$missingRefundCompleted")
+                .contains("rolling JSONL 与本次 operation journal 关联不完整")
                 .contains("/api/v1/mall/outbox/publish")
                 .contains("'order_created','order_paid','refund_created','refund_completed'");
 
