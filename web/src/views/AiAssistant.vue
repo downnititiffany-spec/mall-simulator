@@ -103,16 +103,16 @@
         </div>
         <template v-else>
           <div style="display:flex;flex-direction:column;gap:8px;max-width:760px;font-size:13px">
-            <label>标题<input v-model="draftForm.title" style="width:100%;padding:6px" /></label>
-            <label>动作<textarea v-model="draftForm.action" rows="2" style="width:100%;padding:6px"></textarea></label>
+            <label>标题<input v-model="draftForm.title" :disabled="draftBusy" style="width:100%;padding:6px" /></label>
+            <label>动作<textarea v-model="draftForm.action" rows="2" :disabled="draftBusy" style="width:100%;padding:6px"></textarea></label>
             <label>目标指标<input v-model="draftForm.metricCode" placeholder="接口未提供时留空，不猜"
-                              style="width:100%;padding:6px" /></label>
+                              :disabled="draftBusy" style="width:100%;padding:6px" /></label>
             <label>目标方向（必选，页面不代选）
-              <select v-model="draftForm.direction" style="padding:6px">
+              <select v-model="draftForm.direction" :disabled="draftBusy" style="padding:6px">
                 <option v-for="c in DIRECTION_CHOICES" :key="c.value" :value="c.value">{{ c.label }}</option>
               </select>
             </label>
-            <label>负责人（可留空，提交审批前必填）<input v-model="draftForm.owner" style="width:100%;padding:6px" /></label>
+            <label>负责人（可留空，提交审批前必填）<input v-model="draftForm.owner" :disabled="draftBusy" style="width:100%;padding:6px" /></label>
           </div>
           <div class="table-hint">{{ SUBMIT_REQUIREMENT_TEXT }}</div>
           <div class="table-hint">将提交：<span class="mono">{{ draftPreview }}</span></div>
