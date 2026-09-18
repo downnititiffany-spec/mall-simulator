@@ -14,6 +14,10 @@ class AnalyticsIsolationScriptsContractTest {
     private static final Path PREPARE = RepoRoot.path("scripts/it-prepare-isolation.ps1");
     private static final Path RUNNER = RepoRoot.path("scripts/run-isolated-tests.ps1");
     private static final Path NAMING = RepoRoot.path("scripts/isolation-naming.ps1");
+    private static final Path ADS_IT = RepoRoot.path(
+            "analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java");
+    private static final Path PUBLISHER_IT = RepoRoot.path(
+            "analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java");
 
     @Test
     void prepareScriptCreatesAnalyticsScopeOnlyBehindExplicitOptIn() throws IOException {
@@ -49,7 +53,9 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("MAVEN_ARGS = '-Pisolated-analytics-schema'")
                 .contains("AnalyticsIsolationFlywayIT")
                 .contains("analytics 双库 Flyway 未通过：拒绝继续写入型 IT")
-                .contains("requireClass = 'IsolationGuardMySqlIT'");
+                .contains("@('IsolationGuardMySqlIT')")
+                .contains("@('MetricAdsMySqlIT', 'MetricPublisherMySqlIT')")
+                .contains("foreach ($requiredClass in @($t.requireClasses))");
     }
 
     @Test
@@ -65,5 +71,11 @@ class AnalyticsIsolationScriptsContractTest {
                     .as(script + " 不得新增 *Password 命令行参数，避免口令进入进程列表/历史")
                     .doesNotContain("Password");
         }
+    }
+
+    @Test
+    void metricWriteItsStayTaggedForUnifiedIsolationSuite() throws IOException {
+        assertThat(Files.readString(ADS_IT)).contains("@Tag(\"it\")");
+        assertThat(Files.readString(PUBLISHER_IT)).contains("@Tag(\"it\")");
     }
 }

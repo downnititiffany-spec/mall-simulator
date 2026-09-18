@@ -9,6 +9,7 @@ import com.graduation.analytics.testsupport.TestIsolationGuard.WorkScope;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -59,6 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *       "-Dtest=MetricAdsMySqlIT" "-Dv25.it.testRunId=v25it-...-..." ...
  * </pre>
  */
+@Tag("it")
 @ExtendWith(IsolationProfileCondition.class)
 class MetricAdsMySqlIT {
 

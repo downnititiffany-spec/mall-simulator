@@ -150,7 +150,10 @@ if ($Module -in @('analytics', 'all')) {
     name = 'analytics'; db = "${RunId}_mall"; user = (New-IsolationUserName -RunId $RunId -Role 'mallapp')
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
     pom = 'analytics-server\pom.xml'
-    extraArgs = @('-pl', 'metric-analysis', '-am'); requireClass = 'IsolationGuardMySqlIT'
+    extraArgs = @('-pl', 'metric-analysis', '-am')
+    requireClasses = @('IsolationGuardMySqlIT') + $(if ($IncludeAnalyticsWriteIts) {
+      @('MetricAdsMySqlIT', 'MetricPublisherMySqlIT')
+    } else { @() })
   }
 }
 
@@ -442,14 +445,20 @@ foreach ($t in $targets) {
   $code = $LASTEXITCODE
   $tests = (Select-String -LiteralPath $log -Pattern 'Tests run:' | Select-Object -Last 1)
   $summary = if ($tests) { $tests.Line.Trim() } else { '<无 Tests run 行>' }
-  if ($t.requireClass) {
-    # DEV-003b 硬门禁：被点名的隔离类必须**真的**被执行到。只跑出 "Tests run: 0"、或压根没选中该类
-    # （profile 没生效 / includes 写错）时 Maven 退出码仍是 0 —— 那正是「假绿」，这里一律按失败处理。
-    $hit = Select-String -LiteralPath $log -Pattern ('-- in .*' + [regex]::Escape($t.requireClass)) | Select-Object -Last 1
-    if ($hit) {
-      $summary = ('[{0}] {1}' -f $t.requireClass, $hit.Line.Trim())
-    } else {
-      $summary = ('✗ 标准入口未自动执行到 {0}（零用例/未被选中）：{1}' -f $t.requireClass, $summary)
+  if ($t.PSObject.Properties.Name -contains 'requireClasses') {
+    # DEV-003b/V-032 硬门禁：收编清单中的每个隔离类都必须真的执行到。
+    # profile/includes/groups 任何漂移导致 Maven "BUILD SUCCESS / 少跑类" 都按假绿处理。
+    $hits = @()
+    $missingClasses = @()
+    foreach ($requiredClass in @($t.requireClasses)) {
+      $hit = Select-String -LiteralPath $log -Pattern ('-- in .*' + [regex]::Escape($requiredClass)) | Select-Object -Last 1
+      if ($hit) { $hits += ('[{0}] {1}' -f $requiredClass, $hit.Line.Trim()) }
+      else { $missingClasses += $requiredClass }
+    }
+    if ($missingClasses.Count -eq 0 -and $hits.Count -gt 0) {
+      $summary = ($hits -join ' | ')
+    } elseif ($missingClasses.Count -gt 0) {
+      $summary = ('✗ 标准入口未自动执行到：{0}（零用例/未被选中）：{1}' -f ($missingClasses -join ', '), $summary)
       if ($code -eq 0) { $code = 7 }
     }
   }

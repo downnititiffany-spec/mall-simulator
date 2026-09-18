@@ -17,6 +17,7 @@ import com.graduation.analytics.testsupport.TestIsolationGuard.WorkScope;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -60,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 把整个测试套件打红，而不是按 §9.4「默认关闭」。放进 {@code @BeforeAll} 后顺序为
  * 「先判定启用 → 再加载配置 → 启用但配置非法仍硬失败」。</p>
  */
+@Tag("it")
 @ExtendWith(IsolationProfileCondition.class)
 class MetricPublisherMySqlIT {
 
