@@ -15,6 +15,7 @@ class AnalyticsIsolationScriptsContractTest {
     private static final Path RUNNER = RepoRoot.path("scripts/run-isolated-tests.ps1");
     private static final Path NAMING = RepoRoot.path("scripts/isolation-naming.ps1");
     private static final Path STAGE7_HTTP = RepoRoot.path("scripts/stage7-http-isolated.ps1");
+    private static final Path STAGE7_LOCALFILE_E2E = RepoRoot.path("scripts/stage7-localfile-e2e.ps1");
     private static final Path ADS_IT = RepoRoot.path(
             "analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java");
     private static final Path PUBLISHER_IT = RepoRoot.path(
@@ -138,5 +139,28 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("$result.outcome = 'PIPELINE_TIMEOUT'")
                 .contains("[TIMEOUT exit=7]")
                 .contains("if (-not ($terminal -contains $last.data.status))");
+    }
+
+    @Test
+    void stage7LocalFileE2eConsumesOnlyCleanProducerEvidenceAndReconcilesAnalyticsInput() throws IOException {
+        String source = Files.readString(STAGE7_LOCALFILE_E2E);
+        assertThat(source)
+                .contains("stage7-http-isolated.ps1")
+                .contains("$producer.outcome -ne 'PASS'")
+                .contains("$producer.rollingLog.uniqueEventIdCount")
+                .contains("$producer.rollingLog.duplicateEventIdCount")
+                .contains("producer rolling 尚未满足 clean handoff")
+                .contains("mall-landing\\events")
+                .contains("$eventTime = [datetimeoffset]$node.event_time")
+                .contains("$businessTime = '{0}T00:00:00' -f $businessDate")
+                .contains("$sources.Contains('mock-mall')")
+                .contains("GetEnvironmentVariable('V25_IT_META_PASSWORD','Process')")
+                .contains("GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD','Process')")
+                .contains("'-GoldenDataset',$relativeInput")
+                .contains("[long]$http.ingestion.recordCount -ne $sourceLineCount")
+                .contains("[long]$http.ingestion.quarantineCount -ne 0")
+                .contains("[string]$http.pipeline.status -ne 'SUCCESS'")
+                .contains("[DRY-RUN] 不读 producer evidence、不读口令、不建目录、不启动 JVM、不发 HTTP、不连接数据库。")
+                .doesNotContain(":3306/");
     }
 }
