@@ -26,7 +26,7 @@
 | ID | 工作项 | 状态 | 当前证明边界 |
 |---|---|---|---|
 | V-001 | S3-53 AI evidenceId 兼容 | SUPERSEDED | 由 V-004 覆盖最终 ID 形状 |
-| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch N-R1 296/296 |
+| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch O 305/305 |
 | V-003 | S3-54 AI summary 展示 | PARTIAL | 工具函数/源码接线；无浏览器 E2E |
 | V-004 | S3-55/56 AI ID 严格形状/草稿锚点 | PARTIAL | 纯逻辑/源码接线；无真实提交链 E2E |
 | V-005 | S3-57 provider provenance | PASS | unit/default；无真实 Provider |
@@ -50,6 +50,7 @@
 | V-023 | Post-Batch-K Web interaction consistency | PASS | Ops admin/export + AI query/draft concurrency source guards + Web 271/271；无真实浏览器/HTTP/admin persistence/decision DB E2E |
 | V-024 | Batch M/M-R1 Pipeline + Product interaction consistency | PASS | M 初次因陈旧测试守卫 FAIL；M-R1 33/33 + Web 274/274 + build PASS；无真实 HTTP/DB E2E |
 | V-025 | Batch N/N-R1 analysis + post-N interaction consistency | PASS | N 初次因两条陈旧守卫 FAIL；N-R1 53/53 + Web 296/296 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
+| V-026 | Batch O secondary-read concurrency | PASS | RFM/Decision 旁路状态 latest-request ownership + Decision 读写互斥；55/55 + Web 305/305 + build PASS；无真实浏览器/HTTP/state-machine/DB E2E |
 
 当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 写 `CURRENT_BATCH.md` + 对应永久 plan，并置 `READY`。
 
@@ -60,7 +61,7 @@
 - **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
 - `npm run verify = npm test && npm run build`。
 - 多轮独立执行均为 Node tests 全绿 + Vite production build 成功。
-- 最新 Batch N-R1：**296/296 PASS** + Vite 5.4.21 production build PASS（672 modules，4.66s）。
+- 最新 Batch O：**305/305 PASS** + Vite 5.4.21 production build PASS（672 modules，3.00s）。
 
 ### V-005 — S3-57 Explanation provider provenance
 
@@ -189,6 +190,18 @@
 - N-R1 修复只改 `rfmMatrixOwnership.test.js` 与 `postJr1WebHardening.test.js` 两个测试文件，不改生产语义；初次 N FAIL 结果完整保留。
 - 未覆盖真实浏览器时序、真实 HTTP race、浏览器 CSV、后端 runtime/DB、3307 与 Spark/Hive/Flume E2E。
 
+
+### V-026 — Batch O secondary-read concurrency
+
+- **Final verification baseline**：`d4a53a08d3121ce2ce8de9ee4e0582b7230835ef`。
+- 永久测试计划：`docs/verification/batches/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-RESULT.md`；raw result commit `0635bad33a29ca0b9b183dbaf8573e0d801f3296`；accepted archive commit `632502f3fa638ea2b00f0401e6bceff1ae7dfdc8`。
+- 定向 **55/55 PASS**；Web full gate **305/305 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 production build PASS（672 modules，3.00s）。
+- RFM `usersError` 与 Decision `evaluations/evaluationError` 的组合读取旁路状态均有独立 latest-request 序号所有权；旧请求晚到不能覆盖新状态。
+- Decision 手工刷新与六个状态写动作统一 `loading || busy` 双向互斥；内部写后 `flush()` 仍直连 `load({})`，不被自身 busy 阻断。
+- 既有 submit/approve/reject/cancel/evaluate payload 与输入校验、RFM snapshot pinning / observation window / matrix owner / export subset 语义全部回归保持。
+- 未覆盖真实浏览器点击时序、真实 HTTP abort/late-response race、后端 Decision 状态机与 DB 持久化、3307 与 Spark/Hive/Flume E2E。
+
 ## 4. PARTIAL：后续阶段联调再补
 
 ### V-003 — AI summary 展示
@@ -293,6 +306,15 @@
 - Web full gate：**296/296 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 build PASS（672 modules，4.66s）；workspace clean。
 - Raw result commit：`23c02d5c4410a0f49786a18c4645ac34ef625875`。
 - 接受结果：`docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`；archive commit `d379d39d8d59288e9487a002468b410649454001`。
+
+
+### Batch O — `d4a53a08d3121ce2ce8de9ee4e0582b7230835ef`
+- RFM / Decision secondary-read concurrency + Decision read/write serialization。
+- 定向 **55/55 PASS**。
+- Web full gate：**305/305 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 build PASS（672 modules，3.00s）；workspace clean。
+- Raw result commit：`0635bad33a29ca0b9b183dbaf8573e0d801f3296`。
+- 接受结果：`docs/verification/results/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-RESULT.md`；archive commit `632502f3fa638ea2b00f0401e6bceff1ae7dfdc8`。
+- 未覆盖真实浏览器/HTTP race、Decision 后端状态机/DB 持久化、3307 与 Spark/Hive/Flume E2E。
 
 ## 6. 已知环境红与未覆盖面
 
