@@ -91,16 +91,20 @@ const colorOf = (name) => COLORS[name] || '#1E40AF'
 // 两个接口必须固定到同一 snapshotId：先以 /analysis/rfm 响应选定快照，再用该快照请求 /analysis/users，
 // 避免两次“取当前 ACTIVE”之间发生发布切换时把不同快照的数据拼到同一页。
 const usersError = ref('')
+let rfmFetchSeq = 0
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
 async function fetchRfm(params, signal) {
+  const mySeq = ++rfmFetchSeq
   const rfmRaw = await api.rfm({}, { signal })
   const rfm = readEnvelope(rfmRaw)
   let usersData = {}
   let usersWarnings = []
 
   if (!rfm.snapshotId) {
-    usersError.value = 'RFM 响应未提供 snapshotId，为避免混快照已跳过生命周期/偏好聚合请求'
+    if (mySeq === rfmFetchSeq) {
+      usersError.value = 'RFM 响应未提供 snapshotId，为避免混快照已跳过生命周期/偏好聚合请求'
+    }
   } else {
     try {
       const users = readEnvelope(await api.users({ snapshotId: rfm.snapshotId }, { signal }))
@@ -111,7 +115,7 @@ async function fetchRfm(params, signal) {
       usersWarnings = users.warnings
     } catch (e) {
       // 主动取消（切换刷新）不算失败，不写错误提示；其余错误（含快照回声不一致）只降级用户聚合区块。
-      if (!isAbort(e)) usersError.value = (e && (e.message || e.code)) || '请求失败'
+      if (!isAbort(e) && mySeq === rfmFetchSeq) usersError.value = (e && (e.message || e.code)) || '请求失败'
     }
   }
 
@@ -198,7 +202,10 @@ function doExport() {
 }
 
 onMounted(load)
-onBeforeUnmount(() => analysis.cancel())
+onBeforeUnmount(() => {
+  rfmFetchSeq += 1
+  analysis.cancel()
+})
 </script>
 
 <style scoped>
