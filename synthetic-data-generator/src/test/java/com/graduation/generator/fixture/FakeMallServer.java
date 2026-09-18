@@ -162,6 +162,22 @@ public final class FakeMallServer implements AutoCloseable {
         return refunds.size();
     }
 
+    public BigDecimal productPrice(String productId) {
+        Product product = products.get(productId);
+        if (product == null) {
+            throw new IllegalArgumentException("夹具商品不存在：" + productId);
+        }
+        return product.price();
+    }
+
+    public BigDecimal orderTotal(String orderId) {
+        ObjectNode order = orders.get(orderId);
+        if (order == null) {
+            throw new IllegalArgumentException("夹具订单不存在：" + orderId);
+        }
+        return new BigDecimal(order.path("totalAmount").asText());
+    }
+
     /** 商城侧订单状态分布（用于对账"支付/取消真的发生了"） */
     public Map<String, Integer> orderStatusHistogram() {
         Map<String, Integer> histogram = new LinkedHashMap<>();
@@ -327,12 +343,31 @@ public final class FakeMallServer implements AutoCloseable {
                         "订单当前状态不允许退款：" + order.path("status").asText(), null);
                 return;
             }
+            JsonNode refundRequest = read(body);
+            BigDecimal refundAmount;
+            try {
+                refundAmount = new BigDecimal(refundRequest.path("amount").asText());
+            } catch (RuntimeException e) {
+                respond(exchange, 400, "INVALID_AMOUNT", "退款金额非法", null);
+                return;
+            }
+            BigDecimal paidAmount = new BigDecimal(order.path("totalAmount").asText());
+            BigDecimal alreadyRefunded = refunds.values().stream()
+                    .filter(existing -> refundApply.group(1).equals(existing.path("orderId").asText()))
+                    .map(existing -> new BigDecimal(existing.path("request").path("amount").asText()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (refundAmount.compareTo(paidAmount.subtract(alreadyRefunded)) > 0) {
+                hit(exchange, "POST /api/v1/mall/orders/{orderId}/refunds");
+                respond(exchange, 400, "REFUND_EXCEEDS_PAID",
+                        "退款金额超过已付未退金额: " + refundAmount, null);
+                return;
+            }
             String refundId = nextId("83");
             ObjectNode refund = MAPPER.createObjectNode();
             refund.put("refundId", refundId);
             refund.put("orderId", refundApply.group(1));
             refund.put("status", "APPLIED");
-            refund.set("request", read(body));
+            refund.set("request", refundRequest);
             refunds.put(refundId, refund);
             hit(exchange, "POST /api/v1/mall/orders/{orderId}/refunds");
             respond(exchange, 200, "OK", "success", MAPPER.createObjectNode().put("refundId", refundId));

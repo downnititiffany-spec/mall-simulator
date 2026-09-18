@@ -113,7 +113,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 $BaselineDefault = [ordered]@{
   'analytics-server'        = 1034
   'mall-simulator'          = 13
-  'synthetic-data-generator' = 110
+  'synthetic-data-generator' = 111
 }
 # S3-01：新增 AdsRfmRawValueSpec（6 条，ADS 画像 R/F/M 原值与窗口）+ MetricAdsCatalogDdlConsistencyTest
 # （3 条，Java 侧迁移↔白名单一致性，计入默认档 analytics-server）⇒ spark 177→183，analytics-server 872→875。

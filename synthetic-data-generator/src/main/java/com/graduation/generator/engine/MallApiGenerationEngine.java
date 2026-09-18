@@ -15,6 +15,8 @@ import com.graduation.generator.contract.EventSink;
 import com.graduation.generator.contract.EventTypes;
 import com.graduation.generator.core.GenerationResult;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -171,22 +173,37 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         notes.addAll(dispatchResult.notes());
 
         GenerationResult base = fileOutcome.result();
+        Map<String, EventTypeStat> actualStats = eventStats.snapshot();
+        long actualUsers = statCount(actualStats, EventTypes.USER_REGISTERED);
+        long actualProducts = statCount(actualStats, EventTypes.PRODUCT_CREATED);
+        long actualOrdersCreated = statCount(actualStats, EventTypes.ORDER_CREATED);
+        long actualOrdersPaid = statCount(actualStats, EventTypes.ORDER_PAID);
+        long actualOrdersCancelled = statCount(actualStats, EventTypes.ORDER_CANCELLED);
+        long actualRefundsApplied = statCount(actualStats, EventTypes.REFUND_CREATED);
+        long actualRefundsCompleted = statCount(actualStats, EventTypes.REFUND_COMPLETED);
+        long actualOrdersCompleted = Math.max(0L, actualOrdersPaid - actualRefundsCompleted);
+        BigDecimal actualGmv = statAmount(actualStats, EventTypes.ORDER_PAID);
+        BigDecimal actualRefundAmount = statAmount(actualStats, EventTypes.REFUND_COMPLETED);
+        BigDecimal actualNetSale = actualGmv.subtract(actualRefundAmount).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal actualAvgOrderValue = actualOrdersPaid == 0
+                ? BigDecimal.ZERO.setScale(2)
+                : actualGmv.divide(BigDecimal.valueOf(actualOrdersPaid), 2, RoundingMode.HALF_UP);
         GenerationResult result = GenerationResult.builder()
                 .configKey(base.configKey())
                 .scenario(base.scenario())
                 .expectedEffect(base.expectedEffect())
-                .usersCreated(base.usersCreated())
-                .productsCreated(base.productsCreated())
+                .usersCreated(actualUsers)
+                .productsCreated(actualProducts)
                 .behaviorsByType(base.behaviorsByType())
-                .ordersCreated(base.ordersCreated())
-                .ordersPaid(base.ordersPaid())
-                .ordersCancelled(base.ordersCancelled())
-                .ordersCompleted(base.ordersCompleted())
-                .refundsApplied(base.refundsApplied())
-                .refundsCompleted(base.refundsCompleted())
-                .gmv(base.gmv())
-                .netSale(base.netSale())
-                .avgOrderValue(base.avgOrderValue())
+                .ordersCreated(actualOrdersCreated)
+                .ordersPaid(actualOrdersPaid)
+                .ordersCancelled(actualOrdersCancelled)
+                .ordersCompleted(actualOrdersCompleted)
+                .refundsApplied(actualRefundsApplied)
+                .refundsCompleted(actualRefundsCompleted)
+                .gmv(actualGmv)
+                .netSale(actualNetSale)
+                .avgOrderValue(actualAvgOrderValue)
                 .stockShortageHits(base.stockShortageHits())
                 .totalEvents(forwarding.forwarded())
                 .sampleEventIds(base.sampleEventIds())
@@ -199,6 +216,17 @@ public final class MallApiGenerationEngine implements GenerationEngine {
                 new EngineOutcome(result, eventStats.snapshot(), forwarding.forwarded(),
                         dispatchResult.failed(), List.of(), allNotes),
                 preflight, dispatchResult, forwarding.forwarded());
+    }
+
+    private static long statCount(Map<String, EventTypeStat> stats, String eventType) {
+        EventTypeStat stat = stats.get(eventType);
+        return stat == null ? 0L : stat.count();
+    }
+
+    private static BigDecimal statAmount(Map<String, EventTypeStat> stats, String eventType) {
+        EventTypeStat stat = stats.get(eventType);
+        return stat == null ? BigDecimal.ZERO.setScale(2)
+                : stat.amount().setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -516,10 +544,13 @@ public final class MallApiGenerationEngine implements GenerationEngine {
             if (!dispatch.write(event)) {
                 return;
             }
-            delegate.write(dispatch.rewrite(event));
+            CanonicalEvent rewritten = dispatch.rewrite(event);
+            delegate.write(rewritten);
             forwarded++;
             // 记账点在"真的转写进规范流"之后：账本与产物逐条一致，被商城拒绝的事件不进账本。
-            eventStats.record(event.eventType(), amountOf(event));
+            // MALL_API 会把计划估价重写成商城真实成交价，统计也必须读 rewritten，
+            // 否则 generation_event_stat 会和规范流/商城三边金额不一致。
+            eventStats.record(rewritten.eventType(), amountOf(rewritten));
         }
 
         private boolean budgetExhausted;

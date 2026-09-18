@@ -29,6 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -143,6 +144,72 @@ class MallApiGenerationEngineTest {
         String itemProductId = String.valueOf(items.get(0).get("product_id"));
         assertTrue(mall.productIds().contains(itemProductId),
                 "订单商品必须来自真实目录：" + itemProductId);
+
+        // 金额事实也必须来自商城，而不是文件模式计划里的估价/随机折扣。
+        Map<String, CanonicalEvent> createdByExternalOrder = sink.events.stream()
+                .filter(event -> "order_created".equals(event.eventType()))
+                .collect(java.util.stream.Collectors.toMap(
+                        event -> String.valueOf(event.payload().get("order_id")),
+                        event -> event,
+                        (left, right) -> left,
+                        java.util.LinkedHashMap::new));
+        for (Map.Entry<String, CanonicalEvent> entry : createdByExternalOrder.entrySet()) {
+            String externalOrderId = entry.getKey();
+            CanonicalEvent created = entry.getValue();
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> realItems = (List<Map<String, Object>>) created.payload().get("items");
+            BigDecimal itemSum = BigDecimal.ZERO;
+            for (Map<String, Object> item : realItems) {
+                String externalProductId = String.valueOf(item.get("product_id"));
+                int quantity = ((Number) item.get("quantity")).intValue();
+                BigDecimal realPrice = mall.productPrice(externalProductId).setScale(2);
+                assertEquals(0, realPrice.compareTo(new BigDecimal(String.valueOf(item.get("unit_price")))),
+                        "unit_price 必须等于商城真实目录价：" + item);
+                assertEquals("0.00", String.valueOf(item.get("discount")),
+                        "参考商城下单没有折扣，规范流也不能保留计划随机折扣：" + item);
+                BigDecimal line = realPrice.multiply(BigDecimal.valueOf(quantity)).setScale(2);
+                assertEquals(0, line.compareTo(new BigDecimal(String.valueOf(item.get("amount")))),
+                        "items.amount 必须等于商城真实单价×数量：" + item);
+                itemSum = itemSum.add(line);
+            }
+            BigDecimal realOrderTotal = mall.orderTotal(externalOrderId).setScale(2);
+            assertEquals(0, realOrderTotal.compareTo(itemSum), "商城总额必须等于重写后的明细合计");
+            assertEquals(0, realOrderTotal.compareTo(
+                            new BigDecimal(String.valueOf(created.payload().get("total_amount")))),
+                    "order_created.total_amount 必须等于商城真实成交额：" + externalOrderId);
+        }
+        for (CanonicalEvent event : sink.events) {
+            if ("order_paid".equals(event.eventType())
+                    || "refund_created".equals(event.eventType())
+                    || "refund_completed".equals(event.eventType())) {
+                String externalOrderId = String.valueOf(event.payload().get("order_id"));
+                BigDecimal realOrderTotal = mall.orderTotal(externalOrderId).setScale(2);
+                assertEquals(0, realOrderTotal.compareTo(
+                                new BigDecimal(String.valueOf(event.payload().get("amount")))),
+                        event.eventType() + ".amount 必须等于对应商城真实成交额：" + externalOrderId);
+            }
+            if ("refund_created".equals(event.eventType()) || "refund_completed".equals(event.eventType())) {
+                String refundId = String.valueOf(event.payload().get("refund_id"));
+                assertTrue(refundId.startsWith("83") && refundId.length() == 19,
+                        "退款号必须是商城真实退款 ID，而不是生成器 R...：" + refundId);
+            }
+        }
+        BigDecimal streamGmv = sink.events.stream()
+                .filter(event -> "order_paid".equals(event.eventType()))
+                .map(event -> new BigDecimal(String.valueOf(event.payload().get("amount"))))
+                .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2);
+        BigDecimal streamRefund = sink.events.stream()
+                .filter(event -> "refund_completed".equals(event.eventType()))
+                .map(event -> new BigDecimal(String.valueOf(event.payload().get("amount"))))
+                .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2);
+        assertEquals(0, streamGmv.compareTo(outcome.outcome().result().gmv()),
+                "MALL_API result.gmv 必须来自重写后的真实支付事件");
+        assertEquals(0, streamGmv.subtract(streamRefund).setScale(2)
+                        .compareTo(outcome.outcome().result().netSale()),
+                "MALL_API result.netSale 必须来自真实支付-真实退款");
+        assertEquals(0, streamGmv.compareTo(
+                        outcome.outcome().eventStats().get("order_paid").amount().setScale(2)),
+                "generation_event_stat 的支付金额必须与规范流一致");
 
         // 操作流水：预检 1 条真实读取 + 每个"有公开写接口"的事件各 1 条真实调用。
         // D12 起这两个数必须分开数：product_created 走的是预检已取回的目录（本地对齐记账，不发请求），

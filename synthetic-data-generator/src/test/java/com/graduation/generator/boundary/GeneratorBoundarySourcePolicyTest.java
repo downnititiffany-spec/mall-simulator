@@ -165,6 +165,37 @@ class GeneratorBoundarySourcePolicyTest {
         assertThat(pom).as("独立版本号").contains("<artifactId>synthetic-data-generator</artifactId>");
     }
 
+    @Test
+    @DisplayName("Stage 7 producer harness 只走 3307 + 8090/8092 公开边界，凭据不进 CLI")
+    void stage7ProducerHarnessKeepsIsolationAndPublicHttpBoundary() {
+        Path script = MODULE_ROOT.getParent().resolve("scripts/stage7-producer-isolated.ps1");
+        assertThat(script).as("Stage 7 producer harness 必须存在").exists();
+        String text = read(script);
+
+        assertThat(text)
+                .contains("jdbc:mysql://127.0.0.1:3307/$mallDb")
+                .contains("jdbc:mysql://127.0.0.1:3307/$genDb")
+                .contains("if ($mallUrl -match ':3306/' -or $genUrl -match ':3306/')")
+                .contains("http://127.0.0.1:8090/api/v1/auth/login")
+                .contains("http://127.0.0.1:8090/api/v1/admin/products")
+                .contains("changeType='adjust'")
+                .contains("http://127.0.0.1:8092/api/v1/targets")
+                .contains("http://127.0.0.1:8092/api/v1/generation-runs")
+                .contains("--mode=MALL_API")
+                .contains("operation-journal.jsonl")
+                .contains("$artifactResponse | ForEach-Object { $_ }")
+                .contains("/api/v1/mall/outbox/publish")
+                .contains("'order_created','order_paid','refund_created','refund_completed'");
+
+        assertThat(text)
+                .contains("Read-CredrefPassword")
+                .contains("credential_ref=$tokenRef")
+                .doesNotContain("[string]$MallPassword")
+                .doesNotContain("[string]$GeneratorPassword")
+                .doesNotContain("--password=")
+                .doesNotContain("jdbc:mysql://127.0.0.1:3306/");
+    }
+
     /**
      * M1-9 ② 硬约束 6 的常驻负向证据：<b>引擎侧不许内置任何一家商城的路由字面量</b>。
      *
