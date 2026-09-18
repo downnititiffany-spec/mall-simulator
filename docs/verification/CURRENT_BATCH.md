@@ -1,57 +1,61 @@
 # Current Verification Batch
 
-> 状态：READY
-> Batch N 已经由 Code Agent 两次一致复现为 FAIL_NEW_REGRESSION：新增 8 条目标测试全部通过，但两条历史源码守卫仍绑定旧的 `exportable` 字面量，导致定向 29/30、全量 280/282，Vite build 未执行。当前进入 **Batch N-R1**：只同步这两条陈旧测试守卫，不改变 Overview/RFM 生产语义。
+> 状态：CLOSED / PASS
+> Batch N-R1 已正式接受。Batch N 的原始 FAIL_NEW_REGRESSION 证据保留不覆盖；N-R1 仅同步两条陈旧源码守卫，在不改生产语义的前提下完成回归收口。
 
-## Current batch
+## Accepted batch
 
 - **Batch ID**：`BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY`
 - **Tested commit**：`0c7af0dd0f09f4e5c0c097dc70fbe2647da7a54d`
+- **Result**：PASS
 - **Branch context**：`feature/v3-development`
-- **Failed predecessor**：`BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY` / `58411f92a8e5591c435f5597143896f4fadac020` / FAIL_NEW_REGRESSION
-- **Accepted predecessor before N**：`BATCH-M-R1-WEB-PIPELINE-PRODUCT-INTERACTION` / `7748caf8b2628bd47ed5075db62ec2cd26a42fe6` / PASS
 - **Permanent plan**：`docs/verification/batches/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-PLAN.md`
-- **Expected accepted result**：`docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
-- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
+- **Accepted result**：`docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
+- **Raw result branch**：`verification-results`
+- **Raw result commit**：`23c02d5c4410a0f49786a18c4645ac34ef625875`
+- **Archived result commit**：`d379d39d8d59288e9487a002468b410649454001`
 
-## Why R1 exists
+## Verification summary
 
-Batch N itself implemented the intended stricter export predicates correctly:
+- targeted suites: **53/53 PASS**;
+- full Web gate: **296/296 PASS**;
+- failed / cancelled / skipped: **0 / 0 / 0**;
+- Vite: **5.4.21**;
+- transformed modules: **672**;
+- production build: **PASS**, built in **4.66s**;
+- workspace clean before and after;
+- no repair performed during verification.
 
-- Overview: `metricExportable = exportable && cards.length > 0`;
-- RFM: `segmentExportable = exportable && segmentRows.length > 0`.
+Batch N failed predecessor remains preserved:
 
-The new Batch N tests already proved those semantics. The two failures were older characterization tests that still required `if (!exportable.value) return`.
+- `BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY`
+- tested SHA `58411f92a8e5591c435f5597143896f4fadac020`
+- result: FAIL_NEW_REGRESSION
+- raw result commit: `bd4f41d46cd021177f85792d52c4cdc5e36326f6`
 
-R1 changes only:
+The two Batch N failures were stale source-characterization guards. N-R1 changed only:
 - `web/tests/rfmMatrixOwnership.test.js`;
 - `web/tests/postJr1WebHardening.test.js`.
 
-Relative to pre-repair development HEAD `dcc15740a70bdeb12b65b18d44863b4807f702ca`, no production file changes are part of the R1 repair.
+No production semantics were changed by the repair.
 
-## Count boundary
+## Accepted behavior boundary
 
-The development branch legitimately advanced after Batch N froze. The exact R1 tested SHA includes the post-N low-risk Web cluster already committed before this repair:
+The accepted SHA includes and verifies the accumulated low-risk Web cluster through:
 
+- Behavior / Sales / Overview / RFM loading reentry and export-subset consistency;
 - Login in-flight input locking;
-- AI history late-response/Abort protection;
-- BaseChart reactive height resize;
-- Ops refresh/admin-write mutual exclusion;
-- net +14 tests.
+- AI history sequence/Abort late-response protection;
+- BaseChart reactive-height resize;
+- Ops whole-page refresh/admin-write mutual exclusion;
+- shared CSV stale/empty-subset fail-closed behavior.
 
-Therefore R1 expected full gate is **296/296**, not 282/282.
+PASS proves Node/source-invariant tests and Vite production build only. It does not claim real browser timing, real HTTP races, browser CSV behavior, backend runtime/DB writes, 3307, or Spark/Hive/Flume E2E.
 
-Required targeted suites total **53/53**. Full gate is `cd web && npm run verify`, expected:
-- 296 total / 296 pass;
-- 0 fail / 0 cancelled / 0 skipped;
-- Vite production build actually executes and passes.
+## Next state
 
-## Execution rule
-
-Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name. Do not modify or repair source/tests/docs during verification.
-
-The original Batch N raw FAIL result remains preserved on `verification-results` and must not be overwritten.
+No verification batch is currently READY. Continue development from `feature/v3-development` and accumulate the next coherent low-risk cluster. Open a new batch only when the next meaningful verification trigger is reached.
 
 ## User action
 
-`VERIFY_CURRENT_BATCH`
+None.
