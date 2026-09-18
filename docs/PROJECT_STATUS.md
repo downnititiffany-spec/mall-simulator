@@ -1,9 +1,9 @@
 # PROJECT_STATUS
 
 > 当前阶段：**历史整理阶段已结束；项目正式进入毕业设计功能开发阶段。**
-> 最后更新时间：2026-09-18，Stage 7 producer rolling 唯一性 S-R1 已真实 PASS，当前验证门已切到 Batch T。
-> 当前代码基线：`cbc4191`（真实 producer rolling → LocalFile/HTTP ingestion → Spark 接力 harness；producer 修复被测 SHA 为 `5f20c37`）。
-> Batch T：**READY**；输入已由 S-R1 证明为 1011 行 / 1011 unique / 0 duplicate，`CURRENT_BATCH` 已切换。
+> 最后更新时间：2026-09-18，Batch T 已完成真实 rolling→ingestion 并推进到 BUILD_DWS，但 platform 在 DWS 期间异常退出；当前验证门为 T-R1 诊断复跑。
+> 当前代码基线：`2acee3d`（Stage 7 HTTP harness 增加 platform ExitCode / 资源快照 / poll 诊断；Batch T 被测 SHA 为 `cbc4191`）。
+> Batch T-R1：**READY**；producer 输入继续固定为 S-R1 的 1011 行 / 1011 unique / 0 duplicate exact evidence。
 > 当前治理基线（V3_RELEASE_COMMIT）：`7e8de648f1ff0d7306bbecdedeca985218229fe6`。
 > 当前指导书：`docs/guidance/项目完整实施指导书 V3.0.md`，见[指导书](guidance/项目完整实施指导书%20V3.0.md)。
 > 当前设计：`docs/design/项目设计文档 V3.0.md`，见[设计文档](design/项目设计文档%20V3.0.md)。

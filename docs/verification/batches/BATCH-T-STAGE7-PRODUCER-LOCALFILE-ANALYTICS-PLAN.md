@@ -1,6 +1,6 @@
 # BATCH-T-STAGE7-PRODUCER-LOCALFILE-ANALYTICS — Verification Plan
 
-> 状态：**READY**
+> 状态：**EXECUTED / BLOCKED_PLATFORM_EXIT_UNDIAGNOSED**
 > Exact source/test SHA：`cbc41919df79bba20e1f91fe1724061ae151d12e`
 > Branch：`feature/v3-development`
 > RunId：`stage7q1_20260918_152245`
@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-验证设计 V3 `8.1 的 LocalFile 三程序接力：
+验证设计 V3 §8.1 的 LocalFile 三程序接力：
 
 `generator HTTP → mall transaction/Outbox → completed rolling JSONL → LocalFile ingestion → Landing → Spark ODS/DWD/DWS/ADS → quality → metric publish`
 
