@@ -128,17 +128,46 @@ try {
   $mallProc = Start-Process -FilePath 'java' -ArgumentList @('-Dfile.encoding=UTF-8','-jar',$mallJar) -WorkingDirectory $root -RedirectStandardOutput $mallLog -RedirectStandardError "$mallLog.err" -PassThru
 
   $login = $null
-  foreach ($i in 1..60) {
+  $lastLoginError = $null
+  foreach ($i in 1..120) {
+    if ($mallProc.HasExited) {
+      throw "mall 启动进程提前退出 exit=$($mallProc.ExitCode)；日志：$mallLog"
+    }
     try {
       $loginBody = @{username='admin';password='admin123'} | ConvertTo-Json
       $login = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8090/api/v1/auth/login' -ContentType 'application/json' -Body $loginBody -TimeoutSec 2
       if ($login.data.token) { break }
-    } catch {}
+    } catch {
+      $lastLoginError = $_.Exception.Message
+    }
     Start-Sleep -Milliseconds 500
   }
-  if (-not $login.data.token) { throw "mall 未就绪或 admin 登录失败；日志：$mallLog" }
+  if (-not $login.data.token) {
+    throw "mall 60s 内未完成 admin 登录；lastError=$lastLoginError；日志：$mallLog"
+  }
   $mallToken = [string]$login.data.token
   $mallHeaders = @{Authorization="Bearer $mallToken"}
+
+  Write-Host '[1a/9] 收敛历史 Outbox 并建立不可发布残留基线 ...'
+  $baselineFailedIds = [System.Collections.Generic.HashSet[string]]::new()
+  $previousPending = [long]::MaxValue
+  for ($i=0; $i -lt 10; $i++) {
+    $baselinePub = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/publish' -Headers $mallHeaders
+    foreach ($failedId in @($baselinePub.data.failedEventIds)) {
+      if (-not [string]::IsNullOrWhiteSpace([string]$failedId)) { [void]$baselineFailedIds.Add([string]$failedId) }
+    }
+    $baselineStatus = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/status' -Headers $mallHeaders
+    $pending = [long]$baselineStatus.data.pendingCount
+    if ($pending -eq 0 -or $pending -eq $previousPending) { break }
+    $previousPending = $pending
+    Start-Sleep -Milliseconds 300
+  }
+  $baselineStatus = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/status' -Headers $mallHeaders
+  $baselineResidualPending = [long]$baselineStatus.data.pendingCount
+  $result.outbox = @{
+    baselineResidualPending=$baselineResidualPending
+    baselineFailedEventIds=@($baselineFailedIds)
+  }
 
   Write-Host '[1b/9] 通过 admin HTTP 恢复 run-scoped 商品库存 ...'
   $adminProducts = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8090/api/v1/admin/products' -Headers $mallHeaders
@@ -243,16 +272,35 @@ try {
   Write-Host '[7/9] 商城 Outbox 显式发布到 run-scoped rolling log ...'
   $statusBefore = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/status' -Headers $mallHeaders
   $publishedTotal = 0
+  $failedAfterIds = [System.Collections.Generic.HashSet[string]]::new()
   for ($i=0; $i -lt 10; $i++) {
     $pub = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/publish' -Headers $mallHeaders
     $publishedTotal += [int]$pub.data.publishedCount
+    foreach ($failedId in @($pub.data.failedEventIds)) {
+      if (-not [string]::IsNullOrWhiteSpace([string]$failedId)) { [void]$failedAfterIds.Add([string]$failedId) }
+    }
     $statusNow = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/status' -Headers $mallHeaders
-    if ([long]$statusNow.data.pendingCount -eq 0) { break }
+    if ([long]$statusNow.data.pendingCount -le $baselineResidualPending) { break }
     Start-Sleep -Milliseconds 300
   }
   $statusAfter = Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:8090/api/v1/mall/outbox/status' -Headers $mallHeaders
-  if ([long]$statusAfter.data.pendingCount -ne 0) { throw "Outbox 发布后仍有 pending=$($statusAfter.data.pendingCount)" }
-  $result.outbox = @{pendingBefore=$statusBefore.data.pendingCount;explicitPublishedCount=$publishedTotal;pendingAfter=$statusAfter.data.pendingCount;latestFile=$statusAfter.data.latestFile}
+  $newFailedIds = @($failedAfterIds | Where-Object { -not $baselineFailedIds.Contains($_) })
+  if ($newFailedIds.Count -gt 0) {
+    throw "Outbox 本次新增失败事件：$($newFailedIds -join ',')"
+  }
+  if ([long]$statusAfter.data.pendingCount -gt $baselineResidualPending) {
+    throw "Outbox 本次 run 留下新 pending：baseline=$baselineResidualPending after=$($statusAfter.data.pendingCount)"
+  }
+  $result.outbox = @{
+    baselineResidualPending=$baselineResidualPending
+    baselineFailedEventIds=@($baselineFailedIds)
+    pendingBefore=$statusBefore.data.pendingCount
+    explicitPublishedCount=$publishedTotal
+    pendingAfter=$statusAfter.data.pendingCount
+    failedEventIdsObserved=@($failedAfterIds)
+    newFailedEventIds=$newFailedIds
+    latestFile=$statusAfter.data.latestFile
+  }
 
   Write-Host '[8/9] 核对商城 rolling JSONL 事件类型 ...'
   $eventFiles = @(Get-ChildItem -Path (Join-Path $mallLanding 'events') -Filter '*.jsonl' -File -ErrorAction SilentlyContinue)

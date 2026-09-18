@@ -188,6 +188,11 @@ class GeneratorBoundarySourcePolicyTest {
                 .contains("$missingRefundCompleted")
                 .contains("rolling JSONL 与本次 operation journal 关联不完整")
                 .contains("/api/v1/mall/outbox/publish")
+                .contains("$baselineFailedIds")
+                .contains("$baselineResidualPending")
+                .contains("$newFailedIds")
+                .contains("Outbox 本次新增失败事件")
+                .contains("Outbox 本次 run 留下新 pending")
                 .contains("'order_created','order_paid','refund_created','refund_completed'");
 
         assertThat(text)
