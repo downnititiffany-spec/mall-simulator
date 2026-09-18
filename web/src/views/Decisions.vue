@@ -101,11 +101,13 @@ const evaluations = ref({})
 const evaluationError = ref('')
 const actionError = ref('')
 const busy = ref(false)
+let decisionFetchSeq = 0
 
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
 // 决策列表 + 每个已评价决策的效果（都返回裸数组，非统一信封）
 async function fetchDecisions(params, signal) {
+  const mySeq = ++decisionFetchSeq
   const raw = await api.decisions(20, { signal })
   const list = Array.isArray(raw) ? raw : []
   const evalMap = {}
@@ -121,8 +123,10 @@ async function fetchDecisions(params, signal) {
       if (!isAbort(e)) failed.push(`${d.decisionNo || d.id}: ${(e && (e.message || e.code)) || '读取失败'}`)
     }
   }
-  evaluations.value = evalMap
-  evaluationError.value = failed.join('；')
+  if (mySeq === decisionFetchSeq) {
+    evaluations.value = evalMap
+    evaluationError.value = failed.join('；')
+  }
 
   const ctx = buildFallbackContext({ rows: list, warnings: ['ENVELOPE_MISSING'] })
   return {
@@ -309,5 +313,8 @@ onMounted(() => {
   load({})
 })
 
-onUnmounted(cancel)
+onUnmounted(() => {
+  decisionFetchSeq += 1
+  cancel()
+})
 </script>
