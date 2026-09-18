@@ -52,7 +52,7 @@
 | V-025 | Batch N/N-R1 analysis + post-N interaction consistency | PASS | N 初次因两条陈旧守卫 FAIL；N-R1 53/53 + Web 296/296 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
 | V-026 | Batch O secondary-read concurrency | PASS | RFM/Decision 旁路状态 latest-request ownership + Decision 读写互斥；55/55 + Web 305/305 + build PASS；无真实浏览器/HTTP/state-machine/DB E2E |
 | V-027 | Batch P in-flight interaction locks | PASS | Sales loading 期锁本地排序/翻页 + AI 草稿字段锁 + Pipeline 读写互斥；41/41 + Web 307/307 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
-| V-028 | Pipeline 多 attempt / retry-from-stage L1 加固 | PARTIAL | `0f77322`：developer test 31/31；default 1015 MATCH（唯一红仍为既有环境 patrol）；真库 delete/completedStages、进程重启恢复、真实 Spark 未验 |
+| V-028 | Pipeline 多 attempt / retry-from-stage / startup recovery L1 加固 | PARTIAL | `0f77322` + `96f4ad2`：developer test 32/32；default 1016 MATCH（唯一红仍为既有环境 patrol）；真库 delete/completedStages、真实进程重启、真实 Spark 未验 |
 
 `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` 已执行并经总控接受为 **BLOCKED_ENV**。原始结果 commit `2c32a45fedfba65ab7c5510b1662631b2d0adce2`；接受记录见 `docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`。当前没有可执行的 Stage 7 下一门：3307 管理员认证恢复后应新建 `BATCH-Q-R1`，固定届时最新开发基线重跑 isolated 55/55；在其 PASS 前禁止进入完整 HTTP ingestion→pipeline 链，且禁止回退 3306。
 
@@ -216,16 +216,17 @@
 - 既有 AI ask/draft/history 并发守卫与 Pipeline operationId、业务日期/runtime profile 冻结、context/retry 语义全部回归保持。
 - 未覆盖真实浏览器点击/键入时序、真实 HTTP race、Pipeline 后端执行/幂等、AI 草稿持久化/状态机、3307 与 Spark/Hive/Flume E2E。
 
-### V-028 — Pipeline 多 attempt / retry-from-stage L1 加固
+### V-028 — Pipeline 多 attempt / retry-from-stage / startup recovery L1 加固
 
-- **Implementation baseline**：`0f773220ad6a29d4b839e52d29b5b5fb6124d94b`。
+- **Implementation baselines**：`0f773220ad6a29d4b839e52d29b5b5fb6124d94b`（多 attempt + retry-from-stage）＋ `96f4ad2e55672e3a49a1faf5ae3be23fc237bef3`（startup recovery → admin resume 桥接）。
 - 目的：在 Stage 7 的 3307 运行门被环境阻塞期间，收口 S3-48 已登记且不依赖真库的恢复路径纯 Java 缺口，不改变生产语义。
 - 新增 `retryFromStagePreservesPrefixAndReexecutesExactSuffix`：首跑成功后从 `BUILD_DWS` 起重算；验证 mapper delete 被调用、成功前缀阶段记录 ID 与 `targetSnapshotId` 保持、删除后缀重新创建、Spark 提交恰好是声明后缀。
 - 新增 `repeatedRetriesKeepSuccessfulPrefixSingleAndAdvanceAttempt`：`BUILD_DWS` 连续两次失败、第三次成功；attempt 1→2→3，已成功前缀保持单行，失败阶段保留两失败 + 一成功的三条 attempt 证据，后继阶段只在最终成功后执行一次。
-- developer targeted gate：`PipelineServiceTest` **31/31 PASS**，F/E/S=0，BUILD SUCCESS。
-- default 量数轮：analytics-server **1015 (F=1/E=0/S=1)**，相对旧基线 1013 的 +2 全部在 warehouse-pipeline（172→174）；mall 13、generator 110；三棵树 1138。更新 baseline 后 fresh 收口轮 **1015/13/110 全部 MATCH**。
+- `96f4ad2` 新增桥接用例 `startupRecoveryThenAdminResumeContinuesFromFirstIncompleteStage`：构造旧进程死在 `BUILD_DWS` 前的真实形状（前四阶段 SUCCESS、run RUNNING、snapshot 已冻结），先由 `PipelineRecoveryService` 标记 `RUN_INTERRUPTED`，再由管理员 `resume`；最终 attempt=2、snapshot 不变、成功前缀不重建，只提交 `BUILD_DWS → PUBLISH_METRIC` 后缀。首轮 RED 暴露的是 fixture 不真实（成功阶段存在但 snapshot 仍 null），按生产 `execute()` 的冻结时序修正 fixture 后转绿，未改生产代码。
+- developer targeted gate：`PipelineServiceTest` **32/32 PASS**，F/E/S=0，BUILD SUCCESS。
+- default 两轮量数链：`0f77322` 后 analytics 1015（+2）；`96f4ad2` 后 analytics **1016 (F=1/E=0/S=1)**，新增 +1 仍全部在 warehouse-pipeline（174→175）；mall 13、generator 110；三棵树 1139。更新 baseline 后 fresh 收口轮 **1016/13/110 全部 MATCH**。
 - default 唯一失败仍是既有环境 patrol：`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 / actual 0）；无本工作集新增失败。
-- **Remaining / why PARTIAL**：纯 Mockito L1 不初始化 MyBatis-Plus lambda column cache，所以本轮只证明 `retryFromStage` 发出了 mapper delete，并由内存 store 模拟 delete 后可见状态；**不证明真实 MySQL 上 `LambdaQueryWrapper.delete` 的 SQL 形状/事务可见性**。真库 `completedStages`、平台进程重启后恢复、真实 Spark 重跑次序与 Stage 7 E2E 仍待后续独立验证。
+- **Remaining / why PARTIAL**：纯 Mockito L1 不初始化 MyBatis-Plus lambda column cache，所以 `retryFromStage` 仍只证明发出了 mapper delete，并由内存 store 模拟 delete 后可见状态；**不证明真实 MySQL 上 `LambdaQueryWrapper.delete` 的 SQL 形状/事务可见性**。startup recovery 桥接同样是内存持久化 fixture，不是实际杀/启 Spring 进程。真库 `completedStages`、真实进程重启、真实 Spark 重跑次序与 Stage 7 E2E 仍待后续独立验证。
 - 不触碰 3306/3307，不跑 isolated/spark；没有生产 Java、DDL、迁移或正式契约变更，因此不新增 Decision Log / ADR。
 
 ## 4. PARTIAL：后续阶段联调再补
