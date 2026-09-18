@@ -53,3 +53,12 @@ test('打开/关闭草稿不会在草稿创建请求在途时改写表单状态'
   const close = functionBody('closeDraft', 'createDraft')
   assert.match(close, /if \(draftBusy\.value\) return/)
 })
+
+test('草稿创建在途时表单五个可编辑字段全部锁定，页面显示不会继续偏离已提交 payload', () => {
+  assert.match(source, /v-model="draftForm\.title" :disabled="draftBusy"/)
+  assert.match(source, /v-model="draftForm\.action"[^>]*:disabled="draftBusy"/)
+  assert.match(source, /v-model="draftForm\.metricCode"[^>]*:disabled="draftBusy"/)
+  assert.match(source, /v-model="draftForm\.direction" :disabled="draftBusy"/)
+  assert.match(source, /v-model="draftForm\.owner" :disabled="draftBusy"/)
+})
+
