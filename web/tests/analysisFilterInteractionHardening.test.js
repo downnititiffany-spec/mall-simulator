@@ -39,6 +39,12 @@ test('Sales load handler 在重置页码和请求前拒绝 loading 重入', () =
   assert.ok(request > reset, '请求必须发生在页码重置之后')
 })
 
+test('Sales loading 期间拒绝本地排序与翻页，避免新筛选结果落在中途改过的页码', () => {
+  assert.match(sales, /function toggleSort\(key\) \{\s*if \(loading\.value\) return/)
+  assert.match(sales, /:disabled="loading \|\| paged\.page <= 1" @click="page = paged\.page - 1"/)
+  assert.match(sales, /:disabled="loading \|\| paged\.page >= paged\.totalPages" @click="page = paged\.page \+ 1"/)
+})
+
 test('Overview 日期输入与 load handler 在 loading 期间 fail-closed', () => {
   assert.equal((overview.match(/v-model="(?:from|to)" :disabled="loading"/g) || []).length, 2)
   assert.match(overview, /const load = \(\) => \{\s*if \(loading\.value\) return\s*return analysis\.load/)
