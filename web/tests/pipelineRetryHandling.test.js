@@ -14,13 +14,13 @@ const functionBody = (name) => {
   return source.slice(start, next === -1 ? source.length : next)
 }
 
-test('FAILED run 的重试按钮受 busy 保护，避免重复提交 retry', () => {
-  assert.match(source, /v-if="r\.status === 'FAILED'"[^>]*@click="retry\(r\.id\)"[^>]*:disabled="busy"/)
+test('FAILED run 的重试按钮受 loading/busy 双向保护，避免与刷新或重复 retry 并发', () => {
+  assert.match(source, /v-if="r\.status === 'FAILED'"[^>]*@click="retry\(r\.id\)"[^>]*:disabled="loading \|\| busy"/)
 })
 
-test('retry 进入 busy、清理旧结果，并在 finally 中恢复 busy', () => {
+test('retry 在 loading/busy 时 fail-closed，进入 busy 后清理旧结果，并在 finally 中恢复 busy', () => {
   const body = functionBody('retry')
-  assert.match(body, /if \(busy\.value\) return/)
+  assert.match(body, /if \(busy\.value \|\| loading\.value\) return/)
   assert.match(body, /busy\.value = true/)
   assert.match(body, /runResult\.value = null/)
   assert.match(body, /finally \{[\s\S]*busy\.value = false[\s\S]*\}/)
