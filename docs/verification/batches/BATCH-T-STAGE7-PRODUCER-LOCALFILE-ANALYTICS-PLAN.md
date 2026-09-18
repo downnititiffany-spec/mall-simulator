@@ -1,6 +1,6 @@
 # BATCH-T-STAGE7-PRODUCER-LOCALFILE-ANALYTICS — Verification Plan
 
-> 状态：**BLOCKED_BY_S_R1**
+> 状态：**READY**
 > Exact source/test SHA：`cbc41919df79bba20e1f91fe1724061ae151d12e`
 > Branch：`feature/v3-development`
 > RunId：`stage7q1_20260918_152245`
@@ -81,15 +81,29 @@ analytics 侧完成后必须满足：
 
 ## 7. Execution
 
-**当前不可执行。** 只有 S-R1 PASS 后，CURRENT_BATCH 才能切到 T。
+S-R1 已 PASS，CURRENT_BATCH 已可切到 T。
 
-届时应在仍持有 `V25_IT_META_PASSWORD` 与 `V25_IT_METRIC_PUBLISH_PASSWORD` 的交互式 PowerShell 中，针对 exact T SHA 执行：
+必须在仍持有 `V25_IT_META_PASSWORD` 与 `V25_IT_METRIC_PUBLISH_PASSWORD` 的交互式 PowerShell 中，针对 exact T SHA 执行。先在 detach 的 exact SHA 重新构建 analytics platform 与 Spark JAR，避免复用旧 target 运行物：
 
 ~~~powershell
+cd "D:\Develop_code\GraduationProject-wt\v3-dev"
+
+git switch --detach cbc41919df79bba20e1f91fe1724061ae151d12e
+git rev-parse HEAD
+
+mvn -f .\analytics-server\pom.xml -DskipTests package
+mvn -f .\spark-jobs\pom.xml -DskipTests package
+
 pwsh -NoProfile -File .\scripts\stage7-localfile-e2e.ps1 -RunId stage7q1_20260918_152245 -Confirm
+
+$BatchTExit = $LASTEXITCODE
+
+git switch feature/v3-development
+
+"BATCH_T_EXIT=$BatchTExit"
 ~~~
 
-T harness 默认读取 S-R1 的 producer latest evidence；控制端仍会在执行前核对 exact producer attempt 与 clean handoff 字段。
+T harness 默认读取 S-R1 的 producer latest evidence；执行前会重新核对 exact producer attempt、clean handoff 字段、物理文件行数/唯一性/source_system/业务日。
 
 ## 8. PASS boundary
 
