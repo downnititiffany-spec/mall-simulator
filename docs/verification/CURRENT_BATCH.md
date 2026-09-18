@@ -1,46 +1,49 @@
 # Current Verification Batch
 
-> 状态：READY
-> Batch O 已正式 PASS 并归档。当前达到下一次功能簇级批量验证节点：Sales / AI Draft / Pipeline 的在途交互锁与读写互斥已收口。
+> 状态：CLOSED / PASS
+> Batch P 已正式接受。Sales / AI Draft / Pipeline 的在途交互锁与读写互斥已通过定向与全量 Web 门禁。
 
-## Current batch
+## Accepted batch
 
 - **Batch ID**：`BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS`
 - **Tested commit**：`2f3e79f676e1b614fe9a57e71e7ecad68106a51f`
+- **Result**：PASS
 - **Branch context**：`feature/v3-development`
-- **Accepted predecessor**：`BATCH-O-WEB-SECONDARY-READ-CONCURRENCY` / `d4a53a08d3121ce2ce8de9ee4e0582b7230835ef` / PASS
 - **Permanent plan**：`docs/verification/batches/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-PLAN.md`
-- **Expected accepted result**：`docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`
-- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`
+- **Accepted result**：`docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`
+- **Raw result branch**：`verification-results`
+- **Raw result commit**：`4493bfa6818e9d3fb030616b55c4d6f345068cf4`
+- **Archived result commit**：`86ceda3764c2d11c25c3afc2192041c2fe7bcf00`
 
-## Scope summary
+## Verification summary
 
-This batch verifies one coherent low-risk Web interaction cluster:
+- targeted suites: **41/41 PASS**;
+- full Web gate: **307/307 PASS**;
+- failed / cancelled / skipped: **0 / 0 / 0**;
+- Vite: **5.4.21**;
+- transformed modules: **672**;
+- production build: **PASS**, built in **2.90s**;
+- workspace clean before and after;
+- no repair performed during verification.
 
-- Sales loading period locks local pagination and sort mutations as well as date filters;
-- AI decision-draft editable fields are locked while the already-frozen payload is being created;
-- Pipeline manual refresh, trigger and retry actions use a common `loading || busy` read/write exclusion boundary;
-- Pipeline internal post-write refresh still calls `load()` directly and is not blocked by its own busy flag;
-- existing AI ask cancellation/query-draft concurrency and Pipeline identity/date/context/retry semantics remain regression-covered.
+## Accepted behavior boundary
 
-No backend API/state-machine contract, DB/Flyway, auth/security, AI SQL, 3307, or Spark/Hive/Flume changes are part of this batch.
+The accepted SHA verifies:
 
-## Execution rule
+- Sales date-range reload cannot be interleaved with local sort/pagination mutations;
+- AI decision-draft editable fields remain visually consistent with the already-frozen payload while draft creation is in flight;
+- Pipeline manual refresh, trigger and retry actions share a `loading || busy` read/write exclusion boundary;
+- Pipeline successful writes still refresh internally through direct `load()` while their own busy flag is true;
+- prior AI ask cancellation/query-draft/history concurrency and Pipeline operation identity/date/context/retry semantics remain regression-covered.
 
-Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name, do not modify source/tests/docs, and do not repair failures during verification.
+PASS proves Node/source-invariant tests and Vite production build only. It does not claim real browser timing, real HTTP races, Pipeline backend execution/idempotency, AI decision-draft persistence/state-machine behavior, DB/3307, or Spark/Hive/Flume E2E.
 
-Required targeted suites total **41/41**.
+## Next state
 
-Accepted Batch O full gate was 305/305. This batch adds exactly two tests, so required full gate is:
+No verification batch is currently READY.
 
-- **307/307**;
-- 0 fail / 0 cancelled / 0 skipped;
-- Vite production build must actually execute and pass.
-
-## Acceptance boundary
-
-A PASS proves Node/source-invariant tests and Vite production build for the exact tested SHA. It does not elevate real browser timing, real HTTP races, Pipeline backend execution/idempotency, AI decision-draft persistence/state-machine behavior, DB/3307, or Spark/Hive/Flume E2E to verified status.
+The Web source/build baseline is now **307/307 PASS**. The next development priority shifts from broad Web interaction hardening toward Stage 7 real-chain readiness and integration evidence, while low-risk Web fixes may continue only when they directly protect that integration path.
 
 ## User action
 
-`VERIFY_CURRENT_BATCH`
+None.
