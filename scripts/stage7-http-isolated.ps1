@@ -191,6 +191,17 @@ $result = [ordered]@{
   runtimeProfileTest = $null
   ingestion = $null
   pipeline = $null
+  platform = [ordered]@{
+    pid = $null
+    hasExited = $null
+    exitCode = $null
+    lastAliveAt = $null
+    lastWorkingSetBytes = $null
+    lastPrivateMemoryBytes = $null
+    lastHandleCount = $null
+    pollErrorCount = 0
+    lastPollError = $null
+  }
   outcome = 'STARTED'
 }
 
@@ -202,10 +213,30 @@ function Save-Evidence {
   $json | Set-Content -LiteralPath $latestEvidencePath -Encoding utf8
 }
 
+function Capture-PlatformState {
+  if (-not $proc) { return }
+  try {
+    $proc.Refresh()
+    $result.platform.pid = $proc.Id
+    $result.platform.hasExited = $proc.HasExited
+    if ($proc.HasExited) {
+      $result.platform.exitCode = $proc.ExitCode
+      return
+    }
+    $result.platform.lastAliveAt = (Get-Date).ToString('s')
+    $result.platform.lastWorkingSetBytes = $proc.WorkingSet64
+    $result.platform.lastPrivateMemoryBytes = $proc.PrivateMemorySize64
+    $result.platform.lastHandleCount = $proc.HandleCount
+  } catch {
+    # 诊断采样本身绝不能改变验证结果。
+  }
+}
+
 try {
   Write-Host '[1/7] 启动 isolated analytics platform...'
   $jvmArgs = @('-Dfile.encoding=UTF-8', "-Dplatform.metric.publish.export-dir=$metricStaging", '-jar', $jar.FullName)
   $proc = Start-Process -FilePath 'java' -ArgumentList $jvmArgs -WorkingDirectory $root -RedirectStandardOutput $platformLog -RedirectStandardError "$platformLog.err" -PassThru
+  Capture-PlatformState
 
   if (-not (Wait-Http "$BaseUrl/api/v1/metrics/health")) {
     $result.outcome = 'PLATFORM_NOT_READY'
@@ -267,13 +298,33 @@ try {
   $created = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/v1/pipeline-runs" -Headers $pipelineHeaders -ContentType 'application/json' -Body $pipelineBody
   $pipelineId = $created.data.runId
   if (-not $pipelineId) { throw 'pipeline create 未返回 runId' }
+  $result.pipeline = $created.data
 
   $terminal = @('SUCCESS','FAILED','RUN_INTERRUPTED','CANCELLED','DEGRADED')
   $deadline = (Get-Date).AddSeconds($PipelineTimeoutSec)
   $last = $created
   while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds $PollSec
-    $last = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/v1/pipeline-runs/$pipelineId" -Headers $headers
+    Capture-PlatformState
+    try {
+      $last = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/v1/pipeline-runs/$pipelineId" -Headers $headers
+      $result.pipeline = $last.data
+    } catch {
+      $result.platform.pollErrorCount = [int]$result.platform.pollErrorCount + 1
+      $result.platform.lastPollError = $_.Exception.Message
+      Capture-PlatformState
+      if ($proc -and $proc.HasExited) {
+        $result.outcome = 'PLATFORM_EXITED_DURING_PIPELINE'
+        Save-Evidence $result
+        Write-Host ("[FAIL exit=7] platform 在 pipeline 运行中退出：pid={0} exitCode={1} stage={2}；证据 {3}" -f
+          $proc.Id,$proc.ExitCode,$result.pipeline.currentStage,$evidencePath)
+        exit 7
+      }
+      if ([int]$result.platform.pollErrorCount -ge 3) {
+        throw
+      }
+      continue
+    }
     if ($terminal -contains $last.data.status) { break }
   }
   $result.pipeline = $last.data
@@ -298,6 +349,7 @@ try {
   exit 0
 }
 catch {
+  Capture-PlatformState
   $result.outcome = 'EXCEPTION'
   $result.exception = $_.Exception.Message
   try { Save-Evidence $result } catch {}

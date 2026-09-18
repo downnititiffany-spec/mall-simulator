@@ -138,7 +138,13 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("[int]$PipelineTimeoutSec = 600")
                 .contains("$result.outcome = 'PIPELINE_TIMEOUT'")
                 .contains("[TIMEOUT exit=7]")
-                .contains("if (-not ($terminal -contains $last.data.status))");
+                .contains("if (-not ($terminal -contains $last.data.status))")
+                .contains("function Capture-PlatformState")
+                .contains("$result.platform.exitCode = $proc.ExitCode")
+                .contains("$result.platform.lastWorkingSetBytes = $proc.WorkingSet64")
+                .contains("$result.platform.pollErrorCount")
+                .contains("$result.outcome = 'PLATFORM_EXITED_DURING_PIPELINE'")
+                .contains("if ([int]$result.platform.pollErrorCount -ge 3)");
     }
 
     @Test
