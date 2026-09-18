@@ -53,7 +53,7 @@
 | V-026 | Batch O secondary-read concurrency | PASS | RFM/Decision 旁路状态 latest-request ownership + Decision 读写互斥；55/55 + Web 305/305 + build PASS；无真实浏览器/HTTP/state-machine/DB E2E |
 | V-027 | Batch P in-flight interaction locks | PASS | Sales loading 期锁本地排序/翻页 + AI 草稿字段锁 + Pipeline 读写互斥；41/41 + Web 307/307 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
 
-当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 写 `CURRENT_BATCH.md` + 对应永久 plan，并置 `READY`。
+当前等待 Code Agent 的工作项：`BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT`（READY）。本批只验证 fresh runId 的 3307 隔离运行能力与 isolated 55/55，不进入完整 HTTP ingestion→pipeline 链；若 3307 外部运行环境不可用则记录 `BLOCKED_ENV`，禁止回退 3306。
 
 ## 3. 已验证工作项摘要
 
