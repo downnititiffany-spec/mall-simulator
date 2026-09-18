@@ -765,6 +765,12 @@ $BaselineSpark = 308
 # 未测边界：跨会话/跨用户**不互斥**（未用 `Global\`）；两轮全档并发**未测**；不证明并发能通过
 #   （只证明撞车不会静默丢证据）；`docs/acceptance/dev003c-unified-test-entry-20260915/REPORT.md:19`
 #   记的是**当时的**默认口径（历史报告按纪律不改写，以本块为准）。
+# 2026-09-18 S3-51 残余面补测：`AbandonedMutexException` 接管分支已做真实 named-mutex 进程探针。
+#   keeper 进程先保持同名 mutex 对象句柄，owner 线程取得 mutex 后用 `Environment.Exit(0)` 异常终止且不
+#   `ReleaseMutex`；随后本脚本以**同一 LogDir** 启动，真实输出「并发锁恢复: ... AbandonedMutexException
+#   安全接管」，证明 catch 分支不是死代码。接管后的 Maven 故意替换成 `where.exe` 使探针快速 0 用例
+#   exit=7，**该 exit 7 不作套件证据**，只用于在不重复跑全仓的前提下验证锁分支。另有真实 Maven
+#   default 正常路径 fresh `1022/13/110 MATCH`（唯一红仍是既有历史 patrol），证明新增可观测输出不改正常门禁语义。
 # ───────────────────────────────────────────────────────────────────────────
 # ── S3-52（F-85）：Spark SQL 字面量「反斜杠形态」静态守卫（阶段6 反熵，A 类纯加性）────
 # 来源：backlog 行「Spark SQL 字面量**反斜杠转义被解析器吃掉**这一类缺陷目前只靠**人工审计**
@@ -1154,12 +1160,19 @@ try {
 $LockName = 'Local\v25tests-' + (-join ($lockBytes[0..7] | ForEach-Object { $_.ToString('x2') }))
 $script:GateMutex = New-Object System.Threading.Mutex($false, $LockName)
 $lockTaken = $false
+$abandonedMutexRecovered = $false
 try { $lockTaken = $script:GateMutex.WaitOne(0) }
-catch [System.Threading.AbandonedMutexException] { $lockTaken = $true }   # 前一轮异常终止 ⇒ 锁已由 OS 释放，可接管
+catch [System.Threading.AbandonedMutexException] {
+  $lockTaken = $true
+  $abandonedMutexRecovered = $true
+}   # 前一轮异常终止 ⇒ 锁已由 OS 释放，可接管
 if (-not $lockTaken) {
   Fail 5 ("日志目录已被另一轮门禁占用（RunId='{0}' LogDir='{1}'）：并发必须显式传不同 -RunId；默认 RunId 已含秒级时间戳与随机后缀。" -f $RunId, $LogDir)
 }
 Write-Host ("  并发锁    : {0}（已取得；进程退出即释放，无陈旧锁）" -f $LockName)
+if ($abandonedMutexRecovered) {
+  Write-Host '  并发锁恢复: 检测到上一持有线程异常终止，已通过 AbandonedMutexException 安全接管。'
+}
 
 # ── 按档执行 ───────────────────────────────────────────────────────────────
 if ($Suite -in @('default', 'all')) {
