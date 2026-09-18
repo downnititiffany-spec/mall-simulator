@@ -43,6 +43,9 @@ param(
   [switch]$DryRun,
   # 真正执行。**未显式给出时脚本只打印清单并退出**（默认拒绝执行）。
   [switch]$Confirm,
+  # Stage 7：额外准备 analytics 双库与两个最小权限账号。
+  # 默认关闭，避免改变既有 mall/generator 准备行为；只有显式给出才创建。
+  [switch]$IncludeAnalytics,
   # 允许在本机隔离实例(3307)上用 root 做建库/授权。脚本不改动 root 本身的口令。
   # 未显式给出时，即使 -Confirm 也拒绝执行（防止"顺手用 root"）。
   [switch]$AllowRootOnIsolated,
@@ -90,6 +93,10 @@ $mallDb      = "${RunId}_mall"
 $generatorDb = "${RunId}_generator"
 $mallUser    = "${RunId}_mallapp"
 $genUser     = "${RunId}_genapp"
+$analyticsMetaDb   = "${RunId}_analytics_meta"
+$analyticsMetricDb = "${RunId}_analytics_metric"
+$analyticsMetaUser = "${RunId}_metaapp"
+$analyticsMetricUser = "${RunId}_metricapp"
 # 守卫 requireCredential 的候选路径 = 各模块的工作目录（CWD-relative）。
 # surefire 的 CWD 就是模块目录，故凭据文件写到模块根即可被找到；
 # 两处都在仓库内，且被 .gitignore 的 credref-*.properties 覆盖。
@@ -111,6 +118,13 @@ Write-Host ("   数据库     : {0}" -f $mallDb)
 Write-Host ("   数据库     : {0}" -f $generatorDb)
 Write-Host ("   受限账号   : {0}@'%'  （只对 {1} 有权限）" -f $mallUser, $mallDb)
 Write-Host ("   受限账号   : {0}@'%'  （只对 {1} 有权限）" -f $genUser, $generatorDb)
+if ($IncludeAnalytics) {
+  Write-Host ("   数据库     : {0}" -f $analyticsMetaDb)
+  Write-Host ("   数据库     : {0}" -f $analyticsMetricDb)
+  Write-Host ("   受限账号   : {0}@'%'  （只对 {1} 有权限）" -f $analyticsMetaUser, $analyticsMetaDb)
+  Write-Host ("   受限账号   : {0}@'%'  （只对 {1} 有权限）" -f $analyticsMetricUser, $analyticsMetricDb)
+  Write-Host '   analytics 口令：只从进程环境 V25_IT_META_PASSWORD / V25_IT_METRIC_PUBLISH_PASSWORD 读取；不落盘、不回显。'
+}
 Write-Host (" 将写入的凭据文件（仓内、gitignore 覆盖、单键 password）：")
 Write-Host ("               : {0}" -f $credRefFileMall)
 Write-Host ("               : {0}" -f $credRefFileGen)
@@ -139,6 +153,17 @@ function New-Secret([int]$len = 24) {
 }
 $mallPwd = New-Secret
 $genPwd  = New-Secret
+$analyticsMetaPwd = $null
+$analyticsMetricPwd = $null
+if ($IncludeAnalytics) {
+  $analyticsMetaPwd = [Environment]::GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')
+  $analyticsMetricPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')
+  if (-not $analyticsMetaPwd -or -not $analyticsMetricPwd) {
+    Write-Host '拒绝：-IncludeAnalytics 真执行要求预先设置 V25_IT_META_PASSWORD 与 V25_IT_METRIC_PUBLISH_PASSWORD。'
+    Write-Host '  这两个值只从当前进程环境读取；脚本不提供密码参数、不生成文件、不回显。'
+    exit 2
+  }
+}
 
 if ($CredRefDir -and -not (Test-Path $CredRefDir)) { New-Item -ItemType Directory -Force -Path $CredRefDir | Out-Null }
 @(
@@ -157,6 +182,20 @@ Write-Host ("[1/2] 已写凭据文件：{0}" -f $credRefFileMall)
 Write-Host ("               : {0}（均不回显口令）" -f $credRefFileGen)
 
 # ── 5. 在 WSL 内执行 SQL（幂等）────────────────────────────────────────
+$analyticsSql = ''
+if ($IncludeAnalytics) {
+  $analyticsSql = @"
+CREATE DATABASE IF NOT EXISTS ``$analyticsMetaDb`` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE DATABASE IF NOT EXISTS ``$analyticsMetricDb`` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER IF NOT EXISTS '$analyticsMetaUser'@'%' IDENTIFIED BY '$analyticsMetaPwd';
+CREATE USER IF NOT EXISTS '$analyticsMetricUser'@'%' IDENTIFIED BY '$analyticsMetricPwd';
+ALTER USER '$analyticsMetaUser'@'%' IDENTIFIED BY '$analyticsMetaPwd';
+ALTER USER '$analyticsMetricUser'@'%' IDENTIFIED BY '$analyticsMetricPwd';
+GRANT ALL PRIVILEGES ON ``$analyticsMetaDb``.* TO '$analyticsMetaUser'@'%';
+GRANT ALL PRIVILEGES ON ``$analyticsMetricDb``.* TO '$analyticsMetricUser'@'%';
+"@
+}
+
 $sql = @"
 CREATE DATABASE IF NOT EXISTS ``$mallDb`` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 CREATE DATABASE IF NOT EXISTS ``$generatorDb`` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
@@ -166,9 +205,10 @@ ALTER USER '$mallUser'@'%' IDENTIFIED BY '$mallPwd';
 ALTER USER '$genUser'@'%'  IDENTIFIED BY '$genPwd';
 GRANT ALL PRIVILEGES ON ``$mallDb``.* TO '$mallUser'@'%';
 GRANT ALL PRIVILEGES ON ``$generatorDb``.* TO '$genUser'@'%';
+$analyticsSql
 FLUSH PRIVILEGES;
-SELECT 'created', SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME IN ('$mallDb','$generatorDb');
-SELECT 'granted', GRANTEE, TABLE_SCHEMA FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE LIKE '%$mallUser%' OR GRANTEE LIKE '%$genUser%';
+SELECT 'created', SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME LIKE '$RunId%';
+SELECT 'granted', GRANTEE, TABLE_SCHEMA FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE LIKE '%$RunId%';
 "@
 # 注意：新建账号的口令经 stdin（SQL 文本）传入，不出现在命令行/进程列表。
 # 管理员(root)口令如提供，只经环境变量 MYSQL_PWD 进入 WSL 内的 mysql 进程；
@@ -213,4 +253,18 @@ Write-Host ("  password=credref:{0}" -f $credRefIdGen)
 Write-Host ''
 Write-Host '  # 注意：这两个档案只被各模块的门禁(IsolationGuard)读取，Spring 不读它们；'
 Write-Host '  #       数据源地址仍须用环境变量/系统属性提供（见 application-test.yml）。'
+if ($IncludeAnalytics) {
+  Write-Host ''
+  Write-Host '  # analytics-server / TestIsolationGuard（双库；真值仍只走环境变量）'
+  Write-Host ("  V25_IT_TEST_RUN_ID={0}" -f $RunId)
+  Write-Host ("  V25_IT_META_DB={0}" -f $analyticsMetaDb)
+  Write-Host ("  V25_IT_METRIC_DB={0}" -f $analyticsMetricDb)
+  Write-Host ("  V25_IT_MYSQL_HOST={0}:{1}" -f $DbHost, $Port)
+  Write-Host ("  V25_IT_META_USERNAME={0}" -f $analyticsMetaUser)
+  Write-Host '  V25_IT_META_PASSWORD=<沿用当前进程环境；不回显>'
+  Write-Host ("  V25_IT_METRIC_PUBLISH_USERNAME={0}" -f $analyticsMetricUser)
+  Write-Host '  V25_IT_METRIC_PUBLISH_PASSWORD=<沿用当前进程环境；不回显>'
+  Write-Host ("  V25_IT_METRIC_READ_USERNAME={0}" -f $analyticsMetricUser)
+  Write-Host '  V25_IT_METRIC_READ_PASSWORD=<默认可与 publish 同值；runner 显式注入>'
+}
 exit 0

@@ -82,4 +82,26 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!-- Stage 7：analytics 双库 schema 准备。默认档不选中 *IT；显式 profile 才运行，
+         且类内 loadContext/verifyBeforeWrite 缺任一 V25_IT_* 都直接失败，不允许 skip 假绿。 -->
+    <profile>
+      <id>isolated-analytics-schema</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <groups>analytics-schema-it</groups>
+              <includes>
+                <include>**/AnalyticsIsolationFlywayIT.java</include>
+              </includes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
