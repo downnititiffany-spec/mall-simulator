@@ -14,6 +14,7 @@ class AnalyticsIsolationScriptsContractTest {
     private static final Path PREPARE = RepoRoot.path("scripts/it-prepare-isolation.ps1");
     private static final Path RUNNER = RepoRoot.path("scripts/run-isolated-tests.ps1");
     private static final Path NAMING = RepoRoot.path("scripts/isolation-naming.ps1");
+    private static final Path STAGE7_HTTP = RepoRoot.path("scripts/stage7-http-isolated.ps1");
     private static final Path ADS_IT = RepoRoot.path(
             "analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java");
     private static final Path PUBLISHER_IT = RepoRoot.path(
@@ -77,5 +78,41 @@ class AnalyticsIsolationScriptsContractTest {
     void metricWriteItsStayTaggedForUnifiedIsolationSuite() throws IOException {
         assertThat(Files.readString(ADS_IT)).contains("@Tag(\"it\")");
         assertThat(Files.readString(PUBLISHER_IT)).contains("@Tag(\"it\")");
+    }
+
+    @Test
+    void stage7HttpLaneIsRunScopedAnd3307Only() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metaapp'")
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metricapp'")
+                .contains("jdbc:mysql://127.0.0.1:3307/$metaDb")
+                .contains("jdbc:mysql://127.0.0.1:3307/$metricDb")
+                .contains("target\\v25-it\\$RunId\\http")
+                .contains("if ($metaUrl -match ':3306/' -or $metricUrl -match ':3306/')");
+    }
+
+    @Test
+    void stage7HttpLaneKeepsSecretsOutOfCliAndUsesRealHttpBoundaries() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')")
+                .contains("GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')")
+                .doesNotContain("[string]$MetaPassword")
+                .doesNotContain("[string]$MetricPassword")
+                .contains("/api/v1/runtime-profiles/1/test")
+                .contains("/api/v1/runtime-profiles/1/activate")
+                .contains("/api/v1/ingestion/runs")
+                .contains("/api/v1/pipeline-runs");
+    }
+
+    @Test
+    void stage7HttpLaneOwnsAndStopsOnlyItsPlatformProcess() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("-PassThru")
+                .contains("if ($proc -and -not $proc.HasExited)")
+                .contains("Stop-Process -Id $proc.Id -Force")
+                .doesNotContain("Get-Process java | Stop-Process");
     }
 }
