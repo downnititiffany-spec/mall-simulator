@@ -53,6 +53,7 @@
 | V-026 | Batch O secondary-read concurrency | PASS | RFM/Decision 旁路状态 latest-request ownership + Decision 读写互斥；55/55 + Web 305/305 + build PASS；无真实浏览器/HTTP/state-machine/DB E2E |
 | V-027 | Batch P in-flight interaction locks | PASS | Sales loading 期锁本地排序/翻页 + AI 草稿字段锁 + Pipeline 读写互斥；41/41 + Web 307/307 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
 | V-028 | Pipeline 多 attempt / retry-from-stage / startup recovery L1 加固 | PARTIAL | `0f77322` + `96f4ad2`：developer test 32/32；default 1016 MATCH（唯一红仍为既有环境 patrol）；真库 delete/completedStages、真实进程重启、真实 Spark 未验 |
+| V-029 | Pipeline 全阶段 fail-fast L1 矩阵 | PARTIAL | `384dedf`：7 个 Spark 承载阶段逐格失败；PipelineServiceTest 38/38；default 1022 MATCH；真实 Spark 失败形态未验 |
 
 `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` 已执行并经总控接受为 **BLOCKED_ENV**。原始结果 commit `2c32a45fedfba65ab7c5510b1662631b2d0adce2`；接受记录见 `docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`。当前没有可执行的 Stage 7 下一门：3307 管理员认证恢复后应新建 `BATCH-Q-R1`，固定届时最新开发基线重跑 isolated 55/55；在其 PASS 前禁止进入完整 HTTP ingestion→pipeline 链，且禁止回退 3306。
 
@@ -228,6 +229,17 @@
 - default 唯一失败仍是既有环境 patrol：`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 / actual 0）；无本工作集新增失败。
 - **Remaining / why PARTIAL**：纯 Mockito L1 不初始化 MyBatis-Plus lambda column cache，所以 `retryFromStage` 仍只证明发出了 mapper delete，并由内存 store 模拟 delete 后可见状态；**不证明真实 MySQL 上 `LambdaQueryWrapper.delete` 的 SQL 形状/事务可见性**。startup recovery 桥接同样是内存持久化 fixture，不是实际杀/启 Spring 进程。真库 `completedStages`、真实进程重启、真实 Spark 重跑次序与 Stage 7 E2E 仍待后续独立验证。
 - 不触碰 3306/3307，不跑 isolated/spark；没有生产 Java、DDL、迁移或正式契约变更，因此不新增 Decision Log / ADR。
+
+### V-029 — Pipeline 全阶段 fail-fast L1 矩阵
+
+- **Implementation baseline**：`384dedffd18b6d5d3ab783a17ad96af287d80277`。
+- 原 `failedStageStopsEveryLaterStageOnTheWholeChain` 只有 `BUILD_DWS` 一个失败注入点；现改为 JUnit 参数化矩阵，覆盖 `INIT_SCHEMA / LOAD_ODS / BUILD_DWD / BUILD_DWS / BUILD_ADS / QUALITY_CHECK / PUBLISH_METRIC` 全部 7 个 Spark 承载阶段。
+- 每个参数实例都要求：阶段记录恰好是 `STAGE_ORDER` 到失败阶段的前缀；Spark 提交恰好是去掉本地 `WAIT_LANDING` 后到失败阶段的前缀；失败阶段为 FAILED、run 为 FAILED；所有后继阶段既无阶段记录也从未被提交。
+- 原 1 个 BUILD_DWS 样例替换为 7 个参数实例，因此测试净增 **+6**；定向 `PipelineServiceTest` **38/38 PASS**。
+- default 量数轮：analytics **1022 (F=1/E=0/S=1)**，相对 1016 的 +6 全部落在 warehouse-pipeline（175→181）；mall 13、generator 110；三棵树 1145。更新 baseline 后 fresh 收口轮 **1022/13/110 全部 MATCH**。
+- 唯一失败仍是既有环境 patrol `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 / actual 0），不是本工作集新增回归。
+- **Remaining / why PARTIAL**：矩阵使用 Fake `SparkStageExecutor`，证明的是 Java 编排层 fail-fast；不证明真实 `spark-submit` 子进程、超时、进程崩溃、部分输出后失败或 Hive/HDFS 失败形态。真实 Stage 7 / Spark 专项验证仍必需。
+- 本工作集只改测试与计数基线，不触碰生产代码、DDL、3306/3307、正式契约；不需要新的 Decision Log / ADR。
 
 ## 4. PARTIAL：后续阶段联调再补
 
