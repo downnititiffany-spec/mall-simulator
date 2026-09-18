@@ -112,7 +112,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1015
+  'analytics-server'        = 1016
   'mall-simulator'          = 13
   'synthetic-data-generator' = 110
 }
@@ -824,6 +824,18 @@ $BaselineSpark = 308
 #   mall 13、generator 110 均 MATCH；三棵树 1138。唯一红仍是既有环境性
 #   `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43, actual 0），与本轮改动无关。
 #   ⇒ baseline analytics-server **1013→1015**；spark/isolated 均未改覆盖面，基线不变。
+# 2026-09-18 Stage 7 环境阻塞期间继续收口 S3-48「平台重启恢复」的 L1 桥接面：
+#   新增 `startupRecoveryThenAdminResumeContinuesFromFirstIncompleteStage`，把真实生产类
+#   `PipelineRecoveryService.reconcile` 与 `PipelineService.resume` 串在同一内存持久化 fixture：
+#   模拟旧进程死在 BUILD_DWS 前，WAIT_LANDING～BUILD_DWD 已 SUCCESS、run 仍 RUNNING，且 run 级
+#   snapshot 已按真实 execute() 时序冻结。启动对账必须先落 `RUN_INTERRUPTED`；管理员 resume 后 attempt=2，
+#   snapshotId 不变，成功前缀阶段记录不重建，Spark 提交恰好从 BUILD_DWS 到 PUBLISH_METRIC。
+#   首轮 RED 暴露 fixture 不真实（人为留下“成功阶段存在但 snapshotId=null”，生产 execute() 不会形成该状态）；
+#   修正 fixture 为已冻结 snapshot 后定向 **32/32 PASS**，未改生产代码。
+#   default 量数轮（`-AllowCountDrift`）：analytics-server **1016 (F=1 E=0 S=1)**，明细
+#   `105+353+175+97+126+160`，相对基线 1015 的 **+1 全部落在 warehouse-pipeline（174→175）**；
+#   mall 13、generator 110 均 MATCH；三棵树 1139。唯一红仍是既有环境 patrol（expected 43 / actual 0）。
+#   ⇒ baseline analytics-server **1015→1016**；该测试仍是 L1，不证明真实 Spring 进程重启/真库事务/Spark 集群行为。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 6 }
 

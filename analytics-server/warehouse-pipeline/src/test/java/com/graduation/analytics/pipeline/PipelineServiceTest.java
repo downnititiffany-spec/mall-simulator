@@ -637,6 +637,88 @@ class PipelineServiceTest {
         }
     }
 
+    /**
+     * S3-48 后继残余面：把「启动对账判中断」与「管理员 resume 跳过已成功阶段」真正串起来。
+     * 这里模拟进程死在 BUILD_DWS 前：WAIT_LANDING～BUILD_DWD 已 SUCCESS，run 仍是 RUNNING。
+     * 新进程启动后 RecoveryService 必须先把它标成 RUN_INTERRUPTED；管理员随后 resume 时，
+     * 只能从 BUILD_DWS 起继续，不能重新跑成功前缀，也不能换 snapshotId。
+     */
+    @Test
+    void startupRecoveryThenAdminResumeContinuesFromFirstIncompleteStage() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00",
+                        "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult created = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-restart-resume", "trace-before-crash");
+        // 模拟旧进程已从线程池拿到任务，但进程在真正继续前崩溃；重启后该内存队列自然不存在。
+        executor.clear();
+        PipelineRun persistedRun = insertedRun.get();
+        persistedRun.setStatus(PipelineRun.STATUS_RUNNING);
+        persistedRun.setCurrentStage("BUILD_DWS");
+        // 真正能完成前四阶段的旧进程一定已经经过 execute() 的 run 级快照冻结；
+        // 若这里留 null，fixture 会构造出生产上不可能的“已有成功阶段但 snapshot 从未生成”状态。
+        persistedRun.setTargetSnapshotId("S20260901_restart");
+
+        int resumeIndex = PipelineService.STAGE_ORDER.indexOf("BUILD_DWS");
+        List<String> completedPrefix = PipelineService.STAGE_ORDER.subList(0, resumeIndex);
+        Map<String, Long> prefixIds = new LinkedHashMap<>();
+        for (String code : completedPrefix) {
+            PipelineStageRun s = new PipelineStageRun();
+            s.setId(stageId.getAndIncrement());
+            s.setRunId(created.runId());
+            s.setStageCode(code);
+            s.setStatus(PipelineStageRun.STATUS_SUCCESS);
+            s.setEvidence("{\"seed\":\"before-restart\",\"stage\":\"" + code + "\"}");
+            stages.add(s);
+            prefixIds.put(code, s.getId());
+        }
+
+        com.graduation.analytics.pipeline.mapper.SparkJobRunMapper jobMapper =
+                mock(com.graduation.analytics.pipeline.mapper.SparkJobRunMapper.class);
+        when(jobMapper.selectList(any())).thenReturn(List.of());
+        // RecoveryService 固定先查 RUNNING、再查 PENDING；本 fixture 只有前者。
+        when(runMapper.selectList(any())).thenReturn(List.of(persistedRun), List.of());
+        PipelineRecoveryService recovery = new PipelineRecoveryService(
+                runMapper, stageMapper, jobMapper, service, eventClock);
+
+        PipelineRecoveryService.Report report = recovery.reconcile("system:startup");
+        assertThat(report.interruptedRunning()).containsExactly(created.runId());
+        assertThat(report.requeuedPending()).isEmpty();
+        assertThat(report.errors()).isEmpty();
+        assertThat(persistedRun.getStatus()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(persistedRun.getErrorCode()).isEqualTo("RUN_INTERRUPTED");
+
+        List<String> submittedAfterRestart = new ArrayList<>();
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> {
+                    String code = inv.getArgument(2);
+                    submittedAfterRestart.add(code);
+                    return successExecution(code);
+                });
+
+        String snapshotBeforeResume = persistedRun.getTargetSnapshotId();
+        service.resume(created.runId(), "operator:test", "resume after startup recovery", "trace-after-restart");
+        executor.drain();
+
+        PipelineService.RunResult done = service.get(created.runId());
+        assertThat(done.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(done.attemptNo()).isEqualTo(2);
+        assertThat(done.targetSnapshotId()).isEqualTo(snapshotBeforeResume);
+        assertThat(submittedAfterRestart)
+                .as("重启恢复后的管理员 resume 只能提交首个未完成阶段及其后缀")
+                .containsExactlyElementsOf(PipelineService.STAGE_ORDER.subList(resumeIndex,
+                        PipelineService.STAGE_ORDER.size()));
+
+        for (String code : completedPrefix) {
+            assertThat(stageOf(code).getId())
+                    .as("重启后成功前缀不得重建：" + code)
+                    .isEqualTo(prefixIds.get(code));
+            long rows = stages.stream().filter(s -> code.equals(s.getStageCode())).count();
+            assertThat(rows).as("重启后成功前缀仍只能有一条阶段证据：" + code).isEqualTo(1);
+        }
+    }
+
     // ── S2-04：Landing 输入清单必须按源归属（fail-closed） ────────────────
 
     @Test
@@ -1331,6 +1413,10 @@ class PipelineServiceTest {
 
         int pending() {
             return tasks.size();
+        }
+
+        void clear() {
+            tasks.clear();
         }
 
         void drain() {
