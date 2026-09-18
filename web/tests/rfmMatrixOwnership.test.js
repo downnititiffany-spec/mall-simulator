@@ -29,5 +29,6 @@ test('矩阵行仅做字段搬运，缺失数值按既有空值语义处理', ()
 test('图表与 CSV 都消费同一个 segmentRows，不再产生第二套类别所有者', () => {
   assert.match(source, /rfmMatrixOption\(segmentRows\.value, segmentRows\.value\.map/)
   assert.match(source, /rows: segmentRows\.value\.map/)
-  assert.match(source, /function doExport\(\) \{[\s\S]*if \(!exportable\.value\) return/)
+  assert.match(source, /const segmentExportable = computed\(\(\) => exportable\.value && segmentRows\.value\.length > 0\)/)
+  assert.match(source, /function doExport\(\) \{[\s\S]*if \(!segmentExportable\.value\) return/)
 })
