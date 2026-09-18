@@ -195,6 +195,11 @@ class GeneratorBoundarySourcePolicyTest {
                 .contains("$newFailedIds")
                 .contains("Outbox 本次新增失败事件")
                 .contains("Outbox 本次 run 留下新 pending")
+                .contains("$loggedEventIds")
+                .contains("$duplicateEventIds")
+                .contains("rolling JSONL 出现重复 event_id")
+                .contains("uniqueEventIdCount")
+                .contains("duplicateEventIdCount")
                 .contains("'order_created','order_paid','refund_created','refund_completed'");
 
         assertThat(text)

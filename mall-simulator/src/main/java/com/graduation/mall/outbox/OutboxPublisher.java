@@ -49,7 +49,7 @@ public class OutboxPublisher {
      *
      * @return 发布结果（成功数 + 失败 event_id 列表）
      */
-    public PublishResult publishOnce() {
+    public synchronized PublishResult publishOnce() {
         List<EventOutbox> pending = outboxMapper.selectList(new LambdaQueryWrapper<EventOutbox>()
                 .isNull(EventOutbox::getPublishedAt)
                 .orderByAsc(EventOutbox::getId)

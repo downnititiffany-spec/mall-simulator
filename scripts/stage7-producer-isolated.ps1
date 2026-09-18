@@ -316,11 +316,16 @@ try {
   $loggedOrderPaidIds = [System.Collections.Generic.HashSet[string]]::new()
   $loggedRefundCreatedIds = [System.Collections.Generic.HashSet[string]]::new()
   $loggedRefundCompletedIds = [System.Collections.Generic.HashSet[string]]::new()
+  $loggedEventIds = [System.Collections.Generic.HashSet[string]]::new()
+  $duplicateEventIds = [System.Collections.Generic.HashSet[string]]::new()
   foreach ($file in $eventFiles) {
     foreach ($line in Get-Content -LiteralPath $file.FullName -Encoding utf8) {
       if ([string]::IsNullOrWhiteSpace($line)) { continue }
       $node = $line | ConvertFrom-Json
       $type = [string]$node.event_type
+      $eventId = [string]$node.event_id
+      if ([string]::IsNullOrWhiteSpace($eventId)) { throw 'rolling JSONL 存在空 event_id' }
+      if (-not $loggedEventIds.Add($eventId)) { [void]$duplicateEventIds.Add($eventId) }
       if (-not $eventTypeCounts.Contains($type)) { $eventTypeCounts[$type] = 0 }
       $eventTypeCounts[$type] = [int]$eventTypeCounts[$type] + 1
       if ($type -eq 'order_created') { [void]$loggedOrderCreatedIds.Add([string]$node.payload.order_id) }
@@ -329,6 +334,18 @@ try {
       if ($type -eq 'refund_completed') { [void]$loggedRefundCompletedIds.Add([string]$node.payload.refund_id) }
       $eventLines++
     }
+  }
+  $result.rollingLog = @{
+    files=@($eventFiles | ForEach-Object {$_.FullName})
+    lineCount=$eventLines
+    uniqueEventIdCount=$loggedEventIds.Count
+    duplicateEventIds=@($duplicateEventIds | Sort-Object)
+    duplicateEventIdCount=$duplicateEventIds.Count
+    eventTypeCounts=$eventTypeCounts
+    correlatedCurrentRun=$null
+  }
+  if ($duplicateEventIds.Count -gt 0) {
+    throw "rolling JSONL 出现重复 event_id：duplicateIds=$($duplicateEventIds.Count) unique=$($loggedEventIds.Count) lines=$eventLines"
   }
   foreach ($requiredType in @('order_created','order_paid','refund_created','refund_completed')) {
     if (-not $eventTypeCounts.Contains($requiredType) -or [int]$eventTypeCounts[$requiredType] -lt 1) { throw "rolling JSONL 缺 $requiredType：$($eventTypeCounts | ConvertTo-Json -Compress)" }
@@ -347,13 +364,10 @@ try {
     throw ("rolling JSONL 与本次 operation journal 关联不完整：order_created missing={0}, order_paid missing={1}, refund_created missing={2}, refund_completed missing={3}" -f
       $missingCreatedOrders.Count,$missingPaidOrders.Count,$missingRefundCreated.Count,$missingRefundCompleted.Count)
   }
-  $result.rollingLog = @{
-    files=@($eventFiles | ForEach-Object {$_.FullName});lineCount=$eventLines;eventTypeCounts=$eventTypeCounts
-    correlatedCurrentRun=@{
-      createdOrders=$currentOrderIds.Count;paidOrders=$currentPaidOrderIds.Count;refunds=$currentRefundIds.Count
-      missingCreatedOrders=$missingCreatedOrders.Count;missingPaidOrders=$missingPaidOrders.Count
-      missingRefundCreated=$missingRefundCreated.Count;missingRefundCompleted=$missingRefundCompleted.Count
-    }
+  $result.rollingLog.correlatedCurrentRun = @{
+    createdOrders=$currentOrderIds.Count;paidOrders=$currentPaidOrderIds.Count;refunds=$currentRefundIds.Count
+    missingCreatedOrders=$missingCreatedOrders.Count;missingPaidOrders=$missingPaidOrders.Count
+    missingRefundCreated=$missingRefundCreated.Count;missingRefundCompleted=$missingRefundCompleted.Count
   }
 
   Write-Host '[9/9] 收口 producer 证据 ...'
