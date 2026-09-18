@@ -26,7 +26,7 @@
 | ID | 工作项 | 状态 | 当前证明边界 |
 |---|---|---|---|
 | V-001 | S3-53 AI evidenceId 兼容 | SUPERSEDED | 由 V-004 覆盖最终 ID 形状 |
-| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch O 305/305 |
+| V-002 | Web 统一 `npm run verify` | PASS | Node test + Vite build；最新 Batch P 307/307 |
 | V-003 | S3-54 AI summary 展示 | PARTIAL | 工具函数/源码接线；无浏览器 E2E |
 | V-004 | S3-55/56 AI ID 严格形状/草稿锚点 | PARTIAL | 纯逻辑/源码接线；无真实提交链 E2E |
 | V-005 | S3-57 provider provenance | PASS | unit/default；无真实 Provider |
@@ -51,6 +51,7 @@
 | V-024 | Batch M/M-R1 Pipeline + Product interaction consistency | PASS | M 初次因陈旧测试守卫 FAIL；M-R1 33/33 + Web 274/274 + build PASS；无真实 HTTP/DB E2E |
 | V-025 | Batch N/N-R1 analysis + post-N interaction consistency | PASS | N 初次因两条陈旧守卫 FAIL；N-R1 53/53 + Web 296/296 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
 | V-026 | Batch O secondary-read concurrency | PASS | RFM/Decision 旁路状态 latest-request ownership + Decision 读写互斥；55/55 + Web 305/305 + build PASS；无真实浏览器/HTTP/state-machine/DB E2E |
+| V-027 | Batch P in-flight interaction locks | PASS | Sales loading 期锁本地排序/翻页 + AI 草稿字段锁 + Pipeline 读写互斥；41/41 + Web 307/307 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
 
 当前没有等待 Code Agent 的 PENDING 工作项。下一次达到批量测试点时，由 ChatGPT 写 `CURRENT_BATCH.md` + 对应永久 plan，并置 `READY`。
 
@@ -61,7 +62,7 @@
 - **Implementation baseline**：`351fee90b790b87992b7479c4a9f18774f7459ec`
 - `npm run verify = npm test && npm run build`。
 - 多轮独立执行均为 Node tests 全绿 + Vite production build 成功。
-- 最新 Batch O：**305/305 PASS** + Vite 5.4.21 production build PASS（672 modules，3.00s）。
+- 最新 Batch P：**307/307 PASS** + Vite 5.4.21 production build PASS（672 modules，2.90s）。
 
 ### V-005 — S3-57 Explanation provider provenance
 
@@ -202,6 +203,18 @@
 - 既有 submit/approve/reject/cancel/evaluate payload 与输入校验、RFM snapshot pinning / observation window / matrix owner / export subset 语义全部回归保持。
 - 未覆盖真实浏览器点击时序、真实 HTTP abort/late-response race、后端 Decision 状态机与 DB 持久化、3307 与 Spark/Hive/Flume E2E。
 
+
+### V-027 — Batch P in-flight interaction locks
+
+- **Final verification baseline**：`2f3e79f676e1b614fe9a57e71e7ecad68106a51f`。
+- 永久测试计划：`docs/verification/batches/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-PLAN.md`。
+- 接受结果：`docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`；raw result commit `4493bfa6818e9d3fb030616b55c4d6f345068cf4`；accepted archive commit `86ceda3764c2d11c25c3afc2192041c2fe7bcf00`。
+- 定向 **41/41 PASS**；Web full gate **307/307 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 production build PASS（672 modules，2.90s）。
+- Sales loading 期间锁本地排序/翻页，避免新的日期范围结果落在请求途中被改写的页码；AI 草稿创建期间五个可编辑字段锁定，与已冻结 payload 保持一致。
+- Pipeline 手工刷新、触发、重试和业务输入统一 `loading || busy`；成功写后的内部 `load()` 仍可在 busy 期间刷新。
+- 既有 AI ask/draft/history 并发守卫与 Pipeline operationId、业务日期/runtime profile 冻结、context/retry 语义全部回归保持。
+- 未覆盖真实浏览器点击/键入时序、真实 HTTP race、Pipeline 后端执行/幂等、AI 草稿持久化/状态机、3307 与 Spark/Hive/Flume E2E。
+
 ## 4. PARTIAL：后续阶段联调再补
 
 ### V-003 — AI summary 展示
@@ -315,6 +328,15 @@
 - Raw result commit：`0635bad33a29ca0b9b183dbaf8573e0d801f3296`。
 - 接受结果：`docs/verification/results/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-RESULT.md`；archive commit `632502f3fa638ea2b00f0401e6bceff1ae7dfdc8`。
 - 未覆盖真实浏览器/HTTP race、Decision 后端状态机/DB 持久化、3307 与 Spark/Hive/Flume E2E。
+
+
+### Batch P — `2f3e79f676e1b614fe9a57e71e7ecad68106a51f`
+- Sales / AI Draft / Pipeline in-flight interaction locks。
+- 定向 **41/41 PASS**。
+- Web full gate：**307/307 PASS**；failed/cancelled/skipped = 0；Vite 5.4.21 build PASS（672 modules，2.90s）；workspace clean。
+- Raw result commit：`4493bfa6818e9d3fb030616b55c4d6f345068cf4`。
+- 接受结果：`docs/verification/results/BATCH-P-WEB-INFLIGHT-INTERACTION-LOCKS-RESULT.md`；archive commit `86ceda3764c2d11c25c3afc2192041c2fe7bcf00`。
+- 未覆盖真实浏览器/HTTP race、Pipeline 后端实际执行/幂等、AI 草稿状态机/持久化、3307 与 Spark/Hive/Flume E2E。
 
 ## 6. 已知环境红与未覆盖面
 
