@@ -334,18 +334,22 @@ class TestIsolationGuardTest {
         TestIsolationGuard.assertJdbcTargetAllowed(new CountingDataSource());
     }
 
-    // ── 2c. 连接参数解析：系统属性优先，档案兜底，两处都没有即拒（无默认值） ──
+    // ── 2c. 连接参数解析：系统属性 → 环境变量 → 档案；都没有即拒（无默认值） ──
 
     @Test
-    @DisplayName("连接参数解析：系统属性优先；两处都没有则拒绝，绝不回退正式地址/正式账号")
+    @DisplayName("连接参数解析：系统属性优先于环境变量；全部缺失则拒绝，绝不回退正式地址/正式账号")
     void connectionPropertiesFailClosedWithoutAnySource() {
-        // 系统属性优先于档案
+        Map<String, String> environment = Map.of("V25_IT_PROBE_KEY", "from-environment");
+        // 系统属性优先于环境变量/档案
         System.setProperty(TestIsolationGuard.SYSTEM_PROPERTY_PREFIX + "probe.key", "from-system");
         try {
-            assertThat(TestIsolationGuard.requiredProperty("probe.key")).isEqualTo("from-system");
+            assertThat(TestIsolationGuard.requiredProperty("probe.key", environment)).isEqualTo("from-system");
         } finally {
             System.clearProperty(TestIsolationGuard.SYSTEM_PROPERTY_PREFIX + "probe.key");
         }
+
+        // 没有 -D 时，runner 可安全通过环境变量注入（无需把口令放命令行/档案）
+        assertThat(TestIsolationGuard.requiredProperty("probe.key", environment)).isEqualTo("from-environment");
 
         // 两处都没有 → 拒绝，而不是给 127.0.0.1:3306 / root / metric_pub 之类的默认值
         assertThatThrownBy(() -> TestIsolationGuard.requiredProperty("definitely.absent.key"))
@@ -355,6 +359,31 @@ class TestIsolationGuardTest {
 
         // 可空版本不抛，但也不会凭空造出默认值
         assertThat(TestIsolationGuard.optionalProperty("definitely.absent.key")).isNull();
+    }
+
+    @Test
+    @DisplayName("V25_IT_* 命名稳定且完整环境来源可构造双库上下文；缺字段 fail-closed")
+    void environmentConfigurationUsesStableNamesAndRequiresCompleteSource() {
+        assertThat(TestIsolationGuard.environmentName("testRunId")).isEqualTo("V25_IT_TEST_RUN_ID");
+        assertThat(TestIsolationGuard.environmentName("serverFingerprint")).isEqualTo("V25_IT_SERVER_FINGERPRINT");
+        assertThat(TestIsolationGuard.environmentName("metaDb")).isEqualTo("V25_IT_META_DB");
+        assertThat(TestIsolationGuard.environmentName("metric.publish.password"))
+                .isEqualTo("V25_IT_METRIC_PUBLISH_PASSWORD");
+
+        Map<String, String> env = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : validProps(RUN_ID).entrySet()) {
+            env.put(TestIsolationGuard.environmentName(entry.getKey()), entry.getValue());
+        }
+        TestIsolationConfig cfg = TestIsolationGuard.fromEnvironment(env);
+        assertThat(cfg.testRunId()).isEqualTo(RUN_ID);
+        assertThat(cfg.metaDb()).isNotEqualTo(cfg.metricDb());
+        assertThat(cfg.source().getFileName().toString()).isEqualTo("v25-it-environment.marker");
+
+        env.remove("V25_IT_METRIC_DB");
+        assertThatThrownBy(() -> TestIsolationGuard.fromEnvironment(env))
+                .isInstanceOf(MissingConfigurationException.class)
+                .hasMessageContaining("metricDb")
+                .hasMessageNotContaining("analytics_metric");
     }
 
     // ── 2d. DEV-001：MySQL 8 语义下「版本识别 + 四项判据真的执行」 ───────────
