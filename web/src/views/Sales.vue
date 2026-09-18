@@ -54,9 +54,9 @@
         </tbody>
       </table>
       <div class="pager">
-        <button style="font-size:12px" :disabled="paged.page <= 1" @click="page = paged.page - 1">上一页</button>
+        <button style="font-size:12px" :disabled="loading || paged.page <= 1" @click="page = paged.page - 1">上一页</button>
         <span>第 {{ paged.page }} / {{ paged.totalPages }} 页</span>
-        <button style="font-size:12px" :disabled="paged.page >= paged.totalPages" @click="page = paged.page + 1">下一页</button>
+        <button style="font-size:12px" :disabled="loading || paged.page >= paged.totalPages" @click="page = paged.page + 1">下一页</button>
       </div>
       <div class="table-hint">
         质量规则（快照 run）：{{ qualityText }}。
@@ -123,6 +123,7 @@ const ruleVersionsText = computed(() => ruleVersionText((data.value.quality || {
 const trendOpt = computed(() => salesTrendOption(rows.value))
 
 function toggleSort(key) {
+  if (loading.value) return
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   } else {
