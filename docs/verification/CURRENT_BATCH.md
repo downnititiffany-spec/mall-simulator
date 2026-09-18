@@ -1,61 +1,49 @@
 # Current Verification Batch
 
-> 状态：CLOSED / PASS
-> Batch N-R1 已正式接受。Batch N 的原始 FAIL_NEW_REGRESSION 证据保留不覆盖；N-R1 仅同步两条陈旧源码守卫，在不改生产语义的前提下完成回归收口。
+> 状态：READY
+> Batch N-R1 已正式 PASS 并归档。当前又达到下一次功能簇级批量验证节点：RFM / Decision 组合读取的旁路状态不再允许旧请求晚到覆盖，Decision 手工刷新与状态写动作也已做读写互斥。
 
-## Accepted batch
+## Current batch
 
-- **Batch ID**：`BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY`
-- **Tested commit**：`0c7af0dd0f09f4e5c0c097dc70fbe2647da7a54d`
-- **Result**：PASS
+- **Batch ID**：`BATCH-O-WEB-SECONDARY-READ-CONCURRENCY`
+- **Tested commit**：`d4a53a08d3121ce2ce8de9ee4e0582b7230835ef`
 - **Branch context**：`feature/v3-development`
-- **Permanent plan**：`docs/verification/batches/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-PLAN.md`
-- **Accepted result**：`docs/verification/results/BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY-RESULT.md`
-- **Raw result branch**：`verification-results`
-- **Raw result commit**：`23c02d5c4410a0f49786a18c4645ac34ef625875`
-- **Archived result commit**：`d379d39d8d59288e9487a002468b410649454001`
+- **Accepted predecessor**：`BATCH-N-R1-WEB-ANALYSIS-INTERACTION-CONSISTENCY` / `0c7af0dd0f09f4e5c0c097dc70fbe2647da7a54d` / PASS
+- **Permanent plan**：`docs/verification/batches/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-PLAN.md`
+- **Expected accepted result**：`docs/verification/results/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-RESULT.md`
+- **Raw Code Agent result**：`verification-results:docs/verification/results/BATCH-O-WEB-SECONDARY-READ-CONCURRENCY-RESULT.md`
 
-## Verification summary
+## Scope summary
 
-- targeted suites: **53/53 PASS**;
-- full Web gate: **296/296 PASS**;
-- failed / cancelled / skipped: **0 / 0 / 0**;
-- Vite: **5.4.21**;
-- transformed modules: **672**;
-- production build: **PASS**, built in **4.66s**;
-- workspace clean before and after;
-- no repair performed during verification.
+This batch verifies one coherent low-risk Web concurrency cluster:
 
-Batch N failed predecessor remains preserved:
+- RFM composite fetch owns a separate request sequence for `usersError` side effects;
+- stale/aborted RFM secondary reads cannot overwrite the newest user-aggregate error state;
+- Decision composite fetch owns a separate request sequence for `evaluations/evaluationError`;
+- stale Decision evaluation reads cannot overwrite newer side-channel state;
+- RFM/Decision unmount invalidates those secondary sequences before cancelling the shared analysis request;
+- Decision manual refresh and state-write actions are mutually exclusive through `loading || busy`;
+- internal post-write `flush()` still bypasses the external refresh guard so successful writes can refresh the list;
+- existing Decision payload/state-action wiring and existing RFM snapshot/export semantics remain regression-covered.
 
-- `BATCH-N-WEB-ANALYSIS-INTERACTION-CONSISTENCY`
-- tested SHA `58411f92a8e5591c435f5597143896f4fadac020`
-- result: FAIL_NEW_REGRESSION
-- raw result commit: `bd4f41d46cd021177f85792d52c4cdc5e36326f6`
+No backend API/state-machine transition, DB/Flyway, auth/security, AI SQL, 3307, or Spark/Hive/Flume behavior changes are part of this batch.
 
-The two Batch N failures were stale source-characterization guards. N-R1 changed only:
-- `web/tests/rfmMatrixOwnership.test.js`;
-- `web/tests/postJr1WebHardening.test.js`.
+## Execution rule
 
-No production semantics were changed by the repair.
+Code Agent must execute the permanent plan against the exact tested commit. Do not test branch HEAD by name, do not modify source/tests/docs, and do not repair failures during verification.
 
-## Accepted behavior boundary
+Required targeted suites total **55/55**.
 
-The accepted SHA includes and verifies the accumulated low-risk Web cluster through:
+Accepted Batch N-R1 full gate was 296/296. This batch adds exactly 9 tests in `secondaryReadConcurrency.test.js`, so required full gate is:
 
-- Behavior / Sales / Overview / RFM loading reentry and export-subset consistency;
-- Login in-flight input locking;
-- AI history sequence/Abort late-response protection;
-- BaseChart reactive-height resize;
-- Ops whole-page refresh/admin-write mutual exclusion;
-- shared CSV stale/empty-subset fail-closed behavior.
+- **305/305**;
+- 0 fail / 0 cancelled / 0 skipped;
+- Vite production build must actually execute and pass.
 
-PASS proves Node/source-invariant tests and Vite production build only. It does not claim real browser timing, real HTTP races, browser CSV behavior, backend runtime/DB writes, 3307, or Spark/Hive/Flume E2E.
+## Acceptance boundary
 
-## Next state
-
-No verification batch is currently READY. Continue development from `feature/v3-development` and accumulate the next coherent low-risk cluster. Open a new batch only when the next meaningful verification trigger is reached.
+A PASS proves Node/source-invariant tests and Vite production build for the exact tested SHA. It does not elevate real browser timing, real HTTP races, backend Decision state-machine execution/persistence, browser CSV behavior, 3307, or Spark/Hive/Flume E2E to verified status.
 
 ## User action
 
-None.
+`VERIFY_CURRENT_BATCH`
