@@ -54,6 +54,7 @@
 | V-027 | Batch P in-flight interaction locks | PASS | Sales loading 期锁本地排序/翻页 + AI 草稿字段锁 + Pipeline 读写互斥；41/41 + Web 307/307 + build PASS；无真实浏览器/HTTP/DB/Spark-Hive-Flume E2E |
 | V-028 | Pipeline 多 attempt / retry-from-stage / startup recovery L1 加固 | PARTIAL | `0f77322` + `96f4ad2`：developer test 32/32；default 1016 MATCH（唯一红仍为既有环境 patrol）；真库 delete/completedStages、真实进程重启、真实 Spark 未验 |
 | V-029 | Pipeline 全阶段 fail-fast L1 矩阵 | PARTIAL | `384dedf`：7 个 Spark 承载阶段逐格失败；PipelineServiceTest 38/38；default 1022 MATCH；真实 Spark 失败形态未验 |
+| V-030 | 统一测试入口 abandoned mutex 接管 | PASS | `a253446`：真实 named-mutex owner 异常退出后，真实 `run-tests.ps1` 命中 AbandonedMutexException 并安全接管；正常 default 1022/13/110 MATCH；跨用户/路径等价等不在本项 |
 
 `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` 已执行并经总控接受为 **BLOCKED_ENV**。原始结果 commit `2c32a45fedfba65ab7c5510b1662631b2d0adce2`；接受记录见 `docs/verification/results/BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT-RESULT.md`。当前没有可执行的 Stage 7 下一门：3307 管理员认证恢复后应新建 `BATCH-Q-R1`，固定届时最新开发基线重跑 isolated 55/55；在其 PASS 前禁止进入完整 HTTP ingestion→pipeline 链，且禁止回退 3306。
 
@@ -240,6 +241,16 @@
 - 唯一失败仍是既有环境 patrol `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 / actual 0），不是本工作集新增回归。
 - **Remaining / why PARTIAL**：矩阵使用 Fake `SparkStageExecutor`，证明的是 Java 编排层 fail-fast；不证明真实 `spark-submit` 子进程、超时、进程崩溃、部分输出后失败或 Hive/HDFS 失败形态。真实 Stage 7 / Spark 专项验证仍必需。
 - 本工作集只改测试与计数基线，不触碰生产代码、DDL、3306/3307、正式契约；不需要新的 Decision Log / ADR。
+
+### V-030 — 统一测试入口 abandoned mutex 接管
+
+- **Implementation baseline**：`a2534466335144e3d34f2d8a3e9e5c434e7d3c8e`。
+- `scripts/run-tests.ps1` 原本已经 catch `System.Threading.AbandonedMutexException` 并把 `$lockTaken=true`，但没有任何可观察证据能区分“普通首次取得”与“异常 owner 后接管”。本项只增加 `$abandonedMutexRecovered` 标记与一行明确输出，不改变 mutex 名、WaitOne(0)、拒绝条件、退出码或套件执行语义。
+- 真实进程探针：keeper PowerShell 进程先打开与指定 LogDir 对应的 `Local\v25tests-...` named mutex 句柄；owner 进程取得同一 mutex 后直接 `Environment.Exit(0)`，不调用 `ReleaseMutex`；keeper 继续持有对象句柄，保证 mutex 对象不因 owner 退出而销毁。随后真实 `scripts/run-tests.ps1` 使用同一 LogDir 启动，输出：`并发锁恢复: 检测到上一持有线程异常终止，已通过 AbandonedMutexException 安全接管。`
+- 为避免接管探针再跑整套 Maven，接管后的 MavenCmd **故意替换为 `where.exe`**，因此后续 `0 tests / exit 7` 是预期探针终止手段，**不属于套件失败证据，也不作 PASS 依据**；PASS 只针对 abandoned-mutex 分支被真实触发且没有 `[REFUSE exit=5]`。
+- 另一次真实 Maven default 正常路径在新增可观察输出后完整执行：analytics **1022 MATCH**、mall **13 MATCH**、generator **110 MATCH**、总计 **1145 MATCH**；唯一红仍为既有 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`（expected 43 / actual 0）。普通首次取得路径没有打印 abandoned 恢复行。
+- **边界**：只证明当前 Windows / `Local\` namespace 下的 abandoned owner 接管；不证明多用户/多会话 `Global\` 互斥、路径别名规范化、isolated/spark/all 并发、Windows PowerShell 5.1，也不证明两轮并发都能完成。
+- 零 3306/3307 操作；无生产代码、DDL、正式契约变更。
 
 ## 4. PARTIAL：后续阶段联调再补
 
