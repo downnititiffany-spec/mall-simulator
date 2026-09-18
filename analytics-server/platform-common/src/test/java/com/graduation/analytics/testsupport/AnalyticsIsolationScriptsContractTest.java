@@ -105,7 +105,10 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("/api/v1/runtime-profiles/1/test")
                 .contains("/api/v1/runtime-profiles/1/activate")
                 .contains("/api/v1/ingestion/runs")
-                .contains("/api/v1/pipeline-runs");
+                .contains("/api/v1/pipeline-runs")
+                .contains("$attemptVersion = \"stage7-$RunId-$attemptId\"")
+                .contains("$idem = $attemptVersion")
+                .contains("sourceDataVersion=$attemptVersion");
     }
 
     @Test

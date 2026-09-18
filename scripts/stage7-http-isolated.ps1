@@ -229,8 +229,12 @@ try {
   }
 
   Write-Host '[6/7] HTTP pipeline...'
-  $idem = "stage7-$RunId"
-  $pipelineBody = @{ runtimeProfileId=1; pipelineCode='ODS_TO_ADS'; businessTime=$BusinessTime; sourceDataVersion="stage7-$RunId" } | ConvertTo-Json
+  # 每个 verification attempt 必须创建独立 Pipeline run。
+  # PipelineService 的正式契约是“同 Idempotency-Key 返回原 run，不重复执行”，所以这里若只按 RunId
+  # 生成 key，会让 R1/R2 之类的重跑错误复用旧失败 run，根本没有验证本次 attempt 的 landing/Spark。
+  $attemptVersion = "stage7-$RunId-$attemptId"
+  $idem = $attemptVersion
+  $pipelineBody = @{ runtimeProfileId=1; pipelineCode='ODS_TO_ADS'; businessTime=$BusinessTime; sourceDataVersion=$attemptVersion } | ConvertTo-Json
   $pipelineHeaders = @{} + $headers
   $pipelineHeaders['Idempotency-Key'] = $idem
   $created = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/v1/pipeline-runs" -Headers $pipelineHeaders -ContentType 'application/json' -Body $pipelineBody
