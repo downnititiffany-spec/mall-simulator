@@ -25,7 +25,7 @@ param(
   [string]$BusinessTime = '2026-09-01T00:00:00',
   [string]$GoldenDataset = 'tests/golden-dataset/events/golden-20260901-positive.jsonl',
   [string]$SparkSubmitPath = 'D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd',
-  [int]$PipelineTimeoutSec = 180,
+  [int]$PipelineTimeoutSec = 600,
   [int]$PollSec = 3
 )
 
@@ -54,6 +54,32 @@ function Wait-Http([string]$Url, [int]$Tries = 40) {
     Start-Sleep -Milliseconds 750
   }
   return $false
+}
+
+function Stop-OwnedProcessTree([int]$RootPid) {
+  # 只按当前 platform PID 的父子关系收集后代，避免 Get-Process java 之类的扫杀。
+  # 先拍快照再停进程：即使停掉父进程后子进程被系统重新挂父，也仍能按已捕获 PID 精确清理。
+  $all = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue)
+  $owned = [System.Collections.Generic.HashSet[int]]::new()
+  [void]$owned.Add($RootPid)
+  do {
+    $changed = $false
+    foreach ($p in $all) {
+      $pid = [int]$p.ProcessId
+      $ppid = [int]$p.ParentProcessId
+      if ($owned.Contains($ppid) -and -not $owned.Contains($pid)) {
+        [void]$owned.Add($pid)
+        $changed = $true
+      }
+    }
+  } while ($changed)
+
+  $children = @($owned | Where-Object { $_ -ne $RootPid })
+  foreach ($pid in $children) {
+    Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+  }
+  Stop-Process -Id $RootPid -Force -ErrorAction SilentlyContinue
+  return $children
 }
 
 if ($RunId -notmatch '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$') {
@@ -250,6 +276,13 @@ try {
     if ($terminal -contains $last.data.status) { break }
   }
   $result.pipeline = $last.data
+  if (-not ($terminal -contains $last.data.status)) {
+    $result.outcome = 'PIPELINE_TIMEOUT'
+    $result.pipelineTimeoutSec = $PipelineTimeoutSec
+    Save-Evidence $result
+    Write-Host ("[TIMEOUT exit=7] pipeline 在 {0}s 内未到终态：status={1} stage={2}；证据 {3}" -f $PipelineTimeoutSec, $last.data.status, $last.data.currentStage, $evidencePath)
+    exit 7
+  }
   if ($last.data.status -ne 'SUCCESS') {
     $result.outcome = 'PIPELINE_NOT_SUCCESS'
     Save-Evidence $result
@@ -272,7 +305,7 @@ catch {
 }
 finally {
   if ($proc -and -not $proc.HasExited) {
-    Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-    Write-Host "已停止本脚本启动的 platform PID=$($proc.Id)"
+    $children = @(Stop-OwnedProcessTree $proc.Id)
+    Write-Host ("已停止本脚本启动的 platform PID={0} 及其后代 PID=[{1}]" -f $proc.Id, ($children -join ','))
   }
 }

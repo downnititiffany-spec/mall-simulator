@@ -118,10 +118,23 @@ class AnalyticsIsolationScriptsContractTest {
         assertThat(source)
                 .contains("-PassThru")
                 .contains("if ($proc -and -not $proc.HasExited)")
-                .contains("Stop-Process -Id $proc.Id -Force")
+                .contains("function Stop-OwnedProcessTree([int]$RootPid)")
+                .contains("$owned.Contains($ppid)")
+                .contains("Stop-Process -Id $pid -Force")
+                .contains("Stop-Process -Id $RootPid -Force")
                 .contains("New-Item -ItemType Directory -Force -Path $eventsDir,$warehouseDir,$metricStaging,$logDir")
                 .doesNotContain("-Path $eventsDir,$warehouseDir,$metastoreDir")
                 .contains("latest 指针便于控制端固定读取")
                 .doesNotContain("Get-Process java | Stop-Process");
+    }
+
+    @Test
+    void stage7HttpLaneUsesBoundedFullPipelineTimeoutAndDoesNotCallRunningAFailure() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("[int]$PipelineTimeoutSec = 600")
+                .contains("$result.outcome = 'PIPELINE_TIMEOUT'")
+                .contains("[TIMEOUT exit=7]")
+                .contains("if (-not ($terminal -contains $last.data.status))");
     }
 }
