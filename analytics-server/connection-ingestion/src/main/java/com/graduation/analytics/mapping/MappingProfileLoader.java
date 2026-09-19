@@ -53,8 +53,12 @@ public final class MappingProfileLoader {
      * <p><b>为什么 v2 不接受 {@code checksum}</b>：画像哈希的唯一权威值是 Loader 对**原始画像字节**
      * 计算的 {@link MappingProfile#profileChecksum()}；若允许画像自声明 checksum，就必须定义它覆盖哪些
      * 字节（自引用循环）。S2-01A 收口裁决：v2 出现 {@code checksum} 即非法。</p>
+     *
+     * <p>本集合是 v2 顶层键的**唯一权威清单**：源生命周期门（{@code SourceProfileValidator}）
+     * 按同一结构判据（{@code fieldMappings} 是否为对象）复用本集合判定 v2 画像的顶层必备键，
+     * 不另立第二份清单（D-029）。</p>
      */
-    private static final Set<String> V2_TOP_LEVEL_KEYS = Set.of(
+    public static final Set<String> V2_STRICT_TOP_LEVEL_KEYS = Set.of(
             "profileVersion", "sourceCode", "contractVersion", "eventTypeMappings", "fieldMappings",
             "enumSemantics", "timePolicy", "amountPolicy");
 
@@ -271,7 +275,7 @@ public final class MappingProfileLoader {
         root.fieldNames().forEachRemaining(keys::add);
         for (String key : keys) {
             if (syntax == MappingProfile.ProfileSyntax.V2_STRICT) {
-                if (!V2_TOP_LEVEL_KEYS.contains(key)) {
+                if (!V2_STRICT_TOP_LEVEL_KEYS.contains(key)) {
                     String detail = V1_TOP_LEVEL_KEYS.contains(key)
                             ? "LEGACY_KEY_NOT_ALLOWED_IN_V2:" + key
                             : "UNKNOWN_TOP_LEVEL_KEY:" + key;

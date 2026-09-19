@@ -111,7 +111,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1039
+  'analytics-server'        = 1043
   'mall-simulator'          = 14
   'synthetic-data-generator' = 111
 }
@@ -880,6 +880,10 @@ $BaselineSpark = 320
 #   （AdsDataQualityErrorRateNullableMySqlIT：information_schema 可空性/Flyway 历史 + D-019 空态行
 #   与非 NULL 对照行真实写入，沿用 MetricAdsMySqlIT 隔离纪律）。
 #   ⇒ baseline analytics-server **1036→1039**；isolated **analytics 11→13**（mall/generator/spark 不变）。
+# G31-02/D-029（2026-09-19）：SourceProfileValidator 顶层必备键按画像语法分派（v2 复用 Loader 的
+#   V2_STRICT_TOP_LEVEL_KEYS，v1 仍为设计 §4.2 九键；ProfileCheck 新增 requiredTopLevelKeys/syntaxName），
+#   SourceProfileValidatorTest +4（v2 键集=Loader 集恒等、v2 全键通过、v2 缺 amountPolicy 只报 v2 键、
+#   v1 口径与语法名不变）⇒ analytics-server **1039→1043**（mall/generator/spark 不变）。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 

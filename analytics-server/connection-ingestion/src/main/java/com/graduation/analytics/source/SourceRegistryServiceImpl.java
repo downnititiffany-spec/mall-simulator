@@ -2,6 +2,7 @@ package com.graduation.analytics.source;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.graduation.analytics.common.PlatformBizException;
+import com.graduation.analytics.mapping.MappingProfile;
 import com.graduation.analytics.source.dto.SourceChangeOutcome;
 import com.graduation.analytics.source.dto.SourceCheckResult;
 import com.graduation.analytics.source.dto.SourceRegistryCreateReq;
@@ -223,12 +224,16 @@ public class SourceRegistryServiceImpl implements SourceRegistryService {
                                 : "画像 profileVersion 与登记不一致：登记=" + row.getProfileVersion()
                                         + " 文件=" + check.actualProfileVersion())
                         : notApplicable));
+        // 顶层必备键的口径跟画像语法走（D-029）：V2_STRICT 用 Loader 的 8 键清单，v1 用设计 §4.2 的 9 键清单。
+        boolean v2Syntax = MappingProfile.ProfileSyntax.V2_STRICT.name().equals(check.syntaxName());
         items.add(new SourceCheckResult.CheckItem("profile_required_top_level_keys",
                 canInspect && check.missingKeys().isEmpty(),
                 canInspect, canInspect
                         ? (check.missingKeys().isEmpty()
-                                ? "设计 §4.2 的 " + SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS.size() + " 个顶层必备键齐全"
-                                : "画像缺设计 §4.2 顶层必备键：" + String.join(",", check.missingKeys()))
+                                ? (v2Syntax ? "V2_STRICT" : "设计 §4.2") + " 的 "
+                                        + check.requiredTopLevelKeys().size() + " 个顶层必备键齐全"
+                                : (v2Syntax ? "画像缺 V2_STRICT 顶层必备键：" : "画像缺设计 §4.2 顶层必备键：")
+                                        + String.join(",", check.missingKeys()))
                         : notApplicable));
 
         // 第七项＝activate 的第三个失败面：状态是否允许变更（DRAFT/ACTIVE/PAUSED 可以，DISABLED 不行）
