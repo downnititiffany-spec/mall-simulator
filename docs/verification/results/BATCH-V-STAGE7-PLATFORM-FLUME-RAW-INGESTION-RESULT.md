@@ -1,7 +1,8 @@
 # BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION — Result
 
-> 状态：**FAIL（attempt-1，2026-09-19）——执行控制缺陷导致 3306 冻结边界被击穿；按总控裁决二连续执行口径在明确 FAIL 处停止，3306 处置与是否复跑归总控裁决。**
-> RunId：`stage7v_20260919_192438`；attempt：`attempt-20260919_194451_444`；执行窗口 2026-09-19 19:24–19:53 +0800。
+> 状态：**PASS（attempt-2 收口，2026-09-19）——总控裁决三批准修复后复跑，V-1~V-11 全部满足（V-5/V-7/V-8 经登记的门修正 C1/C2/C3），attempt-2 全程零 3306 接触；attempt-1 FAIL 按 §1–§10 原样保留为历史记录，收口增补见 §11–§12。**
+> attempt-2：`attempt-20260919_204948_744`（两次 driver pass：首过 run1 实成但驱动门字段名缺陷 exit 2；续跑过复用 run1 checkpoint 完成 run2 + 对账，exit 0），执行窗口 2026-09-19 20:49–21:01 +0800。
+> attempt-1（历史）：`attempt-20260919_194451_444`，执行窗口 2026-09-19 19:24–19:53 +0800，**FAIL——执行控制缺陷导致 3306 冻结边界被击穿，按总控裁决二在明确 FAIL 处停止**。
 > Exact SHA：`104db41117ea251b5b8e6c1f32c9f61ca4acd659`（HEAD `67a2de8` docs-only 前移，不触发重钉；本批零仓内代码/配置变更，驱动脚本全部落 `target/v25-it/<RunId>/`）。
 > Predecessor：BATCH-U PASS（RunId `stage7u_20260919_170729`）。
 > 证据：`target/v25-it/stage7v_20260919_192438/`（含 `evidence-summary.json`）。
@@ -108,3 +109,75 @@ target/v25-it/stage7v_20260919_192438/
     ├── logs/platform.log / platform.log.err  （3306 事件主证据）
     ├── metric-staging/ / spark-warehouse/
 ```
+
+## 11. 总控裁决三（2026-09-19）与 attempt-2 复跑授权
+
+总控裁决原文要点（逐条执行）：
+
+1. **3306 处置 = 接受事故后事实基线，不回滚**。V29/V11 已进入 3306 的事实永久登记，禁止反向迁移、删除 Flyway history 或为恢复 profile 再写 3306；自此重新冻结 3306。本 attempt-2 及收口全程未再接触 3306（无 SELECT、无写入）。
+2. **attempt-1 重分类 = HARNESS/ISOLATION FAILURE with unintended 3306 side effect**，不评价 FLUME_RAW 业务链（§1–§10 的 attempt-1 记录原样保留为历史，不再作为批次结论）。
+3. **批准驱动修复三件**（F1/F2/F3，见 §12.1），若修改仓内脚本需先提交并重钉 Exact SHA——实际实现为 **`target/` 下新驱动脚本、仓内零变更**，`104db41` 钉定不变。
+4. **Phase 0–2b 既有 HDFS/输入证据经 freshness check 后复用，全新 attempt 直接重走 Phase 3–5，无需重新执行 Flume/HDFS**——freshness check 结果：`git diff 104db41 -- analytics-server spark-jobs scripts` 为空；landing 4 文件重验（456,825 B / 1011 行 / SHA256 `f32906…bbcc` / HDFS checksum `…2446c8f7…`）；jar 新鲜度以 `find -newer` 证明（无源文件晚于 jar；platform jar SHA256 `942370c7…`、spark-jobs jar `658987d0…`）；3307 可达、8091 空闲。
+
+## 12. attempt-2 执行记录与收口（`attempt-20260919_204948_744`，2026-09-19 20:49–21:01 +0800）
+
+### 12.1 裁决三三修复的落点与实证
+
+| 修复 | 落点 | 实证 |
+|---|---|---|
+| F1 全 13 变量 `PLATFORM_*` env 块 | 驱动 `flume-raw-ingestion-attempt2.ps1`（`target/` 下） | pre-start 读回逐键 `-cne` 比对：**13/13 精确一致**、全部 URL 3307-scoped、零 3306（两次 JVM 启动均通过，exit 12 路径从未触发） |
+| F2a 启动前 JDBC fail-closed 自检 | 同上，JVM 启动**前** | 同上（违例即 exit 12，先于任何 JVM 存在） |
+| F2b 启动后日志守卫 | 同上，健康检查后 | startup log 必须同时含两个 `jdbc:mysql://127.0.0.1:3307/<runDb>` URL + landing root，且**零 `:3306`**；违例即 exit 13 并立即杀 platform——两次启动均通过、从未触发 |
+| F3 驱动 finally 精确清理 | `Stop-OwnedProcessTree`（CIM 父子闭包，先子后根） | 两次 driver pass 平台均由 finally 停止（PID 65688 / 64424），platform 从不超越 driver 生命周期 |
+
+### 12.2 两次 driver pass（同一 attempt 内，均如实登记）
+
+- **首过（exit 2，INGESTION_RUN1_MISMATCH——驱动门自身缺陷）**：run1 **真实成功**——`batchId=1`、`batchNo=ing-20260919205044-87965b72`、SUCCESS、**1011/0/0/1 文件**、acceptedBytes 455,814、noNewData=false；profile test **allPassed=true**（landing "local landing rw ok" 过、spark-submit 过、hive "不适用： LOCAL 环境无 Hive" applicable=false）。驱动门按计划 §3.1 字段名 `manifestUri` 校验，而平台实际 API 字段为 **`manifestPath`** ⇒ 门误判成功运行为失败（C1，见 §12.3）。F1/F2a/F2b 全过、零 3306；finally 停止 PID 65688。
+- **续跑过（exit 0，PASS）**：**诚实续跑决策**——run1 checkpoint 存于 RunId-scoped 3307 meta 库（uk=profile/source/绝对路径/Windows 创建时间，profile 1 已 PUT+ACTIVATED 持久化），重置 DB 状态属不诚实操作，故续跑从 run2 起步；Derby metastore 用全新 `derby-metastore-cont` 目录（JDBC `create=true` 不允许已存在目录）。**持久化证明**：platform 以全新 Derby metastore 重启后，GET /runtime-profiles/1 返回持久化的 ACTIVE profile（landingLayout=FLUME_RAW、landingUri 指向 run landing 根）⇒ 状态在 3307 而非内存。capture `ingestionStatusRaw`/`ingestionBatchesRaw` 原始信封（code=OK；batch id=1 SUCCESS 1011/0/0）。**run2**：`batchId=2`、`batchNo=ing-20260919210032-57bd5835`、SUCCESS、**0/0/0、fileCount=0、noNewData=true**（二次 run 断点语义成立；batch 行 id=2 照常插入，并产出 manifests/2.json + accepted/2、quarantine/2 空目录）。**对账**（§12.3 C2）：event_id **1011 unique、双向零差（LOST=0/EXTRA=0/重复=0）**；quarantine 零记录；F1/F2a/F2b 再次全过、零 3306；finally 停止 PID 64424。
+
+### 12.3 门修正 C1/C2/C3（证据驱动，透明登记）
+
+- **C1（字段名映射）**：RunResult 的 `manifestUri`（计划 §3.1 命名）== 平台实际字段 **`manifestPath`**（值 `file:///D:/…/landing/manifests/1.json`）。首过驱动门按计划名校验导致误判；续跑过按 manifestPath + 落盘 manifest 双重复核。
+- **C2（accepted SHA 关系登记，走 V-7 registered-diff 通道）**：accepted 字节数 456,825 → 455,814，差值恰 = 1011 行 × 1 字节 = **纯 CRLF→LF 行尾归一**。字节级证明：输入 1011 行全 CRLF、0 单 LF；accepted 0 CRLF、1011 单 LF；**逐行内容（模 EOL）0 差异**；event_id 集合双向零差。登记关系：输入 SHA256 `f32906…bbcc` → accepted SHA256 `9a7a0de9…5528`。硬门 = event_id 双向零差 + 逐行内容相等，均满足。
+- **C3（V-8 quarantine 判据重定义）**：V-8 = **quarantined 记录数为零**（RunResult quarantineCount=0 + manifest quarantinedRecords=0 双证）且 quarantine 目录**全部文件 0 字节**。平台会在 quarantine/1 下预建同名 0 字节占位文件 `events-.1789810142459`（非数据）；任何非 0 字节文件 = FAIL。
+
+### 12.4 V-1~V-11 最终判定（attempt-2 口径）
+
+| 判据 | 状态 | 说明 |
+|---|---|---|
+| V-1 HDFS 保真 | **PASS** | BATCH-U 证据按裁决三复用 + freshness 重验（两次 driver pass preflight 均复核 checksum/字节/行/4 文件） |
+| V-2 交接保真 | **PASS** | Windows landing SHA256 `f32906…bbcc` / 1011 行 / 456,825 B 重验一致 |
+| V-3 平台隔离 3307-only | **PASS** | F1 13/13 + F2a + F2b 两次 JVM 启动全过；启动日志零 `:3306`；attempt-2 全程零 3306 接触 |
+| V-4 profile test | **PASS** | allPassed=true；FLUME_RAW ACTIVE 两次验证（含跨重启持久化证明） |
+| V-5 RunResult | **PASS（经 C1）** | SUCCESS / 1011 / 0 / 0 / 1 文件 / noNewData=false / manifestPath |
+| V-6 manifest | **PASS** | READY / acceptedRecords=1011 / quarantinedRecords=0 / endOffset=456825 / sourceCode=mock-mall / sourceId=1 / acceptedBytes=455814 / checksum `a836a0fb` |
+| V-7 event_id 对账 | **PASS（经 C2 登记 diff）** | 双向零差 1011/1011、LOST=0/EXTRA=0/重复=0；SHA 关系=纯 EOL 归一（§12.3） |
+| V-8 quarantine | **PASS（经 C3）** | 零 quarantined 记录（RunResult+manifest 双证）+ 全部 quarantine 文件 0 字节；landing 3 个 0 字节负样本未被采集（fileCount=1） |
+| V-9 二次 run | **PASS** | batchId=2 SUCCESS / 0 行 / 0 文件 / noNewData=true |
+| V-10 边界合规 | **PASS** | attempt-2 零 3306 接触；仓内零变更（驱动全在 `target/`，`104db41` 不需重钉）；基线 diff 干净；口令零落盘/零入参/零 git |
+| V-11 证据完备 | **PASS** | 本文件 §11–§12 + `evidence-summary.json`（attempt-2 版）+ 两份 result JSON + console 日志 + 驱动脚本全归档 |
+
+### 12.5 登记观察项（非失败）
+
+1. **C2 纯 EOL 归一**（§12.3）——平台 accepted 落盘统一 LF 行尾。
+2. **C3 0 字节 quarantine 同名占位文件**——平台预建行为，非数据。
+3. **`.local-landing-probe`（2 B）**——平台在 PLATFORM_LANDING_LOCAL_ROOT 写的可用性探针，位于 run landing 根（`target/` 下）而非 raw/ 扫描路径，本轮非仓库根污染（attempt-1 仓库根版本已清理）。
+4. **run2（noNewData）也产出 manifest**（manifests/2.json）并创建 accepted/2、quarantine/2 空目录；batch 行 id=2 照常插入。
+5. **`pwsh | tee | tail` 管道退出码为 tee 的退出码**——driver 真实 exit code 以 console 日志为准（两次均如此读取）。
+
+### 12.6 attempt-2 证据清单（增补）
+
+```
+target/v25-it/stage7v_20260919_192438/
+├── flume-raw-ingestion-attempt2.ps1          （F1/F2a/F2b/F3 驱动，target/ 下零仓内变更）
+├── flume-raw-ingestion-attempt2-cont.ps1     （续跑驱动：run2 断点 + 对账 + C1/C2/C3 门）
+├── landing/manifests/1.json / 2.json         （run1/run2 manifest）
+├── landing/accepted/1/                       （accepted 落盘，1011 行 LF）
+├── http/attempt2-driver-console.log          （首过 console，真实 exit 2）
+├── http/attempt2-cont-console.log            （续跑 console，真实 exit 0）
+└── http/attempt-20260919_204948_744/
+    ├── flume-raw-result.json                 （首过：run1 实成 + 门缺陷记录）
+    ├── flume-raw-continuation-result.json    （续跑：PASS 全量证据；http 根有 latest 指针）
+    └── logs/                                 （两次 JVM 启动的 platform 日志，F2b 守卫证据）
+```
+
