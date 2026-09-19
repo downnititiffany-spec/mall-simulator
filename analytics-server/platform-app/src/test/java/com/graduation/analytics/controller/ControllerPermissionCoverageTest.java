@@ -101,6 +101,13 @@ class ControllerPermissionCoverageTest {
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/runtime-profiles/active", PermissionCode.RUNTIME_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/runtime-profiles/{id}", PermissionCode.RUNTIME_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/runtime-profiles", PermissionCode.RUNTIME_MANAGE);
+        // 02.5 接入向导面（SourceRegistry/MappingDryRun/MappingActivation 控制器，全部 RUNTIME_MANAGE）：
+        // 源列表读取 + 源激活 + 映射 dry-run 预览 + 映射激活。dry-run 报告回查
+        // GET /api/v1/sources/{id}/mappings/dry-runs/{reportId} 前端未接线（向导直接消费 dry-run 响应），不入表。
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/sources", PermissionCode.RUNTIME_MANAGE);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/sources/{id}/activate", PermissionCode.RUNTIME_MANAGE);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/sources/{id}/mappings/dry-run", PermissionCode.RUNTIME_MANAGE);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/sources/{id}/mappings/activate", PermissionCode.RUNTIME_MANAGE);
     }
 
     @Test

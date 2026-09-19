@@ -119,5 +119,13 @@ export default {
   adminUserAction: (id, action, body) => client.post(`/admin/users/${id}/${action}`, body),
   // 采集（分析平台侧采集触发；模拟商城生成器接口已迁出分析前端）
   ingestionRun: () => client.post('/ingestion/runs'),
-  ingestionStatus: () => client.get('/ingestion/status')
+  ingestionStatus: () => client.get('/ingestion/status'),
+  // 接入向导（02.5）：源登记读取 + 受控激活面（RUNTIME_MANAGE，服务端审计）。
+  // 路径占位符统一写 ${id}：跨树对账守卫按 `${x}` → `{x}` 原名归一后与 Java 冻结表逐字对账，
+  // 而冻结表（ControllerPermissionCoverageTest.normalize）把一切占位符折叠成 {id}。
+  // dry-run 报告回查 GET /sources/{id}/mappings/dry-runs/{reportId} 前端不接线（向导直接消费 dry-run 响应）。
+  sources: (options) => client.get('/sources', { ...(options || {}) }),
+  sourceActivate: (id) => client.post(`/sources/${id}/activate`),
+  mappingDryRun: (id, body) => client.post(`/sources/${id}/mappings/dry-run`, body),
+  mappingActivate: (id, body) => client.post(`/sources/${id}/mappings/activate`, body)
 }

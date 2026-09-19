@@ -11,6 +11,7 @@ const routes = [
   { path: '/sales', name: 'sales', component: () => import('./views/Sales.vue'), meta: { title: '销售分析', requiresAuth: true } },
   { path: '/pipeline', name: 'pipeline', component: () => import('./views/Pipeline.vue'), meta: { title: '数据流水线', requiresAuth: true } },
   { path: '/ops', name: 'ops', component: () => import('./views/Ops.vue'), meta: { title: '运维中心', requiresAuth: true } },
+  { path: '/sources/wizard', name: 'sourceWizard', component: () => import('./views/SourceWizard.vue'), meta: { title: '接入向导', requiresAuth: true } },
   { path: '/decisions', name: 'decisions', component: () => import('./views/Decisions.vue'), meta: { title: '决策中心', requiresAuth: true } },
   { path: '/ai', name: 'ai', component: () => import('./views/AiAssistant.vue'), meta: { title: '智能分析助手', requiresAuth: true } }
 ]
