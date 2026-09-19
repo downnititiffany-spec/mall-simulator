@@ -1,7 +1,8 @@
 # Current Verification Batch
 
-> 状态：**READY — Batch T-R2 待执行，VERIFY_CURRENT_BATCH 开放**（2026-09-19，总控 APPROVED「mxp 合法 0 行 ADS 导出修复」后按其 READY 条件开放）。
+> 状态：**BLOCKED_ENV — Batch T-R2 已执行 3 次 attempt 全部被环境级故障阻断（2026-09-19 登记），VERIFY_CURRENT_BATCH 保持开放**。
 > T-R1 已登记 `FAIL_PRODUCTION_RUN_PUBLISH_FAILED`（mxp 对 0 行暂存分区直读抛 `UNABLE_TO_INFER_SCHEMA`）；修复（D-020）已按总控边界落地并经 developer tests + 三档回归验证；T-R1 结果（`d28afa2`）与修复提交（`1ae091b`）均已真正落到 origin/feature/v3-development。
+> T-R2 三次 attempt 均未执行到 PUBLISH_METRIC：attempt-1 dqc JVM 0-CPU 挂起、attempt-2 平台 JVM 出生即被 CTRL_C 杀死（瞬时）、attempt-3 INIT_SCHEMA driver 挂死（jstack 铁证：Spark local 模式 executor 经回环 TCP 自 driver 下载 job jar 永久阻塞——框架层故障，项目代码未执行）。被测修复**未被证实也未被证伪**；环境修复选项已交总控/用户裁决（结果文档 §7）。
 
 ## Current batch
 
@@ -12,7 +13,7 @@
 - **Permanent plan**：`docs/verification/batches/BATCH-T-R2-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-PLAN.md`
 - **Predecessor**：Batch T-R1 / `FAIL_PRODUCTION_RUN_PUBLISH_FAILED`（result：`docs/verification/results/BATCH-T-R1-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-RESULT.md`，attempt `attempt-20260919_094931_381` / pipeline runId=8）
 - **Pinned S-R1 producer evidence**：`target/v25-it/stage7q1_20260918_152245/producer/attempt-20260918_195657_077/stage7-producer-result.json`（1011 unique / 0 duplicate，SHA256 `f32906…bbcc`，businessDate 2026-09-18，mock-mall）
-- **Overall**：`READY`（总控裁决原文：「APPROVED：mxp 合法 0 行 ADS 导出修复。T-R2：条件批准，待修复 + developer tests + 回归完成，并将 T-R1 结果和修复提交真正落到远端后，再置 READY。禁止把合法空态扩大成"所有 schema 读取失败都按空表处理"。」）
+- **Overall**：`BLOCKED_ENV`（执行结果，2026-09-19 登记；开放时为 READY，总控裁决原文：「APPROVED：mxp 合法 0 行 ADS 导出修复。T-R2：条件批准，待修复 + developer tests + 回归完成，并将 T-R1 结果和修复提交真正落到远端后，再置 READY。禁止把合法空态扩大成"所有 schema 读取失败都按空表处理"。」）
 
 ## mxp 修复与三档回归（2026-09-19，T-R2 前置已全部满足）
 
@@ -31,6 +32,24 @@
 ## T-R2 PASS criteria（摘要，全文见 plan §5）
 
 ingestion 1011/0 quarantine → Pipeline 全链 SUCCESS **through PUBLISH_METRIC** → 0 行表真实空 JSONL（rowCount=0/checksum="0"）+ 非 0 行表逐表对账 → MetricPublisher 消费 manifest → outer harness exit 0。任何失败按 evidence-only 分类（production FAIL vs BLOCKED_ENV vs harness issue），不猜测；mxp 若再失败**不得**把读取失败当空表。
+
+## T-R2 实际结果（2026-09-19 登记：3 次 attempt 全部 BLOCKED_ENV，详见结果文档）
+
+结果：`docs/verification/results/BATCH-T-R2-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-RESULT.md`（Exact SHA `1ae091b`，RunId `stage7q1_20260918_152245`，harness exit 7 ×3）。
+
+| # | attempt | outcome | 失败点 |
+|---|---|---|---|
+| 1 | `attempt-20260919_112031_598` | PIPELINE_TIMEOUT | QUALITY_CHECK：dqc JVM 提交后 0-CPU 挂起（7 作业 SUCCESS 后第 8 个挂；当时无 jstack，签名归因） |
+| 2 | `attempt-20260919_113916_916` | 平台未就绪 | 平台 JVM 出生 ~3s 被 CTRL_C 杀死（exitCode -1073741510，stderr 0 字节；attempt-3 同条件存活证伪其可复现性 → 瞬时环境信号） |
+| 3 | `attempt-20260919_115603_058` | PIPELINE_TIMEOUT | INIT_SCHEMA：driver JVM（pid 58920）SparkContext 初始化中 jar 自下载永久阻塞——3 份 jstack 证明 main 线程卡在 `NettyRpcEnv$FileDownloadChannel.read → SocketDispatcher.read0`，CPU 计数 6.5 分钟零变化、无 ESTABLISHED 套接字 |
+
+关键事实：
+
+- **挂点在 Spark 框架层（`Executor.updateDependencies` 依赖自下载），项目作业逻辑一行未执行**——非 production FAIL（`1ae091b` diff 不触及提交/初始化路径），亦非 harness issue（3 次 attempt 的预检/落盘/清理/分支恢复全部正确）；
+- 间歇性：T-R1（今晨 09:49，同命令形态）9 作业全 SUCCESS；今日平台链 16 次 JVM 作业提交 2 次挂起（~12%/作业）。主机动态端口范围异常 = **1024–15000**（Windows 默认 49152–65535），Spark 随机端口全落低位拥挤区间（`netsh int ipv4 show dynamicport tcp`）；裸 SparkPi 对照 9/9 过（不构成统计区分）；
+- 每次 attempt 的 producer handoff 均成立（batchId 11/12，1011/0/0，钉死输入）；DB 为 runId 域内复用 + 幂等 prep 口令重置（T-R1 先例）；3306 未触碰、阈值未改、未把任何读取失败当空表（根本未执行到 mxp）；
+- **治理后果**：T-R2 PASS 判据未达成也未被证伪 → T-R1 事件 `FAIL_PRODUCTION_RUN_PUBLISH_FAILED` **保持开放**，BATCH-U 不开放；VERIFY_CURRENT_BATCH 保持开放待环境修复后复跑；
+- **修复选项（均未执行，待总控/用户裁决）**：A. 恢复主机默认动态端口范围 `netsh int ipv4 set dynamicport tcp start=49152 num=16384`（改环境不改被测系统，推荐）；B. 平台 spark-submit 钉定端口（改被测系统，需批准）；C. 多 attempt 重试（~12%/作业挂起率下低效且弱化 PASS 说服力）。
 
 ## Accepted Batch T facts（钉死 producer 输入的既有证据）
 
@@ -53,3 +72,5 @@ Pipeline `runId=5` 真实启动并推进至 BUILD_DWS 后平台进程消失（�
 ## After T-R2
 
 T-R2 PASS → 关闭 T-R1 事件并开放 **BATCH-U**（Flume→HDFS，现为 DRAFT）。T-R2 通过仍不证明：REMOTE_CLUSTER、浏览器 E2E、真实 LLM。
+
+**当前（2026-09-19）**：T-R2 未 PASS（BLOCKED_ENV），上述推进未发生；环境修复裁决后按原计划复跑 T-R2（编排脚本、钉定契约不变）。
