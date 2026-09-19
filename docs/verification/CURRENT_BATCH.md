@@ -1,19 +1,33 @@
 # Current Verification Batch
 
-> 状态：**当前验证门 = BATCH-V（平台 FLUME_RAW 采集与 manifest/1011 行 event_id 对账）READY（2026-09-19 总控裁决二：计划置 READY 后可连续执行至 PASS、明确 FAIL/BLOCKED 或 HARD DECISION）。**
-> 范围钉死：复用 BATCH-U 已验 HDFS landing（data file `events-.1789810142459` 456,825 B / 1011 行）→ HDFS→本地 landing 交接（保留 `raw/dt=20260919/hour=17/` 分区）→ platform（8091 / 3307 RunId-scoped 双库）FLUME_RAW ingestion 真实 HTTP 驱动 → manifest + 1011 行 event_id 集合双向对账。**不重跑商城/Flume，不把完整 Spark→publish、浏览器、LLM、REMOTE_CLUSTER 混入本批。**
-> 计划：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md`；代码基线 `104db41`（HEAD `836faca` 为 docs-only 前移，不触发重钉）；执行驱动脚本落 `target/v25-it/<RunId>/`（零仓内代码/配置变更）。
+> 状态：**BATCH-V attempt-1 已登记 FAIL（2026-09-19）：执行驱动脚本遗漏 `$env:PLATFORM_*` 配置块，platform 以 application.yml 默认配置启动，三个 JDBC 数据源连接并写入正式 3306（Flyway meta v18→v29、metric v3→v11、PUT profile 1），击穿「3306 零连接零写入」冻结边界 ⇒ 按裁决二停止；3306 处置与是否复跑待总控裁决。当前无 READY 验证门。**
+> 事件后处置（已完成）：platform 已死（exitCode -1073741510）、8091 释放、HDFS NN/DN 已停回 BATCH-U 收口态、仓库根意外产物已清理、**事件后对 3306 零接触**（无 forensic SELECT、无回滚 SQL）；完整清单见结果文档与 `target/v25-it/stage7v_20260919_192438/evidence-summary.json`。
+> 范围钉死（原计划，未变更）：复用 BATCH-U 已验 HDFS landing（data file `events-.1789810142459` 456,825 B / 1011 行）→ HDFS→本地 landing 交接（保留 `raw/dt=20260919/hour=17/` 分区）→ platform（8091 / 3307 RunId-scoped 双库）FLUME_RAW ingestion 真实 HTTP 驱动 → manifest + 1011 行 event_id 集合双向对账。**不重跑商城/Flume，不把完整 Spark→publish、浏览器、LLM、REMOTE_CLUSTER 混入本批。**
+> 计划：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md`；代码基线 `104db41`（执行 HEAD `67a2de8` 为 docs-only 前移，不触发重钉）。
 > Git 注记（D-001）：本计划与状态文档提交仅本地；push 需总控另行授权（836faca 授权已用尽）。
 
-## Current batch：BATCH-V（READY，2026-09-19 总控裁决二）
+## Current batch：BATCH-V（attempt-1 已执行并登记 FAIL，2026-09-19；等待总控裁决）
 
 - **Batch ID**：`BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION`
 - **Permanent plan**：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md`
-- **Exact source/test baseline**：`104db41117ea251b5b8e6c1f32c9f61ca4acd659`（执行 HEAD `836faca` 为 docs-only 前移，不触发重钉）
+- **Exact source/test baseline**：`104db41117ea251b5b8e6c1f32c9f61ca4acd659`（执行 HEAD `67a2de8` 为 docs-only 前移，不触发重钉）
 - **Branch context**：`feature/v3-development`
-- **RunId**：`stage7v_<yyyyMMdd_HHmmss>`（全新，不复用 stage7u_*）
+- **RunId**：`stage7v_20260919_192438`（attempt `attempt-20260919_194451_444`）
 - **Predecessor**：BATCH-U PASS（RunId `stage7u_20260919_170729`，HDFS landing 保留、NN/DN 已停可无损重启）
-- **Authorization**：总控裁决二（2026-09-19）——范围固定、连续执行至 PASS / 明确 FAIL/BLOCKED / HARD DECISION；口令环境变量缺失 ⇒ Phase 0 停止并把精确设置命令交总控，不得代填。
+- **Authorization**：总控裁决二（2026-09-19）——范围固定、连续执行至 PASS / 明确 FAIL/BLOCKED / HARD DECISION。**停止条件已触发（明确 FAIL），连续执行终结；后续动作需总控新裁决。**
+- **口令通道偏离登记**：驱动按 T-R1/T-R2/T-R3 已三次登记的先例在进程内生成 `V25_IT_META_PASSWORD`/`V25_IT_METRIC_PUBLISH_PASSWORD`（零落盘/零入参/零 git），未按计划 §4 原文「缺失即停止交总控」执行——已如实登记于结果文档 §6。
+
+## BATCH-V attempt-1 实际结果（2026-09-19 登记：FAIL——3306 冻结边界被击穿）
+
+结果：`docs/verification/results/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-RESULT.md`（Exact SHA `104db41`，RunId `stage7v_20260919_192438`，2026-09-19 19:24–19:53 +0800，零仓内代码/配置变更）。
+
+- **根因（确定性）**：驱动脚本 `flume-raw-ingestion.ps1` 遗漏 `$env:PLATFORM_*` 环境变量块（`grep -c 'env:PLATFORM_'` = 0），platform（PID 86088）以 `application.yml` 默认配置启动——meta/metric-publish/metric-read 三数据源全部连**正式 3306**，`LocalLandingStorage root` 落仓库根 `landing/`。第二处控制缺口：启动后未核验 platform 实际 JDBC URL，3306 迹象在启动日志 2 秒内已存在、直至 `/1/test` 挂起才定位。
+- **3306 写入清单**：analytics_meta Flyway **v18→v29（11 迁移，含此前标注「真库未执行」的 V29）**；analytics_metric Flyway **v3→v11（8 迁移）**；PUT /runtime-profiles/1 覆写 profile 1 行（landingUri/landingLayout=FLUME_RAW/sparkSubmitPath/sparkJobJarUri/hiveDatabasePrefix）——**覆写前原值未捕获**。3306 上未发生 ingestion run、业务数据写入或 ACTIVE 切换。
+- **platform 死亡（次要观察）**：`POST /1/test` 期间 exitCode -1073741510（0xC000013A CTRL_C 类）——与 T-R2 attempt-2 已登记签名一致；机制未定，疑与驱动「platform 略过驱动退出留活」设计有关；未来 attempt 强制改回 T harness 生命周期（驱动 finally 内停 platform）。
+- **未到达**：任何 ingestion run、manifest、accepted 落盘、event_id 对账（V-5~V-9 未评估）；V-3/V-10 对本 attempt 不可满足 ⇒ **明确 FAIL**。
+- **事件前各 Phase PASS**：P0 预检、P1 HDFS 无 reformat 重启 + checksum/字节/行三复核、P2 WSL 交接、P2b Windows 盘直接交接（SHA256 `f32906…bbcc` 全程一致）——对潜在 attempt-2 仍有效。
+- **收口**：platform 已死、8091 释放；仓库根 `landing/.local-landing-probe` 与 `landing/manifests/` 已删除；NN/DN 已停（pgrep 空）；3307 prep 建的 4 库 4 账号未被动用（platform 从未连接）；**事件后对 3306 零接触**（无 forensic SELECT、无回滚 SQL）。
+- **待总控裁决**：① 3306 处置——接受为事实基线 / 授权外科回滚（回滚本身也是 3306 写入）/ 其它；② 是否以及何时复跑（驱动修复点已明确：env 块 + 启动后 URL 自检 + T harness 生命周期）。
 
 ## Closed batch：BATCH-U（2026-09-19 收口，历史）
 
@@ -116,8 +130,8 @@ Pipeline `runId=5` 真实启动并推进至 BUILD_DWS 后平台进程消失（�
 
 总控两项裁决均已执行：① T→T-R1→T-R2→T-R3 三个既有提交（`7850e9b` → `a11ee42` → `104db41`）按原 ancestry fast-forward 推送 origin/feature/v3-development（`520d673..104db41`，无 force/rebase/amend/squash、无夹带），远端 HEAD = `104db41117ea251b5b8e6c1f32c9f61ca4acd659` 已验证；② BATCH-U 按裁决二在确认远端 HEAD `f136af5`（docs-only 前移）后直接执行 Phase 0–6，**已 PASS 收口**（本文件顶部与「BATCH-U 实际结果」节；结果文档 `docs/verification/results/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-RESULT.md`）。
 
-BATCH-U 后总控裁决二（2026-09-19）批准 BATCH-V 计划编制并连续执行：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md` 已置 **READY**（本文件顶部「Current batch」节）。
+BATCH-U 后总控裁决二（2026-09-19）批准 BATCH-V 计划编制并连续执行：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md` 已置 **READY** 并于当日执行 attempt-1（RunId `stage7v_20260919_192438`）——**因驱动脚本遗漏 `$env:PLATFORM_*` 配置块致 platform 击穿 3306 冻结边界，已登记明确 FAIL 并按裁决二停止**（本文件顶部与「BATCH-V attempt-1 实际结果」节；结果文档 `docs/verification/results/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-RESULT.md`）；3306 处置与复跑决策待总控。
 
-状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、Flume→HDFS PASS/CLOSED、**平台 FLUME_RAW 采集 READY/BATCH-V（当前验证门）**、REMOTE_CLUSTER 未验证、浏览器 E2E 未验证、真实 LLM 未验证；Stage 8 未开始。
+状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、Flume→HDFS PASS/CLOSED、**平台 FLUME_RAW 采集 = BATCH-V attempt-1 FAIL（3306 边界击穿，待总控裁决）**、REMOTE_CLUSTER 未验证、浏览器 E2E 未验证、真实 LLM 未验证；Stage 8 未开始。
 
-BATCH-U 通过不证明：平台 FLUME_RAW 采集与 manifest 对账（BATCH-V 当前验证门即为此闭合）、Spark 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
+BATCH-V attempt-1 FAIL 不证明：平台 FLUME_RAW 采集与 manifest 对账（验证门仍开放，待总控决定复跑形态）、Spark 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
