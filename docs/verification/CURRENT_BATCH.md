@@ -1,21 +1,29 @@
 # Current Verification Batch
 
-> 状态：**Batch T-R3 PASS 已收口并完成授权推送（2026-09-19）：远端 origin/feature/v3-development HEAD = `104db41`（`520d673..104db41` 纯 fast-forward，已验证）。Stage 7「localfile 分析链」验证门 T→T-R1→T-R2→T-R3 收敛关闭，T-R2 的 production FAIL `MP_ADS_WRITE` 事件正式关闭。**
-> **BATCH-U（Flume→HDFS SpoolDir 实链）：READY——总控已批准启动，永久计划已钉死**（`docs/verification/batches/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-PLAN.md`：Exact SHA `104db41`、spooldir 钉死、RunId 隔离 HDFS 目标、11 项 PASS 判据、七类失败分类、零 MySQL）；**执行待总控对计划检查后放行，未放行不得执行任何 Phase 命令**。T-R3 通过不证明：REMOTE_CLUSTER、浏览器 E2E、真实 LLM。
-> T-R3 结果文档：`docs/verification/results/BATCH-T-R3-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-RESULT.md`。
+> 状态：**BATCH-U（Flume→HDFS SpoolDir 实链）PASS 已收口（2026-09-19 17:07–17:55，RunId `stage7u_20260919_170729`）：主链 1011 行 event_id 逐项对账零丢失/零新增/零重复；kill -9 恢复子例两次 attempt 均 LOST=0（重复如实登记 500/0，at-least-once）；全程零 MySQL、零 platform/Spark、`/opt` 与 3306 未触碰。Stage 7 状态矩阵仅 Flume→HDFS 一格置 PASS/CLOSED。**
+> **当前无开放验证门**；下一步按总控指示直接推进 Stage 7 剩余面（REMOTE_CLUSTER、浏览器 E2E、真实 LLM——待总控排程）。BATCH-U 通过不证明：平台 FLUME_RAW 采集与 manifest 对账、Spark/LOAD_ODS 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
+> 结果文档：`docs/verification/results/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-RESULT.md`；T-R3 结果：`docs/verification/results/BATCH-T-R3-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-RESULT.md`。
+> Git 注记（D-001）：BATCH-U 结果/状态文档提交仅本地；push 需总控另行授权。
 
-## Current batch：BATCH-U（READY——计划已钉死，执行待总控放行）
+## Closed batch：BATCH-U（2026-09-19 收口，历史）
 
 - **Batch ID**：`BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN`
-- **Permanent plan**：`docs/verification/batches/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-PLAN.md`（本次由 DRAFT 升级为 READY）
-- **Exact source/test baseline**：`104db41117ea251b5b8e6c1f32c9f61ca4acd659`（当前 HEAD；本批零仓内代码/配置变更，docs-only HEAD 前移不触发重钉；引入仓内变更须先提交并重钉）
+- **Permanent plan**：`docs/verification/batches/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-PLAN.md`（执行前由总控裁决二直接批准：确认远端 HEAD `f136af5` 后按 Phase 0–6 连续执行，无需第二次确认）
+- **Exact source/test baseline**：`104db41117ea251b5b8e6c1f32c9f61ca4acd659`（执行 HEAD `f136af5` 为 docs-only 前移，不触发重钉；本批零仓内代码/配置变更）
 - **Branch context**：`feature/v3-development`
-- **RunId**：执行时新生成 `stage7u_<yyyyMMdd_HHmmss>`；恢复子例隔离资源用 `<RunId>-rec`
+- **RunId**：`stage7u_20260919_170729`（恢复子例隔离资源 `<RunId>-rec`）
 - **Predecessor**：Batch T-R3 PASS（被测 SHA `7850e9b`，结果 `104db41`，远端 HEAD 已验证）
-- **范围（总控钉死）**：producer 完成文件（spool input）→ Flume source/channel/sink → HDFS landing → 文件真实可读、行数/event_id 可对账；不含平台 FLUME_RAW 采集、Spark、浏览器、真实 LLM、REMOTE_CLUSTER。
-- **关键钉死**：Source = Spooling Directory Source（设计 §8.2 强制，taildir 排除，不得执行时切换）；HDFS = WSL 单节点 1NN/1DN replication=1（run-scoped conf，NN RPC 钉 9100）；Flume 1.11.0 需前置下载（SHA512 校验）+ 注入 hadoop-3.3.4 client jars（2026-09-19 实测：本机无 Flume，WSL /opt 有出厂空配置 hadoop-3.3.4，默认 JDK11）；输入 = S-R1 pinned 1011 行完成文件只读副本（SHA256 `f32906…bbcc`，主键 `event_id`，1011 unique）；全程零 MySQL（3306/3307 均不碰）、零 platform/Spark。
-- **PASS 判据**：总控 11 项钉死判据逐条对应（计划 §5）；**失败分类**：FAIL_CONF / FAIL_PORT_NET / FAIL_HDFS_UNREACHABLE / FAIL_PERM / FAIL_RECON / FAIL_CHAIN / BLOCKED_ENV（计划 §6）。
-- **Git 状态注记（D-001）**：BATCH-U 计划与状态文档提交仅本地；push 需总控另行授权。
+- **Outcome**：**PASS**（计划 §5 十一项判据全部满足；七类失败分类零触发；3 起环境级事件登记：flume-ng 默认 `-Xmx20m` 堆 OOM → run-scoped `flume-env.sh` 官方覆写点修复、NN/DN SIGHUP → setsid 无损恢复、Phase 4 竞速 echo 截断 → 留证日志诚实重构）
+- **Git 状态注记（D-001）**：结果/状态文档提交仅本地；push 需总控另行授权。
+
+## BATCH-U 实际结果（2026-09-19 登记：PASS）
+
+结果：`docs/verification/results/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-RESULT.md`（Exact SHA `104db41`，RunId `stage7u_20260919_170729`，2026-09-19 17:07–17:55 +0800，WSL run root 隔离，零仓内变更）。
+
+- **主链（Phase 0–3/5/6）**：Flume 1.11.0 官方 SHA512 校验通过、run-scoped 安装；run conf 由仓内 `flume-spooldir.conf` 派生、diff 恰 4 处路径替换（各恰 8 行）；HDFS run-scoped 1NN/1DN（RPC 9100 运行时证实）；pinned 1011 行输入（SHA `f32906…bbcc`）copy 投入 → `.COMPLETED`（deletePolicy=never，SHA 复核一致）→ HDFS data file `events-.1789810142459` **456,825 B / 1011 行**（checksum `2446c8f7…`）；60s 双快照不变；event_id 集合双向比对 **1011=1011 `MAIN_SET_EQUAL`，LOST=0、×1 无重复**。
+- **恢复子例（Phase 4，隔离 `-rec`）**：attempt-1（×20=20,220 行）kill -9 后重放 `put: 20220, take: 500 → Queue 20220`，交付 20,720 = 20,220+**500 在途重投**（如实登记），distinct 1011、LOST=0；attempt-2（×100=101,100 行）kill 前 101,100 事件全部 commit 进 File Channel、kill 落在 sink 排空，重放 `put: 101100 → Queue 99100`，交付**恰 101,100（零净超额、无二次摄取）**、LOST=0；合并 multiset **INPUT_ONLY=0 / DELIVERED_ONLY=500**（`rec-multiset-diff-fixed.txt`）。File Channel kill -9 后重放日志干净 → FAIL_CHAIN 不适用；checkpoint/data 分离持久留证。
+- **登记事件（3，均非 FAIL_\* 类）**：① flume-ng 脚本硬编码 `-Xmx20m` 堆 OOM 首启即死 → run-scoped `flume-env.sh` `JAVA_OPTS=-Xmx512m`（flume-ng 326–331 行官方覆写点，`-f` run conf 未动）；② NN/DN 因 WSL 会话拆除收 SIGHUP（各唯一 1 条 ERROR）→ `setsid nohup` 无损恢复（不 reformat），Flume 存活、1011 事件安全滞留 channel，NN 中断期间 sink 重试留 3 个 0 字节残迹文件（未承载数据，如实登记）；③ Phase 4 attempt-2 竞速 echo 行位于截断输出段 → 由 agent-3 日志 + 重放计数 + HDFS 快照诚实重构。
+- **边界**：全程零 MySQL（3306/3307 零连接）、零 platform/Spark；`/opt/hadoop-3.3.4` 原配置零修改、无系统服务注册；证据 62 件 + flume conf 4 件 + hadoop 日志 2 件归档 `target/v25-it/stage7u_20260919_170729/`（含 `evidence-summary.json`）。**不证明**：平台 FLUME_RAW、Spark 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、exactly-once、整个 Stage 7 完成。
 
 ## Closed batch：T-R3（2026-09-19 收口，历史）
 
@@ -94,10 +102,10 @@ Pipeline `runId=5` 真实启动并推进至 BUILD_DWS 后平台进程消失（�
 - 失败点：PUBLISH_METRIC 的 mxp exit=1 `[UNABLE_TO_INFER_SCHEMA]`——0 行暂存分区目录只有 `_SUCCESS` 无 parquet 文件，`MetricExportJob.scala:78` 直读路径文件级 schema 推断失败；
 - 分类：**production FAIL**（`FAIL_PRODUCTION_RUN_PUBLISH_FAILED`）；该事件已由 T-R2 attempt-4（mxp SUCCESS）实链证实修复、随 T-R3 收敛关闭。
 
-## After T-R3 → BATCH-U（当前状态，2026-09-19）
+## After BATCH-U（当前状态，2026-09-19）
 
-总控两项裁决均已执行：① T→T-R1→T-R2→T-R3 三个既有提交（`7850e9b` → `a11ee42` → `104db41`）按原 ancestry fast-forward 推送 origin/feature/v3-development（`520d673..104db41`，无 force/rebase/amend/squash、无夹带），远端 HEAD = `104db41117ea251b5b8e6c1f32c9f61ca4acd659` 已验证；② BATCH-U 批准启动，永久计划已按治理流程编制并置 READY（本文件已同步），**执行待总控对计划检查后放行**。
+总控两项裁决均已执行：① T→T-R1→T-R2→T-R3 三个既有提交（`7850e9b` → `a11ee42` → `104db41`）按原 ancestry fast-forward 推送 origin/feature/v3-development（`520d673..104db41`，无 force/rebase/amend/squash、无夹带），远端 HEAD = `104db41117ea251b5b8e6c1f32c9f61ca4acd659` 已验证；② BATCH-U 按裁决二在确认远端 HEAD `f136af5`（docs-only 前移）后直接执行 Phase 0–6，**已 PASS 收口**（本文件顶部与「BATCH-U 实际结果」节；结果文档 `docs/verification/results/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-RESULT.md`）。
 
-状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、Flume→HDFS NEXT/BATCH-U READY（执行待放行）、REMOTE_CLUSTER 未验证、浏览器 E2E 未验证、真实 LLM 未验证；Stage 8 未开始。
+状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、**Flume→HDFS PASS/CLOSED**、REMOTE_CLUSTER 未验证、浏览器 E2E 未验证、真实 LLM 未验证；Stage 8 未开始。当前无开放验证门；下一步按总控指示直接推进 Stage 7 剩余面（REMOTE_CLUSTER、浏览器 E2E、真实 LLM）。
 
 BATCH-U 通过不证明：平台 FLUME_RAW 采集与 manifest 对账、Spark 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
