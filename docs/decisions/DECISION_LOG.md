@@ -322,3 +322,23 @@
 
 **Implementation commits**：本笔（fix(stage7) 02.6 时效横幅）。
 
+### D-033 — G31-03 业务正样本夹具：生成器文件夹具（99+71 事件）+ 独立 plain-Python oracle + E4 未来业务日钉执行窗口 + NTILE 确定性
+
+**Decision**：G31-03（03.1~03.7）输入件按以下口径固定：(1) **夹具形态** = 生成器文件夹具（`fixtures/source-a-e3/`）：`generate.py` 确定性生成 canonical JSONL（E3=99 行、E4=71 行，均在 E3 档 20~100 上限内），经 `EventContractValidator` 全量规则离线核对（信封 7 字段+payload 对象、12 类型白名单、schema_version=1.0、金额字符串、行为枚举、各类型 payload 必填字段；校验器**无未来日期守卫**已核），不引入 mock-mall 尚不存在的行为接口——符合「合成行为只能来自生成器文件夹具或实际已存在的业务端点」约束；(2) **oracle** = `oracle.py` + `ORACLE.md`：**plain-Python 独立重述**冻结语义（OrderTradeCompiler 退款口径、漏斗四段、热度公式 1·log1p(pv)+2·log1p(fav)+3·log1p(cart)+5·log1p(buy) 与 (−heat,−buy,product_id) 排序、RFM v2 NTILE 桶序、决策 rate 4dp HALF_UP/DOWN 取负与 0.05/0 阈值），**零平台 import**，全部期望值手推+脚本双算对齐；(3) **排序确定性**：排行并列样本（g3p02/g3p03 heat 同为 14.370443）按 (−heat, −buy, product_id) 落序，RFM 依赖 Spark NTILE 追加 `user_id ASC` 稳定键（AdsSql rfm-v2）→ oracle 给**精确桶值**而非一致性检查；(4) **E4 业务日 2026-09-21（晚于壁钟）**：合法（校验器无时间守卫），唯一真约束是 DecisionService 的 insufficientReason 下界（actual.businessDate 必须晚于 complete 壁钟日）→ E4 链必须钉死在壁钟=2026-09-20 当天完成，ORACLE.md 写明过期需以新 T 重生成；(5) 每条腿（E3/E4）**单次流水线运行**承载对应 businessDate 的 ADS 计算，E3=2026-09-18、E4=2026-09-21。
+
+**Reason**：指导书 03.x 的验收全部是**数值可对账**断言（排行至少3商品并含并列、分页稳定、漏斗可对账、RFM 原值+窗口、四类评价可达、基线0不输出无限改善率）——只有「输入事件逐条可枚举 + 期望值由独立实现算出」才能把平台输出和 oracle 逐 cell 对表；复用平台自身代码算期望等于用被测物验证被测物。并列与 NTILE 稳定键是 03.1/03.2 显式要求，E3 商品/行为设计（5 商品、30 views/6 fav/8 cart/12 paid、6 买家 3 复购）即为覆盖这些断言而反推。
+
+**Boundary**：不改平台代码（纯输入件+文档）；不新增 ADS 表；E3/E4 落盘 hash 清单 `MANIFEST-SHA256.txt`（生成器、双 JSONL、oracle、ORACLE.md 五件）；E4 71 行中 2 单退款全额（g4r0001/g4r0002）用于 D3 INEFFECTIVE 方向；`fixtures/` 属输入件入 git，运行期产物（landing/staging/evidence）不入。
+
+**Evidence**：`fixtures/source-a-e3/MANIFEST-SHA256.txt`（五件 sha256+行数：e3=99/e4=71/generate.py=257/oracle.py=304/ORACLE.md=90）；oracle 预算值：A 快照 pv 30/uv 10/gmv 1010/net 930/aov 84.1667/refund 0.0833/repeat 0.3333，漏斗 10→6→6→8→6，排行 g3p01(16.968247)>g3p02=g3p03(14.370443)>g3p04(7.154615)>g3p05(4.564348)，RFM 6 行（g3u01 5/5/5 重要价值…g3u06 1/2/1 一般保持 新用户）；B 快照 gmv 1200/net 1000/aov 92.3077/refund 0.1538；四决策 D1 EFFECTIVE(+0.0967)、D2 PARTIAL(+0.0333)、D3 INEFFECTIVE(−0.8463)、D4 EFFECTIVE(+0.1881)、D1 先评 INSUFFICIENT_DATA（完成后尚未发布新快照）。
+
+### D-034 — 03.5 跨源证据守卫：suggestionSnapshotId 解析回源比对，跨源快照拒绝为 SOURCE_MISMATCH 并留审计
+
+**Decision**：指导书 03.5「跨源证据拒绝并留审计」落地口径：`DecisionService` 提交链（createDraft/submit）在请求携带 `suggestionSnapshotId` 时，**先解析后接受**：(1) 按 snapshot_id 查 `metric_snapshot`，不存在 → `PARAM_INVALID`（snapshotId 参数化注入面，不当「未知源」处理）；(2) 由快照行取 `runtime_profile_id` → `runtime_profile.source_id`，与**当前 ACTIVE runtime_profile 的 source_id**（即本次决策实际将引用的证据源）比对，不一致 → 新业务码 `SOURCE_MISMATCH`(409)，异常文案携带 双方 source_id 与快照 id；(3) 校验点放在 service 层业务校验段（与 baseline/actual 可观测性检查同段），controller 既有包装器自动把业务异常落 `decision_audit` FAILED 行（error_code=SOURCE_MISMATCH）——审计留痕不新增机制；(4) 不校验通过时**不消耗**快照/不触碰 source_mapping_active（对 source 2 只读引用，S20260918_15 作为跨源参照样本）。
+
+**Reason**：03.5 要求「跨源证据拒绝并留审计」，而决策引用的快照是唯一能伪装成证据的入口——若只在前端隐藏跨源快照选项，构造 API 调用仍可把别源快照塞进 suggestionSnapshotId；service 层解析回源是唯一权威闸门。用当前 ACTIVE profile 的 source_id 作为基准而不是「决策人自选源」，与 D-031 语义一致：决策的评价对比必须同源同定义，跨源对比在 03.6 由 oracle 显式约束（等长同源同定义）。
+
+**Boundary**：不改快照发布/激活机制；不改 controller 包装器；SOURCE_MISMATCH 单测覆盖（跨源 id、不存在 id、同源 id 三态）；不把 source_id 暴露给前端新字段（复用既有 409 错误结构）。
+
+**Evidence**：单测 DecisionServiceSourceMismatchTest（待本批提交）；运行期证据 = 50-*.json（03.5 负向批），以 S20260918_15（source 2）对 ACTIVE S20260918_17（source 1 数据域）发起决策提交，断言 409/SOURCE_MISMATCH + audit FAILED 行存在。
+
