@@ -223,3 +223,102 @@
 **Evidence**：RunId `g3101_20260920_003500`（session-1 outcome=PLATFORM_RUNNING，session-2 outcome=CLEANUP_AND_NEGATIVES_PASS）。01.1：负例 N1（缺 META_PASSWORD）/N2（META_URL 指向 3306）/N3（PUBLISH_URL 错库名前缀）全部 exit 12 于启动前（378/371/344 ms），零平台 JVM、8091 空闲；正例门禁 `assert-platform-env：OK（13/13 …）`；F2b 启动后日志核查 0 次 `:3306`。01.2：C1 owned-tree 停止（cmd 34068/conhost 13800/java 29800）+ 端口释放 + ledger outcome=STOPPED；C2 PID 复用牺牲进程拒杀 exit 5（牺牲进程存活）；C3 名字不符拒杀 exit 5；C4 ALREADY_GONE 幂等 exit 0。01.3：两 driver 分进程交接成立。5.1.4：grant audit 证实 metricread（`stage7q1_202_0598ff44_metricread`，32 字符哈希回退命名）仅 `GRANT SELECT`、无任何写权限、无 meta 库权限；读探针 `/api/v1/metrics/snapshots` 返回 3 条 + 日志含 metric-read-ds 连接池。回归：fresh suite RunId `dev003c_20260920_002959_f9380b` analytics **1039 MATCH** / mall 14 / generator 111（=1164，唯一红仍为既有环境性 `IngestionManifestRuntimePatrolTest`）；隔离档沿用 `d021iso_20260919_145240` 62/62 基线（本批未动隔离测试数）。新增 01.5 文档 `docs/verification/ISOLATED-EXECUTION-MINIMAL-GUIDE.md`（零密钥）。结果文档 `docs/verification/results/G31-01-TEST-ISOLATION-RESULT.md`。
 
 **Implementation commits**：`00dac1a`（application.yml 兜底默认剥离 + EnvCredentialService 注释 + assert-platform-env.ps1 + stop-platform-by-pidfile.ps1 + it-prepare-isolation.ps1 metricread 通道，5 文件 +401/−13）。
+
+### D-029 — 源画像生命周期门按画像语法分派顶层必备键（v2 复用 Loader 权威键集），解锁第二来源 fixture-shop-b 的源级激活
+
+**Decision**：`SourceProfileValidator`（`POST /api/v1/sources/{id}/activate` 与 `/{id}/test` 的画像门）在「可解析为 JSON 对象」之后按与 `MappingProfileLoader.load` **逐字相同的结构判据**（`fieldMappings` 是否为 JSON 对象）分派顶层必备键：v2（V2_STRICT）画像必备键 = 公开后的 `MappingProfileLoader.V2_STRICT_TOP_LEVEL_KEYS`（8 键，唯一权威清单，排序成稳定列表），v1 扁平画像仍用设计 §4.2 的 9 键清单（顺序逐字、缺键文案逐字不变）；`ProfileCheck` record 新增 `requiredTopLevelKeys` 与 `syntaxName`（V2_STRICT/V1_COMPATIBILITY）两个组件，`SourceRegistryServiceImpl` 的 `profile_required_top_level_keys` 检查项明细随语法回填（v1 的「设计 §4.2 的 9 个顶层必备键齐全」逐字保留）。修复前 v2 画像激活源必 409 `SOURCE_PROFILE_INVALID`（误按 v1 九键清单缺 canonical/eventTypeMapping/fieldMapping/identityPolicy/quarantinePolicy）；摄取路径（Loader→Pointer→SourceMapper）本就 v2-capable，只有生命周期门卡死 v1。
+
+**Reason**：G31-02/02.2 真机流程（RunId g3102_20260920_014827）：fixture-shop-b.v2.json 三方哈希对齐的 mapping 激活已成功（dry-run 38/38 eligible、fault 5 隔离不变式、空样本拒绝、漂移 409 `MAPPING_PROFILE_CHANGED` 全部通过），但源级 activate 409——`SourceProfileValidator` 是 P1-03 时代的 v1 门，从未分派画像版本。设计 V3.1 02.2 验收「B注册、画像预览/激活」要求 v2 画像可激活；若不改门则第二来源永远 DRAFT，02.3~02.6 全部被阻断。修门不修摄取路径（摄取路径已正确），也不放宽任何既有校验（v1 行为逐字不变）。
+
+**Boundary**：分派判据与键集**只此一处**——validator 不自创第二份 v2 键清单，直接引用 Loader 公开常量（新增恒等测试钉死）；不新增/删除任何键、不改 v1 九键清单与顺序、不改任何 409/错误码语义；`ProfileCheck` 新组件对既有调用方（仅 `SourceRegistryServiceImpl` 一处消费）向后兼容（早退分支填空表/null）；不动摄取侧 `MappingProfileLoader.load` 的任何解析行为（仅常量改名公开 + javadoc）；3306 零接触、不 push（授权已用尽）。
+
+**Evidence**：定向回归 `SourceProfileValidatorTest` **12/12**（+4：v2 键集≡Loader 集且不含 v1 专属键 / v2 全键通过且 syntaxName=V2_STRICT / v2 缺 amountPolicy 只报 v2 键不误报 v1 键 / v1 口径与 V1_COMPATIBILITY 不变）+ `SourceRegistryServiceTest` **32/32**（「9 个顶层必备键齐全」逐字断言仍绿）；default 三档回归 RunId `dev003c_20260920_020324_00d2c3`：analytics **1043 MATCH**（基线 1039→1043，唯一红=既有环境性 `IngestionManifestRuntimePatrolTest`，与 D-022 基线运行同一红）/ mall 14 / generator 111。修复后 jar 重建并以 `stop-platform-by-pidfile.ps1`（G31-01 C1 收口脚本，身份核对通过、8091 释放、:3306 清查零命中）+ g3102-start driver 重启平台，02.2 源级激活复跑证据见 `target/v25-it/g3102_20260920_014827/022-evidence/`。
+
+**Implementation commits**：`8b4e4da`（MappingProfileLoader 常量公开改名 + SourceProfileValidator 分派 + SourceRegistryServiceImpl 明细回填 + SourceProfileValidatorTest +4 + run-tests.ps1 基线 1039→1043）。
+
+### D-023 — 第二来源 warehousePrefix=`fxsb`（≤24 字符、与 `dw` 命名空间区分、语义可读）
+
+**Decision**：fixture-shop-b（sourceId=2）注册时 `warehousePrefix=fxsb`，仓库名空间为 `fxsb_ods/fxsb_dwd/fxsb_dws/fxsb_ads`（含派生库），与 mock-mall 的 `dw_*` 完全平行、互不重叠。ingestMode=FILE，profilePath=`analytics-server/source-profiles/fixture-shop-b.v2.json`，timezone=Asia/Shanghai，currency=CNY，status=DRAFT 起步。
+
+**Reason**：02.3/02.4 要求两源并存且同 ID 不串表；前缀是唯一隔离边界，须短、可读、与既有 `dw` 无前缀冲突；`fxsb` 满足 ≤24 字符命名约束且在 B 腿全部读写路径（spark-read、MySQL readback、文件系统 inventory）中可精确 grep。
+
+**Boundary**：不新增共享表；不改 `dw_*` 任何对象；fxsb_* 仅由 B 腿流水线写入；不清理旧 runId。
+
+**Evidence**：注册报文与源列表见 `target/v25-it/g3102_20260920_014827/022-evidence/`；B 腿 MySQL readback 9/9（fxsb_ods/dwd/dws/ads 四层）与 02.3 oracle 41/41；02.4 A-B-A 后 `fxsb_*` 文件级不变（132 文件/218724 字节 before=after，`025-evidence/16-fxsb-warehouse-after.json`）。
+
+**Implementation commits**：无（验证批次决策，无代码变更；源注册为运行期 API 操作）。
+
+### D-024 — B 夹具在 A 金样本缺失面上补齐 product_created/behavior/user_registered，使 8 类事件映射全面覆盖
+
+**Decision**：`fixtures/source-b/fixture-shop-b/normal.jsonl`（含 `fault.jsonl` 与手算预言 `ORACLE.md`）在 mock-mall A 金样本只有交易+行为衍生的面上补齐 product_created / behavior 原始事件 / user_registered 三类，使 B 画像 8 类 eventTypeMapping 全部有真实样本执行路径；运行期使用运行目录副本，仓库制品不参与运行时写入。
+
+**Reason**：映射覆盖证明必须「每一类映射都被执行过」，否则 02.2 的 eligible 只对 5/8 类有意义；A 金样本不携带这三类是历史事实而非缺陷，故补面在 B 夹具而非改 A 制品（不改已验证制品）。
+
+**Boundary**：不改 mock-mall 金样本与 `mock-mall.v1.json`；B 夹具带 synthetic/fixture 标记，不称真实外部商城；预言值全部手算入 `ORACLE.md`，不允许「跑出来什么就是什么」。
+
+**Evidence**：`fixtures/source-b/fixture-shop-b/ORACLE.md`；02.3 执行 oracle 41/41 + MySQL readback 9/9（`022-evidence/`、`023-evidence/`）；dry-run 38/38 eligible（022 fault/normal 双样本）。
+
+**Implementation commits**：无（夹具为批次资产，随 G31-02 docs 提交收口）。
+
+### D-025 — 故障集取 5 类互异映射违规；同源重复 event_id 案例剔除（属去重语义非映射违规）
+
+**Decision**：`fault.jsonl` 取 5 类互异违规：未映射事件类型 / FEN 金额非整数 / 事件时间格式不匹配 / 必填字段缺失 / 不支持的 schema 版本；剔除「同源内重复 event_id」案例——同源重复属 DWD 去重键语义（D-012 一族），与映射违规混测会污染归因。
+
+**Reason**：故障注入要的是「每类违规独立可见且 reason 可归因」；去重与映射是两个机制，合并样本会使 quarantine reason 分布不可解释。
+
+**Boundary**：不放宽任何 quarantine 不变式（隔离行不进 ODS、batch quarantineCount 精确、SUCCESS 语义不变）；故障样本只进 dry-run，不进正式摄取流。
+
+**Evidence**：`022-evidence/` fault dry-run：5 行全部隔离、reason 与类别一一对应、isolated 行零泄漏；02.2 验收「预览错误/覆盖率」即以此为准。
+
+**Implementation commits**：无（验证批次决策）。
+
+### D-026 — A-B-A 回程每腿换新落盘文件名（checkpoint 键含绝对路径）；登记每源检查点的跨源重扫语义与防御墙结果
+
+**Decision**：A-B-A 各腿落盘文件名互不相同（B 腿 2026091821.jsonl → A 回程 attempt-1 2026091822.jsonl → 清洁复跑 2026091823.jsonl），因为 LandingInput 检查点键含**绝对路径**，同名重放会被判已处理而静默 0 行。同时登记执行中钉死的两个检查点事实：(1) 检查点键为 (runtime_profile_id, source_id, 绝对路径)——切源后**同一路径文件在新 sourceId 下会被重扫**；(2) 重扫的防御行为正确：B 残留文件 38 行在 A 画像下全部隔离（quarantineCount=38、零入仓），attempt-1 的 A 文件被 batch 16 消费后在其 checkpoint 下不再被 batch 17 重扫；完全消费的文件连扫描都不进入（batch 18 对 2026091823.jsonl 复跑 recordCount=0/fileCount=0）。
+
+**Reason**：attempt-1 的 batch 16 出现 fileCount=2/quarantineCount=38，根因是 B 残留文件在切源后按 (profile,source=1) 重新可见——这不是缺陷（防御墙完整起效），但必须登记成语义事实，否则后续任何「切源后重放旧文件」的操作都会被误读为数据污染。清洁复跑（025）以「归档残留 + 新文件名」把两个语义都钉进证据。
+
+**Boundary**：不修改检查点实现与键序；不清理 landing 历史归档（archive-b15/、archive-a16-attempt1/、archive-b17-consumed/ 均保留出处）；不把「重扫即隔离」宣传为可依赖的数据修复手段——正确操作仍是先归档再切源。
+
+**Evidence**：`024-evidence/`（attempt-1：fileCount=2/quarantine=38、dashboard 零 B 残留）；`025-evidence/06-ingest-run.json`（batch 17：17/0/SUCCESS/fileCount=1）；`025-evidence/28-landing-final-hygiene.json`（batch 18 幂等 0/0 + 三处归档 + events/ 终态为空）；`025-run.log` 全 26 项。
+
+**Implementation commits**：无（验证批次决策）。
+
+### D-030 — dry-run 预览严于生产 Loader：预览定位为 advisory preflight，激活/摄取以 Loader 语义为准；遗留 A 画像不在验证中途改写
+
+**Decision**：映射 dry-run 报告与生产 Loader 的接受面差异**登记为已知语义而非缺陷**，处置三条：(1) 激活与摄取的权威语义 = `MappingProfileLoader`（batch 17 实测 17/17 全收、0 隔离），dry-run 报告定位为 **advisory preflight**（错误/覆盖率预览），02.4 的预检断言放宽为 `processed=17 && systemErrors==0`；(2) 已提交且已验证的 A 画像 `mock-mall.v1.json` **不在验证中途改写**——补 amountPolicy 单位声明等属遗留画像治理，另立后续工作项，不随 02.4 静默变更（避免「验证中途换被测物」）；(3) 向导（02.5）展示预览时必须携带 `activationEligible=false` ≠「必然拒绝激活」的语义说明，以 Loader 实际结果为激活门槛。
+
+**Reason**：attempt-1（024）dry-run 对 A 画像报 26 条 preview violations（reasonCounts: EMPTY_FIELD 11 / PROFILE_INVALID 15；requiredCoverage 0.877、activationEligible=false），其中三类均为预览比 Loader 严：MISSING_AMOUNT_POLICY（遗留画像无 amountPolicy 单位声明）、ITEMS_REQUIRES_ITEM_MAP（Loader 接受 items 为 JSON 字符串）、EMPTY_FIELD（status/created_at/paid_at 可选映射字段在 stage7q1 金样本中同样缺省）。若按预览阻断激活，则平台自己的黄金路径都会被预览否决——证明「预览=门」是错误模型；但预览的 processed/systemErrors/requiredCoverage 对管理员仍有真实预警价值，故保留为 advisory。
+
+**Boundary**：不改 MappingDryRunService/Loader 任何校验代码（本决策是语义登记，不是放宽代码）；不改已提交画像制品；预览报告的 profileChecksum 权威性（sha256 of 提交字节）不变；激活漂移 409 `MAPPING_PROFILE_CHANGED` 不变。
+
+**Evidence**：`024-evidence/05-dry-run-a-fixture.json`（26 violations 明细与 reasonCounts）vs `025-evidence/04-dry-run-a2.json`（同画像 processed=17/systemErrors=0/previewViolations=26）+ `025-evidence/06-ingest-run.json`（Loader batch 17：17 收 0 隔离 SUCCESS）；伴生澄清：repeat_rate=0.0 为平台正确值——DwsSql `valid_order_count` 按 S3-03（设计 §11.2 L433「完全退款不算有效复购订单」）只计 `final_refunded_flag=0`，u9001 第二单 910003 全额退款 → 0/2=0.0，手工预言 0.5 误用「支付复购率」变体，修正后 14/14 全绿（`025-evidence/27-close-verify.json`）。
+
+**Implementation commits**：无（语义登记 + 证据修正，无代码变更）。
+
+### D-031 — 02.5 接入向导面收口：冻结表 +4 行、dry-run 报告回查端点不接线（api.js 路径占位符一律 `${id}`）、预置回填输入框、激活文案按调用前 current 区分幂等与真切换
+
+> 编号注记：早先会话曾为 02.4/02.5 产物预留 D-027/D-028 编号但未落条目（相应事实最终以 D-023~D-026、D-029、D-030 登记）；为免与历史过程记录中的引用撞号，D-027/D-028 永久空缺，本条自 D-031 续编。
+
+**Decision**：指导书 V3.1 02.5「最小管理员接入向导」按四条子决策落地。(1) Java 冻结表（`ControllerPermissionCoverageTest`）新增 4 行 RUNTIME_MANAGE 期望：`GET /api/v1/sources`、`POST /api/v1/sources/{id}/activate`、`POST /api/v1/sources/{id}/mappings/dry-run`、`POST /api/v1/sources/{id}/mappings/activate`；dry-run 报告回查 `GET /api/v1/sources/{id}/mappings/dry-runs/{reportId}` **不接入前端**——向导直接消费 dry-run 响应体，且**双占位符路径**（`{sourceId}`+`{reportId}`）在跨树对账中不可调和：Java 侧 `normalize()` 把一切占位符折叠为 `{id}`，web 侧守卫按 `${expr}` 原名归一，两套归一对双占位符无法逐字对账。(2) 因此 api.js 全部路径占位符统一写作 `${id}`（原名参数），这是跨树对账成立的命名约定。(3) 向导第 2 步「预置样本」与「手工输入 sampleRef」互斥语义 = **最后操作的一个生效**：选预置即把引用回填输入框（输入框始终显示实际将提交的 ref，仍可再编辑），手输值经 `||` 优先级覆盖预置。(4) 激活结果文案以**调用前**捕获的源 current 状态区分「幂等」（响应 current=true 且调用前已 current）与「真切换」（响应 current=true 但调用前非 current）——激活响应的 current 是切换后视图恒为 true，不能单独作为判据。
+
+**Reason**：E2E 实测暴露两处组件语义缺口：负例路径上预置选择被残留手输值遮蔽（互斥从未实现），真切换后文案误报「已是当前源」（current 恒真）；冻结表若收下报告回查端点则 web 判据 B 永远无法对账（前端物理上无法以单占位符表达双占位符路径）。预置清单只收 fixture-shop-b 受控集三条（boundary 守卫禁止分析前端出现商城字样，A-B-A 双腿样本仍可经手工输入引用）。
+
+**Boundary**：不新增任何服务端端点/权限码（向导面全部复用 02.1/02.2 既有 RUNTIME_MANAGE 面）；不改 Java normalize 与 web normalize 的既有归一语义；预置清单是展示建议不是安全边界（边界在服务端 sample-root fail-close 校验）。
+
+**Evidence**：web 套件 **329/329**（含 permissionReconcile 判据 A/C0/C1/B/D 全绿、boundary、sourceWizard 14 测试）；`ControllerPermissionCoverageTest` **5/5**（scannerSelfCheck/runtimeProfilesFullyGuarded 等全绿）；Playwright E2E **12/12**（`target/v25-it/g3102_20260920_014827/026-wizard-e2e/`：7 截图 + wizard-e2e-result.json + api-captures.json；①同画像幂等 changed=false（checksum 3ee7d8fa…、报告 dr-20260920015208-976f54b8）、②真切换文案、负例 eligible=false violations=5 → 409 MAPPING_ACTIVATION_INELIGIBLE fail-closed）；收尾恢复 source 1 current=true（A-B-A 收口态保持）。
+
+**Implementation commits**：本笔（fix(stage7) 02.5 向导面）。
+
+### D-032 — 02.6 时效警告派生口径：从指标载荷 period 取最大业务日期与本地今日比较，角色无关；滞后 ≥1 天才提示且绝不宣称「最新」
+
+**Decision**：指导书 V3.1 02.6「关闭商城/生成器后历史指标可读；来源停机显示时效警告，不假报最新」的落地口径：(1) 派生输入 = `/metrics/overview` 载荷本身（metrics cell 的 `period` 字段，day 取该日、window 取观察期两端的最大 ISO 日期），**不用** `/sources` 端点——分析师无 RUNTIME_MANAGE 权限，时效提示必须角色无关；(2) 比较基准 = **本地壁钟今日**（`localIsoDayOffset(0)`，与页面日期控件同源）；滞后 ≥1 天渲染琥珀色横幅（业务时点 + 滞后天数 + 「历史指标仍可读，但以下数字不代表最新业务日」）；滞后 0 天或业务时点在未来 → 返回 null 不渲染；(3) **不假报最新**的精确语义：用户可见文案中「最新」只允许出现在否定式「不代表最新」中（单测把否定式剥除后断言零残留），同日不渲染横幅也**绝不**主动宣称「最新」（前端不为来源是否停更背书）；(4) 派生与文案唯一属主 `web/src/utils/staleness.js`，畸形/未知 period（hour: 等非声明形态）忽略不猜（与 metricPeriod.js 同律）。
+
+**Reason**：壁钟比较是唯一无需任何额外权限/端点的信号源，且快照载荷本就同时携带 period（cell 级）与 businessTime（快照级）双证据（本次实测两者一致 = 2026-09-18，壁钟 2026-09-20，滞后恰 2 天）；停更检测的权威事实（源是否 current/暂停）在管理员专属面里，若时效警告依赖它则分析师/决策角色在来源停机时反而看不到警告——与本条款意图相反。
+
+**Boundary**：不做「数据是新的」正向断言；不改 /metrics 端点契约；不为时效提示新增轮询或定时器（随页面 load 派生一次，重新加载即刷新）；跨日滞后数随壁钟自然增长，不缓存。
+
+**Evidence**：web 套件 **329/329**（+5：overviewStaleness.test.js 纯逻辑 4 测 + 不假报最新断言 + Overview 接线/角色无关锚点）；独立性证据 `target/v25-it/g3102_20260920_014827/027-independence/`：TCP 探测 mall :8090 与 generator :8092 均 refused、平台 :8091 在听（阳性对照），关闭双上游后 `/metrics/overview` 14 cells + `/metrics/snapshots`（ACTIVE S20260918_17 businessTime 2026-09-18）照常可读，壁钟滞后 lag=2 天，cell 日期与 ACTIVE 快照 businessTime 日期一致性 PASS（**9/9**）；真实 Chromium 横幅 DOM 证据 **5/5**（`027-independence/shots/overview-staleness.png` + banner-shot-result.json：横幅可见、事实文案、零「最新」正断言）。
+
+**Implementation commits**：本笔（fix(stage7) 02.6 时效横幅）。
+
