@@ -4,7 +4,7 @@
 > attempt-1（历史）：FAIL——执行驱动脚本遗漏 `$env:PLATFORM_*` 配置块，platform 以默认配置连接并写入正式 3306，击穿冻结边界；总控裁决三重分类为 HARNESS/ISOLATION FAILURE with unintended 3306 side effect，3306 事后零接触、不回滚。详见结果文档 §1–§10。
 > 范围钉死（原计划，未变更）：复用 BATCH-U 已验 HDFS landing（data file `events-.1789810142459` 456,825 B / 1011 行）→ HDFS→本地 landing 交接（保留 `raw/dt=20260919/hour=17/` 分区）→ platform（8091 / 3307 RunId-scoped 双库）FLUME_RAW ingestion 真实 HTTP 驱动 → manifest + 1011 行 event_id 集合双向对账。**不重跑商城/Flume，不把完整 Spark→publish、浏览器、LLM、REMOTE_CLUSTER 混入本批。**
 > 计划：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md`；代码基线 `104db41`（执行 HEAD `88f85cf` 为 docs-only 前移，不触发重钉）。
-> Git 注记（D-001）：本计划与状态文档提交仅本地；push 需总控另行授权（836faca 授权已用尽；远端 HEAD `104db41`）。
+> Git 注记（D-001）：本计划与状态文档提交仅本地；push 需总控另行授权（836faca 授权已用尽）。**远端事实更正（2026-09-19 总控实时核实 GitHub，经 `git fetch` 复核）**：远端 branch HEAD = `836facaa22f1e839d7444f1a08d5ce9984b12ff0`（`836faca`，BATCH-U PASS 登记提交，位于 `f136af5` 之上）；`104db41` 仅表示 **BATCH-V 的 Exact source/test code baseline（代码钉定 SHA）**，不是远端分支 HEAD；本地 `67a2de8`/`88f85cf`/`24eed20` 与本更正提交按总控一次性授权 fast-forward push（禁 force/rebase/amend/squash、不夹带其它提交）。
 
 ## Closed batch：BATCH-V（attempt-2 PASS 收口，2026-09-19；当前无 READY 门）
 
@@ -30,7 +30,7 @@
 - **门修正 C1**：RunResult 计划字段名 `manifestUri` == 平台实际字段 `manifestPath`——首过驱动门按计划名校验误判成功 run 为失败（exit 2），续跑过按 manifestPath + 落盘 manifest 双重复核后收口；全程透明登记。
 - **续跑决策（诚实性）**：run1 checkpoint 存于 RunId-scoped 3307 meta 库（profile 1 PUT+ACTIVATED 持久化），重置 DB 状态属不诚实操作 ⇒ 续跑自 run2 起步，Derby metastore 用全新 `derby-metastore-cont` 目录（JDBC create=true 约束）。
 - **边界**：attempt-2 全程零 3306 接触（F2a/F2b 两次启动 + final sweep）；仓内零变更、`104db41` 不需重钉；口令通道按已登记先例（进程内生成、零落盘/零入参/零 git）；3306 事实基线按裁决三接受并重新冻结，未做任何事后接触。
-- **不证明**：Spark 下游完整链、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
+- **不证明**：Spark 下游完整链、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、第二异构来源、故障样本实链（后两者见 `docs/verification/STAGE7-REMAINING-SCOPE-20260919.md` #5/#6）、端到端 exactly-once、整个 Stage 7 完成。
 
 ## BATCH-V attempt-1（历史记录：FAIL，已被裁决三重分类并被 attempt-2 取代）
 
@@ -158,6 +158,10 @@ Pipeline `runId=5` 真实启动并推进至 BUILD_DWS 后平台进程消失（�
 
 BATCH-V 全程（2026-09-19）：裁决二批准计划编制并连续执行 → attempt-1 因驱动脚本遗漏 `$env:PLATFORM_*` 配置块击穿 3306 冻结边界，登记明确 FAIL 并停止 → **总控裁决三**：3306 接受事故后事实基线、不回滚、重新冻结；attempt-1 重分类 HARNESS/ISOLATION FAILURE；批准驱动修复三件（F1/F2/F3）；Phase 0–2b 证据经 freshness check 复用 → **attempt-2（`attempt-20260919_204948_744`）按修复复跑 PASS 收口**（run1 成功 1011/0/0/1 + run2 断点 noNewData=true + event_id 双向零差对账 + 全程零 3306 接触；V-1~V-11 全满足，门修正 C1/C2/C3 透明登记；结果文档 §11–§12）。
 
-状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、Flume→HDFS PASS/CLOSED、**平台 FLUME_RAW 采集与 manifest 对账 PASS/CLOSED（BATCH-V attempt-2）**、REMOTE_CLUSTER 未验证、浏览器 E2E 未验证、真实 LLM 未验证；Stage 8 未开始。
+状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、Flume→HDFS PASS/CLOSED、**平台 FLUME_RAW 采集与 manifest 对账 PASS/CLOSED（BATCH-V attempt-2）**、浏览器 E2E 未验证、真实 LLM 未验证、第二异构来源 未验证、故障样本实链 未验证、REMOTE_CLUSTER 未验证；Stage 8 未开始。
 
-BATCH-V PASS 不证明：Spark 下游完整链（BUILD_DWS→ADS→质量门→发布在本批范围外）、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
+BATCH-V PASS 不证明：Spark 下游完整链（BUILD_DWS→ADS→质量门→发布在本批范围外）、浏览器 E2E、真实 LLM、第二异构来源、故障样本实链（`STAGE7-REMAINING-SCOPE-20260919.md` #5/#6，此前清单遗漏特此补齐）、REMOTE_CLUSTER、端到端 exactly-once、整个 Stage 7 完成。
+
+**Stage 7 剩余批次顺序（总控 2026-09-19 裁决）**：BATCH-W 浏览器 E2E（真实浏览器 + 8091 + 3307-only 隔离数据）→ BATCH-X 真实 LLM Provider → BATCH-Y 第二异构来源 → BATCH-Z 故障样本实链 → BATCH-AA REMOTE_CLUSTER / HDFS-Hive 环境验收。
+
+**远端 HEAD 事实更正（2026-09-19 总控裁决，docs-only 更正提交登记）**：本文件历史小节中「远端 HEAD = `104db41`」的表述（T→T-R3 推送 `520d673..104db41`、BATCH-U 计划 Predecessor 行等）均为**当时**推送事件的历史事实；当前远端 branch HEAD 经总控实时核实 GitHub 并经 `git fetch` 复核 = `836facaa22f1e839d7444f1a08d5ce9984b12ff0`（`836faca`）。`104db41` 自此只用于表示 BATCH-V 的 Exact source/test code baseline（代码钉定），不表示远端分支 HEAD。BATCH-V 三笔 docs 提交（`67a2de8`/`88f85cf`/`24eed20`）此前均未推送，随本更正提交一并按总控一次性授权 fast-forward push。C1/C2/C3 按总控口径在结果文档中定性为 **plan deviation / evidence interpretation correction**（原计划文本不改写，供答辩逐条追溯）。

@@ -137,6 +137,8 @@ target/v25-it/stage7v_20260919_192438/
 
 ### 12.3 门修正 C1/C2/C3（证据驱动，透明登记）
 
+> **定性（总控 2026-09-19 口径）**：C1/C2/C3 均为 **plan deviation / evidence interpretation correction**（计划偏离 / 证据解读更正）——原计划文本（§3.1 字段名、V-7、V-8 原文）未做任何改写，本节仅登记「原门怎么写、平台实际如何返回、为何最终仍可判 PASS」，供答辩逐条追溯；C2 亦构成「文本换行规范化而非数据损坏」的完整证据链（差值 1011 = 每行恰 1 个 CR；内容模 EOL 恒等；event_id 双向零差）。
+
 - **C1（字段名映射）**：RunResult 的 `manifestUri`（计划 §3.1 命名）== 平台实际字段 **`manifestPath`**（值 `file:///D:/…/landing/manifests/1.json`）。首过驱动门按计划名校验导致误判；续跑过按 manifestPath + 落盘 manifest 双重复核。
 - **C2（accepted SHA 关系登记，走 V-7 registered-diff 通道）**：accepted 字节数 456,825 → 455,814，差值恰 = 1011 行 × 1 字节 = **纯 CRLF→LF 行尾归一**。字节级证明：输入 1011 行全 CRLF、0 单 LF；accepted 0 CRLF、1011 单 LF；**逐行内容（模 EOL）0 差异**；event_id 集合双向零差。登记关系：输入 SHA256 `f32906…bbcc` → accepted SHA256 `9a7a0de9…5528`。硬门 = event_id 双向零差 + 逐行内容相等，均满足。
 - **C3（V-8 quarantine 判据重定义）**：V-8 = **quarantined 记录数为零**（RunResult quarantineCount=0 + manifest quarantinedRecords=0 双证）且 quarantine 目录**全部文件 0 字节**。平台会在 quarantine/1 下预建同名 0 字节占位文件 `events-.1789810142459`（非数据）；任何非 0 字节文件 = FAIL。
