@@ -50,6 +50,17 @@
       <artifactId>metric-analysis</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!--
+      G31-03 03.5（D-034）：决策证据快照的跨源守卫需要"当前 ACTIVE 运行环境的 source_id"，
+      该语义的所有者是 connection-ingestion 的 RuntimeProfileService（激活流程 §8.3），
+      直接复用同一所有者，不在 ai-decision 里再造一条 runtime_profile 查询（依赖方向
+      ai-decision → connection-ingestion，无环：后者不依赖本模块）。
+    -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>connection-ingestion</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>

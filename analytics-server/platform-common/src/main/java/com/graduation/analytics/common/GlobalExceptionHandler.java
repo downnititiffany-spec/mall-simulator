@@ -92,6 +92,9 @@ public class GlobalExceptionHandler {
      *
      * <p>S3-19 加法：{@code QUERY_TIMEOUT} → 504（只读查询到点中止，属"依赖方太慢"而不是
      * 调用方参数错或本服务故障，理由见 {@link PlatformBizException#QUERY_TIMEOUT}）；既有码状态不变。</p>
+     *
+     * <p>G31-03 加法：{@code SOURCE_MISMATCH} → 409（决策证据快照与当前 ACTIVE 运行环境不同源，
+     * 03.5「跨源证据拒绝」，理由见 {@link PlatformBizException#SOURCE_MISMATCH}）；既有码状态不变。</p>
      */
     static HttpStatus mapStatus(String code) {
         if (code == null) {
@@ -113,7 +116,8 @@ public class GlobalExceptionHandler {
                  PlatformBizException.MAPPING_CONTRACT_DRIFT,
                  PlatformBizException.MAPPING_PROFILE_CHANGED,
                  PlatformBizException.MAPPING_NOT_ACTIVE,
-                 PlatformBizException.MAPPING_ACTIVE_PROFILE_DRIFT -> HttpStatus.CONFLICT;
+                 PlatformBizException.MAPPING_ACTIVE_PROFILE_DRIFT,
+                 PlatformBizException.SOURCE_MISMATCH -> HttpStatus.CONFLICT;
             case PlatformBizException.MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE -> HttpStatus.NOT_IMPLEMENTED;
             case PlatformBizException.QUERY_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
             default -> HttpStatus.BAD_REQUEST;

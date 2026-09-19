@@ -7,7 +7,10 @@ import com.graduation.analytics.decision.entity.DecisionTask;
 import com.graduation.analytics.decision.mapper.DecisionEvaluationMapper;
 import com.graduation.analytics.decision.mapper.DecisionTaskMapper;
 import com.graduation.analytics.metric.MetricStore;
+import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
+import com.graduation.analytics.runtime.RuntimeProfileService;
+import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -75,6 +79,7 @@ public class DecisionService {
     private final DecisionTaskMapper taskMapper;
     private final DecisionEvaluationMapper evaluationMapper;
     private final MetricStore metricStore;
+    private final RuntimeProfileService runtimeProfileService;
     private final OperationAuditService audit;
 
     /** 允许的决策来源（AI 只能 DRAFT；人工创建同样从 DRAFT 起步） */
@@ -146,6 +151,7 @@ public class DecisionService {
         task.setCreatedBy(actor.userId());
         task.setCreatedAt(LocalDateTime.now());
         task.setUpdatedAt(LocalDateTime.now());
+        requireEvidenceSourceConsistent(task.getSuggestionSnapshotId());
         taskMapper.insert(task);
 
         audit.success(actor, OperationAuditService.ACTION_DECISION_CREATE,
@@ -174,6 +180,7 @@ public class DecisionService {
             throw new PlatformBizException("PARAM_INVALID",
                     "提交审批前必须齐备（§20.3），缺失: " + String.join(", ", missing));
         }
+        requireEvidenceSourceConsistent(task.getSuggestionSnapshotId());
         DecisionStateMachine.validate(task.getStatus(), DecisionStateMachine.PENDING_REVIEW);
         String before = digestOf(task);
         task.setStatus(DecisionStateMachine.PENDING_REVIEW);
@@ -404,6 +411,54 @@ public class DecisionService {
     }
 
     // ── 内部：齐备校验 ───────────────────────────────────────────────────
+
+    /**
+     * 03.5「跨源证据拒绝并留审计」（D-034）：suggestionSnapshotId 是唯一能把别源快照塞进
+     * 决策证据链的入口——前端隐藏跨源选项拦不住构造 API 调用，故在 service 层解析回源：
+     * 快照 → runtime_profile → source_id，与当前 ACTIVE 运行环境的 source_id 比对（比
+     * profile id 宽一档：同源换版本/换环境不算跨源）。
+     *
+     * <ul>
+     *   <li>快照不存在 → {@code PARAM_INVALID}(400)：快照号是参数化注入面，不当"未知源"处理；</li>
+     *   <li>归属别源 → {@code SOURCE_MISMATCH}(409)：证据与当前状态不满足一致性前提，与
+     *       SOURCE_NOT_BOUND/MAPPING_* 同族（见 {@link PlatformBizException#SOURCE_MISMATCH}）；
+     *       controller 既有包装器把业务异常落审计 FAILED 行，无需新机制；</li>
+     *   <li>无 ACTIVE 运行环境 → {@code PARAM_INVALID}(400)：fail-closed——没有权威比较基准时
+     *       无法区分同源/跨源，放行等于把"未核对"伪装成"已核对"（与 SOURCE_NOT_BOUND 同一姿态）。</li>
+     * </ul>
+     *
+     * <p>创建与提交两处都调用：创建时拒绝可防脏草稿入库；提交是证据锚点的绑定动作，
+     * 创建后激活源可能已切换，故提交时必须重核。基线/评价路径不经此守卫——baseline 在
+     * approve 时从最新 ACTIVE 快照钉住，与激活环境天然同源。</p>
+     */
+    private void requireEvidenceSourceConsistent(String suggestionSnapshotId) {
+        String snapshotId = trimToNull(suggestionSnapshotId);
+        if (snapshotId == null) {
+            return; // 走 evidence_package_id 证据路径，与快照归属无关
+        }
+        MetricSnapshot snap = metricStore.findSnapshot(snapshotId);
+        if (snap == null) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "建议快照不存在: " + snapshotId + "（请核对快照号，不存在或已删除）");
+        }
+        if (snap.getRuntimeProfileId() == null) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "建议快照缺少运行环境归属（snapshot_id=" + snapshotId + "），无法核对证据来源");
+        }
+        RuntimeProfile active = runtimeProfileService.findActive().orElseThrow(() ->
+                new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                        "当前无 ACTIVE 运行环境，无法核对证据快照的来源归属（请先完成激活流程 §8.3）"));
+        RuntimeProfile evidenceProfile = runtimeProfileService.get(snap.getRuntimeProfileId());
+        if (evidenceProfile == null || !Objects.equals(evidenceProfile.getSourceId(), active.getSourceId())) {
+            long evidenceSource = evidenceProfile == null || evidenceProfile.getSourceId() == null
+                    ? -1L : evidenceProfile.getSourceId();
+            throw new PlatformBizException(PlatformBizException.SOURCE_MISMATCH,
+                    "证据快照与当前激活源不一致，拒绝跨源证据（03.5）：快照 " + snapshotId
+                            + " 属 source_id=" + evidenceSource
+                            + "，当前 ACTIVE 运行环境属 source_id=" + active.getSourceId()
+                            + "；请使用本源快照，或先切换激活源");
+        }
+    }
 
     /** 提交审批前的齐备校验项（§20.3）：缺哪项就报哪项 */
     private List<String> missingForSubmit(DecisionTask task) {

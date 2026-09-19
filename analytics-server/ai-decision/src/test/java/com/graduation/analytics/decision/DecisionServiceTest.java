@@ -9,7 +9,10 @@ import com.graduation.analytics.decision.entity.DecisionTask;
 import com.graduation.analytics.decision.mapper.DecisionEvaluationMapper;
 import com.graduation.analytics.decision.mapper.DecisionTaskMapper;
 import com.graduation.analytics.metric.MetricStore;
+import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
+import com.graduation.analytics.runtime.RuntimeProfileService;
+import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -54,6 +58,8 @@ class DecisionServiceTest {
     @Mock
     private MetricStore metricStore;
     @Mock
+    private RuntimeProfileService runtimeProfileService;
+    @Mock
     private OperationAuditService audit;
 
     private DecisionService service;
@@ -62,11 +68,16 @@ class DecisionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DecisionService(taskMapper, evaluationMapper, metricStore, audit);
+        service = new DecisionService(taskMapper, evaluationMapper, metricStore, runtimeProfileService, audit);
         ReflectionTestUtils.setField(service, "defaultEvalWindowDays", 3);
         ReflectionTestUtils.setField(service, "effectiveThreshold", new BigDecimal("0.05"));
         ReflectionTestUtils.setField(service, "partialThreshold", BigDecimal.ZERO);
         ReflectionTestUtils.setField(service, "evalDefinitionVersion", "r8-window-v1");
+        // 03.5 跨源证据守卫的默认同源桩：夹具快照 S20260901_24 属 profile 7 / source 1，
+        // ACTIVE 环境也是 source 1 —— 守卫放行，专注本类原本覆盖的状态机/评价语义。
+        when(metricStore.findSnapshot("S20260901_24")).thenReturn(snapshot("S20260901_24", 7L));
+        when(runtimeProfileService.get(7L)).thenReturn(profile(1L));
+        when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile(1L)));
     }
 
     // ── ① AI 只能 DRAFT ─────────────────────────────────────────────────
@@ -465,5 +476,21 @@ class DecisionServiceTest {
         metric.setPeriod(period);
         metric.setDefinitionVersion(definitionVersion);
         return metric;
+    }
+
+    private MetricSnapshot snapshot(String snapshotId, Long runtimeProfileId) {
+        MetricSnapshot snap = new MetricSnapshot();
+        snap.setSnapshotId(snapshotId);
+        snap.setRuntimeProfileId(runtimeProfileId);
+        snap.setStatus(MetricSnapshot.STATUS_ACTIVE);
+        return snap;
+    }
+
+    private RuntimeProfile profile(Long sourceId) {
+        RuntimeProfile profile = new RuntimeProfile();
+        profile.setId(7L);
+        profile.setSourceId(sourceId);
+        profile.setStatus(RuntimeProfile.STATUS_ACTIVE);
+        return profile;
     }
 }

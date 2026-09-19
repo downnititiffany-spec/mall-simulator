@@ -111,7 +111,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1043
+  'analytics-server'        = 1050
   'mall-simulator'          = 14
   'synthetic-data-generator' = 111
 }
@@ -884,6 +884,12 @@ $BaselineSpark = 320
 #   V2_STRICT_TOP_LEVEL_KEYS，v1 仍为设计 §4.2 九键；ProfileCheck 新增 requiredTopLevelKeys/syntaxName），
 #   SourceProfileValidatorTest +4（v2 键集=Loader 集恒等、v2 全键通过、v2 缺 amountPolicy 只报 v2 键、
 #   v1 口径与语法名不变）⇒ analytics-server **1039→1043**（mall/generator/spark 不变）。
+# G31-03/D-034（2026-09-19）：03.5 跨源证据守卫——DecisionService.createDraft/submit 双闸门
+#   （suggestionSnapshotId → MetricStore.findSnapshot 元数据读取 → source_id 对比当前 ACTIVE
+#   runtime_profile；不存在=400、跨源=409 SOURCE_MISMATCH、无 ACTIVE=fail-closed 400），
+#   DecisionServiceSourceMismatchTest +7（跨源创建不落库/快照不存在/无 ACTIVE fail-closed/
+#   同源异 profile 放行/提交重核跨源留 DRAFT/同源提交放行/证据包路径不经守卫）
+#   ⇒ analytics-server **1043→1050**（mall/generator/spark 不变；唯一已知环境性红 manifest patrol 不计）。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 

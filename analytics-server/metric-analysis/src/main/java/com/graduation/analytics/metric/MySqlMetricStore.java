@@ -133,6 +133,7 @@ public class MySqlMetricStore implements MetricStore {
      * 无法按请求指定的历史快照号取，因此补一个按主键等值查询的只读方法；仍走 metric_read，
      * 不新增数据源、不写库。</p>
      */
+    @Override
     public MetricSnapshot findSnapshot(String snapshotId) {
         if (snapshotId == null || snapshotId.isBlank()) {
             return null;

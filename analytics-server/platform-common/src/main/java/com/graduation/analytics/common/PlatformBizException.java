@@ -101,6 +101,14 @@ public class PlatformBizException extends RuntimeException {
     public static final String MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE =
             "MAPPING_ACTIVATION_PERSISTENCE_UNAVAILABLE";
 
+    // 决策证据域错误码（G31-03 03.5，加法式新增；状态映射仍由 GlobalExceptionHandler.mapStatus 独有）：
+    //   SOURCE_MISMATCH → 409（决策证据快照与当前 ACTIVE 运行环境不同源：跨源证据拒绝）
+    // 语义：与 SOURCE_NOT_BOUND / MAPPING_* 同族——不是"参数写错了"（400），而是**证据的归属
+    // 与当前状态不满足一致性前提**（03.5「跨源证据拒绝并留审计」）。快照号本身不存在才是
+    // 400（PARAM_INVALID，D-034：参数化注入面不当"未知源"处理）；存在但归属别源是状态冲突 409，
+    // 调用方的正确动作是换本源快照或先切换激活源，而不是改参数重试同一快照。
+    public static final String SOURCE_MISMATCH = "SOURCE_MISMATCH";
+
     // S3-19 加性新增（指导书 V3.0 §7 阶段4 L158「…分页、限流、超时统一」）：
     //   QUERY_TIMEOUT → 504（GATEWAY_TIMEOUT）
     // 语义：**只读查询超过了统一超时**（超时值由 QueryTimeoutPolicy 单点定义），既不是调用方把参数
