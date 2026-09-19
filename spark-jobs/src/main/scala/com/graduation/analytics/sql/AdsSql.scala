@@ -381,11 +381,11 @@ object AdsSql {
        |${insertTarget(ns, "ads_data_quality", dt, snapshotId)}
        |SELECT rule_code, check_count, error_count, error_rate, passed, threshold, rule_version FROM (
        |  SELECT 'AMOUNT_RECONCILE' AS rule_code,
-       |         CAST(SUM(fp) AS BIGINT) AS check_count,
-       |         CAST(SUM(bad) AS BIGINT) AS error_count,
-       |         CASE WHEN SUM(fp) = 0 THEN NULL
-       |              ELSE CAST(SUM(bad) AS DECIMAL(8,6)) / SUM(fp) END AS error_rate,
-       |         CASE WHEN SUM(bad) = 0 THEN 1 ELSE 0 END AS passed,
+       |         CAST(COALESCE(SUM(fp), 0) AS BIGINT) AS check_count,
+       |         CAST(COALESCE(SUM(bad), 0) AS BIGINT) AS error_count,
+       |         CASE WHEN COALESCE(SUM(fp), 0) = 0 THEN NULL
+       |              ELSE CAST(COALESCE(SUM(bad), 0) AS DECIMAL(8,6)) / SUM(fp) END AS error_rate,
+       |         CASE WHEN COALESCE(SUM(bad), 0) = 0 THEN 1 ELSE 0 END AS passed,
        |         '0.01' AS threshold,
        |         $QualityRuleVersion AS rule_version
        |  FROM (
@@ -400,9 +400,12 @@ object AdsSql {
        |  UNION ALL
        |  SELECT 'REQUIRED_FIELD_NULL_RATE' AS rule_code,
        |         CAST(COUNT(*) AS BIGINT) AS check_count,
-       |         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
-       |         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
-       |         CASE WHEN SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) * 1000 <= COUNT(*) THEN 1 ELSE 0 END AS passed,
+       |         CAST(COALESCE(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END), 0) AS BIGINT) AS error_count,
+       |         CASE WHEN COUNT(*) = 0 THEN NULL
+       |              ELSE CAST(COALESCE(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END), 0) AS DECIMAL(8,6)) / COUNT(*) END AS error_rate,
+       |         CASE WHEN COUNT(*) = 0 THEN 1
+       |              WHEN COALESCE(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END), 0) * 1000 <= COUNT(*) THEN 1
+       |              ELSE 0 END AS passed,
        |         '0.001' AS threshold,
        |         $QualityRuleVersion AS rule_version
        |  FROM ${ns.dwd}.dwd_user_behavior_detail
@@ -411,8 +414,9 @@ object AdsSql {
        |  SELECT 'EVENT_ID_UNIQUE' AS rule_code,
        |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS BIGINT) AS check_count,
        |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS BIGINT) AS error_count,
-       |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS DECIMAL(8,6))
-       |           / (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS error_rate,
+       |         CASE WHEN (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') = 0 THEN NULL
+       |              ELSE CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS DECIMAL(8,6))
+       |                / (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') END AS error_rate,
        |         CASE WHEN (SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') * 2000
        |                <= (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') THEN 1 ELSE 0 END AS passed,
        |         '0.0005' AS threshold,
@@ -420,9 +424,12 @@ object AdsSql {
        |  UNION ALL
        |  SELECT 'ENUM_WHITELIST' AS rule_code,
        |         CAST(COUNT(*) AS BIGINT) AS check_count,
-       |         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
-       |         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
-       |         CASE WHEN SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) = 0 THEN 1 ELSE 0 END AS passed,
+       |         CAST(COALESCE(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END), 0) AS BIGINT) AS error_count,
+       |         CASE WHEN COUNT(*) = 0 THEN NULL
+       |              ELSE CAST(COALESCE(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END), 0) AS DECIMAL(8,6)) / COUNT(*) END AS error_rate,
+       |         CASE WHEN COUNT(*) = 0 THEN 1
+       |              WHEN COALESCE(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END), 0) = 0 THEN 1
+       |              ELSE 0 END AS passed,
        |         '0' AS threshold,
        |         $QualityRuleVersion AS rule_version
        |  FROM ${ns.dwd}.dwd_user_behavior_detail

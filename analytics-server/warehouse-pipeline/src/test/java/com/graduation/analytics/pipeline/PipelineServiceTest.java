@@ -217,8 +217,8 @@ class PipelineServiceTest {
         }
         return List.of(
                 new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
-                        "dw_ads.ads_operation_overview__staging", 8L, 0L, "每表行数>0",
-                        "BLOCKING", true, "8 张暂存表行数均>0"),
+                        "dw_ads.ads_operation_overview__staging", 8L, 0L, "分区存在且 Location 可读（允许 0 行专题）",
+                        "BLOCKING", true, "8 张暂存分区均存在"),
                 new JobResultParser.CheckInfo("PUB_STAGING_PRUNE", "PUBLISH", "staging", 0L, 0L,
                         "保留被引用快照", "INFO", true, "无待清理历史暂存分区"));
     }
@@ -227,8 +227,8 @@ class PipelineServiceTest {
     private static SparkStageExecutor.StageExecution qualityBlockedExecution(String stageCode) {
         List<JobResultParser.CheckInfo> checks = List.of(
                 new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
-                        "dw_ads.ads_hot_product__staging", 8L, 1L, "每表行数>0",
-                        "BLOCKING", false, "空/缺失暂存表: dw_ads.ads_hot_product__staging"),
+                        "dw_ads.ads_hot_product__staging", 8L, 1L, "分区存在且 Location 可读（允许 0 行专题）",
+                        "BLOCKING", false, "缺失/无 Location 暂存分区: dw_ads.ads_hot_product__staging"),
                 new JobResultParser.CheckInfo("PUB_DQ_EVENT_ID_UNIQUE", "PUBLISH",
                         "dw_ads.ads_data_quality__staging", 51L, 3L, "0.0005", "ERROR", false,
                         "观察项"));

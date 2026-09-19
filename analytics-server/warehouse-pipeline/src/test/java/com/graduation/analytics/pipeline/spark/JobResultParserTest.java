@@ -44,7 +44,7 @@ class JobResultParserTest {
                 "\"checks\":[" +
                 "{\"ruleCode\":\"ADS_STAGING_PRESENT\",\"layer\":\"ADS_STAGING\"," +
                 "\"targetTable\":\"dw_ads.ads_hot_product__staging\",\"checkCount\":8,\"errorCount\":1," +
-                "\"threshold\":\"每表行数>0\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
+                "\"threshold\":\"分区存在且 Location 可读（允许 0 行专题）\",\"severity\":\"BLOCKING\",\"passed\":false,\"detail\":\"缺失1表\"}," +
                 "{\"ruleCode\":\"PUB_DQ_EVENT_ID_UNIQUE\",\"layer\":\"PUBLISH\",\"checkCount\":51," +
                 "\"errorCount\":3,\"threshold\":\"0.0005\",\"severity\":\"ERROR\",\"passed\":false}," +
                 "{\"ruleCode\":\"LEGACY_NO_SEVERITY\",\"checkCount\":1,\"errorCount\":1,\"passed\":false}" +

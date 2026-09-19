@@ -183,7 +183,8 @@ class SourceRegistryMigrationMySqlIT {
             "V25__quality_rule_ads_funnel_rate_reconcile.sql",
             "V26__quality_rule_ads_gmv_net_sale_invariant.sql",
             "V27__quality_rule_ads_uv_pv_invariant.sql",
-            "V28__quality_rule_dws_uv_pv_invariant.sql");
+            "V28__quality_rule_dws_uv_pv_invariant.sql",
+            "V29__quality_rule_ads_staging_present_v2.sql");
 
     private static final String V17_SCRIPT = "V17__source_dimension_for_checkpoint_and_batch.sql";
     private static final String V18_SCRIPT = "V18__source_warehouse_prefix.sql";

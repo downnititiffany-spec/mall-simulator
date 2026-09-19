@@ -185,7 +185,16 @@ public final class QualityRuleCatalog {
                     "{\"dupRateMax\":0.0005,\"dedupDeterministic\":true}", true, null, null,
                     "发布层复用的重复率口径，与 EVENT_ID_UNIQUE 同阈值同语义（观察项，超阈值阻断）"),
 
-            fixed(RULE_ADS_STAGING_PRESENT, STAGE_ADS, RuleSeverity.BLOCKING, "8 张暂存表本次快照分区必须存在且非空"),
+            // v1 历史语义：把“0 行专题”与“缺分区”合并为失败。保留本定义供历史 run/指纹解释，
+            // 不得原地改写；Stage 7 T-R1 暴露的合法 0 行专题由下面 v2 收窄。
+            fixed(RULE_ADS_STAGING_PRESENT, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "v1：8 张暂存表本次快照分区必须存在且非空"),
+            new QualityRuleDefinition(RULE_ADS_STAGING_PRESENT, 2, QualityRuleDefinition.SCOPE_ALL, STAGE_ADS,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null,
+                    true, null, null,
+                    "v2：8 张暂存表本次快照分区必须存在且 Location 可读；专题当天无事实时允许 0 行，"
+                            + "缺分区或无 Location 仍 BLOCKING。Stage 7 T-R1 真实 MALL_API 交易日证明"
+                            + "参考商城可合法无 behavior，不能把合法空态冒充数据缺失"),
             fixed(RULE_ADS_STAGING_SNAPSHOT_ISOLATION, STAGE_ADS, RuleSeverity.WARN,
                     "历史暂存快照存在本身不是错误（陈旧分区不污染正式分区，且清理在 pub 之后，"
                             + "设阻断会造成发布死锁）；「混入其他快照」由 MXP_SNAPSHOT_PINNED(BLOCKING) 承担"),

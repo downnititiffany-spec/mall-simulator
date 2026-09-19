@@ -245,7 +245,9 @@ public final class RuleSeverity {
             case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" ->
                     "原始事件重复；下游确定性去重（ROW_NUMBER PARTITION BY event_id / dropDuplicates），"
                             + "重复行进 dwd_reject_record 的 DUPLICATE_EVENT；阈值 0.0005 来自设计文稿 §5.4.2，未放宽";
-            case "ADS_STAGING_PRESENT" -> "ADS 暂存分区缺失/为空 ⇒ 发布无数据可切（硬门）";
+            case "ADS_STAGING_PRESENT" ->
+                    "ADS 暂存分区缺失或无 Location ⇒ 无可追溯制品可发布（硬门）；"
+                            + "v2 起允许专题当天无事实形成的合法 0 行分区";
             case "ADS_STAGING_SNAPSHOT_ISOLATION" ->
                     "历史暂存快照存在本身不是错误（D-142 §1）；指针按本次快照切换，陈旧分区由 pub 按引用清理；"
                             + "真阻断点由 MXP_SNAPSHOT_PINNED 承担（设为阻断会造成发布死锁）";

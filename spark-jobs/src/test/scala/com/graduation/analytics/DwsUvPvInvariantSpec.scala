@@ -42,10 +42,10 @@ import org.scalatest.matchers.should.Matchers
  *     没有任何关键列非空谓词**（实测 `keyPredicates` 的键集），按「唯一所有者原则」本层空缺即由
  *     本码承担；三值逻辑下 `uv > pv` 在 NULL 时求值为 NULL，不显式判 NULL 则「两列整体未计算」
  *     会被静默放行（不可证明的不变量不得放行）。
- *  4. **空分区不判违反**：`checked = 0` ⇒ `passed = true`，因为「存在性/非空」在链路上另有所有者
- *     （`ADS_STAGING_PRESENT` 要求 8 张暂存表本次快照分区行数 > 0、档位 BLOCKING；而
- *     `AdsSql.productConversion` 实测**直连**本表的 `uv`）⇒ 本表空则派生暂存空、既有阻断已生效。
- *     本规则只判不变量，避免同一缺陷双重阻断。
+ *  4. **空分区不判违反**：`checked = 0` ⇒ `passed = true`。Stage 7 T-R1 证明来源当天可以合法
+ *     没有 behavior；这时没有商品行为事实可检查，不能凭“0 行”制造 UV/PV 违规。
+ *     `ADS_STAGING_PRESENT` 只负责确认派生暂存分区真实存在且 Location 可读，允许 rowCount=0；
+ *     一旦本表有行，NULL/UV>PV 仍由本码严格阻断。
  *  5. **只判不改**：违规行不得被静默修正/裁剪/置 0。`uv > pv` 意味着两列取自**不同过滤条件**
  *     （口径破坏）而非展示问题，故档位 BLOCKING（设计 L508 的「宽松口径不一概阻断」说的是第 10 项
  *     「支付/浏览用户比」这类**跨口径比率**，与本项的同口径不变量不是一回事）。
@@ -306,14 +306,13 @@ class DwsUvPvInvariantSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
     src.replace(pvLine, "").replace(uvLine, "") should not include "behavior_type = 'view' THEN 1"
   }
 
-  "空分区" should "不判违反（check_count=0、passed=true）：存在性/非空另有所有者" in {
+  "空分区" should "不判违反（check_count=0、passed=true）：无行为事实时保持合法空态" in {
     val dt = "20260908"
     val r = check(dt)
     r.checkCount should be(0L)
     r.errorCount should be(0L)
     r.passed should be(true)
-    // 派生表守卫证据：ads_product_conversion 的 pv_users 非空守卫在 ADS 侧存在（见上一用例），
-    // 而 ADS_STAGING_PRESENT 要求暂存分区行数 > 0 ⇒ 本表空 ⇒ 暂存空 ⇒ 既有 BLOCKING 已阻断。
+    // 若后续真的产出 ads_product_conversion 行，关键列非空守卫仍然存在；这里只是不把 0 行空态冒充错误。
     AdsQualityJob.keyPredicates(ns).values.exists(_.contains("pv_users IS NULL")) should be(true)
   }
 }

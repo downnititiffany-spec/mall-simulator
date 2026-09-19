@@ -2,7 +2,7 @@ package com.graduation.analytics.job
 
 import com.graduation.analytics.sql.AdsSql
 import com.graduation.analytics.warehouse.WarehouseNamespace
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Row, SparkSession}
 
 import scala.collection.mutable.ListBuffer
 
@@ -11,7 +11,8 @@ import scala.collection.mutable.ListBuffer
  * 在 ADS 写入**暂存分区之后、正式分区发布之前**检查暂存结果，全部阻断规则通过才允许发布。
  *
  * 规则（层次 = ADS_STAGING / PUBLISH，§16.5 运维页展示字段齐全）：
- *  1. ADS_STAGING_PRESENT        BLOCKING  8 张暂存表本次快照分区必须存在且行数 > 0
+ *  1. ADS_STAGING_PRESENT        BLOCKING  8 张暂存表本次快照分区必须存在且 Location 可读；
+ *                                      允许“专题当天无事实”的 0 行分区
  *  2. ADS_STAGING_SNAPSHOT_ISOLATION ERROR 同一 dt 下不得混入其它 snapshot_id 的暂存分区（观察项，
  *     降级为 ERROR 的理由见规则 2 处注释：设为 BLOCKING 会造成发布死锁）
  *  3. ADS_STAGING_KEY_NOT_NULL   BLOCKING  关键列不得为空（逐表真实 COUNT）
@@ -50,15 +51,17 @@ class AdsQualityJob extends WarehouseJob {
     // 分区证据来自 Hive 元数据实测（分区规格里的 snapshot_id + 真实 COUNT + Location）
     val parts = PartitionEvidence.collect(spark, staging, Some(sid), Some(dt))
     val current = parts.filter(_.snapshotId.contains(sid))
-    val rowsOf = current.map(p => p.table -> p.rowCount).toMap
     val foreign = parts.filterNot(_.snapshotId.contains(sid))
 
-    // 规则 1：暂存分区必须存在且非空
-    val empty = staging.filter(t => rowsOf.getOrElse(t, 0L) <= 0L)
+    // 规则 1：暂存分区必须真实存在且有 Location；0 行专题是合法空态，不等于分区缺失。
+    val missing = PartitionEvidence.missingLocatedTables(staging, current)
+    val zeroRow = current.filter(_.rowCount == 0L).map(_.table).distinct.sorted
     checks += QualityCheck("ADS_STAGING_PRESENT", "ADS_STAGING", staging.mkString(","),
-      staging.size, empty.size, "每表行数>0", "BLOCKING", empty.isEmpty,
-      if (empty.isEmpty) s"8 张暂存表行数均>0（合计 ${current.map(_.rowCount).sum} 行）"
-      else s"空/缺失暂存表: ${empty.mkString(",")}")
+      staging.size, missing.size, "8 张暂存分区存在且 Location 可读（允许 0 行专题）", "BLOCKING", missing.isEmpty,
+      if (missing.isEmpty) {
+        val zeroDetail = if (zeroRow.isEmpty) "无 0 行专题" else s"0 行专题=${zeroRow.mkString(",")}"
+        s"8 张暂存分区均存在（合计 ${current.map(_.rowCount).sum} 行；$zeroDetail）"
+      } else s"缺失/无 Location 暂存分区: ${missing.mkString(",")}")
 
     // 规则 2：同一 dt 的快照隔离 —— 只记录不阻断（ERROR）。
     // 理由（R6-13 实测后定稿）：发布是按"本次快照的暂存路径"逐表切换元数据指针，
@@ -97,17 +100,29 @@ class AdsQualityJob extends WarehouseJob {
       s"SELECT rule_code, check_count, error_count, passed FROM $dqTable " +
         s"WHERE snapshot_id = '$sid' AND dt = '$dt'").collect()
     val byRule = dqRows.map(r => r.getString(0) -> r).toMap
+    def longAt(row: Row, index: Int): Option[Long] =
+      Option(row.get(index)).map(_.toString.toLong)
+    def intAt(row: Row, index: Int): Option[Int] =
+      Option(row.get(index)).map(_.toString.toInt)
     val missingRules = blockingRules.filterNot(byRule.contains)
-    val failedBlocking = blockingRules.filter(r => byRule.get(r).exists(_.getInt(3) != 1))
+    // 质量结果自身出现 NULL 时必须判失败，但不能因为 getLong/getInt 直接把 dqc JVM 打崩，
+    // 否则平台只能看到 RUN_JOB_FAILED 而看不到是哪条质量记录 malformed。
+    val failedBlocking = blockingRules.filter(r => byRule.get(r).exists(row =>
+      longAt(row, 1).isEmpty || longAt(row, 2).isEmpty || !intAt(row, 3).contains(1)))
     checks += QualityCheck("PUB_DQ_BLOCKING_RULES", "PUBLISH", dqTable,
       blockingRules.size, (missingRules ++ failedBlocking).size, "全部 passed=1", "BLOCKING",
       missingRules.isEmpty && failedBlocking.isEmpty,
       s"阻断规则结果: ${blockingRules.toSeq.sorted.map(r =>
-        s"$r=${byRule.get(r).map(x => s"passed=${x.getInt(3)},err=${x.getLong(2)}").getOrElse("缺失")}").mkString("; ")}")
+        s"$r=${byRule.get(r).map(x =>
+          s"passed=${intAt(x, 3).map(_.toString).getOrElse("NULL")},err=${longAt(x, 2).map(_.toString).getOrElse("NULL")}")
+          .getOrElse("缺失")}").mkString("; ")}")
     byRule.get("EVENT_ID_UNIQUE").foreach { r =>
       checks += QualityCheck("PUB_DQ_EVENT_ID_UNIQUE", "PUBLISH", dqTable,
-        r.getLong(1), r.getLong(2), "0.0005", "ERROR", r.getInt(3) == 1,
-        "观察项：重复 event_id 比率，不阻断发布")
+        longAt(r, 1).getOrElse(0L), longAt(r, 2).getOrElse(0L), "0.0005", "ERROR",
+        longAt(r, 1).isDefined && longAt(r, 2).isDefined && intAt(r, 3).contains(1),
+        if (longAt(r, 1).isDefined && longAt(r, 2).isDefined && intAt(r, 3).isDefined)
+          "观察项：重复 event_id 比率，不阻断发布"
+        else "观察项自身存在 NULL 结果；由 ADS_STAGING_KEY_NOT_NULL 阻断发布")
     }
 
     // 规则 6：跨层对账 ADS 漏斗 vs DWS 漏斗（§16.4 对账公式）
@@ -176,7 +191,7 @@ object AdsQualityJob {
     AdsSql.staging(ns, "ads_product_conversion") -> "product_id IS NULL OR pv_users IS NULL",
     AdsSql.staging(ns, "ads_sale_trend") -> "order_count IS NULL OR sale_amount IS NULL OR net_sale_amount IS NULL",
     AdsSql.staging(ns, "ads_user_profile") -> "user_id IS NULL OR r IS NULL OR f IS NULL OR m IS NULL",
-    AdsSql.staging(ns, "ads_data_quality") -> "rule_code IS NULL OR check_count IS NULL OR passed IS NULL")
+    AdsSql.staging(ns, "ads_data_quality") -> "rule_code IS NULL OR check_count IS NULL OR error_count IS NULL OR passed IS NULL")
 
   /**
    * 规则 7「ADS 漏斗**率列** ↔ DWS 漏斗全站行」跨层对账（S3-10，关闭 S3-04 R-1）。
@@ -423,10 +438,10 @@ object AdsQualityJob {
    * 三值逻辑下 `uv > pv` 在 NULL 时求值为 NULL，若不显式判 NULL，「两列整体未计算」会被静默放行
    * （不可证明的不变量不得放行）。用例「NULL 判不通过」+「本表无既有关键列非空谓词」把这口径钉住。
    *
-   * 空分区：本规则**不**把 `checked = 0` 判为不通过 —— 「存在性/非空」在本链路另有所有者
-   * （`ADS_STAGING_PRESENT` 要求 8 张暂存表本次快照分区行数 > 0，档位 BLOCKING；商品转化 ADS
-   * 直接由本表产出，本表空 ⇒ 暂存空 ⇒ 既有阻断），本规则只判不变量（避免同一缺陷双重阻断）。
-   * 用例「空分区不冒充违反」+「ADS 存在性守卫覆盖派生表」把这边界钉住。
+   * 空分区：本规则**不**把 `checked = 0` 判为不通过。Stage 7 T-R1 证明参考商城 MALL_API
+   * 可以合法地只有交易而没有 behavior；此时本表无事实可检查就是空态，不应制造“不变量违反”。
+   * ADS 发布侧另由 `ADS_STAGING_PRESENT` 校验“分区真实存在且 Location 可读”，但允许 rowCount=0。
+   * 一旦本表有行，NULL/UV>PV 仍由本规则严格 BLOCKING。
    *
    * `detail`：通过时给出被检查行数与两列最大值（证明判据看到了真数据，而非空分区跑绿）；
    * 不通过时给出最多 6 行违反行的 product_id 与两列实际值（NULL 显示为 `NULL`）。

@@ -287,9 +287,14 @@ class RuleSeverityTest {
         }
         assertThat(missing).as("这些码只在 RuleSeverity.of 里登记、未进 quality_rule_definition 目录；"
                 + "按 §7.3.1 line 524 它们会被判为「未登记规则」而停止发布").isEmpty();
-        // 反向：目录里也不应有超出登记清单的码。36 = 34 个既有码 + 2 个本次按 §7.3.1 line 526
-        // 新增的独立金额校验码（ORDER_ITEM_AMOUNT_FORMULA、DWD_DWS_AMOUNT_RECONCILE）。
-        assertThat(rules.definitions()).hasSize(ALL_REGISTERED_CODES.size() + 2);
+        // 反向按“规则码”对账，而不是按“定义行数”对账：版本化目录允许同一码保留多个历史版本。
+        assertThat(rules.definitions().stream().map(QualityRuleDefinition::ruleCode).distinct().toList())
+                .hasSize(ALL_REGISTERED_CODES.size() + 2);
+        assertThat(rules.byRuleCode().get("ADS_STAGING_PRESENT"))
+                .extracting(QualityRuleDefinition::version)
+                .containsExactly(1, 2);
+        assertThat(rules.find("ADS_STAGING_PRESENT")).isPresent().get()
+                .extracting(QualityRuleDefinition::version).isEqualTo(2);
     }
 
     @Test

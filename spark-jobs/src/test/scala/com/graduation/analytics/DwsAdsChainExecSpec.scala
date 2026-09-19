@@ -553,16 +553,16 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       }
     }
 
-    "跨业务日**端到端**链路（另一 dt 走完 fna→dqc→pub）本轮未测——第二个业务日无法产出非空 ADS 暂存" in {
+    "跨业务日**端到端**链路（另一 dt 走完 fna→dqc→pub）本轮仍未测——本套件没有调度第二个业务日完整链" in {
       withClue(s"ods_trade_event 分区分布=${cap.odsTradePartitions}（迟到退款落在 $BusinessDate2）：") {
         cap.odsTradePartitions.size should be >= 1
       }
-      // 事实：dt=20260902 只有退款事件（无行为/下单），DWS 漏斗与 ADS 暂存行数为 0 ⇒
-      // dqc 的 ADS_STAGING_PRESENT 与 pub 的 PUB_STAGING_READY 必然阻断（BLOCKING），
-      // 因此「另一个业务日**真的走完发布**」这一条在黄金夹具上不可测量。
+      // 事实：dt=20260902 只有退款事件（无行为/下单），会出现合法的 0 行业务专题。
+      // Stage 7 T-R1 已修正“0 行 = 分区缺失”的旧口径：dqc/pub 现在只要求本次分区存在且 Location 可读，
+      // 所以这里“不测第二业务日完整发布”只是本套件编排范围，不再声称空专题必然被质量门阻断。
       // 已替代测量：上节 D-R9-1 判别探针**手工埋入** dt=$ForeignDate 的暂存分区，覆盖清理谓词的 dt 边界；
       // 未覆盖的是「异 dt 正式分区（已发布）在本次发布后保留」这条更长的链路。
-      println(s"[s206] 未测：跨业务日端到端发布（dt=$BusinessDate2 无可发布 ADS 数据；证据 odsTradePartitions=${cap.odsTradePartitions}）")
+      println(s"[s206] 未测：跨业务日端到端发布（本套件未调度 dt=$BusinessDate2 的完整 fna→dqc→pub；证据 odsTradePartitions=${cap.odsTradePartitions}）")
     }
   }
 

@@ -57,8 +57,12 @@ class AdsQualityRuleVersionSpec extends AnyFlatSpec with Matchers with BeforeAnd
   /** 统计日 2：与夹具完全对齐（四条规则 `passed = 1`） */
   private val DtOk = "20260902"
 
+  /** 统计日 3：只有合法交易、没有行为事件（REFERENCE_MALL_HTTP / B-04 的真实边界） */
+  private val DtNoBehavior = "20260903"
+
   private val SnapBad = "S_DQ_BAD"
   private val SnapOk = "S_DQ_OK"
+  private val SnapNoBehavior = "S_DQ_NO_BEHAVIOR"
 
   /** 目录版本（`QualityRuleCatalog` 四条规则 version 均为 1）—— 故意硬编码，漂移即红 */
   private val RuleVersion = 1
@@ -91,9 +95,14 @@ class AdsQualityRuleVersionSpec extends AnyFlatSpec with Matchers with BeforeAnd
     writeBehavior(DtOk, Seq((5L, Some(13L), "view"), (6L, Some(14L), "cart_add")))
     writeOrders(DtOk, Seq((401L, 5L, 10.00, 10.00)))
 
+    // 20260903：参考商城 MALL_API 当前没有通用 behavior endpoint（B-04），
+    // 但真实订单仍然是合法输入；行为规则必须表现为“0 条被检查、0 错误”。
+    writeOrders(DtNoBehavior, Seq((501L, 7L, 20.00, 20.00)))
+
     spark.sql(AdsSql.dataQuality(ns, DtBad, Some(SnapBad)))
     spark.sql(AdsSql.dataQuality(ns, DtBad))
     spark.sql(AdsSql.dataQuality(ns, DtOk, Some(SnapOk)))
+    spark.sql(AdsSql.dataQuality(ns, DtNoBehavior, Some(SnapNoBehavior)))
   }
 
   override def afterAll(): Unit = P2TestSupport.stop(spark)
@@ -233,6 +242,28 @@ class AdsQualityRuleVersionSpec extends AnyFlatSpec with Matchers with BeforeAnd
         cell(row, "error_rate").toString should be("0.000000")
         cell(row, "passed") should be(1)
         cell(row, "threshold") should be(Thresholds(code))
+      }
+    }
+  }
+
+  "ADS 质量大盘（无行为但有合法交易）" should
+    "行为规则按 0 checks / 0 errors / passed=1 收口，error_rate 保持 NULL" in {
+    val rows0 = rows(SnapNoBehavior)
+    rows0.keySet should be(Rules.toSet)
+
+    val amount = rows0("AMOUNT_RECONCILE")
+    cell(amount, "check_count") should be(1L)
+    cell(amount, "error_count") should be(0L)
+    cell(amount, "error_rate").toString should be("0.000000")
+    cell(amount, "passed") should be(1)
+
+    Seq("REQUIRED_FIELD_NULL_RATE", "EVENT_ID_UNIQUE", "ENUM_WHITELIST").foreach { code =>
+      val row = rows0(code)
+      withClue(s"$code zero-behavior: ") {
+        cell(row, "check_count") should be(0L)
+        cell(row, "error_count") should be(0L)
+        (cell(row, "error_rate") == null) should be(true)
+        cell(row, "passed") should be(1)
       }
     }
   }

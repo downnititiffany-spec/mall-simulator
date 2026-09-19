@@ -111,7 +111,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1035
+  'analytics-server'        = 1036
   'mall-simulator'          = 14
   'synthetic-data-generator' = 111
 }
@@ -551,7 +551,7 @@ $BaselineDefault = [ordered]@{
 #   仅作顺序意图显式化，**不声称**有独立用例钉住）；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，
 #   未改任何命令语义（`spark`／`isolated` 档**未重跑**）。
 #   详见 docs/acceptance/s3-44-ai-provider-http-client-timeout-20260916/。
-$BaselineSpark = 308
+$BaselineSpark = 312
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
@@ -851,6 +851,22 @@ $BaselineSpark = 308
 #   warehouse-pipeline（175→181）**；mall 13、generator 110 均 MATCH；三棵树 1145。
 #   唯一红仍是既有环境 patrol（expected 43 / actual 0）。
 #   ⇒ baseline analytics-server **1016→1022**；这证明 L1 编排 fail-fast 矩阵，不证明真实 Spark 作业/集群失败模式。
+# 2026-09-19 Stage 7 Batch T-R1 前置缺陷修复（ADS_STAGING_PRESENT v2：合法 0 行暂存分区 ≠ 发布缺失）：
+#   真实 MALL_API 链证明同一业务日可只有合法交易而无 behavior 事件（B-04）；v1 把 rowCount=0 与
+#   「分区缺失」合并判 BLOCKING，会让纯交易输入在 QUALITY_CHECK 必然假失败。V29 以追加方式发 v2
+#   （就绪 = 本次 snapshot+dt 分区存在且 Hive 元数据 Location 可读；缺分区/无 Location 仍 BLOCKING，
+#   阈值/档位未变），dqc 与 pub 预检统一改用共享判据 `PartitionEvidence.missingLocatedTables`；
+#   AdsSql 无行为日的 ads_data_quality 行改为良构 0/0/passed=1/error_rate=NULL；dqc 结果读取对 NULL
+#   不再崩 JVM。决策依据见 docs/decisions/DECISION_LOG.md D-019。
+#   测试增量：analytics-server +1（QualityRuleVersionMigrationScriptTest.v29OnlyAppendsAdsStagingPresentVersion2，
+#   其余 Java 文件只改断言/文案不增用例）；spark +4（新增 StagingPartitionReadinessSpec 3 条
+#   + AdsQualityRuleVersionSpec 无行为日 1 条）。
+#   量数轮 2026-09-19：default（-AllowCountDrift）analytics-server **1036 (F=1 E=0 S=1)**，模块明细
+#   `115+353+181+100+126+161`，相对基线 1035 的 **+1 = 新迁移守卫用例**；mall 14 MATCH、generator 111
+#   MATCH；唯一红仍是既有环境性 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched`
+#   （expected 43，与本轮改动无关）。spark 档 **312/312** 全绿 exit=0（38 套件、TestSuite.txt 本轮新写）。
+#   ⇒ baseline analytics-server **1035→1036**；spark **308→312**（+4，2026-09-18 T-R1 会话已改数未留痕，
+#   本轮实测 312 MATCH 补记）；isolated 面不变（V29 仅登记进既有 IT 的迁移清单，不新增用例）。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 11 }
 
