@@ -1,9 +1,19 @@
 # Current Verification Batch
 
-> 状态：**BATCH-U（Flume→HDFS SpoolDir 实链）PASS 已收口（2026-09-19 17:07–17:55，RunId `stage7u_20260919_170729`）：主链 1011 行 event_id 逐项对账零丢失/零新增/零重复；kill -9 恢复子例两次 attempt 均 LOST=0（重复如实登记 500/0，at-least-once）；全程零 MySQL、零 platform/Spark、`/opt` 与 3306 未触碰。Stage 7 状态矩阵仅 Flume→HDFS 一格置 PASS/CLOSED。**
-> **当前无开放验证门**；下一步按总控指示直接推进 Stage 7 剩余面（REMOTE_CLUSTER、浏览器 E2E、真实 LLM——待总控排程）。BATCH-U 通过不证明：平台 FLUME_RAW 采集与 manifest 对账、Spark/LOAD_ODS 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
-> 结果文档：`docs/verification/results/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-RESULT.md`；T-R3 结果：`docs/verification/results/BATCH-T-R3-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-RESULT.md`。
-> Git 注记（D-001）：BATCH-U 结果/状态文档提交仅本地；push 需总控另行授权。
+> 状态：**当前验证门 = BATCH-V（平台 FLUME_RAW 采集与 manifest/1011 行 event_id 对账）READY（2026-09-19 总控裁决二：计划置 READY 后可连续执行至 PASS、明确 FAIL/BLOCKED 或 HARD DECISION）。**
+> 范围钉死：复用 BATCH-U 已验 HDFS landing（data file `events-.1789810142459` 456,825 B / 1011 行）→ HDFS→本地 landing 交接（保留 `raw/dt=20260919/hour=17/` 分区）→ platform（8091 / 3307 RunId-scoped 双库）FLUME_RAW ingestion 真实 HTTP 驱动 → manifest + 1011 行 event_id 集合双向对账。**不重跑商城/Flume，不把完整 Spark→publish、浏览器、LLM、REMOTE_CLUSTER 混入本批。**
+> 计划：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md`；代码基线 `104db41`（HEAD `836faca` 为 docs-only 前移，不触发重钉）；执行驱动脚本落 `target/v25-it/<RunId>/`（零仓内代码/配置变更）。
+> Git 注记（D-001）：本计划与状态文档提交仅本地；push 需总控另行授权（836faca 授权已用尽）。
+
+## Current batch：BATCH-V（READY，2026-09-19 总控裁决二）
+
+- **Batch ID**：`BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION`
+- **Permanent plan**：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md`
+- **Exact source/test baseline**：`104db41117ea251b5b8e6c1f32c9f61ca4acd659`（执行 HEAD `836faca` 为 docs-only 前移，不触发重钉）
+- **Branch context**：`feature/v3-development`
+- **RunId**：`stage7v_<yyyyMMdd_HHmmss>`（全新，不复用 stage7u_*）
+- **Predecessor**：BATCH-U PASS（RunId `stage7u_20260919_170729`，HDFS landing 保留、NN/DN 已停可无损重启）
+- **Authorization**：总控裁决二（2026-09-19）——范围固定、连续执行至 PASS / 明确 FAIL/BLOCKED / HARD DECISION；口令环境变量缺失 ⇒ Phase 0 停止并把精确设置命令交总控，不得代填。
 
 ## Closed batch：BATCH-U（2026-09-19 收口，历史）
 
@@ -106,6 +116,8 @@ Pipeline `runId=5` 真实启动并推进至 BUILD_DWS 后平台进程消失（�
 
 总控两项裁决均已执行：① T→T-R1→T-R2→T-R3 三个既有提交（`7850e9b` → `a11ee42` → `104db41`）按原 ancestry fast-forward 推送 origin/feature/v3-development（`520d673..104db41`，无 force/rebase/amend/squash、无夹带），远端 HEAD = `104db41117ea251b5b8e6c1f32c9f61ca4acd659` 已验证；② BATCH-U 按裁决二在确认远端 HEAD `f136af5`（docs-only 前移）后直接执行 Phase 0–6，**已 PASS 收口**（本文件顶部与「BATCH-U 实际结果」节；结果文档 `docs/verification/results/BATCH-U-STAGE7-FLUME-HDFS-SPOOL-CHAIN-RESULT.md`）。
 
-状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、**Flume→HDFS PASS/CLOSED**、REMOTE_CLUSTER 未验证、浏览器 E2E 未验证、真实 LLM 未验证；Stage 8 未开始。当前无开放验证门；下一步按总控指示直接推进 Stage 7 剩余面（REMOTE_CLUSTER、浏览器 E2E、真实 LLM）。
+BATCH-U 后总控裁决二（2026-09-19）批准 BATCH-V 计划编制并连续执行：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md` 已置 **READY**（本文件顶部「Current batch」节）。
 
-BATCH-U 通过不证明：平台 FLUME_RAW 采集与 manifest 对账、Spark 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
+状态矩阵：Stage 1–6 完成；Stage 7：LocalFile 分析链 PASS/CLOSED、Flume→HDFS PASS/CLOSED、**平台 FLUME_RAW 采集 READY/BATCH-V（当前验证门）**、REMOTE_CLUSTER 未验证、浏览器 E2E 未验证、真实 LLM 未验证；Stage 8 未开始。
+
+BATCH-U 通过不证明：平台 FLUME_RAW 采集与 manifest 对账（BATCH-V 当前验证门即为此闭合）、Spark 下游、REMOTE_CLUSTER、浏览器 E2E、真实 LLM、端到端 exactly-once、整个 Stage 7 完成。
