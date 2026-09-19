@@ -111,7 +111,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1036
+  'analytics-server'        = 1039
   'mall-simulator'          = 14
   'synthetic-data-generator' = 111
 }
@@ -870,8 +870,18 @@ $BaselineSpark = 320
 #   （expected 43，与本轮改动无关）。spark 档 **312/312** 全绿 exit=0（38 套件、TestSuite.txt 本轮新写）。
 #   ⇒ baseline analytics-server **1035→1036**；spark **308→312**（+4，2026-09-18 T-R1 会话已改数未留痕，
 #   本轮实测 312 MATCH 补记）；isolated 面不变（V29 仅登记进既有 IT 的迁移清单，不新增用例）。
+# 2026-09-19 Stage 7 D-021（总控裁决 APPROVED）：ads_data_quality_m.error_rate 放开为可空，承接
+#   D-019 的合法空态质量行（0/0/passed=1/error_rate=NULL）——T-R2 attempt-4 真链路证明该行被 V3 的
+#   NOT NULL DEFAULT 0 整批拒绝（MP_ADS_WRITE，42 行回滚，runId=11 FAILED）。追加式 metric 迁移 V11
+#   （MODIFY COLUMN error_rate DECIMAL(12,6) NULL DEFAULT NULL；不改 V3、不做 NULL→0、D-019 不变；
+#   3306 未执行，真实 MySQL 证据只来自 3307 隔离库）。决策依据见 docs/decisions/DECISION_LOG.md D-021。
+#   测试增量：analytics-server +3（AdsDataQualityErrorRateNullableMigrationScriptTest：V11 脚本门正向
+#   + append-only/版本唯一 + 反向对照证明非空洞）；isolated analytics +2
+#   （AdsDataQualityErrorRateNullableMySqlIT：information_schema 可空性/Flyway 历史 + D-019 空态行
+#   与非 NULL 对照行真实写入，沿用 MetricAdsMySqlIT 隔离纪律）。
+#   ⇒ baseline analytics-server **1036→1039**；isolated **analytics 11→13**（mall/generator/spark 不变）。
 # ───────────────────────────────────────────────────────────────────────────
-$BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 11 }
+$BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)
@@ -1063,7 +1073,8 @@ function Invoke-IsolatedSuite {
   $isoExit = $LASTEXITCODE
 
   $rows = @(); $total = 0; $bad = @()
-  $expectedMap = @{ mall = 30; generator = 19; analytics = 11 }
+  # 与顶部 $BaselineIsolated 单一来源对齐（D-021 轮发现此处残留字面量 11，会与 13 基线假性 DRIFT）
+  $expectedMap = $BaselineIsolated
   foreach ($n in @('mall', 'generator', 'analytics')) {
     $log = Join-Path $isoMvnLogDir ("isolated-{0}.log" -f $n)
     if (-not (Test-Path -LiteralPath $log)) {
@@ -1103,7 +1114,7 @@ function Invoke-IsolatedSuite {
         $row.name, $row.tests, $row.failures, $row.errors, $row.skipped, $row.blocks, $row.cmp)
   }
   Write-Host ("  {0,-10} 合计 = {1}（基线 {2}）；runner exit={3}" -f 'isolated', $total, (($expectedMap.Values | Measure-Object -Sum).Sum), $isoExit)
-  Write-Host '  口径：mall 30 ＋ generator 19 ＋ metric-analysis IT 11 = 60；analytics 11 = IsolationGuard 6 + MetricAds 2 + MetricPublisher 3；同 reactor 依赖构建不计入隔离档。'
+  Write-Host '  口径：mall 30 ＋ generator 19 ＋ metric-analysis IT 13 = 62；analytics 13 = IsolationGuard 6 + MetricAds 2 + MetricPublisher 3 + AdsDataQualityErrorRateNullable 2（D-021）；同 reactor 依赖构建不计入隔离档。'
   $code = 0
   if ($isoExit -ne 0) { $code = $isoExit } elseif ($bad.Count -gt 0) { $code = 7 }
   return [pscustomobject]@{ suite = 'isolated'; exit = $code; total = $total; rows = $rows; bad = $bad; childExit = $isoExit; console = $isoConsole }
