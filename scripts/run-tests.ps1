@@ -551,7 +551,10 @@ $BaselineDefault = [ordered]@{
 #   仅作顺序意图显式化，**不声称**有独立用例钉住）；⑤ 本文件是**门禁基线**，本轮只改这一个数字＋注释，
 #   未改任何命令语义（`spark`／`isolated` 档**未重跑**）。
 #   详见 docs/acceptance/s3-44-ai-provider-http-client-timeout-20260916/。
-$BaselineSpark = 312
+# 2026-09-19：312→320＝mxp 合法 0 行 ADS 导出修复新增 developer spec `MetricExportZeroRowSpec` 8 条
+#   （0 行分区 pub 放行＋mxp catalog-backed 空态导出＋负向对照＋非 0 行不回归），fresh 实测
+#   devmxpfull_20260919_1046：320/320、39 套件、JDK8=True、All tests passed（D-020）。
+$BaselineSpark = 320
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）

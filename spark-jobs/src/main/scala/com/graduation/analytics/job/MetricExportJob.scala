@@ -75,7 +75,20 @@ class MetricExportJob extends WarehouseJob {
     MetricAdsSpec.TABLES.foreach { spec =>
       val loc = pathOf(spec.hiveTable(ns)).get
       val hiveRows = countOf.getOrElse(spec.hiveTable(ns), -1L)
-      val df = spark.read.parquet(loc).select(spec.columns.map(col): _*)
+      val df =
+        if (hiveRows == 0L) {
+          // 合法空态（T-R1 实证缺口）：上面的 collect 已用 metastore 的 COUNT(*) 证实该分区存在且
+          // 真实 0 行 —— 当天无行为事实时 fna 写出的暂存目录只有 _SUCCESS、无 parquet 数据文件，
+          // `spark.read.parquet(loc)` 的文件级 schema 推断必然抛 UNABLE_TO_INFER_SCHEMA
+          // （T-R1 PUBLISH_METRIC 即因此 FAILED，见 BATCH-T-R1-…-RESULT.md §4）。
+          // 此时从 catalog 侧表 schema 构造 0 行 DataFrame（limit(0) 不做文件读取），列序仍与
+          // 契约投影一致，导出走既有空文件路径：真实空 JSONL + rowCount=0 + checksum="0"。
+          // 分区缺失（-1）/非 0 行一律走下面的物理读取，缺路径、schema 损坏照旧 fail-closed，
+          // 不允许把任何读取失败扩大成"按空表处理"。
+          spark.table(spec.hiveTable(ns)).select(spec.columns.map(col): _*).limit(0)
+        } else {
+          spark.read.parquet(loc).select(spec.columns.map(col): _*)
+        }
       val exportFile = s"$exportDir/${spec.mysqlTable}.jsonl"
       MetricExportJob.writeJsonl(spark, df, exportFile)
       val written = MetricExportJob.countLines(spark, exportFile)
