@@ -184,3 +184,15 @@
 **Evidence**：spark 档 312/312（JDK8）；default fresh analytics **1036 MATCH**（基线 1035→1036，spark 308→312 在 runner 内补记）/ mall 14 / generator 111，唯一红仍是既有 manifest patrol；isolated 档 fresh runId `tir1iso_20260919_093537` **60/60**（mall 30 + generator 19 + analytics 11），其中 analytics-schema Flyway 在全新 3307 meta 库 `tir1iso_20260919_093537_analytics_meta` 上应用至 **version v29 成功**——V29 已获真实 MySQL 证据（3306 仍未执行）。
 
 **Implementation commits**：`81d8f93`（16 文件修复 + 基线同步）。
+
+### D-020 — mxp 合法 0 行 ADS 暂存分区的导出走 catalog-backed 空态路径
+
+**Decision**：`MetricExportJob` 导出循环以 `PartitionEvidence.collect`（metastore 侧 `COUNT(*)`，缺失分区不进结果映射）为判据：仅当该 snapshot+dt 分区**存在且真实 0 行**（hiveRows==0）时，改用 `spark.table(...).select(契约列).limit(0)` 从 catalog 构造 0 行 DataFrame 导出，不对物理路径做文件级 schema 推断；非 0 行与分区缺失（countOf 缺项记 -1）一律保持既有 `spark.read.parquet(loc)` 物理读取路径。0 行导出走既有空文件路径：真实 0 字节 JSONL + manifest rowCount=0 + checksum="0"。
+
+**Reason**：T-R1 实证：当天无行为事实时（mock-mall 纯交易源，无通用行为端点 B-04）行为主题暂存分区目录只有 `_SUCCESS`、无 parquet 数据文件，`spark.read.parquet` 的文件级 schema 推断必然抛 `UNABLE_TO_INFER_SCHEMA`，PUBLISH_METRIC 因此 FAILED（`FAIL_PRODUCTION_RUN_PUBLISH_FAILED`）——D-019 打开合法空态通道后首次触达 mxp 暴露的既有下游缺口，非 v2 逻辑回归。
+
+**Boundary**（总控裁决原文边界）：只处理「已确认 Hive 分区合法存在、snapshot pin 正确、真实行数为 0」的导出情况；**禁止**把合法空态扩大成「所有 schema 读取失败都按空表处理」——路径丢失、schema 损坏、非法分区照旧 fail-closed；不通过 catch `UNABLE_TO_INFER_SCHEMA` 跳过表；不放宽 snapshot pinning（MXP_SNAPSHOT_PINNED）、checksum（MP_EXPORT_CHECKSUM）、行数对账（MXP_EXPORT_ROWS / MP_ADS_ROWS_MATCH）与 8 表完整性判据（MXP_EXPORT_COMPLETE / MP_MANIFEST_TABLES）。发布侧按既有设计兼容合法空表：`MP_REQUIRED_TABLES_NONEMPTY` 只要求概览/趋势/漏斗/活跃四表非空（代码注释明示「其它表允许 0 行」），`AdsExportReader` 对 0 字节文件返回空行集、`MetricAdsWriter.insertRows` 对空集返回 0、`MetricPublishValidator` 0=0 对账通过；最终以 T-R2 实链复证。不碰 3306、不改 V1~V28、不改质量阈值。
+
+**Evidence**：developer spec `MetricExportZeroRowSpec` **8/8**（0 行 pub 放行＋mxp 空态导出 SUCCESS＋负向对照证明 0 行分区物理读取确实抛 UNABLE_TO_INFER_SCHEMA＋非 0 行 6 表不回归＋0 字节 JSONL/rowCount=0/checksum="0"＋manifest 总账）；三档回归：spark fresh **320/320**（基线 312→320，RunId devmxpfull_20260919_1046）→ MATCH PASS（devmxpmatch_20260919_1050）；default analytics **1036 MATCH** / mall 14 / generator 111（devmxpdef_20260919_1055，唯一红=既有 manifest patrol）；isolated fresh runId `tir2iso_20260919_105926` **60/60**（mall 30 + generator 19 + analytics 11；口令通道按 T-R1 先例由幂等 prep 以进程内新生成口令重置 run 账号，口令只走 PowerShell Process env）。
+
+**Implementation commits**：`1ae091b`（MetricExportJob.scala catalog-backed 空态分支 + MetricExportZeroRowSpec.scala + spark 基线 312→320）。
