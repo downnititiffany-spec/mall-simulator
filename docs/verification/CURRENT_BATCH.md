@@ -1,23 +1,19 @@
 # Current Verification Batch
 
-> 状态：**BATCH-W READY（2026-09-19 总控裁决：BATCH-V 收口后推送成功，随即编制浏览器 E2E 计划并连续执行至 PASS / 明确 FAIL/BLOCKED / HARD DECISION）。范围钉死：真实浏览器（Chromium）+ 8091 生产形态（前端构建产物进 platform jar 同进程托管）+ 3307-only 隔离数据（复用 stage7q1_20260918_152245_* 四库，ACTIVE S20260918_12）；复用 BATCH-V 的 F1/F2a/F2b/F3 3307 fail-closed 守卫；AI 页面只验 UI + 后端接口 + 当前 fallback/provenance 展示。排除：真实 LLM、第二异构来源、故障注入、REMOTE_CLUSTER。计划 `docs/verification/batches/BATCH-W-STAGE7-BROWSER-E2E-PLAN.md`（判据 W-1~W-9）。**
+> 状态：**BATCH-W PASS 已收口（2026-09-19 深夜，attempt-4 权威记录）；V3.1 指导书生效，G31-00（W 收口）关闭，下一批 = G31-01 测试隔离与可重复执行（01.1~01.5）。结果 `docs/verification/results/BATCH-W-STAGE7-BROWSER-E2E-RESULT.md`；证据根 `target/v25-it/stage7w_20260919_223000/`（evidence-summary.json + 14 截图 + 三源对账 JSON + 4 份会话记录）。W-1~W-9 全满足：真实 Chromium 9 页侧栏/直达双通道 + 刷新/后退/登出全过；未登录重定向与 /metrics/snapshots ACTIVE 补验成立；三源对账 6 锚点 + 4 补充全 match（GMV 15112.10/净 11859.40/订单 80/客单 188.90/退款率 0.20/复购 0.4571/漏斗 49→35/RFM 合计 35）；ACTIVE 五点一致；空态全对；零 3306 接触（守卫 + 两次 final sweep）；收尾 git 仅 `?? .zcode/`。门修正 C4（解析器 v1 多行锚定缺陷，fail-closed 无影响）/C5（attempt-2 平台 0xC000013A 外部控制台事件，非平台缺陷）登记；attempt-2→3 间环境回收经 daemon3307.sh 恢复（事件与数据完整性复核留证）。C6 偏差（DOM click 通道/Enter 未绑定/chip 竞态）按 V31-D04 排入 G31-03/G31-07 补验。push 规则：仅本地提交。**
 > 前门 BATCH-V PASS 收口（attempt-2，2026-09-19）：总控裁决三批准驱动修复后复跑（F1 全 13 变量 PLATFORM_* env 块 + F2 启动前后 3307 JDBC 双重 fail-closed 自检 + F3 驱动 finally 精确清理），FLUME_RAW ingestion run1 成功（1011/0/0/1 文件，manifest READY）、run2 断点语义成立（noNewData=true/0 行/0 文件）、1011 行 event_id 双向零差对账通过（accepted SHA 差异经登记定性为纯 CRLF→LF 归一）、quarantine 零记录、attempt-2 全程零 3306 接触；V-1~V-11 全部满足（V-5/V-7/V-8 经登记的门修正 C1/C2/C3）。3306 事实基线按裁决三接受并重新冻结。
 > attempt-1（历史）：FAIL——执行驱动脚本遗漏 `$env:PLATFORM_*` 配置块，platform 以默认配置连接并写入正式 3306，击穿冻结边界；总控裁决三重分类为 HARNESS/ISOLATION FAILURE with unintended 3306 side effect，3306 事后零接触、不回滚。详见结果文档 §1–§10。
 > 范围钉死（原计划，未变更）：复用 BATCH-U 已验 HDFS landing（data file `events-.1789810142459` 456,825 B / 1011 行）→ HDFS→本地 landing 交接（保留 `raw/dt=20260919/hour=17/` 分区）→ platform（8091 / 3307 RunId-scoped 双库）FLUME_RAW ingestion 真实 HTTP 驱动 → manifest + 1011 行 event_id 集合双向对账。**不重跑商城/Flume，不把完整 Spark→publish、浏览器、LLM、REMOTE_CLUSTER 混入本批。**
 > 计划：`docs/verification/batches/BATCH-V-STAGE7-PLATFORM-FLUME-RAW-INGESTION-PLAN.md`；代码基线 `104db41`（执行 HEAD `88f85cf` 为 docs-only 前移，不触发重钉）。
 > Git 注记（D-001）：**远端事实更正已执行并按总控一次性授权完成 fast-forward push（2026-09-19，`836faca..883dcff`，禁 force/rebase/amend/squash、零夹带；推送前 `git rev-list --reverse origin/feature/v3-development..HEAD` 恰为 `67a2de8`/`88f85cf`/`24eed20`/`883dcff` 四笔，远端 HEAD 复核 = `883dcffa6136fef96385ebcd475550a71fa22310`）。该笔授权已用尽；本 BATCH-W 计划及其后 docs 提交仅本地，push 需总控再次授权。** 远端事实口径：BATCH-V 三笔 docs 提交推送前远端 branch HEAD = `836faca`（BATCH-U PASS 登记提交）；`104db41` 仅表示 **BATCH-V 的 Exact source/test code baseline（代码钉定 SHA）**，不是远端分支 HEAD。
 
-## Ready batch：BATCH-W（2026-09-19 置 READY，当前执行中）
+## Closed batch：BATCH-W（2026-09-19 深夜 PASS 收口；= V3.1 G31-00）
 
-- **Batch ID**：`BATCH-W-STAGE7-BROWSER-E2E`
-- **Permanent plan**：`docs/verification/batches/BATCH-W-STAGE7-BROWSER-E2E-PLAN.md`（判据 W-1~W-9）
-- **Exact source/test baseline**：`883dcffa6136fef96385ebcd475550a71fa22310`（当前 HEAD；相对 `104db41` 仅 docs-only 前移，代码态恒等，不触发重钉；本批零仓内代码/配置变更，前端构建产物与驱动全落 gitignore 覆盖区/`target/v25-it/<RunId>/`）
-- **Branch context**：`feature/v3-development`（远端 HEAD = `883dcff`，2026-09-19 总控授权 push 后复核）
-- **RunId**：`stage7w_20260919_223000`（仅作 attempt/证据目录标签，不新建数据库）
-- **数据域**：复用 `stage7q1_20260918_152245_analytics_meta/_analytics_metric` 等四库（ACTIVE `S20260918_12`；ADS 行数 2/8/2/4/4/8）；幂等 prep 仅重置账号口令（零 DROP），后置数据完好性断言兜底
-- **Predecessor**：BATCH-V PASS（F1/F2a/F2b/F3 守卫模式直接复用）
-- **Authorization**：总控 2026-09-19 裁决（随远端事实更正授权同轮下达）：「推送成功后立即编制 BATCH-W Browser E2E READY 计划；范围仅真实浏览器 + 8091 + 3307-only 隔离数据……计划完成后可连续执行到 PASS、明确 FAIL/BLOCKED 或 HARD DECISION。」
-- **Git 状态注记（D-001）**：本计划与后续 docs 提交仅本地；push 需总控再次授权（上一笔授权已用尽）。
+- **Batch ID**：`BATCH-W-STAGE7-BROWSER-E2E`（结果：`docs/verification/results/BATCH-W-STAGE7-BROWSER-E2E-RESULT.md`）
+- **Exact source/test baseline**：`883dcffa6136fef96385ebcd475550a71fa22310`（driver preflight 复核 working tree 与其零差异）；被测 jar `9e79f1b3…`（BATCH-W P1 生产形态构建：前端 dist 28 文件入 jar，8091 同进程托管）
+- **RunId**：`stage7w_20260919_223000`（attempt-1 C4 / attempt-2 C5 / attempt-3 环境恢复后全绿 / **attempt-4 权威**）
+- **判据**：W-1~W-9 全 PASS；门修正 C4/C5 与环境恢复事件登记；D31-00a~e 自主决策记录在结果文档 §9
+- **后续**：G31-01（测试隔离与可重复执行 01.1~01.5）→ G31-02 → G31-03 → G31-04 → G31-05 → G31-06 → G31-07（V3.1 主序）
 
 ## Closed batch：BATCH-V（attempt-2 PASS 收口，2026-09-19；前门）
 
