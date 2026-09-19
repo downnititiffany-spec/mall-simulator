@@ -170,3 +170,17 @@
 **Safety boundary**：对外只暴露稳定、可解释的原因类别；不把 Provider 原始异常 message、响应体、URL、密钥或堆栈拼进 API limitation。原始异常仍只进入既有日志/审计路径。本项不新增自动重试、不改变 Provider 调用次数、不改变 SQL/权限/快照安全策略，也不新增公开响应字段。
 
 **Implementation commits**：`8ab0058`（生产逻辑）+ `97d6e83`（developer tests）。
+
+## 2026-09-19
+
+### D-019 — ADS_STAGING_PRESENT v2：合法空态暂存分区 ≠ 发布缺失
+
+**Decision**：质量规则 `ADS_STAGING_PRESENT` 升级为 v2：暂存分区**就绪** = 该 snapshot+dt 的分区存在**且** Hive Location 可读；`rowCount=0` 是合法空态（不再误判 BLOCKING），发布时输出良构的 `0/0/passed=1/error_rate=NULL` 行；**分区缺失或无 Location 仍为 BLOCKING**。实现为追加式新迁移 `V29__quality_rule_ads_staging_present_v2.sql`（不改任何已发布迁移 V1~V28），运行时按 `quality_rule_definition` 唯一键 `(source_scope, rule_code, version)` 取最高 enabled 版本；dqc 与 publish 预检共用 `PartitionEvidence.missingLocatedTables` 判据。
+
+**Reason**：Batch T 的 producer 输入是 mock-mall 纯交易事件，而 mock-mall 无通用行为端点（B-04）⇒ 纯交易日的行为主题 ADS 暂存表合法为空；v1 把「表存在但 0 行」误判为 BLOCKING，QUALITY_CHECK 必然假失败——被阻塞的是缺陷形态而非真实数据缺失。0 行合法 ≠ 放水：结构缺失（分区/Location 不存在）在 v2 下依旧拦截，且「0 行合法」只适用于本规则。
+
+**Boundary**：不改质量阈值数值；不改已发布迁移 V1~V28；V29 在真库 3306 上**未执行**（3306 冻结，迁移头部标注不变，3306 零写入）；其他质量规则语义不变。T-R1 通过不证明 Flume/HDFS/REMOTE_CLUSTER/浏览器 E2E/真实 LLM。
+
+**Evidence**：spark 档 312/312（JDK8）；default fresh analytics **1036 MATCH**（基线 1035→1036，spark 308→312 在 runner 内补记）/ mall 14 / generator 111，唯一红仍是既有 manifest patrol；isolated 档 fresh runId `tir1iso_20260919_093537` **60/60**（mall 30 + generator 19 + analytics 11），其中 analytics-schema Flyway 在全新 3307 meta 库 `tir1iso_20260919_093537_analytics_meta` 上应用至 **version v29 成功**——V29 已获真实 MySQL 证据（3306 仍未执行）。
+
+**Implementation commits**：`81d8f93`（16 文件修复 + 基线同步）。

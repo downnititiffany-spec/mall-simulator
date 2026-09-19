@@ -1,10 +1,11 @@
 # BATCH-T-R1-STAGE7-PRODUCER-LOCALFILE-ANALYTICS — Verification Plan
 
 > 状态：**READY**
-> Exact source/test SHA：`2acee3d5f34c4ee4734a88e940f29ee0021def85`
+> Exact source/test SHA：`81d8f938deb3a5e73e75e1e7bbc3082dd90585b8`
 > Branch：`feature/v3-development`
 > RunId：`stage7q1_20260918_152245`
 > Predecessor：Batch T / `BLOCKED_PLATFORM_EXIT_UNDIAGNOSED`
+> 修订（2026-09-19）：被测 SHA 由 `2acee3d` 更新为 `81d8f93`——T-R1 前置缺陷修复「质量规则 ADS_STAGING_PRESENT v2：合法空态暂存分区 ≠ 发布缺失」（追加式 V29，D-019）已提交并三档实测（spark 312/312；default fresh analytics 1036 / mall 14 / generator 111；isolated 60/60，fresh runId `tir1iso_20260919_093537`，其中 analytics-schema Flyway 在全新 3307 meta 库应用至 version v29 成功）。该修复属缺陷修复而非阈值放水，用户已批准；本计划其余契约不变。口令通道注记：原会话进程环境口令已丢失，执行时由幂等 prep 重跑（`it-prepare-isolation.ps1`，ALTER USER 语义）以进程内新生成口令重置 run 账号，口令仍只走 PowerShell Process env、不落盘不进命令行。
 
 ## 1. Purpose
 
@@ -52,7 +53,7 @@ Run in the interactive PowerShell that still owns `V25_IT_META_PASSWORD` and `V2
 ~~~powershell
 cd "D:\Develop_code\GraduationProject-wt\v3-dev"
 
-git switch --detach 2acee3d5f34c4ee4734a88e940f29ee0021def85
+git switch --detach 81d8f938deb3a5e73e75e1e7bbc3082dd90585b8
 git rev-parse HEAD
 
 mvn -f .\analytics-server\pom.xml -DskipTests package

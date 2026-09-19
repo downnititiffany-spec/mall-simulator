@@ -6,7 +6,7 @@
 ## Current batch
 
 - **Batch ID**：`BATCH-T-R1-STAGE7-PRODUCER-LOCALFILE-ANALYTICS`
-- **Exact source/test baseline**：`2acee3d5f34c4ee4734a88e940f29ee0021def85`
+- **Exact source/test baseline**：`81d8f938deb3a5e73e75e1e7bbc3082dd90585b8`（2026-09-19 修订：T-R1 前置缺陷修复 ADS_STAGING_PRESENT v2 / D-019）
 - **Branch context**：`feature/v3-development`
 - **RunId**：`stage7q1_20260918_152245`
 - **Permanent plan**：`docs/verification/batches/BATCH-T-R1-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-PLAN.md`
@@ -47,7 +47,7 @@ Pipeline `runId=5`真实启动并推进：
 
 ## T-R1 diagnostic gate
 
-Successor SHA `2acee3d` 仅增强验证 harness：
+Successor SHA `2acee3d` 增强验证 harness；被测 SHA 现为 `81d8f93`（在 harness 诊断之上追加 T-R1 前置缺陷修复「质量规则 ADS_STAGING_PRESENT v2：合法空态暂存分区 ≠ 发布缺失」，追加式 V29，见 D-019）：
 
 - platform PID / HasExited / ExitCode；
 - lastAliveAt；
@@ -56,11 +56,13 @@ Successor SHA `2acee3d` 仅增强验证 harness：
 - platform 已退出时明确写 `PLATFORM_EXITED_DURING_PIPELINE`；
 - platform 仍存活时才允许最多三次瞬态 poll 重试。
 
-Default fresh 仍是：
+Default fresh 收口为：
 
-- analytics **1035 MATCH**；
+- analytics **1036 MATCH**（基线 1035→1036）；
 - mall **14 MATCH**；
 - generator **111 MATCH**；
+- spark 档 **312/312**（JDK8，基线 308→312 补记）；
+- isolated 档 fresh runId `tir1iso_20260919_093537` **60/60**（mall 30 + generator 19 + analytics 11），analytics-schema Flyway 在全新 3307 meta 库上应用至 version v29 成功；
 - 唯一红为既有 manifest patrol。
 
 ## PASS
