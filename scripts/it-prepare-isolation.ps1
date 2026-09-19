@@ -98,6 +98,20 @@ $analyticsMetaDb   = "${RunId}_analytics_meta"
 $analyticsMetricDb = "${RunId}_analytics_metric"
 $analyticsMetaUser = New-IsolationUserName -RunId $RunId -Role 'metaapp'
 $analyticsMetricUser = New-IsolationUserName -RunId $RunId -Role 'metricapp'
+# G31-01（指导书 5.1.4 发布/只读分别授权）：设置 V25_IT_METRIC_READ_PASSWORD 时，
+# 额外创建**只读**账号（对 ${RunId}_analytics_metric 仅 SELECT），供平台只读源
+#（PLATFORM_METRIC_READ_USER/PASSWORD）使用。不设置则跳过——向后兼容：
+# 既有调用方（mall/generator/旧 analytics 批次）行为完全不变。
+$metricReadEnabled = $false
+$metricReadUser = ''
+$metricReadPwd = $null
+if ($IncludeAnalytics) {
+  $metricReadPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_READ_PASSWORD', 'Process')
+  if ($metricReadPwd) {
+    $metricReadEnabled = $true
+    $metricReadUser = New-IsolationUserName -RunId $RunId -Role 'metricread'
+  }
+}
 # 守卫 requireCredential 的候选路径 = 各模块的工作目录（CWD-relative）。
 # surefire 的 CWD 就是模块目录，故凭据文件写到模块根即可被找到；
 # 两处都在仓库内，且被 .gitignore 的 credref-*.properties 覆盖。
@@ -124,7 +138,10 @@ if ($IncludeAnalytics) {
   Write-Host ("   数据库     : {0}" -f $analyticsMetricDb)
   Write-Host ("   受限账号   : {0}@'%'  （只对 {1} 有权限）" -f $analyticsMetaUser, $analyticsMetaDb)
   Write-Host ("   受限账号   : {0}@'%'  （只对 {1} 有权限）" -f $analyticsMetricUser, $analyticsMetricDb)
-  Write-Host '   analytics 口令：只从进程环境 V25_IT_META_PASSWORD / V25_IT_METRIC_PUBLISH_PASSWORD 读取；不落盘、不回显。'
+  if ($metricReadEnabled) {
+    Write-Host ("   受限账号   : {0}@'%'  （只对 {1} **只读 SELECT**）" -f $metricReadUser, $analyticsMetricDb)
+  }
+  Write-Host '   analytics 口令：只从进程环境 V25_IT_META_PASSWORD / V25_IT_METRIC_PUBLISH_PASSWORD（以及可选 V25_IT_METRIC_READ_PASSWORD）读取；不落盘、不回显。'
 }
 Write-Host (" 将写入的凭据文件（仓内、gitignore 覆盖、单键 password）：")
 Write-Host ("               : {0}" -f $credRefFileMall)
@@ -185,6 +202,16 @@ Write-Host ("               : {0}（均不回显口令）" -f $credRefFileGen)
 # ── 5. 在 WSL 内执行 SQL（幂等）────────────────────────────────────────
 $analyticsSql = ''
 if ($IncludeAnalytics) {
+  # G31-01：metricread 只读账号的授权语句（仅 SELECT，且只对本次 runId 的 metric 库）。
+  # 与写账号一样，口令经 stdin（SQL 文本）进入 mysql，不出现在命令行/进程列表。
+  $metricReadSql = ''
+  if ($metricReadEnabled) {
+    $metricReadSql = @"
+CREATE USER IF NOT EXISTS '$metricReadUser'@'%' IDENTIFIED BY '$metricReadPwd';
+ALTER USER '$metricReadUser'@'%' IDENTIFIED BY '$metricReadPwd';
+GRANT SELECT ON ``$analyticsMetricDb``.* TO '$metricReadUser'@'%';
+"@
+  }
   $analyticsSql = @"
 CREATE DATABASE IF NOT EXISTS ``$analyticsMetaDb`` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 CREATE DATABASE IF NOT EXISTS ``$analyticsMetricDb`` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
@@ -194,6 +221,7 @@ ALTER USER '$analyticsMetaUser'@'%' IDENTIFIED BY '$analyticsMetaPwd';
 ALTER USER '$analyticsMetricUser'@'%' IDENTIFIED BY '$analyticsMetricPwd';
 GRANT ALL PRIVILEGES ON ``$analyticsMetaDb``.* TO '$analyticsMetaUser'@'%';
 GRANT ALL PRIVILEGES ON ``$analyticsMetricDb``.* TO '$analyticsMetricUser'@'%';
+$metricReadSql
 "@
 }
 
@@ -265,7 +293,12 @@ if ($IncludeAnalytics) {
   Write-Host '  V25_IT_META_PASSWORD=<沿用当前进程环境；不回显>'
   Write-Host ("  V25_IT_METRIC_PUBLISH_USERNAME={0}" -f $analyticsMetricUser)
   Write-Host '  V25_IT_METRIC_PUBLISH_PASSWORD=<沿用当前进程环境；不回显>'
-  Write-Host ("  V25_IT_METRIC_READ_USERNAME={0}" -f $analyticsMetricUser)
-  Write-Host '  V25_IT_METRIC_READ_PASSWORD=<默认可与 publish 同值；runner 显式注入>'
+  if ($metricReadEnabled) {
+    Write-Host ("  V25_IT_METRIC_READ_USERNAME={0}  （只读账号，DB 层仅 SELECT）" -f $metricReadUser)
+    Write-Host '  V25_IT_METRIC_READ_PASSWORD=<沿用当前进程环境；不回显>'
+  } else {
+    Write-Host ("  V25_IT_METRIC_READ_USERNAME={0}" -f $analyticsMetricUser)
+    Write-Host '  V25_IT_METRIC_READ_PASSWORD=<默认可与 publish 同值；runner 显式注入>'
+  }
 }
 exit 0
