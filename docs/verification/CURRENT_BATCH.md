@@ -1,7 +1,7 @@
 # Current Verification Batch
 
-> 状态：READY
-> Batch T 已证明 1011 行真实 producer rolling 完整进入 LocalFile ingestion，并真实推进 Spark 到 BUILD_DWS；但 platform 在 DWS 期间从 8091 消失，旧 harness 未记录退出码。当前唯一可执行批次是 T-R1。
+> 状态：**T-R1 已执行并登记为 FAIL_PRODUCTION_RUN_PUBLISH_FAILED**（2026-09-19）——平台全程存活、链路推进到 PUBLISH_METRIC，mxp 作业对 0 行暂存分区直读抛 `UNABLE_TO_INFER_SCHEMA`；下一道门（mxp 0 行修复工作包 → T-R2）待总控裁决。
+> Batch T 已证明 1011 行真实 producer rolling 完整进入 LocalFile ingestion 并推进 Spark；T-R1 复跑进一步证明 v2 修复解开 QUALITY_CHECK、链路首次真实触达发布导出环节。
 
 ## Current batch
 
@@ -11,8 +11,9 @@
 - **RunId**：`stage7q1_20260918_152245`
 - **Permanent plan**：`docs/verification/batches/BATCH-T-R1-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-PLAN.md`
 - **Batch T result**：`docs/verification/results/BATCH-T-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-RESULT.md`
+- **T-R1 result**：`docs/verification/results/BATCH-T-R1-STAGE7-PRODUCER-LOCALFILE-ANALYTICS-RESULT.md`（attempt `attempt-20260919_094931_381` / pipeline runId=8 / attempt-20260919_094931_830）
 - **Pinned S-R1 producer evidence**：`target/v25-it/stage7q1_20260918_152245/producer/attempt-20260918_195657_077/stage7-producer-result.json`
-- **Overall**：`READY`
+- **Overall**：`FAIL_PRODUCTION_RUN_PUBLISH_FAILED`（已登记，待总控裁决下一门）
 
 ## Accepted Batch T facts
 
@@ -70,4 +71,14 @@ Default fresh 收口为：
 若 T-R1 直接 PASS，则关闭本次 platform-exit 事件并继续后续 Stage 7。
 
 若 platform 再次退出，则必须以新 evidence 的 exitCode/resource snapshot 分类，不再猜测。
+
+## T-R1 实际结果（2026-09-19 登记）
+
+按计划 §6 分类为 **production FAIL**（`FAIL_PRODUCTION_RUN_PUBLISH_FAILED`）：
+
+- 平台未再退出：PID 39964 全程 `hasExited=false`、pollErrorCount=0；Batch T 的消失未复现；
+- 链路真实推进：WAIT_LANDING/INIT_SCHEMA/LOAD_ODS/BUILD_DWD/BUILD_DWS/BUILD_ADS/QUALITY_CHECK 全 SUCCESS（v2 修复被实链验证：`PUB_STAGING_READY` 明确放行 0 行专题 ads_hot_product、ads_product_conversion），pub 作业 SUCCESS 且 8 张正式指针切换完成；
+- 失败点：PUBLISH_METRIC 的 **mxp**（metric 导出）作业 exit=1 `[UNABLE_TO_INFER_SCHEMA]`——0 行暂存分区目录只有 `_SUCCESS` 无 parquet 文件，`MetricExportJob.scala:78` 直读路径做文件级 schema 推断失败；这是 D-019 打开合法空态通道后首次触达 mxp 暴露的既有下游缺口；
+- 未证明事项与下一门建议见 RESULT §6/§7：mxp 0 行导出修复工作包 → T-R2 复跑 → PASS 后才开放 BATCH-U（Flume→HDFS DRAFT）。
+
 
