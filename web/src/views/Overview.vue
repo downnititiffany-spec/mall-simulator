@@ -18,6 +18,10 @@
     <AnalysisContext :context="context || {}" :state="state" :error="error" />
 
     <template v-if="!empty && !failed">
+      <div v-if="staleness" data-test="staleness-note"
+           style="border:1px solid #F59E0B;background:#FFFBEB;color:#92400E;font-size:13px;padding:10px 14px;margin-bottom:10px;border-radius:4px">
+        ⚠ {{ staleness.text }}
+      </div>
       <div class="metric-cards">
         <div v-for="m in cards" :key="m.metricCode" class="metric-card">
           <div class="label">{{ m.metricName || m.metricCode }}</div>
@@ -88,6 +92,8 @@ import { localIsoDayOffset } from '../utils/localDate.js'
 import { periodText, WINDOW_METRIC_NOTE } from '../utils/metricPeriod'
 // S3-41：清单外指标的量纲/展示名唯一属主在 utils/metricDisplay.js，视图只引用不自拼
 import { displayMetricName, formatOutsideMetricValue, DICTIONARY_MISSING_NOTE } from '../utils/metricDisplay'
+// 02.6：时效警告的派生与文案唯一属主在 utils/staleness.js，视图只引用不自拼
+import { stalenessNotice } from '../utils/staleness'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
 
@@ -168,6 +174,10 @@ const ruleVersionsText = computed(() => ruleVersionText((data.value.quality || {
 
 // S3-40：本次快照里出现过窗口口径指标时才提示"不同期"（无则不提，避免无谓噪声）
 const windowNote = computed(() => (cards.value.some((c) => c.periodText) ? WINDOW_METRIC_NOTE : ''))
+
+// 02.6 平台独立性：来源停机时历史指标仍可读，但页面必须显示时效警告、不假报最新。
+// 派生只用指标载荷本身（角色无关：分析师无 RUNTIME_MANAGE，不调 /sources），滞后 ≥1 天才出现。
+const staleness = computed(() => stalenessNotice(data.value.metrics, localIsoDayOffset(0)))
 
 const dictionary = computed(() => (Array.isArray(data.value.metricDictionary) ? data.value.metricDictionary : []))
 const salesOption = computed(() => salesTrendOption(data.value.salesTrend))
