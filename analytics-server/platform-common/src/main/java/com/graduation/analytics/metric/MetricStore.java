@@ -4,6 +4,9 @@ import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 /**
  * 指标服务接口（§19.3）：查询/发布/健康检查。
@@ -15,6 +18,12 @@ public interface MetricStore {
 
     /** 查询指标（可指定快照或取最新 ACTIVE；可选指标码过滤） */
     List<MetricValue> query(MetricQuery query);
+
+    /**
+     * 查询已发布的日粒度指标序列。实现必须限定运行环境、业务 source、指标口径和闭区间日期，
+     * 每个业务日只返回一个确定的已发布快照值；窗口缺日由调用方按数据不足处理。
+     */
+    List<WindowMetricValue> queryWindow(WindowMetricQuery query);
 
     /**
      * 按快照号读快照元数据行（不存在返回 null）；证据归属核对等元数据读取使用（G31-03 03.5/D-034）。
@@ -29,6 +38,14 @@ public interface MetricStore {
     HealthResult healthCheck();
 
     record MetricQuery(String snapshotId, boolean latestActive) {
+    }
+
+    record WindowMetricQuery(Long runtimeProfileId, Long sourceId, String metricCode, LocalDate from, LocalDate to,
+                             String definitionVersion) {
+    }
+
+    record WindowMetricValue(String snapshotId, Long runtimeProfileId, Long sourceId, String metricCode, BigDecimal value,
+                             LocalDate businessDate, String definitionVersion, LocalDateTime publishedAt) {
     }
 
     record SnapshotRef(String snapshotId, Long runtimeProfileId, String period) {

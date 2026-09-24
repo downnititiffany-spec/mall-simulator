@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import {
   buildAiEvidenceContext,
   buildFallbackContext,
+  effectiveWindowText,
   collectSnapshotIds,
   mergeWarnings,
   NON_ANALYSIS_ROW_KEYS,
@@ -12,6 +13,16 @@ import {
 } from '../src/utils/context.js'
 // S3-35：缺失告知要活过统一信封归一化才到得了屏幕/导出件 ⇒ 这条链必须一起验
 import { readEnvelope } from '../src/utils/envelope.js'
+
+test('effectiveWindowText 只显示接口回显的有效日期窗口，不读取当前输入值', () => {
+  assert.equal(effectiveWindowText({ from: '2026-09-15', to: '2026-09-21' }), '2026-09-15 ~ 2026-09-21')
+  assert.equal(effectiveWindowText({ from: '2026-09-15' }), '自 2026-09-15 起')
+  assert.equal(effectiveWindowText({ to: '2026-09-21' }), '截至 2026-09-21')
+  assert.equal(effectiveWindowText({ date: '2026-09-21' }), '2026-09-21')
+  assert.equal(effectiveWindowText({ '时间范围': '2026-09-15 ~ 2026-09-21（共 7 天）' }), '2026-09-15 ~ 2026-09-21（共 7 天）')
+  assert.equal(effectiveWindowText({ snapshotId: 'S1' }), null)
+  assert.equal(effectiveWindowText(null), null)
+})
 
 test('collectSnapshotIds 兼容 snapshotId / snapshot_id / suggestionSnapshotId 三种字段并去重排序', () => {
   const rows = [
@@ -159,8 +170,23 @@ test('buildAiEvidenceContext 遇到真实后端的占位快照号 unknown：按�
 })
 
 test('buildAiEvidenceContext 优先使用 evidence.snapshotId，并搬运 SQL/表/行数/耗时/提示词版本', () => {
+  // QA-04 更新：旧断言固定 filters['时间范围'] === 证据里的请求标签 '近30天'，
+  // 正是「请求标签当口径」的缺陷本身。现在有效查询期以结构化 query.window 为唯一来源。
   const ctx = buildAiEvidenceContext({
-    query: { rows: [{ snapshot_id: 'S20260831_23' }], tables: ['x'] },
+    query: {
+      rows: [{ snapshot_id: 'S20260831_23' }],
+      tables: ['x'],
+      window: {
+        requested: '最近 7 天',
+        requestedDays: 7,
+        from: '2026-08-26',
+        to: '2026-09-01',
+        days: 7,
+        referenceBusinessDate: '2026-09-01',
+        coveredDays: 1,
+        notice: '有效查询区间 7 天，结果只覆盖 1 天（6 天无数据），不能据此判断趋势'
+      }
+    },
     explanation: {
       evidence: {
         snapshotId: 'S20260901_24',
@@ -181,7 +207,8 @@ test('buildAiEvidenceContext 优先使用 evidence.snapshotId，并搬运 SQL/�
   assert.equal(ctx.evidence.returnedRows, 7)
   assert.equal(ctx.evidence.queryElapsedMs, 42)
   assert.equal(ctx.evidence.promptVersion, 'explain_v1')
-  assert.equal(ctx.filters['时间范围'], '近30天')
+  assert.equal(ctx.filters['时间范围'], '2026-08-26 ~ 2026-09-01（共 7 天）（有效查询区间 7 天，结果只覆盖 1 天（6 天无数据），不能据此判断趋势）')
+  assert.doesNotMatch(ctx.filters['时间范围'], /近30天/, '请求标签不得再充当有效查询期')
   assert.ok(ctx.warnings.includes('仅覆盖已支付订单'))
   // 证据齐全时不应再提 snapshotId 缺失
   assert.doesNotMatch(ctx.missingNotice, /snapshotId/)

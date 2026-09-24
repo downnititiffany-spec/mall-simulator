@@ -93,9 +93,15 @@ public class ExplanationService {
 
     /**
      * 对一次已执行查询生成证据解释。
+     *
+     * @param timeRange 页面**请求**的时间口径（仅在没有生效区间时作为兜底展示）；
+     *                  QA-04：正常情况下口径取 {@link TextToSqlService.QueryResult#window()}
+     *                  里从 SQL 解析出的生效区间，避免「解释说近30天、SQL 只查 7 天」。
      */
     public ExplanationResult explain(TextToSqlService.QueryResult query, String snapshotId,
                                      String question, String timeRange) {
+        String effectiveRange = effectiveTimeRange(query, timeRange);
+        String windowNotice = query.window() == null ? null : query.window().notice();
         Map<String, Object> evidenceMeta = new LinkedHashMap<>();
         evidenceMeta.put("snapshotId", snapshotId);
         evidenceMeta.put("question", question);
@@ -103,15 +109,22 @@ public class ExplanationService {
         evidenceMeta.put("tables", query.tables());
         evidenceMeta.put("returnedRows", query.rowsReturned());
         evidenceMeta.put("queryElapsedMs", query.elapsedMs());
-        evidenceMeta.put("timeRange", timeRange);
+        evidenceMeta.put("timeRange", effectiveRange);
+        if (query.window() != null) {
+            evidenceMeta.put("requestedTimeRange", query.window().requested());
+            evidenceMeta.put("effectiveRange", query.window().effectiveRangeText());
+            evidenceMeta.put("coveredDays", query.window().coveredDays());
+            evidenceMeta.put("effectiveDays", query.window().days());
+            evidenceMeta.put("referenceBusinessDate", query.window().referenceBusinessDate());
+        }
 
         // 结果摘要（发送给模型前限制行数，§8.6 资源限制：<=200 行）
         List<Map<String, Object>> limitedRows = query.rows().size() > 200
                 ? query.rows().subList(0, 200) : query.rows();
 
         if (!llmProvider.healthCheck()) {
-            return ruleBased(query, question, snapshotId, timeRange,
-                    "规则回退模式：模型服务不可用，未调用大模型");
+            return ruleBased(query, question, snapshotId, effectiveRange,
+                    "规则回退模式：模型服务不可用，未调用大模型", windowNotice);
         }
 
         String prompt = """
@@ -124,7 +137,8 @@ public class ExplanationService {
                 推测放入 possibleCauses；每条主要结论关联至少一个结果字段（evidenceIds 用列名）。
                 """;
         String user = "问题：" + question
-                + "\n口径：" + timeRange
+                + "\n口径：" + effectiveRange
+                + (windowNotice == null ? "" : "\n口径提示：" + windowNotice)
                 + "\n查询：\n" + toString(limitedRows)
                 + "\n证据元信息：" + evidenceMeta;
 
@@ -142,19 +156,31 @@ public class ExplanationService {
                     toStringList(parsed.path("limitations")),
                     llmProvider.providerName(),
                     new Evidence(snapshotId, question, query.sql(), query.tables(),
-                            query.rowsReturned(), query.elapsedMs(), timeRange, PROMPT_VERSION, null, null));
+                            query.rowsReturned(), query.elapsedMs(), effectiveRange, PROMPT_VERSION, null, null));
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - start;
             logCall("explanation", elapsed, "FAILED", e.getMessage());
             log.warn("explanation failed, fallback to rule-based: {}", e.getMessage());
-            return ruleBased(query, question, snapshotId, timeRange,
-                    "规则回退模式：" + providerFailureLabel(e) + "，已回退模板摘要");
+            return ruleBased(query, question, snapshotId, effectiveRange,
+                    "规则回退模式：" + providerFailureLabel(e) + "，已回退模板摘要", windowNotice);
         }
+    }
+
+    /**
+     * QA-04 口径文本的唯一取值点：优先用窗口里 SQL 解析出的生效区间；只有拿不到生效区间
+     * （校验未通过/无窗口的旧调用点）才回落展示请求标签。
+     */
+    private static String effectiveTimeRange(TextToSqlService.QueryResult query, String requested) {
+        if (query != null && query.window() != null && query.window().effectiveRangeText() != null) {
+            return query.window().effectiveRangeText();
+        }
+        return requested;
     }
 
     /** 规则化摘要（无 LLM 或 LLM 失败时的证据链兜底，§3.5.5） */
     private ExplanationResult ruleBased(TextToSqlService.QueryResult query, String question,
-                                        String snapshotId, String timeRange, String limitation) {
+                                        String snapshotId, String timeRange, String limitation,
+                                        String windowNotice) {
         String summary;
         if (query.rows().isEmpty()) {
             summary = "当前时间范围无数据，不编造结论。";
@@ -170,8 +196,14 @@ public class ExplanationService {
             f.put("evidenceIds", List.of("R" + (i + 1)));
             facts.add(f);
         }
+        // QA-04：请求口径与生效区间/覆盖天数不一致时，回退摘要也必须如实受限，不能只报结论
+        List<String> limitations = new ArrayList<>();
+        limitations.add(limitation);
+        if (windowNotice != null) {
+            limitations.add(windowNotice);
+        }
         return new ExplanationResult(summary, facts, List.of(), List.of(),
-                List.of(limitation),
+                List.copyOf(limitations),
                 EvidenceTemplates.Narrative.PROVIDER_TEMPLATE,
                 new Evidence(snapshotId, question, query.sql(), query.tables(),
                         query.rowsReturned(), query.elapsedMs(), timeRange, PROMPT_VERSION, null, null));

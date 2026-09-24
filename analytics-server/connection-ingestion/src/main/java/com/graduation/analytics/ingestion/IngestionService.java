@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -59,6 +61,9 @@ import java.util.zip.CRC32;
 public class IngestionService {
 
     private static final DateTimeFormatter BATCH_NO = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    private record PendingCheckpoint(Path file, LocalFileIngestor.FileResult result) {
+    }
 
     private final IngestionBatchMapper batchMapper;
     private final IngestionBatchFileMapper batchFileMapper;
@@ -158,6 +163,7 @@ public class IngestionService {
         CRC32 checksum = new CRC32();
         var schemaVersions = new TreeMap<String, Boolean>();
         var files = new ArrayList<Map<String, Object>>();
+        var pendingCheckpoints = new ArrayList<PendingCheckpoint>();
         boolean anyNewBytes = false;   // B-08：本次是否读到过新字节（含新增/重建/追加三种情形）
         LocalDateTime startedAt = eventClock.nowLdt();
         try {
@@ -195,7 +201,7 @@ public class IngestionService {
                                         + " 已消费文件 " + fileName + "，本轮该文件又有新内容；"
                                         + "同一批次不得二次消费同一输入（重放须开新批次）");
                     }
-                    var res = ingestor.ingestFile(entry.file(), batch.getId(), runtimeProfileId, sourceId,
+                    var res = ingestor.ingestFileDeferredCheckpoint(entry.file(), batch.getId(), runtimeProfileId, sourceId,
                             acceptedDir, quarantineDir, trace, checksum, mapping);
                     // endOffset > startOffset ⇒ 真实推进了断点（有新内容可读），与 fileCount 的
                     // "产出了记录"是两件事：全是坏行的文件同样说明数据源在产出（B-08 / D-022）
@@ -219,6 +225,7 @@ public class IngestionService {
                         bf.setRecordCount(res.collected());
                         bf.setStatus("LANDED");
                         batchFileMapper.insert(bf);
+                        pendingCheckpoints.add(new PendingCheckpoint(entry.file(), res));
                         // 清单的 files[].file 仍是**文件名**（res.filePath()＝FileResult 的既有语义）：
                         // ingestion-manifest.v1.schema.json 明确写着「文件名（非绝对路径）」并引用
                         // LocalFileIngestor 的 getFileName()，改它的取值域属于契约语义变更（真决策门）。
@@ -241,14 +248,6 @@ public class IngestionService {
             throw new UncheckedIOException("采集目录准备失败", e);
         }
 
-        batch.setRecordCount(recordCount);
-        batch.setQuarantineCount(quarantineCount);
-        batch.setErrorCount(errorCount);
-        batch.setStatus(errorCount > 0 ? IngestionBatch.STATUS_FAILED
-                : (quarantineCount > 0 ? IngestionBatch.STATUS_QUARANTINED : IngestionBatch.STATUS_SUCCESS));
-        batch.setEndTime(eventClock.nowLdt());
-        batchMapper.updateById(batch);
-
         // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
         // S2-02B：**失败批次不产出清单**。清单 schema 的 status 是 const "READY"
         // （contract-specs/schemas/ingestion-manifest.v1.schema.json：清单文档只能断言"可交付"），
@@ -262,15 +261,40 @@ public class IngestionService {
         // DWD 侧 event_id 去重兜底，见 D-107/D-117 的 DUPLICATE_EVENT 归属）。
         String manifestUri = null;
         if (errorCount == 0) {
-            String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
-                    recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
-                    source, mapping);
-            manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
+            try {
+                String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
+                        recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
+                        source, mapping);
+                manifestUri = writeManifest(landingRoot, batchId, manifestJson);
+            } catch (RuntimeException e) {
+                errorCount++;
+                log.error("批次 {} manifest 发布失败；不推进任何文件断点，下一轮可从源文件重读", batchId, e);
+            }
+        }
+        if (manifestUri != null) {
+            // READY manifest 是下游唯一交付凭据：先原子发布，再推进断点。若断点写入发生瞬时故障，
+            // 下游仍有完整批次可消费，最多导致后续 at-least-once 重投，由 DWD event_id 去重兜底。
+            for (PendingCheckpoint pending : pendingCheckpoints) {
+                try {
+                    ingestor.commitCheckpoint(pending.file(), runtimeProfileId, sourceId, pending.result());
+                } catch (RuntimeException e) {
+                    log.error("批次 {} manifest 已发布但文件断点提交失败 file={}；本轮数据仍可交付，后续可能重复投递",
+                            batchId, pending.file(), e);
+                }
+            }
         } else {
-            log.warn("批次 {} 有 {} 个文件采集失败（status=FAILED）⇒ 不产出批次清单；"
+            log.warn("批次 {} 有 {} 个文件采集失败（status=FAILED）⇒ 不产出批次清单且不推进断点；"
                             + "accepted/quarantine 目录保留为失败证据，重放须开新批次",
                     batchId, errorCount);
         }
+
+        batch.setRecordCount(recordCount);
+        batch.setQuarantineCount(quarantineCount);
+        batch.setErrorCount(errorCount);
+        batch.setStatus(errorCount > 0 ? IngestionBatch.STATUS_FAILED
+                : (quarantineCount > 0 ? IngestionBatch.STATUS_QUARANTINED : IngestionBatch.STATUS_SUCCESS));
+        batch.setEndTime(eventClock.nowLdt());
+        batchMapper.updateById(batch);
 
         log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={} noNewData={}",
                 batchNo, batch.getStatus(), recordCount, quarantineCount, errorCount, fileCount, acceptedBytes,
@@ -387,16 +411,29 @@ public class IngestionService {
         }
     }
 
-    private String writeManifestQuietly(Path landingRoot, String batchId, String manifestJson) {
+    private String writeManifest(Path landingRoot, String batchId, String manifestJson) {
+        Path temp = null;
         try {
             Path dir = landingRoot.resolve("manifests");
             Files.createDirectories(dir);
             Path file = dir.resolve(batchId + ".json");
-            Files.writeString(file, manifestJson, StandardCharsets.UTF_8);
+            temp = Files.createTempFile(dir, "." + batchId + "-", ".tmp");
+            Files.writeString(temp, manifestJson, StandardCharsets.UTF_8);
+            try {
+                Files.move(temp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
+            }
             return file.toUri().toString();
         } catch (IOException e) {
-            log.error("manifest 写入失败 batchId={}", batchId, e);
-            return null;
+            if (temp != null) {
+                try {
+                    Files.deleteIfExists(temp);
+                } catch (IOException cleanupError) {
+                    e.addSuppressed(cleanupError);
+                }
+            }
+            throw new UncheckedIOException("manifest 写入失败 batchId=" + batchId, e);
         }
     }
 

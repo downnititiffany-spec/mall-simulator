@@ -18,6 +18,7 @@ import java.util.Map;
  * 放进 platform-common 只会让公共模块背上看板语义。</p>
  *
  * @param snapshotId        本次请求固定使用的快照号；无可用快照时为 null
+ * @param sourceId          业务数据源身份（source_registry.id）；历史快照或无法溯源时为 null
  * @param source            快照的**发布方/生产者**（`metric_snapshot.source`，§17.6 成功快照只接受
  *                          `spark-ads`）；无可用快照时为 null。**不是业务源身份** —— 源身份由 per-source
  *                          warehouse namespace 与 ODS/DWD 的 `source_system`/`source_instance_id` 承载
@@ -33,6 +34,7 @@ import java.util.Map;
  */
 public record AnalysisViewModel<T>(
         String snapshotId,
+        Long sourceId,
         String source,
         String businessTime,
         String dataUpdatedAt,
@@ -47,6 +49,9 @@ public record AnalysisViewModel<T>(
 
     /** 请求显式指定的快照号在指标库中不存在（不能假装读了它） */
     public static final String WARN_UNKNOWN_SNAPSHOT = "UNKNOWN_SNAPSHOT";
+
+    /** 快照未保存 source_registry.id；不得用当前 runtime profile 绑定关系推断历史归属 */
+    public static final String WARN_SOURCE_ID_UNAVAILABLE = "SOURCE_ID_UNAVAILABLE";
 
     /** 契约要求但本期没有 Hive 来源的维度表（分类/地区结构），只能返回空数组并显式警告 */
     public static final String WARN_UNKNOWN_DIMENSION_TABLE = "UNKNOWN_DIMENSION_TABLE";
@@ -84,7 +89,14 @@ public record AnalysisViewModel<T>(
     public static <T> AnalysisViewModel<T> of(String snapshotId, String source, String businessTime,
                                              String dataUpdatedAt, String definitionVersion, String qualityStatus,
                                              Map<String, Object> filters, T data, List<String> warnings) {
-        return new AnalysisViewModel<>(snapshotId, source, businessTime, dataUpdatedAt, definitionVersion,
+        return of(snapshotId, null, source, businessTime, dataUpdatedAt, definitionVersion, qualityStatus,
+                filters, data, warnings);
+    }
+
+    public static <T> AnalysisViewModel<T> of(String snapshotId, Long sourceId, String source, String businessTime,
+                                             String dataUpdatedAt, String definitionVersion, String qualityStatus,
+                                             Map<String, Object> filters, T data, List<String> warnings) {
+        return new AnalysisViewModel<>(snapshotId, sourceId, source, businessTime, dataUpdatedAt, definitionVersion,
                 qualityStatus, filters, data, warnings);
     }
 
@@ -100,7 +112,7 @@ public record AnalysisViewModel<T>(
      */
     @SuppressWarnings("unchecked")
     public static <T> AnalysisViewModel<T> empty(Map<String, Object> filters, List<String> warnings) {
-        return new AnalysisViewModel<>(null, null, null, null, null, MetricQualityGate.UNKNOWN,
+        return new AnalysisViewModel<>(null, null, null, null, null, null, MetricQualityGate.UNKNOWN,
                 filters, (T) Map.of(), warnings);
     }
 }

@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -78,8 +77,8 @@ class AdsDataQualityErrorRateNullableMigrationScriptTest {
     }
 
     @Test
-    @DisplayName("append-only：V3 的 error_rate 原始定义未被改动，db/metric 版本号唯一且 V11 是下一个号")
-    void appendOnlyHoldsAndV11IsTheNextVersion() throws IOException {
+    @DisplayName("append-only：V3 原始定义与 V11 修复迁移保留，V12 可继续追加")
+    void appendOnlyHoldsAndV11RemainsBeforeV12() throws IOException {
         String v3 = Files.readString(METRIC_DIR.resolve(V3_NAME), StandardCharsets.UTF_8);
         assertTrue(Pattern.compile(V3_ERROR_RATE_SEMANTICS).matcher(v3).find(),
                 "V3 的 error_rate DECIMAL(12,6) NOT NULL DEFAULT 0 必须原样保留（append-only，"
@@ -97,10 +96,10 @@ class AdsDataQualityErrorRateNullableMigrationScriptTest {
                         versions.put(version, n);
                     });
         }
-        int max = versions.keySet().stream().max(Comparator.naturalOrder()).orElse(0);
-        assertEquals(11, max, "V11 必须是 db/metric 当前最高版本（下一个 append-only 号），实测最高 V" + max);
         assertTrue(versions.containsKey(11) && versions.get(11).equals(V11_NAME),
                 "V11 文件名必须是 " + V11_NAME);
+        assertTrue(versions.containsKey(12) && versions.get(12).equals("V12__metric_snapshot_source_id.sql"),
+                "V12 必须在 V11 之后作为 sourceId 的 append-only 迁移");
     }
 
     @Test

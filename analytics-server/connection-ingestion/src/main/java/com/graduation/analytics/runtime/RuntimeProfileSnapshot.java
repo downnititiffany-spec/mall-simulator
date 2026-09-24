@@ -38,11 +38,19 @@ public record RuntimeProfileSnapshot(
         String timezone) {
 
     public static RuntimeProfileSnapshot from(RuntimeProfile p) {
+        return from(p, p == null ? null : p.getSourceId());
+    }
+
+    /**
+     * 使用流水线已冻结的源身份构建运行快照。运行期必须先验证当前 profile.sourceId
+     * 与冻结值相同；此重载确保实际提交作业使用的是 pipeline_run.source_id，而非重读的可变值。
+     */
+    public static RuntimeProfileSnapshot from(RuntimeProfile p, Long frozenSourceId) {
         if (p == null) {
             throw new IllegalArgumentException("RuntimeProfile 不能为空");
         }
         return new RuntimeProfileSnapshot(
-                p.getId(), p.getSourceId(), p.getVersion(), p.getType(), p.getLandingUri(),
+                p.getId(), frozenSourceId, p.getVersion(), p.getType(), p.getLandingUri(),
                 p.getHiveJdbcUrl(),
                 p.getSparkMaster(), p.getDeployMode(), p.getYarnQueue(),
                 p.getSshHost(), p.getSshPort(), p.getSshUser(),

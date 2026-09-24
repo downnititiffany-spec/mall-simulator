@@ -111,6 +111,17 @@ final class AdsRows {
         return value;
     }
 
+    /**
+     * 把请求日期渲染成 ADS 落库的紧凑 {@code dt} 文本（{@code yyyyMMdd}），供 WHERE 参数绑定使用。
+     *
+     * <p>QA-01：日期筛选真正下推到 ADS 读取后，请求侧的 {@link LocalDate} 必须在**唯一一处**
+     * 转成与列值同格式的文本。dt 列是 varchar 存紧凑值，用 ISO {@code yyyy-MM-dd} 比较会恒 false
+     * 而静默 0 行（2026-09-11 事故同源），因此转换只在这里定义，并接受 {@code null}（表示该端不设边界）。</p>
+     */
+    static String compactDate(LocalDate date) {
+        return date == null ? null : date.format(COMPACT_DATE);
+    }
+
     /** 规范顺序下标；不在规范列表里的取值统一排在末尾（保证输出稳定可对账） */
     static int orderIndex(List<String> order, String value) {
         int index = order.indexOf(value);

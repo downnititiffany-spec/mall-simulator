@@ -129,6 +129,15 @@ export function evaluationRows(list) {
     baselineValue: num(e.baselineValue),
     actualValue: num(e.actualValue),
     evalWindowDays: formatInteger(e.evalWindowDays),
+    baselineWindow: e.baselineWindowStart && e.baselineWindowEnd
+      ? `${text(e.baselineWindowStart)} ~ ${text(e.baselineWindowEnd)}` : EMPTY_TEXT,
+    actualWindow: e.windowStart && e.windowEnd
+      ? `${text(e.windowStart)} ~ ${text(e.windowEnd)}` : EMPTY_TEXT,
+    baselineSamples: formatInteger(e.baselineSampleCount),
+    actualSamples: formatInteger(e.actualSampleCount),
+    sourceId: e.sourceId === null || e.sourceId === undefined ? EMPTY_TEXT : String(e.sourceId),
+    metricDefinitionVersion: text(e.metricDefinitionVersion),
+    note: text(e.note),
     createdAt: formatDateTime(e.createdAt)
   }))
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -44,28 +45,64 @@ public class MetricPublishRepository {
     }
 
     /**
-     * 登记/重置为 BUILDING（幂等重试安全）：
-     * 已存在的同 snapshot_id 行先归零（active_flag=NULL 释放唯一 ACTIVE），再按需插入。
+     * 登记/重置为 BUILDING（仅非 ACTIVE 快照允许幂等重试）：
+     * 已存在的非 ACTIVE 同 snapshot_id 行先归零（active_flag=NULL 释放唯一 ACTIVE），再按需插入；
+     * 当前 ACTIVE 快照必须使用新 snapshot_id，避免在本次发布事务之外提前丢失旧 ACTIVE。
      */
+    @Transactional(transactionManager = "metricPublishTransactionManager", rollbackFor = Exception.class)
     public void createBuilding(long runtimeProfileId, Integer runtimeProfileVersion, String snapshotId,
                                String businessDate, String businessTime, Long pipelineRunId,
                                String definitionVersion) {
+        createBuilding(runtimeProfileId, runtimeProfileVersion, snapshotId, businessDate, businessTime,
+                pipelineRunId, definitionVersion, null);
+    }
+
+    /**
+     * 带业务数据源身份登记 BUILDING。sourceId 必须来自创建该流水线任务时固定的
+     * source_registry.id；不得从可变的当前 runtime profile 绑定关系回查。
+     * 已保存的非空身份不可覆盖：同身份重试允许，未知身份重试会保留旧值，冲突身份拒绝。
+     */
+    @Transactional(transactionManager = "metricPublishTransactionManager", rollbackFor = Exception.class)
+    public void createBuilding(long runtimeProfileId, Integer runtimeProfileVersion, String snapshotId,
+                               String businessDate, String businessTime, Long pipelineRunId,
+                               String definitionVersion, Long sourceId) {
         LocalDateTime business = parseBusinessTime(businessTime);
+        List<String> activeSnapshots = publishJdbc.query(
+                "SELECT snapshot_id FROM metric_snapshot WHERE snapshot_id = ? "
+                        + "AND (status = 'ACTIVE' OR active_flag IS NOT NULL) FOR UPDATE",
+                (rs, rowNum) -> rs.getString(1), snapshotId);
+        if (!activeSnapshots.isEmpty()) {
+            throw new IllegalStateException("metric snapshot " + snapshotId
+                    + " is already ACTIVE; allocate a new snapshotId instead of resetting a published snapshot");
+        }
+        List<Long> existingSourceIds = publishJdbc.query(
+                "SELECT source_id FROM metric_snapshot WHERE snapshot_id = ? FOR UPDATE",
+                (rs, rowNum) -> rs.getObject("source_id", Long.class), snapshotId);
+        if (!existingSourceIds.isEmpty()) {
+            Long persistedSourceId = existingSourceIds.get(0);
+            if (sourceId != null && persistedSourceId != null && !persistedSourceId.equals(sourceId)) {
+                throw new IllegalStateException("metric snapshot " + snapshotId
+                        + " already belongs to source_id " + persistedSourceId
+                        + "; refusing conflicting source_id " + sourceId);
+            }
+            // NULL means the caller has no identity to assert; it must not erase an identity already fixed.
+            sourceId = persistedSourceId == null ? sourceId : persistedSourceId;
+        }
         publishJdbc.update("UPDATE metric_snapshot SET status = ?, active_flag = NULL, failure_reason = NULL, "
-                        + "source = 'spark-ads', runtime_profile_version = ?, pipeline_run_id = ?, "
+                        + "source = 'spark-ads', source_id = ?, runtime_profile_version = ?, pipeline_run_id = ?, "
                         + "business_time = ?, data_updated_at = ? WHERE snapshot_id = ?",
-                MetricSnapshot.STATUS_BUILDING, runtimeProfileVersion, pipelineRunId,
+                MetricSnapshot.STATUS_BUILDING, sourceId, runtimeProfileVersion, pipelineRunId,
                 Timestamp.valueOf(business), Timestamp.valueOf(business), snapshotId);
 
         int version = nextVersion(runtimeProfileId);
         publishJdbc.update("INSERT INTO metric_snapshot (snapshot_id, runtime_profile_id, runtime_profile_version, "
                         + "business_time, pipeline_run_id, status, version, definition_version, data_updated_at, "
-                        + "source, active_flag) "
-                        + "SELECT ?,?,?,?,?,?,?,?,?,?,NULL FROM DUAL "
+                        + "source, source_id, active_flag) "
+                        + "SELECT ?,?,?,?,?,?,?,?,?,?,?,NULL FROM DUAL "
                         + "WHERE NOT EXISTS (SELECT 1 FROM metric_snapshot WHERE snapshot_id = ?)",
                 snapshotId, runtimeProfileId, runtimeProfileVersion, Timestamp.valueOf(business), pipelineRunId,
                 MetricSnapshot.STATUS_BUILDING, version, definitionVersion == null ? "" : definitionVersion,
-                Timestamp.valueOf(business), "spark-ads", snapshotId);
+                Timestamp.valueOf(business), "spark-ads", sourceId, snapshotId);
         log.info("metric publish: 快照 {} 登记 BUILDING（profile={}, version={}, businessDate={}）",
                 snapshotId, runtimeProfileId, version, businessDate);
     }

@@ -30,7 +30,7 @@ const props = defineProps({
 })
 
 // 设计系统统一色板（Data-Dense Dashboard）：Navy 主/蓝次/琥珀强调/绿成功/灰
-const PALETTE = ['#1E40AF', '#3B82F6', '#D97706', '#059669', '#64748B', '#7C3AED']
+const PALETTE = ['#1E40AF', '#3B82F6', '#D97706', '#059669', '#64748B', 'var(--ai)']
 const FONT = "'Fira Sans','PingFang SC','Microsoft YaHei',sans-serif"
 
 const el = ref(null)

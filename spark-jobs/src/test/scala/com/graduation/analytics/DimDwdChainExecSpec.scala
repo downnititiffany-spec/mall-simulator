@@ -507,7 +507,7 @@ class DimDwdChainExecSpec extends AnyFlatSpec with Matchers with BeforeAndAfterA
     A.dim.inputRecords should be(18L)
     A.dim.outputRecords should be(A.dimUser + A.dimProduct)
     A.dim.outputRecords should be(7L)
-    A.dim.message should be("user=4->3 product=14->4")
+    A.dim.message should be("user=4->3 product=14->4 productAsOfEligible=5")
   }
 
   it should "bdw：input=ODS 行为 16 / output=14 / rejected=1（与 reject 表行数一致）" in {

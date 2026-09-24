@@ -73,6 +73,18 @@ test('漏斗阶段名优先用后端 label，回退 stage', () => {
   assert.equal(fallback.series[0].data[0].name, 'pay')
 })
 
+test('漏斗保留后端业务阶段顺序，不按人数重新排序', () => {
+  const opt = funnelOption([
+    { stage: 'view', label: '浏览', users: 8 },
+    { stage: 'intent', label: '意向', users: 3 },
+    { stage: 'order', label: '下单', users: 7 },
+    { stage: 'pay', label: '支付', users: 7 }
+  ])
+  assert.equal(opt.series[0].sort, 'none')
+  assert.deepEqual(opt.series[0].data.map((row) => row.name), ['浏览', '意向', '下单', '支付'])
+  assert.deepEqual(opt.series[0].data.map((row) => row.value), [8, 3, 7, 7])
+})
+
 test('商品热度排行按后端顺序展示（不前端重排）', () => {
   const opt = productHeatOption([{ productName: '甲', heat: 9.5 }, { productName: '乙', heat: 8.1 }])
   assert.deepEqual(opt.yAxis.data, ['甲', '乙'])

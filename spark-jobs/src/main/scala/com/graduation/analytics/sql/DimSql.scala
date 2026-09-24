@@ -48,7 +48,9 @@ object DimSql {
        |""".stripMargin
 
   /**
-   * dim_product：每个 product_id 取最近一次商品建档/变更事件生成全量快照。
+   * dim_product：以 dt 为截止日，回看历史 ODS 商品建档/变更事件，生成当日完整维度快照。
+   * 商品是缓慢变化维度：当天没有商品变更，不代表当天维表应为空。每个业务日都从截至该日的
+   * 历史事件中选出每个商品的最新状态，保证交易/行为事实能关联商品名称。
    *
    * 追加列（4 个，全部在列尾）：`product_key` / `category_key` / `parent_category_key` / `brand_key`。
    * 类目与品牌键取**原始** `payload_*_id`（A2）；空/缺 ⇒ **NULL 键**（D-087），
@@ -78,9 +80,11 @@ object DimSql {
        |  ${SurrogateKey.toBIGINT("p.source_system", "brand", "p.payload_brand_id")} AS brand_key
        |FROM (
        |  SELECT *,
-       |         ROW_NUMBER() OVER (PARTITION BY payload_product_id ORDER BY event_time DESC) AS rn
+       |         ROW_NUMBER() OVER (
+       |           PARTITION BY payload_product_id
+       |           ORDER BY event_time DESC, ingest_batch_id DESC, event_id DESC) AS rn
        |  FROM ${ns.ods}.ods_product_event
-       |  WHERE dt = '$dt'
+       |  WHERE dt <= '$dt'
        |    AND schema_version = '1.0'
        |    AND payload_product_id IS NOT NULL
        |    AND event_type IN ('product_created', 'product_updated')

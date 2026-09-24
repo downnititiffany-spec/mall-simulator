@@ -11,7 +11,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * R7-4 信封结构 L0 单测（不连库）：验证契约 §2 的 9 个字段（v1.2 起含 `source`）与空信封语义。
+ * R7-4 信封结构 L0 单测（不连库）：验证契约 §2 元数据字段（含业务 `sourceId` 与发布方 `source`）与空信封语义。
  */
 class AnalysisViewModelTest {
 
@@ -22,6 +22,7 @@ class AnalysisViewModelTest {
                 AnalysisViewModel.empty(Map.of("from", "2026-09-01"), List.of(AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
 
         assertThat(model.snapshotId()).isNull();
+        assertThat(model.sourceId()).isNull();
         assertThat(model.source()).isNull();
         assertThat(model.businessTime()).isNull();
         assertThat(model.dataUpdatedAt()).isNull();
@@ -40,8 +41,19 @@ class AnalysisViewModelTest {
                 AnalysisViewModel.of("S1", "spark-ads", null, null, "v2", "PASS", null, "data", null);
 
         assertThat(model.source()).isEqualTo("spark-ads");
+        assertThat(model.sourceId()).isNull();
         assertThat(model.filters()).isEmpty();
         assertThat(model.warnings()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("业务 sourceId 与发布方 source 是不同维度")
+    void businessSourceIdDoesNotReplacePublisherSource() {
+        AnalysisViewModel<String> model = AnalysisViewModel.of("S1", 42L, "spark-ads", null, null,
+                "v2", "PASS", null, "data", List.of());
+
+        assertThat(model.sourceId()).isEqualTo(42L);
+        assertThat(model.source()).isEqualTo("spark-ads");
     }
 
     @Test

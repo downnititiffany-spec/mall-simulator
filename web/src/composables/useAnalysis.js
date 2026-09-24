@@ -39,6 +39,9 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [] }) {
     const ctx = context.value || {}
     return {
       snapshotId: ctx.snapshotId || null,
+      // sourceId 是业务来源 source_registry.id；与 source（指标快照发布方）分字段导出。
+      // null 必须保持 null，不能由当前选源或发布方推断。
+      sourceId: ctx.sourceId ?? null,
       businessTime: ctx.businessTime || null,
       dataUpdatedAt: ctx.dataUpdatedAt || null,
       source: ctx.source || null,

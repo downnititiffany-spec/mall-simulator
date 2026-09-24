@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>后端 owner：{@code AnalysisViewModel.WARN_*} 共 8 个常量（契约 §16.4：所有新错误码统一 owner ＝
  *       {@code AnalysisViewModel}），{@code docs/contracts/analysis-viewmodel-r7-4.md:182} 约定 {@code filters}
  *       等字段原样回显、前端据码展示中文文案；</li>
- *   <li>前端镜像：{@code web/src/utils/envelope.js} 的 {@code WARNING_TEXT}（8 键）＋
+ *   <li>前端镜像：{@code web/src/utils/envelope.js} 的 {@code WARNING_TEXT}（9 键）＋
  *       {@code web/src/utils/context.js} 的 {@code WARNING_TEXT_EXTRA}（4 键，页面本地码）。</li>
  * </ul>
  * 两侧一旦不同步，页面会把**原始编码**直接打给用户（{@code warningText = (code) => WARNING_TEXT[code] || String(code)}），
@@ -131,6 +131,7 @@ class EnvelopeWarningCodeMirrorTest {
         expected.put("RFM_RAW_VALUES_UNAVAILABLE", 1);
         expected.put("RFM_PERIOD_UNAVAILABLE", 1);
         expected.put("MULTIPLE_RULE_VERSIONS", 1);
+        expected.put("SOURCE_ID_UNAVAILABLE", 1);
         expected.put("QUALITY_RULE_FAILED", 1);
         expected.put("ENVELOPE_MISSING", 0);
         expected.put("AI_EVIDENCE_PARTIAL", 0);

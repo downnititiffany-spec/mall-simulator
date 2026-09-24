@@ -1,26 +1,37 @@
 <template>
   <div>
-    <div class="page-title">运营大盘</div>
+    <div class="page-head">
+      <div>
+        <h1>运营大盘</h1>
+        <div class="page-desc">核心指标快照 + 销售/活跃趋势；口径与质量状态逐项可追溯</div>
+      </div>
+    </div>
 
-    <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <label style="font-size:13px;color:#374151">趋势日期范围：</label>
-      <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
-      <span style="color:#9ca3af">至</span>
-      <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
-      <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
-      <button style="font-size:12px" :disabled="!metricExportable" @click="doExport">导出 CSV</button>
-      <button style="font-size:12px" @click="showDictionary = !showDictionary">
+    <div class="filter-bar">
+      <label class="row text-sm secondary">趋势日期范围</label>
+      <input class="input input-date" type="date" v-model="from" :disabled="loading" />
+      <span class="muted">至</span>
+      <input class="input input-date" type="date" v-model="to" :disabled="loading" />
+      <button class="btn btn-sm btn-primary" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
+      <button class="btn btn-sm" :disabled="!metricExportable" @click="doExport">导出 CSV</button>
+      <button class="btn btn-sm" @click="showDictionary = !showDictionary">
         {{ showDictionary ? '收起指标口径' : '查看指标口径' }}
       </button>
-      <span style="font-size:12px;color:#9ca3af">日期范围只作用于趋势，指标卡固定取本次快照</span>
+      <span class="sep"></span>
+      <span class="tip">日期范围只作用于趋势，指标卡固定取本次快照</span>
     </div>
+    <div v-if="rangeError" class="alert alert-danger">{{ rangeError }}</div>
 
     <AnalysisContext :context="context || {}" :state="state" :error="error" />
 
     <template v-if="!empty && !failed">
-      <div v-if="staleness" data-test="staleness-note"
-           style="border:1px solid #F59E0B;background:#FFFBEB;color:#92400E;font-size:13px;padding:10px 14px;margin-bottom:10px;border-radius:4px">
-        ⚠ {{ staleness.text }}
+      <div v-if="staleness" data-test="staleness-note" class="alert alert-warning">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+          <path d="M12 9v4" /><circle cx="12" cy="17" r=".6" fill="currentColor" />
+        </svg>
+        <div>{{ staleness.text }}</div>
       </div>
       <div class="metric-cards">
         <div v-for="m in cards" :key="m.metricCode" class="metric-card">
@@ -48,14 +59,14 @@
 
       <div class="chart-box">
         <div class="chart-title">数据质量（快照 run）</div>
-        <div style="font-size:13px;color:#374151">质量规则：{{ qualityText }}</div>
-        <div style="font-size:13px;color:#374151;margin-top:4px">规则版本：{{ ruleVersionsText }}</div>
+        <div style="font-size:13px;color:var(--gray-700)">质量规则：{{ qualityText }}</div>
+        <div style="font-size:13px;color:var(--gray-700);margin-top:4px">规则版本：{{ ruleVersionsText }}</div>
         <div style="font-size:12px;color:#94A3B8;margin-top:6px">{{ RULE_VERSION_NOTE }}</div>
       </div>
 
       <div v-if="showDictionary" class="table-box">
         <div class="chart-title">指标口径（来自 analytics_meta.metric_definition）</div>
-        <table>
+        <table class="data-table">
           <thead>
             <tr><th>指标编码</th><th>指标名称</th><th>单位</th><th>口径公式</th></tr>
           </thead>
@@ -87,7 +98,7 @@ import { warningText } from '../utils/envelope'
 import { qualitySummaryText, ruleVersionText, RULE_VERSION_NOTE } from '../utils/quality'
 import { salesTrendOption, activeTrendOption, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
-import { localIsoDayOffset } from '../utils/localDate.js'
+import { dateRangeErrorText, isRangeInverted, localIsoDayOffset } from '../utils/localDate.js'
 // S3-40：窗口口径（repeat_rate）的观察期解析与限制说明唯一属主在 utils/metricPeriod.js，视图只引用不自拼
 import { periodText, WINDOW_METRIC_NOTE } from '../utils/metricPeriod'
 // S3-41：清单外指标的量纲/展示名唯一属主在 utils/metricDisplay.js，视图只引用不自拼
@@ -100,6 +111,8 @@ import ChartState from '../components/ChartState.vue'
 const from = ref(localIsoDayOffset(-6))
 const to = ref(localIsoDayOffset(0))
 const showDictionary = ref(false)
+// QA-01：倒置区间的页面提示（判据与文案的唯一属主是 utils/localDate.js）
+const rangeError = ref('')
 
 const analysis = useAnalysis({
   fetcher: (params, signal) => api.overview(params, { signal }),
@@ -190,6 +203,12 @@ const metricExportable = computed(() => exportable.value && cards.value.length >
 
 const load = () => {
   if (loading.value) return
+  // QA-01：from > to 属于无效区间（后端会 400），前端先拦下并给出明确提示，不发注定失败的请求
+  if (isRangeInverted(from.value, to.value)) {
+    rangeError.value = dateRangeErrorText(from.value, to.value)
+    return
+  }
+  rangeError.value = ''
   return analysis.load({ from: from.value, to: to.value })
 }
 

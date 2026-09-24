@@ -1,7 +1,18 @@
-# R7-4 分析接口 ViewModel 契约（冻结版 v1）
+# R7-4 分析接口 ViewModel 契约（v1 系列；当前版本 v1.11）
 
 > 依据：指导书 V2.0 §18.1 / §18.3 / §24.6。**本文件是 R7-4 后端与前端唯一契约**，
 > 两侧实现必须逐字段对齐；若实现中确需改动，先改本文件再改代码。
+
+> **v1.11（2026-09-23，G31-03.3 加性补充）**：统一分析信封新增 `sourceId`，表示该响应固定的 `snapshotId`
+> 所属业务数据源 `source_registry.id`。它由创建流水线 run 时冻结的来源身份，经 `pipeline_run.source_id`
+> 传至 `metric_snapshot.source_id` 后读取；历史 run/快照无法可靠归因时为 `null`，并以
+> `SOURCE_ID_UNAVAILABLE` 标记，不得从当前可变 `runtime_profile.source_id`、当前页面所选来源或
+> `source='spark-ads'` 推导。既有 `source` 字段仍只表示指标快照的发布方/生产者，语义不变。
+>
+> `sourceId` 是纯加性字段，不改变现有字段、指标口径、筛选或授权行为。JSON 表示为正整数或 `null`；
+> JavaScript 消费端只接受可安全精确表示的正整数，否则按未知处理。发布快照时同一 `snapshotId` 的
+> 非空来源身份不可改写；相同来源可幂等重试，身份不一致必须在写入前拒绝。V30/V12 迁移只新增可空列，
+> 不回填历史来源。
 
 > **v1.1（2026-09-16，S3-16 加性补充）**：按指导书 V3.0 §7 阶段4 L156 与设计 V3.0 §11.2 L435 /
 > §11.4 L449 / §15 L676，`/analysis/users` 与 `/analysis/rfm` 补**消费已落库的 RFM 原值**
@@ -229,6 +240,7 @@
 ```json
 {
   "snapshotId": "S20260901_24",
+  "sourceId": 1,
   "source": "spark-ads",
   "businessTime": "2026-09-01T00:00:00",
   "dataUpdatedAt": "2026-09-10T20:12:33",
@@ -243,6 +255,7 @@
 | 字段 | 类型 | 来源/口径 |
 |---|---|---|
 | `snapshotId` | string，可为 null | 本次请求固定的快照；无 ACTIVE 时为 null |
+| `sourceId` | 正整数，可为 null（**v1.11 新增**） | 固定快照所属的 `source_registry.id`；来源未知/历史未记录/无快照时为 null；不得用可变 runtime profile 绑定或发布方推断。超过 JavaScript 可安全精确表示范围的消费端必须按未知处理 |
 | `source` | string，可为 null（**v1.2 新增**） | `metric_snapshot.source`——该快照的**发布方/生产者**（§17.6 成功快照只接受 `spark-ads`）；无可用快照时 null；取到快照但列为空串 ⇒ `""`（与 `definitionVersion` 同口径，不臆造值）。**不是业务源身份**，见文首 v1.2 口径边界 |
 | `businessTime` | string ISO，可为 null | `metric_snapshot.business_time` |
 | `dataUpdatedAt` | string ISO，可为 null | `metric_snapshot.data_updated_at`（无则 LOAD 时间） |

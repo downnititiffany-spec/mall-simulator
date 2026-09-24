@@ -73,9 +73,21 @@ V2 逐字节一致），`FLUME_RAW`＝递归读 `raw/` 下的完成文件；**�
 ## 切换到真实 Flume（SINGLE_NODE / REMOTE_CLUSTER）
 
 1. 选一份配置部署（阶段 2 用 `flume-spooldir.conf`），position/channel/spool 目录都用持久盘；
-2. 把 `runtime_profile.landing_layout` 设为与该配置一致的值（`flume-spooldir.conf` ⇒ `FLUME_RAW`），
-   并把 `landing_uri` 指向 sink 的落地区根；
-3. 采集验收（§5.2.9）：暂停 Flume → 商城继续生成 → 恢复 Flume → 事件最终进入 Landing
+2. 使用 Flume **1.10+**（建议 1.11.0），从受保护的启动环境提供以下变量；它们都属于部署配置，
+   不写入仓库或 Java 源码：
+
+   | 环境变量 | 用途 | 示例（仅示例） |
+   |---|---|---|
+   | `FLUME_SPOOL_DIR` | 已完成输入文件目录 | `/data/flume/spool/mall` |
+   | `FLUME_CHANNEL_CHECKPOINT_DIR` | File Channel 检查点目录 | `/data/flume/channel/checkpoint` |
+   | `FLUME_CHANNEL_DATA_DIR` | File Channel 数据目录 | `/data/flume/channel/data` |
+   | `PLATFORM_LANDING_URI` | Landing 根 URI，需与平台该源的 `RuntimeProfile.landing_uri` 完全一致 | `hdfs://namenode:8020/analytics-landing` |
+
+   checkpoint 和 data 必须落在持久盘且目录彼此分开；`PLATFORM_LANDING_URI` 可按环境选择 `file:///...` 或 `hdfs://...`，
+   不要给它附加 `/raw`，配置模板会追加 `/raw/dt=.../hour=...`。模板使用 Apache Flume 1.10+ 的 `${env:NAME}` 值替换；
+   启动前检查四个变量均非空，且 Landing URI 与平台运行档案一致。
+3. 把 `runtime_profile.landing_layout` 设为 `FLUME_RAW`，`landing_uri` 指向上表中的同一个根 URI；
+4. 采集验收（§5.2.9）：暂停 Flume → 商城继续生成 → 恢复 Flume → 事件最终进入 Landing
    且没有重复计数；确认 Landing 接收前不清理源日志（Taildir 路径下尤其重要）。
 
 ## 常用命令（本机）

@@ -37,7 +37,8 @@ test('Pipeline 默认业务日使用本地日历 helper，不能退回 UTC 日�
 
 test('分析页默认近 7 天范围共用本地日历 helper，不再各自从 UTC instant 截日期', () => {
   for (const source of [behaviorSource, salesSource, overviewSource]) {
-    assert.match(source, /import \{ localIsoDayOffset \} from '\.\.\/utils\/localDate\.js'/)
+    // 允许同一 import 语句里带上 QA-01 的区间判据 helper，但 localIsoDayOffset 必须来自同一属主
+    assert.match(source, /import \{[^}]*\blocalIsoDayOffset\b[^}]*\} from '\.\.\/utils\/localDate\.js'/)
     assert.match(source, /const from = ref\(localIsoDayOffset\(-6\)\)/)
     assert.match(source, /const to = ref\(localIsoDayOffset\(0\)\)/)
     assert.doesNotMatch(source, /toISOString\(\)\.slice\(0,\s*10\)/)

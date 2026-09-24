@@ -126,7 +126,7 @@ class IngestionLandingLayoutTest {
 
     /** 每个被采文件都"采到 3 条"，批次账里因此有行、清单里因此有 files[]。 */
     private void stubIngestCollected() {
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
+        when(ingestor.ingestFileDeferredCheckpoint(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> {
                     Path file = inv.getArgument(0);
                     return new LocalFileIngestor.FileResult(file.getFileName().toString(), 0L, 64L,
@@ -149,7 +149,8 @@ class IngestionLandingLayoutTest {
     private List<String> ingestedRelativePaths(Path landingRoot) {
         ArgumentCaptor<Path> captor = ArgumentCaptor.forClass(Path.class);
         verify(ingestor, org.mockito.Mockito.atLeast(0))
-                .ingestFile(captor.capture(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any());
+                .ingestFileDeferredCheckpoint(captor.capture(), anyLong(), anyLong(), anyLong(),
+                        any(), any(), any(), any(), any());
         List<String> keys = new ArrayList<>();
         for (Path p : captor.getAllValues()) {
             keys.add(landingRoot.relativize(p).toString().replace('\\', '/'));
@@ -230,7 +231,7 @@ class IngestionLandingLayoutTest {
 
         IngestionService.RunResult result = service().runOne(TRACE);
 
-        verify(ingestor, never()).ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(),
+        verify(ingestor, never()).ingestFileDeferredCheckpoint(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(),
                 any(), any());
         assertThat(result.fileCount()).isZero();
         assertThat(result.noNewData()).as("raw 里那一个文件不属于本布局：0 新字节就是 0 新字节").isTrue();

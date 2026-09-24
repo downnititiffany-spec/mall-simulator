@@ -35,6 +35,12 @@ test('上下文条展示来源，值取自信封 source 且缺值走统一文案
   assert.doesNotMatch(COMPONENT, /spark-ads/)
 })
 
+test('上下文条展示后端回显的生效查询范围，不以当前控件值冒充结果范围', () => {
+  assert.match(COMPONENT, /生效查询范围/)
+  assert.match(COMPONENT, /effectiveWindowText\(ctx\.value\.filters\)/)
+  assert.doesNotMatch(COMPONENT, /props\.from|props\.to/)
+})
+
 test('来源一栏标明「非业务源身份」，防被当成源身份使用', () => {
   assert.match(COMPONENT, /非业务源身份/)
   // 契约 v1.2 口径边界：业务源身份由 source_system/source_instance_id 承载，不由 source 承载

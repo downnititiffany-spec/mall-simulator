@@ -18,7 +18,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-DT_A, DT_B = "2026-09-18", "2026-09-21"
+DT_A = "2026-09-18"
 # ads_metric_publish metric codes -> overview column mapping is done by the
 # publisher; the oracle only needs value+period per code.
 
@@ -33,6 +33,12 @@ def day(ev):
 
 def r4(x):
     return float(Decimal(str(x)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP))
+
+
+def r2(x):
+    # money scale: dws_trade_day/ads_operation_overview avg_order_value is
+    # DECIMAL(18,2) (LocalSchemaInitJob / db/metric/V2) — publish carries 2dp.
+    return float(Decimal(str(x)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 def behavior_rows(events, dt):
@@ -120,7 +126,7 @@ def overview(events, dt):
         "fav_cnt": (f"day:{dt}", fav), "cart_add_cnt": (f"day:{dt}", cart),
         "paid_order_cnt": (f"day:{dt}", order_cnt), "gmv": (f"day:{dt}", float(sale)),
         "net_sale": (f"day:{dt}", float(net)),
-        "avg_order_value": (f"day:{dt}", r4(aov) if aov is not None else None),
+        "avg_order_value": (f"day:{dt}", r2(aov) if aov is not None else None),
         "refund_rate": (f"day:{dt}", r4(rr) if rr is not None else None),
         "full_refund_rate": (f"day:{dt}", r4(frr) if frr is not None else None),
         "repeat_rate": (f"window:{dt}..{dt}", r4(repeat) if repeat is not None else None),
@@ -140,7 +146,9 @@ def funnel(events, dt):
     paid, cancel = paid_orders(events, dt)
     order_u = {r["user_id"] for r in paid + cancel}
     pay_u = {r["user_id"] for r in paid}
-    stages = {"view": len(view_u), "intent": len(intent_u), "cart": len(cart_u),
+    # Frozen stage set is view/intent/order/pay — no cart stage row
+    # (AdsSql.funnel / S3-04: 加购不加 stage 行; cart coverage is the cart_rate metric).
+    stages = {"view": len(view_u), "intent": len(intent_u),
               "order": len(order_u), "pay": len(pay_u)}
     rates = {
         "intent_rate": r4(len(intent_u) / len(view_u)) if view_u else None,
@@ -234,7 +242,7 @@ def rfm(events, dt):
                 ("重要价值" if row["f"] >= 4 else "重要发展") if row["m"] >= 4 and row["r_ntile"] <= 2
                 else ("重要保持" if row["f"] >= 4 else "重要挽留") if row["m"] >= 4
                 else ("一般价值" if row["f"] >= 4 else "一般发展") if row["r_ntile"] <= 2
-                else ("一般保持" if row["f"] >= 4 else "一般保持"))
+                else ("一般保持" if row["f"] >= 4 else "一般挽留"))
             row["lifecycle_state"] = (
                 "新用户" if row["f_count"] == 1 else "活跃")
     return rows
@@ -265,21 +273,25 @@ def grade(baseline, actual, direction, target=None):
 
 def main():
     e3, e4 = load("e3-events.jsonl"), load("e4-events.jsonl")
+    e4_dates = {day(e) for e in e4}
+    if len(e4_dates) != 1:
+        raise ValueError(f"E4 fixture must contain exactly one business date, got: {sorted(e4_dates)}")
+    dt_b = next(iter(e4_dates))
     a_cells, a_extra = overview(e3, DT_A)
-    b_cells, b_extra = overview(e4, DT_B)
+    b_cells, b_extra = overview(e4, dt_b)
     # buy_rate / cart_rate come from ads_behavior_funnel (dws funnelDay):
     _, a_rates = funnel(e3, DT_A)
-    _, b_rates = funnel(e4, DT_B)
+    _, b_rates = funnel(e4, dt_b)
     a_cells["buy_rate"] = (f"day:{DT_A}", a_rates["overall_buy_rate"])
     a_cells["cart_rate"] = (f"day:{DT_A}", a_rates["cart_rate"])
-    b_cells["buy_rate"] = (f"day:{DT_B}", b_rates["overall_buy_rate"])
-    b_cells["cart_rate"] = (f"day:{DT_B}", b_rates["cart_rate"])
+    b_cells["buy_rate"] = (f"day:{dt_b}", b_rates["overall_buy_rate"])
+    b_cells["cart_rate"] = (f"day:{dt_b}", b_rates["cart_rate"])
     out = {
         "EXPECTED_A": a_cells, "A_extra": a_extra,
         "EXPECTED_B": b_cells, "B_extra": b_extra,
         "A_funnel_stages": funnel(e3, DT_A)[0], "A_funnel_rates": a_rates,
         "A_hot_product": hot_product(e3, DT_A),
-        "A_rfm": rfm(e3, DT_A), "B_rfm": rfm(e4, DT_B),
+        "A_rfm": rfm(e3, DT_A), "B_rfm": rfm(e4, dt_b),
         "decisions": {
             "D1_avg_order_value_UP_target90": {
                 "baseline": a_cells["avg_order_value"][1], "actual": b_cells["avg_order_value"][1],

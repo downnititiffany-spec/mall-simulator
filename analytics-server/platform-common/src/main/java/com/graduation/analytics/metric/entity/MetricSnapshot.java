@@ -21,6 +21,9 @@ public class MetricSnapshot {
 
     private Long runtimeProfileId;
 
+    /** 业务数据源身份：source_registry.id；与 source（快照发布方）完全不同。旧快照保持 null。 */
+    private Long sourceId;
+
     /** §8.1：每次快照保存实际 profile_version（V7 列） */
     private Integer runtimeProfileVersion;
 

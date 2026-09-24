@@ -8,12 +8,13 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const source = fs.readFileSync(path.join(here, '../src/views/Login.vue'), 'utf8')
 
 test('登录请求在途时锁住用户名和密码输入，避免界面值与已发送凭据错位', () => {
-  assert.match(source, /id="username"[\s\S]*?:disabled="loading"[\s\S]*?@keyup\.enter="onSubmit"/)
-  assert.match(source, /id="password"[\s\S]*?:disabled="loading"[\s\S]*?@keyup\.enter="onSubmit"/)
+  assert.match(source, /<form\s+@submit\.prevent="onSubmit">[\s\S]*id="username"[\s\S]*?:disabled="loading"/)
+  assert.match(source, /id="password"[\s\S]*?:disabled="loading"/)
+  assert.doesNotMatch(source, /@keyup\.enter="onSubmit"/)
 })
 
-test('登录按钮继续由 loading 状态禁用并显示在途文案', () => {
-  assert.match(source, /<button class="login-btn" :disabled="loading" @click="onSubmit">/)
+test('登录按钮是表单提交按钮，继续由 loading 状态禁用并显示在途文案', () => {
+  assert.match(source, /<button class="login-btn" type="submit" :disabled="loading">/)
   assert.match(source, /loading \? '登录中…' : '登 录'/)
 })
 

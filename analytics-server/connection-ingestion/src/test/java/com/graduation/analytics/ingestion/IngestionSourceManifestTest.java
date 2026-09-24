@@ -103,7 +103,7 @@ class IngestionSourceManifestTest {
         when(sourceRegistryService.currentSourceId()).thenReturn(Optional.of(sourceId));
         SourceRegistry row = IngestionSourceNotBoundTest.sourceRow(sourceId, sourceCode, profileVersion);
         when(sourceRegistryService.get(sourceId)).thenReturn(SourceRegistryView.of(row, sourceId));
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
+        when(ingestor.ingestFileDeferredCheckpoint(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
                 .thenReturn(new LocalFileIngestor.FileResult("events-001.jsonl", 0, 16,
                         "identity-1", 1, 0, 16L, Set.of("1.0")));
         when(batchMapper.insert(any(IngestionBatch.class))).thenAnswer(inv -> {

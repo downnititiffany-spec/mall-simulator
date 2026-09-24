@@ -52,6 +52,24 @@ function pickText(source, keys) {
 }
 
 /**
+ * Return the date window echoed by the backend, if one exists.
+ * This intentionally does not read page form state: the context bar describes
+ * the query that produced the visible result, not a possibly newer user input.
+ */
+export function effectiveWindowText(filters) {
+  if (!isRecord(filters)) return null
+  const from = pickText(filters, ['from'])
+  const to = pickText(filters, ['to'])
+  if (from && to) return `${from} ~ ${to}`
+  if (from) return `自 ${from} 起`
+  if (to) return `截至 ${to}`
+  const date = pickText(filters, ['date'])
+  if (date) return date
+  const aiWindow = pickText(filters, ['时间范围'])
+  return aiWindow || null
+}
+
+/**
  * 从后端对象中读取标识字段。
  * ID 不接受数字自动转字符串，也不做 trim；真实性统一交给 isRealSnapshotId 判定。
  */
@@ -105,7 +123,7 @@ function missingNotice(missing) {
  * @param {{rows?: unknown, warnings?: string[], snapshotIds?: string[],
  *          businessTime?: string|null, dataUpdatedAt?: string|null,
  *          definitionVersion?: string|null, qualityStatus?: string|null,
- *          source?: string|null, filters?: object|null, envelopeSource?: object|null,
+ *          sourceId?: number|null, source?: string|null, filters?: object|null, envelopeSource?: object|null,
  *          extraMissing?: string[]}} input
  */
 export function buildFallbackContext(input = {}) {
@@ -117,6 +135,7 @@ export function buildFallbackContext(input = {}) {
     dataUpdatedAt = null,
     definitionVersion = null,
     qualityStatus = null,
+    sourceId = null,
     source = null,
     filters = null,
     envelopeSource = null,
@@ -125,6 +144,11 @@ export function buildFallbackContext(input = {}) {
 
   // 若响应中夹带了统一信封字段（例如行内含 snapshotId/definitionVersion），一并提取
   const env = readEnvelope(envelopeSource || {})
+  // 若信封明确包含 sourceId（包括 null），它是该快照的唯一事实来源；显式 null 不回退到
+  // 调用参数，防止历史快照被当前选择的业务来源补值。无信封字段时才接受接口提供的 sourceId。
+  const envelopeHasSourceId = isRecord(envelopeSource)
+    && Object.prototype.hasOwnProperty.call(envelopeSource, 'sourceId')
+  const businessSourceId = envelopeHasSourceId ? env.sourceId : readEnvelope({ sourceId }).sourceId
   const sns = collectSnapshotIds(
     snapshotIds && snapshotIds.length ? snapshotIds : (Array.isArray(rows) ? rows : rows ? [rows] : [])
   )
@@ -155,6 +179,7 @@ export function buildFallbackContext(input = {}) {
 
   return {
     snapshotId,
+    sourceId: businessSourceId,
     businessTime: business,
     dataUpdatedAt: updated,
     // 来源（发布方）：取不到就是 null，由展示层统一显示「未知」（契约 v1.2，非业务源身份）
@@ -166,6 +191,100 @@ export function buildFallbackContext(input = {}) {
     warnings: mergeWarnings(warnings, env.warnings),
     missingNotice: missingNotice(missing)
   }
+}
+
+/**
+ * 快照身份的**唯一**归一化（实测评价 §QA-03）。
+ *
+ * 为什么必须只有一处：此前 `snapshotId` 只放在本模块返回值的顶层，嵌套 `evidence` 没有它，
+ * 页面读的却是嵌套字段 ⇒ 真实快照号 S20260921_20 被显示成「未提供」，提示还编出
+ * 「SQL 用 MAX(snapshot_id)」（SQL 里没有 MAX）。展示值与决策草稿锚点必须读同一结果。
+ *
+ * 判据仍是 {@link isRealSnapshotId}（fail-closed）：不 trim、不把数字转字符串、
+ * `unknown` 任意大小写一律无效；无效值**不**回落成占位串，只如实说「未提供」。
+ *
+ * @param {unknown} value 后端给出的原始快照号
+ * @returns {{snapshotId: string|null, text: string, hint: string}}
+ */
+export function snapshotIdentity(value) {
+  const ok = isRealSnapshotId(value)
+  return {
+    snapshotId: ok ? value : null,
+    text: ok ? value : '未提供',
+    // 提示只陈述「证据包没给出可用快照号」，不推断 SQL 怎么锁快照、也不回显占位串
+    hint: ok ? '' : '（证据包未返回可用的快照号）'
+  }
+}
+
+/**
+ * 从「证据 → query → 结果行」按既有优先序解析快照身份。
+ * `source` 只用于缺失说明，不改变身份本身。
+ */
+export function aiSnapshotIdentity({ evidence, query, rows } = {}) {
+  const candidates = [
+    ['evidence', pickIdentifier(evidence, ['snapshotId'])],
+    ['query', pickIdentifier(query, ['snapshotId'])],
+    ['row', pickIdentifier(Array.isArray(rows) ? rows[0] : null, ['snapshot_id', 'snapshotId'])]
+  ]
+  for (const [source, raw] of candidates) {
+    if (isRealSnapshotId(raw)) return { ...snapshotIdentity(raw), source }
+  }
+  return { ...snapshotIdentity(null), source: 'none' }
+}
+
+/**
+ * 归一化 `/ai/queries` 返回的结构化查询窗口 `query.window`（实测评价 §QA-04）。
+ *
+ * 有效查询期、参考业务日、实际覆盖天数以后端结论为唯一事实来源——请求标签由模型自己解析，
+ * 不能拿来当解释口径。字段缺失一律 `null`（`days` 按契约取 0），绝不前端推算日期差。
+ *
+ * @param {unknown} raw 后端 `query.window`
+ * @returns {object|null} 无结构化窗口时 null（旧后端/错误响应），页面据此诚实降级
+ */
+export function normalizeAiWindow(raw) {
+  if (!isRecord(raw)) return null
+  return {
+    requested: pickText(raw, ['requested']),
+    requestedDays: Number.isFinite(raw.requestedDays) ? raw.requestedDays : null,
+    from: pickText(raw, ['from']),
+    to: pickText(raw, ['to']),
+    days: Number.isFinite(raw.days) ? raw.days : 0,
+    referenceBusinessDate: pickText(raw, ['referenceBusinessDate']),
+    coveredDays: Number.isFinite(raw.coveredDays) ? raw.coveredDays : null,
+    notice: pickText(raw, ['notice'])
+  }
+}
+
+/**
+ * 结构化窗口里的有效查询期文本：`2026-09-15 ~ 2026-09-21（共 7 天）`。
+ * 区间不可得时返回 null（不编造单日、不编造天数）。
+ */
+export function windowRangeText(window) {
+  if (!isRecord(window) || !window.from || !window.to) return null
+  const days = typeof window.days === 'number' && window.days > 0 ? `（共 ${window.days} 天）` : ''
+  return `${window.from} ~ ${window.to}${days}`
+}
+
+/**
+ * 有效查询期的展示文本（唯一来源）：结构化窗口优先，其次证据自带的 timeRange，
+ * 都没有才是「接口未提供」。**不**回落到请求标签——那正是 QA-04 的矛盾来源。
+ * 窗口存在但区间不可得时（如空窗口），仍原样转达后端 notice，不假装没有任何口径信息。
+ */
+export function windowDisplayText(window, fallbackTimeRange) {
+  const range = windowRangeText(window)
+  const hasWindow = isRecord(window)
+  const notice = hasWindow ? window.notice : null
+  if (!range) {
+    // 后端明确给了窗口却说不出区间（空窗口）：以结构化结论为准，绝不拿请求侧的旧文本凑数
+    if (hasWindow) return notice ? `（${notice}）` : MISSING_TEXT
+    // 完全无结构化窗口（旧后端）：只如实展示后端**自己返回**的文本，空白一律当没有
+    return typeof fallbackTimeRange === 'string' && fallbackTimeRange.trim() !== '' ? fallbackTimeRange : MISSING_TEXT
+  }
+  // 后端给出的口径提示原样转达；后端没给但声明的覆盖天数确实不足时，只补一句事实
+  const coverage = !notice && Number.isFinite(window.coveredDays) && window.days > 0 && window.coveredDays < window.days
+    ? `（结果只覆盖 ${window.coveredDays} / ${window.days} 天，其余业务日无数据）`
+    : ''
+  return `${range}${notice ? `（${notice}）` : coverage}`
 }
 
 /**
@@ -182,17 +301,19 @@ export function buildAiEvidenceContext(result) {
   const rows = Array.isArray(query.rows) ? query.rows : []
 
   const evidenceSnapshotId = pickIdentifier(evidence, ['snapshotId'])
-  const querySnapshotId = pickIdentifier(query, ['snapshotId'])
-  const rowSnapshotId = rows.length ? pickIdentifier(rows[0], ['snapshot_id', 'snapshotId']) : null
-  // 后端证据里的 snapshotId 在 AI 分支上是占位串 'unknown'（真实 SQL 用 MAX(snapshot_id) 锁定），
-  // 这种占位值不能当快照号展示，必须按「未提供」处理并说明原因。
-  const evidenceSnapshot = isRealSnapshotId(evidenceSnapshotId) ? evidenceSnapshotId : null
-  const querySnapshot = isRealSnapshotId(querySnapshotId) ? querySnapshotId : null
-  const rowSnapshot = isRealSnapshotId(rowSnapshotId) ? rowSnapshotId : null
-  const snapshotId = evidenceSnapshot || querySnapshot || rowSnapshot
+  // 快照身份只归一化一次：顶层 snapshotId 与嵌套 evidence.* 都取这一份结果
+  const snapshot = aiSnapshotIdentity({ evidence, query, rows })
+  const snapshotId = snapshot.snapshotId
   const tables = Array.isArray(evidence.tables) ? evidence.tables : (Array.isArray(query.tables) ? query.tables : [])
   const definitions = pickText(evidence, ['definitions'])
-  const timeRange = pickText(evidence, ['timeRange'])
+  const rawTimeRange = pickText(evidence, ['timeRange'])
+  // QA-04：结构化 window 是有效查询期/参考业务日/覆盖情况的唯一来源；timeRange 优先它的区间。
+  // 窗口存在但区间为空时不补日期，退回证据原文（window.notice 由 windowDisplayText 负责转达，
+  // 不重复并入 timeRange，否则展示层会叠加两遍同一句后端提示）。
+  const window = normalizeAiWindow(query.window)
+  const timeRange = window
+    ? (windowRangeText(window) || rawTimeRange || null)
+    : (rawTimeRange || null)
   // S3-54：结论文本只来自后端 ExplanationResult.summary。页面已经读取 evidenceContext.summary，
   // 这里必须显式搬运；缺失/空白就返回 null，让页面显示“后端未给出结论文本”，绝不前端拼结论。
   const summary = pickText(explanation, ['summary'])
@@ -206,18 +327,26 @@ export function buildAiEvidenceContext(result) {
     : (isRealSnapshotId(nestedEvidenceId) ? nestedEvidenceId : null)
 
   const missing = []
-  if (!evidenceSnapshot) {
-    // 说明回退来源，避免读者以为快照号就是证据包自带的
-    if (evidenceSnapshotId) missing.push(`证据字段 snapshotId（后端返回占位值 ${evidenceSnapshotId}，未给出真实快照号）`)
-    else if (querySnapshot) missing.push('证据字段 snapshotId（已回退取 query.snapshotId）')
-    else if (rowSnapshot) missing.push('证据字段 snapshotId（已回退取结果行的 snapshot_id）')
+  if (!snapshotId) {
+    // 说明回退来源/占位情况，避免读者以为快照号就是证据包自带的
+    if (evidenceSnapshotId && !isRealSnapshotId(evidenceSnapshotId)) {
+      missing.push(`证据字段 snapshotId（后端返回占位值 ${evidenceSnapshotId}，未给出真实快照号）`)
+    } else if (snapshot.source === 'query') missing.push('证据字段 snapshotId（已回退取 query.snapshotId）')
+    else if (snapshot.source === 'row') missing.push('证据字段 snapshotId（已回退取结果行的 snapshot_id）')
     else missing.push('证据字段 snapshotId')
+  } else if (snapshot.source === 'query') {
+    // 拿到了快照号但来源不是证据包，仍要说明出处，读者才知道该字段是回退取来的
+    missing.push('证据字段 snapshotId（已回退取 query.snapshotId）')
+  } else if (snapshot.source === 'row') {
+    missing.push('证据字段 snapshotId（已回退取结果行的 snapshot_id）')
   }
   missing.push('业务时间', '数据更新时间', '质量状态', '指标口径版本')
 
   return {
     summary,
     snapshotId,
+    // AI 证据接口未提供业务来源登记 ID；不借用当前选源或发布方填充。
+    sourceId: null,
     businessTime: null,
     dataUpdatedAt: null,
     // S3-26：AI 证据包不含发布方字段（不是统一信封），显式给 null ⇒ 页面来源一栏显示「未知」，
@@ -225,7 +354,7 @@ export function buildAiEvidenceContext(result) {
     source: null,
     definitionVersion: null,
     qualityStatus: 'UNKNOWN',
-    filters: { 问题: pickText(evidence, ['question']) || '', 时间范围: timeRange || '未指定' },
+    filters: { 问题: pickText(evidence, ['question']) || '', 时间范围: windowDisplayText(window, rawTimeRange) },
     warnings: mergeWarnings(explanation.limitations, ['AI_EVIDENCE_PARTIAL']),
     missingNotice: missingNotice(missing),
     evidence: {
@@ -235,6 +364,12 @@ export function buildAiEvidenceContext(result) {
       returnedRows: Number.isFinite(evidence.returnedRows) ? evidence.returnedRows : rows.length,
       queryElapsedMs: Number.isFinite(evidence.queryElapsedMs) ? evidence.queryElapsedMs : null,
       timeRange,
+      // QA-04：结构化查询窗口原样搬运（无则 null），页面据它展示有效查询期/参考业务日/覆盖提示
+      window,
+      // QA-03：展示值与决策草稿锚点共用的同一份快照身份，页面不再自建判据
+      snapshotId,
+      snapshotText: snapshot.text,
+      snapshotHint: snapshot.hint,
       // AI 证据里的 definitions 是解释提示词版本（explain_v1），不是指标口径版本，分开命名避免混淆
       promptVersion: definitions,
       // 证据包 ID：决策草稿的 evidence_package_id 锚点来源。优先顶层，其次嵌套 EvidencePackage；

@@ -3,11 +3,11 @@
     <div class="page-title">商品分析</div>
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <label style="font-size:13px;color:#374151">每页：</label>
+      <label style="font-size:13px;color:var(--gray-700)">每页：</label>
       <input v-model.number="pageSize" type="number" min="1" max="100" :disabled="loading" style="width:80px;padding:4px" />
-      <button style="font-size:12px" :disabled="loading" @click="applyFilters">{{ loading ? '加载中' : '加载' }}</button>
-      <button style="font-size:12px" :disabled="!pageExportable" @click="doExport">导出当前页 CSV</button>
-      <span style="font-size:12px;color:#9ca3af">
+      <button class="btn btn-sm" :disabled="loading" @click="applyFilters">{{ loading ? '加载中' : '加载' }}</button>
+      <button class="btn btn-sm" :disabled="!pageExportable" @click="doExport">导出当前页 CSV</button>
+      <span style="font-size:12px;color:var(--gray-400)">
         热度与转化均取后端快照口径；热度榜分页/排序由后端执行，页面不对单页结果再次排序。
         当前第 {{ responsePage }} 页，每页 {{ responseSize }} 条，共 {{ totalText }} 条
       </span>
@@ -32,7 +32,7 @@
         商品明细（后端稳定排序）
         <span class="table-count">当前页 {{ rows.length }} 行</span>
       </div>
-      <table>
+      <table class="data-table">
         <thead>
           <tr>
             <th v-for="col in columns" :key="col.key"
@@ -57,9 +57,9 @@
         </tbody>
       </table>
       <div class="pager">
-        <button style="font-size:12px" :disabled="loading || responsePage <= 1" @click="goPage(responsePage - 1)">上一页</button>
+        <button class="btn btn-sm" :disabled="loading || responsePage <= 1" @click="goPage(responsePage - 1)">上一页</button>
         <span>第 {{ responsePage }} 页 / 共 {{ totalText }} 条</span>
-        <button style="font-size:12px" :disabled="loading || !hasMore" @click="goPage(responsePage + 1)">下一页</button>
+        <button class="btn btn-sm" :disabled="loading || !hasMore" @click="goPage(responsePage + 1)">下一页</button>
       </div>
       <div class="table-hint">
         排序字段只开放后端契约白名单：排名、热度、浏览、收藏、加购、支付；商品名称与转化率不在服务端排序白名单内，因此不伪造本地全量排序。

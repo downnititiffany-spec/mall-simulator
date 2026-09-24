@@ -23,6 +23,7 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLTimeoutException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -70,13 +71,32 @@ public class TextToSqlService {
      * 查询结果。
      *
      * @param errorCode 稳定错误码/规则码（如 SQL_JOIN、SQL_COST_TOO_HIGH、NO_ACTIVE_SNAPSHOT），成功为 null
+     * @param window    QA-04：本次查询的时间窗口（请求口径 / SQL 实际生效区间 / 结果覆盖天数）。
+     *                  页面提示、解释口径、证据与导出**共用**它，避免三处各说各话。
      */
     public record QueryResult(String status, String sql, List<String> tables, int rowsReturned,
                               long elapsedMs, List<Map<String, Object>> rows, List<String> assumptions,
-                              String error, String errorCode, String providerUsed) {
+                              String error, String errorCode, String providerUsed, QueryWindow window) {
+
+        /** 兼容旧调用点（无窗口）：窗口未知时按 null 传递，不允许伪造生效区间 */
+        public QueryResult(String status, String sql, List<String> tables, int rowsReturned, long elapsedMs,
+                           List<Map<String, Object>> rows, List<String> assumptions, String error,
+                           String errorCode, String providerUsed) {
+            this(status, sql, tables, rowsReturned, elapsedMs, rows, assumptions, error, errorCode,
+                    providerUsed, null);
+        }
     }
 
+    /** 未指定请求口径的问数（内部/测试入口）：请求标签为 null，窗口仍给出生效区间与覆盖天数 */
     public QueryResult query(String question, String userId) {
+        return query(question, userId, null);
+    }
+
+    /**
+     * @param requestedTimeRange 页面请求的时间口径原文（如「近30天」）。只作**对照展示**，
+     *                           绝不能当成生效口径：生效区间一律以校验器解析出的 dt 字面量为准。
+     */
+    public QueryResult query(String question, String userId, String requestedTimeRange) {
         long start = System.currentTimeMillis();
         String status = "GENERATED";
         String sql = null;
@@ -90,6 +110,9 @@ public class TextToSqlService {
         AiScope scope = null;
         Long explainRows = null;
         String stage = "SCOPE_RESOLVE";
+        // QA-04：生效 dt 区间只从校验器的解析结果取，不复制请求标签
+        LocalDate effectiveFrom = null;
+        LocalDate effectiveTo = null;
 
         try {
             // ── 1. ACTIVE 快照作用域（日期/快照参数化的唯一来源，§19.5） ──────────
@@ -145,6 +168,8 @@ public class TextToSqlService {
                     status = "SAFE";
                 }
                 sql = v.sql(); // 已重写 LIMIT
+                effectiveFrom = v.dtFrom();
+                effectiveTo = v.dtTo();
             } else {
                 // ── 规则回退（§3.5.5）：模板同样带快照/日期字面量 ───────────────
                 stage = "FALLBACK";
@@ -160,6 +185,8 @@ public class TextToSqlService {
                     throw new AiSqlException(v.code(), "规则回退模板未通过安全校验: " + v.error());
                 }
                 sql = v.sql();
+                effectiveFrom = v.dtFrom();
+                effectiveTo = v.dtTo();
                 status = "GENERATED";
             }
 
@@ -203,8 +230,10 @@ public class TextToSqlService {
             saveHistory(userId, question, sql, tables, scope, status, rowsReturned,
                     System.currentTimeMillis() - start, error, errorCode, explainRows);
         }
+        QueryWindow window = QueryWindow.of(requestedTimeRange, effectiveFrom, effectiveTo,
+                scope == null ? null : scope.businessDate(), rows);
         return new QueryResult(status, sql, tables, rowsReturned,
-                System.currentTimeMillis() - start, rows, assumptions, error, errorCode, providerUsed);
+                System.currentTimeMillis() - start, rows, assumptions, error, errorCode, providerUsed, window);
     }
 
     // ── Prompt 构建（§19.5 安全规则内嵌；真实日期/快照作为字面量下发） ─────────

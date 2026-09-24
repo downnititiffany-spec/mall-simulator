@@ -1,5 +1,14 @@
 # E3/E4 独立 Oracle（BATCH-G3103）
 
+> **D-035 夹具口径修正（2026-09-20，执行期发现）**：首版夹具实体 id 用 `g3u01/g3p01/g3o0101`
+> 样式（数字嵌在中间），不满足冻结 `IdCodec` 契约 `^[A-Za-z]*([0-9]+)$`（可选字母前缀+纯数字）
+> → `REGEXP_EXTRACT` 不匹配 → DWD `user_id/product_id/order_id` 全 NULL → 质量门
+> `ADS_STAGING_KEY_NOT_NULL`/`REQUIRED_FIELD_NULL_RATE` 正确阻断（run 18 FAILED，证据留存于
+> g3103 attempt `e3-leg/06-pipeline-final.json`）。夹具改用符合契约的纯数字实体 id。业务事件设计和金额总量不变；oracle 同步修正 ADS 金额精度（DWS DECIMAL(18,2)）、漏斗四阶段（加购率单列）及 RFM 最后一类标签。本文下文沿用 `g3uXX` 可读标签，对应关系：
+> g3u01..15→93001..93015，g4u01..07→93021..93027，g3p01..05→93101..93105，
+> g3o0001/0002→940001/940002，g3o0101..14→940101..940114，g4o0101..13→942101..942113。
+> 事件 id（g3e/g4e）、trace、payment、refund id 不经 IdCodec，保持原样。
+
 来源：`generate.py`（确定性夹具，99 + 71 行）→ `oracle.py`（纯 Python 重述冻结口径，**不 import 平台代码**）。
 冻结口径来源：`DwsSql.funnelDay/productBehaviorDay/tradeDay/userTradePeriod`、`AdsSql.operationOverview/funnel/hotProduct/userProfile(rfm-v2)`、`DecisionService.evaluate/grade`、`OrderTradeCompiler`（退款只计 refund_completed、按 refund_id 去重、归属订单业务日 = F-35 同日退款）。
 
@@ -19,14 +28,14 @@
 | pv / uv / dau | day:2026-09-18 | 30 / 10 / 10 | view 事件数 / 去重 / 全行为去重 |
 | fav_cnt / cart_add_cnt | day:2026-09-18 | 6 / 8 | 事件条数（S3-08） |
 | paid_order_cnt / gmv / net_sale | day:2026-09-18 | 12 / 1010 / 930 | 有效支付；退款只扣已完成 |
-| avg_order_value | day:2026-09-18 | 84.1667 | 1010/12 |
+| avg_order_value | day:2026-09-18 | 84.17 | 1010/12，按 DWS DECIMAL(18,2) |
 | refund_rate / full_refund_rate | day:2026-09-18 | 0.0833 / 0.0833 | 1/12（部分=全额，本夹具全为全额） |
 | repeat_rate | window:2026-09-18..2026-09-18 | 0.3333 | 有效复购 S3-03：2/6（u03 全额退款单不计 valid） |
 | buy_rate / cart_rate | day:2026-09-18 | 0.6 / 0.6 | pay/view=6/10；cart/view=6/10 |
 
 ### 漏斗（03.1 可对账）
 
-view=10 → intent=6 → cart=6 → order=8 → pay=6；intent_rate=0.6、order_rate=1.3333（8/6，取消单计入 order）、pay_rate=0.75、overall_buy_rate=0.6、cart_rate=0.6。ADS 四 stage 行（view/intent/order/pay，无 cart 行——S3-04）。
+view=10 → intent=6 → order=8 → pay=6；intent_rate=0.6、order_rate=1.3333（8/6，取消单计入 order）、pay_rate=0.75、overall_buy_rate=0.6。加购另以 `cart_users=6`、`cart_rate=0.6` 发布，不是漏斗 stage（S3-04）。
 
 ### 商品排行（03.1 ≥3 商品 + 并列）
 
@@ -51,25 +60,25 @@ rfm-v2：NTILE 排序键带 user_id ASC（稳定），r=6−r_ntile、f=f_ntile�
 | g3u03 | 2 | 160 | 4/3/3 | 一般发展 | 活跃 |
 | g3u04 | 1 | 70 | 3/1/2 | 一般保持 | 新用户 |
 | g3u05 | 1 | 60 | 2/1/1 | 一般保持 | 新用户 |
-| g3u06 | 1 | 50 | 1/2/1 | 一般保持 | 新用户 |
+| g3u06 | 1 | 50 | 1/2/1 | 一般挽留 | 新用户 |
 
 distinct 人数：buyer_count=6=pay_users=6；repeat_users=2。不足场景：无支付日（如 09-17 未发布）→ 指标不可计算而非 0。
 
-## E4（B 腿，快照 B，businessTime 2026-09-21）
+## E4（B 腿，快照 B，businessTime 取自 `e4-events.jsonl`）
 
-71 行全部 dt=2026-09-21。**执行窗口钉死 2026-09-20**：insufficientReason 要求 actual.businessDate > completedDate（=complete 动作的墙钟日）。若批次拖过午夜（墙钟进入 09-21），必须改 generate.py 的 T21 重生成（否则 09-21 > 09-21 不成立 → 全部 INSUFFICIENT_DATA）。
+71 行全部使用同一业务日。运行前执行 `python generate.py --e4-date YYYY-MM-DD`；日期必须晚于决策完成日。默认值为执行当天的次日。先完成 D1 并记录完成日，再发布 E4 对应快照；若执行跨过所选 E4 日期，重新生成 E4、运行 oracle 并更新哈希清单。oracle 从 E4 事件自身读取业务日，不维护第二份硬编码日期。
 
 ### 快照 B 14 cells
 
 | code | period | value |
 |---|---|---|
-| pv / uv / dau | day:2026-09-21 | 31 / 8 / 8 |
-| fav_cnt / cart_add_cnt | day:2026-09-21 | 2 / 1 |
-| paid_order_cnt / gmv / net_sale | day:2026-09-21 | 13 / 1200 / 1000 |
-| avg_order_value | day:2026-09-21 | 92.3077（1200/13） |
-| refund_rate / full_refund_rate | day:2026-09-21 | 0.1538 / 0.1538（2/13） |
-| repeat_rate | window:2026-09-21..2026-09-21 | 0.5714（4/7） |
-| buy_rate / cart_rate | day:2026-09-21 | 0.875 / 0.125 |
+| pv / uv / dau | day:E4_DATE | 31 / 8 / 8 |
+| fav_cnt / cart_add_cnt | day:E4_DATE | 2 / 1 |
+| paid_order_cnt / gmv / net_sale | day:E4_DATE | 13 / 1200 / 1000 |
+| avg_order_value | day:E4_DATE | 92.31（1200/13，按 DECIMAL(18,2)） |
+| refund_rate / full_refund_rate | day:E4_DATE | 0.1538 / 0.1538（2/13） |
+| repeat_rate | window:E4_DATE..E4_DATE | 0.5714（4/7） |
+| buy_rate / cart_rate | day:E4_DATE | 0.875 / 0.125 |
 
 ### 四决策（03.4/03.6）
 
@@ -77,7 +86,7 @@ distinct 人数：buyer_count=6=pay_users=6；repeat_users=2。不足场景：�
 
 | 决策 | metric/方向/target | 评于 B 前 | 评于 B 后 |
 |---|---|---|---|
-| D1 | avg_order_value UP 90 | INSUFFICIENT_DATA「完成后尚未发布新快照」（actual==baseline 快照） | EFFECTIVE（92.3077≥90 达标路径；rate=0.0967）→ 补数据后重评可达 ✓ |
+| D1 | avg_order_value UP 90 | INSUFFICIENT_DATA「完成后尚未发布新快照」（actual==baseline 快照） | EFFECTIVE（92.31≥90 达标路径；rate=0.0967）→ 补数据后重评可达 ✓ |
 | D2 | pv UP 无 target | — | PARTIAL（30→31，rate=0.0333 ∈ (0,0.05)） |
 | D3 | refund_rate DOWN | — | INEFFECTIVE（0.0833→0.1538，rate=−0.8463 <0） |
 | D4 | gmv UP 无 target | — | EFFECTIVE（1010→1200，rate=0.1881 ≥0.05 阈值路径） |

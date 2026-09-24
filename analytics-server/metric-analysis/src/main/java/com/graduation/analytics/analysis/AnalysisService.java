@@ -37,8 +37,12 @@ import java.util.Set;
  * <p>快照一致性：一次请求只解析一个 snapshotId（请求指定优先，否则取 ACTIVE），
  * 之后所有查询都带着它，并在响应信封里回显（契约 §1.2，§17.5 第 8 步）。</p>
  *
- * <p>{@code from/to}、{@code topN} 只作为筛选回显：ADS 宽表本身就是"快照 + dt"粒度的物化结果，
- * 服务端不按事件时间重算，因此它们不参与计算（契约 §1.3 不允许回退到明细层）。</p>
+ * <p><b>{@code from/to} 的生效范围（QA-01 修正后）</b>：ADS 宽表是「快照 + dt」粒度的物化结果，
+ * 服务端仍不按事件时间重算，但**逐日趋势**（{@code ads_sale_trend_m}/{@code ads_active_trend_m}）
+ * 会把区间作为 {@code dt >= ? AND dt <= ?} 参数化下推到 ADS 读取，页面 {@code filters} 回显的就是
+ * 真正生效的区间；**指标卡/质量卡等按快照读数的区块不随日期变化**（卡片按快照、趋势按日期）。
+ * 区间倒置（{@code from > to}）在读取任何 ADS 之前以 400 {@code PARAM_INVALID} 拒绝，
+ * 区间内无数据返回空趋势而不是补零。{@code topN} 仍只作筛选回显，不参与计算（契约 §1.3）。</p>
  */
 @Slf4j
 @Service
@@ -188,6 +192,7 @@ public class AnalysisService {
     // ── 运营总览（§3.1） ──────────────────────────────────────────────────────
 
     public AnalysisViewModel<OverviewData> overview(String snapshotId, LocalDate from, LocalDate to) {
+        requireOrderedDateRange(from, to);
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
@@ -201,14 +206,15 @@ public class AnalysisService {
         List<DictionaryItem> dictionary = dictionary();
         Map<String, String> names = new HashMap<>();
         dictionary.forEach(item -> names.put(item.metricCode(), item.metricName()));
-        OverviewData data = new OverviewData(metrics(sid, names), salesTrend(sid), activeTrend(sid),
-                quality(sid), dictionary);
+        OverviewData data = new OverviewData(metrics(sid, names), salesTrend(sid, from, to),
+                activeTrend(sid, from, to), quality(sid), dictionary);
         return view(pinned, filters, data, List.of());
     }
 
     // ── 销售分析（§3.2） ──────────────────────────────────────────────────────
 
     public AnalysisViewModel<SalesData> sales(String snapshotId, LocalDate from, LocalDate to) {
+        requireOrderedDateRange(from, to);
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
@@ -221,7 +227,7 @@ public class AnalysisService {
 
         Map<String, BigDecimal> values = metricValueMap(sid);
         // 分类/地区结构：本期没有对应 Hive ADS 与 MySQL 服务表，返回空数组并显式给出降级事实（契约 §3.2）
-        SalesData data = new SalesData(salesTrend(sid),
+        SalesData data = new SalesData(salesTrend(sid, from, to),
                 values.get(METRIC_GMV), values.get(METRIC_NET_SALE),
                 values.get(METRIC_REFUND_RATE), values.get(METRIC_FULL_REFUND_RATE),
                 quality(sid), List.of(), List.of());
@@ -486,7 +492,11 @@ public class AnalysisService {
         List<String> allWarnings = new ArrayList<>(warnings);
         MetricSnapshot meta = pinned.meta();
         // source 是快照行的发布方（§17.6 只接受 spark-ads），原样回显；空串保持空串，不臆造值
-        return AnalysisViewModel.of(pinned.snapshotId(), blankToEmpty(meta.getSource()),
+        // sourceId 是数据源注册身份；仅取快照固化值。历史 NULL 明确告警，不从可变 profile 绑定回查。
+        if (meta.getSourceId() == null) {
+            allWarnings.add(AnalysisViewModel.WARN_SOURCE_ID_UNAVAILABLE);
+        }
+        return AnalysisViewModel.of(pinned.snapshotId(), meta.getSourceId(), blankToEmpty(meta.getSource()),
                 isoSeconds(meta.getBusinessTime()),
                 dataUpdatedAt(meta), blankToEmpty(meta.getDefinitionVersion()),
                 qualityStatus(meta, allWarnings), filters, data, allWarnings);
@@ -564,9 +574,12 @@ public class AnalysisService {
      * 销售趋势（ads_sale_trend_m，按 dt 升序）。
      *
      * <p>v1.4（S3-20）：末列补 ADS `net_sale_amount`（净销售额）**原样透传**；缺列/畸形 ⇒ {@code null}。
+     *
+     * <p>QA-01：日期区间下推到 ADS 读取（见 {@link #trendRows}）。缺省区间（两端都为 null）保持
+     * 原有「整快照」语义不变，不引入第二条读取路径。</p>
      */
-    private List<SalesTrendPoint> salesTrend(String snapshotId) {
-        return adsReader.selectBySnapshot(T_SALE_TREND, snapshotId, null).stream()
+    private List<SalesTrendPoint> salesTrend(String snapshotId, LocalDate from, LocalDate to) {
+        return trendRows(T_SALE_TREND, snapshotId, from, to).stream()
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new SalesTrendPoint(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("order_count")), AdsRows.asDecimal(row.get("sale_amount")),
@@ -575,13 +588,35 @@ public class AnalysisService {
                 .toList();
     }
 
-    /** 活跃趋势（ads_active_trend_m，按 dt 升序） */
-    private List<ActiveDay> activeTrend(String snapshotId) {
-        return adsReader.selectBySnapshot(T_ACTIVE_TREND, snapshotId, null).stream()
+    /** 活跃趋势（ads_active_trend_m，按 dt 升序）；日期区间语义同 {@link #salesTrend} */
+    private List<ActiveDay> activeTrend(String snapshotId, LocalDate from, LocalDate to) {
+        return trendRows(T_ACTIVE_TREND, snapshotId, from, to).stream()
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new ActiveDay(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("dau")), AdsRows.asLong(row.get("behavior_count"))))
                 .toList();
+    }
+
+    /**
+     * 逐日趋势表的日期读取（QA-01 的唯一分派点）。
+     *
+     * <p>缺省区间（{@code from}/{@code to} 都为 null）→ 整快照读取；任一端存在 → 参数化区间读取
+     * （缺失端不设边界）。此处不做「读全量再本地过滤」：过滤必须在库里完成，否则既浪费又会让
+     * 「回显的区间」与「实际读到的数据」再次脱钩。</p>
+     */
+    private List<Map<String, Object>> trendRows(String table, String snapshotId, LocalDate from, LocalDate to) {
+        if (from == null && to == null) {
+            return adsReader.selectBySnapshot(table, snapshotId, null);
+        }
+        return adsReader.selectBySnapshotRange(table, snapshotId, AdsRows.compactDate(from), AdsRows.compactDate(to));
+    }
+
+    /** QA-01：日期区间的唯一校验点（倒置区间必须 400，不允许静默按整快照返回） */
+    private static void requireOrderedDateRange(LocalDate from, LocalDate to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new PlatformBizException("PARAM_INVALID",
+                    "日期区间非法：from(" + from + ") 晚于 to(" + to + ")，请调整开始/结束日期");
+        }
     }
 
     /**

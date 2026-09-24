@@ -35,14 +35,16 @@ export function buildExportFilename({ baseName, context = {}, generatedAt }) {
 }
 
 /**
- * CSV 元信息行：快照、生成时间、来源（发布方）、口径版本、质量状态、filters。
- * 导出文件必须能自证“数据来自哪次快照、谁发布的、按什么筛选、什么时候导出”。
+ * CSV 元信息行：快照、生成时间、业务来源 ID、来源（发布方）、口径版本、质量状态、filters。
+ * 导出文件必须能自证“数据来自哪次快照、哪个业务来源、谁发布的、按什么筛选、什么时候导出”。
  */
 export function buildContextRows(context = {}, generatedAt) {
   const rows = [
     ['# 快照ID', context.snapshotId || MISSING],
     ['# 业务时间', formatDateTime(context.businessTime)],
     ['# 数据更新时间', formatDateTime(context.dataUpdatedAt)],
+    // 业务来源 ID 与下方发布方是不同身份；缺失或非法值不得从发布方/页面当前选择推断。
+    ['# 业务来源 ID', Number.isSafeInteger(context.sourceId) && context.sourceId > 0 ? context.sourceId : MISSING],
     // S3-26：与上下文条同一字段（信封 source = 发布方，契约 v1.2）；取不到写「（缺失）」不写 spark-ads
     ['# 来源（发布方）', context.source || MISSING],
     ['# 口径版本', context.definitionVersion || MISSING],

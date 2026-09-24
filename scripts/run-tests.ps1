@@ -111,7 +111,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1050
+  'analytics-server'        = 1096
   'mall-simulator'          = 14
   'synthetic-data-generator' = 111
 }
@@ -554,7 +554,9 @@ $BaselineDefault = [ordered]@{
 # 2026-09-19：312→320＝mxp 合法 0 行 ADS 导出修复新增 developer spec `MetricExportZeroRowSpec` 8 条
 #   （0 行分区 pub 放行＋mxp catalog-backed 空态导出＋负向对照＋非 0 行不回归），fresh 实测
 #   devmxpfull_20260919_1046：320/320、39 套件、JDK8=True、All tests passed（D-020）。
-$BaselineSpark = 320
+# 2026-09-23：320→321＝G31-03 QA-02 商品 as-of 快照回归 `ProductDimensionAsOfSpec` 新增 1 条；
+#   后续补入空 ODS 重跑清除旧分区的第二条回归，fresh 统一 spark 档 322/322、40 suites、JDK8=True。
+$BaselineSpark = 322
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
@@ -890,6 +892,14 @@ $BaselineSpark = 320
 #   DecisionServiceSourceMismatchTest +7（跨源创建不落库/快照不存在/无 ACTIVE fail-closed/
 #   同源异 profile 放行/提交重核跨源留 DRAFT/同源提交放行/证据包路径不经守卫）
 #   ⇒ analytics-server **1043→1050**（mall/generator/spark 不变；唯一已知环境性红 manifest patrol 不计）。
+# ───────────────────────────────────────────────────────────────────────────
+# 2026-09-23 fresh default run on the current worktree:
+#   analytics-server module totals = 115 + 359 + 184 + 122 + 154 + 162 = 1096.
+#   Count includes this turn's 8 new tests (metric window SQL 2, window aggregator 4,
+#   decision service 1, migration guard 1). All analytics modules were counted from fresh
+#   Surefire summaries; the sole failure remains the already documented environment patrol
+#   (IngestionManifestRuntimePatrolTest: expected legacy 43-file evidence, current 0).
+#   Update the count gate only; this does not turn the default suite green or waive that failure.
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 

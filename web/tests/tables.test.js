@@ -93,11 +93,23 @@ test('decisionRows 快照号与基线来自后端行，缺失给占位符', () =
 
 test('evaluationRows 改善率 decimal → 百分比，缺失不写成 0%', () => {
   const rows = evaluationRows([
-    { result: 'EFFECTIVE', improvementRate: 0.6, baselineValue: 1, actualValue: 1.6, evalWindowDays: 3, createdAt: '2026-09-04T00:00:00Z' },
+    { result: 'EFFECTIVE', improvementRate: 0.6, baselineValue: 1, actualValue: 1.6, evalWindowDays: 3,
+      baselineWindowStart: '2026-09-01', baselineWindowEnd: '2026-09-03',
+      windowStart: '2026-09-05', windowEnd: '2026-09-07', baselineSampleCount: 3, actualSampleCount: 3,
+      sourceId: 7, metricDefinitionVersion: 'v1', note: '前后变化（非因果推断）',
+      createdAt: '2026-09-04T00:00:00Z' },
     { result: 'INSUFFICIENT_DATA', improvementRate: null }
   ])
   assert.equal(rows[0].improvementRate, '60.00%')
+  assert.equal(rows[0].baselineWindow, '2026-09-01 ~ 2026-09-03')
+  assert.equal(rows[0].actualWindow, '2026-09-05 ~ 2026-09-07')
+  assert.equal(rows[0].baselineSamples, '3')
+  assert.equal(rows[0].actualSamples, '3')
+  assert.equal(rows[0].sourceId, '7')
+  assert.equal(rows[0].metricDefinitionVersion, 'v1')
+  assert.equal(rows[0].note, '前后变化（非因果推断）')
   assert.equal(rows[1].improvementRate, '—')
+  assert.equal(rows[1].baselineWindow, '—')
 })
 
 test('aiResultTable 列名来自结果行键的并集（未登记键原样保留），值原样字符串化，null 转空串', () => {

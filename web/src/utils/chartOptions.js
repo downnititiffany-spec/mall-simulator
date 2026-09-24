@@ -67,6 +67,9 @@ export function funnelOption(stages = []) {
     series: [
       {
         type: 'funnel',
+        // Funnel series default sorting can reorder business stages by value.
+        // Keep the API's view -> intent -> order -> pay sequence as supplied.
+        sort: 'none',
         left: 60,
         top: 20,
         bottom: 20,

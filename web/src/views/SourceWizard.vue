@@ -2,6 +2,25 @@
   <div>
     <div class="page-title">接入向导（选源 → 受控样本 → 预览 → 确认激活）</div>
 
+    <!-- 步骤条：仅按既有状态渲染进度，不参与任何校验判定 -->
+    <div class="steps">
+      <div class="step" :class="report ? 'is-done' : 'is-active'">
+        <span class="step-no">1</span>选择数据源
+      </div>
+      <span class="step-line"></span>
+      <div class="step" :class="report ? 'is-done' : ''">
+        <span class="step-no">2</span>受控样本与画像
+      </div>
+      <span class="step-line"></span>
+      <div class="step" :class="report ? (mappingDone ? 'is-done' : 'is-active') : ''">
+        <span class="step-no">3</span>预览报告
+      </div>
+      <span class="step-line"></span>
+      <div class="step" :class="activationRows ? 'is-done' : (mappingDone ? 'is-active' : '')">
+        <span class="step-no">4</span>确认激活
+      </div>
+    </div>
+
     <div class="chart-box">
       <div class="chart-title">说明</div>
       <div class="table-hint">
@@ -17,13 +36,13 @@
       <div class="chart-title">第 1 步 · 选择数据源（GET /sources；current=当前 ACTIVE 运行环境绑定的源）</div>
       <div class="table-hint" v-if="sourcesLoading">源列表加载中…</div>
       <div class="table-hint" v-else-if="!sources.length">接口未返回任何源（请先以管理员身份登记源）。</div>
-      <table v-else style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
+      <table v-else class="data-table">
+        <thead><tr style="text-align:left;color:var(--gray-500)">
           <th style="padding:6px">选择</th><th>ID</th><th>sourceCode</th><th>名称</th>
           <th>模式</th><th>状态</th><th>画像版本</th><th>当前激活</th>
         </tr></thead>
         <tbody>
-          <tr v-for="s in sources" :key="s.id" style="border-top:1px solid #f3f4f6">
+          <tr v-for="s in sources" :key="s.id" style="border-top:1px solid var(--gray-100)">
             <td style="padding:6px"><input type="radio" name="wizard-source" :value="s.id" v-model.number="sourceId" /></td>
             <td>{{ s.id }}</td>
             <td>{{ s.sourceCode }}</td>
@@ -32,8 +51,8 @@
             <td>{{ s.status }}</td>
             <td>{{ s.profileVersion || '—' }}</td>
             <td>
-              <span v-if="s.current" style="color:#16a34a">是</span>
-              <span v-else style="color:#6b7280">否</span>
+              <span v-if="s.current" style="color:var(--success)">是</span>
+              <span v-else style="color:var(--gray-500)">否</span>
             </td>
           </tr>
         </tbody>
@@ -63,15 +82,15 @@
       </div>
       <textarea v-model="profileText" rows="10" style="width:100%;font-family:monospace;font-size:12px;padding:6px"
                 :placeholder="profilePlaceholder" data-testid="wizard-profile-text"></textarea>
-      <div style="margin-top:6px;font-size:12px" :style="{ color: profileCheck.ok ? '#16a34a' : '#dc2626' }">
+      <div style="margin-top:6px;font-size:12px" :style="{ color: profileCheck.ok ? 'var(--success)' : '#dc2626' }">
         {{ profileCheck.ok ? '画像原文 JSON 形状初检通过（fieldMappings 对象存在）；最终以服务端 Loader 为准。'
            : (profileText.trim() ? profileCheck.error : '') }}
       </div>
       <div style="margin-top:8px">
-        <button style="font-size:12px" @click="runPreview" :disabled="previewDisabled || previewBusy" data-testid="wizard-preview-btn">
+        <button class="btn btn-sm" @click="runPreview" :disabled="previewDisabled || previewBusy" data-testid="wizard-preview-btn">
           {{ previewBusy ? '预览中…' : '生成预览报告' }}
         </button>
-        <span v-if="previewGate.reason && !previewBusy" style="font-size:12px;color:#6b7280;margin-left:8px">{{ previewGate.reason }}</span>
+        <span v-if="previewGate.reason && !previewBusy" style="font-size:12px;color:var(--gray-500);margin-left:8px">{{ previewGate.reason }}</span>
       </div>
     </div>
 
@@ -80,20 +99,20 @@
       <div class="chart-title">
         第 3 步 · 预览报告（reportId {{ report.reportId }}）
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <table class="data-table">
         <tbody>
-          <tr v-for="r in summary.rows" :key="r.label" style="border-top:1px solid #f3f4f6">
-            <td style="padding:6px;color:#6b7280;width:160px">{{ r.label }}</td>
+          <tr v-for="r in summary.rows" :key="r.label" style="border-top:1px solid var(--gray-100)">
+            <td style="padding:6px;color:var(--gray-500);width:160px">{{ r.label }}</td>
             <td style="padding:6px">{{ r.value }}</td>
           </tr>
         </tbody>
       </table>
       <div v-if="reasonRows.length" style="margin-top:8px">
         <div style="font-size:13px;font-weight:600;margin-bottom:4px">违规计数（按违例条数，非隔离行数）</div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr style="text-align:left;color:#6b7280"><th style="padding:6px">原因</th><th>条数</th></tr></thead>
+        <table class="data-table">
+          <thead><tr style="text-align:left;color:var(--gray-500)"><th style="padding:6px">原因</th><th>条数</th></tr></thead>
           <tbody>
-            <tr v-for="r in reasonRows" :key="r.reason" style="border-top:1px solid #f3f4f6">
+            <tr v-for="r in reasonRows" :key="r.reason" style="border-top:1px solid var(--gray-100)">
               <td style="padding:6px">{{ r.reason }}</td><td>{{ r.count }}</td>
             </tr>
           </tbody>
@@ -103,10 +122,10 @@
         画像装载失败原因：<span v-for="(i, idx) in summary.profileIssues" :key="idx">{{ issueText(i) }}；</span>
       </div>
       <div style="margin-top:10px;font-size:13px" data-testid="wizard-eligible">
-        <span v-if="summary.eligible" style="color:#16a34a">activationEligible = true（预览判据全绿）</span>
+        <span v-if="summary.eligible" style="color:var(--success)">activationEligible = true（预览判据全绿）</span>
         <template v-else>
           <span style="color:#dc2626">activationEligible = false</span>
-          <div style="font-size:12px;color:#6b7280;margin-top:4px">
+          <div style="font-size:12px;color:var(--gray-500);margin-top:4px">
             原因清单：<template v-if="summary.ineligibleReasons.length">{{ summary.ineligibleReasons.join('；') }}</template><template v-else>接口未提供逐条原因。</template>
             <template v-if="summary.blocks.length"> 激活阻断项：{{ summary.blocks.join('；') }}。</template>
             <template v-if="summary.gaps.length"> 能力缺口：{{ summary.gaps.join('；') }}。</template>
@@ -124,10 +143,10 @@
     <div class="chart-box" v-if="report">
       <div class="chart-title">第 4 步 · 确认激活（先映射后源；两步都写服务端审计）</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <button style="font-size:12px;background:#16a34a" @click="activateMapping" :disabled="!report || mappingBusy || sourceBusy" data-testid="wizard-activate-mapping-btn">
+        <button class="btn btn-sm btn-success" @click="activateMapping" :disabled="!report || mappingBusy || sourceBusy" data-testid="wizard-activate-mapping-btn">
           {{ mappingBusy ? '映射激活中…' : '① 激活映射（按报告 ' + (report ? report.reportId : '') + '）' }}
         </button>
-        <button style="font-size:12px;background:#2563eb" @click="activateSource" :disabled="!mappingDone || sourceBusy || mappingBusy" data-testid="wizard-activate-source-btn">
+        <button class="btn btn-sm btn-primary" @click="activateSource" :disabled="!mappingDone || sourceBusy || mappingBusy" data-testid="wizard-activate-source-btn">
           {{ sourceBusy ? '源激活中…' : '② 激活源（绑定到当前运行环境）' }}
         </button>
       </div>
@@ -136,10 +155,10 @@
       </div>
       <div v-if="mappingError" style="margin-top:8px;font-size:13px;color:#dc2626" data-testid="wizard-activation-error">{{ mappingError }}</div>
       <div v-if="activationRows" style="margin-top:8px">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <table class="data-table">
           <tbody>
-            <tr v-for="r in activationRows" :key="r.label" style="border-top:1px solid #f3f4f6">
-              <td style="padding:6px;color:#6b7280;width:160px">{{ r.label }}</td>
+            <tr v-for="r in activationRows" :key="r.label" style="border-top:1px solid var(--gray-100)">
+              <td style="padding:6px;color:var(--gray-500);width:160px">{{ r.label }}</td>
               <td style="padding:6px">{{ r.value }}</td>
             </tr>
           </tbody>
@@ -147,7 +166,7 @@
       </div>
       <div v-if="sourceResult" style="margin-top:8px;font-size:13px" data-testid="wizard-source-result">
         源激活结果：sourceId {{ sourceResult.id }} / {{ sourceResult.sourceCode }} 状态
-        <b :style="{ color: sourceResult.status === 'ACTIVE' ? '#16a34a' : '#6b7280' }">{{ sourceResult.status }}</b>
+        <b :style="{ color: sourceResult.status === 'ACTIVE' ? 'var(--success)' : 'var(--gray-500)' }">{{ sourceResult.status }}</b>
         <template v-if="sourceResult.current && wasCurrentAtActivate">（已是当前运行环境绑定的源，幂等）</template>
         <template v-else-if="sourceResult.current">（已切换为当前运行环境绑定的源）</template>
       </div>

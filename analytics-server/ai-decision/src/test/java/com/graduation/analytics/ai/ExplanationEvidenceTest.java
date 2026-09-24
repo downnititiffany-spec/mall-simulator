@@ -162,6 +162,28 @@ class ExplanationEvidenceTest {
     }
 
     @Test
+    @DisplayName("QA-04 解释口径用生效区间：请求「近30天」而 SQL 只扫 7 天、覆盖 1 天时必须照实说")
+    void evidenceTimeRangeUsesEffectiveWindowNotRequestLabel() {
+        when(llmProvider.healthCheck()).thenReturn(false);
+        QueryWindow window = QueryWindow.of("近30天",
+                java.time.LocalDate.of(2026, 9, 11), java.time.LocalDate.of(2026, 9, 17),
+                java.time.LocalDate.of(2026, 9, 17), List.of(Map.of("dt", "20260917", "sale_amount", "500.00")));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select dt, sale_amount from ads_sale_trend_m", List.of("ads_sale_trend_m"),
+                1, 12L, List.of(Map.of("dt", "20260917", "sale_amount", "500.00")), List.of(), null, null,
+                "rule-based", window);
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "最近销售趋势", "近30天");
+
+        // 证据与摘要都不得照抄「近30天」，必须给出 2026-09-11 ~ 2026-09-17 的覆盖情况
+        assertThat(result.evidence().timeRange()).contains("2026-09-11 ~ 2026-09-17").contains("覆盖 1/7 天");
+        assertThat(result.evidence().timeRange()).doesNotContain("近30天");
+        assertThat(result.summary()).contains("2026-09-11 ~ 2026-09-17").contains("覆盖 1/7 天");
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("不能据此判断趋势"));
+    }
+
+    @Test
     @DisplayName("问数解释已尝试模型但超时：规则回退不得声称未调用大模型")
     void queryFallbackDoesNotClaimModelWasNeverCalled() {
         when(llmProvider.healthCheck()).thenReturn(true);

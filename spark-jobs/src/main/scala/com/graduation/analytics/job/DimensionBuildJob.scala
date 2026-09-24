@@ -7,12 +7,13 @@ import org.apache.spark.sql.SparkSession
 /**
  * Job05 用户/商品维度构建（§11.2 DimensionBuildJob）：
  * ODS 用户事件 → dim_user；ODS 商品/库存事件 → dim_product。
- * 每日全量快照，生效日期=dt 分区，来源批次=ingest_batch_id（source_batch_id）；
+ * 用户维度按当日事件生成快照；商品维度按 dt 截止日回看 ODS 历史并生成完整快照，
+ * 生效日期=dt 分区，来源批次=ingest_batch_id（source_batch_id）；
  * 维度数据来自事件流（ODS），禁止 Spark 直连商城数据库。
  */
 class DimensionBuildJob extends WarehouseJob {
   override val code: String = "dim"
-  override val description: String = "ODS 用户/商品事件 → dim_user / dim_product 每日快照"
+  override val description: String = "ODS 用户事件与截至业务日的商品历史 → dim_user / 完整 dim_product 快照"
 
   override def run(spark: SparkSession, args: JobArgs): JobResult = {
     val start = System.currentTimeMillis()
@@ -22,13 +23,20 @@ class DimensionBuildJob extends WarehouseJob {
     spark.sparkContext.setJobDescription(s"$code input count")
     val userInput = spark.sql(
       s"SELECT COUNT(*) c FROM ${ns.ods}.ods_user_event WHERE dt = '$dt'").collect()(0).getLong(0)
+    // 商品快照是截至 dt 的完整视图：即使当日无商品事件，也要把历史商品延续到当天分区。
+    // 查询条件与 DimSql.productSnapshot 的 as-of 过滤保持一致，避免晚到的未来分区泄漏。
     val productInput = spark.sql(
       s"SELECT COUNT(*) c FROM ${ns.ods}.ods_product_event WHERE dt = '$dt'").collect()(0).getLong(0)
+    val productAsOfInput = spark.sql(
+      s"SELECT COUNT(*) c FROM ${ns.ods}.ods_product_event WHERE dt <= '$dt' " +
+        "AND schema_version = '1.0' AND payload_product_id IS NOT NULL " +
+        "AND event_type IN ('product_created', 'product_updated')").collect()(0).getLong(0)
 
     spark.sparkContext.setJobDescription(s"$code dim_user snapshot")
     if (userInput > 0) spark.sql(DimSql.userSnapshot(ns, dt))
-    spark.sparkContext.setJobDescription(s"$code dim_product snapshot")
-    if (productInput > 0) spark.sql(DimSql.productSnapshot(ns, dt))
+    spark.sparkContext.setJobDescription(s"$code dim_product as-of snapshot")
+    // 即使当前没有合格 ODS 商品，也必须覆盖该静态分区：否则同日重跑会遗留旧快照。
+    spark.sql(DimSql.productSnapshot(ns, dt))
 
     val userOutput = spark.sql(
       s"SELECT COUNT(*) c FROM ${ns.dim}.dim_user WHERE dt = '$dt'").collect()(0).getLong(0)
@@ -38,7 +46,8 @@ class DimensionBuildJob extends WarehouseJob {
     JobResult.success(code, userInput + productInput, userOutput + productOutput, 0L,
       args.outputSnapshotId, args.attemptNo, System.currentTimeMillis() - start,
       PartitionEvidence.collect(spark, DimensionBuildJob.outputTables(ns), args.outputSnapshotId, Some(dt)))
-      .copy(message = s"user=$userInput->$userOutput product=$productInput->$productOutput")
+      .copy(message = s"user=$userInput->$userOutput product=$productInput->$productOutput " +
+        s"productAsOfEligible=$productAsOfInput")
   }
 }
 

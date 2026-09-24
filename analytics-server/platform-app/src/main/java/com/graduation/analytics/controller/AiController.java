@@ -119,12 +119,13 @@ public class AiController {
     public ApiResponse<AiQueryResp> query(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
-        QueryResult query = textToSqlService.query(req.question(), actor.userId());
-        String timeRange = req.timeRange() == null || req.timeRange().isBlank() ? "近30天(默认)" : req.timeRange();
+        QueryResult query = textToSqlService.query(req.question(), actor.userId(), req.timeRange());
         EvidencePackage pkg = buildEvidenceQuietly(null, req.timeRange(), actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
+        // QA-04：口径由 query.window 的生效区间产出（ExplanationService 内部取用），
+        // 这里只传页面请求口径，不再伪造「近30天(默认)」这类与 SQL 无关的标签
         ExplanationResult explanation = explanationService.explain(query, snapshotId,
-                req.question(), timeRange);
+                req.question(), req.timeRange());
         auditQuery(actor, req.question(), snapshotId, query);
         return ApiResponse.ok(new AiQueryResp(query, explanation,
                 summaryOf(pkg), evidenceIdOf(pkg)), trace.traceId());
@@ -136,11 +137,11 @@ public class AiController {
     public ApiResponse<ExplanationResult> analyze(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
-        QueryResult query = textToSqlService.query(req.question(), actor.userId());
+        QueryResult query = textToSqlService.query(req.question(), actor.userId(), req.timeRange());
         EvidencePackage pkg = buildEvidenceQuietly(null, req.timeRange(), actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
         ExplanationResult explanation = explanationService.explain(query, snapshotId, req.question(),
-                req.timeRange() == null ? "近30天(默认)" : req.timeRange());
+                req.timeRange());
         auditQuery(actor, req.question(), snapshotId, query);
         return ApiResponse.ok(explanation, trace.traceId());
     }

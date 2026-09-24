@@ -30,7 +30,7 @@ const props = defineProps({
           <td v-for="(cell, j) in row" :key="j" class="mono"
               :style="cellColor ? { color: cellColor(cell, i, j) } : null">{{ cell === null || cell === undefined ? '—' : cell }}</td>
           <td v-if="actionLabel">
-            <button style="font-size:12px" @click="props.onAction && props.onAction(row, i)">查看指标</button>
+            <button class="btn btn-sm" @click="props.onAction && props.onAction(row, i)">查看指标</button>
           </td>
         </tr>
       </tbody>
@@ -48,13 +48,13 @@ const props = defineProps({
 .data-table th {
   text-align: left;
   padding: 6px;
-  color: var(--color-muted-foreground, #6b7280);
+  color: var(--color-muted-foreground, var(--gray-500));
   font-weight: 500;
   border-bottom: 1px solid #e5e7eb;
 }
 .data-table td {
   padding: 6px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--gray-100);
 }
 .data-table tr.row-active td {
   background: #eff6ff;

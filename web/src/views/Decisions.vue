@@ -7,7 +7,7 @@
     <div class="chart-box">
       <div class="chart-title">
         决策数据上下文
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="refresh" :disabled="loading || busy">
+        <button class="btn btn-sm" style="float:right" @click="refresh" :disabled="loading || busy">
           {{ loading ? '刷新中…' : '刷新' }}
         </button>
       </div>
@@ -21,7 +21,7 @@
     <div class="chart-box">
       <div class="chart-title">
         决策列表（AI 草稿 → 人工审核 → 执行 → 效果评价）
-        <button style="float:right;font-size:12px;padding:3px 10px"
+        <button class="btn btn-sm" style="float:right"
                 :disabled="!exportable" @click="exportDecisions">
           {{ exportable ? '导出决策 CSV' : '导出（' + statusText + '）' }}
         </button>
@@ -34,14 +34,14 @@
 
       <div v-if="actionError" class="banner banner-error">操作失败：{{ actionError }}</div>
 
-      <table v-if="rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
+      <table v-if="rows.length" class="data-table">
+        <thead><tr style="text-align:left;color:var(--gray-500)">
           <th style="padding:8px">编号</th><th>标题</th><th>来源</th><th>目标指标</th><th>基线</th>
           <th>建议快照</th><th>基线快照</th><th>口径版本</th><th>负责人</th><th>截止日期</th>
           <th>状态</th><th>效果</th><th>操作</th>
         </tr></thead>
         <tbody>
-          <tr v-for="d in rows" :key="d.id" style="border-top:1px solid #f3f4f6">
+          <tr v-for="d in rows" :key="d.id" style="border-top:1px solid var(--gray-100)">
             <td style="padding:8px" class="mono">{{ d.decisionNo }}</td>
             <td>{{ d.title }}</td>
             <td>{{ d.source || '—' }}</td>
@@ -52,25 +52,31 @@
             <td class="mono">{{ d.definitionVersion || '—' }}</td>
             <td>{{ d.owner || '—' }}</td>
             <td class="mono">{{ d.dueDate || '—' }}</td>
-            <td><span :style="{ color: statusColor(d.status), fontWeight: 600 }">{{ d.status }}</span></td>
+            <td><span class="badge" :class="statusBadge(d.status)">{{ d.status }}</span></td>
             <td>
               <span v-if="evaluations[d.id]">
                 {{ evaluations[d.id].result }} ({{ evaluations[d.id].improvementRate }})
                 <div class="table-hint mono">
                   基线 {{ evaluations[d.id].baselineValue }} → 实际 {{ evaluations[d.id].actualValue }}
-                  （窗口 {{ evaluations[d.id].evalWindowDays }} 天）
+                  （{{ evaluations[d.id].evalWindowDays }} 天；基线 {{ evaluations[d.id].baselineWindow }} /
+                  实际 {{ evaluations[d.id].actualWindow }}；逐日样本
+                  {{ evaluations[d.id].baselineSamples }} + {{ evaluations[d.id].actualSamples }}）
+                </div>
+                <div class="table-hint">
+                  来源 {{ evaluations[d.id].sourceId }} / 指标口径 {{ evaluations[d.id].metricDefinitionVersion }}；
+                  {{ evaluations[d.id].note }}
                 </div>
               </span>
               <span v-else>—</span>
             </td>
-            <td style="white-space:nowrap">
-              <button v-if="d.status === 'DRAFT'" @click="submitDecision(d)" :disabled="loading || busy">提交审核</button>
-              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#16a34a" @click="approve(d)" :disabled="loading || busy">批准</button>
-              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="rejectDecision(d)" :disabled="loading || busy">驳回</button>
-              <button v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="loading || busy">开始</button>
-              <button v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="loading || busy">完成</button>
-              <button v-if="d.status === 'IN_PROGRESS'" style="background:#dc2626" @click="cancelDecision(d)" :disabled="loading || busy">取消</button>
-              <button v-if="d.status === 'COMPLETED'" style="background:#7c3aed" @click="evaluate(d)" :disabled="loading || busy">评价</button>
+            <td class="nowrap">
+              <button class="btn btn-sm btn-primary" v-if="d.status === 'DRAFT'" @click="submitDecision(d)" :disabled="loading || busy">提交审核</button>
+              <button class="btn btn-sm btn-success" v-if="d.status === 'PENDING_REVIEW'" @click="approve(d)" :disabled="loading || busy">批准</button>
+              <button class="btn btn-sm btn-danger" v-if="d.status === 'PENDING_REVIEW'" @click="rejectDecision(d)" :disabled="loading || busy">驳回</button>
+              <button class="btn btn-sm" v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="loading || busy">开始</button>
+              <button class="btn btn-sm" v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="loading || busy">完成</button>
+              <button class="btn btn-sm btn-danger" v-if="d.status === 'IN_PROGRESS'" @click="cancelDecision(d)" :disabled="loading || busy">取消</button>
+              <button class="btn btn-sm btn-ai" v-if="d.status === 'COMPLETED'" @click="evaluate(d)" :disabled="loading || busy">评价</button>
             </td>
           </tr>
         </tbody>
@@ -80,10 +86,11 @@
       <div v-if="evaluationError" class="table-hint table-hint-error">部分决策的评价读取失败：{{ evaluationError }}</div>
     </div>
 
-    <div class="chart-box" style="font-size:13px;color:#6b7280;line-height:1.8">
+    <div class="chart-box" style="font-size:13px;color:var(--gray-500);line-height:1.8">
       <b>口径说明：</b>AI 只能创建 DRAFT（§22.6）；从 PENDING_REVIEW 到 APPROVED 必须人工；
-      批准时锁定基线快照、口径版本与目标指标；效果 = (实际−基线)/|基线|，"越低越好"指标（退款率等）取反；
-      评价结果仅为前后对比，非因果推断（§21.10）。
+      批准时冻结完整基线窗口的来源、口径及逐日快照；目前只对已验证的可加总日指标评价。
+      比率、UV/DAU、复购率、客单价等缺少窗口公式时显示数据不足，不直接按日值平均或求和；
+      评价结果仅为前后变化，非因果推断（§21.10）。
     </div>
   </div>
 </template>
@@ -149,9 +156,20 @@ const { data, state, loading, error, exportable, statusText, exportContext, load
 const rows = computed(() => mapDecisionRows(data.value.decisions))
 
 const statusColor = (s) => {
-  const map = { EFFECTIVE: '#16a34a', PARTIAL: '#d97706', INEFFECTIVE: '#dc2626',
-    INSUFFICIENT_DATA: '#6b7280', REJECTED: '#dc2626', CANCELLED: '#6b7280' }
-  return map[s] || '#111827'
+  const map = { EFFECTIVE: 'var(--success)', PARTIAL: '#d97706', INEFFECTIVE: '#dc2626',
+    INSUFFICIENT_DATA: 'var(--gray-500)', REJECTED: '#dc2626', CANCELLED: 'var(--gray-500)' }
+  return map[s] || 'var(--gray-800)'
+}
+
+// 状态徽标（纯展示映射，不改变任何状态判定）
+const statusBadge = (s) => {
+  const map = {
+    EFFECTIVE: 'badge-success', PARTIAL: 'badge-warning', INEFFECTIVE: 'badge-danger',
+    INSUFFICIENT_DATA: 'badge-neutral', REJECTED: 'badge-danger', CANCELLED: 'badge-neutral',
+    DRAFT: 'badge-neutral', PENDING_REVIEW: 'badge-warning', APPROVED: 'badge-brand',
+    IN_PROGRESS: 'badge-info', COMPLETED: 'badge-ai'
+  }
+  return map[s] || 'badge-neutral'
 }
 
 function refresh() {

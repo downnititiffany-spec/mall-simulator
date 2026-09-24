@@ -54,32 +54,40 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
+/* 与分析平台登录页保持同一套视觉：品牌渐变背景 + 白卡 + 品牌锚点主按钮 */
 .login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f7fa;
+  padding: 40px 24px;
+  background: linear-gradient(160deg, #172554 0%, #1E3A8A 45%, #1E40AF 100%);
 }
 .login-card {
   width: 380px;
-  padding: 32px 28px 28px;
+  padding: 32px 30px 26px;
   margin: 0;
+  border: none;
+  box-shadow: var(--shadow-lg);
 }
-.login-title { font-size: 18px; font-weight: 700; color: #111827; text-align: center; }
-.login-sub { font-size: 12px; color: #6b7280; text-align: center; margin: 6px 0 22px; }
+.login-title { font-size: 19px; font-weight: 700; color: var(--text-primary); text-align: center; }
+.login-sub { font-size: 12px; color: var(--text-secondary); text-align: center; margin: 6px 0 22px; line-height: 1.7; }
 .field { margin-bottom: 14px; }
-.field label { display: block; font-size: 13px; color: #374151; margin-bottom: 6px; }
+.field label { display: block; font-size: var(--fs-base); color: var(--text-secondary); margin-bottom: 6px; }
 .field input {
-  width: 100%; height: 38px; padding: 0 10px; border: 1px solid #d1d5db; border-radius: 6px;
-  font-size: 14px; color: #111827; background: #fff; outline: none;
+  width: 100%; height: 38px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: var(--fs-md); color: var(--text-primary); background: #fff; outline: none;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
-.field input:focus { border-color: #3b82f6; }
-.login-error { color: #dc2626; font-size: 13px; margin: 2px 0 12px; }
+.field input:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
+.login-error { color: var(--danger); font-size: var(--fs-base); margin: 2px 0 12px; }
 .login-btn {
-  width: 100%; height: 40px; border: none; border-radius: 6px; background: #3b82f6; color: #fff;
+  width: 100%; height: 40px; border: none; border-radius: var(--radius);
+  background: var(--brand-800); color: #fff;
   font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: filter var(--dur-fast) var(--ease);
 }
-.login-btn:hover { background: #2563eb; }
+.login-btn:hover { filter: brightness(1.08); }
 .login-btn:disabled { opacity: .6; cursor: default; }
 </style>

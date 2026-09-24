@@ -22,6 +22,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -130,6 +131,48 @@ class AiSqlSecurityTest {
         assertTrue(r.ok(), "该查询本应通过（只改 LIMIT）: " + r.error());
         assertTrue(r.sql().toUpperCase(java.util.Locale.ROOT).contains("LIMIT 200"), "未改写为 200: " + r.sql());
         assertFalse(r.sql().contains("100000"), "仍残留超限 LIMIT: " + r.sql());
+    }
+
+    @Test
+    @DisplayName("QA-04 校验结果暴露解析出的 dt 生效区间（WHERE 字面量是唯一来源，不靠请求标签）")
+    void 校验结果暴露生效区间() {
+        ValidationResult r = validate("SELECT dt, sale_amount FROM ads_sale_trend_m WHERE " + SNAP
+                + " AND dt >= '20260829' AND dt <= '20260904' LIMIT 200");
+
+        assertTrue(r.ok(), "合法查询被误拒: " + r.error());
+        assertEquals(LocalDate.of(2026, 8, 29), r.dtFrom());
+        assertEquals(LocalDate.of(2026, 9, 4), r.dtTo());
+    }
+
+    @Test
+    @DisplayName("QA-04 严格日期比较必须排除边界日，且反向比较语义一致")
+    void 严格日期比较不应把排除端点计入生效区间() {
+        ValidationResult direct = validate("SELECT dt, sale_amount FROM ads_sale_trend_m WHERE " + SNAP
+                + " AND dt > '20260829' AND dt < '20260904' LIMIT 200");
+        ValidationResult reversed = validate("SELECT dt, sale_amount FROM ads_sale_trend_m WHERE " + SNAP
+                + " AND '20260829' < dt AND '20260904' > dt LIMIT 200");
+
+        assertTrue(direct.ok(), "严格比较查询本应通过: " + direct.error());
+        assertTrue(reversed.ok(), "反向严格比较查询本应通过: " + reversed.error());
+        assertEquals(LocalDate.of(2026, 8, 30), direct.dtFrom());
+        assertEquals(LocalDate.of(2026, 9, 3), direct.dtTo());
+        assertEquals(direct.dtFrom(), reversed.dtFrom());
+        assertEquals(direct.dtTo(), reversed.dtTo());
+    }
+
+    @Test
+    @DisplayName("QA-04 BETWEEN 形式同样暴露生效区间；被拒的 SQL 区间为 null（不得给出假区间）")
+    void 生效区间覆盖BETWEEN与拒绝路径() {
+        ValidationResult between = validate("SELECT dt, order_count FROM ads_operation_overview_m WHERE " + SNAP
+                + " AND dt BETWEEN '20260901' AND '20260904' LIMIT 200");
+        assertTrue(between.ok(), "BETWEEN 合法查询被误拒: " + between.error());
+        assertEquals(LocalDate.of(2026, 9, 1), between.dtFrom());
+        assertEquals(LocalDate.of(2026, 9, 4), between.dtTo());
+
+        ValidationResult rejected = validate("SELECT dt FROM ads_sale_trend_m WHERE " + SNAP + " LIMIT 200");
+        assertFalse(rejected.ok(), "缺日期区间的查询必须被拒绝");
+        assertNull(rejected.dtFrom());
+        assertNull(rejected.dtTo());
     }
 
     // ── 攻击集（契约 §2.4 逐条） ─────────────────────────────────────────────

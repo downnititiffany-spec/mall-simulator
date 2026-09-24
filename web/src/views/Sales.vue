@@ -3,14 +3,15 @@
     <div class="page-title">销售分析</div>
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <label style="font-size:13px;color:#374151">日期范围：</label>
+      <label style="font-size:13px;color:var(--gray-700)">日期范围：</label>
       <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
-      <span style="color:#9ca3af">至</span>
+      <span style="color:var(--gray-400)">至</span>
       <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
-      <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
-      <button style="font-size:12px" :disabled="!exportable" @click="doExport">导出 CSV</button>
-      <span style="font-size:12px;color:#9ca3af">汇总值取快照指标库，趋势取快照明细，页面不重算</span>
+      <button class="btn btn-sm" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
+      <button class="btn btn-sm" :disabled="!exportable" @click="doExport">导出 CSV</button>
+      <span style="font-size:12px;color:var(--gray-400)">汇总值取快照指标库，趋势取快照明细，页面不重算</span>
     </div>
+    <div v-if="rangeError" class="banner banner-error" style="margin-bottom:10px">{{ rangeError }}</div>
 
     <AnalysisContext :context="context || {}" :state="state" :error="error" />
 
@@ -33,7 +34,7 @@
         销售明细
         <span class="table-count">共 {{ rows.length }} 行</span>
       </div>
-      <table>
+      <table class="data-table">
         <thead>
           <tr>
             <th v-for="col in columns" :key="col.key" style="cursor:pointer" @click="toggleSort(col.key)">
@@ -54,9 +55,9 @@
         </tbody>
       </table>
       <div class="pager">
-        <button style="font-size:12px" :disabled="loading || paged.page <= 1" @click="page = paged.page - 1">上一页</button>
+        <button class="btn btn-sm" :disabled="loading || paged.page <= 1" @click="page = paged.page - 1">上一页</button>
         <span>第 {{ paged.page }} / {{ paged.totalPages }} 页</span>
-        <button style="font-size:12px" :disabled="loading || paged.page >= paged.totalPages" @click="page = paged.page + 1">下一页</button>
+        <button class="btn btn-sm" :disabled="loading || paged.page >= paged.totalPages" @click="page = paged.page + 1">下一页</button>
       </div>
       <div class="table-hint">
         质量规则（快照 run）：{{ qualityText }}。
@@ -74,7 +75,7 @@ import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
-import { localIsoDayOffset } from '../utils/localDate.js'
+import { dateRangeErrorText, isRangeInverted, localIsoDayOffset } from '../utils/localDate.js'
 import { qualitySummaryText, ruleVersionText, RULE_VERSION_NOTE } from '../utils/quality'
 import { salesTrendOption, sortRows, paginate, NET_SALE_NOTE } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
@@ -86,6 +87,8 @@ const to = ref(localIsoDayOffset(0))
 const sortKey = ref('')
 const sortOrder = ref('asc')
 const page = ref(1)
+// QA-01：倒置区间的页面提示（判据与文案的唯一属主是 utils/localDate.js）
+const rangeError = ref('')
 const pageSize = 10
 
 const analysis = useAnalysis({
@@ -135,6 +138,13 @@ function toggleSort(key) {
 
 const load = () => {
   if (loading.value) return
+  // QA-01：from > to 属于无效区间（后端会 400），前端先拦下并给出明确提示，不发注定失败的请求
+  // （注意：提示写回发生在清空上一次筛选状态之前，否则刚给出的提示会被自己抹掉）
+  if (isRangeInverted(from.value, to.value)) {
+    rangeError.value = dateRangeErrorText(from.value, to.value)
+    return
+  }
+  rangeError.value = ''
   page.value = 1
   return analysis.load({ from: from.value, to: to.value })
 }

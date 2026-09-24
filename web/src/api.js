@@ -101,9 +101,16 @@ export default {
     client.get('/metrics/overview', { params: snapshotId ? { snapshotId } : {}, ...(options || {}) }),
   snapshots: (limit = 10, options) => client.get('/metrics/snapshots', { params: { limit }, ...(options || {}) }),
   quality: (limit = 20, options) => client.get('/metrics/quality', { params: { limit }, ...(options || {}) }),
-  // AI（问答 + 审计）：返回证据包结构，非统一信封
-  aiQuery: (question, timeRange = '近30天', options) =>
-    client.post('/ai/queries', { question, timeRange }, { ...(options || {}) }),
+  // AI（问答 + 审计）：返回证据包结构，非统一信封。
+  // QA-04：查询时间范围是**真正可选**——不传就不发送该字段。此前默认写死一个「最近 30 天」标签，
+  // 等于前端替模型编一个时间口径，与 SQL 生成路径自行选择的真实日期互相矛盾。
+  // 有效查询期一律以后端响应里的结构化 query.window 为准。
+  aiQuery: (question, timeRange, options) => {
+    const body = { question }
+    const hasTimeRange = typeof timeRange === 'string' && timeRange.trim() !== ''
+    if (hasTimeRange) body.timeRange = timeRange
+    return client.post('/ai/queries', body, { ...(options || {}) })
+  },
   aiHistoryMine: (limit = 8, options) => client.get('/ai/history/my', { params: { limit }, ...(options || {}) }),
   aiAuditHistory: (limit = 20, options) => client.get('/ai/audit/history', { params: { limit }, ...(options || {}) }),
   aiAuditCalls: (limit = 20, options) => client.get('/ai/audit/calls', { params: { limit }, ...(options || {}) }),

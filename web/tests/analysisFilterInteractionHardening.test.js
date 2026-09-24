@@ -47,7 +47,9 @@ test('Sales loading 期间拒绝本地排序与翻页，避免新筛选结果落
 
 test('Overview 日期输入与 load handler 在 loading 期间 fail-closed', () => {
   assert.equal((overview.match(/v-model="(?:from|to)" :disabled="loading"/g) || []).length, 2)
-  assert.match(overview, /const load = \(\) => \{\s*if \(loading\.value\) return\s*return analysis\.load/)
+  // QA-01 在 guard 与请求之间插入了「倒置区间直接返回」，因此这里断言顺序而不是紧邻：
+  // loading guard 仍然最先短路，真正发请求仍在最后
+  assert.match(overview, /const load = \(\) => \{\s*if \(loading\.value\) return[\s\S]*?return analysis\.load/)
 })
 
 test('Overview 指标 CSV 只在 cards 子集非空时允许导出', () => {

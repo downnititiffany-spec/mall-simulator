@@ -2,6 +2,11 @@
   <div class="analysis-context">
     <div class="meta-row">
       <span class="meta-item">快照 <b class="mono">{{ ctx.snapshotId || '无' }}</b></span>
+      <span v-if="queryWindowText" class="meta-item">生效查询范围 <b class="mono">{{ queryWindowText }}</b></span>
+      <span class="meta-item">
+        业务来源 ID
+        <b class="mono">{{ businessSourceIdText(ctx.sourceId) }}</b>
+      </span>
       <span class="meta-item">业务时间 <b class="mono">{{ formatDateTime(ctx.businessTime) }}</b></span>
       <span class="meta-item">数据更新 <b class="mono">{{ formatDateTime(ctx.dataUpdatedAt) }}</b></span>
       <span class="meta-item">
@@ -35,8 +40,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import { formatDateTime, qualityText, sourceText } from '../utils/envelope'
-import { warningTextAll } from '../utils/context'
+import { businessSourceIdText, formatDateTime, qualityText, sourceText } from '../utils/envelope'
+import { effectiveWindowText, warningTextAll } from '../utils/context'
 
 const props = defineProps({
   context: { type: Object, default: () => ({}) },
@@ -47,4 +52,5 @@ const props = defineProps({
 // 上下文可能仍是 null（首次加载尚未返回）：统一兜底为空对象，避免模板取字段抛错
 const ctx = computed(() => props.context || {})
 const warnings = computed(() => (Array.isArray(ctx.value.warnings) ? ctx.value.warnings : []))
+const queryWindowText = computed(() => effectiveWindowText(ctx.value.filters))
 </script>

@@ -6,7 +6,7 @@
       <!-- S3-34（E5-c）：本页此前**不挂**上下文条（其余 8 个分析页都挂）⇒ 看不到结果所属数据源/发布方。
            上下文条只描述**本页响应整体**的口径；每个实例自己的业务时间/源数据版本/输入批次/目标快照见下表。 -->
       <AnalysisContext :context="exportContext" :state="state" :error="error" />
-      <div class="window-note" style="font-size:12px;color:#6b7280;margin-bottom:8px">
+      <div class="window-note" style="font-size:12px;color:var(--gray-500);margin-bottom:8px">
         上下文条描述本页响应整体口径（/pipeline-runs 返回裸数组、无统一信封，故来源（发布方）/口径版本/质量状态显示「未知」）；
         实例级溯源请看下表「源数据版本 / 输入批次 / 目标快照」三列（输入批次 ＝ 本 run 消费的
         `ingestion_batch.id`，S3-36 起落库；老实例该列未记录、显示「—」）。
@@ -22,7 +22,7 @@
           {{ busy ? '运行中…' : '触发采集并创建流水线实例' }}
         </button>
       </div>
-      <div style="margin-top:8px;font-size:12px;color:#6b7280">
+      <div style="margin-top:8px;font-size:12px;color:var(--gray-500)">
         说明：事件由外部模拟商城按统一契约写入事件目录，分析平台只做采集与编排，不再内置“生成订单”入口（指导书 §18.4）。
       </div>
       <div v-if="runResult" style="margin-top:12px;font-size:13px">
@@ -37,27 +37,30 @@
     <div class="chart-box">
       <div class="chart-title">
         最近流水线实例
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="refresh" :disabled="loading || busy">
+        <button class="btn btn-sm" style="float:right" @click="refresh" :disabled="loading || busy">
           {{ loading ? '刷新中…' : '刷新' }}
         </button>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
+      <table class="data-table">
+        <thead><tr style="text-align:left;color:var(--gray-500)">
           <th style="padding:8px">ID</th><th>流水线</th><th>业务时间</th><th>源数据版本</th><th>输入批次</th><th>目标快照</th><th>状态</th><th>尝试</th><th>操作</th>
         </tr></thead>
         <tbody>
-          <tr v-for="r in runRows" :key="r.id" style="border-top:1px solid #f3f4f6">
+          <tr v-for="r in runRows" :key="r.id" style="border-top:1px solid var(--gray-100)">
             <td style="padding:8px">{{ r.id }}</td>
             <td>{{ r.pipelineCode }}</td>
             <td>{{ r.businessTime }}</td>
             <td class="mono">{{ r.sourceDataVersion }}</td>
             <td class="mono">{{ r.inputBatchId }}</td>
             <td class="mono">{{ r.targetSnapshotId }}</td>
-            <td :style="{ color: r.status === 'SUCCESS' ? '#16a34a' : (r.status === 'FAILED' ? '#dc2626' : '#d97706') }">
-              {{ r.status }}
+            <td>
+              <span class="badge"
+                    :class="r.status === 'SUCCESS' ? 'badge-success' : (r.status === 'FAILED' ? 'badge-danger' : 'badge-warning')">
+                {{ r.status }}
+              </span>
             </td>
             <td>{{ r.attemptNo }}</td>
-            <td><button v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="loading || busy" style="font-size:12px">重试</button></td>
+            <td><button class="btn btn-sm" v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="loading || busy">重试</button></td>
           </tr>
           <tr v-if="runRows.length === 0"><td colspan="9" class="el-empty">暂无运行记录</td></tr>
         </tbody>

@@ -3,13 +3,13 @@
     <div class="page-title">用户行为分析</div>
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <label style="font-size:13px;color:#374151">活跃趋势日期范围：</label>
+      <label style="font-size:13px;color:var(--gray-700)">活跃趋势日期范围：</label>
       <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
-      <span style="color:#9ca3af">至</span>
+      <span style="color:var(--gray-400)">至</span>
       <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
-      <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
-      <button style="font-size:12px" :disabled="!funnelExportable" @click="doExport">导出 CSV</button>
-      <span style="font-size:12px;color:#9ca3af">漏斗按快照整体口径返回，不受日期范围影响</span>
+      <button class="btn btn-sm" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
+      <button class="btn btn-sm" :disabled="!funnelExportable" @click="doExport">导出 CSV</button>
+      <span style="font-size:12px;color:var(--gray-400)">漏斗按快照整体口径返回，不受日期范围影响</span>
     </div>
 
     <AnalysisContext :context="context || {}" :state="state" :error="error" />
@@ -32,7 +32,7 @@
 
     <div class="table-box">
       <div class="chart-title">漏斗阶段明细（转化率取后端 conversion_rate，前端不重算）</div>
-      <table>
+      <table class="data-table">
         <thead>
           <tr><th>阶段</th><th>用户数</th><th>转化率</th></tr>
         </thead>

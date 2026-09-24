@@ -8,13 +8,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * MySQL 指标服务实现（§19.3/§21.11，R7-1 改造）。
@@ -39,7 +43,7 @@ public class MySqlMetricStore implements MetricStore {
     private static final String SNAPSHOT_COLUMNS =
             "id, snapshot_id, runtime_profile_id, runtime_profile_version, business_time, pipeline_run_id, "
                     + "status, version, definition_version, data_updated_at, published_at, source, "
-                    + "failure_reason, created_at";
+                    + "failure_reason, created_at, source_id";
 
     /** metric_value 行映射（dimension_json/dimension_key 暂未进入 MetricValue 契约，R7-3 扩展） */
     private static final RowMapper<MetricValue> VALUE_MAPPER = (ResultSet rs, int rowNum) -> {
@@ -61,6 +65,7 @@ public class MySqlMetricStore implements MetricStore {
         s.setId(rs.getLong("id"));
         s.setSnapshotId(rs.getString("snapshot_id"));
         s.setRuntimeProfileId(rs.getLong("runtime_profile_id"));
+        s.setSourceId(rs.getObject("source_id", Long.class));
         s.setRuntimeProfileVersion(rs.getObject("runtime_profile_version", Integer.class));
         Timestamp businessTime = rs.getTimestamp("business_time");
         s.setBusinessTime(businessTime == null ? null : businessTime.toLocalDateTime());
@@ -108,6 +113,50 @@ public class MySqlMetricStore implements MetricStore {
         }
         return readJdbc.query("SELECT " + VALUE_COLUMNS + " FROM metric_value WHERE snapshot_id = ? "
                 + "ORDER BY metric_code", VALUE_MAPPER, snapshotId);
+    }
+
+    /**
+     * 按来源、指标口径和业务日读取历史序列。相同业务日存在重复发布时取 published_at/id
+     * 最新的一条；BUILDING/VERIFYING/FAILED 快照不参与，避免半成品进入决策评价。
+     */
+    @Override
+    public List<WindowMetricValue> queryWindow(WindowMetricQuery query) {
+        if (query == null || query.runtimeProfileId() == null || query.runtimeProfileId() <= 0
+                || query.sourceId() == null || query.sourceId() <= 0
+                || query.metricCode() == null || query.metricCode().isBlank()
+                || query.definitionVersion() == null || query.definitionVersion().isBlank()
+                || query.from() == null || query.to() == null || query.from().isAfter(query.to())) {
+            return List.of();
+        }
+        String fromPeriod = "day:" + query.from();
+        String toPeriod = "day:" + query.to();
+        List<WindowMetricValue> rows = readJdbc.query(
+                "SELECT mv.snapshot_id, ms.runtime_profile_id, ms.source_id, mv.metric_code, mv.metric_value, mv.period, "
+                        + "mv.definition_version, ms.published_at "
+                        + "FROM metric_value mv JOIN metric_snapshot ms ON ms.snapshot_id = mv.snapshot_id "
+                        + "WHERE ms.runtime_profile_id = ? AND ms.source_id = ? "
+                        + "AND mv.metric_code = ? AND mv.definition_version = ? "
+                        + "AND mv.period >= ? AND mv.period <= ? "
+                        + "AND ms.status IN (?, ?) AND ms.published_at IS NOT NULL "
+                        + "ORDER BY mv.period ASC, ms.published_at DESC, ms.id DESC",
+                (rs, rowNum) -> {
+                    String period = rs.getString("period");
+                    LocalDate businessDate = LocalDate.parse(period.substring("day:".length()));
+                    Timestamp publishedAt = rs.getTimestamp("published_at");
+                    return new WindowMetricValue(rs.getString("snapshot_id"),
+                            rs.getObject("runtime_profile_id", Long.class), rs.getObject("source_id", Long.class),
+                            rs.getString("metric_code"),
+                            rs.getBigDecimal("metric_value"), businessDate,
+                            rs.getString("definition_version"),
+                            publishedAt == null ? null : publishedAt.toLocalDateTime());
+                }, query.runtimeProfileId(), query.sourceId(), query.metricCode(), query.definitionVersion(), fromPeriod, toPeriod,
+                MetricSnapshot.STATUS_ACTIVE, MetricSnapshot.STATUS_ARCHIVED);
+
+        Map<LocalDate, WindowMetricValue> newestByDate = new LinkedHashMap<>();
+        for (WindowMetricValue row : rows) {
+            newestByDate.putIfAbsent(row.businessDate(), row);
+        }
+        return List.copyOf(newestByDate.values());
     }
 
     /** 最新 ACTIVE 快照号（metric_read）；无 ACTIVE 返回 null */
@@ -200,6 +249,10 @@ public class MySqlMetricStore implements MetricStore {
         if (switched == 0) {
             log.warn("metric publish: 快照 {} 未处于 VERIFYING，未切换为 ACTIVE（无 ACTIVE 指针变更，旧快照保持）",
                     snapshotId);
+            // 返回 0 供 MetricPublisher 保留明确的 MP_ACTIVATE_NOOP 分支，但本方法此前已经
+            // 删除/插入 metric_value 并可能归档旧 ACTIVE。若正常提交会留下孤儿指标并丢失旧 ACTIVE，
+            // 因此必须让 Spring 事务代理回滚整个发布事务。
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
         return switched;
     }

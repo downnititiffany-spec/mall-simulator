@@ -3,9 +3,9 @@
     <div class="page-title">用户分层（RFM）</div>
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <button style="font-size:12px" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
-      <button style="font-size:12px" :disabled="!segmentExportable" @click="doExport">导出 CSV</button>
-      <span style="font-size:12px;color:#9ca3af">
+      <button class="btn btn-sm" :disabled="loading" @click="load">{{ loading ? '加载中' : '刷新' }}</button>
+      <button class="btn btn-sm" :disabled="!segmentExportable" @click="doExport">导出 CSV</button>
+      <span style="font-size:12px;color:var(--gray-400)">
         分层口径版本：{{ ruleVersion || '未提供' }}；观察期：{{ periodText }}；只展示聚合结果，不展示个人敏感明细
       </span>
     </div>
@@ -20,7 +20,7 @@
 
     <div class="table-box">
       <div class="chart-title">分层明细</div>
-      <table>
+      <table class="data-table">
         <thead>
           <tr><th>分层</th><th>用户数</th><th>消费额(元)</th><th>平均最近购买(天)</th></tr>
         </thead>
@@ -42,7 +42,7 @@
 
     <div class="chart-box">
       <div class="chart-title">生命周期分布（aggregate，来自 ads_user_profile_m）</div>
-      <table>
+      <table class="data-table">
         <thead><tr><th>生命周期</th><th>用户数</th></tr></thead>
         <tbody>
           <tr v-for="l in lifecycle" :key="l.state">
@@ -55,7 +55,7 @@
 
     <div class="chart-box">
       <div class="chart-title">偏好分类分布（聚合）</div>
-      <table>
+      <table class="data-table">
         <thead><tr><th>分类ID</th><th>用户数</th></tr></thead>
         <tbody>
           <tr v-for="p in preference" :key="p.categoryId">
@@ -83,7 +83,7 @@ import ChartState from '../components/ChartState.vue'
 
 const COLORS = {
   重要价值: '#059669', 重要发展: '#10B981', 重要保持: '#84CC16', 重要挽留: '#D97706',
-  一般价值: '#1E40AF', 一般发展: '#3B82F6', 一般保持: '#7C3AED', 一般挽留: '#94A3B8'
+  一般价值: '#1E40AF', 一般发展: '#3B82F6', 一般保持: 'var(--ai)', 一般挽留: '#94A3B8'
 }
 const colorOf = (name) => COLORS[name] || '#1E40AF'
 

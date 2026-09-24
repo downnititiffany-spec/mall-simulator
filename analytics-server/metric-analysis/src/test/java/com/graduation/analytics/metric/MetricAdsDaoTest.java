@@ -186,6 +186,49 @@ class MetricAdsDaoTest {
         assertThat(reader.countRows("ads_data_quality_m", "snap-1")).isEqualTo(7L);
     }
 
+    @Test
+    @DisplayName("QA-01 日期区间读取：dt 边界全部参数化绑定，双端/单端都支持")
+    void selectBySnapshotRangeBindsDateBounds() {
+        stubQuery("snap-active", Map.of("dt", "20260901"));
+
+        reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "20260901", "20260903");
+        reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "20260901", null);
+        reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", null, "20260903");
+
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+        verify(readJdbc, times(3)).query(sql.capture(), any(RowMapper.class), args.capture());
+
+        assertThat(sql.getAllValues().get(0))
+                .contains("FROM `ads_sale_trend_m`")
+                .contains("`snapshot_id` = ?")
+                .contains("`dt` >= ?")
+                .contains("`dt` <= ?");
+        assertThat(args.getAllValues().get(0)).containsExactly("snap-1", "20260901", "20260903");
+
+        // 单端区间只绑定给出的一端（缺失端不得被写成 '19000101'/'99991231' 之类的假边界）
+        assertThat(sql.getAllValues().get(1)).contains("`dt` >= ?").doesNotContain("`dt` <= ?");
+        assertThat(args.getAllValues().get(1)).containsExactly("snap-1", "20260901");
+        assertThat(sql.getAllValues().get(2)).contains("`dt` <= ?").doesNotContain("`dt` >= ?");
+        assertThat(args.getAllValues().get(2)).containsExactly("snap-1", "20260903");
+    }
+
+    @Test
+    @DisplayName("QA-01 日期区间读取 fail-closed：缺快照/两端都缺/格式非紧凑/倒置一律拒绝且不发 SQL")
+    void selectBySnapshotRangeRejectsBadBounds() {
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "", "20260901", "20260903"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("snapshot_id");
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", null, null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("dt");
+        // dt 列是 varchar 紧凑值：'2026-09-01' 这种 ISO 字面量会静默 0 行，必须拒绝而不是放行
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "2026-09-01", "20260903"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("dt");
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "20260903", "20260901"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("倒置");
+        verifyNoInteractions(readJdbc);
+    }
+
     private static Map<String, Object> row(long pv) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("pv", pv);

@@ -95,6 +95,26 @@ public class LocalFileIngestor {
     public FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
                                  CRC32 checksum, SourceMapping mapping) {
+        return ingestFile(file, batchId, runtimeProfileId, sourceId, acceptedDir, quarantineDir,
+                trace, checksum, mapping, true);
+    }
+
+    /**
+     * 采集但暂不推进断点。批次编排器在所有文件成功且 READY manifest 已原子发布后，
+     * 才能调用 {@link #commitCheckpoint(Path, long, long, FileResult)}。
+     * manifest 发布失败时保留旧断点，让下一批次从源文件重读；未发布的 accepted 目录只是孤儿证据，
+     * 不会被 ODS 扫描。重读产生的重复事件由 DWD event_id 幂等去重。
+     */
+    public FileResult ingestFileDeferredCheckpoint(Path file, long batchId, long runtimeProfileId, long sourceId,
+                                                    Path acceptedDir, Path quarantineDir, TraceContext trace,
+                                                    CRC32 checksum, SourceMapping mapping) {
+        return ingestFile(file, batchId, runtimeProfileId, sourceId, acceptedDir, quarantineDir,
+                trace, checksum, mapping, false);
+    }
+
+    private FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
+                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
+                                  CRC32 checksum, SourceMapping mapping, boolean commitCheckpoint) {
         String abs = checkpointKey(file);
         String identity = fileIdentity(file);
         FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, abs);
@@ -226,8 +246,8 @@ public class LocalFileIngestor {
                 acceptedOut.flush();
                 quarantineOut.flush();
             }
-            // 落地成功后才推进 checkpoint（可恢复顺序，§9.2）
-            if (endOffset > startOffset || collected > 0 || quarantined > 0) {
+            // 单文件调用保持既有行为；批次编排调用 deferred 变体，待完整 manifest 发布后再推进。
+            if (commitCheckpoint && (endOffset > startOffset || collected > 0 || quarantined > 0)) {
                 upsertCheckpoint(runtimeProfileId, sourceId, abs, identity, endOffset);
             }
         } catch (IOException e) {
@@ -237,6 +257,16 @@ public class LocalFileIngestor {
                 file.getFileName(), collected, quarantined, acceptedBytes, startOffset, endOffset, identity);
         return result(file, startOffset, endOffset, identity, collected, quarantined,
                 acceptedBytes, schemaVersions);
+    }
+
+    /** READY manifest 发布成功后确认文件级断点，保证未发布批次可从源文件重放。 */
+    public void commitCheckpoint(Path file, long runtimeProfileId, long sourceId, FileResult result) {
+        if (result.endOffset() > result.startOffset()
+                || result.collected() > 0
+                || result.quarantined() > 0) {
+            upsertCheckpoint(runtimeProfileId, sourceId, checkpointKey(file),
+                    result.fileIdentity(), result.endOffset());
+        }
     }
 
     private static FileResult result(Path file, long start, long end, String identity,

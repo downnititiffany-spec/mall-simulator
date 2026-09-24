@@ -12,6 +12,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * HDFS 落地存储（§8.2/REMOTE_CLUSTER）：通过 Hadoop FileSystem API 操作 hdfs://
@@ -25,16 +26,20 @@ public class HdfsLandingStorage implements LandingStorage {
     private final String hdfsUri;
     private final Configuration conf;
     private final FileSystem fs;
+    private final Path basePath;
 
     public HdfsLandingStorage(String hdfsUri) {
-        if (hdfsUri == null || !hdfsUri.startsWith("hdfs://")) {
-            throw new IllegalArgumentException("hdfs landing uri 必须形如 hdfs://namenode:8020/...: " + hdfsUri);
-        }
-        this.hdfsUri = hdfsUri;
-        this.conf = new Configuration();
-        this.conf.set("fs.defaultFS", hdfsUri);
+        this(hdfsUri, new Configuration(), null);
+    }
+
+    /** package-private seam：允许离线测试路径策略，不需要启动 NameNode。 */
+    HdfsLandingStorage(String hdfsUri, Configuration conf, FileSystem fileSystem) {
+        this.hdfsUri = requireHdfsUri(hdfsUri);
+        this.basePath = new Path(URI.create(this.hdfsUri));
+        this.conf = Objects.requireNonNull(conf, "conf");
+        this.conf.set("fs.defaultFS", this.hdfsUri);
         try {
-            this.fs = FileSystem.get(URI.create(hdfsUri), conf);
+            this.fs = fileSystem == null ? FileSystem.get(basePath.toUri(), this.conf) : fileSystem;
         } catch (IOException e) {
             throw new IllegalStateException("初始化 HDFS FileSystem 失败: " + e.getMessage(), e);
         }
@@ -96,11 +101,11 @@ public class HdfsLandingStorage implements LandingStorage {
     @Override
     public String writeManifest(String batchId, String manifestJson) {
         try {
-            Path manifests = new Path(toPath("manifests"), batchId + ".json");
-            try (org.apache.hadoop.fs.FSDataOutputStream out = fs.create(manifests, true)) {
+            Path manifest = manifestPath(batchId);
+            try (org.apache.hadoop.fs.FSDataOutputStream out = fs.create(manifest, true)) {
                 out.write(manifestJson.getBytes(StandardCharsets.UTF_8));
             }
-            return manifests.toUri().toString();
+            return manifest.toUri().toString();
         } catch (IOException e) {
             throw new IllegalStateException("HDFS writeManifest 失败: " + e.getMessage(), e);
         }
@@ -109,23 +114,75 @@ public class HdfsLandingStorage implements LandingStorage {
     @Override
     public HealthResult healthCheck() {
         try {
-            Path rootPath = new Path("/");
-            FileStatus[] statuses = fs.listStatus(rootPath);
-            return new HealthResult(true, "hdfs reachable @ " + hdfsUri + " (root entries=" + statuses.length + ")");
+            FileStatus[] statuses = fs.listStatus(basePath);
+            return new HealthResult(true, "hdfs reachable @ " + hdfsUri
+                    + " (landing entries=" + statuses.length + ")");
         } catch (IOException e) {
             return new HealthResult(false, "hdfs probe failed: " + e.getMessage());
         }
     }
 
     private Path toPath(String relativePath) {
-        String rp = relativePath == null ? "" : relativePath;
-        return new Path(fullPath(rp));
+        String rp = relativePath == null ? "" : relativePath.trim();
+        if (rp.isEmpty()) {
+            return basePath;
+        }
+        requireRelativePath(rp);
+        Path target = new Path(basePath, rp);
+        String base = normalizedPath(basePath.toUri().getPath());
+        String candidate = normalizedPath(target.toUri().getPath());
+        String prefix = base.endsWith("/") ? base : base + "/";
+        if (!candidate.equals(base) && !candidate.startsWith(prefix)) {
+            throw new IllegalArgumentException("HDFS 相对路径逃逸出 landing namespace");
+        }
+        return target;
     }
 
-    private String fullPath(String relativePath) {
-        String base = hdfsUri;
-        String p = relativePath == null || relativePath.isBlank() ? ""
-                : relativePath.startsWith("/") ? relativePath : "/" + relativePath;
-        return (base.endsWith("/") ? base.substring(0, base.length() - 1) : base) + p;
+    private static String requireHdfsUri(String raw) {
+        try {
+            URI uri = URI.create(raw == null ? "" : raw.trim());
+            if (!"hdfs".equalsIgnoreCase(uri.getScheme()) || uri.getAuthority() == null
+                    || uri.getAuthority().isBlank() || uri.getQuery() != null || uri.getFragment() != null) {
+                throw new IllegalArgumentException();
+            }
+            String path = uri.getPath();
+            if (path != null) {
+                for (String segment : path.split("/")) {
+                    if ("..".equals(segment)) {
+                        throw new IllegalArgumentException();
+                    }
+                }
+            }
+            return uri.toString();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("hdfs landing uri 必须形如 hdfs://namenode:8020/landing-root", e);
+        }
+    }
+
+    private static void requireRelativePath(String path) {
+        if (path.startsWith("/") || path.contains("\\") || path.matches("^[A-Za-z][A-Za-z0-9+.-]*:.*")) {
+            throw new IllegalArgumentException("HDFS 路径必须是相对 landing namespace 的 POSIX 路径");
+        }
+        for (String segment : path.split("/", -1)) {
+            if ("..".equals(segment)) {
+                throw new IllegalArgumentException("HDFS 路径不得包含 ..");
+            }
+        }
+    }
+
+    private static String normalizedPath(String path) {
+        if (path == null || path.isBlank()) {
+            return "/";
+        }
+        String normalized = path.replaceAll("/+$", "");
+        return normalized.isEmpty() ? "/" : normalized;
+    }
+
+    private Path manifestPath(String batchId) {
+        if (batchId == null || !batchId.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+                || ".".equals(batchId) || "..".equals(batchId)) {
+            throw new IllegalArgumentException("batchId 必须是单段安全标识符");
+        }
+        return toPath("manifests/" + batchId + ".json");
     }
 }

@@ -147,10 +147,8 @@ object AdsSql {
   /**
    * 热门商品 TopN（热度权重来自配置，默认 §21.7 对数公式）。
    *
-   * DEF-08：`dim_product` 是**按业务日的快照**，只覆盖当日 `product_created/product_updated` 事件；
-   * 当日无商品事件时该分区 0 行（实测 run 37：dim_product(20260901)=0，dws_product_behavior_day=9 个商品），
-   * LEFT JOIN 会把商品名全部打成 NULL → `ads_hot_product__staging` 9/9 行 `product_name` 为空 →
-   * BLOCKING 规则 `ADS_STAGING_KEY_NOT_NULL` 拦截整条发布。故名称按维度表既有 unknown 约定兜底
+   * DEF-08：`dim_product` 按业务日生成截至当日的完整 as-of 快照，因此正常历史商品即使当日
+   * 没有变更也能关联商品名。对确实没有任何可用维度记录的商品，仍按既有 unknown 约定兜底
    * （`DimSql.productSnapshot` 同样写 'UNKNOWN'），**不用 NULL**：宁可显式 unknown，不留空关键列。
    *
    * 稳定次序键（§11.5 L455「商品排行按热度/销量/金额并有**稳定次序键**」）：热度并列时按 `buy` 降序、

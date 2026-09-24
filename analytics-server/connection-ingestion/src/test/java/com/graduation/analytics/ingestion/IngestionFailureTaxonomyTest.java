@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -144,6 +145,54 @@ class IngestionFailureTaxonomyTest {
     }
 
     // ---------------------------------------------------------------- ① 系统自身异常
+
+    @Test
+    @DisplayName("manifest 写入失败：批次失败且断点不推进，源文件可由下一批次重读")
+    void manifestWriteFailureFailsClosedWithoutAdvancingCheckpoint(@TempDir Path landingRoot,
+                                                                   @TempDir Path profileRoot)
+            throws IOException {
+        writeProfile(profileRoot, PROFILE_PATH, V2_PROFILE);
+        stubRun(landingRoot, SOURCE_CODE, "2.0", PROFILE_PATH);
+        Path input = writeEvents(landingRoot, paidLine("evt-manifest-fail", OK_AT, "12345", "o-manifest-fail"));
+
+        // 让 manifests 路径本身成为普通文件：Files.createDirectories(manifests/) 将稳定失败，
+        // 不依赖权限、系统服务或外部数据库。
+        Files.writeString(landingRoot.resolve("manifests"), "not-a-directory", StandardCharsets.UTF_8);
+
+        IngestionService.RunResult result = service(profileRoot).runOne(TraceContext.create());
+
+        assertThat(result.status()).isEqualTo("FAILED");
+        assertThat(result.errorCount()).isEqualTo(1);
+        assertThat(result.manifestPath()).as("manifest 目录不可创建，因此没有可供下游读取的清单")
+                .isNull();
+        verify(checkpointMapper, never()).insert(any(FileCheckpoint.class));
+        verify(checkpointMapper, never()).updateById(any(FileCheckpoint.class));
+        verify(batchFileMapper).insert(any(IngestionBatchFile.class));
+        assertThat(Files.readString(Path.of(result.acceptedDir()).resolve(EVENT_FILE), StandardCharsets.UTF_8))
+                .as("输入已被写入批次 accepted 目录")
+                .contains("evt-manifest-fail");
+        assertThat(Files.isRegularFile(landingRoot.resolve("manifests"))).isTrue();
+        assertThat(Files.exists(input)).isTrue();
+
+        // 恢复 manifest 落地区后，新批次必须从旧 checkpoint（本用例中为 0）重读，
+        // 再产生可被下游选择的 READY 清单。
+        Files.delete(landingRoot.resolve("manifests"));
+        Files.createDirectory(landingRoot.resolve("manifests"));
+        doAnswer(invocation -> {
+            Path readyManifest = landingRoot.resolve("manifests").resolve("102.json");
+            assertThat(Files.isRegularFile(readyManifest))
+                    .as("checkpoint 写入时 READY manifest 必须已经发布")
+                    .isTrue();
+            assertThat(objectMapper.readTree(Files.readString(readyManifest, StandardCharsets.UTF_8))
+                    .path("status").asText()).isEqualTo("READY");
+            return 1;
+        }).when(checkpointMapper).insert(any(FileCheckpoint.class));
+        IngestionService.RunResult retry = service(profileRoot).runOne(TraceContext.create());
+        assertThat(retry.status()).isEqualTo("SUCCESS");
+        assertThat(retry.manifestPath()).isNotNull();
+        assertThat(manifestNames(landingRoot)).containsExactly("102.json");
+        verify(checkpointMapper).insert(any(FileCheckpoint.class));
+    }
 
     @Test
     @DisplayName("系统异常：批次 FAILED、不产出清单、断点不推进，且不伪装成隔离")

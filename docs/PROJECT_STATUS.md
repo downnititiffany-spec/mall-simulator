@@ -1,5 +1,88 @@
 # PROJECT_STATUS
 
+## 2026-09-23 并行开发增量：HDFS Landing 命名空间防护
+
+- **工作树**：`D:\Develop_code\GraduationProject-wt\v3-dev`，分支 `feature/v3-development`，HEAD `2a11b60a24332e02fc3b4927dbef5e524a3b5b15`；沿用当前未提交工作，不提交、不 push。本文本次编辑前原文备份为 `target/fast-dev-20260923/docs-backup/PROJECT_STATUS.md.before-hdfs-storage.md`，已核验 SHA256 一致。
+- **HDFS Landing 修复**：健康探针从 HDFS `/` 改为仅检查配置的 Landing namespace；HDFS URI 必须为带 authority 的 `hdfs://`，拒绝查询参数、片段及 `..`；所有存储路径必须为相对 POSIX 路径，拒绝绝对路径、反斜杠、URI 形式和目录穿越；manifest `batchId` 限制为安全单段标识符。新增可注入 `FileSystem` 的离线测试 seam，便于不启动 NameNode 验证路径契约。
+- **本轮 fresh 回归**：`platform-common` **115/115**；`connection-ingestion` **368 项、0 失败、0 错误、2 跳过**；合计 **483 项、0 失败、0 错误、2 跳过**，Maven BUILD SUCCESS（约 11 秒）。HDFS 路径专项 6/6 通过。画像 symlink 专项 2 项、0 失败/错误、1 跳过（Windows 当前不允许创建 symlink）。
+- **范围边界**：以上均为离线测试，未启动或访问 HDFS、Hive、Spark、Flume、MySQL，也未做端到端验收。WSL 的 Hadoop 默认配置先前只读检查为 `file:///`，故不可将本轮测试描述为 HDFS 实机/单节点集群验收。
+- **提速策略**：对单一适配器先用可注入 FileSystem 的 6 项定向测试快速反馈，再执行 `platform-common + connection-ingestion` 全模块 fresh reactor；暂不重复无关 Spark 重型套件和历史 acceptance。数据库写链与 Spark `TestSuite.txt` 仍串行，不并行争用共享状态。
+- **后端集成 fresh 回归**：随后执行 `mvn -o -f analytics-server/pom.xml -pl platform-app -am test`，覆盖六个后端功能模块及 `platform-app`，Surefire 报告合计 **1,124 tests，0 failures，0 errors，2 skipped**，BUILD SUCCESS（约 38 秒）。本轮确认 AI/决策、pipeline、指标发布补偿、HDFS 路径和平台 HTTP 测试在同一工作树下可共同编译与通过；仍然全部是离线/替身测试，不替代真实数据库或集群验收。
+- **ACTIVE 快照重用保护**：对抗性复核确认 `createBuilding` 原先会把已存在同 `snapshotId` 的行直接改成 BUILDING 并清除 `active_flag`。如果该 ID 恰好是当前 ACTIVE，发布失败时旧快照可能在 MySQL 发布事务开始前已失去 ACTIVE。现加入行锁预检：ACTIVE/带活动标记的 `snapshotId` 必须拒绝复用，调用方需为重新发布分配新 ID；冲突在任何写入前 fail-closed。`MetricPublishRepositorySourceIdentityTest` 定向 **4/4 PASS**；修改后再次 fresh 执行完整 `platform-app` 上游 Reactor，**1,125 tests，0 failures，0 errors，2 skipped**，BUILD SUCCESS（约 39 秒）。该行为经过 JDBC mock 单测，真实 MySQL 并发/故障回滚仍须隔离库验证。
+
+## 2026-09-23 开发提速增量：画像路径安全与发布失败补偿
+
+- **工作树**：继续使用 `D:\Develop_code\GraduationProject-wt\v3-dev`，分支 `feature/v3-development`，代码基线仍为 `2a11b60a24332e02fc3b4927dbef5e524a3b5b15`；保留原有未提交改动，本轮不提交、不 push。此次状态文档编辑前备份见 ignored 路径 `target/fast-dev-20260923/docs-backup/PROJECT_STATUS.md.before.md`。
+- **并行实现 A｜采集画像读取边界**：`SourceProfileFile.resolve` 在画像真实读取前拒绝画像路径中的符号链接，并以 `toRealPath()` 校验目标仍位于画像根目录内；错误不回显部署机绝对路径。新增真实路径包含判定与符号链接测试。定向测试 2 项、0 失败/错误、1 跳过；跳过原因是当前 Windows 环境不允许创建符号链接，因此真实 symlink 分支尚未在此机运行验证。
+- **并行实现 B｜ADS 发布失败清理**：`MetricPublisher` 在核心指标值构建失败、且本次快照的 ADS 行已写入但尚未切换 ACTIVE 时，按快照 ID 清理本次 ADS 行；不删除 Spark 导出文件/Hive 分区，也不触碰旧 ACTIVE。新增离线故障测试验证 8 张 ADS 清理、失败结果和不调用指标激活。原有 `sourceId` 透传改动保持不变。
+- **原子发布边界追加修复**：继续审查发现 `MySqlMetricStore.publish` 在指标值已写入并归档旧 ACTIVE 后，如果激活 UPDATE 影响 0 行，Spring 默认仍会提交事务。现将该事务标记为 rollback-only，仍返回 0 以保留发布器 `MP_ACTIVATE_NOOP` 契约；发布器该分支也补偿删除本次 ADS 行并标记 FAILED。离线代理事务测试证明 0 行时 rollback=1、commit=0，发布器测试证明失败补偿执行。`platform-common + metric-analysis` fresh reactor **125/125 PASS**；新增专项三测试 **3/3 PASS**。没有执行 DB-backed IT，因此事务行为由 Spring 事务代理模拟测试证明，真实 MySQL 故障注入仍待隔离环境复核。该补充是在前述 600 项 reactor 之后完成；连接采集模块代码未变。
+- **fresh 回归**：`platform-common + connection-ingestion + metric-analysis` 定向 reactor **600 项、0 失败、0 错误、2 跳过**（分模块 115/362/123）；商城服务 **14/14**、独立生成器 **111/111**；分析 Web `npm run verify` 成功、测试 **373/373** 且构建 675 modules；商城前端 **6/6** 且构建 90 modules。`git diff --check` 通过（Git 仅提示现存 CRLF/LF 自动转换信息）。
+- **范围边界**：本轮上述 Maven 与前端测试均为离线/本地测试；没有连接 MySQL 3306/3307，没有启动 8091、Spark、Flume、HDFS/Hive，没有调用真实大模型。此轮未运行 Spark 测试，因此不产生新的 Hive/HDFS/集群证据。
+- **提速结论**：将 ingestion、metric-analysis、商城服务、生成器、两个前端分成不共享运行资源的泳道；先跑新增风险所在的窄模块，再合并跑两个 Java 模块的 fresh reactor。Spark `TestSuite.txt` 和数据库隔离写链仍需串行，避免并发争用；不重复执行与本轮代码无关的 10 作业集群链。
+- **下一步优先级**：继续阶段 2 的 connector/Flume 可复用小切片与映射执行器；仅在隔离环境门禁具备后重跑当前 HEAD 小样本采集→数仓→发布链。分类/地区专题、AI 建议到决策的来源血缘若需要新增指标/接口/表，先按 V3.0 权限规则提出设计变更，不让并行 Code Agent自行定口径。
+
+## 2026-09-23 开发提速增量：采集清单先发布、断点后提交
+
+- **当前工作树**：`D:\Develop_code\GraduationProject-wt\v3-dev`，branch `feature/v3-development`，HEAD `2a11b60a24332e02fc3b4927dbef5e524a3b5b15`。没有从备份仓库重新开始；本轮保留既有未提交改动，不提交、不 push。
+- **采集可靠性顺序回归**：`IngestionService` 当前工作树实现先原子发布 READY manifest，再提交文件 checkpoint；新增测试在 checkpoint mapper 实际写入回调中读取 `manifests/102.json`，断言文件已存在且 status=READY。`IngestionFailureTaxonomyTest` **7/7 PASS**；含 `platform-common` 的 `connection-ingestion` Reactor 窄全测 **360 tests / 0 failures / 0 errors / 1 skipped**，约 10 秒。测试覆盖本地临时目录与 Mockito mapper，不访问数据库、Spark、Flume 或 HDFS。
+- **并行前端复测**：分析平台 Web **373/373 PASS**，Vite 生产构建 675 modules 成功；商城前端 **6/6 PASS**、生产构建 90 modules 成功。Web 测试有一次 Vite WebSocket 端口占用 warning，但测试与构建均成功；浏览器 E2E 前需查明/隔离占用服务。
+- **AI / 决策后端窄回归**：`ai-decision` Maven 模块 **160/160 PASS**，覆盖 SQL 安全、查询窗口校验与覆盖、Evidence 构建、LLM provider 错误分类/超时 fallback、决策状态和身份窗口聚合；同次 reactor 依赖模块测试也通过。全为离线单元测试，不连接真实大模型或数据库，不能据此宣称 AI→真实建议→DRAFT 的来源血缘正向链已验收。
+- **Spark 变更档回归**：统一入口 `scripts/run-tests.ps1 -Suite spark` **322/322 PASS、40 suites、JDK 8、新鲜 TestSuite.txt、计数基线 MATCH**，用时约 1 分 49 秒。包含修改过的维度 as-of / DWD-DIM 与 SQL 模板相关本地执行测试；证明边界仅为 `local[1] + in-memory catalog`，不代表 Hive/HDFS/生产集群验收。
+- **平台 HTTP 边界回归**：`platform-app` 离线指定测试 **11/11 PASS**（AiController 身份与无锚点行为 7、RuntimeProfile HTTP 3、人工决策生命周期 1），覆盖本工作树的控制器契约；测试使用 MockMvc/替身，不启动 8091、不连接 MySQL。人工决策生命周期通过不等于 AI 生成建议的来源血缘链通过。
+- **测试基线版本边界**：冻结的 V3.0 指导书记录发布时 fresh 基线 **751/55/111**；当前工作树 `scripts/run-tests.ps1` 的配置基线已为 default（analytics 1096、mall 14、generator 111）、isolated（mall 30、generator 19、analytics 13）、spark 322。本轮仅 fresh 执行 spark，结果 322 与 runner 基线一致；未 fresh 执行 default/isolated，不能将脚本注释当作本轮实测。V3.0 不原地修改，待总控发布 V3.1 时统一复核并更新基线。
+- **隔离环境边界**：3307 与 8091 当前未监听；WSL 的 `/opt/mysql-8.0.41/bin/mysqld` 和既有 RunId 数据目录存在，但未发现运行中的 mysqld。`scripts/it-prepare-isolation.ps1` 是 schema/账号准备器，并明确要求先有 W03 交付的独立 3307，再由总控确认后执行；本轮没有执行它，也没有重用带固定账号/旧数据目录的历史脚本。早先只读检查曾看到宿主 3306 listener，末次监听检查未见 3306/3307/8091/5176；全程未连接或访问 3306。
+- **证据边界**：历史 BATCH-U 仍证明对应 pinned 版本的 Flume→HDFS 1NN/1DN 链路；当前工作树未修改 Flume 配置、HDFS LandingStorage、LandingInputScanner/Layout。历史 BATCH-V attempt-2 证明旧 SHA `104db411...` 的 `FLUME_RAW` 平台链路，**不是当前 HEAD 的新鲜端到端验收**；本工作树 ingestion manifest/checkpoint 提交顺序已有未提交变化，因此当前只记上述窄测通过。
+- **加速策略**：复用未受代码变化影响的 Flume→HDFS 历史证据；把当前变更风险聚焦到 ingestion 单测，避免重复 1011 行 Flume/HDFS 与 10 作业 Spark 重链。待运行环境/安全隔离入口具备后，再安排当前 HEAD 小样本 `FLUME_RAW` + 3307 链路复验。
+
+## 2026-09-23 开发提速增量：并行窄测与决策基线失败关闭
+
+- **并行验证结果**：分析平台 Web `npm run verify` 为 **373/373 PASS**，生产构建 675 modules 成功；商城前端 `npm test` **6/6 PASS**，生产构建 90 modules 成功。后端决策窗口/来源隔离/SQL 查询范围/运行环境来源冻结窄测 **52/52 PASS**（Maven 约 8.6 秒，均为 Mockito/JUnit，不连 MySQL、不跑 Spark）。各自独立执行，未争用数据库或 Spark `TestSuite.txt`。
+- **新增回归保护**：`DecisionServiceTest.approveRejectsIncompleteBaselineWindow` 覆盖三日基线仅返回两天的情况，断言批准失败，决策状态、批准人/时间/备注、基线值/快照引用/来源/运行环境/指标版本均不落库，且不调用成功审计；`DecisionServiceTest` 单类 **28/28 PASS**。这是 test-only 补强，不代表真实 MySQL 决策闭环。
+- **增量工作树状态**：保留既有未提交改动；本轮未提交、未 push。`git diff --check` 通过。Web 测试中出现一次 Vite WebSocket 端口占用警告但全部用例通过；浏览器 E2E 前需独占服务端口并核验实际页面服务。
+- **环境边界**：新 E3 当前工作树小样本 LOCAL 真链证据见下方本文件首段及 `verification/results/G31-03-E3-LOCAL-CHAIN-20260923-RESULT.md`；它只证明本地 Spark/文件仓库链。决策评价仍要求身份一致的连续业务日指标快照；E3 的 2026-09-18 单日指标不能被当作 2026-09-23 的批准基线。当前 3307、8091 未监听；只观察到宿主 3306 正在监听，本轮未连接或访问。
+- **最短后续顺序**：① 聚合器身份矩阵已审查到现有 `DecisionWindowAggregatorTest`，sourceId/runtimeProfileId/definitionVersion 混杂三种窗口均 fail-closed，单类 **5/5 PASS**，不再重复增加测试；② 为 DB-backed 决策/页面验收准备独立 RunId，并使用明确标为合成的连续业务日夹具，串行执行迁移、流水线发布和真实 API；③ 有效 AI→DRAFT 正向链需真实模型输出或总控批准的确定性测试适配器，不能手工伪造 AI 建议。Hive/HDFS/Flume/多节点验收仍独立排期。
+- **DB-backed 决策最小样本裁定（只读代码审查）**：可以用独立临时夹具把 E3 日期 2026-09-17/18 平移到 09-22/23，并用 E4 09-24，匹配应用 09-23 的单日基线与完成后实际窗口；必须使用新 RunId/新隔离数据库，不能原样重放已有 eventId/checkpoint。建议仅验证可加指标 `gmv`（可选 `pv`）：同一决策首次评价应 `INSUFFICIENT_DATA`，发布 09-24 后重评；只能称为合成样本的单日 API/数据库闭环。当前聚合器对 `avg_order_value` 与 `refund_rate` 按公式未验证 fail-closed，旧批次计划的 D1/D3 不能继续按 EFFECTIVE/INEFFECTIVE 期待验收。未来业务时间接纳规则（P2-06）未验证，不得声称生产未来时间安全。该流程尚未运行，预计两条小样本 LOCAL pipeline 约 6 分钟，此外需 API 与只读数据库回读；AI→DRAFT 仍受真实模型/确定性测试适配器边界约束。
+- **AI→决策来源血缘缺口（并行只读审查）**：当前 ExplanationService 的建议来自固定 ACTIONS 模板，LLM 只改写摘要；决策创建 API 接受客户端提供的任意草稿文本并由服务端固定写 `source=ai`，没有 recommendationId/证据包来源绑定。`MockLlmProvider` 当前默认返回 Text-to-SQL 格式，不构成决策建议测试适配器。因此既有 DB-free 决策生命周期测试**不证明 AI 生成建议或建议来源真实性**。推荐后续在正式设计变更获批后增加结构化 Recommendation 服务：绑定 EvidencePackage/snapshotId/metric/source/profile/provider/model/promptVersion，服务端签发可消费的 recommendationId 后才允许 AI 来源 DRAFT；test provider 必须显式标记 mock。V3.0 正式设计正文本轮未修改，未擅自改变生产 API/架构。
+
+## 2026-09-23 最新推进：G31-03 当前工作树 E3 LOCAL 真链
+
+- **工作树/代码基线**：`D:\Develop_code\GraduationProject-wt\v3-dev`，`feature/v3-development`，HEAD `2a11b60a24332e02fc3b4927dbef5e524a3b5b15`；保留全部原有未提交改动。本轮不提交、不 push。
+- **运行隔离**：新建 RunId `g3103y_20260923_193657_b1` 的独立 WSL MySQL 8.0.41 数据目录，绑定 `127.0.0.1:3307`，未访问 3306；平台使用当前工作树 JAR 在 Windows/JDK 17 运行，Spark 3.5.1 `local[1]` 经本地 `spark-submit.cmd` 计算，本地文件 `file:` warehouse/metastore，不是 HDFS/Hive 集群。测试结束后平台与该 MySQL 服务均已正常停止；隔离数据库数据目录保留在 WSL `/home/asus/.cache/graduation-project/g3103y_20260923_193657_b1/mysql/data`，可供后续受控复验，但账号口令不落盘，复用时需由隔离脚本重置。
+- **小样本真链 PASS**：E3 固定输入 99 行（sha256 `47F09C3DBF6C85C37699311E8F6DA6C4C6FE08B5B4690F1F7DDEB7270B3F7092`），ingestion batch 1 成功（1 文件/99 行/0 隔离/0 错误）；pipeline run 1 的 8/8 阶段与 10/10 Spark jobs 成功，均有 `externalJobId` 与非空日志；快照 `S20260918_1` 为本 RunId 唯一 ACTIVE，14 个 MySQL 指标值与独立 oracle 的 period/value **14/14 相等**，16 项发布检查全过。完整结果与构建指纹见[本轮结果记录](verification/results/G31-03-E3-LOCAL-CHAIN-20260923-RESULT.md)，原始 JSON/作业日志在该文档所述 ignored `target/v25-it/` attempt 目录。
+- **并行 HTTP 回归**：新增运行环境 API DB-free HTTP 契约测试 3/3，以及真实 DecisionService + Controller/AuthInterceptor 的人工决策主路径组合测试 1/1；合并单 reactor fresh 运行 4/4 PASS。两类测试不证明真实 MySQL 审计持久化，也不关闭 G31-03 真实决策或浏览器要求。
+- **环境诊断更正**：首轮 MySQL 启动因 `LD_LIBRARY_PATH` 未包含已有 `/opt/mysql-libs` 兼容目录而失败；未启动服务、未建库。随后用进程级 `LD_LIBRARY_PATH=/opt/mysql-libs` 成功启动隔离实例，无需安装系统包。只清理了首轮失败时创建的空目录；本次成功测试的隔离数据目录保留，服务已停止。
+- **未完成边界**：E3 使用 canonical `mock-mall` 输入，未证明异构字段映射；本次不是 WSL Spark/HDFS/Hive、Flume、集群或第二商城链路验收，也未对浏览器、AI/决策页面做新快照 E2E。G31-03 尚未完成，原有阶段划分不因这次 E3 真链而提前关闭。
+- **下一步**：利用已形成的 E3 ACTIVE 快照，继续补 G31-03 真实决策 HTTP/持久化闭环；优先选择最小 E4 样本，仅当正向评价确实需要新实际窗口时再跑第二条 10 作业链。Spark POM Scala 2.12.19 与运行包 Scala 2.12.18 的版本差异记为兼容性后续项，不在本次验收后未经验证改动。
+
+## 隔离链路增量验证（2026-09-23；覆盖本文件前文中“未访问 3307 / 尚未应用 V30-V31-V12”的旧状态）
+
+- **运行边界**：仅使用本轮隔离域 `g3103x_20260923_1630_a1_*`（MySQL `127.0.0.1:3307`），平台 jar SHA-256 `D26971D1777E113D9E4994593F15C012DCCF70BA804CE00AAD6675EDE1C37E20`；未连接或写入 3306。真实 Hive/HDFS/多节点 Spark 集群未启动、未验收。
+- **迁移与来源血缘**：平台启动时 Flyway 在隔离 `analytics_meta` 校验 30 项并应用至 V31，在隔离 `analytics_metric` 校验 12 项并应用至 V12；V30/V31/V12 已在本轮隔离库实际生效。向隔离 Landing 加入 2 条最小 JSONL 正样本后，ingestion batch 3 成功；pipeline run 3 的 8 个阶段全部成功，发布并激活快照 `S20260924_3`。run 列表 API、快照读接口、overview/sales API 均回读 `sourceId=1`，`snapshotId=S20260924_3`、`definitionVersion=v2`；metric overview 返回 14 项。详情 DTO `/pipeline-runs/{id}` 不含 `sourceId` 字段，不能将该 DTO 误报为血缘字段通过；本轮使用 run 列表/快照/分析 API 作交叉证据。
+- **定向回归**：后端受影响模块定向 Maven 测试 93/93 PASS；Web `npm test` 371/371 PASS。真实 Chromium 页面已有 prior run 的五个分析页与 fallback AI 证据；本轮 C6 真 API 浏览器验证中，AI 输入框 Enter 和建议 chip 各发出恰好 1 个 `/ai/queries` 请求，两次均 HTTP 200 / `EXECUTED`，分析员 runtime-profile 请求被 403，页面异常 0。截图与 JSON 暂存在 ignored `target/v25-it/g3103-fresh-20260923-a1/attempt-v31-20260923-1717/`。
+- **未完成及诚实边界**：本轮无模型凭据，AI fallback 建议数为 0；AI→真实建议→DRAFT→审批/执行/评价仍未验收，不能伪造建议。五个分析页面的旧截图对应 `S20260924_2`，不代表新 `S20260924_3` 的页面展示已浏览器复验；本轮五点来源字段的 API/数据库交叉验证部分完成，DOM 上的 sourceId 展示待恢复安全隔离环境后验证。当前复查时 8091、5176、3307 均已停止；WSL 中未发现本 RunId 的数据库启动脚本。唯一搜到的历史 MySQL 脚本会操作旧数据目录/账号且含递归重建风险，禁止复用。既有证据不可据此推断 3306、Hive/HDFS 或多节点环境状态。
+- **提速与下一步**：不重复已完成的 93 项 Java / 371 项 Web 测试及 Spark 大套件；仅在相关代码变化后运行对应窄套件，Spark 套件保持独占。可并行只读审查与前端单测；对同一隔离库的 ingestion、pipeline、快照发布和决策写操作串行。继续 G31-03 前先恢复或创建有明确隔离身份、RunId 与可验证启动/停止入口的 3307 环境；不得从历史脚本重建数据目录。模型正向验收仍需真实模型凭据，或总控明确批准的测试专用确定性适配器。
+
+## 并行加速批次（2026-09-23）
+
+- **工作方式**：针对决策窗口、指标存储、查询日期和前端分别并行审查/补测，避免多个任务同时改同一文件；本轮未提交、未 push，未清理既有工作树改动。
+- **决策评价窗口补强**：窗口身份现同时固定 `runtimeProfileId`、`sourceId`、指标码与指标定义版本，查询限定同一运行环境和商城来源；历史任务缺少运行环境身份时 fail-closed 为 `INSUFFICIENT_DATA`。V31 迁移仍只完成代码与静态守卫，尚未实际应用到隔离 MySQL。
+- **输入异常 fail-closed**：指标窗口聚合在排序前拒绝 null 行；AI 查询窗口覆盖天数仅接受严格合法的 `yyyy-MM-dd` / `yyyyMMdd` 日期，并排除生效闭区间外日期，避免坏日期或越界日期虚增覆盖率。
+- **定向测试**：AI/决策与 QueryWindow 测试 44/44 PASS；查询窗口 SQL/参数契约 2/2 PASS；V31 迁移静态守卫 1/1 PASS。Web `npm run verify` 371/371 且 Vite 构建成功；商城前端边界测试 6/6 且构建成功。
+- **Spark fresh 结果与门禁基线**：统一入口执行的 ScalaTest 报告本轮新写，JDK 8 下 40 suites、322/322 PASS。首次门禁因旧基线 321 返回 exit 7（唯一原因是计数漂移，无测试失败）；据本轮实测把 `scripts/run-tests.ps1` 基线更新为 322，语法检查通过。为减少重复耗时，本轮未在更新后再次完整跑 322 项，因此“测试内容全绿”已证实，“更新后统一门禁 MATCH”尚未复跑确认。
+- **环境边界**：本轮未启动/停止服务，未访问或写入 MySQL/3307，未应用 V30/V31/V12，未运行 WSL Hive/HDFS 或真实 Spark 集群作业。Spark `local[1] + in-memory catalog` 结果不代表集群验收。
+- **并行审查发现的非阻断事项**：商城主要下单流程目前没有业务交互 E2E；AI 窗口摘要与原始证据时间范围需用真实响应确认是否一致。后续先完成隔离库迁移与同环境窗口 SQL 实测，再安排商城/分析页面的短流程浏览器验收。
+
+## 当前实现进度更新（2026-09-23）
+
+- **代码工作区**：`D:\Develop_code\GraduationProject-wt\v3-dev`；本轮未提交，工作区已有多组既存改动，未做清理/重置。
+- **G31-03 决策评价算法补强（本轮）**：效果评价已从“基线/实际各读单个快照”改为完整等长日窗口。批准时冻结来源、指标口径、基线起止日及逐日快照血缘；评价时按 sourceId、指标码、指标版本、业务日期读取已发布/归档序列。要求每日唯一且完整覆盖，缺日、重复日、跨源、混口径、范围外数据均返回 `INSUFFICIENT_DATA`，不产生 actualValue/improvementRate。
+- **聚合能力边界**：当前仅开放经验证的可加总日指标（gmv、net_sale、paid_order_cnt、pv、fav_cnt、cart_add_cnt）。比例指标、UV/DAU、复购率、客单价尚无完整窗口公式或分子分母证据，按不支持处理；不能把每日比例平均或把 distinct 指标相加。决策样本窗口上限 90 天。
+- **逐日可追溯**：新增 V31 加性迁移，在 decision_task/decision_evaluation 保存来源、基线与实际窗口日期、样本数、指标口径及 URL-safe Base64 编码的快照引用。历史旧决策没有完整窗口字段时不会被提升为有效评价。
+- **员工页面**：决策效果展示基线/实际窗口、两侧样本数、sourceId、指标口径和后端说明；对不支持或缺日的指标如实显示数据不足。
+- **测试事实**：metric-analysis 默认单测 122/122；ai-decision 默认单测 154/154；platform-app V31 迁移静态守卫 1/1；Web 371/371 且 production build 成功。统一 default 档 fresh 结果：analytics-server 1096（F=1/E=0/S=1）、mall 14、generator 111；唯一红为已知 `IngestionManifestRuntimePatrolTest` 证据目录巡检（期待旧证据 43 个、当前 0 个），不是本轮功能测试失败。`scripts/run-tests.ps1` 数量基线已更新至 1096，但本轮尚未为此重复执行整套默认档。
+- **尚未验证**：V31 尚未在隔离 MySQL 实例执行；没有启动/覆盖 8091，也没有读写 3307。本轮只做 Mockito/JUnit 与页面构建验证，MySQL 真实 SQL 行为、Flyway 实际迁移和服务/API 联调仍待新的 run-scoped 隔离环境验收。
+- **下一步**：先建立独立 RunId 的 3307 隔离库并应用 V31；在隔离环境写入三天可加总正样本、缺日/混口径/跨源负样本，验证 SQL 查询、决策批准/评价、历史回读和页面呈现。再根据结果实现或明确拒绝 AOV/比率型决策指标，不运行完整 Spark 集群链除非本阶段需要。
+
 > 当前阶段：**历史整理阶段已结束；项目正式进入毕业设计功能开发阶段。**
 > 最后更新时间：2026-09-20，**G31-02 第二来源 fixture-shop-b PASS 已收口（02.1~02.6 全满足）：02.1 B 夹具 normal 38 行/fault 5 类互异违规 + 手算 ORACLE.md（金额/人数不经被测代码）+ 画像制品 fixture-shop-b.v2.json（sha256 3ee7d8fa…848da1；夹具补面 D-024/故障集 D-025）；02.2 注册 sourceId=2 warehousePrefix=fxsb（D-023），processed=accepted+quarantined+systemErrors 恒等式全样本成立、空样本 fail-closed 不可激活、hash 漂移 409 MAPPING_PROFILE_CHANGED，源级生命周期门 D-029（v2 画像按 V2_STRICT 键集分派顶层必备键，代码提交 8b4e4da）；02.3 ingestion batchId=15（38 accepted/0 quarantined）→ pipeline runId=15 SUCCESS（sourceDataVersion g3102-fxsb-20260920_024253 单值贯穿，businessTime 2026-09-18），逐事件 oracle 41/41 + ADS readback 9/9；02.4 A-B-A 三腿：B→A attempt-1 检查点跨源重扫使 B 残留 38 行全部隔离零入仓（防御墙语义 D-026）→ 清洁复跑 batch 17 17/0 + batch 18 幂等 0/0，B 快照/AI 证据零串；repeat_rate=0.0 经 S3-03 有效复购口径修正后 14/14 全绿（D-030：dry-run=advisory preflight，Loader 为激活权威）；02.5 管理员接入向导 SourceWizard.vue 四步流（选源→受控样本→预览错误/覆盖率→确认激活）不要求编辑服务器文件，ControllerPermissionCoverageTest 冻结表 +4 行 RUNTIME_MANAGE，E2E 12/12（同画像幂等 changed=false / 真切换 ACTIVE / fault 样本 409 MAPPING_ACTIVATION_INELIGIBLE fail-closed；D-031：dry-run 报告回查端点不接线 + ${id} 占位符约定 + 调用前 current 判幂等）；02.6 独立性 9/9（商城 :8090/生成器 :8092 均 refused 而平台 :8091 照常供数 14 cells + ACTIVE S20260918_17）+ 时效警告横幅（staleness.js 唯一属主：载荷 period 最大业务日期 vs 本地壁钟，滞后 ≥1 天渲染实测滞后 2 天，「最新」只允许出现于否定式「不代表最新」）横幅 DOM 5/5（D-032）。回归：web 329/329、Java 5/5、analytics 1043 MATCH。结果 `docs/verification/results/G31-02-SECOND-SOURCE-RESULT.md`；证据根 `target/v25-it/g3102_20260920_014827/`；收尾平台态 source 1 current=true / landing events/ 终态空；决策 D-023~D-026/D-029/D-030/D-031/D-032（D-027/D-028 永久空缺）；下一批 = **G31-03 有数正样本与决策人工流程（03.1~03.7 + C6 补验）**；push 规则：仅本地提交（先前授权已用尽）。**
 > 前一工作包 G31-01：**测试隔离与可重复执行 PASS 已收口（01.1~01.5 全满足，01.4 定性 audit-only）：01.1 双层防线——`platform-app/application.yml` 9 个 `PLATFORM_*` 键 3306 兜底默认剥离为裸占位（缺变量 = Spring 上下文启动即 fail-fast，内层）+ 新增共享门禁 `scripts/assert-platform-env.ps1`（13 必填变量 + 3307 URL 作用域 + 库名前缀白名单 + `:3306` 标记即拒，exit 12，纯字符串核对零网络 I/O，外层）；负例 N1/N2/N3 全部启动前被拒（378/371/344ms，零 JVM，8091 空闲），正例 13/13 OK，F2b 启动后日志 0 次 `:3306`。01.2：新增 `scripts/stop-platform-by-pidfile.ps1`——pidfile+identity.json 身份证据、PID 复用拒杀（exit 5）、名字不符拒杀（exit 5）、ALREADY_GONE 幂等、CIM owned-tree children-first 停止（无按名组杀）、资源账本 ledger（credentialRefs 只记名）。01.3：driver-1（start）/driver-2（cleanup）独立进程交接成立，清理失败≠PASS。5.1.4：第 4 条 secret 通道 `V25_IT_METRIC_READ_PASSWORD` → SELECT-only metricread 账号（`stage7q1_202_0598ff44_metricread` 32 字符哈希回退命名），grant audit 无写权限/无 meta 库权限，读探针 snapshots=3 + metric-read-ds 连接池实证。回归：fresh RunId `dev003c_20260920_002959_f9380b` analytics 1039 MATCH / mall 14 / generator 111（唯一红=既有 manifest patrol 环境性红）。01.5：`docs/verification/ISOLATED-EXECUTION-MINIMAL-GUIDE.md`（零密钥）。决策 D-022；结果 `docs/verification/results/G31-01-TEST-ISOLATION-RESULT.md`；证据根 `target/v25-it/g3101_20260920_003500/`；代码提交 `00dac1a`（5 文件 +401/−13）；jar 旧 SHA pin 语义废止改为记录不钉定；下一批 = **G31-02 第二来源 fixture-shop-b（02.1~02.6）**；push 规则：仅本地提交（先前授权已用尽）。**
@@ -21,6 +104,82 @@
 ### 当前阶段与下一工作
 
 按八阶段功能开发推进：1基线与核心链确认 → 2采集/数仓 → 3Spark指标 → 4Spring Boot服务 → 5Vue → 6AI → 7业务实链联调 → 8部署/验收/论文答辩。
+
+### 2026-09-23 加速批次：查询窗口可见性与决策窗口边界
+
+- 前端 `AnalysisContext` 新增“生效查询范围”，只读取后端响应回显的 `filters.from/to/date` 或 AI 证据中的后端结构化有效范围，不读取尚未提交的页面控件值，避免员工把旧结果误认为新筛选结果。新增 utility 与组件结构测试；全量 `npm run verify` **371/371 测试通过、Vite 构建成功**。
+- 决策评价新增 fail-closed 日期边界：基线观测日必须位于 `[approvedDate - windowDays + 1, approvedDate]`，实际观测日必须落于 `(completedDate, completedDate + windowDays]`；基线缺少可解析业务日、或任一观测落在窗口外时返回 `INSUFFICIENT_DATA`，不产生 `actualValue/improvementRate`。新增两个边界回归用例，旧实现均先实测为错误 `EFFECTIVE`，修复后 AI/决策完整 Maven 测试模块 **149/149 通过**。
+- 同轮 AI 日期严格比较修正单测 **46/46**、SourceId 持久化/冻结相关单测 **6/6** 通过；这些均为本地单测，不是数据库实链。
+- **边界**：上述决策修复只禁止窗口外单快照被误判，不等于已实现每日完整窗口聚合；V3.0 设计的等长、完整前后窗口聚合仍未完成。SourceId 五点实链也未在本批验证：3307 当前监听，但 8091 返回 `R1-skleton` 旧实例；既有启动入口将端口与 RunId 写死，本轮未启动/停止服务、未执行迁移或触碰数据库。
+- **下一步**：先为新隔离 RunId 准备可显式设置备用端口、RunId、输出目录的受保护启动入口（不得连接 3306，完整健康检查也必须使用同一端口），随后做一次小样本 SourceId 五点核对；并继续按 V3.0 阶段 6/7 实现真正的窗口聚合与员工业务正向流程。
+
+### 2026-09-23 并行加速：G31-04 本地恢复单测基线
+
+- 为减少串行等待，在 G31-03 页面/上下文验收准备期间，并行运行了 G31-04 的无外部依赖单测；只构建 `warehouse-pipeline` Maven reactor 依赖并执行 `PipelineServiceTest` 与 `PipelineRecoveryServiceTest`。
+- 结果：`PipelineServiceTest` 38/38、`PipelineRecoveryServiceTest` 3/3，合计 **41/41 PASS**，失败/错误/跳过均为 0，Maven `BUILD SUCCESS`，耗时约 5 秒。没有连接 MySQL、Hive 或 Spark，也没有启停服务。
+- 证据：`target/g3104-unit-20260923-140716/maven-targeted-tests.log` 与两个 Surefire XML 报告。此项只建立 G31-04 的 L1 单测证据，**不代表真实进程中断、数据库恢复或 Spark 子进程恢复验收通过**；需待 G31-03 稳定链路后再按隔离 run 做小规模故障演练。
+
+### 2026-09-23 G31-03.3 业务来源身份冻结与上下文透传
+
+- **决定**：`sourceId` 是 `source_registry.id`，属于商城/业务来源身份；现有 `source` 仍是 `metric_snapshot.source` 发布方（如 `spark-ads`），两者严格分开。流水线创建 run 时冻结 `source_id`；恢复/重试只用被冻结值，当前 profile 绑定漂移时 fail-closed。旧 run/快照的来源身份无法可靠回填，保持 `NULL`，不猜测。
+- **实现增量**：meta 新增 `V30__pipeline_run_source_id.sql`；指标库新增 `V12__metric_snapshot_source_id.sql`；发布请求、`metric_snapshot` 持久化/回读、分析统一信封 `sourceId` 以及前端上下文/导出/展示已接线。缺来源身份的历史快照返回 `sourceId=null` + `SOURCE_ID_UNAVAILABLE`；复用同一 snapshotId 的来源身份不可从非空值改成别的来源，旧调用方传 null 不清空已存身份。
+- **契约**：`docs/contracts/analysis-viewmodel-r7-4.md` 升至 v1.11（加性字段，不改变 `source` 语义、指标口径或筛选）；旧文档备份位于本 run 的 ignored `target/v25-it/g3103-fresh-20260923-a1/docs-backup/`。
+- **定向验证**：后端 9 个纯单测类 **112/112 PASS**（Maven reactor `platform-app -am`，日志 `target/v25-it/g3103-fresh-20260923-a1/sourceid-integrated-maven.log`）；前端 sourceId/context 定向测试 **46/46 PASS**；`git diff --check` 通过。没有连接数据库或执行 IT，V30/V12 尚未应用到真实数据库。
+- **验收边界**：该切片只证明代码/序列化/映射/前端单测，不证明真实 pipeline publish→MySQL→API 的 sourceId 五点对账。故 G31-03.3 仍为**部分完成**，需在受控隔离库完成 Flyway 与一次小样本真实发布后核对 sourceId/snapshotId/definitionVersion/window/value，再做真实页面验证。
+
+### 2026-09-23 G31-03.3 SourceId 发布器接线修复
+
+- **根因**：流水线已把创建 run 时冻结的 `sourceId` 放入 `PublishRequest`，但 `MetricPublisher.publish()` 登记 `metric_snapshot` 时仍调用兼容旧调用方的 7 参数 `createBuilding` 重载，因而新快照也会丢失来源 ID；不是 `nullSafe`、SQL 类型或前端解析问题。
+- **修复与回归**：改为调用带 `request.sourceId()` 的重载；新增 `MetricPublisherSourceIdentityTest`，先在旧实现下 RED（实际调用缺少 sourceId），修复后 GREEN。同步为 `SOURCE_ID_UNAVAILABLE` 增加前端说明，并将旧 V11 测试改为验证 V11 仍保留、V12 作为后续追加迁移，不再错误断言 V11 永远是最高版本。
+- **定向验证**：metric-analysis 默认测试 **120/120 PASS**，platform-common 默认测试 **115/115 PASS**，合计 **235/235 PASS**；Web source/context/analysis-context 定向测试 **33/33 PASS**；Vite 生产构建 **675 modules PASS**；`git diff --check` 通过。没有运行 MySQL IT，也没有应用 V30/V12。
+- **运行环境边界**：只读探测确认当前 `8091` 仍响应；但 `/api/v1/metrics/overview` 返回旧式指标值数组（metricCode/value/definitionVersion/unit/snapshotId/period），不是统一分析信封，不能据此判断分析信封的 `sourceId` 透传是否生效。本轮未重启当前平台、未迁移正在运行的隔离数据库、未改 ACTIVE 快照。G31-03.3 仍为**部分完成**，必须在新 run-scoped 隔离 schema 上实测 `pipeline_run.source_id → metric_snapshot.source_id → 分析 API/UI sourceId`，并核对 `snapshotId/definitionVersion/window/value` 后才能关闭。
+
+### 2026-09-23 QA-04 严格日期边界修正
+
+- **发现**：并行审查发现 `SqlSafetyValidator` 把 `dt > D` / `dt < D` 的范围按闭区间记录；而 `QueryWindow.days()` 按闭区间计数，实际日期范围及覆盖提示会多算一天。
+- **修复**：严格下界改为 `D + 1`，严格上界改为 `D - 1`；同时覆盖字面量在左侧的等价写法。普通 `>=`、`<=` 与 `BETWEEN` 口径不变。
+- **回归证据**：新增严格比较测试，修复前 **1 项失败**（预期 `2026-08-30`，旧实现给出 `2026-08-29`）；修复后 AI 定向套件 `AiSqlSecurityTest` 36/36、`QueryWindowPipelineTest` 3/3、`QueryWindowTest` 7/7，合计 **46/46 PASS**。此外跨模块点名 Java 测试 reactor 成功；Web `npm run verify` **369/369 PASS**、Vite 构建成功。
+- **边界**：仅运行本地单元测试与构建，未连接数据库、未应用迁移、未运行 Spark/Hive/集群链路。Web 测试日志有一次 WebSocket 端口已占用提示，但所有测试通过且构建成功。
+
+### 2026-09-23 QA-05 商品维表空输入重跑幂等修正
+
+- **发现与 RED**：并行审查发现 `DimensionBuildJob` 在截至业务日没有合格商品 ODS 行时会跳过 `INSERT OVERWRITE`；若该日维表分区此前已生成，数据更正/清理后的同日重跑会保留旧分区。新增测试先在旧实现下失败（预置旧分区后期望清零，实测仍为 1 行）。
+- **修复与 GREEN**：商品 as-of 快照始终对目标日静态分区执行覆盖，即使查询结果为空也清理旧输出。JDK 8（1.8.0_202）隔离 Spark `ProductDimensionAsOfSpec` **2/2 PASS**，`BUILD SUCCESS`；`git diff --check` 通过。
+- **测试隔离说明**：ScalaTest `TestSuite.txt` 位于共享 `spark-jobs/target/surefire-reports`，并行运行会互相覆盖；本次先确认无 Maven/ScalaTest 进程、确认报告文件未跟踪，再独占串行执行。并行运行中的报告不作为本次结果依据。
+- **验收边界**：仅证明本地 `local[1]` / in-memory catalog 行为；不证明生产 Hive metastore/HDFS 或 Spark 集群语义，后续仍需在隔离单节点环境做小样本验证。
+
+### 2026-09-23 G31-05 WSL 单节点环境只读预检
+
+- WSL Ubuntu 正在运行，仅见 WSL 内 MySQL `127.0.0.1:3307`；未见 HDFS NameNode/DataNode、Hive Metastore/Server2 或 Spark daemon。Hadoop/Hive/Spark 安装目录存在不等于运行验收。
+- 当前 shell 与 `.bashrc` 的 Java 环境不一致（JDK 11 vs JDK 8）；Hadoop XML 尚无有效 `fs.defaultFS`；Hive 目录没有 `hive-site.xml`。Spark Hive 配置指向非 run-scoped 的 `analytics_meta`，且带明文 root 凭据/自动建库参数，**不得直接启动复用**。
+- 本轮未启动或改动任何 WSL 服务/配置，未运行 Spark 作业。G31-05 应先为独立 run 创建不含共享凭据的 Hadoop/Hive/Spark 配置副本，再执行边界核验；在验收条款从当前指导书恢复前，不自行猜测 05.1–05.6 门槛。
+
+### 2026-09-23 G31-03 E3/E4 隔离实链更新（覆盖下方旧环境状态）
+
+- **运行域**：新建一次性 WSL MySQL 8 隔离实例，仅监听 `127.0.0.1:3307`，schema 前缀 `g3103x_20260923_1630_a1_`；Windows 平台运行在 `8091`，连接新隔离库。没有复用或依赖旧 `stage7q1_20260918_152245` 数据域；3306 未触碰。MySQL 凭据保存在本机 DPAPI 加密的 ignored `target/` 证据目录，不写入文档或日志。
+- **输入与流水线**：来源 1 `mock-mall`、runtime profile 2（LOCAL / Spark `local[1]`）；E3 99 行、E4 71 行分别 `accepted`，两批均为 `quarantined=0 / errors=0`。E3 Pipeline run 1 第一次在 `INIT_SCHEMA` 因 Spark 子进程缺少 `HADOOP_HOME` 失败；配置本地 Windows Hadoop 目录及 `winutils.exe` 后，通过 run retry 从失败阶段恢复，未重采集成功的 Landing 阶段。E3 attempt 2 与 E4 run 2 均最终 `SUCCESS`，各自 8 个阶段成功（含 ODS、DWD、DWS、ADS、质量检查与发布），快照分别为 `S20260918_1`、`S20260924_2`。
+- **发布与指标核对**：隔离 `analytics_metric` 只读核查：E3 `S20260918_1` 为 `ARCHIVED`（保留可读），E4 `S20260924_2` 为 `ACTIVE`；各快照各含 14 项 metric_value。独立 fixture oracle、分析 API 与 MySQL 只读 SQL 对两快照全部指标 code/period/value **14/14 × 2 全部匹配**；E3 漏斗用户数、五个商品热度排序/并列、两期 RFM 买家数另通过 oracle 对账。证据根：`target/v25-it/g3103-fresh-20260923-a1/`（`e3/e4-ingestion.json`、`e3-pipeline-retry-final.json`、`e4-pipeline-final.json`、`e3-e4-oracle-reconciliation.json`、`e3-e4-metric-readonly-all.txt`）。
+- **员工页面验收增量**：真实 Chromium 分析员登录后，运营大盘、销售、行为、商品、RFM 五页分别请求真实 API，均 HTTP 200、页面异常 0；E3 与 E4 页面截图分别以 `browser-*-positive.png`、`browser-b-*-positive.png` 存于上述证据根。E3 销售接口按设计返回 `UNKNOWN_DIMENSION_TABLE`，分类/地区无数据仍诚实为空。AI 页实测规则回退 `rule-based` 问数 `EXECUTED`、固定 `template` 解释、证据包 ID 与快照均存在；当前无模型凭据且本快照无模板规则建议，页面不显示/伪造“转决策草稿”。
+- **验收边界**：本次关闭“E3/E4 → 隔离 WSL MySQL → Windows Spark LOCAL → MySQL ADS 发布 → Vue 多页读数”的小规模本机实链，不代表 HDFS/Hive/多节点集群验收，也不代表 G31-03 的 03.1–03.7 全部完成。旧环境说明“WSL 未运行 3307/8091”只代表早先预检时点；本 run-scoped 服务仍运行。第一轮失败日志已另存证据，原仓库 `landing/logs/` 文件未删除。
+- **下一步**：03.3 的前端最新请求优先规则已新增真实 composable 竞态单测；仍需浏览器慢响应/筛选切换验收及上下文五点一致核验。决策正向（03.4–03.6）需先取得有审计证据的真实 LLM 或经批准的确定性模型测试适配器，使 AI 实际返回可核验建议后再走 DRAFT→审批→执行→效果评价。禁止手工伪造 AI 建议以宣称通过。不要把本地 LOCAL Spark 测试表述为集群验收。
+
+### 2026-09-23 G31-03.3 前端请求竞态单测增量
+
+- 新增 `web/tests/useAnalysisRequestRace.test.js`，通过 Vite SSR 加载真实 `useAnalysis` composable（不复制实现），用两个 deferred fetch 实测“请求 A 被 abort 但底层忽略取消、请求 B 先完成、A 最后返回”时快照和数据仍保持 B；另实测 `cancel()` 后迟到响应不写状态。
+- 验证：定向 `node --test tests/useAnalysisRequestRace.test.js` 2/2 PASS；前端全量 `npm test` 365/365 PASS；`npm run build` 675 modules 成功。
+- **浏览器增量**：真实 Chromium 分析员登录并进入销售页；CDP 将网络延迟设为 1.8 秒，触发刷新时两个日期输入与刷新按钮均禁用；对 disabled 按钮派发额外 DOM click 后，实际 `/api/v1/analysis/sales` 请求仍仅 1 次，当前快照标识仍可见，页面异常 0。结果 `target/v25-it/g3103-fresh-20260923-a1/browser-sales-loading-guard-smoke.json`。初版同步 route handler 没有形成有效证据，已弃用，不计入通过。
+- **范围限定**：单测覆盖“旧请求晚回”序号守卫，浏览器测试覆盖加载期间用户重入保护；尚未完成真实五点上下文（sourceId/snapshotId/definitionVersion/window/value）逐项对账，因此 G31-03.3 仍为部分完成。构建 `dist/` 是忽略产物，不作为交付证据。
+
+### G31-03 最新进展（2026-09-23）
+
+- **QA-02 商品维表连续性已修复并完成本地 Spark 回归**：`DimSql.productSnapshot` 从仅读当天商品事件改为 `ODS.dt <= 业务日` 的 as-of 快照；按 `event_time DESC, ingest_batch_id DESC, event_id DESC` 稳定选每个 `product_id` 最新商品建档/更新事件。`DimensionBuildJob` 在当天无商品变更但历史商品存在时仍生成完整商品维表分区，并把 `productAsOfEligible` 与既有当日 `inputRecords` 统计分开，保留原 JobResult 输入行数语义。未知商品仍按既有 `UNKNOWN` 兜底。
+- **兼容边界**：未改 ODS/DIM 表结构、ADS 指标或旧 `product_id` 关联键；当前 DIM 不增加 `source_system`，避免与尚未迁移到复合键的 DWD/ADS 连接形态不兼容。因此不能据此声称多个商城相同商品 ID 已实现完整隔离，该项需与跨源键改造联动。
+- **测试**：`ProductDimensionAsOfSpec` 覆盖商品创建日、无变更日延续、后续更新及回跑历史日不读未来分区；与 `SqlTemplateSpec`、`DimDwdChainExecSpec` 定向 **48/48 PASS**。统一 `scripts/run-tests.ps1 -Suite spark` fresh **321/321 PASS**（40 suites，JDK8；`dev003c_20260923_112300_9053c1`，321 与基线 MATCH）。边界仅为 Spark `local[1] + in-memory catalog`，不是生产 Hive/HDFS 或 `spark-submit` 验收。
+- **变更文件**：`spark-jobs/.../DimSql.scala`、`DimensionBuildJob.scala`、`AdsSql.scala`；新增 `ProductDimensionAsOfSpec.scala`；调整 `SqlTemplateSpec.scala`、`DimDwdChainExecSpec.scala`；更新 `scripts/run-tests.ps1` Spark 测试数基线 320→321；决策登记 D-037。
+- **G31-03 业务链进度（既有运行证据，未在本轮重跑）**：`target/v25-it/g3103_20260920_052106/` 中记录 E3 99 行 accepted=99/quarantined=0、Pipeline run 19 SUCCESS；E4 71 行 accepted=71/quarantined=0、Pipeline run 20 SUCCESS，ADS 快照 A=`S20260918_19` / B=`S20260921_20`，B 指标 readback 17/17。另有 E3 oracle 对账 138/138、03.3 API 上下文检查 118/118、03.4 决策正向、03.5 负向与审计负向、03.6 四级评价 41/41 的运行记录。以上来自既有 attempt 证据，不代表本轮重新执行，也不替代完整员工浏览器验收。
+- **本轮 C6/员工交互的增量**：登录改为原生 `<form @submit>` 语义并增加 username/password autocomplete、错误 `role=alert`；新增登录表单语义测试并更新既有登录交互守卫。隔离 Chromium 冒烟（API 全部拦截模拟）验证登录 Enter 恰好 1 个 POST；AI 输入框 Enter 与一次推荐问题点击各恰好 1 个 `/ai/queries` POST，浏览器异常 0。该证据只覆盖前端事件接线，不是平台/API/认证实链。
+- **本轮回归**：web **363/363 PASS**；Spring Boot 关联 AI/分析/身份定向用例 **109/109 PASS**；Spark `local[1] + in-memory catalog` **321/321 PASS**；Vite build **675 modules 成功**。以上均不能被表述为生产 Hive/HDFS 集群验收。
+- **环境边界与下一步**：当前复用的新 run-scoped WSL MySQL 8 隔离实例通过 Windows localhost 转发在 `127.0.0.1:3307` 提供服务，平台 `8091` 与 Vite `5176` 正在运行；不得据此声称 HDFS/Hive 已运行或多节点验收通过。旧 G31-03 脚本仍绑定已停止的 `stage7q1` 数据域，不直接复用。03.7（analyst 登录→看板→AI→可核验建议→决策草稿→决策中心、管理员页服务端 403）、03.3 五点上下文一致性及 C6 DOM 交互剩余项仍待真实验收。后续复用当前隔离运行域时，先确认 PID/端口/数据库作用域，再进行相应浏览器/API检查；不得把本轮真实平台结果泛化成 Hive/HDFS 或多节点验收。
 
 **当前真实阶段（2026-09-18）**：已进入 **Stage 7 业务实链联调**。历史 `BATCH-Q-STAGE7-ISOLATED-RUNTIME-PREFLIGHT` 仍保持 **BLOCKED_ENV**，但环境恢复后已另开并完成 `BATCH-Q-R1-STAGE7-ISOLATED-RUNTIME-PREFLIGHT`：被测 SHA `9b2f18f`、RunId `stage7q1_20260918_152245`，真实 WSL MySQL 3307 上 governed preparation 成功，analytics 双库 Flyway **1/1 PASS**，mall **30/30**、generator **19/19**、analytics **11/11**（IsolationGuard 6 + MetricAds 2 + MetricPublisher 3），合计 **60/60 PASS**，全程未回退 3306。Q-R1 通过只开放“进入下一道 Stage 7 HTTP ingestion → pipeline 专项验证”的资格，**不代表该 HTTP/Spark/Hive/HDFS 实链已通过**。证据后基线登记 `a496434` 已把统一 isolated 基线从 55 更新为 60，并让顶层 runner 自动纳入 analytics 写入型 IT。
 
@@ -908,3 +1067,59 @@
   - 本文件中所有「未取证」条目，在取得证据前**不得**改写为通过。
 
 </details>
+
+## 2026-09-23 开发提速增量：manifest 失败不推进采集断点
+
+- **checkout / 基线**：`D:\Develop_code\GraduationProject-wt\v3-dev`，`feature/v3-development`，代码基线 HEAD `2a11b60a24332e02fc3b4927dbef5e524a3b5b15`；本轮不提交、不 push；保留既有工作树改动。
+- **新发现与证据**：采集前一版在逐文件落地后立即提交 checkpoint，批次状态先写 SUCCESS，之后 manifest 写失败只记日志并返回 `manifestPath=null`。新增故障注入用例证明该路径会使事件无 READY manifest 且不能从原断点自然重读。
+- **本轮实现**：编排采集改为延迟 checkpoint；完整 manifest 先写入同目录临时文件，再原子移动到 `{batchId}.json` 成为 READY；只有 manifest 发布成功后才推进文件断点。文件/批次账本提交异常或 manifest 发布异常时不推进未提交断点；manifest 发布后的 checkpoint 写失败按 at-least-once 处理并记 ERROR 日志，后续可能重投，DWD `event_id` 去重仍是下游兜底。未新增数据库迁移、公开 API 字段或状态值。
+- **fresh 验证**：`connection-ingestion` 定向 Maven reactor 7 个测试类共 **30/30 PASS**（含 manifest 写失败→FAILED/无清单/断点不动→修复落地区后新批次重读并发布）；随后将当前已改 Java 模块相关用例合并为**单一 Maven reactor**复验，29 类 **255/255 PASS**。前端独立 `npm test` **373/373 PASS**。较早一次适配测试 mock 方法名时有 5 个用例失败，根因是测试仍 stub 旧采集方法；更新为延迟断点方法后，最终 fresh 轮 30/30 与 255/255 均全绿。
+- **一致性限制**：临时文件 + 原子 rename 仅解决单机 manifest 的完整可见性；manifest rename 与 MySQL checkpoint 不是跨资源原子事务，进程若恰在二者之间崩溃，可能产生已 READY 但 checkpoint 未更新的 at-least-once 重投。本轮不宣称覆盖该 crash window；若需要严格恢复，后续需单独设计持久化 outbox/恢复状态及验收，不以本轮最小修复代替。
+- **阶段口径**：这是采集可靠性的离线单测级修正，不代表 Hive/HDFS/Flume/真实 MySQL 链路验收，不改变 G31-03 03.1–03.3 部分完成及 03.4–03.7 未完成状态。V3.0 指导书和设计正文保持冻结；本条为动态状态补记。
+# 2026-09-23 开发提速增量：按影响面并行与窄测试
+
+> 本段为动态状态的追加记录，不改变 V3.0 冻结指导书/设计文档，也不把局部验证扩写成阶段验收。
+
+- 当前 checkout：`D:\Develop_code\GraduationProject-wt\v3-dev`，分支 `feature/v3-development`，HEAD `2a11b60a24332e02fc3b4927dbef5e524a3b5b15`。不从备份目录 `D:\Develop_code\GraduationProject` 重新开发；保留工作树既有未提交改动。
+- 并行工作边界：可并行执行互不共享写入状态的代码审阅、离线单测、前端单测/构建、Spark 定向单测；共享 MySQL/快照/同一业务数据域的写操作串行执行；Spark 集成测试共享 `TestSuite.txt`，必须独占测试时段。不得并行启动多个会修改同一隔离库或同一测试输出目录的任务。
+- 本轮 fresh 窄验证：前端 sourceId 与 AI 证据快照身份测试 **14/14 PASS**；Web build **675 modules 成功**。仅覆盖所选测试，不代表前端全量 371 项复跑。
+- Spark 定向验证：JDK 8、`local[1]` + in-memory catalog，3 个受影响套件共 **49/49 PASS**（`SqlTemplateSpec`、`DimDwdChainExecSpec`、`ProductDimensionAsOfSpec`；fresh `TestSuite.txt`）。该结果不代表统一 `spark-tests` 全量 111 项，也不代表生产 Hive/HDFS/多节点验收。
+- 决策 API 负向控制器测试新增 `DecisionControllerApiSecurityTest`：**3/3 PASS**，覆盖分析员越权审批/拒绝、身份伪造不覆盖登录身份、非法状态映射及失败审计调用。范围是 Controller + AuthInterceptor 的服务边界（依赖使用 mock），不证明数据库审计持久化，也不关闭 G31-03 的真实浏览器负向链。
+- CSV 业务来源随导出增量：`buildContextRows()` 现在将经验证的正安全整数 `sourceId` 写为“业务来源 ID”；缺失/非法值输出“（缺失）”，不从 `source` 发布方或当前页面选择推断。新增 composable→CSV 五点一致性测试，定向 Web 测试 **40/40 PASS**（含 sourceId/snapshotId/definitionVersion/window/GMV value）。测试期间 Vite 曾提示 WebSocket 端口已占用，但 Node 测试最终退出码 0，40 项均 PASS。
+- 决策评价重评增量：`DecisionServiceTest.reevaluateAfterInsufficientDataWhenCompleteWindowArrives` 覆盖同一任务首次缺少实际窗口→`INSUFFICIENT_DATA`，三日数据到齐后重评→`EFFECTIVE`；同时检查评价记录、状态、来源/运行环境/口径、快照引用及样本数。指定决策测试 **42/42 PASS**（DecisionService 28、跨源 7、状态机 7）。这是 Mockito 服务层回归，不是 MySQL 真库或真实 E4 快照验收。
+- 当前基础设施约束：8091、5176、3307 均未监听；不得触碰 Windows MySQL 3306。未发现本 run 专属且安全可复用的 MySQL 启动入口，不运行带固定凭据/初始化数据目录的历史脚本。AI 正向决策仍缺真实 LLM 凭据或已批准的确定性测试适配器。
+- G31-03 仍为部分完成：上述离线/API 切片不改变 03.1–03.3 部分完成及 03.4–03.7 未完成状态。下一步优先推进可离线验收的服务安全、前端上下文和 Spark 纯计算测试；需要真实库的决策生命周期与浏览器业务链，在隔离环境安全恢复后按 03.4→03.5→03.6→03.7 顺序验证。
+
+### 2026-09-23 WSL 环境复核（只读；不等于服务可用）
+
+- Ubuntu 26.04 中当前无 MySQL 服务进程/监听、无 `mysql.service`；MySQL 8.0.41 可执行文件与 `/data/mysql-isolated/data` 旧隔离目录仍在。该目录包含历史 `stage7q1_20260918_152245_*` 等 schema，但不含本批期望的 `g3103x_20260923_1630_a1_*` schema；目录内 pid/socket lock 为旧文件，不能据此判断服务在运行。
+- 发现的 `target/v25-it/stage7w_20260919_223000/session/daemon3307.sh` 指向上述共享旧数据目录且含内嵌固定凭据；本轮没有执行它，也没有启动/停止 MySQL、创建 schema 或触碰 3306。不能将“旧目录存在”表述成“本轮 run-scoped 隔离库已恢复”。
+- WSL 可调用 Hadoop/HDFS 与 Spark 3.3.2 客户端（Hadoop 工具位于 Windows D 盘挂载，Spark 位于 `/opt/spark-3.3.2-bin-hadoop3`）；没有 Hive/Beeline 命令。故该环境当前可用于离线/LOCAL Spark 工作，不构成已启动的单节点 Hive/HDFS 数仓验收环境。
+- 后续真实链前置工作：准备新的 run-scoped MySQL 数据域与无固定凭据、显式 3307 bind、可验证 stop 的启动入口；旧 schema 保持不动。Hive 单节点服务如纳入测试，应另行安装/配置后逐项健康检查，不能仅凭客户端存在推断服务已部署。
+
+### 2026-09-23 全量采集模块回归补记
+
+- 在同一工作树执行完整 `connection-ingestion` Maven reactor（含 `platform-common`）：**360 tests，359 passed、0 failed、0 errors、1 skipped，BUILD SUCCESS，约 10 秒**。这补强了上文 30/30 定向测试，不改变本轮其余模块和 G31-03 阶段状态。
+- 提速口径：代码变更后先跑受影响模块/测试类，确认后再合并跑单 reactor 的模块全量；不重复跑无关大套件。与数据库、快照发布共享状态的链路仍串行；Spark 集成档仍独占运行。
+
+### 2026-09-23 G31-03.5 跨源决策 HTTP 拒绝回归
+
+- 在 DB-free MockMvc 中新增决策草稿创建与提交两条 `SOURCE_MISMATCH` 负向路径：真实 Controller/AuthInterceptor/ExceptionAdvice 将冲突映射为 HTTP 409 和稳定错误码；并断言分别写入 `DECISION_CREATE` / `DECISION_SUBMIT` 失败审计，不走成功审计。
+- 将 `SOURCE_MISMATCH → 409` 加入 `GlobalExceptionHandlerSourceStatusTest` 的稳定映射回归。验证命令定向执行 `DecisionControllerApiSecurityTest`、`DecisionServiceSourceMismatchTest` 与 `GlobalExceptionHandlerSourceStatusTest`，Maven BUILD SUCCESS；控制器 5/5、服务跨源 7/7，公共异常映射用例也在本轮 reactor 实际执行。
+- **范围边界**：这是 G31-03.5 的离线 HTTP 契约切片，不证明 MySQL 审计持久化、跨源快照真实数据库拒绝或完整 03.5 验收；该阶段仍未关闭。
+
+### 2026-09-23 开发提速与工作树验证补记
+
+- **并行验证**：独立工作树 `GraduationProject-wt/v3-dev` 上，前端 `npm run verify` **373/373 测试通过，Vite production build 通过**；AI/决策定向 20 类单测 **160/160 通过**。后端 `mvn -o -f analytics-server/pom.xml -pl platform-app -am test` 六模块 fresh reactor 共 **1108 tests，1107 passed、0 failed、0 errors、1 skipped，BUILD SUCCESS（约 38 秒）**；JDK 8 Spark 定向 `DimDwdChainExecSpec`、`SqlTemplateSpec`、`ProductDimensionAsOfSpec` **49/49 通过**（local Spark/in-memory）。各档口径分别记录，不将 local Spark 结果表述为 Hive/HDFS 集群验收。
+- **隔离运行冒烟**：仅使用新 RunId `g3103x_20260923_1850_b1` 的 3307 MySQL（无 3306 访问），应用完成 meta V31 / metric V12 Flyway 检查；真实登录、`/api/v1/auth/me` 及 overview/sales/products 查询均返回成功信封。数据库为空，接口按预期报告无已发布指标快照；列表中无 ACTIVE runtime profile，pipeline 记录为空，因此本次不是数据流水线端到端验收。`/api/v1/health` 仍返回历史字面值 `stage=R1-skleton`，登记为需后续清理的过时健康信息。
+- **工作树测试数据缺口及处理**：首次全量 reactor 的唯一失败是 `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` 找不到当前 worktree 的 ignored `landing/manifests/1–43.json`；43 个原文件在备份目录均与仓库 `freeze.json` 的 SHA256 和字节数逐项相符，且工作树目标目录原为空。将这 43 个文件**复制**到 worktree 后，patrol 3/3 与全量 reactor 均通过；原备份目录未修改，业务源码/测试断言未因该失败而改动。此类被忽略运行数据应作为工作树测试前置依赖显式准备，避免误判为代码回归。
+- **提速规则**：先并行运行互不共享状态的前端/AI 单测；Java/Maven 用变更模块 reactor 快速反馈，再运行一次上游完整 reactor；Spark 只点名受影响 suite 且独占执行；3307 数据库链路单独串行。禁止为“全量绿”重复运行无关的大型 acceptance，也不得把缺失的本机历史运行数据改成宽松断言。
+- **下一步**：为新隔离库的 `local-dev` DRAFT 环境补齐可验证的本机 Spark/landing 配置，先以小型固定夹具跑一次采集→Spark→ADS→MySQL 发布→只读 API；全链需要的 profile/路径/提交器参数核定前，不启动会产生不可控输出的流水线。分类/地区指标语义仍须遵循既有契约冻结边界。
+
+### 2026-09-23 Flume Spooling 配置可移植性补强
+
+- `ingestion/flume/flume-spooldir.conf` 的 spool、File Channel checkpoint/data、Landing 根 URI 改为从运行环境注入，不再绑定某一 checkout 或 `/data` 固定目录；`PLATFORM_LANDING_URI` 与平台该源 `RuntimeProfile.landing_uri` 必须一致，配置仍只追加 `raw/dt=.../hour=...`。`ingestion/flume/README.md` 补充 Flume 1.10+ 变量要求与目录约束，模板测试增加环境变量契约断言。
+- 窄测 `FlumeSpoolConfigTest` **10/10 PASS**；`connection-ingestion` + `platform-common` reactor **369 tests，0 failures、0 errors、2 skipped，BUILD SUCCESS**；`git diff --check` 通过（仅提示若干工作区文件的 LF/CRLF 转换警告）。
+- WSL 中发现 Flume **1.11.0**。一次早期 smoke 使用了错误的 agent 名称 `spool`（配置名为 `ingestion`），日志明确为 `No configuration found for this host:spool`，该次不计入通过。修正名称后，空 spool agent 使用独立 `/tmp` 下的 spool/channel/checkpoint 与 `file://` Landing，日志确认环境变量路径展开，Spooling Source、File Channel、HDFS Sink 均初始化并启动；正常 shutdown hook 关闭组件。启动日志副本：`target/fast-dev-20260923/flume-smoke/flume-agent-config-smoke.log`，SHA-256 `5B8261276E70F62EBF17F9868E5BBF9F7E49A4CF9B9EBCC77E3DECFB187A3809`。该日志中的本次检查使用空 spool，sink 队列为空。
+- 另以独立临时目录放入 1 行合成 JSONL：Flume 将源文件改名为 `.COMPLETED`，在 `raw/dt=20260923/hour=21/` 下写出 61 字节文件，内容与输入样本一致。该 smoke 只验证 WSL Flume→本地 `file://` Landing，未走 HDFS、平台 Landing 扫描器、Spark 或 MySQL；WSL `/tmp` 会话数据未作为长期证据文件保存。两个 agent 都由定时测试结束并执行 shutdown hook；没有遗留 Flume 进程，没有启动/修改 HDFS、Hive、MySQL 服务，也未访问 Windows MySQL 3306。
+- **阶段结论**：模板可移植性、Flume agent 配置解析/组件启动、单事件写入本地 Landing 已实测；阶段 2 Flume/HDFS/平台实链仍未关闭。下一步应在专用隔离单节点 HDFS 环境中用固定小夹具验收 HDFS 落地、平台递归扫描、去重与恢复口径。

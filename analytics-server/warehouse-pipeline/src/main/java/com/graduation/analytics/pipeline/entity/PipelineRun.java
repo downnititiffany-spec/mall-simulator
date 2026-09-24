@@ -21,6 +21,9 @@ public class PipelineRun {
 
     private Long runtimeProfileId;
 
+    /** 创建任务时冻结的 source_registry.id；历史 run 无法可靠反推时保持 NULL。 */
+    private Long sourceId;
+
     /** §8.1：每次运行必须保存实际 profile_version（V7 列） */
     private Integer runtimeProfileVersion;
 

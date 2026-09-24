@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -26,16 +27,20 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +54,7 @@ import static org.mockito.Mockito.when;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class DecisionServiceTest {
 
-    private static final String METRIC = "order_paid_amount";
+    private static final String METRIC = "gmv";
 
     @Mock
     private DecisionTaskMapper taskMapper;
@@ -78,6 +83,10 @@ class DecisionServiceTest {
         when(metricStore.findSnapshot("S20260901_24")).thenReturn(snapshot("S20260901_24", 7L));
         when(runtimeProfileService.get(7L)).thenReturn(profile(1L));
         when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile(1L)));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return windowPoints(q, new BigDecimal("100"));
+        });
     }
 
     // ── ① AI 只能 DRAFT ─────────────────────────────────────────────────
@@ -175,12 +184,50 @@ class DecisionServiceTest {
         assertEquals(DecisionStateMachine.APPROVED, after.getStatus());
         assertEquals("alice", after.getApprovedBy());
         assertEquals("bob", after.getOwner());
+        assertEquals(7L, after.getRuntimeProfileId());
         assertEquals(0, new BigDecimal("100").compareTo(after.getBaselineValue()));
-        assertEquals("S20260901_24", after.getBaselineSnapshotId());
+        assertTrue(after.getBaselineSnapshotId().startsWith("SNAP-"));
+        assertEquals(3, after.getBaselineSnapshotRefs().split(",").length);
+        assertEquals(1L, after.getSourceId());
         assertEquals("metric-v1", after.getDefinitionVersion());
         assertEquals(3, after.getEvalWindowDays());
+        assertEquals(7L, after.getRuntimeProfileId());
         assertNotNull(after.getApprovedAt());
-        assertTrue(after.getApprovalNote().contains("基线快照=S20260901_24"), after.getApprovalNote());
+        assertTrue(after.getApprovalNote().contains("基线快照=[SNAP-"), after.getApprovalNote());
+    }
+
+    @Test
+    @DisplayName("approve：基线窗口缺业务日时拒绝批准，不冻结部分和")
+    void approveRejectsIncompleteBaselineWindow() {
+        DecisionTask task = completeDraft();
+        task.setStatus(DecisionStateMachine.PENDING_REVIEW);
+        when(taskMapper.selectById(1L)).thenReturn(task);
+        when(metricStore.query(any(MetricStore.MetricQuery.class)))
+                .thenReturn(List.of(metric("S20260901_24", METRIC, "100", "day:2026-09-01", "metric-v1")));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return List.of(windowPoint("B1", q, new BigDecimal("10"), q.from()),
+                    windowPoint("B2", q, new BigDecimal("20"), q.to()));
+        });
+
+        PlatformBizException e = assertThrows(PlatformBizException.class, () -> service.approve(1L,
+                new ApproveReq("bob", LocalDate.of(2026, 9, 30), null, 3, null), alice));
+
+        assertTrue(e.getMessage().contains("缺失"), e.getMessage());
+        assertEquals(DecisionStateMachine.PENDING_REVIEW, task.getStatus());
+        assertNull(task.getBaselineValue(), "基线不足时不得冻结聚合值");
+        assertNull(task.getBaselineSnapshotId(), "基线不足时不得冻结基线快照");
+        assertNull(task.getBaselineSnapshotRefs(), "基线不足时不得写逐日快照血缘");
+        assertNull(task.getBaselineWindowStart(), "基线不足时不得写基线窗口起始日");
+        assertNull(task.getBaselineWindowEnd(), "基线不足时不得写基线窗口结束日");
+        assertNull(task.getRuntimeProfileId(), "基线不足时不得冻结运行环境血缘");
+        assertNull(task.getSourceId(), "基线不足时不得冻结数据源血缘");
+        assertNull(task.getDefinitionVersion(), "基线不足时不得冻结指标口径血缘");
+        assertNull(task.getApprovedBy(), "基线不足时不得写批准人");
+        assertNull(task.getApprovedAt(), "基线不足时不得写批准时间");
+        assertNull(task.getApprovalNote(), "基线不足时不得写批准备注/血缘摘要");
+        verify(taskMapper, never()).updateById(any(DecisionTask.class));
+        verify(audit, never()).success(any(AuditActor.class), anyString(), anyString(), any(), any(), any(), anyString());
     }
 
     @Test
@@ -253,31 +300,38 @@ class DecisionServiceTest {
     void evaluateUpEffective() {
         DecisionTask task = completedTask(new BigDecimal("100"));
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class))).thenAnswer(inv -> {
-            MetricStore.MetricQuery q = inv.getArgument(0);
-            return "BS-1".equals(q.snapshotId())
-                    ? List.of(metric("BS-1", METRIC, "100", "day:2026-09-01", "metric-v1"))
-                    : List.of(metric("AS-2", METRIC, "120", "day:2026-09-05", "metric-v1"));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return windowPoints(q, new BigDecimal("120"));
         });
 
         DecisionEvaluation evaluation = service.evaluate(1L, alice);
 
         assertEquals(DecisionStateMachine.EFFECTIVE, evaluation.getResult());
         assertEquals(0, new BigDecimal("0.2000").compareTo(evaluation.getImprovementRate()));
-        assertEquals("BS-1", evaluation.getBaselineSnapshotId());
-        assertEquals("AS-2", evaluation.getActualSnapshotId());
+        assertTrue(evaluation.getBaselineSnapshotId().startsWith("BS-"));
+        assertEquals("SNAP-2026-09-07", evaluation.getActualSnapshotId());
         assertEquals(0, new BigDecimal("100").compareTo(evaluation.getBaselinePeriodValue()));
         assertEquals(0, new BigDecimal("120").compareTo(evaluation.getActualPeriodValue()));
-        assertEquals(2, evaluation.getSampleCount());
+        assertEquals(6, evaluation.getSampleCount());
+        assertEquals(3, evaluation.getBaselineSampleCount());
+        assertEquals(3, evaluation.getActualSampleCount());
+        assertEquals(7L, evaluation.getSourceId());
+        assertEquals(7L, evaluation.getRuntimeProfileId());
+        assertEquals("metric-v1", evaluation.getMetricDefinitionVersion());
+        assertEquals(LocalDate.of(2026, 8, 30), evaluation.getBaselineWindowStart());
+        assertEquals(LocalDate.of(2026, 9, 1), evaluation.getBaselineWindowEnd());
         assertEquals("r8-window-v1", evaluation.getDefinitionVersion());
         assertEquals("alice", evaluation.getEvaluatedBy());
         assertEquals(LocalDate.of(2026, 9, 5), evaluation.getWindowStart());
         assertEquals(LocalDate.of(2026, 9, 7), evaluation.getWindowEnd());
         assertEquals(3, evaluation.getEvalWindowDays());
         assertTrue(evaluation.getNote().contains("非因果"), evaluation.getNote());
-        assertTrue(evaluation.getNote().contains("口径 r8-window-v1"), evaluation.getNote());
+        assertTrue(evaluation.getNote().contains("评价算法 r8-window-v1"), evaluation.getNote());
         assertEquals(DecisionStateMachine.EFFECTIVE, task.getStatus());
         assertNotNull(task.getEvaluatedAt());
+        verify(metricStore).queryWindow(new MetricStore.WindowMetricQuery(7L, 7L, METRIC,
+                LocalDate.of(2026, 9, 5), LocalDate.of(2026, 9, 7), "metric-v1"));
     }
 
     @Test
@@ -285,13 +339,11 @@ class DecisionServiceTest {
     void evaluateDownDirectionInvertsRate() {
         DecisionTask task = completedTask(new BigDecimal("100"));
         task.setTargetDirection("DOWN");
-        task.setTargetMetricCode("refund_rate");
+        task.setTargetMetricCode("net_sale");
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class))).thenAnswer(inv -> {
-            MetricStore.MetricQuery q = inv.getArgument(0);
-            return "BS-1".equals(q.snapshotId())
-                    ? List.of(metric("BS-1", "refund_rate", "100", "day:2026-09-01", "metric-v1"))
-                    : List.of(metric("AS-2", "refund_rate", "80", "day:2026-09-05", "metric-v1"));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return windowPoints(q, new BigDecimal("80"));
         });
 
         DecisionEvaluation evaluation = service.evaluate(1L, alice);
@@ -304,11 +356,9 @@ class DecisionServiceTest {
     void evaluatePartial() {
         DecisionTask task = completedTask(new BigDecimal("100"));
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class))).thenAnswer(inv -> {
-            MetricStore.MetricQuery q = inv.getArgument(0);
-            return "BS-1".equals(q.snapshotId())
-                    ? List.of(metric("BS-1", METRIC, "100", "day:2026-09-01", null))
-                    : List.of(metric("AS-2", METRIC, "102", "day:2026-09-05", null));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return windowPoints(q, new BigDecimal("102"));
         });
 
         assertEquals(DecisionStateMachine.PARTIAL, service.evaluate(1L, alice).getResult());
@@ -319,11 +369,9 @@ class DecisionServiceTest {
     void evaluateIneffective() {
         DecisionTask task = completedTask(new BigDecimal("100"));
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class))).thenAnswer(inv -> {
-            MetricStore.MetricQuery q = inv.getArgument(0);
-            return "BS-1".equals(q.snapshotId())
-                    ? List.of(metric("BS-1", METRIC, "100", "day:2026-09-01", null))
-                    : List.of(metric("AS-2", METRIC, "90", "day:2026-09-05", null));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return windowPoints(q, new BigDecimal("90"));
         });
 
         assertEquals(DecisionStateMachine.INEFFECTIVE, service.evaluate(1L, alice).getResult());
@@ -335,11 +383,9 @@ class DecisionServiceTest {
         DecisionTask task = completedTask(new BigDecimal("100"));
         task.setTargetValue(new BigDecimal("110"));
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class))).thenAnswer(inv -> {
-            MetricStore.MetricQuery q = inv.getArgument(0);
-            return "BS-1".equals(q.snapshotId())
-                    ? List.of(metric("BS-1", METRIC, "100", "day:2026-09-01", null))
-                    : List.of(metric("AS-2", METRIC, "110", "day:2026-09-05", null));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return windowPoints(q, new BigDecimal("110"));
         });
 
         assertEquals(DecisionStateMachine.EFFECTIVE, service.evaluate(1L, alice).getResult());
@@ -359,7 +405,7 @@ class DecisionServiceTest {
 
         DecisionEvaluation evaluation = service.evaluate(1L, alice);
         assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, evaluation.getResult());
-        assertTrue(evaluation.getNote().contains("基线值为 0"), evaluation.getNote());
+        assertTrue(evaluation.getNote().contains("聚合值为 0"), evaluation.getNote());
     }
 
     @Test
@@ -367,12 +413,57 @@ class DecisionServiceTest {
     void evaluateSameSnapshotIsInsufficient() {
         DecisionTask task = completedTask(new BigDecimal("100"));
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class)))
-                .thenReturn(List.of(metric("BS-1", METRIC, "100", "day:2026-09-01", null)));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenReturn(List.of());
 
         DecisionEvaluation evaluation = service.evaluate(1L, alice);
         assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, evaluation.getResult());
-        assertTrue(evaluation.getNote().contains("尚未发布新快照"), evaluation.getNote());
+        assertTrue(evaluation.getNote().contains("数据不足"), evaluation.getNote());
+    }
+
+    @Test
+    @DisplayName("D1：首次评价数据不足后，完整窗口到齐可重评为 EFFECTIVE 并保留两次评价血缘")
+    void reevaluateAfterInsufficientDataWhenCompleteWindowArrives() {
+        DecisionTask task = completedTask(new BigDecimal("100"));
+        when(taskMapper.selectById(1L)).thenReturn(task);
+        java.util.concurrent.atomic.AtomicInteger queryCount = new java.util.concurrent.atomic.AtomicInteger();
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(invocation -> {
+            MetricStore.WindowMetricQuery query = invocation.getArgument(0);
+            return queryCount.getAndIncrement() == 0 ? List.of() : windowPoints(query, new BigDecimal("120"));
+        });
+
+        DecisionEvaluation first = service.evaluate(1L, alice);
+
+        assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, first.getResult());
+        assertNull(first.getActualSnapshotId());
+        assertEquals("", first.getActualSnapshotRefs());
+        assertEquals(3, first.getBaselineSampleCount());
+        assertEquals(0, first.getActualSampleCount());
+        assertEquals(3, first.getSampleCount());
+        assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, task.getStatus());
+
+        DecisionEvaluation second = service.evaluate(1L, alice);
+
+        assertEquals(DecisionStateMachine.EFFECTIVE, second.getResult());
+        assertEquals("SNAP-2026-09-07", second.getActualSnapshotId());
+        assertEquals(encodedRefs("SNAP-2026-09-05", "SNAP-2026-09-06", "SNAP-2026-09-07"),
+                second.getActualSnapshotRefs());
+        assertEquals(3, second.getBaselineSampleCount());
+        assertEquals(3, second.getActualSampleCount());
+        assertEquals(6, second.getSampleCount());
+        assertEquals(7L, second.getRuntimeProfileId());
+        assertEquals(7L, second.getSourceId());
+        assertEquals("metric-v1", second.getMetricDefinitionVersion());
+        assertEquals("BS-1", second.getBaselineSnapshotId());
+        assertEquals(task.getBaselineSnapshotRefs(), second.getBaselineSnapshotRefs());
+        assertEquals(DecisionStateMachine.EFFECTIVE, task.getStatus());
+
+        ArgumentCaptor<DecisionEvaluation> saved = ArgumentCaptor.forClass(DecisionEvaluation.class);
+        verify(evaluationMapper, times(2)).insert(saved.capture());
+        assertEquals(List.of(DecisionStateMachine.INSUFFICIENT_DATA, DecisionStateMachine.EFFECTIVE),
+                saved.getAllValues().stream().map(DecisionEvaluation::getResult).toList());
+        verify(taskMapper, times(2)).updateById(task);
+        verify(metricStore, times(2)).queryWindow(new MetricStore.WindowMetricQuery(7L, 7L, METRIC,
+                LocalDate.of(2026, 9, 5), LocalDate.of(2026, 9, 7), "metric-v1"));
     }
 
     @Test
@@ -380,16 +471,58 @@ class DecisionServiceTest {
     void evaluateBusinessDateInsideWindowRequired() {
         DecisionTask task = completedTask(new BigDecimal("100"));
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class))).thenAnswer(inv -> {
-            MetricStore.MetricQuery q = inv.getArgument(0);
-            return "BS-1".equals(q.snapshotId())
-                    ? List.of(metric("BS-1", METRIC, "100", "day:2026-09-01", null))
-                    : List.of(metric("AS-2", METRIC, "120", "day:2026-09-02", null));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return List.of(windowPoint("AS-2", q, new BigDecimal("120"), q.from()));
         });
 
         DecisionEvaluation evaluation = service.evaluate(1L, alice);
         assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, evaluation.getResult());
-        assertTrue(evaluation.getNote().contains("完成日"), evaluation.getNote());
+        assertTrue(evaluation.getNote().contains("缺失"), evaluation.getNote());
+    }
+
+    @Test
+    @DisplayName("evaluate：实际快照日期晚于评价窗口 → INSUFFICIENT_DATA")
+    void evaluateRejectsActualObservationAfterWindowEnd() {
+        DecisionTask task = completedTask(new BigDecimal("100"));
+        task.setCompletedAt(LocalDateTime.of(2026, 9, 20, 18, 0)); // 实际窗口为 09-21..09-23
+        task.setApprovedAt(LocalDateTime.of(2026, 9, 20, 9, 0));
+        task.setBaselineWindowStart(LocalDate.of(2026, 9, 18));
+        task.setBaselineWindowEnd(LocalDate.of(2026, 9, 20));
+        task.setBaselineSnapshotRefs(encodedRefs("B1", "B2", "B3"));
+        when(taskMapper.selectById(1L)).thenReturn(task);
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return List.of(windowPoint("AS-2", q, new BigDecimal("120"), LocalDate.of(2026, 9, 24)));
+        });
+
+        DecisionEvaluation evaluation = service.evaluate(1L, alice);
+
+        assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, evaluation.getResult());
+        assertTrue(evaluation.getNote().contains("范围外"), evaluation.getNote());
+        assertNull(evaluation.getActualValue(), "窗口外观测不能成为评价值");
+        assertNull(evaluation.getImprovementRate(), "窗口外观测不能产生改善率");
+    }
+
+    @Test
+    @DisplayName("evaluate：基线快照日期早于基线窗口 → INSUFFICIENT_DATA")
+    void evaluateRejectsBaselineObservationBeforeWindowStart() {
+        DecisionTask task = completedTask(new BigDecimal("100"));
+        task.setApprovedAt(LocalDateTime.of(2026, 9, 20, 9, 0)); // 基线窗口为 09-18..09-20
+        task.setCompletedAt(LocalDateTime.of(2026, 9, 20, 18, 0));
+        when(taskMapper.selectById(1L)).thenReturn(task);
+        task.setBaselineSnapshotRefs(encodedRefs("B1"));
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenAnswer(inv -> {
+            MetricStore.WindowMetricQuery q = inv.getArgument(0);
+            return windowPoints(q, new BigDecimal("120"));
+        });
+
+        DecisionEvaluation evaluation = service.evaluate(1L, alice);
+
+        assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, evaluation.getResult());
+        assertTrue(evaluation.getNote().contains("基线窗口证据不完整"), evaluation.getNote());
+        assertNull(evaluation.getActualValue(), "无有效基线窗口时不能产出实际评价值");
+        assertNull(evaluation.getImprovementRate(), "无有效基线窗口时不能产出改善率");
     }
 
     @Test
@@ -397,16 +530,46 @@ class DecisionServiceTest {
     void evaluateHandlesMissingInputs() {
         DecisionTask task = completedTask(new BigDecimal("100"));
         when(taskMapper.selectById(1L)).thenReturn(task);
-        when(metricStore.query(any(MetricStore.MetricQuery.class))).thenAnswer(inv -> {
-            MetricStore.MetricQuery q = inv.getArgument(0);
-            return "BS-1".equals(q.snapshotId()) ? List.of() : List.of();
-        });
+        when(metricStore.queryWindow(any(MetricStore.WindowMetricQuery.class))).thenReturn(List.of());
         assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, service.evaluate(1L, alice).getResult());
 
         DecisionTask noApprovedAt = completedTask(new BigDecimal("100"));
         noApprovedAt.setApprovedAt(null);
         when(taskMapper.selectById(2L)).thenReturn(noApprovedAt);
         assertThrows(PlatformBizException.class, () -> service.evaluate(2L, alice));
+    }
+
+    @Test
+    @DisplayName("evaluate：历史任务缺少冻结的 runtimeProfileId → INSUFFICIENT_DATA，不查询跨环境窗口")
+    void evaluateHistoricalTaskWithoutRuntimeProfileIsInsufficient() {
+        DecisionTask task = completedTask(new BigDecimal("100"));
+        task.setRuntimeProfileId(null);
+        when(taskMapper.selectById(1L)).thenReturn(task);
+
+        DecisionEvaluation evaluation = service.evaluate(1L, alice);
+
+        assertEquals(DecisionStateMachine.INSUFFICIENT_DATA, evaluation.getResult());
+        assertNull(evaluation.getActualValue());
+        assertNull(evaluation.getImprovementRate());
+        assertNull(evaluation.getRuntimeProfileId());
+        assertTrue(evaluation.getNote().contains("基线窗口证据不完整"));
+        verify(metricStore, never()).queryWindow(any(MetricStore.WindowMetricQuery.class));
+    }
+
+    @Test
+    @DisplayName("approve：完整基线血缘冻结快照所属 runtimeProfileId 到任务")
+    void approveFreezesRuntimeProfileIdentityAndWindowQuery() {
+        DecisionTask task = completeDraft();
+        task.setStatus(DecisionStateMachine.PENDING_REVIEW);
+        when(taskMapper.selectById(1L)).thenReturn(task);
+        when(metricStore.query(any(MetricStore.MetricQuery.class)))
+                .thenReturn(List.of(metric("S20260901_24", METRIC, "100", "day:2026-09-23", "metric-v1")));
+
+        DecisionTask approved = service.approve(1L,
+                new ApproveReq("bob", LocalDate.now().plusDays(7), null, 3, null), alice);
+
+        assertEquals(7L, approved.getRuntimeProfileId());
+        verify(metricStore).queryWindow(any(MetricStore.WindowMetricQuery.class));
     }
 
     @Test
@@ -464,8 +627,39 @@ class DecisionServiceTest {
         task.setCompletedAt(LocalDateTime.of(2026, 9, 4, 18, 0));
         task.setBaselineValue(baseline);
         task.setBaselineSnapshotId("BS-1");
+        task.setBaselineSnapshotRefs(encodedRefs("BS-2026-08-30", "BS-2026-08-31", "BS-2026-09-01"));
+        task.setBaselineWindowStart(LocalDate.of(2026, 8, 30));
+        task.setBaselineWindowEnd(LocalDate.of(2026, 9, 1));
+        task.setRuntimeProfileId(7L);
+        task.setSourceId(7L);
         task.setDefinitionVersion("metric-v1");
         return task;
+    }
+
+    private List<MetricStore.WindowMetricValue> windowPoints(MetricStore.WindowMetricQuery q, BigDecimal total) {
+        long days = q.from().datesUntil(q.to().plusDays(1)).count();
+        BigDecimal perDay = total.divide(BigDecimal.valueOf(days), 4, java.math.RoundingMode.HALF_UP);
+        List<MetricStore.WindowMetricValue> points = new java.util.ArrayList<>();
+        BigDecimal assigned = BigDecimal.ZERO;
+        List<LocalDate> dates = q.from().datesUntil(q.to().plusDays(1)).toList();
+        for (int i = 0; i < dates.size(); i++) {
+            BigDecimal value = i == dates.size() - 1 ? total.subtract(assigned) : perDay;
+            assigned = assigned.add(value);
+            points.add(windowPoint("SNAP-" + dates.get(i), q, value, dates.get(i)));
+        }
+        return points;
+    }
+
+    private MetricStore.WindowMetricValue windowPoint(String snapshotId, MetricStore.WindowMetricQuery q,
+                                                      BigDecimal value, LocalDate day) {
+        return new MetricStore.WindowMetricValue(snapshotId, q.runtimeProfileId(), q.sourceId(), q.metricCode(), value, day,
+                q.definitionVersion(), day.atTime(23, 0));
+    }
+
+    private static String encodedRefs(String... ids) {
+        return java.util.Arrays.stream(ids)
+                .map(id -> Base64.getUrlEncoder().withoutPadding().encodeToString(id.getBytes(StandardCharsets.UTF_8)))
+                .collect(java.util.stream.Collectors.joining(","));
     }
 
     private MetricValue metric(String snapshotId, String code, String value, String period, String definitionVersion) {
@@ -482,6 +676,7 @@ class DecisionServiceTest {
         MetricSnapshot snap = new MetricSnapshot();
         snap.setSnapshotId(snapshotId);
         snap.setRuntimeProfileId(runtimeProfileId);
+        snap.setSourceId(1L);
         snap.setStatus(MetricSnapshot.STATUS_ACTIVE);
         return snap;
     }

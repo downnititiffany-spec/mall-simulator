@@ -163,6 +163,8 @@ public class PipelineService {
             PipelineRun run = new PipelineRun();
             run.setIdempotencyKey(key);
             run.setRuntimeProfileId(runtimeProfileId);
+            // source_registry.id 在任务创建时冻结；后续源切换不得改变本 run 的归属。
+            run.setSourceId(profile.getSourceId());
             run.setRuntimeProfileVersion(profile.getVersion());
             run.setPipelineCode(pipelineCode);
             run.setBusinessTime(businessTime);
@@ -374,20 +376,24 @@ public class PipelineService {
             String businessDate = run.getBusinessTime().toLocalDate().format(KEY_DATE);
             // §8.1/§15.3 R6-10：一次 run 冻结一份环境快照（提交器与命令均取自该快照）
             RuntimeProfile profile = runtimeProfileService.get(run.getRuntimeProfileId());
-            RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile);
-            // S2-04：本轮输入必须能归属到一个源，而"哪个源"唯一来自 profile.source_id。
-            // 必须**早于**执行器构造判定：装配路径下 `SparkStageExecutorFactory.create` 会抛
-            // PlatformBizException(SOURCE_NOT_BOUND)，那是业务异常、落到下面的通用 catch 会变成
-            // RUN_INTERNAL（真机实测口径：错误码被吞掉，运维看到的是"平台内部错误"而不是"未绑定源"）。
-            // 这里先判一次，让"未绑定源"永远以稳定错误码 SOURCE_NOT_BOUND 落在 run 上；
-            // 同时它也是"清单按源过滤"这一前提的显式化 —— 不依赖别的组件的副作用。
-            Long runSourceId = profile.getSourceId();
+            Long runSourceId = run.getSourceId();
             if (runSourceId == null) {
-                throw new PipelineStageException("SOURCE_NOT_BOUND",
-                        "运行环境未绑定源（runtime_profile.source_id 为空），无法确定数仓命名空间、"
-                                + "也无法按源选择 Landing 输入清单（runtime_profile_id=" + profile.getId()
-                                + "，请先激活一个源再运行）");
+                // 新的未绑定 profile 仍报告原稳定错误码；若 profile 后来绑定了源，也不能
+                // 用新值猜测旧 run 的来源，否则恢复可能把旧批次写进另一商城的数仓。
+                String code = profile.getSourceId() == null ? "SOURCE_NOT_BOUND" : "RUN_SOURCE_UNKNOWN";
+                String reason = "pipeline_run.source_id 为空，无法证明本 run 的商城来源；不得从当前 runtime_profile.source_id 回填或猜测";
+                throw new PipelineStageException(code, reason + "（runId=" + run.getId()
+                        + "，runtimeProfileId=" + profile.getId() + "）");
             }
+            if (!runSourceId.equals(profile.getSourceId())) {
+                throw new PipelineStageException("RUN_SOURCE_BINDING_CHANGED",
+                        "本 run 冻结来源与 runtime_profile 当前绑定不一致，拒绝继续以避免跨商城写入"
+                                + "（runId=" + run.getId() + "，frozenSourceId=" + runSourceId
+                                + "，currentSourceId=" + profile.getSourceId() + "）");
+            }
+            RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile, runSourceId);
+            // S2-04/G31-03.3：此后数仓命名空间、清单选择、Spark 参数和发布请求
+            // 全部使用已校验的 runSourceId；不能再从可变 profile 中重新决定本次 run 属于哪个源。
             SparkStageExecutor executor = stageExecutorFactory.create(snapshot);
             Path landingRoot = LandingUri.resolve(profile.getLandingUri());
 
@@ -649,7 +655,7 @@ public class PipelineService {
 
                     // ── R7-3：Hive 正式分区已发布 → 指标库 ADS→MySQL 写入 + 快照 ACTIVE 原子切换 ──
                     PublishReport report = metricPublisher.publish(new PublishRequest(
-                            snapshot.id(), snapshot.version(), snapshotIdRef, businessDate,
+                            snapshot.id(), snapshot.version(), runSourceId, snapshotIdRef, businessDate,
                             run.getBusinessTime().toString(), run.getId(), exportDir, metricDefinitions()));
                     evidence.put("metricPublish", Map.of(
                             "ok", report.ok(),

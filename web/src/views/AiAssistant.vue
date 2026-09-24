@@ -16,31 +16,30 @@
 
     <div class="chart-box">
       <div class="chart-title">自然语言问数（语义层 → 受控 Text-to-SQL → 安全校验 → 证据解释）</div>
-      <div style="display:flex;gap:10px">
-        <input v-model="question" @keyup.enter="ask" placeholder="例如：最近 7 天销售额变化趋势如何？"
-               style="flex:1;padding:8px" :disabled="busy || draftBusy" />
-        <button @click="handleAskAction" :disabled="draftBusy || (!busy && !question.trim())"
-                style="padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:6px">
+      <div class="chat-input-bar">
+        <input class="input" v-model="question" @keyup.enter="ask" placeholder="例如：最近 7 天销售额变化趋势如何？"
+               :disabled="busy || draftBusy" />
+        <button class="btn btn-ai" @click="handleAskAction" :disabled="draftBusy || (!busy && !question.trim())">
           {{ busy ? '放弃本次分析' : (draftBusy ? '草稿创建中…' : '发送') }}
         </button>
       </div>
       <div v-if="busy" class="state-line">
         执行状态：理解问题 → 生成 SQL → 安全校验 → 查询数据 → 生成解释…
       </div>
-      <div v-if="queryError" class="banner banner-error" style="margin-top:10px">请求失败：{{ queryError }}</div>
-      <div v-if="abortedNotice" class="banner banner-stale" style="margin-top:10px">{{ abortedNotice }}</div>
+      <div v-if="queryError" class="alert alert-danger" style="margin-top:10px">请求失败：{{ queryError }}</div>
+      <div v-if="abortedNotice" class="alert alert-info" style="margin-top:10px">{{ abortedNotice }}</div>
     </div>
 
     <template v-if="queryResult">
       <div class="chart-box">
         <div class="chart-title">
           结论
-          <button style="float:right;font-size:12px;padding:3px 10px"
+          <button class="btn btn-sm" style="float:right"
                   :disabled="!canExportResult" @click="exportResult">
             {{ exportButtonText }}
           </button>
         </div>
-        <div style="font-size:14px;line-height:1.7">{{ evidenceContext.summary || '（后端未给出结论文本）' }}</div>
+        <div class="answer-card">{{ evidenceContext.summary || '（后端未给出结论文本）' }}</div>
         <div v-if="query.status" class="table-hint">
           管道状态：{{ query.status }}（模型：{{ query.providerUsed || '未提供' }}，行数：{{ query.rowsReturned ?? 0 }}，
           耗时：{{ query.elapsedMs ?? '未提供' }}ms）
@@ -53,12 +52,12 @@
 
       <div class="chart-box">
         <div class="chart-title">数据依据（真实查询结果，未做前端重算）</div>
-        <table v-if="resultTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr style="text-align:left;color:#6b7280">
+        <table v-if="resultTable.rows.length" class="data-table">
+          <thead><tr style="text-align:left;color:var(--gray-500)">
             <th v-for="k in resultTable.headers" :key="k" style="padding:6px">{{ k }}</th>
           </tr></thead>
           <tbody>
-            <tr v-for="(row, i) in resultTable.rows" :key="i" style="border-top:1px solid #f3f4f6">
+            <tr v-for="(row, i) in resultTable.rows" :key="i" style="border-top:1px solid var(--gray-100)">
               <td v-for="(v, j) in row" :key="j" style="padding:6px" class="mono">{{ v }}</td>
             </tr>
           </tbody>
@@ -82,7 +81,7 @@
           证据锚点：<b class="mono">{{ anchorLabel }}</b>
         </div>
         <div v-for="s in draftSuggestions(explanation.suggestions)" :key="s.index"
-             style="padding:6px 0;font-size:13px;border-top:1px solid #f3f4f6">
+             style="padding:6px 0;font-size:13px;border-top:1px solid var(--gray-100)">
           <div style="line-height:1.7">{{ s.action }}</div>
           <div style="display:flex;gap:10px;align-items:center;margin-top:4px">
             <button :disabled="!canCreateDraft || draftBusy" @click="openDraft(s)"
@@ -118,7 +117,7 @@
           <div class="table-hint">将提交：<span class="mono">{{ draftPreview }}</span></div>
           <div style="margin-top:10px;display:flex;gap:8px">
             <button :disabled="draftBusy" @click="createDraft"
-                    style="padding:6px 16px;background:#7c3aed;color:#fff;border:none;border-radius:6px">
+                    style="padding:6px 16px;background:var(--ai);color:#fff;border:none;border-radius:6px">
               {{ draftBusy ? '创建中…' : '创建草稿' }}
             </button>
             <button :disabled="draftBusy" @click="closeDraft" style="padding:6px 16px">取消</button>
@@ -128,15 +127,18 @@
 
       <div class="chart-box">
         <div class="chart-title">证据（SQL + 口径）</div>
-        <pre style="background:#f9fafb;padding:10px;border-radius:6px;font-size:12px;overflow:auto">{{ evidence.sql || '（后端未返回 SQL）' }}</pre>
+        <pre class="evidence-box">{{ evidence.sql || '（后端未返回 SQL）' }}</pre>
         <div class="meta-row" style="margin-top:8px">
           <span class="meta-item">
             证据快照
-            <b class="mono">{{ evidenceSnapshotText }}</b>
-            <span class="meta-hint">{{ evidenceSnapshotHint }}</span>
+            <b class="mono">{{ evidence.snapshotText }}</b>
           </span>
+          <span class="meta-item meta-hint" v-if="evidence.snapshotHint">{{ evidence.snapshotHint }}</span>
           <span class="meta-item">证据包 ID <b class="mono">{{ evidence.evidenceId || '未提供' }}</b></span>
-          <span class="meta-item">时间范围 <b class="mono">{{ evidence.timeRange || '未提供' }}</b></span>
+          <span class="meta-item">时间范围 <b class="mono">{{ evidenceWindowText }}</b></span>
+          <span class="meta-item" v-if="evidence.window && evidence.window.referenceBusinessDate">
+            参考业务日 <b class="mono">{{ evidence.window.referenceBusinessDate }}</b>
+          </span>
           <span class="meta-item">提示词版本 <b class="mono">{{ evidence.promptVersion || '未提供' }}</b></span>
           <span class="meta-item">返回行数 <b class="mono">{{ evidence.returnedRows }}</b></span>
           <span class="meta-item">查询耗时 <b class="mono">{{ evidence.queryElapsedMs === null ? '未提供' : evidence.queryElapsedMs + 'ms' }}</b></span>
@@ -170,9 +172,9 @@
       <div v-if="historyError" class="banner banner-error">历史加载失败：{{ historyError }}</div>
       <div v-if="history.length" style="display:flex;flex-direction:column;gap:6px">
         <button v-for="h in history" :key="h.id" @click="question = h.question" :disabled="busy || draftBusy"
-                style="text-align:left;padding:6px 10px;border:1px solid #f3f4f6;background:#fafafa;border-radius:6px;font-size:13px;cursor:pointer">
-          <span style="color:#111827">{{ h.question }}</span>
-          <span style="float:right;color:#9ca3af;font-size:12px">
+                style="text-align:left;padding:6px 10px;border:1px solid var(--gray-100);background:#fafafa;border-radius:6px;font-size:13px;cursor:pointer">
+          <span style="color:var(--gray-800)">{{ h.question }}</span>
+          <span style="float:right;color:var(--gray-400);font-size:12px">
             {{ h.status }} · {{ h.rowsReturned ?? 0 }} 行 · {{ formatDateTime(h.createdAt) }}
           </span>
         </button>
@@ -188,7 +190,7 @@ import api from '../api'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import { useAnalysis } from '../composables/useAnalysis'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
-import { buildAiEvidenceContext, isRealSnapshotId, warningTextAll } from '../utils/context'
+import { buildAiEvidenceContext, warningTextAll, windowDisplayText } from '../utils/context'
 import {
   ANCHOR_KIND,
   DIRECTION_CHOICES,
@@ -236,18 +238,11 @@ const explanation = computed(() => (queryResult.value && queryResult.value.expla
 const evidenceContext = computed(() => buildAiEvidenceContext(queryResult.value))
 const evidence = computed(() => evidenceContext.value.evidence || {})
 
-// 规则回退分支的证据快照是占位串 'unknown'（SQL 里用 MAX(snapshot_id) 锁定最新快照），
-// 页面只如实说明后端给了什么、SQL 实际怎么锁的，不替它填一个快照号。
-const evidenceSnapshotText = computed(() => (isRealSnapshotId(evidence.value.snapshotId) ? evidence.value.snapshotId : '未提供'))
-const evidenceSnapshotHint = computed(() => {
-  if (isRealSnapshotId(evidence.value.snapshotId)) return ''
-  const raw = pickRawEvidenceSnapshot.value
-  return raw ? `（后端返回占位值 ${raw}；SQL 用 MAX(snapshot_id) 锁定最新快照）` : '（证据包未返回快照号）'
-})
-const pickRawEvidenceSnapshot = computed(() => {
-  const ev = (queryResult.value && queryResult.value.explanation && queryResult.value.explanation.evidence) || {}
-  return ev.snapshotId || ''
-})
+// QA-03：快照身份的唯一归一化在 utils/context.js。页面**只**渲染它给出的文本与提示，
+// 不再自己判断 isRealSnapshotId，也不推断裂回退分支的 SQL 怎么锁快照（曾错误宣称 MAX(snapshot_id)）。
+// QA-04：有效查询期以响应里的结构化 query.window 为唯一来源（经 context.js 搬运与降级），
+// 无结构化窗口时才回落到证据自带文本，仍取不到就是「接口未提供」——绝不打印前端请求标签。
+const evidenceWindowText = computed(() => windowDisplayText(evidence.value.window, evidence.value.timeRange))
 const resultTable = computed(() => aiResultTable(query.value.rows))
 
 // ── S3-42：AI 建议 → 决策草稿（字段口径的唯一属主是 utils/decisionDraft.js）──
@@ -256,7 +251,8 @@ const draftBusy = ref(false)
 const draftError = ref('')
 const draftCreated = ref(null)
 
-// 证据锚点：优先顶层证据包 ID，其次真实快照号；两者皆无 ⇒ canCreateDraft=false，入口禁用
+// 证据锚点：优先顶层证据包 ID，其次归一化后的证据快照号（QA-03 起二者同源）；
+// 两者皆无 ⇒ canCreateDraft=false，入口禁用
 const evidenceAnchor = computed(() => draftAnchor({
   evidenceId: evidence.value.evidenceId,
   snapshotId: evidence.value.snapshotId
@@ -377,7 +373,10 @@ async function ask() {
   queryResult.value = null
   closeDraft()
   try {
-    const resp = await api.aiQuery(text, '近30天', askController ? { signal: askController.signal } : undefined)
+    // QA-04：不再下发任何时间范围标签——问题原文由后端解析成结构化 window，
+    // 页面只展示响应里的 query.window，避免「问题/SQL/解释」三个口径互相打架。
+    const ctl = askController
+    const resp = await api.aiQuery(text, undefined, ctl ? { signal: ctl.signal } : undefined)
     if (mySeq !== askSeq) return // 已被显式取消或已有更新序号，丢弃过期响应
     queryResult.value = resp
     await loadHistory()

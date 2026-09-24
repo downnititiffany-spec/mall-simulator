@@ -15,8 +15,8 @@ import java.nio.file.Path;
  * （{@code MappingActivationService}）都要回答同一个问题——{@code source_registry.profile_path}
  * 是**仓库相对**路径，根目录由 {@code platform.source.profile-root} 决定，越界/缺失/不可读一律
  * fail-closed。两份实现会立刻产生"采集说读得到、激活说读不到"的双所有者问题。
- * 这里只搬运既有语义，**不新增判定**：路径策略仍是 {@link SourcePathPolicy}，
- * 错误码仍是 {@code MAPPING_PROFILE_INVALID}(409)。</p>
+ * 路径策略仍由 {@link SourcePathPolicy} 唯一负责；本类在实际读取边界额外拒绝符号链接，
+ * 并校验真实路径仍在画像根目录内。错误码仍是 {@code MAPPING_PROFILE_INVALID}(409)。</p>
  *
  * <p><b>不回显路径值</b>：{@code profile_path} 可能来自库里的历史行，回显等于把部署机目录结构
  * 写进响应与审计（任务书 §6）。只有**已经过策略校验**的仓库相对值才会出现在消息里。</p>
@@ -53,7 +53,35 @@ public final class SourceProfileFile {
             throw new PlatformBizException(PlatformBizException.MAPPING_PROFILE_INVALID,
                     "画像文件不存在或不可读（仓库相对路径）：" + repoRelative + "，" + purpose + "：sourceCode=" + sourceCode);
         }
+        // 词法包含不能阻止根目录内的符号链接指向仓库外文件。画像会被采集与激活流程读取，
+        // 因此拒绝候选路径上的符号链接，并再用真实路径做一次根目录包含校验。
+        Path normalizedRoot = profileRoot.toAbsolutePath().normalize();
+        Path normalizedFile = file.toAbsolutePath().normalize();
+        Path cursor = normalizedRoot;
+        for (Path segment : normalizedRoot.relativize(normalizedFile)) {
+            cursor = cursor.resolve(segment);
+            if (Files.isSymbolicLink(cursor)) {
+                throw new PlatformBizException(PlatformBizException.MAPPING_PROFILE_INVALID,
+                        "画像路径不得包含符号链接（仓库相对路径），" + purpose + "：sourceCode=" + sourceCode);
+            }
+        }
+        try {
+            Path realRoot = normalizedRoot.toRealPath();
+            Path realFile = normalizedFile.toRealPath();
+            requireRealPathWithinRoot(realRoot, realFile, purpose, sourceCode);
+        } catch (IOException e) {
+            throw new PlatformBizException(PlatformBizException.MAPPING_PROFILE_INVALID,
+                    "画像真实路径解析失败（仓库相对路径），" + purpose + "：sourceCode=" + sourceCode);
+        }
         return file;
+    }
+
+    /** 真实路径包含判定与文件系统操作分离，以便在无符号链接权限的平台仍可完整测试边界。 */
+    static void requireRealPathWithinRoot(Path realRoot, Path realFile, String purpose, String sourceCode) {
+        if (!realFile.startsWith(realRoot)) {
+            throw new PlatformBizException(PlatformBizException.MAPPING_PROFILE_INVALID,
+                    "画像真实路径逃逸出画像根目录（仓库相对路径），" + purpose + "：sourceCode=" + sourceCode);
+        }
     }
 
     /** 读画像**原始字节**（激活侧比对 sha256 用；哈希必须算在字节上，不做任何再序列化）。 */

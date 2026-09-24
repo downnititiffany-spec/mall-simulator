@@ -96,7 +96,9 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
   it should "商品维度取每 product_id 最新建档事件并做 unknown key 兜底（库存事件不进快照）" in {
     val sql = DimSql.productSnapshot(ns, "20260901")
     val lower = sql.toLowerCase
-    lower should include("row_number() over (partition by payload_product_id order by event_time desc)")
+    lower should include("partition by payload_product_id")
+    lower should include("order by event_time desc, ingest_batch_id desc, event_id desc")
+    lower should include("where dt <= '20260901'")
     lower should include("'unknown'")
     lower should include("-1")
     lower should include("event_type in ('product_created', 'product_updated')")

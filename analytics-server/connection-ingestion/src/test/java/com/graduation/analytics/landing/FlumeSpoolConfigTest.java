@@ -57,12 +57,13 @@ class FlumeSpoolConfigTest {
         assertThat(path).as("sink 落地区必须与 runtime_profile.landing_uri + 布局 %s 对齐",
                         LandingLayout.FLUME_RAW.name())
                 .isNotNull()
+                .startsWith("${env:PLATFORM_LANDING_URI}/")
                 .contains("/" + LandingLayout.FLUME_RAW.dirName() + "/")
                 .contains("dt=%Y%m%d")
                 .contains("hour=%H")
                 .doesNotContain("%{eventType}");
-        assertThat(path).as("必须是显式 scheme，不能是裸相对路径")
-                .matches("^(file|hdfs)://.*");
+        assertThat(path).as("模板不得绑定旧 checkout 路径；实际 scheme 由运行环境的 Landing URI 提供")
+                .doesNotContain("D:/Develop_code/GraduationProject");
         assertThat(LandingLayout.FLUME_RAW.recursive())
                 .as("raw 区按 dt/hour 分层，平台侧必须递归枚举")
                 .isTrue();
@@ -80,8 +81,8 @@ class FlumeSpoolConfigTest {
         Map<String, String> conf = conf();
         String checkpoint = conf.get("ingestion.channels.fileChannel.checkpointDir");
         String data = conf.get("ingestion.channels.fileChannel.dataDirs");
-        assertThat(checkpoint).as("checkpoint 目录必填（重启后靠它恢复）").isNotBlank().startsWith("/");
-        assertThat(data).as("data 目录必填").isNotBlank().startsWith("/");
+        assertThat(checkpoint).as("checkpoint 目录由启动环境提供").isEqualTo("${env:FLUME_CHANNEL_CHECKPOINT_DIR}");
+        assertThat(data).as("data 目录由启动环境提供").isEqualTo("${env:FLUME_CHANNEL_DATA_DIR}");
         assertThat(checkpoint).as("两者写成同一个目录＝重启即损坏 checkpoint").isNotEqualTo(data);
         assertThat(conf.get("ingestion.channels.fileChannel.capacity")).isNotNull();
         assertThat(Long.parseLong(conf.get("ingestion.channels.fileChannel.transactionCapacity")))
@@ -137,13 +138,28 @@ class FlumeSpoolConfigTest {
         Map<String, String> conf = conf();
         String spool = conf.get("ingestion.sources.spool.spoolDir");
         String sinkPath = conf.get("ingestion.sinks.landingSink.hdfs.path");
-        assertThat(spool).isNotBlank().startsWith("/");
+        assertThat(spool).isEqualTo("${env:FLUME_SPOOL_DIR}");
         assertThat(spool).as("spool 是 Flume 的**输入**，raw 是**输出**").doesNotContain("/raw/");
         assertThat(sinkPath).doesNotContain("/spool");
         assertThat(effectiveLines().stream().filter(line -> line.toUpperCase().contains("TAILDIR")).count())
                 .as("两种语义（尾读 vs 完成文件）不得写进同一份配置")
                 .isZero();
         assertThat(conf).doesNotContainKey("ingestion.sources.spool.positionFile");
+    }
+
+    @Test
+    @DisplayName("§5/§8 配置路径必须从运行环境注入，不得绑定 checkout 或单一机器")
+    void pathsAreInjectedFromRuntimeEnvironment() {
+        Map<String, String> conf = conf();
+        assertThat(conf.get("ingestion.sources.spool.spoolDir")).isEqualTo("${env:FLUME_SPOOL_DIR}");
+        assertThat(conf.get("ingestion.channels.fileChannel.checkpointDir"))
+                .isEqualTo("${env:FLUME_CHANNEL_CHECKPOINT_DIR}");
+        assertThat(conf.get("ingestion.channels.fileChannel.dataDirs"))
+                .isEqualTo("${env:FLUME_CHANNEL_DATA_DIR}");
+        assertThat(conf.get("ingestion.sinks.landingSink.hdfs.path"))
+                .isEqualTo("${env:PLATFORM_LANDING_URI}/raw/dt=%Y%m%d/hour=%H");
+        assertThat(effectiveLines())
+                .noneMatch(line -> line.contains("D:/Develop_code/") || line.contains("/home/asus/"));
     }
 
     @Test

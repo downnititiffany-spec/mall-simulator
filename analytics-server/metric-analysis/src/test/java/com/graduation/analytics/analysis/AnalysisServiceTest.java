@@ -1,5 +1,6 @@
 package com.graduation.analytics.analysis;
 
+import com.graduation.analytics.analysis.AnalysisService.ActiveDay;
 import com.graduation.analytics.analysis.AnalysisService.FunnelData;
 import com.graduation.analytics.analysis.AnalysisService.FunnelStage;
 import com.graduation.analytics.analysis.AnalysisService.MetricItem;
@@ -105,6 +106,7 @@ class AnalysisServiceTest {
         AnalysisViewModel<OverviewData> model = service.overview(null, null, null);
 
         assertThat(model.snapshotId()).isEqualTo(SID);
+        assertThat(model.sourceId()).isEqualTo(73L);
         assertThat(model.source()).isEqualTo("spark-ads");
         assertThat(model.businessTime()).isEqualTo("2026-09-01T00:00:00");
         assertThat(model.dataUpdatedAt()).isEqualTo("2026-09-01T00:00:00");
@@ -201,9 +203,29 @@ class AnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("历史快照 source_id 为 NULL：API 显式返回 null 和溯源警告，不从 runtime profile 猜测")
+    void missingSnapshotSourceIdIsNullAndWarned() {
+        stubActiveSnapshot();
+        MetricSnapshot historical = snapshot(SID);
+        historical.setSourceId(null);
+        when(metricStore.findSnapshot(SID)).thenReturn(historical);
+
+        AnalysisViewModel<OverviewData> model = service.overview(null, null, null);
+
+        assertThat(model.sourceId()).isNull();
+        assertThat(model.source()).isEqualTo("spark-ads"); // 发布方仍单独存在，不与业务源身份混用
+        assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_SOURCE_ID_UNAVAILABLE);
+    }
+
+    @Test
     @DisplayName("销售分析：gmv/净销售额/退款率一律取 metric_value 原值，不重算；缺维度表给出降级警告")
     void salesReadsMetricValueWithoutRecompute() {
         stubActiveSnapshot();
+        // QA-01：带日期区间的请求不再读整个快照，而是把区间参数化下推（本夹具只回该日一行）
+        when(adsReader.selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260901"))
+                .thenReturn(List.of(row("dt", "20260901", "order_count", 5L, "buyer_count", 3L,
+                        "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"),
+                        "net_sale_amount", new BigDecimal("1493.00"))));
 
         AnalysisViewModel<SalesData> model =
                 service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1));
@@ -215,13 +237,14 @@ class AnalysisServiceTest {
         assertThat(model.data().netSale()).isEqualByComparingTo("1493.00");
         assertThat(model.data().refundRate()).isEqualByComparingTo("0.6000");
         assertThat(model.data().fullRefundRate()).isEqualByComparingTo("0.2000");
-        assertThat(model.data().trend()).hasSize(2);
-        assertThat(model.data().trend().get(1).netSaleAmount()).isEqualByComparingTo("1493.00");
+        assertThat(model.data().trend()).hasSize(1);
+        assertThat(model.data().trend().get(0).date()).isEqualTo("2026-09-01");
+        assertThat(model.data().trend().get(0).netSaleAmount()).isEqualByComparingTo("1493.00");
         assertThat(model.data().byCategory()).isEmpty();
         assertThat(model.data().byRegion()).isEmpty();
         assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
-        // 快照一致性：ADS 查询带着与信封相同的 snapshotId
-        verify(adsReader).selectBySnapshot("ads_sale_trend_m", SID, null);
+        // 快照一致性：ADS 查询带着与信封相同的 snapshotId，且日期区间真的下推到查询
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260901");
     }
 
     @Test
@@ -258,6 +281,107 @@ class AnalysisServiceTest {
         assertThat(trend.get(0).netSaleAmount()).isEqualByComparingTo("500.00");
         assertThat(trend.get(1).netSaleAmount()).isEqualByComparingTo("1493.00");
         assertThat(trend.get(2).netSaleAmount()).isNull();
+    }
+
+    // ── QA-01：日期筛选必须真正作用于趋势（卡片按快照、趋势按日期） ──────────────
+
+    @Test
+    @DisplayName("QA-01 单日区间：趋势按 from=to 参数化读取，不再读整个快照")
+    void dateRangeBoundsTrendReads() {
+        stubActiveSnapshot();
+        when(adsReader.selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260901"))
+                .thenReturn(List.of(row("dt", "20260901", "order_count", 5L, "buyer_count", 3L,
+                        "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"),
+                        "net_sale_amount", new BigDecimal("1493.00"))));
+        when(adsReader.selectBySnapshotRange("ads_active_trend_m", SID, "20260901", "20260901"))
+                .thenReturn(List.of(row("dt", "20260901", "dau", 3L, "behavior_count", 14L)));
+
+        OverviewData data = service.overview(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)).data();
+
+        assertThat(data.salesTrend()).extracting(SalesTrendPoint::date).containsExactly("2026-09-01");
+        assertThat(data.activeTrend()).extracting(ActiveDay::date).containsExactly("2026-09-01");
+        // 语义边界：指标卡仍按快照（本问题只要求趋势按日期）
+        assertThat(data.metrics()).isNotEmpty();
+        // 带日期的请求不得再走「整快照」读路径
+        verify(adsReader, never()).selectBySnapshot(eq("ads_sale_trend_m"), anyString(), any());
+        verify(adsReader, never()).selectBySnapshot(eq("ads_active_trend_m"), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("QA-01 两日区间：两端都下传（含端点语义由 DAO 的 dt >= ? AND dt <= ? 保证）")
+    void twoDayRangePassesBothBounds() {
+        stubActiveSnapshot();
+
+        service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 2));
+
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260902");
+    }
+
+    @Test
+    @DisplayName("QA-01 半开区间：只给一端时只绑定该端，缺失端不伪造")
+    void halfOpenRangeBindsOnlyGivenSide() {
+        stubActiveSnapshot();
+
+        service.sales(null, LocalDate.of(2026, 9, 1), null);
+        service.sales(null, null, LocalDate.of(2026, 9, 2));
+
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", null);
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, null, "20260902");
+    }
+
+    @Test
+    @DisplayName("QA-01 区间内无数据：趋势为空数组，不补零、不伪造点")
+    void emptyRangeKeepsTrendEmpty() {
+        stubActiveSnapshot();
+        when(adsReader.selectBySnapshotRange(eq("ads_sale_trend_m"), anyString(), any(), any()))
+                .thenReturn(List.of());
+        when(adsReader.selectBySnapshotRange(eq("ads_active_trend_m"), anyString(), any(), any()))
+                .thenReturn(List.of());
+
+        OverviewData data = service.overview(null, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1)).data();
+
+        assertThat(data.salesTrend()).isEmpty();
+        assertThat(data.activeTrend()).isEmpty();
+        // 卡片是快照读数，与趋势的日期窗口无关（不得因为趋势空就把卡片清零）
+        assertThat(data.metrics()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("QA-01 缺省区间：保持整快照读取语义，不引入第二条读取路径")
+    void absentRangeKeepsWholeSnapshotRead() {
+        stubActiveSnapshot();
+
+        service.sales(null, null, null);
+
+        verify(adsReader).selectBySnapshot("ads_sale_trend_m", SID, null);
+        verify(adsReader, never()).selectBySnapshotRange(anyString(), anyString(), any(), any());
+    }
+
+    @Test
+    @DisplayName("QA-01 倒置区间 from>to：读任何 ADS 之前就 400 PARAM_INVALID")
+    void invertedRangeRejectedBeforeAnyRead() {
+        assertThatThrownBy(() -> service.overview(null, LocalDate.of(2026, 9, 22), LocalDate.of(2026, 9, 16)))
+                .isInstanceOf(PlatformBizException.class)
+                .hasMessageContaining("from");
+        assertThatThrownBy(() -> service.sales(null, LocalDate.of(2026, 9, 22), LocalDate.of(2026, 9, 16)))
+                .isInstanceOf(PlatformBizException.class);
+        assertThatThrownBy(() -> service.overview(null, LocalDate.of(2026, 9, 22), LocalDate.of(2026, 9, 16)))
+                .extracting(e -> ((PlatformBizException) e).getCode())
+                .isEqualTo("PARAM_INVALID");
+
+        verify(adsReader, never()).selectBySnapshot(anyString(), anyString(), any());
+        verify(adsReader, never()).selectBySnapshotRange(anyString(), anyString(), any(), any());
+        verify(adsReader, never()).activeSnapshotId();
+    }
+
+    @Test
+    @DisplayName("QA-01 filters 只回显真正生效的日期：缺省时不写 from/to")
+    void filtersEchoOnlyEffectiveDates() {
+        stubActiveSnapshot();
+
+        assertThat(service.sales(null, null, null).filters()).doesNotContainKeys("from", "to");
+        assertThat(service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)).filters())
+                .containsEntry("from", "2026-09-01").containsEntry("to", "2026-09-01");
     }
 
     @Test
@@ -704,6 +828,7 @@ class AnalysisServiceTest {
     private static MetricSnapshot snapshot(String snapshotId) {
         MetricSnapshot snapshot = new MetricSnapshot();
         snapshot.setSnapshotId(snapshotId);
+        snapshot.setSourceId(73L);
         snapshot.setBusinessTime(LocalDateTime.of(2026, 9, 1, 0, 0, 0));
         snapshot.setDataUpdatedAt(LocalDateTime.of(2026, 9, 1, 0, 0, 0));
         snapshot.setDefinitionVersion("v2");

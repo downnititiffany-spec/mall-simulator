@@ -158,7 +158,7 @@ class IngestionSourceNotBoundTest {
         // 采集器本身在别处取证（LocalFileIngestorSourceIsolationTest / IngestionSourceManifestTest），
         // 这里必须显式给一个非 null 结果：否则会走"采集失败"分支（记录 FAILED、files=0），
         // 而 noNewData=true 会**碰巧**成立，断言就变成了假绿。
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
+        when(ingestor.ingestFileDeferredCheckpoint(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
                 .thenReturn(new LocalFileIngestor.FileResult("events-001.jsonl", 0L, 16L,
                         "identity-1", 1, 0, 16L, java.util.Set.of("1.0")));
 

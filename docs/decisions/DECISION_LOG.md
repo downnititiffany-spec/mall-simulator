@@ -342,3 +342,25 @@
 
 **Evidence**：单测 DecisionServiceSourceMismatchTest（待本批提交）；运行期证据 = 50-*.json（03.5 负向批），以 S20260918_15（source 2）对 ACTIVE S20260918_17（source 1 数据域）发起决策提交，断言 409/SOURCE_MISMATCH + audit FAILED 行存在。
 
+### D-035 — G31-03 E3/E4 夹具按运行契约修正并支持可复现的未来业务日
+
+**Decision**：保留 D-033 的事件场景规模和业务金额，修正其后发现的四处实现口径，并消除 E4 过期：(1) 用户/商品/订单实体 ID 使用纯数字字符串以符合已冻结 `IdCodec` 正则；首版 `g3u01/g3p01/g3o0101` 在真实 run 18 中无法抽取 BIGINT，DWD 主键为空，质量闸正确阻断；事件、trace、支付及退款 ID 保持原样；(2) AOV oracle 按 `dws_trade_day.avg_order_value DECIMAL(18,2)` 量化，E3=84.17、E4=92.31，不再保留旧 4 位展示值；决策改善率以服务库发布精度计算仍为 0.0967；(3) 漏斗仍为 view/intent/order/pay 四行，加购独立发布 `cart_rate`，不作为第五阶段；(4) RFM `r_ntile>2 && m_ntile<4 && f_ntile<4` 分类对齐 SQL 为“一般挽留”；(5) E4 日期由 `generate.py --e4-date YYYY-MM-DD` 显式固定，缺省取本地明日，oracle 从 E4 事件本身提取日期并要求 71 行同一业务日。D1 完成日必须早于 E4 业务日；若日期过期，重新生成、重算 oracle 并更新 SHA 清单。
+
+**Reason**：E3/E4 是 G31-03 的输入真值。只更新文件哈希而保留错误 AOV、漏斗阶段、RFM 标签或已过期日期，会让后续全链路对账稳定地产生错误结论。D-033 保留历史原貌；本条覆盖其已过期的字段精度、分类描述、日期与摘要数值。
+
+**Boundary**：仅修正独立夹具、oracle、夹具说明和本台账；不改 Spark 生产 SQL、ADS 表结构、指标定义或决策算法；不把本地 oracle 运行写成真实 Spark/ADS 验收。
+
+**Evidence**：`fixtures/source-a-e3/ORACLE.md`、`generate.py`、`oracle.py`、`MANIFEST-SHA256.txt`；生成器与 oracle 的本地校验只证明输入件内部可复现。真实 EventContractValidator→Spark→ADS→决策流程仍需 G31-03 运行证据。
+
+### D-037 — 商品维表按业务日生成 as-of 完整快照
+
+**Decision**：`dim_product` 以业务日 `dt` 为截止点，读取 `ods_product_event.dt <= dt` 中合法的 `product_created/product_updated` 事件，为当天重建完整商品状态；每个 `payload_product_id` 按 `event_time DESC, ingest_batch_id DESC, event_id DESC` 稳定取最新记录。`DimensionBuildJob` 即使当天没有商品事件，只要截止日前存在可用商品历史也必须写当天维表分区。作业 `inputRecords` 继续统计当天 ODS 用户/商品事件总行数（库存事件仍计入，保持既有结果契约）；`productAsOfEligible` 另行记录可进入商品维表的截止日历史行数。商品维表仍以 `product_id` 为键，不增加 `source_system` 维度，以免与当前 DWD/ADS 的旧键关联形态不兼容；跨源自然键冲突需待 DWD 复合键全链改造时一并决策。
+
+**Reason**：商品是缓慢变化维度。只读当天商品事件会使无商品变更日的 `dim_product` 分区为空，导致已存在商品的销售/行为事实无法取得名称；用“截止日历史 + 最新状态”生成快照，既保持每日可连接的维度，又避免未来分区事件污染历史业务日。稳定次序键使相同时间戳的多条更新可重复选出同一条记录。
+
+**Boundary**：不改 ODS/DIM 表结构、ADS 指标公式、用户维表时态口径或当前 DWD 业务键；不声称跨商城同 ID 已完成隔离；当截止日前不存在任何有效商品建档/更新事件时，不创建虚假的商品行。该次 Spark 测试为 `local[1] + in-memory catalog`，不代表生产 Hive/HDFS 实链。
+
+**Evidence**：`ProductDimensionAsOfSpec` 真实执行 Spark SQL：创建日商品写入、次日无商品事件仍延续商品、第三日更新生效、回跑第二日不读未来更新；`SqlTemplateSpec` + `DimDwdChainExecSpec` 定向组合 **48/48 PASS**（JDK8，ScalaTest；三套件，48 tests）。随后统一入口 `scripts/run-tests.ps1 -Suite spark` fresh **321/321 PASS**（40 suites，JDK8，exit 0；RunId `dev003c_20260923_112300_9053c1`，基线 320→321 MATCH）。测试证明边界仅为 Scala `local[1] + in-memory catalog`，不代表生产 Hive/HDFS 或真实 `spark-submit`。
+
+> 编号注记：本记录续 D-035 使用 D-037；D-036 已在历史过程资料中用于另一事项，不复用编号。
+

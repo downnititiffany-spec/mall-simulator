@@ -39,7 +39,7 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
-    @DisplayName("SOURCE_CODE_IMMUTABLE / SOURCE_IN_USE / SOURCE_PROFILE_INVALID / SOURCE_NOT_BOUND → 409（与当前资源状态冲突）")
+    @DisplayName("源状态冲突与决策跨源证据 → 409（与当前资源状态冲突）")
     void sourceConflictCodesMapTo409() {
         assertThat(handle(PlatformBizException.SOURCE_CODE_IMMUTABLE, "source_code 不可改").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
@@ -49,6 +49,9 @@ class GlobalExceptionHandlerSourceStatusTest {
                 .isEqualTo(HttpStatus.CONFLICT);
         // P1-05 加性：未绑定源是"当前运行环境状态不允许采集"，不是请求参数写错（那才是 400）
         assertThat(handle(PlatformBizException.SOURCE_NOT_BOUND, "运行环境未绑定源").getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        // G31-03 03.5：决策证据来源与当前 ACTIVE 来源不一致，禁止创建/提交。
+        assertThat(handle(PlatformBizException.SOURCE_MISMATCH, "决策证据跨源").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
@@ -100,5 +103,6 @@ class GlobalExceptionHandlerSourceStatusTest {
         // S2-01B 加性新增（映射 dry-run，仅预览、不激活）
         assertThat(PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND).isEqualTo("DRY_RUN_SAMPLE_NOT_FOUND");
         assertThat(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND).isEqualTo("DRY_RUN_REPORT_NOT_FOUND");
+        assertThat(PlatformBizException.SOURCE_MISMATCH).isEqualTo("SOURCE_MISMATCH");
     }
 }

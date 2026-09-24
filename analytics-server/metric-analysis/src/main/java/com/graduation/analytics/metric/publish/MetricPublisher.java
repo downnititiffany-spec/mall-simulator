@@ -126,7 +126,7 @@ public class MetricPublisher implements MetricPublisherPort {
         try {
             repository.createBuilding(request.runtimeProfileId(), request.runtimeProfileVersion(),
                     request.snapshotId(), request.businessDate(), request.businessTime(), request.pipelineRunId(),
-                    definitionVersionOf(request, "refund_rate"));
+                    definitionVersionOf(request, "refund_rate"), request.sourceId());
         } catch (Exception e) {
             return fail(request, checks, evidence, start, "MP_SNAPSHOT_REGISTER", e.getMessage());
         }
@@ -165,6 +165,9 @@ public class MetricPublisher implements MetricPublisherPort {
             values = buildCoreMetricValues(request, rowsByTable);
         } catch (Exception e) {
             markFailed(request, "MP_VALUE_BUILD_FAILED: " + e.getMessage());
+            // ADS 行已写入但 ACTIVE 尚未切换；按失败补偿契约只清理本快照的 ADS 行，
+            // 不触碰导出文件、Hive 分区或旧 ACTIVE 快照。
+            compensate(request, evidence);
             return fail(request, checks, evidence, start, "MP_VALUE_BUILD", e.getMessage());
         }
         evidence.put("metricCodes", values.stream().map(MetricValue::getMetricCode).toList());
@@ -192,6 +195,7 @@ public class MetricPublisher implements MetricPublisherPort {
         }
         if (switched == 0) {
             markFailed(request, "MP_ACTIVATE_NOOP: 快照未处于 VERIFYING");
+            compensate(request, evidence);
             return fail(request, checks, evidence, start, "MP_ACTIVATE_NOOP",
                     "指标值已写入但 ACTIVE 指针未切换（快照非 VERIFYING）");
         }

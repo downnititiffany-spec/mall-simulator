@@ -121,7 +121,7 @@ class IngestionRunNoNewDataTest {
     }
 
     private void stubIngest(long startOffset, long endOffset, long collected, long quarantined) {
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
+        when(ingestor.ingestFileDeferredCheckpoint(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
                 .thenReturn(new LocalFileIngestor.FileResult("events-001.jsonl", startOffset, endOffset,
                         "identity-1", collected, quarantined, collected > 0 ? 64L : 0L, Set.of("1.0")));
     }

@@ -7,7 +7,7 @@
     <div class="chart-box">
       <div class="chart-title">
         运维数据上下文
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="loadAll" :disabled="loading || busy">
+        <button class="btn btn-sm" style="float:right" @click="loadAll" :disabled="loading || busy">
           {{ loading ? '刷新中…' : (busy ? '用户操作中…' : '刷新') }}
         </button>
       </div>
@@ -24,41 +24,43 @@
           <option value="admin">系统管理员</option>
         </select>
         <input v-model="newUser.password" placeholder="初始密码(≥6位)" type="password" style="padding:4px" />
-        <button style="font-size:12px;background:#16a34a" @click="createUser" :disabled="loading || busy">创建用户</button>
+        <button class="btn btn-sm btn-success" @click="createUser" :disabled="loading || busy">创建用户</button>
       </div>
       <div class="table-hint">
         说明：/admin/users 的用户列表接口不返回启用状态（UserView 只有 id/username/realName/role），
         因此「状态」列只显示本会话内的切换结果，初始一律标注「接口未提供」，不假装知道后端当前状态；
         若同一账号同时被他人改动，以刷新后后端行为为准。后端规则：不能停用当前登录账号。
       </div>
-      <table v-if="users.length" style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
-          <th style="padding:6px">ID</th><th>用户名</th><th>姓名</th><th>角色</th><th>启用状态</th><th>操作</th>
-        </tr></thead>
+      <div v-if="users.length" class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>ID</th><th>用户名</th><th>姓名</th><th>角色</th><th>启用状态</th><th class="right">操作</th></tr>
+        </thead>
         <tbody>
-          <tr v-for="u in users" :key="u.id" style="border-top:1px solid #f3f4f6">
-            <td style="padding:6px">{{ u.id }}</td>
-            <td>{{ u.username }}</td>
+          <tr v-for="u in users" :key="u.id">
+            <td class="mono">{{ u.id }}</td>
+            <td class="mono">{{ u.username }}</td>
             <td>{{ u.realName || '—' }}</td>
-            <td>{{ roleName(u.role) }}</td>
+            <td><span class="badge badge-brand">{{ roleName(u.role) }}</span></td>
             <td>
-              <span v-if="knownStatus(u.id) === null" style="color:#6b7280">接口未提供</span>
-              <span v-else :style="{ color: knownStatus(u.id) ? '#16a34a' : '#dc2626' }">
+              <span v-if="knownStatus(u.id) === null" class="badge badge-neutral">接口未提供</span>
+              <span v-else :class="knownStatus(u.id) ? 'badge badge-success' : 'badge badge-danger'">
                 {{ knownStatus(u.id) ? '已启用（本会话确认）' : '已禁用（本会话确认）' }}
               </span>
             </td>
-            <td style="white-space:nowrap">
+            <td class="right nowrap">
               <template v-if="knownStatus(u.id) === null">
-                <button style="font-size:12px;background:#dc2626" @click="toggle(u, false)" :disabled="loading || busy">禁用</button>
-                <button style="font-size:12px;background:#16a34a" @click="toggle(u, true)" :disabled="loading || busy">启用</button>
+                <button class="btn btn-sm btn-danger" @click="toggle(u, false)" :disabled="loading || busy">禁用</button>
+                <button class="btn btn-sm btn-success" @click="toggle(u, true)" :disabled="loading || busy">启用</button>
               </template>
-              <button v-else-if="knownStatus(u.id)" style="font-size:12px;background:#dc2626" @click="toggle(u, false)" :disabled="loading || busy">禁用</button>
-              <button v-else style="font-size:12px;background:#16a34a" @click="toggle(u, true)" :disabled="loading || busy">启用</button>
-              <button style="font-size:12px" @click="resetPwd(u)" :disabled="loading || busy">重置密码</button>
+              <button v-else-if="knownStatus(u.id)" class="btn btn-sm btn-danger" @click="toggle(u, false)" :disabled="loading || busy">禁用</button>
+              <button v-else class="btn btn-sm btn-success" @click="toggle(u, true)" :disabled="loading || busy">启用</button>
+              <button class="btn btn-sm" @click="resetPwd(u)" :disabled="loading || busy">重置密码</button>
             </td>
           </tr>
         </tbody>
       </table>
+      </div>
       <div v-else class="el-empty">暂无用户或该接口未返回数据</div>
       <div v-if="actionError" class="table-hint table-hint-error">用户操作失败：{{ actionError }}</div>
     </div>
@@ -75,7 +77,7 @@
       <div v-if="selected" style="margin-top:12px">
         <div class="chart-title">
           快照 {{ selected }} 指标
-          <button style="float:right;font-size:12px;padding:3px 10px"
+          <button class="btn btn-sm" style="float:right"
                   :disabled="!metricExportable" @click="exportMetrics">
             {{ metricExportable ? '导出指标 CSV' : '导出（' + metricStateText + '）' }}
           </button>
@@ -90,12 +92,12 @@
         <div v-else-if="metricState === 'error'" class="banner banner-error">指标加载失败：{{ metricError || '未知原因' }}</div>
         <div v-else-if="metricState === 'empty'" class="state-line">{{ metricEmptyText }}</div>
         <div v-else-if="metricState === 'stale'" class="banner banner-stale">数据更新中：正在重新拉取该快照指标，当前展示的仍是上一次结果，已禁止导出。</div>
-        <table v-if="metricTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr style="text-align:left;color:#6b7280">
+        <table v-if="metricTable.rows.length" class="data-table">
+          <thead><tr style="text-align:left;color:var(--gray-500)">
             <th v-for="h in metricTable.headers" :key="h" style="padding:6px">{{ h }}</th>
           </tr></thead>
           <tbody>
-            <tr v-for="(row, i) in metricTable.rows" :key="i" style="border-top:1px solid #f3f4f6">
+            <tr v-for="(row, i) in metricTable.rows" :key="i" style="border-top:1px solid var(--gray-100)">
               <td v-for="(cell, j) in row" :key="j" style="padding:6px" class="mono">{{ cell }}</td>
             </tr>
           </tbody>
@@ -110,17 +112,17 @@
     <div class="chart-box">
       <div class="chart-title">
         流水线实例（幂等键 / 尝试次数 / 目标快照，溯源链路）
-        <button style="float:right;font-size:12px;padding:3px 10px"
+        <button class="btn btn-sm" style="float:right"
                 :disabled="!pipelineExportable" @click="exportRuns">
           {{ pipelineExportable ? '导出流水线 CSV' : '导出（当前无可导出流水线数据）' }}
         </button>
       </div>
-      <table v-if="pipelineTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
+      <table v-if="pipelineTable.rows.length" class="data-table">
+        <thead><tr style="text-align:left;color:var(--gray-500)">
           <th v-for="h in pipelineTable.headers" :key="h" style="padding:6px">{{ h }}</th>
         </tr></thead>
         <tbody>
-          <tr v-for="(r, i) in pipelineTable.rows" :key="i" style="border-top:1px solid #f3f4f6">
+          <tr v-for="(r, i) in pipelineTable.rows" :key="i" style="border-top:1px solid var(--gray-100)">
             <td v-for="(cell, j) in r" :key="j" style="padding:6px" class="mono">{{ cell }}</td>
           </tr>
         </tbody>
@@ -130,15 +132,15 @@
 
     <div class="chart-box">
       <div class="chart-title">数据质量规则结果（金额对账失败会阻断发布）</div>
-      <table v-if="qualityTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
+      <table v-if="qualityTable.rows.length" class="data-table">
+        <thead><tr style="text-align:left;color:var(--gray-500)">
           <th v-for="h in qualityTable.headers" :key="h" style="padding:6px">{{ h }}</th>
         </tr></thead>
         <tbody>
-          <tr v-for="(q, i) in qualityTable.rows" :key="i" style="border-top:1px solid #f3f4f6">
+          <tr v-for="(q, i) in qualityTable.rows" :key="i" style="border-top:1px solid var(--gray-100)">
             <td style="padding:6px">{{ q[0] }}</td>
             <td>{{ q[1] }}</td>
-            <td><span :style="{ color: q[2] === '通过' ? '#16a34a' : '#dc2626', fontWeight: 600 }">{{ q[2] }}</span></td>
+            <td><span :style="{ color: q[2] === '通过' ? 'var(--success)' : '#dc2626', fontWeight: 600 }">{{ q[2] }}</span></td>
             <td>{{ q[3] }}</td>
             <td class="mono">{{ q[4] }}</td>
           </tr>
@@ -151,16 +153,16 @@
       <div class="chart-box">
         <div class="chart-title">
           AI 问答审计（ai_query_history）
-          <button style="float:right;font-size:12px;padding:3px 10px" :disabled="!aiHistoryExportable" @click="exportAudit('ai')">
+          <button class="btn btn-sm" style="float:right" :disabled="!aiHistoryExportable" @click="exportAudit('ai')">
             {{ aiHistoryExportable ? '导出 CSV' : '导出（当前无可导出问答审计）' }}
           </button>
         </div>
-        <table v-if="aiHistoryTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr style="text-align:left;color:#6b7280">
+        <table v-if="aiHistoryTable.rows.length" class="data-table">
+          <thead><tr style="text-align:left;color:var(--gray-500)">
             <th style="padding:6px">用户</th><th>问题</th><th>状态</th><th>行数</th><th>耗时</th><th>时间</th>
           </tr></thead>
           <tbody>
-            <tr v-for="h in aiHistoryRows" :key="h.createdAt + h.question" style="border-top:1px solid #f3f4f6">
+            <tr v-for="h in aiHistoryRows" :key="h.createdAt + h.question" style="border-top:1px solid var(--gray-100)">
               <td style="padding:6px">{{ h.userId }}</td>
               <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="h.question">{{ h.question }}</td>
               <td>{{ h.status }}</td>
@@ -172,7 +174,7 @@
         </table>
         <div v-else class="el-empty">暂无问答记录</div>
         <details v-if="aiHistoryRows.length" style="margin-top:8px">
-          <summary style="font-size:12px;color:#6b7280;cursor:pointer">展开 SQL 与使用表（证据复核）</summary>
+          <summary style="font-size:12px;color:var(--gray-500);cursor:pointer">展开 SQL 与使用表（证据复核）</summary>
           <div v-for="(h, i) in aiHistoryRows" :key="i" style="margin-top:6px;font-size:12px">
             <div class="mono">{{ h.tables }}</div>
             <pre style="background:#f9fafb;padding:8px;border-radius:6px;overflow:auto">{{ h.sqlText }}</pre>
@@ -183,16 +185,16 @@
       <div class="chart-box">
         <div class="chart-title">
           模型调用审计（ai_call_log）
-          <button style="float:right;font-size:12px;padding:3px 10px" :disabled="!aiCallExportable" @click="exportAudit('calls')">
+          <button class="btn btn-sm" style="float:right" :disabled="!aiCallExportable" @click="exportAudit('calls')">
             {{ aiCallExportable ? '导出 CSV' : '导出（当前无可导出调用审计）' }}
           </button>
         </div>
-        <table v-if="aiCallTable.rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr style="text-align:left;color:#6b7280">
+        <table v-if="aiCallTable.rows.length" class="data-table">
+          <thead><tr style="text-align:left;color:var(--gray-500)">
             <th style="padding:6px">用例</th><th>模型</th><th>tokens</th><th>耗时</th><th>状态</th>
           </tr></thead>
           <tbody>
-            <tr v-for="(c, i) in aiCallRows" :key="i" style="border-top:1px solid #f3f4f6">
+            <tr v-for="(c, i) in aiCallRows" :key="i" style="border-top:1px solid var(--gray-100)">
               <td style="padding:6px">{{ c.useCase }}</td>
               <td>{{ c.provider }}/{{ c.model }}</td>
               <td class="mono">{{ c.inputTokens }}/{{ c.outputTokens }}</td>
@@ -241,7 +243,7 @@ const knownStatus = (id) => {
   const v = lastKnownStatus.value[id]
   return typeof v === 'boolean' ? v : null
 }
-const snapColor = (s) => ({ ACTIVE: '#16a34a', BUILDING: '#d97706', VERIFYING: '#d97706', ARCHIVED: '#6b7280', FAILED: '#dc2626' }[s] || '#111827')
+const snapColor = (s) => ({ ACTIVE: 'var(--success)', BUILDING: '#d97706', VERIFYING: '#d97706', ARCHIVED: 'var(--gray-500)', FAILED: '#dc2626' }[s] || 'var(--gray-800)')
 
 // 运维页多来源取数：统一信封接口（无）与非信封接口混用，
 // 因此在这里拼上下文；任一子接口失败都要显式告知，不静默当作没数据。

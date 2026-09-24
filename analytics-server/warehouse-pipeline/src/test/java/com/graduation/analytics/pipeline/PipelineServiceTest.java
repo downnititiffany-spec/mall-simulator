@@ -268,6 +268,7 @@ class PipelineServiceTest {
         // POST 立即返回：PENDING + 有 taskId，且计算链尚未执行（仅投递）
         assertThat(r.runId()).isNotNull();
         assertThat(r.status()).isEqualTo(PipelineRun.STATUS_PENDING);
+        assertThat(insertedRun.get().getSourceId()).isEqualTo(SOURCE_ID);
         assertThat(executor.pending()).isEqualTo(1);
 
         executor.drain();
@@ -914,6 +915,70 @@ class PipelineServiceTest {
         // 判定早于执行器构造：一个作业都不该被准备
         verify(stageExecutorFactory, never()).create(any());
         assertThat(stages).isEmpty();
+    }
+
+    @Test
+    void sourceSwitchAfterRunCreationFailsClosedBeforeAnyStageOrJob() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult result = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-source-switch", "trace-1");
+        assertThat(insertedRun.get().getSourceId()).isEqualTo(SOURCE_ID);
+
+        // runtime_profile 是可变绑定；模拟任务入队后管理员切换商城。
+        RuntimeProfile switched = new RuntimeProfile();
+        switched.setId(1L);
+        switched.setVersion(8);
+        switched.setType(RuntimeProfile.TYPE_LOCAL);
+        switched.setSourceId(OTHER_SOURCE_ID);
+        switched.setLandingUri(landing.toAbsolutePath().toString());
+        when(runtimeProfileService.get(1L)).thenReturn(switched);
+
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(result.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("RUN_SOURCE_BINDING_CHANGED");
+        verify(stageExecutorFactory, never()).create(any());
+        verify(stageExecutor, never()).executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any());
+        assertThat(stages).isEmpty();
+    }
+
+    @Test
+    void recoveryOfRunWithUnknownSourceNeverGuessesCurrentProfileSource() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult result = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-unknown-source", "trace-1");
+        // Simulate a historical pipeline_run row from before source_id existed.
+        insertedRun.get().setSourceId(null);
+        service.retry(result.runId(), "trace-retry");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(result.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("RUN_SOURCE_UNKNOWN");
+        verify(stageExecutorFactory, never()).create(any());
+        verify(stageExecutor, never()).executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any());
+        assertThat(stages).isEmpty();
+    }
+
+    @Test
+    void frozenSourceIdReachesMetricPublisherRequest() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult result = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-publish-source", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(result.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        ArgumentCaptor<com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest> request =
+                ArgumentCaptor.forClass(com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest.class);
+        verify(publisherPort).publish(request.capture());
+        assertThat(request.getValue().sourceId()).isEqualTo(SOURCE_ID);
     }
 
     // ── ⑤重试跳过成功阶段：成功阶段不重复执行，失败阶段重跑（§13.4 恢复） ─

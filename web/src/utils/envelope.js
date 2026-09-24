@@ -5,6 +5,10 @@
 // 非空字符串判定：空串按“缺字段”处理
 const asText = (v) => (typeof v === 'string' && v.trim() !== '' ? v : null)
 
+// source_registry.id 由后端 Long|null 输出为 JSON 数字。拒绝字符串和不安全整数，
+// 避免 JS 精度损失后把错误的业务来源 ID 展示出来。
+const asSourceId = (v) => (typeof v === 'number' && Number.isSafeInteger(v) && v > 0 ? v : null)
+
 // 数组字段透传；缺失或类型不符时返回空数组
 const asList = (v) => (Array.isArray(v) ? v : [])
 
@@ -15,7 +19,7 @@ const asRecord = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {
  * 解包统一信封。
  * 兼容两种入参：完整信封 { snapshotId, data, ... } 与仅含业务数据的裸对象。
  * @param {unknown} envelope 后端 data 字段（已由 api.js 剥掉 ApiResponse 外壳）
- * @returns {{snapshotId: string|null, businessTime: string|null, dataUpdatedAt: string|null,
+ * @returns {{snapshotId: string|null, sourceId: number|null, businessTime: string|null, dataUpdatedAt: string|null,
  *            source: string|null, definitionVersion: string|null, qualityStatus: string, filters: object,
  *            warnings: string[], data: object}}
  */
@@ -23,6 +27,9 @@ export function readEnvelope(envelope) {
   const src = envelope && typeof envelope === 'object' && !Array.isArray(envelope) ? envelope : {}
   return {
     snapshotId: asText(src.snapshotId),
+    // sourceId = source_registry.id（业务来源身份）；与 source（指标快照发布方）严格分开。
+    // 历史快照显式 null 或旧响应缺字段都保持 null，不从当前选源/发布方补值。
+    sourceId: asSourceId(src.sourceId),
     businessTime: asText(src.businessTime),
     dataUpdatedAt: asText(src.dataUpdatedAt),
     // S3-26：`source` = metric_snapshot.source，即该快照的**发布方/生产者**（契约 v1.2 §2 字段表；
@@ -67,7 +74,8 @@ export const WARNING_TEXT = {
   RFM_RAW_VALUES_UNAVAILABLE: '画像缺少 R/F 原值列：R 已按「统计日 − 末次购买日」回算（与原值口径不同），F 原值为空。',
   RFM_PERIOD_UNAVAILABLE: '画像观察窗口缺失或行间不一致：窗口起止留空，不猜测窗口。',
   MULTIPLE_RULE_VERSIONS: '同一快照内出现多个画像规则版本，规则版本不唯一。',
-  QUALITY_STATUS_UNAVAILABLE: '质量结果查询失败：质量结论降级为「未知」（不伪造成通过）。'
+  QUALITY_STATUS_UNAVAILABLE: '质量结果查询失败：质量结论降级为「未知」（不伪造成通过）。',
+  SOURCE_ID_UNAVAILABLE: '该历史快照未记录所属业务数据源，无法可靠归因。'
 }
 export const warningText = (code) => WARNING_TEXT[code] || String(code)
 
@@ -86,6 +94,12 @@ export function qualityText(status) {
  */
 export function sourceText(source) {
   return asText(source) || '未知'
+}
+
+/** 业务来源登记 ID 的展示语义；历史快照未记录时不猜测其来源。 */
+export function businessSourceIdText(sourceId) {
+  const id = asSourceId(sourceId)
+  return id === null ? '未知 / 历史未记录' : String(id)
 }
 
 /** ISO 时间转本地可读文本：2026-09-10T20:12:33 -> 2026-09-10 20:12:33 */
