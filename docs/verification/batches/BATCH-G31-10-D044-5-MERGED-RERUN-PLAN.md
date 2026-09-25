@@ -5,7 +5,7 @@
 - 裁决依据：D-044⑤（合并验收批：不逐项重复跑全量链，一次合并重跑覆盖 G31-08/G31-09 两修复的行为级取证 + G31-07 终验重跑）
 - 缺陷登记：F-G4-1（G31-04 登记，G31-08/D-045 修复，**行为级证据待本批**）、D-041（HDFS 同文件重试重读嫌疑，G31-09/D-046 仅完成 schema 前提，**行为级证据待本批**）
 - RunId：`g3110_20260925_HHMMSS`（执行时落实际时间戳），attempt 根：`target/v25-it/g3110_20260925_HHMMSS/`
-- 正式库对：`stage7q1_20260918_152245_analytics_meta` / `_analytics_metric`（3307，root/123456 为 W03 记录值，仅经 WSL `MYSQL_PWD` 环境变量使用）
+- 正式库对：`stage7q1_20260918_152245_analytics_meta` / `_analytics_metric`（3307；root 口令**不含于文档**——执行时经 WSL `MYSQL_PWD` 环境变量传入。2026-09-25 D-048：原 W03 记录值已轮换作废，现行值仅存仓库根 `credref-mysql3307-root.properties`（gitignored））
 
 ---
 
@@ -119,6 +119,6 @@
 ## §5 边界
 
 - 本批不修改源代码、不新增产品测试；所有"通过"均为链路行为证据。
-- 3306 零接触；`V25_IT_*` 口令零落盘零 argv 零 git；3307 root 口令仅经 WSL `MYSQL_PWD`。
+- 3306 零接触；`V25_IT_*` 口令零落盘零 argv 零 git；3307 root 口令仅经 WSL `MYSQL_PWD`（2026-09-25 D-048 起口令值已轮换，只存 credref，文档零口令）。
 - Spark 循环回环 jar 下载挂起（local 模式 executor 自下载 ~12% 阻塞）为已知环境坑：run 卡 12% 即按 watcher+jstack 模板诊断留证，不盲目重试。
 - Maven 路径用正斜杠（MSYS 转换坑）；WSL 发行版名为 **Ubuntu**。

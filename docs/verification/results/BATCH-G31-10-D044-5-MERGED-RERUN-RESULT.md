@@ -77,3 +77,15 @@
 
 - 报总控：以本批证据替换 F-G4-1/D-041 拦截项并请求产品验收签收裁定（含 §5-1 M3 发布语义是否收紧）。
 - 待总控签收后：G31-06（真实 LLM）与远程集群验证另行开批。
+
+## 10. 收口后补充（2026-09-25 总控 D-048 裁定执行，追加不改写前文）
+
+总控对本批收口报告作出 D-048 裁定并已执行收口。前文 §1–§9 原文保留，本节补充登记：
+
+1. **3307 root 凭据轮换完成**：三 root 条目（`root@%`/`root@127.0.0.1`/`root@localhost`，均 mysql_native_password）改设新值；TCP/socket 双路正测 + **旧值双路负测拒**；数据完整性五点核对（flyway 31 行 V32 success=1 / `file_checkpoint.file_identity` varchar(255) / ACTIVE 唯一 `S20260901_23` / sys_user 3 / decision_task 12）与本批收口态全等——**本批成果（V32 正式落地、终验锚迁移）未受影响**。新值仅存仓库根 `credref-mysql3307-root.properties`（gitignored），零落文档/日志/git。证据：`target/v25-it/g3110_20260925_191753/evidence/d048-rotation-evidence.md`（§1–§6）。
+2. **轮换前凭据漂移异常（无法归因，如实披露）**：21:52:18 patched start 脚本 S4 探针以旧值 TCP 认证成功，约 5 分钟后同值 TCP 被拒；期间仅两次中止的轮换尝试（逐行解析重建显示未执行任何 ALTER）、错误日志无 SHUTDOWN/重启且 verbosity=2 不记录认证失败 → 成因无法归因；以 pass-3（socket 路径）对三条目统一重设新值收口。pass-2 中途自锁（改 `root@localhost` 后脚本自身旧 `MYSQL_PWD` 失效）属操作过程记录，非数据事件。
+3. **凭据面文档收口（三处 tracked 面，备份 `*.bak-20260925-d048`）**：本批计划文档（§头部正式库对 + §5）、W03 acceptance `README.md` §4.2 五处（含「历史证据原件保留原样 + 作废声明」blockquote）、`start-isolated-mysql-3307.sh`（env 化 fail-fast + 字面量归零 + 真实值重跑全绿 `evidence/d048-startscript-rerun.log`）。
+4. **待交付材料扫描（总控裁定第 3 项）**：tracked `123456` 命中 22 处（docs/acceptance 之外）全定性——测试向量子串（CRC `123456789` ×3、MD5Hash `0123456789abcdef…` ×1）或 3306 时代历史文档/脚本残留；非 3307 凭据，**历史提交不改写**（总控裁定明示）；target/ 不跟踪不入交付。
+5. **总控更正登记（对本文件 §5-1 表述）**：`PipelineService.java:641` 已有 F-88 发布前质量门，§5-1「发布无条件（publish 不经门禁）」表述不准——实际缺口在 **consumed-input 识别**（consumed manifest 保持 READY 且 `LandingManifestSelector` 重扫 → no-new-input 场景仍再发布），非「无质量门」。§5-1 原文不改写，以本条为准。
+6. **M3 语义裁定（总控 D-048）**：no-new-input → 不发布、no-op、ACTIVE 不变；消费状态**独立记录**（判定依据既非 manifest READY 单独、亦非值相等去重）；多待处理批次逐批处理不遗漏；失败重试绑定原批；提供显式重算入口且必须带理由。落地与四场景验证（无新输入不发布 / 有新输入能发布 / 失败重试仍有效 / 连续两个待处理批次不遗漏）+ 一次受影响终验 = **G31-11 批次**；真实 AI 与远程集群不并入。
+7. **归档义务**：按批次保存完整源码 + 脱敏证据至仓库外持久位置（`v3-archive/g3110/`），不依赖会被构建清理的 `target/`；DB 备份继续受控保存、不公开上传。

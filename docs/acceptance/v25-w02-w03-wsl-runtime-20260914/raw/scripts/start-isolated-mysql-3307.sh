@@ -3,7 +3,11 @@
 # Reuses the /opt/mysql-libs compat libs; creates the libaio.so.1 -> libaio.so.1t64 compat symlink
 # required because Ubuntu 26.04 renamed the libaio soname.
 # Idempotent: safe to re-run. Start-only; never formats/drops anything.
+# D-048 (2026-09-25): the historically documented root credential is DEAD (rotated away).
+# This script takes the credential from env MYSQL3307_ROOT_PASSWORD (credref channel,
+# gitignored credref-mysql3307-root.properties). Never hardcode a password here again.
 set -u
+ROOTPW="${MYSQL3307_ROOT_PASSWORD:?export MYSQL3307_ROOT_PASSWORD (rotated per D-048 2026-09-25; value in credref-mysql3307-root.properties)}"
 BASE=/opt/mysql-8.0.41
 LIBS=/opt/mysql-libs
 DDIR=/data/mysql-isolated/data
@@ -36,7 +40,7 @@ fi
 echo "--- datadir ---"; ls $DDIR | head -12
 
 echo "### S2: start on 127.0.0.1:$PORT (loopback only)"
-if $BASE/bin/mysqladmin --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 ping >/dev/null 2>&1; then
+if $BASE/bin/mysqladmin --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" ping >/dev/null 2>&1; then
   echo "already running"
 else
   nohup $BASE/bin/mysqld --no-defaults \
@@ -51,7 +55,7 @@ fi
 UP=no
 for i in $(seq 1 60); do
   if $BASE/bin/mysqladmin --no-defaults -h127.0.0.1 -P$PORT -uroot ping >/dev/null 2>&1 \
-     || $BASE/bin/mysqladmin --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 ping >/dev/null 2>&1; then
+     || $BASE/bin/mysqladmin --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" ping >/dev/null 2>&1; then
     echo "mysqld UP after ${i}s"; UP=yes; break
   fi
   sleep 1
@@ -60,9 +64,9 @@ echo "UP=$UP"
 if [ "$UP" != "yes" ]; then echo "--- error.log ---"; tail -25 $LOGD/error.log 2>/dev/null; exit 1; fi
 
 echo "### S3: account + isolated databases (idempotent)"
-$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 -e "
-  ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '123456';
-  CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED WITH mysql_native_password BY '123456';
+$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" -e "
+  ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$ROOTPW';
+  CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED WITH mysql_native_password BY '$ROOTPW';
   GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION;
   CREATE DATABASE IF NOT EXISTS analytics_metric CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
   CREATE DATABASE IF NOT EXISTS analytics_meta   CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -72,19 +76,19 @@ echo "account/db exit=$?"
 
 echo "### S4: DELIVERABLE EVIDENCE — 库名/账号/端口/连接串/实测连通性"
 echo "--- [1] identity ---"
-$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 --batch --raw \
+$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" --batch --raw \
   -e "SELECT @@version AS version, @@port AS port, @@datadir AS datadir, @@socket AS socket, @@bind_address AS bind_addr, @@hostname AS hostname;" 2>&1
 echo "--- [2] databases in ISOLATED instance ---"
-$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 --batch --raw -e "SHOW DATABASES;" 2>&1
+$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" --batch --raw -e "SHOW DATABASES;" 2>&1
 echo "--- [3] users ---"
-$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 --batch --raw \
+$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" --batch --raw \
   -e "SELECT user, host, plugin FROM mysql.user WHERE user='root';" 2>&1
 echo "--- [4] TCP connectivity 127.0.0.1:3307 ---"
-$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 -e "SELECT 1 AS tcp_ok, NOW() AS server_time;" 2>&1
+$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" -e "SELECT 1 AS tcp_ok, NOW() AS server_time;" 2>&1
 echo "--- [5] unix socket connectivity ---"
-$BASE/bin/mysql --no-defaults -S$SOCK -uroot -p123456 -e "SELECT 1 AS sock_ok;" 2>&1
+$BASE/bin/mysql --no-defaults -S$SOCK -uroot -p"$ROOTPW" -e "SELECT 1 AS sock_ok;" 2>&1
 echo "--- [6] CREATE/INSERT/SELECT round-trip in analytics_metric ---"
-$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p123456 --batch --raw -e "
+$BASE/bin/mysql --no-defaults -h127.0.0.1 -P$PORT -uroot -p"$ROOTPW" --batch --raw -e "
   CREATE TABLE IF NOT EXISTS analytics_metric.__v25_w03_probe (id INT PRIMARY KEY, note VARCHAR(64));
   INSERT INTO analytics_metric.__v25_w03_probe VALUES (1,'wsl-isolated-3307') ON DUPLICATE KEY UPDATE note=VALUES(note);
   SELECT * FROM analytics_metric.__v25_w03_probe;" 2>&1
