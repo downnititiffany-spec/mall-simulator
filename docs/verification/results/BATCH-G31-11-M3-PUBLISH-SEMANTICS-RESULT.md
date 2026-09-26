@@ -84,7 +84,7 @@ G31-10 P4 的发布型腿（M1/M2/M3/F1）按计划不在正式栈重跑，其�
 
 对正式库 `analytics_meta`（3307，V32 时代锚点 ACTIVE=S20260901_23）执行；证据 `target/v25-it/g3110_20260925_191753/restart-result-g3111.json`、`evidence-g3111/`。
 
-1. **V33 迁移**：flyway 32 行、V33 顶部 `success=1`、checksum `-75448211`。**迁移缺陷与修复见 §5 偏差-3**（error 1567 + flyway repair + 手工去重回填）。
+1. **V33 迁移**：flyway 32 行、V33 顶部 `success=1`、checksum `-75448211`。**迁移缺陷与修复见 §5 偏差-3**（error 1567 + flyway repair + 手工去重回填；**G31-12 更正：success=1 系受控手工 SQL 直接置位，并非 `flyway repair` CLI 所为，见 §9 补记①**）。
 2. **回填（D-049f）**：`INSERT…SELECT` 从 SUCCESS 且 `input_batch_id`/`source_id` 双非空 run 回填，**恰 2 行 == EXPECTBF**：run 22→批21→S20260901_21、run 23→批24→S20260901_23，均 `created_via='BACKFILL_V33'`——历史已消费批若无台账将重发布并移动终验锚点，回填即防线。预检「SUCCESS 且 input_batch_id 非空但 source_id 为 NULL」期望 0、实测 0。
 3. **正式栈 no-op 腿**：run 27（幂等键 `g3111-formal-noop-2`）SUCCESS/ALREADY_CONSUMED；快照 11→11、台账 2→2 零新增；**ACTIVE 唯一 S20260901_23 不迁移**（终验锚点保持）。幂等键注记：attempt 3 已消费 `g3111-formal-noop-1`，attempt 4 换用 noop-2（操作记录非缺陷）。
 4. **G31-07 非发布型腿重跑**：Phase E 指纹 **14/14 == P6 oracle** `{pv=8.0; uv=3.0; dau=3.0; fav_cnt=3.0; cart_add_cnt=3.0; paid_order_cnt=5.0; gmv=2042.0; net_sale=1493.0; avg_order_value=408.4; refund_rate=0.6; full_refund_rate=0.2; repeat_rate=0.3333; buy_rate=1.0; cart_rate=0.6667}`（tol 0.0005）；**F2b 正式平台日志零 `:3306`**；AI 探针 stub-local/EXECUTED；平台 LEFT RUNNING 常驻（identity pid 44284、marker `g3111-formal-restart`）。
@@ -104,7 +104,7 @@ G31-10 P4 的发布型腿（M1/M2/M3/F1）按计划不在正式栈重跑，其�
 
 1. **D-049x 陈旧行缺陷**（§4）：G31-11 执行中由隔离栈 run4 重试链暴露，同批修复+测试；属「执行暴露的存量缺陷修复」非计划内改动，若不修则场景3 重试链在修复后仍永久 FAILED，判据3 无法闭合。
 2. **测试基线两段增长**：1150→1165（M3 五场景等 +15）→1169（D-049x +4）；均为本批新增用例，非 flake；`run-tests.ps1` 基线同步 1169 属 MIXED 文件（§7），其 G31-08 时代遗留注释翻新无法与本次基线提升分离，故**不入提交组**、随工作树保留并在此登记。
-3. **V33 迁移缺陷（error 1567）**：`ON DUPLICATE KEY UPDATE id = pipeline_batch_consumption.id`（V33 第 61 行）——MySQL 不允许对自增主键自身做该更新，flyway 首跑报 1567。**修复**：`flyway repair` 置 success=1（checksum `-75448211` 原样保留）+ 手工去重回填 INSERT…SELECT 达成 EXPECTBF=2；**jar 未重建**（纯 SQL 数据层修复，代码零改动）；**V33 源文件未来修正 = 去重构造 + checksum 重锚**，登记为后续批次义务（不改已发布迁移内容，仅修写法，需随下个迁移窗口重锚）。
+3. **V33 迁移缺陷（error 1567）**：`ON DUPLICATE KEY UPDATE id = pipeline_batch_consumption.id`（V33 第 61 行）——MySQL 不允许对自增主键自身做该更新，flyway 首跑报 1567。**修复**：`flyway repair` 置 success=1（checksum `-75448211` 原样保留）+ 手工去重回填 INSERT…SELECT 达成 EXPECTBF=2（**G31-12 更正：实际修复 = 手工 SQL `UPDATE flyway_schema_history SET success=1` 直接置位 + 显式 VALUES 逐行回填，非 `flyway repair` CLI、`INSERT…SELECT` 语句现场从未成功执行（其同语句 UK 冲突 + 自指更新正是 1567 根因）；原句按当时报告原貌保留，见 §9 补记①**）；**jar 未重建**（纯 SQL 数据层修复，代码零改动）；**V33 源文件未来修正 = 去重构造 + checksum 重锚**，登记为后续批次义务（不改已发布迁移内容，仅修写法，需随下个迁移窗口重锚）。
 4. **驱动脚本 PowerShell 四陷阱**（均已修复留痕，属驱动层非产品层）：① 单元素数组经函数返回被展开 → `return ,@(…)`；② 管道上下文 `,@()` 整组作单 `$_` 传递 → `(Sql-Lines …) | ForEach-Object` 括号化；③ PowerShell 变量名大小写不敏感致 `$h` 覆写 `$H` → 改名 `$healthResp`；④ `-like '*.jar'` 尾锚永不匹配 → `'*platform-app*'`。
 5. **形状巡检 BAD=8**：pre-S3-36 时代 `source_id` 未记录的历史 SUCCESS run（4,12,15,16,17,19,20）∪ no-op run（26/27，按 D-049a 设计 `input_batch_id` 留 NULL）并集计数 8；`restart-result` 内 `deviations.badSeven` 为编写时 7 项陈旧枚举，实际 8（差 1 = 首个 no-op run）。**每执行一次 no-op 该计数按设计 +1**；no-op run 无批次可关联、对再消费零风险，属形状说明非缺陷（对应 mini-gate 硬门项 Fail 15 登记）。其中 runs 4,12,15,16,17,19,20 的批次因消费 run 无 source_id 双证不参与回填（防无源归属数据入台账），其 manifest 残留以隔离处置（§3-5）。
 6. **陈旧 manifest 两轮误隔离事故**：驱动脚本 PowerShell 管道 `,@()` 展平陷阱致判断集错位，24.json 一度被误隔离，两轮内发现并恢复（SHA `6dda162f…` 留证），quarantine README 事故补记留痕。
@@ -185,3 +185,22 @@ FROM data_quality_result WHERE run_id = <runId>;
 - 归档义务按 D-048 执行：`v3-archive/g3111/`（源码快照 + 脱敏证据 + git bundle + SHA256 清单），DB 备份受控保存不公开上传。
 - 已知窗口（D-049g，计划 §0 预登记）：发布 ok 后、台账写入前的崩溃窗口 → 批次未被消费 → 重跑将重发布同值快照（D-045 去重兜底、ACTIVE 前移一槽）——登记为**已知窗口非缺陷**。
 - 语义分裂登记（计划 §0(c)）：「READY 清单存在但全部已消费」= no-op SUCCESS；「READY 清单完全不存在」= `RUN_EMPTY_LANDING` fail-closed。二者判据不同、不可混同。
+
+---
+
+## §9 总控复核补记（2026-09-26，G31-12 批次）
+
+总控 G31-11 复核结论：**主要功能已实现，复核发现问题待修，最终签收暂缓**（已完成能力与 333/333 SHA256 归档校验接收；G31-10 已解除的两项拦截保持解除）。本节为本文档两处不准确表述的**更正补记**——正文按原貌保留、不就地改写（历史报告完整性），歧义以本节为准。
+
+① **「flyway repair 已修复迁移」表述不成立**（对应正文 §3-1、§5-3）。实际补偿动作（证据原件 `target/v25-it/g3110_20260925_191753/evidence-g3111/sql-repair2-backfill.sql`，按原貌保留）为**受控手工 SQL**，两步：
+- `UPDATE flyway_schema_history SET success = 1 WHERE installed_rank = 32 AND version = '33' AND success = 0;`——success=1 系**手工 UPDATE 直接置位**，`flyway repair` CLI 根本未使用；checksum `-75448211` 原样保留。
+- 回填为**显式 VALUES 逐行** INSERT（批 22：consumed_by=21/first=21/S20260901_21/publish=1；批 24：consumed_by=23/first=22/S20260901_23/publish_count=2），非正文 §5-3 所述「INSERT…SELECT」——V33 原文的 INSERT…SELECT 同语句 UK 冲突 + `ON DUPLICATE KEY UPDATE id=…` 自指赋值正是 1567 根因，该语句现场从未成功执行。
+- 措辞后果：「当前库恢复可用」成立；「从已有 V32 数据正常升级」在当时**未闭合**——已由 G31-12 闭合（见 ③）。
+
+② **场景3「修复后重试成功」的手段限定**（对应正文 §2 场景3）。g3111 驱动第 551 行系**直接改写 accepted 文件**（manifest 不变）——仅证明「人工订正数据后计算可恢复」，**不构成正常数据修复流程的验收证据**。原实验按原貌保留、结论限于此；正常流程证据由 G31-12 腿④补验：输入文件与 manifest 校验和全程不变、仅解除临时环境故障（job jar 移走）后**原 run 原地重试成功**（`target/v25-it/g3112iso_20260926_192745/` evidence/leg4-*）。
+
+③ **G31-12 已闭合项**（结果文档 `docs/verification/results/BATCH-G31-12-MASTER-REVIEW-FIXES-RESULT.md`，决策 **D-050**）：
+- **V33 可重复升级**：重写为去重构造（`INSERT IGNORE` + `GROUP BY` 聚合），原 ODKU 语句保留为注释；权威 checksum **`535846146`**（原 `-75448211` 记录于文件头）；小型历史夹具升级 IT 3/3（含「同批多次成功发布」批 24 形态：r1/r2 聚合 publish_count=2）；正式库 live 重锚 success=1 @ `535846146`（credref 通道）。
+- **重算目标批次校验旁路修复**（`PipelineService`：先冻结原请求批次，选中与请求相等才写回 run 行；不等时保持原值、由 WAIT_LANDING 按冻结值 fail-closed `RUN_RECALC_BATCH_UNAVAILABLE`）+ 负例：目标批清单缺失、选择器回落他批 → 拒绝执行、他批不被消费、ACTIVE 不变、run 行 `input_batch_id` 保持原请求值（腿⑤）。
+- **FIFO「两批同时待处理」真实链路证据**（腿③）：先完成 A、B 两批摄取并确认台账为空、均未消费，再连续两次流水线 → A→B 顺序、零遗漏（旧「取最新」在该序列下必然失败，方可证明 FIFO）。
+- **正常修复流程证据**（腿④）：见 ②。
