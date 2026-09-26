@@ -343,6 +343,66 @@ class DataQualityGateTest {
         assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.PASS);
     }
 
+    /**
+     * D-049x（G31-11 判据3）：同一 run 的重试会为同一 (规则码, 层) 留多行判定
+     * （retryFromStage 只删阶段记录，质量行是故意保留的失败证据）。门只认**最新一次**判定：
+     * 修复后重试的 passed=1 行使历史 passed=0 行失效；反之最新失败仍然阻断。
+     */
+    @Test
+    @DisplayName("D-049x 正向：修复后重试的 passed=1 使同码历史失败行失效（run4 实测形状）⇒ PASS")
+    void repairedRetrySupersedesStaleFailureRows() {
+        // 实测 run4 的 data_quality_result：id79（重试前失败 passed=0）、id83（再试仍失败 passed=0）、
+        // id87（修复后 passed=1），三条同码同层并存；发布前门曾因读全量行而永久拦截。
+        when(qualityMapper.selectList(any())).thenReturn(List.of(
+                landing(BLOCKING_CODE, 79, 0),
+                landing(BLOCKING_CODE, 83, 0),
+                landing(BLOCKING_CODE, 87, 1),
+                landing(THRESHOLD_OBSERVATION_CODE, 88, 1)));
+
+        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.PASS);
+        assertThat(gate.blockingFailuresForRun(24L)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("D-049x 反向：最新判定失败仍阻断（不是「曾经通过就放行」）")
+    void latestFailureStillBlocksAfterEarlierPass() {
+        when(qualityMapper.selectList(any())).thenReturn(List.of(
+                landing(BLOCKING_CODE, 91, 1),
+                landing(BLOCKING_CODE, 95, 0)));
+
+        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.FAIL);
+        assertThat(gate.blockingFailuresForRun(24L)).containsExactly(BLOCKING_CODE);
+    }
+
+    @Test
+    @DisplayName("D-049x 分层保守：同码跨层各取最新判定，任一层最新失败仍阻断")
+    void crossLayerLatestVerdictsAreJudgedIndependently() {
+        // LANDING 层最新 passed=1（历史失败行失效），但 ADS_STAGING 层最新 passed=0 ⇒ 仍阻断。
+        when(qualityMapper.selectList(any())).thenReturn(List.of(
+                row(BLOCKING_CODE, "LANDING", 79, 0),
+                row(BLOCKING_CODE, "LANDING", 87, 1),
+                row(BLOCKING_CODE, "ADS_STAGING", 90, 0)));
+
+        assertThat(gate.statusForRun(24L)).isEqualTo(MetricQualityGate.FAIL);
+        assertThat(gate.blockingFailuresForRun(24L)).containsExactly(BLOCKING_CODE);
+    }
+
+    @Test
+    @DisplayName("D-049x 不放宽未登记码口径：最新行即使 passed=1，未登记码仍停止发布（§7.3.1 line 524）")
+    void unregisteredCodeStillStopsPublishEvenWhenLatestRowPassed() {
+        when(qualityMapper.selectList(any())).thenReturn(List.of(
+                row(UNREGISTERED_CODE, "LANDING", 70, 0),
+                row(UNREGISTERED_CODE, "LANDING", 71, 1)));
+
+        DataQualityGate.GateDecision decision = gate.decisionForRun(24L);
+
+        // D-049x 只决定「判哪一行」（此处判最新行 passed=1），不改未登记码的 fail-closed 语义：
+        // 未知规则码不论结果如何都不得放行 —— 只有「登记规则版本」是出路，不是改数据。
+        assertThat(decision.status()).isEqualTo(MetricQualityGate.FAIL);
+        assertThat(decision.unregisteredRules()).containsExactly(UNREGISTERED_CODE);
+        assertThat(decision.stopPublish()).isTrue();
+    }
+
     @Test
     @DisplayName("该 run 没有任何质量结果 → UNKNOWN（不臆造为 PASS）")
     void missingResultsAreUnknown() {
@@ -375,5 +435,21 @@ class DataQualityGateTest {
         entity.setSeverity(severity);
         entity.setPassed(passed);
         return entity;
+    }
+
+    /**
+     * D-049x 夹具：带 id 与层（layer）的质量结果行。同码多行按 id 取最新，
+     * severity 字面同样不参与判定（沿用类注释的夹具纪律，此处统一填 BLOCKING 标签）。
+     */
+    private static DataQualityResult row(String ruleCode, String layer, long id, Integer passed) {
+        DataQualityResult entity = result(ruleCode, "BLOCKING", passed);
+        entity.setLayer(layer);
+        entity.setId(id);
+        return entity;
+    }
+
+    /** D-049x 夹具：Landing 内联规则层（LANDING）的行。 */
+    private static DataQualityResult landing(String ruleCode, long id, Integer passed) {
+        return row(ruleCode, "LANDING", id, passed);
     }
 }

@@ -1,13 +1,16 @@
 package com.graduation.analytics.pipeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.metric.QualityRuleCatalog;
 import com.graduation.analytics.metric.RuleSeverity;
 import com.graduation.analytics.pipeline.entity.DataQualityResult;
+import com.graduation.analytics.pipeline.entity.PipelineBatchConsumption;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
+import com.graduation.analytics.pipeline.mapper.PipelineBatchConsumptionMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineStageRunMapper;
 import com.graduation.analytics.pipeline.spark.JobResultParser;
@@ -44,6 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -80,6 +84,7 @@ class PipelineServiceTest {
     @Mock PipelineRunMapper runMapper;
     @Mock PipelineStageRunMapper stageMapper;
     @Mock DataQualityResultMapper qualityMapper;
+    @Mock PipelineBatchConsumptionMapper batchConsumptionMapper;
     @Mock QualityChecker qualityChecker;
     @Mock RuntimeProfileService runtimeProfileService;
     @Mock SparkStageExecutorFactory stageExecutorFactory;
@@ -94,6 +99,14 @@ class PipelineServiceTest {
 
     /** 内存映射 store：模拟单键幂等查询与单 run 阶段列表 */
     private final AtomicReference<PipelineRun> insertedRun = new AtomicReference<>();
+
+    /**
+     * G31-11：run 的 id→实体内存库。旧桩只有 insertedRun 单槽（selectById/selectOne
+     * 无条件返回"最后插入的 run"），同一测试里多个不同幂等键的 run 会互相顶替：
+     * run2 的 selectByKey("k-second") 会错误命中 run1（幂等短路，run2 根本不创建，
+     * 断言读到的是 run1 的 SUCCESS）。现按 id 存取，selectOne 按 wrapper 条件分派。
+     */
+    private final Map<Long, PipelineRun> runStore = new LinkedHashMap<>();
     private final List<PipelineStageRun> stages = new ArrayList<>();
     private final AtomicLong stageId = new AtomicLong(1);
     private final AtomicLong runId = new AtomicLong(1);
@@ -106,19 +119,68 @@ class PipelineServiceTest {
      */
     private final List<DataQualityResult> qualityRows = new ArrayList<>();
 
+    /**
+     * G31-11（D-049a）：pipeline_batch_consumption 的内存替身。
+     * consumptionRows = selectList/selectOne 的可见行（发布成功后 insert 累积）；
+     * consumptionUpdates = updateById 捕获（重算再发布的 publishCount/recalcCount 递增）。
+     */
+    private final List<PipelineBatchConsumption> consumptionRows = new ArrayList<>();
+    private final List<PipelineBatchConsumption> consumptionUpdates = new ArrayList<>();
+
+    /*
+     * G31-11 根因修复：MyBatis-Plus 3.5.7 的 wrapper 条件是**惰性登记**的——
+     * eq(column, val) 只追加 SQL 片段，formatParam（真正把参数放进 paramNameValuePairs）
+     * 要等 getSqlSegment() 渲染 SQL 时才执行。纯 Mockito 单测里 wrapper 永远不会被
+     * 真实渲染 ⇒ 桩读到的 paramNameValuePairs 恒为空（三个 G31-11 用例集体翻红的根因）；
+     * 而一旦渲染，列名解析（columnToString → lambda cache）又要求实体 TableInfo 已初始化，
+     * 否则报 "can not find lambda cache for this entity"。因此先在此为三类实体热身
+     * TableInfo（同时装配 lambda 列缓存），各桩在读参前再显式 getSqlSegment() 强制渲染。
+     */
+    static {
+        org.apache.ibatis.builder.MapperBuilderAssistant assistant =
+                new org.apache.ibatis.builder.MapperBuilderAssistant(
+                        new com.baomidou.mybatisplus.core.MybatisConfiguration(), "");
+        com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant, PipelineRun.class);
+        com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant, PipelineStageRun.class);
+        com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant,
+                PipelineBatchConsumption.class);
+    }
+
     @BeforeEach
     void setUp() throws IOException {
         PipelineRun repoRun = new PipelineRun();
         doAnswer(inv -> {
             PipelineRun r = inv.getArgument(0);
-            r.setId(runId.get());
+            // G31-11：自增（recalculate 在同一测试里插入第二个 run，stageMapper 的
+            // runId 过滤与台账 consumedByRunId 断言都依赖两个 run 的 id 可区分）
+            r.setId(runId.getAndIncrement());
             insertedRun.set(r);
+            runStore.put(r.getId(), r);
             return 1;
         }).when(runMapper).insert(any(PipelineRun.class));
-        when(runMapper.selectById(anyLong())).thenAnswer(inv -> insertedRun.get());
-        when(runMapper.selectOne(any())).thenAnswer(inv -> insertedRun.get());
-        when(runMapper.selectList(any())).thenAnswer(inv ->
-                insertedRun.get() == null ? List.of() : List.of(insertedRun.get()));
+        when(runMapper.selectById(anyLong())).thenAnswer(inv -> runStore.get((Long) inv.getArgument(0)));
+        // selectOne 按 wrapper 条件分派（MP 3.5.7 参数惰性登记：先 getSqlSegment() 强制渲染）：
+        //   · idempotency_key = ?        → selectByKey 幂等查询：同键返回原 run，无匹配返回 null
+        //   · input_batch_id + source_id → recalculate 的"既成 run"查询：orderByDesc(id) LIMIT 1
+        //   · 其它形态                   → 旧行为兜底（单 run 用例的最后插入 run）
+        when(runMapper.selectOne(any())).thenAnswer(inv -> {
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PipelineRun> w = inv.getArgument(0);
+            String seg = String.valueOf(w.getSqlSegment());
+            java.util.Collection<Object> params = w.getParamNameValuePairs().values();
+            if (seg.contains("idempotency_key")) {
+                return runStore.values().stream()
+                        .filter(r -> params.contains(r.getIdempotencyKey()))
+                        .findFirst().orElse(null);
+            }
+            if (seg.contains("input_batch_id")) {
+                return runStore.values().stream()
+                        .filter(r -> params.contains(r.getInputBatchId()) && params.contains(r.getSourceId()))
+                        .max(java.util.Comparator.comparingLong(PipelineRun::getId))
+                        .orElse(null);
+            }
+            return insertedRun.get();
+        });
+        when(runMapper.selectList(any())).thenAnswer(inv -> List.copyOf(runStore.values()));
 
         doAnswer(inv -> {
             PipelineStageRun s = inv.getArgument(0);
@@ -126,12 +188,35 @@ class PipelineServiceTest {
             stages.add(s);
             return 1;
         }).when(stageMapper).insert(any(PipelineStageRun.class));
-        // 模拟真实库：completedStages 查询只返回 SUCCESS 阶段（execute() 用 status 过滤）
-        when(stageMapper.selectList(any())).thenAnswer(inv -> stages.stream()
-                .filter(s -> PipelineStageRun.STATUS_SUCCESS.equals(s.getStatus())).collect(java.util.stream.Collectors.toList()));
-        // latestStage：顺序执行时列表最后一条即当前阶段
-        when(stageMapper.selectOne(any())).thenAnswer(inv ->
-                stages.isEmpty() ? null : stages.get(stages.size() - 1));
+        // 模拟真实库：completedStages 查询只返回 SUCCESS 阶段（execute() 用 status 过滤）。
+        // G31-11：按 wrapper 里的 runId 条件过滤（重算用例一个测试里有两个 run，
+        // 不能像旧桩那样全表返回，否则新 run 会把旧 run 的 SUCCESS 阶段当已完成后整链跳过）。
+        // MP 3.5.7 参数惰性登记：先 getSqlSegment() 强制渲染，paramNameValuePairs 才有值。
+        when(stageMapper.selectList(any())).thenAnswer(inv -> {
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PipelineStageRun> w = inv.getArgument(0);
+            w.getSqlSegment();
+            java.util.Collection<Object> params = w.getParamNameValuePairs().values();
+            return stages.stream()
+                    .filter(s -> PipelineStageRun.STATUS_SUCCESS.equals(s.getStatus()))
+                    .filter(s -> params.isEmpty() || params.contains(s.getRunId()))
+                    .collect(java.util.stream.Collectors.toList());
+        });
+        // latestStage / manifestForRun：两处 selectOne 都带 (runId, stageCode) 条件，区别只在
+        // 排序（latestStage ORDER BY id DESC 取最新，manifestForRun ORDER BY id ASC 取最早）。
+        // 桩按渲染出的 ORDER BY 方向返回对应行，查无匹配返回 null（真实库语义）——不再像旧桩
+        // 那样"永远返回最后一条"，否则跨 run 的阶段证据/钉住批次会串行。
+        when(stageMapper.selectOne(any())).thenAnswer(inv -> {
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PipelineStageRun> w = inv.getArgument(0);
+            String seg = String.valueOf(w.getSqlSegment());
+            java.util.Collection<Object> params = w.getParamNameValuePairs().values();
+            java.util.List<PipelineStageRun> matched = stages.stream()
+                    .filter(s -> params.contains(s.getRunId()) && params.contains(s.getStageCode()))
+                    .collect(java.util.stream.Collectors.toList());
+            if (matched.isEmpty()) {
+                return null;
+            }
+            return seg.contains("DESC") ? matched.get(matched.size() - 1) : matched.get(0);
+        });
 
         RuntimeProfile profile = new RuntimeProfile();
         profile.setId(1L);
@@ -165,12 +250,42 @@ class PipelineServiceTest {
         });
         when(qualityMapper.selectList(any())).thenAnswer(inv -> List.copyOf(qualityRows));
 
+        // G31-11（D-049）：消费台账内存替身。selectOne 区分两种查询形态：
+        //   · 只带 sourceId（no-op 报告最近消费）→ 返回最后一行（模拟 orderByDesc(consumed_at) LIMIT 1）
+        //   · 带 sourceId+batchId（钉住批次的台账核对）→ 按 (sourceId, batchId) 精确匹配
+        // MP 3.5.7 参数惰性登记：先 getSqlSegment() 强制渲染参数才可见；形态判定看渲染片段里
+        // 有无 batch_id 条件（比数参数个数稳：sourceId 与 batchId 数值撞车时不会误判）。
+        when(batchConsumptionMapper.selectList(any())).thenAnswer(inv -> List.copyOf(consumptionRows));
+        when(batchConsumptionMapper.selectOne(any())).thenAnswer(inv -> {
+            if (consumptionRows.isEmpty()) {
+                return null;
+            }
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<PipelineBatchConsumption> w =
+                    inv.getArgument(0);
+            String seg = String.valueOf(w.getSqlSegment());
+            java.util.Collection<Object> params = w.getParamNameValuePairs().values();
+            if (!seg.contains("batch_id")) {
+                return consumptionRows.get(consumptionRows.size() - 1);
+            }
+            return consumptionRows.stream()
+                    .filter(c -> params.contains(c.getSourceId()) && params.contains(c.getBatchId()))
+                    .findFirst().orElse(null);
+        });
+        when(batchConsumptionMapper.insert(any(PipelineBatchConsumption.class))).thenAnswer(inv -> {
+            consumptionRows.add(inv.getArgument(0));
+            return 1;
+        });
+        when(batchConsumptionMapper.updateById(any(PipelineBatchConsumption.class))).thenAnswer(inv -> {
+            consumptionUpdates.add(inv.getArgument(0));
+            return 1;
+        });
+
         stubPublisherSuccess();
 
         service = new PipelineService(runMapper, stageMapper, qualityMapper, qualityChecker,
                 eventClock, objectMapper, runtimeProfileService, stageExecutorFactory, executor,
                 publisherPort, metricDefinitionMapper(), new DataQualityGate(qualityMapper),
-                new LandingManifestSelector(objectMapper));
+                new LandingManifestSelector(objectMapper), batchConsumptionMapper);
     }
 
     /**
@@ -804,7 +919,7 @@ class PipelineServiceTest {
 
     @Test
     void waitLandingPersistsInputBatchIdOfPinnedBatch() throws Exception {
-        // writeLanding 写的是 manifests/b1.json（batchId=1）→ 本 run 的输入批次就是 1
+        // writeLanding 写的是 manifests/1.json（batchId=1）→ 本 run 的输入批次就是 1
         writeLanding("accepted/2026-09-01",
                 event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
 
@@ -1404,6 +1519,249 @@ class PipelineServiceTest {
         assertThat(reduced.length()).isLessThanOrEqualTo(PipelineService.EVIDENCE_MAX_CHARS);
     }
 
+    // ── G31-11（总控 D-048 §(5) / D-049）：M3 发布语义 —— 消费台账、no-op、显式重算 ──
+
+    /**
+     * 场景①「无新输入不发布」（D-049c）：本源全部 READY 批次都已进台账 →
+     * run 以 SUCCESS 收口 + WAIT_LANDING 证据 noNewInput=ALREADY_CONSUMED，
+     * 不发布、不分配快照、后续计算阶段零记录（区别于 RUN_EMPTY_LANDING 的 fail-closed）。
+     */
+    @Test
+    void allConsumedBatchesYieldSuccessNoOpWithoutRepublish() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        // 批次 1 已被历史 run 77 消费并发布为 S20260831_prev
+        consumptionRows.add(consumedRow(1L, 77L, "S20260831_prev"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-noop", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult done = service.get(r.runId());
+        assertThat(done.status()).as("无新输入是 SUCCESS 收口，不是 RUN_EMPTY_LANDING fail-closed")
+                .isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(done.errorCode()).isNull();
+        PipelineStageRun landingStage = stageOf("WAIT_LANDING");
+        assertThat(stageOf("WAIT_LANDING").getStatus()).isEqualTo(PipelineStageRun.STATUS_SUCCESS);
+        Map<String, Object> evidence = evidenceOf(landingStage);
+        assertThat(evidence.get("noNewInput")).isEqualTo(true);
+        assertThat(evidence.get("reason")).isEqualTo("ALREADY_CONSUMED");
+        assertThat(((Number) evidence.get("batchId")).longValue()).isEqualTo(1L);
+        assertThat(((Number) evidence.get("consumedByRunId")).longValue()).isEqualTo(77L);
+        assertThat(((Number) evidence.get("readyButConsumedCount")).intValue()).isEqualTo(1);
+        // 不发布：端口零调用、无快照身份、后继计算/发布阶段零记录、台账零改动
+        verify(publisherPort, never()).publish(any());
+        assertThat(done.targetSnapshotId()).as("no-op 不分配新的 S{date}_{runId}").isNull();
+        assertThat(stageOf("LOAD_ODS")).isNull();
+        assertThat(stageOf("PUBLISH_METRIC")).isNull();
+        assertThat(consumptionUpdates).as("no-op 不得改写台账").isEmpty();
+    }
+
+    /**
+     * 场景②「有新输入能发布」（D-049b FIFO）：批次 1 已消费、批次 2 待处理 →
+     * 选择器必须跳过已消费的 1、选中最早待处理的 2，发布后为 2 新增台账行
+     * （批次 1 的旧行原样不动，publishCount/recalcCount 不被误增）。
+     */
+    @Test
+    void newInputAfterConsumedBatchPublishesNextPendingBatchFifo() throws Exception {
+        writeManifest(1, SOURCE_ID, "accepted/2026-09-01-a", true);
+        writeEvents("accepted/2026-09-01-a",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        writeManifest(2, SOURCE_ID, "accepted/2026-09-01-b", true);
+        writeEvents("accepted/2026-09-01-b",
+                event("e2", "order_created", "2026-09-01T10:05:00", "{\"order_id\":\"o2\",\"total_amount\":\"200\"}"));
+        consumptionRows.add(consumedRow(1L, 77L, "S20260831_prev"));
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-fifo", "trace-1");
+        executor.drain();
+
+        assertThat(service.get(r.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(stageOf("WAIT_LANDING").getEvidence())
+                .as("FIFO 必须跳过已消费的批次 1，选中最早待处理的批次 2")
+                .contains("\"batchId\":2")
+                .doesNotContain("\"batchId\":1");
+        verify(publisherPort).publish(any());
+        assertThat(consumptionRows).hasSize(2);
+        PipelineBatchConsumption b2 = consumptionRows.stream()
+                .filter(c -> Long.valueOf(2L).equals(c.getBatchId())).findFirst().orElseThrow();
+        assertThat(b2.getConsumedByRunId()).isEqualTo(r.runId());
+        assertThat(b2.getFirstConsumedByRunId()).isEqualTo(r.runId());
+        assertThat(b2.getPublishCount()).isEqualTo(1);
+        assertThat(b2.getRecalcCount()).isZero();
+        assertThat(b2.getCreatedVia()).isEqualTo(PipelineBatchConsumption.VIA_PIPELINE);
+        assertThat(consumptionUpdates).as("新批次是 INSERT，不是对旧行的 UPDATE").isEmpty();
+    }
+
+    /**
+     * 场景③「失败重试仍有效」（D-049d/g）：发布本身成功但台账写失败 → run 以
+     * RUN_CONSUMPTION_MARK_FAILED 如实失败（批次因无台账行而保持待处理，不会被
+     * FIFO 跳过）→ 重试绑原批真重发布并补上台账行（publishCount=1，不是 2）。
+     */
+    @Test
+    void failedConsumptionWriteKeepsBatchPendingAndRetryRepublishesSameBatch() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        when(batchConsumptionMapper.insert(any(PipelineBatchConsumption.class)))
+                .thenThrow(new RuntimeException("db down"))
+                .thenAnswer(inv -> {
+                    consumptionRows.add(inv.getArgument(0));
+                    return 1;
+                });
+
+        PipelineService.RunResult r = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-ledger-fail", "trace-1");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(r.runId());
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("RUN_CONSUMPTION_MARK_FAILED");
+        assertThat(stageStatus("PUBLISH_METRIC")).isEqualTo(PipelineStageRun.STATUS_FAILED);
+        assertThat(stageOf("PUBLISH_METRIC").getEvidence()).contains("consumptionLedgerError");
+        verify(publisherPort, org.mockito.Mockito.times(1)).publish(any());
+        assertThat(consumptionRows).as("写失败的批次没有台账行 = 保持待处理").isEmpty();
+
+        service.retry(r.runId(), "trace-2");
+        executor.drain();
+
+        PipelineService.RunResult done = service.get(r.runId());
+        assertThat(done.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        verify(publisherPort, org.mockito.Mockito.times(2)).publish(any());
+        assertThat(consumptionRows).hasSize(1);
+        assertThat(consumptionRows.get(0).getBatchId()).isEqualTo(1L);
+        assertThat(consumptionRows.get(0).getPublishCount())
+                .as("首次发布实际只发生一次成功记账（补记），publishCount 必须是 1")
+                .isEqualTo(1);
+        assertThat(consumptionRows.get(0).getConsumedByRunId()).isEqualTo(r.runId());
+    }
+
+    /**
+     * 场景④（D-049d 钉住批次已被他人消费）：run2 钉住批次 2 后在 LOAD_ODS 失败，
+     * 期间 run3 把批次 2 消费进台账 → 重试 run2 触发 no-op（SUCCESS 收口），
+     * 绝不第三次发布同一批次。retry() 不带 recalcReason（retry-from-stage 才是显式重算）。
+     */
+    @Test
+    void retryOfRunWhoseBatchWasConsumedInBetweenYieldsNoOp() throws Exception {
+        writeManifest(1, SOURCE_ID, "accepted/2026-09-01-a", true);
+        writeEvents("accepted/2026-09-01-a",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        writeManifest(2, SOURCE_ID, "accepted/2026-09-01-b", true);
+        writeEvents("accepted/2026-09-01-b",
+                event("e2", "order_created", "2026-09-01T10:05:00", "{\"order_id\":\"o2\",\"total_amount\":\"200\"}"));
+
+        PipelineService.RunResult first = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-first", "trace-1");
+        executor.drain();
+        assertThat(service.get(first.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(consumptionRows).hasSize(1);
+
+        when(stageExecutor.executeStage(any(), anyLong(), org.mockito.ArgumentMatchers.eq("LOAD_ODS"),
+                anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> failedExecution("LOAD_ODS", "odl"));
+        PipelineService.RunResult second = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-second", "trace-2");
+        executor.drain();
+        assertThat(service.get(second.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+
+        when(stageExecutor.executeStage(any(), anyLong(), anyString(), anyString(), anyInt(), any(), any()))
+                .thenAnswer(inv -> successExecution(inv.getArgument(2)));
+        PipelineService.RunResult third = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-third", "trace-3");
+        executor.drain();
+        assertThat(service.get(third.runId()).status())
+                .as("run3 按 FIFO 消费仍待处理的批次 2（run2 失败未发布，批次保持待处理）")
+                .isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(consumptionRows).hasSize(2);
+
+        service.retry(second.runId(), "trace-retry");
+        executor.drain();
+
+        PipelineService.RunResult done = service.get(second.runId());
+        assertThat(done.status()).as("钉住批次已被 run3 消费 → 重试 no-op 收口，不重复发布")
+                .isEqualTo(PipelineRun.STATUS_SUCCESS);
+        verify(publisherPort, org.mockito.Mockito.times(2)).publish(any());
+        assertThat(consumptionRows).hasSize(2);
+        assertThat(consumptionUpdates).as("no-op 不写台账").isEmpty();
+        assertThat(stages.stream().filter(s -> second.runId().equals(s.getRunId())
+                        && "LOAD_ODS".equals(s.getStageCode())).count())
+                .as("no-op 不得把失败阶段的 suffix 重新执行（LOAD_ODS 仍只有失败那一次记录）")
+                .isEqualTo(1);
+    }
+
+    /**
+     * 场景⑤（D-049e 校验面）：显式重算必须带理由（blank → 400 PARAM_INVALID）、
+     * 批次号必须为正、且目标批次必须存在既成 run（无发布可复核 → 400 fail-closed）。
+     * 三种拒绝都不得产生任何新 run。
+     */
+    @Test
+    void recalculateRejectsBlankReasonNonPositiveBatchAndMissingPriorRun() throws Exception {
+        PlatformBizException blank = assertThrows(PlatformBizException.class, () ->
+                service.recalculate(1L, 1L, "ops:a", "   ", "trace-r"));
+        assertThat(blank.getCode()).isEqualTo(PlatformBizException.PARAM_INVALID);
+
+        PlatformBizException badBatch = assertThrows(PlatformBizException.class, () ->
+                service.recalculate(1L, 0L, "ops:a", "指标口径修正", "trace-r"));
+        assertThat(badBatch.getCode()).isEqualTo(PlatformBizException.PARAM_INVALID);
+
+        PlatformBizException noPrior = assertThrows(PlatformBizException.class, () ->
+                service.recalculate(1L, 1L, "ops:a", "指标口径修正", "trace-r"));
+        assertThat(noPrior.getCode())
+                .as("批次在源下无任何 run = 无既成发布可复核，重算拒绝（fail-closed）")
+                .isEqualTo(PlatformBizException.PARAM_INVALID);
+        verify(runMapper, never()).insert(any(PipelineRun.class));
+    }
+
+    /**
+     * 场景⑤（D-049e 主链路）：显式重算豁免 no-op 门，对已消费批次真重发布；
+     * run 行预置 recalcReason/input_batch_id/createdBy（异步前落库），
+     * WAIT_LANDING 证据带 recalcReason/recalcOperator，台账走 UPDATE：
+     * publishCount=2、recalcCount=1、last_recalc_* 审计、consumedByRunId 指向重算 run，
+     * first_consumed_* 与 consumed_at 保留首次事实。
+     */
+    @Test
+    void recalculateRepublishesConsumedBatchWithLedgerAudit() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult first = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-first", "trace-1");
+        executor.drain();
+        assertThat(service.get(first.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(consumptionRows).hasSize(1);
+        assertThat(consumptionRows.get(0).getPublishCount()).isEqualTo(1);
+
+        PipelineService.RunResult rr = service.recalculate(1L, 1L, "ops:a", "指标口径修正", "trace-r");
+        assertThat(executor.pending()).as("重算 run 也走异步链（POST 立即返回）").isEqualTo(1);
+        assertThat(rr.status()).isEqualTo(PipelineRun.STATUS_PENDING);
+        executor.drain();
+
+        PipelineService.RunResult done = service.get(rr.runId());
+        assertThat(done.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        verify(publisherPort, org.mockito.Mockito.times(2)).publish(any());
+        // run 行：理由与目标批次在异步执行前就落库（不是事后补写）
+        PipelineRun recalcRun = insertedRun.get();
+        assertThat(recalcRun.getRecalcReason()).isEqualTo("指标口径修正");
+        assertThat(recalcRun.getInputBatchId()).isEqualTo(1L);
+        assertThat(recalcRun.getCreatedBy()).isEqualTo("ops:a");
+        assertThat(recalcRun.getIdempotencyKey()).startsWith("recalc|1|ODS_TO_ADS|1|");
+        // WAIT_LANDING 证据携带重算审计（谁、为什么）
+        Map<String, Object> evidence = evidenceOf(stageOf(recalcRun.getId(), "WAIT_LANDING"));
+        assertThat(evidence.get("recalcReason")).isEqualTo("指标口径修正");
+        assertThat(evidence.get("recalcOperator")).isEqualTo("ops:a");
+        // 台账仍是一行：UPDATE 累计，不新增行
+        assertThat(consumptionRows).hasSize(1);
+        PipelineBatchConsumption row = consumptionRows.get(0);
+        assertThat(row.getPublishCount()).isEqualTo(2);
+        assertThat(row.getRecalcCount()).isEqualTo(1);
+        assertThat(row.getLastRecalcReason()).isEqualTo("指标口径修正");
+        assertThat(row.getLastRecalcBy()).isEqualTo("ops:a");
+        assertThat(row.getLastRecalcAt()).isNotNull();
+        assertThat(row.getConsumedByRunId()).isEqualTo(recalcRun.getId());
+        assertThat(consumptionUpdates).contains(row);
+        // 首次事实不改写
+        assertThat(row.getFirstConsumedByRunId()).isEqualTo(first.runId());
+    }
+
     // ── 辅助 ────────────────────────────────────────────────────────────────
     private void writeLanding(String acceptedUriDir, String... eventLines) throws IOException {
         writeManifest(1, SOURCE_ID, acceptedUriDir, true);
@@ -1432,7 +1790,10 @@ class PipelineServiceTest {
             m.put("sourceId", sourceId);
             m.put("sourceCode", sourceId == SOURCE_ID ? "mall-a" : "mall-b");
         }
-        Files.writeString(landing.resolve("manifests/b" + batchId + ".json"),
+        // 文件名必须是 manifests/{batchId}.json —— 这是 LandingStorage 写侧唯一实现
+        //（"manifests/" + batchId + ".json"）的契约；D-049e 重算/重试的钉住路径按
+        // 该名**直读**（不再扫目录），测试桩写错名字会让钉住读取 miss → fail-closed。
+        Files.writeString(landing.resolve("manifests/" + batchId + ".json"),
                 objectMapper.writeValueAsString(m));
     }
 
@@ -1461,6 +1822,42 @@ class PipelineServiceTest {
             }
         }
         return null;
+    }
+
+    /** G31-11：按 runId + 阶段码定位阶段记录（一个测试里出现多个 run 时用） */
+    private PipelineStageRun stageOf(Long runId, String code) {
+        for (PipelineStageRun s : stages) {
+            if (code.equals(s.getStageCode()) && runId.equals(s.getRunId())) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /** G31-11：把阶段证据 JSON 解析成 Map（断言 no-op / 重算审计键） */
+    private Map<String, Object> evidenceOf(PipelineStageRun stage) throws IOException {
+        return objectMapper.readValue(stage.getEvidence(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                });
+    }
+
+    /**
+     * G31-11：预置一条台账行（模拟此前某个 run 已发布消费该批次）。
+     * consumedAt 固定在过去（2026-08-31），与 fixture 业务日（09-01）可区分。
+     */
+    private static PipelineBatchConsumption consumedRow(long batchId, long consumedByRunId, String snapshotId) {
+        PipelineBatchConsumption row = new PipelineBatchConsumption();
+        row.setSourceId(SOURCE_ID);
+        row.setBatchId(batchId);
+        row.setStatus(PipelineBatchConsumption.STATUS_CONSUMED);
+        row.setConsumedByRunId(consumedByRunId);
+        row.setFirstConsumedByRunId(consumedByRunId);
+        row.setTargetSnapshotId(snapshotId);
+        row.setPublishCount(1);
+        row.setRecalcCount(0);
+        row.setConsumedAt(LocalDateTime.of(2026, 8, 31, 9, 0));
+        row.setCreatedVia(PipelineBatchConsumption.VIA_PIPELINE);
+        return row;
     }
 
     private String stageStatus(String code) {

@@ -39,6 +39,12 @@ public class PipelineRun {
     /** V7：目标快照 ID（S{date}_{runId}），溯源链路 */
     private String targetSnapshotId;
 
+    /**
+     * V33（G31-11 / D-049e）：显式重算理由（recalculate 入口必填；非空 = 本 run 是重算，
+     * 豁免 M3 no-op 门并强制钉住 input_batch_id）。NULL = 普通调度/重试 run。
+     */
+    private String recalcReason;
+
     private Integer attemptNo;
 
     private String status;
