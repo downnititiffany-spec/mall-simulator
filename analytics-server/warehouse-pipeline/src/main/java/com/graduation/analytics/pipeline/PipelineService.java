@@ -510,19 +510,28 @@ public class PipelineService {
             // S2-04：并**按源归属**过滤（否则他源批次会落进本源的库，且事后不可察觉）
             // G31-11：叠加消费台账——已消费批次不作候选（FIFO 取最老未消费，多待处理批次
             // 逐批处理不遗漏）；「全部 READY 已消费」与「钉住批次已消费」的 no-op 判定在下方。
+            // G31-12（D-050②，总控 G31-11 复核第 2 项）：**先冻结本 run 的原请求批次，
+            // 再选择输入**。recalculate() 在异步前预置 input_batch_id（D-049e），重试/恢复
+            // run 则带着首跑写入值——它是「请求的意图」，后续选择器回落**不得改写**：
+            // 先写选中值再比对，会把「选中 != 目标」退化成「B==B」（旁路，见下）。
+            final Long requestedBatchId = run.getInputBatchId();
             InputSelection input = manifestForRun(landingRoot, run, runSourceId);
             LandingManifestSelector.Selection selection = input.selection();
             Map<String, Object> manifest = selection.manifest();
             // S3-36：批次级溯源落库。pipeline_run.input_batch_id 由 V7 建列、实体也有字段，
             // 但此前**零写入**（S3-34 登记行）：批次只能靠 pipeline_stage_run.evidence 的 JSON
             // 正则反查。此处与 WAIT_LANDING 证据（evidence.batchId）读的是**同一次** manifest 解析，
-            // 故两者同源、不会各说各话；重试路径钉住原批次（见 manifestForRun），故一次 run 内该值
-            // 稳定，可安全覆盖式写入（重试再写一次同值，不存在漂移）。
+            // 故两者同源、不会各说各话。
+            // G31-12（D-050②）：**校验相等后才允许更新运行记录**——run 已带请求批次（重算
+            // 预置/重试首跑写入）时，仅当选中批次与其相等才写（同值确认）；不等（钉住清单
+            // 缺失、选择器按 FIFO 回落到他批）时**保持原值不写**，交给 WAIT_LANDING 的重算
+            // 断言按冻结值 fail-closed。先写后查会让重算退化成对回落批次的发布。
             // manifest == null（无 READY 批次）时不写：该 run 没有输入批次，留 NULL 是如实，不是缺失。
             // 值非法（缺 batchId / 解析为 0）同样不写：宁可空，不可猜一个批次号。
             if (manifest != null && manifest.get("batchId") != null) {
                 long inputBatchId = LandingManifestSelector.longOf(manifest.get("batchId"));
-                if (inputBatchId > 0) {
+                long requested = requestedBatchId == null ? 0L : requestedBatchId;
+                if (inputBatchId > 0 && (requested <= 0 || requested == inputBatchId)) {
                     run.setInputBatchId(inputBatchId);
                     runMapper.updateById(run);
                 }
@@ -619,13 +628,14 @@ public class PipelineService {
                     throw new PipelineStageException("RUN_EMPTY_LANDING",
                             "landing/manifests 无 READY 批次清单（先执行采集并生成 manifest）");
                 }
-                if (isRecalc && run.getInputBatchId() != null
-                        && LandingManifestSelector.longOf(manifest.get("batchId")) != run.getInputBatchId()) {
-                    // D-049e：重算必须真的选到目标批次——钉住回落/漂移时静默改换输入会让
-                    // 「重算」变成对另一批次的发布，直接 fail-closed（错误码可区分）。
+                long selectedBatchId = LandingManifestSelector.longOf(manifest.get("batchId"));
+                long requested = requestedBatchId == null ? 0L : requestedBatchId;
+                if (isRecalc && requested > 0 && selectedBatchId != requested) {
+                    // D-049e + G31-12（D-050②）：重算必须真的选到**请求时冻结的**目标批次——
+                    // 钉住清单缺失、选择器回落到他批时，run 行保持原值（写侧已拦截改写），
+                    // 此处按冻结值比对，fail-closed（错误码可区分）。
                     throw new PipelineStageException("RUN_RECALC_BATCH_UNAVAILABLE",
-                            "重算目标批次 " + run.getInputBatchId() + " 不可选（实际选中 "
-                                    + LandingManifestSelector.longOf(manifest.get("batchId"))
+                            "重算目标批次 " + requested + " 不可选（实际选中 " + selectedBatchId
                                     + "），fail-closed：重算不得静默改换输入批次");
                 }
                 Map<String, Object> evidence = new LinkedHashMap<>();

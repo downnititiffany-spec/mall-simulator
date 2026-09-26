@@ -26,9 +26,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li><b>号位不冲突</b>：33 号在 {@code db/meta} 内唯一（重复会让 Flyway 拒绝启动）；</li>
  *   <li><b>台账唯一性与回填守卫</b>：{@code pipeline_batch_consumption} 以
  *       UK {@code (source_id, batch_id)} 一批次一源一行；回填只认 SUCCESS 且
- *       input_batch_id/source_id 双非空的 run（既成事实，不猜），且
- *       {@code ON DUPLICATE KEY UPDATE id=id} 幂等——重复执行或与 PIPELINE 写入撞行
- *       不得覆盖既有行（D-049f：保护正式锚 S20260901_23 的 ACTIVE 快照不漂移）；</li>
+ *       input_batch_id/source_id 双非空的 run（既成事实，不猜），且按构造去重
+ *       （GROUP BY 聚合同批多条 SUCCESS run）+ {@code INSERT IGNORE} 幂等——重复执行
+ *       或与 PIPELINE 写入撞行不得覆盖既有行（D-049f：保护正式锚 S20260901_23 的
+ *       ACTIVE 快照不漂移）。G31-12（D-050①）：首版 ODKU 回填在「同批多次成功发布」
+ *       时语句内自撞触发正式库 1567（详见 V33 头部事故记录），故 ODKU 模式在本脚本
+ *       中被**禁止**；</li>
  *   <li><b>重算理由留痕列</b>：{@code pipeline_run.recalc_reason} 为单条可空列——
  *       理由必填（空理由 400 PARAM_INVALID）是应用层契约，DB 侧 NULL 只表示
  *       「非重算 run」，因此列必须可空、且全脚本不得再动 pipeline_run 其它列。</li>
@@ -113,13 +116,14 @@ class PipelineBatchConsumptionMigrationScriptTest {
     }
 
     @Test
-    @DisplayName("V33 回填双守卫 + 幂等：只回填 SUCCESS 且输入批次/来源明确的 run，撞行不覆盖")
+    @DisplayName("V33 回填双守卫 + 按构造去重幂等：只回填 SUCCESS 且输入批次/来源明确的 run，"
+            + "同批多次发布聚合一行，禁用 ODKU")
     void v33BackfillIsGuardedAndIdempotent() {
         String sql = code(V33);
 
         assertThat(sql)
                 .as("必须有历史回填（D-049f）：否则 V33 上线后已发布批次会被 FIFO 重新消费造成重发布")
-                .containsPattern("(?is)insert\\s+into\\s+pipeline_batch_consumption\\b.*\\bselect\\b");
+                .containsPattern("(?is)insert\\s+ignore\\s+into\\s+pipeline_batch_consumption\\b.*\\bselect\\b");
         assertThat(sql)
                 .as("回填守卫①：只认 SUCCESS run——FAILED/中途失败的 run 从未发布，不是消费事实")
                 .containsPattern("(?i)r\\.status\\s*=\\s*'SUCCESS'");
@@ -128,10 +132,21 @@ class PipelineBatchConsumptionMigrationScriptTest {
                 .containsPattern("(?i)r\\.input_batch_id\\s+is\\s+not\\s+null")
                 .containsPattern("(?i)r\\.source_id\\s+is\\s+not\\s+null");
         assertThat(sql)
-                .as("幂等（D-049f）：ON DUPLICATE KEY UPDATE id=id 撞行不覆盖——"
-                        + "重复执行/与 PIPELINE 写入撞行都不得改写既有消费事实")
-                .containsPattern("(?is)on\\s+duplicate\\s+key\\s+update\\s+id\\s*="
-                        + "\\s*pipeline_batch_consumption\\.id");
+                .as("按构造去重（G31-12/D-050①）：先 GROUP BY (source_id, input_batch_id) 聚合，"
+                        + "同批多条 SUCCESS run 只出一行——语句内无重复键才不会复现 MySQL 1567")
+                .containsPattern("(?i)group\\s+by\\s+r\\.source_id\\s*,\\s*r\\.input_batch_id");
+        assertThat(sql)
+                .as("publish_count 必须来自 COUNT(*)（同批多次成功发布的聚合口径，与人工补偿一致）")
+                .containsPattern("(?i)count\\(\\s*\\*\\s*\\)");
+        assertThat(sql)
+                .as("幂等（D-049f）：INSERT IGNORE 撞行即跳过——重复执行/与 PIPELINE 或人工"
+                        + "补偿行撞键都不得改写既有消费事实")
+                .containsPattern("(?i)insert\\s+ignore\\s+into\\s+pipeline_batch_consumption\\b");
+        assertThat(sql)
+                .as("禁用 ON DUPLICATE KEY UPDATE（G31-12/D-050①）：同批多条 SUCCESS run 时 "
+                        + "SELECT 结果集内部含重复键，ODKU 无法消解语句内自撞（正式库 1567 事故根因）；"
+                        + "该模式一经移除不得回流")
+                .doesNotContainPattern("(?is)on\\s+duplicate\\s+key\\s+update");
         assertThat(sql)
                 .as("回填行必须带 BACKFILL_V33 溯源标记，与 PIPELINE 写入可区分")
                 .contains("'BACKFILL_V33'");

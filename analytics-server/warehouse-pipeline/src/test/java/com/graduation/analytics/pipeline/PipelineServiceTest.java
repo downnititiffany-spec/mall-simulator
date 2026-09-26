@@ -1762,6 +1762,48 @@ class PipelineServiceTest {
         assertThat(row.getFirstConsumedByRunId()).isEqualTo(first.runId());
     }
 
+    /**
+     * G31-12（D-050②，总控 G31-11 复核第 2 项）负例：显式重算 A，但 A 的清单缺失、
+     * 同源 B 仍待处理——选择器按 FIFO 回落到 B 时，run 行**不得**被先改写成 B
+     * （先写后查会把「选中 != 目标」退化成「B==B」，错误重算照常执行），
+     * WAIT_LANDING 断言按冻结的原请求批次比对 → RUN_RECALC_BATCH_UNAVAILABLE
+     * fail-closed；B 不被消费、无第二次发布（ACTIVE 不变）、台账不改写。
+     */
+    @Test
+    void recalcWithMissingTargetManifestDoesNotSilentlyConsumeFallbackBatch() throws Exception {
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+
+        PipelineService.RunResult first = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-first", "trace-1");
+        executor.drain();
+        assertThat(service.get(first.runId()).status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
+        assertThat(consumptionRows).hasSize(1);
+
+        // 批次 2（同源 B）待处理；随后删掉批次 1（A）的清单 → 重算 A 只能回落到 B
+        writeManifest(2, SOURCE_ID, "accepted/2026-09-01-b", true);
+        writeEvents("accepted/2026-09-01-b",
+                event("e2", "order_created", "2026-09-01T10:05:00", "{\"order_id\":\"o2\",\"total_amount\":\"200\"}"));
+        Files.delete(landing.resolve("manifests/1.json"));
+
+        PipelineService.RunResult rr = service.recalculate(1L, 1L, "ops:a", "目标批次清单缺失的负例", "trace-r");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(rr.runId());
+        assertThat(failed.status()).as("重算目标不可选必须 fail-closed").isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("RUN_RECALC_BATCH_UNAVAILABLE");
+        // 关键断言：run 行未被改写成回落批次 B——旁路的根就是先把 B 写进 input_batch_id
+        assertThat(runStore.get(rr.runId()).getInputBatchId())
+                .as("选择器回落他批时 run.input_batch_id 必须保持原请求批次 1（先校验后写）")
+                .isEqualTo(1L);
+        // B 未被消费：台账仍只有批次 1 一行、publishCount=1；无第二次发布（ACTIVE 不变）
+        assertThat(consumptionRows).hasSize(1);
+        assertThat(consumptionRows.get(0).getBatchId()).isEqualTo(1L);
+        assertThat(consumptionRows.get(0).getPublishCount()).isEqualTo(1);
+        assertThat(consumptionUpdates).as("拒绝执行不得改写台账").isEmpty();
+        verify(publisherPort, org.mockito.Mockito.times(1)).publish(any());
+    }
+
     // ── 辅助 ────────────────────────────────────────────────────────────────
     private void writeLanding(String acceptedUriDir, String... eventLines) throws IOException {
         writeManifest(1, SOURCE_ID, acceptedUriDir, true);
