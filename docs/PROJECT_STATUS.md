@@ -7,6 +7,7 @@
 - **验证**：基线 1170 携带论证 + web 375/375 复跑 + 夹具 sha256 5/5 + 危险扫描双清零 + 逐文件 diff 复核完成。
 - **边界**：仅本地提交、绝不 -A、不改写历史提交、零产品字节改动（门值数字除外）、3306 零接触。
 - **SHA 清单（16 组落库 + 本收口 = 17）**：R=70b7d00 注册；①f863891 connection-ingestion 存储缝 21 文件（LandingStorage/Resolver/双实现 + 8 测试 IT + platform-app pom hadoop-client 3.3.4）；②27fec11 metric-analysis D-042 6 文件（MetricExportPath 新增）；③6d60d8d warehouse-pipeline 2；④6abd3f5 ai-decision 2；⑤1291c53 web 8（chartState 唯一属主 + aiButtonStyle 新测试）；⑥a1d5ee6 fixtures 2（精度注记，canonical JSONL 零字节改动）；⑦a2d4536 G31-04 文档；⑧c3d7aa6 G31-05 文档；⑨425b5a2 G31-07 文档+deployment-freeze；⑩47869ea 指导书 V3.1；⑪d6c2bca G31-08 spark-jobs 代码（分区级读-并-去重-覆写 + OdsMergeIncrementalSpec）；⑫59eed7c G31-08 文档；⑬54a116e G31-09 V32 代码（SQL + 静态门 + 2 IT 吸收）；⑭73714a4 G31-09 文档；⑮21c42b6 run-tests.ps1 门值链 1096→1170 一次收清（spark 322→329 / analytics-server →1150→1165→1169→1170，注释 + 计数，零产品字节）。执行备注：组①②含未跟踪文件，按 add(显式路径)→commit 两步；一次工具输出异常（变量名未定义致组②首试失败）按协议整块废弃、以 fresh git log/status 重核实后重做，无脏数据入库。
+- **总控复核与归档（2026-09-27）**：总控复核认定 **Git 历史清账完成**（17 提交文件集吻合、HEAD=8ab5824、树净）；笔误裁定：组⑤ web 实为 7 M+1 新=8 文件，索引按实际清单、计划原文不改写；V3.1 提交≠发布（权威仍 V3.0）。**归档 `v3-archive/g3113` 完成**：WORKTREE-STATE（17 组逐文件实际清单）+ 源码快照 5276 项（credref/.zcode/.git 零入档、bak-* 审计痕 47 保留）+ git bundle --all（complete history）+ 证据 4 件（web 375/375 复跑、夹具 sha256 5/5、危险扫描定性、零回显 pw 扫描 pw-len=40 hits=0）+ db-backup 零接触声明 + MANIFEST-SHA256 9 项全验。下一步 = **G31-12 复核证据单独提交总控作签收裁定**。
 
 ### 2026-09-26 G31-12 收口（总控复核四项处置，D-050）：V33 可重复升级 ＋ 重算目标校验旁路修复 ＋ FIFO 两批同待处理证据 ＋ 正常修复流程证据 ＋ G31-11 改登记暂缓签收
 
