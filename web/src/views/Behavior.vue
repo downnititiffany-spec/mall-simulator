@@ -20,13 +20,13 @@
         观察窗口：{{ windowNote }}
         <template v-if="overallBuyRate !== null">；整体支付转化率（后端快照口径）：{{ formatPercent(overallBuyRate) }}</template>
       </div>
-      <ChartState :option="funnelOpt" :state="state" :error="error" :height="300"
+      <ChartState :option="funnelOpt" :state="funnelChartState" :error="error" :height="300"
                   empty-text="当前快照没有漏斗阶段数据" />
     </div>
 
     <div class="chart-box">
       <div class="chart-title">活跃趋势（活跃用户 / 行为量）</div>
-      <ChartState :option="trendOpt" :state="state" :error="error" :height="280"
+      <ChartState :option="trendOpt" :state="trendChartState" :error="error" :height="280"
                   empty-text="所选日期范围内没有活跃趋势数据" />
     </div>
 
@@ -60,6 +60,7 @@ import { formatInteger, formatPercent } from '../utils/number'
 import { readEnvelope } from '../utils/envelope'
 import { localIsoDayOffset } from '../utils/localDate.js'
 import { activeTrendOption, funnelOption } from '../utils/chartOptions'
+import { chartStateForRows } from '../utils/chartState'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
@@ -111,12 +112,14 @@ const analysis = useAnalysis({
   rowKeys: ['stages', 'activeTrend'],
   defaults: { stages: [], activeTrend: [], overallBuyRate: null, windowNote: '' }
 })
-const { data, context, state, error, loading, exportable, exportContext } = analysis
+const { data, context, state, requestStatus, error, loading, exportable, exportContext } = analysis
 
 const stages = computed(() => (Array.isArray(data.value.stages) ? data.value.stages : []))
 const overallBuyRate = computed(() => (data.value.overallBuyRate === null || data.value.overallBuyRate === undefined ? null : data.value.overallBuyRate))
 const windowNote = computed(() => data.value.windowNote || '未提供观察窗口说明')
 const funnelOpt = computed(() => funnelOption(stages.value))
+const funnelChartState = computed(() => chartStateForRows(requestStatus.value, stages.value))
+const trendChartState = computed(() => chartStateForRows(requestStatus.value, data.value.activeTrend))
 const trendOpt = computed(() => activeTrendOption(data.value.activeTrend))
 const funnelExportable = computed(() => exportable.value && stages.value.length > 0)
 

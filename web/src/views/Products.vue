@@ -17,13 +17,13 @@
 
     <div class="chart-box">
       <div class="chart-title">商品热度排行（当前页）</div>
-      <ChartState :option="heatOpt" :state="state" :error="error" :height="Math.min(420, 100 + hotRows.length * 34)"
+      <ChartState :option="heatOpt" :state="hotChartState" :error="error" :height="Math.min(420, 100 + hotRows.length * 34)"
                   empty-text="当前分页窗口没有商品热度数据" />
     </div>
 
     <div class="chart-box">
       <div class="chart-title">商品转化（浏览用户 / 支付用户）</div>
-      <ChartState :option="convOpt" :state="state" :error="error" :height="300"
+      <ChartState :option="convOpt" :state="conversionChartState" :error="error" :height="300"
                   empty-text="当前快照没有商品转化数据" />
     </div>
 
@@ -73,7 +73,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
-import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
+import { chartStateForRows, ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent, isNumeric } from '../utils/number'
 import { productHeatOption, productConversionOption } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
@@ -90,10 +90,12 @@ const analysis = useAnalysis({
   rowKeys: ENDPOINT_ROW_KEYS.products,
   defaults: { hot: [], conversion: [], topN: null, page: 1, size: 10, total: null, hasMore: false }
 })
-const { data, context, state, error, loading, exportable, exportContext } = analysis
+const { data, context, state, requestStatus, error, loading, exportable, exportContext } = analysis
 
 const hotRows = computed(() => (Array.isArray(data.value.hot) ? data.value.hot : []))
 const conversionRows = computed(() => (Array.isArray(data.value.conversion) ? data.value.conversion : []))
+const hotChartState = computed(() => chartStateForRows(requestStatus.value, hotRows.value))
+const conversionChartState = computed(() => chartStateForRows(requestStatus.value, conversionRows.value))
 const responsePage = computed(() => (isNumeric(data.value.page) ? Number(data.value.page) : page.value))
 const responseSize = computed(() => (isNumeric(data.value.size) ? Number(data.value.size) : pageSize.value))
 const total = computed(() => (isNumeric(data.value.total) ? Number(data.value.total) : null))

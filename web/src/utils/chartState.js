@@ -35,6 +35,11 @@ export function chartState(requestStatus, pointCount) {
   return hasData ? 'ready' : 'empty'
 }
 
+/** 按单个图表自己的行集派生状态，避免同页其它模块有数据时隐藏本图空态。 */
+export function chartStateForRows(requestStatus, rows) {
+  return chartState(requestStatus, Array.isArray(rows) ? rows.length : 0)
+}
+
 /** 是否允许导出：加载中/失败/无数据/旧数据在屏时一律禁止，避免导出错版数据 */
 export function canExport(state) {
   return state === 'ready'

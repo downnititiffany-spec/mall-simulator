@@ -14,7 +14,7 @@
 
     <div class="chart-box">
       <div class="chart-title">RFM 八类用户分布（优先使用后端 rfmMatrix，缺失类目补 0 由后端口径负责）</div>
-      <ChartState :option="matrixOpt" :state="state" :error="error" :height="300"
+      <ChartState :option="matrixOpt" :state="matrixChartState" :error="error" :height="300"
                   empty-text="当前快照没有 RFM 分层数据" />
     </div>
 
@@ -73,7 +73,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
-import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
+import { chartStateForRows, ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber } from '../utils/number'
 import { readEnvelope } from '../utils/envelope'
 import { rfmMatrixOption } from '../utils/chartOptions'
@@ -149,7 +149,7 @@ const analysis = useAnalysis({
     lifecycle: [], preference: []
   }
 })
-const { data, context, state, error, loading, exportable, exportContext } = analysis
+const { data, context, state, requestStatus, error, loading, exportable, exportContext } = analysis
 
 const ruleVersion = computed(() => data.value.ruleVersion || (context.value && context.value.definitionVersion) || null)
 // 保持 S3-76 已验收的具名观察期派生：显示和 CSV 共用同一后端原值所有者。
@@ -179,6 +179,7 @@ const preference = computed(() => (Array.isArray(data.value.preference) ? data.v
 const matrixOpt = computed(() =>
   rfmMatrixOption(segmentRows.value, segmentRows.value.map((s) => s.valueGroup), COLORS)
 )
+const matrixChartState = computed(() => chartStateForRows(requestStatus.value, segmentRows.value))
 const segmentExportable = computed(() => exportable.value && segmentRows.value.length > 0)
 
 const load = () => {

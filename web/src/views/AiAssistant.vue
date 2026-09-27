@@ -161,7 +161,7 @@
       <div class="chart-title">推荐问题</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         <button v-for="q in recommended" :key="q" @click="askPreset(q)" :disabled="busy || draftBusy"
-                style="padding:6px 12px;border:1px solid #e5e7eb;background:#fff;border-radius:16px;font-size:13px;cursor:pointer">
+                style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:16px;font-size:13px;cursor:pointer">
           {{ q }}
         </button>
       </div>
@@ -172,7 +172,7 @@
       <div v-if="historyError" class="banner banner-error">历史加载失败：{{ historyError }}</div>
       <div v-if="history.length" style="display:flex;flex-direction:column;gap:6px">
         <button v-for="h in history" :key="h.id" @click="question = h.question" :disabled="busy || draftBusy"
-                style="text-align:left;padding:6px 10px;border:1px solid var(--gray-100);background:#fafafa;border-radius:6px;font-size:13px;cursor:pointer">
+                style="text-align:left;padding:6px 10px;border:1px solid var(--gray-100);border-radius:6px;font-size:13px;cursor:pointer">
           <span style="color:var(--gray-800)">{{ h.question }}</span>
           <span style="float:right;color:var(--gray-400);font-size:12px">
             {{ h.status }} · {{ h.rowsReturned ?? 0 }} 行 · {{ formatDateTime(h.createdAt) }}

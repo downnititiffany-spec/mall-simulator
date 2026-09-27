@@ -46,14 +46,14 @@
 
       <div class="chart-box">
         <div class="chart-title">销售趋势（销售额 / 净销售额 / 订单数 / 买家数）</div>
-        <ChartState :option="salesOption" :state="state" :error="error" :height="280"
+        <ChartState :option="salesOption" :state="salesTrendState" :error="error" :height="280"
                     empty-text="所选日期范围内没有销售趋势数据" />
         <div style="font-size:12px;color:#94A3B8;margin-top:6px">{{ NET_SALE_NOTE }}</div>
       </div>
 
       <div class="chart-box">
         <div class="chart-title">活跃趋势（活跃用户 / 行为量）</div>
-        <ChartState :option="activeOption" :state="state" :error="error" :height="280"
+        <ChartState :option="activeOption" :state="activeTrendState" :error="error" :height="280"
                     empty-text="所选日期范围内没有活跃趋势数据" />
       </div>
 
@@ -91,6 +91,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
+import { chartStateForRows } from '../utils/chartState'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
 import { warningText } from '../utils/envelope'
@@ -119,7 +120,7 @@ const analysis = useAnalysis({
   rowKeys: ENDPOINT_ROW_KEYS.overview,
   defaults: { metrics: [], salesTrend: [], activeTrend: [], quality: {}, metricDictionary: [] }
 })
-const { data, context, state, error, loading, empty, failed, exportable, exportContext } = analysis
+const { data, context, state, requestStatus, error, loading, empty, failed, exportable, exportContext } = analysis
 
 // 指标卡顺序与展示名：后端未返回的指标不显示，不在前端造数
 const CARD_META = [
@@ -193,6 +194,8 @@ const windowNote = computed(() => (cards.value.some((c) => c.periodText) ? WINDO
 const staleness = computed(() => stalenessNotice(data.value.metrics, localIsoDayOffset(0)))
 
 const dictionary = computed(() => (Array.isArray(data.value.metricDictionary) ? data.value.metricDictionary : []))
+const salesTrendState = computed(() => chartStateForRows(requestStatus.value, data.value.salesTrend))
+const activeTrendState = computed(() => chartStateForRows(requestStatus.value, data.value.activeTrend))
 const salesOption = computed(() => salesTrendOption(data.value.salesTrend))
 const activeOption = computed(() => activeTrendOption(data.value.activeTrend))
 const warningSummary = computed(() =>

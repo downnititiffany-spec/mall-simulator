@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import {
   REQUEST,
   chartState,
+  chartStateForRows,
   canExport,
   stateText,
   rowCount,
@@ -35,6 +36,14 @@ test('请求成功且有数据 -> ready', () => {
   assert.equal(chartState(REQUEST.READY, 1), 'ready')
   assert.equal(chartState(REQUEST.READY, 100), 'ready')
   assert.equal(stateText('ready'), '')
+})
+
+test('单个图表按自己的行集判四态，不受同页其它数据集影响', () => {
+  assert.equal(chartStateForRows(REQUEST.READY, []), 'empty')
+  assert.equal(chartStateForRows(REQUEST.READY, [{ dt: '2026-09-01' }]), 'ready')
+  assert.equal(chartStateForRows(REQUEST.LOADING, [{ dt: '2026-09-01' }]), 'stale')
+  assert.equal(chartStateForRows(REQUEST.ERROR, [{ dt: '2026-09-01' }]), 'error')
+  assert.equal(chartStateForRows(REQUEST.READY, null), 'empty')
 })
 
 test('只有 ready 允许导出：loading/empty/error/stale 一律禁止', () => {
