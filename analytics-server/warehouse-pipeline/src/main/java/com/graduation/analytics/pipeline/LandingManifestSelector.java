@@ -1,13 +1,16 @@
 package com.graduation.analytics.pipeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.runtime.storage.LandingStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -98,6 +101,32 @@ public class LandingManifestSelector {
         return new Selection(s.best.get(), s.consumedCount.get());
     }
 
+    /**
+     * 存储抽象变体（N31-02 腿①，D-055）：landing 根在 HDFS（profile.landing_uri=hdfs://）时
+     * 没有本地 Path 可给，清单扫描与钉住读取一律经 {@link LandingStorage}。选择语义与
+     * {@link #select(Path, Long, long, Set)} 完全一致（同源归属、READY 非空、FIFO、
+     * 钉住优先、已消费留痕），仅数据面不同。
+     */
+    public Selection select(LandingStorage storage, Long pinnedBatchId, long sourceId, Set<Long> consumedBatchIds) {
+        ScanState s = scanOfSource(storage, sourceId, consumedBatchIds);
+        if (pinnedBatchId != null) {
+            Map<String, Object> pinned = read(storage, MANIFESTS_DIR + "/" + pinnedBatchId + ".json");
+            if (pinned != null && belongsTo(pinned, sourceId)) {
+                // 钉住批次胜过 FIFO 扫描——即使它已消费：普通重试的 no-op 判定与
+                // 显式重算的再发布判定都需要"拿到这条清单"才能继续（D-049d/e）。
+                log.info("pipeline: 复用本 run 原批次 batchId={}（重试/恢复/重算不切换输入，源 {}）",
+                        pinnedBatchId, sourceId);
+                return new Selection(pinned, s.consumedCount.get());
+            }
+            if (pinned != null) {
+                log.warn("pipeline: 钉住批次 {} 不属于本次运行的源 {}（清单 {}={}）→ 丢弃该清单，"
+                                + "改用本源可归属批次；绝不把他源字节当作本轮输入",
+                        pinnedBatchId, sourceId, KEY_SOURCE_ID, pinned.get(KEY_SOURCE_ID));
+            }
+        }
+        return new Selection(s.best.get(), s.consumedCount.get());
+    }
+
     /** 一次扫描的中间结果：最老未消费候选 + 已消费计数（含他源/不可归属的诊断计数） */
     private record ScanState(AtomicReference<Map<String, Object>> best,
                              AtomicLong bestBatchId,
@@ -107,14 +136,18 @@ public class LandingManifestSelector {
                              AtomicLong scanned) {
     }
 
+    private static ScanState newScanState() {
+        return new ScanState(new AtomicReference<>(null), new AtomicLong(Long.MAX_VALUE),
+                new AtomicLong(0), new AtomicLong(0), new AtomicLong(0), new AtomicLong(0));
+    }
+
     /**
      * 扫描 {@code manifests/*.json}：只有本源的 READY 非空批次参与比较，
      * 已消费的计入 {@code consumedCount} 不作候选，未消费取 batchId **最小**者（FIFO）。
      */
     private ScanState scanOfSource(Path landingRoot, long sourceId, Set<Long> consumedBatchIds) {
         Path manifestsDir = landingRoot.resolve(MANIFESTS_DIR);
-        ScanState s = new ScanState(new AtomicReference<>(null), new AtomicLong(Long.MAX_VALUE),
-                new AtomicLong(0), new AtomicLong(0), new AtomicLong(0), new AtomicLong(0));
+        ScanState s = newScanState();
         if (!Files.isDirectory(manifestsDir)) {
             return s;
         }
@@ -124,43 +157,79 @@ public class LandingManifestSelector {
                 if (manifest == null) {
                     continue; // 读取失败已在 read 内告警
                 }
-                s.scanned.incrementAndGet();
-                Long manifestSourceId = manifestSourceId(manifest);
-                if (manifestSourceId == null) {
-                    s.unattributable.incrementAndGet();
-                    continue;
-                }
-                if (manifestSourceId != sourceId) {
-                    s.foreignSource.incrementAndGet();
-                    continue;
-                }
-                if (!STATUS_READY.equals(manifest.get("status"))) {
-                    continue;
-                }
-                // R6-13 修正：老批次清单里计数是字符串（实测 2.json/4.json/5.json 报
-                // "class java.lang.String cannot be cast to class java.lang.Number"），
-                // 按数字/字符串双兼容解析，避免整条清单被当作损坏而跳过。
-                long accepted = longOf(manifest.get("acceptedRecords"));
-                long quarantined = longOf(manifest.get("quarantinedRecords"));
-                if (accepted + quarantined <= 0) {
-                    continue; // 空批次：无新数据，不阻塞也不作为输入（§9.3）
-                }
-                long batchId = longOf(manifest.get("batchId"));
-                if (consumedBatchIds.contains(batchId)) {
-                    // M3（D-049b）：已消费批次留痕计数、不作候选——重复发布同一批次
-                    // 违反「无新输入不发布」，但计数让调用方能区分"没清单"与"全吃完了"。
-                    s.consumedCount.incrementAndGet();
-                    continue;
-                }
-                if (s.best.get() == null || batchId < s.bestBatchId.get()) {
-                    s.bestBatchId.set(batchId);
-                    s.best.set(manifest);
-                }
+                consider(s, manifest, sourceId, consumedBatchIds);
             }
         } catch (IOException e) {
             log.warn("manifests 扫描失败: {}", e.getMessage());
             return s;
         }
+        return warnIfNothingAttributable(s, sourceId);
+    }
+
+    /**
+     * 存储抽象变体（N31-02 腿①，D-055）：同一扫描语义，数据面经 {@link LandingStorage}。
+     * 与本地版的唯一差异是清单如何读出来——{@code list} 对缺失目录返回空表、对存储 I/O
+     * 故障必须抛出（§8.2 契约），这里把故障降级为「无清单」告警，不炸整次选择。
+     */
+    private ScanState scanOfSource(LandingStorage storage, long sourceId, Set<Long> consumedBatchIds) {
+        ScanState s = newScanState();
+        List<String> names;
+        try {
+            names = storage.list(MANIFESTS_DIR);
+        } catch (RuntimeException e) {
+            log.warn("manifests 扫描失败: {}", e.getMessage());
+            return s;
+        }
+        for (String name : names) {
+            if (!name.endsWith(".json")) {
+                continue;
+            }
+            Map<String, Object> manifest = read(storage, MANIFESTS_DIR + "/" + name);
+            if (manifest == null) {
+                continue; // 读取失败已在 read 内告警
+            }
+            consider(s, manifest, sourceId, consumedBatchIds);
+        }
+        return warnIfNothingAttributable(s, sourceId);
+    }
+
+    /** 单条清单参与比较的共享判定（本地/存储两版唯一差异只在清单如何读出来） */
+    private void consider(ScanState s, Map<String, Object> manifest, long sourceId, Set<Long> consumedBatchIds) {
+        s.scanned.incrementAndGet();
+        Long manifestSourceId = manifestSourceId(manifest);
+        if (manifestSourceId == null) {
+            s.unattributable.incrementAndGet();
+            return;
+        }
+        if (manifestSourceId != sourceId) {
+            s.foreignSource.incrementAndGet();
+            return;
+        }
+        if (!STATUS_READY.equals(manifest.get("status"))) {
+            return;
+        }
+        // R6-13 修正：老批次清单里计数是字符串（实测 2.json/4.json/5.json 报
+        // "class java.lang.String cannot be cast to class java.lang.Number"），
+        // 按数字/字符串双兼容解析，避免整条清单被当作损坏而跳过。
+        long accepted = longOf(manifest.get("acceptedRecords"));
+        long quarantined = longOf(manifest.get("quarantinedRecords"));
+        if (accepted + quarantined <= 0) {
+            return; // 空批次：无新数据，不阻塞也不作为输入（§9.3）
+        }
+        long batchId = longOf(manifest.get("batchId"));
+        if (consumedBatchIds.contains(batchId)) {
+            // M3（D-049b）：已消费批次留痕计数、不作候选——重复发布同一批次
+            // 违反「无新输入不发布」，但计数让调用方能区分"没清单"与"全吃完了"。
+            s.consumedCount.incrementAndGet();
+            return;
+        }
+        if (s.best.get() == null || batchId < s.bestBatchId.get()) {
+            s.bestBatchId.set(batchId);
+            s.best.set(manifest);
+        }
+    }
+
+    private ScanState warnIfNothingAttributable(ScanState s, long sourceId) {
         if (s.best.get() == null && (s.foreignSource.get() > 0 || s.unattributable.get() > 0)) {
             // 这种情况最需要留痕：库里的清单不是没有，而是**都不能归到本源名下**。
             // 静默返回 null 会让运维只看到 RUN_EMPTY_LANDING，误以为"没采集"。
@@ -201,6 +270,23 @@ public class LandingManifestSelector {
                     });
         } catch (Exception e) {
             log.warn("manifest 解析失败 {}: {}", file.getFileName(), e.getMessage());
+            return null;
+        }
+    }
+
+    /** 存储变体（D-055）：同一读取语义——缺失返回 null，坏内容/读取失败告警后返回 null（不炸整次选择） */
+    private Map<String, Object> read(LandingStorage storage, String relativePath) {
+        try {
+            if (!storage.exists(relativePath)) {
+                return null;
+            }
+            try (InputStream in = storage.open(relativePath)) {
+                return objectMapper.readValue(new String(in.readAllBytes(), StandardCharsets.UTF_8),
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                        });
+            }
+        } catch (Exception e) {
+            log.warn("manifest 解析失败 {}: {}", relativePath, e.getMessage());
             return null;
         }
     }

@@ -1,5 +1,12 @@
 # PROJECT_STATUS
 
+### 2026-09-27 N31-02 腿①执行切片：run5 崩溃根因链修复（平台 hdfs:// landingUri 拒绝，D-055）＋ driver 三修——run6 待跑
+
+- **已证 PASS（run5 内）**：A1/A2 受控输入与 oracle 钉档（5/5 全等）；A3 Flume→HDFS 字节对账全等（34192 B，99 行，glob `events.*` 修复实证）。
+- **run5 崩溃根因链（已修，D-055）**：症状 = driver `Get-FailedStage` 对零行 SQL 输出 `[regex]::Match($null,…)` 抛 `Value cannot be null` 退出 1（零 stage 行本身是真实状态）；真因 = `PipelineService` 执行入口对 landingUri 无条件 `LandingUri.resolve`，对 hdfs:// profile 抛 `PlatformBizException 暂不支持的 landingUri 协议：hdfs://`，run 调度前 internal error。修复 = `LandingStorageResolver.forProfile` 分派：LandingUri 仍是本地路径唯一所有者（V2.1 §5.4，local 行为字节不变）；hdfs profile 经 LandingStorage 抽象读 manifest/钉住/accepted（`LandingManifestSelector` 存储重载与 local 语义逐条一致：同源归属/READY 非空/FIFO/钉住优先/消费留痕，I/O 故障按 §8.2 降级不炸选择）；accepted 事件行语义收口共享 `acceptEventLine`（坏行跳过/业务日切片/订单总额照收）；odsExtra `landingDir` 经 `storage.uri()` 给 Spark 绝对 `hdfs://` URI（spark-jobs 零改动，`--k=v` 透传）；LOAD_ODS 预检两后端统一 `RUN_LOAD_FAILED`。
+- **测试与构建**：`LandingManifestSelectorTest` 12→17（+MemLandingStorage 假存储 +4 存储语义等价用例）17/17、`PipelineServiceTest` 48/48 零回归，warehouse-pipeline BUILD SUCCESS；platform-app fat jar 重打包成功（首次失败系 run5 残留 JVM PID 145908 锁 jar，经 tasklist 核验 java.exe 后终止，18080 stub LLM 与 HDFS 未动）。driver 层三修登记：`-Fresh` 删 HDFS landing 后 mkdir 重建、A3 glob `events-*`→`events.*`、`Get-FailedStage` 零行守卫（target/ 内驱动，不入库）。
+- **下一步** = 腿① run6 全链重跑（driver `-Confirm -Fresh` 后台），随后腿②。
+
 ### 2026-09-27 N31-02 开工登记（总控开工授权，D-054）：四腿有序推进——连续小链 / 同源第二批·重放·失败保旧 / 分类地区契约冻结 / 共享 HMS 单列
 
 - **裁定要点**（原文逐字备份 `docs/decisions/rulings/MASTER-RULING-20260927-N3102-START.md`）：**批准启动 N31-02**，按 D-053 所列范围执行；工作批次开工授权**不是发布 V3.1**，正式权威仍为 V3.0；「不必为每个普通技术步骤再等一次确认」。①连续小链（受控输入→Flume→HDFS→平台摄取→Spark 分层→ADS→隔离 3307 ACTIVE→API→页面一次对账；血缘以 sourceId/batchId/runId/snapshotId 串联，不强行共用字面 runId；**独立 oracle 发布前确定**）；②同源第二批+重放+失败保旧（复用 G31-11/12 机制、只跑受影响定向测试、不拼接不同运行腿）；③分类/地区专题**先冻结实现契约**（粒度/来源字段/unknown 归属/ADS 与 MySQL 表/发布映射/API/页面/oracle；**新增表或改口径前先交设计差异供总控审定**；切片停在那里不阻塞①②）；④共享 HMS 单列判据（WSL 单节点尝试 Spark+Hive 共用 Metastore；资源不足如实记未通过，不用嵌入式 Derby 冒称，不因此否定连续链）。

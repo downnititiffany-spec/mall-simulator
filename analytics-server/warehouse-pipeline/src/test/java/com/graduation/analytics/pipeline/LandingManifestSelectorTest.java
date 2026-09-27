@@ -1,15 +1,23 @@
 package com.graduation.analytics.pipeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.runtime.storage.LandingStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -224,6 +232,78 @@ class LandingManifestSelectorTest {
         assertThat(select(landing, null, SOURCE_A).manifest()).containsEntry("batchId", 1);
     }
 
+    // ── 存储抽象变体（N31-02 腿①，D-055）：hdfs profile 走 LandingStorage，语义必须逐条不变 ──
+
+    @Test
+    @DisplayName("存储版（D-055）：FIFO 取最老未消费 + 已消费跳过——选择语义与本地版一致")
+    void storageSelectsOldestUnconsumedAndSkipsConsumed() throws IOException {
+        MemLandingStorage storage = new MemLandingStorage();
+        write(storage, 1, SOURCE_A, 3, "READY");
+        write(storage, 2, SOURCE_A, 5, "READY");
+
+        assertThat(select(storage, null, SOURCE_A).manifest())
+                .as("hdfs profile 没有本地 Path 可给，选择语义必须与本地版完全一致（FIFO）")
+                .containsEntry("batchId", 1);
+
+        assertThat(select(storage, null, SOURCE_A, Set.of(1L)).manifest())
+                .as("已消费批次跳过，取下一个未消费批次")
+                .containsEntry("batchId", 2);
+    }
+
+    @Test
+    @DisplayName("存储版（D-055）：全部 READY 已消费 ⇒ null + count>0（M3 no-op 判据不因后端而异）")
+    void storageAllConsumedYieldsNullWithCount() throws IOException {
+        MemLandingStorage storage = new MemLandingStorage();
+        write(storage, 1, SOURCE_A, 3, "READY");
+        write(storage, 2, SOURCE_A, 5, "READY");
+
+        LandingManifestSelector.Selection selection = select(storage, null, SOURCE_A, Set.of(1L, 2L));
+        assertThat(selection.manifest())
+                .as("没有未消费批次 ⇒ 无新输入（是否 no-op 由调用方判定）")
+                .isNull();
+        assertThat(selection.readyButConsumedCount())
+                .as("「有清单但全吃完了」必须与「没清单」（count=0）可区分")
+                .isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("存储版（D-055）：钉住语义与本地版一致——本源已消费批次照常返回，他源钉住被丢弃")
+    void storagePinnedSemanticsMatchLocal() throws IOException {
+        MemLandingStorage storage = new MemLandingStorage();
+        write(storage, 1, SOURCE_A, 3, "READY");
+        write(storage, 2, SOURCE_A, 5, "READY");
+        write(storage, 9, SOURCE_B, 6, "READY");
+
+        LandingManifestSelector.Selection pinnedConsumed = select(storage, 1L, SOURCE_A, Set.of(1L));
+        assertThat(pinnedConsumed.manifest())
+                .as("D-049d：钉住即使已消费也返回（no-op/重算由调用方按台账判定）")
+                .containsEntry("batchId", 1);
+        assertThat(pinnedConsumed.readyButConsumedCount()).isEqualTo(1);
+
+        assertThat(select(storage, 9L, SOURCE_A).manifest())
+                .as("钉住他源批次 → 丢弃并回落本源扫描（绝不返回他源清单）")
+                .containsEntry("batchId", 1);
+    }
+
+    @Test
+    @DisplayName("存储版（D-055）：manifests 缺失=空表、损坏清单跳过——fail-closed 语义与本地版一致")
+    void storageMissingDirAndBrokenManifestStayFailClosed() throws IOException {
+        MemLandingStorage empty = new MemLandingStorage();
+        assertThat(select(empty, null, SOURCE_A).manifest())
+                .as("无 manifests 目录：list 契约=空表 → null（交 RUN_EMPTY_LANDING）")
+                .isNull();
+        assertThat(select(empty, 42L, SOURCE_A).manifest())
+                .as("钉住清单不存在同样返回 null（exists 契约）")
+                .isNull();
+
+        MemLandingStorage broken = new MemLandingStorage();
+        writeRaw(broken, "manifests/6.json", "{ not json");
+        write(broken, 1, SOURCE_A, 3, "READY");
+        assertThat(select(broken, null, SOURCE_A).manifest())
+                .as("坏 JSON 只跳过该文件，其余照常比较")
+                .containsEntry("batchId", 1);
+    }
+
     // ── 辅助 ────────────────────────────────────────────────────────────────
 
     /** 无消费事实的选择（等价于 V33 之前的行为） */
@@ -262,5 +342,169 @@ class LandingManifestSelectorTest {
 
     private static Path manifestsDir(Path landing) throws IOException {
         return Files.createDirectories(landing.resolve("manifests"));
+    }
+
+    // ── 存储版辅助 ──────────────────────────────────────────────────────────
+
+    /** 无消费事实的存储版选择 */
+    private LandingManifestSelector.Selection select(LandingStorage storage, Long pinned, long sourceId) {
+        return select(storage, pinned, sourceId, Set.of());
+    }
+
+    private LandingManifestSelector.Selection select(LandingStorage storage, Long pinned, long sourceId,
+                                                     Set<Long> consumedBatchIds) {
+        return selector.select(storage, pinned, sourceId, consumedBatchIds);
+    }
+
+    private void write(LandingStorage storage, int batchId, long sourceId,
+                       long acceptedRecords, String status) throws IOException {
+        Map<String, Object> m = manifest(batchId, acceptedRecords, status);
+        m.put("sourceId", sourceId);
+        writeRaw(storage, "manifests/" + batchId + ".json", mapper.writeValueAsString(m));
+    }
+
+    private static void writeRaw(LandingStorage storage, String relativePath, String content) throws IOException {
+        try (OutputStream out = storage.createOrAppend(relativePath)) {
+            out.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    /**
+     * 内存假存储：满足 {@link LandingStorage} 全部抽象方法的语义契约（缺失目录 list=空表、
+     * open 缺失即抛、stat 缺失返回 null），只用于验证选择器的存储路径与本地 Path 路径同语义，
+     * 不冒充任何真实后端的字节对账。
+     */
+    private static final class MemLandingStorage implements LandingStorage {
+
+        private static final String ROOT = "mem://landing/";
+        private final Map<String, byte[]> files = new LinkedHashMap<>();
+        private final Set<String> dirs = new HashSet<>();
+
+        private static String norm(String relativePath) {
+            return relativePath == null || relativePath.isBlank() ? "" : relativePath.replace('\\', '/');
+        }
+
+        @Override
+        public String type() {
+            return "mem";
+        }
+
+        @Override
+        public String namespace() {
+            return ROOT;
+        }
+
+        @Override
+        public boolean exists(String relativePath) {
+            String p = norm(relativePath);
+            return files.containsKey(p) || dirs.contains(p);
+        }
+
+        @Override
+        public List<String> list(String relativeDir) {
+            String dir = norm(relativeDir);
+            String prefix = dir.isEmpty() ? "" : dir + "/";
+            List<String> names = new ArrayList<>();
+            for (String p : files.keySet()) {
+                if (p.startsWith(prefix) && !p.substring(prefix.length()).contains("/")) {
+                    names.add(p.substring(prefix.length()));
+                }
+            }
+            for (String d : dirs) {
+                if (d.startsWith(prefix) && !d.substring(prefix.length()).contains("/")) {
+                    names.add(d.substring(prefix.length()));
+                }
+            }
+            return names;
+        }
+
+        @Override
+        public InputStream open(String relativePath) {
+            byte[] bytes = files.get(norm(relativePath));
+            if (bytes == null) {
+                throw new IllegalStateException("打开 landing 文件失败: " + relativePath);
+            }
+            return new ByteArrayInputStream(bytes);
+        }
+
+        @Override
+        public SeekableInput openSeekable(String relativePath) {
+            throw new UnsupportedOperationException("mem fake 不支持可定位读取");
+        }
+
+        @Override
+        public FileStat stat(String relativePath) {
+            String p = norm(relativePath);
+            byte[] bytes = files.get(p);
+            if (bytes != null) {
+                return new FileStat(bytes.length, 0L, false);
+            }
+            return dirs.contains(p) ? new FileStat(0L, 0L, true) : null;
+        }
+
+        @Override
+        public String fileIdentity(String relativePath) {
+            byte[] bytes = files.get(norm(relativePath));
+            if (bytes == null) {
+                throw new IllegalStateException("读取 landing 文件身份失败: " + relativePath);
+            }
+            return "mem:" + bytes.length;
+        }
+
+        @Override
+        public String checkpointKey(String relativePath) {
+            return ROOT + norm(relativePath);
+        }
+
+        @Override
+        public void createDirectories(String relativeDir) {
+            dirs.add(norm(relativeDir));
+        }
+
+        @Override
+        public OutputStream createOrAppend(String relativePath) {
+            String p = norm(relativePath);
+            return new ByteArrayOutputStream() {
+                @Override
+                public void close() {
+                    byte[] old = files.get(p);
+                    byte[] merged = new byte[(old == null ? 0 : old.length) + count];
+                    if (old != null) {
+                        System.arraycopy(old, 0, merged, 0, old.length);
+                    }
+                    System.arraycopy(buf, 0, merged, old == null ? 0 : old.length, count);
+                    files.put(p, merged);
+                }
+            };
+        }
+
+        @Override
+        public boolean move(String sourceRelativePath, String targetRelativePath) {
+            String src = norm(sourceRelativePath);
+            String dst = norm(targetRelativePath);
+            byte[] bytes = files.get(src);
+            if (bytes == null || files.containsKey(dst)) {
+                return false;
+            }
+            files.remove(src);
+            files.put(dst, bytes);
+            return true;
+        }
+
+        @Override
+        public boolean deleteIfExists(String relativePath) {
+            String p = norm(relativePath);
+            return files.remove(p) != null || dirs.remove(p);
+        }
+
+        @Override
+        public String uri(String relativePath) {
+            return ROOT + norm(relativePath);
+        }
+
+        @Override
+        public HealthResult healthCheck() {
+            return new HealthResult(true, "mem ok");
+        }
     }
 }

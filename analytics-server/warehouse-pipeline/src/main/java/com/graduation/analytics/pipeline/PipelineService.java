@@ -30,12 +30,17 @@ import com.graduation.analytics.pipeline.spark.SparkStageExecutorFactory;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.runtime.storage.LandingStorage;
+import com.graduation.analytics.runtime.storage.LandingStorageResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -481,7 +486,12 @@ public class PipelineService {
             // S2-04/G31-03.3：此后数仓命名空间、清单选择、Spark 参数和发布请求
             // 全部使用已校验的 runSourceId；不能再从可变 profile 中重新决定本次 run 属于哪个源。
             SparkStageExecutor executor = stageExecutorFactory.create(snapshot);
-            Path landingRoot = LandingUri.resolve(profile.getLandingUri());
+            // N31-02 腿①（D-055）：landing 根不再无条件本地解析——hdfs:// profile 经
+            // LandingStorage 抽象读清单与 accepted（与 IngestionService 的 local-only 守卫同范式）。
+            // LandingUri 仍是本地路径的唯一所有者（V2.1 §5.4），仅 local 落地才解析出 java.nio Path。
+            LandingStorage landingStorage = LandingStorageResolver.forProfile(profile);
+            boolean localLanding = "local".equals(landingStorage.type());
+            Path landingRoot = localLanding ? LandingUri.resolve(profile.getLandingUri()) : null;
 
             // §7.3.1 line 520：**一次 run 冻结完整规则版本与指纹**。
             // 本 run 内所有严重度判定（写侧 QualityChecker、读侧 DataQualityGate、证据留痕）
@@ -515,7 +525,7 @@ public class PipelineService {
             // run 则带着首跑写入值——它是「请求的意图」，后续选择器回落**不得改写**：
             // 先写选中值再比对，会把「选中 != 目标」退化成「B==B」（旁路，见下）。
             final Long requestedBatchId = run.getInputBatchId();
-            InputSelection input = manifestForRun(landingRoot, run, runSourceId);
+            InputSelection input = manifestForRun(landingStorage, landingRoot, run, runSourceId);
             LandingManifestSelector.Selection selection = input.selection();
             Map<String, Object> manifest = selection.manifest();
             // S3-36：批次级溯源落库。pipeline_run.input_batch_id 由 V7 建列、实体也有字段，
@@ -595,16 +605,31 @@ public class PipelineService {
                 runMapper.updateById(run);
             }
             // §9.1：ODS 只能读取 accepted（好的批次数据）；§5.3.3 只装载业务日事件
-            Path acceptedDir = manifest == null ? null
-                    : landingRoot.resolve(String.valueOf(manifest.get("acceptedUri")));
+            // D-055：acceptedUri 在清单里对两种后端都写相对值（accepted/{batchId}，采集侧唯一写点）。
+            // 本地 profile 解析成 java.nio Path（行为不变）；hdfs profile 保留相对路径，
+            // 字节读取一律经 LandingStorage——绝不把 hdfs:// 字符串塞进 Path.resolve。
+            Path acceptedDir = null;
+            String acceptedRelativeDir = null;
+            if (manifest != null) {
+                String acceptedUri = String.valueOf(manifest.get("acceptedUri"));
+                if (localLanding) {
+                    acceptedDir = landingRoot.resolve(acceptedUri);
+                } else {
+                    acceptedRelativeDir = acceptedUri;
+                }
+            }
             String datePrefix = businessDate.substring(0, 4) + "-" + businessDate.substring(4, 6)
                     + "-" + businessDate.substring(6, 8);
             List<EventEnvelope> events = new ArrayList<>();
             // DEF-04：订单总额索引覆盖**整批**（不受业务日切片限制），供金额对账使用。
             // 电商订单跨日支付是常态（T 日下单、T+1 日支付），只用切片会对真实数据误判对账失败。
             Map<String, BigDecimal> batchOrderTotals = new HashMap<>();
-            if (acceptedDir != null && Files.isDirectory(acceptedDir)) {
-                readAcceptedEvents(acceptedDir, datePrefix, events, batchOrderTotals);
+            if (localLanding) {
+                if (acceptedDir != null && Files.isDirectory(acceptedDir)) {
+                    readAcceptedEvents(acceptedDir, datePrefix, events, batchOrderTotals);
+                }
+            } else if (isLandingDirectory(landingStorage, acceptedRelativeDir)) {
+                readAcceptedEvents(landingStorage, acceptedRelativeDir, datePrefix, events, batchOrderTotals);
             }
             // R6-11：本地 Java **不再**计算任何 ADS 指标（删除 MetricCalculator / local-calculator 路径）。
             // events 仅服务于两处非计算职责：LOAD_ODS 空数据预检（快速失败，避免白跑 Spark）
@@ -677,6 +702,7 @@ public class PipelineService {
             // 否则给出稳定错误码（RUN_EMPTY_DATA），且失败必须留在阶段记录上（§23.2/§15.3 失败留痕）
             final Map<String, Object> manifestRef = manifest;
             final Path acceptedDirRef = acceptedDir;
+            final String acceptedRelativeDirRef = acceptedRelativeDir;
             final List<EventEnvelope> eventsRef = events;
 
             // 每次提交都带显式 warehouse/metastore 配置（LOCAL 嵌入式 Hive 不能按 spark-submit CWD 漂移）
@@ -693,7 +719,11 @@ public class PipelineService {
 
             // ── LOAD_ODS（§9.1）：真实 spark-jobs odl 装载四主题 ──────────
             Map<String, String> odsExtra = new LinkedHashMap<>();
-            odsExtra.put("landingDir", acceptedDir == null ? "" : acceptedDir.toUri().toString());
+            // D-055：Spark 输入统一给可寻址 URI——local 是 file://（原行为），hdfs 是
+            // storage.uri() 的 hdfs:// 全路径，Spark 作业经 Hadoop FileSystem 原生读取。
+            odsExtra.put("landingDir", localLanding
+                    ? (acceptedDir == null ? "" : acceptedDir.toUri().toString())
+                    : (acceptedRelativeDir == null ? "" : landingStorage.uri(acceptedRelativeDir)));
             if (manifest != null && manifest.get("batchId") != null) {
                 odsExtra.put("batchId", String.valueOf(manifest.get("batchId")));
             }
@@ -702,9 +732,11 @@ public class PipelineService {
                         if (manifestRef == null) {
                             throw new PipelineStageException("RUN_EMPTY_LANDING", "无 READY manifest");
                         }
-                        if (acceptedDirRef == null || !Files.isDirectory(acceptedDirRef)) {
+                        if (localLanding ? acceptedDirRef == null || !Files.isDirectory(acceptedDirRef)
+                                : !isLandingDirectory(landingStorage, acceptedRelativeDirRef)) {
                             throw new PipelineStageException("RUN_LOAD_FAILED",
-                                    "accepted 目录不存在: " + acceptedDirRef);
+                                    "accepted 目录不存在: "
+                                            + (acceptedDirRef != null ? acceptedDirRef : acceptedRelativeDirRef));
                         }
                         if (eventsRef.isEmpty()) {
                             throw new PipelineStageException("RUN_EMPTY_DATA", "accepted 无归属业务日事件");
@@ -1241,7 +1273,8 @@ public class PipelineService {
      * ?? run.input_batch_id」——recalculate() 在插入 run 时就预置 input_batch_id，重算从
      * 第一轮执行起就钉住目标批次，绝不静默改换输入。</p>
      */
-    private InputSelection manifestForRun(Path landingRoot, PipelineRun run, long sourceId) {
+    private InputSelection manifestForRun(LandingStorage landingStorage, Path landingRoot,
+                                          PipelineRun run, long sourceId) {
         PipelineStageRun landing = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
                 .eq(PipelineStageRun::getRunId, run.getId())
                 .eq(PipelineStageRun::getStageCode, "WAIT_LANDING")
@@ -1267,7 +1300,9 @@ public class PipelineService {
             }
         }
         return new InputSelection(
-                manifestSelector.select(landingRoot, pinnedBatchId, sourceId, consumedBatchIds),
+                landingRoot != null
+                        ? manifestSelector.select(landingRoot, pinnedBatchId, sourceId, consumedBatchIds)
+                        : manifestSelector.select(landingStorage, pinnedBatchId, sourceId, consumedBatchIds),
                 pinnedBatchId);
     }
 
@@ -1456,30 +1491,79 @@ public class PipelineService {
         try (Stream<Path> list = Files.list(acceptedDir)) {
             for (Path f : list.filter(p -> p.getFileName().toString().endsWith(".jsonl")).sorted().toList()) {
                 for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
-                    if (line.isBlank()) {
-                        continue;
-                    }
-                    try {
-                        EventEnvelope envelope = EventEnvelope.fromJson(line, objectMapper);
-                        if (EventContract.ORDER_CREATED.equals(envelope.eventType())) {
-                            String orderId = envelope.payload().get("order_id") == null ? ""
-                                    : String.valueOf(envelope.payload().get("order_id"));
-                            if (!orderId.isEmpty()) {
-                                QualityChecker.putTotal(batchOrderTotals, orderId,
-                                        envelope.payload().get("total_amount"));
-                            }
-                        }
-                        if (envelope.eventTime() != null && envelope.eventTime().startsWith(datePrefix)) {
-                            out.add(envelope);
-                        }
-                    } catch (Exception e) {
-                        log.warn("pipeline skip bad line in {}: {}", f.getFileName(), e.getMessage());
-                    }
+                    acceptEventLine(line, f.getFileName().toString(), datePrefix, out, batchOrderTotals);
                 }
             }
         } catch (IOException e) {
             log.warn("accepted 读取失败 {}: {}", acceptedDir, e.getMessage());
         }
+    }
+
+    /**
+     * 存储变体（D-055）：hdfs profile 的 accepted 读取——行语义与本地版共用
+     * {@link #acceptEventLine}；文件枚举经 {@link LandingStorage#list}（缺失目录=空表、
+     * I/O 故障抛出→与本地版同口径降级为告警），单个文件读失败中止剩余文件（同本地语义）。
+     */
+    private void readAcceptedEvents(LandingStorage landingStorage, String acceptedRelativeDir, String datePrefix,
+                                    List<EventEnvelope> out, Map<String, BigDecimal> batchOrderTotals) {
+        try {
+            List<String> names = new ArrayList<>(landingStorage.list(acceptedRelativeDir));
+            names.sort(String::compareTo);
+            for (String name : names) {
+                if (!name.endsWith(".jsonl")) {
+                    continue;
+                }
+                String relativePath = acceptedRelativeDir + "/" + name;
+                try (InputStream in = landingStorage.open(relativePath);
+                     BufferedReader reader = new BufferedReader(
+                             new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                    for (String line : reader.lines().toList()) {
+                        acceptEventLine(line, name, datePrefix, out, batchOrderTotals);
+                    }
+                } catch (Exception e) {
+                    log.warn("accepted 读取失败 {}: {}", relativePath, e.getMessage());
+                    return;
+                }
+            }
+        } catch (RuntimeException e) {
+            log.warn("accepted 读取失败 {}: {}", acceptedRelativeDir, e.getMessage());
+        }
+    }
+
+    /** 两版 accepted 读取共用的唯一行语义：坏行跳过、订单总额照收、只放行业务日切片 */
+    private void acceptEventLine(String line, String fileName, String datePrefix, List<EventEnvelope> out,
+                                 Map<String, BigDecimal> batchOrderTotals) {
+        if (line.isBlank()) {
+            return;
+        }
+        try {
+            EventEnvelope envelope = EventEnvelope.fromJson(line, objectMapper);
+            if (EventContract.ORDER_CREATED.equals(envelope.eventType())) {
+                String orderId = envelope.payload().get("order_id") == null ? ""
+                        : String.valueOf(envelope.payload().get("order_id"));
+                if (!orderId.isEmpty()) {
+                    QualityChecker.putTotal(batchOrderTotals, orderId,
+                            envelope.payload().get("total_amount"));
+                }
+            }
+            if (envelope.eventTime() != null && envelope.eventTime().startsWith(datePrefix)) {
+                out.add(envelope);
+            }
+        } catch (Exception e) {
+            log.warn("pipeline skip bad line in {}: {}", fileName, e.getMessage());
+        }
+    }
+
+    /**
+     * accepted 目录存在性的统一判定（D-055）：本地 {@code Files.isDirectory} ↔
+     * 存储 {@code stat().directory()}；缺失返回 false，存储 I/O 故障按 §8.2 契约抛出。
+     */
+    private static boolean isLandingDirectory(LandingStorage storage, String relativeDir) {
+        if (relativeDir == null || relativeDir.isBlank()) {
+            return false;
+        }
+        LandingStorage.FileStat stat = storage.stat(relativeDir);
+        return stat != null && stat.directory();
     }
 
     /** 阶段失败（携带稳定错误码，§23.2） */
