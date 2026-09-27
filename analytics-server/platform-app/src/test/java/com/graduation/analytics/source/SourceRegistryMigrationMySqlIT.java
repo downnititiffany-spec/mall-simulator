@@ -51,6 +51,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * （{@code runtime_profile_landing_layout}）与 V23（{@code quality_rule_publish_export_checksum}）
  * 两轮落地时都未回填，本轮新加 V24（{@code metric_definition_fav_cart_cnt}）时一并对齐，
  * 使清单与目录**逐项相等**（清单仍是"少一个/多一个都红"的显式全集）。</p>
+ *
+ * <p><b>G31-09（V30/V31/V32）</b>：清单自 S3-08 后第三次落后于 {@code db/meta} —— V30
+ * （{@code pipeline_run_source_id}）与 V31（{@code decision_window_snapshot_lineage}）落地时
+ * 都未回填（复发同一漂移模式，本轮随 V32 一并对齐）。末端钉从 V21 改为 V32，且 version 断言
+ * 改由清单末端文件名**推导**（号位硬钉每加一个迁移就红一次，是本清单三度漂移的共同根因）。
+ * 本类不在 default 计数内（surefire 显式指定才跑）；真库取证指向 3307 隔离 per-run 库，
+ * 正式 analytics_meta 的 V32 应用归 D-044⑤ 合并重跑窗口。</p>
  */
 @EnabledIfSystemProperty(named = "p1.it", matches = "true")
 class SourceRegistryMigrationMySqlIT {
@@ -71,6 +78,19 @@ class SourceRegistryMigrationMySqlIT {
             "目标 meta 库名。整改后无默认值：不得回退到正式库 analytics_meta。"
                     + "请显式指定一份从真库 dump 出来的副本库，例如 "
                     + "-Dp1.it.metaDb=analytics_meta_<runId>it");
+
+    /**
+     * 登记用 metric 库名。**没有默认值**（G31-09）。
+     *
+     * <p>本类只写 meta 库，但 V25_IT 环境通道（31d5ed5）收紧后 {@code TestRunContext}
+     * 强制 metricDb 非空且 ≠ metaDb（唯一合法形态是双库登记），不再接受
+     * {@code META_DB, META_DB} 的历史写法。这里按同链路读取（系统属性
+     * {@code p1.it.metricDb} → 环境变量 {@code V25_IT_METRIC_DB}），值只进 context
+     * 登记，本类不会连接该库。</p>
+     */
+    private static final String METRIC_DB = requiredProperty("p1.it.metricDb",
+            "context 登记用 metric 库名（本类不写该库）：G31-09 起隔离护栏要求双库登记且"
+                    + "不得与 meta 库同名。");
 
     /** 目标实例主机:端口。**没有默认值**：默认 3306 意味着宿主正式实例。 */
     private static final String META_HOST = requiredProperty("p1.it.metaHost",
@@ -139,11 +159,14 @@ class SourceRegistryMigrationMySqlIT {
 
     /** 由 {@code p1.it.*} 构造平台侧共享的 {@link com.graduation.analytics.testsupport.TestRunContext}。 */
     private static com.graduation.analytics.testsupport.TestIsolationGuard.TestRunContext context() {
+        // G31-09：TestRunContext 构造即校验（31d5ed5 收紧）——metricDb 非空且 ≠ metaDb、
+        // hiveNamespace 以 testRunId 开头、hdfsRoot/manifestRoot 必须是含 testRunId 的本机绝对路径。
+        // 本类虽不写 metric/Hive/HDFS，登记值也必须是本次运行自己的真实 scope，占位符会被拒。
         return new com.graduation.analytics.testsupport.TestIsolationGuard.TestRunContext(
-                TEST_RUN_ID, SERVER_FINGERPRINT, META_DB, META_DB,
-                System.getProperty("p1.it.hiveNamespace", "unused-no-hive"),
-                System.getProperty("p1.it.hdfsRoot", "unused-no-hdfs"),
-                System.getProperty("p1.it.manifestRoot", "unused-no-manifest"),
+                TEST_RUN_ID, SERVER_FINGERPRINT, META_DB, METRIC_DB,
+                requiredProperty("p1.it.hiveNamespace", "隔离 Hive namespace（登记用，本类不访问）"),
+                requiredProperty("p1.it.hdfsRoot", "隔离 HDFS 根（登记用，本类不访问）"),
+                requiredProperty("p1.it.manifestRoot", "隔离 manifest 根（登记用，本类不访问）"),
                 "credref:" + META_USER,
                 System.currentTimeMillis(),
                 java.nio.file.Path.of("p1.it.properties"));
@@ -184,16 +207,23 @@ class SourceRegistryMigrationMySqlIT {
             "V26__quality_rule_ads_gmv_net_sale_invariant.sql",
             "V27__quality_rule_ads_uv_pv_invariant.sql",
             "V28__quality_rule_dws_uv_pv_invariant.sql",
-            "V29__quality_rule_ads_staging_present_v2.sql");
+            "V29__quality_rule_ads_staging_present_v2.sql",
+            "V30__pipeline_run_source_id.sql",
+            "V31__decision_window_snapshot_lineage.sql",
+            "V32__file_checkpoint_identity_width.sql");
 
     private static final String V17_SCRIPT = "V17__source_dimension_for_checkpoint_and_batch.sql";
     private static final String V18_SCRIPT = "V18__source_warehouse_prefix.sql";
-    private static final String V21_SCRIPT = "V21__source_mapping_active.sql";
+    private static final String V32_SCRIPT = "V32__file_checkpoint_identity_width.sql";
 
 
+    // 冻结列 = V30 之前 runtime_profile 的全部列（ordinal_position 序）。
+    // landing_layout 由 V22 追加在 landing_uri 之后（既有漂移：本 IT 自 V22 落地后未再实跑，
+    // 旧清单只列到 V7 的 24 列，G31-09 attempt-3 实测补齐）；source_id 由 V16 追加在末尾
+    // （无 AFTER 子句），故期望序列 = 冻结 25 列 + 末尾 source_id。
     private static final List<String> FROZEN_RUNTIME_PROFILE_COLUMNS = List.of(
             "id", "profile_code", "profile_name", "type", "status",
-            "landing_uri", "hdfs_uri", "hive_jdbc_url", "hive_database_prefix",
+            "landing_uri", "landing_layout", "hdfs_uri", "hive_jdbc_url", "hive_database_prefix",
             "spark_master", "deploy_mode", "yarn_queue",
             "ssh_host", "ssh_port", "ssh_user",
             "spark_submit_path", "spark_job_jar_uri",
@@ -265,15 +295,20 @@ class SourceRegistryMigrationMySqlIT {
                         .map(name -> name.substring(1, name.indexOf("__")))
                         .toList());
 
-        // 清单最后一项（本轮 = V21）必须是最后应用的脚本 —— "新迁移只能往后加"的可判据形式。
-        // 原 P1-05 版本把"最后"硬写成 V17，加 V18 后必然失败，故改为从清单推导。
+        // 清单最后一项（本轮 = V32）必须是最后应用的脚本 —— "新迁移只能往后加"的可判据形式。
+        // 原 P1-05 版本把"最后"硬写成 V17，加 V18 后必然失败，故改为从清单推导；
+        // S2-03.1 又把"末端是 V21"写回成硬钉，V22 起再次漂移（G31-09 随 V32 一并移除号位硬钉）。
         String newest = EXPECTED_META_SCRIPTS.get(EXPECTED_META_SCRIPTS.size() - 1);
         Map<String, Object> last = rows.get(rows.size() - 1);
-        assertThat(newest).as("S2-03.1 起清单末端即 V21").isEqualTo(V21_SCRIPT);
+        assertThat(newest).as("G31-09 起清单末端即 V32（后续批次追加迁移时同步更新清单与本钉）")
+                .isEqualTo(V32_SCRIPT);
         assertThat(String.valueOf(last.get("script")))
                 .as("清单最后一项必须就是最后应用的脚本")
                 .isEqualTo(newest);
-        assertThat(String.valueOf(last.get("version"))).as("V21 的 version 列").isEqualTo("21");
+        // version 由清单末端文件名推导：号位硬钉每加一个迁移就红一次，推导后不再漂移
+        assertThat(String.valueOf(last.get("version")))
+                .as("清单末端脚本的 version 列须等于其文件名号位")
+                .isEqualTo(newest.substring(1, newest.indexOf("__")));
 
         Map<String, Object> v17 = rows.stream()
                 .filter(r -> V17_SCRIPT.equals(String.valueOf(r.get("script"))))
@@ -387,7 +422,7 @@ class SourceRegistryMigrationMySqlIT {
         List<String> expected = new java.util.ArrayList<>(FROZEN_RUNTIME_PROFILE_COLUMNS);
         expected.add("source_id");
         assertThat(actual)
-                .as("迁移前 24 列必须原样保留，新增列只能是 source_id")
+                .as("迁移前 25 列（含 V22 的 landing_layout）必须原样保留，新增列只能是 source_id")
                 .containsExactlyElementsOf(expected);
     }
 
