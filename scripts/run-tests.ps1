@@ -111,7 +111,7 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1096
+  'analytics-server'        = 1170
   'mall-simulator'          = 14
   'synthetic-data-generator' = 111
 }
@@ -556,7 +556,12 @@ $BaselineDefault = [ordered]@{
 #   devmxpfull_20260919_1046：320/320、39 套件、JDK8=True、All tests passed（D-020）。
 # 2026-09-23：320→321＝G31-03 QA-02 商品 as-of 快照回归 `ProductDimensionAsOfSpec` 新增 1 条；
 #   后续补入空 ODS 重跑清除旧分区的第二条回归，fresh 统一 spark 档 322/322、40 suites、JDK8=True。
-$BaselineSpark = 322
+# 2026-09-25：322→329＝G31-08（D-044④ 第一短批，F-G4-1/D-040 同日增量修复）新增针对性回归
+#   `OdsMergeIncrementalSpec` 7 条（G1 原有保留/G2 新增计入/G3 重放幂等/G4 同分区旧记录并存硬约束/
+#   G5a 单主题不清他表/G5b 零写入/new-wins+G6 conf 还原），fresh 实测本日 16:18：329/329、41 套件、
+#   JDK8=True、All tests passed（首跑 329 DRIFT(基线 322) 后同步本数，基线比对轮见
+#   docs/verification/results/BATCH-G31-08-FG41-SAMEDAY-INCREMENTAL-RESULT.md §2.2）。
+$BaselineSpark = 329
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
@@ -900,6 +905,34 @@ $BaselineSpark = 322
 #   Surefire summaries; the sole failure remains the already documented environment patrol
 #   (IngestionManifestRuntimePatrolTest: expected legacy 43-file evidence, current 0).
 #   Update the count gate only; this does not turn the default suite green or waive that failure.
+# ───────────────────────────────────────────────────────────────────────────
+ # 2026-09-25 G31-09 fresh default run on the current worktree:
+ #   analytics-server module totals = 115 + 383 + 185 + 130 + 161 + 176 = 1150 (F=0 E=0 S=2).
+ #   vs 2026-09-23 gate (1096): +5 = G31-09 static gate (V32 file_checkpoint identity width,
+ #   FileCheckpointIdentityWidthMigrationScriptTest); remaining +49 = accumulated additions from
+ #   batches after 09-23 (T-R1 quality-rule v2 worktree tests, G31-00..08 module tests) that were
+ #   verified in their own faces but never re-synced into this count gate — attribution list is
+ #   tracked for the pre-commit checklist (D-044⑤). This entry is a count-gate sync only:
+ #   gate 1096 → 1150（首跑 DRIFT 后同步本数，G31-08 同一流程）。
+ # 2026-09-26 G31-11 M3 发布语义（D-048 §(5) / D-049）fresh full reactor run:
+ #   analytics-server module totals = 115 + 383 + 195 + 130 + 161 + 181 = 1165 (F=0 E=0 S=2).
+ #   vs 09-25 gate (1150): +15 全部为 G31-11 新增测试 — warehouse-pipeline 185→195
+ #   (PipelineServiceTest M3 五场景：no-op 不发布 / FIFO 次批 / 显式重算再发布 /
+ #   失败重试绑原批 / 连续两待处理批不遗漏 + LandingManifestSelectorTest 等)
+ #   + platform-app 176→181（recalculate 管理端点契约 +5）。主代码行为零回退：
+ #   中途三处翻红全为测试桩缺陷 — MP 3.5.7 wrapper 参数惰性登记（桩需 TableInfo 热身
+ #   + getSqlSegment() 强制渲染）、runMapper.selectOne 无条件桩破坏多 run 幂等语义、
+ #   测试 manifest 文件名违背 LandingStorage manifests/{batchId}.json 生产契约
+ #   (D-049e 钉住路径直读)。gate 1150 → 1165（G31-08/09 同一流程）。
+ # 2026-09-26 G31-11 D-049x（发布前门陈旧行缺陷修复）fresh full reactor run:
+ #   analytics-server module totals = 115 + 383 + 199 + 130 + 161 + 181 = 1169 (F=0 E=0 S=2).
+ #   vs 09-26 gate (1165): +4 全部为 DataQualityGateTest D-049x 用例（warehouse-pipeline 195→199）：
+ #   修复后重试使同码历史失败行失效（run4 实测形状）/ 最新判定失败仍阻断 / 分层保守（跨层各取最新）
+ #   / 未登记码 fail-closed 不因最新行通过而放宽。主代码改动仅 DataQualityGate.resultsOf
+ #   （每条 (规则码, 层) 只取 id 最大行参与判定，历史失败行留痕不阻断）。gate 1165 → 1169。
+ # 2026-09-27 G31-13 D-051 门值欠账补同步（G31-12 收口 a25cc9b 的基线迁移，无新代码）：
+ #   G31-12 D-050 总控复核四项处置 fresh full reactor run = 1170 (F=0 E=0 S=2)：
+ #   vs 09-26 gate (1169): +1 = 重算旁路负例（D-050② 修复的回归钉）。gate 1169 → 1170。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 
