@@ -9,6 +9,11 @@
 > g3o0001/0002→940001/940002，g3o0101..14→940101..940114，g4o0101..13→942101..942113。
 > 事件 id（g3e/g4e）、trace、payment、refund id 不经 IdCodec，保持原样。
 
+> **发布精度注记（收口）**：客单价原始商 1200/13 = 92.307692…；早期 D-033 文本曾以 4 位显示值
+> 92.3077 表述。本版 oracle 与平台发布一律按 DWS `DECIMAL(18,2)` 量化（E3=84.17、E4=92.31），
+> 决策改善率同样按发布精度计算（D1 rate=(92.31−84.17)/84.17 → 0.0967）。凡见 92.3077 均为
+> 历史口径残留，不是当前 oracle 值。
+
 来源：`generate.py`（确定性夹具，99 + 71 行）→ `oracle.py`（纯 Python 重述冻结口径，**不 import 平台代码**）。
 冻结口径来源：`DwsSql.funnelDay/productBehaviorDay/tradeDay/userTradePeriod`、`AdsSql.operationOverview/funnel/hotProduct/userProfile(rfm-v2)`、`DecisionService.evaluate/grade`、`OrderTradeCompiler`（退款只计 refund_completed、按 refund_id 去重、归属订单业务日 = F-35 同日退款）。
 
