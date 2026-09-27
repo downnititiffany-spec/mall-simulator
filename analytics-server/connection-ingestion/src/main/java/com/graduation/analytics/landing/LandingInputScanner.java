@@ -1,5 +1,7 @@
 package com.graduation.analytics.landing;
 
+import com.graduation.analytics.runtime.storage.LandingStorage;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -48,6 +50,63 @@ public final class LandingInputScanner {
      * 「目录里有文件、到达时间为空」。两个问题的所有者是同一个类，但**答案不是同一个集合**。</p>
      */
     public record Candidate(Path file, String inputKey, long size, boolean completed) {
+    }
+
+    /** 存储无关的候选项；relativePath 相对 Landing namespace，inputKey 相对本布局输入根。 */
+    public record StoredCandidate(String relativePath, String inputKey, long size,
+                                  long lastModified, boolean completed) {
+    }
+
+    public record StoredFile(String relativePath, String inputKey, long size, long lastModified) {
+    }
+
+    /** 对任意 LandingStorage 应用与本地路径扫描相同的完成文件规则。 */
+    public static List<StoredCandidate> inspect(LandingStorage storage, String inputRoot, LandingLayout layout) {
+        Objects.requireNonNull(storage, "storage");
+        Objects.requireNonNull(layout, "layout");
+        String root = inputRoot == null ? "" : inputRoot.trim().replaceAll("/+$", "");
+        return storage.listFiles(root, layout.recursive()).stream()
+                .filter(entry -> isIncludedStoragePath(root, entry.relativePath(), layout))
+                .map(entry -> new StoredCandidate(entry.relativePath(), storageInputKey(root, entry.relativePath()),
+                        entry.stat().size(), entry.stat().lastModified(), entry.stat().size() > 0L))
+                .toList();
+    }
+
+    public static List<StoredFile> scan(LandingStorage storage, String inputRoot, LandingLayout layout) {
+        return inspect(storage, inputRoot, layout).stream()
+                .filter(StoredCandidate::completed)
+                .map(candidate -> new StoredFile(candidate.relativePath(), candidate.inputKey(),
+                        candidate.size(), candidate.lastModified()))
+                .toList();
+    }
+
+    private static boolean isIncludedStoragePath(String root, String path, LandingLayout layout) {
+        String key = storageInputKey(root, path);
+        if (key.isEmpty()) {
+            return false;
+        }
+        for (String segment : key.split("/")) {
+            if (segment.startsWith(".") || segment.startsWith("_")) {
+                return false;
+            }
+        }
+        String name = key.substring(key.lastIndexOf('/') + 1);
+        String lower = name.toLowerCase(java.util.Locale.ROOT);
+        if (lower.endsWith(".tmp")) {
+            return false;
+        }
+        return layout.recursive() || lower.endsWith(".jsonl");
+    }
+
+    private static String storageInputKey(String root, String path) {
+        if (root.isEmpty()) {
+            return path;
+        }
+        String prefix = root + "/";
+        if (!path.startsWith(prefix)) {
+            throw new IllegalArgumentException("Storage 返回的条目不在输入根下: " + path);
+        }
+        return path.substring(prefix.length());
     }
 
     /**

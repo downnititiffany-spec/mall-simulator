@@ -29,6 +29,21 @@
       <artifactId>connection-ingestion</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- HDFS profile is loaded by the executable Spring Boot jar, so its Hadoop client
+         must be present at runtime; connection-ingestion declares it provided for reuse. -->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client</artifactId>
+      <version>3.3.4</version>
+      <scope>runtime</scope>
+      <exclusions>
+        <!-- Spring Boot uses Logback; Hadoop's reload4j SLF4J binding conflicts at startup. -->
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-reload4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>com.graduation.analytics</groupId>
       <artifactId>warehouse-pipeline</artifactId>

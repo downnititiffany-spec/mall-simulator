@@ -388,8 +388,15 @@ class LocalFileIngestorSourceIsolationTest {
                 .filter(m -> m.getName().equals("hasConsumableData"))
                 .map(m -> m.getParameterCount())
                 .toList())
-                .as("hasConsumableData 只允许 (Path, long, long) 一种形态")
-                .containsExactly(3);
+                .as("本地和 storage 两种读取入口都必须显式携带 profileId 与 sourceId")
+                .containsExactlyInAnyOrder(3, 4);
+        assertThat(Arrays.stream(LocalFileIngestor.class.getMethods())
+                .filter(m -> m.getName().equals("hasConsumableData"))
+                .allMatch(m -> {
+                    Class<?>[] types = m.getParameterTypes();
+                    return types[types.length - 2] == long.class && types[types.length - 1] == long.class;
+                }))
+                .isTrue();
         assertThat(Arrays.stream(LocalFileIngestor.class.getMethods())
                 .filter(m -> m.getName().equals("checkpointKeys"))
                 .map(m -> m.getParameterCount())

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,14 +98,72 @@ class HdfsLandingStoragePathTest {
     void writesManifestUnderNamespace() throws IOException {
         FileSystem fs = mock(FileSystem.class);
         FSDataOutputStream output = mock(FSDataOutputStream.class);
-        when(fs.create(any(Path.class), eq(true))).thenReturn(output);
+        when(fs.mkdirs(any(Path.class))).thenReturn(true);
+        when(fs.create(any(Path.class), eq(false))).thenReturn(output);
+        when(fs.rename(any(Path.class), any(Path.class))).thenReturn(true);
         HdfsLandingStorage storage = storage(fs);
 
         String written = storage.writeManifest("batch-42_v1", "{}");
 
         Path expected = new Path(new Path(URI.create(NAMESPACE)), "manifests/batch-42_v1.json");
         assertThat(written).isEqualTo(expected.toUri().toString());
-        verify(fs).create(expected, true);
+        org.mockito.ArgumentCaptor<Path> temporary = org.mockito.ArgumentCaptor.forClass(Path.class);
+        verify(fs).create(temporary.capture(), eq(false));
+        assertThat(temporary.getValue().getParent()).isEqualTo(expected.getParent());
+        assertThat(temporary.getValue().getName()).startsWith(".batch-42_v1-").endsWith(".tmp");
+        verify(fs).rename(temporary.getValue(), expected);
+    }
+
+    @Test
+    @DisplayName("HDFS Storage 的 createOrAppend 在缺失时创建、存在时追加相对文件")
+    void createsOrAppendsUnderNamespace() throws IOException {
+        FileSystem fs = mock(FileSystem.class);
+        Path target = new Path(new Path(URI.create(NAMESPACE)), "accepted/7/events.jsonl");
+        FSDataOutputStream created = mock(FSDataOutputStream.class);
+        FSDataOutputStream appended = mock(FSDataOutputStream.class);
+        when(fs.mkdirs(any(Path.class))).thenReturn(true);
+        when(fs.exists(target)).thenReturn(false, true);
+        when(fs.create(target, false)).thenReturn(created);
+        when(fs.append(target)).thenReturn(appended);
+        HdfsLandingStorage storage = storage(fs);
+
+        try (OutputStream output = storage.createOrAppend("accepted/7/events.jsonl")) {
+            output.write(1);
+        }
+        try (OutputStream output = storage.createOrAppend("accepted/7/events.jsonl")) {
+            output.write(2);
+        }
+
+        verify(fs).create(target, false);
+        verify(fs).append(target);
+    }
+
+    @Test
+    @DisplayName("HDFS 文件身份优先采用文件系统 checksum")
+    void fileIdentityUsesHdfsChecksum() throws IOException {
+        FileSystem fs = mock(FileSystem.class);
+        Path target = new Path(new Path(URI.create(NAMESPACE)), "raw/dt=20260924/events.jsonl");
+        FileStatus status = new FileStatus(12L, false, 1, 128L, 42L, target);
+        org.apache.hadoop.fs.FileChecksum checksum = mock(org.apache.hadoop.fs.FileChecksum.class);
+        when(fs.getFileStatus(target)).thenReturn(status);
+        when(fs.getFileChecksum(target)).thenReturn(checksum);
+        when(checksum.getAlgorithmName()).thenReturn("MD5-of-0MD5-of-512CRC32");
+        when(checksum.getBytes()).thenReturn(new byte[]{(byte) 0xab, (byte) 0xc1, 0x23});
+
+        assertThat(storage(fs).fileIdentity("raw/dt=20260924/events.jsonl"))
+                .isEqualTo("hdfs:MD5-of-0MD5-of-512CRC32:abc123");
+    }
+
+    @Test
+    @DisplayName("不提供 checksum 的兼容文件系统使用路径、长度、修改时间组合身份")
+    void fileIdentityFallsBackToMetadataWhenChecksumUnavailable() throws IOException {
+        FileSystem fs = mock(FileSystem.class);
+        Path target = new Path(new Path(URI.create(NAMESPACE)), "raw/events.jsonl");
+        when(fs.getFileStatus(target)).thenReturn(new FileStatus(12L, false, 1, 128L, 42L, target));
+        when(fs.getFileChecksum(target)).thenReturn(null);
+
+        assertThat(storage(fs).fileIdentity("raw/events.jsonl"))
+                .isEqualTo("hdfs-meta:/warehouse/landing/raw/events.jsonl:12:42");
     }
 
     private static HdfsLandingStorage storage(FileSystem fs) {

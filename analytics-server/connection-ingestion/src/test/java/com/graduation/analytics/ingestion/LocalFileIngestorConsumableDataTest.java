@@ -5,6 +5,8 @@ import com.graduation.analytics.ingestion.entity.FileCheckpoint;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
+import com.graduation.analytics.runtime.storage.LocalLandingStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -167,5 +169,48 @@ class LocalFileIngestorConsumableDataTest {
         when(checkpointMapper.selectOne(any()))
                 .thenReturn(checkpointOf(file, LocalFileIngestor.fileIdentity(file), 9_999L));
         assertThat(consumable(file)).isTrue();
+    }
+
+    @Test
+    @DisplayName("storage-backed local ingestion shares byte parser and preserves canonical local checkpoint identity")
+    void storageBackedIngestionUsesSameLineSemantics(@TempDir Path dir) throws IOException {
+        Path landingRoot = dir.resolve("landing");
+        Files.createDirectories(landingRoot.resolve("events"));
+        Files.writeString(landingRoot.resolve("events/in.jsonl"), "one\r\ntwo\npartial",
+                StandardCharsets.UTF_8);
+        LocalLandingStorage storage = new LocalLandingStorage(landingRoot.toString());
+        LocalFileIngestor collector = ingestor();
+        when(checkpointMapper.selectOne(any())).thenReturn(null);
+
+        LocalFileIngestor.FileResult result = collector.ingestFileDeferredCheckpoint(storage,
+                "events/in.jsonl", 9L, 1L, 1L, "accepted/9", "quarantine/9",
+                null, new java.util.zip.CRC32(), SourceMapping.legacy());
+
+        assertThat(result.startOffset()).isZero();
+        assertThat(result.endOffset()).isEqualTo("one\r\ntwo\n".getBytes(StandardCharsets.UTF_8).length);
+        assertThat(result.collected()).isEqualTo(2);
+        assertThat(Files.readString(landingRoot.resolve("accepted/9/in.jsonl"), StandardCharsets.UTF_8))
+                .isEqualTo("one\ntwo\n");
+        assertThat(storage.checkpointKey("events/in.jsonl"))
+                .isEqualTo(LocalFileIngestor.checkpointKey(landingRoot.resolve("events/in.jsonl")));
+    }
+
+    @Test
+    @DisplayName("storage-backed availability excludes a partial tail after the checkpoint")
+    void storageBackedConsumableDataIgnoresPartialTail(@TempDir Path dir) throws IOException {
+        Path landingRoot = dir.resolve("landing");
+        Files.createDirectories(landingRoot.resolve("events"));
+        Path file = landingRoot.resolve("events/in.jsonl");
+        Files.writeString(file, "one\npartial", StandardCharsets.UTF_8);
+        LocalLandingStorage storage = new LocalLandingStorage(landingRoot.toString());
+        FileCheckpoint checkpoint = new FileCheckpoint();
+        checkpoint.setRuntimeProfileId(1L);
+        checkpoint.setSourceId(1L);
+        checkpoint.setFilePath(storage.checkpointKey("events/in.jsonl"));
+        checkpoint.setFileIdentity(storage.fileIdentity("events/in.jsonl"));
+        checkpoint.setNextOffset(4L);
+        when(checkpointMapper.selectOne(any())).thenReturn(checkpoint);
+
+        assertThat(ingestor().hasConsumableData(storage, "events/in.jsonl", 1L, 1L)).isFalse();
     }
 }

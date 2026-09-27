@@ -61,6 +61,12 @@ public enum LandingLayout {
         return landingRoot.resolve(dirName);
     }
 
+    /** Storage-relative counterpart to {@link #inputRoot(Path)}. */
+    public String inputRoot(String landingRoot) {
+        String root = landingRoot == null ? "" : landingRoot.trim().replaceAll("/+$", "");
+        return root.isEmpty() ? dirName : root + "/" + dirName;
+    }
+
     public String dirName() {
         return dirName;
     }

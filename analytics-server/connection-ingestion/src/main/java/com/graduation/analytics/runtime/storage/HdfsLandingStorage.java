@@ -4,21 +4,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileNotFoundException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * HDFS 落地存储（§8.2/REMOTE_CLUSTER）：通过 Hadoop FileSystem API 操作 hdfs://
- * 命名空间。hadoop-client 为 provided 依赖（与 spark-jobs 同版本 3.3.4）：客户端
- * jar 由部署端 Spark/Hadoop 环境提供（HADOOP_CLASSPATH），LOCAL 演示环境不加载
- * 本类（RuntimeProfileService 按 profile.type 选择实现）。
+ * 命名空间。hadoop-client 与 spark-jobs 同版本 3.3.4；platform-app 将其放入可执行运行包。
+ * LOCAL 演示环境不实例化本类（由 LandingStorageResolver 按 profile.landing_uri 选择实现）。
  */
 @Slf4j
 public class HdfsLandingStorage implements LandingStorage {
@@ -74,6 +74,8 @@ public class HdfsLandingStorage implements LandingStorage {
                 names.add(s.getPath().getName());
             }
             return names;
+        } catch (FileNotFoundException e) {
+            return List.of();
         } catch (IOException e) {
             throw new IllegalStateException("HDFS list 失败: " + e.getMessage(), e);
         }
@@ -89,26 +91,139 @@ public class HdfsLandingStorage implements LandingStorage {
     }
 
     @Override
+    public SeekableInput openSeekable(String relativePath) {
+        try {
+            FSDataInputStream input = fs.open(toPath(relativePath));
+            return new SeekableInput() {
+                @Override
+                public void seek(long offset) throws IOException {
+                    if (offset < 0) {
+                        throw new IllegalArgumentException("offset 不得小于 0");
+                    }
+                    input.seek(offset);
+                }
+
+                @Override
+                public int read(byte[] buffer, int offset, int length) throws IOException {
+                    return input.read(buffer, offset, length);
+                }
+
+                @Override
+                public long length() throws IOException {
+                    return fs.getFileStatus(toPath(relativePath)).getLen();
+                }
+
+                @Override
+                public void close() throws IOException {
+                    input.close();
+                }
+            };
+        } catch (IOException e) {
+            throw new IllegalStateException("打开可定位 HDFS landing 文件失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public FileStat stat(String relativePath) {
         try {
             FileStatus s = fs.getFileStatus(toPath(relativePath));
             return new FileStat(s.getLen(), s.getModificationTime(), s.isDirectory());
+        } catch (FileNotFoundException e) {
+            return null;
         } catch (IOException e) {
             throw new IllegalStateException("HDFS stat 失败: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public String writeManifest(String batchId, String manifestJson) {
+    public String fileIdentity(String relativePath) {
+        Path path = toPath(relativePath);
         try {
-            Path manifest = manifestPath(batchId);
-            try (org.apache.hadoop.fs.FSDataOutputStream out = fs.create(manifest, true)) {
-                out.write(manifestJson.getBytes(StandardCharsets.UTF_8));
+            FileStatus status = fs.getFileStatus(path);
+            org.apache.hadoop.fs.FileChecksum checksum = fs.getFileChecksum(path);
+            if (checksum != null) {
+                return "hdfs:" + checksum.getAlgorithmName() + ":"
+                        + java.util.HexFormat.of().formatHex(checksum.getBytes());
             }
-            return manifest.toUri().toString();
+            // Some compatible filesystems do not expose checksums. Include path and full metadata
+            // so a replacement is unlikely to reuse the same identity; do not hide stat failures.
+            return "hdfs-meta:" + path.toUri().normalize().getPath() + ":"
+                    + status.getLen() + ":" + status.getModificationTime();
         } catch (IOException e) {
-            throw new IllegalStateException("HDFS writeManifest 失败: " + e.getMessage(), e);
+            throw new IllegalStateException("读取 HDFS 文件身份失败: " + relativePath, e);
         }
+    }
+
+    @Override
+    public String checkpointKey(String relativePath) {
+        String key = namespace() + "|" + toPath(relativePath).toUri().normalize().getPath();
+        if (key.length() > 500) {
+            throw new IllegalArgumentException("HDFS checkpoint key 超过 file_checkpoint.file_path VARCHAR(500)");
+        }
+        return key;
+    }
+
+    @Override
+    public void createDirectories(String relativeDir) {
+        try {
+            Path directory = toPath(relativeDir);
+            if (!fs.mkdirs(directory) && !fs.exists(directory)) {
+                throw new IOException("HDFS mkdirs 返回 false");
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("HDFS createDirectories 失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public java.io.OutputStream createOrAppend(String relativePath) {
+        Path target = toPath(relativePath);
+        try {
+            Path parent = target.getParent();
+            if (parent != null && !fs.mkdirs(parent) && !fs.exists(parent)) {
+                throw new IOException("HDFS mkdirs 返回 false: " + parent);
+            }
+            return fs.exists(target) ? fs.append(target) : fs.create(target, false);
+        } catch (IOException e) {
+            throw new IllegalStateException("HDFS 打开输出失败: " + relativePath, e);
+        }
+    }
+
+    @Override
+    public boolean move(String sourceRelativePath, String targetRelativePath) {
+        Path source = toPath(sourceRelativePath);
+        Path target = toPath(targetRelativePath);
+        try {
+            Path parent = target.getParent();
+            if (parent != null && !fs.mkdirs(parent) && !fs.exists(parent)) {
+                throw new IOException("HDFS mkdirs 返回 false: " + parent);
+            }
+            return fs.rename(source, target);
+        } catch (IOException e) {
+            try {
+                if (fs.exists(target)) {
+                    return false;
+                }
+            } catch (IOException probeError) {
+                e.addSuppressed(probeError);
+            }
+            throw new IllegalStateException("HDFS move 失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean deleteIfExists(String relativePath) {
+        Path target = toPath(relativePath);
+        try {
+            return fs.delete(target, false);
+        } catch (IOException e) {
+            throw new IllegalStateException("HDFS 删除路径失败: " + relativePath, e);
+        }
+    }
+
+    @Override
+    public String uri(String relativePath) {
+        return toPath(relativePath).toUri().toString();
     }
 
     @Override
@@ -178,11 +293,4 @@ public class HdfsLandingStorage implements LandingStorage {
         return normalized.isEmpty() ? "/" : normalized;
     }
 
-    private Path manifestPath(String batchId) {
-        if (batchId == null || !batchId.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
-                || ".".equals(batchId) || "..".equals(batchId)) {
-            throw new IllegalArgumentException("batchId 必须是单段安全标识符");
-        }
-        return toPath("manifests/" + batchId + ".json");
-    }
 }

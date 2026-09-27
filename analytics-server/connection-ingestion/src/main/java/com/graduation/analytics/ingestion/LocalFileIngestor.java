@@ -11,6 +11,7 @@ import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.mapping.ingest.MappedLine;
 import com.graduation.analytics.mapping.ingest.SourceMapper;
 import com.graduation.analytics.mapping.ingest.SourceMapping;
+import com.graduation.analytics.runtime.storage.LandingStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -66,6 +67,21 @@ public class LocalFileIngestor {
     private static final byte LF = 10;
     private static final byte CR = 13;
 
+    @FunctionalInterface
+    private interface InputOpener {
+        LandingStorage.SeekableInput open() throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface OutputOpener {
+        OutputStream open() throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface IoAction {
+        void run() throws IOException;
+    }
+
     private final FileCheckpointMapper checkpointMapper;
     private final QuarantineRecordMapper quarantineRecordMapper;
     private final EventContractValidator validator;
@@ -115,15 +131,94 @@ public class LocalFileIngestor {
     private FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
                                   Path acceptedDir, Path quarantineDir, TraceContext trace,
                                   CRC32 checksum, SourceMapping mapping, boolean commitCheckpoint) {
-        String abs = checkpointKey(file);
-        String identity = fileIdentity(file);
-        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, abs);
-        long size = sizeOf(file);
+        String acceptedName = file.getFileName().toString();
+        return ingestFile(checkpointKey(file), acceptedName, fileIdentity(file), sizeOf(file),
+                () -> seekable(file),
+                () -> Files.newOutputStream(acceptedDir.resolve(acceptedName),
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND),
+                () -> Files.newOutputStream(quarantineDir.resolve(acceptedName),
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND),
+                quarantineDir.resolve(acceptedName).toString(),
+                () -> {
+                    Files.createDirectories(acceptedDir);
+                    Files.createDirectories(quarantineDir);
+                }, batchId, runtimeProfileId, sourceId, trace, checksum, mapping, commitCheckpoint);
+    }
+
+    /** 存储无关的文件采集入口；相同映射、契约校验、尾行和断点策略同时服务本地与 HDFS。 */
+    public FileResult ingestFileDeferredCheckpoint(LandingStorage storage, String relativePath,
+                                                    long batchId, long runtimeProfileId, long sourceId,
+                                                    String acceptedDir, String quarantineDir,
+                                                    TraceContext trace, CRC32 checksum, SourceMapping mapping) {
+        return ingestStorageFile(storage, relativePath, batchId, runtimeProfileId, sourceId,
+                acceptedDir, quarantineDir, trace, checksum, mapping, false);
+    }
+
+    public void commitCheckpoint(LandingStorage storage, String relativePath, long runtimeProfileId,
+                                 long sourceId, FileResult result) {
+        if (result.endOffset() > result.startOffset() || result.collected() > 0 || result.quarantined() > 0) {
+            upsertCheckpoint(runtimeProfileId, sourceId, storage.checkpointKey(relativePath),
+                    result.fileIdentity(), result.endOffset());
+        }
+    }
+
+    public boolean hasConsumableData(LandingStorage storage, String relativePath,
+                                     long runtimeProfileId, long sourceId) {
+        LandingStorage.FileStat stat = storage.stat(relativePath);
+        if (stat == null || stat.directory() || stat.size() <= 0L) {
+            return false;
+        }
+        String key = storage.checkpointKey(relativePath);
+        FileCheckpoint checkpoint = findCheckpoint(runtimeProfileId, sourceId, key);
+        long end = consumableEnd(storage, relativePath, stat.size());
+        if (end <= 0) {
+            return false;
+        }
+        if (checkpoint == null) {
+            return true;
+        }
+        Long next = checkpoint.getNextOffset();
+        return next == null || !storage.fileIdentity(relativePath).equals(checkpoint.getFileIdentity())
+                || stat.size() < next || end > next;
+    }
+
+    private FileResult ingestStorageFile(LandingStorage storage, String relativePath,
+                                         long batchId, long runtimeProfileId, long sourceId,
+                                         String acceptedDir, String quarantineDir,
+                                         TraceContext trace, CRC32 checksum, SourceMapping mapping,
+                                         boolean commitCheckpoint) {
+        LandingStorage.FileStat stat = storage.stat(relativePath);
+        if (stat == null || stat.directory()) {
+            throw new IllegalStateException("Landing 输入文件不存在或不是普通文件: " + relativePath);
+        }
+        String fileName = relativePath.substring(relativePath.lastIndexOf('/') + 1);
+        String acceptedPath = acceptedDir + "/" + fileName;
+        String quarantinePath = quarantineDir + "/" + fileName;
+        return ingestFile(storage.checkpointKey(relativePath), fileName, storage.fileIdentity(relativePath), stat.size(),
+                () -> storage.openSeekable(relativePath),
+                () -> storage.createOrAppend(acceptedPath),
+                () -> storage.createOrAppend(quarantinePath), storage.uri(quarantinePath),
+                () -> {
+                    storage.createDirectories(acceptedDir);
+                    storage.createDirectories(quarantineDir);
+                }, batchId, runtimeProfileId, sourceId, trace, checksum, mapping, commitCheckpoint);
+    }
+
+    private FileResult ingestFile(String checkpointKey, String fileName, String identity, long size,
+                                  InputOpener inputOpener, OutputOpener acceptedOpener,
+                                  OutputOpener quarantineOpener, String quarantineReference,
+                                  IoAction prepareOutputs, long batchId, long runtimeProfileId,
+                                  long sourceId, TraceContext trace, CRC32 checksum,
+                                  SourceMapping mapping, boolean commitCheckpoint) {
+        if (checkpointKey == null || checkpointKey.length() > 500) {
+            throw new IllegalArgumentException("checkpoint key 必须在 file_checkpoint.file_path VARCHAR(500) 范围内");
+        }
+        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, checkpointKey);
         // 文件版本变化或 size 小于偏移（被截断）→ 新版本从头读取，不沿用旧偏移（§9.2）
         boolean newVersion = ckpt == null || !identity.equals(ckpt.getFileIdentity()) || size < ckpt.getNextOffset();
         long startOffset = newVersion ? 0 : ckpt.getNextOffset();
         if (!newVersion && startOffset >= size) {
-            return result(file, startOffset, startOffset, identity, 0, 0, 0, Set.of());
+            return result(fileName, startOffset, startOffset, identity, 0, 0, 0, Set.of());
         }
 
         long collected = 0;
@@ -132,18 +227,12 @@ public class LocalFileIngestor {
         long endOffset = startOffset;
         Set<String> schemaVersions = new HashSet<>();
         try {
-            Files.createDirectories(acceptedDir);
-            Files.createDirectories(quarantineDir);
-            Path acceptedFile = acceptedDir.resolve(file.getFileName().toString());
-            Path quarantineFile = quarantineDir.resolve(file.getFileName().toString());
+            prepareOutputs.run();
+            try (LandingStorage.SeekableInput channel = inputOpener.open();
+                 OutputStream acceptedOut = acceptedOpener.open();
+                 OutputStream quarantineOut = quarantineOpener.open()) {
 
-            try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ);
-                 OutputStream acceptedOut = Files.newOutputStream(acceptedFile,
-                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-                 OutputStream quarantineOut = Files.newOutputStream(quarantineFile,
-                         StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
-
-                channel.position(startOffset);
+                channel.seek(startOffset);
                 ByteBuffer buf = ByteBuffer.allocate(64 * 1024);
                 ByteArrayOutputStream line = new ByteArrayOutputStream(1024);
 
@@ -155,7 +244,7 @@ public class LocalFileIngestor {
                 outer:
                 while (true) {
                     buf.clear();
-                    int n = channel.read(buf);
+                    int n = channel.read(buf.array(), 0, buf.remaining());
                     if (n == -1) {
                         eof = true;
                         break;
@@ -163,7 +252,8 @@ public class LocalFileIngestor {
                     if (n == 0) {
                         continue;
                     }
-                    buf.flip();
+                    buf.limit(n);
+                    buf.position(0);
                     while (buf.hasRemaining()) {
                         byte b = buf.get();
                         consumed++;
@@ -216,7 +306,7 @@ public class LocalFileIngestor {
                                 record.setEventId(eventId);
                                 record.setSchemaVersion(schemaVersion);
                                 record.setReason(reason);
-                                record.setRawPath(quarantineFile.toString());
+                                record.setRawPath(quarantineReference);
                                 quarantineRecordMapper.insert(record);
                                 quarantined++;
                             }
@@ -241,22 +331,34 @@ public class LocalFileIngestor {
                 } else {
                     // 尾部残行（无换行）：不消费，偏移停在最后一个完整行之后（Taildir 语义）
                     endOffset = startOffset + consumedAtLineStart;
-                    log.info("ingest {}: 尾部残行 {} 字节留待文件增长", file.getFileName(), line.size());
+                    log.info("ingest {}: 尾部残行 {} 字节留待文件增长", fileName, line.size());
                 }
                 acceptedOut.flush();
                 quarantineOut.flush();
             }
             // 单文件调用保持既有行为；批次编排调用 deferred 变体，待完整 manifest 发布后再推进。
             if (commitCheckpoint && (endOffset > startOffset || collected > 0 || quarantined > 0)) {
-                upsertCheckpoint(runtimeProfileId, sourceId, abs, identity, endOffset);
+                upsertCheckpoint(runtimeProfileId, sourceId, checkpointKey, identity, endOffset);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("采集失败: " + file, e);
+            throw new UncheckedIOException("采集失败: " + checkpointKey, e);
         }
         log.info("ingest {}: collected={} quarantined={} acceptedBytes={} offset {}→{} identity={}",
-                file.getFileName(), collected, quarantined, acceptedBytes, startOffset, endOffset, identity);
-        return result(file, startOffset, endOffset, identity, collected, quarantined,
+                fileName, collected, quarantined, acceptedBytes, startOffset, endOffset, identity);
+        return result(fileName, startOffset, endOffset, identity, collected, quarantined,
                 acceptedBytes, schemaVersions);
+    }
+
+    private static LandingStorage.SeekableInput seekable(Path file) throws IOException {
+        FileChannel channel = FileChannel.open(file, StandardOpenOption.READ);
+        return new LandingStorage.SeekableInput() {
+            @Override public void seek(long offset) throws IOException { channel.position(offset); }
+            @Override public int read(byte[] buffer, int offset, int length) throws IOException {
+                return channel.read(ByteBuffer.wrap(buffer, offset, length));
+            }
+            @Override public long length() throws IOException { return channel.size(); }
+            @Override public void close() throws IOException { channel.close(); }
+        };
     }
 
     /** READY manifest 发布成功后确认文件级断点，保证未发布批次可从源文件重放。 */
@@ -274,6 +376,12 @@ public class LocalFileIngestor {
                                      Set<String> schemaVersions) {
         return new FileResult(file.getFileName().toString(), start, end, identity,
                 collected, quarantined, acceptedBytes, schemaVersions);
+    }
+
+    private static FileResult result(String fileName, long start, long end, String identity,
+                                     long collected, long quarantined, long acceptedBytes,
+                                     Set<String> schemaVersions) {
+        return new FileResult(fileName, start, end, identity, collected, quarantined, acceptedBytes, schemaVersions);
     }
 
     /**
@@ -307,6 +415,10 @@ public class LocalFileIngestor {
         return canonical(file.toAbsolutePath().toString());
     }
 
+    public String checkpointKeyFor(LandingStorage storage, String relativePath) {
+        return storage.checkpointKey(relativePath);
+    }
+
     /**
      * 键的规范形式：去掉 {@code ./}、{@code ../} 与重复分隔符。
      *
@@ -330,8 +442,12 @@ public class LocalFileIngestor {
                         .eq(FileCheckpoint::getRuntimeProfileId, runtimeProfileId)
                         .eq(FileCheckpoint::getSourceId, sourceId))
                 .stream()
-                .map(ckpt -> canonical(ckpt.getFilePath()))
+                .map(ckpt -> canonicalCheckpointKey(ckpt.getFilePath()))
                 .collect(Collectors.toSet());
+    }
+
+    private static String canonicalCheckpointKey(String key) {
+        return key != null && key.startsWith("hdfs://") ? key : canonical(key);
     }
 
     private void upsertCheckpoint(long runtimeProfileId, long sourceId, String absPath,
@@ -421,6 +537,41 @@ public class LocalFileIngestor {
             return size;
         }
         return 0;   // 整个文件没有任何换行 → 没有完整行
+    }
+
+    private static long consumableEnd(LandingStorage storage, String relativePath, long size) {
+        if (size <= 0L) {
+            return 0L;
+        }
+        byte[] buffer = new byte[64 * 1024];
+        try (LandingStorage.SeekableInput input = storage.openSeekable(relativePath)) {
+            long position = size;
+            while (position > 0) {
+                int length = (int) Math.min(buffer.length, position);
+                long start = position - length;
+                input.seek(start);
+                int read = 0;
+                while (read < length) {
+                    int count = input.read(buffer, read, length - read);
+                    if (count < 0) {
+                        break;
+                    }
+                    if (count == 0) {
+                        continue;
+                    }
+                    read += count;
+                }
+                for (int i = read - 1; i >= 0; i--) {
+                    if (buffer[i] == LF) {
+                        return start + i + 1;
+                    }
+                }
+                position = start;
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("读取 Landing 可消费边界失败: " + relativePath, e);
+        }
+        return 0L;
     }
 
     /**
