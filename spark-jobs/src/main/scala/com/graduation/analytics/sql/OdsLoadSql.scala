@@ -16,7 +16,10 @@ import org.apache.spark.sql.types.{
  *    （因此模板 FROM 视图而非 json.`path`，避免推断缺失缺口字段）；
  *  - 校验 schema_version='1.0'、event_id/event_type/event_time 非空；
  *  - 未知版本/非法行 → 隔离统计（rejected，§10.2 步骤 5 计数，页面可展示）；
- *  - 按 dt（yyyyMMdd）/hour（HH）分区；INSERT OVERWRITE 幂等，重跑不重复；
+ *  - 按 dt（yyyyMMdd）/hour（HH）分区；写出走 G31-08 合并语义（selectFromLanding /
+ *    mergeInsertOverwrite）：旧实现裸 INSERT OVERWRITE 在 STATIC 模式下是整表覆写、
+ *    同日增量批次会清空历史（F-G4-1/D-040），现由 EventOdsLoadJob 以
+ *    「命中分区 读-合并-去重-覆写」写出（计划 BATCH-G31-08-FG41-SAMEDAY-INCREMENTAL-PLAN §1）；
  *  - 保留 ingest_batch_id（mandatory 由作业注入）。
  *
  * **P2-01 / ODS v2 口径（D-052…D-058）**：
@@ -168,38 +171,80 @@ object OdsLoadSql {
     "  REGEXP_REPLACE(SUBSTR(event_time, 1, 10), '-', '') AS dt,\n" +
       "  SUBSTR(event_time, 12, 2) AS hour"
 
-  private def insert(ns: WarehouseNamespace, table: String, sourceSystem: String,
-                     batchId: Long, whereClause: String): String =
-    s"""
-       |INSERT OVERWRITE TABLE ${ns.ods}.$table PARTITION (dt, hour)
-       |SELECT
+  /** 各主题 WHERE 谓词（原四条模板的 whereClause 字节原样收拢一处；调用方只有 selectFromLanding） */
+  private def topicWhere(table: String): String = table match {
+    case "ods_user_event" =>
+      "event_type IN ('user_registered')"
+    case "ods_product_event" =>
+      "event_type IN ('product_created', 'product_updated',\n" +
+        "                     'stock_reserved', 'stock_released', 'stock_changed')"
+    case "ods_behavior_event" =>
+      "event_type = 'behavior'"
+    case "ods_trade_event" =>
+      "event_type IN ('order_created', 'order_cancelled', 'order_paid',\n" +
+        "                     'refund_created', 'refund_completed')"
+    case other => throw new IllegalArgumentException(s"未登记的 ODS 表：$other")
+  }
+
+  /**
+   * Landing 视图 → 目标表的**纯 SELECT**（G31-08 从 insert 模板拆出，文本字节保真）：
+   * `EventOdsLoadJob` 用它取新批行集做合并；四条 `*FromLanding` 模板用它还原与
+   * 改造前逐字节一致的 INSERT 文本（契约测试 A9/A9d 继续钉住）。
+   */
+  def selectFromLanding(table: String, sourceSystem: String, batchId: Long): String =
+    s"""SELECT
        |${renderSelect(odsSelect(table, sourceSystem), batchId)},
        |$partitionSelect
        |FROM $LANDING_VIEW
        |WHERE schema_version = '1.0'
-       |  AND $whereClause
-       |  AND event_id IS NOT NULL AND event_time IS NOT NULL
+       |  AND ${topicWhere(table)}
+       |  AND event_id IS NOT NULL AND event_time IS NOT NULL""".stripMargin
+
+  private def insert(ns: WarehouseNamespace, table: String, sourceSystem: String,
+                     batchId: Long): String =
+    s"""
+       |INSERT OVERWRITE TABLE ${ns.ods}.$table PARTITION (dt, hour)
+       |${selectFromLanding(table, sourceSystem, batchId)}
        |""".stripMargin
 
   /** 用户事件：显式视图 → ods_user_event（§10.1 用户主题核心字段） */
   def userFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
-    insert(ns, "ods_user_event", sourceSystem, batchId, "event_type IN ('user_registered')")
+    insert(ns, "ods_user_event", sourceSystem, batchId)
 
   /** 商品事件：显式视图 → ods_product_event（§10.1 商品主题，含库存事件） */
   def productFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
-    insert(ns, "ods_product_event", sourceSystem, batchId,
-      "event_type IN ('product_created', 'product_updated',\n" +
-        "                     'stock_reserved', 'stock_released', 'stock_changed')")
+    insert(ns, "ods_product_event", sourceSystem, batchId)
 
   /** 行为事件：显式视图 → ods_behavior_event（§10.1 行为主题） */
   def behaviorFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
-    insert(ns, "ods_behavior_event", sourceSystem, batchId, "event_type = 'behavior'")
+    insert(ns, "ods_behavior_event", sourceSystem, batchId)
 
   /** 交易事件：显式视图 → ods_trade_event（§10.1 交易主题，订单/支付/退款） */
   def tradeFromLanding(ns: WarehouseNamespace, sourceSystem: String, batchId: Long): String =
-    insert(ns, "ods_trade_event", sourceSystem, batchId,
-      "event_type IN ('order_created', 'order_cancelled', 'order_paid',\n" +
-        "                     'refund_created', 'refund_completed')")
+    insert(ns, "ods_trade_event", sourceSystem, batchId)
+
+  // ── 合并写出口（G31-08 / F-G4-1·D-040）：分区作用域 读-合并-去重-覆写 ──────────
+  // 动机：裸 INSERT OVERWRITE 未设 partitionOverwriteMode 时是 STATIC 整表覆写，同日增量
+  // 批次清空历史；且**仅开动态覆盖也不够**——同一分区内的旧记录仍会被覆写掉（D-044④ 硬约束），
+  // 必须由作业把「命中分区旧行」与「新批」合并后整体覆写回命中分区（性质与判据见计划 §1/§2）。
+
+  /** 合并/去重键（EventOdsLoadJob 的 semi/anti join 用；分区列名与 OdsV2Columns.PartitionColumns 同名） */
+  val ColDt = "dt"
+  val ColHour = "hour"
+  val ColEventId = "event_id"
+
+  /** 合并临时视图名（EventOdsLoadJob 注册 newRows ∪ 命中分区旧行） */
+  def mergeView(table: String): String = s"${table}__merge"
+
+  /**
+   * 合并覆写模板：SELECT 列序由唯一所有者 `OdsV2Columns.columnNames` 显式给出
+   * （数据列 + dt/hour，按名投影、按位落表），行集 = 合并视图（新批 + 命中分区旧行）。
+   */
+  def mergeInsertOverwrite(ns: WarehouseNamespace, table: String, mergedView: String): String =
+    s"""INSERT OVERWRITE TABLE ${ns.ods}.$table PARTITION (dt, hour)
+       |SELECT
+       |${OdsV2Columns.columnNames(table).map(n => s"  $n").mkString(",\n")}
+       |FROM $mergedView""".stripMargin
 
   /** Landing 事件显式 Schema（§10.2 步骤 2：不自动推断生产 Schema） */
   val landingSchema: StructType = StructType(Seq(

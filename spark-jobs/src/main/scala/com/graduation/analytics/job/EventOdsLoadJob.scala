@@ -15,7 +15,9 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
  *  2. 校验 schema_version / event_id / event_type / event_time；
  *  3. 未知版本或缺失主键 → rejected（隔离计数，不进入正式分区）；
  *  4. 按业务日期 dt/hour 分区；
- *  5. INSERT OVERWRITE 幂等（重跑相同 inputVersion 分区内容不重复，§10.3）；
+ *  5. 增量合并语义（G31-08 / F-G4-1·D-040，§10.3 幂等在分区内与跨批次两个维度同时成立）：
+ *     按「命中分区 读-合并-去重-覆写」写出——新批行 ∪ 命中分区旧行（event_id 未被新批
+ *     覆盖者）整体覆写回命中分区；非命中分区物理不动，同批重放 anti-join 幂等；
  *  6. 返回 input / accepted / rejected / output 四类计数。
  *
  * **P2-01 / ODS v2 读取路径（D-054…D-057）**：
@@ -102,24 +104,43 @@ class EventOdsLoadJob extends WarehouseJob {
     valid.createOrReplaceTempView(OdsLoadSql.LANDING_VIEW)
 
     spark.sparkContext.setJobDescription(s"$code load four topics")
-    val tables: Seq[(String, String)] = Seq(
-      ("ods_user_event", "userFromLanding"),
-      ("ods_product_event", "productFromLanding"),
-      ("ods_behavior_event", "behaviorFromLanding"),
-      ("ods_trade_event", "tradeFromLanding")
-    )
+    val tables: Seq[String] = Seq(
+      "ods_user_event", "ods_product_event", "ods_behavior_event", "ods_trade_event")
 
+    // G31-08 / F-G4-1（D-040）：裸 INSERT OVERWRITE 未设 partitionOverwriteMode 时是 STATIC
+    // 整表覆写——同日第二批增量会把历史清空（G31-04 run2 实测：3 张 ODS 表 parquet 归零）；
+    // 且仅开动态覆盖也不够：同一分区内的旧记录仍会被覆写掉（D-044④ 硬约束）。
+    // 修复 = 分区作用域「读-合并-去重-覆写」：
+    //   newRows       = 现行 SELECT 模板输出（模板字节不变，见 OdsLoadSql.selectFromLanding）；
+    //   hits          = newRows 的 distinct (dt, hour)——本批命中的分区；
+    //   staleExisting = 目标表 ⋈hits（只取命中分区旧行） anti-join newRows.event_id
+    //                   （同 event_id 旧副本让位新批 = new-wins）；
+    //   merged        = newRows ∪ staleExisting，整体覆写回命中分区。
+    // 性质：非命中分区物理不动；命中分区旧行保留；同批重放 anti-join 幂等；批内不去重
+    // （现状保持，重放稳定性由 anti-join 保证）；空批零写入。
+    val overwriteModeKey = "spark.sql.sources.partitionOverwriteMode"
+    val previousOverwriteMode = spark.conf.getOption(overwriteModeKey)
     var outputCount = 0L
-    tables.foreach { case (table, sqlName) =>
-      // D-056：注入值经参数通道进入 SQL 字面量（含 ' 转义），模板不再读行内 source_system
-      val sql = sqlName match {
-        case "userFromLanding"     => OdsLoadSql.userFromLanding(ns, sourceSystem, batchId)
-        case "productFromLanding"  => OdsLoadSql.productFromLanding(ns, sourceSystem, batchId)
-        case "behaviorFromLanding" => OdsLoadSql.behaviorFromLanding(ns, sourceSystem, batchId)
-        case "tradeFromLanding"    => OdsLoadSql.tradeFromLanding(ns, sourceSystem, batchId)
+    try {
+      spark.conf.set(overwriteModeKey, "dynamic") // 只在写期间生效，finally 还原（防跨作业泄漏）
+      tables.foreach { table =>
+        val newRows = spark.sql(OdsLoadSql.selectFromLanding(table, sourceSystem, batchId))
+        if (!newRows.take(1).isEmpty) {
+          val hits = newRows.select(OdsLoadSql.ColDt, OdsLoadSql.ColHour).distinct()
+          val staleExisting = spark.table(s"${ns.ods}.$table")
+            .join(hits, Seq(OdsLoadSql.ColDt, OdsLoadSql.ColHour), "left_semi")
+            .join(newRows.select(OdsLoadSql.ColEventId), Seq(OdsLoadSql.ColEventId), "left_anti")
+          val mergedView = OdsLoadSql.mergeView(table)
+          newRows.unionByName(staleExisting).createOrReplaceTempView(mergedView)
+          spark.sql(OdsLoadSql.mergeInsertOverwrite(ns, table, mergedView))
+        }
+        outputCount += spark.sql(s"SELECT COUNT(*) c FROM ${ns.ods}.$table").collect()(0).getLong(0)
       }
-      spark.sql(sql) // INSERT OVERWRITE 幂等：分区内重跑内容相同，不重复累加（§10.3 第 4 条）
-      outputCount += spark.sql(s"SELECT COUNT(*) c FROM ${ns.ods}.$table").collect()(0).getLong(0)
+    } finally {
+      previousOverwriteMode match {
+        case Some(v) => spark.conf.set(overwriteModeKey, v)
+        case None    => spark.conf.unset(overwriteModeKey)
+      }
     }
 
     spark.sparkContext.setJobDescription(s"$code rejected summary")
