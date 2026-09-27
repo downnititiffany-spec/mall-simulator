@@ -209,4 +209,15 @@ class ExplanationEvidenceTest {
         assertThat(ExplanationService.numberViolations("gmv 2042.0000，环比 1.0420", evidence)).isEmpty();
         assertThat(ExplanationService.numberViolations("gmv 9999.0000", evidence)).containsExactly("9999.0000");
     }
+
+    @Test
+    @DisplayName("数值守卫：日期按整体匹配，不能把证据日期改成另一天")
+    void numberGuardRejectsDateBuiltFromAllowedNumberFragments() {
+        String evidence = "快照 S20260901_24（业务日期 2026-09-01）";
+
+        assertThat(ExplanationService.numberViolations("快照 S20260901_24，业务日期 2026-09-09", evidence))
+                .containsExactly("2026-09-09");
+        assertThat(ExplanationService.numberViolations("快照 S20260901_24，业务日期 2026-09-01", evidence))
+                .isEmpty();
+    }
 }

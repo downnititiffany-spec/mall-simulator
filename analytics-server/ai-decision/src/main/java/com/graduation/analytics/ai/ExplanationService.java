@@ -60,6 +60,7 @@ public class ExplanationService {
     /** 摘要长度上限，防止模型长篇发挥 */
     private static final int SUMMARY_MAX_CHARS = 400;
     private static final Pattern NUMBER = Pattern.compile("\\d+(?:\\.\\d+)?");
+    private static final Pattern ISO_DATE = Pattern.compile("\\b\\d{4}-\\d{2}-\\d{2}\\b");
 
     public record Evidence(String snapshotId, String question, String sql, List<String> tables,
                            int returnedRows, long queryElapsedMs, String timeRange, String definitions,
@@ -311,19 +312,35 @@ public class ExplanationService {
 
     /** 返回候选摘要里「证据包叙述中找不到」的数字（空 = 通过） */
     static List<String> numberViolations(String candidate, String evidenceText) {
-        Set<String> allowed = new LinkedHashSet<>();
-        Matcher m = NUMBER.matcher(evidenceText == null ? "" : evidenceText);
-        while (m.find()) {
-            allowed.add(m.group());
-        }
+        Set<String> allowed = numericTokens(evidenceText);
         Set<String> violations = new LinkedHashSet<>();
-        Matcher c = NUMBER.matcher(candidate == null ? "" : candidate);
+        Matcher c = NUMBER.matcher(ISO_DATE.matcher(candidate == null ? "" : candidate).replaceAll(" "));
+        Matcher candidateDates = ISO_DATE.matcher(candidate == null ? "" : candidate);
+        while (candidateDates.find()) {
+            if (!allowed.contains(candidateDates.group())) {
+                violations.add(candidateDates.group());
+            }
+        }
         while (c.find()) {
             if (!allowed.contains(c.group())) {
                 violations.add(c.group());
             }
         }
         return List.copyOf(violations);
+    }
+
+    private static Set<String> numericTokens(String text) {
+        String value = text == null ? "" : text;
+        Set<String> tokens = new LinkedHashSet<>();
+        Matcher dates = ISO_DATE.matcher(value);
+        while (dates.find()) {
+            tokens.add(dates.group());
+        }
+        Matcher numbers = NUMBER.matcher(ISO_DATE.matcher(value).replaceAll(" "));
+        while (numbers.find()) {
+            tokens.add(numbers.group());
+        }
+        return tokens;
     }
 
     /** 事实：每条都带 evidenceIds（列/证据引用），供前端逐条复核 */
