@@ -142,7 +142,7 @@ public class MetricPublisher implements MetricPublisherPort {
             for (MetricAdsCatalog spec : MetricAdsCatalog.ALL) {
                 MetricExportManifest.TableExport t = manifest.table(spec.name());
                 List<Map<String, Object>> rows =
-                        exportReader.readTable(Path.of(t.exportFile()), spec.name(), t.columns());
+                        exportReader.readTable(MetricExportPath.localPath(t.exportFile()), spec.name(), t.columns());
                 rowsByTable.put(spec.name(), rows);
                 writtenCounts.put(spec.name(), adsWriter.insertRows(spec.name(), request.snapshotId(),
                         request.businessDate(), rows));

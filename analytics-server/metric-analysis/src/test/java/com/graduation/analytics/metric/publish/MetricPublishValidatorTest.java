@@ -71,6 +71,25 @@ class MetricPublishValidatorTest {
     }
 
     @Test
+    @DisplayName("manifest 中 file URI 的 8 个导出文件都能被发布校验器定位")
+    void fileUriExportFilesPassManifestChecks(@TempDir Path dir) throws Exception {
+        MetricExportManifest local = manifest(dir, SID, DT);
+        List<MetricExportManifest.TableExport> uriTables = local.tables().stream()
+                .map(t -> new MetricExportManifest.TableExport(t.hiveTable(), t.mysqlTable(), t.rowCount(),
+                        t.columns(), t.hivePath(), Path.of(t.exportFile()).toUri().toString(), t.checksum()))
+                .toList();
+        MetricExportManifest withFileUris = new MetricExportManifest(local.snapshotId(), local.businessDate(),
+                local.dt(), local.source(), local.totalRows(), uriTables);
+
+        List<Check> checks = validator.manifestChecks(request(dir, SID, DT), withFileUris);
+
+        assertThat(checks.stream().filter(c -> "MP_EXPORT_FILES".equals(c.ruleCode())).findFirst()
+                .orElseThrow().passed()).isTrue();
+        assertThat(checks.stream().filter(c -> "MP_EXPORT_CHECKSUM".equals(c.ruleCode())).findFirst()
+                .orElseThrow().passed()).isTrue();
+    }
+
+    @Test
     @DisplayName("清单快照与请求不一致 → 拦下（防把上一版数据当本次发布）")
     void manifestSnapshotMismatchBlocked(@TempDir Path dir) throws Exception {
         MetricExportManifest manifest = manifest(dir, "S20260901_20", DT);

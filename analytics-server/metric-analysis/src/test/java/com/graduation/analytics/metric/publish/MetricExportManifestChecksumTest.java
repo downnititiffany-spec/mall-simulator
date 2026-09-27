@@ -96,6 +96,24 @@ class MetricExportManifestChecksumTest {
         assertThat(manifest.tables().get(0).checksum()).isEqualTo("195ac066");
     }
 
+    @Test
+    @DisplayName("file URI 按本机文件 URI 解析，而不是当普通路径字符串")
+    void fileUriResolvesToLocalPath(@TempDir Path dir) throws Exception {
+        Path export = file(dir, "uri-export.jsonl", "{\"pv\":1}\n");
+
+        assertThat(MetricExportPath.localPath(export.toUri().toString()))
+                .isEqualTo(export.toAbsolutePath())
+                .satisfies(path -> assertThat(Files.isRegularFile(path)).isTrue());
+    }
+
+    @Test
+    @DisplayName("非 file URI 不可误当成本地文件路径")
+    void nonFileUriIsRejected(@TempDir Path dir) throws Exception {
+        assertThatThrownBy(() -> MetricExportPath.localPath("hdfs://namenode:8020/ads/a.jsonl"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("仅支持本机文件路径或 file URI");
+    }
+
     private Path file(Path dir, String name, String content) throws IOException {
         Path file = dir.resolve(name);
         Files.write(file, content.getBytes(StandardCharsets.UTF_8));

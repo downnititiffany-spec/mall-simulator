@@ -84,7 +84,7 @@ public class MetricPublishValidator {
                         .orElse("无"), rules));
 
         long missingFiles = manifest.tables().stream()
-                .filter(t -> t.exportFile() == null || !Files.isRegularFile(java.nio.file.Path.of(t.exportFile())))
+                .filter(t -> !isRegularLocalFile(t.exportFile()))
                 .count();
         checks.add(check("MP_EXPORT_FILES", manifest.tables().size(), missingFiles, missingFiles == 0,
                 "导出文件全部存在", "exportDir=" + request.exportDir(), rules));
@@ -97,7 +97,7 @@ public class MetricPublishValidator {
         for (MetricExportManifest.TableExport t : manifest.tables()) {
             String actual;
             try {
-                actual = MetricExportManifest.crc32(java.nio.file.Path.of(t.exportFile()));
+                actual = MetricExportManifest.crc32(MetricExportPath.localPath(t.exportFile()));
             } catch (IOException | RuntimeException ex) {
                 // 文件缺失/不可读在此也算"摘要对不上"（不假装通过）：MP_EXPORT_FILES 会另行点名缺失文件
                 checksumMismatch.add(t.mysqlTable() + " 重算失败=" + ex.getClass().getSimpleName());
@@ -113,6 +113,14 @@ public class MetricPublishValidator {
                 checksumMismatch.isEmpty() ? "逐表摘要一致" : String.join("; ", checksumMismatch), rules));
 
         return checks;
+    }
+
+    private static boolean isRegularLocalFile(String path) {
+        try {
+            return path != null && Files.isRegularFile(MetricExportPath.localPath(path));
+        } catch (RuntimeException ex) {
+            return false;
+        }
     }
 
     /** ── 阶段二：写库前对账（ADS 行已在库，指标值待写） ─────────────────── */

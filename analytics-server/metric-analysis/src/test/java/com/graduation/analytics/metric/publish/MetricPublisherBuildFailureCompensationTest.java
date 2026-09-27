@@ -90,6 +90,34 @@ class MetricPublisherBuildFailureCompensationTest {
         verify(repository).markStatus("S_TEST_BUILD_FAIL", "FAILED", "MP_ACTIVATE_NOOP: 快照未处于 VERIFYING");
     }
 
+    @Test
+    @DisplayName("MetricPublisher 可实际读取 manifest 中 file URI 指向的八张 ADS 导出文件")
+    void publisherReadsFileUriExports(@TempDir Path exportDir) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        MetricPublishRepository repository = mock(MetricPublishRepository.class);
+        MetricAdsWriter adsWriter = mock(MetricAdsWriter.class);
+        MetricStore metricStore = mock(MetricStore.class);
+        when(adsWriter.deleteSnapshot("S_TEST_BUILD_FAIL")).thenReturn(0, 8);
+        when(adsWriter.insertRows(anyString(), org.mockito.ArgumentMatchers.eq("S_TEST_BUILD_FAIL"),
+                org.mockito.ArgumentMatchers.eq("20260923"), anyList())).thenReturn(1);
+        when(metricStore.publish(any(MetricStore.SnapshotRef.class), anyList())).thenReturn(0);
+        writeValidManifest(exportDir, mapper, false, true);
+
+        PublishRequest request = new PublishRequest(1L, 1, 10L, "S_TEST_BUILD_FAIL", "20260923",
+                "2026-09-23T00:00:00", 99L, exportDir, definitions());
+        MetricPublisher publisher = new MetricPublisher(repository, adsWriter, new AdsExportReader(), metricStore,
+                new MetricPublishValidator(), mapper);
+
+        var report = publisher.publish(request);
+
+        assertThat(report.errorCode())
+                .as("8 张 URI 文件已被读取并进入预期的激活边界；模拟激活 0 行后 fail-closed")
+                .isEqualTo("MP_ACTIVATE_NOOP");
+        verify(adsWriter, times(MetricAdsCatalog.ALL.size())).insertRows(anyString(),
+                org.mockito.ArgumentMatchers.eq("S_TEST_BUILD_FAIL"), org.mockito.ArgumentMatchers.eq("20260923"),
+                anyList());
+    }
+
     private Map<String, DefinitionRef> definitions() {
         Map<String, DefinitionRef> definitions = new LinkedHashMap<>();
         for (String code : List.of("pv", "uv", "dau", "paid_order_cnt", "gmv", "net_sale",
@@ -101,6 +129,11 @@ class MetricPublisherBuildFailureCompensationTest {
     }
 
     private void writeValidManifest(Path exportDir, ObjectMapper mapper, boolean malformedSaleAmount) throws Exception {
+        writeValidManifest(exportDir, mapper, malformedSaleAmount, false);
+    }
+
+    private void writeValidManifest(Path exportDir, ObjectMapper mapper, boolean malformedSaleAmount,
+                                    boolean fileUri) throws Exception {
         Files.createDirectories(exportDir);
         var tables = new java.util.ArrayList<Map<String, Object>>();
         for (MetricAdsCatalog spec : MetricAdsCatalog.ALL) {
@@ -119,7 +152,7 @@ class MetricPublisherBuildFailureCompensationTest {
             table.put("rowCount", 1);
             table.put("columns", spec.columns());
             table.put("hivePath", "file:/warehouse/" + spec.name() + "/snapshot_id=S_TEST_BUILD_FAIL/dt=20260923");
-            table.put("exportFile", file.toString());
+            table.put("exportFile", fileUri ? file.toUri().toString() : file.toString());
             table.put("checksum", MetricExportManifest.crc32(file));
             tables.add(table);
         }
