@@ -517,3 +517,13 @@
 **Boundary**：仅本地提交（push 授权已用尽）；绝不 `git add -A`/bulk-tree，每组显式路径；不改写历史提交；3306 永久冻结零接触；本批零产品/测试字节改动（run-tests.ps1 门值数字与注释行除外）；不产生新验收判据——G31-04~G31-09 结论以各自结果文档为准，本批仅收口 git 呈现形态；`*.bak-*` 永不提交。
 
 **Evidence**：计划 `docs/verification/batches/BATCH-G31-13-WORKTREE-DEBT-CLOSURE-PLAN.md`（§1 审计结论 35 M+67 ?? 全定性表）；web 测试 375/375（node --test 2026-09-27）；夹具 `fixtures/source-a-e3/MANIFEST-SHA256.txt` sha256sum -c 5/5 OK；提交序列 17 组（R 注册→六代码组→五文档组→G31-08/09 代码+文档→门值→C 收口），逐组 SHA 记录于 CURRENT_BATCH/PROJECT_STATUS 收口条目；编辑前备份 `*.bak-20260927-g3113` 三件（DECISION_LOG / CURRENT_BATCH / PROJECT_STATUS）。
+
+### D-052 — 总控签收登记（2026-09-27）：G31-13 Git 清账与归档签收 ＋ G31-12 四项证据签收并解除 G31-11 暂缓签收；裁定原文备份落盘；范围限已记录证据、非产品最终验收
+
+**Decision**：总控 2026-09-27 复核裁定（原文逐字备份 `docs/decisions/rulings/MASTER-RULING-20260927-G3113-SIGNOFF.md`）：**(1) G31-13 Git 清账与归档签收**——17 组提交已落库；`g3113` 清单总控独立核验 **9/9 哈希一致**，bundle 验证为完整历史；当前无已跟踪或暂存改动，49 个未跟踪路径仍按「永不提交」清单管理。**(2) G31-12 四项复核证据签收，解除 G31-11 的暂缓签收**——留存的隔离链结果为 PASS，支持 V33 升级、重算钉批、FIFO 双待处理批和原 run 故障恢复四项结论。**(3) 归档边界登记**——归档快照截于 `8ab5824`，之后的登记提交 `7bcbde1` 不在该 bundle 中（不影响 17 组清账的备份范围，但远端仍未收到这些提交）；含历史 `*.bak-*` 的归档继续只作受控本地副本、不公开上传。**(4) 本条登记动作**——按裁定指令「将本裁定备份后登记到动态状态与决策记录」执行：裁定原文备份落盘（新目录 `docs/decisions/rulings/`）+ 本条 + CURRENT_BATCH/PROJECT_STATUS 状态翻转（G31-11 暂缓签收解除、G31-12/G31-13 签收完成），下一动作 = 审定 V3.1 范围。
+
+**Reason**：签收权归总控，代码 Agent 不得自行宣布验收；本条仅登记裁定事实并解锁 V3.1 范围审定，不产生新的技术判据。裁定原文逐字备份是「登记以保全」的最小充分动作，与 DECISION_LOG 概括登记互为凭据。
+
+**Boundary**：裁定**限于已记录的 WSL 单节点与隔离环境证据，不等于整个毕业设计产品最终验收通过**（裁定原文明示；总控本轮未重连数据库、未重跑 Java 测试）；V3.1 仍为待审稿——提交≠发布，权威版本仍 V3.0；真实 LLM 仍 BLOCKED（G31-06/D-039）；远程集群、连续 WSL 发布链及分类/地区供数**不因本次签收写成已完成**；3306 永久冻结零接触；push 授权已用尽仅本地提交（远端未收到 17 组提交与登记提交）；`*.bak-*` 备份永不提交。
+
+**Evidence**：裁定原文备份 `docs/decisions/rulings/MASTER-RULING-20260927-G3113-SIGNOFF.md`；g3113 归档 `v3-archive/g3113/`（MANIFEST-SHA256 9 项，总控独立复核 9/9 一致）；提交序列 `b1c02b6..8ab5824`（17 组）+ `7bcbde1`（归档登记）；编辑前备份 `*.bak-20260927-d052` 三件（DECISION_LOG / CURRENT_BATCH / PROJECT_STATUS）。
