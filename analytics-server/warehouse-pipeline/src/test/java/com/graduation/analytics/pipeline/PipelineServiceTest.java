@@ -1804,6 +1804,23 @@ class PipelineServiceTest {
         verify(publisherPort, org.mockito.Mockito.times(1)).publish(any());
     }
 
+    // ── accepted 数据文件判定（D-057）：accepted 沿用源输入文件名，不得按扩展名假设 ──
+
+    @Test
+    void acceptedDataFilePredicateFollowsIngestionNamingContract() {
+        // 摄取器不改名写入 accepted：滚动日志布局=*.jsonl，Flume raw 布局=events.<millis> 任意名
+        assertThat(PipelineService.isAcceptedDataFile("events.jsonl")).isTrue();
+        assertThat(PipelineService.isAcceptedDataFile("events.1790554342097")).isTrue();
+        assertThat(PipelineService.isAcceptedDataFile("events.1")).isTrue();
+        assertThat(PipelineService.isAcceptedDataFile("e3-events.jsonl")).isTrue();
+        // 形状排除口径（对齐输入扫描）：隐藏、_ 前缀、未完成 .tmp 不算数据
+        assertThat(PipelineService.isAcceptedDataFile(".1790554342097.tmp")).isFalse();
+        assertThat(PipelineService.isAcceptedDataFile("_SUCCESS")).isFalse();
+        assertThat(PipelineService.isAcceptedDataFile("_temporary")).isFalse();
+        assertThat(PipelineService.isAcceptedDataFile("events.1.TMP")).isFalse();
+        assertThat(PipelineService.isAcceptedDataFile(".hidden")).isFalse();
+    }
+
     // ── 辅助 ────────────────────────────────────────────────────────────────
     private void writeLanding(String acceptedUriDir, String... eventLines) throws IOException {
         writeManifest(1, SOURCE_ID, acceptedUriDir, true);

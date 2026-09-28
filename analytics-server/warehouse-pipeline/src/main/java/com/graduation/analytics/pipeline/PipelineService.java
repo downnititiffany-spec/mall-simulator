@@ -54,6 +54,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -1489,7 +1490,7 @@ public class PipelineService {
     private void readAcceptedEvents(Path acceptedDir, String datePrefix, List<EventEnvelope> out,
                                     Map<String, BigDecimal> batchOrderTotals) {
         try (Stream<Path> list = Files.list(acceptedDir)) {
-            for (Path f : list.filter(p -> p.getFileName().toString().endsWith(".jsonl")).sorted().toList()) {
+            for (Path f : list.filter(p -> isAcceptedDataFile(p.getFileName().toString())).sorted().toList()) {
                 for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
                     acceptEventLine(line, f.getFileName().toString(), datePrefix, out, batchOrderTotals);
                 }
@@ -1510,7 +1511,7 @@ public class PipelineService {
             List<String> names = new ArrayList<>(landingStorage.list(acceptedRelativeDir));
             names.sort(String::compareTo);
             for (String name : names) {
-                if (!name.endsWith(".jsonl")) {
+                if (!isAcceptedDataFile(name)) {
                     continue;
                 }
                 String relativePath = acceptedRelativeDir + "/" + name;
@@ -1528,6 +1529,18 @@ public class PipelineService {
         } catch (RuntimeException e) {
             log.warn("accepted 读取失败 {}: {}", acceptedRelativeDir, e.getMessage());
         }
+    }
+
+    /**
+     * accepted 目录的数据文件判定（D-057）：摄取器写入 accepted 时**沿用源输入文件名**
+     * （LocalFileIngestor 不改名）——滚动日志布局输入全是 .jsonl，Flume raw 布局是
+     * {@code events.<millis>} 等任意名，因此读取侧不得按扩展名假设数据文件。统一对齐
+     * 输入扫描的形状排除口径：隐藏/`_` 前缀（清单、_SUCCESS、_temporary 类）与 `.tmp`
+     * 未完成文件不算数据，其余名字一律读。
+     */
+    static boolean isAcceptedDataFile(String name) {
+        String lower = name.toLowerCase(Locale.ROOT);
+        return !name.startsWith(".") && !name.startsWith("_") && !lower.endsWith(".tmp");
     }
 
     /** 两版 accepted 读取共用的唯一行语义：坏行跳过、订单总额照收、只放行业务日切片 */

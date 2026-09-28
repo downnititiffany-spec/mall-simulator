@@ -1,5 +1,12 @@
 # PROJECT_STATUS
 
+### 2026-09-28 N31-02 腿①执行切片#2：run6#3 A5 RUN_EMPTY_DATA 根因修复（accepted 文件名契约，D-057）——run6#4 待跑
+
+- **run6#3 已证 PASS**：A3 Flume→HDFS 对账全等（34192 B/99 行）；A4 hdfs:// 平台摄取 PASS（99 行 quarantine=0；manifest 批 1 READY；D-041 截断命中 0；hdfs-checksum[cp1-baseline] 批 1 签名 d9f516fa85b4）——**D-055 修复经 WAIT_LANDING/INIT_SCHEMA 实跑复证**（manifest 经 HDFS LandingStorage 读取，sci 输出 37）。
+- **A5 根因（已修，D-057）**：LOAD_ODS `RUN_EMPTY_DATA` = D-055 存储版 accepted 读取按 `.jsonl` 过滤，而摄取器写入 accepted **沿用源输入文件名**（LocalFileIngestor 不改名）——Flume raw 布局落 `events.<millis>`（实测 accepted/1/events.1790554342097 34192 B），整目录被跳过 → 0 事件 → 预检抛 RUN_EMPTY_DATA（platform.log 零告警：循环从未命中）。修复 = 共享谓词 `PipelineService.isAcceptedDataFile`（形状排除：`.`/`_` 前缀、`.tmp` 后缀，对齐 LandingInputScanner 口径，不按扩展名假设），本地/存储两版读取统一收口；清单在 manifests/ 目录无误读风险。
+- **测试与构建**：`PipelineServiceTest` +1 谓词用例 49/49、warehouse-pipeline 模块 205/205 全绿（reactor 三模块 BUILD SUCCESS 08:42）；platform-app 重打包（08:44）SHA 8ee676eb…→`79abfc23…`（D-056 台账第三次构建）、spark-jobs 71c0fc88… 不变；driver Phase-0 钉定更新；run6#3 残留平台 JVM（PID 124972，metric-staging 命令行核验）已终止后重打包。
+- **下一步** = 腿① run6#4 全链重跑（重启 3307+HDFS → 新保活 → driver `-Confirm -Fresh`），验 A5-A9（Spark 分层→ADS→3307 ACTIVE→API→页面 tol 0.0005），随后腿②。
+
 ### 2026-09-27 N31-02 腿①执行切片：run5 崩溃根因链修复（平台 hdfs:// landingUri 拒绝，D-055）＋ driver 三修——run6 待跑
 
 - **已证 PASS（run5 内）**：A1/A2 受控输入与 oracle 钉档（5/5 全等）；A3 Flume→HDFS 字节对账全等（34192 B，99 行，glob `events.*` 修复实证）。
