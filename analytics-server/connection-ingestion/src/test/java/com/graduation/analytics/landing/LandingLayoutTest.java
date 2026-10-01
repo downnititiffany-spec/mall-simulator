@@ -5,7 +5,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -69,7 +68,7 @@ class LandingLayoutTest {
     @Test
     @DisplayName("输入根按布局推出：滚动日志＝<landing>/events（不递归），Flume＝<landing>/raw（递归）")
     void inputRootAndRecursionComeFromLayout() {
-        Path landing = Paths.get("D:/landing/demo");
+        Path landing = Path.of("landing", "demo");
         assertThat(LandingLayout.ROLLING_LOG.inputRoot(landing)).isEqualTo(landing.resolve("events"));
         assertThat(LandingLayout.FLUME_RAW.inputRoot(landing)).isEqualTo(landing.resolve("raw"));
         assertThat(LandingLayout.ROLLING_LOG.recursive()).isFalse();

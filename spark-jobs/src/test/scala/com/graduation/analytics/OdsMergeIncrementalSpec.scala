@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 /**
  * G31-08 / F-G4-1·D-040：同日增量写入回归（分区作用域 读-合并-去重-覆写）。
@@ -27,8 +27,7 @@ import java.nio.file.{Files, Path, Paths}
  *  2. in-memory catalog + `USING parquet`（spark-hive 为 provided）：
  *     测试域 ≠ 在产 Hive metastore；「在产成立」归 D-044⑤ 合并重跑验证，本套件不宣称。
  *
- * 夹具纪律：golden 只读；批次行克隆到 `D:/Develop/tmp/g31-08-landing/<runId>/`，
- * 只新建不删除。
+ * 夹具纪律：golden 只读；批次行克隆到本套件独占的操作系统临时目录，结束时只清理该目录。
  */
 class OdsMergeIncrementalSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
@@ -49,6 +48,7 @@ class OdsMergeIncrementalSpec extends AnyFlatSpec with Matchers with BeforeAndAf
     }
 
   private var spark: SparkSession = _
+  private var tempRoot: Path = _
   // 内置 SQLConf 键 getOption 恒为 Some（出厂默认 STATIC）——「未预置」的判据是 == Some("STATIC")，
   // G6 断言作业跑完后还原为该捕获值（若作业泄漏 dynamic 则拿到 Some("dynamic") 失败）
   private var initialOverwriteMode: Option[String] = _
@@ -111,14 +111,15 @@ class OdsMergeIncrementalSpec extends AnyFlatSpec with Matchers with BeforeAndAf
     cNew.length should be(2)
     batchE.length should be(2)
 
-    val warehouse = s"${P2TestSupport.TempRoot}/g31-08-warehouse/$runId"
-    Files.createDirectories(Paths.get(warehouse))
+    tempRoot = P2TestSupport.createTempDirectory(s"g31-08-merge-$runId")
+    val warehouse = tempRoot.resolve("warehouse")
+    Files.createDirectories(warehouse)
     val session = SparkSession.builder()
       .appName("g31-08-merge-incremental")
       .master("local[1]")
       .config("spark.ui.enabled", "false")
       .config("spark.sql.shuffle.partitions", "1")
-      .config("spark.sql.warehouse.dir", warehouse)
+      .config("spark.sql.warehouse.dir", P2TestSupport.fileUri(warehouse))
       .config("spark.sql.catalogImplementation", "in-memory")
       .config("spark.driver.host", "127.0.0.1")
       .config("spark.sql.session.timeZone", "Asia/Shanghai")
@@ -134,7 +135,7 @@ class OdsMergeIncrementalSpec extends AnyFlatSpec with Matchers with BeforeAndAf
 
     LocalSchemaInitJob.statements(ns).foreach { case (_, ddl) => spark.sql(ddl) }
 
-    val landingRoot = Paths.get(P2TestSupport.TempRoot, "g31-08-landing", runId)
+    val landingRoot = tempRoot.resolve("landing")
     Files.createDirectories(landingRoot)
     val dirA = writeBatch(landingRoot, "batch-a", batchA)
     val dirB = writeBatch(landingRoot, "batch-b", batchB)
@@ -150,7 +151,10 @@ class OdsMergeIncrementalSpec extends AnyFlatSpec with Matchers with BeforeAndAf
     runBatch(dirE, BatchEId); snapsE = snapAll()
   }
 
-  override def afterAll(): Unit = if (spark != null) spark.stop()
+  override def afterAll(): Unit = {
+    try if (spark != null) spark.stop()
+    finally P2TestSupport.deleteTree(tempRoot)
+  }
 
   // ── 判据 ─────────────────────────────────────────────────────────────────
 

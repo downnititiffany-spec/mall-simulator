@@ -292,7 +292,7 @@ class DimDwdChainExecSpec extends AnyFlatSpec with Matchers with BeforeAndAfterA
       // 数据驱动分区（§11.4 迟到退款按订单归属业务日重算历史分区）
       val orderPartitions = dist(s"SELECT dt, COUNT(*) FROM $dwdOrder GROUP BY dt ORDER BY dt")
 
-      Capture(tag, s"${P2TestSupport.TempRoot}/p2-01-warehouse/$appName",
+      Capture(tag, spark.conf.get("spark.sql.warehouse.dir"),
         ns.prefix, spark.sparkContext.appName, dimRowsAtBdw, dimInputAtBdw,
         odsCounts, dimUser, dimProduct, dimUserAttrs, behavior, behaviorDistinctIds,
         behaviorBadEnum, behaviorNullUserKey, behaviorNullProductKey, behaviorNullCategoryKey,

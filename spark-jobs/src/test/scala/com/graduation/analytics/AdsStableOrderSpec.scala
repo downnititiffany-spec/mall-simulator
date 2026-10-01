@@ -23,7 +23,7 @@ import org.scalatest.matchers.should.Matchers
  * `INSERT` 的落文件顺序）⇒ 两轮结果不同（RED）。名次漂移不是学术问题：TopN 的**入选集合**
  * 会随重跑改变，用户看到的热门商品列表与上游同一份数据却对不上。
  *
- * 只读夹具与隔离仓库由 `P2TestSupport.spark` 提供（`D:/Develop/tmp/p2-01-warehouse/...`），
+ * 只读夹具与隔离仓库由 `P2TestSupport.spark` 提供（套件独占的操作系统临时目录），
  * 绝不触碰在产 `spark-warehouse`。
  */
 class AdsStableOrderSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {

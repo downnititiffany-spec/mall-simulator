@@ -25,7 +25,7 @@ import org.scalatest.matchers.should.Matchers
  *  A6⑤ 旧列与新列同表共存、旧列取值不变（防回归）
  *  以及 SQL 侧（真实 Spark）逐向量复算：证明 `SurrogateKey.toBIGINT` 与内存实现**同值**。
  *
- * 数据安全：本套件用 `P2TestSupport.spark` 的**隔离 warehouse**（`D:/Develop/tmp/p2-01-warehouse/…`），
+ * 数据安全：本套件用 `P2TestSupport.spark` 的**隔离 warehouse**（套件独占的操作系统临时目录），
  * 绝不写真实 `spark-warehouse`；黄金夹具只读。
  */
 class SurrogateKeySpec extends AnyFlatSpec with Matchers {
@@ -267,7 +267,7 @@ class SurrogateKeySpec extends AnyFlatSpec with Matchers {
    * A6⑤ + A6③ 的真实链：建 ODS 表 → 载入黄金 55 条 → 跑 `DimSql` / `DwdSql` 真 SQL
    * → 断言「旧列与新列同表共存」「旧列取值不变」「空 id 行 ⇒ 新键 NULL 且不丢行」。
    *
-   * 隔离纪律：warehouse 在 `D:/Develop/tmp/…`；黄金夹具**只读**（`P2TestSupport.goldenUri`）。
+   * 隔离纪律：warehouse 在套件独占的操作系统临时目录；黄金夹具**只读**（`P2TestSupport.goldenUri`）。
    * 本用例承载「**E3-lite 真实链冒烟**」的证据：真实 Spark 本地模式 + 真实 parquet 落盘 + 真实 SQL。
    */
   "代理键真链（隔离 warehouse + 黄金 55 条）" should "旧列不变且新键列与契约同值（A6③/A6⑤）" in {

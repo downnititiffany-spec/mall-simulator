@@ -9,17 +9,15 @@ import scala.collection.JavaConverters._
 /**
  * P2-01 测试夹具（只给 P2-01 的套件用）。
  *
- * 隔离纪律（硬约束）：**绝不写真实 `spark-warehouse`**。本夹具把
- *  - `spark.sql.warehouse.dir` → `D:/Develop/tmp/p2-01-warehouse/<suite>/<runId>`
- * 指到独立临时目录，测试报告里如实写这个路径。
+ * 隔离纪律（硬约束）：**绝不写真实 `spark-warehouse`**。每个 SparkSession 都获得一个
+ * 操作系统临时目录，并以正确的本地 `file:` URI 传给 Spark/Hadoop；关闭 session 时只清理本夹具创建的目录。
  *
  * 黄金夹具 `tests/golden-dataset/events/golden-20260901.jsonl` **只读**：
  * 需要落盘给 Spark 读时不复制、不改写，直接用绝对路径（`file:/…`）读。
  */
 object P2TestSupport {
 
-  /** 独立 warehouse 根（与在产 `D:\Develop_code\GraduationProject\spark-warehouse` 无关） */
-  val TempRoot = "D:/Develop/tmp"
+  private val warehouses = new java.util.IdentityHashMap[SparkSession, Path]()
 
   /** 黄金夹具（只读输入） */
   val GoldenRelative = "tests/golden-dataset/events/golden-20260901.jsonl"
@@ -71,8 +69,8 @@ object P2TestSupport {
    * `…/p2-01-warehouse/ods-v2-edge/dw_edge_ods.db/ods_user_event` 之后，下一轮在空 catalog 里
    * 重新 `CREATE TABLE IF NOT EXISTS`，Spark 发现 location 已存在 →
    * `[LOCATION_ALREADY_EXISTS]` 直接把 `beforeAll` 打崩（`OdsV2EdgeCaseSpec`、`OdsV2ByteFidelitySpec`
-   * 两个套件 ABORTED，86/100 例）。本轮禁止删除任何文件（含测试临时目录），
-   * 所以取「每轮换根目录」而不是「开跑前清目录」；可用 `-Dp2.test.runId=…` 显式指定以便复现。
+   * 两个套件 ABORTED，86/100 例）。每个 session 都新建独立临时目录；清理时只删除本辅助类本轮创建
+   * 并登记的目录，不遍历或清理共享仓库路径。可用 `-Dp2.test.runId=…` 标记本轮运行。
    */
   private val runId: String = sys.props.get("p2.test.runId").filter(_.nonEmpty).getOrElse {
     val ts = java.time.LocalDateTime.now()
@@ -80,28 +78,52 @@ object P2TestSupport {
     s"$ts-${java.lang.management.ManagementFactory.getRuntimeMXBean.getName.takeWhile(_ != '@')}"
   }
 
-  def spark(suiteName: String): SparkSession = {
-    val warehouse = s"$TempRoot/p2-01-warehouse/$suiteName/$runId"
-    Files.createDirectories(Paths.get(warehouse))
+  private def safeName(value: String): String = value.replaceAll("[^A-Za-z0-9_-]", "_")
 
-    val session = SparkSession.builder()
-      .appName(s"p2-01-$suiteName")
-      .master("local[1]")
-      .config("spark.ui.enabled", "false")
-      .config("spark.sql.shuffle.partitions", "1")
-      .config("spark.sql.warehouse.dir", warehouse)
-      .config("spark.sql.catalogImplementation", "in-memory")
-      .config("spark.driver.host", "127.0.0.1")
-      .config("spark.sql.session.timeZone", "Asia/Shanghai")
-      .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
-      .getOrCreate()
-    session.sparkContext.setLogLevel("ERROR")
-    session
+  def createTempDirectory(prefix: String): Path =
+    Files.createTempDirectory(safeName(prefix) + "-")
+
+  def fileUri(path: Path): String = path.toAbsolutePath.normalize().toUri.toString
+
+  /** 清理调用者明确传入的、本测试创建的临时目录树；不跟随符号链接。 */
+  def deleteTree(root: Path): Unit = {
+    if (root != null && Files.exists(root)) {
+      val paths = Files.walk(root)
+      try paths.iterator().asScala.toSeq.sortBy(_.getNameCount).reverse.foreach(path => Files.deleteIfExists(path))
+      finally paths.close()
+    }
   }
 
-  /** 关掉会话（套件末尾调；元数据落在隔离目录里，不影响在产仓库） */
-  def stop(session: SparkSession): Unit =
-    if (session != null) session.stop()
+  def spark(suiteName: String): SparkSession = {
+    val warehousePath = createTempDirectory(s"p2-01-${safeName(suiteName)}-${safeName(runId)}")
+    try {
+      val session = SparkSession.builder()
+        .appName(s"p2-01-$suiteName")
+        .master("local[1]")
+        .config("spark.ui.enabled", "false")
+        .config("spark.sql.shuffle.partitions", "1")
+        .config("spark.sql.warehouse.dir", fileUri(warehousePath))
+        .config("spark.sql.catalogImplementation", "in-memory")
+        .config("spark.driver.host", "127.0.0.1")
+        .config("spark.sql.session.timeZone", "Asia/Shanghai")
+        .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
+        .getOrCreate()
+      warehouses.synchronized { warehouses.put(session, warehousePath) }
+      session.sparkContext.setLogLevel("ERROR")
+      session
+    } catch {
+      case error: Throwable =>
+        deleteTree(warehousePath)
+        throw error
+    }
+  }
+
+  /** 关掉会话并只清理该 session 对应的临时 warehouse。 */
+  def stop(session: SparkSession): Unit = if (session != null) {
+    val warehousePath = warehouses.synchronized { warehouses.remove(session) }
+    try session.stop()
+    finally if (warehousePath != null) deleteTree(warehousePath)
+  }
 
   /** 断言文件存在且非空（读任何文件前先断言，硬约束） */
   def requireNonEmpty(path: Path): Unit = {

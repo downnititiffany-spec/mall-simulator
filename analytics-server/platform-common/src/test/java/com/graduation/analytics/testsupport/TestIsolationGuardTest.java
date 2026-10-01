@@ -64,7 +64,7 @@ class TestIsolationGuardTest {
     @Test
     @DisplayName("配置不完整（少一个键）→ 拒绝，且不使用任何默认值补齐")
     void incompleteConfigurationIsRefused(@TempDir Path dir) throws Exception {
-        Path file = writeProps(dir.resolve("integration.local.properties"), validProps(RUN_ID));
+        Path file = writeProps(dir.resolve("integration.local.properties"), validProps(dir, RUN_ID));
         String content = Files.readString(file).replaceAll("(?m)^metricDb=.*\\R", "");
         Files.writeString(file, content);
 
@@ -76,7 +76,7 @@ class TestIsolationGuardTest {
     @Test
     @DisplayName("正式库配置 → 在构造 TestRunContext 时就被拒（不提供 analytics_metric fallback）")
     void productionDatabaseConfigurationIsRejected(@TempDir Path dir) throws Exception {
-        Map<String, String> props = validProps(RUN_ID);
+        Map<String, String> props = validProps(dir, RUN_ID);
         props.put("metricDb", "analytics_metric");
         Path file = writeProps(dir.resolve("integration.local.properties"), props);
 
@@ -91,7 +91,7 @@ class TestIsolationGuardTest {
     @Test
     @DisplayName("metaDb 指向正式库同样被拒（只改 JDBC URL 不算隔离）")
     void productionMetaDatabaseConfigurationIsRejected(@TempDir Path dir) throws Exception {
-        Map<String, String> props = validProps(RUN_ID);
+        Map<String, String> props = validProps(dir, RUN_ID);
         props.put("metaDb", "analytics_meta");
         TestIsolationConfig cfg = TestIsolationGuard.loadFrom(writeProps(dir.resolve("p.properties"), props));
 
@@ -103,7 +103,7 @@ class TestIsolationGuardTest {
     @Test
     @DisplayName("隔离范围不一致：hiveNamespace / hdfsRoot / manifestRoot / credentialsRef 缺 testRunId 一律拒")
     void partiallyScopedTargetsAreRejected(@TempDir Path dir) throws Exception {
-        Map<String, String> base = validProps(RUN_ID);
+        Map<String, String> base = validProps(dir, RUN_ID);
         for (String key : List.of("hiveNamespace", "hdfsRoot", "manifestRoot", "credentialsRef")) {
             Map<String, String> broken = new LinkedHashMap<>(base);
             broken.put(key, broken.get(key).replace(RUN_ID, "shared-namespace"));
@@ -118,7 +118,7 @@ class TestIsolationGuardTest {
     @Test
     @DisplayName("集群路径护栏：hdfsRoot 指向 hdfs:///graduation/** 一律拒")
     void clusterPathIsRejected(@TempDir Path dir) throws Exception {
-        Map<String, String> props = validProps(RUN_ID);
+        Map<String, String> props = validProps(dir, RUN_ID);
         props.put("hdfsRoot", "hdfs://node01:8020/graduation/" + RUN_ID);
         TestIsolationConfig cfg = TestIsolationGuard.loadFrom(writeProps(dir.resolve("p.properties"), props));
 
@@ -134,7 +134,7 @@ class TestIsolationGuardTest {
     void verificationFailsBeforeAnyConnectionIsOpened(@TempDir Path dir) throws Exception {
         CountingDataSource probe = new CountingDataSource();
         TestRunContext context = TestIsolationGuard.verifyContext(
-                TestIsolationGuard.loadFrom(writeProps(dir.resolve("p.properties"), validProps(RUN_ID))));
+                TestIsolationGuard.loadFrom(writeProps(dir.resolve("p.properties"), validProps(dir, RUN_ID))));
 
         assertThatThrownBy(() -> TestIsolationGuard.verifyBeforeWrite(context, probe, "analytics_metric"))
                 .isInstanceOf(IsolationViolationException.class)
@@ -153,7 +153,7 @@ class TestIsolationGuardTest {
     void declaredDatabaseOutsideScopeIsRejected(@TempDir Path dir) throws Exception {
         CountingDataSource probe = new CountingDataSource();
         TestRunContext context = TestIsolationGuard.verifyContext(
-                TestIsolationGuard.loadFrom(writeProps(dir.resolve("p.properties"), validProps(RUN_ID))));
+                TestIsolationGuard.loadFrom(writeProps(dir.resolve("p.properties"), validProps(dir, RUN_ID))));
 
         assertThatThrownBy(() -> TestIsolationGuard.verifyBeforeWrite(context, probe, "some_other_db"))
                 .isInstanceOf(IsolationViolationException.class)
@@ -180,7 +180,7 @@ class TestIsolationGuardTest {
         for (String bad : List.of("file:///D:/Develop_code/GraduationProject/target/v25-it/" + RUN_ID + "/hdfs",
                 "hdfs://127.0.0.1:9000/v25-it/" + RUN_ID,
                 "file:///graduation/" + RUN_ID)) {
-            Map<String, String> props = validProps(RUN_ID);
+            Map<String, String> props = validProps(dir, RUN_ID);
             props.put("hdfsRoot", bad);
             Path file = writeProps(dir.resolve("u.properties"), props);
             assertThatThrownBy(() -> TestIsolationGuard.verifyContext(TestIsolationGuard.loadFrom(file)))
@@ -363,7 +363,7 @@ class TestIsolationGuardTest {
 
     @Test
     @DisplayName("V25_IT_* 命名稳定且完整环境来源可构造双库上下文；缺字段 fail-closed")
-    void environmentConfigurationUsesStableNamesAndRequiresCompleteSource() {
+    void environmentConfigurationUsesStableNamesAndRequiresCompleteSource(@TempDir Path dir) {
         assertThat(TestIsolationGuard.environmentName("testRunId")).isEqualTo("V25_IT_TEST_RUN_ID");
         assertThat(TestIsolationGuard.environmentName("serverFingerprint")).isEqualTo("V25_IT_SERVER_FINGERPRINT");
         assertThat(TestIsolationGuard.environmentName("metaDb")).isEqualTo("V25_IT_META_DB");
@@ -371,7 +371,7 @@ class TestIsolationGuardTest {
                 .isEqualTo("V25_IT_METRIC_PUBLISH_PASSWORD");
 
         Map<String, String> env = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : validProps(RUN_ID).entrySet()) {
+        for (Map.Entry<String, String> entry : validProps(dir, RUN_ID).entrySet()) {
             env.put(TestIsolationGuard.environmentName(entry.getKey()), entry.getValue());
         }
         TestIsolationConfig cfg = TestIsolationGuard.fromEnvironment(env);
@@ -658,7 +658,7 @@ class TestIsolationGuardTest {
     @DisplayName("合法隔离配置可构造 context，字段与 startedAt 齐备")
     void validConfigurationBuildsContext(@TempDir Path dir) throws Exception {
         TestIsolationConfig cfg = TestIsolationGuard.loadFrom(
-                writeProps(dir.resolve("p.properties"), validProps(RUN_ID)));
+                writeProps(dir.resolve("p.properties"), validProps(dir, RUN_ID)));
         TestRunContext context = TestIsolationGuard.contextOf(cfg, 1_700_000_000_000L);
 
         assertThat(context.testRunId()).isEqualTo(RUN_ID);
@@ -674,7 +674,7 @@ class TestIsolationGuardTest {
     @Test
     @DisplayName("testRunId 形状非法 → 拒绝（不可复用/不可复查的标识不算隔离范围）")
     void malformedTestRunIdIsRejected(@TempDir Path dir) throws Exception {
-        Map<String, String> props = validProps(RUN_ID);
+        Map<String, String> props = validProps(dir, RUN_ID);
         props.put("testRunId", "x");
         assertThatThrownBy(() -> TestIsolationGuard.loadFrom(writeProps(dir.resolve("p.properties"), props)))
                 .isInstanceOf(IsolationViolationException.class)
@@ -683,17 +683,22 @@ class TestIsolationGuardTest {
 
     // ── 夹具 ───────────────────────────────────────────────────────────────
 
-    private static Map<String, String> validProps(String runId) {
+    private static Map<String, String> validProps(Path dir, String runId) {
         Map<String, String> props = new LinkedHashMap<>();
+        Path isolatedRoot = dir.resolve("isolated").resolve(runId).toAbsolutePath().normalize();
         props.put("testRunId", runId);
         props.put("serverFingerprint", FINGERPRINT);
         props.put("metaDb", "analytics_meta_v25it");
         props.put("metricDb", "analytics_metric_v25it");
         props.put("hiveNamespace", runId + "_hive");
-        props.put("hdfsRoot", "D:/Develop_code/GraduationProject/target/v25-it/" + runId + "/hdfs");
-        props.put("manifestRoot", "D:/Develop_code/GraduationProject/target/v25-it/" + runId + "/manifest");
+        props.put("hdfsRoot", propertyPath(isolatedRoot.resolve("hdfs")));
+        props.put("manifestRoot", propertyPath(isolatedRoot.resolve("manifest")));
         props.put("credentialsRef", "credref:" + runId);
         return props;
+    }
+
+    private static String propertyPath(Path path) {
+        return path.toAbsolutePath().normalize().toString().replace('\\', '/');
     }
 
     private static Path writeProps(Path file, Map<String, String> props) throws Exception {
@@ -707,12 +712,12 @@ class TestIsolationGuardTest {
     /** 用合法配置构造本次运行的 {@link TestRunContext}（走 verifyContext，范围校验一并生效）。 */
     private static TestRunContext contextOf(Path dir) throws Exception {
         return TestIsolationGuard.verifyContext(TestIsolationGuard.loadFrom(
-                writeProps(dir.resolve("p.properties"), validProps(RUN_ID))));
+                writeProps(dir.resolve("p.properties"), validProps(dir, RUN_ID))));
     }
 
     /** 同上，但登记一个指定的实例身份（用于指纹判据的正/反例）。 */
     private static TestRunContext contextOf(Path dir, String fingerprint) throws Exception {
-        Map<String, String> props = validProps(RUN_ID);
+        Map<String, String> props = validProps(dir, RUN_ID);
         props.put("serverFingerprint", fingerprint);
         return TestIsolationGuard.verifyContext(TestIsolationGuard.loadFrom(
                 writeProps(dir.resolve("p-fingerprint.properties"), props)));
