@@ -28,7 +28,7 @@ test('retry 在 loading/busy 时 fail-closed，进入 busy 后清理旧结果，
 
 test('retry 成功才刷新列表，失败时转成可见 FAILED 结果而不是未处理 Promise', () => {
   const body = functionBody('retry')
-  assert.match(body, /runResult\.value = await api\.retryPipelineRun\(id\)[\s\S]*await load\(\{ page: page\.value, size: pageSize, sort: sort\.value \}\)/)
+  assert.match(body, /runResult\.value = await api\.retryPipelineRun\(id\)[\s\S]*await load\(\{ page: page\.value, size: pageSize\.value, sort: sort\.value \}\)/)
   assert.match(body, /catch \(e\) \{[\s\S]*runResult\.value = \{ status: 'FAILED: ' \+ \(e\.message \|\| e\) \}/)
 })
 

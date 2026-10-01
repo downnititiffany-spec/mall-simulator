@@ -43,7 +43,7 @@ test('Decision 组合读取每次 fetch 都取得独立序号', () => {
   const body = between(decisions, 'async function fetchDecisions(params, signal)', 'const analysis = useAnalysis')
   assert.match(body, /const mySeq = \+\+decisionFetchSeq/)
   assert.ok(body.indexOf('const mySeq = ++decisionFetchSeq') < body.indexOf('await api.decisionPage('))
-  assert.match(body, /decisionPage\(\{ page: params\.page \|\| 1, size: pageSize, sort: params\.sort \|\| 'id,desc' \}/)
+  assert.match(body, /decisionPage\(\{ page: params\.page \|\| 1, size: params\.size \|\| pageSize\.value, sort: params\.sort \|\| 'id,desc' \}/)
 })
 
 test('Decision evaluations 与 evaluationError 作为同一旁路状态只允许最新 fetch 提交', () => {
@@ -62,12 +62,12 @@ test('Decision 外部刷新在 loading 或写操作 busy 期间 fail-closed', ()
   assert.match(decisions, /@click="refresh" :disabled="loading \|\| busy"/)
   const body = between(decisions, 'function refresh()', 'async function flush()')
   assert.match(body, /if \(loading\.value \|\| busy\.value\) return/)
-  assert.match(body, /return load\(\{ page: page\.value, sort: sort\.value \}\)/)
+  assert.match(body, /return load\(\{ page: page\.value, size: pageSize\.value, sort: sort\.value \}\)/)
 })
 
 test('Decision 内部写后 flush 不复用外部 refresh 守卫，busy 期间仍能刷新最新列表', () => {
   const body = between(decisions, 'async function flush()', 'function changePage(')
-  assert.match(body, /await load\(\{ page: page\.value, sort: sort\.value \}\)/)
+  assert.match(body, /await load\(\{ page: page\.value, size: pageSize\.value, sort: sort\.value \}\)/)
   assert.doesNotMatch(body, /loading\.value \|\| busy\.value/)
   assert.doesNotMatch(body, /refresh\(\)/)
 })

@@ -38,6 +38,14 @@
             <option value="status,asc">状态</option>
           </select>
         </label>
+        <label>每页
+          <select v-model.number="pageSize" @change="changePageSize" :disabled="loading || busy">
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
+        </label>
         <button class="btn btn-sm" @click="changePage(page - 1)" :disabled="loading || busy || page <= 1">上一页</button>
         <button class="btn btn-sm" @click="changePage(page + 1)" :disabled="loading || busy || page >= totalPages">下一页</button>
       </div>
@@ -127,7 +135,7 @@ const page = ref(1)
 const total = ref(0)
 const totalPages = ref(1)
 const sort = ref('id,desc')
-const pageSize = 20
+const pageSize = ref(20)
 let decisionFetchSeq = 0
 
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
@@ -135,10 +143,11 @@ const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'Ca
 // 决策列表分页响应使用统一信封；单项评价仍返回裸数组。
 async function fetchDecisions(params, signal) {
   const mySeq = ++decisionFetchSeq
-  const result = await api.decisionPage({ page: params.page || 1, size: pageSize, sort: params.sort || 'id,desc' }, { signal })
+  const result = await api.decisionPage({ page: params.page || 1, size: params.size || pageSize.value, sort: params.sort || 'id,desc' }, { signal })
   const list = result && Array.isArray(result.items) ? result.items : []
   if (mySeq === decisionFetchSeq) {
     page.value = Number(result.page) || 1
+    pageSize.value = Number(result.size) || pageSize.value
     total.value = Number(result.total) || 0
     totalPages.value = Math.max(1, Number(result.totalPages) || 1)
   }
@@ -199,21 +208,28 @@ const statusBadge = (s) => {
 
 function refresh() {
   if (loading.value || busy.value) return
-  return load({ page: page.value, sort: sort.value })
+  return load({ page: page.value, size: pageSize.value, sort: sort.value })
 }
 
 async function flush() {
-  await load({ page: page.value, sort: sort.value })
+  await load({ page: page.value, size: pageSize.value, sort: sort.value })
 }
 
 function changePage(nextPage) {
   if (loading.value || busy.value || nextPage < 1 || nextPage > totalPages.value) return
-  return load({ page: nextPage, sort: sort.value })
+  return load({ page: nextPage, size: pageSize.value, sort: sort.value })
 }
 
 function changeSort() {
   if (loading.value || busy.value) return
-  return load({ page: 1, sort: sort.value })
+  page.value = 1
+  return load({ page: 1, size: pageSize.value, sort: sort.value })
+}
+
+function changePageSize() {
+  if (loading.value || busy.value) return
+  page.value = 1
+  return load({ page: 1, size: pageSize.value, sort: sort.value })
 }
 
 function exportDecisions() {

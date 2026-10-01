@@ -1665,3 +1665,10 @@
 - **实现**：扩展 `DecisionServicePaginationTest`，捕获执行给 mapper 的 wrapper，断言 `createdAt,asc` 映射为 `created_at ASC`、以 `id DESC` 稳定打散，并使用正确 page=3/size=10 偏移 `LIMIT 10 OFFSET 20`。测试初始化 MyBatis-Plus `TableInfo` 元数据，保持纯单元测试，不连数据库。
 - **验证**：首次执行发现纯 Mockito 环境未自动注册 lambda column cache；补齐实体元数据初始化后 `DecisionServicePaginationTest` **3/3 PASS**，五模块 Maven reactor `BUILD SUCCESS`。没有改业务实现或预期值；原完整定向 20/20 结果由本条更新后的 suite 组成。
 - **影响/回滚**：仅扩展服务测试；回滚为移除此新增测试与 setup 初始化即可，无库状态变化。
+
+### 2026-10-01 阶段 4：分页每页条数控制
+
+- **缺口**：流水线和决策分页 API 均接受 `page/size/sort`，但 UI 固定每页 20 行，无法由使用者调整分页窗口。
+- **实现/决策**：两个列表统一提供 10/20/50/100 条每页选项；数值在 API 上限 100 内。修改 size 或排序时回第 1 页，避免保留旧页码后落入空窗口；刷新及写操作后的列表重载保留当前 page/size/sort。busy/loading 期间控件禁用，处理函数也拒绝重入。
+- **验证**：Web 定向结构守卫覆盖两页选项、参数传递、排序/size 重置和禁用期间行为；完整 `npm run verify` **384/384 PASS**，Vite production build 成功。此前后端 API/SQL 判据与真实空集 HTTP/浏览器证据继续有效；本轮未改后端或数据库。
+- **限制/回滚**：真实环境仍无决策记录，尚未对非空列表逐页核数；page size 控件的行为由源码守卫/build 验收。回退两页面、对应结构测试和本条状态记录即可，不涉及 schema/API 变更。

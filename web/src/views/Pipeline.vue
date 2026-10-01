@@ -43,10 +43,15 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
         <label style="font-size:13px">排序
-          <select v-model="sort" :disabled="loading || busy" @change="refresh" style="margin-left:6px;padding:4px">
+          <select v-model="sort" :disabled="loading || busy" @change="changeSort" style="margin-left:6px;padding:4px">
             <option value="id,desc">创建时间顺序（新到旧）</option>
             <option value="businessTime,desc">业务时间（新到旧）</option>
             <option value="status,asc">状态</option>
+          </select>
+        </label>
+        <label style="font-size:13px">每页
+          <select v-model.number="pageSize" :disabled="loading || busy" @change="changePageSize" style="margin-left:6px;padding:4px">
+            <option :value="10">10</option><option :value="20">20</option><option :value="50">50</option><option :value="100">100</option>
           </select>
         </label>
         <span style="font-size:13px;color:var(--gray-500)">共 {{ total }} 条</span>
@@ -99,7 +104,7 @@ const page = ref(1)
 const total = ref(0)
 const totalPages = ref(1)
 const sort = ref('id,desc')
-const pageSize = 20
+const pageSize = ref(20)
 
 // 取数 fetcher：/pipeline-runs/page 是分页对象而非分析信封 ⇒ 在这里用 buildFallbackContext
 // 拼响应级上下文（与 Decisions.vue / Ops.vue 同形）；快照号只取实例的 targetSnapshotId
@@ -139,13 +144,25 @@ const runRows = computed(() => pipelineRunRows(data.value.pipelineRuns))
 
 function refresh() {
   if (loading.value || busy.value) return
-  return load({ page: page.value, size: pageSize, sort: sort.value })
+  return load({ page: page.value, size: pageSize.value, sort: sort.value })
 }
 
 function changePage(next) {
   if (loading.value || busy.value) return
   page.value = next
-  return load({ page: next, size: pageSize, sort: sort.value })
+  return load({ page: next, size: pageSize.value, sort: sort.value })
+}
+
+function changePageSize() {
+  if (loading.value || busy.value) return
+  page.value = 1
+  return load({ page: 1, size: pageSize.value, sort: sort.value })
+}
+
+function changeSort() {
+  if (loading.value || busy.value) return
+  page.value = 1
+  return load({ page: 1, size: pageSize.value, sort: sort.value })
 }
 
 async function runOnce() {
@@ -171,7 +188,7 @@ async function runOnce() {
       businessTime: requestedBusinessDate + 'T00:00:00', sourceDataVersion: operationId
     }, operationId)
     page.value = 1
-    await load({ page: page.value, size: pageSize, sort: sort.value })
+    await load({ page: page.value, size: pageSize.value, sort: sort.value })
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
   } finally {
@@ -185,7 +202,7 @@ async function retry(id) {
   runResult.value = null
   try {
     runResult.value = await api.retryPipelineRun(id)
-    await load({ page: page.value, size: pageSize, sort: sort.value })
+    await load({ page: page.value, size: pageSize.value, sort: sort.value })
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
   } finally {

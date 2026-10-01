@@ -58,6 +58,7 @@
 | 2026-10-01 | 需验证真实商城交易到分析快照，还是只用规范文件输入 | 保留 canonical 文件模式覆盖采集/增量，同时追加一份最小 `MALL_API` 运行；只用商城公开 HTTP 与既有 Outbox，不直写商城库 | targetId=1/generator run `cloud_261001_071427_ac5e43_mall_http-v1-20261001-154044-5818`；94 Outbox events 经 Flume/HDFS，batchId=5、pipeline runId=6、snapshot `S20261001_6` 成功；操作账本成功60/失败0、oracle/API paid count与GMV一致 | 停止任务应用；target 配置及业务演示数据留在隔离运行库，不触碰其它 schema |
 | 2026-10-01 | 真实调用商城需要 bearer token，如何避免落盘 | 由一次性进程内登录取短期 token；仅将 token 作为 CLI 子进程环境值传入；目标表仅保存 `CLOUD_MALL_TOKEN` 引用名，日志写入前脱敏 | CLI run SUCCESS；仓库、日志与环境快照无 token 持久化 | 结束 CLI 子进程即释放；如疑似泄漏，停止任务应用并在隔离环境重新登录 |
 | 2026-10-01 | 故障注入 batchId=4 未消费时，直接启动新的分析运行 | 尊重源内 FIFO/待消费批次语义；先受控重试旧失败批，再单独触发 Outbox batchId=5 | runId=5 消费 batchId=4 并发布 `S20261001_5`；runId=6 消费 batchId=5 并发布 `S20261001_6`；未把两批证据混记 | 不回滚已发布记录；需要复测时使用新隔离 RunId |
+| 2026-10-01 | 分页 API 有 page/size/sort，但流水线与决策页固定 size=20 | 提供 10/20/50/100 的离散 size 选择；更改 size/sort 时回到第 1 页，刷新和写后重载保留当前 size | 前端 384/384 + production build 通过；本次仅做组件契约验证 | 回退 Pipeline.vue、Decisions.vue 的 size 控件/参数与对应测试；无服务端或数据变化 |
 
 ## 当前未验收项 / 待复核假设
 
