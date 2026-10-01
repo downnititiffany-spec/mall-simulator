@@ -1,5 +1,12 @@
 # PROJECT_STATUS
 
+### 2026-10-01 V3.0 §3.3 HTTP 客户端安全重试切片（部分关闭）
+
+- 设计 V3.0 §3.3 要求客户端有限重试。此前生成器的两家商城 HTTP 适配器仅设置 timeout，没有 retry。新增共享 `SafeHttpRetry`：GET/HEAD/OPTIONS 对连接/套接字/请求超时异常及 HTTP 502/503/504 最多发起 2 次尝试，中间固定等待 100ms；POST 等写操作不重试，避免缺少目标端幂等保障时重复下单/支付。
+- 两适配器共 4 个 HTTP 发送点接入 helper。定向测试覆盖安全 GET 从 503 恢复，以及 POST 收到 503 仍仅发送一次；适配器操作、超时结构守卫与重试回归合计 **36/36 PASS**。没有调用外部商城服务。
+- 决策/限制：本切片只做安全方法自动重试，不增加写操作重放、不推定商城支持幂等键；写操作幂等契约及结构化错误映射仍未完成，故设计 §3.3 整项不能标为完成。下一步可继续独立的低风险工作；任何写操作幂等方案需在明确接口约定后实现。回滚仅移除 helper 与四处接线及新测试。
+- 工具限制：本环境无 `javac` 可执行文件；初次复用 analytics 专用 javac wrapper 因生成器没有 Lombok annotation processor 而失败，普通 Maven 编译也未找到支持 Java 17 release 的编译器。随后使用同一 JDK 21 javac 模块的无 Lombok 临时 wrapper，将 release 参数映射为 source/target 17 后，目标测试通过。该结果不等于标准 `--release 17` 编译验收。3306 未连接、无凭据写入日志、冻结 V3.0 文档未改。
+
 ### 2026-10-01 阶段 4 只读查询超时配置统一（定向测试通过）
 
 - 复核发现只读指标 `JdbcTemplate` 会读取 `platform.query.read-timeout-seconds`，但 AI Text-to-SQL/EXPLAIN 虽引用同一默认常量，执行时却始终使用硬编码的默认值，导致配置覆盖不能作用于所有只读查询。

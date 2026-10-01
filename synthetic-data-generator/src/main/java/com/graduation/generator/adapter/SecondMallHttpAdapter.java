@@ -569,7 +569,8 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
             builder.header("Authorization", "Bearer " + token);
         }
         try {
-            HttpResponse<Void> response = client.send(builder.build(), HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response = SafeHttpRetry.send(
+                    client, builder.build(), HttpResponse.BodyHandlers.discarding());
             int status = response.statusCode();
             ProbeStatus classification;
             if (status >= 200 && status < 300) {
@@ -755,7 +756,8 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         String responseBody;
         int status;
         try {
-            HttpResponse<String> response = client().send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = SafeHttpRetry.send(
+                    client(), builder.build(), HttpResponse.BodyHandlers.ofString());
             status = response.statusCode();
             responseBody = response.body();
         } catch (IOException e) {

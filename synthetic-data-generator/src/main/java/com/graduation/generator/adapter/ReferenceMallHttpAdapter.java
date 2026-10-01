@@ -327,7 +327,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         String responseBody;
         int status;
         try {
-            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = SafeHttpRetry.send(
+                    httpClient, builder.build(), HttpResponse.BodyHandlers.ofString());
             status = response.statusCode();
             responseBody = response.body();
         } catch (IOException e) {
@@ -568,7 +569,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
             builder.header("Authorization", "Bearer " + token);
         }
         try {
-            HttpResponse<Void> response = client.send(builder.build(), HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response = SafeHttpRetry.send(
+                    client, builder.build(), HttpResponse.BodyHandlers.discarding());
             return new RouteOutcome(classify(response.statusCode()), response.statusCode(), null);
         } catch (IOException e) {
             return new RouteOutcome(RouteStatus.FAILED, -1, e);
