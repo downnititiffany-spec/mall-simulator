@@ -1636,3 +1636,11 @@
 - **验证**：定向 Maven reactor 内 `InMemoryRequestRateLimiterTest` **2/2**（窗口边界、用户/操作族隔离、并发预算）和 `RateLimitInterceptorHttpTest` **1/1**（认证后计数、429、Retry-After、匿名 401）通过；合并分页类测试后平台定向 **13/13 PASS**，六个依赖模块 `BUILD SUCCESS`。未连数据库；前端无需变更；`git diff --check` 待本切片收口时复核。
 - **回滚**：移除三个高成本控制器上的注解、RateLimitConfig/组件/异常映射及对应测试即可；无迁移、配置、外部依赖或数据写入。
 - **边界**：这是本地单进程限流行为的 MockMvc/L1 测试，不是多实例共享限流或远程集群验收；仅覆盖明确标注的写入/长任务提交，不声称所有 API 均有限流。
+
+### 2026-10-01 阶段 4：决策中心分页列表
+
+- **缺口**：统一分页要求覆盖决策列表；此前 `GET /api/v1/decisions?limit=` 固定返回数组，决策页面不能翻页、确认总量或选择排序。
+- **实现/兼容**：新增受 `dashboard:view` 保护的 `GET /api/v1/decisions/page`，响应 `items/page/size/total/totalPages/sort`；页码、每页大小和排序字段/方向均有边界校验，页码越界夹到最后一页，ID 作为稳定排序并列键。旧数组端点保留。决策中心已切到分页接口，展示总量和页码、支持上一页/下一页及 ID/创建时间/更新时间/截止日期/状态排序；导出按钮明确标注为“本页 CSV”。
+- **决策记录**：采用新增 `/page` 维持旧 API JSON 兼容；本页面固定每页 20 条，避免加入不必要的控件；只导出当前可见页，按钮文案如实界定范围。排序列白名单，不允许用户输入 SQL/属性表达式。回滚只需恢复 service/controller、api.js、Decisions.vue 与新增测试。
+- **验证**：前端 `npm run verify`：**382/382** Node 测试通过，Vite production build 成功；并更新原有并发/刷新结构判据，使其检查分页读取及页码/排序状态。后端定向 Maven reactor：`DecisionServicePaginationTest` 2/2、`ControllerPermissionCoverageTest` 5/5、`DecisionControllerAuditTest` 6/6、`DecisionControllerIdentityTest` 5/5；合计 **18/18 PASS**，七模块 reactor `BUILD SUCCESS`。没有数据库连接或真实服务 HTTP 请求。`git diff --check` 通过。
+- **限制**：列表端到端数据库排序和真实 HTTP 尚未在云端服务进程验证；后端编译使用临时 JDK 21 `jdk.compiler` wrapper，将 `--release 17` 调整为 `-source/-target 17`，故标准 JDK 17 release API 严格校验仍未验证。以上不替代后续真实单节点链路/浏览器验收。

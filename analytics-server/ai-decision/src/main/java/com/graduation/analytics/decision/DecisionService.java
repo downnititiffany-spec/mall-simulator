@@ -438,6 +438,43 @@ public class DecisionService {
         return require(id);
     }
 
+    public record DecisionPage(List<DecisionTask> items, long page, int size, long total, long totalPages,
+                               String sort) {
+    }
+
+    /** Paginated read view for the decision center; legacy list(int) remains unchanged. */
+    public DecisionPage listPage(long page, int size, String sort) {
+        if (page < 1 || size < 1 || size > 100) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "page 必须大于等于 1，size 必须在 1 到 100 之间");
+        }
+        String[] parts = sort == null ? new String[0] : sort.trim().toLowerCase(Locale.ROOT).split(",", -1);
+        if (parts.length < 1 || parts.length > 2 || parts[0].isBlank()) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 格式应为 字段[,asc|desc]");
+        }
+        String field = parts[0];
+        String direction = parts.length == 1 ? "asc" : parts[1];
+        if (!List.of("id", "createdat", "updatedat", "duedate", "status").contains(field)
+                || !("asc".equals(direction) || "desc".equals(direction))) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 字段或方向不受支持");
+        }
+        LambdaQueryWrapper<DecisionTask> query = new LambdaQueryWrapper<>();
+        switch (field) {
+            case "createdat" -> { if ("asc".equals(direction)) query.orderByAsc(DecisionTask::getCreatedAt); else query.orderByDesc(DecisionTask::getCreatedAt); }
+            case "updatedat" -> { if ("asc".equals(direction)) query.orderByAsc(DecisionTask::getUpdatedAt); else query.orderByDesc(DecisionTask::getUpdatedAt); }
+            case "duedate" -> { if ("asc".equals(direction)) query.orderByAsc(DecisionTask::getDueDate); else query.orderByDesc(DecisionTask::getDueDate); }
+            case "status" -> { if ("asc".equals(direction)) query.orderByAsc(DecisionTask::getStatus); else query.orderByDesc(DecisionTask::getStatus); }
+            default -> { if ("asc".equals(direction)) query.orderByAsc(DecisionTask::getId); else query.orderByDesc(DecisionTask::getId); }
+        }
+        query.orderByDesc(DecisionTask::getId);
+        long total = taskMapper.selectCount(new LambdaQueryWrapper<>());
+        long totalPages = Math.max(1, (total + size - 1) / size);
+        if (page > totalPages) page = totalPages;
+        long offset = Math.multiplyExact(page - 1, (long) size);
+        List<DecisionTask> items = taskMapper.selectList(query.last("LIMIT " + size + " OFFSET " + offset));
+        return new DecisionPage(items, page, size, total, totalPages, field + "," + direction);
+    }
+
     public List<DecisionTask> list(int limit) {
         return taskMapper.selectList(new LambdaQueryWrapper<DecisionTask>()
                 .orderByDesc(DecisionTask::getId)

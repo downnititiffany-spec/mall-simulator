@@ -23,8 +23,23 @@
         决策列表（AI 草稿 → 人工审核 → 执行 → 效果评价）
         <button class="btn btn-sm" style="float:right"
                 :disabled="!exportable" @click="exportDecisions">
-          {{ exportable ? '导出决策 CSV' : '导出（' + statusText + '）' }}
+          {{ exportable ? '导出本页 CSV' : '导出（' + statusText + '）' }}
         </button>
+      </div>
+
+      <div class="table-hint" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <span>共 {{ total }} 条 · 第 {{ page }} / {{ totalPages }} 页</span>
+        <label>排序
+          <select v-model="sort" @change="changeSort" :disabled="loading || busy">
+            <option value="id,desc">最新编号</option>
+            <option value="createdAt,desc">创建时间（新到旧）</option>
+            <option value="updatedAt,desc">更新时间（新到旧）</option>
+            <option value="dueDate,asc">截止日期（早到晚）</option>
+            <option value="status,asc">状态</option>
+          </select>
+        </label>
+        <button class="btn btn-sm" @click="changePage(page - 1)" :disabled="loading || busy || page <= 1">上一页</button>
+        <button class="btn btn-sm" @click="changePage(page + 1)" :disabled="loading || busy || page >= totalPages">下一页</button>
       </div>
 
       <div v-if="state === 'loading'" class="state-line">决策列表加载中…</div>
@@ -108,15 +123,25 @@ const evaluations = ref({})
 const evaluationError = ref('')
 const actionError = ref('')
 const busy = ref(false)
+const page = ref(1)
+const total = ref(0)
+const totalPages = ref(1)
+const sort = ref('id,desc')
+const pageSize = 20
 let decisionFetchSeq = 0
 
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
-// 决策列表 + 每个已评价决策的效果（都返回裸数组，非统一信封）
+// 决策列表分页响应使用统一信封；单项评价仍返回裸数组。
 async function fetchDecisions(params, signal) {
   const mySeq = ++decisionFetchSeq
-  const raw = await api.decisions(20, { signal })
-  const list = Array.isArray(raw) ? raw : []
+  const result = await api.decisionPage({ page: params.page || 1, size: pageSize, sort: params.sort || 'id,desc' }, { signal })
+  const list = result && Array.isArray(result.items) ? result.items : []
+  if (mySeq === decisionFetchSeq) {
+    page.value = Number(result.page) || 1
+    total.value = Number(result.total) || 0
+    totalPages.value = Math.max(1, Number(result.totalPages) || 1)
+  }
   const evalMap = {}
   const failed = []
   const decided = list.filter((d) => d && ['EFFECTIVE', 'PARTIAL', 'INEFFECTIVE', 'INSUFFICIENT_DATA'].includes(d.status))
@@ -174,11 +199,21 @@ const statusBadge = (s) => {
 
 function refresh() {
   if (loading.value || busy.value) return
-  return load({})
+  return load({ page: page.value, sort: sort.value })
 }
 
 async function flush() {
-  await load({})
+  await load({ page: page.value, sort: sort.value })
+}
+
+function changePage(nextPage) {
+  if (loading.value || busy.value || nextPage < 1 || nextPage > totalPages.value) return
+  return load({ page: nextPage, sort: sort.value })
+}
+
+function changeSort() {
+  if (loading.value || busy.value) return
+  return load({ page: 1, sort: sort.value })
 }
 
 function exportDecisions() {

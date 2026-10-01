@@ -123,6 +123,7 @@ export default {
   aiAuditCalls: (limit = 20, options) => client.get('/ai/audit/calls', { params: { limit }, ...(options || {}) }),
   // 决策中心：返回决策任务/评价数组，非统一信封
   decisions: (limit = 20, options) => client.get('/decisions', { params: { limit }, ...(options || {}) }),
+  decisionPage: (params = {}, options) => client.get('/decisions/page', { params, ...(options || {}) }),
   decisionEvaluations: (id, options) => client.get(`/decisions/${id}/evaluations`, { ...(options || {}) }),
   decisionAction: (id, action, body = {}) => client.post(`/decisions/${id}/${action}`, body),
   // 决策创建（POST /decisions）：服务端把 source 固定为 ai、初始状态固定 DRAFT（r8 契约 §3.3/§5）
