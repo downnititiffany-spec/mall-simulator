@@ -2,6 +2,7 @@ package com.graduation.analytics.common;
 
 import com.graduation.analytics.common.TraceContext;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -20,6 +21,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @Value("${platform.query.read-timeout-seconds:}")
+    private String queryTimeoutProperty;
 
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -71,7 +75,7 @@ public class GlobalExceptionHandler {
         log.warn("read query exceeded unified timeout [{}] {}", describeCurrentRequest(), e.getMessage());
         return ResponseEntity.status(mapStatus(PlatformBizException.QUERY_TIMEOUT))
                 .body(ApiResponse.error(PlatformBizException.QUERY_TIMEOUT,
-                        "查询超过统一超时（" + QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS
+                        "查询超过统一超时（" + QueryTimeoutPolicy.readTimeoutSeconds(queryTimeoutProperty)
                                 + " 秒，可用 " + QueryTimeoutPolicy.READ_TIMEOUT_PROPERTY + " 调整）；"
                                 + "请缩小时间窗口或降低 topN 后重试",
                         TraceContext.create().traceId()));

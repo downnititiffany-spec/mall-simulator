@@ -5,6 +5,7 @@
 - 复核发现只读指标 `JdbcTemplate` 会读取 `platform.query.read-timeout-seconds`，但 AI Text-to-SQL/EXPLAIN 虽引用同一默认常量，执行时却始终使用硬编码的默认值，导致配置覆盖不能作用于所有只读查询。
 - 修复：`SqlExecutor` 也读取同一配置键，经 `QueryTimeoutPolicy` 校验后为 SQL 与 EXPLAIN 设置 JDBC 超时；缺省仍为 30 秒，0/负数/非法输入回退默认值。发布写模板和元数据读写事务未改，避免在缺乏长事务实测时扩大超时策略。
 - 测试：`QueryTimeoutOwnerDriftTest` 2/2，新增 `SqlExecutorTimeoutConfigurationTest` 2/2（真实 mock JDBC execute 与 EXPLAIN 均断言 `setQueryTimeout(9)`）；平台只读模板配置专项 5/5；相关 Maven reactor BUILD SUCCESS。使用已有临时 Maven/JDK 21 `--release 17` 兼容启动器；不声称在 JDK 17 runtime 下验证。
+- 继续检查发现 `QUERY_TIMEOUT` 504 文案仍固定显示 30 秒。`GlobalExceptionHandler` 现从同一配置解析实际值；处理器测试覆盖配置为 9 秒时文案显示 9 秒。AI SQL/EXPLAIN 的稳定码映射其实已由 S3-58 与 `AiQueryTimeoutMappingTest` 覆盖；已更正文档和测试注释中的过时“未映射”说法，不重复改动该实现。最终定向回归：AI 超时类 7/7、平台只读模板 5/5 均通过。
 - 决策/回滚：阶段4统一只读查询配置键，保留写事务现有限制；若回滚，只恢复 `SqlExecutor` 读取默认值和这两份专项测试，不涉及数据库、凭据或运行数据。3306 未连接，冻结 V3.0 正文未改。
 
 ### 2026-10-01 阶段 4 运维流水线表分页统一（实现与前端验证通过）

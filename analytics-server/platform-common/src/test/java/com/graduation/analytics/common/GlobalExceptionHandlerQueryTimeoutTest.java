@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +38,16 @@ class GlobalExceptionHandlerQueryTimeoutTest {
         // 不回传驱动原文（与兜底处理器同样不向调用方泄露实现细节）
         assertThat(response.getBody().message()).doesNotContain("Statement cancelled");
         assertThat(response.getBody().traceId()).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("配置覆盖后，504 文案展示实际超时值而不是固定默认值")
+    void queryTimeoutMessageUsesConfiguredValue() {
+        ReflectionTestUtils.setField(handler, "queryTimeoutProperty", "9");
+        ResponseEntity<ApiResponse<Void>> response = handler.handleQueryTimeout(new QueryTimeoutException("timeout"));
+
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().message()).contains("9 秒").doesNotContain("30 秒");
     }
 
     @Test

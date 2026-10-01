@@ -15,9 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 两处若各自演化，就会出现"同一平台两套超时"，正是指导书 L158「超时统一」要消掉的东西。
  * 本测试把两者的相等关系钉住：改属主即两条路径同时改，改单边立刻红。</p>
  *
- * <p><b>边界</b>：相等只覆盖**数值与属主**；执行点仍有两个（JdbcTemplate / 裸 JDBC），
- * 且 AI 路径的 {@code SQLTimeoutException} 走阶段6 自己的错误上报，**未**汇入
- * {@code QUERY_TIMEOUT} 响应码 —— 已登记为遗留。</p>
+ * <p><b>边界</b>：共享配置覆盖分析 JDBC 与 AI SQL/EXPLAIN 的语句级超时；AI 执行点仍有
+ * {@code JdbcTemplate} 与裸 JDBC 两类，各自将超时映射为 {@code QUERY_TIMEOUT}。
+ * 真 MySQL 到点行为及真 HTTP 超时响应仍需真实环境验证。</p>
  */
 class QueryTimeoutOwnerDriftTest {
 
