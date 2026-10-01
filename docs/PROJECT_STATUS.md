@@ -1619,3 +1619,11 @@
 - **DWS 调查状态**：`bdw` SUCCESS（0 行，输入没有行为事件）；`usw` 可复现失败，错误为 `org.apache.spark.sql.catalyst.expressions.CaseWhen cannot be cast to org.apache.spark.sql.catalyst.expressions.AnsiCast`。同一次作业仅首个 `dws_user_behavior_day` 写出 `dt=20260924` 分区，其后漏斗分区未产生，说明失败发生在后续 DWS SQL 阶段；以 `spark.sql.codegen.wholeStage=false` 重跑仍失败，故不能归因于 whole-stage codegen 开关。**根因尚未在项目源码内最终钉死**；当前假设是 `DwsSql.funnelDay` 等 `CASE WHEN`/DECIMAL 写入表达式撞到 Spark 3.3.2 的 Catalyst 插入类型检查缺陷。Apache JIRA [SPARK-42286](https://issues.apache.org/jira/browse/SPARK-42286) 记录 Spark 3.3.2 中相近的 CASE WHEN + CAST 写表内部错误，修复版本为 3.3.3；这是线索，不是本项目根因已证实。下一步应单独导出/执行 `DwsSql.funnelDay` 获取完整堆栈，复现实例后再决定最小 SQL 改写或升级版本；不以跳过 DWS 或关闭质量检查冒充通过。`fna`、`dqc`、`pub` 因 DWS 失败未运行。
 - **环境及数据边界**：本轮 HDFS、Flume、Spark/Hive 均使用 WSL 单节点隔离目录和新的 Hive 前缀；未访问 Windows MySQL 3306，未连接或写入 3307；旧测试快照/命名空间未覆盖。Flume agent 已正常停止；单节点 HDFS 为本轮 Spark SQL 回读仍保持运行，临时 DWS 数据和测试配置保留待调查，未删除。
 - **下一步**：先针对 `DwsSql.funnelDay` 做独立 Spark 3.3.2 最小复现并保存完整错误堆栈；通过回归测试确认修复/升级方案，再重建全新隔离前缀重跑 `usw → fna → dqc → pub`。在此之前只能宣称 ODS 与交易 DWD 小样本链路通过，不能宣称 DWS/ADS 链路完成。
+
+### 2026-10-01 阶段 4：流水线运行记录分页切片
+
+- **缺口**：V3.0 设计 §16.1 要求统一分页 `page/size/sort`；`GET /api/v1/pipeline-runs` 原来仅支持 `limit`，Pipeline 页面也无法翻页、查看总数或指定排序。
+- **实现**：新增受 `ops:log:view` 保护的 `GET /api/v1/pipeline-runs/page`，返回 `items/page/size/total/totalPages/sort`；限制 `page >= 1`、`1 <= size <= 100`，排序字段使用 MyBatis Lambda 白名单，未知字段/方向返回 `PARAM_INVALID`；相同排序值以 ID 倒序稳定打散。原 `GET /pipeline-runs?limit=...` 保持原响应兼容。Pipeline 页面改用分页查询，提供上一页/下一页、总条数及三种排序。
+- **决策记录**：为保持既有响应兼容，采用新 `/page` 子路径，不改变旧列表 JSON 形状；排序只开放 ID、创建/开始/结束时间、业务时间和状态；页越界自动归到最后一页，空列表仍显示第 1/1 页。影响仅流水线运行列表 API、前端及权限覆盖测试；回滚可恢复 controller、Pipeline.vue/api.js 和对应测试改动，不涉及数据库或迁移。
+- **验证**：Web `npm run verify`：382/382 Node 测试通过，Vite 5.4.21 production build 成功；`git diff --check` 通过。后端新增 `PipelineControllerPaginationTest`（分页元数据、越界、空结果、参数 fail-closed）及权限期望，但当前云端工作树无 Maven / Maven Wrapper，后端测试尚未运行，不能将该切片报告为完整通过。
+- **限制/下一步**：需在具备 Maven 的开发环境执行定向 `PipelineControllerPaginationTest` 与 `ControllerPermissionCoverageTest`，再做真实 HTTP 分页/排序及边界验收；之后继续处理首版其它阶段缺口。本切片不关闭阶段 4。

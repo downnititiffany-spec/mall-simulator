@@ -86,6 +86,7 @@ class ControllerPermissionCoverageTest {
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ingestion/batches", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ingestion/runs", PermissionCode.PIPELINE_RUN);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/pipeline-runs", PermissionCode.OPS_LOG_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/pipeline-runs/page", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/pipeline-runs", PermissionCode.PIPELINE_RUN);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/pipeline-runs/{id}", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/pipeline-runs/{id}/retry", PermissionCode.PIPELINE_RUN);

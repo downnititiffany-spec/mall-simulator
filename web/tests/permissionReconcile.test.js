@@ -117,7 +117,7 @@ const NOT_WIRED_IN_FRONTEND = new Map([
   ['POST /api/v1/ai/explanations', '前端无该调用（仅 web/src/utils/context.js:181 注释提到该分支）；AI 页消费的是 /ai/queries 响应里的 explanation'],
   // ── 采集面（1）：前端只有 POST /ingestion/runs 与 GET /ingestion/status ──
   ['GET /api/v1/ingestion/batches', '前端无该调用；运维页只读 GET /ingestion/status（批次列表页尚未接线）'],
-  // ── 运维/管理流水线面（4）：前端只有 POST /pipeline-runs、GET /pipeline-runs、GET /{id}、POST /{id}/retry（不含 admin/ 那组）──
+  // ── 运维/管理流水线面：分页运行列表已接线；admin 恢复操作仍未接线 ──
   ['GET /api/v1/admin/pipeline-runs/recovery-report', '前端无该调用（/admin/pipeline-runs 在 web/src 零命中）；故障恢复页尚未接线'],
   ['POST /api/v1/admin/pipeline-runs/{id}/resume', '前端无该调用（/admin/pipeline-runs 在 web/src 零命中）；续跑入口尚未接线'],
   ['POST /api/v1/admin/pipeline-runs/{id}/mark-failed', '前端无该调用（/admin/pipeline-runs 在 web/src 零命中）；标记失败入口尚未接线'],

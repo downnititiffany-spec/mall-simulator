@@ -28,8 +28,16 @@ test('retry 在 loading/busy 时 fail-closed，进入 busy 后清理旧结果，
 
 test('retry 成功才刷新列表，失败时转成可见 FAILED 结果而不是未处理 Promise', () => {
   const body = functionBody('retry')
-  assert.match(body, /runResult\.value = await api\.retryPipelineRun\(id\)[\s\S]*await load\(\)/)
+  assert.match(body, /runResult\.value = await api\.retryPipelineRun\(id\)[\s\S]*await load\(\{ page: page\.value, size: pageSize, sort: sort\.value \}\)/)
   assert.match(body, /catch \(e\) \{[\s\S]*runResult\.value = \{ status: 'FAILED: ' \+ \(e\.message \|\| e\) \}/)
+})
+
+test('运行列表使用分页查询并展示总数、页码和受控排序', () => {
+  assert.match(source, /api\.pipelineRunsPage\(params, \{ signal \}\)/)
+  assert.match(source, /第 \{\{ page \}\} \/ \{\{ totalPages \}\} 页/)
+  assert.match(source, /共 \{\{ total \}\} 条/)
+  assert.match(source, /value="businessTime,desc"/)
+  assert.match(source, /value="status,asc"/)
 })
 
 test('失败结果没有 runId 时不渲染 run#undefined', () => {

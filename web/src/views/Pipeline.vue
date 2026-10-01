@@ -7,7 +7,7 @@
            上下文条只描述**本页响应整体**的口径；每个实例自己的业务时间/源数据版本/输入批次/目标快照见下表。 -->
       <AnalysisContext :context="exportContext" :state="state" :error="error" />
       <div class="window-note" style="font-size:12px;color:var(--gray-500);margin-bottom:8px">
-        上下文条描述本页响应整体口径（/pipeline-runs 返回裸数组、无统一信封，故来源（发布方）/口径版本/质量状态显示「未知」）；
+        上下文条描述本页响应整体口径（/pipeline-runs/page 返回分页对象但无分析信封，故来源（发布方）/口径版本/质量状态显示「未知」）；
         实例级溯源请看下表「源数据版本 / 输入批次 / 目标快照」三列（输入批次 ＝ 本 run 消费的
         `ingestion_batch.id`，S3-36 起落库；老实例该列未记录、显示「—」）。
       </div>
@@ -40,6 +40,19 @@
         <button class="btn btn-sm" style="float:right" @click="refresh" :disabled="loading || busy">
           {{ loading ? '刷新中…' : '刷新' }}
         </button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <label style="font-size:13px">排序
+          <select v-model="sort" :disabled="loading || busy" @change="refresh" style="margin-left:6px;padding:4px">
+            <option value="id,desc">创建时间顺序（新到旧）</option>
+            <option value="businessTime,desc">业务时间（新到旧）</option>
+            <option value="status,asc">状态</option>
+          </select>
+        </label>
+        <span style="font-size:13px;color:var(--gray-500)">共 {{ total }} 条</span>
+        <button class="btn btn-sm" :disabled="loading || busy || page <= 1" @click="changePage(page - 1)">上一页</button>
+        <span style="font-size:13px">第 {{ page }} / {{ totalPages }} 页</span>
+        <button class="btn btn-sm" :disabled="loading || busy || page >= totalPages" @click="changePage(page + 1)">下一页</button>
       </div>
       <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
@@ -82,16 +95,23 @@ const businessDate = ref(localIsoDay())
 const runtimeProfileId = ref(1)
 const busy = ref(false)
 const runResult = ref(null)
+const page = ref(1)
+const total = ref(0)
+const totalPages = ref(1)
+const sort = ref('id,desc')
+const pageSize = 20
 
-// 取数 fetcher：/pipeline-runs 是**裸数组**接口（无统一信封）⇒ 在这里用 buildFallbackContext
+// 取数 fetcher：/pipeline-runs/page 是分页对象而非分析信封 ⇒ 在这里用 buildFallbackContext
 // 拼响应级上下文（与 Decisions.vue / Ops.vue 同形）；快照号只取实例的 targetSnapshotId
 // （可能多个：由 buildFallbackContext 既有规则如实标注「未合并为单一快照」）。
-// 业务时间/数据更新时间/口径版本/质量状态是**响应级**字段、裸数组接口并不提供 ⇒ 交缺失清单如实标注，
+// 业务时间/数据更新时间/口径版本/质量状态是**响应级**字段、运行列表接口并不提供 ⇒ 交缺失清单如实标注，
 // 不从某一实例行挑一个值冒充整页口径。加载状态**一律**交给唯一属主 useAnalysis，页内不自造状态机。
-async function fetchRuns(_params, signal) {
-  const raw = await api.pipelineRuns(10, { signal })
-  // 形状守卫：api.js 解包 `body.data` ⇒ 这里是 List<PipelineRun>；形状意外时退化成空表（不抛错）
-  const list = Array.isArray(raw) ? raw : []
+async function fetchRuns(params, signal) {
+  const raw = await api.pipelineRunsPage(params, { signal })
+  const list = raw && Array.isArray(raw.items) ? raw.items : []
+  total.value = Number.isFinite(Number(raw && raw.total)) ? Number(raw.total) : 0
+  totalPages.value = Math.max(1, Number(raw && raw.totalPages) || 1)
+  page.value = Math.max(1, Number(raw && raw.page) || 1)
   const ctx = buildFallbackContext({
     rows: list,
     warnings: ['ENVELOPE_MISSING'],
@@ -119,7 +139,13 @@ const runRows = computed(() => pipelineRunRows(data.value.pipelineRuns))
 
 function refresh() {
   if (loading.value || busy.value) return
-  return load()
+  return load({ page: page.value, size: pageSize, sort: sort.value })
+}
+
+function changePage(next) {
+  if (loading.value || busy.value) return
+  page.value = next
+  return load({ page: next, size: pageSize, sort: sort.value })
 }
 
 async function runOnce() {
@@ -144,7 +170,8 @@ async function runOnce() {
       runtimeProfileId: requestedRuntimeProfileId, pipelineCode: 'ODS_TO_ADS',
       businessTime: requestedBusinessDate + 'T00:00:00', sourceDataVersion: operationId
     }, operationId)
-    await load()
+    page.value = 1
+    await load({ page: page.value, size: pageSize, sort: sort.value })
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
   } finally {
@@ -158,7 +185,7 @@ async function retry(id) {
   runResult.value = null
   try {
     runResult.value = await api.retryPipelineRun(id)
-    await load()
+    await load({ page: page.value, size: pageSize, sort: sort.value })
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
   } finally {

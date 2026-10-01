@@ -46,7 +46,7 @@ test('sourceDataVersion 与 Idempotency-Key 复用同一 operationId', () => {
 test('runOnce 仍保持成功刷新、失败可见和 finally 释放 busy', () => {
   const body = functionBody('runOnce', 'retry')
   assert.match(body, /runResult\.value = await api\.createPipelineRun/)
-  assert.match(body, /await load\(\)/)
+  assert.match(body, /page\.value = 1\s*await load\(\{ page: page\.value, size: pageSize, sort: sort\.value \}\)/)
   assert.match(body, /catch \(e\) \{[\s\S]*runResult\.value = \{ status: 'FAILED: ' \+ \(e\.message \|\| e\) \}/)
   assert.match(body, /finally \{\s*busy\.value = false\s*\}/)
 })
@@ -69,5 +69,5 @@ test('流水线读写互斥时锁住业务输入和手工刷新，避免操作�
   assert.match(source, /v-model\.number="runtimeProfileId"[^>]*:disabled="loading \|\| busy"/)
   assert.match(source, /@click="runOnce"\s+:disabled="loading \|\| busy"/)
   assert.match(source, /@click="refresh"\s+:disabled="loading \|\| busy"/)
-  assert.match(source, /function refresh\(\) \{\s*if \(loading\.value \|\| busy\.value\) return\s*return load\(\)\s*\}/)
+  assert.match(source, /function refresh\(\) \{\s*if \(loading\.value \|\| busy\.value\) return\s*return load\(\{ page: page\.value, size: pageSize, sort: sort\.value \}\)\s*\}/)
 })

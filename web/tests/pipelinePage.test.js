@@ -24,7 +24,7 @@ test('Pipeline.vue 挂载 AnalysisContext，上下文由 buildFallbackContext �
   assert.match(text, /:state="state"/)
   assert.match(text, /:error="error"/)
   assert.ok(CTX_CALL, '未找到 buildFallbackContext 调用块')
-  // /pipeline-runs 返回裸数组（无统一信封）：调用块里必须显式登记，不能静默当信封用
+  // /pipeline-runs/page 返回分页对象（无统一分析信封）：调用块里必须显式登记，不能静默当信封用
   assert.match(CTX_CALL[0], /warnings:\s*\['ENVELOPE_MISSING'\]/)
 })
 
@@ -46,14 +46,14 @@ test('Pipeline.vue 的上下文快照号取自实例 targetSnapshotId，且不�
   assert.match(text, /targetSnapshotId/)
   assert.ok(CTX_CALL, '未找到 buildFallbackContext 调用块')
   assert.match(CTX_CALL[0], /snapshotIds:/)
-  // 裸数组接口不提供响应级业务时间/数据更新时间/口径版本/质量状态：
+  // 分页运行列表不提供响应级业务时间/数据更新时间/口径版本/质量状态：
   // 不得从某一实例行挑一个值当成整页口径（多快照由 buildFallbackContext 既有规则如实标注）。
   // 断言范围限定在调用块内 —— 触发实例的请求体里本来就有 businessTime（创建入参），
   // 那不是上下文口径，不得被这条守卫误伤。
   assert.ok(!/businessTime:\s*[A-Za-z_$]/.test(CTX_CALL[0]), '不得把实例行 businessTime 当作响应级业务时间')
   assert.ok(!/qualityStatus:\s*[A-Za-z_$]/.test(CTX_CALL[0]), '裸数组接口不提供质量状态，不得在页面推断')
-  // 形状守卫：取数结果只按数组处理（api.js 解包 body.data ⇒ List<PipelineRun>），
-  // 形状意外时退化为空表而不是让页面抛错（与 Ops.vue 对同一实体的处理一致）
+  // 形状守卫：分页对象中的 items 只按数组处理（api.js 解包 body.data ⇒ PipelineRunPage），
+  // 形状意外时退化为空表而不是让页面抛错
   assert.match(text, /Array\.isArray\(/)
 })
 
