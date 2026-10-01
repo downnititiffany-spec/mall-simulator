@@ -1,23 +1,15 @@
 # PROJECT_STATUS
 
-### 2026-10-01 云端单节点联调进展检查点（未完成，已获用户授权推送存档）
+### 2026-10-01 云端 Linux 单节点联调收口（PASS_WITH_LIMITATION；待总控复核）
 
-- **本轮工作树基线**：HEAD=`2f17dac36907328cb8d1d446974c8ee57863c36e`；保留最初核验的 10 个测试文件改动及 `.gitattributes`，当前另有联调脚本和动态清单。总控最新指示要求阶段性上传 GitHub 存档，覆盖此前暂不提交/推送要求；本检查点尚未完成产品验收，不代表最终验收。
-- **脚本化与运行**：`scripts/cloud-single-node.sh` 复用现成组件，在专用 3307 启动 MySQL/HDFS/Flume/Hive HMS/三应用和前端；`scripts/cloud-generator-cli.sh` 通过生成器进程内存环境安全调用受支持 CLI，输出日志对数据库用户名/密码做运行时替换。无凭据写入文件。MySQL 改为独立 session 后，脚本退出后仍存活。
-- **已验收切片**：当前轮 RunId `cloud_261001_071427_ac5e43` 启动后 3307/19000/19010/19083/8090/8091/8092/5173/5174 均 LISTEN；平台与生成器健康 200；浏览器登录分析平台及独立商城均成功，分别实际请求平台指标/源 API 与商城商品 API，均 200，页面无 JS 异常。生成器计划 v1 输出 20 条固定 seed canonical events（SHA-256 `ba4f333a…`）；Flume 完整落入 HDFS raw，原始文件与 HDFS SHA-256 相等；`sourceId=1`、`batchId=1`、摄取 SUCCESS、20 条、0 quarantine，manifest/accepted 路径位于任务 HDFS namespace。
-- **Metastore 分项证据**：Hive CLI 通过 Thrift `127.0.0.1:19083` 列出 `cloud_smoke` 与 `default`；独立 Spark 3.5.1 `local[1]` 用 `spark.hadoop.hive.metastore.uris=thrift://127.0.0.1:19083` 返回相同数据库。平台 SINGLE_NODE 作业仍被强制配置独立嵌入式 Derby，不能混写成共享 HMS 验收。
-- **失败与最小修复**：第一次 pipeline RunId `cloud_261001_070712_10c8a3` 的 `runId=1` 在 `INIT_SCHEMA` 失败，`RUN_JOB_FAILED`；Spark 日志明确为 Derby `create=true` 的目标目录已预先存在。本轮将启动脚本移除 Derby 目标目录的 `mkdir`，保留旧失败目录、日志、MySQL/HDFS 数据；当前 fresh RunId `cloud_261001_071427_ac5e43` 尚待重跑完整 pipeline 与确认该修复。早先健康探针错误地用商城 GET 登录 API，触发方法不支持并被商城包装为 500；现以商城 SPA 根 HTTP 作为存活探测，浏览器独立验证实际 POST 登录。
-- **共享 HMS 结论**：Hive CLI 与 Spark smoke 均 PASS（单机 Thrift + 独立后端 Derby 限定）；平台完整流水线尚未通过。脚本健康、浏览器和 smoke 不替代隔离数据库测试或单节点 E2E。
-- **动态任务清单**：`docs/PROJECT_COMPLETION_CHECKLIST.md` 记录 V3.0 首版边界、D-039/044/053/054/058、阶段状态、执行顺序、验收判据、限制和自主决策。冻结的 V3.0 正文不变。
-- **下一步**：在当前 RunId 重建生成器 v1 → Flume → HDFS → sourceId1/batchId1 摄取，发布前重算并钉住独立 oracle，运行 ODS_TO_ADS；再做第二批、无输入不发版、失败保旧快照；最后按 V3.0 首版未完项继续功能开发和受影响验收。
-
-### 2026-10-01 云端 Linux 单节点三程序联调（进行中）
-
-- **工作范围**：沿用用户保留的基线 HEAD 与 11 个既有文件改动；不修改 V3.0 指导书/设计文档及其他冻结文档、不提交、不推送。允许新增可复用 Linux harness、忽略的任务运行配置/证据及本动态状态条目。
-- **目标**：复用已安装 MySQL 8.0.41 / Hadoop 3.3.4 / Hive 3.1.3 / Spark 3.5.1 / JDK 8、17、Maven、Node；禁止访问 3306。任务专用 MySQL 仅监听 127.0.0.1:3307；Flume/HDFS 及分析平台、商城、生成器显式 Linux 运行配置；嵌入式 Derby 与 Thrift Hive Metastore 后端 Derby 分开记录。
-- **退出判据**：健康与登录成功；两前端浏览器请求命中各自后端；小数据 Flume→HDFS→平台摄取→ODS/DWD/DWS/ADS→3307 ACTIVE→API/页面同 RunId 对账；检查第二批增量、无新输入不发版、失败保留旧 ACTIVE；保留 sourceId/batchId/runId/snapshotId 与独立 oracle；总结范围与恢复步骤。
-- **当前预检**：HEAD `2f17dac36907328cb8d1d446974c8ee57863c36e`；恰有 10 个已跟踪测试文件修改及根 `.gitattributes` 未跟踪文件，共 11 项。旧 `AnalyticsIsolationFlywayIT` 2/2 与 `MetricPublisherMySqlIT` 3/3 隔离 MySQL 结果 PASS，但这些是前一 RunId 的 schema/publisher 试验，不是本轮应用端到端证据。当前服务端口预检均关闭；现有 HDFS 已格式化 name/data 目录与 HMS 后端 Derby 数据目录存在，禁止重新格式化或清空。
-- **本轮新增允许文件**：`scripts/cloud-single-node.sh`；该脚本只生成进程内随机账号口令，不写入仓库、日志或环境快照。独立结果只在运行完成后追加于本节。
+- **证据**：`docs/verification/results/CLOUD-SINGLE-NODE-E2E-20261001.md`。RunId `cloud_261001_071427_ac5e43`，任务目录 `/workspace/single-node/cloud-e2e/cloud_261001_071427_ac5e43`。服务/端口、前端登录及后端 API、共享 Thrift HMS 独立 Hive/Spark smoke、批次/故障语义、商城 HTTP→Outbox→Flume/HDFS→数仓→MySQL/API/页面链均有本轮证据。
+- **血缘**：来源 `sourceId=1`。canonical file batchId=1/2 分别 20/20 行、batchId=4 为 10 行；batchId=3 是 0 行 no-op。故障 runId=4 在 INIT_SCHEMA 失败时保留旧 ACTIVE `S20261001_2`；恢复作业 JAR profile 后，受控 runId=5 成功消费 batchId=4 并发布 `S20261001_5`。真实生成器 `MALL_API` run `cloud_261001_071427_ac5e43_mall_http-v1-20261001-154044-5818` 触发商城用户/订单/支付/取消与 Outbox；batchId=5 共 94 事件、0 quarantine；runId=6 SUCCESS，ACTIVE=`S20261001_6`。
+- **独立对账**：Outbox 的 26 个订单独立关联创建/支付/取消事件，得到 13 有效支付与 GMV 1617.40；API 同快照返回 `paid_order_cnt=13`、`gmv=1617.40`、`net_sale=1617.40`。累计 PV=8、UV=3、DAU=3、favorites=2、cart=2 与独立 oracle/API/最终页面一致。No-new-input 未发布快照；失败期间原 ACTIVE 与指标值逐项未变。
+- **运行脚本**：复用已有 MySQL/Hadoop/Hive/Spark/Maven/Node 安装；专用 MySQL 只监听 127.0.0.1:3307，不格式化现有 HDFS。平台 SINGLE_NODE 的嵌入 Derby 与 Hive Thrift HMS 后端 Derby 保持独立并分项验收。生成器 helper 的 `--with-mall-token` 只把父进程传来的短期环境令牌注入 CLI 子进程，并对 CLI 日志脱敏；凭据未存仓库、运行日志或环境快照。
+- **缺陷与修复**：首次 Derby 目标目录创建导致 `create=true` 初始化失败，启动脚本已修正并由新 RunId 的 runId=1 SUCCESS 复证；商城健康探针改为 SPA 根路径，浏览器单独验证登录；MySQL 进程改用独立 session。遇到 batchId=4 未消费时，遵循 FIFO 先重试 runId=5，再以 runId=6 消费 batchId=5，未混合批次结论。
+- **范围/测试档**：单节点 E2E PASS_WITH_LIMITATION；云端 smoke 与浏览器 E2E PASS。独立 MySQL IT 套件本 RunId 未重跑，不把历史 13/13 套件结果冒充当前；本轮未改业务逻辑/单测，脚本语法与 diff whitespace 检查 PASS。REMOTE_CLUSTER/YARN、多节点、真实 LLM 和总控最终验收仍未测/阻塞/待签收；不属于本结果通过范围。Stage 7 第二来源与 stub-local AI/决策等既有验收不重复执行，沿用历史对应报告。
+- **安全与保留**：禁止并遵守 3306；不提交数据库备份或敏感原始事件。任务运行数据/日志留在仓库外 RunId 目录。原有 11 文件改动均在 Git checkpoint `161ae29` 内；用户已授权定期 GitHub 存档，本结果变更将在测试后推送新 checkpoint，不代表产品最终验收。冻结 V3.0 正文未修改。
+- **恢复**：当前服务仍运行时使用 `./scripts/cloud-single-node.sh status`；结束本任务进程但保留数据用 `./scripts/cloud-single-node.sh stop`。端口释放后创建新隔离环境用 `./scripts/cloud-single-node.sh start`；脚本创建新 RunId、只绑定 3307、保留旧目录与 HDFS namespace，不格式化。
 
 ### 2026-09-30 N31-02 D-048 全批归档与签收前状态
 

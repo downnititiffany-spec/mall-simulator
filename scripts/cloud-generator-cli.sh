@@ -11,6 +11,8 @@ PID=$(<"$RUN_DIR/pids/generator.pid")
 exec python3 - "$PID" "$ROOT/synthetic-data-generator/target/synthetic-data-generator-0.1.0-SNAPSHOT.jar" "$RUN_DIR/logs/generator-cli.log" "$@" <<'PY'
 import os, subprocess, sys
 pid, jar, logfile, *args = sys.argv[1:]
+use_mall_token = "--with-mall-token" in args
+args = [arg for arg in args if arg != "--with-mall-token"]
 with open(f"/proc/{pid}/environ", "rb") as f:
     pairs = [p.split(b"=", 1) for p in f.read().split(b"\0") if b"=" in p]
 source = {k.decode(errors="replace"): v.decode(errors="replace") for k, v in pairs}
@@ -21,13 +23,21 @@ if missing:
     print("Generator runtime environment is incomplete.", file=sys.stderr)
     sys.exit(3)
 env = {k: source[k] for k in keys}
+if use_mall_token:
+    token = os.environ.get("CLOUD_MALL_TOKEN")
+    if not token:
+        print("Mall API auth token is not available in the current process environment.", file=sys.stderr)
+        sys.exit(3)
+    env["CLOUD_MALL_TOKEN"] = token
 env["SPRING_MAIN_WEB_APPLICATION_TYPE"] = "none"
 cmd = [os.path.join(env["JAVA_HOME"], "bin", "java"), "-Xms64m", "-Xmx384m", "-Dfile.encoding=UTF-8",
        "-jar", jar, *args]
 result = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 safe = result.stdout
-for k in ("SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD"):
-    safe = safe.replace(env[k], "[REDACTED]")
+for secret in (env.get("SPRING_DATASOURCE_USERNAME"), env.get("SPRING_DATASOURCE_PASSWORD"),
+               env.get("CLOUD_MALL_TOKEN")):
+    if secret:
+        safe = safe.replace(secret, "[REDACTED]")
 os.makedirs(os.path.dirname(logfile), exist_ok=True)
 with open(logfile, "a", encoding="utf-8") as f:
     f.write(safe)
