@@ -16,7 +16,7 @@
 | N31-04 真实 LLM | 未完成且阻塞 | D-039 缺少外部服务/凭据等必要条件；不伪造、不纳入首版完成门槛 |
 | N31-05 最终验收/版本发布 | 未开始/未授权 | 总控保留最终签收；本代理不提交、不发布 |
 | 云端 Linux 单节点持续链 | 已完成，PASS_WITH_LIMITATION | 结果 `docs/verification/results/CLOUD-SINGLE-NODE-E2E-20261001.md`。RunId `cloud_261001_071427_ac5e43` 完成文件生成 20+20+10、无输入 no-op、失败保旧快照/受控重试，以及 `MALL_API`→商城 Outbox 94 事件→Flume/HDFS→摄取→Spark→3307/MySQL/API/页面；限单节点 local[1] |
-| 阶段 4 分页（流水线运行、决策列表） | 实现、定向测试、真实服务空集读取与浏览器空态通过；非空记录排序待测 | 两个兼容 `/page` API 均提供页码、总量和白名单排序，前端支持 page/size/sort。新 RunId `cloud_261001_104952_d7b6d8` 登录态真 HTTP 对两个 API 分别请求 size=10/50，均 200 且正确回显 size、total=0、totalPages=1；Playwright 曾验证决策页实际请求及空态。无决策/运行记录，不能据此验非空排序。 |
+| 阶段 4 分页（流水线运行、决策列表、运维流水线表） | 实现与前端定向测试通过；真服务空集读取已覆盖 pipeline/decision API，浏览器空态仅验证决策页；非空排序/翻页未验 | pipeline 与 decision 兼容 `/page` API 提供页码、总量和白名单排序；三个前端列表支持 page/size/sort。运维表改用 `/pipeline-runs/page` 并明确导出本页。新 RunId `cloud_261001_104952_d7b6d8` 登录态真 HTTP 对 pipeline/decision API 分别请求 size=10/50，均 200 且正确回显 size、total=0、totalPages=1；Playwright 曾验证决策页实际请求及空态。当前无决策/运行记录，非空排序与运维页浏览器验收待有真实记录后补测。本次 web 386/386 + build PASS。 |
 | 阶段 4 高成本请求限流 | 实现和定向测试已完成，单节点范围 | 进程内用户+操作族固定窗口，流水线提交 10/min、采集触发 20/min，MockMvc/L1 验收；多节点共享限流未实现/未验收 |
 | 远程集群、YARN、多节点、真实 LLM | 未测/暂缓 | 明确不属于本轮可宣称范围 |
 
@@ -59,6 +59,7 @@
 | 2026-10-01 | 真实调用商城需要 bearer token，如何避免落盘 | 由一次性进程内登录取短期 token；仅将 token 作为 CLI 子进程环境值传入；目标表仅保存 `CLOUD_MALL_TOKEN` 引用名，日志写入前脱敏 | CLI run SUCCESS；仓库、日志与环境快照无 token 持久化 | 结束 CLI 子进程即释放；如疑似泄漏，停止任务应用并在隔离环境重新登录 |
 | 2026-10-01 | 故障注入 batchId=4 未消费时，直接启动新的分析运行 | 尊重源内 FIFO/待消费批次语义；先受控重试旧失败批，再单独触发 Outbox batchId=5 | runId=5 消费 batchId=4 并发布 `S20261001_5`；runId=6 消费 batchId=5 并发布 `S20261001_6`；未把两批证据混记 | 不回滚已发布记录；需要复测时使用新隔离 RunId |
 | 2026-10-01 | 分页 API 有 page/size/sort，但流水线与决策页固定 size=20 | 提供 10/20/50/100 的离散 size 选择；更改 size/sort 时回到第 1 页，刷新和写后重载保留当前 size | 前端 384/384 + production build 通过；本次仅做组件契约验证 | 回退 Pipeline.vue、Decisions.vue 的 size 控件/参数与对应测试；无服务端或数据变化 |
+| 2026-10-01 | Ops 流水线表仍调用旧 top-10 数组 API，且导出范围不明显 | 统一调用 `/pipeline-runs/page`；提供 10/20/50/100 页大小、现有安全排序选项和页码控件；导出标签注明本页 | Web 386/386 与 production build 通过；当前数据集为空，非空真服务/浏览器验收待补 | 回退 `web/src/views/Ops.vue` 与 `web/tests/opsPipelinePagination.test.js`，不触及数据 |
 
 ## 当前未验收项 / 待复核假设
 
@@ -69,6 +70,7 @@
 
 ## 2026-10-01 连续开发进度
 
+- 阶段 4「运维中心流水线实例分页」：**实现及前端验证通过**。Ops 现与流水线主页面使用相同的服务端分页契约；web 386/386 + Vite production build PASS、diff whitespace PASS。真库当前无 pipeline 记录，故非空排序/翻页及 Ops 浏览器实测未验；见 `PROJECT_STATUS.md` 顶部记录。
 - 阶段 4「流水线运行记录分页」：**实现、前后端定向测试与 MockMvc 验收通过；真实服务/真库验收未完成**。Web 382/382 + Vite build PASS；Java 三类用例共 10/10 PASS。Java 使用临时 Maven/JDK21 javac 兼容启动器完成，标准 Java 17 release 尚未测。细节见 `docs/PROJECT_STATUS.md` 对应切片记录。
 - 阶段 4「限流」：**首版单节点高成本提交端点已实现并通过定向测试**（10 次/分钟 pipeline commands、20 次/分钟 ingestion triggers；按用户与操作族隔离；HTTP 429/Retry-After）。多节点共享状态未验收，且普通读取 API 不纳入本次限流策略。
 - 下一步：在现有单节点环境的隔离 3307 schema 对只读列表做一次真实 API 验收，不修改/迁移 3306；随后继续 V3.0 必做项。冻结文档保持不变。

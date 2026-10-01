@@ -1,5 +1,12 @@
 # PROJECT_STATUS
 
+### 2026-10-01 阶段 4 运维流水线表分页统一（实现与前端验证通过）
+
+- 运维中心独立的流水线实例表此前仍走旧 `pipelineRuns(10)` 列表，无法翻页，导出按钮也没有说明仅导出已加载子集。现改为使用 `/pipeline-runs/page`，新增总量/页数、10/20/50/100 条每页、ID/业务时间/状态排序和翻页；切换页大小或排序回到第 1 页，导出标签明确为“导出本页”。
+- 测试：`web npm run verify` **386/386 PASS**，Vite production build PASS；`git diff --check` PASS。测试覆盖请求参数、分页元数据、控件、分页/排序/页大小触发和导出文案。当前隔离运行库没有 pipeline 记录，未做非空分页的真实服务验收；本次未重复安装浏览器，未重跑浏览器 smoke。
+- 决策：运维表与 `/pipeline` 页面共用服务端分页契约，避免维护第二套截断列表；维持离散页大小和服务端排序白名单；导出仍限当前返回页并明示范围。回滚只需恢复 `Ops.vue` 与新增测试，不触及数据或数据库。
+- 保留边界：旧数组 API 不删除；无业务语义变化；3306 未连接，未输出凭据，冻结 V3.0 正文未改。
+
 ### 2026-10-01 云端 Linux 单节点联调收口（PASS_WITH_LIMITATION；待总控复核）
 
 - **证据**：`docs/verification/results/CLOUD-SINGLE-NODE-E2E-20261001.md`。RunId `cloud_261001_071427_ac5e43`，任务目录 `/workspace/single-node/cloud-e2e/cloud_261001_071427_ac5e43`。服务/端口、前端登录及后端 API、共享 Thrift HMS 独立 Hive/Spark smoke、批次/故障语义、商城 HTTP→Outbox→Flume/HDFS→数仓→MySQL/API/页面链均有本轮证据。

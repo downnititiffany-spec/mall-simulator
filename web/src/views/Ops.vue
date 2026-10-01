@@ -114,8 +114,25 @@
         流水线实例（幂等键 / 尝试次数 / 目标快照，溯源链路）
         <button class="btn btn-sm" style="float:right"
                 :disabled="!pipelineExportable" @click="exportRuns">
-          {{ pipelineExportable ? '导出流水线 CSV' : '导出（当前无可导出流水线数据）' }}
+          {{ pipelineExportable ? '导出本页流水线 CSV' : '导出（当前无可导出流水线数据）' }}
         </button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <label style="font-size:13px">排序
+          <select v-model="runSort" :disabled="loading || busy" @change="changeRunSort" style="margin-left:6px;padding:4px">
+            <option value="id,desc">创建时间顺序（新到旧）</option>
+            <option value="businessTime,desc">业务时间（新到旧）</option>
+            <option value="status,asc">状态</option>
+          </select>
+        </label>
+        <label style="font-size:13px">每页
+          <select v-model.number="runPageSize" :disabled="loading || busy" @change="changeRunPageSize" style="margin-left:6px;padding:4px">
+            <option :value="10">10</option><option :value="20">20</option><option :value="50">50</option><option :value="100">100</option>
+          </select>
+        </label>
+        <span style="font-size:13px;color:var(--gray-500)">共 {{ runTotal }} 条 · 第 {{ runPage }} / {{ runTotalPages }} 页</span>
+        <button class="btn btn-sm" :disabled="loading || busy || runPage <= 1" @click="changeRunPage(runPage - 1)">上一页</button>
+        <button class="btn btn-sm" :disabled="loading || busy || runPage >= runTotalPages" @click="changeRunPage(runPage + 1)">下一页</button>
       </div>
       <table v-if="pipelineTable.rows.length" class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
@@ -234,6 +251,11 @@ const users = ref([])
 const lastKnownStatus = ref({})
 const busy = ref(false)
 const actionError = ref('')
+const runPage = ref(1)
+const runPageSize = ref(10)
+const runTotal = ref(0)
+const runTotalPages = ref(1)
+const runSort = ref('id,desc')
 const newUser = ref({ username: '', realName: '', role: 'operator', password: '' })
 const selected = ref('')
 
@@ -248,13 +270,18 @@ const snapColor = (s) => ({ ACTIVE: 'var(--success)', BUILDING: '#d97706', VERIF
 // 运维页多来源取数：统一信封接口（无）与非信封接口混用，
 // 因此在这里拼上下文；任一子接口失败都要显式告知，不静默当作没数据。
 async function fetchOps(params, signal) {
-  const [snapshots, quality, history, calls, pipelineRuns] = await Promise.all([
+  const [snapshots, quality, history, calls, pipelinePage] = await Promise.all([
     api.snapshots(15, { signal }),
     api.quality(20, { signal }),
     api.aiAuditHistory(10, { signal }),
     api.aiAuditCalls(10, { signal }),
-    api.pipelineRuns(10, { signal })
+    api.pipelineRunsPage({ page: runPage.value, size: runPageSize.value, sort: runSort.value }, { signal })
   ])
+  const runs = pipelinePage && Array.isArray(pipelinePage.items) ? pipelinePage.items : []
+  runPage.value = Math.max(1, Number(pipelinePage && pipelinePage.page) || 1)
+  runPageSize.value = Number(pipelinePage && pipelinePage.size) || runPageSize.value
+  runTotal.value = Number(pipelinePage && pipelinePage.total) || 0
+  runTotalPages.value = Math.max(1, Number(pipelinePage && pipelinePage.totalPages) || 1)
   const warnings = []
   // 这些接口都不返回统一信封，逐项登记，页面与导出件都能看到“为什么上下文是拼的”
   warnings.push('ENVELOPE_MISSING')
@@ -263,7 +290,6 @@ async function fetchOps(params, signal) {
   const qualityList = Array.isArray(quality) ? quality : []
   const historyList = Array.isArray(history) ? history : []
   const callList = Array.isArray(calls) ? calls : []
-  const runs = Array.isArray(pipelineRuns) ? (pipelineRuns.items || pipelineRuns) : []
 
   // 找 ACTIVE 快照作为上下文主快照（找不到就如实留空，由上下文标注缺失）
   const active = snapshotList.find((s) => s && s.status === 'ACTIVE') || null
@@ -401,6 +427,24 @@ async function loadAll() {
   if (loading.value || busy.value) return
   actionError.value = ''
   await Promise.all([load({}), loadUsers()])
+}
+
+function changeRunPage(nextPage) {
+  if (loading.value || busy.value || nextPage < 1 || nextPage > runTotalPages.value) return
+  runPage.value = nextPage
+  return load({})
+}
+
+function changeRunPageSize() {
+  if (loading.value || busy.value) return
+  runPage.value = 1
+  return load({})
+}
+
+function changeRunSort() {
+  if (loading.value || busy.value) return
+  runPage.value = 1
+  return load({})
 }
 
 function exportMetrics() {
