@@ -1642,7 +1642,7 @@
 - **缺口**：统一分页要求覆盖决策列表；此前 `GET /api/v1/decisions?limit=` 固定返回数组，决策页面不能翻页、确认总量或选择排序。
 - **实现/兼容**：新增受 `dashboard:view` 保护的 `GET /api/v1/decisions/page`，响应 `items/page/size/total/totalPages/sort`；页码、每页大小和排序字段/方向均有边界校验，页码越界夹到最后一页，ID 作为稳定排序并列键。旧数组端点保留。决策中心已切到分页接口，展示总量和页码、支持上一页/下一页及 ID/创建时间/更新时间/截止日期/状态排序；导出按钮明确标注为“本页 CSV”。
 - **决策记录**：采用新增 `/page` 维持旧 API JSON 兼容；本页面固定每页 20 条，避免加入不必要的控件；只导出当前可见页，按钮文案如实界定范围。排序列白名单，不允许用户输入 SQL/属性表达式。回滚只需恢复 service/controller、api.js、Decisions.vue 与新增测试。
-- **验证**：前端 `npm run verify`：**382/382** Node 测试通过，Vite production build 成功；并更新原有并发/刷新结构判据，使其检查分页读取及页码/排序状态。后端定向 Maven reactor：`DecisionServicePaginationTest` 2/2、`DecisionControllerPaginationHttpTest` 1/1、`ControllerPermissionCoverageTest` 5/5、`DecisionControllerAuditTest` 6/6、`DecisionControllerIdentityTest` 5/5；合计 **19/19 PASS**，七模块 reactor `BUILD SUCCESS`。MockMvc 实测 `/page` JSON metadata 与匿名 401；没有数据库连接或真实服务 HTTP 请求。`git diff --check` 通过。
+- **验证**：前端 `npm run verify`：**382/382** Node 测试通过，Vite production build 成功；并更新原有并发/刷新结构判据，使其检查分页读取及页码/排序状态。后端定向 Maven reactor：`DecisionServicePaginationTest` 3/3、`DecisionControllerPaginationHttpTest` 1/1、`ControllerPermissionCoverageTest` 5/5、`DecisionControllerAuditTest` 6/6、`DecisionControllerIdentityTest` 5/5；合计 **20/20 PASS**，七模块 reactor `BUILD SUCCESS`。服务测试覆盖分页元数据/边界与白名单 SQL 排序、稳定 ID 次序、LIMIT/OFFSET；MockMvc 覆盖 `/page` JSON metadata 与匿名 401。真实服务/浏览器结果另见下方 RunId 记录。`git diff --check` 通过。
 - **限制**：列表端到端数据库排序和真实服务 HTTP 尚未在云端服务进程验证；后端编译使用临时 JDK 21 `jdk.compiler` wrapper，将 `--release 17` 调整为 `-source/-target 17`，故标准 JDK 17 release API 严格校验仍未验证。以上不替代后续真实单节点链路/浏览器验收。
 
 ### 2026-10-01 V3.0 首版阶段门映射更新
@@ -1658,3 +1658,10 @@
 - **浏览器实测**：Playwright 模块存在但初始缺少 Chromium。将 Chromium 临时安装到 `/tmp/codex-playwright-browsers`（未改仓库依赖），浏览器在独立内存上下文登录并打开 `http://127.0.0.1:5173/decisions`；实际捕获 `/api/v1/decisions/page` HTTP 200，页面显示“共 0 条 · 第 1 / 1 页”，无页面运行时错误；测试令牌已注销、上下文关闭，临时浏览器文件已清理。`agent-browser` CLI 未安装，故使用现存 Playwright 库完成浏览器验收。
 - **失败记录/边界**：第一次从旧接力文档提取的本地 smoke 账号返回 401，未得到令牌；按当前部署参考文档核对后的本地账号登录成功。首次浏览器断言因“决策中心”标题同时出现在导航/面包屑/正文而触发严格定位器歧义，收紧到正文标题后重跑通过。无凭据值进入输出。新 RunId 是空业务库，仅完成 GET/read；没有复制原业务数据或重跑 Spark。旧环境目录保留，工作目录 `current` 指向新 RunId。3306 零连接。
 - **下一步**：后续需要非空分页真库证据时，使用商城/生成器产生的真实来源数据和经批准的决策流程，独立算预期后验证 ID/排序/页边界；不得为测试伪造业务记录，也不得把当前空集读取当作非空排序验收。
+
+### 2026-10-01 决策分页 SQL 形状定向覆盖
+
+- **缺口**：服务单测覆盖参数、总数和页码夹取，但未断言实际 MyBatis LambdaQueryWrapper 的排序与 LIMIT/OFFSET 片段。
+- **实现**：扩展 `DecisionServicePaginationTest`，捕获执行给 mapper 的 wrapper，断言 `createdAt,asc` 映射为 `created_at ASC`、以 `id DESC` 稳定打散，并使用正确 page=3/size=10 偏移 `LIMIT 10 OFFSET 20`。测试初始化 MyBatis-Plus `TableInfo` 元数据，保持纯单元测试，不连数据库。
+- **验证**：首次执行发现纯 Mockito 环境未自动注册 lambda column cache；补齐实体元数据初始化后 `DecisionServicePaginationTest` **3/3 PASS**，五模块 Maven reactor `BUILD SUCCESS`。没有改业务实现或预期值；原完整定向 20/20 结果由本条更新后的 suite 组成。
+- **影响/回滚**：仅扩展服务测试；回滚为移除此新增测试与 setup 初始化即可，无库状态变化。
