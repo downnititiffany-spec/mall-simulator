@@ -1644,3 +1644,9 @@
 - **决策记录**：采用新增 `/page` 维持旧 API JSON 兼容；本页面固定每页 20 条，避免加入不必要的控件；只导出当前可见页，按钮文案如实界定范围。排序列白名单，不允许用户输入 SQL/属性表达式。回滚只需恢复 service/controller、api.js、Decisions.vue 与新增测试。
 - **验证**：前端 `npm run verify`：**382/382** Node 测试通过，Vite production build 成功；并更新原有并发/刷新结构判据，使其检查分页读取及页码/排序状态。后端定向 Maven reactor：`DecisionServicePaginationTest` 2/2、`DecisionControllerPaginationHttpTest` 1/1、`ControllerPermissionCoverageTest` 5/5、`DecisionControllerAuditTest` 6/6、`DecisionControllerIdentityTest` 5/5；合计 **19/19 PASS**，七模块 reactor `BUILD SUCCESS`。MockMvc 实测 `/page` JSON metadata 与匿名 401；没有数据库连接或真实服务 HTTP 请求。`git diff --check` 通过。
 - **限制**：列表端到端数据库排序和真实服务 HTTP 尚未在云端服务进程验证；后端编译使用临时 JDK 21 `jdk.compiler` wrapper，将 `--release 17` 调整为 `-source/-target 17`，故标准 JDK 17 release API 严格校验仍未验证。以上不替代后续真实单节点链路/浏览器验收。
+
+### 2026-10-01 V3.0 首版阶段门映射更新
+
+- **更新原因**：持续开发需要能逐阶段判断“实现”“测试”和“真实环境验收”的差别；原动态完成清单已列局部进度，但没有逐条映射指导书 §7/§8 八个阶段门。
+- **处理**：在 `docs/PROJECT_COMPLETION_CHECKLIST.md` 增加逐阶段矩阵，以既有权威报告引用已有证据，不重写/重复实现已有功能；标记 Stage 1 逐任务更新，Stage 2/3/7 为单节点限定完成，Stage 4 与 Stage 6/8 部分完成，Stage 5 有既有可用性证据及其视口限制。真实 LLM、REMOTE_CLUSTER/YARN 与最终总控签收继续独立标为阻塞/未测/未授权。
+- **验证/边界**：文档引用路径和结论按当前状态检查，`git diff --check` 通过；这是工作清单澄清，不替代任何代码、数据库、浏览器或产品验收测试。冻结 V3.0 正文未修改。
