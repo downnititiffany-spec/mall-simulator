@@ -60,6 +60,7 @@
 | 2026-10-01 | 故障注入 batchId=4 未消费时，直接启动新的分析运行 | 尊重源内 FIFO/待消费批次语义；先受控重试旧失败批，再单独触发 Outbox batchId=5 | runId=5 消费 batchId=4 并发布 `S20261001_5`；runId=6 消费 batchId=5 并发布 `S20261001_6`；未把两批证据混记 | 不回滚已发布记录；需要复测时使用新隔离 RunId |
 | 2026-10-01 | 分页 API 有 page/size/sort，但流水线与决策页固定 size=20 | 提供 10/20/50/100 的离散 size 选择；更改 size/sort 时回到第 1 页，刷新和写后重载保留当前 size | 前端 384/384 + production build 通过；本次仅做组件契约验证 | 回退 Pipeline.vue、Decisions.vue 的 size 控件/参数与对应测试；无服务端或数据变化 |
 | 2026-10-01 | Ops 流水线表仍调用旧 top-10 数组 API，且导出范围不明显 | 统一调用 `/pipeline-runs/page`；提供 10/20/50/100 页大小、现有安全排序选项和页码控件；导出标签注明本页 | Web 386/386 与 production build 通过；当前数据集为空，非空真服务/浏览器验收待补 | 回退 `web/src/views/Ops.vue` 与 `web/tests/opsPipelinePagination.test.js`，不触及数据 |
+| 2026-10-01 | 流水线列表把 ID 顺序标为创建时间 | 两页默认及可见创建时间排序统一用后端白名单 `createdAt,desc`；不改变 ID tie-break 契约 | 原实现静态复核发现；修改后 Web 386/386 与 production build 通过 | 回退两页的 sort 默认值/选项及对应断言；无数据库变化 |
 
 ## 当前未验收项 / 待复核假设
 

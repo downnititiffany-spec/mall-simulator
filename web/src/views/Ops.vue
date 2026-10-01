@@ -120,7 +120,7 @@
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
         <label style="font-size:13px">排序
           <select v-model="runSort" :disabled="loading || busy" @change="changeRunSort" style="margin-left:6px;padding:4px">
-            <option value="id,desc">创建时间顺序（新到旧）</option>
+            <option value="createdAt,desc">创建时间（新到旧）</option>
             <option value="businessTime,desc">业务时间（新到旧）</option>
             <option value="status,asc">状态</option>
           </select>
@@ -255,7 +255,7 @@ const runPage = ref(1)
 const runPageSize = ref(10)
 const runTotal = ref(0)
 const runTotalPages = ref(1)
-const runSort = ref('id,desc')
+const runSort = ref('createdAt,desc')
 const newUser = ref({ username: '', realName: '', role: 'operator', password: '' })
 const selected = ref('')
 

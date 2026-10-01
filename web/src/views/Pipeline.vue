@@ -44,7 +44,7 @@
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
         <label style="font-size:13px">排序
           <select v-model="sort" :disabled="loading || busy" @change="changeSort" style="margin-left:6px;padding:4px">
-            <option value="id,desc">创建时间顺序（新到旧）</option>
+            <option value="createdAt,desc">创建时间（新到旧）</option>
             <option value="businessTime,desc">业务时间（新到旧）</option>
             <option value="status,asc">状态</option>
           </select>
@@ -103,7 +103,7 @@ const runResult = ref(null)
 const page = ref(1)
 const total = ref(0)
 const totalPages = ref(1)
-const sort = ref('id,desc')
+const sort = ref('createdAt,desc')
 const pageSize = ref(20)
 
 // 取数 fetcher：/pipeline-runs/page 是分页对象而非分析信封 ⇒ 在这里用 buildFallbackContext

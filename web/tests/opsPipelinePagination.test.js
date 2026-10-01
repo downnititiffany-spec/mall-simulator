@@ -15,6 +15,8 @@ test('运维流水线表使用服务端分页元数据与白名单排序参数',
 })
 
 test('运维流水线分页控件在翻页、改页大小与排序时请求新页面', () => {
+  assert.match(source, /value="createdAt,desc">创建时间（新到旧）/)
+  assert.match(source, /const runSort = ref\('createdAt,desc'\)/)
   assert.match(source, /第 \{\{ runPage \}\} \/ \{\{ runTotalPages \}\} 页/)
   assert.match(source, /:value="100"/)
   assert.match(source, /@click="changeRunPage\(runPage - 1\)"/)

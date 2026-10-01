@@ -38,6 +38,8 @@ test('运行列表使用分页查询并展示总数、页码和受控排序', ()
   assert.match(source, /共 \{\{ total \}\} 条/)
   assert.match(source, /value="businessTime,desc"/)
   assert.match(source, /value="status,asc"/)
+  assert.match(source, /value="createdAt,desc">创建时间（新到旧）/)
+  assert.match(source, /const sort = ref\('createdAt,desc'\)/)
 })
 
 test('失败结果没有 runId 时不渲染 run#undefined', () => {
