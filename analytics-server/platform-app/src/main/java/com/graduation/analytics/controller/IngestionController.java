@@ -5,6 +5,7 @@ import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.ingestion.IngestionService;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
+import com.graduation.analytics.ratelimit.RateLimited;
 import com.graduation.analytics.common.TraceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +37,7 @@ public class IngestionController {
 
     @PostMapping("/runs")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
+    @RateLimited(scope = "ingestion-trigger", requests = 20)
     public ApiResponse<IngestionService.RunResult> run() {
         TraceContext trace = TraceContext.create();
         return ApiResponse.ok(ingestionService.runOne(trace), trace.traceId());

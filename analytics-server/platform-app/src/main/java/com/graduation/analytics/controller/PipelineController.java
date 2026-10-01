@@ -8,6 +8,7 @@ import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.pipeline.PipelineService;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
+import com.graduation.analytics.ratelimit.RateLimited;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ public class PipelineController {
 
     @PostMapping
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
+    @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> create(@RequestBody CreateRunReq req,
                                                          @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
         TraceContext trace = TraceContext.create();
@@ -68,6 +70,7 @@ public class PipelineController {
 
     @PostMapping("/{id}/retry")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
+    @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> retry(@PathVariable Long id) {
         TraceContext trace = TraceContext.create();
         return ApiResponse.ok(pipelineService.retry(id, trace.traceId()), trace.traceId());

@@ -1627,3 +1627,12 @@
 - **决策记录**：为保持既有响应兼容，采用新 `/page` 子路径，不改变旧列表 JSON 形状；排序只开放 ID、创建/开始/结束时间、业务时间和状态；页越界自动归到最后一页，空列表仍显示第 1/1 页。影响仅流水线运行列表 API、前端及权限覆盖测试；回滚可恢复 controller、Pipeline.vue/api.js 和对应测试改动，不涉及数据库或迁移。
 - **验证**：Web `npm run verify`：382/382 Node 测试通过，Vite 5.4.21 production build 成功；`git diff --check` 通过。使用临时 Maven 3.9.9＋云端代理＋JDK 21 `jdk.compiler` 模块运行后端定向 reactor：`PipelineControllerPaginationTest` 3/3、`PipelineControllerPaginationHttpTest` 2/2、`ControllerPermissionCoverageTest` 5/5，总计 **10/10 PASS**。MockMvc 验证分页响应 JSON、静态 `/page` 路由、匿名 401 与非法排序 400。为适配缺少标准 JDK `ct.sym` 的环境，临时 javac 启动器将 Maven `--release 17` 映射成 `-source 17 -target 17`；无仓库 POM 改动。
 - **限制/下一步**：HTTP 验收目前为 MockMvc，不是启动中的真实服务；尚未验收 3307 数据库列表读取或标准 JDK 17 的 `--release` 编译。因此只关闭分页 API/页面实现及定向测试，不关闭阶段 4。继续处理首版其它阶段缺口。
+
+### 2026-10-01 阶段 4：高成本提交请求限流切片
+
+- **缺口**：V3.0 指导书 §7 阶段 4 L158 要求分页、限流、超时统一；此前平台只做只读查询超时控制，没有平台业务请求限流。
+- **决策**：按当前首版单节点拓扑，采用进程内单调时钟固定窗口，不引入 Redis/新依赖；按登录用户 ID 与操作族分别计数。流水线创建/重试/恢复/显式重算为 10 次/分钟，手工采集触发为 20 次/分钟；GET 与登录接口不受限。拒绝时返回 HTTP 429、稳定码 `RATE_LIMITED` 和 `Retry-After` 秒数。固定窗口易于确定性测试、无需改库；可接受单窗口边界处突发最多达到两倍限额。
+- **实现范围**：新增 `@RateLimited`、并发安全 `InMemoryRequestRateLimiter`、认证之后运行的 MVC 拦截器及错误映射；只标记高成本提交端点。用户/操作族隔离，未登录的标注端点 fail-closed。更换部署拓扑到多节点时，需将此进程内策略升级为共享限流存储，否则各节点各自计数。
+- **验证**：定向 Maven reactor 内 `InMemoryRequestRateLimiterTest` **2/2**（窗口边界、用户/操作族隔离、并发预算）和 `RateLimitInterceptorHttpTest` **1/1**（认证后计数、429、Retry-After、匿名 401）通过；合并分页类测试后平台定向 **13/13 PASS**，六个依赖模块 `BUILD SUCCESS`。未连数据库；前端无需变更；`git diff --check` 待本切片收口时复核。
+- **回滚**：移除三个高成本控制器上的注解、RateLimitConfig/组件/异常映射及对应测试即可；无迁移、配置、外部依赖或数据写入。
+- **边界**：这是本地单进程限流行为的 MockMvc/L1 测试，不是多实例共享限流或远程集群验收；仅覆盖明确标注的写入/长任务提交，不声称所有 API 均有限流。

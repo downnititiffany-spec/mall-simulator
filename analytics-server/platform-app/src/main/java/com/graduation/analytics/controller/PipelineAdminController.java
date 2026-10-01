@@ -2,6 +2,7 @@ package com.graduation.analytics.controller;
 
 import com.graduation.analytics.auth.PermissionCode;
 import com.graduation.analytics.auth.RequiresPermission;
+import com.graduation.analytics.ratelimit.RateLimited;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.pipeline.PipelineRecoveryService;
@@ -39,6 +40,7 @@ public class PipelineAdminController {
 
     @PostMapping("/{id}/resume")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
+    @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> resume(@PathVariable Long id,
                                                         @RequestParam String operator,
                                                         @RequestParam String reason) {
@@ -57,6 +59,7 @@ public class PipelineAdminController {
 
     @PostMapping("/{id}/retry-from-stage")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
+    @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> retryFromStage(@PathVariable Long id,
                                                                  @RequestParam String stage,
                                                                  @RequestParam String operator,
@@ -75,6 +78,7 @@ public class PipelineAdminController {
      */
     @PostMapping("/recalculate")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
+    @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> recalculate(@RequestBody RecalculateReq req) {
         TraceContext trace = TraceContext.create();
         return ApiResponse.ok(pipelineService.recalculate(req.runtimeProfileId(), req.batchId(),

@@ -52,4 +52,5 @@
 ## 2026-10-01 连续开发进度
 
 - 阶段 4「流水线运行记录分页」：**实现、前后端定向测试与 MockMvc 验收通过；真实服务/真库验收未完成**。Web 382/382 + Vite build PASS；Java 三类用例共 10/10 PASS。Java 使用临时 Maven/JDK21 javac 兼容启动器完成，标准 Java 17 release 尚未测。细节见 `docs/PROJECT_STATUS.md` 对应切片记录。
+- 阶段 4「限流」：**首版单节点高成本提交端点已实现并通过定向测试**（10 次/分钟 pipeline commands、20 次/分钟 ingestion triggers；按用户与操作族隔离；HTTP 429/Retry-After）。多节点共享状态未验收，且普通读取 API 不纳入本次限流策略。
 - 下一步：在现有单节点环境的隔离 3307 schema 对只读列表做一次真实 API 验收，不修改/迁移 3306；随后继续 V3.0 必做项。冻结文档保持不变。
