@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * F-88（D-142 §1 / 指导书 §7.3）：规则码 → 严重度的**唯一所有者**目录测试。
  *
  * <p>本测试同时是「全部规则码是否都已被审核」的清单：Spark 侧（dqc/pub/mxp）与 Java 侧
- * （QualityChecker）共 17 个规则码、指标库发布对账（MetricPublishValidator）15 个，
+ * （QualityChecker）共 18 个规则码、指标库发布对账（MetricPublishValidator）16 个，
  * 每一个都必须显式登记，且必须给出中文依据。</p>
  *
  * <p>位置说明（F-88 裁决 4）：本测试随 {@link RuleSeverity} 由 warehouse-pipeline 上移到
@@ -26,6 +26,7 @@ class RuleSeverityTest {
             "AMOUNT_RECONCILE", "REQUIRED_FIELD_NULL_RATE", "ENUM_WHITELIST",
             "ADS_STAGING_PRESENT", "ADS_STAGING_KEY_NOT_NULL", "PUB_DQ_BLOCKING_RULES",
             "ADS_DWS_FUNNEL_RECONCILE",
+            "ADS_CATEGORY_SALE_RECONCILE", "ADS_REGION_SALE_RECONCILE",
             // S3-10：率列跨层对账（conversion_rate/overall_buy_rate/overall_cart_rate），
             // 与 user_count 汇总对账分开登记（设计 §12.3 line 512「不同校验不能互相替代」）
             "ADS_DWS_FUNNEL_RATE_RECONCILE",
@@ -67,7 +68,7 @@ class RuleSeverityTest {
             "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE", "MP_OLD_ACTIVE_ARCHIVED");
 
     /**
-     * 全部已登记规则码（38 个）＝ 阻断级 16 + 指标库发布对账 16 + WARN 3 + INFO 3。
+     * 全部已登记规则码（40 个）＝ 阻断级 18 + 指标库发布对账 16 + WARN 3 + INFO 3。
      *
      * <p>与 {@link RuleSeverity} 的登记表、{@link QualityRuleCatalog} 的目录必须三者一致：
      * 按 §7.3.1 line 524，只在一处登记、目录里没有的码会判为「未登记规则」而停止发布。</p>
@@ -292,9 +293,9 @@ class RuleSeverityTest {
                 .hasSize(ALL_REGISTERED_CODES.size() + 2);
         assertThat(rules.byRuleCode().get("ADS_STAGING_PRESENT"))
                 .extracting(QualityRuleDefinition::version)
-                .containsExactly(1, 2);
+                .containsExactly(1, 2, 3);
         assertThat(rules.find("ADS_STAGING_PRESENT")).isPresent().get()
-                .extracting(QualityRuleDefinition::version).isEqualTo(2);
+                .extracting(QualityRuleDefinition::version).isEqualTo(3);
     }
 
     @Test
@@ -328,7 +329,7 @@ class RuleSeverityTest {
         all.addAll(PUBLISH_VALIDATOR_CODES);
         all.addAll(WARN_CODES);
         all.addAll(INFO_CODES);
-        assertThat(all).hasSize(38);   // 16 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
+        assertThat(all).hasSize(40);   // 18 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
         assertThat(all).doesNotHaveDuplicates();
 
         for (String code : all) {

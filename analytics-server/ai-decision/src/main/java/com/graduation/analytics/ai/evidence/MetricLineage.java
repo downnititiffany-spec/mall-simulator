@@ -50,6 +50,23 @@ public final class MetricLineage {
             new Edge("ads_user_profile", "ads_user_profile_m");
     private static final Edge DATA_QUALITY =
             new Edge("ads_data_quality", "ads_data_quality_m");
+    private static final Edge CATEGORY_SALE =
+            new Edge("ads_category_sale", "ads_category_sale_m");
+    private static final Edge REGION_SALE =
+            new Edge("ads_region_sale", "ads_region_sale_m");
+
+    /** 镜像表 → Hive 表反向表，涵盖指标表与 AI 结构化证据维度表。 */
+    private static final Map<String, Edge> BY_MYSQL_TABLE = Map.ofEntries(
+            Map.entry(OVERVIEW.mysqlTable(), OVERVIEW),
+            Map.entry(SALE_TREND.mysqlTable(), SALE_TREND),
+            Map.entry(BEHAVIOR_FUNNEL.mysqlTable(), BEHAVIOR_FUNNEL),
+            Map.entry(ACTIVE_TREND.mysqlTable(), ACTIVE_TREND),
+            Map.entry(HOT_PRODUCT.mysqlTable(), HOT_PRODUCT),
+            Map.entry(PRODUCT_CONVERSION.mysqlTable(), PRODUCT_CONVERSION),
+            Map.entry(USER_PROFILE.mysqlTable(), USER_PROFILE),
+            Map.entry(DATA_QUALITY.mysqlTable(), DATA_QUALITY),
+            Map.entry(CATEGORY_SALE.mysqlTable(), CATEGORY_SALE),
+            Map.entry(REGION_SALE.mysqlTable(), REGION_SALE));
 
     /** 指标码 → 血缘边（按 metric-lineage.md 的 #1–#14） */
     private static final Map<String, Edge> BY_METRIC_CODE = Map.ofEntries(
@@ -87,10 +104,10 @@ public final class MetricLineage {
         Set<String> tables = new LinkedHashSet<>();
         if (mysqlTables != null) {
             for (String mysql : mysqlTables) {
-                BY_METRIC_CODE.values().stream()
-                        .filter(edge -> edge.mysqlTable().equals(mysql))
-                        .findFirst()
-                        .ifPresent(edge -> tables.add(edge.hiveTable(namespace)));
+                Edge edge = mysql == null ? null : BY_MYSQL_TABLE.get(mysql);
+                if (edge != null) {
+                    tables.add(edge.hiveTable(namespace));
+                }
             }
         }
         return List.copyOf(tables);
@@ -104,6 +121,14 @@ public final class MetricLineage {
     /** 销售趋势/商品转化血缘（维度贡献读取用） */
     public static Edge saleTrend() {
         return SALE_TREND;
+    }
+
+    public static Edge categorySale() {
+        return CATEGORY_SALE;
+    }
+
+    public static Edge regionSale() {
+        return REGION_SALE;
     }
 
     public static Edge activeTrend() {

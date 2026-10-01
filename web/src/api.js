@@ -100,6 +100,7 @@ export default {
   metricsOverview: (snapshotId, options) =>
     client.get('/metrics/overview', { params: snapshotId ? { snapshotId } : {}, ...(options || {}) }),
   snapshots: (limit = 10, options) => client.get('/metrics/snapshots', { params: { limit }, ...(options || {}) }),
+  analyticsSourceOptions: (options) => client.get('/analytics/sources', { ...(options || {}) }),
   quality: (limit = 20, options) => client.get('/metrics/quality', { params: { limit }, ...(options || {}) }),
   // AI（问答 + 审计）：返回证据包结构，非统一信封。
   // QA-04：查询时间范围是**真正可选**——不传就不发送该字段。此前默认写死一个「最近 30 天」标签，
@@ -109,7 +110,12 @@ export default {
     const body = { question }
     const hasTimeRange = typeof timeRange === 'string' && timeRange.trim() !== ''
     if (hasTimeRange) body.timeRange = timeRange
-    return client.post('/ai/queries', body, { ...(options || {}) })
+    const requestOptions = { ...(options || {}) }
+    if (typeof requestOptions.snapshotId === 'string' && requestOptions.snapshotId.trim()) {
+      body.snapshotId = requestOptions.snapshotId.trim()
+    }
+    delete requestOptions.snapshotId
+    return client.post('/ai/queries', body, requestOptions)
   },
   aiHistoryMine: (limit = 8, options) => client.get('/ai/history/my', { params: { limit }, ...(options || {}) }),
   aiAuditHistory: (limit = 20, options) => client.get('/ai/audit/history', { params: { limit }, ...(options || {}) }),

@@ -7,6 +7,7 @@ import com.graduation.analytics.ai.ExplanationService;
 import com.graduation.analytics.ai.TextToSqlService;
 import com.graduation.analytics.ai.TextToSqlService.QueryResult;
 import com.graduation.analytics.ai.entity.AiQueryHistory;
+import com.graduation.analytics.ai.evidence.EvidenceRequest;
 import com.graduation.analytics.ai.evidence.EvidenceService;
 import com.graduation.analytics.ai.mapper.AiCallLogMapper;
 import com.graduation.analytics.ai.mapper.AiQueryHistoryMapper;
@@ -192,6 +193,25 @@ class AiControllerIdentityTest {
         assertTrue(resp.evidenceSummary().contains("快照 S20260901_24"), resp.evidenceSummary());
         assertTrue(resp.evidenceSummary().contains("2 个指标"), resp.evidenceSummary());
         assertFalse(resp.evidenceSummary().contains("unknown"), "不得出现 unknown 占位值");
+    }
+
+    @Test
+    @DisplayName("显式选择快照同时约束 Text2SQL、解释证据包与解释服务")
+    void selectedSnapshotIsSharedByAiQueryAndEvidence() {
+        CurrentUserHolder.set(new CurrentUser(3L, "analyst1", "analyst"));
+        String selectedSnapshot = "S20260917_9";
+        when(textToSqlService.query(anyString(), anyString(), anyString(), anyString())).thenReturn(success());
+        when(evidenceService.build(any())).thenReturn(EvidenceTestFixtures.packageOf(selectedSnapshot));
+
+        AiController.AiQueryResp response = controller.query(
+                new AiController.AiQueryReq("分析所选业务日", null, selectedSnapshot), request()).data();
+
+        verify(textToSqlService).query("分析所选业务日", "analyst1", null, selectedSnapshot);
+        ArgumentCaptor<EvidenceRequest> evidence = ArgumentCaptor.forClass(EvidenceRequest.class);
+        verify(evidenceService).build(evidence.capture());
+        assertEquals(selectedSnapshot, evidence.getValue().snapshotId());
+        verify(explanationService).explain(any(), eq(selectedSnapshot), anyString(), isNull());
+        assertTrue(response.evidenceSummary().contains(selectedSnapshot));
     }
 
     @Test

@@ -88,6 +88,7 @@ const sortOrder = ref('asc')
 const analysis = useAnalysis({
   fetcher: (params, signal) => api.products(params, { signal }),
   rowKeys: ENDPOINT_ROW_KEYS.products,
+  pinSnapshot: true,
   defaults: { hot: [], conversion: [], topN: null, page: 1, size: 10, total: null, hasMore: false }
 })
 const { data, context, state, requestStatus, error, loading, exportable, exportContext } = analysis

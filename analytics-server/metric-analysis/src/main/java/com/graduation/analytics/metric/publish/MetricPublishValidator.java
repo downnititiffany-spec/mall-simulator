@@ -72,7 +72,7 @@ public class MetricPublishValidator {
         }
         checks.add(check("MP_MANIFEST_TABLES", MetricAdsCatalog.ALL.size(),
                 missing.size() + columnMismatch.size(), missing.isEmpty() && columnMismatch.isEmpty(),
-                "8 张宽表齐备且列与白名单一致",
+                MetricAdsCatalog.ALL.size() + " 张宽表齐备且列与白名单一致",
                 "缺失=" + missing + " 列不一致=" + columnMismatch, rules));
 
         long unpinned = manifest.tables().stream()

@@ -60,6 +60,7 @@ class ControllerPermissionCoverageTest {
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/analysis/rfm", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/overview", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/snapshots", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/analytics/sources", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/quality", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ai/queries", PermissionCode.AI_QUERY);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ai/analyses", PermissionCode.AI_QUERY);

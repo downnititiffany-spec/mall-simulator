@@ -78,6 +78,7 @@ public final class RuleSeverity {
             // ADS 暂存层（Spark dqc）
             "ADS_STAGING_PRESENT", "ADS_STAGING_SNAPSHOT_ISOLATION", "ADS_STAGING_KEY_NOT_NULL",
             "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE", "ADS_DWS_FUNNEL_RATE_RECONCILE",
+            "ADS_CATEGORY_SALE_RECONCILE", "ADS_REGION_SALE_RECONCILE",
             "ADS_GMV_NET_SALE_INVARIANT",
             "ADS_UV_PV_INVARIANT",
             // DWS 层（Spark dqc 读 DWS 宽表；第 9 项的同型站点，S3-25）
@@ -128,7 +129,7 @@ public final class RuleSeverity {
             case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" -> WARN;
 
             // ── ADS 暂存层（Spark dqc）──
-            case "ADS_STAGING_PRESENT" -> BLOCKING;          // 8 张暂存表本次快照分区必须存在且非空
+            case "ADS_STAGING_PRESENT" -> BLOCKING;          // 当前 ADS 表集本次快照分区必须存在且 Location 可读
             // 历史暂存快照存在**本身不是错误**（D-142 §1）：发布按「本次快照的暂存路径」逐表切指针，
             // 陈旧分区不污染正式分区；且清理发生在 pub（dqc 之后），设为阻断会造成发布死锁
             // （实测依据见 AdsQualityJob.scala:55-59 与 docs/remediation-status.md:183）。
@@ -141,6 +142,8 @@ public final class RuleSeverity {
             case "PUB_DQ_BLOCKING_RULES" -> BLOCKING;
             // 跨层对账（ADS 漏斗 stage 汇总 = DWS 漏斗对应列），不一致即口径破坏 ⇒ 阻断
             case "ADS_DWS_FUNNEL_RECONCILE" -> BLOCKING;
+            // 分类/城市等级销售金额与 DWS 总额差异意味着维度生产口径漏数、重复或串值 ⇒ 阻断
+            case "ADS_CATEGORY_SALE_RECONCILE", "ADS_REGION_SALE_RECONCILE" -> BLOCKING;
             // 跨层对账（ADS 漏斗**率列**逐格 = DWS 全站行同 dt 率列；S3-10）：ADS 只透传不重算，
             // 率列错位会让发布出去的漏斗结论直接错，而行数/关键列非空可能同时正常 ⇒ 阻断。
             // 只判跨层一致性：不判比率数值是否异常（设计 §12.3 第 10 项「宽松口径异常不一概阻断」），
@@ -169,7 +172,7 @@ public final class RuleSeverity {
             // 其他快照数据 ⇒ 阻断」的**真阻断点**
             case "MXP_SNAPSHOT_PINNED" -> BLOCKING;
             case "MXP_EXPORT_ROWS" -> BLOCKING;              // 导出文件行数 = Hive 分区行数
-            case "MXP_EXPORT_COMPLETE" -> BLOCKING;          // 8 张表导出完成且行数一致
+            case "MXP_EXPORT_COMPLETE" -> BLOCKING;          // 当前 ADS 白名单表集导出完成且行数一致
 
             // ── 指标库发布对账（MetricPublishValidator，四阶段纯函数校验）──
             // 登记理由：这些规则由 metric-analysis 直接判阻断并阻断「写指标值 + 切 ACTIVE」，
@@ -246,7 +249,7 @@ public final class RuleSeverity {
                     "原始事件重复；下游确定性去重（ROW_NUMBER PARTITION BY event_id / dropDuplicates），"
                             + "重复行进 dwd_reject_record 的 DUPLICATE_EVENT；阈值 0.0005 来自设计文稿 §5.4.2，未放宽";
             case "ADS_STAGING_PRESENT" ->
-                    "ADS 暂存分区缺失或无 Location ⇒ 无可追溯制品可发布（硬门）；"
+                    "当前 ADS 表集的暂存分区缺失或无 Location ⇒ 无可追溯制品可发布（硬门）；"
                             + "v2 起允许专题当天无事实形成的合法 0 行分区";
             case "ADS_STAGING_SNAPSHOT_ISOLATION" ->
                     "历史暂存快照存在本身不是错误（D-142 §1）；指针按本次快照切换，陈旧分区由 pub 按引用清理；"
@@ -254,6 +257,10 @@ public final class RuleSeverity {
             case "ADS_STAGING_KEY_NOT_NULL" -> "ADS 关键列 NULL ⇒ 口径破坏（阈值 0）";
             case "PUB_DQ_BLOCKING_RULES" -> "暂存宽表内 3 条阻断规则必须全过（与 Java corePassed 同口径）";
             case "ADS_DWS_FUNNEL_RECONCILE" -> "ADS↔DWS 跨层漏斗对账不一致 ⇒ 口径破坏";
+            case "ADS_CATEGORY_SALE_RECONCILE" ->
+                    "分类 ADS 销售额/净销售额与 DWS 交易总额不一致 ⇒ 分类分布漏数、重复或串值；unknown 桶必须计入";
+            case "ADS_REGION_SALE_RECONCILE" ->
+                    "城市等级 ADS 销售额/净销售额与 DWS 交易总额不一致 ⇒ 地区分布漏数、重复或串值；unknown 桶必须计入";
             case "ADS_DWS_FUNNEL_RATE_RECONCILE" ->
                     "ADS 漏斗率列 ≠ DWS 全站行同 dt 率列 ⇒ 发布出去的漏斗结论直接错"
                             + "（行数与关键列非空可能同时正常，只有逐格率对账能发现；"
@@ -284,7 +291,7 @@ public final class RuleSeverity {
             case "MXP_EXPORT_COMPLETE" -> "存在未完成/行数不一致的导出表 ⇒ 指标库快照不完整";
             case "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE" -> "发布操作审计项（切换/清理计数），不冒充质量规则";
             case "MP_MANIFEST_SNAPSHOT" -> "发布清单的快照/业务日与本次请求不一致 ⇒ 可能把上一版数据当本次发布";
-            case "MP_MANIFEST_TABLES" -> "8 张宽表未齐备或清单列与白名单不一致 ⇒ 发布面不完整";
+            case "MP_MANIFEST_TABLES" -> "ADS 白名单表未齐备或清单列与白名单不一致 ⇒ 发布面不完整";
             case "MP_HIVE_PATH_PINNED" -> "来源分区未指向本次 snapshot_id ⇒ 会读到上一版数据";
             case "MP_EXPORT_FILES" -> "导出文件缺失 ⇒ 写入的是残缺数据";
             case "MP_EXPORT_CHECKSUM" ->

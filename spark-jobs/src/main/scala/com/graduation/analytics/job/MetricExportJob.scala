@@ -2,7 +2,8 @@ package com.graduation.analytics.job
 
 import com.graduation.analytics.metric.MetricAdsSpec
 import com.graduation.analytics.warehouse.WarehouseNamespace
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.col
 
@@ -12,7 +13,7 @@ import scala.collection.mutable.ListBuffer
 
 /**
  * MetricExportJob（code=mxp）—— R7-3（V2.0 §17.4/§17.5）指标发布链路的**读取侧**：
- * 把本次已发布的 8 张 Hive 正式 ADS 分区导出为"发布导出文件"（每表一个 JSONL + 一份 `_export.json` 清单），
+ * 把本次已发布的 ADS 表集 Hive 正式分区导出为"发布导出文件"（每表一个 JSONL + 一份 `_export.json` 清单），
  * 交给 Java 侧 `MetricPublisher` 批量写入 analytics_metric 并做对账/激活。
  *
  * 为什么"导出文件"而不是 Spark 直连 MySQL：发布事务、快照 ACTIVE 切换、失败保留旧快照必须
@@ -45,7 +46,11 @@ class MetricExportJob extends WarehouseJob {
     val dt = args.businessDate
     val ns = WarehouseNamespace.fromArgs(args)
     val sid = args.outputSnapshotId.get
-    val exportDir = args.extra("exportDir").stripSuffix("/")
+    // The Java publisher consumes local files on the platform host. A bare /mnt/d/... path would
+    // otherwise inherit fs.defaultFS (HDFS in the WSL profile) and silently create HDFS artifacts
+    // that the Windows publisher cannot read. Qualify scheme-less paths with LocalFileSystem.
+    val exportDir = MetricExportJob.localExportDirectory(args.extra("exportDir"),
+      spark.sparkContext.hadoopConfiguration)
     val checks = ListBuffer.empty[QualityCheck]
 
     // null 字段必须出现在 JSON 里（默认 true 会省略 null → 各行键集不一致 → 发布侧拒绝批量写入）
@@ -61,7 +66,7 @@ class MetricExportJob extends WarehouseJob {
     checks += QualityCheck("MXP_SNAPSHOT_PINNED", "PUBLISH", formalTables.mkString(","),
       formalTables.size, unpinned.size, s"正式分区 Location 指向 snapshot_id=$sid", "BLOCKING",
       unpinned.isEmpty,
-      if (unpinned.isEmpty) s"8 张正式分区均指向 snapshot_id=$sid"
+      if (unpinned.isEmpty) s"${formalTables.size} 张正式分区均指向 snapshot_id=$sid"
       else s"未指向本次快照: ${unpinned.map(t => s"$t=${pathOf.get(t).flatten.getOrElse("<无路径>")}").mkString(",")}")
     if (unpinned.nonEmpty) {
       return JobResult.failed(code, args.attemptNo,
@@ -89,7 +94,7 @@ class MetricExportJob extends WarehouseJob {
         } else {
           spark.read.parquet(loc).select(spec.columns.map(col): _*)
         }
-      val exportFile = s"$exportDir/${spec.mysqlTable}.jsonl"
+      val exportFile = new Path(exportDir, s"${spec.mysqlTable}.jsonl").toString
       MetricExportJob.writeJsonl(spark, df, exportFile)
       val written = MetricExportJob.countLines(spark, exportFile)
       // 内容摘要：随清单一起交付，发布侧（MetricPublishValidator 的 MP_EXPORT_CHECKSUM）重算比对。
@@ -108,7 +113,7 @@ class MetricExportJob extends WarehouseJob {
     val exportFailed = checks.exists(c => c.severity == "BLOCKING" && !c.passed)
     checks += QualityCheck("MXP_EXPORT_COMPLETE", "PUBLISH", MetricAdsSpec.TABLES.map(_.mysqlTable).mkString(","),
       MetricAdsSpec.TABLES.size, checks.count(c => c.severity == "BLOCKING" && !c.passed),
-      "8 张表导出完成且行数一致", "BLOCKING", !exportFailed,
+      s"${MetricAdsSpec.TABLES.size} 张表导出完成且行数一致", "BLOCKING", !exportFailed,
       s"合计导出 $totalRows 行 / ${MetricAdsSpec.TABLES.size} 张表")
 
     val manifest =
@@ -124,7 +129,7 @@ class MetricExportJob extends WarehouseJob {
          |  ]
          |}
          |""".stripMargin
-    MetricExportJob.writeText(spark, s"$exportDir/${MetricAdsSpec.EXPORT_MANIFEST}", manifest)
+    MetricExportJob.writeText(spark, new Path(exportDir, MetricAdsSpec.EXPORT_MANIFEST).toString, manifest)
 
     val elapsed = System.currentTimeMillis() - start
     if (exportFailed) {
@@ -139,6 +144,21 @@ class MetricExportJob extends WarehouseJob {
 
 object MetricExportJob {
   val instance: MetricExportJob = new MetricExportJob()
+
+  /**
+   * Resolve an export directory to the local file system, independent of Hadoop's configured
+   * default FS. The Java publisher requires files visible from the platform host; HDFS export
+   * needs an explicit future transport rather than silently creating an unreadable manifest.
+   */
+  def localExportDirectory(raw: String, conf: Configuration): Path = {
+    val path = new Path(raw)
+    Option(path.toUri.getScheme) match {
+      case None => FileSystem.getLocal(conf).makeQualified(path)
+      case Some(scheme) if scheme.equalsIgnoreCase("file") => FileSystem.getLocal(conf).makeQualified(path)
+      case Some(scheme) =>
+        throw new IllegalArgumentException(s"指标发布导出目录必须是本机文件路径或 file URI，不支持: $scheme")
+    }
+  }
 
   /**
    * 清单里的路径统一写成正斜杠形式（`D:/x/y.jsonl`）。

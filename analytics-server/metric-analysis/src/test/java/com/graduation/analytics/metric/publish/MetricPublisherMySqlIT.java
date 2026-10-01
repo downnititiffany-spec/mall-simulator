@@ -3,6 +3,7 @@ package com.graduation.analytics.metric.publish;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.metric.MetricAdsCatalog;
 import com.graduation.analytics.metric.MetricAdsWriter;
+import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.publish.MetricPublisherPort.DefinitionRef;
 import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport;
@@ -21,8 +22,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -70,6 +75,7 @@ class MetricPublisherMySqlIT {
     private static TestRunContext context;
     private static String sidOk;
     private static String sidBad;
+    private static String sidPostFailure;
 
     private static final List<String> OWNED_ADS_TABLES = new ArrayList<>();
 
@@ -95,6 +101,7 @@ class MetricPublisherMySqlIT {
         String run = context.testRunId();
         sidOk = run + "-pub-ok";
         sidBad = run + "-pub-bad";
+        sidPostFailure = run + "-pub-post-fail";
         System.out.println("[MetricPublisherMySqlIT] 隔离上下文：" + context.redactedSummary());
         mapper = new ObjectMapper();
         // 键名不带 v25.it. 前缀：TestIsolationGuard.requiredProperty 内部会先查系统属性
@@ -115,12 +122,13 @@ class MetricPublisherMySqlIT {
         read = new JdbcTemplate(readDs);
         writer = new MetricAdsWriter(publish);
         MetricPublishRepository repository = new MetricPublishRepository(publish, read);
-        MySqlMetricStore store = new MySqlMetricStore(publish, read);
+        MetricStore store = transactionalStore(publishDs, publish, read);
         publisher = new MetricPublisher(repository, writer, new AdsExportReader(), store,
                 new MetricPublishValidator(), mapper);
 
         profileId = registerOwnProfile();
-        scope = new WorkScope(context.testRunId(), profileId, new LinkedHashSet<>(List.of(sidOk, sidBad)),
+        scope = new WorkScope(context.testRunId(), profileId,
+                new LinkedHashSet<>(List.of(sidOk, sidBad, sidPostFailure)),
                 new LinkedHashSet<>(OWNED_ADS_TABLES));
         System.out.println("[MetricPublisherMySqlIT] 本次拥有范围：profileId=" + profileId
                 + " snapshots=" + List.of(sidOk, sidBad));
@@ -135,7 +143,7 @@ class MetricPublisherMySqlIT {
     }
 
     @Test
-    @DisplayName("成功发布 → ACTIVE 切换；写库后对账失败 → FAILED + 补偿清理 + 旧 ACTIVE 保留")
+    @DisplayName("成功发布与两类失败补偿：激活前失败、激活后对账失败均保留旧 ACTIVE（含 V13 行）")
     void publishActivationAndFailureCompensation(@TempDir Path dir) throws Exception {
         // ── 阶段 1：正常发布 → ACTIVE ──
         Path okDir = Files.createDirectories(dir.resolve(sidOk));
@@ -168,6 +176,40 @@ class MetricPublisherMySqlIT {
         assertThat(metricValueCount(sidBad)).as("失败快照不得留下指标值").isZero();
         assertThat(adsRowCount(sidBad)).as("失败补偿必须清掉本次写入的 ADS 行").isZero();
         assertThat(metricValueCount(sidOk)).as("旧快照数据不受影响").isEqualTo(13);
+
+        // ── 阶段 3：真实 MySQL 发布成功后，注入只读 ACTIVE 指针滞后，验证后置失败原子恢复 ──
+        MetricPublishRepository laggingReadRepository = new MetricPublishRepository(publish, read) {
+            private final java.util.concurrent.atomic.AtomicInteger activeReads =
+                    new java.util.concurrent.atomic.AtomicInteger();
+
+            @Override
+            public String activeSnapshotId(long runtimeProfileId) {
+                String actual = super.activeSnapshotId(runtimeProfileId);
+                // 第一次读取用于捕获发布前快照；第二次是激活后的只读核验，模拟读端仍看到旧指针。
+                return activeReads.getAndIncrement() == 1 ? sidOk : actual;
+            }
+        };
+        MetricPublisher laggingReadPublisher = new MetricPublisher(laggingReadRepository, writer,
+                new AdsExportReader(), transactionalStore(publish.getDataSource(), publish, read),
+                new MetricPublishValidator(), mapper);
+        Path postFailureDir = Files.createDirectories(dir.resolve(sidPostFailure));
+        writeFixture(postFailureDir, sidPostFailure, allTables());
+        PublishReport postFailure = laggingReadPublisher.publish(
+                request(sidPostFailure, postFailureDir, fullDictionary()));
+
+        assertThat(postFailure.ok()).isFalse();
+        assertThat(postFailure.errorCode()).isEqualTo("MP_POST_VERIFY_FAILED");
+        assertThat(postFailure.evidence()).containsEntry("postVerificationRecovery", "COMPLETED")
+                .containsEntry("activeSnapshotAfterRecovery", sidOk);
+        assertThat(status(sidPostFailure)).isEqualTo("FAILED");
+        assertThat(activeSnapshot()).as("后置只读对账失败后必须恢复旧 ACTIVE").isEqualTo(sidOk);
+        assertThat(metricValueCount(sidPostFailure)).as("回退事务清除失败快照指标值").isZero();
+        assertThat(adsRowCount(sidPostFailure)).as("回退后补偿清除失败快照全部 ADS 行").isZero();
+        assertThat(categorySaleAmount(sidOk, 100L)).isEqualByComparingTo("123.45");
+        assertThat(categoryName(sidOk, 100L)).isEqualTo("终端设备");
+        assertThat(regionSaleAmount(sidOk, "城市等级一")).isEqualByComparingTo("123.45");
+        assertThat(categorySaleCount(sidPostFailure)).isZero();
+        assertThat(regionSaleCount(sidPostFailure)).isZero();
     }
 
     /**
@@ -227,7 +269,7 @@ class MetricPublisherMySqlIT {
         return dict;
     }
 
-    /** 每张表一行（列集合严格等于 MetricAdsCatalog 白名单），行数 8，够验证落库/对账/补偿 */
+    /** 夹具覆盖当前全部 10 张 ADS 镜像表；V13 分类与城市等级表各带一行可辨认记录。 */
     private static Map<String, List<Map<String, Object>>> allTables() {
         Map<String, List<Map<String, Object>>> rows = new LinkedHashMap<>();
         Map<String, Object> overview = new LinkedHashMap<>();
@@ -321,6 +363,21 @@ class MetricPublisherMySqlIT {
         // S3-05：质量大盘补规则定义版本列；夹具与该列保持一致（同 profile 的注释：列集合不对齐会让本 IT 无辜变红）
         quality.put("rule_version", 1);
         rows.put("ads_data_quality_m", List.of(quality));
+        Map<String, Object> category = new LinkedHashMap<>();
+        category.put("category_id", 100L);
+        category.put("category_name", "终端设备");
+        category.put("parent_category_id", 10L);
+        category.put("parent_category_name", "数码家电");
+        category.put("sale_count", 2L);
+        category.put("sale_amount", new BigDecimal("123.45"));
+        category.put("net_sale_amount", new BigDecimal("100.00"));
+        rows.put("ads_category_sale_m", List.of(category));
+
+        Map<String, Object> region = new LinkedHashMap<>();
+        region.put("region", "城市等级一");
+        region.put("sale_amount", new BigDecimal("123.45"));
+        region.put("net_sale_amount", new BigDecimal("100.00"));
+        rows.put("ads_region_sale_m", List.of(region));
         return rows;
     }
 
@@ -394,6 +451,33 @@ class MetricPublisherMySqlIT {
                 BigDecimal.class, sid, code);
     }
 
+    private BigDecimal categorySaleAmount(String sid, long categoryId) {
+        return read.queryForObject("SELECT sale_amount FROM ads_category_sale_m "
+                + "WHERE snapshot_id=? AND category_id=?", BigDecimal.class, sid, categoryId);
+    }
+
+    private String categoryName(String sid, long categoryId) {
+        return read.queryForObject("SELECT category_name FROM ads_category_sale_m "
+                + "WHERE snapshot_id=? AND category_id=?", String.class, sid, categoryId);
+    }
+
+    private BigDecimal regionSaleAmount(String sid, String region) {
+        return read.queryForObject("SELECT sale_amount FROM ads_region_sale_m "
+                + "WHERE snapshot_id=? AND region=?", BigDecimal.class, sid, region);
+    }
+
+    private int categorySaleCount(String sid) {
+        Integer count = read.queryForObject("SELECT COUNT(*) FROM ads_category_sale_m WHERE snapshot_id=?",
+                Integer.class, sid);
+        return count == null ? 0 : count;
+    }
+
+    private int regionSaleCount(String sid) {
+        Integer count = read.queryForObject("SELECT COUNT(*) FROM ads_region_sale_m WHERE snapshot_id=?",
+                Integer.class, sid);
+        return count == null ? 0 : count;
+    }
+
     private long overviewPv(String sid) {
         Long pv = read.queryForObject("SELECT pv FROM ads_operation_overview_m WHERE snapshot_id=?",
                 Long.class, sid);
@@ -429,7 +513,7 @@ class MetricPublisherMySqlIT {
 
     /** cleanup：先查目标清单并验范围，再按「快照号 + 本次档案 id」删除。 */
     private static void cleanup() {
-        for (String sid : List.of(sidOk, sidBad)) {
+        for (String sid : List.of(sidOk, sidBad, sidPostFailure)) {
             safeDeleteSnapshot(sid);
         }
         int profiles = meta.update("DELETE FROM runtime_profile WHERE id = ? AND profile_code = ?",
@@ -469,6 +553,16 @@ class MetricPublisherMySqlIT {
         ds.setUsername(requiredProperty(userProperty));
         ds.setPassword(requiredProperty(passwordProperty));
         return ds;
+    }
+
+    private static MetricStore transactionalStore(DataSource publishDataSource, JdbcTemplate publishJdbc,
+                                                   JdbcTemplate readJdbc) {
+        MySqlMetricStore target = new MySqlMetricStore(publishJdbc, readJdbc);
+        ProxyFactory proxyFactory = new ProxyFactory(target);
+        proxyFactory.setInterfaces(MetricStore.class);
+        proxyFactory.addAdvice(new TransactionInterceptor(new DataSourceTransactionManager(publishDataSource),
+                new AnnotationTransactionAttributeSource()));
+        return (MetricStore) proxyFactory.getProxy();
     }
 
     private static String requiredProperty(String key) {

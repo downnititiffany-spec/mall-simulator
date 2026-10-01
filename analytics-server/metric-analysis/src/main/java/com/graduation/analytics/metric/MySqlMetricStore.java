@@ -257,6 +257,80 @@ public class MySqlMetricStore implements MetricStore {
         return switched;
     }
 
+    /**
+     * 激活后的只读校验失败：原子地将失败快照置 FAILED，并在它仍是当前 ACTIVE 时恢复旧 ACTIVE。
+     * 若另一个发布已经取代失败快照，则保留更新的 ACTIVE，不回滚到更旧版本。
+     */
+    @Override
+    @Transactional(transactionManager = "metricPublishTransactionManager", rollbackFor = Exception.class)
+    public String failActivationAndRestore(SnapshotRef failedSnapshot, String previousActiveSnapshotId,
+                                          String failureReason) {
+        if (failedSnapshot == null || failedSnapshot.snapshotId() == null
+                || failedSnapshot.snapshotId().isBlank()) {
+            throw new IllegalArgumentException("failed snapshotId 必填");
+        }
+        String failedId = failedSnapshot.snapshotId();
+        Long profileId = failedSnapshot.runtimeProfileId();
+        if (profileId == null) {
+            List<Long> profiles = publishJdbc.query(
+                    "SELECT runtime_profile_id FROM metric_snapshot WHERE snapshot_id = ? FOR UPDATE",
+                    (rs, rowNum) -> rs.getLong(1), failedId);
+            if (profiles.isEmpty()) {
+                throw new IllegalStateException("失败快照不存在，无法恢复 ACTIVE: " + failedId);
+            }
+            profileId = profiles.get(0);
+        }
+
+        List<String> activeRows = publishJdbc.query(
+                "SELECT snapshot_id FROM metric_snapshot WHERE runtime_profile_id = ? AND active_flag = 1 "
+                        + "FOR UPDATE",
+                (rs, rowNum) -> rs.getString(1), profileId);
+        if (activeRows.size() > 1) {
+            throw new IllegalStateException("同一 runtime profile 存在多个 ACTIVE 快照，拒绝自动恢复: " + profileId);
+        }
+        String currentActive = activeRows.isEmpty() ? null : activeRows.get(0);
+
+        if (failedId.equals(currentActive)) {
+            int deactivated = publishJdbc.update(
+                    "UPDATE metric_snapshot SET status = ?, active_flag = NULL, failure_reason = ? "
+                            + "WHERE snapshot_id = ? AND runtime_profile_id = ? AND active_flag = 1",
+                    MetricSnapshot.STATUS_FAILED, failureReason, failedId, profileId);
+            if (deactivated != 1) {
+                throw new IllegalStateException("撤销失败快照 ACTIVE 状态失败: " + failedId);
+            }
+            currentActive = null;
+
+        } else {
+            // 若本次快照已被后续发布取代，只失败本次非 ACTIVE 快照，绝不覆盖更新的 ACTIVE。
+            int failed = publishJdbc.update(
+                    "UPDATE metric_snapshot SET status = ?, active_flag = NULL, failure_reason = ? "
+                            + "WHERE snapshot_id = ? AND runtime_profile_id = ? AND active_flag IS NULL",
+                    MetricSnapshot.STATUS_FAILED, failureReason, failedId, profileId);
+            if (failed != 1) {
+                throw new IllegalStateException("失败快照不存在或状态已变化，拒绝静默恢复: " + failedId);
+            }
+        }
+
+        // 如果没有任何 ACTIVE（例如失败快照先被另一个恢复流程撤销），仍尽力恢复发布前快照。
+        // 若已有更新 ACTIVE，则绝不回滚到更旧快照。
+        if (currentActive == null && previousActiveSnapshotId != null && !previousActiveSnapshotId.isBlank()) {
+            int restored = publishJdbc.update(
+                    "UPDATE metric_snapshot SET status = ?, active_flag = ?, failure_reason = NULL "
+                            + "WHERE snapshot_id = ? AND runtime_profile_id = ? AND status = ? "
+                            + "AND active_flag IS NULL",
+                    MetricSnapshot.STATUS_ACTIVE, MetricSnapshot.ACTIVE_FLAG, previousActiveSnapshotId,
+                    profileId, MetricSnapshot.STATUS_ARCHIVED);
+            if (restored != 1) {
+                throw new IllegalStateException("旧 ACTIVE 不存在或状态已变化，拒绝静默覆盖: "
+                        + previousActiveSnapshotId);
+            }
+            currentActive = previousActiveSnapshotId;
+        }
+
+        publishJdbc.update("DELETE FROM metric_value WHERE snapshot_id = ?", failedId);
+        return currentActive;
+    }
+
     @Override
     public HealthResult healthCheck() {
         try {

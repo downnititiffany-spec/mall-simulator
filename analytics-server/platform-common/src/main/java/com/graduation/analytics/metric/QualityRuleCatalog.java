@@ -77,6 +77,10 @@ public final class QualityRuleCatalog {
     public static final String RULE_ADS_STAGING_KEY_NOT_NULL = "ADS_STAGING_KEY_NOT_NULL";
     public static final String RULE_PUB_DQ_BLOCKING_RULES = "PUB_DQ_BLOCKING_RULES";
     public static final String RULE_ADS_DWS_FUNNEL_RECONCILE = "ADS_DWS_FUNNEL_RECONCILE";
+    /** 分类 ADS 每日金额与 DWS 交易总额逐日对账。 */
+    public static final String RULE_ADS_CATEGORY_SALE_RECONCILE = "ADS_CATEGORY_SALE_RECONCILE";
+    /** 城市等级 ADS 每日金额与 DWS 交易总额逐日对账。 */
+    public static final String RULE_ADS_REGION_SALE_RECONCILE = "ADS_REGION_SALE_RECONCILE";
     /** 漏斗**率列**跨层对账（S3-10）：ADS 率列必须逐格等于 DWS 全站行同 dt 率列。 */
     public static final String RULE_ADS_DWS_FUNNEL_RATE_RECONCILE = "ADS_DWS_FUNNEL_RATE_RECONCILE";
     /**
@@ -195,6 +199,11 @@ public final class QualityRuleCatalog {
                     "v2：8 张暂存表本次快照分区必须存在且 Location 可读；专题当天无事实时允许 0 行，"
                             + "缺分区或无 Location 仍 BLOCKING。Stage 7 T-R1 真实 MALL_API 交易日证明"
                             + "参考商城可合法无 behavior，不能把合法空态冒充数据缺失"),
+            new QualityRuleDefinition(RULE_ADS_STAGING_PRESENT, 3, QualityRuleDefinition.SCOPE_ALL, STAGE_ADS,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null,
+                    true, null, null,
+                    "v3：AdsSql.TABLES 当前登记的每张 ADS 暂存分区必须存在且 Location 可读；允许合法 0 行专题，"
+                            + "缺分区或无 Location 仍阻断；分类与城市等级销售表自本版本纳入完整性判定"),
             fixed(RULE_ADS_STAGING_SNAPSHOT_ISOLATION, STAGE_ADS, RuleSeverity.WARN,
                     "历史暂存快照存在本身不是错误（陈旧分区不污染正式分区，且清理在 pub 之后，"
                             + "设阻断会造成发布死锁）；「混入其他快照」由 MXP_SNAPSHOT_PINNED(BLOCKING) 承担"),
@@ -203,6 +212,10 @@ public final class QualityRuleCatalog {
                     "暂存宽表内 3 条阻断规则必须全 passed=1，与 Java 侧 corePassed 同口径"),
             fixed(RULE_ADS_DWS_FUNNEL_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
                     "ADS 漏斗 stage 汇总 = DWS 漏斗对应列，不一致即口径破坏"),
+            fixed(RULE_ADS_CATEGORY_SALE_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "分类 ADS 销售额与净销售额必须逐日对账 DWS 交易总额，unknown 分类也计入"),
+            fixed(RULE_ADS_REGION_SALE_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "城市等级 ADS 销售额与净销售额必须逐日对账 DWS 交易总额，unknown 城市等级也计入"),
             fixed(RULE_ADS_DWS_FUNNEL_RATE_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
                     "ADS 漏斗率列（conversion_rate/overall_buy_rate/overall_cart_rate）逐格等于 DWS 全站行同 dt 率列；"
                             + "ADS 只透传不重算，不一致即口径破坏。只判跨层一致性、不判比率数值是否异常"
@@ -240,7 +253,12 @@ public final class QualityRuleCatalog {
             fixed(RULE_MXP_SNAPSHOT_PINNED, STAGE_PUBLISH, RuleSeverity.BLOCKING,
                     "正式分区 Location 必须指向本次 snapshot_id（D-142 §1 的真阻断点）"),
             fixed(RULE_MXP_EXPORT_ROWS, STAGE_PUBLISH, RuleSeverity.BLOCKING, "导出文件行数 = Hive 分区行数"),
-            fixed(RULE_MXP_EXPORT_COMPLETE, STAGE_PUBLISH, RuleSeverity.BLOCKING, "8 张表导出完成且行数一致"),
+            new QualityRuleDefinition(RULE_MXP_EXPORT_COMPLETE, 1, QualityRuleDefinition.SCOPE_ALL, STAGE_PUBLISH,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null, true, null, null,
+                    "历史版本：8 张表导出完成且行数一致"),
+            new QualityRuleDefinition(RULE_MXP_EXPORT_COMPLETE, 2, QualityRuleDefinition.SCOPE_ALL, STAGE_PUBLISH,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null, true, null, null,
+                    "v2：MetricAdsSpec.TABLES 当前登记的每张 ADS 均完成导出且真实行数一致"),
 
             fixed(RULE_MP_MANIFEST_TABLES, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "清单表数对账"),
             fixed(RULE_MP_MANIFEST_SNAPSHOT, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "清单快照一致性"),

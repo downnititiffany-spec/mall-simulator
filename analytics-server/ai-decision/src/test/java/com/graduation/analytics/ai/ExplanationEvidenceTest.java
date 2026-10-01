@@ -64,7 +64,7 @@ class ExplanationEvidenceTest {
                 new EvidencePackage.Lineage(List.of("dw_ads.ads_operation_overview"),
                         List.of("ads_operation_overview_m", "ads_data_quality_m"), 21L, SNAP),
                 List.of(EvidencePackage.WARN_NO_COMPARISON_PERIOD,
-                        EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE));
+                        EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE));
     }
 
     @Test

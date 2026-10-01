@@ -40,6 +40,47 @@ export function salesTrendOption(trend = []) {
   }
 }
 
+/** Category sales are leaf-only; ratios are the server's whole-window ratios, not frontend aggregates. */
+export function categorySalesOption(rows = []) {
+  const values = Array.isArray(rows) ? rows : []
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 170, right: 28, top: 18, bottom: 36 },
+    xAxis: { type: 'value', name: '销售额（元）' },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: values.map((row) => {
+        const name = labelOf(row.category_name, Number(row.category_id) === -1 ? '未分类' : '未知分类')
+        const ratio = num(row.amount_ratio)
+        return ratio === null ? name : `${name}（${(ratio * 100).toFixed(2)}%）`
+      })
+    },
+    series: [{ name: '销售额', type: 'bar', data: values.map((row) => num(row.sale_amount)) }]
+  }
+}
+
+/** The API's region field is city_level; this is a categorical chart, never an administrative map. */
+export function cityLevelSalesOption(rows = []) {
+  const values = Array.isArray(rows) ? rows : []
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 150, right: 28, top: 18, bottom: 36 },
+    xAxis: { type: 'value', name: '销售额（元）' },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: values.map((row) => {
+        const raw = labelOf(row.region, 'unknown')
+        const name = raw === 'unknown' ? '未知城市等级' : raw
+        const ratio = num(row.amount_ratio)
+        return ratio === null ? name : `${name}（${(ratio * 100).toFixed(2)}%）`
+      })
+    },
+    series: [{ name: '销售额', type: 'bar', data: values.map((row) => num(row.sale_amount)) }]
+  }
+}
+
 /** 活跃趋势：DAU（折线）+ 行为量（柱） */
 export function activeTrendOption(active = []) {
   const rows = Array.isArray(active) ? active : []

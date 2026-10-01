@@ -42,6 +42,8 @@ class HdfsLandingStorageIT {
 
             assertThat(storage.healthCheck().ok()).isTrue();
             assertThat(storage.stat(eventPath).size()).isEqualTo(content.length);
+            assertThat(storage.uri(eventPath))
+                    .startsWith(runUri.toString() + "/events/dt=20260924/events.1");
             assertThat(storage.listFiles("events", true))
                     .extracting(LandingStorage.FileEntry::relativePath)
                     .containsExactly(eventPath);
@@ -58,7 +60,8 @@ class HdfsLandingStorageIT {
 
             String manifest = "{\"runId\":\"" + runId + "\",\"status\":\"READY\"}";
             String manifestUri = storage.writeManifest(runId, manifest);
-            assertThat(manifestUri).contains("/manifests/" + runId + ".json");
+            assertThat(manifestUri)
+                    .startsWith(runUri.toString() + "/manifests/" + runId + ".json");
             assertThat(storage.writeManifest(runId, manifest)).isEqualTo(manifestUri);
             assertThatThrownBy(() -> storage.writeManifest(runId, "{}"))
                     .isInstanceOf(IllegalStateException.class)

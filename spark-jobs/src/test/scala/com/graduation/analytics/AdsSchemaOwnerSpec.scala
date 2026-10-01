@@ -22,7 +22,7 @@ import java.nio.file.{Files, Path}
  *     建表语句：表集、列名、类型、顺序逐列一致；
  *  2. 参考副本与所有者之间**三处已登记差异**全部写成**显式白名单**，并逐条钉住精确形态
  *     （多一列、少两表、少八表）—— 白名单漂移一格即红，「差异悄悄长大」不可能静默；
- *  3. 写入投影（`AdsSql` 的 8 个 `INSERT OVERWRITE … SELECT`）↔ 所有者列序一致。
+ *  3. 写入投影（`AdsSql` 的全部 `INSERT OVERWRITE … SELECT`）↔ 所有者列序一致。
  *     Spark 按**位置**写 Parquet，投影与 DDL 列序差一位就是「值串列」的静默错数；
  *  4. ADS 写入的**唯一入口**：每张表恰好一处 `AdsSql.insertTarget` 调用，全仓 main 源码里
  *     不存在以 `ads_` 表名直写的旁路 `INSERT OVERWRITE`；
@@ -30,9 +30,7 @@ import java.nio.file.{Files, Path}
  *  6. 守卫**自检**：把投影列序对调、把静态分区子句换错时，同一判定点必须红 —— 否则本守卫是空的。
  *
  * 归因边界（不得越界表述）：本类只判**表形 / 列序 / 写入目标 / 分区子句形态**，不判任何口径、
- * 不判任何指标值、不判真实 Hive 上的物理落盘（本地链与真 Hive 不等价，见 `P2TestSupport` 自陈的测试域）；
- * 也不断言白名单里那 2 张镜像表"应当有数据"——它们缺生产链的事实登记在
- * `docs/PROJECT_STATUS.md`（G-04 / 门⑦⑧），本类只保证"没人偷偷建一半"。
+ * 不判任何指标值、不判真实 Hive 上的物理落盘（本地链与真 Hive 不等价，见 `P2TestSupport` 自陈的测试域）。
  *
  * 加列 / 改列是**有意为之**的变更 ⇒ 必须同批改所有者＋参考副本＋写入投影，并**有意**更新 `Frozen`。
  */
@@ -52,7 +50,7 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
    *
    * 它是**独立的第四份**：只在下述情况红 —— 有人**同时**改了所有者＋参考副本＋写入投影
    * （剩下三份互等，前几个用例全绿），此时必须**显式**改这里，逼一次"这确实是有意的表形变更"的判断。
-   * 依据：`LocalSchemaInitJob.statements` 的 `ns.ads` 段（8 张正式建表语句）逐列实测。
+   * 依据：`LocalSchemaInitJob.statements` 的 `ns.ads` 段逐列实测。
    */
   private val Frozen: Map[String, Seq[(String, String)]] = Map(
     "ads_operation_overview" -> Seq(
@@ -87,21 +85,19 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     "ads_data_quality" -> Seq(
       "rule_code" -> "STRING", "check_count" -> "BIGINT", "error_count" -> "BIGINT",
       "error_rate" -> "DECIMAL(8,6)", "passed" -> "INT", "threshold" -> "STRING",
-      "rule_version" -> "INT")
+      "rule_version" -> "INT"),
+    "ads_category_sale" -> Seq(
+      "category_id" -> "BIGINT", "category_name" -> "STRING",
+      "parent_category_id" -> "BIGINT", "parent_category_name" -> "STRING",
+      "sale_count" -> "BIGINT", "sale_amount" -> "DECIMAL(18,2)",
+      "net_sale_amount" -> "DECIMAL(18,2)"),
+    "ads_region_sale" -> Seq(
+      "region" -> "STRING", "sale_amount" -> "DECIMAL(18,2)",
+      "net_sale_amount" -> "DECIMAL(18,2)")
   )
 
-  /**
-   * 参考副本**已声明**、唯一所有者**不建**、且全仓 main 源码**零写入**的 2 张 ADS 镜像表 —— 显式白名单。
-   *
-   * 事实（实测，非推测）：`warehouse/ddl/04-ads.sql:99-118` 声明了 `ads_category_sale` /
-   * `ads_region_sale`，而 `LocalSchemaInitJob.statements` 的 `ns.ads` 名下只有 8 张正式表 + 8 张
-   * `__staging` 建表语句；`AdsSql.TABLES` 也不含这两张。设计 §9.2 L322 逐字写着
-   * "已知DIM仅user/product有日常产出、**分类/地区ADS缺生产链**，需逐项补证"。
-   * 本轮**只登记不实现**（分类/地区 ADS 的生产链涉及 unknown 维度保留等未决口径，
-   * 且属已登记门⑦⑧/G-04），故用白名单把"参考副本多出来 2 张"写死：
-   * 任何一张被删、被建、或被写入，本类立即红。
-   */
-  private val UnownedMirrorAdsTables: Set[String] = Set("ads_category_sale", "ads_region_sale")
+  /** No longer a whitelist: the category and city-level sales ADS are now owned and produced. */
+  private val UnownedMirrorAdsTables: Set[String] = Set.empty
 
   /**
    * 参考副本与所有者的**已登记缺陷**（不是有意差异）：`04-ads.sql` 的 `ads_operation_overview`
@@ -149,7 +145,7 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     withClue(s"$table: ") { parsed.columnSeq(table) }
 
   /**
-   * 8 张 ADS 表的写入投影：`snapshotId=None` → 正式分区，`Some(_)` → `__staging` 暂存分区。
+   * ADS 表集的写入投影：`snapshotId=None` → 正式分区，`Some(_)` → `__staging` 暂存分区。
    *
    * 表名取自 `AdsSql.TABLES`（本体自陈的唯一表集），新增表若没在此登记，`case _` 直接抛 ——
    * 逼"新增 ADS 表"这件事必须在守卫里显式落地，不能靠默认分支溜过。
@@ -163,6 +159,8 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     case "ads_sale_trend"         => AdsSql.saleTrend(ns, dt, snapshotId)
     case "ads_user_profile"       => AdsSql.userProfile(ns, dt, periodStart, periodEnd, snapshotId)
     case "ads_data_quality"       => AdsSql.dataQuality(ns, dt, snapshotId)
+    case "ads_category_sale"      => AdsSql.categorySale(ns, dt, snapshotId)
+    case "ads_region_sale"        => AdsSql.regionSale(ns, dt, snapshotId)
     case other =>
       throw new IllegalArgumentException(s"未登记的 ADS 写入投影：$other（新增 ADS 表必须在本守卫登记）")
   }
@@ -220,14 +218,14 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
 
   // ── 1. 参考副本 ↔ 唯一所有者 ───────────────────────────────────────────
 
-  it should "A1 参考副本 04-ads.sql 的表集 = 所有者 8 张 + 2 张镜像表白名单，其余表逐列一致（列名/类型/顺序）" in {
+  it should "A1 参考副本 04-ads.sql 的表集 = 当前 ADS 所有者表集，其余表逐列一致（列名/类型/顺序）" in {
     val ddl = adsRef
     val owner = ownerAds
     val tables = Frozen.keySet
-    // 白名单自检：条目数写死；表集必须**恰好**是多出这 2 张，多一张少一张都红
-    UnownedMirrorAdsTables.size should be(2)
+    // 目录迁移后不得再有尚未纳入唯一所有者的镜像表。
+    UnownedMirrorAdsTables should be(Set.empty[String])
     ddl.columns.keySet should be(tables ++ UnownedMirrorAdsTables)
-    // 白名单的另一半：镜像表既无所有者、也不在写入作业的表集里（"没人偷偷建一半"）
+    // 若以后新增未登记镜像表，表集差异会在这里失败，而不是留作隐形表。
     UnownedMirrorAdsTables.foreach { table =>
       withClue(s"$table 白名单已漂移: ") {
         ownerStatements(ns.ads).exists(_.contains(table)) should be(false)
@@ -310,23 +308,23 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "B3 参考副本里没有 __staging 表：8 张暂存表是所有者独有的派生结构（白名单的另一半）" in {
+  it should "B3 参考副本里没有 __staging 表：暂存表是所有者独有的派生结构" in {
     val ddl = adsRef
     val stagingOwned = AdsSql.TABLES.map(t => s"${t}__staging").toSet
-    stagingOwned.size should be(8)
+    stagingOwned.size should be(10)
     ddl.columns.keySet.filter(_.endsWith("__staging")) should be(Set.empty[String])
     ownerAds.columns.keySet.filter(_.endsWith("__staging")) should be(stagingOwned)
   }
 
   // ── 3. 写入投影 ↔ 所有者 ───────────────────────────────────────────────
 
-  it should "C1 8 张正式表的写入投影与所有者列序一致（静态分区 dt）" in {
+  it should "C1 所有正式表的写入投影与所有者列序一致（静态分区 dt）" in {
     AdsSql.TABLES.foreach { table =>
       checkProjection(table, DmlWriteProjection.parse(write(table, None)))
     }
   }
 
-  it should "C2 8 张暂存表的写入投影与所有者列序一致（静态分区 snapshot_id + dt）" in {
+  it should "C2 所有暂存表的写入投影与所有者列序一致（静态分区 snapshot_id + dt）" in {
     AdsSql.TABLES.foreach { table =>
       checkProjection(s"${table}__staging", DmlWriteProjection.parse(write(table, Some(sid))))
     }
@@ -335,7 +333,7 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
   it should "C3 ADS 写入唯一入口：每张表恰好 1 处 insertTarget 调用，且无以 ads_ 表名直写的旁路 INSERT" in {
     val text = readRepoFile(adsSqlRelative)
     val calls = adsInsertCallRe.findAllMatchIn(text).map(_.group(1)).toList
-    calls.distinct.size should be(8)
+    calls.distinct.size should be(10)
     // 注意：Scala 2.12 的 `view.mapValues` 返回 IterableView（2.13 才可直接 mapValues）⇒ 用显式 map
     calls.groupBy(identity).map { case (table, hits) => table -> hits.size } should be(
       AdsSql.TABLES.map(_ -> 1).toMap)
@@ -363,9 +361,9 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "C5 冻结快照 Frozen（第四份独立依据）与所有者逐列一致，且覆盖全部 8 张表" in {
+  it should "C5 冻结快照 Frozen（第四份独立依据）与所有者逐列一致，且覆盖全部 10 张表" in {
     val owner = ownerAds
-    Frozen.size should be(8)
+    Frozen.size should be(10)
     Frozen.keySet should be(AdsSql.TABLES.toSet)
     Frozen.foreach { case (table, cols) =>
       withClue(s"$table: ") {

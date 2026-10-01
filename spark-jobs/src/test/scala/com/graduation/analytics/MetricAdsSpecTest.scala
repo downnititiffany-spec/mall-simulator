@@ -40,11 +40,11 @@ class MetricAdsSpecTest extends AnyFlatSpec with Matchers {
 
   private val ns = WarehouseNamespace.defaultNamespace
 
-  "MetricAdsSpec" should "覆盖 8 张 ADS 且 Hive/MySQL 表名一一对应" in {
-    MetricAdsSpec.TABLES.size should be(8)
+  "MetricAdsSpec" should "覆盖当前 ADS 表集且 Hive/MySQL 表名一一对应" in {
+    MetricAdsSpec.TABLES.size should be(10)
     MetricAdsSpec.TABLES.map(_.mysqlTable) should be(javaCatalog.map(_._1))
     MetricAdsSpec.TABLES.map(_.hiveTable(ns)).foreach(_ should startWith(s"${ns.ads}.ads_"))
-    MetricAdsSpec.byMysqlTable.size should be(8)
+    MetricAdsSpec.byMysqlTable.size should be(10)
   }
 
   it should "P1-04：库名前缀可替换，表名映射不写死（换源时同一套规格复用）" in {
@@ -67,7 +67,7 @@ class MetricAdsSpecTest extends AnyFlatSpec with Matchers {
 
   it should "S3-30：期望列清单读取自唯一所有者文件（不是本类内的硬编码镜像）" in {
     // 解析面非空自检：解析器与所有者形态脱节时必须红，而不是让下面的逐表比对空转
-    javaCatalog.size should be(8)
+    javaCatalog.size should be(10)
     withClue("解析结果必须逐表非空：") {
       javaCatalog.foreach { case (table, cols) => cols should not be empty }
     }

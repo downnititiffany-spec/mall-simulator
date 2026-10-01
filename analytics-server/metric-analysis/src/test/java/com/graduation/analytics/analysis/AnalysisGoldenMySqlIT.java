@@ -162,7 +162,7 @@ class AnalysisGoldenMySqlIT {
     }
 
     @Test
-    @DisplayName("销售分析：四项取 metric_value 原值（不重算），维度表缺失给降级警告")
+    @DisplayName("销售分析：四项取 metric_value 原值；现有维度表无该旧快照数据时为空态而非缺表警告")
     void salesMatchesGoldenValues() {
         AnalysisViewModel<SalesData> model = service.sales(SID, null, null);
 
@@ -174,7 +174,7 @@ class AnalysisGoldenMySqlIT {
         assertThat(model.data().trend()).isNotEmpty();
         assertThat(model.data().byCategory()).isEmpty();
         assertThat(model.data().byRegion()).isEmpty();
-        assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
+        assertThat(model.warnings()).isEmpty();
     }
 
     @Test

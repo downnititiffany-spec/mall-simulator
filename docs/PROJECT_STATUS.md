@@ -1,5 +1,126 @@
 # PROJECT_STATUS
 
+### 2026-09-30 N31-02 D-048 全批归档与签收前状态
+
+- **批次证据已持久化**：仓库外受控归档 `D:\Develop_code\GraduationProject-wt\v3-archive\n3102\` 汇总 A/B/C/D 与 WAIT_LANDING URI 窄判据。腿级文件数分别为 A/B 40、原 C 14、C 复验 18、D 8、URI 回读 1；源码工作树快照 tar 含 5,382 项，完整 Git bundle 14 refs、HEAD=`300c4c9b7bfc25b8a058c62ad89f349bb15121b8`。根总清单与五份腿级清单共 95 条全数核验、0 失败；快照归档前 3,985 个文本文件针对当前凭据值扫描 0 命中，tar 排除路径扫描 0 命中。不含数据库 dump；凭据引用文件、`.git`、`target`、`node_modules` 等排除。
+- **各腿验收边界不变**：A PASS（限 WSL 单节点与隔离 3307）；B PASS_WITH_HARNESS_CORRECTION；C PASS_WITH_LIMITATION（单视口未完整展示图表）；D PASS_WITH_CLEANUP_CORRECTION。WAIT_LANDING URI 回读只证明该阶段 `acceptedStorageUri` 的持久化，不证明后续 Spark/ADS/全链 SUCCESS。
+- **总体状态**：N31-02 四腿执行及证据归档齐备，仍待总控复核/签收；归档完整不等于产品最终验收。此项未改 V3.0 权威文稿，也未发布 V3.1；本轮不提交、不推送。V3.1 未签收的阶段门、真实 LLM 所需外部四要素、远程集群范围仍维持原状态。
+- 详细索引：仓库外归档根 `README.md`、`WORKTREE-STATE.txt`、`MANIFEST-SHA256SUMS.txt`；腿级报告分别为 `BATCH-N31-02-LEGA-RESULT.md`、`LEGB-RESULT.md`、`LEGC-RESULT.md`、`LEGD-RESULT.md`、`LEGC-REVALIDATION-20260930.md` 与 `WAIT-LANDING-URI-DB-PROOF-20260930.md`。
+
+### 2026-09-30 N31-02 LEG C 分类/地区与 MySQL 发布失败恢复复验
+
+- **LEG C 补充结果 `PASS_WITH_LIMITATION`**：RunId `n3102cat_20260930_2235_6f3a` 以 WSL 单节点 HDFS/Flume 真实链路和独立 oracle 验证分类/城市等级 ADS→MySQL 3307→API→Vue。41 行输入中 36 行 accepted、5 行 quarantine；类别和地区金额分别汇总为 GMV 450、净销售 370；“未分类”、`unknown` 及真实分类名称均覆盖。浏览器/API/MySQL/oracle 对账 17/17 通过，40 个 API cells 一致，overview 14 指标快照为 `S20260918_1`。
+- **持久证据**：腿级复验的 18 个原样文件已复制至 `v3-archive/n3102/legc-revalidation-20260930-2235-6f3a/`；manifest 18/18、复制哈希一致、敏感模式扫描 0 命中。N31-02 全批结束时仍需依 D-048 汇总 A–D 并另做全批归档，不能把该切片称为全批 archive。
+- **正式隔离 MySQL 写 IT 通过**：新 RunId `n3102pub_20260930_2335_f3a`，官方 suite 13/13（Flyway 2、IsolationGuard 6、MetricAds 2、MetricPublisher 3）；包含发布后校验失败时保留旧 ACTIVE 快照及 ADS 的故障恢复验证。执行前 schema 0 表，执行后 37 张基表逐表核数；隔离 schema 保留，无 DROP。凭据仅安全环境传递且运行后清除。
+- 本轮关闭旧 LEG C 报告中的坏样本、unknown 桶、分类名称、真实 MySQL 发布失败恢复缺口；`WAIT_LANDING.acceptedStorageUri` 由前一独立结果闭合。剩余证据限制为销售页截图仅捕获单一视口，未完整展示全部图表。故 LEG C 不改报无条件 PASS；N31-02 整批仍待总控复核/签收。
+- 证据：`docs/verification/results/BATCH-N31-02-LEGC-REVALIDATION-20260930.md`；忽略证据目录 `target/v25-it/n3102cat_20260930_2235_6f3a/`、`target/v25-it/n3102pub_20260930_2335_f3a/`。本轮只修改验证/动态状态文档与忽略的运行 harness；产品源码、测试源码及 runner 未改。平台停止且 8091 已释放；3306 零接触；不 commit/push；V3.0 正文未改，V3.1 未发布。
+
+### 2026-09-30 N31-02 WAIT_LANDING HDFS URI 落库窄判据闭合
+
+- **本项证据 PASS（限窄判据）**：真实平台 profile 指向既有 WSL HDFS 单节点与新隔离 RunId；HTTP 摄取 99 行，`batchId=1`、`quarantineCount=0`。只读回读 RunId 隔离 MySQL 的 `pipeline_stage_run.evidence`，确认 `WAIT_LANDING=SUCCESS`、`batchId=1`，且 `acceptedStorageUri=hdfs://127.0.0.1:19000/landing/n3102waituri_20260930_2042_a1/accepted/1`，无 userinfo/query/fragment。
+- 为限缩验证范围，下一阶段 `INIT_SCHEMA` 使用不存在的隔离作业 JAR 并按预期失败；**未验证 Spark 数仓计算、ADS 发布、全流水线 SUCCESS**。证据与日志见 `docs/verification/results/BATCH-N31-02-WAIT-LANDING-URI-DB-PROOF-20260930.md`；JAR SHA、RunId、查询证据和边界均在结果文档登记。
+- 本项闭合此前“真实 `WAIT_LANDING.acceptedStorageUri` 尚未回读”的限制；N31-02 腿③及整批仍为 **PASS_WITH_LIMITATION / 待总控复核签收**，不提升验收结论。坏样本/live unknown、分类名称字典、新 ADS 失败注入等其他局限仍在。
+- 平台进程已停止、8091 已释放；RunId 隔离 schema、HDFS 测试根与日志保留。WSL 3307 与 HDFS 服务保持运行以便后续开发；3306 未连接。无产品源码变更，不 commit/push；V3.0 冻结，V3.1 未发布。
+
+> 下方状态条目按其形成时点保留；其中“WAIT_LANDING URI 尚未回读”的旧限制已由本页顶部后续实测闭合，其他边界仍以各条原文为准。
+
+### 2026-09-30 N31-02 WSL 恢复、隔离 MySQL 与真实 HDFS 专项验证
+
+- Ubuntu WSL 按用户批准重启后恢复。当前 WSL MySQL 8.0.41 仅监听 `127.0.0.1:3307`；Hadoop 3.3.4 NameNode/DataNode 监听 19000/19870/19010。Windows MySQL 3306 未连接、未执行 SQL。
+- 隔离 MySQL 新 RunId `n3102mysqlit_20260930_1703_b2` 经官方隔离 runner **13/13 PASS**：Flyway 2/2、IsolationGuard 6/6、MetricAds 2/2、MetricPublisher 3/3。RunId 隔离 schema 保留，不清理。首轮长 RunId 暴露 username 截断/哈希契约与 IT 断言不一致；测试已改为比较 runner 导出的规范账号，详见专项补记。
+- 真实 HDFS `HdfsLandingStorageIT` **1/1 PASS**，覆盖 HDFS health、CRUD、定位读取、文件身份、manifest 幂等，并新增完整 `hdfs://authority/path` URI 断言。测试唯一 HDFS 目录经空目录验证后已移除；既有 `/landing` 权限未变。首轮 daemon 受 WSL 会话 SIGHUP 退出，改用独立 session 后稳定运行；未格式化 HDFS。NameNode 正常启动恢复产生 checkpoint/过期 fsimage 保留清理，非人工删除。
+- 常规 Maven 相关模块测试 **500 项，0 失败/错误、2 跳过**（platform-common 117 + connection-ingestion 383）；不是全仓 fresh 测试档。仅变更 `IsolationGuardMySqlIT` 与 `HdfsLandingStorageIT` 两个测试文件，生产业务源码未改。
+- 证据：`docs/verification/results/BATCH-N31-02-WSL-ENV-RECOVERY-AND-IT-20260930.md`；本地忽略产物 `target/v25-it/n3102wsl_20260930_1722/`。
+- **剩余限制**：尚未在运行中的平台 HDFS profile 下实际读取 `pipeline_stage_run.evidence`，因此真实流水线中 `WAIT_LANDING.acceptedStorageUri` 的落库值仍未直接实测；需以隔离 RunId 做最小 WAIT_LANDING 流水线并回读验证。N31-02 腿③仍 `PASS_WITH_LIMITATION`，整批待总控签收；本次 HDFS adapter IT 不替代 Flume→平台→Spark→ADS→API 的整链验收。
+- MySQL 3307 与 HDFS 服务本次检查时仍运行；本轮不 commit/push；V3.0 冻结正文未改，V3.1 仍为草稿。下方 16:42 环境诊断是较早状态切片，以本条为当前状态。
+
+### 2026-09-30 WSL 环境只读诊断（16:42 +08:00）
+
+- 本机 `wsl --list --verbose` 显示 Ubuntu 为 Running，但 `wsl -d Ubuntu --exec /bin/echo WSL_OK` 立即以 exit 1 返回 `Wsl/Service/E_UNEXPECTED`。本任务启动的挂起 `jps`、`ss`、`true`、`echo` WSL 客户端已按精确命令行结束；未停止 Ubuntu 发行版，也未触碰其数据。
+- 当前无法在 WSL 内确认 HDFS/MySQL 进程状态；Windows 侧只读端口检查为 3307 无监听、3306 有 `mysqld.exe` 监听。未连接任何数据库，3306 零接触；不得把 3306 作为替代环境。
+- 隔离 MySQL root credref 文件存在且格式检查通过（口令未回显、未读取到输出、未用于连接）；当前进程没有 `IT_GUARD_PASSWORD`、`V25_IT_META_PASSWORD`、`V25_IT_METRIC_PUBLISH_PASSWORD`、`V25IT_ADMIN_PWD`。已批准的 `MetricPublisherMySqlIT` 因 WSL 服务接口异常未运行，3307 无写入。
+- **下一步阻塞**：需用户批准仅终止并重新启动 Ubuntu WSL（可能中断该发行版内尚未确认的进程），或由用户先行恢复 WSL；恢复后再通过隔离准备脚本配置本 RunId 并执行真实 MySQL IT。此项诊断不改变 N31-02 判定：腿③仍 `PASS_WITH_LIMITATION`，整批待总控签收。
+
+### 2026-09-30 N31-02 WAIT_LANDING 存储 URI 安全证据
+
+- `WAIT_LANDING` 保留 manifest 相对 `acceptedUri`，并通过当前 profile 的 `LandingStorage.uri()` 新增完整 `acceptedStorageUri`，便于复核实际存储位置，不改变采集契约。
+- 阶段证据写入前剥离 URI `userinfo`；遇到 query 或 fragment 则 fail-closed，避免用户名、口令或 token 落入证据。URI 完整解析、userinfo 脱敏、query/fragment 拒绝三个回归均通过；新增守卫均先在旧实现下失败再修复。
+- 统一 default fresh RunId `dev003c_20260930_161803_e2c0c8`：analytics-server **1195**（117+383+207+138+163+187，F=0/E=0/S=2）、mall **14**、generator **111**，合计 **1320 MATCH/PASS**。基线已同步为 analytics 1195 / 三树 1320。
+- 本轮未运行真实 HDFS 链；WSL 当前未运行 HDFS/MySQL 服务。安全进程环境中仍无 `MetricPublisherMySqlIT` 所需隔离凭据，故未执行写入型 IT、未在 3307 写入；3306 零接触。真实 MySQL 失败恢复验证仍待凭据由安全环境注入。
+- N31-02 腿③保持 `PASS_WITH_LIMITATION`、整批待总控签收；V3.0 冻结正文未改，V3.1 未发布；不 commit/push。详见 `docs/verification/results/BATCH-N31-02-LEGC-POSTVERIFY-RECOVERY-20260930.md`。
+
+### 2026-09-30 N31-02 腿③发布后恢复补充（默认测试通过，真实 MySQL IT 待凭据）
+
+- 复核 MetricPublisher 的激活后只读校验失败路径，补齐 `failActivationAndRestore` 原子恢复逻辑；旧 ACTIVE 不存在/状态不符时事务回滚，若更晚快照已 ACTIVE 则不覆盖。另补测“ACTIVE 指针暂时为空时恢复可用旧快照”边界。
+- 定向恢复测试 9/9；统一 `default` fresh：analytics 1193（F=0/E=0/S=2）+ mall 14 + generator 111 = **1318 MATCH/PASS**。测试计数门同步到 1193；不表示真实 MySQL IT 已运行。
+- `MetricPublisherMySqlIT` 已有真实 MySQL 后置失败注入与 V13 分类/地区行断言，但本轮 `run-isolated-tests.ps1 -DryRun` 显示缺少隔离测试口令；3307 socket root 探针只读且 Access denied。因此没有执行 IT、没有在 3307 写入；3306 零接触。后续须走受控凭据通道实跑，不能以单测替代。
+- 本记录详见 `docs/verification/results/BATCH-N31-02-LEGC-POSTVERIFY-RECOVERY-20260930.md`。N31-02 腿③仍为 `PASS_WITH_LIMITATION`、整批待总控签收；N31-01 仍 PARTIAL，N31-04 真实 LLM 仍 BLOCKED，N31-05 最终验收/版本发布未开始。V3.0 冻结正文未改，V3.1 未发布。本轮不 commit/push。
+
+### 2026-09-30 N31-02 V34 隔离库迁移回归与测试脚本安全修复
+
+- **凭据传递修复**：`scripts/it-prepare-isolation.ps1` 原先把 `MYSQL_PWD=<管理员口令>` 作为 `wsl.exe` 的参数传入，口令可能出现在 Windows/WSL 进程命令行。现改为进程环境变量经 `WSLENV=MYSQL_PWD/u` 传递，并在结束时恢复原 `MYSQL_PWD`/`WSLENV`；没有记录或输出口令。旧实现下新增回归断言先失败，修复后 `AnalyticsIsolationScriptsContractTest` 11/11 通过。
+- **V34 真实 Flyway 集成验证**：使用 WSL MySQL 8.0.41、loopback `127.0.0.1:3307` 和新隔离 RunId `n3102v34_20260930_143500`。`AnalyticsIsolationFlywayIT` 2/2 通过：该 RunId 的 meta schema 首轮应用 33 条迁移至 V34、metric schema 首轮应用 13 条至 V13；两库第二轮均执行 0 条迁移；测试查询核对 V34 管理的 4 条质量规则。日志位于忽略目录 `target/v25-it/n3102v34_20260930_143500/analytics/schema-flyway-it-am.log`。这是**RunId 隔离库**证据，不代表共享/正式 `analytics_meta` 或 `analytics_metric` 已迁移。
+- **统一默认档**：新鲜 `scripts/run-tests.ps1 -Suite default` = analytics-server 1188（F=0/E=0/S=2）、商城 14、生成器 111，合计 1313，最终 `PASS exit=0`。新增两条脚本契约测试后，analytics 基线由 1186 校准到 1188。首跑同时暴露 `-AllowCountDrift` 文案称“放行”但判定仍失败的问题；三个档位现共用 `Test-BaselineComparison`，只允许该开关绕过计数差异，不绕过零测试或 F/E 门禁；函数行为探针与定向契约测试通过。
+- **本轮边界**：没有访问 3306；只迁移本批 RunId schema，没有对共享/正式 schema 执行 DDL；没有重跑 Spark 或 web 套件，本轮不新增其通过声明。隔离 schema 保留，未清理。未改冻结 V3.0 正文。
+- **环境安全待办**：旧的 WSL MySQL 启动脚本 `start-isolated-mysql-3307.sh` 经过静态检查，存在数据目录哨兵缺失时递归删除目录的分支，并包含 root 账户变更及共享 schema/探针表写入；本轮没有执行它，改为在确认现存数据目录后直接启动既有实例。该启动脚本须先经单独安全修复与无副作用验证，之后才能作为常规启动入口。
+- **阶段状态不变**：N31-02 腿③本轮增加了 V34 隔离迁移证据，但整批仍待总控复核/签收；N31-01 仍为 PARTIAL 且受 V3.1 采用门控；V3.1 仍是未发布草稿，正式权威仍为 V3.0；N31-04 真实 LLM 仍 BLOCKED，N31-05 最终验收/版本发布未开始。本轮未 commit/push。
+
+### 2026-09-29 N31-02 腿③质量规则契约回归（代码/测试通过，未做数据库迁移验收）
+
+- 发现并修正分类/城市等级供数改造带来的质量规则登记缺口：Java 规则目录含 45 条定义（新增分类/地区对账码、`ADS_STAGING_PRESENT` v3、`MXP_EXPORT_COMPLETE` v2），旧迁移种子并集仅有 41 条。按 D-058 的加性迁移约束新增 `V34__quality_rule_category_region_sales.sql`，并扩展静态迁移一致性测试；V1–V33 未修改，V34 **尚未在数据库执行**。
+- `AdsQualityJob` 的分类/城市等级 `QualityCheck` 调用点改为规则码静态字面量，保留共享金额对账计算，满足 Java 侧质量规则调用点守卫。项目统一默认测试：analytics-server 1186（F=0/E=0/S=2）、商城 14、生成器 111；总计 1311 项（F=0/E=0/S=2），统一 runner PASS。Spark JDK8 332/332 PASS（42 suites，`local[1]`+in-memory catalog）；`web/npm test` 381/381 PASS。
+- `scripts/run-tests.ps1` 默认档基线由 1170 校准为 1186。V3.1 草稿 §6 的 1170 是草稿编制时记载值，本轮未改待审指导书；正式发布前应根据获准范围和 fresh 测试结果更新。
+- 以上仅为代码/静态契约及本地测试证据，不代表 V34 已在 MySQL 生效，也不证明生产 Hive/Spark 集群通过。未连接 MySQL、未执行数据库迁移；3306 零接触。N31-02 整批仍待总控复核签收，N31-04 真实 LLM 仍为外部资源阻塞，N31-05 最终验收/版本发布未开始。
+
+### 2026-09-29 N31-01 状态校准审计（PARTIAL，等待总控门控）
+
+- G31-12 归档位于当前仓库旁的 D:\Develop_code\GraduationProject-wt\v3-archive\g3112；164 条 SHA-256 全部匹配，Git bundle 完整历史核验通过；D-052 已签收 G31-12 证据、解除 G31-11 暂缓，边界非产品最终验收。
+- 当前 WSL MySQL 8.0.41 的 3307 只读回查：analytics_meta 为 0 张表、没有 flyway_schema_history；analytics_metric 仅有 __v25_w03_probe。不能据此现场复核历史归档中的 V33 checksum 535846146。本轮无 DDL/DML、无恢复；原因未定。
+- 审计启动时 HEAD 300c4c9b7bfc25b8a058c62ad89f349bb15121b8 的 192 个 dirty/untracked 项全部完成归属分类、未知 0：N31-03 30、N31-02 腿③ 52、批次登记文档 12、腿③证据归档 16、编辑前备份 78、本地保留项 3、G31-11 历史 runner 1。审计另新增 N31-01 报告 1 项与三份编辑前备份；本状态计数勘误再新增一份备份，故此后 git status 最终为 197 项，新增项均归属 N31-01 报告/备份。两个批次结果原“代码改动计数”有误，已追加勘误并保留原始备份；完整路径清单见 docs/verification/results/BATCH-N31-01-STATE-CALIBRATION-AUDIT-20260929.md。
+- 分支只读关系：本地开发分支相对 origin/feature/v3-development 为 31 ahead / 0 behind，相对 origin/main 为 451 ahead / 0 behind。未 stage、commit 或 push。
+- N31-01 未达到退出标准：历史归档核验完成；当前 3307 V33 live 状态不可复证；D-052 签收对象已明确；工作树无未知归属；设计 V3.1 差异清单仍受 V3.1 §2.3 / D-053 总控审阅门控。需要总控决定是否审阅并采用 V3.1 草稿；如要求重新建立正式库证据，另需受控恢复/复验授权。本轮不自行恢复数据库或发布文档。
+
+### 2026-09-29 N31-02 腿③实现与真实小链验证完成（PASS_WITH_LIMITATION，待总控签收）
+
+- D-058 批准的分类/城市等级销售链已贯通：Spark Hive ADS → MySQL V13 服务镜像 → 销售 API → Vue 页面；结构化 AI EvidenceBuilder 引用已指向分类/地区 ADS 与固定 snapshot/window。未扩展 Text2SQL，也未接入真实 LLM。
+- 新隔离 run `n3102e_20260929_173000_7c11`：Flume→HDFS 99 行/34,192 B；摄取 accepted 99、quarantine 0；Spark pipeline SUCCESS，sourceId=1 / batchId=1 / runId=1 / snapshotId=`S20260918_1`；ADS 导出 10 表/33 行、4 条核心质量规则通过，MySQL 3307 唯一 ACTIVE；API 分类/城市等级与发布前独立 oracle 的金额/件数一致，汇总 GMV 1010.00、净销售额 930.00。
+- 修复用户维度 as-of 缺陷：即使当日没有新用户事件，也按业务日从 ODS 历史重建完整用户维度快照，避免既有用户的 `city_level` 在 DWD 被错误归入 unknown。回归从历史日注册、当日 `userInput=0` 断言成功生成 1 个历史用户且 city_level=tier2。
+- 定向测试全绿：Spark 3/3 + 1/1；Java AnalysisService 41/41、EvidenceBuilder/ExplanationEvidence 16/16、MetricPublisher compensation 3/3；web 29/29。真实链路结论限 WSL 单节点。
+- **PASS_WITH_LIMITATION**：真实链路使用 99 行全有效夹具，没有计划中 5–10 行坏样本；夹具没有分类名称（ID 100/200/300 显示 `UNKNOWN`）；真实页面本批没有 unknown 业务桶且截图仅为 viewport；新增 V13 ADS 表没有另跑端到端发布失败注入（引用腿②旧 ACTIVE 证据与发布补偿单测）；pipeline `WAIT_LANDING` 摘要 URI 缺少 `hdfs://` scheme。逐项详见 `docs/verification/results/BATCH-N31-02-LEGC-RESULT.md`。
+- 本轮证据持久化于 `v3-archive/n3102/legc-20260929-7c11/`，sha256 manifest 随目录提供。平台已停止、8091 释放；HDFS/3307 常驻服务未停止。3306 未连接或执行 SQL；只读端口检查发现外部监听 PID 10004，未接触该进程。
+- 当前 N31-02 腿① PASS、腿② PASS_WITH_HARNESS_CORRECTION、腿④ PASS_WITH_CLEANUP_CORRECTION、腿③技术结论 PASS_WITH_LIMITATION，**整批等待总控复核/签收，不自宣最终验收**。V3.0 正文未改；V3.1 仍为未发布草稿；本轮未 commit/push。
+
+### 2026-09-29 N31-02 腿③ C3 总控裁决通过（D-058，实施前状态快照）
+
+- 总控已明确批准按推荐契约整体实现：地区首版=源字段 `city_level`，页面显示“城市等级销售分布”；多日不把日级 distinct 买家/订单数相加冒充窗口唯一数；分类以叶子分类聚合，`category_id=-1`/缺失维表保留唯一 unknown；新增 Hive ADS 与 MySQL 镜像表使用加性 Flyway migration，不修改 V1–V33 历史迁移。
+- **当前批次状态**：N31-02 腿① PASS（WSL 单节点限定）；腿② PASS_WITH_HARNESS_CORRECTION；腿④ PASS_WITH_CLEANUP_CORRECTION；腿③已解除设计门，正在从 Spark ADS→服务表/发布→API→Vue→独立 oracle 实施。实现未完成前不得标为 PASS。
+- 设计契约、批次计划和用户裁决原文：`docs/contracts/n31-02-category-region-sales-contract-draft.md`、`docs/verification/batches/BATCH-N31-02-CONTINUOUS-CHAIN-PLAN.md`、`docs/decisions/rulings/MASTER-RULING-20260929-N3102-LEGC-APPROVAL.md`；决策登记 D-058。冻结 V3.0 正文不改，V3.1 仍为未发布草稿。
+- 验收红线：金额占比按窗口聚合重算；独立 oracle 与 Spark 实现路径分离；隔离 MySQL 3307；发布失败保留原 ACTIVE；3306 零接触；本轮不 commit/push。
+
+### 2026-09-29 N31-03 普通员工可用性验收收口（PASS_WITH_LIMITATION）
+
+- 当前发布包已同步：根因是 Spring Boot 后端单独 Maven 打包不会执行 Vite 构建/静态资源同步，因此旧 JAR 仍内嵌 9 月 19 日的前端文件；按批准流程重建 web、同步静态资源并重打包后，JAR 与 `web/dist` 的 29 个静态文件一致。当前 8091 服务 JAR SHA-256：`1179F63DA27BC7CA98B7DDBFD456D9413BB421756234270E1395C2AA69B2D7D9`。
+- **员工路径 PASS_WITH_LIMITATION**：analyst 常用页面、权限隔离、快照选择与当前 JAR AI→DRAFT 正向路径通过；决策草稿 `DC-20260929141635-32eb` 保留在本批隔离 3307 schema，未提交审批或执行商业动作。AI provider 为 `stub-local`，不代表真实 LLM；本批无新增采集、Spark 计算或 ADS 快照。
+- 页面上的业务数据仍是 ACTIVE `S20260918_2`、业务日期 2026-09-18，执行日 2026-09-29 时滞后 11 天。前端包日期问题已修复；数据日期未前移是因为尚无更新的采集→Spark→ADS→发布产物，不应把两者混为一谈。
+- 本批详见 `docs/verification/results/BATCH-N31-03-EMPLOYEE-USABILITY-RESULT.md`，计划见 `docs/verification/batches/BATCH-N31-03-EMPLOYEE-USABILITY-PLAN.md`。**N31-03 收口登记时** N31-02 腿③仍等待 C3；其后状态以本文件更高处 D-058 条目为准。N31-04 真实 LLM 仍 BLOCKED。当前 8091 服务隔离环境；3306 未连接、未执行 SQL。本轮未 commit/push。
+
+### 2026-09-29 N31-02 腿④共享 HMS 验证收口（腿①/②与腿③草案状态承接）
+
+- **腿④ PASS_WITH_CLEANUP_CORRECTION**：新建隔离 MySQL 3307 schema 作为 Hive 3.1.3 Metastore 后端；Spark 3.5.1 与 Hive 通过同一 Thrift Metastore 双向读取彼此创建的表，行数/聚合值相符，两张表均落入本批 HDFS warehouse。初始化 schema、版本检查、DDL、交叉读和 HDFS 路径判据均通过。外层清理包装退出码 15，9083 未自动释放；核实本批 Metastore 进程身份后定点停止，并验证 9083 关闭、常驻 HDFS 19000 与 MySQL 3307 仍在运行。详见 `docs/verification/results/BATCH-N31-02-LEGD-RESULT.md`。结论限 WSL 单节点，不等于多节点/远程/生产 HMS 验收。
+- **N31-02 当前状态（D-058 后）**：腿① PASS；腿② PASS_WITH_HARNESS_CORRECTION；腿④ PASS_WITH_CLEANUP_CORRECTION；腿③已获 C3 批准并正在实现，批次仍未整体结束。N31-03 员工可用性验收已独立收口。
+
+### 2026-09-29 N31-02 腿①/②收口与腿③设计草案提交（腿④执行前状态快照）
+
+- **腿① PASS（当前 WSL 单节点）**：run `n3102iso_20260929_095610` 从发布前独立 oracle 开始，完成 99 行受控样本 Flume→HDFS→摄取→Spark ODS/DWD/DWS/ADS→隔离 MySQL 3307→API→Vue。血缘 `sourceId=1 / batchId=1 / runId=1 / snapshotId=S20260918_1`；四方 oracle/ADS 导出/metric_value/API/页面 14/14 对账，tol 0.0005。页面截图、API 摘要与对账见 `evidence/`。
+- **9/19 前端包原因已定位并处置**：Vue 源码和 `web/dist` 已包含时效提示，旧运行 jar 内 `platform-app/static` 仍是 9/19 资源；单独 Maven 打包不会构建/同步 Vite。按批准流程重建 web、同步静态资源并重打 platform jar；新 jar SHA `075de7f3839a1c417b5955942be2a0951bd830721a03d25d653db19775d09515`，与旧包相比 91 个后端 class entry 全一致，仅静态前端变化。浏览器确认横幅业务日 2026-09-18、滞后 11 天。此处滞后是样本业务日期，不是页面包日期。未改业务源码。
+- **腿② PASS_WITH_HARNESS_CORRECTION**：同源 `sourceId=1` 第二批 `batchId=2` 经 Flume/HDFS/摄取，100 行组合 oracle 对第二快照 `S20260918_2` 14/14 对账；run3 重放为 `ALREADY_CONSUMED` no-op，无新快照；run4 可控 Spark 提交失败后，唯一 ACTIVE 仍 `S20260918_2`，旧快照 14/14 经 API 可读，消费台账数不变。原 B 驱动因 MySQL CLI 列标题整串比较假 FAIL；首个 PowerShell 只读复核器又因数组属性访问误判快照 ID。两项均以原始输出/HTTP JSON逐行复核；原 `leg-b-state.json` 保留 FAIL 原貌，独立校验 `leg-b-postfault-readonly-verification.json` PASS。不得把原驱动记作原样 PASS。
+- **腿③已提交审定草案，未实施**：新增 `docs/contracts/n31-02-category-region-sales-contract-draft.md`。C1 勘察确认当前只有城市等级 `city_level` 而非省市行政区；DWS 有地区日聚合但 ADS/metric服务表/API/前端维度图未贯通，AI EvidenceBuilder 来源名也需改。草案给出 unknown、跨日 distinct、表/API/页面/AI/oracle 建议；等待 C3 总控裁决。未创建任何表、未修改指标口径。
+- **测试范围与环境（当时快照）**：执行 `npm run build`；Maven platform reactor `clean package -DskipTests` 成功（不等价全量 Java 回归）；WSL HDFS+Flume+真实 Spark 小链和隔离 3307/API/Chromium 页面已验证。运行中的 isolated platform 已停止，8091 释放；3306 日志/清扫均零命中。腿④结果之后续状态块为准。
+- **当前阶段/下一步（当时快照）**：此块写入时腿④尚未执行；其状态以本文件顶部后续条目为准。腿③等待总控裁决后才可建 ADS 与改 API/UI/AI。
+- **变更与提交边界**：产品业务源码/测试源码零变更；临时驱动、A8 截图与运行证据均在 ignored `target/v25-it/n3102iso_20260929_095610/`。本轮文档有编辑前 `.bak-20260929-n3102-legab-c` 备份；未 commit、未 push；不触碰冻结 V3.0 正文、不接触 3306。
+
+结果文档：`docs/verification/results/BATCH-N31-02-LEGA-RESULT.md`、`docs/verification/results/BATCH-N31-02-LEGB-RESULT.md`、`docs/verification/results/BATCH-N31-02-LEGD-RESULT.md`；契约草案：`docs/contracts/n31-02-category-region-sales-contract-draft.md`。
+
 ### 2026-09-28 N31-02 腿①执行切片#2：run6#3 A5 RUN_EMPTY_DATA 根因修复（accepted 文件名契约，D-057）——run6#4 待跑
 
 - **run6#3 已证 PASS**：A3 Flume→HDFS 对账全等（34192 B/99 行）；A4 hdfs:// 平台摄取 PASS（99 行 quarantine=0；manifest 批 1 READY；D-041 截断命中 0；hdfs-checksum[cp1-baseline] 批 1 签名 d9f516fa85b4）——**D-055 修复经 WAIT_LANDING/INIT_SCHEMA 实跑复证**（manifest 经 HDFS LandingStorage 读取，sci 输出 37）。

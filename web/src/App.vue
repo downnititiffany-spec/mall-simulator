@@ -48,6 +48,7 @@
       </header>
 
       <main class="page-body">
+        <SnapshotSelector v-if="route.meta.snapshotScoped" />
         <router-view />
       </main>
     </div>
@@ -58,6 +59,8 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from './api'
+import SnapshotSelector from './components/SnapshotSelector.vue'
+import { resetSnapshotSelection } from './composables/useSnapshotSelection'
 
 const router = useRouter()
 const route = useRoute()
@@ -95,11 +98,19 @@ const readUser = () => {
 
 // 登录/登出后路由变化时重新读取登录态（含刷新页面场景）
 const user = ref(null)
+let currentUserIdentity = null
 watch(
   () => route.path,
   () => { user.value = readUser() },
   { immediate: true }
 )
+watch(user, (next) => {
+  const identity = next && (next.id || next.username) ? String(next.id || next.username) : null
+  if (identity !== currentUserIdentity) {
+    resetSnapshotSelection()
+    currentUserIdentity = identity
+  }
+}, { immediate: true })
 
 // 登录页为独立全屏布局，不展示侧边栏
 const isLoginPage = computed(() => route.path === '/login')
@@ -114,12 +125,11 @@ const displayName = computed(() => {
 const avatarText = computed(() => (displayName.value || '—').slice(0, 1))
 const versionText = VERSION_TEXT
 
-// 导航按角色过滤：admin 可见全部页面，其余角色隐藏「数据流水线/运维中心/接入向导」
+// 管理页权限元数据同时用于导航过滤与 router 守卫，避免两份路径清单漂移。
 const allRoutes = router.options.routes.filter((r) => r.meta && r.meta.title && r.path !== '/login')
-const ADMIN_ONLY_PATHS = ['/pipeline', '/ops', '/sources/wizard']
 const visibleRoutes = computed(() => {
   const isAdmin = user.value && user.value.role === 'admin'
-  return allRoutes.filter((r) => isAdmin || !ADMIN_ONLY_PATHS.includes(r.path))
+  return allRoutes.filter((r) => isAdmin || !r.meta.requiresAdmin)
 })
 
 // 分组：分析看板 / 智能与决策 / 系统治理（未列出的路由归入第一组）
@@ -157,6 +167,7 @@ const onLogout = async () => {
     // 登出接口失败（如令牌已失效）不影响本地清理，照常退出
   }
   user.value = null
+  resetSnapshotSelection()
   router.push('/login')
 }
 </script>

@@ -4,22 +4,30 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   { path: '/login', name: 'login', component: () => import('./views/Login.vue'), meta: { title: '登录' } },
   { path: '/', redirect: '/overview' },
-  { path: '/overview', name: 'overview', component: () => import('./views/Overview.vue'), meta: { title: '运营大盘', requiresAuth: true } },
-  { path: '/behavior', name: 'behavior', component: () => import('./views/Behavior.vue'), meta: { title: '用户行为分析', requiresAuth: true } },
-  { path: '/products', name: 'products', component: () => import('./views/Products.vue'), meta: { title: '商品分析', requiresAuth: true } },
-  { path: '/rfm', name: 'rfm', component: () => import('./views/Rfm.vue'), meta: { title: '用户分层', requiresAuth: true } },
-  { path: '/sales', name: 'sales', component: () => import('./views/Sales.vue'), meta: { title: '销售分析', requiresAuth: true } },
-  { path: '/pipeline', name: 'pipeline', component: () => import('./views/Pipeline.vue'), meta: { title: '数据流水线', requiresAuth: true } },
-  { path: '/ops', name: 'ops', component: () => import('./views/Ops.vue'), meta: { title: '运维中心', requiresAuth: true } },
-  { path: '/sources/wizard', name: 'sourceWizard', component: () => import('./views/SourceWizard.vue'), meta: { title: '接入向导', requiresAuth: true } },
+  { path: '/overview', name: 'overview', component: () => import('./views/Overview.vue'), meta: { title: '运营大盘', requiresAuth: true, snapshotScoped: true } },
+  { path: '/behavior', name: 'behavior', component: () => import('./views/Behavior.vue'), meta: { title: '用户行为分析', requiresAuth: true, snapshotScoped: true } },
+  { path: '/products', name: 'products', component: () => import('./views/Products.vue'), meta: { title: '商品分析', requiresAuth: true, snapshotScoped: true } },
+  { path: '/rfm', name: 'rfm', component: () => import('./views/Rfm.vue'), meta: { title: '用户分层', requiresAuth: true, snapshotScoped: true } },
+  { path: '/sales', name: 'sales', component: () => import('./views/Sales.vue'), meta: { title: '销售分析', requiresAuth: true, snapshotScoped: true } },
+  { path: '/pipeline', name: 'pipeline', component: () => import('./views/Pipeline.vue'), meta: { title: '数据流水线', requiresAuth: true, requiresAdmin: true } },
+  { path: '/ops', name: 'ops', component: () => import('./views/Ops.vue'), meta: { title: '运维中心', requiresAuth: true, requiresAdmin: true } },
+  { path: '/sources/wizard', name: 'sourceWizard', component: () => import('./views/SourceWizard.vue'), meta: { title: '接入向导', requiresAuth: true, requiresAdmin: true } },
   { path: '/decisions', name: 'decisions', component: () => import('./views/Decisions.vue'), meta: { title: '决策中心', requiresAuth: true } },
-  { path: '/ai', name: 'ai', component: () => import('./views/AiAssistant.vue'), meta: { title: '智能分析助手', requiresAuth: true } }
+  { path: '/ai', name: 'ai', component: () => import('./views/AiAssistant.vue'), meta: { title: '智能分析助手', requiresAuth: true, snapshotScoped: true } }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+const currentUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('analytics_user') || 'null')
+  } catch (e) {
+    return null
+  }
+}
 
 // 登录守卫：未登录访问受保护页面 → /login；已登录访问 /login → /
 // 令牌键名与 api.js 一致（analytics_token）；分析平台不读写商城侧键名（§18.4 边界）
@@ -31,6 +39,10 @@ router.beforeEach((to, from, next) => {
   }
   if (to.path !== '/login' && to.meta.requiresAuth !== false && !token) {
     next('/login')
+    return
+  }
+  if (to.meta.requiresAdmin && currentUser()?.role !== 'admin') {
+    next(token ? '/overview' : '/login')
     return
   }
   next()

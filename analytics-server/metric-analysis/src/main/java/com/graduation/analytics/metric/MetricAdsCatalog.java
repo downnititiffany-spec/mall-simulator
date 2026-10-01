@@ -4,14 +4,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * R7-2：analytics_metric 八张 ADS 物化宽表白名单（§17.3 / V2.0 §24.4）。
+ * R7-2：analytics_metric ADS 物化宽表白名单（§17.3 / V2.0 §24.4）。
  *
  * <p>唯一用途是给 {@link MetricAdsWriter}/{@link MetricAdsReader} 做**表名与列名校验**：
  * SQL 里的表名/列名只允许来自本清单（反引号拼接），任何来自外部的表名/列名都会在拼接前被拒绝，
  * 杜绝 SQL 注入与「写错库/写错表」。</p>
  *
- * <p>本期只建 8 张：Hive 侧首期 ADS 只有 8 张，{@code ads_category_sale_m}/{@code ads_region_sale_m}
- * 尚无对应 ADS，禁止先建空表造假数据（§24.4 只对有 Hive 来源的表建服务表）。</p>
+ * <p>每张服务表必须有对应 Hive ADS 生产者；目录同时承担导出、写入、读取和发布对账白名单。</p>
  *
  * @param name       物理表名
  * @param columns    业务列（不含 snapshot_id / dt，二者所有表都有）；**必须包含全部主键业务列**
@@ -52,7 +51,14 @@ public record MetricAdsCatalog(String name, List<String> columns, List<String> k
             new MetricAdsCatalog("ads_data_quality_m",
                     List.of("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold",
                             "rule_version"),
-                    List.of("rule_code")));
+                    List.of("rule_code")),
+            new MetricAdsCatalog("ads_category_sale_m",
+                    List.of("category_id", "category_name", "parent_category_id", "parent_category_name",
+                            "sale_count", "sale_amount", "net_sale_amount"),
+                    List.of("category_id")),
+            new MetricAdsCatalog("ads_region_sale_m",
+                    List.of("region", "sale_amount", "net_sale_amount"),
+                    List.of("region")));
 
     private static final Map<String, MetricAdsCatalog> BY_NAME =
             ALL.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(MetricAdsCatalog::name, t -> t));

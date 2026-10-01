@@ -24,7 +24,7 @@ case class MetricAdsTable(table: String, mysqlTable: String, columns: Seq[String
 
 object MetricAdsSpec {
 
-  /** 首期 8 张 ADS（Hive 侧只有 8 张；类目/地区 ADS 未产出，故不建对应 _m 表） */
+  /** Hive ADS ↔ analytics_metric 导出映射的唯一清单。 */
   val TABLES: Seq[MetricAdsTable] = Seq(
     MetricAdsTable("ads_operation_overview", "ads_operation_overview_m",
       Seq("pv", "uv", "dau", "order_count", "sale_amount", "net_sale_amount",
@@ -47,7 +47,12 @@ object MetricAdsSpec {
         "r_days", "f_count", "m_amount", "period_start", "period_end")),
     MetricAdsTable("ads_data_quality", "ads_data_quality_m",
       Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold",
-        "rule_version")))
+        "rule_version")),
+    MetricAdsTable("ads_category_sale", "ads_category_sale_m",
+      Seq("category_id", "category_name", "parent_category_id", "parent_category_name",
+        "sale_count", "sale_amount", "net_sale_amount")),
+    MetricAdsTable("ads_region_sale", "ads_region_sale_m",
+      Seq("region", "sale_amount", "net_sale_amount")))
 
   val EXPORT_MANIFEST: String = "_export.json"
 

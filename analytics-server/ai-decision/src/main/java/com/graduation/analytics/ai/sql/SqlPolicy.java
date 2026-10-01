@@ -49,6 +49,8 @@ public final class SqlPolicy {
 
     // ── 成本 / 作用域错误码（契约 §2.2、§2.3） ──────────────────────────────
     public static final String NO_ACTIVE_SNAPSHOT = "NO_ACTIVE_SNAPSHOT";
+    /** Explicitly selected snapshot is not ACTIVE/ARCHIVED or no longer exists. */
+    public static final String SNAPSHOT_NOT_AVAILABLE = "SNAPSHOT_NOT_AVAILABLE";
     public static final String METRIC_READ_SOURCE_MISSING = "METRIC_READ_SOURCE_MISSING";
     public static final String SQL_COST_TOO_HIGH = "SQL_COST_TOO_HIGH";
 

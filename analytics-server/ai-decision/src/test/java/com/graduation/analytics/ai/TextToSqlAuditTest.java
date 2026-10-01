@@ -169,6 +169,34 @@ class TextToSqlAuditTest {
         assertNull(h.getErrors());
     }
 
+    @Test
+    @DisplayName("显式选择的快照进入 AI SQL 作用域和查询审计，不回退到 ACTIVE")
+    void 显式快照贯穿问数与审计() throws Exception {
+        String selectedSnapshot = "S20260917_9";
+        AiScope selectedScope = AiScope.of(selectedSnapshot, "v2", LocalDate.of(2026, 9, 17));
+        AiScopeResolver resolver = mock(AiScopeResolver.class);
+        when(resolver.resolve(selectedSnapshot)).thenReturn(selectedScope);
+
+        LlmProvider llm = mock(LlmProvider.class);
+        QueryCostGuard guard = mock(QueryCostGuard.class);
+        when(guard.check(anyString())).thenReturn(new QueryCostGuard.CostEstimate(50L, 1));
+        SqlExecutor executor = mock(SqlExecutor.class);
+        when(executor.execute(anyString())).thenReturn(new SqlExecutor.ExecutionResult(List.of(), 2L, false));
+        AiQueryHistoryMapper historyMapper = mock(AiQueryHistoryMapper.class);
+        AiCallLogMapper callLogMapper = mock(AiCallLogMapper.class);
+
+        TextToSqlService.QueryResult result = service(resolver, guard, realValidator(), executor, llm,
+                historyMapper, callLogMapper).query("最近 7 天销售额趋势", "u1", null, selectedSnapshot);
+
+        assertEquals("EXECUTED", result.status());
+        verify(resolver).resolve(selectedSnapshot);
+        verify(resolver, never()).resolve();
+        ArgumentCaptor<AiQueryHistory> history = ArgumentCaptor.forClass(AiQueryHistory.class);
+        verify(historyMapper).insert(history.capture());
+        assertEquals(selectedSnapshot, history.getValue().getSnapshotId());
+        assertEquals(LocalDate.of(2026, 9, 17), history.getValue().getScopeMaxDate());
+    }
+
     /** 真实校验器（真实目录白名单），保证测试断言的是生产规则而不是桩 */
     private static SqlSafetyValidator realValidator() {
         SemanticCatalog real = new SemanticCatalog();

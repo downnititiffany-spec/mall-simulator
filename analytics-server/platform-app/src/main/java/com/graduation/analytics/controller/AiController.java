@@ -64,7 +64,10 @@ public class AiController {
     private final AiCallLogMapper callLogMapper;
     private final OperationAuditService audit;
 
-    public record AiQueryReq(@NotBlank String question, String timeRange) {
+    public record AiQueryReq(@NotBlank String question, String timeRange, String snapshotId) {
+        public AiQueryReq(String question, String timeRange) {
+            this(question, timeRange, null);
+        }
     }
 
     /** 证据解释请求（R8-2 §1）：三段皆可选——不传快照取 ACTIVE，不传时间范围取快照业务日 */
@@ -119,8 +122,8 @@ public class AiController {
     public ApiResponse<AiQueryResp> query(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
-        QueryResult query = textToSqlService.query(req.question(), actor.userId(), req.timeRange());
-        EvidencePackage pkg = buildEvidenceQuietly(null, req.timeRange(), actor.userId());
+        QueryResult query = runQuery(req, actor.userId());
+        EvidencePackage pkg = buildEvidenceQuietly(req.snapshotId(), req.timeRange(), actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
         // QA-04：口径由 query.window 的生效区间产出（ExplanationService 内部取用），
         // 这里只传页面请求口径，不再伪造「近30天(默认)」这类与 SQL 无关的标签
@@ -137,8 +140,8 @@ public class AiController {
     public ApiResponse<ExplanationResult> analyze(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
-        QueryResult query = textToSqlService.query(req.question(), actor.userId(), req.timeRange());
-        EvidencePackage pkg = buildEvidenceQuietly(null, req.timeRange(), actor.userId());
+        QueryResult query = runQuery(req, actor.userId());
+        EvidencePackage pkg = buildEvidenceQuietly(req.snapshotId(), req.timeRange(), actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
         ExplanationResult explanation = explanationService.explain(query, snapshotId, req.question(),
                 req.timeRange());
@@ -212,6 +215,13 @@ public class AiController {
             log.warn("证据包构建失败，问答照常返回（evidenceSummary/evidenceId 置空）: {}", e.getMessage());
             return null;
         }
+    }
+
+    private QueryResult runQuery(AiQueryReq req, String userId) {
+        if (req.snapshotId() == null || req.snapshotId().isBlank()) {
+            return textToSqlService.query(req.question(), userId, req.timeRange());
+        }
+        return textToSqlService.query(req.question(), userId, req.timeRange(), req.snapshotId());
     }
 
     private String resolveSnapshotId(EvidencePackage pkg, QueryResult query) {

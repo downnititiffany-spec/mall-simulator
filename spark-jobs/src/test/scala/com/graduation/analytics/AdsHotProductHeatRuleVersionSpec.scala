@@ -156,8 +156,8 @@ class AdsHotProductHeatRuleVersionSpec extends AnyFlatSpec with Matchers with Be
     }
   }
 
-  "ADS 热门商品列清单" should "末尾追加 rule_version（热度权重定义版本），且仍是 8 张 ADS 表" in {
-    MetricAdsSpec.TABLES.size should be(8)
+  "ADS 热门商品列清单" should "末尾追加 rule_version（热度权重定义版本），且当前 ADS 表集为 10 张" in {
+    MetricAdsSpec.TABLES.size should be(10)
     spec.columns.last should be("rule_version")
     spec.columns should be(Seq("product_id", "product_name", "heat_score", "pv", "fav", "cart", "buy",
       "rank_no", "rule_version"))

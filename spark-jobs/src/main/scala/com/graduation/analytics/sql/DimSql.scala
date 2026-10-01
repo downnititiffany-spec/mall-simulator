@@ -38,9 +38,11 @@ object DimSql {
        |  ${SurrogateKey.toBIGINT("u.source_system", "user", "u.payload_user_id")} AS user_key
        |FROM (
        |  SELECT *,
-       |         ROW_NUMBER() OVER (PARTITION BY payload_user_id ORDER BY event_time DESC) AS rn
+       |         ROW_NUMBER() OVER (
+       |           PARTITION BY payload_user_id
+       |           ORDER BY event_time DESC, ingest_batch_id DESC, event_id DESC) AS rn
        |  FROM ${ns.ods}.ods_user_event
-       |  WHERE dt = '$dt'
+       |  WHERE dt <= '$dt'
        |    AND schema_version = '1.0'
        |    AND payload_user_id IS NOT NULL
        |) u

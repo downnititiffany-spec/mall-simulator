@@ -70,7 +70,7 @@ class MetricAdsCatalogDdlConsistencyTest {
     // ------------------------------------------------------------------ 用例
 
     @Test
-    @DisplayName("8 张 ADS 镜像：迁移建出的业务列与 MetricAdsCatalog 白名单逐表逐列一致")
+    @DisplayName("ADS 镜像：迁移建出的业务列与 MetricAdsCatalog 白名单逐表逐列一致")
     void everyCatalogTableHasExactlyTheMigratedColumns() throws IOException {
         Map<String, List<String>> ddl = parseTables(readMigrations());
 

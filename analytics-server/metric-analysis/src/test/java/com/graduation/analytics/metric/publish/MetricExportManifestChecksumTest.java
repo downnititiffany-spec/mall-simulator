@@ -107,6 +107,15 @@ class MetricExportManifestChecksumTest {
     }
 
     @Test
+    @DisplayName("WSL 的 /mnt/<盘符> 清单路径可映射回 Windows 主机盘符")
+    void wslDriveMountMapsToWindowsHostPath() {
+        assertThat(MetricExportPath.windowsPathFromWslMount(
+                "/mnt/d/analytics/metric-staging/S1/ads.jsonl"))
+                .isEqualTo("D:/analytics/metric-staging/S1/ads.jsonl");
+        assertThat(MetricExportPath.windowsPathFromWslMount("/tmp/ads.jsonl")).isNull();
+    }
+
+    @Test
     @DisplayName("非 file URI 不可误当成本地文件路径")
     void nonFileUriIsRejected(@TempDir Path dir) throws Exception {
         assertThatThrownBy(() -> MetricExportPath.localPath("hdfs://namenode:8020/ads/a.jsonl"))

@@ -71,7 +71,7 @@ const to = ref(localIsoDayOffset(0))
 // 先由漏斗接口固定主快照，再用同一 snapshotId 请求 Overview 的活跃趋势。
 // 不能两个接口各自解析“当前 ACTIVE”，否则发布切换窗口可能把不同快照拼进同一页。
 async function fetchBehavior(params, signal) {
-  const funnel = readEnvelope(await api.funnel({}, { signal }))
+  const funnel = readEnvelope(await api.funnel({ snapshotId: params.snapshotId }, { signal }))
   let overview = readEnvelope({})
 
   if (funnel.snapshotId) {
@@ -110,6 +110,7 @@ async function fetchBehavior(params, signal) {
 const analysis = useAnalysis({
   fetcher: fetchBehavior,
   rowKeys: ['stages', 'activeTrend'],
+  pinSnapshot: true,
   defaults: { stages: [], activeTrend: [], overallBuyRate: null, windowNote: '' }
 })
 const { data, context, state, requestStatus, error, loading, exportable, exportContext } = analysis

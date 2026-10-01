@@ -41,7 +41,7 @@ import org.scalatest.matchers.should.Matchers
  *  ③ 阈值列逐条比对（`0.01` / `0.001` / `0.0005` / `0`），确认加列没有顺带改口径；
  *  ④ 规则集合仍是那四条（不得因加列顺手加规则）；
  *  ⑤ 正式/暂存 DDL 列与列序 = `MetricAdsSpec.columns`（插入按位置写，列序漂移即写错列）；
- *  ⑥ 表数仍是 8 张（本节不新增 ADS 表）。
+ *  ⑥ 表集含 10 张 ADS；本节只验证质量大盘，不改变其余表的规则版本。
  *
  * 与 Java 侧的一致性由 `warehouse-pipeline` 的 `QualityRuleThresholdDriftTest` 承担：
  * Scala 测试无法读 Java 目录，故该守卫解析 `AdsSql.scala` 文本 + `QualityChecker.java` 文本 +
@@ -190,8 +190,8 @@ class AdsQualityRuleVersionSpec extends AnyFlatSpec with Matchers with BeforeAnd
     row.getAs[Any](name)
   }
 
-  "ADS 质量大盘列清单" should "末尾追加 rule_version（定义版本），且仍是 8 张 ADS 表" in {
-    MetricAdsSpec.TABLES.size should be(8)
+  "ADS 质量大盘列清单" should "末尾追加 rule_version（定义版本），且当前 ADS 表集为 10 张" in {
+    MetricAdsSpec.TABLES.size should be(10)
     spec.columns.last should be("rule_version")
     spec.columns should be(Seq("rule_code", "check_count", "error_count", "error_rate", "passed",
       "threshold", "rule_version"))

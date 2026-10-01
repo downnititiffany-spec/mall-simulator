@@ -3,6 +3,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   salesTrendOption,
+  categorySalesOption,
+  cityLevelSalesOption,
   activeTrendOption,
   funnelOption,
   productHeatOption,
@@ -57,6 +59,26 @@ test('净销售额限制文案是单一常量，写明逐日口径/占位 0/不�
   assert.match(NET_SALE_NOTE, /退款归属期/)
   assert.match(NET_SALE_NOTE, /占位/)
   assert.match(NET_SALE_NOTE, /汇总/)
+})
+
+test('分类图只映射后端叶子分类金额和窗口占比，并保留未分类桶', () => {
+  const opt = categorySalesOption([
+    { category_id: 2, category_name: '图书', sale_amount: '30.00', amount_ratio: '0.6000' },
+    { category_id: -1, category_name: '未分类', sale_amount: '20.00', amount_ratio: '0.4000' }
+  ])
+  assert.deepEqual(opt.yAxis.data, ['图书（60.00%）', '未分类（40.00%）'])
+  assert.deepEqual(opt.series[0].data, [30, 20])
+  assert.deepEqual(categorySalesOption(undefined).series[0].data, [])
+})
+
+test('地区图按 city_level 分类展示，不把 unknown 丢掉或冒充行政区地图', () => {
+  const opt = cityLevelSalesOption([
+    { region: 'L1', sale_amount: 80, amount_ratio: 0.8 },
+    { region: 'unknown', sale_amount: 20, amount_ratio: 0.2 }
+  ])
+  assert.deepEqual(opt.yAxis.data, ['L1（80.00%）', '未知城市等级（20.00%）'])
+  assert.deepEqual(opt.series[0].data, [80, 20])
+  assert.equal(opt.xAxis.type, 'value')
 })
 
 test('缺失字段映射为 null，不伪造 0', () => {

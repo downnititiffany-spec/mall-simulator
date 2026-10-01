@@ -147,7 +147,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       // 「完成证据」是「staging表/快照、各表行数」，由 PartitionEvidence 承载；§10.2 L387 明写
       // QUALITY_CHECK（dqc）才产出「规则版本与失败详情」。故 fna 无 checks 是符合设计的，我改断言。
       withClue(s"fna outputPartitions=${cap.step("fna").result.outputPartitions}；checks=${cap.checks("fna")}：") {
-        cap.step("fna").result.outputPartitions.size should be(8)
+        cap.step("fna").result.outputPartitions.size should be(10)
         cap.step("fna").result.outputPartitions.map(_.rowCount).forall(_ > 0L) should be(true)
         cap.step("fna").result.outputPartitions.flatMap(_.snapshotId).distinct should be(Seq(Snap1))
       }
@@ -271,7 +271,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
 
   "fna 暂存写入与发布隔离（§9.5 L353、§10.2 BUILD_ADS）" should {
 
-    "8 张 ADS 暂存表在 snapshot_id=S1 / dt=20260901 分区上逐表 >0 行" in {
+    "10 张 ADS 暂存表在 snapshot_id=S1 / dt=20260901 分区上逐表 >0 行" in {
       val empty = cap.stagingRowsS1.filter(_._2 <= 0)
       withClue(s"暂存行数=${cap.stagingRowsS1}：") {
         cap.stagingRowsS1.keySet should be(AdsSql.TABLES.toSet)
@@ -280,9 +280,9 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       println(s"[s206] fna staging(S1) 行数=${cap.stagingRowsS1.toSeq.sortBy(_._1).map { case (t, n) => s"$t=$n" }.mkString(", ")}（合计 ${cap.stagingRowsS1.values.sum}）")
     }
 
-    "8 张暂存表的行内容可读且与行数自洽（行级证据，非只数个数）" in {
+    "10 张暂存表的行内容可读且与行数自洽（行级证据，非只数个数）" in {
       withClue(s"逐表行数=${cap.adsStagingRendered.map { case (t, r) => s"$t=${r.size}" }}：") {
-        cap.adsStagingRendered.size should be(8)
+        cap.adsStagingRendered.size should be(10)
         cap.adsStagingRendered.foreach { case (t, rows) =>
           withClue(s"$t 暂存行：$rows：") {
             rows.size.toLong should be(cap.stagingRowsS1.getOrElse(t, -1L))
@@ -295,9 +295,9 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       }
     }
 
-    "pub 之前：8 张正式 ADS 表在 dt=20260901 上既无分区、也无任何行（发布隔离）" in {
+    "pub 之前：10 张正式 ADS 表在 dt=20260901 上既无分区、也无任何行（发布隔离）" in {
       withClue(s"pub 前正式分区证据=${cap.formalBeforePub}：") {
-        cap.formalBeforePub.size should be(8)
+        cap.formalBeforePub.size should be(10)
         cap.formalBeforePub.filterNot { case (_, p) => p.partitions.isEmpty } should be(empty)
         cap.formalBeforePub.filterNot { case (_, p) => p.tableRowCount == 0L } should be(empty)
         cap.formalBeforePub.filterNot { case (_, p) => p.location.isEmpty } should be(empty)
@@ -349,9 +349,9 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
   // 6. mxp 导出
   // ══════════════════════════════════════════════════════════════════════
 
-  "mxp 导出制品（§9.3 L328-335 的 8 张镜像、§12.5 L528 manifest）" should {
+  "mxp 导出制品（ADS 镜像、§12.5 L528 manifest）" should {
 
-    "8 个 JSONL 与 _export.json 清单落盘、非空，且逐表文件行数 = 暂存行数" in {
+    "10 个 JSONL 与 _export.json 清单落盘、非空，且逐表文件行数 = 暂存行数" in {
       withClue(s"exportDir=${cap.exportDir}；文件存在=${cap.exportFileExists}：") {
         cap.exportFileExists.values.forall(identity) should be(true)
         cap.exportFileExists.keySet should be(MetricAdsSpec.TABLES.map(_.mysqlTable).toSet)
@@ -382,13 +382,13 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
         cap.manifestRowCounts should be(expectedRows)
       }
       withClue(s"manifest hivePath=${cap.manifestHivePaths}：") {
-        cap.manifestHivePaths.size should be(8)
+        cap.manifestHivePaths.size should be(10)
         cap.manifestHivePaths.values.foreach { p =>
           p should include(s"snapshot_id=$Snap1")
         }
       }
       withClue(s"manifest 里的 exportFile 必须指向真实存在的文件：${cap.manifestExportFiles}：") {
-        cap.manifestExportFiles.size should be(8)
+        cap.manifestExportFiles.size should be(10)
         cap.manifestExportFiles.values.foreach { f =>
           Files.isRegularFile(nioPath(f)) should be(true)
         }
@@ -426,8 +426,8 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
 
   "重跑幂等（同一 snapshotId 再发布一次）" should {
 
-    "第二次 pub(S1) 不产生第二份数据：8 张正式分区 Location 与行数逐一不变，暂存 S1 仍在" in {
-      withClue("两次发布都必须覆盖全部 8 张表（防空集合导致的平凡通过）：") {
+    "第二次 pub(S1) 不产生第二份数据：10 张正式分区 Location 与行数逐一不变，暂存 S1 仍在" in {
+      withClue("两次发布都必须覆盖当前全部 10 张表（防空集合导致的平凡通过）：") {
         cap.formalAfterPubS1.keySet should be(AdsSql.TABLES.toSet)
         cap.formalAfterPubAgain.keySet should be(AdsSql.TABLES.toSet)
       }
@@ -444,7 +444,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
         cap.stagingRowsS1AfterPubAgain should be(cap.stagingRowsS1)
       }
       withClue(s"pub 重放的作业自报（§14.4 幂等）：${cap.pubAgainPointerSwitch}：") {
-        cap.pubAgainPointerSwitch should include("同快照重放 8 张")
+        cap.pubAgainPointerSwitch should include("同快照重放 10 张")
       }
       println(s"[s206] pub(S1) 重放：${cap.pubAgainPointerSwitch}")
     }
@@ -497,22 +497,22 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
         cap.foreignSeedRoute should not include "THREW"
         cap.foreignRowsAfterSeed.keySet should be(AdsSql.TABLES.toSet)
         withClue(s"埋点后异日期暂存行数=${cap.foreignRowsAfterSeed}：") {
-          cap.foreignRowsAfterSeed.values.sum should be(8L)
+          cap.foreignRowsAfterSeed.values.sum should be(AdsSql.TABLES.size.toLong)
         }
       }
       withClue(s"pub(S1)（dt=$BusinessDate）之后异日期暂存行数=${cap.foreignRowsAfterPubS1}：") {
         cap.foreignRowsAfterPubS1.keySet should be(AdsSql.TABLES.toSet)
-        cap.foreignRowsAfterPubS1.values.sum should be(8L)
+        cap.foreignRowsAfterPubS1.values.sum should be(AdsSql.TABLES.size.toLong)
       }
       withClue(s"pub(S2) 之后异日期暂存行数=${cap.foreignRowsAfterPubS2}；目录存在性=${cap.foreignDirExistsAfterPubS2}：") {
         cap.foreignRowsAfterPubS2.keySet should be(AdsSql.TABLES.toSet)
-        cap.foreignRowsAfterPubS2.values.sum should be(8L)
+        cap.foreignRowsAfterPubS2.values.sum should be(AdsSql.TABLES.size.toLong)
         cap.foreignDirExistsAfterPubS2.keySet should be(AdsSql.TABLES.toSet)
-        cap.foreignDirExistsAfterPubS2.values.count(identity) should be(8)
+        cap.foreignDirExistsAfterPubS2.values.count(identity) should be(10)
       }
       println(s"[s206] D-R9-1 判别探针：埋点后=${cap.foreignRowsAfterSeed.values.sum} 行；" +
         s"pub(S1) 后=${cap.foreignRowsAfterPubS1.values.sum} 行；pub(S2) 后=${cap.foreignRowsAfterPubS2.values.sum} 行；" +
-        s"物理目录存活=${cap.foreignDirExistsAfterPubS2.values.count(identity)}/8")
+        s"物理目录存活=${cap.foreignDirExistsAfterPubS2.values.count(identity)}/${AdsSql.TABLES.size}")
     }
   }
 
@@ -1127,7 +1127,7 @@ object DwsAdsChainExecSpec {
   /**
    * D-R9-1 判别探针埋点：把本快照的 1 行**原样复制**成一个异业务日期（`dt=ForeignDate`）的暂存分区，
    * 模拟"另一业务日期在飞/未发布"。列清单取 `MetricAdsSpec.columns`（与 ADS 暂存 DDL 的非分区列
-   * 逐列同序，已核对 LocalSchemaInitJob L174-215 八张表的列数与顺序）。
+   * 逐列同序，已核对当前 AdsSql.TABLES 全部表的列数与顺序）。
    *
    * 两条写法：优先 `INSERT INTO … PARTITION(…)`（不能对"正在被读的同一张表"做 `INSERT OVERWRITE`，
    * r5 实测 `UNSUPPORTED_OVERWRITE.TABLE` —— 我的埋点写法问题，非产品问题）；回退为

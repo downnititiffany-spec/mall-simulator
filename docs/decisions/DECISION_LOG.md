@@ -577,3 +577,13 @@
 **Boundary**：仅 PipelineService 读取侧过滤变化；摄取器（LocalFileIngestor）、清单写侧、acceptEventLine 行语义（坏行跳过/订单总额照收/业务日切片）零改动；本地非递归布局行为等价不变（G31-11/12 既有证据不失效）；全程隔离环境、3306 零接触、不格式化既有 HDFS（clusterID 不变）、不覆盖历史证据；push 授权已用尽仅本地提交；`*.bak-*` 永不提交。构建台账：platform-app 重打包（2026-09-28 08:44）SHA-256 = `79abfc234e177aa85919b759bc07588dfea6136adb780795ec30127efe320df8`（D-056 台账的第三次构建，增量 = 本谓词修复 + 单测）；spark-jobs jar 不变 `71c0fc88…`（仓库根 spark-jobs/target，独立复算）；driver Phase-0 钉定随之更新。
 
 **Evidence**：run6#3 失败链 `pipeline_stage_run` run 1（WAIT_LANDING/INIT_SCHEMA SUCCESS、LOAD_ODS FAILED RUN_EMPTY_DATA）+ HDFS 实测 `hdfs dfs -ls /landing/n3102iso_20260927_123837/accepted/1`（events.1790554342097 34192 B）+ platform.log 零「accepted 读取失败」告警；写侧契约 `LocalFileIngestor.java:194-196/:134` + `LandingStorage.writeManifest`（manifests/ 唯一落点）+ `LandingInputScanner.isExcludedByShape`（形状排除口径）；修改文件 `PipelineService.java`（谓词 + 两版过滤）+ `PipelineServiceTest.java`（+1 例 49/49，模块 205/205 BUILD SUCCESS 08:42）；构建与 SHA：platform-app package BUILD SUCCESS（08:44）+ sha256sum 双 jar 独立复算；编辑前备份 `DECISION_LOG.md.bak-n3102-d057`。
+
+### D-058 — N31-02 腿③分类/城市等级维度契约批准（2026-09-29）：按推荐方案整体批准，解锁 ADS→服务库→API→页面实现
+
+**Decision**：总控明确回复“按推荐方案整体批准”，批准 `docs/contracts/n31-02-category-region-sales-contract-draft.md` 中四项推荐语义：(1) 地区维度首版实际含义为源字段 `city_level`，页面明确标为“城市等级销售分布”，不得冒充省市行政区/地图；(2) 多日窗口不对日级 distinct `buyer_count`/`order_count` 求和并称窗口唯一人数/订单数，只提供可加总维度度量，金额占比按窗口总额重算；(3) 分类以叶子分类为唯一聚合/展示粒度，父类只作描述，缺失维表或 `category_id=-1` 保留为唯一 unknown 类别；(4) 增加分类/城市等级 Hive ADS producer 与 MySQL 服务镜像表，使用新的加性 Flyway migration，历史迁移 V1–V33 不改。按契约实现独立 oracle、窗口查询、页面呈现和发布失败保留旧 ACTIVE。
+
+**Reason**：现有 `AnalysisService.sales` 对 `byCategory/byRegion` 返回空数组并标记 `UNKNOWN_DIMENSION_TABLE`。DWS 已有分类与城市等级来源字段，但 ADS、MySQL 镜像、发布映射、API 和页面尚未贯通。先锁定地区实际含义、跨日 distinct 边界和分类粒度，避免在服务层或前端伪造数仓指标。
+
+**Boundary**：仅解锁 N31-02 腿③推荐契约；不代表实现或验收已通过，不修改冻结 V3.0 正文、不发布 V3.1；不扩展行政区/地图、多日精确 distinct 存储、Text2SQL 白名单或真实 LLM；MySQL 3306 零接触，隔离验证只用 run-scoped 3307；失败必须保留原 ACTIVE。
+
+**Evidence**：用户批准回复；原文凭据 `docs/decisions/rulings/MASTER-RULING-20260929-N3102-LEGC-APPROVAL.md`；契约 `docs/contracts/n31-02-category-region-sales-contract-draft.md`；批次计划 `docs/verification/batches/BATCH-N31-02-CONTINUOUS-CHAIN-PLAN.md`；编辑前备份 `*.bak-20260929-n3102-c3-approval`。

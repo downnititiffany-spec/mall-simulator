@@ -100,7 +100,9 @@ public class IsolationGuardMySqlIT {
         assertEquals(fingerprint, facts.hostname() + ":" + facts.port(),
                 "实例身份必须是 @@hostname:@@port，且与注入值逐字一致");
         assertThat(facts.serverUuid()).isNotBlank();
-        assertEquals(runId + "_mallapp", facts.account());
+        assertEquals(env(ENV_USER), facts.account(),
+                "真实 MySQL CURRENT_USER 应与隔离 runner 注入的 run-scoped 用户一致；"
+                        + "长 RunId 的账号可能按 MySQL 32 字符限制截断并附加哈希");
         assertEquals(mallDb, facts.currentDb());
         // ④ 权限判据：SHOW GRANTS 真解析（去反引号；USAGE 占位标记不算权限）
         // 真实现场：SHOW GRANTS 返回两行 —— "GRANT USAGE ON *.* TO ..." 与

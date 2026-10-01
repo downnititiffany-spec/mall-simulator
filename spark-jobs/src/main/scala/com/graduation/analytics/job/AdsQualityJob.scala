@@ -11,7 +11,7 @@ import scala.collection.mutable.ListBuffer
  * 在 ADS 写入**暂存分区之后、正式分区发布之前**检查暂存结果，全部阻断规则通过才允许发布。
  *
  * 规则（层次 = ADS_STAGING / PUBLISH，§16.5 运维页展示字段齐全）：
- *  1. ADS_STAGING_PRESENT        BLOCKING  8 张暂存表本次快照分区必须存在且 Location 可读；
+ *  1. ADS_STAGING_PRESENT        BLOCKING  当前 ADS 表集暂存分区本次快照分区必须存在且 Location 可读；
  *                                      允许“专题当天无事实”的 0 行分区
  *  2. ADS_STAGING_SNAPSHOT_ISOLATION ERROR 同一 dt 下不得混入其它 snapshot_id 的暂存分区（观察项，
  *     降级为 ERROR 的理由见规则 2 处注释：设为 BLOCKING 会造成发布死锁）
@@ -57,10 +57,10 @@ class AdsQualityJob extends WarehouseJob {
     val missing = PartitionEvidence.missingLocatedTables(staging, current)
     val zeroRow = current.filter(_.rowCount == 0L).map(_.table).distinct.sorted
     checks += QualityCheck("ADS_STAGING_PRESENT", "ADS_STAGING", staging.mkString(","),
-      staging.size, missing.size, "8 张暂存分区存在且 Location 可读（允许 0 行专题）", "BLOCKING", missing.isEmpty,
+      staging.size, missing.size, s"${staging.size} 张暂存分区存在且 Location 可读（允许 0 行专题）", "BLOCKING", missing.isEmpty,
       if (missing.isEmpty) {
         val zeroDetail = if (zeroRow.isEmpty) "无 0 行专题" else s"0 行专题=${zeroRow.mkString(",")}"
-        s"8 张暂存分区均存在（合计 ${current.map(_.rowCount).sum} 行；$zeroDetail）"
+        s"${staging.size} 张暂存分区均存在（合计 ${current.map(_.rowCount).sum} 行；$zeroDetail）"
       } else s"缺失/无 Location 暂存分区: ${missing.mkString(",")}")
 
     // 规则 2：同一 dt 的快照隔离 —— 只记录不阻断（ERROR）。
@@ -160,6 +160,10 @@ class AdsQualityJob extends WarehouseJob {
     // 该表按 product_id×category_id 逐行、且无 snapshot 维度（作用域＝本次 dt 分区）
     checks += AdsQualityJob.dwsUvPvInvariantCheck(spark, ns, dt)
 
+    // 规则 11/12：分类与城市等级 ADS 金额按日对账 DWS 交易总额；任一维度漏数/重复/串值均阻断发布。
+    checks += AdsQualityJob.categorySaleReconcileCheck(spark, ns, sid, dt)
+    checks += AdsQualityJob.regionSaleReconcileCheck(spark, ns, sid, dt)
+
     val all = checks.toList
     val blockingFailed = all.filter(c => c.severity == "BLOCKING" && !c.passed)
     val elapsed = System.currentTimeMillis() - start
@@ -190,8 +194,72 @@ object AdsQualityJob {
     AdsSql.staging(ns, "ads_hot_product") -> "product_id IS NULL OR product_name IS NULL OR heat_score IS NULL",
     AdsSql.staging(ns, "ads_product_conversion") -> "product_id IS NULL OR pv_users IS NULL",
     AdsSql.staging(ns, "ads_sale_trend") -> "order_count IS NULL OR sale_amount IS NULL OR net_sale_amount IS NULL",
+    (AdsSql.staging(ns, "ads_category_sale"),
+      "category_id IS NULL OR category_name IS NULL OR parent_category_id IS NULL OR " +
+        "parent_category_name IS NULL OR sale_count IS NULL OR sale_amount IS NULL OR net_sale_amount IS NULL"),
+    (AdsSql.staging(ns, "ads_region_sale"),
+      "region IS NULL OR sale_amount IS NULL OR net_sale_amount IS NULL"),
     AdsSql.staging(ns, "ads_user_profile") -> "user_id IS NULL OR r IS NULL OR f IS NULL OR m IS NULL",
     AdsSql.staging(ns, "ads_data_quality") -> "rule_code IS NULL OR check_count IS NULL OR error_count IS NULL OR passed IS NULL")
+
+  private case class SalesDimensionReconcileResult(passed: Boolean, detail: String)
+
+  /** Category- and region-level daily money must reconcile to the canonical DWS trade day. */
+  def categorySaleReconcileCheck(spark: SparkSession, ns: WarehouseNamespace,
+                                 sid: String, dt: String): QualityCheck = {
+    val result = salesDimensionReconcileCheck(spark, ns, sid, dt, "ads_category_sale", "分类销售")
+    QualityCheck("ADS_CATEGORY_SALE_RECONCILE", "ADS_STAGING", AdsSql.staging(ns, "ads_category_sale"),
+      2L, if (result.passed) 0L else 1L,
+      "分类销售 sale_amount/net_sale_amount 按日与 dws_trade_day 对账（差值 < 0.01；无支付订单日为空表）",
+      "BLOCKING", result.passed, result.detail)
+  }
+
+  /** The region field is city_level; the check concerns additive money only, never daily distinct counts. */
+  def regionSaleReconcileCheck(spark: SparkSession, ns: WarehouseNamespace,
+                               sid: String, dt: String): QualityCheck = {
+    val result = salesDimensionReconcileCheck(spark, ns, sid, dt, "ads_region_sale", "城市等级销售")
+    QualityCheck("ADS_REGION_SALE_RECONCILE", "ADS_STAGING", AdsSql.staging(ns, "ads_region_sale"),
+      2L, if (result.passed) 0L else 1L,
+      "城市等级销售 sale_amount/net_sale_amount 按日与 dws_trade_day 对账（差值 < 0.01；无支付订单日为空表）",
+      "BLOCKING", result.passed, result.detail)
+  }
+
+  private def salesDimensionReconcileCheck(spark: SparkSession, ns: WarehouseNamespace,
+                                           sid: String, dt: String, tableName: String,
+                                           label: String): SalesDimensionReconcileResult = {
+    val staging = AdsSql.staging(ns, tableName)
+    val actual = spark.sql(
+      s"SELECT COUNT(*), SUM(sale_amount), SUM(net_sale_amount) FROM $staging " +
+        s"WHERE snapshot_id = '$sid' AND dt = '$dt'").collect()(0)
+    val trade = spark.sql(
+      s"SELECT COUNT(*), MAX(order_count), MAX(sale_amount), MAX(net_sale_amount) " +
+        s"FROM ${ns.dws}.dws_trade_day WHERE dt = '$dt'").collect()(0)
+
+    val actualRows = actual.getLong(0)
+    val actualSale = Option(actual.get(1)).map(v => new java.math.BigDecimal(v.toString))
+    val actualNet = Option(actual.get(2)).map(v => new java.math.BigDecimal(v.toString))
+    val tradeRows = trade.getLong(0)
+    val orderCount = Option(trade.get(1)).map(_.toString.toLong).getOrElse(-1L)
+    val expectedSale = Option(trade.get(2)).map(v => new java.math.BigDecimal(v.toString))
+    val expectedNet = Option(trade.get(3)).map(v => new java.math.BigDecimal(v.toString))
+    val tolerance = new java.math.BigDecimal("0.01")
+
+    def close(left: Option[java.math.BigDecimal], right: Option[java.math.BigDecimal]): Boolean =
+      left.exists(a => right.exists(b => a.subtract(b).abs().compareTo(tolerance) < 0))
+
+    // An empty paid-order day has an aggregate trade row with sale_amount=NULL and net_sale_amount=0;
+    // the correct dimension representation is zero rows, not a fabricated zero-valued member.
+    val emptyDayMatches = orderCount == 0L && actualRows == 0L && actualSale.isEmpty &&
+      actualNet.isEmpty && expectedNet.exists(_.signum() == 0)
+    val nonEmptyDayMatches = orderCount > 0L && actualRows > 0L &&
+      close(actualSale, expectedSale) && close(actualNet, expectedNet)
+    val passed = tradeRows == 1L && (emptyDayMatches || nonEmptyDayMatches)
+    val detail = s"tradeRows=$tradeRows paidOrders=$orderCount expectedSale=${expectedSale.map(_.toPlainString).getOrElse("NULL")}" +
+      s" expectedNet=${expectedNet.map(_.toPlainString).getOrElse("NULL")} $tableName rows=$actualRows" +
+      s" actualSale=${actualSale.map(_.toPlainString).getOrElse("NULL")}" +
+      s" actualNet=${actualNet.map(_.toPlainString).getOrElse("NULL")}"
+    SalesDimensionReconcileResult(passed, detail)
+  }
 
   /**
    * 规则 7「ADS 漏斗**率列** ↔ DWS 漏斗全站行」跨层对账（S3-10，关闭 S3-04 R-1）。

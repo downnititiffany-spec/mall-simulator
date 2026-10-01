@@ -117,11 +117,18 @@ class EvidenceBuilderTest {
     }
 
     private void stubSales() {
+        List<Map<String, Object>> categories = List.of(
+                Map.of("category_id", -1L, "category_name", "未分类",
+                        "sale_amount", new BigDecimal("500.00"), "amount_ratio", new BigDecimal("0.2500")));
+        List<Map<String, Object>> regions = List.of(
+                Map.of("region", "L1", "sale_amount", new BigDecimal("1500.00"),
+                        "amount_ratio", new BigDecimal("0.7500")));
         AnalysisService.SalesData sales = new AnalysisService.SalesData(List.of(), null, null, null, null,
-                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE"), Map.of("EVENT_ID_UNIQUE", 1)), List.of(), List.of());
+                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE"), Map.of("EVENT_ID_UNIQUE", 1)),
+                categories, regions);
         when(analysisService.sales(eq(SNAP), eq(DAY), eq(DAY)))
                 .thenReturn(AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "x", "v2", "PASS",
-                        Map.of(), sales, List.of(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE)));
+                        Map.of(), sales, List.of()));
     }
 
     // ── 1. 字段齐全 + 证据引用 ─────────────────────────────────────────────
@@ -155,7 +162,7 @@ class EvidenceBuilderTest {
         assertThat(pkg.comparisons()).isEmpty();
         assertThat(pkg.warnings()).contains(EvidencePackage.WARN_NO_COMPARISON_PERIOD);
 
-        // 商品维度：贡献值 + 占比；分类/地区/渠道无来源 → 空数组 + 警告
+        // 三个已供数维度必须绑定真实 ADS 来源、快照和日期；渠道维度仍明确未覆盖。
         List<EvidencePackage.DimensionContribution> product = pkg.dimensions().get("product");
         assertThat(product).hasSize(2);
         assertThat(product.get(0).label()).isEqualTo("保温杯");
@@ -163,9 +170,24 @@ class EvidenceBuilderTest {
         assertThat(product.get(0).evidenceRef()).isEqualTo("ads_hot_product_m.heat_score@" + SNAP);
         assertThat(new BigDecimal(product.get(0).share()))
                 .isEqualByComparingTo(BigDecimal.valueOf(11.0904 / 21.4876).setScale(4, java.math.RoundingMode.HALF_UP));
-        assertThat(pkg.dimensions().get("category")).isEmpty();
+        List<EvidencePackage.DimensionContribution> category = pkg.dimensions().get("category");
+        assertThat(category).hasSize(1);
+        assertThat(category.get(0).key()).isEqualTo("-1");
+        assertThat(category.get(0).label()).isEqualTo("未分类");
+        assertThat(category.get(0).metricCode()).isEqualTo("category_sale_amount");
+        assertThat(category.get(0).value()).isEqualTo("500.0000");
+        assertThat(category.get(0).share()).isEqualTo("0.2500");
+        assertThat(category.get(0).evidenceRef()).isEqualTo(
+                "ads_category_sale_m.sale_amount@" + SNAP + "[20260901..20260901]");
+        List<EvidencePackage.DimensionContribution> region = pkg.dimensions().get("region");
+        assertThat(region).hasSize(1);
+        assertThat(region.get(0).label()).isEqualTo("城市等级 L1");
+        assertThat(region.get(0).metricCode()).isEqualTo("city_level_sale_amount");
+        assertThat(region.get(0).evidenceRef()).isEqualTo(
+                "ads_region_sale_m.sale_amount@" + SNAP + "[20260901..20260901]");
         assertThat(pkg.dimensions().get("channel")).isEmpty();
-        assertThat(pkg.warnings()).contains(EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE);
+        assertThat(pkg.warnings()).contains(EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE)
+                .doesNotContain(EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE);
 
         // 质量与血缘
         assertThat(pkg.dataQuality().gateStatus()).isEqualTo("PASS");
@@ -173,9 +195,10 @@ class EvidenceBuilderTest {
         assertThat(pkg.dataQuality().rulePassed()).isEqualTo(3);
         assertThat(pkg.dataQuality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
         assertThat(pkg.lineage().pipelineRunId()).isEqualTo(21L);
-        assertThat(pkg.lineage().mysqlTables())
-                .contains("ads_operation_overview_m", "ads_data_quality_m");
-        assertThat(pkg.lineage().hiveAdsTables()).contains("dw_ads.ads_operation_overview");
+        assertThat(pkg.lineage().mysqlTables()).contains("ads_operation_overview_m", "ads_data_quality_m",
+                "ads_category_sale_m", "ads_region_sale_m");
+        assertThat(pkg.lineage().hiveAdsTables()).contains("dw_ads.ads_operation_overview",
+                "dw_ads.ads_category_sale", "dw_ads.ads_region_sale");
 
         // 候选异常：退款率 0.6 > 0.3（MEDIUM）+ 质量规则未通过；文案必须是非因果表述
         assertThat(pkg.anomalies()).extracting(EvidencePackage.AnomalyCandidate::ruleCode)

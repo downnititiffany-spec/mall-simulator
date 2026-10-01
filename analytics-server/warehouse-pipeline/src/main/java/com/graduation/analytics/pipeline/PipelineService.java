@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -667,6 +668,11 @@ public class PipelineService {
                 Map<String, Object> evidence = new LinkedHashMap<>();
                 evidence.put("batchId", manifest.get("batchId"));
                 evidence.put("acceptedUri", manifest.get("acceptedUri"));
+                // 相对 acceptedUri 是 manifest 契约；再记录经当前存储适配器解析后的 URI，
+                // 让本地与 HDFS 两种 profile 的运行证据都能定位到实际存储位置。
+                evidence.put("acceptedStorageUri",
+                        safeStorageUriForEvidence(
+                                landingStorage.uri(String.valueOf(manifest.get("acceptedUri")))));
                 evidence.put("checksum", manifest.get("checksum"));
                 evidence.put("acceptedRecords", manifest.get("acceptedRecords"));
                 evidence.put("schemaVersions", manifest.get("schemaVersions"));
@@ -774,7 +780,7 @@ public class PipelineService {
                 updateStageEvidence(run.getId(), "BUILD_DWS", evidence);
             }
 
-            // ── BUILD_ADS：真实 spark-jobs fna（8 张 ADS，R6-13 只写**暂存分区**） ──
+            // ── BUILD_ADS：真实 spark-jobs fna（当前 ADS 表集，R6-13 只写**暂存分区**） ──
             // §14.4：ADS 先写 {table}__staging/snapshot_id=S/dt=D，正式分区由 PUBLISH_METRIC 发布。
             StageOutcome adsOutcome = runSparkStage(run, executor, snapshot, "BUILD_ADS",
                     businessDate, completedStages,
@@ -782,7 +788,7 @@ public class PipelineService {
                             "outputSnapshotId", snapshotId), null, confs);
             if (adsOutcome != null && !completedStages.contains("BUILD_ADS")) {
                 Map<String, Object> evidence = new LinkedHashMap<>(adsOutcome.evidence());
-                evidence.put("contracted", "fna: 8 张 ADS 写入暂存分区（snapshot_id=" + snapshotId + "）");
+                evidence.put("contracted", "fna: ADS 表集写入暂存分区（snapshot_id=" + snapshotId + "）");
                 evidence.put("stagingSnapshotId", snapshotId);
                 updateStageEvidence(run.getId(), "BUILD_ADS", evidence);
             }
@@ -1461,6 +1467,28 @@ public class PipelineService {
 
     private static boolean isBlank(Object v) {
         return v == null || String.valueOf(v).isBlank();
+    }
+
+    static String safeStorageUriForEvidence(String rawUri) {
+        URI uri = URI.create(rawUri);
+        if (uri.getRawQuery() != null || uri.getRawFragment() != null) {
+            throw new IllegalArgumentException("存储 URI 含 query 或 fragment，拒绝写入运行证据");
+        }
+        String rawAuthority = uri.getRawAuthority();
+        String rawUserInfo = uri.getRawUserInfo();
+        if (rawUserInfo == null) {
+            return uri.toString();
+        }
+        if (rawAuthority == null) {
+            throw new IllegalArgumentException("存储 URI 包含认证信息但没有 authority，拒绝写入运行证据");
+        }
+        int separator = rawAuthority.lastIndexOf('@');
+        if (separator < 0 || uri.getScheme() == null || uri.getRawPath() == null) {
+            throw new IllegalArgumentException("存储 URI 认证信息无法安全剥离，拒绝写入运行证据");
+        }
+        StringBuilder sanitized = new StringBuilder(uri.getScheme())
+                .append("://").append(rawAuthority.substring(separator + 1)).append(uri.getRawPath());
+        return sanitized.toString();
     }
 
     private RunResult assemble(Long runId) {

@@ -218,7 +218,7 @@ class AnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("销售分析：gmv/净销售额/退款率一律取 metric_value 原值，不重算；缺维度表给出降级警告")
+    @DisplayName("销售分析：汇总取 metric_value 原值；维度服务表存在但无行时为空态且不误报缺表")
     void salesReadsMetricValueWithoutRecompute() {
         stubActiveSnapshot();
         // QA-01：带日期区间的请求不再读整个快照，而是把区间参数化下推（本夹具只回该日一行）
@@ -242,9 +242,102 @@ class AnalysisServiceTest {
         assertThat(model.data().trend().get(0).netSaleAmount()).isEqualByComparingTo("1493.00");
         assertThat(model.data().byCategory()).isEmpty();
         assertThat(model.data().byRegion()).isEmpty();
-        assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
+        assertThat(model.warnings()).isEmpty();
         // 快照一致性：ADS 查询带着与信封相同的 snapshotId，且日期区间真的下推到查询
         verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260901");
+        verify(adsReader).selectBySnapshotRange("ads_category_sale_m", SID, "20260901", "20260901");
+        verify(adsReader).selectBySnapshotRange("ads_region_sale_m", SID, "20260901", "20260901");
+    }
+
+    @Test
+    @DisplayName("分类/城市等级多日窗口：只累加可加金额和件数，比例按窗口总额重算，不合计日 distinct")
+    void salesAggregatesDimensionRowsAcrossWindow() {
+        stubActiveSnapshot();
+        LocalDate from = LocalDate.of(2026, 9, 1);
+        LocalDate to = LocalDate.of(2026, 9, 2);
+        when(adsReader.selectBySnapshotRange("ads_category_sale_m", SID, "20260901", "20260902"))
+                .thenReturn(List.of(
+                        row("dt", "20260901", "category_id", 1L, "category_name", "旧分类名",
+                                "parent_category_id", 7L, "parent_category_name", "上级分类",
+                                "sale_count", 2L, "sale_amount", new BigDecimal("100.00"),
+                                "net_sale_amount", new BigDecimal("90.00")),
+                        row("dt", "20260902", "category_id", 1L, "category_name", "新分类名",
+                                "parent_category_id", 7L, "parent_category_name", "上级分类",
+                                "sale_count", 1L, "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("40.00")),
+                        row("dt", "20260901", "category_id", 2L, "category_name", "配件",
+                                "parent_category_id", 8L, "parent_category_name", "配件组",
+                                "sale_count", 1L, "sale_amount", new BigDecimal("200.00"),
+                                "net_sale_amount", new BigDecimal("190.00")),
+                        row("dt", "20260901", "category_id", -1L, "category_name", "未分类",
+                                "parent_category_id", -1L, "parent_category_name", "未分类",
+                                "sale_count", 1L, "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("40.00")),
+                        row("dt", "20260902", "category_id", -1L, "category_name", "未分类",
+                                "parent_category_id", -1L, "parent_category_name", "未分类",
+                                "sale_count", 2L, "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("45.00"))));
+        when(adsReader.selectBySnapshotRange("ads_region_sale_m", SID, "20260901", "20260902"))
+                .thenReturn(List.of(
+                        row("dt", "20260901", "region", "L1", "sale_amount", new BigDecimal("40.00"),
+                                "net_sale_amount", new BigDecimal("35.00")),
+                        row("dt", "20260902", "region", "L1", "sale_amount", new BigDecimal("60.00"),
+                                "net_sale_amount", new BigDecimal("55.00")),
+                        row("dt", "20260901", "region", "L2", "sale_amount", new BigDecimal("160.00"),
+                                "net_sale_amount", new BigDecimal("150.00")),
+                        row("dt", "20260902", "region", "L2", "sale_amount", new BigDecimal("140.00"),
+                                "net_sale_amount", new BigDecimal("130.00")),
+                        row("dt", "20260901", "region", "unknown", "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("45.00")),
+                        row("dt", "20260902", "region", "unknown", "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("45.00"))));
+
+        AnalysisViewModel<SalesData> model = service.sales(null, from, to);
+
+        assertThat(model.warnings()).isEmpty();
+        assertThat(model.data().byCategory()).hasSize(3);
+        Map<String, Object> leadingCategory = model.data().byCategory().get(0);
+        assertThat(leadingCategory).containsEntry("category_id", 2L)
+                .containsEntry("sale_amount", new BigDecimal("200.00"))
+                .containsEntry("amount_ratio", new BigDecimal("0.4444"));
+        Map<String, Object> mergedCategory = model.data().byCategory().stream()
+                .filter(row -> row.get("category_id").equals(1L)).findFirst().orElseThrow();
+        assertThat(mergedCategory).containsEntry("category_name", "新分类名")
+                .containsEntry("sale_count", 3L)
+                .containsEntry("sale_amount", new BigDecimal("150.00"))
+                .containsEntry("net_sale_amount", new BigDecimal("130.00"))
+                .containsEntry("amount_ratio", new BigDecimal("0.3333"));
+        Map<String, Object> unknownCategory = model.data().byCategory().stream()
+                .filter(row -> row.get("category_id").equals(-1L)).findFirst().orElseThrow();
+        assertThat(unknownCategory).containsEntry("category_name", "未分类")
+                .containsEntry("sale_amount", new BigDecimal("100.00"));
+
+        assertThat(model.data().byRegion()).extracting(row -> row.get("region"))
+                .containsExactly("L2", "L1", "unknown");
+        assertThat(model.data().byRegion().get(0)).containsEntry("sale_amount", new BigDecimal("300.00"))
+                .containsEntry("amount_ratio", new BigDecimal("0.6000"));
+        assertThat(model.data().byRegion().get(1)).containsEntry("amount_ratio", new BigDecimal("0.2000"));
+        assertThat(model.data().byRegion().get(2)).containsEntry("amount_ratio", new BigDecimal("0.2000"));
+        model.data().byCategory().forEach(row -> assertThat(row).doesNotContainKeys("buyer_count", "order_count"));
+        model.data().byRegion().forEach(row -> assertThat(row).doesNotContainKeys("buyer_count", "order_count"));
+        verify(adsReader).selectBySnapshotRange("ads_category_sale_m", SID, "20260901", "20260902");
+        verify(adsReader).selectBySnapshotRange("ads_region_sale_m", SID, "20260901", "20260902");
+    }
+
+    @Test
+    @DisplayName("可选维度服务表读取故障：两个维度均降级并去重告警，不吞掉其它错误")
+    void missingDimensionTablesReturnExplicitDeduplicatedWarning() {
+        stubActiveSnapshot();
+        org.springframework.dao.DataAccessException unavailable =
+                new org.springframework.dao.DataAccessResourceFailureException("dimension store unavailable");
+        when(adsReader.selectBySnapshot("ads_category_sale_m", SID, null)).thenThrow(unavailable);
+        when(adsReader.selectBySnapshot("ads_region_sale_m", SID, null)).thenThrow(unavailable);
+
+        AnalysisViewModel<SalesData> model = service.sales(null, null, null);
+
+        assertThat(model.data().byCategory()).isEmpty();
+        assertThat(model.data().byRegion()).isEmpty();
+        assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
     }
 
     @Test

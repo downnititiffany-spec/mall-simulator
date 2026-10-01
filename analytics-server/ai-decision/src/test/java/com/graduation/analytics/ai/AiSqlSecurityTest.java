@@ -27,7 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -432,6 +435,32 @@ class AiSqlSecurityTest {
         assertEquals(LocalDate.of(2026, 6, 7), scope.minAllowedDate());
         assertEquals(90, scope.maxScanDays());
         assertEquals(200, scope.rowLimit());
+    }
+
+    @Test
+    @DisplayName("AiScopeResolver：只读取用户明确选择的已发布历史快照，不自动回退")
+    void 显式历史快照解析且未知快照failClosed() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("snapshot_id", "S20260917_9");
+        row.put("business_time", LocalDateTime.of(2026, 9, 17, 3, 0, 0));
+        row.put("definition_version", "v2");
+        when(jdbc.queryForList(eq(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL), eq("S20260917_9")))
+                .thenReturn(List.of(row));
+
+        AiScope scope = new AiScopeResolver(jdbc).resolve("S20260917_9");
+
+        assertEquals("S20260917_9", scope.snapshotId());
+        assertEquals(LocalDate.of(2026, 9, 17), scope.businessDate());
+        verify(jdbc).queryForList(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL, "S20260917_9");
+        verify(jdbc, never()).queryForList(AiScopeResolver.ACTIVE_SNAPSHOT_SQL);
+
+        when(jdbc.queryForList(eq(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL), eq("missing")))
+                .thenReturn(List.of());
+        AiSqlException unavailable = assertThrows(AiSqlException.class,
+                () -> new AiScopeResolver(jdbc).resolve("missing"));
+        assertEquals(SqlPolicy.SNAPSHOT_NOT_AVAILABLE, unavailable.code());
+        verify(jdbc, never()).queryForList(AiScopeResolver.ACTIVE_SNAPSHOT_SQL);
     }
 
     // ── QueryCostGuard：EXPLAIN 超阈值 / EXPLAIN 失败都拒绝 ──────────────────

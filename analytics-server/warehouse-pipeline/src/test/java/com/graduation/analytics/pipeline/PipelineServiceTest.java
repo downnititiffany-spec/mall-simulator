@@ -332,8 +332,8 @@ class PipelineServiceTest {
         }
         return List.of(
                 new JobResultParser.CheckInfo("ADS_STAGING_PRESENT", "ADS_STAGING",
-                        "dw_ads.ads_operation_overview__staging", 8L, 0L, "分区存在且 Location 可读（允许 0 行专题）",
-                        "BLOCKING", true, "8 张暂存分区均存在"),
+                        "dw_ads.ads_operation_overview__staging", 10L, 0L, "分区存在且 Location 可读（允许 0 行专题）",
+                        "BLOCKING", true, "10 张暂存分区均存在"),
                 new JobResultParser.CheckInfo("PUB_STAGING_PRUNE", "PUBLISH", "staging", 0L, 0L,
                         "保留被引用快照", "INFO", true, "无待清理历史暂存分区"));
     }
@@ -433,6 +433,25 @@ class PipelineServiceTest {
         assertThat(stageStatus("PUBLISH_METRIC")).isEqualTo(PipelineStageRun.STATUS_SUCCESS);
         // 顺序：WAIT_LANDING 在 LOAD_ODS 之前
         assertThat(byCode.indexOf(stageOf("WAIT_LANDING"))).isLessThan(byCode.indexOf(stageOf("LOAD_ODS")));
+        assertThat(evidenceOf(stageOf("WAIT_LANDING")).get("acceptedStorageUri"))
+                .isEqualTo(landing.resolve("accepted/2026-09-01").toUri().toString());
+    }
+
+    @Test
+    void acceptedStorageUriEvidenceDoesNotPersistUriUserInfo() {
+        assertThat(PipelineService.safeStorageUriForEvidence(
+                "hdfs://service-user:secret@namenode:8020/warehouse/landing/accepted/7"))
+                .isEqualTo("hdfs://namenode:8020/warehouse/landing/accepted/7");
+    }
+
+    @Test
+    void acceptedStorageUriEvidenceRejectsQueryAndFragment() {
+        for (String uri : List.of("hdfs://namenode:8020/landing/accepted/7?token=secret",
+                "hdfs://namenode:8020/landing/accepted/7#secret")) {
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> PipelineService.safeStorageUriForEvidence(uri));
+            assertThat(error.getMessage()).doesNotContain("secret");
+        }
     }
 
     // ── ④阶段失败 → run FAILED（§13.2 失败留痕） ───────────────────────────

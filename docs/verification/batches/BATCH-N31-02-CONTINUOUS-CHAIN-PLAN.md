@@ -1,6 +1,7 @@
-# BATCH-N31-02 — 单节点连续数仓链与维度专题（连续小链 ＋ 同源第二批/重放/失败保旧 ＋ 分类地区契约冻结 ＋ 共享 HMS 单列）
+# BATCH-N31-02 — 单节点连续数仓链与维度专题（连续小链 ＋ 同源第二批/重放/失败保旧 ＋ 分类/城市等级供数 ＋ 共享 HMS 单列）
 
 - 决策：**D-054**（N31-02 开工授权登记，2026-09-27）；范围审定 **D-053**；开工裁定原文备份 `docs/decisions/rulings/MASTER-RULING-20260927-N3102-START.md`。
+- 腿③裁决：**D-058（2026-09-29）已批准按推荐方案整体实现**；裁决原文备份 `docs/decisions/rulings/MASTER-RULING-20260929-N3102-LEGC-APPROVAL.md`；实现契约见 `docs/contracts/n31-02-category-region-sales-contract-draft.md`。
 - 性质：工作批次开工授权，**不是发布 V3.1**；正式权威仍为 V3.0；普通技术步骤不再逐步确认。
 - 基线（run-tests.ps1，本批只跑受影响定向测试）：default=**1295**（analytics-server 1170 / mall-simulator 14 / synthetic-data-generator 111）；spark=**329**；isolated=**62**（mall 30 / generator 19 / analytics 13）。
 
@@ -14,14 +15,17 @@
 
 | 腿 | 判据 | 通过标准 | 状态 |
 | --- | --- | --- | --- |
-| ① | 连续小链一次对账 | 受控输入→Flume→HDFS→平台摄取→Spark 分层→ADS→隔离 3307 ACTIVE→API→页面，对账容差 0.0005；血缘四元组齐全 | 待执行 |
-| ① | oracle 发布前钉档 | 独立 oracle（方法论+期望值）在发布/对账前写死并 sha256 钉档 | 待执行 |
-| ② | 同源第二批 | 第二批摄取→第二 snapshot，血缘不混 | 待执行 |
-| ② | 重放 no-op | 同 manifest 重放零新快照（ALREADY_CONSUMED 类） | 待执行 |
-| ② | 失败保旧快照 | 发布腿故障→FAILED，旧 ACTIVE 不变、旧快照可读 | 待执行 |
-| ③ | 契约冻结 | 分类/地区实现契约文档（粒度/字段/unknown/表/映射/API/页面/oracle） | 待交总控 |
-| ③ | 设计差异门控 | 新增表或改口径前交设计差异，切片停止 | 门控 |
-| ④ | 共享 HMS | Spark+Hive 共用同一 Metastore（非 Derby）；资源不足如实记未通过 | 待执行 |
+| ① | 连续小链一次对账 | 受控输入→Flume→HDFS→平台摄取→Spark 分层→ADS→隔离 3307 ACTIVE→API→页面，对账容差 0.0005；血缘四元组齐全 | **PASS**（LEG A；WSL 单节点限定） |
+| ① | oracle 发布前钉档 | 独立 oracle（方法论+期望值）在发布/对账前写死并 sha256 钉档 | **PASS**（LEG A；14/14 四方核对） |
+| ② | 同源第二批 | 第二批摄取→第二 snapshot，血缘不混 | **PASS**（LEG B；batch2/run2/S20260918_2） |
+| ② | 重放 no-op | 同 manifest 重放零新快照（ALREADY_CONSUMED 类） | **PASS**（LEG B；run3；ACTIVE 不变） |
+| ② | 失败保旧快照 | 发布腿故障→FAILED，旧 ACTIVE 不变、旧快照可读 | **PASS_WITH_HARNESS_CORRECTION**（行为 PASS；原驱动断言误报，原 FAIL 原貌保留，独立只读证据复核通过） |
+| ③ | 契约冻结 | 分类/城市等级实现契约（粒度/字段/unknown/表/映射/API/页面/oracle） | **PASS（D-058 批准）**；进入实现 |
+| ③ | 设计差异门控 | 新增表或改口径前交设计差异，切片停止 | **PASS（D-058 已裁决推荐语义）**；仅加性迁移，不改历史迁移/V3.0 |
+| ③ | Spark ADS 与服务表 | Hive 叶子分类/城市等级 ADS producer、MetricAdsCatalog、MySQL ADS 镜像与发布 | **PASS**（LEG C；10 张 ADS 导出、33 行；分类/城市等级表各 3 行） |
+| ③ | API/UI/AI evidence | 销售 API 窗口聚合；销售页分类/城市等级可视化；结构化 EvidencePackage 来源正确 | **PASS_WITH_LIMITATION**（API/UI/AI 证据来源定向测试通过；真实 LLM 未测，分类名称缺失） |
+| ③ | 独立 oracle 与小链 | 独立 oracle→Spark/Hive→服务库→API→页面对账；未知项、比例和失败保旧覆盖 | **PASS_WITH_LIMITATION**（LEG C；单日 oracle 与服务库/API 一致；样本/未知项/故障注入边界见结果） |
+| ④ | 共享 HMS | Spark+Hive 共用同一 Metastore（非 Derby）；资源不足如实记未通过 | **PASS_WITH_CLEANUP_CORRECTION**（结果见 `docs/verification/results/BATCH-N31-02-LEGD-RESULT.md`；WSL 单节点限定） |
 
 ## §2 腿① 连续小链（A1–A9）
 
@@ -40,11 +44,21 @@
 - 复用 G31-11/12 隔离栈机制与既有小样本；同一 source 第二批摄取产生第二 snapshot；随后同 manifest 重放应 no-op（零新快照）；再把发布腿故障化（如临时移走 spark jar）确认 run FAILED 且旧 ACTIVE 不变、旧快照 14/14 可读。
 - **只跑受影响的定向测试**；不得把不同运行腿拼接成「一次连续链通过」——每条腿独立留痕。
 
-## §4 腿③ 分类/地区专题（契约先行，C1–C3）
+## §4 腿③ 分类/城市等级专题（契约已批准，实现与小链验证结果）
 
-- **C1 勘察**：现状 `AnalysisService.sales` 返回两空数组 + `UNKNOWN_DIMENSION_TABLE` 告警；梳理 DWS/ADS 现有分类/地区字段、前端页面与 AI 白名单现状。
-- **C2 契约冻结**：产出实现契约文档——分类/地区粒度、来源字段（来源表与列）、`unknown` 归属规则、ADS 与 MySQL（服务库镜像）表结构草案、发布映射、API 契约、页面呈现、独立 oracle 方法。
-- **C3 交总控停**：**新增表或改变指标口径前，先交设计差异供总控审定**；本切片停在契约提交，不建表、不跑数据、不阻塞腿①②。
+- **C1/C2 已完成，C3 已由 D-058 批准**：契约规定叶子分类与城市等级、保留 unknown、跨日不伪造 distinct、两个新增 ADS/服务镜像表、独立 oracle 与端到端验收。
+- **实现顺序**：① 锁定 Hive DDL/分区与 Spark `AdsSql` producer；② 接入现有 `fna` 编排、导出 manifest/catalog、增加新的加性 Flyway migration 和 MetricPublisher 列映射；③ 实现服务层按窗口聚合分类/城市等级金额与件数并重算占比；④ 更新 Vue 销售页；⑤ 修正结构化 AI EvidencePackage 的 ADS 来源标签，不扩展 Text2SQL 语义白名单；⑥ 增加 Spark/Java/Web 定向测试和独立 oracle。
+- **实现约束**：不编辑已发布 Flyway V1–V33、不修改冻结 V3.0；查询按 `snapshotId` pin，日期端点含首尾；category `-1`/缺维表只进入唯一 unknown；多日 `buyer_count/order_count` 不返回或不得命名为窗口 distinct；金额比例基于窗口聚合后计算；Hive/服务表缺失与合法空结果必须可区分；任一 ADS 发布失败时旧 ACTIVE 保持可读。
+- **最小端到端验收**：使用新 runId、隔离 schema/证据目录和 30–50 行正常样本 + 5–10 行坏样本；独立 oracle 在发布前钉档；逐层核对 Spark/Hive 分区、导出制品、MySQL ADS、API 与浏览器数值，金额容差 `<0.01`，比率容差 `<0.0005`；保留未知分类、缺失城市等级、跨日重复买家/订单、全额退款与未支付退款金额等边界案例。
+
+### LEG C 执行结果摘要（2026-09-29）
+
+- D-058 批准的代码路径已接通：Hive `dw_ads.ads_category_sale` / `dw_ads.ads_region_sale` → MetricAdsCatalog/导出与 MySQL V13 镜像 → `AnalysisService.sales` 窗口聚合 → Vue 销售页；EvidenceBuilder 测试引用正确 ADS 来源及 snapshot/window。实现边界与未验收项见 `docs/verification/results/BATCH-N31-02-LEGC-RESULT.md`。
+- 新隔离运行 `n3102e_20260929_173000_7c11` 完成 99 行/34,192 B Flume→HDFS→摄取→Spark→ADS→MySQL 3307→API→Chromium；batch=1、run=1、snapshot=`S20260918_1`，14 项 overview 指标，ACTIVE 唯一，ADS 导出 10 表/33 行。独立分类/城市等级 oracle 的金额和件数与 MySQL/API 一致，窗口比例按窗口 GMV 重算。
+- 修复的根因：当日无新增注册事件时，`DimensionBuildJob` 原先跳过用户 as-of 快照，造成历史用户 `city_level` 在 DWD 关联中变成 unknown。现在无论当日用户输入数是否为 0，均按业务日回看 ODS 历史生成用户快照；回归断言 `user=0->1` 且 `city_level=tier2`。
+- 定向测试：`ProductDimensionAsOfSpec` 3/3、`CategoryRegionAdsSpec` 1/1、`AnalysisServiceTest` 41/41、EvidenceBuilder/ExplanationEvidence 合计 16/16、`MetricPublisherBuildFailureCompensationTest` 3/3、web `chartOptions.test.js` + `aiEvidenceWindow.test.js` 29/29。
+- **状态为 PASS_WITH_LIMITATION**，不降格成无条件 PASS：本次复用 99 行全有效样本，未包含计划规定的坏行；本次真实业务日浏览器数据未出现 unknown 桶（其规则由 Spark 回归覆盖）；夹具无分类名称，API 如实返回 `UNKNOWN`；分类图没有完整进入 viewport 截图；新增 V13 表上的失败注入没有作为本腿真实链路重跑。另 pipeline `WAIT_LANDING` stage evidence 存相对 accepted URI、没有完整 `hdfs://` scheme（摄取结果与 A3 证据有完整 HDFS URI）。这些差异均登记在 LEG C 结果，不改变实测事实。
+- 持久证据切片 `v3-archive/n3102/legc-20260929-7c11/`；其 manifest 对 14 项文件做 SHA-256 核验。此目录不是 N31-02 全批最终归档；全批归档仍须汇总 A–D 并按 D-048 规则收口。
 
 ## §5 腿④ 共享 HMS（单列判据）
 

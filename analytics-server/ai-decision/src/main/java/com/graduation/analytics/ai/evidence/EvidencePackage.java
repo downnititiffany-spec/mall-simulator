@@ -25,7 +25,7 @@ import java.util.Map;
  * @param comparisonPeriod  等长上期；取不到为 null（§20.4 同精神：数据不足不得编造）
  * @param facts             指标事实
  * @param comparisons       上期对比
- * @param dimensions        维度贡献：product/category/region/channel（无来源表 → 空数组 + 警告）
+ * @param dimensions        维度贡献：product/category/city-level/channel（无来源或取数受限 → 空数组 + 警告）
  * @param anomalies         候选异常（规则 + 阈值 + 偏离），**非因果结论**
  * @param dataQuality       质量可信度
  * @param lineage           血缘：Hive ADS → MySQL 表 → pipelineRunId
@@ -62,8 +62,10 @@ public record EvidencePackage(
     public static final String WARN_NO_COMPARISON_PERIOD = "NO_COMPARISON_PERIOD";
     /** 多日窗口暂不支持对比（metric_value 只有快照粒度的单日聚合） */
     public static final String WARN_COMPARISON_WINDOW_UNSUPPORTED = "COMPARISON_WINDOW_UNSUPPORTED";
-    /** 契约要求但本期无 Hive 来源的维度表 */
+    /** 分类/城市等级 ADS 服务表缺失或读取故障 */
     public static final String WARN_UNKNOWN_DIMENSION_TABLE = "UNKNOWN_DIMENSION_TABLE";
+    /** 渠道维度目前没有对应 ADS 服务表，因此证据包明确不覆盖渠道贡献 */
+    public static final String WARN_CHANNEL_DIMENSION_UNAVAILABLE = "CHANNEL_DIMENSION_UNAVAILABLE";
     /** 只读 ADS 读取不可用（维度/质量取不到，facts 仍来自快照指标） */
     public static final String WARN_ADS_READ_UNAVAILABLE = "ADS_READ_UNAVAILABLE";
     /** 快照内出现多个指标口径版本（同一快照的口径不唯一） */

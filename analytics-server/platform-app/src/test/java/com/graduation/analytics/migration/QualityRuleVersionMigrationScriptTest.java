@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>钉住 V19（规则定义表 + 种子）与 V20（结果行版本列）两件事：</p>
  * <ol>
  *   <li><b>号位不冲突</b>：{@code db/meta} 内迁移号不重复（重复会让 Flyway 拒绝启动）；</li>
- *   <li><b>种子与 Java 目录同源</b>：V19 的 35 行种子逐字段等于
+ *   <li><b>种子与 Java 目录同源</b>：V19 与后续加性迁移的种子并集逐字段等于
  *       {@link QualityRuleCatalog#definitions()} —— 这条是本门禁的**核心**。
  *       若允许 SQL 里再写一份手抄档位，就会产生「第二份严重度所有者」，
  *       与 {@code RuleSeverity} 的单一所有者直接冲突；本用例使二者不可能漂移。</li>
@@ -103,8 +103,14 @@ class QualityRuleVersionMigrationScriptTest {
      */
     private static final String V29 = "V29__quality_rule_ads_staging_present_v2.sql";
 
+    /**
+     * 追加式种子迁移（N31-02 / D-058）：新增分类与城市等级对账规则，
+     * 并为新增 ADS 表集追加暂存/导出完整性规则版本。
+     */
+    private static final String V34 = "V34__quality_rule_category_region_sales.sql";
+
     /** 承载种子的迁移（顺序无关，对账取并集） */
-    private static final List<String> SEED_SCRIPTS = List.of(V19, V23, V25, V26, V27, V28, V29);
+    private static final List<String> SEED_SCRIPTS = List.of(V19, V23, V25, V26, V27, V28, V29, V34);
 
     /** V20 的四个新列（顺序即脚本内的声明顺序）。 */
     private static final List<String> V20_COLUMNS = List.of(
@@ -121,7 +127,7 @@ class QualityRuleVersionMigrationScriptTest {
                     + "\\s*'([0-9a-f]{64})'\\s*\\)");
 
     @Test
-    @DisplayName("迁移号不冲突：V19/V20/V23/V25/V26/V27/V28/V29 存在，且 db/meta 内号位不重复")
+    @DisplayName("迁移号不冲突：V19/V20/V23/V25/V26/V27/V28/V29/V34 存在，且 db/meta 内号位不重复")
     void migrationVersionsAreAssignedAndUnique() {
         List<Integer> versions = scriptVersions();
         assertThat(versions).as("db/meta 下应有迁移脚本").isNotEmpty();
@@ -149,6 +155,9 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(versions)
                 .as("Stage 7 T-R1 的 ADS_STAGING_PRESENT v2 迁移号必须存在（仅追加一个新版本）")
                 .contains(29);
+        assertThat(versions)
+                .as("N31-02 分类/城市等级质量规则必须由 V34 加性登记")
+                .contains(34);
         assertThat(Files.isRegularFile(META_DIR.resolve(V19))).as("%s 必须存在", V19).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V20))).as("%s 必须存在", V20).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V23))).as("%s 必须存在", V23).isTrue();
@@ -157,6 +166,7 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(Files.isRegularFile(META_DIR.resolve(V27))).as("%s 必须存在", V27).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V28))).as("%s 必须存在", V28).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V29))).as("%s 必须存在", V29).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V34))).as("%s 必须存在", V34).isTrue();
     }
 
     @Test
@@ -229,6 +239,28 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(read(V29))
                 .contains("'ADS_STAGING_PRESENT', 2")
                 .contains("未执行");
+    }
+
+    @Test
+    @DisplayName("V34 只追加分类/城市等级规则及完整性版本，不改历史迁移或其它表")
+    void v34OnlyAppendsCategoryRegionRules() {
+        String sql = code(V34);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V34 只向质量规则目录追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+")
+                .contains("'ADS_CATEGORY_SALE_RECONCILE', 1")
+                .contains("'ADS_REGION_SALE_RECONCILE', 1")
+                .contains("'ADS_STAGING_PRESENT', 3")
+                .contains("'MXP_EXPORT_COMPLETE', 2");
+        assertThat(read(V34)).contains("未执行");
+        assertThat(countMatches(sql, ";"))
+                .as("V34 为单条 INSERT 语句，四行规则作为同一分类/地区 ADS 契约原子登记")
+                .isEqualTo(1);
     }
 
     @Test
@@ -380,13 +412,13 @@ class QualityRuleVersionMigrationScriptTest {
     }
 
     @Test
-    @DisplayName("种子（V19+V23+V25+V26+V27+V28+V29 并集）逐字段等于 Java 目录：41 行、版本/档位/模式/阈值/指纹零漂移")
+    @DisplayName("种子（V19+V23+V25+V26+V27+V28+V29+V34 并集）逐字段等于 Java 目录：45 行、版本/档位/模式/阈值/指纹零漂移")
     void v19SeedMatchesTheJavaCatalogExactly() {
         List<QualityRuleDefinition> definitions = QualityRuleCatalog.DEFAULT.definitions();
         assertThat(definitions)
-                .as("目录契约全集应为 41 条：历史 40 条 + V29 为 ADS_STAGING_PRESENT 追加 v2；"
-                        + "同规则码多版本必须同时保留，不能用新语义覆盖历史 v1")
-                .hasSize(41);
+                .as("目录契约全集应为 45 条：历史种子 + ADS_STAGING_PRESENT v2/v3、MXP_EXPORT_COMPLETE v2，"
+                        + "以及分类/城市等级销售对账规则；同规则码多版本必须同时保留")
+                .hasSize(45);
 
         List<String> seed = seedRows();
         assertThat(seed)
@@ -418,8 +450,8 @@ class QualityRuleVersionMigrationScriptTest {
                 .as("合法空态语义必须通过独立 v2 行发布，不能原地覆盖 ADS_STAGING_PRESENT v1")
                 .hasSize(1);
         assertThat(seed.stream().map(row -> row.split("\\|", -1)[1]).distinct().sorted().toList())
-                .as("当前目录应只包含历史 v1 与本轮新增的 ADS_STAGING_PRESENT v2")
-                .containsExactly("1", "2");
+                .as("当前目录应包含历史 v1，以及已登记的 ADS_STAGING_PRESENT v2/v3 和 MXP_EXPORT_COMPLETE v2")
+                .containsExactly("1", "2", "3");
     }
 
     @Test
@@ -485,7 +517,7 @@ class QualityRuleVersionMigrationScriptTest {
             rows.addAll(seedRowsOf(script));
         }
         assertThat(rows)
-                .as("种子并集（%s）应解析出 39 行；解析结果说明格式已被改动", SEED_SCRIPTS)
+                .as("种子并集（%s）应解析出 45 行；解析结果说明格式已被改动", SEED_SCRIPTS)
                 .isNotEmpty();
         return rows;
     }

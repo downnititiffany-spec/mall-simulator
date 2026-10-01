@@ -96,7 +96,7 @@ const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'Ca
 
 async function fetchRfm(params, signal) {
   const mySeq = ++rfmFetchSeq
-  const rfmRaw = await api.rfm({}, { signal })
+  const rfmRaw = await api.rfm({ snapshotId: params.snapshotId }, { signal })
   const rfm = readEnvelope(rfmRaw)
   let usersData = {}
   let usersWarnings = []
@@ -143,6 +143,7 @@ async function fetchRfm(params, signal) {
 const analysis = useAnalysis({
   fetcher: fetchRfm,
   rowKeys: [...ENDPOINT_ROW_KEYS.rfm, 'lifecycle', 'preference'],
+  pinSnapshot: true,
   defaults: {
     rfmSegments: [], rfmMatrix: [], ruleVersion: null,
     periodStart: null, periodEnd: null,

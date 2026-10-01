@@ -2,12 +2,14 @@ package com.graduation.analytics
 
 import com.graduation.analytics.sql.{AdsSql, DimSql, DwdSql, DwsSql, OdsLoadSql}
 import com.graduation.analytics.warehouse.WarehouseNamespace
+import com.graduation.analytics.job.MetricExportJob
+import org.apache.hadoop.conf.Configuration
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 /**
  * SQL 模板关键子句测试：不依赖 Spark 运行，验证口径/安全/去重逻辑在 SQL 层面正确。
- * R5：7 张 DWS + 8 张 ADS 模板口径断言（§12.1-12.4）。
+ * R5：7 张 DWS + 当前 10 张 ADS 模板口径断言（§12.1-12.4）。
  *
  * P1-04：模板首参是库名空间；本用例统一用**缺省命名空间**（源 A 库名 dw_*），
  * 因此断言的 SQL 文本与改造前逐字一致。跨前缀（换源）的断言见 WarehouseNamespaceSpec。
@@ -87,10 +89,25 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
   "DimSql" should "用户维度取每 user_id 最新事件生成快照并保留来源批次" in {
     val sql = DimSql.userSnapshot(ns, "20260901")
     val lower = sql.toLowerCase
-    lower should include("row_number() over (partition by payload_user_id order by event_time desc)")
+    lower should include("row_number() over (")
+    lower should include("partition by payload_user_id")
     lower should include("payload_user_id")
     lower should include("source_batch_id")
     lower should include("partition(dt = '20260901')")
+    lower should include("where dt <= '20260901'")
+    lower should include("order by event_time desc, ingest_batch_id desc, event_id desc")
+  }
+
+  "MetricExportJob" should "把无 scheme 的导出目录显式定向到本地文件系统，而非 Hadoop 默认 HDFS" in {
+    val conf = new Configuration()
+    conf.set("fs.defaultFS", "hdfs://namenode:8020")
+
+    val resolved = MetricExportJob.localExportDirectory("/mnt/d/analytics/metric-staging", conf)
+
+    resolved.toUri.getScheme should be("file")
+    resolved.toUri.getPath should be("/mnt/d/analytics/metric-staging")
+    an[IllegalArgumentException] should be thrownBy
+      MetricExportJob.localExportDirectory("hdfs://namenode:8020/ads/export", conf)
   }
 
   it should "商品维度取每 product_id 最新建档事件并做 unknown key 兜底（库存事件不进快照）" in {

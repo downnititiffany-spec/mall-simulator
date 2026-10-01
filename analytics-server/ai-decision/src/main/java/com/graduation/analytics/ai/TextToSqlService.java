@@ -32,7 +32,7 @@ import java.util.Map;
  * 受控 Text-to-SQL 服务（§19.4 流程 / R8-2 契约 §2.2-§2.4）。
  *
  * <p>流程（顺序即安全边界）：<br>
- * ① {@link AiScopeResolver#resolve()} 取 ACTIVE 快照 → {@link AiScope}（无 ACTIVE 直接失败）；<br>
+ * ① {@link AiScopeResolver#resolve(String)} 取显式已发布快照；未指定则取 ACTIVE → {@link AiScope}；<br>
  * ② 把**真实日期/快照作为字面量**注入上下文与提示词（含参数化 few-shot）；<br>
  * ③ LLM 生成 SQL（不可用则规则回退，回退模板同样带字面量）；<br>
  * ④ {@link SqlSafetyValidator#validate(String, AiScope)} 全树校验（失败允许一次受控修复）；<br>
@@ -97,6 +97,14 @@ public class TextToSqlService {
      *                           绝不能当成生效口径：生效区间一律以校验器解析出的 dt 字面量为准。
      */
     public QueryResult query(String question, String userId, String requestedTimeRange) {
+        return query(question, userId, requestedTimeRange, null);
+    }
+
+    /**
+     * 受控问数；snapshotId 由已登录用户从已发布快照选项中选择。
+     * 空值保持历史行为（解析 ACTIVE）；显式值必须由只读快照解析器验证为 ACTIVE/ARCHIVED。
+     */
+    public QueryResult query(String question, String userId, String requestedTimeRange, String snapshotId) {
         long start = System.currentTimeMillis();
         String status = "GENERATED";
         String sql = null;
@@ -115,8 +123,9 @@ public class TextToSqlService {
         LocalDate effectiveTo = null;
 
         try {
-            // ── 1. ACTIVE 快照作用域（日期/快照参数化的唯一来源，§19.5） ──────────
-            scope = scopeResolver.resolve();
+            // ── 1. 固定快照作用域（日期/快照参数化的唯一来源，§19.5） ──────────────
+            scope = snapshotId == null || snapshotId.isBlank()
+                    ? scopeResolver.resolve() : scopeResolver.resolve(snapshotId);
 
             // ── 1.5 问句层注入筛（§19.5 纵深防御；拒绝也留审计，2026-09-11 补强） ──
             // 放在 scope 之后：被拒问句同样带快照/日期作用域，便于事后取证。
@@ -208,6 +217,7 @@ public class TextToSqlService {
             error = truncate(e.getMessage(), 500);
             // 作用域/依赖超时 = 系统不具备本次问数条件（FAILED）；治理拒绝 = REJECTED。
             boolean infrastructureFailure = SqlPolicy.NO_ACTIVE_SNAPSHOT.equals(e.code())
+                    || SqlPolicy.SNAPSHOT_NOT_AVAILABLE.equals(e.code())
                     || SqlPolicy.METRIC_READ_SOURCE_MISSING.equals(e.code())
                     || PlatformBizException.QUERY_TIMEOUT.equals(e.code());
             if (infrastructureFailure) {
@@ -243,7 +253,7 @@ public class TextToSqlService {
                 你是指标查询助手。只能生成**单表只读 SELECT**，必须遵守：
                 1. 只使用我给出的表和字段，禁止编造；禁止 SELECT *，所有列必须显式写出；
                 2. WHERE 必须同时含两个字面量条件：
-                   snapshot_id = '%s'（当前 ACTIVE 快照）与
+                   snapshot_id = '%s'（本次固定的已发布快照）与
                    dt >= '%s' AND dt <= '%s'（紧凑 yyyyMMdd，如 20260901；允许区间最长 90 天）；
                    禁止用 (SELECT MAX(dt) ...) / (SELECT MAX(snapshot_id) ...) 等子查询取日期或快照；
                    禁止 CURDATE()/DATE_SUB()/NOW() 等"当前时间"函数，日期一律写字面量；
@@ -259,7 +269,7 @@ public class TextToSqlService {
 
     private String buildUserQuestion(String question, List<String> tables, AiScope scope) {
         return "问题：" + question
-                + "\n当前 ACTIVE 快照：" + scope.snapshotId()
+                + "\n本次固定快照：" + scope.snapshotId()
                 + "（口径版本 " + scope.definitionVersion() + "，业务日（dt 字面量格式） " + scope.dtTo() + "）"
                 + "\n允许查询日期区间（含端点，共 " + scope.maxScanDays() + " 天）："
                 + scope.dtFrom() + " ~ " + scope.dtTo()

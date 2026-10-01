@@ -4,17 +4,18 @@ import com.graduation.analytics.warehouse.WarehouseNamespace
 
 /**
  * ADS 指标 SQL（§7.7，§12.4 修复）：
- * 8 张首期核心 ADS 全部真实执行；漏斗收编为模板；
+ * ADS 指标 SQL：首期核心 ADS 全部真实执行；漏斗收编为模板；
  * 商品转化 buy_users 取商品销售 DWS 的去重买家数（不是 buy 件数）；
  * 用户画像按 RFM 规则分层（§21.6，与 algorithm/RfmScorer、QuartileStats 口径一致）；
  * 数据质量大盘 4 规则来自 ODS/DWD 真实统计（§5.4，与 QualityChecker 同阈值）。
  */
 object AdsSql {
 
-  /** 8 张首期核心 ADS（不含库前缀；R6-13 暂存/正式同名，仅分区不同） */
+  /** 当前 ADS 发布表集（不含库前缀；R6-13 暂存/正式同名，仅分区不同） */
   val TABLES: Seq[String] = Seq(
     "ads_operation_overview", "ads_active_trend", "ads_behavior_funnel", "ads_hot_product",
-    "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality")
+    "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality",
+    "ads_category_sale", "ads_region_sale")
 
   /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4）；库名由唯一所有者派生 */
   def formal(ns: WarehouseNamespace, table: String): String = ns.table("ads", table)
@@ -221,6 +222,60 @@ object AdsSql {
        |SELECT order_count, buyer_count, sale_amount, avg_order_value, net_sale_amount
        |FROM ${ns.dws}.dws_trade_day
        |WHERE dt = '$dt'
+       |""".stripMargin
+
+  /**
+   * 分类销售（叶子分类 × 业务日）。
+   * 事实只取最终已支付订单明细；按 category_id 聚合后用同一 dt 的 dim_product 补名称，
+   * 维表缺失及非法/未知分类统一折叠到 category_id=-1 的唯一“未分类”行。
+   * 分类金额包含该 unknown 桶，供发布质量门与 dws_trade_day 对账。
+   */
+  def categorySale(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
+    s"""
+       |${insertTarget(ns, "ads_category_sale", dt, snapshotId)}
+       |WITH facts AS (
+       |  SELECT CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END AS category_id,
+       |         SUM(quantity) AS sale_count,
+       |         SUM(amount) AS sale_amount,
+       |         SUM(amount) - COALESCE(SUM(refund_amount), CAST(0 AS DECIMAL(18,2))) AS net_sale_amount
+       |  FROM ${ns.dwd}.dwd_order_detail
+       |  WHERE dt = '$dt' AND final_paid_flag = 1
+       |  GROUP BY CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END
+       |), category_dim AS (
+       |  SELECT category_id,
+       |         MIN(COALESCE(category_name, '未知分类')) AS category_name,
+       |         MIN(CASE WHEN parent_category_id IS NULL OR parent_category_id <= 0
+       |                  THEN -1 ELSE parent_category_id END) AS parent_category_id,
+       |         MIN(COALESCE(parent_category_name, '未知上级分类')) AS parent_category_name
+       |  FROM ${ns.dim}.dim_product
+       |  WHERE dt = '$dt' AND category_id > 0
+       |  GROUP BY category_id
+       |)
+       |SELECT CASE WHEN d.category_id IS NULL THEN -1 ELSE f.category_id END AS category_id,
+       |       CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.category_name END AS category_name,
+       |       CASE WHEN d.category_id IS NULL THEN -1 ELSE d.parent_category_id END AS parent_category_id,
+       |       CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.parent_category_name END AS parent_category_name,
+       |       SUM(f.sale_count) AS sale_count,
+       |       SUM(f.sale_amount) AS sale_amount,
+       |       SUM(f.net_sale_amount) AS net_sale_amount
+       |FROM facts f
+       |LEFT JOIN category_dim d ON d.category_id = f.category_id AND f.category_id > 0
+       |GROUP BY CASE WHEN d.category_id IS NULL THEN -1 ELSE f.category_id END,
+       |         CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.category_name END,
+       |         CASE WHEN d.category_id IS NULL THEN -1 ELSE d.parent_category_id END,
+       |         CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.parent_category_name END
+       |""".stripMargin
+
+  /** 城市等级销售（ADS 名称兼容 region；region 的业务含义固定为 dws_region_sale_day.region）。 */
+  def regionSale(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
+    s"""
+       |${insertTarget(ns, "ads_region_sale", dt, snapshotId)}
+       |SELECT COALESCE(region, 'unknown') AS region,
+       |       SUM(sale_amount) AS sale_amount,
+       |       SUM(net_sale_amount) AS net_sale_amount
+       |FROM ${ns.dws}.dws_region_sale_day
+       |WHERE dt = '$dt'
+       |GROUP BY COALESCE(region, 'unknown')
        |""".stripMargin
 
   /**

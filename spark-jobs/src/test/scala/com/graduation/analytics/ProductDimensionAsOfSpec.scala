@@ -92,4 +92,40 @@ class ProductDimensionAsOfSpec extends AnyFlatSpec with Matchers {
       spark.sql(s"SELECT COUNT(*) FROM $dimTable WHERE dt = '20260901'").head().getLong(0) shouldBe 0L
     } finally P2TestSupport.stop(spark)
   }
+
+  it should "在业务日无新用户事件时仍从历史 ODS 构建完整用户 as-of 快照" in {
+    val spark: SparkSession = P2TestSupport.spark("user-dimension-as-of")
+    try {
+      val ns = WarehouseNamespace.defaultNamespace
+      LocalSchemaInitJob.statements(ns).foreach { case (_, sql) => spark.sql(sql) }
+
+      val odsTable = ns.table("ods", "ods_user_event")
+      val schema = spark.table(odsTable).schema
+      val eventTime = "2026-09-17 09:00:00"
+      val values: Map[String, Any] = Map(
+        "event_id" -> "user-registered-prior-day", "event_type" -> "user_registered",
+        "event_time" -> eventTime, "ingest_time" -> eventTime,
+        "source_system" -> "mall-a", "schema_version" -> "1.0",
+        "trace_id" -> "trace-user-prior-day", "raw_event_type" -> "user_registered",
+        "raw_source_system" -> "mall-a", "landing_file" -> "fixture.jsonl",
+        "payload_json" -> "{}", "payload_hash" -> "hash-user-prior-day",
+        "ingest_batch_id" -> 1L, "payload_user_id" -> "93001",
+        "payload_age_group" -> "25-34", "payload_city_level" -> "tier2",
+        "payload_member_level" -> "gold", "payload_register_time" -> eventTime,
+        "source_file" -> "fixture.jsonl", "dt" -> "20260917", "hour" -> "09")
+      val row = Row.fromSeq(schema.fieldNames.map(name => values.getOrElse(name, null)))
+      spark.createDataFrame(spark.sparkContext.parallelize(Seq(row)), schema)
+        .write.mode("append").insertInto(odsTable)
+
+      val args = JobArgs(1L, "dim", "20260918", None, None, 1, Map.empty)
+      val result = DimensionBuildJob.instance.run(spark, args)
+      result.status shouldBe "SUCCESS"
+      result.message should include("user=0->1")
+
+      val users = spark.sql(
+        s"SELECT user_id, city_level FROM ${ns.dim}.dim_user WHERE dt = '20260918'")
+      users.count() shouldBe 1L
+      users.head().getAs[String]("city_level") shouldBe "tier2"
+    } finally P2TestSupport.stop(spark)
+  }
 }

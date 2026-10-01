@@ -15,16 +15,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ACTIVE 快照作用域解析器（R8-2 契约 §2.2）：AI 问数在生成 SQL **之前**必须先拿到
- * 「当前生效快照 + 其业务日」，再把它们作为字面量注入提示词。
+ * 快照作用域解析器（R8-2 契约 §2.2）：AI 问数在生成 SQL **之前**必须先拿到
+ * 「当前 ACTIVE 快照」或用户明确选择的「已发布快照」及其业务日，再把它们作为字面量注入提示词。
  *
  * <p>走与 {@link SqlExecutor} 同一个 {@code metricReadDataSource}（metric_read 只读账号）：
  * 快照表属于 analytics_metric，读它必须和读 ADS 用同一条最小权限通道，不允许走 meta 库或可写账号。
  * 数据源缺失时 fail-closed（抛 {@code METRIC_READ_SOURCE_MISSING}），不静默降级。</p>
  *
- * <p>反熵（R8-2 契约 §2.2）：ACTIVE 不存在 → 抛业务异常 {@code NO_ACTIVE_SNAPSHOT}，
- * **不得**回退到「最新归档快照」或「id 最大的任意快照」。归档快照是已被替换的旧口径，
- * 用它回答问数等于给用户一份过期证据；失败的 → 失败，比悄悄返回旧数据安全。</p>
+ * <p>反熵（R8-2 契约 §2.2）：默认 ACTIVE 不存在 → 抛 {@code NO_ACTIVE_SNAPSHOT}，
+ * **不得自动回退**到归档快照。仅当用户显式提交 snapshotId 时才允许读取 ACTIVE/ARCHIVED；
+ * 不存在、BUILDING、VERIFYING、FAILED 均 fail-closed。这样历史回看是明示选择，而非静默降级。</p>
  */
 @Slf4j
 @Component
@@ -34,6 +34,9 @@ public class AiScopeResolver {
     public static final String ACTIVE_SNAPSHOT_SQL =
             "SELECT snapshot_id, business_time, definition_version FROM metric_snapshot "
                     + "WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1";
+    public static final String PUBLISHED_SNAPSHOT_SQL =
+            "SELECT snapshot_id, business_time, definition_version FROM metric_snapshot "
+                    + "WHERE snapshot_id = ? AND status IN ('ACTIVE','ARCHIVED') LIMIT 1";
 
     private final JdbcTemplate metricReadJdbcTemplate;
 
@@ -63,20 +66,36 @@ public class AiScopeResolver {
      *                        {@code NO_ACTIVE_SNAPSHOT} 无 ACTIVE 快照或快照行缺少必要字段
      */
     public AiScope resolve() {
+        return resolve(null);
+    }
+
+    /**
+     * 解析显式选择快照；未指定时维持原有 ACTIVE 默认行为，不做归档回退。
+     * 只有 ACTIVE/ARCHIVED 两种已发布状态可用于只读问数。
+     */
+    public AiScope resolve(String requestedSnapshotId) {
         if (metricReadJdbcTemplate == null) {
             throw new AiSqlException(SqlPolicy.METRIC_READ_SOURCE_MISSING,
                     "metricReadDataSource 未配置：AI 作用域必须从 analytics_metric 只读源解析（§17.1 禁止回退 meta）");
         }
+        String requested = requestedSnapshotId == null ? null : requestedSnapshotId.trim();
+        boolean explicit = requested != null && !requested.isEmpty();
         List<Map<String, Object>> rows;
         try {
-            rows = metricReadJdbcTemplate.queryForList(ACTIVE_SNAPSHOT_SQL);
+            rows = explicit
+                    ? metricReadJdbcTemplate.queryForList(PUBLISHED_SNAPSHOT_SQL, requested)
+                    : metricReadJdbcTemplate.queryForList(ACTIVE_SNAPSHOT_SQL);
         } catch (RuntimeException e) {
-            throw new AiSqlException(SqlPolicy.NO_ACTIVE_SNAPSHOT,
-                    "读取 ACTIVE 快照失败（fail-closed，不回退归档快照）: " + e.getMessage(), e);
+            throw new AiSqlException(SqlPolicy.METRIC_READ_SOURCE_MISSING,
+                    "读取指标快照作用域失败（fail-closed）: " + e.getMessage(), e);
         }
         if (rows == null || rows.isEmpty()) {
+            if (explicit) {
+                throw new AiSqlException(SqlPolicy.SNAPSHOT_NOT_AVAILABLE,
+                        "所选快照不存在或未发布：仅允许明确选择 ACTIVE/ARCHIVED 快照");
+            }
             throw new AiSqlException(SqlPolicy.NO_ACTIVE_SNAPSHOT,
-                    "metric_snapshot 中没有 status='ACTIVE' 的快照：AI 问数拒绝执行（不回退归档/最新快照）");
+                    "metric_snapshot 中没有 status='ACTIVE' 的快照：AI 问数拒绝执行（不自动回退归档/最新快照）");
         }
         Map<String, Object> row = rows.get(0);
         String snapshotId = asText(row.get("snapshot_id"));
@@ -84,7 +103,7 @@ public class AiScopeResolver {
         String definitionVersion = asText(row.get("definition_version"));
         if (snapshotId == null || snapshotId.isBlank() || businessDate == null) {
             throw new AiSqlException(SqlPolicy.NO_ACTIVE_SNAPSHOT,
-                    "ACTIVE 快照行缺少 snapshot_id/business_time，无法确定问数作用域（fail-closed）");
+                    "所选快照行缺少 snapshot_id/business_time，无法确定问数作用域（fail-closed）");
         }
         AiScope scope = AiScope.of(snapshotId, definitionVersion == null ? "" : definitionVersion, businessDate);
         log.debug("AI 问数作用域: snapshot={} businessDate={} 允许区间=[{}, {}]",

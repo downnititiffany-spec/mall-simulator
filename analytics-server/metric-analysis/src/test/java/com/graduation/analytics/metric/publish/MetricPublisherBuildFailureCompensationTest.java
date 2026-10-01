@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,7 +36,7 @@ class MetricPublisherBuildFailureCompensationTest {
         MetricPublishRepository repository = mock(MetricPublishRepository.class);
         MetricAdsWriter adsWriter = mock(MetricAdsWriter.class);
         MetricStore metricStore = mock(MetricStore.class);
-        when(adsWriter.deleteSnapshot("S_TEST_BUILD_FAIL")).thenReturn(0, 8);
+        when(adsWriter.deleteSnapshot("S_TEST_BUILD_FAIL")).thenReturn(0, 10);
         when(adsWriter.insertRows(org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.eq("S_TEST_BUILD_FAIL"), org.mockito.ArgumentMatchers.eq("20260923"),
                 org.mockito.ArgumentMatchers.anyList())).thenReturn(1);
@@ -56,7 +57,7 @@ class MetricPublisherBuildFailureCompensationTest {
 
         assertThat(report.ok()).isFalse();
         assertThat(report.errorCode()).isEqualTo("MP_VALUE_BUILD");
-        assertThat(report.evidence()).containsEntry("compensatedAdsRows", 8);
+        assertThat(report.evidence()).containsEntry("compensatedAdsRows", 10);
         verify(adsWriter, times(2)).deleteSnapshot("S_TEST_BUILD_FAIL");
         verify(metricStore, org.mockito.Mockito.never()).publish(
                 org.mockito.ArgumentMatchers.any(MetricStore.SnapshotRef.class), org.mockito.ArgumentMatchers.anyList());
@@ -69,7 +70,7 @@ class MetricPublisherBuildFailureCompensationTest {
         MetricPublishRepository repository = mock(MetricPublishRepository.class);
         MetricAdsWriter adsWriter = mock(MetricAdsWriter.class);
         MetricStore metricStore = mock(MetricStore.class);
-        when(adsWriter.deleteSnapshot("S_TEST_BUILD_FAIL")).thenReturn(0, 8);
+        when(adsWriter.deleteSnapshot("S_TEST_BUILD_FAIL")).thenReturn(0, 10);
         when(adsWriter.insertRows(anyString(), org.mockito.ArgumentMatchers.eq("S_TEST_BUILD_FAIL"),
                 org.mockito.ArgumentMatchers.eq("20260923"), anyList())).thenReturn(1);
         when(metricStore.publish(any(MetricStore.SnapshotRef.class), anyList())).thenReturn(0);
@@ -85,13 +86,51 @@ class MetricPublisherBuildFailureCompensationTest {
 
         assertThat(report.ok()).isFalse();
         assertThat(report.errorCode()).isEqualTo("MP_ACTIVATE_NOOP");
-        assertThat(report.evidence()).containsEntry("compensatedAdsRows", 8);
+        assertThat(report.evidence()).containsEntry("compensatedAdsRows", 10);
         verify(adsWriter, times(2)).deleteSnapshot("S_TEST_BUILD_FAIL");
         verify(repository).markStatus("S_TEST_BUILD_FAIL", "FAILED", "MP_ACTIVATE_NOOP: 快照未处于 VERIFYING");
     }
 
     @Test
-    @DisplayName("MetricPublisher 可实际读取 manifest 中 file URI 指向的八张 ADS 导出文件")
+    @DisplayName("激活后只读对账失败时调用原子回退，再清理失败快照 ADS 行")
+    void postActivationVerificationFailureRestoresPriorSnapshot(@TempDir Path exportDir) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        MetricPublishRepository repository = mock(MetricPublishRepository.class);
+        MetricAdsWriter adsWriter = mock(MetricAdsWriter.class);
+        MetricStore metricStore = mock(MetricStore.class);
+        when(repository.activeSnapshotId(1L)).thenReturn("S_OLD", "S_OLD");
+        when(repository.countAdsRows(anyString(), org.mockito.ArgumentMatchers.eq("S_TEST_BUILD_FAIL")))
+                .thenReturn(1L);
+        when(repository.countMetricValues("S_TEST_BUILD_FAIL")).thenReturn(14L);
+        when(repository.metricValues("S_TEST_BUILD_FAIL")).thenReturn(Map.of());
+        when(adsWriter.deleteSnapshot("S_TEST_BUILD_FAIL")).thenReturn(0, 10);
+        when(adsWriter.insertRows(anyString(), org.mockito.ArgumentMatchers.eq("S_TEST_BUILD_FAIL"),
+                org.mockito.ArgumentMatchers.eq("20260923"), anyList())).thenReturn(1);
+        when(metricStore.publish(any(MetricStore.SnapshotRef.class), anyList())).thenReturn(1);
+        when(metricStore.failActivationAndRestore(any(MetricStore.SnapshotRef.class),
+                org.mockito.ArgumentMatchers.eq("S_OLD"), anyString())).thenReturn("S_OLD");
+        writeValidManifest(exportDir, mapper, false);
+
+        PublishRequest request = new PublishRequest(1L, 1, 10L, "S_TEST_BUILD_FAIL", "20260923",
+                "2026-09-23T00:00:00", 99L, exportDir, definitions());
+        MetricPublisher publisher = new MetricPublisher(repository, adsWriter, new AdsExportReader(), metricStore,
+                new MetricPublishValidator(), mapper);
+
+        var report = publisher.publish(request);
+
+        assertThat(report.ok()).isFalse();
+        assertThat(report.errorCode()).isEqualTo("MP_POST_VERIFY_FAILED");
+        assertThat(report.evidence()).containsEntry("postVerificationRecovery", "COMPLETED")
+                .containsEntry("activeSnapshotAfterRecovery", "S_OLD")
+                .containsEntry("compensatedAdsRows", 10);
+        verify(metricStore).failActivationAndRestore(
+                eq(new MetricStore.SnapshotRef("S_TEST_BUILD_FAIL", 1L, "day:2026-09-23")), eq("S_OLD"),
+                anyString());
+        verify(adsWriter, times(2)).deleteSnapshot("S_TEST_BUILD_FAIL");
+    }
+
+    @Test
+    @DisplayName("MetricPublisher 可实际读取 manifest 中 file URI 指向的十张 ADS 导出文件")
     void publisherReadsFileUriExports(@TempDir Path exportDir) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         MetricPublishRepository repository = mock(MetricPublishRepository.class);
@@ -111,7 +150,7 @@ class MetricPublisherBuildFailureCompensationTest {
         var report = publisher.publish(request);
 
         assertThat(report.errorCode())
-                .as("8 张 URI 文件已被读取并进入预期的激活边界；模拟激活 0 行后 fail-closed")
+                .as("10 张 URI 文件已被读取并进入预期的激活边界；模拟激活 0 行后 fail-closed")
                 .isEqualTo("MP_ACTIVATE_NOOP");
         verify(adsWriter, times(MetricAdsCatalog.ALL.size())).insertRows(anyString(),
                 org.mockito.ArgumentMatchers.eq("S_TEST_BUILD_FAIL"), org.mockito.ArgumentMatchers.eq("20260923"),

@@ -131,7 +131,7 @@ public class MetricPublisher implements MetricPublisherPort {
             return fail(request, checks, evidence, start, "MP_SNAPSHOT_REGISTER", e.getMessage());
         }
 
-        // ── 2. 幂等清理 + 批量写 8 张 ADS 宽表 ──
+        // ── 2. 幂等清理 + 批量写 MetricAdsCatalog 登记的 ADS 宽表 ──
         Map<String, List<Map<String, Object>>> rowsByTable = new LinkedHashMap<>();
         Map<String, Integer> writtenCounts = new LinkedHashMap<>();
         try {
@@ -213,8 +213,26 @@ public class MetricPublisher implements MetricPublisherPort {
                 active, previousActive));
         boolean ok = !MetricPublishValidator.blocked(checks);
         if (!ok) {
-            // 指针已切换却对账失败：属于真实不一致，必须留 FAILED 证据（不静默"看起来成功"）
-            markFailed(request, "MP_POST_VERIFY_FAILED: " + MetricPublishValidator.failedRules(checks));
+            // 激活后的只读对账失败：原子撤销本次 ACTIVE 并恢复发布前快照，避免失败快照继续服务。
+            String failure = "MP_POST_VERIFY_FAILED: " + MetricPublishValidator.failedRules(checks);
+            try {
+                String activeAfterRecovery = metricStore.failActivationAndRestore(
+                        new MetricStore.SnapshotRef(request.snapshotId(), request.runtimeProfileId(),
+                                "day:" + isoDate(request.businessDate())), previousActive, truncate(failure));
+                evidence.put("postVerificationRecovery", "COMPLETED");
+                evidence.put("activeSnapshotAfterRecovery", activeAfterRecovery);
+                compensate(request, evidence);
+            } catch (Exception recoveryError) {
+                // 回退事务失败时不再清理当前 ACTIVE 所需 ADS 行，也不伪报 FAILED；保留诊断供运维处理。
+                log.error("metric publish: 快照 {} 后置校验失败且 ACTIVE 回退失败", request.snapshotId(), recoveryError);
+                evidence.put("postVerificationRecovery", "FAILED");
+                evidence.put("postVerificationRecoveryError", recoveryError.getMessage());
+                evidence.put("activeSnapshotAfterRecovery", active);
+                return new PublishReport(false, "MP_POST_VERIFY_RECOVERY_FAILED",
+                        "激活后对账失败且无法恢复旧 ACTIVE: " + recoveryError.getMessage(),
+                        request.snapshotId(), adsRows, values.size(), List.copyOf(checks),
+                        immutable(evidence));
+            }
             return new PublishReport(false, "MP_POST_VERIFY_FAILED",
                     "激活后对账失败: " + MetricPublishValidator.failedRules(checks),
                     request.snapshotId(), adsRows, values.size(), List.copyOf(checks),

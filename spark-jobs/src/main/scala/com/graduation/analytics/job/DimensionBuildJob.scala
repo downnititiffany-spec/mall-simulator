@@ -7,7 +7,7 @@ import org.apache.spark.sql.SparkSession
 /**
  * Job05 用户/商品维度构建（§11.2 DimensionBuildJob）：
  * ODS 用户事件 → dim_user；ODS 商品/库存事件 → dim_product。
- * 用户维度按当日事件生成快照；商品维度按 dt 截止日回看 ODS 历史并生成完整快照，
+ * 用户与商品维度均按 dt 截止日回看 ODS 历史并生成完整快照，
  * 生效日期=dt 分区，来源批次=ingest_batch_id（source_batch_id）；
  * 维度数据来自事件流（ODS），禁止 Spark 直连商城数据库。
  */
@@ -33,7 +33,9 @@ class DimensionBuildJob extends WarehouseJob {
         "AND event_type IN ('product_created', 'product_updated')").collect()(0).getLong(0)
 
     spark.sparkContext.setJobDescription(s"$code dim_user snapshot")
-    if (userInput > 0) spark.sql(DimSql.userSnapshot(ns, dt))
+    // 用户维度同样是截至业务日的完整快照。即使当日没有注册事件，也必须延续历史用户，
+    // 否则 DWD 当日关联会把所有既有用户的 city_level 回退为 unknown。
+    spark.sql(DimSql.userSnapshot(ns, dt))
     spark.sparkContext.setJobDescription(s"$code dim_product as-of snapshot")
     // 即使当前没有合格 ODS 商品，也必须覆盖该静态分区：否则同日重跑会遗留旧快照。
     spark.sql(DimSql.productSnapshot(ns, dt))

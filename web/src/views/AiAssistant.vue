@@ -185,7 +185,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import api from '../api'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import { useAnalysis } from '../composables/useAnalysis'
@@ -204,6 +204,7 @@ import {
 import { formatDateTime } from '../utils/envelope'
 import { aiResultCsvHeaders, aiResultTable } from '../utils/tables'
 import { exportAnalysisCsv } from '../utils/exportCsv'
+import { snapshotSelection } from '../composables/useSnapshotSelection'
 
 const question = ref('')
 const busy = ref(false)
@@ -212,7 +213,11 @@ const abortedNotice = ref('')
 const queryResult = ref(null)
 
 // 对照基线：当期 ACTIVE 快照的分析信封（供上下文条展示快照/业务时间/口径版本/质量状态与告警）
-const base = useAnalysis({ fetcher: (params, signal) => api.overview({}, { signal }), rowKeys: ENDPOINT_ROW_KEYS.overview })
+const base = useAnalysis({
+  fetcher: (params, signal) => api.overview(params, { signal }),
+  rowKeys: ENDPOINT_ROW_KEYS.overview,
+  pinSnapshot: true
+})
 const { context: baseContext, state, error, load: loadBase, cancel: cancelBase } = base
 
 // 历史记录：/ai/history/my 返回裸数组，失败必须显式提示（不再静默）
@@ -376,7 +381,10 @@ async function ask() {
     // QA-04：不再下发任何时间范围标签——问题原文由后端解析成结构化 window，
     // 页面只展示响应里的 query.window，避免「问题/SQL/解释」三个口径互相打架。
     const ctl = askController
-    const resp = await api.aiQuery(text, undefined, ctl ? { signal: ctl.signal } : undefined)
+    const resp = await api.aiQuery(text, undefined, {
+      ...(ctl ? { signal: ctl.signal } : {}),
+      snapshotId: snapshotSelection.selectedSnapshotId
+    })
     if (mySeq !== askSeq) return // 已被显式取消或已有更新序号，丢弃过期响应
     queryResult.value = resp
     await loadHistory()
@@ -394,6 +402,15 @@ async function ask() {
     }
   }
 }
+
+watch(() => snapshotSelection.selectedSnapshotId, (next, previous) => {
+  if (!previous || !next || next === previous) return
+  if (busy.value) cancelAsk()
+  queryResult.value = null
+  queryError.value = ''
+  abortedNotice.value = ''
+  closeDraft()
+})
 
 function askPreset(q) {
   if (busy.value || draftBusy.value) return

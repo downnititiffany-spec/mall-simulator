@@ -34,6 +34,14 @@ public interface MetricStore {
     /** 发布指标快照：写指标值与 ACTIVE 指针切换（幂等：同快照重复发布覆盖） */
     int publish(SnapshotRef snapshot, List<MetricValue> datasets);
 
+    /**
+     * 激活后的只读对账失败时，在写事务中撤销失败快照的 ACTIVE 状态并恢复此前 ACTIVE 快照。
+     * 若该快照已被后续发布取代，不覆盖更新的 ACTIVE；同时清理失败快照的指标值。
+     * 返回恢复/保留后的 ACTIVE 快照号；若当前无 ACTIVE 则返回 null。
+     */
+    String failActivationAndRestore(SnapshotRef failedSnapshot, String previousActiveSnapshotId,
+                                    String failureReason);
+
     /** 连通性检查 */
     HealthResult healthCheck();
 

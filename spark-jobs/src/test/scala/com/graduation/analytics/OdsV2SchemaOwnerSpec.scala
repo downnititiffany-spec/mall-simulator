@@ -178,7 +178,7 @@ class OdsV2SchemaOwnerSpec extends AnyFlatSpec with Matchers {
   it should "A12 LocalSchemaInitJob 的 ODS 建表列由唯一所有者派生，逐列一致且语句总数不变" in {
     val ns = WarehouseNamespace.defaultNamespace
     val statements = LocalSchemaInitJob.statements(ns)
-    statements.size should be(37) // 派生改造不得增删语句
+    statements.size should be(41) // 5 建库 + 36 建表；含新增分类/地区正式表与 staging 表
 
     OdsTables.foreach { table =>
       val ddl = statements.map(_._2).find(s => s.contains(s".$table (")).getOrElse(

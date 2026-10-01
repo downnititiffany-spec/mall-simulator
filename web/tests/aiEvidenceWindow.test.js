@@ -191,10 +191,10 @@ test('QA-04：api.js 的 timeRange 是真正可选（缺省时不发送该字段
   assert.match(aiQueryBody, /if \(hasTimeRange\) body\.timeRange = timeRange/)
 })
 
-test('QA-04：AiAssistant 不再硬编码标签，只把问题交给 API（时间范围参数缺省）', () => {
+test('QA-04：AiAssistant 不再硬编码标签，并把当前固定快照交给 AI API', () => {
   assert.doesNotMatch(aiCode, /'近30天'/)
   assert.doesNotMatch(aiCode, /"近30天"/)
-  assert.match(aiCode, /api\.aiQuery\(\s*text,\s*undefined,\s*ctl\s*\?\s*\{ signal: ctl\.signal \}\s*:\s*undefined\s*\)/)
+  assert.match(aiCode, /api\.aiQuery\(\s*text,\s*undefined,\s*\{[\s\S]*snapshotId:\s*snapshotSelection\.selectedSnapshotId[\s\S]*\}\s*\)/)
 })
 
 test('QA-04：页面展示结构化窗口（唯一来源），并直接消费共享的 evidence.window', () => {

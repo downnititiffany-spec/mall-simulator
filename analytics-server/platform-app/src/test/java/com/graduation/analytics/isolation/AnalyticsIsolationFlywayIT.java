@@ -1,6 +1,7 @@
 package com.graduation.analytics.isolation;
 
 import com.graduation.analytics.testsupport.TestIsolationGuard;
+import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.fs.MD5MD5CRC32CastagnoliFileChecksum;
 import org.apache.hadoop.fs.MD5MD5CRC32FileChecksum;
@@ -60,11 +61,32 @@ class AnalyticsIsolationFlywayIT {
         // 因此不能把它当作 schema 已初始化的判据。重复使用同一隔离 RunId 时，正确行为正是首轮 0 条。
         assertThat(metaFlyway.info().current()).as("meta Flyway 必须已有当前版本").isNotNull();
         assertThat(metricFlyway.info().current()).as("metric Flyway 必须已有当前版本").isNotNull();
+        assertThat(metaFlyway.info().current().getVersion().getVersion())
+                .as("隔离 meta schema 必须真实应用分类/城市等级规则迁移 V34")
+                .isEqualTo("34");
+        assertThat(metricFlyway.info().current().getVersion().getVersion())
+                .as("隔离 metric schema 必须真实应用 ADS 分类/城市等级服务表迁移 V13")
+                .isEqualTo("13");
         assertThat(metaSecond.migrationsExecuted).as("meta 第二次启动必须空跑").isZero();
         assertThat(metricSecond.migrationsExecuted).as("metric 第二次启动必须空跑").isZero();
 
         JdbcTemplate meta = new JdbcTemplate(metaDs);
         JdbcTemplate metric = new JdbcTemplate(metricDs);
+        List<Map<String, Object>> categoryRegionRules = meta.queryForList(
+                "SELECT rule_code, version, stage, severity FROM quality_rule_definition"
+                        + " WHERE (rule_code = 'ADS_CATEGORY_SALE_RECONCILE' AND version = 1)"
+                        + " OR (rule_code = 'ADS_REGION_SALE_RECONCILE' AND version = 1)"
+                        + " OR (rule_code = 'ADS_STAGING_PRESENT' AND version = 3)"
+                        + " OR (rule_code = 'MXP_EXPORT_COMPLETE' AND version = 2)");
+        assertThat(categoryRegionRules)
+                .as("V34 新增/升级的四条质量规则必须真实落库，不能只通过静态 SQL 检查")
+                .extracting(row -> row.get("rule_code") + ":" + row.get("version")
+                        + ":" + row.get("stage") + ":" + row.get("severity"))
+                .containsExactlyInAnyOrder(
+                        "ADS_CATEGORY_SALE_RECONCILE:1:ADS:BLOCKING",
+                        "ADS_REGION_SALE_RECONCILE:1:ADS:BLOCKING",
+                        "ADS_STAGING_PRESENT:3:ADS:BLOCKING",
+                        "MXP_EXPORT_COMPLETE:2:PUBLISH:BLOCKING");
         assertThat(tableCount(meta, "runtime_profile"))
                 .as("db/meta 迁移必须在 metaDb 创建 runtime_profile")
                 .isEqualTo(1);

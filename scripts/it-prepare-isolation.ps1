@@ -240,19 +240,46 @@ SELECT 'created', SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME
 SELECT 'granted', GRANTEE, TABLE_SCHEMA FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE LIKE '%$RunId%';
 "@
 # 注意：新建账号的口令经 stdin（SQL 文本）传入，不出现在命令行/进程列表。
-# 管理员(root)口令如提供，只经环境变量 MYSQL_PWD 进入 WSL 内的 mysql 进程；
+# 管理员(root)口令如提供，通过 WSLENV 将当前进程的 MYSQL_PWD 环境变量传入 WSL；
+# 不把 `MYSQL_PWD=<口令>` 拼进 wsl.exe 参数，避免口令出现在 Windows/WSL 进程命令行。
 # 它只作用于本机隔离实例 3307，不涉及宿主 3306；不回显、不落盘。
 $wslArgs = if ($WslDistro) { @('-d', $WslDistro) } else { @() }
-$adminArgs = @()
+$previousMysqlPwd = [Environment]::GetEnvironmentVariable('MYSQL_PWD', 'Process')
+$previousWslEnv = [Environment]::GetEnvironmentVariable('WSLENV', 'Process')
+$wslEnvEntries = @($previousWslEnv -split ':' | Where-Object {
+  $_ -and $_ -notmatch '^MYSQL_PWD(?:/.*)?$'
+})
 if ($env:V25IT_ADMIN_PWD) {
-  $adminArgs = @('env', "MYSQL_PWD=$($env:V25IT_ADMIN_PWD)")
+  $env:MYSQL_PWD = $env:V25IT_ADMIN_PWD
+  $wslEnvEntries += 'MYSQL_PWD/u'
+  $env:WSLENV = $wslEnvEntries -join ':'
   Write-Host '[admin] 管理员口令取自环境变量 V25IT_ADMIN_PWD（不回显）。'
 } else {
+  $env:MYSQL_PWD = $null
+  if ($wslEnvEntries.Count -gt 0) {
+    $env:WSLENV = $wslEnvEntries -join ':'
+  } else {
+    Remove-Item Env:WSLENV -ErrorAction SilentlyContinue
+  }
   Write-Host '[admin] 未提供 V25IT_ADMIN_PWD：按 WSL 内 root 免密(auth_socket)尝试；失败则退出码 3。'
 }
-$sql | & wsl @wslArgs -- @adminArgs mysql -h 127.0.0.1 -P $Port -uroot --batch --silent 2>&1
-if ($LASTEXITCODE -ne 0) {
-  Write-Host ("[2/2] ⚠️ 建库/授权失败（wsl mysql 退出码 {0}）。" -f $LASTEXITCODE)
+try {
+  $sql | & wsl @wslArgs -- mysql -h 127.0.0.1 -P $Port -uroot --batch --silent 2>&1
+  $mysqlExitCode = $LASTEXITCODE
+} finally {
+  if ($null -eq $previousMysqlPwd) {
+    Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue
+  } else {
+    $env:MYSQL_PWD = $previousMysqlPwd
+  }
+  if ($null -eq $previousWslEnv) {
+    Remove-Item Env:WSLENV -ErrorAction SilentlyContinue
+  } else {
+    $env:WSLENV = $previousWslEnv
+  }
+}
+if ($mysqlExitCode -ne 0) {
+  Write-Host ("[2/2] ⚠️ 建库/授权失败（wsl mysql 退出码 {0}）。" -f $mysqlExitCode)
   Write-Host '      常见原因：W03 的 3307 实例未起、或 WSL 内 mysql 客户端不在 PATH。'
   Write-Host '      凭据文件已生成；修好实例后重跑本脚本（幂等）。'
   exit 3

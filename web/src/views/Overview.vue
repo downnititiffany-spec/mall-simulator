@@ -118,6 +118,7 @@ const rangeError = ref('')
 const analysis = useAnalysis({
   fetcher: (params, signal) => api.overview(params, { signal }),
   rowKeys: ENDPOINT_ROW_KEYS.overview,
+  pinSnapshot: true,
   defaults: { metrics: [], salesTrend: [], activeTrend: [], quality: {}, metricDictionary: [] }
 })
 const { data, context, state, requestStatus, error, loading, empty, failed, exportable, exportContext } = analysis

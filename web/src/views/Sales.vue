@@ -29,6 +29,24 @@
       <div style="font-size:12px;color:#94A3B8;margin-top:6px">{{ NET_SALE_NOTE }}</div>
     </div>
 
+    <div class="chart-box">
+      <div class="chart-title">城市等级销售分布</div>
+      <ChartState :option="cityLevelOpt" :state="regionState" :error="error" :height="280"
+                  empty-text="所选日期范围内没有城市等级销售数据" />
+      <div style="font-size:12px;color:#94A3B8;margin-top:6px">
+        按商城提供的 city_level 分类展示，不代表行政区划或地图；未知城市等级保留在总额中。
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">叶子分类销售分布（Top 20）</div>
+      <ChartState :option="categoryOpt" :state="categoryState" :error="error" :height="320"
+                  empty-text="所选日期范围内没有分类销售数据" />
+      <div style="font-size:12px;color:#94A3B8;margin-top:6px">
+        只统计叶子分类；上级分类仅作说明、不重复汇总。“未分类”作为单独类别并计入总额。多日占比按所选窗口金额总额计算。
+      </div>
+    </div>
+
     <div class="table-box">
       <div class="chart-title">
         销售明细
@@ -62,8 +80,7 @@
       <div class="table-hint">
         质量规则（快照 run）：{{ qualityText }}。
         规则版本：{{ ruleVersionsText }}。限制说明：{{ RULE_VERSION_NOTE }}
-        说明：分类结构、地区结构本期未在分析接口发布（契约 §3.2 中 ads_category_sale_m / ads_region_sale_m 不存在），
-        页面不展示无数据来源的维度图。
+        分类及城市等级分布读取独立 ADS 服务表；无数据时显示空态，不在前端从趋势或订单行推算。
       </div>
     </div>
   </div>
@@ -73,11 +90,14 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
-import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
+import { ENDPOINT_ROW_KEYS, chartStateForRows } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
 import { dateRangeErrorText, isRangeInverted, localIsoDayOffset } from '../utils/localDate.js'
 import { qualitySummaryText, ruleVersionText, RULE_VERSION_NOTE } from '../utils/quality'
-import { salesTrendOption, sortRows, paginate, NET_SALE_NOTE } from '../utils/chartOptions'
+import {
+  salesTrendOption, categorySalesOption, cityLevelSalesOption,
+  sortRows, paginate, NET_SALE_NOTE
+} from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import ChartState from '../components/ChartState.vue'
@@ -94,9 +114,13 @@ const pageSize = 10
 const analysis = useAnalysis({
   fetcher: (params, signal) => api.sales(params, { signal }),
   rowKeys: ENDPOINT_ROW_KEYS.sales,
-  defaults: { trend: [], gmv: null, netSale: null, refundRate: null, fullRefundRate: null, quality: {} }
+  pinSnapshot: true,
+  defaults: {
+    trend: [], byCategory: [], byRegion: [], gmv: null, netSale: null,
+    refundRate: null, fullRefundRate: null, quality: {}
+  }
 })
-const { data, context, state, error, loading, exportable, exportContext } = analysis
+const { data, context, state, error, loading, exportable, exportContext, requestStatus } = analysis
 
 // GMV 与净销售必须并列展示（指导书 §18.2 销售分析）
 const cards = computed(() => [
@@ -124,6 +148,12 @@ const qualityText = computed(() => qualitySummaryText(data.value.quality))
 const ruleVersionsText = computed(() => ruleVersionText((data.value.quality || {}).ruleVersions))
 
 const trendOpt = computed(() => salesTrendOption(rows.value))
+const categoryRows = computed(() => Array.isArray(data.value.byCategory) ? data.value.byCategory : [])
+const regionRows = computed(() => Array.isArray(data.value.byRegion) ? data.value.byRegion : [])
+const categoryOpt = computed(() => categorySalesOption(categoryRows.value))
+const cityLevelOpt = computed(() => cityLevelSalesOption(regionRows.value))
+const categoryState = computed(() => chartStateForRows(requestStatus.value, categoryRows.value))
+const regionState = computed(() => chartStateForRows(requestStatus.value, regionRows.value))
 
 function toggleSort(key) {
   if (loading.value) return

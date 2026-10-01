@@ -231,7 +231,7 @@ class AdsSaleTrendNetSaleSpec extends AnyFlatSpec with Matchers with BeforeAndAf
   }
 
   "发布前关键列规则（AdsQualityJob 规则 3）" should
-    "覆盖全部 8 张暂存表，且真的能把净销售额为 NULL 的暂存行判为不合格" in {
+    "覆盖全部 10 张暂存表，且真的能把净销售额为 NULL 的暂存行判为不合格" in {
     run()
 
     val predicates = AdsQualityJob.keyPredicates(ns)

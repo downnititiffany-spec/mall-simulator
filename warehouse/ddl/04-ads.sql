@@ -97,11 +97,13 @@ LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_sale_trend';
 
 -- 分类销售
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_category_sale (
-    category_id   BIGINT,
-    category_name STRING,
-    sale_count    BIGINT,
-    sale_amount   DECIMAL(18,2),
-    amount_ratio  DECIMAL(8,4) COMMENT '分类金额/全站金额'
+    category_id         BIGINT COMMENT '叶子分类；-1 为未分类/维度未匹配',
+    category_name       STRING,
+    parent_category_id  BIGINT COMMENT '父级仅作描述，不作为重复汇总粒度',
+    parent_category_name STRING,
+    sale_count          BIGINT COMMENT '销售件数，不是订单数',
+    sale_amount         DECIMAL(18,2),
+    net_sale_amount     DECIMAL(18,2) COMMENT '已支付销售额 - 已支付退款额'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
@@ -109,9 +111,9 @@ LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_category_sale';
 
 -- 地区销售
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_region_sale (
-    region      STRING,
-    buyer_count BIGINT,
-    sale_amount DECIMAL(18,2)
+    region          STRING COMMENT '城市等级（city_level），不是行政区',
+    sale_amount     DECIMAL(18,2),
+    net_sale_amount DECIMAL(18,2) COMMENT '已支付销售额 - 已支付退款额'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

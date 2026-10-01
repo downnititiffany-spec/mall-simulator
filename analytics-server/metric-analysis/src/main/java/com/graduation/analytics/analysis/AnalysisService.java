@@ -11,6 +11,7 @@ import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,10 +23,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.math.RoundingMode;
 
 /**
  * 专题分析服务（R7-4 契约 docs/contracts/analysis-viewmodel-r7-4.md，指导书 §18.1/§18.2/§24.6）。
@@ -56,6 +60,8 @@ public class AnalysisService {
     private static final String T_HOT_PRODUCT = "ads_hot_product_m";
     private static final String T_PRODUCT_CONVERSION = "ads_product_conversion_m";
     private static final String T_DATA_QUALITY = "ads_data_quality_m";
+    private static final String T_CATEGORY_SALE = "ads_category_sale_m";
+    private static final String T_REGION_SALE = "ads_region_sale_m";
 
     // ── 销售分析取值的指标码（一律取 metric_value，不重算，契约 §3.2） ──────────
     private static final String METRIC_GMV = "gmv";
@@ -70,6 +76,7 @@ public class AnalysisService {
 
     private static final int DEFAULT_TOP_N = 10;
     private static final int MAX_TOP_N = 100;
+    private static final int MAX_DIMENSION_ROWS = 20;
 
     /**
      * v1.3（S3-18）：分页窗口上限。与 {@link #MAX_TOP_N} **同值且刻意共用**——旧参数 `topN` 已退化为
@@ -226,12 +233,184 @@ public class AnalysisService {
         filters.put("snapshotId", sid);
 
         Map<String, BigDecimal> values = metricValueMap(sid);
-        // 分类/地区结构：本期没有对应 Hive ADS 与 MySQL 服务表，返回空数组并显式给出降级事实（契约 §3.2）
+        List<String> warnings = new ArrayList<>();
+        List<Map<String, Object>> byCategory = categorySales(
+                dimensionRows(T_CATEGORY_SALE, sid, from, to, warnings));
+        List<Map<String, Object>> byRegion = regionSales(
+                dimensionRows(T_REGION_SALE, sid, from, to, warnings));
         SalesData data = new SalesData(salesTrend(sid, from, to),
                 values.get(METRIC_GMV), values.get(METRIC_NET_SALE),
                 values.get(METRIC_REFUND_RATE), values.get(METRIC_FULL_REFUND_RATE),
-                quality(sid), List.of(), List.of());
-        return view(pinned, filters, data, List.of(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE));
+                quality(sid), byCategory, byRegion);
+        return view(pinned, filters, data, List.copyOf(new LinkedHashSet<>(warnings)));
+    }
+
+    /**
+     * 维度 ADS 与趋势共用同一快照和闭区间；没有区间时读整快照。
+     * 只把可定位到可选维度服务表的数据库访问故障降级为空数组并显式告警，其他编程错误不吞掉。
+     */
+    private List<Map<String, Object>> dimensionRows(String table, String snapshotId,
+                                                    LocalDate from, LocalDate to, List<String> warnings) {
+        try {
+            if (from == null && to == null) {
+                return adsReader.selectBySnapshot(table, snapshotId, null);
+            }
+            return adsReader.selectBySnapshotRange(table, snapshotId,
+                    AdsRows.compactDate(from), AdsRows.compactDate(to));
+        } catch (DataAccessException ex) {
+            log.warn("销售维度 ADS 读取不可用，按受限空态返回: table={} snapshotId={} reason={}",
+                    table, snapshotId, ex.getMessage());
+            warnings.add(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
+            return List.of();
+        }
+    }
+
+    /** 把按日叶子分类行聚合成闭区间行；父类仅取窗口内最新日的标签，不重复汇总父级。 */
+    private static List<Map<String, Object>> categorySales(List<Map<String, Object>> rows) {
+        Map<Long, CategoryAccumulator> grouped = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            long rawId = AdsRows.asLong(row.get("category_id"));
+            long id = rawId > 0 ? rawId : -1L;
+            CategoryAccumulator acc = grouped.computeIfAbsent(id, CategoryAccumulator::new);
+            acc.saleCount += AdsRows.asLong(row.get("sale_count"));
+            acc.addSale(AdsRows.asDecimal(row.get("sale_amount")));
+            acc.addNet(AdsRows.asDecimal(row.get("net_sale_amount")));
+            String dt = AdsRows.asString(row.get("dt"));
+            if (id == -1L) {
+                acc.categoryName = "未分类";
+                acc.parentCategoryId = -1L;
+                acc.parentCategoryName = "未分类";
+                acc.latestDt = dt;
+            } else if (acc.latestDt == null || dt.compareTo(acc.latestDt) >= 0) {
+                acc.categoryName = nonBlank(row.get("category_name"), "未知分类");
+                Long parentId = AdsRows.asLongOrNull(row.get("parent_category_id"));
+                acc.parentCategoryId = parentId == null || parentId <= 0 ? -1L : parentId;
+                acc.parentCategoryName = nonBlank(row.get("parent_category_name"), "未知上级分类");
+                acc.latestDt = dt;
+            }
+        }
+        BigDecimal denominator = grouped.values().stream().map(CategoryAccumulator::saleAmount)
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<Map<String, Object>> all = grouped.values().stream().map(acc -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("category_id", acc.categoryId);
+            item.put("category_name", acc.categoryName == null ? "未知分类" : acc.categoryName);
+            item.put("parent_category_id", acc.parentCategoryId == 0 ? -1L : acc.parentCategoryId);
+            item.put("parent_category_name", acc.parentCategoryName == null ? "未知上级分类" : acc.parentCategoryName);
+            item.put("sale_count", acc.saleCount);
+            item.put("sale_amount", acc.saleAmount());
+            item.put("net_sale_amount", acc.netSaleAmount());
+            item.put("amount_ratio", ratio(acc.saleAmount(), denominator));
+            return item;
+        }).sorted(categoryOrder()).toList();
+        return keepUnknownWithinLimit(all, "category_id", -1L, categoryOrder());
+    }
+
+    /** 城市等级（city_level）闭区间聚合；不提供按日 distinct 计数，避免跨日重复相加。 */
+    private static List<Map<String, Object>> regionSales(List<Map<String, Object>> rows) {
+        Map<String, RegionAccumulator> grouped = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            String region = nonBlank(row.get("region"), "unknown");
+            RegionAccumulator acc = grouped.computeIfAbsent(region, RegionAccumulator::new);
+            acc.addSale(AdsRows.asDecimal(row.get("sale_amount")));
+            acc.addNet(AdsRows.asDecimal(row.get("net_sale_amount")));
+        }
+        BigDecimal denominator = grouped.values().stream().map(RegionAccumulator::saleAmount)
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return grouped.values().stream().map(acc -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("region", acc.region);
+            item.put("sale_amount", acc.saleAmount());
+            item.put("net_sale_amount", acc.netSaleAmount());
+            item.put("amount_ratio", ratio(acc.saleAmount(), denominator));
+            return item;
+        }).sorted(regionOrder()).limit(MAX_DIMENSION_ROWS).toList();
+    }
+
+    private static List<Map<String, Object>> keepUnknownWithinLimit(List<Map<String, Object>> rows,
+                                                                    String key, long unknownId,
+                                                                    Comparator<Map<String, Object>> order) {
+        if (rows.size() <= MAX_DIMENSION_ROWS) {
+            return rows;
+        }
+        Map<String, Object> unknown = rows.stream()
+                .filter(row -> AdsRows.asLong(row.get(key)) == unknownId).findFirst().orElse(null);
+        List<Map<String, Object>> limited = new ArrayList<>(rows.subList(0, MAX_DIMENSION_ROWS));
+        if (unknown != null && !limited.contains(unknown)) {
+            limited.set(MAX_DIMENSION_ROWS - 1, unknown);
+            limited.sort(order);
+        }
+        return List.copyOf(limited);
+    }
+
+    private static Comparator<Map<String, Object>> categoryOrder() {
+        return (left, right) -> {
+            int amount = compareAmountDescending(left.get("sale_amount"), right.get("sale_amount"));
+            if (amount != 0) return amount;
+            int id = Long.compare(AdsRows.asLong(left.get("category_id")), AdsRows.asLong(right.get("category_id")));
+            return id != 0 ? id : AdsRows.asString(left.get("category_name"))
+                    .compareTo(AdsRows.asString(right.get("category_name")));
+        };
+    }
+
+    private static Comparator<Map<String, Object>> regionOrder() {
+        return (left, right) -> {
+            int amount = compareAmountDescending(left.get("sale_amount"), right.get("sale_amount"));
+            return amount != 0 ? amount : AdsRows.asString(left.get("region"))
+                    .compareTo(AdsRows.asString(right.get("region")));
+        };
+    }
+
+    private static int compareAmountDescending(Object left, Object right) {
+        BigDecimal a = AdsRows.asDecimal(left);
+        BigDecimal b = AdsRows.asDecimal(right);
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;
+        if (b == null) return -1;
+        return b.compareTo(a);
+    }
+
+    private static BigDecimal ratio(BigDecimal amount, BigDecimal denominator) {
+        if (amount == null || denominator == null || denominator.signum() <= 0) return null;
+        return amount.divide(denominator, 4, RoundingMode.HALF_UP);
+    }
+
+    private static String nonBlank(Object value, String fallback) {
+        String text = AdsRows.asString(value).trim();
+        return text.isEmpty() ? fallback : text;
+    }
+
+    private static final class CategoryAccumulator {
+        private final long categoryId;
+        private String categoryName;
+        private long parentCategoryId = -1L;
+        private String parentCategoryName;
+        private String latestDt;
+        private long saleCount;
+        private BigDecimal sale = BigDecimal.ZERO;
+        private BigDecimal net = BigDecimal.ZERO;
+        private boolean hasSale;
+        private boolean hasNet;
+
+        private CategoryAccumulator(long categoryId) { this.categoryId = categoryId; }
+        private void addSale(BigDecimal value) { if (value != null) { sale = sale.add(value); hasSale = true; } }
+        private void addNet(BigDecimal value) { if (value != null) { net = net.add(value); hasNet = true; } }
+        private BigDecimal saleAmount() { return hasSale ? sale : null; }
+        private BigDecimal netSaleAmount() { return hasNet ? net : null; }
+    }
+
+    private static final class RegionAccumulator {
+        private final String region;
+        private BigDecimal sale = BigDecimal.ZERO;
+        private BigDecimal net = BigDecimal.ZERO;
+        private boolean hasSale;
+        private boolean hasNet;
+
+        private RegionAccumulator(String region) { this.region = region; }
+        private void addSale(BigDecimal value) { if (value != null) { sale = sale.add(value); hasSale = true; } }
+        private void addNet(BigDecimal value) { if (value != null) { net = net.add(value); hasNet = true; } }
+        private BigDecimal saleAmount() { return hasSale ? sale : null; }
+        private BigDecimal netSaleAmount() { return hasNet ? net : null; }
     }
 
     // ── 商品分析（§3.3） ──────────────────────────────────────────────────────

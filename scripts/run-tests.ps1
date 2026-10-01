@@ -111,10 +111,17 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1170
+  'analytics-server'        = 1195
   'mall-simulator'          = 14
   'synthetic-data-generator' = 111
 }
+# 2026-09-30：MySqlMetricStoreActivationRollbackTest +4（激活后恢复旧快照、保护后续 ACTIVE、
+#   缺失旧快照时事务回滚、无 ACTIVE 时恢复旧快照），MetricPublisherBuildFailureCompensationTest +1（校验失败调用回退）。
+#   default fresh 1188→1193，三树 1313→1318；仅同步测试数量，不代表真实 MySQL IT 已运行。
+# 2026-09-30：PipelineServiceTest 新增 acceptedStorageUri 解析与 URI userinfo 脱敏守卫 +1；
+#   fresh 量数轮实测 analytics 1194（F=0/E=0/S=2）、三树 1319，故默认基线 1193→1194。
+# 2026-09-30：PipelineServiceTest 增加 evidence URI query/fragment 拒绝守卫 +1；
+#   fresh 量数轮实测 analytics 1195（F=0/E=0/S=2）、三树 1320，故默认基线 1194→1195。
 # S3-01：新增 AdsRfmRawValueSpec（6 条，ADS 画像 R/F/M 原值与窗口）+ MetricAdsCatalogDdlConsistencyTest
 # （3 条，Java 侧迁移↔白名单一致性，计入默认档 analytics-server）⇒ spark 177→183，analytics-server 872→875。
 # S3-02：新增 AdsSaleTrendNetSaleSpec（6 条，ads_sale_trend 净销售额透传/血缘/跨表对账/空值规则）
@@ -561,7 +568,9 @@ $BaselineDefault = [ordered]@{
 #   G5a 单主题不清他表/G5b 零写入/new-wins+G6 conf 还原），fresh 实测本日 16:18：329/329、41 套件、
 #   JDK8=True、All tests passed（首跑 329 DRIFT(基线 322) 后同步本数，基线比对轮见
 #   docs/verification/results/BATCH-G31-08-FG41-SAMEDAY-INCREMENTAL-RESULT.md §2.2）。
-$BaselineSpark = 329
+# 2026-09-29：329→332＝N31-02 开发新增 `ProductDimensionAsOfSpec`、`MetricExportZeroRowSpec`、
+#   `CategoryRegionAdsSpec` 各 1 条；同批同步 DDL 总数与 FixtureWriteShape 写入点基线，避免新功能被旧守卫误报。
+$BaselineSpark = 332
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
@@ -1072,6 +1081,12 @@ function Compare-Baseline {
   return ("{0}={1} DRIFT(基线 {2}) ⇒ 基线漂移" -f $Label, $Actual, $Expected)
 }
 
+function Test-BaselineComparison {
+  param([string]$Comparison)
+  if ($AllowCountDrift) { return $true }
+  return ($Comparison -notmatch 'DRIFT')
+}
+
 $suiteResults = [ordered]@{}
 $failCode = 0
 
@@ -1091,7 +1106,7 @@ function Invoke-DefaultSuite {
       -JdkHome $JdkDefault -SysProps @() -LogName ("default-{0}.log" -f $t.name)
     $tot = Get-MavenTotals -Log $r.log
     $cmp = Compare-Baseline -Label 'tests' -Actual $tot.tests -Expected $BaselineDefault[$t.name]
-    $ok = ($r.exit -eq 0) -and ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and ($cmp -notmatch 'DRIFT')
+    $ok = ($r.exit -eq 0) -and ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and (Test-BaselineComparison -Comparison $cmp)
     $total += $tot.tests
     $rows += [pscustomobject]@{
       name = $t.name; exit = $r.exit; tests = $tot.tests; failures = $tot.failures; errors = $tot.errors
@@ -1152,7 +1167,7 @@ function Invoke-IsolatedSuite {
       $reqNote = if ($reqOk) { '3 个 analytics IT 类均已执行' } else { '✗ 未执行：' + ($missingClasses -join ', ') }
       if ($tot.excluded) { $reqNote += ("；同 reactor 依赖构建不计入：" + $tot.excluded) }
     }
-    $ok = ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and ($cmp -notmatch 'DRIFT') -and $reqOk
+    $ok = ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and (Test-BaselineComparison -Comparison $cmp) -and $reqOk
     $total += $tot.tests
     $rows += [pscustomobject]@{
       name = $n; exit = $isoExit; tests = $tot.tests; failures = $tot.failures; errors = $tot.errors
@@ -1218,7 +1233,7 @@ function Invoke-SparkSuite {
   Write-Host ("  基线比对：{0}" -f $cmp)
 
   $ok = ($r.exit -eq 0) -and $fresh -and ($tot.total -gt 0) -and ($tot.failed -eq 0) -and ($tot.aborted -eq 0) -and `
-    ($tot.succeeded -eq $tot.total) -and $tot.allPassed -and $jdkOk -and ($cmp -notmatch 'DRIFT')
+    ($tot.succeeded -eq $tot.total) -and $tot.allPassed -and $jdkOk -and (Test-BaselineComparison -Comparison $cmp)
   $row = [pscustomobject]@{
     name = 'spark-jobs'; exit = $r.exit; tests = $tot.total; failures = $tot.failed; errors = $tot.aborted
     skipped = $tot.ignored; blocks = $tot.suitesCompleted; detail = ''; cmp = $cmp; ok = $ok; log = $r.log

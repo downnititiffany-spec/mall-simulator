@@ -221,11 +221,23 @@ public class EvidenceBuilder {
             String snapshotId, LocalDate from, LocalDate to, List<String> warnings) {
         Map<String, List<EvidencePackage.DimensionContribution>> out = new LinkedHashMap<>();
         out.put("product", productDimension(snapshotId, from, to, warnings));
-        out.put("category", rowDimension("category", snapshotId, from, to, warnings));
-        out.put("region", rowDimension("region", snapshotId, from, to, warnings));
-        // 渠道维度本期没有 Hive 来源表（§24.4 只对有来源的表建服务表）
+        AnalysisService.SalesData sales;
+        try {
+            AnalysisViewModel<AnalysisService.SalesData> view = analysisService.sales(snapshotId, from, to);
+            warnings.addAll(view.warnings());
+            sales = view.data();
+        } catch (RuntimeException e) {
+            log.warn("证据包分类/城市等级维度读取失败（降级为空维度）: {}", e.getMessage());
+            warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
+            sales = null;
+        }
+        out.put("category", rowDimension("category", snapshotId, from, to,
+                sales == null ? List.of() : sales.byCategory(), warnings));
+        out.put("region", rowDimension("region", snapshotId, from, to,
+                sales == null ? List.of() : sales.byRegion(), warnings));
+        // 渠道维度当前无正式 ADS 服务表；明确标记未覆盖，不把它伪装成分类/城市等级缺表。
         out.put("channel", List.of());
-        warnings.add(EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE);
+        warnings.add(EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE);
         return out;
     }
 
@@ -257,31 +269,34 @@ public class EvidenceBuilder {
     }
 
     private List<EvidencePackage.DimensionContribution> rowDimension(
-            String dimension, String snapshotId, LocalDate from, LocalDate to, List<String> warnings) {
-        List<Map<String, Object>> rows;
-        try {
-            AnalysisService.SalesData sales = analysisService.sales(snapshotId, from, to).data();
-            rows = "category".equals(dimension) ? sales.byCategory() : sales.byRegion();
-        } catch (RuntimeException e) {
-            log.warn("证据包 {} 维度读取失败（降级为空维度）: {}", dimension, e.getMessage());
-            warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
-            return List.of();
-        }
+            String dimension, String snapshotId, LocalDate from, LocalDate to,
+            List<Map<String, Object>> rows, List<String> warnings) {
         if (rows == null || rows.isEmpty()) {
             return List.of();
         }
+        boolean category = "category".equals(dimension);
+        String sourceTable = category ? "ads_category_sale_m" : "ads_region_sale_m";
+        String keyField = category ? "category_id" : "region";
+        String labelField = category ? "category_name" : "region";
         List<EvidencePackage.DimensionContribution> out = new ArrayList<>();
         for (Map<String, Object> row : rows) {
-            String key = firstText(row, dimension + "_id", dimension, "key");
-            String label = firstText(row, dimension + "_name", "name", "label");
-            Map.Entry<String, BigDecimal> measure = firstNumber(row);
-            if (key == null || measure == null) {
+            String key = firstText(row, keyField, "key");
+            String label = firstText(row, labelField, "name", "label");
+            BigDecimal amount = decimal(row.get("sale_amount"));
+            BigDecimal amountRatio = decimal(row.get("amount_ratio"));
+            if (key == null || amount == null) {
                 warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
                 continue;
             }
-            out.add(new EvidencePackage.DimensionContribution(key, blankToDash(label),
-                    plain(measure.getValue()), null, measure.getKey(),
-                    "ads_sale_trend_m." + measure.getKey() + "@" + snapshotId));
+            String visibleLabel = category ? blankToDash(label) : "城市等级 " + key;
+            String period = dateStamp(from) + ".." + dateStamp(to);
+            out.add(new EvidencePackage.DimensionContribution(key, visibleLabel,
+                    plain(amount), plain(amountRatio), category ? "category_sale_amount" : "city_level_sale_amount",
+                    sourceTable + ".sale_amount@" + snapshotId + "[" + period + "]"));
+        }
+        if (!out.isEmpty()) {
+            // 血缘登记只依据实际返回的维度，而不是固定把维度数值归到趋势表。
+            out.sort((left, right) -> new BigDecimal(right.value()).compareTo(new BigDecimal(left.value())));
         }
         return out;
     }
@@ -310,9 +325,11 @@ public class EvidenceBuilder {
         if (!dimensions.getOrDefault("product", List.of()).isEmpty()) {
             mysql.add(MetricLineage.hotProduct().mysqlTable());
         }
-        if (!dimensions.getOrDefault("category", List.of()).isEmpty()
-                || !dimensions.getOrDefault("region", List.of()).isEmpty()) {
-            mysql.add(MetricLineage.saleTrend().mysqlTable());
+        if (!dimensions.getOrDefault("category", List.of()).isEmpty()) {
+            mysql.add(MetricLineage.categorySale().mysqlTable());
+        }
+        if (!dimensions.getOrDefault("region", List.of()).isEmpty()) {
+            mysql.add(MetricLineage.regionSale().mysqlTable());
         }
         return new EvidencePackage.Lineage(
                 MetricLineage.hiveTables(mysql, namespaceProvider.current()), List.copyOf(mysql),
@@ -370,17 +387,25 @@ public class EvidenceBuilder {
         return null;
     }
 
-    /** 行里的第一个数值列（列名即度量码；取不到返回 null，不猜列） */
-    private static Map.Entry<String, BigDecimal> firstNumber(Map<String, Object> row) {
-        for (Map.Entry<String, Object> e : row.entrySet()) {
-            if (e.getValue() instanceof BigDecimal bd) {
-                return Map.entry(e.getKey(), bd);
-            }
-            if (e.getValue() instanceof Number n) {
-                return Map.entry(e.getKey(), new BigDecimal(n.toString()));
+    private static BigDecimal decimal(Object value) {
+        if (value instanceof BigDecimal decimal) {
+            return decimal;
+        }
+        if (value instanceof Number number) {
+            return new BigDecimal(number.toString());
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return new BigDecimal(text.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
             }
         }
         return null;
+    }
+
+    private static String dateStamp(LocalDate value) {
+        return value == null ? "*" : value.format(STAMP);
     }
 
     private static String share(BigDecimal value, BigDecimal total) {

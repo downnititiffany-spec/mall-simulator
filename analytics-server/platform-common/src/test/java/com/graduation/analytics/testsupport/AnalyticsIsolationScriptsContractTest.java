@@ -13,6 +13,7 @@ class AnalyticsIsolationScriptsContractTest {
 
     private static final Path PREPARE = RepoRoot.path("scripts/it-prepare-isolation.ps1");
     private static final Path RUNNER = RepoRoot.path("scripts/run-isolated-tests.ps1");
+    private static final Path PROJECT_RUNNER = RepoRoot.path("scripts/run-tests.ps1");
     private static final Path NAMING = RepoRoot.path("scripts/isolation-naming.ps1");
     private static final Path STAGE7_HTTP = RepoRoot.path("scripts/stage7-http-isolated.ps1");
     private static final Path STAGE7_LOCALFILE_E2E = RepoRoot.path("scripts/stage7-localfile-e2e.ps1");
@@ -73,6 +74,29 @@ class AnalyticsIsolationScriptsContractTest {
                     .as(script + " 不得新增 *Password 命令行参数，避免口令进入进程列表/历史")
                     .doesNotContain("Password");
         }
+    }
+
+    @Test
+    void prepareScriptDoesNotPutWslAdminPasswordInWslArguments() throws IOException {
+        String source = Files.readString(PREPARE);
+        assertThat(source)
+                .as("Windows-to-WSL credential transfer must use WSLENV, never an env NAME=value argv token")
+                .contains("MYSQL_PWD/u")
+                .contains("$env:V25IT_ADMIN_PWD")
+                .contains("$env:WSLENV")
+                .doesNotContain("MYSQL_PWD=$($env:V25IT_ADMIN_PWD)");
+    }
+
+    @Test
+    void unifiedRunnerAllowCountDriftBypassesOnlyTheCountComparisonGate() throws IOException {
+        String source = Files.readString(PROJECT_RUNNER);
+        assertThat(source)
+                .contains("function Test-BaselineComparison")
+                .contains("if ($AllowCountDrift) { return $true }")
+                .contains("return ($Comparison -notmatch 'DRIFT')");
+        assertThat(source.split(java.util.regex.Pattern.quote("Test-BaselineComparison -Comparison $cmp"), -1))
+                .as("default / isolated / spark 三个计数比较点必须共用同一放行语义")
+                .hasSize(4);
     }
 
     @Test

@@ -53,7 +53,7 @@ public record AnalysisViewModel<T>(
     /** 快照未保存 source_registry.id；不得用当前 runtime profile 绑定关系推断历史归属 */
     public static final String WARN_SOURCE_ID_UNAVAILABLE = "SOURCE_ID_UNAVAILABLE";
 
-    /** 契约要求但本期没有 Hive 来源的维度表（分类/地区结构），只能返回空数组并显式警告 */
+    /** 可选维度 ADS 服务表不存在或暂不可读时返回空数组并显式警告；正常空结果不触发此码 */
     public static final String WARN_UNKNOWN_DIMENSION_TABLE = "UNKNOWN_DIMENSION_TABLE";
 
     /** ads_user_profile_m 无消费额列，八类消费额无法从指标库取值（不用 m 分冒充金额） */
