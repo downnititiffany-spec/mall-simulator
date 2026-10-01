@@ -1672,3 +1672,4 @@
 - **实现/决策**：两个列表统一提供 10/20/50/100 条每页选项；数值在 API 上限 100 内。修改 size 或排序时回第 1 页，避免保留旧页码后落入空窗口；刷新及写操作后的列表重载保留当前 page/size/sort。busy/loading 期间控件禁用，处理函数也拒绝重入。
 - **验证**：Web 定向结构守卫覆盖两页选项、参数传递、排序/size 重置和禁用期间行为；完整 `npm run verify` **384/384 PASS**，Vite production build 成功。此前后端 API/SQL 判据与真实空集 HTTP/浏览器证据继续有效；本轮未改后端或数据库。
 - **限制/回滚**：真实环境仍无决策记录，尚未对非空列表逐页核数；page size 控件的行为由源码守卫/build 验收。回退两页面、对应结构测试和本条状态记录即可，不涉及 schema/API 变更。
+- **运行中服务补验**：新 RunId `cloud_261001_104952_d7b6d8` 使用一次性登录会话对 `/decisions/page` 与 `/pipeline-runs/page` 分别执行 size=10、50 的真实 GET；四个响应均 HTTP 200，正确回显所请求 size，`total=0,totalPages=1`。完成后注销。验证服务层接受 page size 与空集元数据；不替代有记录时的跨页/排序验收。
