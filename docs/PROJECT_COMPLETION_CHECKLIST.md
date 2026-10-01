@@ -40,7 +40,7 @@
 | 1 开发基线与核心链路：HEAD/工作区、依赖和档案；复用测试基线；固定来源、RunId、夹具、预期及代码落点 | 已完成（逐任务更新） | 本轮基线/边界见本文件与 `docs/PROJECT_STATUS.md` 顶部；云端 RunId `cloud_261001_071427_ac5e43`、sourceId=1、分批输入和 oracle 已归档。每一新切片继续记录允许改动、定向验收及失败处理。 |
 | 2 采集与数仓：版本化来源映射、完成文件、Flume/HDFS、ODS/DIM/DWD/DWS/ADS、边界样本、可配置 namespace | 已完成，单节点限定 | 云端完整链结果 `CLOUD-SINGLE-NODE-E2E-20261001.md`；历史第二来源结果 `G31-02-SECOND-SOURCE-RESULT.md`；N31-02 A–D 结果分别列于上述 N31-02 行。REMOTE_CLUSTER/YARN、跨节点恢复未测。 |
 | 3 指标计算与发布：口径/版本、分层计算及逐层对账、分类地区、checksum/暂存/ACTIVE、失败保旧 | 已完成，单节点限定 | 云端 oracle 独立核对 batch1/2、商城 Outbox、snapshot `S20261001_6`；失败保旧/no-op/受控重试见云端结果。隔离 MySQL IT 历史 13/13 证据来自 `BATCH-N31-02-LEGC-REVALIDATION-20260930.md`，不冒充当前 RunId 重跑。 |
-| 4 查询与分析服务：上下文/固定快照/授权、异步任务反馈、分页/限流/超时、身份与账号分离 | 部分完成 | 固定快照与权限沿用既有验收；pipeline 与 decision `/page`、限流已实现并定向测。Decision 页面真实 DB/HTTP 仍待当前运行服务验证；进程内限流仅单节点；只读超时不代表所有写请求都有统一超时。见 `PROJECT_STATUS.md` 阶段 4 条目。 |
+| 4 查询与分析服务：上下文/固定快照/授权、异步任务反馈、分页/限流/超时、身份与账号分离 | 部分完成 | 固定快照与权限沿用既有验收；pipeline 与 decision `/page`、限流已实现并定向测。当前 RunId 对两个分页 API 的登录态空集查询通过；决策页浏览器空态已验证，Ops 分页 UI 本次未做浏览器实测；非空排序/翻页待真实记录。进程内限流仅单节点；只读超时不代表所有写请求都有统一超时。见 `PROJECT_STATUS.md` 阶段 4 条目。 |
 | 5 页面：八类分析与运行/质量接真实 API、统一四态及上下文、来源/关键路径、员工可用、浏览器验证 | 已完成，有限制 | N31-03 普通员工验收 `BATCH-N31-03-EMPLOYEE-USABILITY-RESULT.md`；本轮浏览器与服务链见云端结果。N31-03 中记录的单视口可见性限制继续保留；新决策分页尚未在当前真实浏览器实例验证。 |
 | 6 AI：已发布证据包、真实 Provider 标识/耗时/失败、受控 Text-to-SQL、解释/建议回退、审批及可计算效果 | 部分完成；真实 Provider 阻塞且不纳入本轮完成门槛 | stub-local/安全拒绝/证据/决策已有历史测试与云端 stub 范围结果。缺少 D-039 要求的外部 endpoint、有效凭据及授权；严禁据 stub 声称真实 LLM 通过。Text-to-SQL 与模板安全按已归档定向证据维持原边界。 |
 | 7 业务联调：生成器经商城 HTTP/Outbox，主来源持续链，第二异构来源，同源对账及失败保旧，Hive/HDFS 单独判 | 已完成，单节点限定 | 云端 RunId 的商城 API→Outbox 94 事件→Flume/HDFS→数仓→API/页面与独立 oracle 通过；第二来源单列 `G31-02-SECOND-SOURCE-RESULT.md`；共享 Thrift HMS 与嵌入 Derby 分开验收。远程集群、多节点未测。 |
@@ -74,4 +74,4 @@
 - 阶段 4「运维中心流水线实例分页」：**实现及前端验证通过**。Ops 现与流水线主页面使用相同的服务端分页契约；web 386/386 + Vite production build PASS、diff whitespace PASS。真库当前无 pipeline 记录，故非空排序/翻页及 Ops 浏览器实测未验；见 `PROJECT_STATUS.md` 顶部记录。
 - 阶段 4「流水线运行记录分页」：**实现、前后端定向测试与 MockMvc 验收通过；真实服务/真库验收未完成**。Web 382/382 + Vite build PASS；Java 三类用例共 10/10 PASS。Java 使用临时 Maven/JDK21 javac 兼容启动器完成，标准 Java 17 release 尚未测。细节见 `docs/PROJECT_STATUS.md` 对应切片记录。
 - 阶段 4「限流」：**首版单节点高成本提交端点已实现并通过定向测试**（10 次/分钟 pipeline commands、20 次/分钟 ingestion triggers；按用户与操作族隔离；HTTP 429/Retry-After）。多节点共享状态未验收，且普通读取 API 不纳入本次限流策略。
-- 下一步：在现有单节点环境的隔离 3307 schema 对只读列表做一次真实 API 验收，不修改/迁移 3306；随后继续 V3.0 必做项。冻结文档保持不变。
+- 下一步：已有的列表 API 空集验收不再重复；在有真实非空 run/decision 行的隔离运行库中验证多页排序与切页，并补 Ops 页浏览器调用验收。期间继续推进其他可执行 V3.0 必做项；冻结文档保持不变。
