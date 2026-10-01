@@ -1625,5 +1625,5 @@
 - **缺口**：V3.0 设计 §16.1 要求统一分页 `page/size/sort`；`GET /api/v1/pipeline-runs` 原来仅支持 `limit`，Pipeline 页面也无法翻页、查看总数或指定排序。
 - **实现**：新增受 `ops:log:view` 保护的 `GET /api/v1/pipeline-runs/page`，返回 `items/page/size/total/totalPages/sort`；限制 `page >= 1`、`1 <= size <= 100`，排序字段使用 MyBatis Lambda 白名单，未知字段/方向返回 `PARAM_INVALID`；相同排序值以 ID 倒序稳定打散。原 `GET /pipeline-runs?limit=...` 保持原响应兼容。Pipeline 页面改用分页查询，提供上一页/下一页、总条数及三种排序。
 - **决策记录**：为保持既有响应兼容，采用新 `/page` 子路径，不改变旧列表 JSON 形状；排序只开放 ID、创建/开始/结束时间、业务时间和状态；页越界自动归到最后一页，空列表仍显示第 1/1 页。影响仅流水线运行列表 API、前端及权限覆盖测试；回滚可恢复 controller、Pipeline.vue/api.js 和对应测试改动，不涉及数据库或迁移。
-- **验证**：Web `npm run verify`：382/382 Node 测试通过，Vite 5.4.21 production build 成功；`git diff --check` 通过。后端新增 `PipelineControllerPaginationTest`（分页元数据、越界、空结果、参数 fail-closed）及权限期望，但当前云端工作树无 Maven / Maven Wrapper，后端测试尚未运行，不能将该切片报告为完整通过。
-- **限制/下一步**：需在具备 Maven 的开发环境执行定向 `PipelineControllerPaginationTest` 与 `ControllerPermissionCoverageTest`，再做真实 HTTP 分页/排序及边界验收；之后继续处理首版其它阶段缺口。本切片不关闭阶段 4。
+- **验证**：Web `npm run verify`：382/382 Node 测试通过，Vite 5.4.21 production build 成功；`git diff --check` 通过。使用临时 Maven 3.9.9＋云端代理＋JDK 21 `jdk.compiler` 模块运行后端定向 reactor：`PipelineControllerPaginationTest` 3/3、`ControllerPermissionCoverageTest` 5/5，总计 **8/8 PASS**。为适配缺少标准 JDK `ct.sym` 的环境，临时 javac 启动器将 Maven `--release 17` 映射成 `-source 17 -target 17`；无仓库 POM 改动。
+- **限制/下一步**：已通过权限/控制器定向单测，但尚未进行 MockMvc/真实 HTTP 分页排序、3307 数据库列表读取或标准 JDK 17 的 `--release` 编译验收；因此只关闭本切片的单测实现部分，不关闭阶段 4。继续处理首版其它阶段缺口。

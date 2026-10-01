@@ -51,5 +51,5 @@
 
 ## 2026-10-01 连续开发进度
 
-- 阶段 4「流水线运行记录分页」：**已实现、前端 build/unit 验证通过、后端未验收**。新增 endpoint 与兼容策略、参数边界、排序白名单、恢复方式和测试状态见 `docs/PROJECT_STATUS.md` 的「阶段 4：流水线运行记录分页切片」。由于当前云端没有 Maven/Maven Wrapper，不把此项升级成已完成。
-- 下一步：在可执行 Maven 的环境完成上述两项 Java 定向测试和 HTTP 分页验收，然后从 V3.0 必做项继续选取下一项未完成能力；不修改冻结 V3.0 文档。
+- 阶段 4「流水线运行记录分页」：**实现与前后端定向单测通过；HTTP/真库验收未完成**。Web 382/382 + Vite build PASS；Java `PipelineControllerPaginationTest` 3/3、`ControllerPermissionCoverageTest` 5/5。Java 使用临时 Maven/JDK21 javac 兼容启动器完成，标准 Java 17 release 尚未测。细节见 `docs/PROJECT_STATUS.md` 对应切片记录。
+- 下一步：补 MockMvc/真实 HTTP 分页排序及 3307 只读列表验收，再从 V3.0 必做项继续选取下一项未完成能力；不修改冻结 V3.0 文档。
