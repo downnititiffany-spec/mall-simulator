@@ -1,6 +1,7 @@
 package com.graduation.analytics.ai.sql;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 
@@ -39,8 +40,13 @@ public class SqlExecutor {
      * 阶段4 的分析只读链路在 {@code metricReadJdbcTemplate} 上取同一个值。
      * 值不变（30 秒，设计 L569 先例），但改属主即两条路径同时改。
      */
-    public static final int QUERY_TIMEOUT_SECONDS =
-            com.graduation.analytics.common.QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS;
+    @Value("${platform.query.read-timeout-seconds:}")
+    private String queryTimeoutProperty;
+
+    /** Same validated setting used by metricReadJdbcTemplate; invalid values never disable the timeout. */
+    int queryTimeoutSeconds() {
+        return com.graduation.analytics.common.QueryTimeoutPolicy.readTimeoutSeconds(queryTimeoutProperty);
+    }
 
     /** 契约 §2.3 rowLimit：结果行上限 200（LIMIT 不生效时由 JDBC 层兜底截断） */
     public static final int MAX_ROWS = AiScope.DEFAULT_ROW_LIMIT;
@@ -92,7 +98,7 @@ public class SqlExecutor {
         try {
             conn.setReadOnly(true);
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
+                ps.setQueryTimeout(queryTimeoutSeconds());
                 ps.setMaxRows(MAX_ROWS); // 契约 §2.3：JDBC 层再兜一层行数上限
                 try (ResultSet rs = ps.executeQuery()) {
                     ResultSetMetaData meta = rs.getMetaData();
@@ -116,7 +122,7 @@ public class SqlExecutor {
     /**
      * 在一次只读连接上取 {@code EXPLAIN <sql>} 的原始计划（供 {@link QueryCostGuard} 解析成本）。
      *
-     * <p>与 {@link #execute(String)} 同源同策略：metric_read、{@code setReadOnly(true)}、30s 超时、
+     * <p>与 {@link #execute(String)} 同源同策略：metric_read、{@code setReadOnly(true)}、统一配置超时、
      * 只读源缺失 fail-closed。EXPLAIN 不是"只读查询的普通路径"，但仍必须是只读连接 ——
      * 成本校验失败不能变成"顺手用可写账号看一眼计划"的口子。</p>
      */
@@ -126,7 +132,7 @@ public class SqlExecutor {
         try {
             conn.setReadOnly(true);
             try (PreparedStatement ps = conn.prepareStatement("EXPLAIN " + sql)) {
-                ps.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
+                ps.setQueryTimeout(queryTimeoutSeconds());
                 List<String> columns = new ArrayList<>();
                 List<Map<String, Object>> plan = new ArrayList<>();
                 // 说明（如实登记）：这里只读**第一个**结果集。EXPLAIN FORMAT=TRADITIONAL（默认）就是

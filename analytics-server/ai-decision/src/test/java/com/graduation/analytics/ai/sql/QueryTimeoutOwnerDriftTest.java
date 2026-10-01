@@ -3,6 +3,7 @@ package com.graduation.analytics.ai.sql;
 import com.graduation.analytics.common.QueryTimeoutPolicy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,10 +22,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 class QueryTimeoutOwnerDriftTest {
 
     @Test
-    @DisplayName("AI 只读 SQL 的超时值取自平台唯一属主，不各自写字面量")
-    void aiReadPathUsesUnifiedTimeoutOwner() {
+    @DisplayName("AI 只读 SQL 的默认超时值取自平台唯一属主")
+    void aiReadPathUsesUnifiedTimeoutDefault() {
         assertThat(QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS).isEqualTo(30);
-        assertThat(SqlExecutor.QUERY_TIMEOUT_SECONDS)
-                .isEqualTo(QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS);
+        SqlExecutor executor = new SqlExecutor();
+        assertThat(executor.queryTimeoutSeconds()).isEqualTo(QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS);
+    }
+
+    @Test
+    @DisplayName("AI 只读 SQL 与分析只读模板共享可配置超时，非法值仍回退默认值")
+    void configuredTimeoutAndInvalidFallbackComeFromSameOwner() {
+        SqlExecutor executor = new SqlExecutor();
+        ReflectionTestUtils.setField(executor, "queryTimeoutProperty", "7");
+        assertThat(executor.queryTimeoutSeconds()).isEqualTo(QueryTimeoutPolicy.readTimeoutSeconds("7"));
+
+        ReflectionTestUtils.setField(executor, "queryTimeoutProperty", "0");
+        assertThat(executor.queryTimeoutSeconds()).isEqualTo(QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS);
     }
 }

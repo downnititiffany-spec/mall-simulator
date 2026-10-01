@@ -61,6 +61,7 @@
 | 2026-10-01 | 分页 API 有 page/size/sort，但流水线与决策页固定 size=20 | 提供 10/20/50/100 的离散 size 选择；更改 size/sort 时回到第 1 页，刷新和写后重载保留当前 size | 前端 384/384 + production build 通过；本次仅做组件契约验证 | 回退 Pipeline.vue、Decisions.vue 的 size 控件/参数与对应测试；无服务端或数据变化 |
 | 2026-10-01 | Ops 流水线表仍调用旧 top-10 数组 API，且导出范围不明显 | 统一调用 `/pipeline-runs/page`；提供 10/20/50/100 页大小、现有安全排序选项和页码控件；导出标签注明本页 | Web 386/386 与 production build 通过；当前数据集为空，非空真服务/浏览器验收待补 | 回退 `web/src/views/Ops.vue` 与 `web/tests/opsPipelinePagination.test.js`，不触及数据 |
 | 2026-10-01 | 流水线列表把 ID 顺序标为创建时间 | 两页默认及可见创建时间排序统一用后端白名单 `createdAt,desc`；不改变 ID tie-break 契约 | 原实现静态复核发现；修改后 Web 386/386 与 production build 通过 | 回退两页的 sort 默认值/选项及对应断言；无数据库变化 |
+| 2026-10-01 | 查询超时属性只影响分析 JDBC 模板，AI SQL/EXPLAIN 仍锁在默认 30 秒 | 两条只读路径统一读取 `platform.query.read-timeout-seconds`，共享 `QueryTimeoutPolicy` 的非法值保护；写事务不扩展 | AI 默认/自定义值测试 4/4，平台只读模板测试 5/5，Maven reactor 成功 | 恢复 `SqlExecutor` 对默认值的使用和新增定向测试；无数据库变化 |
 
 ## 当前未验收项 / 待复核假设
 
@@ -72,6 +73,7 @@
 ## 2026-10-01 连续开发进度
 
 - 阶段 4「运维中心流水线实例分页」：**实现及前端验证通过**。Ops 现与流水线主页面使用相同的服务端分页契约；web 386/386 + Vite production build PASS、diff whitespace PASS。真库当前无 pipeline 记录，故非空排序/翻页及 Ops 浏览器实测未验；见 `PROJECT_STATUS.md` 顶部记录。
+- 阶段 4「只读查询超时配置」：**实现并定向验证通过**。分析只读 JDBC 与 AI SQL/EXPLAIN 现共享同一配置键和安全解析；Maven 测试分别 4/4、5/5 通过。写事务仍不扩展；没有声称标准 JDK 17 runtime 验收。
 - 阶段 4「流水线运行记录分页」：**实现、前后端定向测试与 MockMvc 验收通过；真实服务/真库验收未完成**。Web 382/382 + Vite build PASS；Java 三类用例共 10/10 PASS。Java 使用临时 Maven/JDK21 javac 兼容启动器完成，标准 Java 17 release 尚未测。细节见 `docs/PROJECT_STATUS.md` 对应切片记录。
 - 阶段 4「限流」：**首版单节点高成本提交端点已实现并通过定向测试**（10 次/分钟 pipeline commands、20 次/分钟 ingestion triggers；按用户与操作族隔离；HTTP 429/Retry-After）。多节点共享状态未验收，且普通读取 API 不纳入本次限流策略。
 - 下一步：已有的列表 API 空集验收不再重复；在有真实非空 run/decision 行的隔离运行库中验证多页排序与切页，并补 Ops 页浏览器调用验收。期间继续推进其他可执行 V3.0 必做项；冻结文档保持不变。
