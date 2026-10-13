@@ -3,9 +3,12 @@ package com.graduation.analytics.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.graduation.analytics.ai.ExplanationService;
 import com.graduation.analytics.ai.ExplanationService.ExplanationResult;
+import com.graduation.analytics.ai.AiFeedbackService;
+import com.graduation.analytics.ai.AiFeedbackConflictException;
 import com.graduation.analytics.ai.TextToSqlService;
 import com.graduation.analytics.ai.TextToSqlService.QueryResult;
 import com.graduation.analytics.ai.entity.AiCallLog;
+import com.graduation.analytics.ai.entity.AiFeedback;
 import com.graduation.analytics.ai.entity.AiQueryHistory;
 import com.graduation.analytics.ai.evidence.EvidencePackage;
 import com.graduation.analytics.ai.evidence.EvidenceRequest;
@@ -16,6 +19,8 @@ import com.graduation.analytics.ai.mapper.AiQueryHistoryMapper;
 import com.graduation.analytics.auth.PermissionCode;
 import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
+import com.graduation.analytics.common.PaginationMath;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.decision.AuditActor;
 import com.graduation.analytics.decision.OperationAuditService;
@@ -29,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -57,17 +64,26 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class AiController {
 
+    private static final int MAX_AUDIT_PAGE_SIZE = 100;
+
     private final TextToSqlService textToSqlService;
     private final ExplanationService explanationService;
     private final EvidenceService evidenceService;
     private final AiQueryHistoryMapper queryHistoryMapper;
     private final AiCallLogMapper callLogMapper;
     private final OperationAuditService audit;
+    private final AiFeedbackService feedbackService;
 
     public record AiQueryReq(@NotBlank String question, String timeRange, String snapshotId) {
         public AiQueryReq(String question, String timeRange) {
             this(question, timeRange, null);
         }
+    }
+
+    public record AuditPage<T>(List<T> items, long page, int size, long total, long totalPages, String sort) {
+    }
+
+    private record AuditSort(String field, String direction) {
     }
 
     /** 证据解释请求（R8-2 §1）：三段皆可选——不传快照取 ACTIVE，不传时间范围取快照业务日 */
@@ -91,6 +107,16 @@ public class AiController {
                               String evidenceSummary, String evidenceId) {
     }
 
+    public record AiFeedbackReq(@NotBlank String rating, @NotBlank String reasonCode) {
+    }
+
+    public record AiFeedbackResp(Long id, String rating, String reasonCode, java.time.LocalDateTime createdAt) {
+        static AiFeedbackResp from(AiFeedback feedback) {
+            return new AiFeedbackResp(feedback.getId(), feedback.getRating(), feedback.getReasonCode(),
+                    feedback.getCreatedAt());
+        }
+    }
+
     /**
      * 证据包 + 解释（R8-2 §1）：一次调用给出「证据（数值/血缘/质量）+ 六段叙述」。
      *
@@ -105,6 +131,7 @@ public class AiController {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
         ExplainReq body = req == null ? new ExplainReq(null, null, null) : req;
+        requireDashboardViewForExplicitSnapshot(body.snapshotId());
         EvidencePackage pkg = evidenceService.build(
                 new EvidenceRequest(body.snapshotId(), null, body.timeRange(), actor.userId()));
         ExplanationResult explanation = evidenceService.explain(pkg, body.question());
@@ -122,8 +149,10 @@ public class AiController {
     public ApiResponse<AiQueryResp> query(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
+        requireDashboardViewForExplicitSnapshot(req.snapshotId());
         QueryResult query = runQuery(req, actor.userId());
         EvidencePackage pkg = buildEvidenceQuietly(req.snapshotId(), req.timeRange(), actor.userId());
+        attachFeedbackEvidence(query, pkg, actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
         // QA-04：口径由 query.window 的生效区间产出（ExplanationService 内部取用），
         // 这里只传页面请求口径，不再伪造「近30天(默认)」这类与 SQL 无关的标签
@@ -140,6 +169,7 @@ public class AiController {
     public ApiResponse<ExplanationResult> analyze(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
+        requireDashboardViewForExplicitSnapshot(req.snapshotId());
         QueryResult query = runQuery(req, actor.userId());
         EvidencePackage pkg = buildEvidenceQuietly(req.snapshotId(), req.timeRange(), actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
@@ -204,7 +234,8 @@ public class AiController {
                     OperationAuditService.RESOURCE_AI_QUERY, pkg.evidenceId(), null, digest,
                     "AI 证据解释（快照 " + pkg.snapshotId() + "）");
         } catch (RuntimeException e) {
-            log.warn("证据解释审计写入失败（operation_audit_log 是否已随 V14 建表？）: {}", e.getMessage());
+            log.warn("证据解释审计写入失败（operation_audit_log 是否已随 V14 建表？），causeType={}",
+                    e.getClass().getSimpleName());
         }
     }
 
@@ -212,7 +243,8 @@ public class AiController {
         try {
             return evidenceService.build(new EvidenceRequest(snapshotId, null, timeRange, requestedBy));
         } catch (RuntimeException e) {
-            log.warn("证据包构建失败，问答照常返回（evidenceSummary/evidenceId 置空）: {}", e.getMessage());
+            log.warn("证据包构建失败，问答照常返回（evidenceSummary/evidenceId 置空），causeType={}",
+                    e.getClass().getSimpleName());
             return null;
         }
     }
@@ -222,6 +254,12 @@ public class AiController {
             return textToSqlService.query(req.question(), userId, req.timeRange());
         }
         return textToSqlService.query(req.question(), userId, req.timeRange(), req.snapshotId());
+    }
+
+    private static void requireDashboardViewForExplicitSnapshot(String snapshotId) {
+        if (snapshotId != null && !snapshotId.isBlank()) {
+            CallerContext.requirePermission(PermissionCode.DASHBOARD_VIEW);
+        }
     }
 
     private String resolveSnapshotId(EvidencePackage pkg, QueryResult query) {
@@ -250,6 +288,25 @@ public class AiController {
         return template.sections().stream()
                 .map(section -> new ExplanationSection(section.title(), section.lines()))
                 .toList();
+    }
+
+    private void attachFeedbackEvidence(QueryResult query, EvidencePackage pkg, String userId) {
+        if (query == null || pkg == null || query.historyId() == null || !"EXECUTED".equals(query.status())
+                || query.snapshotId() == null || !query.snapshotId().equals(pkg.snapshotId())
+                || query.sourceId() == null || pkg.lineage() == null
+                || !query.sourceId().equals(pkg.lineage().sourceId())
+                || pkg.definitionVersion() == null || pkg.definitionVersion().isBlank()
+                || pkg.evidenceId() == null || pkg.evidenceId().isBlank()) {
+            return;
+        }
+        AiQueryHistory anchor = new AiQueryHistory();
+        anchor.setId(query.historyId());
+        anchor.setUserId(userId);
+        anchor.setSourceId(query.sourceId());
+        anchor.setSnapshotId(query.snapshotId());
+        anchor.setDefinitionVersion(pkg.definitionVersion());
+        anchor.setEvidenceId(pkg.evidenceId());
+        queryHistoryMapper.updateById(anchor);
     }
 
     private static String shortHash(String value) {
@@ -285,13 +342,102 @@ public class AiController {
                 .last("LIMIT " + Math.max(1, Math.min(200, limit)))), TraceContext.create().traceId());
     }
 
+    @GetMapping("/audit/history/page")
+    @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public ApiResponse<AuditPage<AiQueryHistory>> auditHistoryPage(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String sort) {
+        AuditSort order = auditSort(page, size, sort,
+                List.of("id", "createdat", "status", "elapsedms", "rowsreturned"));
+        long total = queryHistoryMapper.selectCount(new LambdaQueryWrapper<>());
+        long totalPages = PaginationMath.totalPages(total, size);
+        long actualPage = Math.min(page, totalPages);
+        var query = new LambdaQueryWrapper<AiQueryHistory>();
+        switch (order.field()) {
+            case "createdat" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getCreatedAt);
+            case "status" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getStatus);
+            case "elapsedms" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getElapsedMs);
+            case "rowsreturned" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getRowsReturned);
+            default -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getId);
+        }
+        if (!"id".equals(order.field())) query.orderByDesc(AiQueryHistory::getId);
+        long offset = Math.multiplyExact(actualPage - 1, (long) size);
+        List<AiQueryHistory> items = queryHistoryMapper.selectList(query.last("LIMIT " + size + " OFFSET " + offset));
+        return ApiResponse.ok(new AuditPage<>(items, actualPage, size, total, totalPages,
+                order.field() + "," + order.direction()), TraceContext.create().traceId());
+    }
+
+    @GetMapping("/audit/calls/page")
+    @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public ApiResponse<AuditPage<AiCallLog>> auditCallsPage(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String sort) {
+        AuditSort order = auditSort(page, size, sort,
+                List.of("id", "createdat", "usecase", "provider", "model", "status", "elapsedms"));
+        long total = callLogMapper.selectCount(new LambdaQueryWrapper<>());
+        long totalPages = PaginationMath.totalPages(total, size);
+        long actualPage = Math.min(page, totalPages);
+        var query = new LambdaQueryWrapper<AiCallLog>();
+        switch (order.field()) {
+            case "createdat" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getCreatedAt);
+            case "usecase" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getUseCase);
+            case "provider" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getProvider);
+            case "model" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getModel);
+            case "status" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getStatus);
+            case "elapsedms" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getElapsedMs);
+            default -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getId);
+        }
+        if (!"id".equals(order.field())) query.orderByDesc(AiCallLog::getId);
+        long offset = Math.multiplyExact(actualPage - 1, (long) size);
+        List<AiCallLog> items = callLogMapper.selectList(query.last("LIMIT " + size + " OFFSET " + offset));
+        return ApiResponse.ok(new AuditPage<>(items, actualPage, size, total, totalPages,
+                order.field() + "," + order.direction()), TraceContext.create().traceId());
+    }
+
+    private static AuditSort auditSort(long page, int size, String sort, List<String> fields) {
+        if (page < 1 || size < 1 || size > MAX_AUDIT_PAGE_SIZE) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "page 必须大于等于 1，size 必须在 1 到 " + MAX_AUDIT_PAGE_SIZE + " 之间");
+        }
+        String[] parts = sort == null ? new String[0] : sort.trim().toLowerCase(Locale.ROOT).split(",", -1);
+        if (parts.length < 1 || parts.length > 2 || parts[0].isBlank()) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 格式应为 字段[,asc|desc]");
+        }
+        String direction = parts.length == 1 ? "asc" : parts[1];
+        if (!fields.contains(parts[0]) || !("asc".equals(direction) || "desc".equals(direction))) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 字段或方向不受支持");
+        }
+        return new AuditSort(parts[0], direction);
+    }
+
     @GetMapping("/history/my")
     @RequiresPermission(PermissionCode.AI_QUERY)
     public ApiResponse<List<AiQueryHistory>> myHistory(@RequestParam(defaultValue = "10") int limit) {
         String userId = CallerContext.requireUserId();
-        return ApiResponse.ok(queryHistoryMapper.selectList(new LambdaQueryWrapper<AiQueryHistory>()
+        List<AiQueryHistory> histories = queryHistoryMapper.selectList(new LambdaQueryWrapper<AiQueryHistory>()
                 .eq(AiQueryHistory::getUserId, userId)
                 .orderByDesc(AiQueryHistory::getId)
-                .last("LIMIT " + Math.max(1, Math.min(50, limit)))), TraceContext.create().traceId());
+                .last("LIMIT " + Math.max(1, Math.min(50, limit))));
+        var submitted = feedbackService.submittedHistoryIds(userId,
+                histories.stream().map(AiQueryHistory::getId).toList());
+        histories.forEach(history -> history.setFeedbackSubmitted(submitted.contains(history.getId())));
+        return ApiResponse.ok(histories, TraceContext.create().traceId());
+    }
+
+    @PostMapping("/history/{id}/feedback")
+    @RequiresPermission(PermissionCode.AI_QUERY)
+    public ApiResponse<AiFeedbackResp> submitFeedback(@org.springframework.web.bind.annotation.PathVariable("id") long id,
+                                                       @RequestBody AiFeedbackReq req) {
+        String userId = CallerContext.requireUserId();
+        AiFeedbackReq body = req == null ? null : req;
+        if (body == null) {
+            throw new PlatformBizException("AI_FEEDBACK_INVALID", "rating 与 reasonCode 必填");
+        }
+        AiFeedback feedback = feedbackService.submit(id, userId, body.rating(), body.reasonCode());
+        return ApiResponse.ok(AiFeedbackResp.from(feedback), TraceContext.create().traceId());
     }
 }

@@ -15,11 +15,11 @@ spring:
   application:
     name: synthetic-data-generator
   datasource:
-    # 独立库：库名是配置项，不是硬编码。createDatabaseIfNotExist 让首次启动即可自举，
-    # 因此不需要改动仓库既有的三库初始化脚本（裁决项 B-05 只影响这一行的库名）。
-    url: jdbc:mysql://127.0.0.1:3306/generator_meta?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
-    username: ${GENERATOR_DB_USER:root}
-    password: ${GENERATOR_DB_PASSWORD:123456}
+    # 安全默认只指向本机隔离实例；目标库须预先创建，不授予应用账号建库权限。
+    # 用户名和口令必须由调用方显式提供，不设置默认账号或默认口令。
+    url: ${GENERATOR_DB_URL:jdbc:mysql://127.0.0.1:3307/generator_meta?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${GENERATOR_DB_USER}
+    password: ${GENERATOR_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
     enabled: true

@@ -20,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 映射激活生命周期（S2-03）：把一张**已通过 dry-run 的报告**变成一个**已激活的映射指针**。
+ * 映射激活生命周期（S2-03）：把一张 dry-run 报告绑定的画像变成一个已激活映射指针。
  *
  * <p><b>核心不变式（设计 §7.3 规则 14 / §7.4）</b>：预览的内容必须就是激活的内容。
  * 判据是**字节级哈希相等**，不是"再跑一遍看着差不多"：
@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  * 三条任一不成立即 409，**绝不"重新执行一遍然后认为差不多一样"**——重跑会引入第二个判据来源。</p>
  *
  * <p><b>只读前置的失败顺序</b>：源不存在(404) → 报告不存在或不属于该源(404，不泄露归属) →
- * 报告不可激活(409) → checksum 不一致(409) → 契约漂移(409) → 画像字节变化(409)，
+ * Loader 硬门槛不满足(409) → checksum 不一致(409) → 契约漂移(409) → 画像字节变化(409)，
  * **全部检查跑完才开始写**（与 {@code SourceRegistryServiceImpl} 的"先判后写"同构），
  * 因此不存在"写了一半才发现不合格"的中间态。</p>
  *
@@ -152,32 +152,28 @@ public class MappingActivationService {
     }
 
     /**
-     * 报告侧"不可激活"的唯一判据集合（逐条点名，不用一句笼统的"报告不可用"）。
+     * 激活侧的硬门槛。dry-run 的逐行 violations 与 activationEligible 是 advisory preflight，
+     * Loader 的装载结果和 activationBlocks 才决定画像是否能安全用于生产；非空样本与无系统异常
+     * 仍是报告可作为激活依据的前置条件。
      *
-     * <p>为什么逐条列出而不是只信 {@code activationEligible}：那是 dry-run 的汇总结论。
-     * 一旦汇总规则演化或报告不自洽，激活侧就失去了自己的判断。这里把成功条件③④⑤⑥⑦⑧
-     * （profileAccepted / violations / systemErrors / activationBlocks / capabilityGaps /
-     * activationEligible）全部显式复核，任一不成立即 409。</p>
+     * <p>{@code activationEligible} 同时汇总了样本逐行预览差异和 capabilityGaps；按 D-030，
+     * 它不能覆盖 Loader 的生产语义。Loader 已把影响正确性的必需字段/金额/枚举等条件记录在
+     * {@code activationBlocks}，画像结构错误由 {@code profileAccepted} 表达。能力提示仍在报告中
+     * 展示，关键能力缺口若影响生产映射也必须由 Loader 显式升格为 activationBlock。</p>
      */
     private static void requireActivatable(MappingDryRunReport report) {
         List<String> reasons = new ArrayList<>();
         if (!report.profileAccepted()) {
             reasons.add("profileAccepted=false（候选画像未通过装载，不能拿它跑真实采集）");
         }
-        if (!report.violations().isEmpty()) {
-            reasons.add("violations=" + report.violations().size());
+        if (report.processedCount() <= 0) {
+            reasons.add("processedCount=0（空样本不能作为激活依据）");
         }
         if (!report.systemErrors().isEmpty()) {
             reasons.add("systemErrors=" + report.systemErrors().size());
         }
         if (!report.activationBlocks().isEmpty()) {
             reasons.add("activationBlocks=" + report.activationBlocks());
-        }
-        if (!report.capabilityGaps().isEmpty()) {
-            reasons.add("capabilityGaps=" + report.capabilityGaps());
-        }
-        if (!report.activationEligible()) {
-            reasons.add("activationEligible=false（dry-run 结论：" + report.activationIneligibleReasons() + "）");
         }
         if (!reasons.isEmpty()) {
             throw new PlatformBizException(PlatformBizException.MAPPING_ACTIVATION_INELIGIBLE,

@@ -164,7 +164,11 @@ public record EvidencePackage(
      * @param pipelineRunId 指标快照的发布批次（取不到为 null，不编造）
      */
     public record Lineage(List<String> hiveAdsTables, List<String> mysqlTables,
-                          Long pipelineRunId, String snapshotId) {
+                          Long pipelineRunId, String snapshotId, Long sourceId) {
+        public Lineage(List<String> hiveAdsTables, List<String> mysqlTables,
+                       Long pipelineRunId, String snapshotId) {
+            this(hiveAdsTables, mysqlTables, pipelineRunId, snapshotId, null);
+        }
         public Lineage {
             hiveAdsTables = hiveAdsTables == null ? List.of() : List.copyOf(hiveAdsTables);
             mysqlTables = mysqlTables == null ? List.of() : List.copyOf(mysqlTables);

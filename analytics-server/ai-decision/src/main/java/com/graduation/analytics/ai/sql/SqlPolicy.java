@@ -53,6 +53,9 @@ public final class SqlPolicy {
     public static final String SNAPSHOT_NOT_AVAILABLE = "SNAPSHOT_NOT_AVAILABLE";
     public static final String METRIC_READ_SOURCE_MISSING = "METRIC_READ_SOURCE_MISSING";
     public static final String SQL_COST_TOO_HIGH = "SQL_COST_TOO_HIGH";
+    public static final String SQL_EXECUTION_FAILED = "SQL_EXECUTION_FAILED";
+    public static final String MODEL_RESPONSE_INVALID = "MODEL_RESPONSE_INVALID";
+    public static final String AI_QUERY_FAILED = "AI_QUERY_FAILED";
 
     /** LIMIT 上限（契约 §2.3：rowLimit=200）；缺省补 200，>200 改写为 200 */
     public static final int LIMIT_CAP = AiScope.DEFAULT_ROW_LIMIT;

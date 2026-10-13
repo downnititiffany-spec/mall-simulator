@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -203,6 +204,7 @@ class MallTargetAdapterOperationsTest {
                 () -> adapter.listProducts(config, new ProductQuery(null, null, 0, 5)));
         assertTrue(e.getMessage().contains(ENV_NAME), "必须点名缺哪个环境变量：" + e.getMessage());
         assertTrue(e.getMessage().contains("凭据"), "必须说清是凭据问题：" + e.getMessage());
+        assertEquals(MallFailureCode.MALL_CREDENTIAL_UNAVAILABLE, e.failureCode());
         assertEquals(0, mall.requests().size(), "取不到凭据就不得发出匿名请求（匿名也查不出能力）");
     }
 
@@ -234,6 +236,7 @@ class MallTargetAdapterOperationsTest {
                                 "S-1", "view", "app")));
         assertTrue(absent.getMessage().contains("404") || absent.getMessage().contains("NOT_FOUND"),
                 "必须说清埋点路由不存在：" + absent.getMessage());
+        assertEquals(MallFailureCode.MALL_ROUTE_NOT_FOUND, absent.failureCode());
         assertEquals(List.of("POST " + declaredButMissing), withoutRoute.requests(),
                 "只在声明的路径上发请求，不试别的路由");
     }
@@ -251,6 +254,53 @@ class MallTargetAdapterOperationsTest {
                         new UserCommand("25-34", "tier1", "normal")));
         assertTrue(e.getMessage().contains("INSUFFICIENT_STOCK"), "必须带上商城错误码：" + e.getMessage());
         assertTrue(e.getMessage().contains("库存不足"), "必须带上商城错误说明：" + e.getMessage());
+        assertEquals(MallFailureCode.MALL_STOCK_UNAVAILABLE, e.failureCode());
+    }
+
+    @Test
+    @DisplayName("写请求遇到 5xx 时标记结果不明且只发送一次，避免盲目重复下单")
+    void writeRemoteFailureRequiresOutcomeReconciliation() throws IOException {
+        Map<String, FakeMall.Reply> routes = allRoutes();
+        routes.put("POST /api/v1/mall/orders", new FakeMall.Reply(503,
+                "TEMPORARY_FAILURE", "暂时不可用", null));
+        mall = new FakeMall(routes, BEHAVIOR_PATH);
+
+        MallOperationException failure = assertThrows(MallOperationException.class,
+                () -> adapter().createOrder(config(mall.baseUrl(), ENV_NAME),
+                        new OrderCommand("810000000000000001",
+                                List.of(new OrderCommand.Item("910000000000000001", 1)))));
+
+        assertEquals(MallFailureCode.MALL_OUTCOME_UNKNOWN, failure.failureCode());
+        assertTrue(failure.getMessage().contains("先核实目标状态"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("禁止自动重试"), failure.getMessage());
+        assertEquals(List.of("POST /api/v1/mall/orders"), mall.requests(),
+                "5xx 不触发 POST 重放，避免产生重复订单");
+    }
+
+    @Test
+    @DisplayName("服务端回显 Bearer 值时异常必须脱敏；含凭据的 base_url 必须在发送前拒绝")
+    void diagnosticsNeverExposeCredentialFromResponseOrBaseUrl() throws IOException {
+        Map<String, FakeMall.Reply> routes = allRoutes();
+        routes.put("GET /api/v1/mall/products", new FakeMall.Reply(400,
+                TOKEN, "upstream diagnostic: " + TOKEN, null));
+        mall = new FakeMall(routes, BEHAVIOR_PATH);
+
+        MallOperationException responseFailure = assertThrows(MallOperationException.class,
+                () -> adapter().listProducts(config(mall.baseUrl(), ENV_NAME),
+                        new ProductQuery(null, null, 0, 5)));
+        assertFalse(responseFailure.getMessage().contains(TOKEN), responseFailure.getMessage());
+        assertTrue(responseFailure.getMessage().contains("[REDACTED]"), responseFailure.getMessage());
+
+        int requestCountBeforeUrlCheck = mall.requests().size();
+        MallOperationException urlFailure = assertThrows(MallOperationException.class,
+                () -> adapter().listProducts(config("http://user:" + TOKEN + "@127.0.0.1:1", ENV_NAME),
+                        new ProductQuery(null, null, 0, 5)));
+        assertFalse(urlFailure.getMessage().contains(TOKEN), urlFailure.getMessage());
+        assertEquals(requestCountBeforeUrlCheck, mall.requests().size(),
+                "拒绝含 userinfo 的 base_url 前不应再发送商城请求");
+        var probe = adapter().test(config("http://user:" + TOKEN + "@127.0.0.1:1", ENV_NAME));
+        assertFalse(probe.detail().contains(TOKEN), probe.detail());
+        assertEquals(requestCountBeforeUrlCheck, mall.requests().size(), "能力探测也必须先拒绝凭据型 base_url");
     }
 
     @Test

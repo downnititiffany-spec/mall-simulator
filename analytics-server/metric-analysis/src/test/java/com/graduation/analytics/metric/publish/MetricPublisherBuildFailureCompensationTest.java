@@ -64,6 +64,32 @@ class MetricPublisherBuildFailureCompensationTest {
     }
 
     @Test
+    @DisplayName("底层写库诊断不进入快照错误字段或发布报告")
+    void rawWriteDiagnosticIsNotPersistedOrReturned(@TempDir Path exportDir) throws Exception {
+        String diagnostic = "jdbc:mysql://internal:3307/metric?password=do-not-store";
+        ObjectMapper mapper = new ObjectMapper();
+        MetricPublishRepository repository = mock(MetricPublishRepository.class);
+        MetricAdsWriter adsWriter = mock(MetricAdsWriter.class);
+        MetricStore metricStore = mock(MetricStore.class);
+        when(adsWriter.deleteSnapshot("S_TEST_BUILD_FAIL")).thenReturn(0, 0);
+        when(adsWriter.insertRows(anyString(), eq("S_TEST_BUILD_FAIL"), eq("20260923"), anyList()))
+                .thenThrow(new IllegalStateException(diagnostic));
+        writeValidManifest(exportDir, mapper, false);
+
+        PublishRequest request = new PublishRequest(1L, 1, 10L, "S_TEST_BUILD_FAIL", "20260923",
+                "2026-09-23T00:00:00", 99L, exportDir, definitions());
+        MetricPublisher publisher = new MetricPublisher(repository, adsWriter, new AdsExportReader(), metricStore,
+                new MetricPublishValidator(), mapper);
+
+        var report = publisher.publish(request);
+
+        assertThat(report.errorCode()).isEqualTo("MP_ADS_WRITE");
+        assertThat(report.message()).contains("受控发布日志").doesNotContain(diagnostic, "password");
+        assertThat(report.evidence().toString()).doesNotContain(diagnostic, "password");
+        verify(repository).markStatus("S_TEST_BUILD_FAIL", "FAILED", "MP_ADS_WRITE_FAILED");
+    }
+
+    @Test
     @DisplayName("激活更新 0 行时补偿已写 ADS 行，旧快照仍由指标库事务回滚保护")
     void activationNoopCompensatesAdsRows(@TempDir Path exportDir) throws Exception {
         ObjectMapper mapper = new ObjectMapper();

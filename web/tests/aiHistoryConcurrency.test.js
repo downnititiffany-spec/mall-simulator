@@ -39,7 +39,7 @@ test('只有最新 history 请求可以写列表，异常路径也先做序号�
   const guards = body.match(/if \(mySeq !== historySeq\) return/g) || []
   assert.ok(guards.length >= 2, `成功/异常路径至少各需一条过期响应守卫，实际 ${guards.length}`)
   const successGuard = body.indexOf('if (mySeq !== historySeq) return')
-  const assign = body.indexOf('history.value = Array.isArray(rows) ? rows : []')
+  const assign = body.indexOf("history.value = requireArrayResponse(rows, 'AI历史')")
   assert.ok(assign > successGuard, '历史列表写入必须发生在最新序号确认之后')
 })
 

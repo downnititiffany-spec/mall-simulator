@@ -23,6 +23,7 @@ public class PlatformBizException extends RuntimeException {
 
     // 常用错误码（§23.2 错误分类在平台层做完整映射）
     public static final String USER_NOT_FOUND = "USER_NOT_FOUND";
+    public static final String FORBIDDEN_PERMISSION = "FORBIDDEN_PERMISSION";
     public static final String PARAM_INVALID = "PARAM_INVALID";
     public static final String UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE";
     public static final String METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED";

@@ -33,4 +33,8 @@ public class MallOrder {
     private LocalDateTime cancelledAt;
 
     private String cancelReason;
+
+    private String idempotencyKey;
+
+    private String requestHash;
 }

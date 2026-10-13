@@ -8,7 +8,12 @@ import java.math.BigDecimal;
  * <p>{@code amount} 用 {@link BigDecimal}：参考商城要求 {@code amount} 且校验"不得超过订单可退金额"，
  * 用 double 会在边界（等额整退）上偶发失败，属于自找的脏数据。</p>
  */
-public record RefundCommand(String orderId, String userId, BigDecimal amount, String reason) {
+public record RefundCommand(String orderId, String userId, BigDecimal amount, String reason,
+                            String idempotencyKey) {
+
+    public RefundCommand(String orderId, String userId, BigDecimal amount, String reason) {
+        this(orderId, userId, amount, reason, null);
+    }
 
     public RefundCommand {
         if (orderId == null || orderId.isBlank()) {

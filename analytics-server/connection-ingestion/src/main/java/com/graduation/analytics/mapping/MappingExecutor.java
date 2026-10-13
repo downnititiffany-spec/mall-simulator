@@ -76,7 +76,9 @@ public final class MappingExecutor {
         try {
             raw = mapper.readTree(rawJson);
         } catch (IOException e) {
-            return parseFailure(profile, NODES.textNode(rawJson), rawJson, "PARSE_FAILED:" + e.getMessage());
+            // Parser diagnostics may quote offending input tokens. Keep the complete raw row
+            // only in the quarantine evidence; issue details are returned by dry-run APIs.
+            return parseFailure(profile, NODES.textNode(rawJson), rawJson, "INVALID_JSON");
         }
         return run(profile, raw, MappingHash.sha256Hex(rawJson));
     }

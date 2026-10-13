@@ -117,4 +117,25 @@ class PipelineRecoveryServiceTest {
         assertThat(report.orphanJobsMarkedUnknown()).isZero();
         assertThat(report.at()).isEqualTo(LocalDateTime.of(2026, 9, 1, 18, 0));
     }
+
+    @Test
+    void recoveryReportDoesNotExposeMapperOrQueueDiagnosticText() {
+        String diagnostic = "jdbc:mysql://internal:3307/meta?password=do-not-store";
+        PipelineRun running = run(11L, PipelineRun.STATUS_RUNNING);
+        PipelineRun pending = run(12L, PipelineRun.STATUS_PENDING);
+        when(runMapper.selectList(any())).thenReturn(List.of(running), List.of(pending));
+        when(jobMapper.selectList(any())).thenReturn(List.of());
+        when(stageMapper.selectOne(any())).thenReturn(null);
+        when(runMapper.updateById(any(PipelineRun.class))).thenThrow(new IllegalStateException(diagnostic));
+        org.mockito.Mockito.doThrow(new IllegalArgumentException(diagnostic))
+                .when(pipelineService).resume(eq(12L), anyString(), anyString(), anyString());
+
+        PipelineRecoveryService.Report report = service.reconcile("system:startup");
+
+        assertThat(report.errors()).hasSize(2)
+                .anySatisfy(error -> assertThat(error).contains("run 11", "IllegalStateException"))
+                .anySatisfy(error -> assertThat(error).contains("run 12", "IllegalArgumentException"));
+        assertThat(report.errors()).allSatisfy(error ->
+                assertThat(error).doesNotContain(diagnostic, "password"));
+    }
 }

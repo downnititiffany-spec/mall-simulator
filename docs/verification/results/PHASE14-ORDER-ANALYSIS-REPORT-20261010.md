@@ -1,0 +1,34 @@
+# 阶段14 D-060 订单专题报告实例（实现切片，2026-10-10）
+
+## 实现
+
+- 扩展 `ReportInstanceService`，开放 `ORDER_ANALYSIS`，继续使用同一已发布快照、服务端 creator、`dashboard:view` API、V38 report_instance 持久化和 JSON/SHA-256 制品路径。
+- 订单专题内容从该快照 `EvidencePackage.facts` 中提取已发布的 `paid_order_cnt`、`gmv`、`net_sale`、`avg_order_value`、`refund_rate`、`full_refund_rate`，保留原单位、period 和 evidenceRef；缺失 metricCode 单独列为 `unavailableMetrics`，不补 0。相关指标候选异常及质量结论随专题内容保存，不包含用户级行。
+- 制品显式说明单快照/业务日范围、净销售额不等于最终到账收入，且不从缺失指标推断无订单或无退款。AI 叙述仍 fail-closed 于 D-039。
+- `/reports` 页面模板选择器现开放经营日报与订单专题；两者都从共享已发布快照选择器取得 snapshotId 和业务日。其他四模板仍禁用。
+
+## 验证
+
+- Windows JDK 17、Maven 3.9.14 离线 reactor：`mvn -o -f analytics-server/pom.xml -pl ai-decision,platform-app -am -DskipTests compile`，7/7 modules `BUILD SUCCESS`；ai-decision 重编48个源码文件，platform-app重编29个源码文件。未执行测试。
+- Web Vite 5.4.21 production build 成功，694 modules，输出到唯一 TEMP 路径；没有覆盖 `web/dist`。
+- `git diff --check` 对本轮 Java/Vue 文件通过。
+
+## 未验证与边界
+
+- V37/V38 未应用；未进行真实认证 HTTP、数据库、浏览器流程或部署。未连接3306。
+- 此实现是固定快照单业务日订单指标专题；真实服务行为、制品回读与 owner 隔离仍需验证。OPS_WEEKLY 需要冻结七日聚合/快照一致性方案；PRODUCT_ANOMALY 的商品级异常判据、USER_OPERATIONS 的聚合分群边界、DECISION_EFFECT 的任务/窗口绑定仍未实现，不用通用证据包冒充完成。
+- 阶段14、阶段6及项目门槛/总验收保持开放。
+
+## 补充：USER_OPERATIONS 聚合报告切片（同日，2026-10-10）
+
+- 扩展 `ReportInstanceService`，开放 `USER_OPERATIONS` 并调用既有 `AnalysisService.users`，显式钉定为报告相同的 `snapshotId`、`sourceId` 和业务日。制品包含现有 RFM 分组、生命周期状态、类目偏好、RFM 规则版本/实际观察期，以及原样发布的 `uv`、`dau`、`repeat_rate` 聚合指标；缺失指标明确列出，保留读取警告和质量结论。
+- `RfmService` 返回的是分组聚合字段（segment、users、share、amount、R/F 聚合），不是 user_id 明细。制品限制声明不含用户标识/个人行，不跨日累加 UV/DAU，不重算复购率。
+- 页面现开放经营日报、订单专题、用户运营三个模板。
+- 补充后复跑 Maven 7模块离线 compile `BUILD SUCCESS`；Web Vite 5.4.21 production build 694 modules成功，输出到唯一 TEMP 路径。仍未执行测试、未部署/调用真实服务。
+
+## 补充：PRODUCT_ANOMALY 商品信号报告切片（2026-10-10）
+
+- `ReportInstanceService` 增加 `PRODUCT_ANOMALY`：从同一已发布快照调用既有 `AnalysisService.products`，将热度 Top 10 与同快照商品转化事实按 productId 关联，保留来源、质量、警告和证据引用。读取失败返回稳定不可用状态。
+- 未新增异常阈值或把高热度自动称为异常；不推断库存、成本、利润。商品明细依赖该快照现有 ADS 证据。Web 报告页开放该模板。
+- 现有四种切片：`OPS_DAILY`、`ORDER_ANALYSIS`、`USER_OPERATIONS`、`PRODUCT_ANOMALY`。未完成两种：`OPS_WEEKLY`、`DECISION_EFFECT`。
+- 验证：Maven 离线 reactor compile BUILD SUCCESS；Vite production build成功（临时输出）。`git diff --check`通过。未运行测试、未部署、未做真实 HTTP/DB/浏览器验收；V37/V38未应用，3306未连接。阶段14与项目总验收保持开放。

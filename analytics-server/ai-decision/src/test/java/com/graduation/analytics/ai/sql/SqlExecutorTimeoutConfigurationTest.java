@@ -2,6 +2,7 @@ package com.graduation.analytics.ai.sql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.sql.DataSource;
@@ -31,6 +32,28 @@ class SqlExecutorTimeoutConfigurationTest {
         Fixture fixture = fixture("9");
         fixture.executor().explain("select 1");
         verify(fixture.statement()).setQueryTimeout(9);
+    }
+
+    @Test
+    @DisplayName("EXPLAIN 成本守卫的 JdbcTemplate 继承统一查询超时")
+    void explainCostGuardUsesSharedTimeout() throws Exception {
+        Fixture fixture = fixture("9");
+        QueryCostGuard guard = new QueryCostGuard(fixture.executor(), 500_000L);
+        JdbcTemplate template = (JdbcTemplate) ReflectionTestUtils.getField(guard, "metricReadJdbcTemplate");
+
+        org.junit.jupiter.api.Assertions.assertNotNull(template);
+        org.junit.jupiter.api.Assertions.assertEquals(9, template.getQueryTimeout());
+    }
+
+    @Test
+    @DisplayName("EXPLAIN 成本守卫采用统一默认查询超时")
+    void explainCostGuardUsesDefaultTimeoutWhenUnset() throws Exception {
+        Fixture fixture = fixture(null);
+        QueryCostGuard guard = new QueryCostGuard(fixture.executor(), 500_000L);
+        JdbcTemplate template = (JdbcTemplate) ReflectionTestUtils.getField(guard, "metricReadJdbcTemplate");
+
+        org.junit.jupiter.api.Assertions.assertNotNull(template);
+        org.junit.jupiter.api.Assertions.assertEquals(30, template.getQueryTimeout());
     }
 
     private Fixture fixture(String timeout) throws Exception {

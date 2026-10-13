@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * R6-14（§23.1）流水线恢复管理接口：resume / mark-failed / retry-from-stage + 启动对账报告。
- * 每个动作都必须携带 operator 与 reason（审计）；R8-3 起细粒度权限由
+ * 每个动作都必须携带 reason（审计）；operator 只从已认证会话取得，R8-3 起细粒度权限由
  * {@link RequiresPermission} 声明、AuthInterceptor 查矩阵执行（恢复动作 = pipeline:run）。
  */
 @RestController
@@ -34,7 +34,8 @@ public class PipelineAdminController {
     public record RecalculateReq(
             @NotNull Long runtimeProfileId,
             @NotNull Long batchId,
-            @NotBlank String operator,
+            // 兼容旧请求体字段，但请求方自报身份不可信；实际操作者取自认证会话。
+            String operator,
             @NotBlank String reason) {
     }
 
@@ -42,18 +43,18 @@ public class PipelineAdminController {
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
     @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> resume(@PathVariable Long id,
-                                                        @RequestParam String operator,
                                                         @RequestParam String reason) {
         TraceContext trace = TraceContext.create();
+        String operator = CallerContext.requireUserId();
         return ApiResponse.ok(pipelineService.resume(id, operator, reason, trace.traceId()), trace.traceId());
     }
 
     @PostMapping("/{id}/mark-failed")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
     public ApiResponse<PipelineService.RunResult> markFailed(@PathVariable Long id,
-                                                            @RequestParam String operator,
                                                             @RequestParam String reason) {
         TraceContext trace = TraceContext.create();
+        String operator = CallerContext.requireUserId();
         return ApiResponse.ok(pipelineService.markFailed(id, operator, reason), trace.traceId());
     }
 
@@ -62,9 +63,9 @@ public class PipelineAdminController {
     @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> retryFromStage(@PathVariable Long id,
                                                                  @RequestParam String stage,
-                                                                 @RequestParam String operator,
                                                                  @RequestParam String reason) {
         TraceContext trace = TraceContext.create();
+        String operator = CallerContext.requireUserId();
         return ApiResponse.ok(pipelineService.retryFromStage(id, stage, operator, reason, trace.traceId()),
                 trace.traceId());
     }
@@ -73,16 +74,17 @@ public class PipelineAdminController {
      * G31-11（D-049e）：显式重算入口——唯一能对**已消费**批次再次发布的通道，必须带理由。
      * 语义与普通调度/重试不同：它豁免 M3 no-op 门、从插入 run 起就钉住目标批次
      * （input_batch_id 预置），目标批次选不到时 fail-closed（RUN_RECALC_BATCH_UNAVAILABLE）。
-     * 理由走 body 而非 query param：理由是审计文本（可含空格/换行），且 operator/reason
-     * 与业务参数同属一个语义整体。缺理由/参数缺失/无既成发布 → PARAM_INVALID(400)。
+     * 理由走 body 而非 query param：理由是审计文本（可含空格/换行）。operator 为兼容旧请求体
+     * 保留但不可信，实际操作者取当前认证会话。缺理由/参数缺失/无既成发布 → PARAM_INVALID(400)。
      */
     @PostMapping("/recalculate")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
     @RateLimited(scope = "pipeline-submit", requests = 10)
     public ApiResponse<PipelineService.RunResult> recalculate(@RequestBody RecalculateReq req) {
         TraceContext trace = TraceContext.create();
+        String operator = CallerContext.requireUserId();
         return ApiResponse.ok(pipelineService.recalculate(req.runtimeProfileId(), req.batchId(),
-                req.operator(), req.reason(), trace.traceId()), trace.traceId());
+                operator, req.reason(), trace.traceId()), trace.traceId());
     }
 
     /** 启动对账报告（本次启动处理了哪些 run） */

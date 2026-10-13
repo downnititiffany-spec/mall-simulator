@@ -107,7 +107,7 @@ const DYNAMIC_CALL_RULES = [
 ]
 
 /**
- * 冻结表里**前端目前并没有调用**的行 → 原因（S3-43 实测：48 条中 15 条）。
+ * 冻结表里**前端目前并没有调用**的行 → 原因（S3-43 初次建立时 48 条中 15 条；后续逐步接线）。
  * 这些行在 Java 侧仍是有意义的「端点 → 权限码」期望（新接口不该忘权限码），但**不是**前端调用证据。
  * 判据 B 要求本表与「冻结表 − 前端调用面」**集合相等**：新增一条没接前端的冻结行，这里必须显式登记。
  */
@@ -115,22 +115,12 @@ const NOT_WIRED_IN_FRONTEND = new Map([
   // ── AI 面（2）：前端只走 /ai/queries 与 /ai/history/my、/ai/audit/*（`git grep -n '/ai/analyses|/ai/explanations' -- web/src` 只命中 context.js 的注释）──
   ['POST /api/v1/ai/analyses', '前端无该调用（web/src 无 /ai/analyses 命中）；AI 页目前只走 /ai/queries、/ai/history/my、/ai/audit/*'],
   ['POST /api/v1/ai/explanations', '前端无该调用（仅 web/src/utils/context.js:181 注释提到该分支）；AI 页消费的是 /ai/queries 响应里的 explanation'],
-  // ── 采集面（1）：前端只有 POST /ingestion/runs 与 GET /ingestion/status ──
-  ['GET /api/v1/ingestion/batches', '前端无该调用；运维页只读 GET /ingestion/status（批次列表页尚未接线）'],
-  // ── 运维/管理流水线面：分页运行列表已接线；admin 恢复操作仍未接线 ──
-  ['GET /api/v1/admin/pipeline-runs/recovery-report', '前端无该调用（/admin/pipeline-runs 在 web/src 零命中）；故障恢复页尚未接线'],
-  ['POST /api/v1/admin/pipeline-runs/{id}/resume', '前端无该调用（/admin/pipeline-runs 在 web/src 零命中）；续跑入口尚未接线'],
-  ['POST /api/v1/admin/pipeline-runs/{id}/mark-failed', '前端无该调用（/admin/pipeline-runs 在 web/src 零命中）；标记失败入口尚未接线'],
-  ['POST /api/v1/admin/pipeline-runs/{id}/retry-from-stage', '前端无该调用（/admin/pipeline-runs 在 web/src 零命中）；按阶段重试入口尚未接线'],
-  // ── 运行时配置面（6）：/runtime-profiles 在 web/src 全树零命中 ──
-  ['GET /api/v1/runtime-profiles', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；运行时配置页尚未接线'],
-  ['GET /api/v1/runtime-profiles/active', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；生效配置页尚未接线'],
-  ['GET /api/v1/runtime-profiles/{id}', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；配置详情页尚未接线'],
-  ['POST /api/v1/runtime-profiles', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；新建配置入口尚未接线'],
-  ['PUT /api/v1/runtime-profiles/{id}', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；编辑配置入口尚未接线'],
-  ['POST /api/v1/runtime-profiles/{id}/test', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；连通性测试入口尚未接线'],
-  ['POST /api/v1/runtime-profiles/{id}/activate', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；切换 ACTIVE 入口尚未接线（且切 ACTIVE 属硬门禁⑤，不在本轮面内）'],
-  ['POST /api/v1/runtime-profiles/{id}/disable', '前端无该调用（/runtime-profiles 在 web/src 全树零命中）；停用入口尚未接线'],
+  ['GET /api/v1/ingestion/batches', '兼容旧客户端的最近批次数组接口；Ops 页面已改用 /ingestion/batches/page 服务端分页'],
+  // ── 采集面：只读状态和最近批次已接线到 Ops.vue ──
+  ['GET /api/v1/metrics/capabilities', '前端无该调用；Store 能力查询供受权限保护的服务端调用方探测'],
+  // ── 运维/管理流水线面：恢复报告与三种恢复入口接线于 Pipeline.vue ──
+  // ── 运行时配置面（1）：列表已承载 ACTIVE 状态，不额外请求 /active ──
+  ['GET /api/v1/runtime-profiles/active', '配置页从运行环境列表读取唯一 ACTIVE 状态；避免重复请求并保持同一列表视图'],
 ])
 
 // ── ④ 对账面计算（供断言与失败消息共用） ──────────────────────────────────────

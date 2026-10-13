@@ -1,0 +1,28 @@
+{
+  "batchId" : 2,
+  "batchNo" : "ing-20260929111612-09bddc01",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-09-29T11:16:13.003525500",
+  "finishedAt" : "2026-09-29T11:16:13.239670400",
+  "files" : [ {
+    "quarantinedRecords" : 0,
+    "file" : "events.1790651570177",
+    "endOffset" : 348,
+    "startOffset" : 0,
+    "acceptedRecords" : 1
+  } ],
+  "acceptedRecords" : 1,
+  "quarantinedRecords" : 0,
+  "acceptedBytes" : 348,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/2",
+  "quarantineUri" : "quarantine/2",
+  "checksum" : "5aee345c",
+  "sourceCode" : "mock-mall",
+  "sourceId" : 1,
+  "profileVersion" : "1.0",
+  "mappingVersion" : null,
+  "mappingProfileHash" : null
+}

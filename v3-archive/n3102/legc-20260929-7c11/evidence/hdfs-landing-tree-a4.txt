@@ -1,0 +1,12 @@
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/accepted
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/accepted/1
+-rw-r--r--   3 asus supergroup      34192 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/accepted/1/events.1790674916610
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/manifests
+-rw-r--r--   3 asus supergroup        772 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/manifests/1.json
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/quarantine
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/quarantine/1
+-rw-r--r--   3 asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/quarantine/1/events.1790674916610
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/raw
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/raw/dt=20260929
+drwxr-xr-x   - asus supergroup          0 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/raw/dt=20260929/hour=17
+-rw-r--r--   1 asus supergroup      34192 2026-09-29 17:42 /landing/n3102e_20260929_173000_7c11/raw/dt=20260929/hour=17/events.1790674916610

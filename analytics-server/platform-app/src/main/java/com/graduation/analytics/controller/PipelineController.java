@@ -3,6 +3,7 @@ package com.graduation.analytics.controller;
 import com.graduation.analytics.auth.PermissionCode;
 import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
+import com.graduation.analytics.common.PaginationMath;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.pipeline.PipelineService;
@@ -12,6 +13,8 @@ import com.graduation.analytics.ratelimit.RateLimited;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -87,6 +90,8 @@ public class PipelineController {
     /** 新增分页列表；旧 GET /pipeline-runs?limit=... 保持原响应，供旧客户端兼容。 */
     @GetMapping("/page")
     @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
+    @Transactional(transactionManager = "metaTransactionManager", readOnly = true,
+            isolation = Isolation.REPEATABLE_READ)
     public ApiResponse<PipelineRunPage> page(
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "1") long page,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int size,
@@ -114,10 +119,10 @@ public class PipelineController {
             case "status" -> { if ("asc".equals(direction)) wrapper.orderByAsc(PipelineRun::getStatus); else wrapper.orderByDesc(PipelineRun::getStatus); }
             default -> { if ("asc".equals(direction)) wrapper.orderByAsc(PipelineRun::getId); else wrapper.orderByDesc(PipelineRun::getId); }
         }
-        // Tie-break equal sort values deterministically so adjacent pages do not reshuffle.
-        wrapper.orderByDesc(PipelineRun::getId);
+        // Tie-break non-unique sort values deterministically so adjacent pages do not reshuffle.
+        if (!"id".equals(field)) wrapper.orderByDesc(PipelineRun::getId);
         long total = runMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>());
-        long totalPages = Math.max(1, (total + size - 1) / size);
+        long totalPages = PaginationMath.totalPages(total, size);
         if (page > totalPages) page = totalPages;
         long offset = Math.multiplyExact(page - 1, (long) size);
         List<PipelineRun> items = runMapper.selectList(wrapper.last("LIMIT " + size + " OFFSET " + offset));

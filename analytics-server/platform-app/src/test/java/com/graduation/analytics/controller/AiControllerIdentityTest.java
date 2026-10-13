@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.graduation.analytics.ai.ExplanationService;
+import com.graduation.analytics.ai.AiFeedbackService;
 import com.graduation.analytics.ai.TextToSqlService;
 import com.graduation.analytics.ai.TextToSqlService.QueryResult;
 import com.graduation.analytics.ai.entity.AiQueryHistory;
@@ -14,6 +15,7 @@ import com.graduation.analytics.ai.mapper.AiQueryHistoryMapper;
 import com.graduation.analytics.auth.AuthenticationRequiredException;
 import com.graduation.analytics.auth.CurrentUser;
 import com.graduation.analytics.auth.CurrentUserHolder;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.AuditActor;
 import com.graduation.analytics.decision.OperationAuditService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -76,7 +78,7 @@ class AiControllerIdentityTest {
         callLogMapper = mock(AiCallLogMapper.class);
         audit = mock(OperationAuditService.class);
         controller = new AiController(textToSqlService, explanationService, evidenceService,
-                queryHistoryMapper, callLogMapper, audit);
+                queryHistoryMapper, callLogMapper, audit, mock(AiFeedbackService.class));
     }
 
     @AfterEach
@@ -212,6 +214,26 @@ class AiControllerIdentityTest {
         assertEquals(selectedSnapshot, evidence.getValue().snapshotId());
         verify(explanationService).explain(any(), eq(selectedSnapshot), anyString(), isNull());
         assertTrue(response.evidenceSummary().contains(selectedSnapshot));
+    }
+
+    @Test
+    @DisplayName("AI 显式快照入口在读取前额外要求 dashboard:view")
+    void explicitSnapshotRequiresDashboardPermissionBeforeAnyRead() {
+        CurrentUserHolder.set(new CurrentUser(3L, "restricted", "ai_query_only"));
+        String snapshotId = "S20260917_9";
+
+        PlatformBizException queryDenied = assertThrows(PlatformBizException.class,
+                () -> controller.query(new AiController.AiQueryReq("问题", null, snapshotId), request()));
+        PlatformBizException analysisDenied = assertThrows(PlatformBizException.class,
+                () -> controller.analyze(new AiController.AiQueryReq("问题", null, snapshotId), request()));
+        PlatformBizException explanationDenied = assertThrows(PlatformBizException.class,
+                () -> controller.explain(new AiController.ExplainReq(snapshotId, null, "问题"), request()));
+
+        for (PlatformBizException denied : List.of(queryDenied, analysisDenied, explanationDenied)) {
+            assertEquals(PlatformBizException.FORBIDDEN_PERMISSION, denied.getCode());
+            assertTrue(denied.getMessage().contains("dashboard:view"));
+        }
+        verifyNoInteractions(textToSqlService, explanationService, evidenceService, audit);
     }
 
     @Test

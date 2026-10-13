@@ -10,6 +10,7 @@ Stage 7 HTTP 真实链隔离入口（3307 only）。
 凭据只从当前进程环境读取：
   V25_IT_META_PASSWORD
   V25_IT_METRIC_PUBLISH_PASSWORD
+  V25_IT_METRIC_READ_PASSWORD
 
 退出码：
   0 = HTTP preflight + ingestion + pipeline 全部通过
@@ -92,14 +93,19 @@ if (-not $DryRun -and -not $Confirm) {
 
 $metaPwd = [Environment]::GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')
 $metricPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')
-if (-not $DryRun -and ([string]::IsNullOrWhiteSpace($metaPwd) -or [string]::IsNullOrWhiteSpace($metricPwd))) {
-  Fail 5 '缺 V25_IT_META_PASSWORD / V25_IT_METRIC_PUBLISH_PASSWORD；拒绝启动 HTTP 真链。'
+$metricReadPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_READ_PASSWORD', 'Process')
+$missingMetricCredentials = [string]::IsNullOrWhiteSpace($metaPwd) -or
+    [string]::IsNullOrWhiteSpace($metricPwd) -or
+    [string]::IsNullOrWhiteSpace($metricReadPwd)
+if (-not $DryRun -and $missingMetricCredentials) {
+  Fail 5 '缺 V25_IT_META_PASSWORD / V25_IT_METRIC_PUBLISH_PASSWORD / V25_IT_METRIC_READ_PASSWORD；拒绝启动 HTTP 真链。'
 }
 
 $metaDb = "$($RunId)_analytics_meta"
 $metricDb = "$($RunId)_analytics_metric"
 $metaUser = New-IsolationUserName -RunId $RunId -Role 'metaapp'
 $metricUser = New-IsolationUserName -RunId $RunId -Role 'metricapp'
+$metricReadUser = New-IsolationUserName -RunId $RunId -Role 'metricread'
 $jdbcSuffix = '?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true'
 $metaUrl = "jdbc:mysql://127.0.0.1:3307/$metaDb$jdbcSuffix"
 $metricUrl = "jdbc:mysql://127.0.0.1:3307/$metricDb$jdbcSuffix"
@@ -126,8 +132,10 @@ Write-Host '=== Stage 7 isolated HTTP preflight ==='
 Write-Host "RunId       : $RunId"
 Write-Host "meta         : $metaDb / $metaUser @ 127.0.0.1:3307"
 Write-Host "metric       : $metricDb / $metricUser @ 127.0.0.1:3307"
+Write-Host "metric read  : $metricDb / $metricReadUser @ 127.0.0.1:3307"
 Write-Host "meta password: $(Mask-State 'V25_IT_META_PASSWORD')"
 Write-Host "metric pwd   : $(Mask-State 'V25_IT_METRIC_PUBLISH_PASSWORD')"
+Write-Host "metric read pwd: $(Mask-State 'V25_IT_METRIC_READ_PASSWORD')"
 Write-Host "http root    : $httpRoot"
 Write-Host "attempt root : $attemptRoot"
 
@@ -169,8 +177,8 @@ $env:PLATFORM_METRIC_PUBLISH_URL = $metricUrl
 $env:PLATFORM_METRIC_PUBLISH_USER = $metricUser
 $env:PLATFORM_METRIC_PUBLISH_PASSWORD = $metricPwd
 $env:PLATFORM_METRIC_READ_URL = $metricUrl
-$env:PLATFORM_METRIC_READ_USER = $metricUser
-$env:PLATFORM_METRIC_READ_PASSWORD = $metricPwd
+$env:PLATFORM_METRIC_READ_USER = $metricReadUser
+$env:PLATFORM_METRIC_READ_PASSWORD = $metricReadPwd
 $env:PLATFORM_LANDING_LOCAL_ROOT = $landingRoot
 $env:PLATFORM_SOURCE_PROFILE_ROOT = $root
 $env:PLATFORM_SPARK_WAREHOUSE_DIR = $warehouseDir

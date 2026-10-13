@@ -88,10 +88,18 @@ public class PlatformDataSources {
             // 返回 null 仅表示"本机没配只读源"；消费方据此拒绝执行，而不是改用元数据库
             return null;
         }
+        String publishUsername = env.getProperty("platform.metric.publish.username");
+        String readUsername = env.getProperty("platform.metric.read.username");
+        if (publishUsername == null || publishUsername.isBlank()
+                || readUsername == null || readUsername.isBlank()
+                || publishUsername.trim().equalsIgnoreCase(readUsername.trim())) {
+            throw new IllegalStateException(
+                    "platform.metric.publish.username 与 platform.metric.read.username 必须配置为不同账号（V3.0 阶段4）");
+        }
         HikariDataSource ds = DataSourceBuilder.create()
                 .type(HikariDataSource.class)
                 .url(url)
-                .username(env.getProperty("platform.metric.read.username"))
+                .username(readUsername)
                 .password(env.getProperty("platform.metric.read.password", ""))
                 .driverClassName(env.getProperty("platform.metric.read.driver", "com.mysql.cj.jdbc.Driver"))
                 .build();
@@ -158,6 +166,13 @@ public class PlatformDataSources {
     @Bean("metricPublishTransactionManager")
     public DataSourceTransactionManager metricPublishTransactionManager(
             @Qualifier("metricPublishDataSource") DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+
+    /** Read-only metrics pages use one read-source transaction for consistent count and rows. */
+    @Bean("metricReadTransactionManager")
+    public DataSourceTransactionManager metricReadTransactionManager(
+            @Qualifier("metricReadDataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
     }
 }

@@ -21,7 +21,19 @@ final class SafeHttpRetry {
     static <T> HttpResponse<T> send(HttpClient client, HttpRequest request,
                                     HttpResponse.BodyHandler<T> responseBodyHandler)
             throws IOException, InterruptedException {
-        if (!isRetrySafe(request.method())) {
+        return send(client, request, responseBodyHandler, false);
+    }
+
+    /**
+     * Retries a POST only when the caller has verified that the target honors the
+     * Idempotency-Key protocol. Merely attaching the header is not proof that a
+     * remote implementation deduplicates writes.
+     */
+    static <T> HttpResponse<T> send(HttpClient client, HttpRequest request,
+                                    HttpResponse.BodyHandler<T> responseBodyHandler,
+                                    boolean targetSupportsIdempotencyKey)
+            throws IOException, InterruptedException {
+        if (!isRetrySafe(request, targetSupportsIdempotencyKey)) {
             return client.send(request, responseBodyHandler);
         }
 
@@ -40,9 +52,13 @@ final class SafeHttpRetry {
         }
     }
 
-    private static boolean isRetrySafe(String method) {
+    private static boolean isRetrySafe(HttpRequest request, boolean targetSupportsIdempotencyKey) {
+        String method = request.method();
         String normalized = method == null ? "" : method.toUpperCase(Locale.ROOT);
-        return "GET".equals(normalized) || "HEAD".equals(normalized) || "OPTIONS".equals(normalized);
+        return "GET".equals(normalized) || "HEAD".equals(normalized) || "OPTIONS".equals(normalized)
+                || targetSupportsIdempotencyKey && "POST".equals(normalized)
+                && request.headers().firstValue("Idempotency-Key")
+                .filter(key -> !key.isBlank()).isPresent();
     }
 
     private static boolean isTransientStatus(int status) {

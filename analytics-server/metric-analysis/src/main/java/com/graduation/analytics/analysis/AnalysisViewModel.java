@@ -47,7 +47,7 @@ public record AnalysisViewModel<T>(
     /** 无 ACTIVE 快照：空 data + 本警告，禁止回退落地区事件、禁止造数（契约 §1.3） */
     public static final String WARN_NO_ACTIVE_SNAPSHOT = "NO_ACTIVE_SNAPSHOT";
 
-    /** 请求显式指定的快照号在指标库中不存在（不能假装读了它） */
+    /** 请求显式指定的快照不存在或尚未发布（不能假装读了它，也不回退到 ACTIVE） */
     public static final String WARN_UNKNOWN_SNAPSHOT = "UNKNOWN_SNAPSHOT";
 
     /** 快照未保存 source_registry.id；不得用当前 runtime profile 绑定关系推断历史归属 */

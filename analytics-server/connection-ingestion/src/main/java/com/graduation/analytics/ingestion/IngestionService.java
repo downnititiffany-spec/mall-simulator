@@ -252,7 +252,7 @@ public class IngestionService {
                     }
                 } catch (Exception e) {
                     errorCount++;
-                    log.warn("ingest file failed: {} ({})", inputKey, e.getMessage());
+                    log.warn("ingest file failed: {} (causeType={})", inputKey, e.getClass().getSimpleName());
                 }
             }
         } catch (RuntimeException e) {
@@ -445,8 +445,9 @@ public class IngestionService {
                 }
             } catch (RuntimeException e) {
                 // 显式报告错误：landingUri 不可解析时如实说明，绝不回退到任何默认目录（D-003）
-                landingError = e.getMessage();
-                log.warn("landingUri 不可解析（profile {}）：{}", active.getId(), e.getMessage());
+                landingError = "Landing 存储配置无效或当前不可用，请检查运行环境配置";
+                log.warn("landingUri 不可解析（profile {}，causeType={}）",
+                        active.getId(), e.getClass().getSimpleName());
             }
         }
         // S2-04B：状态口与采集端**同源**取输入根——布局决定目录（滚动日志＝events/，Flume＝raw/）。
@@ -505,7 +506,7 @@ public class IngestionService {
                     }
                 }
             } catch (RuntimeException e) {
-                log.warn("landing input dir scan failed: {}", e.getMessage());
+                log.warn("landing input dir scan failed (causeType={})", e.getClass().getSimpleName());
             }
         }
         IngestionBatch latest = batchMapper.selectOne(new LambdaQueryWrapper<IngestionBatch>()

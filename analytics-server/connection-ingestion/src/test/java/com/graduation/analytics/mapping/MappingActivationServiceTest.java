@@ -172,17 +172,30 @@ class MappingActivationServiceTest {
     }
 
     @Test
-    @DisplayName("⑥ 有违例 ⇒ 409：一条缺必填字段的样本行就足以阻断激活")
-    void violationBlocksActivation() throws IOException {
+    @DisplayName("⑥ D-030：逐行预览违例不覆盖 Loader 激活语义，报告仍按实际 loader 阻断项判定")
+    void previewViolationDoesNotOverrideLoaderActivation() throws IOException {
         String profile = MappingActivationTestSupport.v2Profile();
         MappingActivationTestSupport.writeProfile(profileRoot, PROFILE_PATH, profile);
         MappingActivationTestSupport.writeSample(sampleRoot, "s2-03.jsonl",
                 MappingActivationTestSupport.rawLine(), MappingActivationTestSupport.rawLineMissingRequired());
         givenSource();
         MappingDryRunReport report = dryRun.run(SOURCE_TOKEN, profile, "s2-03.jsonl", 100);
+        assertThat(report.profileAccepted()).isTrue();
         assertThat(report.violations()).isNotEmpty();
+        assertThat(report.activationBlocks()).isEmpty();
+        assertThat(report.activationEligible()).isFalse();
 
-        assertConflict(report, PlatformBizException.MAPPING_ACTIVATION_INELIGIBLE);
+        MappingOutcome ingestOutcome = MappingTestSupport.executeText(
+                profile, "activation-d030-sample-check", MappingActivationTestSupport.rawLineMissingRequired());
+        assertThat(ingestOutcome.quarantined())
+                .as("D-030 允许 Loader 接受的画像进入激活；生产映射器仍必须隔离缺少必需字段的单条事件")
+                .isTrue();
+        assertThat(ingestOutcome.canonical()).isNull();
+
+        MappingActivationOutcome outcome = service().activate(SOURCE_TOKEN, report.reportId(),
+                report.profileChecksum(), "admin");
+        assertThat(outcome.changed()).isTrue();
+        assertThat(store.current(SOURCE_ID)).isPresent();
     }
 
     @Test
@@ -211,8 +224,8 @@ class MappingActivationServiceTest {
     }
 
     @Test
-    @DisplayName("⑦ 能力缺口阻断 ⇒ 409：v1 兼容画像声明 identityPolicy，只进 capabilityGaps（无激活阻断）也拒绝")
-    void capabilityGapBlocksActivation() throws IOException {
+    @DisplayName("⑦ D-030：未升格为 Loader activationBlock 的能力提示不单独阻断激活")
+    void capabilityGapWithoutLoaderBlockIsAdvisory() throws IOException {
         String profile = MappingActivationTestSupport.v1Profile(true);
         MappingActivationTestSupport.writeProfile(profileRoot, V1_PROFILE_PATH, profile);
         MappingActivationTestSupport.writeSample(sampleRoot, "v1.jsonl", MappingActivationTestSupport.canonicalLine());
@@ -224,8 +237,12 @@ class MappingActivationServiceTest {
                 .as("本用例要单独量能力缺口：activationBlocks 必须为空，否则量到的是另一条判据")
                 .isEmpty();
         assertThat(report.capabilityGaps()).isNotEmpty();
+        assertThat(report.activationEligible()).isFalse();
 
-        assertConflict(report, PlatformBizException.MAPPING_ACTIVATION_INELIGIBLE);
+        MappingActivationOutcome outcome = service().activate(SOURCE_TOKEN, report.reportId(),
+                report.profileChecksum(), "admin");
+        assertThat(outcome.changed()).isTrue();
+        assertThat(store.current(SOURCE_ID)).isPresent();
     }
 
     @Test

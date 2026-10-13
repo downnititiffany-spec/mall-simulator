@@ -6,7 +6,11 @@ package com.graduation.generator.adapter;
  * <p>参考商城的 {@code POST /api/v1/mall/orders/{orderId}/pay} 需要 {@code userId} 与订单同属一人
  * （实测），故显式带上而不是从订单里猜。</p>
  */
-public record PayCommand(String orderId, String userId) {
+public record PayCommand(String orderId, String userId, String idempotencyKey) {
+
+    public PayCommand(String orderId, String userId) {
+        this(orderId, userId, null);
+    }
 
     public PayCommand {
         if (orderId == null || orderId.isBlank()) {

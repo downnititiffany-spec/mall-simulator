@@ -11,11 +11,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * S3-19 反熵守卫：只读查询超时只有**一个数值属主**（{@link QueryTimeoutPolicy}）。
  *
  * <p>阶段4 分析读路径在 {@code metricReadJdbcTemplate} 上取该值；阶段6 的 AI 只读 SQL
- * （{@link SqlExecutor}，裸 JDBC 直连 metric_read）此前自带一个字面量 {@code 30}。
- * 两处若各自演化，就会出现"同一平台两套超时"，正是指导书 L158「超时统一」要消掉的东西。
- * 本测试把两者的相等关系钉住：改属主即两条路径同时改，改单边立刻红。</p>
+ * （{@link SqlExecutor}，裸 JDBC 直连 metric_read）也从这里取值。HiveServer2 RuntimeProfile
+ * 探测的语句级映射由 {@code RuntimeProfileHiveProbeRedactionTest} 单独核验。本测试只钉住
+ * AI SQL 对统一属主的引用，避免该执行点重新引入字面量。</p>
  *
- * <p><b>边界</b>：共享配置覆盖分析 JDBC 与 AI SQL/EXPLAIN 的语句级超时；AI 执行点仍有
+ * <p><b>边界</b>：共享配置覆盖分析 JDBC、HiveServer2 探测语句与 AI SQL/EXPLAIN 的语句级超时；AI 执行点仍有
  * {@code JdbcTemplate} 与裸 JDBC 两类，各自将超时映射为 {@code QUERY_TIMEOUT}。
  * 真 MySQL 到点行为及真 HTTP 超时响应仍需真实环境验证。</p>
  */

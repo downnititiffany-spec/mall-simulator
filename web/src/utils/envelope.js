@@ -68,7 +68,7 @@ export function hasWarnings(ctx) {
  */
 export const WARNING_TEXT = {
   NO_ACTIVE_SNAPSHOT: '当前没有 ACTIVE 快照，指标库尚未发布可用数据。',
-  UNKNOWN_SNAPSHOT: '请求指定的快照在指标库中不存在，未读到该快照的任何数据（不假装读过）。',
+  UNKNOWN_SNAPSHOT: '请求指定的快照不存在或尚未发布，未读到该快照的任何数据（不回退到当前快照）。',
   UNKNOWN_DIMENSION_TABLE: '部分维度表本期不存在，对应维度为空。',
   RFM_AMOUNT_UNAVAILABLE: '画像缺少消费额列：八类消费额无法从指标库取值（不用积分折算冒充金额）。',
   RFM_RAW_VALUES_UNAVAILABLE: '画像缺少 R/F 原值列：R 已按「统计日 − 末次购买日」回算（与原值口径不同），F 原值为空。',

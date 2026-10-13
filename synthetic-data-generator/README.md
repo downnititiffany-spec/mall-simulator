@@ -27,17 +27,28 @@ V2.1 §3.1 的**第三个独立程序**。唯一职责：固定 seed 的场景�
 # 构建（离线可用；产出可执行 fat jar）
 mvn -o -DskipTests package -f synthetic-data-generator/pom.xml
 
-# 启动（前台；端口 8092，日志 ./logs/generator.log）
-java -jar synthetic-data-generator/target/synthetic-data-generator-0.1.0-SNAPSHOT.jar
+# 启动前通过受控的进程环境注入隔离库 URL、用户名和口令；不要写入脚本/命令行/日志。
+# 安全目标固定为本机隔离 MySQL 3307，默认库 generator_meta 必须预先创建。
+# start-all.ps1 会在拉起任何服务前验证配置；不满足时 fail-closed。
+$env:GENERATOR_DB_URL = 'jdbc:mysql://127.0.0.1:3307/generator_meta?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false'
+# 使用本机凭据管理器或受控 secret 注入器设置 GENERATOR_DB_USER 与 GENERATOR_DB_PASSWORD；
+# 本文不提供可复制的账号/口令赋值示例，也不要把实际值粘贴到终端命令。
+pwsh -File scripts/start-all.ps1 -GeneratorOnly
 
-# 后台启动（工作目录必须是本模块，日志/产物都相对它解析）
-Start-Process -FilePath 'java' `
-  -ArgumentList '-jar','target/synthetic-data-generator-0.1.0-SNAPSHOT.jar' `
-  -WorkingDirectory 'synthetic-data-generator' -WindowStyle Hidden
+# 直接 java -jar 仅在同一进程环境已注入上述变量后使用；缺少账号/口令会启动失败。
+java -jar synthetic-data-generator/target/synthetic-data-generator-0.1.0-SNAPSHOT.jar
 
 # 停止（只停本程序，不影响 8090 商城与 8091 平台）
 Get-NetTCPConnection -LocalPort 8092 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 ```
+
+## 浏览器管理台（阶段性入口）
+
+服务启动成功后访问 `http://127.0.0.1:8092/`。管理台使用本程序现有 API 展示目标商城和场景、测试商城连通性、启动已有不可变计划、按 `runId` 查看状态/取消任务及读取制品元数据；计划创建和版本管理仍由 CLI 完成。
+
+`application.yml` 默认 JDBC 目标为 `127.0.0.1:3307/generator_meta`，但不含默认账号、口令，也不允许应用账号自动建库。没有显式凭据时 Spring 配置解析失败；`start-all.ps1` 还会在启动任何服务前拒绝缺少凭据、或非 `127.0.0.1:3307` 的 URL。禁止连接 3306。凭据不得放进命令行参数、README 可执行值、截图或日志；示例尖括号文字不是可用凭据。
+
+管理台启动时对 MALL_API 计划显示副作用确认；若已知运行摘要标为 `MALL_OUTCOME_UNKNOWN`，会要求操作员先人工核实商城状态，再允许后续启动。它不能替代商城对账。现有契约没有计划创建/查询 API、全部运行列表 API 或操作流水正文读取 API，因此运行查询需提供 `runId`，操作流水需在受控环境按制品路径核验；不能把总状态 `SUCCESS` 当成每条商城操作均成功。
 
 ## 配置
 
@@ -46,8 +57,8 @@ Get-NetTCPConnection -LocalPort 8092 -State Listen | ForEach-Object { Stop-Proce
 | 键 / 变量 | 默认值 | 说明 |
 |---|---|---|
 | `server.port` | `8092` | 独立端口（V2.1 §3.1 原文；`8082` 属误记，见事实记录 D-011） |
-| `GENERATOR_DB_USER` / `GENERATOR_DB_PASSWORD` | `root` / `123456` | 元数据库账号（裁决项 B-05：鉴权模型未定前沿用本机开发账号） |
-| `spring.datasource.url` | `.../generator_meta?...createDatabaseIfNotExist=true` | **库名是配置项**：B-05 裁决为 `synthetic_generator` 或复用其它库时只改这一行 |
+| `GENERATOR_DB_USER` / `GENERATOR_DB_PASSWORD` | 必填，无默认值 | 只允许受控注入的隔离账号；不使用 root/固定口令 |
+| `GENERATOR_DB_URL` | 本机 `127.0.0.1:3307/generator_meta` | 目标库预先创建；启动脚本仅接受本机隔离 3307 |
 | `GENERATOR_OUTPUT_ROOT` | `./generator-output` | 文件模式产物目录（独立测试目录，绝不指向平台 landing） |
 | `GENERATOR_LOG_FILE` | `./logs/generator.log` | 独立日志文件 |
 

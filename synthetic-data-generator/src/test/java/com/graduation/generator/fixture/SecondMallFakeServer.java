@@ -79,6 +79,7 @@ public final class SecondMallFakeServer implements AutoCloseable {
 
     /** 失败注入：让下单接口回 HTTP 400 + {@code E_NO_STOCK}（模拟库存耗尽） */
     public static final String FAIL_ORDER_NO_STOCK = "ORDER_NO_STOCK";
+    public static final String FAIL_ORDER_ECHO_TOKEN = "ORDER_ECHO_TOKEN";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Pattern SETTLE = Pattern.compile("^/open/v2/orders/([^/]+)/settle$");
@@ -167,7 +168,8 @@ public final class SecondMallFakeServer implements AutoCloseable {
      * @param behaviorPath     埋点路径；{@code null} 表示这家"商城"没有埋点接口（404）
      * @param itemCount        目录里的在售商品数
      * @param orderCapacity    总共接得下多少单，超出回 {@code E_NO_STOCK}
-     * @param failureInjection {@link #FAIL_ORDER_SUCCESS_FALSE} / {@link #FAIL_ORDER_NO_STOCK} / {@code null}
+     * @param failureInjection {@link #FAIL_ORDER_SUCCESS_FALSE} / {@link #FAIL_ORDER_NO_STOCK} /
+     *                         {@link #FAIL_ORDER_ECHO_TOKEN} / {@code null}
      */
     public SecondMallFakeServer(String token, String behaviorPath, int itemCount, long orderCapacity,
                                 String failureInjection) throws IOException {
@@ -434,6 +436,11 @@ public final class SecondMallFakeServer implements AutoCloseable {
             if (FAIL_ORDER_NO_STOCK.equals(failureInjection) || orderAttempts.get() > orderCapacity) {
                 hit(ORDERS_ROUTE);
                 fail(exchange, 400, "E_NO_STOCK", "no stock for " + firstSku(request));
+                return;
+            }
+            if (FAIL_ORDER_ECHO_TOKEN.equals(failureInjection)) {
+                hit(ORDERS_ROUTE);
+                fail(exchange, 400, "E_ECHO", "upstream diagnostic: " + token);
                 return;
             }
             String buyerRef = request.path("buyer_ref").asText();

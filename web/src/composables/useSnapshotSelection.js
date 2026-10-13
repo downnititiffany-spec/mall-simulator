@@ -5,6 +5,7 @@ import { buildSnapshotOptions, initialSnapshotId } from '../utils/snapshotOption
 export const snapshotSelection = reactive({
   options: [],
   selectedSnapshotId: '',
+  explicitSnapshotId: '',
   loading: false,
   initialized: false,
   error: '',
@@ -75,15 +76,32 @@ export function selectSnapshot(snapshotId) {
   const choice = snapshotSelection.options.find((item) => item.snapshotId === snapshotId)
   if (!choice) throw new Error('所选快照不在已发布选项中，已拒绝切换。')
   snapshotSelection.selectedSnapshotId = choice.snapshotId
+  snapshotSelection.explicitSnapshotId = ''
   saveSnapshotId(choice.snapshotId)
   snapshotSelection.error = ''
   return choice
+}
+
+/** Select an exact historical snapshot ID without listing or persisting cross-profile history. */
+export function selectExplicitSnapshot(snapshotId) {
+  const normalized = typeof snapshotId === 'string' ? snapshotId.trim() : ''
+  if (!normalized || normalized.length > 256 || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    throw new Error('请输入有效的快照 ID（最多 256 个字符）。')
+  }
+  snapshotSelection.explicitSnapshotId = normalized
+  snapshotSelection.error = ''
+  return normalized
+}
+
+export function clearExplicitSnapshot() {
+  snapshotSelection.explicitSnapshotId = ''
 }
 
 /** Reset in-memory state across logout/login; per-user saved selection remains namespaced. */
 export function resetSnapshotSelection() {
   snapshotSelection.options = []
   snapshotSelection.selectedSnapshotId = ''
+  snapshotSelection.explicitSnapshotId = ''
   snapshotSelection.loading = false
   snapshotSelection.initialized = false
   snapshotSelection.error = ''

@@ -160,7 +160,7 @@ public class LandingManifestSelector {
                 consider(s, manifest, sourceId, consumedBatchIds);
             }
         } catch (IOException e) {
-            log.warn("manifests 扫描失败: {}", e.getMessage());
+            log.warn("manifests 扫描失败 causeType={}", e.getClass().getSimpleName());
             return s;
         }
         return warnIfNothingAttributable(s, sourceId);
@@ -177,7 +177,7 @@ public class LandingManifestSelector {
         try {
             names = storage.list(MANIFESTS_DIR);
         } catch (RuntimeException e) {
-            log.warn("manifests 扫描失败: {}", e.getMessage());
+            log.warn("manifests 扫描失败 causeType={}", e.getClass().getSimpleName());
             return s;
         }
         for (String name : names) {
@@ -269,7 +269,8 @@ public class LandingManifestSelector {
                     new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
                     });
         } catch (Exception e) {
-            log.warn("manifest 解析失败 {}: {}", file.getFileName(), e.getMessage());
+            log.warn("manifest 解析失败 file={} causeType={}", file.getFileName(),
+                    e.getClass().getSimpleName());
             return null;
         }
     }
@@ -286,7 +287,9 @@ public class LandingManifestSelector {
                         });
             }
         } catch (Exception e) {
-            log.warn("manifest 解析失败 {}: {}", relativePath, e.getMessage());
+            log.warn("manifest 解析失败 file={} causeType={}",
+                    relativePath.substring(relativePath.lastIndexOf('/') + 1),
+                    e.getClass().getSimpleName());
             return null;
         }
     }

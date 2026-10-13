@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { canAccessRoute } from './utils/routeAccess'
 
 // 页面结构（§11.2）：固定看板为日常主入口，技术页面单独隔离；/login 为登录入口
 const routes = [
@@ -12,7 +13,9 @@ const routes = [
   { path: '/pipeline', name: 'pipeline', component: () => import('./views/Pipeline.vue'), meta: { title: '数据流水线', requiresAuth: true, requiresAdmin: true } },
   { path: '/ops', name: 'ops', component: () => import('./views/Ops.vue'), meta: { title: '运维中心', requiresAuth: true, requiresAdmin: true } },
   { path: '/sources/wizard', name: 'sourceWizard', component: () => import('./views/SourceWizard.vue'), meta: { title: '接入向导', requiresAuth: true, requiresAdmin: true } },
+  { path: '/runtime-profiles', name: 'runtimeProfiles', component: () => import('./views/RuntimeProfiles.vue'), meta: { title: '运行环境', requiresAuth: true, requiresRuntimeManage: true } },
   { path: '/decisions', name: 'decisions', component: () => import('./views/Decisions.vue'), meta: { title: '决策中心', requiresAuth: true } },
+  { path: '/reports', name: 'reports', component: () => import('./views/Reports.vue'), meta: { title: '业务报告', requiresAuth: true } },
   { path: '/ai', name: 'ai', component: () => import('./views/AiAssistant.vue'), meta: { title: '智能分析助手', requiresAuth: true, snapshotScoped: true } }
 ]
 
@@ -41,7 +44,7 @@ router.beforeEach((to, from, next) => {
     next('/login')
     return
   }
-  if (to.meta.requiresAdmin && currentUser()?.role !== 'admin') {
+  if (!canAccessRoute(currentUser(), to.meta)) {
     next(token ? '/overview' : '/login')
     return
   }

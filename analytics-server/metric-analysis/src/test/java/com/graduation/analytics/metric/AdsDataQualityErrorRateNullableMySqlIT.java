@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -79,7 +80,7 @@ class AdsDataQualityErrorRateNullableMySqlIT {
         publish = new JdbcTemplate(publishDs);
         read = new JdbcTemplate(readDs);
         writer = new MetricAdsWriter(publish);
-        reader = new MetricAdsReader(read);
+        reader = new MetricAdsReader(read, () -> Optional.of(profileId));
 
         profileId = registerOwnProfile();
         scope = new WorkScope(context.testRunId(), profileId,

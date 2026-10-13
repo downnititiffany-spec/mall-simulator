@@ -60,18 +60,25 @@ export function aiHistoryRows(list) {
 
 /** AI 模型调用审计行 */
 export function aiCallRows(list) {
-  return (Array.isArray(list) ? list : []).map((c) => ({
-    useCase: text(c.useCase),
-    provider: text(c.provider),
-    model: text(c.model),
-    inputTokens: formatInteger(c.inputTokens),
-    outputTokens: formatInteger(c.outputTokens),
-    elapsedMs: c.elapsedMs === null || c.elapsedMs === undefined ? text(c.elapsedMs) : formatInteger(c.elapsedMs) + 'ms',
-    promptVersion: text(c.promptVersion),
-    status: text(c.status),
-    error: text(c.error),
-    createdAt: formatDateTime(c.createdAt)
-  }))
+  return (Array.isArray(list) ? list : []).map((c) => {
+    const fingerprint = text(c.requestFingerprint)
+    return {
+      useCase: text(c.useCase),
+      provider: text(c.provider),
+      model: text(c.model),
+      sourceId: text(c.sourceId),
+      snapshotId: text(c.snapshotId),
+      requestFingerprint: fingerprint,
+      fingerprintPreview: fingerprint === '—' ? fingerprint : `${fingerprint.slice(0, 12)}…`,
+      inputTokens: formatInteger(c.inputTokens),
+      outputTokens: formatInteger(c.outputTokens),
+      elapsedMs: c.elapsedMs === null || c.elapsedMs === undefined ? text(c.elapsedMs) : formatInteger(c.elapsedMs) + 'ms',
+      promptVersion: text(c.promptVersion),
+      status: text(c.status),
+      error: text(c.error),
+      createdAt: formatDateTime(c.createdAt)
+    }
+  })
 }
 
 /** 流水线实例行（溯源链路：业务时间 / 源数据版本 / 目标快照 / 当前阶段） */
@@ -201,6 +208,9 @@ export const COLUMNS = {
     { key: 'useCase', label: '用例' },
     { key: 'provider', label: '提供方' },
     { key: 'model', label: '模型' },
+    { key: 'sourceId', label: '来源 ID' },
+    { key: 'snapshotId', label: '快照 ID' },
+    { key: 'requestFingerprint', label: '请求指纹 SHA-256' },
     { key: 'inputTokens', label: '输入 tokens' },
     { key: 'outputTokens', label: '输出 tokens' },
     { key: 'elapsedMs', label: '耗时' },

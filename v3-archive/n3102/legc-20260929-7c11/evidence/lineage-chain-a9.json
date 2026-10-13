@@ -1,0 +1,29 @@
+{
+  "sourceId": 1,
+  "manifestBatchId": 1,
+  "pipelineRunId": 1,
+  "snapshotId": "S20260918_1",
+  "hdfsLandingUri": "hdfs://127.0.0.1:19000/landing/n3102e_20260929_173000_7c11",
+  "hdfsLandingLayout": "FLUME_RAW",
+  "businessTime": "2026-09-18T00:00:00",
+  "ingestion": {
+    "recordCount": 99,
+    "quarantineCount": 0,
+    "noNewData": false
+  },
+  "run": {
+    "inputBatchId": 1,
+    "status": "SUCCESS",
+    "pipelineCode": "ODS_TO_ADS"
+  },
+  "flume": {
+    "byteMatch": true,
+    "hdfsBytes": 34192,
+    "hdfsLines": 99,
+    "srcBytes": 34192
+  },
+  "hdfsInputChecksumSignatureA4": "a7e8f2481f05ed1e1518c1a622e0ccc05886e31956950b592a2d1890d7b20283",
+  "d041TruncationHits": 0,
+  "reconciliation": "14/14 PASS tol 0.0005",
+  "oracleRef": "fixtures/source-a-e3/oracle.py（发布前钉档 2a11b60）"
+}

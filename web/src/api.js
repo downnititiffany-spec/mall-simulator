@@ -97,12 +97,27 @@ export default {
   pipelineRunsPage: (params = {}, options) => client.get('/pipeline-runs/page', { params, ...(options || {}) }),
   pipelineRun: (id) => client.get(`/pipeline-runs/${id}`),
   retryPipelineRun: (id) => client.post(`/pipeline-runs/${id}/retry`),
-  // 指标/快照（非统一信封接口：/metrics/overview 返回指标数组，/metrics/snapshots 返回快照数组）
+  pipelineRecoveryReport: (options) => client.get('/admin/pipeline-runs/recovery-report', { ...(options || {}) }),
+  resumePipelineRun: (id, reason) => client.post(`/admin/pipeline-runs/${id}/resume`, null, { params: { reason } }),
+  markPipelineRunFailed: (id, reason) => client.post(`/admin/pipeline-runs/${id}/mark-failed`, null, { params: { reason } }),
+  retryPipelineRunFromStage: (id, stage, reason) =>
+    client.post(`/admin/pipeline-runs/${id}/retry-from-stage`, null, { params: { stage, reason } }),
+  // 指标/快照（非统一信封接口；旧快照数组路由保留，新历史表支持 page/size/sort）
   metricsOverview: (snapshotId, options) =>
     client.get('/metrics/overview', { params: snapshotId ? { snapshotId } : {}, ...(options || {}) }),
   snapshots: (limit = 10, options) => client.get('/metrics/snapshots', { params: { limit }, ...(options || {}) }),
+  snapshotsPage: (params = {}, options) => client.get('/metrics/snapshots/page', { params, ...(options || {}) }),
   analyticsSourceOptions: (options) => client.get('/analytics/sources', { ...(options || {}) }),
   quality: (limit = 20, options) => client.get('/metrics/quality', { params: { limit }, ...(options || {}) }),
+  qualityPage: (params = {}, options) => client.get('/metrics/quality/page', { params, ...(options || {}) }),
+  // Runtime environment administration (server enforces runtime:manage).
+  runtimeProfiles: (options) => client.get('/runtime-profiles', { ...(options || {}) }),
+  runtimeProfile: (id, options) => client.get(`/runtime-profiles/${id}`, { ...(options || {}) }),
+  createRuntimeProfile: (body) => client.post('/runtime-profiles', body),
+  updateRuntimeProfile: (id, body) => client.put(`/runtime-profiles/${id}`, body),
+  testRuntimeProfile: (id) => client.post(`/runtime-profiles/${id}/test`),
+  activateRuntimeProfile: (id) => client.post(`/runtime-profiles/${id}/activate`),
+  disableRuntimeProfile: (id) => client.post(`/runtime-profiles/${id}/disable`),
   // AI（问答 + 审计）：返回证据包结构，非统一信封。
   // QA-04：查询时间范围是**真正可选**——不传就不发送该字段。此前默认写死一个「最近 30 天」标签，
   // 等于前端替模型编一个时间口径，与 SQL 生成路径自行选择的真实日期互相矛盾。
@@ -119,8 +134,16 @@ export default {
     return client.post('/ai/queries', body, requestOptions)
   },
   aiHistoryMine: (limit = 8, options) => client.get('/ai/history/my', { params: { limit }, ...(options || {}) }),
+  aiFeedback: (id, body) => client.post(`/ai/history/${id}/feedback`, body),
   aiAuditHistory: (limit = 20, options) => client.get('/ai/audit/history', { params: { limit }, ...(options || {}) }),
   aiAuditCalls: (limit = 20, options) => client.get('/ai/audit/calls', { params: { limit }, ...(options || {}) }),
+  aiAuditHistoryPage: (params = {}, options) => client.get('/ai/audit/history/page', { params, ...(options || {}) }),
+  aiAuditCallsPage: (params = {}, options) => client.get('/ai/audit/calls/page', { params, ...(options || {}) }),
+  // Business report instances (D-060 / §14.4).
+  createReport: (body) => client.post('/reports', body),
+  reportsPage: (params = {}, options) => client.get('/reports/page', { params, ...(options || {}) }),
+  reportDetail: (id, options) => client.get(`/reports/${id}`, { ...(options || {}) }),
+  reportArtifact: (id, options) => client.get(`/reports/${id}/artifact`, { ...(options || {}) }),
   // 决策中心：返回决策任务/评价数组，非统一信封
   decisions: (limit = 20, options) => client.get('/decisions', { params: { limit }, ...(options || {}) }),
   decisionPage: (params = {}, options) => client.get('/decisions/page', { params, ...(options || {}) }),
@@ -130,11 +153,13 @@ export default {
   decisionCreate: (body) => client.post('/decisions', body),
   // 用户管理（运维页，admin 专属）
   adminUsers: (options) => client.get('/admin/users', { ...(options || {}) }),
+  adminUsersPage: (params = {}, options) => client.get('/admin/users/page', { params, ...(options || {}) }),
   adminCreateUser: (body) => client.post('/admin/users', body),
   adminUserAction: (id, action, body) => client.post(`/admin/users/${id}/${action}`, body),
   // 采集（分析平台侧采集触发；模拟商城生成器接口已迁出分析前端）
   ingestionRun: () => client.post('/ingestion/runs'),
   ingestionStatus: () => client.get('/ingestion/status'),
+  ingestionBatchesPage: (params = {}, options) => client.get('/ingestion/batches/page', { params, ...(options || {}) }),
   // 接入向导（02.5）：源登记读取 + 受控激活面（RUNTIME_MANAGE，服务端审计）。
   // 路径占位符统一写 ${id}：跨树对账守卫按 `${x}` → `{x}` 原名归一后与 Java 冻结表逐字对账，
   // 而冻结表（ControllerPermissionCoverageTest.normalize）把一切占位符折叠成 {id}。

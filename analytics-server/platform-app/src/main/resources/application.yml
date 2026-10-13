@@ -51,6 +51,17 @@ platform:
     warehouse-dir: ${PLATFORM_SPARK_WAREHOUSE_DIR:./spark-warehouse}
     metastore-dir: ${PLATFORM_SPARK_METASTORE_DIR:./derby-metastore}
 
+# AI Provider 资源保护（设计 V3.0 §13.4）；均可由受控部署环境覆盖。
+# 不配置/无凭据时 Provider 仍不可用，调用方沿既有模板回退路径处理。
+llm:
+  max-request-bytes: ${LLM_MAX_REQUEST_BYTES:262144}
+  max-response-bytes: ${LLM_MAX_RESPONSE_BYTES:1048576}
+  max-output-tokens: ${LLM_MAX_OUTPUT_TOKENS:1024}
+  max-concurrent-calls: ${LLM_MAX_CONCURRENT_CALLS:2}
+  circuit-failure-threshold: ${LLM_CIRCUIT_FAILURE_THRESHOLD:5}
+  circuit-open-ms: ${LLM_CIRCUIT_OPEN_MS:60000}
+  max-daily-token-budget: ${LLM_MAX_DAILY_TOKEN_BUDGET:1000000}
+
 # 迁移由 MetaFlywayInitializer 显式执行（classpath:db/meta）；默认 flyway 关闭
 spring:
   flyway:

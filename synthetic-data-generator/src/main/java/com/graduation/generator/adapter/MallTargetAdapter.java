@@ -112,7 +112,7 @@ public interface MallTargetAdapter {
      * 不能静默变成空操作（那会产出"看起来成功、其实什么都没发生"的运行报告）。</p>
      */
     private MallOperationException unsupported(String operation) {
-        return new MallOperationException(operation,
+        return new MallOperationException(operation, MallFailureCode.MALL_UNSUPPORTED_OPERATION,
                 "适配器 " + adapterType() + " 不支持该操作（§4.1 的 " + operation + " 未实现）");
     }
 }

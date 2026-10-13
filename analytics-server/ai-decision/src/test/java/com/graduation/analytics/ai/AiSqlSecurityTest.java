@@ -8,6 +8,7 @@ import com.graduation.analytics.ai.sql.SqlExecutor;
 import com.graduation.analytics.ai.sql.SqlPolicy;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator.ValidationResult;
+import com.graduation.analytics.runtime.ActiveRuntimeProfileIdProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -404,8 +406,10 @@ class AiSqlSecurityTest {
     @DisplayName("AiScopeResolver：无 ACTIVE 快照 → NO_ACTIVE_SNAPSHOT（不回退归档/最新）")
     void 无ACTIVE快照被拒() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.queryForList(anyString())).thenReturn(List.of());
-        AiScopeResolver resolver = new AiScopeResolver(jdbc);
+        ActiveRuntimeProfileIdProvider activeProfile = mock(ActiveRuntimeProfileIdProvider.class);
+        when(activeProfile.activeRuntimeProfileId()).thenReturn(Optional.of(7L));
+        when(jdbc.queryForList(eq(AiScopeResolver.ACTIVE_SNAPSHOT_SQL), eq(7L))).thenReturn(List.of());
+        AiScopeResolver resolver = new AiScopeResolver(jdbc, activeProfile);
         AiSqlException e = assertThrows(AiSqlException.class, resolver::resolve);
         assertEquals(SqlPolicy.NO_ACTIVE_SNAPSHOT, e.code());
         assertTrue(e.getMessage().contains("ACTIVE"));
@@ -414,7 +418,7 @@ class AiSqlSecurityTest {
     @Test
     @DisplayName("AiScopeResolver：只读源缺失 → fail-closed")
     void 只读源缺失failClosed() {
-        AiScopeResolver resolver = new AiScopeResolver((javax.sql.DataSource) null);
+        AiScopeResolver resolver = new AiScopeResolver((JdbcTemplate) null);
         AiSqlException e = assertThrows(AiSqlException.class, resolver::resolve);
         assertEquals(SqlPolicy.METRIC_READ_SOURCE_MISSING, e.code());
     }
@@ -423,18 +427,36 @@ class AiSqlSecurityTest {
     @DisplayName("AiScopeResolver：读到 ACTIVE 快照 → scope 字段派生正确（businessDate-89）")
     void ACTIVE快照解析正确() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        ActiveRuntimeProfileIdProvider activeProfile = mock(ActiveRuntimeProfileIdProvider.class);
+        when(activeProfile.activeRuntimeProfileId()).thenReturn(Optional.of(23L));
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("snapshot_id", "S20260901_24");
         row.put("business_time", LocalDateTime.of(2026, 9, 4, 3, 0, 0));
         row.put("definition_version", "v2");
-        when(jdbc.queryForList(anyString())).thenReturn(new ArrayList<>(List.of(row)));
-        AiScope scope = new AiScopeResolver(jdbc).resolve();
+        when(jdbc.queryForList(eq(AiScopeResolver.ACTIVE_SNAPSHOT_SQL), eq(23L)))
+                .thenReturn(new ArrayList<>(List.of(row)));
+        AiScope scope = new AiScopeResolver(jdbc, activeProfile).resolve();
         assertEquals("S20260901_24", scope.snapshotId());
         assertEquals("v2", scope.definitionVersion());
         assertEquals(LocalDate.of(2026, 9, 4), scope.businessDate());
         assertEquals(LocalDate.of(2026, 6, 7), scope.minAllowedDate());
         assertEquals(90, scope.maxScanDays());
         assertEquals(200, scope.rowLimit());
+        verify(jdbc).queryForList(AiScopeResolver.ACTIVE_SNAPSHOT_SQL, 23L);
+    }
+
+    @Test
+    @DisplayName("AiScopeResolver：无唯一 ACTIVE RuntimeProfile 时不查找全局 ACTIVE 快照")
+    void 无唯一ACTIVEProfile时拒绝默认快照解析() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        ActiveRuntimeProfileIdProvider activeProfile = mock(ActiveRuntimeProfileIdProvider.class);
+        when(activeProfile.activeRuntimeProfileId()).thenReturn(Optional.empty());
+
+        AiSqlException e = assertThrows(AiSqlException.class,
+                () -> new AiScopeResolver(jdbc, activeProfile).resolve());
+
+        assertEquals(SqlPolicy.NO_ACTIVE_SNAPSHOT, e.code());
+        verify(jdbc, never()).queryForList(anyString(), org.mockito.ArgumentMatchers.<Object>any());
     }
 
     @Test
@@ -443,6 +465,7 @@ class AiSqlSecurityTest {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("snapshot_id", "S20260917_9");
+        row.put("source_id", 99L);
         row.put("business_time", LocalDateTime.of(2026, 9, 17, 3, 0, 0));
         row.put("definition_version", "v2");
         when(jdbc.queryForList(eq(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL), eq("S20260917_9")))
@@ -451,6 +474,7 @@ class AiSqlSecurityTest {
         AiScope scope = new AiScopeResolver(jdbc).resolve("S20260917_9");
 
         assertEquals("S20260917_9", scope.snapshotId());
+        assertEquals(99L, scope.sourceId());
         assertEquals(LocalDate.of(2026, 9, 17), scope.businessDate());
         verify(jdbc).queryForList(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL, "S20260917_9");
         verify(jdbc, never()).queryForList(AiScopeResolver.ACTIVE_SNAPSHOT_SQL);

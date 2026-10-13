@@ -3,7 +3,7 @@ package com.graduation.analytics.ai.evidence;
 import com.graduation.analytics.analysis.AnalysisService;
 import com.graduation.analytics.analysis.AnalysisViewModel;
 import com.graduation.analytics.ai.evidence.EvidencePackage.Period;
-import com.graduation.analytics.metric.MySqlMetricStore;
+import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.warehouse.WarehouseNamespace;
 import com.graduation.analytics.warehouse.WarehouseNamespaceProvider;
@@ -51,7 +51,7 @@ public class EvidenceBuilder {
     private static final DateTimeFormatter ISO_SECONDS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final AnalysisService analysisService;
-    private final MySqlMetricStore metricStore;
+    private final MetricStore metricStore;
     /** 数仓库名空间（唯一所有者）：血缘里的 Hive 库名不写死，随 ACTIVE 档案的 hive_database_prefix 走 */
     private final WarehouseNamespaceProvider namespaceProvider;
 
@@ -98,7 +98,7 @@ public class EvidenceBuilder {
         List<EvidencePackage.Fact> facts = facts(snapshotId, data.metrics(), warnings);
         Map<String, BigDecimal> values = values(data.metrics());
 
-        ComparisonResult cmp = compare(snapshotId, from, data.metrics(), warnings);
+        ComparisonResult cmp = compare(snapshotId, meta, from, data.metrics(), warnings);
         Map<String, List<EvidencePackage.DimensionContribution>> dimensions =
                 dimensions(snapshotId, from, to, warnings);
 
@@ -153,7 +153,7 @@ public class EvidenceBuilder {
      * 所以本方法签名只接受一个业务日（不是区间）——跨天请求在 {@link #build} 里就登记为不支持，
      * 从结构上避免"拿某一天的值冒充多日窗口"。
      */
-    private ComparisonResult compare(String snapshotId, LocalDate day,
+    private ComparisonResult compare(String snapshotId, MetricSnapshot currentSnapshot, LocalDate day,
                                      List<AnalysisService.MetricItem> metrics, List<String> warnings) {
         Map<String, BigDecimal> deltaRates = new LinkedHashMap<>();
         if (day == null) {
@@ -161,7 +161,7 @@ public class EvidenceBuilder {
             return new ComparisonResult(null, List.of(), deltaRates);
         }
         LocalDate prevDate = day.minusDays(1);
-        String baselineSnapshot = previousDaySnapshot(prevDate);
+        String baselineSnapshot = previousDaySnapshot(currentSnapshot, prevDate);
         if (baselineSnapshot == null) {
             warnings.add(EvidencePackage.WARN_NO_COMPARISON_PERIOD);
             return new ComparisonResult(null, List.of(), deltaRates);
@@ -195,14 +195,22 @@ public class EvidenceBuilder {
     }
 
     /** 业务日 = 指定日期的已发布快照（优先 ACTIVE，其次 ARCHIVED；找不到返回 null） */
-    private String previousDaySnapshot(LocalDate date) {
+    private String previousDaySnapshot(MetricSnapshot currentSnapshot, LocalDate date) {
+        if (currentSnapshot == null || currentSnapshot.getRuntimeProfileId() == null
+                || currentSnapshot.getSourceId() == null || blankToNull(currentSnapshot.getDefinitionVersion()) == null) {
+            return null;
+        }
         List<MetricSnapshot> snapshots = metricStore.listSnapshots(SNAPSHOT_LOOKBACK);
         if (snapshots == null) {
             return null;
         }
         String archived = null;
         for (MetricSnapshot s : snapshots) {
-            if (s.getBusinessTime() == null || !date.equals(s.getBusinessTime().toLocalDate())) {
+            if (s == null
+                    || !currentSnapshot.getRuntimeProfileId().equals(s.getRuntimeProfileId())
+                    || !currentSnapshot.getSourceId().equals(s.getSourceId())
+                    || !currentSnapshot.getDefinitionVersion().equals(s.getDefinitionVersion())
+                    || s.getBusinessTime() == null || !date.equals(s.getBusinessTime().toLocalDate())) {
                 continue;
             }
             if (MetricSnapshot.STATUS_ACTIVE.equals(s.getStatus())) {
@@ -227,7 +235,8 @@ public class EvidenceBuilder {
             warnings.addAll(view.warnings());
             sales = view.data();
         } catch (RuntimeException e) {
-            log.warn("证据包分类/城市等级维度读取失败（降级为空维度）: {}", e.getMessage());
+            log.warn("证据包分类/城市等级维度读取失败（降级为空维度），causeType={}",
+                    e.getClass().getSimpleName());
             warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
             sales = null;
         }
@@ -249,7 +258,8 @@ public class EvidenceBuilder {
             // S3-21：sort=null ⇒ rank,asc（与 v1.4 前的排行顺序逐行相同）；证据包不引入新的排序口径
             hot = analysisService.products(snapshotId, null, null, null, DIMENSION_TOP_N, from, to).data().hot();
         } catch (RuntimeException e) {
-            log.warn("证据包商品维度读取失败（降级为空维度）: {}", e.getMessage());
+            log.warn("证据包商品维度读取失败（降级为空维度），causeType={}",
+                    e.getClass().getSimpleName());
             warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
             return List.of();
         }
@@ -333,7 +343,8 @@ public class EvidenceBuilder {
         }
         return new EvidencePackage.Lineage(
                 MetricLineage.hiveTables(mysql, namespaceProvider.current()), List.copyOf(mysql),
-                meta == null ? null : meta.getPipelineRunId(), snapshotId);
+                meta == null ? null : meta.getPipelineRunId(), snapshotId,
+                meta == null ? null : meta.getSourceId());
     }
 
     // ── 空证据包 ───────────────────────────────────────────────────────────

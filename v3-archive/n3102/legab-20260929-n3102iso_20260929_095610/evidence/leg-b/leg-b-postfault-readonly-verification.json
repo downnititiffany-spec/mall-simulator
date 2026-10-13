@@ -1,0 +1,32 @@
+{
+  "runId": "n3102iso_20260929_095610",
+  "checkedAt": "2026-09-29T11:31:52",
+  "verificationOutcome": "PASS_WITH_HARNESS_CORRECTION",
+  "productBehavior": "PASS",
+  "originalHarnessOutcome": "FALSE_FAIL_CONFIRMED",
+  "rootCause": "原断言对 mysql CLI 的完整输出直接 Trim 后全串比较；CLI 输出同时含列标题与 CONS|2 数据行，导致正确的台账值被误报。",
+  "originalFailureArtifact": "evidence/leg-b-state.json",
+  "evidence": {
+    "secondBatchSnapshot": "S20260918_2",
+    "noOpRun": "NRUN|3|SUCCESS|NULL|NULL|NULL",
+    "consumptionAfterFailure": "CONS|2",
+    "failedRecalcRun": "FRUN|4|FAILED|2|S20260918_4|N31-02 controlled Spark jar fault; verify current ACTIVE remains readable|RUN_JOB_FAILED",
+    "activeAfterFailure": "ACTIVE|S20260918_2|ACTIVE",
+    "snapshotCount": "SNAPCNT|2",
+    "metricValueCount": "MV|14",
+    "apiMetricCount": 14,
+    "apiSnapshotIds": [
+      "S20260918_2"
+    ],
+    "sparkJarSha256": "71c0fc88b1c093df3e2e828d0c00b827a5bd51bca1d0ca0ab4a378e37bc00e57",
+    "platformStopped": true,
+    "zero3306": true
+  },
+  "sourceArtifacts": [
+    "logs/sql-b-fault-consumption-after.out.txt",
+    "logs/sql-b-fault-run-after.out.txt",
+    "logs/sql-b-fault-active-after.out.txt",
+    "evidence/api-overview-postfault-response.json",
+    "evidence/cleanup-postfault-readonly.json"
+  ]
+}

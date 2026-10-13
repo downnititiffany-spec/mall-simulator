@@ -56,6 +56,10 @@ class HdfsFlumeRawIngestionIT {
     private static final long RUNTIME_PROFILE_ID = 5L;
     private static final long SOURCE_ID = 7L;
     private static final long BATCH_ID = 908002L;
+    private static final long DEFAULT_EXPECTED_RECORDS = 2L;
+    private static final String[] DEFAULT_EXPECTED_EVENT_IDS = {
+            "flume-smoke-order-created-20260924-03", "flume-smoke-order-paid-20260924-03"
+    };
 
     @BeforeAll
     static void initLambdaMetadata() {
@@ -146,7 +150,7 @@ class HdfsFlumeRawIngestionIT {
             IngestionService.RunResult replay = service.runOne(TraceContext.create());
 
             assertThat(result.status()).isEqualTo(IngestionBatch.STATUS_SUCCESS);
-            assertThat(result.recordCount()).isEqualTo(2L);
+            assertThat(result.recordCount()).isEqualTo(expectedRecordCount());
             assertThat(result.quarantineCount()).isZero();
             assertThat(result.errorCount()).isZero();
             assertThat(result.manifestPath()).isEqualTo(storage.uri("manifests/" + BATCH_ID + ".json"));
@@ -158,9 +162,10 @@ class HdfsFlumeRawIngestionIT {
             assertThat(checkpointInsertCount).hasValue(1);
             assertThat(storage.exists("accepted/" + BATCH_ID + "/flume-output.jsonl")).isTrue();
             try (InputStream accepted = storage.open("accepted/" + BATCH_ID + "/flume-output.jsonl")) {
-                assertThat(new String(accepted.readAllBytes(), StandardCharsets.UTF_8))
-                        .contains("\"event_id\":\"flume-smoke-order-created-20260924-03\"")
-                        .contains("\"event_id\":\"flume-smoke-order-paid-20260924-03\"");
+                String acceptedContent = new String(accepted.readAllBytes(), StandardCharsets.UTF_8);
+                for (String eventId : expectedEventIds()) {
+                    assertThat(acceptedContent).contains("\"event_id\":\"" + eventId + "\"");
+                }
             }
             try (InputStream manifest = storage.open("manifests/" + BATCH_ID + ".json")) {
                 assertThat(new String(manifest.readAllBytes(), StandardCharsets.UTF_8))
@@ -178,5 +183,19 @@ class HdfsFlumeRawIngestionIT {
                         + runUri + "/accepted/" + BATCH_ID);
             }
         }
+    }
+
+    private static long expectedRecordCount() {
+        String configured = System.getenv("LANDING_FLUME_IT_EXPECTED_RECORDS");
+        return configured == null || configured.isBlank()
+                ? DEFAULT_EXPECTED_RECORDS : Long.parseLong(configured.trim());
+    }
+
+    private static String[] expectedEventIds() {
+        String configured = System.getenv("LANDING_FLUME_IT_EXPECTED_EVENT_IDS");
+        return configured == null || configured.isBlank()
+                ? DEFAULT_EXPECTED_EVENT_IDS.clone()
+                : java.util.Arrays.stream(configured.split(","))
+                        .map(String::trim).filter(value -> !value.isEmpty()).toArray(String[]::new);
     }
 }

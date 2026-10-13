@@ -117,6 +117,21 @@ class GeneratorBoundarySourcePolicyTest {
         String main = read(MODULE_ROOT.resolve("src/main/resources/application.yml"));
         assertThat(main).as("独立端口必须是 8092（V2.1 §3.1 原文）").contains("port: 8092");
         assertThat(main).as("独立元数据库必须是本程序自己的库").contains("generator_meta");
+        assertThat(main).as("生成器默认连接只能落到本机隔离 MySQL 3307")
+                .contains("127.0.0.1:3307/generator_meta")
+                .doesNotContain("127.0.0.1:3306/");
+        assertThat(main).as("禁止内置数据库账号、口令或自动建库权限")
+                .contains("username: ${GENERATOR_DB_USER}")
+                .contains("password: ${GENERATOR_DB_PASSWORD}")
+                .doesNotContain("GENERATOR_DB_USER:root")
+                .doesNotContain("GENERATOR_DB_PASSWORD:123456")
+                .doesNotContain("createDatabaseIfNotExist=true");
+        String launcher = read(MODULE_ROOT.getParent().resolve("scripts/start-all.ps1"));
+        assertThat(launcher).as("总启动脚本必须在拉起服务前拒绝缺凭据或非隔离端口")
+                .contains("if ($startGenerator)")
+                .contains("GENERATOR_DB_URL -notmatch '^jdbc:mysql://127\\.0\\.0\\.1:3307/'")
+                .contains("GENERATOR_DB_USER -or -not $env:GENERATOR_DB_PASSWORD")
+                .contains("未启动任何服务");
         assertThat(main).as("文件模式产物必须落在本程序自己的目录（§3.3 B）").contains("generator-output");
     }
 

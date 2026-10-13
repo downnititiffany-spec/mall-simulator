@@ -1,6 +1,7 @@
 package com.graduation.analytics.controller;
 
 import com.graduation.analytics.ai.ExplanationService;
+import com.graduation.analytics.ai.AiFeedbackService;
 import com.graduation.analytics.ai.TextToSqlService;
 import com.graduation.analytics.ai.evidence.EvidenceBuilder;
 import com.graduation.analytics.ai.evidence.EvidenceService;
@@ -95,7 +96,7 @@ class AuthResponseMeasurementTest {
                         new DecisionController(decisionService, mock(OperationAuditService.class)),
                         new AiController(textToSqlService, explanationService, evidenceService,
                                 mock(AiQueryHistoryMapper.class), mock(AiCallLogMapper.class),
-                                mock(OperationAuditService.class)),
+                                mock(OperationAuditService.class), mock(AiFeedbackService.class)),
                         new UserAdminController(mock(AuthService.class), mock(OperationAuditService.class)),
                         new MetricController(mock(MySqlMetricStore.class), mock(DataQualityResultMapper.class)))
                 .addInterceptors(new AuthInterceptor(authService, new ObjectMapper()))

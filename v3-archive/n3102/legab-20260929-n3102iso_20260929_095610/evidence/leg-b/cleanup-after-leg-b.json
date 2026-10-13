@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-09-29 11:24:13 +08:00",
+  "pidFile": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\platform-restart.pid",
+  "rootPid": 138016,
+  "identity": {
+    "evidence": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\platform-restart.identity.json",
+    "note": "identity verified",
+    "verified": true
+  },
+  "ownedTree": [
+    {
+      "pid": 138016,
+      "name": "cmd.exe",
+      "startedAt": "2026-09-29T11:16:03.86201+08:00"
+    },
+    {
+      "pid": 136684,
+      "name": "conhost.exe",
+      "startedAt": "2026-09-29T11:16:03.871695+08:00"
+    },
+    {
+      "pid": 117460,
+      "name": "java.exe",
+      "startedAt": "2026-09-29T11:16:03.94405+08:00"
+    }
+  ],
+  "stoppedPids": [
+    138016,
+    136684,
+    117460
+  ],
+  "port": {
+    "port": 8091,
+    "released": true
+  },
+  "sweep3306": {
+    "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\logs\\platform.log",
+    "hits": 0
+  },
+  "outcome": "STOPPED",
+  "credentialRefs": [
+    "V25_IT_*",
+    "IT_GUARD_*",
+    "V25IT_ADMIN_PWD",
+    "PLATFORM_*（口令仅存在于启动进程环境，不落盘）"
+  ]
+}

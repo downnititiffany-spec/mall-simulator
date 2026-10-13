@@ -1,5 +1,8 @@
 package com.graduation.analytics.analysis;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.graduation.analytics.analysis.AnalysisService.ActiveDay;
 import com.graduation.analytics.analysis.AnalysisService.FunnelData;
 import com.graduation.analytics.analysis.AnalysisService.FunnelStage;
@@ -14,11 +17,12 @@ import com.graduation.analytics.analysis.AnalysisService.UsersData;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricAdsReader;
 import com.graduation.analytics.metric.MetricQualityGate;
-import com.graduation.analytics.metric.MySqlMetricStore;
+import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.dict.MetricDefinition;
 import com.graduation.analytics.metric.dict.MetricDefinitionMapper;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
+import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,7 +59,7 @@ class AnalysisServiceTest {
     private static final String SID = "S20260901_24";
 
     private MetricAdsReader adsReader;
-    private MySqlMetricStore metricStore;
+    private MetricStore metricStore;
     private MetricDefinitionMapper definitionMapper;
     private MetricQualityGate qualityGate;
     private AnalysisService service;
@@ -63,7 +67,7 @@ class AnalysisServiceTest {
     @BeforeEach
     void setUp() {
         adsReader = mock(MetricAdsReader.class);
-        metricStore = mock(MySqlMetricStore.class);
+        metricStore = mock(MetricStore.class);
         definitionMapper = mock(MetricDefinitionMapper.class);
         qualityGate = mock(MetricQualityGate.class);
         when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.PASS);
@@ -822,9 +826,12 @@ class AnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("显式指定 snapshotId：按指定快照读，不解析 ACTIVE，并在 filters/信封回显")
-    void explicitSnapshotIdWins() {
-        when(metricStore.findSnapshot("S20260901_23")).thenReturn(snapshot("S20260901_23"));
+    @DisplayName("显式指定其他 RuntimeProfile 的归档 snapshotId：精确读取且不解析当前 ACTIVE")
+    void explicitArchivedSnapshotFromAnotherProfileIsReadableById() {
+        MetricSnapshot archived = snapshot("S20260901_23");
+        archived.setRuntimeProfileId(202L);
+        archived.setStatus(MetricSnapshot.STATUS_ARCHIVED);
+        when(metricStore.findSnapshot("S20260901_23")).thenReturn(archived);
         when(metricStore.query(any())).thenReturn(List.of());
         stubAdsRows();
 
@@ -854,6 +861,25 @@ class AnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("显式指定未发布快照：BUILDING/VERIFYING/FAILED 均不读取 ADS 或回退 ACTIVE")
+    void unpublishedSnapshotIdsReturnEmptyEnvelopeWithoutReadingAds() {
+        for (String status : List.of(MetricSnapshot.STATUS_BUILDING, MetricSnapshot.STATUS_VERIFYING,
+                MetricSnapshot.STATUS_FAILED)) {
+            MetricSnapshot unpublished = snapshot("S-" + status);
+            unpublished.setStatus(status);
+            when(metricStore.findSnapshot(unpublished.getSnapshotId())).thenReturn(unpublished);
+
+            AnalysisViewModel<SalesData> model = service.sales(unpublished.getSnapshotId(), null, null);
+
+            assertThat(model.snapshotId()).isNull();
+            assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_SNAPSHOT);
+        }
+        verify(adsReader, never()).activeSnapshotId();
+        verify(adsReader, never()).selectBySnapshot(anyString(), anyString(), any());
+        verify(metricStore, never()).query(any());
+    }
+
+    @Test
     @DisplayName("质量门：BLOCKING 失败 → FAIL；质量查询异常 → UNKNOWN 且留警告（不伪造成 PASS）")
     void qualityStatusReflectsGateResult() {
         stubActiveSnapshot();
@@ -861,10 +887,23 @@ class AnalysisServiceTest {
         when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.FAIL);
         assertThat(service.overview(null, null, null).qualityStatus()).isEqualTo("FAIL");
 
-        when(qualityGate.statusForRun(any())).thenThrow(new IllegalStateException("meta 库不可用"));
-        AnalysisViewModel<OverviewData> degraded = service.overview(null, null, null);
-        assertThat(degraded.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
-        assertThat(degraded.warnings()).containsExactly(AnalysisViewModel.WARN_QUALITY_STATUS_UNAVAILABLE);
+        String privateDiagnostic = "jdbc:mysql://private-host/analytics_meta?password=private-secret";
+        when(qualityGate.statusForRun(any())).thenThrow(new IllegalStateException(privateDiagnostic));
+        Logger logger = (Logger) LoggerFactory.getLogger(AnalysisService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            AnalysisViewModel<OverviewData> degraded = service.overview(null, null, null);
+            assertThat(degraded.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+            assertThat(degraded.warnings()).containsExactly(AnalysisViewModel.WARN_QUALITY_STATUS_UNAVAILABLE);
+            assertThat(appender.list).anySatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("IllegalStateException")
+                    .doesNotContain(privateDiagnostic, "private-secret", "private-host"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
     }
 
     // ── 夹具：数值与真库 S20260901_24 一致（§5 黄金值） ─────────────────────────

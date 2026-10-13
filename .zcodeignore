@@ -1,0 +1,118 @@
+# ── 构建产物 ──
+target/
+*.class
+*.jar
+!mall-simulator/target/*.jar
+*.war
+
+# ── 前端 / Node ──
+node_modules/
+dist/
+.vite/
+
+# ── IDE ──
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# ── 本地配置与密钥（绝不进入 Git）──
+.env.local
+*.local.yml
+application-local.yml
+mall-simulator/src/main/resources/application-local.yml
+*.pem
+*.key
+
+# ── 运行时数据 ──
+landing/
+data/
+logs/
+*.log
+# 反选：`landing/` 这条是为运行时落地目录写的，但 Java 包名也可以叫 landing
+# （S2-04B 新增 `com.graduation.analytics.landing`）。不反选的话新类/新测试会被
+# **静默地**挡在提交之外——本地全绿、推上去编译不过。反选必须写在 `landing/` 之后。
+!analytics-server/**/src/**/landing/
+
+# ── Spark 本地实验残留（embedded Derby / warehouse）──
+metastore_db/
+spark-warehouse/
+derby.log
+# R6 真实 Spark 冒烟运行产物（固定目录，不入库）
+analytics-server/warehouse-pipeline/tests/r6-smoke-warehouse/
+# 同一用例在 surefire 进程内跑时工作目录＝仓库根，产物落在下面这个路径（见 DEF-16）
+tests/r6-smoke-warehouse/
+
+# ── 单进程发布产物（由 build-web-and-package.ps1 生成，不入库）──
+mall-simulator/src/main/resources/static/
+# 分析平台前端产物（R7-4 前端拆分：分析前端进 platform-app，商城前端进 mall-simulator）
+analytics-server/platform-app/src/main/resources/static/
+
+# ── 参考/备份/临时目录（第三方代码与历史备份不入库）──
+references/sample-projects/
+references/papers/visual-checks/
+text-to-sql/
+backups/
+tmp/
+*.pdf
+
+# ── 操作系统 ──
+.DS_Store
+Thumbs.db
+# R4 验证产物（黄金数据 + 本地 warehouse）
+.verify/
+token.txt
+r4-*.json
+platform-r4*.log
+
+# ── 运行时状态（本机跑出来的，不入库）──
+# Spark/Hive 本地元数据库（与 metastore_db 同性质，R7 运行在仓库根生成）
+derby-metastore/
+# R7-3 指标导出暂存目录（发布器的中间产物，含失败现场）
+metric-staging/
+# 商城模拟器本地草稿目录
+mall-simulator/.freebuff/
+# 生成器运行产物（规范流 jsonl + 操作流水 + 运行报告；本机跑出来的，不入库）
+generator-output/
+
+# ==== F-42（2026-09-12 总控）：验收证据必须可复现 ====
+# 原 `*.log` 规则把 docs/acceptance/** 下的证据日志一并忽略，导致看板引用的证据不在库中（31 文件 / 949 KB 未入库）。
+# 现改为：docs/acceptance/ 下的日志与产物快照入库；运行期日志（logs/、target/ 等）维持忽略。
+# 策略：单文件超过 5 MB 的证据不入库，改为在报告中记「外部路径 + sha256」。
+!docs/acceptance/**/*.log
+!docs/acceptance/**/*.jar
+credref-*.properties
+*.local.properties
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+.svn/
+bower_components/
+jspm_packages/
+__pycache__/
+site-packages/
+venv/
+coverage/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+cdk.out/
+*.egg-info/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）

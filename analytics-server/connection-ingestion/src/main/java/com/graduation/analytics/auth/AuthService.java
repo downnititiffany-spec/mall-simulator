@@ -6,6 +6,9 @@ import com.graduation.analytics.auth.entity.UserSessionEntity;
 import com.graduation.analytics.auth.mapper.SysUserMapper;
 import com.graduation.analytics.auth.mapper.UserSessionMapper;
 import com.graduation.analytics.common.PlatformBizException;
+import com.graduation.analytics.common.PaginationMath;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,6 +43,9 @@ public class AuthService {
 
     /** 登录结果信封：token + 用户信息 */
     public record LoginResult(String token, UserView user) {
+    }
+
+    public record UserPage(List<UserView> items, long page, int size, long total, long totalPages, String sort) {
     }
 
     /**
@@ -166,6 +172,41 @@ public class AuthService {
                         .orderByAsc(UserEntity::getId)).stream()
                 .map(u -> new UserView(u.getId(), u.getUsername(), u.getRealName(), u.getRole()))
                 .toList();
+    }
+
+    /** 管理页分页：兼容旧数组接口，同时让用户规模增长时读取保持有界。 */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public UserPage listUsersPage(long page, int size, String sort) {
+        if (page < 1 || size < 1 || size > 100) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "page 必须大于等于 1，size 必须在 1 到 100 之间");
+        }
+        String[] parts = sort == null ? new String[0] : sort.trim().toLowerCase(java.util.Locale.ROOT).split(",", -1);
+        if (parts.length < 1 || parts.length > 2 || parts[0].isBlank()) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 格式应为 字段[,asc|desc]");
+        }
+        String direction = parts.length == 1 ? "asc" : parts[1];
+        if (!List.of("id", "username", "role", "createdat").contains(parts[0])
+                || !("asc".equals(direction) || "desc".equals(direction))) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 字段或方向不受支持");
+        }
+        long total = userMapper.selectCount(new LambdaQueryWrapper<>());
+        long totalPages = PaginationMath.totalPages(total, size);
+        long actualPage = Math.min(page, totalPages);
+        var query = new LambdaQueryWrapper<UserEntity>();
+        boolean ascending = "asc".equals(direction);
+        switch (parts[0]) {
+            case "username" -> query.orderBy(true, ascending, UserEntity::getUsername);
+            case "role" -> query.orderBy(true, ascending, UserEntity::getRole);
+            case "createdat" -> query.orderBy(true, ascending, UserEntity::getCreatedAt);
+            default -> query.orderBy(true, ascending, UserEntity::getId);
+        }
+        if (!"id".equals(parts[0])) query.orderByDesc(UserEntity::getId);
+        long offset = Math.multiplyExact(actualPage - 1, (long) size);
+        List<UserView> items = userMapper.selectList(query.last("LIMIT " + size + " OFFSET " + offset)).stream()
+                .map(u -> new UserView(u.getId(), u.getUsername(), u.getRealName(), u.getRole()))
+                .toList();
+        return new UserPage(items, actualPage, size, total, totalPages, parts[0] + "," + direction);
     }
 
     private UserEntity requireUser(Long userId) {

@@ -1,0 +1,34 @@
+{
+  "sourceId": 1,
+  "manifestBatchId": 1,
+  "pipelineRunId": 1,
+  "snapshotId": "S20260918_1",
+  "hdfsLandingUri": "hdfs://127.0.0.1:19000/landing/n3102iso_20260929_095610",
+  "hdfsLandingLayout": "FLUME_RAW",
+  "businessTime": "2026-09-18T00:00:00",
+  "ingestion": {
+    "quarantineCount": 0,
+    "noNewData": false,
+    "recordCount": 99
+  },
+  "run": {
+    "pipelineCode": "ODS_TO_ADS",
+    "status": "SUCCESS",
+    "inputBatchId": 1,
+    "attemptNo": 3
+  },
+  "flume": {
+    "srcBytes": 34192,
+    "hdfsLines": 99,
+    "byteMatch": true,
+    "hdfsBytes": 34192
+  },
+  "hdfsInputChecksumSignatureA4": "b8d94f3fff87406c731e92bfa69606e87747e7245c93c99dcb18c4a944328b1b",
+  "reconciliation": "14/14 PASS tol 0.0005",
+  "oracleRef": "fixtures/source-a-e3/oracle.py",
+  "publish": {
+    "exportManifest": "metric-staging/S20260918_1/_export.json",
+    "metricRows": 27,
+    "coreMetricCount": 14
+  }
+}

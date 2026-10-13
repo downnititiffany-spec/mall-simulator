@@ -62,4 +62,57 @@ class SafeHttpRetryTest {
             server.stop(0);
         }
     }
+
+    @Test
+    void doesNotTreatHeaderAloneAsProofOfTargetIdempotencySupport() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/write", exchange -> {
+            calls.incrementAndGet();
+            exchange.sendResponseHeaders(503, -1);
+            exchange.close();
+        });
+        server.start();
+        try {
+            HttpRequest request = HttpRequest.newBuilder(
+                            URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/write"))
+                    .header("Idempotency-Key", "stable-order-key")
+                    .POST(HttpRequest.BodyPublishers.noBody()).build();
+            HttpResponse<String> response = SafeHttpRetry.send(HttpClient.newHttpClient(), request,
+                    HttpResponse.BodyHandlers.ofString());
+            assertEquals(503, response.statusCode());
+            assertEquals(1, calls.get());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void retriesPostOnlyWhenCallerConfirmsTargetIdempotencySupportAndKeyIsStable() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        AtomicInteger keyMismatches = new AtomicInteger();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/write", exchange -> {
+            if (!"stable-order-key".equals(exchange.getRequestHeaders().getFirst("Idempotency-Key"))) {
+                keyMismatches.incrementAndGet();
+            }
+            int count = calls.incrementAndGet();
+            exchange.sendResponseHeaders(count == 1 ? 503 : 200, -1);
+            exchange.close();
+        });
+        server.start();
+        try {
+            HttpRequest request = HttpRequest.newBuilder(
+                            URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/write"))
+                    .header("Idempotency-Key", "stable-order-key")
+                    .POST(HttpRequest.BodyPublishers.noBody()).build();
+            HttpResponse<String> response = SafeHttpRetry.send(HttpClient.newHttpClient(), request,
+                    HttpResponse.BodyHandlers.ofString(), true);
+            assertEquals(200, response.statusCode());
+            assertEquals(2, calls.get());
+            assertEquals(0, keyMismatches.get());
+        } finally {
+            server.stop(0);
+        }
+    }
 }

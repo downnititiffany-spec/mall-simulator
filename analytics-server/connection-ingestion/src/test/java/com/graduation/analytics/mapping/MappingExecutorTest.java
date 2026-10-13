@@ -548,11 +548,15 @@ class MappingExecutorTest {
     @Test
     @DisplayName("规则6：raw 事件不是合法 JSON ⇒ JSON_PARSE_ERROR + 隔离")
     void jsonParseErrorOnRawText() {
-        MappingOutcome outcome = MappingTestSupport.execute("behavior-enum-keep.v2.json", "{oops");
+        String raw = "UNTRUSTED_SECRET_MARKER";
+        MappingOutcome outcome = MappingTestSupport.execute("behavior-enum-keep.v2.json", raw);
 
         assertThat(outcome.quarantined()).isTrue();
         assertThat(outcome.canonical()).isNull();
         assertThat(MappingTestSupport.codes(outcome.violations())).containsExactly("JSON_PARSE_ERROR");
+        assertThat(outcome.violations().get(0).detail()).isEqualTo("INVALID_JSON")
+                .doesNotContain(raw);
+        assertThat(outcome.raw().asText()).isEqualTo(raw);
     }
 
     // ---------- 规则8/14：确定性、双校验和 ----------

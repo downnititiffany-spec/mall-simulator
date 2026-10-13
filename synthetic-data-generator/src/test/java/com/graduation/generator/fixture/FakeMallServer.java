@@ -70,6 +70,7 @@ public final class FakeMallServer implements AutoCloseable {
     private final Map<String, ObjectNode> refunds = new ConcurrentHashMap<>();
     private final List<String> exchanges = new CopyOnWriteArrayList<>();
     private final Map<String, List<String>> bodiesByRoute = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> idempotencyKeysByRoute = new ConcurrentHashMap<>();
     private final Map<String, Integer> countsByRoute = new ConcurrentHashMap<>();
     private final List<Integer> statuses = new CopyOnWriteArrayList<>();
     private final AtomicLong sequence = new AtomicLong();
@@ -139,6 +140,10 @@ public final class FakeMallServer implements AutoCloseable {
 
     public List<String> bodiesOf(String routeKey) {
         return List.copyOf(bodiesByRoute.getOrDefault(routeKey, List.of()));
+    }
+
+    public List<String> idempotencyKeysOf(String routeKey) {
+        return List.copyOf(idempotencyKeysByRoute.getOrDefault(routeKey, List.of()));
     }
 
     public List<Integer> statuses() {
@@ -407,6 +412,9 @@ public final class FakeMallServer implements AutoCloseable {
 
     private void hit(HttpExchange exchange, String routeKey) {
         routeHits.merge(routeKey, 1, Integer::sum);
+        String idempotencyKey = exchange.getRequestHeaders().getFirst("Idempotency-Key");
+        idempotencyKeysByRoute.computeIfAbsent(routeKey, key -> new CopyOnWriteArrayList<>())
+                .add(idempotencyKey == null ? "" : idempotencyKey);
     }
 
     private String nextId(String prefix) {

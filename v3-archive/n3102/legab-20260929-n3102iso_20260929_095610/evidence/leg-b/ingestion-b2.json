@@ -1,0 +1,14 @@
+{
+  "batchId": 2,
+  "batchNo": "ing-20260929111612-09bddc01",
+  "status": "SUCCESS",
+  "recordCount": 1,
+  "quarantineCount": 0,
+  "errorCount": 0,
+  "fileCount": 1,
+  "acceptedBytes": 348,
+  "acceptedDir": "hdfs://127.0.0.1:19000/landing/n3102iso_20260929_095610/accepted/2",
+  "quarantineDir": "hdfs://127.0.0.1:19000/landing/n3102iso_20260929_095610/quarantine/2",
+  "manifestPath": "hdfs://127.0.0.1:19000/landing/n3102iso_20260929_095610/manifests/2.json",
+  "noNewData": false
+}

@@ -124,6 +124,7 @@ class DimDwdChainExecSpec extends AnyFlatSpec with Matchers with BeforeAndAfterA
       odsCounts: Map[String, Long],
       dimUser: Long,
       dimProduct: Long,
+      dimDate: Long,
       dimUserAttrs: Seq[(String, String, String)],
       behavior: Long,
       behaviorDistinctIds: Long,
@@ -210,6 +211,7 @@ class DimDwdChainExecSpec extends AnyFlatSpec with Matchers with BeforeAndAfterA
 
       val dimUser = count(s"SELECT COUNT(*) FROM ${ns.dim}.dim_user WHERE dt = '$BusinessDate'")
       val dimProduct = count(s"SELECT COUNT(*) FROM ${ns.dim}.dim_product WHERE dt = '$BusinessDate'")
+      val dimDate = count(s"SELECT COUNT(*) FROM ${ns.dim}.dim_date")
       val dimUserAttrs = spark.sql(
         s"SELECT CAST(user_id AS STRING) u, member_level m, city_level c FROM ${ns.dim}.dim_user " +
           s"WHERE dt = '$BusinessDate' ORDER BY user_id")
@@ -294,7 +296,7 @@ class DimDwdChainExecSpec extends AnyFlatSpec with Matchers with BeforeAndAfterA
 
       Capture(tag, spark.conf.get("spark.sql.warehouse.dir"),
         ns.prefix, spark.sparkContext.appName, dimRowsAtBdw, dimInputAtBdw,
-        odsCounts, dimUser, dimProduct, dimUserAttrs, behavior, behaviorDistinctIds,
+        odsCounts, dimUser, dimProduct, dimDate, dimUserAttrs, behavior, behaviorDistinctIds,
         behaviorBadEnum, behaviorNullUserKey, behaviorNullProductKey, behaviorNullCategoryKey,
         behaviorKeyMismatch, behaviorKeyMismatchSample, odsTradePartitions,
         behaviorCityLevel, behaviorCategoryId, rejectRows, rejectIdGroupsInOds, rejectSample,
@@ -501,13 +503,14 @@ class DimDwdChainExecSpec extends AnyFlatSpec with Matchers with BeforeAndAfterA
     A.odl.message should include("rejectedVersionKeys=3")
   }
 
-  it should "dim：input=18（用户 4 + 商品 14） / output=7（dim_user 3 + dim_product 4）" in {
+  it should "dim：input=18（用户 4 + 商品 14） / 输出包含用户/商品/日期快照及五行静态地区字典" in {
     A.dim.inputRecords should be(
       A.odsCounts("ods_user_event") + A.odsCounts("ods_product_event"))
     A.dim.inputRecords should be(18L)
-    A.dim.outputRecords should be(A.dimUser + A.dimProduct)
-    A.dim.outputRecords should be(7L)
-    A.dim.message should be("user=4->3 product=14->4 productAsOfEligible=5")
+    A.dimDate should be(2L)
+    A.dim.outputRecords should be(A.dimUser + A.dimProduct + A.dimDate + 5L)
+    A.dim.outputRecords should be(14L)
+    A.dim.message should be(s"user=4->3 product=14->4 productAsOfEligible=5 dim_date=${A.dimDate} dim_region=5")
   }
 
   it should "bdw：input=ODS 行为 16 / output=14 / rejected=1（与 reject 表行数一致）" in {

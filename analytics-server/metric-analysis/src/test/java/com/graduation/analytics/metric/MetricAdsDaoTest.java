@@ -1,5 +1,6 @@
 package com.graduation.analytics.metric;
 
+import com.graduation.analytics.runtime.ActiveRuntimeProfileIdProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,8 +33,9 @@ class MetricAdsDaoTest {
 
     private final JdbcTemplate publishJdbc = mock(JdbcTemplate.class);
     private final JdbcTemplate readJdbc = mock(JdbcTemplate.class);
+    private final ActiveRuntimeProfileIdProvider activeProfile = () -> Optional.of(41L);
     private final MetricAdsWriter writer = new MetricAdsWriter(publishJdbc);
-    private final MetricAdsReader reader = new MetricAdsReader(readJdbc);
+    private final MetricAdsReader reader = new MetricAdsReader(readJdbc, activeProfile);
 
     @Test
     @DisplayName("10 张 ADS 白名单包含已实现的 category/region 表")

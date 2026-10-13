@@ -1,0 +1,30 @@
+# 阶段 8 单节点停服身份核验修正
+
+日期：2026-10-07
+
+## 问题与范围
+
+隔离运行 `cloud_261007_020732_2f8143` 的停服现场暴露出两类身份识别不完整：Flume PID 对应的 Java 命令为 `org.apache.flume.node.Application`，并带有该 RunId 下的 `flume.conf`，但旧匹配器只匹配 `flume-ng`；WSL interop 启动的 Windows Node/Vite 进程也可能在 Linux `/init` 代理结束后继续占用前端端口。
+
+本次仅修改 `scripts/cloud-single-node.sh` 的停服匹配及 Windows Vite 启动记录，并新增 `scripts/stop-task-vite-process.ps1`：
+
+- Flume 需要同时匹配 Java 主类、当前 RunId 的配置文件路径，并确认登记 PID 是进程组组长后才发 TERM。
+- Windows Vite 启动时写入 Windows PID 与 Node 可执行路径，并将 RunId 标记放入 Node 命令行。停止时 PowerShell 按登记 PID、`node.exe` 路径、Vite 脚本参数、端口和 RunId 标记核对；任一不符则拒绝终止。
+- Windows 进程核验失败会使 `stop` 报告不完整；数据库和 HDFS 文件仍由脚本保留。
+- 停止各登记服务后，最多轮询 60 秒检查任务端口；仍有监听时报告停服不完整，不尝试终止未识别监听者。
+- WSL 无法从 Linux `ss` 查看 Windows 端口时，5173/5174 改用有 2 秒上限的 TCP connect 检测；不依赖服务返回 HTTP 响应。脚本启动时要求 `timeout` 工具存在，否则拒绝继续。
+
+## 验证与限制
+
+- `bash -n scripts/cloud-single-node.sh`：通过。
+- 停服端口释放等待仅做源码核对，未在当前运行 RunId 上调用。
+- Windows PowerShell AST Parser 对 `stop-task-vite-process.ps1`：通过。
+- 新增可复现的 `scripts/test-stop-task-vite-process.ps1` 守卫测试：匹配的模拟任务进程在 verify 与 stop 分支通过；错误 RunId、端口、Vite 入口、Node 可执行路径及进程名五种情况均拒绝。错误身份的 stop 调用数为 0；正确身份只把已登记 PID `424242` 交给模拟停止函数。命令 `pwsh -NoProfile -File scripts/test-stop-task-vite-process.ps1` 输出 PASS。
+- `git diff --check`（两个脚本）：通过。
+- 守卫测试用模拟 CIM 进程信息，覆盖 verify 和 stop 分支；`Stop-Process` 被测试函数截获，未调用系统进程停止命令，也没有启动 Vite 或触碰实际进程。它仅验证目标 PID 选择和身份判断分支，不证明任务进程真实回收或端口释放。
+- 当前隔离 RunId `cloud_261007_021316_0219d8` 在本修正前启动，仍在运行。此次没有停止/重启它，因此新 PID 标记和 Windows 停服流程仍待一个后续新 RunId 实服验证。
+- 不连接 MySQL 3306；不清理数据库/HDFS 持久数据；未提交或推送。
+
+## 结论
+
+这是阶段 8 生命周期实现的代码修正，不构成停服恢复实证或部署验收。阶段 8 与项目最终验收保持未完成。

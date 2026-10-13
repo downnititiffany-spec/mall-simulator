@@ -56,6 +56,13 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
+    @DisplayName("FORBIDDEN_PERMISSION → 403")
+    void forbiddenPermissionMapsTo403() {
+        assertThat(handle(PlatformBizException.FORBIDDEN_PERMISSION, "无权访问该资源，需要权限: dashboard:view")
+                .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     @DisplayName("dry-run 域两个码 → 404（S2-01B 加性新增：引用被允许但位置没有东西 / 报告不在本进程）")
     void dryRunCodesMapTo404() {
         assertThat(handle(PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND, "样本不存在").getStatusCode())

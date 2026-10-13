@@ -6,6 +6,7 @@ import com.graduation.analytics.ai.entity.AiQueryHistory;
 import com.graduation.analytics.ai.llm.JsonExtractor;
 import com.graduation.analytics.ai.llm.LlmProvider;
 import com.graduation.analytics.ai.llm.LlmProvider.AiRequest;
+import com.graduation.analytics.ai.llm.LlmProvider.AiResponse;
 import com.graduation.analytics.ai.mapper.AiCallLogMapper;
 import com.graduation.analytics.ai.mapper.AiQueryHistoryMapper;
 import com.graduation.analytics.ai.sql.AiScope;
@@ -52,6 +53,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TextToSqlService {
 
+    private static final String AI_CALL_AUDIT_WRITE_FAILED = "AI_CALL_AUDIT_WRITE_FAILED";
+    private static final String AI_CALL_FAILURE_AUDIT_WRITE_FAILED = "AI_CALL_FAILURE_AUDIT_WRITE_FAILED";
+    private static final String AI_RESPONSE_AUDIT_WRITE_FAILED = "AI_RESPONSE_AUDIT_WRITE_FAILED";
+
     /** 契约 §2.1/§2.2：提示词与 few-shot 版本化标识 */
     public static final String PROMPT_VERSION = "sql_v2";
 
@@ -76,7 +81,23 @@ public class TextToSqlService {
      */
     public record QueryResult(String status, String sql, List<String> tables, int rowsReturned,
                               long elapsedMs, List<Map<String, Object>> rows, List<String> assumptions,
-                              String error, String errorCode, String providerUsed, QueryWindow window) {
+                              String error, String errorCode, String providerUsed, QueryWindow window,
+                              String snapshotId, Long sourceId, Long historyId) {
+
+        public QueryResult(String status, String sql, List<String> tables, int rowsReturned, long elapsedMs,
+                           List<Map<String, Object>> rows, List<String> assumptions, String error,
+                           String errorCode, String providerUsed, QueryWindow window,
+                           String snapshotId, Long sourceId) {
+            this(status, sql, tables, rowsReturned, elapsedMs, rows, assumptions, error, errorCode,
+                    providerUsed, window, snapshotId, sourceId, null);
+        }
+
+        public QueryResult(String status, String sql, List<String> tables, int rowsReturned, long elapsedMs,
+                           List<Map<String, Object>> rows, List<String> assumptions, String error,
+                           String errorCode, String providerUsed, QueryWindow window) {
+            this(status, sql, tables, rowsReturned, elapsedMs, rows, assumptions, error, errorCode,
+                    providerUsed, window, null, null, null);
+        }
 
         /** 兼容旧调用点（无窗口）：窗口未知时按 null 传递，不允许伪造生效区间 */
         public QueryResult(String status, String sql, List<String> tables, int rowsReturned, long elapsedMs,
@@ -122,6 +143,7 @@ public class TextToSqlService {
         LocalDate effectiveFrom = null;
         LocalDate effectiveTo = null;
 
+        Long historyId = null;
         try {
             // ── 1. 固定快照作用域（日期/快照参数化的唯一来源，§19.5） ──────────────
             scope = snapshotId == null || snapshotId.isBlank()
@@ -137,9 +159,8 @@ public class TextToSqlService {
                 // ── 2. LLM 生成（temperature=0；提示词内嵌 scope 字面量） ──────────
                 stage = "GENERATE";
                 AiRequest req = new AiRequest(buildSystemPrompt(scope), buildUserQuestion(question, tables, scope), 0);
-                long callStart = System.currentTimeMillis();
-                String content = llmProvider.complete(req).content();
-                logCall("sql_generation", providerUsed, System.currentTimeMillis() - callStart, "OK", null);
+                AiResponse generated = completeAndAudit("sql_generation", req, providerUsed, scope, question);
+                String content = generated.content();
 
                 JsonNode parsed = JsonExtractor.extractJson(content);
                 sql = parsed.path("sql").asText(null);
@@ -162,10 +183,9 @@ public class TextToSqlService {
                             + SqlPolicy.ALLOWED_FUNCTIONS
                             + "\nSchema：" + catalog.schemaJson(tables)
                             + "\n请只输出修正后的 JSON（含 sql 字段）。";
-                    long repairStart = System.currentTimeMillis();
-                    String repairContent = llmProvider.complete(new AiRequest(
-                            buildSystemPrompt(scope), repairPrompt, 0)).content();
-                    logCall("sql_repair", providerUsed, System.currentTimeMillis() - repairStart, "OK", null);
+                    AiResponse repairResponse = completeAndAudit("sql_repair", new AiRequest(
+                            buildSystemPrompt(scope), repairPrompt, 0), providerUsed, scope, question);
+                    String repairContent = repairResponse.content();
                     JsonNode repaired = JsonExtractor.extractJson(repairContent);
                     sql = repaired.path("sql").asText(null);
                     v = validator.validate(sql, scope);
@@ -231,19 +251,40 @@ public class TextToSqlService {
             errorCode = PlatformBizException.QUERY_TIMEOUT;
             error = "只读查询超过统一超时（阶段=" + stage + "）";
             status = "FAILED";
-            log.warn("text-to-sql timed out at stage {}: {}", stage, e.getMessage());
+            log.warn("text-to-sql timed out at stage {}", stage);
         } catch (Exception e) {
-            error = truncate(e.getMessage(), 500);
+            if (e instanceof LlmProvider.LlmException llmException) {
+                errorCode = llmException.type();
+                error = switch (errorCode) {
+                    case AI_CALL_AUDIT_WRITE_FAILED -> "模型调用结果不确定：调用审计记录未能保存";
+                    case AI_CALL_FAILURE_AUDIT_WRITE_FAILED -> "模型调用失败：失败审计记录未能保存";
+                    case AI_RESPONSE_AUDIT_WRITE_FAILED -> "模型响应无效：失败审计记录未能保存";
+                    default -> "模型服务调用失败 (" + errorCode + ")";
+                };
+            } else {
+                errorCode = switch (stage) {
+                    case "EXECUTE" -> SqlPolicy.SQL_EXECUTION_FAILED;
+                    case "GENERATE", "REPAIR" -> SqlPolicy.MODEL_RESPONSE_INVALID;
+                    default -> SqlPolicy.AI_QUERY_FAILED;
+                };
+                error = switch (errorCode) {
+                    case SqlPolicy.SQL_EXECUTION_FAILED -> "只读 SQL 执行失败";
+                    case SqlPolicy.MODEL_RESPONSE_INVALID -> "模型响应格式无效";
+                    default -> "问数处理失败（阶段=" + stage + "）";
+                };
+            }
             status = "FAILED";
-            log.warn("text-to-sql failed: {}", error);
+            log.warn("text-to-sql failed at stage {}: {}", stage,
+                    errorCode == null ? error : errorCode);
         } finally {
-            saveHistory(userId, question, sql, tables, scope, status, rowsReturned,
+            historyId = saveHistory(userId, question, sql, tables, scope, status, rowsReturned,
                     System.currentTimeMillis() - start, error, errorCode, explainRows);
         }
         QueryWindow window = QueryWindow.of(requestedTimeRange, effectiveFrom, effectiveTo,
                 scope == null ? null : scope.businessDate(), rows);
         return new QueryResult(status, sql, tables, rowsReturned,
-                System.currentTimeMillis() - start, rows, assumptions, error, errorCode, providerUsed, window);
+                System.currentTimeMillis() - start, rows, assumptions, error, errorCode, providerUsed, window,
+                scope == null ? null : scope.snapshotId(), scope == null ? null : scope.sourceId(), historyId);
     }
 
     // ── Prompt 构建（§19.5 安全规则内嵌；真实日期/快照作为字面量下发） ─────────
@@ -279,17 +320,70 @@ public class TextToSqlService {
 
     // ── 审计（§19.6/§24.8；拒绝也写一行） ─────────────────────────────────────
 
-    private void logCall(String useCase, String provider, long elapsedMs, String status, String error) {
+    private void logCall(String useCase, String provider, String model, long elapsedMs, String status, String error,
+                         AiResponse response, Throwable failure, AiCallIdentity identity) {
         AiCallLog logRow = new AiCallLog();
         logRow.setUseCase(useCase);
         logRow.setProvider(provider);
-        logRow.setModel(null);
+        logRow.setModel(model);
         logRow.setPromptVersion(PROMPT_VERSION);
         logRow.setElapsedMs(elapsedMs);
         logRow.setStatus(status);
         logRow.setError(error);
+        AiCallUsage.record(logRow, response, failure);
+        identity.record(logRow);
         logRow.setCreatedAt(LocalDateTime.now());
         callLogMapper.insert(logRow);
+    }
+
+    private AiResponse completeAndAudit(String useCase, AiRequest request, String provider, AiScope scope, String question) {
+        long callStart = System.currentTimeMillis();
+        AiCallIdentity identity = AiCallIdentity.of(useCase, scope.sourceId(), scope.snapshotId(), question,
+                llmProvider.modelName(), PROMPT_VERSION, llmProvider.maxOutputTokens(), request);
+        AiResponse response;
+        try {
+            response = llmProvider.complete(request);
+        } catch (RuntimeException e) {
+            String errorCode = e instanceof LlmProvider.LlmException llmException
+                    && llmException.type() != null && !llmException.type().isBlank()
+                    ? llmException.type() : "MODEL_CALL_FAILED";
+            try {
+                logCall(useCase, provider, llmProvider.modelName(),
+                        System.currentTimeMillis() - callStart, "FAILED", errorCode, null, e, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("AI call failed and its audit row could not be persisted for useCase {}", useCase);
+                throw new LlmProvider.LlmException(AI_CALL_FAILURE_AUDIT_WRITE_FAILED,
+                        "模型调用失败且调用审计记录未能保存");
+            }
+            if (e instanceof LlmProvider.LlmException) {
+                throw e;
+            }
+            throw new LlmProvider.LlmException(errorCode, "模型调用失败 (" + errorCode + ")");
+        }
+
+        if (response == null) {
+            try {
+                logCall(useCase, provider, llmProvider.modelName(), System.currentTimeMillis() - callStart,
+                        "FAILED", "FORMAT", null, null, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("AI provider returned no response and its audit row could not be persisted for useCase {}",
+                        useCase);
+                throw new LlmProvider.LlmException(AI_RESPONSE_AUDIT_WRITE_FAILED,
+                        "模型响应无效且调用审计记录未能保存");
+            }
+            throw new LlmProvider.LlmException("FORMAT", "模型响应为空");
+        }
+
+        try {
+            String model = response.model() == null ? llmProvider.modelName() : response.model();
+            logCall(useCase, provider, model, System.currentTimeMillis() - callStart,
+                    "OK", null, response, null, identity);
+        } catch (RuntimeException auditFailure) {
+            log.warn("AI call completed but its audit row could not be persisted for useCase {}", useCase);
+            throw new LlmProvider.LlmException(AI_CALL_AUDIT_WRITE_FAILED,
+                    "模型调用完成但调用审计记录未能保存", response.inputTokens(), response.outputTokens());
+        }
+        return response;
     }
 
     /**
@@ -301,7 +395,7 @@ public class TextToSqlService {
      * {@code errors} 只保留真正的错误文本（脱敏 + 截断），不再拼接结构化字段。<br>
      * 被拒绝的查询同样落一行（{@code status=REJECTED}），否则「谁在试探校验器」在库里看不见。</p>
      */
-    private void saveHistory(String userId, String question, String sql, List<String> tables, AiScope scope,
+    private Long saveHistory(String userId, String question, String sql, List<String> tables, AiScope scope,
                              String status, int rowsReturned, long elapsedMs, String error,
                              String errorCode, Long explainRows) {
         AiQueryHistory h = new AiQueryHistory();
@@ -321,6 +415,7 @@ public class TextToSqlService {
         h.setErrors(errorText(error, errorCode));
         h.setCreatedAt(LocalDateTime.now());
         historyMapper.insert(h);
+        return h.getId();
     }
 
     /** errors 列：规则码 + 说明（脱敏后 ≤200 字符） */

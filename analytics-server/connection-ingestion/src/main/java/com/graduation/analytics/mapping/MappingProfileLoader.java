@@ -96,7 +96,7 @@ public final class MappingProfileLoader {
             root = mapper.readTree(profileJson);
         } catch (IOException e) {
             return new MappingProfileLoad(null, List.of(issue(MappingReason.JSON_PARSE_ERROR, "profile",
-                    "PARSE_FAILED:" + e.getMessage())));
+                    "INVALID_JSON")));
         }
         if (root == null || !root.isObject()) {
             issues.add(issue(MappingReason.PROFILE_INVALID, "profile", "NOT_AN_OBJECT"));

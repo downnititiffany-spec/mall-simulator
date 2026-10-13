@@ -201,7 +201,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         body.put("ageGroup", command.ageGroup());
         body.put("cityLevel", command.cityLevel());
         body.put("memberLevel", command.memberLevel());
-        JsonNode data = call(config, "createSyntheticUser", "POST", USERS_PATH, body, 0);
+        JsonNode data = call(config, "createSyntheticUser", "POST", USERS_PATH, body, 0,
+                command.idempotencyKey(), true);
         return new ExternalUser(requireId(data, "userId", "createSyntheticUser"), command.memberLevel());
     }
 
@@ -222,7 +223,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         body.put("sessionId", command.sessionId());
         body.put("behaviorType", command.behaviorType());
         body.put("channel", command.channel());
-        call(config, "emitBehavior", "POST", path, body, 0);
+        // behavior_path is deployment-configurable, so do not assume that its owner honors our key.
+        call(config, "emitBehavior", "POST", path, body, 0, command.idempotencyKey(), false);
     }
 
     @Override
@@ -238,7 +240,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
             row.put("quantity", item.quantity());
             return row;
         }).toList());
-        JsonNode data = call(config, "createOrder", "POST", ORDERS_PATH, body, 0);
+        JsonNode data = call(config, "createOrder", "POST", ORDERS_PATH, body, 0,
+                command.idempotencyKey(), true);
         return readOrder(data, command.userId(), "createOrder", null);
     }
 
@@ -251,7 +254,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         // 就是"已支付"，没有可读的状态字段可解析——这里的 PAID 是"调用成功"的记录，不是从应答里读来的值。
         call(config, "pay", "POST",
                 PAY_PATH.replace("{orderId}", encode(command.orderId())),
-                Map.of("userId", command.userId()), 0);
+                Map.of("userId", command.userId()), 0, command.idempotencyKey(), true);
         return new ExternalOrder(command.orderId(), command.userId(), "PAID", null, -1);
     }
 
@@ -265,7 +268,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         body.put("reason", command.reason());
         // 同上：取消也是 ApiResponse<Void>
         call(config, "cancel", "POST",
-                CANCEL_PATH.replace("{orderId}", encode(command.orderId())), body, 0);
+                CANCEL_PATH.replace("{orderId}", encode(command.orderId())), body, 0,
+                command.idempotencyKey(), true);
         return new ExternalOrder(command.orderId(), command.userId(), "CANCELLED", null, -1);
     }
 
@@ -279,12 +283,13 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         body.put("amount", command.amount());
         body.put("reason", command.reason());
         JsonNode data = call(config, "refund", "POST",
-                REFUND_APPLY_PATH.replace("{orderId}", encode(command.orderId())), body, 0);
+                REFUND_APPLY_PATH.replace("{orderId}", encode(command.orderId())), body, 0,
+                derivedKey(command.idempotencyKey(), "apply"), true);
         String refundId = requireId(data, "refundId", "refund");
         // 参考商城的退款是两步（申请 + 完成）；只申请不完成会留下"永远不完成"的退款单，
         // 因此这里把完成也走一遍——两步都成，返回的退款项才算 COMPLETED。
         call(config, "refund", "POST", REFUND_COMPLETE_PATH.replace("{refundId}", encode(refundId)),
-                Map.of("userId", command.userId()), 0);
+                Map.of("userId", command.userId()), 0, derivedKey(command.idempotencyKey(), "complete"), true);
         return new ExternalRefund(refundId, command.orderId(), "COMPLETED", command.amount());
     }
 
@@ -293,17 +298,23 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
     /**
      * 一次真实业务调用：附凭据 → 发请求 → 解信封 → 校验 {@code code==OK} → 返回 {@code data}。
      *
-     * <p>四条失败路径都抛 {@link MallOperationException}，信息里带操作名、URL 与商城原话：
+     * <p>四条失败路径都抛 {@link MallOperationException}，信息里带操作名、无凭据 origin 与脱敏商城摘要：
      * 缺凭据（发请求之前就抛，绝不匿名发）、连不上、HTTP 状态非 2xx、{@code code != OK}。</p>
      *
      * @param expectSize 期望的 {@code data} 是数组时其大小（用于内存上界）；非数组传 0
      */
     private JsonNode call(TargetConfig config, String operation, String method, String path,
                           Object body, int expectSize) {
+        return call(config, operation, method, path, body, expectSize, null, false);
+    }
+
+    private JsonNode call(TargetConfig config, String operation, String method, String path,
+                          Object body, int expectSize, String idempotencyKey,
+                          boolean targetSupportsIdempotencyKey) {
         URI uri = baseUri(config);
         if (uri == null) {
             throw new MallOperationException(operation,
-                    "base_url 非法或为空，无法调用：" + config.baseUrl());
+                    "base_url 非法或包含不允许的 userinfo/query/fragment，拒绝调用");
         }
         String token = requireCredential(config, operation);
 
@@ -311,6 +322,9 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
                 .timeout(timeout)
                 .header("Accept", "application/json")
                 .header("Authorization", "Bearer " + token);
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            builder.header("Idempotency-Key", idempotencyKey);
+        }
         if ("GET".equals(method)) {
             builder.GET();
         } else {
@@ -328,29 +342,51 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         int status;
         try {
             HttpResponse<String> response = SafeHttpRetry.send(
-                    httpClient, builder.build(), HttpResponse.BodyHandlers.ofString());
+                    httpClient, builder.build(), HttpResponse.BodyHandlers.ofString(),
+                    targetSupportsIdempotencyKey);
             status = response.statusCode();
             responseBody = response.body();
         } catch (IOException e) {
-            throw new MallOperationException(operation, "无法连接 " + uri + "：" + abbreviateException(e), e);
+            MallFailureCode failureCode = MallFailureCode.forTransport(method, e);
+            throw new MallOperationException(operation, failureCode,
+                    transportFailureMessage(failureCode, uri, e, token),
+                    MallDiagnosticSanitizer.safeCause(e, token));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new MallOperationException(operation, "调用被中断：" + uri, e);
+            MallFailureCode failureCode = MallFailureCode.forInterruptedRequest(method);
+            throw new MallOperationException(operation, failureCode,
+                    transportFailureMessage(failureCode, uri, e, token),
+                    MallDiagnosticSanitizer.safeCause(e, token));
         }
 
         JsonNode envelope;
         try {
             envelope = mapper.readTree(responseBody);
         } catch (IOException e) {
-            throw new MallOperationException(operation, "HTTP " + status + " 应答不是合法 JSON（"
-                    + abbreviateText(responseBody) + "）", e);
+            MallFailureCode failureCode = MallFailureCode.forInvalidResponse(method, status);
+            throw new MallOperationException(operation, failureCode,
+                    "HTTP " + status + " 应答不是合法 JSON"
+                    + outcomeUnknownMessage(failureCode) + "（"
+                    + abbreviateText(MallDiagnosticSanitizer.redact(responseBody, token)) + "）",
+                    MallDiagnosticSanitizer.safeCause(e, token));
+        }
+        if (envelope == null || !envelope.isObject()) {
+            MallFailureCode failureCode = MallFailureCode.forInvalidResponse(method, status);
+            throw new MallOperationException(operation, failureCode,
+                    "HTTP " + status + " 应答不是 JSON 对象"
+                    + outcomeUnknownMessage(failureCode) + "（"
+                    + abbreviateText(MallDiagnosticSanitizer.redact(responseBody, token)) + "）");
         }
         String code = envelope.path("code").asText("");
         if (status < 200 || status >= 300 || !"OK".equals(code)) {
             String message = envelope.path("message").asText("");
-            throw new MallOperationException(operation, "商城拒绝：" + uri + " → HTTP " + status
-                    + " code=" + (code.isEmpty() ? "(缺失)" : code)
-                    + " message=" + (message.isEmpty() ? "(无)" : message));
+            MallFailureCode failureCode = MallFailureCode.forResponse(method, status, code);
+            throw new MallOperationException(operation, failureCode,
+                    "商城拒绝：" + MallDiagnosticSanitizer.origin(uri) + " → HTTP " + status
+                    + " code=" + (code.isEmpty() ? "(缺失)" : abbreviateText(
+                    MallDiagnosticSanitizer.redact(code, token)))
+                    + " message=" + abbreviateText(MallDiagnosticSanitizer.redact(message, token))
+                    + outcomeUnknownMessage(failureCode));
         }
         JsonNode data = envelope.path("data");
         if (data.isArray() && expectSize > 0 && data.size() > expectSize) {
@@ -358,6 +394,22 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
             log.debug("{} 返回 {} 条，超出本次请求上界 {}（客户端侧分页仍会裁剪）", path, data.size(), expectSize);
         }
         return data;
+    }
+
+    private static String transportFailureMessage(MallFailureCode failureCode, URI uri,
+                                                  Exception failure, String token) {
+        String endpoint = MallDiagnosticSanitizer.origin(uri);
+        String detail = abbreviateText(MallDiagnosticSanitizer.redact(abbreviateException(failure), token));
+        if (failureCode == MallFailureCode.MALL_OUTCOME_UNKNOWN) {
+            return "调用 " + endpoint + " 后未获得确定结果（" + detail + ")"
+                    + outcomeUnknownMessage(failureCode);
+        }
+        return "无法连接 " + endpoint + "：" + detail;
+    }
+
+    private static String outcomeUnknownMessage(MallFailureCode failureCode) {
+        return failureCode == MallFailureCode.MALL_OUTCOME_UNKNOWN
+                ? "；写请求结果不明，商城可能已执行，请先核实目标状态，禁止自动重试" : "";
     }
 
     /** 取凭据；取不到就抛（响亮失败），信息只出现引用名，绝不出现取值 */
@@ -370,7 +422,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
                 ? "目标未配置 credential_ref，而参考商城对 /api/v1/** 全部要求 Bearer（D-033 实测），"
                 + "匿名调用必然 401"
                 : "凭据引用 " + credential.ref() + " 指向的环境变量未设置或为空";
-        throw new MallOperationException(operation, "缺少凭据，拒绝发送匿名请求：" + why
+        throw new MallOperationException(operation, MallFailureCode.MALL_CREDENTIAL_UNAVAILABLE,
+                "缺少凭据，拒绝发送匿名请求：" + why
                 + "（credential_ref 只存引用，取值由部署环境注入，见 D-033）");
     }
 
@@ -437,6 +490,10 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         return java.net.URLEncoder.encode(pathSegment, java.nio.charset.StandardCharsets.UTF_8);
     }
 
+    private static String derivedKey(String base, String action) {
+        return base == null ? null : base + ":" + action;
+    }
+
     /** 报文/异常摘要：单行、限长，避免把整页 HTML 或长栈塞进运行报告 */
     private static String abbreviate(JsonNode node) {
         if (node == null || node.isMissingNode()) {
@@ -472,14 +529,10 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         if (config.baseUrl() == null || config.baseUrl().isBlank()) {
             return unmeasured(config, "base_url 为空，无法探测商城能力");
         }
-        URI base;
-        try {
-            base = URI.create(config.baseUrl().trim());
-        } catch (IllegalArgumentException e) {
-            return unmeasured(config, "base_url 不是合法 URI：" + config.baseUrl());
-        }
-        if (base.getHost() == null) {
-            return unmeasured(config, "base_url 缺少 host：" + config.baseUrl());
+        URI base = baseUri(config);
+        if (base == null) {
+            return unmeasured(config,
+                    "base_url 非法或包含不允许的 userinfo/query/fragment，拒绝探测商城能力");
         }
 
         Map<String, String> declared = declaredPaths(config.configJson());
@@ -508,8 +561,9 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         }
 
         if (answered == 0) {
-            String why = "无法连接 " + base + "（" + (lastFailure == null ? "无应答"
+            String why = "无法连接 " + MallDiagnosticSanitizer.origin(base) + "（" + (lastFailure == null ? "无应答"
                     : lastFailure.getClass().getSimpleName() + ": " + lastFailure.getMessage()) + "）";
+            why = MallDiagnosticSanitizer.redact(why, token);
             log.warn("目标能力探测失败：id={} {}", config.id(), why);
             return unmeasured(config, why);
         }
@@ -524,7 +578,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
                     : aggregate(routes, outcomes, capability));
         }
 
-        String detail = describe(base, routes, outcomes, verdicts, credentialNote, declared);
+        String detail = MallDiagnosticSanitizer.redact(
+                describe(base, routes, outcomes, verdicts, credentialNote, declared), token);
         log.info("目标能力探测完成：id={} {}", config.id(), verdicts);
         return new TargetCheckResult(config.id(), true, detail, verdicts);
     }
@@ -597,7 +652,7 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
                                    Map<String, RouteOutcome> outcomes,
                                    Map<MallCapability, CapabilityVerdict> verdicts,
                                    String credentialNote, Map<String, String> declared) {
-        StringBuilder text = new StringBuilder("OPTIONS 探测 ").append(base)
+        StringBuilder text = new StringBuilder("OPTIONS 探测 ").append(MallDiagnosticSanitizer.origin(base))
                 .append("：").append(routes.size()).append(" 条代表路由");
         for (MallCapability capability : MallCapability.values()) {
             text.append("；").append(capability.key()).append('=').append(verdicts.get(capability));
@@ -634,7 +689,8 @@ public final class ReferenceMallHttpAdapter implements MallTargetAdapter {
         }
         try {
             URI uri = URI.create(config.baseUrl().trim());
-            return uri.getHost() == null ? null : uri;
+            return uri.getHost() == null || uri.getUserInfo() != null
+                    || uri.getRawQuery() != null || uri.getRawFragment() != null ? null : uri;
         } catch (IllegalArgumentException e) {
             return null;
         }

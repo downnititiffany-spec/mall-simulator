@@ -2,24 +2,27 @@ package com.graduation.analytics.runtime;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.graduation.analytics.common.PlatformBizException;
+import com.graduation.analytics.common.QueryTimeoutPolicy;
 import com.graduation.analytics.landing.LandingLayout;
 import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.runtime.credential.CredentialService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.runtime.mapper.RuntimeProfileMapper;
-import com.graduation.analytics.runtime.storage.HdfsLandingStorage;
 import com.graduation.analytics.runtime.storage.LandingStorage;
+import com.graduation.analytics.runtime.storage.LandingStorageResolver;
 import com.graduation.analytics.runtime.storage.LocalLandingStorage;
 import com.graduation.analytics.runtime.submit.JobSubmitter;
 import com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter;
 import com.graduation.analytics.runtime.submit.SshSparkSubmitter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,15 +40,33 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RuntimeProfileServiceImpl implements RuntimeProfileService {
 
+    /** Hive 3.1.3 reads the DriverManager login timeout while constructing its Thrift transport. */
+    private static final Object HIVE_DRIVER_MANAGER_TIMEOUT_LOCK = new Object();
+
+    @Value("${" + QueryTimeoutPolicy.READ_TIMEOUT_PROPERTY + ":" + QueryTimeoutPolicy.DEFAULT_QUERY_TIMEOUT_SECONDS + "}")
+    private String hiveProbeQueryTimeoutSeconds;
+
     private final RuntimeProfileMapper profileMapper;
-    private final LocalLandingStorage localLandingStorage;
     private final MetricStore metricStore;
     private final CredentialService credentialService;
 
-    private static final String SPARK_SUBMIT_DEFAULT = "D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd";
+    @Autowired
+    public RuntimeProfileServiceImpl(RuntimeProfileMapper profileMapper, MetricStore metricStore,
+                                     CredentialService credentialService) {
+        this.profileMapper = profileMapper;
+        this.metricStore = metricStore;
+        this.credentialService = credentialService;
+    }
+
+    /** Compatibility constructor for existing isolated probes; the injected default root is not used. */
+    @Deprecated
+    public RuntimeProfileServiceImpl(RuntimeProfileMapper profileMapper, LocalLandingStorage ignoredDefaultLanding,
+                                     MetricStore metricStore, CredentialService credentialService) {
+        this(profileMapper, metricStore, credentialService);
+    }
+
     private static final String SPARK_JOB_JAR_DEFAULT = "spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar";
     private static final String LOG_ROOT_DEFAULT = "landing/logs";
 
@@ -178,19 +199,12 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
 
     private CheckDetail checkLanding(RuntimeProfile p) {
         try {
-            if (RuntimeProfile.TYPE_REMOTE_CLUSTER.equals(p.getType())) {
-                HdfsLandingStorage hdfs = new HdfsLandingStorage(p.getLandingUri());
-                return wrap("landing", hdfs.healthCheck());
-            }
-            String profileUri = p.getLandingUri();
-            if (profileUri != null && (profileUri.startsWith("hdfs://"))) {
-                HdfsLandingStorage hdfs = new HdfsLandingStorage(profileUri);
-                return wrap("landing", hdfs.healthCheck());
-            }
-            // LOCAL：用 localRoot 探针 + 失败时给出明确原因
-            return wrap("landing", localLandingStorage.healthCheck());
+            // Probe the candidate profile's own namespace, never the application-wide LOCAL default.
+            // An empty landing_uri must fail closed instead of accidentally validating another root.
+            LandingStorage storage = LandingStorageResolver.forProfile(p);
+            return wrap("landing", storage.healthCheck());
         } catch (Exception e) {
-            return new CheckDetail("landing", false, "ex: " + e.getMessage());
+            return probeFailure("landing", e);
         }
     }
 
@@ -204,16 +218,41 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
             }
             return new CheckDetail("hive", false, "UNKNOWN: 未配置 hive_jdbc_url");
         }
-        try (Connection conn = DriverManager.getConnection(url,
-                p.getCredentialRef() != null && p.getCredentialRef().startsWith("env:")
-                        ? System.getenv(p.getCredentialRef().substring(4)) : "hive",
-                "")) {
-            try (Statement st = conn.createStatement()) {
-                st.execute("SELECT 1");
+        try {
+            // credential_ref is a secret reference, not a JDBC username. HiveServer2's
+            // username is fixed by this profile contract; resolve the referenced secret
+            // only into the password argument and never include it in probe details.
+            String password = credentialService.resolve(p.getCredentialRef());
+            try (Connection conn = openHiveConnection(url, password)) {
+                try (Statement st = conn.createStatement()) {
+                    st.setQueryTimeout(QueryTimeoutPolicy.readTimeoutSeconds(hiveProbeQueryTimeoutSeconds));
+                    st.execute("SELECT 1");
+                }
+                return new CheckDetail("hive", true, "SELECT 1 ok (HiveServer2)");
             }
-            return new CheckDetail("hive", true, "SELECT 1 ok @ " + url);
         } catch (Exception e) {
-            return new CheckDetail("hive", false, "SELECT 1 failed: " + e.getMessage());
+            // JDBC URLs and driver messages can contain credentials or connection details.
+            // Report only the exception type; never echo either value to the API response.
+            return new CheckDetail("hive", false,
+                    "SELECT 1 failed (" + e.getClass().getSimpleName() + ")");
+        }
+    }
+
+    /**
+     * Hive JDBC 3.1.3 copies {@link DriverManager#getLoginTimeout()} into its connection-local
+     * Thrift connect timeout during connection construction. Keep the process-global setting
+     * scoped to that construction and restore it even when the driver rejects the connection.
+     */
+    private Connection openHiveConnection(String url, String password) throws SQLException {
+        synchronized (HIVE_DRIVER_MANAGER_TIMEOUT_LOCK) {
+            int previousTimeoutSeconds = DriverManager.getLoginTimeout();
+            try {
+                DriverManager.setLoginTimeout(
+                        QueryTimeoutPolicy.readTimeoutSeconds(hiveProbeQueryTimeoutSeconds));
+                return DriverManager.getConnection(url, "hive", password);
+            } finally {
+                DriverManager.setLoginTimeout(previousTimeoutSeconds);
+            }
         }
     }
 
@@ -225,33 +264,42 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
                         p.getSshPort() == null ? 22 : p.getSshPort(), p.getSshUser(), credential);
                 return wrap("spark", ssh.healthCheck());
             }
-            String sp = p.getSparkSubmitPath() != null && !p.getSparkSubmitPath().isBlank()
-                    ? p.getSparkSubmitPath() : SPARK_SUBMIT_DEFAULT;
-            LocalProcessSparkSubmitter lp = new LocalProcessSparkSubmitter(sp, LOG_ROOT_DEFAULT);
+            String sparkSubmitPath = p.getSparkSubmitPath();
+            if (sparkSubmitPath == null || sparkSubmitPath.isBlank()) {
+                return new CheckDetail("spark", false,
+                        "LOCAL/SINGLE_NODE 环境缺少 spark_submit_path（§8.4 禁止硬编码默认路径）");
+            }
+            LocalProcessSparkSubmitter lp = new LocalProcessSparkSubmitter(sparkSubmitPath, LOG_ROOT_DEFAULT);
             return wrap("spark", lp.healthCheck());
         } catch (Exception e) {
-            return new CheckDetail("spark", false, "ex: " + e.getMessage());
+            return probeFailure("spark", e);
         }
     }
 
     private CheckDetail checkMetric(RuntimeProfile p) {
         try {
-            MetricStore.HealthResult h = metricStore.healthCheck();
-            if (!h.ok()) {
-                return new CheckDetail("metric", false, "healthCheck: " + h.detail());
+            if (p.getId() == null || p.getId() <= 0) {
+                return new CheckDetail("metric", false, "探测失败");
             }
+            // Test the candidate profile's actual snapshot query path. The profile being
+            // tested is not ACTIVE yet, so a default/global lookup could probe another profile.
+            metricStore.query(new MetricStore.MetricQuery(null, true, p.getId()));
             return new CheckDetail("metric", true, "metricStore query ok");
         } catch (Exception e) {
-            return new CheckDetail("metric", false, "ex: " + e.getMessage());
+            return probeFailure("metric", e);
         }
     }
 
+    private CheckDetail probeFailure(String name, Exception e) {
+        return new CheckDetail(name, false, "探测失败 (" + e.getClass().getSimpleName() + ")");
+    }
+
     private CheckDetail wrap(String name, JobSubmitter.HealthResult h) {
-        return new CheckDetail(name, h.ok(), h.detail());
+        return new CheckDetail(name, h.ok(), h.ok() ? "探测通过" : "探测失败");
     }
 
     private CheckDetail wrap(String name, LandingStorage.HealthResult h) {
-        return new CheckDetail(name, h.ok(), h.detail());
+        return new CheckDetail(name, h.ok(), h.ok() ? "探测通过" : "探测失败");
     }
 
     @Override
@@ -309,10 +357,16 @@ public class RuntimeProfileServiceImpl implements RuntimeProfileService {
 
     @Override
     public Optional<RuntimeProfile> findActive() {
-        return Optional.ofNullable(profileMapper.selectOne(new LambdaQueryWrapper<RuntimeProfile>()
+        List<RuntimeProfile> active = profileMapper.selectList(new LambdaQueryWrapper<RuntimeProfile>()
                 .eq(RuntimeProfile::getStatus, RuntimeProfile.STATUS_ACTIVE)
                 .orderByDesc(RuntimeProfile::getId)
-                .last("LIMIT 1")));
+                .last("LIMIT 2"));
+        if (active == null || active.size() != 1) {
+            return Optional.empty();
+        }
+        RuntimeProfile profile = active.get(0);
+        return profile.getId() == null || profile.getId() <= 0
+                ? Optional.empty() : Optional.of(profile);
     }
 
     @Override

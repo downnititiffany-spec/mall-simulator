@@ -65,8 +65,11 @@
         <div v-else class="el-empty">当前时间范围无数据，不编造结论</div>
       </div>
 
-      <div class="chart-box" v-if="explanationSection.length">
+      <div class="chart-box" v-if="explanationSection.length || explanation.providerUsed">
         <div class="chart-title">建议与可能原因（模型推测，非因果结论）</div>
+        <div class="table-hint">
+          解释最终来源：{{ explanation.providerUsed || '接口未提供' }}；template 表示采用模板/规则回退。
+        </div>
         <div v-for="(s, i) in explanationSection" :key="i" style="font-size:13px;line-height:1.8;padding:4px 0">
           • {{ s }}
         </div>
@@ -171,13 +174,34 @@
       <div class="chart-title">我的最近问答（点击回填；来自 /ai/history/my，非统一信封）</div>
       <div v-if="historyError" class="banner banner-error">历史加载失败：{{ historyError }}</div>
       <div v-if="history.length" style="display:flex;flex-direction:column;gap:6px">
-        <button v-for="h in history" :key="h.id" @click="question = h.question" :disabled="busy || draftBusy"
-                style="text-align:left;padding:6px 10px;border:1px solid var(--gray-100);border-radius:6px;font-size:13px;cursor:pointer">
-          <span style="color:var(--gray-800)">{{ h.question }}</span>
-          <span style="float:right;color:var(--gray-400);font-size:12px">
-            {{ h.status }} · {{ h.rowsReturned ?? 0 }} 行 · {{ formatDateTime(h.createdAt) }}
-          </span>
-        </button>
+        <div v-for="h in history" :key="h.id" style="padding:8px 10px;border:1px solid var(--gray-100);border-radius:6px">
+          <button class="history-question" @click="question = h.question" :disabled="busy || draftBusy">
+            <span style="color:var(--gray-800)">{{ h.question }}</span>
+            <span style="float:right;color:var(--gray-400);font-size:12px">
+              {{ h.status }} · {{ h.rowsReturned ?? 0 }} 行 · {{ formatDateTime(h.createdAt) }}
+            </span>
+          </button>
+          <div v-if="h.status === 'EXECUTED' && h.evidenceId && h.snapshotId && h.sourceId && h.definitionVersion"
+               style="display:flex;align-items:center;gap:8px;margin-top:7px;font-size:12px">
+            <span style="color:var(--gray-500)">证据 {{ h.sourceId }} / {{ h.snapshotId }} / {{ h.definitionVersion }}</span>
+            <template v-if="h.feedbackSubmitted">
+              <span style="color:var(--green-700)">已提交反馈</span>
+            </template>
+            <template v-else>
+              <select :value="feedbackReasons[h.id] || 'ANSWER_MATCHED_EVIDENCE'"
+                      aria-label="反馈原因" @change="setFeedbackReason(h.id, $event.target.value)">
+                <option value="ANSWER_MATCHED_EVIDENCE">回答符合证据</option>
+                <option value="MISSING_EVIDENCE">缺少证据</option>
+                <option value="FACT_OR_SCOPE_INCORRECT">事实或范围不正确</option>
+                <option value="EXPLANATION_UNCLEAR">解释不清楚</option>
+                <option value="OTHER">其他</option>
+              </select>
+              <button type="button" :disabled="feedbackBusyId === h.id" @click="sendFeedback(h, 'GOOD')">有用</button>
+              <button type="button" :disabled="feedbackBusyId === h.id" @click="sendFeedback(h, 'BAD')">无用</button>
+            </template>
+            <span v-if="feedbackErrors[h.id]" role="alert" style="color:var(--red-700)">{{ feedbackErrors[h.id] }}</span>
+          </div>
+        </div>
       </div>
       <div v-else class="el-empty">暂无历史记录</div>
     </div>
@@ -189,6 +213,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import api from '../api'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import { useAnalysis } from '../composables/useAnalysis'
+import { requireAnalysisDataResponse } from '../utils/analysisDataResponse.js'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { buildAiEvidenceContext, warningTextAll, windowDisplayText } from '../utils/context'
 import {
@@ -204,6 +229,7 @@ import {
 import { formatDateTime } from '../utils/envelope'
 import { aiResultCsvHeaders, aiResultTable } from '../utils/tables'
 import { exportAnalysisCsv } from '../utils/exportCsv'
+import { requireArrayResponse } from '../utils/arrayResponse.js'
 import { snapshotSelection } from '../composables/useSnapshotSelection'
 
 const question = ref('')
@@ -214,7 +240,11 @@ const queryResult = ref(null)
 
 // 对照基线：当期 ACTIVE 快照的分析信封（供上下文条展示快照/业务时间/口径版本/质量状态与告警）
 const base = useAnalysis({
-  fetcher: (params, signal) => api.overview(params, { signal }),
+  fetcher: async (params, signal) => requireAnalysisDataResponse(await api.overview(params, { signal }), {
+    resourceLabel: 'AI 分析基线',
+    arrayFields: ['metrics', 'salesTrend', 'activeTrend', 'metricDictionary'],
+    objectFields: ['quality']
+  }),
   rowKeys: ENDPOINT_ROW_KEYS.overview,
   pinSnapshot: true
 })
@@ -223,8 +253,34 @@ const { context: baseContext, state, error, load: loadBase, cancel: cancelBase }
 // 历史记录：/ai/history/my 返回裸数组，失败必须显式提示（不再静默）
 const history = ref([])
 const historyError = ref('')
+const feedbackReasons = ref({})
+const feedbackErrors = ref({})
+const feedbackBusyId = ref(null)
 let historySeq = 0
 let historyController = null
+
+function setFeedbackReason(historyId, reasonCode) {
+  feedbackReasons.value = { ...feedbackReasons.value, [historyId]: reasonCode }
+}
+
+async function sendFeedback(historyRow, rating) {
+  if (!historyRow || feedbackBusyId.value === historyRow.id) return
+  feedbackBusyId.value = historyRow.id
+  feedbackErrors.value = { ...feedbackErrors.value, [historyRow.id]: '' }
+  try {
+    await api.aiFeedback(historyRow.id, {
+      rating,
+      reasonCode: feedbackReasons.value[historyRow.id] || 'ANSWER_MATCHED_EVIDENCE'
+    })
+    historyRow.feedbackSubmitted = true
+  } catch (e) {
+    const code = e?.code || e?.response?.data?.code
+    if (code === 'AI_FEEDBACK_ALREADY_SUBMITTED') historyRow.feedbackSubmitted = true
+    else feedbackErrors.value = { ...feedbackErrors.value, [historyRow.id]: e?.message || code || '提交失败，可稍后重试' }
+  } finally {
+    feedbackBusyId.value = null
+  }
+}
 
 // 提问请求序号守卫：显式取消时递增序号，任何旧请求随后完成都必须被丢弃
 let askSeq = 0
@@ -335,7 +391,7 @@ async function loadHistory() {
   try {
     const rows = await api.aiHistoryMine(8, historyController ? { signal: historyController.signal } : undefined)
     if (mySeq !== historySeq) return
-    history.value = Array.isArray(rows) ? rows : []
+    history.value = requireArrayResponse(rows, 'AI历史')
   } catch (e) {
     if (mySeq !== historySeq) return
     if (!isAbort(e)) historyError.value = (e && (e.message || e.code)) || '请求失败'
@@ -383,7 +439,7 @@ async function ask() {
     const ctl = askController
     const resp = await api.aiQuery(text, undefined, {
       ...(ctl ? { signal: ctl.signal } : {}),
-      snapshotId: snapshotSelection.selectedSnapshotId
+      snapshotId: snapshotSelection.explicitSnapshotId || snapshotSelection.selectedSnapshotId
     })
     if (mySeq !== askSeq) return // 已被显式取消或已有更新序号，丢弃过期响应
     queryResult.value = resp
@@ -403,7 +459,7 @@ async function ask() {
   }
 }
 
-watch(() => snapshotSelection.selectedSnapshotId, (next, previous) => {
+watch(() => snapshotSelection.explicitSnapshotId || snapshotSelection.selectedSnapshotId, (next, previous) => {
   if (!previous || !next || next === previous) return
   if (busy.value) cancelAsk()
   queryResult.value = null
@@ -446,3 +502,17 @@ onUnmounted(() => {
   historyController = null
 })
 </script>
+
+<style scoped>
+.history-question {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+</style>

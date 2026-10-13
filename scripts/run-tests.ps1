@@ -111,10 +111,15 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1195
+  'analytics-server'        = 1234
   'mall-simulator'          = 14
-  'synthetic-data-generator' = 111
+  'synthetic-data-generator' = 125
 }
+# 2026-10-06：当前工作树 default 全量量数（RunId `dev003c_20261006_164319_275a62`）确认
+#   analytics-server 1234（F=0/E=0/S=2）、mall 14（F=0/E=0/S=0）、generator 125（F=0/E=0/S=0）。
+#   全树测试均执行完成；旧基线 1195/14/111 导致统一入口仅因计数漂移 exit=7。按实际完整汇总更新
+#   登记值至 1234/14/125；严格计数门禁保留，未启用 `-AllowCountDrift`。fresh 对照复验见
+#   `docs/verification/results/DEFAULT-JAVA-SUITE-BASELINE-REFRESH-20261006.md`。
 # 2026-09-30：MySqlMetricStoreActivationRollbackTest +4（激活后恢复旧快照、保护后续 ACTIVE、
 #   缺失旧快照时事务回滚、无 ACTIVE 时恢复旧快照），MetricPublisherBuildFailureCompensationTest +1（校验失败调用回退）。
 #   default fresh 1188→1193，三树 1313→1318；仅同步测试数量，不代表真实 MySQL IT 已运行。
@@ -568,9 +573,11 @@ $BaselineDefault = [ordered]@{
 #   G5a 单主题不清他表/G5b 零写入/new-wins+G6 conf 还原），fresh 实测本日 16:18：329/329、41 套件、
 #   JDK8=True、All tests passed（首跑 329 DRIFT(基线 322) 后同步本数，基线比对轮见
 #   docs/verification/results/BATCH-G31-08-FG41-SAMEDAY-INCREMENTAL-RESULT.md §2.2）。
+# 2026-10-12：332→333＝D-061 批准 dim_date 日期区间契约，新增 `DateDimensionRangeSpec` 1 条；
+#   fresh spark 全量 333/333、43 suites、JDK8=True、All tests passed。
 # 2026-09-29：329→332＝N31-02 开发新增 `ProductDimensionAsOfSpec`、`MetricExportZeroRowSpec`、
 #   `CategoryRegionAdsSpec` 各 1 条；同批同步 DDL 总数与 FixtureWriteShape 写入点基线，避免新功能被旧守卫误报。
-$BaselineSpark = 332
+$BaselineSpark = 333
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）

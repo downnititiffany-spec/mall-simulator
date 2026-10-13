@@ -56,6 +56,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
+import { requireAnalysisDataResponse } from '../utils/analysisDataResponse.js'
 import { formatInteger, formatPercent } from '../utils/number'
 import { readEnvelope } from '../utils/envelope'
 import { localIsoDayOffset } from '../utils/localDate.js'
@@ -71,15 +72,22 @@ const to = ref(localIsoDayOffset(0))
 // 先由漏斗接口固定主快照，再用同一 snapshotId 请求 Overview 的活跃趋势。
 // 不能两个接口各自解析“当前 ACTIVE”，否则发布切换窗口可能把不同快照拼进同一页。
 async function fetchBehavior(params, signal) {
-  const funnel = readEnvelope(await api.funnel({ snapshotId: params.snapshotId }, { signal }))
+  const funnel = readEnvelope(requireAnalysisDataResponse(
+    await api.funnel({ snapshotId: params.snapshotId }, { signal }),
+    { resourceLabel: '转化漏斗', arrayFields: ['stages'] }
+  ))
   let overview = readEnvelope({})
 
   if (funnel.snapshotId) {
-    overview = readEnvelope(await api.overview({
+    overview = readEnvelope(requireAnalysisDataResponse(await api.overview({
       from: params.from,
       to: params.to,
       snapshotId: funnel.snapshotId
-    }, { signal }))
+    }, { signal }), {
+      resourceLabel: '活跃趋势',
+      arrayFields: ['metrics', 'salesTrend', 'activeTrend', 'metricDictionary'],
+      objectFields: ['quality']
+    }))
     if (overview.snapshotId && overview.snapshotId !== funnel.snapshotId) {
       throw new Error(`跨接口快照不一致：funnel=${funnel.snapshotId}, overview=${overview.snapshotId}`)
     }

@@ -16,18 +16,32 @@ public class MallOperationException extends RuntimeException {
 
     /** 出错的操作（§4.1 的方法名，便于运行报告与统计归因） */
     private final String operation;
+    /** 由商城适配器归一化的稳定业务失败分类；不暴露商城特有错误码作为平台契约。 */
+    private final MallFailureCode failureCode;
 
     public MallOperationException(String operation, String message) {
-        super("[" + operation + "] " + message);
-        this.operation = operation;
+        this(operation, MallFailureCode.MALL_OPERATION_FAILED, message, null);
     }
 
     public MallOperationException(String operation, String message, Throwable cause) {
+        this(operation, MallFailureCode.MALL_OPERATION_FAILED, message, cause);
+    }
+
+    public MallOperationException(String operation, MallFailureCode failureCode, String message) {
+        this(operation, failureCode, message, null);
+    }
+
+    public MallOperationException(String operation, MallFailureCode failureCode, String message, Throwable cause) {
         super("[" + operation + "] " + message, cause);
         this.operation = operation;
+        this.failureCode = failureCode == null ? MallFailureCode.MALL_OPERATION_FAILED : failureCode;
     }
 
     public String operation() {
         return operation;
+    }
+
+    public MallFailureCode failureCode() {
+        return failureCode;
     }
 }

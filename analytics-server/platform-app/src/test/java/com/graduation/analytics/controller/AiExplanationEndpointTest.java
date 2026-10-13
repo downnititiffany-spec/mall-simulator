@@ -1,6 +1,7 @@
 package com.graduation.analytics.controller;
 
 import com.graduation.analytics.ai.ExplanationService;
+import com.graduation.analytics.ai.AiFeedbackService;
 import com.graduation.analytics.ai.TextToSqlService;
 import com.graduation.analytics.ai.evidence.EvidenceBuilder;
 import com.graduation.analytics.ai.evidence.EvidenceRequest;
@@ -60,7 +61,8 @@ class AiExplanationEndpointTest {
                 mock(AiCallLogMapper.class), mock(SqlExecutor.class));
         EvidenceService evidenceService = new EvidenceService(builder, explanationService);
         controller = new AiController(mock(TextToSqlService.class), explanationService, evidenceService,
-                mock(AiQueryHistoryMapper.class), mock(AiCallLogMapper.class), audit);
+                mock(AiQueryHistoryMapper.class), mock(AiCallLogMapper.class), audit,
+                mock(AiFeedbackService.class));
     }
 
     @AfterEach

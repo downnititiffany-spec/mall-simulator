@@ -1,0 +1,57 @@
+{
+  "bridgeVersion": "3.6",
+  "kind": "google-docs-trusted-read",
+  "status": "complete",
+  "outputDir": "/mnt/d/Develop_code/GraduationProject-wt/v3-dev/.codex/trusted-read/governance-1791435377895",
+  "target": {
+    "documentId": "1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk",
+    "title": "00_知识库治理规则 V1",
+    "revisionId": "ANLCKQke7WK0DzS3JlusG4M4UuIYJ8s8sqf17kuNaHYnJeLqRGvxYP9QAaJj2ZjQj1uMBGDx_hlDJyGESr6nsTmS7p8omWEp8tV-uITEC9s",
+    "documentUrl": "https://docs.google.com/document/d/1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk",
+    "selectedTabId": null
+  },
+  "dropdownMetadata": {
+    "status": "unavailable",
+    "resolvedTool": null,
+    "authoritative": false,
+    "count": 0
+  },
+  "controlAwareness": {
+    "hasProtectedControls": false,
+    "authoritativeDropdownCount": 0,
+    "opaqueControlCount": 0,
+    "affectedParagraphCount": 0,
+    "nativeElementCounts": {},
+    "preservationRequired": false,
+    "recommendedBehavior": "No protected controls were detected in the scanned scope."
+  },
+  "warnings": [],
+  "files": {
+    "document_result": {
+      "path": "/mnt/d/Develop_code/GraduationProject-wt/v3-dev/.codex/trusted-read/governance-1791435377895/document-result.json",
+      "bytes": 82801,
+      "sha256": "77de849a77aa582933cdecda3695322307435468e9dd3a883d15f98d3d1429b0"
+    },
+    "control_inventory": {
+      "path": "/mnt/d/Develop_code/GraduationProject-wt/v3-dev/.codex/trusted-read/governance-1791435377895/control-inventory.json",
+      "bytes": 1032,
+      "sha256": "a143275101f45702422065a2a04bba7eec9d83c30e18ce888162e697a5bad791"
+    },
+    "document_outline": {
+      "path": "/mnt/d/Develop_code/GraduationProject-wt/v3-dev/.codex/trusted-read/governance-1791435377895/document-outline.json",
+      "bytes": 48956,
+      "sha256": "c83325b8bf5e28436a7aab38ac57995ad33caeb227e06308ec14ccb3d4aa75cf"
+    },
+    "document_text": {
+      "path": "/mnt/d/Develop_code/GraduationProject-wt/v3-dev/.codex/trusted-read/governance-1791435377895/document-text.md",
+      "bytes": 10098,
+      "sha256": "0b3700bc00537f0bc8085b786f2f3f79d3cbd0c5c6d6994032776521123b2f4a"
+    },
+    "receipt": {
+      "path": "/mnt/d/Develop_code/GraduationProject-wt/v3-dev/.codex/trusted-read/governance-1791435377895/receipt.json",
+      "bytes": 963,
+      "sha256": "6d021f428522e176f332dbba2378627079307357fd02bfc2c4f4465642dcd89e"
+    }
+  },
+  "error": null
+}

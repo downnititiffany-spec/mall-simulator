@@ -91,6 +91,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
+import { requireAnalysisDataResponse } from '../utils/analysisDataResponse.js'
 import { chartStateForRows } from '../utils/chartState'
 import { ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
@@ -116,7 +117,11 @@ const showDictionary = ref(false)
 const rangeError = ref('')
 
 const analysis = useAnalysis({
-  fetcher: (params, signal) => api.overview(params, { signal }),
+  fetcher: async (params, signal) => requireAnalysisDataResponse(await api.overview(params, { signal }), {
+    resourceLabel: '经营概览',
+    arrayFields: ['metrics', 'salesTrend', 'activeTrend', 'metricDictionary'],
+    objectFields: ['quality']
+  }),
   rowKeys: ENDPOINT_ROW_KEYS.overview,
   pinSnapshot: true,
   defaults: { metrics: [], salesTrend: [], activeTrend: [], quality: {}, metricDictionary: [] }

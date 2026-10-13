@@ -21,6 +21,10 @@ import com.graduation.generator.contract.CanonicalEvent;
 import com.graduation.generator.contract.EventTypes;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.math.RoundingMode;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -79,6 +83,7 @@ public final class MallApiDispatchSink {
      * 目标配置是运行级事实，只该有一个来源。空表（默认实现）读作"一条路由都没声明"。</p>
      */
     private final Map<String, TargetRoute> operationRoutes;
+    private final String runId;
 
     private final Map<String, String> externalUserByCanonical = new LinkedHashMap<>();
     private final Map<String, String> externalOrderByCanonical = new LinkedHashMap<>();
@@ -107,6 +112,17 @@ public final class MallApiDispatchSink {
                                List<ExternalProduct> productCatalog,
                                boolean failFast,
                                Map<String, TargetRoute> operationRoutes) {
+        this(adapter, target, capabilities, journal, productCatalog, failFast, operationRoutes, null);
+    }
+
+    public MallApiDispatchSink(MallTargetAdapter adapter,
+                               TargetConfig target,
+                               TargetCapabilities capabilities,
+                               OperationJournal journal,
+                               List<ExternalProduct> productCatalog,
+                               boolean failFast,
+                               Map<String, TargetRoute> operationRoutes,
+                               String runId) {
         this.adapter = adapter;
         this.target = target;
         this.capabilities = capabilities;
@@ -115,6 +131,7 @@ public final class MallApiDispatchSink {
         this.availableProducts = new ArrayDeque<>(this.productCatalog);
         this.failFast = failFast;
         this.operationRoutes = Map.copyOf(operationRoutes);
+        this.runId = runId;
     }
 
     /**
@@ -160,7 +177,8 @@ public final class MallApiDispatchSink {
         } catch (MallOperationException e) {
             failed++;
             journal.append(plan.operation(), true, route.method(), route.path(),
-                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED, e.getMessage(), false);
+                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED,
+                    e.failureCode().name() + ": " + e.getMessage(), false);
             if (failFast) {
                 throw e;
             }
@@ -193,7 +211,8 @@ public final class MallApiDispatchSink {
             return true;
         }
         ExternalUser user = adapter.createSyntheticUser(target,
-                new UserCommand(text(event, "age_group"), text(event, "city_level"), text(event, "member_level")));
+                new UserCommand(text(event, "age_group"), text(event, "city_level"),
+                        text(event, "member_level"), idempotencyKeyOf(event)));
         externalUserByCanonical.put(canonicalId, user.userId());
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalId, user.userId(),
                 OperationJournalEntry.STATUS_OK, "member_level=" + user.memberLevel(), false);
@@ -226,7 +245,7 @@ public final class MallApiDispatchSink {
         String externalUser = requireUser(event, plan.operation());
         adapter.emitBehavior(target, new BehaviorCommand(externalUser,
                 externalProductOf(text(event, "product_id")), text(event, "session_id"),
-                text(event, "behavior_type"), text(event, "channel")));
+                text(event, "behavior_type"), text(event, "channel"), idempotencyKeyOf(event)));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalIdOf(event), null,
                 OperationJournalEntry.STATUS_OK, "behavior_type=" + text(event, "behavior_type"), false);
         return true;
@@ -245,8 +264,9 @@ public final class MallApiDispatchSink {
             realTotal = realTotal.add(realProduct.price().multiply(BigDecimal.valueOf(quantity)));
         }
         realTotal = money(realTotal);
-        ExternalOrder order = adapter.createOrder(target,
-                new OrderCommand(requireUser(event, plan.operation()), items));
+        String userId = requireUser(event, plan.operation());
+        String idempotencyKey = idempotencyKeyOf(event);
+        ExternalOrder order = adapter.createOrder(target, new OrderCommand(userId, items, idempotencyKey));
         externalOrderByCanonical.put(canonicalId, order.orderId());
         realOrderTotalByCanonical.put(canonicalId, realTotal);
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalId, order.orderId(),
@@ -255,10 +275,41 @@ public final class MallApiDispatchSink {
         return true;
     }
 
+    static String idempotencyKey(String runId, String userId, String logicalActionId) {
+        if (runId == null || runId.isBlank() || userId == null || userId.isBlank()
+                || logicalActionId == null || logicalActionId.isBlank()) {
+            throw new IllegalArgumentException("runId、userId 和 logicalActionId 均必填");
+        }
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(
+                    (runId + "\0" + userId + "\0" + logicalActionId).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 不可用", e);
+        }
+    }
+
+    static String idempotencyKey(String runId, CanonicalEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("event 必填");
+        }
+        Object userId = event.payload().get("user_id");
+        if (userId == null || String.valueOf(userId).isBlank()) {
+            throw new IllegalArgumentException("event.payload.user_id 必填");
+        }
+        // Aggregate IDs repeat across lifecycle events (order_created/order_paid, for example).
+        // event_id is stable for replay of one generated event and unique across logical actions.
+        return idempotencyKey(runId, String.valueOf(userId), event.eventId());
+    }
+
+    private String idempotencyKeyOf(CanonicalEvent event) {
+        return runId == null ? null : idempotencyKey(runId, event);
+    }
+
     private boolean dispatchPay(CanonicalEvent event, MallDispatchPlan plan, TargetRoute route) {
         String canonicalOrder = text(event, "order_id");
         ExternalOrder paid = adapter.pay(target, new PayCommand(requireOrder(canonicalOrder, plan.operation()),
-                requireUser(event, plan.operation())));
+                requireUser(event, plan.operation()), idempotencyKeyOf(event)));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, paid.orderId(),
                 OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(paid.status()), false);
         return true;
@@ -268,7 +319,7 @@ public final class MallApiDispatchSink {
         String canonicalOrder = text(event, "order_id");
         ExternalOrder cancelled = adapter.cancel(target, new CancelCommand(
                 requireOrder(canonicalOrder, plan.operation()), requireUser(event, plan.operation()),
-                text(event, "reason")));
+                text(event, "reason"), idempotencyKeyOf(event)));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, cancelled.orderId(),
                 OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(cancelled.status()), false);
         return true;
@@ -279,7 +330,8 @@ public final class MallApiDispatchSink {
         String externalOrder = requireOrder(canonicalOrder, plan.operation());
         BigDecimal realRefundAmount = requireOrderTotal(canonicalOrder, plan.operation());
         ExternalRefund refund = adapter.refund(target, new RefundCommand(externalOrder,
-                requireUser(event, plan.operation()), realRefundAmount, text(event, "reason")));
+                requireUser(event, plan.operation()), realRefundAmount, text(event, "reason"),
+                idempotencyKeyOf(event)));
         externalRefundByCanonical.put(text(event, "refund_id"), refund.refundId());
         externalRefundByOrder.put(canonicalOrder, refund.refundId());
         // 一行流水 = 两次 HTTP（参考商城的退款是"申请 + 完成"两步，适配器内一次走完）：

@@ -40,9 +40,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p><b>覆盖边界（不得越界表述）</b>：只覆盖本模块 {@code src/main/java}；不含 {@code spark-jobs}、
  * {@code analytics-server}（平台侧 AI Provider 的请求级超时由 S3-44 的行为测试钉住）。
- * 本守卫<b>只</b>钉 L85 的"连接/请求超时"一项；L85 的「有限重试」「幂等」「错误映射」在商城客户端上
- * <b>尚未实现</b>（{@code MallOperationException} 只带操作名与文本，无分类码），属 S3-46 实测登记、
- * 由台账跟踪，<b>不得</b>因为本守卫变绿就声称 L85 已全项满足。</p>
+ * 本守卫<b>只</b>钉 L85 的"连接/请求超时"一项。有限安全方法重试与基础错误分类另有实现和行为测试；
+ * 目标商城写操作的可靠幂等协议仍未实现，因为未证明所有目标支持稳定幂等键或结果查询。<b>不得</b>因为本守卫变绿
+ * 就声称 L85 已全项满足。</p>
  */
 class MallHttpClientTimeoutGuardTest {
 
@@ -65,16 +65,16 @@ class MallHttpClientTimeoutGuardTest {
     private static final String TIMEOUT_OWNER_FILE = "src/main/java/com/graduation/generator/config/GeneratorBeans.java";
 
     /**
-     * 已登记的商城客户端所有者：文件 ⇒ 站点数。ReferenceMall 在 Stage 7 Batch S 后将
-     * 两个 HttpClient build 点合并成一个实例级客户端，因此当前共 7 个站点。
+     * 已登记的商城客户端所有者：文件 ⇒ 站点数。两家商城适配器均复用实例级 HttpClient，
+     * 每家只有一个客户端构造点；请求构造点按各操作保留。
      *
      * <p>集合相等式判据：新增/删除任何客户端文件、或某文件里的站点数变化，都必须先在这里登记，
      * 否则守卫变红 —— 这就是"新客户端不得静默逃过超时纪律"的强制点。</p>
      */
     private static final Map<String, Integer> REGISTERED_SITES = registeredSites();
 
-    /** 当前实测：ReferenceMall 1 个 + SecondMall 2 个 HttpClient build 点，共 3 个 */
-    private static final int REGISTERED_CLIENT_SITES = 3;
+    /** 当前实测：ReferenceMall 1 个 + SecondMall 1 个实例级 HttpClient build 点，共 2 个 */
+    private static final int REGISTERED_CLIENT_SITES = 2;
 
     /** S3-46 实测：两家适配器里 HttpRequest.newBuilder( 站点共 4 个（各 2 个） */
     private static final int REGISTERED_REQUEST_SITES = 4;
@@ -82,7 +82,7 @@ class MallHttpClientTimeoutGuardTest {
     private static Map<String, Integer> registeredSites() {
         Map<String, Integer> sites = new LinkedHashMap<>();
         sites.put("src/main/java/com/graduation/generator/adapter/ReferenceMallHttpAdapter.java", 3);
-        sites.put("src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java", 4);
+        sites.put("src/main/java/com/graduation/generator/adapter/SecondMallHttpAdapter.java", 3);
         return Map.copyOf(sites);
     }
 
@@ -105,7 +105,7 @@ class MallHttpClientTimeoutGuardTest {
             }
         }
 
-        assertThat(sites).as("必须真的扫到出站客户端站点（当前 3 个：ReferenceMall 1 + SecondMall 2）")
+        assertThat(sites).as("必须真的扫到出站客户端站点（当前 2 个：ReferenceMall 1 + SecondMall 1）")
                 .isEqualTo(REGISTERED_CLIENT_SITES);
         assertThat(offenders)
                 .as("设计 §3.3 L85：每个客户端的建连必须有超时，禁止无界等待")

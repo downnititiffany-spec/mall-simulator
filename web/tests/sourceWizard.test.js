@@ -34,8 +34,13 @@ test('未选源/未给样本/未粘贴画像/limit 越界时禁止预览并说�
     false
   )
   assert.equal(
-    canPreview({ sourceId: 2, sampleRef: 'fixture-shop-b/normal.jsonl', profileText: '{}', limit: 20 }).ok,
+    canPreview({ sourceId: 2, sampleRef: 'fixture-shop-b/normal.jsonl', profileText: '{"fieldMappings":{}}', limit: 20 }).ok,
     true
+  )
+  assert.equal(
+    canPreview({ sourceId: 2, sampleRef: 'fixture-shop-b/normal.jsonl', profileText: '{bad json', limit: 20 }).ok,
+    false,
+    '画像 JSON 无法解析时应在发送请求前阻止预览'
   )
 })
 
@@ -49,13 +54,16 @@ test('手动样本引用拒绝绝对路径/.. /协议前缀（任意服务器路
 
 // ---------- 画像原文 advisory 校验 ----------
 
-test('validateProfileText 只做形状初检：JSON/对象/fieldMappings，不复制 Loader 语义', () => {
+test('validateProfileText 只做形状初检：JSON/对象/V1或V2映射对象，不复制 Loader 语义', () => {
   assert.equal(validateProfileText('').ok, false)
   assert.equal(validateProfileText('not json').ok, false)
   assert.equal(validateProfileText('[]').ok, false)
   assert.equal(validateProfileText('{"a":1}').ok, false)
-  assert.match(validateProfileText('{"a":1}').error, /fieldMappings/)
+  assert.match(validateProfileText('{"a":1}').error, /fieldMapping/)
   assert.equal(validateProfileText('{"fieldMappings":{"event_type":"$.type"}}').ok, true)
+  assert.equal(validateProfileText('{"fieldMapping":{"event_type":"event_type"}}').ok, true)
+  assert.equal(validateProfileText('{"fieldMapping":[]}').ok, false)
+  assert.equal(validateProfileText('{"fieldMappings":[]}').ok, false)
 })
 
 // ---------- 报告摘要（只引用 MappingDryRunReport 真实字段） ----------
@@ -145,6 +153,62 @@ test('SourceWizard.vue 具备四步结构与零服务器文件编辑语义', () 
   ]) {
     assert.ok(wizardVue.includes(anchor), `缺少锚点: ${anchor}`)
   }
+})
+
+test('D-030：activationEligible=false 是预览提示，不单独禁用画像激活按钮', () => {
+  const activateButton = wizardVue.match(
+    /<button\b[^>]*data-testid="wizard-activate-mapping-btn"[^>]*>/
+  )?.[0]
+  assert.ok(activateButton, '缺少画像激活按钮')
+  assert.match(activateButton, /:disabled="!report \|\| !sourceId \|\| sourcesLoading \|\| mappingBusy \|\| sourceBusy"/)
+  assert.doesNotMatch(activateButton, /activationEligible|summary\.eligible/)
+  assert.match(wizardVue, /activationEligible=false 不必然等于激活被拒/)
+})
+
+test('来源加载错误与真正空列表区分，并提供可访问的重试入口', () => {
+  assert.match(wizardVue, /sourcesError/)
+  assert.match(wizardVue, /v-else-if="sourcesError"[^>]*role="alert"/)
+  assert.match(wizardVue, /当前没有已登记的数据源/)
+  assert.match(wizardVue, /aria-label="重新加载数据源列表"/)
+})
+
+test('刷新来源列表立即作废旧预览，并在刷新期间阻止两类激活写操作', () => {
+  assert.match(wizardVue, /const loadSources = async \(\) => \{\s*if \(mappingBusy\.value \|\| sourceBusy\.value\) return[\s\S]*?previewRequestSequence \+= 1[\s\S]*?clearPreview\(\)/)
+  for (const id of ['wizard-activate-mapping-btn', 'wizard-activate-source-btn']) {
+    const button = wizardVue.match(new RegExp(`<button\\b[^>]*data-testid="${id}"[^>]*>`))?.[0]
+    assert.ok(button, `缺少激活按钮: ${id}`)
+    assert.match(button, /!sourceId \|\| sourcesLoading/)
+  }
+})
+
+test('激活请求期间锁定源与画像输入，事件处理器自身拒绝状态错配/重入', () => {
+  const activationLock = /:disabled="sourcesLoading \|\| previewBusy \|\| mappingBusy \|\| sourceBusy"/
+  for (const id of ['wizard-preset-select', 'wizard-sample-input', 'wizard-limit', 'wizard-profile-text']) {
+    const control = wizardVue.match(new RegExp(`<[^>]+(?:id|data-testid)="${id}"[^>]*>`))?.[0]
+    assert.ok(control, `缺少向导控件: ${id}`)
+    assert.match(control, activationLock, `激活中控件仍可编辑: ${id}`)
+  }
+  assert.match(wizardVue, /:disabled="previewDisabled \|\| sourcesLoading \|\| previewBusy \|\| mappingBusy \|\| sourceBusy"/)
+  assert.match(wizardVue, /const runPreview = async \(\) => \{\s*if \(sourcesLoading\.value \|\| mappingBusy\.value \|\| sourceBusy\.value\) return/)
+  assert.match(wizardVue, /const activateMapping = async \(\) => \{\s*if \(!report\.value \|\| !sourceId\.value \|\| previewBusy\.value \|\| mappingBusy\.value \|\| sourceBusy\.value\) return/)
+  assert.match(wizardVue, /const activateSource = async \(\) => \{\s*if \(!mappingDone\.value \|\| !sourceId\.value \|\| previewBusy\.value \|\| mappingBusy\.value \|\| sourceBusy\.value\) return/)
+})
+
+test('所有向导输入有可见标签；画像反馈用 live region，预览失败在表单旁可见', () => {
+  for (const id of ['wizard-preset-select', 'wizard-sample-input', 'wizard-limit', 'wizard-profile-text']) {
+    assert.ok(wizardVue.includes(`for="${id}"`), `缺少可见字段标签: ${id}`)
+  }
+  assert.match(wizardVue, /id="profile-check"[^>]*role="status"[^>]*aria-live="polite"/)
+  assert.match(wizardVue, /data-testid="wizard-preview-error"/)
+})
+
+test('修改数据源或预览输入会作废旧报告并要求重新预览', () => {
+  assert.match(wizardVue, /watch\(\[sourceId, presetRef, sampleRefInput, limit, profileText\]/)
+  assert.match(wizardVue, /if \(report\.value\) clearPreview\(\)/)
+  assert.match(wizardVue, /const clearPreview = \(\) =>/)
+  assert.match(wizardVue, /const requestSequence = \+\+previewRequestSequence/)
+  assert.match(wizardVue, /if \(requestSequence !== previewRequestSequence\) return/)
+  assert.match(wizardVue, /:disabled="sourcesLoading \|\| previewBusy \|\| mappingBusy \|\| sourceBusy"/)
 })
 
 test('向导激活顺序先映射后源；②在①成功前禁用', () => {

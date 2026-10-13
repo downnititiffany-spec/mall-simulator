@@ -28,9 +28,22 @@
       <div v-if="runResult" style="margin-top:12px;font-size:13px">
         <template v-if="runResult.runId">流水线 run#{{ runResult.runId }}：{{ runResult.status }}</template>
         <template v-else>{{ runResult.status }}</template>
-        <span v-if="runResult.stages">
-          （{{ runResult.stages.filter(s => s.status === 'SUCCESS').length }}/{{ runResult.stages.length }} 阶段成功）
-        </span>
+        <div v-if="runResult.runId" style="margin-top:4px;color:var(--gray-600)">
+          当前阶段：{{ runResult.currentStage || 'PENDING' }}
+          <span v-if="runResult.errorCode" style="margin-left:8px;color:#dc2626">失败码：{{ runResult.errorCode }}</span>
+          <span v-if="runIsActive(runResult.status)" style="margin-left:8px">正在刷新进度…</span>
+        </div>
+        <div v-if="runResult.pollingError" role="status" style="margin-top:4px;color:#b45309">
+          暂时无法刷新任务进度，将继续重试。
+        </div>
+        <table v-if="Array.isArray(runResult.stages) && runResult.stages.length" class="data-table" style="margin-top:8px;max-width:720px">
+          <thead><tr style="text-align:left;color:var(--gray-500)"><th style="padding:6px">阶段</th><th>状态</th><th>记录数</th><th>失败码</th></tr></thead>
+          <tbody><tr v-for="stage in runResult.stages" :key="stage.id" style="border-top:1px solid var(--gray-100)">
+            <td style="padding:6px">{{ stage.stageCode }}</td><td>{{ stage.status }}</td>
+            <td class="mono">{{ stage.records == null ? '—' : stage.records }}</td>
+            <td class="mono" style="color:#dc2626">{{ stage.errorCode || '—' }}</td>
+          </tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -78,11 +91,77 @@
               </span>
             </td>
             <td>{{ r.attemptNo }}</td>
-            <td><button class="btn btn-sm" v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="loading || busy">重试</button></td>
+            <td>
+              <button class="btn btn-sm" v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="loading || busy || recoveryBusy">重试</button>
+              <template v-if="canOperatePipeline">
+                <button class="btn btn-sm" v-if="r.status === 'FAILED'" @click="beginRecovery(r, 'resume')" :disabled="loading || busy || recoveryBusy">续跑</button>
+                <button class="btn btn-sm" v-if="r.status === 'FAILED'" @click="beginRecovery(r, 'retry-stage')" :disabled="loading || busy || recoveryBusy">按阶段重试</button>
+                <button class="btn btn-sm btn-danger" v-if="r.status === 'PENDING' || r.status === 'RUNNING'" @click="beginRecovery(r, 'mark-failed')" :disabled="loading || busy || recoveryBusy">标记失败…</button>
+              </template>
+            </td>
           </tr>
           <tr v-if="runRows.length === 0"><td colspan="9" class="el-empty">暂无运行记录</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">
+        启动恢复报告
+        <button class="btn btn-sm" style="float:right" @click="refreshRecoveryReport" :disabled="recoveryReportLoading">
+          {{ recoveryReportLoading ? '读取中…' : '刷新报告' }}
+        </button>
+      </div>
+      <div v-if="recoveryReportError" class="banner banner-error">恢复报告读取失败：{{ recoveryReportError }}</div>
+      <div v-else-if="recoveryReportLoading && !recoveryReport" class="state-line">读取本次平台启动后的恢复对账结果…</div>
+      <div v-else-if="!recoveryReport" class="el-empty">本次启动尚无可展示的恢复报告</div>
+      <template v-else>
+        <div class="table-hint">操作者 {{ recoveryReport.operator || '—' }} · 时间 {{ recoveryReport.at || '—' }} ·
+          重排待执行 {{ recoveryReport.requeuedPending?.length || 0 }} · 中断运行 {{ recoveryReport.interruptedRunning?.length || 0 }} ·
+          孤立作业标记 UNKNOWN {{ recoveryReport.orphanJobsMarkedUnknown ?? '—' }}</div>
+        <div v-if="recoveryReport.requeuedPending?.length" class="table-hint">已重排 run：{{ recoveryReport.requeuedPending.join(', ') }}</div>
+        <div v-if="recoveryReport.interruptedRunning?.length" class="table-hint">判定中断 run：{{ recoveryReport.interruptedRunning.join(', ') }}</div>
+        <div v-if="recoveryReport.errors?.length" class="banner banner-error">对账错误：{{ recoveryReport.errors.join('；') }}</div>
+        <div v-else class="table-hint">报告仅记录本次启动时发现的 PENDING/RUNNING 对账；可对 FAILED run 执行有理由的人工恢复。</div>
+      </template>
+    </div>
+
+    <div v-if="recoveryMessage" class="banner banner-stale" role="status">{{ recoveryMessage }}</div>
+    <div v-if="recoveryForm" class="chart-box">
+      <div class="chart-title">{{ recoveryActionTitle(recoveryForm.action) }}：run#{{ recoveryForm.runId }}</div>
+      <div v-if="recoveryFormError" class="banner banner-error">操作失败：{{ recoveryFormError }}</div>
+      <div v-if="recoveryForm.run" class="table-hint">
+        当前状态 {{ recoveryForm.run.status }} · 当前阶段 {{ recoveryForm.run.currentStage || '—' }} · 失败码 {{ recoveryForm.run.errorCode || '—' }}
+      </div>
+      <div v-if="recoveryForm.stages?.length" class="table-hint">
+        已记录阶段：{{ recoveryForm.stages.map(s => `${s.stageCode}:${s.status}`).join('，') }}
+      </div>
+      <div v-if="recoveryForm.action === 'mark-failed'" class="banner banner-warn">
+        此操作只改写平台 run 状态，不会停止进程或从执行队列移除任务。PENDING 也可能已经入队，RUNNING 也可能仍在执行；只有核实平台队列、提交进程和外部 Spark 作业均无待执行/运行任务后才可继续。
+      </div>
+      <div v-if="recoveryForm.action === 'retry-stage'" class="banner banner-warn">
+        按阶段重试会删除所选阶段及之后的阶段记录并重跑。请先核实所选阶段之前的产物可复用；本操作不会自动检查外部作业是否仍运行。
+      </div>
+      <label v-if="recoveryForm.action === 'retry-stage'" style="display:block;margin:8px 0">
+        起始阶段
+        <select v-model="recoveryForm.stage" :disabled="recoveryBusy" style="margin-left:6px;padding:4px">
+          <option v-for="stage in PIPELINE_STAGES" :key="stage" :value="stage">{{ stage }}</option>
+        </select>
+      </label>
+      <label style="display:block;margin:8px 0">恢复原因（必填）
+        <textarea v-model="recoveryForm.reason" rows="3" maxlength="500" :disabled="recoveryBusy"
+                  style="display:block;width:min(100%,720px);margin-top:4px;padding:8px"></textarea>
+      </label>
+      <label style="display:block;margin:8px 0">
+        <input v-model="recoveryForm.confirmed" type="checkbox" :disabled="recoveryBusy" />
+        {{ recoveryConfirmationText(recoveryForm.action) }}
+      </label>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" @click="executeRecovery" :disabled="recoveryBusy || !recoveryForm.run || !recoveryForm.reason.trim() || !recoveryForm.confirmed">
+          {{ recoveryBusy ? '提交中…' : '确认并提交' }}
+        </button>
+        <button class="btn" @click="closeRecoveryForm" :disabled="recoveryBusy">取消</button>
+      </div>
     </div>
   </div>
 </template>
@@ -95,6 +174,7 @@ import { useAnalysis } from '../composables/useAnalysis'
 import { buildFallbackContext, NON_ANALYSIS_ROW_KEYS } from '../utils/context.js'
 import { localIsoDay } from '../utils/localDate.js'
 import { pipelineRunRows } from '../utils/tables.js'
+import { requirePageResponse } from '../utils/pageResponse.js'
 
 const businessDate = ref(localIsoDay())
 const runtimeProfileId = ref(1)
@@ -105,6 +185,24 @@ const total = ref(0)
 const totalPages = ref(1)
 const sort = ref('createdAt,desc')
 const pageSize = ref(20)
+const runPollTimer = ref(null)
+let runPollGeneration = 0
+const recoveryReport = ref(null)
+const recoveryReportError = ref('')
+const recoveryReportLoading = ref(false)
+const recoveryForm = ref(null)
+const recoveryFormError = ref('')
+const recoveryBusy = ref(false)
+const recoveryMessage = ref('')
+const PIPELINE_STAGES = ['WAIT_LANDING', 'INIT_SCHEMA', 'LOAD_ODS', 'BUILD_DWD', 'BUILD_DWS', 'BUILD_ADS', 'QUALITY_CHECK', 'PUBLISH_METRIC']
+const canOperatePipeline = computed(() => {
+  try {
+    const user = JSON.parse(localStorage.getItem('analytics_user') || 'null')
+    return ['admin', 'data_dev', 'operator'].includes(user?.role)
+  } catch (_) {
+    return false
+  }
+})
 
 // 取数 fetcher：/pipeline-runs/page 是分页对象而非分析信封 ⇒ 在这里用 buildFallbackContext
 // 拼响应级上下文（与 Decisions.vue / Ops.vue 同形）；快照号只取实例的 targetSnapshotId
@@ -112,11 +210,11 @@ const pageSize = ref(20)
 // 业务时间/数据更新时间/口径版本/质量状态是**响应级**字段、运行列表接口并不提供 ⇒ 交缺失清单如实标注，
 // 不从某一实例行挑一个值冒充整页口径。加载状态**一律**交给唯一属主 useAnalysis，页内不自造状态机。
 async function fetchRuns(params, signal) {
-  const raw = await api.pipelineRunsPage(params, { signal })
-  const list = raw && Array.isArray(raw.items) ? raw.items : []
-  total.value = Number.isFinite(Number(raw && raw.total)) ? Number(raw.total) : 0
-  totalPages.value = Math.max(1, Number(raw && raw.totalPages) || 1)
-  page.value = Math.max(1, Number(raw && raw.page) || 1)
+  const raw = requirePageResponse(await api.pipelineRunsPage(params, { signal }), '流水线运行列表')
+  const list = raw.items
+  total.value = raw.total
+  totalPages.value = raw.totalPages
+  page.value = raw.page
   const ctx = buildFallbackContext({
     rows: list,
     warnings: ['ENVELOPE_MISSING'],
@@ -165,6 +263,106 @@ function changeSort() {
   return load({ page: 1, size: pageSize.value, sort: sort.value })
 }
 
+async function refreshRecoveryReport() {
+  if (recoveryReportLoading.value) return
+  recoveryReportLoading.value = true
+  recoveryReportError.value = ''
+  try {
+    recoveryReport.value = await api.pipelineRecoveryReport()
+  } catch (e) {
+    recoveryReportError.value = (e && (e.message || e.code)) || '读取失败'
+  } finally {
+    recoveryReportLoading.value = false
+  }
+}
+
+function recoveryActionTitle(action) {
+  return ({ resume: '续跑失败实例', 'mark-failed': '人工标记失败', 'retry-stage': '从指定阶段重跑' })[action] || '恢复流水线'
+}
+
+function recoveryConfirmationText(action) {
+  if (action === 'mark-failed') return '我已核实该 run 不在执行队列中，平台提交进程和外部 Spark 作业均无待执行/运行任务；此操作不会停止它们。'
+  if (action === 'retry-stage') return '我已核对起始阶段之前的产物可复用，并确认没有相关任务仍在队列或运行。'
+  return '我已核实该实例为失败/中断状态，且没有相关任务仍在队列或运行。'
+}
+
+async function beginRecovery(row, action) {
+  if (recoveryBusy.value || busy.value || loading.value || !canOperatePipeline.value) return
+  recoveryFormError.value = ''
+  recoveryMessage.value = ''
+  recoveryBusy.value = true
+  try {
+    const run = await api.pipelineRun(row.id)
+    const stages = Array.isArray(run && run.stages) ? run.stages : []
+    const incomplete = stages.find((stage) => stage && stage.status !== 'SUCCESS' && PIPELINE_STAGES.includes(stage.stageCode))
+    const currentStage = run && PIPELINE_STAGES.includes(run.currentStage) ? run.currentStage : null
+    recoveryForm.value = {
+      action,
+      runId: row.id,
+      run,
+      stages,
+      stage: (incomplete && incomplete.stageCode) || currentStage || PIPELINE_STAGES[0],
+      reason: '',
+      confirmed: false
+    }
+  } catch (e) {
+    recoveryForm.value = { action, runId: row.id, run: null, stages: [], stage: PIPELINE_STAGES[0], reason: '', confirmed: false }
+    recoveryFormError.value = (e && (e.message || e.code)) || '无法读取实例详情'
+  } finally {
+    recoveryBusy.value = false
+  }
+}
+
+function closeRecoveryForm() {
+  if (recoveryBusy.value) return
+  recoveryForm.value = null
+  recoveryFormError.value = ''
+}
+
+async function executeRecovery() {
+  const form = recoveryForm.value
+  if (!form || !form.run || recoveryBusy.value || !form.reason.trim() || !form.confirmed) return
+  recoveryBusy.value = true
+  recoveryFormError.value = ''
+  recoveryMessage.value = ''
+  try {
+    const fresh = await api.pipelineRun(form.runId)
+    if (!fresh || fresh.status !== form.run.status || fresh.currentStage !== form.run.currentStage
+        || fresh.updatedAt !== form.run.updatedAt) {
+      throw new Error('运行状态已变化。请刷新列表并重新打开恢复操作，避免使用过期详情。')
+    }
+    if ((form.action === 'resume' || form.action === 'retry-stage') && fresh.status !== 'FAILED') {
+      throw new Error('只有 FAILED 实例可续跑或按阶段重跑。')
+    }
+    if (form.action === 'mark-failed' && !['PENDING', 'RUNNING'].includes(fresh.status)) {
+      throw new Error('只有 PENDING/RUNNING 实例可由管理员判定失败。')
+    }
+    let result
+    if (form.action === 'resume') result = await api.resumePipelineRun(form.runId, form.reason.trim())
+    else if (form.action === 'mark-failed') result = await api.markPipelineRunFailed(form.runId, form.reason.trim())
+    else if (form.action === 'retry-stage') result = await api.retryPipelineRunFromStage(form.runId, form.stage, form.reason.trim())
+    else throw new Error('未知的恢复操作')
+
+    runResult.value = result
+    recoveryMessage.value = `run#${form.runId} 操作已被服务端接受，当前状态：${(result && result.status) || '未提供'}`
+    recoveryForm.value = null
+    if (result && result.runId && runIsActive(result.status)) startRunPolling(result.runId)
+    await refreshRunsAfterSubmission()
+  } catch (e) {
+    recoveryFormError.value = (e && (e.message || e.code)) || '操作失败'
+  } finally {
+    recoveryBusy.value = false
+  }
+}
+
+async function refreshRunsAfterSubmission() {
+  try {
+    await load({ page: page.value, size: pageSize.value, sort: sort.value })
+  } catch (_) {
+    // useAnalysis owns the list error state; a list read failure must not rewrite a created run as failed.
+  }
+}
+
 async function runOnce() {
   if (busy.value || loading.value) return
   // 本次人工触发的输入必须在任何 await 之前冻结；否则 ingestionRun/3 秒等待期间修改表单，
@@ -172,6 +370,7 @@ async function runOnce() {
   const requestedBusinessDate = businessDate.value
   const requestedRuntimeProfileId = runtimeProfileId.value
   busy.value = true
+  stopRunPolling()
   runResult.value = null
   try {
     // 一次人工触发使用同一个 operationId 同时作为 sourceDataVersion 与 Idempotency-Key：
@@ -187,8 +386,9 @@ async function runOnce() {
       runtimeProfileId: requestedRuntimeProfileId, pipelineCode: 'ODS_TO_ADS',
       businessTime: requestedBusinessDate + 'T00:00:00', sourceDataVersion: operationId
     }, operationId)
+    if (runResult.value && runResult.value.runId) startRunPolling(runResult.value.runId)
     page.value = 1
-    await load({ page: page.value, size: pageSize.value, sort: sort.value })
+    await refreshRunsAfterSubmission()
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
   } finally {
@@ -199,10 +399,12 @@ async function runOnce() {
 async function retry(id) {
   if (busy.value || loading.value) return
   busy.value = true
+  stopRunPolling()
   runResult.value = null
   try {
     runResult.value = await api.retryPipelineRun(id)
-    await load({ page: page.value, size: pageSize.value, sort: sort.value })
+    if (runResult.value && runResult.value.runId) startRunPolling(runResult.value.runId)
+    await refreshRunsAfterSubmission()
   } catch (e) {
     runResult.value = { status: 'FAILED: ' + (e.message || e) }
   } finally {
@@ -210,6 +412,49 @@ async function retry(id) {
   }
 }
 
-onMounted(refresh)
-onBeforeUnmount(() => analysis.cancel())
+const runIsActive = (status) => status === 'PENDING' || status === 'RUNNING'
+
+function stopRunPolling() {
+  runPollGeneration += 1
+  if (runPollTimer.value !== null) {
+    clearTimeout(runPollTimer.value)
+    runPollTimer.value = null
+  }
+}
+
+function startRunPolling(runId) {
+  stopRunPolling()
+  const generation = runPollGeneration
+  const poll = async () => {
+    if (generation !== runPollGeneration) return
+    try {
+      const latest = await api.pipelineRun(runId)
+      if (generation !== runPollGeneration) return
+      runResult.value = latest
+      if (!runIsActive(latest && latest.status)) {
+        runPollTimer.value = null
+        try {
+          await load({ page: page.value, size: pageSize.value, sort: sort.value })
+        } catch (_) {
+          // A list refresh failure must not restart polling for an already terminal run.
+        }
+        return
+      }
+    } catch (_) {
+      if (generation !== runPollGeneration) return
+      runResult.value = { ...runResult.value, pollingError: true }
+    }
+    runPollTimer.value = setTimeout(poll, 1500)
+  }
+  runPollTimer.value = setTimeout(poll, 800)
+}
+
+onMounted(() => {
+  refresh()
+  refreshRecoveryReport()
+})
+onBeforeUnmount(() => {
+  stopRunPolling()
+  analysis.cancel()
+})
 </script>

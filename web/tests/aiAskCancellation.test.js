@@ -49,5 +49,5 @@ test('ask 保留序号守卫，取消后的旧响应不得重新写回页面状�
 
 test('在途分析或草稿创建期间推荐问题和历史回填均禁用，避免跨操作状态错位', () => {
   assert.match(source, /v-for="q in recommended"[^>]*@click="askPreset\(q\)"[^>]*:disabled="busy \|\| draftBusy"/)
-  assert.match(source, /v-for="h in history"[^>]*@click="question = h\.question"[^>]*:disabled="busy \|\| draftBusy"/)
+  assert.match(source, /<button class="history-question" @click="question = h\.question" :disabled="busy \|\| draftBusy"/)
 })

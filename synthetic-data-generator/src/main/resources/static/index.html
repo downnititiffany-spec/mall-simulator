@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f7f6" />
+    <title>数据工坊 · 生成器控制台</title>
+    <link rel="stylesheet" href="/generator.css" />
+    <script type="module" src="/generator.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳转到主要内容</a>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="数据工坊首页">
+        <span class="brand-mark" aria-hidden="true">G</span>
+        <span><strong>数据工坊</strong><small>GENERATOR CONSOLE</small></span>
+      </a>
+      <div class="service-state"><span class="state-dot" aria-hidden="true"></span><span>独立生成服务</span><code>8092</code></div>
+    </header>
+
+    <main id="main" class="page-shell">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">SYNTHETIC DATA OPERATIONS</p>
+          <h1>让每一批测试数据，都有来处</h1>
+          <p class="intro-copy">使用已冻结的生成计划运行数据任务，检查商城连接，并追踪运行状态与产物。生成器独立于商城和分析平台。</p>
+        </div>
+        <div class="intro-note"><span class="note-icon" aria-hidden="true">i</span><span>当前页面只调用生成器已有 API；计划的创建与版本管理仍由 CLI 完成。</span></div>
+      </section>
+
+      <div id="page-message" class="notice hidden" role="status" aria-live="polite"></div>
+
+      <div class="workspace-grid">
+        <div class="main-column">
+          <section class="panel launch-panel" aria-labelledby="launch-title">
+            <div class="panel-heading">
+              <div><p class="eyebrow">01 / RUN</p><h2 id="launch-title">启动一个生成计划</h2></div>
+              <span class="step-badge">异步任务</span>
+            </div>
+            <p class="section-copy">运行只能引用已有的不可变计划版本。请从计划维护者处取得准确的计划编号与版本。</p>
+            <form id="start-form" class="run-form">
+              <div class="field-grid">
+                <label class="field"><span>计划编号</span><input id="plan-id" name="plan_id" required maxlength="128" autocomplete="off" placeholder="例如：daily-smoke" /><small>必填 · 区分大小写</small></label>
+                <label class="field"><span>计划版本</span><input id="plan-version" name="version" required type="number" min="1" step="1" inputmode="numeric" placeholder="例如：3" /><small>必填 · 正整数</small></label>
+              </div>
+              <div class="warning-box" role="note">
+                <span class="warning-symbol" aria-hidden="true">!</span>
+                <div><strong>启动会产生真实副作用</strong><p>如果该计划使用 MALL_API，任务会通过商城公开接口写入数据。启动前请确认目标商城、测试环境和计划版本；不要对生产商城试跑。</p></div>
+              </div>
+              <label class="confirm-line"><input id="side-effect-confirm" type="checkbox" /><span>我已确认这是获准的测试目标，并接受该计划可能写入商城数据。</span></label>
+              <div class="form-actions"><button id="start-button" class="button button-primary" type="submit" disabled><span class="button-label">启动计划</span><span class="button-arrow" aria-hidden="true">→</span></button><span class="helper-inline">计划本身不会在此页面修改</span></div>
+            </form>
+          </section>
+
+          <section class="panel run-panel" aria-labelledby="run-title">
+            <div class="panel-heading">
+              <div><p class="eyebrow">02 / TRACE</p><h2 id="run-title">运行追踪</h2></div>
+              <button id="refresh-run" class="button button-quiet" type="button" disabled>刷新状态</button>
+            </div>
+            <form id="lookup-form" class="lookup-form">
+              <label class="field field-inline" for="run-id"><span>按运行编号查询</span><div class="input-action"><input id="run-id" name="run_id" required autocomplete="off" placeholder="粘贴 runId" /><button class="button button-secondary" type="submit">查询</button></div></label>
+            </form>
+            <div id="recent-runs" class="recent-runs hidden"><span class="recent-label">本机最近查看</span><div id="recent-list" class="chip-list"></div></div>
+            <div id="run-empty" class="empty-state"><span class="empty-icon" aria-hidden="true">↗</span><strong>还没有选中运行</strong><p>启动计划后会自动追踪，也可以粘贴已有 runId 查询。</p></div>
+            <div id="run-content" class="run-content hidden" aria-live="polite">
+              <div id="run-result-warning" class="outcome-warning hidden" role="alert"><div class="warning-symbol" aria-hidden="true">!</div><div><strong>商城写入结果待核实</strong><p>请求可能已经被商城执行。先到目标商城核对订单或操作状态；不要盲目重新运行。</p><label class="outcome-reconcile"><input id="outcome-reconciled" type="checkbox" /><span>我已在商城侧核对该请求状态，并按核对结果处置。</span></label></div></div>
+              <div class="run-summary">
+                <div><span class="micro-label">运行编号</span><code id="run-value-id"></code></div>
+                <span id="run-status" class="status-pill">—</span>
+              </div>
+              <dl class="run-metrics">
+                <div><dt>成功计数</dt><dd id="run-success">—</dd></div>
+                <div><dt>失败计数</dt><dd id="run-failed">—</dd></div>
+                <div><dt>计划版本</dt><dd id="run-version">—</dd></div>
+                <div><dt>目标版本</dt><dd id="target-version">—</dd></div>
+              </dl>
+              <div id="run-error" class="run-error hidden"></div>
+              <div class="run-times"><span id="run-started"></span><span id="run-finished"></span></div>
+              <div class="run-actions"><button id="cancel-run" class="button button-danger-outline hidden" type="button">请求取消</button><span id="poll-hint" class="helper-inline"></span></div>
+              <div class="artifact-section"><div class="artifact-heading"><h3>运行产物</h3><span id="artifact-count" class="count-label">尚未加载</span></div><div id="artifact-list" class="artifact-list"><p class="muted">查询运行后查看制品校验信息。</p></div><p id="journal-content-note" class="journal-content-note hidden">操作流水文件当前只显示路径与校验信息，服务 API 未提供浏览器内查看内容的接口。若商城操作失败或结果不明，请在受控环境核对该 JSONL 和商城状态；不要仅凭运行总状态认定每笔操作成功。</p></div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="side-column">
+          <section class="panel side-panel" aria-labelledby="targets-title">
+            <div class="panel-heading"><div><p class="eyebrow">03 / TARGETS</p><h2 id="targets-title">目标商城</h2></div><button id="refresh-targets" class="icon-button" type="button" aria-label="刷新目标商城列表" title="刷新列表">↻</button></div>
+            <p class="section-copy">这里只展示已保存的目标。连通性测试会访问对应商城。</p>
+            <div id="target-list" class="target-list"><div class="skeleton" aria-label="正在加载目标商城"></div></div>
+          </section>
+
+          <section class="panel side-panel" aria-labelledby="scenarios-title">
+            <div class="panel-heading"><div><p class="eyebrow">04 / SCENARIOS</p><h2 id="scenarios-title">生成场景</h2></div></div>
+            <p class="section-copy">场景来自生成器服务定义；具体运行参数以计划版本为准。</p>
+            <div id="scenario-list" class="scenario-list"><div class="skeleton" aria-label="正在加载场景"></div></div>
+          </section>
+        </aside>
+      </div>
+
+      <footer class="page-footer"><span>数据生成与分析服务分离 · 所有时间由服务端记录</span><span>GENERATOR / V1</span></footer>
+    </main>
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  </body>
+</html>

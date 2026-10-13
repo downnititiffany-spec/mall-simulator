@@ -1,18 +1,19 @@
 package com.graduation.analytics.ai.sql;
 
+import com.graduation.analytics.runtime.ActiveRuntimeProfileIdProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 快照作用域解析器（R8-2 契约 §2.2）：AI 问数在生成 SQL **之前**必须先拿到
@@ -32,31 +33,26 @@ public class AiScopeResolver {
 
     /** 契约 §2.2 冻结查询：同一 runtime_profile 下最多一个 ACTIVE（DB 层唯一索引保证） */
     public static final String ACTIVE_SNAPSHOT_SQL =
-            "SELECT snapshot_id, business_time, definition_version FROM metric_snapshot "
-                    + "WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1";
+            "SELECT snapshot_id, business_time, definition_version, source_id FROM metric_snapshot "
+                    + "WHERE runtime_profile_id = ? AND status='ACTIVE' ORDER BY id DESC LIMIT 1";
     public static final String PUBLISHED_SNAPSHOT_SQL =
-            "SELECT snapshot_id, business_time, definition_version FROM metric_snapshot "
+            "SELECT snapshot_id, business_time, definition_version, source_id FROM metric_snapshot "
                     + "WHERE snapshot_id = ? AND status IN ('ACTIVE','ARCHIVED') LIMIT 1";
 
     private final JdbcTemplate metricReadJdbcTemplate;
+    private final ActiveRuntimeProfileIdProvider activeRuntimeProfileIdProvider;
 
-    /**
-     * 生产构造：只读源缺失（Bean 为 null）时保持 jdbcTemplate=null，调用 resolve() 即 fail-closed。
-     *
-     * <p>{@code @Autowired} 必须标在**构造器**上（不是参数上）：本类有两个 public 构造器
-     * （另一个给测试直接注入 JdbcTemplate），Spring 无法自行择一，会退化成"找无参构造"并启动失败——
-     * 2026-09-11 真机启动实测踩到（MockMvc 测试手工 new，覆盖不到装配路径）。</p>
-     */
+    /** Reuse the centrally configured metric_read template so scope queries inherit its timeout. */
     @Autowired
-    public AiScopeResolver(@Autowired(required = false)
-                           @Qualifier("metricReadDataSource") DataSource metricReadDataSource) {
-        this.metricReadJdbcTemplate = metricReadDataSource == null
-                ? null : new JdbcTemplate(metricReadDataSource);
+    public AiScopeResolver(@Qualifier("metricReadJdbcTemplate") JdbcTemplate metricReadJdbcTemplate,
+                           ActiveRuntimeProfileIdProvider activeRuntimeProfileIdProvider) {
+        this.metricReadJdbcTemplate = metricReadJdbcTemplate;
+        this.activeRuntimeProfileIdProvider = activeRuntimeProfileIdProvider;
     }
 
-    /** 测试/装配用构造：直接给定只读 JdbcTemplate（必须是 metricReadDataSource 上的那一个） */
+    /** Compatibility constructor for focused unit tests; default resolution fails closed without a profile provider. */
     public AiScopeResolver(JdbcTemplate metricReadJdbcTemplate) {
-        this.metricReadJdbcTemplate = metricReadJdbcTemplate;
+        this(metricReadJdbcTemplate, null);
     }
 
     /**
@@ -82,12 +78,22 @@ public class AiScopeResolver {
         boolean explicit = requested != null && !requested.isEmpty();
         List<Map<String, Object>> rows;
         try {
-            rows = explicit
-                    ? metricReadJdbcTemplate.queryForList(PUBLISHED_SNAPSHOT_SQL, requested)
-                    : metricReadJdbcTemplate.queryForList(ACTIVE_SNAPSHOT_SQL);
+            if (explicit) {
+                rows = metricReadJdbcTemplate.queryForList(PUBLISHED_SNAPSHOT_SQL, requested);
+            } else {
+                Optional<Long> activeProfileId = activeRuntimeProfileIdProvider == null
+                        ? Optional.empty() : activeRuntimeProfileIdProvider.activeRuntimeProfileId();
+                if (activeProfileId.isEmpty()) {
+                    throw new AiSqlException(SqlPolicy.NO_ACTIVE_SNAPSHOT,
+                            "没有唯一的 ACTIVE RuntimeProfile，AI 问数拒绝解析默认快照（fail-closed）");
+                }
+                rows = metricReadJdbcTemplate.queryForList(ACTIVE_SNAPSHOT_SQL, activeProfileId.get());
+            }
+        } catch (AiSqlException e) {
+            throw e;
         } catch (RuntimeException e) {
             throw new AiSqlException(SqlPolicy.METRIC_READ_SOURCE_MISSING,
-                    "读取指标快照作用域失败（fail-closed）: " + e.getMessage(), e);
+                    "读取指标快照作用域失败（fail-closed）");
         }
         if (rows == null || rows.isEmpty()) {
             if (explicit) {
@@ -105,7 +111,17 @@ public class AiScopeResolver {
             throw new AiSqlException(SqlPolicy.NO_ACTIVE_SNAPSHOT,
                     "所选快照行缺少 snapshot_id/business_time，无法确定问数作用域（fail-closed）");
         }
-        AiScope scope = AiScope.of(snapshotId, definitionVersion == null ? "" : definitionVersion, businessDate);
+        Long sourceId = null;
+        if (row.get("source_id") != null) {
+            try {
+                sourceId = Long.valueOf(row.get("source_id").toString());
+                if (sourceId <= 0) throw new NumberFormatException();
+            } catch (NumberFormatException e) {
+                throw new AiSqlException(SqlPolicy.SNAPSHOT_NOT_AVAILABLE,
+                        "快照来源身份无效，无法确定问数作用域（fail-closed）");
+            }
+        }
+        AiScope scope = AiScope.of(snapshotId, definitionVersion == null ? "" : definitionVersion, businessDate, sourceId);
         log.debug("AI 问数作用域: snapshot={} businessDate={} 允许区间=[{}, {}]",
                 scope.snapshotId(), scope.businessDate(), scope.minAllowedDate(), scope.businessDate());
         return scope;

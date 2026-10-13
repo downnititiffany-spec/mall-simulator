@@ -91,7 +91,7 @@ public class SourceProfileValidator {
         try {
             root = objectMapper.readTree(Files.readString(file, StandardCharsets.UTF_8));
         } catch (IOException e) {
-            log.warn("源画像解析失败 path={}: {}", repoRelativePath, e.getMessage());
+            log.warn("源画像解析失败 path={} causeType={}", repoRelativePath, e.getClass().getSimpleName());
             return new ProfileCheck(true, false, false, false, List.of(), null, null, List.of(), null,
                     "画像文件不是合法 JSON（解析失败）：" + repoRelativePath);
         }

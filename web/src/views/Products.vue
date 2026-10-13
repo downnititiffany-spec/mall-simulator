@@ -73,6 +73,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
+import { requireProductsPageResponse } from '../utils/productsPageResponse.js'
 import { chartStateForRows, ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent, isNumeric } from '../utils/number'
 import { productHeatOption, productConversionOption } from '../utils/chartOptions'
@@ -86,7 +87,7 @@ const sortKey = ref('rank')
 const sortOrder = ref('asc')
 
 const analysis = useAnalysis({
-  fetcher: (params, signal) => api.products(params, { signal }),
+  fetcher: async (params, signal) => requireProductsPageResponse(await api.products(params, { signal })),
   rowKeys: ENDPOINT_ROW_KEYS.products,
   pinSnapshot: true,
   defaults: { hot: [], conversion: [], topN: null, page: 1, size: 10, total: null, hasMore: false }

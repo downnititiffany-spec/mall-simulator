@@ -2,8 +2,8 @@
   <div>
     <div class="page-title">运维中心</div>
 
-    <!-- 运维页数据来源为 /metrics/*、/ai/audit/*、/admin/users 等非统一信封接口：
-         上下文由响应内可见字段拼装，取不到的字段逐项标注「接口未提供」，不编造。 -->
+    <!-- 运维页主体使用 /metrics/*、/ai/audit/*、/admin/users 等接口；
+         所选快照指标上下文使用 /dashboards/overview 的统一信封。字段缺失时不编造。 -->
     <div class="chart-box">
       <div class="chart-title">
         运维数据上下文
@@ -62,11 +62,36 @@
       </table>
       </div>
       <div v-else class="el-empty">暂无用户或该接口未返回数据</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+        <span>共 {{ userTotal }} 条 · 第 {{ userPage }} / {{ userTotalPages }} 页</span>
+        <select v-model="userSort" :disabled="loading || busy" @change="changeUserSort"><option value="id,asc">ID（升序）</option><option value="username,asc">用户名（升序）</option><option value="role,asc">角色（升序）</option><option value="createdAt,desc">创建时间（新到旧）</option></select>
+        <button class="btn btn-sm" :disabled="loading || busy || userPage <= 1" @click="changeUserPage(userPage - 1)">上一页</button>
+        <button class="btn btn-sm" :disabled="loading || busy || userPage >= userTotalPages" @click="changeUserPage(userPage + 1)">下一页</button>
+        <select v-model.number="userPageSize" :disabled="loading || busy" @change="changeUserPageSize"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
+      </div>
       <div v-if="actionError" class="table-hint table-hint-error">用户操作失败：{{ actionError }}</div>
     </div>
 
     <div class="chart-box">
       <div class="chart-title">快照版本（BUILDING→VERIFYING→ACTIVE / ARCHIVED / FAILED）</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <label style="font-size:13px">排序
+          <select v-model="snapshotSort" :disabled="loading || busy" @change="changeSnapshotSort" style="margin-left:6px;padding:4px">
+            <option value="id,desc">快照 ID（新到旧）</option>
+            <option value="createdAt,desc">创建时间（新到旧）</option>
+            <option value="publishedAt,desc">发布时间（新到旧）</option>
+            <option value="status,asc">状态</option>
+          </select>
+        </label>
+        <label style="font-size:13px">每页
+          <select v-model.number="snapshotPageSize" :disabled="loading || busy" @change="changeSnapshotPageSize" style="margin-left:6px;padding:4px">
+            <option :value="10">10</option><option :value="20">20</option><option :value="50">50</option><option :value="100">100</option>
+          </select>
+        </label>
+        <span style="font-size:13px;color:var(--gray-500)">共 {{ snapshotTotal }} 条 · 第 {{ snapshotPage }} / {{ snapshotTotalPages }} 页</span>
+        <button class="btn btn-sm" :disabled="loading || busy || snapshotPage <= 1" @click="changeSnapshotPage(snapshotPage - 1)">上一页</button>
+        <button class="btn btn-sm" :disabled="loading || busy || snapshotPage >= snapshotTotalPages" @click="changeSnapshotPage(snapshotPage + 1)">下一页</button>
+      </div>
       <DataTable :table="snapshotTable" :is-active="isActiveSnapshotRow" action-label="操作"
                  :on-action="viewSnapshotRow" :cell-color="snapshotCellColor"
                  empty-text="暂无快照或该接口未返回数据" />
@@ -84,9 +109,17 @@
         </div>
         <div class="meta-row" style="margin-bottom:8px">
           <span class="meta-item">指标快照 <b class="mono">{{ metricExportContext.snapshotId || '无' }}</b></span>
+          <span class="meta-item">业务来源 ID <b class="mono">{{ metricExportContext.sourceId ?? '未知' }}</b></span>
+          <span class="meta-item">发布方 <b class="mono">{{ metricExportContext.source || '未知' }}</b></span>
           <span class="meta-item">口径版本 <b class="mono">{{ metricExportContext.definitionVersion || '未知' }}</b></span>
           <span class="meta-item">业务时间 <b class="mono">{{ fmtDateTime(metricExportContext.businessTime) }}</b></span>
           <span class="meta-item">数据更新 <b class="mono">{{ fmtDateTime(metricExportContext.dataUpdatedAt) }}</b></span>
+          <span class="meta-item">质量状态 <b class="mono">{{ metricExportContext.qualityStatus || 'UNKNOWN' }}</b></span>
+        </div>
+        <div v-if="metricExportContext.warnings && metricExportContext.warnings.length" class="table-hint">
+          数据提示：<span v-for="(warning, i) in metricExportContext.warnings" :key="i">
+            {{ warningTextAll(warning) }}<template v-if="i < metricExportContext.warnings.length - 1">；</template>
+          </span>
         </div>
         <div v-if="metricState === 'loading'" class="state-line">指标加载中…</div>
         <div v-else-if="metricState === 'error'" class="banner banner-error">指标加载失败：{{ metricError || '未知原因' }}</div>
@@ -103,8 +136,7 @@
           </tbody>
         </table>
         <div class="table-hint">
-          说明：/metrics/overview 返回指标数组（非统一信封），快照与口径版本取自指标行本身；
-          业务时间、数据更新时间、质量状态、生效筛选不在此接口返回内，已在上方上下文如实标注为「接口未提供」。
+          上下文来自所选快照的 /dashboards/overview 信封；发布方与业务来源 ID 含义不同，缺失值按接口原样显示为未知。
         </div>
       </div>
     </div>
@@ -148,7 +180,79 @@
     </div>
 
     <div class="chart-box">
+      <div class="chart-title">采集运行状态与最近批次</div>
+      <div v-if="ingestionStatus" class="meta-row" style="margin-bottom:8px">
+        <span class="meta-item">运行环境 <b>{{ ingestionStatus.profileState || '接口未提供' }}<template v-if="ingestionStatus.runtimeProfileId"> / {{ ingestionStatus.runtimeProfileId }}</template></b></span>
+        <span class="meta-item">来源 ID <b>{{ ingestionStatus.sourceId ?? '接口未提供' }}</b></span>
+        <span class="meta-item">扫描目录文件数 <b>{{ ingestionStatus.pendingFiles ?? '接口未提供' }}</b></span>
+        <span class="meta-item">扫描目录字节数 <b>{{ ingestionStatus.pendingBytes ?? '接口未提供' }}</b></span>
+        <span class="meta-item">checkpoint 文件 <b>{{ ingestionStatus.checkpointFiles ?? '接口未提供' }}</b></span>
+        <span class="meta-item">仍有可消费行的文件数 <b>{{ ingestionStatus.newFileCount ?? '接口未提供' }}</b></span>
+        <span class="meta-item">最近接收 <b>{{ fmtDateTime(ingestionStatus.lastArrivalAt) }}</b></span>
+      </div>
+      <div v-if="ingestionStatus && ingestionStatus.landingError" class="table-hint table-hint-error">
+        Landing 检查异常：{{ ingestionStatus.landingError }}
+      </div>
+      <div v-if="ingestionBatches.length" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">
+        <label style="font-size:13px">批次排序
+          <select v-model="ingestionSort" :disabled="loading || busy" @change="changeIngestionSort" style="margin-left:6px;padding:4px">
+            <option value="id,desc">批次 ID（新到旧）</option>
+            <option value="startTime,desc">开始时间（新到旧）</option>
+            <option value="status,asc">状态（升序）</option>
+          </select>
+        </label>
+        <label style="font-size:13px">每页
+          <select v-model.number="ingestionPageSize" :disabled="loading || busy" @change="changeIngestionPageSize" style="margin-left:6px;padding:4px">
+            <option :value="10">10</option><option :value="20">20</option><option :value="50">50</option>
+          </select>
+        </label>
+        <span style="font-size:13px;color:var(--gray-500)">共 {{ ingestionTotal }} 条 · 第 {{ ingestionPage }} / {{ ingestionTotalPages }} 页</span>
+        <button class="btn btn-sm" :disabled="loading || busy || ingestionPage <= 1" @click="changeIngestionPage(ingestionPage - 1)">上一页</button>
+        <button class="btn btn-sm" :disabled="loading || busy || ingestionPage >= ingestionTotalPages" @click="changeIngestionPage(ingestionPage + 1)">下一页</button>
+      </div>
+      <table v-if="ingestionBatches.length" class="data-table">
+        <thead><tr style="text-align:left;color:var(--gray-500)">
+          <th style="padding:6px">批次 ID</th><th>批次号</th><th>来源 / RuntimeProfile</th><th>状态</th><th>记录数</th><th>错误数</th><th>隔离数</th><th>开始时间</th><th>结束时间</th>
+        </tr></thead>
+        <tbody>
+          <tr v-for="batch in visibleIngestionBatches" :key="batch.id" style="border-top:1px solid var(--gray-100)">
+            <td class="mono" style="padding:6px">{{ batch.id ?? '接口未提供' }}</td>
+            <td class="mono">{{ batch.batchNo || '接口未提供' }}</td>
+            <td class="mono">{{ batch.sourceId ?? '未知来源' }} / {{ batch.runtimeProfileId ?? '未知环境' }}</td>
+            <td><span class="badge" :class="batch.status === 'SUCCESS' ? 'badge-success' : batch.status === 'FAILED' || batch.status === 'QUARANTINED' ? 'badge-danger' : 'badge-neutral'">{{ batch.status || '接口未提供' }}</span></td>
+            <td class="mono">{{ batch.recordCount ?? '接口未提供' }}</td>
+            <td class="mono">{{ batch.errorCount ?? '接口未提供' }}</td>
+            <td class="mono">{{ batch.quarantineCount ?? '接口未提供' }}</td>
+            <td class="mono">{{ fmtDateTime(batch.startTime) }}</td>
+            <td class="mono">{{ fmtDateTime(batch.endTime) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="el-empty">暂无采集批次或接口未返回数据</div>
+      <div class="table-hint">批次表由服务端按页读取全量历史记录，排序仅允许 ID、开始时间和状态；状态、计数与时间来自只读接口，也不表示上游持续在线或完整链路已验收。</div>
+    </div>
+
+    <div class="chart-box">
       <div class="chart-title">数据质量规则结果（金额对账失败会阻断发布）</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <label style="font-size:13px">排序
+          <select v-model="qualitySort" :disabled="loading || busy" @change="changeQualitySort" style="margin-left:6px;padding:4px">
+            <option value="id,desc">记录 ID（新到旧）</option>
+            <option value="createdAt,desc">创建时间（新到旧）</option>
+            <option value="ruleCode,asc">规则编码</option>
+            <option value="layer,asc">数据层</option>
+            <option value="passed,asc">检查结果</option>
+          </select>
+        </label>
+        <label style="font-size:13px">每页
+          <select v-model.number="qualityPageSize" :disabled="loading || busy" @change="changeQualityPageSize" style="margin-left:6px;padding:4px">
+            <option :value="10">10</option><option :value="20">20</option><option :value="50">50</option><option :value="100">100</option>
+          </select>
+        </label>
+        <span style="font-size:13px;color:var(--gray-500)">共 {{ qualityTotal }} 条 · 第 {{ qualityPage }} / {{ qualityTotalPages }} 页</span>
+        <button class="btn btn-sm" :disabled="loading || busy || qualityPage <= 1" @click="changeQualityPage(qualityPage - 1)">上一页</button>
+        <button class="btn btn-sm" :disabled="loading || busy || qualityPage >= qualityTotalPages" @click="changeQualityPage(qualityPage + 1)">下一页</button>
+      </div>
       <table v-if="qualityTable.rows.length" class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
           <th v-for="h in qualityTable.headers" :key="h" style="padding:6px">{{ h }}</th>
@@ -190,6 +294,13 @@
           </tbody>
         </table>
         <div v-else class="el-empty">暂无问答记录</div>
+        <div class="pagination-bar" style="display:flex;gap:8px;align-items:center;margin-top:8px">
+          <span>共 {{ aiHistoryTotal }} 条 · 第 {{ aiHistoryPage }} / {{ aiHistoryTotalPages }} 页</span>
+          <select v-model="aiHistorySort" :disabled="loading" @change="changeAiHistorySort"><option value="id,desc">ID（新到旧）</option><option value="createdAt,desc">时间（新到旧）</option><option value="status,asc">状态（升序）</option><option value="elapsedMs,desc">耗时（高到低）</option></select>
+          <button class="btn btn-sm" :disabled="loading || aiHistoryPage <= 1" @click="changeAiHistoryPage(aiHistoryPage - 1)">上一页</button>
+          <button class="btn btn-sm" :disabled="loading || aiHistoryPage >= aiHistoryTotalPages" @click="changeAiHistoryPage(aiHistoryPage + 1)">下一页</button>
+          <select v-model.number="aiHistoryPageSize" :disabled="loading" @change="changeAiHistoryPageSize"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
+        </div>
         <details v-if="aiHistoryRows.length" style="margin-top:8px">
           <summary style="font-size:12px;color:var(--gray-500);cursor:pointer">展开 SQL 与使用表（证据复核）</summary>
           <div v-for="(h, i) in aiHistoryRows" :key="i" style="margin-top:6px;font-size:12px">
@@ -208,12 +319,14 @@
         </div>
         <table v-if="aiCallTable.rows.length" class="data-table">
           <thead><tr style="text-align:left;color:var(--gray-500)">
-            <th style="padding:6px">用例</th><th>模型</th><th>tokens</th><th>耗时</th><th>状态</th>
+            <th style="padding:6px">用例</th><th>模型</th><th>来源 / 快照</th><th>请求指纹</th><th>tokens</th><th>耗时</th><th>状态</th>
           </tr></thead>
           <tbody>
             <tr v-for="(c, i) in aiCallRows" :key="i" style="border-top:1px solid var(--gray-100)">
               <td style="padding:6px">{{ c.useCase }}</td>
               <td>{{ c.provider }}/{{ c.model }}</td>
+              <td class="mono">{{ c.sourceId }} / {{ c.snapshotId }}</td>
+              <td class="mono" :title="c.requestFingerprint">{{ c.fingerprintPreview }}</td>
               <td class="mono">{{ c.inputTokens }}/{{ c.outputTokens }}</td>
               <td class="mono">{{ c.elapsedMs }}</td>
               <td>{{ c.status }}</td>
@@ -221,6 +334,13 @@
           </tbody>
         </table>
         <div v-else class="el-empty">暂无调用记录</div>
+        <div class="pagination-bar" style="display:flex;gap:8px;align-items:center;margin-top:8px">
+          <span>共 {{ aiCallTotal }} 条 · 第 {{ aiCallPage }} / {{ aiCallTotalPages }} 页</span>
+          <select v-model="aiCallSort" :disabled="loading" @change="changeAiCallSort"><option value="id,desc">ID（新到旧）</option><option value="createdAt,desc">时间（新到旧）</option><option value="useCase,asc">用例（升序）</option><option value="status,asc">状态（升序）</option><option value="elapsedMs,desc">耗时（高到低）</option></select>
+          <button class="btn btn-sm" :disabled="loading || aiCallPage <= 1" @click="changeAiCallPage(aiCallPage - 1)">上一页</button>
+          <button class="btn btn-sm" :disabled="loading || aiCallPage >= aiCallTotalPages" @click="changeAiCallPage(aiCallPage + 1)">下一页</button>
+          <select v-model.number="aiCallPageSize" :disabled="loading" @change="changeAiCallPageSize"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
+        </div>
       </div>
     </div>
   </div>
@@ -233,7 +353,8 @@ import AnalysisContext from '../components/AnalysisContext.vue'
 import DataTable from '../components/DataTable.vue'
 import { useAnalysis } from '../composables/useAnalysis'
 import { formatDateTime } from '../utils/envelope'
-import { buildFallbackContext, mergeWarnings, NON_ANALYSIS_ROW_KEYS } from '../utils/context'
+import { buildFallbackContext, mergeWarnings, NON_ANALYSIS_ROW_KEYS, warningTextAll } from '../utils/context'
+import { withMetricSnapshotIdentity } from '../utils/metricSnapshotEnvelope'
 import {
   aiCallRows as mapAiCallRows,
   aiHistoryRows as mapAiHistoryRows,
@@ -245,6 +366,8 @@ import {
   toTable
 } from '../utils/tables'
 import { exportAnalysisCsv } from '../utils/exportCsv'
+import { requirePageResponse } from '../utils/pageResponse.js'
+import { requireArrayResponse } from '../utils/arrayResponse.js'
 
 const users = ref([])
 // 用户启用状态：列表接口不返回该字段，只记录本会话内切换过的结果，其余为 null（=接口未提供）
@@ -256,6 +379,34 @@ const runPageSize = ref(10)
 const runTotal = ref(0)
 const runTotalPages = ref(1)
 const runSort = ref('createdAt,desc')
+const qualityPage = ref(1)
+const qualityPageSize = ref(20)
+const qualityTotal = ref(0)
+const qualityTotalPages = ref(1)
+const qualitySort = ref('id,desc')
+const snapshotPage = ref(1)
+const snapshotPageSize = ref(10)
+const snapshotTotal = ref(0)
+const snapshotTotalPages = ref(1)
+const snapshotSort = ref('id,desc')
+const aiHistoryPage = ref(1)
+const aiHistoryPageSize = ref(10)
+const aiHistoryTotal = ref(0)
+const aiHistoryTotalPages = ref(1)
+const aiHistorySort = ref('id,desc')
+const aiCallPage = ref(1)
+const aiCallPageSize = ref(10)
+const aiCallTotal = ref(0)
+const aiCallTotalPages = ref(1)
+const aiCallSort = ref('id,desc')
+const userPage = ref(1)
+const userPageSize = ref(10)
+const userTotal = ref(0)
+const userTotalPages = ref(1)
+const userSort = ref('id,asc')
+const ingestionPage = ref(1)
+const ingestionPageSize = ref(20)
+const ingestionSort = ref('id,desc')
 const newUser = ref({ username: '', realName: '', role: 'operator', password: '' })
 const selected = ref('')
 
@@ -270,33 +421,60 @@ const snapColor = (s) => ({ ACTIVE: 'var(--success)', BUILDING: '#d97706', VERIF
 // 运维页多来源取数：统一信封接口（无）与非信封接口混用，
 // 因此在这里拼上下文；任一子接口失败都要显式告知，不静默当作没数据。
 async function fetchOps(params, signal) {
-  const [snapshots, quality, history, calls, pipelinePage] = await Promise.all([
+  const [snapshotContextRows, snapshotPageResult, quality, qualityPageResult, historyPageResult, callPageResult, pipelinePage, ingestionStatus, ingestionBatchPage] = await Promise.all([
     api.snapshots(15, { signal }),
+    api.snapshotsPage({ page: snapshotPage.value, size: snapshotPageSize.value, sort: snapshotSort.value }, { signal }),
     api.quality(20, { signal }),
-    api.aiAuditHistory(10, { signal }),
-    api.aiAuditCalls(10, { signal }),
-    api.pipelineRunsPage({ page: runPage.value, size: runPageSize.value, sort: runSort.value }, { signal })
+    api.qualityPage({ page: qualityPage.value, size: qualityPageSize.value, sort: qualitySort.value }, { signal }),
+    api.aiAuditHistoryPage({ page: aiHistoryPage.value, size: aiHistoryPageSize.value, sort: aiHistorySort.value }, { signal }),
+    api.aiAuditCallsPage({ page: aiCallPage.value, size: aiCallPageSize.value, sort: aiCallSort.value }, { signal }),
+    api.pipelineRunsPage({ page: runPage.value, size: runPageSize.value, sort: runSort.value }, { signal }),
+    api.ingestionStatus({ signal }),
+    api.ingestionBatchesPage({ page: ingestionPage.value, size: ingestionPageSize.value, sort: ingestionSort.value }, { signal })
   ])
-  const runs = pipelinePage && Array.isArray(pipelinePage.items) ? pipelinePage.items : []
-  runPage.value = Math.max(1, Number(pipelinePage && pipelinePage.page) || 1)
-  runPageSize.value = Number(pipelinePage && pipelinePage.size) || runPageSize.value
-  runTotal.value = Number(pipelinePage && pipelinePage.total) || 0
-  runTotalPages.value = Math.max(1, Number(pipelinePage && pipelinePage.totalPages) || 1)
+  const snapshotResponse = requirePageResponse(snapshotPageResult, '快照列表')
+  const qualityResponse = requirePageResponse(qualityPageResult, '质量结果列表')
+  const historyResponse = requirePageResponse(historyPageResult, 'AI问答审计列表')
+  const callResponse = requirePageResponse(callPageResult, 'AI调用审计列表')
+  const pipelineResponse = requirePageResponse(pipelinePage, '流水线运行列表')
+  const ingestionResponse = requirePageResponse(ingestionBatchPage, '采集批次列表')
+  const snapshotContextList = requireArrayResponse(snapshotContextRows, '快照上下文')
+  const qualityList = requireArrayResponse(quality, '质量列表')
+  const runs = pipelineResponse.items
+  const snapshots = snapshotResponse.items
+  const qualityRowsPage = qualityResponse.items
+  qualityPage.value = qualityResponse.page
+  qualityPageSize.value = qualityResponse.size
+  qualityTotal.value = qualityResponse.total
+  qualityTotalPages.value = qualityResponse.totalPages
+  snapshotPage.value = snapshotResponse.page
+  snapshotPageSize.value = snapshotResponse.size
+  snapshotTotal.value = snapshotResponse.total
+  snapshotTotalPages.value = snapshotResponse.totalPages
+  runPage.value = pipelineResponse.page
+  runPageSize.value = pipelineResponse.size
+  runTotal.value = pipelineResponse.total
+  runTotalPages.value = pipelineResponse.totalPages
+  ingestionPage.value = ingestionResponse.page
+  ingestionPageSize.value = ingestionResponse.size
+  const history = historyResponse.items
+  const calls = callResponse.items
+  aiHistoryPage.value = historyResponse.page
+  aiHistoryTotal.value = historyResponse.total
+  aiHistoryTotalPages.value = historyResponse.totalPages
+  aiCallPage.value = callResponse.page
+  aiCallTotal.value = callResponse.total
+  aiCallTotalPages.value = callResponse.totalPages
   const warnings = []
   // 这些接口都不返回统一信封，逐项登记，页面与导出件都能看到“为什么上下文是拼的”
   warnings.push('ENVELOPE_MISSING')
 
-  const snapshotList = Array.isArray(snapshots) ? snapshots : []
-  const qualityList = Array.isArray(quality) ? quality : []
-  const historyList = Array.isArray(history) ? history : []
-  const callList = Array.isArray(calls) ? calls : []
-
   // 找 ACTIVE 快照作为上下文主快照（找不到就如实留空，由上下文标注缺失）
-  const active = snapshotList.find((s) => s && s.status === 'ACTIVE') || null
+  const active = snapshotContextList.find((s) => s && s.status === 'ACTIVE') || null
   // 质量结论：有质量结果就按结果判定；一条都没有则传 null → 上下文如实标注「接口未提供」
   const qualityOk = qualityList.length ? qualityList.every((q) => q.passed === 1) : null
   const ctx = buildFallbackContext({
-    rows: snapshotList,
+    rows: snapshotContextList,
     warnings,
     snapshotIds: active ? [active.snapshotId] : [],
     businessTime: active ? active.businessTime : null,
@@ -315,11 +493,16 @@ async function fetchOps(params, signal) {
     warnings: mergeWarnings(ctx.warnings, qualityOk === false ? ['QUALITY_RULE_FAILED'] : []),
     missingNotice: ctx.missingNotice,
     data: {
-      snapshots: snapshotList,
-      qualityResults: qualityList,
-      aiHistory: historyList,
-      aiCalls: callList,
-      pipelineRuns: runs
+      snapshots,
+      snapshotContextRows: snapshotContextList,
+      qualityResults: qualityRowsPage,
+      aiHistory: history,
+      aiCalls: calls,
+      pipelineRuns: runs,
+      ingestionStatus: ingestionStatus && typeof ingestionStatus === 'object' ? ingestionStatus : null,
+      ingestionBatches: ingestionResponse.items,
+      ingestionTotal: ingestionResponse.total,
+      ingestionTotalPages: ingestionResponse.totalPages
     }
   }
 }
@@ -341,8 +524,7 @@ const {
 
 async function fetchMetrics(params, signal) {
   const snapshotId = params && params.snapshotId ? params.snapshotId : selected.value
-  // 没有快照号就不发请求：/metrics/overview 不带 snapshotId 会返回全部快照的指标，
-  // 那样页面展示的就不是「某一期快照」的数据，与上下文标注不符。
+  // 没有快照号就不发请求，避免把 ACTIVE 或未知历史误当作当前选定的快照。
   if (!snapshotId) {
     return {
       snapshotId: null,
@@ -351,30 +533,13 @@ async function fetchMetrics(params, signal) {
       definitionVersion: null,
       qualityStatus: 'UNKNOWN',
       filters: {},
-      warnings: mergeWarnings(['ENVELOPE_MISSING'], ['NO_SNAPSHOT_SELECTED']),
-      missingNotice: '接口未提供（尚未选择快照，未发起 /metrics/overview 请求）：snapshotId',
+      warnings: mergeWarnings(['NO_SNAPSHOT_SELECTED']),
+      missingNotice: '尚未选择快照，未发起 /dashboards/overview 请求。',
       data: { metrics: [] }
     }
   }
-  const raw = await api.metricsOverview(snapshotId, { signal })
-  const list = Array.isArray(raw) ? raw : []
-  const ctx = buildFallbackContext({
-    rows: list,
-    warnings: ['ENVELOPE_MISSING'],
-    snapshotIds: snapshotId ? [snapshotId] : []
-  })
-  return {
-    snapshotId: ctx.snapshotId,
-    businessTime: ctx.businessTime,
-    dataUpdatedAt: ctx.dataUpdatedAt,
-    source: ctx.source,
-    definitionVersion: ctx.definitionVersion,
-    qualityStatus: ctx.qualityStatus,
-    filters: { snapshotId },
-    warnings: ctx.warnings,
-    missingNotice: ctx.missingNotice,
-    data: { metrics: list }
-  }
+  const envelope = await api.overview({ snapshotId }, { signal })
+  return withMetricSnapshotIdentity(envelope)
 }
 
 async function viewSnapshot(id) {
@@ -384,9 +549,10 @@ async function viewSnapshot(id) {
 
 // 首次取到快照列表后自动展示 ACTIVE 快照的指标（浏览器端点「查看指标」或此处自动选中；离线渲染校验走同一逻辑）
 const snapshotList = computed(() => (Array.isArray(data.value.snapshots) ? data.value.snapshots : []))
+const snapshotContextRows = computed(() => (Array.isArray(data.value.snapshotContextRows) ? data.value.snapshotContextRows : []))
 function autoSelectActive() {
   if (selected.value) return
-  const first = snapshotList.value.find((s) => s && s.status === 'ACTIVE') || snapshotList.value[0]
+  const first = snapshotContextRows.value.find((s) => s && s.status === 'ACTIVE') || snapshotList.value[0]
   if (first && first.snapshotId) return viewSnapshot(first.snapshotId)
   return null
 }
@@ -400,6 +566,11 @@ const viewSnapshotRow = (row) => viewSnapshot(snapshotIdOfRow(row))
 // 状态列（第 3 列）只上色，不改文字：文字永远是后端原样返回的状态码
 const snapshotCellColor = (cell, i, j) => (j === 2 ? snapColor(cell) : null)
 const pipelineTable = computed(() => toTable(mapPipelineRunRows(data.value.pipelineRuns), COLUMNS.opsPipelineRuns))
+const ingestionStatus = computed(() => data.value.ingestionStatus || null)
+const ingestionBatches = computed(() => Array.isArray(data.value.ingestionBatches) ? data.value.ingestionBatches : [])
+const ingestionTotal = computed(() => Number(data.value.ingestionTotal) || 0)
+const ingestionTotalPages = computed(() => Math.max(1, Number(data.value.ingestionTotalPages) || 1))
+const visibleIngestionBatches = computed(() => ingestionBatches.value)
 const qualityTable = computed(() => toTable(qualityRows(data.value.qualityResults), COLUMNS.opsQuality))
 const metricTable = computed(() => toTable(metricRows(metricData.value.metrics), COLUMNS.opsMetrics))
 const aiHistoryTable = computed(() => toTable(mapAiHistoryRows(data.value.aiHistory), COLUMNS.opsAiHistory))
@@ -416,12 +587,28 @@ const metricEmptyText = computed(() =>
 
 async function loadUsers() {
   try {
-    users.value = (await api.adminUsers()) || []
+    const result = requirePageResponse(
+      await api.adminUsersPage({ page: userPage.value, size: userPageSize.value, sort: userSort.value }),
+      '用户列表'
+    )
+    users.value = result.items
+    userPage.value = result.page
+    userPageSize.value = result.size
+    userTotal.value = result.total
+    userTotalPages.value = result.totalPages
   } catch (e) {
     // 非 admin 或无权限时如实提示，不假装没数据
     actionError.value = (e && (e.message || e.code)) || '用户列表加载失败'
   }
 }
+
+function changeUserPage(nextPage) {
+  if (loading.value || busy.value || nextPage < 1 || nextPage > userTotalPages.value) return
+  userPage.value = nextPage
+  return loadUsers()
+}
+function changeUserPageSize() { userPage.value = 1; return loadUsers() }
+function changeUserSort() { userPage.value = 1; return loadUsers() }
 
 async function loadAll() {
   if (loading.value || busy.value) return
@@ -446,6 +633,67 @@ function changeRunSort() {
   runPage.value = 1
   return load({})
 }
+
+function changeIngestionPage(nextPage) {
+  if (loading.value || busy.value || nextPage < 1 || nextPage > ingestionTotalPages.value) return
+  ingestionPage.value = nextPage
+  return load({})
+}
+
+function changeIngestionPageSize() {
+  if (loading.value || busy.value) return
+  ingestionPage.value = 1
+  return load({})
+}
+
+function changeIngestionSort() {
+  if (loading.value || busy.value) return
+  ingestionPage.value = 1
+  return load({})
+}
+
+function changeQualityPage(nextPage) {
+  if (loading.value || busy.value || nextPage < 1 || nextPage > qualityTotalPages.value) return
+  qualityPage.value = nextPage
+  return load({})
+}
+
+function changeQualityPageSize() {
+  if (loading.value || busy.value) return
+  qualityPage.value = 1
+  return load({})
+}
+
+function changeQualitySort() {
+  if (loading.value || busy.value) return
+  qualityPage.value = 1
+  return load({})
+}
+
+function changeSnapshotPage(nextPage) {
+  if (loading.value || busy.value || nextPage < 1 || nextPage > snapshotTotalPages.value) return
+  snapshotPage.value = nextPage
+  return load({})
+}
+
+function changeSnapshotPageSize() {
+  if (loading.value || busy.value) return
+  snapshotPage.value = 1
+  return load({})
+}
+
+function changeSnapshotSort() {
+  if (loading.value || busy.value) return
+  snapshotPage.value = 1
+  return load({})
+}
+
+function changeAiHistoryPage(nextPage) { if (!loading.value && nextPage >= 1 && nextPage <= aiHistoryTotalPages.value) { aiHistoryPage.value = nextPage; return load({}) } }
+function changeAiHistoryPageSize() { aiHistoryPage.value = 1; return load({}) }
+function changeAiHistorySort() { aiHistoryPage.value = 1; return load({}) }
+function changeAiCallPage(nextPage) { if (!loading.value && nextPage >= 1 && nextPage <= aiCallTotalPages.value) { aiCallPage.value = nextPage; return load({}) } }
+function changeAiCallPageSize() { aiCallPage.value = 1; return load({}) }
+function changeAiCallSort() { aiCallPage.value = 1; return load({}) }
 
 function exportMetrics() {
   if (!metricExportable.value) return
@@ -494,6 +742,7 @@ async function createUser() {
   try {
     await api.adminCreateUser(newUser.value)
     newUser.value = { username: '', realName: '', role: 'operator', password: '' }
+    userPage.value = 1
     await loadUsers()
   } catch (e) {
     actionError.value = (e && (e.message || e.code)) || '创建失败'

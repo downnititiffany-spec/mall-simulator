@@ -85,6 +85,15 @@ object LocalSchemaInitJob {
           source_batch_id BIGINT,
           product_key BIGINT, category_key BIGINT, parent_category_key BIGINT, brand_key BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
+    (ns.dim, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_date (
+          date_key STRING, year INT, month INT, day INT,
+          week_of_year INT, quarter INT, day_of_week INT, is_weekend INT)
+        USING parquet"""),
+    (ns.dim, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_region (
+          region_code STRING, region_name STRING, city_level STRING)
+        USING parquet"""),
 
     (ns.dws, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_user_behavior_day (

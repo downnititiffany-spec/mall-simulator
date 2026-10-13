@@ -79,4 +79,31 @@ class DecisionServicePaginationTest {
         org.junit.jupiter.api.Assertions.assertTrue(sql.contains("id DESC"), sql);
         org.junit.jupiter.api.Assertions.assertTrue(sql.contains("LIMIT 10 OFFSET 20"), sql);
     }
+
+    @Test
+    void idAscendingSortDoesNotAppendConflictingDescendingIdOrder() {
+        when(taskMapper.selectCount(any())).thenReturn(2L);
+        when(taskMapper.selectList(any())).thenReturn(List.of());
+
+        service.listPage(1, 10, "id,asc");
+
+        ArgumentCaptor<Wrapper<DecisionTask>> query = ArgumentCaptor.forClass(Wrapper.class);
+        verify(taskMapper).selectList(query.capture());
+        String sql = query.getValue().getSqlSegment();
+        org.junit.jupiter.api.Assertions.assertTrue(sql.contains("ORDER BY id ASC"), sql);
+        org.junit.jupiter.api.Assertions.assertFalse(sql.contains("id DESC"), sql);
+    }
+
+    @Test
+    void totalPagesDoesNotOverflowForLargestSupportedCount() {
+        when(taskMapper.selectCount(any())).thenReturn(Long.MAX_VALUE);
+        when(taskMapper.selectList(any())).thenReturn(List.of());
+
+        var result = service.listPage(Long.MAX_VALUE, 100, "id,desc");
+
+        long expectedPages = 1 + (Long.MAX_VALUE - 1) / 100;
+        assertEquals(expectedPages, result.totalPages());
+        assertEquals(expectedPages, result.page());
+        assertEquals(Long.MAX_VALUE, result.total());
+    }
 }

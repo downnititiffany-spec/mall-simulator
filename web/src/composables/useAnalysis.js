@@ -77,7 +77,7 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [], pinSnapshot 
       let effectiveParams = { ...requestParams }
       if (pinSnapshot) {
         await ensureSnapshotSelection()
-        const snapshotId = snapshotSelection.selectedSnapshotId
+        const snapshotId = snapshotSelection.explicitSnapshotId || snapshotSelection.selectedSnapshotId
         if (!snapshotId) {
           throw new Error(snapshotSelection.error || '没有可用的已发布快照')
         }
@@ -87,6 +87,9 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [], pinSnapshot 
       const raw = await fetcher(effectiveParams, controller ? controller.signal : undefined)
       if (mySeq !== seq) return null // 已有更新的请求，丢弃本次结果
       const ctx = readEnvelope(raw)
+      if (pinSnapshot && ctx.snapshotId !== effectiveParams.snapshotId) {
+        throw new Error('分析数据快照与当前选择不一致，已拒绝显示。')
+      }
       context.value = ctx
       data.value = ctx.data
       requestStatus.value = REQUEST.READY
@@ -111,7 +114,7 @@ export function useAnalysis({ fetcher, rowKeys = [], defaults = [], pinSnapshot 
   }
 
   if (pinSnapshot) {
-    watch(() => snapshotSelection.selectedSnapshotId, (next, previous) => {
+    watch(() => snapshotSelection.explicitSnapshotId || snapshotSelection.selectedSnapshotId, (next, previous) => {
       // 初次从空值初始化默认 ACTIVE 时，当前 load 已等待选项加载并会使用该快照；
       // 只有员工随后主动切换快照才需要重载当前页面。
       if (!previous || !next || next === previous) return

@@ -128,6 +128,25 @@ class MallApiGenerationEngineTest {
         assertEquals(counts.getOrDefault("refund_completed", 0),
                 mall.hits(FakeMallServer.REFUND_COMPLETE_PATTERN));
 
+        // 每个商城写路由都携带独立、非空的事件级幂等键；生命周期动作之间也不能共用键。
+        Map<String, Integer> expectedWrites = Map.of(
+                "POST /api/v1/mall/users", counts.getOrDefault("user_registered", 0),
+                "POST /api/v1/mall/orders", counts.getOrDefault("order_created", 0),
+                "POST /api/v1/mall/orders/{orderId}/pay", counts.getOrDefault("order_paid", 0),
+                "POST /api/v1/mall/orders/{orderId}/cancel", counts.getOrDefault("order_cancelled", 0),
+                "POST /api/v1/mall/orders/{orderId}/refunds", counts.getOrDefault("refund_created", 0),
+                FakeMallServer.REFUND_COMPLETE_PATTERN, counts.getOrDefault("refund_completed", 0));
+        List<String> allWriteKeys = new ArrayList<>();
+        expectedWrites.forEach((route, expectedCount) -> {
+            List<String> keys = mall.idempotencyKeysOf(route);
+            assertEquals(expectedCount, keys.size(), "请求头采集数应与成功事件数相等：" + route);
+            assertTrue(keys.stream().allMatch(key -> key != null && !key.isBlank()),
+                    "写请求必须携带非空幂等键：" + route);
+            allWriteKeys.addAll(keys);
+        });
+        assertEquals(allWriteKeys.size(), Set.copyOf(allWriteKeys).size(),
+                "不同商城写请求及不同生命周期事件不得复用幂等键");
+
         // 规范 ID → 商城外部 ID：产物里落的是商城 ID，映射表里能查到
         CanonicalEvent firstOrder = sink.events.stream()
                 .filter(event -> "order_created".equals(event.eventType())).findFirst().orElseThrow();

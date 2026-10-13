@@ -1,0 +1,31 @@
+{
+  "sourceId": 1,
+  "manifestBatchId": 1,
+  "pipelineRunId": 1,
+  "snapshotId": "S20260918_1",
+  "hdfsLandingUri": "hdfs://127.0.0.1:19000/landing/n3102cat_20260930_2235_6f3a",
+  "landingLayout": "FLUME_RAW",
+  "businessTime": "2026-09-18T00:00:00",
+  "ingestion": {
+    "noNewData": false,
+    "quarantineCount": 5,
+    "recordCount": 36
+  },
+  "run": {
+    "status": "SUCCESS",
+    "inputBatchId": 1,
+    "pipelineCode": "ODS_TO_ADS"
+  },
+  "categoryRows": 4,
+  "regionRows": 4,
+  "grossAmount": {
+    "category": 450.0,
+    "region": 450.0
+  },
+  "netAmount": {
+    "category": 370.0,
+    "region": 370.0
+  },
+  "oracle": "samples/oracle-legc.json",
+  "reconciliation": "API + isolated 3307 ADS MySQL + independent category/region oracle"
+}

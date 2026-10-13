@@ -32,11 +32,10 @@
 #   * mall 的 Spring 测试上下文读 `${MALL_ISOLATION_URL|USER|PASSWORD|FLYWAY_ENABLED}`
 #     （`mall-simulator/src/test/resources/application-test.yml`，**无默认值**）。
 #   * generator 的 Spring 测试上下文**没有**自己的 test application.yml，直接用主
-#     `synthetic-data-generator/src/main/resources/application.yml`——那份配置指向
-#     `jdbc:mysql://127.0.0.1:3306/generator_meta?...createDatabaseIfNotExist=true`、flyway
-#     `classpath:db/generator`。必须用 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD` 这个标准
-#     relaxed-binding 通道覆盖到 3307 隔离库，否则 generator 的 Spring 用例会连宿主正式实例
-#     （DEV-002；3306 冻结期尤其不能靠"它恰好没有迁移"来兜底）。
+#     `synthetic-data-generator/src/main/resources/application.yml`——当前默认目标为本机 3307，
+#     账号/口令必填且不含自动建库参数。必须用 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`
+#     这个标准 relaxed-binding 通道覆盖为本次 runId 专属库；不覆盖会误落到默认共用库。
+#     Flyway location 仍为 `classpath:db/generator`。历史 3306 风险背景见 DEV-002。
 #   * 库名/账号名与 `scripts/it-prepare-isolation.ps1:89-92` 同源：`<runId>_mall` /
 #   * DEV-003b：analytics-server 侧的真库 IT（`metric-analysis` 的 `IsolationGuardMySqlIT`）接进本入口，
 #     目标 = `-Module analytics`（`-Module all` = mall + generator + analytics）。它复用 mall 的库与受限账号
@@ -166,15 +165,20 @@ if ($IncludeAnalyticsWriteIts) {
     metricDb = "${RunId}_analytics_metric"
     metaUser = (New-IsolationUserName -RunId $RunId -Role 'metaapp')
     metricUser = (New-IsolationUserName -RunId $RunId -Role 'metricapp')
+    metricReadUser = (New-IsolationUserName -RunId $RunId -Role 'metricread')
     metaPwd = [Environment]::GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')
     metricPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')
+    metricReadPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_READ_PASSWORD', 'Process')
     hiveNamespace = "${RunId}_analytics"
     hdfsRoot = Join-Path $scopeRoot 'hdfs'
     manifestRoot = Join-Path $scopeRoot 'manifest'
     credentialsRef = "env:${RunId}-analytics"
   }
-  foreach ($u in @($analyticsWrite.metaUser, $analyticsWrite.metricUser)) {
+  foreach ($u in @($analyticsWrite.metaUser, $analyticsWrite.metricUser, $analyticsWrite.metricReadUser)) {
     if ($ForbiddenAccounts -contains $u) { Fail 5 ("analytics 写入型 IT 账号 {0} 在禁用清单内：拒绝" -f $u) }
+  }
+  if ($analyticsWrite.metricReadUser -eq $analyticsWrite.metricUser) {
+    Fail 5 'metric_read 与 metric_pub 必须是不同的隔离账号。'
   }
   foreach ($db in @($analyticsWrite.metaDb, $analyticsWrite.metricDb)) {
     if ($db -in @('analytics_meta', 'analytics_metric')) { Fail 5 ("analytics 写入型 IT 目标库 {0} 是正式库名：拒绝" -f $db) }
@@ -214,8 +218,10 @@ if ($IncludeAnalyticsWriteIts) {
   $missingAnalytics = @()
   if (-not $analyticsWrite.metaPwd) { $missingAnalytics += 'V25_IT_META_PASSWORD' }
   if (-not $analyticsWrite.metricPwd) { $missingAnalytics += 'V25_IT_METRIC_PUBLISH_PASSWORD' }
+  if (-not $analyticsWrite.metricReadPwd) { $missingAnalytics += 'V25_IT_METRIC_READ_PASSWORD' }
   Write-Host ("  [门禁4] analytics-meta   V25_IT_META_PASSWORD               值 {0}" -f (Mask $analyticsWrite.metaPwd))
   Write-Host ("  [门禁4] analytics-metric V25_IT_METRIC_PUBLISH_PASSWORD     值 {0}" -f (Mask $analyticsWrite.metricPwd))
+  Write-Host ("  [门禁4] analytics-metric-read V25_IT_METRIC_READ_PASSWORD    值 {0}" -f (Mask $analyticsWrite.metricReadPwd))
   if ($missingAnalytics.Count -gt 0) {
     if ($DryRun) {
       Write-Host ("  [门禁4] ⚠️ 预演模式：缺 {0}（真跑会被拒，退出码 5）" -f ($missingAnalytics -join ', '))
@@ -262,7 +268,7 @@ if ($Module -in @('generator', 'both', 'all')) {
   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_USERNAME', $genTarget.user)
   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_PASSWORD', (Mask $genTarget.pwd))
   Write-Host '        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键'
-  Write-Host '          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。'
+  Write-Host '          覆盖主 application.yml 的默认 3307 地址，确保使用本次 runId 专属隔离库。'
 }
 if ($Module -in @('analytics', 'all')) {
   $anTarget = $targets | Where-Object { $_.name -eq 'analytics' }
@@ -289,8 +295,8 @@ if ($IncludeAnalyticsWriteIts) {
   Write-Host ("  {0,-34} = {1}" -f 'V25_IT_META_PASSWORD', (Mask $analyticsWrite.metaPwd))
   Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_PUBLISH_USERNAME', $analyticsWrite.metricUser)
   Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_PUBLISH_PASSWORD', (Mask $analyticsWrite.metricPwd))
-  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_READ_USERNAME', $analyticsWrite.metricUser)
-  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_READ_PASSWORD', (Mask $analyticsWrite.metricPwd))
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_READ_USERNAME', $analyticsWrite.metricReadUser)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_READ_PASSWORD', (Mask $analyticsWrite.metricReadPwd))
   Write-Host '  V25_IT_SERVER_FINGERPRINT       = <运行期由门禁6探针确定为 @@hostname:@@port>'
 }
 if ($Module -in @('mall', 'both', 'all')) {
@@ -313,6 +319,7 @@ $probeTargets = @($targets)
 if ($IncludeAnalyticsWriteIts) {
   $probeTargets += [pscustomobject]@{ name = 'analytics-meta'; db = $analyticsWrite.metaDb; user = $analyticsWrite.metaUser; pwd = $analyticsWrite.metaPwd }
   $probeTargets += [pscustomobject]@{ name = 'analytics-metric'; db = $analyticsWrite.metricDb; user = $analyticsWrite.metricUser; pwd = $analyticsWrite.metricPwd }
+  $probeTargets += [pscustomobject]@{ name = 'analytics-metric-read'; db = $analyticsWrite.metricDb; user = $analyticsWrite.metricReadUser; pwd = $analyticsWrite.metricReadPwd }
 }
 foreach ($t in $probeTargets) {
   $sql = "SELECT CONCAT(@@port,'|',@@server_uuid,'|',@@hostname,'|', (SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$($t.db)')) AS probe;"
@@ -362,8 +369,8 @@ if ($IncludeAnalyticsWriteIts) {
   $env:V25_IT_META_PASSWORD = $analyticsWrite.metaPwd
   $env:V25_IT_METRIC_PUBLISH_USERNAME = $analyticsWrite.metricUser
   $env:V25_IT_METRIC_PUBLISH_PASSWORD = $analyticsWrite.metricPwd
-  $env:V25_IT_METRIC_READ_USERNAME = $analyticsWrite.metricUser
-  $env:V25_IT_METRIC_READ_PASSWORD = $analyticsWrite.metricPwd
+  $env:V25_IT_METRIC_READ_USERNAME = $analyticsWrite.metricReadUser
+  $env:V25_IT_METRIC_READ_PASSWORD = $analyticsWrite.metricReadPwd
 }
 
 # ── 注入环境变量并跑套件 ───────────────────────────────────────────────────
@@ -412,7 +419,7 @@ foreach ($t in $targets) {
   }
   if ($t.name -eq 'generator') {
     # generator 的 Spring 测试上下文没有自己的 test application.yml：用标准 relaxed binding 键
-    # 把主 application.yml 的 127.0.0.1:3306/generator_meta 覆盖成本次隔离库（DEV-002）
+    # 把主 application.yml 的默认 127.0.0.1:3307/generator_meta 覆盖成本次 runId 隔离库
     $env:SPRING_DATASOURCE_URL = $t.url
     $env:SPRING_DATASOURCE_USERNAME = $t.user
     $env:SPRING_DATASOURCE_PASSWORD = $t.pwd

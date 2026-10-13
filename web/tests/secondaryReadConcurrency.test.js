@@ -47,10 +47,10 @@ test('Decision 组合读取每次 fetch 都取得独立序号', () => {
 })
 
 test('Decision evaluations 与 evaluationError 作为同一旁路状态只允许最新 fetch 提交', () => {
-  const body = between(decisions, 'async function fetchDecisions(params, signal)', 'const analysis = useAnalysis')
+  const body = between(decisions, 'async function loadDecisionEvaluations(decisions, signal, mySeq)', 'async function fetchDecisions')
   assert.match(
     body,
-    /if \(mySeq === decisionFetchSeq\) \{\s*evaluations\.value = evalMap\s*evaluationError\.value = failed\.join\('；'\)\s*\}/
+    /if \(mySeq === decisionFetchSeq\s*&& !\(signal && signal\.aborted\)\) \{\s*evaluations\.value = \{ \.\.\.evalMap, \.\.\.evaluations\.value \}\s*evaluationError\.value = failed\.join\('；'\)\s*\}/
   )
 })
 

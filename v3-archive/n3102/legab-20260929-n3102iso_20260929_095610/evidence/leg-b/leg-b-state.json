@@ -1,0 +1,60 @@
+{
+  "runId": "n3102iso_20260929_095610",
+  "startedAt": "2026-09-29T11:15:59",
+  "outcome": "FAIL",
+  "legs": {
+    "fixture-oracle": {
+      "baseLineCount": 99,
+      "eventId": "n3102-b2-view-0001",
+      "eventSha256": "2a7f75d95bee5d7bbe0f14aa4b203b790c89d6693830be6787ead9396b2b178f",
+      "combinedLineCount": 100,
+      "oraclePath": "evidence/oracle-b2-combined.json",
+      "expectedPv": 31.0,
+      "sourceFixtureUntouched": true,
+      "oracleCount": 14
+    },
+    "flume-hdfs-b2": {
+      "flumeLog": "flume-b2-run.log",
+      "eventId": "n3102-b2-view-0001",
+      "outcome": "PASS",
+      "rawEventCount": 1,
+      "manifest": "created after platform ingestion",
+      "acceptedRecords": 1,
+      "manifestBatchId": 2,
+      "sourceId": 1,
+      "inputSha256": "2a7f75d95bee5d7bbe0f14aa4b203b790c89d6693830be6787ead9396b2b178f"
+    },
+    "ingestion-b2": {
+      "recordCount": 1,
+      "noNewData": false,
+      "quarantineCount": 0,
+      "status": "SUCCESS",
+      "sourceId": 1,
+      "batchId": 2
+    },
+    "batch2-pipeline-publish": {
+      "runId": 2,
+      "adsRows": 27,
+      "adsTableCount": 8,
+      "active": "SNAP|S20260918_2|ACTIVE",
+      "runDb": "RUN|2|SUCCESS|2|S20260918_2|1|1|-",
+      "result": "PASS",
+      "metricCount": 14,
+      "waitLanding": "SUBSTRING(evidence,1,700)\n{\"batchId\":2,\"acceptedUri\":\"accepted/2\",\"checksum\":\"5aee345c\",\"acceptedRecords\":1,\"schemaVersions\":[\"1.0\"],\"sourceId\":1,\"sourceCode\":\"mock-mall\"}",
+      "snapshotCount": 2,
+      "snapshotId": "S20260918_2",
+      "oracle": "combined fixture independent oracle"
+    },
+    "replay-noop": {
+      "runRow": "NRUN|3|SUCCESS|NULL|NULL|NULL",
+      "active": "S20260918_2",
+      "runId": 3,
+      "waitLanding": "WL|{\"noNewInput\":true,\"reason\":\"ALREADY_CONSUMED\",\"batchId\":2,\"consumedByRunId\":2,\"readyButConsumedCount\":2}",
+      "snapshotCount": 2,
+      "consumptionCount": "CONS|2",
+      "result": "PASS"
+    }
+  },
+  "finishedAt": "2026-09-29T11:24:06",
+  "error": "[N3102-B-FAIL] failed recalculation changed consumption ledger: CONCAT('CONS|',COUNT(*))\nCONS|2\n"
+}

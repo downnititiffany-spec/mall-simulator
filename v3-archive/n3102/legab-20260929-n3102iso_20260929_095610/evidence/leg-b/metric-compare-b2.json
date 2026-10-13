@@ -1,0 +1,142 @@
+[
+  {
+    "metricCode": "avg_order_value",
+    "expected": 84.17,
+    "ads": 84.17,
+    "metricStore": 84.17,
+    "api": 84.17,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "buy_rate",
+    "expected": 0.6,
+    "ads": 0.6,
+    "metricStore": 0.6,
+    "api": 0.6,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "cart_add_cnt",
+    "expected": 8.0,
+    "ads": 8.0,
+    "metricStore": 8.0,
+    "api": 8.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "cart_rate",
+    "expected": 0.6,
+    "ads": 0.6,
+    "metricStore": 0.6,
+    "api": 0.6,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "dau",
+    "expected": 10.0,
+    "ads": 10.0,
+    "metricStore": 10.0,
+    "api": 10.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "fav_cnt",
+    "expected": 6.0,
+    "ads": 6.0,
+    "metricStore": 6.0,
+    "api": 6.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "full_refund_rate",
+    "expected": 0.0833,
+    "ads": 0.0833,
+    "metricStore": 0.0833,
+    "api": 0.0833,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "gmv",
+    "expected": 1010.0,
+    "ads": 1010.0,
+    "metricStore": 1010.0,
+    "api": 1010.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "net_sale",
+    "expected": 930.0,
+    "ads": 930.0,
+    "metricStore": 930.0,
+    "api": 930.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "paid_order_cnt",
+    "expected": 12.0,
+    "ads": 12.0,
+    "metricStore": 12.0,
+    "api": 12.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "pv",
+    "expected": 31.0,
+    "ads": 31.0,
+    "metricStore": 31.0,
+    "api": 31.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "refund_rate",
+    "expected": 0.0833,
+    "ads": 0.0833,
+    "metricStore": 0.0833,
+    "api": 0.0833,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "repeat_rate",
+    "expected": 0.3333,
+    "ads": 0.3333,
+    "metricStore": 0.3333,
+    "api": 0.3333,
+    "expectedPeriod": "window:2026-09-18..2026-09-18",
+    "dbPeriod": "window:2026-09-18..2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "uv",
+    "expected": 10.0,
+    "ads": 10.0,
+    "metricStore": 10.0,
+    "api": 10.0,
+    "expectedPeriod": "day:2026-09-18",
+    "dbPeriod": "day:2026-09-18",
+    "pass": true
+  }
+]

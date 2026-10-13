@@ -1,0 +1,119 @@
+{
+  "code": "OK",
+  "message": "success",
+  "data": [
+    {
+      "definitionVersion": "v1",
+      "value": 84.17,
+      "metricCode": "avg_order_value",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "元"
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 0.6,
+      "metricCode": "buy_rate",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": ""
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 8.0,
+      "metricCode": "cart_add_cnt",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "次"
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 0.6,
+      "metricCode": "cart_rate",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": ""
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 10.0,
+      "metricCode": "dau",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "人"
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 6.0,
+      "metricCode": "fav_cnt",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "次"
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 0.0833,
+      "metricCode": "full_refund_rate",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": ""
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 1010.0,
+      "metricCode": "gmv",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "元"
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 930.0,
+      "metricCode": "net_sale",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "元"
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 12.0,
+      "metricCode": "paid_order_cnt",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "单"
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 31.0,
+      "metricCode": "pv",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "次"
+    },
+    {
+      "definitionVersion": "v2",
+      "value": 0.0833,
+      "metricCode": "refund_rate",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": ""
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 0.3333,
+      "metricCode": "repeat_rate",
+      "period": "window:2026-09-18..2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": ""
+    },
+    {
+      "definitionVersion": "v1",
+      "value": 10.0,
+      "metricCode": "uv",
+      "period": "day:2026-09-18",
+      "snapshotId": "S20260918_2",
+      "unit": "人"
+    }
+  ],
+  "traceId": "314b2efb-abc5-4b99-9bff-d2346f3bdff8"
+}

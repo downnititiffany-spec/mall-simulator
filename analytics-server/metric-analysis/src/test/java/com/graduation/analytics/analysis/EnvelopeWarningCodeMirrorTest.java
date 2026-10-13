@@ -165,7 +165,7 @@ class EnvelopeWarningCodeMirrorTest {
         String table = """
                 export const WARNING_TEXT = {
                   NO_ACTIVE_SNAPSHOT: '当前没有已发布快照',
-                  UNKNOWN_SNAPSHOT: '快照不存在',
+                  UNKNOWN_SNAPSHOT: '快照不存在或尚未发布',
                 }
                 """;
         assertThat(tableKeys(table, "WARNING_TEXT")).containsExactly("NO_ACTIVE_SNAPSHOT", "UNKNOWN_SNAPSHOT");

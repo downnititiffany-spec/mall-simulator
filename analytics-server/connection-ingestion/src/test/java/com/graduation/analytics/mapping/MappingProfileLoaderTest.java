@@ -62,11 +62,14 @@ class MappingProfileLoaderTest {
     @Test
     @DisplayName("规则6：画像不是合法 JSON ⇒ JSON_PARSE_ERROR，不给 profile")
     void jsonParseFailureIsJsonParseError() {
-        MappingProfileLoad load = MappingTestSupport.load("{ not json ", "inline/broken.json");
+        String raw = "UNTRUSTED_SECRET_MARKER";
+        MappingProfileLoad load = MappingTestSupport.load(raw, "inline/broken.json");
 
         assertThat(load.ok()).isFalse();
         assertThat(load.profile()).isNull();
         assertThat(MappingTestSupport.codes(load.issues())).containsExactly("JSON_PARSE_ERROR");
+        assertThat(load.issues().get(0).detail()).isEqualTo("INVALID_JSON")
+                .doesNotContain(raw);
     }
 
     @Test

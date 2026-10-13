@@ -14,7 +14,7 @@
         <div class="login-point"><b>分析看板</b><span>运营大盘 / 用户行为 / 商品 / 用户分层 / 销售</span></div>
         <div class="login-point"><b>智能问数</b><span>受控 Text-to-SQL 与证据包，结论可回溯到 SQL</span></div>
       </div>
-      <div class="login-foot">V2.2 · 阶段7 看板</div>
+      <div class="login-foot">电商数据链路 · 经营分析</div>
     </div>
 
     <div class="login-right">

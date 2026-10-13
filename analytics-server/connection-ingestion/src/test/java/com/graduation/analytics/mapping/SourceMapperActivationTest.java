@@ -152,6 +152,26 @@ class SourceMapperActivationTest {
         assertThat(after.profileVersion()).isEqualTo("2.0");
     }
 
+    @Test
+    @DisplayName("D-030：允许激活的画像仍由实际采集 SourceMapper 隔离缺必需字段的单行")
+    void activatedProfileQuarantinesBadSampleRowAtIngestion() throws IOException {
+        String profile = profileA();
+        MappingActivationTestSupport.writeProfile(profileRoot, PROFILE_PATH, profile);
+        store.seed(MappingActivationTestSupport.pointer(SOURCE_ID, MappingHash.sha256Hex(profile),
+                MappingHash.sha256Hex(contractText())));
+
+        SourceMapper sourceMapper = mapper(store);
+        SourceMapping mapping = sourceMapper.prepare(view(PROFILE_PATH));
+        assertThat(mapping.applied()).isTrue();
+
+        var outcome = sourceMapper.map(mapping, MappingActivationTestSupport.rawLineMissingRequired());
+        assertThat(outcome.accepted()).isFalse();
+        assertThat(outcome.canonicalText()).isNull();
+        assertThat(outcome.quarantineReason())
+                .startsWith("MAPPING:")
+                .contains("EMPTY_FIELD@payload.order_id");
+    }
+
     // ---------------------------------------------------------------- v1 直通不受影响
 
     @Test

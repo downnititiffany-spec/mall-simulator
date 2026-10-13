@@ -1,0 +1,2 @@
+CONCAT('CONS|', batch_id, '|', consumed_by_run_id, '|', first_consumed_by_run_id, '|', IFNULL(target_snapshot_id,'-'), '|', publish_count, '|', recalc_count, '|', IFNULL(SUBSTRING(last_recalc_reason,1,40),'-'), '|', created_via)
+CONS|1|1|1|S20260918_1|1|1|N31-02-local-export-staging-fix|PIPELINE

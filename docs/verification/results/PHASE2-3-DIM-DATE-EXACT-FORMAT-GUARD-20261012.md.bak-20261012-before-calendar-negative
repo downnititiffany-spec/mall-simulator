@@ -1,0 +1,18 @@
+# 阶段2/3 `dim_date` 日期输入精确格式守卫（2026-10-12）
+
+## 变更
+
+- 四类 ODS 的 `dt` 除日历解析成功外，还必须满足精确 8 位数字格式 `yyyyMMdd`。
+- 既有 `dim_date.date_key` 必须满足 `yyyy-MM-dd` 的固定宽度格式。
+- 格式与日历检查沿用 fail-fast 顺序，在 `dim_user`、`dim_product` 或 `dim_date` 写入前完成。
+- `DateDimensionRangeSpec` 用短格式 ODS 日期 `2021011` 验证失败时，三张维表已存内容保持不变。
+
+## 验证
+
+统一入口 `pwsh -NoProfile -File scripts/run-tests.ps1 -Suite spark`，RunId `dev003c_20261012_113459_8e459b`：JDK 1.8.0_202；43 suites；333/333 succeeded；0 failed、aborted、canceled、ignored、pending；333 基线 MATCH；BUILD SUCCESS。TestSuite.txt 由本轮新写。
+
+首次编译尝试因 Scala `s` 字符串中未转义正则 `$` 失败，改为 `$$` 后本轮完整验证成功；失败轮旧 TestSuite.txt 时间戳未变且未被判为通过。
+
+## 边界
+
+仅 Spark local[1]/in-memory catalog；真实 Hive/HDFS、平台 API/数据库和端到端链路未验证。未连接 MySQL 3306。阶段2/3和项目总验收开放。

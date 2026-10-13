@@ -141,11 +141,11 @@ public class SparkStageExecutor {
                     businessDate, attemptNo, extraArgs, confs);
             results.add(exec);
             if (!exec.success()) {
-                log.warn("stage {} fail-fast: job {} 失败（{}），不再提交剩余作业 {}",
-                        stageCode, jobCode, exec.errorMessage(),
+                log.warn("stage {} fail-fast: job {} 失败，不再提交剩余作业 {}",
+                        stageCode, jobCode,
                         stageJobs(stageCode).subList(results.size(), stageJobs(stageCode).size()));
                 return new StageExecution(stageCode, results, true,
-                        jobCode + ": " + exec.errorMessage());
+                        jobCode + ": 作业失败；请查看受控作业日志");
             }
         }
         return new StageExecution(stageCode, results, false, null);
@@ -210,13 +210,13 @@ public class SparkStageExecutor {
         run.setFinishedAt(LocalDateTime.now());
         if (!info.success()) {
             run.setErrorCode("JOB_EXECUTION_FAILED");
-            run.setErrorMessage(info.message());
+            run.setErrorMessage("作业失败；请查看受控作业日志");
         }
         runMapper.updateById(run);
 
         return new JobExecution(run.getExternalJobId(), jobCode, run.getStatus(),
                 run.getInputRecords(), run.getOutputRecords(), run.getRejectedRecords(),
-                run.getLogUri(), info.success() ? null : info.message(), info.outputPartitions(),
+                run.getLogUri(), info.success() ? null : "作业失败；请查看受控作业日志", info.outputPartitions(),
                 info.checks());
     }
 

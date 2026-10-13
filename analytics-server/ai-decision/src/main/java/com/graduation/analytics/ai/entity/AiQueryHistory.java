@@ -3,6 +3,7 @@ package com.graduation.analytics.ai.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -35,6 +36,15 @@ public class AiQueryHistory {
     /** R8-2：本次问数钉住的 ACTIVE 快照（禁止 SQL 内 MAX(snapshot_id)） */
     private String snapshotId;
 
+    /** 反馈契约 V37：历史问答对应快照来源；旧历史保持 null。 */
+    private Long sourceId;
+
+    /** 反馈契约 V37：历史问答对应的口径版本；旧历史保持 null。 */
+    private String definitionVersion;
+
+    /** 反馈契约 V37：控制器在问答证据包生成后回填；旧历史保持 null。 */
+    private String evidenceId;
+
     /** R8-2：允许的最早日期（业务日 - 89，扫描上限 90 天） */
     private LocalDate scopeMinDate;
 
@@ -54,6 +64,9 @@ public class AiQueryHistory {
     private Long elapsedMs;
 
     private String feedback;
+
+    @TableField(exist = false)
+    private boolean feedbackSubmitted;
 
     /** 真正的错误文本（规则码 + 说明，脱敏后截断），不再承载快照/范围等结构化信息 */
     private String errors;

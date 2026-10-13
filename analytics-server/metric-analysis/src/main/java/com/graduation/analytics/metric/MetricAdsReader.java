@@ -1,6 +1,8 @@
 package com.graduation.analytics.metric;
 
 import com.graduation.analytics.metric.entity.MetricSnapshot;
+import com.graduation.analytics.runtime.ActiveRuntimeProfileIdProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * R7-2：analytics_metric ADS 宽表**只读查询** DAO（§17.5 第 8 步：看板先取一个 ACTIVE snapshotId，
@@ -32,18 +35,29 @@ public class MetricAdsReader {
     private static final String COL_DT = "dt";
 
     private final JdbcTemplate readJdbc;
+    private final ActiveRuntimeProfileIdProvider activeProfileIdProvider;
 
-    /** 显式构造器保留 @Qualifier：多数据源下 Lombok 不会把字段注解复制到构造参数 */
+    /**
+     * Compatibility constructor for focused tests that do not load RuntimeProfile wiring.
+     * Default ACTIVE lookup fails closed without the profile provider.
+     */
     public MetricAdsReader(@Qualifier("metricReadJdbcTemplate") JdbcTemplate readJdbc) {
+        this(readJdbc, null);
+    }
+
+    /** Production constructor scopes default ACTIVE lookups to the unique active RuntimeProfile. */
+    @Autowired
+    public MetricAdsReader(@Qualifier("metricReadJdbcTemplate") JdbcTemplate readJdbc,
+                           ActiveRuntimeProfileIdProvider activeProfileIdProvider) {
         this.readJdbc = readJdbc;
+        this.activeProfileIdProvider = activeProfileIdProvider;
     }
 
     /** 平台（最新）ACTIVE 快照号；无 ACTIVE 返回 null。 */
     public String activeSnapshotId() {
-        List<String> ids = readJdbc.query(
-                "SELECT snapshot_id FROM metric_snapshot WHERE status = ? ORDER BY id DESC LIMIT 1",
-                (rs, rowNum) -> rs.getString(1), MetricSnapshot.STATUS_ACTIVE);
-        return ids.isEmpty() ? null : ids.get(0);
+        Optional<Long> activeProfileId = activeProfileIdProvider == null
+                ? Optional.empty() : activeProfileIdProvider.activeRuntimeProfileId();
+        return activeProfileId.map(this::activeSnapshotId).orElse(null);
     }
 
     /**

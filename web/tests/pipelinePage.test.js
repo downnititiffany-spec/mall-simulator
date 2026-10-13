@@ -39,7 +39,7 @@ test('Pipeline.vue 的加载状态由唯一属主 useAnalysis 拥有（页内不
   assert.ok(!/error\s*=\s*ref\(/.test(text), '页内不得自造 error ref（属主＝useAnalysis）')
   assert.ok(!/requestStatus\s*=\s*ref\(/.test(text), '页内不得自造 requestStatus ref（属主＝useAnalysis）')
   // 卸载时取消在途请求（与 Behavior/Overview/Products/Rfm/Sales 同形）
-  assert.match(text, /onBeforeUnmount\(\(\) => analysis\.cancel\(\)\)/)
+  assert.match(text, /onBeforeUnmount\(\(\) => \{[\s\S]*stopRunPolling\(\)[\s\S]*analysis\.cancel\(\)[\s\S]*\}\)/)
 })
 
 test('Pipeline.vue 的上下文快照号取自实例 targetSnapshotId，且不把行级业务时间冒充响应级口径', () => {
@@ -72,10 +72,12 @@ test('Pipeline.vue 实例表展示「输入批次」，且空态 colspan 与表�
   // 同时固定「列数 ＝ 空态 colspan」这个既有不变量 —— 加列忘改 colspan 会让「暂无运行记录」错位。
   assert.match(text, /<th>输入批次<\/th>/)
   assert.match(text, /r\.inputBatchId/)
-  const head = text.match(/<thead><tr[^>]*>([\s\S]*?)<\/tr><\/thead>/)
+  const runTable = text.match(/<table class="data-table">([\s\S]*?<th[^>]*>输入批次<\/th>[\s\S]*?)<\/table>/)
+  assert.ok(runTable, '未找到流水线实例表')
+  const head = runTable[1].match(/<thead><tr[^>]*>([\s\S]*?)<\/tr><\/thead>/)
   assert.ok(head, '未找到实例表表头行')
   const thCount = (head[1].match(/<th/g) || []).length
-  const span = text.match(/<td colspan="(\d+)"/)
+  const span = runTable[1].match(/<td colspan="(\d+)"/)
   assert.ok(span, '未找到空态单元格')
   assert.equal(Number(span[1]), thCount, '空态 colspan 必须等于表头列数')
 })
@@ -88,4 +90,13 @@ test('跨页共享属主 useAnalysis 的 exportContext 必须带 missingNotice�
   const block = src.match(/const exportContext = computed\(\(\) => \{[\s\S]*?\n  \}\)/)
   assert.ok(block, '未找到 exportContext 定义块')
   assert.match(block[0], /missingNotice:/)
+})
+
+test('流水线提交成功后列表刷新失败不得覆盖运行结果为提交失败', () => {
+  const helper = text.match(/async function refreshRunsAfterSubmission\(\) \{([\s\S]*?)\n\}/)
+  assert.ok(helper, '提交后的列表刷新必须有独立错误边界')
+  assert.match(helper[1], /await load\(/)
+  assert.match(helper[1], /useAnalysis owns the list error state/)
+  assert.match(text, /startRunPolling\(runResult\.value\.runId\)[\s\S]*?await refreshRunsAfterSubmission\(\)/)
+  assert.doesNotMatch(helper[1], /runResult\.value\s*=/)
 })

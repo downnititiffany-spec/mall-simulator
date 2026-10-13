@@ -15,7 +15,7 @@ const functionBody = (name) => {
 }
 
 test('FAILED run 的重试按钮受 loading/busy 双向保护，避免与刷新或重复 retry 并发', () => {
-  assert.match(source, /v-if="r\.status === 'FAILED'"[^>]*@click="retry\(r\.id\)"[^>]*:disabled="loading \|\| busy"/)
+  assert.match(source, /v-if="r\.status === 'FAILED'"[^>]*@click="retry\(r\.id\)"[^>]*:disabled="loading \|\| busy \|\| recoveryBusy"/)
 })
 
 test('retry 在 loading/busy 时 fail-closed，进入 busy 后清理旧结果，并在 finally 中恢复 busy', () => {

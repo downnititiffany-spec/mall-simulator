@@ -46,7 +46,8 @@ test('sourceDataVersion 与 Idempotency-Key 复用同一 operationId', () => {
 test('runOnce 仍保持成功刷新、失败可见和 finally 释放 busy', () => {
   const body = functionBody('runOnce', 'retry')
   assert.match(body, /runResult\.value = await api\.createPipelineRun/)
-  assert.match(body, /page\.value = 1\s*await load\(\{ page: page\.value, size: pageSize\.value, sort: sort\.value \}\)/)
+  assert.match(body, /page\.value = 1\s*await refreshRunsAfterSubmission\(\)/)
+  assert.match(source, /async function refreshRunsAfterSubmission\(\) \{\s*try \{\s*await load\(\{ page: page\.value, size: pageSize\.value, sort: sort\.value \}\)\s*\} catch \(_\) \{[\s\S]*useAnalysis owns the list error state[\s\S]*\}\s*\}/)
   assert.match(body, /catch \(e\) \{[\s\S]*runResult\.value = \{ status: 'FAILED: ' \+ \(e\.message \|\| e\) \}/)
   assert.match(body, /finally \{\s*busy\.value = false\s*\}/)
 })

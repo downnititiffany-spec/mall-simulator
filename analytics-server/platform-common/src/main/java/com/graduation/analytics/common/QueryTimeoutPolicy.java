@@ -8,18 +8,18 @@ import org.springframework.core.env.Environment;
  * <p>设计 V3.0 的锚点：L544 明确 MetricStore 的能力描述要包含 {@code queryTimeout}；
  * L569 给只读 SQL 定下「查询超时 30 秒」；L572 要求只读链路上 {@code setReadOnly} 与
  * 「timeout / maxRows」**同时生效**。本类只承担"一个数、一处定、谁都能引用"，
- * 不做执行（执行点分别是 {@code metricReadJdbcTemplate} 与 {@code SqlExecutor}）。</p>
+ * 不做执行；执行点包括 {@code metricReadJdbcTemplate}、{@code SqlExecutor} 和
+ * {@code RuntimeProfileServiceImpl.checkHive()} 的 HiveServer2 探测语句。</p>
  *
  * <p><b>为什么需要它</b>：S3-19 之前，阶段4 的分析只读链路（{@code MySqlMetricStore}、
  * {@code MetricAdsReader}）**没有任何语句超时**，而阶段6 的 {@code SqlExecutor} 自带字面量 30；
- * 同一平台两套超时正是 L158 要消掉的漂移。属主收拢后，改一处两条路径同时改。</p>
+ * 同一平台两套超时正是 L158 要消掉的漂移。属主收拢后，各语句执行点读取同一配置策略。</p>
  *
  * <p><b>绝不解释成"无超时"</b>：JDBC 里 {@code setQueryTimeout(0)} 表示永不超时。
  * 因此配置值为 0 / 负数 / 非数字 / 空 / 越界时一律回退默认值，而不是把 L158 静默关掉。</p>
  *
- * <p><b>未做（已登记）</b>：per-Store 能力描述（L544 的 {@code supportsSnapshot /
- * supportsDimensions / maxRows / queryTimeout / availability}）本轮未实现；
- * meta 读写共用模板与发布写路径刻意未纳入读超时。</p>
+ * <p>设计 L544 的 per-Store 能力由 {@code MetricStore.Capabilities} 描述；该能力对象报告实际
+ * {@code queryTimeout}，但不改变本类的单一超时数值属主。meta 读写共用模板与发布写路径刻意未纳入读超时。</p>
  */
 public final class QueryTimeoutPolicy {
 

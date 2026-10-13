@@ -67,7 +67,9 @@ public class QueryCostGuard {
         }
         // effectiveDataSource() 在只读源缺失时抛异常 → 成本守卫根本装配不起来，属于期望的 fail-closed
         DataSource ds = executor.effectiveDataSource();
-        return new JdbcTemplate(ds);
+        JdbcTemplate template = new JdbcTemplate(ds);
+        template.setQueryTimeout(executor.queryTimeoutSeconds());
+        return template;
     }
 
     public record CostEstimate(long estimatedScanRows, int planRows) {
@@ -92,7 +94,7 @@ public class QueryCostGuard {
         } catch (RuntimeException e) {
             // fail-closed：非超时 EXPLAIN 失败绝不放行（宁可不答复，也不冒全表扫描风险）
             throw new AiSqlException(SqlPolicy.SQL_COST_TOO_HIGH,
-                    "EXPLAIN 执行失败，按 fail-closed 拒绝: " + e.getMessage(), e);
+                    "EXPLAIN 执行失败，按 fail-closed 拒绝");
         }
         if (plan == null || plan.isEmpty()) {
             throw new AiSqlException(SqlPolicy.SQL_COST_TOO_HIGH, "EXPLAIN 未返回任何计划行，按 fail-closed 拒绝");
@@ -108,7 +110,7 @@ public class QueryCostGuard {
             Long rows = toLong(row.get("rows"));
             if (rows == null) {
                 throw new AiSqlException(SqlPolicy.SQL_COST_TOO_HIGH,
-                        "EXPLAIN 计划缺少 rows 列或值不可解析，按 fail-closed 拒绝: " + row);
+                        "EXPLAIN 计划缺少 rows 列或值不可解析，按 fail-closed 拒绝");
             }
             if (rows < 0) {
                 throw new AiSqlException(SqlPolicy.SQL_COST_TOO_HIGH, "EXPLAIN rows 出现负值，按 fail-closed 拒绝");

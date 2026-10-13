@@ -47,12 +47,13 @@ import java.util.TreeMap;
  *       canonical 的 sha256（执行器产出，按样本顺序）。</li>
  * </ul>
  *
- * <h2>可激活判据（fail-closed）</h2>
- * <p>{@code activationEligible} = 画像装载成功 且 {@code processedCount>0} 且 无 violation 且 无系统异常
- * 且 {@code activationBlocks} 空 且 {@code capabilityGaps} 空。**本轮不存在"无害缺口"白名单**：任何 capabilityGap
- * 都按"影响正确性"处理（例如 {@code identityPolicy}/{@code quarantinePolicy} 未实现、v1 的 {@code checksum}
- * 兼容元数据、未使用的金额单位声明之外的缺口）。将来若确证某缺口无害，必须在激活阶段显式登记白名单并附证据，
- * 不允许在这里悄悄放行。{@code activationIneligibleReasons} 逐条列出原因，便于对账。</p>
+ * <h2>预览资格摘要与激活硬门槛</h2>
+ * <p>{@code activationEligible} 是保守预览摘要：画像装载成功、{@code processedCount>0}、无逐行 violation/系统异常，
+ * 且 {@code activationBlocks} 与 {@code capabilityGaps} 都为空。它可能因逐行预览差异或仅供提示的能力缺口为
+ * {@code false}。按 D-030，激活以 Loader 语义为准：激活服务检查装载成功、非空样本、无系统异常和 Loader
+ * 明确产出的 {@code activationBlocks}；逐行 violation、capabilityGaps 与这个汇总布尔值不单独阻断激活。
+ * 影响正确性的关键缺口必须由 Loader 显式登记为 {@code activationBlocks}。{@code activationIneligibleReasons}
+ * 仍逐条解释预览摘要为何为 false，便于管理员判断风险。</p>
  * <p>{@code processedCount>0} 这条是"零事实 ≠ 无罪"：空样本/全空行不会有违例，若不额外要求"至少处理过一行"，
  * 一份什么都没证明的报告就会被判"可激活"。宁可对空样本 fail-closed。</p>
  *

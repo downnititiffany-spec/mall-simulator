@@ -28,6 +28,7 @@ import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -107,8 +108,10 @@ class AnalysisGoldenMySqlIT {
         metricRead = new JdbcTemplate(dataSource(METRIC_DB, "metric.read.user", "metric.read.password"));
         meta = new JdbcTemplate(dataSource(META_DB, "meta.app.user", "meta.app.password"));
 
-        MySqlMetricStore store = new MySqlMetricStore(metricRead, metricRead); // 写源在本类用不到
-        MetricAdsReader reader = new MetricAdsReader(metricRead);
+        // Every golden assertion names SID explicitly; the provider intentionally fails closed
+        // so this read-only legacy fixture cannot default to a cross-profile ACTIVE snapshot.
+        MySqlMetricStore store = new MySqlMetricStore(metricRead, metricRead, Optional::empty); // 写源在本类用不到
+        MetricAdsReader reader = new MetricAdsReader(metricRead, Optional::empty);
         MetricDefinitionMapper dictionary = mock(MetricDefinitionMapper.class);
         when(dictionary.selectList(any())).thenReturn(dictionaryFromMeta());
 

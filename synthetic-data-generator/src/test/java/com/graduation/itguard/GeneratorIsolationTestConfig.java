@@ -15,8 +15,9 @@ import javax.sql.DataSource;
  *
  * <p>用于 {@code synthetic-data-generator} 的 {@code @SpringBootTest} 用例：
  * 它们会用 {@code application.yml} 的<b>默认 profile</b> 起整个应用，
- * 也就是连 {code 127.0.0.1:3306/generator_meta} + {@code root}（见 V25-S03 R-4b 记录），
- * 然后通过 {@code GeneratorMetaStore} 真写库。所以门禁必须挂在<b>上下文启动期</b>，
+ * 以前曾使用 {@code 127.0.0.1:3306/generator_meta + root} 的不安全默认值（见 V25-S03 R-4b 记录）；
+ * 当前默认配置已改为隔离 3307 且账号/口令必填。用例仍会通过 {@code GeneratorMetaStore} 真写库，
+ * 所以门禁必须挂在<b>上下文启动期</b>，
  * 而不是等用例方法里再检查——那时候 Flyway 已经建完表、用例可能已经写了几行。</p>
  *
  * <p>两道接线：</p>
@@ -102,7 +103,7 @@ public class GeneratorIsolationTestConfig {
                 IsolationGuard.requireEnabled("flyway-before-migrate");
             } catch (IsolationGuard.GuardViolation e) {
                 throw new IsolationGuard.GuardViolation(e.getMessage()
-                        + "（整改前本模块的 @SpringBootTest 用默认 profile 连 127.0.0.1:3306/"
+                        + "（历史整改前本模块曾用默认 profile 连 127.0.0.1:3306/"
                         + "generator_meta + root 并真写库；V25-S03 R-4b 起在 Flyway 迁移前拒绝。）");
             }
         }

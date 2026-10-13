@@ -142,7 +142,7 @@ public final class MallApiGenerationEngine implements GenerationEngine {
         // 170 条 [createOrder] INSUFFICIENT_STOCK 被打成 failed_count=170，运行却报 SUCCESS。
         // 因此改成"跑完再据实收口"：让每条事件都拿到真实结论、流水记全，最后有任何失败就不许报成功。
         MallApiDispatchSink dispatch = new MallApiDispatchSink(adapter, target, adapter.capabilities(target),
-                journal, preflight.catalog(), false, preflight.operationRoutes());
+                journal, preflight.catalog(), false, preflight.operationRoutes(), request.runId());
         ForwardingSink forwarding = new ForwardingSink(sink, dispatch, request.eventCount(), eventStats);
 
         // 刻意用 3 参重载：MALL_API 模式下"权威账本"是 ForwardingSink 那本（只记真的转写进规范流的事件），

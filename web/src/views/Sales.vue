@@ -90,6 +90,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import api from '../api'
 import { useAnalysis } from '../composables/useAnalysis'
+import { requireAnalysisDataResponse } from '../utils/analysisDataResponse.js'
 import { ENDPOINT_ROW_KEYS, chartStateForRows } from '../utils/chartState'
 import { formatInteger, formatNumber, formatPercent } from '../utils/number'
 import { dateRangeErrorText, isRangeInverted, localIsoDayOffset } from '../utils/localDate.js'
@@ -112,7 +113,11 @@ const rangeError = ref('')
 const pageSize = 10
 
 const analysis = useAnalysis({
-  fetcher: (params, signal) => api.sales(params, { signal }),
+  fetcher: async (params, signal) => requireAnalysisDataResponse(await api.sales(params, { signal }), {
+    resourceLabel: '销售分析',
+    arrayFields: ['trend', 'byCategory', 'byRegion'],
+    objectFields: ['quality']
+  }),
   rowKeys: ENDPOINT_ROW_KEYS.sales,
   pinSnapshot: true,
   defaults: {

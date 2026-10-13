@@ -14,11 +14,11 @@ import java.nio.file.{Files, Path}
  * S3-13：DWD / DIM 物理表形的**三方一致**守卫（不需要 Spark）。
  *
  * 与 S3-11（`DwsSchemaOwnerSpec`）同族、同型：把「参考副本」「唯一所有者」「写入投影」三份之间的
- * 漂移钉在编译后的测试里。本类只覆盖 **DWD 3 张 + DIM 2 张有所有者的表**（DWS/ODS/ADS 各有自己的
+ * 漂移钉在编译后的测试里。本类覆盖 **DWD 3 张 + 当前有所有者的 DIM 4 张表**（DWS/ODS/ADS 各有自己的
  * 守卫或已登记缺口，不在此重复）。
  *
  * 本类钉六件事：
- *  1. 参考副本 `warehouse/ddl/01-dwd.sql`（3 张）与 `02-dims.sql`（其中 2 张）↔ 唯一所有者
+ *  1. 参考副本 `warehouse/ddl/01-dwd.sql`（3 张）与 `02-dims.sql`（其中 4 张）↔ 唯一所有者
  *     `LocalSchemaInitJob.statements`：列**名/类型/顺序**逐列一致，分区列一致；
  *  2. 两份参考副本都不得用 `ALTER TABLE` 旁路加列（否则「唯一所有者」断言可被绕过）；
  *  3. 写入投影（`DwdSql` / `DimSql` / `TradeDwdJob` 的 `INSERT OVERWRITE … SELECT` 列表）↔ 所有者**列序**一致；
@@ -27,12 +27,12 @@ import java.nio.file.{Files, Path}
  *     （`TradeDwdJob` L128-148 记录的 run 44/45/46 连续失败真根因就是这个位置），并附**守卫自检**
  *     （把 `dt` 挪到非末位时同一断言必须红 —— 否则本守卫是空的）；
  *  5. 一份**冻结快照** `Frozen`：防止"三份一起漂"（例如三处同时漏加一列）时全绿；
- *  6. DIM 的**参考副本已声明、所有者不建**的 3 张表（`dim_date`/`dim_region`/`dim_metric`）列为
+ *  6. DIM 的**参考副本已声明、所有者不建**的 1 张表（`dim_metric`）列为
  *     **显式白名单**，并断言它们既无所有者、也无写入投影 —— 白名单一旦漂移立刻红。
  *
  * 归因边界（不得越界表述）：本类只判**表形/列序/写入目标**，不判任何口径、不判任何指标值、不判
  * 真实 Hive 上的物理落盘（本地链与真 Hive 不等价，见 `P2TestSupport` 自陈的测试域）；也不断言
- * 白名单里那 3 张 DIM 表"应当有数据"——它们缺生产链的事实登记在
+ * 白名单里 DIM 表"应当有数据"——它缺生产链的事实登记在
  * `docs/status-history/项目实施进度与任务看板.md:437` 与 `docs/audit/v2-completeness-audit.md:133-135`，
  * 本类只保证"没人偷偷建一半"。
  *
@@ -52,7 +52,9 @@ class DwdDimSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     "dwd_reject_record" -> DwdSql.duplicateReject(ns, dt),
     "dwd_order_detail" -> TradeDwdJob.orderDetailInsertSql(ns, dt, srcSys),
     "dim_user" -> DimSql.userSnapshot(ns, dt),
-    "dim_product" -> DimSql.productSnapshot(ns, dt)
+    "dim_product" -> DimSql.productSnapshot(ns, dt),
+    "dim_date" -> DimSql.dateRangeRebuild(ns, "2026-01-01", "2026-01-02"),
+    "dim_region" -> DimSql.regionDictionary(ns)
   )
 
   /**
@@ -92,20 +94,24 @@ class DwdDimSchemaOwnerSpec extends AnyFlatSpec with Matchers {
       "parent_category_name" -> "STRING", "brand_id" -> "BIGINT", "price" -> "DECIMAL(18,2)",
       "cost" -> "DECIMAL(18,2)", "status" -> "STRING", "source_batch_id" -> "BIGINT",
       "product_key" -> "BIGINT", "category_key" -> "BIGINT",
-      "parent_category_key" -> "BIGINT", "brand_key" -> "BIGINT")
+      "parent_category_key" -> "BIGINT", "brand_key" -> "BIGINT"),
+    "dim_date" -> Seq(
+      "date_key" -> "STRING", "year" -> "INT", "month" -> "INT", "day" -> "INT",
+      "week_of_year" -> "INT", "quarter" -> "INT", "day_of_week" -> "INT", "is_weekend" -> "INT"),
+    "dim_region" -> Seq(
+      "region_code" -> "STRING", "region_name" -> "STRING", "city_level" -> "STRING")
   )
 
   /**
    * 参考副本**已声明**、唯一所有者**不建**、且全仓 main 源码**零写入**的 DIM 表 —— 显式白名单。
    *
-   * 事实（实测，非推测）：`warehouse/ddl/02-dims.sql:49-83` 声明了这 3 张表，而
-   * `LocalSchemaInitJob.statements` 的 `ns.dim` 名下只有 `dim_user`/`dim_product` 两条建表语句；
-   * 设计 §9.2 **L309** 要求这三张表"日期区间幂等；地区未知成员；指标字典同步，**不只建空表**"，
+   * 当前仍无所有者的表：`warehouse/ddl/02-dims.sql:63-83` 声明了 `dim_metric`；
+   * `dim_region` 已由 `LocalSchemaInitJob` 建表并进入 `DimensionBuildJob` 静态字典写入。
+   * 设计 §9.2 **L309** 还要求地区未知成员、指标字典同步，**不只建空表**，
    * 同节 **L322** 逐字写着"已知DIM仅user/product有日常产出…需逐项补证"。
-   * 本轮**只登记不实现**（补生产链涉及分区/版本/同步方式等未决口径，须走设计差异裁定），
-   * 故用白名单把"参考副本多出来 3 张"这件事**写死**：任何一张被删、被建、或被写入，本类立即红。
+   * 指标同步语义仍待裁定，故用白名单把 `dim_metric` 写死：被删、被建或被写入，本类立即红。
    */
-  private val UnownedDimTables: Set[String] = Set("dim_date", "dim_region", "dim_metric")
+  private val UnownedDimTables: Set[String] = Set("dim_metric")
 
   // ── 夹具 ────────────────────────────────────────────────────────────────
 
@@ -209,7 +215,7 @@ class DwdDimSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "A2 参考副本 02-dims.sql 中有所有者的 2 张 DIM 表与唯一所有者逐列一致" in {
+  it should "A2 参考副本 02-dims.sql 中有所有者的 DIM 表与唯一所有者逐列一致" in {
     val ddl = dimRef
     val owner = ownerDim
     val tables = Frozen.keys.filter(_.startsWith("dim_")).toSet
@@ -227,10 +233,13 @@ class DwdDimSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     Frozen.keys.foreach { table =>
       val ddl = if (table.startsWith("dwd_")) dwdDdl else dimDdl
       withClue(s"$table: ") {
-        ddl.partitions(table) should be(Seq("dt" -> "STRING"))
-        owner.partitions(table) should be(Seq("dt" -> "STRING"))
-        ddl.columnSeq(table).map(_._1) should not contain "dt"
-        owner.columnSeq(table).map(_._1) should not contain "dt"
+        val expectedPartitions = if (Set("dim_date", "dim_region").contains(table)) Seq.empty else Seq("dt" -> "STRING")
+        ddl.partitions(table) should be(expectedPartitions)
+        owner.partitions(table) should be(expectedPartitions)
+        if (!Set("dim_date", "dim_region").contains(table)) {
+          ddl.columnSeq(table).map(_._1) should not contain "dt"
+          owner.columnSeq(table).map(_._1) should not contain "dt"
+        }
       }
     }
   }
@@ -279,7 +288,7 @@ class DwdDimSchemaOwnerSpec extends AnyFlatSpec with Matchers {
         counts.getOrElse(table, 0) should be(1)
       }
     }
-    // 白名单里的 3 张表必须**零写入**（有 DDL 无生产链是登记事实，但不能有人偷偷写一半）
+    // 白名单里的 2 张表必须**零写入**（有 DDL 无生产链是登记事实，但不能有人偷偷写一半）
     UnownedDimTables.toSeq.sorted.foreach { table =>
       withClue(s"$table 不应有写入语句: ") {
         counts.getOrElse(table, 0) should be(0)
@@ -298,7 +307,7 @@ class DwdDimSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "C2 参考副本已声明但所有者不建的 DIM 表恰好等于显式白名单，且这 3 张无所有者" in {
+  it should "C2 参考副本已声明但所有者不建的 DIM 表恰好等于显式白名单，且该表无所有者" in {
     val ddlTables = dimRef.columns.keySet
     val dimOwned = Frozen.keys.filter(_.startsWith("dim_")).toSet
     withClue("02-dims.sql 的表集与「所有者表集 + 白名单」不一致: ") {

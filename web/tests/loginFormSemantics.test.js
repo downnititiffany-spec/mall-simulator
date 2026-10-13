@@ -22,3 +22,8 @@ test('login validation and error feedback remain accessible', () => {
   assert.match(login, /class="login-error" role="alert"/)
   assert.match(login, /if \(loading\.value\) return/)
 })
+
+test('login footer describes the product without stale phase/version labeling', () => {
+  assert.match(login, /class="login-foot">电商数据链路 · 经营分析<\/div>/)
+  assert.doesNotMatch(login, /V2\.2|阶段7 看板/)
+})

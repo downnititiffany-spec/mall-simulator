@@ -31,6 +31,8 @@ export function canPreview(state) {
   }
   const profileText = (s.profileText || '').trim()
   if (!profileText) return { ok: false, reason: '请粘贴候选映射画像 JSON 原文' }
+  const profileCheck = validateProfileText(profileText)
+  if (!profileCheck.ok) return { ok: false, reason: profileCheck.error }
   const limit = Number(s.limit)
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
     return { ok: false, reason: '样本行数上限必须是 1..100 的整数（服务端契约）' }
@@ -40,7 +42,7 @@ export function canPreview(state) {
 
 /**
  * 画像原文的轻量客户端校验（advisory：真正的装载校验在服务端 Loader）。
- * 只做「能 parse、是对象、能看出 fieldMappings 形状」三层，帮助管理员在提交前发现粘贴错误。
+ * 只做「能 parse、是对象、能看出 V1/V2 映射对象」三层，避免把合法旧版画像误挡在服务端之外。
  */
 export function validateProfileText(text) {
   const t = (text || '').trim()
@@ -54,8 +56,10 @@ export function validateProfileText(text) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
     return { ok: false, error: '画像必须是 JSON 对象' }
   }
-  if (!obj.fieldMappings || typeof obj.fieldMappings !== 'object' || Array.isArray(obj.fieldMappings)) {
-    return { ok: false, error: '缺少 fieldMappings 对象（v2 画像必备键之一，Loader 会拒绝）' }
+  const hasV1FieldMapping = obj.fieldMapping && typeof obj.fieldMapping === 'object' && !Array.isArray(obj.fieldMapping)
+  const hasV2FieldMappings = obj.fieldMappings && typeof obj.fieldMappings === 'object' && !Array.isArray(obj.fieldMappings)
+  if (!hasV1FieldMapping && !hasV2FieldMappings) {
+    return { ok: false, error: '缺少 fieldMapping / fieldMappings 映射对象（V1/V2 画像必备形状）' }
   }
   return { ok: true, error: '' }
 }

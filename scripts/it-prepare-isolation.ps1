@@ -98,10 +98,8 @@ $analyticsMetaDb   = "${RunId}_analytics_meta"
 $analyticsMetricDb = "${RunId}_analytics_metric"
 $analyticsMetaUser = New-IsolationUserName -RunId $RunId -Role 'metaapp'
 $analyticsMetricUser = New-IsolationUserName -RunId $RunId -Role 'metricapp'
-# G31-01（指导书 5.1.4 发布/只读分别授权）：设置 V25_IT_METRIC_READ_PASSWORD 时，
-# 额外创建**只读**账号（对 ${RunId}_analytics_metric 仅 SELECT），供平台只读源
-#（PLATFORM_METRIC_READ_USER/PASSWORD）使用。不设置则跳过——向后兼容：
-# 既有调用方（mall/generator/旧 analytics 批次）行为完全不变。
+# 指导书 V3.0 阶段 4 要求指标发布与查询账号分离。选择 -IncludeAnalytics 时，
+# 必须提供独立 metric_read 凭据，并为本次隔离指标库创建仅有 SELECT 权限的账号。
 $metricReadEnabled = $false
 $metricReadUser = ''
 $metricReadPwd = $null
@@ -141,7 +139,7 @@ if ($IncludeAnalytics) {
   if ($metricReadEnabled) {
     Write-Host ("   受限账号   : {0}@'%'  （只对 {1} **只读 SELECT**）" -f $metricReadUser, $analyticsMetricDb)
   }
-  Write-Host '   analytics 口令：只从进程环境 V25_IT_META_PASSWORD / V25_IT_METRIC_PUBLISH_PASSWORD（以及可选 V25_IT_METRIC_READ_PASSWORD）读取；不落盘、不回显。'
+  Write-Host '   analytics 口令：只从进程环境 V25_IT_META_PASSWORD / V25_IT_METRIC_PUBLISH_PASSWORD / V25_IT_METRIC_READ_PASSWORD 读取；不落盘、不回显。'
 }
 Write-Host (" 将写入的凭据文件（仓内、gitignore 覆盖、单键 password）：")
 Write-Host ("               : {0}" -f $credRefFileMall)
@@ -179,6 +177,11 @@ if ($IncludeAnalytics) {
   if (-not $analyticsMetaPwd -or -not $analyticsMetricPwd) {
     Write-Host '拒绝：-IncludeAnalytics 真执行要求预先设置 V25_IT_META_PASSWORD 与 V25_IT_METRIC_PUBLISH_PASSWORD。'
     Write-Host '  这两个值只从当前进程环境读取；脚本不提供密码参数、不生成文件、不回显。'
+    exit 2
+  }
+  if (-not $metricReadPwd) {
+    Write-Host '拒绝：-IncludeAnalytics 真执行要求预先设置 V25_IT_METRIC_READ_PASSWORD。'
+    Write-Host '  metric_read 必须使用独立口令；该值只从当前进程环境读取，不提供密码参数、不生成文件、不回显。'
     exit 2
   }
 }
@@ -324,8 +327,8 @@ if ($IncludeAnalytics) {
     Write-Host ("  V25_IT_METRIC_READ_USERNAME={0}  （只读账号，DB 层仅 SELECT）" -f $metricReadUser)
     Write-Host '  V25_IT_METRIC_READ_PASSWORD=<沿用当前进程环境；不回显>'
   } else {
-    Write-Host ("  V25_IT_METRIC_READ_USERNAME={0}" -f $analyticsMetricUser)
-    Write-Host '  V25_IT_METRIC_READ_PASSWORD=<默认可与 publish 同值；runner 显式注入>'
+    Write-Host ("  V25_IT_METRIC_READ_USERNAME={0}" -f (New-IsolationUserName -RunId $RunId -Role 'metricread'))
+    Write-Host '  V25_IT_METRIC_READ_PASSWORD=<真执行前必须从当前进程环境设置>'
   }
 }
 exit 0

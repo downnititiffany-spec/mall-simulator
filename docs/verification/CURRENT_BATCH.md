@@ -1,4 +1,235 @@
+> **2026-10-12 阶段2/7 当前 Mall HDFS→平台采集代码实读**：平台当前工作树 `HdfsFlumeRawIngestionIT` 直接从当前 RunId 原始 HDFS 文件读取89行/41,103字节，SUCCESS/89 accepted/0 quarantine/error，READY manifest后提交测试替身 checkpoint；同实例重跑 0条、`noNewData=true`。HDFS测试1/1 PASS，`platform-common`+`connection-ingestion` BUILD SUCCESS。测试创建的唯一 HDFS 子目录已清理；首轮以 Windows `ASUS` 身份在写入前遭 HDFS ACL 拒绝，后按 HDFS owner `asus` 设置测试进程用户后通过，未改权限。Mapper/数据库/checkpoint为测试替身，不代表认证平台API、持久化或ODS/Spark/ADS；共享旧NameNode不代表独立部署验收。详见 `docs/verification/results/PHASE2-7-MALL-FLUME-HDFS-INGESTION-20261012.md`。
+
+> **2026-10-12 阶段7 当前 RunId 真实 Mall→HDFS Landing**：RunId `cloud_261012_012653_d3b0fc` 的 MALL_API 计划 60/60 成功、0 failed；operation journal 记录目录 GET 1、注册5、下单22、支付10、取消11、退款4，FAILED 0。商城滚动 JSONL 有89行、唯一event_id；调用当前 RunId File Channel 后，HDFS `/landing/cloud_261012_012653_d3b0fc/raw/dt=20261012/hour=10/` 单文件89行，源/HDFS SHA256相同（`5946695fdf129017ce2e9721d639e52492b4cbccf62f00793f5e6c2e5a732c43`）。一次性 Flume helper因NameNode配置属于旧RunId而按守卫拒绝，未写入；新增 active-run helper校验当前 Flume PID/config、File Channel和目标Landing空态后通过常驻agent投递。Bash语法通过，`AnalyticsIsolationScriptsContractTest` 13/13 PASS。共享HDFS namespace不代表独立 NameNode验收；平台摄取/Hive/Spark/ADS/认证页面均未验，阶段7/4/8开放。报告 `docs/verification/results/PHASE7-CURRENT-RUN-MALL-API-FLUME-HDFS-20261012.md`；备份后缀 `bak-20261012-stage7-current-run-mall-flume`。
+
+### 2026-10-12 阶段7 Generator CLI 任务根解析修复
+
+- `scripts/cloud-generator-cli.sh` 改为读取与单节点启动器一致的 `CLOUD_SINGLE_NODE_ROOT`（默认值仍为 `/workspace/single-node`）；修复 CRLF 造成的 Python heredoc 解析失败，并在 `.gitattributes` 锁定 LF。新增任务根契约测试。
+- `bash -n` PASS；临时 task-root 分派探针在 JVM/DB 启动前按预期通过；`AnalyticsIsolationScriptsContractTest` 12/12 PASS，`git diff --check` 无空白错误。未运行生成器 CLI、未创建业务数据或连接数据库。该项仅修复工具定位能力，不代表 Stage 7 当前 RunId 完整链路通过。
+- 报告 `docs/verification/results/PHASE7-GENERATOR-CLI-TASK-ROOT-20261012.md`；动态文档编辑前备份后缀 `bak-20261012-generator-cli-task-root`。
+### 2026-10-12 Spark 全档 ScalaTest fresh 回归
+
+- 项目统一入口 `pwsh -NoProfile -File scripts/run-tests.ps1 -Suite spark` 使用 JDK 8 和本轮 RunId `dev003c_20261012_100411_9b566b`；TestSuite.txt 本轮新写，42 suites completed、332 succeeded、0 failed/aborted/ignored/pending，基线 MATCH，入口 PASS。`CategoryRegionAdsSpec` 包含在本轮套件中。
+- 证明范围仅为 Spark local[1] + in-memory catalog；不代表生产 Hive/共享 HMS/多节点通过。测试未连接数据库、未触碰3306、未启停 task-owned 服务、未改业务代码。真实管理员认证只读验收仍开放；先前获准的隔离管理员口令重置命令被执行策略在启动前拒绝，未发生数据库写入。
+- 报告 `docs/verification/results/PHASE3-SPARK-FULL-SUITE-20261012.md`；动态文档编辑前备份后缀 `bak-20261012-spark-full-suite`。
+### 2026-10-12 Analytics Server 全模块离线 Maven 回归
+
+- `analytics-server` 执行 `mvn -o test`：6 个业务模块全部 BUILD SUCCESS；Surefire 汇总 1381 tests，0 failures，0 errors，2 skipped（符号链接用例）。`git diff --check` 无空白错误，只有既有 LF→CRLF 警告。
+- Windows 测试环境缺少 `HADOOP_HOME`/`hadoop.home.dir` 时，HDFS URI 的状态测试输出 Hadoop 初始化诊断；测试通过并按约定报告受控错误。本轮没有连接数据库、启停服务或改动业务代码；未连接 3306。该结果不包含 `*IT`、真服务、浏览器或完整链路证据，不能视为产品验收。
+- 报告：`docs/verification/results/ANALYTICS-SERVER-FULL-MAVEN-REGRESSION-20261012.md`。编辑前备份后缀 `bak-20261012-analytics-full-maven-tests`。
+### 2026-10-12 阶段4/3 Metric Analysis 当前工作树模块回归
+
+- `mvn -o -pl metric-analysis -am test`：`platform-common` + `metric-analysis` 两模块 BUILD SUCCESS，153/153 PASS，0 failure/error/skipped。
+- 默认离线测试不包括 `*IT` 真库验收；未证明真实 JDBC/MySQL、MetricStore 运行时切换、认证 HTTP、浏览器或完整发布链。3306未访问、服务未启停。阶段3/4及总验收开放。报告 `docs/verification/results/PHASE4-METRIC-ANALYSIS-MODULE-REGRESSION-20261012.md`。文档编辑前备份后缀 `bak-20261012-phase4-metric-analysis-tests`。
+
+### 2026-10-12 阶段6 AI 调用审计写入失败回归
+
+- 当前工作树定向运行 `ExplanationProviderProvenanceTest`、`ExplanationEvidenceTest`、`TextToSqlAuditTest`：40/40 PASS，0 failure/error/skipped；`platform-common`、`connection-ingestion`、`metric-analysis`、`ai-decision` 四模块 Reactor BUILD SUCCESS。
+- 仅 Mockito/JUnit 证据；不证明真实数据库持久化、HTTP/浏览器或真实 Provider。D-039、阶段6及总验收开放；3306 未访问。报告 `docs/verification/results/PHASE6-AI-AUDIT-WRITE-FAILURE-REGRESSION-20261012.md`。文档编辑前备份后缀 `bak-20261012-phase6-ai-audit-tests`。
+
+### 2026-10-10 阶段14 DECISION_EFFECT 服务回归
+
+- 离线测试覆盖复用已保存评价、窗口/样本/口径/快照引用；INSUFFICIENT_DATA使用baseline快照且actual缺值保持null；保存评价与任务状态不一致时在证据构建/持久化前拒绝。
+- `ReportInstanceServiceTest` 13/13 PASS（0 failure/error/skipped），七模块Maven Reactor BUILD SUCCESS。只属Mockito/JUnit证据。
+- 当前RunId无可供实服 DECISION_EFFECT 的已完成评价任务，未伪造审批/执行/评价。跨用户owner隔离实服、导出和真实LLM仍未闭合；阶段14及总验收开放。报告：`docs/verification/results/PHASE14-REPORT-DECISION-EFFECT-SEMANTIC-TEST-20261010.md`；动态文档编辑前备份后缀 `bak-20261010-decision-effect-template-test`。
+### 2026-10-10 阶段14 五种报告模板真实 API/浏览器验收
+
+- 当前 RunId `cloud_261010_061315_23e7b3` ACTIVE 快照 `S20261010_1` 上，OPS_DAILY ID1 加本轮 OPS_WEEKLY ID2、ORDER_ANALYSIS ID3、PRODUCT_ANOMALY ID4、USER_OPERATIONS ID5 均经真实管理员 API 生成并保持READY。ID2–5 的本人分页/详情/artifact及快照/source/口径/templateContent各10项验证通过；无POST重放、未请求AI。
+- Chromium真实报告页核对五行和快照，逐个读取详情及完整JSON artifact，最后退出清除token：28/28检查PASS、15请求均成功、页面异常0。首次4个标题负例来自验证器未等待Vue详情请求，增加标题同步后复测通过，不是产品缺字段。
+- 仅覆盖五种模板，不包括DECISION_EFFECT（无合格已评价决策，本轮未伪造生命周期），也未验证实服双用户owner隔离、导出、LLM或生产部署。报告 `docs/verification/results/PHASE14-REPORT-FIVE-TEMPLATES-REAL-API-BROWSER-20261010.md`；动态文档编辑前备份后缀 `bak-20261010-five-report-templates-live`；阶段14/总验收开放。
+### 2026-10-10 阶段14 OPS_DAILY 报告真实 API 与浏览器验收
+
+- 当前 task-owned RunId `cloud_261010_061315_23e7b3` 的 ACTIVE 快照 `S20261010_1`（source=1、definition=v2）经真实管理员 API 生成一条 OPS_DAILY 报告（ID 1、READY、checksum 存在）；未请求 AI叙述、只发送一次POST。
+- 本人分页/详情/完整artifact只读 API 9/9检查PASS，artifact与快照/source/口径一致，含12 facts、0 anomalies、3 warnings、1 limitation。真实 Chromium 管理员浏览器报告页核对行、详情和完整JSON制品，7/7 PASS、7 API请求均成功、页面异常0并成功注销/token清除。
+- owner-only 的跨用户隔离没有做实服双用户验证，仍只有既有离线Controller证据。其他模板、文件导出、真实LLM叙述与部署验收未覆盖；未直连数据库、未连接3306。阶段14和总验收继续开放。证据：`docs/verification/results/PHASE14-REPORT-INSTANCE-REAL-API-BROWSER-20261010.md`；浏览器脚本：`scripts/verify-reports-real-browser.py`。
+- 当前进度动态文档本次编辑前备份后缀 `bak-20261010-report-instance-real-api-browser`。
+> **2026-10-10 16:59 当前 RunId 阶段4/14 新证据**：工作树 fetch 后与 `origin/codex/cloud-v3-development` 同步（0/0），状态条目1462，未清理。task-owned RunId `cloud_261010_061315_23e7b3` 的8091/3307及商城/生成器端口仍监听；专用HS2为10016/10018。10015和19083属于旧RunId，未停止/复用；3306未连接。决策API两条合成DRAFT的size=1认证分页、排序/边界和真实管理员页面均PASS；RuntimeProfile DRAFT ID2的`/test`中真实HiveServer2 JDBC `SELECT 1`通过，但Spark缺少`spark_submit_path`导致总检查失败，ACTIVE ID1不变。报告服务新语义测试10/10 PASS，七模块Reactor及package成功。范围均为单项证据，阶段4、14和总验收开放。详细结果见 `PHASE4-DECISION-PAGINATION-TASK-RUN-061315-20261010.md`、`PHASE4-RUNTIMEPROFILE-THRIFT-TASK-RUN-061315-20261010.md`、`PHASE14-REPORT-SEMANTIC-SERVICE-REGRESSION-20261010.md`。动态文件编辑前备份后缀 `bak-20261010-live-061315-decision-hs2-report`。
+> **2026-10-10 阶段5 报告中心浏览器 Mock**：新增 loopback-only Chromium 验证器，六模板入口可见；OPS_WEEKLY 快照/七日窗口/创建请求/摘要详情正确；DECISION_EFFECT 仅切换模板后加载候选且创建只发 decisionId。11次mock API、2个合成创建、意外路径0、页面错误0。未覆盖完整artifact，也不含真实API/DB/认证证据。报告 `docs/verification/results/PHASE5-REPORTS-UI-MOCK-BROWSER-20261010.md`；备份后缀 `bak-20261010-reports-browser-mock`。
+
+> **2026-10-10 阶段14 报告 owner 范围控制器回归**：报告创建/分页使用当前会话身份，详情/制品按 owner 查询，非本人记录 fail-closed，摘要不返回 artifactUri。与周报空值服务回归合计10/10 PASS（7+3），七模块 Maven Reactor BUILD SUCCESS。只证明离线单测，不含真实认证HTTP/DB/浏览器；隔离凭据仍未在任务/WSL可见，8091 closed，3306未连接。报告 `docs/verification/results/PHASE14-REPORT-OWNER-SCOPE-CONTROLLER-TEST-20261010.md`；备份后缀 `bak-20261010-report-owner-scope-tests`。
+
+> **2026-10-10 阶段14 OPS_WEEKLY 空值完整性修正**：七日任一必要计数/金额缺失时，相应周汇总留空并附 `WARN_WEEKLY_*_INCOMPLETE`；不补零，AOV仅在订单数与销售额完整时计算。`mvn -o -pl ai-decision -am -DskipTests compile` BUILD SUCCESS（ai-decision依赖reactor）；`ReportInstanceServiceTest` 7/7 PASS，0 failure/error/skipped；未做实服。真实平台因 task/WSL 未看到隔离 DB 凭据而未启动，8091 closed；3306未访问。报告 `docs/verification/results/PHASE14-OPS-WEEKLY-NULL-COMPLETENESS-20261010.md`；动态文档备份后缀 `bak-20261010-weekly-report-tests-pass`。
+
+> **2026-10-10 Analytics Server 七模块完整 Maven 回归**：Windows JDK17 完整 Reactor 六代码模块合计1364项、0 failure/0 error/2 skipped，BUILD SUCCESS。两项skip为 `SampleRefPolicyTest.symbolicLinkIsRejected` 与 `SourceProfileFileSymlinkTest.rejectsSymlinkedProfile`。connection-ingestion 状态测试现核验稳定脱敏错误且不回退本地目录。没有启动平台或连接数据库。证据 `docs/verification/results/ANALYTICS-SERVER-SEVEN-MODULE-FULL-REGRESSION-20261010.md`；修改前动态文档备份后缀 `bak-20261010-seven-module-full-regression`。
+
+> **2026-10-10 阶段14 报告实例启动恢复补充**：RunId `cloud_261010_061315_23e7b3` 的启动日志记录 V37/V38 应用至版本38；启动失败根因是 `ReportInstanceMapper` 未纳入 MapperScan，已修复。定向回归17/17 PASS，七模块打包成功。报告默认快照请求校验已修复；平台当前8091 closed，安全凭据变量未出现在任务/WSL环境，故没有再次启动或做真实 API/DB/浏览器验证。阶段14保持开放。详见 `docs/verification/results/PHASE14-REPORT-INSTANCE-STARTUP-RECOVERY-20261010.md`；动态文档编辑前备份后缀 `bak-20261010-phase14-startup-recovery`。
+
+
+> **2026-10-10 D-060 业务报告实例 OPS_DAILY Web/API 纵向切片**：新增受 `dashboard:view` 保护的创建、本人分页/详情/制品读取和“业务报告”Web入口；V38加性迁移保存owner、快照血缘、EvidencePackage JSON与SHA-256。页面用共享快照选项；只实现OPS_DAILY，另外五模板明确不可用并由API fail-closed，AI摘要受D-039阻塞。Maven定向17/17、Web全量447/447、Vite 5.4.21 build 694 modules成功，diff-check通过。无V37/V38数据库应用、实服/浏览器报告工作流或3306访问；阶段14/总验收开放。详见 `docs/verification/results/PHASE14-REPORT-INSTANCE-OPS-DAILY-API-20261010.md`；编辑前备份后缀 `bak-20261010-report-center-ui`。
+
+> **2026-10-10 阶段4当前 RunId Ops 批次真实管理员浏览器**：真实登录 `/ops` 后表格显示3条批次（2 SUCCESS/1 QUARANTINED），页摘要total=3，与 `/ingestion/status` 和 `/ingestion/batches/page` HTTP/code合法响应一致；注销清token，页面错误0。首轮严格文本locator未匹配摘要span，DOM确认预期字符串后重跑PASS，无UI缺陷。无写操作、未直连DB/3306。报告 `PHASE4-OPS-BATCH-REAL-BROWSER-CURRENT-RUN-20261010.md`；动态文档编辑前备份 `bak-20261010-ops-batch-browser-current-run`。
+> **2026-10-10 阶段4当前 RunId RuntimeProfile真实管理员只读浏览器**：RunId `cloud_261010_040051_b2ab54` 上真实登录并打开管理页，2个profile/1个ACTIVE；RuntimeProfile/source只读API契约均通过，5请求、页面错误0、logout成功。没有写入或调用profile test/activate/disable/switch；不直连DB/3306。此项只覆盖只读页面/API。报告 `PHASE4-RUNTIMEPROFILE-READ-ONLY-CURRENT-RUN-20261010.md`；文档编辑前备份后缀 `bak-20261010-runtime-profile-readonly-current-run`。
+> **2026-10-10 阶段4当前 RunId 决策非空分页与真实浏览器**：RunId `cloud_261010_040051_b2ab54` 先确认分页 total=0，再经正式 API 创建两条唯一标记合成 DRAFT（ID 1、2），没有提交/审批/执行。真实管理员 size=1 分页 PASS：ID升/降序、createdAt降序、跨页边界均验证，无重复。Playwright Chromium真实登录后显示两行DRAFT及正确分页摘要，API合法、页面错误0、logout/token清理成功；未点击决策操作。未直连DB/SQL、未触碰3306，阶段4整体开放。报告 `PHASE4-DECISION-PAGINATION-CURRENT-RUN-20261010.md`；编辑前备份后缀 `bak-20261010-decision-pagination-current-run`。
+> **2026-10-10 阶段4 当前 RunId 采集批次真实认证分页**：RunId `cloud_261010_040051_b2ab54` 使用现存的3条批次做真实管理员只读分页；`size=1` 下升/降序首屏和分页元数据有效，降序跨第1/2页无重复且严格递减，`verify-ingestion-batch-pagination.ps1` PASS 并完成注销。没有触发新采集或写业务数据，未直接访问DB/3306。此证据仅为当前RunId真实API，不含Ops浏览器/全阶段验收。报告 `PHASE4-INGESTION-BATCH-LIVE-PAGINATION-CURRENT-RUN-20261010.md`；动态文档编辑前备份 `bak-20261010-ingestion-batch-pagination-cloudrun`。
+> **2026-10-10 阶段4 RuntimeProfile/HS2 真实 API 探测**：当前 RunId `cloud_261010_040051_b2ab54` 使用 task-owned embedded Derby、Metastore 19084、HS2 10015 和 HDFS warehouse；Hive 3.1.3 NONE 模式。脚本确认 schema version 3.1.0；JDK17 启动未就绪，按身份守卫停止并保留目录，JDK8 重试监听成功。管理员 API 发现 id=2 的同 RunId profile 已存在，避免重复创建；`POST /runtime-profiles/2/test` 的 Landing/Hive/Spark/Metric 均通过，回读仍 TESTING，ACTIVE 仍唯一。`SELECT 1` 经当前 RuntimeProfile Hive JDBC 探测；19083 共享实例未复用，3306未连接。证据不含认证型HS2/切换/全项目验收。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HS2-REAL-API-TEST-20261010.md`；编辑前备份后缀 `bak-20261010-hs2-none-runtimeprofile-probe`。### 2026-10-10 阶段2/7 默认 File Channel 隔离恢复子例
+
+- 当前 RunId `cloud_261010_040051_b2ab54` 的隔离恢复 agent 使用与默认配置一致的 File Channel 核心参数和独立 checkpoint/data。1500条唯一合成事件进入 spool，文件完成为 `.COMPLETED`；未监听 Avro sink期间硬中断测试 agent，再以 HDFS sink恢复。输出1500行/1500 unique，missing=0/extra=0，源/HDFS SHA256同为 `64c5a285ca4b8acc4c07a45d3da9810071ea241a158c57c4d555095238292656`。
+- 默认在线 agent 本身未中断，恢复 agent 使用隔离 channel/HDFS 路径；不代表 Mall API、平台摄取、一般 exactly-once 或默认 agent PID 崩溃验收。恢复 agent已停，默认 agent保留1个；默认 Landing仍1行，3306未访问。报告 `docs/verification/results/PHASE2-DEFAULT-FLUME-FILE-CHANNEL-CRASH-RECOVERY-20261010.md`。动态文档备份后缀 `bak-20261010-flume-filechannel-recovery`。
+
+> **2026-10-10 阶段2/7 默认 Flume File Channel 单行实投**：新 RunId `cloud_261010_040051_b2ab54` 的默认 agent 接收 task-owned synthetic transport fixture，spool 完成标记 `.COMPLETED`；HDFS raw 落地1行/162 B，source/HDFS SHA-256 同为 `44d47282b65ebcd244ee1ebc76e78553164b16cab368856a261a8369edf90ddf`。整栈12/12端口监听。Mall Outbox只读GET为401，未做Mall写入或平台摄取；此结果不含Flume中断恢复。报告 `docs/verification/results/PHASE2-DEFAULT-FLUME-FILE-CHANNEL-20261010.md`；动态文档编辑前备份后缀 `bak-20261010-flume-default-file-channel-event`。
+
+> **2026-10-10 阶段2/7 默认 Flume agent 切换为 File Channel**：`scripts/cloud-single-node.sh` 原默认 memory channel 不满足 V3.0 §8.2；现使用 RunId 专属独立 checkpoint/data 路径。修改后启动新隔离 RunId `cloud_261010_040051_b2ab54`，status 12/12 LISTEN，Flume 实际加载 `type=file` 配置并初始化 checkpoint；当前未投递事件、未验证该 agent 的故障恢复，故只登记实现与启动通过。旧 RunId `cloud_261010_005249_1c73ec` 经身份守卫停止、数据保留。WSL `bash -n`、配置静态守卫、preflight、`git diff --check` 通过；3306未连接。证据 `docs/verification/results/PHASE2-DEFAULT-FLUME-FILE-CHANNEL-20261010.md`；动态文档备份后缀 `bak-20261010-flume-default-file-channel`。
+
+> **2026-10-10 阶段4真实管理员只读复核**：task-owned RunId cloud_261010_005249_1c73ec；恢复 Web 5173 后统一脚本 12/12 端口 LISTEN。实际 admin 登录/注销及 RuntimeProfile/source 两只读 API 浏览器验收 PASS（profile 1，ACTIVE 1，API 请求5，页面错误0）。账户摘要已等于V3.0迁移定义的管理员演示种子摘要，no-op 更新0行，未改密码。真实决策/采集分页排序端点返回合法契约但两个 total=0；非空分页/跨页排序门槛仍未验，没有插入业务行或 profile 写入。阶段4保持开放，详见 docs/verification/results/PHASE4-REAL-ADMIN-RUNTIMEPROFILE-AND-EMPTY-PAGINATION-20261010.md；动态文档备份后缀 bak-20261010-real-admin-pagination。
+
+> **2026-10-10 阶段4 RuntimeProfile 管理页浏览器 mock**：新增 `scripts/verify-runtime-profile-browser.py`，loopback-only headless Chromium、全部平台API mock。创建候选→凭据引用提交→测试前激活禁用→测试通过+确认→激活态刷新；11请求、意外路径0、password输入框0、页面错误0。仅前端浏览器 mock，不是实际登录/API/DB/HS2/profile切换证据；阶段4保持开放。结果 `docs/verification/results/PHASE4-RUNTIMEPROFILE-WEB-MOCK-BROWSER-20261010.md`；备份后缀 `bak-20261010-runtime-profile-mock-browser`。
+
+> **2026-10-10 阶段5 当前源码 Web 全量验证**：`npm test` 424/424 PASS，0 fail/cancelled/skipped；Vite 5.4.21 build 转换685 modules、产出32文件并写入TEMP新目录，没有覆盖web/dist。测试期间有一次 WebSocket port-in-use 与 Vite依赖重优化提示，测试汇总/退出仍通过。仅前端单测和构建，不含真实认证API/DB/浏览器员工流程；阶段5保持开放。报告 `docs/verification/results/PHASE5-WEB-CURRENT-SOURCE-FULL-VERIFY-20261010.md`；备份后缀 `bak-20261010-phase5-web-full-current`。
+> **2026-10-10 阶段5 商品服务端分页响应契约**：Products 页校验 `hot`/`conversion` 行数组及分页元数据一致性，非法成功响应不再显示成合法空图表；已知无快照告警的约定空态继续接受。定向 10/10、Web 全量 434/434 PASS，Vite 5.4.21 build 转换 689 modules 成功；无真实认证/API/DB/浏览器验证。报告 `docs/verification/results/PHASE5-PRODUCTS-PAGINATION-RESPONSE-CONTRACT-20261010.md`，动态文档备份后缀 `bak-20261010-products-pagination-response-contract`。
+
+### 2026-10-10 阶段4 G-03 当前工作树快照范围定向回归
+
+- 按 D-059 方案 A 复核默认读取/快照列表限定唯一 ACTIVE profile、显式 snapshotId 跨 profile 已发布快照读取及 dashboard:view 端点权限。MetricController overview/list/page 三路均有权限声明。
+- JDK17 离线 Maven 七模块 reactor 定向 19/19 PASS，0 failure/error/skipped：ACTIVE provider 4、MetricStore 5、ADS reader 3、MetricController HTTP 4、RuntimeProfileController HTTP 3；BUILD SUCCESS。新增 MockMvc 明确验证 overview 显式 snapshotId 精确传入 Store，管理员会话为 200、匿名为 401。
+- 另用 headless Chromium/Playwright 实测未登录访问 `/runtime-profiles` 重定向 `/login`，登录框可见、受保护内容不可见、无 API 请求/页面异常；仅证明客户端匿名路由守卫。Mockito/JUnit/MockMvc 和该浏览器检查均不证明真实 DB 行、认证后浏览器会话或 profile 切换。阶段4/总验收保持开放，3306未访问。报告：docs/verification/results/PHASE4-G03-ACTIVE-SNAPSHOT-SCOPE-CURRENT-TREE-TEST-20261010.md；备份后缀 bak-20261010-g03-current-tree-tests。
+
+> **2026-10-10 当前源码隔离栈 task-owned 正常停启复验**：RunId `cloud_261010_004300_b0b2ab` 的所有任务 PID（含双 Vite）身份核验后，统一 stop exit 0，12端口关闭且运行数据目录保留；preflight 通过后新 RunId `cloud_261010_005249_1c73ec` start exit 0，12/12 LISTEN。健康/商城/生成器/双登录页 HTTP 200，匿名决策与采集批次分页401。HDFS clusterID维持 `GP-SMOKE-20260924`，旧900字节样例仍可读、新Landing根存在。仅正常停启，不是行级回读、崩溃/业务/Spark恢复或阶段验收；3306零接触。结果 `docs/verification/results/PHASE8-CURRENT-SOURCE-TASK-OWNED-STOP-RESTART-20261010.md`；动态文档备份后缀 `bak-20261010-current-source-stop-restart`。
+> **2026-10-10 当前源码打包与隔离栈健康复核**：analytics-server 六模块1335项（2 skipped）、mall23/23、generator134/134，Maven package 均 BUILD SUCCESS；统一脚本新RunId cloud_261010_004300_b0b2ab，12端口LISTEN，公开探针5项200，匿名决策/采集分页401。当前管理员安全变量未提供，真实认证分页与 RuntimeProfile API/切换未验；平台Thrift探测和阶段4/8保持开放。报告 docs/verification/results/PHASE4-PHASE8-CURRENT-SOURCE-BUILD-LIVE-HEALTH-20261010.md。
+
+### 阶段 2：映射 JSON 解析错误详情脱敏（2026-10-09）
+
+- 事件与画像 JSON 解析失败详情不再回显 Jackson 异常文本，统一为 `INVALID_JSON`；原始事件及 checksum 保留。
+- `MappingExecutorTest` 37/37 + `MappingProfileLoaderTest` 26/26，共 63/63 PASS，0 failure/error/skipped，`BUILD SUCCESS`。
+- 仅离线单测；未验证 dry-run HTTP/认证/数据库/浏览器，不关闭阶段2。报告 `docs/verification/results/PHASE2-MAPPING-JSON-DIAGNOSTIC-REDACTION-20261009.md`。
+> **2026-10-09 阶段4采集批次分页 SQL 契约补强**：`IngestionControllerPaginationTest` 捕获 Mapper 的 Lambda Wrapper，断言 `ORDER BY status ASC,id DESC LIMIT 10 OFFSET 10`，覆盖稳定次排序与第 2 页偏移。定向 Maven 3/3 PASS，0 failure/error/skipped，七模块 reactor BUILD SUCCESS。仅离线 SQL 组装，不证明数据库执行、认证实服非空分页或浏览器；阶段4保持开放。结果 `docs/verification/results/PHASE4-INGESTION-BATCH-PAGINATION-SQL-CONTRACT-20261009.md`。
+> **2026-10-09 阶段4决策 createdAt DESC 分页验收器**：在 ID 升/降序验证外，新增页面可见的创建时间降序及第二页边界检查；同时间按 ID 降序稳定排序。原始 JSON 时间字符串保留 9 位小数，避开 PowerShell JSON 自动 DateTime 转换精度损失。25 条 mock 数据、10 条/页，跨页拆分同时间组；页内排序、两种跨页边界、元数据与 logout PASS。仅脚本/mock，不含实服认证/DB证据；阶段4不关闭。报告 docs/verification/results/PHASE4-DECISION-CREATEDAT-PAGINATION-VERIFIER-20261009.md；备份后缀 bak-20261009-decision-createdat-pagination。
+> **2026-10-09 阶段4决策分页验收器注销响应确认**：脚本要求 logout 响应 code=OK；HTTP 200 + MOCK_LOGOUT_ERROR 时不输出分页 PASS，错误不泄露响应正文，mock 确认 logout 请求已发出。正常路径25条合成记录、双向排序、3页边界与logout均通过；PowerShell AST、Node语法检查通过。仅工具/mock证据，非真实管理员分页。报告 docs/verification/results/PHASE4-DECISION-PAGINATION-VERIFIER-LOGOUT-20261009.md；备份后缀 bak-20261009-decision-verifier-logout-code。
+> **2026-10-09 阶段4决策分页验收器业务错误负例**：HTTP 200 + code=MOCK_BUSINESS_ERROR 被拒绝且不回显业务码/正文；finally logout，mock请求序列 login,page-desc-1,logout PASS。夹具失败路径预期序列经修正后重跑通过。仅脚本/mock证据，不含实服认证或DB验收；阶段4仍开放。报告 docs/verification/results/PHASE4-DECISION-PAGINATION-VERIFIER-BUSINESS-ERROR-NEGATIVE-20261009.md；备份后缀 `bak-20261009-decision-verifier-business-negative`。
+
+> **2026-10-09 阶段4决策分页验收器响应码守卫**：验证器检查登录与分页 HTTP 200 信封 code=OK；PowerShell AST/Node check 通过，25 条 loopback mock 合成记录双向排序、3 页跨页边界与 logout 序列 PASS。仅夹具证据，未认证实服；阶段4不关闭。报告 docs/verification/results/PHASE4-DECISION-PAGINATION-VERIFIER-RESPONSE-CODE-20261009.md；动态文档备份后缀 `bak-20261009-decision-verifier-business-code`。
+
+> **2026-10-09 当前隔离 RunId 登记根路径更正**：脚本默认 `CLOUD_SINGLE_NODE_ROOT=/workspace/single-node` 与当前任务数据根不同；设置为 `/home/asus/graduationproject-runs` 后只读 status 确认 `cloud_261009_053348_d6936a` 已登记且 12 个目标端口 LISTEN。此前默认根下的无登记提示不代表服务已停。Windows/WSL 均未见管理员安全变量；无认证、触库或启停行为，3306零接触。管理员分页/RuntimeProfile 现场门仍未闭合。
+
+> **2026-10-09 阶段8 当前工作树 task-owned 停启恢复复验**：旧 RunId `cloud_261009_050925_daf5af` 经统一脚本 stop exit 0，Vite PID 守卫通过、数据保留；首次 preflight 因调用路径误多 `conf` fail-closed，按现场只读核实路径更正后 preflight exit 0；新 RunId `cloud_261009_051303_550c06` start exit 0，12 端口 LISTEN。平台 health、生成器 scenarios、两个登录页 GET 200；匿名商品接口 401 符合 Bearer 保护。管理员环境变量在任务/WSL不可见，未认证或验证分页/profile API。只覆盖正常单节点停启，不覆盖崩溃、业务/Spark恢复或最终验收；3306未访问、HDFS未格式化/删除。报告 `docs/verification/results/PHASE8-CURRENT-SOURCE-STOP-RESTART-20261009.md`；备份后缀 `bak-20261009-phase8-current-stop-restart`。
+> **2026-10-09 阶段4/5 决策效果读取异步化**：决策页先返回服务端分页主列表，已完成决策评价作为旁路读取，最大并发5并显示逐行加载；保留序号/AbortSignal防陈旧写入，写后回读结果合并不覆盖。定向23/23、Web全量421/421 PASS，Vite 685 modules成功。Playwright + mock API 浏览器切片：主分页先显示6行且6行评价处于加载态，随后6项补齐；成功场景6/6补齐；部分失败场景5项成功、1项HTTP 500，成功结果保留、错误提示显示、加载状态清理；两场景峰值并发5、页面错误0。该模拟不证明真实认证API/DB/现场时延，阶段4/5不关闭。报告 docs/verification/results/PHASE4-5-DECISION-EVALUATION-ASYNC-20261009.md；动态文档备份后缀 bak-20261009-decision-evaluation-async。
+> **2026-10-09 阶段4/5 运维中心采集批次接线**：Ops 页面新增现有只读 ingestion status 与最近最多 100 条批次，页面对有界结果做客户端分页/排序，展示 profile/source、扫描目录文件/字节数、checkpoint、最近接收、批次状态/记录/错误/隔离计数和时间；缺失字段不猜。权限对账同步移除 GET /ingestion/batches 未接线项。采集批次工具/运维页/权限对账定向测试 22/22 PASS；Web 全量 418/418 PASS、Vite 684 modules build 成功。全量验证有 WebSocket 端口占用提示；本次验证 exit 0；未终止进程/删除目录。未做真实认证 API、DB、浏览器或采集运行验证，阶段4/5/7仍开放。报告 docs/verification/results/PHASE4-INGESTION-BATCH-OPS-UI-20261009.md；编辑前备份后缀 bak-20261009-ingestion-batch-utils。
+
+> **2026-10-08 阶段4/8 Pipeline 恢复管理页接线**：运行中心现展示启动恢复报告并接入 resume、mark-failed、retry-from-stage；操作要求理由和现场核验，重交前比较最新 run 状态/阶段/更新时间，阶段重试警示其删除阶段记录的语义。客户端角色限制配合服务端权限；operator 仍由会话决定。定向 22/22、Web 全量 410/410、production build 684 modules PASS；本轮仅离线，无认证 API/DB/实服恢复。WebSocket port 提示未影响 exit 0，未停止进程。报告 `docs/verification/results/PHASE4-PIPELINE-RECOVERY-UI-20261008.md`；备份后缀 `bak-20261008-pipeline-recovery-ui`。
+
+> **2026-10-08 阶段4流水线恢复操作者身份**：resume、mark-failed、retry-from-stage、recalculate 不再信任请求方 operator，操作者统一取已认证会话；缺少会话 fail-closed，旧重算字段只保留兼容。Windows JDK17 离线定向身份 2/2、权限覆盖 5/5 PASS，七模块 reactor BUILD SUCCESS。未做认证 HTTP、数据库审计回读或真实恢复操作；无服务/数据库副作用、未访问 3306。阶段4不关闭。报告 `docs/verification/results/PHASE4-PIPELINE-RECOVERY-SESSION-IDENTITY-20261008.md`；动态文档备份后缀 `bak-20261008-pipeline-recovery-session-identity`。
+
+> **2026-10-08 阶段4/5 RuntimeProfile 管理页面**：新增运行环境配置页，接入列表/详情/创建/编辑/测试/激活/停用及来源绑定；管理员与 data_dev 可访问，普通角色在前端拦截，后端 runtime:manage 为最终边界。激活要求本页最近测试通过+二次确认，服务端再次检查；ACTIVE 不能编辑，凭据只输引用。定向 17/17、Web 全量 407/407 PASS，Vite 684 modules build 成功。期间 Vite WebSocket 端口提示但验证 exit 0，未停止进程。无真实管理员会话/API/数据库写入或 profile 切换证据；阶段4/5不关闭。结果 `docs/verification/results/PHASE4-RUNTIMEPROFILE-WEB-ADMIN-UI-20261008.md`；动态文档备份后缀 `bak-20261008-runtime-profile-admin-ui`。
+> **2026-10-08 阶段 4 全分页总页数溢出保护**：把决策/快照/质量/流水线/AI 查询审计/AI 调用审计/管理员用户分页的总页数计算统一到 `PaginationMath.totalPages`，避免 `total + size - 1` 对大 `COUNT(*)` 溢出；空结果仍 1 页。定向测试 22/22 PASS；七模块 Maven 完整离线回归 170 suites、1,313 tests、0 failure/error、2 skipped，BUILD SUCCESS。没有数据库、服务或浏览器验证，阶段4不关闭。报告：`docs/verification/results/PHASE4-PAGINATION-OVERFLOW-SHARED-MATH-20261008.md`；编辑前备份后缀 `bak-20261008-pagination-math-overflow`。
+
+> **2026-10-08 阶段 4 决策分页总页数溢出修复**：`DecisionService.listPage` 用 `1 + (total - 1) / size` 计算正数总页数，避免 `total + size - 1` 在 `Long.MAX_VALUE` 附近溢出；空列表仍为 1 页。定向离线 Maven `DecisionServicePaginationTest` 5/5 PASS，0 failure/error/skipped，platform-common → ai-decision reactor BUILD SUCCESS。新增最大 long count、size=100 的回归。未验证真实 MySQL、认证 HTTP、浏览器或非空实服排序，阶段4不关闭。报告：`docs/verification/results/PHASE4-DECISION-PAGINATION-OVERFLOW-20261008.md`；编辑前备份后缀 `bak-20261008-decision-pagination-overflow`。
+
+> **2026-10-08 阶段4 RuntimeProfile Hive JDBC 停滞握手超时 IT 复测**：时间断言已加严为探测调用 `1 秒 ≤ elapsed < 6 秒`，且 loopback fixture 确认已接受连接，避免立即拒绝的假阳性。Windows JDK17/Maven 3.9.14 七模块离线 reactor 1/1 PASS，0 failure/error/skipped，Surefire 3.673 秒，BUILD SUCCESS；真实 Hive JDBC 3.1.3 返回脱敏失败并恢复 `DriverManager` 全局登录超时。只为本地 socket fixture，不含真实 HS2、Spring/API、DB-backed profile、WSL或其它调用方并发改写全局值；无数据库/3306/运行栈副作用。阶段4不关闭。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVE-CONNECT-TIMEOUT-IT-RETEST-20261008.md`；动态文档备份后缀 `bak-20261008-runtimeprofile-hive-timeout-retest`。
+> **2026-10-08 阶段4 RuntimeProfile Spark WSL 方法级检查复现脚本**：新增 `scripts/runtime-profile-spark-wsl-check.sh` 与无凭据反射 runner；显式指定 WSL Java 17 与 Spark 3.5.1 CLI 后，脚本从当前模块 classes 加载 `RuntimeProfileServiceImpl`，验证类来源路径并调用 `checkSpark()`，输出 `探测通过`。`bash -n` 和实际 WSL 执行均通过。只运行 `spark-submit --version`，不连接数据库、不启停服务或提交作业。保留阶段4 API/DB-backed profile/认证/激活/作业验证缺口。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SPARK-CHECK-WSL-CURRENT-SOURCE-20261008.md`；脚本及 runner `scripts/runtime-profile-spark-wsl-check.sh`、`scripts/RuntimeProfileSparkCheckRunner.java`；动态文档备份后缀 `bak-20261008-runtimeprofile-spark-wsl-repro-script`。
+> **2026-10-08 阶段4 RuntimeProfile Spark WSL 当前源码方法级复验**：使用 WSL JDK 17.0.12，经已有应用 PropertiesLauncher 直接调用当前工作树 `RuntimeProfileServiceImpl.checkSpark()`，执行 `/opt/spark-3.5.1-bin-hadoop3/bin/spark-submit --version`，返回 `探测通过`；类来源核实为当前 `connection-ingestion/target/classes`。Windows 离线七模块 IT/回归另为 11/11 PASS。仅方法级证据，不含 Spring API、DB-backed profile、认证、切换或作业；未连接数据库/触碰 3306/启停服务，阶段4不关闭。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SPARK-CHECK-WSL-CURRENT-SOURCE-20261008.md`，此前 Windows 测试报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SPARK-CHECK-CURRENT-SOURCE-20261008.md`；动态文档备份后缀 `bak-20261008-runtimeprofile-spark-wsl-current-source`。
+> **2026-10-08 阶段4 RuntimeProfile checkSpark 当前源码方法级实测**：新显式 `RuntimeProfileSparkHealthCheckIT` 直接调用当前 `checkSpark()`，经已安装 Windows Spark 3.5.1 `spark-submit.cmd --version`；IT 1/1，`RuntimeProfileProbeRedactionTest` 7/7、`RuntimeProfileHiveProbeRedactionTest` 3/3，合计 11/11 PASS，0 failure/error/skipped，七模块离线 reactor BUILD SUCCESS。仅 Windows CLI/方法级证据；不含 WSL 配置/API、DB-backed profile、切换或作业提交。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SPARK-CHECK-CURRENT-SOURCE-20261008.md`；动态文档备份后缀 `bak-20261008-runtimeprofile-spark-health-check-method`。
+> **2026-10-08 阶段5 SourceWizard 刷新安全修正**：刷新来源列表时立即使旧预览报告、激活结果和在途请求失效；来源列表加载/无有效 sourceId 时锁住映射与来源激活。Web npm run verify：402/402 PASS，0 fail/cancelled/skipped；Vite production build 成功（680 modules）。只证明离线 Web 验证，不含认证浏览器/API写入/数据库验收。阶段5不因此整体关闭。报告 `docs/verification/results/PHASE5-SOURCE-WIZARD-REFRESH-SAFETY-20261008.md`；备份后缀 `bak-20261008-source-wizard-refresh-safety`。
+> **2026-10-08 阶段8 task-owned 单节点停启恢复**：旧隔离 RunId `cloud_261008_040652_a898e1` 经身份核验后由统一脚本安全停止，所有任务端口释放、数据目录保留；同一二进制/HDFS配置 preflight 通过，新 RunId `cloud_261008_041944_41e68e` 启动 exit 0。12端口 LISTEN，平台 health、商城、生成器 scenarios、两登录页共 5 个公开 HTTP 检查为 200，匿名管理员分页 401；HDFS clusterID 未变、历史 900-byte 样例可读、旧 MySQL datadir 保留。仅覆盖隔离节点正常停启，不证明旧库行级回读、崩溃/业务恢复、Spark发布恢复或终验；无 3306 接触、无 HDFS format/delete。报告 `docs/verification/results/PHASE8-TASK-OWNED-STOP-RESTART-RECOVERY-20261008.md`；备份后缀 `bak-20261008-phase8-stop-restart-recovery`。
+> **2026-10-08 阶段4 RuntimeProfile HiveServer2 当前源码实链复验**：当前工作树 `RuntimeProfileHiveServer2IT` 经 Hive JDBC 3.1.3 对 task-owned HiveServer2 执行 `SELECT 1`，1/1 PASS、0 failure/error/skipped，七模块 Maven reactor BUILD SUCCESS。独立 RunId `hiveprobe_rt_20261008_153000` 使用 Derby catalog、Metastore 19084、HiveServer2 10015 和专属 HDFS warehouse；结束后端口释放且 Derby/HDFS warehouse 保留，主栈仍独立运行。只证明 `checkHive()` 方法级真实驱动/服务；不含 Spring API、DB-backed profile、凭据、切换或慢连接时限；未触碰 MySQL/3306，阶段4不关闭。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVESERVER2-CURRENT-SOURCE-20261008.md`；动态文档备份后缀 `bak-20261008-runtimeprofile-hs2-current-source-retest`。
+> **2026-10-08 阶段5 登录页旧版本文案修正**：实栈 Chromium 检查发现 V2.2/阶段7 页脚残留，改为“电商数据链路 · 经营分析”并增加守卫。npm run verify exit 0，Web 401/401，Vite build 成功；实时热更新后页脚可见，HTTP 200，0 console/page/request error。只证明当前登录页修正，不关闭阶段5。证据 docs/verification/results/PHASE4-PHASE8-LIVE-RUN-HEALTH-20261008.md；备份后缀 bak-20261008-login-footer-copy。
+> **2026-10-08 阶段4/8 当前工作树隔离运行健康验证**：保存旧 JAR 后，当前平台工作树 Maven 离线打包成功；统一脚本预检和新 RunId cloud_261008_040652_a898e1 启动通过。所有目标端口 LISTEN；health/Mall/Generator scenarios/两登录页均 HTTP 200，Platform meta V36、metric V13、Mall V9、Generator V1 已迁移。未认证分页/profile API 为 401；Chromium 登录页零 console/page/network error。管理员密码在 Windows 与 WSL 进程环境均缺失，未验证认证非空分页/profile 切换或全链路；没有 3306 接触、HDFS format/清理。任务栈仍运行，报告 docs/verification/results/PHASE4-PHASE8-LIVE-RUN-HEALTH-20261008.md；备份后缀 bak-20261008-phase4-phase8-live-run。
+> **2026-10-08 后端在途工作树离线回归**：Windows JDK 17 执行 mvn -o -f analytics-server/pom.xml test，七模块 170 suites / 1,311 tests，0 failure/error、2 skipped（Windows 不支持的 POSIX symlink 用例），BUILD SUCCESS。fetch 后 HEAD 与 origin 相同；测试前工作树 707 状态条目保留。无应用/数据库/浏览器或生产环境验证，阶段门不因此关闭。报告 docs/verification/results/BACKEND-WORKTREE-REGRESSION-1311-20261008.md；动态文档备份后缀 bak-20261008-backend-1311-regression。
+> **2026-10-08 阶段 6 AI 调用审计 UI**：Ops 调用日志现展示 `sourceId`、`snapshotId`、短指纹；悬停和 CSV 保留完整 SHA-256。历史空身份不补造，问题/prompt 明文不展示。Web `npm run verify` 400/400 PASS，production build 680 modules 成功。测试有一次 Vite WebSocket 端口占用提示但无失败；未终止进程。未验真实 API/DB/部署，V36 未应用、真实 Provider 未验，阶段6不关闭。报告 `docs/verification/results/PHASE6-AI-AUDIT-UI-20261008.md`；备份后缀 `bak-20261008-ai-audit-ui`。
+> **2026-10-08 阶段 6 AI 请求指纹与来源/快照审计**：V3.0 §13.4 所需 sourceId、snapshotId、SHA-256 requestFingerprint 已串接 SQL 生成/修复、查询解释和证据改写；查询解释关联实际执行快照。指纹包含实际 `max_tokens`，是本地审计摘要，不是 provider 幂等键。meta V36 增加可空身份列及非唯一索引，历史未知身份不回填。JDK17 离线七模块定向 AI 117/117 + 迁移守卫 2/2，合计 119/119 PASS，0 failure/error/skipped，BUILD SUCCESS；HTTP 仅访问进程内 stub。未应用数据库迁移、未连库、未调用真实 Provider/部署；阶段6仍未完成。报告 `docs/verification/results/PHASE6-AI-REQUEST-FINGERPRINT-20261008.md`；动态文档备份后缀 `bak-20261008-ai-request-max-output-tokens`。
+> **2026-10-07 阶段6 AI token用量审计**：Provider上报用量贯穿SQL生成/修复、查询解释和证据改写；成功、拒绝和内容解析失败保留已知用量，未知为null，显式0保留。非法usage返回FORMAT，输出预算异常携带已知用量。JDK17五模块定向74/74 PASS（0 failure/error/skipped）；七模块test-compile成功，仅下游编译。无外部Provider/真实DB/部署证据，金额预算、请求指纹、D-039仍未闭合，阶段6不关闭。报告 docs/verification/results/PHASE6-AI-TOKEN-USAGE-AUDIT-20261007.md；动态文档备份后缀 bak-20261007-ai-token-usage-audit。
+> **2026-10-07 阶段 6 Provider 响应流上限**：HTTP 响应在 JSON 转换/错误正文缓冲前按实际读取字节限制（默认 1 MiB），超限 RESPONSE_TOO_LARGE；chunked 和无 usage 不绕过，读取流关闭后再关闭响应。JDK 17 离线五模块定向 59/59 PASS，0 failure/error/skipped，BUILD SUCCESS；含未结束流的提前拒绝、Spring 配置注入和模板失败审计。只调用本机 stub，未部署或访问真实模型/数据库；金额预算和 D-039 未闭合，阶段6不关闭。报告 docs/verification/results/PHASE6-LLM-RESPONSE-STREAM-LIMIT-20261007.md；编辑前备份后缀 bak-20261007-llm-response-stream-limit。
+
+> **2026-10-07 阶段 4 RuntimeProfile HiveServer2 当前源码复验**：独立 Hive RunId hiveprobe_261007_a1 下 Hive 3.1.3 Metastore 19084 + HiveServer2 10015；当前工作树 RuntimeProfileHiveServer2IT 经实际 JDBC 执行 SELECT 1，1/1 PASS，七模块 Maven reactor BUILD SUCCESS。测试后 19084/10015 释放、RunId Derby 保留；主栈 HDFS 19000/19010、Metastore 19083 与应用 8090–8092 仍监听，Web 5173/5174 未观察到监听。方法级证据，不含 Spring/API、DB-backed profile、凭据、profile 激活或慢连接时限；未触碰 MySQL/3306，阶段4不关闭。报告 docs/verification/results/PHASE4-HIVE-PROBE-CONNECTION-TIMEOUT-20261007.md；动态文档备份后缀 bak-20261007-hive-server2-current-source。
+> **2026-10-07 阶段 4 Hive 探测同 JVM 并发超时回归**：`RuntimeProfileHiveProbeRedactionTest` 定向 **3/3 PASS**，0 failure/error/skipped；同一类锁内的两个探测分别使用 3 秒/7 秒且恢复原值。证据限 fake JDBC 和同类探测；`DriverManager` 全局超时仍可能被类锁外 JDBC 调用观察。未连接实服/数据库，阶段4保持部分完成。结果 `docs/verification/results/PHASE4-HIVE-PROBE-SAME-JVM-TIMEOUT-LOCK-20261007.md`；动态文档备份后缀 `bak-20261007-hive-same-jvm-timeout-lock`。
+> **2026-10-07 阶段 4 限流键容量保护与身份 scope 回归**：JDK 17 离线七模块 Maven `InMemoryRequestRateLimiterTest` 5/5、`RateLimitInterceptorHttpTest` 2/2，合计 7/7 PASS（0 failure/error/skipped，BUILD SUCCESS）；覆盖容量拒绝/最早重试、过期回收、并发预算/容量、认证后 HTTP 429/Retry-After、同用户跨相同 scope 路由共享额度及用户/scope 间隔离。无真实服务负载或跨进程证据；阶段4不关闭。结果 `docs/verification/results/PHASE4-RATELIMIT-KEY-CAP-20261007.md`；动态文档备份后缀 `bak-20261007-ratelimit-identity-scope`。
+> **2026-10-07 阶段 4 指标只读账号隔离装配回归**：JDK 17 离线七模块 Maven `PlatformDataSourcesQueryTimeoutTest` 9/9 PASS（0 failure/error/skipped，BUILD SUCCESS）；覆盖只读源启用但账号缺失/重复时拒绝，以及独立账号数据源无连接装配。未连接 MySQL，不证明数据库权限或运行态读写隔离。结果 `docs/verification/results/PHASE4-METRIC-READ-ACCOUNT-SEPARATION-TEST-20261007.md`；动态文档备份后缀 `bak-20261007-ratelimit-http-account-coverage`。
+
+> **2026-10-07 阶段 4 RuntimeProfile Spark 路径缺省 fail-closed**：LOCAL/SINGLE_NODE preflight 现与作业提交器一致，要求显式 `spark_submit_path`，移除硬编码 Windows 回退。`RuntimeProfileProbeRedactionTest` 7/7 PASS；connection-ingestion 403/403、platform-common 119/119，合计 522 项、0 failure/error、2 skipped，BUILD SUCCESS。未启动平台/Spark、未连库或激活档案，当前 WSL 配置和真实路径未验，阶段4不关闭。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SPARK-PATH-REQUIRED-20261007.md`；编辑前动态文档备份后缀 `bak-20261007-runtimeprofile-spark-path-required`。
+
+> **2026-10-07 阶段 4 G-03 provider 缺失 fail-closed**：移除 `MySqlMetricStore`/`MetricAdsReader` 兼容构造路径的全局 ACTIVE 回退。默认读取/快照列表在缺少唯一 ACTIVE RuntimeProfile 时不发 JDBC 查询并返回空结果；生产注入保持不变。JDK 17 离线 test-compile 编译 14 main/28 test sources；定向测试 64/64 PASS（0 failure/error/skipped）。未启动服务/连接数据库/真实登录/切档/执行 IT，阶段4仍部分完成。结果 `docs/verification/results/PHASE4-G03-MISSING-PROFILE-PROVIDER-FAIL-CLOSED-20261007.md`；动态文档备份后缀 `bak-20261007-g03-provider-fail-closed`。
+
+### 2026-10-07 阶段 4/8 当前运行栈与 G-03 离线回归复核
+
+- 统一脚本以任务根 `/home/asus/graduationproject-runs` 仍登记 RunId `cloud_261007_021316_0219d8`，但本轮核验 3307、HDFS RPC/DataNode/HTTP/IPC、Hive Metastore 19083、平台/商城/生成器 8091/8090/8092、Web 5173/5174 全部 closed。目录与 PID 登记文件仍在；登记的 Linux PID 均不在 WSL 进程表。Windows 登记 PID 270864 当前对应 Codex `node_repl.exe`，不是该 RunId 可验证的 Vite 进程；判为 PID 复用/身份不符并保留，不发信号。
+- 当前任务进程未见 `GRADUATION_TEST_ADMIN_PASSWORD`，未读取变量值，真实认证分页与 RuntimeProfile 切换仍不能验收。默认 `/workspace/toolchains` 不存在；已知历史 HDFS 配置与统一脚本的 RPC/目录身份不匹配，本轮没有改写配置或启动新 RunId。
+- 依总控 D-059 方案 A 复跑 G-03 与决策分页关键用例：七模块 JDK 17 离线 reactor 实际执行 60 项，0 failure/error/skipped，BUILD SUCCESS。`git diff --check` 通过（有既有 LF/CRLF 警告）。结果：`docs/verification/results/PHASE4-PHASE8-RUNTIME-RECHECK-20261007.md`。
+- Google Drive 本轮搜索服务连接失败，未读取/更新知识库。
+> **2026-10-07 阶段 4 RuntimeProfile Landing 探测按候选档案命名空间**：LOCAL profile 探测原来使用应用级默认 LandingStorage，可能验证错误目录或在档案 URI 缺失时误通过；现按候选 profile 的 `landing_uri` 解析，空/无效 URI fail-closed。JDK 17 离线 Maven 12/12 PASS（RuntimeProfile 探测 6、ACTIVE 读取 4、Hive 探测 2；0 failure/error/skipped）。未连接真实服务/数据库或部署；阶段4保持部分完成。结果 `docs/verification/results/PHASE4-RUNTIMEPROFILE-LANDING-PROBE-NAMESPACE-20261007.md`；动态文档备份后缀 `bak-20261007-runtimeprofile-landing-probe-namespace`。
+> **2026-10-07 阶段 4 流水线分页 ID 升序排序修正**：流水线分页 `sort=id,asc` 原先仍追加 `id DESC`，现仅对其它非唯一排序追加稳定 ID 并列键。与决策分页同类修正一并七模块离线 Maven：PipelineControllerPaginationTest 5/5、DecisionServicePaginationTest 4/4，合计 9/9 PASS（0 failure/error/skipped，BUILD SUCCESS），捕获 MyBatis wrapper SQL 断言方向。未部署/连库，当前运行栈不含本轮改动。阶段4不关闭。结果 `docs/verification/results/PHASE4-PIPELINE-ID-ASCENDING-SORT-20261007.md` 和 `PHASE4-DECISION-ID-ASCENDING-SORT-20261007.md`；动态文档备份后缀 `bak-20261007-pipeline-id-ascending-sort`。
+> **2026-10-07 阶段 4 决策分页 ID 升序方向修正**：修复 `DecisionService.listPage` 在 `sort=id,asc` 时重复追加 `id DESC` 导致排序冲突；只在其它字段排序时追加稳定 ID 并列键。JDK 17 离线四模块 Maven `DecisionServicePaginationTest` 4/4 PASS（0 failure/error/skipped，BUILD SUCCESS），含 MyBatis SQL 片段断言。未部署/连库，实服排序未复验，阶段4不关闭。结果 `docs/verification/results/PHASE4-DECISION-ID-ASCENDING-SORT-20261007.md`；动态文档备份后缀 `bak-20261007-decision-id-ascending-sort`。
+> **2026-10-07 阶段 4 G-03 AI 显式历史快照权限门**：依 D-059 方案 A，AI 问数/分析/解释对明确 snapshotId 在读取前要求 `dashboard:view`；拒绝为 HTTP 403 `FORBIDDEN_PERMISSION`。JDK 17 七模块离线 Maven 45/45 PASS（AiControllerIdentity 9、ControllerPermissionCoverage 5、GlobalExceptionHandler 7、RolePermissions 11、AuthInterceptor 13；0 failure/error/skipped）。受限角色负例确认不触发后续查询/审计调用。未部署/登录真实 Web/连接数据库，阶段4不关闭。结果 `docs/verification/results/PHASE4-G03-EXPLICIT-SNAPSHOT-DASHBOARD-PERMISSION-20261007.md`；备份后缀 `bak-20261007-g03-explicit-dashboard-permission`。
+> **2026-10-07 阶段 4 G-03 AI 默认快照作用域修复**：AI 默认快照现以唯一 ACTIVE RuntimeProfile 限定；provider 缺失/无唯一 profile 时 fail-closed，显式 ID 仍限已发布状态。JDK 17 七模块定向 Maven **53/53 PASS**（AI 47 项 + 平台 Spring 装配/超时 6 项；0 failure/error/skipped）。未连接 MySQL/部署，阶段 4 不关闭。结果 `docs/verification/results/PHASE4-AI-ACTIVE-PROFILE-SCOPE-20261007.md`；动态文件编辑前备份后缀 `bak-20261007-ai-active-profile-scope`。
+
+> **2026-10-07 阶段 8 Windows Vite 停服身份守卫回归与实服 verify**：模拟用例覆盖 verify/stop 正例与 5 类身份负例；错误身份 stop 调用数 0，正确身份仅向模拟停止函数传入登记 PID。另对当前 RunId `cloud_261007_021316_0219d8` 的注册 Vite PID 270864 实际调用 `-Action verify` 通过，调用前后统一状态一致，未执行 stop。真实停止、端口释放和新 RunId 恢复仍待验。报告 `docs/verification/results/PHASE8-TASK-STOP-IDENTITY-20261007.md`；动态文档备份后缀 `bak-20261007-vite-live-verify`。
+
+> **2026-10-07 阶段 4/6 AI 快照作用域统一超时**：`AiScopeResolver` 原先直接从只读 DataSource 新建 `JdbcTemplate`，快照 scope 查询绕过统一 queryTimeout；现复用 `metricReadJdbcTemplate`。新增最小 Spring 容器实际解析 `@Qualifier`；JDK 17 七模块定向 Maven **52/52 PASS**（0 failure/error/skipped），含 9 秒配置模板实例断言。未连接 MySQL/部署；实驱动中断时效仍未证。结果 `docs/verification/results/PHASE4-6-AI-SCOPE-QUERY-TIMEOUT-20261007.md`；本次动态文档编辑前备份后缀 `bak-20261007-scope-resolver-spring-wiring`。
+
+> **2026-10-07 阶段 4 G-03 显式快照发布状态守卫**：精确 snapshotId 读取原先仅按 ID 取 `metric_value`；现通过 `metric_snapshot` 限定 `ACTIVE/ARCHIVED`，分析专题对未发布/未知快照 fail-closed，不读 ADS、不回退 ACTIVE；Web `UNKNOWN_SNAPSHOT` 提示覆盖“尚未发布”。JDK 17 五模块离线 reactor 60/60 PASS（0 failure/error/skipped），Web `envelope.test.js` 13/13 PASS。未连接数据库或部署，阶段4保持部分完成。结果 `docs/verification/results/PHASE4-EXPLICIT-SNAPSHOT-PUBLISHED-STATUS-20261007.md`；动态文件编辑前备份后缀 `bak-20261007-g03-published-snapshot-guard`。
+
+> **2026-10-07 阶段 4 Hive JDBC 全局超时审计**：核对 Apache Hive 3.1.3 源码，`HiveConnection` 从 `DriverManager` 取登录超时后用于 Thrift `TSocket`；HIVE-22196 记录该 JVM 全局值可能受其他 JDBC driver 影响并引起 socket read timeout。3.1.3 未见公开 per-connection socketTimeout。未改码/测试；现有锁只保护项目内探测，限制保留并登记后续驱动/进程隔离方案评估。证据：`docs/verification/results/PHASE4-HIVE-DRIVER-MANAGER-TIMEOUT-AUDIT-20261007.md`；动态文档备份 `bak-20261007-hive-driver-timeout-audit`。
+> **2026-10-07 阶段 4/6 Text-to-SQL EXPLAIN 超时补齐**：`QueryCostGuard` 新建的只读 `JdbcTemplate` 已继承 `SqlExecutor` 的统一 queryTimeout。JDK 17 离线五模块定向 reactor：SQL 超时配置 4/4、AI 超时映射 3/3 PASS，BUILD SUCCESS；首轮 testCompile 的 checked-exception 签名问题已修正。未访问真实数据库/Provider，实服 JDBC 超时中断仍待验证。证据：`docs/verification/results/PHASE4-6-EXPLAIN-QUERY-TIMEOUT-20261007.md`；动态文档备份后缀 `bak-20261007-explain-timeout`。
+> **2026-10-07 阶段 4 流水线分页一致性代码切片**：`/api/v1/pipeline-runs/page` 的 count 与 rows 现使用 `metaTransactionManager` 的 `REPEATABLE_READ` 只读事务。JDK 17 离线七模块 Maven reactor `BUILD SUCCESS`，`PipelineControllerPaginationTest` 4/4 PASS（0 failure/error/skipped，含事务属性反射断言）；未部署或访问真实数据库，实库并发一致性仍待验证，阶段 4 不关闭。证据：`docs/verification/results/PHASE4-PIPELINE-PAGE-SNAPSHOT-CONSISTENCY-20261007.md`；动态文档备份后缀 `bak-20261007-pipeline-page-test`。
+> **2026-10-07 阶段 4 RuntimeProfile Hive 实 JDBC 复验**：独立 RunId `hive_rtprobe_20261007_120517` 的 Hive 3.1.3 HiveServer2 10015 + 专属 Derby Metastore 19084；使用当前 HDFS 19000 下的新 warehouse。`RuntimeProfileHiveServer2IT` 调用当前代码 `checkHive()` 并真实执行 `SELECT 1`，1/1 PASS，七模块 reactor BUILD SUCCESS。测试后本轮 Hive 服务停止、数据保留，原 cloud RunId/19083 Metastore/HDFS 保持运行。未接 Spring API/DB-backed profile/真实 secret，不含慢连接超时测量；阶段4不关闭。证据见 `docs/verification/results/PHASE4-HIVE-PROBE-CONNECTION-TIMEOUT-20261007.md`；动态文档备份后缀 `bak-20261007-hive-server2-retest`。
+
+> **2026-10-07 阶段 4 Hive 探测建连超时**：Hive JDBC 3.1.3 建连使用统一读取超时，fake JDBC 验证默认 30 秒、配置 7 秒、成功/失败恢复原 DriverManager 值。同步修正 AI 兼容构造器重复 `@Value` 标记后，完整七模块 reactor 1,262 项（0 failure/error、2 skipped）BUILD SUCCESS。HiveServer2 10015 未监听，未部署/连接数据库；阶段4不关闭。DriverManager 超时为 JVM 全局，存在锁外调用观察短暂设置值的边界。详见 `docs/verification/results/PHASE4-HIVE-PROBE-CONNECTION-TIMEOUT-20261007.md`。动态文件编辑前备份后缀 `bak-20261007-hive-connect-timeout`。
+
+> **2026-10-07 生成器参考商城写操作幂等键扩展（离线实现）**：生成器用户/行为/下单/支付/取消/退款命令派发稳定键；参考商城 V9 通用写请求账本覆盖下单以外的写操作，下单继续使用 V8 唯一键/摘要。退款拆分请求使用逻辑动作子键。JDK 17 生成器默认套件 **130/130**、商城默认套件 **18/18** PASS（0 failure/error/skipped）；商城数据库 IT 未运行但已编译。未应用 V8/V9、未连 DB/实商城、未执行真实写入或启停服务；3306 未访问。部署端协议/迁移、实库并发、第二商城支持及目标状态核实均未证，不代表全 MALL_API exactly-once 或 §3.3 完成。结果 `docs/verification/results/GENERATOR-MALL-WRITE-IDEMPOTENCY-20261007.md`；动态文档编辑前备份后缀 `bak-20261007-mall-write-idempotency`。
+
+> **2026-10-07 阶段 4 Hive 探测查询超时行为回归**：JDK 17 七模块离线 Maven reactor `BUILD SUCCESS`，`RuntimeProfileHiveProbeRedactionTest` 2/2 PASS；fake JDBC 断言默认 30 秒及显式 7 秒会传给 `Statement.setQueryTimeout`。不含真实 HiveServer2、驱动超时行为、建连超时或部署验证；阶段 4 不关闭。详见 `docs/verification/results/PHASE4-HIVE-PROBE-QUERY-TIMEOUT-TEST-20261007.md`。动态文档编辑前备份后缀 `bak-20261007-hive-probe-timeout-behavior`。
+
+> **2026-10-07 当前隔离栈复核/前端恢复**：实际任务根 `/home/asus/graduationproject-runs` 的 RunId `cloud_261007_021316_0219d8` 仍运行。平台/指标 Store 健康 API 200；Vite Web 因 Windows ESM 路径错误退出，修复后经受控 `recover-web` 恢复，5173 `/login` HTTP 200；5174 Mall Vite 也在线。未认证的 RuntimeProfile、决策分页、管理员分页请求均 401；Windows 和 WSL 均无管理员密码变量，真实分页/G-03 切档仍未证。Metastore 19083 在线、HS2 10015 未监听。未停止其它服务、直连数据库、访问 3306 或运行自动化测试。阶段4/8不关闭。详见 `docs/verification/results/PHASE4-LIVE-RUN-RECONCILE-20261007.md`。编辑前备份：`docs/verification/CURRENT_BATCH.md.bak-20261007-web-recovery`。
+
+> **2026-10-07 阶段 4 MetricStore 契约修复**：分页与旧快照列表方法纳入 MetricStore，Controller 仅依赖接口；JDK 17 七模块编译及定向 11/11 PASS。无真实 DB/浏览器验证，阶段4保持部分完成。
+结果 docs/verification/results/PHASE4-METRICSTORE-PAGINATION-CONTRACT-20261007.md。
+
+> **2026-10-07 阶段 4 分页离线回归**：JDK 17 七模块 reactor 11/11 PASS（用户/AI审计/指标快照 API 与 Store 分页），Web 399/399、Vite build 680 modules PASS。没有实服、数据库或认证非空分页证据；阶段4保持部分完成。报告 docs/verification/results/PHASE4-PAGINATION-HTTP-REGRESSION-20261007.md。
+
+> **2026-10-07 阶段 6 Provider 资源治理补充**：已实现 UTC 日额度保守预留（默认 1,000,000 单位，完整 payload 字节 + max_tokens；失败不释放），配置 LLM_MAX_DAILY_TOKEN_BUDGET。定向 loopback stub/Mockito reactor 更新为 **47/47 PASS**（0 failure/error/skipped）。此额度不是供应商实际 token/金额账单，且仅单 JVM；真实 Provider 仍受 D-039 阻塞，阶段 6 未完成。详情 docs/verification/results/PHASE6-LLM-RESOURCE-GOVERNANCE-20261007.md。
+
+> **2026-10-07 阶段 6 Provider 资源治理**：请求字节、输出 max_tokens、单 JVM 并发、连续失败熔断已实现；HTTP 结果不确定时不自动重试。loopback stub reactor 46/46 PASS。真实调用、每日预算与跨 JVM 治理仍未验；阶段6保持未完成。详情 docs/verification/results/PHASE6-LLM-RESOURCE-GOVERNANCE-20261007.md。
+
+> **2026-10-07 RuntimeProfile Hive 凭据引用全模块回归**：connection-ingestion 390 项（0 failure/error、2 skipped），platform-common 118/118 PASS，三模块 Maven reactor BUILD SUCCESS。证据仍为离线，没有真实 Hive 复验。详见 docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVE-CREDENTIAL-REFERENCE-20261007.md。
+
+> **2026-10-07 阶段 4 RuntimeProfile Hive JDBC 凭据引用修复**：credentialRef 解析值改传 JDBC password，用户名固定为 hive；RuntimeProfile Hive/其它探测脱敏测试 4/4 PASS，三模块离线 Maven reactor BUILD SUCCESS。fake JDBC/Mockito 验证，不含部署或真实 Hive 复验；阶段 4 仍部分完成。结果 docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVE-CREDENTIAL-REFERENCE-20261007.md。
+
+> **2026-10-06 阶段 4 MetricStore 能力契约**：新增 `MetricStore.Capabilities` 与权限保护的 `GET /api/v1/metrics/capabilities`；MySQL 实现如实报告快照/维度、未声明通用行数上限、实际查询超时及即时健康状态。MetricStore 定向 2/2、平台 HTTP/权限覆盖 8/8、Web 权限对账 7/7 PASS。只含离线/mock/HTTP harness；未部署、未做数据库或浏览器实服验证。阶段 4 整体仍部分完成。详情 `docs/verification/results/PHASE4-METRIC-STORE-CAPABILITIES-20261006.md`。
+> **2026-10-06 统一 default Java 档计数基线更新后复跑 PASS**：基线 analytics-server 1234、mall 14、generator 125；fresh RunId `dev003c_20261006_165335_12bb44` 合计 1373 tests，0 failure/error、2 skipped，三树全 MATCH，runner exit 0。未使用漂移开关；结果 `docs/verification/results/DEFAULT-JAVA-SUITE-BASELINE-REFRESH-20261006.md`。前一轮 exit=7 的量数记录保留。
+> **2026-10-06 阶段 4 隔离栈状态更正**：默认 `cloud-single-node.sh status` 未指定 `CLOUD_SINGLE_NODE_ROOT`，所以“No task run registered”不代表栈已停。指定 `/home/asus/graduationproject-runs` 后确认 RunId `cloud_261006_074130_535d3b` 和各服务监听；平台 health 200，五个受保护分页 GET 未认证均 401。管理员变量在当前任务进程不可用，非空认证分页仍未验证。10015 关闭，3306 未探测；未启动或停止服务。详见 `docs/verification/results/PHASE4-RUNSTACK-RECONCILIATION-20261006.md`。
+> **2026-10-06 统一 default Java 档复核（计数基线漂移，FAIL exit=7）**：analytics-server 1234/1195、mall 14/14、generator 125/111；Maven 测试均 0 failure/error（共 1373 tests、2 skipped），但统一计数门禁未通过。未用 `-AllowCountDrift`；脚本要求总控批准后调整基线。RunId `dev003c_20261006_164319_275a62`。证据 `docs/verification/results/DEFAULT-JAVA-SUITE-COUNT-DRIFT-20261006.md`。
+> **2026-10-06 Web 全量回归与分页权限对账**：首次全量发现两处测试守卫滞后（5 个分页 GET 未加入冻结权限映射；流水线测试仍期待旧直接 `load()` 写法）；核对控制器权限注解并更新守卫后，Web **398/398 PASS**、Vite 680 modules PASS，Java `ControllerPermissionCoverageTest` **5/5 PASS**、七模块 reactor BUILD SUCCESS。无真实认证分页/API/DB 证据。结果 `docs/verification/results/WEB-AND-PERMISSION-FULL-REGRESSION-20261006.md`。
+> **2026-10-06 阶段 3 Spark 本地全量回归复核**：统一 Spark 档 332/332 PASS（42 suites、0 aborted），JDK 1.8.0_202，Maven BUILD SUCCESS；ScalaTest 汇总本轮新写且与基线 332 匹配。仅 `local[1]` + in-memory catalog，不代表生产集群/数据库/产品验收。RunId `dev003c_20261006_163358_db4e93`。详情 `docs/verification/results/SPARK-LOCAL-FULL-SUITE-20261006.md`。
+> **2026-10-06 阶段 4 当前工作树定向回归及服务现场**：后端分页相关七类测试合计 15/15 PASS（JDK 17、离线 mock/HTTP harness），Web Ops/流水线异步反馈 9/9 PASS。WSL 统一脚本使用 `CLOUD_MAVEN_BIN=/usr/bin/mvn` 预检通过，新 RunId `cloud_261006_074130_535d3b` 启动，12 个登记端口 LISTEN；登录页 Chromium HTTP 200、页面/Console error 0，但未登录或验证受保护分页 API。真实非空用户/AI审计列表、当前运行库异步轮询仍未验。HiveServer2 10015 未随该脚本启动；3306 未触碰，隔离栈保留。详情 `docs/verification/results/PHASE4-PAGINATION-LIVE-RETEST-20261006.md`。编辑前备份分别为两个动态文件的 `*.bak-20261006-phase4-pagination-live-retest`。
+
+> **2026-10-06 阶段 4 后台执行器拒绝处理**：创建/重试/重算/恢复共用安全入队；有界线程池拒绝时持久化 `FAILED/RUN_EXECUTOR_REJECTED`，不留永久 PENDING、不在请求线程同步执行。`PipelineServiceTest` 53/53 PASS，四模块 reactor BUILD SUCCESS；`-DskipTests package` 七模块 platform-app reactor BUILD SUCCESS（该次测试跳过）。无真实饱和/DB 故障验证。见 `docs/verification/results/PHASE4-PIPELINE-EXECUTOR-REJECTION-20261006.md`。
+> **2026-10-06 阶段 4 决策分页一致性定向测试**：`DecisionService.listPage` 的 `REPEATABLE_READ` 只读分页服务单测 3/3 PASS，五模块离线 Maven reactor BUILD SUCCESS；不含数据库并发隔离验证。详见 `docs/verification/results/PHASE4-DECISION-REPEATABLE-READ-TEST-20261006.md`。
+### 2026-10-06 阶段 6 数字证据守卫十进制格式规范化
+
+- 后续回归发现固定字符串比较会误拒等值格式（证据 `2042.0000`、输出 `2042`）。数值白名单现按 BigDecimal 归一化小数尾零，同时保留符号差异，避免正负值混淆。修改前新增等值格式断言 RED，修复后通过。
+- `ExplanationEvidenceTest` + `ExplanationProviderProvenanceTest` 15/15 PASS；ai-decision 上游 reactor 709 项、0 failure/error、2 skipped，BUILD SUCCESS。
+- 仍为本地离线证据，无真实 Provider/DB 验收；阶段 6 保持未完成。详见 `docs/verification/results/PHASE6-TEXT-TO-SQL-NUMBER-FORMAT-NORMALIZATION-20261006.md`。
+### 2026-10-06 阶段 6 Text-to-SQL 解释数值证据守卫
+
+- `/api/v1/ai/queries` 的结果解释此前没有像 EvidencePackage 主路径那样校验模型生成数字，越界数字会直接采用。现对模型生成自然语言/数值校验实际执行行；越界时记录 `REJECTED / QUERY_RESULT_NUMBER_GUARD` 并回退规则摘要，合法结果数字仍可采用。
+- 新增编造数字拒绝与合法数字通过用例。修复前负例 RED；修复后定向 15/15 PASS，完整 ai-decision 上游 reactor 709 项（0 failure/error，2 skipped）BUILD SUCCESS。
+- 仅本地 mock/offline 证据；未调用真实 Provider或数据库，D-039 未闭合，阶段 6 保持未完成。详见 `docs/verification/results/PHASE6-TEXT-TO-SQL-EXPLANATION-NUMBER-GUARD-20261006.md`。
+### 2026-10-06 阶段 4 流水线异步运行反馈（离线实现与验证）
+
+- 流水线创建/重试获得 RunId 后，页面轮询运行详情并呈现当前阶段、阶段状态/记录数/失败码；仅对 PENDING/RUNNING 续轮询，终态、换任务和卸载时清理定时器。详情读取网络错误显示可恢复提示，不伪装成任务失败。
+- 定向 Web 测试 14/14 PASS；Vite production build 680 modules PASS。首轮旧表格守卫因新增阶段明细表误选了第一张表，修正守卫作用域后通过。
+- 证据限源码/静态测试/构建；未做真实浏览器、API/DB 实服轮询或新版部署。阶段 4 仍部分完成。结果：`docs/verification/results/PHASE4-PIPELINE-ASYNC-FEEDBACK-20261006.md`。
+> **2026-10-06 阶段 4 流水线提交与列表刷新错误隔离**：创建/重试返回 RunId 后，后续流水线列表读取失败不会再把已创建运行覆盖显示为提交失败；新增回归守卫，`node --test tests/pipelinePage.test.js` 7/7 PASS、Vite production build 680 modules PASS。未部署、未做真实浏览器/API/DB 异步轮询。编辑前动态文档备份 `docs/verification/CURRENT_BATCH.md.bak-20261006-pipeline-submit-refresh-error`。
+
+> **2026-10-06 阶段 4 流水线异步反馈 Chromium 模拟 API 走查通过**：本地浏览器经 mock API 验证创建 RunId、首轮 503 提示、持续轮询显示 SPARK/12、终态 SUCCESS/PUBLISH 及列表刷新；详情轮询 3 次、页面异常 0。定向前端源码测试 10/10 PASS。没有后端/数据库验收。证据 `docs/verification/results/PHASE4-PIPELINE-ASYNC-BROWSER-MOCK-20261006.md`，截图 `target/v25-it/pipeline-async-browser-20261006/final.png`。本轮 Vite 临时服务进程已通过 PID 核验清理。
+
+> **2026-10-06 阶段 4 指标快照分页**：新 `/metrics/snapshots/page` 接口兼容旧数组 API，metric_read 只读；排序白名单/稳定 ID 次序/只读一致性事务，Ops UI 有分页控件。定向后端 4/4、Web 4/4，Vite build 与新版平台包通过；RunId `cloud_261006_054419_331c89` 浏览器/真实服务验证空集 0/1 页，尚无非空快照翻页实证。详见 `docs/verification/results/PHASE4-METRIC-SNAPSHOT-PAGINATION-20261006.md`。
+
+> **2026-10-06 阶段 4 运维数据质量结果分页（离线验证）**：新增 `/metrics/quality/page`，旧数组 API 保留；Ops 数据质量表增加页码/排序/页大小控件，质量上下文仍使用最新 20 条。MockMvc 2/2、Web 定向 7/7、Vite build 680 modules PASS。未部署新版或验证真实非空记录分页，阶段 4 仍部分完成。详见 `docs/verification/results/PHASE4-QUALITY-PAGINATION-20261006.md`。
+
+> **2026-10-06 阶段 4 决策列表非空分页/排序浏览器切片通过**：RunId `cloud_261006_054419_331c89` 的隔离库含 11 条本轮 API 创建的合成 DRAFT；真实浏览器验证每页 10 条的 10+1 翻页及 `createdAt,desc` 排序（11→02、下一页 01）。未执行状态变更/商业动作，阶段 4 整体仍部分完成。RunId 服务现场仍在运行，Windows Node Vite 停止归属未解决，数据保留。详情 `docs/verification/results/PHASE4-DECISION-PAGINATION-BROWSER-20261006.md`。
+
+> **2026-10-06 阶段 6 AI 调用审计与异常脱敏（离线）**：provider/model 分列，Text-to-SQL provider 成功/失败尝试写入 `ai_call_log`，异常只保存稳定码并脱敏应用日志/查询历史。JDK 17 Maven 定向 reactor **41/41 PASS**，0 failure/error/skipped；HTTP stub/Mockito，不是真实外部 Provider，D-039 未闭合，阶段 6 不关闭。详情 `docs/verification/results/PHASE6-AI-CALL-AUDIT-20261006.md`。
+> **2026-10-07 analytics-server 完整离线回归复核**：Windows JDK 17.0.12/Maven 3.9.14 执行七模块 `mvn -o -f analytics-server/pom.xml test`，168 suites、1,278 tests，0 failure/error、2 skipped，BUILD SUCCESS。跳过项为 Windows 未执行的 POSIX symbolic-link 测试。未覆盖 mall/generator/Spark/Web、真实服务/数据库/浏览器认证分页/RuntimeProfile 实际切换；阶段4和总体验收保持未关闭。报告 `docs/verification/results/BACKEND-FULL-REGRESSION-RECHECK-1278-20261007.md`。动态文档编辑前备份后缀 `bak-20261007-backend-full-regression-recheck-1278`。
+
 # Current Verification Batch
+
+> **2026-10-06 阶段 4 管理员用户分页**：`GET /api/v1/admin/users/page` 与 Ops 用户管理翻页/排序控件已实现，旧数组路由保持兼容；公开用户视图不含密码摘要。七模块 Maven reactor 定向 5/5（AuthService 2/2、用户分页 HTTP 1/1、AI 审计 2/2），BUILD SUCCESS；Web 运维分页 6/6、Vite build 成功。尚无非空真实用户/AI 审计数据的浏览器证据，阶段 4 未关闭。
+
+> **2026-10-06 阶段 4 AI 审计分页实现**：问答历史与模型调用审计新增服务端分页路由、排序白名单和 Ops 页翻页控件，旧 limit 路由保留。`AiControllerAuditPaginationTest` 2/2、平台分页 HTTP 回归 1/1、Web 运维分页定向 5/5、Vite build 通过。未部署到运行栈，未验证非空真实审计 DB/浏览器分页。结果：`docs/verification/results/PHASE4-AI-AUDIT-PAGINATION-20261006.md`。
+
+> **2026-10-06 生成器商城诊断凭据脱敏**：两家适配器会按当前 Bearer 值脱敏商城错误正文和传输/解析诊断，错误目标只显示无凭据 origin；拒绝含 userinfo/query/fragment 的 base_url。生成器默认 JDK 17 Maven 套件 125/125 PASS，均为本地假商城/离线测试，不是真实商城验收。详见 `docs/verification/results/GENERATOR-MALL-DIAGNOSTIC-REDACTION-20261006.md`。
+
+
+> **2026-10-06 阶段 4 RuntimeProfile Hive 探测实服证据**：任务 RunId `rtprofile_20261006_01`。真实 HiveServer2 3.1.3（`127.0.0.1:10015`）通过平台 `RuntimeProfileServiceImpl.checkHive` 执行 `SELECT 1`，定向 integration **1/1 PASS**、无跳过；50 行合成 HDFS 写入/回读 SHA 相同。任务 Derby/HDFS 数据保留，Hive/HDFS 进程已按任务身份停止；3306 零接触。该证据不覆盖 Web/API、DB profile 全流程、共享 HMS 或阶段 4 其它门槛。详见 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVESERVER2-20261006.md`。
+
 
 > **N31-02 全批归档补充（2026-09-30）**：A/B/C/D 四腿及 `WAIT_LANDING.acceptedStorageUri` 窄判据的脱敏证据已汇总到仓库外受控目录 `D:\Develop_code\GraduationProject-wt\v3-archive\n3102\`。归档含 A/B 40 件、原 C 14 件、C 复验 18 件、D 8 件、URI 回读 1 件，以及工作树源码快照（tar 5,382 项）和完整 Git bundle（14 refs，HEAD=`300c4c9b7bfc25b8a058c62ad89f349bb15121b8`）。总清单 14 项、5 个腿级清单共核验 95 个条目，0 失败；各腿原件副本逐字节 hash 匹配。源码快照归档前对 3,985 个文本文件以内存凭据值进行零回显扫描，0 命中；tar 禁止路径 0；归档不含数据库 dump，凭据引用文件被排除。该结论只表示 D-048 证据归档可复核，不代表 N31-02 产品验收签收。腿结果仍按各自限制表述：A PASS（WSL 单节点），B PASS_WITH_HARNESS_CORRECTION，C PASS_WITH_LIMITATION（销售页仅单视口截图），D PASS_WITH_CLEANUP_CORRECTION。整批待总控复核/签收。归档根 `README.md`、`WORKTREE-STATE.txt` 与六份 SHA-256 manifest 为核验入口；本轮不 commit/push。
 
@@ -233,3 +464,347 @@ BATCH-V PASS 不证明：Spark 下游完整链（BUILD_DWS→ADS→质量门→�
 **Stage 7 剩余批次顺序（总控 2026-09-19 裁决）**：BATCH-W 浏览器 E2E（真实浏览器 + 8091 + 3307-only 隔离数据）→ BATCH-X 真实 LLM Provider → BATCH-Y 第二异构来源 → BATCH-Z 故障样本实链 → BATCH-AA REMOTE_CLUSTER / HDFS-Hive 环境验收。
 
 **远端 HEAD 事实更正（2026-09-19 总控裁决，docs-only 更正提交登记）**：本文件历史小节中「远端 HEAD = `104db41`」的表述（T→T-R3 推送 `520d673..104db41`、BATCH-U 计划 Predecessor 行等）均为**当时**推送事件的历史事实；当时远端 branch HEAD 经总控实时核实 GitHub 并经 `git fetch` 复核 = `836facaa22f1e839d7444f1a08d5ce9984b12ff0`（`836faca`）。`104db41` 自此只用于表示 BATCH-V 的 Exact source/test code baseline（代码钉定），不表示远端分支 HEAD。BATCH-V 三笔 docs 提交（`67a2de8`/`88f85cf`/`24eed20`）此前均未推送，随本更正提交一并按总控一次性授权 fast-forward push——**推送已完成并复核：`836faca..883dcff`，远端 HEAD = `883dcffa6136fef96385ebcd475550a71fa22310`（零 force/rebase/amend/squash、零夹带；该授权已用尽）**。C1/C2/C3 按总控口径在结果文档中定性为 **plan deviation / evidence interpretation correction**（原计划文本不改写，供答辩逐条追溯）。
+
+## 2026-10-07 阶段 4 RuntimeProfile ACTIVE 快照隔离切片
+
+- 完成 MetricStore 默认 ACTIVE 快照解析、MetricAdsReader ADS 读取和快照列表/分页的当前 RuntimeProfile 约束；AnalysisService/EvidenceBuilder 仅依赖 MetricStore 抽象。
+- JDK 17 离线七模块 reactor，选定测试 60/60 PASS，0 failure/error/skipped；结果报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SNAPSHOT-SCOPE-20261007.md`。
+- 未部署、未访问真实 MySQL、未做真实档案切换。任务环境缺管理员密码变量，实服端口无监听，认证分页验证仍待恢复安全注入/服务后执行；阶段 4 不关闭。
+
+## 2026-10-07 RuntimeProfile MetricStore 查询路径修正
+
+- checkMetric 现用候选 RuntimeProfile ID 执行 MetricStore latest ACTIVE 查询，避免 healthCheck 的 SELECT 1 代替实际快照读取，也避免查询当前其它 ACTIVE 档案。无持久 ID 时拒绝。
+- 定向 8/8 PASS；connection-ingestion 全模块 392 项，0 failure/error、2 skipped；Maven reactor BUILD SUCCESS。
+- 仍为离线/mock。WSL旧 RunId 监听端口均关闭，preflight 缺 Linux Node.js；无真实服务/DB/API验收。数据保留，3306未接触。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-METRIC-PROBE-20261007.md`。
+
+> **2026-10-07 WSL preflight 更正**：Codex Windows Node v24.19.0 可由 WSL interop 执行且 Vite 5.4.21 `--version` 成功；统一脚本接着因 Hadoop RPC/namespace 与所选历史配置不匹配而拒绝。未改配置或启动服务。当前实服阻塞是找不到预初始化身份与脚本目录/端口契合的获准 HDFS config，不是 Node 缺失。
+> **2026-10-07 G-03 作用域裁决（D-059）**：总控选择 A。默认指标/分析读取与快照列表/分页限定当前 ACTIVE RuntimeProfile；跨 profile 历史快照须按明确 snapshotId 且经 `dashboard:view` 权限读取；未知 ID 不回退。现有拦截器校验权限但不记录逐次读取审计事件。追加发现 V7 无 ACTIVE 唯一约束，默认 profile 提供器已改成只在恰有一个有效 ACTIVE 档案时返回 ID，零/重复/无效均 fail-closed。Provider/Analysis/ADS reader/MetricStore 离线定向测试 49/49 PASS；权限/角色/Controller 覆盖 29/29 PASS；前次 60/60 RuntimeProfile 快照范围证据见 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SNAPSHOT-SCOPE-20261007.md`。未执行真实 profile 切换/数据库回读/浏览器登录，真实重复状态和并发激活仍待评估；阶段 4 及项目验收未关闭。编辑前备份：`docs/verification/CURRENT_BATCH.md.bak-20261007-g03-scope-ruling`、`docs/verification/CURRENT_BATCH.md.bak-20261007-g03-permission-tests`、`docs/verification/CURRENT_BATCH.md.bak-20261007-active-profile-unique-guard`。
+
+> **2026-10-07 RuntimeProfile 唯一 ACTIVE 读取一致性**：`findActive()` 在零/多 ACTIVE 或无效 ID 时 fail-closed，与默认指标范围保持一致。七模块定向 **52/52 PASS**。数据库约束、并发激活及真实切档仍待实服验收；阶段 4 不关闭。详见 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SNAPSHOT-SCOPE-20261007.md`。
+> **2026-10-07 RuntimeProfile 并发唯一性防护**：新增 V35 generated-column unique key，使数据库最多允许一个 ACTIVE 档案；迁移不自动改写存量状态，若已有重复则迁移失败保留原值。守卫/应用 fail-closed 定向 reactor 10/10 PASS。未连接数据库，V35 和真实并发行为未验，阶段 4 不关闭。见 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SNAPSHOT-SCOPE-20261007.md`。
+> **2026-10-07 阶段 4 续：**隔离准备/验收/Stage 7 HTTP 启动器现统一要求独立 metric_read 凭据，平台只读数据源在用户名缺失或与 publish 相同时拒绝启动。PowerShell Parser、diff check 和 JDK 17 七模块 `-DskipTests compile` 通过；未连接隔离 MySQL或运行 HTTP/写入型 IT，真实授权仍待验，阶段 4 保持部分完成。报告：`docs/verification/results/PHASE4-METRIC-READ-ACCOUNT-ISOLATION-20261007.md`。
+> **2026-10-07 阶段 4 单节点限流键容量保护（编译验证）**：修复进程内 limiter 在 10,000 键满载时可能继续增长的问题；回收各键按自身窗口过期的记录，仍满则拒绝新键并返回预计最早重试秒数。JDK 17 七模块 Maven reactor `-DskipTests compile` BUILD SUCCESS；未运行测试/服务/数据库验证。阶段 4 保持部分完成。详情：`docs/verification/results/PHASE4-RATELIMIT-KEY-CAP-20261007.md`。
+> **2026-10-07 阶段 4 限流容量保护行为回归**：`InMemoryRequestRateLimiterTest` 5/5 PASS，覆盖 10,000 键上限、容量拒绝与 Retry-After、窗口到期回收及并发新键边界。JDK 17 离线七模块 Maven reactor BUILD SUCCESS；没有部署、连接数据库或证明多节点共享限流。阶段 4 保持部分完成。详情：`docs/verification/results/PHASE4-RATELIMIT-KEY-CAP-BEHAVIOR-20261007.md`。编辑前备份：`docs/verification/CURRENT_BATCH.md.bak-20261007-ratelimit-cap-behavior`。
+> **2026-10-07 后端完整离线回归**：当前工作树 `mvn -o -f analytics-server/pom.xml test`，JDK 17.0.12/Maven 3.9.14，167 suites、1,275 tests、0 failure/error、2 skipped，七模块 `BUILD SUCCESS`；2 个跳过用例为 Windows 不执行的 symbolic-link 拒绝测试。`git diff --check` exit 0（有既存 LF→CRLF 警告）。不含商城/生成器/Spark/Web、真实服务/数据库/浏览器验收；未启动服务或访问 3306。只读 WSL preflight 因 `/workspace/toolchains/jdk17/bin/java` 缺失拒绝。报告 `docs/verification/results/BACKEND-FULL-REGRESSION-20261007.md`；动态文档备份后缀 `bak-20261007-analytics-server-full-regression`。
+> **2026-10-07 阶段 2/7 生成器 POST 重试能力守卫**：`SafeHttpRetry` 不再仅凭存在 `Idempotency-Key` 就重放 POST；默认仅重试安全读方法，调用方需显式确认目标商城遵循幂等键协议且请求键非空。参考商城适配器按第一方账本契约显式启用，其它调用默认不启用写重试。定向 4/4、生成器默认套件 131/131 PASS，0 failure/error/skipped，JDK 17 离线 `BUILD SUCCESS`；仅本地 HTTP harness/mock，无真实商城/数据库/写入，不证明通用 exactly-once。阶段2/7仍未关闭。报告 `docs/verification/results/GENERATOR-IDEMPOTENCY-RETRY-CAPABILITY-20261007.md`；动态文档备份后缀 `bak-20261007-generator-idempotency-retry-capability`。
+> **2026-10-07 阶段 2/7 参考商城自定义行为路由重试边界**：参考适配器允许配置 `behavior_path`，该外部实现不能自动继承内置参考商城的幂等账本能力。现按调用点声明 POST 幂等支持：内置用户/订单/支付/取消/退款路径启用稳定键有界重试；可配置行为路径仍携带键但不自动重放。定向 15/15、生成器默认套件 132/132、商城默认套件 18/18 全 PASS（0 failure/error/skipped，JDK17 Maven BUILD SUCCESS）；新增 localhost 503 用例确认自定义行为 POST 仅发一次。无真实商城/DB/全链，阶段2/7不关闭。报告 `docs/verification/results/GENERATOR-CUSTOM-BEHAVIOR-RETRY-BOUNDARY-20261007.md`；动态文档备份后缀 `bak-20261007-generator-custom-behavior-no-retry`。
+
+> **2026-10-07 阶段 2/7 商城幂等账本请求冲突守卫**：新增相同键/相同操作/不同请求摘要测试，必须返回 IDEMPOTENCY_CONFLICT 且不执行注册副作用。商城定向 **6/6 PASS**，默认套件 **20/20 PASS，0 failure/error/skipped。仅离线 Mockito/本地测试，未应用 V8/V9 或验证并发事务，不声称 exactly-once；阶段2/7不关闭。报告 `docs/verification/results/MALL-IDEMPOTENCY-REQUEST-CONFLICT-20261007.md`。动态文档备份后缀 `bak-20261007-idempotency-request-conflict-test`。
+> **2026-10-07 阶段 2/7 商城共享幂等键空间**：下单现先登记 V9 通用账本并保留 V8 订单唯一键；V9 回填升级前订单键，避免新旧键空间跨操作复用。定向测试 8/8、商城默认套件 22/22 PASS，0 failure/error/skipped，JDK17 离线 BUILD SUCCESS。真实 V9 迁移/并发 IT 未运行，不宣称 exactly-once；阶段2/7不关闭。报告 `docs/verification/results/MALL-SHARED-IDEMPOTENCY-KEYSPACE-20261007.md`。动态文档备份后缀 `bak-20261007-mall-shared-idempotency-keyspace`。
+> **2026-10-07 阶段 4 G-03 provider 缺失 fail-closed**：移除 `MySqlMetricStore`/`MetricAdsReader` 兼容构造路径的全局 ACTIVE 回退。默认读取/快照列表在缺少唯一 ACTIVE RuntimeProfile 时不发 JDBC 查询并返回空结果；生产注入保持不变。JDK 17 离线 test-compile 编译 14 main/28 test sources；定向测试 64/64 PASS（0 failure/error/skipped）。未启动服务/连接数据库/真实登录/切档/执行 IT，阶段4仍部分完成。结果 `docs/verification/results/PHASE4-G03-MISSING-PROFILE-PROVIDER-FAIL-CLOSED-20261007.md`；动态文档备份后缀 `bak-20261007-g03-provider-fail-closed`。
+> **2026-10-07 阶段 8 隔离 RunId 运行态更正**：以冻结任务根只读执行统一脚本 status，RunId `cloud_261007_021316_0219d8` 仍登记但 MySQL 3307、HDFS、Metastore、平台/商城/生成器与 Web 端口均 closed；独立 `ss` 检查一致。本轮未启停/发信号/连库/改数据目录；旧 RunId 不再可描述为运行中。结果 `docs/verification/results/PHASE8-RUNID-STOPPED-RECHECK-20261007.md`；动态文档备份后缀 `bak-20261007-post-handoff-runtime-status`。
+> **2026-10-07 阶段 2/7 生成器商城幂等键事件身份修复**：MALL_API 幂等键改以稳定规范 `event_id` 区分同聚合的不同生命周期动作；同一事件重放保持同键。定向 `MallApiIdempotencyKeyTest` 4/4、生成器默认套件 134/134 PASS（0 failure/error/skipped，JDK17离线）。未连商城/数据库、未执行 V8/V9、未证明 exactly-once。结果 `docs/verification/results/GENERATOR-EVENT-ID-IDEMPOTENCY-20261007.md`；动态文档备份后缀 `bak-20261007-generator-event-id-idempotency`。
+
+> **2026-10-07 阶段 2/7 生成器幂等键 HTTP 集成回归**：真实本地 socket fixture 已核验生成器主链路的订单创建/支付请求头：键非空、每路唯一且跨生命周期动作不碰撞。定向 19/19、生成器全套 134/134 PASS，JDK17离线 BUILD SUCCESS。无真实商城/DB、迁移、并发/写后核验，不声称 exactly-once；阶段2/7不关闭。报告 `docs/verification/results/GENERATOR-EVENT-ID-IDEMPOTENCY-20261007.md`；编辑前备份后缀 `bak-20261007-generator-event-id-http-integration`。
+
+> **2026-10-07 生成器幂等键全写路由集成回归**：本地 socket fixture 对用户注册、订单创建/支付/取消、退款申请/完成六个写路由核实请求头数量与成功事件数一致、键非空且跨请求唯一。定向19/19、生成器默认134/134 PASS，JDK17离线 BUILD SUCCESS。未验真实商城/数据库、V8/V9、并发及写后核查，不声称 exactly-once；阶段2/7不关闭。结果 `GENERATOR-EVENT-ID-IDEMPOTENCY-20261007.md`；备份后缀 `bak-20261007-generator-idempotency-all-routes`。
+
+> **2026-10-07 阶段 4 RuntimeProfile Spark CLI 冒烟**：WSL JDK17.0.12 下 `/opt/spark-3.5.1-bin-hadoop3/bin/spark-submit --version` 在 30 秒内 exit 0，打印 Spark 3.5.1/Scala2.12.18；与生产 `LocalProcessSparkSubmitter.healthCheck()` 执行的命令一致。仅验证已安装候选二进制，不证明 DB 中 RuntimeProfile 配置、平台/API 探测或真实提交。统一启动脚本因默认 HDFS namespace/config 缺少配对而拒绝，未绕过或启停服务。阶段4未关闭。报告 `PHASE4-RUNTIMEPROFILE-SPARK-CLI-SMOKE-20261007.md`，备份后缀 `bak-20261007-runtimeprofile-spark-cli-smoke`。
+
+> **2026-10-07 当前源码新隔离栈实服启动**：三个 Maven package 成功（analytics 167 suites/1283 tests/0F0E/2 Windows POSIX skips；mall 22/22；generator 134/134）。统一脚本新建 RunId `cloud_261007_082925_605e5a`；任务全部端口监听，Vite PID 归属守卫通过。平台健康、商城、生成器和登录页 GET 200；管理员/决策/快照分页无认证返回401。当前任务及 WSL 缺管理员密码变量，未测认证分页/Profile切换；未跑Spark/Hive业务链，3306未触碰。栈保持运行以供继续验收，阶段4/8不关闭。报告 `PHASE4-ISOLATED-STACK-REBUILD-LIVE-HEALTH-20261007.md`；备份后缀 `bak-20261007-isolated-stack-rebuild-live-health`。
+
+> 补充复核：刷新 handler 自身也在映射/来源激活请求期间 fail-closed，入口同步禁用；随后再次 npm run verify 402/402 PASS，0 fail/cancelled/skipped，production build 680 modules 成功（该次没有 WebSocket 端口诊断）。
+
+> ### 2026-10-08 阶段 5 数据源向导激活期间状态竞态修复
+
+- 修复映射激活在途时可切换 sourceId/修改画像并由旧请求回填 mappingDone，误把旧源结果用于新源激活的竞态。映射/来源激活忙碌期间锁定源、画像/样本输入、预览与刷新；处理器增加独立 busy/状态校验。
+- Web `npm run verify`：403/403 PASS，0 fail/cancelled/skipped；Vite production build 680 modules 成功。
+- 仅离线 Web 测试/构建，不含认证浏览器、API写入、数据库或部署验证；阶段5与总体验收未关闭。结果：`docs/verification/results/PHASE5-SOURCE-WIZARD-ACTIVATION-STATE-LOCK-20261008.md`；动态文档编辑前备份后缀 `bak-20261008-source-wizard-activation-state-lock`。
+
+> ### 2026-10-08 阶段 5 来源列表刷新期间输入/预览门控
+
+- 刷新数据源时 `sourceId` 保留期间曾可继续切换来源/生成预览。现将 `sourcesLoading` 加入来源选择、画像/样本控件、预览按钮禁用条件，并由 `runPreview` handler 再次 fail-closed 检查。
+- Web `npm run verify`：403/403 PASS，0 fail/cancelled/skipped；Vite production build 成功，680 modules。
+- 仅为离线 Web 验证，不含管理员浏览器、API写入、数据库/部署。阶段5与总体验收保持原状态。结果：`docs/verification/results/PHASE5-SOURCE-WIZARD-REFRESH-INPUT-GUARD-20261008.md`；动态文档备份后缀 `bak-20261008-source-wizard-list-refresh-lock`。
+
+> ### 2026-10-08 阶段 4/5：日期筛选实现与分析契约漂移校正
+
+- 当前工作树概览/销售 API 已对固定快照内 ADS 日行实际应用 `from/to`：overview 的销售/活跃趋势；sales 的趋势/分类/地区。快照级 metric cards/quality 不随窗口重算；单端点、双端含边界、倒置拒绝均由现有代码实现。契约此前仍写“只回显”，现按先契约后实现纪律版本化补充 `analysis-viewmodel-r7-4.md` v1.12，未更改冻结 V3.0 指导书/设计或业务字段/端点。
+- JDK 17 离线定向回归：AnalysisServiceTest 42/42 + MetricAdsDaoTest 11/11，合计 53/53 PASS，0 failure/error/skipped；platform-common + metric-analysis Maven reactor BUILD SUCCESS。
+- 不含真实 HTTP/DB/浏览器/部署；未访问 3306。过滤只作用于已发布 ADS `dt`，不表示重算指标或退款归属期已解决。结果：`docs/verification/results/PHASE4-5-QA01-DATE-FILTER-CONTRACT-20261008.md`；契约与动态文档编辑前备份后缀 `bak-20261008-qa01-range-filter-contract`。
+
+> ### 2026-10-08 阶段 4 决策分页当前工作树回归
+>
+> - `DecisionServicePaginationTest` 4/4、`DecisionControllerPaginationHttpTest` 1/1 PASS；匿名分页请求 HTTP 401。
+> - 当前任务内未发现管理员凭据变量，未进行认证/真实非空分页/浏览器验收；阶段 4/总体验收不关闭。结果：`docs/verification/results/PHASE4-DECISION-PAGINATION-FRESH-20261008.md`；备份后缀 `bak-20261008-decision-pagination-fresh`。
+
+> ### 2026-10-08 阶段 4–6 当前工作树离线全回归
+>
+> - 后端六模块当前工作树回归 **1310 项、0F/0E/2 skipped**；Web **403/403** 与 production build 680 modules 通过。
+> - 不含数据库、真实 Provider、认证非空分页、真实浏览器业务流。报告 `docs/verification/results/PHASE4-6-OFFLINE-REGRESSION-20261008.md`；动态文档备份后缀 `bak-20261008-full-offline-regression`。
+
+> ### 2026-10-08 阶段 6 AI 解释最终来源展示
+>
+> - AI 助手直接显示 `explanation.providerUsed`，标明最终来源和 `template` 回退含义；解释文本为空但来源存在时仍显示来源。
+> - Web `npm run verify`：404/404 PASS，0 fail/cancelled/skipped；production build 成功（680 modules）。过程有 WebSocket 端口占用诊断，不影响测试/构建成功。
+> - 仅离线 Web 契约测试/构建；不含真实 Provider、认证浏览器、DB、部署/E2E。D-039 未闭合，阶段6不关闭。报告 `docs/verification/results/PHASE6-AI-EXPLANATION-PROVIDER-SOURCE-20261008.md`；备份后缀 `bak-20261008-ai-explanation-provider-source`。
+
+> ### 2026-10-08 阶段 4 Hive JDBC 3.1.3 超时参数兼容性
+>
+> - Apache Hive 3.1.3 `HiveConnection` 在 `setupLoginTimeout()` 直接读取 `DriverManager.getLoginTimeout()`，对应分支无 `socketTimeout` 参数；ASF HIVE-12371 将 timeout connection parameter 标注 Hive 4.0.0-alpha-1。
+> - 未测试 Hive 4 客户端与项目 HiveServer2 的兼容性，不改当前依赖；全局超时耦合仍是阶段4未闭合项。报告 `docs/verification/results/PHASE4-HIVE-JDBC-313-SOCKET-TIMEOUT-FEASIBILITY-20261008.md`；动态文档备份后缀 `bak-20261008-hive-jdbc-timeout-feasibility`。
+
+### 2026-10-09 阶段 2/7 商城购物车空结果幂等重放回归
+
+- 新增 `addCartItem` 已提交结果为空字符串时的重放单测，确认同操作/同请求摘要复用 ledger 结果且不重复执行购物车 insert/update，也不重写账本。
+- 定向单测与 V9 静态迁移守卫 9/9 PASS；商城默认离线套件 23/23 PASS，0 failure/error/skipped，BUILD SUCCESS。
+- 只属 Mockito/离线证据，真实 V9 数据库迁移、并发事务及商城 HTTP/目标端写后核对未执行，不证明 exactly-once；阶段2/7不关闭。报告：`docs/verification/results/MALL-CART-IDEMPOTENCY-REPLAY-20261009.md`；动态文档备份后缀 `bak-20261009-mall-cart-idempotency-replay`。
+
+### 2026-10-09 阶段 4 采集批次历史分页代码与离线验证
+
+- 后端新增授权服务端分页 API；Ops 使用全历史分页，旧最近批次数组 API 保留兼容。
+- 离线证据：分页/权限测试 8/8 PASS；Web 421/421 PASS，production build 684 modules；目标文件 `git diff --check` 通过。
+- 当前统一 RunId 尚未部署本轮后端构建；新端点真实认证/非空分页及浏览器验证待做。报告 `docs/verification/results/PHASE4-INGESTION-BATCH-SERVER-PAGINATION-20261009.md`。动态文档备份后缀 `bak-20261009-ingestion-batch-server-page`。
+
+### 2026-10-09 analytics-server 七模块全量离线回归
+
+- `mvn -o -f analytics-server/pom.xml test`：1318 tests，0 failure/error，2 skipped；BUILD SUCCESS。含当前工作树变更。
+- 离线后端证据，不含真实服务/DB/认证/浏览器/完整链路。报告 `docs/verification/results/BACKEND-FULL-REGRESSION-20261009.md`。动态文档备份后缀 `bak-20261009-backend-full-regression-current`。
+
+### 2026-10-09 Java 应用模块 Maven 全量离线回归
+
+- analytics-server 七模块1318项（2跳过），商城23项，生成器134项；0失败/错误，BUILD SUCCESS。均为离线工作树验证，真实迁移/DB/商城写后核对/浏览器业务链仍待。
+- 报告：`docs/verification/results/JAVA-APP-MODULES-FULL-REGRESSION-20261009.md`；动态文档备份后缀 `bak-20261009-java-module-full-regression`。
+
+### 2026-10-09 Spark local 全量套件复验
+
+- 用 `scripts/run-tests.ps1 -Suite spark` 指定 JDK8 跑完 332/332、42 suites，0 fail/aborted，报告本轮新写且基线 MATCH。
+- local[1]/in-memory 证据，不是 Hive/Thrift/远端集群验收。结果 `docs/verification/results/SPARK-LOCAL-FULL-SUITE-20261009.md`；动态文档备份后缀 `bak-20261009-spark-local-suite`。
+
+### 2026-10-09 当前分页源码隔离部署
+
+- 新 RunId `cloud_261009_053348_d6936a` 由统一脚本启动，12 端口 LISTEN，平台 health/登录页 HTTP200。分页匿名请求401；只证明认证拒绝，不代表分页读数。
+- 管理员变量不可见，无真实非空分页/浏览器验收；旧 RunId 数据保留，3306未访问。报告 `docs/verification/results/PHASE4-INGESTION-PAGE-LIVE-DEPLOY-AUTH-20261009.md`；备份后缀 `bak-20261009-ingestion-page-live-deploy`。
+
+> **2026-10-09 阶段4 HiveServer2 RuntimeProfile 探测与配置传递修复**：`wsl-hive-thrift.sh` 两个服务子进程现使用 preflight 已校验的 `CLOUD_HADOOP_CONF_DIR`，避免传入配置与运行进程配置不一致。bash -n PASS；当前源码 `RuntimeProfileHiveServer2IT` 通过隔离 Hive 3.1.3 实际 `SELECT 1`，1/1 PASS、七模块 BUILD SUCCESS。临时 Hive RunId 已安全停止且 Derby/HDFS 数据保留；主 cloud RunId 仍运行。仅方法级证据，不含 Spring/API、DB-backed RuntimeProfile、认证/profile切换或共享 HMS；3306未访问。报告 `docs/verification/results/PHASE4-HIVESERVER2-CONFIG-PROPAGATION-20261009.md`。
+### 2026-10-09 阶段8 Hive Thrift 停止身份守卫
+
+- `wsl-hive-thrift.sh stop` 现对 Metastore 与 HiveServer2 的 PID、Java executable、RunId cwd、Hive 主类、HIVE/HADOOP 配置环境及独立进程组先做完整预检；任一不匹配或“端口监听但 PID 缺失/失效”均在发信号前拒绝。
+- 新隔离 Hive RunId 正向启动/身份核对/stop通过，Derby数据保留；无关 `sleep` PID 的负向用例证明错误身份被拒绝且进程未被停止。脚本 bash -n 通过。
+- 本轮发现 19083 由仓库 cwd 下 JDK17 Metastore PID 9084 监听，没有触碰；使用 `CLOUD_SINGLE_NODE_ROOT=/home/asus/graduationproject-runs` 核对后，RunId `cloud_261009_053348_d6936a` 的12个登记端口均 LISTEN。3306未连接。该证据不是完整栈生命周期或恢复验收，阶段8/总验收仍开放。详见 `docs/verification/results/PHASE8-HIVE-STOP-PROCESS-IDENTITY-20261009.md`。
+
+### 2026-10-09 阶段4 RuntimeProfile ACTIVE Hive 配置只读现场核对
+
+- 使用运行平台进程内已有元数据凭据只读连接当前 RunId 的 `127.0.0.1:3307`；回读唯一 ACTIVE=`local-dev` / `SINGLE_NODE` / version 2，`hive_jdbc_url=NULL`、无 `credential_ref`。凭据未回显/落盘，3306 未连接，数据库未写入。
+- 当前 ACTIVE 档案不能驱动 `checkHive()` 实服 JDBC 探测；此前独立 HiveServer2 `SELECT 1` 仍是方法级，不等于 DB-backed profile/API 验收。Metastore 19083 监听也不代表 HiveServer2 JDBC 已配置。V3.0 按需启动 Hive JDBC 路径，故未擅自把 NULL 判为缺陷。
+- 管理员安全变量仍缺失，不能通过受认证的 RuntimeProfile 管理流程建立/测试/激活候选档案。阶段4保持开放。结果：`docs/verification/results/PHASE4-RUNTIMEPROFILE-ACTIVE-HIVE-PROFILE-READONLY-20261009.md`。
+> **2026-10-09 阶段4决策分页排序与一致性复核**：`DecisionService.listPage` 当前为只读 `REPEATABLE_READ` 事务，count/page 位于同一事务上下文；ID 升序不会被冲突 ID 降序覆盖，非 ID 排序保留 ID 稳定并列次序，页数计算溢出安全。定向离线 `DecisionServicePaginationTest` 5/5 PASS，0 failure/error/skipped，platform-common → ai-decision reactor BUILD SUCCESS。Mockito Mapper 测试不证明 Spring 事务代理、MySQL 并发一致性或受认证真实非空 API/浏览器；管理员变量缺失，阶段4不关闭。未访问3306/改库。报告 `docs/verification/results/PHASE4-DECISION-PAGE-CONSISTENCY-RECHECK-20261009.md`；备份后缀 `bak-20261009-decision-page-consistency-recheck`。
+
+> **2026-10-09 阶段4决策分页控制器 HTTP 契约复核**：当前树 DecisionController 分页路由在模拟 Bearer 会话下序列化 items/page/size/total/totalPages/sort；匿名请求 HTTP 401。`DecisionControllerPaginationHttpTest` 1/1 PASS、0 failure/error/skipped，七模块 Maven reactor BUILD SUCCESS。Mockito/standalone MockMvc，不代表真实 Spring 服务、数据库非空排序或浏览器验证；未连接数据库/访问3306，阶段4不关闭。报告 `docs/verification/results/PHASE4-DECISION-CONTROLLER-PAGINATION-HTTP-RECHECK-20261009.md`；备份后缀 `bak-20261009-decision-controller-pagination-http`。
+
+> **2026-10-09 阶段4决策列表只读分页验收器**：新增 `scripts/verify-decision-pagination.ps1` 和 loopback mock。脚本仅连 loopback、从进程环境取口令，登录后只读检查决策非空 ID 升/降序、分页元数据和跨页边界并注销，输出不含凭据或响应正文；缺凭据零请求。PowerShell AST、Node `--check` PASS；25 条合成 DRAFT mock 调用序列 login/page-desc-1/page-asc-1/page-desc-2/logout 全部通过。未运行真实隔离 API/DB；阶段4不关闭，未访问3306。报告 `docs/verification/results/PHASE4-DECISION-PAGINATION-VERIFIER-20261009.md`；备份后缀 `bak-20261009-decision-pagination-verifier`。
+
+> **2026-10-09 阶段4采集分页查询服务分层**：`IngestionController` 保留 OPS_LOG_VIEW 授权路由并委托 `IngestionBatchQueryService`；服务集中处理参数校验、排序/稳定次排序、计数与分页及只读 `REPEATABLE_READ`。服务测试断言 SQL 排序/偏移、边界和非法参数；MockMvc 覆盖模拟登录路由 JSON、匿名 401、业务错误 400 与旧 `/batches?limit=` 数组兼容。定向 7/7 PASS；七模块依赖 reactor 全回归 1325 项、0 failure/error、2 skipped，BUILD SUCCESS。MockMvc 用 mock service，不证明真实 DB/认证 API/事务代理/浏览器；管理员环境变量未进入当前任务，未访问3306，阶段4仍开放。报告 `docs/verification/results/PHASE4-INGESTION-BATCH-PAGINATION-SERVICE-LAYER-20261009.md`；本次备份后缀 `bak-20261009-ingestion-pagination-http-contract`。
+> **2026-10-09 阶段2事件校验诊断原始值脱敏**：隔离原因不再回显 Jackson parser message、未知事件类型/版本、非法行为枚举或金额原始值；金额诊断保留字段定位，受控原始文件/引用路径不变。定向回归 4/4 PASS；connection-ingestion 全模块 412 项、0 failure/error、2 skipped，BUILD SUCCESS。仅离线证据，未启动服务/连接数据库/访问3306；阶段2验收仍开放。报告 `docs/verification/results/PHASE2-EVENT-JSON-DIAGNOSTIC-REDACTION-20261009.md`；动态文档备份后缀 `bak-20261009-event-value-redaction`。
+
+> **2026-10-09 阶段6 AI 快照作用域数据库异常脱敏**：`AiScopeResolver` 数据访问失败保留 `METRIC_READ_SOURCE_MISSING` 并 fail-closed，消息固定化、不携带底层异常 cause。新脱敏单测1/1，AI SQL安全38/38，Text-to-SQL审计7/7，共46/46 PASS；五模块 reactor BUILD SUCCESS。仅离线/mock，未连库、未访问3306或真实 Provider；D-039/阶段6仍开放。报告 `docs/verification/results/PHASE6-AI-SCOPE-DB-ERROR-REDACTION-20261009.md`；备份后缀 `bak-20261009-ai-scope-exception-redaction`。
+
+> **2026-10-09 阶段6 AI SQL 诊断错误脱敏**：EXPLAIN 失败保留 `SQL_COST_TOO_HIGH`/fail-closed 但不输出 JDBC 消息/cause，错误计划不序列化整行；只读 SQL 执行失败使用 `SQL_EXECUTION_FAILED` 固定说明，其它异常按阶段归类，超时日志不写驱动消息。定向49/49 PASS；四个测试模块依赖reactor 898项、0 failure/error、2 skipped，BUILD SUCCESS（platform-common 121、connection-ingestion 412〔2 skipped〕、metric-analysis 152、ai-decision 213）。仅离线/Mockito，未连库/访问3306/真实Provider；D-039/阶段6仍未关闭。报告 `docs/verification/results/PHASE6-AI-SQL-ERROR-DIAGNOSTIC-REDACTION-20261009.md`；备份后缀 `bak-20261009-ai-sql-error-reactor-count-correction`。
+
+
+> **2026-10-09 阶段4流水线内部异常文本脱敏**：通用未预期异常持久化固定摘要、日志不附异常原文；阶段异常保留 STAGE_INTERNAL 和阶段定位。定向54/54，依赖模块回归743项、0 failure/error、2 skipped，BUILD SUCCESS。仅离线证据；Spark JobResult/发布器/消费台账诊断路径待审计，阶段4仍开放。报告 docs/verification/results/PHASE4-PIPELINE-INTERNAL-ERROR-REDACTION-20261009.md；动态文档备份后缀 bak-20261009-pipeline-internal-error-redaction。
+
+> **2026-10-09 阶段4流水线结构化失败诊断脱敏补充**：Spark作业失败、发布器报告、消费台账、恢复报告及解析/accepted/坏行日志不再携带底层自由异常文本；保留稳定错误码、异常类型与必要 run/stage/file 定位信息。发布报告证据采用字段白名单。Windows JDK17 Maven离线依赖回归104 suites、899 tests、0 failure/error、2 skipped，四模块 BUILD SUCCESS。未连接数据库/访问3306、未启停服务或验实Spark/Hive/API/浏览器。阶段4保持开放。详见 docs/verification/results/PHASE4-PIPELINE-STRUCTURED-ERROR-REDACTION-20261009.md；动态文档备份后缀 bak-20261010-real-admin-pagination。
+
+> **2026-10-09 阶段4 ManifestSelector 异常日志复核**：目录扫描及本地/存储版 JSON 解析日志现仅保留异常类型和必要清单文件名，避免输出原始异常片段或绝对路径。四模块依赖回归899项、0 failure/error、2 skipped，BUILD SUCCESS。未触碰数据库/3306、未启停服务，未验真实 Hive/Spark/API/浏览器，阶段4保持开放。报告 docs/verification/results/PHASE4-MANIFEST-SELECTOR-LOG-REDACTION-RECHECK-20261009.md；备份后缀 bak-20261010-real-admin-pagination。
+> **2026-10-10 阶段4 RuntimeProfile 真实认证只读浏览器验收器准备**：新增 loopback-only Playwright 脚本；管理员凭据仅从进程环境读取，缺失即 NOT_RUN 并在浏览器/请求启动前退出；仅只读打开运行环境列表、检查空态/ACTIVE 数量并登出，不测试或修改 profile。AST、缺凭据 fail-closed、非 loopback 拒绝通过。真实认证、API、DB、HS2 与切档仍未测，阶段4开放。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-AUTHENTICATED-READONLY-VERIFIER-20261010.md`；动态备份后缀 `bak-20261010-runtime-profile-readonly-verifier`。
+> **2026-10-10 阶段4 RuntimeProfile 当前源码 HiveServer2 JDBC 探测**：临时 RunId 独立启动 Hive Metastore 19084/HS2 10015 与 Derby/warehouse；当前工作树 `RuntimeProfileServiceImpl.checkHive()` 经 Hive JDBC 3.1.3 实际执行 `SELECT 1`，`RuntimeProfileHiveServer2IT` 1/1 PASS，七模块 reactor BUILD SUCCESS。Windows Maven 离线缓存执行；WSL Maven 首次因 parent 缓存缺失在模型解析时退出，未编译/测试。随后由 RunId/PID 守卫停止 Hive 服务，数据保留，主隔离 RunId 的 12 端口仍 LISTEN。仅方法级 JDBC，不是认证 API/DB-backed profile/切档证据；3306未访问。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVESERVER2-CURRENT-SOURCE-20261010.md`；动态备份后缀 `bak-20261010-runtime-profile-hiveserver2-current-source`。
+> **2026-10-10 阶段4 RuntimeProfile Hive 配置缺失门禁回归**：新增两条方法级断言，SINGLE_NODE 缺 Hive JDBC URL 保持 applicable=true/passed=false/UNKNOWN；LOCAL 则显式不适用；凭据服务均无调用。现有成功/失败脱敏及并发超时一并 5/5 PASS，0 failure/error/skipped，三模块离线 reactor BUILD SUCCESS。首轮仅漏静态导入，修正后通过。无生产代码变化、API/认证/DB/profile切换证据；3306未触碰。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVE-CONFIG-FAIL-CLOSED-20261010.md`；动态备份后缀 `bak-20261010-runtime-profile-hive-config-fail-closed`。
+
+### 2026-10-10 阶段4 RuntimeProfile Hive 配置缺失激活门禁
+
+- 新增服务层回归：SINGLE_NODE 候选缺少 `hive_jdbc_url` 时 `activate()` 返回 `ACTIVATE_CHECK_FAILED` / UNKNOWN；候选保持 DRAFT，未更新 profile/查询 ACTIVE 列表/解析凭据。
+- `RuntimeProfileHiveActivationGateTest` 1/1 与 `RuntimeProfileHiveProbeRedactionTest` 5/5 合计 6/6 PASS，0 failure/error/skipped；JDK17 离线三模块 reactor BUILD SUCCESS。仅新增 Mockito 测试，无生产代码改动或真实 API/DB/HS2/profile 切换证据；3306 未访问。阶段4/总验收开放。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVE-ACTIVATION-GATE-20261010.md`；编辑前备份后缀 `bak-20261010-runtime-profile-hive-activation-gate`。
+
+### 2026-10-10 阶段4 RuntimeProfile 认证只读验收安全本地启动器
+
+- 新增 `scripts/run-runtime-profile-authenticated-readonly.ps1`：先拒绝非 loopback URL；已有管理员进程变量沿用，否则通过 `Read-Host -AsSecureString` 输入，仅临时注入 Python 子进程环境，运行后恢复/清除并释放敏感缓冲区；shell 保持打开且保留 verifier 退出码。
+- AST、loopback mock 环境继承/恢复、虚构 SecureString 标记注入后清除、退出码传递、非 loopback exit 2 均通过。未输入真实密码、未真实登录/请求 API、未访问 DB/3306。仅改善本地安全执行路径，不是认证验收；阶段4/总验收开放。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-SECURE-LOCAL-AUTH-LAUNCHER-20261010.md`；动态文档编辑前备份后缀 `bak-20261010-runtime-profile-secure-launcher`。
+
+补充复核（2026-10-10）：空 SecureString 输入返回 exit 3，未启动 Python verifier，环境中无密码残留；仅 PowerShell 替身负例，不涉及真实凭据。详见 `PHASE4-RUNTIMEPROFILE-SECURE-LOCAL-AUTH-LAUNCHER-20261010.md`。
+
+### 2026-10-10 阶段4 RuntimeProfile 服务流程真实 HiveServer2 探测
+
+- 扩展 `RuntimeProfileHiveServer2IT`：在原私有 `checkHive()` 实 JDBC 用例外，新增通过公开 `RuntimeProfileServiceImpl.test(profileId)` 汇总真实 Hive 检查项的服务级场景。Hive 项经隔离 Hive 3.1.3 JDBC 真执行 `SELECT 1` 并 PASS；mapper/MetricStore/credential 使用 mock，Landing 用临时目录，Spark 路径故意缺失，因此 `allPassed=false`、profile 保持 DRAFT，未假称全流程或激活通过。
+- 新 RunId `hiveprofileflow_rt_20261010_v3dev_01`，Metastore 19084/HS2 10015；定向 IT 2/2 PASS，0 failure/error/skipped，七模块 Maven reactor BUILD SUCCESS。随后按 RunId 进程身份守卫停止，端口 STOPPED，Derby/HDFS 数据保留；主隔离栈继续运行。未连接 MySQL/3306，未做认证 API/DB-backed profile/切档。阶段4/总验收开放。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVE-SERVICE-WORKFLOW-20261010.md`；动态文档编辑前备份后缀 `bak-20261010-runtime-profile-hive-service-workflow`。
+
+### 2026-10-10 阶段4认证只读验收器本地安全启动入口
+
+- 扩展 `scripts/run-runtime-profile-authenticated-readonly.ps1`，可选择 RuntimeProfile 只读检查、决策分页、采集批次分页；按入口提供 loopback 默认地址，分页条数限制 1–50。沿用当前进程变量或用 SecureString 不回显提示，仅临时注入验收子进程后恢复/清理。
+- 本轮 PowerShell AST 解析通过；非 loopback 在凭据提示和验收器启动前拒绝，`$LASTEXITCODE=2`；IPv6 loopback 由 Uri 判定为本机地址。真实凭据、认证 API、DB 和分页均未执行；此前已测的 verifier mock 不替代本轮真实运行。仅提供安全入口，不是阶段4通过证据。3306 未访问。报告 `docs/verification/results/PHASE4-ADMIN-READONLY-VERIFIER-SECURE-LAUNCHER-20261010.md`；动态文档编辑前备份后缀 `bak-20261010-admin-verifier-launcher-options`。
+
+分派替身补充（2026-10-10）：临时替身确认三个 Verifier 选项分别调用预期入口；decision/ingestion 正确传递 loopback BaseUrl 与 PageSize，进程变量透传且旧值恢复；不发 HTTP、不含真实凭据。报告：`PHASE4-ADMIN-READONLY-VERIFIER-SECURE-LAUNCHER-20261010.md`。
+
+### 2026-10-10 RuntimeProfile 只读验收器响应契约复核
+
+本地响应替身 4/4、Python 编译通过；真实认证运行因当前进程缺管理员变量返回 NOT_RUN，未发浏览器请求。结果与限制见 `docs/verification/results/PHASE4-RUNTIMEPROFILE-READ-API-CONTRACT-20261010.md`。阶段4继续开放。
+补充（2026-10-10）：响应契约回归固化为 `scripts/test_verify_runtime_profile_authenticated_readonly.py`，覆盖单响应和双接口聚合门禁；`python -B scripts/test_verify_runtime_profile_authenticated_readonly.py` 5/5 PASS。仍为离线单测，不含真实浏览器/认证 HTTP/DB。详见 `docs/verification/results/PHASE4-RUNTIMEPROFILE-READ-API-CONTRACT-20261010.md`；动态文档备份后缀 `bak-20261010-runtimeprofile-contract-unit-tests`。
+### 2026-10-10 阶段5 RuntimeProfile API 列表格式错误/空态区分
+
+- 新增 `requireRuntimeProfileList`：只接受数组 data；异常响应结构不再被伪装成空列表。刷新开始时清除旧行；环境列表错误显示“列表不可用”，来源列表错误保留环境结果并显示来源错误；合法空数组仍显示空状态。
+- RuntimeProfiles 定向 4/4 PASS；Web 全量 `npm test` 425/425 PASS、0 fail/cancelled/skipped；Vite 5.4.21 production build 686 modules 成功，产物写入新 TEMP 目录，未覆盖 `web/dist`。日志有 WebSocket port-in-use 文本但退出码0；未处理该未归属端口。
+- 仅离线 Node 测试/构建，未做真实认证浏览器/API/DB验收；阶段4/5与总验收开放，3306未访问。报告 `docs/verification/results/PHASE5-RUNTIMEPROFILE-MALFORMED-API-20261010.md`；动态文件编辑前备份后缀 `bak-20261010-runtimeprofile-malformed-api-state`。
+### 2026-10-10 决策/流水线分页响应契约错误空态
+
+- `requirePageResponse` 校验 Decisions、Pipeline 和 Ops 的共同分页 envelope（含用户、快照、质量、AI审计、流水线、采集批次）；页面不再将 malformed `items` 或元数据默认成空列表/第1页。合法空页仍有效。
+- Web 定向 21/21、全量 428/428 PASS；Vite 5.4.21 build 687 modules 成功，临时输出目录 `web/tmp-build-page-response` 仍保留。
+- 只属离线前端证据；未做真实认证 API/DB/浏览器验证。详见 `docs/verification/results/PHASE4-PAGINATION-MALFORMED-RESPONSE-20261010.md`。
+### 2026-10-10 阶段8 task-owned 平台前端恢复
+
+- 统一 `recover-web` 对平台 Vite 失效 PID 的身份校验后，只恢复 RunId `cloud_261010_005249_1c73ec` 的 5173 服务；数据库/HDFS及其他服务未操作。恢复后 status 12/12 LISTEN，health/login 公开 GET 为 200。
+- 不含认证 API/DB/业务恢复或最终验收。详见 `docs/verification/results/PHASE8-TASK-WEB-FRONTEND-RECOVERY-20261010.md`。
+### 2026-10-10 阶段5 裸数组列表响应结构校验
+
+- AI 历史、来源向导、Ops 最近快照上下文/质量列表异常响应不再变成空列表；空数组保持正常。定向40/40、Web全量430/430 PASS；Vite 5.4.21 build 688 modules成功。
+- 仅离线前端证据；报告 `docs/verification/results/PHASE5-RAW-ARRAY-RESPONSE-CONTRACT-20261010.md`。
+
+### 2026-10-10 阶段8 task-owned Vite PID 复用恢复补充
+
+- `recover-web` 在 Windows helper 确认任务 Vite 已停止后，只清除该 RunId 下身份不匹配的 Linux PID 登记，不向复用 PID 发信号；端口占用检查仍 fail-closed。RunId `cloud_261010_005249_1c73ec` 恢复后 12/12 端口 LISTEN，登录页与公开 health HTTP 200；shell syntax 和进程身份守卫测试通过。未终止 PID、未触碰数据库/HDFS，3306未访问。
+- 仅进程恢复/公开 GET；认证与最终验收仍开放。报告 `docs/verification/results/PHASE8-TASK-WEB-FRONTEND-RECOVERY-20261010.md`；动态文件编辑前备份后缀 `bak-20261010-vite-pid-reuse-recovery`。
+
+### 2026-10-10 阶段4 RuntimeProfile 登录失败诊断增强
+
+- 一次真实 loopback 登录未到 overview，1 次 API 请求，列表端点未访问；旧报告未保留可安全判因的响应状态/业务码。验收器现仅采集 HTTP 状态及 `OK`/`BAD_CREDENTIALS`/`USER_DISABLED` 白名单码，未知码为 `OTHER`，无响应正文/token/口令留存；新增测试 8/8 PASS。
+- 本次登录失败的根因仍未确认，真实 RuntimeProfile/source API 未验。种子口令是否仍有效未知；不得未经授权修改隔离数据库凭据。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-LOGIN-FAILURE-DIAGNOSTIC-20261010.md`；备份后缀 `bak-20261010-login-response-diagnostics`。
+
+> **2026-10-10 阶段5 分析页数据结构错误/真实空态浏览器复核**：新增 loopback-only Playwright 验证脚本，销售页完整 mock 快照选项和 API。畸形 HTTP 200 响应使 3 个图表显示错误态、没有空态；有效快照空数组返回正常空态。两种场景共 6 次 API 请求全部拦截，意外请求0、页面异常0。Web 437/437 PASS，Vite 690 modules build 成功。仅客户端 mock/本地证据，不含真实认证/API/DB业务快照。报告 `docs/verification/results/PHASE5-ANALYSIS-DATA-RESPONSE-CONTRACT-20261010.md`；动态备份后缀 `bak-20261010-analysis-data-response-contract`。
+
+### 2026-10-10 阶段4 分析页固定快照响应身份校验
+
+- `pinSnapshot=true` 的分析请求现在要求响应回显的 `snapshotId` 与请求固定 ID 精确一致；缺失或错配进入错误态且不提交上下文/数据。
+- 定向 8/8、Web 全量 440/440 PASS，Vite production build 690 modules 成功。测试日志有一次 WebSocket port-in-use 提示但进程退出码0；未处理未归属端口。
+- 本地单测/构建证据，不含真实认证 API/DB/业务快照。阶段4和总验收开放，3306未访问。详见 `docs/verification/results/PHASE4-ANALYSIS-PINNED-SNAPSHOT-ECHO-20261010.md`。
+
+### 2026-10-10 阶段4 G-03 显式历史快照入口
+
+- 默认列表继续限定当前 ACTIVE profile；新增共享精确 ID 输入，分析数据与 AI 基线/问答可读取指定归档快照。只存内存；清除即返回当前 profile。服务端权限/状态校验不变；错误不回退。
+- 定向13/13、全量442/442 PASS，Vite build 690 modules。Chromium 全 mock 完成当前 ACTIVE、显式跨 profile 归档、未知 ID 错误无回退、返回 ACTIVE；6 API 请求，意外0、页面异常0。
+- 不含真实认证/权限/DB或真实 profile 切换证据，阶段4与总验收开放，3306未访问。详见 `docs/verification/results/PHASE4-G03-EXPLICIT-HISTORICAL-SNAPSHOT-UI-20261010.md`。
+> **2026-10-10 阶段4决策真实非空分页复核**：隔离 RunId `cloud_261010_005249_1c73ec` 经正式 API 创建两条标记合成用途的 DRAFT，PageSize=1 真实管理员验证 PASS，total=2、id升降序与createdAt降序及跨页边界通过；草稿未提交/审批/执行。批次分页仍无可消费的已确认合成输入，本轮未触发采集。无 profile 变更、无 SQL 业务写入、未连接3306。阶段4继续开放，报告 `docs/verification/results/PHASE4-DECISION-PAGINATION-SYNTHETIC-20261010.md`。
+> **2026-10-10 阶段4决策中心真实管理员浏览器分页**：task-owned RunId `cloud_261010_005249_1c73ec` 上，真实登录打开 `/decisions`，API total/items=2，页面显示两条 `PAGINATION-SYNTH` DRAFT 与正确分页摘要；logout/token 清理通过，页面错误0。只读浏览器，不触发草稿动作。size=1 API 分页排序/跨页边界另 PASS。采集批次非空分页仍未完成，阶段4继续开放。报告 `PHASE4-DECISION-PAGINATION-REAL-BROWSER-20261010.md`。
+
+
+### 2026-10-10 阶段4采集批次真实非空分页
+
+- task-owned RunId `cloud_261010_005249_1c73ec`：两条合成商城事件经 Outbox JSONL、当前运行的 Flume spool（memory channel）/HDFS sink 投递，HDFS 两行哈希与源一致；平台采集 API 第1轮 SUCCESS/2条/隔离0，第2轮 SUCCESS/noNewData/0条。
+- 真实管理员只读分页 API `size=1` 返回 total=2、两页；升序 ID 1，降序 ID 2、1，跨页无重复且严格递减。只证明本 RunId 的批次 API、同输入采集断点和文件投递，不声称 File Channel 持久性、Flume 故障恢复、平台从 HDFS 回读或阶段4整体完成。无 profile 变更，业务数据仅经正式 API 创建，未直写业务表，未连接3306。管理员凭据按授权仅重置当前隔离库记录，并恢复为仓库现有种子哈希；不含密码/token。阶段4整体与总验收开放。报告：`docs/verification/results/PHASE4-INGESTION-BATCH-LIVE-PAGINATION-20261010.md`；备份后缀 `bak-20261010-ingestion-batch-live-pagination`。
+
+### 2026-10-10 阶段4 RuntimeProfile 真实管理员只读浏览器复核
+
+- task-owned RunId `cloud_261010_005249_1c73ec` 的 Chromium 管理员登录/注销通过；RuntimeProfile/source 列表接口信封合法，页面 1 个 profile、1 个 ACTIVE，API 请求5、页面错误0，无写入。
+- 未调用 `POST /runtime-profiles/{id}/test`：该服务会执行 `profileMapper.updateById`，全通过还会设置 `TESTING`。因此真实 Thrift HS2 运行时探测仍待完成；服务层隔离 JDBC IT 不代替实服 RuntimeProfile 流程。未编辑/切档/连接3306。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-REAL-ADMIN-READ-ONLY-20261010.md`。
+
+### 2026-10-10 阶段4 当前 ACTIVE RuntimeProfile test API
+
+- 用户授权后对当前 ACTIVE ID 1（SINGLE_NODE）调用真实 `POST /runtime-profiles/1/test` 一次，HTTP 200。Landing/Spark/Metric PASS，Hive applicable 但未通过；当前 profile 没有 `hiveJdbcUrl`，所以没有连接 Thrift。`allPassed=false`，测试后仍是同一 ACTIVE profile；未切换/激活/改配置。服务代码会走 profileMapper.updateById 写回路径，记录此副作用。
+- 只读列表共1 profile，因此没有已登记 HS2 候选可做实服 Thrift 探测。无 Profile 新建/更新/credential_ref/激活。阶段4 HiveServer2 实际连接证据仍开放，3306 未访问。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-ACTIVE-TEST-ENDPOINT-20261010.md`。
+
+### 2026-10-10 阶段4 RuntimeProfile→HiveServer2 真实服务流程
+
+- 用户授权后，在 RunId `cloud_261010_005249_1c73ec` 经正式 API 新建 SINGLE_NODE DRAFT profile ID 2，指向本 RunId 的 HDFS Landing、Spark路径和 HiveServer2 10015；本地测试栈 Hive 3.1.3/JDK8、专属 Metastore19084/Derby，authentication=NONE/空 credential_ref。
+- `POST /runtime-profiles/2/test` HTTP200，Landing/Hive/Spark/Metric 四项全 PASS，Hive 通过真实 JDBC `SELECT 1`。ID2 转 TESTING；原 ID1 继续 ACTIVE，无激活/切换。测试后按 RunId/PID 身份守卫停止本次 Hive 服务，端口STOPPED，Derby/HDFS warehouse保留。
+- 仅闭合此配置下 RuntimeProfile→Thrift 的单节点测试；不代表共享 HMS/生产安全/ODS/阶段4整体完成，3306未访问。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVESERVER2-REAL-TEST-20261010.md`。
+
+
+### 2026-10-10 阶段4 当前 RunId RuntimeProfile→HiveServer2 真实服务复测
+
+- RunId `cloud_261010_040051_b2ab54`：独立 Hive 3.1.3/JDK8、Metastore19084专属 Derby、HS2 10015，authentication=NONE/空 `credential_ref`，HDFS warehouse `/warehouse/cloud_261010_040051_b2ab54/hive-warehouse`。
+- 真实管理员 API 新建 profile ID 2（DRAFT），调用 `/runtime-profiles/2/test` HTTP200，Landing/Hive JDBC `SELECT 1`/Spark/Metric 四项均 PASS；复读状态为 TESTING，原 ID1 仍唯一 ACTIVE，未激活/切换。test endpoint 写回 profile 状态。
+- 用 RunId/PID/命令路径守卫停止专属 Hive 后，19084/10015 STOPPED；Derby 和 warehouse 保留。Mall 用户 POST 同幂等键复试返回401，无商城业务写入；File Channel transport fixture 证据边界不变。未重置管理员密码、未直写 DB、未连3306。阶段4及总验收继续开放。报告 `docs/verification/results/PHASE4-RUNTIMEPROFILE-HIVESERVER2-REAL-TEST-CURRENT-RUN-20261010.md`；动态文件备份后缀 `bak-20261010-runtime-profile-hs2-current-run`。
+
+> **2026-10-10 阶段2/7 Mall Outbox→默认 Flume File Channel→HDFS**：RunId `cloud_261010_040051_b2ab54` 中一条正式 Mall `user_registered` Outbox 文件（1行/449 bytes）由默认在线 File Channel agent 投递至 HDFS；源、spool `.COMPLETED`、HDFS 单文件 SHA-256 完全一致。未调用平台采集 API/Hive ODS，不证明 HDFS 回读或一般 exactly-once；默认 agent 未被中断，恢复证据另有隔离子例。报告 `docs/verification/results/PHASE2-MALL-OUTBOX-FLUME-FILECHANNEL-HDFS-20261010.md`。编辑前备份后缀 `bak-20261010-mall-outbox-filechannel-delivery`。
+
+> **2026-10-10 阶段2/4 Mall Outbox→默认 File Channel→平台本地 Landing 采集**：RunId `cloud_261010_040051_b2ab54` 首条注册事件因 `adult/basic` 不符合映射枚举而被平台隔离（1条）；未重放。新合成用户使用 `25-34/tier2/silver` 后，第二行 Outbox 经默认 File Channel 写到单独 HDFS 文件，SHA-256一致；正式平台采集成功1条、隔离0；下一轮 `noNewData=true` 且0条。平台采集读取本地 Landing，不代表 HDFS 回读/Hive ODS。3306未连接、无直写，阶段2/4及总验收开放。报告 `docs/verification/results/PHASE2-MALL-OUTBOX-INGESTION-CONTRACT-20261010.md`。动态文件补记前备份后缀 `bak-20261010-mall-ingestion-contract-recovery`。
+
+> **2026-10-10 阶段2 Mall 注册枚举契约**：`POST /api/v1/mall/users` 现以前置 Bean Validation 拒绝不在当前事件映射内的年龄组/城市等级/会员等级；防止源 API 接受后必被采集器隔离。定向3/3、Mall默认全量26/26 PASS。仅当前源码离线证据，隔离运行服务未部署或重启；阶段2/4继续开放。报告 `docs/verification/results/PHASE2-MALL-REGISTRATION-ENUM-CONTRACT-20261010.md`。动态文件补记前备份后缀 `bak-20261010-mall-outbox-enum-contract-validation`。
+> **2026-10-10 阶段6 Text-to-SQL 审计写入故障分类修复**：`completeAndAudit()` 分离 Provider 调用与 `ai_call_log` 插入，避免将日志持久化异常误报为模型调用失败或重试外部请求；稳定返回 `AI_CALL_AUDIT_WRITE_FAILED`，null响应按 `FAILED/FORMAT` 处理。四模块离线 compile BUILD SUCCESS，ai-decision 41个源码文件；未运行测试/真实Provider/数据库。阶段6不关闭。报告 `docs/verification/results/PHASE6-AI-CALL-AUDIT-WRITE-FAILURE-CLASSIFICATION-20261010.md`；备份后缀 `bak-20261010-ai-call-audit-write-failure`。
+> **2026-10-10 阶段6 AI 调用审计结果分类补充**：将 Provider 已成功但审计行失败、Provider 已失败但失败审计行失败、空 Provider 响应且失败审计行失败分为三个稳定错误码，避免把已知失败误报为调用结果不确定；对外说明不含 mapper 原文。四模块离线 compile BUILD SUCCESS，41个 ai-decision 源码文件；未运行测试或真实Provider。报告：`docs/verification/results/PHASE6-AI-CALL-AUDIT-WRITE-FAILURE-CLASSIFICATION-20261010.md`；备份后缀 `bak-20261010-ai-audit-outcome-error-codes`。
+> **2026-10-10 阶段6 ExplanationService 审计失败回退**：证据包摘要改写在审计成功落库前不会采用模型结果；Provider失败、空响应、约束拒绝和审计写入失败分支均回退固定模板，mapper异常不暴露。四模块离线增量 compile BUILD SUCCESS（Nothing to compile）；未运行测试/真实Provider/数据库。审计Mapper故障回归开放。结果见 `docs/verification/results/PHASE6-AI-CALL-AUDIT-WRITE-FAILURE-CLASSIFICATION-20261010.md`；修改前备份后缀 `bak-20261010-explanation-audit-write-fallback`。
+> **2026-10-10 阶段6 QueryResult 解释入口审计失败回退补充**：同步修复 `explain(QueryResult, ...)`；空 Provider 响应记 `FAILED/FORMAT`，审计失败时使用规则摘要回退，避免数据库审计故障误报 Provider 故障。离线定向 compile 重编 ai-decision 41个源码文件，四模块 BUILD SUCCESS；未运行测试/真实Provider/数据库。结果见阶段6审计故障报告；编辑前备份后缀 `bak-20261010-query-explanation-audit-branches`。
+> **2026-10-10 阶段4/G-03 AI 历史快照来源血缘门禁**：显式 snapshotId 查询若快照行没有固化 source_id，现在返回 SNAPSHOT_NOT_AVAILABLE，禁止从当前 profile 推断。ai-decision 41个源码离线重编成功，四模块 BUILD SUCCESS；未运行测试/实服/数据库。G-03仍开放。报告 `docs/verification/results/PHASE4-G03-AI-EXPLICIT-SNAPSHOT-SOURCE-GUARD-20261010.md`；编辑前备份后缀 `bak-20261010-g03-explicit-source-id-guard`。
+> **2026-10-10 G-03 来源字段门禁复核更正**：历史 `source_id=NULL` 是 V12 明确保留的合法未归属值，D-059 要求不推断来源而非禁止精确快照读取。撤回上一条过严门禁；此后未新增代码行为，原编译不作为当前变更验证。更正见 `PHASE4-G03-AI-EXPLICIT-SNAPSHOT-SOURCE-GUARD-20261010.md`；编辑前备份后缀 `bak-20261010-g03-source-null-reassessment`。
+> **2026-10-10 阶段6 AI 诊断日志脱敏**：AiController 的证据构建/audit 失败与 EvidenceBuilder 的ADS维度读取失败只记录异常类别，不再输出原始异常 message。目标源码静态搜索无 `log.*getMessage()`；7模块离线 compile BUILD SUCCESS，platform-app 编译28个源码文件。未运行测试/Provider/DB。报告 `docs/verification/results/PHASE6-AI-DIAGNOSTIC-LOG-REDACTION-20261010.md`；备份后缀 `bak-20261010-ai-diagnostic-log-redaction`。
+> **2026-10-10 阶段2/4 采集异常信息脱敏**：源画像 JSON、单文件摄取、Landing初始化/扫描失败日志不再输出原始异常 message；状态API的 landingError 改为稳定提示，不回显 URI 解析细节。connection-ingestion 重编95源码，两个模块 BUILD SUCCESS。未运行测试/实服/DB。报告 `docs/verification/results/PHASE2-4-INGESTION-ERROR-LOG-REDACTION-20261010.md`；备份后缀 `bak-20261010-ingestion-error-log-redaction`。
+> **2026-10-10 当前工作树四应用离线构建**：analytics-server Reactor、mall-simulator（67源码）、synthetic-data-generator 均 Maven compile BUILD SUCCESS；Web `npm run build` 在 `web/` 下成功（Vite 5.4.21，690模块）。不含测试/服务/DB/浏览器/端到端验收，不改变阶段状态。详见 `CURRENT-WORKTREE-FOUR-APP-OFFLINE-BUILD-20261010.md`；备份后缀 `bak-20261010-full-app-offline-build`。
+> **2026-10-10 阶段2/3/7 Pipeline 首跑真实失败**：隔离 RunId `cloud_261010_040051_b2ab54`，正式 `ODS_TO_ADS` run 1 的 WAIT_LANDING 选中 source 1 batch 1，INIT_SCHEMA Spark 作业终态失败，日志报内置 Hive 2.3.9 与 Metastore 3.1.3 版本冲突；无快照发布，profile 1 仍唯一 ACTIVE。batch 1 API 状态 QUARANTINED 而 manifest selector 选中，须核对输入语义。报告 `docs/verification/results/PHASE2-3-7-PIPELINE-SPARK-HIVE-METASTORE-MISMATCH-20261010.md`；下一步修复隔离配置后用新幂等键续跑，阶段2/3/7仍开放。
+
+> **2026-10-10 阶段2/3/7 Spark 配置隔离修复后真实支付链 SUCCESS**：平台进程绑定当前 RunId `platform-spark-conf`；真实 Spark 日志读取当前 Hive 配置，版本冲突消失。RunId `cloud_261010_061315_23e7b3` Mall 注册/下单/支付 4 事件，File Channel/HDFS 4行哈希一致，正式 HDFS 采集 SUCCESS/4，ODS/DWD/DWS/ADS/质量/发布共 8/8 成功，快照 `S20261010_1` ACTIVE，指标12项，质量查询30条全passed。前一RunId单注册样本质量门失败，数据保留；本结论仅限单source/单订单/隔离投递agent，不代表完整阶段或最终验收。报告 `docs/verification/results/PHASE2-3-7-SPARK-CONF-ISOLATION-AND-PAID-ORDER-CHAIN-20261010.md`。
+
+> 2026-10-10 语义复核补记：`QUARANTINED` 批次状态不禁止 READY manifest；batch 1 的 1 accepted + 1 quarantined 被 selector 选择是预期行为。根因及范围见 `docs/verification/results/PHASE2-3-QUARANTINED-MANIFEST-SEMANTICS-20261010.md`。不改代码、不重放批次。
+
+> 2026-10-10 D-060 报告实例进度：经营日报及订单专题服务/页面已实现；订单专题从单个已发布快照提取订单、金额、退款事实，缺失列明，不补零。其余四模板未实现。Maven compile 7/7 module success，Vite build 694 modules success；未运行测试、未部署/连库。报告 `docs/verification/results/PHASE14-ORDER-ANALYSIS-REPORT-20261010.md`。
+
+> 2026-10-10 D-060 模板进度补记：用户运营模板已实现，以报告相同快照输出 RFM/生命周期/类目偏好聚合与 `uv`、`dau`、`repeat_rate` 已发布值；无用户级数据，不跨日累加。现有 OPS_DAILY、ORDER_ANALYSIS、USER_OPERATIONS 三模板；其余三模板仍未完成。没有实服验收。报告 `docs/verification/results/PHASE14-ORDER-ANALYSIS-REPORT-20261010.md`。
+
+> 2026-10-10 D-060 PRODUCT_ANOMALY 补记：报告在固定快照中关联商品热度Top10与已发布转化数据，不新造异常阈值或推断库存/成本/利润。现有四模板含 OPS_DAILY、ORDER_ANALYSIS、USER_OPERATIONS、PRODUCT_ANOMALY；OPS_WEEKLY、DECISION_EFFECT未实现。Maven compile与Vite build通过；未运行测试、未部署/连库/浏览器验收。详见 PHASE14-ORDER-ANALYSIS-REPORT-20261010.md；阶段14开放。
+
+> 2026-10-10 D-060 OPS_WEEKLY 代码/UI切片：创建 API 采用 fromDate/toDate 恰好连续七日并绑定结束日快照；ADS逐日销售/活跃缺失显式列示，金额/订单/行为可加项汇总，周客单价按总额/订单重算，DAU不跨日累加。Maven七模块 compile、Vite build、diff-check通过；未运行测试/实服/DB/浏览器，V37/V38未应用，3306未连接。报告 PHASE14-OPS-WEEKLY-REPORT-20261010.md；阶段14开放，DECISION_EFFECT未实现。
+
+> 2026-10-10 D-060 DECISION_EFFECT 实现切片：页面按现有决策分页选择已完成/已评价任务；报告只读其最新已保存评价，核对source/profile/metric口径/窗口样本，保留窗口和快照引用，不重新评价、不重算、不改决策状态、不声称因果。有效结果锚定实际末快照，INSUFFICIENT_DATA锚定基线末快照。Maven七模块 compile、Vite build、diff-check通过；未运行测试、未做真实API/DB/浏览器验收；V37/V38未应用、3306未连接。报告 PHASE14-DECISION-EFFECT-REPORT-20261010.md。六模板代码/UI切片均存在，阶段14开放。
+
+> 2026-10-10 D-060 报告读取失败稳定化：EvidenceService、周度 ADS 趋势、用户运营聚合底层读取异常分别返回稳定 REPORT_*_EVIDENCE_UNAVAILABLE，EvidenceService业务异常原样保留，不补0/空结果。Maven七模块 compile、Vite build、diff-check通过；未运行测试、未做真实 API/DB/浏览器验收，V37/V38未应用、3306未连接。证据 PHASE14-REPORT-TEMPLATE-READ-FAILURE-STABILITY-20261010.md；阶段14开放。
+
+### 阶段14 DECISION_EFFECT 报告页分页契约（2026-10-10）
+
+- 决策候选 API 响应现经过共享分页 envelope 校验；无效响应显示错误而非空态。成功提示显示 decisionId。Vite production build成功；未运行测试或真实 API/DB/浏览器验收，阶段14开放。证据 docs/verification/results/PHASE14-REPORT-DECISION-PAGE-CONTRACT-20261010.md。
+
+### 阶段14 DECISION_EFFECT 候选评价核对（2026-10-10）
+
+- 报告页只列出已保存最新评价与终态一致的决策；评价只读请求按20条/页、最多5并发。读取失败不伪装成无候选。Vite build成功，未做测试/真实验收，阶段14开放。报告 docs/verification/results/PHASE14-REPORT-DECISION-EVALUATION-CANDIDATE-20261010.md。
+
+### 阶段14 DECISION_EFFECT 候选按需加载（2026-10-10）
+
+- 报告挂载不再等待决策候选请求；选择决策效果模板时才加载，减少普通报告读取路径的额外网络等待。保留候选评价核对。Vite build通过，未做测试/实服验收，阶段14开放。报告 docs/verification/results/PHASE14-REPORT-DECISION-LAZY-LOAD-20261010.md。
+
+### 阶段14 DECISION_EFFECT 候选排序稳定性（2026-10-10）
+
+- 候选评价请求并发完成后按原决策分页顺序筛选，保持ID降序。Vite build通过，未做测试/实服验收，阶段14开放。报告 docs/verification/results/PHASE14-REPORT-DECISION-ORDER-STABILITY-20261010.md。
+
+### 阶段14 报告详情摘要与checksum（2026-10-10）
+
+- detail摘要与artifact读取拆分，统一SHA-256校验；异常checksum fail-closed。Maven离线7模块compile成功；未运行测试/DB/实服验收，阶段14开放。报告 docs/verification/results/PHASE14-REPORT-DETAIL-SUMMARY-INTEGRITY-20261010.md。
+
+### 阶段14 报告详情与分页一致性（2026-10-10）
+
+- 详情接口只返回摘要，完整JSON走artifact；统一SHA-256验证。分页查询count/rows事务一致。Maven离线7模块compile成功，未做测试/实服/DB验收；阶段14开放。报告 docs/verification/results/PHASE14-REPORT-DETAIL-PAGE-CONTRACT-20261010.md。
+
+### 阶段14 报告制品血缘结构守卫（2026-10-10）
+
+- 制品JSON读取校验checksum、模板与snapshot/source/definition血缘及核心结构。Maven 7模块离线compile通过；未运行负例测试或实服验收，阶段14开放。报告 docs/verification/results/PHASE14-REPORT-ARTIFACT-LINEAGE-GUARD-20261010.md。
+
+### 阶段14 报告页列表元数据投影（2026-10-10）
+
+- 分页查询排除artifact_json长文本，只选列表所需列；完整制品走详情/制品路径。Maven离线7模块编译通过，未做测试及实服/DB验收。报告 docs/verification/results/PHASE14-REPORT-PAGE-PROJECTION-20261010.md。
+
+### 阶段14 六模板内容结构守卫（2026-10-10）
+
+- 详情/制品读取按模板校验核心内容结构，周报必须七天且实例窗口匹配；其他模板核对必需数组/状态字段。Maven七模块离线compile通过；未运行测试和真实DB/HTTP验收。报告 docs/verification/results/PHASE14-REPORT-TEMPLATE-CONTENT-GUARD-20261010.md。
+
+### 阶段14 报告详情可读视图（2026-10-10）
+
+- 报告摘要由原始JSON默认展示改为卡片/表格；完整制品加载后显示指标、警告和限制，raw JSON按需展开。Vite build通过；未做测试、浏览器或实服验收。报告 docs/verification/results/PHASE14-REPORT-READABLE-DETAIL-20261010.md。
+
+### 阶段14 报告列表状态展示（2026-10-10）
+
+- 表格仅在有数据时渲染，详情错误不阻断选择其他报告。Vite build通过；未做测试/浏览器/实服验收。报告 docs/verification/results/PHASE14-REPORT-LIST-STATE-VISIBILITY-20261010.md。
+
+### 阶段14 隐藏内部报告制品URI（2026-10-10）
+
+- 报告DTO不再输出内部artifactUri；完整制品仍经归属鉴权端点获取。Maven离线7模块编译通过；未测试/实服/DB验收，V37/V38未应用。报告 docs/verification/results/PHASE14-REPORT-STORAGE-URI-MINIMIZATION-20261010.md。
+
+> 2026-10-10 阶段14内容守卫定向回归：六模板合法内容可读、缺必需结构 fail-closed 的单测已覆盖；`ReportInstanceServiceTest` 14/14、七模块离线 BUILD SUCCESS。未做真实 DB/HTTP/浏览器验收，RunId 未登记任务，阶段14继续开放。结果 `PHASE14-REPORT-TEMPLATE-CONTENT-GUARD-TESTS-20261010.md`。
+
+> 2026-10-10 模板守卫扩展回归：六模板有效结构、缺失字段/类型错误、周报窗口和DECISION_EFFECT状态/窗口错配均以离线单测覆盖；15/15 PASS，七模块BUILD SUCCESS。12/12端口监听仅为服务状态证据；未做真实报告HTTP/DB/浏览器验收，阶段14开放。
+
+
+> 2026-10-12 当前RunId栈恢复：`cloud_261012_012653_d3b0fc`，脚本status 12/12 LISTEN，5项公开HTTP检查均200，meta V38/metric V13迁移完成；复用既有HDFS namespace，无格式化。认证API/浏览器和报告业务链尚未验证，阶段14开放。
+
+
+> 2026-10-12 DECISION_EFFECT 空值边界修复：INSUFFICIENT_DATA下部分 actualPeriodValue 不再回填报告 actualValue，实际样本数保留；定向 ReportInstanceServiceTest 15/15、七模块Reactor BUILD SUCCESS。未重启当前服务/做真实认证API、浏览器、DB验收；阶段14开放。
+> **2026-10-12 阶段7 Generator CLI task root 自动识别**：复核 RunId `cloud_261012_012653_d3b0fc` 的实际根目录为 `/home/asus/graduationproject-runs`，与 CLI 默认目录不同。脚本现从 `/proc` 唯一匹配 generator PID 与 RunId PID登记，并核验进程 root；歧义或身份不一致时拒绝。当前栈 CLI `--help` 退出码0，未追加计划/启动生成Run/调用商城写接口；`bash -n`通过，`AnalyticsIsolationScriptsContractTest` 12/12 PASS。该验证使用隔离生成器环境，不能据此声称未连接其元数据数据库；没有认证型Mall API、HDFS投递、平台采集或完整阶段7证据。报告 `docs/verification/results/PHASE7-GENERATOR-CLI-PROC-TASKROOT-AUTODETECT-20261012.md`；编辑前备份后缀 `bak-20261012-generator-cli-autodiscovery`。
+
+
+### 2026-10-12 阶段2/3 DIM 日期范围（D-061）
+
+`DimensionBuildJob` 已把连续日期维度接入 ODS 后、DWD 前的 `dim` 生产作业；范围合并四类 ODS 日期及既有历史，支持幂等重建，周语义按 ISO-8601。定向4 suite 37/37 PASS；spark 全量333/333、43 suites、0 failed/aborted、BUILD SUCCESS。证据 `docs/verification/results/PHASE2-3-DIM-DATE-RANGE-20261012.md`。结论限 Spark local[1]/in-memory catalog；未做真 Hive/HDFS/生产链验证。`dim_region`/`dim_metric` 与项目阶段门仍开放。相关动态文件更新前备份后缀 `bak-20261012-dim-date`。

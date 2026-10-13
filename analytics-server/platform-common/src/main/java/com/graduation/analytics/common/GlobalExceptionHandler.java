@@ -105,6 +105,7 @@ public class GlobalExceptionHandler {
             return HttpStatus.BAD_REQUEST;
         }
         return switch (code) {
+            case PlatformBizException.FORBIDDEN_PERMISSION -> HttpStatus.FORBIDDEN;
             case PlatformBizException.SOURCE_NOT_FOUND,
                  PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND,
                  PlatformBizException.DRY_RUN_REPORT_NOT_FOUND -> HttpStatus.NOT_FOUND;

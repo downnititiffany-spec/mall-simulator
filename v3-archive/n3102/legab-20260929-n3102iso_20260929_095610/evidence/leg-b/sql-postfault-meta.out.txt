@@ -1,0 +1,4 @@
+CONCAT('CONS|',COUNT(*))
+CONS|2
+CONCAT('RUN|',id,'|',status,'|',IFNULL(input_batch_id,'NULL'))
+RUN|4|FAILED|2

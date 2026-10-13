@@ -587,3 +587,40 @@
 **Boundary**：仅解锁 N31-02 腿③推荐契约；不代表实现或验收已通过，不修改冻结 V3.0 正文、不发布 V3.1；不扩展行政区/地图、多日精确 distinct 存储、Text2SQL 白名单或真实 LLM；MySQL 3306 零接触，隔离验证只用 run-scoped 3307；失败必须保留原 ACTIVE。
 
 **Evidence**：用户批准回复；原文凭据 `docs/decisions/rulings/MASTER-RULING-20260929-N3102-LEGC-APPROVAL.md`；契约 `docs/contracts/n31-02-category-region-sales-contract-draft.md`；批次计划 `docs/verification/batches/BATCH-N31-02-CONTINUOUS-CHAIN-PLAN.md`；编辑前备份 `*.bak-20260929-n3102-c3-approval`。
+
+### D-059 — G-03 历史快照作用域裁决（2026-10-07）：默认与列表限当前 ACTIVE RuntimeProfile，跨 profile 历史仅按明确 snapshotId 且经权限允许读取
+
+**Decision**：总控明确选择方案 A：(1) 不带 `snapshotId` 的默认指标/分析/ADS/证据读取，仅解析当前唯一 ACTIVE RuntimeProfile 的 ACTIVE 快照；(2) 快照数组/分页及面向看板用户的来源选项，只呈现当前 ACTIVE RuntimeProfile 关联快照；(3) 读取旧 profile 历史快照必须提供精确 `snapshotId`，以快照行固化的 `sourceId` 等元数据为准，不从当前 profile 推断历史来源，未知 ID fail-closed，不回退到当前 ACTIVE；(4) 显式历史读取受现有 `dashboard:view` 权限控制。`AuthInterceptor` 执行登录与角色权限判定，但不写逐次读取审计事件；本裁决不把权限拦截表述成读取审计日志。
+
+**Reason**：V3.0 设计 §12.3 的 G-03 要求 profile 换源时避免将历史快照错误归属到当前源；总控对两个候选范围作出明确选择，确定历史浏览的调用方必须明确指定快照，避免列表隐式暴露其他 profile 的快照并保留受权限控制的回溯能力。
+
+**Boundary**：本条关闭 G-03 的范围选择，不代表阶段 4 或项目验收完成。只登记动态裁决和既有实现/测试证据；冻结的 V3.0 指导书、设计正文保持不变。`dashboard:view` 仍按现有权限矩阵执行；若后续要求逐次读取审计日志，应另行按正式设计差异审定，不从本裁决推定已有此能力。未连接数据库、未运行真实 profile 切换。
+
+**Evidence**：用户回复“A”；默认 ACTIVE 与列表过滤实现 `MetricAdsReader`、`MySqlMetricStore`、`ActiveRuntimeProfileIdProvider`；显式归档 ID 路径 `AnalysisService.pin`/`MySqlMetricStore.findSnapshot`，控制器权限 `AnalysisController`、`MetricController` 的 `DASHBOARD_VIEW`；回归 `AnalysisServiceTest.explicitArchivedSnapshotFromAnotherProfileIsReadableById`、`AuthInterceptorTest`、`RolePermissionsTest`、`ControllerPermissionCoverageTest` 与 PHASE4 RuntimeProfile 快照范围测试。后续复核 `V7__platform_runtime_profile.sql` 未见 ACTIVE 状态唯一约束，因此 `ActiveRuntimeProfileIdProviderImpl` 增加重复 ACTIVE fail-closed；七模块定向回归 49/49 PASS。离线替身证据不证明真实 profile 切换/数据库重复状态或并发激活行为。本文编辑前备份 `DECISION_LOG.md.bak-20261007-g03-scope-ruling`、`DECISION_LOG.md.bak-20261007-active-profile-unique-guard`。
+
+### D-060 — V3.0 AI反馈与业务报告实例 API 草案批准（2026-10-10）
+
+**Decision**：总控明确回复“批准两份草案”，批准 `docs/contracts/ai-feedback-contract-draft.md`（V3.0 §13.2）及 `docs/contracts/business-report-instance-api-draft.md`（V3.0 §14.4）作为实现契约和后续开发范围。按各自已写明的输入校验、登录权限、服务端身份/血缘派生、最小披露、加性迁移、只读报告制品和证据边界实现；不突破草案已标记的 D-039 真实 Provider 限制。
+
+**Reason**：AI问答反馈当前缺少提交路由及原因/血缘持久化；V3.0报告实例缺少可追溯的创建、分页读取和制品下载 API。批准草案后按正式项目范围进入实现，不再把两份契约停留在评审状态。
+
+**Boundary**：批准实现范围不等于实现或验收完成；未连接 MySQL 3306，不修改冻结 V3.0 指导书/设计正文，不改变已发布迁移。具体迁移必须加性；逐模板指标窗口、状态/错误契约、制品存储和异步门槛严格遵从草案，尚未由草案冻结的实现选择需在代码/动态状态中明确，不得扩大声称。真实Provider仍按D-039外部条件执行。编辑前备份 `DECISION_LOG.md.bak-20261010-api-contracts-approved`。
+### D-061 — `dim_date` 连续日期范围与 ISO-8601 语义（2026-10-12）
+
+**Decision**：用户批准 `dim_date` 契约：从四类 ODS 实际 `dt` 行及已有 `dim_date.date_key` 获取最小/最大日期，生成连续闭区间日历并保留/扩展历史，重跑幂等；ISO-8601 周次/星期，周一=1、周日=7，周末为 6/7；沿用已声明的非分区表，不设固定日期上限。
+
+**Reason**：V3.0 设计 §9.2 要求日期区间幂等，但分区及范围更新细节此前未裁定。明确边界后，日期维度可以在既有 DIM 作业中形成真实生产写入路径。
+
+**Boundary**：本裁决只关闭 `dim_date` 的语义选择，不表示真实 Hive/HDFS/生产 Spark 验收或阶段/项目验收完成。`dim_region` 静态字典内容/版本及 `dim_metric` 的 MySQL 字典同步仍待裁决。冻结的 V3.0 指导书、设计正文保持不变；不连接 3306。
+
+**Evidence**：实现 `DimensionBuildJob` / `DimSql` / `LocalSchemaInitJob`；新增日期区间回归与 S3-13 schema-owner 守卫。定向 37/37 PASS；Spark 全量 333/333、43 suites、BUILD SUCCESS（local[1]/in-memory catalog）。报告 `docs/verification/results/PHASE2-3-DIM-DATE-RANGE-20261012.md`。决策日志编辑前备份 `DECISION_LOG.md.bak-20261012-dim-date`。
+
+### D-062 — `dim_region` 固定城市等级字典与三列结构（2026-10-12）
+
+**Decision**：用户批准方案 A，保留 `region_code`、`region_name`、`city_level` 三列非分区表，不增加版本列。字典绑定 `canonical-event.v1`，固定成员为 `tier1`、`tier2`、`tier3`、`other`、`unknown`；每行三个字段均使用同一稳定代码，`unknown` 是唯一未知成员，不造中文地名。每次 DIM 构建覆盖完整五行，不依赖业务日期或事件是否存在。
+
+**Reason**：V3.0 §9.2 要求地区维度包含未知成员且不能只建空表；D-058 已将地区定义限定为城市等级，现明确静态成员及版本绑定，以便建立唯一 schema owner 和真实写入路径。
+
+**Boundary**：不把城市等级解释为行政区/地图/真实城市，不改变 D-058 ADS 的 city_level 聚合与 unknown 保留口径；`dim_metric` MySQL 同步另行处理。此裁决及离线测试不代表真实 Hive/HDFS、阶段或项目验收。冻结 V3.0 指导书/设计正文保持不变，不连接 3306。
+
+**Evidence**：契约 `docs/contracts/dim-region-static-dictionary-contract.md`；生产写入 `LocalSchemaInitJob` / `DimSql` / `DimensionBuildJob`；三方 schema-owner 冻结守卫扩展；离线验证结果见 `docs/verification/results/PHASE2-3-DIM-REGION-DICTIONARY-20261012.md`。决策日志编辑前备份 `DECISION_LOG.md.bak-20261012-dim-region-approved`。

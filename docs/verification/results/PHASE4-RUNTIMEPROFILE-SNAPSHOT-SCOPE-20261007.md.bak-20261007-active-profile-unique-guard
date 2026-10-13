@@ -1,0 +1,32 @@
+# PHASE4-RUNTIMEPROFILE-SNAPSHOT-SCOPE-20261007
+
+## 结论
+
+阶段 4 的默认 ACTIVE 指标快照解析现在按平台当前唯一 ACTIVE RuntimeProfile 限定。切换运行档案后，旧档案仍处于自身 ACTIVE 的快照不会被默认分析/ADS/证据读取选中；快照列表也只显示当前档案的元数据。没有 ACTIVE RuntimeProfile 时默认读取 fail-closed。总控 2026-10-07 选择 G-03 方案 A（D-059）：旧 profile 历史快照只可按明确 `snapshotId` 访问，且接口须通过现有 `dashboard:view` 权限检查；未知 ID 不回退。权限拦截器不记录逐次读取审计事件。
+
+## 实现
+
+- 新增 `ActiveRuntimeProfileIdProvider` 契约及 mapper 实现。实现只读 `RuntimeProfileMapper` 的 active 行，不依赖 `RuntimeProfileService`，避免 RuntimeProfileService → MetricStore → provider 的注入环。
+- `MetricStore.MetricQuery` 增加可选 `runtimeProfileId`，保留原两参数构造器。
+- `MySqlMetricStore` 的默认 ACTIVE 解析、列表与分页按当前 RuntimeProfile 过滤；显式查询指定 profile 时按指定 profile 解析。没有当前 profile 时默认列表为空，避免回退到跨 profile 数据。
+- `MetricAdsReader` 默认 ACTIVE 解析也按当前 RuntimeProfile；无 profile 时返回 null。
+- `AnalysisService` 与 `EvidenceBuilder` 依赖 `MetricStore` 抽象，不再绑具体 MySQL 实现。
+- 显式 snapshotId 查询可精确读取已归档的跨 profile 快照；依赖快照行的固化元数据，不按当前 profile 推断 source。分析接口的 `AnalysisController` 与指标端点的 `MetricController` 均要求 `dashboard:view`。`AnalyticsSourceOptionController` 的已发布来源集合来自当前 profile 限定的快照列表。
+
+## 验证
+
+命令：
+
+`mvn -o -f analytics-server/pom.xml -pl platform-app -am '-Dtest=MetricAdsReaderActiveProfileTest,MySqlMetricStoreActiveProfileTest,MySqlMetricStorePaginationTest,AnalysisServiceTest,EvidenceBuilderTest,MetricControllerPaginationHttpTest,AuthServiceUserPaginationTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`
+
+七模块 Maven reactor `BUILD SUCCESS`。选定测试共 60/60：AuthServiceUserPaginationTest 2、AnalysisServiceTest 41、MetricAdsReaderActiveProfileTest 2、MySqlMetricStoreActiveProfileTest 2、MySqlMetricStorePaginationTest 3、EvidenceBuilderTest 7、MetricControllerPaginationHttpTest 3；0 failure、0 error、0 skipped。`git diff --check` 通过。
+
+## 证据边界与后续
+
+以上是 JDK 17 离线 Mockito/JUnit/MockMvc 证据，不连接真实 MySQL，也未部署或切换真实 RuntimeProfile。当前任务进程未发现 `GRADUATION_TEST_ADMIN_PASSWORD`，3307/8091/8090/8092/10015/19083 均无监听，因此未执行认证真实分页或 HS2 健康探测。管理员变量只检查是否存在，从未读取或回显其值。阶段 4 和产品验收不关闭。
+
+## G-03 裁决后的补充验证（2026-10-07）
+
+`AnalysisServiceTest.explicitArchivedSnapshotFromAnotherProfileIsReadableById` 将显式快照设为 `ARCHIVED` 且归属另一 RuntimeProfile，断言按指定 ID 回读并且不调用当前 ACTIVE 解析。定向命令 `mvn -o -f analytics-server/pom.xml -pl metric-analysis -am '-Dtest=AnalysisServiceTest,MetricAdsReaderActiveProfileTest,MySqlMetricStoreActiveProfileTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`：`AnalysisServiceTest` 41/41、`MetricAdsReaderActiveProfileTest` 2/2、`MySqlMetricStoreActiveProfileTest` 2/2，共 **45/45 PASS**，0 failure/error/skipped，BUILD SUCCESS。该测试与前述默认/列表过滤测试共同覆盖方案 A 的本地实现路径。这仍不替代真实 profile 切换、跨 profile 快照服务库回读或真实登录授权证据。决策见 `docs/decisions/DECISION_LOG.md` D-059。
+
+权限侧复核：`mvn -o -f analytics-server/pom.xml -pl platform-app -am '-Dtest=AuthInterceptorTest,ControllerPermissionCoverageTest,RolePermissionsTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`，`AuthInterceptorTest` 13/13、`RolePermissionsTest` 11/11、`ControllerPermissionCoverageTest` 5/5，共 **29/29 PASS**，0 failure/error/skipped，七模块 reactor BUILD SUCCESS。覆盖实际 handler 的角色权限判定、四类角色 dashboard:view 矩阵、受保护端点声明与冻结前端端点权限对照；这证明权限代码与注解契约，不是数据库或真实登录浏览器验收。修改前备份：`docs/verification/results/PHASE4-RUNTIMEPROFILE-SNAPSHOT-SCOPE-20261007.md.bak-20261007-g03-permission-tests`。

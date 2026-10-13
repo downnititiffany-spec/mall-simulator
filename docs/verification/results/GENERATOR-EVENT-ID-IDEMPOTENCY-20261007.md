@@ -1,0 +1,39 @@
+# 阶段 2/7 生成器商城动作幂等键事件身份修复
+
+日期：2026-10-07（Asia/Shanghai）
+
+## 缺陷与修复
+
+生成器原先以 `runId + userId + canonicalIdOf(event)` 生成商城 `Idempotency-Key`。`canonicalIdOf` 对 `order_created` 和 `order_paid` 都返回同一 `order_id`，对 `refund_created` 和 `refund_completed` 也都返回同一 `refund_id`。因此正常生命周期中的不同业务操作会共用一个 key；商城共享账本按操作名校验时，后续支付/退款完成会误报 `IDEMPOTENCY_CONFLICT`。相同 session 下多个行为事件也可能因共用 `session_id` 冲突。
+
+现改用稳定的规范事件 `event_id` 作为逻辑动作身份，同时继续将 `runId` 与 `userId` 纳入 SHA-256 派生。相同生成计划事件重放时保持相同 key；同一用户/订单的不同 lifecycle event 使用不同 key。缺失 event、userId 时 fail-closed。
+
+## 验证
+
+- 定向命令：`mvn -o -f synthetic-data-generator/pom.xml '-Dtest=MallApiIdempotencyKeyTest' test`：**4/4 PASS**。
+- 模块默认回归：`mvn -o -f synthetic-data-generator/pom.xml test`：**134/134 PASS**，0 failure、0 error、0 skipped，`BUILD SUCCESS`。
+- 新回归覆盖同一订单不同 lifecycle event 键不同、同一事件重试键稳定、跨 run 隔离及缺少 user identity 拒绝。
+
+## 证据边界
+
+以上为 JDK 17 离线单测和生成器默认套件证据，不连接真实商城或数据库，不执行 V8/V9 迁移，不证明并发事务或端到端 exactly-once。阶段 2/7 仍需隔离商城数据库、真实生成器写入和结果核对。
+
+修改文件：`synthetic-data-generator/src/main/java/com/graduation/generator/engine/MallApiDispatchSink.java`、`synthetic-data-generator/src/test/java/com/graduation/generator/engine/MallApiIdempotencyKeyTest.java`。
+
+## HTTP 派发集成补充（2026-10-07）
+
+在原辅助函数测试之外，扩展真实本地 `FakeMallServer` socket fixture 记录每个写路由收到的 `Idempotency-Key`，并在 `MallApiGenerationEngineTest.happyPathDrivesMallThenWritesCanonicalStream` 覆盖生成计划→派发→HTTP 请求头：订单创建及支付请求均逐请求携带非空唯一键，两路键集合互不相交。
+
+- 定向：`mvn -o -f synthetic-data-generator/pom.xml '-Dtest=MallApiGenerationEngineTest,MallApiIdempotencyKeyTest' test`：19/19 PASS。
+- 生成器全套：`mvn -o -f synthetic-data-generator/pom.xml test`：134/134 PASS，0 failure、0 error、0 skipped，`BUILD SUCCESS`。
+- 证据仍限本地 HTTP fixture 与离线测试；未连接真实商城/数据库，未执行 V8/V9、并发回放或目标端结果核验，不证明 exactly-once，阶段 2/7 不关闭。
+
+新增测试文件：`synthetic-data-generator/src/test/java/com/graduation/generator/fixture/FakeMallServer.java`、`synthetic-data-generator/src/test/java/com/graduation/generator/engine/MallApiGenerationEngineTest.java`。
+
+## 全写路由覆盖补充（2026-10-07）
+
+将本地 HTTP 集成断言从订单创建/支付扩展到正常生成链路的全部商城写路由：用户注册、订单创建、支付、取消、退款申请、退款完成。逐路由请求头数须与成功事件数相等，所有键非空，跨所有请求全局唯一。
+
+- 定向：`MallApiGenerationEngineTest,MallApiIdempotencyKeyTest` 19/19 PASS。
+- 生成器默认全套：134/134 PASS，0 failure、0 error、0 skipped，JDK 17 Maven 离线 `BUILD SUCCESS`。
+- 仍限本地 HTTP fixture；未连接真实商城/数据库，未执行 V8/V9、并发回放或目标端结果核对，不证明 exactly-once，阶段 2/7 不关闭。

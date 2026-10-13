@@ -90,6 +90,7 @@
                   {{ evaluations[d.id].note }}
                 </div>
               </span>
+              <span v-else-if="evaluationPending.has(d.id)" class="table-hint">评价加载中…</span>
               <span v-else>—</span>
             </td>
             <td class="nowrap">
@@ -126,9 +127,12 @@ import { useAnalysis } from '../composables/useAnalysis'
 import { buildFallbackContext, NON_ANALYSIS_ROW_KEYS } from '../utils/context'
 import { COLUMNS, decisionRows as mapDecisionRows, evaluationRows as mapEvaluationRows } from '../utils/tables'
 import { exportAnalysisCsv } from '../utils/exportCsv'
+import { forEachConcurrent } from '../utils/forEachConcurrent'
+import { requirePageResponse } from '../utils/pageResponse.js'
 
 const evaluations = ref({})
 const evaluationError = ref('')
+const evaluationPending = ref(new Set())
 const actionError = ref('')
 const busy = ref(false)
 const page = ref(1)
@@ -137,37 +141,62 @@ const totalPages = ref(1)
 const sort = ref('id,desc')
 const pageSize = ref(20)
 let decisionFetchSeq = 0
+const DECISION_EVALUATION_READ_CONCURRENCY = 5
 
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
 // 决策列表分页响应使用统一信封；单项评价仍返回裸数组。
-async function fetchDecisions(params, signal) {
-  const mySeq = ++decisionFetchSeq
-  const result = await api.decisionPage({ page: params.page || 1, size: params.size || pageSize.value, sort: params.sort || 'id,desc' }, { signal })
-  const list = result && Array.isArray(result.items) ? result.items : []
-  if (mySeq === decisionFetchSeq) {
-    page.value = Number(result.page) || 1
-    pageSize.value = Number(result.size) || pageSize.value
-    total.value = Number(result.total) || 0
-    totalPages.value = Math.max(1, Number(result.totalPages) || 1)
-  }
+async function loadDecisionEvaluations(decisions, signal, mySeq) {
   const evalMap = {}
   const failed = []
-  const decided = list.filter((d) => d && ['EFFECTIVE', 'PARTIAL', 'INEFFECTIVE', 'INSUFFICIENT_DATA'].includes(d.status))
-  // 逐个取评价：单个失败只影响该行，但要显式记录失败原因，不静默
-  for (const d of decided) {
+  await forEachConcurrent(decisions, DECISION_EVALUATION_READ_CONCURRENCY, async (d) => {
+    if (signal && signal.aborted) return
     try {
       const evals = await api.decisionEvaluations(d.id, { signal })
       const first = Array.isArray(evals) ? evals[0] : null
       if (first) evalMap[d.id] = mapEvaluationRows([first])[0]
     } catch (e) {
       if (!isAbort(e)) failed.push(`${d.decisionNo || d.id}: ${(e && (e.message || e.code)) || '读取失败'}`)
+    } finally {
+      if (mySeq === decisionFetchSeq) {
+        const nextPending = new Set(evaluationPending.value)
+        nextPending.delete(d.id)
+        evaluationPending.value = nextPending
+      }
     }
-  }
-  if (mySeq === decisionFetchSeq) {
-    evaluations.value = evalMap
+  })
+  if (mySeq === decisionFetchSeq && !(signal && signal.aborted)) {
+    evaluations.value = { ...evalMap, ...evaluations.value }
     evaluationError.value = failed.join('；')
   }
+}
+
+async function fetchDecisions(params, signal) {
+  const mySeq = ++decisionFetchSeq
+  evaluationPending.value = new Set()
+  const result = requirePageResponse(
+    await api.decisionPage({ page: params.page || 1, size: params.size || pageSize.value, sort: params.sort || 'id,desc' }, { signal }),
+    '决策列表'
+  )
+  const list = result.items
+  if (mySeq === decisionFetchSeq) {
+    page.value = Number(result.page) || 1
+    pageSize.value = Number(result.size) || pageSize.value
+    total.value = Number(result.total) || 0
+    totalPages.value = Math.max(1, Number(result.totalPages) || 1)
+  }
+  const decided = list.filter((d) => d && ['EFFECTIVE', 'PARTIAL', 'INEFFECTIVE', 'INSUFFICIENT_DATA'].includes(d.status))
+  if (mySeq === decisionFetchSeq) {
+    evaluations.value = {}
+    evaluationError.value = ''
+    evaluationPending.value = new Set(decided.map((d) => d.id))
+  }
+  // Secondary evaluation reads must not delay the decision table's primary page response.
+  void loadDecisionEvaluations(decided, signal, mySeq).catch((e) => {
+    if (!isAbort(e) && mySeq === decisionFetchSeq && !(signal && signal.aborted)) {
+      evaluationError.value = (e && (e.message || e.code)) || '评价读取失败'
+    }
+  })
 
   const ctx = buildFallbackContext({ rows: list, warnings: ['ENVELOPE_MISSING'] })
   return {

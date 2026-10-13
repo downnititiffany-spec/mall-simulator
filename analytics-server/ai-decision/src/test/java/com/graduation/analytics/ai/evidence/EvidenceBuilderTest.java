@@ -2,7 +2,7 @@ package com.graduation.analytics.ai.evidence;
 
 import com.graduation.analytics.analysis.AnalysisService;
 import com.graduation.analytics.analysis.AnalysisViewModel;
-import com.graduation.analytics.metric.MySqlMetricStore;
+import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.warehouse.RunSourceIdentity;
 import com.graduation.analytics.warehouse.WarehouseNamespace;
@@ -42,7 +42,7 @@ class EvidenceBuilderTest {
     @Mock
     private AnalysisService analysisService;
     @Mock
-    private MySqlMetricStore metricStore;
+    private MetricStore metricStore;
 
     private EvidenceBuilder builder() {
         return new EvidenceBuilder(analysisService, metricStore, defaultNamespaceProvider());
@@ -83,8 +83,10 @@ class EvidenceBuilderTest {
         s.setSnapshotId(id);
         s.setStatus(status);
         s.setBusinessTime(date.atStartOfDay());
+        s.setRuntimeProfileId(7L);
         s.setDefinitionVersion("v2");
         s.setPipelineRunId(pipelineRunId);
+        s.setSourceId(73L);
         return s;
     }
 
@@ -195,6 +197,7 @@ class EvidenceBuilderTest {
         assertThat(pkg.dataQuality().rulePassed()).isEqualTo(3);
         assertThat(pkg.dataQuality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
         assertThat(pkg.lineage().pipelineRunId()).isEqualTo(21L);
+        assertThat(pkg.lineage().sourceId()).isEqualTo(73L);
         assertThat(pkg.lineage().mysqlTables()).contains("ads_operation_overview_m", "ads_data_quality_m",
                 "ads_category_sale_m", "ads_region_sale_m");
         assertThat(pkg.lineage().hiveAdsTables()).contains("dw_ads.ads_operation_overview",
@@ -269,6 +272,37 @@ class EvidenceBuilderTest {
 
         assertThat(pkg.anomalies()).extracting(EvidencePackage.AnomalyCandidate::ruleCode)
                 .contains(AnomalyRules.RULE_PERIOD_SHIFT);
+    }
+
+    @Test
+    @DisplayName("上一日快照身份不同：不跨 profile、source 或指标定义版本构造比较")
+    void refusesPreviousDaySnapshotFromDifferentScope() {
+        String otherProfile = "S-OTHER-PROFILE";
+        String otherSource = "S-OTHER-SOURCE";
+        String otherDefinition = "S-OTHER-DEFINITION";
+        MetricSnapshot profileCandidate = snapshot(otherProfile, "ARCHIVED", DAY.minusDays(1), 19L);
+        profileCandidate.setRuntimeProfileId(8L);
+        MetricSnapshot sourceCandidate = snapshot(otherSource, "ARCHIVED", DAY.minusDays(1), 19L);
+        sourceCandidate.setSourceId(74L);
+        MetricSnapshot definitionCandidate = snapshot(otherDefinition, "ARCHIVED", DAY.minusDays(1), 19L);
+        definitionCandidate.setDefinitionVersion("v1");
+
+        when(metricStore.activeSnapshotId()).thenReturn(SNAP);
+        when(metricStore.findSnapshot(SNAP)).thenReturn(snapshot(SNAP, "ACTIVE", DAY, 21L));
+        when(metricStore.listSnapshots(anyInt())).thenReturn(List.of(
+                snapshot(SNAP, "ACTIVE", DAY, 21L), profileCandidate, sourceCandidate, definitionCandidate));
+        when(analysisService.overview(eq(SNAP), eq(DAY), eq(DAY))).thenReturn(overview("2042.0000"));
+        stubProducts();
+        stubSales();
+
+        EvidencePackage pkg = builder().build(EvidenceRequest.latest("admin"));
+
+        assertThat(pkg.comparisonPeriod()).isNull();
+        assertThat(pkg.comparisons()).isEmpty();
+        assertThat(pkg.warnings()).contains(EvidencePackage.WARN_NO_COMPARISON_PERIOD);
+        verify(analysisService, never()).overview(eq(otherProfile), any(), any());
+        verify(analysisService, never()).overview(eq(otherSource), any(), any());
+        verify(analysisService, never()).overview(eq(otherDefinition), any(), any());
     }
 
     @Test

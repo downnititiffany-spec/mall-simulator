@@ -27,5 +27,6 @@ public class MallBizException extends RuntimeException {
     public static final String REFUND_EXCEEDS_PAID = "REFUND_EXCEEDS_PAID";
     public static final String REFUND_NOT_FOUND = "REFUND_NOT_FOUND";
     public static final String PARAM_INVALID = "PARAM_INVALID";
+    public static final String IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT";
     public static final String INTERNAL = "INTERNAL";
 }

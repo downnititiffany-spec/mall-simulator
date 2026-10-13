@@ -12,7 +12,12 @@ import com.graduation.generator.contract.ContractEnums;
  * <p>{@code sessionId} 必填：分析侧的会话口径依赖它，生成器不能事后拼。</p>
  */
 public record BehaviorCommand(String userId, String productId, String sessionId,
-                              String behaviorType, String channel) {
+                              String behaviorType, String channel, String idempotencyKey) {
+
+    public BehaviorCommand(String userId, String productId, String sessionId,
+                           String behaviorType, String channel) {
+        this(userId, productId, sessionId, behaviorType, channel, null);
+    }
 
     public BehaviorCommand {
         requireId(userId, "userId");

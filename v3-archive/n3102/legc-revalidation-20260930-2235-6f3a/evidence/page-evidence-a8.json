@@ -1,0 +1,237 @@
+{
+  "startedAt": "2026-09-30T14:40:45.172Z",
+  "base": "http://127.0.0.1:8091",
+  "afterLoginUrl": "http://127.0.0.1:8091/overview",
+  "domTextLength": 1362,
+  "screenshot": "page-overview-a8.png",
+  "overviewApiHits": 1,
+  "overviewMetrics": 14,
+  "snapshotId": "S20260918_1",
+  "metricCodes": [
+    "avg_order_value",
+    "buy_rate",
+    "cart_add_cnt",
+    "cart_rate",
+    "dau",
+    "fav_cnt",
+    "full_refund_rate",
+    "gmv",
+    "net_sale",
+    "paid_order_cnt",
+    "pv",
+    "refund_rate",
+    "repeat_rate",
+    "uv"
+  ],
+  "domEvidence": {
+    "hasGmv": true,
+    "hasNetSale": true,
+    "hasAov": true,
+    "hasPv30": true
+  },
+  "sales": {
+    "apiStatus": 200,
+    "snapshotId": "S20260918_1",
+    "overviewSnapshotId": "S20260918_1",
+    "categoryRows": [
+      {
+        "category_id": 100,
+        "category_name": "数码设备",
+        "parent_category_id": 10,
+        "parent_category_name": "电子产品",
+        "sale_count": 2,
+        "sale_amount": 190,
+        "net_sale_amount": 190,
+        "amount_ratio": 0.4222
+      },
+      {
+        "category_id": 200,
+        "category_name": "数码配件",
+        "parent_category_id": 10,
+        "parent_category_name": "电子产品",
+        "sale_count": 2,
+        "sale_amount": 150,
+        "net_sale_amount": 70,
+        "amount_ratio": 0.3333
+      },
+      {
+        "category_id": -1,
+        "category_name": "未分类",
+        "parent_category_id": -1,
+        "parent_category_name": "未分类",
+        "sale_count": 1,
+        "sale_amount": 60,
+        "net_sale_amount": 60,
+        "amount_ratio": 0.1333
+      },
+      {
+        "category_id": 300,
+        "category_name": "家居日用",
+        "parent_category_id": 20,
+        "parent_category_name": "家居生活",
+        "sale_count": 1,
+        "sale_amount": 50,
+        "net_sale_amount": 50,
+        "amount_ratio": 0.1111
+      }
+    ],
+    "regionRows": [
+      {
+        "region": "tier1",
+        "sale_amount": 230,
+        "net_sale_amount": 150,
+        "amount_ratio": 0.5111
+      },
+      {
+        "region": "tier2",
+        "sale_amount": 90,
+        "net_sale_amount": 90,
+        "amount_ratio": 0.2
+      },
+      {
+        "region": "tier3",
+        "sale_amount": 70,
+        "net_sale_amount": 70,
+        "amount_ratio": 0.1556
+      },
+      {
+        "region": "unknown",
+        "sale_amount": 60,
+        "net_sale_amount": 60,
+        "amount_ratio": 0.1333
+      }
+    ],
+    "categoriesMatchIndependentOracle": true,
+    "regionsMatchIndependentOracle": true,
+    "additiveTotalsMatchOverview": true,
+    "windowRatiosRecomputed": true,
+    "salesHeadings": {
+      "pageTitle": true,
+      "region": true,
+      "category": true,
+      "cityDisclaimer": true
+    },
+    "chartCanvasCount": 3,
+    "pageErrors": [],
+    "screenshot": "page-sales-category-region.png",
+    "apiBody": {
+      "code": "OK",
+      "message": "success",
+      "data": {
+        "snapshotId": "S20260918_1",
+        "sourceId": 1,
+        "source": "spark-ads",
+        "businessTime": "2026-09-18T00:00:00",
+        "dataUpdatedAt": "2026-09-18T00:00:00",
+        "definitionVersion": "v2",
+        "qualityStatus": "PASS",
+        "filters": {
+          "from": "2026-09-18",
+          "to": "2026-09-18",
+          "snapshotId": "S20260918_1"
+        },
+        "data": {
+          "trend": [
+            {
+              "date": "2026-09-18",
+              "orderCount": 6,
+              "saleAmount": 450,
+              "buyerCount": 6,
+              "avgOrderValue": 75,
+              "netSaleAmount": 370
+            }
+          ],
+          "gmv": 450,
+          "netSale": 370,
+          "refundRate": 0.1667,
+          "fullRefundRate": 0.1667,
+          "quality": {
+            "ruleCount": 4,
+            "passedCount": 4,
+            "failedRules": [],
+            "ruleVersions": {
+              "AMOUNT_RECONCILE": 1,
+              "ENUM_WHITELIST": 1,
+              "EVENT_ID_UNIQUE": 1,
+              "REQUIRED_FIELD_NULL_RATE": 1
+            }
+          },
+          "byCategory": [
+            {
+              "category_id": 100,
+              "category_name": "数码设备",
+              "parent_category_id": 10,
+              "parent_category_name": "电子产品",
+              "sale_count": 2,
+              "sale_amount": 190,
+              "net_sale_amount": 190,
+              "amount_ratio": 0.4222
+            },
+            {
+              "category_id": 200,
+              "category_name": "数码配件",
+              "parent_category_id": 10,
+              "parent_category_name": "电子产品",
+              "sale_count": 2,
+              "sale_amount": 150,
+              "net_sale_amount": 70,
+              "amount_ratio": 0.3333
+            },
+            {
+              "category_id": -1,
+              "category_name": "未分类",
+              "parent_category_id": -1,
+              "parent_category_name": "未分类",
+              "sale_count": 1,
+              "sale_amount": 60,
+              "net_sale_amount": 60,
+              "amount_ratio": 0.1333
+            },
+            {
+              "category_id": 300,
+              "category_name": "家居日用",
+              "parent_category_id": 20,
+              "parent_category_name": "家居生活",
+              "sale_count": 1,
+              "sale_amount": 50,
+              "net_sale_amount": 50,
+              "amount_ratio": 0.1111
+            }
+          ],
+          "byRegion": [
+            {
+              "region": "tier1",
+              "sale_amount": 230,
+              "net_sale_amount": 150,
+              "amount_ratio": 0.5111
+            },
+            {
+              "region": "tier2",
+              "sale_amount": 90,
+              "net_sale_amount": 90,
+              "amount_ratio": 0.2
+            },
+            {
+              "region": "tier3",
+              "sale_amount": 70,
+              "net_sale_amount": 70,
+              "amount_ratio": 0.1556
+            },
+            {
+              "region": "unknown",
+              "sale_amount": 60,
+              "net_sale_amount": 60,
+              "amount_ratio": 0.1333
+            }
+          ]
+        },
+        "warnings": []
+      },
+      "traceId": "13f49a19-0875-43d0-99f5-a71936c5d01c"
+    },
+    "ok": true
+  },
+  "salesPageScreenshot": "page-sales-category-region.png",
+  "apiHitsCount": 6,
+  "ok": true
+}

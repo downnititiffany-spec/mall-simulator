@@ -1,6 +1,7 @@
 package com.graduation.analytics.controller;
 
 import com.graduation.analytics.auth.AuthenticationRequiredException;
+import com.graduation.analytics.ai.AiFeedbackConflictException;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.decision.DecisionStateMachine;
@@ -51,6 +52,12 @@ public class PlatformExceptionAdvice {
     public ApiResponse<Void> handleIllegalState(DecisionStateMachine.IllegalDecisionStateException e) {
         log.warn("拒绝非法决策状态流转: {}", e.getMessage());
         return ApiResponse.error(DECISION_STATE_ILLEGAL, e.getMessage(), TraceContext.create().traceId());
+    }
+
+    @ExceptionHandler(AiFeedbackConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleAiFeedbackConflict(AiFeedbackConflictException e) {
+        return ApiResponse.error("AI_FEEDBACK_ALREADY_SUBMITTED", e.getMessage(), TraceContext.create().traceId());
     }
 
     @ExceptionHandler(RateLimitExceededException.class)

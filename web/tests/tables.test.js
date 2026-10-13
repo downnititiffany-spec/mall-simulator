@@ -78,6 +78,26 @@ test('aiCallRows 缺失耗时给占位符，token 数量整数格式化', () => 
   const rows = aiCallRows([{ useCase: 'ai_query', provider: 'deepseek', model: 'x', inputTokens: 1200, outputTokens: 300, elapsedMs: null, promptVersion: 'explain_v1', status: 'OK' }])
   assert.equal(rows[0].inputTokens, '1,200')
   assert.equal(rows[0].elapsedMs, '—')
+  assert.equal(rows[0].sourceId, '—')
+  assert.equal(rows[0].snapshotId, '—')
+  assert.equal(rows[0].requestFingerprint, '—')
+  assert.equal(rows[0].fingerprintPreview, '—')
+})
+
+test('aiCallRows 搬运真实来源与快照，页面短显指纹而导出值保持完整', () => {
+  const fingerprint = '0123456789abcdef'.repeat(4)
+  const [row] = aiCallRows([{
+    useCase: 'evidence_explain', provider: 'openai-compatible', model: 'model-x',
+    sourceId: 7, snapshotId: 'S20261008_1', requestFingerprint: fingerprint,
+    inputTokens: 12, outputTokens: 8, elapsedMs: 21, promptVersion: 'v3', status: 'OK'
+  }])
+  assert.equal(row.sourceId, '7')
+  assert.equal(row.snapshotId, 'S20261008_1')
+  assert.equal(row.requestFingerprint, fingerprint)
+  assert.equal(row.fingerprintPreview, `${fingerprint.slice(0, 12)}…`)
+  assert.ok(COLUMNS.opsAiCalls.some(({ key }) => key === 'sourceId'))
+  assert.ok(COLUMNS.opsAiCalls.some(({ key }) => key === 'snapshotId'))
+  assert.ok(COLUMNS.opsAiCalls.some(({ key }) => key === 'requestFingerprint'))
 })
 
 test('decisionRows 快照号与基线来自后端行，缺失给占位符', () => {

@@ -1,0 +1,2629 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Action completed."
+    }
+  ],
+  "structuredContent": {
+    "documentId": "1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk",
+    "title": "00_知识库治理规则 V1",
+    "revisionId": "ANLCKQke7WK0DzS3JlusG4M4UuIYJ8s8sqf17kuNaHYnJeLqRGvxYP9QAaJj2ZjQj1uMBGDx_hlDJyGESr6nsTmS7p8omWEp8tV-uITEC9s",
+    "suggestionsViewMode": "SUGGESTIONS_INLINE",
+    "url": null,
+    "body": null,
+    "tabs": [
+      {
+        "tabId": "t.0",
+        "title": "Tab 1",
+        "parentTabId": null,
+        "index": 0,
+        "nestingLevel": null,
+        "iconEmoji": null,
+        "body": {
+          "content": [
+            {
+              "endIndex": 1,
+              "sectionBreak": {
+                "sectionStyle": {
+                  "columnSeparatorStyle": "NONE",
+                  "contentDirection": "LEFT_TO_RIGHT",
+                  "sectionType": "CONTINUOUS"
+                }
+              }
+            },
+            {
+              "startIndex": 1,
+              "endIndex": 28,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1,
+                    "endIndex": 28,
+                    "textRun": {
+                      "content": "【Google Drive 技术知识库自动沉淀规则】\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 28,
+              "endIndex": 29,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 28,
+                    "endIndex": 29,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 29,
+              "endIndex": 68,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 29,
+                    "endIndex": 68,
+                    "textRun": {
+                      "content": "我在 Google Drive 中维护一个长期 ChatGPT 技术知识库。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 68,
+              "endIndex": 69,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 68,
+                    "endIndex": 69,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 69,
+              "endIndex": 89,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 69,
+                    "endIndex": 89,
+                    "textRun": {
+                      "content": "根目录为 ChatGPT，主要结构为：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 89,
+              "endIndex": 111,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 89,
+                    "endIndex": 111,
+                    "textRun": {
+                      "content": "- 00_Index：知识库索引与治理规则\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 111,
+              "endIndex": 138,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 111,
+                    "endIndex": 138,
+                    "textRun": {
+                      "content": "- 01_Knowledge：稳定、可复用的技术知识\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 138,
+              "endIndex": 169,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 138,
+                    "endIndex": 169,
+                    "textRun": {
+                      "content": "- 02_Mistakes：我实际犯过的错误、误区和排障经验\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 169,
+              "endIndex": 199,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 169,
+                    "endIndex": 199,
+                    "textRun": {
+                      "content": "- 03_Projects：项目事实、决策、状态和历史问题\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 199,
+              "endIndex": 221,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 199,
+                    "endIndex": 221,
+                    "textRun": {
+                      "content": "- 04_Daily：每日学习和问题时间线\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 221,
+              "endIndex": 247,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 221,
+                    "endIndex": 247,
+                    "textRun": {
+                      "content": "- 05_Inbox：尚未整理或无法确定分类的问题\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 247,
+              "endIndex": 248,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 247,
+                    "endIndex": 248,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 248,
+              "endIndex": 301,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 248,
+                    "endIndex": 301,
+                    "textRun": {
+                      "content": "在正常聊天过程中，主动判断当前讨论是否值得沉淀到 Google Drive，不需要等待我再次说“保存”。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 301,
+              "endIndex": 302,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 301,
+                    "endIndex": 302,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 302,
+              "endIndex": 308,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 302,
+                    "endIndex": 308,
+                    "textRun": {
+                      "content": "执行原则：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 308,
+              "endIndex": 309,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 308,
+                    "endIndex": 309,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 309,
+              "endIndex": 323,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 309,
+                    "endIndex": 323,
+                    "textRun": {
+                      "content": "1. 不要按每条消息保存。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 323,
+              "endIndex": 367,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 323,
+                    "endIndex": 367,
+                    "textRun": {
+                      "content": "   连续追问、要求举例、重新解释、确认理解、局部补充等，视为同一个“问题生命周期”。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 367,
+              "endIndex": 368,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 367,
+                    "endIndex": 368,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 368,
+              "endIndex": 397,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 368,
+                    "endIndex": 397,
+                    "textRun": {
+                      "content": "2. 当一个独立技术问题已经基本收口时，再进行沉淀判断。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 397,
+              "endIndex": 404,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 397,
+                    "endIndex": 404,
+                    "textRun": {
+                      "content": "   包括：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 404,
+              "endIndex": 419,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 404,
+                    "endIndex": 419,
+                    "textRun": {
+                      "content": "   - 已形成稳定技术结论\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 419,
+              "endIndex": 432,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 419,
+                    "endIndex": 432,
+                    "textRun": {
+                      "content": "   - 已定位故障根因\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 432,
+              "endIndex": 448,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 432,
+                    "endIndex": 448,
+                    "textRun": {
+                      "content": "   - 代码或配置问题已解决\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 448,
+              "endIndex": 464,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 448,
+                    "endIndex": 464,
+                    "textRun": {
+                      "content": "   - 已形成重要阶段性结论\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 464,
+              "endIndex": 480,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 464,
+                    "endIndex": 480,
+                    "textRun": {
+                      "content": "   - 项目已经形成明确决策\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 480,
+              "endIndex": 499,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 480,
+                    "endIndex": 499,
+                    "textRun": {
+                      "content": "   - 我明显切换到另一个独立主题\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 499,
+              "endIndex": 500,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 499,
+                    "endIndex": 500,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 500,
+              "endIndex": 515,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 500,
+                    "endIndex": 515,
+                    "textRun": {
+                      "content": "3. 以下内容优先长期保存：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 515,
+              "endIndex": 532,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 515,
+                    "endIndex": 532,
+                    "textRun": {
+                      "content": "   - 具有复用价值的技术知识\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 532,
+              "endIndex": 558,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 532,
+                    "endIndex": 558,
+                    "textRun": {
+                      "content": "   - 我实际犯过的代码、SQL、配置或概念错误\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 558,
+              "endIndex": 576,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 558,
+                    "endIndex": 576,
+                    "textRun": {
+                      "content": "   - 有完整排查过程的故障案例\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 576,
+              "endIndex": 594,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 576,
+                    "endIndex": 594,
+                    "textRun": {
+                      "content": "   - 多轮追问后才理解的知识点\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 594,
+              "endIndex": 619,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 594,
+                    "endIndex": 619,
+                    "textRun": {
+                      "content": "   - 项目中的重要事实、状态、架构或设计决策\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 619,
+              "endIndex": 637,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 619,
+                    "endIndex": 637,
+                    "textRun": {
+                      "content": "   - 以后可能再次使用的方法论\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 637,
+              "endIndex": 638,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 637,
+                    "endIndex": 638,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 638,
+              "endIndex": 655,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 638,
+                    "endIndex": 655,
+                    "textRun": {
+                      "content": "4. 以下内容默认不要独立保存：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 655,
+              "endIndex": 681,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 655,
+                    "endIndex": 681,
+                    "textRun": {
+                      "content": "   - “没懂”“再解释一下”等无新增知识的追问\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 681,
+              "endIndex": 693,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 681,
+                    "endIndex": 693,
+                    "textRun": {
+                      "content": "   - 单纯要求举例\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 693,
+              "endIndex": 703,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 693,
+                    "endIndex": 703,
+                    "textRun": {
+                      "content": "   - 重复确认\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 703,
+              "endIndex": 713,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 703,
+                    "endIndex": 713,
+                    "textRun": {
+                      "content": "   - 临时闲聊\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 713,
+              "endIndex": 731,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 713,
+                    "endIndex": 731,
+                    "textRun": {
+                      "content": "   - 没有长期价值的一次性信息\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 731,
+              "endIndex": 732,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 731,
+                    "endIndex": 732,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 732,
+              "endIndex": 757,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 732,
+                    "endIndex": 757,
+                    "textRun": {
+                      "content": "5. 写入前优先检查 Google Drive：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 757,
+              "endIndex": 774,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 757,
+                    "endIndex": 774,
+                    "textRun": {
+                      "content": "   - 先查 00_Index\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 774,
+              "endIndex": 794,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 774,
+                    "endIndex": 794,
+                    "textRun": {
+                      "content": "   - 再查是否已有同主题知识或记录\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 794,
+              "endIndex": 811,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 794,
+                    "endIndex": 811,
+                    "textRun": {
+                      "content": "   - 已存在：优先更新原记录\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 811,
+              "endIndex": 830,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 811,
+                    "endIndex": 830,
+                    "textRun": {
+                      "content": "   - 不存在：根据内容创建新记录\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 830,
+              "endIndex": 855,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 830,
+                    "endIndex": 855,
+                    "textRun": {
+                      "content": "   - 无法可靠分类：先放入 05_Inbox\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 855,
+              "endIndex": 856,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 855,
+                    "endIndex": 856,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 856,
+              "endIndex": 876,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 856,
+                    "endIndex": 876,
+                    "textRun": {
+                      "content": "6. 可以按需自动创建新的知识子模块。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 876,
+              "endIndex": 909,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 876,
+                    "endIndex": 909,
+                    "textRun": {
+                      "content": "   只有在第一次产生真正值得保存的内容时才创建，不创建空目录。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 909,
+              "endIndex": 919,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 909,
+                    "endIndex": 919,
+                    "textRun": {
+                      "content": "   新模块必须：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 919,
+              "endIndex": 935,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 919,
+                    "endIndex": 935,
+                    "textRun": {
+                      "content": "   - 有明确稳定的主题边界\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 935,
+              "endIndex": 951,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 935,
+                    "endIndex": 951,
+                    "textRun": {
+                      "content": "   - 现有模块无法合理容纳\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 951,
+              "endIndex": 971,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 951,
+                    "endIndex": 971,
+                    "textRun": {
+                      "content": "   - 创建后更新 00_Index\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 971,
+              "endIndex": 972,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 971,
+                    "endIndex": 972,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 972,
+              "endIndex": 985,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 972,
+                    "endIndex": 985,
+                    "textRun": {
+                      "content": "6.1 命名与编号规范：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 985,
+              "endIndex": 1032,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 985,
+                    "endIndex": 1032,
+                    "textRun": {
+                      "content": "   - 00_Index 内治理、索引和审计文件使用两位顺序号：00_、01_、02_……\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1032,
+              "endIndex": 1098,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1032,
+                    "endIndex": 1098,
+                    "textRun": {
+                      "content": "   - 01_Knowledge、02_Mistakes、03_Projects 中的二级模块使用两位顺序号：01_、02_……\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1098,
+              "endIndex": 1135,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1098,
+                    "endIndex": 1135,
+                    "textRun": {
+                      "content": "   - 二级模块内文件使用三位顺序号：001_、002_、003_……\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1135,
+              "endIndex": 1180,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1135,
+                    "endIndex": 1180,
+                    "textRun": {
+                      "content": "   - 04_Daily 按 YYYY/MM 目录组织，月份目录内文件使用三位顺序号。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1180,
+              "endIndex": 1223,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1180,
+                    "endIndex": 1223,
+                    "textRun": {
+                      "content": "   - 新增内容优先进入既有模块；仅在现有模块无法合理容纳时创建下一个顺序号模块。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1223,
+              "endIndex": 1264,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1223,
+                    "endIndex": 1264,
+                    "textRun": {
+                      "content": "   - 文件迁移到其他模块时，在目标模块按下一可用编号重新编号，避免重复编号。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1264,
+              "endIndex": 1265,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1264,
+                    "endIndex": 1265,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1265,
+              "endIndex": 1274,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1265,
+                    "endIndex": 1274,
+                    "textRun": {
+                      "content": "7. 分类原则：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1274,
+              "endIndex": 1301,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1274,
+                    "endIndex": 1301,
+                    "textRun": {
+                      "content": "   - 通用技术知识 → 01_Knowledge\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1301,
+              "endIndex": 1335,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1301,
+                    "endIndex": 1335,
+                    "textRun": {
+                      "content": "   - 我的实际错误/误区/排障经验 → 02_Mistakes\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1335,
+              "endIndex": 1369,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1335,
+                    "endIndex": 1369,
+                    "textRun": {
+                      "content": "   - 与具体项目强相关的事实与决策 → 03_Projects\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1369,
+              "endIndex": 1395,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1369,
+                    "endIndex": 1395,
+                    "textRun": {
+                      "content": "   - 当天学习和问题记录 → 04_Daily\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1395,
+              "endIndex": 1420,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1395,
+                    "endIndex": 1420,
+                    "textRun": {
+                      "content": "   - 暂时无法确定归类 → 05_Inbox\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1420,
+              "endIndex": 1421,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1420,
+                    "endIndex": 1421,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1421,
+              "endIndex": 1448,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1421,
+                    "endIndex": 1448,
+                    "textRun": {
+                      "content": "8. 每个独立问题最终只保留精炼后的结果，至少包括：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1448,
+              "endIndex": 1456,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1448,
+                    "endIndex": 1456,
+                    "textRun": {
+                      "content": "   - 标题\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1456,
+              "endIndex": 1464,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1456,
+                    "endIndex": 1464,
+                    "textRun": {
+                      "content": "   - 主题\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1464,
+              "endIndex": 1474,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1464,
+                    "endIndex": 1474,
+                    "textRun": {
+                      "content": "   - 原始问题\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1474,
+              "endIndex": 1484,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1474,
+                    "endIndex": 1484,
+                    "textRun": {
+                      "content": "   - 最终结论\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1484,
+              "endIndex": 1499,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1484,
+                    "endIndex": 1499,
+                    "textRun": {
+                      "content": "   - 关键原理或解决过程\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1499,
+              "endIndex": 1515,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1499,
+                    "endIndex": 1515,
+                    "textRun": {
+                      "content": "   - 错误/易错点（如有）\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1515,
+              "endIndex": 1534,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1515,
+                    "endIndex": 1534,
+                    "textRun": {
+                      "content": "   - 防止再次犯错的提醒（如有）\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1534,
+              "endIndex": 1560,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1534,
+                    "endIndex": 1560,
+                    "textRun": {
+                      "content": "   - 状态：已解决 / 阶段性解决 / 未解决\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1560,
+              "endIndex": 1568,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1560,
+                    "endIndex": 1568,
+                    "textRun": {
+                      "content": "   - 日期\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1568,
+              "endIndex": 1569,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1568,
+                    "endIndex": 1569,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1569,
+              "endIndex": 1588,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1569,
+                    "endIndex": 1588,
+                    "textRun": {
+                      "content": "9. 不要为了写知识库打断正常对话。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1588,
+              "endIndex": 1633,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1588,
+                    "endIndex": 1633,
+                    "textRun": {
+                      "content": "   优先完成当前问题；适合沉淀时，在同一轮中后台完成 Drive 的搜索、更新或创建。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1633,
+              "endIndex": 1634,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1633,
+                    "endIndex": 1634,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1634,
+              "endIndex": 1660,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1634,
+                    "endIndex": 1660,
+                    "textRun": {
+                      "content": "10. Google Drive 是长期事实来源。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1660,
+              "endIndex": 1672,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1660,
+                    "endIndex": 1672,
+                    "textRun": {
+                      "content": "    当我以后询问：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1672,
+              "endIndex": 1688,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1672,
+                    "endIndex": 1688,
+                    "textRun": {
+                      "content": "    - “我之前问过什么”\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1688,
+              "endIndex": 1705,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1688,
+                    "endIndex": 1705,
+                    "textRun": {
+                      "content": "    - “我以前犯过什么错”\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1705,
+              "endIndex": 1725,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1705,
+                    "endIndex": 1725,
+                    "textRun": {
+                      "content": "    - “这个问题之前怎么解决的”\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1725,
+              "endIndex": 1747,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1725,
+                    "endIndex": 1747,
+                    "textRun": {
+                      "content": "    - “毕业设计之前为什么这么决定”\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1747,
+              "endIndex": 1801,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1747,
+                    "endIndex": 1801,
+                    "textRun": {
+                      "content": "    等涉及个人历史的问题时，应优先搜索 Google Drive 知识库，而不是只依赖 Memory。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1801,
+              "endIndex": 1802,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1801,
+                    "endIndex": 1802,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1802,
+              "endIndex": 1839,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1802,
+                    "endIndex": 1839,
+                    "textRun": {
+                      "content": "11. Memory 只作为导航和长期偏好层，不把它当作完整历史数据库。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1839,
+              "endIndex": 1882,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1839,
+                    "endIndex": 1882,
+                    "textRun": {
+                      "content": "    具体技术历史、错误和项目事实优先以 Google Drive 中的记录为准。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1882,
+              "endIndex": 1883,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1882,
+                    "endIndex": 1883,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1883,
+              "endIndex": 1948,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1883,
+                    "endIndex": 1948,
+                    "textRun": {
+                      "content": "12. 如果一次写操作涉及不确定的覆盖、删除、大规模重构或可能破坏现有知识结构，应先询问我；普通新增、更新、索引维护可以直接执行\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1948,
+              "endIndex": 1949,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1948,
+                    "endIndex": 1949,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1949,
+              "endIndex": 1964,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1949,
+                    "endIndex": 1964,
+                    "textRun": {
+                      "content": "13. 跨会话长期执行规则：\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 1964,
+              "endIndex": 2036,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 1964,
+                    "endIndex": 2036,
+                    "textRun": {
+                      "content": "   - 在技术学习、代码、配置、故障排查或项目讨论中，只要一个独立问题已经基本收口且具有长期价值，就应主动进行知识沉淀，不等待再次要求保存。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2036,
+              "endIndex": 2097,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2036,
+                    "endIndex": 2097,
+                    "textRun": {
+                      "content": "   - 执行知识库操作时，优先读取 ChatGPT/00_Index 下的治理规则和知识库索引，并以其中当前规则为准。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2097,
+              "endIndex": 2156,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2097,
+                    "endIndex": 2156,
+                    "textRun": {
+                      "content": "   - 根据治理规则自行判断是新增、更新已有内容、创建新模块还是维护索引；已有同主题内容时优先更新，避免重复堆叠。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2156,
+              "endIndex": 2237,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2156,
+                    "endIndex": 2237,
+                    "textRun": {
+                      "content": "   - 涉及“以前问过什么、犯过什么错、以前如何解决、项目为何这样决策”等个人历史问题时，优先查询 Google Drive 知识库，不只依赖 Memory。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2237,
+              "endIndex": 2295,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2237,
+                    "endIndex": 2295,
+                    "textRun": {
+                      "content": "   - 知识库操作不得打断当前问题的正常回答；优先完成当前问题，再在同一轮中完成适合的普通新增、更新和索引维护。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2295,
+              "endIndex": 2344,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2295,
+                    "endIndex": 2344,
+                    "textRun": {
+                      "content": "   - 删除、大规模覆盖、结构重构等高风险操作必须先询问；普通新增、更新、索引维护可直接执行。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2344,
+              "endIndex": 2418,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2344,
+                    "endIndex": 2418,
+                    "textRun": {
+                      "content": "   - 如果 Google Drive 或当前治理规则无法访问，不得猜测或虚构已有知识库内容；正常完成当前回答，并明确说明本次知识库操作未完成。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2418,
+              "endIndex": 2420,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2418,
+                    "endIndex": 2420,
+                    "textRun": {
+                      "content": "。\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            },
+            {
+              "startIndex": 2420,
+              "endIndex": 2421,
+              "paragraph": {
+                "elements": [
+                  {
+                    "startIndex": 2420,
+                    "endIndex": 2421,
+                    "textRun": {
+                      "content": "\n",
+                      "textStyle": {}
+                    }
+                  }
+                ],
+                "paragraphStyle": {
+                  "namedStyleType": "NORMAL_TEXT",
+                  "direction": "LEFT_TO_RIGHT"
+                }
+              }
+            }
+          ]
+        },
+        "headers": null,
+        "footers": null,
+        "footnotes": null,
+        "documentStyle": {
+          "background": {
+            "color": {}
+          },
+          "pageNumberStart": 1,
+          "marginTop": {
+            "magnitude": 72,
+            "unit": "PT"
+          },
+          "marginBottom": {
+            "magnitude": 72,
+            "unit": "PT"
+          },
+          "marginRight": {
+            "magnitude": 72,
+            "unit": "PT"
+          },
+          "marginLeft": {
+            "magnitude": 72,
+            "unit": "PT"
+          },
+          "pageSize": {
+            "height": {
+              "magnitude": 792,
+              "unit": "PT"
+            },
+            "width": {
+              "magnitude": 612,
+              "unit": "PT"
+            }
+          },
+          "marginHeader": {
+            "magnitude": 36,
+            "unit": "PT"
+          },
+          "marginFooter": {
+            "magnitude": 36,
+            "unit": "PT"
+          },
+          "useCustomHeaderFooterMargins": true,
+          "documentFormat": {
+            "documentMode": "PAGES"
+          }
+        },
+        "suggestedDocumentStyleChanges": null,
+        "namedStyles": {
+          "styles": [
+            {
+              "namedStyleType": "NORMAL_TEXT",
+              "textStyle": {
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false,
+                "smallCaps": false,
+                "backgroundColor": {},
+                "foregroundColor": {
+                  "color": {
+                    "rgbColor": {}
+                  }
+                },
+                "fontSize": {
+                  "magnitude": 11,
+                  "unit": "PT"
+                },
+                "weightedFontFamily": {
+                  "fontFamily": "Arial",
+                  "weight": 400
+                },
+                "baselineOffset": "NONE"
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "alignment": "START",
+                "lineSpacing": 115,
+                "direction": "LEFT_TO_RIGHT",
+                "spacingMode": "COLLAPSE_LISTS",
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "unit": "PT"
+                },
+                "borderBetween": {
+                  "color": {},
+                  "width": {
+                    "unit": "PT"
+                  },
+                  "padding": {
+                    "unit": "PT"
+                  },
+                  "dashStyle": "SOLID"
+                },
+                "borderTop": {
+                  "color": {},
+                  "width": {
+                    "unit": "PT"
+                  },
+                  "padding": {
+                    "unit": "PT"
+                  },
+                  "dashStyle": "SOLID"
+                },
+                "borderBottom": {
+                  "color": {},
+                  "width": {
+                    "unit": "PT"
+                  },
+                  "padding": {
+                    "unit": "PT"
+                  },
+                  "dashStyle": "SOLID"
+                },
+                "borderLeft": {
+                  "color": {},
+                  "width": {
+                    "unit": "PT"
+                  },
+                  "padding": {
+                    "unit": "PT"
+                  },
+                  "dashStyle": "SOLID"
+                },
+                "borderRight": {
+                  "color": {},
+                  "width": {
+                    "unit": "PT"
+                  },
+                  "padding": {
+                    "unit": "PT"
+                  },
+                  "dashStyle": "SOLID"
+                },
+                "indentFirstLine": {
+                  "unit": "PT"
+                },
+                "indentStart": {
+                  "unit": "PT"
+                },
+                "indentEnd": {
+                  "unit": "PT"
+                },
+                "keepLinesTogether": false,
+                "keepWithNext": false,
+                "avoidWidowAndOrphan": true,
+                "shading": {
+                  "backgroundColor": {}
+                },
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "HEADING_1",
+              "textStyle": {
+                "fontSize": {
+                  "magnitude": 20,
+                  "unit": "PT"
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "magnitude": 20,
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 6,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "HEADING_2",
+              "textStyle": {
+                "bold": false,
+                "fontSize": {
+                  "magnitude": 16,
+                  "unit": "PT"
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "magnitude": 18,
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 6,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "HEADING_3",
+              "textStyle": {
+                "bold": false,
+                "foregroundColor": {
+                  "color": {
+                    "rgbColor": {
+                      "red": 0.2627451,
+                      "green": 0.2627451,
+                      "blue": 0.2627451
+                    }
+                  }
+                },
+                "fontSize": {
+                  "magnitude": 14,
+                  "unit": "PT"
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "magnitude": 16,
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 4,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "HEADING_4",
+              "textStyle": {
+                "foregroundColor": {
+                  "color": {
+                    "rgbColor": {
+                      "red": 0.4,
+                      "green": 0.4,
+                      "blue": 0.4
+                    }
+                  }
+                },
+                "fontSize": {
+                  "magnitude": 12,
+                  "unit": "PT"
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "magnitude": 14,
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 4,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "HEADING_5",
+              "textStyle": {
+                "foregroundColor": {
+                  "color": {
+                    "rgbColor": {
+                      "red": 0.4,
+                      "green": 0.4,
+                      "blue": 0.4
+                    }
+                  }
+                },
+                "fontSize": {
+                  "magnitude": 11,
+                  "unit": "PT"
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "magnitude": 12,
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 4,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "HEADING_6",
+              "textStyle": {
+                "italic": true,
+                "foregroundColor": {
+                  "color": {
+                    "rgbColor": {
+                      "red": 0.4,
+                      "green": 0.4,
+                      "blue": 0.4
+                    }
+                  }
+                },
+                "fontSize": {
+                  "magnitude": 11,
+                  "unit": "PT"
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "magnitude": 12,
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 4,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "TITLE",
+              "textStyle": {
+                "fontSize": {
+                  "magnitude": 26,
+                  "unit": "PT"
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 3,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            },
+            {
+              "namedStyleType": "SUBTITLE",
+              "textStyle": {
+                "italic": false,
+                "foregroundColor": {
+                  "color": {
+                    "rgbColor": {
+                      "red": 0.4,
+                      "green": 0.4,
+                      "blue": 0.4
+                    }
+                  }
+                },
+                "fontSize": {
+                  "magnitude": 15,
+                  "unit": "PT"
+                },
+                "weightedFontFamily": {
+                  "fontFamily": "Arial",
+                  "weight": 400
+                }
+              },
+              "paragraphStyle": {
+                "namedStyleType": "NORMAL_TEXT",
+                "direction": "LEFT_TO_RIGHT",
+                "spaceAbove": {
+                  "unit": "PT"
+                },
+                "spaceBelow": {
+                  "magnitude": 16,
+                  "unit": "PT"
+                },
+                "keepLinesTogether": true,
+                "keepWithNext": true,
+                "pageBreakBefore": false
+              }
+            }
+          ]
+        },
+        "suggestedNamedStylesChanges": null,
+        "lists": null,
+        "dropdownDefinitions": null,
+        "namedRanges": null,
+        "inlineObjects": null,
+        "positionedObjects": null,
+        "documentId": "1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk",
+        "document_url": "https://docs.google.com/document/d/1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk"
+      }
+    ],
+    "document_url": "https://docs.google.com/document/d/1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk"
+  },
+  "isError": false
+}

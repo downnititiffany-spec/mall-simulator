@@ -61,11 +61,12 @@ import { useRoute, useRouter } from 'vue-router'
 import api from './api'
 import SnapshotSelector from './components/SnapshotSelector.vue'
 import { resetSnapshotSelection } from './composables/useSnapshotSelection'
+import { canAccessRoute } from './utils/routeAccess'
 
 const router = useRouter()
 const route = useRoute()
 
-const ROLE_NAMES = { admin: '系统管理员', operator: '运营专员', analyst: '数据分析师' }
+const ROLE_NAMES = { admin: '系统管理员', data_dev: '数据开发', operator: '运营专员', analyst: '数据分析师' }
 const VERSION_TEXT = 'V2.2 · 阶段7 看板'
 
 // 导航图标：内联 SVG（24×24 / currentColor 描边），不引外网资源、不新增依赖
@@ -79,7 +80,8 @@ const ICON_PATHS = {
   '/decisions': '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',
   '/pipeline': '<rect x="3" y="4" width="6" height="6" rx="1.5"/><rect x="15" y="14" width="6" height="6" rx="1.5"/><path d="M9 7h4a2 2 0 012 2v7"/>',
   '/ops': '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 007 19.4a1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00-1.2-2.9H1a2 2 0 110-4h.1A1.7 1.7 0 002.6 7a1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H7a1.7 1.7 0 001-1.5V1a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V7a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
-  '/sources/wizard': '<path d="M12 3l2.2 5.3 5.8.5-4.4 3.8 1.3 5.7L12 15.2 7.1 18.3l1.3-5.7L4 8.8l5.8-.5L12 3z"/>'
+  '/sources/wizard': '<path d="M12 3l2.2 5.3 5.8.5-4.4 3.8 1.3 5.7L12 15.2 7.1 18.3l1.3-5.7L4 8.8l5.8-.5L12 3z"/>',
+  '/runtime-profiles': '<path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="17" r="2"/>'
 }
 const iconOf = (path) =>
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
@@ -128,15 +130,14 @@ const versionText = VERSION_TEXT
 // 管理页权限元数据同时用于导航过滤与 router 守卫，避免两份路径清单漂移。
 const allRoutes = router.options.routes.filter((r) => r.meta && r.meta.title && r.path !== '/login')
 const visibleRoutes = computed(() => {
-  const isAdmin = user.value && user.value.role === 'admin'
-  return allRoutes.filter((r) => isAdmin || !r.meta.requiresAdmin)
+  return allRoutes.filter((r) => canAccessRoute(user.value, r.meta))
 })
 
 // 分组：分析看板 / 智能与决策 / 系统治理（未列出的路由归入第一组）
 const GROUP_DEFS = [
   { title: '分析看板', paths: ['/overview', '/behavior', '/products', '/rfm', '/sales'] },
-  { title: '智能与决策', paths: ['/ai', '/decisions'] },
-  { title: '系统治理', paths: ['/pipeline', '/ops', '/sources/wizard'] }
+  { title: '智能与决策', paths: ['/ai', '/decisions', '/reports'] },
+  { title: '系统治理', paths: ['/pipeline', '/ops', '/sources/wizard', '/runtime-profiles'] }
 ]
 const groups = computed(() => {
   const listed = GROUP_DEFS.flatMap((g) => g.paths)

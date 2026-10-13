@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -167,6 +169,59 @@ class ReferenceMallHttpAdapterTest {
         }
     }
 
+    @Test
+    void createOrderCarriesIdempotencyKeyOnlyWhenProvided() throws IOException {
+        mall = new FakeMall(Map.of("POST /api/v1/mall/orders", 200), null, null);
+        ReferenceMallHttpAdapter adapter = adapter(name -> "test-token");
+
+        adapter.createOrder(config(mall.baseUrl(), ADMIN_ENV, null),
+                new OrderCommand("810000000000000001", List.of(new OrderCommand.Item("9", 1)), "stable-key"));
+        adapter.createOrder(config(mall.baseUrl(), ADMIN_ENV, null),
+                new OrderCommand("810000000000000001", List.of(new OrderCommand.Item("9", 1))));
+
+        assertEquals(List.of("stable-key", ""), mall.idempotencyKeys());
+    }
+
+    @Test
+    void allReferenceMallWriteCommandsCarryTheirStableKey() throws IOException {
+        String orderId = "810000000000000123";
+        Map<String, Integer> routes = new LinkedHashMap<>();
+        routes.put("POST /api/v1/mall/users", 200);
+        routes.put("POST /api/v1/mall/orders", 200);
+        routes.put("POST /api/v1/mall/orders/" + orderId + "/pay", 200);
+        routes.put("POST /api/v1/mall/orders/" + orderId + "/cancel", 200);
+        routes.put("POST /api/v1/mall/orders/" + orderId + "/refunds", 200);
+        routes.put("POST /api/v1/mall/refunds/refund-1/complete", 200);
+        mall = new FakeMall(routes, null, null);
+        ReferenceMallHttpAdapter adapter = adapter(name -> "test-token");
+        TargetConfig target = config(mall.baseUrl(), ADMIN_ENV, null);
+
+        adapter.createSyntheticUser(target, new UserCommand("25-34", "tier1", "gold", "user-key"));
+        adapter.createOrder(target, new OrderCommand(orderId,
+                List.of(new OrderCommand.Item("9", 1)), "order-key"));
+        adapter.pay(target, new PayCommand(orderId, orderId, "pay-key"));
+        adapter.cancel(target, new CancelCommand(orderId, orderId, "test", "cancel-key"));
+        adapter.refund(target, new RefundCommand(orderId, orderId, java.math.BigDecimal.ONE,
+                "test", "refund-key"));
+
+        assertEquals(List.of("user-key", "order-key", "pay-key", "cancel-key",
+                "refund-key:apply", "refund-key:complete"), mall.idempotencyKeys());
+    }
+
+    @Test
+    void configurableBehaviorRouteDoesNotRetryJustBecauseItReceivesAnIdempotencyKey() throws IOException {
+        Map<String, Integer> routes = Map.of("POST /custom/behaviors", 503);
+        mall = new FakeMall(routes, null, null);
+        ReferenceMallHttpAdapter adapter = adapter(name -> "test-token");
+        TargetConfig target = config(mall.baseUrl(), ADMIN_ENV, "{\"behavior_path\":\"/custom/behaviors\"}");
+
+        assertThrows(MallOperationException.class, () -> adapter.emitBehavior(target,
+                new BehaviorCommand("user-1", "product-1", "session-1", "view", "h5", "behavior-key")));
+
+        assertEquals(List.of("POST /custom/behaviors"), mall.requests());
+        assertEquals(List.of("behavior-key"), mall.idempotencyKeys());
+    }
+
     // ---------- 夹具 ----------
 
     private static ReferenceMallHttpAdapter adapter(Function<String, String> credentialLookup) {
@@ -208,6 +263,7 @@ class ReferenceMallHttpAdapterTest {
         private final String gatedPrefix;
         private final String token;
         private final List<String> requests = new CopyOnWriteArrayList<>();
+        private final List<String> idempotencyKeys = new CopyOnWriteArrayList<>();
 
         FakeMall(Map<String, Integer> routes, String gatedPrefix, String token) throws IOException {
             this.routes = Map.copyOf(routes);
@@ -222,6 +278,8 @@ class ReferenceMallHttpAdapterTest {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
             requests.add(method + " " + path);
+            idempotencyKeys.add(java.util.Objects.toString(
+                    exchange.getRequestHeaders().getFirst("Idempotency-Key"), ""));
             int status;
             if (gatedPrefix != null && path.startsWith(gatedPrefix)) {
                 String expected = "Bearer " + token;
@@ -229,7 +287,20 @@ class ReferenceMallHttpAdapterTest {
             } else {
                 status = routes.getOrDefault(method + " " + path, NOT_FOUND);
             }
-            exchange.sendResponseHeaders(status, -1);
+            if (status == 200 && "POST".equals(method)) {
+                String data = switch (path) {
+                    case "/api/v1/mall/users" -> "{\"userId\":\"810000000000000123\"}";
+                    case "/api/v1/mall/orders" -> "{\"orderId\":\"810000000000000123\"}";
+                    case "/api/v1/mall/orders/810000000000000123/refunds" -> "{\"refundId\":\"refund-1\"}";
+                    default -> "null";
+                };
+                byte[] body = ("{\"code\":\"OK\",\"data\":" + data + "}")
+                        .getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(status, body.length);
+                exchange.getResponseBody().write(body);
+            } else {
+                exchange.sendResponseHeaders(status, -1);
+            }
             exchange.close();
         }
 
@@ -239,6 +310,10 @@ class ReferenceMallHttpAdapterTest {
 
         List<String> requests() {
             return List.copyOf(requests);
+        }
+
+        List<String> idempotencyKeys() {
+            return List.copyOf(idempotencyKeys);
         }
 
         @Override

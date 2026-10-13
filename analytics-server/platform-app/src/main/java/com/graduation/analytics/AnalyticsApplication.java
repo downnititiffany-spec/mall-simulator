@@ -31,7 +31,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.graduation.analytics.runtime.mapper",
         "com.graduation.analytics.metric.dict",
         "com.graduation.analytics.source.mapper",
-        "com.graduation.analytics.mapping.activation.mapper"})
+        "com.graduation.analytics.mapping.activation.mapper",
+        "com.graduation.analytics.report.mapper"})
 public class AnalyticsApplication {
 
     public static void main(String[] args) {

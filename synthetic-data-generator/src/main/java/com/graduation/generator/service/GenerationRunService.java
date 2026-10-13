@@ -318,7 +318,7 @@ public class GenerationRunService {
             manifest = sink.closeAndBuildManifest();
             terminal = isCancelled(runId) ? RunStatus.CANCELLED : RunStatus.SUCCESS;
         } catch (RuntimeException e) {
-            errorCode = ERROR_RUN_FAILED;
+            errorCode = errorCodeOf(e);
             errorMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
             terminal = isCancelled(runId) ? RunStatus.CANCELLED : RunStatus.FAILED;
             log.error("生成运行失败：runId={} code={}", runId, errorCode, e);
@@ -359,6 +359,13 @@ public class GenerationRunService {
         log.info("生成运行收口：runId={} status={} success={} failed={} artifacts={} manifestRecords={}",
                 runId, terminal, successCount, failedCount, artifacts.size(),
                 manifest == null ? 0 : manifest.recordCount());
+    }
+
+    static String errorCodeOf(RuntimeException failure) {
+        if (failure instanceof com.graduation.generator.adapter.MallOperationException mallFailure) {
+            return mallFailure.failureCode().name();
+        }
+        return ERROR_RUN_FAILED;
     }
 
     /**

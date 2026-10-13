@@ -2,12 +2,17 @@ package com.graduation.analytics.metric;
 
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
+import com.graduation.analytics.common.PlatformBizException;
+import com.graduation.analytics.common.PaginationMath;
+import com.graduation.analytics.runtime.ActiveRuntimeProfileIdProvider;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.math.BigDecimal;
@@ -19,6 +24,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * MySQL 指标服务实现（§19.3/§21.11，R7-1 改造）。
@@ -38,8 +45,12 @@ import java.util.Map;
 @Service
 public class MySqlMetricStore implements MetricStore {
 
-    private static final String VALUE_COLUMNS =
-            "snapshot_id, metric_code, metric_value, unit, period, definition_version, updated_at";
+    private static final int MAX_SNAPSHOT_PAGE_SIZE = 100;
+
+    static final String PUBLISHED_METRIC_VALUES_SQL = "SELECT mv.snapshot_id AS snapshot_id, mv.metric_code, "
+            + "mv.metric_value, mv.unit, mv.period, mv.definition_version, mv.updated_at "
+            + "FROM metric_value mv JOIN metric_snapshot ms ON ms.snapshot_id = mv.snapshot_id "
+            + "WHERE mv.snapshot_id = ? AND ms.status IN (?, ?) ORDER BY mv.metric_code";
     private static final String SNAPSHOT_COLUMNS =
             "id, snapshot_id, runtime_profile_id, runtime_profile_version, business_time, pipeline_run_id, "
                     + "status, version, definition_version, data_updated_at, published_at, source, "
@@ -86,12 +97,25 @@ public class MySqlMetricStore implements MetricStore {
 
     private final JdbcTemplate publishJdbc;
     private final JdbcTemplate readJdbc;
+    private final ActiveRuntimeProfileIdProvider activeProfileIdProvider;
 
-    /** 显式构造器：多数据源下必须保留 @Qualifier（Lombok 不会把字段注解复制到构造参数） */
+    /**
+     * Compatibility constructor for focused tests that do not load RuntimeProfile wiring.
+     * Default ACTIVE lookups and snapshot listings fail closed without the profile provider.
+     */
     public MySqlMetricStore(@Qualifier("metricPublishJdbcTemplate") JdbcTemplate publishJdbc,
                             @Qualifier("metricReadJdbcTemplate") JdbcTemplate readJdbc) {
+        this(publishJdbc, readJdbc, null);
+    }
+
+    /** Production constructor: keep datasource qualifiers and scope default reads to the active profile. */
+    @Autowired
+    public MySqlMetricStore(@Qualifier("metricPublishJdbcTemplate") JdbcTemplate publishJdbc,
+                            @Qualifier("metricReadJdbcTemplate") JdbcTemplate readJdbc,
+                            ActiveRuntimeProfileIdProvider activeProfileIdProvider) {
         this.publishJdbc = publishJdbc;
         this.readJdbc = readJdbc;
+        this.activeProfileIdProvider = activeProfileIdProvider;
     }
 
     @Override
@@ -105,14 +129,15 @@ public class MySqlMetricStore implements MetricStore {
     public List<MetricValue> query(MetricQuery query) {
         String snapshotId = query == null ? null : query.snapshotId();
         if ((snapshotId == null || snapshotId.isBlank()) && query != null && query.latestActive()) {
-            snapshotId = activeSnapshotId();
+            snapshotId = query.runtimeProfileId() == null
+                    ? activeSnapshotId() : activeSnapshotId(query.runtimeProfileId());
         }
         if (snapshotId == null || snapshotId.isBlank()) {
             // 读不到就是空：不查 analytics_meta 的弃用副本表（§17.2 表所有权）
             return List.of();
         }
-        return readJdbc.query("SELECT " + VALUE_COLUMNS + " FROM metric_value WHERE snapshot_id = ? "
-                + "ORDER BY metric_code", VALUE_MAPPER, snapshotId);
+        return readJdbc.query(PUBLISHED_METRIC_VALUES_SQL, VALUE_MAPPER, snapshotId,
+                MetricSnapshot.STATUS_ACTIVE, MetricSnapshot.STATUS_ARCHIVED);
     }
 
     /**
@@ -160,18 +185,86 @@ public class MySqlMetricStore implements MetricStore {
     }
 
     /** 最新 ACTIVE 快照号（metric_read）；无 ACTIVE 返回 null */
+    @Override
     public String activeSnapshotId() {
+        Optional<Long> activeProfileId = activeProfileId();
+        return activeProfileId.map(this::activeSnapshotId).orElse(null);
+    }
+
+    /** Latest ACTIVE snapshot for a specific RuntimeProfile. */
+    public String activeSnapshotId(long runtimeProfileId) {
+        if (runtimeProfileId <= 0) {
+            return null;
+        }
         List<String> ids = readJdbc.query(
-                "SELECT snapshot_id FROM metric_snapshot WHERE status = ? ORDER BY id DESC LIMIT 1",
-                (rs, rowNum) -> rs.getString(1), MetricSnapshot.STATUS_ACTIVE);
+                "SELECT snapshot_id FROM metric_snapshot WHERE status = ? AND runtime_profile_id = ? "
+                        + "ORDER BY id DESC LIMIT 1",
+                (rs, rowNum) -> rs.getString(1), MetricSnapshot.STATUS_ACTIVE, runtimeProfileId);
         return ids.isEmpty() ? null : ids.get(0);
+    }
+
+    private Optional<Long> activeProfileId() {
+        return activeProfileIdProvider == null ? Optional.empty() : activeProfileIdProvider.activeRuntimeProfileId();
     }
 
     /** 快照列表（管理页 /api/v1/metrics/snapshots；只读源） */
     public List<MetricSnapshot> listSnapshots(int limit) {
         int capped = Math.max(1, Math.min(100, limit));
-        return readJdbc.query("SELECT " + SNAPSHOT_COLUMNS + " FROM metric_snapshot ORDER BY id DESC LIMIT ?",
-                SNAPSHOT_MAPPER, capped);
+        Optional<Long> activeProfileId = activeProfileId();
+        if (activeProfileId.isEmpty()) {
+            return List.of();
+        }
+        return readJdbc.query("SELECT " + SNAPSHOT_COLUMNS
+                        + " FROM metric_snapshot WHERE runtime_profile_id = ? ORDER BY id DESC LIMIT ?",
+                SNAPSHOT_MAPPER, activeProfileId.get(), capped);
+    }
+
+    /**
+     * Read a stable snapshot-list page from the read-only metric source. Count and rows share one
+     * repeatable-read transaction so a concurrent publish cannot make the page metadata disagree
+     * with its contents. The legacy listSnapshots(limit) API remains unchanged.
+     */
+    @Transactional(transactionManager = "metricReadTransactionManager", readOnly = true,
+            isolation = Isolation.REPEATABLE_READ)
+    @Override
+    public MetricStore.SnapshotPage listSnapshotsPage(long page, int size, String sort) {
+        if (page < 1 || size < 1 || size > MAX_SNAPSHOT_PAGE_SIZE) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "page 必须大于等于 1，size 必须在 1 到 " + MAX_SNAPSHOT_PAGE_SIZE + " 之间");
+        }
+        String[] parts = sort == null ? new String[0] : sort.trim().toLowerCase(Locale.ROOT).split(",", -1);
+        if (parts.length < 1 || parts.length > 2 || parts[0].isBlank()) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 格式应为 字段[,asc|desc]");
+        }
+        String field = parts[0];
+        String direction = parts.length == 1 ? "asc" : parts[1];
+        Map<String, String> sortColumns = Map.of(
+                "id", "id",
+                "snapshotid", "snapshot_id",
+                "businesstime", "business_time",
+                "status", "status",
+                "publishedat", "published_at",
+                "createdat", "created_at");
+        String column = sortColumns.get(field);
+        if (column == null || !("asc".equals(direction) || "desc".equals(direction))) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 字段或方向不受支持");
+        }
+
+        Optional<Long> activeProfileId = activeProfileId();
+        if (activeProfileId.isEmpty()) {
+            return new MetricStore.SnapshotPage(List.of(), 1, size, 0, 1, field + "," + direction);
+        }
+        long total = readJdbc.queryForObject("SELECT COUNT(*) FROM metric_snapshot WHERE runtime_profile_id = ?",
+                Long.class, activeProfileId.get());
+        long totalPages = PaginationMath.totalPages(total, size);
+        long normalizedPage = Math.min(page, totalPages);
+        long offset = Math.multiplyExact(normalizedPage - 1, (long) size);
+        String tieBreak = "id".equals(field) ? "" : ", id DESC";
+        List<MetricSnapshot> items = readJdbc.query(
+                "SELECT " + SNAPSHOT_COLUMNS + " FROM metric_snapshot WHERE runtime_profile_id = ? ORDER BY "
+                        + column + " " + direction.toUpperCase(Locale.ROOT) + tieBreak + " LIMIT ? OFFSET ?",
+                SNAPSHOT_MAPPER, activeProfileId.get(), size, offset);
+        return new MetricStore.SnapshotPage(items, normalizedPage, size, total, totalPages, field + "," + direction);
     }
 
     /**
@@ -338,7 +431,21 @@ public class MySqlMetricStore implements MetricStore {
             readJdbc.queryForObject("SELECT 1", Integer.class);
             return new HealthResult(true, "mysql metric store ok (metric_read)");
         } catch (Exception e) {
-            return new HealthResult(false, e.getMessage());
+            // Health details are returned by an authenticated API; never expose driver/URL details.
+            log.warn("MySQL metric read health check failed: {}", e.getClass().getSimpleName());
+            return new HealthResult(false, "mysql metric store unavailable (metric_read)");
         }
+    }
+
+    /** MySQL 首版能力声明；不支持的维度查询和未实施的行数上限均如实返回。 */
+    @Override
+    public Capabilities capabilities() {
+        return new Capabilities(
+                type(),
+                true,
+                false,
+                null,
+                readJdbc.getQueryTimeout(),
+                healthCheck().ok());
     }
 }

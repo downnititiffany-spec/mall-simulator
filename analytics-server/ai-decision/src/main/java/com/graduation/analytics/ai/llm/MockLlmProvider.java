@@ -32,6 +32,11 @@ public class MockLlmProvider implements LlmProvider {
     }
 
     @Override
+    public String modelName() {
+        return "mock-model";
+    }
+
+    @Override
     public AiResponse complete(AiRequest request) {
         String content = request.userContent();
         // 前缀匹配：测试可用短标记注册行为

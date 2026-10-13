@@ -1,0 +1,4 @@
+CONCAT('SNAP|',snapshot_id,'|',status)
+SNAP|S20260918_2|ACTIVE
+CONCAT('SNAPCNT|',COUNT(*))
+SNAPCNT|2

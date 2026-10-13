@@ -4,7 +4,6 @@ import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricAdsReader;
 import com.graduation.analytics.metric.MetricQualityGate;
 import com.graduation.analytics.metric.MetricStore;
-import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.dict.MetricDefinition;
 import com.graduation.analytics.metric.dict.MetricDefinitionMapper;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
@@ -87,7 +86,7 @@ public class AnalysisService {
     private static final DateTimeFormatter ISO_SECONDS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final MetricAdsReader adsReader;
-    private final MySqlMetricStore metricStore;
+    private final MetricStore metricStore;
     private final MetricQualityGate qualityGate;
     private final MetricDefinitionMapper definitionMapper;
     private final RfmService rfmService;
@@ -258,8 +257,8 @@ public class AnalysisService {
             return adsReader.selectBySnapshotRange(table, snapshotId,
                     AdsRows.compactDate(from), AdsRows.compactDate(to));
         } catch (DataAccessException ex) {
-            log.warn("销售维度 ADS 读取不可用，按受限空态返回: table={} snapshotId={} reason={}",
-                    table, snapshotId, ex.getMessage());
+            log.warn("销售维度 ADS 读取不可用，按受限空态返回: table={} snapshotId={} causeType={}",
+                    table, snapshotId, ex.getClass().getSimpleName());
             warnings.add(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
             return List.of();
         }
@@ -656,8 +655,9 @@ public class AnalysisService {
             return new Pinned(null, null, List.of(AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
         }
         MetricSnapshot meta = metricStore.findSnapshot(snapshotId);
-        if (meta == null) {
-            // 显式指定的快照号库里没有（不能假装读过它）；ACTIVE 号取到却没有快照行同样属于"取不到"
+        if (meta == null || !(MetricSnapshot.STATUS_ACTIVE.equals(meta.getStatus())
+                || MetricSnapshot.STATUS_ARCHIVED.equals(meta.getStatus()))) {
+            // 未发布/不存在的快照不可读；显式 ID 不回退到当前 ACTIVE，也不查询部分产物。
             return new Pinned(null, null, List.of(explicit
                     ? AnalysisViewModel.WARN_UNKNOWN_SNAPSHOT
                     : AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
@@ -689,7 +689,8 @@ public class AnalysisService {
         try {
             return qualityGate.statusForRun(meta.getPipelineRunId());
         } catch (RuntimeException e) {
-            log.warn("quality gate unavailable for run {}: {}", meta.getPipelineRunId(), e.getMessage());
+            log.warn("quality gate unavailable for run {} ({})",
+                    meta.getPipelineRunId(), e.getClass().getSimpleName());
             warnings.add(AnalysisViewModel.WARN_QUALITY_STATUS_UNAVAILABLE);
             return MetricQualityGate.UNKNOWN;
         }

@@ -44,6 +44,32 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- RuntimeProfileService performs a real HiveServer2 JDBC SELECT 1 health check. -->
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-jdbc</artifactId>
+      <version>3.1.3</version>
+      <scope>runtime</scope>
+      <exclusions>
+        <!-- Spring Boot supplies Logback; do not package Hive's competing SLF4J binding. -->
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-reload4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-runner</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>apache-jsp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.glassfish.web</groupId>
+          <artifactId>javax.servlet.jsp</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>com.graduation.analytics</groupId>
       <artifactId>warehouse-pipeline</artifactId>

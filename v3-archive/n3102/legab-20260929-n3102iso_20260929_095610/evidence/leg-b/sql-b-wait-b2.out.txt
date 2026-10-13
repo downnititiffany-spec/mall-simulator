@@ -1,0 +1,2 @@
+SUBSTRING(evidence,1,700)
+{"batchId":2,"acceptedUri":"accepted/2","checksum":"5aee345c","acceptedRecords":1,"schemaVersions":["1.0"],"sourceId":1,"sourceCode":"mock-mall"}

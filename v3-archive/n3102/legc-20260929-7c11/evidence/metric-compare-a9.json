@@ -1,0 +1,100 @@
+[
+  {
+    "metricCode": "pv",
+    "expected": 30.0,
+    "actual": 30.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "uv",
+    "expected": 10.0,
+    "actual": 10.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "dau",
+    "expected": 10.0,
+    "actual": 10.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "fav_cnt",
+    "expected": 6.0,
+    "actual": 6.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "cart_add_cnt",
+    "expected": 8.0,
+    "actual": 8.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "paid_order_cnt",
+    "expected": 12.0,
+    "actual": 12.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "gmv",
+    "expected": 1010.0,
+    "actual": 1010.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "net_sale",
+    "expected": 930.0,
+    "actual": 930.0,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "avg_order_value",
+    "expected": 84.17,
+    "actual": 84.17,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "refund_rate",
+    "expected": 0.0833,
+    "actual": 0.0833,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "full_refund_rate",
+    "expected": 0.0833,
+    "actual": 0.0833,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "repeat_rate",
+    "expected": 0.3333,
+    "actual": 0.3333,
+    "period": "window:2026-09-18..2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "buy_rate",
+    "expected": 0.6,
+    "actual": 0.6,
+    "period": "day:2026-09-18",
+    "pass": true
+  },
+  {
+    "metricCode": "cart_rate",
+    "expected": 0.6,
+    "actual": 0.6,
+    "period": "day:2026-09-18",
+    "pass": true
+  }
+]

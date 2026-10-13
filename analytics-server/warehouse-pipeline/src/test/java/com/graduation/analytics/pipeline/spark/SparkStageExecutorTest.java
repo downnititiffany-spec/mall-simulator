@@ -174,7 +174,25 @@ class SparkStageExecutorTest {
         List<SparkStageExecutor.JobExecution> results = runStage(13L, "LOAD_ODS");
 
         assertThat(results.get(0).status()).isEqualTo("FAILED");
-        assertThat(results.get(0).errorMessage()).contains("schema mismatch");
+        assertThat(results.get(0).errorMessage()).contains("受控作业日志").doesNotContain("schema mismatch");
+    }
+
+    @Test
+    void rawJobDiagnosticIsNotPersistedInJobRunOrReturnedExecution() {
+        String diagnostic = "jdbc:mysql://internal:3307/metric?password=do-not-store";
+        submitter.program("SUBMITTED",
+                "{\"jobCode\":\"odl\",\"inputRecords\":10,\"outputRecords\":0,\"rejectedRecords\":0,"
+                        + "\"attemptNo\":1,\"status\":\"FAILED\",\"message\":\"" + diagnostic
+                        + "\",\"elapsedMs\":500}");
+
+        List<SparkStageExecutor.JobExecution> results = runStage(131L, "LOAD_ODS");
+
+        assertThat(results.get(0).errorMessage()).contains("受控作业日志").doesNotContain(diagnostic, "password");
+        ArgumentCaptor<SparkJobRun> captor = ArgumentCaptor.forClass(SparkJobRun.class);
+        verify(runMapper).updateById(captor.capture());
+        assertThat(captor.getValue().getErrorCode()).isEqualTo("JOB_EXECUTION_FAILED");
+        assertThat(captor.getValue().getErrorMessage()).contains("受控作业日志")
+                .doesNotContain(diagnostic, "password");
     }
 
     @Test
@@ -186,7 +204,7 @@ class SparkStageExecutorTest {
 
         SparkStageExecutor.JobExecution r = results.get(0);
         assertThat(r.status()).isEqualTo("FAILED"); // 进程异常终止不冒充成功（§13.2）
-        assertThat(r.errorMessage()).contains("进程退出码非0");
+        assertThat(r.errorMessage()).contains("受控作业日志");
     }
 
     @Test
@@ -196,7 +214,7 @@ class SparkStageExecutorTest {
         List<SparkStageExecutor.JobExecution> results = runStage(15L, "LOAD_ODS");
 
         assertThat(results.get(0).status()).isEqualTo("FAILED");
-        assertThat(results.get(0).errorMessage()).contains("未找到 JobResult 结果行");
+        assertThat(results.get(0).errorMessage()).contains("受控作业日志");
     }
 
     @Test
@@ -206,7 +224,7 @@ class SparkStageExecutorTest {
         List<SparkStageExecutor.JobExecution> results = runStage(16L, "LOAD_ODS");
 
         assertThat(results.get(0).status()).isEqualTo("FAILED");
-        assertThat(results.get(0).errorMessage()).contains("取消");
+        assertThat(results.get(0).errorMessage()).contains("受控作业日志");
     }
 
     @Test
@@ -237,7 +255,8 @@ class SparkStageExecutorTest {
                 executor.executeStage(profile, 21L, "BUILD_DWD", "20260901", 1, Map.of());
 
         assertThat(stage.failed()).isTrue();
-        assertThat(stage.errorMessage()).contains("bdw").contains("行为清洗失败");
+        assertThat(stage.errorMessage()).contains("bdw").contains("受控作业日志")
+                .doesNotContain("行为清洗失败");
         // 只提交了 dim + bdw，tdw 未提交（fail-fast）
         assertThat(submitter.submitCount()).isEqualTo(2);
         assertThat(submitter.submittedCommands().get(0)).contains("--jobCode=dim");

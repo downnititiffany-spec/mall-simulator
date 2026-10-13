@@ -62,7 +62,7 @@ class ExplanationEvidenceTest {
                         "metric_value.refund_rate@" + SNAP)),
                 new EvidencePackage.DataQuality("PASS", 4, 3, List.of("EVENT_ID_UNIQUE"), List.of()),
                 new EvidencePackage.Lineage(List.of("dw_ads.ads_operation_overview"),
-                        List.of("ads_operation_overview_m", "ads_data_quality_m"), 21L, SNAP),
+                        List.of("ads_operation_overview_m", "ads_data_quality_m"), 21L, SNAP, 31L),
                 List.of(EvidencePackage.WARN_NO_COMPARISON_PERIOD,
                         EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE));
     }
@@ -191,7 +191,8 @@ class ExplanationEvidenceTest {
         when(llmProvider.complete(any())).thenThrow(new LlmProvider.LlmException("TIMEOUT", "timeout"));
         TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
                 "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
-                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based");
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based",
+                null, "S_QUERY_ACTUAL", 42L);
 
         ExplanationService.ExplanationResult result = service().explain(
                 query, SNAP, "销售额怎么样", "2026-09-01");
@@ -202,12 +203,91 @@ class ExplanationEvidenceTest {
     }
 
     @Test
+    @DisplayName("Text-to-SQL 解释编造查询结果中不存在的数字时回退并记录 REJECTED")
+    void queryExplanationRejectsNumbersAbsentFromExecutedRows() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("mock");
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse(
+                "{\"summary\":\"销售额达到 99999.00 元\",\"facts\":[],\"possibleCauses\":[],\"suggestions\":[],\"limitations\":[]}",
+                10, 20, "mock"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based",
+                null, "S_QUERY_ACTUAL", 42L);
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo(EvidenceTemplates.Narrative.PROVIDER_TEMPLATE);
+        assertThat(result.summary()).contains("已查询 1 行结果").doesNotContain("99999");
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("数值校验"));
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> captor =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("REJECTED");
+        assertThat(captor.getValue().getError()).contains("QUERY_RESULT_NUMBER_GUARD");
+        assertThat(captor.getValue().getInputTokens()).isEqualTo(10);
+        assertThat(captor.getValue().getOutputTokens()).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("Text-to-SQL 解释只使用已执行结果中的数字时可采用模型输出")
+    void queryExplanationAcceptsNumbersPresentInExecutedRows() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("mock");
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse(
+                "{\"summary\":\"查询结果 GMV 为 2042.0000\",\"facts\":[],\"possibleCauses\":[],\"suggestions\":[],\"limitations\":[]}",
+                10, 20, "mock"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based",
+                null, "S_QUERY_ACTUAL", 42L);
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo("mock");
+        assertThat(result.summary()).contains("2042.0000");
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> captor =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("OK");
+        assertThat(captor.getValue().getSourceId()).isEqualTo(42L);
+        assertThat(captor.getValue().getSnapshotId()).isEqualTo("S_QUERY_ACTUAL");
+        assertThat(captor.getValue().getRequestFingerprint()).matches("[0-9a-f]{64}");
+        assertThat(captor.getValue().getInputTokens()).isEqualTo(10);
+        assertThat(captor.getValue().getOutputTokens()).isEqualTo(20);
+    }
+
+    @Test
+    void invalidQueryExplanationRetainsUsageFromCompletedModelCall() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse("not-json", 11, 13, "mock"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based");
+
+        ExplanationService.ExplanationResult result = service().explain(query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo(EvidenceTemplates.Narrative.PROVIDER_TEMPLATE);
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> call =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(call.capture());
+        assertThat(call.getValue().getStatus()).isEqualTo("FAILED");
+        assertThat(call.getValue().getModel()).isEqualTo("mock");
+        assertThat(call.getValue().getInputTokens()).isEqualTo(11);
+        assertThat(call.getValue().getOutputTokens()).isEqualTo(13);
+    }
+
+    @Test
     @DisplayName("数值守卫：只放过证据叙述里出现过的数字")
     void numberGuardAllowList() {
         String evidence = "快照 S20260901_24（2026-09-01）gmv = 2042.0000，环比 1.0420";
 
         assertThat(ExplanationService.numberViolations("gmv 2042.0000，环比 1.0420", evidence)).isEmpty();
+        assertThat(ExplanationService.numberViolations("gmv 2042，环比 1.042", evidence)).isEmpty();
         assertThat(ExplanationService.numberViolations("gmv 9999.0000", evidence)).containsExactly("9999.0000");
+        assertThat(ExplanationService.numberViolations("gmv -2042.0000", evidence)).containsExactly("-2042.0000");
     }
 
     @Test

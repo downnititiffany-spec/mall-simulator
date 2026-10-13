@@ -2,6 +2,7 @@ package com.graduation.analytics.decision;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.graduation.analytics.common.PlatformBizException;
+import com.graduation.analytics.common.PaginationMath;
 import com.graduation.analytics.decision.entity.DecisionEvaluation;
 import com.graduation.analytics.decision.entity.DecisionTask;
 import com.graduation.analytics.decision.mapper.DecisionEvaluationMapper;
@@ -15,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -443,6 +446,7 @@ public class DecisionService {
     }
 
     /** Paginated read view for the decision center; legacy list(int) remains unchanged. */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public DecisionPage listPage(long page, int size, String sort) {
         if (page < 1 || size < 1 || size > 100) {
             throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
@@ -466,9 +470,9 @@ public class DecisionService {
             case "status" -> { if ("asc".equals(direction)) query.orderByAsc(DecisionTask::getStatus); else query.orderByDesc(DecisionTask::getStatus); }
             default -> { if ("asc".equals(direction)) query.orderByAsc(DecisionTask::getId); else query.orderByDesc(DecisionTask::getId); }
         }
-        query.orderByDesc(DecisionTask::getId);
+        if (!"id".equals(field)) query.orderByDesc(DecisionTask::getId);
         long total = taskMapper.selectCount(new LambdaQueryWrapper<>());
-        long totalPages = Math.max(1, (total + size - 1) / size);
+        long totalPages = PaginationMath.totalPages(total, size);
         if (page > totalPages) page = totalPages;
         long offset = Math.multiplyExact(page - 1, (long) size);
         List<DecisionTask> items = taskMapper.selectList(query.last("LIMIT " + size + " OFFSET " + offset));

@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "kind": "google-docs-trusted-read-context",
+  "target": {
+    "documentId": "1aoKe_K2XsE6-Eb1wbXpJWSVfeOjv8p_GU68mH5wxPDg",
+    "title": "01_知识库内容索引",
+    "revisionId": "AHj4eMQJIki34ZCRzNs3ARjEOYSaVhio4QIZh8EdRmGpHohtXBzH2rPrSTCXFGb9x2G69YJKwjBUiWQU4JZS9dz875b5JTYjCkd45heaFI0",
+    "documentUrl": "https://docs.google.com/document/d/1aoKe_K2XsE6-Eb1wbXpJWSVfeOjv8p_GU68mH5wxPDg",
+    "selectedTabId": null
+  },
+  "dropdownMetadata": {
+    "status": "unavailable",
+    "resolvedTool": null,
+    "authoritative": false,
+    "count": 0
+  },
+  "derivedControlInventory": {
+    "hasProtectedControls": false,
+    "authoritativeDropdownCount": 0,
+    "opaqueControlCount": 0,
+    "nativeElementCounts": {
+      "dateElement": 8,
+      "richLink": 7
+    },
+    "tabsScanned": [
+      "t.0"
+    ],
+    "controls": [],
+    "nativeElements": [
+      {
+        "type": "dateElement",
+        "startIndex": 7314,
+        "endIndex": 7315,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[31]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 7309,
+          "endIndex": 7316,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-06T12:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 6, 2026"
+        }
+      },
+      {
+        "type": "richLink",
+        "startIndex": 8286,
+        "endIndex": 8287,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[33]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 8278,
+          "endIndex": 8288,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "title": "001_毕业设计 V3.0｜实现基线、架构与开发边界",
+          "uri": "https://docs.google.com/document/d/1MfRhBXqjtazkHWwliT5JAbIAhf0BC_Lw6skHOnDze94/edit",
+          "mimeType": "application/vnd.google-apps.kix"
+        }
+      },
+      {
+        "type": "richLink",
+        "startIndex": 8296,
+        "endIndex": 8297,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[34]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 8288,
+          "endIndex": 8298,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "title": "004_Codex Cloud 环境与全链路测试边界",
+          "uri": "https://docs.google.com/document/d/160YxNnb3Re-VpVMfz4GNRtstmgk31u_asHya_KsEr9k/edit",
+          "mimeType": "application/vnd.google-apps.kix"
+        }
+      },
+      {
+        "type": "dateElement",
+        "startIndex": 8337,
+        "endIndex": 8338,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[38]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 8332,
+          "endIndex": 8339,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-06T12:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 6, 2026"
+        }
+      },
+      {
+        "type": "richLink",
+        "startIndex": 8983,
+        "endIndex": 8984,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[61]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 8896,
+          "endIndex": 8985,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "title": "004_Codex Cloud 环境与全链路测试边界",
+          "uri": "https://docs.google.com/document/d/160YxNnb3Re-VpVMfz4GNRtstmgk31u_asHya_KsEr9k/edit",
+          "mimeType": "application/vnd.google-apps.kix"
+        }
+      },
+      {
+        "type": "dateElement",
+        "startIndex": 19988,
+        "endIndex": 19989,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[192]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 19982,
+          "endIndex": 19990,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-01T16:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 1, 2026"
+        }
+      },
+      {
+        "type": "richLink",
+        "startIndex": 20171,
+        "endIndex": 20172,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[195]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20168,
+          "endIndex": 20173,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "title": "005_ChatGPT Codex Windows 客户端高内存与卡顿排查",
+          "uri": "https://docs.google.com/document/d/10NbPefpDHJq-2FUgXW2pbYhVmQnvvh-jP8cscIxOL8E/edit",
+          "mimeType": "application/vnd.google-apps.kix"
+        }
+      },
+      {
+        "type": "dateElement",
+        "startIndex": 20176,
+        "endIndex": 20177,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[196]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20173,
+          "endIndex": 20376,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-05T00:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 5, 2026"
+        }
+      },
+      {
+        "type": "dateElement",
+        "startIndex": 20377,
+        "endIndex": 20378,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[198]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20377,
+          "endIndex": 20478,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-05T00:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 5, 2026"
+        }
+      },
+      {
+        "type": "richLink",
+        "startIndex": 20476,
+        "endIndex": 20477,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[198]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20377,
+          "endIndex": 20478,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "title": "001_毕业设计 V3.0｜实现基线、架构与开发边界",
+          "uri": "https://docs.google.com/document/d/1MfRhBXqjtazkHWwliT5JAbIAhf0BC_Lw6skHOnDze94/edit",
+          "mimeType": "application/vnd.google-apps.kix"
+        }
+      },
+      {
+        "type": "dateElement",
+        "startIndex": 20485,
+        "endIndex": 20486,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[199]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20478,
+          "endIndex": 20589,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-05T00:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 5, 2026"
+        }
+      },
+      {
+        "type": "richLink",
+        "startIndex": 20587,
+        "endIndex": 20588,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[199]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20478,
+          "endIndex": 20589,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "title": "001_毕业设计 V3.0｜实现基线、架构与开发边界",
+          "uri": "https://docs.google.com/document/d/1MfRhBXqjtazkHWwliT5JAbIAhf0BC_Lw6skHOnDze94/edit",
+          "mimeType": "application/vnd.google-apps.kix"
+        }
+      },
+      {
+        "type": "dateElement",
+        "startIndex": 20596,
+        "endIndex": 20597,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[200]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20589,
+          "endIndex": 20727,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-06T12:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 6, 2026"
+        }
+      },
+      {
+        "type": "richLink",
+        "startIndex": 20725,
+        "endIndex": 20726,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[200]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 20589,
+          "endIndex": 20727,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "title": "001_毕业设计 V3.0｜实现基线、架构与开发边界",
+          "uri": "https://docs.google.com/document/d/1MfRhBXqjtazkHWwliT5JAbIAhf0BC_Lw6skHOnDze94/edit",
+          "mimeType": "application/vnd.google-apps.kix"
+        }
+      },
+      {
+        "type": "dateElement",
+        "startIndex": 27890,
+        "endIndex": 27891,
+        "tabId": "t.0",
+        "segmentId": null,
+        "container": {
+          "kind": "paragraph",
+          "path": "root.tabs[0].body.content[253]",
+          "tabId": "t.0",
+          "segmentId": null,
+          "startIndex": 27875,
+          "endIndex": 28036,
+          "namedStyleType": "NORMAL_TEXT",
+          "listId": null,
+          "nestingLevel": null,
+          "table": null
+        },
+        "properties": {
+          "timestamp": "2026-10-07T00:00:00Z",
+          "locale": "zh-CN",
+          "dateFormat": "DATE_FORMAT_MONTH_DAY_YEAR_ABBREVIATED",
+          "timeFormat": "TIME_FORMAT_DISABLED",
+          "displayText": "10月 7, 2026"
+        }
+      }
+    ]
+  },
+  "editGuidance": {
+    "advisoryOnly": true,
+    "requiresTargetedPreservation": false,
+    "recommendedBehavior": "No protected controls were detected in the scanned scope.",
+    "warnings": []
+  }
+}

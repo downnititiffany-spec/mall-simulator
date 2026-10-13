@@ -391,6 +391,79 @@ class PipelineServiceTest {
         assertThat(done.status()).isEqualTo(PipelineRun.STATUS_SUCCESS);
     }
 
+    @Test
+    void rejectedBackgroundSubmissionIsRecordedAsFailedInsteadOfStayingPending() {
+        executor.rejectNext();
+
+        PipelineService.RunResult result = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-rejected", "trace-rejected");
+
+        assertThat(result.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(result.currentStage()).isEqualTo("FAILED");
+        assertThat(result.errorCode()).isEqualTo("RUN_EXECUTOR_REJECTED");
+        assertThat(result.stages()).isEmpty();
+        assertThat(executor.pending()).isZero();
+        assertThat(runStore.get(result.runId()).getFinishedAt()).isNotNull();
+    }
+
+    @Test
+    void retryRejectedByBackgroundExecutorIsRecordedAsFailed() {
+        PipelineService.RunResult original = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-retry-rejected", "trace-first");
+        executor.drain(); // 无 READY Landing 输入，产生可重试失败
+        assertThat(service.get(original.runId()).status()).isEqualTo(PipelineRun.STATUS_FAILED);
+
+        executor.rejectNext();
+        PipelineService.RunResult retried = service.retry(original.runId(), "trace-retry");
+
+        assertThat(retried.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(retried.attemptNo()).isEqualTo(2);
+        assertThat(retried.errorCode()).isEqualTo("RUN_EXECUTOR_REJECTED");
+        assertThat(executor.pending()).isZero();
+    }
+
+    @Test
+    void unexpectedStageExecutorFailureDoesNotPersistDiagnosticText() {
+        String diagnostic = "jdbc:postgresql://internal/db password=do-not-store";
+        when(stageExecutorFactory.create(any())).thenThrow(new IllegalStateException(diagnostic));
+        PipelineService.RunResult submitted = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-hidden-error", "trace-hidden-error");
+
+        executor.drain();
+
+        PipelineRun failed = runStore.get(submitted.runId());
+        assertThat(failed.getStatus()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.getErrorCode()).isEqualTo("RUN_INTERNAL");
+        assertThat(failed.getErrorMessage()).isEqualTo("流水线内部错误，请查看受控服务端诊断");
+        assertThat(failed.getErrorMessage()).doesNotContain(diagnostic, "password");
+    }
+
+    @Test
+    void metricPublisherFailureDiagnosticIsNotPersistedInRunEvidence() throws Exception {
+        String diagnostic = "jdbc:mysql://internal:3307/metric?password=do-not-store";
+        writeLanding("accepted/2026-09-01",
+                event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
+        org.mockito.Mockito.doAnswer(inv -> {
+            var request = inv.getArgument(0, com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest.class);
+            return new com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport(
+                    false, "MP_TEST", diagnostic, request.snapshotId(), 0L, 0,
+                    List.of(), Map.of("rawFailure", diagnostic, "elapsedMs", 3L,
+                            "errorCode", "MP_TEST", "compensateError", diagnostic));
+        }).when(publisherPort).publish(any());
+
+        PipelineService.RunResult submitted = service.run(1L, "ODS_TO_ADS",
+                LocalDateTime.of(2026, 9, 1, 10, 0), "v7", "k-publisher-failure", "trace-publisher-failure");
+        executor.drain();
+
+        PipelineService.RunResult failed = service.get(submitted.runId());
+        String publishEvidence = stageOf("PUBLISH_METRIC").getEvidence();
+        assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
+        assertThat(failed.errorCode()).isEqualTo("RUN_METRIC_PUBLISH_FAILED");
+        assertThat(runStore.get(submitted.runId()).getErrorMessage()).doesNotContain(diagnostic, "password");
+        assertThat(publishEvidence).contains("metricPublishEvidence", "elapsedMs")
+                .doesNotContain(diagnostic, "password", "rawFailure", "compensateError");
+    }
+
     // ── ②幂等：同键返回原任务，不重复执行（§13.4） ───────────────────────
 
     @Test
@@ -1619,10 +1692,11 @@ class PipelineServiceTest {
      */
     @Test
     void failedConsumptionWriteKeepsBatchPendingAndRetryRepublishesSameBatch() throws Exception {
+        String diagnostic = "jdbc:mysql://internal:3307/metadata?password=do-not-store";
         writeLanding("accepted/2026-09-01",
                 event("e1", "order_created", "2026-09-01T10:00:00", "{\"order_id\":\"o1\",\"total_amount\":\"100\"}"));
         when(batchConsumptionMapper.insert(any(PipelineBatchConsumption.class)))
-                .thenThrow(new RuntimeException("db down"))
+                .thenThrow(new RuntimeException(diagnostic))
                 .thenAnswer(inv -> {
                     consumptionRows.add(inv.getArgument(0));
                     return 1;
@@ -1636,7 +1710,9 @@ class PipelineServiceTest {
         assertThat(failed.status()).isEqualTo(PipelineRun.STATUS_FAILED);
         assertThat(failed.errorCode()).isEqualTo("RUN_CONSUMPTION_MARK_FAILED");
         assertThat(stageStatus("PUBLISH_METRIC")).isEqualTo(PipelineStageRun.STATUS_FAILED);
-        assertThat(stageOf("PUBLISH_METRIC").getEvidence()).contains("consumptionLedgerError");
+        assertThat(runStore.get(r.runId()).getErrorMessage()).doesNotContain(diagnostic, "password");
+        assertThat(stageOf("PUBLISH_METRIC").getEvidence()).contains("consumptionLedgerError", "写入失败")
+                .contains("consumptionLedgerErrorType").doesNotContain(diagnostic, "password");
         verify(publisherPort, org.mockito.Mockito.times(1)).publish(any());
         assertThat(consumptionRows).as("写失败的批次没有台账行 = 保持待处理").isEmpty();
 
@@ -1951,10 +2027,19 @@ class PipelineServiceTest {
     /** 收集 Runnable 的 Executor：run() 投递后不立即执行，drain() 手动触发 */
     private static class CollectingExecutor implements Executor {
         private final List<Runnable> tasks = new ArrayList<>();
+        private boolean rejectNext;
 
         @Override
         public void execute(Runnable command) {
+            if (rejectNext) {
+                rejectNext = false;
+                throw new java.util.concurrent.RejectedExecutionException("test queue saturation");
+            }
             tasks.add(command);
+        }
+
+        void rejectNext() {
+            rejectNext = true;
         }
 
         int pending() {

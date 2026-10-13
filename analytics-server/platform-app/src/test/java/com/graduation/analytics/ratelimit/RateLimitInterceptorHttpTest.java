@@ -45,12 +45,57 @@ class RateLimitInterceptorHttpTest {
         assertThat(mvc.perform(get("/api/v1/test-limited")).andReturn().getResponse().getStatus()).isEqualTo(401);
     }
 
+    @Test
+    void sharesScopeAcrossRoutesButKeepsBudgetsPerAuthenticatedUser() throws Exception {
+        AuthService auth = mock(AuthService.class);
+        when(auth.validate("admin-token")).thenReturn(new CurrentUser(1L, "admin", "admin"));
+        when(auth.validate("other-token")).thenReturn(new CurrentUser(2L, "other", "admin"));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new LimitedController())
+                .addInterceptors(new AuthInterceptor(auth, new ObjectMapper()),
+                        new RateLimitInterceptor(new InMemoryRequestRateLimiter()))
+                .setControllerAdvice(new GlobalExceptionHandler(), new PlatformExceptionAdvice())
+                .build();
+
+        assertThat(mvc.perform(get("/api/v1/test-limited")
+                        .header("Authorization", "Bearer admin-token"))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
+        assertThat(mvc.perform(get("/api/v1/test-limited/alias")
+                        .header("Authorization", "Bearer admin-token"))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
+        assertThat(mvc.perform(get("/api/v1/test-limited/alias")
+                        .header("Authorization", "Bearer admin-token"))
+                .andReturn().getResponse().getStatus()).isEqualTo(429);
+
+        // The same scope is an independent budget for another authenticated principal.
+        assertThat(mvc.perform(get("/api/v1/test-limited/alias")
+                        .header("Authorization", "Bearer other-token"))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
+        // A distinct operation scope is independent even for the original principal.
+        assertThat(mvc.perform(get("/api/v1/test-limited/other-scope")
+                        .header("Authorization", "Bearer admin-token"))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
+    }
+
     @RestController
     static class LimitedController {
         @GetMapping("/api/v1/test-limited")
         @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
         @RateLimited(scope = "test", requests = 2, windowSeconds = 60)
         String limited() {
+            return "ok";
+        }
+
+        @GetMapping("/api/v1/test-limited/alias")
+        @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
+        @RateLimited(scope = "test", requests = 2, windowSeconds = 60)
+        String limitedAlias() {
+            return "ok";
+        }
+
+        @GetMapping("/api/v1/test-limited/other-scope")
+        @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
+        @RateLimited(scope = "other", requests = 2, windowSeconds = 60)
+        String otherScope() {
             return "ok";
         }
     }

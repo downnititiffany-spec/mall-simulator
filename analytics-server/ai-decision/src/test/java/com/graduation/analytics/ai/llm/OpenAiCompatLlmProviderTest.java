@@ -8,6 +8,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,8 +19,11 @@ import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,19 +55,29 @@ class OpenAiCompatLlmProviderTest {
     private ExecutorService executor;
     private final List<Recorded> received = new CopyOnWriteArrayList<>();
     private final AtomicReference<Response> responder = new AtomicReference<>();
+    private final AtomicReference<CountDownLatch> requestObserved = new AtomicReference<>();
+    private final AtomicReference<CountDownLatch> responseFinishGate = new AtomicReference<>();
     private String baseUrl;
 
     /** stub 记下的一条请求（真话来源：被调用方实际收到什么）。 */
     private record Recorded(String method, String path, String body, String auth, String contentType) {
     }
 
-    private record Response(int status, String body, String contentType, long delayMs) {
+    private record Response(int status, String body, String contentType, long delayMs, boolean chunked) {
+        Response(int status, String body, String contentType, long delayMs) {
+            this(status, body, contentType, delayMs, false);
+        }
+
         static Response json(String body) {
             return new Response(200, body, "application/json", 0L);
         }
 
         static Response status(int status) {
             return new Response(status, "{\"error\":\"stub\"}", "application/json", 0L);
+        }
+
+        static Response chunkedJson(String body) {
+            return new Response(200, body, "application/json", 0L, true);
         }
     }
 
@@ -80,6 +97,8 @@ class OpenAiCompatLlmProviderTest {
                     body,
                     exchange.getRequestHeaders().getFirst("Authorization"),
                     exchange.getRequestHeaders().getFirst("Content-Type")));
+            CountDownLatch observed = requestObserved.get();
+            if (observed != null) observed.countDown();
             Response r = responder.get();
             if (r.delayMs() > 0) {
                 try {
@@ -92,9 +111,18 @@ class OpenAiCompatLlmProviderTest {
             if (r.contentType() != null) {
                 exchange.getResponseHeaders().add("Content-Type", r.contentType());
             }
-            exchange.sendResponseHeaders(r.status(), out.length == 0 ? -1 : out.length);
+            exchange.sendResponseHeaders(r.status(), out.length == 0 ? -1 : (r.chunked() ? 0 : out.length));
             if (out.length > 0) {
                 exchange.getResponseBody().write(out);
+                exchange.getResponseBody().flush();
+            }
+            CountDownLatch finishGate = responseFinishGate.get();
+            if (finishGate != null) {
+                try {
+                    finishGate.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
             exchange.close();
         });
@@ -169,12 +197,15 @@ class OpenAiCompatLlmProviderTest {
     }
 
     @Test
-    @DisplayName("providerName 返回实际模型名；模型未配置退化为协议标识")
-    void providerNameIsModel() {
+    @DisplayName("provider 与 model 标识独立返回")
+    void providerAndModelAreDistinct() {
         assertThat(provider(baseUrl, STUB_KEY, "deepseek-chat").providerName())
+                .isEqualTo("openai-compat");
+        assertThat(provider(baseUrl, STUB_KEY, "deepseek-chat").modelName())
                 .isEqualTo("deepseek-chat");
         assertThat(provider(baseUrl, STUB_KEY, "  ").providerName())
                 .isEqualTo("openai-compat");
+        assertThat(provider(baseUrl, STUB_KEY, "  ").modelName()).isNull();
     }
 
     @Test
@@ -223,6 +254,7 @@ class OpenAiCompatLlmProviderTest {
         assertThat(body.path("messages").path(1).path("role").asText()).isEqualTo("user");
         assertThat(body.path("messages").path(1).path("content").asText()).isEqualTo("用户内容");
         assertThat(body.path("response_format").path("type").asText()).isEqualTo("json_object");
+        assertThat(body.path("max_tokens").asInt()).isEqualTo(OpenAiCompatLlmProvider.DEFAULT_MAX_OUTPUT_TOKENS);
     }
 
     @Test
@@ -266,6 +298,237 @@ class OpenAiCompatLlmProviderTest {
         responder.set(Response.status(500));
 
         assertThat(failureOf(() -> provider().complete(request())).type()).isEqualTo("NETWORK");
+    }
+
+    @Test
+    @DisplayName("请求字节超限在发出HTTP前拒绝，配置输出上限并对连续故障熔断")
+    void enforcesRequestAndOutputBudgetsAndCircuitBreaks() {
+        OpenAiCompatLlmProvider tooSmall = new OpenAiCompatLlmProvider(
+                baseUrl, STUB_KEY, "test-model", OpenAiCompatLlmProvider.DEFAULT_TIMEOUT_MS,
+                2, 32, 1, 1, 60_000L);
+        assertThat(failureOf(() -> tooSmall.complete(request())).type()).isEqualTo("REQUEST_TOO_LARGE");
+        assertThat(received).isEmpty();
+
+        responder.set(Response.status(500));
+        OpenAiCompatLlmProvider circuit = new OpenAiCompatLlmProvider(
+                baseUrl, STUB_KEY, "test-model", OpenAiCompatLlmProvider.DEFAULT_TIMEOUT_MS,
+                1_024, 32, 1, 1, 60_000L);
+        assertThat(failureOf(() -> circuit.complete(request())).type()).isEqualTo("NETWORK");
+        assertThat(failureOf(() -> circuit.complete(request())).type()).isEqualTo("CIRCUIT_OPEN");
+        assertThat(received).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("每日预算按请求字节加最大输出预留并在额度耗尽时拒绝请求")
+    void rejectsRequestWhenDailyReservationBudgetIsExhausted() {
+        OpenAiCompatLlmProvider budgeted = new OpenAiCompatLlmProvider(
+                baseUrl, STUB_KEY, "test-model", OpenAiCompatLlmProvider.DEFAULT_TIMEOUT_MS,
+                1_024, 32, 1, 5, 60_000L, 512L);
+
+        int successfulCalls = 0;
+        boolean budgetExhausted = false;
+        for (int i = 0; i < 10; i++) {
+            try {
+                budgeted.complete(request());
+                successfulCalls++;
+            } catch (LlmProvider.LlmException e) {
+                assertThat(e.type()).isEqualTo("DAILY_BUDGET_EXCEEDED");
+                budgetExhausted = true;
+                break;
+            }
+        }
+
+        assertThat(successfulCalls).isBetween(1, 9);
+        assertThat(budgetExhausted).isTrue();
+        assertThat(received).hasSize(successfulCalls);
+    }
+
+    private OpenAiCompatLlmProvider responseLimitedProvider(int responseBytes) {
+        return new OpenAiCompatLlmProvider(baseUrl, STUB_KEY, "test-model", 2_000L,
+                1_024, 32, 1, 5, 60_000L, 1_000_000L, responseBytes);
+    }
+
+    @Test
+    void acceptsResponseExactlyAtUtf8ByteLimit() {
+        String body = okBody("中文摘要");
+        responder.set(Response.json(body));
+        OpenAiCompatLlmProvider bounded = responseLimitedProvider(
+                body.getBytes(StandardCharsets.UTF_8).length);
+
+        assertThat(bounded.complete(request()).content()).isEqualTo("中文摘要");
+        assertThat(received).hasSize(1);
+    }
+
+    @Test
+    void rejectsResponseOneByteOverLimitAndReleasesPermit() {
+        String accepted = okBody("summary");
+        OpenAiCompatLlmProvider bounded = responseLimitedProvider(
+                accepted.getBytes(StandardCharsets.UTF_8).length);
+        responder.set(Response.json(okBody("summaryX")));
+
+        assertThat(failureOf(() -> bounded.complete(request())).type()).isEqualTo("RESPONSE_TOO_LARGE");
+        responder.set(Response.json(accepted));
+        assertThat(bounded.complete(request()).content()).isEqualTo("summary");
+        assertThat(received).hasSize(2);
+    }
+
+    @Test
+    void rejectsChunkedOversizeResponseEvenWithoutUsage() {
+        String body = "{\"choices\":[{\"message\":{\"content\":\"" + "中".repeat(1_024) + "\"}}]}";
+        responder.set(Response.chunkedJson(body));
+        OpenAiCompatLlmProvider bounded = responseLimitedProvider(256);
+
+        LlmProvider.LlmException failure = failureOf(() -> bounded.complete(request()));
+        assertThat(failure.type()).isEqualTo("RESPONSE_TOO_LARGE");
+        assertThat(failure.getMessage()).doesNotContain("中", baseUrl, STUB_KEY);
+        assertThat(received).hasSize(1);
+    }
+
+    @Test
+    void stopsOversizeChunkedReadBeforeServerFinishesResponse() throws Exception {
+        responder.set(Response.chunkedJson(okBody("x".repeat(3_000))));
+        CountDownLatch finishGate = new CountDownLatch(1);
+        responseFinishGate.set(finishGate);
+        OpenAiCompatLlmProvider bounded = new OpenAiCompatLlmProvider(
+                baseUrl, STUB_KEY, "test-model", 10_000L,
+                1_024, 32, 1, 5, 60_000L, 1_000_000L, 256);
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            Future<String> result = caller.submit(() -> failureOf(() -> bounded.complete(request())).type());
+            assertThat(result.get(3, TimeUnit.SECONDS)).isEqualTo("RESPONSE_TOO_LARGE");
+            assertThat(finishGate.getCount()).isEqualTo(1);
+        } finally {
+            finishGate.countDown();
+            caller.shutdownNow();
+        }
+    }
+
+    @Test
+    void springInjectsConfiguredResponseByteLimit() {
+        responder.set(Response.json(okBody("x".repeat(1_024))));
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            TestPropertySourceUtils.addInlinedPropertiesToEnvironment(context,
+                    "llm.mock-enabled=false", "llm.base-url=" + baseUrl,
+                    "llm.api-key=" + STUB_KEY, "llm.max-response-bytes=128");
+            context.register(OpenAiCompatLlmProvider.class);
+            context.refresh();
+            OpenAiCompatLlmProvider bounded = context.getBean(OpenAiCompatLlmProvider.class);
+            assertThat(failureOf(() -> bounded.complete(request())).type()).isEqualTo("RESPONSE_TOO_LARGE");
+        }
+    }
+
+    @Test
+    void oversizedErrorBodiesPreserveHttpFailureClasses() {
+        OpenAiCompatLlmProvider bounded = responseLimitedProvider(128);
+        for (int status : new int[] {401, 429, 503}) {
+            responder.set(new Response(status, "private-upstream-detail".repeat(100), "application/json", 0L));
+            LlmProvider.LlmException failure = failureOf(() -> bounded.complete(request()));
+            assertThat(failure.type()).isEqualTo(status == 401 ? "AUTH" : status == 429 ? "RATE_LIMITED" : "NETWORK");
+            assertThat(failure.getMessage()).doesNotContain("private-upstream-detail");
+        }
+        assertThat(received).hasSize(3);
+    }
+
+    @Test
+    void nonpositiveResponseByteLimitUsesSafeDefault() {
+        responder.set(Response.chunkedJson(okBody("valid")));
+        assertThat(responseLimitedProvider(0).complete(request()).content()).isEqualTo("valid");
+    }
+
+    @Test
+    void missingUsageIsUnknownRatherThanZero() {
+        responder.set(Response.json("{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}"));
+        LlmProvider.AiResponse response = provider().complete(request());
+        assertThat(response.inputTokens()).isNull();
+        assertThat(response.outputTokens()).isNull();
+    }
+
+    @Test
+    void partialUsagePreservesKnownCountAndReportedZero() {
+        String choices = "\"choices\":[{\"message\":{\"content\":\"ok\"}}]";
+        responder.set(Response.json("{" + choices + ",\"usage\":{\"prompt_tokens\":0}}"));
+        LlmProvider.AiResponse response = provider().complete(request());
+        assertThat(response.inputTokens()).isZero();
+        assertThat(response.outputTokens()).isNull();
+
+        responder.set(Response.json("{" + choices + ",\"usage\":{\"prompt_tokens\":null,\"completion_tokens\":0}}"));
+        response = provider().complete(request());
+        assertThat(response.inputTokens()).isNull();
+        assertThat(response.outputTokens()).isZero();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-1", "1.5", "2147483648", "\"7\"", "true"})
+    void rejectsInvalidUsageCounts(String value) {
+        for (String field : new String[] {"prompt_tokens", "completion_tokens"}) {
+            responder.set(Response.json("{\"choices\":[{\"message\":{\"content\":\"ok\"}}],"
+                    + "\"usage\":{\"" + field + "\":" + value + "}}"));
+            assertThat(failureOf(() -> provider().complete(request())).type()).isEqualTo("FORMAT");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[]", "7", "\"invalid\""})
+    void rejectsNonObjectUsage(String usage) {
+        responder.set(Response.json("{\"choices\":[{\"message\":{\"content\":\"ok\"}}],\"usage\":" + usage + "}"));
+        assertThat(failureOf(() -> provider().complete(request())).type()).isEqualTo("FORMAT");
+    }
+
+    @Test
+    @DisplayName("超过响应输出 token 上限时拒收，单实例并发上限立即生效")
+    void enforcesOutputTokenAndConcurrencyLimits() throws Exception {
+        OpenAiCompatLlmProvider tokenLimited = new OpenAiCompatLlmProvider(
+                baseUrl, STUB_KEY, "test-model", OpenAiCompatLlmProvider.DEFAULT_TIMEOUT_MS,
+                1_024, 5, 1, 5, 60_000L);
+        assertThat(tokenLimited.maxOutputTokens()).isEqualTo(5);
+        LlmProvider.LlmException budgetFailure = failureOf(() -> tokenLimited.complete(request()));
+        assertThat(budgetFailure.type()).isEqualTo("OUTPUT_BUDGET_EXCEEDED");
+        assertThat(budgetFailure.inputTokens()).isEqualTo(11);
+        assertThat(budgetFailure.outputTokens()).isEqualTo(7);
+        JsonNode limitedRequest = MAPPER.readTree(received.get(0).body());
+        assertThat(limitedRequest.path("max_tokens").asInt()).isEqualTo(5);
+
+        received.clear();
+        responder.set(new Response(200, okBody("并发测试"), "application/json", 700L));
+        CountDownLatch observed = new CountDownLatch(1);
+        requestObserved.set(observed);
+        OpenAiCompatLlmProvider singleFlight = new OpenAiCompatLlmProvider(
+                baseUrl, STUB_KEY, "test-model", OpenAiCompatLlmProvider.DEFAULT_TIMEOUT_MS,
+                1_024, 32, 1, 5, 60_000L);
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            Future<LlmProvider.AiResponse> first = caller.submit(() -> singleFlight.complete(request()));
+            assertThat(observed.await(2, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            assertThat(failureOf(() -> singleFlight.complete(request())).type()).isEqualTo("RATE_LIMITED");
+            assertThat(first.get().content()).isEqualTo("并发测试");
+            assertThat(received).hasSize(1);
+        } finally {
+            requestObserved.set(null);
+            caller.shutdownNow();
+        }
+    }
+
+    @Test
+    @DisplayName("超时或5xx不自动重试，避免结果不确定时重复计费")
+    void doesNotRetryUncertainProviderFailure() {
+        responder.set(Response.status(503));
+
+        assertThat(failureOf(() -> provider().complete(request())).type()).isEqualTo("NETWORK");
+        assertThat(received).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("供应商失败报文只保留稳定分类，不回传报文中的敏感文本")
+    void redactsProviderErrorBodyFromException() {
+        String privateBody = "prompt-echo-private auth-token=provider-secret";
+        responder.set(new Response(500, "{\"error\":\"" + privateBody + "\"}",
+                "application/json", 0L));
+
+        LlmProvider.LlmException failure = failureOf(() -> provider().complete(request()));
+
+        assertThat(failure.type()).isEqualTo("NETWORK");
+        assertThat(failure.getMessage()).contains("NETWORK")
+                .doesNotContain("prompt-echo-private", "provider-secret", "auth-token");
     }
 
     @Test

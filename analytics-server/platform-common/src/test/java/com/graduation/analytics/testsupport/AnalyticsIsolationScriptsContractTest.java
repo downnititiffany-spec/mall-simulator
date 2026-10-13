@@ -17,6 +17,8 @@ class AnalyticsIsolationScriptsContractTest {
     private static final Path NAMING = RepoRoot.path("scripts/isolation-naming.ps1");
     private static final Path STAGE7_HTTP = RepoRoot.path("scripts/stage7-http-isolated.ps1");
     private static final Path STAGE7_LOCALFILE_E2E = RepoRoot.path("scripts/stage7-localfile-e2e.ps1");
+    private static final Path CLOUD_GENERATOR_CLI = RepoRoot.path("scripts/cloud-generator-cli.sh");
+    private static final Path CLOUD_FLUME_ACTIVE_RUN = RepoRoot.path("scripts/cloud-flume-submit-active-run.sh");
     private static final Path ADS_IT = RepoRoot.path(
             "analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java");
     private static final Path PUBLISHER_IT = RepoRoot.path(
@@ -103,6 +105,32 @@ class AnalyticsIsolationScriptsContractTest {
     void metricWriteItsStayTaggedForUnifiedIsolationSuite() throws IOException {
         assertThat(Files.readString(ADS_IT)).contains("@Tag(\"it\")");
         assertThat(Files.readString(PUBLISHER_IT)).contains("@Tag(\"it\")");
+    }
+
+    @Test
+    void cloudGeneratorCliUsesTheConfiguredTaskRoot() throws IOException {
+        String source = Files.readString(CLOUD_GENERATOR_CLI);
+        assertThat(source)
+                .contains("TASK_ROOT=${CLOUD_SINGLE_NODE_ROOT:-}")
+                .contains("Could not identify one active task generator")
+                .contains("GENERATOR_LOG_FILE", "GENERATOR_OUTPUT_ROOT", "SPRING_DATASOURCE_URL")
+                .contains("Task generator identity does not match the selected task root.")
+                .contains("RUN_DIR=$(readlink -f \"$TASK_ROOT/cloud-e2e/current\")")
+                .doesNotContain("/workspace/single-node/cloud-e2e/current");
+    }
+
+    @Test
+    void cloudFlumeActiveRunSubmitterIsRunScopedAndFailClosed() throws IOException {
+        String source = Files.readString(CLOUD_FLUME_ACTIVE_RUN);
+        assertThat(source)
+                .contains("Requested RunId is not the active task stack.")
+                .contains("Flume command line does not reference this RunId configuration.")
+                .contains("a1.channels.c.type = file")
+                .contains("/landing/$RUN_ID/raw/")
+                .contains("RunId raw Landing is not empty; refusing first-file delivery.")
+                .contains("This source file was already submitted or is being processed; refusing replay.")
+                .contains("source/spool preserved, no replay.")
+                .doesNotContain("kill -TERM", "kill -KILL", "hdfs namenode -format", "rm -rf");
     }
 
     @Test

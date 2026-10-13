@@ -76,6 +76,7 @@ import { useAnalysis } from '../composables/useAnalysis'
 import { chartStateForRows, ENDPOINT_ROW_KEYS } from '../utils/chartState'
 import { formatInteger, formatNumber } from '../utils/number'
 import { readEnvelope } from '../utils/envelope'
+import { requireAnalysisDataResponse } from '../utils/analysisDataResponse.js'
 import { rfmMatrixOption } from '../utils/chartOptions'
 import { exportAnalysisCsv } from '../utils/exportCsv'
 import AnalysisContext from '../components/AnalysisContext.vue'
@@ -96,7 +97,10 @@ const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'Ca
 
 async function fetchRfm(params, signal) {
   const mySeq = ++rfmFetchSeq
-  const rfmRaw = await api.rfm({ snapshotId: params.snapshotId }, { signal })
+  const rfmRaw = requireAnalysisDataResponse(await api.rfm({ snapshotId: params.snapshotId }, { signal }), {
+    resourceLabel: 'RFM 分层',
+    arrayFields: ['rfmSegments', 'rfmMatrix']
+  })
   const rfm = readEnvelope(rfmRaw)
   let usersData = {}
   let usersWarnings = []
@@ -107,7 +111,10 @@ async function fetchRfm(params, signal) {
     }
   } else {
     try {
-      const users = readEnvelope(await api.users({ snapshotId: rfm.snapshotId }, { signal }))
+      const users = readEnvelope(requireAnalysisDataResponse(
+        await api.users({ snapshotId: rfm.snapshotId }, { signal }),
+        { resourceLabel: '用户聚合', arrayFields: ['rfmSegments', 'lifecycle', 'preference'] }
+      ))
       if (users.snapshotId !== rfm.snapshotId) {
         throw new Error(`用户聚合快照不一致：rfm=${rfm.snapshotId}, users=${users.snapshotId || '未提供'}`)
       }

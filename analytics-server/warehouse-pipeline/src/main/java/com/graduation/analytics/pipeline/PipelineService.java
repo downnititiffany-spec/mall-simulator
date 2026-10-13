@@ -57,10 +57,12 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.regex.Matcher;
@@ -88,6 +90,11 @@ import java.util.regex.Pattern;
 public class PipelineService {
 
     private static final DateTimeFormatter KEY_DATE = DateTimeFormatter.BASIC_ISO_DATE;
+    private static final Set<String> PUBLISH_EVIDENCE_KEYS = Set.of(
+            "snapshotId", "businessDate", "exportDir", "manifestTotalRows", "manifestSource",
+            "previousActiveSnapshotId", "adsRows", "adsRowsByTable", "metricCodes", "metricValues",
+            "postVerificationRecovery", "activeSnapshotAfterRecovery", "postVerificationRecoveryErrorType",
+            "compensatedAdsRows", "compensateErrorType", "errorCode", "elapsedMs");
 
     /**
      * 阶段证据 JSON 的字符上限（V15 后列型 MEDIUMTEXT，16MB；本项目证据量级为 10^4 字符，
@@ -211,7 +218,7 @@ public class PipelineService {
             }
             final Long runId = run.getId();
             // §13.1：立即返回 PENDING taskId，计算链异步执行
-            pipelineExecutor.execute(() -> executeInBackground(runId));
+            enqueue(runId);
             return assemble(runId);
         }
     }
@@ -237,7 +244,7 @@ public class PipelineService {
         run.setUpdatedAt(eventClock.nowLdt());
         runMapper.updateById(run);
         clearRunError(run);
-        pipelineExecutor.execute(() -> executeInBackground(runId));
+        enqueue(runId);
         return assemble(runId);
     }
 
@@ -301,7 +308,7 @@ public class PipelineService {
         run.setUpdatedAt(eventClock.nowLdt());
         runMapper.insert(run);
         final Long runId = run.getId();
-        pipelineExecutor.execute(() -> executeInBackground(runId));
+        enqueue(runId);
         log.info("pipeline recalc: run {} 目标批次 {} by {} reason={}",
                 runId, batchId, operator, cap(reason, 200));
         return assemble(runId);
@@ -347,7 +354,7 @@ public class PipelineService {
                 .eq("id", runId)
                 .set("finished_at", null));
         clearRunError(run);
-        pipelineExecutor.execute(() -> executeInBackground(runId));
+        enqueue(runId);
         log.info("pipeline {} resumed by {} ({}) attempt={}", runId, operator, reason, run.getAttemptNo());
         return assemble(runId);
     }
@@ -452,6 +459,30 @@ public class PipelineService {
      */
     private QualityRuleCatalog.FrozenRules rulesFor(PipelineRun run) {
         return QualityRuleCatalog.DEFAULT.freeze(run.getPipelineCode());
+    }
+
+    /**
+     * 有界后台队列拒绝任务时，不能把已持久化的 run 留在 PENDING，也不能回退到请求线程执行。
+     * 标记稳定失败码后由现有失败重试/运维恢复入口重新入队。
+     */
+    private void enqueue(Long runId) {
+        try {
+            pipelineExecutor.execute(() -> executeInBackground(runId));
+        } catch (RejectedExecutionException rejected) {
+            PipelineRun run = runMapper.selectById(runId);
+            if (run == null) {
+                log.error("pipeline {} executor rejected task but run record is missing", runId);
+                throw rejected;
+            }
+            run.setStatus(PipelineRun.STATUS_FAILED);
+            run.setCurrentStage("FAILED");
+            run.setErrorCode("RUN_EXECUTOR_REJECTED");
+            run.setErrorMessage("后台执行器当前不可用，任务尚未开始；请稍后重试");
+            run.setFinishedAt(eventClock.nowLdt());
+            run.setUpdatedAt(eventClock.nowLdt());
+            runMapper.updateById(run);
+            log.warn("pipeline {} was rejected by the bounded executor and marked FAILED", runId);
+        }
     }
 
     /** 后台异步执行：读取 run → 顺序执行七阶段 → 更新状态（§13.1 异步契约） */
@@ -831,7 +862,7 @@ public class PipelineService {
                 if (ex.failed()) {
                     updateStageEvidence(run.getId(), "QUALITY_CHECK", evidence);
                     throw new PipelineStageException("PIPELINE_QUALITY_FAILED",
-                            "ADS 暂存质量门未通过，正式分区未发布: " + ex.errorMessage());
+                            "ADS 暂存质量门未通过，正式分区未发布；请查看受控作业日志");
                 }
                 evidence.put("published", true);
                 return new StageOutcome(ex.totalOutputRecords(), evidence);
@@ -865,7 +896,7 @@ public class PipelineService {
                     if (ex.failed()) {
                         return new StageOutcome(ex.totalOutputRecords(), evidence,
                                 new PipelineStageException("RUN_PUBLISH_FAILED",
-                                        "正式分区发布失败: " + ex.errorMessage()));
+                                        "正式分区发布失败；请查看受控作业日志"));
                     }
 
                     // ── F-88：发布前质量门断言（D-142 §1 / §7.3）──────────────────────────
@@ -890,17 +921,18 @@ public class PipelineService {
                     evidence.put("metricPublish", Map.of(
                             "ok", report.ok(),
                             "errorCode", String.valueOf(report.errorCode()),
-                            "message", String.valueOf(report.message()),
+                            "message", report.ok() ? "发布成功" : "发布失败，请根据错误码、校验项及受控日志排查",
                             "snapshotId", String.valueOf(report.snapshotId()),
                             "adsRows", report.adsRows(),
                             "metricValues", report.metricValues()));
-                    evidence.put("metricPublishEvidence", report.evidence());
+                    evidence.put("metricPublishEvidence", safeMetricPublishEvidence(report.evidence()));
                     evidence.put("metricPublishChecks", report.checks().stream().map(c -> Map.of(
                             "ruleCode", c.ruleCode(), "severity", c.severity(),
                             "passed", c.passed(), "detail", c.detail())).toList());
                     if (!report.ok()) {
+                        updateStageEvidence(run.getId(), "PUBLISH_METRIC", evidence);
                         throw new PipelineStageException("RUN_METRIC_PUBLISH_FAILED",
-                                "指标库发布失败[" + report.errorCode() + "]: " + report.message());
+                                "指标库发布失败[" + report.errorCode() + "]；请根据发布校验项及受控日志排查");
                     }
                     // ── G31-11（D-049a/g）：发布 ok → 消费台账落库（唯一写点）──────────
                     // 只在 metricPublisher.publish 返回 ok（ACTIVE 已切换）之后写：FAILED run
@@ -930,11 +962,11 @@ public class PipelineService {
         } catch (Exception e) {
             run.setStatus(PipelineRun.STATUS_FAILED);
             run.setErrorCode("RUN_INTERNAL");
-            run.setErrorMessage(e.getMessage());
+            run.setErrorMessage("流水线内部错误，请查看受控服务端诊断");
             run.setCurrentStage("FAILED");
             run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
-            log.error("pipeline {} internal error", run.getId(), e);
+            log.error("pipeline {} internal error ({})", run.getId(), e.getClass().getName());
         }
     }
 
@@ -967,11 +999,35 @@ public class PipelineService {
                 // 失败证据先落库（stage() 的 finally 写记录），再阻断：后续依赖阶段保持未执行
                 return new StageOutcome(ex.totalOutputRecords(), evidence,
                         new PipelineStageException("RUN_JOB_FAILED",
-                                stageCode + " 作业失败: " + ex.errorMessage()));
+                                stageFailureSummary(stageCode, ex)));
             }
             // 输出计数只取 JobResult（R6-12）
             return new StageOutcome(ex.totalOutputRecords(), evidence);
         });
+    }
+
+    private static String stageFailureSummary(String stageCode, SparkStageExecutor.StageExecution execution) {
+        String failedJob = execution.jobs().stream()
+                .filter(job -> !job.success())
+                .map(SparkStageExecutor.JobExecution::jobCode)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        return "阶段 " + stageCode + (failedJob == null ? "" : " 作业 " + failedJob)
+                + " 失败；请查看受控作业日志";
+    }
+
+    private static Map<String, Object> safeMetricPublishEvidence(Map<String, Object> source) {
+        Map<String, Object> safe = new LinkedHashMap<>();
+        if (source == null) {
+            return safe;
+        }
+        source.forEach((key, value) -> {
+            if (PUBLISH_EVIDENCE_KEYS.contains(key)) {
+                safe.put(key, value);
+            }
+        });
+        return safe;
     }
 
     /** 阶段内预检（在阶段记录内执行，失败同样留痕） */
@@ -1120,7 +1176,7 @@ public class PipelineService {
             item.put("rejectedRecords", j.rejectedRecords());
             item.put("logUri", j.logUri());
             if (j.errorMessage() != null) {
-                item.put("errorMessage", j.errorMessage());
+                item.put("errorMessage", "作业失败；请查看关联的受控作业日志");
             }
             // R6-12：真实输出分区证据（表/dt/snapshotId/行数/路径），空则不写（不造数）
             if (j.outputPartitions() != null && !j.outputPartitions().isEmpty()) {
@@ -1225,7 +1281,7 @@ public class PipelineService {
             s.setErrorCode(e.code());
         } catch (Exception e) {
             failure = new PipelineStageException("STAGE_INTERNAL",
-                    "阶段 " + stageCode + " 内部错误: " + e.getMessage());
+                    "阶段 " + stageCode + " 内部错误，请查看受控服务端诊断");
             s.setStatus(PipelineStageRun.STATUS_FAILED);
             s.setErrorCode("STAGE_INTERNAL");
         } finally {
@@ -1259,7 +1315,8 @@ public class PipelineService {
                     new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
                     });
         } catch (Exception e) {
-            log.warn("阶段证据解析失败 run={} stage={}: {}", runId, stageCode, e.getMessage());
+            log.warn("阶段证据解析失败 run={} stage={} causeType={}", runId, stageCode,
+                    e.getClass().getSimpleName());
             return Map.of();
         }
     }
@@ -1381,10 +1438,11 @@ public class PipelineService {
             evidence.put("consumptionLedger", Map.of(
                     "batchId", batchId, "consumedByRunId", run.getId(), "recalc", recalc));
         } catch (Exception e) {
-            evidence.put("consumptionLedgerError", String.valueOf(e.getMessage()));
+            evidence.put("consumptionLedgerError", "写入失败");
+            evidence.put("consumptionLedgerErrorType", e.getClass().getName());
             updateStageEvidence(run.getId(), "PUBLISH_METRIC", evidence);
             throw new PipelineStageException("RUN_CONSUMPTION_MARK_FAILED",
-                    "发布已成功但消费台账写入失败（run 置 FAILED，批次保持待处理）: " + e.getMessage());
+                    "发布已成功但消费台账写入失败，批次保持待处理；请完成受控核查后重试");
         }
     }
 
@@ -1524,7 +1582,7 @@ public class PipelineService {
                 }
             }
         } catch (IOException e) {
-            log.warn("accepted 读取失败 {}: {}", acceptedDir, e.getMessage());
+            log.warn("accepted 读取失败 causeType={}", e.getClass().getSimpleName());
         }
     }
 
@@ -1550,12 +1608,13 @@ public class PipelineService {
                         acceptEventLine(line, name, datePrefix, out, batchOrderTotals);
                     }
                 } catch (Exception e) {
-                    log.warn("accepted 读取失败 {}: {}", relativePath, e.getMessage());
+                    log.warn("accepted 读取失败 file={} causeType={}", name,
+                            e.getClass().getSimpleName());
                     return;
                 }
             }
         } catch (RuntimeException e) {
-            log.warn("accepted 读取失败 {}: {}", acceptedRelativeDir, e.getMessage());
+            log.warn("accepted 读取失败 causeType={}", e.getClass().getSimpleName());
         }
     }
 
@@ -1591,7 +1650,8 @@ public class PipelineService {
                 out.add(envelope);
             }
         } catch (Exception e) {
-            log.warn("pipeline skip bad line in {}: {}", fileName, e.getMessage());
+            log.warn("pipeline skip bad line in {} causeType={}", fileName,
+                    e.getClass().getSimpleName());
         }
     }
 

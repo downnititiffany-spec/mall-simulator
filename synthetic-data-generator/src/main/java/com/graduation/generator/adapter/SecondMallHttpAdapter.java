@@ -199,6 +199,8 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
 
     private final Function<String, String> credentialLookup;
     private final Duration timeout;
+    /** Reuse the adapter-owned client so a long MALL_API run does not create a new client per operation. */
+    private final HttpClient httpClient;
     private final ObjectMapper mapper = new ObjectMapper();
 
     /** 探测说明文本在静态上下文里拼装，因此另备一个只读 JSON 的 ObjectMapper */
@@ -211,6 +213,10 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
     public SecondMallHttpAdapter(Function<String, String> credentialLookup, Duration timeout) {
         this.credentialLookup = credentialLookup;
         this.timeout = timeout;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(timeout)
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
     }
 
     /** 生产装配形态：凭据取环境变量 */
@@ -475,16 +481,11 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         Map<String, List<MallCapability>> routes = probeRoutes(config);
         String token = resolveToken(config.credentialRef());
 
-        HttpClient client = HttpClient.newBuilder()
-                .connectTimeout(timeout)
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
-
         Map<String, RouteOutcome> outcomes = new LinkedHashMap<>();
         int answered = 0;
         IOException lastFailure = null;
         for (String path : routes.keySet()) {
-            RouteOutcome outcome = probe(client, base, path, token);
+            RouteOutcome outcome = probe(httpClient, base, path, token);
             outcomes.put(path, outcome);
             if (outcome.answered()) {
                 answered++;
@@ -495,8 +496,9 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         }
 
         if (answered == 0) {
-            String why = "无法连接 " + base + "（" + (lastFailure == null ? "无应答"
+            String why = "无法连接 " + MallDiagnosticSanitizer.origin(base) + "（" + (lastFailure == null ? "无应答"
                     : lastFailure.getClass().getSimpleName() + ": " + lastFailure.getMessage()) + "）";
+            why = MallDiagnosticSanitizer.redact(why, token);
             log.warn("第二家商城能力探测失败：id={} {}", config.id(), why);
             return unmeasured(config, why);
         }
@@ -515,7 +517,8 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
             verdicts.put(capability, aggregate(routes, outcomes, capability));
         }
 
-        String detail = describeProbe(base, routes, outcomes, verdicts, config);
+        String detail = MallDiagnosticSanitizer.redact(
+                describeProbe(base, routes, outcomes, verdicts, config), token);
         log.info("第二家商城能力探测完成：id={} {}", config.id(), verdicts);
         return new TargetCheckResult(config.id(), true, detail, verdicts);
     }
@@ -594,7 +597,7 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
     private static String describeProbe(URI base, Map<String, List<MallCapability>> routes,
                                         Map<String, RouteOutcome> outcomes,
                                         Map<MallCapability, CapabilityVerdict> verdicts, TargetConfig config) {
-        StringBuilder text = new StringBuilder("OPTIONS 探测 ").append(base)
+        StringBuilder text = new StringBuilder("OPTIONS 探测 ").append(MallDiagnosticSanitizer.origin(base))
                 .append("（第二家商城 /open/v2/**）：").append(routes.size()).append(" 条代表路由");
         for (MallCapability capability : MallCapability.values()) {
             text.append("；").append(capability.key()).append('=').append(verdicts.get(capability));
@@ -725,14 +728,15 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
      * 一次真实业务调用：附凭据 → 发请求 → 解<b>第二家的信封</b>（{@code success/result/errMsg}）
      * → 返回 {@code result}。
      *
-     * <p>五条失败路径都抛 {@link MallOperationException}，信息里带操作名、URL 与商城原话：
+     * <p>五条失败路径都抛 {@link MallOperationException}，信息里带操作名、无凭据 origin 与脱敏商城摘要：
      * 缺凭据（发请求之前就抛，绝不匿名发）、连不上、HTTP 状态非 2xx、{@code success=false}、
      * 应答不是合法 JSON。</p>
      */
     private JsonNode call(TargetConfig config, String operation, String method, String path, Object body) {
         URI uri = baseUri(config);
         if (uri == null) {
-            throw new MallOperationException(operation, "base_url 非法或为空，无法调用：" + config.baseUrl());
+            throw new MallOperationException(operation,
+                    "base_url 非法或包含不允许的 userinfo/query/fragment，拒绝调用");
         }
         String token = requireCredential(config, operation);
 
@@ -757,22 +761,39 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         int status;
         try {
             HttpResponse<String> response = SafeHttpRetry.send(
-                    client(), builder.build(), HttpResponse.BodyHandlers.ofString());
+                    httpClient, builder.build(), HttpResponse.BodyHandlers.ofString());
             status = response.statusCode();
             responseBody = response.body();
         } catch (IOException e) {
-            throw new MallOperationException(operation, "无法连接 " + uri + "：" + abbreviateException(e), e);
+            MallFailureCode failureCode = MallFailureCode.forTransport(method, e);
+            throw new MallOperationException(operation, failureCode,
+                    transportFailureMessage(failureCode, uri, e, token),
+                    MallDiagnosticSanitizer.safeCause(e, token));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new MallOperationException(operation, "调用被中断：" + uri, e);
+            MallFailureCode failureCode = MallFailureCode.forInterruptedRequest(method);
+            throw new MallOperationException(operation, failureCode,
+                    transportFailureMessage(failureCode, uri, e, token),
+                    MallDiagnosticSanitizer.safeCause(e, token));
         }
 
         JsonNode envelope;
         try {
             envelope = mapper.readTree(responseBody);
         } catch (IOException e) {
-            throw new MallOperationException(operation, "HTTP " + status + " 应答不是合法 JSON（"
-                    + abbreviateText(responseBody) + "）", e);
+            MallFailureCode failureCode = MallFailureCode.forInvalidResponse(method, status);
+            throw new MallOperationException(operation, failureCode,
+                    "HTTP " + status + " 应答不是合法 JSON"
+                    + outcomeUnknownMessage(failureCode) + "（"
+                    + abbreviateText(MallDiagnosticSanitizer.redact(responseBody, token)) + "）",
+                    MallDiagnosticSanitizer.safeCause(e, token));
+        }
+        if (envelope == null || !envelope.isObject()) {
+            MallFailureCode failureCode = MallFailureCode.forInvalidResponse(method, status);
+            throw new MallOperationException(operation, failureCode,
+                    "HTTP " + status + " 应答不是 JSON 对象"
+                    + outcomeUnknownMessage(failureCode) + "（"
+                    + abbreviateText(MallDiagnosticSanitizer.redact(responseBody, token)) + "）");
         }
         boolean success = envelope.path(ENVELOPE_SUCCESS).asBoolean(false);
         if (status < 200 || status >= 300 || !success) {
@@ -784,19 +805,32 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
             if (error.isEmpty()) {
                 error = errorCode;
             }
-            throw new MallOperationException(operation, "商城拒绝：" + uri + " → HTTP " + status
+            MallFailureCode failureCode = MallFailureCode.forResponse(method, status, errorCode);
+            throw new MallOperationException(operation, failureCode,
+                    "商城拒绝：" + MallDiagnosticSanitizer.origin(uri) + " → HTTP " + status
                     + " success=" + success
-                    + " errMsg=" + (error.isEmpty() ? "(无)" : error)
-                    + (errorCode.isEmpty() ? "" : " error_code=" + errorCode));
+                    + " errMsg=" + abbreviateText(MallDiagnosticSanitizer.redact(error, token))
+                    + (errorCode.isEmpty() ? "" : " error_code="
+                    + MallDiagnosticSanitizer.redact(errorCode, token))
+                    + outcomeUnknownMessage(failureCode));
         }
         return envelope.path(ENVELOPE_RESULT);
     }
 
-    private HttpClient client() {
-        return HttpClient.newBuilder()
-                .connectTimeout(timeout)
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
+    private static String transportFailureMessage(MallFailureCode failureCode, URI uri,
+                                                  Exception failure, String token) {
+        String endpoint = MallDiagnosticSanitizer.origin(uri);
+        String detail = abbreviateText(MallDiagnosticSanitizer.redact(abbreviateException(failure), token));
+        if (failureCode == MallFailureCode.MALL_OUTCOME_UNKNOWN) {
+            return "调用 " + endpoint + " 后未获得确定结果（" + detail + ")"
+                    + outcomeUnknownMessage(failureCode);
+        }
+        return "无法连接 " + endpoint + "：" + detail;
+    }
+
+    private static String outcomeUnknownMessage(MallFailureCode failureCode) {
+        return failureCode == MallFailureCode.MALL_OUTCOME_UNKNOWN
+                ? "；写请求结果不明，商城可能已执行，请先核实目标状态，禁止自动重试" : "";
     }
 
     /** 取凭据；取不到就抛（响亮失败），信息只出现引用名，绝不出现取值 */
@@ -816,7 +850,8 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         } else {
             why = "凭据引用 " + credential.ref() + " 指向的环境变量未设置或为空";
         }
-        throw new MallOperationException(operation, "缺少凭据，拒绝发送匿名请求：" + why
+        throw new MallOperationException(operation, MallFailureCode.MALL_CREDENTIAL_UNAVAILABLE,
+                "缺少凭据，拒绝发送匿名请求：" + why
                 + "（credential_ref 只存引用，取值由部署环境注入）");
     }
 
@@ -1067,7 +1102,8 @@ public final class SecondMallHttpAdapter implements MallTargetAdapter {
         }
         try {
             URI uri = URI.create(config.baseUrl().trim());
-            return uri.getHost() == null ? null : uri;
+            return uri.getHost() == null || uri.getUserInfo() != null
+                    || uri.getRawQuery() != null || uri.getRawFragment() != null ? null : uri;
         } catch (IllegalArgumentException e) {
             return null;
         }

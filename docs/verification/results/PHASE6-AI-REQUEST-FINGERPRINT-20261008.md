@@ -1,0 +1,31 @@
+# 阶段 6：AI 请求指纹与快照来源审计（2026-10-08）
+
+## 结论
+
+按 V3.0 设计文档 §13.4，AI 调用日志现在记录来源、快照和 `requestFingerprint`。该指纹仅用于本地审计关联，不是 provider 幂等键，也不承诺去重、exactly-once 或避免重复计费。
+
+## 实现
+
+- 新增 `AiCallIdentity`：以 SHA-256 计算长度前缀编码字段的摘要，字段包括 useCase、sourceId、snapshotId、原始问题、配置模型、promptVersion、有效 `max_tokens`、完整 system/user prompt 与 temperature。`LlmProvider` 暴露可选的有效输出上限，OpenAI 兼容实现返回实际加入请求体的配置值；未知时保留 null。日志只保存来源、快照和 64 位十六进制摘要，不保存问题或 prompt 明文。
+- `AiScopeResolver` 从实际选中的快照行读取 `source_id`；默认路径仍限定当前 ACTIVE RuntimeProfile，明确 snapshot 路径读取指定已发布快照。旧快照没有来源值时保留 null，不使用当前 source 伪填。
+- `TextToSqlService` 将解析出的 source/snapshot 身份写入查询结果，并为 SQL 生成与修复记录调用指纹。
+- `EvidenceBuilder` 将快照 sourceId 放入血缘；证据解释按证据包的来源/快照记录指纹。查询解释若执行结果携带 snapshotId，则以实际执行快照为审计对象，即使调用方随后传入了不同快照参数。
+- 新增 `V36__ai_call_request_identity.sql`，增加可空 `source_id`、`snapshot_id`、`request_fingerprint` 与非唯一检索索引；保留历史审计记录，不回填未知身份、不对指纹设唯一约束。
+
+## 验证
+
+Windows JDK 17，离线七模块 reactor，定向命令：
+
+```text
+mvn -o -f analytics-server/pom.xml -pl platform-app -am -Dtest=AiCallIdentityTest,TextToSqlAuditTest,AiSqlSecurityTest,ExplanationEvidenceTest,ExplanationProviderProvenanceTest,EvidenceBuilderTest,OpenAiCompatLlmProviderTest,AiCallRequestIdentityMigrationScriptTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+结果：AI 定向 117/117，迁移版本/DDL 守卫 2/2；合计 **119/119 PASS**，0 failure、0 error、0 skipped，七模块 `BUILD SUCCESS`。覆盖稳定性与字段区分（含有效输出上限变化）、长度前缀边界、实际请求体的 `max_tokens`、来源/快照贯穿、解释失败审计、实际执行快照优先级、血缘来源携带，以及迁移非唯一/可空守卫。Provider HTTP 仅调用进程内 loopback stub。
+
+## 未覆盖范围
+
+- V36 仅在当前工作树定义并由静态迁移测试检查，尚未应用或在 MySQL 回读验证；本轮没有连接数据库或部署。
+- 未调用真实 LLM provider；没有真实账单、重试/扣费语义或 provider 幂等性证据。
+- 历史快照 `source_id` 为空时，指纹中 source 维持 null；应在未来可用的真实快照/审计查询中如实呈现。
+- 阶段 6 与整体产品验收保持未完成。
+

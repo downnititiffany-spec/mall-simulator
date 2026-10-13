@@ -247,7 +247,8 @@ class IngestionServiceStatusTest {
         assertThat(status.get("profileState")).isEqualTo("ACTIVE");
         assertThat(status.get("eventsDir")).isNull();
         assertThat(status.get("pendingFiles")).isEqualTo(0L);
-        assertThat((String) status.get("landingError")).contains("hdfs");
+        assertThat((String) status.get("landingError"))
+                .isEqualTo("Landing 存储配置无效或当前不可用，请检查运行环境配置");
     }
 
     @Test

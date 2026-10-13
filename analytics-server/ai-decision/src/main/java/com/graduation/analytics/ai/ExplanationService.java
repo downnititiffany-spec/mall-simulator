@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class ExplanationService {
     private static final String PROMPT_VERSION_EVIDENCE = "explain_evidence_v1";
     /** 摘要长度上限，防止模型长篇发挥 */
     private static final int SUMMARY_MAX_CHARS = 400;
-    private static final Pattern NUMBER = Pattern.compile("\\d+(?:\\.\\d+)?");
+    private static final Pattern NUMBER = Pattern.compile("[-+]?\\d+(?:\\.\\d+)?");
     private static final Pattern ISO_DATE = Pattern.compile("\\b\\d{4}-\\d{2}-\\d{2}\\b");
 
     public record Evidence(String snapshotId, String question, String sql, List<String> tables,
@@ -101,6 +102,8 @@ public class ExplanationService {
      */
     public ExplanationResult explain(TextToSqlService.QueryResult query, String snapshotId,
                                      String question, String timeRange) {
+        // The executed query's anchor wins over a later ACTIVE lookup at the controller.
+        if (query.snapshotId() != null) snapshotId = query.snapshotId();
         String effectiveRange = effectiveTimeRange(query, timeRange);
         String windowNotice = query.window() == null ? null : query.window().notice();
         Map<String, Object> evidenceMeta = new LinkedHashMap<>();
@@ -143,12 +146,49 @@ public class ExplanationService {
                 + "\n查询：\n" + toString(limitedRows)
                 + "\n证据元信息：" + evidenceMeta;
 
+        AiRequest request = new AiRequest(prompt, user, 0.2);
+        AiCallIdentity identity = AiCallIdentity.of("explanation", query.sourceId(), snapshotId, question,
+                llmProvider.modelName(), PROMPT_VERSION, llmProvider.maxOutputTokens(), request);
         long start = System.currentTimeMillis();
+        LlmProvider.AiResponse response = null;
         try {
-            String content = llmProvider.complete(new AiRequest(prompt, user, 0.2)).content();
+            response = llmProvider.complete(request);
+            if (response == null) {
+                try {
+                    logCall("explanation", System.currentTimeMillis() - start, "FAILED", "FORMAT",
+                            PROMPT_VERSION, llmProvider.modelName(), null, null, identity);
+                } catch (RuntimeException auditFailure) {
+                    log.warn("explanation returned no response and audit row could not be persisted");
+                    return ruleBased(query, question, snapshotId, effectiveRange,
+                            "模型响应无效且审计记录未能保存，已回退规则摘要", windowNotice);
+                }
+                return ruleBased(query, question, snapshotId, effectiveRange,
+                        "模型响应无效，已回退规则摘要", windowNotice);
+            }
+            String content = response.content();
             long elapsed = System.currentTimeMillis() - start;
-            logCall("explanation", elapsed, "OK", null);
             JsonNode parsed = JsonExtractor.extractJson(content);
+            List<String> violations = numberViolations(narrativeText(parsed), toString(limitedRows));
+            if (!violations.isEmpty()) {
+                try {
+                    logCall("explanation", elapsed, "REJECTED", "QUERY_RESULT_NUMBER_GUARD:" + violations,
+                            PROMPT_VERSION, response.model() == null ? llmProvider.modelName() : response.model(), response, null, identity);
+                } catch (RuntimeException auditFailure) {
+                    log.warn("explanation response rejected but audit row could not be persisted");
+                    return ruleBased(query, question, snapshotId, effectiveRange,
+                            "模型解释审查结果未能写入调用审计，已回退规则摘要", windowNotice);
+                }
+                return ruleBased(query, question, snapshotId, effectiveRange,
+                        "模型解释未通过数值校验，已回退规则摘要", windowNotice);
+            }
+            try {
+                logCall("explanation", elapsed, "OK", null, PROMPT_VERSION,
+                        response.model() == null ? llmProvider.modelName() : response.model(), response, null, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("explanation rewrite succeeded but audit row could not be persisted");
+                return ruleBased(query, question, snapshotId, effectiveRange,
+                        "模型解释未能写入调用审计，已回退规则摘要", windowNotice);
+            }
             return new ExplanationResult(
                     parsed.path("summary").asText(""),
                     toList(parsed.path("facts")),
@@ -160,8 +200,16 @@ public class ExplanationService {
                             query.rowsReturned(), query.elapsedMs(), effectiveRange, PROMPT_VERSION, null, null));
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - start;
-            logCall("explanation", elapsed, "FAILED", e.getMessage());
-            log.warn("explanation failed, fallback to rule-based: {}", e.getMessage());
+            String failureCode = providerFailureCode(e);
+            try {
+                logCall("explanation", elapsed, "FAILED", failureCode, PROMPT_VERSION,
+                        response != null && response.model() != null ? response.model() : llmProvider.modelName(), response, e, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("explanation failed and audit row could not be persisted ({})", failureCode);
+                return ruleBased(query, question, snapshotId, effectiveRange,
+                        "模型调用失败且审计记录未能保存，已回退规则摘要", windowNotice);
+            }
+            log.warn("explanation failed, fallback to rule-based ({})", failureCode);
             return ruleBased(query, question, snapshotId, effectiveRange,
                     "规则回退模式：" + providerFailureLabel(e) + "，已回退模板摘要", windowNotice);
         }
@@ -265,32 +313,80 @@ public class ExplanationService {
         String user = "问题：" + (question == null ? "（未提供）" : question)
                 + "\n快照：" + (pkg.snapshotId() == null ? "无可用快照" : pkg.snapshotId())
                 + "\n结论原文：\n" + narrative.toText();
+        AiRequest request = new AiRequest(prompt, user, 0.0);
+        AiCallIdentity identity = AiCallIdentity.of("explanation_evidence",
+                pkg.lineage() == null ? null : pkg.lineage().sourceId(), pkg.snapshotId(), question,
+                llmProvider.modelName(), PROMPT_VERSION_EVIDENCE, llmProvider.maxOutputTokens(), request);
         long start = System.currentTimeMillis();
+        LlmProvider.AiResponse response;
         try {
-            String content = llmProvider.complete(new AiRequest(prompt, user, 0.0)).content();
-            long elapsed = System.currentTimeMillis() - start;
-            String candidate = content == null ? "" : content.trim().replaceAll("\\s+", " ");
-            if (candidate.isEmpty() || candidate.length() > SUMMARY_MAX_CHARS) {
-                logCall("explanation_evidence", elapsed, "REJECTED", "SUMMARY_LENGTH_GUARD", PROMPT_VERSION_EVIDENCE);
-                return RewriteResult.fallback(
-                        "模型改写不符合摘要格式/长度约束，摘要回退固定模板（数值仍来自证据包）");
-            }
-            List<String> violations = numberViolations(candidate, narrative.toText());
-            if (!violations.isEmpty()) {
-                logCall("explanation_evidence", elapsed, "REJECTED",
-                        "SUMMARY_NUMBER_GUARD:" + violations, PROMPT_VERSION_EVIDENCE);
-                return RewriteResult.fallback(
-                        "模型改写未通过数值校验，摘要回退固定模板（数值仍来自证据包）");
-            }
-            logCall("explanation_evidence", elapsed, "OK", null, PROMPT_VERSION_EVIDENCE);
-            return RewriteResult.accepted(candidate);
+            response = llmProvider.complete(request);
         } catch (Exception e) {
-            logCall("explanation_evidence", System.currentTimeMillis() - start, "FAILED",
-                    e.getMessage(), PROMPT_VERSION_EVIDENCE);
-            log.warn("evidence explanation rewrite failed, fallback to template: {}", e.getMessage());
+            String failureCode = providerFailureCode(e);
+            try {
+                logCall("explanation_evidence", System.currentTimeMillis() - start, "FAILED",
+                        failureCode, PROMPT_VERSION_EVIDENCE, llmProvider.modelName(), null, e, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("evidence explanation provider failed and audit row could not be persisted");
+                return RewriteResult.fallback(
+                        "模型调用失败且审计记录未能保存，摘要回退固定模板（数值仍来自证据包）");
+            }
+            log.warn("evidence explanation rewrite failed, fallback to template ({})", failureCode);
             return RewriteResult.fallback(
                     providerFailureLabel(e) + "，摘要回退固定模板（数值仍来自证据包）");
         }
+
+        long elapsed = System.currentTimeMillis() - start;
+        if (response == null) {
+            try {
+                logCall("explanation_evidence", elapsed, "FAILED", "FORMAT",
+                        PROMPT_VERSION_EVIDENCE, llmProvider.modelName(), null, null, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("evidence explanation provider returned no response and audit row could not be persisted");
+                return RewriteResult.fallback(
+                        "模型响应无效且审计记录未能保存，摘要回退固定模板（数值仍来自证据包）");
+            }
+            return RewriteResult.fallback(
+                    "模型返回空响应，摘要回退固定模板（数值仍来自证据包）");
+        }
+
+        String content = response.content();
+        String candidate = content == null ? "" : content.trim().replaceAll("\\s+", " ");
+        String model = response.model() == null ? llmProvider.modelName() : response.model();
+        if (candidate.isEmpty() || candidate.length() > SUMMARY_MAX_CHARS) {
+            try {
+                logCall("explanation_evidence", elapsed, "REJECTED", "SUMMARY_LENGTH_GUARD",
+                        PROMPT_VERSION_EVIDENCE, model, response, null, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("evidence explanation response rejected but audit row could not be persisted");
+                return RewriteResult.fallback(
+                        "模型改写格式审查结果未能写入调用审计，摘要回退固定模板（数值仍来自证据包）");
+            }
+            return RewriteResult.fallback(
+                    "模型改写不符合摘要格式/长度约束，摘要回退固定模板（数值仍来自证据包）");
+        }
+        List<String> violations = numberViolations(candidate, narrative.toText());
+        if (!violations.isEmpty()) {
+            try {
+                logCall("explanation_evidence", elapsed, "REJECTED", "SUMMARY_NUMBER_GUARD:" + violations,
+                        PROMPT_VERSION_EVIDENCE, model, response, null, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("evidence explanation response rejected but audit row could not be persisted");
+                return RewriteResult.fallback(
+                        "模型改写数值审查结果未能写入调用审计，摘要回退固定模板（数值仍来自证据包）");
+            }
+            return RewriteResult.fallback(
+                    "模型改写未通过数值校验，摘要回退固定模板（数值仍来自证据包）");
+        }
+        try {
+            logCall("explanation_evidence", elapsed, "OK", null, PROMPT_VERSION_EVIDENCE,
+                    model, response, null, identity);
+        } catch (RuntimeException auditFailure) {
+            log.warn("evidence explanation rewrite succeeded but audit row could not be persisted");
+            return RewriteResult.fallback(
+                    "模型改写结果未能写入调用审计，摘要回退固定模板（数值仍来自证据包）");
+        }
+        return RewriteResult.accepted(candidate);
     }
 
     /**
@@ -310,6 +406,15 @@ public class ExplanationService {
         return "模型调用失败";
     }
 
+    /** Stable error category for logs; provider messages may contain request or connection data. */
+    private static String providerFailureCode(Exception e) {
+        if (e instanceof LlmProvider.LlmException llmException
+                && llmException.type() != null && !llmException.type().isBlank()) {
+            return llmException.type();
+        }
+        return "MODEL_CALL_FAILED";
+    }
+
     /** 返回候选摘要里「证据包叙述中找不到」的数字（空 = 通过） */
     static List<String> numberViolations(String candidate, String evidenceText) {
         Set<String> allowed = numericTokens(evidenceText);
@@ -322,11 +427,40 @@ public class ExplanationService {
             }
         }
         while (c.find()) {
-            if (!allowed.contains(c.group())) {
+            if (!isAllowedNumber(allowed, c.group())) {
                 violations.add(c.group());
             }
         }
         return List.copyOf(violations);
+    }
+
+    /** 只检查模型生成的自然语言和值，不把 evidenceIds/metric codes 当作业务数字。 */
+    private static String narrativeText(JsonNode node) {
+        StringBuilder out = new StringBuilder();
+        appendNarrativeText(node, null, out);
+        return out.toString();
+    }
+
+    private static void appendNarrativeText(JsonNode node, String fieldName, StringBuilder out) {
+        if (fieldName != null && Set.of("evidenceIds", "metricCode", "targetMetricCode", "ruleCode")
+                .contains(fieldName)) {
+            return;
+        }
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isTextual() || node.isNumber()) {
+            out.append(node.asText()).append(' ');
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(child -> appendNarrativeText(child, null, out));
+            return;
+        }
+        if (node.isObject()) {
+            node.fields().forEachRemaining(entry ->
+                    appendNarrativeText(entry.getValue(), entry.getKey(), out));
+        }
     }
 
     private static Set<String> numericTokens(String text) {
@@ -338,9 +472,20 @@ public class ExplanationService {
         }
         Matcher numbers = NUMBER.matcher(ISO_DATE.matcher(value).replaceAll(" "));
         while (numbers.find()) {
-            tokens.add(numbers.group());
+            String token = numbers.group();
+            tokens.add(token);
+            tokens.add(canonicalNumber(token));
         }
         return tokens;
+    }
+
+    private static boolean isAllowedNumber(Set<String> allowed, String token) {
+        return allowed.contains(token) || allowed.contains(canonicalNumber(token));
+    }
+
+    /** Formatting changes such as 2042.0000 → 2042 keep the same numeric value. */
+    private static String canonicalNumber(String token) {
+        return new BigDecimal(token).stripTrailingZeros().toPlainString();
     }
 
     /** 事实：每条都带 evidenceIds（列/证据引用），供前端逐条复核 */
@@ -422,18 +567,19 @@ public class ExplanationService {
         return executor.execute(sql);
     }
 
-    private void logCall(String useCase, long elapsedMs, String status, String error) {
-        logCall(useCase, elapsedMs, status, error, PROMPT_VERSION);
-    }
-
-    private void logCall(String useCase, long elapsedMs, String status, String error, String promptVersion) {
+    private void logCall(String useCase, long elapsedMs, String status, String error,
+                         String promptVersion, String model, LlmProvider.AiResponse response, Throwable failure,
+                         AiCallIdentity identity) {
         AiCallLog logRow = new AiCallLog();
         logRow.setUseCase(useCase);
         logRow.setProvider(llmProvider.providerName());
+        logRow.setModel(model);
         logRow.setPromptVersion(promptVersion);
         logRow.setElapsedMs(elapsedMs);
         logRow.setStatus(status);
         logRow.setError(error == null ? null : truncate(error, 200));
+        AiCallUsage.record(logRow, response, failure);
+        identity.record(logRow);
         logRow.setCreatedAt(LocalDateTime.now());
         callLogMapper.insert(logRow);
     }
