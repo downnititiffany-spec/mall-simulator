@@ -26,7 +26,7 @@ class LocalProcessSparkSubmitterLogTest {
                 new LocalProcessSparkSubmitter("cmd", tempDir.toString());
 
         JobSubmitter.SubmitResult sr = submitter.submit(
-                List.of("cmd", "/c", "echo", "MARKER-OK-123"), "pipeline-9-LOAD_ODS");
+                echoCommand("MARKER-OK-123"), "pipeline-9-LOAD_ODS");
 
         String externalJobId = sr.externalJobId();
         assertThat(externalJobId).startsWith("lp-").isNotBlank();
@@ -49,7 +49,7 @@ class LocalProcessSparkSubmitterLogTest {
                 new LocalProcessSparkSubmitter("cmd", tempDir.toString());
         String prefix = "prefix-" + System.currentTimeMillis();
         JobSubmitter.SubmitResult sr = submitter.submit(
-                List.of("cmd", "/c", "echo", "x"), prefix);
+                echoCommand("x"), prefix);
 
         // 日志由异步守护线程写完（进程先退出再落盘），轮询等待文件出现。
         // R6-12（V2.0 §15.3）：文件名 = {prefix}__{externalJobId}.log，运维可按运行检索，
@@ -88,5 +88,12 @@ class LocalProcessSparkSubmitterLogTest {
                 new LocalProcessSparkSubmitter("cmd", tempDir.toString());
         String logs = submitter.logs("lp-999999-nonexistent");
         assertThat(logs).contains("日志文件不存在");
+    }
+
+    private static List<String> echoCommand(String marker) {
+        if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+            return List.of("cmd", "/c", "echo", marker);
+        }
+        return List.of("echo", marker);
     }
 }

@@ -127,6 +127,7 @@ public class IsolationGuardMySqlIT {
     @Test
     void wrongFingerprintIsRejectedOnRealInstance() {
         String runId = env(ENV_RUNID);
+        String actualHostname = env(ENV_FINGERPRINT).split(":")[0];
         UrlDataSource dataSource = dataSource(env(ENV_URL));
 
         assertThatThrownBy(() -> TestIsolationGuard.verifyBeforeWrite(
@@ -134,7 +135,7 @@ public class IsolationGuardMySqlIT {
                 dataSource, runId + "_mall"))
                 .hasMessageContaining("服务实例指纹不匹配")
                 .hasMessageContaining("127.0.0.1:3307")
-                .hasMessageContaining("dahaishui");
+                .hasMessageContaining(actualHostname);
         // 指纹判据在权限判据之后：连接确实建立了，说明前四步都真跑过才轮到指纹拒绝
         assertEquals(1, dataSource.connects());
     }

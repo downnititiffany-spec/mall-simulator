@@ -41,7 +41,7 @@
 #   * DEV-003b：analytics-server 侧的真库 IT（`metric-analysis` 的 `IsolationGuardMySqlIT`）接进本入口，
 #     目标 = `-Module analytics`（`-Module all` = mall + generator + analytics）。它复用 mall 的库与受限账号
 #     （`<runId>_mall` / `<runId>_mallapp`，**不新建任何 3307 对象**），跑法固定为
-#     `mvn -f analytics-server\pom.xml -pl metric-analysis -am test`（+ `-Pisolated-tests`：该模块 profile 收集
+#     `mvn -f analytics-server/pom.xml -pl metric-analysis -am test`（+ `-Pisolated-tests`：该模块 profile 收集
 #     `@Tag("it")` 的 `*IT` 类）。跑完**强制核对日志里确实出现 `...IsolationGuardMySqlIT` 的 `Tests run:` 行**：
 #     零用例／类没被选中一律按失败（exit 7）处理，否则「自动执行」会退化成假绿。
 #     分析侧凭据通道与 mall/generator 不同（`IsolationGuardMySqlIT` 只读环境变量 `DEV001_IT_*`），
@@ -124,7 +124,7 @@ if ($Module -in @('mall', 'both', 'all')) {
   $targets += [pscustomobject]@{
     name = 'mall'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
-    pom = 'mall-simulator\pom.xml'
+    pom = 'mall-simulator/pom.xml'
     extraArgs = @(); requireClass = $null
   }
 }
@@ -132,7 +132,7 @@ if ($Module -in @('generator', 'both', 'all')) {
   $targets += [pscustomobject]@{
     name = 'generator'; db = "${RunId}_generator"; user = "${RunId}_genapp"
     pwdEnv = @('IT_GUARD_PASSWORD_GENERATOR', 'IT_GUARD_PASSWORD')
-    pom = 'synthetic-data-generator\pom.xml'
+    pom = 'synthetic-data-generator/pom.xml'
     extraArgs = @(); requireClass = $null
   }
 }
@@ -141,7 +141,7 @@ if ($Module -in @('analytics', 'all')) {
   $targets += [pscustomobject]@{
     name = 'analytics'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
-    pom = 'analytics-server\pom.xml'
+    pom = 'analytics-server/pom.xml'
     extraArgs = @('-pl', 'metric-analysis', '-am'); requireClass = 'IsolationGuardMySqlIT'
   }
 }

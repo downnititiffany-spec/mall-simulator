@@ -1,0 +1,5 @@
+# Byte-frozen fixtures: the sha256 values in freeze.json were computed over
+# CRLF bytes. These files must materialize with CRLF endings on every
+# platform, otherwise the freeze patrol cannot reproduce the frozen hashes.
+legacy/*.json text eol=crlf
+new/*.json text eol=crlf

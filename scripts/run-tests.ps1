@@ -159,6 +159,9 @@ function Invoke-MavenRun {
 }
 
 # 逐模块汇总行：`[INFO] Tests run: N, Failures: F, Errors: E, Skipped: S`（行尾无 `-- in`）
+# 注意：当模块含有 Skipped 用例时，Maven Surefire 将该模块的汇总行改以 [WARNING] 级别输出，
+# 而非 [INFO]。因此必须同时匹配 [INFO] 与 [WARNING] 两种前缀，否则含跳过用例的模块汇总行会
+# 被静默丢弃，导致计数偏低（WP-4 修复）。
 # 注意：多模块 reactor **没有** reactor 级汇总行 —— 「632」必须由 6 条模块汇总行相加得到。
 # `-ModuleFilter`：隔离档的 analytics 目标是 `-pl metric-analysis -am`，日志里**同时**含依赖模块
 # platform-common 的 89 个默认档用例（依赖构建，不属于隔离档）。因此必须按「当前正在构建的模块」
@@ -170,7 +173,7 @@ function Get-MavenTotals {
   foreach ($line in (Get-Content -LiteralPath $Log)) {
     if ($line -match '^\s*\[INFO\] Building (\S+) ') { $current = $Matches[1] }
     elseif ($line -match '\[INFO\] --- .* @ (\S+) ---') { $current = $Matches[1] }
-    elseif ($line -match '^\[INFO\] Tests run: (\d+), Failures: (\d+), Errors: (\d+), Skipped: (\d+)\s*$') {
+    elseif ($line -match '^\[(?:INFO|WARNING)\] Tests run: (\d+), Failures: (\d+), Errors: (\d+), Skipped: (\d+)\s*$') {
       $n = [int]$Matches[1]; $ff = [int]$Matches[2]; $ee = [int]$Matches[3]; $ss = [int]$Matches[4]
       if ($ModuleFilter -and $current -ne $ModuleFilter) {
         if (-not $skippedModules.ContainsKey($current)) { $skippedModules[$current] = 0 }
@@ -329,7 +332,7 @@ function Invoke-SparkSuite {
     # -CaseSensitive 必需：默认不区分大小写时会把 TestSuite.txt 的良性行 `Suites: completed 15, aborted 0` 误报成中止
     $aborted = Select-String -LiteralPath $r.log -CaseSensitive -Pattern 'RUN ABORTED' | Select-Object -First 3
     if ($aborted) { Write-Host ("  ⚠️ 日志内出现中止标记：{0}" -f (($aborted | ForEach-Object { $_.Line.Trim() }) -join ' | ')) }
-    $sfSum = Select-String -LiteralPath $r.log -Pattern '^\[INFO\] Tests run: \d+, Failures' | Select-Object -Last 1
+    $sfSum = Select-String -LiteralPath $r.log -Pattern '^\[(?:INFO|WARNING)\] Tests run: \d+, Failures' | Select-Object -Last 1
     Write-Host ("  [对照·不作成功依据] surefire 汇总行：{0}" -f $(if ($sfSum) { $sfSum.Line.Trim() } else { '<无>' }))
   }
 
