@@ -117,6 +117,21 @@ class GeneratorBoundarySourcePolicyTest {
         String main = read(MODULE_ROOT.resolve("src/main/resources/application.yml"));
         assertThat(main).as("独立端口必须是 8092（V2.1 §3.1 原文）").contains("port: 8092");
         assertThat(main).as("独立元数据库必须是本程序自己的库").contains("generator_meta");
+        assertThat(main).as("生成器默认连接只能落到本机隔离 MySQL 3307")
+                .contains("127.0.0.1:3307/generator_meta")
+                .doesNotContain("127.0.0.1:3306/");
+        assertThat(main).as("禁止内置数据库账号、口令或自动建库权限")
+                .contains("username: ${GENERATOR_DB_USER}")
+                .contains("password: ${GENERATOR_DB_PASSWORD}")
+                .doesNotContain("GENERATOR_DB_USER:root")
+                .doesNotContain("GENERATOR_DB_PASSWORD:123456")
+                .doesNotContain("createDatabaseIfNotExist=true");
+        String launcher = read(MODULE_ROOT.getParent().resolve("scripts/start-all.ps1"));
+        assertThat(launcher).as("总启动脚本必须在拉起服务前拒绝缺凭据或非隔离端口")
+                .contains("if ($startGenerator)")
+                .contains("GENERATOR_DB_URL -notmatch '^jdbc:mysql://127\\.0\\.0\\.1:3307/'")
+                .contains("GENERATOR_DB_USER -or -not $env:GENERATOR_DB_PASSWORD")
+                .contains("未启动任何服务");
         assertThat(main).as("文件模式产物必须落在本程序自己的目录（§3.3 B）").contains("generator-output");
     }
 
@@ -163,6 +178,52 @@ class GeneratorBoundarySourcePolicyTest {
         assertThat(pom).as("生成器是单模块工程，不是聚合 reactor 的一部分").doesNotContain("<modules>");
         assertThat(pom).as("必须能产出可执行 jar").contains("spring-boot-maven-plugin");
         assertThat(pom).as("独立版本号").contains("<artifactId>synthetic-data-generator</artifactId>");
+    }
+
+    @Test
+    @DisplayName("Stage 7 producer harness 只走 3307 + 8090/8092 公开边界，凭据不进 CLI")
+    void stage7ProducerHarnessKeepsIsolationAndPublicHttpBoundary() {
+        Path script = MODULE_ROOT.getParent().resolve("scripts/stage7-producer-isolated.ps1");
+        assertThat(script).as("Stage 7 producer harness 必须存在").exists();
+        String text = read(script);
+
+        assertThat(text)
+                .contains("jdbc:mysql://127.0.0.1:3307/$mallDb")
+                .contains("jdbc:mysql://127.0.0.1:3307/$genDb")
+                .contains("if ($mallUrl -match ':3306/' -or $genUrl -match ':3306/')")
+                .contains("http://127.0.0.1:8090/api/v1/auth/login")
+                .contains("http://127.0.0.1:8090/api/v1/admin/products")
+                .contains("changeType='adjust'")
+                .contains("http://127.0.0.1:8092/api/v1/targets")
+                .contains("http://127.0.0.1:8092/api/v1/generation-runs")
+                .contains("Wait-Get 'http://127.0.0.1:8092/api/v1/scenarios' 120")
+                .contains("generator 启动进程提前退出")
+                .contains("--mode=MALL_API")
+                .contains("operation-journal.jsonl")
+                .contains("$artifactResponse | ForEach-Object { $_ }")
+                .contains("$missingCreatedOrders")
+                .contains("$missingRefundCompleted")
+                .contains("rolling JSONL 与本次 operation journal 关联不完整")
+                .contains("/api/v1/mall/outbox/publish")
+                .contains("$baselineFailedIds")
+                .contains("$baselineResidualPending")
+                .contains("$newFailedIds")
+                .contains("Outbox 本次新增失败事件")
+                .contains("Outbox 本次 run 留下新 pending")
+                .contains("$loggedEventIds")
+                .contains("$duplicateEventIds")
+                .contains("rolling JSONL 出现重复 event_id")
+                .contains("uniqueEventIdCount")
+                .contains("duplicateEventIdCount")
+                .contains("'order_created','order_paid','refund_created','refund_completed'");
+
+        assertThat(text)
+                .contains("Read-CredrefPassword")
+                .contains("credential_ref=$tokenRef")
+                .doesNotContain("[string]$MallPassword")
+                .doesNotContain("[string]$GeneratorPassword")
+                .doesNotContain("--password=")
+                .doesNotContain("jdbc:mysql://127.0.0.1:3306/");
     }
 
     /**

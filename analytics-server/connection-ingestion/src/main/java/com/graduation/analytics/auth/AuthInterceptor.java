@@ -2,6 +2,7 @@ package com.graduation.analytics.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.common.ApiResponse;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,7 +52,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     /** 无权限 */
     private static final String FORBIDDEN = "FORBIDDEN";
     /** 缺少所需权限码（R8-3 契约 §3.2 冻结码） */
-    private static final String FORBIDDEN_PERMISSION = "FORBIDDEN_PERMISSION";
+    private static final String FORBIDDEN_PERMISSION = PlatformBizException.FORBIDDEN_PERMISSION;
 
     private final AuthService authService;
     private final ObjectMapper objectMapper;

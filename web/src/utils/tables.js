@@ -60,26 +60,41 @@ export function aiHistoryRows(list) {
 
 /** AI 模型调用审计行 */
 export function aiCallRows(list) {
-  return (Array.isArray(list) ? list : []).map((c) => ({
-    useCase: text(c.useCase),
-    provider: text(c.provider),
-    model: text(c.model),
-    inputTokens: formatInteger(c.inputTokens),
-    outputTokens: formatInteger(c.outputTokens),
-    elapsedMs: c.elapsedMs === null || c.elapsedMs === undefined ? text(c.elapsedMs) : formatInteger(c.elapsedMs) + 'ms',
-    promptVersion: text(c.promptVersion),
-    status: text(c.status),
-    error: text(c.error),
-    createdAt: formatDateTime(c.createdAt)
-  }))
+  return (Array.isArray(list) ? list : []).map((c) => {
+    const fingerprint = text(c.requestFingerprint)
+    return {
+      useCase: text(c.useCase),
+      provider: text(c.provider),
+      model: text(c.model),
+      sourceId: text(c.sourceId),
+      snapshotId: text(c.snapshotId),
+      requestFingerprint: fingerprint,
+      fingerprintPreview: fingerprint === '—' ? fingerprint : `${fingerprint.slice(0, 12)}…`,
+      inputTokens: formatInteger(c.inputTokens),
+      outputTokens: formatInteger(c.outputTokens),
+      elapsedMs: c.elapsedMs === null || c.elapsedMs === undefined ? text(c.elapsedMs) : formatInteger(c.elapsedMs) + 'ms',
+      promptVersion: text(c.promptVersion),
+      status: text(c.status),
+      error: text(c.error),
+      createdAt: formatDateTime(c.createdAt)
+    }
+  })
 }
 
-/** 流水线实例行（溯源链路：业务时间 / 目标快照 / 当前阶段） */
+/** 流水线实例行（溯源链路：业务时间 / 源数据版本 / 目标快照 / 当前阶段） */
 export function pipelineRunRows(list) {
   return (Array.isArray(list) ? list : []).map((r) => ({
     id: text(r.id),
     pipelineCode: text(r.pipelineCode),
     businessTime: formatDateTime(r.businessTime),
+    // S3-34：结果所属**数据源版本**（§PipelineService:169 逐次运行写入 'manual-<ms>' 等），
+    // V2 既有列；后端列表接口返回实体整行，前端只搬运，不重算。
+    sourceDataVersion: text(r.sourceDataVersion),
+    // S3-37：本 run **消费了哪一批**（`pipeline_run.input_batch_id` → `ingestion_batch.id`）。
+    // 该列由 V7 建好、S3-36 起写入侧真的落库（A 类加性），后端列表接口返回实体整行 ⇒
+    // 前端此前只是**没搬运**。S3-36 不回填历史行 ⇒ 老实例为 NULL ⇒ 显示占位符（NULL 是
+    // 「未知」，**不得**用 targetSnapshotId / sourceDataVersion 顶替，也不得显示 0）。
+    inputBatchId: text(r.inputBatchId),
     targetSnapshotId: text(r.targetSnapshotId),
     attemptNo: formatInteger(r.attemptNo),
     status: text(r.status),
@@ -89,8 +104,10 @@ export function pipelineRunRows(list) {
   }))
 }
 
-/** 决策任务行：基线/目标/快照号来自后端，不重算 */export function decisionRows(list) {
+/** 决策任务行：保留后端实体主键供行操作/评价索引使用；展示字段只搬运与格式化，不重算 */
+export function decisionRows(list) {
   return (Array.isArray(list) ? list : []).map((d) => ({
+    id: d.id === null || d.id === undefined ? null : d.id,
     decisionNo: text(d.decisionNo),
     title: text(d.title),
     source: text(d.source),
@@ -99,8 +116,11 @@ export function pipelineRunRows(list) {
     baselineValue: num(d.baselineValue),
     targetValue: num(d.targetValue),
     suggestionSnapshotId: text(d.suggestionSnapshotId),
+    baselineSnapshotId: text(d.baselineSnapshotId),
+    definitionVersion: text(d.definitionVersion),
     risk: text(d.risk),
     owner: text(d.owner),
+    dueDate: text(d.dueDate),
     status: text(d.status),
     createdAt: formatDateTime(d.createdAt)
   }))
@@ -116,6 +136,15 @@ export function evaluationRows(list) {
     baselineValue: num(e.baselineValue),
     actualValue: num(e.actualValue),
     evalWindowDays: formatInteger(e.evalWindowDays),
+    baselineWindow: e.baselineWindowStart && e.baselineWindowEnd
+      ? `${text(e.baselineWindowStart)} ~ ${text(e.baselineWindowEnd)}` : EMPTY_TEXT,
+    actualWindow: e.windowStart && e.windowEnd
+      ? `${text(e.windowStart)} ~ ${text(e.windowEnd)}` : EMPTY_TEXT,
+    baselineSamples: formatInteger(e.baselineSampleCount),
+    actualSamples: formatInteger(e.actualSampleCount),
+    sourceId: e.sourceId === null || e.sourceId === undefined ? EMPTY_TEXT : String(e.sourceId),
+    metricDefinitionVersion: text(e.metricDefinitionVersion),
+    note: text(e.note),
     createdAt: formatDateTime(e.createdAt)
   }))
 }
@@ -155,6 +184,8 @@ export const COLUMNS = {
     { key: 'id', label: '实例' },
     { key: 'pipelineCode', label: '流水线' },
     { key: 'businessTime', label: '业务时间' },
+    { key: 'sourceDataVersion', label: '源数据版本' },
+    { key: 'inputBatchId', label: '输入批次' },
     { key: 'targetSnapshotId', label: '目标快照' },
     { key: 'attemptNo', label: '尝试次数' },
     { key: 'status', label: '状态' },
@@ -177,6 +208,9 @@ export const COLUMNS = {
     { key: 'useCase', label: '用例' },
     { key: 'provider', label: '提供方' },
     { key: 'model', label: '模型' },
+    { key: 'sourceId', label: '来源 ID' },
+    { key: 'snapshotId', label: '快照 ID' },
+    { key: 'requestFingerprint', label: '请求指纹 SHA-256' },
     { key: 'inputTokens', label: '输入 tokens' },
     { key: 'outputTokens', label: '输出 tokens' },
     { key: 'elapsedMs', label: '耗时' },
@@ -194,8 +228,11 @@ export const COLUMNS = {
     { key: 'baselineValue', label: '基线' },
     { key: 'targetValue', label: '目标' },
     { key: 'suggestionSnapshotId', label: '建议快照' },
+    { key: 'baselineSnapshotId', label: '基线快照' },
+    { key: 'definitionVersion', label: '口径版本' },
     { key: 'risk', label: '风险' },
     { key: 'owner', label: '负责人' },
+    { key: 'dueDate', label: '截止日期' },
     { key: 'status', label: '状态' },
     { key: 'createdAt', label: '创建时间' }
   ],

@@ -27,7 +27,7 @@ class JobArgsRegistrySpec extends AnyFlatSpec with Matchers {
   "JobRegistry" should "注册全部 11 作业且依赖顺序正确" in {
     JobRegistry.allCodes should contain allOf ("odl", "bdw", "dim", "tdw", "usw", "fna", "ljp", "sci", "dqc", "pub", "mxp")
     JobRegistry.jobs.size should be(11)
-    JobRegistry.dependencies("bdw") should be(List("odl"))
+    JobRegistry.dependencies("bdw") should be(List("odl", "dim"))
     JobRegistry.dependencies("dim") should be(List("odl"))
     JobRegistry.dependencies("tdw") should be(List("odl", "dim"))
     JobRegistry.dependencies("usw") should be(List("bdw", "tdw"))
@@ -41,5 +41,44 @@ class JobArgsRegistrySpec extends AnyFlatSpec with Matchers {
     JobRegistry.dependencies("ljp") should be(List.empty)
     JobRegistry.dependencies("sci") should be(List.empty)
     JobRegistry.lookup("unknown") should be(None)
+  }
+
+  it should "真检环并给出拓扑序（设计 §10.1 L375：扩 DAG 必须真检环，不得沿用「首批无环」假定）" in {
+    // 在产 DAG：无环，且拓扑序必须满足「前置在前」这一编排前提
+    JobRegistry.hasCycle should be(false)
+    val order = JobRegistry.topologicalOrder().getOrElse(fail("在产 DAG 被判成有环"))
+    order.toSet should be(JobRegistry.dependencies.keySet)
+    def before(a: String, b: String): Unit =
+      withClue(s"拓扑序要求 $a 先于 $b，实得 order=$order：") {
+        order.indexOf(a) should be < order.indexOf(b)
+      }
+    before("odl", "dim")
+    before("odl", "bdw")   // P2-04-a：bdw 的 SQL LEFT JOIN dim 两张快照（bfs 编排必须 dim 先于 bdw）
+    before("dim", "bdw")
+    before("odl", "tdw")
+    before("dim", "tdw")
+    before("bdw", "usw")
+    before("tdw", "usw")
+    before("usw", "fna")
+    before("fna", "dqc")
+    before("dqc", "pub")
+    before("pub", "mxp")
+
+    // 真实环必须被检出（原实现 `hasCycle = false` 恒假 ⇒ 这三条必红）
+    JobRegistry.topologicalOrder(Map("a" -> List("b"), "b" -> List("a"))) should be(None)
+    JobRegistry.topologicalOrder(Map("a" -> List("a"))) should be(None) // 自环
+    JobRegistry.topologicalOrder(Map("a" -> List("b"), "b" -> List("c"), "c" -> List("a"))) should be(None)
+
+    // 非环用例（含未知前置：不在注册表内的前置被忽略，不构成环、也不静默变成「有环」误报）
+    JobRegistry.topologicalOrder(Map.empty) should be(Some(List.empty))
+    JobRegistry.topologicalOrder(Map("a" -> List.empty)) should be(Some(List("a")))
+    JobRegistry.topologicalOrder(Map("a" -> List("b"), "b" -> List.empty)) should be(Some(List("b", "a")))
+    JobRegistry.topologicalOrder(Map("a" -> List("zzz"))) should be(Some(List("a")))
+
+    // 依赖表的每个前置都必须是已注册作业（否则编排里会静默不跑该前置）
+    JobRegistry.dependencies.keySet should be(JobRegistry.jobs.keySet)
+    JobRegistry.dependencies.foreach { case (code, pres) =>
+      pres.foreach(p => withClue(s"$code 的前置 $p 未注册：") { JobRegistry.jobs.keySet should contain(p) })
+    }
   }
 }

@@ -20,6 +20,19 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 object PartitionEvidence {
 
   /**
+   * 发布/质量门共同使用的“分区已就绪”判据：目标表必须有本次已采集到的分区，
+   * 且元数据能给出非空 Location。rowCount=0 **不等于缺分区**——某个业务专题当天
+   * 没有事实行时，空分区仍是合法、可追溯的发布制品。
+   */
+  def missingLocatedTables(expectedTables: Seq[String], parts: Seq[OutputPartition]): Seq[String] = {
+    val located = parts.iterator
+      .filter(_.path.exists(_.nonEmpty))
+      .map(_.table)
+      .toSet
+    expectedTables.filterNot(located.contains)
+  }
+
+  /**
    * 采集一组目标表的分区证据。
    *
    * @param tables     库限定表名（形如 `ns.table("ads", "ads_operation_overview")`，库名由 WarehouseNamespace 派生）

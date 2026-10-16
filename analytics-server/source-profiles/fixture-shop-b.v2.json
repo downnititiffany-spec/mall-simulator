@@ -1,0 +1,149 @@
+{
+  "profileVersion": "2.0",
+  "sourceCode": "fixture-shop-b",
+  "contractVersion": "1.0",
+  "eventTypeMappings": {
+    "sourceField": "state",
+    "values": {
+      "ORDER_PLACED": "order_created",
+      "PAID_OK": "order_paid",
+      "BUYER_CANCELLED": "order_cancelled",
+      "REFUND_OPENED": "refund_created",
+      "REFUND_CLOSED": "refund_completed",
+      "MEMBER_JOINED": "user_registered",
+      "ITEM_LISTED": "product_created",
+      "PAGE_VIEW": "behavior",
+      "SAVE_ITEM": "behavior",
+      "CART_ADD": "behavior"
+    }
+  },
+  "fieldMappings": {
+    "envelope": {
+      "evt_no": "event_id",
+      "state": "event_type",
+      "occur_at": "event_time",
+      "src": "source_system",
+      "rev": "schema_version",
+      "tr": "trace_id",
+      "data": "payload"
+    },
+    "payload": {
+      "user_registered": {
+        "buyer_no": "user_id",
+        "age_band": "age_group",
+        "city_tier": "city_level",
+        "vip_level": "member_level",
+        "joined_tm": "register_time"
+      },
+      "product_created": {
+        "sku_no": "product_id",
+        "sku_name": "product_name",
+        "cat_no": "category_id",
+        "brand_no": "brand_id",
+        "price_minor": "price",
+        "cost_minor": "cost",
+        "listing_st": "status"
+      },
+      "behavior": {
+        "buyer_no": "user_id",
+        "sku_no": "product_id",
+        "sess_no": "session_id",
+        "act": "behavior_type",
+        "via": "channel"
+      },
+      "order_created": {
+        "trade_no": "order_id",
+        "buyer_no": "user_id",
+        "lines": {
+          "target": "items[]",
+          "itemFields": {
+            "sku_no": "product_id",
+            "qty": "quantity",
+            "unit_minor": "unit_price",
+            "line_disc_minor": "discount",
+            "line_minor": "amount"
+          }
+        },
+        "grand_minor": "total_amount",
+        "st": "status",
+        "placed_tm": "created_at"
+      },
+      "order_paid": {
+        "trade_no": "order_id",
+        "buyer_no": "user_id",
+        "pay_no": "payment_id",
+        "paid_minor": "amount",
+        "paid_tm": "paid_at"
+      },
+      "order_cancelled": {
+        "trade_no": "order_id",
+        "buyer_no": "user_id",
+        "cancel_reason": "reason",
+        "cancelled_tm": "cancelled_at"
+      },
+      "refund_created": {
+        "refund_no": "refund_id",
+        "trade_no": "order_id",
+        "buyer_no": "user_id",
+        "refund_minor": "amount",
+        "refund_reason": "reason",
+        "opened_tm": "created_at"
+      },
+      "refund_completed": {
+        "refund_no": "refund_id",
+        "trade_no": "order_id",
+        "buyer_no": "user_id",
+        "refund_minor": "amount",
+        "settled_tm": "completed_at"
+      }
+    }
+  },
+  "enumSemantics": {
+    "behavior_type": {
+      "BROWSE": "view",
+      "SAVE": "favorite",
+      "ADD_CART": "cart_add"
+    },
+    "channel": {
+      "APP": "app",
+      "PC": "pc",
+      "H5": "h5"
+    },
+    "age_group": {
+      "AGE_UNDER18": "under18",
+      "AGE_18_24": "18-24",
+      "AGE_25_34": "25-34",
+      "AGE_35_44": "35-44",
+      "AGE_45_PLUS": "45+"
+    },
+    "city_level": {
+      "T1": "tier1",
+      "T2": "tier2",
+      "T3": "tier3",
+      "T_OTHER": "other"
+    },
+    "member_level": {
+      "VIP1": "normal",
+      "VIP2": "silver",
+      "VIP3": "gold",
+      "VIP4": "platinum"
+    }
+  },
+  "timePolicy": {
+    "field": "occur_at",
+    "formats": ["ISO_OFFSET_DATE_TIME"],
+    "zone": "Asia/Shanghai"
+  },
+  "amountPolicy": {
+    "bySourceField": {
+      "unit_minor": "FEN",
+      "line_disc_minor": "FEN",
+      "line_minor": "FEN",
+      "grand_minor": "FEN",
+      "paid_minor": "FEN",
+      "refund_minor": "FEN",
+      "price_minor": "FEN",
+      "cost_minor": "FEN"
+    }
+  }
+}

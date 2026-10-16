@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -47,6 +49,10 @@ import java.util.Objects;
  * 但本类仍以**调用方传入的冻结集**为准来判定，不按结果行上的 {@code rule_fingerprint} 选版本 ——
  * 「读侧按行内指纹重算历史 run 的当时结论」属 F-93，**不在 F-88 范围内**。
  * 当前冻结集取目录的默认版本集，因此同一规则码跨版本的历史差异仍未被读侧冻结。</p>
+ *
+ * <p><b>D-049x（G31-11）：判定只看每条 (规则码, 层) 的最新一次结果行</b> —— 重试链路保留的历史
+ * 失败行仅留痕、不再阻断；见 {@code #resultsOf} 的 javadoc 与 {@code DataQualityGateTest} 的
+ * {@code repairedRetrySupersedesStaleFailureRows} 等用例。</p>
  *
  * <p>run 号为空或该 run 没有任何质量结果 → UNKNOWN（取不到就是取不到，不冒充 PASS）。</p>
  */
@@ -162,13 +168,41 @@ public class DataQualityGate implements MetricQualityGate {
         return decisionForRun(pipelineRunId, rules).blockingRules();
     }
 
-    /** 查该 run 的质量结果；run 号为空直接返回空列表（不查库）。 */
+    /**
+     * 查该 run 的质量结果；run 号为空直接返回空列表（不查库）。
+     *
+     * <p><b>D-049x（G31-11 判据3）：只取每条 (规则码, 层) 的最新一次判定（id 最大者）</b>。
+     * 同一 run 的重试链路（{@code retryFromStage} 只删 {@code pipeline_stage_run} 记录，
+     * 保留 {@code data_quality_result} 作为失败证据 —— 写侧「失败证据必须先落库再抛阻断」的纪律）
+     * 会为同一 (规则码, 层) 留下多行历史判定；若全部行都参与判定，早期失败尝试的
+     * {@code passed=0 BLOCKING} 行会永久拦截修复后的重试（实测 run4：修复后 QUALITY_CHECK 已
+     * passed=1，PUBLISH_METRIC 前置门仍读到两次失败尝试的旧行 ⇒ PIPELINE_QUALITY_FAILED，
+     * 「失败重试仍有效」被卡死）。历史失败行仅留痕，不参与结论；反之最新一次判定失败仍然阻断
+     * ——「最新一次」不是「曾经通过就放行」。层也参与分组：同一规则码若同时出现在
+     * Landing 内联与 ADS 暂存两层，各层的最新判定独立生效，任何一层最新判定失败仍阻断。</p>
+     */
     private List<DataQualityResult> resultsOf(Long pipelineRunId) {
         if (pipelineRunId == null) {
             return List.of();
         }
-        return qualityMapper.selectList(
-                new LambdaQueryWrapper<DataQualityResult>().eq(DataQualityResult::getRunId, pipelineRunId));
+        List<DataQualityResult> all = qualityMapper.selectList(
+                new LambdaQueryWrapper<DataQualityResult>().eq(DataQualityResult::getRunId, pipelineRunId)
+                        .orderByAsc(DataQualityResult::getId));
+        if (all == null || all.isEmpty()) {
+            return List.of();
+        }
+        // id 升序遍历 ⇒ 后写覆盖先写，循环结束时 map 里是每键的最大 id 行。
+        Map<String, DataQualityResult> latest = new LinkedHashMap<>();
+        for (DataQualityResult r : all) {
+            latest.put(latestKey(r), r);
+        }
+        return List.copyOf(latest.values());
+    }
+
+    /** (规则码, 层) 的空安全分组键：两列均可能为 NULL（历史行/未登记码），NULL 视为同一组。 */
+    private static String latestKey(DataQualityResult r) {
+        return (r.getRuleCode() == null ? "" : r.getRuleCode()) + '|'
+                + (r.getLayer() == null ? "" : r.getLayer());
     }
 
     /**

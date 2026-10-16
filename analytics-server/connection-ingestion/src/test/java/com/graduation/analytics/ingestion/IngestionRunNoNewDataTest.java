@@ -1,14 +1,22 @@
 package com.graduation.analytics.ingestion;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.contracts.EventClock;
+import com.graduation.analytics.ingestion.entity.FileCheckpoint;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
+import com.graduation.analytics.ingestion.entity.IngestionBatchFile;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchFileMapper;
 import com.graduation.analytics.ingestion.mapper.IngestionBatchMapper;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,17 +49,33 @@ import static org.mockito.Mockito.when;
  */
 class IngestionRunNoNewDataTest {
 
+    /**
+     * 批次文件账（S2-02B 的重放口径读它）与断点查询都要经过 MyBatis-Plus 的 lambda 列名缓存
+     * （平时由 SqlSessionFactory 建），L0 测试手工建一次。
+     */
+    @BeforeAll
+    static void initLambdaCache() {
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
+                FileCheckpoint.class);
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
+                IngestionBatchFile.class);
+    }
+
     private final IngestionBatchMapper batchMapper = mock(IngestionBatchMapper.class);
     private final RuntimeProfileService runtimeProfileService = mock(RuntimeProfileService.class);
     private final LocalFileIngestor ingestor = mock(LocalFileIngestor.class);
     /** P1-05：采集必须归属一个已激活的源，故本夹具默认绑定源 1（未绑定的拒绝行为另有用例）。 */
     private final SourceRegistryService sourceRegistryService = mock(SourceRegistryService.class);
+    /** S2-02：本轮映射绑定由 SourceMapper 决定；本测试不考映射，固定返回"不映射"直通。 */
+    private final SourceMapper sourceMapper = mock(SourceMapper.class);
     private final EventClock clock = new EventClock(
             Clock.fixed(Instant.parse("2026-09-12T02:00:00Z"), ZoneId.of("Asia/Shanghai")));
 
     private IngestionService service() {
+        when(sourceMapper.prepare(any())).thenReturn(SourceMapping.legacy());
         return new IngestionService(batchMapper, mock(IngestionBatchFileMapper.class),
-                ingestor, clock, runtimeProfileService, sourceRegistryService, new ObjectMapper());
+                ingestor, clock, runtimeProfileService, sourceRegistryService, new ObjectMapper(),
+                sourceMapper);
     }
 
     /**
@@ -97,7 +121,7 @@ class IngestionRunNoNewDataTest {
     }
 
     private void stubIngest(long startOffset, long endOffset, long collected, long quarantined) {
-        when(ingestor.ingestFile(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any()))
+        when(ingestor.ingestFileDeferredCheckpoint(any(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any(), any()))
                 .thenReturn(new LocalFileIngestor.FileResult("events-001.jsonl", startOffset, endOffset,
                         "identity-1", collected, quarantined, collected > 0 ? 64L : 0L, Set.of("1.0")));
     }

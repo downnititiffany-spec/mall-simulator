@@ -54,7 +54,19 @@ public class MetricPublisher implements MetricPublisherPort {
         OVERVIEW_TO_METRIC.put("avg_order_value", "avg_order_value");
         OVERVIEW_TO_METRIC.put("refund_rate", "refund_rate");
         OVERVIEW_TO_METRIC.put("full_refund_rate", "full_refund_rate");
+        // S3-03：复购率（观察期窗口型指标，period 声明见 periodOf）
+        OVERVIEW_TO_METRIC.put("repeat_rate", "repeat_rate");
+        // S3-08：收藏/加购**次数**（设计 §11.2 L425「对应行为事件数」；与 pv 同型、单日粒度）
+        OVERVIEW_TO_METRIC.put("fav_cnt", "fav_cnt");
+        OVERVIEW_TO_METRIC.put("cart_add_cnt", "cart_add_cnt");
     }
+
+    /** 观察期窗口型指标码：其 `metric_value.period` 必须声明 `window:<起>..<止>`，不得谎报单日 */
+    private static final String WINDOWED_REPEAT_RATE = "repeat_rate";
+
+    /** ADS 概览行里声明观察期的列（由 Spark 侧从 DWS 行的 period_start/period_end 展开） */
+    private static final String PERIOD_START_COLUMN = "repeat_period_start";
+    private static final String PERIOD_END_COLUMN = "repeat_period_end";
 
     private final MetricPublishRepository repository;
     private final MetricAdsWriter adsWriter;
@@ -97,7 +109,8 @@ public class MetricPublisher implements MetricPublisherPort {
         try {
             manifest = MetricExportManifest.read(request.exportDir().resolve(MANIFEST_FILE), objectMapper);
         } catch (IOException e) {
-            return fail(request, checks, evidence, start, "MP_MANIFEST_READ", e.getMessage());
+            return fail(request, checks, evidence, start, "MP_MANIFEST_READ",
+                    "发布清单读取失败；请检查清单及受控发布日志");
         }
         checks.addAll(validator.manifestChecks(request, manifest));
         if (MetricPublishValidator.blocked(checks)) {
@@ -114,12 +127,13 @@ public class MetricPublisher implements MetricPublisherPort {
         try {
             repository.createBuilding(request.runtimeProfileId(), request.runtimeProfileVersion(),
                     request.snapshotId(), request.businessDate(), request.businessTime(), request.pipelineRunId(),
-                    definitionVersionOf(request, "refund_rate"));
+                    definitionVersionOf(request, "refund_rate"), request.sourceId());
         } catch (Exception e) {
-            return fail(request, checks, evidence, start, "MP_SNAPSHOT_REGISTER", e.getMessage());
+            return fail(request, checks, evidence, start, "MP_SNAPSHOT_REGISTER",
+                    "快照登记失败；请查看受控发布日志");
         }
 
-        // ── 2. 幂等清理 + 批量写 8 张 ADS 宽表 ──
+        // ── 2. 幂等清理 + 批量写 MetricAdsCatalog 登记的 ADS 宽表 ──
         Map<String, List<Map<String, Object>>> rowsByTable = new LinkedHashMap<>();
         Map<String, Integer> writtenCounts = new LinkedHashMap<>();
         try {
@@ -130,18 +144,20 @@ public class MetricPublisher implements MetricPublisherPort {
             for (MetricAdsCatalog spec : MetricAdsCatalog.ALL) {
                 MetricExportManifest.TableExport t = manifest.table(spec.name());
                 List<Map<String, Object>> rows =
-                        exportReader.readTable(Path.of(t.exportFile()), spec.name(), t.columns());
+                        exportReader.readTable(MetricExportPath.localPath(t.exportFile()), spec.name(), t.columns());
                 rowsByTable.put(spec.name(), rows);
                 writtenCounts.put(spec.name(), adsWriter.insertRows(spec.name(), request.snapshotId(),
                         request.businessDate(), rows));
             }
         } catch (Exception e) {
-            log.error("metric publish: 快照 {} 写 ADS 宽表失败", request.snapshotId(), e);
-            markFailed(request, "MP_ADS_WRITE_FAILED: " + e.getMessage());
+            log.error("metric publish: 快照 {} 写 ADS 宽表失败（{}）",
+                    request.snapshotId(), e.getClass().getName());
+            markFailed(request, "MP_ADS_WRITE_FAILED");
             // 写入中途失败会留下"半张表"的行（如第 7 张表炸在第 3 行）：
             // ACTIVE 指针未切换，这些行没有任何读者，必须清掉，否则下次同快照重试会撞唯一键。
             compensate(request, evidence);
-            return fail(request, checks, evidence, start, "MP_ADS_WRITE", e.getMessage());
+            return fail(request, checks, evidence, start, "MP_ADS_WRITE",
+                    "ADS 写入失败；请查看受控发布日志");
         }
         long adsRows = writtenCounts.values().stream().mapToLong(Integer::longValue).sum();
         evidence.put("adsRows", adsRows);
@@ -152,8 +168,12 @@ public class MetricPublisher implements MetricPublisherPort {
         try {
             values = buildCoreMetricValues(request, rowsByTable);
         } catch (Exception e) {
-            markFailed(request, "MP_VALUE_BUILD_FAILED: " + e.getMessage());
-            return fail(request, checks, evidence, start, "MP_VALUE_BUILD", e.getMessage());
+            markFailed(request, "MP_VALUE_BUILD_FAILED");
+            // ADS 行已写入但 ACTIVE 尚未切换；按失败补偿契约只清理本快照的 ADS 行，
+            // 不触碰导出文件、Hive 分区或旧 ACTIVE 快照。
+            compensate(request, evidence);
+            return fail(request, checks, evidence, start, "MP_VALUE_BUILD",
+                    "指标值构建失败；请根据错误码及受控发布日志排查");
         }
         evidence.put("metricCodes", values.stream().map(MetricValue::getMetricCode).toList());
 
@@ -173,13 +193,16 @@ public class MetricPublisher implements MetricPublisherPort {
                     new MetricStore.SnapshotRef(request.snapshotId(), request.runtimeProfileId(),
                             "day:" + isoDate(request.businessDate())), values);
         } catch (Exception e) {
-            log.error("metric publish: 快照 {} 指标值写入/激活失败", request.snapshotId(), e);
-            markFailed(request, "MP_ACTIVATE_FAILED: " + e.getMessage());
+            log.error("metric publish: 快照 {} 指标值写入/激活失败（{}）",
+                    request.snapshotId(), e.getClass().getName());
+            markFailed(request, "MP_ACTIVATE_FAILED");
             compensate(request, evidence);
-            return fail(request, checks, evidence, start, "MP_ACTIVATE", e.getMessage());
+            return fail(request, checks, evidence, start, "MP_ACTIVATE",
+                    "指标值写入或快照激活失败；请查看受控发布日志");
         }
         if (switched == 0) {
             markFailed(request, "MP_ACTIVATE_NOOP: 快照未处于 VERIFYING");
+            compensate(request, evidence);
             return fail(request, checks, evidence, start, "MP_ACTIVATE_NOOP",
                     "指标值已写入但 ACTIVE 指针未切换（快照非 VERIFYING）");
         }
@@ -197,8 +220,27 @@ public class MetricPublisher implements MetricPublisherPort {
                 active, previousActive));
         boolean ok = !MetricPublishValidator.blocked(checks);
         if (!ok) {
-            // 指针已切换却对账失败：属于真实不一致，必须留 FAILED 证据（不静默"看起来成功"）
-            markFailed(request, "MP_POST_VERIFY_FAILED: " + MetricPublishValidator.failedRules(checks));
+            // 激活后的只读对账失败：原子撤销本次 ACTIVE 并恢复发布前快照，避免失败快照继续服务。
+            String failure = "MP_POST_VERIFY_FAILED: " + MetricPublishValidator.failedRules(checks);
+            try {
+                String activeAfterRecovery = metricStore.failActivationAndRestore(
+                        new MetricStore.SnapshotRef(request.snapshotId(), request.runtimeProfileId(),
+                                "day:" + isoDate(request.businessDate())), previousActive, truncate(failure));
+                evidence.put("postVerificationRecovery", "COMPLETED");
+                evidence.put("activeSnapshotAfterRecovery", activeAfterRecovery);
+                compensate(request, evidence);
+            } catch (Exception recoveryError) {
+                // 回退事务失败时不再清理当前 ACTIVE 所需 ADS 行，也不伪报 FAILED；保留诊断供运维处理。
+                log.error("metric publish: 快照 {} 后置校验失败且 ACTIVE 回退失败（{}）",
+                        request.snapshotId(), recoveryError.getClass().getName());
+                evidence.put("postVerificationRecovery", "FAILED");
+                evidence.put("postVerificationRecoveryErrorType", recoveryError.getClass().getName());
+                evidence.put("activeSnapshotAfterRecovery", active);
+                return new PublishReport(false, "MP_POST_VERIFY_RECOVERY_FAILED",
+                        "激活后对账失败且旧 ACTIVE 恢复失败；请查看受控发布日志",
+                        request.snapshotId(), adsRows, values.size(), List.copyOf(checks),
+                        immutable(evidence));
+            }
             return new PublishReport(false, "MP_POST_VERIFY_FAILED",
                     "激活后对账失败: " + MetricPublishValidator.failedRules(checks),
                     request.snapshotId(), adsRows, values.size(), List.copyOf(checks),
@@ -215,7 +257,8 @@ public class MetricPublisher implements MetricPublisherPort {
 
     /**
      * 从 ADS 概览/漏斗行映射核心指标值（**不重算业务指标**）。
-     * {@code buy_rate} 取漏斗行的 overall_buy_rate（全体用户购买率，与 ADS 同值）。
+     * {@code buy_rate} 取漏斗行的 overall_buy_rate、{@code cart_rate} 取 overall_cart_rate
+     * （两者都是整体率，四行同值，故「取首个非空行」与行序无关；与 ADS 同值）。
      */
     List<MetricValue> buildCoreMetricValues(PublishRequest request,
                                            Map<String, List<Map<String, Object>>> rowsByTable) {
@@ -232,30 +275,80 @@ public class MetricPublisher implements MetricPublisherPort {
                 log.warn("metric publish: 概览列 {} 为空，跳过指标 {}", e.getKey(), e.getValue());
                 continue;
             }
-            values.add(valueOf(request, e.getValue(), new BigDecimal(String.valueOf(raw))));
+            values.add(valueOf(request, e.getValue(), new BigDecimal(String.valueOf(raw)),
+                    periodOf(request, e.getValue(), row)));
         }
 
+        // 漏斗整体率：buy_rate ← overall_buy_rate、cart_rate ← overall_cart_rate。
+        // 两列都在四行上重复携带（行序无关）；某一列为空（如当日浏览用户为 0）时各自独立跳过，
+        // 不让一个空值带走另一个指标。
         List<Map<String, Object>> funnel = rowsByTable.getOrDefault("ads_behavior_funnel_m", List.of());
+        Object buyRate = null;
+        Object cartRate = null;
         for (Map<String, Object> funnelRow : funnel) {
-            Object rate = funnelRow.get("overall_buy_rate");
-            if (rate != null) {
-                values.add(valueOf(request, "buy_rate", new BigDecimal(String.valueOf(rate))));
+            if (buyRate == null) {
+                buyRate = funnelRow.get("overall_buy_rate");
+            }
+            if (cartRate == null) {
+                cartRate = funnelRow.get("overall_cart_rate");
+            }
+            if (buyRate != null && cartRate != null) {
                 break;
             }
+        }
+        if (buyRate != null) {
+            values.add(valueOf(request, "buy_rate", new BigDecimal(String.valueOf(buyRate))));
+        }
+        if (cartRate != null) {
+            values.add(valueOf(request, "cart_rate", new BigDecimal(String.valueOf(cartRate))));
         }
         return values;
     }
 
     private MetricValue valueOf(PublishRequest request, String metricCode, BigDecimal value) {
+        return valueOf(request, metricCode, value, "day:" + isoDate(request.businessDate()));
+    }
+
+    private MetricValue valueOf(PublishRequest request, String metricCode, BigDecimal value, String period) {
         RefHolder ref = new RefHolder(request.definitionVersions().get(metricCode));
         MetricValue v = new MetricValue();
         v.setSnapshotId(request.snapshotId());
         v.setMetricCode(metricCode);
         v.setMetricValue(value);
         v.setUnit(ref.unit());
-        v.setPeriod("day:" + isoDate(request.businessDate()));
+        v.setPeriod(period);
         v.setDefinitionVersion(ref.version());
         return v;
+    }
+
+    /**
+     * 指标值的观察期声明（设计 §11.2 L433「必须声明观察期和变体」）。
+     *
+     * <p>单日指标 = {@code day:<ISO 业务日>}；复购率这类**窗口指标**必须写
+     * {@code window:<ISO 起>..<ISO 止>}，窗口取自 ADS 行里由上游 DWS 行自己声明的观察期
+     * （唯一所有者 = Spark 侧作业入参），发布器不自行推断、也不拿业务日冒充窗口。</p>
+     *
+     * <p>窗口声明缺失（老快照镜像行没有该列 / 值为空）时退回 {@code day:} 并告警 —— 失败保旧、
+     * 宁缺勿造：宁可声明得保守，也不编造一个没参与计算的窗口。</p>
+     */
+    private String periodOf(PublishRequest request, String metricCode, Map<String, Object> row) {
+        if (!WINDOWED_REPEAT_RATE.equals(metricCode)) {
+            return "day:" + isoDate(request.businessDate());
+        }
+        String start = isoDay(row.get(PERIOD_START_COLUMN));
+        String end = isoDay(row.get(PERIOD_END_COLUMN));
+        if (start.isEmpty() || end.isEmpty()) {
+            log.warn("metric publish: 指标 {} 的观察期声明缺失（{}={}, {}={}），period 退回 day:{}",
+                    metricCode, PERIOD_START_COLUMN, row.get(PERIOD_START_COLUMN),
+                    PERIOD_END_COLUMN, row.get(PERIOD_END_COLUMN), isoDate(request.businessDate()));
+            return "day:" + isoDate(request.businessDate());
+        }
+        return "window:" + start + ".." + end;
+    }
+
+    /** 观察期声明列的 ISO 化（20260831 与 2026-08-31 都归一成后者；空值 → 空串） */
+    private static String isoDay(Object raw) {
+        return raw == null ? "" : isoDate(String.valueOf(raw).trim());
     }
 
     /** 字典单位/版本的取值包装（字典缺该码时留空，由校验阶段以 BLOCKING 拦下） */
@@ -287,7 +380,8 @@ public class MetricPublisher implements MetricPublisherPort {
         try {
             repository.markStatus(request.snapshotId(), MetricSnapshot.STATUS_FAILED, truncate(reason));
         } catch (Exception e) {
-            log.error("metric publish: 标记 FAILED 失败（快照 {}）", request.snapshotId(), e);
+            log.error("metric publish: 标记 FAILED 失败（快照 {}，异常类型 {}）",
+                    request.snapshotId(), e.getClass().getName());
         }
     }
 
@@ -297,8 +391,9 @@ public class MetricPublisher implements MetricPublisherPort {
             int deleted = adsWriter.deleteSnapshot(request.snapshotId());
             evidence.put("compensatedAdsRows", deleted);
         } catch (Exception e) {
-            log.error("metric publish: 失败补偿清理 ADS 行失败（快照 {}）", request.snapshotId(), e);
-            evidence.put("compensateError", e.getMessage());
+            log.error("metric publish: 失败补偿清理 ADS 行失败（快照 {}，异常类型 {}）",
+                    request.snapshotId(), e.getClass().getName());
+            evidence.put("compensateErrorType", e.getClass().getName());
         }
     }
 
@@ -306,7 +401,7 @@ public class MetricPublisher implements MetricPublisherPort {
                                long start, String errorCode, String message) {
         evidence.put("errorCode", errorCode);
         evidence.put("elapsedMs", System.currentTimeMillis() - start);
-        log.warn("metric publish 失败[{}] 快照 {}：{}", errorCode, request.snapshotId(), message);
+        log.warn("metric publish 失败[{}] 快照 {}", errorCode, request.snapshotId());
         return new PublishReport(false, errorCode, message, request.snapshotId(),
                 longOf(evidence.get("adsRows")), intOf(evidence.get("metricValues")),
                 List.copyOf(checks), immutable(evidence));

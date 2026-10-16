@@ -10,8 +10,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 决策任务（§22.6 / R8-3 §20.2-§20.3）：AI 只能创建 DRAFT；批准必须锁定基线快照；
- * 效果评价按等长窗口闭环，窗口内数据不足不得判无效。
+ * 决策任务（§22.6 / R8-3 §20.2-§20.3）：AI 只能创建 DRAFT；批准时冻结 sourceId、指标版本和完整基线日窗口；
+ * 效果评价按等长窗口闭环，窗口内缺日或口径不匹配不得判无效。
  */
 @Data
 @TableName("decision_task")
@@ -57,10 +57,22 @@ public class DecisionTask {
     private String approvedBy;
 
     /**
-     * R8-3 V14 补列：批准时钉住的基线快照（§20.4「前快照」）。
-     * 评价的 baseline 只认这个快照，防止事后换快照伪造基线。
+     * 兼容锚点：完整基线窗口的最后一日快照（§20.4「前快照」）；窗口全部快照另由 refs 保存。
      */
     private String baselineSnapshotId;
+
+    /** 批准时完整基线窗口的快照号（URL-safe Base64 item，逗号分隔）；历史单快照任务为空并拒绝窗口评价。 */
+    private String baselineSnapshotRefs;
+
+    private LocalDate baselineWindowStart;
+
+    private LocalDate baselineWindowEnd;
+
+    /** 批准时固定的业务数据源身份；不随当前 ACTIVE 环境切换。 */
+    private Long sourceId;
+
+    /** 批准时固定的运行环境身份；窗口评价不得混用同源的其他 profile。历史记录为空时拒绝评价。 */
+    private Long runtimeProfileId;
 
     /** R8-3 V14 补列：目标指标的口径版本（批准时快照行的 definition_version） */
     private String definitionVersion;

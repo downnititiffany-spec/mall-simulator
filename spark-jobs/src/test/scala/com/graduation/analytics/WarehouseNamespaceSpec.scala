@@ -10,7 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.Files
 import scala.collection.mutable
 
 /**
@@ -153,10 +153,10 @@ class WarehouseNamespaceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "INIT_SCHEMA 的 37 条 DDL 全部只引用当前命名空间的库（5 建库 + 32 建表）" in {
+  it should "INIT_SCHEMA 的 43 条 DDL 全部只引用当前命名空间的库（5 建库 + 38 建表）" in {
     val ns = WarehouseNamespace.of("dw_b")
     val statements = LocalSchemaInitJob.statements(ns)
-    statements.size should be(37)
+    statements.size should be(43)
     val allowed = ns.layers.values.toSet
     statements.map(_._1).toSet should be(allowed)
     statements.foreach { case (db, ddl) =>
@@ -185,17 +185,10 @@ object WarehouseNamespaceSpec {
     else WarehouseNamespace.parse(input).left.getOrElse(Ok)
 
   private def readSpec(): JsonNode = {
-    val path = findRepoRoot().resolve(SpecRelative)
+    // S3-31：仓库根的**唯一所有者**是 `P2TestSupport.repoRoot`（本对象原先自持一份 walk-up 循环，已删除）。
+    val path = P2TestSupport.repoRoot.resolve(SpecRelative)
     if (!Files.isRegularFile(path)) throw new IllegalStateException(s"规格文件缺失: $path")
     new ObjectMapper().readTree(new String(Files.readAllBytes(path), StandardCharsets.UTF_8))
-  }
-
-  private def findRepoRoot(): Path = {
-    val start = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath.normalize()
-    var dir: Path = start
-    while (dir != null && !Files.isRegularFile(dir.resolve(SpecRelative))) dir = dir.getParent
-    if (dir == null) throw new IllegalStateException(s"找不到仓库根：从 $start 向上未发现 $SpecRelative")
-    dir
   }
 
   private def textSeq(node: JsonNode): Seq[String] = {

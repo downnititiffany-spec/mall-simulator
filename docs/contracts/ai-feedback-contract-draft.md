@@ -1,0 +1,47 @@
+# V3.0 §13.2 AI 反馈契约草案
+
+状态：总控已于 2026-10-10 按 D-060 批准作为实现契约；不构成 V3.0 设计变更；实现仍须遵守本文副作用、权限和证据边界。
+
+## 1. 当前缺口与目标
+
+当前 `AiQueryHistory`/`ai_query_history.feedback` 有反馈列，但 `AiController` 没有提交反馈的路由，AI 页面没有反馈入口，且现有行未持久化反馈原因或显式来源/定义版本。V3.0 §13.2 要求反馈包含有用/无用、原因、用户与证据版本，并用于评测；反馈不能改变指标公式或已发布事实。
+
+## 2. 建议接口
+
+`POST /api/v1/ai/history/{historyId}/feedback`
+
+请求：
+
+```json
+{
+  "rating": "GOOD",
+  "reasonCode": "ANSWER_MATCHED_EVIDENCE"
+}
+```
+
+`rating` 只允许 `GOOD`/`BAD`；`reasonCode` 必填并来自版本化白名单（提案：`ANSWER_MATCHED_EVIDENCE`、`MISSING_EVIDENCE`、`FACT_OR_SCOPE_INCORRECT`、`EXPLANATION_UNCLEAR`、`OTHER`）。首版不接收自由文本，避免用户输入原始业务信息或敏感内容进入审计库。响应返回反馈记录的 ID、rating、reasonCode 和创建时间，不返回问题正文或 SQL。
+
+## 3. 身份、血缘与副作用
+
+- 要求当前登录会话及 `ai:query` 权限；服务端从主体派生 userId，不接受请求体传 userId。
+- 仅允许对当前用户自己的、状态为 `EXECUTED` 且存在有效证据锚点的历史记录提交；其他用户/不存在 ID 统一 fail-closed，不泄露记录是否存在。
+- 反馈写入独立追加记录，至少保存 historyId、userId、rating、reasonCode、sourceId、snapshotId、definitionVersion、evidenceId、createdAt。证据身份由已存 history/snapshot 元数据服务端解析，不信任客户端传值。
+- 每条 history 首版仅接受一次反馈；重复请求返回已存在记录或稳定冲突码，最终语义由总控裁决。反馈不改写 AiQueryHistory 的问题/SQL/结果，不自动触发重算、审批或模型训练。
+- 反馈结果进入受限审计列表；不暴露跨用户 history 内容给普通用户。保留期限、管理员访问范围和导出策略需依正式权限矩阵冻结。
+
+## 4. 持久化提案
+
+优先新增 `ai_feedback` 表，而不是将原因编码挤入 `ai_query_history.feedback`：id、history_id（唯一约束）、user_id、rating、reason_code、source_id、snapshot_id、definition_version、evidence_id、created_at。添加 FK 与索引前需检查当前 MySQL 版本和部署迁移约束；迁移必须加性，不修改 V1–V36。
+
+## 5. 前端提案
+
+AI 问答历史仅对本人展示“有用/无用”按钮。一次反馈提交后显示确认并禁用重复提交；API 失败保持可重试状态。反馈不发送问题/SQL正文，不依赖 localStorage 保存身份。页面同时展示本次回答的 source/snapshot 以便用户确认反馈所指证据。
+
+## 6. 裁决项
+
+1. 是否采纳独立 `ai_feedback` 表、唯一一次反馈语义和上述路由。
+2. 是否使用离散 reasonCode，而不存自由文本；冻结代码表与版本策略。
+3. 权限是否采用 `ai:query`，管理员审计列表访问边界与保留期限。
+4. 明确支持哪些输出类型：仅 Text-to-SQL 历史，还是 Evidence Explanation/AI analysis 也需要反馈锚点。当前建议先限制到已有 `ai_query_history` 的 Text-to-SQL，待第二阶段再扩展。
+
+批准前本文仅供评审；实现需另立工作包，补 API 清单、加性迁移、权限覆盖、前端状态及真实证据血缘验证。

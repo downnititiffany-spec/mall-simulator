@@ -59,6 +59,23 @@ $startPlatform = -not ($MallOnly -or $GeneratorOnly)
 $startMall = -not ($PlatformOnly -or $GeneratorOnly)
 $startGenerator = -not ($PlatformOnly -or $MallOnly)
 
+# 生成器的数据库目标和凭据必须显式给出，且目标只能是本机隔离 3307。
+# 在启动任何服务前检查，避免“平台/商城已启动，最后生成器才因缺配置失败”。
+if ($startGenerator) {
+  if (-not $env:GENERATOR_DB_URL) {
+    Write-Host '[启动守卫] 拒绝启动：必须设置 GENERATOR_DB_URL，目标限定为 127.0.0.1:3307。'
+    exit 4
+  }
+  if ($env:GENERATOR_DB_URL -notmatch '^jdbc:mysql://127\.0\.0\.1:3307/') {
+    Write-Host '[启动守卫] 拒绝启动：GENERATOR_DB_URL 不是本机隔离 MySQL 3307；未启动任何服务。'
+    exit 4
+  }
+  if (-not $env:GENERATOR_DB_USER -or -not $env:GENERATOR_DB_PASSWORD) {
+    Write-Host '[启动守卫] 拒绝启动：必须通过环境变量提供 GENERATOR_DB_USER 和 GENERATOR_DB_PASSWORD；未启动任何服务。'
+    exit 4
+  }
+}
+
 if ($startPlatform) {
   Write-Host '[1/6] 启动分析平台（analytics-platform, 8091）...'
   # 工作目录必须是仓库根：landing / spark-warehouse / derby-metastore 默认都是相对路径

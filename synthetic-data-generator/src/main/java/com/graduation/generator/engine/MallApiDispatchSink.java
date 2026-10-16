@@ -21,6 +21,10 @@ import com.graduation.generator.contract.CanonicalEvent;
 import com.graduation.generator.contract.EventTypes;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.math.RoundingMode;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -79,9 +83,14 @@ public final class MallApiDispatchSink {
      * 目标配置是运行级事实，只该有一个来源。空表（默认实现）读作"一条路由都没声明"。</p>
      */
     private final Map<String, TargetRoute> operationRoutes;
+    private final String runId;
 
     private final Map<String, String> externalUserByCanonical = new LinkedHashMap<>();
     private final Map<String, String> externalOrderByCanonical = new LinkedHashMap<>();
+    /** 规范订单 → 参考商城按真实目录价格计算出的成交总额。 */
+    private final Map<String, BigDecimal> realOrderTotalByCanonical = new LinkedHashMap<>();
+    /** 规范退款 → 商城真实退款 ID；与按订单复用的映射分开，避免拿 order_id 当 refund_id 的键。 */
+    private final Map<String, String> externalRefundByCanonical = new LinkedHashMap<>();
     private final Map<String, String> externalRefundByOrder = new LinkedHashMap<>();
     private final Map<String, String> productRefByCanonical = new LinkedHashMap<>();
     private final Deque<ExternalProduct> availableProducts;
@@ -103,6 +112,17 @@ public final class MallApiDispatchSink {
                                List<ExternalProduct> productCatalog,
                                boolean failFast,
                                Map<String, TargetRoute> operationRoutes) {
+        this(adapter, target, capabilities, journal, productCatalog, failFast, operationRoutes, null);
+    }
+
+    public MallApiDispatchSink(MallTargetAdapter adapter,
+                               TargetConfig target,
+                               TargetCapabilities capabilities,
+                               OperationJournal journal,
+                               List<ExternalProduct> productCatalog,
+                               boolean failFast,
+                               Map<String, TargetRoute> operationRoutes,
+                               String runId) {
         this.adapter = adapter;
         this.target = target;
         this.capabilities = capabilities;
@@ -111,6 +131,7 @@ public final class MallApiDispatchSink {
         this.availableProducts = new ArrayDeque<>(this.productCatalog);
         this.failFast = failFast;
         this.operationRoutes = Map.copyOf(operationRoutes);
+        this.runId = runId;
     }
 
     /**
@@ -156,7 +177,8 @@ public final class MallApiDispatchSink {
         } catch (MallOperationException e) {
             failed++;
             journal.append(plan.operation(), true, route.method(), route.path(),
-                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED, e.getMessage(), false);
+                    canonicalIdOf(event), null, OperationJournalEntry.STATUS_FAILED,
+                    e.failureCode().name() + ": " + e.getMessage(), false);
             if (failFast) {
                 throw e;
             }
@@ -189,7 +211,8 @@ public final class MallApiDispatchSink {
             return true;
         }
         ExternalUser user = adapter.createSyntheticUser(target,
-                new UserCommand(text(event, "age_group"), text(event, "city_level"), text(event, "member_level")));
+                new UserCommand(text(event, "age_group"), text(event, "city_level"),
+                        text(event, "member_level"), idempotencyKeyOf(event)));
         externalUserByCanonical.put(canonicalId, user.userId());
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalId, user.userId(),
                 OperationJournalEntry.STATUS_OK, "member_level=" + user.memberLevel(), false);
@@ -222,7 +245,7 @@ public final class MallApiDispatchSink {
         String externalUser = requireUser(event, plan.operation());
         adapter.emitBehavior(target, new BehaviorCommand(externalUser,
                 externalProductOf(text(event, "product_id")), text(event, "session_id"),
-                text(event, "behavior_type"), text(event, "channel")));
+                text(event, "behavior_type"), text(event, "channel"), idempotencyKeyOf(event)));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalIdOf(event), null,
                 OperationJournalEntry.STATUS_OK, "behavior_type=" + text(event, "behavior_type"), false);
         return true;
@@ -231,23 +254,62 @@ public final class MallApiDispatchSink {
     private boolean dispatchOrder(CanonicalEvent event, MallDispatchPlan plan, TargetRoute route) {
         String canonicalId = canonicalIdOf(event);
         List<OrderCommand.Item> items = new ArrayList<>();
+        BigDecimal realTotal = BigDecimal.ZERO;
         for (Object raw : list(event, "items")) {
             Map<?, ?> item = (Map<?, ?>) raw;
-            items.add(new OrderCommand.Item(externalProductOf(String.valueOf(item.get("product_id"))),
-                    ((Number) item.get("quantity")).intValue()));
+            String canonicalProduct = String.valueOf(item.get("product_id"));
+            ExternalProduct realProduct = realProductOf(canonicalProduct);
+            int quantity = ((Number) item.get("quantity")).intValue();
+            items.add(new OrderCommand.Item(realProduct.productId(), quantity));
+            realTotal = realTotal.add(realProduct.price().multiply(BigDecimal.valueOf(quantity)));
         }
-        ExternalOrder order = adapter.createOrder(target,
-                new OrderCommand(requireUser(event, plan.operation()), items));
+        realTotal = money(realTotal);
+        String userId = requireUser(event, plan.operation());
+        String idempotencyKey = idempotencyKeyOf(event);
+        ExternalOrder order = adapter.createOrder(target, new OrderCommand(userId, items, idempotencyKey));
         externalOrderByCanonical.put(canonicalId, order.orderId());
+        realOrderTotalByCanonical.put(canonicalId, realTotal);
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalId, order.orderId(),
-                OperationJournalEntry.STATUS_OK, "件数=" + items.size(), false);
+                OperationJournalEntry.STATUS_OK,
+                "件数=" + items.size() + "，商城成交额=" + realTotal.toPlainString(), false);
         return true;
+    }
+
+    static String idempotencyKey(String runId, String userId, String logicalActionId) {
+        if (runId == null || runId.isBlank() || userId == null || userId.isBlank()
+                || logicalActionId == null || logicalActionId.isBlank()) {
+            throw new IllegalArgumentException("runId、userId 和 logicalActionId 均必填");
+        }
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(
+                    (runId + "\0" + userId + "\0" + logicalActionId).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 不可用", e);
+        }
+    }
+
+    static String idempotencyKey(String runId, CanonicalEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("event 必填");
+        }
+        Object userId = event.payload().get("user_id");
+        if (userId == null || String.valueOf(userId).isBlank()) {
+            throw new IllegalArgumentException("event.payload.user_id 必填");
+        }
+        // Aggregate IDs repeat across lifecycle events (order_created/order_paid, for example).
+        // event_id is stable for replay of one generated event and unique across logical actions.
+        return idempotencyKey(runId, String.valueOf(userId), event.eventId());
+    }
+
+    private String idempotencyKeyOf(CanonicalEvent event) {
+        return runId == null ? null : idempotencyKey(runId, event);
     }
 
     private boolean dispatchPay(CanonicalEvent event, MallDispatchPlan plan, TargetRoute route) {
         String canonicalOrder = text(event, "order_id");
         ExternalOrder paid = adapter.pay(target, new PayCommand(requireOrder(canonicalOrder, plan.operation()),
-                requireUser(event, plan.operation())));
+                requireUser(event, plan.operation()), idempotencyKeyOf(event)));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, paid.orderId(),
                 OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(paid.status()), false);
         return true;
@@ -257,7 +319,7 @@ public final class MallApiDispatchSink {
         String canonicalOrder = text(event, "order_id");
         ExternalOrder cancelled = adapter.cancel(target, new CancelCommand(
                 requireOrder(canonicalOrder, plan.operation()), requireUser(event, plan.operation()),
-                text(event, "reason")));
+                text(event, "reason"), idempotencyKeyOf(event)));
         journal.append(plan.operation(), true, route.method(), route.path(), canonicalOrder, cancelled.orderId(),
                 OperationJournalEntry.STATUS_OK, "status=" + describeMallStatus(cancelled.status()), false);
         return true;
@@ -266,8 +328,11 @@ public final class MallApiDispatchSink {
     private boolean dispatchRefundApply(CanonicalEvent event, MallDispatchPlan plan, TargetRoute route) {
         String canonicalOrder = text(event, "order_id");
         String externalOrder = requireOrder(canonicalOrder, plan.operation());
+        BigDecimal realRefundAmount = requireOrderTotal(canonicalOrder, plan.operation());
         ExternalRefund refund = adapter.refund(target, new RefundCommand(externalOrder,
-                requireUser(event, plan.operation()), amount(event, "amount"), text(event, "reason")));
+                requireUser(event, plan.operation()), realRefundAmount, text(event, "reason"),
+                idempotencyKeyOf(event)));
+        externalRefundByCanonical.put(text(event, "refund_id"), refund.refundId());
         externalRefundByOrder.put(canonicalOrder, refund.refundId());
         // 一行流水 = 两次 HTTP（参考商城的退款是"申请 + 完成"两步，适配器内一次走完）：
         // 因此"真实调用条数"与"HTTP 请求次数"不是同一个数，对账时按后者要再加上本条数。
@@ -301,15 +366,56 @@ public final class MallApiDispatchSink {
      */
     public CanonicalEvent rewrite(CanonicalEvent event) {
         Map<String, Object> payload = new LinkedHashMap<>(event.payload());
+        String canonicalOrder = payload.get("order_id") == null ? null : String.valueOf(payload.get("order_id"));
         replace(payload, "user_id", externalUserByCanonical);
         replace(payload, "order_id", externalOrderByCanonical);
-        replace(payload, "refund_id", externalRefundByOrder);
+        replace(payload, "refund_id", externalRefundByCanonical);
         if (EventTypes.PRODUCT_CREATED.equals(event.eventType())) {
             rewriteProduct(payload);
         }
-        rewriteNestedProductIds(payload);
+        if (EventTypes.ORDER_CREATED.equals(event.eventType())) {
+            rewriteOrderCreated(payload, canonicalOrder);
+        } else {
+            rewriteNestedProductIds(payload);
+        }
+        if (canonicalOrder != null && (EventTypes.ORDER_PAID.equals(event.eventType())
+                || EventTypes.REFUND_CREATED.equals(event.eventType())
+                || EventTypes.REFUND_COMPLETED.equals(event.eventType()))) {
+            payload.put("amount", moneyText(requireOrderTotal(canonicalOrder, "rewrite:" + event.eventType())));
+        }
         return new CanonicalEvent(event.eventId(), event.eventType(), event.eventTime(), event.ingestTime(),
                 event.sourceSystem(), event.schemaVersion(), event.traceId(), payload);
+    }
+
+    /**
+     * MALL_API 的订单金额必须描述商城真正成交的事实，而不是文件模式计划里的估价/随机折扣。
+     * 参考商城下单规则是 Σ(realCatalogPrice * quantity) 且 discount=0，因此按同一真实目录
+     * 重写明细与总额。
+     */
+    private void rewriteOrderCreated(Map<String, Object> payload, String canonicalOrder) {
+        Object items = payload.get("items");
+        if (!(items instanceof List<?> list) || list.isEmpty()) {
+            throw new IllegalStateException("order_created 缺 items，无法按商城真实价格重写：" + canonicalOrder);
+        }
+        List<Object> rewritten = new ArrayList<>(list.size());
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> map)) {
+                throw new IllegalStateException("order_created.items 含非对象项：" + item);
+            }
+            Map<String, Object> copy = new LinkedHashMap<>();
+            map.forEach((key, value) -> copy.put(String.valueOf(key), value));
+            String canonicalProduct = String.valueOf(copy.get("product_id"));
+            ExternalProduct realProduct = realProductOf(canonicalProduct);
+            int quantity = ((Number) copy.get("quantity")).intValue();
+            BigDecimal lineAmount = money(realProduct.price().multiply(BigDecimal.valueOf(quantity)));
+            copy.put("product_id", realProduct.productId());
+            copy.put("unit_price", moneyText(realProduct.price()));
+            copy.put("discount", "0.00");
+            copy.put("amount", moneyText(lineAmount));
+            rewritten.add(copy);
+        }
+        payload.put("items", rewritten);
+        payload.put("total_amount", moneyText(requireOrderTotal(canonicalOrder, "rewrite:order_created")));
     }
 
     /**
@@ -435,7 +541,7 @@ public final class MallApiDispatchSink {
         Map<String, String> traceability = new LinkedHashMap<>();
         externalUserByCanonical.forEach((canonical, external) -> traceability.put("user:" + canonical, external));
         externalOrderByCanonical.forEach((canonical, external) -> traceability.put("order:" + canonical, external));
-        externalRefundByOrder.forEach((canonical, external) -> traceability.put("refund:" + canonical, external));
+        externalRefundByCanonical.forEach((canonical, external) -> traceability.put("refund:" + canonical, external));
         productRefByCanonical.forEach((canonical, external) -> traceability.put("product:" + canonical, external));
         return new DispatchResult(succeeded, failed, skipped, Map.copyOf(traceability),
                 List.copyOf(notes), journal.entries());
@@ -483,6 +589,37 @@ public final class MallApiDispatchSink {
                     "商品 " + canonicalProduct + " 未与商城目录对齐（商品事件未成功派发），拒绝用假 ID 继续");
         }
         return external;
+    }
+
+    private ExternalProduct realProductOf(String canonicalProduct) {
+        String external = externalProductOf(canonicalProduct);
+        ExternalProduct product = productCatalog.stream()
+                .filter(p -> external.equals(p.productId()))
+                .findFirst()
+                .orElseThrow(() -> new MallOperationException(MallDispatchPlan.OP_LIST_PRODUCTS,
+                        "商品 " + canonicalProduct + " 已映射为 " + external + "，但真实目录快照中不存在"));
+        if (product.price() == null) {
+            throw new MallOperationException(MallDispatchPlan.OP_LIST_PRODUCTS,
+                    "商品 " + external + " 没有可读价格，无法计算商城真实订单金额");
+        }
+        return product;
+    }
+
+    private BigDecimal requireOrderTotal(String canonicalOrder, String operation) {
+        BigDecimal total = realOrderTotalByCanonical.get(canonicalOrder);
+        if (total == null) {
+            throw new MallOperationException(operation,
+                    "订单 " + canonicalOrder + " 没有商城真实成交额（下单未成功或金额事实丢失），拒绝继续");
+        }
+        return total;
+    }
+
+    private static BigDecimal money(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static String moneyText(BigDecimal value) {
+        return money(value).toPlainString();
     }
 
     private static String text(CanonicalEvent event, String key) {

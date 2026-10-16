@@ -32,16 +32,15 @@
 #   * mall 的 Spring 测试上下文读 `${MALL_ISOLATION_URL|USER|PASSWORD|FLYWAY_ENABLED}`
 #     （`mall-simulator/src/test/resources/application-test.yml`，**无默认值**）。
 #   * generator 的 Spring 测试上下文**没有**自己的 test application.yml，直接用主
-#     `synthetic-data-generator/src/main/resources/application.yml`——那份配置指向
-#     `jdbc:mysql://127.0.0.1:3306/generator_meta?...createDatabaseIfNotExist=true`、flyway
-#     `classpath:db/generator`。必须用 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD` 这个标准
-#     relaxed-binding 通道覆盖到 3307 隔离库，否则 generator 的 Spring 用例会连宿主正式实例
-#     （DEV-002；3306 冻结期尤其不能靠"它恰好没有迁移"来兜底）。
+#     `synthetic-data-generator/src/main/resources/application.yml`——当前默认目标为本机 3307，
+#     账号/口令必填且不含自动建库参数。必须用 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`
+#     这个标准 relaxed-binding 通道覆盖为本次 runId 专属库；不覆盖会误落到默认共用库。
+#     Flyway location 仍为 `classpath:db/generator`。历史 3306 风险背景见 DEV-002。
 #   * 库名/账号名与 `scripts/it-prepare-isolation.ps1:89-92` 同源：`<runId>_mall` /
 #   * DEV-003b：analytics-server 侧的真库 IT（`metric-analysis` 的 `IsolationGuardMySqlIT`）接进本入口，
 #     目标 = `-Module analytics`（`-Module all` = mall + generator + analytics）。它复用 mall 的库与受限账号
 #     （`<runId>_mall` / `<runId>_mallapp`，**不新建任何 3307 对象**），跑法固定为
-#     `mvn -f analytics-server/pom.xml -pl metric-analysis -am test`（+ `-Pisolated-tests`：该模块 profile 收集
+#     `mvn -f analytics-server\pom.xml -pl metric-analysis -am test`（+ `-Pisolated-tests`：该模块 profile 收集
 #     `@Tag("it")` 的 `*IT` 类）。跑完**强制核对日志里确实出现 `...IsolationGuardMySqlIT` 的 `Tests run:` 行**：
 #     零用例／类没被选中一律按失败（exit 7）处理，否则「自动执行」会退化成假绿。
 #     分析侧凭据通道与 mall/generator 不同（`IsolationGuardMySqlIT` 只读环境变量 `DEV001_IT_*`），
@@ -75,6 +74,9 @@ param(
   [string]$MavenCmd = 'D:\apache-maven-3.9.14\bin\mvn.cmd',
   [string]$MavenRepoLocal = 'D:\maven_repository',
   [string]$LogDir = '',
+  # Stage 7 预收编：注入 analytics 双库 V25_IT_* 上下文并探针两库；默认关闭。
+  # 当前不会改变 Maven 的 @Tag("it") 选择集合，只有 3307 + Flyway 真跑通过后才允许收编两类写入 IT。
+  [switch]$IncludeAnalyticsWriteIts,
   [switch]$DryRun,
   [switch]$Confirm
 )
@@ -82,6 +84,7 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'isolation-naming.ps1')
 
 $FormalPort = 3306
 $RunIdPattern = '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$'
@@ -96,6 +99,10 @@ function Mask([string]$v) {
   if ($v.Length -le 2) { return '<已设置:长度 ' + $v.Length + '>' }
   $dots = if ($v.Length -gt 7) { '…' } else { '' }
   return ('<' + $v.Substring(0, 1) + ('*' * ([Math]::Min(6, $v.Length - 1))) + $dots + '长度 ' + $v.Length + '>')
+}
+
+if ($IncludeAnalyticsWriteIts -and $Module -notin @('analytics', 'all')) {
+  Fail 5 '-IncludeAnalyticsWriteIts 只允许与 -Module analytics 或 -Module all 一起使用。'
 }
 
 Write-Host '=== 隔离套件运行门禁（V25-S02 唯一入口）==='
@@ -122,7 +129,7 @@ Write-Host ("  [门禁2] RunId 形状 OK：{0}" -f $RunId)
 $targets = @()
 if ($Module -in @('mall', 'both', 'all')) {
   $targets += [pscustomobject]@{
-    name = 'mall'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
+    name = 'mall'; db = "${RunId}_mall"; user = (New-IsolationUserName -RunId $RunId -Role 'mallapp')
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
     pom = 'mall-simulator/pom.xml'
     extraArgs = @(); requireClass = $null
@@ -130,7 +137,7 @@ if ($Module -in @('mall', 'both', 'all')) {
 }
 if ($Module -in @('generator', 'both', 'all')) {
   $targets += [pscustomobject]@{
-    name = 'generator'; db = "${RunId}_generator"; user = "${RunId}_genapp"
+    name = 'generator'; db = "${RunId}_generator"; user = (New-IsolationUserName -RunId $RunId -Role 'genapp')
     pwdEnv = @('IT_GUARD_PASSWORD_GENERATOR', 'IT_GUARD_PASSWORD')
     pom = 'synthetic-data-generator/pom.xml'
     extraArgs = @(); requireClass = $null
@@ -139,11 +146,45 @@ if ($Module -in @('generator', 'both', 'all')) {
 if ($Module -in @('analytics', 'all')) {
   # DEV-003b：analytics 真库 IT 走同一入口。目标库/账号复用 mall 那一对（只读用例，不新建 3307 对象）。
   $targets += [pscustomobject]@{
-    name = 'analytics'; db = "${RunId}_mall"; user = "${RunId}_mallapp"
+    name = 'analytics'; db = "${RunId}_mall"; user = (New-IsolationUserName -RunId $RunId -Role 'mallapp')
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
     pom = 'analytics-server/pom.xml'
-    extraArgs = @('-pl', 'metric-analysis', '-am'); requireClass = 'IsolationGuardMySqlIT'
+    extraArgs = @('-pl', 'metric-analysis', '-am')
+    requireClasses = @('IsolationGuardMySqlIT') + $(if ($IncludeAnalyticsWriteIts) {
+      @('MetricAdsMySqlIT', 'MetricPublisherMySqlIT')
+    } else { @() })
   }
+}
+
+$analyticsWrite = $null
+if ($IncludeAnalyticsWriteIts) {
+  $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+  $scopeRoot = Join-Path $repoRoot ("target\v25-it\{0}\analytics" -f $RunId)
+  $analyticsWrite = [pscustomobject]@{
+    metaDb = "${RunId}_analytics_meta"
+    metricDb = "${RunId}_analytics_metric"
+    metaUser = (New-IsolationUserName -RunId $RunId -Role 'metaapp')
+    metricUser = (New-IsolationUserName -RunId $RunId -Role 'metricapp')
+    metricReadUser = (New-IsolationUserName -RunId $RunId -Role 'metricread')
+    metaPwd = [Environment]::GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')
+    metricPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')
+    metricReadPwd = [Environment]::GetEnvironmentVariable('V25_IT_METRIC_READ_PASSWORD', 'Process')
+    hiveNamespace = "${RunId}_analytics"
+    hdfsRoot = Join-Path $scopeRoot 'hdfs'
+    manifestRoot = Join-Path $scopeRoot 'manifest'
+    credentialsRef = "env:${RunId}-analytics"
+  }
+  foreach ($u in @($analyticsWrite.metaUser, $analyticsWrite.metricUser, $analyticsWrite.metricReadUser)) {
+    if ($ForbiddenAccounts -contains $u) { Fail 5 ("analytics 写入型 IT 账号 {0} 在禁用清单内：拒绝" -f $u) }
+  }
+  if ($analyticsWrite.metricReadUser -eq $analyticsWrite.metricUser) {
+    Fail 5 'metric_read 与 metric_pub 必须是不同的隔离账号。'
+  }
+  foreach ($db in @($analyticsWrite.metaDb, $analyticsWrite.metricDb)) {
+    if ($db -in @('analytics_meta', 'analytics_metric')) { Fail 5 ("analytics 写入型 IT 目标库 {0} 是正式库名：拒绝" -f $db) }
+  }
+  Write-Host ("  [门禁3] analytics 写入型 IT 预收编目标：meta={0}/{1} metric={2}/{3}" -f `
+      $analyticsWrite.metaDb, $analyticsWrite.metaUser, $analyticsWrite.metricDb, $analyticsWrite.metricUser)
 }
 foreach ($t in $targets) {
   if ($ForbiddenAccounts -contains $t.user) { Fail 5 ("账号 {0} 在禁用清单内：拒绝" -f $t.user) }
@@ -171,6 +212,22 @@ if ($missing.Count -gt 0) {
   } else {
     Fail 5 ("缺口令：{0}。请设置环境变量 IT_GUARD_PASSWORD（或 {1}）；本脚本不提供 -Password 参数。" -f `
         (($missing | ForEach-Object { $_.name }) -join ','), (($missing | ForEach-Object { $_.pwdEnv[0] }) -join '/'))
+  }
+}
+if ($IncludeAnalyticsWriteIts) {
+  $missingAnalytics = @()
+  if (-not $analyticsWrite.metaPwd) { $missingAnalytics += 'V25_IT_META_PASSWORD' }
+  if (-not $analyticsWrite.metricPwd) { $missingAnalytics += 'V25_IT_METRIC_PUBLISH_PASSWORD' }
+  if (-not $analyticsWrite.metricReadPwd) { $missingAnalytics += 'V25_IT_METRIC_READ_PASSWORD' }
+  Write-Host ("  [门禁4] analytics-meta   V25_IT_META_PASSWORD               值 {0}" -f (Mask $analyticsWrite.metaPwd))
+  Write-Host ("  [门禁4] analytics-metric V25_IT_METRIC_PUBLISH_PASSWORD     值 {0}" -f (Mask $analyticsWrite.metricPwd))
+  Write-Host ("  [门禁4] analytics-metric-read V25_IT_METRIC_READ_PASSWORD    值 {0}" -f (Mask $analyticsWrite.metricReadPwd))
+  if ($missingAnalytics.Count -gt 0) {
+    if ($DryRun) {
+      Write-Host ("  [门禁4] ⚠️ 预演模式：缺 {0}（真跑会被拒，退出码 5）" -f ($missingAnalytics -join ', '))
+    } else {
+      Fail 5 ("analytics 写入型 IT 缺口令环境变量：{0}。不提供密码参数、不回退正式账号。" -f ($missingAnalytics -join ', '))
+    }
   }
 }
 
@@ -211,7 +268,7 @@ if ($Module -in @('generator', 'both', 'all')) {
   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_USERNAME', $genTarget.user)
   Write-Host ("  {0,-28} = {1}" -f 'SPRING_DATASOURCE_PASSWORD', (Mask $genTarget.pwd))
   Write-Host '        ↑ generator 的 Spring 测试上下文没有自己的 test application.yml，必须靠这三个键'
-  Write-Host '          覆盖主 application.yml 里的 3306 地址（否则会连宿主正式实例）。'
+  Write-Host '          覆盖主 application.yml 的默认 3307 地址，确保使用本次 runId 专属隔离库。'
 }
 if ($Module -in @('analytics', 'all')) {
   $anTarget = $targets | Where-Object { $_.name -eq 'analytics' }
@@ -223,10 +280,29 @@ if ($Module -in @('analytics', 'all')) {
   Write-Host '        ↑ analytics 侧（TestIsolationGuard / IsolationGuardMySqlIT）只认这 5 个键：'
   Write-Host '          它没有 mall/generator 那种 *.local.properties 档案，缺任一项即失败（不 skip）。'
 }
+if ($IncludeAnalyticsWriteIts) {
+  Write-Host ''
+  Write-Host '  analytics 写入型 IT 预收编上下文（仅注入，不改变当前 @Tag("it") 选择集合）：'
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_TEST_RUN_ID', $RunId)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_META_DB', $analyticsWrite.metaDb)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_DB', $analyticsWrite.metricDb)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_HIVE_NAMESPACE', $analyticsWrite.hiveNamespace)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_HDFS_ROOT', $analyticsWrite.hdfsRoot)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_MANIFEST_ROOT', $analyticsWrite.manifestRoot)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_CREDENTIALS_REF', $analyticsWrite.credentialsRef)
+  Write-Host ("  {0,-34} = {1}:{2}" -f 'V25_IT_MYSQL_HOST', $DbHost, $Port)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_META_USERNAME', $analyticsWrite.metaUser)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_META_PASSWORD', (Mask $analyticsWrite.metaPwd))
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_PUBLISH_USERNAME', $analyticsWrite.metricUser)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_PUBLISH_PASSWORD', (Mask $analyticsWrite.metricPwd))
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_READ_USERNAME', $analyticsWrite.metricReadUser)
+  Write-Host ("  {0,-34} = {1}" -f 'V25_IT_METRIC_READ_PASSWORD', (Mask $analyticsWrite.metricReadPwd))
+  Write-Host '  V25_IT_SERVER_FINGERPRINT       = <运行期由门禁6探针确定为 @@hostname:@@port>'
+}
 if ($Module -in @('mall', 'both', 'all')) {
   $mallTarget = $targets | Where-Object { $_.name -eq 'mall' }
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_URL', $mallTarget.url)
-  Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_USER', "${RunId}_mallapp")
+  Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_USER', $mallTarget.user)
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_PASSWORD', (Mask $mallTarget.pwd))
   Write-Host ("  {0,-28} = {1}" -f 'MALL_ISOLATION_FLYWAY_ENABLED', 'true')
 }
@@ -239,7 +315,13 @@ if ($DryRun) {
 
 # ── 门禁 6：只读探针（用本次 runId 的受限账号）──────────────────────────────
 if (-not (Test-Path -LiteralPath $MysqlExe)) { Fail 1 ("找不到 mysql 客户端：{0}" -f $MysqlExe) }
-foreach ($t in $targets) {
+$probeTargets = @($targets)
+if ($IncludeAnalyticsWriteIts) {
+  $probeTargets += [pscustomobject]@{ name = 'analytics-meta'; db = $analyticsWrite.metaDb; user = $analyticsWrite.metaUser; pwd = $analyticsWrite.metaPwd }
+  $probeTargets += [pscustomobject]@{ name = 'analytics-metric'; db = $analyticsWrite.metricDb; user = $analyticsWrite.metricUser; pwd = $analyticsWrite.metricPwd }
+  $probeTargets += [pscustomobject]@{ name = 'analytics-metric-read'; db = $analyticsWrite.metricDb; user = $analyticsWrite.metricReadUser; pwd = $analyticsWrite.metricReadPwd }
+}
+foreach ($t in $probeTargets) {
   $sql = "SELECT CONCAT(@@port,'|',@@server_uuid,'|',@@hostname,'|', (SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$($t.db)')) AS probe;"
   $old = $env:MYSQL_PWD
   $env:MYSQL_PWD = $t.pwd
@@ -272,6 +354,25 @@ foreach ($t in $targets) {
 $envCommon['IT_GUARD_SERVERFINGERPRINT'] = $InstanceFingerprint
 Write-Host ("  [门禁6] 唯一的实例身份（注入 IT_GUARD_SERVERFINGERPRINT）= {0}" -f $InstanceFingerprint)
 
+if ($IncludeAnalyticsWriteIts) {
+  # 双库 schema profile 与后续 metric 写入 IT 共用同一份完整上下文；只在双库探针全部通过后注入。
+  $env:V25_IT_TEST_RUN_ID = $RunId
+  $env:V25_IT_SERVER_FINGERPRINT = $InstanceFingerprint
+  $env:V25_IT_META_DB = $analyticsWrite.metaDb
+  $env:V25_IT_METRIC_DB = $analyticsWrite.metricDb
+  $env:V25_IT_HIVE_NAMESPACE = $analyticsWrite.hiveNamespace
+  $env:V25_IT_HDFS_ROOT = $analyticsWrite.hdfsRoot
+  $env:V25_IT_MANIFEST_ROOT = $analyticsWrite.manifestRoot
+  $env:V25_IT_CREDENTIALS_REF = $analyticsWrite.credentialsRef
+  $env:V25_IT_MYSQL_HOST = ('{0}:{1}' -f $DbHost, $Port)
+  $env:V25_IT_META_USERNAME = $analyticsWrite.metaUser
+  $env:V25_IT_META_PASSWORD = $analyticsWrite.metaPwd
+  $env:V25_IT_METRIC_PUBLISH_USERNAME = $analyticsWrite.metricUser
+  $env:V25_IT_METRIC_PUBLISH_PASSWORD = $analyticsWrite.metricPwd
+  $env:V25_IT_METRIC_READ_USERNAME = $analyticsWrite.metricReadUser
+  $env:V25_IT_METRIC_READ_PASSWORD = $analyticsWrite.metricReadPwd
+}
+
 # ── 注入环境变量并跑套件 ───────────────────────────────────────────────────
 if (-not $LogDir) { $LogDir = Join-Path $env:TEMP ("v25it-logs-{0}" -f $RunId) }
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
@@ -280,6 +381,26 @@ if (-not (Test-Path -LiteralPath $MavenCmd)) { Fail 1 ("找不到 Maven：{0}" -
 if (-not $env:JAVA_HOME) { $env:JAVA_HOME = 'D:\Develop\JAVA17' }
 
 $results = @()
+if ($IncludeAnalyticsWriteIts) {
+  # 先迁移 fresh analytics_meta / analytics_metric；失败时绝不继续跑写入型 metric IT。
+  $env:MAVEN_ARGS = '-Pisolated-analytics-schema'
+  $schemaLog = Join-Path $LogDir 'isolated-analytics-schema.log'
+  Write-Host ''
+  Write-Host '=== 运行 analytics 双库 Flyway：platform-app -Pisolated-analytics-schema ==='
+  $schemaArgs = @('-o', "-Dmaven.repo.local=$MavenRepoLocal", '-f', 'analytics-server/pom.xml',
+      '-pl', 'platform-app', '-am', 'test')
+  & $MavenCmd @schemaArgs 2>&1 | Set-Content -LiteralPath $schemaLog -Encoding utf8
+  $schemaCode = $LASTEXITCODE
+  $schemaHit = Select-String -LiteralPath $schemaLog -Pattern '-- in .*AnalyticsIsolationFlywayIT' | Select-Object -Last 1
+  $schemaSummary = if ($schemaHit) { $schemaHit.Line.Trim() } else { '<未执行到 AnalyticsIsolationFlywayIT>' }
+  if (-not $schemaHit -and $schemaCode -eq 0) { $schemaCode = 7 }
+  $results += [pscustomobject]@{ module = 'analytics-schema'; exit = $schemaCode; summary = $schemaSummary; log = $schemaLog }
+  Write-Host ("  analytics-schema exit={0}   {1}" -f $schemaCode, $schemaSummary)
+  if ($schemaCode -ne 0) {
+    Remove-Item Env:\MAVEN_ARGS -ErrorAction SilentlyContinue
+    Fail 7 ("analytics 双库 Flyway 未通过：拒绝继续写入型 IT。日志 {0}" -f $schemaLog)
+  }
+}
 foreach ($t in $targets) {
   # 每次运行前把"本次模块"的 guard 值落到共用键上（避免上一个模块的值残留）
   $env:IT_GUARD_ENABLED = 'true'
@@ -298,7 +419,7 @@ foreach ($t in $targets) {
   }
   if ($t.name -eq 'generator') {
     # generator 的 Spring 测试上下文没有自己的 test application.yml：用标准 relaxed binding 键
-    # 把主 application.yml 的 127.0.0.1:3306/generator_meta 覆盖成本次隔离库（DEV-002）
+    # 把主 application.yml 的默认 127.0.0.1:3307/generator_meta 覆盖成本次 runId 隔离库
     $env:SPRING_DATASOURCE_URL = $t.url
     $env:SPRING_DATASOURCE_USERNAME = $t.user
     $env:SPRING_DATASOURCE_PASSWORD = $t.pwd
@@ -331,14 +452,20 @@ foreach ($t in $targets) {
   $code = $LASTEXITCODE
   $tests = (Select-String -LiteralPath $log -Pattern 'Tests run:' | Select-Object -Last 1)
   $summary = if ($tests) { $tests.Line.Trim() } else { '<无 Tests run 行>' }
-  if ($t.requireClass) {
-    # DEV-003b 硬门禁：被点名的隔离类必须**真的**被执行到。只跑出 "Tests run: 0"、或压根没选中该类
-    # （profile 没生效 / includes 写错）时 Maven 退出码仍是 0 —— 那正是「假绿」，这里一律按失败处理。
-    $hit = Select-String -LiteralPath $log -Pattern ('-- in .*' + [regex]::Escape($t.requireClass)) | Select-Object -Last 1
-    if ($hit) {
-      $summary = ('[{0}] {1}' -f $t.requireClass, $hit.Line.Trim())
-    } else {
-      $summary = ('✗ 标准入口未自动执行到 {0}（零用例/未被选中）：{1}' -f $t.requireClass, $summary)
+  if ($t.PSObject.Properties.Name -contains 'requireClasses') {
+    # DEV-003b/V-032 硬门禁：收编清单中的每个隔离类都必须真的执行到。
+    # profile/includes/groups 任何漂移导致 Maven "BUILD SUCCESS / 少跑类" 都按假绿处理。
+    $hits = @()
+    $missingClasses = @()
+    foreach ($requiredClass in @($t.requireClasses)) {
+      $hit = Select-String -LiteralPath $log -Pattern ('-- in .*' + [regex]::Escape($requiredClass)) | Select-Object -Last 1
+      if ($hit) { $hits += ('[{0}] {1}' -f $requiredClass, $hit.Line.Trim()) }
+      else { $missingClasses += $requiredClass }
+    }
+    if ($missingClasses.Count -eq 0 -and $hits.Count -gt 0) {
+      $summary = ($hits -join ' | ')
+    } elseif ($missingClasses.Count -gt 0) {
+      $summary = ('✗ 标准入口未自动执行到：{0}（零用例/未被选中）：{1}' -f ($missingClasses -join ', '), $summary)
       if ($code -eq 0) { $code = 7 }
     }
   }

@@ -1,0 +1,52 @@
+{
+  "profileVersion": "2.0",
+  "sourceCode": "s2-01a-behavior",
+  "contractVersion": "1.0",
+  "eventTypeMappings": {
+    "sourceField": "msg_kind",
+    "values": {
+      "browse": "behavior",
+      "wish": "behavior",
+      "coupon_redeemed": null
+    }
+  },
+  "fieldMappings": {
+    "envelope": {
+      "msg_id": "event_id",
+      "msg_kind": "event_type",
+      "occurred": "event_time",
+      "origin": "source_system",
+      "rev": "schema_version",
+      "trc": "trace_id",
+      "body": "payload"
+    },
+    "payload": {
+      "behavior": {
+        "buyer": "user_id",
+        "item": "product_id",
+        "visit": "session_id",
+        "act": "behavior_type",
+        "term": "channel",
+        "ext_coupon": "@keep"
+      }
+    }
+  },
+  "enumSemantics": {
+    "behavior_type": {
+      "BROWSE": "view",
+      "WISH": "favorite",
+      "BASKET_ADD": "cart_add",
+      "PURCHASE": null
+    },
+    "channel": {
+      "APP": "app",
+      "WEB_PC": "pc",
+      "MINI_PROG": null
+    }
+  },
+  "timePolicy": {
+    "field": "occurred",
+    "formats": ["ISO_OFFSET_DATE_TIME"],
+    "zone": "Asia/Shanghai"
+  }
+}

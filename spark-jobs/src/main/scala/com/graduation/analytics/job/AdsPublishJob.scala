@@ -9,7 +9,7 @@ import scala.collection.mutable.ListBuffer
 
 /**
  * R6-13 正式分区发布（V2.0 §14.4 分区幂等协议，code=pub）：
- * 质量门（dqc）通过后，把 8 张 ADS 的**正式分区**用 **Hive 元数据指针**指向本次快照的暂存路径：
+ * 质量门（dqc）通过后，把当前 ADS 表集的**正式分区**用 **Hive 元数据指针**指向本次快照的暂存路径：
  *   ALTER TABLE {ns.ads}.ads_X ADD IF NOT EXISTS PARTITION (dt='D') LOCATION '<staging>';
  *   ALTER TABLE {ns.ads}.ads_X PARTITION (dt='D') SET LOCATION '<staging>';
  *
@@ -48,12 +48,16 @@ class AdsPublishJob extends WarehouseJob {
       .filter(_.snapshotId.contains(sid))
     val stgOf = stagingParts.map(p => p.table -> p).toMap
 
-    // 规则 1（发布前预检）：暂存分区必须全部就绪且已知物理路径，否则不切换任何分区
-    val notReady = tables.filter(t => stgOf.get(AdsSql.staging(ns, t)).forall(p => p.rowCount <= 0 || p.path.isEmpty))
+    // 规则 1（发布前预检）：暂存分区必须全部存在且已知物理路径，否则不切换任何分区。
+    // rowCount=0 是合法业务空态（例如来源当天无 behavior），不能与“分区缺失”混为一谈。
+    val notReady = PartitionEvidence.missingLocatedTables(stagingTables, stagingParts)
+    val zeroRow = stagingParts.filter(_.rowCount == 0L).map(_.table).distinct.sorted
     checks += QualityCheck("PUB_STAGING_READY", "PUBLISH", stagingTables.mkString(","),
-      tables.size, notReady.size, "8 张暂存分区就绪", "BLOCKING", notReady.isEmpty,
-      if (notReady.isEmpty) s"8 张暂存分区就绪，合计 ${stagingParts.map(_.rowCount).sum} 行"
-      else s"暂存分区缺失/为空/无路径: ${notReady.mkString(",")}")
+      tables.size, notReady.size, s"${tables.size} 张暂存分区存在且 Location 可读（允许 0 行专题）", "BLOCKING", notReady.isEmpty,
+      if (notReady.isEmpty) {
+        val zeroDetail = if (zeroRow.isEmpty) "无 0 行专题" else s"0 行专题=${zeroRow.mkString(",")}"
+        s"${tables.size} 张暂存分区就绪，合计 ${stagingParts.map(_.rowCount).sum} 行；$zeroDetail"
+      } else s"暂存分区缺失/无路径: ${notReady.mkString(",")}")
     if (notReady.nonEmpty) {
       return JobResult.failed(code, args.attemptNo,
         s"发布前预检失败（未切换任何正式分区）: ${notReady.mkString(",")}",
@@ -80,7 +84,7 @@ class AdsPublishJob extends WarehouseJob {
     val mismatch = tables.filter(t => formalOf.getOrElse(AdsSql.formal(ns, t), -1L) != stgOf(AdsSql.staging(ns, t)).rowCount)
     checks += QualityCheck("PUB_FORMAL_PARTITION_MATCH", "PUBLISH", formalTables.mkString(","),
       tables.size, mismatch.size, "正式=暂存行数", "BLOCKING", mismatch.isEmpty,
-      if (mismatch.isEmpty) s"8 张正式分区行数与暂存一致（合计 ${formalParts.map(_.rowCount).sum} 行）"
+      if (mismatch.isEmpty) s"${tables.size} 张正式分区行数与暂存一致（合计 ${formalParts.map(_.rowCount).sum} 行）"
       else s"行数不一致: ${mismatch.map(t => s"$t stg=${stgOf(AdsSql.staging(ns, t)).rowCount} formal=${formalOf.getOrElse(AdsSql.formal(ns, t), -1L)}").mkString(",")}")
     checks += QualityCheck("PUB_POINTER_SWITCH", "PUBLISH", formalTables.mkString(","),
       tables.size, switched.size, "本次切换表数", "INFO", true,

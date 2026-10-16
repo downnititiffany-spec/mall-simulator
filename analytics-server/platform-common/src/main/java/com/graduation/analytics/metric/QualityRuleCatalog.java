@@ -77,6 +77,40 @@ public final class QualityRuleCatalog {
     public static final String RULE_ADS_STAGING_KEY_NOT_NULL = "ADS_STAGING_KEY_NOT_NULL";
     public static final String RULE_PUB_DQ_BLOCKING_RULES = "PUB_DQ_BLOCKING_RULES";
     public static final String RULE_ADS_DWS_FUNNEL_RECONCILE = "ADS_DWS_FUNNEL_RECONCILE";
+    /** 分类 ADS 每日金额与 DWS 交易总额逐日对账。 */
+    public static final String RULE_ADS_CATEGORY_SALE_RECONCILE = "ADS_CATEGORY_SALE_RECONCILE";
+    /** 城市等级 ADS 每日金额与 DWS 交易总额逐日对账。 */
+    public static final String RULE_ADS_REGION_SALE_RECONCILE = "ADS_REGION_SALE_RECONCILE";
+    /** 漏斗**率列**跨层对账（S3-10）：ADS 率列必须逐格等于 DWS 全站行同 dt 率列。 */
+    public static final String RULE_ADS_DWS_FUNNEL_RATE_RECONCILE = "ADS_DWS_FUNNEL_RATE_RECONCILE";
+    /**
+     * ADS 大盘**同归属口径不变量**（S3-22）：`sale_amount >= net_sale_amount >= 0`。
+     *
+     * <p>设计 §12.3 第 8 项「同归属口径 ADS GMV≥净销售≥0。」；第 9 项「UV≤PV」另立一码，
+     * 二者不得合并（同 line 512）。</p>
+     */
+    public static final String RULE_ADS_GMV_NET_SALE_INVARIANT = "ADS_GMV_NET_SALE_INVARIANT";
+    /**
+     * ADS 大盘同过滤条件不变量「UV ≤ PV」（设计 §12.3 第 9 项 L507）。
+     *
+     * <p>与 {@link #RULE_ADS_GMV_NET_SALE_INVARIANT}（第 8 项）**分开的两个码**：
+     * line 512 要求不同校验不得合并，且「同过滤条件」是本规则的**作用域判据** ——
+     * 大盘的 {@code pv}/{@code uv} 出自同一个 {@code behavior_type = 'view'} 过滤条件，
+     * 而 {@code dau} 是全事件去重用户数（不同过滤条件），不得纳入本码。</p>
+     */
+    public static final String RULE_ADS_UV_PV_INVARIANT = "ADS_UV_PV_INVARIANT";
+    /**
+     * DWS 商品×日期行为宽表**同过滤条件**不变量「UV ≤ PV」（S3-25）—— 第 9 项在 DWS 层的
+     * **同型站点**，与 {@link #RULE_ADS_UV_PV_INVARIANT} 是**两处独立站点、两个独立码**。
+     *
+     * <p>同型不等于同码：ADS 大盘是「一次聚合成一行」，DWS 宽表是**按
+     * {@code product_id × category_id} 分组的逐行**结果，粒度、表、分区维度都不同，
+     * 一处通过不能证明另一处通过（设计 §12.3 line 512：不同校验不得合并）。
+     * 「同过滤条件」的作用域判据在 DWS 侧由 {@code DwsSql.productBehaviorDay} 的
+     * `pv`（次数）/`uv`（{@code COUNT(DISTINCT user_id)}）两行共同来自
+     * {@code behavior_type = 'view'} 这一事实保证。</p>
+     */
+    public static final String RULE_DWS_UV_PV_INVARIANT = "DWS_UV_PV_INVARIANT";
 
     /** 发布层（Spark pub / mxp）规则码。 */
     public static final String RULE_PUB_STAGING_READY = "PUB_STAGING_READY";
@@ -92,6 +126,7 @@ public final class QualityRuleCatalog {
     public static final String RULE_MP_MANIFEST_SNAPSHOT = "MP_MANIFEST_SNAPSHOT";
     public static final String RULE_MP_HIVE_PATH_PINNED = "MP_HIVE_PATH_PINNED";
     public static final String RULE_MP_EXPORT_FILES = "MP_EXPORT_FILES";
+    public static final String RULE_MP_EXPORT_CHECKSUM = "MP_EXPORT_CHECKSUM";
     public static final String RULE_MP_ADS_ROWS_MATCH = "MP_ADS_ROWS_MATCH";
     public static final String RULE_MP_REQUIRED_TABLES_NONEMPTY = "MP_REQUIRED_TABLES_NONEMPTY";
     public static final String RULE_MP_ROW_SHAPE_CONSISTENT = "MP_ROW_SHAPE_CONSISTENT";
@@ -154,7 +189,21 @@ public final class QualityRuleCatalog {
                     "{\"dupRateMax\":0.0005,\"dedupDeterministic\":true}", true, null, null,
                     "发布层复用的重复率口径，与 EVENT_ID_UNIQUE 同阈值同语义（观察项，超阈值阻断）"),
 
-            fixed(RULE_ADS_STAGING_PRESENT, STAGE_ADS, RuleSeverity.BLOCKING, "8 张暂存表本次快照分区必须存在且非空"),
+            // v1 历史语义：把“0 行专题”与“缺分区”合并为失败。保留本定义供历史 run/指纹解释，
+            // 不得原地改写；Stage 7 T-R1 暴露的合法 0 行专题由下面 v2 收窄。
+            fixed(RULE_ADS_STAGING_PRESENT, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "v1：8 张暂存表本次快照分区必须存在且非空"),
+            new QualityRuleDefinition(RULE_ADS_STAGING_PRESENT, 2, QualityRuleDefinition.SCOPE_ALL, STAGE_ADS,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null,
+                    true, null, null,
+                    "v2：8 张暂存表本次快照分区必须存在且 Location 可读；专题当天无事实时允许 0 行，"
+                            + "缺分区或无 Location 仍 BLOCKING。Stage 7 T-R1 真实 MALL_API 交易日证明"
+                            + "参考商城可合法无 behavior，不能把合法空态冒充数据缺失"),
+            new QualityRuleDefinition(RULE_ADS_STAGING_PRESENT, 3, QualityRuleDefinition.SCOPE_ALL, STAGE_ADS,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null,
+                    true, null, null,
+                    "v3：AdsSql.TABLES 当前登记的每张 ADS 暂存分区必须存在且 Location 可读；允许合法 0 行专题，"
+                            + "缺分区或无 Location 仍阻断；分类与城市等级销售表自本版本纳入完整性判定"),
             fixed(RULE_ADS_STAGING_SNAPSHOT_ISOLATION, STAGE_ADS, RuleSeverity.WARN,
                     "历史暂存快照存在本身不是错误（陈旧分区不污染正式分区，且清理在 pub 之后，"
                             + "设阻断会造成发布死锁）；「混入其他快照」由 MXP_SNAPSHOT_PINNED(BLOCKING) 承担"),
@@ -163,6 +212,38 @@ public final class QualityRuleCatalog {
                     "暂存宽表内 3 条阻断规则必须全 passed=1，与 Java 侧 corePassed 同口径"),
             fixed(RULE_ADS_DWS_FUNNEL_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
                     "ADS 漏斗 stage 汇总 = DWS 漏斗对应列，不一致即口径破坏"),
+            fixed(RULE_ADS_CATEGORY_SALE_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "分类 ADS 销售额与净销售额必须逐日对账 DWS 交易总额，unknown 分类也计入"),
+            fixed(RULE_ADS_REGION_SALE_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "城市等级 ADS 销售额与净销售额必须逐日对账 DWS 交易总额，unknown 城市等级也计入"),
+            fixed(RULE_ADS_DWS_FUNNEL_RATE_RECONCILE, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "ADS 漏斗率列（conversion_rate/overall_buy_rate/overall_cart_rate）逐格等于 DWS 全站行同 dt 率列；"
+                            + "ADS 只透传不重算，不一致即口径破坏。只判跨层一致性、不判比率数值是否异常"
+                            + "（设计 §12.3 第 10 项：宽松口径异常不一概作为阻断规则）；NULL 与 NULL 判等（分母 0）"),
+            fixed(RULE_ADS_GMV_NET_SALE_INVARIANT, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "ADS 大盘同归属口径不变量（设计 §12.3 第 8 项）：GMV(sale_amount) ≥ 净销售(net_sale_amount) ≥ 0；"
+                            + "两列由同一次聚合产出、可逐行判定，故不设阈值（thresholdJson 为空）。"
+                            + "金额任一列为 NULL 判不通过（不可证明的不变量不得放行，与本表关键列非空口径一致）；"
+                            + "只判不变量、不改写数据。第 9 项「UV≤PV」另立一码，二者不得互相替代"),
+            fixed(RULE_ADS_UV_PV_INVARIANT, STAGE_ADS, RuleSeverity.BLOCKING,
+                    "ADS 大盘同过滤条件不变量（设计 §12.3 第 9 项 L507）：UV(去重浏览用户) ≤ PV(浏览次数)；"
+                            + "两列由生产 SQL 中同一个 behavior_type = 'view' 过滤条件产出、可逐行判定，"
+                            + "故不设阈值（thresholdJson 为空）。同表的 dau 是全事件去重用户数"
+                            + "（不同过滤条件），dau > uv 合法、不纳入本码 —— 这正是「同过滤条件」四字的作用域。"
+                            + "pv/uv 为 NULL 由既有的 ADS_STAGING_KEY_NOT_NULL(BLOCKING) 唯一判定，"
+                            + "本码不重复判定（避免同一缺陷被两条规则重复计数/双重阻断）；"
+                            + "只判不变量、不改写数据"),
+            fixed(RULE_DWS_UV_PV_INVARIANT, STAGE_DWS, RuleSeverity.BLOCKING,
+                    "DWS 商品×日期行为宽表同过滤条件不变量（设计 §12.3 第 9 项 L507 的 DWS 同型站点，S3-25）："
+                            + "UV(去重浏览用户) ≤ PV(浏览次数)。判据表＝dws_product_behavior_day 的本次 dt 分区"
+                            + "（该表无 snapshot 维度，与 ADS_DWS_FUNNEL_RECONCILE 读 DWS 的作用域同型）；"
+                            + "DwsSql.productBehaviorDay 里两列由同一个 behavior_type = 'view' 过滤条件、同表同 dt 产出，"
+                            + "按 product_id×category_id 分组后逐行可判，故不设阈值（thresholdJson 为空）。"
+                            + "NULL 归本码自判：该表在 ADS 暂存侧之外**没有**直接的关键列非空守卫"
+                            + "（AdsQualityJob.keyPredicates 只覆盖 ADS 暂存表），按唯一所有者原则由本码承担，"
+                            + "任一列为 NULL 即不通过（不可证明的不变量不得放行）。"
+                            + "与 ADS 侧 ADS_UV_PV_INVARIANT 是两处独立站点、两个独立码，不得互相替代（同 line 512）；"
+                            + "只判不变量、不改写数据"),
 
             fixed(RULE_PUB_STAGING_READY, STAGE_PUBLISH, RuleSeverity.BLOCKING, "暂存分区未就绪不得切换正式分区"),
             fixed(RULE_PUB_FORMAL_PARTITION_MATCH, STAGE_PUBLISH, RuleSeverity.BLOCKING,
@@ -172,12 +253,19 @@ public final class QualityRuleCatalog {
             fixed(RULE_MXP_SNAPSHOT_PINNED, STAGE_PUBLISH, RuleSeverity.BLOCKING,
                     "正式分区 Location 必须指向本次 snapshot_id（D-142 §1 的真阻断点）"),
             fixed(RULE_MXP_EXPORT_ROWS, STAGE_PUBLISH, RuleSeverity.BLOCKING, "导出文件行数 = Hive 分区行数"),
-            fixed(RULE_MXP_EXPORT_COMPLETE, STAGE_PUBLISH, RuleSeverity.BLOCKING, "8 张表导出完成且行数一致"),
+            new QualityRuleDefinition(RULE_MXP_EXPORT_COMPLETE, 1, QualityRuleDefinition.SCOPE_ALL, STAGE_PUBLISH,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null, true, null, null,
+                    "历史版本：8 张表导出完成且行数一致"),
+            new QualityRuleDefinition(RULE_MXP_EXPORT_COMPLETE, 2, QualityRuleDefinition.SCOPE_ALL, STAGE_PUBLISH,
+                    RuleSeverity.BLOCKING, QualityRuleDefinition.SeverityMode.FIXED, null, true, null, null,
+                    "v2：MetricAdsSpec.TABLES 当前登记的每张 ADS 均完成导出且真实行数一致"),
 
             fixed(RULE_MP_MANIFEST_TABLES, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "清单表数对账"),
             fixed(RULE_MP_MANIFEST_SNAPSHOT, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "清单快照一致性"),
             fixed(RULE_MP_HIVE_PATH_PINNED, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "Hive 路径必须钉住本次快照"),
             fixed(RULE_MP_EXPORT_FILES, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "导出文件齐备"),
+            fixed(RULE_MP_EXPORT_CHECKSUM, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING,
+                    "导出制品内容摘要 = 清单 checksum（逐表重算，防行数相同但内容被截断/错位搬运）"),
             fixed(RULE_MP_ADS_ROWS_MATCH, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING, "清单行数 = 文件行数"),
             fixed(RULE_MP_REQUIRED_TABLES_NONEMPTY, STAGE_METRIC_PUBLISH, RuleSeverity.BLOCKING,
                     "必须有数据的表不得为空"),

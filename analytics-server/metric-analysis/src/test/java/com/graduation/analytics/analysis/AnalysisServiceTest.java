@@ -1,20 +1,28 @@
 package com.graduation.analytics.analysis;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import com.graduation.analytics.analysis.AnalysisService.ActiveDay;
 import com.graduation.analytics.analysis.AnalysisService.FunnelData;
 import com.graduation.analytics.analysis.AnalysisService.FunnelStage;
 import com.graduation.analytics.analysis.AnalysisService.MetricItem;
 import com.graduation.analytics.analysis.AnalysisService.OverviewData;
 import com.graduation.analytics.analysis.AnalysisService.ProductsData;
+import com.graduation.analytics.analysis.AnalysisService.QualitySummary;
 import com.graduation.analytics.analysis.AnalysisService.RfmData;
 import com.graduation.analytics.analysis.AnalysisService.SalesData;
+import com.graduation.analytics.analysis.AnalysisService.SalesTrendPoint;
 import com.graduation.analytics.analysis.AnalysisService.UsersData;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricAdsReader;
 import com.graduation.analytics.metric.MetricQualityGate;
-import com.graduation.analytics.metric.MySqlMetricStore;
+import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.dict.MetricDefinition;
 import com.graduation.analytics.metric.dict.MetricDefinitionMapper;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
+import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,13 +30,16 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,7 +59,7 @@ class AnalysisServiceTest {
     private static final String SID = "S20260901_24";
 
     private MetricAdsReader adsReader;
-    private MySqlMetricStore metricStore;
+    private MetricStore metricStore;
     private MetricDefinitionMapper definitionMapper;
     private MetricQualityGate qualityGate;
     private AnalysisService service;
@@ -56,7 +67,7 @@ class AnalysisServiceTest {
     @BeforeEach
     void setUp() {
         adsReader = mock(MetricAdsReader.class);
-        metricStore = mock(MySqlMetricStore.class);
+        metricStore = mock(MetricStore.class);
         definitionMapper = mock(MetricDefinitionMapper.class);
         qualityGate = mock(MetricQualityGate.class);
         when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.PASS);
@@ -72,13 +83,14 @@ class AnalysisServiceTest {
         List<AnalysisViewModel<?>> models = List.of(
                 service.overview(null, null, null),
                 service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)),
-                service.products(null, 10, null, null),
+                service.products(null, null, null, null, 10, null, null),
                 service.funnel(null, LocalDate.of(2026, 9, 1)),
                 service.users(null, null, null),
                 service.rfm(null, 50));
 
         for (AnalysisViewModel<?> model : models) {
             assertThat(model.snapshotId()).isNull();
+            assertThat(model.source()).isNull();
             assertThat(model.businessTime()).isNull();
             assertThat(model.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
             assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT);
@@ -91,13 +103,15 @@ class AnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("运营总览：信封 8 字段齐备，指标/趋势/质量/字典按契约 §3.1 组装")
+    @DisplayName("运营总览：信封 9 字段齐备，指标/趋势/质量/字典按契约 §3.1 组装")
     void overviewFillsEnvelopeAndSections() {
         stubActiveSnapshot();
 
         AnalysisViewModel<OverviewData> model = service.overview(null, null, null);
 
         assertThat(model.snapshotId()).isEqualTo(SID);
+        assertThat(model.sourceId()).isEqualTo(73L);
+        assertThat(model.source()).isEqualTo("spark-ads");
         assertThat(model.businessTime()).isEqualTo("2026-09-01T00:00:00");
         assertThat(model.dataUpdatedAt()).isEqualTo("2026-09-01T00:00:00");
         assertThat(model.definitionVersion()).isEqualTo("v2");
@@ -121,6 +135,8 @@ class AnalysisServiceTest {
         assertThat(data.salesTrend().get(0).date()).isEqualTo("2026-08-31");
         assertThat(data.salesTrend().get(1).date()).isEqualTo("2026-09-01");
         assertThat(data.salesTrend().get(1).saleAmount()).isEqualByComparingTo("2042.00");
+        assertThat(data.salesTrend().get(1).netSaleAmount()).isEqualByComparingTo("1493.00");
+        assertThat(data.salesTrend().get(0).netSaleAmount()).isEqualByComparingTo("500.00");
         assertThat(data.salesTrend().get(1).orderCount()).isEqualTo(5L);
         assertThat(data.salesTrend().get(1).buyerCount()).isEqualTo(3L);
 
@@ -136,9 +152,84 @@ class AnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("销售分析：gmv/净销售额/退款率一律取 metric_value 原值，不重算；缺维度表给出降级警告")
+    @DisplayName("S3-24 质量卡回显规则定义版本：记了版本的规则码按码升序进 ruleVersions")
+    void qualityCardCarriesRuleDefinitionVersion() {
+        stubActiveSnapshot();
+
+        QualitySummary quality = service.overview(null, null, null).data().quality();
+
+        // 夹具三行 rule_version=1、一行无该列（NULL）
+        assertThat(quality.ruleVersions()).containsExactly(
+                Map.entry("AMOUNT_RECONCILE", 1), Map.entry("ENUM_WHITELIST", 1), Map.entry("EVENT_ID_UNIQUE", 1));
+    }
+
+    @Test
+    @DisplayName("S3-24 rule_version 为 NULL 的规则：不进 ruleVersions，也不补 0/1 冒充 v1")
+    void qualityCardDoesNotFabricateVersionForNullRows() {
+        stubActiveSnapshot();
+
+        QualitySummary quality = service.overview(null, null, null).data().quality();
+
+        // 无版本那行**仍计入**规则条数（缺版本不等于缺规则）
+        assertThat(quality.ruleCount()).isEqualTo(4);
+        assertThat(quality.ruleVersions()).hasSize(3);
+        assertThat(quality.ruleVersions()).doesNotContainKey("REQUIRED_FIELD_NULL_RATE");
+        assertThat(quality.ruleVersions().values()).doesNotContain(0);
+    }
+
+    @Test
+    @DisplayName("S3-24 销售分析的质量卡与总览同源：同一 quality() 所有者，版本映射逐字相同")
+    void salesQualityCardSharesSameVersionsAsOverview() {
+        stubActiveSnapshot();
+
+        Map<String, Integer> overviewVersions = service.overview(null, null, null).data().quality().ruleVersions();
+        Map<String, Integer> salesVersions = service.sales(null, null, null).data().quality().ruleVersions();
+
+        assertThat(salesVersions).isEqualTo(overviewVersions).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("信封 source 取快照行原值：空串原样回显，不臆造成 spark-ads（§17.6 只约束发布侧）")
+    void blankSnapshotSourceIsEchoedAsEmptyString() {
+        when(adsReader.activeSnapshotId()).thenReturn(SID);
+        MetricSnapshot blank = snapshot(SID);
+        blank.setSource("");
+        when(metricStore.findSnapshot(SID)).thenReturn(blank);
+        when(metricStore.query(any())).thenReturn(metricValues());
+        when(definitionMapper.selectList(any())).thenReturn(definitions());
+        stubAdsRows();
+
+        AnalysisViewModel<OverviewData> model = service.overview(null, null, null);
+
+        assertThat(model.snapshotId()).isEqualTo(SID);
+        assertThat(model.source()).isEmpty();
+        assertThat(model.warnings()).isEmpty(); // 空串不是降级事实：读到的就是"发布方未标注"
+    }
+
+    @Test
+    @DisplayName("历史快照 source_id 为 NULL：API 显式返回 null 和溯源警告，不从 runtime profile 猜测")
+    void missingSnapshotSourceIdIsNullAndWarned() {
+        stubActiveSnapshot();
+        MetricSnapshot historical = snapshot(SID);
+        historical.setSourceId(null);
+        when(metricStore.findSnapshot(SID)).thenReturn(historical);
+
+        AnalysisViewModel<OverviewData> model = service.overview(null, null, null);
+
+        assertThat(model.sourceId()).isNull();
+        assertThat(model.source()).isEqualTo("spark-ads"); // 发布方仍单独存在，不与业务源身份混用
+        assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_SOURCE_ID_UNAVAILABLE);
+    }
+
+    @Test
+    @DisplayName("销售分析：汇总取 metric_value 原值；维度服务表存在但无行时为空态且不误报缺表")
     void salesReadsMetricValueWithoutRecompute() {
         stubActiveSnapshot();
+        // QA-01：带日期区间的请求不再读整个快照，而是把区间参数化下推（本夹具只回该日一行）
+        when(adsReader.selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260901"))
+                .thenReturn(List.of(row("dt", "20260901", "order_count", 5L, "buyer_count", 3L,
+                        "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"),
+                        "net_sale_amount", new BigDecimal("1493.00"))));
 
         AnalysisViewModel<SalesData> model =
                 service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1));
@@ -150,12 +241,256 @@ class AnalysisServiceTest {
         assertThat(model.data().netSale()).isEqualByComparingTo("1493.00");
         assertThat(model.data().refundRate()).isEqualByComparingTo("0.6000");
         assertThat(model.data().fullRefundRate()).isEqualByComparingTo("0.2000");
-        assertThat(model.data().trend()).hasSize(2);
+        assertThat(model.data().trend()).hasSize(1);
+        assertThat(model.data().trend().get(0).date()).isEqualTo("2026-09-01");
+        assertThat(model.data().trend().get(0).netSaleAmount()).isEqualByComparingTo("1493.00");
+        assertThat(model.data().byCategory()).isEmpty();
+        assertThat(model.data().byRegion()).isEmpty();
+        assertThat(model.warnings()).isEmpty();
+        // 快照一致性：ADS 查询带着与信封相同的 snapshotId，且日期区间真的下推到查询
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260901");
+        verify(adsReader).selectBySnapshotRange("ads_category_sale_m", SID, "20260901", "20260901");
+        verify(adsReader).selectBySnapshotRange("ads_region_sale_m", SID, "20260901", "20260901");
+    }
+
+    @Test
+    @DisplayName("分类/城市等级多日窗口：只累加可加金额和件数，比例按窗口总额重算，不合计日 distinct")
+    void salesAggregatesDimensionRowsAcrossWindow() {
+        stubActiveSnapshot();
+        LocalDate from = LocalDate.of(2026, 9, 1);
+        LocalDate to = LocalDate.of(2026, 9, 2);
+        when(adsReader.selectBySnapshotRange("ads_category_sale_m", SID, "20260901", "20260902"))
+                .thenReturn(List.of(
+                        row("dt", "20260901", "category_id", 1L, "category_name", "旧分类名",
+                                "parent_category_id", 7L, "parent_category_name", "上级分类",
+                                "sale_count", 2L, "sale_amount", new BigDecimal("100.00"),
+                                "net_sale_amount", new BigDecimal("90.00")),
+                        row("dt", "20260902", "category_id", 1L, "category_name", "新分类名",
+                                "parent_category_id", 7L, "parent_category_name", "上级分类",
+                                "sale_count", 1L, "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("40.00")),
+                        row("dt", "20260901", "category_id", 2L, "category_name", "配件",
+                                "parent_category_id", 8L, "parent_category_name", "配件组",
+                                "sale_count", 1L, "sale_amount", new BigDecimal("200.00"),
+                                "net_sale_amount", new BigDecimal("190.00")),
+                        row("dt", "20260901", "category_id", -1L, "category_name", "未分类",
+                                "parent_category_id", -1L, "parent_category_name", "未分类",
+                                "sale_count", 1L, "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("40.00")),
+                        row("dt", "20260902", "category_id", -1L, "category_name", "未分类",
+                                "parent_category_id", -1L, "parent_category_name", "未分类",
+                                "sale_count", 2L, "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("45.00"))));
+        when(adsReader.selectBySnapshotRange("ads_region_sale_m", SID, "20260901", "20260902"))
+                .thenReturn(List.of(
+                        row("dt", "20260901", "region", "L1", "sale_amount", new BigDecimal("40.00"),
+                                "net_sale_amount", new BigDecimal("35.00")),
+                        row("dt", "20260902", "region", "L1", "sale_amount", new BigDecimal("60.00"),
+                                "net_sale_amount", new BigDecimal("55.00")),
+                        row("dt", "20260901", "region", "L2", "sale_amount", new BigDecimal("160.00"),
+                                "net_sale_amount", new BigDecimal("150.00")),
+                        row("dt", "20260902", "region", "L2", "sale_amount", new BigDecimal("140.00"),
+                                "net_sale_amount", new BigDecimal("130.00")),
+                        row("dt", "20260901", "region", "unknown", "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("45.00")),
+                        row("dt", "20260902", "region", "unknown", "sale_amount", new BigDecimal("50.00"),
+                                "net_sale_amount", new BigDecimal("45.00"))));
+
+        AnalysisViewModel<SalesData> model = service.sales(null, from, to);
+
+        assertThat(model.warnings()).isEmpty();
+        assertThat(model.data().byCategory()).hasSize(3);
+        Map<String, Object> leadingCategory = model.data().byCategory().get(0);
+        assertThat(leadingCategory).containsEntry("category_id", 2L)
+                .containsEntry("sale_amount", new BigDecimal("200.00"))
+                .containsEntry("amount_ratio", new BigDecimal("0.4444"));
+        Map<String, Object> mergedCategory = model.data().byCategory().stream()
+                .filter(row -> row.get("category_id").equals(1L)).findFirst().orElseThrow();
+        assertThat(mergedCategory).containsEntry("category_name", "新分类名")
+                .containsEntry("sale_count", 3L)
+                .containsEntry("sale_amount", new BigDecimal("150.00"))
+                .containsEntry("net_sale_amount", new BigDecimal("130.00"))
+                .containsEntry("amount_ratio", new BigDecimal("0.3333"));
+        Map<String, Object> unknownCategory = model.data().byCategory().stream()
+                .filter(row -> row.get("category_id").equals(-1L)).findFirst().orElseThrow();
+        assertThat(unknownCategory).containsEntry("category_name", "未分类")
+                .containsEntry("sale_amount", new BigDecimal("100.00"));
+
+        assertThat(model.data().byRegion()).extracting(row -> row.get("region"))
+                .containsExactly("L2", "L1", "unknown");
+        assertThat(model.data().byRegion().get(0)).containsEntry("sale_amount", new BigDecimal("300.00"))
+                .containsEntry("amount_ratio", new BigDecimal("0.6000"));
+        assertThat(model.data().byRegion().get(1)).containsEntry("amount_ratio", new BigDecimal("0.2000"));
+        assertThat(model.data().byRegion().get(2)).containsEntry("amount_ratio", new BigDecimal("0.2000"));
+        model.data().byCategory().forEach(row -> assertThat(row).doesNotContainKeys("buyer_count", "order_count"));
+        model.data().byRegion().forEach(row -> assertThat(row).doesNotContainKeys("buyer_count", "order_count"));
+        verify(adsReader).selectBySnapshotRange("ads_category_sale_m", SID, "20260901", "20260902");
+        verify(adsReader).selectBySnapshotRange("ads_region_sale_m", SID, "20260901", "20260902");
+    }
+
+    @Test
+    @DisplayName("可选维度服务表读取故障：两个维度均降级并去重告警，不吞掉其它错误")
+    void missingDimensionTablesReturnExplicitDeduplicatedWarning() {
+        stubActiveSnapshot();
+        org.springframework.dao.DataAccessException unavailable =
+                new org.springframework.dao.DataAccessResourceFailureException("dimension store unavailable");
+        when(adsReader.selectBySnapshot("ads_category_sale_m", SID, null)).thenThrow(unavailable);
+        when(adsReader.selectBySnapshot("ads_region_sale_m", SID, null)).thenThrow(unavailable);
+
+        AnalysisViewModel<SalesData> model = service.sales(null, null, null);
+
         assertThat(model.data().byCategory()).isEmpty();
         assertThat(model.data().byRegion()).isEmpty();
         assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
-        // 快照一致性：ADS 查询带着与信封相同的 snapshotId
+    }
+
+    @Test
+    @DisplayName("趋势净额：ADS 缺该列时返回 null，不臆造 0；汇总净额仍取 metric_value（两个来源不得互相顶替）")
+    void trendNetSaleAmountIsNullWhenAdsColumnAbsent() {
+        stubActiveSnapshot();
+        stubTrendRows(List.of(row("dt", "20260901", "order_count", 5L, "buyer_count", 3L,
+                "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"))));
+
+        AnalysisViewModel<SalesData> model = service.sales(null, null, null);
+
+        assertThat(model.data().trend()).hasSize(1);
+        assertThat(model.data().trend().get(0).netSaleAmount()).isNull();
+        assertThat(model.data().trend().get(0).saleAmount()).isEqualByComparingTo("2042.00");
+        assertThat(model.data().netSale()).isEqualByComparingTo("1493.00");
+    }
+
+    @Test
+    @DisplayName("趋势净额：字符串/数值两种驱动形态都吃，畸形值返回 null 且不抛异常（一律不猜 0）")
+    void trendNetSaleAmountParsesDriverForms() {
+        stubActiveSnapshot();
+        stubTrendRows(List.of(
+                row("dt", "20260831", "order_count", 2L, "buyer_count", 2L, "sale_amount", new BigDecimal("500.00"),
+                        "avg_order_value", new BigDecimal("250.00"), "net_sale_amount", "500.00"),
+                row("dt", "20260901", "order_count", 5L, "buyer_count", 3L, "sale_amount", new BigDecimal("2042.00"),
+                        "avg_order_value", new BigDecimal("408.40"), "net_sale_amount", new BigDecimal("1493.00")),
+                row("dt", "20260902", "order_count", 1L, "buyer_count", 1L, "sale_amount", new BigDecimal("100.00"),
+                        "avg_order_value", new BigDecimal("100.00"), "net_sale_amount", "abc")));
+
+        List<SalesTrendPoint> trend = service.sales(null, null, null).data().trend();
+
+        assertThat(trend).extracting(SalesTrendPoint::date)
+                .containsExactly("2026-08-31", "2026-09-01", "2026-09-02");
+        assertThat(trend.get(0).netSaleAmount()).isEqualByComparingTo("500.00");
+        assertThat(trend.get(1).netSaleAmount()).isEqualByComparingTo("1493.00");
+        assertThat(trend.get(2).netSaleAmount()).isNull();
+    }
+
+    // ── QA-01：日期筛选必须真正作用于趋势（卡片按快照、趋势按日期） ──────────────
+
+    @Test
+    @DisplayName("QA-01 单日区间：趋势按 from=to 参数化读取，不再读整个快照")
+    void dateRangeBoundsTrendReads() {
+        stubActiveSnapshot();
+        when(adsReader.selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260901"))
+                .thenReturn(List.of(row("dt", "20260901", "order_count", 5L, "buyer_count", 3L,
+                        "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"),
+                        "net_sale_amount", new BigDecimal("1493.00"))));
+        when(adsReader.selectBySnapshotRange("ads_active_trend_m", SID, "20260901", "20260901"))
+                .thenReturn(List.of(row("dt", "20260901", "dau", 3L, "behavior_count", 14L)));
+
+        OverviewData data = service.overview(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)).data();
+
+        assertThat(data.salesTrend()).extracting(SalesTrendPoint::date).containsExactly("2026-09-01");
+        assertThat(data.activeTrend()).extracting(ActiveDay::date).containsExactly("2026-09-01");
+        // 语义边界：指标卡仍按快照（本问题只要求趋势按日期）
+        assertThat(data.metrics()).isNotEmpty();
+        // 带日期的请求不得再走「整快照」读路径
+        verify(adsReader, never()).selectBySnapshot(eq("ads_sale_trend_m"), anyString(), any());
+        verify(adsReader, never()).selectBySnapshot(eq("ads_active_trend_m"), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("QA-01 两日区间：两端都下传（含端点语义由 DAO 的 dt >= ? AND dt <= ? 保证）")
+    void twoDayRangePassesBothBounds() {
+        stubActiveSnapshot();
+
+        service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 2));
+
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", "20260902");
+    }
+
+    @Test
+    @DisplayName("QA-01 半开区间：只给一端时只绑定该端，缺失端不伪造")
+    void halfOpenRangeBindsOnlyGivenSide() {
+        stubActiveSnapshot();
+
+        service.sales(null, LocalDate.of(2026, 9, 1), null);
+        service.sales(null, null, LocalDate.of(2026, 9, 2));
+
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, "20260901", null);
+        verify(adsReader).selectBySnapshotRange("ads_sale_trend_m", SID, null, "20260902");
+    }
+
+    @Test
+    @DisplayName("QA-01 区间内无数据：趋势为空数组，不补零、不伪造点")
+    void emptyRangeKeepsTrendEmpty() {
+        stubActiveSnapshot();
+        when(adsReader.selectBySnapshotRange(eq("ads_sale_trend_m"), anyString(), any(), any()))
+                .thenReturn(List.of());
+        when(adsReader.selectBySnapshotRange(eq("ads_active_trend_m"), anyString(), any(), any()))
+                .thenReturn(List.of());
+
+        OverviewData data = service.overview(null, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1)).data();
+
+        assertThat(data.salesTrend()).isEmpty();
+        assertThat(data.activeTrend()).isEmpty();
+        // 卡片是快照读数，与趋势的日期窗口无关（不得因为趋势空就把卡片清零）
+        assertThat(data.metrics()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("QA-01 缺省区间：保持整快照读取语义，不引入第二条读取路径")
+    void absentRangeKeepsWholeSnapshotRead() {
+        stubActiveSnapshot();
+
+        service.sales(null, null, null);
+
         verify(adsReader).selectBySnapshot("ads_sale_trend_m", SID, null);
+        verify(adsReader, never()).selectBySnapshotRange(anyString(), anyString(), any(), any());
+    }
+
+    @Test
+    @DisplayName("QA-01 倒置区间 from>to：读任何 ADS 之前就 400 PARAM_INVALID")
+    void invertedRangeRejectedBeforeAnyRead() {
+        assertThatThrownBy(() -> service.overview(null, LocalDate.of(2026, 9, 22), LocalDate.of(2026, 9, 16)))
+                .isInstanceOf(PlatformBizException.class)
+                .hasMessageContaining("from");
+        assertThatThrownBy(() -> service.sales(null, LocalDate.of(2026, 9, 22), LocalDate.of(2026, 9, 16)))
+                .isInstanceOf(PlatformBizException.class);
+        assertThatThrownBy(() -> service.overview(null, LocalDate.of(2026, 9, 22), LocalDate.of(2026, 9, 16)))
+                .extracting(e -> ((PlatformBizException) e).getCode())
+                .isEqualTo("PARAM_INVALID");
+
+        verify(adsReader, never()).selectBySnapshot(anyString(), anyString(), any());
+        verify(adsReader, never()).selectBySnapshotRange(anyString(), anyString(), any(), any());
+        verify(adsReader, never()).activeSnapshotId();
+    }
+
+    @Test
+    @DisplayName("QA-01 filters 只回显真正生效的日期：缺省时不写 from/to")
+    void filtersEchoOnlyEffectiveDates() {
+        stubActiveSnapshot();
+
+        assertThat(service.sales(null, null, null).filters()).doesNotContainKeys("from", "to");
+        assertThat(service.sales(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 1)).filters())
+                .containsEntry("from", "2026-09-01").containsEntry("to", "2026-09-01");
+    }
+
+    @Test
+    @DisplayName("趋势净额：overview 与 sales 共用同一记录，两处都给净额（不得一处有一处没有）")
+    void overviewTrendAlsoCarriesNetSaleAmount() {
+        stubActiveSnapshot();
+
+        List<SalesTrendPoint> overviewTrend = service.overview(null, null, null).data().salesTrend();
+
+        assertThat(overviewTrend).isNotEmpty();
+        assertThat(overviewTrend).allSatisfy(point -> assertThat(point.netSaleAmount()).isNotNull());
+        assertThat(overviewTrend.get(overviewTrend.size() - 1).netSaleAmount()).isEqualByComparingTo("1493.00");
     }
 
     @Test
@@ -163,7 +498,7 @@ class AnalysisServiceTest {
     void productsEchoTopNButClampEffectiveValue() {
         stubActiveSnapshot();
 
-        AnalysisViewModel<ProductsData> model = service.products(null, 1000, null, null);
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 1000, null, null);
 
         assertThat(model.filters()).containsEntry("topN", 1000);
         assertThat(model.data().topN()).isEqualTo(100);
@@ -174,6 +509,240 @@ class AnalysisServiceTest {
         assertThat(model.data().conversion()).extracting(AnalysisService.ProductConversion::productId)
                 .containsExactly(1L, 2L, 3L, 4L);
         assertThat(model.data().conversion().get(1).conversionRate()).isEqualByComparingTo("0.3333");
+        // v1.3：size 未显式传 ⇒ 生效窗口 = min(topN, 100)；page 缺省 1 ⇒ 与 v1.2 逐字段相同
+        assertThat(model.data().page()).isEqualTo(1);
+        assertThat(model.data().size()).isEqualTo(100);
+        assertThat(model.data().total()).isEqualTo(4);
+        assertThat(model.data().hasMore()).isFalse();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：只传旧参数 topN 时 page=1 语义与 v1.2 逐字段相同（兼容性）")
+    void productsFirstPageKeepsV12ShapeWhenOnlyLegacyTopNIsProvided() {
+        stubActiveSnapshot();
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 10, null, null);
+
+        assertThat(model.filters()).containsEntry("topN", 10).containsEntry("page", 1).containsEntry("size", 10);
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank).containsExactly(1, 2, 3, 4);
+        assertThat(model.data().topN()).isEqualTo(10);
+        assertThat(model.data().page()).isEqualTo(1);
+        assertThat(model.data().size()).isEqualTo(10);
+        assertThat(model.data().total()).isEqualTo(4);
+        assertThat(model.data().hasMore()).isFalse();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：page=2/size=5 返回第 6~10 名窗口，total/hasMore 如实，conversion 仍全量")
+    void productsSecondPageReturnsRequestedRankWindow() {
+        stubActiveSnapshot();
+        stubHotRows(hotRows(15));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 2, 5, null, null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank)
+                .containsExactly(6, 7, 8, 9, 10);
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(60L, 70L, 80L, 90L, 100L);
+        assertThat(model.data().page()).isEqualTo(2);
+        assertThat(model.data().size()).isEqualTo(5);
+        assertThat(model.data().total()).isEqualTo(15);
+        assertThat(model.data().hasMore()).isTrue();
+        // 旧参数 topN 缺省仍按 v1.2 回显 10（请求原值/缺省值），新参数回显生效值
+        assertThat(model.filters()).containsEntry("page", 2).containsEntry("size", 5).containsEntry("topN", 10);
+        assertThat(model.data().topN()).isEqualTo(5); // 窗口上限 = 生效 size
+        // 分页只作用于热度榜：转化保持全量，不漏商品
+        assertThat(model.data().conversion()).hasSize(4);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：size 未传时旧参数 topN 退化为窗口大小（topN=3 ⇒ 前 3 名）")
+    void productsLegacyTopNBecomesWindowSize() {
+        stubActiveSnapshot();
+        stubHotRows(hotRows(15));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 3, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank).containsExactly(1, 2, 3);
+        assertThat(model.data().page()).isEqualTo(1);
+        assertThat(model.data().size()).isEqualTo(3);
+        assertThat(model.data().total()).isEqualTo(15);
+        assertThat(model.data().hasMore()).isTrue();
+        assertThat(model.filters()).containsEntry("topN", 3);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：page 超出 total 返回空 hot 而不是错误，total/hasMore 如实")
+    void productsPageBeyondLastPageIsEmptyButNotAnError() {
+        stubActiveSnapshot();
+        stubHotRows(hotRows(15));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 4, 5, null, null, null, null);
+
+        assertThat(model.data().hot()).isEmpty();
+        assertThat(model.data().page()).isEqualTo(4);
+        assertThat(model.data().size()).isEqualTo(5);
+        assertThat(model.data().total()).isEqualTo(15);
+        assertThat(model.data().hasMore()).isFalse();
+        assertThat(model.warnings()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：排行空 ⇒ total=0、hasMore=false、hot 空数组（不是 null）")
+    void productsEmptyRankingYieldsZeroTotal() {
+        stubActiveSnapshot();
+        stubHotRows(List.of());
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 1, 10, null, null, null, null);
+
+        assertThat(model.data().hot()).isEmpty();
+        assertThat(model.data().total()).isZero();
+        assertThat(model.data().hasMore()).isFalse();
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：稳定排行——同 rank_no 以 product_id 升序打破平局")
+    void productsTiesAreBrokenByProductIdForStableRanking() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRow(1, 7L, "P7"), hotRow(1, 3L, "P3"), hotRow(1, 5L, "P5")));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 10, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(3L, 5L, 7L);
+        assertThat(model.data().total()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.3：显式 page/size 非法 ⇒ PARAM_INVALID（不静默钳制）；旧参数 topN<=0 仍取缺省")
+    void productsRejectNonPositivePageOrSizeButTolerateLegacyTopN() {
+        stubActiveSnapshot();
+
+        assertThatThrownBy(() -> service.products(null, 0, null, null, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        assertThatThrownBy(() -> service.products(null, -1, null, null, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        assertThatThrownBy(() -> service.products(null, null, 0, null, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        assertThatThrownBy(() -> service.products(null, null, -5, null, null, null, null))
+                .isInstanceOfSatisfying(PlatformBizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+
+        // 兼容保留：旧参数 topN<=0 沿用 v1.2 语义取缺省 10，不因 v1.3 转为错误（既有行为不变）
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, 0, null, null);
+        assertThat(model.filters()).containsEntry("topN", 0);
+        assertThat(model.data().size()).isEqualTo(10);
+        assertThat(model.data().page()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：缺省 sort 仍是 rank 升序，并在 filters 回显生效值 rank,asc")
+    void productsDefaultSortIsRankAscendingAndEchoed() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(hotRow(2, 20L, "P20"), hotRow(1, 10L, "P10")));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, null, null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::rank)
+                .containsExactly(1, 2);
+        assertThat(model.filters()).containsEntry("sort", "rank,asc");
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：sort=buy,desc 按购买数降序，同值仍以 product_id 升序打破平局")
+    void productsSortByBuyDescBreaksTiesByProductId() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 30L, "P30", "3.0000", 1L, 0L, 0L, 5L),
+                hotRowFull(2, 10L, "P10", "2.0000", 1L, 0L, 0L, 9L),
+                hotRowFull(3, 20L, "P20", "1.0000", 1L, 0L, 0L, 5L)));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, "buy,desc", null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(10L, 20L, 30L);
+        assertThat(model.filters()).containsEntry("sort", "buy,desc");
+        assertThat(model.data().total()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：字段自带缺省方向（rank 升序、其余降序），显式方向可覆盖")
+    void productsSortFieldDefaultsToItsOwnDirection() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 1L, "P1", "1.0000", 1L, 0L, 0L, 1L),
+                hotRowFull(2, 2L, "P2", "9.0000", 1L, 0L, 0L, 1L)));
+
+        assertThat(service.products(null, null, null, "rank", null, null, null).filters())
+                .containsEntry("sort", "rank,asc");
+        assertThat(service.products(null, null, null, "heat", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+        assertThat(service.products(null, null, null, "rank,desc", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：sort 去空白且大小写不敏感，回显规范化的 field,dir")
+    void productsSortIsTrimmedAndCaseInsensitive() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(hotRow(1, 1L, "P1")));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, null, null, "  BUY , DESC  ", null, null, null);
+
+        assertThat(model.filters()).containsEntry("sort", "buy,desc");
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：heat 取不到值的行无论方向都排最后（不把缺值当 0 排到榜首）")
+    void productsSortPutsMissingHeatLastRegardlessOfDirection() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 1L, "P1", null, 1L, 0L, 0L, 1L),
+                hotRowFull(2, 2L, "P2", "5.0000", 1L, 0L, 0L, 1L)));
+
+        assertThat(service.products(null, null, null, "heat,desc", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+        assertThat(service.products(null, null, null, "heat,asc", null, null, null).data().hot())
+                .extracting(AnalysisService.HotProduct::productId).containsExactly(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：未登记 sort 字段/方向/多余段 ⇒ PARAM_INVALID；空白 sort 取缺省不报错")
+    void productsRejectUnknownSortFieldOrDirection() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(hotRow(1, 1L, "P1")));
+
+        for (String bad : List.of("price", "heat,up", "heat,desc,extra", ",")) {
+            assertThatThrownBy(() -> service.products(null, null, null, bad, null, null, null))
+                    .as("sort=%s", bad)
+                    .isInstanceOfSatisfying(PlatformBizException.class,
+                            e -> assertThat(e.getCode()).isEqualTo("PARAM_INVALID"));
+        }
+        assertThat(service.products(null, null, null, "   ", null, null, null).filters())
+                .containsEntry("sort", "rank,asc");
+    }
+
+    @Test
+    @DisplayName("商品分析 v1.5：sort 先对全量排序再切页（total 不变），且不改 conversion 表顺序")
+    void productsSortAppliesBeforePagingAndLeavesConversionOrderAlone() {
+        stubActiveSnapshot();
+        stubHotRows(List.of(
+                hotRowFull(1, 30L, "P30", "3.0000", 1L, 0L, 0L, 3L),
+                hotRowFull(2, 10L, "P10", "2.0000", 1L, 0L, 0L, 9L),
+                hotRowFull(3, 20L, "P20", "1.0000", 1L, 0L, 0L, 5L)));
+
+        AnalysisViewModel<ProductsData> model = service.products(null, 2, 2, "buy,desc", null, null, null);
+
+        assertThat(model.data().hot()).extracting(AnalysisService.HotProduct::productId)
+                .containsExactly(30L);
+        assertThat(model.data().total()).isEqualTo(3);
+        assertThat(model.data().hasMore()).isFalse();
+        assertThat(model.data().conversion()).extracting(AnalysisService.ProductConversion::productId)
+                .isSorted();
     }
 
     @Test
@@ -210,7 +779,9 @@ class AnalysisServiceTest {
         assertThat(users.data().lifecycle()).extracting(RfmService.LifecycleState::state).containsExactly("活跃");
         assertThat(users.data().preference()).extracting(RfmService.CategoryPreference::categoryId)
                 .containsExactly(11L, 21L);
-        assertThat(users.warnings()).containsExactly(AnalysisViewModel.WARN_RFM_AMOUNT_UNAVAILABLE);
+        assertThat(users.warnings()).containsExactly(AnalysisViewModel.WARN_RFM_AMOUNT_UNAVAILABLE,
+                AnalysisViewModel.WARN_RFM_RAW_VALUES_UNAVAILABLE,
+                AnalysisViewModel.WARN_RFM_PERIOD_UNAVAILABLE);
 
         AnalysisViewModel<RfmData> rfm = service.rfm(null, 50);
         assertThat(rfm.filters()).containsEntry("limit", 50).containsEntry("snapshotId", SID);
@@ -222,9 +793,45 @@ class AnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("显式指定 snapshotId：按指定快照读，不解析 ACTIVE，并在 filters/信封回显")
-    void explicitSnapshotIdWins() {
-        when(metricStore.findSnapshot("S20260901_23")).thenReturn(snapshot("S20260901_23"));
+    @DisplayName("S3-16 原值列存在：M/F 原值与观察窗口透传到 users/rfm 的 data，且无降级警告")
+    void usersAndRfmCarryRawValuesAndWindow() {
+        stubActiveSnapshot();
+        Map<String, List<Map<String, Object>>> ads = new LinkedHashMap<>(adsRows());
+        ads.put("ads_user_profile_m", List.of(
+                row("dt", "20260901", "user_id", 1L, "r", 5, "f", 2, "m", 3, "value_group", "一般发展",
+                        "favorite_category", 11L, "lifecycle_state", "活跃", "rule_version", "rfm-v1",
+                        "calc_date", "20260901", "last_buy_date", "2026-09-01",
+                        "r_days", 7, "f_count", 2L, "m_amount", new BigDecimal("1496.00"),
+                        "period_start", "2026-08-02", "period_end", "2026-09-01")));
+        when(adsReader.selectBySnapshot(anyString(), anyString(), any()))
+                .thenAnswer(invocation -> ads.getOrDefault(invocation.getArgument(0), List.of()));
+
+        AnalysisViewModel<UsersData> users = service.users(null, null, null);
+        assertThat(users.data().rfmSegments().get(0).amount()).isEqualByComparingTo("1496.00");
+        assertThat(users.data().rfmSegments().get(0).orders()).isEqualTo(2L);
+        assertThat(users.data().rfmSegments().get(0).avgRecencyDays()).isEqualByComparingTo("7.0");
+        assertThat(users.data().periodStart()).isEqualTo("2026-08-02");
+        assertThat(users.data().periodEnd()).isEqualTo("2026-09-01");
+        assertThat(users.warnings()).isEmpty();
+
+        AnalysisViewModel<RfmData> rfm = service.rfm(null, null);
+        assertThat(rfm.data().periodStart()).isEqualTo("2026-08-02");
+        assertThat(rfm.data().periodEnd()).isEqualTo("2026-09-01");
+        assertThat(rfm.data().rfmMatrix()).filteredOn(segment -> "一般发展".equals(segment.valueGroup()))
+                .singleElement().satisfies(segment -> {
+                    assertThat(segment.amount()).isEqualByComparingTo("1496.00");
+                    assertThat(segment.orders()).isEqualTo(2L);
+                });
+        assertThat(rfm.warnings()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("显式指定其他 RuntimeProfile 的归档 snapshotId：精确读取且不解析当前 ACTIVE")
+    void explicitArchivedSnapshotFromAnotherProfileIsReadableById() {
+        MetricSnapshot archived = snapshot("S20260901_23");
+        archived.setRuntimeProfileId(202L);
+        archived.setStatus(MetricSnapshot.STATUS_ARCHIVED);
+        when(metricStore.findSnapshot("S20260901_23")).thenReturn(archived);
         when(metricStore.query(any())).thenReturn(List.of());
         stubAdsRows();
 
@@ -254,6 +861,25 @@ class AnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("显式指定未发布快照：BUILDING/VERIFYING/FAILED 均不读取 ADS 或回退 ACTIVE")
+    void unpublishedSnapshotIdsReturnEmptyEnvelopeWithoutReadingAds() {
+        for (String status : List.of(MetricSnapshot.STATUS_BUILDING, MetricSnapshot.STATUS_VERIFYING,
+                MetricSnapshot.STATUS_FAILED)) {
+            MetricSnapshot unpublished = snapshot("S-" + status);
+            unpublished.setStatus(status);
+            when(metricStore.findSnapshot(unpublished.getSnapshotId())).thenReturn(unpublished);
+
+            AnalysisViewModel<SalesData> model = service.sales(unpublished.getSnapshotId(), null, null);
+
+            assertThat(model.snapshotId()).isNull();
+            assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_SNAPSHOT);
+        }
+        verify(adsReader, never()).activeSnapshotId();
+        verify(adsReader, never()).selectBySnapshot(anyString(), anyString(), any());
+        verify(metricStore, never()).query(any());
+    }
+
+    @Test
     @DisplayName("质量门：BLOCKING 失败 → FAIL；质量查询异常 → UNKNOWN 且留警告（不伪造成 PASS）")
     void qualityStatusReflectsGateResult() {
         stubActiveSnapshot();
@@ -261,10 +887,23 @@ class AnalysisServiceTest {
         when(qualityGate.statusForRun(any())).thenReturn(MetricQualityGate.FAIL);
         assertThat(service.overview(null, null, null).qualityStatus()).isEqualTo("FAIL");
 
-        when(qualityGate.statusForRun(any())).thenThrow(new IllegalStateException("meta 库不可用"));
-        AnalysisViewModel<OverviewData> degraded = service.overview(null, null, null);
-        assertThat(degraded.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
-        assertThat(degraded.warnings()).containsExactly(AnalysisViewModel.WARN_QUALITY_STATUS_UNAVAILABLE);
+        String privateDiagnostic = "jdbc:mysql://private-host/analytics_meta?password=private-secret";
+        when(qualityGate.statusForRun(any())).thenThrow(new IllegalStateException(privateDiagnostic));
+        Logger logger = (Logger) LoggerFactory.getLogger(AnalysisService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            AnalysisViewModel<OverviewData> degraded = service.overview(null, null, null);
+            assertThat(degraded.qualityStatus()).isEqualTo(MetricQualityGate.UNKNOWN);
+            assertThat(degraded.warnings()).containsExactly(AnalysisViewModel.WARN_QUALITY_STATUS_UNAVAILABLE);
+            assertThat(appender.list).anySatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("IllegalStateException")
+                    .doesNotContain(privateDiagnostic, "private-secret", "private-host"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
     }
 
     // ── 夹具：数值与真库 S20260901_24 一致（§5 黄金值） ─────────────────────────
@@ -283,13 +922,50 @@ class AnalysisServiceTest {
                 .thenAnswer(invocation -> ads.getOrDefault(invocation.getArgument(0), List.of()));
     }
 
+    /** v1.3：只替换热度榜表，用于构造分页/平局场景（其余表沿用 {@link #adsRows()} 默认夹具）。 */
+    private void stubHotRows(List<Map<String, Object>> rows) {
+        when(adsReader.selectBySnapshot(eq("ads_hot_product_m"), anyString(), any())).thenReturn(rows);
+    }
+
+    /** v1.4：只替换销售趋势表，用于构造净额缺列/畸形值场景（其余表沿用 {@link #adsRows()} 默认夹具）。 */
+    private void stubTrendRows(List<Map<String, Object>> rows) {
+        when(adsReader.selectBySnapshot(eq("ads_sale_trend_m"), anyString(), any())).thenReturn(rows);
+    }
+
+    /** 生成 count 行热度榜，rank_no 1..count，**故意倒序放入**以证明排序不依赖读取顺序。 */
+    private static List<Map<String, Object>> hotRows(int count) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int rank = count; rank >= 1; rank--) {
+            rows.add(hotRow(rank, rank * 10L, "P" + rank));
+        }
+        return rows;
+    }
+
+    private static Map<String, Object> hotRow(int rank, long productId, String name) {
+        return row("dt", "20260901", "product_id", productId, "product_name", name, "heat_score",
+                new BigDecimal(rank + ".0000"), "pv", 1L, "fav", 0L, "cart", 0L, "buy", 0L, "rank_no", rank);
+    }
+
+    /**
+     * v1.5：可逐个指定 heat/pv/fav/cart/buy 的热度榜行，用于排序场景。
+     * {@code heat == null} 表示「这一行取不到 heat_score」（列缺失或非数值），用来验证缺值排序位置。
+     */
+    private static Map<String, Object> hotRowFull(int rank, long productId, String name, String heat,
+                                                  long pv, long fav, long cart, long buy) {
+        return row("dt", "20260901", "product_id", productId, "product_name", name, "heat_score",
+                heat == null ? null : new BigDecimal(heat), "pv", pv, "fav", fav, "cart", cart, "buy", buy,
+                "rank_no", rank);
+    }
+
     private static MetricSnapshot snapshot(String snapshotId) {
         MetricSnapshot snapshot = new MetricSnapshot();
         snapshot.setSnapshotId(snapshotId);
+        snapshot.setSourceId(73L);
         snapshot.setBusinessTime(LocalDateTime.of(2026, 9, 1, 0, 0, 0));
         snapshot.setDataUpdatedAt(LocalDateTime.of(2026, 9, 1, 0, 0, 0));
         snapshot.setDefinitionVersion("v2");
         snapshot.setPipelineRunId(24L);
+        snapshot.setSource("spark-ads"); // §17.6：成功快照只接受 spark-ads（发布侧写入，读侧原样回显）
         snapshot.setStatus(MetricSnapshot.STATUS_ACTIVE);
         return snapshot;
     }
@@ -333,9 +1009,9 @@ class AnalysisServiceTest {
         Map<String, List<Map<String, Object>>> ads = new LinkedHashMap<>();
         ads.put("ads_sale_trend_m", List.of(
                 row("dt", "20260831", "order_count", 2L, "buyer_count", 2L, "sale_amount", new BigDecimal("500.00"),
-                        "avg_order_value", new BigDecimal("250.00")),
+                        "avg_order_value", new BigDecimal("250.00"), "net_sale_amount", new BigDecimal("500.00")),
                 row("dt", "20260901", "order_count", 5L, "buyer_count", 3L, "sale_amount", new BigDecimal("2042.00"),
-                        "avg_order_value", new BigDecimal("408.40"))));
+                        "avg_order_value", new BigDecimal("408.40"), "net_sale_amount", new BigDecimal("1493.00"))));
         ads.put("ads_active_trend_m", List.of(
                 row("dt", "20260901", "dau", 3L, "behavior_count", 14L)));
         ads.put("ads_behavior_funnel_m", List.of(
@@ -366,9 +1042,10 @@ class AnalysisServiceTest {
                 row("dt", "20260901", "product_id", 2L, "pv_users", 3L, "buy_users", 1L, "conversion_rate",
                         new BigDecimal("0.3333"))));
         ads.put("ads_data_quality_m", List.of(
-                row("dt", "20260901", "rule_code", "AMOUNT_RECONCILE", "passed", 1),
-                row("dt", "20260901", "rule_code", "ENUM_WHITELIST", "passed", 1),
-                row("dt", "20260901", "rule_code", "EVENT_ID_UNIQUE", "passed", 0),
+                row("dt", "20260901", "rule_code", "AMOUNT_RECONCILE", "passed", 1, "rule_version", 1),
+                row("dt", "20260901", "rule_code", "ENUM_WHITELIST", "passed", 1, "rule_version", 1),
+                row("dt", "20260901", "rule_code", "EVENT_ID_UNIQUE", "passed", 0, "rule_version", 1),
+                // 该行**没有** rule_version 列：历史快照的「未记录版本」，不得补 0/1（V8 空值语义）
                 row("dt", "20260901", "rule_code", "REQUIRED_FIELD_NULL_RATE", "passed", 1)));
         ads.put("ads_user_profile_m", List.of(
                 row("dt", "20260901", "user_id", 1L, "r", 5, "f", 2, "m", 3, "value_group", "一般发展",

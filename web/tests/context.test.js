@@ -5,11 +5,24 @@ import assert from 'node:assert/strict'
 import {
   buildAiEvidenceContext,
   buildFallbackContext,
+  effectiveWindowText,
   collectSnapshotIds,
   mergeWarnings,
   NON_ANALYSIS_ROW_KEYS,
   warningTextAll
 } from '../src/utils/context.js'
+// S3-35：缺失告知要活过统一信封归一化才到得了屏幕/导出件 ⇒ 这条链必须一起验
+import { readEnvelope } from '../src/utils/envelope.js'
+
+test('effectiveWindowText 只显示接口回显的有效日期窗口，不读取当前输入值', () => {
+  assert.equal(effectiveWindowText({ from: '2026-09-15', to: '2026-09-21' }), '2026-09-15 ~ 2026-09-21')
+  assert.equal(effectiveWindowText({ from: '2026-09-15' }), '自 2026-09-15 起')
+  assert.equal(effectiveWindowText({ to: '2026-09-21' }), '截至 2026-09-21')
+  assert.equal(effectiveWindowText({ date: '2026-09-21' }), '2026-09-21')
+  assert.equal(effectiveWindowText({ '时间范围': '2026-09-15 ~ 2026-09-21（共 7 天）' }), '2026-09-15 ~ 2026-09-21（共 7 天）')
+  assert.equal(effectiveWindowText({ snapshotId: 'S1' }), null)
+  assert.equal(effectiveWindowText(null), null)
+})
 
 test('collectSnapshotIds 兼容 snapshotId / snapshot_id / suggestionSnapshotId 三种字段并去重排序', () => {
   const rows = [
@@ -55,6 +68,25 @@ test('mergeWarnings 去重、丢空值、保持首次出现顺序', () => {
 test('warningTextAll 已知码给中文解释，未知码原样透出（新后端告警不会被吞）', () => {
   assert.match(warningTextAll('ENVELOPE_MISSING'), /未返回统一信封/)
   assert.match(warningTextAll('QUALITY_RULE_FAILED'), /质量规则/)
+  assert.equal(warningTextAll('SOME_NEW_CODE_2027'), 'SOME_NEW_CODE_2027')
+})
+
+// ── S3-33：告警文案的「信封内置 → 本模块补全」链 ────────────────────────────
+// 实测缺陷（S3-33）：`warningTextAll` 的 KDoc 写着「先查信封内置映射，再查本模块补全」，
+// 实现却只查 `WARNING_TEXT_EXTRA` ⇒ 信封侧降级码在页面上原样打出编码。页面**只有**这一个
+// 渲染入口（`AnalysisContext.vue:25`、`AiAssistant.vue:96` 都调 `warningTextAll`），
+// 而 `envelope.js` 的 `warningText` 当时零页面调用 ⇒ 只补 `envelope.js` 的表不会显示出来。
+
+test('S3-33：warningTextAll 链式解析——信封内置码给中文，不再原样打出编码', () => {
+  // 语义来源：AnalysisViewModel 常量 KDoc；NO_ACTIVE_SNAPSHOT/UNKNOWN_DIMENSION_TABLE 本就在信封表里
+  assert.match(warningTextAll('NO_ACTIVE_SNAPSHOT'), /ACTIVE/)
+  assert.match(warningTextAll('RFM_PERIOD_UNAVAILABLE'), /(不猜|留空|不一致)/)
+  assert.match(warningTextAll('RFM_RAW_VALUES_UNAVAILABLE'), /回算/)
+})
+
+test('S3-33：本模块补全码与未知码行为不变（补全仍生效、未知仍原样透出）', () => {
+  assert.match(warningTextAll('NO_SNAPSHOT_SELECTED'), /尚未选择快照/)
+  assert.match(warningTextAll('AI_EVIDENCE_PARTIAL'), /证据包/)
   assert.equal(warningTextAll('SOME_NEW_CODE_2027'), 'SOME_NEW_CODE_2027')
 })
 
@@ -138,8 +170,23 @@ test('buildAiEvidenceContext 遇到真实后端的占位快照号 unknown：按�
 })
 
 test('buildAiEvidenceContext 优先使用 evidence.snapshotId，并搬运 SQL/表/行数/耗时/提示词版本', () => {
+  // QA-04 更新：旧断言固定 filters['时间范围'] === 证据里的请求标签 '近30天'，
+  // 正是「请求标签当口径」的缺陷本身。现在有效查询期以结构化 query.window 为唯一来源。
   const ctx = buildAiEvidenceContext({
-    query: { rows: [{ snapshot_id: 'S20260831_23' }], tables: ['x'] },
+    query: {
+      rows: [{ snapshot_id: 'S20260831_23' }],
+      tables: ['x'],
+      window: {
+        requested: '最近 7 天',
+        requestedDays: 7,
+        from: '2026-08-26',
+        to: '2026-09-01',
+        days: 7,
+        referenceBusinessDate: '2026-09-01',
+        coveredDays: 1,
+        notice: '有效查询区间 7 天，结果只覆盖 1 天（6 天无数据），不能据此判断趋势'
+      }
+    },
     explanation: {
       evidence: {
         snapshotId: 'S20260901_24',
@@ -160,7 +207,8 @@ test('buildAiEvidenceContext 优先使用 evidence.snapshotId，并搬运 SQL/�
   assert.equal(ctx.evidence.returnedRows, 7)
   assert.equal(ctx.evidence.queryElapsedMs, 42)
   assert.equal(ctx.evidence.promptVersion, 'explain_v1')
-  assert.equal(ctx.filters['时间范围'], '近30天')
+  assert.equal(ctx.filters['时间范围'], '2026-08-26 ~ 2026-09-01（共 7 天）（有效查询区间 7 天，结果只覆盖 1 天（6 天无数据），不能据此判断趋势）')
+  assert.doesNotMatch(ctx.filters['时间范围'], /近30天/, '请求标签不得再充当有效查询期')
   assert.ok(ctx.warnings.includes('仅覆盖已支付订单'))
   // 证据齐全时不应再提 snapshotId 缺失
   assert.doesNotMatch(ctx.missingNotice, /snapshotId/)
@@ -171,4 +219,87 @@ test('NON_ANALYSIS_ROW_KEYS 与三页实际返回结构一致', () => {
   assert.deepEqual(NON_ANALYSIS_ROW_KEYS.decisions, ['decisions'])
   assert.deepEqual(NON_ANALYSIS_ROW_KEYS.aiQuery, ['queryRows'])
   assert.deepEqual(NON_ANALYSIS_ROW_KEYS.opsAudit, ['snapshots', 'qualityResults', 'aiHistory', 'aiCalls'])
+})
+
+// ── S3-26：来源（发布方）在非信封路径的处理 ────────────────────────────────
+
+test('buildFallbackContext 透传信封 source；信封与入参都没有时为 null（页面显示「未知」）', () => {
+  const withEnvelope = buildFallbackContext({
+    rows: [],
+    envelopeSource: { snapshotId: 'S20260901_24', source: 'spark-ads' }
+  })
+  assert.equal(withEnvelope.source, 'spark-ads')
+  // 显式入参在信封缺失时生效（运维页各行自带来源的场景）
+  assert.equal(buildFallbackContext({ rows: [], source: 'spark-ads' }).source, 'spark-ads')
+  assert.equal(buildFallbackContext({ rows: [] }).source, null)
+  // 来源不是业务源身份，也不进缺失清单：非信封接口已由 ENVELOPE_MISSING 标注
+  const ctx = buildFallbackContext({ rows: [], warnings: ['ENVELOPE_MISSING'] })
+  assert.doesNotMatch(ctx.missingNotice, /来源/)
+})
+
+test('AI 证据上下文不含发布方：source 显式为 null，不借当前快照冒充 AI 结果来源', () => {
+  const ctx = buildAiEvidenceContext({
+    explanation: { evidence: { snapshotId: 'S20260901_24', question: '复购率', sql: 'SELECT 1', tables: ['dws_user_trade_period'] } },
+    query: {},
+    rows: []
+  })
+  assert.equal(ctx.source, null)
+})
+
+// ── S3-35：/pipeline 页取数状态收敛到 useAnalysis 后，其行键也登记在同一属主 ──────────
+
+test('NON_ANALYSIS_ROW_KEYS 是「非信封接口页面的行键」唯一属主：/pipeline 行键已登记且各值非空', () => {
+  // /pipeline 的 data 形状＝{ pipelineRuns: [...] }（fetcher 内已构造），行键必须与 data 键同名
+  assert.deepEqual(NON_ANALYSIS_ROW_KEYS.pipelineRuns, ['pipelineRuns'])
+  // 既有键一个都不能少（加性登记，不得改名/删除既有页面的行键）
+  assert.deepEqual(Object.keys(NON_ANALYSIS_ROW_KEYS).sort(), ['aiQuery', 'decisions', 'opsAudit', 'opsMetrics', 'pipelineRuns'])
+  for (const [k, v] of Object.entries(NON_ANALYSIS_ROW_KEYS)) {
+    assert.ok(Array.isArray(v) && v.length > 0 && v.every((s) => typeof s === 'string' && s), `${k} 的行键必须是非空字符串数组`)
+  }
+})
+
+// ── S3-35：缺失告知（missingNotice）必须活过统一信封归一化，否则页面横幅与导出件都看不到 ──────
+
+test('buildFallbackContext 的 missingNotice 经 readEnvelope 归一化后仍在；真信封无该字段时为空', () => {
+  const ctx = buildFallbackContext({ rows: [] })
+  assert.match(ctx.missingNotice, /接口未提供/)
+  const normalized = readEnvelope(ctx)
+  // fetchRuns 这类 fetcher 返回的对象要经 readEnvelope 才进 useAnalysis：
+  // 若归一化丢掉 missingNotice，横幅（AnalysisContext）与导出元信息（csv.js）都拿不到，
+  // 「取不到就如实标注」就只停留在单元层、到不了屏幕。
+  assert.equal(normalized.missingNotice, ctx.missingNotice)
+  // 后端统一信封没有该字段：按本归一化器既有约定为 null（其余字段同为 asText ⇒ null），
+  // 页面 `v-if` 为假不显示、导出不写该行，不得凭空造缺失说明
+  assert.equal(readEnvelope({ snapshotId: 'S20260901_47', data: {} }).missingNotice, null)
+})
+
+// ── S3-42：AI 证据包 ID（决策草稿的锚点来源）必须搬到页面；占位/缺失按「未提供」────────────
+
+test('buildAiEvidenceContext 搬运顶层 evidenceId（问数分支 explanation.evidence.evidenceId 恒为 null）', () => {
+  const ctx = buildAiEvidenceContext({
+    evidenceId: 'EV-20260916-3f2a9c',
+    query: { status: 'OK', rows: [] },
+    explanation: { evidence: { snapshotId: 'S20260901_24', evidenceId: null } }
+  })
+  assert.equal(ctx.evidence.evidenceId, 'EV-20260916-3f2a9c')
+})
+
+test('buildAiEvidenceContext 的 evidenceId 遇占位串/空白按未提供（null），不拿占位当锚点', () => {
+  for (const raw of ['unknown', 'UNKNOWN', '   ', null, undefined]) {
+    const ctx = buildAiEvidenceContext({
+      evidenceId: raw,
+      query: { status: 'OK', rows: [] },
+      explanation: { evidence: {} }
+    })
+    assert.equal(ctx.evidence.evidenceId, null, `evidenceId=${JSON.stringify(raw)} 必须归一为 null`)
+  }
+})
+
+test('证据包构建失败（顶层 evidenceId 缺失）时不编造 ID：快照号仍走既有回退', () => {
+  const ctx = buildAiEvidenceContext({
+    query: { status: 'OK', rows: [{ snapshot_id: 'S20260901_24' }] },
+    explanation: { evidence: {} }
+  })
+  assert.equal(ctx.evidence.evidenceId, null)
+  assert.equal(ctx.snapshotId, 'S20260901_24')
 })

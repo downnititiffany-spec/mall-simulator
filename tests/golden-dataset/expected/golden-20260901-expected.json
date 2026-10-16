@@ -40,9 +40,9 @@
     "证据：docs/acceptance/r9-20260911-fabc6cb-run25-S20260901_25/13-ads-overview-active.tsv（正式 ADS 分区）与 11-metric-value-active.tsv（metric_value 10 码）",
     "buy_rate = 支付用户数(3) / 浏览用户数(3) = 1.0000",
     "repeat_rate = 有效支付订单>=2 用户(u3: O1003+O1006=2) / 支付用户(3) = 0.3333；O1004 全额退款排除，O1002 取消不计",
-    "行为明细 14 行 = ODS behavior 16 - 重复 event_id(037 去重) - 非法枚举(038 purchase 白名单过滤)；DUPLICATE_EVENT reject 1 条 → EVENT_ID_UNIQUE error=1(只记不阻断)",
+    "行为明细 14 行 = ODS behavior 16 - 重复 event_id(037 去重) - 非法枚举(038 purchase 白名单过滤)；原 55 行夹具刻意保留 DUPLICATE_EVENT 负例，当前 V3 质量契约下 EVENT_ID_UNIQUE 超阈值必须阻断，不再沿用‘只记不阻断’旧说明",
     "用户更新(u1 二次 user_registered 12:00 platinum)与商品更新(p1 product_updated 279.00)经 dim 快照取最新",
     "迟到退款 O1005：refund_completed event_time=09-02 → ODS dt=20260902 分区，TradeDwdJob 全分区读重算归 orderDate 20260901",
-    "AMOUNT_RECONCILE 全过（各单 order_amount==paid_amount）→ corePassed=true → 主链 SUCCESS"
+    "AMOUNT_RECONCILE 本身全过；原 55 行负向夹具因 EVENT_ID_UNIQUE 超阈值不得作为正向主链 SUCCESS 夹具。Stage 7 正向链使用 golden-20260901-positive.jsonl（移除 3 个 ODL 脏样本、purchase 非白名单样本和第二个 golden-evt-008，共 50 行），阈值与生产规则均不放宽"
   ]
 }

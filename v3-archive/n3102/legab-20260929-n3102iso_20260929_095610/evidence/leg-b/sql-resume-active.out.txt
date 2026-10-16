@@ -1,0 +1,2 @@
+CONCAT('SNAP|', snapshot_id, '|', status)
+SNAP|S20260918_1|ACTIVE

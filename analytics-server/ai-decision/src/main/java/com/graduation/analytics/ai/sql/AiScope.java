@@ -24,7 +24,13 @@ public record AiScope(String snapshotId,
                       LocalDate businessDate,
                       LocalDate minAllowedDate,
                       int maxScanDays,
-                      int rowLimit) {
+                      int rowLimit,
+                      Long sourceId) {
+
+    public AiScope(String snapshotId, String definitionVersion, LocalDate businessDate,
+                   LocalDate minAllowedDate, int maxScanDays, int rowLimit) {
+        this(snapshotId, definitionVersion, businessDate, minAllowedDate, maxScanDays, rowLimit, null);
+    }
 
     /** dt 范围含端点：businessDate 往前共 90 天（2026-09-04 → [2026-06-07, 2026-09-04]） */
     public static final int DEFAULT_MAX_SCAN_DAYS = 90;
@@ -60,9 +66,13 @@ public record AiScope(String snapshotId,
 
     /** 按契约口径由业务日派生 minAllowedDate / maxScanDays / rowLimit */
     public static AiScope of(String snapshotId, String definitionVersion, LocalDate businessDate) {
+        return of(snapshotId, definitionVersion, businessDate, null);
+    }
+
+    public static AiScope of(String snapshotId, String definitionVersion, LocalDate businessDate, Long sourceId) {
         return new AiScope(snapshotId, definitionVersion, businessDate,
                 businessDate.minusDays(DEFAULT_MAX_SCAN_DAYS - 1L),
-                DEFAULT_MAX_SCAN_DAYS, DEFAULT_ROW_LIMIT);
+                DEFAULT_MAX_SCAN_DAYS, DEFAULT_ROW_LIMIT, sourceId);
     }
 
     public boolean businessDateInRange(LocalDate date) {

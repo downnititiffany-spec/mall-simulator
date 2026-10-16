@@ -1,0 +1,140 @@
+{
+  "runId": "n3102cat_20260930_2235_6f3a",
+  "outcome": "PASS",
+  "snapshotId": "S20260918_1",
+  "apiCategoryRows": 4,
+  "apiRegionRows": 4,
+  "mysqlCategoryRows": 4,
+  "mysqlRegionRows": 4,
+  "comparedApiCells": 40,
+  "passedChecks": 17,
+  "failedChecks": 0,
+  "tolerance": 0.0005,
+  "oracleSha256": "5dc903967d0025ac8d27b63d2daeb764fdfcedfe955fb0e52478d46eeb661909",
+  "checks": [
+    {
+      "name": "overview.metricCount",
+      "expected": 14,
+      "actual": 14,
+      "passed": true
+    },
+    {
+      "name": "overview.snapshot",
+      "expected": "S20260918_1",
+      "actual": "S20260918_1",
+      "passed": true
+    },
+    {
+      "name": "sales.snapshot",
+      "expected": "S20260918_1",
+      "actual": "S20260918_1",
+      "passed": true
+    },
+    {
+      "name": "sales.categoryRowCount",
+      "expected": 4,
+      "actual": 4,
+      "passed": true
+    },
+    {
+      "name": "sales.regionRowCount",
+      "expected": 4,
+      "actual": 4,
+      "passed": true
+    },
+    {
+      "name": "sales.gmv",
+      "expected": 450,
+      "actual": 450.0,
+      "passed": true
+    },
+    {
+      "name": "sales.netSale",
+      "expected": 370,
+      "actual": 370.0,
+      "passed": true
+    },
+    {
+      "name": "sales.categoryGrossTotal",
+      "expected": 450,
+      "actual": 450.0,
+      "passed": true
+    },
+    {
+      "name": "sales.regionGrossTotal",
+      "expected": 450,
+      "actual": 450.0,
+      "passed": true
+    },
+    {
+      "name": "sales.categoryNetTotal",
+      "expected": 370,
+      "actual": 370.0,
+      "passed": true
+    },
+    {
+      "name": "sales.regionNetTotal",
+      "expected": 370,
+      "actual": 370.0,
+      "passed": true
+    },
+    {
+      "name": "mysql.categoryRowsMatchOracle",
+      "expected": [
+        "CAT|-1|未分类|-1|未分类|1|60.00|60.00",
+        "CAT|100|数码设备|10|电子产品|2|190.00|190.00",
+        "CAT|200|数码配件|10|电子产品|2|150.00|70.00",
+        "CAT|300|家居日用|20|家居生活|1|50.00|50.00"
+      ],
+      "actual": [
+        "CAT|-1|未分类|-1|未分类|1|60.00|60.00",
+        "CAT|100|数码设备|10|电子产品|2|190.00|190.00",
+        "CAT|200|数码配件|10|电子产品|2|150.00|70.00",
+        "CAT|300|家居日用|20|家居生活|1|50.00|50.00"
+      ],
+      "passed": true
+    },
+    {
+      "name": "mysql.regionRowsMatchOracle",
+      "expected": [
+        "REG|tier1|230.00|150.00",
+        "REG|tier2|90.00|90.00",
+        "REG|tier3|70.00|70.00",
+        "REG|unknown|60.00|60.00"
+      ],
+      "actual": [
+        "REG|tier1|230.00|150.00",
+        "REG|tier2|90.00|90.00",
+        "REG|tier3|70.00|70.00",
+        "REG|unknown|60.00|60.00"
+      ],
+      "passed": true
+    },
+    {
+      "name": "mysql.unclassifiedBucket",
+      "expected": "CAT|-1|未分类|-1|未分类|1|60.00|60.00",
+      "actual": true,
+      "passed": true
+    },
+    {
+      "name": "mysql.unknownRegionBucket",
+      "expected": "REG|unknown|60.00|60.00",
+      "actual": true,
+      "passed": true
+    },
+    {
+      "name": "page.overviewMetricCount",
+      "expected": 14,
+      "actual": 14,
+      "passed": true
+    },
+    {
+      "name": "page.salesPassed",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    }
+  ],
+  "failed": [],
+  "pageEvidence": "evidence-a8-corrected/page-evidence-a8.json"
+}

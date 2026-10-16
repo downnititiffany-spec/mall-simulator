@@ -1,0 +1,32 @@
+-- =====================================================================
+-- V11: ads_data_quality_m.error_rate 放开为可空 —— 承接 D-019 的合法空态质量行
+--
+-- 真实链路证据（Stage 7 Batch T-R2 attempt-4，2026-09-19）：D-019（V29）让
+-- 「分区存在且 Location 可读但 0 行」的合法空态输出良构质量行
+-- 0/0/passed=1/error_rate=NULL（AdsSql 无行为日分支）。该行首次写进真库时被
+-- V3 的 `error_rate DECIMAL(12,6) NOT NULL DEFAULT 0` 拒绝：MetricAdsWriter 把
+-- 行值原样直传 JDBC batchUpdate（insertRows），PUBLISH_METRIC 因此 FAILED
+-- （MP_ADS_WRITE，42 行整批回滚，runId=11）。被阻塞的正是 D-019 已裁定合法的
+-- 空态——属 schema 缺口，不是数据缺陷，也不得在写侧把 NULL 偷换成 0。
+--
+-- 为什么是 NULL 而不是 0：0 行规则检查的 error_rate = error_count/check_count
+-- = 0/0，数学上未定义。写 0 会把「没有可计算的错误率」伪装成「真实比率为 0」，
+-- 与 D-019 确立的空态语义（error_rate=NULL）冲突。读侧不受影响：error_rate
+-- 目前没有字段级消费方（质量卡只消费 passed/rule_version 等列，质量行按
+-- manifest JSONL 以通用 Map 透传），NULL 不会破坏任何既有读取路径。
+--
+-- 为什么发 V11 而不修改 V3：V3 已发布，改动会破坏 Flyway checksum（治理门 ③，
+-- 与 V10/V29 同一 append-only 先例）。只追加本迁移，不改 V1~V10 任何字节；
+-- V3 的原始定义保持原样，由迁移脚本门测试锁定。
+--
+-- 类型与精度保持 DECIMAL(12,6) 不变，只放开 NOT NULL 并把默认值定为 NULL：
+-- 「未提供 error_rate 列」与「显式写 NULL」行为一致（均为 NULL，不再有 0 默认
+-- 值伪装）。
+--
+-- 【本迁移在真库上的执行状态：未执行】
+-- 3306 冻结（零写入、不切 ACTIVE）；真实 MySQL 证据只来自 3307 隔离库
+-- （AnalyticsIsolationFlywayIT 应用 + AdsDataQualityErrorRateNullableMySqlIT 验证）。
+-- =====================================================================
+
+ALTER TABLE ads_data_quality_m
+    MODIFY COLUMN error_rate DECIMAL(12,6) NULL DEFAULT NULL;

@@ -1,0 +1,115 @@
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "snapshotId": "S20260918_1",
+    "sourceId": 1,
+    "source": "spark-ads",
+    "businessTime": "2026-09-18T00:00:00",
+    "dataUpdatedAt": "2026-09-18T00:00:00",
+    "definitionVersion": "v2",
+    "qualityStatus": "PASS",
+    "filters": {
+      "from": "2026-09-18",
+      "to": "2026-09-18",
+      "snapshotId": "S20260918_1"
+    },
+    "data": {
+      "trend": [
+        {
+          "date": "2026-09-18",
+          "orderCount": 6,
+          "saleAmount": 450.0,
+          "buyerCount": 6,
+          "avgOrderValue": 75.0,
+          "netSaleAmount": 370.0
+        }
+      ],
+      "gmv": 450.0,
+      "netSale": 370.0,
+      "refundRate": 0.1667,
+      "fullRefundRate": 0.1667,
+      "quality": {
+        "ruleCount": 4,
+        "passedCount": 4,
+        "failedRules": [],
+        "ruleVersions": {
+          "AMOUNT_RECONCILE": 1,
+          "ENUM_WHITELIST": 1,
+          "EVENT_ID_UNIQUE": 1,
+          "REQUIRED_FIELD_NULL_RATE": 1
+        }
+      },
+      "byCategory": [
+        {
+          "category_id": 100,
+          "category_name": "数码设备",
+          "parent_category_id": 10,
+          "parent_category_name": "电子产品",
+          "sale_count": 2,
+          "sale_amount": 190.0,
+          "net_sale_amount": 190.0,
+          "amount_ratio": 0.4222
+        },
+        {
+          "category_id": 200,
+          "category_name": "数码配件",
+          "parent_category_id": 10,
+          "parent_category_name": "电子产品",
+          "sale_count": 2,
+          "sale_amount": 150.0,
+          "net_sale_amount": 70.0,
+          "amount_ratio": 0.3333
+        },
+        {
+          "category_id": -1,
+          "category_name": "未分类",
+          "parent_category_id": -1,
+          "parent_category_name": "未分类",
+          "sale_count": 1,
+          "sale_amount": 60.0,
+          "net_sale_amount": 60.0,
+          "amount_ratio": 0.1333
+        },
+        {
+          "category_id": 300,
+          "category_name": "家居日用",
+          "parent_category_id": 20,
+          "parent_category_name": "家居生活",
+          "sale_count": 1,
+          "sale_amount": 50.0,
+          "net_sale_amount": 50.0,
+          "amount_ratio": 0.1111
+        }
+      ],
+      "byRegion": [
+        {
+          "region": "tier1",
+          "sale_amount": 230.0,
+          "net_sale_amount": 150.0,
+          "amount_ratio": 0.5111
+        },
+        {
+          "region": "tier2",
+          "sale_amount": 90.0,
+          "net_sale_amount": 90.0,
+          "amount_ratio": 0.2
+        },
+        {
+          "region": "tier3",
+          "sale_amount": 70.0,
+          "net_sale_amount": 70.0,
+          "amount_ratio": 0.1556
+        },
+        {
+          "region": "unknown",
+          "sale_amount": 60.0,
+          "net_sale_amount": 60.0,
+          "amount_ratio": 0.1333
+        }
+      ]
+    },
+    "warnings": []
+  },
+  "traceId": "59b011e4-8f10-4594-bcf7-6210a47c26f9"
+}

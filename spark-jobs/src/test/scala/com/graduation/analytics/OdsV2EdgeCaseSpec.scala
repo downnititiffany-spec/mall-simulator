@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path}
 
 /**
  * P2-01 A5c / A6 / A6b：**受控夹具**上的边界行为。
@@ -29,6 +29,7 @@ class OdsV2EdgeCaseSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll
   private val sourceSystem = "edge-src"
 
   private var spark: SparkSession = _
+  private var tempRoot: Path = _
 
   /** 受控输入（每条都是**完整的 landing JSON 行**；`|` 只用于可读性，写入时去掉） */
   private val InnerJson = """{"user_id":"1","nested":{"a":1,"b":"}"},"q":"he said \"hi\"","list":[{"x":2}]}"""
@@ -47,12 +48,12 @@ class OdsV2EdgeCaseSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll
     """{"event_id":"edge-5","event_type":"user_registered","event_time":"2026-09-02T14:00:00+08:00","ingest_time":"2026-09-02T14:00:01+08:00","source_system":"row-src","schema_version":"1.0","trace_id":"t-5","payload":{"user_id":"1"}"""
   )
 
-  private val landingDir: String = s"${P2TestSupport.TempRoot}/p2-01-edge-landing"
-
   override def beforeAll(): Unit = {
-    // 落地只读输入：写进隔离临时目录（不用删除类命令，文件按固定名覆盖写）
-    Files.createDirectories(Paths.get(landingDir))
-    val fixture = Paths.get(landingDir, "edge-20260902.jsonl")
+    // 输入与 warehouse 分别位于本套件独占的操作系统临时目录。
+    tempRoot = P2TestSupport.createTempDirectory("p2-01-edge-case")
+    val landingDir = tempRoot.resolve("landing")
+    Files.createDirectories(landingDir)
+    val fixture = landingDir.resolve("edge-20260902.jsonl")
     Files.write(fixture,
       (lines.mkString("\n") + "\n").getBytes(StandardCharsets.UTF_8))
     P2TestSupport.requireNonEmpty(fixture)
@@ -63,12 +64,15 @@ class OdsV2EdgeCaseSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll
       "--runtimeProfileId=1", "--jobCode=odl", "--businessDate=20260902", "--attemptNo=1",
       s"--hiveDatabasePrefix=${ns.prefix}",
       s"--sourceSystem=$sourceSystem",
-      s"--landingDir=file:///$landingDir",
+      s"--landingDir=${P2TestSupport.fileUri(landingDir)}",
       s"--batchId=$batchId")).right.get
     EventOdsLoadJob.instance.run(spark, args)
   }
 
-  override def afterAll(): Unit = P2TestSupport.stop(spark)
+  override def afterAll(): Unit = {
+    try P2TestSupport.stop(spark)
+    finally P2TestSupport.deleteTree(tempRoot)
+  }
 
   // ── A5c：受控行的切片结果 ───────────────────────────────────────────────
 

@@ -1,0 +1,15 @@
+CONCAT('MV|', metric_code, '|', metric_value, '|', period, '|', snapshot_id)
+MV|avg_order_value|84.1700|day:2026-09-18|S20260918_1
+MV|buy_rate|0.6000|day:2026-09-18|S20260918_1
+MV|cart_add_cnt|8.0000|day:2026-09-18|S20260918_1
+MV|cart_rate|0.6000|day:2026-09-18|S20260918_1
+MV|dau|10.0000|day:2026-09-18|S20260918_1
+MV|fav_cnt|6.0000|day:2026-09-18|S20260918_1
+MV|full_refund_rate|0.0833|day:2026-09-18|S20260918_1
+MV|gmv|1010.0000|day:2026-09-18|S20260918_1
+MV|net_sale|930.0000|day:2026-09-18|S20260918_1
+MV|paid_order_cnt|12.0000|day:2026-09-18|S20260918_1
+MV|pv|30.0000|day:2026-09-18|S20260918_1
+MV|refund_rate|0.0833|day:2026-09-18|S20260918_1
+MV|repeat_rate|0.3333|window:2026-09-18..2026-09-18|S20260918_1
+MV|uv|10.0000|day:2026-09-18|S20260918_1

@@ -2,12 +2,14 @@ package com.graduation.analytics
 
 import com.graduation.analytics.sql.{AdsSql, DimSql, DwdSql, DwsSql, OdsLoadSql}
 import com.graduation.analytics.warehouse.WarehouseNamespace
+import com.graduation.analytics.job.MetricExportJob
+import org.apache.hadoop.conf.Configuration
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 /**
  * SQL 模板关键子句测试：不依赖 Spark 运行，验证口径/安全/去重逻辑在 SQL 层面正确。
- * R5：7 张 DWS + 8 张 ADS 模板口径断言（§12.1-12.4）。
+ * R5：7 张 DWS + 当前 10 张 ADS 模板口径断言（§12.1-12.4）。
  *
  * P1-04：模板首参是库名空间；本用例统一用**缺省命名空间**（源 A 库名 dw_*），
  * 因此断言的 SQL 文本与改造前逐字一致。跨前缀（换源）的断言见 WarehouseNamespaceSpec。
@@ -87,35 +89,52 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
   "DimSql" should "用户维度取每 user_id 最新事件生成快照并保留来源批次" in {
     val sql = DimSql.userSnapshot(ns, "20260901")
     val lower = sql.toLowerCase
-    lower should include("row_number() over (partition by payload_user_id order by event_time desc)")
+    lower should include("row_number() over (")
+    lower should include("partition by payload_user_id")
     lower should include("payload_user_id")
     lower should include("source_batch_id")
     lower should include("partition(dt = '20260901')")
+    lower should include("where dt <= '20260901'")
+    lower should include("order by event_time desc, ingest_batch_id desc, event_id desc")
+  }
+
+  "MetricExportJob" should "把无 scheme 的导出目录显式定向到本地文件系统，而非 Hadoop 默认 HDFS" in {
+    val conf = new Configuration()
+    conf.set("fs.defaultFS", "hdfs://namenode:8020")
+
+    val resolved = MetricExportJob.localExportDirectory("/mnt/d/analytics/metric-staging", conf)
+
+    resolved.toUri.getScheme should be("file")
+    resolved.toUri.getPath should be("/mnt/d/analytics/metric-staging")
+    an[IllegalArgumentException] should be thrownBy
+      MetricExportJob.localExportDirectory("hdfs://namenode:8020/ads/export", conf)
   }
 
   it should "商品维度取每 product_id 最新建档事件并做 unknown key 兜底（库存事件不进快照）" in {
     val sql = DimSql.productSnapshot(ns, "20260901")
     val lower = sql.toLowerCase
-    lower should include("row_number() over (partition by payload_product_id order by event_time desc)")
+    lower should include("partition by payload_product_id")
+    lower should include("order by event_time desc, ingest_batch_id desc, event_id desc")
+    lower should include("where dt <= '20260901'")
     lower should include("'unknown'")
     lower should include("-1")
     lower should include("event_type in ('product_created', 'product_updated')")
     lower should not include "stock_reserved"
   }
 
-  "DwdSql" should "event_id 去重且只保留合法枚举" in {
+  "DwdSql" should "(source_system, event_id) 复合去重且只保留合法枚举（P2-04-a：跨源同名不得互相去重）" in {
     val sql = DwdSql.behaviorClean(ns, "20260901")
     val lower = sql.toLowerCase
-    lower should include("row_number() over (partition by event_id order by ingest_time)")
+    lower should include("row_number() over (partition by source_system, event_id order by ingest_time)")
     lower should include("rn.rn = 1")
     lower should include("behavior_type in ('view','favorite','cart_add','cart_remove','search')")
     lower should include("partition(dt = '20260901')")
     lower should include("payload_user_id is not null")
   }
 
-  it should "重复事件写入拒绝记录" in {
+  it should "重复事件写入拒绝记录（拒绝键与去重键同为复合键，跨源同名不算重复）" in {
     val sql = DwdSql.duplicateReject(ns, "20260901")
-    sql.toLowerCase should include("group by event_id having count(*) > 1")
+    sql.toLowerCase should include("group by source_system, event_id having count(*) > 1")
     sql.toLowerCase should include("'duplicate_event'")
   }
 
@@ -218,6 +237,17 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     sql should include("'order'")
     sql should include("'pay'")
     sql should include("overall_buy_rate")
+    // S3-04：整体加购率是**列**而不是第五个 stage 行（§11.3 L441 阶段集合恒为四阶）
+    sql should include("overall_cart_rate")
+    sql should not include "'cart'"
+  }
+
+  it should "漏斗 DWS 的加购分子只取 cart_add（不是 intent 的 favorite|cart_add）且分母 0 为 NULL" in {
+    val sql = DwsSql.funnelDay(ns, "20260901").toLowerCase
+    sql should include("behavior_type = 'cart_add'")
+    sql should include("as cart_users")
+    sql should include("as cart_rate")
+    sql should include("when b.view_users = 0 then null")
   }
 
   it should "商品转化 buy_users 取商品销售 DWS 去重买家数而非 buy 件数" in {
@@ -234,7 +264,9 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     sql should include("重要挽留")
     sql should include("流失风险")
     sql should include("新用户")
-    sql should include("'rfm-v1' as rule_version")
+    // S3-01：窗口转换反斜杠转义被 Spark SQL 解析器吃掉（`'(\d{4})'`→`(d{4})`）导致 DATEDIFF 恒 NULL、
+    // R 分档退化成 user_id 次序；修正后 r/active_level/lifecycle_state 取值改变 ⇒ 版本升 rfm-v2。
+    sql should include("'rfm-v2' as rule_version")
   }
 
   it should "DEF-10：用户画像的 NOT NULL 列不得产出 NULL（下单但当日无行为的用户会把发布 INSERT 打挂）" in {
@@ -256,5 +288,15 @@ class SqlTemplateSpec extends AnyFlatSpec with Matchers {
     lower should include("'enum_whitelist'")
     lower should include("'duplicate_event'")
     lower should include("reject_record")
+  }
+
+  it should "S3-05：数据质量大盘每行带规则定义版本，且四条分支只引用同一个版本常量" in {
+    val sql = AdsSql.dataQuality(ns, "20260901")
+    // 外查列清单把 rule_version 带出来（列序与 MetricAdsSpec 一致：追加在末尾）
+    sql should include("SELECT rule_code, check_count, error_count, error_rate, passed, threshold, rule_version FROM (")
+    // 四条规则分支由**同一个**版本常量渲染而成（渲染结果是 4 处 `1 AS rule_version`，不是各处手写不同字面量）；
+    // 常量真值是否等于目录版本，由 warehouse-pipeline 的 QualityRuleThresholdDriftTest 解析源码对账。
+    sql.sliding("1 AS rule_version".length).count(_ == "1 AS rule_version") should be(4)
+    AdsSql.QualityRuleVersion should be(1)
   }
 }

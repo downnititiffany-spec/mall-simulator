@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.analytics.common.LandingUri;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.contracts.EventContract;
 import com.graduation.analytics.contracts.EventEnvelope;
 import com.graduation.analytics.contracts.EventClock;
@@ -16,9 +17,11 @@ import com.graduation.analytics.metric.publish.MetricPublisherPort.DefinitionRef
 import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishReport;
 import com.graduation.analytics.metric.publish.MetricPublisherPort.PublishRequest;
 import com.graduation.analytics.pipeline.entity.DataQualityResult;
+import com.graduation.analytics.pipeline.entity.PipelineBatchConsumption;
 import com.graduation.analytics.pipeline.entity.PipelineRun;
 import com.graduation.analytics.pipeline.entity.PipelineStageRun;
 import com.graduation.analytics.pipeline.mapper.DataQualityResultMapper;
+import com.graduation.analytics.pipeline.mapper.PipelineBatchConsumptionMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineRunMapper;
 import com.graduation.analytics.pipeline.mapper.PipelineStageRunMapper;
 import com.graduation.analytics.pipeline.spark.JobResultParser;
@@ -27,14 +30,20 @@ import com.graduation.analytics.pipeline.spark.SparkStageExecutorFactory;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.runtime.storage.LandingStorage;
+import com.graduation.analytics.runtime.storage.LandingStorageResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,14 +51,18 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.regex.Matcher;
@@ -77,6 +90,11 @@ import java.util.regex.Pattern;
 public class PipelineService {
 
     private static final DateTimeFormatter KEY_DATE = DateTimeFormatter.BASIC_ISO_DATE;
+    private static final Set<String> PUBLISH_EVIDENCE_KEYS = Set.of(
+            "snapshotId", "businessDate", "exportDir", "manifestTotalRows", "manifestSource",
+            "previousActiveSnapshotId", "adsRows", "adsRowsByTable", "metricCodes", "metricValues",
+            "postVerificationRecovery", "activeSnapshotAfterRecovery", "postVerificationRecoveryErrorType",
+            "compensatedAdsRows", "compensateErrorType", "errorCode", "elapsedMs");
 
     /**
      * 阶段证据 JSON 的字符上限（V15 后列型 MEDIUMTEXT，16MB；本项目证据量级为 10^4 字符，
@@ -122,6 +140,28 @@ public class PipelineService {
      */
     private final DataQualityGate qualityGate;
 
+    /**
+     * S2-04：本轮输入清单（Landing manifest）的选择器——**按源归属**取批次。
+     *
+     * <p>规则本体在 {@link LandingManifestSelector}（唯一所有者）：本类只负责"本 run 归属哪个源"
+     * 与"重试时钉住哪个批次"。之所以必须按源过滤：ODS 库名与 {@code --sourceSystem} 来自
+     * {@code profile.source_id}，而 {@code source_system} 是作业按 source_code 注入的常量字面量，
+     * 选中他源清单就会产出"标成本源、实际是他源"的 ODS 行且事后不可察觉（详见选择器 javadoc）。</p>
+     */
+    private final LandingManifestSelector manifestSelector;
+
+    /**
+     * G31-11（总控 D-048 §(5) M3 发布语义 / D-049a）：采集批次消费台账
+     * （analytics_meta.pipeline_batch_consumption，V33 建表）。
+     *
+     * <p>消费状态是**独立记录**：既不是「manifest READY」的另一种判定，也不是「指标值相等」
+     * 的去重——唯一写点在 {@code metricPublisher.publish} 返回 ok 之后（见
+     * {@link #markBatchConsumed}），FAILED run 永不写。选择器据此把「READY 批次已全部消费」
+     * 与「根本没有 READY 批次」区分开：前者 → M3 no-op（无新输入不发布），后者 →
+     * RUN_EMPTY_LANDING fail-closed（原语义不动）。</p>
+     */
+    private final PipelineBatchConsumptionMapper batchConsumptionMapper;
+
     /** R7-3：Spark `mxp` 导出目录根（清单 + 各表 JSONL），可配置便于运维定位 */
     @org.springframework.beans.factory.annotation.Value("${platform.metric.publish.export-dir:metric-staging}")
     private String metricExportRoot = "metric-staging";
@@ -154,6 +194,8 @@ public class PipelineService {
             PipelineRun run = new PipelineRun();
             run.setIdempotencyKey(key);
             run.setRuntimeProfileId(runtimeProfileId);
+            // source_registry.id 在任务创建时冻结；后续源切换不得改变本 run 的归属。
+            run.setSourceId(profile.getSourceId());
             run.setRuntimeProfileVersion(profile.getVersion());
             run.setPipelineCode(pipelineCode);
             run.setBusinessTime(businessTime);
@@ -176,7 +218,7 @@ public class PipelineService {
             }
             final Long runId = run.getId();
             // §13.1：立即返回 PENDING taskId，计算链异步执行
-            pipelineExecutor.execute(() -> executeInBackground(runId));
+            enqueue(runId);
             return assemble(runId);
         }
     }
@@ -202,7 +244,73 @@ public class PipelineService {
         run.setUpdatedAt(eventClock.nowLdt());
         runMapper.updateById(run);
         clearRunError(run);
-        pipelineExecutor.execute(() -> executeInBackground(runId));
+        enqueue(runId);
+        return assemble(runId);
+    }
+
+    /**
+     * G31-11（总控 D-048 §(5) / D-049e）：显式重算入口（POST /api/v1/admin/pipeline-runs/recalculate）。
+     *
+     * <p>与普通 run 的三点不同：① 理由**必填**（空理由 400 PARAM_INVALID，审计可查；
+     * 有理由的重算才区别于「悄悄再跑一遍」）；② 幂等键带 {@code recalc|} 前缀 + UUID——
+     * 每次重算都是一次**新的**复核 run，不走「同键返回原 run」；③ {@code input_batch_id}
+     * 在异步执行前**预置**为目标批次（D-049e：异步路径若在选择前中断，run 行上仍能看到
+     * 本次重算的目标批次），execute() 按「WAIT_LANDING 证据 ?? run.input_batch_id」取钉，
+     * 选中批次 ≠ 目标批次时 {@code RUN_RECALC_BATCH_UNAVAILABLE} fail-closed（run FAILED），
+     * 且重算**豁免 M3 no-op**——台账里已消费的批次也必须真的再发布一次。</p>
+     *
+     * <p>业务时间/流水线码/源数据版本从「最近一条以该批次为输入的 run」继承：重算不是新计算，
+     * 是对既成发布的复核；找不到既成 run → 400 fail-closed（没有可复核对象）。</p>
+     */
+    public RunResult recalculate(Long runtimeProfileId, Long batchId, String operator, String reason,
+                                 String traceId) {
+        if (runtimeProfileId == null || batchId == null || batchId <= 0) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "recalculate 需要 runtimeProfileId 与正数 batchId");
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "显式重算必须携带理由（reason 必填，D-049e）");
+        }
+        RuntimeProfile profile = runtimeProfileService.get(runtimeProfileId);
+        if (profile.getSourceId() == null) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "runtime profile " + runtimeProfileId + " 未绑定数据源，无法定位重算批次");
+        }
+        PipelineRun prior = runMapper.selectOne(new LambdaQueryWrapper<PipelineRun>()
+                .eq(PipelineRun::getInputBatchId, batchId)
+                .eq(PipelineRun::getSourceId, profile.getSourceId())
+                .orderByDesc(PipelineRun::getId)
+                .last("LIMIT 1"));
+        if (prior == null) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "批次 " + batchId + " 在源 " + profile.getSourceId()
+                            + " 下没有任何流水线 run（无既成发布可复核），拒绝重算");
+        }
+        String key = "recalc|" + runtimeProfileId + "|" + prior.getPipelineCode() + "|" + batchId
+                + "|" + UUID.randomUUID();
+        PipelineRun run = new PipelineRun();
+        run.setIdempotencyKey(key);
+        run.setRuntimeProfileId(runtimeProfileId);
+        run.setSourceId(profile.getSourceId());
+        run.setRuntimeProfileVersion(profile.getVersion());
+        run.setPipelineCode(prior.getPipelineCode());
+        run.setBusinessTime(prior.getBusinessTime());
+        run.setSourceDataVersion(prior.getSourceDataVersion());
+        run.setAttemptNo(1);
+        run.setStatus(PipelineRun.STATUS_PENDING);
+        run.setCurrentStage("PENDING");
+        run.setTraceId(traceId);
+        run.setCreatedBy(operator);
+        run.setRecalcReason(cap(reason, 500));
+        run.setInputBatchId(batchId);
+        run.setCreatedAt(eventClock.nowLdt());
+        run.setUpdatedAt(eventClock.nowLdt());
+        runMapper.insert(run);
+        final Long runId = run.getId();
+        enqueue(runId);
+        log.info("pipeline recalc: run {} 目标批次 {} by {} reason={}",
+                runId, batchId, operator, cap(reason, 200));
         return assemble(runId);
     }
 
@@ -246,7 +354,7 @@ public class PipelineService {
                 .eq("id", runId)
                 .set("finished_at", null));
         clearRunError(run);
-        pipelineExecutor.execute(() -> executeInBackground(runId));
+        enqueue(runId);
         log.info("pipeline {} resumed by {} ({}) attempt={}", runId, operator, reason, run.getAttemptNo());
         return assemble(runId);
     }
@@ -289,6 +397,9 @@ public class PipelineService {
         run.setStatus(PipelineRun.STATUS_FAILED);
         run.setErrorCode("ADMIN_RETRY_FROM_STAGE");
         run.setErrorMessage("管理员从 " + stageCode + " 起重跑 operator=" + operator + " reason=" + reason);
+        // D-049e/i：retryFromStage 是带必填理由的显式重算入口——必须豁免 M3 no-op 门，
+        // 否则已消费批次的尾段重跑会被 ALREADY_CONSUMED 吞掉、后缀永远无法真重执行。
+        run.setRecalcReason(cap(reason, 500));
         runMapper.updateById(run);
         log.warn("pipeline {} retry-from-stage {} by {} ({})", runId, stageCode, operator, reason);
         return resume(runId, operator, "retry-from-stage " + stageCode, traceId);
@@ -350,6 +461,30 @@ public class PipelineService {
         return QualityRuleCatalog.DEFAULT.freeze(run.getPipelineCode());
     }
 
+    /**
+     * 有界后台队列拒绝任务时，不能把已持久化的 run 留在 PENDING，也不能回退到请求线程执行。
+     * 标记稳定失败码后由现有失败重试/运维恢复入口重新入队。
+     */
+    private void enqueue(Long runId) {
+        try {
+            pipelineExecutor.execute(() -> executeInBackground(runId));
+        } catch (RejectedExecutionException rejected) {
+            PipelineRun run = runMapper.selectById(runId);
+            if (run == null) {
+                log.error("pipeline {} executor rejected task but run record is missing", runId);
+                throw rejected;
+            }
+            run.setStatus(PipelineRun.STATUS_FAILED);
+            run.setCurrentStage("FAILED");
+            run.setErrorCode("RUN_EXECUTOR_REJECTED");
+            run.setErrorMessage("后台执行器当前不可用，任务尚未开始；请稍后重试");
+            run.setFinishedAt(eventClock.nowLdt());
+            run.setUpdatedAt(eventClock.nowLdt());
+            runMapper.updateById(run);
+            log.warn("pipeline {} was rejected by the bounded executor and marked FAILED", runId);
+        }
+    }
+
     /** 后台异步执行：读取 run → 顺序执行七阶段 → 更新状态（§13.1 异步契约） */
     private void executeInBackground(Long runId) {
         PipelineRun run = runMapper.selectById(runId);
@@ -365,9 +500,31 @@ public class PipelineService {
             String businessDate = run.getBusinessTime().toLocalDate().format(KEY_DATE);
             // §8.1/§15.3 R6-10：一次 run 冻结一份环境快照（提交器与命令均取自该快照）
             RuntimeProfile profile = runtimeProfileService.get(run.getRuntimeProfileId());
-            RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile);
+            Long runSourceId = run.getSourceId();
+            if (runSourceId == null) {
+                // 新的未绑定 profile 仍报告原稳定错误码；若 profile 后来绑定了源，也不能
+                // 用新值猜测旧 run 的来源，否则恢复可能把旧批次写进另一商城的数仓。
+                String code = profile.getSourceId() == null ? "SOURCE_NOT_BOUND" : "RUN_SOURCE_UNKNOWN";
+                String reason = "pipeline_run.source_id 为空，无法证明本 run 的商城来源；不得从当前 runtime_profile.source_id 回填或猜测";
+                throw new PipelineStageException(code, reason + "（runId=" + run.getId()
+                        + "，runtimeProfileId=" + profile.getId() + "）");
+            }
+            if (!runSourceId.equals(profile.getSourceId())) {
+                throw new PipelineStageException("RUN_SOURCE_BINDING_CHANGED",
+                        "本 run 冻结来源与 runtime_profile 当前绑定不一致，拒绝继续以避免跨商城写入"
+                                + "（runId=" + run.getId() + "，frozenSourceId=" + runSourceId
+                                + "，currentSourceId=" + profile.getSourceId() + "）");
+            }
+            RuntimeProfileSnapshot snapshot = RuntimeProfileSnapshot.from(profile, runSourceId);
+            // S2-04/G31-03.3：此后数仓命名空间、清单选择、Spark 参数和发布请求
+            // 全部使用已校验的 runSourceId；不能再从可变 profile 中重新决定本次 run 属于哪个源。
             SparkStageExecutor executor = stageExecutorFactory.create(snapshot);
-            Path landingRoot = LandingUri.resolve(profile.getLandingUri());
+            // N31-02 腿①（D-055）：landing 根不再无条件本地解析——hdfs:// profile 经
+            // LandingStorage 抽象读清单与 accepted（与 IngestionService 的 local-only 守卫同范式）。
+            // LandingUri 仍是本地路径的唯一所有者（V2.1 §5.4），仅 local 落地才解析出 java.nio Path。
+            LandingStorage landingStorage = LandingStorageResolver.forProfile(profile);
+            boolean localLanding = "local".equals(landingStorage.type());
+            Path landingRoot = localLanding ? LandingUri.resolve(profile.getLandingUri()) : null;
 
             // §7.3.1 line 520：**一次 run 冻结完整规则版本与指纹**。
             // 本 run 内所有严重度判定（写侧 QualityChecker、读侧 DataQualityGate、证据留痕）
@@ -390,54 +547,200 @@ public class PipelineService {
             run.setUpdatedAt(eventClock.nowLdt());
             runMapper.updateById(run);
 
+            // ── 输入选择（含消费台账，G31-11 D-049b）──────────────────────────
+            // §9.3：只认 manifests/ 下状态为 READY 的批次清单，不再看 source/events 目录
+            // §13.4/§23.1：重试/恢复必须钉住**本 run 原有批次**（见 manifestForRun）
+            // S2-04：并**按源归属**过滤（否则他源批次会落进本源的库，且事后不可察觉）
+            // G31-11：叠加消费台账——已消费批次不作候选（FIFO 取最老未消费，多待处理批次
+            // 逐批处理不遗漏）；「全部 READY 已消费」与「钉住批次已消费」的 no-op 判定在下方。
+            // G31-12（D-050②，总控 G31-11 复核第 2 项）：**先冻结本 run 的原请求批次，
+            // 再选择输入**。recalculate() 在异步前预置 input_batch_id（D-049e），重试/恢复
+            // run 则带着首跑写入值——它是「请求的意图」，后续选择器回落**不得改写**：
+            // 先写选中值再比对，会把「选中 != 目标」退化成「B==B」（旁路，见下）。
+            final Long requestedBatchId = run.getInputBatchId();
+            InputSelection input = manifestForRun(landingStorage, landingRoot, run, runSourceId);
+            LandingManifestSelector.Selection selection = input.selection();
+            Map<String, Object> manifest = selection.manifest();
+            // S3-36：批次级溯源落库。pipeline_run.input_batch_id 由 V7 建列、实体也有字段，
+            // 但此前**零写入**（S3-34 登记行）：批次只能靠 pipeline_stage_run.evidence 的 JSON
+            // 正则反查。此处与 WAIT_LANDING 证据（evidence.batchId）读的是**同一次** manifest 解析，
+            // 故两者同源、不会各说各话。
+            // G31-12（D-050②）：**校验相等后才允许更新运行记录**——run 已带请求批次（重算
+            // 预置/重试首跑写入）时，仅当选中批次与其相等才写（同值确认）；不等（钉住清单
+            // 缺失、选择器按 FIFO 回落到他批）时**保持原值不写**，交给 WAIT_LANDING 的重算
+            // 断言按冻结值 fail-closed。先写后查会让重算退化成对回落批次的发布。
+            // manifest == null（无 READY 批次）时不写：该 run 没有输入批次，留 NULL 是如实，不是缺失。
+            // 值非法（缺 batchId / 解析为 0）同样不写：宁可空，不可猜一个批次号。
+            if (manifest != null && manifest.get("batchId") != null) {
+                long inputBatchId = LandingManifestSelector.longOf(manifest.get("batchId"));
+                long requested = requestedBatchId == null ? 0L : requestedBatchId;
+                if (inputBatchId > 0 && (requested <= 0 || requested == inputBatchId)) {
+                    run.setInputBatchId(inputBatchId);
+                    runMapper.updateById(run);
+                }
+            }
+
+            // ── M3 no-op 门（G31-11 D-049c/d）───────────────────────────────
+            // 消费状态独立记录（pipeline_batch_consumption），既非 READY 判定亦非值去重：
+            // ① 无钉住输入且 READY 全部已消费 → 无新输入：SUCCESS + WAIT_LANDING 证据
+            //    noNewInput=ALREADY_CONSUMED，跳过全部计算/发布阶段，不分配快照，ACTIVE 不变；
+            // ② 重试/恢复钉住的批次已被消费 → 同样 no-op（重试绑定原批，但该批已进 ACTIVE，
+            //    再跑只会重复发布同一批次）；
+            // ③ 显式重算（recalcReason 非空）**豁免** no-op：台账已消费也必须真的再发布；
+            // ④ 一个 READY 都没有（readyButConsumedCount==0）→ 不触发本门，交回 WAIT_LANDING
+            //    阶段的 RUN_EMPTY_LANDING fail-closed（与消费台账无关的原始语义）。
+            boolean isRecalc = run.getRecalcReason() != null && !run.getRecalcReason().isBlank();
+            Map<String, Object> noOpEvidence = null;
+            if (!isRecalc) {
+                if (manifest == null && selection.readyButConsumedCount() > 0) {
+                    // 无新输入：报告**最近一次消费**（ACTIVE 快照的既成来源）——运维查
+                    // 「这轮为什么没发布」时最直接的对照物。
+                    PipelineBatchConsumption latest = batchConsumptionMapper.selectOne(
+                            new LambdaQueryWrapper<PipelineBatchConsumption>()
+                                    .eq(PipelineBatchConsumption::getSourceId, runSourceId)
+                                    .orderByDesc(PipelineBatchConsumption::getConsumedAt)
+                                    .orderByDesc(PipelineBatchConsumption::getId)
+                                    .last("LIMIT 1"));
+                    noOpEvidence = new LinkedHashMap<>();
+                    noOpEvidence.put("noNewInput", true);
+                    noOpEvidence.put("reason", "ALREADY_CONSUMED");
+                    noOpEvidence.put("batchId", latest == null ? null : latest.getBatchId());
+                    noOpEvidence.put("consumedByRunId",
+                            latest == null ? null : latest.getConsumedByRunId());
+                    noOpEvidence.put("readyButConsumedCount", selection.readyButConsumedCount());
+                } else if (manifest != null && input.pinnedBatchId() != null
+                        && input.pinnedBatchId() == LandingManifestSelector.longOf(manifest.get("batchId"))) {
+                    // 钉住批次被选中：选择器「钉住即使已消费也返回」（D-049d），是否 no-op
+                    // 由台账里有无 (sourceId, batchId) 行决定——不猜、不重复发布。
+                    PipelineBatchConsumption row = batchConsumptionMapper.selectOne(
+                            new LambdaQueryWrapper<PipelineBatchConsumption>()
+                                    .eq(PipelineBatchConsumption::getSourceId, runSourceId)
+                                    .eq(PipelineBatchConsumption::getBatchId, input.pinnedBatchId()));
+                    if (row != null) {
+                        noOpEvidence = new LinkedHashMap<>();
+                        noOpEvidence.put("noNewInput", true);
+                        noOpEvidence.put("reason", "ALREADY_CONSUMED");
+                        noOpEvidence.put("batchId", row.getBatchId());
+                        noOpEvidence.put("consumedByRunId", row.getConsumedByRunId());
+                        noOpEvidence.put("readyButConsumedCount", selection.readyButConsumedCount());
+                    }
+                }
+            }
+            final Map<String, Object> noOpEvidenceRef = noOpEvidence;
+
             // §14.4 快照号：一次 run 一个 snapshotId，**重试复用**（保证暂存分区与发布幂等，
             // 重试不会产生第二份数据，也不会把上一次的暂存结果误当本次）。生成即落库可追溯。
+            // G31-11：M3 no-op 路径不分配快照——无新输入的 run 不产生新的 S{date}_{runId}。
             String snapshotId = run.getTargetSnapshotId();
-            if (snapshotId == null || snapshotId.isBlank()) {
+            if ((snapshotId == null || snapshotId.isBlank()) && noOpEvidence == null) {
                 snapshotId = "S" + businessDate + "_" + run.getId();
                 run.setTargetSnapshotId(snapshotId);
                 runMapper.updateById(run);
             }
-
-            // ── 数据准备（幂等读：即使重试跳过成功阶段，后续阶段仍有上下文） ──
-            // §9.3：只认 manifests/ 下状态为 READY 的批次清单，不再看 source/events 目录
-            // §13.4/§23.1：重试/恢复必须钉住**本 run 原有批次**（见 manifestForRun）
-            Map<String, Object> manifest = manifestForRun(landingRoot, run.getId());
             // §9.1：ODS 只能读取 accepted（好的批次数据）；§5.3.3 只装载业务日事件
-            Path acceptedDir = manifest == null ? null
-                    : landingRoot.resolve(String.valueOf(manifest.get("acceptedUri")));
+            // D-055：acceptedUri 在清单里对两种后端都写相对值（accepted/{batchId}，采集侧唯一写点）。
+            // 本地 profile 解析成 java.nio Path（行为不变）；hdfs profile 保留相对路径，
+            // 字节读取一律经 LandingStorage——绝不把 hdfs:// 字符串塞进 Path.resolve。
+            Path acceptedDir = null;
+            String acceptedRelativeDir = null;
+            if (manifest != null) {
+                String acceptedUri = String.valueOf(manifest.get("acceptedUri"));
+                if (localLanding) {
+                    acceptedDir = landingRoot.resolve(acceptedUri);
+                } else {
+                    acceptedRelativeDir = acceptedUri;
+                }
+            }
             String datePrefix = businessDate.substring(0, 4) + "-" + businessDate.substring(4, 6)
                     + "-" + businessDate.substring(6, 8);
             List<EventEnvelope> events = new ArrayList<>();
             // DEF-04：订单总额索引覆盖**整批**（不受业务日切片限制），供金额对账使用。
             // 电商订单跨日支付是常态（T 日下单、T+1 日支付），只用切片会对真实数据误判对账失败。
             Map<String, BigDecimal> batchOrderTotals = new HashMap<>();
-            if (acceptedDir != null && Files.isDirectory(acceptedDir)) {
-                readAcceptedEvents(acceptedDir, datePrefix, events, batchOrderTotals);
+            if (localLanding) {
+                if (acceptedDir != null && Files.isDirectory(acceptedDir)) {
+                    readAcceptedEvents(acceptedDir, datePrefix, events, batchOrderTotals);
+                }
+            } else if (isLandingDirectory(landingStorage, acceptedRelativeDir)) {
+                readAcceptedEvents(landingStorage, acceptedRelativeDir, datePrefix, events, batchOrderTotals);
             }
             // R6-11：本地 Java **不再**计算任何 ADS 指标（删除 MetricCalculator / local-calculator 路径）。
             // events 仅服务于两处非计算职责：LOAD_ODS 空数据预检（快速失败，避免白跑 Spark）
             // 与 QUALITY_CHECK 质量门（§5.4.1；R6-13 改为读 staging 结果）。
 
-            // ── WAIT_LANDING（§9.3）：只认 READY manifest ─────────────────
+            // ── WAIT_LANDING（§9.3）：只认 READY manifest；G31-11：M3 no-op 出口 + 重算批次断言 ──
             stage(run.getId(), "WAIT_LANDING", completedStages, () -> {
+                if (noOpEvidenceRef != null) {
+                    // M3 no-op（D-049c）：无新输入 → 本阶段 SUCCESS + noNewInput 证据；
+                    // execute() 在本阶段后直接收尾 SUCCESS，后续计算/发布阶段全部跳过。
+                    return new StageOutcome(0L, noOpEvidenceRef);
+                }
                 if (manifest == null) {
+                    if (isRecalc) {
+                        // D-049e：重算选不到目标批次必须与「landing 没采集过」可区分
+                        //（前者是目标不存在/不可归属，后者是根本没有输入）。
+                        throw new PipelineStageException("RUN_RECALC_BATCH_UNAVAILABLE",
+                                "重算目标批次 " + run.getInputBatchId()
+                                        + " 的 manifest 不存在或不可归属本源，fail-closed");
+                    }
                     throw new PipelineStageException("RUN_EMPTY_LANDING",
                             "landing/manifests 无 READY 批次清单（先执行采集并生成 manifest）");
+                }
+                long selectedBatchId = LandingManifestSelector.longOf(manifest.get("batchId"));
+                long requested = requestedBatchId == null ? 0L : requestedBatchId;
+                if (isRecalc && requested > 0 && selectedBatchId != requested) {
+                    // D-049e + G31-12（D-050②）：重算必须真的选到**请求时冻结的**目标批次——
+                    // 钉住清单缺失、选择器回落到他批时，run 行保持原值（写侧已拦截改写），
+                    // 此处按冻结值比对，fail-closed（错误码可区分）。
+                    throw new PipelineStageException("RUN_RECALC_BATCH_UNAVAILABLE",
+                            "重算目标批次 " + requested + " 不可选（实际选中 " + selectedBatchId
+                                    + "），fail-closed：重算不得静默改换输入批次");
                 }
                 Map<String, Object> evidence = new LinkedHashMap<>();
                 evidence.put("batchId", manifest.get("batchId"));
                 evidence.put("acceptedUri", manifest.get("acceptedUri"));
+                // 相对 acceptedUri 是 manifest 契约；再记录经当前存储适配器解析后的 URI，
+                // 让本地与 HDFS 两种 profile 的运行证据都能定位到实际存储位置。
+                evidence.put("acceptedStorageUri",
+                        safeStorageUriForEvidence(
+                                landingStorage.uri(String.valueOf(manifest.get("acceptedUri")))));
                 evidence.put("checksum", manifest.get("checksum"));
                 evidence.put("acceptedRecords", manifest.get("acceptedRecords"));
                 evidence.put("schemaVersions", manifest.get("schemaVersions"));
-                return new StageOutcome(((Number) manifest.get("acceptedRecords")).longValue(), evidence);
+                // S2-04：把"这批字节属于哪个源"写进阶段证据。选择器已保证它与本轮运行源一致，
+                // 此处留痕是为了验收时能从证据直接回答"ODS 里这批行的 source_system 是注入的哪一行"。
+                evidence.put("sourceId", manifest.get("sourceId"));
+                evidence.put("sourceCode", manifest.get("sourceCode"));
+                if (isRecalc) {
+                    // D-049e：重算 run 的 WAIT_LANDING 证据携带理由与操作人（审计链随证据耐久）
+                    evidence.put("recalcReason", run.getRecalcReason());
+                    evidence.put("recalcOperator", run.getCreatedBy());
+                }
+                return new StageOutcome(LandingManifestSelector.longOf(manifest.get("acceptedRecords")),
+                        evidence);
             });
+
+            if (noOpEvidenceRef != null) {
+                // M3 no-op（D-049c）：无新输入 → run SUCCESS，不分配快照、不发布、ACTIVE 不变，
+                // input_batch_id 保持 NULL（无输入批次）。SUCCESS 终态让 retry()/resume() 对它
+                // 直接短路，不会被再次执行。
+                log.info("pipeline {}: 无新输入（批次 {} 已由 run {} 消费）→ M3 no-op，"
+                                + "跳过计算与发布，ACTIVE 不变",
+                        run.getId(), noOpEvidenceRef.get("batchId"), noOpEvidenceRef.get("consumedByRunId"));
+                run.setStatus(PipelineRun.STATUS_SUCCESS);
+                run.setCurrentStage("SUCCESS");
+                run.setFinishedAt(eventClock.nowLdt());
+                run.setUpdatedAt(eventClock.nowLdt());
+                runMapper.updateById(run);
+                clearRunError(run);
+                return;
+            }
 
             // 业务日预检在 LOAD_ODS 阶段内执行：accepted 目录与业务日事件必须存在，
             // 否则给出稳定错误码（RUN_EMPTY_DATA），且失败必须留在阶段记录上（§23.2/§15.3 失败留痕）
             final Map<String, Object> manifestRef = manifest;
             final Path acceptedDirRef = acceptedDir;
+            final String acceptedRelativeDirRef = acceptedRelativeDir;
             final List<EventEnvelope> eventsRef = events;
 
             // 每次提交都带显式 warehouse/metastore 配置（LOCAL 嵌入式 Hive 不能按 spark-submit CWD 漂移）
@@ -454,7 +757,11 @@ public class PipelineService {
 
             // ── LOAD_ODS（§9.1）：真实 spark-jobs odl 装载四主题 ──────────
             Map<String, String> odsExtra = new LinkedHashMap<>();
-            odsExtra.put("landingDir", acceptedDir == null ? "" : acceptedDir.toUri().toString());
+            // D-055：Spark 输入统一给可寻址 URI——local 是 file://（原行为），hdfs 是
+            // storage.uri() 的 hdfs:// 全路径，Spark 作业经 Hadoop FileSystem 原生读取。
+            odsExtra.put("landingDir", localLanding
+                    ? (acceptedDir == null ? "" : acceptedDir.toUri().toString())
+                    : (acceptedRelativeDir == null ? "" : landingStorage.uri(acceptedRelativeDir)));
             if (manifest != null && manifest.get("batchId") != null) {
                 odsExtra.put("batchId", String.valueOf(manifest.get("batchId")));
             }
@@ -463,9 +770,11 @@ public class PipelineService {
                         if (manifestRef == null) {
                             throw new PipelineStageException("RUN_EMPTY_LANDING", "无 READY manifest");
                         }
-                        if (acceptedDirRef == null || !Files.isDirectory(acceptedDirRef)) {
+                        if (localLanding ? acceptedDirRef == null || !Files.isDirectory(acceptedDirRef)
+                                : !isLandingDirectory(landingStorage, acceptedRelativeDirRef)) {
                             throw new PipelineStageException("RUN_LOAD_FAILED",
-                                    "accepted 目录不存在: " + acceptedDirRef);
+                                    "accepted 目录不存在: "
+                                            + (acceptedDirRef != null ? acceptedDirRef : acceptedRelativeDirRef));
                         }
                         if (eventsRef.isEmpty()) {
                             throw new PipelineStageException("RUN_EMPTY_DATA", "accepted 无归属业务日事件");
@@ -475,9 +784,10 @@ public class PipelineService {
                 // §10.3：ODS 输入/输出/隔离数 = JobResult 真实计数（R6-12：非 Java 侧估算）
                 Map<String, Object> evidence = new LinkedHashMap<>(odsOutcome.evidence());
                 evidence.put("contracted", "odl: input=Landing 行数, output=四主题写入行数, rejected=版本/主键非法");
-                Number q = manifest == null ? null : (Number) manifest.get("quarantinedRecords");
-                if (q != null) {
-                    evidence.put("odsQuarantinedRecords", q.longValue());
+                // R6-13：老清单的计数可能是字符串，用选择器的同一口径读，避免 (Number) 强转炸成 RUN_INTERNAL
+                if (manifest != null && manifest.get("quarantinedRecords") != null) {
+                    evidence.put("odsQuarantinedRecords",
+                            LandingManifestSelector.longOf(manifest.get("quarantinedRecords")));
                 }
                 updateStageEvidence(run.getId(), "LOAD_ODS", evidence);
             }
@@ -501,7 +811,7 @@ public class PipelineService {
                 updateStageEvidence(run.getId(), "BUILD_DWS", evidence);
             }
 
-            // ── BUILD_ADS：真实 spark-jobs fna（8 张 ADS，R6-13 只写**暂存分区**） ──
+            // ── BUILD_ADS：真实 spark-jobs fna（当前 ADS 表集，R6-13 只写**暂存分区**） ──
             // §14.4：ADS 先写 {table}__staging/snapshot_id=S/dt=D，正式分区由 PUBLISH_METRIC 发布。
             StageOutcome adsOutcome = runSparkStage(run, executor, snapshot, "BUILD_ADS",
                     businessDate, completedStages,
@@ -509,7 +819,7 @@ public class PipelineService {
                             "outputSnapshotId", snapshotId), null, confs);
             if (adsOutcome != null && !completedStages.contains("BUILD_ADS")) {
                 Map<String, Object> evidence = new LinkedHashMap<>(adsOutcome.evidence());
-                evidence.put("contracted", "fna: 8 张 ADS 写入暂存分区（snapshot_id=" + snapshotId + "）");
+                evidence.put("contracted", "fna: ADS 表集写入暂存分区（snapshot_id=" + snapshotId + "）");
                 evidence.put("stagingSnapshotId", snapshotId);
                 updateStageEvidence(run.getId(), "BUILD_ADS", evidence);
             }
@@ -552,7 +862,7 @@ public class PipelineService {
                 if (ex.failed()) {
                     updateStageEvidence(run.getId(), "QUALITY_CHECK", evidence);
                     throw new PipelineStageException("PIPELINE_QUALITY_FAILED",
-                            "ADS 暂存质量门未通过，正式分区未发布: " + ex.errorMessage());
+                            "ADS 暂存质量门未通过，正式分区未发布；请查看受控作业日志");
                 }
                 evidence.put("published", true);
                 return new StageOutcome(ex.totalOutputRecords(), evidence);
@@ -586,7 +896,7 @@ public class PipelineService {
                     if (ex.failed()) {
                         return new StageOutcome(ex.totalOutputRecords(), evidence,
                                 new PipelineStageException("RUN_PUBLISH_FAILED",
-                                        "正式分区发布失败: " + ex.errorMessage()));
+                                        "正式分区发布失败；请查看受控作业日志"));
                     }
 
                     // ── F-88：发布前质量门断言（D-142 §1 / §7.3）──────────────────────────
@@ -606,23 +916,30 @@ public class PipelineService {
 
                     // ── R7-3：Hive 正式分区已发布 → 指标库 ADS→MySQL 写入 + 快照 ACTIVE 原子切换 ──
                     PublishReport report = metricPublisher.publish(new PublishRequest(
-                            snapshot.id(), snapshot.version(), snapshotIdRef, businessDate,
+                            snapshot.id(), snapshot.version(), runSourceId, snapshotIdRef, businessDate,
                             run.getBusinessTime().toString(), run.getId(), exportDir, metricDefinitions()));
                     evidence.put("metricPublish", Map.of(
                             "ok", report.ok(),
                             "errorCode", String.valueOf(report.errorCode()),
-                            "message", String.valueOf(report.message()),
+                            "message", report.ok() ? "发布成功" : "发布失败，请根据错误码、校验项及受控日志排查",
                             "snapshotId", String.valueOf(report.snapshotId()),
                             "adsRows", report.adsRows(),
                             "metricValues", report.metricValues()));
-                    evidence.put("metricPublishEvidence", report.evidence());
+                    evidence.put("metricPublishEvidence", safeMetricPublishEvidence(report.evidence()));
                     evidence.put("metricPublishChecks", report.checks().stream().map(c -> Map.of(
                             "ruleCode", c.ruleCode(), "severity", c.severity(),
                             "passed", c.passed(), "detail", c.detail())).toList());
                     if (!report.ok()) {
+                        updateStageEvidence(run.getId(), "PUBLISH_METRIC", evidence);
                         throw new PipelineStageException("RUN_METRIC_PUBLISH_FAILED",
-                                "指标库发布失败[" + report.errorCode() + "]: " + report.message());
+                                "指标库发布失败[" + report.errorCode() + "]；请根据发布校验项及受控日志排查");
                     }
+                    // ── G31-11（D-049a/g）：发布 ok → 消费台账落库（唯一写点）──────────
+                    // 只在 metricPublisher.publish 返回 ok（ACTIVE 已切换）之后写：FAILED run
+                    // 永不写 ⇒ 失败批次保持待处理，新 run 的 FIFO 会再次选中它（D-048 ④）。
+                    // 写失败时 run 置 FAILED（RUN_CONSUMPTION_MARK_FAILED）且不吞异常——
+                    // ACTIVE 已切换是既成事实，如实暴露，不假装无事发生。
+                    markBatchConsumed(run, manifest, runSourceId, snapshotIdRef, evidence);
                     evidence.put("metricExportDir", exportDir.toString());
                     return new StageOutcome(ex.totalOutputRecords(), evidence);
                 });
@@ -645,11 +962,11 @@ public class PipelineService {
         } catch (Exception e) {
             run.setStatus(PipelineRun.STATUS_FAILED);
             run.setErrorCode("RUN_INTERNAL");
-            run.setErrorMessage(e.getMessage());
+            run.setErrorMessage("流水线内部错误，请查看受控服务端诊断");
             run.setCurrentStage("FAILED");
             run.setFinishedAt(eventClock.nowLdt());
             runMapper.updateById(run);
-            log.error("pipeline {} internal error", run.getId(), e);
+            log.error("pipeline {} internal error ({})", run.getId(), e.getClass().getName());
         }
     }
 
@@ -682,11 +999,35 @@ public class PipelineService {
                 // 失败证据先落库（stage() 的 finally 写记录），再阻断：后续依赖阶段保持未执行
                 return new StageOutcome(ex.totalOutputRecords(), evidence,
                         new PipelineStageException("RUN_JOB_FAILED",
-                                stageCode + " 作业失败: " + ex.errorMessage()));
+                                stageFailureSummary(stageCode, ex)));
             }
             // 输出计数只取 JobResult（R6-12）
             return new StageOutcome(ex.totalOutputRecords(), evidence);
         });
+    }
+
+    private static String stageFailureSummary(String stageCode, SparkStageExecutor.StageExecution execution) {
+        String failedJob = execution.jobs().stream()
+                .filter(job -> !job.success())
+                .map(SparkStageExecutor.JobExecution::jobCode)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        return "阶段 " + stageCode + (failedJob == null ? "" : " 作业 " + failedJob)
+                + " 失败；请查看受控作业日志";
+    }
+
+    private static Map<String, Object> safeMetricPublishEvidence(Map<String, Object> source) {
+        Map<String, Object> safe = new LinkedHashMap<>();
+        if (source == null) {
+            return safe;
+        }
+        source.forEach((key, value) -> {
+            if (PUBLISH_EVIDENCE_KEYS.contains(key)) {
+                safe.put(key, value);
+            }
+        });
+        return safe;
     }
 
     /** 阶段内预检（在阶段记录内执行，失败同样留痕） */
@@ -835,7 +1176,7 @@ public class PipelineService {
             item.put("rejectedRecords", j.rejectedRecords());
             item.put("logUri", j.logUri());
             if (j.errorMessage() != null) {
-                item.put("errorMessage", j.errorMessage());
+                item.put("errorMessage", "作业失败；请查看关联的受控作业日志");
             }
             // R6-12：真实输出分区证据（表/dt/snapshotId/行数/路径），空则不写（不造数）
             if (j.outputPartitions() != null && !j.outputPartitions().isEmpty()) {
@@ -940,7 +1281,7 @@ public class PipelineService {
             s.setErrorCode(e.code());
         } catch (Exception e) {
             failure = new PipelineStageException("STAGE_INTERNAL",
-                    "阶段 " + stageCode + " 内部错误: " + e.getMessage());
+                    "阶段 " + stageCode + " 内部错误，请查看受控服务端诊断");
             s.setStatus(PipelineStageRun.STATUS_FAILED);
             s.setErrorCode("STAGE_INTERNAL");
         } finally {
@@ -974,106 +1315,134 @@ public class PipelineService {
                     new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
                     });
         } catch (Exception e) {
-            log.warn("阶段证据解析失败 run={} stage={}: {}", runId, stageCode, e.getMessage());
+            log.warn("阶段证据解析失败 run={} stage={} causeType={}", runId, stageCode,
+                    e.getClass().getSimpleName());
             return Map.of();
         }
     }
 
     /**
      * 本 run 的输入批次：重试/恢复时**钉住**原批次（WAIT_LANDING 证据里的 batchId），
-     * 只有首跑（尚无 WAIT_LANDING 记录）才取"最新 READY 批次"。
+     * 只有首跑（尚无 WAIT_LANDING 记录）才按本源扫描选择。
      * R6-13 修正：原实现每次都取最新 READY，重试时会换输入（实测 run 18 retry：篡改批次 19
      * 被后来的干净批次 20 顶掉，同一 run 的 Landing 对账门从 FAILED 变 passed → 判定不可复现）。
+     *
+     * <p>S2-04：本方法只负责"钉住哪个批次"（从证据里正则读 batchId，见 §314 的列宽说明），
+     * 清单的**可归属性与新旧比较**全部交给 {@link LandingManifestSelector}；返回的清单必定属于
+     * {@code sourceId}，否则为 null（调用方按 RUN_EMPTY_LANDING / M3 no-op 拒绝，不回落、不猜）。</p>
+     *
+     * <p>G31-11（D-049b/e）：① 首跑的扫描叠加消费台账——只有**未消费**的本源 READY 批次
+     * 是候选，选择器按 FIFO（batchId 最小）取最老待处理批次，「多待处理批次逐批处理不遗漏」；
+     * ② 重算 run 首跑尚无 WAIT_LANDING 阶段记录，钉住来源改为「WAIT_LANDING 证据
+     * ?? run.input_batch_id」——recalculate() 在插入 run 时就预置 input_batch_id，重算从
+     * 第一轮执行起就钉住目标批次，绝不静默改换输入。</p>
      */
-    private Map<String, Object> manifestForRun(Path landingRoot, Long runId) {
+    private InputSelection manifestForRun(LandingStorage landingStorage, Path landingRoot,
+                                          PipelineRun run, long sourceId) {
         PipelineStageRun landing = stageMapper.selectOne(new LambdaQueryWrapper<PipelineStageRun>()
-                .eq(PipelineStageRun::getRunId, runId)
+                .eq(PipelineStageRun::getRunId, run.getId())
                 .eq(PipelineStageRun::getStageCode, "WAIT_LANDING")
                 .orderByAsc(PipelineStageRun::getId).last("LIMIT 1"));
+        Long pinnedBatchId = null;
         if (landing != null && landing.getEvidence() != null) {
             Matcher m = Pattern.compile("\"batchId\"\\s*:\\s*(\\d+)").matcher(landing.getEvidence());
             if (m.find()) {
-                Map<String, Object> pinned = readManifest(
-                        landingRoot.resolve("manifests").resolve(m.group(1) + ".json"));
-                if (pinned != null) {
-                    log.info("pipeline {}: 复用本 run 原批次 batchId={}（重试/恢复不切换输入）",
-                            runId, m.group(1));
-                    return pinned;
-                }
+                pinnedBatchId = Long.valueOf(m.group(1));
             }
         }
-        return findReadyManifest(landingRoot);
+        if (pinnedBatchId == null && run.getInputBatchId() != null && run.getInputBatchId() > 0) {
+            // D-049e：重算 run 的钉住来源（首跑无阶段记录，只能靠预置的 input_batch_id）
+            pinnedBatchId = run.getInputBatchId();
+        }
+        // D-049a：本源已消费批次集合（消费台账是唯一事实来源；查不到 = 尚无消费事实）
+        Set<Long> consumedBatchIds = new HashSet<>();
+        for (PipelineBatchConsumption c : batchConsumptionMapper.selectList(
+                new LambdaQueryWrapper<PipelineBatchConsumption>()
+                        .eq(PipelineBatchConsumption::getSourceId, sourceId))) {
+            if (c.getBatchId() != null) {
+                consumedBatchIds.add(c.getBatchId());
+            }
+        }
+        return new InputSelection(
+                landingRoot != null
+                        ? manifestSelector.select(landingRoot, pinnedBatchId, sourceId, consumedBatchIds)
+                        : manifestSelector.select(landingStorage, pinnedBatchId, sourceId, consumedBatchIds),
+                pinnedBatchId);
     }
 
-    /** 读取单个 manifest JSON（失败返回 null，不抛异常） */
-    private Map<String, Object> readManifest(Path file) {
-        try {
-            if (!Files.isRegularFile(file)) {
-                return null;
-            }
-            return objectMapper.readValue(Files.readString(file, StandardCharsets.UTF_8),
-                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
-                    });
-        } catch (Exception e) {
-            log.warn("manifest 解析失败 {}: {}", file.getFileName(), e.getMessage());
-            return null;
-        }
+    /** 输入选择结果：选择器 Selection + 本次是否钉住（钉住批次号；null=未钉住首跑） */
+    private record InputSelection(LandingManifestSelector.Selection selection, Long pinnedBatchId) {
     }
 
     /**
-     * 扫描 landing/manifests/*.json，返回状态为 READY 且含数据（accepted+quarantined>0）
-     * 的最新批次清单（§9.3；空批次视为无新数据，不做 ODS 输入）。
-     * 按清单内 batchId 取最大者视为最新；无可用清单返回 null。
+     * G31-11（D-049a/g）：发布 ok 后写消费台账——消费状态是**独立记录**（不是 manifest
+     * READY 的另一种判定、也不是指标值相等的去重），唯一写点在本方法，且只被
+     * PUBLISH_METRIC 阶段在 metricPublisher.publish 返回 ok 之后调用。
+     *
+     * <p>首次消费 insert（publishCount=1，firstConsumedByRunId 与 consumedAt 固定）；重复发布
+     * （仅显式重算可达这里，普通路径已被 no-op 门拦截）update：publishCount+1、
+     * consumedByRunId/targetSnapshotId 指向本次，首跑事实（firstConsumedByRunId、consumedAt）
+     * 保持不动；重算另计 recalcCount 与 lastRecalc 系列（审计：谁、为什么、什么时候再发布）。</p>
+     *
+     * <p>写失败不吞：先 updateStageEvidence 留住已构建的证据，再抛
+     * RUN_CONSUMPTION_MARK_FAILED 让 run FAILED——ACTIVE 已切换是既成事实，
+     * 如实暴露比假装无事发生正确；批次因无台账行而保持待处理，重试/重算可再发布。</p>
      */
-    private Map<String, Object> findReadyManifest(Path landingRoot) {
-        Path manifestsDir = landingRoot.resolve("manifests");
-        if (!Files.isDirectory(manifestsDir)) {
-            return null;
+    private void markBatchConsumed(PipelineRun run, Map<String, Object> manifest, long sourceId,
+                                   String snapshotId, Map<String, Object> evidence) {
+        if (manifest == null || manifest.get("batchId") == null) {
+            return;
         }
-        AtomicReference<Long> maxBatchId = new AtomicReference<>(null);
-        AtomicReference<Map<String, Object>> best = new AtomicReference<>(null);
-        try (Stream<Path> list = Files.list(manifestsDir)) {
-            for (Path m : list.filter(p -> p.getFileName().toString().endsWith(".json")).toList()) {
-                try {
-                    Map<String, Object> manifest = readManifest(m);
-                    if (manifest == null || !"READY".equals(manifest.get("status"))) {
-                        continue;
-                    }
-                    // R6-13 修正：老批次清单里计数是字符串（实测 2.json/4.json/5.json 报
-                    // "class java.lang.String cannot be cast to class java.lang.Number"），
-                    // 按数字/字符串双兼容解析，避免整条清单被当作损坏而跳过。
-                    long accepted = longOf(manifest.get("acceptedRecords"));
-                    long quarantined = longOf(manifest.get("quarantinedRecords"));
-                    if (accepted + quarantined <= 0) {
-                        continue; // 空批次：无新数据，不阻塞也不作为输入（§9.3）
-                    }
-                    long batchId = longOf(manifest.get("batchId"));
-                    if (maxBatchId.get() == null || batchId > maxBatchId.get()) {
-                        maxBatchId.set(batchId);
-                        best.set(manifest);
-                    }
-                } catch (Exception e) {
-                    log.warn("manifest 解析失败 {}: {}", m.getFileName(), e.getMessage());
-                }
-            }
-        } catch (IOException e) {
-            log.warn("manifests 扫描失败: {}", e.getMessage());
+        long batchId = LandingManifestSelector.longOf(manifest.get("batchId"));
+        if (batchId <= 0) {
+            return;
         }
-        return best.get();
-    }
-
-    /** 宽松取长整型：Number 直接用，字符串/空值按解析（老清单兼容） */
-    private static long longOf(Object v) {
-        if (v instanceof Number n) {
-            return n.longValue();
-        }
-        if (v == null) {
-            return 0L;
-        }
+        boolean recalc = run.getRecalcReason() != null && !run.getRecalcReason().isBlank();
         try {
-            return Long.parseLong(String.valueOf(v).trim());
-        } catch (NumberFormatException e) {
-            return 0L;
+            PipelineBatchConsumption row = batchConsumptionMapper.selectOne(
+                    new LambdaQueryWrapper<PipelineBatchConsumption>()
+                            .eq(PipelineBatchConsumption::getSourceId, sourceId)
+                            .eq(PipelineBatchConsumption::getBatchId, batchId));
+            LocalDateTime now = eventClock.nowLdt();
+            if (row == null) {
+                row = new PipelineBatchConsumption();
+                row.setSourceId(sourceId);
+                row.setBatchId(batchId);
+                row.setStatus(PipelineBatchConsumption.STATUS_CONSUMED);
+                row.setConsumedByRunId(run.getId());
+                row.setFirstConsumedByRunId(run.getId());
+                row.setTargetSnapshotId(snapshotId);
+                row.setPublishCount(1);
+                row.setRecalcCount(recalc ? 1 : 0);
+                if (recalc) {
+                    row.setLastRecalcReason(cap(run.getRecalcReason(), 500));
+                    row.setLastRecalcBy(cap(run.getCreatedBy(), 64));
+                    row.setLastRecalcAt(now);
+                }
+                row.setConsumedAt(now);
+                row.setCreatedVia(PipelineBatchConsumption.VIA_PIPELINE);
+                batchConsumptionMapper.insert(row);
+            } else {
+                row.setStatus(PipelineBatchConsumption.STATUS_CONSUMED);
+                row.setConsumedByRunId(run.getId());
+                row.setTargetSnapshotId(snapshotId);
+                row.setPublishCount((row.getPublishCount() == null ? 0 : row.getPublishCount()) + 1);
+                if (recalc) {
+                    row.setRecalcCount((row.getRecalcCount() == null ? 0 : row.getRecalcCount()) + 1);
+                    row.setLastRecalcReason(cap(run.getRecalcReason(), 500));
+                    row.setLastRecalcBy(cap(run.getCreatedBy(), 64));
+                    row.setLastRecalcAt(now);
+                }
+                batchConsumptionMapper.updateById(row);
+            }
+            evidence.put("consumptionLedger", Map.of(
+                    "batchId", batchId, "consumedByRunId", run.getId(), "recalc", recalc));
+        } catch (Exception e) {
+            evidence.put("consumptionLedgerError", "写入失败");
+            evidence.put("consumptionLedgerErrorType", e.getClass().getName());
+            updateStageEvidence(run.getId(), "PUBLISH_METRIC", evidence);
+            throw new PipelineStageException("RUN_CONSUMPTION_MARK_FAILED",
+                    "发布已成功但消费台账写入失败，批次保持待处理；请完成受控核查后重试");
         }
     }
 
@@ -1158,6 +1527,28 @@ public class PipelineService {
         return v == null || String.valueOf(v).isBlank();
     }
 
+    static String safeStorageUriForEvidence(String rawUri) {
+        URI uri = URI.create(rawUri);
+        if (uri.getRawQuery() != null || uri.getRawFragment() != null) {
+            throw new IllegalArgumentException("存储 URI 含 query 或 fragment，拒绝写入运行证据");
+        }
+        String rawAuthority = uri.getRawAuthority();
+        String rawUserInfo = uri.getRawUserInfo();
+        if (rawUserInfo == null) {
+            return uri.toString();
+        }
+        if (rawAuthority == null) {
+            throw new IllegalArgumentException("存储 URI 包含认证信息但没有 authority，拒绝写入运行证据");
+        }
+        int separator = rawAuthority.lastIndexOf('@');
+        if (separator < 0 || uri.getScheme() == null || uri.getRawPath() == null) {
+            throw new IllegalArgumentException("存储 URI 认证信息无法安全剥离，拒绝写入运行证据");
+        }
+        StringBuilder sanitized = new StringBuilder(uri.getScheme())
+                .append("://").append(rawAuthority.substring(separator + 1)).append(uri.getRawPath());
+        return sanitized.toString();
+    }
+
     private RunResult assemble(Long runId) {
         PipelineRun run = runMapper.selectById(runId);
         List<PipelineStageRun> stages = stageMapper.selectList(new LambdaQueryWrapper<PipelineStageRun>()
@@ -1185,32 +1576,95 @@ public class PipelineService {
     private void readAcceptedEvents(Path acceptedDir, String datePrefix, List<EventEnvelope> out,
                                     Map<String, BigDecimal> batchOrderTotals) {
         try (Stream<Path> list = Files.list(acceptedDir)) {
-            for (Path f : list.filter(p -> p.getFileName().toString().endsWith(".jsonl")).sorted().toList()) {
+            for (Path f : list.filter(p -> isAcceptedDataFile(p.getFileName().toString())).sorted().toList()) {
                 for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
-                    if (line.isBlank()) {
-                        continue;
-                    }
-                    try {
-                        EventEnvelope envelope = EventEnvelope.fromJson(line, objectMapper);
-                        if (EventContract.ORDER_CREATED.equals(envelope.eventType())) {
-                            String orderId = envelope.payload().get("order_id") == null ? ""
-                                    : String.valueOf(envelope.payload().get("order_id"));
-                            if (!orderId.isEmpty()) {
-                                QualityChecker.putTotal(batchOrderTotals, orderId,
-                                        envelope.payload().get("total_amount"));
-                            }
-                        }
-                        if (envelope.eventTime() != null && envelope.eventTime().startsWith(datePrefix)) {
-                            out.add(envelope);
-                        }
-                    } catch (Exception e) {
-                        log.warn("pipeline skip bad line in {}: {}", f.getFileName(), e.getMessage());
-                    }
+                    acceptEventLine(line, f.getFileName().toString(), datePrefix, out, batchOrderTotals);
                 }
             }
         } catch (IOException e) {
-            log.warn("accepted 读取失败 {}: {}", acceptedDir, e.getMessage());
+            log.warn("accepted 读取失败 causeType={}", e.getClass().getSimpleName());
         }
+    }
+
+    /**
+     * 存储变体（D-055）：hdfs profile 的 accepted 读取——行语义与本地版共用
+     * {@link #acceptEventLine}；文件枚举经 {@link LandingStorage#list}（缺失目录=空表、
+     * I/O 故障抛出→与本地版同口径降级为告警），单个文件读失败中止剩余文件（同本地语义）。
+     */
+    private void readAcceptedEvents(LandingStorage landingStorage, String acceptedRelativeDir, String datePrefix,
+                                    List<EventEnvelope> out, Map<String, BigDecimal> batchOrderTotals) {
+        try {
+            List<String> names = new ArrayList<>(landingStorage.list(acceptedRelativeDir));
+            names.sort(String::compareTo);
+            for (String name : names) {
+                if (!isAcceptedDataFile(name)) {
+                    continue;
+                }
+                String relativePath = acceptedRelativeDir + "/" + name;
+                try (InputStream in = landingStorage.open(relativePath);
+                     BufferedReader reader = new BufferedReader(
+                             new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                    for (String line : reader.lines().toList()) {
+                        acceptEventLine(line, name, datePrefix, out, batchOrderTotals);
+                    }
+                } catch (Exception e) {
+                    log.warn("accepted 读取失败 file={} causeType={}", name,
+                            e.getClass().getSimpleName());
+                    return;
+                }
+            }
+        } catch (RuntimeException e) {
+            log.warn("accepted 读取失败 causeType={}", e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * accepted 目录的数据文件判定（D-057）：摄取器写入 accepted 时**沿用源输入文件名**
+     * （LocalFileIngestor 不改名）——滚动日志布局输入全是 .jsonl，Flume raw 布局是
+     * {@code events.<millis>} 等任意名，因此读取侧不得按扩展名假设数据文件。统一对齐
+     * 输入扫描的形状排除口径：隐藏/`_` 前缀（清单、_SUCCESS、_temporary 类）与 `.tmp`
+     * 未完成文件不算数据，其余名字一律读。
+     */
+    static boolean isAcceptedDataFile(String name) {
+        String lower = name.toLowerCase(Locale.ROOT);
+        return !name.startsWith(".") && !name.startsWith("_") && !lower.endsWith(".tmp");
+    }
+
+    /** 两版 accepted 读取共用的唯一行语义：坏行跳过、订单总额照收、只放行业务日切片 */
+    private void acceptEventLine(String line, String fileName, String datePrefix, List<EventEnvelope> out,
+                                 Map<String, BigDecimal> batchOrderTotals) {
+        if (line.isBlank()) {
+            return;
+        }
+        try {
+            EventEnvelope envelope = EventEnvelope.fromJson(line, objectMapper);
+            if (EventContract.ORDER_CREATED.equals(envelope.eventType())) {
+                String orderId = envelope.payload().get("order_id") == null ? ""
+                        : String.valueOf(envelope.payload().get("order_id"));
+                if (!orderId.isEmpty()) {
+                    QualityChecker.putTotal(batchOrderTotals, orderId,
+                            envelope.payload().get("total_amount"));
+                }
+            }
+            if (envelope.eventTime() != null && envelope.eventTime().startsWith(datePrefix)) {
+                out.add(envelope);
+            }
+        } catch (Exception e) {
+            log.warn("pipeline skip bad line in {} causeType={}", fileName,
+                    e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * accepted 目录存在性的统一判定（D-055）：本地 {@code Files.isDirectory} ↔
+     * 存储 {@code stat().directory()}；缺失返回 false，存储 I/O 故障按 §8.2 契约抛出。
+     */
+    private static boolean isLandingDirectory(LandingStorage storage, String relativeDir) {
+        if (relativeDir == null || relativeDir.isBlank()) {
+            return false;
+        }
+        LandingStorage.FileStat stat = storage.stat(relativeDir);
+        return stat != null && stat.directory();
     }
 
     /** 阶段失败（携带稳定错误码，§23.2） */

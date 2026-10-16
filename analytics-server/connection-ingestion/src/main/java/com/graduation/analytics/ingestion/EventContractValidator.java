@@ -44,7 +44,9 @@ public class EventContractValidator {
         try {
             node = objectMapper.readTree(jsonLine);
         } catch (JsonProcessingException e) {
-            return new Violation(lineNo, null, null, "JSON 解析失败: " + e.getOriginalMessage());
+            // Parser diagnostics may include fragments of the supplied event line. Keep the
+            // quarantine reason stable and leave the original line only in its protected raw file.
+            return new Violation(lineNo, null, null, "JSON 解析失败");
         }
         if (node == null || !node.isObject()) {
             return new Violation(lineNo, null, null, "非 JSON 对象");
@@ -63,10 +65,10 @@ public class EventContractValidator {
             return new Violation(lineNo, eventId, schemaVersion, "payload 缺失或非对象");
         }
         if (!KNOWN_TYPES.contains(eventType)) {
-            return new Violation(lineNo, eventId, schemaVersion, "未知事件类型: " + eventType);
+            return new Violation(lineNo, eventId, schemaVersion, "未知事件类型");
         }
         if (!KNOWN_VERSIONS.contains(schemaVersion)) {
-            return new Violation(lineNo, eventId, schemaVersion, "未支持 schema_version: " + schemaVersion);
+            return new Violation(lineNo, eventId, schemaVersion, "未支持 schema_version");
         }
         String missingPayload = missingPayloadField(eventType, node.get("payload"));
         if (missingPayload != null) {
@@ -75,7 +77,7 @@ public class EventContractValidator {
         if (EventContract.BEHAVIOR.equals(eventType)) {
             String bt = text(node.path("payload"), "behavior_type");
             if (!BEHAVIOR_TYPES.contains(bt)) {
-                return new Violation(lineNo, eventId, schemaVersion, "非法 behavior_type: " + bt);
+                return new Violation(lineNo, eventId, schemaVersion, "非法 behavior_type");
             }
         }
         String amountBad = findBadAmount(node.get("payload"));
@@ -115,7 +117,7 @@ public class EventContractValidator {
                 "total_amount", "available_qty", "reserved_qty"}) {
             JsonNode v = payload.get(key);
             if (v != null && v.isTextual() && !AMOUNT.matcher(v.asText()).matches()) {
-                return key + "=" + v.asText();
+                return key;
             }
             if (v != null && !v.isTextual() && !v.isNumber()) {
                 return key + " 类型异常";
@@ -127,7 +129,7 @@ public class EventContractValidator {
                 for (String key : new String[]{"unit_price", "discount", "amount"}) {
                     JsonNode v = item.get(key);
                     if (v != null && v.isTextual() && !AMOUNT.matcher(v.asText()).matches()) {
-                        return "items[]. " + key + "=" + v.asText();
+                        return "items[]." + key;
                     }
                 }
             }

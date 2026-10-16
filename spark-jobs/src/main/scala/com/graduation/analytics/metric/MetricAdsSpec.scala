@@ -24,26 +24,35 @@ case class MetricAdsTable(table: String, mysqlTable: String, columns: Seq[String
 
 object MetricAdsSpec {
 
-  /** 首期 8 张 ADS（Hive 侧只有 8 张；类目/地区 ADS 未产出，故不建对应 _m 表） */
+  /** Hive ADS ↔ analytics_metric 导出映射的唯一清单。 */
   val TABLES: Seq[MetricAdsTable] = Seq(
     MetricAdsTable("ads_operation_overview", "ads_operation_overview_m",
       Seq("pv", "uv", "dau", "order_count", "sale_amount", "net_sale_amount",
-        "avg_order_value", "refund_rate", "full_refund_rate")),
+        "avg_order_value", "refund_rate", "full_refund_rate", "repeat_rate",
+        "repeat_period_start", "repeat_period_end", "fav_cnt", "cart_add_cnt")),
     MetricAdsTable("ads_sale_trend", "ads_sale_trend_m",
-      Seq("order_count", "buyer_count", "sale_amount", "avg_order_value")),
+      Seq("order_count", "buyer_count", "sale_amount", "avg_order_value", "net_sale_amount")),
     MetricAdsTable("ads_behavior_funnel", "ads_behavior_funnel_m",
-      Seq("stage", "user_count", "conversion_rate", "overall_buy_rate")),
+      Seq("stage", "user_count", "conversion_rate", "overall_buy_rate", "overall_cart_rate")),
     MetricAdsTable("ads_active_trend", "ads_active_trend_m",
       Seq("dau", "behavior_count")),
     MetricAdsTable("ads_hot_product", "ads_hot_product_m",
-      Seq("product_id", "product_name", "heat_score", "pv", "fav", "cart", "buy", "rank_no")),
+      Seq("product_id", "product_name", "heat_score", "pv", "fav", "cart", "buy", "rank_no",
+        "rule_version")),
     MetricAdsTable("ads_product_conversion", "ads_product_conversion_m",
       Seq("product_id", "pv_users", "buy_users", "conversion_rate")),
     MetricAdsTable("ads_user_profile", "ads_user_profile_m",
       Seq("user_id", "r", "f", "m", "value_group", "active_level", "favorite_category",
-        "last_active_date", "last_buy_date", "lifecycle_state", "rule_version", "calc_date")),
+        "last_active_date", "last_buy_date", "lifecycle_state", "rule_version", "calc_date",
+        "r_days", "f_count", "m_amount", "period_start", "period_end")),
     MetricAdsTable("ads_data_quality", "ads_data_quality_m",
-      Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold")))
+      Seq("rule_code", "check_count", "error_count", "error_rate", "passed", "threshold",
+        "rule_version")),
+    MetricAdsTable("ads_category_sale", "ads_category_sale_m",
+      Seq("category_id", "category_name", "parent_category_id", "parent_category_name",
+        "sale_count", "sale_amount", "net_sale_amount")),
+    MetricAdsTable("ads_region_sale", "ads_region_sale_m",
+      Seq("region", "sale_amount", "net_sale_amount")))
 
   val EXPORT_MANIFEST: String = "_export.json"
 

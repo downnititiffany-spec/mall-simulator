@@ -1,0 +1,21 @@
+-- S3-05（设计 §9.3 L335「ads_data_quality/ads_data_quality_m | 历史已发布，**规则版本与实时结果待接齐**」；
+--         设计 §9.3 L320「ADS…每行带 snapshot/定义版本/业务日期，发布可追溯」；
+--         设计 §12.3 L512「每条规则记录作用域、阈值、**版本**、阶段、实际值、passed、原始/生效严重度」）
+-- `ads_data_quality_m` 补**规则定义版本**列 `rule_version`：
+--   语义 = `quality_rule_definition`（`QualityRuleCatalog`，版本化单一所有者）里该规则码的 `version`；
+--   类型与 meta 侧 `data_quality_result.rule_version`（`V20__data_quality_result_rule_version.sql`，`INT`）一致，
+--   同名同类型 ⇒ 大盘行与门禁结果可以用同一枚键对齐「依据哪一版规则判的」。
+--
+-- 为什么是**加性 ALTER**而不是改 V3 的建表语句：V3 是已发布迁移，改动会破坏 Flyway checksum（治理门 ③）。
+-- Hive 侧（`warehouse/ddl/04-ads.sql` 与 `LocalSchemaInitJob` 的 formal/staging 建表）同样只能追加列，
+-- 故 MySQL 也追加在**末尾**，与 `MetricAdsSpec`（Spark 列真源）和 `MetricAdsCatalog`（Java 白名单）末尾列序一致。
+--
+-- 空值语义：允许 NULL。`quality_rule_definition` 在 V2.5 期间是**代码内目录**（classpath，见
+-- `QualityRuleCatalog` 类注释），历史快照行没有版本可填 ⇒ 保持 NULL 表示「未记录版本」，
+-- **不写 0 冒充 v1**（0 不是任何已发布版本）。新发布由 Spark 侧按目录版本写入（当前 4 条规则均为 1）。
+--
+-- 为什么现在只补版本、不在 ADS 重复落作用域/阶段/严重度：那三者的运行时真值由 meta 侧
+-- `data_quality_result`（`layer`/`target_table`/`severity`/`effective_severity`/`rule_fingerprint`）持有；
+-- 在 ADS 再抄一份会制造第二个严重度属主（V2 审计 §24.3「双所有者残留」）。ADS 只补「定义版本」这一枚可追溯键。
+ALTER TABLE ads_data_quality_m
+    ADD COLUMN rule_version INT NULL COMMENT '规则定义版本（QualityRuleCatalog 里该规则码的 version；历史行为 NULL）';

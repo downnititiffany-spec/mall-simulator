@@ -7,7 +7,11 @@ package com.graduation.generator.adapter;
  * {@code cancel_reason}（实测取值示例 {@code user_cancel/payment_timeout/out_of_stock}），
  * 商城侧没有枚举约束，生成器不替它发明一套——只要求非空，避免出现"原因未知"的订单。</p>
  */
-public record CancelCommand(String orderId, String userId, String reason) {
+public record CancelCommand(String orderId, String userId, String reason, String idempotencyKey) {
+
+    public CancelCommand(String orderId, String userId, String reason) {
+        this(orderId, userId, reason, null);
+    }
 
     public CancelCommand {
         if (orderId == null || orderId.isBlank()) {

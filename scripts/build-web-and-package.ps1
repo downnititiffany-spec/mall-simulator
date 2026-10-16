@@ -37,8 +37,16 @@ function Assert-FrontendBoundary {
 function Assert-JarBoundary {
     param([string]$Jar, [string[]]$Forbidden, [string]$Label)
     if (-not (Test-Path $Jar)) { throw "缺少产物：$Jar" }
-    $jarExe = Join-Path $env:JAVA_HOME 'bin\jar.exe'
-    if (-not (Test-Path $jarExe)) { $jarExe = 'jar' }
+    $jarExe = $null
+    if ($env:JAVA_HOME) {
+        $candidate = Join-Path $env:JAVA_HOME 'bin\jar.exe'
+        if (Test-Path -LiteralPath $candidate) { $jarExe = $candidate }
+    }
+    if (-not $jarExe) {
+        $jarCommand = Get-Command jar.exe -ErrorAction SilentlyContinue
+        if ($jarCommand) { $jarExe = $jarCommand.Source }
+    }
+    if (-not $jarExe) { throw '找不到 jar.exe：请设置 JAVA_HOME 或将 JDK bin 目录加入 PATH。' }
     $names = @(& $jarExe tf $Jar | Where-Object { $_ -like 'BOOT-INF/classes/static/*' -and $_ -notlike '*/' } |
         ForEach-Object { Split-Path $_ -Leaf })
     $bad = @($names | Where-Object { $n = $_; @($Forbidden | Where-Object { $n -like "$_*" }).Count -gt 0 })

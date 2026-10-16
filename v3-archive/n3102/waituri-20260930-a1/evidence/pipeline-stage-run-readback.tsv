@@ -1,0 +1,2 @@
+run_id	stage_code	status	evidence.batchId	evidence.acceptedUri	evidence.acceptedStorageUri	evidence.acceptedRecords	evidence.sourceId
+1	WAIT_LANDING	SUCCESS	1	accepted/1	hdfs://127.0.0.1:19000/landing/n3102waituri_20260930_2042_a1/accepted/1	99	1

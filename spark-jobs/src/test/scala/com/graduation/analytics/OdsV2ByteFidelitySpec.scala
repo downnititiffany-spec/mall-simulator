@@ -15,7 +15,7 @@ import java.nio.file.Files
  * P2-01 A5 / A4 / A6 / A7 / A8 / A12c / A12d：**在 Spark 里**端到端验证 payload 字节保真。
  *
  * 真跑：真读黄金夹具（只读 `file:/…/golden-20260901.jsonl`）、真建表（隔离 warehouse
- * `D:/Develop/tmp/p2-01-warehouse/ods-v2-e2e`）、真 INSERT OVERWRITE，再从表里把
+ * 套件独占的操作系统临时 warehouse）、真 INSERT OVERWRITE，再从表里把
  * `payload_json` 读回来与源行**逐字节**比。
  *
  * 独立 oracle（不依赖被测代码）：本机 PowerShell 对 golden 第 1 行 payload 原文算出的

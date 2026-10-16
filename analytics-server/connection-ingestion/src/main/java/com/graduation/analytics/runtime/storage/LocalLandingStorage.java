@@ -7,6 +7,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -72,8 +75,7 @@ public class LocalLandingStorage implements LandingStorage {
         try (Stream<Path> s = Files.list(dir)) {
             return s.map(p -> p.getFileName().toString()).sorted().toList();
         } catch (IOException e) {
-            log.warn("list {} failed: {}", dir, e.getMessage());
-            return List.of();
+            throw new IllegalStateException("列出 landing 目录失败: " + relativeDir, e);
         }
     }
 
@@ -83,6 +85,40 @@ public class LocalLandingStorage implements LandingStorage {
             return Files.newInputStream(resolve(relativePath));
         } catch (IOException e) {
             throw new IllegalStateException("打开 landing 文件失败: " + relativePath, e);
+        }
+    }
+
+    @Override
+    public SeekableInput openSeekable(String relativePath) {
+        Path path = resolve(relativePath);
+        try {
+            FileChannel channel = FileChannel.open(path, StandardOpenOption.READ);
+            return new SeekableInput() {
+                @Override
+                public void seek(long offset) throws IOException {
+                    if (offset < 0) {
+                        throw new IllegalArgumentException("offset 不得小于 0");
+                    }
+                    channel.position(offset);
+                }
+
+                @Override
+                public int read(byte[] buffer, int offset, int length) throws IOException {
+                    return channel.read(ByteBuffer.wrap(buffer, offset, length));
+                }
+
+                @Override
+                public long length() throws IOException {
+                    return channel.size();
+                }
+
+                @Override
+                public void close() throws IOException {
+                    channel.close();
+                }
+            };
+        } catch (IOException e) {
+            throw new IllegalStateException("打开可定位 landing 文件失败: " + relativePath, e);
         }
     }
 
@@ -101,17 +137,81 @@ public class LocalLandingStorage implements LandingStorage {
     }
 
     @Override
-    public String writeManifest(String batchId, String manifestJson) {
-        Path dir = resolve("manifests");
+    public String fileIdentity(String relativePath) {
+        Path path = resolve(relativePath);
         try {
-            Files.createDirectories(dir);
-            Path file = dir.resolve(batchId + ".json");
-            Files.writeString(file, manifestJson, StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            return file.toUri().toURL().toString();
+            var attrs = Files.readAttributes(path, java.nio.file.attribute.BasicFileAttributes.class,
+                    java.nio.file.LinkOption.NOFOLLOW_LINKS);
+            // Match LocalFileIngestor's historic identity representation so enabling the
+            // storage-backed local path does not invalidate existing byte checkpoints.
+            return String.valueOf(attrs.creationTime().toMillis());
         } catch (IOException e) {
-            throw new IllegalStateException("写入 manifest 失败: " + batchId, e);
+            throw new IllegalStateException("读取 landing 文件身份失败: " + relativePath, e);
         }
+    }
+
+    @Override
+    public String checkpointKey(String relativePath) {
+        return resolve(relativePath).toAbsolutePath().normalize().toString();
+    }
+
+    @Override
+    public void createDirectories(String relativeDir) {
+        try {
+            Files.createDirectories(resolve(relativeDir));
+        } catch (IOException e) {
+            throw new IllegalStateException("创建 landing 目录失败: " + relativeDir, e);
+        }
+    }
+
+    @Override
+    public OutputStream createOrAppend(String relativePath) {
+        Path file = resolve(relativePath);
+        try {
+            Path parent = file.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            return Files.newOutputStream(file, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            throw new IllegalStateException("打开 landing 输出失败: " + relativePath, e);
+        }
+    }
+
+    @Override
+    public boolean move(String sourceRelativePath, String targetRelativePath) {
+        Path source = resolve(sourceRelativePath);
+        Path target = resolve(targetRelativePath);
+        try {
+            Path parent = target.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            try {
+                Files.move(source, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                Files.move(source, target);
+            }
+            return true;
+        } catch (java.nio.file.FileAlreadyExistsException e) {
+            return false;
+        } catch (IOException e) {
+            throw new IllegalStateException("移动 landing 路径失败: " + sourceRelativePath, e);
+        }
+    }
+
+    @Override
+    public boolean deleteIfExists(String relativePath) {
+        try {
+            return Files.deleteIfExists(resolve(relativePath));
+        } catch (IOException e) {
+            throw new IllegalStateException("删除 landing 路径失败: " + relativePath, e);
+        }
+    }
+
+    @Override
+    public String uri(String relativePath) {
+        return resolve(relativePath).toUri().toString();
     }
 
     @Override

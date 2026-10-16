@@ -28,6 +28,11 @@ import java.util.Set;
  *
  * <p>数值一律按文本精确转 {@link BigDecimal}（金额/比率不允许经 double 丢精度），
  * 整型转 {@link Long}；列名必须落在 {@link MetricAdsCatalog} 白名单内，否则拒绝该行。</p>
+ *
+ * <p><b>表形（schema）双向严格</b>（S3-09，设计 §12.5 L529「表形…验证」）：
+ * 非白名单列 → 拒绝；声明列里缺任何一列 → 也拒绝。**不补 null**：
+ * 「键缺失」与「键在、值为 null」是两件事 —— 前者说明导出的不是声明的表形（例如导出侧版本落后
+ * 一列），后者是真实的"当日没有该指标值"。旧实现把缺列补齐成 null，会让残缺导出静默发布成功。</p>
  */
 @Component
 public class AdsExportReader {
@@ -91,9 +96,17 @@ public class AdsExportReader {
         if (!unknown.isEmpty()) {
             throw new IOException("导出文件第 " + lineNo + " 行含非白名单列（" + file + "）: " + unknown);
         }
-        // 缺失列补 null：写入侧按列集合建 SQL，缺列会退化为 DDL 默认值，这里显式补齐保证列集一致
-        for (String column : spec.columns()) {
-            row.putIfAbsent(column, null);
+        // 表形校验（设计 §12.5 L529「表形…验证」、指导书 §7 阶段三第 4 条「核 schema」）：
+        // 声明列必须**逐列出现在该行**。注意与"值为 null"的区别 —— 键在、值为 null 是真实语义
+        // （当日没有该指标值），键不在则说明导出侧写的不是声明的那张表形。
+        // S3-09 修复：旧实现把缺列 putIfAbsent(null) 补齐，于是版本落后的导出（少一列）会被
+        // 静默当成"值全为空"写进指标库，且没有任何 check 会点名它（列集被补齐后各行完全一致，
+        // MP_ROW_SHAPE_CONSISTENT 看不出差别）——"看起来发布成功"的假数据。
+        Set<String> missing = new LinkedHashSet<>(spec.columns());
+        missing.removeAll(row.keySet());
+        if (!missing.isEmpty()) {
+            throw new IOException("导出文件第 " + lineNo + " 行缺列（" + file + "）: " + missing
+                    + "；该表声明列集 = " + spec.columns());
         }
         return row;
     }

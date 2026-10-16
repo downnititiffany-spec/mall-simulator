@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>钉住 V19（规则定义表 + 种子）与 V20（结果行版本列）两件事：</p>
  * <ol>
  *   <li><b>号位不冲突</b>：{@code db/meta} 内迁移号不重复（重复会让 Flyway 拒绝启动）；</li>
- *   <li><b>种子与 Java 目录同源</b>：V19 的 35 行种子逐字段等于
+ *   <li><b>种子与 Java 目录同源</b>：V19 与后续加性迁移的种子并集逐字段等于
  *       {@link QualityRuleCatalog#definitions()} —— 这条是本门禁的**核心**。
  *       若允许 SQL 里再写一份手抄档位，就会产生「第二份严重度所有者」，
  *       与 {@code RuleSeverity} 的单一所有者直接冲突；本用例使二者不可能漂移。</li>
@@ -47,6 +47,71 @@ class QualityRuleVersionMigrationScriptTest {
     private static final String V19 = "V19__quality_rule_definition.sql";
     private static final String V20 = "V20__data_quality_result_rule_version.sql";
 
+    /**
+     * 追加式种子迁移（S3-06 / F-39）：`MP_EXPORT_CHECKSUM` 一行的登记。
+     *
+     * <p>V19 已发布、按门③不得再改，因此「契约全集」的落库载体自 V23 起由
+     * **V19 + 本迁移**共同构成；本类对二者的并集做与 Java 目录的零漂移对账。</p>
+     */
+    private static final String V23 = "V23__quality_rule_publish_export_checksum.sql";
+
+    /**
+     * 追加式种子迁移（S3-10 / F-43）：`ADS_DWS_FUNNEL_RATE_RECONCILE` 一行的登记。
+     *
+     * <p>用途：S3-04 给 ADS 漏斗加了 `overall_cart_rate` 列，但在产阻断规则只对账
+     * `user_count` 汇总，率列没有守卫（S3-04 R-1）。新规则的登记同样**不得**改已发布的
+     * V19（门③），只能由新的加性迁移追加。</p>
+     */
+    private static final String V25 = "V25__quality_rule_ads_funnel_rate_reconcile.sql";
+
+    /**
+     * 追加式种子迁移（S3-22 / F-55）：`ADS_GMV_NET_SALE_INVARIANT` 一行的登记。
+     *
+     * <p>用途：设计 §12.3 第 8 项要求「同归属口径 ADS GMV ≥ 净销售 ≥ 0」，而既有 ADS 阻断规则
+     * 只覆盖关键列非空、暂存存在性、漏斗计数/率列跨层对账，**没有任何规则**读
+     * `ads_operation_overview` 的金额两列做不变量判定。新规则的登记同样**不得**改已发布的
+     * V19/V25（门③），只能由新的加性迁移追加。</p>
+     */
+    private static final String V26 = "V26__quality_rule_ads_gmv_net_sale_invariant.sql";
+
+    /**
+     * 追加式种子迁移（S3-23 / F-56）：`ADS_UV_PV_INVARIANT` 一行的登记。
+     *
+     * <p>用途：设计 §12.3 第 9 项要求「同过滤条件 UV ≤ PV」，而既有 ADS 阻断规则只覆盖
+     * 关键列**非空**（`pv`/`uv`/`dau`）、暂存存在性、漏斗对账与金额不变量，**没有任何规则**
+     * 判 `pv`/`uv` 两列之间的不等式。新规则的登记同样**不得**改已发布的 V19/V25/V26（门③），
+     * 只能由新的加性迁移追加。</p>
+     */
+    private static final String V27 = "V27__quality_rule_ads_uv_pv_invariant.sql";
+
+    /**
+     * 追加式种子迁移（S3-25 / F-58）：`DWS_UV_PV_INVARIANT` 一行的登记。
+     *
+     * <p>用途：设计 §12.3 第 9 项「同过滤条件 UV ≤ PV」在 **DWS 层**另有一个同型站点
+     * （`dws_product_behavior_day` 按 `product_id×category_id` 逐行、无 snapshot 维度），
+     * S3-23 只关闭了 ADS 大盘那一处；该表是 `ads_hot_product` / `ads_product_conversion` 的
+     * 直连来源，其 `pv`/`uv` 在产质量门里**没有任何守卫**。两处粒度/表/分区维度都不同 ⇒
+     * 独立成码（门⑦不触：不改架构；门③不触：不动已发布的 V19/V25/V26/V27，只追加）。</p>
+     */
+    private static final String V28 = "V28__quality_rule_dws_uv_pv_invariant.sql";
+
+    /**
+     * 追加式版本迁移（Stage 7 T-R1）：`ADS_STAGING_PRESENT` 的 version 2。
+     *
+     * <p>v1 把 rowCount=0 与缺分区合并；真实 MALL_API 链证明某些专题可合法 0 行。
+     * v2 只要求分区存在且 Location 可读，保留 v1 供历史 run 解释，不原地改历史定义。</p>
+     */
+    private static final String V29 = "V29__quality_rule_ads_staging_present_v2.sql";
+
+    /**
+     * 追加式种子迁移（N31-02 / D-058）：新增分类与城市等级对账规则，
+     * 并为新增 ADS 表集追加暂存/导出完整性规则版本。
+     */
+    private static final String V34 = "V34__quality_rule_category_region_sales.sql";
+
+    /** 承载种子的迁移（顺序无关，对账取并集） */
+    private static final List<String> SEED_SCRIPTS = List.of(V19, V23, V25, V26, V27, V28, V29, V34);
+
     /** V20 的四个新列（顺序即脚本内的声明顺序）。 */
     private static final List<String> V20_COLUMNS = List.of(
             "rule_version", "effective_severity", "compat_policy_version", "rule_fingerprint");
@@ -62,7 +127,7 @@ class QualityRuleVersionMigrationScriptTest {
                     + "\\s*'([0-9a-f]{64})'\\s*\\)");
 
     @Test
-    @DisplayName("迁移号由总控分配且不冲突：V19/V20 存在，且 db/meta 内号位不重复")
+    @DisplayName("迁移号不冲突：V19/V20/V23/V25/V26/V27/V28/V29/V34 存在，且 db/meta 内号位不重复")
     void migrationVersionsAreAssignedAndUnique() {
         List<Integer> versions = scriptVersions();
         assertThat(versions).as("db/meta 下应有迁移脚本").isNotEmpty();
@@ -72,8 +137,199 @@ class QualityRuleVersionMigrationScriptTest {
         assertThat(versions)
                 .as("F-88/V25-Q01 的两个迁移号必须存在；改号/删号必在此处变红")
                 .contains(19, 20);
+        assertThat(versions)
+                .as("S3-06 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(23);
+        assertThat(versions)
+                .as("S3-10 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(25);
+        assertThat(versions)
+                .as("S3-22 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(26);
+        assertThat(versions)
+                .as("S3-23 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(27);
+        assertThat(versions)
+                .as("S3-25 的加性种子迁移号必须存在（仅追加一行规则定义）")
+                .contains(28);
+        assertThat(versions)
+                .as("Stage 7 T-R1 的 ADS_STAGING_PRESENT v2 迁移号必须存在（仅追加一个新版本）")
+                .contains(29);
+        assertThat(versions)
+                .as("N31-02 分类/城市等级质量规则必须由 V34 加性登记")
+                .contains(34);
         assertThat(Files.isRegularFile(META_DIR.resolve(V19))).as("%s 必须存在", V19).isTrue();
         assertThat(Files.isRegularFile(META_DIR.resolve(V20))).as("%s 必须存在", V20).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V23))).as("%s 必须存在", V23).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V25))).as("%s 必须存在", V25).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V26))).as("%s 必须存在", V26).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V27))).as("%s 必须存在", V27).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V28))).as("%s 必须存在", V28).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V29))).as("%s 必须存在", V29).isTrue();
+        assertThat(Files.isRegularFile(META_DIR.resolve(V34))).as("%s 必须存在", V34).isTrue();
+    }
+
+    @Test
+    @DisplayName("V27 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v27OnlyAppendsSeedRows() {
+        String sql = code(V27);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V27 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V27 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V27))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
+    }
+
+    @Test
+    @DisplayName("V28 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v28OnlyAppendsSeedRows() {
+        String sql = code(V28);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V28 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V28 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V28))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
+        // 新增码是**新**规则码，不是给既有码换档：checksum 必须是本码本版本的指纹，
+        // 且不得与 V27 的 ADS 同型码共用一行（合并即违反设计 line 512）
+        assertThat(read(V28))
+                .as("必须是独立的 DWS_UV_PV_INVARIANT 行，不得复用 ADS_UV_PV_INVARIANT")
+                .contains("'DWS_UV_PV_INVARIANT'")
+                .doesNotContain("'ADS_UV_PV_INVARIANT'");
+    }
+
+    @Test
+    @DisplayName("V29 只追加 ADS_STAGING_PRESENT v2：保留 v1、不改表/列/历史行")
+    void v29OnlyAppendsAdsStagingPresentVersion2() {
+        String sql = code(V29);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V29 只应向 quality_rule_definition 追加一个新版本")
+                .isEqualTo(1);
+        assertThat(sql)
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V29 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V29))
+                .contains("'ADS_STAGING_PRESENT', 2")
+                .contains("未执行");
+    }
+
+    @Test
+    @DisplayName("V34 只追加分类/城市等级规则及完整性版本，不改历史迁移或其它表")
+    void v34OnlyAppendsCategoryRegionRules() {
+        String sql = code(V34);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V34 只向质量规则目录追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+")
+                .contains("'ADS_CATEGORY_SALE_RECONCILE', 1")
+                .contains("'ADS_REGION_SALE_RECONCILE', 1")
+                .contains("'ADS_STAGING_PRESENT', 3")
+                .contains("'MXP_EXPORT_COMPLETE', 2");
+        assertThat(read(V34)).contains("未执行");
+        assertThat(countMatches(sql, ";"))
+                .as("V34 为单条 INSERT 语句，四行规则作为同一分类/地区 ADS 契约原子登记")
+                .isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("V26 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v26OnlyAppendsSeedRows() {
+        String sql = code(V26);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V26 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V26 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V26))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
+    }
+
+    @Test
+    @DisplayName("V25 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v25OnlyAppendsSeedRows() {
+        String sql = code(V25);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V25 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V25 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V25))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
+    }
+
+    @Test
+    @DisplayName("V23 只追加种子：单条 INSERT IGNORE、不建表/不改列/不删行、不碰其它表")
+    void v23OnlyAppendsSeedRows() {
+        String sql = code(V23);
+
+        assertThat(countMatches(sql, "(?i)\\binsert\\s+ignore\\s+into\\s+quality_rule_definition\\b"))
+                .as("V23 只应向 quality_rule_definition 追加登记行")
+                .isEqualTo(1);
+        assertThat(sql)
+                .as("不得建表/改列/删任何东西（已发布契约只许追加）")
+                .doesNotContainPattern("(?i)\\b(create|alter|drop|truncate)\\b")
+                .doesNotContainPattern("(?i)\\b(update|delete|replace)\\b");
+        assertThat(sql)
+                .as("不得触碰其它表")
+                .doesNotContainPattern("(?i)\\binto\\s+(?!quality_rule_definition)\\w+");
+        assertThat(countMatches(sql, ";"))
+                .as("V23 应恰好是一条语句（一次迁移一件事）")
+                .isEqualTo(1);
+        assertThat(read(V23))
+                .as("必须写明本轮未在真库执行（DB 冻结），否则会被误读为已验证")
+                .contains("未执行");
     }
 
     @Test
@@ -156,16 +412,17 @@ class QualityRuleVersionMigrationScriptTest {
     }
 
     @Test
-    @DisplayName("V19 种子逐字段等于 Java 目录：35 行、version 全 1、档位/模式/阈值/指纹零漂移")
+    @DisplayName("种子（V19+V23+V25+V26+V27+V28+V29+V34 并集）逐字段等于 Java 目录：45 行、版本/档位/模式/阈值/指纹零漂移")
     void v19SeedMatchesTheJavaCatalogExactly() {
         List<QualityRuleDefinition> definitions = QualityRuleCatalog.DEFAULT.definitions();
         assertThat(definitions)
-                .as("目录契约全集应为 35 条（本用例是 SQL 与 Java 的对账点，改数必在此处变红）")
-                .hasSize(35);
+                .as("目录契约全集应为 45 条：历史种子 + ADS_STAGING_PRESENT v2/v3、MXP_EXPORT_COMPLETE v2，"
+                        + "以及分类/城市等级销售对账规则；同规则码多版本必须同时保留")
+                .hasSize(45);
 
         List<String> seed = seedRows();
         assertThat(seed)
-                .as("V19 种子行数必须等于目录定义数 —— 少登记一个码，该码一上线就会被读侧判为「未登记」而停止发布")
+                .as("种子行数必须等于目录定义数 —— 少登记一个码，该码一上线就会被读侧判为「未登记」而停止发布")
                 .hasSameSizeAs(definitions);
 
         List<String> expected = new ArrayList<>();
@@ -189,10 +446,12 @@ class QualityRuleVersionMigrationScriptTest {
                         + "差异行即「第二份严重度口径」的入口")
                 .containsExactlyElementsOf(sortedExpected);
 
-        // version 必须全为 1（本版只做既有码的登记，不借登记之名改档）
-        assertThat(seed.stream().map(row -> row.split("\\|", -1)[1]).distinct().toList())
-                .as("V19 是「既有规则的版本化登记」，version 必须全为 1；改档位必须发新 version 并显式裁决")
-                .containsExactly("1");
+        assertThat(seed.stream().filter(row -> row.startsWith("ADS_STAGING_PRESENT|2|")).toList())
+                .as("合法空态语义必须通过独立 v2 行发布，不能原地覆盖 ADS_STAGING_PRESENT v1")
+                .hasSize(1);
+        assertThat(seed.stream().map(row -> row.split("\\|", -1)[1]).distinct().sorted().toList())
+                .as("当前目录应包含历史 v1，以及已登记的 ADS_STAGING_PRESENT v2/v3 和 MXP_EXPORT_COMPLETE v2")
+                .containsExactly("1", "2", "3");
     }
 
     @Test
@@ -244,12 +503,31 @@ class QualityRuleVersionMigrationScriptTest {
         return read(scriptName).replaceAll("(?s)/\\*.*?\\*/", " ").replaceAll("(?m)--.*$", " ");
     }
 
-    /** 解析 V19 的种子行，输出 {@code 11 个字段以 | 连接} 的规范化文本（NULL 与缺省统一为空串）。 */
+    /**
+     * 解析承载种子的迁移（{@link #SEED_SCRIPTS} 并集），输出 {@code 11 个字段以 | 连接}
+     * 的规范化文本（NULL 与缺省统一为空串）。
+     *
+     * <p>为什么取并集：V19 已发布且按门③不得再改，新规则码只能由后续加性迁移登记；
+     * 契约全集 = 各迁移所登记行的并集（读侧同理，按 {@code (source_scope, rule_code, version)}
+     * 唯一键合并）。</p>
+     */
     private static List<String> seedRows() {
-        String sql = code(V19);
+        List<String> rows = new ArrayList<>();
+        for (String script : SEED_SCRIPTS) {
+            rows.addAll(seedRowsOf(script));
+        }
+        assertThat(rows)
+                .as("种子并集（%s）应解析出 45 行；解析结果说明格式已被改动", SEED_SCRIPTS)
+                .isNotEmpty();
+        return rows;
+    }
+
+    /** 解析单个迁移的 VALUES 段种子行。 */
+    private static List<String> seedRowsOf(String scriptName) {
+        String sql = code(scriptName);
         // 只在 VALUES 之后找行，避免把其它小括号结构误当种子
         int valuesAt = sql.toUpperCase(java.util.Locale.ROOT).indexOf("VALUES");
-        assertThat(valuesAt).as("V19 应有 VALUES 子句").isNotNegative();
+        assertThat(valuesAt).as("%s 应有 VALUES 子句", scriptName).isNotNegative();
         String tail = sql.substring(valuesAt);
 
         Matcher m = SEED_ROW.matcher(tail);
@@ -263,7 +541,7 @@ class QualityRuleVersionMigrationScriptTest {
                     threshold, m.group(9), from, to, m.group(14)));
         }
         assertThat(rows)
-                .as("V19 的 VALUES 段应解析出 35 行种子；解析到 %d 行说明格式已被改动", rows.size())
+                .as("%s 的 VALUES 段未解析出任何种子行：格式已被改动（或该迁移不再承载种子）", scriptName)
                 .isNotEmpty();
         return rows;
     }

@@ -1,0 +1,6 @@
+CONCAT('NRUN|',id,'|',status,'|',IFNULL(input_batch_id,'NULL'),'|',IFNULL(target_snapshot_id,'NULL'),'|',IFNULL(recalc_reason,'NULL'))
+NRUN|3|SUCCESS|NULL|NULL|NULL
+CONCAT('WL|',LEFT(evidence,700))
+WL|{"noNewInput":true,"reason":"ALREADY_CONSUMED","batchId":2,"consumedByRunId":2,"readyButConsumedCount":2}
+CONCAT('CONS|',COUNT(*))
+CONS|2

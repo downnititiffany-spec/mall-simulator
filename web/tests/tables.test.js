@@ -9,6 +9,7 @@ import {
   decisionRows,
   evaluationRows,
   metricRows,
+  pipelineRunRows,
   qualityRows,
   resultColumnLabel,
   snapshotRows,
@@ -77,6 +78,26 @@ test('aiCallRows 缺失耗时给占位符，token 数量整数格式化', () => 
   const rows = aiCallRows([{ useCase: 'ai_query', provider: 'deepseek', model: 'x', inputTokens: 1200, outputTokens: 300, elapsedMs: null, promptVersion: 'explain_v1', status: 'OK' }])
   assert.equal(rows[0].inputTokens, '1,200')
   assert.equal(rows[0].elapsedMs, '—')
+  assert.equal(rows[0].sourceId, '—')
+  assert.equal(rows[0].snapshotId, '—')
+  assert.equal(rows[0].requestFingerprint, '—')
+  assert.equal(rows[0].fingerprintPreview, '—')
+})
+
+test('aiCallRows 搬运真实来源与快照，页面短显指纹而导出值保持完整', () => {
+  const fingerprint = '0123456789abcdef'.repeat(4)
+  const [row] = aiCallRows([{
+    useCase: 'evidence_explain', provider: 'openai-compatible', model: 'model-x',
+    sourceId: 7, snapshotId: 'S20261008_1', requestFingerprint: fingerprint,
+    inputTokens: 12, outputTokens: 8, elapsedMs: 21, promptVersion: 'v3', status: 'OK'
+  }])
+  assert.equal(row.sourceId, '7')
+  assert.equal(row.snapshotId, 'S20261008_1')
+  assert.equal(row.requestFingerprint, fingerprint)
+  assert.equal(row.fingerprintPreview, `${fingerprint.slice(0, 12)}…`)
+  assert.ok(COLUMNS.opsAiCalls.some(({ key }) => key === 'sourceId'))
+  assert.ok(COLUMNS.opsAiCalls.some(({ key }) => key === 'snapshotId'))
+  assert.ok(COLUMNS.opsAiCalls.some(({ key }) => key === 'requestFingerprint'))
 })
 
 test('decisionRows 快照号与基线来自后端行，缺失给占位符', () => {
@@ -92,11 +113,23 @@ test('decisionRows 快照号与基线来自后端行，缺失给占位符', () =
 
 test('evaluationRows 改善率 decimal → 百分比，缺失不写成 0%', () => {
   const rows = evaluationRows([
-    { result: 'EFFECTIVE', improvementRate: 0.6, baselineValue: 1, actualValue: 1.6, evalWindowDays: 3, createdAt: '2026-09-04T00:00:00Z' },
+    { result: 'EFFECTIVE', improvementRate: 0.6, baselineValue: 1, actualValue: 1.6, evalWindowDays: 3,
+      baselineWindowStart: '2026-09-01', baselineWindowEnd: '2026-09-03',
+      windowStart: '2026-09-05', windowEnd: '2026-09-07', baselineSampleCount: 3, actualSampleCount: 3,
+      sourceId: 7, metricDefinitionVersion: 'v1', note: '前后变化（非因果推断）',
+      createdAt: '2026-09-04T00:00:00Z' },
     { result: 'INSUFFICIENT_DATA', improvementRate: null }
   ])
   assert.equal(rows[0].improvementRate, '60.00%')
+  assert.equal(rows[0].baselineWindow, '2026-09-01 ~ 2026-09-03')
+  assert.equal(rows[0].actualWindow, '2026-09-05 ~ 2026-09-07')
+  assert.equal(rows[0].baselineSamples, '3')
+  assert.equal(rows[0].actualSamples, '3')
+  assert.equal(rows[0].sourceId, '7')
+  assert.equal(rows[0].metricDefinitionVersion, 'v1')
+  assert.equal(rows[0].note, '前后变化（非因果推断）')
   assert.equal(rows[1].improvementRate, '—')
+  assert.equal(rows[1].baselineWindow, '—')
 })
 
 test('aiResultTable 列名来自结果行键的并集（未登记键原样保留），值原样字符串化，null 转空串', () => {
@@ -112,6 +145,55 @@ test('aiResultTable 列名来自结果行键的并集（未登记键原样保留
 test('aiResultTable 非对象/空输入返回空表而不是抛错', () => {
   assert.deepEqual(aiResultTable(null), { headers: [], rows: [] })
   assert.deepEqual(aiResultTable([null, 1, 'x']), { headers: [], rows: [] })
+})
+
+// ── S3-34（E5-c /pipeline 与 /ops「结果所属数据源」）：流水线实例的溯源字段 ──
+test('pipelineRunRows 映射「源数据版本」（结果所属数据源版本），缺失给占位符', () => {
+  // 实测 §PipelineService:169 `run.setSourceDataVersion(sourceDataVersion)`（页面创建实例时传
+  // 'manual-<ms>'）、:420 `run.setTargetSnapshotId(snapshotId)`；两者都是 V2/V7 既有列，
+  // 后端列表接口本就把实体整行返回 ⇒ 前端此前只是**没搬运**，不得在页面重算或编造。
+  const rows = pipelineRunRows([
+    {
+      id: 47, pipelineCode: 'ODS_TO_ADS', businessTime: '2026-09-01T00:00:00',
+      sourceDataVersion: 'manual-1726000000000', targetSnapshotId: 'S20260901_47',
+      attemptNo: 1, status: 'SUCCESS'
+    },
+    { id: 48, pipelineCode: 'ODS_TO_ADS' }
+  ])
+  assert.equal(rows[0].sourceDataVersion, 'manual-1726000000000')
+  assert.equal(rows[0].targetSnapshotId, 'S20260901_47')
+  assert.equal(rows[1].sourceDataVersion, '—')
+  assert.equal(rows[1].targetSnapshotId, '—')
+})
+
+test('COLUMNS.opsPipelineRuns 含「源数据版本」列：/ops 流水线实例表可见结果所属数据源', () => {
+  const col = COLUMNS.opsPipelineRuns.find((c) => c.key === 'sourceDataVersion')
+  assert.ok(col, '运维页流水线实例表缺少 sourceDataVersion 列')
+  assert.equal(col.label, '源数据版本')
+})
+
+// ── S3-37（`input_batch_id` **展示侧**）：让 S3-36 已落库的「输入批次」真的可见 ──
+test('pipelineRunRows 映射「输入批次」（ingestion_batch.id），缺失给占位符且不由其他字段顶替', () => {
+  // 实测：后端 `/api/v1/pipeline-runs` 返回 `ApiResponse<List<PipelineRun>>` **实体整行**
+  // （`PipelineController.java:70-72`），`inputBatchId` 是 V7 既有列（S3-36 起写入侧落库）
+  // ⇒ 前端此前只是**没搬运**。历史行仍为 NULL（S3-36 明确不回填）⇒ 必须显示占位符：
+  // 不得用 targetSnapshotId / sourceDataVersion 顶替，也不得显示 0 —— S3-36 的 fail-closed
+  // 语义是「NULL ＝ 未知」，写/显示 0 会被误读成"存在 0 号批次"。
+  const rows = pipelineRunRows([
+    { id: 47, pipelineCode: 'ODS_TO_ADS', sourceDataVersion: 'manual-1726000000000', inputBatchId: 128 },
+    { id: 48, pipelineCode: 'ODS_TO_ADS', sourceDataVersion: 'manual-999', inputBatchId: null },
+    { id: 49, pipelineCode: 'ODS_TO_ADS' }
+  ])
+  assert.equal(rows[0].inputBatchId, '128')
+  assert.equal(rows[1].inputBatchId, '—')
+  assert.equal(rows[1].sourceDataVersion, 'manual-999') // 同行的源数据版本不受影响
+  assert.equal(rows[2].inputBatchId, '—')
+})
+
+test('COLUMNS.opsPipelineRuns 含「输入批次」列：/ops 表格与 CSV 导出都能看到', () => {
+  const col = COLUMNS.opsPipelineRuns.find((c) => c.key === 'inputBatchId')
+  assert.ok(col, '运维页流水线实例表缺少 inputBatchId 列')
+  assert.equal(col.label, '输入批次')
 })
 
 test('toTable 对空列表返回列头齐全、行为空', () => {

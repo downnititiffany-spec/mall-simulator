@@ -8,6 +8,7 @@ import com.graduation.analytics.ai.sql.SqlExecutor;
 import com.graduation.analytics.ai.sql.SqlPolicy;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator.ValidationResult;
+import com.graduation.analytics.runtime.ActiveRuntimeProfileIdProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,15 +19,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,9 +54,10 @@ class AiSqlSecurityTest {
         SemanticCatalog catalog = mock(SemanticCatalog.class);
         Map<String, java.util.Set<String>> tables = new LinkedHashMap<>();
         tables.put("ads_operation_overview_m", java.util.Set.of("snapshot_id", "dt", "pv", "uv", "dau",
-                "order_count", "sale_amount", "net_sale_amount", "avg_order_value", "refund_rate", "full_refund_rate"));
+                "order_count", "sale_amount", "net_sale_amount", "avg_order_value", "refund_rate", "full_refund_rate",
+                "repeat_rate", "repeat_period_start", "repeat_period_end", "fav_cnt", "cart_add_cnt"));
         tables.put("ads_sale_trend_m", java.util.Set.of("snapshot_id", "dt", "order_count", "buyer_count",
-                "sale_amount", "avg_order_value"));
+                "sale_amount", "avg_order_value", "net_sale_amount"));
         tables.put("ads_behavior_funnel_m", java.util.Set.of("snapshot_id", "dt", "stage", "user_count",
                 "conversion_rate", "overall_buy_rate"));
         tables.put("ads_hot_product_m", java.util.Set.of("snapshot_id", "dt", "product_id", "product_name",
@@ -129,6 +136,48 @@ class AiSqlSecurityTest {
         assertTrue(r.ok(), "该查询本应通过（只改 LIMIT）: " + r.error());
         assertTrue(r.sql().toUpperCase(java.util.Locale.ROOT).contains("LIMIT 200"), "未改写为 200: " + r.sql());
         assertFalse(r.sql().contains("100000"), "仍残留超限 LIMIT: " + r.sql());
+    }
+
+    @Test
+    @DisplayName("QA-04 校验结果暴露解析出的 dt 生效区间（WHERE 字面量是唯一来源，不靠请求标签）")
+    void 校验结果暴露生效区间() {
+        ValidationResult r = validate("SELECT dt, sale_amount FROM ads_sale_trend_m WHERE " + SNAP
+                + " AND dt >= '20260829' AND dt <= '20260904' LIMIT 200");
+
+        assertTrue(r.ok(), "合法查询被误拒: " + r.error());
+        assertEquals(LocalDate.of(2026, 8, 29), r.dtFrom());
+        assertEquals(LocalDate.of(2026, 9, 4), r.dtTo());
+    }
+
+    @Test
+    @DisplayName("QA-04 严格日期比较必须排除边界日，且反向比较语义一致")
+    void 严格日期比较不应把排除端点计入生效区间() {
+        ValidationResult direct = validate("SELECT dt, sale_amount FROM ads_sale_trend_m WHERE " + SNAP
+                + " AND dt > '20260829' AND dt < '20260904' LIMIT 200");
+        ValidationResult reversed = validate("SELECT dt, sale_amount FROM ads_sale_trend_m WHERE " + SNAP
+                + " AND '20260829' < dt AND '20260904' > dt LIMIT 200");
+
+        assertTrue(direct.ok(), "严格比较查询本应通过: " + direct.error());
+        assertTrue(reversed.ok(), "反向严格比较查询本应通过: " + reversed.error());
+        assertEquals(LocalDate.of(2026, 8, 30), direct.dtFrom());
+        assertEquals(LocalDate.of(2026, 9, 3), direct.dtTo());
+        assertEquals(direct.dtFrom(), reversed.dtFrom());
+        assertEquals(direct.dtTo(), reversed.dtTo());
+    }
+
+    @Test
+    @DisplayName("QA-04 BETWEEN 形式同样暴露生效区间；被拒的 SQL 区间为 null（不得给出假区间）")
+    void 生效区间覆盖BETWEEN与拒绝路径() {
+        ValidationResult between = validate("SELECT dt, order_count FROM ads_operation_overview_m WHERE " + SNAP
+                + " AND dt BETWEEN '20260901' AND '20260904' LIMIT 200");
+        assertTrue(between.ok(), "BETWEEN 合法查询被误拒: " + between.error());
+        assertEquals(LocalDate.of(2026, 9, 1), between.dtFrom());
+        assertEquals(LocalDate.of(2026, 9, 4), between.dtTo());
+
+        ValidationResult rejected = validate("SELECT dt FROM ads_sale_trend_m WHERE " + SNAP + " LIMIT 200");
+        assertFalse(rejected.ok(), "缺日期区间的查询必须被拒绝");
+        assertNull(rejected.dtFrom());
+        assertNull(rejected.dtTo());
     }
 
     // ── 攻击集（契约 §2.4 逐条） ─────────────────────────────────────────────
@@ -357,8 +406,10 @@ class AiSqlSecurityTest {
     @DisplayName("AiScopeResolver：无 ACTIVE 快照 → NO_ACTIVE_SNAPSHOT（不回退归档/最新）")
     void 无ACTIVE快照被拒() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.queryForList(anyString())).thenReturn(List.of());
-        AiScopeResolver resolver = new AiScopeResolver(jdbc);
+        ActiveRuntimeProfileIdProvider activeProfile = mock(ActiveRuntimeProfileIdProvider.class);
+        when(activeProfile.activeRuntimeProfileId()).thenReturn(Optional.of(7L));
+        when(jdbc.queryForList(eq(AiScopeResolver.ACTIVE_SNAPSHOT_SQL), eq(7L))).thenReturn(List.of());
+        AiScopeResolver resolver = new AiScopeResolver(jdbc, activeProfile);
         AiSqlException e = assertThrows(AiSqlException.class, resolver::resolve);
         assertEquals(SqlPolicy.NO_ACTIVE_SNAPSHOT, e.code());
         assertTrue(e.getMessage().contains("ACTIVE"));
@@ -367,7 +418,7 @@ class AiSqlSecurityTest {
     @Test
     @DisplayName("AiScopeResolver：只读源缺失 → fail-closed")
     void 只读源缺失failClosed() {
-        AiScopeResolver resolver = new AiScopeResolver((javax.sql.DataSource) null);
+        AiScopeResolver resolver = new AiScopeResolver((JdbcTemplate) null);
         AiSqlException e = assertThrows(AiSqlException.class, resolver::resolve);
         assertEquals(SqlPolicy.METRIC_READ_SOURCE_MISSING, e.code());
     }
@@ -376,18 +427,64 @@ class AiSqlSecurityTest {
     @DisplayName("AiScopeResolver：读到 ACTIVE 快照 → scope 字段派生正确（businessDate-89）")
     void ACTIVE快照解析正确() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        ActiveRuntimeProfileIdProvider activeProfile = mock(ActiveRuntimeProfileIdProvider.class);
+        when(activeProfile.activeRuntimeProfileId()).thenReturn(Optional.of(23L));
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("snapshot_id", "S20260901_24");
         row.put("business_time", LocalDateTime.of(2026, 9, 4, 3, 0, 0));
         row.put("definition_version", "v2");
-        when(jdbc.queryForList(anyString())).thenReturn(new ArrayList<>(List.of(row)));
-        AiScope scope = new AiScopeResolver(jdbc).resolve();
+        when(jdbc.queryForList(eq(AiScopeResolver.ACTIVE_SNAPSHOT_SQL), eq(23L)))
+                .thenReturn(new ArrayList<>(List.of(row)));
+        AiScope scope = new AiScopeResolver(jdbc, activeProfile).resolve();
         assertEquals("S20260901_24", scope.snapshotId());
         assertEquals("v2", scope.definitionVersion());
         assertEquals(LocalDate.of(2026, 9, 4), scope.businessDate());
         assertEquals(LocalDate.of(2026, 6, 7), scope.minAllowedDate());
         assertEquals(90, scope.maxScanDays());
         assertEquals(200, scope.rowLimit());
+        verify(jdbc).queryForList(AiScopeResolver.ACTIVE_SNAPSHOT_SQL, 23L);
+    }
+
+    @Test
+    @DisplayName("AiScopeResolver：无唯一 ACTIVE RuntimeProfile 时不查找全局 ACTIVE 快照")
+    void 无唯一ACTIVEProfile时拒绝默认快照解析() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        ActiveRuntimeProfileIdProvider activeProfile = mock(ActiveRuntimeProfileIdProvider.class);
+        when(activeProfile.activeRuntimeProfileId()).thenReturn(Optional.empty());
+
+        AiSqlException e = assertThrows(AiSqlException.class,
+                () -> new AiScopeResolver(jdbc, activeProfile).resolve());
+
+        assertEquals(SqlPolicy.NO_ACTIVE_SNAPSHOT, e.code());
+        verify(jdbc, never()).queryForList(anyString(), org.mockito.ArgumentMatchers.<Object>any());
+    }
+
+    @Test
+    @DisplayName("AiScopeResolver：只读取用户明确选择的已发布历史快照，不自动回退")
+    void 显式历史快照解析且未知快照failClosed() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("snapshot_id", "S20260917_9");
+        row.put("source_id", 99L);
+        row.put("business_time", LocalDateTime.of(2026, 9, 17, 3, 0, 0));
+        row.put("definition_version", "v2");
+        when(jdbc.queryForList(eq(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL), eq("S20260917_9")))
+                .thenReturn(List.of(row));
+
+        AiScope scope = new AiScopeResolver(jdbc).resolve("S20260917_9");
+
+        assertEquals("S20260917_9", scope.snapshotId());
+        assertEquals(99L, scope.sourceId());
+        assertEquals(LocalDate.of(2026, 9, 17), scope.businessDate());
+        verify(jdbc).queryForList(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL, "S20260917_9");
+        verify(jdbc, never()).queryForList(AiScopeResolver.ACTIVE_SNAPSHOT_SQL);
+
+        when(jdbc.queryForList(eq(AiScopeResolver.PUBLISHED_SNAPSHOT_SQL), eq("missing")))
+                .thenReturn(List.of());
+        AiSqlException unavailable = assertThrows(AiSqlException.class,
+                () -> new AiScopeResolver(jdbc).resolve("missing"));
+        assertEquals(SqlPolicy.SNAPSHOT_NOT_AVAILABLE, unavailable.code());
+        verify(jdbc, never()).queryForList(AiScopeResolver.ACTIVE_SNAPSHOT_SQL);
     }
 
     // ── QueryCostGuard：EXPLAIN 超阈值 / EXPLAIN 失败都拒绝 ──────────────────

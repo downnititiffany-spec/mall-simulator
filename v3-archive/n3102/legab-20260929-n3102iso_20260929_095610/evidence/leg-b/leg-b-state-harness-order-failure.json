@@ -1,0 +1,19 @@
+{
+  "runId": "n3102iso_20260929_095610",
+  "startedAt": "2026-09-29T11:12:36",
+  "outcome": "FAIL",
+  "legs": {
+    "fixture-oracle": {
+      "eventSha256": "2a7f75d95bee5d7bbe0f14aa4b203b790c89d6693830be6787ead9396b2b178f",
+      "eventId": "n3102-b2-view-0001",
+      "sourceFixtureUntouched": true,
+      "oracleCount": 14,
+      "oraclePath": "evidence/oracle-b2-combined.json",
+      "expectedPv": 31.0,
+      "combinedLineCount": 100,
+      "baseLineCount": 99
+    }
+  },
+  "finishedAt": "2026-09-29T11:13:12",
+  "error": "[N3102-B-FAIL] cannot read HDFS manifest 2."
+}

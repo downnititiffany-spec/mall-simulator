@@ -1,0 +1,189 @@
+{
+  "runId": "n3102e_20260929_173000_7c11",
+  "driver": "n3102e-driver",
+  "startedAt": "2026-09-29T17:41:01",
+  "plan": "N31-02 腿③ 分类与城市等级 ADS/API/页面连续链（D-058 批准）",
+  "platformJarSha256": "89d9272b508d7e9d8f1917654a5476a90e4da4093e475f68afe22d33c129c61f",
+  "sparkJarSha256": "68589344d8fb2f4b56cdc93842f601a4005576c0edacfeadcb88f8aaba10d11b",
+  "legs": {
+    "A1A2-input-oracle": {
+      "e3Lines": 99,
+      "oracleSha256": "09f3a3c0c14f7ad0d5fadf8ffd393d669f5f6ce2f86dce2caad12e1357fdfd63",
+      "fixtureManifestOk": true,
+      "oracleCommittedAt": "b25b47f0ec5ea85bb3d5989d287ae21befcdf039"
+    },
+    "A0-hdfs-precheck": {
+      "clusterId": "GP-SMOKE-20260924",
+      "hdfsWasUp": true,
+      "zeroFormatEvidence": true,
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102e_20260929_173000_7c11\\logs\\hdfs-precheck.log"
+    },
+    "fresh": {
+      "outcome": "DONE",
+      "hdfsRmLines": 0,
+      "note": "HDFS 只清本 run 前缀目录，历史证据零接触",
+      "dropOut": null
+    },
+    "prep": {
+      "outcome": "DONE",
+      "prepLog": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102e_20260929_173000_7c11\\logs\\prep-n3102iso.log"
+    },
+    "platformStart": {
+      "outcome": "RUNNING",
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102e_20260929_173000_7c11\\logs\\platform.log",
+      "hadoopUserNameEnv": "asus",
+      "wrapperPid": 129556,
+      "stubLaunched": false
+    },
+    "profile": {
+      "sourceId": 1,
+      "landingUriBefore": "file://./landing"
+    },
+    "hdfs-landing-root": {
+      "path": "/landing/n3102e_20260929_173000_7c11",
+      "createdBeforeProfileCheck": true,
+      "runScoped": true
+    },
+    "A3-hdfs-start": {
+      "clusterId": "GP-SMOKE-20260924",
+      "outcome": "RUNNING",
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102e_20260929_173000_7c11\\logs\\hdfs-start.log",
+      "probe": "PROBE-CLEAN-OK"
+    },
+    "A3-flume-hdfs": {
+      "byteMatch": true,
+      "hdfsBytes": 34192,
+      "hdfsLines": 99,
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102e_20260929_173000_7c11\\logs\\flume-run.log",
+      "dtDir": "raw/*/hour=*",
+      "srcBytes": 34192
+    },
+    "hdfs-manifest-A4": {
+      "acceptedRecords": 99,
+      "status": "READY",
+      "acceptedUri": "accepted/1",
+      "batchId": 1
+    },
+    "A4-ingestion": {
+      "treeFile": "hdfs-landing-tree-a4.txt",
+      "d041": {
+        "note": "D-041 已由 V32 修复；列身份行为需以实际库行证据核验",
+        "hits": 0,
+        "sample": []
+      },
+      "manifest": {
+        "batchId": 1,
+        "batchNo": "ing-20260929174234-b9723c90",
+        "runtimeProfileId": 1,
+        "source": "local-file",
+        "status": "READY",
+        "startedAt": "2026-09-29T17:42:34.2012806",
+        "finishedAt": "2026-09-29T17:42:34.8028042",
+        "files": [
+          {
+            "endOffset": 34192,
+            "file": "events.1790674916610",
+            "quarantinedRecords": 0,
+            "acceptedRecords": 99,
+            "startOffset": 0
+          }
+        ],
+        "acceptedRecords": 99,
+        "quarantinedRecords": 0,
+        "acceptedBytes": 34192,
+        "schemaVersions": [
+          "1.0"
+        ],
+        "acceptedUri": "accepted/1",
+        "quarantineUri": "quarantine/1",
+        "checksum": "1200494f",
+        "sourceCode": "mock-mall",
+        "sourceId": 1,
+        "profileVersion": "1.0",
+        "mappingVersion": null,
+        "mappingProfileHash": null
+      },
+      "ingestion": {
+        "batchId": 1,
+        "batchNo": "ing-20260929174234-b9723c90",
+        "status": "SUCCESS",
+        "recordCount": 99,
+        "quarantineCount": 0,
+        "errorCount": 0,
+        "fileCount": 1,
+        "acceptedBytes": 34192,
+        "acceptedDir": "hdfs://127.0.0.1:19000/landing/n3102e_20260929_173000_7c11/accepted/1",
+        "quarantineDir": "hdfs://127.0.0.1:19000/landing/n3102e_20260929_173000_7c11/quarantine/1",
+        "manifestPath": "hdfs://127.0.0.1:19000/landing/n3102e_20260929_173000_7c11/manifests/1.json",
+        "noNewData": false
+      }
+    },
+    "hdfs-checksum-cp1-baseline": {
+      "file": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102e_20260929_173000_7c11\\evidence\\hdfs-input-checksums-b1-cp1-baseline.txt",
+      "rowCount": 2,
+      "batch": 1,
+      "signature": "a7e8f2481f05ed1e1518c1a622e0ccc05886e31956950b592a2d1890d7b20283"
+    },
+    "A5-created": {
+      "idemKey": "n3102iso-runA-174302",
+      "pipelineRunId": 1,
+      "businessTime": "2026-09-18T00:00:00"
+    },
+    "A5-run": {
+      "status": "SUCCESS",
+      "snapshot": "S20260918_1",
+      "runDb": "CONCAT('RUN|', id, '|', status, '|', IFNULL(input_batch_id,'NULL'), '|', IFNULL(target_snapshot_id,'NULL'), '|', IFNULL(error_code,'-'), '|', attempt_no, '|', IFNULL(SUBSTRING(recalc_reason,1,60),'-'))\nRUN|1|SUCCESS|1|S20260918_1|-|1|-\n"
+    },
+    "A6-active-cons": {
+      "active": "SNAP|S20260918_1|ACTIVE",
+      "waitLandingEvidence": "SUBSTRING(IFNULL(evidence,''),1,900)\n{\"batchId\":1,\"acceptedUri\":\"accepted/1\",\"checksum\":\"1200494f\",\"acceptedRecords\":99,\"schemaVersions\":[\"1.0\"],\"sourceId\":1,\"sourceCode\":\"mock-mall\"}\n",
+      "consumption": "CONCAT('CONS|', batch_id, '|', consumed_by_run_id, '|', first_consumed_by_run_id, '|', IFNULL(target_snapshot_id,'-'), '|', publish_count, '|', recalc_count, '|', IFNULL(SUBSTRING(last_recalc_reason,1,40),'-'), '|', created_via)\nCONS|1|1|1|S20260918_1|1|0|-|PIPELINE\n",
+      "waitLandingHasHdfsUri": false
+    },
+    "A7-overview": {
+      "snapshotId": "S20260918_1",
+      "shape": "data.data.metrics",
+      "metricCodes": [
+        "avg_order_value",
+        "buy_rate",
+        "cart_add_cnt",
+        "cart_rate",
+        "dau",
+        "fav_cnt",
+        "full_refund_rate",
+        "gmv",
+        "net_sale",
+        "paid_order_cnt",
+        "pv",
+        "refund_rate",
+        "repeat_rate",
+        "uv"
+      ],
+      "metricCount": 14,
+      "businessTime": "2026-09-18T00:00:00",
+      "qualityStatus": "PASS"
+    },
+    "A8-page": {
+      "overviewMetrics": 14,
+      "screenshot": "page-overview-a8.png",
+      "snapshotId": "S20260918_1",
+      "domEvidence": {
+        "hasGmv": false,
+        "hasNetSale": true,
+        "hasAov": true,
+        "hasPv30": true
+      },
+      "domTextLength": 1366,
+      "overviewApiHits": 1
+    },
+    "A9-reconcile": {
+      "failed": 0,
+      "lineageFile": "lineage-chain-a9.json",
+      "compareFile": "metric-compare-a9.json",
+      "passed": 14,
+      "tolerance": 0.0005
+    }
+  },
+  "finishedAt": "2026-09-29T17:50:44",
+  "outcome": "PASS"
+}

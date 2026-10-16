@@ -7,12 +7,23 @@ const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v)
 /** 友好兜底标签（`||` 只影响图例展示，不参与数值计算） */
 const labelOf = (v, fallback) => (typeof v === 'string' && v.trim() !== '' ? v : fallback)
 
-/** 销售趋势：销售额（柱）+ 订单数（折线，双轴） */
+/**
+ * 逐日净销售额的限制说明（S3-27，单一常量，两个视图共用，禁止各写一份）。
+ * 口径逐字取自 `docs/contracts/analysis-viewmodel-r7-4.md` v1.4 边界 1/2 与 v1.7 展示层口径：
+ * 不重算、不把 `0` 当缺值、不把逐日值与快照汇总值互相代入。
+ */
+export const NET_SALE_NOTE =
+  '净销售额为逐日口径（当日支付金额 − 当日成功退款），不是所选区间的净额汇总；退款归属期未冻结，' +
+  '跨业务日到账的退款不会回改历史业务日，故不得读作"最终到账净收入"；历史快照的 0 可能是"未计算"占位，' +
+  '与"当日零净额"在当前数据上不可区分，0 不得读作"无退款"；上方卡片「净销售额」是快照汇总指标，' +
+  '与本图逐日净销售额不是一个东西，两者不得互相代入。'
+
+/** 销售趋势：销售额（柱）+ 净销售额（柱，同轴，逐日口径）+ 订单数/买家数（折线，双轴） */
 export function salesTrendOption(trend = []) {
   const rows = Array.isArray(trend) ? trend : []
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['销售额', '订单数', '买家数'] },
+    legend: { data: ['销售额', '净销售额', '订单数', '买家数'] },
     grid: { left: 60, right: 60, top: 34, bottom: 40 },
     xAxis: { type: 'category', data: rows.map((r) => r.date) },
     yAxis: [
@@ -21,9 +32,52 @@ export function salesTrendOption(trend = []) {
     ],
     series: [
       { name: '销售额', type: 'bar', data: rows.map((r) => num(r.saleAmount)) },
+      // 契约 v1.4：值 = ADS 列 net_sale_amount 原样透传；缺失/畸形 = null（图表断点，不臆造 0）
+      { name: '净销售额', type: 'bar', data: rows.map((r) => num(r.netSaleAmount)) },
       { name: '订单数', type: 'line', smooth: true, yAxisIndex: 1, data: rows.map((r) => num(r.orderCount)) },
       { name: '买家数', type: 'line', smooth: true, yAxisIndex: 1, data: rows.map((r) => num(r.buyerCount)) }
     ]
+  }
+}
+
+/** Category sales are leaf-only; ratios are the server's whole-window ratios, not frontend aggregates. */
+export function categorySalesOption(rows = []) {
+  const values = Array.isArray(rows) ? rows : []
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 170, right: 28, top: 18, bottom: 36 },
+    xAxis: { type: 'value', name: '销售额（元）' },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: values.map((row) => {
+        const name = labelOf(row.category_name, Number(row.category_id) === -1 ? '未分类' : '未知分类')
+        const ratio = num(row.amount_ratio)
+        return ratio === null ? name : `${name}（${(ratio * 100).toFixed(2)}%）`
+      })
+    },
+    series: [{ name: '销售额', type: 'bar', data: values.map((row) => num(row.sale_amount)) }]
+  }
+}
+
+/** The API's region field is city_level; this is a categorical chart, never an administrative map. */
+export function cityLevelSalesOption(rows = []) {
+  const values = Array.isArray(rows) ? rows : []
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 150, right: 28, top: 18, bottom: 36 },
+    xAxis: { type: 'value', name: '销售额（元）' },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: values.map((row) => {
+        const raw = labelOf(row.region, 'unknown')
+        const name = raw === 'unknown' ? '未知城市等级' : raw
+        const ratio = num(row.amount_ratio)
+        return ratio === null ? name : `${name}（${(ratio * 100).toFixed(2)}%）`
+      })
+    },
+    series: [{ name: '销售额', type: 'bar', data: values.map((row) => num(row.sale_amount)) }]
   }
 }
 
@@ -54,6 +108,9 @@ export function funnelOption(stages = []) {
     series: [
       {
         type: 'funnel',
+        // Funnel series default sorting can reorder business stages by value.
+        // Keep the API's view -> intent -> order -> pay sequence as supplied.
+        sort: 'none',
         left: 60,
         top: 20,
         bottom: 20,

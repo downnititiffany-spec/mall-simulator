@@ -1,0 +1,9 @@
+{
+  "sourceId": 1,
+  "manifestBatchId": 2,
+  "pipelineRunId": 2,
+  "snapshotId": "S20260918_2",
+  "hdfsManifest": "manifest-b2.json",
+  "metricCount": 14,
+  "reconciliation": "14/14 PASS tolerance 0.0005"
+}

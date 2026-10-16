@@ -1,0 +1,272 @@
+{
+  "code": "OK",
+  "message": "success",
+  "data": {
+    "snapshotId": "S20260918_1",
+    "sourceId": 1,
+    "source": "spark-ads",
+    "businessTime": "2026-09-18T00:00:00",
+    "dataUpdatedAt": "2026-09-18T00:00:00",
+    "definitionVersion": "v2",
+    "qualityStatus": "PASS",
+    "filters": {
+      "snapshotId": "S20260918_1"
+    },
+    "data": {
+      "metrics": [
+        {
+          "metricCode": "avg_order_value",
+          "metricName": "客单价",
+          "value": 84.17,
+          "unit": "元",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "buy_rate",
+          "metricName": "购买转化率",
+          "value": 0.6,
+          "unit": "",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "cart_add_cnt",
+          "metricName": "加购次数",
+          "value": 8.0,
+          "unit": "次",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "cart_rate",
+          "metricName": "加购率",
+          "value": 0.6,
+          "unit": "",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "dau",
+          "metricName": "日活跃用户数",
+          "value": 10.0,
+          "unit": "人",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "fav_cnt",
+          "metricName": "收藏次数",
+          "value": 6.0,
+          "unit": "次",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "full_refund_rate",
+          "metricName": "全额退款率",
+          "value": 0.0833,
+          "unit": "",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "gmv",
+          "metricName": "销售额(GMV)",
+          "value": 1010.0,
+          "unit": "元",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "net_sale",
+          "metricName": "净销售额",
+          "value": 930.0,
+          "unit": "元",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "paid_order_cnt",
+          "metricName": "支付订单数",
+          "value": 12.0,
+          "unit": "单",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "pv",
+          "metricName": "浏览量",
+          "value": 30.0,
+          "unit": "次",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "refund_rate",
+          "metricName": "退款率",
+          "value": 0.0833,
+          "unit": "",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v2"
+        },
+        {
+          "metricCode": "repeat_rate",
+          "metricName": "复购率(有效)",
+          "value": 0.3333,
+          "unit": "",
+          "period": "window:2026-09-18..2026-09-18",
+          "definitionVersion": "v1"
+        },
+        {
+          "metricCode": "uv",
+          "metricName": "浏览用户数",
+          "value": 10.0,
+          "unit": "人",
+          "period": "day:2026-09-18",
+          "definitionVersion": "v1"
+        }
+      ],
+      "salesTrend": [
+        {
+          "date": "2026-09-18",
+          "orderCount": 12,
+          "saleAmount": 1010.0,
+          "buyerCount": 6,
+          "avgOrderValue": 84.17,
+          "netSaleAmount": 930.0
+        }
+      ],
+      "activeTrend": [
+        {
+          "date": "2026-09-18",
+          "dau": 10,
+          "behaviorCount": 45
+        }
+      ],
+      "quality": {
+        "ruleCount": 4,
+        "passedCount": 4,
+        "failedRules": [],
+        "ruleVersions": {
+          "AMOUNT_RECONCILE": 1,
+          "ENUM_WHITELIST": 1,
+          "EVENT_ID_UNIQUE": 1,
+          "REQUIRED_FIELD_NULL_RATE": 1
+        }
+      },
+      "metricDictionary": [
+        {
+          "metricCode": "avg_order_value",
+          "metricName": "客单价",
+          "formula": "GMV/支付订单数",
+          "unit": "元"
+        },
+        {
+          "metricCode": "buy_rate",
+          "metricName": "购买转化率",
+          "formula": "支付用户数/浏览用户数",
+          "unit": ""
+        },
+        {
+          "metricCode": "cart_add_cnt",
+          "metricName": "加购次数",
+          "formula": "count(cart_add 事件)",
+          "unit": "次"
+        },
+        {
+          "metricCode": "cart_rate",
+          "metricName": "加购率",
+          "formula": "加购用户数/浏览用户数",
+          "unit": ""
+        },
+        {
+          "metricCode": "dau",
+          "metricName": "日活跃用户数",
+          "formula": "count(distinct user_id 当日任一有效行为)",
+          "unit": "人"
+        },
+        {
+          "metricCode": "fav_cnt",
+          "metricName": "收藏次数",
+          "formula": "count(favorite 事件)",
+          "unit": "次"
+        },
+        {
+          "metricCode": "full_refund_rate",
+          "metricName": "全额退款率",
+          "formula": "全额退款订单数/支付订单数",
+          "unit": ""
+        },
+        {
+          "metricCode": "gmv",
+          "metricName": "销售额(GMV)",
+          "formula": "sum(paid_amount)",
+          "unit": "元"
+        },
+        {
+          "metricCode": "net_sale",
+          "metricName": "净销售额",
+          "formula": "GMV - sum(refund_completed.amount)",
+          "unit": "元"
+        },
+        {
+          "metricCode": "paid_order_cnt",
+          "metricName": "支付订单数",
+          "formula": "count(distinct order_id where final_paid_flag=1)",
+          "unit": "单"
+        },
+        {
+          "metricCode": "product_heat",
+          "metricName": "商品热度",
+          "formula": "1×ln(1+PV)+2×ln(1+收藏)+3×ln(1+加购)+5×ln(1+支付件数)",
+          "unit": ""
+        },
+        {
+          "metricCode": "pv",
+          "metricName": "浏览量",
+          "formula": "count(view 行为事件)",
+          "unit": "次"
+        },
+        {
+          "metricCode": "refund_rate",
+          "metricName": "退款率",
+          "formula": "有已完成退款的订单数/支付订单数",
+          "unit": ""
+        },
+        {
+          "metricCode": "repeat_rate",
+          "metricName": "复购率(有效)",
+          "formula": "支付订单数>=2 的用户数/支付用户数",
+          "unit": ""
+        },
+        {
+          "metricCode": "stock_days",
+          "metricName": "库存覆盖天数",
+          "formula": "可售库存/日均销量",
+          "unit": "天"
+        },
+        {
+          "metricCode": "stock_shortage_rate",
+          "metricName": "缺货率",
+          "formula": "缺货商品数/在售商品数",
+          "unit": ""
+        },
+        {
+          "metricCode": "user_value_level",
+          "metricName": "用户价值等级",
+          "formula": "RFM 分位数八类",
+          "unit": ""
+        },
+        {
+          "metricCode": "uv",
+          "metricName": "浏览用户数",
+          "formula": "count(distinct user_id where behavior_type=view)",
+          "unit": "人"
+        }
+      ]
+    },
+    "warnings": []
+  },
+  "traceId": "0db82d14-4a19-4c94-8be0-e03071b0d442"
+}

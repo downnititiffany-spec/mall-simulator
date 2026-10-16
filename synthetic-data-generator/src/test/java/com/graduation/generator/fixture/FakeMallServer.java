@@ -70,6 +70,7 @@ public final class FakeMallServer implements AutoCloseable {
     private final Map<String, ObjectNode> refunds = new ConcurrentHashMap<>();
     private final List<String> exchanges = new CopyOnWriteArrayList<>();
     private final Map<String, List<String>> bodiesByRoute = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> idempotencyKeysByRoute = new ConcurrentHashMap<>();
     private final Map<String, Integer> countsByRoute = new ConcurrentHashMap<>();
     private final List<Integer> statuses = new CopyOnWriteArrayList<>();
     private final AtomicLong sequence = new AtomicLong();
@@ -141,6 +142,10 @@ public final class FakeMallServer implements AutoCloseable {
         return List.copyOf(bodiesByRoute.getOrDefault(routeKey, List.of()));
     }
 
+    public List<String> idempotencyKeysOf(String routeKey) {
+        return List.copyOf(idempotencyKeysByRoute.getOrDefault(routeKey, List.of()));
+    }
+
     public List<Integer> statuses() {
         return List.copyOf(statuses);
     }
@@ -160,6 +165,22 @@ public final class FakeMallServer implements AutoCloseable {
 
     public int refundCount() {
         return refunds.size();
+    }
+
+    public BigDecimal productPrice(String productId) {
+        Product product = products.get(productId);
+        if (product == null) {
+            throw new IllegalArgumentException("夹具商品不存在：" + productId);
+        }
+        return product.price();
+    }
+
+    public BigDecimal orderTotal(String orderId) {
+        ObjectNode order = orders.get(orderId);
+        if (order == null) {
+            throw new IllegalArgumentException("夹具订单不存在：" + orderId);
+        }
+        return new BigDecimal(order.path("totalAmount").asText());
     }
 
     /** 商城侧订单状态分布（用于对账"支付/取消真的发生了"） */
@@ -327,12 +348,31 @@ public final class FakeMallServer implements AutoCloseable {
                         "订单当前状态不允许退款：" + order.path("status").asText(), null);
                 return;
             }
+            JsonNode refundRequest = read(body);
+            BigDecimal refundAmount;
+            try {
+                refundAmount = new BigDecimal(refundRequest.path("amount").asText());
+            } catch (RuntimeException e) {
+                respond(exchange, 400, "INVALID_AMOUNT", "退款金额非法", null);
+                return;
+            }
+            BigDecimal paidAmount = new BigDecimal(order.path("totalAmount").asText());
+            BigDecimal alreadyRefunded = refunds.values().stream()
+                    .filter(existing -> refundApply.group(1).equals(existing.path("orderId").asText()))
+                    .map(existing -> new BigDecimal(existing.path("request").path("amount").asText()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (refundAmount.compareTo(paidAmount.subtract(alreadyRefunded)) > 0) {
+                hit(exchange, "POST /api/v1/mall/orders/{orderId}/refunds");
+                respond(exchange, 400, "REFUND_EXCEEDS_PAID",
+                        "退款金额超过已付未退金额: " + refundAmount, null);
+                return;
+            }
             String refundId = nextId("83");
             ObjectNode refund = MAPPER.createObjectNode();
             refund.put("refundId", refundId);
             refund.put("orderId", refundApply.group(1));
             refund.put("status", "APPLIED");
-            refund.set("request", read(body));
+            refund.set("request", refundRequest);
             refunds.put(refundId, refund);
             hit(exchange, "POST /api/v1/mall/orders/{orderId}/refunds");
             respond(exchange, 200, "OK", "success", MAPPER.createObjectNode().put("refundId", refundId));
@@ -372,6 +412,9 @@ public final class FakeMallServer implements AutoCloseable {
 
     private void hit(HttpExchange exchange, String routeKey) {
         routeHits.merge(routeKey, 1, Integer::sum);
+        String idempotencyKey = exchange.getRequestHeaders().getFirst("Idempotency-Key");
+        idempotencyKeysByRoute.computeIfAbsent(routeKey, key -> new CopyOnWriteArrayList<>())
+                .add(idempotencyKey == null ? "" : idempotencyKey);
     }
 
     private String nextId(String prefix) {

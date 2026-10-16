@@ -25,6 +25,13 @@ public class AiCallLog {
 
     private String promptVersion;
 
+    private Long sourceId;
+
+    private String snapshotId;
+
+    /** SHA-256 request identity; never a provider idempotency guarantee. */
+    private String requestFingerprint;
+
     private Integer inputTokens;
 
     private Integer outputTokens;

@@ -28,6 +28,7 @@ import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -107,8 +108,10 @@ class AnalysisGoldenMySqlIT {
         metricRead = new JdbcTemplate(dataSource(METRIC_DB, "metric.read.user", "metric.read.password"));
         meta = new JdbcTemplate(dataSource(META_DB, "meta.app.user", "meta.app.password"));
 
-        MySqlMetricStore store = new MySqlMetricStore(metricRead, metricRead); // 写源在本类用不到
-        MetricAdsReader reader = new MetricAdsReader(metricRead);
+        // Every golden assertion names SID explicitly; the provider intentionally fails closed
+        // so this read-only legacy fixture cannot default to a cross-profile ACTIVE snapshot.
+        MySqlMetricStore store = new MySqlMetricStore(metricRead, metricRead, Optional::empty); // 写源在本类用不到
+        MetricAdsReader reader = new MetricAdsReader(metricRead, Optional::empty);
         MetricDefinitionMapper dictionary = mock(MetricDefinitionMapper.class);
         when(dictionary.selectList(any())).thenReturn(dictionaryFromMeta());
 
@@ -162,7 +165,7 @@ class AnalysisGoldenMySqlIT {
     }
 
     @Test
-    @DisplayName("销售分析：四项取 metric_value 原值（不重算），维度表缺失给降级警告")
+    @DisplayName("销售分析：四项取 metric_value 原值；现有维度表无该旧快照数据时为空态而非缺表警告")
     void salesMatchesGoldenValues() {
         AnalysisViewModel<SalesData> model = service.sales(SID, null, null);
 
@@ -174,13 +177,14 @@ class AnalysisGoldenMySqlIT {
         assertThat(model.data().trend()).isNotEmpty();
         assertThat(model.data().byCategory()).isEmpty();
         assertThat(model.data().byRegion()).isEmpty();
-        assertThat(model.warnings()).containsExactly(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
+        assertThat(model.warnings()).isEmpty();
     }
 
     @Test
     @DisplayName("商品分析：热度榜与转化取自 ADS 排行表")
     void productsComeFromAdsRankTables() {
-        AnalysisViewModel<ProductsData> model = service.products(SID, 10, null, null);
+        // S3-18：签名改为 (snapshotId, page, size, topN, from, to)——这里保持旧口径（topN=10 ⇒ page 1 窗口 10）
+        AnalysisViewModel<ProductsData> model = service.products(SID, null, null, null, 10, null, null);
 
         assertThat(model.data().hot()).hasSize(4);
         assertThat(model.data().hot().get(0).rank()).isEqualTo(1);

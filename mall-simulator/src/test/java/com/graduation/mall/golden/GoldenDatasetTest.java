@@ -125,12 +125,48 @@ class GoldenDatasetTest {
 
     @Test
     @DisplayName("脏数据行：恰好 3 行被 ODL 拒绝（解析失败/schema_version/缺必需字段）+ 1 行重复由 DWD 去重淘汰")
-    void dirtyLinesAreRejected() {
+    void dirtyLinesAreRejected() throws Exception {
         assertEquals(3, rejectedReasons.size(), "脏行数量变化: " + rejectedReasons);
         assertTrue(rejectedReasons.contains("JSON_PARSE"), "缺少无法解析为 JSON 的脏行: " + rejectedReasons);
         assertTrue(rejectedReasons.contains("SCHEMA_VERSION"), "缺少 schema_version 非 1.0 的脏行: " + rejectedReasons);
         assertTrue(rejectedReasons.contains("MISSING_REQUIRED"), "缺少缺必需字段的脏行: " + rejectedReasons);
         assertEquals(1, duplicateEventIds.size(), "重复 event_id 数量变化: " + duplicateEventIds);
+
+        // Stage 7 正向真链不能复用这份刻意带脏行/重复 event_id 的负向黄金夹具：
+        // V3.0 §12.4 明确要求 EVENT_ID_UNIQUE 超阈值阻断、正/负 fixture 分开。
+        Path repoRoot = Path.of(System.getProperty("user.dir")).getParent();
+        Path positiveFile = repoRoot.resolve("tests/golden-dataset/events/golden-20260901-positive.jsonl");
+        assertTrue(Files.exists(positiveFile), "Stage 7 正向夹具不存在: " + positiveFile.toAbsolutePath());
+
+        List<String> positiveLines = Files.readAllLines(positiveFile, StandardCharsets.UTF_8).stream()
+                .filter(line -> !line.isBlank())
+                .toList();
+        assertEquals(50, positiveLines.size(), "Stage 7 正向夹具必须固定为 50 行");
+
+        Path negativeFile = repoRoot.resolve("tests/golden-dataset/events/golden-20260901.jsonl");
+        List<String> expectedPositive = Files.readAllLines(negativeFile, StandardCharsets.UTF_8).stream()
+                .filter(line -> !line.isBlank())
+                .filter(line -> !line.contains("\"trace_id\":\"golden-trace-037\"")) // 第二个 golden-evt-008
+                .filter(line -> !line.contains("\"trace_id\":\"golden-trace-038\"")) // purchase 非白名单
+                .filter(line -> !line.startsWith("not-valid-json-line-with-no-braces"))
+                .filter(line -> !line.contains("\"trace_id\":\"golden-trace-054\"")) // schema v2
+                .filter(line -> !line.contains("\"trace_id\":\"golden-trace-055\"")) // 缺 event_id
+                .toList();
+        assertEquals(expectedPositive, positiveLines,
+                "Stage 7 正向夹具只能从原 golden 删除 5 个已登记负例，禁止删正常业务事件换绿");
+
+        Set<String> positiveIds = new HashSet<>();
+        for (String line : positiveLines) {
+            EventEnvelope e = EventEnvelope.fromJson(line, MAPPER);
+            assertEquals(EventContract.SCHEMA_VERSION, e.schemaVersion(), "正向夹具 schema_version 漂移: " + e.eventId());
+            assertTrue(e.eventId() != null && !e.eventId().isBlank(), "正向夹具存在空 event_id");
+            assertTrue(positiveIds.add(e.eventId()), "正向夹具 event_id 重复: " + e.eventId());
+            if (EventContract.BEHAVIOR.equals(e.eventType())) {
+                Object behaviorType = e.payload().get("behavior_type");
+                assertTrue(behaviorType instanceof String s && BEHAVIOR_TYPES.contains(s),
+                        "正向夹具存在非 DWD 白名单 behavior_type: " + behaviorType);
+            }
+        }
     }
 
     @Test

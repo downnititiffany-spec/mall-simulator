@@ -4,17 +4,18 @@ import com.graduation.analytics.warehouse.WarehouseNamespace
 
 /**
  * ADS 指标 SQL（§7.7，§12.4 修复）：
- * 8 张首期核心 ADS 全部真实执行；漏斗收编为模板；
+ * ADS 指标 SQL：首期核心 ADS 全部真实执行；漏斗收编为模板；
  * 商品转化 buy_users 取商品销售 DWS 的去重买家数（不是 buy 件数）；
  * 用户画像按 RFM 规则分层（§21.6，与 algorithm/RfmScorer、QuartileStats 口径一致）；
  * 数据质量大盘 4 规则来自 ODS/DWD 真实统计（§5.4，与 QualityChecker 同阈值）。
  */
 object AdsSql {
 
-  /** 8 张首期核心 ADS（不含库前缀；R6-13 暂存/正式同名，仅分区不同） */
+  /** 当前 ADS 发布表集（不含库前缀；R6-13 暂存/正式同名，仅分区不同） */
   val TABLES: Seq[String] = Seq(
     "ads_operation_overview", "ads_active_trend", "ads_behavior_funnel", "ads_hot_product",
-    "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality")
+    "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality",
+    "ads_category_sale", "ads_region_sale")
 
   /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4）；库名由唯一所有者派生 */
   def formal(ns: WarehouseNamespace, table: String): String = ns.table("ads", table)
@@ -38,8 +39,26 @@ object AdsSql {
    *  - uv   = view 行为去重用户数
    *  - refund_rate      = 发生**已完成**退款的订单数 / 支付订单数（部分/全部退款都算，字典口径）
    *  - full_refund_rate = 全额退款订单数 / 支付订单数（新增独立指标，不偷换 refund_rate）
+   *  - repeat_rate      = **有效复购率** = 有效购买 ≥2 次用户 / 支付用户（S3-03，设计 §11.2 L433）
    * 退款金额口径来自 OrderTradeCompiler：refund_amount 只累计 refund_completed 事件（按 refund_id 去重）。
    * 分母 0 → null（不满除零）。
+   *
+   * S3-03 复购率（设计 §11.2 L433「必须声明观察期和变体」/ §11.4 L449）：
+   *  - 分子/分母都取 `dws_user_trade_period`（字典登记的复购源表）：分母 = 该观察期内的**支付用户数**
+   *    （该表只收 `final_paid_flag = 1` 的行），分子 = 其中 `valid_order_count >= 2` 的用户数；
+   *  - 「有效」= 剔除**全额退款**订单（`valid_order_count` 由 `DwsSql.userTradePeriod` 按
+   *    `final_refunded_flag = 0` 计算）；本层不实现「支付复购率」变体（见 F-36 backlog）；
+   *  - **观察期声明落库**：`repeat_period_start/end` 取上游 DWS 行自己写入的 `period_start/period_end`
+   *    （即 `DwsSql.userTradePeriod` 的作业入参窗口，唯一所有者），ISO 化后随行发布 —— 这样 ADS 声明的窗口
+   *    必然等于真正参与聚合的窗口，不会出现「作业按 A 窗口算、ADS 声明 B 窗口」；
+   *  - 无支付用户时分子/分母与窗口声明**同时为 NULL**（不伪造窗口），由发布侧跳过该指标。
+   *
+   * S3-08 收藏/加购**次数**（设计 §11.2 L425「收藏/加购 | 对应行为事件数，用户转化时另算去重用户数 | 行为」；
+   * 字典 `metric-dictionary.md:21/:22`）：
+   *  - 口径 = `favorite` / `cart_add` **事件条数**（`cart_remove` 不算），与同表的 `pv` 同型（`COUNT(CASE … THEN 1 END)`）；
+   *  - 源表按字典给的 `dwd_user_behavior_detail` **直取**（不绕 DWS 二次聚合），跨层一致性由对账断言钉住；
+   *  - 无事件日为 0 而非 NULL（与 `pv` 同型：不存在即 0，不区分「没数据」与「没人收藏」）；
+   *  - 与「去重用户数」是两个指标：`uv` 型的 `COUNT(DISTINCT …)` 不得借来当次数用（L425 明确区分）。
    */
   def operationOverview(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
@@ -49,11 +68,18 @@ object AdsSql {
        |  CASE WHEN t.order_count = 0 THEN NULL
        |       ELSE CAST(r.refunded_orders AS DECIMAL(18,2)) / t.order_count END AS refund_rate,
        |  CASE WHEN t.order_count = 0 THEN NULL
-       |       ELSE CAST(r.full_refunded_orders AS DECIMAL(18,2)) / t.order_count END AS full_refund_rate
+       |       ELSE CAST(r.full_refunded_orders AS DECIMAL(18,2)) / t.order_count END AS full_refund_rate,
+       |  CASE WHEN u.pay_users = 0 THEN NULL
+       |       ELSE CAST(u.repeat_users AS DECIMAL(8,4)) / u.pay_users END AS repeat_rate,
+       |  ${isoDayCol("u.period_start")} AS repeat_period_start,
+       |  ${isoDayCol("u.period_end")} AS repeat_period_end,
+       |  b.fav_cnt, b.cart_add_cnt
        |FROM (SELECT
        |        COUNT(CASE WHEN behavior_type = 'view' THEN 1 END) AS pv,
        |        COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS uv,
-       |        COUNT(DISTINCT user_id) AS dau
+       |        COUNT(DISTINCT user_id) AS dau,
+       |        COUNT(CASE WHEN behavior_type = 'favorite' THEN 1 END) AS fav_cnt,
+       |        COUNT(CASE WHEN behavior_type = 'cart_add' THEN 1 END) AS cart_add_cnt
        |      FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') b,
        |     (SELECT order_count, sale_amount, net_sale_amount, avg_order_value
        |      FROM ${ns.dws}.dws_trade_day WHERE dt = '$dt') t,
@@ -62,7 +88,13 @@ object AdsSql {
        |              THEN order_id END) AS refunded_orders,
        |        COUNT(DISTINCT CASE WHEN final_paid_flag = 1 AND final_refunded_flag = 1
        |              THEN order_id END) AS full_refunded_orders
-       |      FROM ${ns.dwd}.dwd_order_detail WHERE dt = '$dt') r
+       |      FROM ${ns.dwd}.dwd_order_detail WHERE dt = '$dt') r,
+       |     (SELECT
+       |        COUNT(DISTINCT user_id) AS pay_users,
+       |        COUNT(DISTINCT CASE WHEN valid_order_count >= 2 THEN user_id END) AS repeat_users,
+       |        MAX(period_start) AS period_start,
+       |        MAX(period_end) AS period_end
+       |      FROM ${ns.dws}.dws_user_trade_period WHERE dt = '$dt') u
        |""".stripMargin
 
   /** 活跃趋势（dt 为分区列，由 INSERT PARTITION 提供，不再投影） */
@@ -74,44 +106,84 @@ object AdsSql {
        |WHERE dt = '$dt'
        |""".stripMargin
 
-  /** 转化漏斗：dws_behavior_funnel_day 展开为 stage 行（dt 为分区列不投影） */
+  /**
+   * 转化漏斗：dws_behavior_funnel_day 展开为 stage 行（dt 为分区列不投影）。
+   *
+   * S3-04：四行各自携带同一个 `overall_cart_rate`（与 `overall_buy_rate` 同型：整体率，
+   * 分子/分母都取自 DWS，ADS 只透传不重算）。加购**不加 stage 行** —— 设计 §11.3 L441 的
+   * 阶段集合恒为 view/intent/order/pay。
+   */
   def funnel(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_behavior_funnel", dt, snapshotId)}
        |SELECT 'view' AS stage, view_users AS user_count, NULL AS conversion_rate,
-       |       overall_buy_rate
+       |       overall_buy_rate, cart_rate AS overall_cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
-       |SELECT 'intent', intent_users, intent_rate, overall_buy_rate
+       |SELECT 'intent', intent_users, intent_rate, overall_buy_rate, cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
-       |SELECT 'order', order_users, order_rate, overall_buy_rate
+       |SELECT 'order', order_users, order_rate, overall_buy_rate, cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |UNION ALL
-       |SELECT 'pay', pay_users, pay_rate, overall_buy_rate
+       |SELECT 'pay', pay_users, pay_rate, overall_buy_rate, cart_rate
        |FROM ${ns.dws}.dws_behavior_funnel_day WHERE dt = '$dt'
        |""".stripMargin
 
   /**
+   * 热度权重 / 规则定义版本（S3-07）：
+   *  - 设计 §11.2 L434「product_heat | 1·ln(1+PV)+2·ln(1+收藏)+3·ln(1+加购)+5·ln(1+支付件数) |
+   *    **版本化业务权重**，不称学习模型」；
+   *  - 指标字典 `docs/contracts/metric-dictionary.md:31`「权重来自业务设定，**存配置表**」。
+   *
+   * 语义所有者是 meta 库 `metric_definition` 的 `product_heat` 行
+   * （`db/meta/V2__platform_pipeline_quality.sql:75`）：该行 `formula` 保存权重公式文本、
+   * `definition_version` 保存版本（当前 `v1`）。Spark 侧只持有**同一枚版本字面量**并随 ADS 行落库
+   * （`rule_version`），与 `metric_value.definition_version` 同一命名空间；一致性由
+   * `warehouse-pipeline` 的 `AdsHotProductHeatWeightDriftTest` 逐字对账（字典版本/权重 ↔ 本文件），
+   * 漂移即红 —— 不允许 ADS 自造版本号，也不允许改权重只改一处。
+   */
+  val HeatRuleVersion: String = "v1"
+
+  /**
    * 热门商品 TopN（热度权重来自配置，默认 §21.7 对数公式）。
    *
-   * DEF-08：`dim_product` 是**按业务日的快照**，只覆盖当日 `product_created/product_updated` 事件；
-   * 当日无商品事件时该分区 0 行（实测 run 37：dim_product(20260901)=0，dws_product_behavior_day=9 个商品），
-   * LEFT JOIN 会把商品名全部打成 NULL → `ads_hot_product__staging` 9/9 行 `product_name` 为空 →
-   * BLOCKING 规则 `ADS_STAGING_KEY_NOT_NULL` 拦截整条发布。故名称按维度表既有 unknown 约定兜底
+   * DEF-08：`dim_product` 按业务日生成截至当日的完整 as-of 快照，因此正常历史商品即使当日
+   * 没有变更也能关联商品名。对确实没有任何可用维度记录的商品，仍按既有 unknown 约定兜底
    * （`DimSql.productSnapshot` 同样写 'UNKNOWN'），**不用 NULL**：宁可显式 unknown，不留空关键列。
+   *
+   * 稳定次序键（§11.5 L455「商品排行按热度/销量/金额并有**稳定次序键**」）：热度并列时按 `buy` 降序、
+   * 再按 `product_id` 升序定名次（S2-06 补商品号一级，S3-07 补齐销量一级，见下）。
+   * 无此键时同热度商品的名次取决于扫描/落文件顺序，重跑会改变 `rank_no`（实测 S2-06：
+   * 同热度三商品升序落盘得 `{101→1,102→2,103→3}`、降序落盘得 `{103→1,102→2,101→3}`）；而 `rank_no`
+   * 既是 `WHERE rank_no <= topN` 的入选判据，又是 `ads_hot_product_m` 的键列与榜单排序键
+   * （`AnalysisService` 按 `rank_no` 升序取 TopN）⇒ 名次漂移会直接改变用户看到的榜单内容。
+   *
+   * 权重版本（S3-07，设计 §11.2 L434 / §9.3 L320「每行带 snapshot / 定义版本 / 业务日期」）：
+   * 每行携带 `rule_version = $HeatRuleVersion`（见上方常量注释），使「这一行是按哪一版权重算的」可追问；
+   * S3-07 之前 `ads_hot_product` 无此列，V2 审计 L177 登记为「权重调整无版本可溯」。
+   *
+   * S3-07 两处实现修正（均为加性，值语义只影响热度并列组）：
+   *  ① 补齐中间一级 `buy DESC`（V2 审计 L178 登记的目标形态
+   *     `row_number(order by heat desc, buy desc, product_id asc)`）：并列时销量高者排前；
+   *  ② 热度公式收敛为**一处文字属主** —— 子查询算 `heat_score`，窗口函数按该列排序，
+   *     不再把公式抄两遍（两处字面量将来会各自漂移）。
    */
   def hotProduct(ns: WarehouseNamespace, dt: String, topN: Int, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_hot_product", dt, snapshotId)}
-       |SELECT t.product_id, COALESCE(p.product_name, 'UNKNOWN') AS product_name, heat_score, pv, fav, cart, buy, rank_no
+       |SELECT t.product_id, COALESCE(p.product_name, 'UNKNOWN') AS product_name,
+       |       t.heat_score, t.pv, t.fav, t.cart, t.buy, t.rank_no, t.rule_version
        |FROM (
-       |  SELECT product_id,
-       |         1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score,
-       |         pv, fav, cart, buy,
-       |         ROW_NUMBER() OVER (ORDER BY 1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) DESC) AS rank_no
-       |  FROM ${ns.dws}.dws_product_behavior_day
-       |  WHERE dt = '$dt'
+       |  SELECT product_id, pv, fav, cart, buy, heat_score,
+       |         ROW_NUMBER() OVER (ORDER BY heat_score DESC, buy DESC, product_id ASC) AS rank_no,
+       |         '$HeatRuleVersion' AS rule_version
+       |  FROM (
+       |    SELECT product_id, pv, fav, cart, buy,
+       |           1.0*LOG1P(pv) + 2.0*LOG1P(fav) + 3.0*LOG1P(cart) + 5.0*LOG1P(buy) AS heat_score
+       |    FROM ${ns.dws}.dws_product_behavior_day
+       |    WHERE dt = '$dt'
+       |  ) h
        |) t
        |LEFT JOIN ${ns.dim}.dim_product p ON p.product_id = t.product_id AND p.dt = '$dt'
        |WHERE rank_no <= $topN
@@ -132,14 +204,106 @@ object AdsSql {
        |WHERE b.dt = '$dt'
        |""".stripMargin
 
-  /** 销售趋势 */
+  /**
+   * 销售趋势（§9.3 L333「`ads_sale_trend`：历史已发布，**net_sale 等字段需补**」）。
+   *
+   * 净销售额口径 = 设计 §11.2 **L428**「同口径支付金额 − 成功退款金额；真实收入方向，
+   * 退款归属期需冻结」。这里**直接透传** `dws_trade_day.net_sale_amount`，不在 ADS 另写算法：
+   *  - 退款只计 `final_paid_flag = 1` 的行（未支付/已取消订单的退款金额不参与扣减），
+   *    与 `operationOverview` 的净额同源；
+   *  - 由此保证同一 dt 上 `ads_sale_trend.net_sale_amount` 与 `ads_operation_overview.net_sale_amount`
+   *    逐值相等（两张 ADS 表不得给出两种收入口径，实测见 `AdsSaleTrendNetSaleSpec` 的跨表对账）；
+   *  - 「退款归属期冻结」的现状：退款金额由 `OrderTradeCompiler` 按 `refund_completed` 事件累计到
+   *    该订单所在业务日的明细行（与大盘表完全一致），**跨业务日的退款重结未实现**（见 F-35 边界）。
+   */
   def saleTrend(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_sale_trend", dt, snapshotId)}
-       |SELECT order_count, buyer_count, sale_amount, avg_order_value
+       |SELECT order_count, buyer_count, sale_amount, avg_order_value, net_sale_amount
        |FROM ${ns.dws}.dws_trade_day
        |WHERE dt = '$dt'
        |""".stripMargin
+
+  /**
+   * 分类销售（叶子分类 × 业务日）。
+   * 事实只取最终已支付订单明细；按 category_id 聚合后用同一 dt 的 dim_product 补名称，
+   * 维表缺失及非法/未知分类统一折叠到 category_id=-1 的唯一“未分类”行。
+   * 分类金额包含该 unknown 桶，供发布质量门与 dws_trade_day 对账。
+   */
+  def categorySale(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
+    s"""
+       |${insertTarget(ns, "ads_category_sale", dt, snapshotId)}
+       |WITH facts AS (
+       |  SELECT CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END AS category_id,
+       |         SUM(quantity) AS sale_count,
+       |         SUM(amount) AS sale_amount,
+       |         SUM(amount) - COALESCE(SUM(refund_amount), CAST(0 AS DECIMAL(18,2))) AS net_sale_amount
+       |  FROM ${ns.dwd}.dwd_order_detail
+       |  WHERE dt = '$dt' AND final_paid_flag = 1
+       |  GROUP BY CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END
+       |), category_dim AS (
+       |  SELECT category_id,
+       |         MIN(COALESCE(category_name, '未知分类')) AS category_name,
+       |         MIN(CASE WHEN parent_category_id IS NULL OR parent_category_id <= 0
+       |                  THEN -1 ELSE parent_category_id END) AS parent_category_id,
+       |         MIN(COALESCE(parent_category_name, '未知上级分类')) AS parent_category_name
+       |  FROM ${ns.dim}.dim_product
+       |  WHERE dt = '$dt' AND category_id > 0
+       |  GROUP BY category_id
+       |)
+       |SELECT CASE WHEN d.category_id IS NULL THEN -1 ELSE f.category_id END AS category_id,
+       |       CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.category_name END AS category_name,
+       |       CASE WHEN d.category_id IS NULL THEN -1 ELSE d.parent_category_id END AS parent_category_id,
+       |       CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.parent_category_name END AS parent_category_name,
+       |       SUM(f.sale_count) AS sale_count,
+       |       SUM(f.sale_amount) AS sale_amount,
+       |       SUM(f.net_sale_amount) AS net_sale_amount
+       |FROM facts f
+       |LEFT JOIN category_dim d ON d.category_id = f.category_id AND f.category_id > 0
+       |GROUP BY CASE WHEN d.category_id IS NULL THEN -1 ELSE f.category_id END,
+       |         CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.category_name END,
+       |         CASE WHEN d.category_id IS NULL THEN -1 ELSE d.parent_category_id END,
+       |         CASE WHEN d.category_id IS NULL THEN '未分类' ELSE d.parent_category_name END
+       |""".stripMargin
+
+  /** 城市等级销售（ADS 名称兼容 region；region 的业务含义固定为 dws_region_sale_day.region）。 */
+  def regionSale(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
+    s"""
+       |${insertTarget(ns, "ads_region_sale", dt, snapshotId)}
+       |SELECT COALESCE(region, 'unknown') AS region,
+       |       SUM(sale_amount) AS sale_amount,
+       |       SUM(net_sale_amount) AS net_sale_amount
+       |FROM ${ns.dws}.dws_region_sale_day
+       |WHERE dt = '$dt'
+       |GROUP BY COALESCE(region, 'unknown')
+       |""".stripMargin
+
+  /**
+   * 观察窗口 → ISO 日期（yyyy-MM-dd）的唯一实现。
+   *
+   * **为什么不用 `regexp_replace(…, '(\d{4})…', …)`（S3-01 实测事实，不是偏好）**：
+   * Scala 的 `s"""…"""` 会把源码里的双反斜杠还原成一个反斜杠，而 **Spark SQL 的字符串字面量会吃掉
+   * 未识别的反斜杠转义** —— 实测 SQL 文本 `'(\d{4})'` 的解析结果是 `(d{4})`（写成 `'(\\d{4})'` 才是
+   * `(\d{4})`），于是 `regexp_replace` 不匹配、**原样返回** `20260901`；而
+   * `DATEDIFF('20260901','2026-09-01')` = NULL。旧写法正是前者 ⇒ `ads_user_profile` 的 `r_ntile`
+   * 排序键恒为 NULL（全平局 ⇒ R 分档退化成 user_id 次序）、`active_level` 恒「低」、
+   * `lifecycle_state` 恒「活跃」且「新用户」永不成立。
+   * 这里改用不含反斜杠的 `substr/concat`：无解析器歧义，8 位紧凑日期展开为 yyyy-MM-dd，
+   * 其他输入原样保留（与旧正则在 8 位紧凑/已是 ISO 两个域上的行为完全一致）。
+   */
+  private def isoDay(v: String): String =
+    s"""CASE WHEN length('$v') = 8
+       |     THEN concat(substr('$v', 1, 4), '-', substr('$v', 5, 2), '-', substr('$v', 7, 2))
+       |     ELSE '$v' END""".stripMargin
+
+  /**
+   * 列版本的 8 位紧凑日期展开（yyyyMMdd → yyyy-MM-dd，与 `isoDay` 同构，但作用于**列**）。
+   * 用于把 DWS 行里声明的观察期窗口随 ADS 行一起发布（S3-03）；NULL 保持 NULL（不伪造窗口）。
+   * 单行表达式、不含反斜杠（避免解析器歧义，见 S3-01 的 `isoDay` 修复）。
+   */
+  private def isoDayCol(expr: String): String =
+    s"CASE WHEN $expr IS NULL THEN NULL WHEN length($expr) = 8 THEN " +
+      s"concat(substr($expr, 1, 4), '-', substr($expr, 5, 2), '-', substr($expr, 7, 2)) ELSE $expr END"
 
   /**
    * 用户画像 RFM 分层（§21.6）：
@@ -157,6 +321,26 @@ object AdsSql {
    * （`Column 'favorite_category' cannot be null`）。故按库内既有 unknown 约定兜底：
    * 分类用哨兵 **-1**（与 `DwdSql.behaviorClean` 的 `COALESCE(p.category_id, -1)` 同口径），
    * 日期用 **''**（DDL 自身声明的 unknown 载体），此时 `active_level` 的 ELSE 分支给 '低'。
+   *
+   * 稳定次序键（§11.4 L447「NTILE 的同值加**稳定源/用户 ID 排序**保证可复现」）：三个 NTILE 的排序键
+   * 后均追加 `user_id ASC`（库名已按源派生，单次计算只含一个源 ⇒ 稳定源即用户 ID）。原值并列时
+   * （同日下单、单数与金额相同）无此键则桶号随物理顺序变化：实测 S2-06 同值 5 用户升序落盘得
+   * `1→(5,1,1) … 5→(1,5,5)`、降序落盘得完全相反的 `1→(1,5,5) … 5→(5,1,1)` ⇒ 同一份数据重跑会
+   * 给人打上相反的 RFM 标签，八类 `value_group` 也随之翻转。
+   *
+   * S3-01 原值与窗口（§11.4 L447「**记录 R/F/M 原值、score、segment、窗口、rule_version，不仅存标签**」，
+   * §9.3 L334「RFM 完整性需补」）：随分档一并落 **R/F/M 原值** `r_days`（窗口末日 − 末次购买日，天）/
+   * `f_count`（窗口内有效支付订单数）/ `m_amount`（窗口内有效支付金额）与**观察窗口**
+   * `period_start`/`period_end`。窗口取**本次评分实际使用的值**（即 SQL 参数派生、参与
+   * `DATEDIFF`/`NTILE` 的那个窗口），格式统一为 yyyy-MM-dd —— 与同表 `last_buy_date`/
+   * `last_active_date` 同形，因此 `r_days = DATEDIFF(period_end, last_buy_date)` 可被 SQL 直接复核；
+   * 上游 `dws_user_trade_period` 的 `period_start/period_end` 仍是原始 yyyyMMdd 口径，两者各自稳定、
+   * 不互相改写。只有分档没有原值时，"r=5" 究竟是「昨天买过」还是「窗口内最早一天买过」无从判断。
+   *
+   * S3-01 同轮修掉的既有缺陷：窗口转换原先走 `regexp_replace` + 反斜杠正则，被解析器吃掉转义后
+   * 窗口原样保留、`DATEDIFF` 恒 NULL（链路后果与实测见 {@link isoDay}）。**该修正改变了
+   * `r`/`value_group`/`active_level`/`lifecycle_state` 的取值**，故 `rule_version` 由 `rfm-v1`
+   * 升为 `rfm-v2`：新旧数据口径不同、不得混算（§11.4 要求记录规则版本正是为此）。
    */
   def userProfile(ns: WarehouseNamespace, dt: String, periodStart: String, periodEnd: String,
                   snapshotId: Option[String] = None): String =
@@ -190,16 +374,21 @@ object AdsSql {
        |       WHEN DATEDIFF(pe, tp.last_buy_date) > 60 THEN '流失风险'
        |       WHEN DATEDIFF(pe, tp.last_buy_date) > 30 THEN '沉默'
        |       ELSE '活跃' END AS lifecycle_state,
-       |  'rfm-v1' AS rule_version,
-       |  '$dt' AS calc_date
+       |  'rfm-v2' AS rule_version,
+       |  '$dt' AS calc_date,
+       |  DATEDIFF(pe, tp.last_buy_date) AS r_days,
+       |  tp.order_count AS f_count,
+       |  tp.sale_amount AS m_amount,
+       |  tp.ps AS period_start,
+       |  tp.pe AS period_end
        |FROM (
        |  SELECT user_id, last_buy_date, order_count, sale_amount,
-       |         regexp_replace('$periodStart', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3') AS ps,
-       |         regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3') AS pe,
+       |         ${isoDay(periodStart)} AS ps,
+       |         ${isoDay(periodEnd)} AS pe,
        |         NTILE(5) OVER (ORDER BY DATEDIFF(
-       |           regexp_replace('$periodEnd', '(\\d{4})(\\d{2})(\\d{2})', '$$1-$$2-$$3'), last_buy_date) ASC) AS r_ntile,
-       |         NTILE(5) OVER (ORDER BY order_count ASC) AS f_ntile,
-       |         NTILE(5) OVER (ORDER BY sale_amount ASC) AS m_ntile
+       |           ${isoDay(periodEnd)}, last_buy_date) ASC, user_id ASC) AS r_ntile,
+       |         NTILE(5) OVER (ORDER BY order_count ASC, user_id ASC) AS f_ntile,
+       |         NTILE(5) OVER (ORDER BY sale_amount ASC, user_id ASC) AS m_ntile
        |  FROM ${ns.dws}.dws_user_trade_period
        |  WHERE dt = '$dt'
        |) tp
@@ -220,20 +409,38 @@ object AdsSql {
        |""".stripMargin
 
   /**
+   * 质量规则定义版本（`rule_version`）—— S3-05。
+   *
+   * <p>语义 = `quality_rule_definition`（{@code QualityRuleCatalog}，版本化单一所有者）里该规则码的
+   * `version`，与 meta 侧 `data_quality_result.rule_version`（`V20__data_quality_result_rule_version.sql`，
+   * `INT`）**同名列同类型**。四条规则当前版本均为 1。</p>
+   *
+   * <p><b>为什么必须落列</b>：设计 §9.3 L320「ADS 每行带 snapshot / 定义版本 / 业务日期，发布可追溯」、
+   * L335「`ads_data_quality`…规则版本…待接齐」、§12.3 L512「每条规则记录…版本…」。
+   * 版本号真值由 Java 目录持有，本文件只是**复制**一份；两者一致由
+   * `warehouse-pipeline/QualityRuleThresholdDriftTest` 逐条钉住（漂移即红）。</p>
+   */
+  val QualityRuleVersion = 1
+
+  /**
    * 数据质量大盘（§5.4）：4 规则与 QualityChecker 同名同阈值，
    * 统计来自 ODS/DWD 真实数据，非 SQL 字符串自检。
+   *
+   * <p>S3-05 起每行追加 `rule_version`（规则定义版本，见上方 `QualityRuleVersion`）：
+   * 大盘行因此可回答「这一行是依据哪一版规则判的」。规则集合、阈值、实际值算法**均未改动**。</p>
    */
   def dataQuality(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_data_quality", dt, snapshotId)}
-       |SELECT rule_code, check_count, error_count, error_rate, passed, threshold FROM (
+       |SELECT rule_code, check_count, error_count, error_rate, passed, threshold, rule_version FROM (
        |  SELECT 'AMOUNT_RECONCILE' AS rule_code,
-       |         CAST(SUM(fp) AS BIGINT) AS check_count,
-       |         CAST(SUM(bad) AS BIGINT) AS error_count,
-       |         CASE WHEN SUM(fp) = 0 THEN NULL
-       |              ELSE CAST(SUM(bad) AS DECIMAL(8,6)) / SUM(fp) END AS error_rate,
-       |         CASE WHEN SUM(bad) = 0 THEN 1 ELSE 0 END AS passed,
-       |         '0.01' AS threshold
+       |         CAST(COALESCE(SUM(fp), 0) AS BIGINT) AS check_count,
+       |         CAST(COALESCE(SUM(bad), 0) AS BIGINT) AS error_count,
+       |         CASE WHEN COALESCE(SUM(fp), 0) = 0 THEN NULL
+       |              ELSE CAST(COALESCE(SUM(bad), 0) AS DECIMAL(8,6)) / SUM(fp) END AS error_rate,
+       |         CASE WHEN COALESCE(SUM(bad), 0) = 0 THEN 1 ELSE 0 END AS passed,
+       |         '0.01' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  FROM (
        |    SELECT order_id,
        |           MAX(final_paid_flag) AS fp,
@@ -246,28 +453,38 @@ object AdsSql {
        |  UNION ALL
        |  SELECT 'REQUIRED_FIELD_NULL_RATE' AS rule_code,
        |         CAST(COUNT(*) AS BIGINT) AS check_count,
-       |         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
-       |         CAST(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
-       |         CASE WHEN SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END) * 1000 <= COUNT(*) THEN 1 ELSE 0 END AS passed,
-       |         '0.001' AS threshold
+       |         CAST(COALESCE(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END), 0) AS BIGINT) AS error_count,
+       |         CASE WHEN COUNT(*) = 0 THEN NULL
+       |              ELSE CAST(COALESCE(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END), 0) AS DECIMAL(8,6)) / COUNT(*) END AS error_rate,
+       |         CASE WHEN COUNT(*) = 0 THEN 1
+       |              WHEN COALESCE(SUM(CASE WHEN user_id IS NULL OR product_id IS NULL THEN 1 ELSE 0 END), 0) * 1000 <= COUNT(*) THEN 1
+       |              ELSE 0 END AS passed,
+       |         '0.001' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  FROM ${ns.dwd}.dwd_user_behavior_detail
        |  WHERE dt = '$dt'
        |  UNION ALL
        |  SELECT 'EVENT_ID_UNIQUE' AS rule_code,
        |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS BIGINT) AS check_count,
        |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS BIGINT) AS error_count,
-       |         CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS DECIMAL(8,6))
-       |           / (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') AS error_rate,
+       |         CASE WHEN (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') = 0 THEN NULL
+       |              ELSE CAST((SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') AS DECIMAL(8,6))
+       |                / (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') END AS error_rate,
        |         CASE WHEN (SELECT COUNT(*) FROM ${ns.dwd}.dwd_reject_record WHERE dt = '$dt' AND reject_reason = 'DUPLICATE_EVENT') * 2000
        |                <= (SELECT COUNT(*) FROM ${ns.dwd}.dwd_user_behavior_detail WHERE dt = '$dt') THEN 1 ELSE 0 END AS passed,
-       |         '0.0005' AS threshold
+       |         '0.0005' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  UNION ALL
        |  SELECT 'ENUM_WHITELIST' AS rule_code,
        |         CAST(COUNT(*) AS BIGINT) AS check_count,
-       |         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS BIGINT) AS error_count,
-       |         CAST(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) AS DECIMAL(8,6)) / COUNT(*) AS error_rate,
-       |         CASE WHEN SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END) = 0 THEN 1 ELSE 0 END AS passed,
-       |         '0' AS threshold
+       |         CAST(COALESCE(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END), 0) AS BIGINT) AS error_count,
+       |         CASE WHEN COUNT(*) = 0 THEN NULL
+       |              ELSE CAST(COALESCE(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END), 0) AS DECIMAL(8,6)) / COUNT(*) END AS error_rate,
+       |         CASE WHEN COUNT(*) = 0 THEN 1
+       |              WHEN COALESCE(SUM(CASE WHEN behavior_type NOT IN ('view','favorite','cart_add','cart_remove','search') THEN 1 ELSE 0 END), 0) = 0 THEN 1
+       |              ELSE 0 END AS passed,
+       |         '0' AS threshold,
+       |         $QualityRuleVersion AS rule_version
        |  FROM ${ns.dwd}.dwd_user_behavior_detail
        |  WHERE dt = '$dt'
        |) q

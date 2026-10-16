@@ -1,15 +1,16 @@
 package com.graduation.analytics.analysis;
 
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.metric.MetricAdsReader;
 import com.graduation.analytics.metric.MetricQualityGate;
 import com.graduation.analytics.metric.MetricStore;
-import com.graduation.analytics.metric.MySqlMetricStore;
 import com.graduation.analytics.metric.dict.MetricDefinition;
 import com.graduation.analytics.metric.dict.MetricDefinitionMapper;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.metric.entity.MetricValue;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,11 +18,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.math.RoundingMode;
 
 /**
  * 专题分析服务（R7-4 契约 docs/contracts/analysis-viewmodel-r7-4.md，指导书 §18.1/§18.2/§24.6）。
@@ -33,8 +40,12 @@ import java.util.Map;
  * <p>快照一致性：一次请求只解析一个 snapshotId（请求指定优先，否则取 ACTIVE），
  * 之后所有查询都带着它，并在响应信封里回显（契约 §1.2，§17.5 第 8 步）。</p>
  *
- * <p>{@code from/to}、{@code topN} 只作为筛选回显：ADS 宽表本身就是"快照 + dt"粒度的物化结果，
- * 服务端不按事件时间重算，因此它们不参与计算（契约 §1.3 不允许回退到明细层）。</p>
+ * <p><b>{@code from/to} 的生效范围（QA-01 修正后）</b>：ADS 宽表是「快照 + dt」粒度的物化结果，
+ * 服务端仍不按事件时间重算，但**逐日趋势**（{@code ads_sale_trend_m}/{@code ads_active_trend_m}）
+ * 会把区间作为 {@code dt >= ? AND dt <= ?} 参数化下推到 ADS 读取，页面 {@code filters} 回显的就是
+ * 真正生效的区间；**指标卡/质量卡等按快照读数的区块不随日期变化**（卡片按快照、趋势按日期）。
+ * 区间倒置（{@code from > to}）在读取任何 ADS 之前以 400 {@code PARAM_INVALID} 拒绝，
+ * 区间内无数据返回空趋势而不是补零。{@code topN} 仍只作筛选回显，不参与计算（契约 §1.3）。</p>
  */
 @Slf4j
 @Service
@@ -48,6 +59,8 @@ public class AnalysisService {
     private static final String T_HOT_PRODUCT = "ads_hot_product_m";
     private static final String T_PRODUCT_CONVERSION = "ads_product_conversion_m";
     private static final String T_DATA_QUALITY = "ads_data_quality_m";
+    private static final String T_CATEGORY_SALE = "ads_category_sale_m";
+    private static final String T_REGION_SALE = "ads_region_sale_m";
 
     // ── 销售分析取值的指标码（一律取 metric_value，不重算，契约 §3.2） ──────────
     private static final String METRIC_GMV = "gmv";
@@ -62,11 +75,18 @@ public class AnalysisService {
 
     private static final int DEFAULT_TOP_N = 10;
     private static final int MAX_TOP_N = 100;
+    private static final int MAX_DIMENSION_ROWS = 20;
+
+    /**
+     * v1.3（S3-18）：分页窗口上限。与 {@link #MAX_TOP_N} **同值且刻意共用**——旧参数 `topN` 已退化为
+     * 「窗口大小」，两个上限若各写一个字面量迟早漂移；这里只留一个所有者。
+     */
+    private static final int MAX_PAGE_SIZE = MAX_TOP_N;
 
     private static final DateTimeFormatter ISO_SECONDS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final MetricAdsReader adsReader;
-    private final MySqlMetricStore metricStore;
+    private final MetricStore metricStore;
     private final MetricQualityGate qualityGate;
     private final MetricDefinitionMapper definitionMapper;
     private final RfmService rfmService;
@@ -80,12 +100,43 @@ public class AnalysisService {
     public record DictionaryItem(String metricCode, String metricName, String formula, String unit) {
     }
 
-    /** 质量卡：规则条数 / 通过条数 / 未通过规则码（营业页质量状态的可展开明细） */
-    public record QualitySummary(int ruleCount, int passedCount, List<String> failedRules) {
+    /**
+     * 质量卡：规则条数 / 通过条数 / 未通过规则码（营业页质量状态的可展开明细）。
+     *
+     * <p>S3-24 起补 {@code ruleVersions}（规则码 → **规则定义版本**）。</p>
+     *
+     * @param ruleVersions 本次快照最新分区里**记了版本**的规则码 → `rule_version`。键集是
+     *        `ruleCount` 的子集：**不出现的规则码 = 该行 `rule_version` 为 NULL（未记录版本）**，
+     *        不补 0、不冒充 v1（S3-05 加性迁移 `V8` 的空值语义）；按规则码升序稳定输出
+     */
+    public record QualitySummary(int ruleCount, int passedCount, List<String> failedRules,
+                                 Map<String, Integer> ruleVersions) {
+
+        /** 兜底：始终非 null、**不可变**、按规则码升序（同快照多次响应的键序不随读取顺序漂移） */
+        public QualitySummary {
+            ruleVersions = ruleVersions == null
+                    ? Map.of()
+                    : Collections.unmodifiableMap(new java.util.TreeMap<>(ruleVersions));
+        }
     }
 
+    /**
+     * 销售趋势点（契约 §3.1/§3.2）。
+     *
+     * <p>v1.4（S3-20）加性补 {@code netSaleAmount}：设计 §9.3 **L333**「历史已发布，**net_sale 等字段需补**」
+     * （该条原文以 Hive 侧表名开头；本包源码策略测试禁止白名单外的 ADS 裸表名，故此处不引该名）
+     * ＋ §11.2 **L428**「净销售 = 同口径支付金额 − 成功退款金额；真实收入方向，
+     * 退款归属期需冻结」。值 = ADS 列 `net_sale_amount` **原样透传**（口径所有者仍是 DWS/ADS，
+     * 服务层不重算），与 {@code saleAmount} 同一行、同一 dt。
+     *
+     * <p><b>口径边界（不得越界表述）</b>：① 跨业务日到账的退款**不会**回改历史业务日的净额
+     * （L428「退款归属期需冻结」尚未裁决，见 `PROJECT_STATUS` backlog），故本值**不等于**"最终到账净收入"；
+     * ② 历史快照该列由加性迁移的 `NOT NULL DEFAULT 0` 回填 ⇒ **0 可能是"未计算"占位**，
+     * 与"当日零净额"在当前数据上**不可区分**（不得据此判断"无退款"）；列整体缺失/畸形值 ⇒ {@code null}
+     * （不臆造 0）。
+     */
     public record SalesTrendPoint(String date, long orderCount, BigDecimal saleAmount, long buyerCount,
-                                  BigDecimal avgOrderValue) {
+                                  BigDecimal avgOrderValue, BigDecimal netSaleAmount) {
     }
 
     public record ActiveDay(String date, long dau, long behaviorCount) {
@@ -108,7 +159,16 @@ public class AnalysisService {
     public record ProductConversion(long productId, long pvUsers, long buyUsers, BigDecimal conversionRate) {
     }
 
-    public record ProductsData(List<HotProduct> hot, List<ProductConversion> conversion, int topN) {
+    /**
+     * 商品分析 data（契约 §3.3）。
+     *
+     * <p>v1.3（S3-18）加性补 4 个分页字段：`page`/`size` 为**生效值**，
+     * `total` = 该快照排行可用总行数，`hasMore = page*size &lt; total`。
+     * {@code topN} 语义由「前 N 名」收紧为「**本次窗口上限**」——`page` 缺省即 1，
+     * 旧前端行为逐字段不变（契约 v1.3）。</p>
+     */
+    public record ProductsData(List<HotProduct> hot, List<ProductConversion> conversion, int topN,
+                               int page, int size, long total, boolean hasMore) {
     }
 
     public record FunnelStage(String stage, String label, long users, BigDecimal rate) {
@@ -117,17 +177,28 @@ public class AnalysisService {
     public record FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote) {
     }
 
+    /**
+     * 用户分群专题数据（§3.5）。
+     *
+     * <p>S3-16 加性补充：{@code periodStart}/{@code periodEnd} 是本次评分**实际使用的观察窗口**
+     * （来自 ads_user_profile_m 的 period_start/period_end）；不可用时为 null 并由
+     * {@code warnings} 声明（设计 V3.0 §15 L676「R/F/M 原值与 score、8 群体、观察期、复购」）。
+     * 分组行 {@code RfmSegment} 自 S3-16 起带 M 原值（{@code amount}）与 F 原值（{@code orders}）。</p>
+     */
     public record UsersData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.LifecycleState> lifecycle,
-                            List<RfmService.CategoryPreference> preference, String ruleVersion) {
+                            List<RfmService.CategoryPreference> preference, String ruleVersion,
+                            String periodStart, String periodEnd) {
     }
 
+    /** RFM 专题数据（§3.6）：字段语义与 {@link UsersData} 一致，另带八类全量矩阵 rfmMatrix */
     public record RfmData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.RfmSegment> rfmMatrix,
-                          String ruleVersion) {
+                          String ruleVersion, String periodStart, String periodEnd) {
     }
 
     // ── 运营总览（§3.1） ──────────────────────────────────────────────────────
 
     public AnalysisViewModel<OverviewData> overview(String snapshotId, LocalDate from, LocalDate to) {
+        requireOrderedDateRange(from, to);
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
@@ -141,14 +212,15 @@ public class AnalysisService {
         List<DictionaryItem> dictionary = dictionary();
         Map<String, String> names = new HashMap<>();
         dictionary.forEach(item -> names.put(item.metricCode(), item.metricName()));
-        OverviewData data = new OverviewData(metrics(sid, names), salesTrend(sid), activeTrend(sid),
-                quality(sid), dictionary);
+        OverviewData data = new OverviewData(metrics(sid, names), salesTrend(sid, from, to),
+                activeTrend(sid, from, to), quality(sid), dictionary);
         return view(pinned, filters, data, List.of());
     }
 
     // ── 销售分析（§3.2） ──────────────────────────────────────────────────────
 
     public AnalysisViewModel<SalesData> sales(String snapshotId, LocalDate from, LocalDate to) {
+        requireOrderedDateRange(from, to);
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
@@ -160,21 +232,218 @@ public class AnalysisService {
         filters.put("snapshotId", sid);
 
         Map<String, BigDecimal> values = metricValueMap(sid);
-        // 分类/地区结构：本期没有对应 Hive ADS 与 MySQL 服务表，返回空数组并显式给出降级事实（契约 §3.2）
-        SalesData data = new SalesData(salesTrend(sid),
+        List<String> warnings = new ArrayList<>();
+        List<Map<String, Object>> byCategory = categorySales(
+                dimensionRows(T_CATEGORY_SALE, sid, from, to, warnings));
+        List<Map<String, Object>> byRegion = regionSales(
+                dimensionRows(T_REGION_SALE, sid, from, to, warnings));
+        SalesData data = new SalesData(salesTrend(sid, from, to),
                 values.get(METRIC_GMV), values.get(METRIC_NET_SALE),
                 values.get(METRIC_REFUND_RATE), values.get(METRIC_FULL_REFUND_RATE),
-                quality(sid), List.of(), List.of());
-        return view(pinned, filters, data, List.of(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE));
+                quality(sid), byCategory, byRegion);
+        return view(pinned, filters, data, List.copyOf(new LinkedHashSet<>(warnings)));
+    }
+
+    /**
+     * 维度 ADS 与趋势共用同一快照和闭区间；没有区间时读整快照。
+     * 只把可定位到可选维度服务表的数据库访问故障降级为空数组并显式告警，其他编程错误不吞掉。
+     */
+    private List<Map<String, Object>> dimensionRows(String table, String snapshotId,
+                                                    LocalDate from, LocalDate to, List<String> warnings) {
+        try {
+            if (from == null && to == null) {
+                return adsReader.selectBySnapshot(table, snapshotId, null);
+            }
+            return adsReader.selectBySnapshotRange(table, snapshotId,
+                    AdsRows.compactDate(from), AdsRows.compactDate(to));
+        } catch (DataAccessException ex) {
+            log.warn("销售维度 ADS 读取不可用，按受限空态返回: table={} snapshotId={} causeType={}",
+                    table, snapshotId, ex.getClass().getSimpleName());
+            warnings.add(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE);
+            return List.of();
+        }
+    }
+
+    /** 把按日叶子分类行聚合成闭区间行；父类仅取窗口内最新日的标签，不重复汇总父级。 */
+    private static List<Map<String, Object>> categorySales(List<Map<String, Object>> rows) {
+        Map<Long, CategoryAccumulator> grouped = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            long rawId = AdsRows.asLong(row.get("category_id"));
+            long id = rawId > 0 ? rawId : -1L;
+            CategoryAccumulator acc = grouped.computeIfAbsent(id, CategoryAccumulator::new);
+            acc.saleCount += AdsRows.asLong(row.get("sale_count"));
+            acc.addSale(AdsRows.asDecimal(row.get("sale_amount")));
+            acc.addNet(AdsRows.asDecimal(row.get("net_sale_amount")));
+            String dt = AdsRows.asString(row.get("dt"));
+            if (id == -1L) {
+                acc.categoryName = "未分类";
+                acc.parentCategoryId = -1L;
+                acc.parentCategoryName = "未分类";
+                acc.latestDt = dt;
+            } else if (acc.latestDt == null || dt.compareTo(acc.latestDt) >= 0) {
+                acc.categoryName = nonBlank(row.get("category_name"), "未知分类");
+                Long parentId = AdsRows.asLongOrNull(row.get("parent_category_id"));
+                acc.parentCategoryId = parentId == null || parentId <= 0 ? -1L : parentId;
+                acc.parentCategoryName = nonBlank(row.get("parent_category_name"), "未知上级分类");
+                acc.latestDt = dt;
+            }
+        }
+        BigDecimal denominator = grouped.values().stream().map(CategoryAccumulator::saleAmount)
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<Map<String, Object>> all = grouped.values().stream().map(acc -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("category_id", acc.categoryId);
+            item.put("category_name", acc.categoryName == null ? "未知分类" : acc.categoryName);
+            item.put("parent_category_id", acc.parentCategoryId == 0 ? -1L : acc.parentCategoryId);
+            item.put("parent_category_name", acc.parentCategoryName == null ? "未知上级分类" : acc.parentCategoryName);
+            item.put("sale_count", acc.saleCount);
+            item.put("sale_amount", acc.saleAmount());
+            item.put("net_sale_amount", acc.netSaleAmount());
+            item.put("amount_ratio", ratio(acc.saleAmount(), denominator));
+            return item;
+        }).sorted(categoryOrder()).toList();
+        return keepUnknownWithinLimit(all, "category_id", -1L, categoryOrder());
+    }
+
+    /** 城市等级（city_level）闭区间聚合；不提供按日 distinct 计数，避免跨日重复相加。 */
+    private static List<Map<String, Object>> regionSales(List<Map<String, Object>> rows) {
+        Map<String, RegionAccumulator> grouped = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            String region = nonBlank(row.get("region"), "unknown");
+            RegionAccumulator acc = grouped.computeIfAbsent(region, RegionAccumulator::new);
+            acc.addSale(AdsRows.asDecimal(row.get("sale_amount")));
+            acc.addNet(AdsRows.asDecimal(row.get("net_sale_amount")));
+        }
+        BigDecimal denominator = grouped.values().stream().map(RegionAccumulator::saleAmount)
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return grouped.values().stream().map(acc -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("region", acc.region);
+            item.put("sale_amount", acc.saleAmount());
+            item.put("net_sale_amount", acc.netSaleAmount());
+            item.put("amount_ratio", ratio(acc.saleAmount(), denominator));
+            return item;
+        }).sorted(regionOrder()).limit(MAX_DIMENSION_ROWS).toList();
+    }
+
+    private static List<Map<String, Object>> keepUnknownWithinLimit(List<Map<String, Object>> rows,
+                                                                    String key, long unknownId,
+                                                                    Comparator<Map<String, Object>> order) {
+        if (rows.size() <= MAX_DIMENSION_ROWS) {
+            return rows;
+        }
+        Map<String, Object> unknown = rows.stream()
+                .filter(row -> AdsRows.asLong(row.get(key)) == unknownId).findFirst().orElse(null);
+        List<Map<String, Object>> limited = new ArrayList<>(rows.subList(0, MAX_DIMENSION_ROWS));
+        if (unknown != null && !limited.contains(unknown)) {
+            limited.set(MAX_DIMENSION_ROWS - 1, unknown);
+            limited.sort(order);
+        }
+        return List.copyOf(limited);
+    }
+
+    private static Comparator<Map<String, Object>> categoryOrder() {
+        return (left, right) -> {
+            int amount = compareAmountDescending(left.get("sale_amount"), right.get("sale_amount"));
+            if (amount != 0) return amount;
+            int id = Long.compare(AdsRows.asLong(left.get("category_id")), AdsRows.asLong(right.get("category_id")));
+            return id != 0 ? id : AdsRows.asString(left.get("category_name"))
+                    .compareTo(AdsRows.asString(right.get("category_name")));
+        };
+    }
+
+    private static Comparator<Map<String, Object>> regionOrder() {
+        return (left, right) -> {
+            int amount = compareAmountDescending(left.get("sale_amount"), right.get("sale_amount"));
+            return amount != 0 ? amount : AdsRows.asString(left.get("region"))
+                    .compareTo(AdsRows.asString(right.get("region")));
+        };
+    }
+
+    private static int compareAmountDescending(Object left, Object right) {
+        BigDecimal a = AdsRows.asDecimal(left);
+        BigDecimal b = AdsRows.asDecimal(right);
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;
+        if (b == null) return -1;
+        return b.compareTo(a);
+    }
+
+    private static BigDecimal ratio(BigDecimal amount, BigDecimal denominator) {
+        if (amount == null || denominator == null || denominator.signum() <= 0) return null;
+        return amount.divide(denominator, 4, RoundingMode.HALF_UP);
+    }
+
+    private static String nonBlank(Object value, String fallback) {
+        String text = AdsRows.asString(value).trim();
+        return text.isEmpty() ? fallback : text;
+    }
+
+    private static final class CategoryAccumulator {
+        private final long categoryId;
+        private String categoryName;
+        private long parentCategoryId = -1L;
+        private String parentCategoryName;
+        private String latestDt;
+        private long saleCount;
+        private BigDecimal sale = BigDecimal.ZERO;
+        private BigDecimal net = BigDecimal.ZERO;
+        private boolean hasSale;
+        private boolean hasNet;
+
+        private CategoryAccumulator(long categoryId) { this.categoryId = categoryId; }
+        private void addSale(BigDecimal value) { if (value != null) { sale = sale.add(value); hasSale = true; } }
+        private void addNet(BigDecimal value) { if (value != null) { net = net.add(value); hasNet = true; } }
+        private BigDecimal saleAmount() { return hasSale ? sale : null; }
+        private BigDecimal netSaleAmount() { return hasNet ? net : null; }
+    }
+
+    private static final class RegionAccumulator {
+        private final String region;
+        private BigDecimal sale = BigDecimal.ZERO;
+        private BigDecimal net = BigDecimal.ZERO;
+        private boolean hasSale;
+        private boolean hasNet;
+
+        private RegionAccumulator(String region) { this.region = region; }
+        private void addSale(BigDecimal value) { if (value != null) { sale = sale.add(value); hasSale = true; } }
+        private void addNet(BigDecimal value) { if (value != null) { net = net.add(value); hasNet = true; } }
+        private BigDecimal saleAmount() { return hasSale ? sale : null; }
+        private BigDecimal netSaleAmount() { return hasNet ? net : null; }
     }
 
     // ── 商品分析（§3.3） ──────────────────────────────────────────────────────
 
-    public AnalysisViewModel<ProductsData> products(String snapshotId, int topN, LocalDate from, LocalDate to) {
+    /**
+     * 商品分析（契约 §3.3）。v1.3 起热度榜**真分页**（指导书 V3.0 §7 阶段4 L158「分页」、
+     * 设计 V3.0 L693「分页 page/size/sort」/ L675「稳定排行、分页」）；
+     * v1.5（S3-21）补齐 L693 三件套里的 `sort`。
+     *
+     * <p><b>`sort` 只重排热度榜，不改口径</b>：`total`/`hasMore` 仍是全量榜的行数与窗口计算，
+     * `conversion` 列表与排序无关（始终按 `product_id` 升序），`topN` 旧口径不动。</p>
+     *
+     * @param page 1 起始页码；{@code null} ⇒ 1
+     * @param size 窗口大小；{@code null} ⇒ 由旧参数 {@code topN} 决定（缺省 10，上限 100）
+     * @param sort `字段` 或 `字段,asc|desc`；{@code null}/空白 ⇒ {@code rank,asc}（与 v1.4 前逐行同序）；
+     *             未登记字段或非法方向 ⇒ {@code PARAM_INVALID}
+     * @param topN 旧参数：仍原样回显进 {@code filters}；`size` 未显式给出时充当窗口大小
+     */
+    public AnalysisViewModel<ProductsData> products(String snapshotId, Integer page, Integer size, String sort,
+                                                    Integer topN, LocalDate from, LocalDate to) {
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
-        filters.put("topN", topN); // 原样回显请求值
+        // v1.2 兼容：旧参数原样回显（缺省回显 10，与旧 @RequestParam defaultValue="10" 的观测结果一致）
+        filters.put("topN", topN == null ? DEFAULT_TOP_N : topN);
+
+        // 显式传入的非法值 fail-fast：静默钳制会造成「回显值 ≠ 实际生效值」
+        int effectivePage = resolvePage(page);
+        int effectiveSize = resolveSize(size, topN);
+        HotSort effectiveSort = resolveSort(sort);
+        filters.put("page", effectivePage);
+        filters.put("size", effectiveSize);
+        filters.put("sort", effectiveSort.echo());
+
         Pinned pinned = pin(snapshotId);
         if (pinned.snapshotId() == null) {
             return AnalysisViewModel.empty(filters, pinned.warnings());
@@ -182,10 +451,103 @@ public class AnalysisService {
         String sid = pinned.snapshotId();
         filters.put("snapshotId", sid);
 
-        // 生效值才做上限保护（回显仍是请求原值，避免"回显值与实际不符"）
-        int effectiveTopN = topN <= 0 ? DEFAULT_TOP_N : Math.min(topN, MAX_TOP_N);
-        ProductsData data = new ProductsData(hotProducts(sid, effectiveTopN), productConversion(sid), effectiveTopN);
+        List<Map<String, Object>> ranked = rankedHotRows(sid, effectiveSort);
+        long total = ranked.size();
+        List<HotProduct> hot = ranked.stream()
+                .skip((long) (effectivePage - 1) * effectiveSize)
+                .limit(effectiveSize)
+                .map(AnalysisService::toHotProduct)
+                .toList();
+        boolean hasMore = (long) effectivePage * effectiveSize < total;
+        ProductsData data = new ProductsData(hot, productConversion(sid), effectiveSize,
+                effectivePage, effectiveSize, total, hasMore);
         return view(pinned, filters, data, List.of());
+    }
+
+    /** v1.3：缺省 = 第 1 页；显式非法值抛 {@code PARAM_INVALID}（错误码所有者仍是 GlobalExceptionHandler）。 */
+    private static int resolvePage(Integer page) {
+        if (page == null) {
+            return 1;
+        }
+        if (page < 1) {
+            throw new PlatformBizException("PARAM_INVALID", "page 必须 >= 1，实际 " + page);
+        }
+        return page;
+    }
+
+    /** v1.3：显式 {@code size} 优先；未给出时沿用 v1.2 的旧参数口径（{@code topN<=0} 取缺省 10，不转错误）。 */
+    private static int resolveSize(Integer size, Integer legacyTopN) {
+        if (size != null) {
+            if (size < 1) {
+                throw new PlatformBizException("PARAM_INVALID", "size 必须 >= 1，实际 " + size);
+            }
+            return Math.min(size, MAX_PAGE_SIZE);
+        }
+        return legacyTopN == null || legacyTopN <= 0 ? DEFAULT_TOP_N : Math.min(legacyTopN, MAX_TOP_N);
+    }
+
+    /**
+     * v1.5（S3-21）：解析后生效的排序（字段名 + 方向）。{@code echo} 是回显进 {@code filters} 的规范形式
+     * （`字段,asc|desc`），因此「回显值 = 实际生效值」可被测试与前端直接比对。
+     */
+    private record HotSort(String field, boolean descending) {
+
+        String echo() {
+            return field + (descending ? ",desc" : ",asc");
+        }
+    }
+
+    /**
+     * v1.5：`sort` 字段白名单 → ADS 列名。**只登记热度榜真实存在的列**；
+     * 未登记字段一律拒绝（设计 L693 只规定参数名，未规定字段集，故这里把字段集当成本服务的显式契约）。
+     */
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "rank", "rank_no",
+            "heat", "heat_score",
+            "pv", "pv",
+            "fav", "fav",
+            "cart", "cart",
+            "buy", "buy");
+
+    /** v1.5：字段缺省方向（true = 降序）。`rank` 是「越小越热」的名次列；其余指标越大越靠前。 */
+    private static final Set<String> SORT_DESC_FIELDS = Set.of("heat", "pv", "fav", "cart", "buy");
+
+    /** v1.5：缺省排序——与 v1.4 前逐行同序（`rank_no` 升序 + `product_id` 升序打破平局）。 */
+    private static final HotSort DEFAULT_HOT_SORT = new HotSort("rank", false);
+
+    /**
+     * v1.5（S3-21）：解析 `sort`（设计 L693「分页 page/size/sort」、L675「稳定排行」）。
+     *
+     * <p>形式：`字段` 或 `字段,asc|desc`；去首尾空白、大小写不敏感；{@code null}/空白 ⇒ {@code rank,asc}。
+     * 未登记字段、非法方向、段数 > 2、给了逗号却不给方向 ⇒ {@code PARAM_INVALID} fail-fast：
+     * **不静默降级成缺省序**——那会让客户端以为拿到了排序结果，而 {@code filters.sort} 与实际顺序都对不上。</p>
+     */
+    private static HotSort resolveSort(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return DEFAULT_HOT_SORT;
+        }
+        String[] parts = sort.trim().toLowerCase(Locale.ROOT).split(",", -1);
+        if (parts.length > 2) {
+            throw new PlatformBizException("PARAM_INVALID", "sort 段数过多（应为 字段[,asc|desc]）：" + sort);
+        }
+        String field = parts[0].trim();
+        if (!SORT_FIELDS.containsKey(field)) {
+            throw new PlatformBizException("PARAM_INVALID",
+                    "sort 字段未登记：" + parts[0] + "，可用 " + String.join("/", SORT_FIELDS.keySet()));
+        }
+        boolean descending = SORT_DESC_FIELDS.contains(field);
+        if (parts.length == 2) {
+            String direction = parts[1].trim();
+            if ("asc".equals(direction)) {
+                descending = false;
+            } else if ("desc".equals(direction)) {
+                descending = true;
+            } else {
+                throw new PlatformBizException("PARAM_INVALID",
+                        "sort 方向只支持 asc/desc，实际 " + parts[1]);
+            }
+        }
+        return new HotSort(field, descending);
     }
 
     // ── 行为漏斗（§3.4） ──────────────────────────────────────────────────────
@@ -248,7 +610,7 @@ public class AnalysisService {
 
         RfmService.RfmProfile profile = rfmService.profile(sid);
         UsersData data = new UsersData(profile.segments(), profile.lifecycle(), profile.preference(),
-                profile.ruleVersion());
+                profile.ruleVersion(), profile.periodStart(), profile.periodEnd());
         return view(pinned, filters, data, profile.warnings());
     }
 
@@ -270,7 +632,8 @@ public class AnalysisService {
         filters.put("snapshotId", sid);
 
         RfmService.RfmProfile profile = rfmService.profile(sid);
-        RfmData data = new RfmData(profile.segments(), profile.matrix(), profile.ruleVersion());
+        RfmData data = new RfmData(profile.segments(), profile.matrix(), profile.ruleVersion(),
+                profile.periodStart(), profile.periodEnd());
         return view(pinned, filters, data, profile.warnings());
     }
 
@@ -292,8 +655,9 @@ public class AnalysisService {
             return new Pinned(null, null, List.of(AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
         }
         MetricSnapshot meta = metricStore.findSnapshot(snapshotId);
-        if (meta == null) {
-            // 显式指定的快照号库里没有（不能假装读过它）；ACTIVE 号取到却没有快照行同样属于"取不到"
+        if (meta == null || !(MetricSnapshot.STATUS_ACTIVE.equals(meta.getStatus())
+                || MetricSnapshot.STATUS_ARCHIVED.equals(meta.getStatus()))) {
+            // 未发布/不存在的快照不可读；显式 ID 不回退到当前 ACTIVE，也不查询部分产物。
             return new Pinned(null, null, List.of(explicit
                     ? AnalysisViewModel.WARN_UNKNOWN_SNAPSHOT
                     : AnalysisViewModel.WARN_NO_ACTIVE_SNAPSHOT));
@@ -306,7 +670,13 @@ public class AnalysisService {
                                           List<String> warnings) {
         List<String> allWarnings = new ArrayList<>(warnings);
         MetricSnapshot meta = pinned.meta();
-        return AnalysisViewModel.of(pinned.snapshotId(), isoSeconds(meta.getBusinessTime()),
+        // source 是快照行的发布方（§17.6 只接受 spark-ads），原样回显；空串保持空串，不臆造值
+        // sourceId 是数据源注册身份；仅取快照固化值。历史 NULL 明确告警，不从可变 profile 绑定回查。
+        if (meta.getSourceId() == null) {
+            allWarnings.add(AnalysisViewModel.WARN_SOURCE_ID_UNAVAILABLE);
+        }
+        return AnalysisViewModel.of(pinned.snapshotId(), meta.getSourceId(), blankToEmpty(meta.getSource()),
+                isoSeconds(meta.getBusinessTime()),
                 dataUpdatedAt(meta), blankToEmpty(meta.getDefinitionVersion()),
                 qualityStatus(meta, allWarnings), filters, data, allWarnings);
     }
@@ -319,7 +689,8 @@ public class AnalysisService {
         try {
             return qualityGate.statusForRun(meta.getPipelineRunId());
         } catch (RuntimeException e) {
-            log.warn("quality gate unavailable for run {}: {}", meta.getPipelineRunId(), e.getMessage());
+            log.warn("quality gate unavailable for run {} ({})",
+                    meta.getPipelineRunId(), e.getClass().getSimpleName());
             warnings.add(AnalysisViewModel.WARN_QUALITY_STATUS_UNAVAILABLE);
             return MetricQualityGate.UNKNOWN;
         }
@@ -379,50 +750,123 @@ public class AnalysisService {
 
     // ── ADS 宽表映射 ──────────────────────────────────────────────────────────
 
-    /** 销售趋势（ads_sale_trend_m，按 dt 升序） */
-    private List<SalesTrendPoint> salesTrend(String snapshotId) {
-        return adsReader.selectBySnapshot(T_SALE_TREND, snapshotId, null).stream()
+    /**
+     * 销售趋势（ads_sale_trend_m，按 dt 升序）。
+     *
+     * <p>v1.4（S3-20）：末列补 ADS `net_sale_amount`（净销售额）**原样透传**；缺列/畸形 ⇒ {@code null}。
+     *
+     * <p>QA-01：日期区间下推到 ADS 读取（见 {@link #trendRows}）。缺省区间（两端都为 null）保持
+     * 原有「整快照」语义不变，不引入第二条读取路径。</p>
+     */
+    private List<SalesTrendPoint> salesTrend(String snapshotId, LocalDate from, LocalDate to) {
+        return trendRows(T_SALE_TREND, snapshotId, from, to).stream()
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new SalesTrendPoint(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("order_count")), AdsRows.asDecimal(row.get("sale_amount")),
-                        AdsRows.asLong(row.get("buyer_count")), AdsRows.asDecimal(row.get("avg_order_value"))))
+                        AdsRows.asLong(row.get("buyer_count")), AdsRows.asDecimal(row.get("avg_order_value")),
+                        AdsRows.asDecimal(row.get("net_sale_amount"))))
                 .toList();
     }
 
-    /** 活跃趋势（ads_active_trend_m，按 dt 升序） */
-    private List<ActiveDay> activeTrend(String snapshotId) {
-        return adsReader.selectBySnapshot(T_ACTIVE_TREND, snapshotId, null).stream()
+    /** 活跃趋势（ads_active_trend_m，按 dt 升序）；日期区间语义同 {@link #salesTrend} */
+    private List<ActiveDay> activeTrend(String snapshotId, LocalDate from, LocalDate to) {
+        return trendRows(T_ACTIVE_TREND, snapshotId, from, to).stream()
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new ActiveDay(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("dau")), AdsRows.asLong(row.get("behavior_count"))))
                 .toList();
     }
 
-    /** 质量卡（ads_data_quality_m）：按规则码去重统计，未通过规则码升序列出 */
+    /**
+     * 逐日趋势表的日期读取（QA-01 的唯一分派点）。
+     *
+     * <p>缺省区间（{@code from}/{@code to} 都为 null）→ 整快照读取；任一端存在 → 参数化区间读取
+     * （缺失端不设边界）。此处不做「读全量再本地过滤」：过滤必须在库里完成，否则既浪费又会让
+     * 「回显的区间」与「实际读到的数据」再次脱钩。</p>
+     */
+    private List<Map<String, Object>> trendRows(String table, String snapshotId, LocalDate from, LocalDate to) {
+        if (from == null && to == null) {
+            return adsReader.selectBySnapshot(table, snapshotId, null);
+        }
+        return adsReader.selectBySnapshotRange(table, snapshotId, AdsRows.compactDate(from), AdsRows.compactDate(to));
+    }
+
+    /** QA-01：日期区间的唯一校验点（倒置区间必须 400，不允许静默按整快照返回） */
+    private static void requireOrderedDateRange(LocalDate from, LocalDate to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new PlatformBizException("PARAM_INVALID",
+                    "日期区间非法：from(" + from + ") 晚于 to(" + to + ")，请调整开始/结束日期");
+        }
+    }
+
+    /**
+     * 质量卡（ads_data_quality_m）：按规则码去重统计，未通过规则码升序列出。
+     *
+     * <p>S3-24 起同时回显**规则定义版本**（`rule_version`）：指导书 V3.0 阶段4 L156「专题服务返回明确
+     * source、snapshot、definitionVersion、时间和质量信息」＋ 设计 V3.0 §12.3 L512「每条规则记录…
+     * **版本**…」；此前该列只有写入方（S3-05 加性迁移 `V8`，把 `rule_version` 追加到
+     * `ads_data_quality_m` 末尾）没有消费方（F-34 R-5 登记）。</p>
+     *
+     * <p><b>取不到版本不等于 v1</b>：`rule_version` 为 NULL（历史快照未记录）或不可解析时，该规则码
+     * **不出现**在 {@code ruleVersions} 里，键集只是 `ruleCount` 的子集；这里用
+     * {@link AdsRows#asLongOrNull} 而不是 {@code asInt}（后者取不到返回 0，会把「未记录」写成 v0）。
+     * 判据与写入侧同源：V8 空值语义「允许 NULL…不写 0 冒充 v1」。</p>
+     */
     private QualitySummary quality(String snapshotId) {
         Map<String, Integer> passedByRule = new java.util.TreeMap<>();
+        Map<String, Integer> ruleVersions = new java.util.TreeMap<>();
         for (Map<String, Object> row : AdsRows.latestPartition(adsReader, T_DATA_QUALITY, snapshotId)) {
-            passedByRule.put(AdsRows.asString(row.get("rule_code")), AdsRows.asInt(row.get("passed")));
+            String ruleCode = AdsRows.asString(row.get("rule_code"));
+            passedByRule.put(ruleCode, AdsRows.asInt(row.get("passed")));
+            Long ruleVersion = AdsRows.asLongOrNull(row.get("rule_version"));
+            if (ruleVersion != null) {
+                ruleVersions.put(ruleCode, ruleVersion.intValue());
+            }
         }
         int passed = (int) passedByRule.values().stream().filter(value -> value == 1).count();
         List<String> failedRules = passedByRule.entrySet().stream()
                 .filter(entry -> entry.getValue() != 1)
                 .map(Map.Entry::getKey)
                 .toList();
-        return new QualitySummary(passedByRule.size(), passed, failedRules);
+        return new QualitySummary(passedByRule.size(), passed, failedRules, ruleVersions);
     }
 
-    /** 热门商品榜（ads_hot_product_m，按 rank_no 升序取前 topN） */
-    private List<HotProduct> hotProducts(String snapshotId, int topN) {
+    /**
+     * 热门商品**全量排行**（ads_hot_product_m）：缺省 `rank_no` 升序，**末级一律以 `product_id` 升序打破平局**
+     * （设计 L675「稳定排行」：不让同值行随读取顺序漂移）。分页切片与 `total` 由调用方负责。
+     *
+     * <p>v1.5（S3-21）：`sort` 只换**首级**排序键；`product_id` 升序仍是固定的末级，因此
+     * 「同值集合内顺序稳定」在任意 `sort` 下都成立。</p>
+     */
+    private List<Map<String, Object>> rankedHotRows(String snapshotId, HotSort sort) {
         return AdsRows.latestPartition(adsReader, T_HOT_PRODUCT, snapshotId).stream()
-                .sorted(Comparator.comparingInt((Map<String, Object> row) -> AdsRows.asInt(row.get("rank_no"))))
-                .limit(topN)
-                .map(row -> new HotProduct(AdsRows.asLong(row.get("product_id")),
-                        AdsRows.asString(row.get("product_name")), AdsRows.asDecimal(row.get("heat_score")),
-                        AdsRows.asLong(row.get("pv")), AdsRows.asLong(row.get("fav")),
-                        AdsRows.asLong(row.get("cart")), AdsRows.asLong(row.get("buy")),
-                        AdsRows.asInt(row.get("rank_no"))))
+                .sorted(hotKeyComparator(sort)
+                        .thenComparingLong(row -> AdsRows.asLong(row.get("product_id"))))
                 .toList();
+    }
+
+    /**
+     * v1.5：`sort` 首级比较器。取不到 `heat_score` 的行**无论方向都排最后**
+     * （`AdsRows.asDecimal` 取不到返回 null；把 null 当 0 会让缺值行在降序里冒充末位真值、
+     * 在升序里直接霸榜——两种都会让「热度榜」结论失真）。
+     */
+    private static Comparator<Map<String, Object>> hotKeyComparator(HotSort sort) {
+        if ("heat".equals(sort.field())) {
+            Comparator<BigDecimal> order = sort.descending() ? Comparator.reverseOrder() : Comparator.naturalOrder();
+            return Comparator.comparing((Map<String, Object> row) -> AdsRows.asDecimal(row.get("heat_score")),
+                    Comparator.nullsLast(order));
+        }
+        Comparator<Map<String, Object>> numeric =
+                Comparator.comparingLong(row -> AdsRows.asLong(row.get(SORT_FIELDS.get(sort.field()))));
+        return sort.descending() ? numeric.reversed() : numeric;
+    }
+
+    private static HotProduct toHotProduct(Map<String, Object> row) {
+        return new HotProduct(AdsRows.asLong(row.get("product_id")),
+                AdsRows.asString(row.get("product_name")), AdsRows.asDecimal(row.get("heat_score")),
+                AdsRows.asLong(row.get("pv")), AdsRows.asLong(row.get("fav")),
+                AdsRows.asLong(row.get("cart")), AdsRows.asLong(row.get("buy")),
+                AdsRows.asInt(row.get("rank_no")));
     }
 
     /** 商品转化（ads_product_conversion_m，按 product_id 升序；不做 topN 截断，避免漏商品） */

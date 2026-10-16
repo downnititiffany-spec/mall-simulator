@@ -2,18 +2,25 @@
 -- DWS 汇总数据层（§6.4）
 -- 主题宽表，供多个 ADS 应用指标复用；口径在此层固定（有效支付/去重用户）。
 -- 库名：${WAREHOUSE_PREFIX}_dws，缺省源 A 用 dw（beeline --hivevar WAREHOUSE_PREFIX=dw -f 03-dws.sql）；规则见 contract-specs/specs/warehouse-namespace.v1.json
+-- ⚠ 本文件是 DWS 表形的**参考副本**，不是唯一所有者：列名/类型/顺序必须与
+--   ① 唯一所有者 `spark-jobs/.../job/LocalSchemaInitJob.scala`（`CREATE TABLE … USING parquet`）
+--   ② 写入投影 `spark-jobs/.../sql/DwsSql.scala`（`INSERT OVERWRITE … SELECT`）
+--   逐列一致 —— Spark 按**位置**写 Parquet，列序漂移会静默串列（不报错、行数不变）。
+--   三方一致性由 `spark-jobs/src/test/scala/.../DwsSchemaOwnerSpec.scala` 钉住（S3-11 起）；
+--   加列/改列必须**同批**改这三处 + 该 spec 的冻结快照，且本文件不得用 `ALTER TABLE` 旁路加列。
+--   历史漂移（本文件已修）：`dws_user_behavior_day` 曾把 `buy` 排在 `search`/`active_hours` 之前。
 -- =====================================================================
 CREATE DATABASE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws COMMENT 'DWS 汇总数据层';
 
--- 用户×日期行为宽表
+-- 用户×日期行为宽表（列序＝写入投影列序：`search`/`active_hours` 在 `buy` 之前）
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws.dws_user_behavior_day (
     user_id      BIGINT,
     pv           BIGINT,
     fav          BIGINT,
     cart         BIGINT,
-    buy          BIGINT,
     search       BIGINT,
-    active_hours INT COMMENT '活跃小时数'
+    active_hours INT COMMENT '活跃小时数',
+    buy          BIGINT
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
@@ -30,7 +37,9 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws.dws_behavior_funnel_
     intent_rate    DECIMAL(8,4) COMMENT 'intent/view，分母0→null',
     order_rate     DECIMAL(8,4),
     pay_rate       DECIMAL(8,4),
-    overall_buy_rate DECIMAL(8,4) COMMENT 'pay/view（整体购买转化率）'
+    overall_buy_rate DECIMAL(8,4) COMMENT 'pay/view（整体购买转化率）',
+    cart_users     BIGINT COMMENT '当日 cart_add 去重用户（不含 favorite）',
+    cart_rate      DECIMAL(8,4) COMMENT 'cart_add/view（整体加购率），分母0→null'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
@@ -82,7 +91,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws.dws_user_trade_perio
     order_count  BIGINT COMMENT '有效支付订单数',
     sale_amount  DECIMAL(18,2),
     period_start STRING,
-    period_end   STRING
+    period_end   STRING,
+    valid_order_count BIGINT COMMENT '观察期内有效购买订单数（剔除全额退款，S3-03 复购率分子用）'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
@@ -93,7 +103,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dws.dws_region_sale_day 
     region      STRING COMMENT '城市等级',
     buyer_count BIGINT,
     order_count BIGINT,
-    sale_amount DECIMAL(18,2)
+    sale_amount DECIMAL(18,2),
+    net_sale_amount DECIMAL(18,2) COMMENT '净销售额 = 已支付金额 − 已支付退款（与 dws_trade_day 同式，S3-12）'
 )
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET

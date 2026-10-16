@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -84,19 +85,28 @@ public class SparkStageExecutorFactory {
         if (profile.isRemoteCluster()) {
             Map<String, String> confs = new LinkedHashMap<>();
             if (profile.hiveJdbcUrl() != null && !profile.hiveJdbcUrl().isBlank()) {
-                confs.put("hive.metastore.uris", profile.hiveJdbcUrl());
+                confs.put("spark.hadoop.hive.metastore.uris", profile.hiveJdbcUrl());
             }
             return confs;
         }
         Map<String, String> confs = new LinkedHashMap<>();
         confs.put("spark.sql.warehouse.dir", fileUri(warehouseDir));
         confs.put("spark.sql.session.timeZone", "Asia/Shanghai");
+        // LOCAL/SINGLE_NODE 必须使用本次运行指定的嵌入式 Derby，而不能继承
+        // Spark/Hive 安装目录中的 hive-site.xml 所配置的远程 metastore URI。
+        // 显式置空可避免单机档案意外连接开发者机器上的共享 Hive 服务。
+        confs.put("spark.hadoop.hive.metastore.uris", "");
         // DEF-01：本机 hosts 把本机 IP(172.16.208.83) 反解为 host.docker.internal，Spark 自动探测的
         // driver host 随之变成该名字；local 模式下 executor 需从 spark://host.docker.internal:<port>/jars/
         // 拉作业 jar，连接不通即无限阻塞在 SparkContext 初始化（driver 僵死，平台只能等满超时）。
         // 本地档案显式钉死回环地址，与 hosts/DNS 现状解耦（集群档案不受影响）。
         confs.put("spark.driver.host", LOOPBACK);
         confs.put("spark.driver.bindAddress", LOOPBACK);
+        // Windows 本地模式下 Spark 3.5.1 卡在通过 driver RPC 复制用户 jar 的 NIO FileChannel 路径；
+        // 关闭 transferTo 后使用普通流拷贝。该设置只作用于本地/SINGLE_NODE，不影响远端集群档案。
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).startsWith("windows")) {
+            confs.put("spark.file.transferTo", "false");
+        }
         // 嵌入式 Derby 元数据库固定路径：跨 run / 跨进程一致（sci 建表与 odl 装载看到同一套表）
         confs.put("spark.hadoop.javax.jdo.option.ConnectionURL",
                 "jdbc:derby:" + absolute(metastoreDir).replace('\\', '/') + ";create=true");

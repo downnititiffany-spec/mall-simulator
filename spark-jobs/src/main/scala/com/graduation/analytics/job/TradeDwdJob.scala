@@ -146,6 +146,13 @@ object TradeDwdJob {
    *  - 实验 1：23 列同构表，`dt` 放第 19 项（STRING）⇒ 复现**逐字相同**的报错；
    *  - 实验 2：同一 SELECT 仅把 `dt` 移到末尾 ⇒ 写入成功，读回 `user_key=111/product_key=222/
    *    category_key=333/dt=20260901` 逐列落位正确。
+   *
+   * **S3-13 补显式列别名（无行为变化）**：本 SELECT 原有 4 项（`order_id`/`user_id`/`product_id`/`quantity`）
+   * 不带 `AS`，其列义**只**存在于 DDL 的列序里 —— 这正是上面那类位置错位"静态守卫无法核对"的原因
+   * （`DwdDimSchemaOwnerSpec` RED 实测：解析器只能对这四个元素抛"既无顶层 AS 别名也不是纯列引用"）。
+   * `INSERT … SELECT` 按**位置**对齐，别名对写入结果**惰性**：补别名前后 `DimDwdChainExecSpec` /
+   * `DwsAdsChainExecSpec` 的逐值断言不变即为实测依据。补上之后，整条投影的列序才可与所有者 DDL
+   * **逐位**对账（含动态分区列 `dt` 落在最末位这一条）。
    */
   def orderDetailInsertSql(ns: WarehouseNamespace, dimDt: String, sourceSystem: String): String = {
     val orderKey = IdCodec.toBIGINT("t.order_id")
@@ -157,11 +164,11 @@ object TradeDwdJob {
     val productSurrogate = SurrogateKey.toBIGINT(src, "product", "t.product_id")
     s"""INSERT OVERWRITE TABLE ${ns.dwd}.dwd_order_detail PARTITION (dt)
        |SELECT
-       |  $orderKey,
-       |  $userKey,
-       |  CASE WHEN t.product_id = '' THEN -1 ELSE $productKey END,
+       |  $orderKey AS order_id,
+       |  $userKey AS user_id,
+       |  CASE WHEN t.product_id = '' THEN -1 ELSE $productKey END AS product_id,
        |  COALESCE(p.category_id, -1) AS category_id,
-       |  CAST(t.quantity AS INT),
+       |  CAST(t.quantity AS INT) AS quantity,
        |  t.unit_price, t.discount, t.amount,
        |  t.status AS order_status,
        |  TO_TIMESTAMP(t.order_time) AS order_time,

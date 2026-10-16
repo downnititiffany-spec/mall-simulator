@@ -8,13 +8,12 @@ import com.graduation.analytics.ingestion.entity.QuarantineRecord;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import com.graduation.analytics.common.TraceContext;
-import com.graduation.analytics.mapper.MapperOutcome;
-import com.graduation.analytics.mapper.MapperViolation;
-import com.graduation.analytics.mapper.MapperViolationCode;
-import com.graduation.analytics.mapper.PureMapper;
-import com.graduation.analytics.mapper.SourceProfile;
+import com.graduation.analytics.mapping.ingest.MappedLine;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
+import com.graduation.analytics.runtime.storage.LandingStorage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -31,9 +30,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
@@ -52,6 +48,12 @@ import java.util.zip.CRC32;
  * - 数据落地成功后 checkpoint 才推进（可恢复顺序）；at-least-once 重复投递由
  *   DWD 的 event_id 去重兜底。
  *
+ * <p><b>S2-02 起的第二道闸门</b>：本源若登记了可执行的 v2 画像，本类先把原始行交给
+ * {@link SourceMapper}（raw → canonical 或隔离），**再**让 canonical 产物过
+ * {@link EventContractValidator}——两道闸门串行，顺序不能颠倒：raw 行用的是源侧字段名，
+ * 契约校验器把它当 canonical 读只会得到"缺失必要字段: event_id"，全量隔离等于静默丢数据。
+ * v1 只读兼容画像走 {@link SourceMapping#legacy()} 直通，行为与 S2-01 之前逐字节一致。</p>
+ *
  * <p><b>源从哪来</b>：本类不依赖源登记（不注入 {@code SourceRegistryService}）——源由调用方
  * 解析后**显式传入**，与 {@code runtimeProfileId} 同样的处理方式。这样"写入用的源"和
  * "查询用的源"必然是同一个值，不会出现"写 A 查 B"这类只有并发时才暴露的错配；
@@ -59,88 +61,178 @@ import java.util.zip.CRC32;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class LocalFileIngestor {
 
     private static final byte LF = 10;
     private static final byte CR = 13;
 
+    @FunctionalInterface
+    private interface InputOpener {
+        LandingStorage.SeekableInput open() throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface OutputOpener {
+        OutputStream open() throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface IoAction {
+        void run() throws IOException;
+    }
+
     private final FileCheckpointMapper checkpointMapper;
     private final QuarantineRecordMapper quarantineRecordMapper;
     private final EventContractValidator validator;
     private final ObjectMapper objectMapper;
-    private final PureMapper pureMapper;
-
-    public LocalFileIngestor(FileCheckpointMapper checkpointMapper,
-                             QuarantineRecordMapper quarantineRecordMapper,
-                             EventContractValidator validator,
-                             ObjectMapper objectMapper) {
-        this(checkpointMapper, quarantineRecordMapper, validator, objectMapper, new PureMapper());
-    }
-
-    @Autowired
-    public LocalFileIngestor(FileCheckpointMapper checkpointMapper,
-                             QuarantineRecordMapper quarantineRecordMapper,
-                             EventContractValidator validator,
-                             ObjectMapper objectMapper,
-                             PureMapper pureMapper) {
-        this.checkpointMapper = checkpointMapper;
-        this.quarantineRecordMapper = quarantineRecordMapper;
-        this.validator = validator;
-        this.objectMapper = objectMapper;
-        this.pureMapper = pureMapper != null ? pureMapper : new PureMapper();
-    }
+    /**
+     * 逐行映射器（S2-02）。采集器**不认识**画像：它只知道"本轮的映射绑定是什么"
+     * （{@link SourceMapping}，由编排层在本轮开始前定妥），因此装载/激活判定不在这里重复。
+     */
+    private final SourceMapper sourceMapper;
 
     /**
-     * 采集一个文件从断点之后的新内容（字节偏移）。
+     * 采集一个文件从断点之后的新内容（字节偏移），按 {@code mapping} 决定是否逐行映射（S2-02）。
+     *
+     * <p><b>签名里不允许出现"少一个参数"的重载</b>：本方法**唯一**，且同时强制
+     * {@code sourceId}（D-037 裁决 1：断点按源隔离）与 {@code mapping}（"没传映射"与"故意不映射"
+     * 必须由调用点显式声明，不能靠默认值兜底）。给 S2-02 之前的八参形态留一个转 legacy 的便捷重载
+     * 看似无害，实则是把"跳过映射"变成一个静默默认值——已有守卫用例
+     * {@code LocalFileIngestorSourceIsolationTest.noSourceLessOverloadExists} 正是为了防止这种重载增殖。</p>
      *
      * @param runtimeProfileId 归属运行环境
      * @param sourceId         归属数据源（{@code source_registry.id}，**必填**）：
      *                         断点按源隔离（D-037 裁决 1），缺省就会造出"来源不明"的断点行
+     * @param mapping          本轮本源的映射绑定：{@link SourceMapping#legacy()} 表示不映射（v1 兼容画像直通），
+     *                         否则每一行先经 {@link SourceMapper#map} 再落盘。**不能传 null**
      * @return 文件级结果
      */
     public FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
-                                 CRC32 checksum) {
-        return ingestFile(file, batchId, runtimeProfileId, sourceId, acceptedDir, quarantineDir, trace, checksum, null);
+                                 CRC32 checksum, SourceMapping mapping) {
+        return ingestFile(file, batchId, runtimeProfileId, sourceId, acceptedDir, quarantineDir,
+                trace, checksum, mapping, true);
     }
 
-    public FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
-                                 Path acceptedDir, Path quarantineDir, TraceContext trace,
-                                 CRC32 checksum, SourceProfile profile) {
-        String abs = checkpointKey(file);
-        String identity = fileIdentity(file);
-        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, abs);
-        long size = sizeOf(file);
+    /**
+     * 采集但暂不推进断点。批次编排器在所有文件成功且 READY manifest 已原子发布后，
+     * 才能调用 {@link #commitCheckpoint(Path, long, long, FileResult)}。
+     * manifest 发布失败时保留旧断点，让下一批次从源文件重读；未发布的 accepted 目录只是孤儿证据，
+     * 不会被 ODS 扫描。重读产生的重复事件由 DWD event_id 幂等去重。
+     */
+    public FileResult ingestFileDeferredCheckpoint(Path file, long batchId, long runtimeProfileId, long sourceId,
+                                                    Path acceptedDir, Path quarantineDir, TraceContext trace,
+                                                    CRC32 checksum, SourceMapping mapping) {
+        return ingestFile(file, batchId, runtimeProfileId, sourceId, acceptedDir, quarantineDir,
+                trace, checksum, mapping, false);
+    }
+
+    private FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
+                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
+                                  CRC32 checksum, SourceMapping mapping, boolean commitCheckpoint) {
+        String acceptedName = file.getFileName().toString();
+        return ingestFile(checkpointKey(file), acceptedName, fileIdentity(file), sizeOf(file),
+                () -> seekable(file),
+                () -> Files.newOutputStream(acceptedDir.resolve(acceptedName),
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND),
+                () -> Files.newOutputStream(quarantineDir.resolve(acceptedName),
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND),
+                quarantineDir.resolve(acceptedName).toString(),
+                () -> {
+                    Files.createDirectories(acceptedDir);
+                    Files.createDirectories(quarantineDir);
+                }, batchId, runtimeProfileId, sourceId, trace, checksum, mapping, commitCheckpoint);
+    }
+
+    /** 存储无关的文件采集入口；相同映射、契约校验、尾行和断点策略同时服务本地与 HDFS。 */
+    public FileResult ingestFileDeferredCheckpoint(LandingStorage storage, String relativePath,
+                                                    long batchId, long runtimeProfileId, long sourceId,
+                                                    String acceptedDir, String quarantineDir,
+                                                    TraceContext trace, CRC32 checksum, SourceMapping mapping) {
+        return ingestStorageFile(storage, relativePath, batchId, runtimeProfileId, sourceId,
+                acceptedDir, quarantineDir, trace, checksum, mapping, false);
+    }
+
+    public void commitCheckpoint(LandingStorage storage, String relativePath, long runtimeProfileId,
+                                 long sourceId, FileResult result) {
+        if (result.endOffset() > result.startOffset() || result.collected() > 0 || result.quarantined() > 0) {
+            upsertCheckpoint(runtimeProfileId, sourceId, storage.checkpointKey(relativePath),
+                    result.fileIdentity(), result.endOffset());
+        }
+    }
+
+    public boolean hasConsumableData(LandingStorage storage, String relativePath,
+                                     long runtimeProfileId, long sourceId) {
+        LandingStorage.FileStat stat = storage.stat(relativePath);
+        if (stat == null || stat.directory() || stat.size() <= 0L) {
+            return false;
+        }
+        String key = storage.checkpointKey(relativePath);
+        FileCheckpoint checkpoint = findCheckpoint(runtimeProfileId, sourceId, key);
+        long end = consumableEnd(storage, relativePath, stat.size());
+        if (end <= 0) {
+            return false;
+        }
+        if (checkpoint == null) {
+            return true;
+        }
+        Long next = checkpoint.getNextOffset();
+        return next == null || !storage.fileIdentity(relativePath).equals(checkpoint.getFileIdentity())
+                || stat.size() < next || end > next;
+    }
+
+    private FileResult ingestStorageFile(LandingStorage storage, String relativePath,
+                                         long batchId, long runtimeProfileId, long sourceId,
+                                         String acceptedDir, String quarantineDir,
+                                         TraceContext trace, CRC32 checksum, SourceMapping mapping,
+                                         boolean commitCheckpoint) {
+        LandingStorage.FileStat stat = storage.stat(relativePath);
+        if (stat == null || stat.directory()) {
+            throw new IllegalStateException("Landing 输入文件不存在或不是普通文件: " + relativePath);
+        }
+        String fileName = relativePath.substring(relativePath.lastIndexOf('/') + 1);
+        String acceptedPath = acceptedDir + "/" + fileName;
+        String quarantinePath = quarantineDir + "/" + fileName;
+        return ingestFile(storage.checkpointKey(relativePath), fileName, storage.fileIdentity(relativePath), stat.size(),
+                () -> storage.openSeekable(relativePath),
+                () -> storage.createOrAppend(acceptedPath),
+                () -> storage.createOrAppend(quarantinePath), storage.uri(quarantinePath),
+                () -> {
+                    storage.createDirectories(acceptedDir);
+                    storage.createDirectories(quarantineDir);
+                }, batchId, runtimeProfileId, sourceId, trace, checksum, mapping, commitCheckpoint);
+    }
+
+    private FileResult ingestFile(String checkpointKey, String fileName, String identity, long size,
+                                  InputOpener inputOpener, OutputOpener acceptedOpener,
+                                  OutputOpener quarantineOpener, String quarantineReference,
+                                  IoAction prepareOutputs, long batchId, long runtimeProfileId,
+                                  long sourceId, TraceContext trace, CRC32 checksum,
+                                  SourceMapping mapping, boolean commitCheckpoint) {
+        if (checkpointKey == null || checkpointKey.length() > 500) {
+            throw new IllegalArgumentException("checkpoint key 必须在 file_checkpoint.file_path VARCHAR(500) 范围内");
+        }
+        FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, checkpointKey);
         // 文件版本变化或 size 小于偏移（被截断）→ 新版本从头读取，不沿用旧偏移（§9.2）
         boolean newVersion = ckpt == null || !identity.equals(ckpt.getFileIdentity()) || size < ckpt.getNextOffset();
         long startOffset = newVersion ? 0 : ckpt.getNextOffset();
         if (!newVersion && startOffset >= size) {
-            return result(file, startOffset, startOffset, identity, 0, 0, 0, Set.of(), 0, 0, 0, 0, Map.of());
+            return result(fileName, startOffset, startOffset, identity, 0, 0, 0, Set.of());
         }
 
         long collected = 0;
         long quarantined = 0;
         long acceptedBytes = 0;
         long endOffset = startOffset;
-        long totalRows = 0;
-        long canonicalRows = 0;
-        long validatorAccepted = 0;
-        long strictContractAccepted = 0;
-        Map<String, Long> unresolvedEnumCounts = new LinkedHashMap<>();
         Set<String> schemaVersions = new HashSet<>();
         try {
-            Files.createDirectories(acceptedDir);
-            Files.createDirectories(quarantineDir);
-            Path acceptedFile = acceptedDir.resolve(file.getFileName().toString());
-            Path quarantineFile = quarantineDir.resolve(file.getFileName().toString());
+            prepareOutputs.run();
+            try (LandingStorage.SeekableInput channel = inputOpener.open();
+                 OutputStream acceptedOut = acceptedOpener.open();
+                 OutputStream quarantineOut = quarantineOpener.open()) {
 
-            try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ);
-                 OutputStream acceptedOut = Files.newOutputStream(acceptedFile,
-                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-                 OutputStream quarantineOut = Files.newOutputStream(quarantineFile,
-                         StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
-
-                channel.position(startOffset);
+                channel.seek(startOffset);
                 ByteBuffer buf = ByteBuffer.allocate(64 * 1024);
                 ByteArrayOutputStream line = new ByteArrayOutputStream(1024);
 
@@ -152,7 +244,7 @@ public class LocalFileIngestor {
                 outer:
                 while (true) {
                     buf.clear();
-                    int n = channel.read(buf);
+                    int n = channel.read(buf.array(), 0, buf.remaining());
                     if (n == -1) {
                         eof = true;
                         break;
@@ -160,7 +252,8 @@ public class LocalFileIngestor {
                     if (n == 0) {
                         continue;
                     }
-                    buf.flip();
+                    buf.limit(n);
+                    buf.position(0);
                     while (buf.hasRemaining()) {
                         byte b = buf.get();
                         consumed++;
@@ -172,96 +265,50 @@ public class LocalFileIngestor {
                                 len--;
                             }
                             String text = new String(raw, 0, len, StandardCharsets.UTF_8);
-
-                            if (profile == null) {
-                                // 兼容历史直接校验逻辑
-                                totalRows++;
-                                EventContractValidator.Violation v = validator.check(text, 0);
-                                if (v == null) {
-                                    byte[] out = (text + "\n").getBytes(StandardCharsets.UTF_8);
-                                    acceptedOut.write(out);
-                                    acceptedBytes += out.length;
-                                    if (checksum != null) {
-                                        checksum.update(out);
-                                    }
-                                    collected++;
-                                    canonicalRows++;
-                                    validatorAccepted++;
-                                    strictContractAccepted++;
-                                    schemaVersions.add(schemaVersionOf(text));
+                            // S2-02：两道闸门**串行**——映射（可选）在前，canonical 契约在后。
+                            // decision 是要落盘的文本：映射生效时是 canonical 行，否则就是原始行。
+                            String decision = text;
+                            String reason = null;          // 非空 ⇒ 隔离，且已是终态原因
+                            String eventId = null;
+                            String schemaVersion = null;
+                            if (mapping.applied()) {
+                                MappedLine mapped = sourceMapper.map(mapping, text);
+                                if (mapped.accepted()) {
+                                    decision = mapped.canonicalText();
                                 } else {
-                                    quarantineOut.write(raw);
-                                    quarantineOut.write(LF);
-                                    QuarantineRecord record = new QuarantineRecord();
-                                    record.setBatchId(batchId);
-                                    record.setEventId(v.eventId());
-                                    record.setSchemaVersion(v.schemaVersion());
-                                    record.setReason(v.reason());
-                                    record.setRawPath(quarantineFile.toString());
-                                    quarantineRecordMapper.insert(record);
-                                    quarantined++;
+                                    // 映射判死：原因来自映射器。event_id/schema_version 留 null——
+                                    // raw 行用源侧字段名，取不到就别猜（DDL 注释：能解析出则填）。
+                                    reason = mapped.quarantineReason();
                                 }
+                            }
+                            if (reason == null) {
+                                EventContractValidator.Violation v = validator.check(decision, 0);
+                                if (v != null) {
+                                    reason = v.reason();
+                                    eventId = v.eventId();
+                                    schemaVersion = v.schemaVersion();
+                                }
+                            }
+                            if (reason == null) {
+                                byte[] out = (decision + "\n").getBytes(StandardCharsets.UTF_8);
+                                acceptedOut.write(out);
+                                acceptedBytes += out.length;
+                                if (checksum != null) {
+                                    checksum.update(out);
+                                }
+                                collected++;
+                                schemaVersions.add(schemaVersionOf(decision));
                             } else {
-                                // WP-2B / Q6 裁决：PureMapper 映射 + EventContractValidator 正式门
-                                totalRows++;
-                                MapperOutcome outcome = pureMapper.map(text, profile);
-                                if (outcome instanceof MapperOutcome.Quarantined q) {
-                                    quarantineOut.write(raw);
-                                    quarantineOut.write(LF);
-                                    QuarantineRecord record = new QuarantineRecord();
-                                    record.setBatchId(batchId);
-                                    record.setEventId(extractField(text, "event_id", "msg_id"));
-                                    record.setSchemaVersion(extractField(text, "schema_version", "contract_rev"));
-                                    if (record.getSchemaVersion() == null) {
-                                        record.setSchemaVersion(profile.canonicalSchemaVersion());
-                                    }
-                                    String reason = formatQuarantineReason(q.violations());
-                                    record.setReason(reason);
-                                    record.setRawPath(quarantineFile.toString());
-                                    quarantineRecordMapper.insert(record);
-                                    quarantined++;
-                                } else if (outcome instanceof MapperOutcome.Canonical c) {
-                                    canonicalRows++;
-                                    String canonicalJson = c.canonicalRecord().toString();
-                                    EventContractValidator.Violation v = validator.check(canonicalJson, (int) totalRows);
-                                    if (v != null) {
-                                        // 映射成功但未通过校验器闸门
-                                        quarantineOut.write(raw);
-                                        quarantineOut.write(LF);
-                                        QuarantineRecord record = new QuarantineRecord();
-                                        record.setBatchId(batchId);
-                                        record.setEventId(v.eventId() != null ? v.eventId() : extractField(canonicalJson, "event_id"));
-                                        record.setSchemaVersion(v.schemaVersion() != null ? v.schemaVersion() : profile.canonicalSchemaVersion());
-                                        record.setReason(v.reason());
-                                        record.setRawPath(quarantineFile.toString());
-                                        quarantineRecordMapper.insert(record);
-                                        quarantined++;
-                                    } else {
-                                        // 正式采集门通过：写入 accepted 输出
-                                        validatorAccepted++;
-                                        boolean hasUnresolved = c.unresolvedEnumWarnings().stream()
-                                                .anyMatch(w -> w.code() == MapperViolationCode.ENUM_UNRESOLVED);
-                                        if (!hasUnresolved) {
-                                            strictContractAccepted++;
-                                        }
-                                        byte[] out = (canonicalJson + "\n").getBytes(StandardCharsets.UTF_8);
-                                        acceptedOut.write(out);
-                                        acceptedBytes += out.length;
-                                        if (checksum != null) {
-                                            checksum.update(out);
-                                        }
-                                        collected++;
-                                        schemaVersions.add(schemaVersionOf(canonicalJson));
-                                    }
-
-                                    // 统计未定枚举计数（Rule-12）
-                                    for (MapperViolation w : c.unresolvedEnumWarnings()) {
-                                        if (w.code() == MapperViolationCode.ENUM_UNRESOLVED && w.rawValue() != null) {
-                                            String key = w.fieldPath() + "=" + w.rawValue();
-                                            unresolvedEnumCounts.merge(key, 1L, Long::sum);
-                                        }
-                                    }
-                                }
+                                quarantineOut.write(raw);
+                                quarantineOut.write(LF);
+                                QuarantineRecord record = new QuarantineRecord();
+                                record.setBatchId(batchId);
+                                record.setEventId(eventId);
+                                record.setSchemaVersion(schemaVersion);
+                                record.setReason(reason);
+                                record.setRawPath(quarantineReference);
+                                quarantineRecordMapper.insert(record);
+                                quarantined++;
                             }
                             // 行起点推进到 LF 之后
                             consumedAtLineStart = consumed;
@@ -284,23 +331,44 @@ public class LocalFileIngestor {
                 } else {
                     // 尾部残行（无换行）：不消费，偏移停在最后一个完整行之后（Taildir 语义）
                     endOffset = startOffset + consumedAtLineStart;
-                    log.info("ingest {}: 尾部残行 {} 字节留待文件增长", file.getFileName(), line.size());
+                    log.info("ingest {}: 尾部残行 {} 字节留待文件增长", fileName, line.size());
                 }
                 acceptedOut.flush();
                 quarantineOut.flush();
             }
-            // 落地成功后才推进 checkpoint（可恢复顺序，§9.2）
-            if (endOffset > startOffset || collected > 0 || quarantined > 0) {
-                upsertCheckpoint(runtimeProfileId, sourceId, abs, identity, endOffset);
+            // 单文件调用保持既有行为；批次编排调用 deferred 变体，待完整 manifest 发布后再推进。
+            if (commitCheckpoint && (endOffset > startOffset || collected > 0 || quarantined > 0)) {
+                upsertCheckpoint(runtimeProfileId, sourceId, checkpointKey, identity, endOffset);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("采集失败: " + file, e);
+            throw new UncheckedIOException("采集失败: " + checkpointKey, e);
         }
         log.info("ingest {}: collected={} quarantined={} acceptedBytes={} offset {}→{} identity={}",
-                file.getFileName(), collected, quarantined, acceptedBytes, startOffset, endOffset, identity);
-        return result(file, startOffset, endOffset, identity, collected, quarantined,
-                acceptedBytes, schemaVersions, totalRows, canonicalRows, validatorAccepted,
-                strictContractAccepted, unresolvedEnumCounts);
+                fileName, collected, quarantined, acceptedBytes, startOffset, endOffset, identity);
+        return result(fileName, startOffset, endOffset, identity, collected, quarantined,
+                acceptedBytes, schemaVersions);
+    }
+
+    private static LandingStorage.SeekableInput seekable(Path file) throws IOException {
+        FileChannel channel = FileChannel.open(file, StandardOpenOption.READ);
+        return new LandingStorage.SeekableInput() {
+            @Override public void seek(long offset) throws IOException { channel.position(offset); }
+            @Override public int read(byte[] buffer, int offset, int length) throws IOException {
+                return channel.read(ByteBuffer.wrap(buffer, offset, length));
+            }
+            @Override public long length() throws IOException { return channel.size(); }
+            @Override public void close() throws IOException { channel.close(); }
+        };
+    }
+
+    /** READY manifest 发布成功后确认文件级断点，保证未发布批次可从源文件重放。 */
+    public void commitCheckpoint(Path file, long runtimeProfileId, long sourceId, FileResult result) {
+        if (result.endOffset() > result.startOffset()
+                || result.collected() > 0
+                || result.quarantined() > 0) {
+            upsertCheckpoint(runtimeProfileId, sourceId, checkpointKey(file),
+                    result.fileIdentity(), result.endOffset());
+        }
     }
 
     private static FileResult result(Path file, long start, long end, String identity,
@@ -310,46 +378,10 @@ public class LocalFileIngestor {
                 collected, quarantined, acceptedBytes, schemaVersions);
     }
 
-    private static FileResult result(Path file, long start, long end, String identity,
+    private static FileResult result(String fileName, long start, long end, String identity,
                                      long collected, long quarantined, long acceptedBytes,
-                                     Set<String> schemaVersions, long totalRows, long canonicalRows,
-                                     long validatorAccepted, long strictContractAccepted,
-                                     Map<String, Long> unresolvedEnumCounts) {
-        return new FileResult(file.getFileName().toString(), start, end, identity,
-                collected, quarantined, acceptedBytes, schemaVersions,
-                totalRows, canonicalRows, validatorAccepted, strictContractAccepted, unresolvedEnumCounts);
-    }
-
-    private String formatQuarantineReason(List<MapperViolation> violations) {
-        if (violations == null || violations.isEmpty()) {
-            return "MAPPER_QUARANTINE";
-        }
-        return violations.stream()
-                .map(v -> {
-                    String prefix = v.code() != null ? v.code().name() : "VIOLATION";
-                    if (v.detail() != null && !v.detail().isBlank()) {
-                        return prefix + ": " + v.detail();
-                    }
-                    return prefix;
-                })
-                .collect(Collectors.joining("; "));
-    }
-
-    private String extractField(String json, String... candidates) {
-        if (json == null || json.isBlank()) {
-            return null;
-        }
-        try {
-            JsonNode node = objectMapper.readTree(json);
-            for (String c : candidates) {
-                JsonNode v = node.get(c);
-                if (v != null && !v.isNull() && !v.asText().isBlank()) {
-                    return v.asText();
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
+                                     Set<String> schemaVersions) {
+        return new FileResult(fileName, start, end, identity, collected, quarantined, acceptedBytes, schemaVersions);
     }
 
     /**
@@ -383,6 +415,10 @@ public class LocalFileIngestor {
         return canonical(file.toAbsolutePath().toString());
     }
 
+    public String checkpointKeyFor(LandingStorage storage, String relativePath) {
+        return storage.checkpointKey(relativePath);
+    }
+
     /**
      * 键的规范形式：去掉 {@code ./}、{@code ../} 与重复分隔符。
      *
@@ -406,8 +442,12 @@ public class LocalFileIngestor {
                         .eq(FileCheckpoint::getRuntimeProfileId, runtimeProfileId)
                         .eq(FileCheckpoint::getSourceId, sourceId))
                 .stream()
-                .map(ckpt -> canonical(ckpt.getFilePath()))
+                .map(ckpt -> canonicalCheckpointKey(ckpt.getFilePath()))
                 .collect(Collectors.toSet());
+    }
+
+    private static String canonicalCheckpointKey(String key) {
+        return key != null && key.startsWith("hdfs://") ? key : canonical(key);
     }
 
     private void upsertCheckpoint(long runtimeProfileId, long sourceId, String absPath,
@@ -499,6 +539,41 @@ public class LocalFileIngestor {
         return 0;   // 整个文件没有任何换行 → 没有完整行
     }
 
+    private static long consumableEnd(LandingStorage storage, String relativePath, long size) {
+        if (size <= 0L) {
+            return 0L;
+        }
+        byte[] buffer = new byte[64 * 1024];
+        try (LandingStorage.SeekableInput input = storage.openSeekable(relativePath)) {
+            long position = size;
+            while (position > 0) {
+                int length = (int) Math.min(buffer.length, position);
+                long start = position - length;
+                input.seek(start);
+                int read = 0;
+                while (read < length) {
+                    int count = input.read(buffer, read, length - read);
+                    if (count < 0) {
+                        break;
+                    }
+                    if (count == 0) {
+                        continue;
+                    }
+                    read += count;
+                }
+                for (int i = read - 1; i >= 0; i--) {
+                    if (buffer[i] == LF) {
+                        return start + i + 1;
+                    }
+                }
+                position = start;
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("读取 Landing 可消费边界失败: " + relativePath, e);
+        }
+        return 0L;
+    }
+
     /**
      * 该文件是否还有**可被本次采集消费**的数据（B-08 / D-022 候选①：数据源停机时的"最小明示"）。
      *
@@ -539,14 +614,6 @@ public class LocalFileIngestor {
 
     /** 文件级采集结果 */
     public record FileResult(String filePath, long startOffset, long endOffset, String fileIdentity,
-                             long collected, long quarantined, long acceptedBytes, Set<String> schemaVersions,
-                             long totalRows, long canonicalRows, long validatorAccepted,
-                             long strictContractAccepted, Map<String, Long> unresolvedEnumCounts) {
-
-        public FileResult(String filePath, long startOffset, long endOffset, String fileIdentity,
-                          long collected, long quarantined, long acceptedBytes, Set<String> schemaVersions) {
-            this(filePath, startOffset, endOffset, fileIdentity, collected, quarantined, acceptedBytes,
-                    schemaVersions, collected + quarantined, collected, collected, collected, Map.of());
-        }
+                             long collected, long quarantined, long acceptedBytes, Set<String> schemaVersions) {
     }
 }

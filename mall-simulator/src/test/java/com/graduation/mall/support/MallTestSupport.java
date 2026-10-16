@@ -13,6 +13,7 @@ import com.graduation.mall.domain.mapper.CartItemMapper;
 import com.graduation.mall.domain.mapper.EventOutboxMapper;
 import com.graduation.mall.domain.mapper.InventoryMapper;
 import com.graduation.mall.domain.mapper.MallOrderMapper;
+import com.graduation.mall.domain.mapper.MallRequestIdempotencyMapper;
 import com.graduation.mall.domain.mapper.MallUserMapper;
 import com.graduation.mall.domain.mapper.OrderItemMapper;
 import com.graduation.mall.domain.mapper.PaymentMapper;
@@ -63,6 +64,8 @@ public abstract class MallTestSupport {
     @Autowired
     private MallOrderMapper mallOrderMapper;
     @Autowired
+    private MallRequestIdempotencyMapper requestIdempotencyMapper;
+    @Autowired
     private OrderItemMapper orderItemMapper;
     @Autowired
     private PaymentMapper paymentMapper;
@@ -93,6 +96,7 @@ public abstract class MallTestSupport {
         MallIsolationGuard.verifyBeforeWrite(dataSource, "MallTestSupport.freshState");
         LANDING.set(Files.createTempDirectory("mall-landing-"));
         eventOutboxMapper.delete(null);
+        requestIdempotencyMapper.delete(null);
         mallOrderMapper.delete(null);
         orderItemMapper.delete(null);
         paymentMapper.delete(null);

@@ -10,22 +10,21 @@ import com.graduation.analytics.contracts.EventClock;
 import com.graduation.analytics.common.LandingUri;
 import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
+import com.graduation.analytics.landing.LandingInputScanner;
+import com.graduation.analytics.landing.LandingLayout;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
+import com.graduation.analytics.runtime.storage.LandingStorage;
+import com.graduation.analytics.runtime.storage.LandingStorageResolver;
 import com.graduation.analytics.source.SourceRegistryService;
 import com.graduation.analytics.source.dto.SourceRegistryView;
-import com.graduation.analytics.mapper.RepoPathLocator;
-import com.graduation.analytics.mapper.SourceProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -45,7 +44,11 @@ import java.util.zip.CRC32;
  *   由 {@link SourceRegistryService#currentSourceId()} 单点解析；**未绑定源即 fail-closed**
  *   （{@link PlatformBizException#SOURCE_NOT_BOUND}，绝不回落到某个固定源）；
  * - 输出目录职责（§9.1）：landing/accepted/{batchId} 校验通过、landing/quarantine/{batchId} 坏行、
- *   landing/manifests/{batchId}.json 批次清单（状态 READY，§9.3）；
+ *   landing/manifests/{batchId}.json 批次清单（状态 READY，§9.3；**只有 errorCount=0 的批次才产出**——
+ *   见 {@code runOne} 清单段：清单存在即"可交付"，失败批次不得发布半成品，S2-02B）；
+ * - S2-02B 失败三分类（互不伪装）：① 映射/业务数据问题 ⇒ 隔离行 + {@code reason}，批次 QUARANTINED；
+ *   ② canonical 契约不满足 ⇒ 隔离行 + 契约校验器原因（无 {@code MAPPING:} 前缀），批次 QUARANTINED；
+ *   ③ 系统自身异常 ⇒ 该文件记 errorCount、批次 FAILED、**断点不推进**、不产出清单；
  * - ODS 只能读取 accepted，禁止直接读 source/events（§9.1）。
  */
 @Slf4j
@@ -54,6 +57,9 @@ import java.util.zip.CRC32;
 public class IngestionService {
 
     private static final DateTimeFormatter BATCH_NO = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    private record PendingCheckpoint(Path localFile, String relativePath, LocalFileIngestor.FileResult result) {
+    }
 
     private final IngestionBatchMapper batchMapper;
     private final IngestionBatchFileMapper batchFileMapper;
@@ -67,6 +73,11 @@ public class IngestionService {
      */
     private final SourceRegistryService sourceRegistryService;
     private final ObjectMapper objectMapper;
+    /**
+     * 真实采集的映射适配器（S2-02）。装载**必须在任何写入之前**完成：画像不可用就整轮拒绝，
+     * 而不是写一半再发现"这一批根本没有可用的映射"。
+     */
+    private final SourceMapper sourceMapper;
 
     /**
      * 一轮采集的结果。
@@ -74,6 +85,10 @@ public class IngestionService {
      * <p>B-08 / D-022 候选①（最小明示）：{@code noNewData=true} 表示本次**没有读到任何新字节**
      * ——数据源停机时平台据此明示"本次无新数据（数据源未产出）"，而不是只回一个 {@code SUCCESS + 0 条}。
      * 判定口径不变（批次状态仍按错误/隔离行决定），不探活生产者、不新增外部依赖。</p>
+     *
+     * <p>S2-02B：{@code manifestPath} 在 {@code status=FAILED} 时为 {@code null}——失败批次不产出清单
+     * （清单 schema 的 {@code status} 是 {@code const "READY"}，清单存在即断言可交付）。
+     * 调用方不得把 null 当成"清单写失败"，它是"本轮不可交付"的正式表达。</p>
      */
     public record RunResult(Long batchId, String batchNo, String status,
                             long recordCount, long quarantineCount, long errorCount,
@@ -89,8 +104,17 @@ public class IngestionService {
      * 且拒绝发生在**任何写入之前**——批次行、accepted/quarantine 目录、清单都不产生。
      * 这样库里不会出现 source_id 为空的新行（与 V17 回填过的历史行混在一起就再也分不清
      * "历史未标注"和"新代码没写"）。</p>
+     *
+     * <p>S2-02：映射绑定与源解析同样是"拒绝发生在任何写入之前"的一环——画像缺失/不可读/与登记源
+     * 不一致（{@code MAPPING_PROFILE_INVALID}）或可装载但禁止激活（{@code MAPPING_PROFILE_BLOCKED}）
+     * 都在批次行 insert 之前抛出，因此库里不会出现"批次已建但一行都没映射"的残批。</p>
      */
     public RunResult runOne(TraceContext trace) {
+        return runOne(trace, null);
+    }
+
+    /** Package-private storage seam for deterministic orchestration tests without a live NameNode. */
+    RunResult runOne(TraceContext trace, LandingStorage storageOverride) {
         RuntimeProfile active = runtimeProfileService.getActive();
         long runtimeProfileId = active.getId();
         long sourceId = requireBoundSourceId(runtimeProfileId);
@@ -98,8 +122,20 @@ public class IngestionService {
         //   sourceCode / profileVersion 取 source_registry 的**列**（D-037 裁决 8：不解析画像 JSON 反推版本，
         //   那是第二个所有者，且画像文件在本轮尚未交付）；sourceId 取上面解析出的激活源。
         SourceRegistryView source = requireSourceView(sourceId);
-        Path landingRoot = LandingUri.resolve(active.getLandingUri());
-        Path eventsDir = landingRoot.resolve("events");
+        // S2-02：本轮映射绑定在**批次行 insert 之前**定妥（fail-closed 三态见 SourceMapper.prepare）：
+        //   画像非法/缺失/与登记源不一致 → MAPPING_PROFILE_INVALID；可装载但禁止激活 → MAPPING_PROFILE_BLOCKED；
+        //   v1 只读兼容画像 → 不映射（SourceMapping.legacy()），既有采集链路行为不变。
+        // 一轮只装载一次：批内文件必须用同一份映射，中途改画像会让同一批次里的行语义不一致。
+        SourceMapping mapping = sourceMapper.prepare(source);
+        LandingStorage storage = storageOverride == null
+                ? LandingStorageResolver.forProfile(active) : storageOverride;
+        boolean localStorage = "local".equals(storage.type());
+        Path localLandingRoot = localStorage ? LandingUri.resolve(active.getLandingUri()) : null;
+        // S2-04B（§8.2）：输入根由**布局**决定：滚动日志＝<landing>/events（一层、*.jsonl，
+        // V2 起的既有语义）；Flume 目标区＝<landing>/raw（递归，dt=/hour= 是目录层级）。
+        // 布局未配置（V22 之前的存量行）等价于滚动日志——不得因为新增一列而改变存量环境的读法。
+        LandingLayout layout = LandingLayout.effective(active.getLandingLayout());
+        String inputRoot = layout.inputRoot("");
         // 批次号带随机后缀，避免同秒多次运行撞唯一键；时间取**注入的业务时间源**（§20.3 不把系统当前时间
         // 当业务时间），与批次 createdAt（startedAt，同一时间源）保持一致，冻结契约的 ^ing-\d{14}-[0-9a-f]{8}$ 不变
         String batchNo = "ing-" + BATCH_NO.format(eventClock.nowLdt())
@@ -118,9 +154,9 @@ public class IngestionService {
         batchMapper.insert(batch);
         String batchId = String.valueOf(batch.getId());
 
-        Path acceptedDir = landingRoot.resolve("accepted").resolve(batchId);
-        Path quarantineDir = landingRoot.resolve("quarantine").resolve(batchId);
-        batch.setLandingDir(acceptedDir.toString());
+        String acceptedDir = "accepted/" + batchId;
+        String quarantineDir = "quarantine/" + batchId;
+        batch.setLandingDir(storage.uri(acceptedDir));
         batchMapper.updateById(batch);
 
         long recordCount = 0;
@@ -131,27 +167,53 @@ public class IngestionService {
         CRC32 checksum = new CRC32();
         var schemaVersions = new TreeMap<String, Boolean>();
         var files = new ArrayList<Map<String, Object>>();
+        var pendingCheckpoints = new ArrayList<PendingCheckpoint>();
         boolean anyNewBytes = false;   // B-08：本次是否读到过新字节（含新增/重建/追加三种情形）
         LocalDateTime startedAt = eventClock.nowLdt();
         try {
-            Files.createDirectories(acceptedDir);
-            Files.createDirectories(quarantineDir);
-            Map<String, Path> hourFiles = new TreeMap<>(); // 文件名排序 → 确定性批次顺序
-            if (Files.isDirectory(eventsDir)) {
-                try (Stream<Path> s = Files.list(eventsDir)) {
-                    s.filter(p -> p.getFileName().toString().endsWith(".jsonl"))
-                            .forEach(p -> hourFiles.put(p.getFileName().toString(), p));
-                }
-            }
-            for (var entry : hourFiles.entrySet()) {
+            storage.createDirectories(acceptedDir);
+            storage.createDirectories(quarantineDir);
+            // S2-04B：枚举"哪些文件算本轮输入"的唯一所有者是 LandingInputScanner（§8.2 规则 4：
+            // in-use 临时文件不进清单，只枚举已完成文件）。它按 inputKey 升序返回 → 确定性批次顺序。
+            // 滚动日志布局下 inputKey 就是文件名，因此这里的顺序与既有 TreeMap<文件名> 完全一致。
+            for (LandingInputScanner.StoredFile entry : LandingInputScanner.scan(storage, inputRoot, layout)) {
+                String inputKey = entry.inputKey();
                 try {
                     // P1-05：逐文件复核"本轮归属的源"。批次行的 source_id 在开头就定了，
                     // 期间若有人切换激活源（D-035 只允许一个 ACTIVE 源），继续写就会把 B 源的
                     // 字节记进 A 源的批次、并把断点写到 A 源名下 —— 本次记 FAILED 并中断，
                     // 宁可这一轮失败，也不产出**归属错误**的批次（那是事后无法察觉的错账）。
-                    requireSourceUnchanged(runtimeProfileId, sourceId, entry.getKey().toString());
-                    var res = ingestor.ingestFile(entry.getValue(), batch.getId(), runtimeProfileId, sourceId,
-                            acceptedDir, quarantineDir, trace, checksum);
+                    requireSourceUnchanged(runtimeProfileId, sourceId, inputKey);
+                    // S2-02B（批次重放口径）：**同一批次不得二次消费同一输入**。
+                    // 判据不是新造的指纹，而是既有唯一键 uk_batch_file(batch_id, file_path) 已经写下的
+                    // 「本批次已 LANDED 该文件」这笔账（{@link IngestionBatchFile}，L186 就是它的写入点）：
+                    //   ① 已 LANDED + 无新内容 = 同批次、同输入的幂等重放 ⇒ 照常走，下游读到 0 条新记录；
+                    //   ② 已 LANDED + 有新内容（追加 / 重建）= 同批次换了输入 ⇒ **显式冲突**，
+                    //      这批字节不能再进本批次（那会产出既无法归属、也无法对账的重复行）。
+                    // 冲突按"本轮不得继续"处理：记 errorCount ⇒ 批次 FAILED ⇒（见下方清单段）不产出 READY 清单，
+                    // 因此半成品不会被下游当成本轮输入；重放须开新批次。
+                    // S2-04B：这笔账的 file_path 用**输入根相对键**（而非文件名）：嵌套布局下
+                    // "同名不同分区"必须是两个输入，否则第二个会撞唯一键并把整批拖成 FAILED。
+                    String fileName = inputKey;
+                    Long landed = batchFileMapper.selectCount(new LambdaQueryWrapper<IngestionBatchFile>()
+                            .eq(IngestionBatchFile::getBatchId, batch.getId())
+                            .eq(IngestionBatchFile::getFilePath, fileName));
+                    Path localFile = localStorage ? localLandingRoot.resolve(entry.relativePath()) : null;
+                    boolean consumable = localStorage
+                            ? ingestor.hasConsumableData(localFile, runtimeProfileId, sourceId)
+                            : ingestor.hasConsumableData(storage, entry.relativePath(), runtimeProfileId, sourceId);
+                    if (landed != null && landed > 0 && consumable) {
+                        throw new PlatformBizException(PlatformBizException.INGEST_BATCH_INPUT_CONFLICT,
+                                PlatformBizException.INGEST_BATCH_INPUT_CONFLICT + ": 批次 " + batchId
+                                        + " 已消费文件 " + fileName + "，本轮该文件又有新内容；"
+                                        + "同一批次不得二次消费同一输入（重放须开新批次）");
+                    }
+                    var res = localStorage
+                            ? ingestor.ingestFileDeferredCheckpoint(localFile, batch.getId(), runtimeProfileId,
+                                    sourceId, localLandingRoot.resolve(acceptedDir),
+                                    localLandingRoot.resolve(quarantineDir), trace, checksum, mapping)
+                            : ingestor.ingestFileDeferredCheckpoint(storage, entry.relativePath(), batch.getId(),
+                                    runtimeProfileId, sourceId, acceptedDir, quarantineDir, trace, checksum, mapping);
                     // endOffset > startOffset ⇒ 真实推进了断点（有新内容可读），与 fileCount 的
                     // "产出了记录"是两件事：全是坏行的文件同样说明数据源在产出（B-08 / D-022）
                     if (res.endOffset() > res.startOffset()) {
@@ -165,12 +227,22 @@ public class IngestionService {
                         res.schemaVersions().forEach(v -> schemaVersions.put(v, true));
                         IngestionBatchFile bf = new IngestionBatchFile();
                         bf.setBatchId(batch.getId());
-                        bf.setFilePath(res.filePath());
+                        // S2-04B：**账本**的 file_path 记输入根相对键（见上方 fileName 注释）——
+                        // ingestion_batch_file 不在 contract-specs 的既有契约里（README 列为
+                        // "V2.1 §5.2 待做"），因此这里的取值形状由本侧决定，嵌套布局才认得清分区。
+                        bf.setFilePath(inputKey);
                         bf.setStartOffset(res.startOffset());
                         bf.setEndOffset(res.endOffset());
                         bf.setRecordCount(res.collected());
                         bf.setStatus("LANDED");
                         batchFileMapper.insert(bf);
+                        pendingCheckpoints.add(new PendingCheckpoint(localFile, entry.relativePath(), res));
+                        // 清单的 files[].file 仍是**文件名**（res.filePath()＝FileResult 的既有语义）：
+                        // ingestion-manifest.v1.schema.json 明确写着「文件名（非绝对路径）」并引用
+                        // LocalFileIngestor 的 getFileName()，改它的取值域属于契约语义变更（真决策门）。
+                        // 代价是 **FLUME_RAW 布局下清单里可能出现同名条目**（不同分区同一天同一小时文件名
+                        // 相同）——这是**已登记的待裁决契约问题**（F-31），不是无声的取舍：
+                        // 账本已用相对键消歧，清单侧等裁决后再改一个表达式即可。
                         files.add(Map.of(
                                 "file", res.filePath(),
                                 "acceptedRecords", res.collected(),
@@ -180,11 +252,56 @@ public class IngestionService {
                     }
                 } catch (Exception e) {
                     errorCount++;
-                    log.warn("ingest file failed: {} ({})", entry.getKey(), e.getMessage());
+                    log.warn("ingest file failed: {} (causeType={})", inputKey, e.getClass().getSimpleName());
                 }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException("采集目录准备失败", e);
+        } catch (RuntimeException e) {
+            throw e;
+        }
+
+        // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
+        // S2-02B：**失败批次不产出清单**。清单 schema 的 status 是 const "READY"
+        // （contract-specs/schemas/ingestion-manifest.v1.schema.json：清单文档只能断言"可交付"），
+        // 而流水线侧（S2-04 起为 LandingManifestSelector）只扫 manifests/*.json 中 status=READY
+        // 且计数>0、并且 sourceId 与本轮运行源一致的清单。
+        // 系统异常时若照写一份 READY 清单，异常前已落盘的**半成品**（recordCount>0）就会被流水线
+        // 当成本轮输入 —— 那是把系统异常伪装成"采集成功"。不写清单还顺带满足"失败保旧快照"：
+        // 失败轮不占清单位，上一份好批次仍是流水线能取到的输入。
+        // 失败证据不丢：ingestion_batch 行（status=FAILED / error_count）、accepted 与 quarantine 目录、
+        // 每个文件的 warn 日志都在原地；下一轮以新批次重读（断点未推进 ⇒ 不丢数据，重复投递由
+        // DWD 侧 event_id 去重兜底，见 D-107/D-117 的 DUPLICATE_EVENT 归属）。
+        String manifestUri = null;
+        if (errorCount == 0) {
+            try {
+                String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
+                        recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
+                        source, mapping);
+                manifestUri = storage.writeManifest(batchId, manifestJson);
+            } catch (RuntimeException e) {
+                errorCount++;
+                log.error("批次 {} manifest 发布失败；不推进任何文件断点，下一轮可从源文件重读", batchId, e);
+            }
+        }
+        if (manifestUri != null) {
+            // READY manifest 是下游唯一交付凭据：先原子发布，再推进断点。若断点写入发生瞬时故障，
+            // 下游仍有完整批次可消费，最多导致后续 at-least-once 重投，由 DWD event_id 去重兜底。
+            for (PendingCheckpoint pending : pendingCheckpoints) {
+                try {
+                    if (pending.localFile() != null) {
+                        ingestor.commitCheckpoint(pending.localFile(), runtimeProfileId, sourceId, pending.result());
+                    } else {
+                        ingestor.commitCheckpoint(storage, pending.relativePath(), runtimeProfileId, sourceId,
+                                pending.result());
+                    }
+                } catch (RuntimeException e) {
+                    log.error("批次 {} manifest 已发布但文件断点提交失败 file={}；本轮数据仍可交付，后续可能重复投递",
+                            batchId, pending.localFile() == null ? pending.relativePath() : pending.localFile(), e);
+                }
+            }
+        } else {
+            log.warn("批次 {} 有 {} 个文件采集失败（status=FAILED）⇒ 不产出批次清单且不推进断点；"
+                            + "accepted/quarantine 目录保留为失败证据，重放须开新批次",
+                    batchId, errorCount);
         }
 
         batch.setRecordCount(recordCount);
@@ -195,219 +312,14 @@ public class IngestionService {
         batch.setEndTime(eventClock.nowLdt());
         batchMapper.updateById(batch);
 
-        // 批次清单（§9.3）：status=READY 表示落地完成可供 ODS 读取
-        String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
-                recordCount, quarantineCount, fileCount, acceptedBytes, checksum, schemaVersions, files,
-                source);
-        String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
-
         log.info("ingestion run {}: status={} records={} quarantine={} errors={} files={} bytes={} noNewData={}",
                 batchNo, batch.getStatus(), recordCount, quarantineCount, errorCount, fileCount, acceptedBytes,
                 !anyNewBytes);
         return new RunResult(batch.getId(), batchNo, batch.getStatus(), recordCount,
                 quarantineCount, errorCount, fileCount, acceptedBytes,
-                acceptedDir.toString(), quarantineDir.toString(), manifestUri, !anyNewBytes);
-    }
-
-    /**
-     * 单文件画像驱动正式采集入口（WP-2B 交付项 1）：
-     * 读取行 → PureMapper 结合源画像映射 → Q6 裁决门禁（Mapper 规范化成功 ∧ EventContractValidator 校验通过）
-     * → accepted 写入规范化信封+payload JSON，quarantine 写入坏行（附带违规原因码）
-     * → 推进 FileCheckpoint 断点（字节偏移，按 profile + source 隔离）。
-     *
-     * @param file       数据文件绝对或相对路径
-     * @param sourceId   登记的数据源 ID
-     * @param trace      链路追踪上下文
-     * @return 批次运行结果
-     */
-    public RunResult ingestFileForSource(Path file, long sourceId, TraceContext trace) {
-        SourceRegistryView source = requireSourceView(sourceId);
-        SourceProfile profile = loadProfile(source);
-        return ingestFileForSource(file, source, profile, trace);
-    }
-
-    /**
-     * 按 sourceCode 执行单文件画像驱动采集（支持 mock-mall 与 fixture-b）。
-     */
-    public RunResult ingestFileForSource(Path file, String sourceCode, TraceContext trace) {
-        SourceRegistryView source = findSourceByCode(sourceCode);
-        SourceProfile profile = loadProfile(source);
-        return ingestFileForSource(file, source, profile, trace);
-    }
-
-    /** 别名入口（兼容不同命名调用习惯） */
-    public RunResult runProfileIngest(Path file, String sourceCode, TraceContext trace) {
-        return ingestFileForSource(file, sourceCode, trace);
-    }
-
-    public RunResult runProfileIngest(Path file, long sourceId, TraceContext trace) {
-        return ingestFileForSource(file, sourceId, trace);
-    }
-
-    public RunResult ingestFileForSource(Path file, SourceRegistryView source,
-                                         SourceProfile profile, TraceContext trace) {
-        if (!Files.isRegularFile(file)) {
-            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "采集文件不存在: " + file);
-        }
-        RuntimeProfile active = runtimeProfileService.findActive().orElse(null);
-        if (active == null) {
-            try {
-                active = runtimeProfileService.getActive();
-            } catch (Exception e) {
-                active = new RuntimeProfile();
-                active.setId(1L);
-                active.setLandingUri(file.getParent() != null ? file.getParent().toUri().toString() : "file:///tmp/landing");
-            }
-        }
-        long runtimeProfileId = active.getId();
-        Path landingRoot = LandingUri.resolve(active.getLandingUri());
-
-        String batchNo = "ing-" + BATCH_NO.format(eventClock.nowLdt())
-                + "-" + java.util.UUID.randomUUID().toString().substring(0, 8);
-
-        IngestionBatch batch = new IngestionBatch();
-        batch.setBatchNo(batchNo);
-        batch.setRuntimeProfileId(runtimeProfileId);
-        batch.setSourceId(source.id());
-        batch.setSource("local-file");
-        batch.setStatus(IngestionBatch.STATUS_COLLECTING);
-        batch.setRecordCount(0L);
-        batch.setErrorCount(0L);
-        batch.setQuarantineCount(0L);
-        batch.setStartTime(eventClock.nowLdt());
-        batchMapper.insert(batch);
-        String batchId = String.valueOf(batch.getId());
-
-        Path acceptedDir = landingRoot.resolve("accepted").resolve(batchId);
-        Path quarantineDir = landingRoot.resolve("quarantine").resolve(batchId);
-        batch.setLandingDir(acceptedDir.toString());
-        batchMapper.updateById(batch);
-
-        LocalDateTime startedAt = eventClock.nowLdt();
-        CRC32 checksum = new CRC32();
-        var res = ingestor.ingestFile(file, batch.getId(), runtimeProfileId, source.id(),
-                acceptedDir, quarantineDir, trace, checksum, profile);
-
-        if (res.collected() > 0 || res.quarantined() > 0) {
-            IngestionBatchFile bf = new IngestionBatchFile();
-            bf.setBatchId(batch.getId());
-            bf.setFilePath(res.filePath());
-            bf.setStartOffset(res.startOffset());
-            bf.setEndOffset(res.endOffset());
-            bf.setRecordCount(res.collected());
-            bf.setStatus("LANDED");
-            batchFileMapper.insert(bf);
-        }
-
-        batch.setRecordCount(res.collected());
-        batch.setQuarantineCount(res.quarantined());
-        batch.setErrorCount(0L);
-        batch.setStatus(res.quarantined() > 0 ? IngestionBatch.STATUS_QUARANTINED : IngestionBatch.STATUS_SUCCESS);
-        batch.setEndTime(eventClock.nowLdt());
-        batchMapper.updateById(batch);
-
-        List<Map<String, Object>> files = new ArrayList<>();
-        if (res.collected() > 0 || res.quarantined() > 0) {
-            files.add(Map.of(
-                    "file", res.filePath(),
-                    "acceptedRecords", res.collected(),
-                    "quarantinedRecords", res.quarantined(),
-                    "startOffset", res.startOffset(),
-                    "endOffset", res.endOffset()));
-        }
-        var schemaVersions = new TreeMap<String, Boolean>();
-        res.schemaVersions().forEach(v -> schemaVersions.put(v, true));
-
-        // 写入主批次清单（保持历史字段字节级兼容，加法追加画像与网关统计）
-        String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
-                res.collected(), res.quarantined(), (res.collected() > 0 || res.quarantined() > 0) ? 1 : 0,
-                res.acceptedBytes(), checksum, schemaVersions, files, source,
-                profile.contentHash(), res.totalRows(), res.canonicalRows(),
-                res.validatorAccepted(), res.strictContractAccepted(), res.unresolvedEnumCounts());
-        String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
-
-        // 写入独立伴随清单（WP-2B 交付项 2 巡检安全伴随文件）
-        String companionJson = buildCompanionManifest(batchId, runtimeProfileId, batchNo, startedAt,
-                source, profile, res);
-        writeCompanionManifestQuietly(landingRoot, batchId, companionJson);
-
-        boolean noNewData = res.endOffset() <= res.startOffset();
-        log.info("ingestion single file {}: status={} records={} quarantine={} bytes={} noNewData={}",
-                file.getFileName(), batch.getStatus(), res.collected(), res.quarantined(), res.acceptedBytes(), noNewData);
-        return new RunResult(batch.getId(), batchNo, batch.getStatus(), res.collected(),
-                res.quarantined(), 0L, (res.collected() > 0 || res.quarantined() > 0) ? 1 : 0,
-                res.acceptedBytes(), acceptedDir.toString(), quarantineDir.toString(), manifestUri, noNewData);
-    }
-
-    public SourceRegistryView findSourceByCode(String sourceCode) {
-        if (sourceCode == null || sourceCode.isBlank()) {
-            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sourceCode 必填");
-        }
-        try {
-            for (SourceRegistryView view : sourceRegistryService.list()) {
-                if (sourceCode.equals(view.sourceCode())) {
-                    return view;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        String profileRel = "analytics-server/source-profiles/" + sourceCode + ".v1.json";
-        return new SourceRegistryView(
-                "mock-mall".equals(sourceCode) ? 1L : 2L,
-                sourceCode,
-                sourceCode,
-                "FILE",
-                profileRel,
-                "Asia/Shanghai",
-                "CNY",
-                "ACTIVE",
-                "1.0",
-                true,
-                LocalDateTime.now(),
-                LocalDateTime.now(),
-                sourceCode.replace("-", "_")
-        );
-    }
-
-    private SourceProfile loadProfile(SourceRegistryView source) {
-        String profilePathStr = source.profilePath();
-        if (profilePathStr == null || profilePathStr.isBlank()) {
-            throw new PlatformBizException(PlatformBizException.SOURCE_PROFILE_INVALID, "源登记未配置 profilePath");
-        }
-        Path repoRoot = RepoPathLocator.locateRepoRoot(".");
-        Path file = repoRoot.resolve(profilePathStr).normalize().toAbsolutePath();
-        if (!Files.isRegularFile(file) || !Files.isReadable(file)) {
-            Path direct = Paths.get(profilePathStr).normalize().toAbsolutePath();
-            if (Files.isRegularFile(direct) && Files.isReadable(direct)) {
-                file = direct;
-            } else {
-                List<Path> candidates = List.of(
-                        Paths.get(profilePathStr),
-                        Paths.get("analytics-server", profilePathStr),
-                        Paths.get("..", profilePathStr),
-                        Paths.get("../..", profilePathStr),
-                        repoRoot.resolve("analytics-server/source-profiles").resolve(Paths.get(profilePathStr).getFileName())
-                );
-                boolean found = false;
-                for (Path cand : candidates) {
-                    if (Files.isRegularFile(cand) && Files.isReadable(cand)) {
-                        file = cand.normalize().toAbsolutePath();
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    throw new PlatformBizException(PlatformBizException.SOURCE_PROFILE_INVALID,
-                            "源画像文件不存在或不可读: " + profilePathStr);
-                }
-            }
-        }
-        try {
-            return SourceProfile.fromFile(file);
-        } catch (IOException e) {
-            throw new PlatformBizException(PlatformBizException.SOURCE_PROFILE_INVALID,
-                    "源画像文件读取或解析失败: " + e.getMessage());
-        }
+                localStorage ? localLandingRoot.resolve(acceptedDir).toString() : storage.uri(acceptedDir),
+                localStorage ? localLandingRoot.resolve(quarantineDir).toString() : storage.uri(quarantineDir),
+                manifestUri, !anyNewBytes);
     }
 
     /**
@@ -458,9 +370,9 @@ public class IngestionService {
     }
 
     /**
-     * 批次清单（§9.3 的 15 个键 + P1-05 / D-037 裁决 6 新增的 4 个源身份键）。
+     * 批次清单（§9.3 的 15 个键 + P1-05 / D-037 裁决 6 新增的 4 个源身份键 + S2-02 新增的 {@code mappingProfileHash}）。
      *
-     * <p>四个新键的定位：**可选的来源标注**，全部不进 schema 的 {@code required}
+     * <p>新增键的定位：**可选的来源标注**，全部不进 schema 的 {@code required}
      * （裁决 6 的硬约束）——一旦进 required，V17 之前落盘的 39 个清单会立刻判非法。
      * 各字段口径：</p>
      * <ul>
@@ -468,8 +380,10 @@ public class IngestionService {
      *   <li>{@code sourceId} ← 本轮解析出的激活源 id；</li>
      *   <li>{@code profileVersion} ← {@code source_registry.profile_version} **列**
      *       （裁决 8：画像文件里的同名值是"文件自述版本"，两者一致性属 P3-01，不在此处校验）；</li>
-     *   <li>{@code mappingVersion} ← {@code null}：语义映射尚未实施，恒为 null 直到 P2。
-     *       写 {@code ""}/{@code "0"}/{@code "v1"} 之类占位值会让下游以为映射已生效，故显式放 null 键。</li>
+     *   <li>{@code mappingVersion} ← 本轮**生效画像**的 {@code profileVersion}（未应用映射时为 {@code null}；S2-02 起不再是"恒为 null"）。
+     *       写 {@code ""}/{@code "0"}/{@code "v1"} 之类占位值会让下游以为映射已生效，故未映射时显式放 null 键。</li>
+ *   <li>{@code mappingProfileHash} ← 生效画像**原文**的 sha256（与 dry-run 报告 {@code profileChecksum} 同算法）；
+ *       未映射时为 {@code null}。版本号会被人为复用，哈希不会，因此"预览合格"与"这批真用了它"可逐字节对账。</li>
      * </ul>
      *
      * <p>{@code source}（连接器类型，恒为 {@code local-file}）语义不变，**不是**源身份
@@ -479,19 +393,7 @@ public class IngestionService {
                                  LocalDateTime startedAt, long acceptedRecords, long quarantinedRecords,
                                  int files, long acceptedBytes, CRC32 checksum,
                                  Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList,
-                                 SourceRegistryView source) {
-        return buildManifest(batchId, runtimeProfileId, batchNo, startedAt, acceptedRecords, quarantinedRecords,
-                files, acceptedBytes, checksum, schemaVersions, fileList, source, null, null, null, null, null, null);
-    }
-
-    private String buildManifest(String batchId, long runtimeProfileId, String batchNo,
-                                 LocalDateTime startedAt, long acceptedRecords, long quarantinedRecords,
-                                 int files, long acceptedBytes, CRC32 checksum,
-                                 Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList,
-                                 SourceRegistryView source,
-                                 String profileContentHash, Long totalRows, Long canonicalRows,
-                                 Long validatorAccepted, Long strictContractAccepted,
-                                 Map<String, Long> unresolvedEnumCounts) {
+                                 SourceRegistryView source, SourceMapping mapping) {
         Map<String, Object> manifest = new LinkedHashMap<>();
         manifest.put("batchId", Long.parseLong(batchId));
         manifest.put("batchNo", batchNo);
@@ -513,86 +415,17 @@ public class IngestionService {
         manifest.put("sourceCode", source.sourceCode());
         manifest.put("sourceId", source.id());
         manifest.put("profileVersion", source.profileVersion());
-        manifest.put("mappingVersion", null);
-
-        // WP-2B 加法扩展（Deliverable 2）：
-        if (profileContentHash != null) {
-            manifest.put("profileContentHash", profileContentHash);
-        }
-        if (totalRows != null) {
-            manifest.put("totalRows", totalRows);
-        }
-        if (canonicalRows != null) {
-            manifest.put("canonicalRows", canonicalRows);
-        }
-        if (validatorAccepted != null) {
-            manifest.put("validatorAccepted", validatorAccepted);
-        }
-        if (strictContractAccepted != null) {
-            manifest.put("strictContractAccepted", strictContractAccepted);
-        }
-        if (unresolvedEnumCounts != null) {
-            manifest.put("unresolvedEnumCounts", unresolvedEnumCounts);
-        }
-
+        manifest.put("mappingVersion", mapping.profileVersion());
+        // S2-02 加法新增（第 20 个键，可选）：本次生效画像**原文**的 sha256。
+        // 与 dry-run 报告的 profileChecksum 同算法，因此"预览某画像合格"与"这批数据用了该画像"
+        // 可以逐字节对账——版本号会被人为复用，哈希不会。
+        // mappingVersion != null ⟺ mappingProfileHash != null ⟺ 本轮真的逐行映射过，
+        // 因此不再另加 mappingApplied 布尔键（同一事实两个表示必然漂移）。
+        manifest.put("mappingProfileHash", mapping.profileChecksum());
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest);
         } catch (Exception e) {
             throw new IllegalStateException("manifest 序列化失败", e);
-        }
-    }
-
-    private String writeManifestQuietly(Path landingRoot, String batchId, String manifestJson) {
-        try {
-            Path dir = landingRoot.resolve("manifests");
-            Files.createDirectories(dir);
-            Path file = dir.resolve(batchId + ".json");
-            Files.writeString(file, manifestJson, StandardCharsets.UTF_8);
-            return file.toUri().toString();
-        } catch (IOException e) {
-            log.error("manifest 写入失败 batchId={}", batchId, e);
-            return null;
-        }
-    }
-
-    private String buildCompanionManifest(String batchId, long runtimeProfileId, String batchNo,
-                                          LocalDateTime startedAt, SourceRegistryView source,
-                                          SourceProfile profile, LocalFileIngestor.FileResult res) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("manifestType", "MAPPER_DIAGNOSTIC");
-        map.put("batchId", Long.parseLong(batchId));
-        map.put("batchNo", batchNo);
-        map.put("runtimeProfileId", runtimeProfileId);
-        map.put("sourceCode", source.sourceCode());
-        map.put("sourceId", source.id());
-        map.put("profileVersion", profile.profileVersion());
-        map.put("profileContentHash", profile.contentHash());
-        map.put("startedAt", startedAt.toString());
-        map.put("finishedAt", eventClock.nowLdt().toString());
-        map.put("file", res.filePath());
-        map.put("totalRows", res.totalRows());
-        map.put("canonicalRows", res.canonicalRows());
-        map.put("quarantinedRows", res.quarantined());
-        map.put("validatorAccepted", res.validatorAccepted());
-        map.put("strictContractAccepted", res.strictContractAccepted());
-        map.put("unresolvedEnumCounts", res.unresolvedEnumCounts());
-        try {
-            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
-        } catch (Exception e) {
-            throw new IllegalStateException("companion manifest 序列化失败", e);
-        }
-    }
-
-    private String writeCompanionManifestQuietly(Path landingRoot, String batchId, String json) {
-        try {
-            Path dir = landingRoot.resolve("manifests");
-            Files.createDirectories(dir);
-            Path file = dir.resolve(batchId + ".mapper.json");
-            Files.writeString(file, json, StandardCharsets.UTF_8);
-            return file.toUri().toString();
-        } catch (IOException e) {
-            log.error("companion manifest 写入失败 batchId={}", batchId, e);
-            return null;
         }
     }
 
@@ -601,18 +434,27 @@ public class IngestionService {
         // Landing 根与 runOne 同源：只来自 ACTIVE RuntimeProfile.landingUri（§8.3 / V2.1 §3.4-4：
         // 平台不得引用 mall.* 配置键）。无 ACTIVE 环境时如实报告 NO_ACTIVE，不读取任何其它路径。
         RuntimeProfile active = runtimeProfileService.findActive().orElse(null);
-        Path landingRoot = null;
+        LandingStorage storage = null;
+        Path localLandingRoot = null;
         String landingError = null;
         if (active != null) {
             try {
-                landingRoot = LandingUri.resolve(active.getLandingUri());
-            } catch (PlatformBizException e) {
+                storage = LandingStorageResolver.forProfile(active);
+                if ("local".equals(storage.type())) {
+                    localLandingRoot = LandingUri.resolve(active.getLandingUri());
+                }
+            } catch (RuntimeException e) {
                 // 显式报告错误：landingUri 不可解析时如实说明，绝不回退到任何默认目录（D-003）
-                landingError = e.getMessage();
-                log.warn("landingUri 不可解析（profile {}）：{}", active.getId(), e.getMessage());
+                landingError = "Landing 存储配置无效或当前不可用，请检查运行环境配置";
+                log.warn("landingUri 不可解析（profile {}，causeType={}）",
+                        active.getId(), e.getClass().getSimpleName());
             }
         }
-        Path eventsDir = landingRoot == null ? null : landingRoot.resolve("events");
+        // S2-04B：状态口与采集端**同源**取输入根——布局决定目录（滚动日志＝events/，Flume＝raw/）。
+        // 状态口按 events/ 扫而采集读 raw/ 会让运维看到 pendingFiles=0 却看着数据被采走。
+        LandingLayout layout = active == null ? LandingLayout.ROLLING_LOG
+                : LandingLayout.effective(active.getLandingLayout());
+        String inputDir = storage == null ? null : layout.inputRoot("");
         long pendingFiles = 0;
         long pendingBytes = 0;
         // B-08 / D-022 候选①（最小明示）：D-016 的 pendingFiles/pendingBytes 是**整目录累计值**，
@@ -637,26 +479,34 @@ public class IngestionService {
                 ? Set.of()
                 : ingestor.checkpointKeys(active.getId(), sourceId);
         LocalDateTime lastArrivalAt = null;
-        if (eventsDir != null && Files.isDirectory(eventsDir)) {
-            try (Stream<Path> files = Files.list(eventsDir)) {
-                for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".jsonl")).toList()) {
+        if (inputDir != null && storage != null) {
+            // S2-04B：枚举口径与采集端同源（LandingInputScanner），但**取的是候选集不是完成集**。
+            // 这里回答的是"源还在不在产出"（pendingFiles/pendingBytes/lastArrivalAt/断点覆盖），
+            // 不是"这一轮采哪些"：零字节文件确实是到达的文件（旧口径也算它），把它从观测里剔掉
+            // 会得到「目录里有文件、lastArrivalAt=null」这种自相矛盾的总览。
+            // 采集端用 scan()（只认完成文件，规则 4），两者共用同一份排除规则。
+            try {
+                for (LandingInputScanner.StoredCandidate observed : LandingInputScanner.inspect(storage, inputDir, layout)) {
                     pendingFiles++;
-                    long size = Files.size(f);
-                    pendingBytes += size;
+                    pendingBytes += observed.size();
                     LocalDateTime arrivedAt = LocalDateTime.ofInstant(
-                            Files.getLastModifiedTime(f).toInstant(), java.time.ZoneId.systemDefault());
+                            java.time.Instant.ofEpochMilli(observed.lastModified()), java.time.ZoneId.systemDefault());
                     if (lastArrivalAt == null || arrivedAt.isAfter(lastArrivalAt)) {
                         lastArrivalAt = arrivedAt;
                     }
-                    if (checkpointKeys.contains(LocalFileIngestor.checkpointKey(f))) {
+                    if (checkpointKeys.contains(ingestor.checkpointKeyFor(storage, observed.relativePath()))) {
                         checkpointFiles++;
                     }
-                    if (ingestor.hasConsumableData(f, active.getId(), sourceId)) {
+                    Path localFile = "local".equals(storage.type())
+                            ? localLandingRoot.resolve(observed.relativePath()) : null;
+                    if (observed.completed() && (localFile != null
+                            ? ingestor.hasConsumableData(localFile, active.getId(), sourceId)
+                            : ingestor.hasConsumableData(storage, observed.relativePath(), active.getId(), sourceId))) {
                         newFileCount++;
                     }
                 }
-            } catch (IOException e) {
-                log.warn("events dir scan failed: {}", e.getMessage());
+            } catch (RuntimeException e) {
+                log.warn("landing input dir scan failed (causeType={})", e.getClass().getSimpleName());
             }
         }
         IngestionBatch latest = batchMapper.selectOne(new LambdaQueryWrapper<IngestionBatch>()
@@ -667,7 +517,12 @@ public class IngestionService {
         result.put("sourceId", sourceId);
         result.put("landingUri", active == null ? null : active.getLandingUri());
         result.put("landingError", landingError);
-        result.put("eventsDir", eventsDir == null ? null : eventsDir.toString());
+        result.put("landingLayout", layout.name());
+        // eventsDir 这个名字是 V2 起的既有对外键（前端/运维脚本在读）。S2-04B 后它的值＝
+        // **本轮真实的输入根**：滚动日志布局下就是 events/（与 V2 完全一致），Flume 布局下是 raw/。
+        // 保留旧键名而不是换名（换名会静默打断既有消费者），但值必须与采集端同源、不得指向没读的目录。
+        result.put("eventsDir", inputDir == null || storage == null ? null
+                : (localLandingRoot == null ? storage.uri(inputDir) : localLandingRoot.resolve(inputDir).toString()));
         result.put("pendingFiles", pendingFiles);
         result.put("pendingBytes", pendingBytes);
         result.put("checkpointFiles", checkpointFiles);

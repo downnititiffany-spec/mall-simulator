@@ -54,6 +54,7 @@
 | POST | /api/v1/ai/queries | 自然语言问数：受控 Text-to-SQL + 执行 + 证据摘要（§19.4/§19.6） |
 | POST | /api/v1/ai/analyses | 仅解释（不返回证据包全量） |
 | GET | /api/v1/ai/history/my?limit | 我的最近问答（登录用户自己的历史） |
+| POST | /api/v1/ai/history/{id}/feedback | 提交本人已执行问答的离散反馈（ai:query；V37，真实数据库/浏览器尚未验证） |
 | GET | /api/v1/ai/audit/history?limit | 全量问数审计（**ai:audit:view**，analyst/operator 403） |
 | GET | /api/v1/ai/audit/calls?limit | 模型调用日志（**ai:audit:view**） |
 
@@ -82,6 +83,23 @@
 禁 `SELECT *`、列名/函数白名单、必须 `snapshot_id = '<ACTIVE>'` + `dt` 范围（≤90 天）、自动 `LIMIT 200`、
 `EXPLAIN` 预估超阈值拒绝；执行用只读账号（`metric_read`，DB 层仅 SELECT）+ `readOnly` + 30s 超时 + `maxRows=200`。
 被拒也落 `ai_query_history`（`status=REJECTED` + 规则码），全量动作落 `operation_audit_log`（§21.4，不存问题原文只存哈希）。
+
+### AI反馈（D-060 / §13.2）
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| POST | /api/v1/ai/history/{id}/feedback | ai:query | 本人已执行且具备完整证据锚点的历史仅可提交一次；原因码为离散白名单 |
+
+### 业务报告实例（D-060 / §14.4）
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| POST | /api/v1/reports | dashboard:view | 当前实现仅支持 OPS_DAILY；另外五个获批模板明确返回 REPORT_TEMPLATE_NOT_READY；AI摘要受D-039限制 |
+| GET | /api/v1/reports/page?page=&size=&sort= | dashboard:view | 当前用户本人报告分页列表 |
+| GET | /api/v1/reports/{id} | dashboard:view | 本人报告元数据与证据摘要 |
+| GET | /api/v1/reports/{id}/artifact | dashboard:view | 本人报告结构化制品 |
+
+报告接口仍属首个实现切片，Web 报告页已接线；仅 OPS_DAILY 可生成，另外五个模板 fail-closed。V37/V38尚未应用数据库，真实HTTP/DB/浏览器链路未验。详情见批准契约和阶段14验证报告。
 
 ## 3. 决策中心（§20）
 

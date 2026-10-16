@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -54,6 +55,14 @@ public class UserAdminController {
     @GetMapping
     public ApiResponse<List<UserView>> list() {
         return ApiResponse.ok(authService.listUsers(), TraceContext.create().traceId());
+    }
+
+    @GetMapping("/page")
+    public ApiResponse<AuthService.UserPage> listPage(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
+        return ApiResponse.ok(authService.listUsersPage(page, size, sort), TraceContext.create().traceId());
     }
 
     @PostMapping

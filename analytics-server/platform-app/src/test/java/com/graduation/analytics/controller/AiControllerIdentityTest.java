@@ -4,15 +4,18 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.graduation.analytics.ai.ExplanationService;
+import com.graduation.analytics.ai.AiFeedbackService;
 import com.graduation.analytics.ai.TextToSqlService;
 import com.graduation.analytics.ai.TextToSqlService.QueryResult;
 import com.graduation.analytics.ai.entity.AiQueryHistory;
+import com.graduation.analytics.ai.evidence.EvidenceRequest;
 import com.graduation.analytics.ai.evidence.EvidenceService;
 import com.graduation.analytics.ai.mapper.AiCallLogMapper;
 import com.graduation.analytics.ai.mapper.AiQueryHistoryMapper;
 import com.graduation.analytics.auth.AuthenticationRequiredException;
 import com.graduation.analytics.auth.CurrentUser;
 import com.graduation.analytics.auth.CurrentUserHolder;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.AuditActor;
 import com.graduation.analytics.decision.OperationAuditService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -75,7 +78,7 @@ class AiControllerIdentityTest {
         callLogMapper = mock(AiCallLogMapper.class);
         audit = mock(OperationAuditService.class);
         controller = new AiController(textToSqlService, explanationService, evidenceService,
-                queryHistoryMapper, callLogMapper, audit);
+                queryHistoryMapper, callLogMapper, audit, mock(AiFeedbackService.class));
     }
 
     @AfterEach
@@ -108,7 +111,7 @@ class AiControllerIdentityTest {
     @DisplayName("问数身份取会话：query(question, analyst1)，审计 action=AI_QUERY 且摘要无问题原文/SQL 原文")
     void queryUsesSessionIdentityAndHashesContent() {
         CurrentUserHolder.set(new CurrentUser(3L, "analyst1", "analyst"));
-        when(textToSqlService.query(anyString(), anyString())).thenReturn(success());
+        when(textToSqlService.query(anyString(), anyString(), any())).thenReturn(success());
         MockHttpServletRequest request = request();
         request.addHeader("X-User-Id", "admin");
 
@@ -116,9 +119,12 @@ class AiControllerIdentityTest {
 
         ArgumentCaptor<String> questionCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> userIdCaptor = ArgumentCaptor.forClass(String.class);
-        verify(textToSqlService).query(questionCaptor.capture(), userIdCaptor.capture());
+        ArgumentCaptor<String> timeRangeCaptor = ArgumentCaptor.forClass(String.class);
+        verify(textToSqlService).query(questionCaptor.capture(), userIdCaptor.capture(), timeRangeCaptor.capture());
         assertEquals("analyst1", userIdCaptor.getValue(), "问数归属必须是登录用户");
         assertEquals("上月支付金额是多少", questionCaptor.getValue());
+        // QA-04：控制器只把「请求口径」原文下传，生效区间由 SQL 校验结果产出，控制器不得自己编标签
+        assertEquals("近30天", timeRangeCaptor.getValue());
 
         ArgumentCaptor<AuditActor> actorCaptor = ArgumentCaptor.forClass(AuditActor.class);
         ArgumentCaptor<String> digestCaptor = ArgumentCaptor.forClass(String.class);
@@ -142,7 +148,7 @@ class AiControllerIdentityTest {
         CurrentUserHolder.set(new CurrentUser(3L, "analyst1", "analyst"));
         QueryResult rejected = new QueryResult("REJECTED", null, List.of("dws_trade_daily"), 0, 3L,
                 List.of(), List.of(), "SQL 含多表 JOIN", "SQL_JOIN", "rule-based");
-        when(textToSqlService.query(anyString(), anyString())).thenReturn(rejected);
+        when(textToSqlService.query(anyString(), anyString(), any())).thenReturn(rejected);
 
         controller.query(new AiController.AiQueryReq("把所有表 join 一下", null), request());
 
@@ -177,7 +183,7 @@ class AiControllerIdentityTest {
     @DisplayName("问数快照锚点取证据包（不写 \"unknown\" 占位值）")
     void snapshotAnchorComesFromEvidencePackage() {
         CurrentUserHolder.set(new CurrentUser(3L, "analyst1", "analyst"));
-        when(textToSqlService.query(anyString(), anyString())).thenReturn(success());
+        when(textToSqlService.query(anyString(), anyString(), any())).thenReturn(success());
         when(evidenceService.build(any())).thenReturn(EvidenceTestFixtures.packageOf("S20260901_24"));
 
         AiController.AiQueryResp resp = controller.query(
@@ -192,18 +198,58 @@ class AiControllerIdentityTest {
     }
 
     @Test
+    @DisplayName("显式选择快照同时约束 Text2SQL、解释证据包与解释服务")
+    void selectedSnapshotIsSharedByAiQueryAndEvidence() {
+        CurrentUserHolder.set(new CurrentUser(3L, "analyst1", "analyst"));
+        String selectedSnapshot = "S20260917_9";
+        when(textToSqlService.query(anyString(), anyString(), anyString(), anyString())).thenReturn(success());
+        when(evidenceService.build(any())).thenReturn(EvidenceTestFixtures.packageOf(selectedSnapshot));
+
+        AiController.AiQueryResp response = controller.query(
+                new AiController.AiQueryReq("分析所选业务日", null, selectedSnapshot), request()).data();
+
+        verify(textToSqlService).query("分析所选业务日", "analyst1", null, selectedSnapshot);
+        ArgumentCaptor<EvidenceRequest> evidence = ArgumentCaptor.forClass(EvidenceRequest.class);
+        verify(evidenceService).build(evidence.capture());
+        assertEquals(selectedSnapshot, evidence.getValue().snapshotId());
+        verify(explanationService).explain(any(), eq(selectedSnapshot), anyString(), isNull());
+        assertTrue(response.evidenceSummary().contains(selectedSnapshot));
+    }
+
+    @Test
+    @DisplayName("AI 显式快照入口在读取前额外要求 dashboard:view")
+    void explicitSnapshotRequiresDashboardPermissionBeforeAnyRead() {
+        CurrentUserHolder.set(new CurrentUser(3L, "restricted", "ai_query_only"));
+        String snapshotId = "S20260917_9";
+
+        PlatformBizException queryDenied = assertThrows(PlatformBizException.class,
+                () -> controller.query(new AiController.AiQueryReq("问题", null, snapshotId), request()));
+        PlatformBizException analysisDenied = assertThrows(PlatformBizException.class,
+                () -> controller.analyze(new AiController.AiQueryReq("问题", null, snapshotId), request()));
+        PlatformBizException explanationDenied = assertThrows(PlatformBizException.class,
+                () -> controller.explain(new AiController.ExplainReq(snapshotId, null, "问题"), request()));
+
+        for (PlatformBizException denied : List.of(queryDenied, analysisDenied, explanationDenied)) {
+            assertEquals(PlatformBizException.FORBIDDEN_PERMISSION, denied.getCode());
+            assertTrue(denied.getMessage().contains("dashboard:view"));
+        }
+        verifyNoInteractions(textToSqlService, explanationService, evidenceService, audit);
+    }
+
+    @Test
     @DisplayName("无 ACTIVE 快照且结果行无 snapshot_id → 锚点为 null + 告警，不写 unknown")
     void missingSnapshotStaysNull() {
         CurrentUserHolder.set(new CurrentUser(3L, "analyst1", "analyst"));
         QueryResult noSnapshot = new QueryResult("OK", "select 1", List.of("ads_trade_overview"), 1, 5L,
                 List.of(Map.of("value", 1)), List.of(), null, null, "rule-based");
-        when(textToSqlService.query(anyString(), anyString())).thenReturn(noSnapshot);
+        when(textToSqlService.query(anyString(), anyString(), any())).thenReturn(noSnapshot);
         when(evidenceService.build(any())).thenReturn(null);
 
         AiController.AiQueryResp resp = controller.query(
                 new AiController.AiQueryReq("问题", null), request()).data();
 
-        verify(explanationService).explain(any(), isNull(), anyString(), anyString());
+        // QA-04：请求未给口径时不得伪造「近30天(默认)」标签，原样传 null 让证据如实标注缺失
+        verify(explanationService).explain(any(), isNull(), anyString(), isNull());
         assertNull(resp.evidenceId());
         assertNull(resp.evidenceSummary());
         ArgumentCaptor<String> digestCaptor = ArgumentCaptor.forClass(String.class);

@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * F-88（D-142 §1 / 指导书 §7.3）：规则码 → 严重度的**唯一所有者**目录测试。
  *
  * <p>本测试同时是「全部规则码是否都已被审核」的清单：Spark 侧（dqc/pub/mxp）与 Java 侧
- * （QualityChecker）共 17 个规则码、指标库发布对账（MetricPublishValidator）15 个，
+ * （QualityChecker）共 18 个规则码、指标库发布对账（MetricPublishValidator）16 个，
  * 每一个都必须显式登记，且必须给出中文依据。</p>
  *
  * <p>位置说明（F-88 裁决 4）：本测试随 {@link RuleSeverity} 由 warehouse-pipeline 上移到
@@ -26,6 +26,22 @@ class RuleSeverityTest {
             "AMOUNT_RECONCILE", "REQUIRED_FIELD_NULL_RATE", "ENUM_WHITELIST",
             "ADS_STAGING_PRESENT", "ADS_STAGING_KEY_NOT_NULL", "PUB_DQ_BLOCKING_RULES",
             "ADS_DWS_FUNNEL_RECONCILE",
+            "ADS_CATEGORY_SALE_RECONCILE", "ADS_REGION_SALE_RECONCILE",
+            // S3-10：率列跨层对账（conversion_rate/overall_buy_rate/overall_cart_rate），
+            // 与 user_count 汇总对账分开登记（设计 §12.3 line 512「不同校验不能互相替代」）
+            "ADS_DWS_FUNNEL_RATE_RECONCILE",
+            // S3-22：ADS 大盘同归属口径不变量「GMV ≥ 净销售 ≥ 0」（设计 §12.3 第 8 项），
+            // 与第 9 项「UV ≤ PV」分开登记（同 line 512：不同校验不得合并成一个码）
+            "ADS_GMV_NET_SALE_INVARIANT",
+            // S3-23：ADS 大盘同过滤条件不变量「UV ≤ PV」（设计 §12.3 第 9 项），
+            // 与第 8 项「GMV ≥ 净销售 ≥ 0」分开登记（同 line 512：不同校验不得合并成一个码；
+            // 「同过滤条件」是本码作用域判据 —— 同表 dau 为全事件口径，dau > uv 合法）
+            "ADS_UV_PV_INVARIANT",
+            // S3-25：**DWS 层**同型站点「逐商品同过滤条件 UV ≤ PV」（设计 §12.3 第 9 项 L507）。
+            // 与 ADS 侧同型但独立成码：两处的表、粒度（逐 product_id×category_id 行 vs 一次聚合成
+            // 一行）、分区维度（无 snapshot 维度 vs 按 snapshot_id 隔离）都不同，
+            // 一处通过不能证明另一处通过 ⇒ 不得合并（同 line 512）
+            "DWS_UV_PV_INVARIANT",
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE");
 
@@ -36,6 +52,8 @@ class RuleSeverityTest {
      */
     private static final List<String> PUBLISH_VALIDATOR_CODES = List.of(
             "MP_MANIFEST_TABLES", "MP_MANIFEST_SNAPSHOT", "MP_HIVE_PATH_PINNED", "MP_EXPORT_FILES",
+            // S3-06：导出制品内容摘要（逐表重算 CRC32 与清单比对），与 MP_EXPORT_FILES 分开登记
+            "MP_EXPORT_CHECKSUM",
             "MP_ADS_ROWS_MATCH", "MP_REQUIRED_TABLES_NONEMPTY", "MP_ROW_SHAPE_CONSISTENT",
             "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
             "MP_METRIC_VALUE_COUNT", "MP_ACTIVE_SNAPSHOT", "MP_ADS_ROWS_DB_MATCH",
@@ -50,7 +68,7 @@ class RuleSeverityTest {
             "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE", "MP_OLD_ACTIVE_ARCHIVED");
 
     /**
-     * 全部已登记规则码（33 个）＝ 阻断级 12 + 指标库发布对账 15 + WARN 3 + INFO 3。
+     * 全部已登记规则码（40 个）＝ 阻断级 18 + 指标库发布对账 16 + WARN 3 + INFO 3。
      *
      * <p>与 {@link RuleSeverity} 的登记表、{@link QualityRuleCatalog} 的目录必须三者一致：
      * 按 §7.3.1 line 524，只在一处登记、目录里没有的码会判为「未登记规则」而停止发布。</p>
@@ -270,9 +288,14 @@ class RuleSeverityTest {
         }
         assertThat(missing).as("这些码只在 RuleSeverity.of 里登记、未进 quality_rule_definition 目录；"
                 + "按 §7.3.1 line 524 它们会被判为「未登记规则」而停止发布").isEmpty();
-        // 反向：目录里也不应有超出登记清单的码。35 = 33 个既有码 + 2 个本次按 §7.3.1 line 526
-        // 新增的独立金额校验码（ORDER_ITEM_AMOUNT_FORMULA、DWD_DWS_AMOUNT_RECONCILE）。
-        assertThat(rules.definitions()).hasSize(ALL_REGISTERED_CODES.size() + 2);
+        // 反向按“规则码”对账，而不是按“定义行数”对账：版本化目录允许同一码保留多个历史版本。
+        assertThat(rules.definitions().stream().map(QualityRuleDefinition::ruleCode).distinct().toList())
+                .hasSize(ALL_REGISTERED_CODES.size() + 2);
+        assertThat(rules.byRuleCode().get("ADS_STAGING_PRESENT"))
+                .extracting(QualityRuleDefinition::version)
+                .containsExactly(1, 2, 3);
+        assertThat(rules.find("ADS_STAGING_PRESENT")).isPresent().get()
+                .extracting(QualityRuleDefinition::version).isEqualTo(3);
     }
 
     @Test
@@ -306,7 +329,7 @@ class RuleSeverityTest {
         all.addAll(PUBLISH_VALIDATOR_CODES);
         all.addAll(WARN_CODES);
         all.addAll(INFO_CODES);
-        assertThat(all).hasSize(33);   // 12 BLOCKING + 15 发布对账 + 3 WARN + 3 INFO
+        assertThat(all).hasSize(40);   // 18 BLOCKING + 16 发布对账 + 3 WARN + 3 INFO
         assertThat(all).doesNotHaveDuplicates();
 
         for (String code : all) {

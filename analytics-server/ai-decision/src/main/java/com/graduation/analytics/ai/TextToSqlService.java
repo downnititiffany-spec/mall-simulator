@@ -6,6 +6,7 @@ import com.graduation.analytics.ai.entity.AiQueryHistory;
 import com.graduation.analytics.ai.llm.JsonExtractor;
 import com.graduation.analytics.ai.llm.LlmProvider;
 import com.graduation.analytics.ai.llm.LlmProvider.AiRequest;
+import com.graduation.analytics.ai.llm.LlmProvider.AiResponse;
 import com.graduation.analytics.ai.mapper.AiCallLogMapper;
 import com.graduation.analytics.ai.mapper.AiQueryHistoryMapper;
 import com.graduation.analytics.ai.sql.AiScope;
@@ -16,10 +17,14 @@ import com.graduation.analytics.ai.sql.SqlExecutor;
 import com.graduation.analytics.ai.sql.SqlPolicy;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator;
 import com.graduation.analytics.ai.sql.SqlSafetyValidator.ValidationResult;
+import com.graduation.analytics.common.PlatformBizException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.stereotype.Service;
 
+import java.sql.SQLTimeoutException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +33,7 @@ import java.util.Map;
  * 受控 Text-to-SQL 服务（§19.4 流程 / R8-2 契约 §2.2-§2.4）。
  *
  * <p>流程（顺序即安全边界）：<br>
- * ① {@link AiScopeResolver#resolve()} 取 ACTIVE 快照 → {@link AiScope}（无 ACTIVE 直接失败）；<br>
+ * ① {@link AiScopeResolver#resolve(String)} 取显式已发布快照；未指定则取 ACTIVE → {@link AiScope}；<br>
  * ② 把**真实日期/快照作为字面量**注入上下文与提示词（含参数化 few-shot）；<br>
  * ③ LLM 生成 SQL（不可用则规则回退，回退模板同样带字面量）；<br>
  * ④ {@link SqlSafetyValidator#validate(String, AiScope)} 全树校验（失败允许一次受控修复）；<br>
@@ -39,12 +44,18 @@ import java.util.Map;
  * ① 提示词版本 {@code sql_v1 → sql_v2}：v1 教模型写「最近 30 天」并允许自锁快照，
  * 与「禁子查询 + 必须带 snapshot_id/dt 字面量」直接冲突；v2 把 scope 作为事实下发。<br>
  * ② 被拒绝的查询**也写审计行**（{@code status=REJECTED}，{@code errors=<规则码>}），
- * 否则「谁在试探校验器」在库里完全看不见（§19.6 全程审计）。</p>
+ * 否则「谁在试探校验器」在库里完全看不见（§19.6 全程审计）。<br>
+ * ③ S3-58：EXPLAIN/EXECUTE 的数据库超时必须落稳定 {@code QUERY_TIMEOUT}，不能被误记成
+ * {@code SQL_COST_TOO_HIGH} 或无错误码的泛化 FAILED；最终仍写 {@code ai_query_history}。</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TextToSqlService {
+
+    private static final String AI_CALL_AUDIT_WRITE_FAILED = "AI_CALL_AUDIT_WRITE_FAILED";
+    private static final String AI_CALL_FAILURE_AUDIT_WRITE_FAILED = "AI_CALL_FAILURE_AUDIT_WRITE_FAILED";
+    private static final String AI_RESPONSE_AUDIT_WRITE_FAILED = "AI_RESPONSE_AUDIT_WRITE_FAILED";
 
     /** 契约 §2.1/§2.2：提示词与 few-shot 版本化标识 */
     public static final String PROMPT_VERSION = "sql_v2";
@@ -65,13 +76,56 @@ public class TextToSqlService {
      * 查询结果。
      *
      * @param errorCode 稳定错误码/规则码（如 SQL_JOIN、SQL_COST_TOO_HIGH、NO_ACTIVE_SNAPSHOT），成功为 null
+     * @param window    QA-04：本次查询的时间窗口（请求口径 / SQL 实际生效区间 / 结果覆盖天数）。
+     *                  页面提示、解释口径、证据与导出**共用**它，避免三处各说各话。
      */
     public record QueryResult(String status, String sql, List<String> tables, int rowsReturned,
                               long elapsedMs, List<Map<String, Object>> rows, List<String> assumptions,
-                              String error, String errorCode, String providerUsed) {
+                              String error, String errorCode, String providerUsed, QueryWindow window,
+                              String snapshotId, Long sourceId, Long historyId) {
+
+        public QueryResult(String status, String sql, List<String> tables, int rowsReturned, long elapsedMs,
+                           List<Map<String, Object>> rows, List<String> assumptions, String error,
+                           String errorCode, String providerUsed, QueryWindow window,
+                           String snapshotId, Long sourceId) {
+            this(status, sql, tables, rowsReturned, elapsedMs, rows, assumptions, error, errorCode,
+                    providerUsed, window, snapshotId, sourceId, null);
+        }
+
+        public QueryResult(String status, String sql, List<String> tables, int rowsReturned, long elapsedMs,
+                           List<Map<String, Object>> rows, List<String> assumptions, String error,
+                           String errorCode, String providerUsed, QueryWindow window) {
+            this(status, sql, tables, rowsReturned, elapsedMs, rows, assumptions, error, errorCode,
+                    providerUsed, window, null, null, null);
+        }
+
+        /** 兼容旧调用点（无窗口）：窗口未知时按 null 传递，不允许伪造生效区间 */
+        public QueryResult(String status, String sql, List<String> tables, int rowsReturned, long elapsedMs,
+                           List<Map<String, Object>> rows, List<String> assumptions, String error,
+                           String errorCode, String providerUsed) {
+            this(status, sql, tables, rowsReturned, elapsedMs, rows, assumptions, error, errorCode,
+                    providerUsed, null);
+        }
     }
 
+    /** 未指定请求口径的问数（内部/测试入口）：请求标签为 null，窗口仍给出生效区间与覆盖天数 */
     public QueryResult query(String question, String userId) {
+        return query(question, userId, null);
+    }
+
+    /**
+     * @param requestedTimeRange 页面请求的时间口径原文（如「近30天」）。只作**对照展示**，
+     *                           绝不能当成生效口径：生效区间一律以校验器解析出的 dt 字面量为准。
+     */
+    public QueryResult query(String question, String userId, String requestedTimeRange) {
+        return query(question, userId, requestedTimeRange, null);
+    }
+
+    /**
+     * 受控问数；snapshotId 由已登录用户从已发布快照选项中选择。
+     * 空值保持历史行为（解析 ACTIVE）；显式值必须由只读快照解析器验证为 ACTIVE/ARCHIVED。
+     */
+    public QueryResult query(String question, String userId, String requestedTimeRange, String snapshotId) {
         long start = System.currentTimeMillis();
         String status = "GENERATED";
         String sql = null;
@@ -85,10 +139,15 @@ public class TextToSqlService {
         AiScope scope = null;
         Long explainRows = null;
         String stage = "SCOPE_RESOLVE";
+        // QA-04：生效 dt 区间只从校验器的解析结果取，不复制请求标签
+        LocalDate effectiveFrom = null;
+        LocalDate effectiveTo = null;
 
+        Long historyId = null;
         try {
-            // ── 1. ACTIVE 快照作用域（日期/快照参数化的唯一来源，§19.5） ──────────
-            scope = scopeResolver.resolve();
+            // ── 1. 固定快照作用域（日期/快照参数化的唯一来源，§19.5） ──────────────
+            scope = snapshotId == null || snapshotId.isBlank()
+                    ? scopeResolver.resolve() : scopeResolver.resolve(snapshotId);
 
             // ── 1.5 问句层注入筛（§19.5 纵深防御；拒绝也留审计，2026-09-11 补强） ──
             // 放在 scope 之后：被拒问句同样带快照/日期作用域，便于事后取证。
@@ -100,9 +159,8 @@ public class TextToSqlService {
                 // ── 2. LLM 生成（temperature=0；提示词内嵌 scope 字面量） ──────────
                 stage = "GENERATE";
                 AiRequest req = new AiRequest(buildSystemPrompt(scope), buildUserQuestion(question, tables, scope), 0);
-                long callStart = System.currentTimeMillis();
-                String content = llmProvider.complete(req).content();
-                logCall("sql_generation", providerUsed, System.currentTimeMillis() - callStart, "OK", null);
+                AiResponse generated = completeAndAudit("sql_generation", req, providerUsed, scope, question);
+                String content = generated.content();
 
                 JsonNode parsed = JsonExtractor.extractJson(content);
                 sql = parsed.path("sql").asText(null);
@@ -125,10 +183,9 @@ public class TextToSqlService {
                             + SqlPolicy.ALLOWED_FUNCTIONS
                             + "\nSchema：" + catalog.schemaJson(tables)
                             + "\n请只输出修正后的 JSON（含 sql 字段）。";
-                    long repairStart = System.currentTimeMillis();
-                    String repairContent = llmProvider.complete(new AiRequest(
-                            buildSystemPrompt(scope), repairPrompt, 0)).content();
-                    logCall("sql_repair", providerUsed, System.currentTimeMillis() - repairStart, "OK", null);
+                    AiResponse repairResponse = completeAndAudit("sql_repair", new AiRequest(
+                            buildSystemPrompt(scope), repairPrompt, 0), providerUsed, scope, question);
+                    String repairContent = repairResponse.content();
                     JsonNode repaired = JsonExtractor.extractJson(repairContent);
                     sql = repaired.path("sql").asText(null);
                     v = validator.validate(sql, scope);
@@ -140,6 +197,8 @@ public class TextToSqlService {
                     status = "SAFE";
                 }
                 sql = v.sql(); // 已重写 LIMIT
+                effectiveFrom = v.dtFrom();
+                effectiveTo = v.dtTo();
             } else {
                 // ── 规则回退（§3.5.5）：模板同样带快照/日期字面量 ───────────────
                 stage = "FALLBACK";
@@ -155,6 +214,8 @@ public class TextToSqlService {
                     throw new AiSqlException(v.code(), "规则回退模板未通过安全校验: " + v.error());
                 }
                 sql = v.sql();
+                effectiveFrom = v.dtFrom();
+                effectiveTo = v.dtTo();
                 status = "GENERATED";
             }
 
@@ -174,25 +235,56 @@ public class TextToSqlService {
         } catch (AiSqlException e) {
             errorCode = e.code();
             error = truncate(e.getMessage(), 500);
-            // 作用域缺失 = 系统不具备问数条件（FAILED）；SQL 被规则拒绝 = REJECTED（契约 §2.3 审计）
-            boolean scopeFailure = SqlPolicy.NO_ACTIVE_SNAPSHOT.equals(e.code())
-                    || SqlPolicy.METRIC_READ_SOURCE_MISSING.equals(e.code());
-            if (scopeFailure) {
+            // 作用域/依赖超时 = 系统不具备本次问数条件（FAILED）；治理拒绝 = REJECTED。
+            boolean infrastructureFailure = SqlPolicy.NO_ACTIVE_SNAPSHOT.equals(e.code())
+                    || SqlPolicy.SNAPSHOT_NOT_AVAILABLE.equals(e.code())
+                    || SqlPolicy.METRIC_READ_SOURCE_MISSING.equals(e.code())
+                    || PlatformBizException.QUERY_TIMEOUT.equals(e.code());
+            if (infrastructureFailure) {
                 status = "FAILED";
             } else {
                 status = STATUS_REJECTED;
             }
-            log.warn("text-to-sql rejected at stage {}: [{}] {}", stage, errorCode, error);
-        } catch (Exception e) {
-            error = truncate(e.getMessage(), 500);
+            log.warn("text-to-sql rejected/failed at stage {}: [{}] {}", stage, errorCode, error);
+        } catch (SQLTimeoutException | QueryTimeoutException e) {
+            // raw JDBC execute 与 Spring/JdbcTemplate 两条路径的超时统一成已有平台稳定码。
+            errorCode = PlatformBizException.QUERY_TIMEOUT;
+            error = "只读查询超过统一超时（阶段=" + stage + "）";
             status = "FAILED";
-            log.warn("text-to-sql failed: {}", error);
+            log.warn("text-to-sql timed out at stage {}", stage);
+        } catch (Exception e) {
+            if (e instanceof LlmProvider.LlmException llmException) {
+                errorCode = llmException.type();
+                error = switch (errorCode) {
+                    case AI_CALL_AUDIT_WRITE_FAILED -> "模型调用结果不确定：调用审计记录未能保存";
+                    case AI_CALL_FAILURE_AUDIT_WRITE_FAILED -> "模型调用失败：失败审计记录未能保存";
+                    case AI_RESPONSE_AUDIT_WRITE_FAILED -> "模型响应无效：失败审计记录未能保存";
+                    default -> "模型服务调用失败 (" + errorCode + ")";
+                };
+            } else {
+                errorCode = switch (stage) {
+                    case "EXECUTE" -> SqlPolicy.SQL_EXECUTION_FAILED;
+                    case "GENERATE", "REPAIR" -> SqlPolicy.MODEL_RESPONSE_INVALID;
+                    default -> SqlPolicy.AI_QUERY_FAILED;
+                };
+                error = switch (errorCode) {
+                    case SqlPolicy.SQL_EXECUTION_FAILED -> "只读 SQL 执行失败";
+                    case SqlPolicy.MODEL_RESPONSE_INVALID -> "模型响应格式无效";
+                    default -> "问数处理失败（阶段=" + stage + "）";
+                };
+            }
+            status = "FAILED";
+            log.warn("text-to-sql failed at stage {}: {}", stage,
+                    errorCode == null ? error : errorCode);
         } finally {
-            saveHistory(userId, question, sql, tables, scope, status, rowsReturned,
+            historyId = saveHistory(userId, question, sql, tables, scope, status, rowsReturned,
                     System.currentTimeMillis() - start, error, errorCode, explainRows);
         }
+        QueryWindow window = QueryWindow.of(requestedTimeRange, effectiveFrom, effectiveTo,
+                scope == null ? null : scope.businessDate(), rows);
         return new QueryResult(status, sql, tables, rowsReturned,
-                System.currentTimeMillis() - start, rows, assumptions, error, errorCode, providerUsed);
+                System.currentTimeMillis() - start, rows, assumptions, error, errorCode, providerUsed, window,
+                scope == null ? null : scope.snapshotId(), scope == null ? null : scope.sourceId(), historyId);
     }
 
     // ── Prompt 构建（§19.5 安全规则内嵌；真实日期/快照作为字面量下发） ─────────
@@ -202,7 +294,7 @@ public class TextToSqlService {
                 你是指标查询助手。只能生成**单表只读 SELECT**，必须遵守：
                 1. 只使用我给出的表和字段，禁止编造；禁止 SELECT *，所有列必须显式写出；
                 2. WHERE 必须同时含两个字面量条件：
-                   snapshot_id = '%s'（当前 ACTIVE 快照）与
+                   snapshot_id = '%s'（本次固定的已发布快照）与
                    dt >= '%s' AND dt <= '%s'（紧凑 yyyyMMdd，如 20260901；允许区间最长 90 天）；
                    禁止用 (SELECT MAX(dt) ...) / (SELECT MAX(snapshot_id) ...) 等子查询取日期或快照；
                    禁止 CURDATE()/DATE_SUB()/NOW() 等"当前时间"函数，日期一律写字面量；
@@ -218,7 +310,7 @@ public class TextToSqlService {
 
     private String buildUserQuestion(String question, List<String> tables, AiScope scope) {
         return "问题：" + question
-                + "\n当前 ACTIVE 快照：" + scope.snapshotId()
+                + "\n本次固定快照：" + scope.snapshotId()
                 + "（口径版本 " + scope.definitionVersion() + "，业务日（dt 字面量格式） " + scope.dtTo() + "）"
                 + "\n允许查询日期区间（含端点，共 " + scope.maxScanDays() + " 天）："
                 + scope.dtFrom() + " ~ " + scope.dtTo()
@@ -228,17 +320,70 @@ public class TextToSqlService {
 
     // ── 审计（§19.6/§24.8；拒绝也写一行） ─────────────────────────────────────
 
-    private void logCall(String useCase, String provider, long elapsedMs, String status, String error) {
+    private void logCall(String useCase, String provider, String model, long elapsedMs, String status, String error,
+                         AiResponse response, Throwable failure, AiCallIdentity identity) {
         AiCallLog logRow = new AiCallLog();
         logRow.setUseCase(useCase);
         logRow.setProvider(provider);
-        logRow.setModel(null);
+        logRow.setModel(model);
         logRow.setPromptVersion(PROMPT_VERSION);
         logRow.setElapsedMs(elapsedMs);
         logRow.setStatus(status);
         logRow.setError(error);
+        AiCallUsage.record(logRow, response, failure);
+        identity.record(logRow);
         logRow.setCreatedAt(LocalDateTime.now());
         callLogMapper.insert(logRow);
+    }
+
+    private AiResponse completeAndAudit(String useCase, AiRequest request, String provider, AiScope scope, String question) {
+        long callStart = System.currentTimeMillis();
+        AiCallIdentity identity = AiCallIdentity.of(useCase, scope.sourceId(), scope.snapshotId(), question,
+                llmProvider.modelName(), PROMPT_VERSION, llmProvider.maxOutputTokens(), request);
+        AiResponse response;
+        try {
+            response = llmProvider.complete(request);
+        } catch (RuntimeException e) {
+            String errorCode = e instanceof LlmProvider.LlmException llmException
+                    && llmException.type() != null && !llmException.type().isBlank()
+                    ? llmException.type() : "MODEL_CALL_FAILED";
+            try {
+                logCall(useCase, provider, llmProvider.modelName(),
+                        System.currentTimeMillis() - callStart, "FAILED", errorCode, null, e, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("AI call failed and its audit row could not be persisted for useCase {}", useCase);
+                throw new LlmProvider.LlmException(AI_CALL_FAILURE_AUDIT_WRITE_FAILED,
+                        "模型调用失败且调用审计记录未能保存");
+            }
+            if (e instanceof LlmProvider.LlmException) {
+                throw e;
+            }
+            throw new LlmProvider.LlmException(errorCode, "模型调用失败 (" + errorCode + ")");
+        }
+
+        if (response == null) {
+            try {
+                logCall(useCase, provider, llmProvider.modelName(), System.currentTimeMillis() - callStart,
+                        "FAILED", "FORMAT", null, null, identity);
+            } catch (RuntimeException auditFailure) {
+                log.warn("AI provider returned no response and its audit row could not be persisted for useCase {}",
+                        useCase);
+                throw new LlmProvider.LlmException(AI_RESPONSE_AUDIT_WRITE_FAILED,
+                        "模型响应无效且调用审计记录未能保存");
+            }
+            throw new LlmProvider.LlmException("FORMAT", "模型响应为空");
+        }
+
+        try {
+            String model = response.model() == null ? llmProvider.modelName() : response.model();
+            logCall(useCase, provider, model, System.currentTimeMillis() - callStart,
+                    "OK", null, response, null, identity);
+        } catch (RuntimeException auditFailure) {
+            log.warn("AI call completed but its audit row could not be persisted for useCase {}", useCase);
+            throw new LlmProvider.LlmException(AI_CALL_AUDIT_WRITE_FAILED,
+                    "模型调用完成但调用审计记录未能保存", response.inputTokens(), response.outputTokens());
+        }
+        return response;
     }
 
     /**
@@ -250,7 +395,7 @@ public class TextToSqlService {
      * {@code errors} 只保留真正的错误文本（脱敏 + 截断），不再拼接结构化字段。<br>
      * 被拒绝的查询同样落一行（{@code status=REJECTED}），否则「谁在试探校验器」在库里看不见。</p>
      */
-    private void saveHistory(String userId, String question, String sql, List<String> tables, AiScope scope,
+    private Long saveHistory(String userId, String question, String sql, List<String> tables, AiScope scope,
                              String status, int rowsReturned, long elapsedMs, String error,
                              String errorCode, Long explainRows) {
         AiQueryHistory h = new AiQueryHistory();
@@ -270,6 +415,7 @@ public class TextToSqlService {
         h.setErrors(errorText(error, errorCode));
         h.setCreatedAt(LocalDateTime.now());
         historyMapper.insert(h);
+        return h.getId();
     }
 
     /** errors 列：规则码 + 说明（脱敏后 ≤200 字符） */

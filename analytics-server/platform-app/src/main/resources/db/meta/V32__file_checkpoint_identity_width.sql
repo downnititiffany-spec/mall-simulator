@@ -1,0 +1,31 @@
+-- V32（G31-09 / D-041）：file_checkpoint.file_identity 列宽 64 → 255。
+--
+-- 缺陷：V8 将 file_identity 定为 VARCHAR(64)，取值域按「LOCAL 创建时间戳毫秒」设计。
+-- HDFS 接入（G31-05）后，HdfsLandingStorage 写入的身份是
+--   "hdfs:" + "MD5-of-0MD5-of-512CRC32C" + ":" + 64 位 hex = 94 字符，
+-- （算法名 24 字符；FileChecksum.getBytes() 经 WritableUtils.toByteArray 返回 DataOutputBuffer
+--  的**原始缓冲**——write() 实写 28 字节 = bytesPerCRC 4 + crcPerBlock 8 + md5 16，
+--  但 ByteArrayOutputStream 初容量 32、未裁剪 → 返回 byte[32]（含 4 字节零余量）→ 64 hex；
+--  长度由 Hadoop MD5MD5CRC32FileChecksum + DataOutputBuffer 共同决定，hadoop 3.3.4 实测 94）
+-- 超出 64 列宽 → checkpoint INSERT 抛 MysqlDataTruncation → 不落断点行
+-- → 同一 HDFS 文件重试时被当作新文件全量重读（幂等失效）。总控判据：同一 HDFS 文件重试不重读。
+--
+-- 为什么是 255：uk_ckpt_source (runtime_profile_id BIGINT, source_id BIGINT,
+-- file_path VARCHAR(500), file_identity) 为 utf8mb4 唯一键，InnoDB 单键字节上限 3072：
+--   8 + 8 + (500×4) + (255×4) = 3036 ≤ 3072
+-- 若取 300：8 + 8 + 2000 + 1200 = 3216 > 3072，本迁移会直接建键失败。
+-- 身份串格式由 HdfsLandingStorage 代码所有（格式变更 = 新变更请求），94 字符 + 161 余量。
+--
+-- 为什么只 MODIFY：MODIFY COLUMN 自动维护该列所属的唯一键 uk_ckpt_source 与索引，
+-- 无需 DROP/ADD INDEX；不指定 ALGORITHM/LOCK（沿用 V17 先例，避免环境差异）。
+-- 存量行（LOCAL 时间戳身份）语义不变；列仍 NOT NULL DEFAULT ''。
+--
+-- 回滚：无自动 down。如需回退须书面确认后手工 MODIFY 回 VARCHAR(64)，
+-- 前提是确认不存在 >64 字符身份行（否则回退会截断或失败）。
+-- 本脚本为追加式迁移：不修改 V8/V17 已发布内容。
+--
+-- 执行范围：隔离验证库（3307 per-run DB）由 AnalyticsIsolationFlywayIT 执行；
+-- 正式 analytics_meta 按 D-044⑤ 合并重跑窗口执行，本批次不在 3306 上运行。
+
+ALTER TABLE file_checkpoint
+    MODIFY COLUMN file_identity VARCHAR(255) NOT NULL DEFAULT '' COMMENT '文件身份（LOCAL=创建时间戳毫秒；HDFS=hdfs:算法:校验和hex；G31-09/D-041 由 64 加宽至 255）';

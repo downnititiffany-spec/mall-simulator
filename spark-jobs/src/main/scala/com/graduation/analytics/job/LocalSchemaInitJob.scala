@@ -85,6 +85,15 @@ object LocalSchemaInitJob {
           source_batch_id BIGINT,
           product_key BIGINT, category_key BIGINT, parent_category_key BIGINT, brand_key BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
+    (ns.dim, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_date (
+          date_key STRING, year INT, month INT, day INT,
+          week_of_year INT, quarter INT, day_of_week INT, is_weekend INT)
+        USING parquet"""),
+    (ns.dim, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.dim}.dim_region (
+          region_code STRING, region_name STRING, city_level STRING)
+        USING parquet"""),
 
     (ns.dws, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_user_behavior_day (
@@ -95,7 +104,8 @@ object LocalSchemaInitJob {
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_behavior_funnel_day (
           category_id BIGINT, channel STRING, view_users BIGINT, intent_users BIGINT,
           order_users BIGINT, pay_users BIGINT, intent_rate DECIMAL(8,4),
-          order_rate DECIMAL(8,4), pay_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4))
+          order_rate DECIMAL(8,4), pay_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4),
+          cart_users BIGINT, cart_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.dws, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_product_behavior_day (
@@ -116,11 +126,13 @@ object LocalSchemaInitJob {
     (ns.dws, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_user_trade_period (
           user_id BIGINT, last_buy_date STRING, order_count BIGINT,
-          sale_amount DECIMAL(18,2), period_start STRING, period_end STRING)
+          sale_amount DECIMAL(18,2), period_start STRING, period_end STRING,
+          valid_order_count BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.dws, s"""
         CREATE TABLE IF NOT EXISTS ${ns.dws}.dws_region_sale_day (
-          region STRING, buyer_count BIGINT, order_count BIGINT, sale_amount DECIMAL(18,2))
+          region STRING, buyer_count BIGINT, order_count BIGINT, sale_amount DECIMAL(18,2),
+          net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     (ns.ads, s"""
@@ -128,12 +140,15 @@ object LocalSchemaInitJob {
           pv BIGINT, uv BIGINT, dau BIGINT, order_count BIGINT,
           sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
           avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
-          full_refund_rate DECIMAL(8,4))
+          full_refund_rate DECIMAL(8,4), repeat_rate DECIMAL(8,4),
+          repeat_period_start STRING, repeat_period_end STRING,
+          fav_cnt BIGINT, cart_add_cnt BIGINT)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_behavior_funnel (
           stage STRING, user_count BIGINT,
-          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4))
+          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4),
+          overall_cart_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_active_trend (
@@ -142,7 +157,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_hot_product (
           product_id BIGINT, product_name STRING, heat_score DECIMAL(18,4),
-          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT)
+          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT, rule_version STRING)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_product_conversion (
@@ -152,19 +167,32 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_sale_trend (
           order_count BIGINT, buyer_count BIGINT, sale_amount DECIMAL(18,2),
-          avg_order_value DECIMAL(18,2))
+          avg_order_value DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (dt STRING)"""),
+    // S3-01：画像表末尾追加 R/F/M 原值 + 观察窗口（§11.4 L447）。注意 `IF NOT EXISTS` 对**已存在**的表
+    // 不生效 —— 已在产 Hive 建过该表的库需要显式 `ALTER TABLE … ADD COLUMNS` 才会长出新列
+    // （本地/内存目录每次新建，能直接看到新结构；生产 Hive 迁移不在本任务范围，见 F-34 未实测边界）。
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_user_profile (
           user_id BIGINT, r INT, f INT, m INT, value_group STRING,
           active_level STRING, favorite_category BIGINT, last_active_date STRING,
           last_buy_date STRING, lifecycle_state STRING, rule_version STRING,
-          calc_date STRING)
+          calc_date STRING, r_days INT, f_count BIGINT, m_amount DECIMAL(18,2),
+          period_start STRING, period_end STRING)
         USING parquet PARTITIONED BY (dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_data_quality (
           rule_code STRING, check_count BIGINT, error_count BIGINT,
-          error_rate DECIMAL(8,6), passed INT, threshold STRING)
+          error_rate DECIMAL(8,6), passed INT, threshold STRING, rule_version INT)
+        USING parquet PARTITIONED BY (dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_category_sale (
+          category_id BIGINT, category_name STRING, parent_category_id BIGINT, parent_category_name STRING,
+          sale_count BIGINT, sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
+        USING parquet PARTITIONED BY (dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_region_sale (
+          region STRING, sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (dt STRING)"""),
 
     // ---- R6-13 暂存分区（§14.4 分区幂等协议）----
@@ -175,12 +203,15 @@ object LocalSchemaInitJob {
           pv BIGINT, uv BIGINT, dau BIGINT, order_count BIGINT,
           sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
           avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
-          full_refund_rate DECIMAL(8,4))
+          full_refund_rate DECIMAL(8,4), repeat_rate DECIMAL(8,4),
+          repeat_period_start STRING, repeat_period_end STRING,
+          fav_cnt BIGINT, cart_add_cnt BIGINT)
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_behavior_funnel__staging (
           stage STRING, user_count BIGINT,
-          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4))
+          conversion_rate DECIMAL(8,4), overall_buy_rate DECIMAL(8,4),
+          overall_cart_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_active_trend__staging (
@@ -189,7 +220,7 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_hot_product__staging (
           product_id BIGINT, product_name STRING, heat_score DECIMAL(18,4),
-          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT)
+          pv BIGINT, fav BIGINT, cart BIGINT, buy BIGINT, rank_no INT, rule_version STRING)
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_product_conversion__staging (
@@ -199,19 +230,29 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_sale_trend__staging (
           order_count BIGINT, buyer_count BIGINT, sale_amount DECIMAL(18,2),
-          avg_order_value DECIMAL(18,2))
+          avg_order_value DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_user_profile__staging (
           user_id BIGINT, r INT, f INT, m INT, value_group STRING,
           active_level STRING, favorite_category BIGINT, last_active_date STRING,
           last_buy_date STRING, lifecycle_state STRING, rule_version STRING,
-          calc_date STRING)
+          calc_date STRING, r_days INT, f_count BIGINT, m_amount DECIMAL(18,2),
+          period_start STRING, period_end STRING)
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_data_quality__staging (
           rule_code STRING, check_count BIGINT, error_count BIGINT,
-          error_rate DECIMAL(8,6), passed INT, threshold STRING)
+          error_rate DECIMAL(8,6), passed INT, threshold STRING, rule_version INT)
+        USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_category_sale__staging (
+          category_id BIGINT, category_name STRING, parent_category_id BIGINT, parent_category_name STRING,
+          sale_count BIGINT, sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
+        USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_region_sale__staging (
+          region STRING, sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)""")
   )
 
@@ -243,13 +284,27 @@ object LocalSchemaInitJob {
         pv BIGINT, uv BIGINT, dau BIGINT, order_count BIGINT,
         sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2),
         avg_order_value DECIMAL(18,2), refund_rate DECIMAL(8,4),
-        full_refund_rate DECIMAL(8,4))
+        full_refund_rate DECIMAL(8,4), repeat_rate DECIMAL(8,4),
+        repeat_period_start STRING, repeat_period_end STRING,
+        fav_cnt BIGINT, cart_add_cnt BIGINT)
       USING parquet PARTITIONED BY (dt STRING)"""
 
-  /** R7-0 新增列（口径统一新增 full_refund_rate）：正式+暂存表都补齐 */
+  /**
+   * 存量 ADS 表的**加性补列**清单（正式表 + 暂存表都补）：
+   * R7-0 起为口径统一新增 `full_refund_rate`；S3-03 追加复购率与其观察期声明三列；
+   * S3-08 追加收藏/加购**次数**两列（设计 §11.2 L425「对应行为事件数」）。
+   *
+   * 只允许追加列（`ALTER TABLE … ADD COLUMNS`）：历史 parquet 文件缺该列时读出 null，
+   * 下一次成功发布即被新快照覆盖；新建表则由上方 `statements(ns)` 的 DDL 直接长齐。
+   * **列序必须与 DDL 末尾一致**（`MetricAdsSpec` 与写入都是按位置对齐）。
+   */
   val R7_ADDED_COLUMNS: Map[(String, String), Seq[String]] = Map(
-    ("ads", "ads_operation_overview") -> Seq("full_refund_rate DECIMAL(8,4)"),
-    ("ads", "ads_operation_overview__staging") -> Seq("full_refund_rate DECIMAL(8,4)"))
+    ("ads", "ads_operation_overview") -> Seq("full_refund_rate DECIMAL(8,4)",
+      "repeat_rate DECIMAL(8,4)", "repeat_period_start STRING", "repeat_period_end STRING",
+      "fav_cnt BIGINT", "cart_add_cnt BIGINT"),
+    ("ads", "ads_operation_overview__staging") -> Seq("full_refund_rate DECIMAL(8,4)",
+      "repeat_rate DECIMAL(8,4)", "repeat_period_start STRING", "repeat_period_end STRING",
+      "fav_cnt BIGINT", "cart_add_cnt BIGINT"))
 
   /**
    * R6-13 结构对账（幂等，只在检测到漂移时动作）：

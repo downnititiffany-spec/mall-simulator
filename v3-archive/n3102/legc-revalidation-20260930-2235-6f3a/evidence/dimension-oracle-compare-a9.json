@@ -1,0 +1,362 @@
+[
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": -1,
+    "field": "category_name",
+    "expected": "未分类",
+    "actual": "未分类",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": -1,
+    "field": "parent_category_id",
+    "expected": -1,
+    "actual": -1,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": -1,
+    "field": "parent_category_name",
+    "expected": "未分类",
+    "actual": "未分类",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": -1,
+    "field": "sale_count",
+    "expected": 1,
+    "actual": 1,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": -1,
+    "field": "sale_amount",
+    "expected": 60,
+    "actual": 60.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": -1,
+    "field": "net_sale_amount",
+    "expected": 60,
+    "actual": 60.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": -1,
+    "field": "amount_ratio",
+    "expected": 0.13333333333333333,
+    "actual": 0.1333,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 100,
+    "field": "category_name",
+    "expected": "数码设备",
+    "actual": "数码设备",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 100,
+    "field": "parent_category_id",
+    "expected": 10,
+    "actual": 10,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 100,
+    "field": "parent_category_name",
+    "expected": "电子产品",
+    "actual": "电子产品",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 100,
+    "field": "sale_count",
+    "expected": 2,
+    "actual": 2,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 100,
+    "field": "sale_amount",
+    "expected": 190,
+    "actual": 190.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 100,
+    "field": "net_sale_amount",
+    "expected": 190,
+    "actual": 190.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 100,
+    "field": "amount_ratio",
+    "expected": 0.4222222222222222,
+    "actual": 0.4222,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 200,
+    "field": "category_name",
+    "expected": "数码配件",
+    "actual": "数码配件",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 200,
+    "field": "parent_category_id",
+    "expected": 10,
+    "actual": 10,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 200,
+    "field": "parent_category_name",
+    "expected": "电子产品",
+    "actual": "电子产品",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 200,
+    "field": "sale_count",
+    "expected": 2,
+    "actual": 2,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 200,
+    "field": "sale_amount",
+    "expected": 150,
+    "actual": 150.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 200,
+    "field": "net_sale_amount",
+    "expected": 70,
+    "actual": 70.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 200,
+    "field": "amount_ratio",
+    "expected": 0.3333333333333333,
+    "actual": 0.3333,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 300,
+    "field": "category_name",
+    "expected": "家居日用",
+    "actual": "家居日用",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 300,
+    "field": "parent_category_id",
+    "expected": 20,
+    "actual": 20,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 300,
+    "field": "parent_category_name",
+    "expected": "家居生活",
+    "actual": "家居生活",
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 300,
+    "field": "sale_count",
+    "expected": 1,
+    "actual": 1,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 300,
+    "field": "sale_amount",
+    "expected": 50,
+    "actual": 50.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 300,
+    "field": "net_sale_amount",
+    "expected": 50,
+    "actual": 50.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "category",
+    "key": 300,
+    "field": "amount_ratio",
+    "expected": 0.1111111111111111,
+    "actual": 0.1111,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier1",
+    "field": "sale_amount",
+    "expected": 230,
+    "actual": 230.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier1",
+    "field": "net_sale_amount",
+    "expected": 150,
+    "actual": 150.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier1",
+    "field": "amount_ratio",
+    "expected": 0.5111111111111111,
+    "actual": 0.5111,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier2",
+    "field": "sale_amount",
+    "expected": 90,
+    "actual": 90.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier2",
+    "field": "net_sale_amount",
+    "expected": 90,
+    "actual": 90.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier2",
+    "field": "amount_ratio",
+    "expected": 0.2,
+    "actual": 0.2,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier3",
+    "field": "sale_amount",
+    "expected": 70,
+    "actual": 70.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier3",
+    "field": "net_sale_amount",
+    "expected": 70,
+    "actual": 70.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "tier3",
+    "field": "amount_ratio",
+    "expected": 0.15555555555555556,
+    "actual": 0.1556,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "unknown",
+    "field": "sale_amount",
+    "expected": 60,
+    "actual": 60.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "unknown",
+    "field": "net_sale_amount",
+    "expected": 60,
+    "actual": 60.0,
+    "passed": true
+  },
+  {
+    "surface": "API",
+    "dimension": "region",
+    "key": "unknown",
+    "field": "amount_ratio",
+    "expected": 0.13333333333333333,
+    "actual": 0.1333,
+    "passed": true
+  }
+]

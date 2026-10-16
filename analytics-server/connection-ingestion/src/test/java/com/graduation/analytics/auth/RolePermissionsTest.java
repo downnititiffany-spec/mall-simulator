@@ -59,9 +59,11 @@ class RolePermissionsTest {
     }
 
     @Test
-    @DisplayName("四种角色都有 dashboard:view / ai:query / decision:create（防止误 403 的主路径）")
+    @DisplayName("四种角色都有 dashboard:view / ai:query / decision:create（含 D-059 历史快照权限约束）")
     void commonPermissionsForAllRoles() {
         for (String role : RolePermissions.ROLES) {
+            // D-059：AI endpoints accept an explicit snapshotId. Any role allowed to call them
+            // must also satisfy the dashboard:view gate that authorizes cross-profile history.
             for (String code : new String[]{PermissionCode.DASHBOARD_VIEW, PermissionCode.AI_QUERY,
                     PermissionCode.DECISION_CREATE}) {
                 assertTrue(RolePermissions.has(role, code), role + " 缺少 " + code);

@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,13 +18,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LocalProcessSparkSubmitterLogTest {
 
+    private static List<String> echoCommand(String text) {
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win")) {
+            return List.of("cmd.exe", "/c", "echo", text);
+        }
+        return List.of("/bin/sh", "-c", "printf '%s\\n' \"$1\"", "sh", text);
+    }
+
     @TempDir
     Path tempDir;
 
     @Test
     void submitThenLogsReadBackSameFileByExternalJobId() throws Exception {
         LocalProcessSparkSubmitter submitter =
-                new LocalProcessSparkSubmitter("cmd", tempDir.toString());
+                new LocalProcessSparkSubmitter("spark-submit-not-used", tempDir.toString());
 
         JobSubmitter.SubmitResult sr = submitter.submit(
                 echoCommand("MARKER-OK-123"), "pipeline-9-LOAD_ODS");
@@ -46,7 +54,7 @@ class LocalProcessSparkSubmitterLogTest {
     @Test
     void logFileEmbedsPrefixAndIsStillTraceableByExternalJobId() throws Exception {
         LocalProcessSparkSubmitter submitter =
-                new LocalProcessSparkSubmitter("cmd", tempDir.toString());
+                new LocalProcessSparkSubmitter("spark-submit-not-used", tempDir.toString());
         String prefix = "prefix-" + System.currentTimeMillis();
         JobSubmitter.SubmitResult sr = submitter.submit(
                 echoCommand("x"), prefix);
@@ -85,15 +93,8 @@ class LocalProcessSparkSubmitterLogTest {
     @Test
     void logsMissingFileReturnsReadableMessage() {
         LocalProcessSparkSubmitter submitter =
-                new LocalProcessSparkSubmitter("cmd", tempDir.toString());
+                new LocalProcessSparkSubmitter("spark-submit-not-used", tempDir.toString());
         String logs = submitter.logs("lp-999999-nonexistent");
         assertThat(logs).contains("日志文件不存在");
-    }
-
-    private static List<String> echoCommand(String marker) {
-        if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
-            return List.of("cmd", "/c", "echo", marker);
-        }
-        return List.of("echo", marker);
     }
 }

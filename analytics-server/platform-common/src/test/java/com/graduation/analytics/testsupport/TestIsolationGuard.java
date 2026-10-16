@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -163,8 +164,9 @@ public final class TestIsolationGuard {
     /**
      * 加载测试隔离档案并构造 {@link TestRunContext}。
      *
-     * <p>顺序：系统属性 {@code -Dv25.it.*} → classpath {@value #CLASSPATH_RESOURCE} →
-     * 仓库根 {@code analytics-server/integration.local.properties}。三者都没有就
+     * <p>顺序：系统属性 {@code -Dv25.it.*} → 环境变量 {@code V25_IT_*} →
+     * classpath {@value #CLASSPATH_RESOURCE} →
+     * 仓库根 {@code analytics-server/integration.local.properties}。四者都没有就
      * **抛 {@link MissingConfigurationException}**，绝不回退到任何正式库默认值。</p>
      */
     public static TestRunContext loadContext() {
@@ -175,6 +177,10 @@ public final class TestIsolationGuard {
     public static TestIsolationConfig load() {
         if (hasAnySystemProperty()) {
             return fromSystemProperties();
+        }
+        Map<String, String> environment = System.getenv();
+        if (hasAnyEnvironmentProperty(environment)) {
+            return fromEnvironment(environment);
         }
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         try (InputStream in = loader == null ? null : loader.getResourceAsStream(CLASSPATH_RESOURCE)) {
@@ -192,7 +198,7 @@ public final class TestIsolationGuard {
         }
         throw new MissingConfigurationException("未提供测试隔离配置，拒绝运行外部写入型测试。"
                 + "需要以下之一：(1) 系统属性 " + SYSTEM_PROPERTY_PREFIX + "*；"
-                + "(2) classpath:" + CLASSPATH_RESOURCE + "；(3) " + repoFile
+                + "(2) 环境变量 V25_IT_*；(3) classpath:" + CLASSPATH_RESOURCE + "；(4) " + repoFile
                 + "。本门禁**不**提供 analytics_metric 等正式库 fallback。");
     }
 
@@ -224,6 +230,27 @@ public final class TestIsolationGuard {
     }
 
     /**
+     * 用进程环境变量构造完整隔离配置。
+     *
+     * <p>命名规则统一由 {@link #environmentName(String)} 产生，例如：
+     * {@code testRunId -> V25_IT_TEST_RUN_ID}、{@code metaDb -> V25_IT_META_DB}。
+     * 一旦检测到任一核心环境变量，就要求该来源的 8 个字段**全部存在**；不会再拿档案或
+     * 正式默认值补洞，避免一半来自本轮、一半来自陈旧文件的混合配置。</p>
+     */
+    static TestIsolationConfig fromEnvironment(Map<String, String> environment) {
+        Properties props = new Properties();
+        Map<String, String> env = environment == null ? Map.of() : environment;
+        for (String key : List.of("testRunId", "serverFingerprint", "metaDb", "metricDb", "hiveNamespace",
+                "hdfsRoot", "manifestRoot", "credentialsRef")) {
+            String value = env.get(environmentName(key));
+            if (value != null && !value.isBlank()) {
+                props.setProperty(key, value.trim());
+            }
+        }
+        return fromProperties(environmentMarker(), props);
+    }
+
+    /**
      * 系统属性来源的标记路径。
      *
      * <p><b>不能</b>写成 {@code Paths.get("system-properties:v25.it.")}：带冒号的假 URI 在 Windows 上
@@ -234,9 +261,24 @@ public final class TestIsolationGuard {
         return Paths.get(System.getProperty("java.io.tmpdir"), "v25-it-system-properties.marker");
     }
 
+    private static Path environmentMarker() {
+        return Paths.get(System.getProperty("java.io.tmpdir"), "v25-it-environment.marker");
+    }
+
     private static boolean hasAnySystemProperty() {
         for (String key : List.of("testRunId", "metaDb", "metricDb", "serverFingerprint")) {
             String value = System.getProperty(SYSTEM_PROPERTY_PREFIX + key);
+            if (value != null && !value.isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasAnyEnvironmentProperty(Map<String, String> environment) {
+        Map<String, String> env = environment == null ? Map.of() : environment;
+        for (String key : List.of("testRunId", "metaDb", "metricDb", "serverFingerprint")) {
+            String value = env.get(environmentName(key));
             if (value != null && !value.isBlank()) {
                 return true;
             }
@@ -251,7 +293,8 @@ public final class TestIsolationGuard {
     /**
      * 解析连接类配置项（{@code mysql.host} / 账号 / 口令引用）。
      *
-     * <p>解析顺序与隔离档案一致：系统属性 {@code v25.it.<key>} 优先，其次当前隔离档案文件。
+     * <p>解析顺序与隔离上下文一致：系统属性 {@code v25.it.<key>} 优先，其次环境变量
+     * {@code V25_IT_*}，最后当前隔离档案文件。
      * <b>没有默认值</b>：两处都没有就抛 {@link MissingConfigurationException}——尤其不会
      * 退回 {@code 127.0.0.1:3306}、{@code root} 或 {@code metric_pub} 之类的正式目标。</p>
      *
@@ -260,10 +303,19 @@ public final class TestIsolationGuard {
      * 逼使用户为了跑测试而在命令行重复粘正式地址。这里把档案作为同一来源统一解析。</p>
      */
     public static String requiredProperty(String key) {
+        return requiredProperty(key, System.getenv());
+    }
+
+    static String requiredProperty(String key, Map<String, String> environment) {
         requireText(key, "key");
         String fromSystem = System.getProperty(SYSTEM_PROPERTY_PREFIX + key);
         if (fromSystem != null && !fromSystem.isBlank()) {
             return fromSystem.trim();
+        }
+        Map<String, String> env = environment == null ? Map.of() : environment;
+        String fromEnvironment = env.get(environmentName(key));
+        if (fromEnvironment != null && !fromEnvironment.isBlank()) {
+            return fromEnvironment.trim();
         }
         Properties fromProfile = isolationProfileFileProperties();
         String value = fromProfile.getProperty(key);
@@ -271,7 +323,17 @@ public final class TestIsolationGuard {
             return value.trim();
         }
         throw new MissingConfigurationException("缺少测试隔离配置项 " + SYSTEM_PROPERTY_PREFIX + key
-                + "（系统属性或隔离档案 " + CLASSPATH_RESOURCE + "）：拒绝运行（不用正式账号/正式地址兜底）");
+                + " / " + environmentName(key) + "（系统属性、环境变量或隔离档案 " + CLASSPATH_RESOURCE
+                + "）：拒绝运行（不用正式账号/正式地址兜底）");
+    }
+
+    /** 把配置键稳定映射成 runner 可注入的环境变量名。 */
+    static String environmentName(String key) {
+        requireText(key, "key");
+        String snake = key.replaceAll("([a-z0-9])([A-Z])", "$1_$2")
+                .replaceAll("[^A-Za-z0-9]+", "_")
+                .toUpperCase(Locale.ROOT);
+        return "V25_IT_" + snake;
     }
 
     /**

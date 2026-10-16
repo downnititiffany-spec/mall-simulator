@@ -31,9 +31,18 @@ import java.util.List;
  * {@code platform-common}；若把本类留在 {@code warehouse-pipeline}，就会制造
  * 「分析模块反向依赖流水线模块」的新耦合。包名 {@code metric} 与 {@link MetricQualityGate} 同族。</p>
  *
- * <p>覆盖范围：截至 2026-09-12 实测枚举到的规则码 —— Spark dqc/pub/mxp 与 Java Landing 共 17 个，
- * 指标库发布对账 15 个（{@code MetricPublishValidator} 的 {@code check(...)} 实际产出）；
- * 未登记码兜底 {@link #UNREGISTERED}。</p>
+ * <p>覆盖范围：本类只登记**实测枚举到**的规则码 —— Spark dqc/pub/mxp、Java Landing，以及
+ * 指标库发布对账（{@code MetricPublishValidator} 的 {@code check(...)} 调用产出）。
+ * 逐码清单与计数**不在本注释里维护第二份**（历史上两处计数已漂移过：F-88 时写 17/15，
+ * 实际随 V23、S3-10 增长到 18/17）—— 唯一对账点是 {@code RuleSeverityTest} 的
+ * {@code ALL_REGISTERED_CODES} 与 {@link QualityRuleCatalog} 目录；
+ * 未登记码兜底 {@link #UNREGISTERED}。S3-10 新增
+ * {@code ADS_DWS_FUNNEL_RATE_RECONCILE}（率列跨层对账）；S3-22 新增
+ * {@code ADS_GMV_NET_SALE_INVARIANT}（ADS 大盘「GMV ≥ 净销售 ≥ 0」同归属口径不变量，
+ * 设计 §12.3 第 8 项）；S3-23 新增 {@code ADS_UV_PV_INVARIANT}（ADS 大盘「UV ≤ PV」同过滤条件
+ * 不变量，设计 §12.3 第 9 项；与第 8 项分开成码）；S3-25 新增
+ * {@code DWS_UV_PV_INVARIANT}（DWS 商品×日期行为宽表「UV ≤ PV」，第 9 项在 DWS 层的**同型站点**；
+ * 与 ADS 侧同型但**不同码**——粒度、表、分区维度都不同，一处通过不能证明另一处通过）。</p>
  */
 public final class RuleSeverity {
 
@@ -68,12 +77,18 @@ public final class RuleSeverity {
             "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE",
             // ADS 暂存层（Spark dqc）
             "ADS_STAGING_PRESENT", "ADS_STAGING_SNAPSHOT_ISOLATION", "ADS_STAGING_KEY_NOT_NULL",
-            "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE",
+            "PUB_DQ_BLOCKING_RULES", "ADS_DWS_FUNNEL_RECONCILE", "ADS_DWS_FUNNEL_RATE_RECONCILE",
+            "ADS_CATEGORY_SALE_RECONCILE", "ADS_REGION_SALE_RECONCILE",
+            "ADS_GMV_NET_SALE_INVARIANT",
+            "ADS_UV_PV_INVARIANT",
+            // DWS 层（Spark dqc 读 DWS 宽表；第 9 项的同型站点，S3-25）
+            "DWS_UV_PV_INVARIANT",
             // 发布层（Spark pub / mxp）
             "PUB_STAGING_READY", "PUB_FORMAL_PARTITION_MATCH", "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE",
             "MXP_SNAPSHOT_PINNED", "MXP_EXPORT_ROWS", "MXP_EXPORT_COMPLETE",
             // 指标库发布对账（MetricPublishValidator）
             "MP_MANIFEST_TABLES", "MP_MANIFEST_SNAPSHOT", "MP_HIVE_PATH_PINNED", "MP_EXPORT_FILES",
+            "MP_EXPORT_CHECKSUM",
             "MP_ADS_ROWS_MATCH", "MP_REQUIRED_TABLES_NONEMPTY", "MP_ROW_SHAPE_CONSISTENT",
             "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
             "MP_METRIC_VALUE_COUNT", "MP_ACTIVE_SNAPSHOT", "MP_ADS_ROWS_DB_MATCH",
@@ -114,7 +129,7 @@ public final class RuleSeverity {
             case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" -> WARN;
 
             // ── ADS 暂存层（Spark dqc）──
-            case "ADS_STAGING_PRESENT" -> BLOCKING;          // 8 张暂存表本次快照分区必须存在且非空
+            case "ADS_STAGING_PRESENT" -> BLOCKING;          // 当前 ADS 表集本次快照分区必须存在且 Location 可读
             // 历史暂存快照存在**本身不是错误**（D-142 §1）：发布按「本次快照的暂存路径」逐表切指针，
             // 陈旧分区不污染正式分区；且清理发生在 pub（dqc 之后），设为阻断会造成发布死锁
             // （实测依据见 AdsQualityJob.scala:55-59 与 docs/remediation-status.md:183）。
@@ -127,6 +142,26 @@ public final class RuleSeverity {
             case "PUB_DQ_BLOCKING_RULES" -> BLOCKING;
             // 跨层对账（ADS 漏斗 stage 汇总 = DWS 漏斗对应列），不一致即口径破坏 ⇒ 阻断
             case "ADS_DWS_FUNNEL_RECONCILE" -> BLOCKING;
+            // 分类/城市等级销售金额与 DWS 总额差异意味着维度生产口径漏数、重复或串值 ⇒ 阻断
+            case "ADS_CATEGORY_SALE_RECONCILE", "ADS_REGION_SALE_RECONCILE" -> BLOCKING;
+            // 跨层对账（ADS 漏斗**率列**逐格 = DWS 全站行同 dt 率列；S3-10）：ADS 只透传不重算，
+            // 率列错位会让发布出去的漏斗结论直接错，而行数/关键列非空可能同时正常 ⇒ 阻断。
+            // 只判跨层一致性：不判比率数值是否异常（设计 §12.3 第 10 项「宽松口径异常不一概阻断」），
+            // NULL 与 NULL 判等（分母 0 时率列是 NULL）
+            case "ADS_DWS_FUNNEL_RATE_RECONCILE" -> BLOCKING;
+            // 同归属口径不变量（S3-22）：ADS 大盘 GMV(sale_amount) ≥ 净销售(net_sale_amount) ≥ 0
+            // （设计 §12.3 第 8 项）。净销售是「支付 − 成功退款」的发布口径（设计 line 428），
+            // 一旦大于实付或为负，页面上的 GMV/净销售/退款率结论整体错 ⇒ 阻断；
+            // 金额任一列为 NULL 同样阻断（不可证明的不变量不得放行）。只判不改、不修数据。
+            // 第 9 项「UV ≤ PV」另立一码，二者独立（同 line 512）
+            case "ADS_GMV_NET_SALE_INVARIANT" -> BLOCKING;
+            case "ADS_UV_PV_INVARIANT" -> BLOCKING;
+            // DWS 同型站点（S3-25）：DWS 商品×日期行为宽表按 product_id×category_id 分组，
+            // 一行一商品，`uv > pv` 同样是「两列已取自不同过滤条件」的口径破坏
+            // （同过滤条件下的去重用户数不可能超过次数）。该表无 snapshot 维度 ⇒ 作用域＝本次 dt 分区；
+            // NULL 在本层**没有**直接所有者（keyPredicates 只覆盖 ADS 暂存表）⇒ 由本码自判，
+            // 任一列为 NULL 即不通过。与 ADS 侧同型但不合并（粒度/表/分区维度不同，line 512）。
+            case "DWS_UV_PV_INVARIANT" -> BLOCKING;
 
             // ── 发布层（Spark pub / mxp）──
             case "PUB_STAGING_READY" -> BLOCKING;            // 暂存分区未就绪不得切换任何正式分区
@@ -137,7 +172,7 @@ public final class RuleSeverity {
             // 其他快照数据 ⇒ 阻断」的**真阻断点**
             case "MXP_SNAPSHOT_PINNED" -> BLOCKING;
             case "MXP_EXPORT_ROWS" -> BLOCKING;              // 导出文件行数 = Hive 分区行数
-            case "MXP_EXPORT_COMPLETE" -> BLOCKING;          // 8 张表导出完成且行数一致
+            case "MXP_EXPORT_COMPLETE" -> BLOCKING;          // 当前 ADS 白名单表集导出完成且行数一致
 
             // ── 指标库发布对账（MetricPublishValidator，四阶段纯函数校验）──
             // 登记理由：这些规则由 metric-analysis 直接判阻断并阻断「写指标值 + 切 ACTIVE」，
@@ -146,6 +181,7 @@ public final class RuleSeverity {
             // 未登记的兜底也是 BLOCKING，所以此处登记只增可读性、不改变行为。
             // 名单 = 实读 MetricPublishValidator 全部 check(...) 调用产出（F-88 裁决 4 补齐 11 个漏登）。
             case "MP_MANIFEST_TABLES", "MP_MANIFEST_SNAPSHOT", "MP_HIVE_PATH_PINNED", "MP_EXPORT_FILES",
+                 "MP_EXPORT_CHECKSUM",
                  "MP_ADS_ROWS_MATCH", "MP_REQUIRED_TABLES_NONEMPTY", "MP_ROW_SHAPE_CONSISTENT",
                  "MP_OVERVIEW_CORE_NOT_NULL", "MP_METRIC_DICT_VERSION", "MP_VALUE_MATCH_ADS",
                  "MP_METRIC_VALUE_COUNT", "MP_ACTIVE_SNAPSHOT", "MP_ADS_ROWS_DB_MATCH",
@@ -181,6 +217,23 @@ public final class RuleSeverity {
     }
 
     /**
+     * 全部已登记规则码的**只读视图**（S3-49 新增；内容与本类 {@code REGISTERED} 是同一实体，不是副本）。
+     *
+     * <p><b>为什么必须由本类暴露</b>：跨模块守卫（{@code SparkRuleCodeRegistryGuardTest}）要做
+     * **双向**核对 —— 「Spark 生产源码里的码都已登记」＋「登记表里由 Spark 承载的码都还有站点」。
+     * 若守卫在自己那里另抄一份码表，就等于**再造一个所有者**，正是 S3-30/S3-49 要消除的漂移面；
+     * 因此把唯一所有者按只读方式暴露出来，而不是复制。</p>
+     *
+     * <p>语义边界：本集合是**代码内默认目录**（与 {@link #registered(String)} 同一口径），
+     * 不代表某次 run 的冻结规则集（冻结口径见 {@link QualityRuleCatalog.FrozenRules}）。</p>
+     *
+     * @return 不可变集合（{@code Set.of} 语义）；空/未登记仍由 {@link #registered(String)} 回答
+     */
+    public static java.util.Set<String> registeredCodes() {
+        return REGISTERED;
+    }
+
+    /**
      * 该规则为什么是这个严重度（审计用，落 IMPL-REPORT 与运维页说明）。
      *
      * @param ruleCode 规则码
@@ -195,13 +248,42 @@ public final class RuleSeverity {
             case "EVENT_ID_UNIQUE", "PUB_DQ_EVENT_ID_UNIQUE" ->
                     "原始事件重复；下游确定性去重（ROW_NUMBER PARTITION BY event_id / dropDuplicates），"
                             + "重复行进 dwd_reject_record 的 DUPLICATE_EVENT；阈值 0.0005 来自设计文稿 §5.4.2，未放宽";
-            case "ADS_STAGING_PRESENT" -> "ADS 暂存分区缺失/为空 ⇒ 发布无数据可切（硬门）";
+            case "ADS_STAGING_PRESENT" ->
+                    "当前 ADS 表集的暂存分区缺失或无 Location ⇒ 无可追溯制品可发布（硬门）；"
+                            + "v2 起允许专题当天无事实形成的合法 0 行分区";
             case "ADS_STAGING_SNAPSHOT_ISOLATION" ->
                     "历史暂存快照存在本身不是错误（D-142 §1）；指针按本次快照切换，陈旧分区由 pub 按引用清理；"
                             + "真阻断点由 MXP_SNAPSHOT_PINNED 承担（设为阻断会造成发布死锁）";
             case "ADS_STAGING_KEY_NOT_NULL" -> "ADS 关键列 NULL ⇒ 口径破坏（阈值 0）";
             case "PUB_DQ_BLOCKING_RULES" -> "暂存宽表内 3 条阻断规则必须全过（与 Java corePassed 同口径）";
             case "ADS_DWS_FUNNEL_RECONCILE" -> "ADS↔DWS 跨层漏斗对账不一致 ⇒ 口径破坏";
+            case "ADS_CATEGORY_SALE_RECONCILE" ->
+                    "分类 ADS 销售额/净销售额与 DWS 交易总额不一致 ⇒ 分类分布漏数、重复或串值；unknown 桶必须计入";
+            case "ADS_REGION_SALE_RECONCILE" ->
+                    "城市等级 ADS 销售额/净销售额与 DWS 交易总额不一致 ⇒ 地区分布漏数、重复或串值；unknown 桶必须计入";
+            case "ADS_DWS_FUNNEL_RATE_RECONCILE" ->
+                    "ADS 漏斗率列 ≠ DWS 全站行同 dt 率列 ⇒ 发布出去的漏斗结论直接错"
+                            + "（行数与关键列非空可能同时正常，只有逐格率对账能发现；"
+                            + "只判跨层一致性，不判比率数值是否异常）";
+            case "ADS_GMV_NET_SALE_INVARIANT" ->
+                    "ADS 大盘同归属口径不变量被破坏（设计 §12.3 第 8 项）：净销售 > GMV，或净销售/GMV 为负，"
+                            + "或金额列为 NULL ⇒ GMV、净销售、退款率等结论整体不可信（净销售=支付−成功退款，"
+                            + "设计 line 428）；只判不变量、不修数据；第 9 项「UV≤PV」另立一码";
+            case "ADS_UV_PV_INVARIANT" ->
+                    "ADS 大盘同过滤条件不变量被破坏（设计 §12.3 第 9 项 L507）：去重浏览用户数 > 浏览次数 "
+                            + "⇒ 两列已取自**不同过滤条件**（同过滤条件下的去重用户数不可能超过次数），"
+                            + "pv/uv 是转化率等结论的分子分母，口径一破则整组浏览类结论不可信；"
+                            + "dau 是全事件口径（不同过滤条件），dau > uv 合法、不纳入本码；"
+                            + "NULL 由 ADS_STAGING_KEY_NOT_NULL 唯一判定；只判不变量、不修数据";
+            case "DWS_UV_PV_INVARIANT" ->
+                    "DWS 商品×日期行为宽表同过滤条件不变量被破坏（设计 §12.3 第 9 项 L507 的同型站点，S3-25）："
+                            + "某商品去重浏览用户数 > 浏览次数 ⇒ 两列已取自**不同过滤条件**"
+                            + "（DwsSql.productBehaviorDay 中 pv/uv 同出一个 behavior_type = 'view' 条件）；"
+                            + "该表是商品热度/商品转化等 ADS 结论的直连来源，口径一破则整组商品浏览结论不可信。"
+                            + "与 ADS 侧 ADS_UV_PV_INVARIANT 同型但**不合并**（粒度＝商品×日期逐行、表、"
+                            + "分区维度（无 snapshot）都不同，一处通过不能证明另一处通过）；"
+                            + "pv/uv 任一为 NULL 由**本码**判不通过（该表无既有关键列非空守卫，唯一所有者空缺）；"
+                            + "只判不变量、不修数据";
             case "PUB_STAGING_READY" -> "暂存未就绪不得切换正式分区（发布前预检）";
             case "PUB_FORMAL_PARTITION_MATCH" -> "正式分区行数 ≠ 暂存分区行数 ⇒ 发布不完整";
             case "MXP_SNAPSHOT_PINNED" -> "正式分区未指向本次 snapshot_id ⇒ 混入其他快照数据（D-142 §1 必须阻断）";
@@ -209,9 +291,12 @@ public final class RuleSeverity {
             case "MXP_EXPORT_COMPLETE" -> "存在未完成/行数不一致的导出表 ⇒ 指标库快照不完整";
             case "PUB_POINTER_SWITCH", "PUB_STAGING_PRUNE" -> "发布操作审计项（切换/清理计数），不冒充质量规则";
             case "MP_MANIFEST_SNAPSHOT" -> "发布清单的快照/业务日与本次请求不一致 ⇒ 可能把上一版数据当本次发布";
-            case "MP_MANIFEST_TABLES" -> "8 张宽表未齐备或清单列与白名单不一致 ⇒ 发布面不完整";
+            case "MP_MANIFEST_TABLES" -> "ADS 白名单表未齐备或清单列与白名单不一致 ⇒ 发布面不完整";
             case "MP_HIVE_PATH_PINNED" -> "来源分区未指向本次 snapshot_id ⇒ 会读到上一版数据";
             case "MP_EXPORT_FILES" -> "导出文件缺失 ⇒ 写入的是残缺数据";
+            case "MP_EXPORT_CHECKSUM" ->
+                    "导出制品内容摘要 ≠ 清单 checksum ⇒ 制品被截断/错位改写"
+                            + "（行数与文件存在性都可能同时正常，只有内容验证能发现）";
             case "MP_ADS_ROWS_MATCH" -> "写入行数 ≠ 导出清单行数 ⇒ 搬运不完整";
             case "MP_REQUIRED_TABLES_NONEMPTY" -> "概览/趋势/漏斗/活跃表为空 ⇒ 看板核心指标无来源";
             case "MP_ROW_SHAPE_CONSISTENT" -> "同表各行列集不一致 ⇒ 批量插入会错位";

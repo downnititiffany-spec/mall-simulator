@@ -1,9 +1,11 @@
 package com.graduation.analytics.controller;
 
 import com.graduation.analytics.auth.AuthenticationRequiredException;
+import com.graduation.analytics.ai.AiFeedbackConflictException;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.decision.DecisionStateMachine;
+import com.graduation.analytics.ratelimit.RateLimitExceededException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -11,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * R8-3 身份与状态异常映射（平台层补充 advice，不动共享的 GlobalExceptionHandler）。
@@ -48,5 +52,18 @@ public class PlatformExceptionAdvice {
     public ApiResponse<Void> handleIllegalState(DecisionStateMachine.IllegalDecisionStateException e) {
         log.warn("拒绝非法决策状态流转: {}", e.getMessage());
         return ApiResponse.error(DECISION_STATE_ILLEGAL, e.getMessage(), TraceContext.create().traceId());
+    }
+
+    @ExceptionHandler(AiFeedbackConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleAiFeedbackConflict(AiFeedbackConflictException e) {
+        return ApiResponse.error("AI_FEEDBACK_ALREADY_SUBMITTED", e.getMessage(), TraceContext.create().traceId());
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ApiResponse<Void> handleRateLimit(RateLimitExceededException e, HttpServletResponse response) {
+        response.setHeader("Retry-After", Long.toString(e.retryAfterSeconds()));
+        return ApiResponse.error("RATE_LIMITED", "操作请求过于频繁，请稍后重试", TraceContext.create().traceId());
     }
 }

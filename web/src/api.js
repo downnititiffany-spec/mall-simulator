@@ -91,29 +91,81 @@ export default {
   // 流水线
   createPipelineRun: (body, idempotencyKey) =>
     client.post('/pipeline-runs', body, { headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {} }),
-  pipelineRuns: (limit = 10) => client.get('/pipeline-runs', { params: { limit } }),
+  // S3-35：options 可带 AbortSignal（与 snapshots/quality 同形），供 useAnalysis 的
+  // 「切换/卸载取消在途请求」使用；不传 options 时请求与改前完全一致。
+  pipelineRuns: (limit = 10, options) => client.get('/pipeline-runs', { params: { limit }, ...(options || {}) }),
+  pipelineRunsPage: (params = {}, options) => client.get('/pipeline-runs/page', { params, ...(options || {}) }),
   pipelineRun: (id) => client.get(`/pipeline-runs/${id}`),
   retryPipelineRun: (id) => client.post(`/pipeline-runs/${id}/retry`),
-  // 指标/快照（非统一信封接口：/metrics/overview 返回指标数组，/metrics/snapshots 返回快照数组）
+  pipelineRecoveryReport: (options) => client.get('/admin/pipeline-runs/recovery-report', { ...(options || {}) }),
+  resumePipelineRun: (id, reason) => client.post(`/admin/pipeline-runs/${id}/resume`, null, { params: { reason } }),
+  markPipelineRunFailed: (id, reason) => client.post(`/admin/pipeline-runs/${id}/mark-failed`, null, { params: { reason } }),
+  retryPipelineRunFromStage: (id, stage, reason) =>
+    client.post(`/admin/pipeline-runs/${id}/retry-from-stage`, null, { params: { stage, reason } }),
+  // 指标/快照（非统一信封接口；旧快照数组路由保留，新历史表支持 page/size/sort）
   metricsOverview: (snapshotId, options) =>
     client.get('/metrics/overview', { params: snapshotId ? { snapshotId } : {}, ...(options || {}) }),
   snapshots: (limit = 10, options) => client.get('/metrics/snapshots', { params: { limit }, ...(options || {}) }),
+  snapshotsPage: (params = {}, options) => client.get('/metrics/snapshots/page', { params, ...(options || {}) }),
+  analyticsSourceOptions: (options) => client.get('/analytics/sources', { ...(options || {}) }),
   quality: (limit = 20, options) => client.get('/metrics/quality', { params: { limit }, ...(options || {}) }),
-  // AI（问答 + 审计）：返回证据包结构，非统一信封
-  aiQuery: (question, timeRange = '近30天', options) =>
-    client.post('/ai/queries', { question, timeRange }, { ...(options || {}) }),
+  qualityPage: (params = {}, options) => client.get('/metrics/quality/page', { params, ...(options || {}) }),
+  // Runtime environment administration (server enforces runtime:manage).
+  runtimeProfiles: (options) => client.get('/runtime-profiles', { ...(options || {}) }),
+  runtimeProfile: (id, options) => client.get(`/runtime-profiles/${id}`, { ...(options || {}) }),
+  createRuntimeProfile: (body) => client.post('/runtime-profiles', body),
+  updateRuntimeProfile: (id, body) => client.put(`/runtime-profiles/${id}`, body),
+  testRuntimeProfile: (id) => client.post(`/runtime-profiles/${id}/test`),
+  activateRuntimeProfile: (id) => client.post(`/runtime-profiles/${id}/activate`),
+  disableRuntimeProfile: (id) => client.post(`/runtime-profiles/${id}/disable`),
+  // AI（问答 + 审计）：返回证据包结构，非统一信封。
+  // QA-04：查询时间范围是**真正可选**——不传就不发送该字段。此前默认写死一个「最近 30 天」标签，
+  // 等于前端替模型编一个时间口径，与 SQL 生成路径自行选择的真实日期互相矛盾。
+  // 有效查询期一律以后端响应里的结构化 query.window 为准。
+  aiQuery: (question, timeRange, options) => {
+    const body = { question }
+    const hasTimeRange = typeof timeRange === 'string' && timeRange.trim() !== ''
+    if (hasTimeRange) body.timeRange = timeRange
+    const requestOptions = { ...(options || {}) }
+    if (typeof requestOptions.snapshotId === 'string' && requestOptions.snapshotId.trim()) {
+      body.snapshotId = requestOptions.snapshotId.trim()
+    }
+    delete requestOptions.snapshotId
+    return client.post('/ai/queries', body, requestOptions)
+  },
   aiHistoryMine: (limit = 8, options) => client.get('/ai/history/my', { params: { limit }, ...(options || {}) }),
+  aiFeedback: (id, body) => client.post(`/ai/history/${id}/feedback`, body),
   aiAuditHistory: (limit = 20, options) => client.get('/ai/audit/history', { params: { limit }, ...(options || {}) }),
   aiAuditCalls: (limit = 20, options) => client.get('/ai/audit/calls', { params: { limit }, ...(options || {}) }),
+  aiAuditHistoryPage: (params = {}, options) => client.get('/ai/audit/history/page', { params, ...(options || {}) }),
+  aiAuditCallsPage: (params = {}, options) => client.get('/ai/audit/calls/page', { params, ...(options || {}) }),
+  // Business report instances (D-060 / §14.4).
+  createReport: (body) => client.post('/reports', body),
+  reportsPage: (params = {}, options) => client.get('/reports/page', { params, ...(options || {}) }),
+  reportDetail: (id, options) => client.get(`/reports/${id}`, { ...(options || {}) }),
+  reportArtifact: (id, options) => client.get(`/reports/${id}/artifact`, { ...(options || {}) }),
   // 决策中心：返回决策任务/评价数组，非统一信封
   decisions: (limit = 20, options) => client.get('/decisions', { params: { limit }, ...(options || {}) }),
+  decisionPage: (params = {}, options) => client.get('/decisions/page', { params, ...(options || {}) }),
   decisionEvaluations: (id, options) => client.get(`/decisions/${id}/evaluations`, { ...(options || {}) }),
   decisionAction: (id, action, body = {}) => client.post(`/decisions/${id}/${action}`, body),
+  // 决策创建（POST /decisions）：服务端把 source 固定为 ai、初始状态固定 DRAFT（r8 契约 §3.3/§5）
+  decisionCreate: (body) => client.post('/decisions', body),
   // 用户管理（运维页，admin 专属）
   adminUsers: (options) => client.get('/admin/users', { ...(options || {}) }),
+  adminUsersPage: (params = {}, options) => client.get('/admin/users/page', { params, ...(options || {}) }),
   adminCreateUser: (body) => client.post('/admin/users', body),
   adminUserAction: (id, action, body) => client.post(`/admin/users/${id}/${action}`, body),
   // 采集（分析平台侧采集触发；模拟商城生成器接口已迁出分析前端）
   ingestionRun: () => client.post('/ingestion/runs'),
-  ingestionStatus: () => client.get('/ingestion/status')
+  ingestionStatus: () => client.get('/ingestion/status'),
+  ingestionBatchesPage: (params = {}, options) => client.get('/ingestion/batches/page', { params, ...(options || {}) }),
+  // 接入向导（02.5）：源登记读取 + 受控激活面（RUNTIME_MANAGE，服务端审计）。
+  // 路径占位符统一写 ${id}：跨树对账守卫按 `${x}` → `{x}` 原名归一后与 Java 冻结表逐字对账，
+  // 而冻结表（ControllerPermissionCoverageTest.normalize）把一切占位符折叠成 {id}。
+  // dry-run 报告回查 GET /sources/{id}/mappings/dry-runs/{reportId} 前端不接线（向导直接消费 dry-run 响应）。
+  sources: (options) => client.get('/sources', { ...(options || {}) }),
+  sourceActivate: (id) => client.post(`/sources/${id}/activate`),
+  mappingDryRun: (id, body) => client.post(`/sources/${id}/mappings/dry-run`, body),
+  mappingActivate: (id, body) => client.post(`/sources/${id}/mappings/activate`, body)
 }

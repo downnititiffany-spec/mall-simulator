@@ -6,7 +6,10 @@ import org.springframework.stereotype.Service;
 /**
  * 环境变量凭据服务：凭据只从环境变量/系统属性读取，不落库、不落日志。
  *   - SSH：CRED_SSH_PASSWORD 或 ${user.home}/.ssh 密钥
- *   - 指标库：PLATFORM_METRIC_READ_PASSWORD（与 application.yml 默认一致）
+ *   - 指标库：PLATFORM_METRIC_READ_PASSWORD（G31-01 起 application.yml 不再兜底默认值；
+ *     本处的字面默认只在「独立使用本模块且未配置该键」的 LOCAL 演示分支可达——
+ *     平台上下文里 platform.metric.read.* 必须显式提供，缺配时上下文启动即失败，
+ *     走不到这里，因此该默认不会造成静默连接）
  * LOCAL 演示环境允许默认值（毕业设计本地），生产必须显式配置并禁用默认。
  */
 @Service

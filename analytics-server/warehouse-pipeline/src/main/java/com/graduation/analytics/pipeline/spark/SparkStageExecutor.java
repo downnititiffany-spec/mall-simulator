@@ -43,7 +43,12 @@ public class SparkStageExecutor {
     private static final Map<String, List<String>> STAGE_JOBS = Map.of(
             "INIT_SCHEMA", List.of("sci"),
             "LOAD_ODS", List.of("odl"),
-            "BUILD_DWD", List.of("bdw", "dim", "tdw"),
+            // 顺序 = 依赖顺序（`:134` 按列表顺序**串行**提交，不做拓扑排序）：
+            // `bdw`（DwdSql.behaviorClean）LEFT JOIN `dim_user`/`dim_product` 且谓词带
+            // `u.dt = '<业务日>'` ⇒ `dim` 必须先产出当日快照，否则 `city_level`/`category_id`/
+            // `category_key` 在当日首次运行时静默退化为 NULL/-1（不报错、不失败）。
+            // `tdw` 同样依赖 `dim`（其 SQL 亦 JOIN 两张维表）⇒ `dim` 排在最前同时服务两者。
+            "BUILD_DWD", List.of("dim", "bdw", "tdw"),
             "BUILD_DWS", List.of("usw"),
             "BUILD_ADS", List.of("fna"),
             "QUALITY_CHECK", List.of("dqc"),
@@ -136,11 +141,11 @@ public class SparkStageExecutor {
                     businessDate, attemptNo, extraArgs, confs);
             results.add(exec);
             if (!exec.success()) {
-                log.warn("stage {} fail-fast: job {} 失败（{}），不再提交剩余作业 {}",
-                        stageCode, jobCode, exec.errorMessage(),
+                log.warn("stage {} fail-fast: job {} 失败，不再提交剩余作业 {}",
+                        stageCode, jobCode,
                         stageJobs(stageCode).subList(results.size(), stageJobs(stageCode).size()));
                 return new StageExecution(stageCode, results, true,
-                        jobCode + ": " + exec.errorMessage());
+                        jobCode + ": 作业失败；请查看受控作业日志");
             }
         }
         return new StageExecution(stageCode, results, false, null);
@@ -205,13 +210,13 @@ public class SparkStageExecutor {
         run.setFinishedAt(LocalDateTime.now());
         if (!info.success()) {
             run.setErrorCode("JOB_EXECUTION_FAILED");
-            run.setErrorMessage(info.message());
+            run.setErrorMessage("作业失败；请查看受控作业日志");
         }
         runMapper.updateById(run);
 
         return new JobExecution(run.getExternalJobId(), jobCode, run.getStatus(),
                 run.getInputRecords(), run.getOutputRecords(), run.getRejectedRecords(),
-                run.getLogUri(), info.success() ? null : info.message(), info.outputPartitions(),
+                run.getLogUri(), info.success() ? null : "作业失败；请查看受控作业日志", info.outputPartitions(),
                 info.checks());
     }
 

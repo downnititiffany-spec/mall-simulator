@@ -1,0 +1,29 @@
+{
+  "bridgeVersion": "3.6",
+  "kind": "google-docs-trusted-read-receipt",
+  "status": "complete",
+  "target": {
+    "documentId": "1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk",
+    "title": "00_知识库治理规则 V1",
+    "revisionId": "ANLCKQke7WK0DzS3JlusG4M4UuIYJ8s8sqf17kuNaHYnJeLqRGvxYP9QAaJj2ZjQj1uMBGDx_hlDJyGESr6nsTmS7p8omWEp8tV-uITEC9s",
+    "documentUrl": "https://docs.google.com/document/d/1Bkn6aI6fJ2gWsSCqR5IK3LTCjHaYJChaxHoky_pAdZk",
+    "selectedTabId": null
+  },
+  "dropdownMetadata": {
+    "status": "unavailable",
+    "resolvedTool": null,
+    "authoritative": false,
+    "count": 0
+  },
+  "controlAwareness": {
+    "hasProtectedControls": false,
+    "authoritativeDropdownCount": 0,
+    "opaqueControlCount": 0,
+    "affectedParagraphCount": 0,
+    "nativeElementCounts": {},
+    "preservationRequired": false,
+    "recommendedBehavior": "No protected controls were detected in the scanned scope."
+  },
+  "warnings": [],
+  "error": null
+}

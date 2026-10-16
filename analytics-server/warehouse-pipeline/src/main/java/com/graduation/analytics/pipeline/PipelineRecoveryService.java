@@ -91,8 +91,8 @@ public class PipelineRecoveryService {
                 runMapper.updateById(run);
                 interrupted.add(run.getId());
             } catch (Exception e) {
-                errors.add("run " + run.getId() + " 对账失败: " + e.getMessage());
-                log.warn("R6-14 run {} 对账失败", run.getId(), e);
+                errors.add("run " + run.getId() + " 对账失败（" + e.getClass().getSimpleName() + "）");
+                log.warn("R6-14 run {} 对账失败（{}）", run.getId(), e.getClass().getName());
             }
         }
 
@@ -103,8 +103,8 @@ public class PipelineRecoveryService {
                 pipelineService.resume(run.getId(), operator, "启动对账：PENDING 重排", "recovery-" + eventClock.nowLdt());
                 requeued.add(run.getId());
             } catch (Exception e) {
-                errors.add("run " + run.getId() + " 重排失败: " + e.getMessage());
-                log.warn("R6-14 run {} 重排失败", run.getId(), e);
+                errors.add("run " + run.getId() + " 重排失败（" + e.getClass().getSimpleName() + "）");
+                log.warn("R6-14 run {} 重排失败（{}）", run.getId(), e.getClass().getName());
             }
         }
 

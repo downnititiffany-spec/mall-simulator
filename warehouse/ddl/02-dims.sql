@@ -63,7 +63,7 @@ LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_dim.db/dim_date';
 CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_dim.dim_region (
     region_code STRING,
     region_name STRING,
-    city_level  STRING COMMENT 'tier1/tier2/tier3/other'
+    city_level  STRING COMMENT 'canonical-event.v1: tier1/tier2/tier3/other/unknown'
 )
 COMMENT '地区维度（模拟城市等级，不存真实地址）'
 STORED AS PARQUET

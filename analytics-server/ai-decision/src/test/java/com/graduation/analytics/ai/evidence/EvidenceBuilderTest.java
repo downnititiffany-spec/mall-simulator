@@ -2,7 +2,7 @@ package com.graduation.analytics.ai.evidence;
 
 import com.graduation.analytics.analysis.AnalysisService;
 import com.graduation.analytics.analysis.AnalysisViewModel;
-import com.graduation.analytics.metric.MySqlMetricStore;
+import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.warehouse.RunSourceIdentity;
 import com.graduation.analytics.warehouse.WarehouseNamespace;
@@ -42,7 +42,7 @@ class EvidenceBuilderTest {
     @Mock
     private AnalysisService analysisService;
     @Mock
-    private MySqlMetricStore metricStore;
+    private MetricStore metricStore;
 
     private EvidenceBuilder builder() {
         return new EvidenceBuilder(analysisService, metricStore, defaultNamespaceProvider());
@@ -83,8 +83,10 @@ class EvidenceBuilderTest {
         s.setSnapshotId(id);
         s.setStatus(status);
         s.setBusinessTime(date.atStartOfDay());
+        s.setRuntimeProfileId(7L);
         s.setDefinitionVersion("v2");
         s.setPipelineRunId(pipelineRunId);
+        s.setSourceId(73L);
         return s;
     }
 
@@ -100,27 +102,35 @@ class EvidenceBuilderTest {
 
     private AnalysisViewModel<AnalysisService.OverviewData> overview(String gmv) {
         AnalysisService.OverviewData data = new AnalysisService.OverviewData(metrics(gmv), List.of(), List.of(),
-                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of());
-        return AnalysisViewModel.of(SNAP, "2026-09-01T00:00:00", "2026-09-01T00:10:00", "v2", "PASS",
+                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE"), Map.of("EVENT_ID_UNIQUE", 1)), List.of());
+        return AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "2026-09-01T00:10:00", "v2", "PASS",
                 Map.of("snapshotId", SNAP), data, List.of());
     }
 
     private void stubProducts() {
+        // S3-18：ProductsData 加性补 page/size/total/hasMore（AI 侧只读 hot，不参与分页）
         AnalysisService.ProductsData products = new AnalysisService.ProductsData(
                 List.of(new AnalysisService.HotProduct(3L, "保温杯", new BigDecimal("11.0904"), 1, 1, 1, 3, 1),
                         new AnalysisService.HotProduct(2L, "机械键盘", new BigDecimal("10.3972"), 3, 0, 1, 3, 2)),
-                List.of(), 10);
-        when(analysisService.products(eq(SNAP), anyInt(), eq(DAY), eq(DAY)))
-                .thenReturn(AnalysisViewModel.of(SNAP, "2026-09-01T00:00:00", "x", "v2", "PASS",
+                List.of(), 10, 1, 10, 2, false);
+        when(analysisService.products(eq(SNAP), any(), any(), any(), anyInt(), eq(DAY), eq(DAY)))
+                .thenReturn(AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "x", "v2", "PASS",
                         Map.of(), products, List.of()));
     }
 
     private void stubSales() {
+        List<Map<String, Object>> categories = List.of(
+                Map.of("category_id", -1L, "category_name", "未分类",
+                        "sale_amount", new BigDecimal("500.00"), "amount_ratio", new BigDecimal("0.2500")));
+        List<Map<String, Object>> regions = List.of(
+                Map.of("region", "L1", "sale_amount", new BigDecimal("1500.00"),
+                        "amount_ratio", new BigDecimal("0.7500")));
         AnalysisService.SalesData sales = new AnalysisService.SalesData(List.of(), null, null, null, null,
-                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE")), List.of(), List.of());
+                new AnalysisService.QualitySummary(4, 3, List.of("EVENT_ID_UNIQUE"), Map.of("EVENT_ID_UNIQUE", 1)),
+                categories, regions);
         when(analysisService.sales(eq(SNAP), eq(DAY), eq(DAY)))
-                .thenReturn(AnalysisViewModel.of(SNAP, "2026-09-01T00:00:00", "x", "v2", "PASS",
-                        Map.of(), sales, List.of(AnalysisViewModel.WARN_UNKNOWN_DIMENSION_TABLE)));
+                .thenReturn(AnalysisViewModel.of(SNAP, "spark-ads", "2026-09-01T00:00:00", "x", "v2", "PASS",
+                        Map.of(), sales, List.of()));
     }
 
     // ── 1. 字段齐全 + 证据引用 ─────────────────────────────────────────────
@@ -154,7 +164,7 @@ class EvidenceBuilderTest {
         assertThat(pkg.comparisons()).isEmpty();
         assertThat(pkg.warnings()).contains(EvidencePackage.WARN_NO_COMPARISON_PERIOD);
 
-        // 商品维度：贡献值 + 占比；分类/地区/渠道无来源 → 空数组 + 警告
+        // 三个已供数维度必须绑定真实 ADS 来源、快照和日期；渠道维度仍明确未覆盖。
         List<EvidencePackage.DimensionContribution> product = pkg.dimensions().get("product");
         assertThat(product).hasSize(2);
         assertThat(product.get(0).label()).isEqualTo("保温杯");
@@ -162,9 +172,24 @@ class EvidenceBuilderTest {
         assertThat(product.get(0).evidenceRef()).isEqualTo("ads_hot_product_m.heat_score@" + SNAP);
         assertThat(new BigDecimal(product.get(0).share()))
                 .isEqualByComparingTo(BigDecimal.valueOf(11.0904 / 21.4876).setScale(4, java.math.RoundingMode.HALF_UP));
-        assertThat(pkg.dimensions().get("category")).isEmpty();
+        List<EvidencePackage.DimensionContribution> category = pkg.dimensions().get("category");
+        assertThat(category).hasSize(1);
+        assertThat(category.get(0).key()).isEqualTo("-1");
+        assertThat(category.get(0).label()).isEqualTo("未分类");
+        assertThat(category.get(0).metricCode()).isEqualTo("category_sale_amount");
+        assertThat(category.get(0).value()).isEqualTo("500.0000");
+        assertThat(category.get(0).share()).isEqualTo("0.2500");
+        assertThat(category.get(0).evidenceRef()).isEqualTo(
+                "ads_category_sale_m.sale_amount@" + SNAP + "[20260901..20260901]");
+        List<EvidencePackage.DimensionContribution> region = pkg.dimensions().get("region");
+        assertThat(region).hasSize(1);
+        assertThat(region.get(0).label()).isEqualTo("城市等级 L1");
+        assertThat(region.get(0).metricCode()).isEqualTo("city_level_sale_amount");
+        assertThat(region.get(0).evidenceRef()).isEqualTo(
+                "ads_region_sale_m.sale_amount@" + SNAP + "[20260901..20260901]");
         assertThat(pkg.dimensions().get("channel")).isEmpty();
-        assertThat(pkg.warnings()).contains(EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE);
+        assertThat(pkg.warnings()).contains(EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE)
+                .doesNotContain(EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE);
 
         // 质量与血缘
         assertThat(pkg.dataQuality().gateStatus()).isEqualTo("PASS");
@@ -172,9 +197,11 @@ class EvidenceBuilderTest {
         assertThat(pkg.dataQuality().rulePassed()).isEqualTo(3);
         assertThat(pkg.dataQuality().failedRules()).containsExactly("EVENT_ID_UNIQUE");
         assertThat(pkg.lineage().pipelineRunId()).isEqualTo(21L);
-        assertThat(pkg.lineage().mysqlTables())
-                .contains("ads_operation_overview_m", "ads_data_quality_m");
-        assertThat(pkg.lineage().hiveAdsTables()).contains("dw_ads.ads_operation_overview");
+        assertThat(pkg.lineage().sourceId()).isEqualTo(73L);
+        assertThat(pkg.lineage().mysqlTables()).contains("ads_operation_overview_m", "ads_data_quality_m",
+                "ads_category_sale_m", "ads_region_sale_m");
+        assertThat(pkg.lineage().hiveAdsTables()).contains("dw_ads.ads_operation_overview",
+                "dw_ads.ads_category_sale", "dw_ads.ads_region_sale");
 
         // 候选异常：退款率 0.6 > 0.3（MEDIUM）+ 质量规则未通过；文案必须是非因果表述
         assertThat(pkg.anomalies()).extracting(EvidencePackage.AnomalyCandidate::ruleCode)
@@ -248,6 +275,37 @@ class EvidenceBuilderTest {
     }
 
     @Test
+    @DisplayName("上一日快照身份不同：不跨 profile、source 或指标定义版本构造比较")
+    void refusesPreviousDaySnapshotFromDifferentScope() {
+        String otherProfile = "S-OTHER-PROFILE";
+        String otherSource = "S-OTHER-SOURCE";
+        String otherDefinition = "S-OTHER-DEFINITION";
+        MetricSnapshot profileCandidate = snapshot(otherProfile, "ARCHIVED", DAY.minusDays(1), 19L);
+        profileCandidate.setRuntimeProfileId(8L);
+        MetricSnapshot sourceCandidate = snapshot(otherSource, "ARCHIVED", DAY.minusDays(1), 19L);
+        sourceCandidate.setSourceId(74L);
+        MetricSnapshot definitionCandidate = snapshot(otherDefinition, "ARCHIVED", DAY.minusDays(1), 19L);
+        definitionCandidate.setDefinitionVersion("v1");
+
+        when(metricStore.activeSnapshotId()).thenReturn(SNAP);
+        when(metricStore.findSnapshot(SNAP)).thenReturn(snapshot(SNAP, "ACTIVE", DAY, 21L));
+        when(metricStore.listSnapshots(anyInt())).thenReturn(List.of(
+                snapshot(SNAP, "ACTIVE", DAY, 21L), profileCandidate, sourceCandidate, definitionCandidate));
+        when(analysisService.overview(eq(SNAP), eq(DAY), eq(DAY))).thenReturn(overview("2042.0000"));
+        stubProducts();
+        stubSales();
+
+        EvidencePackage pkg = builder().build(EvidenceRequest.latest("admin"));
+
+        assertThat(pkg.comparisonPeriod()).isNull();
+        assertThat(pkg.comparisons()).isEmpty();
+        assertThat(pkg.warnings()).contains(EvidencePackage.WARN_NO_COMPARISON_PERIOD);
+        verify(analysisService, never()).overview(eq(otherProfile), any(), any());
+        verify(analysisService, never()).overview(eq(otherSource), any(), any());
+        verify(analysisService, never()).overview(eq(otherDefinition), any(), any());
+    }
+
+    @Test
     @DisplayName("多日窗口：metric_value 只有单日聚合 → 显式登记不支持，不估算，当期退回快照业务日")
     void multiDayWindowHasNoComparison() {
         when(metricStore.activeSnapshotId()).thenReturn(SNAP);
@@ -279,7 +337,7 @@ class EvidenceBuilderTest {
         when(metricStore.findSnapshot(SNAP)).thenReturn(snapshot(SNAP, "ACTIVE", DAY, 21L));
         when(metricStore.listSnapshots(anyInt())).thenReturn(List.of(snapshot(SNAP, "ACTIVE", DAY, 21L)));
         when(analysisService.overview(eq(SNAP), eq(DAY), eq(DAY))).thenReturn(overview("2042.0000"));
-        when(analysisService.products(eq(SNAP), anyInt(), any(), any()))
+        when(analysisService.products(eq(SNAP), any(), any(), any(), anyInt(), any(), any()))
                 .thenThrow(new IllegalStateException("metricReadDataSource 未配置"));
         stubSales();
 

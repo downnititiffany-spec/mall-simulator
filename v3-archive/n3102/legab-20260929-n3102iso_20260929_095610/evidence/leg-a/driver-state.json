@@ -1,0 +1,292 @@
+{
+  "runId": "n3102iso_20260929_095610",
+  "driver": "n3102-a-driver",
+  "startedAt": "2026-09-29T09:57:08",
+  "plan": "N31-02 腿① 连续小链（D-054 授权第 1 步）",
+  "platformJarSha256": "79abfc234e177aa85919b759bc07588dfea6136adb780795ec30127efe320df8",
+  "sparkJarSha256": "71c0fc88b1c093df3e2e828d0c00b827a5bd51bca1d0ca0ab4a378e37bc00e57",
+  "legs": {
+    "A1A2-input-oracle": {
+      "fixtureManifestOk": true,
+      "oracleSha256": "09f3a3c0c14f7ad0d5fadf8ffd393d669f5f6ce2f86dce2caad12e1357fdfd63",
+      "e3Lines": 99,
+      "oracleCommittedAt": "b25b47f0ec5ea85bb3d5989d287ae21befcdf039"
+    },
+    "A0-hdfs-precheck": {
+      "hdfsWasUp": true,
+      "clusterId": "GP-SMOKE-20260924",
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\logs\\hdfs-precheck.log",
+      "zeroFormatEvidence": true
+    },
+    "fresh": {
+      "note": "HDFS 只清本 run 前缀目录，历史证据零接触",
+      "outcome": "DONE",
+      "hdfsRmLines": 0,
+      "dropOut": null
+    },
+    "prep": {
+      "outcome": "DONE",
+      "prepLog": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\logs\\prep-n3102iso.log"
+    },
+    "platformStart": {
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\logs\\platform.log",
+      "wrapperPid": 153304,
+      "hadoopUserNameEnv": "asus",
+      "outcome": "RUNNING",
+      "stubLaunched": false
+    },
+    "profile": {
+      "sourceId": 1,
+      "landingUriBefore": "file://./landing"
+    },
+    "A3-hdfs-start": {
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\logs\\hdfs-start.log",
+      "clusterId": "GP-SMOKE-20260924",
+      "probe": "PROBE-CLEAN-OK",
+      "outcome": "RUNNING"
+    },
+    "A3-flume-hdfs": {
+      "hdfsBytes": 34192,
+      "log": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\logs\\flume-run.log",
+      "hdfsLines": 99,
+      "dtDir": "raw/*/hour=*",
+      "byteMatch": true,
+      "srcBytes": 34192
+    },
+    "hdfs-manifest-A4": {
+      "status": "READY",
+      "acceptedRecords": 99,
+      "acceptedUri": "accepted/1",
+      "batchId": 1
+    },
+    "A4-ingestion": {
+      "d041": {
+        "note": "D-041 file_identity 列宽 64 vs HDFS 身份 ~94：截断缺陷如实登记，at-least-once 语义，非门禁",
+        "sample": [],
+        "hits": 0
+      },
+      "manifest": {
+        "batchId": 1,
+        "batchNo": "ing-20260929095829-bc98c2e8",
+        "runtimeProfileId": 1,
+        "source": "local-file",
+        "status": "READY",
+        "startedAt": "2026-09-29T09:58:29.678425",
+        "finishedAt": "2026-09-29T09:58:29.833458",
+        "files": [
+          {
+            "startOffset": 0,
+            "acceptedRecords": 99,
+            "quarantinedRecords": 0,
+            "file": "events.1790647078137",
+            "endOffset": 34192
+          }
+        ],
+        "acceptedRecords": 99,
+        "quarantinedRecords": 0,
+        "acceptedBytes": 34192,
+        "schemaVersions": [
+          "1.0"
+        ],
+        "acceptedUri": "accepted/1",
+        "quarantineUri": "quarantine/1",
+        "checksum": "1200494f",
+        "sourceCode": "mock-mall",
+        "sourceId": 1,
+        "profileVersion": "1.0",
+        "mappingVersion": null,
+        "mappingProfileHash": null
+      },
+      "treeFile": "hdfs-landing-tree-a4.txt",
+      "ingestion": {
+        "batchId": 1,
+        "batchNo": "ing-20260929095829-bc98c2e8",
+        "status": "SUCCESS",
+        "recordCount": 99,
+        "quarantineCount": 0,
+        "errorCount": 0,
+        "fileCount": 1,
+        "acceptedBytes": 34192,
+        "acceptedDir": "hdfs://127.0.0.1:19000/landing/n3102iso_20260929_095610/accepted/1",
+        "quarantineDir": "hdfs://127.0.0.1:19000/landing/n3102iso_20260929_095610/quarantine/1",
+        "manifestPath": "hdfs://127.0.0.1:19000/landing/n3102iso_20260929_095610/manifests/1.json",
+        "noNewData": false
+      }
+    },
+    "hdfs-checksum-cp1-baseline": {
+      "signature": "b8d94f3fff87406c731e92bfa69606e87747e7245c93c99dcb18c4a944328b1b",
+      "file": "D:\\Develop_code\\GraduationProject-wt\\v3-dev\\target\\v25-it\\n3102iso_20260929_095610\\evidence\\hdfs-input-checksums-b1-cp1-baseline.txt",
+      "rowCount": 2,
+      "batch": 1
+    },
+    "A5-created": {
+      "businessTime": "2026-09-18T00:00:00",
+      "pipelineRunId": 1,
+      "idemKey": "n3102iso-runA-095850"
+    },
+    "A5-run": {
+      "status": "SUCCESS",
+      "snapshot": "S20260918_1",
+      "finalAttemptNo": 3,
+      "runDb": "CONCAT('RUN|', id, '|', status, '|', IFNULL(input_batch_id,'NULL'), '|', IFNULL(target_snapshot_id,'NULL'), '|', IFNULL(error_code,'-'), '|', attempt_no)\nRUN|1|SUCCESS|1|S20260918_1|-|3"
+    },
+    "A5-export-path-retry": {
+      "attempt2": "RUN_METRIC_PUBLISH_FAILED",
+      "attempt1": "RUN_METRIC_PUBLISH_FAILED",
+      "evidence": "export-path-diagnosis.json",
+      "attempt3": "SUCCESS"
+    },
+    "A6-active-cons": {
+      "waitLandingManifest": {
+        "sourceId": 1,
+        "acceptedUri": "accepted/1",
+        "batchId": 1
+      },
+      "hdfsUriEvidence": "A3/A4 ingestion evidence",
+      "waitLandingEvidence": "SUBSTRING(IFNULL(evidence,''),1,900)\n{\"batchId\":1,\"acceptedUri\":\"accepted/1\",\"checksum\":\"1200494f\",\"acceptedRecords\":99,\"schemaVersions\":[\"1.0\"],\"sourceId\":1,\"sourceCode\":\"mock-mall\"} | [RECOVERY] action=RETRY_FROM_STAGE:PUBLISH_METRIC operator=n3102 reason=N31-02-retry-after-export-path-diagnosis at=2026-09-29T10:11:33.164229800 | [RECOVERY] action=RESUME operator=n3102 reason=retry-from-stage PUBLISH_METRIC at=2026-09-29T10:11:33.174019900 | [RECOVERY] action=RETRY_FROM_STAGE:PUBLISH_METRIC operator=n3102 reason=N31-02-local-export-staging-fix at=2026-09-29T10:17:37.042941200 | [RECOVERY] action=RESUME operator=n3102 reason=retry-from-stage PUBLISH_METRIC at=2026-09-29T10:17:37.050445200",
+      "consumption": "CONS|1|1|1|S20260918_1|1|1|N31-02-local-export-staging-fix|PIPELINE",
+      "active": "SNAP|S20260918_1|ACTIVE"
+    },
+    "A7-overview": {
+      "metricCodes": [
+        "avg_order_value",
+        "buy_rate",
+        "cart_add_cnt",
+        "cart_rate",
+        "dau",
+        "fav_cnt",
+        "full_refund_rate",
+        "gmv",
+        "net_sale",
+        "paid_order_cnt",
+        "pv",
+        "refund_rate",
+        "repeat_rate",
+        "uv"
+      ],
+      "metricCount": 14,
+      "snapshotId": "S20260918_1"
+    },
+    "A8-page": {
+      "snapshotId": "S20260918_1",
+      "stalenessBannerVisible": true,
+      "pageMetrics": [
+        {
+          "metricCode": "gmv",
+          "label": "销售额(GMV)",
+          "valueText": "1,010.00元",
+          "actualValue": 1010
+        },
+        {
+          "metricCode": "net_sale",
+          "label": "净销售额",
+          "valueText": "930.00元",
+          "actualValue": 930
+        },
+        {
+          "metricCode": "paid_order_cnt",
+          "label": "支付订单数",
+          "valueText": "12单",
+          "actualValue": 12
+        },
+        {
+          "metricCode": "pv",
+          "label": "浏览量(PV)",
+          "valueText": "30次",
+          "actualValue": 30
+        },
+        {
+          "metricCode": "uv",
+          "label": "浏览用户(UV)",
+          "valueText": "10人",
+          "actualValue": 10
+        },
+        {
+          "metricCode": "dau",
+          "label": "活跃用户(DAU)",
+          "valueText": "10人",
+          "actualValue": 10
+        },
+        {
+          "metricCode": "avg_order_value",
+          "label": "客单价",
+          "valueText": "84.17元",
+          "actualValue": 84.17
+        },
+        {
+          "metricCode": "refund_rate",
+          "label": "退款率",
+          "valueText": "8.33%",
+          "actualValue": 0.0833
+        },
+        {
+          "metricCode": "repeat_rate",
+          "label": "有效复购率",
+          "valueText": "33.33%",
+          "actualValue": 0.3333
+        },
+        {
+          "metricCode": "buy_rate",
+          "label": "购买转化率",
+          "valueText": "60.00%",
+          "actualValue": 0.6
+        },
+        {
+          "metricCode": "cart_add_cnt",
+          "label": "加购次数",
+          "valueText": "8次",
+          "actualValue": 8
+        },
+        {
+          "metricCode": "cart_rate",
+          "label": "加购率",
+          "valueText": "60.00%",
+          "actualValue": 0.6
+        },
+        {
+          "metricCode": "fav_cnt",
+          "label": "收藏次数",
+          "valueText": "6次",
+          "actualValue": 6
+        },
+        {
+          "metricCode": "full_refund_rate",
+          "label": "全额退款率",
+          "valueText": "8.33%",
+          "actualValue": 0.0833
+        }
+      ],
+      "overviewMetrics": 14,
+      "stalenessBannerText": "数据时点提示：页面指标的业务时点为 2026-09-18（滞后 11 天）。数据来源可能已停更或采集未运行；历史指标仍可读，但以下数字不代表最新业务日。",
+      "screenshot": "page-overview-a8.png",
+      "domTextLength": 1289,
+      "overviewApiHits": 1
+    },
+    "A9-reconcile": {
+      "layers": [
+        "spark-ads-export",
+        "mysql-metric-store",
+        "overview-api",
+        "rendered-page"
+      ],
+      "lineageFile": "lineage-chain-a9.json",
+      "compareFile": "metric-compare-a9.json",
+      "tolerance": 0.0005,
+      "failed": 0,
+      "fourWayCompareFile": "metric-four-way-compare-a9.json",
+      "passed": 14
+    }
+  },
+  "finishedAt": "2026-09-29T10:58:10",
+  "outcome": "PASS",
+  "platformJarBeforeUiRefreshSha256": "79abfc234e177aa85919b759bc07588dfea6136adb780795ec30127efe320df8",
+  "platformJarA8Sha256": "075de7f3839a1c417b5955942be2a0951bd830721a03d25d653db19775d09515",
+  "uiRefresh": {
+    "backendClassEntryChanges": 0,
+    "backendClassEntriesCompared": 91,
+    "overviewChunk": "Overview-whPTVMRb.js",
+    "staticIndexSha256": "476127c5091676499999faca1278d0f544a63fb88f31e9922a7bde74c685db98",
+    "build": "npm run build: PASS",
+    "jarFrontendEntriesVerified": true
+  }
+}

@@ -186,7 +186,10 @@ public final class EvidenceTemplates {
         lines.add("口径版本 " + blankToDash(pkg.definitionVersion())
                 + "；口径变更后同指标的历史值不可直接比较");
         if (pkg.warnings().contains(EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE)) {
-            lines.add("分类/地区维度在本期没有 Hive 来源 ADS，无法给出该维度贡献");
+            lines.add("分类或城市等级 ADS 服务表缺失/不可读，本期无法给出受影响维度贡献");
+        }
+        if (pkg.warnings().contains(EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE)) {
+            lines.add("渠道维度当前未建设 ADS 服务表，本期不提供渠道贡献");
         }
         if (pkg.warnings().contains(EvidencePackage.WARN_NO_COMPARISON_PERIOD)) {
             lines.add("上一期没有可用快照，因此没有环比数据");
@@ -226,7 +229,7 @@ public final class EvidenceTemplates {
         return switch (key == null ? "" : key) {
             case "product" -> "商品维度";
             case "category" -> "分类维度";
-            case "region" -> "地区维度";
+            case "region" -> "城市等级维度";
             case "channel" -> "渠道维度";
             default -> key;
         };

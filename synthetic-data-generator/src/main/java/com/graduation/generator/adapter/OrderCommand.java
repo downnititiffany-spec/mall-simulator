@@ -8,7 +8,11 @@ import java.util.List;
  * <p>只允许"一个用户 + 若干 (商品, 数量)"：参考商城的 {@code POST /api/v1/mall/orders} 就是这个形状，
  * 而且没有优惠券/地址/运费等参数，不为此发明生成器侧字段。</p>
  */
-public record OrderCommand(String userId, List<Item> items) {
+public record OrderCommand(String userId, List<Item> items, String idempotencyKey) {
+
+    public OrderCommand(String userId, List<Item> items) {
+        this(userId, items, null);
+    }
 
     public OrderCommand {
         if (userId == null || userId.isBlank()) {
@@ -18,6 +22,9 @@ public record OrderCommand(String userId, List<Item> items) {
             throw new IllegalArgumentException("items 不得为空（空订单会被商城拒绝，属于调用方的错）");
         }
         items = List.copyOf(items);
+        if (idempotencyKey != null && (idempotencyKey.isBlank() || idempotencyKey.length() > 128)) {
+            throw new IllegalArgumentException("idempotencyKey 必须为 1..128 个字符");
+        }
     }
 
     public static OrderCommand single(String userId, String productId, int quantity) {

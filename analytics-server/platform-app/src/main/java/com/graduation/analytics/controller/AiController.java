@@ -3,9 +3,12 @@ package com.graduation.analytics.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.graduation.analytics.ai.ExplanationService;
 import com.graduation.analytics.ai.ExplanationService.ExplanationResult;
+import com.graduation.analytics.ai.AiFeedbackService;
+import com.graduation.analytics.ai.AiFeedbackConflictException;
 import com.graduation.analytics.ai.TextToSqlService;
 import com.graduation.analytics.ai.TextToSqlService.QueryResult;
 import com.graduation.analytics.ai.entity.AiCallLog;
+import com.graduation.analytics.ai.entity.AiFeedback;
 import com.graduation.analytics.ai.entity.AiQueryHistory;
 import com.graduation.analytics.ai.evidence.EvidencePackage;
 import com.graduation.analytics.ai.evidence.EvidenceRequest;
@@ -16,6 +19,8 @@ import com.graduation.analytics.ai.mapper.AiQueryHistoryMapper;
 import com.graduation.analytics.auth.PermissionCode;
 import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
+import com.graduation.analytics.common.PaginationMath;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.common.TraceContext;
 import com.graduation.analytics.decision.AuditActor;
 import com.graduation.analytics.decision.OperationAuditService;
@@ -29,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -47,6 +54,9 @@ import java.util.Locale;
  * {@code /ai/queries} 增补 {@code evidenceSummary}/{@code evidenceId}。快照锚点**只由证据包给出**
  * （{@link EvidenceService#build} 钉住 ACTIVE 或显式快照，§19.5 禁止在 SQL 里 {@code MAX(snapshot_id)}，
  * 也禁止写 {@code "unknown"} 占位值）；本控制器不计算任何数值、不拼业务文本，只做搬运与形状适配。</p>
+ *
+ * <p>S3-57：解释来源不再通过“摘要文本是否变化”推断；{@link ExplanationResult#providerUsed()}
+ * 由实际解释调用链记录最终采用的来源，控制器只原样搬运。</p>
  */
 @Slf4j
 @RestController
@@ -54,14 +64,26 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class AiController {
 
+    private static final int MAX_AUDIT_PAGE_SIZE = 100;
+
     private final TextToSqlService textToSqlService;
     private final ExplanationService explanationService;
     private final EvidenceService evidenceService;
     private final AiQueryHistoryMapper queryHistoryMapper;
     private final AiCallLogMapper callLogMapper;
     private final OperationAuditService audit;
+    private final AiFeedbackService feedbackService;
 
-    public record AiQueryReq(@NotBlank String question, String timeRange) {
+    public record AiQueryReq(@NotBlank String question, String timeRange, String snapshotId) {
+        public AiQueryReq(String question, String timeRange) {
+            this(question, timeRange, null);
+        }
+    }
+
+    public record AuditPage<T>(List<T> items, long page, int size, long total, long totalPages, String sort) {
+    }
+
+    private record AuditSort(String field, String direction) {
     }
 
     /** 证据解释请求（R8-2 §1）：三段皆可选——不传快照取 ACTIVE，不传时间范围取快照业务日 */
@@ -72,7 +94,7 @@ public class AiController {
     public record EvidenceExplanationResp(EvidencePackage evidence, ExplanationNarrative narrative) {
     }
 
-    /** 叙述形状（§19.3）：providerUsed=template 表示模型不可用也给出完整结论 */
+    /** 叙述形状（§19.3）：providerUsed=template 表示最终结论来自固定模板 */
     public record ExplanationNarrative(String summary, List<ExplanationSection> sections,
                                        List<String> limitations, String providerUsed,
                                        String templateVersion) {
@@ -83,6 +105,16 @@ public class AiController {
 
     public record AiQueryResp(QueryResult query, ExplanationResult explanation,
                               String evidenceSummary, String evidenceId) {
+    }
+
+    public record AiFeedbackReq(@NotBlank String rating, @NotBlank String reasonCode) {
+    }
+
+    public record AiFeedbackResp(Long id, String rating, String reasonCode, java.time.LocalDateTime createdAt) {
+        static AiFeedbackResp from(AiFeedback feedback) {
+            return new AiFeedbackResp(feedback.getId(), feedback.getRating(), feedback.getReasonCode(),
+                    feedback.getCreatedAt());
+        }
     }
 
     /**
@@ -97,9 +129,9 @@ public class AiController {
     public ApiResponse<EvidenceExplanationResp> explain(@RequestBody(required = false) ExplainReq req,
                                                        HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
-        // §21.2：请求人只取登录会话（请求对象只用于取 ip），请求头无法自报身份
         AuditActor actor = CallerContext.actor(request, trace.traceId());
         ExplainReq body = req == null ? new ExplainReq(null, null, null) : req;
+        requireDashboardViewForExplicitSnapshot(body.snapshotId());
         EvidencePackage pkg = evidenceService.build(
                 new EvidenceRequest(body.snapshotId(), null, body.timeRange(), actor.userId()));
         ExplanationResult explanation = evidenceService.explain(pkg, body.question());
@@ -107,7 +139,7 @@ public class AiController {
         auditExplanation(actor, pkg, body.question());
         return ApiResponse.ok(new EvidenceExplanationResp(pkg,
                 new ExplanationNarrative(explanation.summary(), sectionsOf(template),
-                        explanation.limitations(), providerUsed(explanation, template),
+                        explanation.limitations(), explanation.providerUsed(),
                         template.templateVersion())), trace.traceId());
     }
 
@@ -117,12 +149,15 @@ public class AiController {
     public ApiResponse<AiQueryResp> query(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
-        QueryResult query = textToSqlService.query(req.question(), actor.userId());
-        String timeRange = req.timeRange() == null || req.timeRange().isBlank() ? "近30天(默认)" : req.timeRange();
-        EvidencePackage pkg = buildEvidenceQuietly(null, req.timeRange(), actor.userId());
+        requireDashboardViewForExplicitSnapshot(req.snapshotId());
+        QueryResult query = runQuery(req, actor.userId());
+        EvidencePackage pkg = buildEvidenceQuietly(req.snapshotId(), req.timeRange(), actor.userId());
+        attachFeedbackEvidence(query, pkg, actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
+        // QA-04：口径由 query.window 的生效区间产出（ExplanationService 内部取用），
+        // 这里只传页面请求口径，不再伪造「近30天(默认)」这类与 SQL 无关的标签
         ExplanationResult explanation = explanationService.explain(query, snapshotId,
-                req.question(), timeRange);
+                req.question(), req.timeRange());
         auditQuery(actor, req.question(), snapshotId, query);
         return ApiResponse.ok(new AiQueryResp(query, explanation,
                 summaryOf(pkg), evidenceIdOf(pkg)), trace.traceId());
@@ -134,20 +169,19 @@ public class AiController {
     public ApiResponse<ExplanationResult> analyze(@RequestBody AiQueryReq req, HttpServletRequest request) {
         TraceContext trace = TraceContext.create();
         AuditActor actor = CallerContext.actor(request, trace.traceId());
-        QueryResult query = textToSqlService.query(req.question(), actor.userId());
-        EvidencePackage pkg = buildEvidenceQuietly(null, req.timeRange(), actor.userId());
+        requireDashboardViewForExplicitSnapshot(req.snapshotId());
+        QueryResult query = runQuery(req, actor.userId());
+        EvidencePackage pkg = buildEvidenceQuietly(req.snapshotId(), req.timeRange(), actor.userId());
         String snapshotId = resolveSnapshotId(pkg, query);
         ExplanationResult explanation = explanationService.explain(query, snapshotId, req.question(),
-                req.timeRange() == null ? "近30天(默认)" : req.timeRange());
+                req.timeRange());
         auditQuery(actor, req.question(), snapshotId, query);
         return ApiResponse.ok(explanation, trace.traceId());
     }
 
     /** AI 查询审计落库（operation_audit_log）：只记状态/哈希/行数，不复制 SQL 与问题原文 */
     private void auditQuery(AuditActor actor, String question, String snapshotId, QueryResult query) {
-        boolean rejected = query != null && query.status() != null
-                && (query.status().toUpperCase(Locale.ROOT).contains("REJECT")
-                || query.status().toUpperCase(Locale.ROOT).contains("ERROR"));
+        boolean failed = queryAuditFailed(query);
         String digest = OperationAuditService.digest(
                 "status", query == null ? null : query.status(),
                 "questionHash", shortHash(question),
@@ -160,12 +194,25 @@ public class AiController {
         String action = OperationAuditService.ACTION_AI_QUERY;
         String resourceType = OperationAuditService.RESOURCE_AI_QUERY;
         String resourceId = "q-" + shortHash(question);
-        if (rejected) {
+        if (failed) {
             audit.failure(actor, action, resourceType, resourceId, null, digest,
                     "AI 问数被治理规则拒绝/失败：" + (query == null ? "无结果" : query.errorCode()));
         } else {
             audit.success(actor, action, resourceType, resourceId, null, digest, "AI 问数");
         }
+    }
+
+    /**
+     * operation_audit_log 的成功/失败判据唯一放在这里。
+     * S3-59 修正：此前只识别 REJECT/ERROR，TextToSqlService 的 FAILED（例如无 ACTIVE、只读源缺失、超时）
+     * 会被错误记成 audit.success。null 结果也按失败处理，不能把“无结果”记成成功。
+     */
+    static boolean queryAuditFailed(QueryResult query) {
+        if (query == null || query.status() == null) {
+            return true;
+        }
+        String status = query.status().toUpperCase(Locale.ROOT);
+        return status.contains("REJECT") || status.contains("ERROR") || status.contains("FAIL");
     }
 
     /**
@@ -187,27 +234,34 @@ public class AiController {
                     OperationAuditService.RESOURCE_AI_QUERY, pkg.evidenceId(), null, digest,
                     "AI 证据解释（快照 " + pkg.snapshotId() + "）");
         } catch (RuntimeException e) {
-            log.warn("证据解释审计写入失败（operation_audit_log 是否已随 V14 建表？）: {}", e.getMessage());
+            log.warn("证据解释审计写入失败（operation_audit_log 是否已随 V14 建表？），causeType={}",
+                    e.getClass().getSimpleName());
         }
     }
 
-    /**
-     * 建证据包（问数路径的「尽力而为」版本）：证据摘要属于增强信息，取数失败不能让问答整体失败。
-     * 失败返回 {@code null}，调用方按无证据处理并保留警告日志。
-     */
     private EvidencePackage buildEvidenceQuietly(String snapshotId, String timeRange, String requestedBy) {
         try {
             return evidenceService.build(new EvidenceRequest(snapshotId, null, timeRange, requestedBy));
         } catch (RuntimeException e) {
-            log.warn("证据包构建失败，问答照常返回（evidenceSummary/evidenceId 置空）: {}", e.getMessage());
+            log.warn("证据包构建失败，问答照常返回（evidenceSummary/evidenceId 置空），causeType={}",
+                    e.getClass().getSimpleName());
             return null;
         }
     }
 
-    /**
-     * 快照锚点（§19.5/§3.5.2）：只认证据包钉住的快照；建包失败才退回结果行里的 {@code snapshot_id}；
-     * 两者都没有 → {@code null} + 警告。**绝不写 {@code "unknown"} 这类占位值**。
-     */
+    private QueryResult runQuery(AiQueryReq req, String userId) {
+        if (req.snapshotId() == null || req.snapshotId().isBlank()) {
+            return textToSqlService.query(req.question(), userId, req.timeRange());
+        }
+        return textToSqlService.query(req.question(), userId, req.timeRange(), req.snapshotId());
+    }
+
+    private static void requireDashboardViewForExplicitSnapshot(String snapshotId) {
+        if (snapshotId != null && !snapshotId.isBlank()) {
+            CallerContext.requirePermission(PermissionCode.DASHBOARD_VIEW);
+        }
+    }
+
     private String resolveSnapshotId(EvidencePackage pkg, QueryResult query) {
         if (pkg != null && pkg.snapshotId() != null && !pkg.snapshotId().isBlank()) {
             return pkg.snapshotId();
@@ -222,7 +276,6 @@ public class AiController {
         return null;
     }
 
-    /** 证据摘要：固定模板的摘要原文（口径/口径版本/质量门由模板统一给出，控制器不另拼业务文本） */
     private static String summaryOf(EvidencePackage pkg) {
         return pkg == null ? null : EvidenceTemplates.render(pkg).summary();
     }
@@ -237,19 +290,25 @@ public class AiController {
                 .toList();
     }
 
-    /**
-     * providerUsed：ai 层的 {@link ExplanationResult} 未携带该字段（ai 包不在 R8-3 改动面内），
-     * 因此按「最终摘要是否等于固定模板摘要」判定：相等 → 文本完全来自模板（模型不可用、或模型改写
-     * 被数值守卫拒绝两种情形都在内）；不等 → 模型改写已被采纳。ai 层若后续暴露 provider 字段，
-     * 这里应改为直读，删掉本推断。
-     */
-    private static String providerUsed(ExplanationResult explanation, EvidenceTemplates.Narrative template) {
-        String summary = explanation == null ? null : explanation.summary();
-        return summary != null && !summary.equals(template.summary())
-                ? "llm" : EvidenceTemplates.Narrative.PROVIDER_TEMPLATE;
+    private void attachFeedbackEvidence(QueryResult query, EvidencePackage pkg, String userId) {
+        if (query == null || pkg == null || query.historyId() == null || !"EXECUTED".equals(query.status())
+                || query.snapshotId() == null || !query.snapshotId().equals(pkg.snapshotId())
+                || query.sourceId() == null || pkg.lineage() == null
+                || !query.sourceId().equals(pkg.lineage().sourceId())
+                || pkg.definitionVersion() == null || pkg.definitionVersion().isBlank()
+                || pkg.evidenceId() == null || pkg.evidenceId().isBlank()) {
+            return;
+        }
+        AiQueryHistory anchor = new AiQueryHistory();
+        anchor.setId(query.historyId());
+        anchor.setUserId(userId);
+        anchor.setSourceId(query.sourceId());
+        anchor.setSnapshotId(query.snapshotId());
+        anchor.setDefinitionVersion(pkg.definitionVersion());
+        anchor.setEvidenceId(pkg.evidenceId());
+        queryHistoryMapper.updateById(anchor);
     }
 
-    /** 8 位短哈希：审计可对同一问题/同一 SQL 归并，又不落原文（§21.3 脱敏） */
     private static String shortHash(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -267,7 +326,6 @@ public class AiController {
         }
     }
 
-    /** AI 审计：问答历史（§8.9；仅 admin，analyst 必须 403） */
     @GetMapping("/audit/history")
     @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
     public ApiResponse<List<AiQueryHistory>> auditHistory(@RequestParam(defaultValue = "20") int limit) {
@@ -276,7 +334,6 @@ public class AiController {
                 .last("LIMIT " + Math.max(1, Math.min(200, limit)))), TraceContext.create().traceId());
     }
 
-    /** AI 审计：模型调用日志（§8.9；仅 admin） */
     @GetMapping("/audit/calls")
     @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
     public ApiResponse<List<AiCallLog>> auditCalls(@RequestParam(defaultValue = "20") int limit) {
@@ -285,14 +342,102 @@ public class AiController {
                 .last("LIMIT " + Math.max(1, Math.min(200, limit)))), TraceContext.create().traceId());
     }
 
-    /** 我的最近问答（登录用户自己的历史，用于 AI 页回填复问） */
+    @GetMapping("/audit/history/page")
+    @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public ApiResponse<AuditPage<AiQueryHistory>> auditHistoryPage(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String sort) {
+        AuditSort order = auditSort(page, size, sort,
+                List.of("id", "createdat", "status", "elapsedms", "rowsreturned"));
+        long total = queryHistoryMapper.selectCount(new LambdaQueryWrapper<>());
+        long totalPages = PaginationMath.totalPages(total, size);
+        long actualPage = Math.min(page, totalPages);
+        var query = new LambdaQueryWrapper<AiQueryHistory>();
+        switch (order.field()) {
+            case "createdat" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getCreatedAt);
+            case "status" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getStatus);
+            case "elapsedms" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getElapsedMs);
+            case "rowsreturned" -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getRowsReturned);
+            default -> query.orderBy(true, "asc".equals(order.direction()), AiQueryHistory::getId);
+        }
+        if (!"id".equals(order.field())) query.orderByDesc(AiQueryHistory::getId);
+        long offset = Math.multiplyExact(actualPage - 1, (long) size);
+        List<AiQueryHistory> items = queryHistoryMapper.selectList(query.last("LIMIT " + size + " OFFSET " + offset));
+        return ApiResponse.ok(new AuditPage<>(items, actualPage, size, total, totalPages,
+                order.field() + "," + order.direction()), TraceContext.create().traceId());
+    }
+
+    @GetMapping("/audit/calls/page")
+    @RequiresPermission(PermissionCode.AI_AUDIT_VIEW)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public ApiResponse<AuditPage<AiCallLog>> auditCallsPage(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String sort) {
+        AuditSort order = auditSort(page, size, sort,
+                List.of("id", "createdat", "usecase", "provider", "model", "status", "elapsedms"));
+        long total = callLogMapper.selectCount(new LambdaQueryWrapper<>());
+        long totalPages = PaginationMath.totalPages(total, size);
+        long actualPage = Math.min(page, totalPages);
+        var query = new LambdaQueryWrapper<AiCallLog>();
+        switch (order.field()) {
+            case "createdat" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getCreatedAt);
+            case "usecase" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getUseCase);
+            case "provider" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getProvider);
+            case "model" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getModel);
+            case "status" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getStatus);
+            case "elapsedms" -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getElapsedMs);
+            default -> query.orderBy(true, "asc".equals(order.direction()), AiCallLog::getId);
+        }
+        if (!"id".equals(order.field())) query.orderByDesc(AiCallLog::getId);
+        long offset = Math.multiplyExact(actualPage - 1, (long) size);
+        List<AiCallLog> items = callLogMapper.selectList(query.last("LIMIT " + size + " OFFSET " + offset));
+        return ApiResponse.ok(new AuditPage<>(items, actualPage, size, total, totalPages,
+                order.field() + "," + order.direction()), TraceContext.create().traceId());
+    }
+
+    private static AuditSort auditSort(long page, int size, String sort, List<String> fields) {
+        if (page < 1 || size < 1 || size > MAX_AUDIT_PAGE_SIZE) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    "page 必须大于等于 1，size 必须在 1 到 " + MAX_AUDIT_PAGE_SIZE + " 之间");
+        }
+        String[] parts = sort == null ? new String[0] : sort.trim().toLowerCase(Locale.ROOT).split(",", -1);
+        if (parts.length < 1 || parts.length > 2 || parts[0].isBlank()) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 格式应为 字段[,asc|desc]");
+        }
+        String direction = parts.length == 1 ? "asc" : parts[1];
+        if (!fields.contains(parts[0]) || !("asc".equals(direction) || "desc".equals(direction))) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sort 字段或方向不受支持");
+        }
+        return new AuditSort(parts[0], direction);
+    }
+
     @GetMapping("/history/my")
     @RequiresPermission(PermissionCode.AI_QUERY)
     public ApiResponse<List<AiQueryHistory>> myHistory(@RequestParam(defaultValue = "10") int limit) {
         String userId = CallerContext.requireUserId();
-        return ApiResponse.ok(queryHistoryMapper.selectList(new LambdaQueryWrapper<AiQueryHistory>()
+        List<AiQueryHistory> histories = queryHistoryMapper.selectList(new LambdaQueryWrapper<AiQueryHistory>()
                 .eq(AiQueryHistory::getUserId, userId)
                 .orderByDesc(AiQueryHistory::getId)
-                .last("LIMIT " + Math.max(1, Math.min(50, limit)))), TraceContext.create().traceId());
+                .last("LIMIT " + Math.max(1, Math.min(50, limit))));
+        var submitted = feedbackService.submittedHistoryIds(userId,
+                histories.stream().map(AiQueryHistory::getId).toList());
+        histories.forEach(history -> history.setFeedbackSubmitted(submitted.contains(history.getId())));
+        return ApiResponse.ok(histories, TraceContext.create().traceId());
+    }
+
+    @PostMapping("/history/{id}/feedback")
+    @RequiresPermission(PermissionCode.AI_QUERY)
+    public ApiResponse<AiFeedbackResp> submitFeedback(@org.springframework.web.bind.annotation.PathVariable("id") long id,
+                                                       @RequestBody AiFeedbackReq req) {
+        String userId = CallerContext.requireUserId();
+        AiFeedbackReq body = req == null ? null : req;
+        if (body == null) {
+            throw new PlatformBizException("AI_FEEDBACK_INVALID", "rating 与 reasonCode 必填");
+        }
+        AiFeedback feedback = feedbackService.submit(id, userId, body.rating(), body.reasonCode());
+        return ApiResponse.ok(AiFeedbackResp.from(feedback), TraceContext.create().traceId());
     }
 }

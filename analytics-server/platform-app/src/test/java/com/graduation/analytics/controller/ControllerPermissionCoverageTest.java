@@ -41,7 +41,14 @@ class ControllerPermissionCoverageTest {
             "GET /api/v1/metrics/health",
             "GET /api/v1/health");
 
-    /** 前端 api.js 实际调用的端点 → 期望权限码（路径占位符统一写成 {id}） */
+    /**
+     * 端点 → 期望权限码冻结表（路径占位符统一写成 {id}）。
+     *
+     * <p><b>本表不等于「前端 api.js 实际调用面」</b>：本测试体只把本表与扫描到的控制器端点逐条对比
+     * （frozenFrontendExpectations()），从不读 web/src/api.js；表中哪些行真被前端调用、哪些行目前
+     * 没有前端调用，由 web 侧跨树对账守卫 web/tests/permissionReconcile.test.js 逐条登记
+     * （S3-43 实测：48 条中 15 条前端未接线，清单与原因见该守卫的 NOT_WIRED_IN_FRONTEND）。</p>
+     */
     private static final Map<String, String> FROZEN_FRONTEND_EXPECTATIONS = new LinkedHashMap<>();
 
     static {
@@ -53,14 +60,26 @@ class ControllerPermissionCoverageTest {
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/analysis/rfm", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/overview", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/snapshots", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/snapshots/page", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/capabilities", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/analytics/sources", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/quality", PermissionCode.OPS_LOG_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/metrics/quality/page", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ai/queries", PermissionCode.AI_QUERY);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ai/analyses", PermissionCode.AI_QUERY);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ai/explanations", PermissionCode.AI_QUERY);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ai/history/my", PermissionCode.AI_QUERY);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ai/history/{id}/feedback", PermissionCode.AI_QUERY);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ai/audit/history", PermissionCode.AI_AUDIT_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ai/audit/history/page", PermissionCode.AI_AUDIT_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ai/audit/calls", PermissionCode.AI_AUDIT_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ai/audit/calls/page", PermissionCode.AI_AUDIT_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/reports", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/reports/page", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/reports/{id}", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/reports/{id}/artifact", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/decisions", PermissionCode.DASHBOARD_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/decisions/page", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/decisions", PermissionCode.DECISION_CREATE);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/decisions/{id}/submit", PermissionCode.DECISION_CREATE);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/decisions/{id}/approve", PermissionCode.DECISION_APPROVE);
@@ -71,13 +90,16 @@ class ControllerPermissionCoverageTest {
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/decisions/{id}/evaluate", PermissionCode.DECISION_CREATE);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/decisions/{id}/evaluations", PermissionCode.DASHBOARD_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/admin/users", PermissionCode.USER_MANAGE);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/admin/users/page", PermissionCode.USER_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/admin/users", PermissionCode.USER_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/admin/users/{id}/toggle", PermissionCode.USER_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/admin/users/{id}/reset-password", PermissionCode.USER_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ingestion/status", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ingestion/batches", PermissionCode.OPS_LOG_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/ingestion/batches/page", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/ingestion/runs", PermissionCode.PIPELINE_RUN);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/pipeline-runs", PermissionCode.OPS_LOG_VIEW);
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/pipeline-runs/page", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/pipeline-runs", PermissionCode.PIPELINE_RUN);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/pipeline-runs/{id}", PermissionCode.OPS_LOG_VIEW);
         FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/pipeline-runs/{id}/retry", PermissionCode.PIPELINE_RUN);
@@ -94,6 +116,13 @@ class ControllerPermissionCoverageTest {
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/runtime-profiles/active", PermissionCode.RUNTIME_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/runtime-profiles/{id}", PermissionCode.RUNTIME_MANAGE);
         FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/runtime-profiles", PermissionCode.RUNTIME_MANAGE);
+        // 02.5 接入向导面（SourceRegistry/MappingDryRun/MappingActivation 控制器，全部 RUNTIME_MANAGE）：
+        // 源列表读取 + 源激活 + 映射 dry-run 预览 + 映射激活。dry-run 报告回查
+        // GET /api/v1/sources/{id}/mappings/dry-runs/{reportId} 前端未接线（向导直接消费 dry-run 响应），不入表。
+        FROZEN_FRONTEND_EXPECTATIONS.put("GET /api/v1/sources", PermissionCode.RUNTIME_MANAGE);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/sources/{id}/activate", PermissionCode.RUNTIME_MANAGE);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/sources/{id}/mappings/dry-run", PermissionCode.RUNTIME_MANAGE);
+        FROZEN_FRONTEND_EXPECTATIONS.put("POST /api/v1/sources/{id}/mappings/activate", PermissionCode.RUNTIME_MANAGE);
     }
 
     @Test

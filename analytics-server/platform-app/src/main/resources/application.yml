@@ -2,23 +2,28 @@ server:
   port: 8091
 
 # R1 平台元数据库（整改书 §7.1；账号由 init-three-dbs.sql 创建）
+# G31-01（指导书 5.1.2）：三个库的 URL/账号/口令一律是**必填环境变量**，
+# 本文件不再提供任何兜底默认值——曾写死的 jdbc:mysql://127.0.0.1:3306/... 默认
+# 会把「漏配」拖到运行期才暴露，并构成误连宿主正式实例(3306)的通道。
+# 现在变量缺失 ⇒ 占位符解析失败 ⇒ Spring 上下文启动即拒绝（启动前失败的最后一道内层防线；
+# 外层防线是启动 driver 的 scripts/assert-platform-env.ps1 门禁，更早触发、且不启动 JVM）。
 platform:
   meta:
-    url: ${PLATFORM_META_URL:jdbc:mysql://127.0.0.1:3306/analytics_meta?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
-    username: ${PLATFORM_META_USER:meta_app}
-    password: ${PLATFORM_META_PASSWORD:meta_app_pw_2026}
+    url: ${PLATFORM_META_URL}
+    username: ${PLATFORM_META_USER}
+    password: ${PLATFORM_META_PASSWORD}
   # 指标库（analytics_metric）双源，V2.0 §17.1：
   #   publish = metric_pub 读写（Flyway db/metric + 指标发布写路径）
   #   read    = metric_read 仅 SELECT 已发布 ADS（看板/AI SQL/决策取值）
   metric:
     publish:
-      url: ${PLATFORM_METRIC_PUBLISH_URL:jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
-      username: ${PLATFORM_METRIC_PUBLISH_USER:metric_pub}
-      password: ${PLATFORM_METRIC_PUBLISH_PASSWORD:metric_pub_pw_2026}
+      url: ${PLATFORM_METRIC_PUBLISH_URL}
+      username: ${PLATFORM_METRIC_PUBLISH_USER}
+      password: ${PLATFORM_METRIC_PUBLISH_PASSWORD}
     read:
-      url: ${PLATFORM_METRIC_READ_URL:jdbc:mysql://127.0.0.1:3306/analytics_metric?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true}
-      username: ${PLATFORM_METRIC_READ_USER:metric_read}
-      password: ${PLATFORM_METRIC_READ_PASSWORD:metric_read_pw_2026}
+      url: ${PLATFORM_METRIC_READ_URL}
+      username: ${PLATFORM_METRIC_READ_USER}
+      password: ${PLATFORM_METRIC_READ_PASSWORD}
   # R2 落地存储与凭据（整改书 §8）：LOCAL 演示默认值，生产必须显式配置
   landing:
     local-root: ${PLATFORM_LANDING_LOCAL_ROOT:./landing}
@@ -30,6 +35,14 @@ platform:
   # 也让非"工作目录＝仓库根"的部署方式有一个明确说法而不是默默读错文件。
   source:
     profile-root: ${PLATFORM_SOURCE_PROFILE_ROOT:.}
+  # S2-01B 映射 dry-run（设计 §7.3 规则 10）：预览用候选画像与受控脱敏样本。
+  #   contract-path = canonical 契约位置（报告里 contractVersion/contractChecksum 的真相来源）
+  #   sample-root   = sampleRef 的**唯一**解析根；默认 ./sample-data 是"没有配置就没有样本"的
+  #                   fail-closed 默认值（缺失 ⇒ 平台侧 500，不回落仓库根、更不回落任意目录）
+  # 两者都是显式配置键：单测指向临时目录，部署方式不同时也有明确说法，而不是默默读错文件。
+  mapping:
+    contract-path: ${PLATFORM_MAPPING_CONTRACT_PATH:contract-specs/schemas/canonical-event.v1.schema.json}
+    sample-root: ${PLATFORM_MAPPING_SAMPLE_ROOT:./sample-data}
   # R6-11（V2.0 §15.3）：真实 Spark 作业阶段等待上限与轮询间隔（LOCAL 小样本秒级完成）
   spark:
     job-timeout-ms: ${PLATFORM_SPARK_JOB_TIMEOUT_MS:900000}
@@ -38,7 +51,25 @@ platform:
     warehouse-dir: ${PLATFORM_SPARK_WAREHOUSE_DIR:./spark-warehouse}
     metastore-dir: ${PLATFORM_SPARK_METASTORE_DIR:./derby-metastore}
 
+# AI Provider 资源保护（设计 V3.0 §13.4）；均可由受控部署环境覆盖。
+# 不配置/无凭据时 Provider 仍不可用，调用方沿既有模板回退路径处理。
+llm:
+  max-request-bytes: ${LLM_MAX_REQUEST_BYTES:262144}
+  max-response-bytes: ${LLM_MAX_RESPONSE_BYTES:1048576}
+  max-output-tokens: ${LLM_MAX_OUTPUT_TOKENS:1024}
+  max-concurrent-calls: ${LLM_MAX_CONCURRENT_CALLS:2}
+  circuit-failure-threshold: ${LLM_CIRCUIT_FAILURE_THRESHOLD:5}
+  circuit-open-ms: ${LLM_CIRCUIT_OPEN_MS:60000}
+  max-daily-token-budget: ${LLM_MAX_DAILY_TOKEN_BUDGET:1000000}
+
 # 迁移由 MetaFlywayInitializer 显式执行（classpath:db/meta）；默认 flyway 关闭
 spring:
   flyway:
     enabled: false
+  # 正式 HTTP 输出统一 ISO-8601（总控 2026-09-15 裁定）
+  # Spring Boot 默认即关闭该特性；这里显式声明，使「日期形状」有唯一配置文件所有者，
+  # 防止将来改全局 ObjectMapper 时静默退回时间戳数组（[2026,9,21,10,20,30]）。
+  # 测在 platform-app .../controller/MappingDryRunControllerTest#dateShapeIsIso8601OverHttp
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false

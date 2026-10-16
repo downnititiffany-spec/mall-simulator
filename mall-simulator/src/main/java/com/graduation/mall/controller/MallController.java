@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,9 +42,11 @@ public class MallController {
     private final MallBusinessService mallService;
 
     @PostMapping("/users")
-    public ApiResponse<Map<String, Object>> register(@Valid @RequestBody CreateUserReq req) {
+    public ApiResponse<Map<String, Object>> register(@Valid @RequestBody CreateUserReq req,
+                                                     @RequestHeader(value = "Idempotency-Key", required = false)
+                                                     String idempotencyKey) {
         TraceContext trace = TraceContext.create();
-        Long userId = mallService.registerUser(req, trace);
+        Long userId = mallService.registerUser(req, trace, idempotencyKey);
         return ApiResponse.ok(Map.of("userId", String.valueOf(userId)), trace.traceId());
     }
 
@@ -58,9 +61,11 @@ public class MallController {
     }
 
     @PostMapping("/cart/items")
-    public ApiResponse<Void> addCartItem(@Valid @RequestBody CartAddReq req) {
+    public ApiResponse<Void> addCartItem(@Valid @RequestBody CartAddReq req,
+                                         @RequestHeader(value = "Idempotency-Key", required = false)
+                                         String idempotencyKey) {
         TraceContext trace = TraceContext.create();
-        mallService.addCartItem(req, trace);
+        mallService.addCartItem(req, trace, idempotencyKey);
         return ApiResponse.ok(null, trace.traceId());
     }
 
@@ -70,40 +75,51 @@ public class MallController {
     }
 
     @PostMapping("/orders")
-    public ApiResponse<Map<String, Object>> createOrder(@Valid @RequestBody OrderCreateReq req) {
+    public ApiResponse<Map<String, Object>> createOrder(@Valid @RequestBody OrderCreateReq req,
+                                                        @RequestHeader(value = "Idempotency-Key", required = false)
+                                                        String idempotencyKey) {
         TraceContext trace = TraceContext.create();
-        Long orderId = mallService.createOrder(req, trace);
+        Long orderId = mallService.createOrder(req, trace, idempotencyKey);
         // ID 超 JS 安全整数，统一字符串返回（雪花 19 位）
         return ApiResponse.ok(Map.of("orderId", String.valueOf(orderId)), trace.traceId());
     }
 
     @PostMapping("/orders/{orderId}/pay")
-    public ApiResponse<Void> payOrder(@PathVariable Long orderId, @Valid @RequestBody OrderPayReq req) {
+    public ApiResponse<Void> payOrder(@PathVariable Long orderId, @Valid @RequestBody OrderPayReq req,
+                                      @RequestHeader(value = "Idempotency-Key", required = false)
+                                      String idempotencyKey) {
         TraceContext trace = TraceContext.create();
-        mallService.payOrder(orderId, req.userId(), trace);
+        mallService.payOrder(orderId, req.userId(), trace, idempotencyKey);
         return ApiResponse.ok(null, trace.traceId());
     }
 
     @PostMapping("/orders/{orderId}/cancel")
-    public ApiResponse<Void> cancelOrder(@PathVariable Long orderId, @Valid @RequestBody OrderCancelReq req) {
+    public ApiResponse<Void> cancelOrder(@PathVariable Long orderId, @Valid @RequestBody OrderCancelReq req,
+                                         @RequestHeader(value = "Idempotency-Key", required = false)
+                                         String idempotencyKey) {
         TraceContext trace = TraceContext.create();
-        mallService.cancelOrder(orderId, req.userId(), req.reason(), trace);
+        mallService.cancelOrder(orderId, req.userId(), req.reason(), trace, idempotencyKey);
         return ApiResponse.ok(null, trace.traceId());
     }
 
     @PostMapping("/orders/{orderId}/refunds")
     public ApiResponse<Map<String, Object>> applyRefund(@PathVariable Long orderId,
-                                                        @Valid @RequestBody RefundApplyReq req) {
+                                                        @Valid @RequestBody RefundApplyReq req,
+                                                        @RequestHeader(value = "Idempotency-Key", required = false)
+                                                        String idempotencyKey) {
         TraceContext trace = TraceContext.create();
-        Long refundId = mallService.applyRefund(orderId, req.userId(), req.amount(), req.reason(), trace);
+        Long refundId = mallService.applyRefund(orderId, req.userId(), req.amount(), req.reason(), trace,
+                idempotencyKey);
         return ApiResponse.ok(Map.of("refundId", String.valueOf(refundId)), trace.traceId());
     }
 
     @PostMapping("/refunds/{refundId}/complete")
     public ApiResponse<Void> completeRefund(@PathVariable Long refundId,
-                                            @Valid @RequestBody RefundCompleteReq req) {
+                                            @Valid @RequestBody RefundCompleteReq req,
+                                            @RequestHeader(value = "Idempotency-Key", required = false)
+                                            String idempotencyKey) {
         TraceContext trace = TraceContext.create();
-        mallService.completeRefund(refundId, req.userId(), trace);
+        mallService.completeRefund(refundId, req.userId(), trace, idempotencyKey);
         return ApiResponse.ok(null, trace.traceId());
     }
 

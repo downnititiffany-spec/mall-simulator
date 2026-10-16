@@ -52,6 +52,37 @@ final class AdsRows {
         return (int) asLong(value);
     }
 
+    /**
+     * 可空长整数：{@code null}/空白/不可解析 → null。
+     *
+     * <p>与 {@link #asLong} 的区别是**语义**：{@code asLong} 把取不到当 0（适合计数兜底），
+     * 而 RFM 原值列（{@code r_days}/{@code f_count}）取不到必须与真值 0 区分——
+     * 把「缺列」当 0 会让页面显示「最近 0 天没买」「观察期 0 单」（设计 V3.0 §11.4 L449）。</p>
+     */
+    static Long asLongOrNull(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        String text = asString(value).trim();
+        if (text.isEmpty()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** 去空白的字符串；null/空白 → null（MySQL 侧观察窗口列是 {@code NOT NULL DEFAULT ''}） */
+    static String asTrimmedOrNull(Object value) {
+        String text = asString(value).trim();
+        return text.isEmpty() ? null : text;
+    }
+
     /** 金额/比率：取不到就是 null（不用 0 冒充"没有值"） */
     static BigDecimal asDecimal(Object value) {
         if (value == null) {
@@ -78,6 +109,17 @@ final class AdsRows {
             }
         }
         return value;
+    }
+
+    /**
+     * 把请求日期渲染成 ADS 落库的紧凑 {@code dt} 文本（{@code yyyyMMdd}），供 WHERE 参数绑定使用。
+     *
+     * <p>QA-01：日期筛选真正下推到 ADS 读取后，请求侧的 {@link LocalDate} 必须在**唯一一处**
+     * 转成与列值同格式的文本。dt 列是 varchar 存紧凑值，用 ISO {@code yyyy-MM-dd} 比较会恒 false
+     * 而静默 0 行（2026-09-11 事故同源），因此转换只在这里定义，并接受 {@code null}（表示该端不设边界）。</p>
+     */
+    static String compactDate(LocalDate date) {
+        return date == null ? null : date.format(COMPACT_DATE);
     }
 
     /** 规范顺序下标；不在规范列表里的取值统一排在末尾（保证输出稳定可对账） */

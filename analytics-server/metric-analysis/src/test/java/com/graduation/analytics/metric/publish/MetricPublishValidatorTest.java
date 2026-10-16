@@ -44,6 +44,14 @@ class MetricPublishValidatorTest {
 
         List<Check> checks = new ArrayList<>(validator.manifestChecks(request, manifest));
         assertThat(MetricPublishValidator.blocked(checks)).isFalse();
+        // S3-06：内容摘要逐表核对必须真的跑过并给出通过结论（不是"没这条 check 也算过"）
+        assertThat(checks)
+                .as("清单阶段必须产出 MP_EXPORT_CHECKSUM，否则'内容验证'只是文档里的一句话")
+                .anySatisfy(c -> {
+                    assertThat(c.ruleCode()).isEqualTo("MP_EXPORT_CHECKSUM");
+                    assertThat(c.passed()).isTrue();
+                    assertThat(c.severity()).isEqualTo("BLOCKING");
+                });
 
         List<MetricValue> values = values(SID, DT);
         checks.addAll(validator.prePublishChecks(request, manifest, rows(), written(manifest), values));
@@ -60,6 +68,25 @@ class MetricPublishValidatorTest {
         assertThat(MetricPublishValidator.blocked(post))
                 .as("失败规则: %s", MetricPublishValidator.failedRules(post))
                 .isFalse();
+    }
+
+    @Test
+    @DisplayName("manifest 中 file URI 的 8 个导出文件都能被发布校验器定位")
+    void fileUriExportFilesPassManifestChecks(@TempDir Path dir) throws Exception {
+        MetricExportManifest local = manifest(dir, SID, DT);
+        List<MetricExportManifest.TableExport> uriTables = local.tables().stream()
+                .map(t -> new MetricExportManifest.TableExport(t.hiveTable(), t.mysqlTable(), t.rowCount(),
+                        t.columns(), t.hivePath(), Path.of(t.exportFile()).toUri().toString(), t.checksum()))
+                .toList();
+        MetricExportManifest withFileUris = new MetricExportManifest(local.snapshotId(), local.businessDate(),
+                local.dt(), local.source(), local.totalRows(), uriTables);
+
+        List<Check> checks = validator.manifestChecks(request(dir, SID, DT), withFileUris);
+
+        assertThat(checks.stream().filter(c -> "MP_EXPORT_FILES".equals(c.ruleCode())).findFirst()
+                .orElseThrow().passed()).isTrue();
+        assertThat(checks.stream().filter(c -> "MP_EXPORT_CHECKSUM".equals(c.ruleCode())).findFirst()
+                .orElseThrow().passed()).isTrue();
     }
 
     @Test
@@ -86,6 +113,53 @@ class MetricPublishValidatorTest {
                 full.source(), full.totalRows(), full.tables().subList(0, full.tables().size() - 1));
         List<Check> checks = validator.manifestChecks(request(dir, SID, DT), partial);
         assertThat(MetricPublishValidator.failedRules(checks)).contains("MP_MANIFEST_TABLES");
+    }
+
+    @Test
+    @DisplayName("导出制品内容被改写（行数不变）→ MP_EXPORT_CHECKSUM 拦下（§12.5 L529 内容验证）")
+    void exportChecksumMismatchBlocked(@TempDir Path dir) throws Exception {
+        MetricExportManifest manifest = manifest(dir, SID, DT);
+        PublishRequest request = request(dir, SID, DT);
+
+        // 先确认这份清单本身是干净的（否则下面的断言可能因为别的原因变红）
+        assertThat(MetricPublishValidator.failedRules(validator.manifestChecks(request, manifest))).isEmpty();
+
+        // 篡改一张表的导出文件内容：**行数保持不变**（把 stub 值改掉），
+        // 于是 MP_EXPORT_FILES（文件在）与 MP_ADS_ROWS_MATCH（行数对）都不会发现，
+        // 只有内容摘要能发现 —— 这正是本规则存在的理由。
+        Path tampered = dir.resolve("ads_operation_overview_m.jsonl");
+        String before = Files.readString(tampered);
+        Files.writeString(tampered, before.replace("{\"stub\":1}", "{\"stub\":2}"));
+        assertThat(Files.readString(tampered))
+                .as("前置条件：内容确实变了，而字节数不变（同样长度），行数也不变")
+                .isNotEqualTo(before);
+
+        List<Check> checks = validator.manifestChecks(request, manifest);
+        assertThat(MetricPublishValidator.failedRules(checks))
+                .as("内容摘要不匹配必须点名，且不得牵连 MP_EXPORT_FILES")
+                .isEqualTo("MP_EXPORT_CHECKSUM");
+        assertThat(checks.stream().filter(c -> "MP_EXPORT_CHECKSUM".equals(c.ruleCode())).findFirst()
+                .orElseThrow().detail())
+                .as("证据里必须给出可定位的表名与两侧摘要")
+                .contains("ads_operation_overview_m")
+                .contains("清单=")
+                .contains("实算=");
+        assertThat(MetricPublishValidator.blocked(checks))
+                .as("BLOCKING ⇒ 未通过即阻断发布（不得降级为观察项）")
+                .isTrue();
+    }
+
+    @Test
+    @DisplayName("导出制品缺失 → MP_EXPORT_FILES 与 MP_EXPORT_CHECKSUM 各自点名（不互相掩盖）")
+    void missingExportFileReportedByBothRules(@TempDir Path dir) throws Exception {
+        MetricExportManifest manifest = manifest(dir, SID, DT);
+        PublishRequest request = request(dir, SID, DT);
+        Files.delete(dir.resolve("ads_hot_product_m.jsonl"));
+
+        List<Check> checks = validator.manifestChecks(request, manifest);
+        assertThat(MetricPublishValidator.failedRules(checks))
+                .as("文件缺失两个口径都应点名：一个说'不在'，一个说'无法核对内容'")
+                .contains("MP_EXPORT_FILES", "MP_EXPORT_CHECKSUM");
     }
 
     @Test
@@ -143,7 +217,7 @@ class MetricPublishValidatorTest {
     }
 
     @Test
-    @DisplayName("AdsExportReader：列白名单外字段/缺列补齐/null 保留")
+    @DisplayName("AdsExportReader：声明列齐备的行 + null 保留")
     void exportReaderReadsRows(@TempDir Path dir) throws Exception {
         Path file = dir.resolve("ads_active_trend_m.jsonl");
         Files.writeString(file, "{\"dau\":3,\"behavior_count\":22}\n{\"dau\":null,\"behavior_count\":0}\n");
@@ -153,6 +227,34 @@ class MetricPublishValidatorTest {
         assertThat(rows).hasSize(2);
         assertThat(rows.get(0)).containsEntry("dau", 3L).containsEntry("behavior_count", 22L);
         assertThat(rows.get(1)).containsEntry("dau", null);
+    }
+
+    @Test
+    @DisplayName("AdsExportReader：null 值保留（有键无值）→ 仍可读")
+    void exportReaderKeepsExplicitNullValue(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("ads_active_trend_m.jsonl");
+        Files.writeString(file, "{\"dau\":null,\"behavior_count\":null}\n");
+
+        List<Map<String, Object>> rows = new AdsExportReader().readTable(file, "ads_active_trend_m",
+                List.of("dau", "behavior_count"));
+        assertThat(rows).hasSize(1);
+        // 显式 null（键在、值为空）是真实语义"当日没有该指标值"，必须保留
+        assertThat(rows.get(0)).containsEntry("dau", null).containsEntry("behavior_count", null);
+    }
+
+    @Test
+    @DisplayName("AdsExportReader：导出缺声明列 → 拒绝（不得补 null 冒充\"值为空\"）")
+    void exportReaderRejectsMissingDeclaredColumn(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("ads_active_trend_m.jsonl");
+        // 只写了 dau：behavior_count 整列缺失（例如导出侧版本落后于声明列集）
+        Files.writeString(file, "{\"dau\":3}\n");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new AdsExportReader()
+                        .readTable(file, "ads_active_trend_m", List.of("dau", "behavior_count")))
+                .as("缺列若被补成 null，发布侧会写出\"值为空\"的假数据，且没有任何 check 会点名它")
+                .isInstanceOf(java.io.IOException.class)
+                .hasMessageContaining("缺列")
+                .hasMessageContaining("behavior_count");
     }
 
     @Test
@@ -217,7 +319,8 @@ class MetricPublishValidatorTest {
         Map<String, List<Map<String, Object>>> rows = new LinkedHashMap<>();
         rows.put("ads_operation_overview_m", List.of(overview()));
         rows.put("ads_sale_trend_m", List.of(new LinkedHashMap<>(Map.of("order_count", 5L, "buyer_count", 3L,
-                "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40")))));
+                "sale_amount", new BigDecimal("2042.00"), "avg_order_value", new BigDecimal("408.40"),
+                "net_sale_amount", new BigDecimal("1493.00")))));
         rows.put("ads_behavior_funnel_m", List.of(funnel("view"), funnel("pay")));
         rows.put("ads_active_trend_m", List.of(new LinkedHashMap<>(Map.of("dau", 3L, "behavior_count", 22L))));
         for (String table : List.of("ads_hot_product_m", "ads_product_conversion_m", "ads_user_profile_m",
@@ -274,7 +377,8 @@ class MetricPublishValidatorTest {
                     spec.name(), rows.getOrDefault(spec.name(), List.of()).size(), spec.columns(),
                     "file:/D:/Develop_code/GraduationProject/spark-warehouse/dw_ads.db/" + spec.name()
                             + "/" + hivePathMarker + "/dt=" + dt,
-                    file.toString()));
+                    file.toString(),
+                    MetricExportManifest.crc32(file)));
         }
         return new MetricExportManifest(sid, dt, dt, "spark-ads",
                 tables.stream().mapToLong(MetricExportManifest.TableExport::rowCount).sum(), tables);

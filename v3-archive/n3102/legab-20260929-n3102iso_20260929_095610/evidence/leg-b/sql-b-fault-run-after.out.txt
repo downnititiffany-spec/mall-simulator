@@ -1,0 +1,4 @@
+CONCAT('FRUN|',id,'|',status,'|',IFNULL(input_batch_id,'NULL'),'|',IFNULL(target_snapshot_id,'NULL'),'|',IFNULL(recalc_reason,'NULL'),'|',IFNULL(error_code,'-'))
+FRUN|4|FAILED|2|S20260918_4|N31-02 controlled Spark jar fault; verify current ACTIVE remains readable|RUN_JOB_FAILED
+CONCAT('CONS|',COUNT(*))
+CONS|2

@@ -36,7 +36,7 @@ public class MetricAdsWriter {
     }
 
     /**
-     * 按快照清理：删除该 snapshot_id 在 8 张 ADS 表里的全部行。
+     * 按快照清理：删除该 snapshot_id 在 ADS 白名单全部服务表里的行。
      * 只清 ADS 物化行，不动 metric_snapshot/metric_value（快照审计记录由发布流程管理）。
      *
      * @return 删除的总行数

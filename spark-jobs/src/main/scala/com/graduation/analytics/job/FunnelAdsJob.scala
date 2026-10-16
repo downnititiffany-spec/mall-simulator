@@ -5,9 +5,9 @@ import com.graduation.analytics.warehouse.WarehouseNamespace
 import org.apache.spark.sql.SparkSession
 
 /**
- * Job04 漏斗 ADS（§24.6 FunnelAdsJob，§12.4 扩到 8 张核心 ADS）：
+ * Job04 ADS 构建（§24.6 FunnelAdsJob）：
  * dws_behavior_funnel_day → ads_behavior_funnel；
- * 同批生成大盘/活跃趋势/热门/商品转化/销售趋势/用户画像/数据质量。
+ * 同批生成大盘/活跃趋势/热门/商品转化/销售趋势/分类销售/城市等级销售/用户画像/数据质量。
  *
  * R6-13（V2.0 §14.4 分区幂等协议）：本作业**只写暂存分区**
  * `{ns.ads}.{table}__staging/snapshot_id={snapshotId}/dt={dt}`，不碰正式分区；
@@ -16,7 +16,7 @@ import org.apache.spark.sql.SparkSession
  */
 class FunnelAdsJob extends WarehouseJob {
   override val code: String = "fna"
-  override val description: String = "8 张 ADS：漏斗/大盘/活跃/热门/转化/销售趋势/用户画像/数据质量（写暂存分区）"
+  override val description: String = "ADS 指标构建（含分类与城市等级销售，写暂存分区）"
 
   override def validate(args: JobArgs): Either[String, Unit] =
     args.outputSnapshotId.filter(_.nonEmpty)
@@ -44,10 +44,12 @@ class FunnelAdsJob extends WarehouseJob {
     spark.sql(AdsSql.hotProduct(ns, dt, topN, sid))
     spark.sql(AdsSql.productConversion(ns, dt, sid))
     spark.sql(AdsSql.saleTrend(ns, dt, sid))
+    spark.sql(AdsSql.categorySale(ns, dt, sid))
+    spark.sql(AdsSql.regionSale(ns, dt, sid))
     spark.sql(AdsSql.userProfile(ns, dt, periodStart, periodEnd, sid))
     spark.sql(AdsSql.dataQuality(ns, dt, sid))
 
-    // 输出计数 = 8 张暂存表本次快照分区行数之和（真实 COUNT(*)，非输入数冒充）
+    // 输出计数 = 当前发布表集暂存分区行数之和（真实 COUNT(*)，非输入数冒充）
     val stagingTables = FunnelAdsJob.stagingTables(ns)
     val outputCount = stagingTables.map(t =>
       spark.sql(s"SELECT COUNT(*) c FROM $t WHERE snapshot_id = '$snapshotId' AND dt = '$dt'")
@@ -62,7 +64,7 @@ class FunnelAdsJob extends WarehouseJob {
 object FunnelAdsJob {
   val instance: FunnelAdsJob = new FunnelAdsJob()
 
-  /** 本作业写出的 8 张 ADS 暂存表（R6-13；证据采集范围 = 真实写入目标）；库名由唯一所有者派生 */
+  /** 本作业写出的 ADS 暂存表（R6-13；证据采集范围 = 真实写入目标）；库名由唯一所有者派生 */
   def stagingTables(ns: WarehouseNamespace): Seq[String] = AdsSql.TABLES.map(AdsSql.staging(ns, _))
 
   /** 正式表（pub 作业发布目标）；库名由唯一所有者派生 */

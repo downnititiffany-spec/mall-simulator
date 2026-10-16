@@ -108,8 +108,8 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-              <!-- 只选 @Tag("it")：未打标的 *IT（AnalysisGoldenMySqlIT / MetricAdsMySqlIT /
-                   MetricPublisherMySqlIT 等）即使被 <includes> 捞到也会被 tag 过滤掉，不会误跑 -->
+              <!-- 只选 @Tag("it")：AnalysisGoldenMySqlIT 等未打标 *IT 即使被 <includes> 捞到也会被
+                   tag 过滤掉；MetricAdsMySqlIT / MetricPublisherMySqlIT 自 V-032 起正式收编。 -->
               <groups>it</groups>
               <!-- 必须显式写 includes：本类的类名是 *IT，不在 surefire 默认包含式里，
                    缺了它就会 "Tests run: 0"——那正是 DEV-003b 要消灭的假绿形态之一 -->

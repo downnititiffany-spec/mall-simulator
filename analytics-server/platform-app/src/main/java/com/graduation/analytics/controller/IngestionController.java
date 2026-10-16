@@ -4,7 +4,9 @@ import com.graduation.analytics.auth.PermissionCode;
 import com.graduation.analytics.auth.RequiresPermission;
 import com.graduation.analytics.common.ApiResponse;
 import com.graduation.analytics.ingestion.IngestionService;
+import com.graduation.analytics.ingestion.IngestionBatchQueryService;
 import com.graduation.analytics.ingestion.entity.IngestionBatch;
+import com.graduation.analytics.ratelimit.RateLimited;
 import com.graduation.analytics.common.TraceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +29,7 @@ import java.util.Map;
 public class IngestionController {
 
     private final IngestionService ingestionService;
+    private final IngestionBatchQueryService batchQueryService;
 
     @GetMapping("/status")
     @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
@@ -36,6 +39,7 @@ public class IngestionController {
 
     @PostMapping("/runs")
     @RequiresPermission(PermissionCode.PIPELINE_RUN)
+    @RateLimited(scope = "ingestion-trigger", requests = 20)
     public ApiResponse<IngestionService.RunResult> run() {
         TraceContext trace = TraceContext.create();
         return ApiResponse.ok(ingestionService.runOne(trace), trace.traceId());
@@ -45,5 +49,15 @@ public class IngestionController {
     @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
     public ApiResponse<List<IngestionBatch>> batches(@RequestParam(defaultValue = "20") int limit) {
         return ApiResponse.ok(ingestionService.recentBatches(limit), TraceContext.create().traceId());
+    }
+
+    /** 历史批次服务端分页；旧 /batches?limit= 接口继续返回最近数组，保持兼容。 */
+    @GetMapping("/batches/page")
+    @RequiresPermission(PermissionCode.OPS_LOG_VIEW)
+    public ApiResponse<IngestionBatchQueryService.BatchPage> batchPage(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String sort) {
+        return ApiResponse.ok(batchQueryService.listPage(page, size, sort), TraceContext.create().traceId());
     }
 }

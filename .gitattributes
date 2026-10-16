@@ -1,0 +1,5 @@
+/analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/legacy/*.json text eol=crlf
+/analytics-server/platform-app/src/test/resources/ingestion-manifest-freeze/new/*.json text eol=crlf
+/scripts/cloud-single-node.sh text eol=lf
+/scripts/cloud-generator-cli.sh text eol=lf
+/scripts/cloud-flume-submit-active-run.sh text eol=lf

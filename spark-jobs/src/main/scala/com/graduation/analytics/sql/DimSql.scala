@@ -18,6 +18,58 @@ import com.graduation.analytics.warehouse.WarehouseNamespace
  */
 object DimSql {
 
+  /** Static canonical-event.v1 city-level dictionary; independent of ODS dates and event volume. */
+  def regionDictionary(ns: WarehouseNamespace): String = s"""
+    INSERT OVERWRITE TABLE ${ns.dim}.dim_region
+    SELECT member AS region_code, member AS region_name, member AS city_level
+    FROM (
+      SELECT 'tier1' AS member UNION ALL
+      SELECT 'tier2' UNION ALL
+      SELECT 'tier3' UNION ALL
+      SELECT 'other' UNION ALL
+      SELECT 'unknown'
+    ) fixed_members
+  """.trim
+
+  /** 日期维度边界：四类 ODS 的 dt 与现有日期维度共同决定可重建区间。 */
+  def dateRangeBounds(ns: WarehouseNamespace): String = s"""
+    SELECT MIN(calendar_date) AS min_date, MAX(calendar_date) AS max_date,
+           SUM(CASE WHEN raw_date IS NOT NULL AND (NOT valid_shape OR calendar_date IS NULL)
+                    THEN 1 ELSE 0 END) AS invalid_count
+    FROM (
+      SELECT dt AS raw_date, to_date(dt, 'yyyyMMdd') AS calendar_date,
+             dt RLIKE '^[0-9]{8}$$' AS valid_shape FROM ${ns.ods}.ods_user_event
+      UNION ALL
+      SELECT dt AS raw_date, to_date(dt, 'yyyyMMdd') AS calendar_date,
+             dt RLIKE '^[0-9]{8}$$' AS valid_shape FROM ${ns.ods}.ods_product_event
+      UNION ALL
+      SELECT dt AS raw_date, to_date(dt, 'yyyyMMdd') AS calendar_date,
+             dt RLIKE '^[0-9]{8}$$' AS valid_shape FROM ${ns.ods}.ods_behavior_event
+      UNION ALL
+      SELECT dt AS raw_date, to_date(dt, 'yyyyMMdd') AS calendar_date,
+             dt RLIKE '^[0-9]{8}$$' AS valid_shape FROM ${ns.ods}.ods_trade_event
+      UNION ALL
+      SELECT date_key AS raw_date, to_date(date_key, 'yyyy-MM-dd') AS calendar_date,
+             date_key RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$$' AS valid_shape FROM ${ns.dim}.dim_date
+    ) date_inputs
+  """.trim
+
+  /** 从已校验的闭区间重建非分区日期维度；调用方先读取边界，避免覆盖时读写同表。 */
+  def dateRangeRebuild(ns: WarehouseNamespace, minDate: String, maxDate: String): String = s"""
+    INSERT OVERWRITE TABLE ${ns.dim}.dim_date
+    SELECT date_format(calendar_date, 'yyyy-MM-dd') AS date_key,
+           year(calendar_date) AS year,
+           month(calendar_date) AS month,
+           dayofmonth(calendar_date) AS day,
+           weekofyear(calendar_date) AS week_of_year,
+           quarter(calendar_date) AS quarter,
+           CAST(pmod(dayofweek(calendar_date) + 5, 7) + 1 AS INT) AS day_of_week,
+           CASE WHEN pmod(dayofweek(calendar_date) + 5, 7) + 1 IN (6, 7) THEN 1 ELSE 0 END AS is_weekend
+    FROM (
+      SELECT explode(sequence(to_date('$minDate'), to_date('$maxDate'), interval 1 day)) AS calendar_date
+    ) calendar_days
+  """.trim
+
   /**
    * dim_user：每个 user_id 取最近一次用户事件（event_time 最新）生成全量快照。
    *
@@ -38,9 +90,11 @@ object DimSql {
        |  ${SurrogateKey.toBIGINT("u.source_system", "user", "u.payload_user_id")} AS user_key
        |FROM (
        |  SELECT *,
-       |         ROW_NUMBER() OVER (PARTITION BY payload_user_id ORDER BY event_time DESC) AS rn
+       |         ROW_NUMBER() OVER (
+       |           PARTITION BY payload_user_id
+       |           ORDER BY event_time DESC, ingest_batch_id DESC, event_id DESC) AS rn
        |  FROM ${ns.ods}.ods_user_event
-       |  WHERE dt = '$dt'
+       |  WHERE dt <= '$dt'
        |    AND schema_version = '1.0'
        |    AND payload_user_id IS NOT NULL
        |) u
@@ -48,7 +102,9 @@ object DimSql {
        |""".stripMargin
 
   /**
-   * dim_product：每个 product_id 取最近一次商品建档/变更事件生成全量快照。
+   * dim_product：以 dt 为截止日，回看历史 ODS 商品建档/变更事件，生成当日完整维度快照。
+   * 商品是缓慢变化维度：当天没有商品变更，不代表当天维表应为空。每个业务日都从截至该日的
+   * 历史事件中选出每个商品的最新状态，保证交易/行为事实能关联商品名称。
    *
    * 追加列（4 个，全部在列尾）：`product_key` / `category_key` / `parent_category_key` / `brand_key`。
    * 类目与品牌键取**原始** `payload_*_id`（A2）；空/缺 ⇒ **NULL 键**（D-087），
@@ -78,9 +134,11 @@ object DimSql {
        |  ${SurrogateKey.toBIGINT("p.source_system", "brand", "p.payload_brand_id")} AS brand_key
        |FROM (
        |  SELECT *,
-       |         ROW_NUMBER() OVER (PARTITION BY payload_product_id ORDER BY event_time DESC) AS rn
+       |         ROW_NUMBER() OVER (
+       |           PARTITION BY payload_product_id
+       |           ORDER BY event_time DESC, ingest_batch_id DESC, event_id DESC) AS rn
        |  FROM ${ns.ods}.ods_product_event
-       |  WHERE dt = '$dt'
+       |  WHERE dt <= '$dt'
        |    AND schema_version = '1.0'
        |    AND payload_product_id IS NOT NULL
        |    AND event_type IN ('product_created', 'product_updated')

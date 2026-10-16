@@ -42,6 +42,20 @@ test('分析前端登录态键名为 analytics_token / analytics_user', () => {
   assert.match(router.text, /localStorage\.getItem\('analytics_token'\)/)
 })
 
+test('管理页面同时由路由守卫与导航元数据限制为对应权限角色', () => {
+  const router = files.find((f) => f.path === 'router.js')
+  const app = files.find((f) => f.path === 'App.vue')
+  for (const route of ['/pipeline', '/ops', '/sources/wizard']) {
+    const line = router.text.split('\n').find((candidate) => candidate.includes(`path: '${route}'`))
+    assert.ok(line, `缺少管理路由 ${route}`)
+    assert.match(line, /requiresAdmin:\s*true/, `${route} 必须标记为管理员路由`)
+  }
+  assert.match(router.text, /canAccessRoute\(currentUser\(\), to\.meta\)/)
+  const runtimeRoute = router.text.split('\n').find((candidate) => candidate.includes("path: '/runtime-profiles'"))
+  assert.match(runtimeRoute || '', /requiresRuntimeManage:\s*true/)
+  assert.match(app.text, /canAccessRoute\(user\.value, r\.meta\)/)
+})
+
 test('分析前端不出现商城接口路径与商城端口', () => {
   const problems = []
   for (const f of files) {

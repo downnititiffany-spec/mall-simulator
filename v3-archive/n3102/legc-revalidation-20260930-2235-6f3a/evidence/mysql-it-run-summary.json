@@ -1,0 +1,14 @@
+{
+  "runId": "n3102pub_20260930_2335_f3a",
+  "mysqlEndpoint": "127.0.0.1:3307",
+  "mysqlServerUuid": "de8ebbea-aff4-11f1-8037-00155d5dba47",
+  "metaSchema": "n3102pub_20260930_2335_f3a_analytics_meta",
+  "metricSchema": "n3102pub_20260930_2335_f3a_analytics_metric",
+  "runnerExitCode": 0,
+  "beforeItTableCount": "TABLECOUNT|0",
+  "afterItBaseTables": 37,
+  "exactAfterItTableRowCounts": 37,
+  "credentials": "generated in-process; temporary ignored credref files removed; no values logged",
+  "schemas": "preserved for evidence; no schema drop",
+  "outcome": "PASS"
+}

@@ -1,0 +1,2 @@
+CONCAT('RUN|',id,'|',status,'|',IFNULL(input_batch_id,'NULL'),'|',IFNULL(target_snapshot_id,'NULL'),'|',source_id,'|',attempt_no,'|',IFNULL(error_code,'-'))
+RUN|2|SUCCESS|2|S20260918_2|1|1|-

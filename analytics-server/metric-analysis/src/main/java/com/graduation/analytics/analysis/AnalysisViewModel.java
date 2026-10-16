@@ -18,6 +18,11 @@ import java.util.Map;
  * 放进 platform-common 只会让公共模块背上看板语义。</p>
  *
  * @param snapshotId        本次请求固定使用的快照号；无可用快照时为 null
+ * @param sourceId          业务数据源身份（source_registry.id）；历史快照或无法溯源时为 null
+ * @param source            快照的**发布方/生产者**（`metric_snapshot.source`，§17.6 成功快照只接受
+ *                          `spark-ads`）；无可用快照时为 null。**不是业务源身份** —— 源身份由 per-source
+ *                          warehouse namespace 与 ODS/DWD 的 `source_system`/`source_instance_id` 承载
+ *                          （P2-04 裁决：不得把 `source` 当源身份使用）
  * @param businessTime      快照业务时间（ISO-8601，秒精度）
  * @param dataUpdatedAt     数据更新时间（ISO-8601）；取不到时退回快照创建时间
  * @param definitionVersion 快照使用的指标口径版本
@@ -29,6 +34,8 @@ import java.util.Map;
  */
 public record AnalysisViewModel<T>(
         String snapshotId,
+        Long sourceId,
+        String source,
         String businessTime,
         String dataUpdatedAt,
         String definitionVersion,
@@ -40,14 +47,30 @@ public record AnalysisViewModel<T>(
     /** 无 ACTIVE 快照：空 data + 本警告，禁止回退落地区事件、禁止造数（契约 §1.3） */
     public static final String WARN_NO_ACTIVE_SNAPSHOT = "NO_ACTIVE_SNAPSHOT";
 
-    /** 请求显式指定的快照号在指标库中不存在（不能假装读了它） */
+    /** 请求显式指定的快照不存在或尚未发布（不能假装读了它，也不回退到 ACTIVE） */
     public static final String WARN_UNKNOWN_SNAPSHOT = "UNKNOWN_SNAPSHOT";
 
-    /** 契约要求但本期没有 Hive 来源的维度表（分类/地区结构），只能返回空数组并显式警告 */
+    /** 快照未保存 source_registry.id；不得用当前 runtime profile 绑定关系推断历史归属 */
+    public static final String WARN_SOURCE_ID_UNAVAILABLE = "SOURCE_ID_UNAVAILABLE";
+
+    /** 可选维度 ADS 服务表不存在或暂不可读时返回空数组并显式警告；正常空结果不触发此码 */
     public static final String WARN_UNKNOWN_DIMENSION_TABLE = "UNKNOWN_DIMENSION_TABLE";
 
     /** ads_user_profile_m 无消费额列，八类消费额无法从指标库取值（不用 m 分冒充金额） */
     public static final String WARN_RFM_AMOUNT_UNAVAILABLE = "RFM_AMOUNT_UNAVAILABLE";
+
+    /**
+     * S3-16：R/F 原值列（{@code r_days}/{@code f_count}）不可用——R 只能按旧口径
+     * {@code calc_date − last_buy_date} 回算、F 原值为 null。
+     *
+     * <p>为什么要单独声明：{@code r_days} 是 Spark 侧原始值所有者（观察窗口末日 − 末次购买日），
+     * 回算值用的是 {@code calc_date}，两者**定义不同**；静默切换口径比返回 null 更危险
+     * （设计 V3.0 §11.4 L449「不能把缺列当0」，§16.4 L732「所有新错误码统一 owner」）。</p>
+     */
+    public static final String WARN_RFM_RAW_VALUES_UNAVAILABLE = "RFM_RAW_VALUES_UNAVAILABLE";
+
+    /** S3-16：RFM 观察窗口（{@code period_start}/{@code period_end}）缺列或行间不一致，窗口留 null 不猜 */
+    public static final String WARN_RFM_PERIOD_UNAVAILABLE = "RFM_PERIOD_UNAVAILABLE";
 
     /** 同一快照内出现多个 rule_version（画像规则版本不唯一） */
     public static final String WARN_MULTIPLE_RULE_VERSIONS = "MULTIPLE_RULE_VERSIONS";
@@ -63,15 +86,22 @@ public record AnalysisViewModel<T>(
         warnings = warnings == null ? List.of() : List.copyOf(warnings);
     }
 
-    public static <T> AnalysisViewModel<T> of(String snapshotId, String businessTime, String dataUpdatedAt,
-                                             String definitionVersion, String qualityStatus,
+    public static <T> AnalysisViewModel<T> of(String snapshotId, String source, String businessTime,
+                                             String dataUpdatedAt, String definitionVersion, String qualityStatus,
                                              Map<String, Object> filters, T data, List<String> warnings) {
-        return new AnalysisViewModel<>(snapshotId, businessTime, dataUpdatedAt, definitionVersion,
+        return of(snapshotId, null, source, businessTime, dataUpdatedAt, definitionVersion, qualityStatus,
+                filters, data, warnings);
+    }
+
+    public static <T> AnalysisViewModel<T> of(String snapshotId, Long sourceId, String source, String businessTime,
+                                             String dataUpdatedAt, String definitionVersion, String qualityStatus,
+                                             Map<String, Object> filters, T data, List<String> warnings) {
+        return new AnalysisViewModel<>(snapshotId, sourceId, source, businessTime, dataUpdatedAt, definitionVersion,
                 qualityStatus, filters, data, warnings);
     }
 
     /**
-     * 无可用快照：snapshotId/时间/口径版本一律 null，qualityStatus=UNKNOWN，data 为空对象。
+     * 无可用快照：snapshotId/source/时间/口径版本一律 null，qualityStatus=UNKNOWN，data 为空对象。
      *
      * <p>为什么 data 给空对象而不是 null：前端四态判空是"data 里没有行"（契约 §4 empty 态），
      * 给 null 会让解包层多一层特判。</p>
@@ -82,7 +112,7 @@ public record AnalysisViewModel<T>(
      */
     @SuppressWarnings("unchecked")
     public static <T> AnalysisViewModel<T> empty(Map<String, Object> filters, List<String> warnings) {
-        return new AnalysisViewModel<>(null, null, null, null, MetricQualityGate.UNKNOWN,
+        return new AnalysisViewModel<>(null, null, null, null, null, null, MetricQualityGate.UNKNOWN,
                 filters, (T) Map.of(), warnings);
     }
 }

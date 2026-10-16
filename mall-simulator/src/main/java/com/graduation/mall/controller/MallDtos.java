@@ -3,6 +3,7 @@ package com.graduation.mall.controller;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
@@ -17,9 +18,15 @@ public final class MallDtos {
     }
 
     public record CreateUserReq(
-            @NotBlank(message = "ageGroup 必填") String ageGroup,
-            @NotBlank(message = "cityLevel 必填") String cityLevel,
-            @NotBlank(message = "memberLevel 必填") String memberLevel) {
+            @NotBlank(message = "ageGroup 必填")
+            @Pattern(regexp = "(?:under18|18-24|25-34|35-44|45\\+)", message = "ageGroup 不在支持的契约枚举中")
+            String ageGroup,
+            @NotBlank(message = "cityLevel 必填")
+            @Pattern(regexp = "(?:tier1|tier2|tier3|other)", message = "cityLevel 不在支持的契约枚举中")
+            String cityLevel,
+            @NotBlank(message = "memberLevel 必填")
+            @Pattern(regexp = "(?:normal|silver|gold|platinum)", message = "memberLevel 不在支持的契约枚举中")
+            String memberLevel) {
     }
 
     public record CartAddReq(

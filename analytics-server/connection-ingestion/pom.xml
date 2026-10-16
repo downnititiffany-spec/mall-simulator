@@ -57,6 +57,15 @@
       <artifactId>platform-common</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- S3-45：复用 platform-common 测试作用域的「仓库根定位」单一所有者 RepoRoot；
+         本模块测试不得再各自 walk-up 找仓根（改前 5 份，锚点文件还各不相同）。 -->
+    <dependency>
+      <groupId>com.graduation.analytics</groupId>
+      <artifactId>platform-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
@@ -73,5 +82,58 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- WP-N1A: 真实 MySQL 3307 隔离数据库 Flyway 迁移依赖（与 platform-app 同源声明） -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-mysql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <properties>
+    <!-- V25-S02 / K-02 / WP-N1A: 默认套件排除 @Tag("it")（真实 MySQL 隔离集成测试）。 -->
+    <v25.it.excluded.groups>it</v25.it.excluded.groups>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludedGroups>${v25.it.excluded.groups}</excludedGroups>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- WP-N1A: 隔离档。把本模块的真库 IT 接进项目统一入口（scripts/run-isolated-tests.ps1），
+         只跑 @Tag("it") 的 *IT 类，默认档测试数完全不受影响。 -->
+    <profile>
+      <id>isolated-tests</id>
+      <properties>
+        <v25.it.excluded.groups></v25.it.excluded.groups>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <groups>it</groups>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

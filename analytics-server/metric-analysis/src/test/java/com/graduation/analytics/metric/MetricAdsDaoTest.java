@@ -1,5 +1,6 @@
 package com.graduation.analytics.metric;
 
+import com.graduation.analytics.runtime.ActiveRuntimeProfileIdProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,19 +33,20 @@ class MetricAdsDaoTest {
 
     private final JdbcTemplate publishJdbc = mock(JdbcTemplate.class);
     private final JdbcTemplate readJdbc = mock(JdbcTemplate.class);
+    private final ActiveRuntimeProfileIdProvider activeProfile = () -> Optional.of(41L);
     private final MetricAdsWriter writer = new MetricAdsWriter(publishJdbc);
-    private final MetricAdsReader reader = new MetricAdsReader(readJdbc);
+    private final MetricAdsReader reader = new MetricAdsReader(readJdbc, activeProfile);
 
     @Test
-    @DisplayName("8 张 ADS 白名单，且不包含无 Hive 来源的 category/region 表")
-    void catalogContainsExactlyEightAdsTables() {
-        assertThat(MetricAdsCatalog.ALL).hasSize(8);
+    @DisplayName("10 张 ADS 白名单包含已实现的 category/region 表")
+    void catalogContainsAllCurrentAdsTables() {
+        assertThat(MetricAdsCatalog.ALL).hasSize(10);
         assertThat(MetricAdsCatalog.ALL).extracting(MetricAdsCatalog::name)
                 .containsExactly("ads_operation_overview_m", "ads_sale_trend_m", "ads_behavior_funnel_m",
                         "ads_active_trend_m", "ads_hot_product_m", "ads_product_conversion_m",
-                        "ads_user_profile_m", "ads_data_quality_m");
-        assertThatThrownBy(() -> MetricAdsCatalog.require("ads_category_sale_m"))
-                .isInstanceOf(IllegalArgumentException.class);
+                        "ads_user_profile_m", "ads_data_quality_m", "ads_category_sale_m", "ads_region_sale_m");
+        assertThat(MetricAdsCatalog.require("ads_category_sale_m").keyColumns()).containsExactly("category_id");
+        assertThat(MetricAdsCatalog.require("ads_region_sale_m").keyColumns()).containsExactly("region");
         assertThatThrownBy(() -> MetricAdsCatalog.require("metric_value"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
@@ -114,15 +117,15 @@ class MetricAdsDaoTest {
     }
 
     @Test
-    @DisplayName("deleteSnapshot 覆盖全部 8 张表并按 snapshot_id 过滤")
+    @DisplayName("deleteSnapshot 覆盖全部 10 张表并按 snapshot_id 过滤")
     void deleteSnapshotCoversAllTables() {
         when(publishJdbc.update(anyString(), any(Object[].class))).thenReturn(2);
 
         int deleted = writer.deleteSnapshot("snap-r7");
 
         ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
-        verify(publishJdbc, times(8)).update(sql.capture(), any(Object[].class));
-        assertThat(deleted).isEqualTo(16);
+        verify(publishJdbc, times(10)).update(sql.capture(), any(Object[].class));
+        assertThat(deleted).isEqualTo(20);
         assertThat(sql.getAllValues()).allSatisfy(s -> assertThat(s)
                 .startsWith("DELETE FROM `ads_")
                 .contains("WHERE `snapshot_id` = ?"));
@@ -184,6 +187,49 @@ class MetricAdsDaoTest {
 
         when(readJdbc.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(7L);
         assertThat(reader.countRows("ads_data_quality_m", "snap-1")).isEqualTo(7L);
+    }
+
+    @Test
+    @DisplayName("QA-01 日期区间读取：dt 边界全部参数化绑定，双端/单端都支持")
+    void selectBySnapshotRangeBindsDateBounds() {
+        stubQuery("snap-active", Map.of("dt", "20260901"));
+
+        reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "20260901", "20260903");
+        reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "20260901", null);
+        reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", null, "20260903");
+
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+        verify(readJdbc, times(3)).query(sql.capture(), any(RowMapper.class), args.capture());
+
+        assertThat(sql.getAllValues().get(0))
+                .contains("FROM `ads_sale_trend_m`")
+                .contains("`snapshot_id` = ?")
+                .contains("`dt` >= ?")
+                .contains("`dt` <= ?");
+        assertThat(args.getAllValues().get(0)).containsExactly("snap-1", "20260901", "20260903");
+
+        // 单端区间只绑定给出的一端（缺失端不得被写成 '19000101'/'99991231' 之类的假边界）
+        assertThat(sql.getAllValues().get(1)).contains("`dt` >= ?").doesNotContain("`dt` <= ?");
+        assertThat(args.getAllValues().get(1)).containsExactly("snap-1", "20260901");
+        assertThat(sql.getAllValues().get(2)).contains("`dt` <= ?").doesNotContain("`dt` >= ?");
+        assertThat(args.getAllValues().get(2)).containsExactly("snap-1", "20260903");
+    }
+
+    @Test
+    @DisplayName("QA-01 日期区间读取 fail-closed：缺快照/两端都缺/格式非紧凑/倒置一律拒绝且不发 SQL")
+    void selectBySnapshotRangeRejectsBadBounds() {
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "", "20260901", "20260903"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("snapshot_id");
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", null, null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("dt");
+        // dt 列是 varchar 紧凑值：'2026-09-01' 这种 ISO 字面量会静默 0 行，必须拒绝而不是放行
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "2026-09-01", "20260903"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("dt");
+        assertThatThrownBy(() -> reader.selectBySnapshotRange("ads_sale_trend_m", "snap-1", "20260903", "20260901"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("倒置");
+        verifyNoInteractions(readJdbc);
     }
 
     private static Map<String, Object> row(long pv) {

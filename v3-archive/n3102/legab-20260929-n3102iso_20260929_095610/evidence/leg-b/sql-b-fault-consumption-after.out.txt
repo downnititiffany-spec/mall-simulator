@@ -1,0 +1,2 @@
+CONCAT('CONS|',COUNT(*))
+CONS|2

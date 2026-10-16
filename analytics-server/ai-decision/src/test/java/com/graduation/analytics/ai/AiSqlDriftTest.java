@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,12 +29,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code Unknown column 'net_sale_amount' in 'field list'}（query status=FAILED、0 行）。
  * 这类漂移不会让编译或普通单测变红，只有真库查询才暴露，故在此常驻比对 DDL。</p>
  *
- * <p>DDL 为唯一事实来源：platform-app/src/main/resources/db/metric/V2__metric_ads_materialized.sql。</p>
+ * <p>DDL 为唯一事实来源：platform-app/src/main/resources/db/metric/V*.sql（**全部**迁移，
+ * 含后续 {@code ALTER TABLE ... ADD COLUMN} 的加性迁移；只解析 {@code CREATE TABLE} 会漏掉加列，
+ * 导致"真实列已存在但语义层没写"这类漂移在守卫下静默通过，见 {@code 迁移解析覆盖后续ALTER加列}）。</p>
  */
 class AiSqlDriftTest {
 
     private static final Pattern CREATE_TABLE = Pattern.compile(
             "CREATE\\s+TABLE\\s+([a-z_][a-z0-9_]*)\\s*\\((.*?)\\)\\s*ENGINE", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    /** 加性迁移：{@code ALTER TABLE t ... ADD COLUMN c ...;}（列定义细节不解析，只要列名） */
+    private static final Pattern ALTER_TABLE = Pattern.compile(
+            "ALTER\\s+TABLE\\s+`?([a-z_][a-z0-9_]*)`?\\s+(.*?);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern ADD_COLUMN = Pattern.compile(
+            "ADD\\s+COLUMN\\s+`?([a-z_][a-z0-9_]*)`?", Pattern.CASE_INSENSITIVE);
     private static final Pattern FROM_TABLE = Pattern.compile(
             "(?:FROM|JOIN)\\s+([a-z_][a-z0-9_]*)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SELECT_LIST = Pattern.compile(
@@ -41,19 +49,27 @@ class AiSqlDriftTest {
     private static final Pattern FIELD_ARG = Pattern.compile(
             "FIELD\\s*\\(\\s*([a-z_][a-z0-9_]*)", Pattern.CASE_INSENSITIVE);
     private static final Pattern IDENT = Pattern.compile("[a-z_][a-z0-9_]*");
+    /** 迁移文件名 {@code V<n>__描述.sql}：版本号即解析顺序的**判定依据**（非字典序，见 {@code 迁移按版本序解析而非字典序}） */
+    private static final Pattern MIGRATION_NAME = Pattern.compile("V(\\d+)__.*\\.sql", Pattern.CASE_INSENSITIVE);
     private static final Set<String> NOT_COLUMNS = Set.of(
             "select", "from", "where", "and", "or", "order", "by", "desc", "asc", "limit", "group",
             "as", "distinct", "max", "min", "sum", "avg", "count", "date_sub", "curdate", "interval",
             "day", "field", "case", "when", "then", "else", "end", "null", "true", "false");
 
-    /** 解析全部 metric 迁移 DDL（V2 大盘/趋势/漏斗 + V3 R7 商品/画像/质量）：表 → 列集合 */
+    /**
+     * 解析全部 metric 迁移 DDL（V1/V2 大盘/趋势/漏斗 + V3 R7 商品/画像/质量 + 后续加性 ALTER）：
+     * 表 → 列集合。
+     *
+     * <p>顺序无关：先把所有 {@code CREATE TABLE} 建好表集合，再按文件顺序应用
+     * {@code ALTER TABLE ... ADD COLUMN}。只解析 CREATE 会让"加性迁移新增的列"对守卫不可见
+     * （2026-09 S3-02 实测：V5 已给 {@code ads_sale_trend_m} 加了 {@code net_sale_amount}，
+     * 语义层没写该列时本测试**仍然全绿**）。</p>
+     */
     private static Map<String, Set<String>> ddlTables() throws IOException {
         Path dir = resolveDdlDir();
         StringBuilder all = new StringBuilder();
-        try (var files = Files.list(dir)) {
-            for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".sql")).sorted().toList()) {
-                all.append(Files.readString(f, StandardCharsets.UTF_8)).append('\n');
-            }
+        for (Path f : migrationFilesOrdered(dir)) {
+            all.append(Files.readString(f, StandardCharsets.UTF_8)).append('\n');
         }
         String sql = all.toString();
         Map<String, Set<String>> tables = new LinkedHashMap<>();
@@ -77,7 +93,93 @@ class AiSqlDriftTest {
             }
             tables.put(m.group(1).toLowerCase(), cols);
         }
+        // 加性迁移：只处理已建表的 ADD COLUMN（表不存在时说明 CREATE 解析漏了表，交由上游用例报错）
+        Matcher alter = ALTER_TABLE.matcher(sql);
+        while (alter.find()) {
+            Set<String> cols = tables.get(alter.group(1).toLowerCase());
+            if (cols == null) {
+                continue;
+            }
+            Matcher add = ADD_COLUMN.matcher(alter.group(2));
+            while (add.find()) {
+                cols.add(add.group(1).toLowerCase());
+            }
+        }
         return tables;
+    }
+
+    /**
+     * 守卫牙齿自检：加性 ALTER 迁移的列必须真的被解析进来。
+     *
+     * <p>没有这一条，"解析器退回只读 CREATE"这种退化不会被任何用例发现 ——
+     * 上面那条漂移比对会因为"真实列集合偏小"而变得更宽松，静默通过。</p>
+     */
+    @Test
+    void 迁移解析覆盖后续ALTER加列() throws IOException {
+        Map<String, Set<String>> ddl = ddlTables();
+        assertTrue(ddl.getOrDefault("ads_sale_trend_m", Set.of()).contains("net_sale_amount"),
+                "加性迁移列未被解析：ads_sale_trend_m.net_sale_amount（V5 ALTER）");
+        assertTrue(ddl.getOrDefault("ads_user_profile_m", Set.of()).containsAll(
+                        List.of("r_days", "f_count", "m_amount", "period_start", "period_end")),
+                "加性迁移列未被解析：ads_user_profile_m 的 RFM 原值列（V4 ALTER）");
+    }
+
+    /**
+     * 守卫牙齿自检（S3-29 补 backlog「迁移文件名按字典序排序」残留）：迁移必须按**版本序**解析，不是字典序。
+     *
+     * <p>字典序下 {@code V10__…} 会排在 {@code V2__…} 之前，而真实目录里 V10 已存在。当前所有
+     * {@code ALTER} 都只往列集合里加列，错序对 Set 语义无害，但一旦后续迁移出现「依赖前序/按序覆盖」
+     * 的语义，错序就会**静默**改变判定依据 ⇒ 在此把顺序本身钉住（顺序是判定依据的一部分）。</p>
+     */
+    @Test
+    void 迁移按版本序解析而非字典序() throws IOException {
+        // ① 顺序函数本身：V2 必须早于 V10（字典序会判反）
+        assertTrue(migrationVersion(Path.of("V2__a.sql")) < migrationVersion(Path.of("V10__b.sql")),
+                "版本序错误：V2 应排在 V10 之前（字典序恰好判反）");
+        // ② 真实目录：解析顺序的版本号严格升序（字典序在含 V10 的目录上必然违反）
+        List<Integer> versions = new ArrayList<>();
+        for (Path f : migrationFilesOrdered(resolveDdlDir())) {
+            versions.add(migrationVersion(f));
+        }
+        assertFalse(versions.isEmpty(), "迁移目录未解析到任何 .sql 文件");
+        for (int i = 1; i < versions.size(); i++) {
+            assertTrue(versions.get(i - 1) < versions.get(i),
+                    "迁移解析顺序不是版本序（严格升序被破坏）：" + versions);
+        }
+        // ③ 反证（牙齿自检）：真实目录上「版本序 ≠ 字典序」确实成立，否则本用例没有牙齿
+        List<Path> lexicographic = new ArrayList<>();
+        try (var files = Files.list(resolveDdlDir())) {
+            files.filter(p -> p.getFileName().toString().endsWith(".sql")).sorted().forEach(lexicographic::add);
+        }
+        assertFalse(lexicographic.equals(migrationFilesOrdered(resolveDdlDir())),
+                "字典序与版本序在真实目录上已一致 ⇒ 本用例失去牙齿，请确认目录中是否仍有 V10+ 迁移");
+    }
+
+    /**
+     * 迁移文件名版本号（{@code V<n>__…}）⇒ {@code n}。
+     *
+     * <p>不符合命名规范的文件给 {@link Integer#MAX_VALUE}：排到最后且**不**静默参与顺序判定，
+     * 由 {@code 迁移按版本序解析而非字典序} 的严格升序断言把异常文件暴露出来。</p>
+     */
+    static int migrationVersion(Path f) {
+        Matcher m = MIGRATION_NAME.matcher(f.getFileName().toString());
+        return m.matches() ? Integer.parseInt(m.group(1)) : Integer.MAX_VALUE;
+    }
+
+    /**
+     * 迁移目录下的 {@code .sql} 文件，按**版本序**返回（S3-29 补 backlog 残留）。
+     *
+     * <p>此前用 {@code Path.sorted()}（**字典序**）：{@code V10__…} 会排在 {@code V2__…} 之前，
+     * 而真实目录里 V10 已存在。当前 {@code ALTER} 只往列集合加列 ⇒ 对 Set 语义无害，但顺序本身
+     * 是判定依据的一部分（后续若出现依赖前序/按序覆盖的迁移，错序会静默改变结论），故收归此处。</p>
+     */
+    static List<Path> migrationFilesOrdered(Path dir) throws IOException {
+        try (var files = Files.list(dir)) {
+            return files.filter(p -> p.getFileName().toString().endsWith(".sql"))
+                    .sorted(Comparator.comparingInt(AiSqlDriftTest::migrationVersion)
+                            .thenComparing(p -> p.getFileName().toString()))
+                    .toList();
+        }
     }
 
     /**

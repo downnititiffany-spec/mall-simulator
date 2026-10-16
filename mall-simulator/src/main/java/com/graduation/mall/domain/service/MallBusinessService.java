@@ -3,6 +3,7 @@ package com.graduation.mall.domain.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.graduation.mall.common.MallBizException;
+import org.springframework.dao.DuplicateKeyException;
 import com.graduation.mall.controller.MallDtos.CartAddReq;
 import com.graduation.mall.controller.MallDtos.CreateUserReq;
 import com.graduation.mall.controller.MallDtos.OrderCreateReq;
@@ -10,6 +11,7 @@ import com.graduation.mall.controller.MallDtos.OrderItemReq;
 import com.graduation.mall.domain.entity.CartItem;
 import com.graduation.mall.domain.entity.Inventory;
 import com.graduation.mall.domain.entity.MallOrder;
+import com.graduation.mall.domain.entity.MallRequestIdempotency;
 import com.graduation.mall.domain.entity.MallUser;
 import com.graduation.mall.domain.entity.OrderItem;
 import com.graduation.mall.domain.entity.Payment;
@@ -23,6 +25,7 @@ import com.graduation.mall.domain.enums.RefundStatus;
 import com.graduation.mall.domain.mapper.CartItemMapper;
 import com.graduation.mall.domain.mapper.InventoryMapper;
 import com.graduation.mall.domain.mapper.MallOrderMapper;
+import com.graduation.mall.domain.mapper.MallRequestIdempotencyMapper;
 import com.graduation.mall.domain.mapper.MallUserMapper;
 import com.graduation.mall.domain.mapper.OrderItemMapper;
 import com.graduation.mall.domain.mapper.PaymentMapper;
@@ -41,9 +44,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
+import java.util.HexFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * 商城核心业务 Service（§20.1/§5.2.4）：
@@ -62,6 +72,7 @@ public class MallBusinessService {
     private final InventoryMapper inventoryMapper;
     private final CartItemMapper cartItemMapper;
     private final MallOrderMapper orderMapper;
+    private final MallRequestIdempotencyMapper idempotencyMapper;
     private final OrderItemMapper orderItemMapper;
     private final PaymentMapper paymentMapper;
     private final RefundMapper refundMapper;
@@ -72,6 +83,18 @@ public class MallBusinessService {
 
     @Transactional(rollbackFor = Exception.class)
     public Long registerUser(CreateUserReq req, TraceContext trace) {
+        return registerUser(req, trace, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Long registerUser(CreateUserReq req, TraceContext trace, String idempotencyKey) {
+        String result = executeIdempotently(idempotencyKey, "registerUser",
+                requestHash(req.ageGroup(), req.cityLevel(), req.memberLevel()), () ->
+                        Long.toString(registerUserEffect(req, trace)));
+        return Long.valueOf(result);
+    }
+
+    private Long registerUserEffect(CreateUserReq req, TraceContext trace) {
         OffsetDateTime now = eventClock.now();
         MallUser user = new MallUser();
         user.setAgeGroup(req.ageGroup());
@@ -114,6 +137,14 @@ public class MallBusinessService {
 
     @Transactional(rollbackFor = Exception.class)
     public void addCartItem(CartAddReq req, TraceContext trace) {
+        addCartItem(req, trace, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addCartItem(CartAddReq req, TraceContext trace, String idempotencyKey) {
+        executeIdempotently(idempotencyKey, "addCartItem",
+                requestHash(String.valueOf(req.userId()), String.valueOf(req.productId()),
+                        String.valueOf(req.quantity())), () -> {
         requireUser(req.userId());
         Product product = requireOnSale(req.productId());
 
@@ -137,6 +168,8 @@ public class MallBusinessService {
                 EventContract.BEHAVIOR, now,
                 EventPayloadFactory.behavior(req.userId(), req.productId(),
                         "session-" + trace.traceId(), BehaviorType.cart_add.name(), "app", now));
+                    return "";
+                });
     }
 
     public List<CartItem> listCart(Long userId) {
@@ -153,6 +186,26 @@ public class MallBusinessService {
      */
     @Transactional(rollbackFor = Exception.class)
     public Long createOrder(OrderCreateReq req, TraceContext trace) {
+        return createOrder(req, trace, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Long createOrder(OrderCreateReq req, TraceContext trace, String idempotencyKey) {
+        String requestHash = idempotencyKey == null ? null : orderRequestHash(req);
+        String result = executeIdempotently(idempotencyKey, "createOrder", requestHash,
+                () -> Long.toString(createOrderEffect(req, trace, idempotencyKey, requestHash)));
+        return Long.valueOf(result);
+    }
+
+    private Long createOrderEffect(OrderCreateReq req, TraceContext trace, String idempotencyKey,
+                                   String requestHash) {
+        if (idempotencyKey != null) {
+            MallOrder prior = orderMapper.selectOne(new LambdaQueryWrapper<MallOrder>()
+                    .eq(MallOrder::getIdempotencyKey, idempotencyKey));
+            if (prior != null) {
+                return existingIdempotentOrder(prior, requestHash);
+            }
+        }
         requireUser(req.userId());
         OffsetDateTime now = eventClock.now();
         List<OrderItemVo> itemVos = new ArrayList<>();
@@ -171,7 +224,20 @@ public class MallBusinessService {
         order.setStatus(OrderStatus.CREATED.name());
         order.setTotalAmount(total);
         order.setCreatedAt(now.toLocalDateTime());
-        orderMapper.insert(order);
+        order.setIdempotencyKey(idempotencyKey);
+        order.setRequestHash(requestHash);
+        try {
+            orderMapper.insert(order);
+        } catch (DuplicateKeyException duplicate) {
+            if (idempotencyKey == null) {
+                throw duplicate;
+            }
+            MallOrder concurrent = orderMapper.selectIdempotentOrderForUpdate(idempotencyKey);
+            if (concurrent == null) {
+                throw duplicate;
+            }
+            return existingIdempotentOrder(concurrent, requestHash);
+        }
 
         for (OrderItemVo vo : itemVos) {
             OrderItem item = new OrderItem();
@@ -190,6 +256,29 @@ public class MallBusinessService {
                 EventContract.ORDER_CREATED, now,
                 EventPayloadFactory.orderCreated(order.getOrderId(), req.userId(), itemVos, total, now));
         return order.getOrderId();
+    }
+
+    private Long existingIdempotentOrder(MallOrder prior, String requestHash) {
+        if (!requestHash.equals(prior.getRequestHash())) {
+            throw new MallBizException(MallBizException.IDEMPOTENCY_CONFLICT,
+                    "Idempotency-Key 已用于不同的下单请求");
+        }
+        return prior.getOrderId();
+    }
+
+    static String orderRequestHash(OrderCreateReq req) {
+        String items = req.items().stream()
+                .map(item -> item.productId() + ":" + item.quantity())
+                .sorted(Comparator.naturalOrder())
+                .reduce((left, right) -> left + ";" + right)
+                .orElse("");
+        String canonical = req.userId() + "\n" + items;
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(canonical.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 不可用", e);
+        }
     }
 
     /** 原子预扣库存：available>=q 才允许，返回受影响行数 */
@@ -227,6 +316,19 @@ public class MallBusinessService {
 
     @Transactional(rollbackFor = Exception.class)
     public void payOrder(Long orderId, Long userId, TraceContext trace) {
+        payOrder(orderId, userId, trace, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void payOrder(Long orderId, Long userId, TraceContext trace, String idempotencyKey) {
+        executeIdempotently(idempotencyKey, "payOrder",
+                requestHash(String.valueOf(orderId), String.valueOf(userId)), () -> {
+                    payOrderEffect(orderId, userId, trace);
+                    return "";
+                });
+    }
+
+    private void payOrderEffect(Long orderId, Long userId, TraceContext trace) {
         OffsetDateTime now = eventClock.now();
         MallOrder order = requireOwnOrder(orderId, userId);
         transition(order, OrderStatus.PAID);
@@ -251,6 +353,20 @@ public class MallBusinessService {
 
     @Transactional(rollbackFor = Exception.class)
     public void cancelOrder(Long orderId, Long userId, String reason, TraceContext trace) {
+        cancelOrder(orderId, userId, reason, trace, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelOrder(Long orderId, Long userId, String reason, TraceContext trace,
+                            String idempotencyKey) {
+        executeIdempotently(idempotencyKey, "cancelOrder",
+                requestHash(String.valueOf(orderId), String.valueOf(userId), reason), () -> {
+                    cancelOrderEffect(orderId, userId, reason, trace);
+                    return "";
+                });
+    }
+
+    private void cancelOrderEffect(Long orderId, Long userId, String reason, TraceContext trace) {
         OffsetDateTime now = eventClock.now();
         MallOrder order = requireOwnOrder(orderId, userId);
         transition(order, OrderStatus.CANCELLED);
@@ -285,6 +401,21 @@ public class MallBusinessService {
 
     @Transactional(rollbackFor = Exception.class)
     public Long applyRefund(Long orderId, Long userId, BigDecimal amount, String reason, TraceContext trace) {
+        return applyRefund(orderId, userId, amount, reason, trace, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Long applyRefund(Long orderId, Long userId, BigDecimal amount, String reason, TraceContext trace,
+                            String idempotencyKey) {
+        String result = executeIdempotently(idempotencyKey, "applyRefund",
+                requestHash(String.valueOf(orderId), String.valueOf(userId),
+                        amount.stripTrailingZeros().toPlainString(), reason), () ->
+                        Long.toString(applyRefundEffect(orderId, userId, amount, reason, trace)));
+        return Long.valueOf(result);
+    }
+
+    private Long applyRefundEffect(Long orderId, Long userId, BigDecimal amount, String reason,
+                                   TraceContext trace) {
         OffsetDateTime now = eventClock.now();
         MallOrder order = requireOwnOrder(orderId, userId);
         transition(order, OrderStatus.REFUNDING);
@@ -318,6 +449,19 @@ public class MallBusinessService {
 
     @Transactional(rollbackFor = Exception.class)
     public void completeRefund(Long refundId, Long userId, TraceContext trace) {
+        completeRefund(refundId, userId, trace, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void completeRefund(Long refundId, Long userId, TraceContext trace, String idempotencyKey) {
+        executeIdempotently(idempotencyKey, "completeRefund",
+                requestHash(String.valueOf(refundId), String.valueOf(userId)), () -> {
+                    completeRefundEffect(refundId, userId, trace);
+                    return "";
+                });
+    }
+
+    private void completeRefundEffect(Long refundId, Long userId, TraceContext trace) {
         OffsetDateTime now = eventClock.now();
         Refund refund = refundMapper.selectById(refundId);
         if (refund == null) {
@@ -365,6 +509,59 @@ public class MallBusinessService {
     }
 
     // ── 内部校验 ────────────────────────────────────────────────────────────
+
+    /**
+     * Reserve the unique key before business effects. The key row and effects share the caller's transaction;
+     * a concurrent insert waits for the winner, then reads its committed result with a current read.
+     */
+    private String executeIdempotently(String key, String operation, String requestHash,
+                                        Supplier<String> action) {
+        if (key == null) {
+            return action.get();
+        }
+        if (key.isBlank() || key.length() > 128) {
+            throw new MallBizException(MallBizException.PARAM_INVALID,
+                    "Idempotency-Key 必须为 1..128 个字符");
+        }
+
+        MallRequestIdempotency record = new MallRequestIdempotency();
+        record.setIdempotencyKey(key);
+        record.setOperation(operation);
+        record.setRequestHash(requestHash);
+        record.setResultValue("");
+        try {
+            idempotencyMapper.insert(record);
+        } catch (DuplicateKeyException duplicate) {
+            MallRequestIdempotency existing = idempotencyMapper.selectByKeyForUpdate(key);
+            if (existing == null) {
+                throw duplicate;
+            }
+            if (!operation.equals(existing.getOperation()) || !requestHash.equals(existing.getRequestHash())) {
+                throw new MallBizException(MallBizException.IDEMPOTENCY_CONFLICT,
+                        "Idempotency-Key 已用于不同的商城操作或请求");
+            }
+            return existing.getResultValue();
+        }
+
+        String result = action.get();
+        record.setResultValue(result == null ? "" : result);
+        idempotencyMapper.updateById(record);
+        return record.getResultValue();
+    }
+
+    static String requestHash(String... values) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            for (String value : values) {
+                byte[] bytes = String.valueOf(value).getBytes(StandardCharsets.UTF_8);
+                digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(bytes.length).array());
+                digest.update(bytes);
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 不可用", e);
+        }
+    }
 
     /** 状态机校验（§20.1）：非法流转包装为稳定业务错误码，避免把 IllegalOrderStateException 泄露到接口层 */
     private void transition(MallOrder order, OrderStatus to) {

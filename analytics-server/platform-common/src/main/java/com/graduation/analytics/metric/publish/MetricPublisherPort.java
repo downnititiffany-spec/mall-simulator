@@ -25,6 +25,7 @@ public interface MetricPublisherPort {
     /**
      * @param runtimeProfileId      运行环境（快照归属，用于"同 profile 唯一 ACTIVE"）
      * @param runtimeProfileVersion §8.1 实际使用的 profile 版本
+     * @param sourceId              本次 run 冻结的 source_registry.id；历史 run 未知时不可推测
      * @param snapshotId            本次快照号（Hive 分区 snapshot_id 与之相同）
      * @param businessDate          业务日 yyyyMMdd（Hive ADS 的 dt；写入 MySQL 宽表的 dt 同值）
      * @param businessTime          业务时间（ISO-8601，落 metric_snapshot.business_time）
@@ -33,9 +34,16 @@ public interface MetricPublisherPort {
      * @param definitionVersions    metric_code → 口径版本/单位（来自 analytics_meta.metric_definition，
      *                              快照发布必须按字典版本写入并逐码对账，未知指标码直接拒绝）
      */
-    record PublishRequest(long runtimeProfileId, Integer runtimeProfileVersion, String snapshotId,
+    record PublishRequest(long runtimeProfileId, Integer runtimeProfileVersion, Long sourceId, String snapshotId,
                           String businessDate, String businessTime, Long pipelineRunId,
                           Path exportDir, Map<String, DefinitionRef> definitionVersions) {
+        /** 兼容不携带来源身份的历史调用方；流水线新发布路径必须使用带 sourceId 的构造器。 */
+        public PublishRequest(long runtimeProfileId, Integer runtimeProfileVersion, String snapshotId,
+                              String businessDate, String businessTime, Long pipelineRunId,
+                              Path exportDir, Map<String, DefinitionRef> definitionVersions) {
+            this(runtimeProfileId, runtimeProfileVersion, null, snapshotId, businessDate, businessTime,
+                    pipelineRunId, exportDir, definitionVersions);
+        }
     }
 
     /** 指标字典引用（§17.5「版本对账」所需的最小信息） */

@@ -3,6 +3,9 @@ package com.graduation.analytics.controller;
 import com.graduation.analytics.auth.AuthenticationRequiredException;
 import com.graduation.analytics.auth.CurrentUser;
 import com.graduation.analytics.auth.CurrentUserHolder;
+import com.graduation.analytics.auth.PermissionCode;
+import com.graduation.analytics.auth.RolePermissions;
+import com.graduation.analytics.common.PlatformBizException;
 import com.graduation.analytics.decision.AuditActor;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -32,6 +35,15 @@ public final class CallerContext {
     /** 当前登录用户名（落库 created_by/approved_by/evaluated_by、审计 user_id 用） */
     public static String requireUserId() {
         return requireUser().username();
+    }
+
+    /** 当前会话必须额外具备指定权限；用于请求参数会触发更敏感读取的条件授权。 */
+    public static void requirePermission(String permissionCode) {
+        CurrentUser current = requireUser();
+        if (!RolePermissions.has(current.role(), permissionCode)) {
+            throw new PlatformBizException(PlatformBizException.FORBIDDEN_PERMISSION,
+                    "无权访问该资源，需要权限: " + permissionCode);
+        }
     }
 
     /** 组装审计/业务操作者：身份取自登录会话，ip 取自请求（traceId 用响应信封同一个） */

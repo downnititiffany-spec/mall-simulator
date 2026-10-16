@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,6 +57,51 @@ class SecondMallAdapterOperationsTest {
     }
 
     private SecondMallFakeServer mall;
+
+    @Test
+    @DisplayName("HTTP 客户端由适配器实例复用，不随商城请求重新创建")
+    void httpClientIsReusedAcrossBusinessRequests() throws Exception {
+        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT);
+        SecondMallHttpAdapter adapter = adapter();
+        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
+        Field clientField = SecondMallHttpAdapter.class.getDeclaredField("httpClient");
+        clientField.setAccessible(true);
+        Object client = clientField.get(adapter);
+
+        adapter.listProducts(target, ProductQuery.firstPage(1));
+        adapter.listProducts(target, ProductQuery.firstPage(1));
+
+        assertSame(client, clientField.get(adapter), "多次业务请求必须复用构造时创建的同一个 HttpClient");
+        assertEquals(2, mall.hits(SecondMallFakeServer.ITEMS_ROUTE), "两次业务调用都应真实到达本地商城夹具");
+    }
+
+    @Test
+    @DisplayName("服务端错误回显 Bearer 值时异常脱敏；base_url query 不得携带或泄露凭据")
+    void diagnosticsNeverExposeCredentialFromResponseOrBaseUrl() throws IOException {
+        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT, Long.MAX_VALUE,
+                SecondMallFakeServer.FAIL_ORDER_ECHO_TOKEN);
+        SecondMallHttpAdapter adapter = adapter();
+        TargetConfig target = target(mall.baseUrl(), FORMAT_DECLARED);
+        ExternalUser user = adapter.createSyntheticUser(target, new UserCommand("25-34", "tier2", "gold"));
+
+        MallOperationException responseFailure = assertThrows(MallOperationException.class,
+                () -> adapter.createOrder(target,
+                        OrderCommand.single(user.userId(), mall.itemSkus().get(0), 1)));
+        assertFalse(responseFailure.getMessage().contains(TOKEN), responseFailure.getMessage());
+        assertTrue(responseFailure.getMessage().contains("[REDACTED]"), responseFailure.getMessage());
+
+        mall.close();
+        mall = new SecondMallFakeServer(TOKEN, null, ITEM_COUNT);
+        SecondMallHttpAdapter queryAdapter = adapter();
+        TargetConfig queryTarget = target(mall.baseUrl() + "/?access_token=" + TOKEN, FORMAT_DECLARED);
+        MallOperationException urlFailure = assertThrows(MallOperationException.class,
+                () -> queryAdapter.listProducts(queryTarget, ProductQuery.firstPage(1)));
+        assertFalse(urlFailure.getMessage().contains(TOKEN), urlFailure.getMessage());
+        assertTrue(mall.exchanges().isEmpty(), "拒绝含 query 的 base_url 前不应发送商城请求");
+        assertFalse(queryAdapter.test(queryTarget).detail().contains(TOKEN),
+                "能力探测结果也不得回显被拒绝的含凭据 base_url");
+        assertTrue(mall.exchanges().isEmpty(), "含 query 的 base_url 能力探测也应 fail-closed");
+    }
 
     @AfterEach
     void stopMall() {
@@ -446,6 +493,7 @@ class SecondMallAdapterOperationsTest {
                 "异常里必须带商城自己的错误码/原话：" + successFalse.getMessage());
         assertTrue(successFalse.getMessage().contains("item is not on sale"),
                 "异常里必须带商城原话（errMsg）：" + successFalse.getMessage());
+        assertEquals(MallFailureCode.MALL_ITEM_UNAVAILABLE, successFalse.failureCode());
         mall.close();
 
         // 3c：HTTP 400 + E_NO_STOCK ⇒ 抛，且错误码与原话都在异常里
@@ -458,6 +506,7 @@ class SecondMallAdapterOperationsTest {
                 () -> adapter3.createOrder(target3, OrderCommand.single(buyer3.userId(), mall.itemSkus().get(0), 1)));
         assertTrue(noStock.getMessage().contains("E_NO_STOCK"), noStock.getMessage());
         assertTrue(noStock.getMessage().contains("no stock for"), noStock.getMessage());
+        assertEquals(MallFailureCode.MALL_STOCK_UNAVAILABLE, noStock.failureCode());
         assertEquals(400, mall.statuses().get(mall.statuses().size() - 1));
 
         // 3d：凭据不可用 ⇒ 发请求之前就拒绝（绝不匿名发）
@@ -466,6 +515,7 @@ class SecondMallAdapterOperationsTest {
                 () -> noCredential.listProducts(target3, ProductQuery.firstPage(5)));
         assertTrue(missing.getMessage().contains(ENV_NAME), "必须点名凭据引用名：" + missing.getMessage());
         assertFalse(missing.getMessage().contains(TOKEN), "异常里绝不能出现凭据值：" + missing.getMessage());
+        assertEquals(MallFailureCode.MALL_CREDENTIAL_UNAVAILABLE, missing.failureCode());
 
         // 3e（L5）："目标里没配 credential_ref"与"配了个空白串"是两种不同的成因，话术必须分开说——
         // 合成一句话（旧话术里两种情况都可能被读成"没配"）会让运维照着"去配一个引用"改，

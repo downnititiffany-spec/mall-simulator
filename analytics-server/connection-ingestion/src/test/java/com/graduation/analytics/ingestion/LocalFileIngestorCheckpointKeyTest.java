@@ -10,6 +10,8 @@ import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
+import com.graduation.analytics.mapping.ingest.SourceMapper;
+import com.graduation.analytics.mapping.ingest.SourceMapping;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -105,7 +107,7 @@ class LocalFileIngestorCheckpointKeyTest {
         });
         when(validator.check(anyString(), anyInt())).thenReturn(null);   // 本测试只关心断点键，视为整行合法
         ingestor = new LocalFileIngestor(checkpointMapper, mock(QuarantineRecordMapper.class),
-                validator, new ObjectMapper());
+                validator, new ObjectMapper(), mock(SourceMapper.class));
         return ingestor;
     }
 
@@ -237,8 +239,8 @@ class LocalFileIngestorCheckpointKeyTest {
 
         LocalFileIngestor ingestor = ingestor();
         LocalFileIngestor.FileResult result = ingestor.ingestFile(dottedPath, 7L, 1L, 1L,
-                dir.resolve("accepted"), dir.resolve("quarantine"), TraceContext.create(), new CRC32());
-
+                dir.resolve("accepted"), dir.resolve("quarantine"), TraceContext.create(), new CRC32(),
+                SourceMapping.legacy());
         assertThat(result.collected()).isEqualTo(2);
         assertThat(store).hasSize(1);
         assertThat(store.keySet().iterator().next().filePath())

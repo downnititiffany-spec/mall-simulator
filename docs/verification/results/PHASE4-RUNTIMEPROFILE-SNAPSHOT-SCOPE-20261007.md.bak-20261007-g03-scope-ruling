@@ -1,0 +1,26 @@
+# PHASE4-RUNTIMEPROFILE-SNAPSHOT-SCOPE-20261007
+
+## 结论
+
+阶段 4 的默认 ACTIVE 指标快照解析现在按平台当前唯一 ACTIVE RuntimeProfile 限定。切换运行档案后，旧档案仍处于自身 ACTIVE 的快照不会被默认分析/ADS/证据读取选中；快照列表也只显示当前档案的元数据。没有 ACTIVE RuntimeProfile 时默认读取 fail-closed。
+
+## 实现
+
+- 新增 `ActiveRuntimeProfileIdProvider` 契约及 mapper 实现。实现只读 `RuntimeProfileMapper` 的 active 行，不依赖 `RuntimeProfileService`，避免 RuntimeProfileService → MetricStore → provider 的注入环。
+- `MetricStore.MetricQuery` 增加可选 `runtimeProfileId`，保留原两参数构造器。
+- `MySqlMetricStore` 的默认 ACTIVE 解析、列表与分页按当前 RuntimeProfile 过滤；显式查询指定 profile 时按指定 profile 解析。没有当前 profile 时默认列表为空，避免回退到跨 profile 数据。
+- `MetricAdsReader` 默认 ACTIVE 解析也按当前 RuntimeProfile；无 profile 时返回 null。
+- `AnalysisService` 与 `EvidenceBuilder` 依赖 `MetricStore` 抽象，不再绑具体 MySQL 实现。
+- 显式 snapshotId 查询仍允许读取历史快照；本切片未改变该显式查询契约。
+
+## 验证
+
+命令：
+
+`mvn -o -f analytics-server/pom.xml -pl platform-app -am '-Dtest=MetricAdsReaderActiveProfileTest,MySqlMetricStoreActiveProfileTest,MySqlMetricStorePaginationTest,AnalysisServiceTest,EvidenceBuilderTest,MetricControllerPaginationHttpTest,AuthServiceUserPaginationTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`
+
+七模块 Maven reactor `BUILD SUCCESS`。选定测试共 60/60：AuthServiceUserPaginationTest 2、AnalysisServiceTest 41、MetricAdsReaderActiveProfileTest 2、MySqlMetricStoreActiveProfileTest 2、MySqlMetricStorePaginationTest 3、EvidenceBuilderTest 7、MetricControllerPaginationHttpTest 3；0 failure、0 error、0 skipped。`git diff --check` 通过。
+
+## 证据边界与后续
+
+以上是 JDK 17 离线 Mockito/JUnit/MockMvc 证据，不连接真实 MySQL，也未部署或切换真实 RuntimeProfile。当前任务进程未发现 `GRADUATION_TEST_ADMIN_PASSWORD`，3307/8091/8090/8092/10015/19083 均无监听，因此未执行认证真实分页或 HS2 健康探测。管理员变量只检查是否存在，从未读取或回显其值。阶段 4 和产品验收不关闭。

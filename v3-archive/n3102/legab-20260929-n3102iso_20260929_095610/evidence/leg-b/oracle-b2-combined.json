@@ -1,0 +1,431 @@
+{
+ "EXPECTED_A": {
+  "pv": [
+   "day:2026-09-18",
+   31
+  ],
+  "uv": [
+   "day:2026-09-18",
+   10
+  ],
+  "dau": [
+   "day:2026-09-18",
+   10
+  ],
+  "fav_cnt": [
+   "day:2026-09-18",
+   6
+  ],
+  "cart_add_cnt": [
+   "day:2026-09-18",
+   8
+  ],
+  "paid_order_cnt": [
+   "day:2026-09-18",
+   12
+  ],
+  "gmv": [
+   "day:2026-09-18",
+   1010.0
+  ],
+  "net_sale": [
+   "day:2026-09-18",
+   930.0
+  ],
+  "avg_order_value": [
+   "day:2026-09-18",
+   84.17
+  ],
+  "refund_rate": [
+   "day:2026-09-18",
+   0.0833
+  ],
+  "full_refund_rate": [
+   "day:2026-09-18",
+   0.0833
+  ],
+  "repeat_rate": [
+   "window:2026-09-18..2026-09-18",
+   0.3333
+  ],
+  "buy_rate": [
+   "day:2026-09-18",
+   0.6
+  ],
+  "cart_rate": [
+   "day:2026-09-18",
+   0.6
+  ]
+ },
+ "A_extra": {
+  "buyer_count": 6,
+  "pay_users": 6,
+  "repeat_users": 2,
+  "order_rows_incl_cancel": 14,
+  "aov_exact": "1010.00/12"
+ },
+ "EXPECTED_B": {
+  "pv": [
+   "day:2026-09-24",
+   31
+  ],
+  "uv": [
+   "day:2026-09-24",
+   8
+  ],
+  "dau": [
+   "day:2026-09-24",
+   8
+  ],
+  "fav_cnt": [
+   "day:2026-09-24",
+   2
+  ],
+  "cart_add_cnt": [
+   "day:2026-09-24",
+   1
+  ],
+  "paid_order_cnt": [
+   "day:2026-09-24",
+   13
+  ],
+  "gmv": [
+   "day:2026-09-24",
+   1200.0
+  ],
+  "net_sale": [
+   "day:2026-09-24",
+   1000.0
+  ],
+  "avg_order_value": [
+   "day:2026-09-24",
+   92.31
+  ],
+  "refund_rate": [
+   "day:2026-09-24",
+   0.1538
+  ],
+  "full_refund_rate": [
+   "day:2026-09-24",
+   0.1538
+  ],
+  "repeat_rate": [
+   "window:2026-09-24..2026-09-24",
+   0.5714
+  ],
+  "buy_rate": [
+   "day:2026-09-24",
+   0.875
+  ],
+  "cart_rate": [
+   "day:2026-09-24",
+   0.125
+  ]
+ },
+ "B_extra": {
+  "buyer_count": 7,
+  "pay_users": 7,
+  "repeat_users": 4,
+  "order_rows_incl_cancel": 13,
+  "aov_exact": "1200.00/13"
+ },
+ "A_funnel_stages": {
+  "view": 10,
+  "intent": 6,
+  "order": 8,
+  "pay": 6
+ },
+ "A_funnel_rates": {
+  "intent_rate": 0.6,
+  "order_rate": 1.3333,
+  "pay_rate": 0.75,
+  "overall_buy_rate": 0.6,
+  "cart_rate": 0.6
+ },
+ "A_hot_product": [
+  {
+   "product_id": "93101",
+   "pv": 13,
+   "uv": 5,
+   "fav": 2,
+   "cart": 3,
+   "buy": 4,
+   "heat": 17.042355,
+   "rank_no": 1
+  },
+  {
+   "product_id": "93102",
+   "pv": 6,
+   "uv": 3,
+   "fav": 2,
+   "cart": 2,
+   "buy": 3,
+   "heat": 14.370443,
+   "rank_no": 2
+  },
+  {
+   "product_id": "93103",
+   "pv": 6,
+   "uv": 2,
+   "fav": 2,
+   "cart": 2,
+   "buy": 3,
+   "heat": 14.370443,
+   "rank_no": 3
+  },
+  {
+   "product_id": "93104",
+   "pv": 4,
+   "uv": 4,
+   "fav": 0,
+   "cart": 1,
+   "buy": 1,
+   "heat": 7.154615,
+   "rank_no": 4
+  },
+  {
+   "product_id": "93105",
+   "pv": 2,
+   "uv": 2,
+   "fav": 0,
+   "cart": 0,
+   "buy": 1,
+   "heat": 4.564348,
+   "rank_no": 5
+  }
+ ],
+ "A_rfm": [
+  {
+   "user_id": "93001",
+   "r_days": 0,
+   "f_count": 4,
+   "m_amount": 400.0,
+   "valid": 4,
+   "r_ntile": 1,
+   "f_ntile": 5,
+   "m_ntile": 5,
+   "r": 5,
+   "f": 5,
+   "m": 5,
+   "value_group": "��Ҫ��ֵ",
+   "lifecycle_state": "��Ծ"
+  },
+  {
+   "user_id": "93002",
+   "r_days": 0,
+   "f_count": 3,
+   "m_amount": 270.0,
+   "valid": 3,
+   "r_ntile": 1,
+   "f_ntile": 4,
+   "m_ntile": 4,
+   "r": 5,
+   "f": 4,
+   "m": 4,
+   "value_group": "��Ҫ��ֵ",
+   "lifecycle_state": "��Ծ"
+  },
+  {
+   "user_id": "93003",
+   "r_days": 0,
+   "f_count": 2,
+   "m_amount": 160.0,
+   "valid": 1,
+   "r_ntile": 2,
+   "f_ntile": 3,
+   "m_ntile": 3,
+   "r": 4,
+   "f": 3,
+   "m": 3,
+   "value_group": "һ�㷢չ",
+   "lifecycle_state": "��Ծ"
+  },
+  {
+   "user_id": "93004",
+   "r_days": 0,
+   "f_count": 1,
+   "m_amount": 70.0,
+   "valid": 1,
+   "r_ntile": 3,
+   "f_ntile": 1,
+   "m_ntile": 2,
+   "r": 3,
+   "f": 1,
+   "m": 2,
+   "value_group": "һ������",
+   "lifecycle_state": "���û�"
+  },
+  {
+   "user_id": "93005",
+   "r_days": 0,
+   "f_count": 1,
+   "m_amount": 60.0,
+   "valid": 1,
+   "r_ntile": 4,
+   "f_ntile": 1,
+   "m_ntile": 1,
+   "r": 2,
+   "f": 1,
+   "m": 1,
+   "value_group": "һ������",
+   "lifecycle_state": "���û�"
+  },
+  {
+   "user_id": "93006",
+   "r_days": 0,
+   "f_count": 1,
+   "m_amount": 50.0,
+   "valid": 1,
+   "r_ntile": 5,
+   "f_ntile": 2,
+   "m_ntile": 1,
+   "r": 1,
+   "f": 2,
+   "m": 1,
+   "value_group": "һ������",
+   "lifecycle_state": "���û�"
+  }
+ ],
+ "B_rfm": [
+  {
+   "user_id": "93021",
+   "r_days": 0,
+   "f_count": 3,
+   "m_amount": 287.0,
+   "valid": 2,
+   "r_ntile": 1,
+   "f_ntile": 4,
+   "m_ntile": 5,
+   "r": 5,
+   "f": 4,
+   "m": 5,
+   "value_group": "��Ҫ��ֵ",
+   "lifecycle_state": "��Ծ"
+  },
+  {
+   "user_id": "93022",
+   "r_days": 0,
+   "f_count": 3,
+   "m_amount": 276.0,
+   "valid": 2,
+   "r_ntile": 1,
+   "f_ntile": 5,
+   "m_ntile": 4,
+   "r": 5,
+   "f": 5,
+   "m": 4,
+   "value_group": "��Ҫ��ֵ",
+   "lifecycle_state": "��Ծ"
+  },
+  {
+   "user_id": "93023",
+   "r_days": 0,
+   "f_count": 2,
+   "m_amount": 187.0,
+   "valid": 2,
+   "r_ntile": 2,
+   "f_ntile": 2,
+   "m_ntile": 2,
+   "r": 4,
+   "f": 2,
+   "m": 2,
+   "value_group": "һ�㷢չ",
+   "lifecycle_state": "��Ծ"
+  },
+  {
+   "user_id": "93024",
+   "r_days": 0,
+   "f_count": 2,
+   "m_amount": 187.0,
+   "valid": 2,
+   "r_ntile": 2,
+   "f_ntile": 3,
+   "m_ntile": 3,
+   "r": 4,
+   "f": 3,
+   "m": 3,
+   "value_group": "һ�㷢չ",
+   "lifecycle_state": "��Ծ"
+  },
+  {
+   "user_id": "93025",
+   "r_days": 0,
+   "f_count": 1,
+   "m_amount": 88.0,
+   "valid": 1,
+   "r_ntile": 3,
+   "f_ntile": 1,
+   "m_ntile": 1,
+   "r": 3,
+   "f": 1,
+   "m": 1,
+   "value_group": "һ������",
+   "lifecycle_state": "���û�"
+  },
+  {
+   "user_id": "93026",
+   "r_days": 0,
+   "f_count": 1,
+   "m_amount": 88.0,
+   "valid": 1,
+   "r_ntile": 4,
+   "f_ntile": 1,
+   "m_ntile": 2,
+   "r": 2,
+   "f": 1,
+   "m": 2,
+   "value_group": "һ������",
+   "lifecycle_state": "���û�"
+  },
+  {
+   "user_id": "93027",
+   "r_days": 0,
+   "f_count": 1,
+   "m_amount": 87.0,
+   "valid": 1,
+   "r_ntile": 5,
+   "f_ntile": 2,
+   "m_ntile": 1,
+   "r": 1,
+   "f": 2,
+   "m": 1,
+   "value_group": "һ������",
+   "lifecycle_state": "���û�"
+  }
+ ],
+ "decisions": {
+  "D1_avg_order_value_UP_target90": {
+   "baseline": 84.17,
+   "actual": 92.31,
+   "grade_after_B": [
+    "EFFECTIVE",
+    0.0967
+   ],
+   "insufficient_before_B": "actual snapshot == baseline snapshot -> ��ɺ���δ�����¿���"
+  },
+  "D2_pv_UP": {
+   "baseline": 31,
+   "actual": 31,
+   "grade_after_B": [
+    "INEFFECTIVE",
+    0.0
+   ]
+  },
+  "D3_refund_rate_DOWN": {
+   "baseline": 0.0833,
+   "actual": 0.1538,
+   "grade_after_B": [
+    "INEFFECTIVE",
+    -0.8463
+   ]
+  },
+  "D4_gmv_UP": {
+   "baseline": 1010.0,
+   "actual": 1200.0,
+   "grade_after_B": [
+    "EFFECTIVE",
+    0.1881
+   ]
+  }
+ }
+}

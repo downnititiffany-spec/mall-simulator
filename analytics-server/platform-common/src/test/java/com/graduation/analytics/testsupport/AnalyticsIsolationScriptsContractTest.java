@@ -1,0 +1,224 @@
+package com.graduation.analytics.testsupport;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/** Stage 7：analytics 写入型 IT 预收编脚本必须继续保持双库、opt-in、密码不进 CLI。 */
+class AnalyticsIsolationScriptsContractTest {
+
+    private static final Path PREPARE = RepoRoot.path("scripts/it-prepare-isolation.ps1");
+    private static final Path RUNNER = RepoRoot.path("scripts/run-isolated-tests.ps1");
+    private static final Path PROJECT_RUNNER = RepoRoot.path("scripts/run-tests.ps1");
+    private static final Path NAMING = RepoRoot.path("scripts/isolation-naming.ps1");
+    private static final Path STAGE7_HTTP = RepoRoot.path("scripts/stage7-http-isolated.ps1");
+    private static final Path STAGE7_LOCALFILE_E2E = RepoRoot.path("scripts/stage7-localfile-e2e.ps1");
+    private static final Path CLOUD_GENERATOR_CLI = RepoRoot.path("scripts/cloud-generator-cli.sh");
+    private static final Path CLOUD_FLUME_ACTIVE_RUN = RepoRoot.path("scripts/cloud-flume-submit-active-run.sh");
+    private static final Path ADS_IT = RepoRoot.path(
+            "analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/MetricAdsMySqlIT.java");
+    private static final Path PUBLISHER_IT = RepoRoot.path(
+            "analytics-server/metric-analysis/src/test/java/com/graduation/analytics/metric/publish/MetricPublisherMySqlIT.java");
+
+    @Test
+    void prepareScriptCreatesAnalyticsScopeOnlyBehindExplicitOptIn() throws IOException {
+        String source = Files.readString(PREPARE);
+        String naming = Files.readString(NAMING);
+        assertThat(source)
+                .contains("[switch]$IncludeAnalytics")
+                .contains("\"${RunId}_analytics_meta\"")
+                .contains("\"${RunId}_analytics_metric\"")
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metaapp'")
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metricapp'")
+                .contains("isolation-naming.ps1")
+                .contains("GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')")
+                .contains("GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')");
+        assertThat(naming)
+                .contains("if ($raw.Length -le 32)")
+                .contains("SHA256")
+                .contains("if ($name.Length -gt 32)");
+    }
+
+    @Test
+    void runnerStagesDistinctMetaAndMetricScopesWithoutReplacingExistingAnalyticsGate() throws IOException {
+        String source = Files.readString(RUNNER);
+        assertThat(source)
+                .contains("[switch]$IncludeAnalyticsWriteIts")
+                .contains("metaDb = \"${RunId}_analytics_meta\"")
+                .contains("metricDb = \"${RunId}_analytics_metric\"")
+                .contains("metaUser = (New-IsolationUserName -RunId $RunId -Role 'metaapp')")
+                .contains("metricUser = (New-IsolationUserName -RunId $RunId -Role 'metricapp')")
+                .contains("isolation-naming.ps1")
+                .contains("$env:V25_IT_META_DB = $analyticsWrite.metaDb")
+                .contains("$env:V25_IT_METRIC_DB = $analyticsWrite.metricDb")
+                .contains("MAVEN_ARGS = '-Pisolated-analytics-schema'")
+                .contains("AnalyticsIsolationFlywayIT")
+                .contains("analytics 双库 Flyway 未通过：拒绝继续写入型 IT")
+                .contains("@('IsolationGuardMySqlIT')")
+                .contains("@('MetricAdsMySqlIT', 'MetricPublisherMySqlIT')")
+                .contains("foreach ($requiredClass in @($t.requireClasses))");
+    }
+
+    @Test
+    void analyticsPasswordsAreNotAcceptedAsCommandLineParameters() throws IOException {
+        for (Path script : new Path[]{PREPARE, RUNNER}) {
+            String source = Files.readString(script);
+            int start = source.indexOf("param(");
+            int end = source.indexOf("\n)", start);
+            assertThat(start).as(script + " 必须有 param 块").isGreaterThanOrEqualTo(0);
+            assertThat(end).as(script + " param 块必须闭合").isGreaterThan(start);
+            String params = source.substring(start, end);
+            assertThat(params)
+                    .as(script + " 不得新增 *Password 命令行参数，避免口令进入进程列表/历史")
+                    .doesNotContain("Password");
+        }
+    }
+
+    @Test
+    void prepareScriptDoesNotPutWslAdminPasswordInWslArguments() throws IOException {
+        String source = Files.readString(PREPARE);
+        assertThat(source)
+                .as("Windows-to-WSL credential transfer must use WSLENV, never an env NAME=value argv token")
+                .contains("MYSQL_PWD/u")
+                .contains("$env:V25IT_ADMIN_PWD")
+                .contains("$env:WSLENV")
+                .doesNotContain("MYSQL_PWD=$($env:V25IT_ADMIN_PWD)");
+    }
+
+    @Test
+    void unifiedRunnerAllowCountDriftBypassesOnlyTheCountComparisonGate() throws IOException {
+        String source = Files.readString(PROJECT_RUNNER);
+        assertThat(source)
+                .contains("function Test-BaselineComparison")
+                .contains("if ($AllowCountDrift) { return $true }")
+                .contains("return ($Comparison -notmatch 'DRIFT')");
+        assertThat(source.split(java.util.regex.Pattern.quote("Test-BaselineComparison -Comparison $cmp"), -1))
+                .as("default / isolated / spark 三个计数比较点必须共用同一放行语义")
+                .hasSize(4);
+    }
+
+    @Test
+    void metricWriteItsStayTaggedForUnifiedIsolationSuite() throws IOException {
+        assertThat(Files.readString(ADS_IT)).contains("@Tag(\"it\")");
+        assertThat(Files.readString(PUBLISHER_IT)).contains("@Tag(\"it\")");
+    }
+
+    @Test
+    void cloudGeneratorCliUsesTheConfiguredTaskRoot() throws IOException {
+        String source = Files.readString(CLOUD_GENERATOR_CLI);
+        assertThat(source)
+                .contains("TASK_ROOT=${CLOUD_SINGLE_NODE_ROOT:-}")
+                .contains("Could not identify one active task generator")
+                .contains("GENERATOR_LOG_FILE", "GENERATOR_OUTPUT_ROOT", "SPRING_DATASOURCE_URL")
+                .contains("Task generator identity does not match the selected task root.")
+                .contains("RUN_DIR=$(readlink -f \"$TASK_ROOT/cloud-e2e/current\")")
+                .doesNotContain("/workspace/single-node/cloud-e2e/current");
+    }
+
+    @Test
+    void cloudFlumeActiveRunSubmitterIsRunScopedAndFailClosed() throws IOException {
+        String source = Files.readString(CLOUD_FLUME_ACTIVE_RUN);
+        assertThat(source)
+                .contains("Requested RunId is not the active task stack.")
+                .contains("Flume command line does not reference this RunId configuration.")
+                .contains("a1.channels.c.type = file")
+                .contains("/landing/$RUN_ID/raw/")
+                .contains("RunId raw Landing is not empty; refusing first-file delivery.")
+                .contains("This source file was already submitted or is being processed; refusing replay.")
+                .contains("source/spool preserved, no replay.")
+                .doesNotContain("kill -TERM", "kill -KILL", "hdfs namenode -format", "rm -rf");
+    }
+
+    @Test
+    void stage7HttpLaneIsRunScopedAnd3307Only() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metaapp'")
+                .contains("New-IsolationUserName -RunId $RunId -Role 'metricapp'")
+                .contains("jdbc:mysql://127.0.0.1:3307/$metaDb")
+                .contains("jdbc:mysql://127.0.0.1:3307/$metricDb")
+                .contains("target\\v25-it\\$RunId\\http")
+                .contains("$attemptId = 'attempt-' + (Get-Date -Format 'yyyyMMdd_HHmmss_fff')")
+                .contains("$attemptRoot = Join-Path $httpRoot $attemptId")
+                .contains("if ($metaUrl -match ':3306/' -or $metricUrl -match ':3306/')");
+    }
+
+    @Test
+    void stage7HttpLaneKeepsSecretsOutOfCliAndUsesRealHttpBoundaries() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("[string]$GoldenDataset = 'tests/golden-dataset/events/golden-20260901-positive.jsonl'")
+                .contains("GetEnvironmentVariable('V25_IT_META_PASSWORD', 'Process')")
+                .contains("GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD', 'Process')")
+                .doesNotContain("[string]$MetaPassword")
+                .doesNotContain("[string]$MetricPassword")
+                .contains("/api/v1/runtime-profiles/1/test")
+                .contains("/api/v1/runtime-profiles/1/activate")
+                .contains("/api/v1/ingestion/runs")
+                .contains("/api/v1/pipeline-runs")
+                .contains("$attemptVersion = \"stage7-$RunId-$attemptId\"")
+                .contains("$idem = $attemptVersion")
+                .contains("sourceDataVersion=$attemptVersion");
+    }
+
+    @Test
+    void stage7HttpLaneOwnsAndStopsOnlyItsPlatformProcess() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("-PassThru")
+                .contains("if ($proc -and -not $proc.HasExited)")
+                .contains("function Stop-OwnedProcessTree([int]$RootPid)")
+                .contains("$owned.Contains($parentProcessId)")
+                .contains("Stop-Process -Id $processId -Force")
+                .contains("Stop-Process -Id $RootPid -Force")
+                .doesNotContain("$pid =")
+                .doesNotContain("foreach ($pid in")
+                .contains("New-Item -ItemType Directory -Force -Path $eventsDir,$warehouseDir,$metricStaging,$logDir")
+                .doesNotContain("-Path $eventsDir,$warehouseDir,$metastoreDir")
+                .contains("latest 指针便于控制端固定读取")
+                .doesNotContain("Get-Process java | Stop-Process");
+    }
+
+    @Test
+    void stage7HttpLaneUsesBoundedFullPipelineTimeoutAndDoesNotCallRunningAFailure() throws IOException {
+        String source = Files.readString(STAGE7_HTTP);
+        assertThat(source)
+                .contains("[int]$PipelineTimeoutSec = 600")
+                .contains("$result.outcome = 'PIPELINE_TIMEOUT'")
+                .contains("[TIMEOUT exit=7]")
+                .contains("if (-not ($terminal -contains $last.data.status))")
+                .contains("function Capture-PlatformState")
+                .contains("$result.platform.exitCode = $proc.ExitCode")
+                .contains("$result.platform.lastWorkingSetBytes = $proc.WorkingSet64")
+                .contains("$result.platform.pollErrorCount")
+                .contains("$result.outcome = 'PLATFORM_EXITED_DURING_PIPELINE'")
+                .contains("if ([int]$result.platform.pollErrorCount -ge 3)");
+    }
+
+    @Test
+    void stage7LocalFileE2eConsumesOnlyCleanProducerEvidenceAndReconcilesAnalyticsInput() throws IOException {
+        String source = Files.readString(STAGE7_LOCALFILE_E2E);
+        assertThat(source)
+                .contains("stage7-http-isolated.ps1")
+                .contains("$producer.outcome -ne 'PASS'")
+                .contains("$producer.rollingLog.uniqueEventIdCount")
+                .contains("$producer.rollingLog.duplicateEventIdCount")
+                .contains("producer rolling 尚未满足 clean handoff")
+                .contains("mall-landing\\events")
+                .contains("$eventTime = [datetimeoffset]$node.event_time")
+                .contains("$businessTime = '{0}T00:00:00' -f $businessDate")
+                .contains("$sources.Contains('mock-mall')")
+                .contains("GetEnvironmentVariable('V25_IT_META_PASSWORD','Process')")
+                .contains("GetEnvironmentVariable('V25_IT_METRIC_PUBLISH_PASSWORD','Process')")
+                .contains("'-GoldenDataset',$relativeInput")
+                .contains("[long]$http.ingestion.recordCount -ne $sourceLineCount")
+                .contains("[long]$http.ingestion.quarantineCount -ne 0")
+                .contains("[string]$http.pipeline.status -ne 'SUCCESS'")
+                .contains("[DRY-RUN] 不读 producer evidence、不读口令、不建目录、不启动 JVM、不发 HTTP、不连接数据库。")
+                .doesNotContain(":3306/");
+    }
+}

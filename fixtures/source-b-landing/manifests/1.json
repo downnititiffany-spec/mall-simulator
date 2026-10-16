@@ -1,0 +1,34 @@
+{
+  "batchId" : 1,
+  "batchNo" : "ing-20261016161024-e0968a68",
+  "runtimeProfileId" : 1,
+  "source" : "local-file",
+  "status" : "READY",
+  "startedAt" : "2026-10-16T16:10:24.278521595",
+  "finishedAt" : "2026-10-16T16:10:24.778649363",
+  "files" : [ {
+    "file" : "fault.jsonl",
+    "endOffset" : 1308,
+    "startOffset" : 0,
+    "acceptedRecords" : 0,
+    "quarantinedRecords" : 5
+  }, {
+    "file" : "normal.jsonl",
+    "endOffset" : 11387,
+    "startOffset" : 0,
+    "acceptedRecords" : 38,
+    "quarantinedRecords" : 0
+  } ],
+  "acceptedRecords" : 38,
+  "quarantinedRecords" : 5,
+  "acceptedBytes" : 14891,
+  "schemaVersions" : [ "1.0" ],
+  "acceptedUri" : "accepted/1",
+  "quarantineUri" : "quarantine/1",
+  "checksum" : "dc02825a",
+  "sourceCode" : "fixture-shop-b",
+  "sourceId" : 2,
+  "profileVersion" : "2.0",
+  "mappingVersion" : "2.0",
+  "mappingProfileHash" : "3ee7d8fae3a4a5057696105019bfd7dc475fb67c34e234f18624ff1c1e848da1"
+}

@@ -24,6 +24,9 @@ import static org.mockito.Mockito.when;
 /**
  * R8-1 证据解释测试（§19.3）：模板优先；模型只改措辞且受**数值守卫**约束；
  * 模型不可用/越界/异常一律回退模板（永远有结论）。
+ *
+ * <p>S3-60：回退原因必须与真实故障一致，provider 失败不能冒充数值校验失败，
+ * 已尝试过模型调用的问数解释也不能声称“未调用大模型”。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class ExplanationEvidenceTest {
@@ -59,9 +62,9 @@ class ExplanationEvidenceTest {
                         "metric_value.refund_rate@" + SNAP)),
                 new EvidencePackage.DataQuality("PASS", 4, 3, List.of("EVENT_ID_UNIQUE"), List.of()),
                 new EvidencePackage.Lineage(List.of("dw_ads.ads_operation_overview"),
-                        List.of("ads_operation_overview_m", "ads_data_quality_m"), 21L, SNAP),
+                        List.of("ads_operation_overview_m", "ads_data_quality_m"), 21L, SNAP, 31L),
                 List.of(EvidencePackage.WARN_NO_COMPARISON_PERIOD,
-                        EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE));
+                        EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE));
     }
 
     @Test
@@ -125,7 +128,27 @@ class ExplanationEvidenceTest {
     }
 
     @Test
-    @DisplayName("模型抛异常：回退模板，不把异常抛给调用方")
+    @DisplayName("模型摘要为空：按格式/长度约束回退，不冒充数值校验失败")
+    void rejectsBlankRewriteAsShapeFailure() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("mock");
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse("   ", 10, 1, "mock"));
+
+        ExplanationService.ExplanationResult result = service().explain(pkg(), "昨天卖得怎么样");
+
+        assertThat(result.summary()).isEqualTo(EvidenceTemplates.render(pkg()).summary());
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("格式/长度约束"));
+        assertThat(result.limitations()).noneSatisfy(l -> assertThat(l).contains("数值校验"));
+
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> captor =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("REJECTED");
+        assertThat(captor.getValue().getError()).isEqualTo("SUMMARY_LENGTH_GUARD");
+    }
+
+    @Test
+    @DisplayName("模型抛超时异常：回退模板并说明超时，不冒充数值校验失败")
     void fallsBackWhenProviderThrows() {
         when(llmProvider.healthCheck()).thenReturn(true);
         when(llmProvider.providerName()).thenReturn("openai-compat");
@@ -134,7 +157,126 @@ class ExplanationEvidenceTest {
         ExplanationService.ExplanationResult result = service().explain(pkg(), "昨天卖得怎么样");
 
         assertThat(result.summary()).isEqualTo(EvidenceTemplates.render(pkg()).summary());
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("模型调用超时"));
+        assertThat(result.limitations()).noneSatisfy(l -> assertThat(l).contains("数值校验"));
+    }
+
+    @Test
+    @DisplayName("QA-04 解释口径用生效区间：请求「近30天」而 SQL 只扫 7 天、覆盖 1 天时必须照实说")
+    void evidenceTimeRangeUsesEffectiveWindowNotRequestLabel() {
+        when(llmProvider.healthCheck()).thenReturn(false);
+        QueryWindow window = QueryWindow.of("近30天",
+                java.time.LocalDate.of(2026, 9, 11), java.time.LocalDate.of(2026, 9, 17),
+                java.time.LocalDate.of(2026, 9, 17), List.of(Map.of("dt", "20260917", "sale_amount", "500.00")));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select dt, sale_amount from ads_sale_trend_m", List.of("ads_sale_trend_m"),
+                1, 12L, List.of(Map.of("dt", "20260917", "sale_amount", "500.00")), List.of(), null, null,
+                "rule-based", window);
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "最近销售趋势", "近30天");
+
+        // 证据与摘要都不得照抄「近30天」，必须给出 2026-09-11 ~ 2026-09-17 的覆盖情况
+        assertThat(result.evidence().timeRange()).contains("2026-09-11 ~ 2026-09-17").contains("覆盖 1/7 天");
+        assertThat(result.evidence().timeRange()).doesNotContain("近30天");
+        assertThat(result.summary()).contains("2026-09-11 ~ 2026-09-17").contains("覆盖 1/7 天");
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("不能据此判断趋势"));
+    }
+
+    @Test
+    @DisplayName("问数解释已尝试模型但超时：规则回退不得声称未调用大模型")
+    void queryFallbackDoesNotClaimModelWasNeverCalled() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("openai-compat");
+        when(llmProvider.complete(any())).thenThrow(new LlmProvider.LlmException("TIMEOUT", "timeout"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based",
+                null, "S_QUERY_ACTUAL", 42L);
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo(EvidenceTemplates.Narrative.PROVIDER_TEMPLATE);
+        assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("模型调用超时"));
+        assertThat(result.limitations()).noneSatisfy(l -> assertThat(l).contains("未调用大模型"));
+    }
+
+    @Test
+    @DisplayName("Text-to-SQL 解释编造查询结果中不存在的数字时回退并记录 REJECTED")
+    void queryExplanationRejectsNumbersAbsentFromExecutedRows() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("mock");
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse(
+                "{\"summary\":\"销售额达到 99999.00 元\",\"facts\":[],\"possibleCauses\":[],\"suggestions\":[],\"limitations\":[]}",
+                10, 20, "mock"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based",
+                null, "S_QUERY_ACTUAL", 42L);
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo(EvidenceTemplates.Narrative.PROVIDER_TEMPLATE);
+        assertThat(result.summary()).contains("已查询 1 行结果").doesNotContain("99999");
         assertThat(result.limitations()).anySatisfy(l -> assertThat(l).contains("数值校验"));
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> captor =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("REJECTED");
+        assertThat(captor.getValue().getError()).contains("QUERY_RESULT_NUMBER_GUARD");
+        assertThat(captor.getValue().getInputTokens()).isEqualTo(10);
+        assertThat(captor.getValue().getOutputTokens()).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("Text-to-SQL 解释只使用已执行结果中的数字时可采用模型输出")
+    void queryExplanationAcceptsNumbersPresentInExecutedRows() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.providerName()).thenReturn("mock");
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse(
+                "{\"summary\":\"查询结果 GMV 为 2042.0000\",\"facts\":[],\"possibleCauses\":[],\"suggestions\":[],\"limitations\":[]}",
+                10, 20, "mock"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based",
+                null, "S_QUERY_ACTUAL", 42L);
+
+        ExplanationService.ExplanationResult result = service().explain(
+                query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo("mock");
+        assertThat(result.summary()).contains("2042.0000");
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> captor =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("OK");
+        assertThat(captor.getValue().getSourceId()).isEqualTo(42L);
+        assertThat(captor.getValue().getSnapshotId()).isEqualTo("S_QUERY_ACTUAL");
+        assertThat(captor.getValue().getRequestFingerprint()).matches("[0-9a-f]{64}");
+        assertThat(captor.getValue().getInputTokens()).isEqualTo(10);
+        assertThat(captor.getValue().getOutputTokens()).isEqualTo(20);
+    }
+
+    @Test
+    void invalidQueryExplanationRetainsUsageFromCompletedModelCall() {
+        when(llmProvider.healthCheck()).thenReturn(true);
+        when(llmProvider.complete(any())).thenReturn(new LlmProvider.AiResponse("not-json", 11, 13, "mock"));
+        TextToSqlService.QueryResult query = new TextToSqlService.QueryResult(
+                "EXECUTED", "select gmv from ads_operation_overview_m", List.of("ads_operation_overview_m"),
+                1, 12L, List.of(Map.of("gmv", "2042.0000")), List.of(), null, null, "rule-based");
+
+        ExplanationService.ExplanationResult result = service().explain(query, SNAP, "销售额怎么样", "2026-09-01");
+
+        assertThat(result.providerUsed()).isEqualTo(EvidenceTemplates.Narrative.PROVIDER_TEMPLATE);
+        ArgumentCaptor<com.graduation.analytics.ai.entity.AiCallLog> call =
+                ArgumentCaptor.forClass(com.graduation.analytics.ai.entity.AiCallLog.class);
+        verify(callLogMapper).insert(call.capture());
+        assertThat(call.getValue().getStatus()).isEqualTo("FAILED");
+        assertThat(call.getValue().getModel()).isEqualTo("mock");
+        assertThat(call.getValue().getInputTokens()).isEqualTo(11);
+        assertThat(call.getValue().getOutputTokens()).isEqualTo(13);
     }
 
     @Test
@@ -143,6 +285,19 @@ class ExplanationEvidenceTest {
         String evidence = "快照 S20260901_24（2026-09-01）gmv = 2042.0000，环比 1.0420";
 
         assertThat(ExplanationService.numberViolations("gmv 2042.0000，环比 1.0420", evidence)).isEmpty();
+        assertThat(ExplanationService.numberViolations("gmv 2042，环比 1.042", evidence)).isEmpty();
         assertThat(ExplanationService.numberViolations("gmv 9999.0000", evidence)).containsExactly("9999.0000");
+        assertThat(ExplanationService.numberViolations("gmv -2042.0000", evidence)).containsExactly("-2042.0000");
+    }
+
+    @Test
+    @DisplayName("数值守卫：日期按整体匹配，不能把证据日期改成另一天")
+    void numberGuardRejectsDateBuiltFromAllowedNumberFragments() {
+        String evidence = "快照 S20260901_24（业务日期 2026-09-01）";
+
+        assertThat(ExplanationService.numberViolations("快照 S20260901_24，业务日期 2026-09-09", evidence))
+                .containsExactly("2026-09-09");
+        assertThat(ExplanationService.numberViolations("快照 S20260901_24，业务日期 2026-09-01", evidence))
+                .isEmpty();
     }
 }

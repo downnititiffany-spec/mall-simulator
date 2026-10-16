@@ -44,6 +44,9 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
     /** M1-11：存活进程句柄（jobId → Process），供 status()/cancel() 查询与终止真实进程 */
     private static final Map<String, Process> LIVE = new ConcurrentHashMap<>();
 
+    /** 日志捕获线程（jobId → Thread）；终态不得早于日志流关闭和文件落盘。 */
+    private static final Map<String, Thread> LOG_CAPTURE_THREADS = new ConcurrentHashMap<>();
+
     /** M1-11：已结束作业的退出码（有界 LRU，避免平台长跑内存增长） */
     static final int EXIT_CODE_CAPACITY = 256;
     private static final Map<String, Integer> EXIT_CODES = Collections.synchronizedMap(
@@ -112,10 +115,17 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
                     }
                     Files.writeString(logFile, sb.toString(), StandardCharsets.UTF_8);
                 } catch (IOException e) {
-                    log.warn("capture spark-submit log failed: {}", e.getMessage());
+                    if (CANCELLED.contains(jobId)) {
+                        log.debug("cancelled spark-submit log stream closed: {}", jobId);
+                    } else {
+                        log.warn("capture spark-submit log failed: {}", e.getMessage());
+                    }
+                } finally {
+                    LOG_CAPTURE_THREADS.remove(jobId, Thread.currentThread());
                 }
             }, "spark-log-" + jobId);
             thread.setDaemon(true);
+            LOG_CAPTURE_THREADS.put(jobId, thread);
             thread.start();
 
             log.info("spark-submit {} -> pid={} log={}", jobId, proc.pid(), logFile);
@@ -131,12 +141,21 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
         // CANCELLED（被 cancel() 终止）。契约由 SparkStageExecutor 轮询消费：非终结值继续轮询，
         // SUCCESS/FAILED/CANCELLED 触发终结判定（再由日志 JobResult 行与退出码综合判定，§13.2 不冒充成功）。
         if (CANCELLED.contains(externalJobId)) {
+            Thread logCapture = LOG_CAPTURE_THREADS.get(externalJobId);
+            if (logCapture != null && logCapture.isAlive()) {
+                return "SUBMITTED";
+            }
             return "CANCELLED";
         }
         Process live = LIVE.get(externalJobId);
         if (live != null) {
             // 已退出但退出码登记尚未完成 → 仍返回非终结值，下一轮重新判定
             return live.isAlive() ? "RUNNING" : "SUBMITTED";
+        }
+        Thread logCapture = LOG_CAPTURE_THREADS.get(externalJobId);
+        if (logCapture != null && logCapture.isAlive()) {
+            // 进程已退出但 stdout 仍在排空/写盘：暂不暴露终态，避免调用方读到半份日志。
+            return "SUBMITTED";
         }
         Integer exitCode = EXIT_CODES.get(externalJobId);
         if (exitCode != null) {
@@ -241,6 +260,7 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
         Process proc = LIVE.remove(externalJobId);
         if (proc == null) {
             log.warn("本地进程任务无存活句柄，无法终止（可能已结束或平台已重启）: {}", externalJobId);
+            awaitLogCapture(externalJobId, null);
             return;
         }
         List<ProcessHandle> children = proc.descendants().collect(Collectors.toList());
@@ -255,7 +275,38 @@ public class LocalProcessSparkSubmitter implements JobSubmitter {
             Thread.currentThread().interrupt();
             proc.destroyForcibly();
         }
+        // cmd.exe /c 等父进程可能先退出、把仍继承 stdout 的子进程留在后台；
+        // 父进程 waitFor 成功不等于整棵进程树结束。取消语义要求子进程不再继续运行。
+        children.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
+        awaitLogCapture(externalJobId, proc);
         log.warn("本地进程任务已终止: {} pid={} 子进程={}", externalJobId, proc.pid(), children.size());
+    }
+
+    private static void awaitLogCapture(String externalJobId, Process proc) {
+        Thread capture = LOG_CAPTURE_THREADS.get(externalJobId);
+        if (capture == null) {
+            return;
+        }
+        try {
+            capture.join(1_000);
+            if (capture.isAlive() && proc != null) {
+                // 某些 Windows 子进程树关闭继承管道较慢；整个树已被终止后关闭父进程读端，
+                // 解除可能挂起的阻塞读取，避免日志线程遗留和终态永久停在 SUBMITTED。
+                try {
+                    proc.getInputStream().close();
+                } catch (IOException closeError) {
+                    log.debug("closing cancelled process input failed: jobId={} error={}",
+                            externalJobId, closeError.getMessage());
+                }
+                capture.join(5_000);
+            }
+            if (capture.isAlive()) {
+                log.warn("取消后日志流仍未结束: jobId={} thread={}", externalJobId, capture.getName());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("等待日志流结束时被中断: jobId={}", externalJobId);
+        }
     }
 
     @Override

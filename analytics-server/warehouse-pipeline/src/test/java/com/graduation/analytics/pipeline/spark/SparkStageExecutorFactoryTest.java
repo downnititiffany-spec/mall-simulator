@@ -135,6 +135,25 @@ class SparkStageExecutorFactoryTest {
     }
 
     @Test
+    @DisplayName("LOCAL/SINGLE_NODE on Windows disables Spark NIO transferTo workaround")
+    void windowsLocalProfileUsesStreamCopyForSparkFiles() {
+        SparkStageExecutorFactory factory = factory(
+                providerReturning(new RunSourceIdentity("mock-mall", WarehouseNamespace.of("dw_b"))),
+                new FakeJobSubmitter());
+
+        Map<String, String> confs = factory.confsFor(profile(5L));
+        assertThat(confs).containsEntry("spark.hadoop.hive.metastore.uris", "")
+                .containsEntry("spark.sql.hive.metastore.jars", "builtin")
+                .containsEntry("spark.hadoop.javax.jdo.option.ConnectionDriverName",
+                        "org.apache.derby.jdbc.EmbeddedDriver");
+        if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).startsWith("windows")) {
+            assertThat(confs).containsEntry("spark.file.transferTo", "false");
+        } else {
+            assertThat(confs).doesNotContainKey("spark.file.transferTo");
+        }
+    }
+
+    @Test
     @DisplayName("② 解析成功：源身份一路走到命令行（--hiveDatabasePrefix 与 --sourceSystem 同时出现）")
     void resolvedIdentityReachesCommandLine() {
         FakeJobSubmitter submitter = new FakeJobSubmitter();

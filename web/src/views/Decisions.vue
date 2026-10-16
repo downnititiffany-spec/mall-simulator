@@ -7,24 +7,47 @@
     <div class="chart-box">
       <div class="chart-title">
         决策数据上下文
-        <button style="float:right;font-size:12px;padding:3px 10px" @click="load" :disabled="loading">
+        <button class="btn btn-sm" style="float:right" @click="refresh" :disabled="loading || busy">
           {{ loading ? '刷新中…' : '刷新' }}
         </button>
       </div>
       <AnalysisContext :context="exportContext" :state="state" :error="error" />
       <div class="table-hint">
-        说明：批准决策时会锁定当次快照基线，该快照号记录在决策行的「建议快照」字段；
-        多个决策可能来自不同快照，因此上方快照栏在存在多个值时逐个列出，不合并成单一快照。
+        说明：「建议快照」是 AI 建议来源；批准时真正锁定的评价基线来自「基线快照」，并同时记录口径版本。
+        多个决策可能来自不同建议快照，因此上方快照栏在存在多个值时逐个列出，不合并成单一快照。
       </div>
     </div>
 
     <div class="chart-box">
       <div class="chart-title">
         决策列表（AI 草稿 → 人工审核 → 执行 → 效果评价）
-        <button style="float:right;font-size:12px;padding:3px 10px"
+        <button class="btn btn-sm" style="float:right"
                 :disabled="!exportable" @click="exportDecisions">
-          {{ exportable ? '导出决策 CSV' : '导出（' + statusText + '）' }}
+          {{ exportable ? '导出本页 CSV' : '导出（' + statusText + '）' }}
         </button>
+      </div>
+
+      <div class="table-hint" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <span>共 {{ total }} 条 · 第 {{ page }} / {{ totalPages }} 页</span>
+        <label>排序
+          <select v-model="sort" @change="changeSort" :disabled="loading || busy">
+            <option value="id,desc">最新编号</option>
+            <option value="createdAt,desc">创建时间（新到旧）</option>
+            <option value="updatedAt,desc">更新时间（新到旧）</option>
+            <option value="dueDate,asc">截止日期（早到晚）</option>
+            <option value="status,asc">状态</option>
+          </select>
+        </label>
+        <label>每页
+          <select v-model.number="pageSize" @change="changePageSize" :disabled="loading || busy">
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
+        </label>
+        <button class="btn btn-sm" @click="changePage(page - 1)" :disabled="loading || busy || page <= 1">上一页</button>
+        <button class="btn btn-sm" @click="changePage(page + 1)" :disabled="loading || busy || page >= totalPages">下一页</button>
       </div>
 
       <div v-if="state === 'loading'" class="state-line">决策列表加载中…</div>
@@ -34,39 +57,50 @@
 
       <div v-if="actionError" class="banner banner-error">操作失败：{{ actionError }}</div>
 
-      <table v-if="rows.length" style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="text-align:left;color:#6b7280">
+      <table v-if="rows.length" class="data-table">
+        <thead><tr style="text-align:left;color:var(--gray-500)">
           <th style="padding:8px">编号</th><th>标题</th><th>来源</th><th>目标指标</th><th>基线</th>
-          <th>建议快照</th><th>负责人</th><th>状态</th><th>效果</th><th>操作</th>
+          <th>建议快照</th><th>基线快照</th><th>口径版本</th><th>负责人</th><th>截止日期</th>
+          <th>状态</th><th>效果</th><th>操作</th>
         </tr></thead>
         <tbody>
-          <tr v-for="d in rows" :key="d.id" style="border-top:1px solid #f3f4f6">
+          <tr v-for="d in rows" :key="d.id" style="border-top:1px solid var(--gray-100)">
             <td style="padding:8px" class="mono">{{ d.decisionNo }}</td>
             <td>{{ d.title }}</td>
             <td>{{ d.source || '—' }}</td>
             <td>{{ d.targetMetricCode || '—' }} <span v-if="d.targetDirection">({{ d.targetDirection }})</span></td>
-            <td class="mono">{{ formatNumber(d.baselineValue) }}</td>
+            <td class="mono">{{ d.baselineValue }}</td>
             <td class="mono">{{ d.suggestionSnapshotId || '—' }}</td>
+            <td class="mono">{{ d.baselineSnapshotId || '—' }}</td>
+            <td class="mono">{{ d.definitionVersion || '—' }}</td>
             <td>{{ d.owner || '—' }}</td>
-            <td><span :style="{ color: statusColor(d.status), fontWeight: 600 }">{{ d.status }}</span></td>
+            <td class="mono">{{ d.dueDate || '—' }}</td>
+            <td><span class="badge" :class="statusBadge(d.status)">{{ d.status }}</span></td>
             <td>
               <span v-if="evaluations[d.id]">
                 {{ evaluations[d.id].result }} ({{ evaluations[d.id].improvementRate }})
                 <div class="table-hint mono">
                   基线 {{ evaluations[d.id].baselineValue }} → 实际 {{ evaluations[d.id].actualValue }}
-                  （窗口 {{ evaluations[d.id].evalWindowDays }} 天）
+                  （{{ evaluations[d.id].evalWindowDays }} 天；基线 {{ evaluations[d.id].baselineWindow }} /
+                  实际 {{ evaluations[d.id].actualWindow }}；逐日样本
+                  {{ evaluations[d.id].baselineSamples }} + {{ evaluations[d.id].actualSamples }}）
+                </div>
+                <div class="table-hint">
+                  来源 {{ evaluations[d.id].sourceId }} / 指标口径 {{ evaluations[d.id].metricDefinitionVersion }}；
+                  {{ evaluations[d.id].note }}
                 </div>
               </span>
+              <span v-else-if="evaluationPending.has(d.id)" class="table-hint">评价加载中…</span>
               <span v-else>—</span>
             </td>
-            <td style="white-space:nowrap">
-              <button v-if="d.status === 'DRAFT'" @click="act(d, 'submit')" :disabled="busy">提交审核</button>
-              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#16a34a" @click="approve(d)" :disabled="busy">批准</button>
-              <button v-if="d.status === 'PENDING_REVIEW'" style="background:#dc2626" @click="act(d, 'reject')" :disabled="busy">驳回</button>
-              <button v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="busy">开始</button>
-              <button v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="busy">完成</button>
-              <button v-if="d.status === 'IN_PROGRESS'" style="background:#dc2626" @click="cancel(d)" :disabled="busy">取消</button>
-              <button v-if="d.status === 'COMPLETED'" style="background:#7c3aed" @click="evaluate(d)" :disabled="busy">评价</button>
+            <td class="nowrap">
+              <button class="btn btn-sm btn-primary" v-if="d.status === 'DRAFT'" @click="submitDecision(d)" :disabled="loading || busy">提交审核</button>
+              <button class="btn btn-sm btn-success" v-if="d.status === 'PENDING_REVIEW'" @click="approve(d)" :disabled="loading || busy">批准</button>
+              <button class="btn btn-sm btn-danger" v-if="d.status === 'PENDING_REVIEW'" @click="rejectDecision(d)" :disabled="loading || busy">驳回</button>
+              <button class="btn btn-sm" v-if="d.status === 'APPROVED'" @click="act(d, 'start')" :disabled="loading || busy">开始</button>
+              <button class="btn btn-sm" v-if="d.status === 'IN_PROGRESS'" @click="act(d, 'complete')" :disabled="loading || busy">完成</button>
+              <button class="btn btn-sm btn-danger" v-if="d.status === 'IN_PROGRESS'" @click="cancelDecision(d)" :disabled="loading || busy">取消</button>
+              <button class="btn btn-sm btn-ai" v-if="d.status === 'COMPLETED'" @click="evaluate(d)" :disabled="loading || busy">评价</button>
             </td>
           </tr>
         </tbody>
@@ -76,10 +110,11 @@
       <div v-if="evaluationError" class="table-hint table-hint-error">部分决策的评价读取失败：{{ evaluationError }}</div>
     </div>
 
-    <div class="chart-box" style="font-size:13px;color:#6b7280;line-height:1.8">
+    <div class="chart-box" style="font-size:13px;color:var(--gray-500);line-height:1.8">
       <b>口径说明：</b>AI 只能创建 DRAFT（§22.6）；从 PENDING_REVIEW 到 APPROVED 必须人工；
-      批准时锁定当前快照基线与目标指标；效果 = (实际−基线)/|基线|，"越低越好"指标（退款率等）取反；
-      评价结果仅为前后对比，非因果推断（§21.10）。
+      批准时冻结完整基线窗口的来源、口径及逐日快照；目前只对已验证的可加总日指标评价。
+      比率、UV/DAU、复购率、客单价等缺少窗口公式时显示数据不足，不直接按日值平均或求和；
+      评价结果仅为前后变化，非因果推断（§21.10）。
     </div>
   </div>
 </template>
@@ -90,42 +125,85 @@ import api from '../api'
 import AnalysisContext from '../components/AnalysisContext.vue'
 import { useAnalysis } from '../composables/useAnalysis'
 import { buildFallbackContext, NON_ANALYSIS_ROW_KEYS } from '../utils/context'
-import { formatNumber } from '../utils/number'
 import { COLUMNS, decisionRows as mapDecisionRows, evaluationRows as mapEvaluationRows } from '../utils/tables'
 import { exportAnalysisCsv } from '../utils/exportCsv'
+import { forEachConcurrent } from '../utils/forEachConcurrent'
+import { requirePageResponse } from '../utils/pageResponse.js'
 
 const evaluations = ref({})
 const evaluationError = ref('')
+const evaluationPending = ref(new Set())
 const actionError = ref('')
 const busy = ref(false)
+const page = ref(1)
+const total = ref(0)
+const totalPages = ref(1)
+const sort = ref('id,desc')
+const pageSize = ref(20)
+let decisionFetchSeq = 0
+const DECISION_EVALUATION_READ_CONCURRENCY = 5
 
 const isAbort = (e) => Boolean(e && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError'))
 
-// 决策列表 + 每个已评价决策的效果（都返回裸数组，非统一信封）
-async function fetchDecisions(params, signal) {
-  const raw = await api.decisions(20, { signal })
-  const list = Array.isArray(raw) ? raw : []
+// 决策列表分页响应使用统一信封；单项评价仍返回裸数组。
+async function loadDecisionEvaluations(decisions, signal, mySeq) {
   const evalMap = {}
   const failed = []
-  const decided = list.filter((d) => d && ['EFFECTIVE', 'PARTIAL', 'INEFFECTIVE', 'INSUFFICIENT_DATA'].includes(d.status))
-  // 逐个取评价：单个失败只影响该行，但要显式记录失败原因，不静默
-  for (const d of decided) {
+  await forEachConcurrent(decisions, DECISION_EVALUATION_READ_CONCURRENCY, async (d) => {
+    if (signal && signal.aborted) return
     try {
       const evals = await api.decisionEvaluations(d.id, { signal })
       const first = Array.isArray(evals) ? evals[0] : null
       if (first) evalMap[d.id] = mapEvaluationRows([first])[0]
     } catch (e) {
       if (!isAbort(e)) failed.push(`${d.decisionNo || d.id}: ${(e && (e.message || e.code)) || '读取失败'}`)
+    } finally {
+      if (mySeq === decisionFetchSeq) {
+        const nextPending = new Set(evaluationPending.value)
+        nextPending.delete(d.id)
+        evaluationPending.value = nextPending
+      }
     }
+  })
+  if (mySeq === decisionFetchSeq && !(signal && signal.aborted)) {
+    evaluations.value = { ...evalMap, ...evaluations.value }
+    evaluationError.value = failed.join('；')
   }
-  evaluations.value = evalMap
-  evaluationError.value = failed.join('；')
+}
+
+async function fetchDecisions(params, signal) {
+  const mySeq = ++decisionFetchSeq
+  evaluationPending.value = new Set()
+  const result = requirePageResponse(
+    await api.decisionPage({ page: params.page || 1, size: params.size || pageSize.value, sort: params.sort || 'id,desc' }, { signal }),
+    '决策列表'
+  )
+  const list = result.items
+  if (mySeq === decisionFetchSeq) {
+    page.value = Number(result.page) || 1
+    pageSize.value = Number(result.size) || pageSize.value
+    total.value = Number(result.total) || 0
+    totalPages.value = Math.max(1, Number(result.totalPages) || 1)
+  }
+  const decided = list.filter((d) => d && ['EFFECTIVE', 'PARTIAL', 'INEFFECTIVE', 'INSUFFICIENT_DATA'].includes(d.status))
+  if (mySeq === decisionFetchSeq) {
+    evaluations.value = {}
+    evaluationError.value = ''
+    evaluationPending.value = new Set(decided.map((d) => d.id))
+  }
+  // Secondary evaluation reads must not delay the decision table's primary page response.
+  void loadDecisionEvaluations(decided, signal, mySeq).catch((e) => {
+    if (!isAbort(e) && mySeq === decisionFetchSeq && !(signal && signal.aborted)) {
+      evaluationError.value = (e && (e.message || e.code)) || '评价读取失败'
+    }
+  })
 
   const ctx = buildFallbackContext({ rows: list, warnings: ['ENVELOPE_MISSING'] })
   return {
     snapshotId: ctx.snapshotId,
     businessTime: ctx.businessTime,
     dataUpdatedAt: ctx.dataUpdatedAt,
+    source: ctx.source,
     definitionVersion: ctx.definitionVersion,
     qualityStatus: ctx.qualityStatus,
     filters: ctx.filters,
@@ -141,13 +219,46 @@ const { data, state, loading, error, exportable, statusText, exportContext, load
 const rows = computed(() => mapDecisionRows(data.value.decisions))
 
 const statusColor = (s) => {
-  const map = { EFFECTIVE: '#16a34a', PARTIAL: '#d97706', INEFFECTIVE: '#dc2626',
-    INSUFFICIENT_DATA: '#6b7280', REJECTED: '#dc2626', CANCELLED: '#6b7280' }
-  return map[s] || '#111827'
+  const map = { EFFECTIVE: 'var(--success)', PARTIAL: '#d97706', INEFFECTIVE: '#dc2626',
+    INSUFFICIENT_DATA: 'var(--gray-500)', REJECTED: '#dc2626', CANCELLED: 'var(--gray-500)' }
+  return map[s] || 'var(--gray-800)'
+}
+
+// 状态徽标（纯展示映射，不改变任何状态判定）
+const statusBadge = (s) => {
+  const map = {
+    EFFECTIVE: 'badge-success', PARTIAL: 'badge-warning', INEFFECTIVE: 'badge-danger',
+    INSUFFICIENT_DATA: 'badge-neutral', REJECTED: 'badge-danger', CANCELLED: 'badge-neutral',
+    DRAFT: 'badge-neutral', PENDING_REVIEW: 'badge-warning', APPROVED: 'badge-brand',
+    IN_PROGRESS: 'badge-info', COMPLETED: 'badge-ai'
+  }
+  return map[s] || 'badge-neutral'
+}
+
+function refresh() {
+  if (loading.value || busy.value) return
+  return load({ page: page.value, size: pageSize.value, sort: sort.value })
 }
 
 async function flush() {
-  await load({})
+  await load({ page: page.value, size: pageSize.value, sort: sort.value })
+}
+
+function changePage(nextPage) {
+  if (loading.value || busy.value || nextPage < 1 || nextPage > totalPages.value) return
+  return load({ page: nextPage, size: pageSize.value, sort: sort.value })
+}
+
+function changeSort() {
+  if (loading.value || busy.value) return
+  page.value = 1
+  return load({ page: 1, size: pageSize.value, sort: sort.value })
+}
+
+function changePageSize() {
+  if (loading.value || busy.value) return
+  page.value = 1
+  return load({ page: 1, size: pageSize.value, sort: sort.value })
 }
 
 function exportDecisions() {
@@ -163,6 +274,7 @@ function exportDecisions() {
 }
 
 async function act(d, action) {
+  if (busy.value || loading.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -175,16 +287,74 @@ async function act(d, action) {
   }
 }
 
-async function approve(d) {
-  const owner = prompt('负责人（如：运营-小李）', '运营-小李')
+function requiredReason(actionLabel) {
+  const raw = prompt(`${actionLabel}原因（必填）`, '')
+  if (raw === null) return null
+  const reason = raw.trim()
+  if (!reason) {
+    actionError.value = `${actionLabel}原因不能为空`
+    return null
+  }
+  return reason
+}
+
+function requiredApprovalText(promptText, emptyMessage, initialValue = '') {
+  const raw = prompt(promptText, initialValue)
+  if (raw === null) return null
+  const value = raw.trim()
+  if (!value) {
+    actionError.value = emptyMessage
+    return null
+  }
+  return value
+}
+
+function requiredDueDate() {
+  const dueDate = requiredApprovalText('截止日期（必填，格式 YYYY-MM-DD）', '截止日期不能为空')
+  if (!dueDate) return null
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueDate)
+  if (!match) {
+    actionError.value = '截止日期格式必须为 YYYY-MM-DD'
+    return null
+  }
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    actionError.value = '截止日期不是有效日历日期'
+    return null
+  }
+  return dueDate
+}
+
+async function submitDecision(d) {
+  if (busy.value || loading.value) return
+  actionError.value = ''
+  const currentOwner = d && d.owner && d.owner !== '—' ? String(d.owner).trim() : ''
+  const owner = requiredApprovalText('负责人（提交审核前必填）', '负责人不能为空', currentOwner)
   if (!owner) return
   busy.value = true
-  actionError.value = ''
   try {
-    await api.decisionAction(d.id, 'approve', {
-      owner,
-      dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
-    })
+    await api.decisionAction(d.id, 'submit', { owner })
+    await flush()
+  } catch (e) {
+    actionError.value = (e && (e.message || e.code)) || '提交审核失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function approve(d) {
+  if (busy.value || loading.value) return
+  actionError.value = ''
+  const owner = requiredApprovalText('负责人（必填，例如：运营-小李）', '负责人不能为空')
+  if (!owner) return
+  const dueDate = requiredDueDate()
+  if (!dueDate) return
+  busy.value = true
+  try {
+    await api.decisionAction(d.id, 'approve', { owner, dueDate })
     await flush()
   } catch (e) {
     actionError.value = (e && (e.message || e.code)) || '批准失败'
@@ -193,11 +363,30 @@ async function approve(d) {
   }
 }
 
-async function cancelDecision(d) {
+async function rejectDecision(d) {
+  if (busy.value || loading.value) return
+  const reason = requiredReason('驳回')
+  if (!reason) return
   busy.value = true
   actionError.value = ''
   try {
-    await api.decisionAction(d.id, 'cancel', { reason: '策略调整' })
+    await api.decisionAction(d.id, 'reject', { reason })
+    await flush()
+  } catch (e) {
+    actionError.value = (e && (e.message || e.code)) || '驳回失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function cancelDecision(d) {
+  if (busy.value || loading.value) return
+  const reason = requiredReason('取消')
+  if (!reason) return
+  busy.value = true
+  actionError.value = ''
+  try {
+    await api.decisionAction(d.id, 'cancel', { reason })
     await flush()
   } catch (e) {
     actionError.value = (e && (e.message || e.code)) || '取消失败'
@@ -207,6 +396,7 @@ async function cancelDecision(d) {
 }
 
 async function evaluate(d) {
+  if (busy.value || loading.value) return
   busy.value = true
   actionError.value = ''
   try {
@@ -222,9 +412,10 @@ async function evaluate(d) {
   }
 }
 
-onMounted(() => {
-  load({})
-})
+onMounted(refresh)
 
-onUnmounted(cancel)
+onUnmounted(() => {
+  decisionFetchSeq += 1
+  cancel()
+})
 </script>

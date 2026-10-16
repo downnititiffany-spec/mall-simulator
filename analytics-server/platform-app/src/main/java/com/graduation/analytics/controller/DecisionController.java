@@ -136,6 +136,16 @@ public class DecisionController {
         return ApiResponse.ok(decisionService.list(limit), TraceContext.create().traceId());
     }
 
+    /** 分页决策记录；兼容旧 GET /decisions?limit=... 数组响应。 */
+    @GetMapping("/page")
+    @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
+    public ApiResponse<DecisionService.DecisionPage> page(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String sort) {
+        return ApiResponse.ok(decisionService.listPage(page, size, sort), TraceContext.create().traceId());
+    }
+
     @GetMapping("/{id}/evaluations")
     @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
     public ApiResponse<List<DecisionEvaluation>> evaluations(@PathVariable Long id) {

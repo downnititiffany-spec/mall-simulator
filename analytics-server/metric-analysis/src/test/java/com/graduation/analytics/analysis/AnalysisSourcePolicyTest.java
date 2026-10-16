@@ -91,7 +91,8 @@ class AnalysisSourcePolicyTest {
     void endpointSourcesArePresent() {
         String service = read(ANALYSIS_PACKAGE.resolve("AnalysisService.java"));
         assertThat(service).contains("ads_sale_trend_m", "ads_active_trend_m", "ads_behavior_funnel_m",
-                "ads_hot_product_m", "ads_product_conversion_m", "ads_data_quality_m");
+                "ads_hot_product_m", "ads_product_conversion_m", "ads_data_quality_m",
+                "ads_category_sale_m", "ads_region_sale_m");
         assertThat(read(ANALYSIS_PACKAGE.resolve("RfmService.java"))).contains("ads_user_profile_m");
         // 销售四项指标取 metric_value 的指标码
         assertThat(service).contains("\"gmv\"", "\"net_sale\"", "\"refund_rate\"", "\"full_refund_rate\"");

@@ -1,0 +1,22 @@
+{
+  "case": "N31-02 leg C category and city-level sales oracle",
+  "sourceFixture": "fixtures/source-a-e3/e3-events.jsonl",
+  "businessDate": "2026-09-18",
+  "method": "Independent event-level calculation: select order_created/order_paid for the business date; map item product_id to the latest product category at or before the date; map user_id to the latest registered city_level at or before the date; include only paid order items; subtract completed refund amount once by refund_id; sale_count is item quantity; recompute ratio from window gross sales.",
+  "limitations": [
+    "The fixture has no missing category or city-level row in this business-date paid-order subset; unknown-row preservation is covered by the focused Spark SQL regression, not this browser E2E case.",
+    "The fixture carries category IDs but no category-name dimension, so this E2E oracle asserts IDs and additive values rather than inventing names."
+  ],
+  "categoryRows": [
+    { "category_id": 100, "sale_count": 7, "sale_amount": 670.00, "net_sale_amount": 670.00, "amount_ratio": 0.6633663366336633 },
+    { "category_id": 200, "sale_count": 4, "sale_amount": 290.00, "net_sale_amount": 210.00, "amount_ratio": 0.2871287128712871 },
+    { "category_id": 300, "sale_count": 1, "sale_amount": 50.00, "net_sale_amount": 50.00, "amount_ratio": 0.0495049504950495 }
+  ],
+  "cityLevelRows": [
+    { "city_level": "tier1", "sale_amount": 610.00, "net_sale_amount": 530.00, "amount_ratio": 0.6039603960396039 },
+    { "city_level": "tier2", "sale_amount": 330.00, "net_sale_amount": 330.00, "amount_ratio": 0.3267326732673267 },
+    { "city_level": "tier3", "sale_amount": 70.00, "net_sale_amount": 70.00, "amount_ratio": 0.0693069306930693 }
+  ],
+  "totals": { "sale_amount": 1010.00, "net_sale_amount": 930.00, "paid_order_count": 12 },
+  "tolerances": { "amountAbsolute": 0.01, "ratioAbsolute": 0.0005 }
+}

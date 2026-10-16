@@ -42,8 +42,12 @@ import java.util.regex.Pattern;
  * <p><b>已知边界（不夸大）</b>：单行字符串只在本行内闭合，未闭合就按普通字符处理（宁可多报）；
  * 不处理 here-string/heredoc（PS1 的 {@code @"..."@}、shell 的 {@code <<EOF}）；{@code txt}/{@code json}
  * 声明为无注释语法（一律当代码扫）。这些边界的共同方向都是**偏严**（不隐藏），不是偏松。</p>
+ *
+ * <p><b>S3-49：（测试支撑类）可见性放宽到 {@code public}</b>，唯一原因是要把
+ * {@link CommentSyntax#strip} 借给同模块的规则码门禁（{@code metric.SparkRuleCodeScan}）。
+ * 扫描范围、判据、成员可见性其余部分一字未动；放宽只发生在测试树，不进任何生产制品。</p>
  */
-final class WarehouseNameLiteralScanner {
+public final class WarehouseNameLiteralScanner {
 
     /** 允许出现库名字面量的文件（唯一所有者本体，只此两处） */
     static final Set<String> OWNER_FILES = Set.of(
@@ -227,8 +231,15 @@ final class WarehouseNameLiteralScanner {
 
     // ── 词法剥离 ───────────────────────────────────────────────────────────
 
-    /** 注释语法族。只声明「什么算注释」；字符串内容一律保留。 */
-    enum CommentSyntax {
+    /**
+     * 注释语法族。只声明「什么算注释」；字符串内容一律保留。
+     *
+     * <p><b>S3-49 起本词法器被规则码门禁复用</b>（{@code metric.SparkRuleCodeScan} 扫
+     * {@code spark-jobs/src/main/scala} 时用它剥 Scala 注释）⇒ 提升为 {@code public}。
+     * 复用是刻意的：全仓**只有这一份**注释剥离实现，避免出现「两套剥离口径」这种新的
+     * 第二所有者；本类的行为由 {@code WarehouseNameLiteralGateTest.lexerFamilies} 钉住。</p>
+     */
+    public enum CommentSyntax {
         /** 无注释语法（json/text）：原样，一律按代码扫。 */
         NONE,
         /** {@code //} 与 {@code /* *}{@code /}（Java/Scala/JS）。 */
@@ -243,7 +254,7 @@ final class WarehouseNameLiteralScanner {
         XML;
 
         /** 把注释区间的字符替换成空格；行结构（{@code \n}）与字符串内容逐字不动。 */
-        static String strip(String text, CommentSyntax syntax) {
+        public static String strip(String text, CommentSyntax syntax) {
             if (syntax == CommentSyntax.NONE || text.isEmpty()) {
                 return text;
             }

@@ -78,15 +78,25 @@ public class SqlSafetyValidator {
     /**
      * 校验结果。{@code code} 为稳定规则码（写入 {@code ai_query_history.errors}）；
      * {@code ok=false} 时 {@code sql} 为 null。
+     *
+     * <p>QA-04：{@code dtFrom/dtTo} 是校验器**从 WHERE 解析出的实际生效 dt 区间**（紧凑字面量对应的
+     * 日期）。它让上层不必再猜「这次到底查了哪几天」——解释口径、证据与页面提示共用同一份事实，
+     * 而不是复制请求标签。校验未通过时为 null（不得给出假区间）。</p>
      */
-    public record ValidationResult(boolean ok, String code, String error, String sql) {
+    public record ValidationResult(boolean ok, String code, String error, String sql,
+                                   LocalDate dtFrom, LocalDate dtTo) {
 
         public static ValidationResult pass(String sql) {
-            return new ValidationResult(true, null, null, sql);
+            return new ValidationResult(true, null, null, sql, null, null);
+        }
+
+        /** QA-04：带生效区间的通过结果（区间来自 WHERE 的 dt 字面量解析） */
+        public static ValidationResult pass(String sql, LocalDate dtFrom, LocalDate dtTo) {
+            return new ValidationResult(true, null, null, sql, dtFrom, dtTo);
         }
 
         public static ValidationResult fail(String code, String error) {
-            return new ValidationResult(false, code, error, null);
+            return new ValidationResult(false, code, error, null, null, null);
         }
 
         public String message() {
@@ -177,9 +187,9 @@ public class SqlSafetyValidator {
                                 + range.min + ", " + range.max + "]");
             }
 
-            // ── ④ LIMIT 强制重写 ───────────────────────────────────────────
+            // ── ④ LIMIT 强制重写（QA-04：同时把解析出的 dt 生效区间带出给上层） ──
             String rewritten = rewriteLimit(plain, sql, scope.rowLimit());
-            return ValidationResult.pass(rewritten);
+            return ValidationResult.pass(rewritten, range.min, range.max);
         } catch (AiSqlException e) {
             return ValidationResult.fail(e.code(), e.getMessage());
         } catch (JSQLParserException e) {
@@ -501,10 +511,16 @@ public class SqlSafetyValidator {
             boolean reversed = dtRight; // 字面量在左（'2026-09-01' <= dt）
             boolean min = reversed ? op.equals("<=") || op.equals("<") : op.equals(">=") || op.equals(">");
             boolean max = reversed ? op.equals(">=") || op.equals(">") : op.equals("<=") || op.equals("<");
-            if (min && (range.min == null || date.isAfter(range.min))) {
-                range.min = date;
-            } else if (max && (range.max == null || date.isBefore(range.max))) {
-                range.max = date;
+            // QueryWindow represents a closed calendar-date interval. Strict comparisons
+            // therefore move the inclusive bound by one day: dt > D starts at D+1,
+            // while dt < D ends at D-1 (also true when the literal is on the left).
+            LocalDate effectiveDate = (op.equals(">") || op.equals("<"))
+                    ? (min ? date.plusDays(1) : date.minusDays(1))
+                    : date;
+            if (min && (range.min == null || effectiveDate.isAfter(range.min))) {
+                range.min = effectiveDate;
+            } else if (max && (range.max == null || effectiveDate.isBefore(range.max))) {
+                range.max = effectiveDate;
             }
             return null;
         }

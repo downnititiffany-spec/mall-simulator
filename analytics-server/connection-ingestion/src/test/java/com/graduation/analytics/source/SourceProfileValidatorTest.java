@@ -1,6 +1,7 @@
 package com.graduation.analytics.source;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.analytics.mapping.MappingProfileLoader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -15,9 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 源画像校验（P1-03 口径 = D-035 / 任务书 §3.12）：文件存在 + 可解析为 JSON 对象 +
- * 文件内 sourceCode/profileVersion 与登记行一致 + **设计 §4.2 第 112–143 行列出的 9 个顶层键齐全**。
+ * 文件内 sourceCode/profileVersion 与登记行一致 + **顶层必备键齐全**。
  *
- * <p>完整画像 Schema 校验器属 P3-01；本类只钉 P1-03 的最小口径，键名逐字取自设计 §4.2，不自创。</p>
+ * <p>顶层必备键按画像语法分派（D-029）：v1 用设计 §4.2 的 9 个键（键名逐字），
+ * v2（V2_STRICT）用 {@link MappingProfileLoader#V2_STRICT_TOP_LEVEL_KEYS} 的 8 个键——
+ * 与摄取路径的 Loader 同一权威清单，不自创第二份。</p>
+ *
+ * <p>完整画像 Schema 校验器属 P3-01；本类只钉 P1-03 的最小口径，键名不自创。</p>
  */
 class SourceProfileValidatorTest {
 
@@ -51,6 +56,21 @@ class SourceProfileValidatorTest {
                   "identityPolicy": { "user": { "rawField": "buyer_id", "shape": "UUID", "surrogate": "HASH64" } },
                   "timePolicy": { "field": "created_at", "formats": ["ISO_OFFSET_DATE_TIME"] },
                   "quarantinePolicy": { "unknownEventType": "QUARANTINE", "unknownField": "KEEP_IN_PAYLOAD" }
+                }
+                """.formatted(version, code);
+    }
+
+    private String validV2Profile(String code, String version) {
+        return """
+                {
+                  "profileVersion": "%s",
+                  "sourceCode": "%s",
+                  "contractVersion": "1.0",
+                  "eventTypeMappings": { "sourceField": "state", "values": { "ORDER_PLACED": "order_created" } },
+                  "fieldMappings": { "event": { "event_id": "evt_no" } },
+                  "enumSemantics": { "behavior_type": { "BROWSE": "view" } },
+                  "timePolicy": { "field": "occur_at", "formats": ["ISO_OFFSET_DATE_TIME"], "zone": "Asia/Shanghai" },
+                  "amountPolicy": { "bySourceField": { "grand_minor": "FEN" } }
                 }
                 """.formatted(version, code);
     }
@@ -130,6 +150,68 @@ class SourceProfileValidatorTest {
         assertThat(check.profileVersionMatches()).isTrue();
         assertThat(check.missingKeys()).isEmpty();
         assertThat(check.ok()).isTrue();
+    }
+
+    @Test
+    @DisplayName("v2 必备键清单 = Loader 的 V2_STRICT_TOP_LEVEL_KEYS（同一权威清单，禁止第二份）")
+    void v2RequiredKeysAreExactlyTheLoaderSet() {
+        assertThat(SourceProfileValidator.V2_STRICT_REQUIRED_KEYS)
+                .containsExactlyInAnyOrderElementsOf(MappingProfileLoader.V2_STRICT_TOP_LEVEL_KEYS);
+        assertThat(SourceProfileValidator.V2_STRICT_REQUIRED_KEYS)
+                .doesNotContain("canonical", "eventTypeMapping", "fieldMapping", "identityPolicy", "quarantinePolicy");
+    }
+
+    @Test
+    @DisplayName("V2_STRICT 画像（fieldMappings 为对象）：按 v2 口径放行，语法名与必备键如实回填")
+    void validV2ProfilePassesUnderV2KeySet() throws IOException {
+        write(REL, validV2Profile(CODE, "2.0"));
+
+        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "2.0");
+
+        assertThat(check.exists()).isTrue();
+        assertThat(check.jsonObject()).isTrue();
+        assertThat(check.sourceCodeMatches()).isTrue();
+        assertThat(check.profileVersionMatches()).isTrue();
+        assertThat(check.missingKeys()).isEmpty();
+        assertThat(check.requiredTopLevelKeys()).isEqualTo(SourceProfileValidator.V2_STRICT_REQUIRED_KEYS);
+        assertThat(check.syntaxName()).isEqualTo("V2_STRICT");
+        assertThat(check.detail()).contains("V2_STRICT 的 " + SourceProfileValidator.V2_STRICT_REQUIRED_KEYS.size()
+                + " 个顶层必备键齐全");
+        assertThat(check.ok()).isTrue();
+    }
+
+    @Test
+    @DisplayName("V2_STRICT 画像缺 amountPolicy：只缺 v2 键，不按 v1 口径误报 v1 专属键")
+    void v2ProfileMissingV2KeyIsReportedUnderV2KeySet() throws IOException {
+        write(REL, validV2Profile(CODE, "2.0").replace("\"amountPolicy\": { \"bySourceField\": { \"grand_minor\": \"FEN\" } }",
+                "\"enumSemantics2\": {}"));
+
+        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "2.0");
+
+        assertThat(check.missingKeys()).containsExactly("amountPolicy");
+        assertThat(check.missingKeys()).doesNotContain("canonical", "eventTypeMapping", "fieldMapping",
+                "identityPolicy", "quarantinePolicy");
+        assertThat(check.syntaxName()).isEqualTo("V2_STRICT");
+        assertThat(check.detail()).contains("画像缺 V2_STRICT 顶层必备键：amountPolicy");
+        assertThat(check.ok()).isFalse();
+    }
+
+    @Test
+    @DisplayName("v1 扁平画像（无 fieldMappings）：仍按设计 §4.2 口径，语法名 V1_COMPATIBILITY")
+    void v1ProfileKeepsDesignKeySetAndSyntaxName() throws IOException {
+        write(REL, """
+                {"profileVersion":"1.0","sourceCode":"%s","canonical":{"schemaVersion":"1.0"}}
+                """.formatted(CODE));
+
+        SourceProfileValidator.ProfileCheck check = validator().check(REL, CODE, "1.0");
+
+        assertThat(check.syntaxName()).isEqualTo("V1_COMPATIBILITY");
+        assertThat(check.requiredTopLevelKeys()).isEqualTo(SourceProfileValidator.REQUIRED_TOP_LEVEL_KEYS);
+        assertThat(check.missingKeys()).containsExactlyInAnyOrder(
+                "eventTypeMapping", "fieldMapping", "enumSemantics",
+                "identityPolicy", "timePolicy", "quarantinePolicy");
+        assertThat(check.detail()).contains("画像缺设计 §4.2 顶层必备键：");
+        assertThat(check.ok()).isFalse();
     }
 
     @Test

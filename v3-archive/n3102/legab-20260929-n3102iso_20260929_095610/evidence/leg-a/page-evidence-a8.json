@@ -1,0 +1,134 @@
+{
+  "startedAt": "2026-09-29T02:58:05.162Z",
+  "base": "http://127.0.0.1:8091",
+  "afterLoginUrl": "http://127.0.0.1:8091/overview",
+  "domTextLength": 1289,
+  "screenshot": "page-overview-a8.png",
+  "overviewApiHits": 1,
+  "overviewMetrics": 14,
+  "snapshotId": "S20260918_1",
+  "overviewEnvelopePath": "body.data.data.metrics",
+  "metricCodes": [
+    "avg_order_value",
+    "buy_rate",
+    "cart_add_cnt",
+    "cart_rate",
+    "dau",
+    "fav_cnt",
+    "full_refund_rate",
+    "gmv",
+    "net_sale",
+    "paid_order_cnt",
+    "pv",
+    "refund_rate",
+    "repeat_rate",
+    "uv"
+  ],
+  "domEvidence": {
+    "hasGmv": true,
+    "hasNetSale": true,
+    "hasAov": true,
+    "hasPv30": true,
+    "hasSnapshotId": true,
+    "hasQualityPass": true
+  },
+  "pageMetrics": [
+    {
+      "metricCode": "gmv",
+      "label": "销售额(GMV)",
+      "valueText": "1,010.00元",
+      "actualValue": 1010
+    },
+    {
+      "metricCode": "net_sale",
+      "label": "净销售额",
+      "valueText": "930.00元",
+      "actualValue": 930
+    },
+    {
+      "metricCode": "paid_order_cnt",
+      "label": "支付订单数",
+      "valueText": "12单",
+      "actualValue": 12
+    },
+    {
+      "metricCode": "pv",
+      "label": "浏览量(PV)",
+      "valueText": "30次",
+      "actualValue": 30
+    },
+    {
+      "metricCode": "uv",
+      "label": "浏览用户(UV)",
+      "valueText": "10人",
+      "actualValue": 10
+    },
+    {
+      "metricCode": "dau",
+      "label": "活跃用户(DAU)",
+      "valueText": "10人",
+      "actualValue": 10
+    },
+    {
+      "metricCode": "avg_order_value",
+      "label": "客单价",
+      "valueText": "84.17元",
+      "actualValue": 84.17
+    },
+    {
+      "metricCode": "refund_rate",
+      "label": "退款率",
+      "valueText": "8.33%",
+      "actualValue": 0.0833
+    },
+    {
+      "metricCode": "repeat_rate",
+      "label": "有效复购率",
+      "valueText": "33.33%",
+      "actualValue": 0.3333
+    },
+    {
+      "metricCode": "buy_rate",
+      "label": "购买转化率",
+      "valueText": "60.00%",
+      "actualValue": 0.6
+    },
+    {
+      "metricCode": "cart_add_cnt",
+      "label": "加购次数",
+      "valueText": "8次",
+      "actualValue": 8
+    },
+    {
+      "metricCode": "cart_rate",
+      "label": "加购率",
+      "valueText": "60.00%",
+      "actualValue": 0.6
+    },
+    {
+      "metricCode": "fav_cnt",
+      "label": "收藏次数",
+      "valueText": "6次",
+      "actualValue": 6
+    },
+    {
+      "metricCode": "full_refund_rate",
+      "label": "全额退款率",
+      "valueText": "8.33%",
+      "actualValue": 0.0833
+    }
+  ],
+  "stalenessBannerVisible": true,
+  "stalenessBannerText": "数据时点提示：页面指标的业务时点为 2026-09-18（滞后 11 天）。数据来源可能已停更或采集未运行；历史指标仍可读，但以下数字不代表最新业务日。",
+  "stalenessEvidence": {
+    "matchingLines": [],
+    "updateLines": [
+      "数据更新 2026-09-18 00:00:00"
+    ],
+    "expectedBusinessDate": "2026-09-18",
+    "observedLocalToday": "2026-09-29",
+    "interpretation": "记录页面可见的陈旧提示及更新时间文案；不将未显示的告警推断为已通过告警逻辑。"
+  },
+  "apiHitsCount": 2,
+  "ok": true
+}

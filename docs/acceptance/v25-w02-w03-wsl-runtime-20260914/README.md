@@ -202,10 +202,10 @@ git --git-dir=<repo>/.git/worktrees/<name> --work-tree=<真实路径> status --p
 | **二进制基目录** | `/opt/mysql-8.0.41`（1.6 GB） |
 | **库名（已建，均为空库＝隔离）** | `analytics_metric`、`analytics_meta`、`mall_simulator` |
 | **账号** | `root`@`127.0.0.1`、`root`@`%`、`root`@`localhost`，**插件 `mysql_native_password`** |
-| **口令** | `123456` |
+| **口令** | （**已轮换作废** — 2026-09-25 D-048；现行值仅存仓库根 `credref-mysql3307-root.properties`（gitignored），文档不含口令） |
 | **连接串（JDBC）** | `jdbc:mysql://127.0.0.1:3307/<库名>?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai` |
-| **连接串（URL 形式）** | `mysql://root:123456@127.0.0.1:3307/<库名>` |
-| **命令行连接** | `LD_LIBRARY_PATH=/opt/mysql-libs /opt/mysql-8.0.41/bin/mysql -h127.0.0.1 -P3307 -uroot -p123456` |
+| **连接串（URL 形式）** | `mysql://root:<ROTATED-D048-见credref>@127.0.0.1:3307/<库名>` |
+| **命令行连接** | `LD_LIBRARY_PATH=/opt/mysql-libs /opt/mysql-8.0.41/bin/mysql -h127.0.0.1 -P3307 -uroot -p"$MYSQL3307_ROOT_PASSWORD"`（口令经 env 传入，值见 credref） |
 | **二进制调用必须先设库路径** | ⚠️ `/opt/mysql-8.0.41/bin/mysqld --version` 若**不设 `LD_LIBRARY_PATH=/opt/mysql-libs`** 会报 `libaio.so.1: cannot open shared object file`（因兼容软链在该目录内）。**任何调用 mysql/mysqld 的脚本都必须先 `export LD_LIBRARY_PATH=/opt/mysql-libs`** |
 | **启动脚本（可重复执行、幂等）** | `raw/scripts/start-isolated-mysql-3307.sh` |
 
@@ -214,14 +214,16 @@ git --git-dir=<repo>/.git/worktrees/<name> --work-tree=<真实路径> status --p
 | 验证项 | 命令 | 实测结果 | 结论 |
 |---|---|---|---|
 | 身份 | `SELECT @@version,@@port,@@datadir,@@bind_address` | `8.0.41` / `3307` / `/data/mysql-isolated/data/` / `127.0.0.1` | **已确定** |
-| TCP 连通 | `mysql -h127.0.0.1 -P3307 -uroot -p123456 -e "SELECT 1"` | `tcp_ok=1`，`server_time=2026-09-14 12:29:42` | **已确定：TCP 可用** |
+| TCP 连通 | `mysql -h127.0.0.1 -P3307 -uroot -p<masked-D048> -e "SELECT 1"` | `tcp_ok=1`，`server_time=2026-09-14 12:29:42` | **已确定：TCP 可用** |
 | Socket 连通 | `mysql -S /data/mysql-isolated/run/mysql3307.sock ...` | `sock_ok=1`，`@@port=3307` | **已确定：socket 可用** |
 | 建库 | `SHOW DATABASES` | 含 `analytics_meta` / `analytics_metric` / `mall_simulator` ＋ 4 个系统库 | **已确定** |
 | **读写往返** | `CREATE TABLE` → `INSERT` → `SELECT` | 表 `analytics_metric.__v25_w03_probe` 返回 `1  wsl-isolated-3307` | **已确定：可建表可读写** |
 | 隔离性 | `ss -lnt \| grep :3306`（WSL 内） | **无输出** — WSL 内**没有 3306 监听** | **已确定：与宿主 3306 完全隔离** |
 | 宿主 3306 未动 | 未对宿主 MySQL 执行任何 DDL/DML | 全程仅 WSL 侧操作 | **已确定** |
 
-> **给 E3/E5 的接入结论**：把数据源指向 **`127.0.0.1:3307` / `root` / `123456`**（库 `analytics_metric`、`analytics_meta`、`mall_simulator`）即可，**不会再连到宿主正式库**。注意：该实例运行在 WSL 内，**WSL 未启动时不可用**（见 §7 R-F）。
+> **给 E3/E5 的接入结论**：把数据源指向 **`127.0.0.1:3307` / `root` / 口令取 `credref-mysql3307-root.properties`**（库 `analytics_metric`、`analytics_meta`、`mall_simulator`）即可，**不会再连到宿主正式库**。注意：该实例运行在 WSL 内，**WSL 未启动时不可用**（见 §7 R-F）。
+>
+> **⚠️ 2026-09-25 D-048 口令轮换**：本节历史口令字面量已全部作废并掩蔽；3307 root 现行口令仅存于仓库根 `credref-mysql3307-root.properties`（gitignored；不入 git、不入日志、不入文档）。`raw/53b-w03-mysql-accounts-and-connectivity.txt` 为 2026-09-14 历史证据原件，其中口令为**当时值（已作废）**，按证据完整性原则保留原样不改写。
 
 ---
 

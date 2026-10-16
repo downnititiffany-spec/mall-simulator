@@ -73,6 +73,14 @@ public class SemanticCatalog {
         overview.put("avg_order_value", "客单价：销售额 ÷ 支付订单数；不可直接对明细求平均");
         overview.put("refund_rate", "退款率：退款订单数 ÷ 支付订单数");
         overview.put("full_refund_rate", "全额退款率：全额退款订单数 ÷ 支付订单数");
+        overview.put("repeat_rate", "有效复购率：观察期内有效购买≥2次用户数 ÷ 支付用户数（完全退款订单不算有效购买）；"
+                + "与下面两列一起构成观察期声明，跨窗口不可直接比较；无支付用户时为 NULL");
+        overview.put("repeat_period_start", "复购率的观察期起点（ISO yyyy-MM-dd，来自上游 DWS 行声明）");
+        overview.put("repeat_period_end", "复购率的观察期终点（ISO yyyy-MM-dd，来自上游 DWS 行声明）");
+        // S3-08（设计 §11.2 L425 / 字典 metric-dictionary.md:21/:22）：收藏、加购都是**事件次数**，
+        // 不是去重用户数 —— AI 提示词必须说清，否则会被当成"多少人收藏/加购"使用。
+        overview.put("fav_cnt", "收藏次数：当日 favorite 行为事件条数（次数口径，不是收藏人数；未收藏为 0）");
+        overview.put("cart_add_cnt", "加购次数：当日 cart_add 行为事件条数（次数口径，不是加购人数；未加购为 0）");
         TABLES.put("ads_operation_overview_m", overview);
 
         Map<String, String> saleTrend = new LinkedHashMap<>();
@@ -82,6 +90,9 @@ public class SemanticCatalog {
         saleTrend.put("buyer_count", "支付用户数（去重）");
         saleTrend.put("sale_amount", "销售额(GMV)，单位元");
         saleTrend.put("avg_order_value", "客单价");
+        // S3-02（设计 §9.3 L333 / §11.2 L428）：趋势表补净销售额，与大盘表同义同口径，
+        // 使「净销售额」字段别名在本表也可解析（此前只有大盘表有该列）。
+        saleTrend.put("net_sale_amount", "净销售额：销售额减退款金额（只扣已支付订单的退款），单位元");
         TABLES.put("ads_sale_trend_m", saleTrend);
 
         Map<String, String> funnel = new LinkedHashMap<>();
@@ -91,6 +102,9 @@ public class SemanticCatalog {
         funnel.put("user_count", "该阶段去重用户数");
         funnel.put("conversion_rate", "阶段转化率（后一阶段/前一阶段，0-1）");
         funnel.put("overall_buy_rate", "整体购买转化率：pay 阶段 ÷ view 阶段");
+        // S3-04（设计 §11.2 L432 / 字典 metric-dictionary.md:23）：整体加购率，与上面的整体购买率同型。
+        // 加购不是漏斗阶段（§11.3 L441 恒为 view/intent/order/pay），故它是列而不是 stage 取值。
+        funnel.put("overall_cart_rate", "整体加购率：cart_add 去重用户数 ÷ view 去重用户数（四行同值；浏览为 0 时为 NULL）");
         TABLES.put("ads_behavior_funnel_m", funnel);
 
         Map<String, String> hotProduct = new LinkedHashMap<>();
@@ -104,6 +118,9 @@ public class SemanticCatalog {
         hotProduct.put("cart", "该商品加购次数");
         hotProduct.put("buy", "该商品购买次数");
         hotProduct.put("rank_no", "热度排名，1 为最高");
+        // S3-07（设计 §11.2 L434 / §9.3 L320）：热度权重的定义版本，与指标字典 product_heat 的
+        // definition_version 同一枚键。此处登记是 AiSqlDriftTest 强制项（真实列不许在 Prompt 里缺列）。
+        hotProduct.put("rule_version", "热度权重定义版本（指标字典 product_heat 的 definition_version，当前 v1）");
         TABLES.put("ads_hot_product_m", hotProduct);
 
         Map<String, String> productConversion = new LinkedHashMap<>();

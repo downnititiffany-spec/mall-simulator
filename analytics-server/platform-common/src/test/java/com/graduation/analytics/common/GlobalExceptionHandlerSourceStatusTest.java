@@ -39,7 +39,7 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
-    @DisplayName("SOURCE_CODE_IMMUTABLE / SOURCE_IN_USE / SOURCE_PROFILE_INVALID / SOURCE_NOT_BOUND → 409（与当前资源状态冲突）")
+    @DisplayName("源状态冲突与决策跨源证据 → 409（与当前资源状态冲突）")
     void sourceConflictCodesMapTo409() {
         assertThat(handle(PlatformBizException.SOURCE_CODE_IMMUTABLE, "source_code 不可改").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
@@ -50,18 +50,25 @@ class GlobalExceptionHandlerSourceStatusTest {
         // P1-05 加性：未绑定源是"当前运行环境状态不允许采集"，不是请求参数写错（那才是 400）
         assertThat(handle(PlatformBizException.SOURCE_NOT_BOUND, "运行环境未绑定源").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
-        // WP-2A-2 加性：画像版本/哈希冲突 -> 409
-        assertThat(handle(PlatformBizException.PROFILE_VERSION_CONFLICT, "画像版本冲突").getStatusCode())
+        // G31-03 03.5：决策证据来源与当前 ACTIVE 来源不一致，禁止创建/提交。
+        assertThat(handle(PlatformBizException.SOURCE_MISMATCH, "决策证据跨源").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
-        assertThat(handle(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND, "报告不存在").getStatusCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
-    @DisplayName("FORBIDDEN → 403（WP-2A-2 / §7.4 权限不足）")
-    void forbiddenMapsTo403() {
-        assertThat(handle(PlatformBizException.FORBIDDEN, "无权访问").getStatusCode())
-                .isEqualTo(HttpStatus.FORBIDDEN);
+    @DisplayName("FORBIDDEN_PERMISSION → 403")
+    void forbiddenPermissionMapsTo403() {
+        assertThat(handle(PlatformBizException.FORBIDDEN_PERMISSION, "无权访问该资源，需要权限: dashboard:view")
+                .getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("dry-run 域两个码 → 404（S2-01B 加性新增：引用被允许但位置没有东西 / 报告不在本进程）")
+    void dryRunCodesMapTo404() {
+        assertThat(handle(PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND, "样本不存在").getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(handle(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND, "报告不存在").getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -86,7 +93,7 @@ class GlobalExceptionHandlerSourceStatusTest {
     }
 
     @Test
-    @DisplayName("错误码常量本身是加性的：原有 5 个码逐字不变，新增 5 个码逐字取自任务书")
+    @DisplayName("错误码常量本身是加性的：原有 5 个码逐字不变，源域/dry-run 域新增码逐字取自任务书")
     void codesAreAdditiveAndVerbatim() {
         assertThat(PlatformBizException.USER_NOT_FOUND).isEqualTo("USER_NOT_FOUND");
         assertThat(PlatformBizException.PARAM_INVALID).isEqualTo("PARAM_INVALID");
@@ -100,9 +107,9 @@ class GlobalExceptionHandlerSourceStatusTest {
         assertThat(PlatformBizException.SOURCE_IN_USE).isEqualTo("SOURCE_IN_USE");
         // P1-05 加性新增（D-037）：未绑定源
         assertThat(PlatformBizException.SOURCE_NOT_BOUND).isEqualTo("SOURCE_NOT_BOUND");
-        // WP-2A-2 加性新增（Design V3.0 §7.4）
-        assertThat(PlatformBizException.PROFILE_VERSION_CONFLICT).isEqualTo("PROFILE_VERSION_CONFLICT");
+        // S2-01B 加性新增（映射 dry-run，仅预览、不激活）
+        assertThat(PlatformBizException.DRY_RUN_SAMPLE_NOT_FOUND).isEqualTo("DRY_RUN_SAMPLE_NOT_FOUND");
         assertThat(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND).isEqualTo("DRY_RUN_REPORT_NOT_FOUND");
-        assertThat(PlatformBizException.FORBIDDEN).isEqualTo("FORBIDDEN");
+        assertThat(PlatformBizException.SOURCE_MISMATCH).isEqualTo("SOURCE_MISMATCH");
     }
 }

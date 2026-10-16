@@ -3,7 +3,7 @@ package com.graduation.analytics.ai.evidence;
 import com.graduation.analytics.analysis.AnalysisService;
 import com.graduation.analytics.analysis.AnalysisViewModel;
 import com.graduation.analytics.ai.evidence.EvidencePackage.Period;
-import com.graduation.analytics.metric.MySqlMetricStore;
+import com.graduation.analytics.metric.MetricStore;
 import com.graduation.analytics.metric.entity.MetricSnapshot;
 import com.graduation.analytics.warehouse.WarehouseNamespace;
 import com.graduation.analytics.warehouse.WarehouseNamespaceProvider;
@@ -51,7 +51,7 @@ public class EvidenceBuilder {
     private static final DateTimeFormatter ISO_SECONDS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final AnalysisService analysisService;
-    private final MySqlMetricStore metricStore;
+    private final MetricStore metricStore;
     /** 数仓库名空间（唯一所有者）：血缘里的 Hive 库名不写死，随 ACTIVE 档案的 hive_database_prefix 走 */
     private final WarehouseNamespaceProvider namespaceProvider;
 
@@ -98,7 +98,7 @@ public class EvidenceBuilder {
         List<EvidencePackage.Fact> facts = facts(snapshotId, data.metrics(), warnings);
         Map<String, BigDecimal> values = values(data.metrics());
 
-        ComparisonResult cmp = compare(snapshotId, from, data.metrics(), warnings);
+        ComparisonResult cmp = compare(snapshotId, meta, from, data.metrics(), warnings);
         Map<String, List<EvidencePackage.DimensionContribution>> dimensions =
                 dimensions(snapshotId, from, to, warnings);
 
@@ -153,7 +153,7 @@ public class EvidenceBuilder {
      * 所以本方法签名只接受一个业务日（不是区间）——跨天请求在 {@link #build} 里就登记为不支持，
      * 从结构上避免"拿某一天的值冒充多日窗口"。
      */
-    private ComparisonResult compare(String snapshotId, LocalDate day,
+    private ComparisonResult compare(String snapshotId, MetricSnapshot currentSnapshot, LocalDate day,
                                      List<AnalysisService.MetricItem> metrics, List<String> warnings) {
         Map<String, BigDecimal> deltaRates = new LinkedHashMap<>();
         if (day == null) {
@@ -161,7 +161,7 @@ public class EvidenceBuilder {
             return new ComparisonResult(null, List.of(), deltaRates);
         }
         LocalDate prevDate = day.minusDays(1);
-        String baselineSnapshot = previousDaySnapshot(prevDate);
+        String baselineSnapshot = previousDaySnapshot(currentSnapshot, prevDate);
         if (baselineSnapshot == null) {
             warnings.add(EvidencePackage.WARN_NO_COMPARISON_PERIOD);
             return new ComparisonResult(null, List.of(), deltaRates);
@@ -195,14 +195,22 @@ public class EvidenceBuilder {
     }
 
     /** 业务日 = 指定日期的已发布快照（优先 ACTIVE，其次 ARCHIVED；找不到返回 null） */
-    private String previousDaySnapshot(LocalDate date) {
+    private String previousDaySnapshot(MetricSnapshot currentSnapshot, LocalDate date) {
+        if (currentSnapshot == null || currentSnapshot.getRuntimeProfileId() == null
+                || currentSnapshot.getSourceId() == null || blankToNull(currentSnapshot.getDefinitionVersion()) == null) {
+            return null;
+        }
         List<MetricSnapshot> snapshots = metricStore.listSnapshots(SNAPSHOT_LOOKBACK);
         if (snapshots == null) {
             return null;
         }
         String archived = null;
         for (MetricSnapshot s : snapshots) {
-            if (s.getBusinessTime() == null || !date.equals(s.getBusinessTime().toLocalDate())) {
+            if (s == null
+                    || !currentSnapshot.getRuntimeProfileId().equals(s.getRuntimeProfileId())
+                    || !currentSnapshot.getSourceId().equals(s.getSourceId())
+                    || !currentSnapshot.getDefinitionVersion().equals(s.getDefinitionVersion())
+                    || s.getBusinessTime() == null || !date.equals(s.getBusinessTime().toLocalDate())) {
                 continue;
             }
             if (MetricSnapshot.STATUS_ACTIVE.equals(s.getStatus())) {
@@ -221,11 +229,24 @@ public class EvidenceBuilder {
             String snapshotId, LocalDate from, LocalDate to, List<String> warnings) {
         Map<String, List<EvidencePackage.DimensionContribution>> out = new LinkedHashMap<>();
         out.put("product", productDimension(snapshotId, from, to, warnings));
-        out.put("category", rowDimension("category", snapshotId, from, to, warnings));
-        out.put("region", rowDimension("region", snapshotId, from, to, warnings));
-        // 渠道维度本期没有 Hive 来源表（§24.4 只对有来源的表建服务表）
+        AnalysisService.SalesData sales;
+        try {
+            AnalysisViewModel<AnalysisService.SalesData> view = analysisService.sales(snapshotId, from, to);
+            warnings.addAll(view.warnings());
+            sales = view.data();
+        } catch (RuntimeException e) {
+            log.warn("证据包分类/城市等级维度读取失败（降级为空维度），causeType={}",
+                    e.getClass().getSimpleName());
+            warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
+            sales = null;
+        }
+        out.put("category", rowDimension("category", snapshotId, from, to,
+                sales == null ? List.of() : sales.byCategory(), warnings));
+        out.put("region", rowDimension("region", snapshotId, from, to,
+                sales == null ? List.of() : sales.byRegion(), warnings));
+        // 渠道维度当前无正式 ADS 服务表；明确标记未覆盖，不把它伪装成分类/城市等级缺表。
         out.put("channel", List.of());
-        warnings.add(EvidencePackage.WARN_UNKNOWN_DIMENSION_TABLE);
+        warnings.add(EvidencePackage.WARN_CHANNEL_DIMENSION_UNAVAILABLE);
         return out;
     }
 
@@ -233,9 +254,12 @@ public class EvidenceBuilder {
             String snapshotId, LocalDate from, LocalDate to, List<String> warnings) {
         List<AnalysisService.HotProduct> hot;
         try {
-            hot = analysisService.products(snapshotId, DIMENSION_TOP_N, from, to).data().hot();
+            // S3-18：分页参数按「旧 topN 口径」下传（page=null ⇒ 1、size=null ⇒ 由 topN 决定），行为不变
+            // S3-21：sort=null ⇒ rank,asc（与 v1.4 前的排行顺序逐行相同）；证据包不引入新的排序口径
+            hot = analysisService.products(snapshotId, null, null, null, DIMENSION_TOP_N, from, to).data().hot();
         } catch (RuntimeException e) {
-            log.warn("证据包商品维度读取失败（降级为空维度）: {}", e.getMessage());
+            log.warn("证据包商品维度读取失败（降级为空维度），causeType={}",
+                    e.getClass().getSimpleName());
             warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
             return List.of();
         }
@@ -255,31 +279,34 @@ public class EvidenceBuilder {
     }
 
     private List<EvidencePackage.DimensionContribution> rowDimension(
-            String dimension, String snapshotId, LocalDate from, LocalDate to, List<String> warnings) {
-        List<Map<String, Object>> rows;
-        try {
-            AnalysisService.SalesData sales = analysisService.sales(snapshotId, from, to).data();
-            rows = "category".equals(dimension) ? sales.byCategory() : sales.byRegion();
-        } catch (RuntimeException e) {
-            log.warn("证据包 {} 维度读取失败（降级为空维度）: {}", dimension, e.getMessage());
-            warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
-            return List.of();
-        }
+            String dimension, String snapshotId, LocalDate from, LocalDate to,
+            List<Map<String, Object>> rows, List<String> warnings) {
         if (rows == null || rows.isEmpty()) {
             return List.of();
         }
+        boolean category = "category".equals(dimension);
+        String sourceTable = category ? "ads_category_sale_m" : "ads_region_sale_m";
+        String keyField = category ? "category_id" : "region";
+        String labelField = category ? "category_name" : "region";
         List<EvidencePackage.DimensionContribution> out = new ArrayList<>();
         for (Map<String, Object> row : rows) {
-            String key = firstText(row, dimension + "_id", dimension, "key");
-            String label = firstText(row, dimension + "_name", "name", "label");
-            Map.Entry<String, BigDecimal> measure = firstNumber(row);
-            if (key == null || measure == null) {
+            String key = firstText(row, keyField, "key");
+            String label = firstText(row, labelField, "name", "label");
+            BigDecimal amount = decimal(row.get("sale_amount"));
+            BigDecimal amountRatio = decimal(row.get("amount_ratio"));
+            if (key == null || amount == null) {
                 warnings.add(EvidencePackage.WARN_ADS_READ_UNAVAILABLE);
                 continue;
             }
-            out.add(new EvidencePackage.DimensionContribution(key, blankToDash(label),
-                    plain(measure.getValue()), null, measure.getKey(),
-                    "ads_sale_trend_m." + measure.getKey() + "@" + snapshotId));
+            String visibleLabel = category ? blankToDash(label) : "城市等级 " + key;
+            String period = dateStamp(from) + ".." + dateStamp(to);
+            out.add(new EvidencePackage.DimensionContribution(key, visibleLabel,
+                    plain(amount), plain(amountRatio), category ? "category_sale_amount" : "city_level_sale_amount",
+                    sourceTable + ".sale_amount@" + snapshotId + "[" + period + "]"));
+        }
+        if (!out.isEmpty()) {
+            // 血缘登记只依据实际返回的维度，而不是固定把维度数值归到趋势表。
+            out.sort((left, right) -> new BigDecimal(right.value()).compareTo(new BigDecimal(left.value())));
         }
         return out;
     }
@@ -308,13 +335,16 @@ public class EvidenceBuilder {
         if (!dimensions.getOrDefault("product", List.of()).isEmpty()) {
             mysql.add(MetricLineage.hotProduct().mysqlTable());
         }
-        if (!dimensions.getOrDefault("category", List.of()).isEmpty()
-                || !dimensions.getOrDefault("region", List.of()).isEmpty()) {
-            mysql.add(MetricLineage.saleTrend().mysqlTable());
+        if (!dimensions.getOrDefault("category", List.of()).isEmpty()) {
+            mysql.add(MetricLineage.categorySale().mysqlTable());
+        }
+        if (!dimensions.getOrDefault("region", List.of()).isEmpty()) {
+            mysql.add(MetricLineage.regionSale().mysqlTable());
         }
         return new EvidencePackage.Lineage(
                 MetricLineage.hiveTables(mysql, namespaceProvider.current()), List.copyOf(mysql),
-                meta == null ? null : meta.getPipelineRunId(), snapshotId);
+                meta == null ? null : meta.getPipelineRunId(), snapshotId,
+                meta == null ? null : meta.getSourceId());
     }
 
     // ── 空证据包 ───────────────────────────────────────────────────────────
@@ -368,17 +398,25 @@ public class EvidenceBuilder {
         return null;
     }
 
-    /** 行里的第一个数值列（列名即度量码；取不到返回 null，不猜列） */
-    private static Map.Entry<String, BigDecimal> firstNumber(Map<String, Object> row) {
-        for (Map.Entry<String, Object> e : row.entrySet()) {
-            if (e.getValue() instanceof BigDecimal bd) {
-                return Map.entry(e.getKey(), bd);
-            }
-            if (e.getValue() instanceof Number n) {
-                return Map.entry(e.getKey(), new BigDecimal(n.toString()));
+    private static BigDecimal decimal(Object value) {
+        if (value instanceof BigDecimal decimal) {
+            return decimal;
+        }
+        if (value instanceof Number number) {
+            return new BigDecimal(number.toString());
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return new BigDecimal(text.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
             }
         }
         return null;
+    }
+
+    private static String dateStamp(LocalDate value) {
+        return value == null ? "*" : value.format(STAMP);
     }
 
     private static String share(BigDecimal value, BigDecimal total) {

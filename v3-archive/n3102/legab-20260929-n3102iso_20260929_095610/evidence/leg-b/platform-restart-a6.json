@@ -1,0 +1,20 @@
+{
+  "runId": "n3102iso_20260929_095610",
+  "pid": 132700,
+  "jarSha256": "075de7f3839a1c417b5955942be2a0951bd830721a03d25d653db19775d09515",
+  "metaDatabase": "n3102iso_20260929_095610_analytics_meta",
+  "metricDatabase": "n3102iso_20260929_095610_analytics_metric",
+  "metaUser": "n3102iso_20260929_095610_metaapp",
+  "metricUser": "n3102iso_2026_21631db1_metricapp",
+  "metricReadUser": "n3102iso_202_21631db1_metricread",
+  "accountsRotated": true,
+  "guard": "PASS",
+  "health": "PASS",
+  "logZero3306": true,
+  "logEvidenceDbNames": [
+    true,
+    true
+  ],
+  "startedAt": "2026-09-29T11:29:35",
+  "secretsPersisted": false
+}

@@ -6,12 +6,14 @@ import com.graduation.analytics.runtime.RuntimeProfileSnapshot;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.runtime.submit.JobSubmitter;
 import com.graduation.analytics.runtime.submit.LocalProcessSparkSubmitter;
+import com.graduation.analytics.testsupport.RepoRoot;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,7 +58,12 @@ import static org.mockito.Mockito.when;
  *
  * <p>运行（**必须显式给出开关与 runId**）：{@code mvn -pl warehouse-pipeline
  * -Dtest=SparkStageExecutorSmokeIT -Dv25.spark.it=true -Dv25.it.testRunId=<runId> test}
- * 前置：spark-jobs jar 已构建；本机 {@code D:\Develop\spark-3.5.1-bin-hadoop3}。
+ * 前置：<b>当前 Git worktree</b> 的 {@code spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar}
+ * 已构建；本机 spark-submit 默认取 {@code D:\Develop\spark-3.5.1-bin-hadoop3\bin\spark-submit.cmd}，
+ * 可用 {@code -Dv25.spark.submit=<path>} 覆盖。JAR 与 golden dataset 均由唯一 {@link RepoRoot}
+ * 从当前 worktree 解析，禁止跨 worktree 复用旧产物冒充本次证据。Windows 本地 Spark 还必须提供
+ * {@code HADOOP_HOME}，且其中存在 {@code bin/winutils.exe}；测试在启动任何 spark-submit 前 fail-fast
+ * 校验，避免 Hadoop 初始化秒退后再空等 JobResult 超时。
  * 未给开关时本类会**显式报错拒绝**（{@code MissingConfigurationException}），不是 skip。</p>
  *
  * <p>凡触库/触 HDFS 的部分等 W03 交付隔离实例；本轮只把门禁与"拒跑"做实。</p>
@@ -82,6 +89,38 @@ class SparkStageExecutorSmokeIT {
         Files.createDirectories(warehouse);
         Files.createDirectories(logRoot);
 
+        // Stage 7 补强：仓库内输入必须全部来自**当前 worktree**。
+        // 旧实现把 JAR / golden dataset 写死到 D:\Develop_code\GraduationProject，
+        // 在 v3-dev worktree 运行时会把“当前 Java + 旧 Spark 产物”混成一份伪证据。
+        Path sparkJobJar = RepoRoot.path("spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar")
+                .toAbsolutePath().normalize();
+        Path goldenEvents = RepoRoot.path("tests/golden-dataset/events").toAbsolutePath().normalize();
+        String sparkSubmit = System.getProperty("v25.spark.submit",
+                "D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd").trim();
+        Path sparkSubmitPath = Path.of(sparkSubmit).toAbsolutePath().normalize();
+
+        assertThat(Files.isRegularFile(sparkJobJar))
+                .as("必须先构建当前 worktree 的 spark-jobs JAR，禁止回退旧仓库产物：%s", sparkJobJar)
+                .isTrue();
+        assertThat(Files.isDirectory(goldenEvents))
+                .as("golden dataset 必须来自当前 worktree：%s", goldenEvents)
+                .isTrue();
+        assertThat(Files.isRegularFile(sparkSubmitPath))
+                .as("spark-submit 必须真实存在；可用 -Dv25.spark.submit 覆盖：%s", sparkSubmitPath)
+                .isTrue();
+        assertThat(sparkJobJar.startsWith(RepoRoot.path().toAbsolutePath().normalize())).isTrue();
+        assertThat(goldenEvents.startsWith(RepoRoot.path().toAbsolutePath().normalize())).isTrue();
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win")) {
+            String hadoopHome = System.getenv("HADOOP_HOME");
+            assertThat(hadoopHome)
+                    .as("Windows 本地 Spark 必须设置 HADOOP_HOME，并提供 bin/winutils.exe")
+                    .isNotBlank();
+            Path winutils = Path.of(hadoopHome, "bin", "winutils.exe").toAbsolutePath().normalize();
+            assertThat(Files.isRegularFile(winutils))
+                    .as("HADOOP_HOME 下缺少 winutils.exe：%s", winutils)
+                    .isTrue();
+        }
+
         // 档案：LOCAL + 真实 spark-submit（与 runtime_profile 表 LOCAL 档案同构）
         RuntimeProfile profileEntity = new RuntimeProfile();
         profileEntity.setId(7L);
@@ -89,8 +128,8 @@ class SparkStageExecutorSmokeIT {
         profileEntity.setVersion(3);
         profileEntity.setType(RuntimeProfile.TYPE_LOCAL);
         profileEntity.setSparkMaster("local[2]");
-        profileEntity.setSparkSubmitPath("D:\\Develop\\spark-3.5.1-bin-hadoop3\\bin\\spark-submit.cmd");
-        profileEntity.setSparkJobJarUri("file:///D:/Develop_code/GraduationProject/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar");
+        profileEntity.setSparkSubmitPath(sparkSubmitPath.toString());
+        profileEntity.setSparkJobJarUri(sparkJobJar.toUri().toString());
 
         RuntimeProfileSnapshot profile = RuntimeProfileSnapshot.from(profileEntity);
 
@@ -142,7 +181,7 @@ class SparkStageExecutorSmokeIT {
 
         List<SparkStageExecutor.JobExecution> results = executor.executeStage(profile, 1L,
                 "LOAD_ODS", "20260901", 1,
-                Map.of("landingDir", "file:///D:/Develop_code/GraduationProject/tests/golden-dataset/events"),
+                Map.of("landingDir", goldenEvents.toUri().toString()),
                 confs).jobs();
 
         // 3) 断言阶段结果：odl 唯一作业 SUCCESS
@@ -195,6 +234,12 @@ class SparkStageExecutorSmokeIT {
                 if ("SUCCESS".equals(info.status()) || "FAILED".equals(info.status())) {
                     return info;
                 }
+            }
+            String processStatus = submitter.status(externalJobId);
+            if ("FAILED".equals(processStatus) || "CANCELLED".equals(processStatus)) {
+                throw new AssertionError("真实 spark-submit 在产出 JobResult 前已终止，externalJobId="
+                        + externalJobId + " processStatus=" + processStatus
+                        + System.lineSeparator() + submitter.logs(externalJobId));
             }
             Thread.sleep(500);
         }
