@@ -634,9 +634,11 @@ $BaselineDefault = [ordered]@{
 #   fresh spark 全量 333/333、43 suites、JDK8=True、All tests passed。
 # 2026-10-16：333→372＝WP-N1B 两源数仓真链验收新增 `SourceBChainExecSpec` 32 条 + `DwdRealSourceIdentitySpec` 7 条；
 #   fresh spark 全量 372/372、45 suites、JDK8=True、All tests passed（云端 VM，RunId wpn1bgate20261016）。
+# 2026-10-17：372→375＝WP-F7d 退款行粒度扇出修复新增 `DwsTradeDayMultiLineRefundSpec` 3 条（多行部分退款只计一次 /
+#   region 对账闭环 / 空分区语义）；量数轮 RunId wpf7dgate20261017a 实测 375/375、46 suites、All tests passed 后同步本数。
 # 2026-09-29：329→332＝N31-02 开发新增 `ProductDimensionAsOfSpec`、`MetricExportZeroRowSpec`、
 #   `CategoryRegionAdsSpec` 各 1 条；同批同步 DDL 总数与 FixtureWriteShape 写入点基线，避免新功能被旧守卫误报。
-$BaselineSpark = 372
+$BaselineSpark = 375
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
