@@ -3329,3 +3329,8 @@
 - G1 Spark 供给定案（组装路线，零仓库代码变更）：spark-jobs 依赖集 + spark-hive 3.5.1 组件集（发行版同款）组装 spark-submit（toolchain/spark-m2）。关键点：生产作业经 SparkSessionFactory 恒开 Hive 支持，测试自建会话照不到此缺口；提交器需 -Djava.net.preferIPv4Stack=true、驱动回环钉定（SPARK_LOCAL_IP + spark.driver.host/bindAddress）。sci 单作业冒烟 SUCCESS（outputRecords=43）后平台全链通过。官方发行版仍在慢速下载，落地后可替换路径复测。
 - 环境项登记：PLATFORM_SOURCE_PROFILE_ROOT 须为仓库根（画像路径按仓库相对解析）；Derby metastore 叶目录不得预建（XBM0J），已移除空目录后由 Derby 自建；平台 JVM 需 preferIPv4Stack（同 Maven/JDBC 规则）。run 1/2 的失败均属以上环境项，非产品缺陷。
 - 证据边界：旧 ACTIVE 归档滚动未做第二版本实跑（发布器单元层已证，本轮仅一版快照）；D-126 本地口径不变（Derby 嵌入式 metastore + local[*]，不冒充真实集群/HiveServer2 验收）。
+
+### 2026-10-16 阶段 6 真实 LLM 接入：配置与回退实证闭合，真实完成调用受 VM 出口网络限制未闭合
+- 平台以 llm env（base-url=https://api.deepseek.com、model=deepseek-chat，密钥仅环境注入）重启后，AI 查询真实尝试 openai-compat 提供方：ai_call_log 落行（provider=openai-compat、model=deepseek-chat、status=FAILED/NETWORK），说明配置接线与提供方选择无误；失败时解释服务按设计回退规则模板且在 limitations 中明示「模型网络调用失败，已回退模板摘要」，不编造结论。
+- 网络定位（总控逐项实证）：经本机中继 GET https://api.deepseek.com/v1/models 返回 401 约 1.5s（通道通）；但 POST /v1/chat/completions 在 curl、Python、Java 三种客户端下均无响应直至代理 30s 上限切断；同通道 POST 其他站点（如 Maven Central）0.6s 正常返回。结论：本 VM 出口对 api.deepseek.com 的 POST 存在路由级停滞，非代码/配置/密钥问题；Java 客户端另有 TLS 握手被终止现象，已以本地 shim 排除（shim 的上游 POST 同样停滞）。
+- 处置：平台保持规范配置（官方 base-url + JVM 代理参数）运行；真实完成调用（一次最小冒烟）登记为**环境受限待办**——在出口不受限的网络（如答辩机本地）以同一 env 启动后执行一次 AI 查询即可闭合，本 VM 不再重试以免无谓消耗。截至登记时 DeepSeek 侧成功完成调用为 0 次。
