@@ -3356,3 +3356,10 @@
 - run-tests.ps1 新增 `-Suite web` 档：定位 web/ → npm test（解析 node --test ℹ 汇总行）→ npm run build 冒烟；基线登记 $BaselineWebTests=450（2026-10-16 WP-F3）；all 档构成不变，web 为独立档，不改既有验收口径。
 - 首轮交付曾被巡检亲跑判不合格：Get-WebTestTotals 的 7 条解析正则以 `[^\w\s]` 吃 ℹ 前缀（.NET 中 ℹ∈\w），计数全解析为 -1 而误判 DRIFT；经最小实验确证根因后派修复轮，仅改该函数前缀为 `(?:\S+\s+)?`。
 - 总控复验（RunId wpf3fix20261016）：tests=450 MATCH、pass=450、fail=0、npm test/build 均 exit 0、整档 [PASS exit=0]。WP-F3 关账。
+
+### 2026-10-16 WP-F2b 关账兼 WP-F2 结论更正（云端 VM）
+- **更正**：本文件「WP-F2 分析侧隔离写 IT 收编亲跑」条中「统一运行器的 analytics 预收编腿不做 schema 供给、缺口在供给环节」的结论**作废**。复核实证：原运行器本就有供给步（-Module analytics 腿先跑 platform-app `-Pisolated-analytics-schema` → AnalyticsIsolationFlywayIT，失败即 exit 7 拒绝继续）。WP-F2 当时系总控手工直跑三类 IT、未走运行器路径，且检索输出被截断未见该步，致误判。三类 IT 7/7 健康的结论不变；基于误判派生的 FlyMigrate 供给器（WP-F2b 首版）已全部撤销，运行器恢复原文，不留死代码。
+- **WP-F3 遗留红纠正**：AnalyticsIsolationScriptsContractTest 中 -AllowCountDrift 比较点计数断言因 WP-F3 新增 web 比较点而过期（hasSize 4→5、描述补 web），该红自 WP-F3 关账起存在、关账验收未覆盖脚本契约测试所致；已修正，契约类亲跑 13/13 PASS。
+- **迁移头版本钉纠正**：AnalyticsIsolationFlywayIT 的 meta 版本钉 "34" 为 V34 时代所写，仓库迁移头已至 V38（V35 运行时档案单活 / V36 AI 调用请求标识 / V37 AI 反馈与历史证据 / V38 业务报告实例），钉更新为 "38"（V34 内容实证仍由同方法规则查询独立承担）；metric 钉 "13" 仍为当前头未动。
+- **收编腿关账证据**（RunId fix4acc20261016）：prepare -IncludeAnalytics exit 0 → run-isolated-tests.ps1 -Module analytics -IncludeAnalyticsWriteIts：analytics-schema exit 0（Flyway IT 2/2）、analytics 13/13 全绿零跳过（IsolationGuard 6 + MetricPublisher 3 + MetricAds 2 + AdsDataQuality 2，写 IT 真跑非跳过）、runner [PASS exit=0]。WP-F2b 关账：收编以原机制开箱跑通为准。
+- 验收纪律补记：改任一测试脚本（run-tests.ps1 / run-isolated-tests.ps1）必须连带亲跑 AnalyticsIsolationScriptsContractTest；新增 Flyway 迁移必须同步更新 AnalyticsIsolationFlywayIT 的版本钉。
