@@ -3392,3 +3392,9 @@
 - 验收注记：复验首跑（RunId wpf6bfix20261017a）曾因巡检会话未给 fork 测试 JVM 传 `-Djava.net.preferIPv4Stack=true`，回环 HttpClient 测试被沙箱以 IPv4-mapped IPv6 拦截而红（ai-decision 246 中 34 红、generator 53 红、platform-app 被 reactor 跳过）——系 VM 网络怪癖（见 TOOLS.md），非脚本/代码问题；以 `JAVA_TOOL_OPTIONS` 注入后全绿。此项只影响本机亲跑姿势，不影响 CI（托管 runner 无此拦截）。
 - 状态：WP-F6b 实施关账；WP-F6 余项＝推送后观察 Actions 首跑结果（首跑在托管 runner 在线拉依赖，耗时较长），结果由后续巡检登记，绿则 WP-F6 全关账，红则按日志修正或登记外部限制。isolated 档不入 CI（需 3307 隔离实例，沿用 WP-F6 报告结论）。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。
 - **推送阻塞更正（同日巡检续记）**：上节「同笔提交推送」不成立，特此更正——含 `.github/workflows/tests.yml` 的推送被 GitHub 拒绝（repo 限定细粒度 PAT 无 Workflows 权限：`refusing to allow a Personal Access Token to create or update workflow ... without workflow scope`）；本节登记已单独提交推送（f656489）。工作流文件已在本地提交（tip，待推送），GitHub 连接器代推一次超时未落地（远端核查无此文件）。**待用户处理（账号权限事项）**：给该 PAT 增加 Workflows 读写权限后由巡检补推本地提交；或在主聊天批准连接器推送。权限就绪前 Actions 首跑无从观察，WP-F6 余项即此一项。
+
+### 2026-10-17 WP-F7b 万级 B 源造数脚本关账（云端 VM）
+
+- 交付（均在 notes 目录，不进仓库）：`mall-simulator-notes/wpf7-scale/generate_scale_b.py`（确定性造数脚本，Python 标准库 + `random.Random(42)`）与 `WP-F7b-REPORT.md`；agy Flash 仅文件读写，未运行命令、未连库、未改仓库文件。
+- 总控亲验（不采信执行方自述）：亲跑脚本两次（run1/run2），均 exit 0 打印 `SCALE-GEN-OK`，两产出 `scale_events.jsonl` 与 `expected_ledger.json` 逐字节一致（确定性成立）；独立复算（总控自写校验，非脚本自检）：总行数 10,000、accepted 分布逐项与规约一致（MEMBER_JOINED 100 / ITEM_LISTED 20 / PAGE_VIEW 5000 / SAVE_ITEM 875 / CART_ADD 1000 / ORDER_PLACED 1200 / PAID_OK 1000 / BUYER_CANCELLED 200 / REFUND_OPENED 300 / REFUND_CLOSED 300）、隔离 5 行形态齐备（未登记 state LEAVE_REVIEW、PAID_OK 浮点金额、PAGE_VIEW 斜杠时间、MEMBER_JOINED 缺 evt_no、ITEM_LISTED rev=2.0，raw 计数恰为正常数+1）；文件 sha256 与账本 `scale_events_sha256` 一致（`21cc97a7…`）；GMV 独立重算 Σ整数 paid_minor = 363877.50 与账本一致、退款完成额 91518.50 一致、净额 272359.00、AOV 363.88；evt_no 9,999 个全局唯一（1 行缺失即 F4）、tr 10,000 全唯一；全部 occur_at 落在 2026-09-18 且排序不递减；买家池恰 100 人且全为 19 位数字串。
+- 状态：WP-F7b 关账。WP-F7 余项＝全链实跑（采集→数仓→发布走隔离档案，总控亲跑，登记各阶段耗时与计数一致性对期望账），立 WP-F7c 续行。本包未触碰 3306/3307、未使用 Docker、未拨 DeepSeek API。
