@@ -1,0 +1,27 @@
+WP-N1B landing fixture — REAL output of the production ingestion chain (WP-N1A machinery)
+=====================================================================================
+Generated: 2026-10-16, on the cloud VM, by a throwaway lead probe driving
+RealIngestionTestSupport (real MappingActivationService activation of
+analytics-server/source-profiles/fixture-shop-b.v2.json, real SourceMapper +
+LocalFileIngestor + EventContractValidator, checkpoints persisted to the isolated
+MySQL 3307 instance, RunId wpn1bprobe20261016). Probe deleted after generation.
+
+Inputs : fixtures/source-b/fixture-shop-b/normal.jsonl (38 lines, sha per ORACLE.md)
+         fixtures/source-b/fixture-shop-b/fault.jsonl   (5 lines)
+Profile: analytics-server/source-profiles/fixture-shop-b.v2.json
+         sha256 = 3ee7d8fae3a4a5057696105019bfd7dc475fb67c34e234f18624ff1c1e848da1
+         (== manifests/1.json mappingProfileHash, verified byte-for-byte)
+
+Result : batchId=1, manifest status=READY, acceptedRecords=38, quarantinedRecords=5
+         accepted/1/normal.jsonl  38 lines (canonical, mapped)
+         accepted/1/fault.jsonl    0 lines
+         quarantine/1/fault.jsonl  5 lines (original bytes)
+         quarantine/1/normal.jsonl 0 lines
+         accepted/1/normal.jsonl sha256 (first 16) d02d5bd4977f86d7
+         manifests/1.json        sha256 (first 16) 84b112bf73206e3e
+
+Notes  : ingest_time values inside the canonical lines carry the generation
+         wall-clock (EventClock, Asia/Shanghai); every other byte is the
+         deterministic output of the mapper + validator on the inputs above.
+         The Spark-side specs (WP-N1B) consume accepted/1/ as --landingDir
+         with --batchId 1 and --sourceSystem fixture-shop-b, per manifests/1.json.
