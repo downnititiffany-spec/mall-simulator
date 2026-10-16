@@ -129,7 +129,6 @@ public class IsolationGuardMySqlIT {
     @Test
     void wrongFingerprintIsRejectedOnRealInstance() {
         String runId = env(ENV_RUNID);
-        String actualHostname = env(ENV_FINGERPRINT).split(":")[0];
         UrlDataSource dataSource = dataSource(env(ENV_URL));
         String actualFingerprint = env(ENV_FINGERPRINT);
         String actualHostname = actualFingerprint.contains(":")
