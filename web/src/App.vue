@@ -182,8 +182,15 @@ const onLogout = async () => {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  opacity: .85;
+  opacity: .75;
+  transition: opacity var(--dur-fast, .12s) var(--ease, ease);
 }
-.nav-item:hover .nav-ico,
-.nav-item.router-link-active .nav-ico { opacity: 1; }
+.nav-item:hover .nav-ico {
+  opacity: 1;
+}
+.nav-item.router-link-active .nav-ico,
+.nav-item.router-link-exact-active .nav-ico {
+  opacity: 1;
+  color: #fff;
+}
 </style>

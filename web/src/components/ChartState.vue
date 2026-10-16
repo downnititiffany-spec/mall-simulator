@@ -32,22 +32,31 @@ defineProps({
 <style scoped>
 .state-overlay {
   height: 100%;
-  min-height: 120px;
+  min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 13px;
-  color: var(--color-muted-foreground);
-  background: var(--color-card);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius);
+  font-size: var(--fs-sm, 13px);
+  color: var(--text-secondary, #475467);
+  background: var(--bg-surface, #ffffff);
+  border: 1px dashed var(--border, #E4E7EC);
+  border-radius: var(--radius-lg, 14px);
 }
-.state-error { color: var(--color-destructive); border-color: #FECACA; }
-.state-empty { color: #94A3B8; }
+.state-error {
+  color: var(--danger, #F04438);
+  border-color: var(--danger-bd, #FECDCA);
+  background: var(--danger-bg, #FEF3F2);
+}
+.state-empty {
+  color: var(--text-tertiary, #98A2B3);
+}
 .spinner {
-  width: 12px; height: 12px; border-radius: 50%;
-  border: 2px solid var(--color-border); border-top-color: var(--color-primary);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-100, #DBE5FF);
+  border-top-color: var(--brand-600, #2E5BFF);
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }

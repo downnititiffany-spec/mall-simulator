@@ -97,36 +97,76 @@ onMounted(() => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 12px;
-  padding: 10px 12px;
-  margin-bottom: 14px;
-  border: 1px solid var(--gray-200, #e5e7eb);
-  border-radius: 8px;
-  background: var(--white, #fff);
-  color: var(--gray-700, #374151);
-  font-size: 13px;
+  gap: 10px 14px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border, #E4E7EC);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-secondary, #475467);
+  font-size: var(--fs-sm, 13px);
+  box-shadow: var(--shadow-sm);
 }
-.snapshot-toolbar label { font-weight: 600; }
+.snapshot-toolbar label {
+  font-weight: 600;
+  color: var(--text-primary, #101828);
+}
 .snapshot-toolbar select {
   max-width: min(100%, 520px);
-  min-height: 34px;
-  padding: 4px 8px;
-  border: 1px solid var(--gray-300, #d1d5db);
-  border-radius: 6px;
-  background: #fff;
-  color: inherit;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border, #E4E7EC);
+  border-radius: var(--radius, 8px);
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-primary, #101828);
+  font-size: var(--fs-base, 14px);
+  transition: border-color var(--dur-fast, .12s) var(--ease, ease), box-shadow var(--dur-fast, .12s) var(--ease, ease);
+}
+.snapshot-toolbar select:focus {
+  outline: none;
+  border-color: var(--brand-500, #3B71F7);
+  box-shadow: 0 0 0 3px rgba(46, 91, 255, .15);
 }
 .explicit-snapshot { display: contents; }
 .explicit-snapshot input {
   width: min(100%, 250px);
-  min-height: 34px;
-  padding: 4px 8px;
-  border: 1px solid var(--gray-300, #d1d5db);
-  border-radius: 6px;
-  background: #fff;
-  color: inherit;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border, #E4E7EC);
+  border-radius: var(--radius, 8px);
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-primary, #101828);
+  font-size: var(--fs-base, 14px);
+  transition: border-color var(--dur-fast, .12s) var(--ease, ease), box-shadow var(--dur-fast, .12s) var(--ease, ease);
 }
-.snapshot-note { color: var(--gray-500, #6b7280); }
-.snapshot-warning { color: #92400e; }
-.retry { margin-left: 6px; text-decoration: underline; }
+.explicit-snapshot input:focus {
+  outline: none;
+  border-color: var(--brand-500, #3B71F7);
+  box-shadow: 0 0 0 3px rgba(46, 91, 255, .15);
+}
+.explicit-snapshot button.retry {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border, #E4E7EC);
+  border-radius: var(--radius, 8px);
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-secondary, #475467);
+  font-size: var(--fs-sm, 13px);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--dur-fast, .12s) var(--ease, ease);
+}
+.explicit-snapshot button.retry:hover:not(:disabled) {
+  border-color: var(--brand-300, #93B4FD);
+  color: var(--brand-600, #2E5BFF);
+  background: var(--brand-50, #EFF4FF);
+}
+.snapshot-note { color: var(--text-tertiary, #98A2B3); }
+.snapshot-warning { color: var(--warning, #F79009); font-weight: 500; }
+.retry {
+  margin-left: 6px;
+  color: var(--brand-600, #2E5BFF);
+  cursor: pointer;
+}
 </style>

@@ -54,3 +54,53 @@ const ctx = computed(() => props.context || {})
 const warnings = computed(() => (Array.isArray(ctx.value.warnings) ? ctx.value.warnings : []))
 const queryWindowText = computed(() => effectiveWindowText(ctx.value.filters))
 </script>
+
+<style scoped>
+.analysis-context {
+  margin-bottom: var(--sp-4, 18px);
+}
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px var(--sp-5, 24px);
+  align-items: center;
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border, #E4E7EC);
+  border-radius: var(--radius-lg, 14px);
+  padding: 12px 18px;
+  font-size: var(--fs-sm, 13px);
+  color: var(--text-secondary, #475467);
+  box-shadow: var(--shadow-sm);
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.meta-item b.mono {
+  color: var(--text-primary, #101828);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+.meta-item b.ok { color: var(--success, #12B76A); }
+.meta-item b.bad { color: var(--danger, #F04438); }
+.meta-hint {
+  font-size: var(--fs-xs, 12px);
+  color: var(--text-tertiary, #98A2B3);
+  margin-left: 2px;
+}
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md, 10px);
+  font-size: var(--fs-base, 14px);
+  border: 1px solid transparent;
+}
+.banner-warn    { background: var(--warning-bg, #FFFAEB); border-color: var(--warning-bd, #FEDF89); color: #B54708; }
+.banner-stale   { background: var(--info-bg, #F0F9FF);    border-color: var(--info-bd, #B9E6FE);    color: #026AA2; }
+.banner-error   { background: var(--danger-bg, #FEF3F2);  border-color: var(--danger-bd, #FECDCA);  color: #B42318; }
+.banner-missing { background: var(--bg-subtle, #F2F4F7);  border-color: var(--border, #E4E7EC);     color: var(--text-secondary, #475467); }
+</style>

@@ -42,21 +42,40 @@ const props = defineProps({
 <style scoped>
 .data-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-base, 14px);
 }
 .data-table th {
   text-align: left;
-  padding: 6px;
-  color: var(--color-muted-foreground, var(--gray-500));
-  font-weight: 500;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 12px var(--sp-4, 18px);
+  color: var(--text-secondary, #475467);
+  font-weight: 600;
+  font-size: var(--fs-sm, 13px);
+  background: var(--gray-50, #F7F8FA);
+  border-bottom: 1px solid var(--border, #E4E7EC);
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  white-space: nowrap;
 }
 .data-table td {
-  padding: 6px;
-  border-top: 1px solid var(--gray-100);
+  padding: 13px var(--sp-4, 18px);
+  border-top: 1px solid var(--border, #E4E7EC);
+  border-left: none;
+  border-right: none;
+  vertical-align: middle;
+}
+.data-table tbody tr {
+  transition: background var(--dur-fast, .12s) var(--ease, ease);
+}
+.data-table tbody tr:nth-child(even) {
+  background: #FAFAFC;
+}
+.data-table tbody tr:hover {
+  background: #F4F7FF;
 }
 .data-table tr.row-active td {
-  background: #eff6ff;
+  background: var(--brand-50, #EFF4FF);
 }
 </style>
