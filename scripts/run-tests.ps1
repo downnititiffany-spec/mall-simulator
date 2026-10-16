@@ -232,7 +232,7 @@ function Invoke-DefaultSuite {
       -JdkHome $JdkDefault -SysProps @() -LogName ("default-{0}.log" -f $t.name)
     $tot = Get-MavenTotals -Log $r.log
     $cmp = Compare-Baseline -Label 'tests' -Actual $tot.tests -Expected $BaselineDefault[$t.name]
-    $ok = ($r.exit -eq 0) -and ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and ($cmp -notmatch 'DRIFT')
+    $ok = ($r.exit -eq 0) -and ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and ( ($cmp -notmatch 'DRIFT') -or $AllowCountDrift )
     $total += $tot.tests
     $rows += [pscustomobject]@{
       name = $t.name; exit = $r.exit; tests = $tot.tests; failures = $tot.failures; errors = $tot.errors
@@ -287,7 +287,7 @@ function Invoke-IsolatedSuite {
       $reqNote = if ($hit) { 'IsolationGuardMySqlIT 已执行' } else { '✗ IsolationGuardMySqlIT 未执行' }
       if ($tot.excluded) { $reqNote += ("；同 reactor 依赖构建不计入：" + $tot.excluded) }
     }
-    $ok = ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and ($cmp -notmatch 'DRIFT') -and $reqOk
+    $ok = ($tot.tests -gt 0) -and ($tot.failures -eq 0) -and ($tot.errors -eq 0) -and ( ($cmp -notmatch 'DRIFT') -or $AllowCountDrift ) -and $reqOk
     $total += $tot.tests
     $rows += [pscustomobject]@{
       name = $n; exit = $isoExit; tests = $tot.tests; failures = $tot.failures; errors = $tot.errors
@@ -353,7 +353,7 @@ function Invoke-SparkSuite {
   Write-Host ("  基线比对：{0}" -f $cmp)
 
   $ok = ($r.exit -eq 0) -and $fresh -and ($tot.total -gt 0) -and ($tot.failed -eq 0) -and ($tot.aborted -eq 0) -and `
-    ($tot.succeeded -eq $tot.total) -and $tot.allPassed -and $jdkOk -and ($cmp -notmatch 'DRIFT')
+    ($tot.succeeded -eq $tot.total) -and $tot.allPassed -and $jdkOk -and ( ($cmp -notmatch 'DRIFT') -or $AllowCountDrift )
   $row = [pscustomobject]@{
     name = 'spark-jobs'; exit = $r.exit; tests = $tot.total; failures = $tot.failed; errors = $tot.aborted
     skipped = $tot.ignored; blocks = $tot.suitesCompleted; detail = ''; cmp = $cmp; ok = $ok; log = $r.log
