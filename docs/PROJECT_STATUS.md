@@ -3351,3 +3351,8 @@
 - 以完整 V25_IT 契约 + 分析双库（RunId wpf2acc20261016）亲跑：MetricPublisherMySqlIT 3、MetricAdsMySqlIT 2、AdsDataQualityErrorRateNullableMySqlIT 2，合计 **7/7 PASS**（与隔离档登记数一致）。
 - 关键发现：这批 IT 自身不建 schema，统一运行器的 analytics 预收编腿也不做 schema 供给——这是收编一直未落地的真实缺口。本轮由总控以 Flyway（db/meta 37 步、db/metric 13 步）对隔离双库预迁移后全绿，证明 IT 本身健康、缺口在供给环节。收编裁定：三类 IT 具备收编条件，待 WP-F2b 给运行器补上 schema 供给步后以 -IncludeAnalyticsWriteIts 正式收编。
 - SourceRegistryMigrationMySqlIT 经查为 P1 期人工取证件（-Dp1.it=true + 副本库指向，fail-closed 设计），与 V25 收编不是同一套机制，裁定维持人工件、不收编。
+
+### 2026-10-16 WP-F3 前端统一测试入口关账（云端 VM）
+- run-tests.ps1 新增 `-Suite web` 档：定位 web/ → npm test（解析 node --test ℹ 汇总行）→ npm run build 冒烟；基线登记 $BaselineWebTests=450（2026-10-16 WP-F3）；all 档构成不变，web 为独立档，不改既有验收口径。
+- 首轮交付曾被巡检亲跑判不合格：Get-WebTestTotals 的 7 条解析正则以 `[^\w\s]` 吃 ℹ 前缀（.NET 中 ℹ∈\w），计数全解析为 -1 而误判 DRIFT；经最小实验确证根因后派修复轮，仅改该函数前缀为 `(?:\S+\s+)?`。
+- 总控复验（RunId wpf3fix20261016）：tests=450 MATCH、pass=450、fail=0、npm test/build 均 exit 0、整档 [PASS exit=0]。WP-F3 关账。

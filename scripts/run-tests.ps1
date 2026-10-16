@@ -14,12 +14,14 @@
 #   * 本脚本**不使用** `-Dtest=` 点名任何用例（DEV-003b 已确立的纪律：点名会让「入口自动收集」
 #     退化成人工记忆类名）。
 #
-# 四档：
+# 五档（既有四档 ＋ web 档，WP-F3）：
 #   default   → analytics-server（reactor 6 模块）→ mall-simulator → synthetic-data-generator
 #               命令语义与既有默认入口**逐字相同**：`mvn -f <pom> test`（JDK17）
 #   isolated  → 直接调度 `scripts/run-isolated-tests.ps1 -Module all -Confirm`（mall/generator/analytics）
 #   spark     → `mvn -f spark-jobs/pom.xml test`（**显式 JDK8** ＋ 注入本轮 `-Dp2.test.runId`）
+#   web       → 定位 `web/` 目录 → `npm test`（解析 node --test ℹ 汇总行与基线 450 比对）→ `npm run build`（构建冒烟）
 #   all       → default → isolated → spark，任一档失败/零用例/F/E 非 0 ⇒ 非 0 退出
+#               （注：WP-F3 保持 all 档既有三档构成不变，web 为独立档，避免改变既有后端验收口径）
 #
 # 成功判据（**必须**，缺一即失败）：
 #   * default / isolated：逐模块 Maven 汇总行 `Tests run: N, Failures: F, Errors: E, Skipped: S`（前缀不限级别：有跳过为 `[WARNING]`、有失败为 `[ERROR]`）
@@ -29,6 +31,9 @@
 #     （mtime ≥ 本轮启动时刻）。**禁止**用 surefire 的 `Tests run: 0 / BUILD SUCCESS` 当成功依据
 #     （该模块的 ScalaTest 结果不走 surefire 汇总，历史 JDK8 运行里出现过 `Tests run: 0` ＋`BUILD SUCCESS`
 #     的矛盾记录，见 `docs/acceptance/v25-r01-coverage-20260914/VERIFY-T01-T02.md`）。
+#   * web：定位 web/ 目录，运行 npm test，node --test 的 ℹ 汇总行 tests > 0、fail = 0 且
+#     tests 计数与基线（$BaselineWebTests = 450）比对 MATCH（或 -AllowCountDrift 放行），
+#     npm test 退出码 0；随后运行 npm run build 构建冒烟退出码 0。
 #
 # **spark 档的证明边界（不得越界表述）**：它只证明「Scala local[1] ＋ `catalogImplementation=in-memory`
 # 下的测试通过」（`com.graduation.analytics.P2TestSupport` 的 SparkSession 配置）。**不得**表述为
@@ -38,7 +43,7 @@
 #   * `SourceRegistryMigrationMySqlIT` → DEV-004（结构性双必败，未修前不得纳入）
 #   * `SparkStageExecutorSmokeIT` → Spark 专项冒烟 backlog（真实 `spark-submit`，Windows 路径硬编码）
 #   * `AnalysisGoldenMySqlIT` → D 类历史黄金值只读复验，**永久排除** unified isolated-tests
-#   * 前端 `web` 项目级入口 → 整理阶段范围外（后续 CI 阶段处理）
+#   * 前端 `web` 项目级入口 → 整理阶段范围外（由 -Suite web 独立承接，all 档保持既有口径不纳入）
 #
 # 退出码（与 `scripts/run-isolated-tests.ps1` 契约对齐）：
 #   0 = 所选档全部通过
@@ -50,6 +55,7 @@
 #
 # 用法：
 #   pwsh -NoProfile -File scripts/run-tests.ps1 -Suite spark
+#   pwsh -NoProfile -File scripts/run-tests.ps1 -Suite web
 #   $env:IT_GUARD_PASSWORD_MALL='<...>'; $env:IT_GUARD_PASSWORD_GENERATOR='<...>'
 #   pwsh -NoProfile -File scripts/run-tests.ps1 -Suite isolated -RunId dev003c_20260915_1145 -Confirm
 #   pwsh -NoProfile -File scripts/run-tests.ps1 -Suite all -RunId dev003c_20260915_1145 -Confirm
@@ -57,12 +63,13 @@
 #   同一分钟内并发会派生同一 RunId ⇒ 同一日志目录 ⇒ 双方都拿不到证据）；无论显式还是缺省，
 #   同一日志目录**已被另一轮占用**时本次直接 `[REFUSE exit=5]`（互斥锁按日志目录派生、进程退出即释放）。
 param(
-  [ValidateSet('default', 'isolated', 'spark', 'all')][string]$Suite = 'default',
+  [ValidateSet('default', 'isolated', 'spark', 'web', 'all')][string]$Suite = 'default',
   [string]$RunId = '',
   [string]$MavenCmd = 'D:\apache-maven-3.9.14\bin\mvn.cmd',
   [string]$MavenRepoLocal = 'D:\maven_repository',
   [string]$JdkDefault = 'D:\Develop\JAVA17',
   [string]$JdkSpark = 'D:\Develop\JDK1.8',
+  [string]$NpmCmd = 'npm',
   [string]$IsolatedScript = '',
   [string]$LogDir = '',
   # 仅在总控批准口径更新后使用：允许用例数与登记基线不一致仍算通过
@@ -958,6 +965,8 @@ $BaselineSpark = 372
  #   vs 09-26 gate (1169): +1 = 重算旁路负例（D-050② 修复的回归钉）。gate 1169 → 1170。
 # ───────────────────────────────────────────────────────────────────────────
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
+# 2026-10-16 WP-F3 web 基线登记：450
+$BaselineWebTests = 450
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)
@@ -985,13 +994,22 @@ if ($RunId -notmatch $RunIdPattern) {
 if (-not $LogDir) { $LogDir = Join-Path $env:TEMP ("v25tests-{0}" -f $RunId) }
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
-if (-not (Test-Path -LiteralPath $MavenCmd)) { Fail 1 ("找不到 Maven：{0}" -f $MavenCmd) }
-if (-not (Test-Path -LiteralPath (Resolve-JavaExe $JdkDefault))) { Fail 1 ("找不到默认档 JDK：{0}" -f $JdkDefault) }
+if ($Suite -in @('default', 'isolated', 'spark', 'all')) {
+  if (-not (Test-Path -LiteralPath $MavenCmd)) { Fail 1 ("找不到 Maven：{0}" -f $MavenCmd) }
+  if (-not (Test-Path -LiteralPath (Resolve-JavaExe $JdkDefault))) { Fail 1 ("找不到默认档 JDK：{0}" -f $JdkDefault) }
+}
 if ($Suite -in @('spark', 'all') -and -not (Test-Path -LiteralPath (Resolve-JavaExe $JdkSpark))) {
   Fail 1 ("找不到 spark 档 JDK8：{0}" -f $JdkSpark)
 }
 if ($Suite -in @('isolated', 'all') -and -not (Test-Path -LiteralPath $IsolatedScript)) {
   Fail 1 ("找不到隔离档入口：{0}" -f $IsolatedScript)
+}
+if ($Suite -eq 'web') {
+  $webDir = Join-Path $RepoRoot 'web'
+  if (-not (Test-Path -LiteralPath $webDir)) { Fail 1 ("找不到 web 目录：{0}" -f $webDir) }
+  if (-not (Get-Command $NpmCmd -ErrorAction SilentlyContinue) -and -not (Test-Path -LiteralPath $NpmCmd)) {
+    Fail 1 ("找不到 npm：{0}" -f $NpmCmd)
+  }
 }
 
 # 隔离档的前置（在跑 default 之前就判，避免跑完 default 才因缺口令失败）
@@ -1016,9 +1034,13 @@ Write-Host ("  RunId     : {0}" -f $RunId)
 Write-Host ("  日志目录  : {0}" -f $LogDir)
 Write-Host ("  Maven     : {0}   （-o 离线，repo={1}）" -f $MavenCmd, $MavenRepoLocal)
 Write-Host ("  JDK       : 默认档/隔离档 {0} ；spark 档 {1}" -f $JdkDefault, $JdkSpark)
-Write-Host ("  计数基线  : default analytics-server={0} / mall={1} / generator={2} ；spark={3} ；isolated mall={4}/generator={5}/analytics={6}{7}" -f `
+if ($Suite -eq 'web') {
+  Write-Host ("  npm       : {0}" -f $NpmCmd)
+}
+Write-Host ("  计数基线  : default analytics-server={0} / mall={1} / generator={2} ；spark={3} ；isolated mall={4}/generator={5}/analytics={6} ；web={7}{8}" -f `
     $BaselineDefault['analytics-server'], $BaselineDefault['mall-simulator'], $BaselineDefault['synthetic-data-generator'], `
     $BaselineSpark, $BaselineIsolated['mall'], $BaselineIsolated['generator'], $BaselineIsolated['analytics'], `
+    $BaselineWebTests, `
     $(if ($AllowCountDrift) { '（-AllowCountDrift：漂移不算失败）' } else { '' }))
 Write-Host '  不计入通过总数：SourceRegistryMigrationMySqlIT（DEV-004）、SparkStageExecutorSmokeIT（spark 专项 backlog）、'
 Write-Host '                  AnalysisGoldenMySqlIT（D 类，永久排除）、web 前端（范围外）'
@@ -1085,6 +1107,46 @@ function Get-ScalaTestTotals {
     $o.canceled = [int]$m.Groups[3].Value; $o.ignored = [int]$m.Groups[4].Value; $o.pending = [int]$m.Groups[5].Value
   }
   $o.allPassed = [bool]([regex]::IsMatch($raw, '(?m)^All tests passed\.\s*$'))
+  return [pscustomobject]$o
+}
+
+function Get-WebTestTotals {
+  param([string]$Log)
+  $o = [ordered]@{ tests = -1; suites = -1; pass = -1; fail = -1; cancelled = -1; skipped = -1; todo = -1 }
+  if (-not (Test-Path -LiteralPath $Log)) { return [pscustomobject]$o }
+  $raw = Get-Content -LiteralPath $Log -Raw
+  if (-not $raw) { return [pscustomobject]$o }
+  $clean = $raw -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+
+  # node --test 的 ℹ 汇总行：
+  # ℹ tests 450
+  # ℹ suites 0
+  # ℹ pass 450
+  # ℹ fail 0
+  # ℹ cancelled 0
+  # ℹ skipped 0
+  # ℹ todo 0
+  $m = [regex]::Matches($clean, '(?m)^\s*(?:\S+\s+)?tests\s+(\d+)\s*$')
+  if ($m.Count -gt 0) { $o.tests = [int]$m[$m.Count - 1].Groups[1].Value }
+
+  $m = [regex]::Matches($clean, '(?m)^\s*(?:\S+\s+)?suites\s+(\d+)\s*$')
+  if ($m.Count -gt 0) { $o.suites = [int]$m[$m.Count - 1].Groups[1].Value }
+
+  $m = [regex]::Matches($clean, '(?m)^\s*(?:\S+\s+)?pass\s+(\d+)\s*$')
+  if ($m.Count -gt 0) { $o.pass = [int]$m[$m.Count - 1].Groups[1].Value }
+
+  $m = [regex]::Matches($clean, '(?m)^\s*(?:\S+\s+)?fail\s+(\d+)\s*$')
+  if ($m.Count -gt 0) { $o.fail = [int]$m[$m.Count - 1].Groups[1].Value }
+
+  $m = [regex]::Matches($clean, '(?m)^\s*(?:\S+\s+)?cancelled\s+(\d+)\s*$')
+  if ($m.Count -gt 0) { $o.cancelled = [int]$m[$m.Count - 1].Groups[1].Value }
+
+  $m = [regex]::Matches($clean, '(?m)^\s*(?:\S+\s+)?skipped\s+(\d+)\s*$')
+  if ($m.Count -gt 0) { $o.skipped = [int]$m[$m.Count - 1].Groups[1].Value }
+
+  $m = [regex]::Matches($clean, '(?m)^\s*(?:\S+\s+)?todo\s+(\d+)\s*$')
+  if ($m.Count -gt 0) { $o.todo = [int]$m[$m.Count - 1].Groups[1].Value }
+
   return [pscustomobject]$o
 }
 
@@ -1264,6 +1326,67 @@ function Invoke-SparkSuite {
   return [pscustomobject]@{ suite = 'spark'; exit = $(if ($ok) { 0 } else { 7 }); total = $tot.total; rows = @($row); bad = $badList; jdkOk = $jdkOk; fresh = $fresh; mvnExit = $r.exit; suiteTxt = $suiteTxt }
 }
 
+# ── web 档 ─────────────────────────────────────────────────────────────────
+function Invoke-WebSuite {
+  Write-Section 'web-tests：定位 web/ 目录 → npm test → npm run build（前端测试与构建冒烟）'
+  $webDir = Join-Path $RepoRoot 'web'
+  if (-not (Test-Path -LiteralPath $webDir)) {
+    Fail 1 ("找不到 web 目录：{0}" -f $webDir)
+  }
+  $testLog = Join-Path $LogDir 'web-test.log'
+  $buildLog = Join-Path $LogDir 'web-build.log'
+
+  Write-Host ("  工作目录  : {0}" -f $webDir)
+  Write-Host ("  npm test  : {0} test" -f $NpmCmd)
+  $testExit = 0
+  $buildExit = 0
+  Push-Location $webDir
+  try {
+    & $NpmCmd test 2>&1 | Tee-Object -FilePath $testLog | Out-Host
+    $testExit = $LASTEXITCODE
+
+    Write-Host ''
+    Write-Host ("  npm build : {0} run build" -f $NpmCmd)
+    & $NpmCmd run build 2>&1 | Tee-Object -FilePath $buildLog | Out-Host
+    $buildExit = $LASTEXITCODE
+  } finally {
+    Pop-Location
+  }
+
+  $tot = Get-WebTestTotals -Log $testLog
+  Write-Host ''
+  Write-Host ("  node --test 汇总：tests={0}, pass={1}, fail={2}, cancelled={3}, skipped={4}, todo={5}" -f `
+      $tot.tests, $tot.pass, $tot.fail, $tot.cancelled, $tot.skipped, $tot.todo)
+  $cmp = Compare-Baseline -Label 'tests' -Actual $tot.tests -Expected $BaselineWebTests
+  Write-Host ("  基线比对：{0}" -f $cmp)
+
+  $testOk = ($testExit -eq 0) -and ($tot.tests -gt 0) -and ($tot.fail -eq 0) -and (Test-BaselineComparison -Comparison $cmp)
+  $buildOk = ($buildExit -eq 0)
+  $ok = $testOk -and $buildOk
+
+  $bad = @()
+  if (-not $testOk) { $bad += 'web-test' }
+  if (-not $buildOk) { $bad += 'web-build' }
+
+  $row = [pscustomobject]@{
+    name = 'web'; exit = $testExit; tests = $tot.tests; pass = $tot.pass; failures = $tot.fail
+    buildExit = $buildExit; cmp = $cmp; ok = $ok; testLog = $testLog; buildLog = $buildLog
+  }
+
+  Write-Host ''
+  Write-Host '--- web-tests 摘要（本轮 fresh）---'
+  Write-Host ("  {0,-10} Tests run: {1} (pass={2} fail={3})  npm test exit={4}  npm build exit={5}" -f `
+      'web', $tot.tests, $tot.pass, $tot.fail, $testExit, $buildExit)
+  Write-Host ("  {0,-10} {1}" -f '', $cmp)
+  Write-Host ("  构建冒烟  : npm run build exit={0}（{1}）" -f $buildExit, $(if ($buildOk) { 'PASS' } else { 'FAIL' }))
+
+  $code = if ($ok) { 0 } else { 7 }
+  return [pscustomobject]@{
+    suite = 'web'; exit = $code; total = $tot.tests; tests = $tot.tests; pass = $tot.pass
+    fail = $tot.fail; buildExit = $buildExit; rows = @($row); bad = @($bad); testLog = $testLog; buildLog = $buildLog
+  }
+}
+
 # ── S3-51：并发门禁互斥（同 RunId / 同日志目录 ⇒ 直接拒绝，不静默丢证据）──
 # 背景（实测）：旧默认 RunId 分钟级 ⇒ 同一分钟内两次运行 LogDir 完全相同，`Tee-Object -FilePath`
 # 对同一路径互斥 ⇒ 两次运行**都不产生测试证据**。除日志外，隔离档的库名/账号名也由 RunId 派生。
@@ -1309,6 +1432,12 @@ if ($Suite -in @('spark', 'all')) {
   $suiteResults['spark'] = $r
   if ($r.exit -ne 0 -and $failCode -eq 0) { $failCode = $r.exit }
 }
+# WP-F3（2026-10-16）：all 档构成保持既有 default → isolated → spark 三档不变，web 为独立档（-Suite web），避免改变既有后端验收口径。
+if ($Suite -eq 'web') {
+  $r = Invoke-WebSuite
+  $suiteResults['web'] = $r
+  if ($r.exit -ne 0 -and $failCode -eq 0) { $failCode = $r.exit }
+}
 
 # ── 最终摘要 ───────────────────────────────────────────────────────────────
 Write-Section '最终摘要（各档独立，不合并计数）'
@@ -1319,6 +1448,7 @@ foreach ($k in $suiteResults.Keys) {
   if ($k -eq 'default' -and $r.PSObject.Properties.Name -contains 'rows') { $note = ("（{0} 个用例）" -f $r.total) }
   if ($k -eq 'isolated') { $note = ("（{0} 个用例；runner exit={1}）" -f $r.total, $r.childExit) }
   if ($k -eq 'spark') { $note = ("（Total number of tests run={0}；新写={1}；JDK8={2}）" -f $r.total, $r.fresh, $r.jdkOk) }
+  if ($k -eq 'web') { $note = ("（{0} 个用例；build exit={1}）" -f $r.total, $r.buildExit) }
   Write-Host ("  {0,-9} {1} {2}" -f $k, $verdict, $note)
   if (@($r.bad).Count -gt 0) { Write-Host ("            失败项：{0}" -f (@($r.bad) -join ', ')) }
 }
