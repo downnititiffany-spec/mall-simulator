@@ -3334,3 +3334,9 @@
 - 平台以 llm env（base-url=https://api.deepseek.com、model=deepseek-chat，密钥仅环境注入）重启后，AI 查询真实尝试 openai-compat 提供方：ai_call_log 落行（provider=openai-compat、model=deepseek-chat、status=FAILED/NETWORK），说明配置接线与提供方选择无误；失败时解释服务按设计回退规则模板且在 limitations 中明示「模型网络调用失败，已回退模板摘要」，不编造结论。
 - 网络定位（总控逐项实证）：经本机中继 GET https://api.deepseek.com/v1/models 返回 401 约 1.5s（通道通）；但 POST /v1/chat/completions 在 curl、Python、Java 三种客户端下均无响应直至代理 30s 上限切断；同通道 POST 其他站点（如 Maven Central）0.6s 正常返回。结论：本 VM 出口对 api.deepseek.com 的 POST 存在路由级停滞，非代码/配置/密钥问题；Java 客户端另有 TLS 握手被终止现象，已以本地 shim 排除（shim 的上游 POST 同样停滞）。
 - 处置：平台保持规范配置（官方 base-url + JVM 代理参数）运行；真实完成调用（一次最小冒烟）登记为**环境受限待办**——在出口不受限的网络（如答辩机本地）以同一 env 启动后执行一次 AI 查询即可闭合，本 VM 不再重试以免无谓消耗。截至登记时 DeepSeek 侧成功完成调用为 0 次。
+
+### 2026-10-16 关键路径验收登记（云端 VM，总控裁定）
+- 范围：按用户 2026-10-16 裁定的关键路径口径验收，不等同于 V3.0 全量验收；**F-88 维持限定验收**，后续清单（远程集群/共享 HMS 验证、F-93 清理、前端统一测试入口、规模测试等）不在本次范围。
+- 已实证（均为本 VM 总控亲跑证据）：①两源真链采集 E2E（WP-N1A：B 源真映射 38/5 五码对 ORACLE、A 源 51/4 连续性与增量推进）；②B 源数仓链逐层对账（WP-N1B：372 档 spark 全绿，独立重算与生产产出一致；ORACLE 手算两处错误已勘误）；③生产编排发布链（WP-N2A/B/C：平台 API 全序激活→采集批次 1→管线 8 阶段全 SUCCESS→快照 S20260918_3 ACTIVE；导出 10 表行数与指标库逐表一致，metric_value 头条与独立重算逐项相符）；④服务与页面（同上：全部分析端点绑定该快照返回真实数据，SPA 由平台单进程托管；前端视觉层已按用户选定 B 云白极简完成换肤，web 450 测试守护）；⑤AI 解释（阶段 6 登记：真实提供方接线与规则回退实证，真实完成调用受 VM 出口限制单列待办）；⑥验收门（本次登记前总控复跑：default 1540 PASS、spark 372 MATCH、web 450 PASS、isolated PASS 30/19/13，RunId acc20261016a/b）。
+- 证据边界（明示，不在已实证内）：新旧 ACTIVE 快照轮换仅有发布器单元层证据，未在本 VM 强制造第二版本实跑；换肤后的真实页面视觉审阅未做（受管浏览器无法访问 VM 回环、未使用公网隧道）；Spark 证据为 D-126 本地口径（Derby 元存储 + 本地文件仓库），非 Hive/HDFS 集群证据；阶段 6 真实 LLM 完成调用未闭合（出口网络对 api.deepseek.com 的 POST 停滞，已定位非代码问题）。
+- 环境注记：本日 VM 发生一次运行时替换，系统层 MySQL 被冲掉后由总控从本地 .deb 缓存私有化恢复（同版本 8.0.46），实时平台与全部数据无损恢复并复验健康，验收门在此恢复后的环境上完成。
