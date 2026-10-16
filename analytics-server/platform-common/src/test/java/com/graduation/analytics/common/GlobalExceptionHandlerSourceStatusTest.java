@@ -50,6 +50,18 @@ class GlobalExceptionHandlerSourceStatusTest {
         // P1-05 加性：未绑定源是"当前运行环境状态不允许采集"，不是请求参数写错（那才是 400）
         assertThat(handle(PlatformBizException.SOURCE_NOT_BOUND, "运行环境未绑定源").getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
+        // WP-2A-2 加性：画像版本/哈希冲突 -> 409
+        assertThat(handle(PlatformBizException.PROFILE_VERSION_CONFLICT, "画像版本冲突").getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        assertThat(handle(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND, "报告不存在").getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("FORBIDDEN → 403（WP-2A-2 / §7.4 权限不足）")
+    void forbiddenMapsTo403() {
+        assertThat(handle(PlatformBizException.FORBIDDEN, "无权访问").getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
@@ -88,5 +100,9 @@ class GlobalExceptionHandlerSourceStatusTest {
         assertThat(PlatformBizException.SOURCE_IN_USE).isEqualTo("SOURCE_IN_USE");
         // P1-05 加性新增（D-037）：未绑定源
         assertThat(PlatformBizException.SOURCE_NOT_BOUND).isEqualTo("SOURCE_NOT_BOUND");
+        // WP-2A-2 加性新增（Design V3.0 §7.4）
+        assertThat(PlatformBizException.PROFILE_VERSION_CONFLICT).isEqualTo("PROFILE_VERSION_CONFLICT");
+        assertThat(PlatformBizException.DRY_RUN_REPORT_NOT_FOUND).isEqualTo("DRY_RUN_REPORT_NOT_FOUND");
+        assertThat(PlatformBizException.FORBIDDEN).isEqualTo("FORBIDDEN");
     }
 }

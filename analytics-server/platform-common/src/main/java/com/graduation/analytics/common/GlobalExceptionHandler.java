@@ -53,11 +53,14 @@ public class GlobalExceptionHandler {
             return HttpStatus.BAD_REQUEST;
         }
         return switch (code) {
-            case PlatformBizException.SOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case PlatformBizException.SOURCE_NOT_FOUND,
+                 PlatformBizException.DRY_RUN_REPORT_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case PlatformBizException.SOURCE_CODE_IMMUTABLE,
                  PlatformBizException.SOURCE_PROFILE_INVALID,
                  PlatformBizException.SOURCE_IN_USE,
-                 PlatformBizException.SOURCE_NOT_BOUND -> HttpStatus.CONFLICT;
+                 PlatformBizException.SOURCE_NOT_BOUND,
+                 PlatformBizException.PROFILE_VERSION_CONFLICT -> HttpStatus.CONFLICT;
+            case PlatformBizException.FORBIDDEN -> HttpStatus.FORBIDDEN;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

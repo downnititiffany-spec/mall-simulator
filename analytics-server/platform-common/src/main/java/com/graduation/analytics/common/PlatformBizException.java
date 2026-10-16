@@ -48,6 +48,11 @@ public class PlatformBizException extends RuntimeException {
     // 断点挂到错误的源名下后，切源即产生**静默少采**（D-037 裁决 2 的同一条理由，从迁移侧延伸到运行侧）。
     public static final String SOURCE_NOT_BOUND = "SOURCE_NOT_BOUND";
 
+    // 映射 Dry-Run 域错误码（WP-2A-2 / Design V3.0 §7.4）
+    public static final String PROFILE_VERSION_CONFLICT = "PROFILE_VERSION_CONFLICT";
+    public static final String DRY_RUN_REPORT_NOT_FOUND = "DRY_RUN_REPORT_NOT_FOUND";
+    public static final String FORBIDDEN = "FORBIDDEN";
+
     // M1-6 顺带清理（2026-09-11，AE-04）：这里原先还有 8 个**商城域**错误码
     // （PRODUCT_NOT_FOUND / PRODUCT_OFF_SALE / INSUFFICIENT_STOCK / ORDER_NOT_FOUND /
     //  ORDER_OWNER_MISMATCH / ORDER_STATE_ILLEGAL / REFUND_EXCEEDS_PAID / REFUND_NOT_FOUND），

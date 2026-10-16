@@ -96,7 +96,7 @@ public class PureMapper {
             if (targetField == null || "@keep".equals(targetField)) {
                 continue;
             }
-            JsonNode node = resolvePath(root, sourcePath);
+            JsonNode node = resolveSourceValue(root, sourcePath, targetField);
             if (node != null && !node.isMissingNode()) {
                 targetToPresentSources.computeIfAbsent(targetField, k -> new ArrayList<>()).add(sourcePath);
             }
@@ -117,13 +117,32 @@ public class PureMapper {
             return new MapperOutcome.Quarantined(violations, rawJson);
         }
 
-        // Build canonical output node and extension node
+        // Build canonical root node and payload container (Ruling R-2A-2)
         ObjectNode canonical = OBJECT_MAPPER.createObjectNode();
+        ObjectNode payload = OBJECT_MAPPER.createObjectNode();
         ObjectNode keepExtensions = OBJECT_MAPPER.createObjectNode();
 
-        // Rule-4: Time field handling
+        // Ruling R-2A-2: Target payload itself (fixture-b body -> payload)
+        // resolve the source at the root; its value forms the base payload (must be an object;
+        // if it is not an object, that is a TYPE_MISMATCH quarantine).
+        for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
+            if ("payload".equals(entry.getValue())) {
+                String sourcePath = entry.getKey();
+                JsonNode basePayloadNode = resolveSourceValue(root, sourcePath, "payload");
+                if (basePayloadNode != null && !basePayloadNode.isNull() && !basePayloadNode.isMissingNode()) {
+                    if (!basePayloadNode.isObject()) {
+                        violations.add(MapperViolation.of(MapperViolationCode.TYPE_MISMATCH,
+                                "payload", "base payload must be a JSON object"));
+                        return new MapperOutcome.Quarantined(violations, rawJson);
+                    }
+                    basePayloadNode.fields().forEachRemaining(f -> payload.set(f.getKey(), f.getValue()));
+                }
+            }
+        }
+
+        // Rule-4: Time field handling (envelope field: event_time at root; provenance event_time_original in payload)
         String tpField = profile.timePolicyField() != null ? profile.timePolicyField() : "event_time";
-        JsonNode timeNode = resolvePath(root, tpField);
+        JsonNode timeNode = resolveSourceValue(root, tpField, "event_time");
         if (timeNode == null) {
             // Missing time field
             violations.add(MapperViolation.emptyField(tpField, "MISSING"));
@@ -131,8 +150,10 @@ public class PureMapper {
             String originalTimeText = timeNode.isNull() ? null : timeNode.asText();
             TimeParseResult tpr = parseTime(timeNode, profile, violations);
             if (tpr != null) {
-                canonical.put("event_time_original", originalTimeText);
                 canonical.put("event_time", tpr.normalizedIso());
+                if (originalTimeText != null) {
+                    payload.put("event_time_original", originalTimeText);
+                }
             }
         }
 
@@ -141,15 +162,15 @@ public class PureMapper {
             String sourcePath = entry.getKey();
             String targetField = entry.getValue();
 
-            if (targetField == null) {
+            if (targetField == null || "payload".equals(targetField)) {
                 continue;
             }
 
-            JsonNode value = resolvePath(root, sourcePath);
+            JsonNode value = resolveSourceValue(root, sourcePath, targetField);
 
-            // Handle @keep extension fields (Rule-3)
+            // Handle @keep extension fields (Rule-3 & Ruling R-2A-2: inside payload by leaf name)
             if ("@keep".equals(targetField)) {
-                if (value != null && !value.isNull()) {
+                if (value != null && !value.isNull() && !value.isMissingNode()) {
                     String leafName = sourcePath.contains(".")
                             ? sourcePath.substring(sourcePath.lastIndexOf('.') + 1)
                             : sourcePath;
@@ -174,16 +195,22 @@ public class PureMapper {
                 continue;
             }
 
+            // If envelope field -> write to canonical root
+            if (SourceProfile.isEnvelopeField(targetField)) {
+                canonical.set(targetField, value);
+                continue;
+            }
+
             // Rule-9: items array (order_created.items)
             if ("items".equals(targetField)) {
                 if (value.isArray()) {
                     ArrayNode mappedItems = processItemsArray(value, profile, violations);
                     if (mappedItems != null) {
-                        canonical.set(targetField, mappedItems);
+                        payload.set(targetField, mappedItems);
                     }
                 } else if (value.isTextual()) {
                     // String representation passed through (Q4 flagged in report)
-                    canonical.put(targetField, value.asText());
+                    payload.put(targetField, value.asText());
                 } else {
                     violations.add(MapperViolation.of(MapperViolationCode.TYPE_MISMATCH,
                             targetField, "items must be an array or string representation"));
@@ -196,7 +223,7 @@ public class PureMapper {
             if (amountUnit != null) {
                 BigDecimal amount = parseAmount(value, targetField, amountUnit, violations);
                 if (amount != null) {
-                    canonical.put(targetField, amount.toPlainString());
+                    payload.put(targetField, amount.toPlainString());
                 }
                 continue;
             }
@@ -207,10 +234,10 @@ public class PureMapper {
                 String sourceVal = value.asText();
                 SourceProfile.EnumLookupResult lookup = profile.lookupEnum(enumCategory, sourceVal);
                 if (lookup instanceof SourceProfile.EnumLookupResult.Resolved r) {
-                    canonical.put(targetField, r.canonicalValue());
+                    payload.put(targetField, r.canonicalValue());
                 } else if (lookup instanceof SourceProfile.EnumLookupResult.Unresolved u) {
                     // ENUM_UNRESOLVED: keep value + warning
-                    canonical.put(targetField, sourceVal);
+                    payload.put(targetField, sourceVal);
                     warnings.add(MapperViolation.of(
                             MapperViolationCode.ENUM_UNRESOLVED,
                             targetField,
@@ -225,25 +252,13 @@ public class PureMapper {
                             sourceVal
                     ));
                 } else {
-                    canonical.set(targetField, value);
+                    payload.set(targetField, value);
                 }
                 continue;
             }
 
-            // Default mapping
-            canonical.set(targetField, value);
-        }
-
-        // Unknown fields policy (fields present in root but not in mapping)
-        if ("KEEP_IN_PAYLOAD".equals(profile.unknownFieldPolicy())) {
-            root.fields().forEachRemaining(entry -> {
-                String key = entry.getKey();
-                if (!fieldMapping.containsKey(key) && !key.equals(tpField)) {
-                    if (!canonical.has(key) && !keepExtensions.has(key)) {
-                        canonical.set(key, entry.getValue());
-                    }
-                }
-            });
+            // Default payload mapping
+            payload.set(targetField, value);
         }
 
         // Set canonical event_type if resolved
@@ -251,11 +266,50 @@ public class PureMapper {
             canonical.put("event_type", canonicalEventType);
         }
 
-        // Rule-5: Check required fields on canonical output
-        checkRequiredFields(canonicalEventType, root, fieldMapping, canonical, violations);
+        // Add envelope fields present in root if not yet mapped
+        for (String envField : new String[]{"event_id", "ingest_time", "source_system", "schema_version", "trace_id"}) {
+            if (!canonical.has(envField) && root.has(envField) && !root.get(envField).isNull()) {
+                canonical.set(envField, root.get(envField));
+            }
+        }
+        if (!canonical.has("schema_version") && profile.canonicalSchemaVersion() != null) {
+            canonical.put("schema_version", profile.canonicalSchemaVersion());
+        }
+        if (!canonical.has("source_system") && profile.sourceCode() != null) {
+            canonical.put("source_system", profile.sourceCode());
+        }
 
-        // Add @keep extensions to canonical output (Rule-3)
-        keepExtensions.fields().forEachRemaining(e -> canonical.set(e.getKey(), e.getValue()));
+        // Add @keep extensions to payload (Ruling R-2A-2 Clause 3c)
+        keepExtensions.fields().forEachRemaining(e -> payload.set(e.getKey(), e.getValue()));
+
+        // Unknown fields policy (KEEP_IN_PAYLOAD: unmapped fields go inside payload)
+        if ("KEEP_IN_PAYLOAD".equals(profile.unknownFieldPolicy())) {
+            // Unmapped fields from raw payload container if present
+            JsonNode rawPayload = root.get("payload");
+            if (rawPayload != null && rawPayload.isObject()) {
+                rawPayload.fields().forEachRemaining(entry -> {
+                    String key = entry.getKey();
+                    if (!payload.has(key)) {
+                        payload.set(key, entry.getValue());
+                    }
+                });
+            }
+            // Unmapped non-envelope fields from root
+            root.fields().forEachRemaining(entry -> {
+                String key = entry.getKey();
+                if (!SourceProfile.isEnvelopeField(key) && !fieldMapping.containsKey(key) && !key.equals(tpField)) {
+                    if (!payload.has(key)) {
+                        payload.set(key, entry.getValue());
+                    }
+                }
+            });
+        }
+
+        // Attach payload container to canonical record
+        canonical.set("payload", payload);
+
+        // Rule-5: Check required fields on payload
+        checkRequiredFields(canonicalEventType, root, fieldMapping, payload, violations);
 
         if (!violations.isEmpty()) {
             return new MapperOutcome.Quarantined(violations, rawJson);
@@ -270,7 +324,7 @@ public class PureMapper {
         Map<String, String> globalMapping = profile.fieldMappingForGroup("_global_");
         for (Map.Entry<String, String> e : globalMapping.entrySet()) {
             if ("event_type".equals(e.getValue())) {
-                JsonNode v = resolvePath(root, e.getKey());
+                JsonNode v = resolveSourceValue(root, e.getKey(), "event_type");
                 if (v != null && !v.isNull()) {
                     return v.asText();
                 }
@@ -689,7 +743,7 @@ public class PureMapper {
 
     private void checkRequiredFields(String canonicalEventType, JsonNode root,
                                      Map<String, String> fieldMapping,
-                                     ObjectNode canonical, List<MapperViolation> violations) {
+                                     ObjectNode payload, List<MapperViolation> violations) {
         Set<String> requiredFields = getRequiredFieldsForEventType(canonicalEventType);
 
         // Map target field -> all source fields that map to it
@@ -701,16 +755,16 @@ public class PureMapper {
         }
 
         for (String req : requiredFields) {
-            if (canonical.has(req) && !canonical.get(req).isNull()
-                    && !(canonical.get(req).isTextual() && canonical.get(req).asText().isBlank())) {
+            if (payload.has(req) && !payload.get(req).isNull()
+                    && !(payload.get(req).isTextual() && payload.get(req).asText().isBlank())) {
                 continue;
             }
 
-            // Field is missing/null/blank in canonical. Find what was in raw record to assign detail.
+            // Field is missing/null/blank in payload. Find what was in raw record to assign detail.
             List<String> srcFields = targetToSources.getOrDefault(req, List.of(req));
             JsonNode foundNode = null;
             for (String srcField : srcFields) {
-                JsonNode n = resolvePath(root, srcField);
+                JsonNode n = resolveSourceValue(root, srcField, req);
                 if (n != null) {
                     foundNode = n;
                     break;
@@ -727,6 +781,34 @@ public class PureMapper {
                 violations.add(MapperViolation.emptyField(req, "MISSING"));
             }
         }
+    }
+
+    /**
+     * Ruling R-2A-2 (Clause 2): 源码字段查找。
+     * - 点路径（含 .）：从根直接解析（Rule-9 未变）。
+     * - 目标是 payload 容器本身（如 fixture-b 的 body -> payload）：从根解析。
+     * - 目标是信封字段（event_id, event_type, event_time, ingest_time, source_system, schema_version, trace_id, payload）：仅在根解析。
+     * - 目标是 payload 业务字段或 @keep 扩展：若记录含 payload 对象，优先在 payload 内解析；缺席则回退至记录根。
+     */
+    public static JsonNode resolveSourceValue(JsonNode root, String sourcePath, String targetField) {
+        if (root == null || sourcePath == null || sourcePath.isBlank()) {
+            return null;
+        }
+        if (sourcePath.contains(".") || sourcePath.contains("[")) {
+            return resolvePath(root, sourcePath);
+        }
+        if ("payload".equals(targetField) || SourceProfile.isEnvelopeField(targetField)) {
+            return root.get(sourcePath);
+        }
+        // Bare name whose target is a payload field or @keep extension
+        JsonNode payloadContainer = root.get("payload");
+        if (payloadContainer != null && payloadContainer.isObject()) {
+            JsonNode v = payloadContainer.get(sourcePath);
+            if (v != null && !v.isMissingNode()) {
+                return v;
+            }
+        }
+        return root.get(sourcePath);
     }
 
     public static Set<String> getRequiredFieldsForEventType(String eventType) {

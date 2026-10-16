@@ -20,8 +20,13 @@ import java.util.Set;
  * <p>Given a frozen SourceProfile and a list of raw JSON lines, produces a DryRunReport.
  * Zero persistence, zero I/O beyond inputs (Rule-10).</p>
  *
- * <p>Q4/Q5/Q6 rulings are the project lead's — implemented as reporting only,
- * never normalized away.</p>
+ * <p><b>Ruling R-2A-2 Clause 4 definitions:</b>
+ * <ul>
+ *   <li>{@code validatorAccepted} counts canonical OUTPUT records that pass the real {@link EventContractValidator}.</li>
+ *   <li>{@code strictContractAccepted} counts canonical outputs that pass the validator AND whose mapper outcome carried no {@code ENUM_UNRESOLVED} warning.</li>
+ *   <li>Inputs are never counted.</li>
+ * </ul>
+ * </p>
  */
 public class DryRunEngine {
 
@@ -65,7 +70,7 @@ public class DryRunEngine {
         // Unresolved enum counts: "fieldPath=rawValue" -> count
         Map<String, Long> unresolvedEnumCounts = new LinkedHashMap<>();
 
-        // Q4, Q6 counters
+        // Ruling R-2A-2 Clause 4: Q6 counters (canonical output counting)
         long validatorAccepted = 0;
         long strictContractAccepted = 0;
         long itemsPassthroughFlagged = 0;
@@ -81,23 +86,25 @@ public class DryRunEngine {
                 }
                 totalRows++;
 
-                // Q6: run existing EventContractValidator
-                EventContractValidator.Violation contractViolation =
-                        contractValidator.check(rawLine, (int) totalRows);
-                if (contractViolation == null) {
-                    validatorAccepted++;
-                }
-
-                // Q6: strict canonical contract check
-                if (isStrictContractValid(rawLine)) {
-                    strictContractAccepted++;
-                }
-
                 // Apply pure mapper
                 MapperOutcome outcome = mapper.map(rawLine, profile);
 
                 if (outcome instanceof MapperOutcome.Canonical c) {
                     canonicalRows++;
+
+                    // Ruling R-2A-2 Clause 4:
+                    // validatorAccepted counts canonical OUTPUT records that pass the real EventContractValidator.
+                    // strictContractAccepted counts canonical outputs that pass the validator AND whose mapper outcome carried no ENUM_UNRESOLVED warning.
+                    EventContractValidator.Violation contractViolation =
+                            contractValidator.check(c.canonicalRecord().toString(), (int) canonicalRows);
+                    if (contractViolation == null) {
+                        validatorAccepted++;
+                        boolean hasUnresolvedEnum = c.unresolvedEnumWarnings().stream()
+                                .anyMatch(w -> w.code() == MapperViolationCode.ENUM_UNRESOLVED);
+                        if (!hasUnresolvedEnum) {
+                            strictContractAccepted++;
+                        }
+                    }
 
                     // Rule-13: count required fields that passed
                     RequiredFieldStats stats = countRequiredFields(c.canonicalRecord(), profile);
@@ -217,6 +224,9 @@ public class DryRunEngine {
                 return false;
             }
             JsonNode items = canonical.get("items");
+            if (items == null && canonical.has("payload")) {
+                items = canonical.get("payload").get("items");
+            }
             return items != null && items.isTextual();
         } catch (Exception e) {
             return false;
@@ -238,8 +248,12 @@ public class DryRunEngine {
 
         long total = allReq.size();
         long success = 0;
+        JsonNode payloadNode = canonical.get("payload");
         for (String field : allReq) {
             JsonNode v = canonical.get(field);
+            if (v == null && payloadNode != null && payloadNode.isObject()) {
+                v = payloadNode.get(field);
+            }
             if (v != null && !v.isNull() && !(v.isTextual() && v.asText().isBlank())) {
                 success++;
             }
@@ -267,11 +281,15 @@ public class DryRunEngine {
     private void trackCanonicalEnums(String rawLine, ObjectNode canonical,
                                      List<MapperViolation> warnings, SourceProfile profile,
                                      Set<String> observedPairs, Set<String> resolvedPairs) {
+        JsonNode payloadNode = canonical.get("payload");
         for (Map.Entry<String, Map<String, String>> entry : profile.enumSemantics().entrySet()) {
             String enumCategory = entry.getKey();
             String targetField = mapEnumKeyToField(enumCategory);
 
             JsonNode valNode = canonical.get(targetField);
+            if (valNode == null && payloadNode != null && payloadNode.isObject()) {
+                valNode = payloadNode.get(targetField);
+            }
             if (valNode != null && (valNode.isTextual() || valNode.isNumber())) {
                 String val = valNode.asText();
                 String pair = targetField + "=" + val;
@@ -308,9 +326,13 @@ public class DryRunEngine {
         if (sensitive == null || sensitive.isEmpty()) {
             return copy;
         }
+        JsonNode payloadNode = copy.get("payload");
         for (String field : sensitive) {
             if (copy.has(field) && !copy.get(field).isNull()) {
                 copy.put(field, "***MASKED***");
+            }
+            if (payloadNode != null && payloadNode.isObject() && payloadNode.has(field) && !payloadNode.get(field).isNull()) {
+                ((ObjectNode) payloadNode).put(field, "***MASKED***");
             }
         }
         return copy;
@@ -321,8 +343,12 @@ public class DryRunEngine {
         if (sensitive == null || sensitive.isEmpty()) {
             return false;
         }
+        JsonNode payloadNode = canonical.get("payload");
         for (String field : sensitive) {
             if (canonical.has(field) && !canonical.get(field).isNull()) {
+                return true;
+            }
+            if (payloadNode != null && payloadNode.isObject() && payloadNode.has(field) && !payloadNode.get(field).isNull()) {
                 return true;
             }
         }

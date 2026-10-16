@@ -72,8 +72,9 @@ class RealProfilesEndToEndTest {
         assertThat(outcome).isInstanceOf(MapperOutcome.Canonical.class);
         MapperOutcome.Canonical c = (MapperOutcome.Canonical) outcome;
 
-        // Channel value kept as "web" (not defaulted, not null)
-        assertThat(c.canonicalRecord().get("channel").asText()).isEqualTo("web");
+        // Channel value kept as "web" (not defaulted, not null) inside payload
+        assertThat(c.canonicalRecord().path("payload").get("channel").asText()).isEqualTo("web");
+        assertThat(c.canonicalRecord().has("event_type")).isTrue();
 
         // ENUM_UNRESOLVED warning present
         assertThat(c.unresolvedEnumWarnings()).hasSize(1);
@@ -92,7 +93,7 @@ class RealProfilesEndToEndTest {
         String rawApp = rawWeb.replace("\"web\"", "\"app\"");
         MapperOutcome oApp = mapper.map(rawApp, mockMallProfile);
         assertThat(oApp).isInstanceOf(MapperOutcome.Canonical.class);
-        assertThat(((MapperOutcome.Canonical) oApp).canonicalRecord().get("channel").asText()).isEqualTo("app");
+        assertThat(((MapperOutcome.Canonical) oApp).canonicalRecord().path("payload").get("channel").asText()).isEqualTo("app");
         assertThat(((MapperOutcome.Canonical) oApp).unresolvedEnumWarnings()).isEmpty();
     }
 
@@ -115,9 +116,10 @@ class RealProfilesEndToEndTest {
         MapperOutcome o1 = mapper.map(rawOrderCreated, mockMallProfile);
         assertThat(o1).isInstanceOf(MapperOutcome.Canonical.class);
         JsonNode rec1 = ((MapperOutcome.Canonical) o1).canonicalRecord();
-        assertThat(rec1.get("order_id").asText()).isEqualTo("ord-101");
-        assertThat(rec1.get("total_amount").asText()).isEqualTo("2042.00");
-        assertThat(rec1.get("items")).hasSize(1);
+        assertThat(rec1.get("event_type").asText()).isEqualTo("order_created");
+        assertThat(rec1.path("payload").get("order_id").asText()).isEqualTo("ord-101");
+        assertThat(rec1.path("payload").get("total_amount").asText()).isEqualTo("2042.00");
+        assertThat(rec1.path("payload").get("items")).hasSize(1);
 
         String rawOrderPaid = """
                 {
@@ -132,8 +134,9 @@ class RealProfilesEndToEndTest {
         MapperOutcome o2 = mapper.map(rawOrderPaid, mockMallProfile);
         assertThat(o2).isInstanceOf(MapperOutcome.Canonical.class);
         JsonNode rec2 = ((MapperOutcome.Canonical) o2).canonicalRecord();
-        assertThat(rec2.get("payment_id").asText()).isEqualTo("pay-501");
-        assertThat(rec2.get("amount").asText()).isEqualTo("2042.00");
+        assertThat(rec2.get("event_type").asText()).isEqualTo("order_paid");
+        assertThat(rec2.path("payload").get("payment_id").asText()).isEqualTo("pay-501");
+        assertThat(rec2.path("payload").get("amount").asText()).isEqualTo("2042.00");
     }
 
     @Test
@@ -162,21 +165,22 @@ class RealProfilesEndToEndTest {
         assertThat(o1).isInstanceOf(MapperOutcome.Canonical.class);
         JsonNode rec1 = ((MapperOutcome.Canonical) o1).canonicalRecord();
 
-        // Mappings verified
+        // Mappings verified: envelope at root, payload fields in payload container
         assertThat(rec1.get("event_type").asText()).isEqualTo("behavior");
-        assertThat(rec1.get("user_id").asText()).isEqualTo("buyer-123");
-        assertThat(rec1.get("product_id").asText()).isEqualTo("sku-456");
-        assertThat(rec1.get("session_id").asText()).isEqualTo("sess-789");
-        assertThat(rec1.get("behavior_type").asText()).isEqualTo("view");
-        assertThat(rec1.get("channel").asText()).isEqualTo("app");
+        assertThat(rec1.path("payload").get("user_id").asText()).isEqualTo("buyer-123");
+        assertThat(rec1.path("payload").get("product_id").asText()).isEqualTo("sku-456");
+        assertThat(rec1.path("payload").get("session_id").asText()).isEqualTo("sess-789");
+        assertThat(rec1.path("payload").get("behavior_type").asText()).isEqualTo("view");
+        assertThat(rec1.path("payload").get("channel").asText()).isEqualTo("app");
 
-        // Epoch millis normalized to ISO-8601 string, original retained
-        assertThat(rec1.get("event_time_original").asText()).isEqualTo("1725538531000");
+        // Epoch millis normalized to ISO-8601 string, original retained in payload
+        assertThat(rec1.path("payload").get("event_time_original").asText()).isEqualTo("1725538531000");
         assertThat(rec1.get("event_time").asText()).contains("2024-09-05T");
 
-        // @keep field preserved by leaf name
-        assertThat(rec1.has("ext_coupon_code")).isTrue();
-        assertThat(rec1.get("ext_coupon_code").asText()).isEqualTo("PROMO_FIXTURE_B");
+        // @keep field preserved by leaf name in payload
+        assertThat(rec1.has("ext_coupon_code")).isFalse();
+        assertThat(rec1.path("payload").has("ext_coupon_code")).isTrue();
+        assertThat(rec1.path("payload").get("ext_coupon_code").asText()).isEqualTo("PROMO_FIXTURE_B");
 
         // order_new event -> mapped to order_created with FEN /100 conversion
         String rawOrderNew = """
@@ -199,11 +203,11 @@ class RealProfilesEndToEndTest {
         JsonNode rec2 = ((MapperOutcome.Canonical) o2).canonicalRecord();
 
         assertThat(rec2.get("event_type").asText()).isEqualTo("order_created");
-        assertThat(rec2.get("order_id").asText()).isEqualTo("ord-fb-100");
-        assertThat(rec2.get("user_id").asText()).isEqualTo("buyer-123");
-        assertThat(rec2.get("total_amount").asText()).isEqualTo("2042.00"); // 204200 FEN / 100
+        assertThat(rec2.path("payload").get("order_id").asText()).isEqualTo("ord-fb-100");
+        assertThat(rec2.path("payload").get("user_id").asText()).isEqualTo("buyer-123");
+        assertThat(rec2.path("payload").get("total_amount").asText()).isEqualTo("2042.00"); // 204200 FEN / 100
 
-        JsonNode items = rec2.get("items");
+        JsonNode items = rec2.path("payload").get("items");
         assertThat(items).hasSize(1);
         assertThat(items.get(0).get("product_id").asText()).isEqualTo("sku-456");
         assertThat(items.get(0).get("quantity").asLong()).isEqualTo(2);

@@ -91,9 +91,11 @@ class PureMapperTest {
         assertThat(outcome).isInstanceOf(MapperOutcome.Canonical.class);
         MapperOutcome.Canonical c = (MapperOutcome.Canonical) outcome;
 
-        // Leaf name preserved (Rule-3)
-        assertThat(c.canonicalRecord().has("ext_coupon")).isTrue();
-        assertThat(c.canonicalRecord().get("ext_coupon").asText()).isEqualTo("PROMO99");
+        // Leaf name preserved inside payload (Rule-3 & Ruling R-2A-2)
+        assertThat(c.canonicalRecord().path("payload").has("ext_coupon")).isTrue();
+        assertThat(c.canonicalRecord().path("payload").get("ext_coupon").asText()).isEqualTo("PROMO99");
+        assertThat(c.canonicalRecord().has("event_type")).isTrue();
+        assertThat(c.canonicalRecord().has("event_time")).isTrue();
 
         // Rule-3 & Rule-8: original JSON preserved separately
         assertThat(c.originalJson()).isEqualTo(rawJson);
@@ -130,7 +132,7 @@ class PureMapperTest {
                 """;
         MapperOutcome o1 = pureMapper.map(raw1, profile);
         assertThat(o1).isInstanceOf(MapperOutcome.Canonical.class);
-        assertThat(((MapperOutcome.Canonical) o1).canonicalRecord().get("event_time_original").asText())
+        assertThat(((MapperOutcome.Canonical) o1).canonicalRecord().path("payload").get("event_time_original").asText())
                 .isEqualTo("2026/09/05 20:15:31");
         assertThat(((MapperOutcome.Canonical) o1).canonicalRecord().get("event_time").asText())
                 .contains("2026-09-05T20:15:31");
@@ -141,7 +143,7 @@ class PureMapperTest {
                 """;
         MapperOutcome o2 = pureMapper.map(raw2, profile);
         assertThat(o2).isInstanceOf(MapperOutcome.Canonical.class);
-        assertThat(((MapperOutcome.Canonical) o2).canonicalRecord().get("event_time_original").asText())
+        assertThat(((MapperOutcome.Canonical) o2).canonicalRecord().path("payload").get("event_time_original").asText())
                 .isEqualTo("2026-09-05 20:15:31");
         assertThat(((MapperOutcome.Canonical) o2).canonicalRecord().get("event_time").asText())
                 .contains("2026-09-05T20:15:31");
@@ -200,7 +202,7 @@ class PureMapperTest {
         SourceProfile pEpoch = SourceProfile.fromJson(profileEpoch);
         MapperOutcome o2 = pureMapper.map(rawEpoch, pEpoch);
         assertThat(o2).isInstanceOf(MapperOutcome.Canonical.class);
-        assertThat(((MapperOutcome.Canonical) o2).canonicalRecord().get("event_time_original").asText())
+        assertThat(((MapperOutcome.Canonical) o2).canonicalRecord().path("payload").get("event_time_original").asText())
                 .isEqualTo("1725538531000");
         assertThat(((MapperOutcome.Canonical) o2).canonicalRecord().get("event_time").asText())
                 .isNotBlank();
@@ -330,7 +332,9 @@ class PureMapperTest {
         assertThat(o4).isInstanceOf(MapperOutcome.Canonical.class);
         JsonNode rec = ((MapperOutcome.Canonical) o4).canonicalRecord();
         assertThat(rec.has("note")).isFalse(); // omitted
+        assertThat(rec.path("payload").has("note")).isFalse();
         assertThat(rec.path("note").isMissingNode()).isTrue();
+        assertThat(rec.path("payload").path("note").isMissingNode()).isTrue();
     }
 
     @Test
@@ -368,7 +372,7 @@ class PureMapperTest {
                 """;
         MapperOutcome o1 = pureMapper.map(rawValid, profile);
         assertThat(o1).isInstanceOf(MapperOutcome.Canonical.class);
-        assertThat(((MapperOutcome.Canonical) o1).canonicalRecord().get("amount").asText())
+        assertThat(((MapperOutcome.Canonical) o1).canonicalRecord().path("payload").get("amount").asText())
                 .isEqualTo("2042.00");
 
         // Non-integral FEN rejected
@@ -439,10 +443,10 @@ class PureMapperTest {
         MapperOutcome o1 = pureMapper.map(rawValid, profile);
         assertThat(o1).isInstanceOf(MapperOutcome.Canonical.class);
         JsonNode rec = ((MapperOutcome.Canonical) o1).canonicalRecord();
-        assertThat(rec.get("order_id").asText()).isEqualTo("ORD-999");
-        assertThat(rec.get("user_id").asText()).isEqualTo("CUST-111");
+        assertThat(rec.path("payload").get("order_id").asText()).isEqualTo("ORD-999");
+        assertThat(rec.path("payload").get("user_id").asText()).isEqualTo("CUST-111");
 
-        JsonNode items = rec.get("items");
+        JsonNode items = rec.path("payload").get("items");
         assertThat(items.isArray()).isTrue();
         assertThat(items).hasSize(2);
         assertThat(items.get(0).get("product_id").asText()).isEqualTo("p1");
@@ -473,7 +477,7 @@ class PureMapperTest {
                 .isEqualTo("items[1].quantity");
 
         // Disallow wildcard or arbitrary recursion
-        assertThatThrownBy(() -> PureMapper.resolvePath(rec, "items[*].product_id"))
+        assertThatThrownBy(() -> PureMapper.resolvePath(rec.path("payload"), "items[*].product_id"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -519,7 +523,7 @@ class PureMapperTest {
         MapperOutcome o1 = pureMapper.map(rawWeb, profile);
         assertThat(o1).isInstanceOf(MapperOutcome.Canonical.class);
         MapperOutcome.Canonical c = (MapperOutcome.Canonical) o1;
-        assertThat(c.canonicalRecord().get("channel").asText()).isEqualTo("web");
+        assertThat(c.canonicalRecord().path("payload").get("channel").asText()).isEqualTo("web");
         assertThat(c.unresolvedEnumWarnings()).hasSize(1);
         assertThat(c.unresolvedEnumWarnings().get(0).code()).isEqualTo(MapperViolationCode.ENUM_UNRESOLVED);
         assertThat(c.unresolvedEnumWarnings().get(0).rawValue()).isEqualTo("web");
@@ -635,7 +639,7 @@ class PureMapperTest {
         MapperOutcome o1 = pureMapper.map(rawOrderStateOnly, profile);
         assertThat(o1).isInstanceOf(MapperOutcome.Canonical.class);
         JsonNode rec1 = ((MapperOutcome.Canonical) o1).canonicalRecord();
-        assertThat(rec1.get("status").asText()).isEqualTo("CREATED");
+        assertThat(rec1.path("payload").get("status").asText()).isEqualTo("CREATED");
 
         // 2. Record carrying only sale_state -> status maps to "on_sale" (item_new -> product_created)
         String rawSaleStateOnly = """
@@ -654,6 +658,6 @@ class PureMapperTest {
         MapperOutcome o2 = pureMapper.map(rawSaleStateOnly, profile);
         assertThat(o2).isInstanceOf(MapperOutcome.Canonical.class);
         JsonNode rec2 = ((MapperOutcome.Canonical) o2).canonicalRecord();
-        assertThat(rec2.get("status").asText()).isEqualTo("on_sale");
+        assertThat(rec2.path("payload").get("status").asText()).isEqualTo("on_sale");
     }
 }

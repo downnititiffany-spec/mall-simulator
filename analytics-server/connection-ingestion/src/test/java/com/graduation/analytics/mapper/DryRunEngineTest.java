@@ -143,14 +143,14 @@ class DryRunEngineTest {
         assertThat(report.preview()).hasSize(100); // capped at 100
 
         // Rule-10: user_id is masked in preview
-        assertThat(report.preview().get(0).get("user_id").asText()).isEqualTo("***MASKED***");
+        assertThat(report.preview().get(0).path("payload").get("user_id").asText()).isEqualTo("***MASKED***");
         assertThat(report.previewSensitiveNote()).contains("masked");
 
         // Profile without sensitive fields: values passed through unchanged
         String profileNoSensitiveJson = profileJson.replace("\"sensitiveFields\": [\"user_id\"],", "");
         SourceProfile profileNoSensitive = SourceProfile.fromJson(profileNoSensitiveJson);
         DryRunReport reportUnmasked = engine.run(profileNoSensitive, lines.subList(0, 5));
-        assertThat(reportUnmasked.preview().get(0).get("user_id").asText()).isEqualTo("u0");
+        assertThat(reportUnmasked.preview().get(0).path("payload").get("user_id").asText()).isEqualTo("u0");
         assertThat(reportUnmasked.previewSensitiveNote()).contains("No sensitive fields marked");
     }
 

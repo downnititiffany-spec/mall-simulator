@@ -34,12 +34,14 @@ public final class SourceProfile {
     /** 声明 YUAN 单位时使用 */
     public static final String AMOUNT_UNIT_YUAN = "YUAN";
 
-    // 规范事件字段（Rule-3：@keep 不能撞这些信封或标准 payload 名称）
-    private static final Set<String> CANONICAL_FIELDS = Set.of(
-            // Envelope fields
+    /** Ruling R-2A-2: 信封字段全集（权威单一来源） */
+    public static final Set<String> ENVELOPE_FIELDS = Set.of(
             "event_id", "event_type", "event_time", "ingest_time", "source_system",
-            "schema_version", "trace_id", "payload",
-            // Standard canonical payload fields (event-contract.md)
+            "schema_version", "trace_id", "payload"
+    );
+
+    /** 标准业务 payload 字段全集 (event-contract.md) */
+    public static final Set<String> STANDARD_PAYLOAD_FIELDS = Set.of(
             "user_id", "product_id", "session_id", "behavior_type", "channel",
             "order_id", "items", "total_amount", "amount", "status", "created_at",
             "paid_at", "cancelled_at", "payment_id", "refund_id", "completed_at",
@@ -48,6 +50,40 @@ public final class SourceProfile {
             "quantity", "reserved_qty", "available_qty", "change_type",
             "unit_price", "discount", "reason"
     );
+
+    // 规范事件字段（Rule-3：@keep 不能撞这些信封或标准 payload 名称）
+    private static final Set<String> CANONICAL_FIELDS;
+    static {
+        Set<String> all = new HashSet<>(ENVELOPE_FIELDS);
+        all.addAll(STANDARD_PAYLOAD_FIELDS);
+        CANONICAL_FIELDS = Collections.unmodifiableSet(all);
+    }
+
+    /**
+     * 判断字段名是否为信封字段（Ruling R-2A-2）。
+     */
+    public static boolean isEnvelopeField(String fieldName) {
+        return fieldName != null && ENVELOPE_FIELDS.contains(fieldName);
+    }
+
+    /**
+     * 判断字段名是否为 payload 业务字段（除信封字段外的所有规范目标均为 payload 字段，Ruling R-2A-2）。
+     */
+    public static boolean isPayloadField(String fieldName) {
+        return !isEnvelopeField(fieldName);
+    }
+
+    public static Set<String> envelopeFields() {
+        return ENVELOPE_FIELDS;
+    }
+
+    public static Set<String> standardPayloadFields() {
+        return STANDARD_PAYLOAD_FIELDS;
+    }
+
+    public static Set<String> canonicalFields() {
+        return CANONICAL_FIELDS;
+    }
 
     private final String profileVersion;
     private final String sourceCode;
