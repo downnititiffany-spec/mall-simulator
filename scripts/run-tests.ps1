@@ -62,6 +62,7 @@
 #   `-RunId` 缺省（S3-51 起）＝ `dev003c_<yyyyMMdd_HHmmss>_<6 位随机>`（旧口径为分钟级 `yyyyMMdd_HHmm`，
 #   同一分钟内并发会派生同一 RunId ⇒ 同一日志目录 ⇒ 双方都拿不到证据）；无论显式还是缺省，
 #   同一日志目录**已被另一轮占用**时本次直接 `[REFUSE exit=5]`（互斥锁按日志目录派生、进程退出即释放）。
+#   CI / 在线模式与环境变量回退（WP-F6b）：支持 -Online 开关（不加 -o 联网拉依赖）与 4 个 env 回退（MAVEN_CMD / MAVEN_REPO_LOCAL / JAVA_HOME_17_X64 / JAVA_HOME_8_X64），优先级为：显式参数 > env > 原默认值。
 param(
   [ValidateSet('default', 'isolated', 'spark', 'web', 'all')][string]$Suite = 'default',
   [string]$RunId = '',
@@ -74,12 +75,56 @@ param(
   [string]$LogDir = '',
   # 仅在总控批准口径更新后使用：允许用例数与登记基线不一致仍算通过
   [switch]$AllowCountDrift,
-  [switch]$Confirm
+  [switch]$Confirm,
+  # CI 在线模式，不加 -o；缺省关＝现行离线行为不变
+  [switch]$Online
 )
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Set-StrictMode -Version Latest
+
+# ── CI / 环境变量回退解析层（WP-F6b）────────────────────────────────────────
+# 优先级：显式参数 ($PSBoundParameters) > 环境变量 > 原默认值
+if (-not $PSBoundParameters.ContainsKey('MavenCmd')) {
+  if ($env:MAVEN_CMD) {
+    $MavenCmd = $env:MAVEN_CMD
+    Write-Host ("[CI-ADAPT] MavenCmd <- MAVEN_CMD: {0}" -f $MavenCmd)
+  } elseif (-not (Test-Path -LiteralPath $MavenCmd)) {
+    $mvnFound = (Get-Command 'mvn.cmd' -ErrorAction SilentlyContinue | Select-Object -First 1)
+    if (-not $mvnFound) {
+      $mvnFound = (Get-Command 'mvn' -ErrorAction SilentlyContinue | Select-Object -First 1)
+    }
+    if ($mvnFound) {
+      $mvnSource = if ($mvnFound.Source) { $mvnFound.Source } else { $mvnFound.Path }
+      if ($mvnSource) {
+        $MavenCmd = $mvnSource
+        Write-Host ("[CI-ADAPT] MavenCmd <- PATH: {0}" -f $MavenCmd)
+      }
+    }
+  }
+}
+
+if (-not $PSBoundParameters.ContainsKey('MavenRepoLocal')) {
+  if ($env:MAVEN_REPO_LOCAL) {
+    $MavenRepoLocal = $env:MAVEN_REPO_LOCAL
+    Write-Host ("[CI-ADAPT] MavenRepoLocal <- MAVEN_REPO_LOCAL: {0}" -f $MavenRepoLocal)
+  }
+}
+
+if (-not $PSBoundParameters.ContainsKey('JdkDefault')) {
+  if ($env:JAVA_HOME_17_X64) {
+    $JdkDefault = $env:JAVA_HOME_17_X64
+    Write-Host ("[CI-ADAPT] JdkDefault <- JAVA_HOME_17_X64: {0}" -f $JdkDefault)
+  }
+}
+
+if (-not $PSBoundParameters.ContainsKey('JdkSpark')) {
+  if ($env:JAVA_HOME_8_X64) {
+    $JdkSpark = $env:JAVA_HOME_8_X64
+    Write-Host ("[CI-ADAPT] JdkSpark <- JAVA_HOME_8_X64: {0}" -f $JdkSpark)
+  }
+}
 
 $RunIdPattern = '^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$'
 $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
@@ -1055,7 +1100,8 @@ function Invoke-MavenRun {
   $env:PATH = (Join-Path $JdkHome 'bin') + ';' + $env:PATH
   Remove-Item Env:\MAVEN_ARGS -ErrorAction SilentlyContinue
   $log = Join-Path $LogDir $LogName
-  $mvnArgs = @('-o', "-Dmaven.repo.local=$MavenRepoLocal", '-f', $Pom) + $ExtraArgs + @('test') + $SysProps
+  $offlineArgs = @(if ($Online) { } else { '-o' })
+  $mvnArgs = $offlineArgs + @("-Dmaven.repo.local=$MavenRepoLocal", '-f', $Pom) + $ExtraArgs + @('test') + $SysProps
   Write-Host ("  JAVA_HOME = {0}" -f $env:JAVA_HOME)
   Write-Host ("  mvn {0}" -f ($mvnArgs -join ' '))
   # `| Out-Host` 是必需的：Tee-Object 会把内容写进成功流，若不落 Host 就会污染本函数的返回值
