@@ -57,9 +57,9 @@ ODS 归一化分布 dt=20260918 × 36 行、dt=20260919 × 2 行（B-EVT-0035 �
 |----|------|
 | dws_trade_day | order_count=7，buyer_count=4，sale_amount=1222.90，refund_amount=398.00，net_sale_amount=824.90，avg_order_value=174.70 |
 | dws_behavior_funnel_day | view_users=4，intent_users=2，cart_users=1，order_users=4，pay_users=4；intent_rate=0.5000，order_rate=2.0000，pay_rate=1.0000，overall_buy_rate=1.0000，cart_rate=0.2500 |
-| dws_user_behavior_day | U1: pv3/fav0/cart0/hours2/buy2；U2: pv3/fav0/cart1/hours1/buy3；U3: pv1/fav1/cart0/hours1/buy3；U4: pv1/fav0/cart0/hours1/buy2 |
-| dws_product_behavior_day | 1001: pv3/uv2/fav1/cart0/buy3；1002: pv3/uv2/fav0/cart1/buy3；1003: pv2/uv2/fav0/cart0/buy3 |
-| dws_product_sale_day | 1001: qty3/8970.00/买家2；1002: qty3/17940.00/买家1；1003: qty3/89400.00/买家2 |
+| dws_user_behavior_day | U1: pv3/fav0/cart0/hours2/buy2；U2: pv3/fav0/cart1/hours2/buy3；U3: pv1/fav1/cart0/hours1/buy3；U4: pv1/fav0/cart0/hours1/buy2 |
+| dws_product_behavior_day | 1001: pv3/uv2/fav1/cart0/buy3；1002: pv3/uv2/fav0/cart1/buy4；1003: pv2/uv2/fav0/cart0/buy3 |
+| dws_product_sale_day | 1001: qty3/8970.00/买家2；1002: qty4/23920.00/买家2；1003: qty3/89400.00/买家2 |
 | dws_user_trade_period | U1: 1单/59.80/valid1；U2: 2单/179.40/valid2；U3: 2单/387.70/valid2；U4: 2单/596.00/valid1（O4 全退剔除） |
 | dws_region_sale_day | tier1: 买家1/单2/179.40/179.40；tier2: 买家1/单2/387.70/287.70；tier3: 买家2/单3/655.80/357.80 |
 
@@ -72,7 +72,7 @@ ODS 归一化分布 dt=20260918 × 36 行、dt=20260919 × 2 行（B-EVT-0035 �
 | ads_active_trend | dau=4，behavior_count=10 |
 | ads_behavior_funnel | 4 stage 行 view/intent/order/pay = 4/2/4/4，rate NULL/0.5000/2.0000/1.0000；各行 overall_buy_rate=1.0000、overall_cart_rate=0.2500 |
 | ads_hot_product（topN≥3） | rank1=1002（heat=ln4+3·ln2+5·ln4≈10.3972）> rank2=1001（ln4+2·ln2+5·ln4≈9.7041）> rank3=1003（ln3+5·ln4≈8.0301）；名称取自 fxsb dim_product（非 UNKNOWN）；rule_version=v1 |
-| ads_product_conversion | 1001: pv_users2/buy_users2/rate1.0；1002: 2/1/0.5；1003: 2/2/1.0 |
+| ads_product_conversion | 1001: pv_users2/buy_users2/rate1.0；1002: 2/2/1.0；1003: 2/2/1.0 |
 | ads_sale_trend | 1 行：order7/buyer4/sale1222.90/aov174.70/net824.90 |
 | ads_user_profile | U1: r_ntile1→r=5,f1,m1→一般发展，新用户，fav_cat=11，active 高；U2: r_ntile3→r=3,f3,m2→一般挽留，活跃，fav_cat=22；U3: r_ntile4→r=2,f4,m3→一般保持，活跃，fav_cat=11（1:1 平局 category_id ASC）；U4: r_ntile2→r=4,f2,m4→重要发展，活跃，fav_cat=22；rule_version=rfm-v2 |
 | ads_data_quality | AMOUNT_RECONCILE check=7/err0/passed1；REQUIRED_FIELD_NULL_RATE check=10/err0/passed1；EVENT_ID_UNIQUE check=10/err0/passed1；ENUM_WHITELIST check=10/err0/passed1；rule_version=1 |
@@ -107,3 +107,9 @@ RFM 排序键复核（4 行 NTILE(5) → 桶号 1..4）：
 - Phase B 后 `fxsb_*` 六库存在且为 B 预期；`dw_*` 库 A 数据不变（仅 mock-mall 行）。
 - Phase A 回程（SA2）：锚点值必须**逐项等于 SA1**；fxsb 库留存但 ACTIVE 当前源为 mock-mall；
   同 order_id `2100917058081423362` 在 dw_dwd（A 金额口径）与 fxsb_dwd（B 59.80）两库互不串写。
+
+## 勘误（2026-10-16，总控 WP-N1B 验收裁定 R-N1B-3）
+
+§4.3/§4.4 手算遗漏两处，生产链路输出为准（与测试内独立重算一致）：
+1. U3 的混合篮订单 B-EVT-0032/0033（已付 89.70 = 1001×1 29.90 + 1002×1 59.80）：其 1002 行曾漏记。dws_product_sale_day 1002 应为 qty4/239.20 元/买家 2；dws_product_behavior_day 1002 buy 应为 4；ads_product_conversion 1002 应为 pv_users2/buy_users2/rate1.0。（同单 1001 行与 U3 贸易额 387.70 原手算已含此单，前后不一致即此漏。）
+2. U2 在 14:01 有一条 behavior 事件（UUID 型 event_id，商品 1002）：dws_user_behavior_day U2 的 active_hours 应为 2（小时集 {10, 14}），原记 1 漏此条。

@@ -3302,3 +3302,9 @@
 - A 源（mock-mall，v1 直通为设计行为）：黄金 55 行接受 51 / 隔离 4，与冻结清单 №30 连续一致；清单 `mappingVersion/mappingProfileHash` 恒为 null（§3.2 恒等式）；检查点落真库；追加 3 行正例后增量轮恰好接受 3 行、检查点偏移恰好前进追加字节数；重放 `noNewData`。
 - 总控验收修正（均为测试侧，生产代码零改动）：`EventClock` 构造与 dry-run 报告访问器按真实 API 对齐；批次状态期望按 IngestionService 定版口径修正（含隔离行的批次状态为 QUARANTINED，SUCCESS 仅零隔离）；`order_amount` 系执行方臆测字段，按画像实测改 `total_amount`——臆测值全部以实跑证伪/证实后才登记，未采信执行方报告中的「观测值」。
 - 门禁（总控 fresh 运行）：两套件实跑 **3/3 PASS**（RunId `wpn1aacc20261016d`，prepare `-IncludeAnalytics` 全契约注入）；默认档 connection-ingestion **415** 不变（基线 1380/26/134 不受影响）；官方 isolated 脚本 **PASS exit 0**（30/19/13 登记计数不变，RunId `wpn1agate20261016`——新 IT 在 runner 默认环境下由 IsolationProfileCondition 关闭，其全契约实跑证据即上述直跑）。至此采集半程「真映射 + 真检查点 + 真激活」在本机闭环；旧环境 G31-02 的一次性人工证据自此有可复跑的自动化对应物。下一小步：WP-N1B（B 源 Spark 数仓链 + 接缝 + 逐层对账）。
+
+### 2026-10-16 WP-N1B B 源数仓链 E2E + 双源复合键实证（云端 VM）
+- 新增两套件（执行：Antigravity Flash；总控逐项验收、多轮修正）：`SourceBChainExecSpec`（32 条）以总控真链生成的 landing 夹具（fixtures/source-b-landing/，07a95b5）为输入，fxsb 命名空间按 JobRegistry 依赖序直驱 sci→odl→dim→bdw→tdw→usw→fna→dqc→pub；接缝断言解析已提交清单并以其中 batchId/sourceSystem 驱动 odl；ODS 38 行（dt 36+2）、故障 evt_no 不入 ODS、DIM/DWD/DWS/ADS 逐层对 ORACLE 断言，DWS 另以测试内集合重算交叉验证，发布后正式分区行数与 staging 一致。`DwdRealSourceIdentitySpec`（7 条）：A 黄金 + B 落盘同入 dw 仓，两处跨源 event_id 碰撞（B-EVT-0037/0038）各存活两行、source_system 可辨，行为总量与双输入重算一致。
+- 裁定 R-N1B-3（验收抓到）：4 处断言与 ORACLE.md §4.3/§4.4 不符，逐项溯源至 accepted 原始数据后判定为 **ORACLE 手算两处遗漏**（U3 混合篮订单 B-EVT-0032/0033 的 1002 行 qty1/59.80/买家 U3；U2 14:01 的 UUID 行为事件致 active_hours=2），生产输出与测试内独立重算一致为准；ORACLE.md 已加 2026-10-16 勘误并修正四处数值，套件期望随勘误更新。生产代码零改动。
+- 门禁（总控 fresh 运行）：定向复跑 372/372 全绿；官方 spark 门禁 RunId `wpn1bgate20261016` 372/372、45 suites、All tests passed=True，唯一 DRIFT 为基线 333→372（组成：两新套件 +39），已重登记 $BaselineSpark=372 并附日期注释；确认轮 RunId `wpn1bgate20261016b` **PASS exit 0**。证据上限 D-126（本地 Spark + 内存目录，不主张 Hive/HDFS）。
+- 下一步：WP-UI 换肤包（用户选定方案 B 云白极简），其后阶段 3/4/5 服务与页面实跑。
