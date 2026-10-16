@@ -3314,3 +3314,10 @@
 - 门禁（总控 fresh 运行）：web 测试 **450/450 PASS**（node --test，exit 0）；`npm run build` 成功（8.77s）。R-UI-4 冲突清单为空（无测试硬编码旧视觉数值，总控以全绿实测复核）。
 - 证据边界：本机托管浏览器无法访问 VM 回环地址，未做公开隧道（安全），故本包未附真实页面截图；视觉验收依据为令牌数值对照 + diff 逐项核对。真实页面观感复核并入下一阶段（服务/页面实跑，届时应用以真实快照运行）。
 - 下一步：阶段 3–5——指标快照发布 → 服务层（8091）接已发布快照 → 演示页面实跑核心链路。
+
+### 2026-10-16 WP-N2A 平台基座实跑（云端 VM）
+- 范围：live 库供给 → 平台打包 → 13 个 PLATFORM_* 启动 → 基座验收（不含 Spark 发布）。G2 采路线 (i)：复用 it-prepare-isolation.ps1 -IncludeAnalytics，RunId `live20261016`，3307 上建 `live20261016_analytics_meta` / `live20261016_analytics_metric` 与 metaapp/metricapp/metricread 三账号（最小权限）；口令仅存 VM 受限 env 文件，不入库不入仓。
+- 打包：build-web-and-package.ps1 六步全绿，平台 jar（208MB，内含换肤后 SPA 40 个静态文件）与商城 jar 均通过边界自检。过程修复（均为 VM 环境项，零仓库代码变更）：mall-frontend 首次 npm install；JDK bin 补 jar.exe 符号链接（与既有 java.exe 同法）；打包须在本地代理中继健康时进行。
+- 启动与实查（总控亲跑）：assert-platform-env -RequirePlatform 13/13 OK；平台以仓库根为 CWD、export-dir 绝对路径钉死启动，约 52s 后 `GET /api/v1/metrics/health` 200（metric store ok）；Flyway 实查 meta=V38、metric=V13；admin 登录 200；`GET /api/v1/metrics/snapshots` 返回空集（无 ACTIVE 时 fail-closed，不造数）。
+- G1 Spark 供给（ provisional）：官方 3.5.1 发行版经慢代理仍在下载，先行以 Maven 已解析的 spark-jobs 依赖集组装 spark-submit（toolchain/spark-m2，真 SparkSubmit 主类，JDK 8）：`--version` 实测 Spark 3.5.1 / Scala 2.12.18；以 JobRunner 无参调用实证分发与类加载，其参数校验按预期拒绝（exit 64）。发行版落地后替换 sparkSubmitPath 并复测。
+- 环境发现：本 VM 上平台 JVM 同样需要 `-Djava.net.preferIPv4Stack=true`（与 Maven 同一条沙箱规则）；缺失时 JDBC 在握手期以「Packet for query is too large」误报失败，已以独立 JDBC 探针复现并定位。
