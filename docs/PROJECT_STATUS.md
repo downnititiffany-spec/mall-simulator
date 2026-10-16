@@ -3348,3 +3348,4 @@
 ### 2026-10-16 开发线合入 main 登记
 - 合并提交 faf58c3 将 codex/cloud-v3-development（关键路径已验收）合入 main；文本冲突 10 处全部取开发线版本（两线对同一文件的实现不做手工缝合，避免产生第三份未验证实现）。
 - 协调提交 218e8d1：合入时 main 侧独有的新增代码（发布线 WP-2A/2B 的 analytics/mapper 包、dry-run 端点与发布线版采集测试，共 29 个文件）因其面向已退役的发布线采集 API、与开发线采集实现不兼容（合并树 default 门 connection-ingestion 构建失败实证），按「不逐包移植」裁定不进入合并后代码树；该工作完整保留于 main 历史（2118d61 及其祖先）可达。合并后代码树与开发线一致（仅 PROJECT_STATUS.md 为两线历史并集），复跑门结果见本节后续登记/验收记录。
+- 合并后验证：复跑中另发现两处协调项并已修复——IsolationGuardMySqlIT 的自动合并产生重复变量（两线同名修复的语义冲突，59ac340 取开发线版本）；LocalFileIngestorSourceIsolationTest（两线共有文件）曾被协调清扫误删，已按开发线版本恢复。最终合并树与开发线的差异仅余本状态文档，default 门复跑 PASS（1540 全 MATCH，RunId mainfinal20261016），main 已推送。
