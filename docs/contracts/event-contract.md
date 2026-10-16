@@ -76,8 +76,8 @@
 | user_id | string | 是 | 用户 ID |
 | items | array | 是 | 订单项数组，见下 |
 | total_amount | string | 是 | 订单总额 = Σ item.amount（decimal） |
-| status | string | 是 | 固定 `CREATED` |
-| created_at | string | 是 | 下单时间 |
+| status | string | 否 | 固定 `CREATED`（Q6 裁决降为可选，2026-10-16） |
+| created_at | string | 否 | 下单时间（Q6 裁决降为可选，2026-10-16） |
 
 订单项（items[]）：
 
@@ -97,7 +97,7 @@
 | user_id | string | 是 | 用户 ID |
 | payment_id | string | 是 | 支付流水 ID |
 | amount | string | 是 | 支付金额（= 订单总额） |
-| paid_at | string | 是 | 支付时间 |
+| paid_at | string | 否 | 支付时间（Q6 裁决降为可选，2026-10-16） |
 
 ### 2.6 order_cancelled — 订单取消
 
@@ -106,7 +106,7 @@
 | order_id | string | 是 | 订单 ID |
 | user_id | string | 是 | 用户 ID |
 | reason | string | 是 | 取消原因（code 或文本） |
-| cancelled_at | string | 是 | 取消时间 |
+| cancelled_at | string | 否 | 取消时间（Q6 裁决降为可选，2026-10-16） |
 
 ### 2.7 refund_created — 退款申请
 
@@ -117,7 +117,7 @@
 | user_id | string | 是 | 用户 ID |
 | amount | string | 是 | 申请退款金额 ≤ 已付金额 |
 | reason | string | 是 | 退款原因 |
-| created_at | string | 是 | 申请时间 |
+| created_at | string | 否 | 申请时间（Q6 裁决降为可选，2026-10-16） |
 
 ### 2.8 refund_completed — 退款完成
 
@@ -127,7 +127,7 @@
 | order_id | string | 是 | 订单 ID |
 | user_id | string | 是 | 用户 ID |
 | amount | string | 是 | 实际退款金额 |
-| completed_at | string | 是 | 完成时间 |
+| completed_at | string | 否 | 完成时间（Q6 裁决降为可选，2026-10-16） |
 
 ### 2.9 stock_reserved / stock_released — 库存预留与释放
 

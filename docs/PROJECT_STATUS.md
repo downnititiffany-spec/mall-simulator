@@ -3363,3 +3363,8 @@
 - **迁移头版本钉纠正**：AnalyticsIsolationFlywayIT 的 meta 版本钉 "34" 为 V34 时代所写，仓库迁移头已至 V38（V35 运行时档案单活 / V36 AI 调用请求标识 / V37 AI 反馈与历史证据 / V38 业务报告实例），钉更新为 "38"（V34 内容实证仍由同方法规则查询独立承担）；metric 钉 "13" 仍为当前头未动。
 - **收编腿关账证据**（RunId fix4acc20261016）：prepare -IncludeAnalytics exit 0 → run-isolated-tests.ps1 -Module analytics -IncludeAnalyticsWriteIts：analytics-schema exit 0（Flyway IT 2/2）、analytics 13/13 全绿零跳过（IsolationGuard 6 + MetricPublisher 3 + MetricAds 2 + AdsDataQuality 2，写 IT 真跑非跳过）、runner [PASS exit=0]。WP-F2b 关账：收编以原机制开箱跑通为准。
 - 验收纪律补记：改任一测试脚本（run-tests.ps1 / run-isolated-tests.ps1）必须连带亲跑 AnalyticsIsolationScriptsContractTest；新增 Flyway 迁移必须同步更新 AnalyticsIsolationFlywayIT 的版本钉。
+
+### 2026-10-16 WP-F4 canonical-event.v1 契约修订关账（云端 VM）
+- 按 Q6 裁决第 3 条落地：`contract-specs/schemas/canonical-event.v1.schema.json` 仅删 $defs required 中 6 个条目（order_created 的 status/created_at、order_paid 的 paid_at、order_cancelled 的 cancelled_at、refund_created 的 created_at、refund_completed 的 completed_at），properties 定义原样保留，schema_version 仍 "1.0"、x-contract-status 仍 DRAFT 不冻结；`docs/contracts/event-contract.md` 对应 6 行必填改「否」并注 Q6 裁决（2.2 product_created 的 status 未动）；`contract-specs/VERSION` 2.2.0→2.3.0（放宽兼容变更，minor 递增），README 第 15 节登记变更对照与影响。
+- 总控亲验：git diff 仅 4 个规约文件且逐项与规约一致；schema JSON 合法；指纹由总控亲算回填（33558 B，raw 与 LF-normalized sha256 同为 a5cf643e377758f9231b00c9935dc295b66b1d7b6d79ccf79d7a4f49ff633569，文件无 CRLF）；CanonicalEventSchemaParityTest 5/5、GeneratorContractParityTest 7/7 亲跑 PASS。
+- 裸锚点门禁注记：在本 VM（Linux）亲跑与 HEAD 基线对照，两边均为锚点 313／裸锚点 199／「新增 82」——该 82 系台账键反斜杠路径与 Linux 扫描正斜杠键不匹配的既有平台伪影，非本包引入；本包新增第 15 节零裸锚点（无 § 字符）。门禁在 Windows 口径下的真值不受本包影响。
