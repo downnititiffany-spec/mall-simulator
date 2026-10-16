@@ -238,7 +238,7 @@ class IngestionServiceStatusTest {
     void reportsLandingErrorInsteadOfFallingBack(@TempDir Path landingRoot) {
         RuntimeProfile profile = new RuntimeProfile();
         profile.setId(1L);
-        profile.setLandingUri("hdfs://namenode:8020/landing");
+        profile.setLandingUri("file://host/share/landing");
         when(runtimeProfileService.findActive()).thenReturn(Optional.of(profile));
         when(batchMapper.selectOne(any())).thenReturn(null);
 

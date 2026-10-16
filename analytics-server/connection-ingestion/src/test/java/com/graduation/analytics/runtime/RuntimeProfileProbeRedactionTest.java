@@ -41,7 +41,7 @@ class RuntimeProfileProbeRedactionTest {
                 mock(RuntimeProfileMapper.class), landingStorage, metricStore, mock(CredentialService.class));
         RuntimeProfile local = new RuntimeProfile();
         local.setType(RuntimeProfile.TYPE_LOCAL);
-        local.setLandingUri("file:///missing-authority?token=probe-secret");
+        local.setLandingUri("file://missing-authority?token=probe-secret");
         local.setId(41L);
 
         RuntimeProfileService.CheckDetail landing = invoke(service, "checkLanding", local);

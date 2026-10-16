@@ -111,10 +111,15 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1234
-  'mall-simulator'          = 14
-  'synthetic-data-generator' = 125
+  'analytics-server'        = 1380
+  'mall-simulator'          = 26
+  'synthetic-data-generator' = 134
 }
+# 2026-10-16：云端 VM（Linux）接管后 WP-S0 稳定化完成，default 全量 fresh 实测（RunId `vms0gate20261016a`）
+#   analytics-server 1380（F=0/E=0/S=2，模块明细 123+415+213+153+246+230）、mall 26（F=0/E=0/S=0）、generator 134（F=0/E=0/S=0），
+#   三树 Maven 均 exit 0。旧登记 1234/14/125 系 2026-10-06 口径，落后于分支顶端实际用例数；按本次完整汇总重登记。
+#   本轮修复含 connection-ingestion 三项（SourcePathPolicy 编码误判、探针脱敏与状态回退两项测试的平台依赖前提）；
+#   isolated 档已另行全绿（30/19/13 不变）。严格计数门禁保留，未启用 `-AllowCountDrift`。
 # 2026-10-06：当前工作树 default 全量量数（RunId `dev003c_20261006_164319_275a62`）确认
 #   analytics-server 1234（F=0/E=0/S=2）、mall 14（F=0/E=0/S=0）、generator 125（F=0/E=0/S=0）。
 #   全树测试均执行完成；旧基线 1195/14/111 导致统一入口仅因计数漂移 exit=7。按实际完整汇总更新

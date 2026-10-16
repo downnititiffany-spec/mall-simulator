@@ -131,7 +131,7 @@ if ($Module -in @('mall', 'both', 'all')) {
   $targets += [pscustomobject]@{
     name = 'mall'; db = "${RunId}_mall"; user = (New-IsolationUserName -RunId $RunId -Role 'mallapp')
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
-    pom = 'mall-simulator\pom.xml'
+    pom = 'mall-simulator/pom.xml'
     extraArgs = @(); requireClass = $null
   }
 }
@@ -139,7 +139,7 @@ if ($Module -in @('generator', 'both', 'all')) {
   $targets += [pscustomobject]@{
     name = 'generator'; db = "${RunId}_generator"; user = (New-IsolationUserName -RunId $RunId -Role 'genapp')
     pwdEnv = @('IT_GUARD_PASSWORD_GENERATOR', 'IT_GUARD_PASSWORD')
-    pom = 'synthetic-data-generator\pom.xml'
+    pom = 'synthetic-data-generator/pom.xml'
     extraArgs = @(); requireClass = $null
   }
 }
@@ -148,7 +148,7 @@ if ($Module -in @('analytics', 'all')) {
   $targets += [pscustomobject]@{
     name = 'analytics'; db = "${RunId}_mall"; user = (New-IsolationUserName -RunId $RunId -Role 'mallapp')
     pwdEnv = @('IT_GUARD_PASSWORD_MALL', 'IT_GUARD_PASSWORD')
-    pom = 'analytics-server\pom.xml'
+    pom = 'analytics-server/pom.xml'
     extraArgs = @('-pl', 'metric-analysis', '-am')
     requireClasses = @('IsolationGuardMySqlIT') + $(if ($IncludeAnalyticsWriteIts) {
       @('MetricAdsMySqlIT', 'MetricPublisherMySqlIT')
@@ -387,7 +387,7 @@ if ($IncludeAnalyticsWriteIts) {
   $schemaLog = Join-Path $LogDir 'isolated-analytics-schema.log'
   Write-Host ''
   Write-Host '=== 运行 analytics 双库 Flyway：platform-app -Pisolated-analytics-schema ==='
-  $schemaArgs = @('-o', "-Dmaven.repo.local=$MavenRepoLocal", '-f', 'analytics-server\pom.xml',
+  $schemaArgs = @('-o', "-Dmaven.repo.local=$MavenRepoLocal", '-f', 'analytics-server/pom.xml',
       '-pl', 'platform-app', '-am', 'test')
   & $MavenCmd @schemaArgs 2>&1 | Set-Content -LiteralPath $schemaLog -Encoding utf8
   $schemaCode = $LASTEXITCODE

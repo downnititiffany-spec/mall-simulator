@@ -1,7 +1,7 @@
 package com.graduation.generator.web;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
@@ -57,7 +57,7 @@ class GeneratorStaticResourceTest {
                 .andExpect(content().string(containsString("prefers-reduced-motion")));
     }
 
-    @SpringBootConfiguration
+    @Configuration
     @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, FlywayAutoConfiguration.class})
     static class StaticResourceApplication {
     }

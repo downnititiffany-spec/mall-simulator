@@ -47,8 +47,9 @@ public final class SourcePathPolicy {
             if (Path.of(path).isAbsolute()) {
                 return false;
             }
-        } catch (InvalidPathException e) {
-            return false;
+        } catch (InvalidPathException ignored) {
+            // JVM 文件系统编码（如 POSIX 环境下的 US-ASCII）遇到非 ASCII 字符可能抛出 InvalidPathException；
+            // 此时已通过前置前缀/驱动器/UNC/反斜杠校验，不把系统编码限制误判为非法相对路径
         }
         for (String segment : path.split("/")) {
             if ("..".equals(segment)) {
