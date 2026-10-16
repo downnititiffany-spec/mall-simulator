@@ -17,6 +17,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.zone.ZoneRules;
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +32,7 @@ import java.util.Set;
  * <p>Zero persistence, zero I/O beyond its inputs (Rule-10).</p>
  * <p>Thread-safe: stateless.</p>
  */
+@Component
 public class PureMapper {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

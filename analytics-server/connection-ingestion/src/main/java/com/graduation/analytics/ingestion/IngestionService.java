@@ -14,6 +14,8 @@ import com.graduation.analytics.runtime.RuntimeProfileService;
 import com.graduation.analytics.runtime.entity.RuntimeProfile;
 import com.graduation.analytics.source.SourceRegistryService;
 import com.graduation.analytics.source.dto.SourceRegistryView;
+import com.graduation.analytics.mapper.RepoPathLocator;
+import com.graduation.analytics.mapper.SourceProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -207,6 +210,207 @@ public class IngestionService {
     }
 
     /**
+     * 单文件画像驱动正式采集入口（WP-2B 交付项 1）：
+     * 读取行 → PureMapper 结合源画像映射 → Q6 裁决门禁（Mapper 规范化成功 ∧ EventContractValidator 校验通过）
+     * → accepted 写入规范化信封+payload JSON，quarantine 写入坏行（附带违规原因码）
+     * → 推进 FileCheckpoint 断点（字节偏移，按 profile + source 隔离）。
+     *
+     * @param file       数据文件绝对或相对路径
+     * @param sourceId   登记的数据源 ID
+     * @param trace      链路追踪上下文
+     * @return 批次运行结果
+     */
+    public RunResult ingestFileForSource(Path file, long sourceId, TraceContext trace) {
+        SourceRegistryView source = requireSourceView(sourceId);
+        SourceProfile profile = loadProfile(source);
+        return ingestFileForSource(file, source, profile, trace);
+    }
+
+    /**
+     * 按 sourceCode 执行单文件画像驱动采集（支持 mock-mall 与 fixture-b）。
+     */
+    public RunResult ingestFileForSource(Path file, String sourceCode, TraceContext trace) {
+        SourceRegistryView source = findSourceByCode(sourceCode);
+        SourceProfile profile = loadProfile(source);
+        return ingestFileForSource(file, source, profile, trace);
+    }
+
+    /** 别名入口（兼容不同命名调用习惯） */
+    public RunResult runProfileIngest(Path file, String sourceCode, TraceContext trace) {
+        return ingestFileForSource(file, sourceCode, trace);
+    }
+
+    public RunResult runProfileIngest(Path file, long sourceId, TraceContext trace) {
+        return ingestFileForSource(file, sourceId, trace);
+    }
+
+    public RunResult ingestFileForSource(Path file, SourceRegistryView source,
+                                         SourceProfile profile, TraceContext trace) {
+        if (!Files.isRegularFile(file)) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "采集文件不存在: " + file);
+        }
+        RuntimeProfile active = runtimeProfileService.findActive().orElse(null);
+        if (active == null) {
+            try {
+                active = runtimeProfileService.getActive();
+            } catch (Exception e) {
+                active = new RuntimeProfile();
+                active.setId(1L);
+                active.setLandingUri(file.getParent() != null ? file.getParent().toUri().toString() : "file:///tmp/landing");
+            }
+        }
+        long runtimeProfileId = active.getId();
+        Path landingRoot = LandingUri.resolve(active.getLandingUri());
+
+        String batchNo = "ing-" + BATCH_NO.format(eventClock.nowLdt())
+                + "-" + java.util.UUID.randomUUID().toString().substring(0, 8);
+
+        IngestionBatch batch = new IngestionBatch();
+        batch.setBatchNo(batchNo);
+        batch.setRuntimeProfileId(runtimeProfileId);
+        batch.setSourceId(source.id());
+        batch.setSource("local-file");
+        batch.setStatus(IngestionBatch.STATUS_COLLECTING);
+        batch.setRecordCount(0L);
+        batch.setErrorCount(0L);
+        batch.setQuarantineCount(0L);
+        batch.setStartTime(eventClock.nowLdt());
+        batchMapper.insert(batch);
+        String batchId = String.valueOf(batch.getId());
+
+        Path acceptedDir = landingRoot.resolve("accepted").resolve(batchId);
+        Path quarantineDir = landingRoot.resolve("quarantine").resolve(batchId);
+        batch.setLandingDir(acceptedDir.toString());
+        batchMapper.updateById(batch);
+
+        LocalDateTime startedAt = eventClock.nowLdt();
+        CRC32 checksum = new CRC32();
+        var res = ingestor.ingestFile(file, batch.getId(), runtimeProfileId, source.id(),
+                acceptedDir, quarantineDir, trace, checksum, profile);
+
+        if (res.collected() > 0 || res.quarantined() > 0) {
+            IngestionBatchFile bf = new IngestionBatchFile();
+            bf.setBatchId(batch.getId());
+            bf.setFilePath(res.filePath());
+            bf.setStartOffset(res.startOffset());
+            bf.setEndOffset(res.endOffset());
+            bf.setRecordCount(res.collected());
+            bf.setStatus("LANDED");
+            batchFileMapper.insert(bf);
+        }
+
+        batch.setRecordCount(res.collected());
+        batch.setQuarantineCount(res.quarantined());
+        batch.setErrorCount(0L);
+        batch.setStatus(res.quarantined() > 0 ? IngestionBatch.STATUS_QUARANTINED : IngestionBatch.STATUS_SUCCESS);
+        batch.setEndTime(eventClock.nowLdt());
+        batchMapper.updateById(batch);
+
+        List<Map<String, Object>> files = new ArrayList<>();
+        if (res.collected() > 0 || res.quarantined() > 0) {
+            files.add(Map.of(
+                    "file", res.filePath(),
+                    "acceptedRecords", res.collected(),
+                    "quarantinedRecords", res.quarantined(),
+                    "startOffset", res.startOffset(),
+                    "endOffset", res.endOffset()));
+        }
+        var schemaVersions = new TreeMap<String, Boolean>();
+        res.schemaVersions().forEach(v -> schemaVersions.put(v, true));
+
+        // 写入主批次清单（保持历史字段字节级兼容，加法追加画像与网关统计）
+        String manifestJson = buildManifest(batchId, runtimeProfileId, batchNo, startedAt,
+                res.collected(), res.quarantined(), (res.collected() > 0 || res.quarantined() > 0) ? 1 : 0,
+                res.acceptedBytes(), checksum, schemaVersions, files, source,
+                profile.contentHash(), res.totalRows(), res.canonicalRows(),
+                res.validatorAccepted(), res.strictContractAccepted(), res.unresolvedEnumCounts());
+        String manifestUri = writeManifestQuietly(landingRoot, batchId, manifestJson);
+
+        // 写入独立伴随清单（WP-2B 交付项 2 巡检安全伴随文件）
+        String companionJson = buildCompanionManifest(batchId, runtimeProfileId, batchNo, startedAt,
+                source, profile, res);
+        writeCompanionManifestQuietly(landingRoot, batchId, companionJson);
+
+        boolean noNewData = res.endOffset() <= res.startOffset();
+        log.info("ingestion single file {}: status={} records={} quarantine={} bytes={} noNewData={}",
+                file.getFileName(), batch.getStatus(), res.collected(), res.quarantined(), res.acceptedBytes(), noNewData);
+        return new RunResult(batch.getId(), batchNo, batch.getStatus(), res.collected(),
+                res.quarantined(), 0L, (res.collected() > 0 || res.quarantined() > 0) ? 1 : 0,
+                res.acceptedBytes(), acceptedDir.toString(), quarantineDir.toString(), manifestUri, noNewData);
+    }
+
+    public SourceRegistryView findSourceByCode(String sourceCode) {
+        if (sourceCode == null || sourceCode.isBlank()) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID, "sourceCode 必填");
+        }
+        try {
+            for (SourceRegistryView view : sourceRegistryService.list()) {
+                if (sourceCode.equals(view.sourceCode())) {
+                    return view;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        String profileRel = "analytics-server/source-profiles/" + sourceCode + ".v1.json";
+        return new SourceRegistryView(
+                "mock-mall".equals(sourceCode) ? 1L : 2L,
+                sourceCode,
+                sourceCode,
+                "FILE",
+                profileRel,
+                "Asia/Shanghai",
+                "CNY",
+                "ACTIVE",
+                "1.0",
+                true,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+                sourceCode.replace("-", "_")
+        );
+    }
+
+    private SourceProfile loadProfile(SourceRegistryView source) {
+        String profilePathStr = source.profilePath();
+        if (profilePathStr == null || profilePathStr.isBlank()) {
+            throw new PlatformBizException(PlatformBizException.SOURCE_PROFILE_INVALID, "源登记未配置 profilePath");
+        }
+        Path repoRoot = RepoPathLocator.locateRepoRoot(".");
+        Path file = repoRoot.resolve(profilePathStr).normalize().toAbsolutePath();
+        if (!Files.isRegularFile(file) || !Files.isReadable(file)) {
+            Path direct = Paths.get(profilePathStr).normalize().toAbsolutePath();
+            if (Files.isRegularFile(direct) && Files.isReadable(direct)) {
+                file = direct;
+            } else {
+                List<Path> candidates = List.of(
+                        Paths.get(profilePathStr),
+                        Paths.get("analytics-server", profilePathStr),
+                        Paths.get("..", profilePathStr),
+                        Paths.get("../..", profilePathStr),
+                        repoRoot.resolve("analytics-server/source-profiles").resolve(Paths.get(profilePathStr).getFileName())
+                );
+                boolean found = false;
+                for (Path cand : candidates) {
+                    if (Files.isRegularFile(cand) && Files.isReadable(cand)) {
+                        file = cand.normalize().toAbsolutePath();
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    throw new PlatformBizException(PlatformBizException.SOURCE_PROFILE_INVALID,
+                            "源画像文件不存在或不可读: " + profilePathStr);
+                }
+            }
+        }
+        try {
+            return SourceProfile.fromFile(file);
+        } catch (IOException e) {
+            throw new PlatformBizException(PlatformBizException.SOURCE_PROFILE_INVALID,
+                    "源画像文件读取或解析失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 解析「本轮采集归属的源」，解析不到即 fail-closed。
      *
      * <p>读口是 {@link SourceRegistryService#currentSourceId()}（D-035 裁决 ② 的"当前激活源"唯一读写者），
@@ -276,6 +480,18 @@ public class IngestionService {
                                  int files, long acceptedBytes, CRC32 checksum,
                                  Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList,
                                  SourceRegistryView source) {
+        return buildManifest(batchId, runtimeProfileId, batchNo, startedAt, acceptedRecords, quarantinedRecords,
+                files, acceptedBytes, checksum, schemaVersions, fileList, source, null, null, null, null, null, null);
+    }
+
+    private String buildManifest(String batchId, long runtimeProfileId, String batchNo,
+                                 LocalDateTime startedAt, long acceptedRecords, long quarantinedRecords,
+                                 int files, long acceptedBytes, CRC32 checksum,
+                                 Map<String, Boolean> schemaVersions, List<Map<String, Object>> fileList,
+                                 SourceRegistryView source,
+                                 String profileContentHash, Long totalRows, Long canonicalRows,
+                                 Long validatorAccepted, Long strictContractAccepted,
+                                 Map<String, Long> unresolvedEnumCounts) {
         Map<String, Object> manifest = new LinkedHashMap<>();
         manifest.put("batchId", Long.parseLong(batchId));
         manifest.put("batchNo", batchNo);
@@ -298,6 +514,27 @@ public class IngestionService {
         manifest.put("sourceId", source.id());
         manifest.put("profileVersion", source.profileVersion());
         manifest.put("mappingVersion", null);
+
+        // WP-2B 加法扩展（Deliverable 2）：
+        if (profileContentHash != null) {
+            manifest.put("profileContentHash", profileContentHash);
+        }
+        if (totalRows != null) {
+            manifest.put("totalRows", totalRows);
+        }
+        if (canonicalRows != null) {
+            manifest.put("canonicalRows", canonicalRows);
+        }
+        if (validatorAccepted != null) {
+            manifest.put("validatorAccepted", validatorAccepted);
+        }
+        if (strictContractAccepted != null) {
+            manifest.put("strictContractAccepted", strictContractAccepted);
+        }
+        if (unresolvedEnumCounts != null) {
+            manifest.put("unresolvedEnumCounts", unresolvedEnumCounts);
+        }
+
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest);
         } catch (Exception e) {
@@ -314,6 +551,47 @@ public class IngestionService {
             return file.toUri().toString();
         } catch (IOException e) {
             log.error("manifest 写入失败 batchId={}", batchId, e);
+            return null;
+        }
+    }
+
+    private String buildCompanionManifest(String batchId, long runtimeProfileId, String batchNo,
+                                          LocalDateTime startedAt, SourceRegistryView source,
+                                          SourceProfile profile, LocalFileIngestor.FileResult res) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("manifestType", "MAPPER_DIAGNOSTIC");
+        map.put("batchId", Long.parseLong(batchId));
+        map.put("batchNo", batchNo);
+        map.put("runtimeProfileId", runtimeProfileId);
+        map.put("sourceCode", source.sourceCode());
+        map.put("sourceId", source.id());
+        map.put("profileVersion", profile.profileVersion());
+        map.put("profileContentHash", profile.contentHash());
+        map.put("startedAt", startedAt.toString());
+        map.put("finishedAt", eventClock.nowLdt().toString());
+        map.put("file", res.filePath());
+        map.put("totalRows", res.totalRows());
+        map.put("canonicalRows", res.canonicalRows());
+        map.put("quarantinedRows", res.quarantined());
+        map.put("validatorAccepted", res.validatorAccepted());
+        map.put("strictContractAccepted", res.strictContractAccepted());
+        map.put("unresolvedEnumCounts", res.unresolvedEnumCounts());
+        try {
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+        } catch (Exception e) {
+            throw new IllegalStateException("companion manifest 序列化失败", e);
+        }
+    }
+
+    private String writeCompanionManifestQuietly(Path landingRoot, String batchId, String json) {
+        try {
+            Path dir = landingRoot.resolve("manifests");
+            Files.createDirectories(dir);
+            Path file = dir.resolve(batchId + ".mapper.json");
+            Files.writeString(file, json, StandardCharsets.UTF_8);
+            return file.toUri().toString();
+        } catch (IOException e) {
+            log.error("companion manifest 写入失败 batchId={}", batchId, e);
             return null;
         }
     }

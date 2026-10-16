@@ -1,0 +1,4 @@
+{"msg_id":"fb-msg-001","msg_kind":"item_view","occurred_ms":1725538531000,"received_ms":1725538532000,"corr_id":"fb-trace-001","buyer_uid":"buyer-123","item_sku":"sku-456","visit_id":"sess-789","view_action":"BROWSE","terminal":"MINI_PROG","ext_coupon_code":"PROMO_FIXTURE_B"}
+{"msg_id":"fb-msg-002","msg_kind":"order_new","occurred_ms":1725538531000,"received_ms":1725538532000,"corr_id":"fb-trace-002","order_ref":"ord-fb-100","buyer_uid":"buyer-123","order_total_fen":204200,"order_state":"CREATED","order_lines":[{"item_sku":"sku-456","qty":2,"unit_price_fen":102100,"line_amount_fen":204200}]}
+{"msg_id":"fb-msg-003","msg_kind":"item_view","occurred_ms":1725538531000,"received_ms":1725538532000,"corr_id":"fb-trace-003","buyer_uid":"buyer-123","item_sku":"sku-456","visit_id":"sess-789","view_action":"PURCHASE","terminal":"APP"}
+{"msg_id":"fb-msg-004","msg_kind":"coupon_redeemed","occurred_ms":1725538531000,"received_ms":1725538532000,"corr_id":"fb-trace-004"}

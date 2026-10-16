@@ -368,6 +368,10 @@ class LocalFileIngestorSourceIsolationTest {
      * 「源不允许缺省」这一条**由签名保证，而不是由运行时兜底**：{@code sourceId} 是原始 {@code long}，
      * 传不出 null，也不存在 {@code ingestFile(file, batchId, profileId, dirs...)} 这种旧重载
      * （若有人为了兼容把它加回来，本用例立刻失败——那才是真正的风险点）。
+     * <p>2026-10-16 总控裁决 R-2B-1 修订：WP-2B 新增了一个带 SourceProfile 参数的 ingestFile 重载，
+     * 它与原签名一样带 sourceId（第 2–4 参数为 long, long, long）、按源隔离断点，不违反本条意图。
+     * 故断言由「只允许一个」修订为「每一个 ingestFile 都必须带 sourceId 前缀」——禁止的始终是
+     * 不带 sourceId 的重载，本条的保护目标（D-037 断点按源隔离）不变。
      */
     @Test
     @DisplayName("源不许缺省：不存在「不带 sourceId」的 ingestFile / hasConsumableData / checkpointKeys 重载")
@@ -377,9 +381,11 @@ class LocalFileIngestorSourceIsolationTest {
                 .map(m -> m.getName() + Arrays.toString(m.getParameterTypes()))
                 .toList();
         assertThat(ingestSignatures)
-                .as("只允许一个 ingestFile，且参数里有第二个 long（sourceId）")
-                .hasSize(1);
-        assertThat(ingestSignatures.get(0)).contains("long, long, long");
+                .as("至少存在一个 ingestFile（R-2B-1 修订后的不变量）")
+                .isNotEmpty();
+        assertThat(ingestSignatures)
+                .as("每一个 ingestFile 都必须带 sourceId（参数第 2–4 位为 long, long, long），不许存在不带源的重载")
+                .allMatch(sig -> sig.contains("long, long, long"));
 
         assertThat(Arrays.stream(LocalFileIngestor.class.getMethods())
                 .filter(m -> m.getName().equals("hasConsumableData"))

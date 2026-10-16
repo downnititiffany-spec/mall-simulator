@@ -8,8 +8,13 @@ import com.graduation.analytics.ingestion.entity.QuarantineRecord;
 import com.graduation.analytics.ingestion.mapper.FileCheckpointMapper;
 import com.graduation.analytics.ingestion.mapper.QuarantineRecordMapper;
 import com.graduation.analytics.common.TraceContext;
-import lombok.RequiredArgsConstructor;
+import com.graduation.analytics.mapper.MapperOutcome;
+import com.graduation.analytics.mapper.MapperViolation;
+import com.graduation.analytics.mapper.MapperViolationCode;
+import com.graduation.analytics.mapper.PureMapper;
+import com.graduation.analytics.mapper.SourceProfile;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -26,6 +31,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
@@ -51,7 +59,6 @@ import java.util.zip.CRC32;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class LocalFileIngestor {
 
     private static final byte LF = 10;
@@ -61,6 +68,27 @@ public class LocalFileIngestor {
     private final QuarantineRecordMapper quarantineRecordMapper;
     private final EventContractValidator validator;
     private final ObjectMapper objectMapper;
+    private final PureMapper pureMapper;
+
+    public LocalFileIngestor(FileCheckpointMapper checkpointMapper,
+                             QuarantineRecordMapper quarantineRecordMapper,
+                             EventContractValidator validator,
+                             ObjectMapper objectMapper) {
+        this(checkpointMapper, quarantineRecordMapper, validator, objectMapper, new PureMapper());
+    }
+
+    @Autowired
+    public LocalFileIngestor(FileCheckpointMapper checkpointMapper,
+                             QuarantineRecordMapper quarantineRecordMapper,
+                             EventContractValidator validator,
+                             ObjectMapper objectMapper,
+                             PureMapper pureMapper) {
+        this.checkpointMapper = checkpointMapper;
+        this.quarantineRecordMapper = quarantineRecordMapper;
+        this.validator = validator;
+        this.objectMapper = objectMapper;
+        this.pureMapper = pureMapper != null ? pureMapper : new PureMapper();
+    }
 
     /**
      * 采集一个文件从断点之后的新内容（字节偏移）。
@@ -73,6 +101,12 @@ public class LocalFileIngestor {
     public FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
                                  Path acceptedDir, Path quarantineDir, TraceContext trace,
                                  CRC32 checksum) {
+        return ingestFile(file, batchId, runtimeProfileId, sourceId, acceptedDir, quarantineDir, trace, checksum, null);
+    }
+
+    public FileResult ingestFile(Path file, long batchId, long runtimeProfileId, long sourceId,
+                                 Path acceptedDir, Path quarantineDir, TraceContext trace,
+                                 CRC32 checksum, SourceProfile profile) {
         String abs = checkpointKey(file);
         String identity = fileIdentity(file);
         FileCheckpoint ckpt = findCheckpoint(runtimeProfileId, sourceId, abs);
@@ -81,13 +115,18 @@ public class LocalFileIngestor {
         boolean newVersion = ckpt == null || !identity.equals(ckpt.getFileIdentity()) || size < ckpt.getNextOffset();
         long startOffset = newVersion ? 0 : ckpt.getNextOffset();
         if (!newVersion && startOffset >= size) {
-            return result(file, startOffset, startOffset, identity, 0, 0, 0, Set.of());
+            return result(file, startOffset, startOffset, identity, 0, 0, 0, Set.of(), 0, 0, 0, 0, Map.of());
         }
 
         long collected = 0;
         long quarantined = 0;
         long acceptedBytes = 0;
         long endOffset = startOffset;
+        long totalRows = 0;
+        long canonicalRows = 0;
+        long validatorAccepted = 0;
+        long strictContractAccepted = 0;
+        Map<String, Long> unresolvedEnumCounts = new LinkedHashMap<>();
         Set<String> schemaVersions = new HashSet<>();
         try {
             Files.createDirectories(acceptedDir);
@@ -133,27 +172,96 @@ public class LocalFileIngestor {
                                 len--;
                             }
                             String text = new String(raw, 0, len, StandardCharsets.UTF_8);
-                            EventContractValidator.Violation v = validator.check(text, 0);
-                            if (v == null) {
-                                byte[] out = (text + "\n").getBytes(StandardCharsets.UTF_8);
-                                acceptedOut.write(out);
-                                acceptedBytes += out.length;
-                                if (checksum != null) {
-                                    checksum.update(out);
+
+                            if (profile == null) {
+                                // 兼容历史直接校验逻辑
+                                totalRows++;
+                                EventContractValidator.Violation v = validator.check(text, 0);
+                                if (v == null) {
+                                    byte[] out = (text + "\n").getBytes(StandardCharsets.UTF_8);
+                                    acceptedOut.write(out);
+                                    acceptedBytes += out.length;
+                                    if (checksum != null) {
+                                        checksum.update(out);
+                                    }
+                                    collected++;
+                                    canonicalRows++;
+                                    validatorAccepted++;
+                                    strictContractAccepted++;
+                                    schemaVersions.add(schemaVersionOf(text));
+                                } else {
+                                    quarantineOut.write(raw);
+                                    quarantineOut.write(LF);
+                                    QuarantineRecord record = new QuarantineRecord();
+                                    record.setBatchId(batchId);
+                                    record.setEventId(v.eventId());
+                                    record.setSchemaVersion(v.schemaVersion());
+                                    record.setReason(v.reason());
+                                    record.setRawPath(quarantineFile.toString());
+                                    quarantineRecordMapper.insert(record);
+                                    quarantined++;
                                 }
-                                collected++;
-                                schemaVersions.add(schemaVersionOf(text));
                             } else {
-                                quarantineOut.write(raw);
-                                quarantineOut.write(LF);
-                                QuarantineRecord record = new QuarantineRecord();
-                                record.setBatchId(batchId);
-                                record.setEventId(v.eventId());
-                                record.setSchemaVersion(v.schemaVersion());
-                                record.setReason(v.reason());
-                                record.setRawPath(quarantineFile.toString());
-                                quarantineRecordMapper.insert(record);
-                                quarantined++;
+                                // WP-2B / Q6 裁决：PureMapper 映射 + EventContractValidator 正式门
+                                totalRows++;
+                                MapperOutcome outcome = pureMapper.map(text, profile);
+                                if (outcome instanceof MapperOutcome.Quarantined q) {
+                                    quarantineOut.write(raw);
+                                    quarantineOut.write(LF);
+                                    QuarantineRecord record = new QuarantineRecord();
+                                    record.setBatchId(batchId);
+                                    record.setEventId(extractField(text, "event_id", "msg_id"));
+                                    record.setSchemaVersion(extractField(text, "schema_version", "contract_rev"));
+                                    if (record.getSchemaVersion() == null) {
+                                        record.setSchemaVersion(profile.canonicalSchemaVersion());
+                                    }
+                                    String reason = formatQuarantineReason(q.violations());
+                                    record.setReason(reason);
+                                    record.setRawPath(quarantineFile.toString());
+                                    quarantineRecordMapper.insert(record);
+                                    quarantined++;
+                                } else if (outcome instanceof MapperOutcome.Canonical c) {
+                                    canonicalRows++;
+                                    String canonicalJson = c.canonicalRecord().toString();
+                                    EventContractValidator.Violation v = validator.check(canonicalJson, (int) totalRows);
+                                    if (v != null) {
+                                        // 映射成功但未通过校验器闸门
+                                        quarantineOut.write(raw);
+                                        quarantineOut.write(LF);
+                                        QuarantineRecord record = new QuarantineRecord();
+                                        record.setBatchId(batchId);
+                                        record.setEventId(v.eventId() != null ? v.eventId() : extractField(canonicalJson, "event_id"));
+                                        record.setSchemaVersion(v.schemaVersion() != null ? v.schemaVersion() : profile.canonicalSchemaVersion());
+                                        record.setReason(v.reason());
+                                        record.setRawPath(quarantineFile.toString());
+                                        quarantineRecordMapper.insert(record);
+                                        quarantined++;
+                                    } else {
+                                        // 正式采集门通过：写入 accepted 输出
+                                        validatorAccepted++;
+                                        boolean hasUnresolved = c.unresolvedEnumWarnings().stream()
+                                                .anyMatch(w -> w.code() == MapperViolationCode.ENUM_UNRESOLVED);
+                                        if (!hasUnresolved) {
+                                            strictContractAccepted++;
+                                        }
+                                        byte[] out = (canonicalJson + "\n").getBytes(StandardCharsets.UTF_8);
+                                        acceptedOut.write(out);
+                                        acceptedBytes += out.length;
+                                        if (checksum != null) {
+                                            checksum.update(out);
+                                        }
+                                        collected++;
+                                        schemaVersions.add(schemaVersionOf(canonicalJson));
+                                    }
+
+                                    // 统计未定枚举计数（Rule-12）
+                                    for (MapperViolation w : c.unresolvedEnumWarnings()) {
+                                        if (w.code() == MapperViolationCode.ENUM_UNRESOLVED && w.rawValue() != null) {
+                                            String key = w.fieldPath() + "=" + w.rawValue();
+                                            unresolvedEnumCounts.merge(key, 1L, Long::sum);
+                                        }
+                                    }
+                                }
                             }
                             // 行起点推进到 LF 之后
                             consumedAtLineStart = consumed;
@@ -191,7 +299,8 @@ public class LocalFileIngestor {
         log.info("ingest {}: collected={} quarantined={} acceptedBytes={} offset {}→{} identity={}",
                 file.getFileName(), collected, quarantined, acceptedBytes, startOffset, endOffset, identity);
         return result(file, startOffset, endOffset, identity, collected, quarantined,
-                acceptedBytes, schemaVersions);
+                acceptedBytes, schemaVersions, totalRows, canonicalRows, validatorAccepted,
+                strictContractAccepted, unresolvedEnumCounts);
     }
 
     private static FileResult result(Path file, long start, long end, String identity,
@@ -199,6 +308,48 @@ public class LocalFileIngestor {
                                      Set<String> schemaVersions) {
         return new FileResult(file.getFileName().toString(), start, end, identity,
                 collected, quarantined, acceptedBytes, schemaVersions);
+    }
+
+    private static FileResult result(Path file, long start, long end, String identity,
+                                     long collected, long quarantined, long acceptedBytes,
+                                     Set<String> schemaVersions, long totalRows, long canonicalRows,
+                                     long validatorAccepted, long strictContractAccepted,
+                                     Map<String, Long> unresolvedEnumCounts) {
+        return new FileResult(file.getFileName().toString(), start, end, identity,
+                collected, quarantined, acceptedBytes, schemaVersions,
+                totalRows, canonicalRows, validatorAccepted, strictContractAccepted, unresolvedEnumCounts);
+    }
+
+    private String formatQuarantineReason(List<MapperViolation> violations) {
+        if (violations == null || violations.isEmpty()) {
+            return "MAPPER_QUARANTINE";
+        }
+        return violations.stream()
+                .map(v -> {
+                    String prefix = v.code() != null ? v.code().name() : "VIOLATION";
+                    if (v.detail() != null && !v.detail().isBlank()) {
+                        return prefix + ": " + v.detail();
+                    }
+                    return prefix;
+                })
+                .collect(Collectors.joining("; "));
+    }
+
+    private String extractField(String json, String... candidates) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode node = objectMapper.readTree(json);
+            for (String c : candidates) {
+                JsonNode v = node.get(c);
+                if (v != null && !v.isNull() && !v.asText().isBlank()) {
+                    return v.asText();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     /**
@@ -388,6 +539,14 @@ public class LocalFileIngestor {
 
     /** 文件级采集结果 */
     public record FileResult(String filePath, long startOffset, long endOffset, String fileIdentity,
-                             long collected, long quarantined, long acceptedBytes, Set<String> schemaVersions) {
+                             long collected, long quarantined, long acceptedBytes, Set<String> schemaVersions,
+                             long totalRows, long canonicalRows, long validatorAccepted,
+                             long strictContractAccepted, Map<String, Long> unresolvedEnumCounts) {
+
+        public FileResult(String filePath, long startOffset, long endOffset, String fileIdentity,
+                          long collected, long quarantined, long acceptedBytes, Set<String> schemaVersions) {
+            this(filePath, startOffset, endOffset, fileIdentity, collected, quarantined, acceptedBytes,
+                    schemaVersions, collected + quarantined, collected, collected, collected, Map.of());
+        }
     }
 }
