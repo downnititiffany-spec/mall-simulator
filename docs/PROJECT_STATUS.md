@@ -3281,3 +3281,10 @@
 - 负例覆盖 ODS 短格式 `2021011` 与固定宽度但不存在的日期 `20210229`；两类异常均在维表写入前拒绝，用户、商品与日期维表预置数据保持不变。原有 D-061 连续范围/ISO-8601/幂等用例保留。
 - 统一 Spark 门禁 RunId `dev003c_20261012_114026_1a64af`：JDK8、43 suites、333/333 PASS、0 failed/aborted/canceled/ignored/pending，基线 MATCH，BUILD SUCCESS。范围限 local[1]/in-memory。
 - 最终报告 `docs/verification/results/PHASE2-3-DIM-DATE-EXACT-FORMAT-GUARD-20261012.md`；修改前备份后缀 `bak-20261012-dim-date-calendar-guard-final`。生产 Hive/HDFS 验收仍开放。
+
+### 2026-10-16 开发环境迁移与新基线复现（云端 VM 总控接管）
+
+- 用户裁决：开发主线确认为本分支 `codex/cloud-v3-development`（顶端 60a48fa），此后直接在本分支开发；main 为冻结发布线，待本分支测试稳定后再合入。开发环境迁至云端 VM（Linux，JDK17+JDK8、Maven 3.9.9、MySQL 隔离实例 127.0.0.1:3307，3306 全程未触碰）。
+- 基线复现（RunId `vmrebase20261016a`，官方入口）：**spark 333/333、43 suites 与基线 MATCH，exit 0**；**web 450/450 全过、vite build 成功**；isolated 三模块计数 30/19/13 全 MATCH，但内容有真实失败（见下）；default 官方计数因 connection-ingestion 失败停摆（exit 7），全树补跑实测 analytics 1380（基线登记 1234 系 2026-10-06 口径，已落后于分支实际用例数；mall 实测 26 vs 登记 14、generator 134 vs 登记 125同理）。
+- 待稳定化清单（下一工作包 WP-S0）：① default 三个真实失败（均在 connection-ingestion：`RuntimeProfileProbeRedactionTest` 脱敏断言、`IngestionServiceStatusTest` 落地错误回退期望、`SampleRefPolicyTest` POSIX 路径策略）；② isolated 原版入口脚本 pom 字面量为 Windows 反斜杠，本机不可直接运行（验证使用仓外等字节副本，仅改分隔符；本轮未改仓库脚本）；③ generator isolated 两类冒烟共 14 个 `GeneratorMetaStore` 装配错误（同档 `GeneratorMetaStoreTest` 5/5 通过，根因待定案）；④ `IsolationGuardMySqlIT.wrongFingerprintIsRejectedOnRealInstance` 期望硬编码原开发机主机名，与本机真实指纹不符（与发布线 WP-6 同类）。
+- 本轮仅验证与登记，未改任何代码/脚本/基线；工作区复现后保持干净。WP-S0 修复并全绿后，由总控按全量实测重登记 default 基线并补记本节结论。F-88 限定验收与阶段开放项不变。
