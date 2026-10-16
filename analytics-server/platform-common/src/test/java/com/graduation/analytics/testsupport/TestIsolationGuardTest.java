@@ -18,6 +18,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -661,8 +662,11 @@ class TestIsolationGuardTest {
         props.put("metaDb", "analytics_meta_v25it");
         props.put("metricDb", "analytics_metric_v25it");
         props.put("hiveNamespace", runId + "_hive");
-        props.put("hdfsRoot", "D:/Develop_code/GraduationProject/target/v25-it/" + runId + "/hdfs");
-        props.put("manifestRoot", "D:/Develop_code/GraduationProject/target/v25-it/" + runId + "/manifest");
+        String base = Paths.get("D:/Develop_code/GraduationProject/target/v25-it").isAbsolute()
+                ? "D:/Develop_code/GraduationProject/target/v25-it"
+                : System.getProperty("java.io.tmpdir") + "/v25-it";
+        props.put("hdfsRoot", base + "/" + runId + "/hdfs");
+        props.put("manifestRoot", base + "/" + runId + "/manifest");
         props.put("credentialsRef", "credref:" + runId);
         return props;
     }

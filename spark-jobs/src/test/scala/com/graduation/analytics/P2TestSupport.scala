@@ -18,8 +18,18 @@ import scala.collection.JavaConverters._
  */
 object P2TestSupport {
 
-  /** 独立 warehouse 根（与在产 `D:\Develop_code\GraduationProject\spark-warehouse` 无关） */
-  val TempRoot = "D:/Develop/tmp"
+  /**
+   * 独立 warehouse 根（与在产 `D:\Develop_code\GraduationProject\spark-warehouse` 无关）。
+   *
+   * 解析优先级：
+   *  1. 系统属性 `p2.test.tempRoot` 若非空则直接使用；
+   *  2. 否则，若 OS 为 Windows（`os.name` 含 "win"，忽略大小写），使用 `D:/Develop/tmp`；
+   *  3. 否则，使用 `java.io.tmpdir`。
+   */
+  val TempRoot: String = sys.props.get("p2.test.tempRoot").filter(_.nonEmpty).getOrElse {
+    if (sys.props.getOrElse("os.name", "").toLowerCase.contains("win")) "D:/Develop/tmp"
+    else System.getProperty("java.io.tmpdir")
+  }
 
   /** 黄金夹具（只读输入） */
   val GoldenRelative = "tests/golden-dataset/events/golden-20260901.jsonl"
