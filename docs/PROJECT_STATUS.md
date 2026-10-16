@@ -3405,3 +3405,10 @@
 - 对账发现 1（结构口径）：数仓按 (源前缀 fxsb, dt) 累计、档案只隔离快照作用域——LOAD_ODS 输出 10035=9995+既有 40，发布 gmv 365160.30 / paid 1008 / pv 5008 / cart 1001 / fav 876 恰为规模账 + 基线 S20260918_4 累计，差异有完整实证解释。
 - 对账发现 2（真实缺陷，立 WP-F7d）：退款被按订单行数倍增。发布隐含退款 127073.15 vs 累计口径应有 91916.50，多 35156.65；总控取证 Σ(退款×该单行数)=126675.15，与发布值扣基线退款 398.00 后分毫不差。机制：`TradeDwdJob` 的 dwd_order_detail 为行粒度却每行携带整单级 `refund_amount`，`DwsSql.tradeDay` 直接 SUM 倍增（GMV 的 amount 为行级不受影响）；基线退款单均为单行故未暴露。WP-F7d 规约已立（聚合层按订单去重修复 + 多行退款回归测试），修复后复跑验收预言：gmv 365160.30 与 aov 362.26 不变、退款 91916.50、净额 273243.80。
 - 状态：**WP-F7 关账**（纲领原义＝完整链证据 + 耗时/计数登记，只做证据不做性能承诺；本机 local Spark 单机口径）。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。本地提交待推送：分支推送栈含 WP-F6 的 tests.yml 提交（f3e732e），受 PAT 无 Workflows 权限阻塞，本节登记与 WP-F7b 关账提交（346de94）同为本地待补推。
+
+### 2026-10-17 WP-F7d 退款行粒度扇出修复关账（云端 VM）兼 spark 基线 372→375
+
+- 交付：`DwsSql.tradeDay` 与 `regionSaleDay` 改为先按订单聚合的子查询（`SUM(amount)` 为订单额、`MAX(refund_amount)` 折叠整单退款）再汇总，外层投影列序/别名与 `final_paid_flag=1` 口径不变，不动 DWD 明细结构与 `OrderTradeCompiler` 语义；新增回归测试 `DwsTradeDayMultiLineRefundSpec`（3 条：多行部分退款只计一次且含旧口径 420.00 正对照探针、region 与 trade_day 对账闭环、空分区 NULL/0 语义）。盘点结论：全仓仅 `AdsSql.categorySale` 另有整单退款按品类直算，其正确修法属 DWD/Compiler 层行级分摊（订单行分摊口径冻结），本包维持现状并在 `WP-F7d-REPORT.md` 说明理由；其余聚合点经总控 grep 复核均为行级字段或已按 order 去重（含 `AdsSql.dataQuality` 的 AMOUNT_RECONCILE 子查询按 order_id 分组取 MAX），安全。
+- 总控亲验（不采信执行方自述）：diff 逐行核对与规约一致；量数轮（RunId wpf7dgate20261017a，-AllowCountDrift）fresh 实测 **375/375、46 suites、All tests passed**；基线登记 372→375（run-tests.ps1，附变更注释）；脚本契约测试 `AnalyticsIsolationScriptsContractTest` 亲跑 **13/13 PASS**；收口轮（RunId wpf7dgate20261017b）**tests=375 MATCH、PASS exit=0、JDK8 本轮新写**。WP-F7d 代码与回归关账。
+- 余项（转 WP-F7e，不静默丢弃）：同数据复跑验收（预言 gmv 365160.30 / aov 362.26 不变、退款 91916.50、净额 273243.80）本轮未做——在跑平台（8091）仍载旧版 spark-jobs 产物，须先重建 spark-jobs 并重部署平台，再在档案 scale-vm-b 下由总控亲跑流水线复跑核对预言值，单独立步执行。
+- 本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。推送注记：本包提交与在先本地提交同栈，栈内含 WP-F6 的 tests.yml 提交（f3e732e），受 PAT 无 Workflows 权限阻塞，整栈本地待补推（与 WP-F7c 登记口径一致）。
