@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 
@@ -107,6 +109,114 @@ class QualityCheckerSeverityTest {
                 rules.find("EVENT_ID_UNIQUE").orElseThrow().version());
         assertThat(summary.corePassed()).isFalse();      // 必须阻断发布
         assertThat(dup.getDetail()).contains("超批准阈值");
+    }
+
+    /**
+     * F88-INV-09 阈值边界用例 1：errorRate 恰为 0.0005（<= 批准阈值 0.0005）。
+     *
+     * <p>构造夹具：2000 个事件中恰好 1 对重复（1999 个唯一 event_id），
+     * 重复率 = 1 / 2000 = 0.000500。
+     * 按 QualityChecker:129 判定 {@code rate.compareTo(DUP_RATE_MAX) <= 0} 成立，
+     * 判定为观察项（WARN），不阻断核心结论（corePassed = true）。</p>
+     */
+    @Test
+    @DisplayName("F88-INV-09: event_id 重复率恰为 0.0005 ⇒ 观察项 WARN，不阻断发布")
+    void duplicateRateExactlyAtApprovedThreshold00005IsObservedAndDoesNotBlock() {
+        List<EventEnvelope> events = new java.util.ArrayList<>();
+        // 构造 1999 个唯一事件 e0 .. e1998
+        for (int i = 0; i < 1999; i++) {
+            events.add(behavior("e" + i, "u1", "p1", "view"));
+        }
+        // 再加入 1 个重复事件 e0，总事件数 2000，重复数 1，重复率 = 1 / 2000 = 0.000500
+        events.add(behavior("e0", "u1", "p1", "view"));
+
+        QualityChecker.QualitySummary summary = checker.check(events, 47L, new HashMap<>());
+
+        DataQualityResult dup = ruleOf(summary.results(), "EVENT_ID_UNIQUE");
+        assertThat(dup.getPassed()).as("重复率 0.000500 <= 0.0005 必须判定通过").isEqualTo(1);
+        assertThat(dup.getSeverity()).as("声明严重度为 WARN").isEqualTo(RuleSeverity.WARN);
+        assertThat(dup.getEffectiveSeverity()).as("有效严重度为 WARN（观察项）").isEqualTo(RuleSeverity.WARN);
+        assertThat(summary.corePassed()).as("观察项不阻断发布").isTrue();
+        assertThat(dup.getDetail()).contains("未超批准阈值，观察项");
+    }
+
+    /**
+     * F88-INV-09 阈值边界用例 2：errorRate 超过批准阈值 0.0005（如 1/1996 ≈ 0.000501 > 0.0005）。
+     *
+     * <p>构造夹具：1996 个事件中 1 个重复，重复率按 scale=6 HALF_UP 算得 0.000501。
+     * 按 QualityChecker:129 判定 {@code rate.compareTo(DUP_RATE_MAX) <= 0} 为 false，
+     * 判定未通过（passed=0），升为 BLOCKING 并阻断发布（corePassed = false）。</p>
+     */
+    @Test
+    @DisplayName("F88-INV-09: event_id 重复率超阈值（0.000501 > 0.0005）⇒ 升为 BLOCKING 并阻断发布")
+    void duplicateRateExceedingApprovedThresholdBlocks() {
+        List<EventEnvelope> events = new java.util.ArrayList<>();
+        // 1995 个唯一事件
+        for (int i = 0; i < 1995; i++) {
+            events.add(behavior("e" + i, "u1", "p1", "view"));
+        }
+        // 1 个重复事件，总数 1996，重复数 1，1 / 1996 = 0.000501002... -> scale=6 HALF_UP: 0.000501
+        events.add(behavior("e0", "u1", "p1", "view"));
+
+        QualityChecker.QualitySummary summary = checker.check(events, 47L, new HashMap<>());
+
+        DataQualityResult dup = ruleOf(summary.results(), "EVENT_ID_UNIQUE");
+        assertThat(dup.getPassed()).as("重复率 0.000501 > 0.0005 必须判定未通过").isEqualTo(0);
+        assertThat(dup.getSeverity()).as("声明严重度仍为 WARN").isEqualTo(RuleSeverity.WARN);
+        assertThat(dup.getEffectiveSeverity()).as("有效严重度升为 BLOCKING").isEqualTo(RuleSeverity.BLOCKING);
+        assertThat(summary.corePassed()).as("超阈值必须阻断发布").isFalse();
+        assertThat(dup.getDetail()).contains("超批准阈值，阻断");
+    }
+
+    /**
+     * F88-INV-09 判据语义契约与 0.0005 vs 0.0005001 边界解析：
+     *
+     * <p>验证以下事实：
+     * <ol>
+     *   <li>直接数值比较：{@code new BigDecimal("0.0005").compareTo(DUP_RATE_MAX) <= 0} 为 true；
+     *       {@code new BigDecimal("0.0005001").compareTo(DUP_RATE_MAX) <= 0} 为 false（大于 0.0005）。</li>
+     *   <li>严重度判据：passed=1 映射为 WARN（不阻断）；passed=0 升为 BLOCKING（阻断）。</li>
+     *   <li>源码精度语义记录：QualityChecker:128 采用 {@code divide(..., 6, RoundingMode.HALF_UP)}。
+     *       对于 7 位小数（如 0.0005001），在 scale=6 HALF_UP 规则下会四舍五入为 0.000500；
+     *       而在直接 BigDecimal 比较中 0.0005001 > 0.0005。此语义留总控裁定。</li>
+     * </ol></p>
+     */
+    @Test
+    @DisplayName("F88-INV-09: 阈值 0.0005 与 0.0005001 比较语义与严重度映射验证")
+    void thresholdComparisonBoundaryContractAndScaleSemantic() {
+        BigDecimal threshold = new BigDecimal("0.0005");
+        BigDecimal exact = new BigDecimal("0.0005");
+        BigDecimal over = new BigDecimal("0.0005001");
+
+        // 1. 直接比较语义
+        assertThat(exact.compareTo(threshold) <= 0).as("0.0005 <= 0.0005 成立").isTrue();
+        assertThat(over.compareTo(threshold) > 0).as("0.0005001 > 0.0005 成立").isTrue();
+
+        // 2. 规则解析严重度映射
+        QualityRuleCatalog.FrozenRules rules = QualityRuleCatalog.DEFAULT.freeze(null);
+        RuleSeverity.RuleVerdict passVerdict = RuleSeverity.resolve(rules, "EVENT_ID_UNIQUE", 1);
+        assertThat(passVerdict.effectiveSeverity()).isEqualTo(RuleSeverity.WARN);
+        assertThat(passVerdict.blocks()).isFalse();
+
+        RuleSeverity.RuleVerdict failVerdict = RuleSeverity.resolve(rules, "EVENT_ID_UNIQUE", 0);
+        assertThat(failVerdict.effectiveSeverity()).isEqualTo(RuleSeverity.BLOCKING);
+        assertThat(failVerdict.blocks()).isTrue();
+
+        // 3. 证明 QualityChecker:128 舍入语义（scale=6, HALF_UP）
+        BigDecimal scale6Over = BigDecimal.valueOf(5001)
+                .divide(BigDecimal.valueOf(10000000), 6, RoundingMode.HALF_UP);
+        assertThat(scale6Over)
+                .as("5001/10000000=0.0005001 在 scale=6 HALF_UP 下舍入为 0.000500")
+                .isEqualTo(new BigDecimal("0.000500"));
+
+        BigDecimal scale6RoundUp = BigDecimal.valueOf(5005)
+                .divide(BigDecimal.valueOf(10000000), 6, RoundingMode.HALF_UP);
+        assertThat(scale6RoundUp)
+                .as("5005/10000000=0.0005005 在 scale=6 HALF_UP 下进位为 0.000501")
+                .isEqualTo(new BigDecimal("0.000501"));
+        assertThat(scale6RoundUp.compareTo(threshold) > 0)
+                .as("进位后的 0.000501 严格大于阈值 0.0005")
+                .isTrue();
     }
 
     @Test
