@@ -3321,3 +3321,11 @@
 - 启动与实查（总控亲跑）：assert-platform-env -RequirePlatform 13/13 OK；平台以仓库根为 CWD、export-dir 绝对路径钉死启动，约 52s 后 `GET /api/v1/metrics/health` 200（metric store ok）；Flyway 实查 meta=V38、metric=V13；admin 登录 200；`GET /api/v1/metrics/snapshots` 返回空集（无 ACTIVE 时 fail-closed，不造数）。
 - G1 Spark 供给（ provisional）：官方 3.5.1 发行版经慢代理仍在下载，先行以 Maven 已解析的 spark-jobs 依赖集组装 spark-submit（toolchain/spark-m2，真 SparkSubmit 主类，JDK 8）：`--version` 实测 Spark 3.5.1 / Scala 2.12.18；以 JobRunner 无参调用实证分发与类加载，其参数校验按预期拒绝（exit 64）。发行版落地后替换 sparkSubmitPath 并复测。
 - 环境发现：本 VM 上平台 JVM 同样需要 `-Djava.net.preferIPv4Stack=true`（与 Maven 同一条沙箱规则）；缺失时 JDBC 在握手期以「Packet for query is too large」误报失败，已以独立 JDBC 探针复现并定位。
+
+### 2026-10-16 WP-N2B/N2C 发布链与服务展示实跑（云端 VM，生产编排）
+- 全链经平台自身 API 完成：建源 fixture-shop-b（id=2，fxsb）→ 建档案 local-vm-b（id=2，LOCAL，绑源 B）→ 档案四项探测全过（spark 探测真调组装 spark-submit）并激活 → 源 B 激活（current=true）→ 映射 dry-run 38/38（profileChecksum 与 WP-N1A 实测一致）→ 映射激活落指针 → 平台采集批次 1：QUARANTINED 38/5/0，清单 READY（mappingVersion=2.0、哈希对齐）。
+- 流水线：run 1、run 2 均止于 INIT_SCHEMA（见下环境项），run 3 八阶段全 SUCCESS（约 400s），快照 S20260918_3 发布为 ACTIVE（同档案唯一 ACTIVE）。导出目录含 _export.json + 10 张 JSONL（totalRows=26），与 metric 库 ads_*_m 逐表行数全等；metric_value 14 行，头条值与 WP-N1B 独立复算一致：gmv=1222.90、net=824.90、aov=174.70、paid_order_cnt=7、pv=8、uv=4、dau=4。
+- 服务面（N2C）：/metrics/overview 返回 14 指标且值与 metric_value 相等；/dashboards/overview 与 /analysis/sales|products|funnel|users|rfm 均绑定 S20260918_3 返回数据；/metrics/quality 20 行；GET / 返回换肤后 SPA。真页视觉复核仍受限（受管浏览器不可达 VM 回环），登记为证据边界。
+- G1 Spark 供给定案（组装路线，零仓库代码变更）：spark-jobs 依赖集 + spark-hive 3.5.1 组件集（发行版同款）组装 spark-submit（toolchain/spark-m2）。关键点：生产作业经 SparkSessionFactory 恒开 Hive 支持，测试自建会话照不到此缺口；提交器需 -Djava.net.preferIPv4Stack=true、驱动回环钉定（SPARK_LOCAL_IP + spark.driver.host/bindAddress）。sci 单作业冒烟 SUCCESS（outputRecords=43）后平台全链通过。官方发行版仍在慢速下载，落地后可替换路径复测。
+- 环境项登记：PLATFORM_SOURCE_PROFILE_ROOT 须为仓库根（画像路径按仓库相对解析）；Derby metastore 叶目录不得预建（XBM0J），已移除空目录后由 Derby 自建；平台 JVM 需 preferIPv4Stack（同 Maven/JDBC 规则）。run 1/2 的失败均属以上环境项，非产品缺陷。
+- 证据边界：旧 ACTIVE 归档滚动未做第二版本实跑（发布器单元层已证，本轮仅一版快照）；D-126 本地口径不变（Derby 嵌入式 metastore + local[*]，不冒充真实集群/HiveServer2 验收）。
