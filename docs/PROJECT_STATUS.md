@@ -3346,3 +3346,8 @@
 - 管线 run 4（sourceDataVersion wp-f1-rollover-20261016）：8 阶段全 SUCCESS，发布快照 S20260918_4。
 - 轮换实证：metric_snapshot 中 S20260918_4=ACTIVE、S20260918_3=ARCHIVED——关键路径验收时登记的「轮换仅单元层证据」边界就此关闭。
 - 增量核对（与手工预期逐项一致）：gmv 1222.90→1282.80（+59.90）、paid_order_cnt 7→8、avg_order_value 174.70→160.35（=1282.80/8）、pv/uv/dau 不变（8/4/4，无新增行为事件）。
+
+### 2026-10-16 WP-F2 分析侧隔离写 IT 收编亲跑（云端 VM）
+- 以完整 V25_IT 契约 + 分析双库（RunId wpf2acc20261016）亲跑：MetricPublisherMySqlIT 3、MetricAdsMySqlIT 2、AdsDataQualityErrorRateNullableMySqlIT 2，合计 **7/7 PASS**（与隔离档登记数一致）。
+- 关键发现：这批 IT 自身不建 schema，统一运行器的 analytics 预收编腿也不做 schema 供给——这是收编一直未落地的真实缺口。本轮由总控以 Flyway（db/meta 37 步、db/metric 13 步）对隔离双库预迁移后全绿，证明 IT 本身健康、缺口在供给环节。收编裁定：三类 IT 具备收编条件，待 WP-F2b 给运行器补上 schema 供给步后以 -IncludeAnalyticsWriteIts 正式收编。
+- SourceRegistryMigrationMySqlIT 经查为 P1 期人工取证件（-Dp1.it=true + 副本库指向，fail-closed 设计），与 V25 收编不是同一套机制，裁定维持人工件、不收编。
