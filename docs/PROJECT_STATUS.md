@@ -3412,3 +3412,11 @@
 - 总控亲验（不采信执行方自述）：diff 逐行核对与规约一致；量数轮（RunId wpf7dgate20261017a，-AllowCountDrift）fresh 实测 **375/375、46 suites、All tests passed**；基线登记 372→375（run-tests.ps1，附变更注释）；脚本契约测试 `AnalyticsIsolationScriptsContractTest` 亲跑 **13/13 PASS**；收口轮（RunId wpf7dgate20261017b）**tests=375 MATCH、PASS exit=0、JDK8 本轮新写**。WP-F7d 代码与回归关账。
 - 余项（转 WP-F7e，不静默丢弃）：同数据复跑验收（预言 gmv 365160.30 / aov 362.26 不变、退款 91916.50、净额 273243.80）本轮未做——在跑平台（8091）仍载旧版 spark-jobs 产物，须先重建 spark-jobs 并重部署平台，再在档案 scale-vm-b 下由总控亲跑流水线复跑核对预言值，单独立步执行。
 - 本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。推送注记：本包提交与在先本地提交同栈，栈内含 WP-F6 的 tests.yml 提交（f3e732e），受 PAT 无 Workflows 权限阻塞，整栈本地待补推（与 WP-F7c 登记口径一致）。
+
+## WP-F8 盘点关账（2026-10-17 巡检，总控验收）
+
+- 交付：`WP-F8-INVENTORY-REPORT.md`（Antigravity Flash 只读盘点，未连库、未运行命令）：F-88 全部未验项归并 28 项——GAP 8（源自本文件 L2230–2237 缺口清单）+ 完整验收硬理由 5 + backlog/待裁决 3 + F-88 泳道遗留 12；分类 A 已被后续工作关闭 15 / B 本地可关 12 / C 外部依赖 1（F88-GAP-04：3306 真库 V19/V20 执行，须正式环境解冻授权，已转 FULL-PROGRAM 外部依赖节）。
+- 总控抽验（不采信执行方自述）：计数勾稽 8+5+3+12=28、A15/B12/C1 与清单逐项一致；一手锚点实查——L2230–2237 八项缺口与 GAP-01～08 逐项对应、L1942 §12.3 三项金额校验「不构成缺口」（INV-10）、L2261 待裁决第 1 项（BK-03）、L3374–3375 F-93-01 转长期储备（INV-02）与 Spark 冒烟 backlog（HR-02）均属实；§4.4 规则码台账 17 码中抽验 16 码行号精确命中（AdsQualityJob/AdsPublishJob/MetricExportJob/QualityChecker）。
+- 勘误两项（不影响分类结论）：① 台账 #1 `AMOUNT_RECONCILE` 行号应为 QualityChecker.java **L98**（报告记 L95，系规则块起始行）；② F88-INV-01 现状描述不精确——`MySqlMetricStore`/`MetricAdsReader` 无参 `activeSnapshotId()` 已由 `activeProfileId` 上下文委托带 profile 的重载（MySqlMetricStore L133/L189–201），并非「全库 LIMIT 1」裸查；其 B 类动作据此改框为「验证上下文解析与重载隔离性的定向测试」，已写入 WP-F8b 规约。
+- 处置：B 类 12 项拆分——测试类（GAP-05 全量映射台账、INV-01 改框、INV-06 ARCHIVED 隔离、INV-09 阈值边界）立 **WP-F8b** 派 agy 实施、总控亲跑验收（含 INV-07 变异探针由总控在验收时亲手执行）；真库探针类（GAP-01 未登记码落库、GAP-02 全层四列抽验、GAP-06 证据 JSON 查验）立 **WP-F8c** 总控亲跑专轮（与 WP-F7e 同为待执行专轮）；治理类 BK-01～03 与 INV-12 由总控在 F8b/F8c 关账后一并裁决登记。**F-88 正式状态维持限定验收，本节不构成任何完整验收表述。**
+- 本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。推送注记：本地分支已 ahead 5（含 tests.yml 的 f3e732e），受 PAT 无 Workflows 权限阻塞整栈待补推（用户权限事项，既有登记），本节提交同栈本地落账。
