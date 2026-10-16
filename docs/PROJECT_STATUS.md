@@ -3383,3 +3383,11 @@
 - 首批目标核查：`dev003c_20260915_1150/1205` 共 4 库及对应账号在本 VM 3307 实例上**不存在**（系原开发机 2026-09-15 登记的遗留对象；本实例 `information_schema.SCHEMATA` 与 `mysql.user` 全量核对无此 runId）。脚本对该白名单在指纹探针通过后以存在性门禁退出码 7 正式拒绝（总控以 `-File` 原生调用复核原始退出码 7），证明不存在的对象绝不静默跳过冒充成功；本实例无该批对象可清，F-93-08 在本实例的清理义务就此消灭。
 - 正路径实证（牺牲性探针）：以 CREATE 新建与首批同构的 `cleanprobe_20261017_0022_mall`/`_generator` 两库与 `mallapp`/`genapp` 两账号——DryRun 退出码 0、清单列 2 库 2 账号且删前复查仍在；`-Confirm` 退出码 0、执行前指纹重验通过、精确删除 2 库 2 账号；复验残留 0、`live20261016_*` 4 库完好、平台健康接口 200。清理全程只经该脚本执行，未手写任何 DROP。
 - 至此 **F-93 全部 10 条终局**（A 类 6 条关闭、C 类 3 条转长期登记、B 类 F-93-08 机制落地并实证）。边界：原开发机实例上的同名对象不在本机可达范围，日后回到该实例以同一脚本 + 同一白名单执行即可；本包未触碰 3306、未使用 Docker。
+
+### 2026-10-17 WP-F6b 脚本 CI 适配关账（云端 VM）兼 WP-F6 实施落地
+
+- 交付：`scripts/run-tests.ps1` 最小适配（提交 19d200d）——新增 `-Online` 开关（缺省关＝离线 `-o` 行为不变）、四项 env 回退解析层（MAVEN_CMD / MAVEN_REPO_LOCAL / JAVA_HOME_17_X64 / JAVA_HOME_8_X64，优先级 显式参数 > env > 原默认值，改写时打 `[CI-ADAPT]` 行）、头部注释同步；默认值字面量、计数门禁、退出码未动。新增 `.github/workflows/tests.yml`（本节登记同笔提交）：push 本分支 / pull_request / workflow_dispatch 触发，default（temurin 17，90 分钟）与 spark（temurin 8，60 分钟）两 job 均 windows-latest + pwsh，以 `-Online -MavenRepoLocal "$HOME/.m2/repository"` 调用统一入口，无 secrets、不涉数据库。
+- 首轮验收不合格与修复：总控首轮以 env 回退亲跑 default（RunId wpf6bacc20261017a）发现 `Invoke-MavenRun` 离线参数粘连（`mvn -o-Dmaven.repo.local=... -f <pom>test`，三树 0 用例 exit 7）——根因系改动 3 的 `if` 表达式赋值把单元素数组 `@('-o')` 展开为标量、后续 `+` 退化为字符串拼接；缺省离线路径被破坏、`-Online` 路径恰不触发。按 WP-F6b-FIX 规约仅改一行（`$offlineArgs = @(if ($Online) { } else { '-o' })` 强制数组语义）修复，即 19d200d 所含形态。
+- 总控复验（VM 替换后恢复中继/3307 环境，RunId wpf6bfix20261017b，日志 /tmp/v25tests-wpf6bfix-b）：env 回退四行 `[CI-ADAPT]` 全触发；default **PASS exit 0**（1380+26+134=1540 全 MATCH，离线 `-o` 路径实证恢复）；spark **PASS exit 0**（372/372、45 suites、JDK8 本轮新写 MATCH）；`AnalyticsIsolationScriptsContractTest` 亲跑 **13/13 PASS**；tests.yml 经总控逐项核对与规约一致（触发/jdk/超时/动作版本/无 secrets）。
+- 验收注记：复验首跑（RunId wpf6bfix20261017a）曾因巡检会话未给 fork 测试 JVM 传 `-Djava.net.preferIPv4Stack=true`，回环 HttpClient 测试被沙箱以 IPv4-mapped IPv6 拦截而红（ai-decision 246 中 34 红、generator 53 红、platform-app 被 reactor 跳过）——系 VM 网络怪癖（见 TOOLS.md），非脚本/代码问题；以 `JAVA_TOOL_OPTIONS` 注入后全绿。此项只影响本机亲跑姿势，不影响 CI（托管 runner 无此拦截）。
+- 状态：WP-F6b 实施关账；WP-F6 余项＝推送后观察 Actions 首跑结果（首跑在托管 runner 在线拉依赖，耗时较长），结果由后续巡检登记，绿则 WP-F6 全关账，红则按日志修正或登记外部限制。isolated 档不入 CI（需 3307 隔离实例，沿用 WP-F6 报告结论）。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。
