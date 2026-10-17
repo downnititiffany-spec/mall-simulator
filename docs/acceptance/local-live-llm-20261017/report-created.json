@@ -1,0 +1,17 @@
+{
+  "id": 1,
+  "templateCode": "OPS_DAILY",
+  "templateVersion": "1",
+  "sourceId": 1,
+  "snapshotId": "S20261017_1",
+  "definitionVersion": "v2",
+  "fromDate": "2026-10-17",
+  "toDate": "2026-10-17",
+  "promptVersion": null,
+  "creatorId": "admin",
+  "status": "READY",
+  "artifactChecksum": "947431dbe3aae8ae2abcb11ac3fe3cf7ad1e363ddb74fa7520b40746aee06d84",
+  "stableErrorCode": null,
+  "createdAt": "2026-10-17T15:46:30.869348599",
+  "updatedAt": "2026-10-17T15:46:30.869348599"
+}

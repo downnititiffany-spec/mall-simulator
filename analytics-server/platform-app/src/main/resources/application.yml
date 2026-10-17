@@ -54,6 +54,8 @@ platform:
 # AI Provider 资源保护（设计 V3.0 §13.4）；均可由受控部署环境覆盖。
 # 不配置/无凭据时 Provider 仍不可用，调用方沿既有模板回退路径处理。
 llm:
+  # Optional provider-supported effort; empty keeps the provider's default.
+  reasoning-effort: ${LLM_REASONING_EFFORT:}
   max-request-bytes: ${LLM_MAX_REQUEST_BYTES:262144}
   max-response-bytes: ${LLM_MAX_RESPONSE_BYTES:1048576}
   max-output-tokens: ${LLM_MAX_OUTPUT_TOKENS:1024}

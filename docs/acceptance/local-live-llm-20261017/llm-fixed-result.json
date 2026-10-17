@@ -1,0 +1,23 @@
+{
+  "result": "PASS",
+  "snapshot": "S20261017_1",
+  "provider_used": "openai-compat",
+  "elapsed_ms": 1437,
+  "audit": [
+    {
+      "id": 2,
+      "status": "OK",
+      "model": "deepseek-flash",
+      "provider": "openai-compat",
+      "error": null,
+      "inputTokens": 1117,
+      "outputTokens": 78,
+      "snapshotId": "S20261017_1",
+      "sourceId": 1,
+      "requestHash": null,
+      "responseHash": null
+    }
+  ],
+  "new_calls": 1,
+  "secret_output": false
+}

@@ -168,8 +168,9 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 # 2026-10-17：1399→1400＝WP-F9b 渠道流量汇总新增 AnalysisServiceTest 1 例（funnel byChannel 透传）；
 #   总控亲跑 RunId wpf9bdef20261017 实测 analytics 1400（F=0/E=0/S=2，明细 123+415+216+167+246+233）、
 #   三树合计 1560 后同步本数。
+# 2026-10-17 本地真实 LLM 验收：Provider 输出格式/可选推理强度新增 3 例；1400→1403。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1400
+  'analytics-server'        = 1403
   'mall-simulator'          = 26
   'synthetic-data-generator' = 134
 }

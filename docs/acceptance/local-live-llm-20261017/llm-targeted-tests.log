@@ -1,0 +1,201 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] metric-analysis                                                    [jar]
+[INFO] ai-decision                                                        [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/5]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/5]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/5]
+[INFO]   from connection-ingestion\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ connection-ingestion ---
+[INFO] Copying 4 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ connection-ingestion ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ connection-ingestion ---
+[INFO] 
+[INFO] --------------< com.graduation.analytics:metric-analysis >--------------
+[INFO] Building metric-analysis 0.1.0-SNAPSHOT                            [4/5]
+[INFO]   from metric-analysis\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\metric-analysis\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\metric-analysis\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ metric-analysis ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\metric-analysis\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ metric-analysis ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ metric-analysis ---
+[INFO] 
+[INFO] ----------------< com.graduation.analytics:ai-decision >----------------
+[INFO] Building ai-decision 0.1.0-SNAPSHOT                                [5/5]
+[INFO]   from ai-decision\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\ai-decision\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\ai-decision\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ ai-decision ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 48 source files with javac [debug release 17] to target\classes
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/sql/SqlSafetyValidator.java: D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\ai-decision\src\main\java\com\graduation\analytics\ai\sql\SqlSafetyValidator.javaʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/sql/SqlSafetyValidator.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ ai-decision ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\ai-decision\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ ai-decision ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 28 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/ai-decision/src/test/java/com/graduation/analytics/decision/DecisionServicePaginationTest.java: D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\ai-decision\src\test\java\com\graduation\analytics\decision\DecisionServicePaginationTest.javaʹ����δ�����򲻰�ȫ�Ĳ�����
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/ai-decision/src/test/java/com/graduation/analytics/decision/DecisionServicePaginationTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ ai-decision ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.ai.AiCallIdentityTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.090 s -- in com.graduation.analytics.ai.AiCallIdentityTest
+[INFO] Running com.graduation.analytics.ai.ExplanationEvidenceTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+15:43:03.427 [main] WARN com.graduation.analytics.ai.ExplanationService -- explanation failed, fallback to rule-based (TIMEOUT)
+15:43:04.018 [main] WARN com.graduation.analytics.ai.ExplanationService -- explanation failed, fallback to rule-based (MODEL_CALL_FAILED)
+15:43:04.073 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite failed, fallback to template (TIMEOUT)
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.226 s -- in com.graduation.analytics.ai.ExplanationEvidenceTest
+[INFO] Running com.graduation.analytics.ai.ExplanationProviderProvenanceTest
+15:43:04.139 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite failed, fallback to template (TIMEOUT)
+15:43:04.148 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite failed, fallback to template (RESPONSE_TOO_LARGE)
+15:43:04.151 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite failed, fallback to template (TIMEOUT)
+15:43:04.155 [main] WARN com.graduation.analytics.ai.ExplanationService -- explanation failed and audit row could not be persisted (TIMEOUT)
+15:43:04.159 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation provider returned no response and audit row could not be persisted
+15:43:04.163 [main] WARN com.graduation.analytics.ai.ExplanationService -- explanation rewrite succeeded but audit row could not be persisted
+15:43:04.166 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite failed, fallback to template (OUTPUT_BUDGET_EXCEEDED)
+15:43:04.168 [main] WARN com.graduation.analytics.ai.ExplanationService -- explanation response rejected but audit row could not be persisted
+15:43:04.173 [main] WARN com.graduation.analytics.ai.ExplanationService -- explanation returned no response and audit row could not be persisted
+15:43:04.177 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation response rejected but audit row could not be persisted
+15:43:04.185 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation provider failed and audit row could not be persisted
+15:43:04.190 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation rewrite succeeded but audit row could not be persisted
+15:43:04.196 [main] WARN com.graduation.analytics.ai.ExplanationService -- evidence explanation response rejected but audit row could not be persisted
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in com.graduation.analytics.ai.ExplanationProviderProvenanceTest
+[INFO] Running com.graduation.analytics.ai.llm.OpenAiCompatLlmProviderTest
+15:43:04.536 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (AUTH; Unauthorized) in 75ms
+15:43:04.542 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (RATE_LIMITED; TooManyRequests) in 4ms
+15:43:04.547 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (NETWORK; ServiceUnavailable) in 5ms
+15:43:04.563 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 11ms tokens=null+null
+15:43:04.571 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 4ms
+15:43:04.580 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 6ms tokens=11+7
+15:43:04.588 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 4ms
+15:43:04.607 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 18ms
+15:43:04.616 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 4ms
+15:43:04.623 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 5ms
+15:43:04.631 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 4ms
+15:43:04.638 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 6ms
+15:43:04.645 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 3ms
+15:43:04.653 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 7ms
+15:43:04.662 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 4ms
+15:43:04.668 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 6ms
+15:43:04.678 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 5ms tokens=11+7
+15:43:04.687 [pool-2-thread-1] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (RESPONSE_TOO_LARGE; RestClientException) in 4ms
+15:43:04.697 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (NETWORK; InternalServerError) in 5ms
+15:43:04.705 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 3ms
+15:43:04.715 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 9ms
+15:43:04.892 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 4ms tokens=11+7
+15:43:04.901 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 3ms
+15:43:04.912 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 3ms tokens=11+7
+15:43:04.919 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (FORMAT; UnknownContentTypeException) in 3ms
+15:43:04.926 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 3ms tokens=11+7
+15:43:04.933 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (RATE_LIMITED; TooManyRequests) in 3ms
+15:43:04.941 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (OUTPUT_BUDGET_EXCEEDED) in 3ms
+15:43:05.649 [pool-3-thread-1] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 707ms tokens=11+7
+15:43:05.658 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (AUTH; Forbidden) in 5ms
+15:43:05.665 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 3ms tokens=11+7
+15:43:05.671 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 2ms tokens=0+null
+15:43:05.680 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 8ms tokens=null+0
+15:43:05.898 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (TIMEOUT; RestClientException) in 215ms
+15:43:05.906 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 2ms
+15:43:05.911 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 2ms
+15:43:05.918 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete rejected (FORMAT) in 4ms
+15:43:05.923 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (RESPONSE_TOO_LARGE; RestClientException) in 2ms
+15:43:05.931 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 8ms tokens=11+7
+15:43:05.936 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 2ms tokens=11+7
+15:43:05.943 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (RESPONSE_TOO_LARGE; RestClientException) in 2ms
+15:43:05.951 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (AUTH; Unauthorized) in 3ms
+15:43:05.964 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (NETWORK; InternalServerError) in 1ms
+15:43:05.970 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (NETWORK; ResourceAccessException) in 2ms
+15:43:05.975 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 3ms tokens=11+7
+15:43:05.992 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 17ms tokens=11+7
+15:43:05.998 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (NETWORK; InternalServerError) in 2ms
+15:43:06.020 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (FORMAT; RestClientException) in 2ms
+15:43:06.026 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (NETWORK; ServiceUnavailable) in 1ms
+15:43:06.032 [main] INFO com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete ok in 3ms tokens=11+7
+15:43:06.042 [main] WARN com.graduation.analytics.ai.llm.OpenAiCompatLlmProvider -- llm complete failed (RESPONSE_TOO_LARGE; RestClientException) in 2ms
+[INFO] Tests run: 45, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.829 s -- in com.graduation.analytics.ai.llm.OpenAiCompatLlmProviderTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 77, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... SUCCESS [  0.905 s]
+[INFO] connection-ingestion ............................... SUCCESS [  0.452 s]
+[INFO] metric-analysis .................................... SUCCESS [  0.051 s]
+[INFO] ai-decision ........................................ SUCCESS [ 13.153 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  14.846 s
+[INFO] Finished at: 2026-10-17T15:43:06+08:00
+[INFO] ------------------------------------------------------------------------

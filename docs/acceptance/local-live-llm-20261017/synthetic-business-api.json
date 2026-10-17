@@ -1,0 +1,453 @@
+[
+  {
+    "port": 8090,
+    "path": "/mall/products",
+    "data": [
+      {
+        "productId": 1001,
+        "productName": "磁吸手机支架",
+        "categoryId": 11,
+        "brandId": 101,
+        "price": 29.9,
+        "cost": 18.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 1002,
+        "productName": "快充数据线套装",
+        "categoryId": 11,
+        "brandId": 102,
+        "price": 49.0,
+        "cost": 28.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 1003,
+        "productName": "入耳式蓝牙耳机",
+        "categoryId": 12,
+        "brandId": 101,
+        "price": 149.0,
+        "cost": 85.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 1004,
+        "productName": "桌面蓝牙音箱",
+        "categoryId": 12,
+        "brandId": 103,
+        "price": 199.0,
+        "cost": 110.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 2001,
+        "productName": "不锈钢炒锅",
+        "categoryId": 21,
+        "brandId": 201,
+        "price": 159.0,
+        "cost": 95.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 2002,
+        "productName": "真空保温杯",
+        "categoryId": 21,
+        "brandId": 202,
+        "price": 89.0,
+        "cost": 48.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 2003,
+        "productName": "压缩收纳袋 10 只",
+        "categoryId": 22,
+        "brandId": 203,
+        "price": 39.9,
+        "cost": 22.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 2004,
+        "productName": "免打孔置物架",
+        "categoryId": 22,
+        "brandId": 204,
+        "price": 59.0,
+        "cost": 32.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 3001,
+        "productName": "纯棉圆领T恤",
+        "categoryId": 31,
+        "brandId": 301,
+        "price": 79.0,
+        "cost": 35.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 3002,
+        "productName": "牛仔裤",
+        "categoryId": 31,
+        "brandId": 302,
+        "price": 129.0,
+        "cost": 68.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 3003,
+        "productName": "雪纺连衣裙",
+        "categoryId": 32,
+        "brandId": 301,
+        "price": 169.0,
+        "cost": 90.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 3004,
+        "productName": "针织开衫",
+        "categoryId": 32,
+        "brandId": 303,
+        "price": 139.0,
+        "cost": 75.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 4001,
+        "productName": "混合坚果礼盒",
+        "categoryId": 41,
+        "brandId": 401,
+        "price": 99.0,
+        "cost": 55.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 4002,
+        "productName": "冻干草莓脆",
+        "categoryId": 41,
+        "brandId": 402,
+        "price": 29.9,
+        "cost": 16.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 4003,
+        "productName": "赣南脐橙 5kg",
+        "categoryId": 42,
+        "brandId": 403,
+        "price": 49.9,
+        "cost": 30.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 4004,
+        "productName": "智利车厘子 2kg",
+        "categoryId": 42,
+        "brandId": 404,
+        "price": 159.0,
+        "cost": 98.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 5001,
+        "productName": "烟酰胺精华液",
+        "categoryId": 51,
+        "brandId": 501,
+        "price": 119.0,
+        "cost": 45.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 5002,
+        "productName": "氨基酸洁面乳",
+        "categoryId": 51,
+        "brandId": 502,
+        "price": 59.0,
+        "cost": 26.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 5003,
+        "productName": "哑光唇釉",
+        "categoryId": 52,
+        "brandId": 503,
+        "price": 89.0,
+        "cost": 32.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 5004,
+        "productName": "持妆粉底液",
+        "categoryId": 52,
+        "brandId": 504,
+        "price": 179.0,
+        "cost": 88.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 6001,
+        "productName": "婴幼儿配方奶粉",
+        "categoryId": 61,
+        "brandId": 601,
+        "price": 268.0,
+        "cost": 160.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 6002,
+        "productName": "儿童钙片",
+        "categoryId": 61,
+        "brandId": 602,
+        "price": 79.0,
+        "cost": 40.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 6003,
+        "productName": "积木拼装套装",
+        "categoryId": 62,
+        "brandId": 603,
+        "price": 139.0,
+        "cost": 70.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 6004,
+        "productName": "遥控小汽车",
+        "categoryId": 62,
+        "brandId": 604,
+        "price": 99.0,
+        "cost": 50.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 7001,
+        "productName": "瑜伽垫加厚",
+        "categoryId": 71,
+        "brandId": 701,
+        "price": 69.0,
+        "cost": 32.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 7002,
+        "productName": "哑铃组合套装",
+        "categoryId": 71,
+        "brandId": 702,
+        "price": 199.0,
+        "cost": 105.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 7003,
+        "productName": "速干运动T恤",
+        "categoryId": 72,
+        "brandId": 701,
+        "price": 89.0,
+        "cost": 40.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 7004,
+        "productName": "露营折叠椅",
+        "categoryId": 72,
+        "brandId": 703,
+        "price": 119.0,
+        "cost": 62.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 8001,
+        "productName": "大数据之路",
+        "categoryId": 81,
+        "brandId": 801,
+        "price": 89.0,
+        "cost": 45.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 8002,
+        "productName": "Spark快速大数据分析",
+        "categoryId": 81,
+        "brandId": 801,
+        "price": 79.0,
+        "cost": 38.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 8003,
+        "productName": "钢笔礼盒",
+        "categoryId": 82,
+        "brandId": 802,
+        "price": 69.0,
+        "cost": 30.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      },
+      {
+        "productId": 8004,
+        "productName": "日程记事本",
+        "categoryId": 82,
+        "brandId": 803,
+        "price": 39.0,
+        "cost": 18.0,
+        "status": "on_sale",
+        "createdAt": "2026-10-17T15:34:21.045"
+      }
+    ]
+  },
+  {
+    "port": 8090,
+    "path": "/mall/users",
+    "data": {
+      "userId": "2111360547961262082"
+    }
+  },
+  {
+    "port": 8090,
+    "path": "/mall/products/1001",
+    "data": {
+      "productId": 1001,
+      "productName": "磁吸手机支架",
+      "categoryId": 11,
+      "brandId": 101,
+      "price": 29.9,
+      "cost": 18.0,
+      "status": "on_sale",
+      "createdAt": "2026-10-17T15:34:21.045"
+    }
+  },
+  {
+    "port": 8090,
+    "path": "/mall/cart/items",
+    "data": null
+  },
+  {
+    "port": 8090,
+    "path": "/mall/orders",
+    "data": {
+      "orderId": "2111360548389081090"
+    }
+  },
+  {
+    "port": 8090,
+    "path": "/mall/orders/2111360548389081090/pay",
+    "data": null
+  },
+  {
+    "port": 8090,
+    "path": "/mall/users",
+    "data": {
+      "userId": "2111360548611379202"
+    }
+  },
+  {
+    "port": 8090,
+    "path": "/mall/products/1001",
+    "data": {
+      "productId": 1001,
+      "productName": "磁吸手机支架",
+      "categoryId": 11,
+      "brandId": 101,
+      "price": 29.9,
+      "cost": 18.0,
+      "status": "on_sale",
+      "createdAt": "2026-10-17T15:34:21.045"
+    }
+  },
+  {
+    "port": 8090,
+    "path": "/mall/cart/items",
+    "data": null
+  },
+  {
+    "port": 8090,
+    "path": "/mall/orders",
+    "data": {
+      "orderId": "2111360548955312130"
+    }
+  },
+  {
+    "port": 8090,
+    "path": "/mall/orders/2111360548955312130/pay",
+    "data": null
+  },
+  {
+    "port": 8090,
+    "path": "/mall/outbox/publish",
+    "data": {
+      "failedEventIds": [],
+      "publishedCount": 4,
+      "pendingCount": 0
+    }
+  },
+  {
+    "port": 8090,
+    "path": "/mall/outbox/status",
+    "data": {
+      "pendingCount": 0,
+      "latestFile": "/home/asus/graduationproject-runs/cloud-e2e/cloud_261017_073320_76fcc0/mall-landing/events/2026101715.jsonl"
+    }
+  },
+  {
+    "port": 8091,
+    "path": "/runtime-profiles/active",
+    "data": {
+      "id": 1,
+      "profileCode": "local-dev",
+      "profileName": "LOCAL 开发环境（本机 Win）",
+      "type": "SINGLE_NODE",
+      "status": "ACTIVE",
+      "landingUri": "hdfs://127.0.0.1:19000/landing/cloud_261017_073320_76fcc0",
+      "landingLayout": "FLUME_RAW",
+      "hdfsUri": null,
+      "hiveJdbcUrl": null,
+      "hiveDatabasePrefix": null,
+      "sourceId": 1,
+      "sparkMaster": "local[1]",
+      "deployMode": "client",
+      "yarnQueue": null,
+      "sshHost": null,
+      "sshPort": null,
+      "sshUser": null,
+      "sparkSubmitPath": "/opt/spark-3.5.1-bin-hadoop3/bin/spark-submit",
+      "sparkJobJarUri": "/mnt/d/Develop_code/GraduationProject-wt/v3-dev/spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar",
+      "metricStoreType": "MYSQL",
+      "metricStoreConfigRef": null,
+      "credentialRef": null,
+      "timezone": "Asia/Shanghai",
+      "version": 2,
+      "createdAt": "2026-10-17T15:34:23.973",
+      "updatedAt": "2026-10-17T15:34:29.705"
+    }
+  }
+]

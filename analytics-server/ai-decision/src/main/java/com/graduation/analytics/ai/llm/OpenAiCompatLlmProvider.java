@@ -64,6 +64,8 @@ public class OpenAiCompatLlmProvider implements LlmProvider {
     private final String baseUrl;
     private final String apiKey;
     private final String model;
+    @Value("${llm.reasoning-effort:}")
+    private String reasoningEffort = "";
     private final RestClient client;
     private final int maxRequestBytes;
     private final int maxOutputTokens;
@@ -353,7 +355,16 @@ public class OpenAiCompatLlmProvider implements LlmProvider {
         body.put("messages", List.of(
                 Map.of("role", "system", "content", request.systemPrompt()),
                 Map.of("role", "user", "content", request.userContent())));
-        body.put("response_format", Map.of("type", "json_object"));
+        if (request.outputFormat() == OutputFormat.JSON_OBJECT) {
+            body.put("response_format", Map.of("type", "json_object"));
+        }
+        if (reasoningEffort != null && !reasoningEffort.isBlank()) {
+            String effort = reasoningEffort.trim();
+            if (!List.of("none", "low", "high", "max").contains(effort)) {
+                throw new LlmException("FORMAT", "模型推理强度配置无效");
+            }
+            body.put("reasoning_effort", effort);
+        }
         return body;
     }
 

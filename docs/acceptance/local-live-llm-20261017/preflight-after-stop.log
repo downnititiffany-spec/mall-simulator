@@ -1,0 +1,3 @@
+Frontend runtime: Node v24.16.0
+Preflight passed: dependencies, task paths, HDFS identity/config and required ports are ready.
+No directories, credentials, databases, HDFS paths, or processes were created.

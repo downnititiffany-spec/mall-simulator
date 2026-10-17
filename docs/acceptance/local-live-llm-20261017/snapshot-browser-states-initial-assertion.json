@@ -1,0 +1,42 @@
+{
+  "result": "FAIL",
+  "unknown_snapshot_rejected": false,
+  "stale_values_visible": false,
+  "return_current_recovered": true,
+  "page_errors": [],
+  "responses": [
+    {
+      "path": "/auth/login",
+      "status": 200
+    },
+    {
+      "path": "/metrics/snapshots?limit=100",
+      "status": 200
+    },
+    {
+      "path": "/analytics/sources",
+      "status": 200
+    },
+    {
+      "path": "/dashboards/overview?from=2026-10-11&to=2026-10-17&snapshotId=S20261017_1",
+      "status": 200
+    },
+    {
+      "path": "/dashboards/overview?from=2026-10-11&to=2026-10-17&snapshotId=S-NONEXISTENT-ACCEPTANCE-20261017",
+      "status": 200
+    },
+    {
+      "path": "/dashboards/overview?from=2026-10-11&to=2026-10-17&snapshotId=S20261017_1",
+      "status": 200
+    },
+    {
+      "path": "/decisions/page?page=1&size=20&sort=id,desc",
+      "status": 200
+    },
+    {
+      "path": "/auth/logout",
+      "status": 200
+    }
+  ],
+  "model_calls": 0
+}

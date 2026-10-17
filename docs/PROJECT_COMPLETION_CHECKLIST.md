@@ -1,3 +1,13 @@
+## 当前增量（2026-10-17，本地真实验收后）
+
+- [x] RES-01最小真实Provider成功：DeepSeek V4.1 Flash正式证据摘要被采用，审计OK、sourceId/snapshotId/requestFingerprint与token数齐备；保留此前NETWORK失败证据。仅该调用路径，不代表全部AI业务效果通过。
+- [x] 当前源码单节点合成连续链：2笔支付、10 accepted、Spark8阶段成功、S20261017_1 ACTIVE，GMV59.80独立对账。
+- [x] RES-06本地基础角色走查：4角色52/52，真实报告页8/8、oracle/owner隔离8/8；未知快照拒绝旧指标/禁导出并可恢复，决策空态截图。
+- [x] 最终default1563收集/1561通过/2跳过，F0/E0；定向77/77。统一停服后12端口closed，数据保留。
+- [ ] 独立共享HMS/远程集群、冻结3306迁移、完整业务生命周期/性能及最终签收仍不据此勾选。云电脑不可用，旧日志不可恢复。
+
+报告：`docs/verification/results/LOCAL-LIVE-LLM-20261017.md`；原件备份`docs/backups/local-live-acceptance-20261017/`。以下条目按原日期保留，旧“真实LLM未测”不再代表最新最小调用状态。
+
 ## 当前汇总（2026-10-17，独立复核修复后）
 
 本清单以下为按日期保留的历史条目；过期未勾项不得直接累计为当前缺陷。当前定性以PROJECT_STATUS最新裁定与 [剩余验收清单](verification/RESIDUAL_ACCEPTANCE.md) 为准：主要功能开发收官，维持限定验收。

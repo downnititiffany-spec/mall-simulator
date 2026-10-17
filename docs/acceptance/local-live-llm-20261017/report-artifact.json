@@ -1,0 +1,185 @@
+{
+  "templateCode": "OPS_DAILY",
+  "templateVersion": "1",
+  "evidence": {
+    "evidenceId": "EV-20261017-f96c14",
+    "templateVersion": "evidence_v1",
+    "snapshotId": "S20261017_1",
+    "definitionVersion": "v2",
+    "generatedAt": "2026-10-17T15:46:30",
+    "period": {
+      "from": "2026-10-17",
+      "to": "2026-10-17"
+    },
+    "currentPeriod": {
+      "from": "2026-10-17",
+      "to": "2026-10-17"
+    },
+    "comparisonPeriod": null,
+    "facts": [
+      {
+        "metricCode": "avg_order_value",
+        "metricName": "客单价",
+        "value": "29.9000",
+        "unit": "元",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.avg_order_value@S20261017_1"
+      },
+      {
+        "metricCode": "cart_add_cnt",
+        "metricName": "加购次数",
+        "value": "2.0000",
+        "unit": "次",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.cart_add_cnt@S20261017_1"
+      },
+      {
+        "metricCode": "dau",
+        "metricName": "日活跃用户数",
+        "value": "2.0000",
+        "unit": "人",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.dau@S20261017_1"
+      },
+      {
+        "metricCode": "fav_cnt",
+        "metricName": "收藏次数",
+        "value": "0.0000",
+        "unit": "次",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.fav_cnt@S20261017_1"
+      },
+      {
+        "metricCode": "full_refund_rate",
+        "metricName": "全额退款率",
+        "value": "0.0000",
+        "unit": "",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.full_refund_rate@S20261017_1"
+      },
+      {
+        "metricCode": "gmv",
+        "metricName": "销售额(GMV)",
+        "value": "59.8000",
+        "unit": "元",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.gmv@S20261017_1"
+      },
+      {
+        "metricCode": "net_sale",
+        "metricName": "净销售额",
+        "value": "59.8000",
+        "unit": "元",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.net_sale@S20261017_1"
+      },
+      {
+        "metricCode": "paid_order_cnt",
+        "metricName": "支付订单数",
+        "value": "2.0000",
+        "unit": "单",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.paid_order_cnt@S20261017_1"
+      },
+      {
+        "metricCode": "pv",
+        "metricName": "浏览量",
+        "value": "0.0000",
+        "unit": "次",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.pv@S20261017_1"
+      },
+      {
+        "metricCode": "refund_rate",
+        "metricName": "退款率",
+        "value": "0.0000",
+        "unit": "",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.refund_rate@S20261017_1"
+      },
+      {
+        "metricCode": "repeat_rate",
+        "metricName": "复购率(有效)",
+        "value": "0.0000",
+        "unit": "",
+        "period": "window:2026-10-17..2026-10-17",
+        "evidenceRef": "metric_value.repeat_rate@S20261017_1"
+      },
+      {
+        "metricCode": "uv",
+        "metricName": "浏览用户数",
+        "value": "0.0000",
+        "unit": "人",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.uv@S20261017_1"
+      }
+    ],
+    "comparisons": [],
+    "dimensions": {
+      "product": [
+        {
+          "key": "1001",
+          "label": "UNKNOWN",
+          "value": "8.7889",
+          "share": "1.0000",
+          "metricCode": "product_heat",
+          "evidenceRef": "ads_hot_product_m.heat_score@S20261017_1"
+        }
+      ],
+      "category": [
+        {
+          "key": "-1",
+          "label": "未分类",
+          "value": "59.8000",
+          "share": "1.0000",
+          "metricCode": "category_sale_amount",
+          "evidenceRef": "ads_category_sale_m.sale_amount@S20261017_1[20261017..20261017]"
+        }
+      ],
+      "region": [
+        {
+          "key": "tier1",
+          "label": "城市等级 tier1",
+          "value": "59.8000",
+          "share": "1.0000",
+          "metricCode": "city_level_sale_amount",
+          "evidenceRef": "ads_region_sale_m.sale_amount@S20261017_1[20261017..20261017]"
+        }
+      ],
+      "channel": []
+    },
+    "anomalies": [],
+    "dataQuality": {
+      "gateStatus": "PASS",
+      "ruleTotal": 4,
+      "rulePassed": 4,
+      "failedRules": [],
+      "warnings": []
+    },
+    "lineage": {
+      "hiveAdsTables": [
+        "dw_ads.ads_operation_overview",
+        "dw_ads.ads_data_quality",
+        "dw_ads.ads_hot_product",
+        "dw_ads.ads_category_sale",
+        "dw_ads.ads_region_sale"
+      ],
+      "mysqlTables": [
+        "ads_operation_overview_m",
+        "ads_data_quality_m",
+        "ads_hot_product_m",
+        "ads_category_sale_m",
+        "ads_region_sale_m"
+      ],
+      "pipelineRunId": 1,
+      "snapshotId": "S20261017_1",
+      "sourceId": 1
+    },
+    "warnings": [
+      "MIXED_DEFINITION_VERSIONS",
+      "NO_COMPARISON_PERIOD",
+      "CHANNEL_DIMENSION_UNAVAILABLE"
+    ]
+  },
+  "templateContent": null
+}

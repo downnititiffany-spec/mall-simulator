@@ -102,6 +102,9 @@ class ExplanationEvidenceTest {
         ExplanationService.ExplanationResult result = service().explain(pkg(), "昨天卖得怎么样");
 
         assertThat(result.summary()).startsWith("快照 " + SNAP);
+        ArgumentCaptor<LlmProvider.AiRequest> requestCaptor = ArgumentCaptor.forClass(LlmProvider.AiRequest.class);
+        verify(llmProvider).complete(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().outputFormat()).isEqualTo(LlmProvider.OutputFormat.TEXT);
         assertThat(result.limitations()).noneSatisfy(l -> assertThat(l).contains("数值校验"));
         verify(callLogMapper).insert(any(com.graduation.analytics.ai.entity.AiCallLog.class));
     }

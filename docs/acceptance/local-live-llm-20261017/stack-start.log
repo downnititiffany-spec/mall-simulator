@@ -1,0 +1,4 @@
+Frontend runtime: Node v24.16.0
+WARNING: log4j.properties is not found. HADOOP_CONF_DIR may be incomplete.
+Started isolated Linux single-node runtime. run_id=cloud_261017_073320_76fcc0
+Task run directory: /home/asus/graduationproject-runs/cloud-e2e/cloud_261017_073320_76fcc0

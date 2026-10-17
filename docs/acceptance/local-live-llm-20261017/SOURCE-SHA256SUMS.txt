@@ -1,0 +1,8 @@
+26ac6dc3491d1c0b0d1de0f12c75117a3ce94e178493853f7ed87e1dd42fb1f6  analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/AiCallIdentity.java
+62258022a560d93ab1586204156b25fa4c9ecdace5796e8754cf4f33e873d234  analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/ExplanationService.java
+b3a5eb2fd8fe49c472fd81a5df15624545a3316829d2306faddd12094bc8be78  analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/llm/LlmProvider.java
+03f02840d8f44e4968eb3ab075310eb67f7bffb3112d09d896e4826ee159204e  analytics-server/ai-decision/src/main/java/com/graduation/analytics/ai/llm/OpenAiCompatLlmProvider.java
+eb0073ec3982493221b4e6c05ac402ccb7b7623efa4b2a9bf9b321e7de2824b4  analytics-server/platform-app/src/main/resources/application.yml
+d322946e6588ba112d7264ccf1c53278499b6872fc9b937f58a89a896ca25bd6  scripts/cloud-single-node.sh
+ccebba9a41835d4b519134f1fe2fb94b9022ebec4ba375c296238a06cb05666f  scripts/cloud-flume-submit-active-run.sh
+4a4dbdf7e434ca37dabc171bca74fb30e1083a1e9fdfea31a4320070bbc394df  scripts/run-tests.ps1

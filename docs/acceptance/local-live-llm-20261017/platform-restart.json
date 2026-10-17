@@ -1,0 +1,13 @@
+{
+  "run_id": "cloud_261017_073320_76fcc0",
+  "old_platform_pid": 2237,
+  "new_platform_pid": 8222,
+  "identity_verified": true,
+  "startup_env_guard": true,
+  "https_proxy": "127.0.0.1:7890",
+  "reasoning_effort": "none",
+  "max_output_tokens": 1024,
+  "ready": true,
+  "credentials_persisted": false,
+  "other_services_restarted": false
+}

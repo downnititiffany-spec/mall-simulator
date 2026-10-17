@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
  *
  * <p><b>本测试不证明的（不得越界表述）</b>：真实供应商（deepseek 等）可用性、真实 key 生效、
  * 真实模型输出质量、真实网络下的超时阈值是否够用 —— 真实 Provider 调用仍为<b>未测</b>
- * （本机无 key、无外网），只能在真实环境单独取证。stub 服务只复刻 OpenAI 兼容协议的
+ * ，只能在真实环境单独取证。stub 服务只复刻 OpenAI 兼容协议的
  * <b>报文形状</b>，不复刻供应商语义。</p>
  */
 class OpenAiCompatLlmProviderTest {
@@ -255,6 +255,44 @@ class OpenAiCompatLlmProviderTest {
         assertThat(body.path("messages").path(1).path("content").asText()).isEqualTo("用户内容");
         assertThat(body.path("response_format").path("type").asText()).isEqualTo("json_object");
         assertThat(body.path("max_tokens").asInt()).isEqualTo(OpenAiCompatLlmProvider.DEFAULT_MAX_OUTPUT_TOKENS);
+    }
+
+    @Test
+    void plainTextRequestDoesNotForceJsonOutput() throws Exception {
+        provider().complete(new LlmProvider.AiRequest("Only rewrite one sentence.", "Synthetic text.",
+                0.0, LlmProvider.OutputFormat.TEXT));
+        JsonNode body = MAPPER.readTree(received.get(0).body());
+        assertThat(body.has("response_format")).isFalse();
+        assertThat(body.has("reasoning_effort")).isFalse();
+    }
+
+    @Test
+    void configuredReasoningEffortIsSentToProvider() throws Exception {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            TestPropertySourceUtils.addInlinedPropertiesToEnvironment(context,
+                    "llm.base-url=" + baseUrl, "llm.api-key=" + STUB_KEY,
+                    "llm.model=test-model", "llm.reasoning-effort=none");
+            context.register(OpenAiCompatLlmProvider.class);
+            context.refresh();
+            context.getBean(OpenAiCompatLlmProvider.class).complete(request());
+        }
+        JsonNode body = MAPPER.readTree(received.get(0).body());
+        assertThat(body.path("reasoning_effort").asText()).isEqualTo("none");
+        assertThat(body.path("response_format").path("type").asText()).isEqualTo("json_object");
+    }
+
+    @Test
+    void invalidReasoningEffortFailsBeforeNetwork() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            TestPropertySourceUtils.addInlinedPropertiesToEnvironment(context,
+                    "llm.base-url=" + baseUrl, "llm.api-key=" + STUB_KEY,
+                    "llm.reasoning-effort=unsupported");
+            context.register(OpenAiCompatLlmProvider.class);
+            context.refresh();
+            assertThat(failureOf(() -> context.getBean(OpenAiCompatLlmProvider.class).complete(request())).type())
+                    .isEqualTo("FORMAT");
+        }
+        assertThat(received).isEmpty();
     }
 
     @Test

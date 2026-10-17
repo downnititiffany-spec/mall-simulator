@@ -5,7 +5,16 @@ package com.graduation.analytics.ai.llm;
  */
 public interface LlmProvider {
 
-    record AiRequest(String systemPrompt, String userContent, double temperature) {
+    enum OutputFormat { JSON_OBJECT, TEXT }
+
+    record AiRequest(String systemPrompt, String userContent, double temperature, OutputFormat outputFormat) {
+        public AiRequest(String systemPrompt, String userContent, double temperature) {
+            this(systemPrompt, userContent, temperature, OutputFormat.JSON_OBJECT);
+        }
+
+        public AiRequest {
+            if (outputFormat == null) outputFormat = OutputFormat.JSON_OBJECT;
+        }
     }
 
     /** Token counts are null when the provider does not report usage; zero is a reported value. */

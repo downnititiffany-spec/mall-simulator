@@ -1,0 +1,1211 @@
+{
+  "result": "PASS",
+  "checks_passed": 52,
+  "checks_total": 52,
+  "created_isolated_user": {
+    "id": 4,
+    "role": "data_dev"
+  },
+  "page_errors": [],
+  "bad_responses": [],
+  "checks": [
+    {
+      "role": "admin",
+      "requested": "/overview",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/sales",
+      "expected": "/sales",
+      "actual": "/sales",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/behavior",
+      "expected": "/behavior",
+      "actual": "/behavior",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/products",
+      "expected": "/products",
+      "actual": "/products",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/rfm",
+      "expected": "/rfm",
+      "actual": "/rfm",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/ai",
+      "expected": "/ai",
+      "actual": "/ai",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/decisions",
+      "expected": "/decisions",
+      "actual": "/decisions",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/reports",
+      "expected": "/reports",
+      "actual": "/reports",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/runtime-profiles",
+      "expected": "/runtime-profiles",
+      "actual": "/runtime-profiles",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/pipeline",
+      "expected": "/pipeline",
+      "actual": "/pipeline",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/ops",
+      "expected": "/ops",
+      "actual": "/ops",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "requested": "/sources/wizard",
+      "expected": "/sources/wizard",
+      "actual": "/sources/wizard",
+      "pass": true
+    },
+    {
+      "role": "admin",
+      "logout_redirect": "/login",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/overview",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/sales",
+      "expected": "/sales",
+      "actual": "/sales",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/behavior",
+      "expected": "/behavior",
+      "actual": "/behavior",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/products",
+      "expected": "/products",
+      "actual": "/products",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/rfm",
+      "expected": "/rfm",
+      "actual": "/rfm",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/ai",
+      "expected": "/ai",
+      "actual": "/ai",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/decisions",
+      "expected": "/decisions",
+      "actual": "/decisions",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/reports",
+      "expected": "/reports",
+      "actual": "/reports",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/runtime-profiles",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/pipeline",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/ops",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "requested": "/sources/wizard",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "operator",
+      "logout_redirect": "/login",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/overview",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/sales",
+      "expected": "/sales",
+      "actual": "/sales",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/behavior",
+      "expected": "/behavior",
+      "actual": "/behavior",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/products",
+      "expected": "/products",
+      "actual": "/products",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/rfm",
+      "expected": "/rfm",
+      "actual": "/rfm",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/ai",
+      "expected": "/ai",
+      "actual": "/ai",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/decisions",
+      "expected": "/decisions",
+      "actual": "/decisions",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/reports",
+      "expected": "/reports",
+      "actual": "/reports",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/runtime-profiles",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/pipeline",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/ops",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "requested": "/sources/wizard",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "analyst",
+      "logout_redirect": "/login",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/overview",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/sales",
+      "expected": "/sales",
+      "actual": "/sales",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/behavior",
+      "expected": "/behavior",
+      "actual": "/behavior",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/products",
+      "expected": "/products",
+      "actual": "/products",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/rfm",
+      "expected": "/rfm",
+      "actual": "/rfm",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/ai",
+      "expected": "/ai",
+      "actual": "/ai",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/decisions",
+      "expected": "/decisions",
+      "actual": "/decisions",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/reports",
+      "expected": "/reports",
+      "actual": "/reports",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/runtime-profiles",
+      "expected": "/runtime-profiles",
+      "actual": "/runtime-profiles",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/pipeline",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/ops",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "requested": "/sources/wizard",
+      "expected": "/overview",
+      "actual": "/overview",
+      "pass": true
+    },
+    {
+      "role": "data_dev",
+      "logout_redirect": "/login",
+      "pass": true
+    }
+  ],
+  "requests": [
+    {
+      "role": "admin",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analysis/sales",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analysis/funnel",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analysis/products",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analysis/rfm",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analysis/users",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/ai/history/my",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/decisions/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/reports/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/runtime-profiles",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/admin/pipeline-runs/recovery-report",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/pipeline-runs/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/quality",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/ai/audit/history/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/ai/audit/calls/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/quality/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/metrics/snapshots/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/pipeline-runs/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/ingestion/batches/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/admin/users/page",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/ingestion/status",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/sources",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "path": "/api/v1/auth/logout",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analysis/sales",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analysis/funnel",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analysis/products",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analysis/rfm",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analysis/users",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/ai/history/my",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/decisions/page",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/reports/page",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "operator",
+      "path": "/api/v1/auth/logout",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analysis/sales",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analysis/funnel",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analysis/products",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analysis/rfm",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analysis/users",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/ai/history/my",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/decisions/page",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/reports/page",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "analyst",
+      "path": "/api/v1/auth/logout",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analysis/sales",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analysis/funnel",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analysis/products",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analysis/rfm",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analysis/users",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/ai/history/my",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/decisions/page",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/reports/page",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/runtime-profiles",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/metrics/snapshots",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/analytics/sources",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/dashboards/overview",
+      "status": 200
+    },
+    {
+      "role": "data_dev",
+      "path": "/api/v1/auth/logout",
+      "status": 200
+    }
+  ],
+  "browser_non_get_requests": [
+    {
+      "role": "admin",
+      "method": "POST",
+      "path": "/api/v1/auth/login"
+    },
+    {
+      "role": "admin",
+      "method": "POST",
+      "path": "/api/v1/auth/logout"
+    },
+    {
+      "role": "operator",
+      "method": "POST",
+      "path": "/api/v1/auth/login"
+    },
+    {
+      "role": "operator",
+      "method": "POST",
+      "path": "/api/v1/auth/logout"
+    },
+    {
+      "role": "analyst",
+      "method": "POST",
+      "path": "/api/v1/auth/login"
+    },
+    {
+      "role": "analyst",
+      "method": "POST",
+      "path": "/api/v1/auth/logout"
+    },
+    {
+      "role": "data_dev",
+      "method": "POST",
+      "path": "/api/v1/auth/login"
+    },
+    {
+      "role": "data_dev",
+      "method": "POST",
+      "path": "/api/v1/auth/logout"
+    }
+  ],
+  "mocked_requests": 0,
+  "model_calls": 0,
+  "secret_output": false
+}

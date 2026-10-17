@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "useCase": "explanation_evidence",
+    "provider": "openai-compat",
+    "model": "deepseek-flash",
+    "promptVersion": "explain_evidence_v1",
+    "sourceId": 1,
+    "snapshotId": "S20261017_1",
+    "requestFingerprint": "8eedf93298344bccc2073d0cd5522a99d49c9c0cd12120394bbfa9eb5800f7f9",
+    "inputTokens": null,
+    "outputTokens": null,
+    "elapsedMs": 19120,
+    "status": "FAILED",
+    "error": "NETWORK",
+    "createdAt": "2026-10-17T15:40:06.371"
+  }
+]

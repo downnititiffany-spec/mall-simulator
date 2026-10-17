@@ -1,0 +1,1 @@
+{"result": "PASS", "report_ids": ["1"], "snapshot_id": "S20261017_1", "checks_passed": 8, "checks_total": 8, "failed_checks": [], "api_request_count": 7, "page_error_count": 0, "writes_performed": false, "evidence_scope": "real loopback admin browser; report page, owner list, detail, full artifact, logout"}

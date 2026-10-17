@@ -1,0 +1,19 @@
+[
+  {
+    "id": 1,
+    "snapshotId": "S20261017_1",
+    "runtimeProfileId": 1,
+    "sourceId": 1,
+    "runtimeProfileVersion": 2,
+    "businessTime": "2026-10-17T00:00:00",
+    "pipelineRunId": 1,
+    "status": "ACTIVE",
+    "version": 1,
+    "definitionVersion": "v2",
+    "dataUpdatedAt": "2026-10-17T00:00:00",
+    "publishedAt": "2026-10-17T15:39:33.605",
+    "source": "spark-ads",
+    "failureReason": null,
+    "createdAt": "2026-10-17T15:39:33.525"
+  }
+]

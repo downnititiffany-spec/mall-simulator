@@ -1,0 +1,10 @@
+{
+  "runId": 1,
+  "idempotencyKey": "acceptance-e8958346bba446468b5e321b85757021",
+  "status": "PENDING",
+  "currentStage": "PENDING",
+  "errorCode": null,
+  "attemptNo": 1,
+  "targetSnapshotId": null,
+  "stages": []
+}

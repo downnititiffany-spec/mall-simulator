@@ -1,0 +1,11 @@
+WARNING: log4j.properties is not found. HADOOP_CONF_DIR may be incomplete.
+WARNING: log4j.properties is not found. HADOOP_CONF_DIR may be incomplete.
+WARNING: log4j.properties is not found. HADOOP_CONF_DIR may be incomplete.
+result=PASS
+runId=cloud_261017_073320_76fcc0
+inputLines=10
+inputSha256=60a6e8fa80927757516e64691cfee9a2b2db1b9b75227ab4ee4a4476ebcfd2fa
+hdfsFileCount=1
+contentMatches=true
+landing=hdfs://127.0.0.1:19000/landing/cloud_261017_073320_76fcc0/raw
+activeFlumePid=2252

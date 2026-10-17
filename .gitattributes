@@ -6,3 +6,4 @@
 # Preserve evidence bytes and SHA-256 across Windows/Linux checkouts.
 /docs/acceptance/wp-f-close-archive-20261017/** -text
 /docs/acceptance/review-fixes-20261017/** -text
+/docs/acceptance/local-live-llm-20261017/** -text

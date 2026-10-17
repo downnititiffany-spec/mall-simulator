@@ -15,11 +15,11 @@ record AiCallIdentity(Long sourceId, String snapshotId, String fingerprint) {
                              String model, String promptVersion, Integer maxOutputTokens, AiRequest request) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            for (String field : new String[] {"ai-request-v1", useCase,
+            for (String field : new String[] {"ai-request-v2", useCase,
                     sourceId == null ? null : sourceId.toString(), snapshotId, question,
                     model, promptVersion, maxOutputTokens == null ? null : maxOutputTokens.toString(),
                     request.systemPrompt(), request.userContent(),
-                    Double.toHexString(request.temperature())}) {
+                    Double.toHexString(request.temperature()), request.outputFormat().name()}) {
                 if (field == null) {
                     digest.update(ByteBuffer.allocate(4).putInt(-1).array());
                 } else {

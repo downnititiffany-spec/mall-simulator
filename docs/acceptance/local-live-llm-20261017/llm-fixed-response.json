@@ -1,0 +1,262 @@
+{
+  "evidence": {
+    "evidenceId": "EV-20261017-b759c7",
+    "templateVersion": "evidence_v1",
+    "snapshotId": "S20261017_1",
+    "definitionVersion": "v2",
+    "generatedAt": "2026-10-17T15:44:46",
+    "period": {
+      "from": "2026-10-17",
+      "to": "2026-10-17"
+    },
+    "currentPeriod": {
+      "from": "2026-10-17",
+      "to": "2026-10-17"
+    },
+    "comparisonPeriod": null,
+    "facts": [
+      {
+        "metricCode": "avg_order_value",
+        "metricName": "客单价",
+        "value": "29.9000",
+        "unit": "元",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.avg_order_value@S20261017_1"
+      },
+      {
+        "metricCode": "cart_add_cnt",
+        "metricName": "加购次数",
+        "value": "2.0000",
+        "unit": "次",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.cart_add_cnt@S20261017_1"
+      },
+      {
+        "metricCode": "dau",
+        "metricName": "日活跃用户数",
+        "value": "2.0000",
+        "unit": "人",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.dau@S20261017_1"
+      },
+      {
+        "metricCode": "fav_cnt",
+        "metricName": "收藏次数",
+        "value": "0.0000",
+        "unit": "次",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.fav_cnt@S20261017_1"
+      },
+      {
+        "metricCode": "full_refund_rate",
+        "metricName": "全额退款率",
+        "value": "0.0000",
+        "unit": "",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.full_refund_rate@S20261017_1"
+      },
+      {
+        "metricCode": "gmv",
+        "metricName": "销售额(GMV)",
+        "value": "59.8000",
+        "unit": "元",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.gmv@S20261017_1"
+      },
+      {
+        "metricCode": "net_sale",
+        "metricName": "净销售额",
+        "value": "59.8000",
+        "unit": "元",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.net_sale@S20261017_1"
+      },
+      {
+        "metricCode": "paid_order_cnt",
+        "metricName": "支付订单数",
+        "value": "2.0000",
+        "unit": "单",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.paid_order_cnt@S20261017_1"
+      },
+      {
+        "metricCode": "pv",
+        "metricName": "浏览量",
+        "value": "0.0000",
+        "unit": "次",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.pv@S20261017_1"
+      },
+      {
+        "metricCode": "refund_rate",
+        "metricName": "退款率",
+        "value": "0.0000",
+        "unit": "",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.refund_rate@S20261017_1"
+      },
+      {
+        "metricCode": "repeat_rate",
+        "metricName": "复购率(有效)",
+        "value": "0.0000",
+        "unit": "",
+        "period": "window:2026-10-17..2026-10-17",
+        "evidenceRef": "metric_value.repeat_rate@S20261017_1"
+      },
+      {
+        "metricCode": "uv",
+        "metricName": "浏览用户数",
+        "value": "0.0000",
+        "unit": "人",
+        "period": "day:2026-10-17",
+        "evidenceRef": "metric_value.uv@S20261017_1"
+      }
+    ],
+    "comparisons": [],
+    "dimensions": {
+      "product": [
+        {
+          "key": "1001",
+          "label": "UNKNOWN",
+          "value": "8.7889",
+          "share": "1.0000",
+          "metricCode": "product_heat",
+          "evidenceRef": "ads_hot_product_m.heat_score@S20261017_1"
+        }
+      ],
+      "category": [
+        {
+          "key": "-1",
+          "label": "未分类",
+          "value": "59.8000",
+          "share": "1.0000",
+          "metricCode": "category_sale_amount",
+          "evidenceRef": "ads_category_sale_m.sale_amount@S20261017_1[20261017..20261017]"
+        }
+      ],
+      "region": [
+        {
+          "key": "tier1",
+          "label": "城市等级 tier1",
+          "value": "59.8000",
+          "share": "1.0000",
+          "metricCode": "city_level_sale_amount",
+          "evidenceRef": "ads_region_sale_m.sale_amount@S20261017_1[20261017..20261017]"
+        }
+      ],
+      "channel": []
+    },
+    "anomalies": [],
+    "dataQuality": {
+      "gateStatus": "PASS",
+      "ruleTotal": 4,
+      "rulePassed": 4,
+      "failedRules": [],
+      "warnings": []
+    },
+    "lineage": {
+      "hiveAdsTables": [
+        "dw_ads.ads_operation_overview",
+        "dw_ads.ads_data_quality",
+        "dw_ads.ads_hot_product",
+        "dw_ads.ads_category_sale",
+        "dw_ads.ads_region_sale"
+      ],
+      "mysqlTables": [
+        "ads_operation_overview_m",
+        "ads_data_quality_m",
+        "ads_hot_product_m",
+        "ads_category_sale_m",
+        "ads_region_sale_m"
+      ],
+      "pipelineRunId": 1,
+      "snapshotId": "S20261017_1",
+      "sourceId": 1
+    },
+    "warnings": [
+      "MIXED_DEFINITION_VERSIONS",
+      "NO_COMPARISON_PERIOD",
+      "CHANNEL_DIMENSION_UNAVAILABLE"
+    ]
+  },
+  "narrative": {
+    "summary": "快照S20261017_1（2026-10-17）共12个指标，质量门PASS，未命中候选异常规则，GMV与净销售额均为59.8000元、客单价29.9000元、支付订单数2.0000单，因无可用上期快照无法给出环比，渠道维度本期无数据。",
+    "sections": [
+      {
+        "title": "发生了什么",
+        "lines": [
+          "期间 2026-10-17，快照 S20261017_1，指标口径版本 v2",
+          "客单价(avg_order_value) = 29.9000元（期间 day:2026-10-17）[metric_value.avg_order_value@S20261017_1]",
+          "加购次数(cart_add_cnt) = 2.0000次（期间 day:2026-10-17）[metric_value.cart_add_cnt@S20261017_1]",
+          "日活跃用户数(dau) = 2.0000人（期间 day:2026-10-17）[metric_value.dau@S20261017_1]",
+          "收藏次数(fav_cnt) = 0.0000次（期间 day:2026-10-17）[metric_value.fav_cnt@S20261017_1]",
+          "全额退款率(full_refund_rate) = 0.0000（期间 day:2026-10-17）[metric_value.full_refund_rate@S20261017_1]",
+          "销售额(GMV)(gmv) = 59.8000元（期间 day:2026-10-17）[metric_value.gmv@S20261017_1]",
+          "净销售额(net_sale) = 59.8000元（期间 day:2026-10-17）[metric_value.net_sale@S20261017_1]",
+          "支付订单数(paid_order_cnt) = 2.0000单（期间 day:2026-10-17）[metric_value.paid_order_cnt@S20261017_1]",
+          "浏览量(pv) = 0.0000次（期间 day:2026-10-17）[metric_value.pv@S20261017_1]",
+          "退款率(refund_rate) = 0.0000（期间 day:2026-10-17）[metric_value.refund_rate@S20261017_1]",
+          "复购率(有效)(repeat_rate) = 0.0000（期间 window:2026-10-17..2026-10-17）[metric_value.repeat_rate@S20261017_1]",
+          "浏览用户数(uv) = 0.0000人（期间 day:2026-10-17）[metric_value.uv@S20261017_1]"
+        ]
+      },
+      {
+        "title": "与上期相比",
+        "lines": [
+          "无可比上期（NO_COMPARISON_PERIOD）：无法给出环比，不用 0 冒充基线"
+        ]
+      },
+      {
+        "title": "维度贡献",
+        "lines": [
+          "商品维度（度量 product_heat）:",
+          "  - UNKNOWN = 8.7889，占比 1.0000 [ads_hot_product_m.heat_score@S20261017_1]",
+          "分类维度（度量 category_sale_amount）:",
+          "  - 未分类 = 59.8000，占比 1.0000 [ads_category_sale_m.sale_amount@S20261017_1[20261017..20261017]]",
+          "城市等级维度（度量 city_level_sale_amount）:",
+          "  - 城市等级 tier1 = 59.8000，占比 1.0000 [ads_region_sale_m.sale_amount@S20261017_1[20261017..20261017]]",
+          "渠道维度：无来源表/无数据，本期不做该维度归因"
+        ]
+      },
+      {
+        "title": "数据质量可信度",
+        "lines": [
+          "质量门结论 PASS：4/4 条规则通过",
+          "结论：可信度可接受，但未通过规则涉及的字段仍需按第 ⑤ 段核查"
+        ]
+      },
+      {
+        "title": "核查行动",
+        "lines": [
+          "本期没有命中的候选异常规则，不需要额外核查动作",
+          "以上为规则命中的候选线索，相关性不等于因果，需结合业务再判断"
+        ]
+      },
+      {
+        "title": "限制",
+        "lines": [
+          "本结论只覆盖快照 S20261017_1 已发布的数据，不含实时增量",
+          "候选异常来自固定阈值规则，不是模型预测，也不构成因果结论",
+          "口径版本 v2；口径变更后同指标的历史值不可直接比较",
+          "渠道维度当前未建设 ADS 服务表，本期不提供渠道贡献",
+          "上一期没有可用快照，因此没有环比数据",
+          "数据缺口：MIXED_DEFINITION_VERSIONS",
+          "数据缺口：NO_COMPARISON_PERIOD",
+          "数据缺口：CHANNEL_DIMENSION_UNAVAILABLE"
+        ]
+      }
+    ],
+    "limitations": [
+      "本结论只覆盖快照 S20261017_1 已发布的数据，不含实时增量",
+      "候选异常来自固定阈值规则，不是模型预测，也不构成因果结论",
+      "口径版本 v2；口径变更后同指标的历史值不可直接比较",
+      "渠道维度当前未建设 ADS 服务表，本期不提供渠道贡献",
+      "上一期没有可用快照，因此没有环比数据",
+      "数据缺口：MIXED_DEFINITION_VERSIONS",
+      "数据缺口：NO_COMPARISON_PERIOD",
+      "数据缺口：CHANNEL_DIMENSION_UNAVAILABLE"
+    ],
+    "providerUsed": "openai-compat",
+    "templateVersion": "evidence_v1"
+  }
+}

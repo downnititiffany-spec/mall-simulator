@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "checks": {
+    "gmv_matches_two_real_paid_orders": true,
+    "paid_orders_two": true,
+    "no_repeat_buyers": true,
+    "quality_pass": true,
+    "report_ready": true,
+    "report_snapshot_pinned": true,
+    "report_owner_isolation_detail": true,
+    "report_owner_isolation_artifact": true
+  },
+  "expected_gmv": "59.8",
+  "actual_gmv": "59.8",
+  "model_calls": 0
+}

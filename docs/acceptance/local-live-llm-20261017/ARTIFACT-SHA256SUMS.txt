@@ -1,0 +1,4 @@
+961e4ca382d64884867d3edc822252a6d6ad307bc0de8f2f5e8fdf64475797e1  analytics-server/platform-app/target/platform-app-0.1.0-SNAPSHOT.jar
+0eb85a7c61a80115277580d6145fc39efaf085f31810c95c27522794b8b09835  mall-simulator/target/mall-simulator-0.1.0-SNAPSHOT.jar
+f082680579ee85152228e6b478f3a62f00079451a083a2c72f0309f53f7d7d81  synthetic-data-generator/target/synthetic-data-generator-0.1.0-SNAPSHOT.jar
+2de6998e81d71043512518912220b1cd399fa92086235d076d704a5f822c42ca  spark-jobs/target/spark-jobs-0.1.0-SNAPSHOT.jar

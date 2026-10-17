@@ -34,6 +34,9 @@ class AiCallIdentityTest {
         assertThat(fingerprint("generate", 1L, "S1", "question", "model", "v1", new AiRequest("other", "user", 0))).isNotEqualTo(base);
         assertThat(fingerprint("generate", 1L, "S1", "question", "model", "v1", new AiRequest("system", "other", 0))).isNotEqualTo(base);
         assertThat(fingerprint("generate", 1L, "S1", "question", "model", "v1", new AiRequest("system", "user", .2))).isNotEqualTo(base);
+        assertThat(fingerprint("generate", 1L, "S1", "question", "model", "v1",
+                new AiRequest("system", "user", 0,
+                        com.graduation.analytics.ai.llm.LlmProvider.OutputFormat.TEXT))).isNotEqualTo(base);
     }
 
     @Test

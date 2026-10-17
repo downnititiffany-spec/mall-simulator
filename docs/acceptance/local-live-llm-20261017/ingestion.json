@@ -1,0 +1,14 @@
+{
+  "batchId": 1,
+  "batchNo": "ing-20261017153715-178ff3cd",
+  "status": "SUCCESS",
+  "recordCount": 10,
+  "quarantineCount": 0,
+  "errorCount": 0,
+  "fileCount": 1,
+  "acceptedBytes": 4738,
+  "acceptedDir": "hdfs://127.0.0.1:19000/landing/cloud_261017_073320_76fcc0/accepted/1",
+  "quarantineDir": "hdfs://127.0.0.1:19000/landing/cloud_261017_073320_76fcc0/quarantine/1",
+  "manifestPath": "hdfs://127.0.0.1:19000/landing/cloud_261017_073320_76fcc0/manifests/1.json",
+  "noNewData": false
+}

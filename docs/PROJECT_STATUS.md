@@ -1,3 +1,13 @@
+### 2026-10-17 本地真实链、DeepSeek V4.1 Flash与角色基础走查
+
+- 用户指定DeepSeek V4.1 Flash、批准少量合成请求并确认云电脑不可用。仓库外DPAPI密钥仅在进程内解密注入，未明文落盘/回显/归档；本轮2次模型尝试，未超过3次上限。
+- 当前源码打包后由统一脚本新建RunId `cloud_261017_073320_76fcc0`。2笔合成支付→10条商城事件→Flume File Channel/HDFS内容一致→采集10 accepted/0 quarantine/error→真实Spark8阶段SUCCESS→快照`S20261017_1`。12项指标及12张ADS服务表发布回读通过；独立oracle确认GMV59.80、支付订单2、repeat_rate=0。
+- 首次真实LLM审计FAILED/NETWORK、模板回退；查明WSL Java未自动采用本机HTTPS代理。单独重启本RunId平台并显式配置代理，同时修复纯文本摘要请求被强制JSON的问题，新增可选reasoning-effort与输出格式入请求指纹v2。第二次正式`/ai/explanations`采用真实摘要，openai-compat/deepseek-flash，ai_call_log id2/OK，1117输入+78输出token，API1437ms，来源/快照/请求指纹齐备。
+- 定向77/77；最终官方default1563收集、1561通过、2个Windows符号链接跳过，F0/E0，1403/26/134基线MATCH。新增3项Provider回归解释基线增量；Web/Spark离线全套沿用同日既有结果，本轮未新跑。
+- 真实admin/data_dev/operator/analyst浏览器52/52，0 mock/页面异常/失败API；真实报告页8/8、7请求；8项oracle/报告owner检查通过。固定快照、决策空态和未知快照错误态均取证；错误态不显示旧指标、禁导出，返回当前恢复。未扩大成所有交互/完整决策生命周期/性能通过。
+- 统一stop exit0，12目标端口closed，数据库/HDFS保留。单节点pipeline仍用独立Derby；独立19083HMS监听不证明共享Metastore。RES-01最小真实调用与RES-06基础走查闭合；共享/远程环境、3306冻结迁移及总控最终签收仍独立。历史日志不补造，冻结V3.0不改。
+- 报告：`docs/verification/results/LOCAL-LIVE-LLM-20261017.md`；证据：`docs/acceptance/local-live-llm-20261017/`；动态原件先备份至`docs/backups/local-live-acceptance-20261017/`。以下为此前历史状态。
+
 ### 2026-10-17 独立复核修复、原报告归档与剩余验收对齐
 
 - 在远端开发线 `a70ae13`（与main `d9cdd6b`业务代码一致）上修复两项独立复核发现：SourcePathPolicy在trim前拒绝NUL/控制符/非法字符及不完整Unicode，保留中文词法引用，实际文件系统解析失败按脱敏PARAM_INVALID拒绝；统一runner在切目录前把LogDir解析为绝对路径。

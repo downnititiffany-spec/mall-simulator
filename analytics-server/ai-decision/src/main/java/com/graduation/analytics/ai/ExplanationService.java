@@ -313,7 +313,7 @@ public class ExplanationService {
         String user = "问题：" + (question == null ? "（未提供）" : question)
                 + "\n快照：" + (pkg.snapshotId() == null ? "无可用快照" : pkg.snapshotId())
                 + "\n结论原文：\n" + narrative.toText();
-        AiRequest request = new AiRequest(prompt, user, 0.0);
+        AiRequest request = new AiRequest(prompt, user, 0.0, LlmProvider.OutputFormat.TEXT);
         AiCallIdentity identity = AiCallIdentity.of("explanation_evidence",
                 pkg.lineage() == null ? null : pkg.lineage().sourceId(), pkg.snapshotId(), question,
                 llmProvider.modelName(), PROMPT_VERSION_EVIDENCE, llmProvider.maxOutputTokens(), request);

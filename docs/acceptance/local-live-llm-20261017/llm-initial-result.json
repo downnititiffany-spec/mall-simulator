@@ -1,0 +1,23 @@
+{
+  "result": "FAIL",
+  "snapshot": "S20261017_1",
+  "provider_used": "template",
+  "elapsed_ms": 19250,
+  "audit": [
+    {
+      "id": 1,
+      "status": "FAILED",
+      "model": "deepseek-flash",
+      "provider": "openai-compat",
+      "error": "NETWORK",
+      "inputTokens": null,
+      "outputTokens": null,
+      "snapshotId": "S20261017_1",
+      "sourceId": 1,
+      "requestHash": null,
+      "responseHash": null
+    }
+  ],
+  "new_calls": 1,
+  "secret_output": false
+}

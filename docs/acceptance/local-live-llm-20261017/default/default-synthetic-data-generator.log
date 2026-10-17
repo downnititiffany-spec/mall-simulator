@@ -1,0 +1,112 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.graduation:synthetic-data-generator >---------------
+[INFO] Building synthetic-data-generator 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ synthetic-data-generator ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ synthetic-data-generator ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\synthetic-data-generator\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ synthetic-data-generator ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ synthetic-data-generator ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.generator.adapter.MallFailureCodeTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.099 s -- in com.graduation.generator.adapter.MallFailureCodeTest
+[INFO] Running com.graduation.generator.adapter.MallHttpClientTimeoutGuardTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.150 s -- in com.graduation.generator.adapter.MallHttpClientTimeoutGuardTest
+[INFO] Running com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.716 s -- in com.graduation.generator.adapter.MallTargetAdapterOperationsTest
+[INFO] Running com.graduation.generator.adapter.MallTargetAdapterRegistryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.graduation.generator.adapter.MallTargetAdapterRegistryTest
+[INFO] Running com.graduation.generator.adapter.ReferenceMallHttpAdapterTest
+15:46:19.608 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+15:46:19.655 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=ABSENT, RESET_STATE=SUPPORTED, ADMIN=SUPPORTED}
+15:46:19.674 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+15:46:19.694 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+15:46:19.717 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=UNDETERMINED}
+15:46:19.744 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=SUPPORTED, RESET_STATE=SUPPORTED, ADMIN=SUPPORTED}
+15:46:20.953 [main] WARN com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽��ʧ�ܣ�id=42 �޷����� http://127.0.0.1:52067��ConnectException: null��
+15:46:20.978 [main] INFO com.graduation.generator.adapter.ReferenceMallHttpAdapter -- Ŀ������̽����ɣ�id=42 {PRODUCT=SUPPORTED, USER=SUPPORTED, ORDER=SUPPORTED, REFUND=SUPPORTED, BEHAVIOR=UNDETERMINED, RESET_STATE=UNDETERMINED, ADMIN=SUPPORTED}
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.403 s -- in com.graduation.generator.adapter.ReferenceMallHttpAdapterTest
+[INFO] Running com.graduation.generator.adapter.SafeHttpRetryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.232 s -- in com.graduation.generator.adapter.SafeHttpRetryTest
+[INFO] Running com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+15:46:21.281 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+15:46:21.353 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+15:46:21.356 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+15:46:21.359 [main] INFO com.graduation.generator.adapter.SecondMallHttpAdapter -- �ڶ����̳�����̽����ɣ�id=21 {PRODUCT=ABSENT, USER=ABSENT, ORDER=ABSENT, REFUND=ABSENT, BEHAVIOR=UNDETERMINED, RESET_STATE=ABSENT, ADMIN=ABSENT}
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.202 s -- in com.graduation.generator.adapter.SecondMallAdapterOperationsTest
+[INFO] Running com.graduation.generator.boundary.GeneratorBoundarySourcePolicyTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.076 s -- in com.graduation.generator.boundary.GeneratorBoundarySourcePolicyTest
+[INFO] Running com.graduation.generator.contract.GeneratorContractParityTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in com.graduation.generator.contract.GeneratorContractParityTest
+[INFO] Running com.graduation.generator.contract.JsonlEventSinkTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.125 s -- in com.graduation.generator.contract.JsonlEventSinkTest
+[INFO] Running com.graduation.generator.core.BehaviorChainTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.graduation.generator.core.BehaviorChainTest
+[INFO] Running com.graduation.generator.core.DistributionKitTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.graduation.generator.core.DistributionKitTest
+[INFO] Running com.graduation.generator.core.GeneratorDeterminismTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in com.graduation.generator.core.GeneratorDeterminismTest
+[INFO] Running com.graduation.generator.core.ScenarioEffectTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.graduation.generator.core.ScenarioEffectTest
+[INFO] Running com.graduation.generator.core.ScenarioRegistryTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.graduation.generator.core.ScenarioRegistryTest
+[INFO] Running com.graduation.generator.engine.FileModeGenerationEngineTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.065 s -- in com.graduation.generator.engine.FileModeGenerationEngineTest
+[INFO] Running com.graduation.generator.engine.MallApiGenerationEngineTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.811 s -- in com.graduation.generator.engine.MallApiGenerationEngineTest
+[INFO] Running com.graduation.generator.engine.MallApiIdempotencyKeyTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.graduation.generator.engine.MallApiIdempotencyKeyTest
+[INFO] Running com.graduation.generator.engine.SecondMallDualTargetTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.423 s -- in com.graduation.generator.engine.SecondMallDualTargetTest
+[INFO] Running com.graduation.generator.meta.RunStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.graduation.generator.meta.RunStatusTest
+[INFO] Running com.graduation.generator.service.GenerationRunServiceErrorMappingTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.graduation.generator.service.GenerationRunServiceErrorMappingTest
+[INFO] Running com.graduation.generator.web.GeneratorStaticResourceTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-10-17T15:46:25.774+08:00  INFO 99096 --- [synthetic-data-generator] [           main] c.g.g.web.GeneratorStaticResourceTest    : Starting GeneratorStaticResourceTest using Java 17.0.12 with PID 99096 (started by ASUS in D:\Develop_code\GraduationProject-wt\v3-dev\synthetic-data-generator)
+2026-10-17T15:46:25.775+08:00  INFO 99096 --- [synthetic-data-generator] [           main] c.g.g.web.GeneratorStaticResourceTest    : No active profile set, falling back to 1 default profile: "default"
+2026-10-17T15:46:26.822+08:00  INFO 99096 --- [synthetic-data-generator] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-10-17T15:46:27.439+08:00  INFO 99096 --- [synthetic-data-generator] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-17T15:46:27.439+08:00  INFO 99096 --- [synthetic-data-generator] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-17T15:46:27.440+08:00  INFO 99096 --- [synthetic-data-generator] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-17T15:46:27.476+08:00  INFO 99096 --- [synthetic-data-generator] [           main] c.g.g.web.GeneratorStaticResourceTest    : Started GeneratorStaticResourceTest in 2.008 seconds (process running for 9.474)
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.566 s -- in com.graduation.generator.web.GeneratorStaticResourceTest
+[INFO] Running com.graduation.itguard.IsolationGuardFingerprintTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.graduation.itguard.IsolationGuardFingerprintTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 134, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.638 s
+[INFO] Finished at: 2026-10-17T15:46:29+08:00
+[INFO] ------------------------------------------------------------------------
