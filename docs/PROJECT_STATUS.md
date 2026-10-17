@@ -1,3 +1,12 @@
+### 2026-10-17 独立复核修复、原报告归档与剩余验收对齐
+
+- 在远端开发线 `a70ae13`（与main `d9cdd6b`业务代码一致）上修复两项独立复核发现：SourcePathPolicy在trim前拒绝NUL/控制符/非法字符及不完整Unicode，保留中文词法引用，实际文件系统解析失败按脱敏PARAM_INVALID拒绝；统一runner在切目录前把LogDir解析为绝对路径。
+- 来源校验/登记反例旧实现44项2失败，修复后44/44 PASS；官方default重跑1560收集、1558通过、2个Windows符号链接用例跳过，F0/E0，1400/26/134基线MATCH、exit0；相对LogDir的web档450/450及构建PASS。未改计数基线；Spark源代码未改，389/389沿用同日独立审查，不宣称修复后新跑。
+- headless Chromium补验：12条匿名路由全部/login、0 API请求/页面错误；报告与RuntimeProfile模拟流程各11请求、意外请求/页面错误0；留存当前云白界面截图。仅客户端与模拟身份/API，真实认证/快照业务走查仍开放。临时preview PID经身份核对停止，5187已关闭，未操作原有项目服务。
+- 用户提供云端原归档ZIP（SHA256 `6e2abcd0a3c31c2336449e147fd9800cba15075942907d38ee94578549ca47ab`），65个普通文件逐哈希归档。历史 `notes/<文件名>` 统一对应 `docs/acceptance/wp-f-close-archive-20261017/mall-simulator-notes/<文件名>`；见该目录README。早期/tmp日志已因云电脑更换丢失，仅报告/登记可引用；不得补造。幸存main三树日志可复算1560、F0/E0/S2，与登记相符。
+- 最新汇总已同步PROJECT_COMPLETION_CHECKLIST；RES-01—11集中维护于 `docs/verification/RESIDUAL_ACCEPTANCE.md`。真实LLM成功、真实会话UI、共享HMS/远程集群及正式库授权各自未闭合；维持限定验收。当前本地任务未发现所需安全环境变量，用户提供的env位置属于云电脑，不代表本地已注入。
+- 结果与实际日志：`docs/verification/results/REVIEW-FIXES-20261017.md`、`docs/acceptance/review-fixes-20261017/`。本轮未连接3306、未清理数据库、未调用外部LLM；冻结V3.0文档未改。两份动态文档修改前备份到 `docs/backups/review-fixes-20261017/`；本节以下历史条目保持其原时间与范围。
+
 ### 2026-10-12 阶段2/7 当前 Mall HDFS 文件经平台 FLUME_RAW 采集
 
 - 真实 HDFS 输入 `.../landing/cloud_261012_012653_d3b0fc/raw/dt=20261012/hour=10/events-.1791772101760.jsonl`（89行/41,103字节，SHA-256 与 Mall 源相同）经当前工作树 `IngestionService` + `HdfsLandingStorage` 采集：SUCCESS、89 accepted、0 quarantine/error、1文件；READY manifest 后 checkpoint 提交；同一测试实例重跑 0 新记录、`noNewData=true`。

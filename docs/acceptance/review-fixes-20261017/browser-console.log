@@ -1,0 +1,14 @@
+{"result": "PASS", "workflows": ["OPS_WEEKLY snapshot/window -> create -> list -> summary detail", "DECISION_EFFECT lazy candidate load -> decisionId create"], "template_option_count": 6, "mocked_api_request_count": 11, "create_payload_count": 2, "unexpected_api_requests": [], "page_errors": [], "artifact_read": "not exercised by this browser check", "evidence_scope": "loopback UI with intercepted synthetic APIs and client-only identity; no platform auth/HTTP/DB"}
+{"result": "PASS", "workflow": "create -> test -> confirm -> activate", "credential_reference_only": true, "password_input_count": 0, "mocked_api_request_count": 11, "unexpected_api_requests": [], "page_errors": [], "evidence_scope": "mock API and synthetic client identity; no platform authentication or DB"}
+{"result": "PASS", "anonymous_route_count": 12, "api_request_count": 0, "page_error_count": 0, "scope": "client-only anonymous guards; no platform auth/DB"}
+Starting server 1/1: node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 5187 --strictPort
+Waiting for server on port 5187...
+Server ready on port 5187
+
+All 1 server(s) ready
+Running: python ../.verify/review-fixes-20261017/browser-checks.py
+
+
+Stopping 1 server(s)...
+Server 1 stopped
+All servers stopped

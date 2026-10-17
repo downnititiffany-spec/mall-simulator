@@ -1,3 +1,18 @@
+## 当前汇总（2026-10-17，独立复核修复后）
+
+本清单以下为按日期保留的历史条目；过期未勾项不得直接累计为当前缺陷。当前定性以PROJECT_STATUS最新裁定与 [剩余验收清单](verification/RESIDUAL_ACCEPTANCE.md) 为准：主要功能开发收官，维持限定验收。
+
+- [x] R1路径校验缺陷修复；44项反例旧代码2失败→修复后全过。
+- [x] R2相对日志目录修复；Web450/450与构建通过；default1560收集、1558通过、2跳过，基线MATCH。两个跳过为Windows符号链接，历史Landing巡检在原开发工作树实际通过。
+- [x] 原WP-F/收官归档65个普通文件已按原件哈希核对，旧notes引用有统一映射；幸存main日志可复算1560、F0/E0/S2。归档入口 `docs/acceptance/wp-f-close-archive-20261017/README.md`。
+- [x] 万级链复跑、退款分摊、留存及渠道专题的选定WP-F原报告已归档；这些是云端历史证据，不是本轮重新跑全链。原包未包含WP-N1/N2与WP-F1原报告，两源初始采集/发布及第二版轮换仍按PROJECT_STATUS登记引用，不扩大证据。
+- [x] dim_metric按WP-F9d裁定维持MySQL metric_definition唯一权威，数仓不建表/不同步；下方旧“待同步”描述仅保留历史含义。
+- [x] 本地浏览器12条匿名路由、报告/RuntimeProfile mock流程及当前页面截图补验；不替代真实会话/数据库/服务端权限证据。
+- [ ] 真实LLM成功调用、真实认证快照UI走查、共享HMS/远程集群及正式3306迁移仍须独立条件与权限；不能把本轮全绿当作全项目完整验收。
+- [ ] 早期云端/tmp原日志已丢失且不可恢复；仅按原报告与状态登记引用，不伪造替代日志。
+
+详见 `docs/verification/results/REVIEW-FIXES-20261017.md`。修改前原件已备份到 `docs/backups/review-fixes-20261017/`，下列历史证据不删改。
+
 ### 2026-10-12 阶段2/3 `dim_region` 静态字典生产路径（D-062）
 
 - [x] 总控批准保留三列非分区表；字典绑定 `canonical-event.v1`，成员固定 `tier1/tier2/tier3/other/unknown`。

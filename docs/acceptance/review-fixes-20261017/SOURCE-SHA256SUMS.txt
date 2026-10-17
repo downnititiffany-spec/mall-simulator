@@ -1,0 +1,4 @@
+a1bce910140f067bb16561951203d8c729502eb24c1df2b4a2e8ce08b45844b9  analytics-server/connection-ingestion/src/main/java/com/graduation/analytics/source/SourcePathPolicy.java
+bfcd70f62dcbf9a26ecc8bb5c08a9104aaca683413521d334c26ac6cd3fe9696  analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceProfileValidatorTest.java
+2cd308931f4323b974e04014b3dd37de3bfd8517a835a5cf7dde0f707315ddd2  analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/source/SourceRegistryServiceTest.java
+3514fe91f843c8d9218dee601bd36c8439ea9bbc618b6f15180d5ae11e137b89  scripts/run-tests.ps1

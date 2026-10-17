@@ -1,0 +1,144 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] analytics-server                                                   [pom]
+[INFO] platform-common                                                    [jar]
+[INFO] connection-ingestion                                               [jar]
+[INFO] 
+[INFO] -------------< com.graduation.analytics:analytics-server >--------------
+[INFO] Building analytics-server 0.1.0-SNAPSHOT                           [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------< com.graduation.analytics:platform-common >--------------
+[INFO] Building platform-common 0.1.0-SNAPSHOT                            [2/3]
+[INFO]   from platform-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\platform-common\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\platform-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ platform-common ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ platform-common ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\platform-common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ platform-common ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 20 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: ĳЩ�����ļ�ʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/platform-common/src/test/java/com/graduation/analytics/metric/RuleSeverityTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ platform-common ---
+[INFO] 
+[INFO] -----------< com.graduation.analytics:connection-ingestion >------------
+[INFO] Building connection-ingestion 0.1.0-SNAPSHOT                       [3/3]
+[INFO]   from connection-ingestion\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 2 problems were encountered while building the effective model for org.apache.yetus:audience-annotations:jar:0.5.0 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ connection-ingestion ---
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\connection-ingestion\src\main\resources
+[INFO] skip non existing resourceDirectory D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\connection-ingestion\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ connection-ingestion ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 95 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ connection-ingestion ---
+[INFO] Copying 4 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ connection-ingestion ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 63 source files with javac [debug release 17] to target\test-classes
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/runtime/RuntimeProfileHiveProbeRedactionTest.java: ĳЩ�����ļ�ʹ�û򸲸����ѹ�ʱ�� API��
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/runtime/RuntimeProfileHiveProbeRedactionTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionBatchQueryServiceTest.java: D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\connection-ingestion\src\test\java\com\graduation\analytics\ingestion\IngestionBatchQueryServiceTest.javaʹ����δ�����򲻰�ȫ�Ĳ�����
+[INFO] /D:/Develop_code/GraduationProject-wt/v3-dev/analytics-server/connection-ingestion/src/test/java/com/graduation/analytics/ingestion/IngestionBatchQueryServiceTest.java: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ connection-ingestion ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.graduation.analytics.source.SourceProfileValidatorTest
+SLF4J(W): Class path contains multiple SLF4J providers.
+SLF4J(W): Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@266374ef]
+SLF4J(W): Found provider [org.slf4j.reload4j.Reload4jServiceProvider@13b3d178]
+SLF4J(W): See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J(I): Actual provider is of type [ch.qos.logback.classic.spi.LogbackServiceProvider@266374ef]
+14:58:51.368 [main] WARN com.graduation.analytics.source.SourceProfileValidator -- Դ�������ʧ�� path=analytics-server/source-profiles/p1-03-probe-1.v1.json causeType=JsonParseException
+[ERROR] Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.415 s <<< FAILURE! -- in com.graduation.analytics.source.SourceProfileValidatorTest
+[ERROR] com.graduation.analytics.source.SourceProfileValidatorTest.pathPolicyIsSeparatelyOwned -- Time elapsed: 0.013 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+[invalid path must be rejected before native filesystem resolution] 
+Expecting value to be false but was true
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at com.graduation.analytics.source.SourceProfileValidatorTest.pathPolicyIsSeparatelyOwned(SourceProfileValidatorTest.java:246)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] Running com.graduation.analytics.source.SourceRegistryServiceTest
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+14:58:52.482 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=1 �� runtime_profile.id=1
+14:58:52.778 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ��ͣ sourceCode=p1-03-probe-1 id=2
+14:58:52.799 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=probe-invalid id=1 status=DRAFT
+14:58:52.804 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=DRAFT
+14:58:52.831 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ���� sourceCode=p1-03-probe-1 id=2 �� runtime_profile.id=1
+14:58:52.901 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�ǼǴ��� sourceCode=p1-03-probe-1 id=1 status=PAUSED
+14:58:52.910 [main] INFO com.graduation.analytics.source.SourceRegistryServiceImpl -- Դ�Ǽ��޸� id=1 sourceCode=mock-mall
+[ERROR] Tests run: 32, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.477 s <<< FAILURE! -- in com.graduation.analytics.source.SourceRegistryServiceTest
+[ERROR] com.graduation.analytics.source.SourceRegistryServiceTest.createRejectsIllegalProfilePaths -- Time elapsed: 0.012 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting code to raise a throwable.
+	at com.graduation.analytics.source.SourceRegistryServiceTest.createRejectsIllegalProfilePaths(SourceRegistryServiceTest.java:202)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   SourceProfileValidatorTest.pathPolicyIsSeparatelyOwned:246 [invalid path must be rejected before native filesystem resolution] 
+Expecting value to be false but was true
+[ERROR]   SourceRegistryServiceTest.createRejectsIllegalProfilePaths:202 
+Expecting code to raise a throwable.
+[INFO] 
+[ERROR] Tests run: 44, Failures: 2, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for analytics-server 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] analytics-server ................................... SUCCESS [  0.005 s]
+[INFO] platform-common .................................... SUCCESS [  5.017 s]
+[INFO] connection-ingestion ............................... FAILURE [ 15.069 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  20.447 s
+[INFO] Finished at: 2026-10-17T14:58:53+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test (default-test) on project connection-ingestion: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\Develop_code\GraduationProject-wt\v3-dev\analytics-server\connection-ingestion\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :connection-ingestion

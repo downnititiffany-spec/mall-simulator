@@ -1054,6 +1054,8 @@ if ($RunId -notmatch $RunIdPattern) {
 }
 if (-not $LogDir) { $LogDir = Join-Path $env:TEMP ("v25tests-{0}" -f $RunId) }
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
+# Resolve while still in the caller's directory; web/isolated suites may change location.
+$LogDir = (Resolve-Path -LiteralPath $LogDir).ProviderPath
 
 if ($Suite -in @('default', 'isolated', 'spark', 'all')) {
   if (-not (Test-Path -LiteralPath $MavenCmd)) { Fail 1 ("找不到 Maven：{0}" -f $MavenCmd) }

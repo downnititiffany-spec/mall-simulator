@@ -198,6 +198,11 @@ class SourceRegistryServiceTest {
                 createReq("probe-back", "analytics-server\\source-profiles\\x.json", null)))
                 .isInstanceOf(PlatformBizException.class)
                 .satisfies(e -> assertThat(codeOf(e)).isEqualTo(PlatformBizException.PARAM_INVALID));
+        for (String invalid : List.of("profiles/a" + (char) 0 + "b.json", "profiles/a<b.json")) {
+            assertThatThrownBy(() -> service().create(createReq("probe-invalid", invalid, null)))
+                    .isInstanceOf(PlatformBizException.class)
+                    .satisfies(e -> assertThat(codeOf(e)).isEqualTo(PlatformBizException.PARAM_INVALID));
+        }
         assertThat(store.sourceCodes()).isEmpty();
     }
 

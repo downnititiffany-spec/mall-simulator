@@ -4,6 +4,7 @@ import com.graduation.analytics.common.PlatformBizException;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 /**
@@ -24,6 +25,8 @@ public final class SourcePathPolicy {
 
     private static final Pattern DRIVE_LETTER = Pattern.compile("^[A-Za-z]:");
     private static final Pattern UNC = Pattern.compile("^\\\\");
+    // Use the same portable filename rules on Windows and POSIX, before native parsing.
+    private static final Pattern INVALID_CHARACTERS = Pattern.compile("[\\p{Cntrl}<>:\"|?*]");
 
     private SourcePathPolicy() {
     }
@@ -31,6 +34,11 @@ public final class SourcePathPolicy {
     /** 是否满足仓库相对路径策略（不抛异常，供测试与明细项复用） */
     public static boolean isRepoRelative(String rawPath) {
         if (rawPath == null || rawPath.isBlank()) {
+            return false;
+        }
+        // Check before trim: a trailing NUL/control character must not disappear into a valid path.
+        if (INVALID_CHARACTERS.matcher(rawPath).find()
+                || !StandardCharsets.UTF_8.newEncoder().canEncode(rawPath)) {
             return false;
         }
         String path = rawPath.trim();
@@ -43,14 +51,8 @@ public final class SourcePathPolicy {
         if (path.contains("\\")) {
             return false;
         }
-        try {
-            if (Path.of(path).isAbsolute()) {
-                return false;
-            }
-        } catch (InvalidPathException ignored) {
-            // JVM 文件系统编码（如 POSIX 环境下的 US-ASCII）遇到非 ASCII 字符可能抛出 InvalidPathException；
-            // 此时已通过前置前缀/驱动器/UNC/反斜杠校验，不把系统编码限制误判为非法相对路径
-        }
+        // This is a lexical repository-reference check. Native filesystem encoding must not
+        // reject a valid Unicode reference here; actual resolution below fails closed.
         for (String segment : path.split("/")) {
             if ("..".equals(segment)) {
                 return false;
@@ -98,8 +100,15 @@ public final class SourcePathPolicy {
      */
     public static Path resolveUnderRoot(Path root, String rawPath, String fieldName, String rootLabel) {
         requireRepoRelative(rawPath, fieldName);
-        Path normalizedRoot = root.toAbsolutePath().normalize();
-        Path resolved = normalizedRoot.resolve(rawPath.trim()).normalize();
+        Path normalizedRoot;
+        Path resolved;
+        try {
+            normalizedRoot = root.toAbsolutePath().normalize();
+            resolved = normalizedRoot.resolve(rawPath.trim()).normalize();
+        } catch (InvalidPathException e) {
+            throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
+                    fieldName + " 无法在当前文件系统解析（值已脱敏，未回显）");
+        }
         if (!resolved.startsWith(normalizedRoot)) {
             throw new PlatformBizException(PlatformBizException.PARAM_INVALID,
                     fieldName + " 逃逸出" + rootLabel + "根目录（值已脱敏，未回显）");

@@ -1,0 +1,12 @@
+{
+  "receivedDate": "2026-10-17",
+  "originalZip": "毕设验收报告归档-WP-F与收官.zip",
+  "archiveSha256": "6E2ABCD0A3C31C2336449E147FD9800CBA15075942907D38EE94578549CA47AB",
+  "zipEntryCount": 67,
+  "regularFileCount": 65,
+  "directoryEntryCount": 2,
+  "uncompressedBytes": 778363,
+  "provenance": "用户提供的云端 mall-simulator-notes 报告及幸存 /tmp 日志；不是本轮重新执行的结果",
+  "historyLimit": "早期 /tmp 原始运行日志已因云电脑更换丢失，不能从登记数字恢复",
+  "secretScan": "未发现扫描规则匹配的token、私钥或明文密码候选；未导入凭据文件"
+}

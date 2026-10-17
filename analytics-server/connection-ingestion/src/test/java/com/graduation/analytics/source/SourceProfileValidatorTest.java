@@ -236,7 +236,17 @@ class SourceProfileValidatorTest {
         assertThat(SourcePathPolicy.isRepoRelative("a\\b.json")).isFalse();
         assertThat(SourcePathPolicy.isRepoRelative("")).isFalse();
         assertThat(SourcePathPolicy.isRepoRelative(null)).isFalse();
+        for (String invalid : List.of(
+                "profiles/a" + (char) 0 + "b.json", "profiles/a.json" + (char) 0,
+                "profiles/a\nb.json", "profiles/a<b.json", "profiles/a>b.json",
+                "profiles/a:b.json", "profiles/a\"b.json", "profiles/a|b.json",
+                "profiles/a?b.json", "profiles/a*b.json", "profiles/" + (char) 0xD800 + ".json")) {
+            assertThat(SourcePathPolicy.isRepoRelative(invalid))
+                    .as("invalid path must be rejected before native filesystem resolution")
+                    .isFalse();
+        }
         assertThat(SourcePathPolicy.isRepoRelative(REL)).isTrue();
+        assertThat(SourcePathPolicy.isRepoRelative("profiles/中文画像.json")).isTrue();
         assertThat(SourcePathPolicy.isRepoRelative("./analytics-server/source-profiles/x.json")).isTrue();
         assertThat(List.of(REL).get(0)).isEqualTo(REL);
     }

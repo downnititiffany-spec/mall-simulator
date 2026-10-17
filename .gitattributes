@@ -3,3 +3,6 @@
 /scripts/cloud-single-node.sh text eol=lf
 /scripts/cloud-generator-cli.sh text eol=lf
 /scripts/cloud-flume-submit-active-run.sh text eol=lf
+# Preserve evidence bytes and SHA-256 across Windows/Linux checkouts.
+/docs/acceptance/wp-f-close-archive-20261017/** -text
+/docs/acceptance/review-fixes-20261017/** -text

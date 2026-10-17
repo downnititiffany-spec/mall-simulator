@@ -1,0 +1,25 @@
+=== attempt 1 2026-10-17T05:09:14+00:00 ===
+已严格按照规约 [`WP-CLOSE-INVENTORY.md`](file:///home/hatch/workspace/projects/mall-simulator-notes/WP-CLOSE-INVENTORY.md) 完成全部只读盘点任务，未运行任何终端命令，未连接任何数据库，未修改任何生产代码/DDL/契约。
+
+交付报告已写入 [`WP-CLOSE-INVENTORY-REPORT.md`](file:///home/hatch/workspace/projects/mall-simulator-notes/WP-CLOSE-INVENTORY-REPORT.md)，报告核心内容概括如下：
+
+1. **验收口径盘点**：
+   - 逐项梳理 [`项目设计文档 V3.0.md`](file:///home/hatch/workspace/projects/mall-simulator/docs/design/项目设计文档 V3.0.md) 中关于验收/完成定义的 24 条法定条款（含条款锚点行号与口径摘要，覆盖表述级别、八阶段推进、环境宣称红线、漏斗/留存/库存/异常计算口径、AI 硬边界及测试体系等），无任何设计未写之臆测；
+   - 梳理 [`PROJECT_STATUS.md`](file:///home/hatch/workspace/projects/mall-simulator/docs/PROJECT_STATUS.md) 既有验收登记：F-88 限定验收法定表述（本地 B 类 12 项全关，唯一未关项 GAP-04 3306 迁移为外部依赖，正式状态维持限定验收）、关键路径验收登记（6 大已实证事实与 4 大证据边界）、阶段 1～8 开放/关闭状态。
+2. **纲领队列对账**：
+   - 逐条核对 [`FULL-PROGRAM.md`](file:///home/hatch/workspace/projects/mall-simulator-notes/FULL-PROGRAM.md) 队列中 WP-F1 ～ WP-F9d 全部 19 个工作包（含衍生子包），形成「包名 / 关账证据一句话 / 有无余项」对照表；
+   - 对账结果：除当前「收官」包外，全部 19 个工作包 100% 具备确凿关账证据并已登记在案，余项均为「无」。
+3. **残余清单草案**：
+   - 汇总建立 11 项残余台账（RES-01 ～ RES-11），逐项明确事项名称、来源锚点、依赖条件与责任方：
+     - 纲领外部依赖与限定项：阶段 6 真实 LLM 冒烟调用（RES-01）、远程集群/共享 HMS 验证（RES-02）、3306 真库 V19/V20 执行（RES-03）、库存/成本类指标（RES-04）、F-88 限定验收定性（RES-05）；
+     - 可见开放与边界项：UI 换肤页面视觉审阅（RES-06）、D-5 启动前全 DataSource 门禁（RES-07）、原开发机 3307 历史对象清理（RES-08）、AI 建仓完整能力（RES-09）、异构 MetricStore（RES-10）、长期 Backlog 归档项（RES-11）。
+4. **全量验收可否裁定草案**：
+   - 给出两套逻辑自洽、前提严密的裁定文本草案供总控亲验后选用或改写：
+     - **草案 A（可登记全量验收）**：基于纲领队列 100% 关账、端到端全业务链实跑闭环、GitHub Actions CI 双档转绿，将残余项论证为环境不可抗力或外部依赖而不构成阻断；
+     - **草案 B（维持限定验收 + 残余清单）**：严守设计文档 V3.0 §2.1「F-88仍限定验收，没有依据宣布全项目完成」字面约束与 3306 冻结现状，坚持工程诚实性与答辩合规性，以「功能全线收官 + 限定验收 + 残余清单挂账」定性。
+5. **总控待裁定项清单**：
+   - 列明全量定性裁定（草案 A vs 草案 B）、外部依赖封包挂账形式、以及代码分支合入 `main` 的具体操作节奏三项决策。
+
+WPCLOSEINV-DONE
+MARKER-IN-LOG attempt 1
+LOOP-END 2026-10-17T05:13:37+00:00
