@@ -15,7 +15,7 @@ object AdsSql {
   val TABLES: Seq[String] = Seq(
     "ads_operation_overview", "ads_active_trend", "ads_behavior_funnel", "ads_hot_product",
     "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality",
-    "ads_category_sale", "ads_region_sale", "ads_user_retention")
+    "ads_category_sale", "ads_region_sale", "ads_user_retention", "ads_channel_summary")
 
   /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4）；库名由唯一所有者派生 */
   def formal(ns: WarehouseNamespace, table: String): String = ns.table("ads", table)
@@ -611,4 +611,39 @@ object AdsSql {
        |HAVING COUNT(DISTINCT c.user_id) > 0
        |""".stripMargin
   }
+
+  /**
+   * 渠道流量汇总（WP-F9b / F9-GAP-06）：
+   *  - 粒度 [snapshot_id, dt, channel]；channel 取 dwd_user_behavior_detail.channel，NULL 或空串归一为 'UNKNOWN'；
+   *  - pv = 当日该渠道 behavior_type='view' 的事件行数（COUNT(*)）；
+   *  - view_users = 'view' 去重用户；intent_users = behavior_type IN ('favorite','cart_add') 去重用户；cart_users = 'cart_add' 去重用户；
+   *  - intent_rate = intent_users / view_users；cart_rate = cart_users / view_users；分母 0 → NULL（DECIMAL(8,4)）。
+   */
+  def channelSummary(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
+    s"""
+       |${insertTarget(ns, "ads_channel_summary", dt, snapshotId)}
+       |SELECT
+       |  channel,
+       |  pv,
+       |  view_users,
+       |  intent_users,
+       |  cart_users,
+       |  CASE WHEN view_users = 0 THEN NULL
+       |       ELSE CAST(intent_users AS DECIMAL(8,4)) / view_users END AS intent_rate,
+       |  CASE WHEN view_users = 0 THEN NULL
+       |       ELSE CAST(cart_users AS DECIMAL(8,4)) / view_users END AS cart_rate
+       |FROM (
+       |  SELECT
+       |    CASE WHEN channel IS NULL OR trim(channel) = '' THEN 'UNKNOWN'
+       |         ELSE trim(channel) END AS channel,
+       |    COUNT(CASE WHEN behavior_type = 'view' THEN 1 END) AS pv,
+       |    COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS view_users,
+       |    COUNT(DISTINCT CASE WHEN behavior_type IN ('favorite','cart_add') THEN user_id END) AS intent_users,
+       |    COUNT(DISTINCT CASE WHEN behavior_type = 'cart_add' THEN user_id END) AS cart_users
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$dt'
+       |  GROUP BY CASE WHEN channel IS NULL OR trim(channel) = '' THEN 'UNKNOWN'
+       |                ELSE trim(channel) END
+       |) t
+       |""".stripMargin
 }

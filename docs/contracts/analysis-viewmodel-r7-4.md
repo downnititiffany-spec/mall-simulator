@@ -1,7 +1,11 @@
-# R7-4 分析接口 ViewModel 契约（v1 系列；当前版本 v1.13）
+# R7-4 分析接口 ViewModel 契约（v1 系列；当前版本 v1.14）
 
 > 依据：指导书 V2.0 §18.1 / §18.3 / §24.6。**本文件是 R7-4 后端与前端唯一契约**，
 > 两侧实现必须逐字段对齐；若实现中确需改动，先改本文件再改代码。
+
+> **v1.14（2026-10-17，WP-F9b 渠道流量汇总加性扩展）**：按 WP-F9b 规约、G-04 总控裁定与 F9-GAP-06，`/api/v1/analysis/funnel` 的 ViewModel 数据节点（`FunnelData`）加性扩展 `byChannel` 数组，用于承载基于 `ads_channel_summary_m` 的行为侧逐渠道流量与转化下钻。
+>
+> 渠道点包含 `channel`（渠道名称，空/NULL 归一为 `'UNKNOWN'`）、`pv`（当日浏览事件行数）、`viewUsers`（浏览去重用户数）、`intentUsers`（意向去重用户数）、`cartUsers`（加购去重用户数）、`intentRate`（意向转化率，分母 0 为 `null`）、`cartRate`（加购率，分母 0 为 `null`）。交易侧因无渠道数据依据维持不输出（不输出伪造的下单/支付渠道列）。多渠道用户在各渠道分别计入，跨渠道 distinct 和不等于全站总数。既有 `stages`、`overallBuyRate`、`windowNote` 结构与字段完全保持不变。
 
 > **v1.13（2026-10-17，WP-F9a 用户留存率加性扩展）**：按 WP-F9a 规约与 F9-GAP-03，`/api/v1/analysis/users` 的 ViewModel 数据节点（`UsersData`）加性扩展 `retention` 数组，用于承载基于 `ads_user_retention_m` 的逐日队列留存指标（D+1、D+7、D+30 留存人数及比率）。
 >
@@ -389,13 +393,34 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 ### 3.4 `GET /api/v1/analysis/funnel?snapshotId=`
 
 ```json
-{ "stages": [ { "stage": "view", "label": "浏览", "users": 3, "rate": 1.0000 } ],
+{
+  "stages": [ { "stage": "view", "label": "浏览", "users": 3, "rate": 1.0000 } ],
   "overallBuyRate": 1.0000,
-  "windowNote": "同一 businessDate 内的行为窗口（口径版本 v1）" }
+  "windowNote": "同一 businessDate 内的行为窗口（口径版本 v1）",
+  "byChannel": [
+    {
+      "channel": "APP",
+      "pv": 10,
+      "viewUsers": 5,
+      "intentUsers": 3,
+      "cartUsers": 2,
+      "intentRate": 0.6000,
+      "cartRate": 0.4000
+    }
+  ]
+}
 ```
 
-`stages` 来自 `ads_behavior_funnel_m`（`stage`/`user_count`/`conversion_rate`），
-漏斗口径与观察窗口必须随响应返回（§18.2 用户行为）。
+- `stages` 来自 `ads_behavior_funnel_m`（`stage`/`user_count`/`conversion_rate`），漏斗口径与观察窗口必须随响应返回（§18.2 用户行为）。
+- **v1.14 加性扩展 `byChannel`**：来自 `ads_channel_summary_m`（行为侧按渠道流量与转化下钻，按 channel 升序）。
+  - `channel`：渠道标识（APP/H5/PC，空或 NULL 归一化为 `'UNKNOWN'`）；
+  - `pv`：当日该渠道浏览事件条数（`COUNT(*)`）；
+  - `viewUsers`：当日该渠道 view 去重用户数；
+  - `intentUsers`：当日该渠道 favorite 或 cart_add 去重用户数；
+  - `cartUsers`：当日该渠道 cart_add 去重用户数；
+  - `intentRate`：意向转化率（`intentUsers / viewUsers`，分母为 0 时为 `null`）；
+  - `cartRate`：加购率（`cartUsers / viewUsers`，分母为 0 时为 `null`）；
+  - **注记**：跨渠道去重用户数不可简单相加（多渠道活跃用户在各渠道各计一次）；交易链路全程无 channel 字段，本接口严禁输出伪造的渠道下单/支付数字。
 
 ### 3.5 `GET /api/v1/analysis/users?snapshotId=&from=&to=`
 

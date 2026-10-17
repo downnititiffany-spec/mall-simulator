@@ -165,8 +165,11 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 # 2026-10-17：1380→1399＝WP-F8b 新增 17 例（基线同步滞后，本次补登）＋WP-F9a 新增 2 例（AnalysisServiceTest
 #   留存透传/日期倒置）；总控亲跑 RunId wpf9afix20261017 实测 analytics 1399（F=0/E=0/S=2，明细
 #   123+415+216+166+246+233）、三树合计 1559 后同步本数。
+# 2026-10-17：1399→1400＝WP-F9b 渠道流量汇总新增 AnalysisServiceTest 1 例（funnel byChannel 透传）；
+#   总控亲跑 RunId wpf9bdef20261017 实测 analytics 1400（F=0/E=0/S=2，明细 123+415+216+167+246+233）、
+#   三树合计 1560 后同步本数。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1399
+  'analytics-server'        = 1400
   'mall-simulator'          = 26
   'synthetic-data-generator' = 134
 }
@@ -646,7 +649,10 @@ $BaselineDefault = [ordered]@{
 #   385 过 1 红（空日对账存量判据，FIX 轮修 AdsQualityJob 空日谓词后定向 10/10 绿），收口轮复验后同步本数。
 # 2026-09-29：329→332＝N31-02 开发新增 `ProductDimensionAsOfSpec`、`MetricExportZeroRowSpec`、
 #   `CategoryRegionAdsSpec` 各 1 条；同批同步 DDL 总数与 FixtureWriteShape 写入点基线，避免新功能被旧守卫误报。
-$BaselineSpark = 386
+# 2026-10-17：386→389＝WP-F9b 渠道流量汇总新增 `AdsChannelSummarySpec` 3 条（多渠道聚合/跨渠道独立计数/
+#   0 分母 NULL/UNKNOWN 归一 + 正式表同构 + 空日无产出）；首轮量数 RunId wpf9bacc20261017 实测 389 跑 16 红
+#   （新例期望算错 + 冻结连带漏改，生产 SQL 经复核无误），FIX 轮全测试侧修复后收口轮复验同步本数。
+$BaselineSpark = 389
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）

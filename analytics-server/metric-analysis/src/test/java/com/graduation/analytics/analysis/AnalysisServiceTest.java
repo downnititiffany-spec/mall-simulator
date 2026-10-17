@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.graduation.analytics.analysis.AnalysisService.ActiveDay;
+import com.graduation.analytics.analysis.AnalysisService.ChannelSummary;
 import com.graduation.analytics.analysis.AnalysisService.FunnelData;
 import com.graduation.analytics.analysis.AnalysisService.FunnelStage;
 import com.graduation.analytics.analysis.AnalysisService.MetricItem;
@@ -766,6 +767,33 @@ class AnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("行为漏斗 v1.14：透传渠道流量汇总 byChannel，包含各渠道 PV/用户数与转化率")
+    void funnelIncludesChannelSummaries() {
+        stubActiveSnapshot();
+
+        AnalysisViewModel<FunnelData> model = service.funnel(null, LocalDate.of(2026, 9, 1));
+
+        assertThat(model.data().byChannel()).hasSize(2);
+        ChannelSummary app = model.data().byChannel().get(0);
+        assertThat(app.channel()).isEqualTo("APP");
+        assertThat(app.pv()).isEqualTo(100L);
+        assertThat(app.viewUsers()).isEqualTo(80L);
+        assertThat(app.intentUsers()).isEqualTo(40L);
+        assertThat(app.cartUsers()).isEqualTo(20L);
+        assertThat(app.intentRate()).isEqualByComparingTo("0.5000");
+        assertThat(app.cartRate()).isEqualByComparingTo("0.2500");
+
+        ChannelSummary h5 = model.data().byChannel().get(1);
+        assertThat(h5.channel()).isEqualTo("H5");
+        assertThat(h5.pv()).isEqualTo(50L);
+        assertThat(h5.viewUsers()).isEqualTo(40L);
+        assertThat(h5.intentUsers()).isEqualTo(10L);
+        assertThat(h5.cartUsers()).isEqualTo(5L);
+        assertThat(h5.intentRate()).isEqualByComparingTo("0.2500");
+        assertThat(h5.cartRate()).isEqualByComparingTo("0.1250");
+    }
+
+    @Test
     @DisplayName("用户分群与 RFM：聚合层来自 ads_user_profile_m，矩阵补齐八类，金额缺失不冒充")
     void usersAndRfmComeFromProfileAggregation() {
         stubActiveSnapshot();
@@ -1091,6 +1119,13 @@ class AnalysisServiceTest {
                         "retained_d1", 2L, "retention_d1", new BigDecimal("0.6667"),
                         "retained_d7", null, "retention_d7", null,
                         "retained_d30", null, "retention_d30", null)));
+        ads.put("ads_channel_summary_m", List.of(
+                row("dt", "20260901", "channel", "APP", "pv", 100L, "view_users", 80L,
+                        "intent_users", 40L, "cart_users", 20L,
+                        "intent_rate", new BigDecimal("0.5000"), "cart_rate", new BigDecimal("0.2500")),
+                row("dt", "20260901", "channel", "H5", "pv", 50L, "view_users", 40L,
+                        "intent_users", 10L, "cart_users", 5L,
+                        "intent_rate", new BigDecimal("0.2500"), "cart_rate", new BigDecimal("0.1250"))));
         return ads;
     }
 

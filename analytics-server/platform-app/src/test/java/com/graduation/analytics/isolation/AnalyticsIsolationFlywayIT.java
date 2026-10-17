@@ -65,8 +65,8 @@ class AnalyticsIsolationFlywayIT {
                 .as("隔离 meta schema 必须全量迁移至当前迁移头 V38（V35 运行时档案单活 / V36 AI 调用请求标识 / V37 AI 反馈与历史证据 / V38 业务报告实例）")
                 .isEqualTo("38");
         assertThat(metricFlyway.info().current().getVersion().getVersion())
-                .as("隔离 metric schema 必须真实应用 ADS 用户留存服务表迁移 V14")
-                .isEqualTo("14");
+                .as("隔离 metric schema 必须真实应用 ADS 渠道流量汇总服务表迁移 V15")
+                .isEqualTo("15");
         assertThat(metaSecond.migrationsExecuted).as("meta 第二次启动必须空跑").isZero();
         assertThat(metricSecond.migrationsExecuted).as("metric 第二次启动必须空跑").isZero();
 

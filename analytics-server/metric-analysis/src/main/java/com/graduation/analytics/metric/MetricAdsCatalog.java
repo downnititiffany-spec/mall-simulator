@@ -62,7 +62,11 @@ public record MetricAdsCatalog(String name, List<String> columns, List<String> k
             new MetricAdsCatalog("ads_user_retention_m",
                     List.of("cohort_user_count", "retained_d1", "retention_d1", "retained_d7", "retention_d7",
                             "retained_d30", "retention_d30"),
-                    List.of()));
+                    List.of()),
+            new MetricAdsCatalog("ads_channel_summary_m",
+                    List.of("channel", "pv", "view_users", "intent_users", "cart_users",
+                            "intent_rate", "cart_rate"),
+                    List.of("channel")));
 
     private static final Map<String, MetricAdsCatalog> BY_NAME =
             ALL.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(MetricAdsCatalog::name, t -> t));

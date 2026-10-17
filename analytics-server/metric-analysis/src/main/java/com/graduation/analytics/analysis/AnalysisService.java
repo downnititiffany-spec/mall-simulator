@@ -62,6 +62,7 @@ public class AnalysisService {
     private static final String T_CATEGORY_SALE = "ads_category_sale_m";
     private static final String T_REGION_SALE = "ads_region_sale_m";
     private static final String T_USER_RETENTION = "ads_user_retention_m";
+    private static final String T_CHANNEL_SUMMARY = "ads_channel_summary_m";
 
     // ── 销售分析取值的指标码（一律取 metric_value，不重算，契约 §3.2） ──────────
     private static final String METRIC_GMV = "gmv";
@@ -175,7 +176,25 @@ public class AnalysisService {
     public record FunnelStage(String stage, String label, long users, BigDecimal rate) {
     }
 
-    public record FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote) {
+    /**
+     * 渠道流量汇总点（WP-F9b / F9-GAP-06）：行为侧漏斗指标渠道下钻。
+     */
+    public record ChannelSummary(String channel, long pv, long viewUsers,
+                                 long intentUsers, long cartUsers,
+                                 BigDecimal intentRate, BigDecimal cartRate) {
+    }
+
+    /**
+     * 行为漏斗专题数据（§3.4）。
+     *
+     * <p>v1.14（WP-F9b）：加性扩展 {@code byChannel}（行为侧渠道流量与转化汇总）。</p>
+     */
+    public record FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote,
+                             List<ChannelSummary> byChannel) {
+
+        public FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote) {
+            this(stages, overallBuyRate, windowNote, List.of());
+        }
     }
 
     /**
@@ -608,9 +627,11 @@ public class AnalysisService {
                 overallBuyRate = stageOverall; // 规范顺序里最后一个非空值 = 全链路累计购买率
             }
         }
+        List<ChannelSummary> byChannel = channelSummaries(sid);
         // 漏斗口径与观察窗口必须随响应返回（§18.2 用户行为）；口径版本用快照的 definitionVersion，不写死
         FunnelData data = new FunnelData(stages, overallBuyRate,
-                "同一 businessDate 内的行为窗口（口径版本 " + blankToEmpty(pinned.meta().getDefinitionVersion()) + "）");
+                "同一 businessDate 内的行为窗口（口径版本 " + blankToEmpty(pinned.meta().getDefinitionVersion()) + "）",
+                byChannel);
         return view(pinned, filters, data, List.of());
     }
 
@@ -795,6 +816,31 @@ public class AnalysisService {
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new ActiveDay(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("dau")), AdsRows.asLong(row.get("behavior_count"))))
+                .toList();
+    }
+
+    /**
+     * 渠道流量汇总（ads_channel_summary_m，按 channel 升序）。
+     *
+     * <p>WP-F9b（F9-GAP-06）：行为侧渠道流量与转化下钻；分母为 0 时转化率为 null。</p>
+     */
+    private List<ChannelSummary> channelSummaries(String snapshotId) {
+        return AdsRows.latestPartition(adsReader, T_CHANNEL_SUMMARY, snapshotId).stream()
+                .map(row -> {
+                    String channel = AdsRows.asString(row.get("channel")).trim();
+                    if (channel.isEmpty()) {
+                        channel = "UNKNOWN";
+                    }
+                    return new ChannelSummary(
+                            channel,
+                            AdsRows.asLong(row.get("pv")),
+                            AdsRows.asLong(row.get("view_users")),
+                            AdsRows.asLong(row.get("intent_users")),
+                            AdsRows.asLong(row.get("cart_users")),
+                            AdsRows.asDecimal(row.get("intent_rate")),
+                            AdsRows.asDecimal(row.get("cart_rate")));
+                })
+                .sorted(Comparator.comparing(ChannelSummary::channel))
                 .toList();
     }
 

@@ -147,7 +147,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       // 「完成证据」是「staging表/快照、各表行数」，由 PartitionEvidence 承载；§10.2 L387 明写
       // QUALITY_CHECK（dqc）才产出「规则版本与失败详情」。故 fna 无 checks 是符合设计的，我改断言。
       withClue(s"fna outputPartitions=${cap.step("fna").result.outputPartitions}；checks=${cap.checks("fna")}：") {
-        cap.step("fna").result.outputPartitions.size should be(11)
+        cap.step("fna").result.outputPartitions.size should be(AdsSql.TABLES.size)
         cap.step("fna").result.outputPartitions.map(_.rowCount).forall(_ > 0L) should be(true)
         cap.step("fna").result.outputPartitions.flatMap(_.snapshotId).distinct should be(Seq(Snap1))
       }

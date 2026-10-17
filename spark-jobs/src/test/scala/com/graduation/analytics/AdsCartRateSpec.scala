@@ -246,7 +246,7 @@ class AdsCartRateSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     "仍只有 view/intent/order/pay 四个（加购率是整体率列，不得新增第五阶段）" in {
     adsRows(Snap, Dt).length should be(4)
     adsRows(SnapNoView, DtNoView).length should be(4)
-    MetricAdsSpec.TABLES.size should be(11) // 当前 ADS 镜像含 8 张既有表 + 本批分类/城市等级 2 张 + 留存表 1 张
+    MetricAdsSpec.TABLES.size should be(12) // 8 张既有表 + 分类/城市等级 2 张 + 留存表 1 张 + 渠道表 1 张
   }
 
   "ADS 漏斗表结构" should

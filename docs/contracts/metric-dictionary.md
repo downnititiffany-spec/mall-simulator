@@ -80,3 +80,22 @@
    - 计算每单残差：`residual = order_refund − Σline_alloc`；
    - 将 `residual` 全额补偿至该单 `amount` 最大的一行（并列取 `category_id` 最小者，再并列取 `product_id` 最小者）；
    - 严格保证每单各行分摊之和与整单退款逐分相等（`Σline_alloc = order_refund`），从而保证全站 `Σ品类 net_sale_amount` 与 `dws_trade_day.net_sale_amount` 达成逐分一致（容差 `<0.01`），完全消除比例直舍入产生的累计漂移。
+
+
+## 8. 渠道流量汇总口径与归因边界声明（加性说明，WP-F9b 总控裁定）
+
+依据 WP-F9b 规约与总控裁定（2026-10-17，针对 G-04 部分解与 F9-GAP-06 落地）：
+
+1. **行为侧渠道粒度口径**：
+   - 渠道粒度汇总物理物化为 `ads_channel_summary_m`（粒度 `[snapshot_id, dt, channel]`），源头为 `dwd_user_behavior_detail.channel`（ODS `payload_channel`，源 B 行为事件 `via` 映射进入 APP/H5/PC）。NULL 或空串确定性归一为字面量 `'UNKNOWN'`（一行不丢）。
+   - 指标定义与全站漏斗同语义（同一语义所有者）：
+     - `pv` = 当日该渠道浏览事件行数（`COUNT(*)`，非去重）；
+     - `view_users` = 当日该渠道 `view` 行为去重用户数（`COUNT(DISTINCT user_id)`）；
+     - `intent_users` = 当日该渠道 `behavior_type IN ('favorite','cart_add')` 去重用户数；
+     - `cart_users` = 当日该渠道 `behavior_type = 'cart_add'` 去重用户数；
+     - `intent_rate` = `intent_users / view_users`；`cart_rate` = `cart_users / view_users`；分母 0 严格记为 `NULL`（`DECIMAL(8,4)`），绝不硬编码为 0。
+2. **交易侧无渠道（归因不输出）裁定与理由**：
+   - 交易链路全程无渠道字段：`OrderTradeCompiler.TradeEvent` 与 `dwd_order_detail` 均无 channel 列，任何按渠道的订单/支付归因均无数据依据。
+   - 依据设计 V3.0 §11.3 L443「未决不输出假的分类下钻」红线，**交易侧渠道粒度维持不输出**，严禁以用户当日渠道归因、末次渠道归因等臆造 order/pay 渠道数字；盘点草案中 `order_uv`/`pay_uv` 均不进本表。
+3. **跨渠道 Distinct 不可加和注记**：
+   - 依据设计 L443 注记：多渠道活跃用户在各所用渠道各计一次。各渠道 distinct 用户数（`view_users`/`intent_users`/`cart_users`）之和**不等于**全站去重总数，不得以此作为对账失败判据。

@@ -38,14 +38,14 @@ class MetricAdsDaoTest {
     private final MetricAdsReader reader = new MetricAdsReader(readJdbc, activeProfile);
 
     @Test
-    @DisplayName("11 张 ADS 白名单包含已实现的 category/region 表")
+    @DisplayName("12 张 ADS 白名单包含已实现的 category/region 表")
     void catalogContainsAllCurrentAdsTables() {
-        assertThat(MetricAdsCatalog.ALL).hasSize(11);
+        assertThat(MetricAdsCatalog.ALL).hasSize(12);
         assertThat(MetricAdsCatalog.ALL).extracting(MetricAdsCatalog::name)
                 .containsExactly("ads_operation_overview_m", "ads_sale_trend_m", "ads_behavior_funnel_m",
                         "ads_active_trend_m", "ads_hot_product_m", "ads_product_conversion_m",
                         "ads_user_profile_m", "ads_data_quality_m", "ads_category_sale_m", "ads_region_sale_m",
-                        "ads_user_retention_m");
+                        "ads_user_retention_m", "ads_channel_summary_m");
         assertThat(MetricAdsCatalog.require("ads_category_sale_m").keyColumns()).containsExactly("category_id");
         assertThat(MetricAdsCatalog.require("ads_region_sale_m").keyColumns()).containsExactly("region");
         assertThatThrownBy(() -> MetricAdsCatalog.require("metric_value"))
@@ -118,15 +118,15 @@ class MetricAdsDaoTest {
     }
 
     @Test
-    @DisplayName("deleteSnapshot 覆盖全部 11 张表并按 snapshot_id 过滤")
+    @DisplayName("deleteSnapshot 覆盖全部 12 张表并按 snapshot_id 过滤")
     void deleteSnapshotCoversAllTables() {
         when(publishJdbc.update(anyString(), any(Object[].class))).thenReturn(2);
 
         int deleted = writer.deleteSnapshot("snap-r7");
 
         ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
-        verify(publishJdbc, times(11)).update(sql.capture(), any(Object[].class));
-        assertThat(deleted).isEqualTo(22);
+        verify(publishJdbc, times(12)).update(sql.capture(), any(Object[].class));
+        assertThat(deleted).isEqualTo(24);
         assertThat(sql.getAllValues()).allSatisfy(s -> assertThat(s)
                 .startsWith("DELETE FROM `ads_")
                 .contains("WHERE `snapshot_id` = ?"));

@@ -98,7 +98,15 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
       "cohort_user_count" -> "BIGINT",
       "retained_d1" -> "BIGINT", "retention_d1" -> "DECIMAL(8,4)",
       "retained_d7" -> "BIGINT", "retention_d7" -> "DECIMAL(8,4)",
-      "retained_d30" -> "BIGINT", "retention_d30" -> "DECIMAL(8,4)")
+      "retained_d30" -> "BIGINT", "retention_d30" -> "DECIMAL(8,4)"),
+    "ads_channel_summary" -> Seq(
+      "channel" -> "STRING",
+      "pv" -> "BIGINT",
+      "view_users" -> "BIGINT",
+      "intent_users" -> "BIGINT",
+      "cart_users" -> "BIGINT",
+      "intent_rate" -> "DECIMAL(8,4)",
+      "cart_rate" -> "DECIMAL(8,4)")
   )
 
   /** No longer a whitelist: the category and city-level sales ADS are now owned and produced. */
@@ -167,6 +175,7 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     case "ads_category_sale"      => AdsSql.categorySale(ns, dt, snapshotId)
     case "ads_region_sale"        => AdsSql.regionSale(ns, dt, snapshotId)
     case "ads_user_retention"     => AdsSql.userRetention(ns, dt, snapshotId)
+    case "ads_channel_summary"    => AdsSql.channelSummary(ns, dt, snapshotId)
     case other =>
       throw new IllegalArgumentException(s"未登记的 ADS 写入投影：$other（新增 ADS 表必须在本守卫登记）")
   }
