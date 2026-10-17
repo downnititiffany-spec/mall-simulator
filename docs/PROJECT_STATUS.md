@@ -3468,3 +3468,12 @@
 - 留存发布行实证：ads_user_retention_m@_7 产出行 dt=20260918、cohort_user_count=**100**、D+1/D+7/D+30 retained 与 retention 全 **NULL**——与第一轮暂存行及总控 DWD 独立复算（distinct=100、max(dt)=20260918、horizon 外严格 NULL）逐项吻合，留存就此由暂存层推进到发布层实证。
 - 隔离与收尾：_7 为档案 3 作用域 ACTIVE、同作用域 _5 转 ARCHIVED；档案 2 作用域 _4 仍 ACTIVE 未动；跑后已复激档案 2 为 ACTIVE，平台健康。**WP-F7e 关账；WP-F7（含 F7d/F7f 修复链）全线闭合。**
 - 后续顺序（纲领 08:5x 修订不变）：下一巡检执行 **WP-F8c** 真库探针专轮（总控亲跑），其后 WP-F6c（agy 包）、WP-F9b。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F8c F-88 真库探针关账（2026-10-17 巡检，总控亲跑）
+
+- **GAP-02 全层四列抽验通过（判据勘误）**：直查 live 库成功 run 3/4/5/7 的 data_quality_result 共 121 行，V20 四列全非空；(rule_code, rule_version) 与 quality_rule_definition join 0 失配、FIXED 严重度 0 失配、全行 compat-v1 且目录指纹单一（92dc30c6…72c9）。勘误：盘点判据「rule_version="v1"」不实——落库为逐规则整数版本（"1"/"2"/"3"，与定义表多版本行对应）；64 位串为目录级 rule_fingerprint。
+- **GAP-06 目录可追溯性裁定关闭（证据载体勘误）**：全部 run 的阶段证据 JSON 均不含 catalog/指纹字段（盘点假设不成立）；实际双载体成立——结果行自带指纹+compat+版本可逐条复算，且平台日志每 run 有「规则冻结」行绑定 ruleFingerprint ↔ catalog=qrc-1 ↔ compat-v1（指纹跨 run 3–7 恒同）。裁定：可追溯性成立，不为目录常量新增加列。
+- **GAP-01 未登记码落库探针通过（判据勘误）**：总控以生产写侧唯一实现（freeze→RuleSeverity.resolve→QualityChecker.applyVersionedSeverity）驱动未登记码 UNREGISTERED_PROBE_F8C，实体行落隔离库 f8cb20261017_analytics_meta 回读：severity NULL、rule_version NULL（哨兵 0 转 NULL）、compat-v1、指纹与目录一致。勘误：盘点判据「effective_severity='UNREGISTERED'」不实——源码 RuleSeverity:71 定义 UNREGISTERED 为 BLOCKING 的别名常量，落库字面即 "BLOCKING"，未登记的识别签名是 severity IS NULL AND rule_version IS NULL（applyVersionedSeverity javadoc 明示），探针行与此精确一致。
+- **FlywayIT V14 真跑销项**：隔离运行器亲跑 RunId f8cb20261017 全绿 [PASS exit=0]——AnalyticsIsolationFlywayIT 2/2（直查 flyway_schema_history 复核 meta 头 V38、metric 头 V14 且 ads_user_retention_m 实存），写入型 IT 同腿全绿（IsolationGuard 6/6、MetricAds 2/2、MetricPublisher 3/3）。首轮 schema 步曾因 fork JVM 缺 -Djava.net.preferIPv4Stack=true 使 OpenAiCompatLlmProviderTest 34 例红（本 VM 既知 IPv6 映射拦截，总控最小复现定位），以 JAVA_TOOL_OPTIONS 注入后复跑全绿，非仓库缺陷。
+- **治理裁决（BK-01～03/INV-12）**：F-88 本地完成条件（全部 B 类关账）已达成；BK-02 抽象挂账销号；INV-12 台账关账；**F-88 正式状态维持限定验收**——唯一未关项 GAP-04（3306 真库 V19/V20）为外部依赖，待正式环境解冻授权。报告 notes/WP-F8c-REPORT.md。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+- 后续顺序：WP-F6c（agy 包，本轮关账后即派发）→ WP-F9b。
