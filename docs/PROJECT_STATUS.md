@@ -3477,3 +3477,11 @@
 - **FlywayIT V14 真跑销项**：隔离运行器亲跑 RunId f8cb20261017 全绿 [PASS exit=0]——AnalyticsIsolationFlywayIT 2/2（直查 flyway_schema_history 复核 meta 头 V38、metric 头 V14 且 ads_user_retention_m 实存），写入型 IT 同腿全绿（IsolationGuard 6/6、MetricAds 2/2、MetricPublisher 3/3）。首轮 schema 步曾因 fork JVM 缺 -Djava.net.preferIPv4Stack=true 使 OpenAiCompatLlmProviderTest 34 例红（本 VM 既知 IPv6 映射拦截，总控最小复现定位），以 JAVA_TOOL_OPTIONS 注入后复跑全绿，非仓库缺陷。
 - **治理裁决（BK-01～03/INV-12）**：F-88 本地完成条件（全部 B 类关账）已达成；BK-02 抽象挂账销号；INV-12 台账关账；**F-88 正式状态维持限定验收**——唯一未关项 GAP-04（3306 真库 V19/V20）为外部依赖，待正式环境解冻授权。报告 notes/WP-F8c-REPORT.md。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
 - 后续顺序：WP-F6c（agy 包，本轮关账后即派发）→ WP-F9b。
+
+## WP-F6c Actions 首跑双红修复关账（2026-10-17 巡检，总控验收）兼 WP-F6 余项收窄
+
+- 交付（agy Flash 仅文件读写）：① `.github/workflows/tests.yml` 的 spark job 新增 winutils 供给步（在 JDK8 之后、spark 测试之前）：自 cdarlint/winutils 下载 `winutils.exe` 与 `hadoop.dll` 至 `C:\hadoop\bin`，经 `$env:GITHUB_ENV` 设 `HADOOP_HOME`、经 `$env:GITHUB_PATH` 前置 bin，下载后存在性断言缺一即 throw；`run-tests.ps1` 的 spark 口径未动。② `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` 以 JUnit 5 `Assumptions.assumeTrue` 按「`landing/manifests` 目录存在且非空」门控（新增判据 `isManifestDirPresentAndNonEmpty`）：CI fresh checkout 无目录时该单例记 Skipped（总数仍 1399、F/E=0），本机有目录时原断言逐字严格执行；冻结名单 43 与另两条负例未动。报告：notes 目录 `WP-F6c-REPORT.md`、`WP-F6c-FIX-REPORT.md`。
+- 首轮验收不合格与同轮修复（总控亲验抓获，执行方自述未验）：供给步首版选用 hadoop-3.3.4 下载 URL，总控 HEAD 实测两个 URL 均 404，且经 GitHub API 实证 cdarlint/winutils 仓库根本没有 `hadoop-3.3.4` 目录（3.3.x 线仅 3.3.5/3.3.6）——照此推送 Spark 档仍会在下载步失败。按 `WP-F6c-FIX` 规约同轮仅改该步骤：版本改取同线最高补丁 3.3.6（winutils 为独立原生辅助二进制，与工程 `hadoop-client:3.3.4` 同属 3.3.x 线），注释同步勘误。总控复验：两个新 URL HEAD 200（119296 / 78848 B）、GET 实体均为 MZ 头 PE 文件、旧路径零残留、YAML 解析通过、diff 仅限该步。
+- 总控亲跑总门禁（RunId wpf6cacc20261017）：default 全档 **PASS exit 0**——analytics 1399（F=0/E=0/S=2，MATCH；S=2 为既有跳过，本机巡检例实际执行未跳过）、mall 26、generator 134，合计 1559 MATCH；定向 `IngestionManifestRuntimePatrolTest` 3/3 PASS 零跳过（本机 43 文件在位、原断言严格执行且通过，本机巡检语义未削弱）；脚本契约 `AnalyticsIsolationScriptsContractTest` 13/13 PASS。
+- 状态：**WP-F6c 实施关账**（代码提交 6c07e73）。WP-F6 余项仅剩「本提交推送后 Actions 转绿观察」——Spark 档 winutils 修复只能在 windows-latest 托管 runner 上终验，由后续巡检观察本轮推送触发的运行结果：绿则 WP-F6 全关账，红则按日志再修或登记外部限制。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+- 后续顺序：WP-F9b（F9-GAP-06 渠道表）为队列下一包；Actions 观察与 WP-F9b 派发由下一巡检处置。
