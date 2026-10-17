@@ -159,3 +159,18 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_data_quality (
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_data_quality';
+
+-- 用户留存率（D+1 / D+7 / D+30，WP-F9a）
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_user_retention (
+    cohort_user_count BIGINT COMMENT '当日有任一有效行为的去重用户数',
+    retained_d1       BIGINT COMMENT 'D+1 留存用户数（超出 horizon 时为 NULL）',
+    retention_d1      DECIMAL(8,4) COMMENT 'D+1 留存率（超出 horizon 时为 NULL）',
+    retained_d7       BIGINT COMMENT 'D+7 留存用户数（超出 horizon 时为 NULL）',
+    retention_d7      DECIMAL(8,4) COMMENT 'D+7 留存率（超出 horizon 时为 NULL）',
+    retained_d30      BIGINT COMMENT 'D+30 留存用户数（超出 horizon 时为 NULL）',
+    retention_d30     DECIMAL(8,4) COMMENT 'D+30 留存率（超出 horizon 时为 NULL）'
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_user_retention';
+

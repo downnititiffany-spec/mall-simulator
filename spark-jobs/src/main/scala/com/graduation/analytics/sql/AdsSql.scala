@@ -15,7 +15,7 @@ object AdsSql {
   val TABLES: Seq[String] = Seq(
     "ads_operation_overview", "ads_active_trend", "ads_behavior_funnel", "ads_hot_product",
     "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality",
-    "ads_category_sale", "ads_region_sale")
+    "ads_category_sale", "ads_region_sale", "ads_user_retention")
 
   /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4）；库名由唯一所有者派生 */
   def formal(ns: WarehouseNamespace, table: String): String = ns.table("ads", table)
@@ -489,4 +489,69 @@ object AdsSql {
        |  WHERE dt = '$dt'
        |) q
        |""".stripMargin
+  /**
+   * 业务日期偏移计算（yyyyMMdd 或 yyyy-MM-dd）。
+   */
+  private def shiftDate(dt: String, days: Int): String = {
+    if (dt.length == 8 && dt.forall(_.isDigit)) {
+      val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")
+      java.time.LocalDate.parse(dt, formatter).plusDays(days).format(formatter)
+    } else {
+      java.time.LocalDate.parse(dt).plusDays(days).toString
+    }
+  }
+
+  /**
+   * 用户留存率（WP-F9a / F9-GAP-03）：
+   *  - 队列定义：对 dwd_user_behavior_detail 中出现的每个 dt，cohort(dt) = 当日有任一有效行为的去重用户集；
+   *  - 留存定义：retained_n(dt) = cohort(dt) 中在 dt+n 日仍有任一有效行为的去重用户数，n ∈ {1, 7, 30}；
+   *    retention_n = retained_n / |cohort(dt)|；
+   *  - 可观测性：当 dt+n 超出数据内最大 dt 时，该 n 的 retained/retention 必须为 NULL（未可观测），不得记 0；
+   *    |cohort(dt)| = 0 的 dt 不出行（HAVING count > 0 保证）。
+   */
+  def userRetention(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String = {
+    val d1 = shiftDate(dt, 1)
+    val d7 = shiftDate(dt, 7)
+    val d30 = shiftDate(dt, 30)
+    s"""
+       |${insertTarget(ns, "ads_user_retention", dt, snapshotId)}
+       |SELECT
+       |  COUNT(DISTINCT c.user_id) AS cohort_user_count,
+       |  CASE WHEN '$d1' > m.max_dt THEN NULL ELSE COUNT(DISTINCT a1.user_id) END AS retained_d1,
+       |  CASE WHEN '$d1' > m.max_dt THEN NULL
+       |       ELSE CAST(COUNT(DISTINCT a1.user_id) AS DECIMAL(8,4)) / COUNT(DISTINCT c.user_id) END AS retention_d1,
+       |  CASE WHEN '$d7' > m.max_dt THEN NULL ELSE COUNT(DISTINCT a7.user_id) END AS retained_d7,
+       |  CASE WHEN '$d7' > m.max_dt THEN NULL
+       |       ELSE CAST(COUNT(DISTINCT a7.user_id) AS DECIMAL(8,4)) / COUNT(DISTINCT c.user_id) END AS retention_d7,
+       |  CASE WHEN '$d30' > m.max_dt THEN NULL ELSE COUNT(DISTINCT a30.user_id) END AS retained_d30,
+       |  CASE WHEN '$d30' > m.max_dt THEN NULL
+       |       ELSE CAST(COUNT(DISTINCT a30.user_id) AS DECIMAL(8,4)) / COUNT(DISTINCT c.user_id) END AS retention_d30
+       |FROM (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$dt'
+       |) c
+       |CROSS JOIN (
+       |  SELECT COALESCE(MAX(dt), '$dt') AS max_dt
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |) m
+       |LEFT JOIN (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$d1'
+       |) a1 ON a1.user_id = c.user_id
+       |LEFT JOIN (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$d7'
+       |) a7 ON a7.user_id = c.user_id
+       |LEFT JOIN (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$d30'
+       |) a30 ON a30.user_id = c.user_id
+       |GROUP BY m.max_dt
+       |HAVING COUNT(DISTINCT c.user_id) > 0
+       |""".stripMargin
+  }
 }

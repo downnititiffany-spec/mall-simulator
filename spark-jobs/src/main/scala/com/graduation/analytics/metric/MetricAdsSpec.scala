@@ -52,7 +52,10 @@ object MetricAdsSpec {
       Seq("category_id", "category_name", "parent_category_id", "parent_category_name",
         "sale_count", "sale_amount", "net_sale_amount")),
     MetricAdsTable("ads_region_sale", "ads_region_sale_m",
-      Seq("region", "sale_amount", "net_sale_amount")))
+      Seq("region", "sale_amount", "net_sale_amount")),
+    MetricAdsTable("ads_user_retention", "ads_user_retention_m",
+      Seq("cohort_user_count", "retained_d1", "retention_d1", "retained_d7", "retention_d7",
+        "retained_d30", "retention_d30")))
 
   val EXPORT_MANIFEST: String = "_export.json"
 

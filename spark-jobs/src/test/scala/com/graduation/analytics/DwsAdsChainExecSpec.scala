@@ -147,7 +147,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       // 「完成证据」是「staging表/快照、各表行数」，由 PartitionEvidence 承载；§10.2 L387 明写
       // QUALITY_CHECK（dqc）才产出「规则版本与失败详情」。故 fna 无 checks 是符合设计的，我改断言。
       withClue(s"fna outputPartitions=${cap.step("fna").result.outputPartitions}；checks=${cap.checks("fna")}：") {
-        cap.step("fna").result.outputPartitions.size should be(10)
+        cap.step("fna").result.outputPartitions.size should be(11)
         cap.step("fna").result.outputPartitions.map(_.rowCount).forall(_ > 0L) should be(true)
         cap.step("fna").result.outputPartitions.flatMap(_.snapshotId).distinct should be(Seq(Snap1))
       }
@@ -280,9 +280,9 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       println(s"[s206] fna staging(S1) 行数=${cap.stagingRowsS1.toSeq.sortBy(_._1).map { case (t, n) => s"$t=$n" }.mkString(", ")}（合计 ${cap.stagingRowsS1.values.sum}）")
     }
 
-    "10 张暂存表的行内容可读且与行数自洽（行级证据，非只数个数）" in {
+    s"${AdsSql.TABLES.size} 张暂存表的行内容可读且与行数自洽（行级证据，非只数个数）" in {
       withClue(s"逐表行数=${cap.adsStagingRendered.map { case (t, r) => s"$t=${r.size}" }}：") {
-        cap.adsStagingRendered.size should be(10)
+        cap.adsStagingRendered.size should be(AdsSql.TABLES.size)
         cap.adsStagingRendered.foreach { case (t, rows) =>
           withClue(s"$t 暂存行：$rows：") {
             rows.size.toLong should be(cap.stagingRowsS1.getOrElse(t, -1L))
@@ -295,9 +295,9 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
       }
     }
 
-    "pub 之前：10 张正式 ADS 表在 dt=20260901 上既无分区、也无任何行（发布隔离）" in {
+    s"pub 之前：${AdsSql.TABLES.size} 张正式 ADS 表在 dt=20260901 上既无分区、也无任何行（发布隔离）" in {
       withClue(s"pub 前正式分区证据=${cap.formalBeforePub}：") {
-        cap.formalBeforePub.size should be(10)
+        cap.formalBeforePub.size should be(AdsSql.TABLES.size)
         cap.formalBeforePub.filterNot { case (_, p) => p.partitions.isEmpty } should be(empty)
         cap.formalBeforePub.filterNot { case (_, p) => p.tableRowCount == 0L } should be(empty)
         cap.formalBeforePub.filterNot { case (_, p) => p.location.isEmpty } should be(empty)
@@ -382,13 +382,13 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
         cap.manifestRowCounts should be(expectedRows)
       }
       withClue(s"manifest hivePath=${cap.manifestHivePaths}：") {
-        cap.manifestHivePaths.size should be(10)
+        cap.manifestHivePaths.size should be(MetricAdsSpec.TABLES.size)
         cap.manifestHivePaths.values.foreach { p =>
           p should include(s"snapshot_id=$Snap1")
         }
       }
       withClue(s"manifest 里的 exportFile 必须指向真实存在的文件：${cap.manifestExportFiles}：") {
-        cap.manifestExportFiles.size should be(10)
+        cap.manifestExportFiles.size should be(MetricAdsSpec.TABLES.size)
         cap.manifestExportFiles.values.foreach { f =>
           Files.isRegularFile(nioPath(f)) should be(true)
         }
@@ -444,7 +444,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
         cap.stagingRowsS1AfterPubAgain should be(cap.stagingRowsS1)
       }
       withClue(s"pub 重放的作业自报（§14.4 幂等）：${cap.pubAgainPointerSwitch}：") {
-        cap.pubAgainPointerSwitch should include("同快照重放 10 张")
+        cap.pubAgainPointerSwitch should include(s"同快照重放 ${AdsSql.TABLES.size} 张")
       }
       println(s"[s206] pub(S1) 重放：${cap.pubAgainPointerSwitch}")
     }
@@ -508,7 +508,7 @@ class DwsAdsChainExecSpec extends AnyWordSpec with Matchers with BeforeAndAfterA
         cap.foreignRowsAfterPubS2.keySet should be(AdsSql.TABLES.toSet)
         cap.foreignRowsAfterPubS2.values.sum should be(AdsSql.TABLES.size.toLong)
         cap.foreignDirExistsAfterPubS2.keySet should be(AdsSql.TABLES.toSet)
-        cap.foreignDirExistsAfterPubS2.values.count(identity) should be(10)
+        cap.foreignDirExistsAfterPubS2.values.count(identity) should be(AdsSql.TABLES.size)
       }
       println(s"[s206] D-R9-1 判别探针：埋点后=${cap.foreignRowsAfterSeed.values.sum} 行；" +
         s"pub(S1) 后=${cap.foreignRowsAfterPubS1.values.sum} 行；pub(S2) 后=${cap.foreignRowsAfterPubS2.values.sum} 行；" +

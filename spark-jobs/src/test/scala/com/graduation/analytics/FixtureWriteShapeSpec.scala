@@ -87,7 +87,8 @@ class FixtureWriteShapeSpec extends AnyFlatSpec with Matchers {
     "AdsStableOrderSpec.scala" -> 2,
     "DwsAdsChainExecSpec.scala" -> 1,
     "DwsRegionNetSaleSpec.scala" -> 1,
-    "SurrogateKeySpec.scala" -> 1
+    "SurrogateKeySpec.scala" -> 1,
+    "AdsUserRetentionSpec.scala" -> 4
   )
 
   /**

@@ -11,6 +11,7 @@ import com.graduation.analytics.analysis.AnalysisService.OverviewData;
 import com.graduation.analytics.analysis.AnalysisService.ProductsData;
 import com.graduation.analytics.analysis.AnalysisService.QualitySummary;
 import com.graduation.analytics.analysis.AnalysisService.RfmData;
+import com.graduation.analytics.analysis.AnalysisService.RetentionPoint;
 import com.graduation.analytics.analysis.AnalysisService.SalesData;
 import com.graduation.analytics.analysis.AnalysisService.SalesTrendPoint;
 import com.graduation.analytics.analysis.AnalysisService.UsersData;
@@ -826,6 +827,34 @@ class AnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("用户分析 v1.13：返回留存率 D+1/D+7/D+30，超出观察期为 null")
+    void usersReturnsRetentionPoints() {
+        stubActiveSnapshot();
+
+        AnalysisViewModel<UsersData> users = service.users(null, null, null);
+
+        assertThat(users.data().retention()).hasSize(1);
+        RetentionPoint point = users.data().retention().get(0);
+        assertThat(point.date()).isEqualTo("2026-09-01");
+        assertThat(point.cohortUserCount()).isEqualTo(3L);
+        assertThat(point.retainedD1()).isEqualTo(2L);
+        assertThat(point.retentionD1()).isEqualByComparingTo("0.6667");
+        assertThat(point.retainedD7()).isNull();
+        assertThat(point.retentionD7()).isNull();
+        assertThat(point.retainedD30()).isNull();
+        assertThat(point.retentionD30()).isNull();
+    }
+
+    @Test
+    @DisplayName("用户分析：日期倒置抛 PARAM_INVALID")
+    void usersInvertedDateRangeThrows() {
+        stubActiveSnapshot();
+        assertThatThrownBy(() -> service.users(null, LocalDate.of(2026, 9, 2), LocalDate.of(2026, 9, 1)))
+                .isInstanceOf(PlatformBizException.class)
+                .hasMessageContaining("日期区间非法");
+    }
+
+    @Test
     @DisplayName("显式指定其他 RuntimeProfile 的归档 snapshotId：精确读取且不解析当前 ACTIVE")
     void explicitArchivedSnapshotFromAnotherProfileIsReadableById() {
         MetricSnapshot archived = snapshot("S20260901_23");
@@ -1057,6 +1086,11 @@ class AnalysisServiceTest {
                 row("dt", "20260901", "user_id", 3L, "r", 3, "f", 3, "m", 1, "value_group", "一般挽留",
                         "favorite_category", 11L, "lifecycle_state", "活跃", "rule_version", "rfm-v1",
                         "calc_date", "20260901", "last_buy_date", "2026-09-01")));
+        ads.put("ads_user_retention_m", List.of(
+                row("dt", "20260901", "cohort_user_count", 3L,
+                        "retained_d1", 2L, "retention_d1", new BigDecimal("0.6667"),
+                        "retained_d7", null, "retention_d7", null,
+                        "retained_d30", null, "retention_d30", null)));
         return ads;
     }
 

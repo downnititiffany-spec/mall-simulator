@@ -61,6 +61,7 @@ public class AnalysisService {
     private static final String T_DATA_QUALITY = "ads_data_quality_m";
     private static final String T_CATEGORY_SALE = "ads_category_sale_m";
     private static final String T_REGION_SALE = "ads_region_sale_m";
+    private static final String T_USER_RETENTION = "ads_user_retention_m";
 
     // ── 销售分析取值的指标码（一律取 metric_value，不重算，契约 §3.2） ──────────
     private static final String METRIC_GMV = "gmv";
@@ -178,16 +179,34 @@ public class AnalysisService {
     }
 
     /**
+     * 用户留存率点（WP-F9a / F9-GAP-03）：D+1、D+7、D+30 留存人数与比率（超出观测期为 null）。
+     */
+    public record RetentionPoint(String date, long cohortUserCount,
+                                 Long retainedD1, BigDecimal retentionD1,
+                                 Long retainedD7, BigDecimal retentionD7,
+                                 Long retainedD30, BigDecimal retentionD30) {
+    }
+
+    /**
      * 用户分群专题数据（§3.5）。
      *
      * <p>S3-16 加性补充：{@code periodStart}/{@code periodEnd} 是本次评分**实际使用的观察窗口**
      * （来自 ads_user_profile_m 的 period_start/period_end）；不可用时为 null 并由
      * {@code warnings} 声明（设计 V3.0 §15 L676「R/F/M 原值与 score、8 群体、观察期、复购」）。
      * 分组行 {@code RfmSegment} 自 S3-16 起带 M 原值（{@code amount}）与 F 原值（{@code orders}）。</p>
+     *
+     * <p>v1.13（WP-F9a）：加性扩展 {@code retention}（用户留存率 D+1/D+7/D+30）。</p>
      */
     public record UsersData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.LifecycleState> lifecycle,
                             List<RfmService.CategoryPreference> preference, String ruleVersion,
-                            String periodStart, String periodEnd) {
+                            String periodStart, String periodEnd,
+                            List<RetentionPoint> retention) {
+
+        public UsersData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.LifecycleState> lifecycle,
+                         List<RfmService.CategoryPreference> preference, String ruleVersion,
+                         String periodStart, String periodEnd) {
+            this(rfmSegments, lifecycle, preference, ruleVersion, periodStart, periodEnd, List.of());
+        }
     }
 
     /** RFM 专题数据（§3.6）：字段语义与 {@link UsersData} 一致，另带八类全量矩阵 rfmMatrix */
@@ -598,6 +617,7 @@ public class AnalysisService {
     // ── 用户分群（§3.5）与 RFM（§3.6） ────────────────────────────────────────
 
     public AnalysisViewModel<UsersData> users(String snapshotId, LocalDate from, LocalDate to) {
+        requireOrderedDateRange(from, to);
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
@@ -609,8 +629,9 @@ public class AnalysisService {
         filters.put("snapshotId", sid);
 
         RfmService.RfmProfile profile = rfmService.profile(sid);
+        List<RetentionPoint> retention = retention(sid, from, to);
         UsersData data = new UsersData(profile.segments(), profile.lifecycle(), profile.preference(),
-                profile.ruleVersion(), profile.periodStart(), profile.periodEnd());
+                profile.ruleVersion(), profile.periodStart(), profile.periodEnd(), retention);
         return view(pinned, filters, data, profile.warnings());
     }
 
@@ -774,6 +795,26 @@ public class AnalysisService {
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new ActiveDay(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("dau")), AdsRows.asLong(row.get("behavior_count"))))
+                .toList();
+    }
+
+    /**
+     * 用户留存率（ads_user_retention_m，按 dt 升序）。
+     *
+     * <p>WP-F9a（F9-GAP-03）：D+1/D+7/D+30 留存人数与比率透传；超出观测期为 null。</p>
+     */
+    private List<RetentionPoint> retention(String snapshotId, LocalDate from, LocalDate to) {
+        return trendRows(T_USER_RETENTION, snapshotId, from, to).stream()
+                .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
+                .map(row -> new RetentionPoint(
+                        AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
+                        AdsRows.asLong(row.get("cohort_user_count")),
+                        AdsRows.asLongOrNull(row.get("retained_d1")),
+                        AdsRows.asDecimal(row.get("retention_d1")),
+                        AdsRows.asLongOrNull(row.get("retained_d7")),
+                        AdsRows.asDecimal(row.get("retention_d7")),
+                        AdsRows.asLongOrNull(row.get("retained_d30")),
+                        AdsRows.asDecimal(row.get("retention_d30"))))
                 .toList();
     }
 

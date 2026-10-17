@@ -59,3 +59,10 @@
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | v1 | 2026-09-06 | 建立首批 15 项指标与对比/异常/决策口径 |
+
+## 6. 指标物理归宿与聚合形式澄清（加性说明）
+
+依据 WP-F9a 规约与全量指标三层对账（WP-F9-INVENTORY-REPORT §3.2，F9-GAP-01 方案 B）：
+
+1. **`product_heat`（商品热度）**：为**实体级（商品粒度）指标**，物理归宿固定物化为 `ads_hot_product_m.heat_score`（经 `AdsSql.hotProduct` / `FunnelAdsJob` 计算，由 `AnalysisService.products` 端点承接提供排行），**不入 `metric_value` 全站标量表**。发布门 14 项全站标量与本字典首批 15 项清单完全自洽收敛。
+2. **`user_value_level`（用户价值等级）**：为用户×观察期粒度的分层分群指标，其业务诉求由 `ads_user_profile_m.value_group`（及 `ads_user_profile_m.rfm_segment` 对应分层）与 `RfmService` 分组逻辑承接，提供 8 类矩阵与分群统计，**不单列全站标量字段**。

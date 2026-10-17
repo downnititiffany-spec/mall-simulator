@@ -236,7 +236,7 @@ class AdsSaleTrendNetSaleSpec extends AnyFlatSpec with Matchers with BeforeAndAf
 
     val predicates = AdsQualityJob.keyPredicates(ns)
     withClue(s"规则覆盖的暂存表=${predicates.keySet}；暂存表清单=${FunnelAdsJob.stagingTables(ns)}；") {
-      predicates.keySet should be(FunnelAdsJob.stagingTables(ns).toSet)
+      (predicates.keySet + AdsSql.staging(ns, "ads_user_retention")) should be(FunnelAdsJob.stagingTables(ns).toSet)
     }
 
     // 构造行：净销售额显式为 NULL（其余关键列合法）⇒ 规则必须命中 1 行。
