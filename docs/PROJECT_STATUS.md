@@ -3485,3 +3485,10 @@
 - 总控亲跑总门禁（RunId wpf6cacc20261017）：default 全档 **PASS exit 0**——analytics 1399（F=0/E=0/S=2，MATCH；S=2 为既有跳过，本机巡检例实际执行未跳过）、mall 26、generator 134，合计 1559 MATCH；定向 `IngestionManifestRuntimePatrolTest` 3/3 PASS 零跳过（本机 43 文件在位、原断言严格执行且通过，本机巡检语义未削弱）；脚本契约 `AnalyticsIsolationScriptsContractTest` 13/13 PASS。
 - 状态：**WP-F6c 实施关账**（代码提交 6c07e73）。WP-F6 余项仅剩「本提交推送后 Actions 转绿观察」——Spark 档 winutils 修复只能在 windows-latest 托管 runner 上终验，由后续巡检观察本轮推送触发的运行结果：绿则 WP-F6 全关账，红则按日志再修或登记外部限制。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
 - 后续顺序：WP-F9b（F9-GAP-06 渠道表）为队列下一包；Actions 观察与 WP-F9b 派发由下一巡检处置。
+
+## WP-F6 全关账（2026-10-17 巡检，总控亲查 Actions）兼 WP-F9b 立项与 G-04 部分裁定
+
+- **Actions 转绿实证**：WP-F6c 推送（228b653）触发的运行 38995467540（Tests，windows-latest）总控经 GitHub API 亲查全程：Default Suite (JDK 17) **success**（02:34:42→02:37:27Z，巡检例门控修复在 fresh checkout 终验通过）；Spark Suite (JDK 8) **success**——winutils 供给步（3.3.6）completed success、spark 测试套件步随整 job 转绿（winutils/HADOOP_HOME 缺项就此终验修复）；整运行 conclusion=**success**。此前两跑双红（38981395202/38986554847）的两个根因均已消除。
+- 状态：**WP-F6 全关账**（F6b 实施 + F6c 双红修复 + Actions 双档转绿，三段齐备）。CI 口径不变：default + spark 两档入 CI，isolated 档因需 3307 隔离实例不入 CI（WP-F6 报告既有结论）。
+- **WP-F9b 立项（F9-GAP-06 渠道表）与 G-04 部分裁定**：总控亲查实证——`dwd_user_behavior_detail.channel` 为真实列（源 B via=APP/H5/PC 映射进入），行为侧渠道聚合属真下钻；而交易链全程无 channel（`OrderTradeCompiler.TradeEvent` 与 `dwd_order_detail` 均无该字段），按渠道的订单/支付归因无数据依据，属设计 V3.0 §11.3 L443「未决不输出假的分类下钻」所禁，盘点草案的 order_uv/pay_uv 两列驳回。据此裁定 G-04 部分解：行为侧渠道粒度批准落地（宽松口径同 `DwsSql.funnelDay`，跨渠道 distinct 不可加和为设计自带注记），交易侧渠道粒度维持不输出。规约 notes/WP-F9b.md 已立并派发 agy Flash（`ads_channel_summary_m`：pv/view/intent/cart 用户与两比率，Flyway V15，FlywayIT 钉 14→15，funnel ViewModel 加性 byChannel）。
+- 本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
