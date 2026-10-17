@@ -3458,3 +3458,13 @@
 - 首轮验收不合格与同轮修复（总控亲跑抓获）：量数轮（RunId wpf7fgate20261017a）**386 跑 385 过 1 红**，唯一红为新规格空分区用例（:290）——核心分摊 5 例全过。根因经总控实证为存量隐患：`AdsQualityJob.salesDimensionReconcileCheck` 的 `emptyDayMatches` 要求空日 trade 净额为 0，但 `DwsSql.tradeDay` 空日聚合行净额实为 NULL（已被 `DwsTradeDayMultiLineRefundSpec` 空值语义用例冻结），注释前提自 stage7 起即不成立，任一无支付日走发布链都会被 BLOCKING 门误阻断。总控裁定破例扩围仅此一处谓词（不动规则码/目录/0.01 容差、不动 DwsSql）：FIX 轮将净额条件改为接受 NULL 或 0 并对齐注释；该私有函数为品类/城市等级两门共用，一处同治。
 - 总控复验（不采信执行方自述）：FIX diff 逐行核对仅该谓词+注释；定向亲跑 `AdsCategorySaleRefundAllocationSpec+CategoryRegionAdsSpec+DwsTradeDayMultiLineRefundSpec` **10/10 PASS**；基线再登记 spark 380→386（run-tests.ps1 附变更注释），脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**；收口轮（RunId wpf7fgate20261017b）**tests=386 MATCH、48 suites、All tests passed、PASS exit=0、JDK8 本轮新写**。WP-F7f 代码与回归关账。
 - 余项：WP-F7e 同数据复跑验收转入总控亲跑专轮第二轮——重建 spark-jobs 产物并重部署在跑平台（8091 仍载 F7e 第一轮产物，不含 categorySale 修复）后，在隔离档案 scale-vm-b（id=3）以同数据走 recalculate（run 7），核对预言值 gmv 365160.30 / aov 362.26 不变、退款 91916.50、净额 273243.80，并核留存发布行与原 ACTIVE 链未污染，届时 WP-F7e 关账。其后顺序：WP-F8c → WP-F6c → WP-F9b。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F7e 同数据复跑验收·第二轮关账（2026-10-17 巡检，总控亲跑）
+
+- 执行：总控亲跑重建 spark-jobs 产物（BUILD SUCCESS，新 jar 含 WP-F7f 的 AdsSql 分摊 + AdsQualityJob 空日谓词修复；平台进程未重启——spark-submit 按档案配置的 jar 路径逐 run 读取该产物，平台代码本轮无变更）；档案 scale-vm-b（id=3）test 全过→activate 后走显式重算入口 recalculate（批次 3，理由审计落库）得 run 7，发布快照 **S20260918_7**。
+- 结果：run 7 **八阶段全 SUCCESS**（09:42:34→09:50:58，约 504 秒）：WAIT_LANDING 9995 / INIT_SCHEMA 45 / LOAD_ODS 10035 / BUILD_DWD 8508 / BUILD_DWS 100 / BUILD_ADS 161 / QUALITY_CHECK 12 / PUBLISH_METRIC 322。第一轮阻断的 BLOCKING 门 `ADS_CATEGORY_SALE_RECONCILE` 本轮通过。
+- 预言逐项命中（总控直查 metric_value@S20260918_7）：gmv **365160.30**、net_sale **273243.80**、avg_order_value **362.26**、paid_order_cnt 1008、pv 5008、uv/dau 100——隐含退款 = 365160.30 − 273243.80 = **91916.50**，与 WP-F7d 预言分毫不差。
+- 品类分摊发布层对账：ads_category_sale_m@_7 五行 Σsale_amount=365160.30=gmv、Σnet=273243.80=net_sale，逐分勾稽（分摊在发布层精确收敛，非仅质量门放行）。
+- 留存发布行实证：ads_user_retention_m@_7 产出行 dt=20260918、cohort_user_count=**100**、D+1/D+7/D+30 retained 与 retention 全 **NULL**——与第一轮暂存行及总控 DWD 独立复算（distinct=100、max(dt)=20260918、horizon 外严格 NULL）逐项吻合，留存就此由暂存层推进到发布层实证。
+- 隔离与收尾：_7 为档案 3 作用域 ACTIVE、同作用域 _5 转 ARCHIVED；档案 2 作用域 _4 仍 ACTIVE 未动；跑后已复激档案 2 为 ACTIVE，平台健康。**WP-F7e 关账；WP-F7（含 F7d/F7f 修复链）全线闭合。**
+- 后续顺序（纲领 08:5x 修订不变）：下一巡检执行 **WP-F8c** 真库探针专轮（总控亲跑），其后 WP-F6c（agy 包）、WP-F9b。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
