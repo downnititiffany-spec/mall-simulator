@@ -66,3 +66,17 @@
 
 1. **`product_heat`（商品热度）**：为**实体级（商品粒度）指标**，物理归宿固定物化为 `ads_hot_product_m.heat_score`（经 `AdsSql.hotProduct` / `FunnelAdsJob` 计算，由 `AnalysisService.products` 端点承接提供排行），**不入 `metric_value` 全站标量表**。发布门 14 项全站标量与本字典首批 15 项清单完全自洽收敛。
 2. **`user_value_level`（用户价值等级）**：为用户×观察期粒度的分层分群指标，其业务诉求由 `ads_user_profile_m.value_group`（及 `ads_user_profile_m.rfm_segment` 对应分层）与 `RfmService` 分组逻辑承接，提供 8 类矩阵与分群统计，**不单列全站标量字段**。
+
+## 7. 品类净销售额退款分摊口径（加性说明，WP-F7f 裁定）
+
+依据 WP-F7f 裁定（2026-10-17，针对 `ADS_CATEGORY_SALE_RECONCILE` 质量门逐分对账约束）：
+
+1. **品类净销售额（`net_sale_amount`）**：在 ADS 品类层（`ads_category_sale`）定义为 `品类销售额 − 分摊退款金额`。
+2. **整单退款行金额比例分摊**：
+   - 源头订单行（`dwd_order_detail`）冗余携带整单退款 `refund_amount`。为消除跨品类多行订单在类目汇总时的退款行扇出与重复计算，整单退款按订单各行金额比例分摊：`raw_alloc = order_refund × line_amount / order_amount_total`；
+   - 兜底规则：当 `order_amount_total = 0` 时，该单全行 `raw_alloc = 0`，整单退款确定性记入该单 `category_id` 最小（并列取行级确定性键 `product_id` 最小）的一行，不得除零、不得丢退款。
+3. **分级最大余数校正**：
+   - 基础分摊金额取分位四舍五入：`line_alloc = ROUND(raw_alloc, 2)`；
+   - 计算每单残差：`residual = order_refund − Σline_alloc`；
+   - 将 `residual` 全额补偿至该单 `amount` 最大的一行（并列取 `category_id` 最小者，再并列取 `product_id` 最小者）；
+   - 严格保证每单各行分摊之和与整单退款逐分相等（`Σline_alloc = order_refund`），从而保证全站 `Σ品类 net_sale_amount` 与 `dws_trade_day.net_sale_amount` 达成逐分一致（容差 `<0.01`），完全消除比例直舍入产生的累计漂移。

@@ -229,18 +229,75 @@ object AdsSql {
    * 事实只取最终已支付订单明细；按 category_id 聚合后用同一 dt 的 dim_product 补名称，
    * 维表缺失及非法/未知分类统一折叠到 category_id=-1 的唯一“未分类”行。
    * 分类金额包含该 unknown 桶，供发布质量门与 dws_trade_day 对账。
+   *
+   * WP-F7f 整单退款行金额比例分摊与分级最大余数校正：
+   *  - 先按 order 聚合整单退款上限 order_refund 与订单总额 order_amount_total；
+   *  - 每行 raw_alloc = order_refund * amount / order_amount_total（order_amount_total=0 时全行 raw_alloc=0）；
+   *  - 分级最大余数校正：line_alloc = ROUND(raw_alloc, 2)，计算每单 residual = order_refund - Σline_alloc，
+   *    将 residual 全额补入该单 amount 最大的一行（并列取 category_id 最小，再并列取行级确定性键 product_id 最小；
+   *    order_amount_total=0 时 amount 全为 0，自动按 category_id 最小行兜底，不除零、不丢退款）；
+   *  - 保证每单 Σline_alloc = order_refund 逐分相等，消除跨品类退款扇出与舍入漂移，
+   *    使全站 Σ品类净额与 dws_trade_day 达到 <0.01 逐分对账硬要求。
    */
   def categorySale(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_category_sale", dt, snapshotId)}
-       |WITH facts AS (
-       |  SELECT CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END AS category_id,
-       |         SUM(quantity) AS sale_count,
-       |         SUM(amount) AS sale_amount,
-       |         SUM(amount) - COALESCE(SUM(refund_amount), CAST(0 AS DECIMAL(18,2))) AS net_sale_amount
+       |WITH order_lines AS (
+       |  -- 步骤 1：抽取当日最终已支付订单明细，对 category_id 统一归一化（NULL/<=0 折叠为 -1 未分类）；
+       |  -- 窗口聚合：获取整单退款上限 order_refund 与订单总金额 order_amount_total
+       |  SELECT
+       |    order_id,
+       |    product_id,
+       |    CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END AS category_id,
+       |    quantity,
+       |    amount,
+       |    COALESCE(MAX(refund_amount) OVER (PARTITION BY order_id), CAST(0 AS DECIMAL(18,2))) AS order_refund,
+       |    COALESCE(SUM(amount) OVER (PARTITION BY order_id), CAST(0 AS DECIMAL(18,2))) AS order_amount_total
        |  FROM ${ns.dwd}.dwd_order_detail
        |  WHERE dt = '$dt' AND final_paid_flag = 1
-       |  GROUP BY CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END
+       |), line_alloc_base AS (
+       |  -- 步骤 2：按行金额比例计算初步退款分摊 raw_alloc，四舍五入到分：line_alloc = ROUND(raw_alloc, 2)；
+       |  -- 兜底规则：当 order_amount_total = 0 时，全行 raw_alloc 为 0；
+       |  -- 确定性行序：按 amount 降序、category_id 升序、product_id 升序排序
+       |  -- （当 order_amount_total = 0 时 amount 均视同 0，自动按 category_id 升序、product_id 升序选取兜底行）
+       |  SELECT
+       |    order_id,
+       |    category_id,
+       |    quantity,
+       |    amount,
+       |    order_refund,
+       |    ROUND(
+       |      CASE WHEN order_amount_total = 0 THEN CAST(0 AS DECIMAL(18,2))
+       |           ELSE order_refund * amount / order_amount_total END,
+       |      2
+       |    ) AS base_alloc,
+       |    ROW_NUMBER() OVER (
+       |      PARTITION BY order_id
+       |      ORDER BY
+       |        CASE WHEN order_amount_total = 0 THEN CAST(0 AS DECIMAL(18,2)) ELSE amount END DESC,
+       |        category_id ASC,
+       |        product_id ASC
+       |    ) AS alloc_rn
+       |  FROM order_lines
+       |), line_alloc_adjusted AS (
+       |  -- 步骤 3：分级最大余数校正：residual = order_refund - SUM(base_alloc)，全额补偿至 alloc_rn = 1 行；
+       |  -- 严格保证每单各行分摊退款之和与整单退款逐分相等（Σline_alloc = order_refund）
+       |  SELECT
+       |    category_id,
+       |    quantity,
+       |    amount,
+       |    CAST(base_alloc + CASE WHEN alloc_rn = 1 THEN order_refund - SUM(base_alloc) OVER (PARTITION BY order_id)
+       |                           ELSE CAST(0 AS DECIMAL(18,2)) END AS DECIMAL(18,2)) AS line_alloc
+       |  FROM line_alloc_base
+       |), facts AS (
+       |  -- 步骤 4：按归一化 category_id 分组聚合，品类净销售额 = SUM(amount) - SUM(line_alloc)
+       |  SELECT
+       |    category_id,
+       |    SUM(quantity) AS sale_count,
+       |    SUM(amount) AS sale_amount,
+       |    SUM(amount) - COALESCE(SUM(line_alloc), CAST(0 AS DECIMAL(18,2))) AS net_sale_amount
+       |  FROM line_alloc_adjusted
+       |  GROUP BY category_id
        |), category_dim AS (
        |  SELECT category_id,
        |         MIN(COALESCE(category_name, '未知分类')) AS category_name,
