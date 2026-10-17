@@ -3437,3 +3437,17 @@
 - 总控亲跑总门禁（复验 RunId wpf9afix20261017）：spark **380/380、47 suites、All tests passed**（基线 375→380 再登记，其中 +5 为本包新例）；default 三树 **合计 1559 全绿**——analytics 1399（F=0/E=0/S=2，明细 123+415+216+166+246+233；基线 1380→1399 再登记，含 WP-F8b 17 例同步滞后补登 + 本包 2 例）、mall 26、generator 134；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线再登记后亲跑）。验收注记：default 首跑 generator 53 红系巡检调用未注入 JAVA_TOOL_OPTIONS 致 fork JVM 回环 HttpClient 被沙箱 IPv4-mapped IPv6 拦截（WP-F6b 已登记 VM 网络怪癖），注入后全绿，与本包无关。
 - 已知边界（登记不丢弃）：① 留存夹具跨度 4 日，D+7/D+30 仅验 NULL 侧、正例由与 D+1 同一 JOIN/CASE 模式覆盖，未单设跨 7/30 日夹具；② AnalyticsIsolationFlywayIT 真跑（V14 实迁移）与留存真实数据探针并入 WP-F8c/WP-F7e 总控亲跑专轮执行——WP-F7e 复跑将以新 spark-jobs 产物在 scale-vm-b 同数据产出留存行，总控按规约口径独立重算 cohort 与 NULL 侧对账；③ 发布校验 REQUIRED_NON_EMPTY 维持原 4 表，留存表走清单泛型行数对账（与既有表一致口径）。
 - 状态：**WP-F9a 关账**（F9-GAP-03 落地、F9-GAP-01 方案 B 收敛）。WP-F9 余项＝WP-F9b（GAP-06 渠道表）排队，顺序在亲跑专轮之后：先 WP-F7e、再 WP-F8c（纲领既定顺序）。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F6 Actions 首跑观察（2026-10-17 巡检，总控亲查）
+
+- PAT 补齐 Workflows 权限后，07:26 补推触发首跑（run 38981395202 @27537af），08:28 F9a 关账推送触发第二跑（run 38986554847 @75d23a5）；**两跑 Default 与 Spark 两档全红**，总控下载两档作业日志逐项定位（日志原件 /tmp/f6_default_logs.txt、/tmp/f6_spark_logs.txt）：
+- **Spark 档**：`HADOOP_HOME and hadoop.home.dir are unset`（windows-latest 无 winutils）→ 真跑 Spark 的套件大面积失败（succeeded 151 / failed 73 / canceled 8、仅 224 跑出记 DRIFT vs 基线 380）。属工作流环境供给缺项，非代码缺陷（本机基线 380/380 于 WP-F9a 关账亲跑）。
+- **Default 档**：全反应堆仅 1 例红——`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched:61` 断言仓库根 `landing/manifests`（.gitignore 忽略的本机生产落盘）冻结名单恰 43 个，fresh checkout 必然不满足；其余计数全 MATCH（analytics 1399 / mall 26 / generator 134）。该例设计意图为本机运行时巡检，与 CI fresh-checkout 语义冲突；其负例两条不依赖真实目录。
+- 处置：立 **WP-F6c**（规约 mall-simulator-notes/WP-F6c.md）——workflow 为 spark 档供给 winutils 并设 HADOOP_HOME；巡检例按「真实目录存在且非空」门控（在则原断言不改），负例两条继续在 CI 跑。WP-F6 余项转为「F6c 关账 + Actions 转绿观察」，未关账。本节未触碰 3306/Docker/DeepSeek。
+
+## WP-F7e 同数据复跑验收·第一轮（2026-10-17 巡检，总控亲跑，未关账）
+
+- 执行：总控亲跑重建 spark-jobs 与 platform-app 两产物（均 BUILD SUCCESS）并以新 jar 重启平台（pid 135517）——启动期 metric 库 Flyway 实迁移 13→14（V14 留存表落活库，前序登记的「V14 真跑」一半就此实证，隔离 IT 真跑仍归 WP-F8c）；档案 scale-vm-b（id=3）test 全过→activate 后走显式重算入口 recalculate（批次 3，理由审计落库）得 run 6。
+- 结果：run 6 前六阶段全 SUCCESS（WAIT_LANDING 9995 / INIT_SCHEMA 45=F7c 43+留存 2 表 / LOAD_ODS 10035 / BUILD_DWD / BUILD_DWS / BUILD_ADS），**QUALITY_CHECK 被 BLOCKING 规则 `ADS_CATEGORY_SALE_RECONCILE` 阻断（PIPELINE_QUALITY_FAILED），未发布**；跑后复激档案 2、平台 200，metric_snapshot 实查 _4/_5 仍各为其档案 ACTIVE、无 _6，原链未污染。
+- 已实证（不因阻断打折）：① DWS 修复生产链生效——阻断 detail 自带 DWS 期望值 expectedSale=365160.30 / expectedNet=**273243.80**，与 WP-F7d 预言逐分一致；② 留存真实数据探针（暂存层）通过——`ads_user_retention__staging/S20260918_6` 行 cohort=100、D+1/7/30 全 NULL，总控直读 DWD 独立复算 distinct=100、max(dt)=20260918 逐项吻合。
+- 阻断根因：ads_category_sale actualNet=238087.15 仍为旧行扇出口径（run 5 时与 DWS 同错对账假过）；总控 DWD 实证退款单 302 笔中跨品类 64 笔（退款 27743.20），(category,order) 去重 Σ=119659.70 仍不精确。**总控裁定**：WP-F7d 对 categorySale 的递延在全链发布口径下不可维持，立 **WP-F7f**（整单退款按行金额比例分摊 + 分级最大余数校正，逐单逐分相等；规约 notes/WP-F7f.md，已派 agy Flash）。F7f 关账后总控再走 recalculate 复跑（run 7）核对预言值与留存发布行，WP-F7e 届时关账。报告 notes/WP-F7e-REPORT.md。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
