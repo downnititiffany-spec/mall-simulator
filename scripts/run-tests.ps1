@@ -162,8 +162,11 @@ $SparkTestSuiteTxt = 'spark-jobs\target\surefire-reports\TestSuite.txt'
 #   有失败时为 `[ERROR]`，旧正则只认 `[INFO]` ⇒ 这类模块**整块漏计**，其 F/E 一并丢失
 #   （harness 实测复现：platform-app F=1 时摘要仍显示「analytics-server F=0」）。
 #   现按「当前正在构建的模块」归集实际 run/F/E/S，失败一律由 F/E 判定，不因日志级别丢模块。
+# 2026-10-17：1380→1399＝WP-F8b 新增 17 例（基线同步滞后，本次补登）＋WP-F9a 新增 2 例（AnalysisServiceTest
+#   留存透传/日期倒置）；总控亲跑 RunId wpf9afix20261017 实测 analytics 1399（F=0/E=0/S=2，明细
+#   123+415+216+166+246+233）、三树合计 1559 后同步本数。
 $BaselineDefault = [ordered]@{
-  'analytics-server'        = 1380
+  'analytics-server'        = 1399
   'mall-simulator'          = 26
   'synthetic-data-generator' = 134
 }
@@ -636,9 +639,11 @@ $BaselineDefault = [ordered]@{
 #   fresh spark 全量 372/372、45 suites、JDK8=True、All tests passed（云端 VM，RunId wpn1bgate20261016）。
 # 2026-10-17：372→375＝WP-F7d 退款行粒度扇出修复新增 `DwsTradeDayMultiLineRefundSpec` 3 条（多行部分退款只计一次 /
 #   region 对账闭环 / 空分区语义）；量数轮 RunId wpf7dgate20261017a 实测 375/375、46 suites、All tests passed 后同步本数。
+# 2026-10-17：375→380＝WP-F9a 用户留存率新增 `AdsUserRetentionSpec` 5 条（跨日回访/horizon 内 0/horizon 外 NULL /
+#   空队列不产出/正式表同构）；总控亲跑 RunId wpf9afix20261017 实测 380/380、47 suites、All tests passed 后同步本数。
 # 2026-09-29：329→332＝N31-02 开发新增 `ProductDimensionAsOfSpec`、`MetricExportZeroRowSpec`、
 #   `CategoryRegionAdsSpec` 各 1 条；同批同步 DDL 总数与 FixtureWriteShape 写入点基线，避免新功能被旧守卫误报。
-$BaselineSpark = 375
+$BaselineSpark = 380
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
