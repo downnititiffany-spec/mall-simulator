@@ -48,6 +48,8 @@ class FunnelAdsJob extends WarehouseJob {
     spark.sql(AdsSql.regionSale(ns, dt, sid))
     spark.sql(AdsSql.userProfile(ns, dt, periodStart, periodEnd, sid))
     spark.sql(AdsSql.dataQuality(ns, dt, sid))
+    spark.sql(AdsSql.userRetention(ns, dt, sid))
+    spark.sql(AdsSql.channelSummary(ns, dt, sid))
 
     // 输出计数 = 当前发布表集暂存分区行数之和（真实 COUNT(*)，非输入数冒充）
     val stagingTables = FunnelAdsJob.stagingTables(ns)

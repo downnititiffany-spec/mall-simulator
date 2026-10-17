@@ -610,9 +610,7 @@
         "order_id",
         "user_id",
         "items",
-        "total_amount",
-        "status",
-        "created_at"
+        "total_amount"
       ],
       "additionalProperties": true
     },
@@ -647,8 +645,7 @@
         "order_id",
         "user_id",
         "payment_id",
-        "amount",
-        "paid_at"
+        "amount"
       ],
       "additionalProperties": true
     },
@@ -678,8 +675,7 @@
       "required": [
         "order_id",
         "user_id",
-        "reason",
-        "cancelled_at"
+        "reason"
       ],
       "additionalProperties": true
     },
@@ -719,8 +715,7 @@
         "order_id",
         "user_id",
         "amount",
-        "reason",
-        "created_at"
+        "reason"
       ],
       "additionalProperties": true
     },
@@ -755,8 +750,7 @@
         "refund_id",
         "order_id",
         "user_id",
-        "amount",
-        "completed_at"
+        "amount"
       ],
       "additionalProperties": true
     },

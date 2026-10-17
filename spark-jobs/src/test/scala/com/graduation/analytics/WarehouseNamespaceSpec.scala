@@ -153,10 +153,10 @@ class WarehouseNamespaceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "INIT_SCHEMA 的 43 条 DDL 全部只引用当前命名空间的库（5 建库 + 38 建表）" in {
+  it should "INIT_SCHEMA 的 47 条 DDL 全部只引用当前命名空间的库（5 建库 + 42 建表）" in {
     val ns = WarehouseNamespace.of("dw_b")
     val statements = LocalSchemaInitJob.statements(ns)
-    statements.size should be(43)
+    statements.size should be(47)
     val allowed = ns.layers.values.toSet
     statements.map(_._1).toSet should be(allowed)
     statements.foreach { case (db, ddl) =>

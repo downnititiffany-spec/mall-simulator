@@ -85,14 +85,14 @@ class MetricExportZeroRowSpec extends AnyFlatSpec with Matchers with BeforeAndAf
   // mxp：整体成功 + 0 行走 catalog-backed 空态分支
   // ══════════════════════════════════════════════════════════════════════
 
-  "mxp 对含 0 行专题的 10 表导出整体 SUCCESS（修复前此处抛 UNABLE_TO_INFER_SCHEMA）" should
+  "mxp 对含 0 行专题的 12 表导出整体 SUCCESS（修复前此处抛 UNABLE_TO_INFER_SCHEMA）" should
     "SNAPSHOT_PINNED / EXPORT_ROWS / EXPORT_COMPLETE 全部通过" in {
       val mxp = cap.mxp.getOrElse(fail("mxp 未执行"))
       withClue(s"mxp=${mxp.status}: ${mxp.message}；checks=${mxp.checks.map(c => s"${c.ruleCode}|${c.targetTable}|${c.passed}").mkString(" ;; ")}：") {
         mxp.status should be("SUCCESS")
         mxp.checks.find(_.ruleCode == "MXP_SNAPSHOT_PINNED").get.passed should be(true)
         val rows = mxp.checks.filter(_.ruleCode == "MXP_EXPORT_ROWS")
-        rows should have size 10
+        rows should have size 12
         rows.foreach(c => withClue(s"${c.targetTable} detail=${c.detail}：") { c.passed should be(true) })
         mxp.checks.find(_.ruleCode == "MXP_EXPORT_COMPLETE").get.passed should be(true)
         // outputRecords 是真实回读行数之和（不是输入数冒充）
@@ -179,7 +179,7 @@ class MetricExportZeroRowSpec extends AnyFlatSpec with Matchers with BeforeAndAf
     }
   }
 
-  "manifest 总账（§12.5 L528）" should "10 表齐全、snapshotId/dt 正确、totalRows 为逐表之和、hivePath 指向本次快照" in {
+  "manifest 总账（§12.5 L528）" should "12 表齐全、snapshotId/dt 正确、totalRows 为逐表之和、hivePath 指向本次快照" in {
     val manifest = cap.manifest
     manifest.snapshotId should be(Sid)
     manifest.dt should be(Dt)
@@ -239,7 +239,7 @@ class MetricExportZeroRowSpec extends AnyFlatSpec with Matchers with BeforeAndAf
     // ── sci：与既有 spec 相同的建表路径（不自造 DDL 副本）──
     LocalSchemaInitJob.statements(Ns).foreach { case (_, ddl) => spark.sql(ddl) }
 
-    // ── 铺 10 张暂存分区：6 张各 1 行 + 4 张 0 行（纯交易/缺少对应维度事实时均是合法空态）──
+    // ── 铺 12 张暂存分区：6 张各 1 行 + 6 张 0 行（纯交易/缺少对应维度事实时均是合法空态）──
     val rows: Seq[(String, String)] = Seq(
       "ads_operation_overview" ->
         "SELECT 1, 1, 1, 1, 1.00, 0.50, 1.00, 0.1000, 0.0500, 0.2000, '20260911', '20260917', 2, 3",
@@ -259,7 +259,11 @@ class MetricExportZeroRowSpec extends AnyFlatSpec with Matchers with BeforeAndAf
       "ads_hot_product" ->
         "SELECT 1, 'x', 1.0000, 1, 1, 1, 1, 1, 'v1' FROM (SELECT 1) dual WHERE 1 = 0",
       "ads_product_conversion" ->
-        "SELECT 1, 1, 1, 1.0000 FROM (SELECT 1) dual WHERE 1 = 0")
+        "SELECT 1, 1, 1, 1.0000 FROM (SELECT 1) dual WHERE 1 = 0",
+      "ads_user_retention" ->
+        "SELECT 0L, 0L, CAST(0.0000 AS DECIMAL(8,4)), 0L, CAST(0.0000 AS DECIMAL(8,4)), 0L, CAST(0.0000 AS DECIMAL(8,4)) FROM (SELECT 1) dual WHERE 1 = 0",
+      "ads_channel_summary" ->
+        "SELECT 'APP', 0L, 0L, 0L, 0L, CAST(0.0000 AS DECIMAL(8,4)), CAST(0.0000 AS DECIMAL(8,4)) FROM (SELECT 1) dual WHERE 1 = 0")
     rows.foreach { case (t, sel) =>
       spark.sql(s"INSERT INTO ${Ns.ads}.${t}__staging PARTITION (snapshot_id = '$Sid', dt = '$Dt') $sel")
     }
@@ -363,12 +367,12 @@ object MetricExportZeroRowSpec {
   private val Ns = WarehouseNamespace.of("dw_mxp_zero")
 
   /** T-R1 实测的 0 行专题：来源为纯交易事件（REFERENCE_MALL_HTTP 无通用 behavior endpoint，B-04） */
-  private val ZeroRowTables = Seq("ads_hot_product", "ads_product_conversion", "ads_category_sale", "ads_region_sale")
+  private val ZeroRowTables = Seq("ads_hot_product", "ads_product_conversion", "ads_category_sale", "ads_region_sale", "ads_user_retention", "ads_channel_summary")
 
   private val RealRowTables = Seq(
     "ads_operation_overview", "ads_sale_trend", "ads_behavior_funnel",
     "ads_active_trend", "ads_user_profile", "ads_data_quality")
 
   private val ZeroRowMysql: Set[String] = Set(
-    "ads_hot_product_m", "ads_product_conversion_m", "ads_category_sale_m", "ads_region_sale_m")
+    "ads_hot_product_m", "ads_product_conversion_m", "ads_category_sale_m", "ads_region_sale_m", "ads_user_retention_m", "ads_channel_summary_m")
 }

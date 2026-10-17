@@ -194,6 +194,19 @@ object LocalSchemaInitJob {
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_region_sale (
           region STRING, sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
         USING parquet PARTITIONED BY (dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_user_retention (
+          cohort_user_count BIGINT,
+          retained_d1 BIGINT, retention_d1 DECIMAL(8,4),
+          retained_d7 BIGINT, retention_d7 DECIMAL(8,4),
+          retained_d30 BIGINT, retention_d30 DECIMAL(8,4))
+        USING parquet PARTITIONED BY (dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_channel_summary (
+          channel STRING, pv BIGINT, view_users BIGINT,
+          intent_users BIGINT, cart_users BIGINT,
+          intent_rate DECIMAL(8,4), cart_rate DECIMAL(8,4))
+        USING parquet PARTITIONED BY (dt STRING)"""),
 
     // ---- R6-13 暂存分区（§14.4 分区幂等协议）----
     // fna 只写 {table}__staging/snapshot_id=S/dt=D；质量门（dqc）通过后由 pub 用
@@ -253,6 +266,19 @@ object LocalSchemaInitJob {
     (ns.ads, s"""
         CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_region_sale__staging (
           region STRING, sale_amount DECIMAL(18,2), net_sale_amount DECIMAL(18,2))
+        USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_user_retention__staging (
+          cohort_user_count BIGINT,
+          retained_d1 BIGINT, retention_d1 DECIMAL(8,4),
+          retained_d7 BIGINT, retention_d7 DECIMAL(8,4),
+          retained_d30 BIGINT, retention_d30 DECIMAL(8,4))
+        USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)"""),
+    (ns.ads, s"""
+        CREATE TABLE IF NOT EXISTS ${ns.ads}.ads_channel_summary__staging (
+          channel STRING, pv BIGINT, view_users BIGINT,
+          intent_users BIGINT, cart_users BIGINT,
+          intent_rate DECIMAL(8,4), cart_rate DECIMAL(8,4))
         USING parquet PARTITIONED BY (snapshot_id STRING, dt STRING)""")
   )
 

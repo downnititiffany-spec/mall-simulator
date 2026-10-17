@@ -62,6 +62,7 @@ class FixtureWriteShapeSpec extends AnyFlatSpec with Matchers {
    */
   private val FrozenWriteCounts: Map[String, Int] = Map(
     "AdsCartRateSpec.scala" -> 2,
+    "AdsChannelSummarySpec.scala" -> 1,
     "AdsFavCartCountSpec.scala" -> 2,
     "AdsFunnelRateReconcileSpec.scala" -> 2,
     "CategoryRegionAdsSpec.scala" -> 1,
@@ -87,7 +88,8 @@ class FixtureWriteShapeSpec extends AnyFlatSpec with Matchers {
     "AdsStableOrderSpec.scala" -> 2,
     "DwsAdsChainExecSpec.scala" -> 1,
     "DwsRegionNetSaleSpec.scala" -> 1,
-    "SurrogateKeySpec.scala" -> 1
+    "SurrogateKeySpec.scala" -> 1,
+    "AdsUserRetentionSpec.scala" -> 4
   )
 
   /**

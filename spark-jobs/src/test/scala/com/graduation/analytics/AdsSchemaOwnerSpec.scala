@@ -93,7 +93,20 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
       "net_sale_amount" -> "DECIMAL(18,2)"),
     "ads_region_sale" -> Seq(
       "region" -> "STRING", "sale_amount" -> "DECIMAL(18,2)",
-      "net_sale_amount" -> "DECIMAL(18,2)")
+      "net_sale_amount" -> "DECIMAL(18,2)"),
+    "ads_user_retention" -> Seq(
+      "cohort_user_count" -> "BIGINT",
+      "retained_d1" -> "BIGINT", "retention_d1" -> "DECIMAL(8,4)",
+      "retained_d7" -> "BIGINT", "retention_d7" -> "DECIMAL(8,4)",
+      "retained_d30" -> "BIGINT", "retention_d30" -> "DECIMAL(8,4)"),
+    "ads_channel_summary" -> Seq(
+      "channel" -> "STRING",
+      "pv" -> "BIGINT",
+      "view_users" -> "BIGINT",
+      "intent_users" -> "BIGINT",
+      "cart_users" -> "BIGINT",
+      "intent_rate" -> "DECIMAL(8,4)",
+      "cart_rate" -> "DECIMAL(8,4)")
   )
 
   /** No longer a whitelist: the category and city-level sales ADS are now owned and produced. */
@@ -161,6 +174,8 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     case "ads_data_quality"       => AdsSql.dataQuality(ns, dt, snapshotId)
     case "ads_category_sale"      => AdsSql.categorySale(ns, dt, snapshotId)
     case "ads_region_sale"        => AdsSql.regionSale(ns, dt, snapshotId)
+    case "ads_user_retention"     => AdsSql.userRetention(ns, dt, snapshotId)
+    case "ads_channel_summary"    => AdsSql.channelSummary(ns, dt, snapshotId)
     case other =>
       throw new IllegalArgumentException(s"未登记的 ADS 写入投影：$other（新增 ADS 表必须在本守卫登记）")
   }
@@ -311,7 +326,7 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
   it should "B3 参考副本里没有 __staging 表：暂存表是所有者独有的派生结构" in {
     val ddl = adsRef
     val stagingOwned = AdsSql.TABLES.map(t => s"${t}__staging").toSet
-    stagingOwned.size should be(10)
+    stagingOwned.size should be(AdsSql.TABLES.size)
     ddl.columns.keySet.filter(_.endsWith("__staging")) should be(Set.empty[String])
     ownerAds.columns.keySet.filter(_.endsWith("__staging")) should be(stagingOwned)
   }
@@ -330,10 +345,10 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "C3 ADS 写入唯一入口：每张表恰好 1 处 insertTarget 调用，且无以 ads_ 表名直写的旁路 INSERT" in {
+  it should "C3 ADS 写入唯一入口：每张表恰好 1 处 insertTarget 调用，且无以 ads_表名直写的旁路 INSERT" in {
     val text = readRepoFile(adsSqlRelative)
     val calls = adsInsertCallRe.findAllMatchIn(text).map(_.group(1)).toList
-    calls.distinct.size should be(10)
+    calls.distinct.size should be(AdsSql.TABLES.size)
     // 注意：Scala 2.12 的 `view.mapValues` 返回 IterableView（2.13 才可直接 mapValues）⇒ 用显式 map
     calls.groupBy(identity).map { case (table, hits) => table -> hits.size } should be(
       AdsSql.TABLES.map(_ -> 1).toMap)
@@ -361,9 +376,9 @@ class AdsSchemaOwnerSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "C5 冻结快照 Frozen（第四份独立依据）与所有者逐列一致，且覆盖全部 10 张表" in {
+  it should "C5 冻结快照 Frozen（第四份独立依据）与所有者逐列一致，且覆盖全部表" in {
     val owner = ownerAds
-    Frozen.size should be(10)
+    Frozen.size should be(AdsSql.TABLES.size)
     Frozen.keySet should be(AdsSql.TABLES.toSet)
     Frozen.foreach { case (table, cols) =>
       withClue(s"$table: ") {

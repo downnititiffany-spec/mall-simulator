@@ -190,8 +190,8 @@ class AdsQualityRuleVersionSpec extends AnyFlatSpec with Matchers with BeforeAnd
     row.getAs[Any](name)
   }
 
-  "ADS 质量大盘列清单" should "末尾追加 rule_version（定义版本），且当前 ADS 表集为 10 张" in {
-    MetricAdsSpec.TABLES.size should be(10)
+  "ADS 质量大盘列清单" should "末尾追加 rule_version（定义版本），且当前 ADS 表集为 12 张" in {
+    MetricAdsSpec.TABLES.size should be(12)
     spec.columns.last should be("rule_version")
     spec.columns should be(Seq("rule_code", "check_count", "error_count", "error_rate", "passed",
       "threshold", "rule_version"))

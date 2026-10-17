@@ -3349,3 +3349,187 @@
 - 合并提交 faf58c3 将 codex/cloud-v3-development（关键路径已验收）合入 main；文本冲突 10 处全部取开发线版本（两线对同一文件的实现不做手工缝合，避免产生第三份未验证实现）。
 - 协调提交 218e8d1：合入时 main 侧独有的新增代码（发布线 WP-2A/2B 的 analytics/mapper 包、dry-run 端点与发布线版采集测试，共 29 个文件）因其面向已退役的发布线采集 API、与开发线采集实现不兼容（合并树 default 门 connection-ingestion 构建失败实证），按「不逐包移植」裁定不进入合并后代码树；该工作完整保留于 main 历史（2118d61 及其祖先）可达。合并后代码树与开发线一致（仅 PROJECT_STATUS.md 为两线历史并集），复跑门结果见本节后续登记/验收记录。
 - 合并后验证：复跑中另发现两处协调项并已修复——IsolationGuardMySqlIT 的自动合并产生重复变量（两线同名修复的语义冲突，59ac340 取开发线版本）；LocalFileIngestorSourceIsolationTest（两线共有文件）曾被协调清扫误删，已按开发线版本恢复。最终合并树与开发线的差异仅余本状态文档，default 门复跑 PASS（1540 全 MATCH，RunId mainfinal20261016），main 已推送。
+### 2026-10-16 WP-F1 第二版本发布与 ACTIVE 轮换实跑（云端 VM）
+- 增量输入：向 B 源 landing 追加 1 笔已支付订单（B-EVT-0101/0102，商品 1002×1，59.90 元，老买家），采集批次 2 经检查点增量读入：SUCCESS，accepted 2 / quarantine 0。
+- 管线 run 4（sourceDataVersion wp-f1-rollover-20261016）：8 阶段全 SUCCESS，发布快照 S20260918_4。
+- 轮换实证：metric_snapshot 中 S20260918_4=ACTIVE、S20260918_3=ARCHIVED——关键路径验收时登记的「轮换仅单元层证据」边界就此关闭。
+- 增量核对（与手工预期逐项一致）：gmv 1222.90→1282.80（+59.90）、paid_order_cnt 7→8、avg_order_value 174.70→160.35（=1282.80/8）、pv/uv/dau 不变（8/4/4，无新增行为事件）。
+
+### 2026-10-16 WP-F2 分析侧隔离写 IT 收编亲跑（云端 VM）
+- 以完整 V25_IT 契约 + 分析双库（RunId wpf2acc20261016）亲跑：MetricPublisherMySqlIT 3、MetricAdsMySqlIT 2、AdsDataQualityErrorRateNullableMySqlIT 2，合计 **7/7 PASS**（与隔离档登记数一致）。
+- 关键发现：这批 IT 自身不建 schema，统一运行器的 analytics 预收编腿也不做 schema 供给——这是收编一直未落地的真实缺口。本轮由总控以 Flyway（db/meta 37 步、db/metric 13 步）对隔离双库预迁移后全绿，证明 IT 本身健康、缺口在供给环节。收编裁定：三类 IT 具备收编条件，待 WP-F2b 给运行器补上 schema 供给步后以 -IncludeAnalyticsWriteIts 正式收编。
+- SourceRegistryMigrationMySqlIT 经查为 P1 期人工取证件（-Dp1.it=true + 副本库指向，fail-closed 设计），与 V25 收编不是同一套机制，裁定维持人工件、不收编。
+
+### 2026-10-16 WP-F3 前端统一测试入口关账（云端 VM）
+- run-tests.ps1 新增 `-Suite web` 档：定位 web/ → npm test（解析 node --test ℹ 汇总行）→ npm run build 冒烟；基线登记 $BaselineWebTests=450（2026-10-16 WP-F3）；all 档构成不变，web 为独立档，不改既有验收口径。
+- 首轮交付曾被巡检亲跑判不合格：Get-WebTestTotals 的 7 条解析正则以 `[^\w\s]` 吃 ℹ 前缀（.NET 中 ℹ∈\w），计数全解析为 -1 而误判 DRIFT；经最小实验确证根因后派修复轮，仅改该函数前缀为 `(?:\S+\s+)?`。
+- 总控复验（RunId wpf3fix20261016）：tests=450 MATCH、pass=450、fail=0、npm test/build 均 exit 0、整档 [PASS exit=0]。WP-F3 关账。
+
+### 2026-10-16 WP-F2b 关账兼 WP-F2 结论更正（云端 VM）
+- **更正**：本文件「WP-F2 分析侧隔离写 IT 收编亲跑」条中「统一运行器的 analytics 预收编腿不做 schema 供给、缺口在供给环节」的结论**作废**。复核实证：原运行器本就有供给步（-Module analytics 腿先跑 platform-app `-Pisolated-analytics-schema` → AnalyticsIsolationFlywayIT，失败即 exit 7 拒绝继续）。WP-F2 当时系总控手工直跑三类 IT、未走运行器路径，且检索输出被截断未见该步，致误判。三类 IT 7/7 健康的结论不变；基于误判派生的 FlyMigrate 供给器（WP-F2b 首版）已全部撤销，运行器恢复原文，不留死代码。
+- **WP-F3 遗留红纠正**：AnalyticsIsolationScriptsContractTest 中 -AllowCountDrift 比较点计数断言因 WP-F3 新增 web 比较点而过期（hasSize 4→5、描述补 web），该红自 WP-F3 关账起存在、关账验收未覆盖脚本契约测试所致；已修正，契约类亲跑 13/13 PASS。
+- **迁移头版本钉纠正**：AnalyticsIsolationFlywayIT 的 meta 版本钉 "34" 为 V34 时代所写，仓库迁移头已至 V38（V35 运行时档案单活 / V36 AI 调用请求标识 / V37 AI 反馈与历史证据 / V38 业务报告实例），钉更新为 "38"（V34 内容实证仍由同方法规则查询独立承担）；metric 钉 "13" 仍为当前头未动。
+- **收编腿关账证据**（RunId fix4acc20261016）：prepare -IncludeAnalytics exit 0 → run-isolated-tests.ps1 -Module analytics -IncludeAnalyticsWriteIts：analytics-schema exit 0（Flyway IT 2/2）、analytics 13/13 全绿零跳过（IsolationGuard 6 + MetricPublisher 3 + MetricAds 2 + AdsDataQuality 2，写 IT 真跑非跳过）、runner [PASS exit=0]。WP-F2b 关账：收编以原机制开箱跑通为准。
+- 验收纪律补记：改任一测试脚本（run-tests.ps1 / run-isolated-tests.ps1）必须连带亲跑 AnalyticsIsolationScriptsContractTest；新增 Flyway 迁移必须同步更新 AnalyticsIsolationFlywayIT 的版本钉。
+
+### 2026-10-16 WP-F4 canonical-event.v1 契约修订关账（云端 VM）
+- 按 Q6 裁决第 3 条落地：`contract-specs/schemas/canonical-event.v1.schema.json` 仅删 $defs required 中 6 个条目（order_created 的 status/created_at、order_paid 的 paid_at、order_cancelled 的 cancelled_at、refund_created 的 created_at、refund_completed 的 completed_at），properties 定义原样保留，schema_version 仍 "1.0"、x-contract-status 仍 DRAFT 不冻结；`docs/contracts/event-contract.md` 对应 6 行必填改「否」并注 Q6 裁决（2.2 product_created 的 status 未动）；`contract-specs/VERSION` 2.2.0→2.3.0（放宽兼容变更，minor 递增），README 第 15 节登记变更对照与影响。
+- 总控亲验：git diff 仅 4 个规约文件且逐项与规约一致；schema JSON 合法；指纹由总控亲算回填（33558 B，raw 与 LF-normalized sha256 同为 a5cf643e377758f9231b00c9935dc295b66b1d7b6d79ccf79d7a4f49ff633569，文件无 CRLF）；CanonicalEventSchemaParityTest 5/5、GeneratorContractParityTest 7/7 亲跑 PASS。
+- 裸锚点门禁注记：在本 VM（Linux）亲跑与 HEAD 基线对照，两边均为锚点 313／裸锚点 199／「新增 82」——该 82 系台账键反斜杠路径与 Linux 扫描正斜杠键不匹配的既有平台伪影，非本包引入；本包新增第 15 节零裸锚点（无 § 字符）。门禁在 Windows 口径下的真值不受本包影响。
+### 2026-10-17 WP-F5 F-93 清理处置（云端 VM，总控裁定）
+
+- 盘点依据：`WP-F5-INVENTORY-REPORT.md`（Antigravity Flash 只读盘点，未连库、未运行命令；总控逐项抽验原文行号与脚本现状后采信：F-93 各出处行号、设计文档 §12.4 L520、`run-isolated-tests.ps1` 参数区无 `-AllowedCleanDbs` 且全脚本零 DROP、`AnalyticsIsolationFlywayIT` meta 版本钉 "38"、`application.yml` 键名收敛形态，均与报告一致）。F-93 共归并 10 条，处置如下。
+- **A 类关闭（6 条，无代码动作）**：F-93-02 DEV-004 `SourceRegistryMigrationMySqlIT` 收编——WP-F2 已裁定维持 P1 人工件不收编，就此关闭收编要求；F-93-03 V19/V20 迁移 IT 覆盖缺口——`AnalyticsIsolationFlywayIT` 已覆盖至 meta V38（WP-F2b 纠钉），缺口关闭；F-93-04 分析侧写 IT 收编——WP-F2b 已以 `-IncludeAnalyticsWriteIts` 收编 13/13 全绿，关闭；F-93-05 前端统一入口——WP-F3 `-Suite web` 已关账，关闭；F-93-06 R-05 `AnalysisGoldenMySqlIT` 参数化——2026-09-15 D 类裁定（永久排除统一入口）即为终局，关闭；F-93-07 R-06 唯一权威键名表——`application.yml` 与隔离契约键名已收敛，关闭。
+- **C 类转登记（3 条，解除对 F-93 的挂载）**：F-93-01 读侧按指定版本复算——长期架构储备，现状以不可变快照 + 显式重算接口替代，不阻塞答辩；F-93-09 `SparkStageExecutorSmokeIT`——Spark 专项冒烟 backlog，依赖真实 spark-submit 环境；F-93-10 其余未打标 *IT——长期 backlog 归档（盘点推算剩余约 12 个系由原登记 19 个扣除已收编/已裁定项得出，为约数，不影响归档判据）。
+- **B 类转 WP-F5b（1 条）**：F-93-08 3307 遗留对象白名单清理机制——脚本侧确无 `-AllowedCleanDbs` 实现，属真实缺口；立 WP-F5b 落地独立受控清理脚本（端口硬锁 3307 + 实例指纹探针 + 精确白名单 + `-Confirm` + 默认 DryRun），首批仅清理登记在案的 `dev003c_20260915_1150/1205` 共 4 库及对应受限账号；`live20261016_*` 为在跑平台库，列入保护名单严禁清理。WP-F5b 关账后 F-93 全部条目终局。
+- 边界：本节仅处置登记，未改任何代码/脚本，未连库，未触碰 3306；仓库根未跟踪目录 `sample-data/`（2026-10-16 遗留的 B 源样例数据副本）与本包无关，本轮未动。
+
+### 2026-10-17 WP-F5b 3307 白名单清理机制关账（云端 VM）兼 F-93 终局
+
+- 交付：新建 `scripts/it-clean-isolation.ps1`（413 行 / 17,756 B / sha256 `64952271…`），独立脚本、不改统一运行器；`-AllowedCleanDbs`/`-InstanceUuid` 必填、`-Port` 默认 3307、`-Confirm` 才真执行、默认 DryRun；凭据只从环境变量 `V25IT_ADMIN_PWD` 读，不落盘、不回显、不进命令行。
+- 总控亲验（本 VM 3307 实例，指纹 `htch-runtime` / uuid `9c3bdd51…`）：负例五连全以退出码 5 拒绝——端口 3306、`live20261016_analytics_meta`（在跑平台库在 runId 形状级即被拒）、通配符 `%`、系统库 `mysql`、错误 UUID 指纹不符；`AnalyticsIsolationScriptsContractTest` 总控亲跑 13/13 PASS（报告为本轮新写），新脚本对契约无影响，与执行方核对结论一致。
+- 首批目标核查：`dev003c_20260915_1150/1205` 共 4 库及对应账号在本 VM 3307 实例上**不存在**（系原开发机 2026-09-15 登记的遗留对象；本实例 `information_schema.SCHEMATA` 与 `mysql.user` 全量核对无此 runId）。脚本对该白名单在指纹探针通过后以存在性门禁退出码 7 正式拒绝（总控以 `-File` 原生调用复核原始退出码 7），证明不存在的对象绝不静默跳过冒充成功；本实例无该批对象可清，F-93-08 在本实例的清理义务就此消灭。
+- 正路径实证（牺牲性探针）：以 CREATE 新建与首批同构的 `cleanprobe_20261017_0022_mall`/`_generator` 两库与 `mallapp`/`genapp` 两账号——DryRun 退出码 0、清单列 2 库 2 账号且删前复查仍在；`-Confirm` 退出码 0、执行前指纹重验通过、精确删除 2 库 2 账号；复验残留 0、`live20261016_*` 4 库完好、平台健康接口 200。清理全程只经该脚本执行，未手写任何 DROP。
+- 至此 **F-93 全部 10 条终局**（A 类 6 条关闭、C 类 3 条转长期登记、B 类 F-93-08 机制落地并实证）。边界：原开发机实例上的同名对象不在本机可达范围，日后回到该实例以同一脚本 + 同一白名单执行即可；本包未触碰 3306、未使用 Docker。
+
+### 2026-10-17 WP-F6b 脚本 CI 适配关账（云端 VM）兼 WP-F6 实施落地
+
+- 交付：`scripts/run-tests.ps1` 最小适配（提交 19d200d）——新增 `-Online` 开关（缺省关＝离线 `-o` 行为不变）、四项 env 回退解析层（MAVEN_CMD / MAVEN_REPO_LOCAL / JAVA_HOME_17_X64 / JAVA_HOME_8_X64，优先级 显式参数 > env > 原默认值，改写时打 `[CI-ADAPT]` 行）、头部注释同步；默认值字面量、计数门禁、退出码未动。新增 `.github/workflows/tests.yml`（本节登记同笔提交）：push 本分支 / pull_request / workflow_dispatch 触发，default（temurin 17，90 分钟）与 spark（temurin 8，60 分钟）两 job 均 windows-latest + pwsh，以 `-Online -MavenRepoLocal "$HOME/.m2/repository"` 调用统一入口，无 secrets、不涉数据库。
+- 首轮验收不合格与修复：总控首轮以 env 回退亲跑 default（RunId wpf6bacc20261017a）发现 `Invoke-MavenRun` 离线参数粘连（`mvn -o-Dmaven.repo.local=... -f <pom>test`，三树 0 用例 exit 7）——根因系改动 3 的 `if` 表达式赋值把单元素数组 `@('-o')` 展开为标量、后续 `+` 退化为字符串拼接；缺省离线路径被破坏、`-Online` 路径恰不触发。按 WP-F6b-FIX 规约仅改一行（`$offlineArgs = @(if ($Online) { } else { '-o' })` 强制数组语义）修复，即 19d200d 所含形态。
+- 总控复验（VM 替换后恢复中继/3307 环境，RunId wpf6bfix20261017b，日志 /tmp/v25tests-wpf6bfix-b）：env 回退四行 `[CI-ADAPT]` 全触发；default **PASS exit 0**（1380+26+134=1540 全 MATCH，离线 `-o` 路径实证恢复）；spark **PASS exit 0**（372/372、45 suites、JDK8 本轮新写 MATCH）；`AnalyticsIsolationScriptsContractTest` 亲跑 **13/13 PASS**；tests.yml 经总控逐项核对与规约一致（触发/jdk/超时/动作版本/无 secrets）。
+- 验收注记：复验首跑（RunId wpf6bfix20261017a）曾因巡检会话未给 fork 测试 JVM 传 `-Djava.net.preferIPv4Stack=true`，回环 HttpClient 测试被沙箱以 IPv4-mapped IPv6 拦截而红（ai-decision 246 中 34 红、generator 53 红、platform-app 被 reactor 跳过）——系 VM 网络怪癖（见 TOOLS.md），非脚本/代码问题；以 `JAVA_TOOL_OPTIONS` 注入后全绿。此项只影响本机亲跑姿势，不影响 CI（托管 runner 无此拦截）。
+- 状态：WP-F6b 实施关账；WP-F6 余项＝推送后观察 Actions 首跑结果（首跑在托管 runner 在线拉依赖，耗时较长），结果由后续巡检登记，绿则 WP-F6 全关账，红则按日志修正或登记外部限制。isolated 档不入 CI（需 3307 隔离实例，沿用 WP-F6 报告结论）。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+- **推送阻塞更正（同日巡检续记）**：上节「同笔提交推送」不成立，特此更正——含 `.github/workflows/tests.yml` 的推送被 GitHub 拒绝（repo 限定细粒度 PAT 无 Workflows 权限：`refusing to allow a Personal Access Token to create or update workflow ... without workflow scope`）；本节登记已单独提交推送（f656489）。工作流文件已在本地提交（tip，待推送），GitHub 连接器代推一次超时未落地（远端核查无此文件）。**待用户处理（账号权限事项）**：给该 PAT 增加 Workflows 读写权限后由巡检补推本地提交；或在主聊天批准连接器推送。权限就绪前 Actions 首跑无从观察，WP-F6 余项即此一项。
+
+### 2026-10-17 WP-F7b 万级 B 源造数脚本关账（云端 VM）
+
+- 交付（均在 notes 目录，不进仓库）：`mall-simulator-notes/wpf7-scale/generate_scale_b.py`（确定性造数脚本，Python 标准库 + `random.Random(42)`）与 `WP-F7b-REPORT.md`；agy Flash 仅文件读写，未运行命令、未连库、未改仓库文件。
+- 总控亲验（不采信执行方自述）：亲跑脚本两次（run1/run2），均 exit 0 打印 `SCALE-GEN-OK`，两产出 `scale_events.jsonl` 与 `expected_ledger.json` 逐字节一致（确定性成立）；独立复算（总控自写校验，非脚本自检）：总行数 10,000、accepted 分布逐项与规约一致（MEMBER_JOINED 100 / ITEM_LISTED 20 / PAGE_VIEW 5000 / SAVE_ITEM 875 / CART_ADD 1000 / ORDER_PLACED 1200 / PAID_OK 1000 / BUYER_CANCELLED 200 / REFUND_OPENED 300 / REFUND_CLOSED 300）、隔离 5 行形态齐备（未登记 state LEAVE_REVIEW、PAID_OK 浮点金额、PAGE_VIEW 斜杠时间、MEMBER_JOINED 缺 evt_no、ITEM_LISTED rev=2.0，raw 计数恰为正常数+1）；文件 sha256 与账本 `scale_events_sha256` 一致（`21cc97a7…`）；GMV 独立重算 Σ整数 paid_minor = 363877.50 与账本一致、退款完成额 91518.50 一致、净额 272359.00、AOV 363.88；evt_no 9,999 个全局唯一（1 行缺失即 F4）、tr 10,000 全唯一；全部 occur_at 落在 2026-09-18 且排序不递减；买家池恰 100 人且全为 19 位数字串。
+- 状态：WP-F7b 关账。WP-F7 余项＝全链实跑（采集→数仓→发布走隔离档案，总控亲跑，登记各阶段耗时与计数一致性对期望账），立 WP-F7c 续行。本包未触碰 3306/3307、未使用 Docker、未拨 DeepSeek API。
+
+### 2026-10-17 WP-F7c 万级全链实跑关账（云端 VM，总控亲跑）兼 WP-F7 终局与退款扇出缺陷立项
+
+- 执行：新建隔离档案 `scale-vm-b`（id=3，绑源 fixture-shop-b，独立落地根 `landing-scale-f7c`），test 全过→activate；落地 WP-F7b 造数文件（sha256 `21cc97a7…` 与账本一致）；采集批次 3：recordCount **9995** / quarantine **5** / error 0，与期望账逐项一致；流水线 run 5（DAILY_CORE）**8 阶段全 SUCCESS**，总耗时约 496 秒（WAIT_LANDING 0.1 / INIT_SCHEMA 30.5 / LOAD_ODS 76.6 / BUILD_DWD 112.5 / BUILD_DWS 46.2 / BUILD_ADS 64.4 / QUALITY_CHECK 51.2 / PUBLISH_METRIC 114.4），发布快照 **S20260918_5**（档案 3 作用域 ACTIVE），发布门 MP_* 全过（10 表行数、14 指标 DB 对照）。跑后复激档案 2 为 ACTIVE、健康 200；档案 2 的 S20260918_4 仍为其作用域 ACTIVE，原链未受污染。报告：`mall-simulator-notes/WP-F7c-REPORT.md`，证据 `/tmp/f7c_evidence.json`。
+- 对账发现 1（结构口径）：数仓按 (源前缀 fxsb, dt) 累计、档案只隔离快照作用域——LOAD_ODS 输出 10035=9995+既有 40，发布 gmv 365160.30 / paid 1008 / pv 5008 / cart 1001 / fav 876 恰为规模账 + 基线 S20260918_4 累计，差异有完整实证解释。
+- 对账发现 2（真实缺陷，立 WP-F7d）：退款被按订单行数倍增。发布隐含退款 127073.15 vs 累计口径应有 91916.50，多 35156.65；总控取证 Σ(退款×该单行数)=126675.15，与发布值扣基线退款 398.00 后分毫不差。机制：`TradeDwdJob` 的 dwd_order_detail 为行粒度却每行携带整单级 `refund_amount`，`DwsSql.tradeDay` 直接 SUM 倍增（GMV 的 amount 为行级不受影响）；基线退款单均为单行故未暴露。WP-F7d 规约已立（聚合层按订单去重修复 + 多行退款回归测试），修复后复跑验收预言：gmv 365160.30 与 aov 362.26 不变、退款 91916.50、净额 273243.80。
+- 状态：**WP-F7 关账**（纲领原义＝完整链证据 + 耗时/计数登记，只做证据不做性能承诺；本机 local Spark 单机口径）。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。本地提交待推送：分支推送栈含 WP-F6 的 tests.yml 提交（f3e732e），受 PAT 无 Workflows 权限阻塞，本节登记与 WP-F7b 关账提交（346de94）同为本地待补推。
+
+### 2026-10-17 WP-F7d 退款行粒度扇出修复关账（云端 VM）兼 spark 基线 372→375
+
+- 交付：`DwsSql.tradeDay` 与 `regionSaleDay` 改为先按订单聚合的子查询（`SUM(amount)` 为订单额、`MAX(refund_amount)` 折叠整单退款）再汇总，外层投影列序/别名与 `final_paid_flag=1` 口径不变，不动 DWD 明细结构与 `OrderTradeCompiler` 语义；新增回归测试 `DwsTradeDayMultiLineRefundSpec`（3 条：多行部分退款只计一次且含旧口径 420.00 正对照探针、region 与 trade_day 对账闭环、空分区 NULL/0 语义）。盘点结论：全仓仅 `AdsSql.categorySale` 另有整单退款按品类直算，其正确修法属 DWD/Compiler 层行级分摊（订单行分摊口径冻结），本包维持现状并在 `WP-F7d-REPORT.md` 说明理由；其余聚合点经总控 grep 复核均为行级字段或已按 order 去重（含 `AdsSql.dataQuality` 的 AMOUNT_RECONCILE 子查询按 order_id 分组取 MAX），安全。
+- 总控亲验（不采信执行方自述）：diff 逐行核对与规约一致；量数轮（RunId wpf7dgate20261017a，-AllowCountDrift）fresh 实测 **375/375、46 suites、All tests passed**；基线登记 372→375（run-tests.ps1，附变更注释）；脚本契约测试 `AnalyticsIsolationScriptsContractTest` 亲跑 **13/13 PASS**；收口轮（RunId wpf7dgate20261017b）**tests=375 MATCH、PASS exit=0、JDK8 本轮新写**。WP-F7d 代码与回归关账。
+- 余项（转 WP-F7e，不静默丢弃）：同数据复跑验收（预言 gmv 365160.30 / aov 362.26 不变、退款 91916.50、净额 273243.80）本轮未做——在跑平台（8091）仍载旧版 spark-jobs 产物，须先重建 spark-jobs 并重部署平台，再在档案 scale-vm-b 下由总控亲跑流水线复跑核对预言值，单独立步执行。
+- 本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。推送注记：本包提交与在先本地提交同栈，栈内含 WP-F6 的 tests.yml 提交（f3e732e），受 PAT 无 Workflows 权限阻塞，整栈本地待补推（与 WP-F7c 登记口径一致）。
+
+## WP-F8 盘点关账（2026-10-17 巡检，总控验收）
+
+- 交付：`WP-F8-INVENTORY-REPORT.md`（Antigravity Flash 只读盘点，未连库、未运行命令）：F-88 全部未验项归并 28 项——GAP 8（源自本文件 L2230–2237 缺口清单）+ 完整验收硬理由 5 + backlog/待裁决 3 + F-88 泳道遗留 12；分类 A 已被后续工作关闭 15 / B 本地可关 12 / C 外部依赖 1（F88-GAP-04：3306 真库 V19/V20 执行，须正式环境解冻授权，已转 FULL-PROGRAM 外部依赖节）。
+- 总控抽验（不采信执行方自述）：计数勾稽 8+5+3+12=28、A15/B12/C1 与清单逐项一致；一手锚点实查——L2230–2237 八项缺口与 GAP-01～08 逐项对应、L1942 §12.3 三项金额校验「不构成缺口」（INV-10）、L2261 待裁决第 1 项（BK-03）、L3374–3375 F-93-01 转长期储备（INV-02）与 Spark 冒烟 backlog（HR-02）均属实；§4.4 规则码台账 17 码中抽验 16 码行号精确命中（AdsQualityJob/AdsPublishJob/MetricExportJob/QualityChecker）。
+- 勘误两项（不影响分类结论）：① 台账 #1 `AMOUNT_RECONCILE` 行号应为 QualityChecker.java **L98**（报告记 L95，系规则块起始行）；② F88-INV-01 现状描述不精确——`MySqlMetricStore`/`MetricAdsReader` 无参 `activeSnapshotId()` 已由 `activeProfileId` 上下文委托带 profile 的重载（MySqlMetricStore L133/L189–201），并非「全库 LIMIT 1」裸查；其 B 类动作据此改框为「验证上下文解析与重载隔离性的定向测试」，已写入 WP-F8b 规约。
+- 处置：B 类 12 项拆分——测试类（GAP-05 全量映射台账、INV-01 改框、INV-06 ARCHIVED 隔离、INV-09 阈值边界）立 **WP-F8b** 派 agy 实施、总控亲跑验收（含 INV-07 变异探针由总控在验收时亲手执行）；真库探针类（GAP-01 未登记码落库、GAP-02 全层四列抽验、GAP-06 证据 JSON 查验）立 **WP-F8c** 总控亲跑专轮（与 WP-F7e 同为待执行专轮）；治理类 BK-01～03 与 INV-12 由总控在 F8b/F8c 关账后一并裁决登记。**F-88 正式状态维持限定验收，本节不构成任何完整验收表述。**
+- 本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。推送注记：本地分支已 ahead 5（含 tests.yml 的 f3e732e），受 PAT 无 Workflows 权限阻塞整栈待补推（用户权限事项，既有登记），本节提交同栈本地落账。
+
+## WP-F8b F-88 测试类关账（2026-10-17 巡检，总控验收）
+
+- 交付（agy Flash 仅文件读写，生产代码零改动）：新增 `QualityRuleV19MappingLedgerTest`（platform-app，3 例）、`ActiveSnapshotProfileScopingTest`（metric-analysis，7 例）、`ArchivedSnapshotIsolationTest`（metric-analysis，4 例），`QualityCheckerSeverityTest` 增 3 例（9 例总量）；报告 `WP-F8b-REPORT.md`（notes 目录）。覆盖 F88-GAP-05（V19 种子 35 条 ↔ 目录 version=1 定义 35 条穷举台账：rule_code/version/checksum/stage/severity/threshold 全字段差异 0）、F88-INV-01 改框（MySqlMetricStore/MetricAdsReader 带 profile 重载双向隔离 + 无参方法上下文委托解析）、F88-INV-06（默认查询只读 ACTIVE、显式 ARCHIVED 精确读取且双向不渗透）、F88-INV-09（阈值边界，见下裁定）。
+- 首轮验收不合格与两轮同轮修复（总控亲跑抓获，agy 自述未验）：① `ArchivedSnapshotIsolationTest` 跨包访问包私有常量 `MySqlMetricStore.PUBLISHED_METRIC_VALUES_SQL` 致 metric-analysis testCompile 失败——FIX 仅将 stub 改 `anyString()`（verify 侧参数绑定断言不变），未改生产可见性；② 复跑后同类 setUp 质量门桩在直查用例触发 Mockito 严格桩 `UnnecessaryStubbingException`——FIX2 仅将该桩改 `lenient()`。两轮修复均经总控逐字核对 diff 后复验。
+- INV-09 总控裁定：规约预期「0.0005001 → 阻断」与源码实际语义不符——`QualityChecker` L128 以 scale=6 HALF_UP 计算重复率，0.0005001 舍入为 0.000500 落在通过侧；6 位精度下最小可阻断值为 0.000501。按规约自带条款「判据以源码实际比较语义为准、不改生产代码、留总控裁定」关账：新增用例以 1/2000=0.000500 验通过（观察项）、1/1996≈0.000501 验阻断，并以契约用例固定直接比较语义与 scale=6 舍入事实。阈值 0.0005 本身未动，生产代码未动。
+- INV-07 变异探针（总控亲手执行）：两条判定路径均委托唯一所有者 `RuleSeverity.resolve`，对共享所有者变异只会令两路同移、无判别意义；故在发布侧路径注入单点分叉变异（`MetricPublishValidator.blocked` 对 `RuleSeverity.blocks` 结果取反一行）——护栏 `RuleSeverityPathConsistencyTest` 4 跑 3 红如期捕获；复原后文件与备份逐字节一致、护栏 4/4 PASS（证据行 catalogDefinitions=45、comparisons=90）。INV-07 就此关账，判别力实证成立。
+- 总控亲跑总门禁（analytics-server 全反应堆，离线 m2repo，`JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true` 注入 fork JVM——未注入时 ai-decision 回环 HttpClient 测试被沙箱 IPv4-mapped IPv6 拦截而红，系 WP-F6b 已登记的 VM 网络怪癖，洁净 HEAD 同样复现，与本包无关）：**1397 跑、0 失败 0 错误、2 跳过（connection-ingestion 既有）、BUILD SUCCESS**；构成 123+415+216+164+246+233，与基线 1380 + 本包新增 17 例恰合，无回退。四类定向亲跑：9/9、7/7、4/4、3/3 全绿。
+- 状态：**WP-F8b 关账**。F-88 B 类余项＝真库探针类 WP-F8c（总控亲跑专轮，与 WP-F7e 并列待执行）；治理类 BK-01～03/INV-12 待 F8c 关账后总控一并裁决。**F-88 正式状态维持限定验收，本节不构成任何完整验收表述。** 本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。推送注记：本地提交与在先本地提交同栈，栈内含 tests.yml 提交（f3e732e），受 PAT 无 Workflows 权限阻塞，整栈本地待补推（既有登记口径）。
+
+## WP-F9a 用户留存率落地关账（2026-10-17 巡检，总控验收）
+
+- 交付（agy Flash 仅文件读写）：范围 A 留存率 D+1/D+7/D+30——`AdsSql.userRetention`（AdsSql 直算 dwd_user_behavior_detail，cohort=当日有效行为去重用户，dt+n 超数据内 max(dt) 时 retained/retention 严格 NULL、空队列不产出行），`FunnelAdsJob` 同快照调度，`MetricAdsSpec`/`MetricAdsCatalog` 注册 `ads_user_retention(_m)`（第 11 张 ADS 表），Flyway V14 建 `ads_user_retention_m` 且 AnalyticsIsolationFlywayIT 版本钉同步 "13"→"14"，`AnalysisService.users` 加性扩展 `retention` 节点（ViewModel 契约 v1.13），新增 `AdsUserRetentionSpec` 5 例 + AnalysisServiceTest 2 例；范围 B 仅文档——metric-dictionary.md 加性澄清 product_heat 归宿 ads_hot_product_m.heat_score 不入 metric_value、user_value_level 由 ads_user_profile_m 分群承接（F9-GAP-01 方案 B 口径收敛）。报告 `WP-F9a-REPORT.md`、`WP-F9a-FIX-REPORT.md`（notes 目录）。
+- 首轮验收不合格与同轮修复（总控亲跑抓获，agy 自述未验）：spark 380 中 19 红、analytics MetricAdsDaoTest 2 红——全部为「10 表冻结枚举」连带断言未同步（MetricAdsSpecTest、AdsHotProduct/AdsQuality/AdsCartRate 表数、DwsAdsChainExecSpec 分区数、AdsSaleTrendNetSaleSpec 暂存集、Warehouse/OdsV2 DDL 总数 43、FixtureWriteShapeSpec 写入点清单）与 MetricExportZeroRowSpec 零行夹具缺留存暂存表，另新测试种子字面 INSERT 投影形状不符合 FixtureWriteShapeSpec 既有范式（29 vs 15 列）；留存逻辑本体 5/5 首轮即过。FIX 仅改测试文件（种子改写为显式命名列投影 + UNION ALL 子查询范式、种子值逐字不变；冻结计数 10→11 / 43→45；零行夹具补留存表；MetricAdsDaoTest 目录断言同步），生产代码零改动，经总控逐项抽验 diff 后复验。
+- 总控亲跑总门禁（复验 RunId wpf9afix20261017）：spark **380/380、47 suites、All tests passed**（基线 375→380 再登记，其中 +5 为本包新例）；default 三树 **合计 1559 全绿**——analytics 1399（F=0/E=0/S=2，明细 123+415+216+166+246+233；基线 1380→1399 再登记，含 WP-F8b 17 例同步滞后补登 + 本包 2 例）、mall 26、generator 134；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线再登记后亲跑）。验收注记：default 首跑 generator 53 红系巡检调用未注入 JAVA_TOOL_OPTIONS 致 fork JVM 回环 HttpClient 被沙箱 IPv4-mapped IPv6 拦截（WP-F6b 已登记 VM 网络怪癖），注入后全绿，与本包无关。
+- 已知边界（登记不丢弃）：① 留存夹具跨度 4 日，D+7/D+30 仅验 NULL 侧、正例由与 D+1 同一 JOIN/CASE 模式覆盖，未单设跨 7/30 日夹具；② AnalyticsIsolationFlywayIT 真跑（V14 实迁移）与留存真实数据探针并入 WP-F8c/WP-F7e 总控亲跑专轮执行——WP-F7e 复跑将以新 spark-jobs 产物在 scale-vm-b 同数据产出留存行，总控按规约口径独立重算 cohort 与 NULL 侧对账；③ 发布校验 REQUIRED_NON_EMPTY 维持原 4 表，留存表走清单泛型行数对账（与既有表一致口径）。
+- 状态：**WP-F9a 关账**（F9-GAP-03 落地、F9-GAP-01 方案 B 收敛）。WP-F9 余项＝WP-F9b（GAP-06 渠道表）排队，顺序在亲跑专轮之后：先 WP-F7e、再 WP-F8c（纲领既定顺序）。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F6 Actions 首跑观察（2026-10-17 巡检，总控亲查）
+
+- PAT 补齐 Workflows 权限后，07:26 补推触发首跑（run 38981395202 @27537af），08:28 F9a 关账推送触发第二跑（run 38986554847 @75d23a5）；**两跑 Default 与 Spark 两档全红**，总控下载两档作业日志逐项定位（日志原件 /tmp/f6_default_logs.txt、/tmp/f6_spark_logs.txt）：
+- **Spark 档**：`HADOOP_HOME and hadoop.home.dir are unset`（windows-latest 无 winutils）→ 真跑 Spark 的套件大面积失败（succeeded 151 / failed 73 / canceled 8、仅 224 跑出记 DRIFT vs 基线 380）。属工作流环境供给缺项，非代码缺陷（本机基线 380/380 于 WP-F9a 关账亲跑）。
+- **Default 档**：全反应堆仅 1 例红——`IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched:61` 断言仓库根 `landing/manifests`（.gitignore 忽略的本机生产落盘）冻结名单恰 43 个，fresh checkout 必然不满足；其余计数全 MATCH（analytics 1399 / mall 26 / generator 134）。该例设计意图为本机运行时巡检，与 CI fresh-checkout 语义冲突；其负例两条不依赖真实目录。
+- 处置：立 **WP-F6c**（规约 mall-simulator-notes/WP-F6c.md）——workflow 为 spark 档供给 winutils 并设 HADOOP_HOME；巡检例按「真实目录存在且非空」门控（在则原断言不改），负例两条继续在 CI 跑。WP-F6 余项转为「F6c 关账 + Actions 转绿观察」，未关账。本节未触碰 3306/Docker/DeepSeek。
+
+## WP-F7e 同数据复跑验收·第一轮（2026-10-17 巡检，总控亲跑，未关账）
+
+- 执行：总控亲跑重建 spark-jobs 与 platform-app 两产物（均 BUILD SUCCESS）并以新 jar 重启平台（pid 135517）——启动期 metric 库 Flyway 实迁移 13→14（V14 留存表落活库，前序登记的「V14 真跑」一半就此实证，隔离 IT 真跑仍归 WP-F8c）；档案 scale-vm-b（id=3）test 全过→activate 后走显式重算入口 recalculate（批次 3，理由审计落库）得 run 6。
+- 结果：run 6 前六阶段全 SUCCESS（WAIT_LANDING 9995 / INIT_SCHEMA 45=F7c 43+留存 2 表 / LOAD_ODS 10035 / BUILD_DWD / BUILD_DWS / BUILD_ADS），**QUALITY_CHECK 被 BLOCKING 规则 `ADS_CATEGORY_SALE_RECONCILE` 阻断（PIPELINE_QUALITY_FAILED），未发布**；跑后复激档案 2、平台 200，metric_snapshot 实查 _4/_5 仍各为其档案 ACTIVE、无 _6，原链未污染。
+- 已实证（不因阻断打折）：① DWS 修复生产链生效——阻断 detail 自带 DWS 期望值 expectedSale=365160.30 / expectedNet=**273243.80**，与 WP-F7d 预言逐分一致；② 留存真实数据探针（暂存层）通过——`ads_user_retention__staging/S20260918_6` 行 cohort=100、D+1/7/30 全 NULL，总控直读 DWD 独立复算 distinct=100、max(dt)=20260918 逐项吻合。
+- 阻断根因：ads_category_sale actualNet=238087.15 仍为旧行扇出口径（run 5 时与 DWS 同错对账假过）；总控 DWD 实证退款单 302 笔中跨品类 64 笔（退款 27743.20），(category,order) 去重 Σ=119659.70 仍不精确。**总控裁定**：WP-F7d 对 categorySale 的递延在全链发布口径下不可维持，立 **WP-F7f**（整单退款按行金额比例分摊 + 分级最大余数校正，逐单逐分相等；规约 notes/WP-F7f.md，已派 agy Flash）。F7f 关账后总控再走 recalculate 复跑（run 7）核对预言值与留存发布行，WP-F7e 届时关账。报告 notes/WP-F7e-REPORT.md。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F7f 品类退款分摊修复关账（2026-10-17 巡检，总控验收）
+
+- 交付（agy Flash 仅文件读写）：`AdsSql.categorySale` 改为整单退款按行金额比例分摊——先窗口聚合整单 `order_refund=MAX(refund_amount)` 与 `order_amount_total=SUM(amount)`，每行 `base_alloc=ROUND(order_refund×amount/order_amount_total, 2)`（总额 0 时全行 0 且残差确定性落 `category_id` 最小、再 `product_id` 最小行，不除零不丢退款），再把每单 `residual=order_refund−Σbase_alloc` 全额补入 `amount` 最大行（并列取 category/product 最小），保证每单 Σline_alloc 与整单退款逐分相等；投影列、category 归一化、dim 关联与 sale_count/sale_amount 行级 SUM 语义不变。新增回归 `AdsCategorySaleRefundAllocationSpec` 6 例；`metric-dictionary.md` 加性补第 7 节分摊口径。报告 `WP-F7f-REPORT.md`（notes 目录）。
+- 首轮验收不合格与同轮修复（总控亲跑抓获）：量数轮（RunId wpf7fgate20261017a）**386 跑 385 过 1 红**，唯一红为新规格空分区用例（:290）——核心分摊 5 例全过。根因经总控实证为存量隐患：`AdsQualityJob.salesDimensionReconcileCheck` 的 `emptyDayMatches` 要求空日 trade 净额为 0，但 `DwsSql.tradeDay` 空日聚合行净额实为 NULL（已被 `DwsTradeDayMultiLineRefundSpec` 空值语义用例冻结），注释前提自 stage7 起即不成立，任一无支付日走发布链都会被 BLOCKING 门误阻断。总控裁定破例扩围仅此一处谓词（不动规则码/目录/0.01 容差、不动 DwsSql）：FIX 轮将净额条件改为接受 NULL 或 0 并对齐注释；该私有函数为品类/城市等级两门共用，一处同治。
+- 总控复验（不采信执行方自述）：FIX diff 逐行核对仅该谓词+注释；定向亲跑 `AdsCategorySaleRefundAllocationSpec+CategoryRegionAdsSpec+DwsTradeDayMultiLineRefundSpec` **10/10 PASS**；基线再登记 spark 380→386（run-tests.ps1 附变更注释），脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**；收口轮（RunId wpf7fgate20261017b）**tests=386 MATCH、48 suites、All tests passed、PASS exit=0、JDK8 本轮新写**。WP-F7f 代码与回归关账。
+- 余项：WP-F7e 同数据复跑验收转入总控亲跑专轮第二轮——重建 spark-jobs 产物并重部署在跑平台（8091 仍载 F7e 第一轮产物，不含 categorySale 修复）后，在隔离档案 scale-vm-b（id=3）以同数据走 recalculate（run 7），核对预言值 gmv 365160.30 / aov 362.26 不变、退款 91916.50、净额 273243.80，并核留存发布行与原 ACTIVE 链未污染，届时 WP-F7e 关账。其后顺序：WP-F8c → WP-F6c → WP-F9b。本包未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F7e 同数据复跑验收·第二轮关账（2026-10-17 巡检，总控亲跑）
+
+- 执行：总控亲跑重建 spark-jobs 产物（BUILD SUCCESS，新 jar 含 WP-F7f 的 AdsSql 分摊 + AdsQualityJob 空日谓词修复；平台进程未重启——spark-submit 按档案配置的 jar 路径逐 run 读取该产物，平台代码本轮无变更）；档案 scale-vm-b（id=3）test 全过→activate 后走显式重算入口 recalculate（批次 3，理由审计落库）得 run 7，发布快照 **S20260918_7**。
+- 结果：run 7 **八阶段全 SUCCESS**（09:42:34→09:50:58，约 504 秒）：WAIT_LANDING 9995 / INIT_SCHEMA 45 / LOAD_ODS 10035 / BUILD_DWD 8508 / BUILD_DWS 100 / BUILD_ADS 161 / QUALITY_CHECK 12 / PUBLISH_METRIC 322。第一轮阻断的 BLOCKING 门 `ADS_CATEGORY_SALE_RECONCILE` 本轮通过。
+- 预言逐项命中（总控直查 metric_value@S20260918_7）：gmv **365160.30**、net_sale **273243.80**、avg_order_value **362.26**、paid_order_cnt 1008、pv 5008、uv/dau 100——隐含退款 = 365160.30 − 273243.80 = **91916.50**，与 WP-F7d 预言分毫不差。
+- 品类分摊发布层对账：ads_category_sale_m@_7 五行 Σsale_amount=365160.30=gmv、Σnet=273243.80=net_sale，逐分勾稽（分摊在发布层精确收敛，非仅质量门放行）。
+- 留存发布行实证：ads_user_retention_m@_7 产出行 dt=20260918、cohort_user_count=**100**、D+1/D+7/D+30 retained 与 retention 全 **NULL**——与第一轮暂存行及总控 DWD 独立复算（distinct=100、max(dt)=20260918、horizon 外严格 NULL）逐项吻合，留存就此由暂存层推进到发布层实证。
+- 隔离与收尾：_7 为档案 3 作用域 ACTIVE、同作用域 _5 转 ARCHIVED；档案 2 作用域 _4 仍 ACTIVE 未动；跑后已复激档案 2 为 ACTIVE，平台健康。**WP-F7e 关账；WP-F7（含 F7d/F7f 修复链）全线闭合。**
+- 后续顺序（纲领 08:5x 修订不变）：下一巡检执行 **WP-F8c** 真库探针专轮（总控亲跑），其后 WP-F6c（agy 包）、WP-F9b。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F8c F-88 真库探针关账（2026-10-17 巡检，总控亲跑）
+
+- **GAP-02 全层四列抽验通过（判据勘误）**：直查 live 库成功 run 3/4/5/7 的 data_quality_result 共 121 行，V20 四列全非空；(rule_code, rule_version) 与 quality_rule_definition join 0 失配、FIXED 严重度 0 失配、全行 compat-v1 且目录指纹单一（92dc30c6…72c9）。勘误：盘点判据「rule_version="v1"」不实——落库为逐规则整数版本（"1"/"2"/"3"，与定义表多版本行对应）；64 位串为目录级 rule_fingerprint。
+- **GAP-06 目录可追溯性裁定关闭（证据载体勘误）**：全部 run 的阶段证据 JSON 均不含 catalog/指纹字段（盘点假设不成立）；实际双载体成立——结果行自带指纹+compat+版本可逐条复算，且平台日志每 run 有「规则冻结」行绑定 ruleFingerprint ↔ catalog=qrc-1 ↔ compat-v1（指纹跨 run 3–7 恒同）。裁定：可追溯性成立，不为目录常量新增加列。
+- **GAP-01 未登记码落库探针通过（判据勘误）**：总控以生产写侧唯一实现（freeze→RuleSeverity.resolve→QualityChecker.applyVersionedSeverity）驱动未登记码 UNREGISTERED_PROBE_F8C，实体行落隔离库 f8cb20261017_analytics_meta 回读：severity NULL、rule_version NULL（哨兵 0 转 NULL）、compat-v1、指纹与目录一致。勘误：盘点判据「effective_severity='UNREGISTERED'」不实——源码 RuleSeverity:71 定义 UNREGISTERED 为 BLOCKING 的别名常量，落库字面即 "BLOCKING"，未登记的识别签名是 severity IS NULL AND rule_version IS NULL（applyVersionedSeverity javadoc 明示），探针行与此精确一致。
+- **FlywayIT V14 真跑销项**：隔离运行器亲跑 RunId f8cb20261017 全绿 [PASS exit=0]——AnalyticsIsolationFlywayIT 2/2（直查 flyway_schema_history 复核 meta 头 V38、metric 头 V14 且 ads_user_retention_m 实存），写入型 IT 同腿全绿（IsolationGuard 6/6、MetricAds 2/2、MetricPublisher 3/3）。首轮 schema 步曾因 fork JVM 缺 -Djava.net.preferIPv4Stack=true 使 OpenAiCompatLlmProviderTest 34 例红（本 VM 既知 IPv6 映射拦截，总控最小复现定位），以 JAVA_TOOL_OPTIONS 注入后复跑全绿，非仓库缺陷。
+- **治理裁决（BK-01～03/INV-12）**：F-88 本地完成条件（全部 B 类关账）已达成；BK-02 抽象挂账销号；INV-12 台账关账；**F-88 正式状态维持限定验收**——唯一未关项 GAP-04（3306 真库 V19/V20）为外部依赖，待正式环境解冻授权。报告 notes/WP-F8c-REPORT.md。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+- 后续顺序：WP-F6c（agy 包，本轮关账后即派发）→ WP-F9b。
+
+## WP-F6c Actions 首跑双红修复关账（2026-10-17 巡检，总控验收）兼 WP-F6 余项收窄
+
+- 交付（agy Flash 仅文件读写）：① `.github/workflows/tests.yml` 的 spark job 新增 winutils 供给步（在 JDK8 之后、spark 测试之前）：自 cdarlint/winutils 下载 `winutils.exe` 与 `hadoop.dll` 至 `C:\hadoop\bin`，经 `$env:GITHUB_ENV` 设 `HADOOP_HOME`、经 `$env:GITHUB_PATH` 前置 bin，下载后存在性断言缺一即 throw；`run-tests.ps1` 的 spark 口径未动。② `IngestionManifestRuntimePatrolTest.realHistoryOnDiskIsUntouched` 以 JUnit 5 `Assumptions.assumeTrue` 按「`landing/manifests` 目录存在且非空」门控（新增判据 `isManifestDirPresentAndNonEmpty`）：CI fresh checkout 无目录时该单例记 Skipped（总数仍 1399、F/E=0），本机有目录时原断言逐字严格执行；冻结名单 43 与另两条负例未动。报告：notes 目录 `WP-F6c-REPORT.md`、`WP-F6c-FIX-REPORT.md`。
+- 首轮验收不合格与同轮修复（总控亲验抓获，执行方自述未验）：供给步首版选用 hadoop-3.3.4 下载 URL，总控 HEAD 实测两个 URL 均 404，且经 GitHub API 实证 cdarlint/winutils 仓库根本没有 `hadoop-3.3.4` 目录（3.3.x 线仅 3.3.5/3.3.6）——照此推送 Spark 档仍会在下载步失败。按 `WP-F6c-FIX` 规约同轮仅改该步骤：版本改取同线最高补丁 3.3.6（winutils 为独立原生辅助二进制，与工程 `hadoop-client:3.3.4` 同属 3.3.x 线），注释同步勘误。总控复验：两个新 URL HEAD 200（119296 / 78848 B）、GET 实体均为 MZ 头 PE 文件、旧路径零残留、YAML 解析通过、diff 仅限该步。
+- 总控亲跑总门禁（RunId wpf6cacc20261017）：default 全档 **PASS exit 0**——analytics 1399（F=0/E=0/S=2，MATCH；S=2 为既有跳过，本机巡检例实际执行未跳过）、mall 26、generator 134，合计 1559 MATCH；定向 `IngestionManifestRuntimePatrolTest` 3/3 PASS 零跳过（本机 43 文件在位、原断言严格执行且通过，本机巡检语义未削弱）；脚本契约 `AnalyticsIsolationScriptsContractTest` 13/13 PASS。
+- 状态：**WP-F6c 实施关账**（代码提交 6c07e73）。WP-F6 余项仅剩「本提交推送后 Actions 转绿观察」——Spark 档 winutils 修复只能在 windows-latest 托管 runner 上终验，由后续巡检观察本轮推送触发的运行结果：绿则 WP-F6 全关账，红则按日志再修或登记外部限制。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+- 后续顺序：WP-F9b（F9-GAP-06 渠道表）为队列下一包；Actions 观察与 WP-F9b 派发由下一巡检处置。
+
+## WP-F6 全关账（2026-10-17 巡检，总控亲查 Actions）兼 WP-F9b 立项与 G-04 部分裁定
+
+- **Actions 转绿实证**：WP-F6c 推送（228b653）触发的运行 38995467540（Tests，windows-latest）总控经 GitHub API 亲查全程：Default Suite (JDK 17) **success**（02:34:42→02:37:27Z，巡检例门控修复在 fresh checkout 终验通过）；Spark Suite (JDK 8) **success**——winutils 供给步（3.3.6）completed success、spark 测试套件步随整 job 转绿（winutils/HADOOP_HOME 缺项就此终验修复）；整运行 conclusion=**success**。此前两跑双红（38981395202/38986554847）的两个根因均已消除。
+- 状态：**WP-F6 全关账**（F6b 实施 + F6c 双红修复 + Actions 双档转绿，三段齐备）。CI 口径不变：default + spark 两档入 CI，isolated 档因需 3307 隔离实例不入 CI（WP-F6 报告既有结论）。
+- **WP-F9b 立项（F9-GAP-06 渠道表）与 G-04 部分裁定**：总控亲查实证——`dwd_user_behavior_detail.channel` 为真实列（源 B via=APP/H5/PC 映射进入），行为侧渠道聚合属真下钻；而交易链全程无 channel（`OrderTradeCompiler.TradeEvent` 与 `dwd_order_detail` 均无该字段），按渠道的订单/支付归因无数据依据，属设计 V3.0 §11.3 L443「未决不输出假的分类下钻」所禁，盘点草案的 order_uv/pay_uv 两列驳回。据此裁定 G-04 部分解：行为侧渠道粒度批准落地（宽松口径同 `DwsSql.funnelDay`，跨渠道 distinct 不可加和为设计自带注记），交易侧渠道粒度维持不输出。规约 notes/WP-F9b.md 已立并派发 agy Flash（`ads_channel_summary_m`：pv/view/intent/cart 用户与两比率，Flyway V15，FlywayIT 钉 14→15，funnel ViewModel 加性 byChannel）。
+- 本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F9b 渠道流量汇总表关账（2026-10-17 巡检，总控验收）兼 WP-F9c 亲跑专轮立项
+
+- 交付（agy Flash 仅文件读写）：第 12 张 ADS 表 `ads_channel_summary_m` 落地——`AdsSql.channelSummary` 直算 `dwd_user_behavior_detail`（channel NULL/空串归一 UNKNOWN、pv=view 事件行数、view/intent/cart 去重用户、分母 0 两率 NULL，与 `DwsSql.funnelDay` 同式同精度 DECIMAL(8,4)），挂 `FunnelAdsJob` 同批同快照产出；Flyway V15 建表 + FlywayIT 钉 14→15；`MetricAdsSpec`/`MetricAdsCatalog` 注册；`AnalysisService` funnel 加性 `byChannel`（契约 v1.14）+ metric-dictionary §8 口径节。G-04 裁定执行到位：交易侧渠道归因不输出、草案 order_uv/pay_uv 驳回未入表。报告：notes 目录 `WP-F9b-REPORT.md`、`WP-F9b-FIX-REPORT.md`。
+- 首轮验收不合格与同轮修复（总控亲跑抓获）：量数轮 RunId wpf9bacc20261017 **389 跑 16 红**（TestSuite.txt 口径）——生产代码经总控逐项复核无误（独立复算种子数据证伪新例期望），红因全部在测试侧：① `AdsChannelSummarySpec` 期望算错（APP intent 实 1 误写 2、H5 intent 实 1 误写 2、UNKNOWN intent 实 0 误写 2 及连带比率）；② 冻结连带漏改九处（DDL 总数 45→47 两守卫、ADS 表数 11→12 三守卫、FixtureWriteShape 写入点图缺新文件、AdsSaleTrend 规则 3 覆盖集、MetricExportZeroRow 夹具未铺第 12 张暂存致 pub 级联红、MetricAdsDaoTest 目录/删除计数）。按 WP-F9b-FIX 规约同轮修复（仅测试与报告，生产零改动；规则 3 按 WP-F9a 留存先例豁免登记渠道表，不动 AdsQualityJob），总控逐项核 diff 后复验。
+- 总控复验（不采信执行方自述）：Java 定向 MetricAdsDaoTest 11/11、MetricAdsCatalogDdlConsistencyTest 3/3、AnalysisServiceTest 45/45；spark 量数轮 RunId wpf9bfix20261017 **389/389 PASS**；default 量数轮 RunId wpf9bdef20261017 **1560 全绿**（analytics 1400＝1399+新例 1）。基线再登记（run-tests.ps1 附变更注释）：spark 386→389、default analytics 1399→1400；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**；收口轮 RunId wpf9bgate20261017（spark）389 MATCH、wpf9bgate20261017d（default）1560 MATCH，均 PASS exit 0。
+- 状态：**WP-F9b 代码与回归关账**。余项转 **WP-F9c 总控亲跑专轮**（下一巡检执行，比照 WP-F7e/WP-F8c 先例）：① FlywayIT V15 在 3307 隔离运行器真跑销项；② 重建 spark-jobs + 平台产物、重启平台（本轮 VM 替换后 8091 未拉起，中继/3307 已由总控恢复）使 V15 在 live metric 库实迁移；③ 在隔离档案下以真实数据按 channel 独立重算 DWD 与 `ads_channel_summary_m` 发布行对账（数据形状探针）。其后队列：WP-F9 余项 GAP-09、GAP-10，再收官复核。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F9c WP-F9b 真跑销项关账（2026-10-17 巡检，总控亲跑）
+
+- **FlywayIT V15 真跑销项**：隔离运行器亲跑 RunId f9cb20261017 全绿 [PASS exit=0]——AnalyticsIsolationFlywayIT 2/2（总控直查 flyway_schema_history 复核隔离 metric 头 V15「ads channel summary」success=1、meta 头 V38、隔离 metric 库 ads_channel_summary_m 实存），写入型 IT 同腿全绿（IsolationGuard 6/6、MetricAds 2/2、MetricPublisher 3/3）。日志 /tmp/test-logs/f9cb20261017/。
+- **重建与 live 实迁移**：总控亲跑重建 spark-jobs（BUILD SUCCESS）与 platform-app（离线首试因 jar 插件 plexus 依赖仅 POM 无 jar 失败，改经本地中继在线重建 BUILD SUCCESS，新 jar 经 jar tf 实查含 V15 迁移）；平台以新 jar 按 G2 口径重启（pid 84657），启动期 live metric 库 Flyway 实迁移 14→15（应用 1 个脚本），直查 live 库头 V15 且 ads_channel_summary_m 实存，平台健康 200。
+- **隔离档案发布（run 8）**：档案 scale-vm-b（id=3）test 全过→activate，recalculate 批次 3 得 run 8，八阶段全 SUCCESS（约 543 秒）：WAIT_LANDING 9995 / INIT_SCHEMA 47（run 7 的 45 + 渠道正式/暂存 2 表）/ LOAD_ODS 10035 / BUILD_DWD 8508 / BUILD_DWS 100 / BUILD_ADS 164（+3 渠道行）/ QUALITY_CHECK 12 / PUBLISH_METRIC 328，发布 S20260918_8（档案 3 作用域 ACTIVE，_7 转 ARCHIVED；档案 2 作用域 _4 未动，跑后复激档案 2）。头条指标与 run 7 逐项一致（gmv 365160.30 / net 273243.80 / aov 362.26 / pv 5008）。
+- **渠道对账（数据形状探针）**：总控自写 PySpark 直读 DWD（dt=20260918，6885 行）按 AdsSql 同式独立复算——app 1684/100/100/98（1.0000/0.9800）、h5 1630/100/100/96（1.0000/0.9600）、pc 1694/100/100/95（1.0000/0.9500），与 ads_channel_summary_m@_8 发布行及 staging 导出 jsonl 逐项逐分一致，三层勾稽闭合。本数据集 DWD channel 仅 app/h5/pc、零 NULL/零空串，故不应有 UNKNOWN 行、发布亦无——一致（UNKNOWN 归一与 0 分母 NULL 由 WP-F9b 行为测试覆盖，不以本数据冒充）。跨渠道不可加和实证：Σ分渠道 view_users=300 ≠ 全站 distinct 100（设计 L443 注记），Σ pv=5008=头条 pv。
+- 状态：**WP-F9c 关账，WP-F9b 全线闭合**。报告 notes/WP-F9c-REPORT.md。其后队列：WP-F9 余项 GAP-09、GAP-10，再收官复核。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## WP-F9d GAP-09/10 盘点关账兼总控裁定（2026-10-17 巡检，总控验收）——WP-F9 全关账
+
+- 交付（agy Flash 仅文件读写，只读盘点）：报告 notes/WP-F9d-INVENTORY-REPORT.md，对 F9-GAP-09（异动 ADS 下沉）与 F9-GAP-10（dim_metric 同步）各给出设计口径逐字摘录、现行实现锚点、差异清单、落地草案与维持现状备选，末尾两项待裁定问题。
+- 总控亲验（抽验锚点，不采信自述）：设计 V3.0 §11.6 L459-464「至少14个可比历史点／滚动均值z-score |z|≥2.5／缺窗口不生成有置信度的统计异常」与 metric-dictionary §3 L38-42 摘录逐字属实；EvidenceBuilder L152-155 单日诚实边界原文属实；AnomalyRules 阈值常量 0.30/0.15/0.30/0.30（退款率／全退率／转化率／日环比）与规则码属实，现行确为固定阈值内存计算、无 Z-Score/MAD/IQR；02-dims.sql dim_metric DDL 与「唯一来源在平台 MySQL metric_definition」注释属实；LocalSchemaInitJob 只建 dim_user/product/date/region 四维、不建 dim_metric 属实；DwdDimSchemaOwnerSpec UnownedDimTables=Set(dim_metric) 守卫属实；PROJECT_STATUS 2026-10-12 D-062 节「dim_metric 的 MySQL 同步仍未解决」挂账原文属实；指标字典首批 15 项属实。
+- 勘误两项（不影响结论）：① 报告头基线 commit 写 60a48fa（2026-10-13 移交快照），非当前 HEAD 637d337，系出处标注陈旧，锚点文件内容经亲验与现行一致；② 落地草案 Flyway 顺延写「当前 metric 头 V10、顺延 V11」不实——现行 metric 头为 V15（WP-F9b），若立项应顺延 V16；该草案随下方裁定不实施，勘误仅备查。
+- **裁定 GAP-09：维持现状关闭，不立实施包。** 理由：设计自身 fail-closed——至少 14 个可比历史点、缺窗口不生成有置信度的统计异常；本项目真实数据以单业务日为主、无连续 14 日历史分区，强建 ads_metric_anomaly_m 只会产出全 NULL／降级警告的空表，属形式主义。现行 EvidenceBuilder/AnomalyRules 内存阈值判定 + 单日诚实边界（WARN_NO_COMPARISON_PERIOD）+ 非因果声明已在报告制品（report_instance.artifact_json）闭环，满足答辩口径；后续若引入连续多日真实流水线再行评估立项。
+- **裁定 GAP-10：正式关闭，数仓侧不建表不同步。** 理由：数仓侧对 dim_metric 零消费经亲验属实（守卫测试写死零写入）；指标口径唯一权威为 MySQL metric_definition 与 metric-dictionary.md，平台直连查询已闭环；为 15 行静态配置引入 Spark JDBC 跨存同步只增故障点。附带驳回报告「移除/标记废弃 02-dims.sql 中 dim_metric DDL」建议——该 DDL 是 DwdDimSchemaOwnerSpec 冻结计数（dimOwned ++ UnownedDimTables）的组成部分，动它即动守卫契约，维持现状不动；PROJECT_STATUS D-062 挂账句就此由本裁定结清（历史记录不改写）。
+- 状态：**WP-F9d 关账；WP-F9 全关账**——盘点 21 项勾稽后，B 类已落地 GAP-03+GAP-01 方案B（WP-F9a）、GAP-06 渠道表（WP-F9b/F9c，G-04 部分裁定），GAP-09/GAP-10 经本轮盘点+裁定关闭；C 类（库存/成本）因无数据源转外部依赖节挂账；D 类按盘点裁定关闭/维持。队列仅剩收官复核。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。
+
+## 收官复核关账（2026-10-17 巡检，总控亲验＋裁定）——FULL-PROGRAM 全线收官，维持限定验收
+
+- 交付（agy Flash 仅文件读写，只读盘点）：报告 notes/WP-CLOSE-INVENTORY-REPORT.md——设计 V3.0 验收口径 24 条、纲领队列对账表、残余清单草案 RES-01～11、双备选裁定草案（A 全量验收／B 维持限定验收＋残余清单），完成标记 WPCLOSEINV-DONE。
+- 总控亲验（抽验锚点，不采信自述）：设计条款锚点逐项实查属实——§1 表述级别 L18-23、§2.1「F-88 仍限定验收／没有依据宣布全项目完成」L42-43、§2.3 时间与环境边界、§11.3 漏斗 L441-443、§11.5 库存红线、§11.6 异动 14 点、§17.2 D-5 门禁缺口 L750、§18.1 Spark 本地口径 L789、§18.4「完整验收不是测试总数」L823-825；残余项出处实查属实——RES-06 视觉审阅未做（本文件关键路径证据边界）、RES-07 D-5（设计 §17.2）、RES-09 AIW（设计 §13.5-13.7，AIW-001～020 为后续方向、非阶段 6 门槛）、RES-10 异构 MetricStore（设计 §12.6 扩展目标，ClickHouse NOT_IMPLEMENTED／Doris 二期）、RES-11（F-93 C 类转长期登记，本文件 WP-F5 节）、RES-08（WP-F5b 边界：dev003c 4 库不在本 VM 实例、遗留原开发机）。环境亲查：在跑平台（8091）/api/v1/metrics/health 200、3307 与代理中继正常。
+- 勘误一项（不影响结论）：报告称队列「19 个工作包」，其自身对账表实为 20 行、纲领队列实为 20 条（WP-F6c、WP-F7b/F7c 等子包的计入方式不同所致）；逐行对账内容与关账证据经抽验无误，计数口径以 20 为准。
+- **总控裁定：采草案 B——维持限定验收＋残余清单，驳回草案 A。** 理由：① 设计 V3.0 §2.1 冻结文本明示「F-88 仍限定验收，当前没有依据宣布全项目完成」，且本文件历次登记明令禁止任何「F-88 完整验收」同义表述，草案 A 与冻结治理直接冲突；② F88-GAP-04（3306 真库 V19/V20 执行）客观未做、阶段 6 真实 LLM 冒烟与远程集群验证均为外部依赖未闭环，「残余不阻断」不能由总控单方宣布豁免；③ 草案 A 的证据部分（队列全关、CI 双绿、全链实跑）属实且已在本文件逐包登记，无需靠改定性来体现。**正式状态：项目功能开发与 FULL-PROGRAM 纲领队列全线收官；验收定性维持「限定验收」；F-88 维持限定验收。**
+- 残余清单终局（随本节交付，不再另立挂账）：RES-01 阶段 6 真实 LLM 冒烟（外部网络环境＋执行包在位，答辩机一次冒烟即可销项）、RES-02 远程集群／共享 HMS 验证（外部环境，后续部署立项）、RES-03 3306 真库 V19/V20（正式环境解冻授权，用户／运维）、RES-04 库存／成本指标（无数据源，后续业务立项）、RES-05 F-88 定性（随 RES-03 销项或用户另行裁决）、RES-06 UI 视觉审阅（用户／答辩现场走查）、RES-07 D-5 启动前门禁（长期架构项，现行以启动脚本门禁防范）、RES-08 原开发机 3307 历史对象清理（原开发机以 WP-F5b 脚本执行一次）、RES-09 AIW 建仓与 RES-10 异构 MetricStore（设计明示的后续方向，非本版缺失）、RES-11 历史 IT 与专项冒烟（已裁定长期 backlog 归档，非开放项）。
+- 分支处置：本节登记随开发线提交推送后，将 codex/cloud-v3-development 合入 main（main 自上次合并后未再推进，合并以开发线为准；上次合并的 reconcile 文件仍取开发线版本），合并结果在 main 上登记。未跟踪的 sample-data/（2026-10-16 遗留样本输出）不属仓库交付，不入提交。本节未触碰 3306、未使用 Docker、未拨 DeepSeek API。

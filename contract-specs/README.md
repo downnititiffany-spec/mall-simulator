@@ -1,6 +1,6 @@
 # contract-specs — 三程序共享的版本化机器可读契约
 
-状态：**部分冻结**（`specs/surrogate-key.v1.json` 为 `DRAFT`，**尚无任何实现读取**；见 §4 目录表与 §10 指纹表）——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.2.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），`1.3.0 → 2.0.0` 对应 `specs/warehouse-namespace.v2.json` 的**破坏性变更**（取值来源由 `runtime_profile.hive_database_prefix` 迁至源级 `source_registry.warehouse_prefix`；规则本体与 22 向量与 v1 逐字段等价，v1 保留为历史冻结件），`2.1.0 → 2.2.0` 对应 CT 批次（`canonical-event.v1` 的加法变更：`order_created.items` 加性接受字符串形态；`source_system` **去掉** `const` 属放宽兼容性 ⇒ 仍按加法处理。见 §14），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
+状态：**部分冻结**（`specs/surrogate-key.v1.json` 为 `DRAFT`，**尚无任何实现读取**；见 §4 目录表与 §10 指纹表）——`specs/warehouse-namespace.v2.json` 已由总控冻结（2026-09-12，依据 P1-04 的本地 E3 实测，见 §4；v1 为历史冻结件，其 `sourceOfTruth` 已被 v2 取代）；其余四个制品仍为 `DRAFT`（`canonical-event.v1` 受 B-06/Q6 未决阻塞） ｜ 版本：`2.3.0`（见 [`VERSION`](VERSION)；`1.0.0 → 1.1.0` 对应 `specs/warehouse-namespace.v1.json` 的加法新增，`1.1.0 → 1.2.0` 对应 `ingestion-manifest.v1` 的 P1-05 加法扩展，`1.2.0 → 1.3.0` 对应 M1-5 收口同步（见 §11），`1.3.0 → 2.0.0` 对应 `specs/warehouse-namespace.v2.json` 的**破坏性变更**（取值来源由 `runtime_profile.hive_database_prefix` 迁至源级 `source_registry.warehouse_prefix`；规则本体与 22 向量与 v1 逐字段等价，v1 保留为历史冻结件），`2.1.0 → 2.2.0` 对应 CT 批次（`canonical-event.v1` 的加法变更：`order_created.items` 加性接受字符串形态；`source_system` **去掉** `const` 属放宽兼容性 ⇒ 仍按加法处理。见 §14），`2.2.0 → 2.3.0` 对应 WP-F4（Q6 裁决第 3 条落地：canonical-event.v1 的 A 组生命周期字段降为可选，见第 15 节），均按 §3 的目录级版本规则） ｜ 建立任务：M1-5（`specs/` 部分为 P1-04 新增，`ingestion-manifest.v1` 的来源字段为 P1-05 新增）
 
 ## 1. 目的与边界
 
@@ -326,3 +326,34 @@
 
 - 为什么必须单列：PLAN §2.5 只要求"补文件名前缀"，没要求改守卫；这一处改动**超出了 PLAN 授权范围**，故在 README 与批报告里都显式登记，不自评"顺带修好"。
 - 未做：台账 `scripts/contract-bare-anchors.allowlist.txt` **一行未改**（D-065 裁决"只减不增"，且删减须先在看板登记，而看板 `docs/项目实施进度与任务看板 V2.2.md` 属总控面）。守卫提示的 2 条待收敛（1 行可删 ＋ 1 处次数下降）如实保留为**在册负债**。
+
+## 15. WP-F4 落地：当前态版本串 2.2.0 → 2.3.0（2026-10-16）
+
+**为什么有本节**：依据 notes/Q6-RULING.md 裁决第 3 条，canonical-event.v1 契约中 A 组生命周期字段与数据源现实不符，在下一修订中降为可选，契约保持 DRAFT、不冻结。涉及 A 组 5 个字段共 6 处（order_created 的 status 与 created_at、order_paid 的 paid_at、order_cancelled 的 cancelled_at、refund_created 的 created_at、refund_completed 的 completed_at）。商城侧结构性不产出这些字段，黄金集 51 行接受事件中有 18 行缺失这些字段。本次修订属于放宽约束的加法变更，按第 3 节目录级版本规则 minor 递增到 2.3.0。
+
+### 15.1 逐项改动（变更对照表）
+
+| # | 位置 / 文件 | 改动 |
+|---|---|---|
+| 1 | `contract-specs/schemas/canonical-event.v1.schema.json` | 从 $defs 的 required 数组中删除且仅删除 6 个条目：order_created.required 删 status 与 created_at；order_paid.required 删 paid_at；order_cancelled.required 删 cancelled_at；refund_created.required 删 created_at；refund_completed.required 删 completed_at。字段定义 properties 原样保留。 |
+| 2 | `docs/contracts/event-contract.md` | 仅改 6 行必填标记（第 2.4 节 order_created 表的 status 行与 created_at 行、第 2.5 节 order_paid 表的 paid_at 行、第 2.6 节 order_cancelled 表的 cancelled_at 行、第 2.7 节 refund_created 表的 created_at 行、第 2.8 节 refund_completed 表的 completed_at 行），把「必填」列由「是」改为「否」，并在「说明」列末尾追加「（Q6 裁决降为可选，2026-10-16）」。第 2.2 节 product_created 表的 status 保持必填不动。 |
+| 3 | `contract-specs/VERSION` | 版本号由 `contract-specs 2.2.0` 升级为 `contract-specs 2.3.0`。 |
+| 4 | `contract-specs/README.md` | 第 3 行状态行版本号更新为 2.3.0 并在版本沿革链追加 2.2.0 → 2.3.0 条目；末尾追加本第 15 节记录 WP-F4 落地明细。 |
+
+### 15.2 刻意保留与未改项
+
+- **未改任何代码与测试**：采集层校验器（EventContractValidator）本就只校验字段子集，未校验 A 组生命周期字段；结构对账测试（CanonicalEventSchemaParityTest）未断言 payload 必填列表。生产代码与自动化测试零影响。
+- **契约状态与版本未改**：schema_version 的 const 仍为 "1.0"；x-contract-status 仍为 DRAFT，契约保持草稿不冻结。
+- **其他字段与枚举未改**：各事件 properties 定义完全保留；第 2.2 节 product_created 表的 status 行不是 A 组字段，完全未动。
+
+### 15.3 影响分析
+
+- **采集门结论不变**：真实来源 A（mock-mall 黄金集 51 接受 / 4 隔离）与真实来源 B（38 接受 / 5 隔离）的判定结论完全不变。
+- **契约符合度改善**：在严格 JSON Schema 校验口径下，A 组 18 行事件不再因为缺少生命周期字段而校验失败。
+- **版本规则符合度**：本次变更属加法/放宽兼容变更，按第 3 节目录级版本规则执行 minor 递增。
+
+### 15.4 逐制品指纹
+
+| 制品 | sha256 |
+|---|---|
+| `schemas/canonical-event.v1.schema.json`（**当前值**） | raw `a5cf643e377758f9231b00c9935dc295b66b1d7b6d79ccf79d7a4f49ff633569`（33558 B）／LF-normalized `a5cf643e377758f9231b00c9935dc295b66b1d7b6d79ccf79d7a4f49ff633569` |

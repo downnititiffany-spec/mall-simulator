@@ -61,6 +61,8 @@ public class AnalysisService {
     private static final String T_DATA_QUALITY = "ads_data_quality_m";
     private static final String T_CATEGORY_SALE = "ads_category_sale_m";
     private static final String T_REGION_SALE = "ads_region_sale_m";
+    private static final String T_USER_RETENTION = "ads_user_retention_m";
+    private static final String T_CHANNEL_SUMMARY = "ads_channel_summary_m";
 
     // ── 销售分析取值的指标码（一律取 metric_value，不重算，契约 §3.2） ──────────
     private static final String METRIC_GMV = "gmv";
@@ -174,7 +176,34 @@ public class AnalysisService {
     public record FunnelStage(String stage, String label, long users, BigDecimal rate) {
     }
 
-    public record FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote) {
+    /**
+     * 渠道流量汇总点（WP-F9b / F9-GAP-06）：行为侧漏斗指标渠道下钻。
+     */
+    public record ChannelSummary(String channel, long pv, long viewUsers,
+                                 long intentUsers, long cartUsers,
+                                 BigDecimal intentRate, BigDecimal cartRate) {
+    }
+
+    /**
+     * 行为漏斗专题数据（§3.4）。
+     *
+     * <p>v1.14（WP-F9b）：加性扩展 {@code byChannel}（行为侧渠道流量与转化汇总）。</p>
+     */
+    public record FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote,
+                             List<ChannelSummary> byChannel) {
+
+        public FunnelData(List<FunnelStage> stages, BigDecimal overallBuyRate, String windowNote) {
+            this(stages, overallBuyRate, windowNote, List.of());
+        }
+    }
+
+    /**
+     * 用户留存率点（WP-F9a / F9-GAP-03）：D+1、D+7、D+30 留存人数与比率（超出观测期为 null）。
+     */
+    public record RetentionPoint(String date, long cohortUserCount,
+                                 Long retainedD1, BigDecimal retentionD1,
+                                 Long retainedD7, BigDecimal retentionD7,
+                                 Long retainedD30, BigDecimal retentionD30) {
     }
 
     /**
@@ -184,10 +213,19 @@ public class AnalysisService {
      * （来自 ads_user_profile_m 的 period_start/period_end）；不可用时为 null 并由
      * {@code warnings} 声明（设计 V3.0 §15 L676「R/F/M 原值与 score、8 群体、观察期、复购」）。
      * 分组行 {@code RfmSegment} 自 S3-16 起带 M 原值（{@code amount}）与 F 原值（{@code orders}）。</p>
+     *
+     * <p>v1.13（WP-F9a）：加性扩展 {@code retention}（用户留存率 D+1/D+7/D+30）。</p>
      */
     public record UsersData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.LifecycleState> lifecycle,
                             List<RfmService.CategoryPreference> preference, String ruleVersion,
-                            String periodStart, String periodEnd) {
+                            String periodStart, String periodEnd,
+                            List<RetentionPoint> retention) {
+
+        public UsersData(List<RfmService.RfmSegment> rfmSegments, List<RfmService.LifecycleState> lifecycle,
+                         List<RfmService.CategoryPreference> preference, String ruleVersion,
+                         String periodStart, String periodEnd) {
+            this(rfmSegments, lifecycle, preference, ruleVersion, periodStart, periodEnd, List.of());
+        }
     }
 
     /** RFM 专题数据（§3.6）：字段语义与 {@link UsersData} 一致，另带八类全量矩阵 rfmMatrix */
@@ -589,15 +627,18 @@ public class AnalysisService {
                 overallBuyRate = stageOverall; // 规范顺序里最后一个非空值 = 全链路累计购买率
             }
         }
+        List<ChannelSummary> byChannel = channelSummaries(sid);
         // 漏斗口径与观察窗口必须随响应返回（§18.2 用户行为）；口径版本用快照的 definitionVersion，不写死
         FunnelData data = new FunnelData(stages, overallBuyRate,
-                "同一 businessDate 内的行为窗口（口径版本 " + blankToEmpty(pinned.meta().getDefinitionVersion()) + "）");
+                "同一 businessDate 内的行为窗口（口径版本 " + blankToEmpty(pinned.meta().getDefinitionVersion()) + "）",
+                byChannel);
         return view(pinned, filters, data, List.of());
     }
 
     // ── 用户分群（§3.5）与 RFM（§3.6） ────────────────────────────────────────
 
     public AnalysisViewModel<UsersData> users(String snapshotId, LocalDate from, LocalDate to) {
+        requireOrderedDateRange(from, to);
         Map<String, Object> filters = new LinkedHashMap<>();
         echoDateRange(filters, from, to);
         echoRequestedSnapshot(filters, snapshotId);
@@ -609,8 +650,9 @@ public class AnalysisService {
         filters.put("snapshotId", sid);
 
         RfmService.RfmProfile profile = rfmService.profile(sid);
+        List<RetentionPoint> retention = retention(sid, from, to);
         UsersData data = new UsersData(profile.segments(), profile.lifecycle(), profile.preference(),
-                profile.ruleVersion(), profile.periodStart(), profile.periodEnd());
+                profile.ruleVersion(), profile.periodStart(), profile.periodEnd(), retention);
         return view(pinned, filters, data, profile.warnings());
     }
 
@@ -774,6 +816,51 @@ public class AnalysisService {
                 .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
                 .map(row -> new ActiveDay(AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
                         AdsRows.asLong(row.get("dau")), AdsRows.asLong(row.get("behavior_count"))))
+                .toList();
+    }
+
+    /**
+     * 渠道流量汇总（ads_channel_summary_m，按 channel 升序）。
+     *
+     * <p>WP-F9b（F9-GAP-06）：行为侧渠道流量与转化下钻；分母为 0 时转化率为 null。</p>
+     */
+    private List<ChannelSummary> channelSummaries(String snapshotId) {
+        return AdsRows.latestPartition(adsReader, T_CHANNEL_SUMMARY, snapshotId).stream()
+                .map(row -> {
+                    String channel = AdsRows.asString(row.get("channel")).trim();
+                    if (channel.isEmpty()) {
+                        channel = "UNKNOWN";
+                    }
+                    return new ChannelSummary(
+                            channel,
+                            AdsRows.asLong(row.get("pv")),
+                            AdsRows.asLong(row.get("view_users")),
+                            AdsRows.asLong(row.get("intent_users")),
+                            AdsRows.asLong(row.get("cart_users")),
+                            AdsRows.asDecimal(row.get("intent_rate")),
+                            AdsRows.asDecimal(row.get("cart_rate")));
+                })
+                .sorted(Comparator.comparing(ChannelSummary::channel))
+                .toList();
+    }
+
+    /**
+     * 用户留存率（ads_user_retention_m，按 dt 升序）。
+     *
+     * <p>WP-F9a（F9-GAP-03）：D+1/D+7/D+30 留存人数与比率透传；超出观测期为 null。</p>
+     */
+    private List<RetentionPoint> retention(String snapshotId, LocalDate from, LocalDate to) {
+        return trendRows(T_USER_RETENTION, snapshotId, from, to).stream()
+                .sorted(Comparator.comparing((Map<String, Object> row) -> AdsRows.isoDate(AdsRows.asString(row.get("dt")))))
+                .map(row -> new RetentionPoint(
+                        AdsRows.isoDate(AdsRows.asString(row.get("dt"))),
+                        AdsRows.asLong(row.get("cohort_user_count")),
+                        AdsRows.asLongOrNull(row.get("retained_d1")),
+                        AdsRows.asDecimal(row.get("retention_d1")),
+                        AdsRows.asLongOrNull(row.get("retained_d7")),
+                        AdsRows.asDecimal(row.get("retention_d7")),
+                        AdsRows.asLongOrNull(row.get("retained_d30")),
+                        AdsRows.asDecimal(row.get("retention_d30"))))
                 .toList();
     }
 

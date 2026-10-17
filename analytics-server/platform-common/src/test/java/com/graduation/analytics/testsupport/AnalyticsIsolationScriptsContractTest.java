@@ -97,8 +97,8 @@ class AnalyticsIsolationScriptsContractTest {
                 .contains("if ($AllowCountDrift) { return $true }")
                 .contains("return ($Comparison -notmatch 'DRIFT')");
         assertThat(source.split(java.util.regex.Pattern.quote("Test-BaselineComparison -Comparison $cmp"), -1))
-                .as("default / isolated / spark 三个计数比较点必须共用同一放行语义")
-                .hasSize(4);
+                .as("default / isolated / spark / web 四个计数比较点必须共用同一放行语义")
+                .hasSize(5);
     }
 
     @Test

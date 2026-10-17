@@ -15,7 +15,7 @@ object AdsSql {
   val TABLES: Seq[String] = Seq(
     "ads_operation_overview", "ads_active_trend", "ads_behavior_funnel", "ads_hot_product",
     "ads_product_conversion", "ads_sale_trend", "ads_user_profile", "ads_data_quality",
-    "ads_category_sale", "ads_region_sale")
+    "ads_category_sale", "ads_region_sale", "ads_user_retention", "ads_channel_summary")
 
   /** 正式 ADS 表（分区 dt；发布由 pub 作业用 Hive 元数据指针完成，§14.4）；库名由唯一所有者派生 */
   def formal(ns: WarehouseNamespace, table: String): String = ns.table("ads", table)
@@ -229,18 +229,75 @@ object AdsSql {
    * 事实只取最终已支付订单明细；按 category_id 聚合后用同一 dt 的 dim_product 补名称，
    * 维表缺失及非法/未知分类统一折叠到 category_id=-1 的唯一“未分类”行。
    * 分类金额包含该 unknown 桶，供发布质量门与 dws_trade_day 对账。
+   *
+   * WP-F7f 整单退款行金额比例分摊与分级最大余数校正：
+   *  - 先按 order 聚合整单退款上限 order_refund 与订单总额 order_amount_total；
+   *  - 每行 raw_alloc = order_refund * amount / order_amount_total（order_amount_total=0 时全行 raw_alloc=0）；
+   *  - 分级最大余数校正：line_alloc = ROUND(raw_alloc, 2)，计算每单 residual = order_refund - Σline_alloc，
+   *    将 residual 全额补入该单 amount 最大的一行（并列取 category_id 最小，再并列取行级确定性键 product_id 最小；
+   *    order_amount_total=0 时 amount 全为 0，自动按 category_id 最小行兜底，不除零、不丢退款）；
+   *  - 保证每单 Σline_alloc = order_refund 逐分相等，消除跨品类退款扇出与舍入漂移，
+   *    使全站 Σ品类净额与 dws_trade_day 达到 <0.01 逐分对账硬要求。
    */
   def categorySale(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
     s"""
        |${insertTarget(ns, "ads_category_sale", dt, snapshotId)}
-       |WITH facts AS (
-       |  SELECT CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END AS category_id,
-       |         SUM(quantity) AS sale_count,
-       |         SUM(amount) AS sale_amount,
-       |         SUM(amount) - COALESCE(SUM(refund_amount), CAST(0 AS DECIMAL(18,2))) AS net_sale_amount
+       |WITH order_lines AS (
+       |  -- 步骤 1：抽取当日最终已支付订单明细，对 category_id 统一归一化（NULL/<=0 折叠为 -1 未分类）；
+       |  -- 窗口聚合：获取整单退款上限 order_refund 与订单总金额 order_amount_total
+       |  SELECT
+       |    order_id,
+       |    product_id,
+       |    CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END AS category_id,
+       |    quantity,
+       |    amount,
+       |    COALESCE(MAX(refund_amount) OVER (PARTITION BY order_id), CAST(0 AS DECIMAL(18,2))) AS order_refund,
+       |    COALESCE(SUM(amount) OVER (PARTITION BY order_id), CAST(0 AS DECIMAL(18,2))) AS order_amount_total
        |  FROM ${ns.dwd}.dwd_order_detail
        |  WHERE dt = '$dt' AND final_paid_flag = 1
-       |  GROUP BY CASE WHEN category_id IS NULL OR category_id <= 0 THEN -1 ELSE category_id END
+       |), line_alloc_base AS (
+       |  -- 步骤 2：按行金额比例计算初步退款分摊 raw_alloc，四舍五入到分：line_alloc = ROUND(raw_alloc, 2)；
+       |  -- 兜底规则：当 order_amount_total = 0 时，全行 raw_alloc 为 0；
+       |  -- 确定性行序：按 amount 降序、category_id 升序、product_id 升序排序
+       |  -- （当 order_amount_total = 0 时 amount 均视同 0，自动按 category_id 升序、product_id 升序选取兜底行）
+       |  SELECT
+       |    order_id,
+       |    category_id,
+       |    quantity,
+       |    amount,
+       |    order_refund,
+       |    ROUND(
+       |      CASE WHEN order_amount_total = 0 THEN CAST(0 AS DECIMAL(18,2))
+       |           ELSE order_refund * amount / order_amount_total END,
+       |      2
+       |    ) AS base_alloc,
+       |    ROW_NUMBER() OVER (
+       |      PARTITION BY order_id
+       |      ORDER BY
+       |        CASE WHEN order_amount_total = 0 THEN CAST(0 AS DECIMAL(18,2)) ELSE amount END DESC,
+       |        category_id ASC,
+       |        product_id ASC
+       |    ) AS alloc_rn
+       |  FROM order_lines
+       |), line_alloc_adjusted AS (
+       |  -- 步骤 3：分级最大余数校正：residual = order_refund - SUM(base_alloc)，全额补偿至 alloc_rn = 1 行；
+       |  -- 严格保证每单各行分摊退款之和与整单退款逐分相等（Σline_alloc = order_refund）
+       |  SELECT
+       |    category_id,
+       |    quantity,
+       |    amount,
+       |    CAST(base_alloc + CASE WHEN alloc_rn = 1 THEN order_refund - SUM(base_alloc) OVER (PARTITION BY order_id)
+       |                           ELSE CAST(0 AS DECIMAL(18,2)) END AS DECIMAL(18,2)) AS line_alloc
+       |  FROM line_alloc_base
+       |), facts AS (
+       |  -- 步骤 4：按归一化 category_id 分组聚合，品类净销售额 = SUM(amount) - SUM(line_alloc)
+       |  SELECT
+       |    category_id,
+       |    SUM(quantity) AS sale_count,
+       |    SUM(amount) AS sale_amount,
+       |    SUM(amount) - COALESCE(SUM(line_alloc), CAST(0 AS DECIMAL(18,2))) AS net_sale_amount
+       |  FROM line_alloc_adjusted
+       |  GROUP BY category_id
        |), category_dim AS (
        |  SELECT category_id,
        |         MIN(COALESCE(category_name, '未知分类')) AS category_name,
@@ -488,5 +545,105 @@ object AdsSql {
        |  FROM ${ns.dwd}.dwd_user_behavior_detail
        |  WHERE dt = '$dt'
        |) q
+       |""".stripMargin
+  /**
+   * 业务日期偏移计算（yyyyMMdd 或 yyyy-MM-dd）。
+   */
+  private def shiftDate(dt: String, days: Int): String = {
+    if (dt.length == 8 && dt.forall(_.isDigit)) {
+      val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")
+      java.time.LocalDate.parse(dt, formatter).plusDays(days).format(formatter)
+    } else {
+      java.time.LocalDate.parse(dt).plusDays(days).toString
+    }
+  }
+
+  /**
+   * 用户留存率（WP-F9a / F9-GAP-03）：
+   *  - 队列定义：对 dwd_user_behavior_detail 中出现的每个 dt，cohort(dt) = 当日有任一有效行为的去重用户集；
+   *  - 留存定义：retained_n(dt) = cohort(dt) 中在 dt+n 日仍有任一有效行为的去重用户数，n ∈ {1, 7, 30}；
+   *    retention_n = retained_n / |cohort(dt)|；
+   *  - 可观测性：当 dt+n 超出数据内最大 dt 时，该 n 的 retained/retention 必须为 NULL（未可观测），不得记 0；
+   *    |cohort(dt)| = 0 的 dt 不出行（HAVING count > 0 保证）。
+   */
+  def userRetention(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String = {
+    val d1 = shiftDate(dt, 1)
+    val d7 = shiftDate(dt, 7)
+    val d30 = shiftDate(dt, 30)
+    s"""
+       |${insertTarget(ns, "ads_user_retention", dt, snapshotId)}
+       |SELECT
+       |  COUNT(DISTINCT c.user_id) AS cohort_user_count,
+       |  CASE WHEN '$d1' > m.max_dt THEN NULL ELSE COUNT(DISTINCT a1.user_id) END AS retained_d1,
+       |  CASE WHEN '$d1' > m.max_dt THEN NULL
+       |       ELSE CAST(COUNT(DISTINCT a1.user_id) AS DECIMAL(8,4)) / COUNT(DISTINCT c.user_id) END AS retention_d1,
+       |  CASE WHEN '$d7' > m.max_dt THEN NULL ELSE COUNT(DISTINCT a7.user_id) END AS retained_d7,
+       |  CASE WHEN '$d7' > m.max_dt THEN NULL
+       |       ELSE CAST(COUNT(DISTINCT a7.user_id) AS DECIMAL(8,4)) / COUNT(DISTINCT c.user_id) END AS retention_d7,
+       |  CASE WHEN '$d30' > m.max_dt THEN NULL ELSE COUNT(DISTINCT a30.user_id) END AS retained_d30,
+       |  CASE WHEN '$d30' > m.max_dt THEN NULL
+       |       ELSE CAST(COUNT(DISTINCT a30.user_id) AS DECIMAL(8,4)) / COUNT(DISTINCT c.user_id) END AS retention_d30
+       |FROM (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$dt'
+       |) c
+       |CROSS JOIN (
+       |  SELECT COALESCE(MAX(dt), '$dt') AS max_dt
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |) m
+       |LEFT JOIN (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$d1'
+       |) a1 ON a1.user_id = c.user_id
+       |LEFT JOIN (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$d7'
+       |) a7 ON a7.user_id = c.user_id
+       |LEFT JOIN (
+       |  SELECT DISTINCT user_id
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$d30'
+       |) a30 ON a30.user_id = c.user_id
+       |GROUP BY m.max_dt
+       |HAVING COUNT(DISTINCT c.user_id) > 0
+       |""".stripMargin
+  }
+
+  /**
+   * 渠道流量汇总（WP-F9b / F9-GAP-06）：
+   *  - 粒度 [snapshot_id, dt, channel]；channel 取 dwd_user_behavior_detail.channel，NULL 或空串归一为 'UNKNOWN'；
+   *  - pv = 当日该渠道 behavior_type='view' 的事件行数（COUNT(*)）；
+   *  - view_users = 'view' 去重用户；intent_users = behavior_type IN ('favorite','cart_add') 去重用户；cart_users = 'cart_add' 去重用户；
+   *  - intent_rate = intent_users / view_users；cart_rate = cart_users / view_users；分母 0 → NULL（DECIMAL(8,4)）。
+   */
+  def channelSummary(ns: WarehouseNamespace, dt: String, snapshotId: Option[String] = None): String =
+    s"""
+       |${insertTarget(ns, "ads_channel_summary", dt, snapshotId)}
+       |SELECT
+       |  channel,
+       |  pv,
+       |  view_users,
+       |  intent_users,
+       |  cart_users,
+       |  CASE WHEN view_users = 0 THEN NULL
+       |       ELSE CAST(intent_users AS DECIMAL(8,4)) / view_users END AS intent_rate,
+       |  CASE WHEN view_users = 0 THEN NULL
+       |       ELSE CAST(cart_users AS DECIMAL(8,4)) / view_users END AS cart_rate
+       |FROM (
+       |  SELECT
+       |    CASE WHEN channel IS NULL OR trim(channel) = '' THEN 'UNKNOWN'
+       |         ELSE trim(channel) END AS channel,
+       |    COUNT(CASE WHEN behavior_type = 'view' THEN 1 END) AS pv,
+       |    COUNT(DISTINCT CASE WHEN behavior_type = 'view' THEN user_id END) AS view_users,
+       |    COUNT(DISTINCT CASE WHEN behavior_type IN ('favorite','cart_add') THEN user_id END) AS intent_users,
+       |    COUNT(DISTINCT CASE WHEN behavior_type = 'cart_add' THEN user_id END) AS cart_users
+       |  FROM ${ns.dwd}.dwd_user_behavior_detail
+       |  WHERE dt = '$dt'
+       |  GROUP BY CASE WHEN channel IS NULL OR trim(channel) = '' THEN 'UNKNOWN'
+       |                ELSE trim(channel) END
+       |) t
        |""".stripMargin
 }

@@ -247,10 +247,11 @@ object AdsQualityJob {
     def close(left: Option[java.math.BigDecimal], right: Option[java.math.BigDecimal]): Boolean =
       left.exists(a => right.exists(b => a.subtract(b).abs().compareTo(tolerance) < 0))
 
-    // An empty paid-order day has an aggregate trade row with sale_amount=NULL and net_sale_amount=0;
+    // An empty paid-order day has an aggregate trade row with sale_amount=NULL and net_sale_amount=NULL
+    // (tradeDay null semantics, see DwsTradeDayMultiLineRefundSpec); net_sale_amount=0 is also accepted;
     // the correct dimension representation is zero rows, not a fabricated zero-valued member.
     val emptyDayMatches = orderCount == 0L && actualRows == 0L && actualSale.isEmpty &&
-      actualNet.isEmpty && expectedNet.exists(_.signum() == 0)
+      actualNet.isEmpty && (expectedNet.isEmpty || expectedNet.exists(_.signum() == 0))
     val nonEmptyDayMatches = orderCount > 0L && actualRows > 0L &&
       close(actualSale, expectedSale) && close(actualNet, expectedNet)
     val passed = tradeRows == 1L && (emptyDayMatches || nonEmptyDayMatches)

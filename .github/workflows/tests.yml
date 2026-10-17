@@ -1,0 +1,75 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - codex/cloud-v3-development
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: pwsh
+    working-directory: .
+
+jobs:
+  default:
+    name: Default Suite (JDK 17)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run default test suite
+        run: pwsh -NoProfile -File scripts/run-tests.ps1 -Suite default -Online -MavenRepoLocal "$HOME/.m2/repository"
+
+  spark:
+    name: Spark Suite (JDK 8)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Hadoop winutils for Spark
+        run: |
+          # Spark 3.5.x on Windows requires Hadoop winutils.exe and hadoop.dll
+          # 注释勘误（WP-F6c-FIX）：cdarlint/winutils 无 hadoop-3.3.4 目录（3.3.x 线仅 3.3.5/3.3.6）；
+          # winutils.exe 与 hadoop.dll 为独立原生辅助二进制，与工程 hadoop-client:3.3.4（spark-jobs/pom.xml）
+          # 同属 3.3.x 线，取该线最高补丁版 3.3.6 为兼容供给（此为业界通行做法）；Spark 版本仍为 3.5.1。
+          # Version: Hadoop 3.3.6 (compatible with hadoop-client 3.3.4 in spark-jobs/pom.xml)
+          # Source: https://raw.githubusercontent.com/cdarlint/winutils/master/hadoop-3.3.6/bin/
+          $hadoopHome = "C:\hadoop"
+          $hadoopBin = "$hadoopHome\bin"
+          New-Item -ItemType Directory -Force -Path $hadoopBin | Out-Null
+
+          $baseUrl = "https://raw.githubusercontent.com/cdarlint/winutils/master/hadoop-3.3.6/bin"
+          Invoke-WebRequest -Uri "$baseUrl/winutils.exe" -OutFile "$hadoopBin\winutils.exe"
+          Invoke-WebRequest -Uri "$baseUrl/hadoop.dll" -OutFile "$hadoopBin\hadoop.dll"
+
+          if (-not (Test-Path "$hadoopBin\winutils.exe") -or -not (Test-Path "$hadoopBin\hadoop.dll")) {
+            throw "Hadoop winutils download failed"
+          }
+
+          # Export HADOOP_HOME and prepend bin to PATH for subsequent steps
+          "HADOOP_HOME=$hadoopHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "$hadoopBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          Write-Host "[CI] winutils successfully provisioned at $hadoopBin"
+
+      - name: Run spark test suite
+        run: pwsh -NoProfile -File scripts/run-tests.ps1 -Suite spark -Online -MavenRepoLocal "$HOME/.m2/repository"
+

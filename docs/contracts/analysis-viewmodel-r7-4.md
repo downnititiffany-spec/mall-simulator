@@ -1,7 +1,15 @@
-# R7-4 分析接口 ViewModel 契约（v1 系列；当前版本 v1.12）
+# R7-4 分析接口 ViewModel 契约（v1 系列；当前版本 v1.14）
 
 > 依据：指导书 V2.0 §18.1 / §18.3 / §24.6。**本文件是 R7-4 后端与前端唯一契约**，
 > 两侧实现必须逐字段对齐；若实现中确需改动，先改本文件再改代码。
+
+> **v1.14（2026-10-17，WP-F9b 渠道流量汇总加性扩展）**：按 WP-F9b 规约、G-04 总控裁定与 F9-GAP-06，`/api/v1/analysis/funnel` 的 ViewModel 数据节点（`FunnelData`）加性扩展 `byChannel` 数组，用于承载基于 `ads_channel_summary_m` 的行为侧逐渠道流量与转化下钻。
+>
+> 渠道点包含 `channel`（渠道名称，空/NULL 归一为 `'UNKNOWN'`）、`pv`（当日浏览事件行数）、`viewUsers`（浏览去重用户数）、`intentUsers`（意向去重用户数）、`cartUsers`（加购去重用户数）、`intentRate`（意向转化率，分母 0 为 `null`）、`cartRate`（加购率，分母 0 为 `null`）。交易侧因无渠道数据依据维持不输出（不输出伪造的下单/支付渠道列）。多渠道用户在各渠道分别计入，跨渠道 distinct 和不等于全站总数。既有 `stages`、`overallBuyRate`、`windowNote` 结构与字段完全保持不变。
+
+> **v1.13（2026-10-17，WP-F9a 用户留存率加性扩展）**：按 WP-F9a 规约与 F9-GAP-03，`/api/v1/analysis/users` 的 ViewModel 数据节点（`UsersData`）加性扩展 `retention` 数组，用于承载基于 `ads_user_retention_m` 的逐日队列留存指标（D+1、D+7、D+30 留存人数及比率）。
+>
+> 支持可选 `from`/`to` 日期过滤（闭区间下推至 ADS 读取，倒置区间拒绝为 `PARAM_INVALID`）；留存点包含 `date`（队列日期，ISO 格式）、`cohortUserCount`（当日有效行为去重用户数）、`retainedD1`/`retentionD1`、`retainedD7`/`retentionD7`、`retainedD30`/`retentionD30`。当 `dt + n` 超出数据内最大业务日期时，对应周期指标为 `null`（未可观测，不得记 0）。既有 `rfmSegments`、`lifecycle`、`preference` 等字段与结构完全保持不变。
 
 > **v1.12（2026-10-08，QA-01 日期筛选实现边界校正）**：按指导书 V3.0 §7 阶段5「来源切换与关键业务阅读路径」及设计 V3.0 §18.5，明确既有 `from`/`to` 查询参数在概览和销售端点上的实际生效范围。对 `/dashboards/overview`，日期端点只过滤固定快照内的 `salesTrend` 与 `activeTrend` ADS 日行；`metrics`、`quality`、字典和来源/快照身份仍按同一个已 pin 快照返回。对 `/analysis/sales`，日期端点过滤 `trend`、`byCategory`、`byRegion` 的 ADS 日行；`gmv`、`netSale`、退款率及质量仍是快照级值，不因日期窗口重算或缩放。过滤条件只在已发布 ADS 的 `dt` 列做参数化读取，不回扫事件、不重新计算指标。
 >
@@ -385,15 +393,36 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
 ### 3.4 `GET /api/v1/analysis/funnel?snapshotId=`
 
 ```json
-{ "stages": [ { "stage": "view", "label": "浏览", "users": 3, "rate": 1.0000 } ],
+{
+  "stages": [ { "stage": "view", "label": "浏览", "users": 3, "rate": 1.0000 } ],
   "overallBuyRate": 1.0000,
-  "windowNote": "同一 businessDate 内的行为窗口（口径版本 v1）" }
+  "windowNote": "同一 businessDate 内的行为窗口（口径版本 v1）",
+  "byChannel": [
+    {
+      "channel": "APP",
+      "pv": 10,
+      "viewUsers": 5,
+      "intentUsers": 3,
+      "cartUsers": 2,
+      "intentRate": 0.6000,
+      "cartRate": 0.4000
+    }
+  ]
+}
 ```
 
-`stages` 来自 `ads_behavior_funnel_m`（`stage`/`user_count`/`conversion_rate`），
-漏斗口径与观察窗口必须随响应返回（§18.2 用户行为）。
+- `stages` 来自 `ads_behavior_funnel_m`（`stage`/`user_count`/`conversion_rate`），漏斗口径与观察窗口必须随响应返回（§18.2 用户行为）。
+- **v1.14 加性扩展 `byChannel`**：来自 `ads_channel_summary_m`（行为侧按渠道流量与转化下钻，按 channel 升序）。
+  - `channel`：渠道标识（APP/H5/PC，空或 NULL 归一化为 `'UNKNOWN'`）；
+  - `pv`：当日该渠道浏览事件条数（`COUNT(*)`）；
+  - `viewUsers`：当日该渠道 view 去重用户数；
+  - `intentUsers`：当日该渠道 favorite 或 cart_add 去重用户数；
+  - `cartUsers`：当日该渠道 cart_add 去重用户数；
+  - `intentRate`：意向转化率（`intentUsers / viewUsers`，分母为 0 时为 `null`）；
+  - `cartRate`：加购率（`cartUsers / viewUsers`，分母为 0 时为 `null`）；
+  - **注记**：跨渠道去重用户数不可简单相加（多渠道活跃用户在各渠道各计一次）；交易链路全程无 channel 字段，本接口严禁输出伪造的渠道下单/支付数字。
 
-### 3.5 `GET /api/v1/analysis/users?snapshotId=`
+### 3.5 `GET /api/v1/analysis/users?snapshotId=&from=&to=`
 
 ```json
 { "rfmSegments": [ { "valueGroup": "高价值", "users": 1, "amount": 1496.00, "avgRecencyDays": 0,
@@ -401,11 +430,34 @@ HTTP 仍走既有 `ApiResponse`（`code=OK` + `traceId`），信封放在 `data`
   "lifecycle": [ { "state": "活跃期", "users": 3 } ],
   "preference": [ { "categoryId": 1, "users": 2 } ],
   "ruleVersion": "v1",
-  "periodStart": "2026-08-02", "periodEnd": "2026-09-01" }
+  "periodStart": "2026-08-02", "periodEnd": "2026-09-01",
+  "retention": [
+    {
+      "date": "2026-09-01",
+      "cohortUserCount": 3,
+      "retainedD1": 2,
+      "retentionD1": 0.6667,
+      "retainedD7": null,
+      "retentionD7": null,
+      "retainedD30": null,
+      "retentionD30": null
+    }
+  ]
+}
 ```
 
-全部来自 `ads_user_profile_m`（聚合，不返回个人明细）。`ads_user_profile_m` 只有聚合列时，
+RFM/生命周期/偏好来自 `ads_user_profile_m`（聚合，不返回个人明细）。`ads_user_profile_m` 只有聚合列时，
 `avgRecencyDays` 允许为 null（不得造数）。
+
+**v1.13 用户留存率（加性）**：
+
+- `retention`：基于 `ads_user_retention_m` 投影的按队列日（`date`）升序排列的留存数组。
+- `cohortUserCount`：队列当日在 `dwd_user_behavior_detail` 中存在任一有效行为的去重用户数。
+- `retainedD1` / `retentionD1`：D+1 日留存用户数及留存率（`retainedD1 / cohortUserCount`，保留 4 位小数）。
+- `retainedD7` / `retentionD7`：D+7 日留存用户数及留存率。
+- `retainedD30` / `retentionD30`：D+30 日留存用户数及留存率。
+- **可观测性规则**：当 `dt + n` 晚于数据内最大业务日期时，对应 `retainedDn` 与 `retentionDn` 一律为 `null`（未可观测），不得以 0 占位。
+- 查询参数支持可选 `from`/`to`（ISO 日期），参数化下推至 ADS 读逐日行；两端均省略时返回整快照留存数据。日期倒置拒绝为 `PARAM_INVALID`。
 
 **v1.1 原值与观察窗口（加性）**：
 

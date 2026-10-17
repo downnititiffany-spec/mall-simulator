@@ -159,3 +159,32 @@ CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_data_quality (
 PARTITIONED BY (dt STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_data_quality';
+
+-- 用户留存率（D+1 / D+7 / D+30，WP-F9a）
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_user_retention (
+    cohort_user_count BIGINT COMMENT '当日有任一有效行为的去重用户数',
+    retained_d1       BIGINT COMMENT 'D+1 留存用户数（超出 horizon 时为 NULL）',
+    retention_d1      DECIMAL(8,4) COMMENT 'D+1 留存率（超出 horizon 时为 NULL）',
+    retained_d7       BIGINT COMMENT 'D+7 留存用户数（超出 horizon 时为 NULL）',
+    retention_d7      DECIMAL(8,4) COMMENT 'D+7 留存率（超出 horizon 时为 NULL）',
+    retained_d30      BIGINT COMMENT 'D+30 留存用户数（超出 horizon 时为 NULL）',
+    retention_d30     DECIMAL(8,4) COMMENT 'D+30 留存率（超出 horizon 时为 NULL）'
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_user_retention';
+
+-- 渠道流量汇总（行为侧漏斗指标下钻，WP-F9b）
+CREATE EXTERNAL TABLE IF NOT EXISTS ${WAREHOUSE_PREFIX}_ads.ads_channel_summary (
+    channel          STRING COMMENT '渠道名称（APP/H5/PC，空或NULL归一为UNKNOWN）',
+    pv               BIGINT COMMENT '当日浏览行为事件数（COUNT(*)）',
+    view_users       BIGINT COMMENT '当日浏览去重用户数',
+    intent_users     BIGINT COMMENT '当日意向去重用户数（favorite或cart_add）',
+    cart_users       BIGINT COMMENT '当日加购去重用户数（cart_add）',
+    intent_rate      DECIMAL(8,4) COMMENT '意向转化率 intent_users/view_users，分母0→NULL',
+    cart_rate        DECIMAL(8,4) COMMENT '加购率 cart_users/view_users，分母0→NULL'
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET
+LOCATION '/user/hive/warehouse/${WAREHOUSE_PREFIX}_ads.db/ads_channel_summary';
+

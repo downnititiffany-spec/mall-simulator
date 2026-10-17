@@ -16,6 +16,7 @@ import java.util.List;
 
 import static com.graduation.analytics.ingestion.IngestionManifestSchemaSubset.NEW_SOURCE_KEYS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * V25-T02 ②：{@code landing/manifests} 的**运行时巡检**（冻结名单 + sha256）。
@@ -50,6 +51,10 @@ class IngestionManifestRuntimePatrolTest {
     @Test
     @DisplayName("真实历史清单 1-43.json 原样留存、未被回填（冻结名单 + sha256 逐条核对）")
     void realHistoryOnDiskIsUntouched() throws IOException {
+        assumeTrue(
+                isManifestDirPresentAndNonEmpty(),
+                "CI/Fresh checkout 环境无 landing/manifests 历史目录或目录为空，跳过本机运行时巡检");
+
         ManifestFreezePatrol.Report report = ManifestFreezePatrol.inspect(
                 MANIFEST_DIR, allFrozen(), NEW_SOURCE_KEYS);
 
@@ -142,6 +147,22 @@ class IngestionManifestRuntimePatrolTest {
     }
 
     // ---------- 小工具 ----------
+
+    /**
+     * 门控判据：生产落盘目录存在且非空（WP-F6c）。
+     * CI fresh checkout 环境下该目录被 .gitignore 忽略故不存在或为空，应跳过本机巡检；
+     * 本机/在产巡检环境目录存在且含真实落盘文件时，必须严格执行原断言（不放宽、不改名单）。
+     */
+    private static boolean isManifestDirPresentAndNonEmpty() {
+        if (!Files.isDirectory(MANIFEST_DIR)) {
+            return false;
+        }
+        try (var stream = Files.list(MANIFEST_DIR)) {
+            return stream.findAny().isPresent();
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
     private static List<ManifestFreezePatrol.Entry> allFrozen() throws IOException {
         JsonNode freeze = ManifestFreezePatrol.freezeManifest();

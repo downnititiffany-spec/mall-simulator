@@ -109,22 +109,31 @@ object DwsSql {
       |GROUP BY b.product_id, b.category_id, COALESCE(s.buy, 0)
       |""".stripMargin
 
-  /** 交易日汇总（§21.3 有效支付口径）：order_count/buyer_count 仅计 final_paid_flag=1 */
+  /** 交易日汇总（§21.3 有效支付口径）：order_count/buyer_count 仅计 final_paid_flag=1；按订单先聚合消除退款行级扇出（WP-F7d） */
   def tradeDay(ns: WarehouseNamespace, dt: String): String =
     s"""
       |INSERT OVERWRITE TABLE ${ns.dws}.dws_trade_day PARTITION(dt = '$dt')
       |SELECT
       |  COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN order_id END) AS order_count,
       |  COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN user_id END) AS buyer_count,
-      |  SUM(CASE WHEN final_paid_flag = 1 THEN amount ELSE 0 END) AS sale_amount,
+      |  SUM(CASE WHEN final_paid_flag = 1 THEN order_amount ELSE 0 END) AS sale_amount,
       |  COALESCE(SUM(CASE WHEN final_paid_flag = 1 THEN refund_amount ELSE 0 END), 0) AS refund_amount,
-      |  SUM(CASE WHEN final_paid_flag = 1 THEN amount ELSE 0 END)
+      |  SUM(CASE WHEN final_paid_flag = 1 THEN order_amount ELSE 0 END)
       |    - COALESCE(SUM(CASE WHEN final_paid_flag = 1 THEN refund_amount ELSE 0 END), 0) AS net_sale_amount,
       |  CASE WHEN COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN order_id END) = 0 THEN NULL
-      |       ELSE SUM(CASE WHEN final_paid_flag = 1 THEN amount ELSE 0 END)
+      |       ELSE SUM(CASE WHEN final_paid_flag = 1 THEN order_amount ELSE 0 END)
       |            / COUNT(DISTINCT CASE WHEN final_paid_flag = 1 THEN order_id END) END AS avg_order_value
-      |FROM ${ns.dwd}.dwd_order_detail
-      |WHERE dt = '$dt'
+      |FROM (
+      |  SELECT
+      |    order_id,
+      |    MAX(user_id) AS user_id,
+      |    MAX(final_paid_flag) AS final_paid_flag,
+      |    SUM(amount) AS order_amount,
+      |    MAX(refund_amount) AS refund_amount
+      |  FROM ${ns.dwd}.dwd_order_detail
+      |  WHERE dt = '$dt'
+      |  GROUP BY order_id
+      |) o
       |""".stripMargin
 
   /** 商品×日期销售宽表（§12.1 第 4 张）：有效支付商品件数/金额/去重买家 */
@@ -180,13 +189,22 @@ object DwsSql {
     s"""
       |INSERT OVERWRITE TABLE ${ns.dws}.dws_region_sale_day PARTITION(dt = '$dt')
       |SELECT
-      |  COALESCE(city_level, 'unknown') AS region,
+      |  region,
       |  COUNT(DISTINCT user_id) AS buyer_count,
       |  COUNT(DISTINCT order_id) AS order_count,
-      |  SUM(amount) AS sale_amount,
-      |  SUM(amount) - COALESCE(SUM(refund_amount), 0) AS net_sale_amount
-      |FROM ${ns.dwd}.dwd_order_detail
-      |WHERE dt = '$dt' AND final_paid_flag = 1
-      |GROUP BY COALESCE(city_level, 'unknown')
+      |  SUM(order_amount) AS sale_amount,
+      |  SUM(order_amount) - COALESCE(SUM(refund_amount), 0) AS net_sale_amount
+      |FROM (
+      |  SELECT
+      |    COALESCE(city_level, 'unknown') AS region,
+      |    order_id,
+      |    MAX(user_id) AS user_id,
+      |    SUM(amount) AS order_amount,
+      |    MAX(refund_amount) AS refund_amount
+      |  FROM ${ns.dwd}.dwd_order_detail
+      |  WHERE dt = '$dt' AND final_paid_flag = 1
+      |  GROUP BY COALESCE(city_level, 'unknown'), order_id
+      |) o
+      |GROUP BY region
       |""".stripMargin
 }
