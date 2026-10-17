@@ -641,9 +641,12 @@ $BaselineDefault = [ordered]@{
 #   region 对账闭环 / 空分区语义）；量数轮 RunId wpf7dgate20261017a 实测 375/375、46 suites、All tests passed 后同步本数。
 # 2026-10-17：375→380＝WP-F9a 用户留存率新增 `AdsUserRetentionSpec` 5 条（跨日回访/horizon 内 0/horizon 外 NULL /
 #   空队列不产出/正式表同构）；总控亲跑 RunId wpf9afix20261017 实测 380/380、47 suites、All tests passed 后同步本数。
+# 2026-10-17：380→386＝WP-F7f 品类退款分摊新增 `AdsCategorySaleRefundAllocationSpec` 6 条（跨品类比例分摊+逐分校正 /
+#   单品类多行 / 总额 0 兜底 / 全站闭环对账 / 旧口径扇出正对照 / 空分区自洽）；量数轮 RunId wpf7fgate20261017a 实测 386 跑
+#   385 过 1 红（空日对账存量判据，FIX 轮修 AdsQualityJob 空日谓词后定向 10/10 绿），收口轮复验后同步本数。
 # 2026-09-29：329→332＝N31-02 开发新增 `ProductDimensionAsOfSpec`、`MetricExportZeroRowSpec`、
 #   `CategoryRegionAdsSpec` 各 1 条；同批同步 DDL 总数与 FixtureWriteShape 写入点基线，避免新功能被旧守卫误报。
-$BaselineSpark = 380
+$BaselineSpark = 386
 # S3-45：connection-ingestion 取消 5 份「向上找仓根」副本（阶段6 反熵／backlog 行「repo 根查找重复实现的
 #   剩余部分」①②的工程内部分，A 类：只改测试与测试作用域依赖）——pom 补 platform-common 的
 #   `<type>test-jar</type>`（同 ai-decision／metric-analysis／platform-app／warehouse-pipeline 既有形态）
