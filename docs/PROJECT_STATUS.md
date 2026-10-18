@@ -1,3 +1,11 @@
+### 2026-10-18 U06 盘点验收（云端 VM，总控亲验）——UP-42 成立首切片收窄至两表，UP-44/45 裁决登记，首切片 U06-S01 已派发
+
+- U06 只读盘点验收：Antigravity Flash 按 `U06-INV` 规约交付盘点报告（`mall-simulator-notes/U06-INVENTORY-REPORT.md`，云端仅源码级盘点、未截图未走查），总控逐项抽验源码锚点（theme.css 行 334 `.table-wrap` 含 overflow-x 与行 604 兼容层无滚动、Decisions 13 列与 Pipeline 10 列表头逐个点数、Products/Sales 的 th@click 且全仓零 tabindex、Overview/Ops/AiAssistant 标签缺失锚点、BaseChart 的 resize/dispose/height-watch、theme.css 行 119 焦点环与两处 outline:none 的光环替代）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 527 继续有效，未重跑门禁。
+- 问题清单：UP-20261018-42（P2，多列宽表缺横向滚动容器）成立，首切片收窄为仅 Decisions+Pipeline 两张最宽表（其余站点为余项排后续切片，DataTable 与商品名截断分开评估）；UP-20261018-43（P2，标签关联缺失）成立，排后续候选；UP-20261018-44（P2，排序表头键盘不可达）成立，裁决见下；UP-20261018-46（P2，Enter/Escape 键盘路径缺失）成立，排后续候选；UP-20261018-47（P2/测试空白）成立，随实施切片分步补齐；UP-20261018-48（待本地审阅）登记，盘点第 8 节清单采信供用户本地走查，RES-06 沿用签收处置不自动销项；UP-20261018-49～52 复核符合（焦点环、语义元素、图表生命周期、等待与规模），不改代码。
+- 裁决登记两项：① UP-44 采用 A 方案（排序 th 内嵌原生 button 获得聚焦与 Enter/Space，非 §3.2 新组件），本轮仅登记、排后续切片实施；② UP-45 维持现状不引入 ResizeObserver——盘点所举 1200px 断点示例经勘误不成立（断点跨越必触发 window resize），现行 window resize + 高度 watch 已覆盖实际路径，无证实失败场景不改全站图表底座，本地审阅发现错位再立项。
+- 勘误两处（不影响分级）：① 图表实例为 10 处（ChartState 用法实查），非盘点所称 8 个；② UP-45 的断点示例不成立（见上）。
+- 首个实施切片 U06-S01（Decisions 决策列表与 Pipeline 最近实例表各外加一层既有 `.table-wrap` 包裹，Decisions 的 v-if 移至包裹 div 且 v-else-if 条件链不变，不改样式文件与其余站点 + 新增 tableOverflowContainer 源码守卫 5 块）规约已立并派发 agy Flash，验收后另行登记。结果报告 `docs/verification/results/FUNCTION-POLISH-U06-20261018.md`。本节修改前已备份本文件至 `docs/backups/u06-inventory-20261018/`。本轮未改业务代码、未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U05-S02 Reports 竞态守卫与卸载失效切片关账（云端 VM，总控亲验）——UP-34/36 关账；UP-35 涉 §3.2 待裁决已汇报
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Reports.vue` 仅规约六处——import 引入 `onUnmounted`；新增 `detailSequence`/`artifactSequence`/`decisionSequence` 三序号；`openReport`/`loadArtifact` 整函数替换为序号守卫形态（loadArtifact 先捕获 `reportId` 单次读取）；`loadDecisionOptions` 三处插入（取号/写入前校验/catch 校验/finally 条件复位）；新增 `onUnmounted` 四序号递增失效。新增 `web/tests/reportsRaceGuard.test.js` 源码守卫与纯函数仿真 6 块。总控逐行核 diff 与规约零偏差。总控裁决两项：序号失效方案落地、AbortSignal 网络层取消不纳入（卸载后在途响应一律丢弃不回写，诚实登记）；`openReport` 失败清 `selectedReport` 维持现状（仅最新失败才清）。
