@@ -1,3 +1,9 @@
+### 2026-10-18 U06-S09 Ops 新建用户四控件标签关联切片关账（云端 VM，总控亲验）——UP-43 四控件部分关账，下一切片 U06-S10 已派发
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Ops.vue` 新建用户行四控件（用户名/姓名/角色 select/初始密码）各最前加 `id`（ops-new-username/ops-new-real-name/ops-new-role/ops-new-password）、末尾加区分性 `aria-label`，`v-model`/`placeholder`/`type`/`style`、三个 option、创建按钮行与区块标题逐字未动，未新增可见 label 元素、Ops.vue 保持零 tabindex；总控裁决沿盘点三式并列与 S08 先例采用 aria-label 一式；新增 `web/tests/opsNewUserLabelS09.test.js` 源码守卫 5 块（实测 253 行：两组逐字锚点、四 id 各恰一次且全页 id 总数恰 4 与零 tabindex、行为不回退、命名完整性正反向仿真）。总控逐行核 diff 与规约零偏差、无修复轮；跨切片断言预检经规约与关账双重复核无冲突。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u06s09acc20261018` 572/572 全过、build exit=0（脚本因基线 567 报 DRIFT 为预期计数变化）；漂移 +5（新守卫 5 块）书面登记后 `run-tests.ps1` 基线 web 567→572；收口轮 RunId `u06s09gate20261018` 572 MATCH、PASS exit=0；脚本契约 13/13 PASS（基线登记后亲跑）。
+- 处置：UP-20261018-43 Ops 新建用户四控件部分 **关账**；UP-20261018-47 本切片部分关账。U06 余项立切片 U06-S10（UP-20261018-43 部分：AiAssistant 提问框标签关联——提问框本无可见 label 元素，总控裁决沿 S09 先例采用 `aria-label` 并加 id，不改 placeholder/Enter 发送/禁用逻辑；跨切片预检已亲做，无既有守卫逐字锁定该输入行；规约范围守护已按现场实数校准：改动后 aria-label 总数恰 2、`<label` 恰 5 不变）派发 agy Flash，验收后另行登记；各工具栏 select 等 UP-43 余项与 UP-46 排其后，UP-45 维持现状、UP-48 待本地审阅不变。结果报告 `docs/verification/results/FUNCTION-POLISH-U06-S09-20261018.md`。本节修改前已备份本文件至 `docs/backups/u06-s09-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U06-S08 分析看板四页筛选控件标签关联切片关账（云端 VM，总控亲验）——UP-43 四页部分关账，下一切片 U06-S09 已派发
 
 - 交付（agy Flash 仅文件读写）：Overview/Behavior/Sales 三页日期范围与 Products 每页共四处既有 label 各加 `for` 指向新 id、组内七个输入框各加 `id` 与区分性 `aria-label`（起始/结束分开命名），label 文案/样式、`v-model`/`:disabled`/class/style 逐字未动，四页 script 逐字未动；新增 `web/tests/filterLabelAssociationS08.test.js` 源码守卫 5 块（实测 275 行：四页逐字锚点、七个新 id 局部/跨页唯一性与零 tabindex、v-model 不回退与 for→id 配对仿真）。总控逐行核 diff 与规约零偏差、无修复轮；跨切片断言预检经规约与关账双重复核无冲突。
