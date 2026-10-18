@@ -286,7 +286,8 @@
             {{ aiHistoryExportable ? '导出 CSV' : '导出（当前无可导出问答审计）' }}
           </button>
         </div>
-        <table v-if="aiHistoryTable.rows.length" class="data-table">
+        <div v-if="aiHistoryTable.rows.length" class="table-wrap">
+        <table class="data-table">
           <thead><tr style="text-align:left;color:var(--gray-500)">
             <th style="padding:6px">用户</th><th>问题</th><th>状态</th><th>行数</th><th>耗时</th><th>时间</th>
           </tr></thead>
@@ -301,6 +302,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <div v-else class="el-empty">暂无问答记录</div>
         <div class="pagination-bar" style="display:flex;gap:8px;align-items:center;margin-top:8px">
           <span>共 {{ aiHistoryTotal }} 条 · 第 {{ aiHistoryPage }} / {{ aiHistoryTotalPages }} 页</span>
@@ -325,7 +327,8 @@
             {{ aiCallExportable ? '导出 CSV' : '导出（当前无可导出调用审计）' }}
           </button>
         </div>
-        <table v-if="aiCallTable.rows.length" class="data-table">
+        <div v-if="aiCallTable.rows.length" class="table-wrap">
+        <table class="data-table">
           <thead><tr style="text-align:left;color:var(--gray-500)">
             <th style="padding:6px">用例</th><th>模型</th><th>来源 / 快照</th><th>请求指纹</th><th>tokens</th><th>耗时</th><th>状态</th>
           </tr></thead>
@@ -341,6 +344,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <div v-else class="el-empty">暂无调用记录</div>
         <div class="pagination-bar" style="display:flex;gap:8px;align-items:center;margin-top:8px">
           <span>共 {{ aiCallTotal }} 条 · 第 {{ aiCallPage }} / {{ aiCallTotalPages }} 页</span>

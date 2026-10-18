@@ -150,7 +150,7 @@ test('c. ingestion 包裹结构：存在 <div v-if="ingestionBatches.length" cla
   )
 })
 
-test('d. quality 包裹结构与机制锚点：存在 qualityTable 包裹；闭合紧跟 v-else 空态；theme.css 规则在位；Ops.vue 内 table-wrap 恰为 5 处且无 overflow-x；审计双表与 DataTable 逐字未动', () => {
+test('d. quality 包裹结构与机制锚点：存在 qualityTable 包裹；闭合紧跟 v-else 空态；theme.css 规则在位；Ops.vue 内 table-wrap 恰为 7 处且无 overflow-x；审计双表与 DataTable 逐字未动', () => {
   // 1. 存在 <div v-if="qualityTable.rows.length" class="table-wrap"> 紧邻 <table class="data-table">
   assert.match(
     opsSource,
@@ -189,12 +189,12 @@ test('d. quality 包裹结构与机制锚点：存在 qualityTable 包裹；闭�
     'theme.css 中 .table-wrap 规则必须包含 overflow-x: auto'
   )
 
-  // 5. Ops.vue 内 class="table-wrap" 恰为 5 处（既有用户表 1 + 本切片 4）
+  // 5. Ops.vue 内 class="table-wrap" 恰为 7 处（既有用户表 1 + S04 主区四表 4 + S06 审计双表 2）
   const count = (opsSource.match(/class="table-wrap"/g) || []).length
   assert.equal(
     count,
-    5,
-    `Ops.vue 内 class="table-wrap" 恰好 5 处（实测 ${count} 处）`
+    7,
+    `Ops.vue 内 class="table-wrap" 恰好 7 处（实测 ${count} 处）`
   )
 
   // 6. Ops.vue 内不含 overflow-x 字面（包裹只用既有类）
@@ -205,16 +205,16 @@ test('d. quality 包裹结构与机制锚点：存在 qualityTable 包裹；闭�
   )
 
   // 7. 审计双表与 DataTable 使用处逐字未动
-  // 断言 aiHistoryTable.rows.length 与 aiCallTable.rows.length 的 table 标签仍带 v-if 原形态
+  // 断言 aiHistoryTable.rows.length 与 aiCallTable.rows.length 包裹形态在位
   assert.match(
     opsSource,
-    /<table v-if="aiHistoryTable\.rows\.length" class="data-table">/,
-    'aiHistoryTable 的 table 标签仍必须保留原有的 v-if="aiHistoryTable.rows.length" 形态'
+    /<div v-if="aiHistoryTable\.rows\.length" class="table-wrap">\s*<table class="data-table">/,
+    'aiHistoryTable 需包含 <div v-if="aiHistoryTable.rows.length" class="table-wrap"> 且其后紧邻 <table class="data-table">'
   )
   assert.match(
     opsSource,
-    /<table v-if="aiCallTable\.rows\.length" class="data-table">/,
-    'aiCallTable 的 table 标签仍必须保留原有的 v-if="aiCallTable.rows.length" 形态'
+    /<div v-if="aiCallTable\.rows\.length" class="table-wrap">\s*<table class="data-table">/,
+    'aiCallTable 需包含 <div v-if="aiCallTable.rows.length" class="table-wrap"> 且其后紧邻 <table class="data-table">'
   )
   // 断言 <DataTable 使用行仍在
   assert.match(

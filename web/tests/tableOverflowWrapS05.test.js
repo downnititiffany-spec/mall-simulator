@@ -120,17 +120,17 @@ test('c. 机制锚点：theme.css 包含 .table-wrap 与 overflow-x: auto；AiAs
   )
 })
 
-test('d. 范围守护：Ops.vue 内审计双表 table 标签仍带 v-if 原形态；DataTable.vue 内 table 标签仍带 v-if 原形态', () => {
-  // 1. Ops.vue 内审计双表 table 标签仍带 v-if 原形态
+test('d. 范围守护：Ops.vue 内审计双表包裹结构在位；DataTable.vue 内 table 标签仍带 v-if 原形态', () => {
+  // 1. Ops.vue 内审计双表包裹结构在位
   assert.match(
     opsSource,
-    /<table v-if="aiHistoryTable\.rows\.length" class="data-table">/,
-    'Ops.vue 内 aiHistoryTable 必须逐字保留原有 <table v-if="aiHistoryTable.rows.length" class="data-table"> 原形态'
+    /<div v-if="aiHistoryTable\.rows\.length" class="table-wrap">\s*<table class="data-table">/,
+    'Ops.vue 内 aiHistoryTable 需包含 <div v-if="aiHistoryTable.rows.length" class="table-wrap"> 且其后紧邻 <table class="data-table">'
   )
   assert.match(
     opsSource,
-    /<table v-if="aiCallTable\.rows\.length" class="data-table">/,
-    'Ops.vue 内 aiCallTable 必须逐字保留原有 <table v-if="aiCallTable.rows.length" class="data-table"> 原形态'
+    /<div v-if="aiCallTable\.rows\.length" class="table-wrap">\s*<table class="data-table">/,
+    'Ops.vue 内 aiCallTable 需包含 <div v-if="aiCallTable.rows.length" class="table-wrap"> 且其后紧邻 <table class="data-table">'
   )
 
   // 2. DataTable.vue 内 table 标签仍带 v-if 原形态

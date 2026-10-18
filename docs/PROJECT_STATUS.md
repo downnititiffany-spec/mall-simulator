@@ -1,3 +1,9 @@
+### 2026-10-18 U06-S06 Ops 审计双表横向滚动容器切片关账（云端 VM，总控亲验）——UP-42 两表部分关账，下一切片 U06-S07 已派发
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Ops.vue` 审计双表（问答审计 6 列、模型调用审计 7 列，位于 1fr 1fr 双列网格内）各外加一层既有 `<div class="table-wrap">` 包裹，两表 `v-if` 由 table 移至包裹 div、table 改无条件，thead/tbody 逐字未动；两表其后 `v-else` 空态链绑定改为包裹 div 且逐字未动，网格容器与 chart-box 逐字未动；改造后 Ops.vue 内 `table-wrap` 恰 7 处（用户表 1+S04 四表 4+本切片 2）、无 `overflow-x` 字面；新增 `web/tests/tableOverflowWrapS06.test.js` 源码守卫 5 块（实测 218 行）；规约预先列明的跨切片同步已落地：S04 守卫块 d 三处（table-wrap 总数 5→7 与审计双表断言改包裹形态）、S05 守卫块 d 两处（审计双表断言改包裹形态），块数不变。总控逐行核 diff 与规约零偏差；跨切片断言预检经规约与关账时双重复核，无其他断言冲突、无修复轮。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u06s06acc20261018` 557/557 全过、build exit=0（脚本因基线 552 报 DRIFT 为预期计数变化）；漂移 +5（新守卫 5 块）书面登记后 `run-tests.ps1` 基线 web 552→557；收口轮 RunId `u06s06gate20261018` 557 MATCH、PASS exit=0；脚本契约 13/13 PASS（基线登记前后各一次）。
+- 处置：UP-20261018-42 本切片两表部分 **关账**（连同 U06-S01 两表、U06-S03 三表、U06-S04 四表、U06-S05 一表已处置 12 表；DataTable 组件为其余项最后一处）；UP-20261018-47 本切片部分关账。U06 余项立切片 U06-S07（UP-20261018-42 余项最后一处：DataTable 通用组件内部一处包裹，复合 v-if 移至包裹 div、v-else 空态链不变、组件 script/style 与唯一使用点 Ops.vue 逐字不动，与既有先例同机制；规约已按 S03 教训预先列明须同步更新 S05/S06 守卫中锁定 DataTable 旧形态的断言）派发 agy Flash，验收后另行登记；S07 关账后 UP-42 全项处置完毕；UP-43/46 排其后，UP-45 维持现状、UP-48 待本地审阅不变。结果报告 `docs/verification/results/FUNCTION-POLISH-U06-S06-20261018.md`。本节修改前已备份本文件至 `docs/backups/u06-s06-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U06-S05 AiAssistant 数据依据表横向滚动容器切片关账（云端 VM，总控亲验）——UP-42 一表部分关账，下一切片 U06-S06 已派发
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/AiAssistant.vue` 数据依据表外加一层既有 `<div v-if="resultTable.rows.length" class="table-wrap">` 包裹，`v-if` 由 table 移至包裹 div、table 改无条件，thead/tbody 动态列逐字未动；其后 `v-else` 空态绑定改为包裹 div 且逐字未动；改造后 AiAssistant.vue 内 `table-wrap` 恰 1 处、`<table` 恰 1 处、无 `overflow-x` 字面，其余区块与脚本逻辑逐字未动；新增 `web/tests/tableOverflowWrapS05.test.js` 源码守卫 5 块（实测 176 行）。总控逐行核 diff 与规约零偏差；跨切片断言预检（S03 教训）经规约与关账时双重复核，未发现既有守卫锁定该表形态，本切片无断言冲突、无修复轮。
