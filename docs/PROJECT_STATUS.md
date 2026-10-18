@@ -1,3 +1,9 @@
+### 2026-10-18 U06-S01 宽表横向滚动容器切片关账（云端 VM，总控亲验）——UP-42 两表部分关账，下一切片 U06-S02 已派发
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Decisions.vue` 决策列表外加 `<div v-if="rows.length" class="table-wrap">` 包裹（v-if 由 table 移至包裹 div、v-else-if 空态条件链不变）；`web/src/views/Pipeline.vue` 最近实例表外加 `<div class="table-wrap">` 包裹（table 行逐字不动）；新增 `web/tests/tableOverflowContainer.test.js` 源码守卫 5 块。总控逐行核 diff：生产代码与规约零偏差。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u06s01acc20261018` 531/532、判不合格——唯一失败为新守卫块 c 的全文件断言误伤 Pipeline 行 39 既有阶段表（该表本带 v-if、不在本切片范围）；同轮派修复轮 U06-S01-FIX 仅收窄该断言至包裹后首个 table 标签（生产代码零改动），复验 RunId `u06s01fix20261018` 532/532 全过；漂移 +5（新守卫 5 块）书面登记后 `run-tests.ps1` 基线 web 527→532；收口轮 RunId `u06s01gate20261018` 532 MATCH、PASS exit=0；脚本契约 13/13 PASS（基线登记前后各一次）。
+- 处置：UP-20261018-42 两表部分 **关账**（Ops/Products/Sales/Reports/AiAssistant/DataTable 等余项排后续切片，商品名截断分开评估）；UP-20261018-47 本切片部分关账。U06 余项立切片 U06-S02（UP-20261018-44，Products/Sales 排序表头 th 内嵌原生 button——已裁决 A 方案；样式收敛为 theme.css 新增一条 `.sort-btn` 继承规则，排序逻辑逐字不变）派发 agy Flash，验收后另行登记；UP-43/46 与 UP-42 余项排其后，UP-45 维持现状、UP-48 待本地审阅不变。结果报告 `docs/verification/results/FUNCTION-POLISH-U06-S01-20261018.md`。本节修改前已备份本文件至 `docs/backups/u06-s01-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U06 盘点验收（云端 VM，总控亲验）——UP-42 成立首切片收窄至两表，UP-44/45 裁决登记，首切片 U06-S01 已派发
 
 - U06 只读盘点验收：Antigravity Flash 按 `U06-INV` 规约交付盘点报告（`mall-simulator-notes/U06-INVENTORY-REPORT.md`，云端仅源码级盘点、未截图未走查），总控逐项抽验源码锚点（theme.css 行 334 `.table-wrap` 含 overflow-x 与行 604 兼容层无滚动、Decisions 13 列与 Pipeline 10 列表头逐个点数、Products/Sales 的 th@click 且全仓零 tabindex、Overview/Ops/AiAssistant 标签缺失锚点、BaseChart 的 resize/dispose/height-watch、theme.css 行 119 焦点环与两处 outline:none 的光环替代）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 527 继续有效，未重跑门禁。

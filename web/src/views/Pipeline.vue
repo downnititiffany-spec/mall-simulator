@@ -72,6 +72,7 @@
         <span style="font-size:13px">第 {{ page }} / {{ totalPages }} 页</span>
         <button class="btn btn-sm" :disabled="loading || busy || page >= totalPages" @click="changePage(page + 1)">下一页</button>
       </div>
+      <div class="table-wrap">
       <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
           <th style="padding:8px">ID</th><th>流水线</th><th>业务时间</th><th>源数据版本</th><th>输入批次</th><th>目标快照</th><th>状态</th><th>当前阶段</th><th>尝试</th><th>操作</th>
@@ -104,6 +105,7 @@
           <tr v-if="runRows.length === 0"><td colspan="10" class="el-empty">暂无运行记录</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <div class="chart-box">

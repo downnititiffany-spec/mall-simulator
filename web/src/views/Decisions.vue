@@ -57,7 +57,8 @@
 
       <div v-if="actionError" class="banner banner-error">操作失败：{{ actionError }}</div>
 
-      <table v-if="rows.length" class="data-table">
+      <div v-if="rows.length" class="table-wrap">
+        <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
           <th style="padding:8px">编号</th><th>标题</th><th>来源</th><th>目标指标</th><th>基线</th>
           <th>建议快照</th><th>基线快照</th><th>口径版本</th><th>负责人</th><th>截止日期</th>
@@ -105,6 +106,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       <div v-else-if="state !== 'loading' && state !== 'error'" class="el-empty">暂无决策</div>
 
       <div v-if="evaluationError" class="table-hint table-hint-error">部分决策的评价读取失败：{{ evaluationError }}</div>
