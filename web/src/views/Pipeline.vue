@@ -74,7 +74,7 @@
       </div>
       <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
-          <th style="padding:8px">ID</th><th>流水线</th><th>业务时间</th><th>源数据版本</th><th>输入批次</th><th>目标快照</th><th>状态</th><th>尝试</th><th>操作</th>
+          <th style="padding:8px">ID</th><th>流水线</th><th>业务时间</th><th>源数据版本</th><th>输入批次</th><th>目标快照</th><th>状态</th><th>当前阶段</th><th>尝试</th><th>操作</th>
         </tr></thead>
         <tbody>
           <tr v-for="r in runRows" :key="r.id" style="border-top:1px solid var(--gray-100)">
@@ -90,6 +90,7 @@
                 {{ r.status }}
               </span>
             </td>
+            <td class="mono">{{ r.currentStage || '—' }}<span v-if="r.status === 'FAILED' && r.errorCode" style="margin-left:6px;color:#dc2626">{{ r.errorCode }}</span></td>
             <td>{{ r.attemptNo }}</td>
             <td>
               <button class="btn btn-sm" v-if="r.status === 'FAILED'" @click="retry(r.id)" :disabled="loading || busy || recoveryBusy">重试</button>
@@ -100,7 +101,7 @@
               </template>
             </td>
           </tr>
-          <tr v-if="runRows.length === 0"><td colspan="9" class="el-empty">暂无运行记录</td></tr>
+          <tr v-if="runRows.length === 0"><td colspan="10" class="el-empty">暂无运行记录</td></tr>
         </tbody>
       </table>
     </div>

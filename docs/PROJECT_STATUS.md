@@ -1,3 +1,9 @@
+### 2026-10-18 U04-S02 Pipeline 实例表当前阶段列切片关账（云端 VM，总控亲验）
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Pipeline.vue` 实例表三处——表头「状态」后插入「当前阶段」列、行内新增阶段回显单元格（空值回退 `—`，仅 FAILED 且有失败码时红色附注 errorCode）、空态 colspan 9→10（其余逐字未动）；新增 `web/tests/pipelineRunStageColumn.test.js` 5 个守卫（表头位置与原 9 列保留、单元格绑定与附注条件、colspan 与表头列数互证、既有行级操作保留、呈现逻辑仿真 6 组合；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，两字段为列表行既有字段、纯呈现补齐，未动后端、契约、权限与状态模型，无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u04s02acc20261018` 实测 513/513 全过、build exit=0（脚本因基线 508 报 DRIFT）；漂移构成书面登记——+5 全部为新增 pipelineRunStageColumn 测试块，据此 `run-tests.ps1` 基线再登记 web 508→513（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u04s02gate20261018` **513 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线登记前后各跑一次）。
+- 处置：UP-20261018-26 **关账**。U04 余项立切片 U04-S03（UP-20261018-27，Ops 禁用用户二次确认——按 RuntimeProfiles `window.confirm` 先例仅禁用路径补确认、启用不动、取消中止不发请求；非 §3.2、盘点已批准）派发 agy Flash，验收后另行登记；关账后 U04 全项处置完毕转 U05。结果报告 `docs/verification/results/FUNCTION-POLISH-U04-S02-20261018.md`。本节修改前已备份本文件至 `docs/backups/u04-s02-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U04-S01 RuntimeProfiles 刷新保留切片关账（云端 VM，总控亲验）
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/RuntimeProfiles.vue` 模板行 26 加载占位条件改 `loading && profiles.length === 0`、`loadProfiles()` 删除 profiles/sources 两行先行清空（其余逐字未动）；`web/tests/runtimeProfiles.test.js` 固化清空的两条断言改 doesNotMatch；新增 `web/tests/runtimeProfilesRefreshRetention.test.js` 3 个守卫（不先行清空与生命周期、模板四分支结构与卡片头指示、四分支真值表仿真；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，未动 testResult 收敛（按收窄裁决）、后端、契约与权限，无新依赖。
