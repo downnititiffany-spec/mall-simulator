@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import api from '../api'
 import { snapshotSelection, ensureSnapshotSelection } from '../composables/useSnapshotSelection'
 import { forEachConcurrent } from '../utils/forEachConcurrent'
@@ -206,6 +206,9 @@ const artifact = ref(null)
 const detailLoading = ref(false)
 const detailError = ref('')
 let requestSequence = 0
+let detailSequence = 0
+let artifactSequence = 0
+let decisionSequence = 0
 
 const selectedChoice = computed(() => snapshotSelection.options.find(
   (item) => item.snapshotId === selectedSnapshotId.value
@@ -282,6 +285,7 @@ function changeSort() {
 }
 
 async function loadDecisionOptions(targetPage = 1, append = false) {
+  const sequence = ++decisionSequence
   decisionLoading.value = true
   decisionError.value = ''
   try {
@@ -303,6 +307,7 @@ async function loadDecisionOptions(targetPage = 1, append = false) {
         evaluationReadFailures += 1
       }
     })
+    if (sequence !== decisionSequence) return
     const evaluated = eligible.filter((task) => evaluatedTasks.has(task))
     decisionOptions.value = append
       ? [...decisionOptions.value, ...evaluated.filter((task) => !decisionOptions.value.some((existing) => existing.id === task.id))]
@@ -313,9 +318,10 @@ async function loadDecisionOptions(targetPage = 1, append = false) {
       decisionError.value = `${evaluationReadFailures} 条决策的评价读取失败，已暂不列入报告候选。`
     }
   } catch (error) {
+    if (sequence !== decisionSequence) return
     decisionError.value = error?.message || '未知错误'
   } finally {
-    decisionLoading.value = false
+    if (sequence === decisionSequence) decisionLoading.value = false
   }
 }
 
@@ -347,29 +353,39 @@ async function createReport() {
 }
 
 async function openReport(report) {
+  const sequence = ++detailSequence
+  artifactSequence += 1
   detailLoading.value = true
   detailError.value = ''
   artifact.value = null
   try {
-    selectedReport.value = await api.reportDetail(report.id)
+    const detail = await api.reportDetail(report.id)
+    if (sequence !== detailSequence) return
+    selectedReport.value = detail
   } catch (error) {
+    if (sequence !== detailSequence) return
     selectedReport.value = null
     detailError.value = error?.message || '读取报告详情失败'
   } finally {
-    detailLoading.value = false
+    if (sequence === detailSequence) detailLoading.value = false
   }
 }
 
 async function loadArtifact() {
   if (!selectedReport.value?.report?.id) return
+  const reportId = selectedReport.value.report.id
+  const sequence = ++artifactSequence
   detailLoading.value = true
   detailError.value = ''
   try {
-    artifact.value = await api.reportArtifact(selectedReport.value.report.id)
+    const result = await api.reportArtifact(reportId)
+    if (sequence !== artifactSequence) return
+    artifact.value = result
   } catch (error) {
+    if (sequence !== artifactSequence) return
     detailError.value = error?.message || '读取报告制品失败'
   } finally {
-    detailLoading.value = false
+    if (sequence === artifactSequence) detailLoading.value = false
   }
 }
 
@@ -390,6 +406,13 @@ onMounted(async () => {
     snapshotsLoading.value = false
   }
   await loadPage(1)
+})
+
+onUnmounted(() => {
+  requestSequence += 1
+  detailSequence += 1
+  artifactSequence += 1
+  decisionSequence += 1
 })
 </script>
 

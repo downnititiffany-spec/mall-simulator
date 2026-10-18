@@ -1,3 +1,9 @@
+### 2026-10-18 U05-S02 Reports 竞态守卫与卸载失效切片关账（云端 VM，总控亲验）——UP-34/36 关账；UP-35 涉 §3.2 待裁决已汇报
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Reports.vue` 仅规约六处——import 引入 `onUnmounted`；新增 `detailSequence`/`artifactSequence`/`decisionSequence` 三序号；`openReport`/`loadArtifact` 整函数替换为序号守卫形态（loadArtifact 先捕获 `reportId` 单次读取）；`loadDecisionOptions` 三处插入（取号/写入前校验/catch 校验/finally 条件复位）；新增 `onUnmounted` 四序号递增失效。新增 `web/tests/reportsRaceGuard.test.js` 源码守卫与纯函数仿真 6 块。总控逐行核 diff 与规约零偏差。总控裁决两项：序号失效方案落地、AbortSignal 网络层取消不纳入（卸载后在途响应一律丢弃不回写，诚实登记）；`openReport` 失败清 `selectedReport` 维持现状（仅最新失败才清）。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u05s02acc20261018` 527/527 全过、build 成功（基线 521 报 DRIFT 为预期计数变化）；漂移 +6（新守卫 6 块）书面登记后 `run-tests.ps1` 基线 web 521→527；收口轮 RunId `u05s02gate20261018` 527 MATCH、PASS exit=0；脚本契约 13/13 PASS（基线登记前后各一次）。
+- 处置：UP-20261018-34 **关账**；UP-20261018-36 **全项关账**。U05 余项仅 UP-20261018-35（Decisions 原生 prompt 改内联/模态对话框）——涉 §3.2「引入新组件」边缘，总控已在主聊天报告影响与方案（A 对话框组件替代 / B 维持现状，现行 prompt 校验 fail-closed 功能完整），等裁决，不擅自推进；U05 保持进行中（余 UP-35 待裁决）。不依赖裁决的工作继续：转 U06 盘点（U06-INV 只读盘点已派发 agy Flash；真实视觉审阅为用户本地事项）。结果报告 `docs/verification/results/FUNCTION-POLISH-U05-S02-20261018.md`。本节修改前已备份本文件至 `docs/backups/u05-s02-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U05-S01 Reports 列表刷新平滑保留切片关账（云端 VM，总控亲验）——UP-18 全项关账
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Reports.vue` 三处——行 89 状态行条件改 `loading && reports.length === 0`、行 93 表格条件改 `reports.length`（与错误横幅同屏）、`loadPage()` 失败分支删 `reports.value = []` 一行；新增 `web/tests/reportsRefreshRetention.test.js` 源码守卫 3 块。总控逐行核 diff 与规约零偏差。
