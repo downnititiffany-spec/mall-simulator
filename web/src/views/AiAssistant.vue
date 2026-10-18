@@ -52,7 +52,8 @@
 
       <div class="chart-box">
         <div class="chart-title">数据依据（真实查询结果，未做前端重算）</div>
-        <table v-if="resultTable.rows.length" class="data-table">
+        <div v-if="resultTable.rows.length" class="table-wrap">
+        <table class="data-table">
           <thead><tr style="text-align:left;color:var(--gray-500)">
             <th v-for="k in resultTable.headers" :key="k" style="padding:6px">{{ k }}</th>
           </tr></thead>
@@ -62,6 +63,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <div v-else class="el-empty">当前时间范围无数据，不编造结论</div>
       </div>
 
