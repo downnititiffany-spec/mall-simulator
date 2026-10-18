@@ -1051,7 +1051,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U06-S09 web 基线登记：572（+5 = web/tests/opsNewUserLabelS09.test.js 新增 5 个测试块：用户名与姓名关联 1 + 角色与密码关联 1 + id 唯一性与零 tabindex 1 + 行为不回退 1 + 命名完整性仿真 1；总控亲跑 RunId u06s09acc20261018 实测 572/572 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U06-S10 web 基线登记：577（+5 = web/tests/aiQuestionLabelS10.test.js 新增 5 个测试块：提问框关联锚点 1 + 续行与按钮不回退 1 + id 唯一性与零 tabindex 1 + 范围守护 1 + 命名完整性仿真 1；总控亲跑 RunId u06s10acc20261018 实测 577/577 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U06-S11 web 基线登记：582（+5 = web/tests/opsToolbarSelectLabelS11.test.js 新增 5 个测试块：用户列表两控件锚点 1 + 审计四控件锚点 1 + id 唯一性与计数 1 + 范围守护与行为不回退 1 + 命名完整性仿真 1；总控亲跑 RunId u06s11fix20261018 实测 582/582 后登记，非 -AllowCountDrift 放行；首轮 u06s11acc20261018 为 581/582，唯一失败为新守卫块 e 重复标签检出逻辑缺陷（重复检测仅收契约一致标签、重复项先落入文案不符分支而漏检），经 U06-S11-FIX 将重复检测改为基于全部在场非空标签后复验全过，生产代码未改；S09 守卫同步仅改 id 计数 4→10、块数不变）
-$BaselineWebTests = 582
+# 2026-10-18 U06-S12 web 基线登记：587（+5 = web/tests/filterEnterSubmitS12.test.js 新增 5 个测试块：Overview 锚点 1 + Behavior 锚点 1 + Sales 锚点 1 + 范围守护与计数 1 + Enter 触发判定仿真 1；总控亲跑 RunId u06s12acc20261018 实测 587/587 后登记，非 -AllowCountDrift 放行；首轮 587/587 一次全过、无跨切片冲突、无修复轮；S08 守卫同步仅在块 a/b/c 九处正则插入 @keyup\.enter="load" 形态、块数不变）
+$BaselineWebTests = 587
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

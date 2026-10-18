@@ -31,21 +31,21 @@ test('a. Overview 关联：label 的 for="overview-trend-from" 与两输入 id/a
   // 2. 起始日期 input 新形态逐字锚点
   assert.match(
     overviewSource,
-    /<input id="overview-trend-from" class="input input-date" type="date" v-model="from" :disabled="loading" aria-label="趋势起始日期" \/>/,
+    /<input id="overview-trend-from" class="input input-date" type="date" v-model="from" :disabled="loading" aria-label="趋势起始日期" @keyup\.enter="load" \/>/,
     'Overview 需包含起始日期 input 且带 id="overview-trend-from" 与 aria-label="趋势起始日期"'
   )
 
   // 3. 结束日期 input 新形态逐字锚点
   assert.match(
     overviewSource,
-    /<input id="overview-trend-to" class="input input-date" type="date" v-model="to" :disabled="loading" aria-label="趋势结束日期" \/>/,
+    /<input id="overview-trend-to" class="input input-date" type="date" v-model="to" :disabled="loading" aria-label="趋势结束日期" @keyup\.enter="load" \/>/,
     'Overview 需包含结束日期 input 且带 id="overview-trend-to" 与 aria-label="趋势结束日期"'
   )
 
   // 4. 三行筛选控件连贯区块正则断言
   assert.match(
     overviewSource,
-    /<label class="row text-sm secondary" for="overview-trend-from">趋势日期范围<\/label>\s*<input id="overview-trend-from" class="input input-date" type="date" v-model="from" :disabled="loading" aria-label="趋势起始日期" \/>\s*<span class="muted">至<\/span>\s*<input id="overview-trend-to" class="input input-date" type="date" v-model="to" :disabled="loading" aria-label="趋势结束日期" \/>/,
+    /<label class="row text-sm secondary" for="overview-trend-from">趋势日期范围<\/label>\s*<input id="overview-trend-from" class="input input-date" type="date" v-model="from" :disabled="loading" aria-label="趋势起始日期" @keyup\.enter="load" \/>\s*<span class="muted">至<\/span>\s*<input id="overview-trend-to" class="input input-date" type="date" v-model="to" :disabled="loading" aria-label="趋势结束日期" @keyup\.enter="load" \/>/,
     'Overview 筛选栏三行新形态必须按契约顺序连续在位'
   )
 })
@@ -61,21 +61,21 @@ test('b. Behavior 关联：label 的 for="behavior-trend-from" 与两输入 id/a
   // 2. 起始日期 input 新形态逐字锚点
   assert.match(
     behaviorSource,
-    /<input id="behavior-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="活跃趋势起始日期" \/>/,
+    /<input id="behavior-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="活跃趋势起始日期" @keyup\.enter="load" \/>/,
     'Behavior 需包含起始日期 input 且带 id="behavior-trend-from" 与 aria-label="活跃趋势起始日期"'
   )
 
   // 3. 结束日期 input 新形态逐字锚点
   assert.match(
     behaviorSource,
-    /<input id="behavior-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="活跃趋势结束日期" \/>/,
+    /<input id="behavior-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="活跃趋势结束日期" @keyup\.enter="load" \/>/,
     'Behavior 需包含结束日期 input 且带 id="behavior-trend-to" 与 aria-label="活跃趋势结束日期"'
   )
 
   // 4. 三行筛选控件连贯区块正则断言
   assert.match(
     behaviorSource,
-    /<label style="font-size:13px;color:var\(--gray-700\)" for="behavior-trend-from">活跃趋势日期范围：<\/label>\s*<input id="behavior-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="活跃趋势起始日期" \/>\s*<span style="color:var\(--gray-400\)">至<\/span>\s*<input id="behavior-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="活跃趋势结束日期" \/>/,
+    /<label style="font-size:13px;color:var\(--gray-700\)" for="behavior-trend-from">活跃趋势日期范围：<\/label>\s*<input id="behavior-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="活跃趋势起始日期" @keyup\.enter="load" \/>\s*<span style="color:var\(--gray-400\)">至<\/span>\s*<input id="behavior-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="活跃趋势结束日期" @keyup\.enter="load" \/>/,
     'Behavior 筛选区三行新形态必须按契约顺序连续在位'
   )
 })
@@ -91,21 +91,21 @@ test('c. Sales 关联：label 的 for="sales-trend-from" 与两输入 id/aria-la
   // 2. 起始日期 input 新形态逐字锚点
   assert.match(
     salesSource,
-    /<input id="sales-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="销售趋势起始日期" \/>/,
+    /<input id="sales-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="销售趋势起始日期" @keyup\.enter="load" \/>/,
     'Sales 需包含起始日期 input 且带 id="sales-trend-from" 与 aria-label="销售趋势起始日期"'
   )
 
   // 3. 结束日期 input 新形态逐字锚点
   assert.match(
     salesSource,
-    /<input id="sales-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="销售趋势结束日期" \/>/,
+    /<input id="sales-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="销售趋势结束日期" @keyup\.enter="load" \/>/,
     'Sales 需包含结束日期 input 且带 id="sales-trend-to" 与 aria-label="销售趋势结束日期"'
   )
 
   // 4. 三行筛选控件连贯区块正则断言
   assert.match(
     salesSource,
-    /<label style="font-size:13px;color:var\(--gray-700\)" for="sales-trend-from">日期范围：<\/label>\s*<input id="sales-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="销售趋势起始日期" \/>\s*<span style="color:var\(--gray-400\)">至<\/span>\s*<input id="sales-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="销售趋势结束日期" \/>/,
+    /<label style="font-size:13px;color:var\(--gray-700\)" for="sales-trend-from">日期范围：<\/label>\s*<input id="sales-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="销售趋势起始日期" @keyup\.enter="load" \/>\s*<span style="color:var\(--gray-400\)">至<\/span>\s*<input id="sales-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="销售趋势结束日期" @keyup\.enter="load" \/>/,
     'Sales 筛选区三行新形态必须按契约顺序连续在位'
   )
 })

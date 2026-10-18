@@ -9,9 +9,9 @@
 
     <div class="filter-bar">
       <label class="row text-sm secondary" for="overview-trend-from">趋势日期范围</label>
-      <input id="overview-trend-from" class="input input-date" type="date" v-model="from" :disabled="loading" aria-label="趋势起始日期" />
+      <input id="overview-trend-from" class="input input-date" type="date" v-model="from" :disabled="loading" aria-label="趋势起始日期" @keyup.enter="load" />
       <span class="muted">至</span>
-      <input id="overview-trend-to" class="input input-date" type="date" v-model="to" :disabled="loading" aria-label="趋势结束日期" />
+      <input id="overview-trend-to" class="input input-date" type="date" v-model="to" :disabled="loading" aria-label="趋势结束日期" @keyup.enter="load" />
       <button class="btn btn-sm btn-primary" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
       <button class="btn btn-sm" :disabled="!metricExportable" @click="doExport">导出 CSV</button>
       <button class="btn btn-sm" @click="showDictionary = !showDictionary">
