@@ -52,6 +52,7 @@
         销售明细
         <span class="table-count">共 {{ rows.length }} 行</span>
       </div>
+      <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -72,6 +73,7 @@
           <tr v-if="rows.length === 0"><td colspan="6" class="el-empty">所选日期范围内没有销售数据</td></tr>
         </tbody>
       </table>
+      </div>
       <div class="pager">
         <button class="btn btn-sm" :disabled="loading || paged.page <= 1" @click="page = paged.page - 1">上一页</button>
         <span>第 {{ paged.page }} / {{ paged.totalPages }} 页</span>

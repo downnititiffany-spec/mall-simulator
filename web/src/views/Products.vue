@@ -32,6 +32,7 @@
         商品明细（后端稳定排序）
         <span class="table-count">当前页 {{ rows.length }} 行</span>
       </div>
+      <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -55,6 +56,7 @@
           <tr v-if="rows.length === 0"><td colspan="8" class="el-empty">当前分页窗口没有商品明细数据</td></tr>
         </tbody>
       </table>
+      </div>
       <div class="pager">
         <button class="btn btn-sm" :disabled="loading || responsePage <= 1" @click="goPage(responsePage - 1)">上一页</button>
         <span>第 {{ responsePage }} 页 / 共 {{ totalText }} 条</span>

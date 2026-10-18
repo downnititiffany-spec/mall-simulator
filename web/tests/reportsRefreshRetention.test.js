@@ -61,11 +61,11 @@ test('模板条件与分支守护：状态行无闪烁、表格平滑保留且�
     '页面不得存在无长度检查的独立 loading state-line 状态行'
   )
 
-  // 2.c. 表格条件为 <table v-if="reports.length" class="data-table">，页面中不再存在 !loading && !listError 表格条件形态
+  // 2.c. 表格挂载条件为外层 <div v-if="reports.length" class="table-wrap"> 包裹 <table class="data-table">，页面中不再存在 !loading && !listError 表格条件形态
   assert.match(
     page,
-    /<table v-if="reports\.length" class="data-table">/,
-    '数据表格需以 reports.length 为挂载条件'
+    /<div v-if="reports\.length" class="table-wrap">\s*<table class="data-table">/,
+    '数据表格需以 reports.length 为挂载条件（包裹层）'
   )
   assert.doesNotMatch(
     page,

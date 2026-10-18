@@ -90,7 +90,8 @@
       <div v-else-if="listError" class="banner banner-error" role="alert">报告列表读取失败：{{ listError }}</div>
       <div v-else-if="!reports.length" class="el-empty">还没有报告</div>
       <div v-if="detailError && !selectedReport" class="banner banner-error" role="alert">报告详情读取失败：{{ detailError }}。可以重试或选择其他报告。</div>
-      <table v-if="reports.length" class="data-table">
+      <div v-if="reports.length" class="table-wrap">
+      <table class="data-table">
         <thead><tr><th>编号</th><th>模板</th><th>报告窗口</th><th>快照</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="report in reports" :key="report.id">
@@ -104,6 +105,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </section>
 
     <section v-if="selectedReport" class="chart-box" aria-label="报告证据详情">
