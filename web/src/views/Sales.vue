@@ -3,10 +3,10 @@
     <div class="page-title">销售分析</div>
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <label style="font-size:13px;color:var(--gray-700)">日期范围：</label>
-      <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
+      <label style="font-size:13px;color:var(--gray-700)" for="sales-trend-from">日期范围：</label>
+      <input id="sales-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="销售趋势起始日期" />
       <span style="color:var(--gray-400)">至</span>
-      <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
+      <input id="sales-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="销售趋势结束日期" />
       <button class="btn btn-sm" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
       <button class="btn btn-sm" :disabled="!exportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:var(--gray-400)">汇总值取快照指标库，趋势取快照明细，页面不重算</span>

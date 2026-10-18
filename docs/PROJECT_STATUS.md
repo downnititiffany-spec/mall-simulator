@@ -1,3 +1,9 @@
+### 2026-10-18 U06-S08 分析看板四页筛选控件标签关联切片关账（云端 VM，总控亲验）——UP-43 四页部分关账，下一切片 U06-S09 已派发
+
+- 交付（agy Flash 仅文件读写）：Overview/Behavior/Sales 三页日期范围与 Products 每页共四处既有 label 各加 `for` 指向新 id、组内七个输入框各加 `id` 与区分性 `aria-label`（起始/结束分开命名），label 文案/样式、`v-model`/`:disabled`/class/style 逐字未动，四页 script 逐字未动；新增 `web/tests/filterLabelAssociationS08.test.js` 源码守卫 5 块（实测 275 行：四页逐字锚点、七个新 id 局部/跨页唯一性与零 tabindex、v-model 不回退与 for→id 配对仿真）。总控逐行核 diff 与规约零偏差、无修复轮；跨切片断言预检经规约与关账双重复核无冲突。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u06s08acc20261018` 567/567 全过、build exit=0（脚本因基线 562 报 DRIFT 为预期计数变化）；漂移 +5（新守卫 5 块）书面登记后 `run-tests.ps1` 基线 web 562→567；收口轮 RunId `u06s08gate20261018` 567 MATCH、PASS exit=0；脚本契约 13/13 PASS（基线登记后亲跑）。
+- 处置：UP-20261018-43 分析看板四页部分 **关账**；UP-20261018-47 本切片部分关账。U06 余项立切片 U06-S09（UP-20261018-43 部分：Ops 新建用户四控件标签关联——四控件本无可见 label 元素，总控裁决采用 `aria-label` 补齐无障碍命名并加 id，不新增可见标签、不改布局/文案/行为；跨切片预检已亲做，既有守卫仅锁定创建按钮行、不冲突）派发 agy Flash，验收后另行登记；AiAssistant/工具栏 select 等 UP-43 余项与 UP-46 排其后，UP-45 维持现状、UP-48 待本地审阅不变。结果报告 `docs/verification/results/FUNCTION-POLISH-U06-S08-20261018.md`。本节修改前已备份本文件至 `docs/backups/u06-s08-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U06-S07 DataTable 通用表组件横向滚动容器切片关账（云端 VM，总控亲验）——UP-42 全项关账，下一切片 U06-S08 已派发
 
 - 交付（agy Flash 仅文件读写）：`web/src/components/DataTable.vue` 组件内部为 table 外加一层既有 `<div class="table-wrap">` 包裹，复合条件 `v-if="table && table.rows && table.rows.length"` 由 table 移至包裹 div、table 改无条件，`v-else` 空态链绑定改为包裹 div 且逐字未动，组件 script/scoped style、最外层 div、thead/tbody 逐字未动；改造后组件内 `table-wrap` 恰 1 处、`<table` 恰 1 处、无 `overflow-x` 字面，唯一使用点 Ops.vue 逐字未动（内 table-wrap 仍 7 处）；新增 `web/tests/tableOverflowWrapS07.test.js` 源码守卫 5 块（实测 226 行）；规约预先列明的跨切片同步已落地：S05/S06 守卫块 d 各一处 DataTable 断言改包裹形态（含标题/注释），块数不变。总控逐行核 diff 与规约零偏差、无修复轮。

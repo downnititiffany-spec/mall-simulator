@@ -3,10 +3,10 @@
     <div class="page-title">用户行为分析</div>
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <label style="font-size:13px;color:var(--gray-700)">活跃趋势日期范围：</label>
-      <input type="date" v-model="from" :disabled="loading" style="padding:4px" />
+      <label style="font-size:13px;color:var(--gray-700)" for="behavior-trend-from">活跃趋势日期范围：</label>
+      <input id="behavior-trend-from" type="date" v-model="from" :disabled="loading" style="padding:4px" aria-label="活跃趋势起始日期" />
       <span style="color:var(--gray-400)">至</span>
-      <input type="date" v-model="to" :disabled="loading" style="padding:4px" />
+      <input id="behavior-trend-to" type="date" v-model="to" :disabled="loading" style="padding:4px" aria-label="活跃趋势结束日期" />
       <button class="btn btn-sm" :disabled="loading" @click="load">{{ loading ? '加载中' : '加载' }}</button>
       <button class="btn btn-sm" :disabled="!funnelExportable" @click="doExport">导出 CSV</button>
       <span style="font-size:12px;color:var(--gray-400)">漏斗按快照整体口径返回，不受日期范围影响</span>

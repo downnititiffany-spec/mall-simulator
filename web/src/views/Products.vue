@@ -3,8 +3,8 @@
     <div class="page-title">商品分析</div>
 
     <div class="chart-box" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px">
-      <label style="font-size:13px;color:var(--gray-700)">每页：</label>
-      <input v-model.number="pageSize" type="number" min="1" max="100" :disabled="loading" style="width:80px;padding:4px" />
+      <label style="font-size:13px;color:var(--gray-700)" for="products-page-size">每页：</label>
+      <input id="products-page-size" v-model.number="pageSize" type="number" min="1" max="100" :disabled="loading" style="width:80px;padding:4px" aria-label="每页条数" />
       <button class="btn btn-sm" :disabled="loading" @click="applyFilters">{{ loading ? '加载中' : '加载' }}</button>
       <button class="btn btn-sm" :disabled="!pageExportable" @click="doExport">导出当前页 CSV</button>
       <span style="font-size:12px;color:var(--gray-400)">

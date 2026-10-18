@@ -1047,7 +1047,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U06-S05 web 基线登记：552（+5 = web/tests/tableOverflowWrapS05.test.js 新增 5 个测试块：包裹结构 1 + 内容不回退 1 + 机制锚点 1 + 范围守护 1 + 条件真值表仿真 1；总控亲跑 RunId u06s05acc20261018 实测 552/552 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U06-S06 web 基线登记：557（+5 = web/tests/tableOverflowWrapS06.test.js 新增 5 个测试块：问答审计包裹结构 1 + 调用审计包裹结构 1 + 内容不回退 1 + 机制锚点与范围守护 1 + 条件真值表仿真 1；总控亲跑 RunId u06s06acc20261018 实测 557/557 后登记，非 -AllowCountDrift 放行；S04/S05 守卫同步仅改断言形态/计数、块数不变）
 # 2026-10-18 U06-S07 web 基线登记：562（+5 = web/tests/tableOverflowWrapS07.test.js 新增 5 个测试块：包裹结构 1 + 内容不回退 1 + 机制锚点 1 + 范围守护 1 + 条件真值表仿真 1；总控亲跑 RunId u06s07accb20261018 实测 562/562 后登记，非 -AllowCountDrift 放行；S05/S06 守卫同步仅改断言形态、块数不变；首轮 u06s07acc20261018 同为 562/562 但 build 被 VM 替换 SIGTERM 中断 exit=143，复跑轮证据为准）
-$BaselineWebTests = 562
+# 2026-10-18 U06-S08 web 基线登记：567（+5 = web/tests/filterLabelAssociationS08.test.js 新增 5 个测试块：Overview 关联 1 + Behavior 关联 1 + Sales 关联 1 + Products 关联与全仓 id 唯一性 1 + 行为不回退与关联完整性仿真 1；总控亲跑 RunId u06s08acc20261018 实测 567/567 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 567
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)
