@@ -1,3 +1,11 @@
+### 2026-10-18 U02 盘点验收（云端 VM，总控亲验）——两项 P1 成立，首切片 U02-S01 已派发
+
+- U02 只读盘点验收：Antigravity Flash 按 `U02-INV` 规约交付盘点报告（`mall-simulator-notes/U02-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（Behavior.vue/Rfm.vue fetcher、Overview.vue 错误态、Rfm segmentRows、number.js、useAnalysis、exportCsv）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 478 继续有效，未重跑门禁。
+- 问题清单：UP-20261018-09（P1，Behavior.vue 的 fetchBehavior 手工拼装返回对象独漏 sourceId，页面与 CSV 业务来源恒缺失）、UP-20261018-10（P1，Rfm.vue 的 fetchRfm 同漏）成立，下游 readEnvelope/useAnalysis/CSV 透传链经抽验无过错且有既有测试覆盖；UP-20261018-11（P2，Overview error 态隐藏主体与 AnalysisContext「保留旧数据」横幅不一致）排入 U03 候选；UP-20261018-12（P2，Rfm segmentRows 将 users 的 null 强转 0）登记 U02 后续 P2 候选；UP-20261018-14～17 复核符合（快照边界、数值/null 区分、窗口口径、导出一致性），不改代码。
+- 勘误一项（收窄，不影响分级）：盘点 §6 测试覆盖表遗漏 useAnalysisRequestRace（7 例动态竞态）、exportFreshnessGuard（6 例）、sourceIdContext、analysisFivePointContext 等既有测试，UP-20261018-13 据此收窄为仅 fetcher 上下文字段完整性无覆盖，随 U02-S01 补齐；字面 UNKNOWN_SNAPSHOT 空信封动态用例仍缺，但其拒绝机制已被竞态测试覆盖，登记低优先空白不单独立包。
+- §3.2 裁决登记：① 前端跨日聚合（多日客单价平均/UV 累加）维持现行契约、禁止前端聚合，多日口径归数仓，本轮不立项；② 商品/RFM 日期范围筛选维持快照粒度定位，不扩展接口契约。均为维持现状登记，不构成新授权，日后变更另行裁决。
+- 首个实施切片 U02-S01（Behavior/Rfm 各补 1 行 sourceId 透传 + 新增 analysisFetcherContext 源码守卫测试）规约已立并派发 agy Flash，验收后另行登记。结果报告 `docs/verification/results/FUNCTION-POLISH-U02-20261018.md`。本节修改前已备份本文件至 `docs/backups/u02-inventory-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U01-S03 前端 401 拦截器模拟断言切片关账（云端 VM，总控亲验）——U01 全项处置完毕
 
 - 交付（agy Flash 仅文件读写）：`web/src/api.js` 最小可测性重构（行为不变）——`redirectToLogin` 具名导出，原匿名响应拦截器成功/失败回调提取为具名导出 `handleApiResponse`/`handleApiError`（函数体逐字一致），注册行改为 `client.interceptors.response.use(handleApiResponse, handleApiError)`；请求拦截器、存储键、默认导出逐字未动。新增 `web/tests/apiUnauthorized.test.js` 15 个测试块，以内存桩动态模拟断言覆盖规约场景 a–j（OK/ACCEPTED 解包、UNAUTHORIZED 清键跳转与 /login 防循环、其他 code 透传、401 与 body 口径触发、500/网络错误透传原 err、`redirectToLogin` 直测）+ 接线守护。总控逐行核 diff 与规约零偏差，未改后端/权限/契约/router/routeAccess/App.vue、无新依赖。
