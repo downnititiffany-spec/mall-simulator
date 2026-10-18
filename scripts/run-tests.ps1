@@ -1032,7 +1032,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U01-S02 web 基线登记：463（+6 = web/tests/accessDenied.test.js 新增 6 个测试块：resolveDeniedPath 合法回显/非法类型/根与大盘与登录与未知路径/相对与带 query-hash + router/App 接线守护 2；总控亲跑 RunId u01s02acc20261018b 实测 463/463 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U01-S03 web 基线登记：478（+15 = web/tests/apiUnauthorized.test.js 新增 15 个测试块：handleApiResponse/handleApiError/redirectToLogin 动态模拟断言场景 a-j 含补充兜底与防循环 + 接线守护 1；总控亲跑 RunId u01s03acc20261018 实测 478/478 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U02-S01 web 基线登记：486（+8 = web/tests/analysisFetcherContext.test.js 新增 8 个测试块：Behavior/Rfm sourceId 透传与位置/禁补造守护 4 + 直通三页形态守护 3 + 五页完整性 1；总控亲跑 RunId u02s01acc20261018 实测 486/486 后登记，非 -AllowCountDrift 放行）
-$BaselineWebTests = 486
+# 2026-10-18 U02-S02 web 基线登记：491（+5 = web/tests/rfmSegmentUsersNull.test.js 新增 5 个测试块：users 保留 null 形态守护 1 + 禁 ? 0 强转 1 + 三字段空值口径一致 1 + formatInteger 渲染链 1 + 映射语义仿真 1；总控亲跑 RunId u02s02acc20261018 实测 491/491 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 491
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

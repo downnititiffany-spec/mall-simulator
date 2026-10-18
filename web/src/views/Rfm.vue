@@ -177,7 +177,7 @@ const segmentRows = computed(() => {
     : (Array.isArray(data.value.rfmSegments) ? data.value.rfmSegments.filter((s) => s && s.valueGroup) : [])
   return source.map((s) => ({
     valueGroup: s.valueGroup,
-    users: s.users === undefined || s.users === null ? 0 : s.users,
+    users: s.users === undefined || s.users === null ? null : s.users,
     amount: s.amount === undefined ? null : s.amount,
     avgRecencyDays: s.avgRecencyDays === undefined ? null : s.avgRecencyDays
   }))

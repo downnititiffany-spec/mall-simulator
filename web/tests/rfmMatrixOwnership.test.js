@@ -21,7 +21,7 @@ test('旧响应缺少 rfmMatrix 时只展示真实 rfmSegments，不制造额外
 
 test('矩阵行仅做字段搬运，缺失数值按既有空值语义处理', () => {
   assert.match(source, /valueGroup: s\.valueGroup/)
-  assert.match(source, /users: s\.users === undefined \|\| s\.users === null \? 0 : s\.users/)
+  assert.match(source, /users: s\.users === undefined \|\| s\.users === null \? null : s\.users/)
   assert.match(source, /amount: s\.amount === undefined \? null : s\.amount/)
   assert.match(source, /avgRecencyDays: s\.avgRecencyDays === undefined \? null : s\.avgRecencyDays/)
 })

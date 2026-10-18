@@ -1,3 +1,9 @@
+### 2026-10-18 U02-S02 RFM 分层用户数 null 保留切片关账（云端 VM，总控亲验）——U02 全项处置完毕
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Rfm.vue` 的 segmentRows 映射中 users 缺失三元结果由 `0` 改为 `null`（与同映射 amount/avgRecencyDays 口径一致；后端 RfmService.rfmMatrix 八类补 0 的真实 0 值原样透传不受影响，表格显示「0」、缺失显示「—」、CSV 导出为空）；`web/tests/rfmMatrixOwnership.test.js` 写死旧表达式的断言同步更新；新增 `web/tests/rfmSegmentUsersNull.test.js` 5 个守卫（保留 null 形态/禁强转/三字段口径一致/formatInteger 渲染链/映射语义仿真）。总控逐行核 diff 与规约零偏差，未改后端/契约/图表层 `num(r.users) || 0` 既有行为、无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u02s02acc20261018` 实测 491/491 全过、build exit=0（脚本因基线 486 报 DRIFT）；漂移构成书面登记——+5 全部为新增 rfmSegmentUsersNull 测试块，据此 `run-tests.ps1` 基线再登记 web 486→491（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u02s02gate20261018` **491 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线登记前后各跑一次）。
+- 处置：UP-20261018-12 **关账**；**U02 全项处置完毕**（UP-09/10/13 随 U02-S01 关账、UP-12 随本切片关账、UP-14～17 复核符合、UP-11 已排 U03 首位候选）。转 U03 盘点（U03-INV 只读盘点规约已立并派发 agy Flash）。结果报告 `docs/verification/results/FUNCTION-POLISH-U02-S02-20261018.md`。本节修改前已备份本文件至 `docs/backups/u02-s02-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U02-S01 分析页业务来源 ID 透传切片关账（云端 VM，总控亲验）
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Behavior.vue` 的 fetchBehavior 与 `web/src/views/Rfm.vue` 的 fetchRfm 各补 1 行 sourceId 透传（Behavior 为 `funnel.sourceId || overview.sourceId` 主备回退，Rfm 为 `rfm.sourceId` 以主响应为准），位置均在 snapshotId 之后、businessTime 之前；新增 `web/tests/analysisFetcherContext.test.js` 8 个源码结构守卫（透传形态/字段位置/禁写死与禁补造 + 直通三页不退化守护）。总控逐行核 diff 与规约零偏差，未改后端/契约/下游透传链、无新依赖。
