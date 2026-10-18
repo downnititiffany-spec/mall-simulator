@@ -1,3 +1,11 @@
+### 2026-10-18 U03 盘点验收（云端 VM，总控亲验）——UP-11 成立，首切片 U03-S01 已派发
+
+- U03 只读盘点验收：Antigravity Flash 按 `U03-INV` 规约交付盘点报告（`mall-simulator-notes/U03-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（Overview.vue:27/85 与 AnalysisContext 横幅、其余四页无 `!failed` 顶层阻断、useAnalysis 序号/Abort/快照校验与五页卸载 cancel、chartState 五态、ApiResponse traceId 与 api.js 剥离、Reports/RuntimeProfiles 刷新闪空、ChartState 遮罩）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 491 继续有效，未重跑门禁。
+- 问题清单：UP-20261018-11（P2，Overview error 态整墙隐藏与横幅「保留旧数据」承诺矛盾）成立，纳入首切片 U03-S01；UP-20261018-18（P2，Reports/RuntimeProfiles 刷新闪空）成立，按包归属排 U05/U04 候选，不在 U03 跨包扩围；UP-20261018-19（P2，ChartState 遮罩无就地重试）成立，排 U03 后续 P2 候选；UP-20261018-20（P2/测试空白，页面 error 态 DOM 保留无守卫）随 U03-S01 补齐；UP-20261018-22～25 复核符合（状态模型/导出 fail-closed、竞态与卸载防护、错误信息卫生、恢复入口），不改代码。
+- 勘误两处（不影响分级）：① 盘点 §9 建议的失败分支改法 `empty && failed` 为逻辑死条件（empty/failed 同源于单一 state 计算属性、恒互斥），且仅改主体为 `!empty` 会使首次失败的全页提示永不出现——U03-S01 规约已改用总控方案（新增 `hasData` 与 `showBody = failed ? hasData : !empty`：error 有旧数据保留主体、无旧数据仍走全页失败提示，其余四态逐字不变）；② 盘点 §4.2 的 Reports 无 onUnmounted/AbortSignal 观察未编号，不另立 UP，随 U05 盘点核清。
+- §3.2 裁决登记：UP-20261018-21（traceId 前端展示）裁决维持现状——后端 traceId 为现行字段、前端现行剥离不展示；现行错误文案已满足「发生了什么/是否可用/下一步」口径，排障经 Network 响应体或服务端日志取 traceId；此为维持现状登记，日后展示另行裁决。
+- 首个实施切片 U03-S01（Overview 主体条件改经 showBody + 新增 overviewErrorStateConsistency 源码守卫）规约已立并派发 agy Flash，验收后另行登记。结果报告 `docs/verification/results/FUNCTION-POLISH-U03-20261018.md`。本节修改前已备份本文件至 `docs/backups/u03-inventory-20261018/`。本轮未改业务代码、未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U02-S02 RFM 分层用户数 null 保留切片关账（云端 VM，总控亲验）——U02 全项处置完毕
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Rfm.vue` 的 segmentRows 映射中 users 缺失三元结果由 `0` 改为 `null`（与同映射 amount/avgRecencyDays 口径一致；后端 RfmService.rfmMatrix 八类补 0 的真实 0 值原样透传不受影响，表格显示「0」、缺失显示「—」、CSV 导出为空）；`web/tests/rfmMatrixOwnership.test.js` 写死旧表达式的断言同步更新；新增 `web/tests/rfmSegmentUsersNull.test.js` 5 个守卫（保留 null 形态/禁强转/三字段口径一致/formatInteger 渲染链/映射语义仿真）。总控逐行核 diff 与规约零偏差，未改后端/契约/图表层 `num(r.users) || 0` 既有行为、无新依赖。
