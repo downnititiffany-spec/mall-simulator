@@ -1043,7 +1043,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U06-S01 web 基线登记：532（+5 = web/tests/tableOverflowContainer.test.js 新增 5 个测试块：Decisions 包裹结构 1 + Decisions 内容不回退 1 + Pipeline 包裹结构 1 + 机制锚点 1 + 条件链真值表仿真 1；总控亲跑 RunId u06s01fix20261018 实测 532/532 后登记，非 -AllowCountDrift 放行；首轮 u06s01acc20261018 因块 c 全文件断言误伤 Pipeline 行 39 既有阶段表失败 1 例，经 U06-S01-FIX 收窄断言范围后复验全过，生产代码未改）
 # 2026-10-18 U06-S02 web 基线登记：537（+5 = web/tests/tableSortKeyboard.test.js 新增 5 个测试块：Products 结构 1 + Products 排序面不回退 1 + Sales 结构 1 + 机制锚点（.sort-btn 逐字与零 tabindex）1 + 键盘语义仿真 1；总控亲跑 RunId u06s02acc20261018 实测 537/537 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U06-S03 web 基线登记：542（+5 = web/tests/tableOverflowWrapS03.test.js 新增 5 个测试块：Products 包裹结构 1 + Sales 包裹结构 1 + Reports 包裹结构 1 + 机制锚点 1 + 条件真值表仿真 1；总控亲跑 RunId u06s03acc20261018 实测 542/542 后登记，非 -AllowCountDrift 放行）
-$BaselineWebTests = 542
+# 2026-10-18 U06-S04 web 基线登记：547（+5 = web/tests/tableOverflowWrapS04.test.js 新增 5 个测试块：metric 包裹结构 1 + pipeline 包裹结构 1 + ingestion 包裹结构 1 + quality 包裹结构与机制锚点 1 + 条件真值表仿真 1；总控亲跑 RunId u06s04acc20261018 实测 547/547 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 547
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

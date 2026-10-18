@@ -125,7 +125,8 @@
         <div v-else-if="metricState === 'error'" class="banner banner-error">指标加载失败：{{ metricError || '未知原因' }}</div>
         <div v-else-if="metricState === 'empty'" class="state-line">{{ metricEmptyText }}</div>
         <div v-else-if="metricState === 'stale'" class="banner banner-stale">数据更新中：正在重新拉取该快照指标，当前展示的仍是上一次结果，已禁止导出。</div>
-        <table v-if="metricTable.rows.length" class="data-table">
+        <div v-if="metricTable.rows.length" class="table-wrap">
+        <table class="data-table">
           <thead><tr style="text-align:left;color:var(--gray-500)">
             <th v-for="h in metricTable.headers" :key="h" style="padding:6px">{{ h }}</th>
           </tr></thead>
@@ -135,6 +136,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <div class="table-hint">
           上下文来自所选快照的 /dashboards/overview 信封；发布方与业务来源 ID 含义不同，缺失值按接口原样显示为未知。
         </div>
@@ -166,7 +168,8 @@
         <button class="btn btn-sm" :disabled="loading || busy || runPage <= 1" @click="changeRunPage(runPage - 1)">上一页</button>
         <button class="btn btn-sm" :disabled="loading || busy || runPage >= runTotalPages" @click="changeRunPage(runPage + 1)">下一页</button>
       </div>
-      <table v-if="pipelineTable.rows.length" class="data-table">
+      <div v-if="pipelineTable.rows.length" class="table-wrap">
+      <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
           <th v-for="h in pipelineTable.headers" :key="h" style="padding:6px">{{ h }}</th>
         </tr></thead>
@@ -176,6 +179,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       <div v-else class="el-empty">暂无流水线实例或该接口未返回数据</div>
     </div>
 
@@ -210,7 +214,8 @@
         <button class="btn btn-sm" :disabled="loading || busy || ingestionPage <= 1" @click="changeIngestionPage(ingestionPage - 1)">上一页</button>
         <button class="btn btn-sm" :disabled="loading || busy || ingestionPage >= ingestionTotalPages" @click="changeIngestionPage(ingestionPage + 1)">下一页</button>
       </div>
-      <table v-if="ingestionBatches.length" class="data-table">
+      <div v-if="ingestionBatches.length" class="table-wrap">
+      <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
           <th style="padding:6px">批次 ID</th><th>批次号</th><th>来源 / RuntimeProfile</th><th>状态</th><th>记录数</th><th>错误数</th><th>隔离数</th><th>开始时间</th><th>结束时间</th>
         </tr></thead>
@@ -228,6 +233,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       <div v-else class="el-empty">暂无采集批次或接口未返回数据</div>
       <div class="table-hint">批次表由服务端按页读取全量历史记录，排序仅允许 ID、开始时间和状态；状态、计数与时间来自只读接口，也不表示上游持续在线或完整链路已验收。</div>
     </div>
@@ -253,7 +259,8 @@
         <button class="btn btn-sm" :disabled="loading || busy || qualityPage <= 1" @click="changeQualityPage(qualityPage - 1)">上一页</button>
         <button class="btn btn-sm" :disabled="loading || busy || qualityPage >= qualityTotalPages" @click="changeQualityPage(qualityPage + 1)">下一页</button>
       </div>
-      <table v-if="qualityTable.rows.length" class="data-table">
+      <div v-if="qualityTable.rows.length" class="table-wrap">
+      <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
           <th v-for="h in qualityTable.headers" :key="h" style="padding:6px">{{ h }}</th>
         </tr></thead>
@@ -267,6 +274,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       <div v-else class="el-empty">暂无质量结果（跑一次流水线后出现）或该接口未返回数据</div>
     </div>
 
