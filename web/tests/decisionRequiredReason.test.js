@@ -24,7 +24,7 @@ test('PENDING_REVIEW 的驳回按钮调用独立 rejectDecision，而不是 act(
 
 test('requiredReason 对取消 prompt 与纯空白输入 fail-closed，不制造默认原因', () => {
   const fn = bodyOf('function requiredReason(actionLabel)', 'async function approve(d)')
-  assert.match(fn, /prompt\(`\$\{actionLabel\}原因（必填）`, ''\)/)
+  assert.match(fn, /label: `\$\{actionLabel\}原因（必填）`, initialValue: ''/)
   assert.match(fn, /if \(raw === null\) return null/)
   assert.match(fn, /const reason = raw\.trim\(\)/)
   assert.match(fn, /if \(!reason\)/)
@@ -34,7 +34,7 @@ test('requiredReason 对取消 prompt 与纯空白输入 fail-closed，不制造
 
 test('rejectDecision 只在取得非空真实原因后发送 { reason } 并刷新', () => {
   const fn = bodyOf('async function rejectDecision(d)', 'async function cancelDecision(d)')
-  assert.match(fn, /const reason = requiredReason\('驳回'\)/)
+  assert.match(fn, /const reason = await requiredReason\('驳回'\)/)
   assert.match(fn, /if \(!reason\) return/)
   assert.match(fn, /api\.decisionAction\(d\.id, 'reject', \{ reason \}\)/)
   assert.match(fn, /await flush\(\)/)
@@ -43,7 +43,7 @@ test('rejectDecision 只在取得非空真实原因后发送 { reason } 并刷�
 
 test('cancelDecision 与 reject 共用同一原因采集纪律，不再硬编码策略调整', () => {
   const fn = bodyOf('async function cancelDecision(d)', 'async function evaluate(d)')
-  assert.match(fn, /const reason = requiredReason\('取消'\)/)
+  assert.match(fn, /const reason = await requiredReason\('取消'\)/)
   assert.match(fn, /api\.decisionAction\(d\.id, 'cancel', \{ reason \}\)/)
   assert.doesNotMatch(fn, /策略调整/)
   const owners = source.match(/function requiredReason\(/g) || []

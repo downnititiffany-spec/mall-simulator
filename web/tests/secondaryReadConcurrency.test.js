@@ -55,7 +55,7 @@ test('Decision evaluations 与 evaluationError 作为同一旁路状态只允许
 })
 
 test('Decision 卸载先使旁路 fetch 序号失效，再取消 useAnalysis 请求', () => {
-  assert.match(decisions, /onUnmounted\(\(\) => \{\s*decisionFetchSeq \+= 1\s*cancel\(\)\s*\}\)/)
+  assert.match(decisions, /onUnmounted\(\(\) => \{\s*decisionFetchSeq \+= 1\s*settleInputDialog\(null\)\s*cancel\(\)\s*\}\)/)
 })
 
 test('Decision 外部刷新在 loading 或写操作 busy 期间 fail-closed', () => {

@@ -1054,7 +1054,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U06-S12 web 基线登记：587（+5 = web/tests/filterEnterSubmitS12.test.js 新增 5 个测试块：Overview 锚点 1 + Behavior 锚点 1 + Sales 锚点 1 + 范围守护与计数 1 + Enter 触发判定仿真 1；总控亲跑 RunId u06s12acc20261018 实测 587/587 后登记，非 -AllowCountDrift 放行；首轮 587/587 一次全过、无跨切片冲突、无修复轮；S08 守卫同步仅在块 a/b/c 九处正则插入 @keyup\.enter="load" 形态、块数不变）
 # 2026-10-18 U06-S13 web 基线登记：592（+5 = web/tests/opsNewUserEnterSubmitS13.test.js 新增 5 个测试块：用户名/姓名锚点 1 + 密码锚点与按钮保留 1 + 范围守护与计数 1 + 行为不回退 1 + Enter 触发判定仿真 1；总控亲跑 RunId u06s13acc20261018 实测 592/592 后登记，非 -AllowCountDrift 放行；首轮 592/592 一次全过、无跨切片冲突、无修复轮；S09/S11 守卫同步仅在八处正则插入 @keyup\.enter="createUser" 形态、块数不变）
 # 2026-10-18 U06-S14 web 基线登记：597（+5 = web/tests/panelEscapeCloseS14.test.js 新增 5 个测试块：RuntimeProfiles 锚点 1 + Pipeline 锚点 1 + AiAssistant 锚点 1 + 范围守护与计数 1 + Escape 关闭判定仿真 1；总控亲跑 RunId u06s14acc20261018 实测 597/597 后登记，非 -AllowCountDrift 放行；首轮 597/597 一次全过、无跨切片冲突、无修复轮；不改既有测试文件）
-$BaselineWebTests = 597
+# 2026-10-18 U05-S03 web 基线登记：602（+5 = web/tests/decisionInputDialogS03.test.js 新增 5 个测试块：对话框模板锚点 1 + 机制与零 prompt 1 + fail-closed 判定仿真 1 + 调用方接线与顺序 1 + 范围守护 1；总控亲跑复验 RunId u05s03fix20261018 实测 602/602 后登记，非 -AllowCountDrift 放行；首轮 u05s03acc20261018 为 601/602，唯一失败为 secondaryReadConcurrency 守卫逐字锁定 onUnmounted 旧形态、与经批准新增的 settleInputDialog(null) 卸载结算行冲突——U05-S03 规约 §4 跨切片枚举遗漏该文件，生产代码无误；经 U05-S03-FIX 仅同步该断言形态并将 decisionApprovalInput 块 4 的 if (!owner) 断言按总控裁决收紧为多行等强形态（同时锁定错误赋值与 return）后复验全过；既有测试同步仅改断言锚点/形态、块数不变）
+$BaselineWebTests = 602
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

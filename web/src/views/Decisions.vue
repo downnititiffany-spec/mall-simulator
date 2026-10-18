@@ -57,6 +57,17 @@
 
       <div v-if="actionError" class="banner banner-error">操作失败：{{ actionError }}</div>
 
+      <div v-if="inputDialog" class="chart-box" @keyup.esc="cancelInputDialog">
+        <div class="chart-title">{{ inputDialog.title }}</div>
+        <div v-for="field in inputDialog.fields" :key="field.key" style="margin-bottom:8px">
+          <label>{{ field.label }}
+            <input v-model="field.value" @keyup.enter="confirmInputDialog" />
+          </label>
+        </div>
+        <button class="btn btn-sm" @click="cancelInputDialog">取消</button>
+        <button class="btn btn-sm btn-primary" @click="confirmInputDialog">确定</button>
+      </div>
+
       <div v-if="rows.length" class="table-wrap">
         <table class="data-table">
         <thead><tr style="text-align:left;color:var(--gray-500)">
@@ -289,8 +300,42 @@ async function act(d, action) {
   }
 }
 
-function requiredReason(actionLabel) {
-  const raw = prompt(`${actionLabel}原因（必填）`, '')
+const inputDialog = ref(null)
+let inputDialogResolve = null
+
+function openInputDialog({ title, fields }) {
+  if (inputDialog.value) return Promise.resolve(null)
+  inputDialog.value = {
+    title,
+    fields: fields.map((f) => ({ key: f.key, label: f.label, value: f.initialValue || '' }))
+  }
+  return new Promise((resolve) => { inputDialogResolve = resolve })
+}
+
+function settleInputDialog(values) {
+  const resolve = inputDialogResolve
+  inputDialogResolve = null
+  inputDialog.value = null
+  if (resolve) resolve(values)
+}
+
+function confirmInputDialog() {
+  if (!inputDialog.value) return
+  const values = {}
+  for (const field of inputDialog.value.fields) values[field.key] = field.value
+  settleInputDialog(values)
+}
+
+function cancelInputDialog() {
+  settleInputDialog(null)
+}
+
+async function requiredReason(actionLabel) {
+  const values = await openInputDialog({
+    title: `${actionLabel}决策`,
+    fields: [{ key: 'reason', label: `${actionLabel}原因（必填）`, initialValue: '' }]
+  })
+  const raw = values ? values.reason : null
   if (raw === null) return null
   const reason = raw.trim()
   if (!reason) {
@@ -300,8 +345,12 @@ function requiredReason(actionLabel) {
   return reason
 }
 
-function requiredApprovalText(promptText, emptyMessage, initialValue = '') {
-  const raw = prompt(promptText, initialValue)
+async function requiredApprovalText(promptText, emptyMessage, initialValue = '') {
+  const values = await openInputDialog({
+    title: '决策操作',
+    fields: [{ key: 'value', label: promptText, initialValue }]
+  })
+  const raw = values ? values.value : null
   if (raw === null) return null
   const value = raw.trim()
   if (!value) {
@@ -311,9 +360,12 @@ function requiredApprovalText(promptText, emptyMessage, initialValue = '') {
   return value
 }
 
-function requiredDueDate() {
-  const dueDate = requiredApprovalText('截止日期（必填，格式 YYYY-MM-DD）', '截止日期不能为空')
-  if (!dueDate) return null
+function requiredDueDate(rawValue) {
+  const dueDate = (rawValue || '').trim()
+  if (!dueDate) {
+    actionError.value = '截止日期不能为空'
+    return null
+  }
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueDate)
   if (!match) {
     actionError.value = '截止日期格式必须为 YYYY-MM-DD'
@@ -334,7 +386,7 @@ async function submitDecision(d) {
   if (busy.value || loading.value) return
   actionError.value = ''
   const currentOwner = d && d.owner && d.owner !== '—' ? String(d.owner).trim() : ''
-  const owner = requiredApprovalText('负责人（提交审核前必填）', '负责人不能为空', currentOwner)
+  const owner = await requiredApprovalText('负责人（提交审核前必填）', '负责人不能为空', currentOwner)
   if (!owner) return
   busy.value = true
   try {
@@ -350,9 +402,20 @@ async function submitDecision(d) {
 async function approve(d) {
   if (busy.value || loading.value) return
   actionError.value = ''
-  const owner = requiredApprovalText('负责人（必填，例如：运营-小李）', '负责人不能为空')
-  if (!owner) return
-  const dueDate = requiredDueDate()
+  const values = await openInputDialog({
+    title: '批准决策',
+    fields: [
+      { key: 'owner', label: '负责人（必填，例如：运营-小李）', initialValue: '' },
+      { key: 'dueDate', label: '截止日期（必填，格式 YYYY-MM-DD）', initialValue: '' }
+    ]
+  })
+  if (!values) return
+  const owner = values.owner.trim()
+  if (!owner) {
+    actionError.value = '负责人不能为空'
+    return
+  }
+  const dueDate = requiredDueDate(values.dueDate)
   if (!dueDate) return
   busy.value = true
   try {
@@ -367,7 +430,7 @@ async function approve(d) {
 
 async function rejectDecision(d) {
   if (busy.value || loading.value) return
-  const reason = requiredReason('驳回')
+  const reason = await requiredReason('驳回')
   if (!reason) return
   busy.value = true
   actionError.value = ''
@@ -383,7 +446,7 @@ async function rejectDecision(d) {
 
 async function cancelDecision(d) {
   if (busy.value || loading.value) return
-  const reason = requiredReason('取消')
+  const reason = await requiredReason('取消')
   if (!reason) return
   busy.value = true
   actionError.value = ''
@@ -418,6 +481,7 @@ onMounted(refresh)
 
 onUnmounted(() => {
   decisionFetchSeq += 1
+  settleInputDialog(null)
   cancel()
 })
 </script>

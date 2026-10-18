@@ -1,5 +1,5 @@
 // S3-65：批准动作必须由员工显式提供负责人和截止日期，不能用前端硬编码身份或自动 +3 天。
-// 本文件是源码接线守卫；真实浏览器 prompt / HTTP / 后端状态机留后续 E2E。
+// 本文件是源码接线守卫；真实浏览器对话框 / HTTP / 后端状态机留后续 E2E。
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -26,13 +26,14 @@ test('批准流程不再硬编码负责人，也不再自动把截止日期设�
   assert.doesNotMatch(approve, /prompt\([^\n]*,\s*['"]运营-小李['"]\)/)
   assert.doesNotMatch(approve, /Date\.now\(\)\s*\+\s*3\s*\*\s*86400000/)
   assert.doesNotMatch(approve, /toISOString\(\)\.slice\(0,\s*10\)/)
-  assert.match(approve, /requiredApprovalText\('负责人（必填，例如：运营-小李）', '负责人不能为空'\)/)
+  assert.match(approve, /label: '负责人（必填，例如：运营-小李）', initialValue: ''/)
 })
 
 test('requiredApprovalText 对取消和纯空白输入 fail-closed，默认初始值为空但允许调用方传真实已有值', () => {
   const fn = functionBody('requiredApprovalText', 'requiredDueDate')
   assert.match(fn, /function requiredApprovalText\(promptText, emptyMessage, initialValue = ''\)/)
-  assert.match(fn, /prompt\(promptText, initialValue\)/)
+  assert.match(fn, /openInputDialog\(\{/)
+  assert.match(fn, /label: promptText, initialValue/)
   assert.match(fn, /if \(raw === null\) return null/)
   assert.match(fn, /const value = raw\.trim\(\)/)
   assert.match(fn, /if \(!value\)/)
@@ -52,14 +53,14 @@ test('截止日期必须是 YYYY-MM-DD 且是真实存在的日历日期', () =>
 
 test('approve 在拿到负责人和截止日期之前不得进入 busy 或发请求', () => {
   const fn = functionBody('approve', 'rejectDecision')
-  const ownerAt = fn.indexOf("requiredApprovalText('负责人（必填，例如：运营-小李）'")
-  const dueAt = fn.indexOf('requiredDueDate()')
+  const ownerAt = fn.indexOf("label: '负责人（必填，例如：运营-小李）'")
+  const dueAt = fn.indexOf('requiredDueDate(values.dueDate)')
   const busyAt = fn.indexOf('busy.value = true')
   const apiAt = fn.indexOf("api.decisionAction(d.id, 'approve'")
   assert.ok(ownerAt >= 0 && dueAt > ownerAt)
   assert.ok(busyAt > dueAt, '未完成两项人工输入前不能进入 busy')
   assert.ok(apiAt > busyAt, '未完成两项人工输入前不能发 approve 请求')
-  assert.match(fn, /if \(!owner\) return/)
+  assert.match(fn, /if \(!owner\) \{\s*actionError\.value = '负责人不能为空'\s*return\s*\}/)
   assert.match(fn, /if \(!dueDate\) return/)
 })
 

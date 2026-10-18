@@ -20,7 +20,7 @@ test('cancelDecision 要求员工输入取消原因，再通过 decisionAction �
   const end = source.indexOf('async function evaluate(d)', start)
   assert.ok(start >= 0 && end > start, '必须存在独立的 cancelDecision 实现')
   const fn = source.slice(start, end)
-  assert.match(fn, /const reason = requiredReason\('取消'\)/)
+  assert.match(fn, /const reason = await requiredReason\('取消'\)/)
   assert.match(fn, /if \(!reason\) return/)
   assert.match(fn, /api\.decisionAction\(d\.id, 'cancel', \{ reason \}\)/)
   assert.match(fn, /await flush\(\)/)
@@ -30,7 +30,7 @@ test('cancelDecision 要求员工输入取消原因，再通过 decisionAction �
 
 test('useAnalysis.cancel 仍只用于组件卸载时中止取数，不承担业务取消', () => {
   assert.match(source, /const \{[^}]*\bcancel\b[^}]*\} = analysis/s)
-  assert.match(source, /onUnmounted\(\(\) => \{\s*decisionFetchSeq \+= 1\s*cancel\(\)\s*\}\)/)
+  assert.match(source, /onUnmounted\(\(\) => \{\s*decisionFetchSeq \+= 1\s*settleInputDialog\(null\)\s*cancel\(\)\s*\}\)/)
   const businessCalls = source.match(/decisionAction\(d\.id, 'cancel'/g) || []
   assert.equal(businessCalls.length, 1, '业务 cancel 请求必须只有一个显式 owner')
 })
