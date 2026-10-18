@@ -56,7 +56,7 @@
       <p class="card-note">激活按钮要求本页面最近一次连通性测试通过；服务端激活时还会重新执行所有适用检查。</p>
     </section>
 
-    <section v-if="formOpen" class="card editor-card">
+    <section v-if="formOpen" class="card editor-card" @keyup.esc="!saving && closeForm()">
       <div class="card-head">
         <div class="card-title">{{ editingId ? '编辑环境配置' : '新建环境草稿' }}</div>
         <button class="btn btn-sm btn-ghost" :disabled="saving" @click="closeForm">关闭</button>

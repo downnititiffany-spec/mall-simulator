@@ -130,7 +130,7 @@
     </div>
 
     <div v-if="recoveryMessage" class="banner banner-stale" role="status">{{ recoveryMessage }}</div>
-    <div v-if="recoveryForm" class="chart-box">
+    <div v-if="recoveryForm" class="chart-box" @keyup.esc="closeRecoveryForm">
       <div class="chart-title">{{ recoveryActionTitle(recoveryForm.action) }}：run#{{ recoveryForm.runId }}</div>
       <div v-if="recoveryFormError" class="banner banner-error">操作失败：{{ recoveryFormError }}</div>
       <div v-if="recoveryForm.run" class="table-hint">

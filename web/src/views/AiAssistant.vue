@@ -97,7 +97,7 @@
         </div>
       </div>
 
-      <div class="chart-box" v-if="draftForm">
+      <div class="chart-box" v-if="draftForm" @keyup.esc="closeDraft">
         <div class="chart-title">新建决策草稿（内容取自本条建议，可修改；创建后到决策中心提交审批）</div>
         <div v-if="draftError" class="banner banner-error">{{ draftError }}</div>
         <div v-if="draftCreated" class="banner banner-stale">
