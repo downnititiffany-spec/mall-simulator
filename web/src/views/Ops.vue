@@ -17,13 +17,13 @@
     <div class="chart-box">
       <div class="chart-title">系统用户（admin 专属：创建/启用禁用/重置密码；不随快照版本变化）</div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-        <input id="ops-new-username" v-model="newUser.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" />
-        <input id="ops-new-real-name" v-model="newUser.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" />
+        <input id="ops-new-username" v-model="newUser.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" @keyup.enter="createUser" />
+        <input id="ops-new-real-name" v-model="newUser.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" @keyup.enter="createUser" />
         <select id="ops-new-role" v-model="newUser.role" style="padding:4px" aria-label="新用户角色">
           <option value="operator">运营专员</option><option value="analyst">数据分析师</option>
           <option value="admin">系统管理员</option>
         </select>
-        <input id="ops-new-password" v-model="newUser.password" placeholder="初始密码(≥6位)" type="password" style="padding:4px" aria-label="新用户初始密码" />
+        <input id="ops-new-password" v-model="newUser.password" placeholder="初始密码(≥6位)" type="password" style="padding:4px" aria-label="新用户初始密码" @keyup.enter="createUser" />
         <button class="btn btn-sm btn-success" @click="createUser" :disabled="loading || busy">创建用户</button>
       </div>
       <div class="table-hint">

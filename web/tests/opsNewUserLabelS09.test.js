@@ -21,21 +21,21 @@ test('a. 用户名与姓名关联：两输入的 id/aria-label 逐字锚点在�
   // 1. username input 新形态逐字锚点
   assert.match(
     opsSource,
-    /<input id="ops-new-username" v-model="newUser\.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" \/>/,
+    /<input id="ops-new-username" v-model="newUser\.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" @keyup\.enter="createUser" \/>/,
     'Ops 需包含用户名 input 且带 id="ops-new-username" 与 aria-label="新用户用户名"'
   )
 
   // 2. realName input 新形态逐字锚点
   assert.match(
     opsSource,
-    /<input id="ops-new-real-name" v-model="newUser\.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" \/>/,
+    /<input id="ops-new-real-name" v-model="newUser\.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" @keyup\.enter="createUser" \/>/,
     'Ops 需包含姓名 input 且带 id="ops-new-real-name" 与 aria-label="新用户姓名"'
   )
 
   // 3. 用户名与姓名两行连续在位正则断言
   assert.match(
     opsSource,
-    /<input id="ops-new-username" v-model="newUser\.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" \/>\s*<input id="ops-new-real-name" v-model="newUser\.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" \/>/,
+    /<input id="ops-new-username" v-model="newUser\.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" @keyup\.enter="createUser" \/>\s*<input id="ops-new-real-name" v-model="newUser\.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" @keyup\.enter="createUser" \/>/,
     'Ops 新建用户区用户名与姓名输入控件必须按契约顺序连续在位'
   )
 })
@@ -75,14 +75,14 @@ test('b. 角色与密码关联：select 开标签的 id/aria-label 逐字锚点�
   // 4. password input 新形态逐字锚点
   assert.match(
     opsSource,
-    /<input id="ops-new-password" v-model="newUser\.password" placeholder="初始密码\(≥6位\)" type="password" style="padding:4px" aria-label="新用户初始密码" \/>/,
+    /<input id="ops-new-password" v-model="newUser\.password" placeholder="初始密码\(≥6位\)" type="password" style="padding:4px" aria-label="新用户初始密码" @keyup\.enter="createUser" \/>/,
     'Ops 需包含密码 input 且带 id="ops-new-password"、type="password" 与 aria-label="新用户初始密码"'
   )
 
   // 5. 角色与密码两控件连续在位正则断言
   assert.match(
     opsSource,
-    /<\/select>\s*<input id="ops-new-password" v-model="newUser\.password" placeholder="初始密码\(≥6位\)" type="password" style="padding:4px" aria-label="新用户初始密码" \/>/,
+    /<\/select>\s*<input id="ops-new-password" v-model="newUser\.password" placeholder="初始密码\(≥6位\)" type="password" style="padding:4px" aria-label="新用户初始密码" @keyup\.enter="createUser" \/>/,
     'Ops 角色 select 与密码输入必须连续在位'
   )
 })

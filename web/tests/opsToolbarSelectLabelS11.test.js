@@ -212,12 +212,12 @@ test('d. 范围守护与行为不回退：Ops.vue 内 <label 恰 8 处不变（�
   // 3. U06-S09 新建用户四控件新形态逐字保留
   assert.match(
     opsSource,
-    /<input id="ops-new-username" v-model="newUser\.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" \/>/,
+    /<input id="ops-new-username" v-model="newUser\.username" placeholder="用户名" style="padding:4px" aria-label="新用户用户名" @keyup\.enter="createUser" \/>/,
     'Ops 需保留用户名 input 新形态'
   )
   assert.match(
     opsSource,
-    /<input id="ops-new-real-name" v-model="newUser\.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" \/>/,
+    /<input id="ops-new-real-name" v-model="newUser\.realName" placeholder="姓名" style="padding:4px" aria-label="新用户姓名" @keyup\.enter="createUser" \/>/,
     'Ops 需保留姓名 input 新形态'
   )
   assert.match(
@@ -227,7 +227,7 @@ test('d. 范围守护与行为不回退：Ops.vue 内 <label 恰 8 处不变（�
   )
   assert.match(
     opsSource,
-    /<input id="ops-new-password" v-model="newUser\.password" placeholder="初始密码\(≥6位\)" type="password" style="padding:4px" aria-label="新用户初始密码" \/>/,
+    /<input id="ops-new-password" v-model="newUser\.password" placeholder="初始密码\(≥6位\)" type="password" style="padding:4px" aria-label="新用户初始密码" @keyup\.enter="createUser" \/>/,
     'Ops 需保留密码 input 新形态'
   )
 
