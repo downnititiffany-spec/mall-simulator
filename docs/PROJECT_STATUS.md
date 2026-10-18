@@ -1,3 +1,10 @@
+### 2026-10-18 U00 基线关账与 U01 盘点验收（云端 VM，总控亲验）
+
+- U00 关账：开发线 `codex/cloud-v3-development @ feed74f` 同步核验完成；总控亲跑 default RunId `u00base20261018` PASS 1563（analytics 1403 + mall 26 + generator 134，较签收基线 1560 增 3，属 232787b/be8a7a8 增量，单独登记不回写签收）、web RunId `u00web20261018` PASS 450 且 build exit 0；12 功能路由 + 登录页角色矩阵已盘（pipeline/ops/sources-wizard 前端 admin-only，runtime-profiles 为 admin+data_dev）。队列文件 `mall-simulator-notes/U-PROGRAM.md`。
+- U01 只读盘点验收：Antigravity Flash 按 `U01-INV` 规约交付盘点报告，总控逐项抽验源码锚点（Login.vue、router.js、routeAccess.js、api.js、App.vue、RolePermissions）后采信，勘误两项表述（第四角色现行名为 analyst 而非 viewer；token 落盘在 api.js 而非 Login.vue），分级结论不变。问题清单：UP-20261018-01（P1，登录成功硬编码跳 `/`、未处理 redirect 参数）、UP-20261018-02（P2，守卫未带 redirect 参数 + 无权静默回退无提示）、03～06 复核符合、08 测试空白（P2）。
+- §3.2 裁决登记：UP-20261018-07 三项前后端权限宽窄差异（pipeline:run / ops:log:view 对 operator、data_dev 较宽，数据源激活对 data_dev 较宽）维持现行角色契约——前端 admin-only 不扩大，与指导书 §5 U01 第 3 条一致；不改后端矩阵，日后放宽另行裁决。
+- 首个实施切片 U01-S01（登录重定向与安全校验闭环）规约已立并派发，验收后另行登记。结果报告 `docs/verification/results/FUNCTION-POLISH-U01-20261018.md`。本节修改前已备份本文件至 `docs/backups/u01-inventory-20261018/`。本轮未改业务代码、未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 现有功能完善指导书（规划完成，实施待执行）
 
 - 用户要求“继续完善当前功能，出一份指导书”。新增 `docs/guidance/现有功能完善实施指导书 V1.0.md`，规定 U00～U07：现状盘点、登录权限、指标上下文、错误恢复、管理操作、AI/报告/决策体验、视觉与响应体验、增量回归及演示交付。先复现再最小修复，已有功能不重开；检查符合可直接登记，不为制造任务改代码。
