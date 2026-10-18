@@ -17,7 +17,7 @@
     <div class="chart-box">
       <div class="chart-title">自然语言问数（语义层 → 受控 Text-to-SQL → 安全校验 → 证据解释）</div>
       <div class="chat-input-bar">
-        <input class="input" v-model="question" @keyup.enter="ask" placeholder="例如：最近 7 天销售额变化趋势如何？"
+        <input id="ai-question-input" class="input" v-model="question" @keyup.enter="ask" placeholder="例如：最近 7 天销售额变化趋势如何？" aria-label="分析问题输入"
                :disabled="busy || draftBusy" />
         <button class="btn btn-ai" @click="handleAskAction" :disabled="draftBusy || (!busy && !question.trim())">
           {{ busy ? '放弃本次分析' : (draftBusy ? '草稿创建中…' : '发送') }}
