@@ -1029,7 +1029,8 @@ $BaselineSpark = 389
 $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-16 WP-F3 web 基线登记：450
 # 2026-10-18 U01-S01 web 基线登记：457（+7 = web/tests/loginRedirect.test.js 新增 7 个测试块：resolveLoginRedirect 合法回跳/异常回落/开放重定向/特殊字符/自指与未知路径 + router/Login 接线守护 2；总控亲跑 RunId u01s01acc20261018 实测 457/457 后登记，非 -AllowCountDrift 放行）
-$BaselineWebTests = 457
+# 2026-10-18 U01-S02 web 基线登记：463（+6 = web/tests/accessDenied.test.js 新增 6 个测试块：resolveDeniedPath 合法回显/非法类型/根与大盘与登录与未知路径/相对与带 query-hash + router/App 接线守护 2；总控亲跑 RunId u01s02acc20261018b 实测 463/463 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 463
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

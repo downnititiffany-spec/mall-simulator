@@ -44,3 +44,18 @@ export function resolveLoginRedirect(raw) {
   return raw
 }
 
+/**
+ * 校验无权访问回退提示的目标路径。
+ * 纯函数：仅用于无权回退提示的展示校验，不做权限判定（判定仍归 canAccessRoute）。
+ * 仅当 raw 为字符串且精确等于 12 个功能路由路径之一、且不是 /overview 时原样返回；其余（非字符串、数组、/、/overview、/login、未知路径、含 ?/# 的字符串）一律返回 null。
+ *
+ * @param {unknown} raw 原始 denied 参数
+ * @returns {string|null} 合法的功能路由路径，非法/非预期形态一律返回 null
+ */
+export function resolveDeniedPath(raw) {
+  if (typeof raw !== 'string') return null
+  if (raw === '/' || raw === '/overview') return null
+  if (!ALLOWED_REDIRECT_PATHS.has(raw)) return null
+  return raw
+}
+

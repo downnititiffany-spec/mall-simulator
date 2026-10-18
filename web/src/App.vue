@@ -48,6 +48,12 @@
       </header>
 
       <main class="page-body">
+        <div v-if="deniedPath" class="alert alert-warning denied-banner" role="alert">
+          <span>无权访问页面 {{ deniedPath }}，已返回运营大盘。</span>
+          <button type="button" class="denied-close-btn" aria-label="关闭提示" @click="dismissDenied">
+            &times;
+          </button>
+        </div>
         <SnapshotSelector v-if="route.meta.snapshotScoped" />
         <router-view />
       </main>
@@ -61,10 +67,17 @@ import { useRoute, useRouter } from 'vue-router'
 import api from './api'
 import SnapshotSelector from './components/SnapshotSelector.vue'
 import { resetSnapshotSelection } from './composables/useSnapshotSelection'
-import { canAccessRoute } from './utils/routeAccess'
+import { canAccessRoute, resolveDeniedPath } from './utils/routeAccess'
 
 const router = useRouter()
 const route = useRoute()
+
+const deniedPath = computed(() => resolveDeniedPath(route.query.denied))
+const dismissDenied = () => {
+  const nextQuery = { ...route.query }
+  delete nextQuery.denied
+  router.replace({ query: nextQuery })
+}
 
 const ROLE_NAMES = { admin: '系统管理员', data_dev: '数据开发', operator: '运营专员', analyst: '数据分析师' }
 const VERSION_TEXT = 'V2.2 · 阶段7 看板'
@@ -192,5 +205,27 @@ const onLogout = async () => {
 .nav-item.router-link-exact-active .nav-ico {
   opacity: 1;
   color: #fff;
+}
+
+/* 无权访问回退提示横幅 */
+.denied-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.denied-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 6px);
+  opacity: .75;
+  transition: opacity var(--dur-fast, .12s) var(--ease, ease);
+}
+.denied-close-btn:hover {
+  opacity: 1;
 }
 </style>

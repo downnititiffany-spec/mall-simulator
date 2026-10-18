@@ -1,3 +1,10 @@
+### 2026-10-18 U01-S02 无权访问回退提示切片关账（云端 VM，总控亲验）
+
+- 交付（agy Flash 仅文件读写）：`routeAccess.js` 新增纯函数 `resolveDeniedPath`（仅精确命中 12 功能路由且非 `/overview` 时原样返回，其余非字符串/数组/`/`/`/login`/未知/带 query·hash 一律 null，注释明示仅作展示校验、不做权限判定）；`router.js` 无权回退分支改为 `next(token ? { path: '/overview', query: { denied: to.path } } : '/login')`（仅传 to.path，无 token 时 `/login` 字面量逐字未动）；`App.vue` 主内容区顶部（SnapshotSelector 之前）新增可关闭提示横幅（`role="alert"`，文案「无权访问页面 {path}，已返回运营大盘。」），关闭经 `router.replace` 仅移除 denied 参数并保留其余 query；新增 `web/tests/accessDenied.test.js` 6 个测试块。总控逐行核 diff 与规约零偏差，未改后端/权限/契约/api.js、无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u01s02acc20261018b` 实测 463/463 全过、build exit=0（脚本因基线 457 报 DRIFT）；漂移构成书面登记——+6 全部为新增 accessDenied 测试块，据此 `run-tests.ps1` 基线再登记 web 457→463（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u01s02gate20261018` **463 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**。
+- 附带核查：本轮曾误以缺省档（未传 -Suite）跑出一轮 default 失败（analytics F26/E10、generator F18/E35），经查全部为回环 HTTP 测试类（OpenAiCompatLlmProviderTest、ReferenceMallHttpAdapterTest）被沙箱 other_tcp 拦截所致——本轮 shell 缺 `JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true`（U00 基线日志有此项）；补齐后两类总控定向亲跑 45/45、11/11 全过，确认环境口径问题、非代码回归，default 基线 1563 不受影响。
+- 处置：UP-20261018-02 **全项关账**；UP-20261018-08 余项（401 拦截器模拟断言）立切片 U01-S03 派发。结果报告 `docs/verification/results/FUNCTION-POLISH-U01-S02-20261018.md`。本节修改前已备份本文件至 `docs/backups/u01-s02-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U01-S01 登录重定向切片关账（云端 VM，总控亲验）
 
 - 交付（agy Flash 仅文件读写）：`routeAccess.js` 新增纯函数 `resolveLoginRedirect`（白名单=/ +12 功能路由，拒绝 `//`/反斜杠/`:`/空白控制字符/`/login` 自指与未知路径，非法回落 `/`，合法保留 query/hash，注释明示不做权限判定、回跳后仍受守卫二次拦截）；`router.js` 未登录分支改为携带 `redirect=to.fullPath`；`Login.vue` 登录成功后经校验回跳；新增 `web/tests/loginRedirect.test.js` 7 个测试块。总控逐行核 diff 与规约零偏差，未改后端/权限/契约/api.js、无新依赖。

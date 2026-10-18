@@ -45,7 +45,7 @@ router.beforeEach((to, from, next) => {
     return
   }
   if (!canAccessRoute(currentUser(), to.meta)) {
-    next(token ? '/overview' : '/login')
+    next(token ? { path: '/overview', query: { denied: to.path } } : '/login')
     return
   }
   next()
