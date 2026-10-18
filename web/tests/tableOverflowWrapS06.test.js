@@ -144,7 +144,7 @@ test('c. 内容不回退：问答行循环锚点、问题列截断与 title 在�
   )
 })
 
-test('d. 机制锚点与范围守护：theme.css 含 .table-wrap 规则且含 overflow-x: auto；Ops.vue 内 table-wrap 恰为 7 处且无 overflow-x；DataTable.vue 仍带 v-if 原形态', () => {
+test('d. 机制锚点与范围守护：theme.css 含 .table-wrap 规则且含 overflow-x: auto；Ops.vue 内 table-wrap 恰为 7 处且无 overflow-x；DataTable.vue 内包裹结构在位', () => {
   // 1. theme.css 含 .table-wrap 规则且含 overflow-x: auto
   assert.match(
     themeCssSource,
@@ -167,11 +167,11 @@ test('d. 机制锚点与范围守护：theme.css 含 .table-wrap 规则且含 ov
     'Ops.vue 内不得包含 overflow-x 字面（包裹机制严格复用 theme.css 既有类）'
   )
 
-  // 4. DataTable.vue 内 table 标签仍带 v-if 原形态（<table v-if="table && table.rows && table.rows.length" class="data-table"> 逐字断言）
+  // 4. DataTable.vue 内包裹结构在位
   assert.match(
     dataTableSource,
-    /<table v-if="table && table\.rows && table\.rows\.length" class="data-table">/,
-    'DataTable.vue 内 table 标签必须逐字保留原有 <table v-if="table && table.rows && table.rows.length" class="data-table"> 原形态'
+    /<div v-if="table && table\.rows && table\.rows\.length" class="table-wrap">\s*<table class="data-table">/,
+    'DataTable.vue 需包含 <div v-if="table && table.rows && table.rows.length" class="table-wrap"> 且其后紧邻 <table class="data-table">'
   )
 })
 

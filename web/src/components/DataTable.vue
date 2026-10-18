@@ -18,7 +18,8 @@ const props = defineProps({
 
 <template>
   <div>
-    <table v-if="table && table.rows && table.rows.length" class="data-table">
+    <div v-if="table && table.rows && table.rows.length" class="table-wrap">
+    <table class="data-table">
       <thead>
         <tr>
           <th v-for="(h, i) in table.headers" :key="i">{{ h }}</th>
@@ -35,6 +36,7 @@ const props = defineProps({
         </tr>
       </tbody>
     </table>
+    </div>
     <div v-else class="el-empty">{{ emptyText }}</div>
   </div>
 </template>
