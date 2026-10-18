@@ -1,3 +1,9 @@
+### 2026-10-18 U03-S01 Overview 错误态旧数据呈现切片关账（云端 VM，总控亲验）
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Overview.vue` 主体条件由 `v-if="!empty && !failed"` 改为 `v-if="showBody"`，新增 `hasData`（metrics/salesTrend/activeTrend 任一非空）与 `showBody = failed ? hasData : !empty` 两计算属性（总控勘误方案逐字落地）；行 85 全页失败分支与行 86 空快照分支逐字未动，error 无旧数据仍落全页提示、error 有旧数据保留主体且图表经 ChartState 显局部遮罩。新增 `web/tests/overviewErrorStateConsistency.test.js` 8 个守卫（主体/hasData/showBody 形态、分支保留、五页同口径、横幅文案、真值表与 hasData 语义仿真；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，未改其他页面/组件/后端、无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u03s01acc20261018` 实测 499/499 全过、build exit=0（脚本因基线 491 报 DRIFT）；漂移构成书面登记——+8 全部为新增 overviewErrorStateConsistency 测试块，据此 `run-tests.ps1` 基线再登记 web 491→499（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u03s01gate20261018` **499 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线登记前后各跑一次）。
+- 处置：UP-20261018-11、UP-20261018-20 **关账**。U03 余项 UP-20261018-19（P2，ChartState 遮罩无就地重试）立切片 U03-S02 派发 agy Flash（ChartState error 遮罩新增重试按钮经 `retry` 事件触发、五页 10 处用法统一绑定既有 load，不改契约/状态模型；验收后另行登记，关账后 U03 全项处置完毕转 U04）。结果报告 `docs/verification/results/FUNCTION-POLISH-U03-S01-20261018.md`。本节修改前已备份本文件至 `docs/backups/u03-s01-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U03 盘点验收（云端 VM，总控亲验）——UP-11 成立，首切片 U03-S01 已派发
 
 - U03 只读盘点验收：Antigravity Flash 按 `U03-INV` 规约交付盘点报告（`mall-simulator-notes/U03-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（Overview.vue:27/85 与 AnalysisContext 横幅、其余四页无 `!failed` 顶层阻断、useAnalysis 序号/Abort/快照校验与五页卸载 cancel、chartState 五态、ApiResponse traceId 与 api.js 剥离、Reports/RuntimeProfiles 刷新闪空、ChartState 遮罩）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 491 继续有效，未重跑门禁。

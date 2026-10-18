@@ -1033,7 +1033,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U01-S03 web 基线登记：478（+15 = web/tests/apiUnauthorized.test.js 新增 15 个测试块：handleApiResponse/handleApiError/redirectToLogin 动态模拟断言场景 a-j 含补充兜底与防循环 + 接线守护 1；总控亲跑 RunId u01s03acc20261018 实测 478/478 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U02-S01 web 基线登记：486（+8 = web/tests/analysisFetcherContext.test.js 新增 8 个测试块：Behavior/Rfm sourceId 透传与位置/禁补造守护 4 + 直通三页形态守护 3 + 五页完整性 1；总控亲跑 RunId u02s01acc20261018 实测 486/486 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U02-S02 web 基线登记：491（+5 = web/tests/rfmSegmentUsersNull.test.js 新增 5 个测试块：users 保留 null 形态守护 1 + 禁 ? 0 强转 1 + 三字段空值口径一致 1 + formatInteger 渲染链 1 + 映射语义仿真 1；总控亲跑 RunId u02s02acc20261018 实测 491/491 后登记，非 -AllowCountDrift 放行）
-$BaselineWebTests = 491
+# 2026-10-18 U03-S01 web 基线登记：499（+8 = web/tests/overviewErrorStateConsistency.test.js 新增 8 个测试块：主体 showBody 形态 1 + hasData 三数组判定 1 + showBody 公式形态 1 + 失败/空快照分支保留 1 + 五页同口径 1 + 横幅文案 1 + showBody 真值表仿真 1 + hasData 语义仿真 1；总控亲跑 RunId u03s01acc20261018 实测 499/499 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 499
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

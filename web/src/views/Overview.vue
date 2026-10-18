@@ -24,7 +24,7 @@
 
     <AnalysisContext :context="context || {}" :state="state" :error="error" />
 
-    <template v-if="!empty && !failed">
+    <template v-if="showBody">
       <div v-if="staleness" data-test="staleness-note" class="alert alert-warning">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -127,6 +127,14 @@ const analysis = useAnalysis({
   defaults: { metrics: [], salesTrend: [], activeTrend: [], quality: {}, metricDictionary: [] }
 })
 const { data, context, state, requestStatus, error, loading, empty, failed, exportable, exportContext } = analysis
+
+// U03-S01：error 态保留旧数据呈现（与 AnalysisContext 横幅及其余四分析页同口径）；
+// 无旧载荷的首次失败仍落全页失败提示。empty/failed 同源于单一 state、恒互斥，不用组合条件判分支。
+const hasData = computed(() => {
+  const d = data.value || {}
+  return [d.metrics, d.salesTrend, d.activeTrend].some((a) => Array.isArray(a) && a.length > 0)
+})
+const showBody = computed(() => (failed.value ? hasData.value : !empty.value))
 
 // 指标卡顺序与展示名：后端未返回的指标不显示，不在前端造数
 const CARD_META = [
