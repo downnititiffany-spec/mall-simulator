@@ -1,3 +1,9 @@
+### 2026-10-18 U02-S01 分析页业务来源 ID 透传切片关账（云端 VM，总控亲验）
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Behavior.vue` 的 fetchBehavior 与 `web/src/views/Rfm.vue` 的 fetchRfm 各补 1 行 sourceId 透传（Behavior 为 `funnel.sourceId || overview.sourceId` 主备回退，Rfm 为 `rfm.sourceId` 以主响应为准），位置均在 snapshotId 之后、businessTime 之前；新增 `web/tests/analysisFetcherContext.test.js` 8 个源码结构守卫（透传形态/字段位置/禁写死与禁补造 + 直通三页不退化守护）。总控逐行核 diff 与规约零偏差，未改后端/契约/下游透传链、无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u02s01acc20261018` 实测 486/486 全过、build exit=0（脚本因基线 478 报 DRIFT）；漂移构成书面登记——+8 全部为新增 analysisFetcherContext 测试块，据此 `run-tests.ps1` 基线再登记 web 478→486（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u02s01gate20261018` **486 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**。
+- 处置：UP-20261018-09、UP-20261018-10、UP-20261018-13 **关账**。U02 余项仅 UP-20261018-12（P2，Rfm segmentRows 将 users 的 null 强转 0）：总控已亲验边界——后端 RfmService.rfmMatrix 八类补 0 以真实 0 值下发、前端保留 null 不影响该口径，仅降级 rfmSegments 路径与异常 null 行受影响；立 U02-S02 切片派发 agy Flash（验收后另行登记；既有 rfmMatrixOwnership 守卫中写死旧表达式的断言随切片同步更新）。结果报告 `docs/verification/results/FUNCTION-POLISH-U02-S01-20261018.md`。本节修改前已备份本文件至 `docs/backups/u02-s01-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U02 盘点验收（云端 VM，总控亲验）——两项 P1 成立，首切片 U02-S01 已派发
 
 - U02 只读盘点验收：Antigravity Flash 按 `U02-INV` 规约交付盘点报告（`mall-simulator-notes/U02-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（Behavior.vue/Rfm.vue fetcher、Overview.vue 错误态、Rfm segmentRows、number.js、useAnalysis、exportCsv）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 478 继续有效，未重跑门禁。

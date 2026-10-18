@@ -96,6 +96,7 @@ async function fetchBehavior(params, signal) {
   const warnings = [...funnel.warnings, ...overview.warnings]
   return {
     snapshotId: funnel.snapshotId,
+    sourceId: funnel.sourceId || overview.sourceId,
     businessTime: funnel.businessTime || overview.businessTime,
     dataUpdatedAt: funnel.dataUpdatedAt || overview.dataUpdatedAt,
     source: funnel.source || overview.source,

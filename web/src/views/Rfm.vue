@@ -128,6 +128,7 @@ async function fetchRfm(params, signal) {
 
   return {
     snapshotId: rfm.snapshotId,
+    sourceId: rfm.sourceId,
     businessTime: rfm.businessTime,
     dataUpdatedAt: rfm.dataUpdatedAt,
     source: rfm.source,
