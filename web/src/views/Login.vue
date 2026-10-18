@@ -44,9 +44,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
+import { resolveLoginRedirect } from '../utils/routeAccess'
 
+const route = useRoute()
 const router = useRouter()
 const username = ref('')
 const password = ref('')
@@ -63,7 +65,7 @@ const onSubmit = async () => {
   error.value = ''
   try {
     await api.login(username.value, password.value)
-    router.push('/')
+    router.push(resolveLoginRedirect(route.query.redirect))
   } catch (e) {
     error.value =
       (e && e.response && e.response.data && e.response.data.message) ||

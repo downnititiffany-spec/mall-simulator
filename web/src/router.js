@@ -41,7 +41,7 @@ router.beforeEach((to, from, next) => {
     return
   }
   if (to.path !== '/login' && to.meta.requiresAuth !== false && !token) {
-    next('/login')
+    next({ path: '/login', query: { redirect: to.fullPath } })
     return
   }
   if (!canAccessRoute(currentUser(), to.meta)) {

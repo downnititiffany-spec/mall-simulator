@@ -1,3 +1,9 @@
+### 2026-10-18 U01-S01 登录重定向切片关账（云端 VM，总控亲验）
+
+- 交付（agy Flash 仅文件读写）：`routeAccess.js` 新增纯函数 `resolveLoginRedirect`（白名单=/ +12 功能路由，拒绝 `//`/反斜杠/`:`/空白控制字符/`/login` 自指与未知路径，非法回落 `/`，合法保留 query/hash，注释明示不做权限判定、回跳后仍受守卫二次拦截）；`router.js` 未登录分支改为携带 `redirect=to.fullPath`；`Login.vue` 登录成功后经校验回跳；新增 `web/tests/loginRedirect.test.js` 7 个测试块。总控逐行核 diff 与规约零偏差，未改后端/权限/契约/api.js、无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u01s01acc20261018` 实测 457/457 全过、build exit=0（脚本因基线 450 报 DRIFT）；漂移构成书面登记——+7 全部为新增 loginRedirect 测试块，据此 `run-tests.ps1` 基线再登记 web 450→457（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u01s01gate20261018` **457 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**。
+- 处置：UP-20261018-01（P1）关账；UP-20261018-02 redirect 传参部分关账、无权提示部分转 U01-S02（已立规约派发）；UP-20261018-08 redirect/守卫测试补齐关账、401 模拟断言仍候选。结果报告 `docs/verification/results/FUNCTION-POLISH-U01-S01-20261018.md`。本节修改前已备份本文件至 `docs/backups/u01-s01-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U00 基线关账与 U01 盘点验收（云端 VM，总控亲验）
 
 - U00 关账：开发线 `codex/cloud-v3-development @ feed74f` 同步核验完成；总控亲跑 default RunId `u00base20261018` PASS 1563（analytics 1403 + mall 26 + generator 134，较签收基线 1560 增 3，属 232787b/be8a7a8 增量，单独登记不回写签收）、web RunId `u00web20261018` PASS 450 且 build exit 0；12 功能路由 + 登录页角色矩阵已盘（pipeline/ops/sources-wizard 前端 admin-only，runtime-profiles 为 admin+data_dev）。队列文件 `mall-simulator-notes/U-PROGRAM.md`。
