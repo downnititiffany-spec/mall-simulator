@@ -21,13 +21,13 @@
         <template v-if="overallBuyRate !== null">；整体支付转化率（后端快照口径）：{{ formatPercent(overallBuyRate) }}</template>
       </div>
       <ChartState :option="funnelOpt" :state="funnelChartState" :error="error" :height="300"
-                  empty-text="当前快照没有漏斗阶段数据" />
+                  empty-text="当前快照没有漏斗阶段数据" retryable @retry="load" />
     </div>
 
     <div class="chart-box">
       <div class="chart-title">活跃趋势（活跃用户 / 行为量）</div>
       <ChartState :option="trendOpt" :state="trendChartState" :error="error" :height="280"
-                  empty-text="所选日期范围内没有活跃趋势数据" />
+                  empty-text="所选日期范围内没有活跃趋势数据" retryable @retry="load" />
     </div>
 
     <div class="table-box">

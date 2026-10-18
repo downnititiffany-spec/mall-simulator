@@ -47,14 +47,14 @@
       <div class="chart-box">
         <div class="chart-title">销售趋势（销售额 / 净销售额 / 订单数 / 买家数）</div>
         <ChartState :option="salesOption" :state="salesTrendState" :error="error" :height="280"
-                    empty-text="所选日期范围内没有销售趋势数据" />
+                    empty-text="所选日期范围内没有销售趋势数据" retryable @retry="load" />
         <div style="font-size:12px;color:#94A3B8;margin-top:6px">{{ NET_SALE_NOTE }}</div>
       </div>
 
       <div class="chart-box">
         <div class="chart-title">活跃趋势（活跃用户 / 行为量）</div>
         <ChartState :option="activeOption" :state="activeTrendState" :error="error" :height="280"
-                    empty-text="所选日期范围内没有活跃趋势数据" />
+                    empty-text="所选日期范围内没有活跃趋势数据" retryable @retry="load" />
       </div>
 
       <div class="chart-box">

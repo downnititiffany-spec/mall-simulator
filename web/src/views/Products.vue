@@ -18,13 +18,13 @@
     <div class="chart-box">
       <div class="chart-title">商品热度排行（当前页）</div>
       <ChartState :option="heatOpt" :state="hotChartState" :error="error" :height="Math.min(420, 100 + hotRows.length * 34)"
-                  empty-text="当前分页窗口没有商品热度数据" />
+                  empty-text="当前分页窗口没有商品热度数据" retryable @retry="load" />
     </div>
 
     <div class="chart-box">
       <div class="chart-title">商品转化（浏览用户 / 支付用户）</div>
       <ChartState :option="convOpt" :state="conversionChartState" :error="error" :height="300"
-                  empty-text="当前快照没有商品转化数据" />
+                  empty-text="当前快照没有商品转化数据" retryable @retry="load" />
     </div>
 
     <div class="table-box">

@@ -15,7 +15,7 @@
     <div class="chart-box">
       <div class="chart-title">RFM 八类用户分布（优先使用后端 rfmMatrix，缺失类目补 0 由后端口径负责）</div>
       <ChartState :option="matrixOpt" :state="matrixChartState" :error="error" :height="300"
-                  empty-text="当前快照没有 RFM 分层数据" />
+                  empty-text="当前快照没有 RFM 分层数据" retryable @retry="load" />
     </div>
 
     <div class="table-box">

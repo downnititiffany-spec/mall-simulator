@@ -5,6 +5,7 @@
     </div>
     <div v-else-if="state === 'error'" class="state-overlay state-error">
       数据加载失败：{{ error || '未知原因' }}
+      <button v-if="retryable" type="button" class="btn btn-sm state-retry" @click="emit('retry')">重试</button>
     </div>
     <div v-else-if="state === 'empty'" class="state-overlay state-empty">
       {{ emptyText }}
@@ -25,8 +26,11 @@ defineProps({
   state: { type: String, default: 'ready' },
   error: { type: String, default: '' },
   emptyText: { type: String, default: '暂无数据' },
-  height: { type: Number, default: 300 }
+  height: { type: Number, default: 300 },
+  retryable: { type: Boolean, default: false }
 })
+
+const emit = defineEmits(['retry'])
 </script>
 
 <style scoped>
@@ -60,4 +64,5 @@ defineProps({
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.state-retry { flex: none; }
 </style>

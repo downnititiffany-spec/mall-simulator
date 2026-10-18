@@ -1,3 +1,9 @@
+### 2026-10-18 U03-S02 ChartState 错误遮罩就地重试切片关账（云端 VM，总控亲验）——U03 全项处置完毕
+
+- 交付（agy Flash 仅文件读写）：`web/src/components/ChartState.vue` error 遮罩内新增就地重试按钮（`v-if="retryable"`、`@click="emit('retry')"`、文案「重试」逐字按规约），新增 `retryable` prop（Boolean、默认 false，单独使用不显示死按钮）与 `defineEmits(['retry'])`，样式追加 `.state-retry { flex: none; }` 一条；五分析页全部 10 处 `<ChartState>` 用法（Overview 2、Sales 3、Behavior 2、Products 2、Rfm 1）统一追加 `retryable @retry="load"` 绑各自既有 load（Products 为按当前参数 `analysis.load(requestParams())`），各页 load 定义逐字未动。新增 `web/tests/chartStateRetry.test.js` 6 个守卫（按钮形态、prop/emit 声明、仅 error 分支隔离、五页 10 处接线计数、load 保留、三态文案逐字；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差（报告称新测试 158 行、实测 157 行，仅报告计数小误）；未改 useAnalysis/chartState/BaseChart/AnalysisContext 及任何后端、无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u03s02acc20261018` 实测 505/505 全过、build exit=0（脚本因基线 499 报 DRIFT）；漂移构成书面登记——+6 全部为新增 chartStateRetry 测试块，据此 `run-tests.ps1` 基线再登记 web 499→505（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u03s02gate20261018` **505 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线登记前后各跑一次）。
+- 处置：UP-20261018-19 **关账**；**U03 全项处置完毕**（UP-11/20 随 U03-S01 关账、UP-19 随本切片关账、UP-18 已排 U04/U05、UP-21 裁决维持现状、UP-22～25 复核符合）。转 U04 盘点（U04-INV 只读盘点规约已立并派发 agy Flash，UP-18 中 RuntimeProfiles 刷新闪空为首位既有候选）。结果报告 `docs/verification/results/FUNCTION-POLISH-U03-S02-20261018.md`。本节修改前已备份本文件至 `docs/backups/u03-s02-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U03-S01 Overview 错误态旧数据呈现切片关账（云端 VM，总控亲验）
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Overview.vue` 主体条件由 `v-if="!empty && !failed"` 改为 `v-if="showBody"`，新增 `hasData`（metrics/salesTrend/activeTrend 任一非空）与 `showBody = failed ? hasData : !empty` 两计算属性（总控勘误方案逐字落地）；行 85 全页失败分支与行 86 空快照分支逐字未动，error 无旧数据仍落全页提示、error 有旧数据保留主体且图表经 ChartState 显局部遮罩。新增 `web/tests/overviewErrorStateConsistency.test.js` 8 个守卫（主体/hasData/showBody 形态、分支保留、五页同口径、横幅文案、真值表与 hasData 语义仿真；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，未改其他页面/组件/后端、无新依赖。

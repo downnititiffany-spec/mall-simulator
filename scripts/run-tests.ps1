@@ -1034,7 +1034,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U02-S01 web 基线登记：486（+8 = web/tests/analysisFetcherContext.test.js 新增 8 个测试块：Behavior/Rfm sourceId 透传与位置/禁补造守护 4 + 直通三页形态守护 3 + 五页完整性 1；总控亲跑 RunId u02s01acc20261018 实测 486/486 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U02-S02 web 基线登记：491（+5 = web/tests/rfmSegmentUsersNull.test.js 新增 5 个测试块：users 保留 null 形态守护 1 + 禁 ? 0 强转 1 + 三字段空值口径一致 1 + formatInteger 渲染链 1 + 映射语义仿真 1；总控亲跑 RunId u02s02acc20261018 实测 491/491 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U03-S01 web 基线登记：499（+8 = web/tests/overviewErrorStateConsistency.test.js 新增 8 个测试块：主体 showBody 形态 1 + hasData 三数组判定 1 + showBody 公式形态 1 + 失败/空快照分支保留 1 + 五页同口径 1 + 横幅文案 1 + showBody 真值表仿真 1 + hasData 语义仿真 1；总控亲跑 RunId u03s01acc20261018 实测 499/499 后登记，非 -AllowCountDrift 放行）
-$BaselineWebTests = 499
+# 2026-10-18 U03-S02 web 基线登记：505（+6 = web/tests/chartStateRetry.test.js 新增 6 个测试块：error 分支重试按钮形态 1 + retryable prop/emit 声明 1 + 按钮仅 error 分支隔离 1 + 五页 10 处接线守护 1 + 五页 load 处理器保留 1 + 三态文案逐字守护 1；总控亲跑 RunId u03s02acc20261018 实测 505/505 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 505
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)
