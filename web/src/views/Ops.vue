@@ -753,6 +753,10 @@ async function createUser() {
 
 async function toggle(u, enable) {
   if (busy.value || loading.value) return
+  if (!enable) {
+    const confirmed = window.confirm(`确认要禁用用户 ${u.username} 吗？禁用后该用户将无法登录，重新启用前其请求会被拦截。`)
+    if (!confirmed) return
+  }
   busy.value = true
   actionError.value = ''
   try {

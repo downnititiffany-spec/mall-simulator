@@ -1037,7 +1037,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U03-S02 web 基线登记：505（+6 = web/tests/chartStateRetry.test.js 新增 6 个测试块：error 分支重试按钮形态 1 + retryable prop/emit 声明 1 + 按钮仅 error 分支隔离 1 + 五页 10 处接线守护 1 + 五页 load 处理器保留 1 + 三态文案逐字守护 1；总控亲跑 RunId u03s02acc20261018 实测 505/505 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U04-S01 web 基线登记：508（+3 = web/tests/runtimeProfilesRefreshRetention.test.js 新增 3 个测试块：loadProfiles 不先行清空与生命周期守护 1 + 模板四分支结构守护 1 + 条件链真值表仿真 1；总控亲跑 RunId u04s01acc20261018 实测 508/508 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U04-S02 web 基线登记：513（+5 = web/tests/pipelineRunStageColumn.test.js 新增 5 个测试块：表头当前阶段列位置与原 9 列保留 1 + 行单元格阶段绑定与失败码红色附注 1 + 空态 colspan 10 与表头列数互证 1 + 既有行级操作保留 1 + 呈现逻辑仿真 1；总控亲跑 RunId u04s02acc20261018 实测 513/513 后登记，非 -AllowCountDrift 放行）
-$BaselineWebTests = 513
+# 2026-10-18 U04-S03 web 基线登记：518（+5 = web/tests/opsDisableConfirm.test.js 新增 5 个测试块：禁用确认分支与文案 1 + 语句顺序不变量 1 + 文案全文恰好一次 1 + 模板 toggle 按钮保留 1 + 决策逻辑仿真 1；总控亲跑 RunId u04s03acc20261018 实测 518/518 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 518
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

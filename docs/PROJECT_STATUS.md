@@ -1,3 +1,9 @@
+### 2026-10-18 U04-S03 Ops 禁用用户二次确认切片关账（云端 VM，总控亲验）——U04 全项处置完毕
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Ops.vue` 仅 `toggle` 函数内一处——首行 busy/loading 守卫之后、`busy.value = true` 之前插入规约逐字四行：仅禁用路径（`if (!enable)`）以 `window.confirm` 弹出含用户名与禁用后果的确认，`if (!confirmed) return` 在置 busy、清错误、发请求之前中止（取消零副作用）；启用路径不弹确认、逐字不变；模板、createUser、resetPwd 与其余函数逐字未动。新增 `web/tests/opsDisableConfirm.test.js` 5 个守卫（禁用分支与完整文案、语句顺序不变量、文案全文恰好一次、模板 toggle 按钮保留、决策逻辑仿真含缺省/异常按取消与前置守卫组合；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，按 RuntimeProfiles `window.confirm` 先例补齐（非 §3.2、盘点已批准），未动后端、契约、权限与状态模型，无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u04s03acc20261018` 实测 518/518 全过、build exit=0（脚本因基线 513 报 DRIFT）；漂移构成书面登记——+5 全部为新增 opsDisableConfirm 测试块，据此 `run-tests.ps1` 基线再登记 web 513→518（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u04s03gate20261018` **518 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线登记前后各跑一次）。环境注记：巡检时 VM 已重启、代理中继与 3307 隔离 MySQL 未监听，总控按 TOOLS.md 恢复节重新拉起并实查（中继 18128 LISTEN、mysqld 3307 ready）后继续，本切片未连库。
+- 处置：UP-20261018-27 **关账**；**U04 全项处置完毕**（UP-18 RuntimeProfiles 一半/UP-28 随 U04-S01、UP-26 随 U04-S02、UP-27 随本切片关账，UP-29 裁决维持现状，UP-30～33 复核符合；UP-18 的 Reports 一半仍归 U05）。转 U05 盘点（U05-INV 只读盘点规约已立并派发 agy Flash，UP-18 的 Reports 一半为首位既有候选，U03 盘点 §4.2 的 Reports 无 onUnmounted 观察随盘点核清；RES-01 审核单列，不在本包内销项）。结果报告 `docs/verification/results/FUNCTION-POLISH-U04-S03-20261018.md`。本节修改前已备份本文件至 `docs/backups/u04-s03-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U04-S02 Pipeline 实例表当前阶段列切片关账（云端 VM，总控亲验）
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Pipeline.vue` 实例表三处——表头「状态」后插入「当前阶段」列、行内新增阶段回显单元格（空值回退 `—`，仅 FAILED 且有失败码时红色附注 errorCode）、空态 colspan 9→10（其余逐字未动）；新增 `web/tests/pipelineRunStageColumn.test.js` 5 个守卫（表头位置与原 9 列保留、单元格绑定与附注条件、colspan 与表头列数互证、既有行级操作保留、呈现逻辑仿真 6 组合；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，两字段为列表行既有字段、纯呈现补齐，未动后端、契约、权限与状态模型，无新依赖。
