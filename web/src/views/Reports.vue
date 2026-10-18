@@ -86,11 +86,11 @@
         <button class="btn btn-sm" :disabled="loading || page >= Math.max(totalPages, 1)" @click="loadPage(page + 1)">下一页</button>
         <button class="btn btn-sm" :disabled="loading" @click="loadPage(page)">刷新</button>
       </div>
-      <div v-if="loading" class="state-line">正在读取报告…</div>
+      <div v-if="loading && reports.length === 0" class="state-line">正在读取报告…</div>
       <div v-else-if="listError" class="banner banner-error" role="alert">报告列表读取失败：{{ listError }}</div>
       <div v-else-if="!reports.length" class="el-empty">还没有报告</div>
       <div v-if="detailError && !selectedReport" class="banner banner-error" role="alert">报告详情读取失败：{{ detailError }}。可以重试或选择其他报告。</div>
-      <table v-if="!loading && !listError && reports.length" class="data-table">
+      <table v-if="reports.length" class="data-table">
         <thead><tr><th>编号</th><th>模板</th><th>报告窗口</th><th>快照</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="report in reports" :key="report.id">
@@ -271,7 +271,6 @@ async function loadPage(targetPage = 1) {
     totalPages.value = result.totalPages
   } catch (error) {
     if (sequence !== requestSequence) return
-    reports.value = []
     listError.value = error?.message || '未知错误'
   } finally {
     if (sequence === requestSequence) loading.value = false

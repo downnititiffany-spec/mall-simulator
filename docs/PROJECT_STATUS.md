@@ -1,3 +1,9 @@
+### 2026-10-18 U05-S01 Reports 列表刷新平滑保留切片关账（云端 VM，总控亲验）——UP-18 全项关账
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Reports.vue` 三处——行 89 状态行条件改 `loading && reports.length === 0`、行 93 表格条件改 `reports.length`（与错误横幅同屏）、`loadPage()` 失败分支删 `reports.value = []` 一行；新增 `web/tests/reportsRefreshRetention.test.js` 源码守卫 3 块。总控逐行核 diff 与规约零偏差。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u05s01acc20261018` 521/521 全过、build exit=0（基线 518 报 DRIFT 为预期计数变化）；漂移 +3（新守卫 3 块）书面登记后 `run-tests.ps1` 基线 web 518→521；收口轮 RunId `u05s01gate20261018` 521 MATCH、PASS exit=0；脚本契约 13/13 PASS（基线登记前后各一次）。
+- 处置：UP-20261018-18 **全项关账**（RuntimeProfiles 一半随 U04-S01、Reports 一半随本切片）；UP-20261018-36 本切片部分关账。U05 余项立切片 U05-S02（UP-34 竞态/卸载；总控裁决：序号失效方案，AbortSignal 不纳入、openReport 失败清 selectedReport 维持现状，理由见规约）已派发 agy Flash，验收后另行登记。结果报告 `docs/verification/results/FUNCTION-POLISH-U05-S01-20261018.md`。本节修改前已备份本文件至 `docs/backups/u05-s01-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U05 盘点验收（云端 VM，总控亲验）——UP-18 Reports 一半成立，首切片 U05-S01 已派发
 
 - U05 只读盘点验收：Antigravity Flash 按 `U05-INV` 规约交付盘点报告（`mall-simulator-notes/U05-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（Reports 模板行 89/93 与 loadPage 行 274 清表、Reports 无 onUnmounted 与 openReport/loadArtifact 无序号守卫及 api 透传现状、Decisions prompt 收集点、报告创建端点无幂等键、web/tests 无 Reports.vue 守卫）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 518 继续有效，未重跑门禁。
