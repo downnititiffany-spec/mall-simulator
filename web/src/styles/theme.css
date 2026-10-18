@@ -345,6 +345,7 @@ body {
 .data-table th.sortable { cursor: pointer; user-select: none; }
 .data-table th.sortable:hover { color: var(--brand-600); }
 .data-table th .sort-caret { margin-left: 4px; color: var(--brand-500); font-size: 10px; }
+.data-table th .sort-btn { background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; }
 .data-table td {
   padding: 13px var(--sp-4); border-top: 1px solid var(--border);
   vertical-align: middle;

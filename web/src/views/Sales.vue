@@ -55,8 +55,8 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th v-for="col in columns" :key="col.key" style="cursor:pointer" @click="toggleSort(col.key)">
-              {{ col.title }}<span v-if="sortKey === col.key">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span>
+            <th v-for="col in columns" :key="col.key">
+              <button type="button" class="sort-btn" @click="toggleSort(col.key)">{{ col.title }}<span v-if="sortKey === col.key">{{ sortOrder === 'asc' ? ' ↑' : ' ↓' }}</span></button>
             </th>
           </tr>
         </thead>

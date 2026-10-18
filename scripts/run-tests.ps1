@@ -1041,7 +1041,8 @@ $BaselineIsolated = [ordered]@{ mall = 30; generator = 19; analytics = 13 }
 # 2026-10-18 U05-S01 web 基线登记：521（+3 = web/tests/reportsRefreshRetention.test.js 新增 3 个测试块：loadPage 失败不清空与生命周期守护 1 + 模板条件与横幅空态链守护 1 + 条件链真值表仿真 1；总控亲跑 RunId u05s01acc20261018 实测 521/521 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U05-S02 web 基线登记：527（+6 = web/tests/reportsRaceGuard.test.js 新增 6 个测试块：import/onUnmounted 卸载守卫 1 + openReport 竞态守卫 1 + loadArtifact 竞态守卫 1 + loadDecisionOptions 竞态守卫 1 + loadPage 既有守卫不回退 1 + 序号竞态与卸载失效纯函数仿真 1；总控亲跑 RunId u05s02acc20261018 实测 527/527 后登记，非 -AllowCountDrift 放行）
 # 2026-10-18 U06-S01 web 基线登记：532（+5 = web/tests/tableOverflowContainer.test.js 新增 5 个测试块：Decisions 包裹结构 1 + Decisions 内容不回退 1 + Pipeline 包裹结构 1 + 机制锚点 1 + 条件链真值表仿真 1；总控亲跑 RunId u06s01fix20261018 实测 532/532 后登记，非 -AllowCountDrift 放行；首轮 u06s01acc20261018 因块 c 全文件断言误伤 Pipeline 行 39 既有阶段表失败 1 例，经 U06-S01-FIX 收窄断言范围后复验全过，生产代码未改）
-$BaselineWebTests = 532
+# 2026-10-18 U06-S02 web 基线登记：537（+5 = web/tests/tableSortKeyboard.test.js 新增 5 个测试块：Products 结构 1 + Products 排序面不回退 1 + Sales 结构 1 + 机制锚点（.sort-btn 逐字与零 tabindex）1 + 键盘语义仿真 1；总控亲跑 RunId u06s02acc20261018 实测 537/537 后登记，非 -AllowCountDrift 放行）
+$BaselineWebTests = 537
 
 function Fail([int]$code, [string]$msg) {
   Write-Host ("[REFUSE exit={0}] {1}" -f $code, $msg)

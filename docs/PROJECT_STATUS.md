@@ -1,3 +1,9 @@
+### 2026-10-18 U06-S02 排序表头键盘可达切片关账（云端 VM，总控亲验）——UP-44 关账，下一切片 U06-S03 已派发
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/Products.vue` 商品明细表头 th 去除 `:style`/`@click`，可排序六列内嵌原生 `<button v-if="col.sortKey" type="button" class="sort-btn" @click="toggleSort(col)">`（箭头条件 `sortKey === col.sortKey`），不可排序两列走 `<template v-else>` 纯文本；`web/src/views/Sales.vue` 销售明细表头 th 去除 `style`/`@click`，六列全嵌 `<button type="button" class="sort-btn" @click="toggleSort(col.key)">`；`web/src/styles/theme.css` 仅在 `.sort-caret` 后新增一条 `.sort-btn` 继承规则逐字如裁决；两页 `toggleSort`/columns 逐字未动；新增 `web/tests/tableSortKeyboard.test.js` 源码守卫 5 块。总控逐行核 diff 与规约零偏差。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u06s02acc20261018` 537/537 全过、build exit=0（脚本因基线 532 报 DRIFT 为预期计数变化）；漂移 +5（新守卫 5 块）书面登记后 `run-tests.ps1` 基线 web 532→537；收口轮 RunId `u06s02gate20261018` 537 MATCH、PASS exit=0；脚本契约 13/13 PASS（基线登记前后各一次）。环境注记：巡检开始时中继/3307 未监听（VM 替换后遗症），总控按 TOOLS.md 恢复节重新拉起并实查 LISTEN 后继续，本切片未连库。
+- 处置：UP-20261018-44 **关账**；UP-20261018-47 本切片部分关账。U06 余项立切片 U06-S03（UP-20261018-42 余项的一部分：Products/Sales/Reports 三表各加一层既有 `.table-wrap` 包裹，Reports 的 v-if 移至包裹 div，与 S01 同机制）派发 agy Flash，验收后另行登记；UP-42 其余站点（Ops/AiAssistant/DataTable）、UP-43/46 排其后，UP-45 维持现状、UP-48 待本地审阅不变。结果报告 `docs/verification/results/FUNCTION-POLISH-U06-S02-20261018.md`。本节修改前已备份本文件至 `docs/backups/u06-s02-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U06-S01 宽表横向滚动容器切片关账（云端 VM，总控亲验）——UP-42 两表部分关账，下一切片 U06-S02 已派发
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Decisions.vue` 决策列表外加 `<div v-if="rows.length" class="table-wrap">` 包裹（v-if 由 table 移至包裹 div、v-else-if 空态条件链不变）；`web/src/views/Pipeline.vue` 最近实例表外加 `<div class="table-wrap">` 包裹（table 行逐字不动）；新增 `web/tests/tableOverflowContainer.test.js` 源码守卫 5 块。总控逐行核 diff：生产代码与规约零偏差。
