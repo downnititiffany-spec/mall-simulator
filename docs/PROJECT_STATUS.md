@@ -1,3 +1,11 @@
+### 2026-10-18 U04 盘点验收（云端 VM，总控亲验）——UP-18 一半成立，首切片 U04-S01 已派发
+
+- U04 只读盘点验收：Antigravity Flash 按 `U04-INV` 规约交付盘点报告（`mall-simulator-notes/U04-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（RuntimeProfiles loadProfiles 清空与模板卸载及四条写后调用链、Pipeline 实例表列与 currentStage 呈现面、Ops toggle 无 confirm 与 RuntimeProfiles confirm 对照、runtimeProfiles.test.js:58-59 固化断言、Pipeline operationId 与 PipelineController 限流注解、SourceWizard watch 失效守卫）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 505 继续有效，未重跑门禁。
+- 问题清单：UP-20261018-18 中 RuntimeProfiles 一半（P2，刷新闪空且失败丢旧数据）成立，纳入首切片 U04-S01（Reports 一半仍归 U05）；UP-20261018-26（P2，Pipeline 实例表无失败阶段/失败码列）成立，排 U04 后续 P2 候选；UP-20261018-27（P2，Ops 禁用用户无二次确认）成立，排后续候选；UP-20261018-28（P2/测试空白，陈旧断言固化清空行为）随 U04-S01 同步处置；UP-20261018-30～33 复核符合（向导预览失效与三方哈希、运行环境状态与凭据、流水线恢复纪律、分页失败一致性），不改代码。
+- §3.2 裁决登记：UP-20261018-29（流水线人工触发 operationId 生命周期）维持现状，不做表单级固化——单次触发内 operationId 同作 sourceDataVersion 与 Idempotency-Key 已保证证据关联，服务端端点 @RateLimited(requests=10) 且为受控入口，结果未知应先刷新列表确认；固化将改变去重语义，日后另行裁决。UP-20261018-27 不属 §3.2 清单，总控批准按 RuntimeProfiles 既有 window.confirm 先例补齐（仅禁用加确认），方向已定、切片另立。
+- 范围收窄一处（不影响分级）：盘点 §9 的 testResult 收敛建议不在 U04-S01 内处理——testResult 为带环境名的独立结果卡，runTest/activate/disable/save 路径均先行清空，仅手动刷新保留且顶部 pageError 照常报错、不冒充当前成功，清空反而丢失排障证据；S01 只处置列表/来源清空与模板卸载。
+- 首个实施切片 U04-S01（loadProfiles 删除 profiles/sources 两行先行清空 + 模板加载占位条件改 `loading && profiles.length === 0` + 陈旧断言改 doesNotMatch + 新增刷新保留源码守卫）规约已立并派发 agy Flash，验收后另行登记。结果报告 `docs/verification/results/FUNCTION-POLISH-U04-20261018.md`。本节修改前已备份本文件至 `docs/backups/u04-inventory-20261018/`。本轮未改业务代码、未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U03-S02 ChartState 错误遮罩就地重试切片关账（云端 VM，总控亲验）——U03 全项处置完毕
 
 - 交付（agy Flash 仅文件读写）：`web/src/components/ChartState.vue` error 遮罩内新增就地重试按钮（`v-if="retryable"`、`@click="emit('retry')"`、文案「重试」逐字按规约），新增 `retryable` prop（Boolean、默认 false，单独使用不显示死按钮）与 `defineEmits(['retry'])`，样式追加 `.state-retry { flex: none; }` 一条；五分析页全部 10 处 `<ChartState>` 用法（Overview 2、Sales 3、Behavior 2、Products 2、Rfm 1）统一追加 `retryable @retry="load"` 绑各自既有 load（Products 为按当前参数 `analysis.load(requestParams())`），各页 load 定义逐字未动。新增 `web/tests/chartStateRetry.test.js` 6 个守卫（按钮形态、prop/emit 声明、仅 error 分支隔离、五页 10 处接线计数、load 保留、三态文案逐字；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差（报告称新测试 158 行、实测 157 行，仅报告计数小误）；未改 useAnalysis/chartState/BaseChart/AnalysisContext 及任何后端、无新依赖。
