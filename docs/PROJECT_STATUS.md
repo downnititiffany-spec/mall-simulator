@@ -1,3 +1,11 @@
+### 2026-10-18 U05 盘点验收（云端 VM，总控亲验）——UP-18 Reports 一半成立，首切片 U05-S01 已派发
+
+- U05 只读盘点验收：Antigravity Flash 按 `U05-INV` 规约交付盘点报告（`mall-simulator-notes/U05-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（Reports 模板行 89/93 与 loadPage 行 274 清表、Reports 无 onUnmounted 与 openReport/loadArtifact 无序号守卫及 api 透传现状、Decisions prompt 收集点、报告创建端点无幂等键、web/tests 无 Reports.vue 守卫）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 518 继续有效，未重跑门禁。
+- 问题清单：UP-20261018-18 中 Reports 一半（P2，刷新闪空且失败丢旧数据）成立，纳入首切片 U05-S01（关账后 UP-18 全项关账）；UP-20261018-34（P2，Reports 无卸载清理与详情/制品竞态）成立，排 U05-S02；UP-20261018-35（P2，Decisions 全链路 prompt 输入）成立但涉 §3.2 新组件边缘，排后续候选、推进前另行裁决；UP-20261018-36（P2/测试空白，Reports 组件层无守卫）随 S01/S02 分步补齐；UP-20261018-38～41 复核符合（AI 证据可信度、决策状态机、效果评价说明、错误卫生），不改代码。
+- §3.2 裁决登记：UP-20261018-37（报告生成 POST 幂等键）维持现状，不加 Idempotency-Key——前端 creating 在途防连击在位，重复报告为可见可区分的普通记录、无错误数据后果，与 UP-29 口径一致；结果未知应先刷新列表核对，不盲目重放 POST。此为维持现状登记，不构成变更授权。
+- 范围收窄两处（不影响分级）：① 盘点建议的捆绑首切片拆为 S01（仅列表刷新保留，U04-S01 同型）与 S02（UP-34 竞态/卸载），openReport 失败清 selectedReport 随 S02 一并评估；② UP-35 不在本轮批准范围。盘点措辞小误一处（Decisions 为裸 prompt 全局调用、非 window.prompt，语义等价）。
+- 首个实施切片 U05-S01（Reports 行 89 状态行条件改 `loading && reports.length === 0` + 行 93 表格条件改 `reports.length` + loadPage 删除失败清表一行 + 新增刷新保留源码守卫）规约已立并派发 agy Flash，验收后另行登记。结果报告 `docs/verification/results/FUNCTION-POLISH-U05-20261018.md`。本节修改前已备份本文件至 `docs/backups/u05-inventory-20261018/`。本轮未改业务代码、未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U04-S03 Ops 禁用用户二次确认切片关账（云端 VM，总控亲验）——U04 全项处置完毕
 
 - 交付（agy Flash 仅文件读写）：`web/src/views/Ops.vue` 仅 `toggle` 函数内一处——首行 busy/loading 守卫之后、`busy.value = true` 之前插入规约逐字四行：仅禁用路径（`if (!enable)`）以 `window.confirm` 弹出含用户名与禁用后果的确认，`if (!confirmed) return` 在置 busy、清错误、发请求之前中止（取消零副作用）；启用路径不弹确认、逐字不变；模板、createUser、resetPwd 与其余函数逐字未动。新增 `web/tests/opsDisableConfirm.test.js` 5 个守卫（禁用分支与完整文案、语句顺序不变量、文案全文恰好一次、模板 toggle 按钮保留、决策逻辑仿真含缺省/异常按取消与前置守卫组合；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，按 RuntimeProfiles `window.confirm` 先例补齐（非 §3.2、盘点已批准），未动后端、契约、权限与状态模型，无新依赖。
