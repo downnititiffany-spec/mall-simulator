@@ -106,12 +106,12 @@ test('c. id 唯一性与零 tabindex：四个新 id 在 Ops.vue 内以 id="..." 
     )
   }
 
-  // 2. Ops.vue 内全部 id="..." 出现的总数恰为 4（保持 Ops.vue 其余部分零 id 规范）
+  // 2. Ops.vue 内全部 id="..." 出现的总数恰为 10（保持 Ops.vue 其余部分零 id 规范）
   const allIdMatches = opsSource.match(/\bid="[^"]+"/g) || []
   assert.equal(
     allIdMatches.length,
-    4,
-    `Ops.vue 内 id 属性总数必须恰为 4（实测 ${allIdMatches.length} 个：${allIdMatches.join(', ')}）`
+    10,
+    `Ops.vue 内 id 属性总数必须恰为 10（实测 ${allIdMatches.length} 个：${allIdMatches.join(', ')}）`
   )
 
   // 3. Ops.vue 源码不含 tabindex 属性（符合 UP-49～52 规范口径，保持现行零 tabindex）

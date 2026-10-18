@@ -64,10 +64,10 @@
       <div v-else class="el-empty">暂无用户或该接口未返回数据</div>
       <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
         <span>共 {{ userTotal }} 条 · 第 {{ userPage }} / {{ userTotalPages }} 页</span>
-        <select v-model="userSort" :disabled="loading || busy" @change="changeUserSort"><option value="id,asc">ID（升序）</option><option value="username,asc">用户名（升序）</option><option value="role,asc">角色（升序）</option><option value="createdAt,desc">创建时间（新到旧）</option></select>
+        <select id="ops-user-sort" v-model="userSort" :disabled="loading || busy" @change="changeUserSort" aria-label="用户列表排序"><option value="id,asc">ID（升序）</option><option value="username,asc">用户名（升序）</option><option value="role,asc">角色（升序）</option><option value="createdAt,desc">创建时间（新到旧）</option></select>
         <button class="btn btn-sm" :disabled="loading || busy || userPage <= 1" @click="changeUserPage(userPage - 1)">上一页</button>
         <button class="btn btn-sm" :disabled="loading || busy || userPage >= userTotalPages" @click="changeUserPage(userPage + 1)">下一页</button>
-        <select v-model.number="userPageSize" :disabled="loading || busy" @change="changeUserPageSize"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
+        <select id="ops-user-page-size" v-model.number="userPageSize" :disabled="loading || busy" @change="changeUserPageSize" aria-label="用户列表每页条数"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
       </div>
       <div v-if="actionError" class="table-hint table-hint-error">用户操作失败：{{ actionError }}</div>
     </div>
@@ -306,10 +306,10 @@
         <div v-else class="el-empty">暂无问答记录</div>
         <div class="pagination-bar" style="display:flex;gap:8px;align-items:center;margin-top:8px">
           <span>共 {{ aiHistoryTotal }} 条 · 第 {{ aiHistoryPage }} / {{ aiHistoryTotalPages }} 页</span>
-          <select v-model="aiHistorySort" :disabled="loading" @change="changeAiHistorySort"><option value="id,desc">ID（新到旧）</option><option value="createdAt,desc">时间（新到旧）</option><option value="status,asc">状态（升序）</option><option value="elapsedMs,desc">耗时（高到低）</option></select>
+          <select id="ops-ai-history-sort" v-model="aiHistorySort" :disabled="loading" @change="changeAiHistorySort" aria-label="问答审计排序"><option value="id,desc">ID（新到旧）</option><option value="createdAt,desc">时间（新到旧）</option><option value="status,asc">状态（升序）</option><option value="elapsedMs,desc">耗时（高到低）</option></select>
           <button class="btn btn-sm" :disabled="loading || aiHistoryPage <= 1" @click="changeAiHistoryPage(aiHistoryPage - 1)">上一页</button>
           <button class="btn btn-sm" :disabled="loading || aiHistoryPage >= aiHistoryTotalPages" @click="changeAiHistoryPage(aiHistoryPage + 1)">下一页</button>
-          <select v-model.number="aiHistoryPageSize" :disabled="loading" @change="changeAiHistoryPageSize"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
+          <select id="ops-ai-history-page-size" v-model.number="aiHistoryPageSize" :disabled="loading" @change="changeAiHistoryPageSize" aria-label="问答审计每页条数"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
         </div>
         <details v-if="aiHistoryRows.length" style="margin-top:8px">
           <summary style="font-size:12px;color:var(--gray-500);cursor:pointer">展开 SQL 与使用表（证据复核）</summary>
@@ -348,10 +348,10 @@
         <div v-else class="el-empty">暂无调用记录</div>
         <div class="pagination-bar" style="display:flex;gap:8px;align-items:center;margin-top:8px">
           <span>共 {{ aiCallTotal }} 条 · 第 {{ aiCallPage }} / {{ aiCallTotalPages }} 页</span>
-          <select v-model="aiCallSort" :disabled="loading" @change="changeAiCallSort"><option value="id,desc">ID（新到旧）</option><option value="createdAt,desc">时间（新到旧）</option><option value="useCase,asc">用例（升序）</option><option value="status,asc">状态（升序）</option><option value="elapsedMs,desc">耗时（高到低）</option></select>
+          <select id="ops-ai-call-sort" v-model="aiCallSort" :disabled="loading" @change="changeAiCallSort" aria-label="调用审计排序"><option value="id,desc">ID（新到旧）</option><option value="createdAt,desc">时间（新到旧）</option><option value="useCase,asc">用例（升序）</option><option value="status,asc">状态（升序）</option><option value="elapsedMs,desc">耗时（高到低）</option></select>
           <button class="btn btn-sm" :disabled="loading || aiCallPage <= 1" @click="changeAiCallPage(aiCallPage - 1)">上一页</button>
           <button class="btn btn-sm" :disabled="loading || aiCallPage >= aiCallTotalPages" @click="changeAiCallPage(aiCallPage + 1)">下一页</button>
-          <select v-model.number="aiCallPageSize" :disabled="loading" @change="changeAiCallPageSize"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
+          <select id="ops-ai-call-page-size" v-model.number="aiCallPageSize" :disabled="loading" @change="changeAiCallPageSize" aria-label="调用审计每页条数"><option :value="10">10 条</option><option :value="20">20 条</option><option :value="50">50 条</option></select>
         </div>
       </div>
     </div>
