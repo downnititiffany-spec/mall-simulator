@@ -1,3 +1,9 @@
+### 2026-10-18 U01-S03 前端 401 拦截器模拟断言切片关账（云端 VM，总控亲验）——U01 全项处置完毕
+
+- 交付（agy Flash 仅文件读写）：`web/src/api.js` 最小可测性重构（行为不变）——`redirectToLogin` 具名导出，原匿名响应拦截器成功/失败回调提取为具名导出 `handleApiResponse`/`handleApiError`（函数体逐字一致），注册行改为 `client.interceptors.response.use(handleApiResponse, handleApiError)`；请求拦截器、存储键、默认导出逐字未动。新增 `web/tests/apiUnauthorized.test.js` 15 个测试块，以内存桩动态模拟断言覆盖规约场景 a–j（OK/ACCEPTED 解包、UNAUTHORIZED 清键跳转与 /login 防循环、其他 code 透传、401 与 body 口径触发、500/网络错误透传原 err、`redirectToLogin` 直测）+ 接线守护。总控逐行核 diff 与规约零偏差，未改后端/权限/契约/router/routeAccess/App.vue、无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u01s03acc20261018` 实测 478/478 全过、build exit=0（脚本因基线 463 报 DRIFT）；漂移构成书面登记——+15 全部为新增 apiUnauthorized 测试块，据此 `run-tests.ps1` 基线再登记 web 463→478（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u01s03gate20261018` **478 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**。
+- 处置：UP-20261018-08 **全项关账**；**U01 全项处置完毕**（UP-01～08 均关账/复核符合/裁决登记）。转 U02 盘点（U02-INV 只读盘点规约已立并派发）。结果报告 `docs/verification/results/FUNCTION-POLISH-U01-S03-20261018.md`。本节修改前已备份本文件至 `docs/backups/u01-s03-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U01-S02 无权访问回退提示切片关账（云端 VM，总控亲验）
 
 - 交付（agy Flash 仅文件读写）：`routeAccess.js` 新增纯函数 `resolveDeniedPath`（仅精确命中 12 功能路由且非 `/overview` 时原样返回，其余非字符串/数组/`/`/`/login`/未知/带 query·hash 一律 null，注释明示仅作展示校验、不做权限判定）；`router.js` 无权回退分支改为 `next(token ? { path: '/overview', query: { denied: to.path } } : '/login')`（仅传 to.path，无 token 时 `/login` 字面量逐字未动）；`App.vue` 主内容区顶部（SnapshotSelector 之前）新增可关闭提示横幅（`role="alert"`，文案「无权访问页面 {path}，已返回运营大盘。」），关闭经 `router.replace` 仅移除 denied 参数并保留其余 query；新增 `web/tests/accessDenied.test.js` 6 个测试块。总控逐行核 diff 与规约零偏差，未改后端/权限/契约/api.js、无新依赖。

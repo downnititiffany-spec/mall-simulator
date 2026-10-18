@@ -15,7 +15,7 @@ const clearAuth = () => {
   localStorage.removeItem(USER_KEY)
 }
 
-const redirectToLogin = () => {
+export const redirectToLogin = () => {
   clearAuth()
   // 登录页自身的 401（如密码错误）不重复跳转，由页面展示错误提示
   if (!window.location.pathname.startsWith('/login')) {
@@ -36,30 +36,31 @@ client.interceptors.request.use(
   (err) => Promise.reject(err)
 )
 
-client.interceptors.response.use(
-  (resp) => {
-    const body = resp.data
-    if (body && body.code === 'OK') {
-      return body.data
-    }
-    if (body && body.code === 'ACCEPTED') {
-      return body.data
-    }
-    if (body && body.code === 'UNAUTHORIZED') {
-      redirectToLogin()
-      return Promise.reject(new Error((body && body.message) || '未授权'))
-    }
-    return Promise.reject(new Error((body && body.message) || '请求失败'))
-  },
-  (err) => {
-    // 令牌缺失/过期/无效：清理登录态并回到登录页
-    const body = err && err.response && err.response.data
-    if ((err.response && err.response.status === 401) || (body && body.code === 'UNAUTHORIZED')) {
-      redirectToLogin()
-    }
-    return Promise.reject(err)
+export const handleApiResponse = (resp) => {
+  const body = resp.data
+  if (body && body.code === 'OK') {
+    return body.data
   }
-)
+  if (body && body.code === 'ACCEPTED') {
+    return body.data
+  }
+  if (body && body.code === 'UNAUTHORIZED') {
+    redirectToLogin()
+    return Promise.reject(new Error((body && body.message) || '未授权'))
+  }
+  return Promise.reject(new Error((body && body.message) || '请求失败'))
+}
+
+export const handleApiError = (err) => {
+  // 令牌缺失/过期/无效：清理登录态并回到登录页
+  const body = err && err.response && err.response.data
+  if ((err.response && err.response.status === 401) || (body && body.code === 'UNAUTHORIZED')) {
+    redirectToLogin()
+  }
+  return Promise.reject(err)
+}
+
+client.interceptors.response.use(handleApiResponse, handleApiError)
 
 export default {
   // 第三个参数可传 { signal }（AbortController）：新提问发起时取消上一次在途请求（§18.4）
