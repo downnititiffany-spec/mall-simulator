@@ -55,8 +55,8 @@ test('环境列表 API 的错误结构不能伪装成空列表', () => {
     name: 'TypeError',
     message: '来源列表响应格式无效'
   })
-  assert.match(page, /profiles\.value = \[\]/)
-  assert.match(page, /sources\.value = \[\]/)
+  assert.doesNotMatch(page, /profiles\.value = \[\]/)
+  assert.doesNotMatch(page, /sources\.value = \[\]/)
   assert.match(page, /requireRuntimeProfileList\(profileResult\.value, '运行环境'\)/)
   assert.match(page, /requireRuntimeProfileList\(sourceResult\.value, '来源'\)/)
   assert.match(page, /v-else-if="pageError && profiles\.length === 0"/)

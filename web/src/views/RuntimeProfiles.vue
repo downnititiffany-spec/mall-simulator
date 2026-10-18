@@ -23,7 +23,7 @@
         <div class="card-title">已登记环境 <span class="table-count">{{ profiles.length }} 条</span></div>
         <span v-if="loading" class="muted">正在读取…</span>
       </div>
-      <div v-if="loading" class="empty-state">正在读取运行环境…</div>
+      <div v-if="loading && profiles.length === 0" class="empty-state">正在读取运行环境…</div>
       <div v-else-if="pageError && profiles.length === 0" class="empty-state">
         运行环境列表当前不可用，请修正错误后刷新。
       </div>
@@ -133,8 +133,6 @@ const sourceById = computed(() => new Map(sources.value.map((source) => [Number(
 const loadProfiles = async () => {
   loading.value = true
   pageError.value = ''
-  profiles.value = []
-  sources.value = []
   try {
     const [profileResult, sourceResult] = await Promise.allSettled([api.runtimeProfiles(), api.sources()])
     if (profileResult.status === 'rejected') throw profileResult.reason

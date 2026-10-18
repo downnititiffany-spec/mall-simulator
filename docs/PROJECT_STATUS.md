@@ -1,3 +1,9 @@
+### 2026-10-18 U04-S01 RuntimeProfiles 刷新保留切片关账（云端 VM，总控亲验）
+
+- 交付（agy Flash 仅文件读写）：`web/src/views/RuntimeProfiles.vue` 模板行 26 加载占位条件改 `loading && profiles.length === 0`、`loadProfiles()` 删除 profiles/sources 两行先行清空（其余逐字未动）；`web/tests/runtimeProfiles.test.js` 固化清空的两条断言改 doesNotMatch；新增 `web/tests/runtimeProfilesRefreshRetention.test.js` 3 个守卫（不先行清空与生命周期、模板四分支结构与卡片头指示、四分支真值表仿真；文件头如实注明源码守卫形态）。总控逐行核 diff 与规约零偏差，未动 testResult 收敛（按收窄裁决）、后端、契约与权限，无新依赖。
+- 总控亲跑（不采信自述）：web 首轮 RunId `u04s01acc20261018` 实测 508/508 全过、build exit=0（脚本因基线 505 报 DRIFT）；漂移构成书面登记——+3 全部为新增 runtimeProfilesRefreshRetention 测试块，据此 `run-tests.ps1` 基线再登记 web 505→508（附变更注释，未用 -AllowCountDrift）；收口轮 RunId `u04s01gate20261018` **508 MATCH、PASS exit=0**；脚本契约 `AnalyticsIsolationScriptsContractTest` **13/13 PASS**（基线登记前后各跑一次）。
+- 处置：UP-20261018-18 的 RuntimeProfiles 一半 **关账**（Reports 一半仍归 U05），UP-20261018-28 **关账**。U04 余项立切片 U04-S02（UP-20261018-26，Pipeline 实例表新增「当前阶段」列与 FAILED 失败码附注——总控亲验两字段已在列表行对象内、恢复表单已直接消费，属纯呈现补齐、不改后端与契约、不属 §3.2）派发 agy Flash，验收后另行登记；UP-20261018-27 排其后。结果报告 `docs/verification/results/FUNCTION-POLISH-U04-S01-20261018.md`。本节修改前已备份本文件至 `docs/backups/u04-s01-20261018/`。本轮未连库、未触碰 3306、未使用 Docker、未拨 DeepSeek API；增量成果不回写签收结论，不合并 main、不发版。
+
 ### 2026-10-18 U04 盘点验收（云端 VM，总控亲验）——UP-18 一半成立，首切片 U04-S01 已派发
 
 - U04 只读盘点验收：Antigravity Flash 按 `U04-INV` 规约交付盘点报告（`mall-simulator-notes/U04-INVENTORY-REPORT.md`），总控逐项抽验源码锚点（RuntimeProfiles loadProfiles 清空与模板卸载及四条写后调用链、Pipeline 实例表列与 currentStage 呈现面、Ops toggle 无 confirm 与 RuntimeProfiles confirm 对照、runtimeProfiles.test.js:58-59 固化断言、Pipeline operationId 与 PipelineController 限流注解、SourceWizard watch 失效守卫）后采信。盘点期间仓库零代码改动；基线 default 1563 / web 505 继续有效，未重跑门禁。
